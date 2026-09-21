@@ -91,7 +91,7 @@ Create the new solution in a physically isolated subtree:
 src/LimboDancer/LimboDancer.sln
 ```
 
-The legacy solution remains temporarily:
+The legacy source tree is now rooted at `src/Legacy/`. The legacy solution remains temporarily at repository root:
 
 ```text
 LimboDancer.MCP.sln
@@ -390,7 +390,7 @@ These remain working identifiers until the ontology namespace is finalized.
 
 ### Legacy source to inspect
 
-- `src/LimboDancer.MCP.McpServer/McpServer.cs`
+- `src/Legacy/LimboDancer.MCP.McpServer/McpServer.cs`
 - four existing tool implementations;
 - current JSON schemas / JSON-LD action metadata;
 - ontology action/property mappings.
@@ -704,27 +704,27 @@ LimboDancer.Infrastructure.Ontology
 
 Relational:
 
-- `LimboDancer.MCP.Storage`;
-- `HistoryService`;
+- `src/Legacy/LimboDancer.MCP.Storage/`;
+- `src/Legacy/LimboDancer.MCP.McpServer/Services/HistoryService.cs` or its current legacy location;
 - EF models and migrations.
 
 Graph:
 
-- `LimboDancer.MCP.Graph.CosmosGremlin`;
-- `TenantScopedGraphStore`;
+- `src/Legacy/LimboDancer.MCP.Graph.CosmosGremlin/`;
+- `src/Legacy/LimboDancer.MCP.McpServer/` implementation of `TenantScopedGraphStore`;
 - graph query services;
-- `GraphPreconditionsService`;
-- `GraphEffectsService`.
+- `src/Legacy/LimboDancer.MCP.McpServer/` implementation of `GraphPreconditionsService`;
+- `src/Legacy/LimboDancer.MCP.McpServer/` implementation of `GraphEffectsService`.
 
 Vector:
 
-- `LimboDancer.MCP.Vector.AzureSearch`;
-- `VectorSearchService`;
+- `src/Legacy/LimboDancer.MCP.Vector.AzureSearch/`;
+- `src/Legacy/LimboDancer.MCP.McpServer/` implementation of `VectorSearchService`;
 - tenant filter construction.
 
 Ontology:
 
-- `LimboDancer.MCP.Ontology`;
+- `src/Legacy/LimboDancer.MCP.Ontology/`;
 - property/relation mapping;
 - ontology repository contracts and validators.
 
