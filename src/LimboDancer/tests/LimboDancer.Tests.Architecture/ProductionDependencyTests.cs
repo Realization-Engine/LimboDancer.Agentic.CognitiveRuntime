@@ -63,6 +63,32 @@ public sealed class ProductionDependencyTests
             $"Expected: {string.Join(", ", AllowedProjectReferences.Keys)}{Environment.NewLine}Actual: {string.Join(", ", actualProjects)}");
     }
 
+    [Fact]
+    public void EveryProjectTreatsWarningsAsErrors()
+    {
+        var solutionRoot = FindSolutionRoot();
+        var sharedProperties = XDocument.Load(Path.Combine(solutionRoot, "Directory.Build.props"));
+        var sharedSetting = sharedProperties
+            .Descendants("TreatWarningsAsErrors")
+            .Select(element => element.Value.Trim())
+            .LastOrDefault();
+
+        Assert.True(
+            string.Equals("true", sharedSetting, StringComparison.OrdinalIgnoreCase),
+            "Directory.Build.props must set TreatWarningsAsErrors to true.");
+
+        var overrides = Directory.GetFiles(solutionRoot, "*.csproj", SearchOption.AllDirectories)
+            .Where(project => XDocument.Load(project)
+                .Descendants("TreatWarningsAsErrors")
+                .Any(element => !string.Equals(element.Value.Trim(), "true", StringComparison.OrdinalIgnoreCase)))
+            .Select(project => Path.GetRelativePath(solutionRoot, project))
+            .ToArray();
+
+        Assert.True(
+            overrides.Length == 0,
+            $"Projects must not disable TreatWarningsAsErrors:{Environment.NewLine}{string.Join(Environment.NewLine, overrides)}");
+    }
+
     private static IEnumerable<ProjectReference> ReadProductionProjectReferences()
     {
         foreach (var projectFile in GetProductionProjectFiles())
