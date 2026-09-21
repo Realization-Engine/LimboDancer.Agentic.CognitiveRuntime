@@ -10,7 +10,7 @@ This directory is the transition boundary between the legacy `LimboDancer.MCP` i
 | [`docs/`](./docs/) | Active documentation | Current runtime specifications, design guidance, implementation planning, and retained legacy reference documents. |
 | [`Legacy/`](./Legacy/) | Temporary legacy source | Previous `LimboDancer.MCP.*` projects retained only as behavioral and migration references. |
 
-The new production solution baseline now exists under `src/LimboDancer/`. It is intentionally structural: runtime contracts and behavior are introduced incrementally in the order defined by the implementation plan.
+The new production solution under `src/LimboDancer/` now contains the action-authority, diagnostic, execution-gate, audit, and tenant-safe State foundations. Runtime contracts and behavior continue to be introduced incrementally in the order defined by the implementation plan.
 
 ## Active production layout
 
@@ -30,7 +30,7 @@ src/LimboDancer/
 
 All new projects target `net10.0`. The five runtime production projects retain the approved dependency graph. `LimboDancer.AppHost` is an outer Aspire application-orchestration project that references `LimboDancer.Host` only; it does not participate in runtime action authority. Architecture tests enforce these boundaries and forbid references from new projects into `src/Legacy/` or the `LimboDancer.MCP.*` project family.
 
-The initial AppHost deliberately orchestrates only `LimboDancer.Host`. State services and Aspire integrations are admitted later only after the corresponding runtime ports and provider decisions exist. Aspire operational telemetry does not replace LimboDancer diagnostics, Governance decisions, the Execution Gate, or authoritative runtime audit evidence.
+The initial AppHost deliberately orchestrates only `LimboDancer.Host`. The State ports are provider-neutral, and the first Infrastructure implementations are deterministic in-memory reference providers used to prove tenant isolation and fail-closed semantic behavior. PostgreSQL, graph, vector, ontology persistence, and their Aspire resources are admitted only when a concrete provider is selected and configured. Aspire operational telemetry does not replace LimboDancer diagnostics, Governance decisions, the Execution Gate, or authoritative runtime audit evidence.
 
 The exact implementation sequence and admission criteria are defined in the [Implementation Plan](<./docs/LimboDancer.Agentic.CognitiveRuntime Implementation Plan.md>). The [documentation index](./docs/) identifies the normative specification and its supporting design documents.
 
