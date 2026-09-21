@@ -1,5 +1,7 @@
 using LimboDancer.Abstractions.Actions;
+using LimboDancer.Abstractions.Execution;
 using LimboDancer.Runtime.Actions;
+using LimboDancer.Runtime.Execution;
 
 namespace LimboDancer.Tests.Unit.Actions;
 
@@ -30,5 +32,15 @@ public sealed class ActionExecutorResolverTests
         Assert.Null(resolved);
     }
 
-    internal sealed record TestRuntimeExecutor(ActionId ActionId, ExecutorBinding Binding) : IRuntimeActionExecutor;
+    internal sealed record TestRuntimeExecutor(ActionId ActionId, ExecutorBinding Binding) : IActionExecutor
+    {
+        public Task<ActionExecutionResult> ExecuteAsync(
+            AuthorizedAction action,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(action);
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(new ActionExecutionResult(succeeded: true, "test.success"));
+        }
+    }
 }

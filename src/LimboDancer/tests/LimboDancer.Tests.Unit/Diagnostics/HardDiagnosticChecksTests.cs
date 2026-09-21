@@ -1,8 +1,10 @@
 using LimboDancer.Abstractions.Actions;
 using LimboDancer.Abstractions.Diagnostics;
+using LimboDancer.Abstractions.Execution;
 using LimboDancer.Abstractions.Runtime;
 using LimboDancer.Runtime.Actions;
 using LimboDancer.Runtime.Diagnostics;
+using LimboDancer.Runtime.Execution;
 using LimboDancer.Tests.Unit.Actions;
 
 namespace LimboDancer.Tests.Unit.Diagnostics;
@@ -91,7 +93,17 @@ public sealed class HardDiagnosticChecksTests
 
     private sealed record TestRuntimeExecutor(
         ActionId ActionId,
-        ExecutorBinding Binding) : IRuntimeActionExecutor;
+        ExecutorBinding Binding) : IActionExecutor
+    {
+        public Task<ActionExecutionResult> ExecuteAsync(
+            AuthorizedAction action,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(action);
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(new ActionExecutionResult(succeeded: true, "test.success"));
+        }
+    }
 
     private sealed class TestSemanticMappingResolver(IEnumerable<string> knownMappings)
         : IRequiredSemanticMappingResolver

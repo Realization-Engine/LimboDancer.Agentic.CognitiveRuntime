@@ -1,8 +1,10 @@
 using System.Text.Json;
 using LimboDancer.Abstractions.Actions;
+using LimboDancer.Abstractions.Execution;
 using LimboDancer.Abstractions.Runtime;
 using LimboDancer.Runtime.Actions;
 using LimboDancer.Runtime.Directed;
+using LimboDancer.Runtime.Execution;
 using LimboDancer.Tests.Unit.Actions;
 
 namespace LimboDancer.Tests.Unit.Directed;
@@ -75,7 +77,7 @@ public sealed class DirectedActionRuntimeTests
             static type => type.Namespace?.Contains("ModelContextProtocol", StringComparison.Ordinal) == true);
     }
 
-    private static DirectedActionRuntime CreateRuntime(IEnumerable<IRuntimeActionExecutor> executors)
+    private static DirectedActionRuntime CreateRuntime(IEnumerable<IActionExecutor> executors)
     {
         var descriptor = ActionRegistryTests.CreateDescriptor();
         return new DirectedActionRuntime(
@@ -111,5 +113,15 @@ public sealed class DirectedActionRuntimeTests
         return document.RootElement.Clone();
     }
 
-    private sealed record TestRuntimeExecutor(ActionId ActionId, ExecutorBinding Binding) : IRuntimeActionExecutor;
+    private sealed record TestRuntimeExecutor(ActionId ActionId, ExecutorBinding Binding) : IActionExecutor
+    {
+        public Task<ActionExecutionResult> ExecuteAsync(
+            AuthorizedAction action,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(action);
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(new ActionExecutionResult(succeeded: true, "test.success"));
+        }
+    }
 }

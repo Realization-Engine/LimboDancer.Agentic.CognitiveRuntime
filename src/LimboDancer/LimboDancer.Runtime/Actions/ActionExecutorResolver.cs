@@ -1,17 +1,18 @@
 using System.Diagnostics.CodeAnalysis;
 using LimboDancer.Abstractions.Actions;
+using LimboDancer.Runtime.Execution;
 
 namespace LimboDancer.Runtime.Actions;
 
 public sealed class ActionExecutorResolver : IActionExecutorResolver
 {
-    private readonly Dictionary<ExecutorBinding, IRuntimeActionExecutor> executors;
+    private readonly Dictionary<ExecutorBinding, IActionExecutor> executors;
 
-    public ActionExecutorResolver(IEnumerable<IRuntimeActionExecutor> executors)
+    public ActionExecutorResolver(IEnumerable<IActionExecutor> executors)
     {
         ArgumentNullException.ThrowIfNull(executors);
 
-        var registered = new Dictionary<ExecutorBinding, IRuntimeActionExecutor>();
+        var registered = new Dictionary<ExecutorBinding, IActionExecutor>();
         foreach (var executor in executors)
         {
             ArgumentNullException.ThrowIfNull(executor);
@@ -30,6 +31,6 @@ public sealed class ActionExecutorResolver : IActionExecutorResolver
 
     public bool TryResolve(
         ExecutorBinding binding,
-        [NotNullWhen(true)] out IRuntimeActionExecutor? executor) =>
+        [NotNullWhen(true)] out IActionExecutor? executor) =>
         executors.TryGetValue(binding, out executor);
 }

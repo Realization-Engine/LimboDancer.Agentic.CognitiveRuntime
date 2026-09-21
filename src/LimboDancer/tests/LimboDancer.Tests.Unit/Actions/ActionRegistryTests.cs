@@ -79,14 +79,15 @@ public sealed class ActionRegistryTests
         IEnumerable<PreconditionDescriptor>? preconditions = null,
         IEnumerable<EffectDescriptor>? effects = null,
         string version = "1",
-        DiagnosticProfile? diagnostics = null) => new(
+        DiagnosticProfile? diagnostics = null,
+        ActionRiskProfile? risk = null) => new(
             WellKnownActions.HistoryRead,
             new ActionVersion(version),
             "History read",
             "Reads history.",
             ParseJson("""{"type":"object"}"""),
             ParseJson("""{"type":"object"}"""),
-            new ActionRiskProfile(
+            risk ?? new ActionRiskProfile(
                 ActionMutability.ReadOnly,
                 ActionIdempotency.Idempotent,
                 ActionReversibility.Reversible,
