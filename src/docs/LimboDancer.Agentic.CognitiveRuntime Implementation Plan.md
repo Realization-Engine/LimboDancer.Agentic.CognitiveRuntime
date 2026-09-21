@@ -5,7 +5,7 @@
 **Product / repository identity:** `LimboDancer.Agentic.CognitiveRuntime`  
 **.NET root namespace / project prefix:** `LimboDancer`  
 **Target framework:** `net10.0` / C# 14  
-**Legacy source root:** `src/Legacy/`  
+**Legacy source root:** `src/Legacy/` (temporary; delete after required legacy behavior is ported)  
 **Normative source:** `LimboDancer.Agentic.CognitiveRuntime Plane Runtime Specification.md`  
 **Supporting design:** `LimboDancer.Agentic.CognitiveRuntime Plane Runtime Design.md`
 
@@ -92,16 +92,16 @@ Create the new solution in a physically isolated subtree:
 src/LimboDancer/LimboDancer.sln
 ```
 
-The legacy source tree is now rooted at `src/Legacy/`. The legacy solution remains temporarily at repository root:
+The legacy source tree and legacy solution are now fully contained under `src/Legacy/`:
 
 ```text
-LimboDancer.MCP.sln
+src/Legacy/LimboDancer.MCP.sln
 ```
 
 The two solutions serve different purposes during reimplementation:
 
 ```text
-LimboDancer.MCP.sln
+src/Legacy/LimboDancer.MCP.sln
     legacy behavioral reference
 
 LimboDancer.sln
@@ -977,7 +977,7 @@ LimboDancer.Host
 
 ### Exit criteria
 
-The new runtime can be launched independently of `LimboDancer.MCP.sln`.
+The new runtime can be launched independently of `src/Legacy/LimboDancer.MCP.sln`.
 
 ### Suggested PR
 
@@ -1465,7 +1465,7 @@ Do not mix broad legacy deletion into implementation PRs until replacement parit
 
 ## 29. Legacy Retirement Plan
 
-Legacy deletion begins only after the new runtime reaches required parity.
+Legacy deletion begins only after the new runtime reaches required parity. The intended end state is deletion of the entire `src/Legacy/` directory as one retirement unit.
 
 ### Retirement prerequisites
 
@@ -1485,7 +1485,7 @@ Legacy deletion begins only after the new runtime reaches required parity.
 3. archive any required compatibility fixtures;
 4. delete obsolete `LimboDancer.MCP.*` production projects;
 5. delete legacy-only tests;
-6. remove `LimboDancer.MCP.sln`;
+6. delete the entire `src/Legacy/` tree, including `src/Legacy/LimboDancer.MCP.sln`;
 7. remove obsolete package/config entries;
 8. run full new-solution conformance suite;
 9. update repository README/architecture index.
