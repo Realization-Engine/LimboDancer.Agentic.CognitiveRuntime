@@ -1,4 +1,51 @@
-# **LimboDancer.MCP System Design**
+# ASL Domain System Design
+
+**Status:** Historical ASL-domain reference and future integration source
+
+**Origin:** Pre-cognitive-runtime repository README, formerly titled `LimboDancer.MCP System Design`
+
+**Authority:** Non-normative. The current runtime architecture is defined under `src/docs/`, with the Plane Runtime Specification as the normative implementation contract.
+
+## Future integration with LimboDancer.Agentic.CognitiveRuntime
+
+This document preserves the repository's original ASL-centered product vision and its detailed exploration of rulebooks, canonical rule identifiers, nested exceptions, knowledge graphs, vector retrieval, board state, terrain, and spatial reasoning.
+
+The vision remains a valuable future domain application, but the architecture described below predates `LimboDancer.Agentic.CognitiveRuntime`. References to `LimboDancer.MCP` as the product, .NET 9, direct MCP tool execution, the old project layout, generalized plugins, legacy Planner/ReAct behavior, deployment topology, and package versions are historical rather than current implementation guidance.
+
+Future ASL integration should enter the new architecture through explicit plane boundaries:
+
+| ASL capability | Future architectural home |
+|---|---|
+| Rule vocabulary, canonical IDs, entities, relations, conditions, and exceptions | Semantic Plane |
+| Rule text, graph relationships, embeddings, maps, board state, and provenance | State Plane through tenant-safe ports |
+| Rule interpretation and goal decomposition | Reasoning Plane |
+| Finite ASL action candidates and deterministic applicability | Semantic Plane |
+| Choice among already permitted ASL actions | Decision Plane for autonomous goals only |
+| LOS calculations, state queries, and authorized state changes | Execution Plane through registered executors |
+| Tenant, policy, risk, and permission checks | Governance |
+| Invariant checks, mapping validation, and effect verification | Diagnostics |
+| MCP exposure | Interaction adapter, not ASL or runtime authority |
+
+The intended integration path is:
+
+```text
+ASL rules, maps, and reference material
+-> validated ASL ontology and state representations
+-> registered semantic actions
+-> directed or autonomous runtime path
+-> deterministic constraints and diagnostics
+-> Governance and Execution Gate
+-> authorized ASL executor
+-> observed effects and audit evidence
+```
+
+An LLM, embedding model, extraction model, classifier, or search provider may propose interpretations or supply evidence. It may not authorize or directly execute an ASL action.
+
+Porting should be selective. Useful behavior from the legacy implementation should be cleaned, hardened, and retested against the new contracts; obsolete MCP-centric structure should not be reproduced.
+
+---
+
+## Original historical design
 
 ## Executive Summary
 LimboDancer.MCP is an ontology-first Model Context Protocol server that transforms complex documents—rulebooks, regulations, technical specifications—into queryable knowledge graphs, using Vector and Graph databases, enabling AI assistants like Claude and ChatGPT to provide contextually-accurate answers about intricate rule systems. Built on .NET 9 and Azure, it extracts structured knowledge while preserving exact rule references (critical for domains like wargaming where "Rule A6.41" must remain unchanged), handles nested exceptions and cross-references, integrates spatial data through a plugin architecture (supporting hex-based wargames, grid-based RPGs, or custom coordinate systems), and maintains dynamic state tracking for scenarios where terrain changes or units move. The system combines graph traversal for precise rule relationships with vector search for semantic discovery, validates consistency across thousands of interconnected rules, and scales through multi-tenant isolation—turning 200-page PDFs that require expert interpretation into intelligent systems that can answer questions like "Can my elite infantry unit enter an enemy-occupied building?" by considering base rules, applicable exceptions, current game state, and spatial constraints. This system addresses the AI needs of vertical markets such as gaming (tabletop market $15B+), regulatory compliance, technical documentation, the legal profession, and any domain where complex conditional logic must be consistently applied, offering organizations the ability to democratize expert knowledge while ensuring accuracy and reducing costly rule interpretation errors.

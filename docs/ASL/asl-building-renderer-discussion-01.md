@@ -1,4 +1,8 @@
-Here design plan based on the ASL rules pages B23–B30 and the way official boards depict things. 
+# ASL Building Renderer Design Notes
+
+**Status:** Historical domain reference. Renderer concepts remain useful; runtime and implementation assumptions are non-normative.
+
+This design plan is based on ASL rules pages B23–B30 and the way official boards depict buildings.
 
 ---
 

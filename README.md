@@ -740,9 +740,12 @@ Key documents include:
 - `LimboDancer.Agentic.CognitiveRuntime Plane Runtime Design.md`
 - `LimboDancer.Agentic.CognitiveRuntime Plane Runtime Specification.md`
 - `LimboDancer.Agentic.CognitiveRuntime Implementation Plan.md`
+- `LimboDancer.Agentic.CognitiveRuntime Domain Knowledge Modeling Requirements.md`
 - `Decision Plane Architecture.md`
 
-The **Plane Runtime Specification** is normative for implementation. The **Implementation Plan** defines the current engineering sequence.
+The **Plane Runtime Specification** is normative for implementation. The **Implementation Plan** defines the current engineering sequence. The **Domain Knowledge Modeling Requirements** document is non-normative supporting guidance for semantic and state representations.
+
+Domain and use-case reference material lives under `docs/`. Advanced Squad Leader material is consolidated under `docs/ASL/` and is not normative for the runtime architecture.
 
 ---
 

@@ -4,6 +4,8 @@
 
 *How we use Vectors, Embeddings, RDF, and SHACL to make the Rulebook searchable in MCP*
 
+**Status:** Historical domain reference. MCP framing, source paths, SDK examples, and storage choices in this document predate the current cognitive-runtime architecture.
+
 ---
 
 ## 1. **Why Vectors & Embeddings for ASL?**
@@ -711,4 +713,3 @@ else
 ```
 
 ---
-

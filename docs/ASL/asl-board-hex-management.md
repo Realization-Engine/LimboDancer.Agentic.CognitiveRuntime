@@ -1,5 +1,7 @@
 # ASL Board Hex Map Management
 
+**Status:** Historical domain reference. Board, coordinate, LOS, and state-modeling concepts remain useful; legacy ontology and query-engine integration details are non-normative.
+
 ## Overview
 
 ASL (Advanced Squad Leader) relies heavily on standardized hex maps for gameplay. Rules reference specific hex locations (e.g., "LOS from 3K3 to 3P5"), making map data critical for rule interpretation and validation. This document outlines our approach to managing hex map data within the LimboDancer ontology system.
