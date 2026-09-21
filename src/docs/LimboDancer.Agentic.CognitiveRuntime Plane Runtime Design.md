@@ -624,7 +624,8 @@ Conceptually:
 
 ```text
 DiagnosticContext
-├── GoalId / StepId
+├── RuntimeInvocationId
+├── GoalId / StepId, when applicable
 ├── CorrelationId
 ├── TenantId
 ├── Principal
@@ -666,7 +667,8 @@ A conceptual result is:
 ```csharp
 public sealed record DiagnosticResult(
     string CheckId,
-    DiagnosticStatus Status,
+    DiagnosticOutcome Outcome,
+    DiagnosticSeverity Severity,
     string Code,
     string? Message,
     IReadOnlyDictionary<string, object?> Evidence);
@@ -674,29 +676,41 @@ public sealed record DiagnosticResult(
 
 These examples define the design shape, not final implementation signatures.
 
-### 7.5 Diagnostic Status and Severity
+### 7.5 Diagnostic Outcome and Severity
 
-The Diagnostic Fabric SHALL distinguish diagnostic status from action risk.
+The Diagnostic Fabric SHALL distinguish diagnostic outcome, diagnostic severity, and action risk.
 
-A diagnostic result SHOULD support statuses equivalent to:
+Diagnostic outcome SHOULD support:
 
 ```text
 Pass
-Info
-Warning
-Degraded
 Fail
 Indeterminate
 ```
 
-`ActionRisk` and `DiagnosticStatus` are different dimensions.
+Diagnostic severity SHOULD support:
+
+```text
+Info
+Warning
+Error
+Critical
+```
+
+Action risk is a separate multidimensional profile.
 
 For example:
 
 ```text
-ActionRisk: ReadOnly
-Diagnostic: tenant filter absent
-DiagnosticStatus: Fail
+ActionRiskProfile:
+    Mutability = ReadOnly
+    Boundary = Internal
+
+Diagnostic:
+    tenant filter absent
+
+DiagnosticOutcome: Fail
+DiagnosticSeverity: Critical
 Disposition: Block
 ```
 
@@ -719,7 +733,7 @@ A finding MAY result in:
 - execution block;
 - Goal failure.
 
-The same diagnostic status MAY have different dispositions depending on:
+The same diagnostic outcome MAY have different dispositions depending on severity and context, except for hard invariants, which SHALL fail closed on Fail or Indeterminate. Other dispositions may depend on:
 
 - action risk;
 - plane;
@@ -728,7 +742,7 @@ The same diagnostic status MAY have different dispositions depending on:
 - tenant policy;
 - whether the check protects a hard system invariant.
 
-Critical invariants such as tenant isolation SHALL fail closed.
+Hard invariants such as tenant isolation SHALL fail closed on both Fail and Indeterminate.
 
 Performance degradation MAY permit continued execution.
 
@@ -1034,18 +1048,30 @@ ActionDescriptor diagnostic references SHALL identify registered checks or profi
 
 ## 12. Initial Risk Model
 
-The initial runtime risk taxonomy SHALL support at least:
+Action risk SHALL be modeled as orthogonal characteristics rather than a single mutually exclusive enum.
+
+The initial ActionRiskProfile SHALL represent at least:
 
 ```text
-ReadOnly
-IdempotentWrite
-ReversibleWrite
-DestructiveWrite
-ExternalSideEffect
-PrivilegedAction
+Mutability:
+    ReadOnly | Write
+
+Idempotency:
+    Idempotent | NonIdempotent
+
+Reversibility:
+    Reversible | Compensatable | Irreversible
+
+Boundary:
+    Internal | ExternalSideEffect
+
+Privilege:
+    Normal | Privileged
 ```
 
-Risk SHALL influence:
+Governance MAY derive policy-specific risk levels from this profile.
+
+Risk characteristics SHALL influence:
 
 - autonomous execution policy;
 - confidence requirements;
@@ -1054,7 +1080,7 @@ Risk SHALL influence:
 - audit detail;
 - retry policy.
 
-Exact thresholds SHALL be configurable policy.
+Exact thresholds and derived policy levels SHALL remain configurable.
 
 ## 13. Action Registry and Binding
 
@@ -1228,6 +1254,8 @@ Cancelled
 ```
 
 A runtime implementation MAY refine these states.
+
+These states describe the full autonomous Goal lifecycle. Directed invocation SHALL use only the applicable execution states and SHALL NOT be forced through Reasoning or Deciding. A common RuntimeInvocationId SHOULD correlate both directed and autonomous paths; GoalId is required only when a Goal exists.
 
 Diagnostic hooks SHALL attach to lifecycle states and transitions without requiring Diagnostics to become a separate lifecycle state.
 
@@ -1927,7 +1955,7 @@ The bindings SHALL allow existing MCP names to remain stable.
 
 ## 41. Migration of HistoryAppend
 
-`HistoryAppendTool` is the first important migration case because it currently accepts:
+The legacy `HistoryAppendTool` is an important reimplementation reference because it accepted:
 
 - `preconditions`;
 - `effects`.
@@ -1954,7 +1982,7 @@ Gate
 HistoryAppend executor
 ```
 
-Migration SHOULD preserve protocol compatibility where necessary, but caller-provided semantic authority SHALL be deprecated and eventually removed.
+The new implementation MAY preserve protocol compatibility where necessary, but it SHALL NOT preserve caller-provided semantic authority.
 
 ## 42. Tenant Design
 
@@ -1978,7 +2006,7 @@ Audit SHALL record tenant identity.
 
 ### DESIGN RULE T-5
 
-The existing history-read and graph-read paths SHALL be verified for explicit or global-filter tenant enforcement before autonomous execution is enabled.
+The new history-read and graph-read implementations SHALL enforce tenant isolation explicitly or through a verified global mechanism before autonomous execution is enabled.
 
 ## 43. Semantic Fail-Closed Behavior
 
@@ -1996,7 +2024,7 @@ Unknown semantic actions SHALL NOT fall through to executor names.
 
 Unknown effect mappings SHALL produce explicit verification/execution failure according to action policy.
 
-This rule specifically addresses the current mixed behavior in graph precondition/effect mapping.
+This rule specifically prevents reproduction of the legacy mixed behavior in graph precondition/effect mapping.
 
 ## 44. Security Boundary
 
@@ -2053,7 +2081,7 @@ Provider             |             Services
                      v
                   State
 
-Diagnostic Runner / Registry participates across
+Diagnostic Runner participates across
 admission, observation, reasoning, resolution,
 decision, gate, execution, verification, and completion.
 ```
@@ -2064,72 +2092,86 @@ Diagnostic services participate across all planes and lifecycle phases but do no
 
 ## 46. Initial Implementation Boundary
 
-The first implementation increment SHALL establish a trustworthy execution convergence point before autonomous Decision is introduced.
+The first implementation SHALL prove the common execution authority boundary with minimal machinery before autonomous Decision is introduced.
 
-### Increment 1: Action authority
+The initial solution SHOULD begin with five projects:
+
+```text
+LimboDancer.Agentic.CognitiveRuntime.Abstractions
+LimboDancer.Agentic.CognitiveRuntime.Runtime
+LimboDancer.Agentic.CognitiveRuntime.Infrastructure
+LimboDancer.Agentic.CognitiveRuntime.Adapters.Mcp
+LimboDancer.Agentic.CognitiveRuntime.Host
+```
+
+Plane and fabric separation SHOULD initially be expressed primarily through namespaces. Additional assemblies SHOULD be created only when a concrete dependency, deployment, packaging, ownership, or isolation need appears.
+
+### Increment 1: Authority foundation
 
 Define:
 
-- `ActionRisk`;
+- runtime/action identities;
+- `ActionRiskProfile`;
 - `ActionDescriptor`;
-- action identity/version;
 - action registry;
-- protocol action bindings.
-
-Bind the four existing MCP tools.
-
-### Increment 2: Execution authorization
-
-Define:
-
+- protocol action bindings;
 - execution context;
-- gate result;
-- `IExecutionGate`;
-- deterministic baseline gate;
-- structured denial reasons.
+- `SelectedAction`;
+- `AuthorizedAction`;
+- `IExecutionGate`.
 
-Route directed MCP invocation through the gate.
-
-### Increment 3: Audit
-
-Record:
-
-- action;
-- descriptor version;
-- tenant;
-- principal;
-- gate result;
-- execution outcome.
-
-### Increment 4: Diagnostic substrate
+### Increment 2: Minimal diagnostics and audit
 
 Define:
 
-- diagnostic status and severity;
-- DiagnosticContext;
+- diagnostic outcome and severity;
+- `DiagnosticContext`;
 - diagnostic check/result contracts;
-- diagnostic registry;
-- diagnostic policy/disposition;
-- pre-flight execution hooks;
-- structured diagnostic audit events.
+- a small `IDiagnosticRunner`;
+- hard-invariant checks;
+- structured audit boundary.
 
-Implement initial hard-invariant checks for:
+A public plugin-style diagnostic registry is not required for the initial implementation.
+
+Initial hard-invariant checks SHALL cover:
 
 - tenant context;
 - action registration;
 - descriptor version;
 - executor binding;
-- semantic mapping validity.
+- required semantic mapping validity.
 
-### Increment 5: Semantic authority migration
+### Increment 3: Directed execution convergence
 
-Move authoritative preconditions/effects out of caller control.
+Implement a new MCP adapter and new executors under the new namespace family.
 
-Correct fail-open semantic mappings.
+Reimplement the four current MCP capabilities without production references to `LimboDancer.MCP.*`.
 
-Verify tenant enforcement on State reads.
+Prove:
 
-### Increment 6: Autonomous contracts
+```text
+MCP binding
+-> ActionDescriptor
+-> constraints
+-> diagnostics
+-> Execution Gate
+-> AuthorizedAction
+-> executor
+-> audit
+```
+
+### Increment 4: Semantic and State reimplementation
+
+Reimplement:
+
+- authoritative preconditions/effects;
+- fail-closed semantic mappings;
+- tenant-safe relational, graph, and vector access;
+- ontology-backed semantic resolution required by the initial actions.
+
+Legacy code is behavioral reference only.
+
+### Increment 5: Autonomous contracts
 
 Add:
 
@@ -2142,15 +2184,23 @@ Add:
 - `IDecisionProvider`;
 - Goal orchestration.
 
-### Increment 7: Baseline autonomous loop
+An empty PermittedAction set SHALL terminate or redirect orchestration without invoking the Decision provider.
+
+### Increment 6: Baseline autonomous loop
 
 Implement a deterministic or structured baseline provider.
 
-Do not introduce specialized provider routing until the lifecycle is observable and replayable.
+Do not introduce provider routing until at least two real providers exist.
 
-### Increment 8: Provider evaluation
+### Increment 7: Verification and replay-capable evidence
 
-Add Jev and other providers behind the established contract and evaluate using replay.
+Add effect verification only where it is concrete and meaningful.
+
+Capture sufficient structured audit evidence to support future replay, but do not require a replay engine yet.
+
+### Increment 8: Advanced capabilities when justified
+
+Add Jev/LLM Decision providers, provider routing, human confirmation, compensation, distributed authorization, or a replay engine only when concrete use cases require them.
 
 ## 47. Testing Requirements
 
@@ -2230,7 +2280,7 @@ Specifically, the first increment does not require:
 - dynamic ontology-generated executors;
 - a Jev dependency;
 - a specific LLM vendor;
-- project reorganization matching every plane;
+- one project per plane;
 - replacement of all current MCP tools.
 
 The design deliberately establishes authority and contracts before expanding cognition.
