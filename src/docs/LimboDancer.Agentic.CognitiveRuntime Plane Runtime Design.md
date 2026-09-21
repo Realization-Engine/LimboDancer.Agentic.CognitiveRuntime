@@ -7,6 +7,7 @@
 
 
 **Canonical system identity:** `LimboDancer.Agentic.CognitiveRuntime`  
+**.NET root namespace / project prefix:** `LimboDancer`  
 **Legacy code status:** Existing `LimboDancer.MCP.*` projects are reference implementations only. New architecture code SHALL NOT depend on them and they are intended for deletion after replacement.
 
 ## 1. Purpose
@@ -237,7 +238,7 @@ Diagnostics detect conditions. Diagnostic Policy determines their operational co
 
 ## 5. Platform Baseline and Clean-Reimplementation Strategy
 
-The new architecture SHALL be implemented as a clean namespace and project family under `LimboDancer.Agentic.CognitiveRuntime.*`.
+The new architecture SHALL be implemented as a clean .NET namespace and project family under `LimboDancer.*`. The product/repository identity remains `LimboDancer.Agentic.CognitiveRuntime`.
 
 The existing `LimboDancer.MCP.*` projects SHALL be treated as a source of proven behavior, algorithms, tests, schemas, and infrastructure knowledge, not as production dependencies of the new runtime.
 
@@ -250,7 +251,7 @@ LimboDancer.MCP.*
         | inspect / copy / refactor / re-test
         v
 New implementation
-LimboDancer.Agentic.CognitiveRuntime.*
+LimboDancer.*
         |
         v
 feature + conformance parity
@@ -295,13 +296,13 @@ If the evaluation is favorable, the target framework MAY move to `net11.0` befor
 
 ### 5.3 Namespace Isolation
 
-All newly implemented architecture code SHALL use the `LimboDancer.Agentic.CognitiveRuntime.*` root namespace.
+All newly implemented architecture code SHALL use the `LimboDancer.*` root namespace family.
 
-New production projects SHALL NOT use `LimboDancer.MCP.*` namespaces for newly authored runtime types.
+New production projects SHALL use `LimboDancer.*` namespaces and SHALL NOT use `LimboDancer.MCP.*` namespaces for newly authored runtime types.
 
 ### 5.4 Zero Legacy Production Dependency
 
-There SHALL be no production project reference from any `LimboDancer.Agentic.CognitiveRuntime.*` project to any `LimboDancer.MCP.*` project.
+There SHALL be no production project reference from any new `LimboDancer.*` project to any `LimboDancer.MCP.*` project.
 
 This is a hard architectural boundary.
 
@@ -346,7 +347,7 @@ New architecture projects SHALL target `net10.0` until the explicit .NET 11 GA u
 
 ### DESIGN RULE PLAT-2
 
-New production code SHALL use the `LimboDancer.Agentic.CognitiveRuntime.*` namespace family.
+New production code SHALL use the `LimboDancer.*` namespace family.
 
 ### DESIGN RULE PLAT-3
 
@@ -2097,11 +2098,11 @@ The first implementation SHALL prove the common execution authority boundary wit
 The initial solution SHOULD begin with five projects:
 
 ```text
-LimboDancer.Agentic.CognitiveRuntime.Abstractions
-LimboDancer.Agentic.CognitiveRuntime.Runtime
-LimboDancer.Agentic.CognitiveRuntime.Infrastructure
-LimboDancer.Agentic.CognitiveRuntime.Adapters.Mcp
-LimboDancer.Agentic.CognitiveRuntime.Host
+LimboDancer.Abstractions
+LimboDancer.Runtime
+LimboDancer.Infrastructure
+LimboDancer.Adapters.Mcp
+LimboDancer.Host
 ```
 
 Plane and fabric separation SHOULD initially be expressed primarily through namespaces. Additional assemblies SHOULD be created only when a concrete dependency, deployment, packaging, ownership, or isolation need appears.
@@ -2289,7 +2290,7 @@ The design deliberately establishes authority and contracts before expanding cog
 
 The following remain intentionally open until implementation analysis provides stronger evidence:
 
-1. The exact project partitioning within the new `LimboDancer.Agentic.CognitiveRuntime.*` solution.
+1. The exact project partitioning within the new `LimboDancer.*` solution.
 2. The final new-project boundary for reasoning/model-provider integrations; the legacy `LimboDancer.MCP.Llm` project will not be retained as a runtime dependency.
 3. The authoritative physical source for ActionDescriptors.
 4. The final ontology namespace for action identifiers.
