@@ -7,7 +7,7 @@
 
 
 **Canonical system identity:** `LimboDancer.Agentic.CognitiveRuntime`  
-**Legacy implementation namespace:** Existing `LimboDancer.MCP.*` assemblies retain their current names until an explicit code migration is performed.
+**Legacy code status:** Existing `LimboDancer.MCP.*` projects are reference implementations only. New architecture code SHALL NOT depend on them and they are intended for deletion after replacement.
 
 ## 1. Purpose
 
@@ -35,7 +35,9 @@ It defines:
 - failure, retry, escalation, and confirmation behavior;
 - host/runtime boundaries;
 - dependency rules;
-- migration from the current implementation.
+- clean reimplementation from the current implementation;
+- target .NET platform and framework lifecycle policy;
+- legacy-code retirement.
 
 This document intentionally stops short of prescribing every C# type or project layout. Those are implementation decisions derived from this design.
 
@@ -233,7 +235,136 @@ FailGoal
 
 Diagnostics detect conditions. Diagnostic Policy determines their operational consequence.
 
-## 5. Architectural Planes
+## 5. Platform Baseline and Clean-Reimplementation Strategy
+
+The new architecture SHALL be implemented as a clean namespace and project family under `LimboDancer.Agentic.CognitiveRuntime.*`.
+
+The existing `LimboDancer.MCP.*` projects SHALL be treated as a source of proven behavior, algorithms, tests, schemas, and infrastructure knowledge, not as production dependencies of the new runtime.
+
+The migration model is:
+
+```text
+Legacy implementation
+LimboDancer.MCP.*
+        |
+        | inspect / copy / refactor / re-test
+        v
+New implementation
+LimboDancer.Agentic.CognitiveRuntime.*
+        |
+        v
+feature + conformance parity
+        |
+        v
+retire and delete LimboDancer.MCP.*
+```
+
+The objective is not source-level preservation. Code copied from the legacy implementation SHOULD be cleaned, decomposed, renamed, re-tested, and repositioned according to the new plane/fabric architecture before it is admitted to the new runtime.
+
+### 5.1 Target Framework
+
+New production projects SHALL initially target:
+
+```text
+TargetFramework: net10.0
+Language baseline: C# 14
+```
+
+.NET 10 is the current Long Term Support baseline for the implementation phase.
+
+The solution SHOULD remain current on supported .NET 10 servicing releases.
+
+### 5.2 .NET 11 Upgrade Checkpoint
+
+.NET 11 SHALL be treated as an explicit upgrade checkpoint after General Availability.
+
+The architecture SHALL NOT depend on .NET 11 preview or release-candidate-only APIs unless a separate, documented decision changes this rule.
+
+After .NET 11 GA, the project SHALL evaluate:
+
+- SDK and runtime stability;
+- ASP.NET Core compatibility;
+- EF Core compatibility;
+- MCP and AI package compatibility;
+- Azure client-library compatibility;
+- diagnostic and observability dependencies;
+- deployment environment readiness;
+- material runtime or language features useful to this architecture.
+
+If the evaluation is favorable, the target framework MAY move to `net11.0` before the first production release.
+
+### 5.3 Namespace Isolation
+
+All newly implemented architecture code SHALL use the `LimboDancer.Agentic.CognitiveRuntime.*` root namespace.
+
+New production projects SHALL NOT use `LimboDancer.MCP.*` namespaces for newly authored runtime types.
+
+### 5.4 Zero Legacy Production Dependency
+
+There SHALL be no production project reference from any `LimboDancer.Agentic.CognitiveRuntime.*` project to any `LimboDancer.MCP.*` project.
+
+This is a hard architectural boundary.
+
+Legacy code MAY be:
+
+- inspected;
+- copied;
+- adapted during development;
+- used as behavioral reference;
+- compared in tests;
+- used to derive compatibility fixtures.
+
+Legacy assemblies SHALL NOT be required at runtime by the new architecture.
+
+### 5.5 Copy-Forward Admission Rule
+
+Every copied or reimplemented legacy capability SHALL pass three questions before entering the new runtime:
+
+1. Does this behavior still belong in the new architecture?
+2. Is the responsibility located in the correct plane or cross-cutting fabric?
+3. Can the implementation be simplified, hardened, or made more testable while preserving required behavior?
+
+Copying a class into a new namespace without architectural review SHALL NOT constitute migration completion.
+
+### 5.6 Legacy Retirement
+
+The legacy `LimboDancer.MCP.*` projects SHALL be deleted after the new runtime satisfies:
+
+- required functional parity;
+- specification conformance;
+- tenant-isolation tests;
+- diagnostic conformance;
+- protocol compatibility requirements that remain in scope;
+- State migration requirements;
+- operational deployment validation.
+
+Legacy deletion is an intended end state, not an optional cleanup task.
+
+### DESIGN RULE PLAT-1
+
+New architecture projects SHALL target `net10.0` until the explicit .NET 11 GA upgrade review is completed.
+
+### DESIGN RULE PLAT-2
+
+New production code SHALL use the `LimboDancer.Agentic.CognitiveRuntime.*` namespace family.
+
+### DESIGN RULE PLAT-3
+
+New production projects SHALL NOT reference `LimboDancer.MCP.*` projects.
+
+### DESIGN RULE PLAT-4
+
+Legacy code SHALL be treated as reference source, not as an architectural dependency.
+
+### DESIGN RULE PLAT-5
+
+Copied legacy code SHALL be reviewed against current plane ownership, Governance, Diagnostics, tenant isolation, and execution-authority rules before admission.
+
+### DESIGN RULE PLAT-6
+
+The completed architecture SHALL support deletion of all legacy `LimboDancer.MCP.*` production projects.
+
+## 6. Architectural Planes
 
 LimboDancer SHALL be modeled as six logical planes.
 
@@ -356,7 +487,7 @@ It includes:
 
 State SHALL NOT own semantic interpretation merely because semantic data is persisted there.
 
-## 6. Governance and Control Fabric
+## 7. Governance and Control Fabric
 
 Governance SHALL cross all planes.
 
@@ -402,7 +533,7 @@ Governance denials SHALL NOT be converted into Decision candidates.
 
 Governance decisions SHALL emit structured reason codes suitable for audit.
 
-## 7. Diagnostic Fabric
+## 8. Diagnostic Fabric
 
 Diagnostics SHALL be a first-class cross-cutting runtime assurance capability.
 
@@ -766,7 +897,7 @@ Failure or timeout of a required hard-invariant diagnostic SHALL fail closed unl
 
 Diagnostics SHALL be observable themselves: duration, failures, skipped checks, and policy dispositions SHOULD be measurable.
 
-## 8. Orchestration
+## 9. Orchestration
 
 Orchestration SHALL coordinate movement through the planes.
 
@@ -802,7 +933,7 @@ The current chat-session orchestrator SHALL NOT define the future cognitive orch
 
 Chat/session orchestration and Goal orchestration are separate concerns.
 
-## 9. Runtime Authority Model
+## 10. Runtime Authority Model
 
 Authority SHALL narrow as work moves toward execution.
 
@@ -845,7 +976,7 @@ Candidate membership SHALL NOT imply permission.
 
 Selection SHALL NOT imply authorization.
 
-## 10. ActionDescriptor Design
+## 11. ActionDescriptor Design
 
 Every executable capability SHALL have a server-authoritative ActionDescriptor.
 
@@ -901,7 +1032,7 @@ The authoritative source mechanism remains an implementation decision.
 
 ActionDescriptor diagnostic references SHALL identify registered checks or profiles and SHALL be versionable independently from caller input.
 
-## 11. Initial Risk Model
+## 12. Initial Risk Model
 
 The initial runtime risk taxonomy SHALL support at least:
 
@@ -925,7 +1056,7 @@ Risk SHALL influence:
 
 Exact thresholds SHALL be configurable policy.
 
-## 12. Action Registry and Binding
+## 13. Action Registry and Binding
 
 The runtime SHALL provide an authoritative registry of known actions.
 
@@ -963,7 +1094,7 @@ A protocol binding SHALL NOT alter authoritative risk, preconditions, effects, o
 
 Multiple protocol bindings MAY reference the same semantic action.
 
-## 13. Directed Invocation
+## 14. Directed Invocation
 
 Directed invocation occurs when the caller explicitly selects an action.
 
@@ -1020,7 +1151,7 @@ Directed invocation SHALL NOT bypass semantic constraints, governance, or the fi
 
 Existing MCP clients SHOULD remain compatible as the gate is introduced.
 
-## 14. Autonomous Invocation
+## 15. Autonomous Invocation
 
 Autonomous invocation occurs when the caller supplies a Goal rather than an action.
 
@@ -1072,7 +1203,7 @@ Decision SHALL receive only PermittedActions.
 
 If no PermittedAction exists, Decision SHALL NOT be invoked.
 
-## 15. Goal Lifecycle State Machine
+## 16. Goal Lifecycle State Machine
 
 The runtime SHALL expose an explicit lifecycle.
 
@@ -1112,7 +1243,7 @@ Terminal states SHALL include structured reason information.
 
 Abstention SHALL be a normal terminal or transition outcome, not an exception.
 
-## 16. Observation Design
+## 17. Observation Design
 
 Observations SHALL represent state evidence available to reasoning, constraints, and verification.
 
@@ -1138,7 +1269,7 @@ Critical state used to authorize a write SHOULD carry a version or concurrency t
 
 Sensitive observation payloads SHOULD be referenced rather than duplicated into audit records where practical.
 
-## 17. Planning
+## 18. Planning
 
 A Plan SHALL represent proposed future work.
 
@@ -1158,7 +1289,7 @@ Plans MAY be revised after every new Observation.
 
 The planner SHALL express desired semantic outcomes rather than inventing unregistered executor names.
 
-## 18. Action Resolution
+## 19. Action Resolution
 
 Action resolution SHALL map a semantic need to finite ActionCandidates.
 
@@ -1184,7 +1315,7 @@ Ontology-bound identifiers SHALL NOT silently fall through to physical storage i
 
 Resolution SHALL produce explicit evidence sufficient to understand why an action was considered applicable.
 
-## 19. Constraint Pipeline
+## 20. Constraint Pipeline
 
 Before Decision, candidates SHALL pass deterministic constraints.
 
@@ -1223,7 +1354,7 @@ Decision providers SHALL NOT be able to restore a removed candidate.
 
 Constraint failures SHALL produce structured reason codes.
 
-## 20. Decision Plane Design
+## 21. Decision Plane Design
 
 The Decision Plane operates over a finite set of PermittedActions.
 
@@ -1268,7 +1399,7 @@ Decision confidence SHALL be treated as evidence consumed by policy.
 
 Jev, LLMs, rules, classifiers, and composite strategies SHALL be implementations behind the same architectural boundary.
 
-## 21. Decision Provider Routing
+## 22. Decision Provider Routing
 
 Provider routing MAY use:
 
@@ -1306,7 +1437,7 @@ Providers SHALL report results. They SHALL NOT decide whether their own result s
 
 Escalation policy SHALL be external to individual providers.
 
-## 22. Final Execution Gate
+## 23. Final Execution Gate
 
 The Execution Gate is the final deterministic authority before consequential execution.
 
@@ -1342,7 +1473,7 @@ The gate SHALL revalidate critical mutable state rather than relying solely on e
 
 A stale decision SHALL normally trigger re-observation rather than blind execution or blind retry.
 
-## 23. Concurrency and TOCTOU
+## 24. Concurrency and TOCTOU
 
 LimboDancer SHALL assume state can change between observation and execution.
 
@@ -1375,7 +1506,7 @@ Stores supporting optimistic concurrency SHOULD expose version information throu
 
 A stale SelectedAction SHALL NOT automatically inherit authorization after re-observation.
 
-## 24. Executors
+## 25. Executors
 
 Executors SHALL perform operational work.
 
@@ -1400,7 +1531,7 @@ Executors SHALL NOT invoke a Decision provider to determine whether they should 
 
 Executor implementations MAY use MCP tools, application services, workflows, message buses, or external APIs.
 
-## 25. Preconditions
+## 26. Preconditions
 
 Preconditions SHALL be classified by authority.
 
@@ -1428,7 +1559,7 @@ Caller-supplied preconditions MAY be treated as requests or additional restricti
 
 The current pattern in which `HistoryAppendTool` accepts authoritative preconditions from input SHALL be retired through migration.
 
-## 26. Effects
+## 27. Effects
 
 Expected effects SHALL be associated with authoritative action definitions.
 
@@ -1452,7 +1583,7 @@ Execution success SHALL NOT automatically imply semantic effect success.
 
 Effects SHOULD be verified against observed post-execution state where technically feasible and proportionate to risk.
 
-## 27. Effect Verification
+## 28. Effect Verification
 
 Verification results SHALL support:
 
@@ -1467,7 +1598,7 @@ A contradicted high-risk effect SHOULD trigger escalation, recovery, or compensa
 
 Verification MAY be asynchronous where immediate observation is impossible.
 
-## 28. Reversibility and Compensation
+## 29. Reversibility and Compensation
 
 Action metadata SHOULD describe reversibility.
 
@@ -1489,7 +1620,7 @@ Authorization of an action SHALL NOT automatically authorize its compensation ac
 
 Compensation SHALL pass current semantic, governance, and execution constraints.
 
-## 29. Human Confirmation
+## 30. Human Confirmation
 
 Human confirmation is a Governance mechanism.
 
@@ -1525,7 +1656,7 @@ Approval SHALL be bound to action identity, arguments, tenant, and relevant vers
 
 The runtime SHALL revalidate mutable constraints after approval.
 
-## 30. Multi-Step Goals
+## 31. Multi-Step Goals
 
 Each consequential step of a multi-step Goal SHALL pass through the runtime authority lifecycle.
 
@@ -1548,7 +1679,7 @@ A Plan SHALL NOT grant blanket authorization to future steps.
 
 New observations MAY invalidate remaining Plan steps.
 
-## 31. Budgets
+## 32. Budgets
 
 Autonomous execution SHALL be bounded.
 
@@ -1570,7 +1701,7 @@ Budget exhaustion SHALL terminate or escalate execution.
 
 Budget enforcement SHALL be independent of model cooperation.
 
-## 32. Error Taxonomy
+## 33. Error Taxonomy
 
 Runtime failures SHALL be stage-aware.
 
@@ -1603,7 +1734,7 @@ Abstention and governance denial SHALL NOT be represented as generic executor ex
 
 Errors SHALL carry stable reason codes suitable for telemetry and audit.
 
-## 33. Retry Design
+## 34. Retry Design
 
 Retry behavior SHALL depend on stage and action semantics.
 
@@ -1626,7 +1757,7 @@ Examples:
 
 There SHALL NOT be a universal retry policy for the entire cognitive loop.
 
-## 34. Audit Design
+## 35. Audit Design
 
 Every consequential runtime step SHALL emit structured audit information.
 
@@ -1667,7 +1798,7 @@ Audit SHALL capture the decision boundary without requiring hidden model chain-o
 
 Sensitive data SHOULD be referenced, hashed, redacted, or minimized where full persistence is unnecessary.
 
-## 35. Replay Design
+## 36. Replay Design
 
 Replay SHALL allow historical decision contexts to be evaluated without replaying consequential side effects.
 
@@ -1688,7 +1819,7 @@ Replay SHALL be able to stop before execution.
 
 Provider benchmarking SHOULD use replayable historical contexts plus curated labeled cases.
 
-## 36. Observability
+## 37. Observability
 
 Runtime telemetry SHOULD expose:
 
@@ -1716,7 +1847,7 @@ Observability provides signals and evidence. Diagnostics performs explicit check
 
 A zero policy-violation rate is an architectural property, not a model benchmark.
 
-## 37. Host Architecture
+## 38. Host Architecture
 
 Interaction hosts SHALL converge on a host-neutral LimboDancer runtime contract.
 
@@ -1748,7 +1879,7 @@ Shared runtime composition SHOULD move behind host-neutral service registration 
 
 Readiness checks SHOULD be observational. Schema migration SHOULD be a deployment/startup concern rather than normal readiness behavior.
 
-## 38. Dependency Rules
+## 39. Dependency Rules
 
 ### DESIGN RULE DEP-1
 
@@ -1777,7 +1908,7 @@ Semantic/application services SHALL NOT depend on contracts declared inside prot
 
 Plane boundaries SHALL guide dependency direction but SHALL NOT require one project per plane.
 
-## 39. Initial Mapping of Existing Tools
+## 40. Initial Mapping of Existing Tools
 
 The four current tools SHALL receive initial semantic action identities.
 
@@ -1794,7 +1925,7 @@ These identifiers are design placeholders until aligned with the canonical ontol
 
 The bindings SHALL allow existing MCP names to remain stable.
 
-## 40. Migration of HistoryAppend
+## 41. Migration of HistoryAppend
 
 `HistoryAppendTool` is the first important migration case because it currently accepts:
 
@@ -1825,7 +1956,7 @@ HistoryAppend executor
 
 Migration SHOULD preserve protocol compatibility where necessary, but caller-provided semantic authority SHALL be deprecated and eventually removed.
 
-## 41. Tenant Design
+## 42. Tenant Design
 
 Tenant isolation SHALL be structural.
 
@@ -1849,7 +1980,7 @@ Audit SHALL record tenant identity.
 
 The existing history-read and graph-read paths SHALL be verified for explicit or global-filter tenant enforcement before autonomous execution is enabled.
 
-## 42. Semantic Fail-Closed Behavior
+## 43. Semantic Fail-Closed Behavior
 
 Ontology-constrained runtime paths SHALL fail closed.
 
@@ -1867,7 +1998,7 @@ Unknown effect mappings SHALL produce explicit verification/execution failure ac
 
 This rule specifically addresses the current mixed behavior in graph precondition/effect mapping.
 
-## 43. Security Boundary
+## 44. Security Boundary
 
 Probabilistic systems SHALL be treated as untrusted advisors with respect to execution authority.
 
@@ -1883,7 +2014,7 @@ They MAY propose or select within permitted boundaries.
 
 They SHALL NOT define those boundaries.
 
-## 44. Initial Runtime Component Model
+## 45. Initial Runtime Component Model
 
 The target component relationships are:
 
@@ -1931,7 +2062,7 @@ Governance services participate in the constraint pipeline, gate, confirmation, 
 
 Diagnostic services participate across all planes and lifecycle phases but do not replace the authority of those components.
 
-## 45. Initial Implementation Boundary
+## 46. Initial Implementation Boundary
 
 The first implementation increment SHALL establish a trustworthy execution convergence point before autonomous Decision is introduced.
 
@@ -2021,7 +2152,7 @@ Do not introduce specialized provider routing until the lifecycle is observable 
 
 Add Jev and other providers behind the established contract and evaluate using replay.
 
-## 46. Testing Requirements
+## 47. Testing Requirements
 
 The runtime design SHALL be tested at authority boundaries.
 
@@ -2085,7 +2216,7 @@ Initial required test classes include:
 - descriptor version recorded;
 - no hidden reasoning required.
 
-## 47. Non-Goals of the First Design Increment
+## 48. Non-Goals of the First Design Increment
 
 The first implementation SHALL NOT attempt to solve all agent behavior.
 
@@ -2104,12 +2235,12 @@ Specifically, the first increment does not require:
 
 The design deliberately establishes authority and contracts before expanding cognition.
 
-## 48. Design Decisions Held Open
+## 49. Design Decisions Held Open
 
 The following remain intentionally open until implementation analysis provides stronger evidence:
 
-1. Whether a new host-neutral runtime or application abstractions project under `LimboDancer.Agentic.CognitiveRuntime` should be created.
-2. Whether `LimboDancer.MCP.Llm` should be renamed or replaced.
+1. The exact project partitioning within the new `LimboDancer.Agentic.CognitiveRuntime.*` solution.
+2. The final new-project boundary for reasoning/model-provider integrations; the legacy `LimboDancer.MCP.Llm` project will not be retained as a runtime dependency.
 3. The authoritative physical source for ActionDescriptors.
 4. The final ontology namespace for action identifiers.
 5. The persistence schema for decision audit.
@@ -2125,7 +2256,7 @@ The following remain intentionally open until implementation analysis provides s
 
 These are implementation or subsequent design decisions. They do not alter the core authority model.
 
-## 49. Acceptance Criteria for the Runtime Design
+## 50. Acceptance Criteria for the Runtime Design
 
 The design is successfully realized when all of the following are true:
 
@@ -2152,7 +2283,7 @@ The design is successfully realized when all of the following are true:
 21. Diagnostic findings are distinct from Governance decisions and are auditable.
 22. ActionDescriptors can bind versioned diagnostic profiles without accepting caller-defined authoritative checks.
 
-## 50. Canonical Runtime Sequence
+## 51. Canonical Runtime Sequence
 
 The canonical autonomous sequence is:
 
@@ -2265,7 +2396,7 @@ Verify + Audit
 
 Both paths converge on the same execution authority model.
 
-## 51. Final Design Statement
+## 52. Final Design Statement
 
 LimboDancer SHALL NOT be designed as an LLM that happens to call MCP tools.
 
