@@ -1,707 +1,799 @@
-# **LimboDancer.MCP System Design**
+# LimboDancer.Agentic.CognitiveRuntime
 
-## Executive Summary
-LimboDancer.MCP is an ontology-first Model Context Protocol server that transforms complex documents—rulebooks, regulations, technical specifications—into queryable knowledge graphs, using Vector and Graph databases, enabling AI assistants like Claude and ChatGPT to provide contextually-accurate answers about intricate rule systems. Built on .NET 9 and Azure, it extracts structured knowledge while preserving exact rule references (critical for domains like wargaming where "Rule A6.41" must remain unchanged), handles nested exceptions and cross-references, integrates spatial data through a plugin architecture (supporting hex-based wargames, grid-based RPGs, or custom coordinate systems), and maintains dynamic state tracking for scenarios where terrain changes or units move. The system combines graph traversal for precise rule relationships with vector search for semantic discovery, validates consistency across thousands of interconnected rules, and scales through multi-tenant isolation—turning 200-page PDFs that require expert interpretation into intelligent systems that can answer questions like "Can my elite infantry unit enter an enemy-occupied building?" by considering base rules, applicable exceptions, current game state, and spatial constraints. This system addresses the AI needs of vertical markets such as gaming (tabletop market $15B+), regulatory compliance, technical documentation, the legal profession, and any domain where complex conditional logic must be consistently applied, offering organizations the ability to democratize expert knowledge while ensuring accuracy and reducing costly rule interpretation errors.
+> **LimboDancer is a domain-aware runtime that lets AI systems reason, choose, and act against real state without giving the AI direct authority over the world.**
 
-## Table of Contents
-1. [Overview and Purpose](#overview-and-purpose)
-2. [Architecture](#architecture)
-3. [Core Ontology Components](#core-ontology-components)
-4. [Extraction and Query Capabilities](#extraction-and-query-capabilities)
-5. [Ontology Design and Implementation](#ontology-design-and-implementation)
-6. [Core Implementation Components](#core-implementation-components)
-7. [Development Setup and Tooling](#development-setup-and-tooling)
-8. [Use Cases and Benefits](#use-cases-and-benefits)
-9. [Roadmap and Milestones](#roadmap-and-milestones)
-10. [Source Code Structure](#source-code-structure)
+LimboDancer.Agentic.CognitiveRuntime is a governed execution environment for machine cognition.
+
+It sits between intelligence providers and the systems they are allowed to affect. An LLM, classifier, rules engine, or other model may propose what to do. LimboDancer determines whether that proposal maps to a real capability, whether the action is semantically valid, whether policy permits it, whether current state still supports it, and whether the result actually produced the intended effect.
+
+The system is designed around a simple principle:
+
+```text
+Reasoning proposes.
+Semantics constrains.
+Governance permits.
+Decision selects.
+Execution acts.
+State remembers.
+Orchestration coordinates.
+Diagnostics assure.
+```
+
+LimboDancer is not an LLM wrapper, not merely an MCP server, and not a workflow engine with a model attached. It is a runtime for converting goals into governed, auditable, state-aware action.
 
 ---
 
-## Overview and Purpose
+## Why LimboDancer Exists
 
-LimboDancer.MCP is an **ontology-first** Model Context Protocol (MCP) server built on **.NET 9** and **Azure**. As a full-featured MCP implementation, it provides tools for session management, memory storage, vector search, and knowledge graph operations. What distinguishes LimboDancer is its deep integration with formal ontologies - every tool, memory item, and graph entity is grounded in a typed semantic model. This enables the system to extract structured knowledge from complex documents (for instance rulesets, rulebooks, govt regulations or legal documents), maintain consistency across data stores, and provide contextually-aware responses to any MCP-compatible AI assistant, such as Claude and ChatGPT for instance.
+A conventional agent loop often looks like this:
 
-### Example: Processing a Strategy Game Rulebook
-
-When a user submits a board game rulebook (e.g., "Advanced Squad Leader"), LimboDancer:
-
-```mermaid
-flowchart TD
-    A[Rulebook PDF] --> B[Document Ingestion]
-    B --> C{Pattern Recognition}
-    
-    C --> D[Extract Entities]
-    C --> E[Parse Rules]
-    C --> F[Detect Exceptions]
-    C --> G[Find Cross-References]
-    
-    D --> H[Ontology Store]
-    E --> H
-    F --> H
-    G --> H
-    
-    H --> I[Knowledge Graph]
-    H --> J[Vector Index]
-    
-    K[User Query:<br/>'Can elite infantry enter<br/>enemy buildings?'] --> L[Query Engine]
-    
-    L --> I
-    L --> J
-    
-    I --> M[Rule 7.4.2: No entry]
-    I --> N[Exception: Elite units ignore 7.4.2]
-    J --> O[Similar contexts]
-    
-    M --> P[Answer: Yes, elite units<br/>can enter due to exception]
-    N --> P
-    O --> P
+```text
+prompt
+  -> model
+  -> tool call
+  -> result
+  -> prompt
 ```
 
-1. **Extracts Ontology** - Identifies game entities (units, terrain, weapons), their properties (movement points, firepower), and relationships (line-of-sight rules, stacking limits)
+That is easy to build, but it frequently leaves too much implicit authority with the model.
 
-2. **Captures Rule Structure** - Parses numbered rules (e.g., "7.4.2 Infantry may not enter building hexes occupied by enemy units"), creating queryable nodes with cross-references
+The model may end up deciding:
 
-3. **Handles Exceptions** - Detects special cases ("EXC: Elite units ignore rule 7.4.2") and links them to base rules with proper precedence
+- what actions exist;
+- what an action means;
+- whether an action is allowed;
+- whether current state satisfies its prerequisites;
+- whether an action is safe;
+- whether execution actually accomplished the intended effect.
 
-4. **Builds Knowledge Graph** - Creates a navigable structure where rules, exceptions, examples, and game states are interconnected
+LimboDancer separates those responsibilities.
 
-**Benefits**: Instead of searching through a 200-page PDF, users can ask contextual questions like "Can my elite infantry unit enter a building with enemies?" and receive accurate answers that consider all applicable rules, exceptions, and current game state. The system validates rule consistency and flags conflicts during ingestion.
+A model can reason and propose. It does not get to define reality, policy, or execution authority.
+
+```text
+Model output != authority
+```
+
+---
+
+## What LimboDancer Does
+
+LimboDancer supports two primary execution modes.
+
+### Directed execution
+
+A caller explicitly requests a known action.
+
+Examples:
+
+```text
+Read session history
+Append a message
+Query the knowledge graph
+Search semantic memory
+```
+
+A protocol-specific request is mapped to a semantic action and processed through a common authority boundary:
+
+```text
+Interaction
+    |
+    v
+Action Binding
+    |
+    v
+ActionDescriptor
+    |
+    v
+Argument + Semantic Constraints
+    |
+    v
+Governance
+    |
+    v
+Diagnostics
+    |
+    v
+Execution Gate
+    |
+    v
+AuthorizedAction
+    |
+    v
+Executor
+    |
+    v
+Audit / Verification
+```
+
+An MCP client, HTTP endpoint, CLI, UI, scheduler, or another agent can invoke the same runtime without owning execution authority.
+
+### Autonomous goal execution
+
+A caller supplies a desired outcome instead of a specific action.
+
+For example:
+
+> Reconcile this customer's current status with our records and correct anything that is inconsistent.
+
+That becomes a **Goal**.
+
+The runtime can then:
+
+```text
+Observe relevant state
+        |
+        v
+Reason about what is missing
+        |
+        v
+Resolve possible semantic actions
+        |
+        v
+Remove invalid or forbidden actions
+        |
+        v
+Choose among permitted actions
+        |
+        v
+Revalidate current state
+        |
+        v
+Execute
+        |
+        v
+Observe the result
+        |
+        v
+Verify expected effects
+        |
+        v
+Continue or complete
+```
+
+This is the core agentic behavior of the runtime.
 
 ---
 
 ## Architecture
 
-### High-Level System Flow
+LimboDancer is organized around six logical planes plus several cross-cutting runtime fabrics.
 
-```mermaid
-graph LR
-  subgraph "Input Sources"
-    RS[Rulesets & Documents]
-    API[OpenAPI Specs]
-    MD[Map/Board Data]
-  end
-  
-  subgraph "LimboDancer Core"
-    EXT[Extraction Engine]
-    ONT[Ontology Store]
-    VAL[Validation Layer]
-    QE[Query Engine]
-    PS[Plugin System]
-  end
-  
-  subgraph "Storage"
-    PG[(PostgreSQL)]
-    CS[(Cosmos DB)]
-    AI[(AI Search)]
-    RD[(Reference Data)]
-  end
-  
-  RS --> EXT
-  API --> EXT
-  MD --> RD
-  EXT --> ONT
-  ONT --> VAL
-  VAL --> CS
-  ONT --> QE
-  QE --> AI
-  QE --> PG
-  QE --> PS
-  PS --> RD
-```
+### Interaction Plane
 
-### Multi-Tenant Scope
+Owns protocol and presentation concerns.
 
-Every operation is scoped by hierarchical partition keys:
-- **Tenant** - Organization boundary
-- **Package** - Module grouping (e.g., "rules", "core")
-- **Channel** - Version stream (e.g., "current", "v1.0.0")
+Examples:
 
-### Plugin Architecture
+- MCP;
+- HTTP;
+- CLI;
+- Blazor;
+- schedulers;
+- future agent-to-agent protocols.
 
-Domain-specific logic is isolated in plugins:
-- **ASL Plugin** - Hex-based wargame spatial logic
-- **D&D Plugin** - Grid-based RPG mechanics
-- **Chess Plugin** - Algebraic notation and board logic
-- **Generic Plugin** - Fallback for unstructured documents
+Interaction translates external requests into runtime requests. It does not define semantic authority.
 
----
+### Reasoning Plane
 
-## Core Ontology Components
+Owns open-ended interpretation and planning.
 
-### Enhanced Node Types (Phase 3)
+It may:
 
-1. **Entities** - Objects within the rules (units, tokens, game pieces, domain concepts)
-2. **Properties** - Attributes and values (stats, costs, capabilities, with owner/range/cardinality)
-3. **Relations** - Typed connections between elements (prerequisites, dependencies, typed edges)
-4. **Enums** - Categorical values (states, types, phases, closed value sets)
-5. **Shapes** - SHACL-like validation templates for data structures
-6. **RuleNodes** - Primary rule statements with preserved canonical IDs (A.1, B.23.71)
-7. **ExceptionNodes** - Rule modifications with precedence weights and nested support
-8. **ConditionNodes** - Context-dependent rule activation and prerequisites
-9. **ReferenceNodes** - Cross-rule linkages preserving exact rule IDs
-10. **ExampleNodes** - Clarifying instances with location references validation
-11. **DefinitionNodes** - CAPS terms with special meanings
-12. **PhaseNodes** - Temporal containers for phase-specific rules
-13. **MatrixRuleNodes** - Multi-dimensional rule tables (terrain charts)
-14. **Aliases** - Canonical names + synonyms for robust matching
+- interpret Goals;
+- decompose work;
+- identify missing observations;
+- propose plans;
+- revise plans;
+- synthesize results.
 
-### Dynamic State Components
+Reasoning does not execute actions directly.
 
-1. **HexState** - Tracks base and current terrain plus unit occupants
-2. **Unit** - Dynamic game pieces with movement and LOS properties
-3. **Counter** - Terrain modifiers (smoke, rubble, blazes)
-4. **GameBoard** - Manages dynamic state overlay on pre-computed base data
+### Semantic Plane
 
----
+Owns domain meaning.
 
-## Extraction and Query Capabilities
+It defines:
 
-### Enhanced Extraction Process (Phase 3)
+- entities;
+- properties;
+- relations;
+- aliases;
+- semantic actions;
+- action applicability;
+- authoritative preconditions;
+- expected effects;
+- ontology mappings.
 
-The extraction engine identifies complex patterns:
-- **Canonical Rule IDs** preserved exactly (A.1, B.23.71, 10.211)
-- **Nested exceptions** with precedence chains (EXC within EXC)
-- **Matrix rules** for terrain charts and combat tables
-- **Location references** extracted from examples (3K3, P5)
-- **Hierarchical rule structure** (10.211 → 10.21 → 10.2 → 10)
-- **Module namespacing** (Part A, Part B, module-specific)
+The Semantic Plane answers a critical question:
 
-### Advanced Query Capabilities
+> What actions are actually meaningful in this domain?
 
-**Structural Queries:**
-- Rule hierarchy traversal using canonical IDs
-- Exception precedence resolution
-- Cross-module reference validation
-- Matrix rule lookups
+### Decision Plane
 
-**Spatial Queries (via plugins):**
-- Line of sight calculations
-- Distance and adjacency checks
-- Terrain modification effects
-- Dynamic state queries
+Selects among explicit, permitted alternatives.
 
-**Contextual Queries:**
-- "Can infantry in woods at K3 see building at P5?"
-- "What exceptions apply when elite units enter buildings?"
-- "What are my options during Prep Fire Phase?"
+A Decision provider may:
 
-### Reference Data Integration
+- select;
+- abstain;
+- escalate.
 
-- **Pre-computed LOS data** for performance
-- **JSON document store** for map/hex data
-- **Dynamic terrain modifications** (buildings→rubble, woods→blazes)
-- **Unit movement tracking** with state enrichment
+It cannot create new capabilities, override failed preconditions, grant permissions, or execute.
 
-### Validation Layer
+### Execution Plane
 
-- **Rule ID format validation** (canonical ASL format)
-- **Location reference validation** against board data
-- **Exception precedence validation**
-- **Module compatibility checking**
-- **Circular dependency detection**
-- **Terminology consistency** (CAPS terms)
+Owns final authorization and operational action.
 
-### Graph vs Vector: Complementary Technologies
+Only an `AuthorizedAction` may produce consequential execution.
 
-**LimboDancer.MCP.Graph.CosmosGremlin** stores **structured relationships**:
-- Rule hierarchies with canonical IDs (e.g., "10.211" CHILD-OF "10.21")
-- Exception chains with precedence weights
-- Phase-based rule activation
-- Cross-module references
+The Execution Gate revalidates the action immediately before execution.
 
-**LimboDancer.MCP.Vector.AzureSearch** handles **semantic similarity**:
-- Rule text with embeddings for meaning-based search
-- Example text with location references
-- Matrix rule content
-- Hybrid search with ontology metadata
+### State Plane
 
-**How they work together with spatial plugins**:
+Provides persistent and observed state.
 
-```mermaid
-flowchart LR
-    Q[Query: Can tanks at 3K3<br/>cross river at 3K4?] --> QE[Query Engine]
-    
-    QE --> VS[Vector Search]
-    QE --> GS[Graph Store]
-    QE --> SP[Spatial Plugin]
-    
-    VS --> R1[Find river<br/>crossing rules]
-    
-    GS --> R2[Traverse: Tank<br/>→ Vehicle Rules<br/>→ Terrain Restrictions]
-    
-    SP --> R3[Check terrain<br/>at 3K4, calculate<br/>movement cost]
-    
-    R1 --> A[Combined Answer:<br/>Rules + Exceptions<br/>+ Spatial Context]
-    R2 --> A
-    R3 --> A
-```
+Current and anticipated State mechanisms include:
+
+- relational data;
+- graph data;
+- vector retrieval;
+- ontology state;
+- execution results;
+- external-system observations.
+
+State is evidence. It is not authority.
 
 ---
 
-## Ontology Design and Implementation
-
-### MCP Tool Interface
-
-Enhanced tools for Phase 3 functionality:
-
-```csharp
-public class OntologyExtractionTool : IMcpTool
-{
-    public Task<OntologyGraph> ExtractOntology(
-        string documentPath, 
-        string systemType = "Generic")  // Plugin selection
-    {
-        // Preserves canonical rule IDs
-        // Handles nested exceptions
-        // Extracts matrix rules
-    }
-    
-    public Task<QueryResult> Query(
-        string ontologyId, 
-        Query query)
-    {
-        // Uses appropriate spatial plugin
-        // Enriches state with reference data
-        // Handles dynamic terrain state
-    }
-}
-```
-
-### Key Features
-
-1. **Canonical ID Preservation** - Never modifies rule numbering
-2. **Nested Exception Handling** - Supports EXC within EXC patterns
-3. **Plugin Architecture** - Domain logic separation
-4. **Dynamic State Management** - Terrain modifications and unit movement
-5. **Reference Data Integration** - JSON documents for spatial data
-
-### Generation Pipeline
-
-```mermaid
-flowchart TD
-  DOC[Documents] --> ING[Ingest & Chunk]
-  API[OpenAPI Specs] --> ING
-  MAP[Map Data] --> REF[Reference Store]
-  ING --> EXT[Extract with<br/>Pattern Recognition]
-  EXT --> PRES[Preserve<br/>Canonical IDs]
-  PRES --> REL[Build<br/>Relationships]
-  REL --> VAL[Validate<br/>Cross-References]
-  VAL --> PUB[Publish to<br/>Ontology]
-  PUB --> SYNC[Sync with<br/>Spatial Plugins]
-  REF --> SYNC
-```
+## Cross-Cutting Fabrics
 
 ### Governance
 
-- **Rule ID Integrity**: Canonical format enforcement
-- **Location Validation**: Board reference checking
-- **Exception Precedence**: Weight assignment rules
-- **Module Compatibility**: Cross-module validation
+Governance determines what is permitted.
 
-### Export Formats
+It includes concerns such as:
 
-- **JSON-LD**: With preserved rule IDs
-- **Turtle/RDF**: Including spatial predicates
-- **Plugin Schemas**: Domain-specific formats
+- tenant isolation;
+- permissions;
+- policy;
+- risk;
+- confirmation requirements;
+- execution budgets;
+- environment restrictions.
 
----
+Governance is authoritative. Models are not.
 
-## Core Implementation Components
+### Orchestration
 
-### 1. Persistence Baseline (EF Core + Postgres)
+Orchestration coordinates runtime progression.
 
-**Files**: `src/LimboDancer.MCP.Storage/{ChatDbContext.cs, Entities.cs}`, migrations
+It moves Goals through:
 
-**Key Entities**:
-```csharp
-[Table("sessions")]
-public class Session
-{
-    [Key] public Guid Id { get; set; }
-    [MaxLength(256)] public string Title { get; set; } = string.Empty;
-    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
-}
-
-[Table("messages")]
-public class Message
-{
-    [Key] public long Id { get; set; }
-    public Guid SessionId { get; set; }
-    [MaxLength(32)] public string Role { get; set; } = "user";
-    public string Content { get; set; } = string.Empty;
-    public DateTimeOffset Ts { get; set; } = DateTimeOffset.UtcNow;
-}
+```text
+Observe
+-> Reason
+-> Resolve
+-> Constrain
+-> Decide
+-> Gate
+-> Execute
+-> Verify
+-> Continue or Complete
 ```
 
-### 2. Vector Index for Azure AI Search (Hybrid)
+Orchestration coordinates authority boundaries but does not replace them.
 
-**Files**: `src/LimboDancer.MCP.Vector.AzureSearch/{SearchIndexBuilder.cs, VectorStore.cs}`
+### Diagnostics
 
-**Features**:
-- Hybrid search (BM25 + vector)
-- Ontology filters (class, uri, tags)
-- Multi-tenant support via tenant/package/channel fields
-- Rule ID preservation in metadata
+Diagnostics explicitly evaluates whether the runtime is healthy, coherent, correctly configured, and behaving within expected bounds.
 
-### 3. Cosmos Gremlin Graph Scaffold
+Examples:
 
-**Files**: `src/LimboDancer.MCP.Graph.CosmosGremlin/{GremlinClientFactory.cs, GraphStore.cs, Preconditions.cs, Effects.cs}`
+- Is tenant context present?
+- Does this action have a registered executor?
+- Does the ontology property map correctly?
+- Did the Decision provider select a candidate that actually existed?
+- Is execution being duplicated?
+- Are we repeating the same reasoning step without state change?
+- Did a required invariant become indeterminate?
 
-**Capabilities**:
-- Upsert vertices/edges for enhanced node types
-- Exception precedence tracking
-- Rule hierarchy navigation
-- Cross-module reference support
+Diagnostics is not merely logging. It evaluates runtime expectations and invariants.
 
-### 4. Spatial Plugin System (Phase 3)
+---
 
-**Files**: `src/LimboDancer.MCP.Core/Plugins/{ISpatialPlugin.cs, ASLSpatialPlugin.cs}`
+## The Ontology Is Central
 
-**Interface**:
-```csharp
-public interface ISpatialPlugin
-{
-    string SystemType { get; }
-    object ParseLocation(string location);
-    bool CheckVisibility(object from, object to, GameState state);
-    void ApplyModification(GameState state, string type, object target);
-}
+LimboDancer is ontology-constrained.
+
+Actions are not arbitrary functions. They are semantic capabilities with domain meaning.
+
+Examples:
+
+```text
+ldm:action/HistoryRead
+ldm:action/HistoryAppend
+ldm:action/GraphQuery
+ldm:action/MemorySearch
 ```
 
-### 5. Reference Data Management
+The ontology can describe:
 
-**Files**: `src/LimboDancer.MCP.Core/ReferenceData/{GameBoard.cs, HexState.cs}`
+- what entities exist;
+- what properties they have;
+- what relationships are meaningful;
+- what actions exist;
+- what preconditions an action requires;
+- what effects an action is expected to produce.
 
-**Components**:
-- Pre-computed LOS storage
-- Dynamic terrain overlay
-- Unit movement tracking
-- State enrichment pipeline
+This lets the runtime answer questions such as:
 
-### 6. MCP Tool Surface
+```text
+Is this action meaningful for this entity?
 
-**Enhanced Tools**:
-- `ontology.extract` - With system type parameter
-- `ontology.query` - Plugin-aware spatial queries
-- `reference.load` - Board/map data ingestion
-- `state.update` - Dynamic modifications
+Does this requested property exist in the ontology?
 
-### 7. HTTP Transport with SSE Events
+Is this relationship valid?
 
-**Files**: `src/LimboDancer.MCP.McpServer.Http/{AuthExtensions.cs, HttpTransport.cs, ChatStreamEndpoint.cs}`
+What registered actions could advance this Goal?
 
-**Features**:
-- Entra ID (Azure AD) JWT authentication
-- Server-Sent Events at `/mcp/events`
-- Chat streaming endpoints
-- Role-based policies (Reader/Operator)
+What effects should this action produce?
+```
 
-### 8. Operator Console (Blazor Server)
+The Semantic Plane constrains the possible action universe before probabilistic systems are allowed to choose among alternatives.
 
-**Enhanced Pages**:
-- Rules: Browse extracted ontology with canonical IDs
-- Maps: View board data and current state
-- Exceptions: Trace precedence chains
-- Validation: Check rule consistency
+---
 
-### 9. Developer CLI
+## Authority Narrowing
 
-**Enhanced Commands**:
-```bash
-limbodancer ontology extract --file asl.pdf --type ASL
-limbodancer ontology validate --id asl-rules-v1
-limbodancer reference load --board 1 --data board1.json
-limbodancer query --ontology asl-rules --location 3K3
+LimboDancer makes execution authority explicit.
+
+The autonomous authority path is:
+
+```text
+Goal
+  |
+  v
+ActionCandidate
+  |
+  v
+PermittedAction
+  |
+  v
+SelectedAction
+  |
+  v
+AuthorizedAction
+  |
+  v
+ExecutedAction
+```
+
+Each stage narrows authority.
+
+### ActionCandidate
+
+A possible action grounded in a runtime context.
+
+It is not yet permitted.
+
+### PermittedAction
+
+A candidate that passed the deterministic semantic and governance constraints required before autonomous selection.
+
+### SelectedAction
+
+An action selected explicitly by a directed caller or by a Decision provider.
+
+Selection is not final authorization.
+
+### AuthorizedAction
+
+A SelectedAction that has passed the final Execution Gate.
+
+Only this form may reach an executor.
+
+---
+
+## Models Are Replaceable Advisors
+
+LimboDancer is deliberately model-neutral.
+
+Different providers can serve different cognitive roles:
+
+```text
+LLM
+Jev / System One
+Rules
+Local classifier
+Small language model
+Specialized model
+Human decision
+Composite strategy
+```
+
+A runtime might use:
+
+```text
+LLM
+    for interpretation and planning
+
+Jev
+    for bounded action selection
+
+Rules
+    for deterministic safety constraints
+```
+
+Reasoning providers and Decision providers are interchangeable behind runtime contracts.
+
+Executors do not need to change when intelligence providers change.
+
+---
+
+## Stale-State Protection
+
+Agentic systems act against mutable state.
+
+Suppose the runtime observes:
+
+```text
+Account balance: $1,000
+Version: 42
+```
+
+A model reasons about that observation.
+
+Before execution, another system changes the account:
+
+```text
+Account balance: $200
+Version: 43
+```
+
+The Execution Gate can detect that the selected action was based on stale state.
+
+Instead of blindly executing:
+
+```text
+SelectedAction
+    |
+    v
+Stale
+    |
+    v
+Re-observe
+    |
+    v
+Re-reason / reselect
+```
+
+This protects the runtime from time-of-check/time-of-use failures.
+
+---
+
+## Execution Success Is Not Semantic Success
+
+A successful API call does not necessarily mean the intended result occurred.
+
+LimboDancer distinguishes:
+
+```text
+Execution succeeded
+```
+
+from:
+
+```text
+Expected semantic effect occurred
+```
+
+For example:
+
+```text
+Expected effect:
+reservation.status == Confirmed
+```
+
+The remote API might return success while the reservation remains `Pending`.
+
+LimboDancer can represent outcomes such as:
+
+```text
+Verified
+PartiallyVerified
+Unverifiable
+Contradicted
+```
+
+That allows the runtime to escalate, recover, retry where safe, or initiate a separately governed compensation action.
+
+---
+
+## Multi-Tenant by Design
+
+Tenant isolation is a runtime invariant, not a database convention.
+
+Tenant identity is established during admission and must remain structurally enforced through:
+
+```text
+Goal
+Observations
+Action resolution
+Decision
+Execution
+Audit
+State access
+```
+
+Cross-tenant reads and writes must fail closed.
+
+This is particularly important in agentic systems, where probabilistic reasoning must never be allowed to widen a tenant boundary.
+
+---
+
+## Interaction Is Replaceable
+
+MCP is one adapter into the runtime, not the product identity.
+
+The same runtime can be exposed through:
+
+```text
+MCP
+HTTP
+CLI
+Blazor
+Scheduled jobs
+Background workers
+Other agents
+Future A2A protocols
+Internal workflows
+```
+
+All interaction surfaces converge on the same semantic and execution-authority model.
+
+---
+
+## Current .NET Architecture
+
+The new runtime uses **.NET 10** and the `LimboDancer` root namespace.
+
+The initial production solution is intentionally small:
+
+```text
+src/LimboDancer/
+  LimboDancer.sln
+
+  LimboDancer.Abstractions/
+  LimboDancer.Runtime/
+  LimboDancer.Infrastructure/
+  LimboDancer.Adapters.Mcp/
+  LimboDancer.Host/
+
+  tests/
+    LimboDancer.Tests.Unit/
+    LimboDancer.Tests.Integration/
+    LimboDancer.Tests.Architecture/
+```
+
+The logical planes are primarily represented through namespaces rather than one project per plane.
+
+Examples:
+
+```text
+LimboDancer.Runtime.Semantics
+LimboDancer.Runtime.Diagnostics
+LimboDancer.Runtime.Decision
+LimboDancer.Runtime.Execution
+LimboDancer.Runtime.Orchestration
+LimboDancer.Runtime.Observations
+
+LimboDancer.Infrastructure.Relational
+LimboDancer.Infrastructure.Graph
+LimboDancer.Infrastructure.Vector
+LimboDancer.Infrastructure.Ontology
 ```
 
 ---
 
-## Development Setup and Tooling
+## Legacy Implementation
 
-### Prerequisites
-- .NET 9 SDK
-- Docker (for local Postgres)
-- Azure subscription with:
-  - Azure AI Search (Standard or above)
-  - Azure OpenAI (for embeddings)
-  - Azure Cosmos DB (Gremlin) or Gremlin Emulator
+The previous `LimboDancer.MCP.*` implementation has been isolated under:
 
-### Local Development Setup
-
-1. **PostgreSQL**:
-```bash
-docker run --name pg-limbo -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres:16
+```text
+src/Legacy/
 ```
 
-2. **Configuration** (`appsettings.Development.json`):
-```json
-{
-  "Persistence": {
-    "ConnectionString": "Host=localhost;Port=5432;Database=limbodancer_dev;Username=postgres;Password=postgres"
-  },
-  "Search": {
-    "Endpoint": "https://<search>.search.windows.net",
-    "ApiKey": "<key>",
-    "Index": "ldm-memory"
-  },
-  "OpenAI": {
-    "Endpoint": "https://<aoai>.openai.azure.com",
-    "ApiKey": "<key>",
-    "EmbeddingModel": "text-embedding-3-large"
-  },
-  "Gremlin": {
-    "Host": "<acct>.gremlin.cosmos.azure.com",
-    "Port": "443",
-    "Database": "ldm",
-    "Graph": "kg",
-    "Key": "<primary-key>"
-  },
-  "Plugins": {
-    "ASL": "LimboDancer.MCP.Plugins.ASL",
-    "DnD": "LimboDancer.MCP.Plugins.DnD",
-    "Chess": "LimboDancer.MCP.Plugins.Chess"
-  }
-}
+including its legacy solution:
+
+```text
+src/Legacy/LimboDancer.MCP.sln
 ```
 
-### Bootstrap Script
+Legacy code is behavioral reference only.
 
-A PowerShell script (`scripts\bootstrap.ps1`) creates the complete solution structure:
-- Creates all projects with proper references
-- Adds required NuGet packages
-- Generates initial file stubs
-- Sets up project dependencies
-- Includes plugin templates
+New production projects must not reference legacy projects or assemblies.
 
----
+The migration model is:
 
-## Use Cases and Benefits
+```text
+inspect legacy behavior
+    |
+    v
+copy or reimplement only what is still useful
+    |
+    v
+clean / harden / retest
+    |
+    v
+admit into the new architecture
+    |
+    v
+prove parity and conformance
+    |
+    v
+delete src/Legacy/
+```
 
-### Use Cases
-
-- **Complex wargame rules** (ASL, GMT games) - with spatial awareness
-- **RPG systems** (D&D, Pathfinder) - grid-based mechanics
-- **Board game manuals** - with dynamic state
-- **Legal/regulatory documents**
-- **Technical specifications**
-- **API documentation**
-- **Business process definitions**
-
-### Benefits
-
-- **Canonical Reference Preservation** - Rule IDs remain exactly as published
-- **Spatial Intelligence** - Location-aware queries via plugins
-- **Dynamic State Tracking** - Handles terrain changes and unit movement
-- **Exception Precedence** - Correctly resolves nested rule modifications
-- **Multi-System Support** - Plugin architecture for different domains
-- **Performance Optimization** - Pre-computed spatial data with dynamic overlay
-- **Complete Rule Context** - Matrix rules, examples, and cross-references
+The intended end state is complete removal of the `src/Legacy/` directory.
 
 ---
 
-## Roadmap and Milestones
+## Initial Runtime Capabilities
 
-### Guiding Principles
-- Built in **.NET 9**
-- Hosted in **Azure Container Apps**
-- **MCP runtime** = stateless headless worker/web API
-- **Blazor Server UI** = operator/console only (separate container, sticky sessions)
-- **Ontology is first-class**: every tool, memory, and KG entry tied to ontology terms
-- **Incremental milestones** with acceptance gates
+The first implementation slice focuses on directed execution through a common authority boundary.
 
-### Milestones
+Initial semantic actions are expected to include:
 
-#### Alpha Phase (Milestones 1-3)
-- ✅ **Milestone 1 – MCP Skeleton**: Scaffold solution, implement MCP server with stdio + noop tool
-- ✅ **Milestone 2 – Persistence**: EF Core + PostgreSQL, basic history persistence
-- ✅ **Milestone 3 – Embeddings and Vector Store**: Azure OpenAI integration, hybrid retrieval
+```text
+ldm:action/HistoryRead
+ldm:action/HistoryAppend
+ldm:action/GraphQuery
+ldm:action/MemorySearch
+```
 
-#### Beta Phase (Milestones 4-9)
-- ✅ **Milestone 4 – Ontology v1**: JSON-LD context, base classes, tool schema mapping
-- **Milestone 4.5 – Phase 3 Rule Extraction Engine**: 
-  - Canonical rule ID preservation
-  - Nested exception detection with precedence
-  - Matrix rule extraction
-  - Location reference validation
-  - Cross-module reference resolution
-- **Milestone 4.6 – Spatial Plugin Architecture**:
-  - ISpatialPlugin interface design
-  - ASL hex-based plugin
-  - D&D grid-based plugin
-  - Generic fallback plugin
-- **Milestone 4.7 – Dynamic State Management**:
-  - Reference data integration (JSON documents)
-  - Pre-computed LOS with modification patterns
-  - Unit movement tracking
-  - Terrain change handling
-- **Milestone 5 – Planner + Precondition/Effect Checks**: Typed ReAct loop, KG validation
-- ✅ **Milestone 6 – Knowledge Graph Integration**: Cosmos DB Gremlin, context expansion
-- ✅ **Milestone 7 – Ingestion Pipeline**: Event-driven document processing
-- **Milestone 7.5 – Enhanced Document Processing**:
-  - Rule-aware chunking preserving structure
-  - Example extraction with location validation
-  - Matrix table recognition
-- **Milestone 7.6 – Spatial-Aware Search**:
-  - Location-based query enrichment
-  - Hybrid search with spatial context
-  - Cross-reference preservation
-- ✅ **Milestone 8 – HTTP Transport**: Streamable HTTP endpoints, Entra ID auth
-- **Milestone 9 – Validation Framework**:
-  - Rule ID format checking
-  - Location reference validation
-  - Exception precedence verification
-  - Module compatibility testing
+The first end-to-end runtime target is:
 
-#### 1.0 Release (Milestones 10-13)
-- **Milestone 10 – Enhanced Operator Console**:
-  - Rule browser with canonical IDs
-  - Map viewer with current state
-  - Exception trace visualization
-  - Validation dashboards
-- **Milestone 11 – Multi-tenant hardening**: Proven isolation across all components
-- **Milestone 12 – Observability & Governance**: OTEL traces, SHACL validators
-- **Milestone 13 – Packaging & 1.0 Release**: Containers, CI/CD, documentation
+```text
+MCP request
+-> Action binding
+-> ActionDescriptor
+-> deterministic constraints
+-> diagnostics
+-> Execution Gate
+-> AuthorizedAction
+-> executor
+-> audit
+```
 
-### Implementation Status
-
-#### Complete
-- Multi-tenant Cosmos storage with HPK
-- In-memory OntologyStore with indexes
-- JSON-LD/RDF export services
-- Tool schema binding framework
-- Basic validators and governance
-- Core MCP server implementation
-- PostgreSQL persistence layer
-- Azure AI Search integration
-- HTTP Transport with SSE
-- Authentication via Entra ID
-
-#### In Progress (Phase 3)
-- Enhanced rule extraction engine
-- Spatial plugin architecture
-- Dynamic state management
-- Reference data integration
-- Canonical ID preservation
-- Nested exception handling
-
-#### Not Started
-- Planner with precondition/effect checks
-- Advanced spatial reasoning
-- Cross-ontology mapping
-
-#### Future
-- OWL reasoning integration
-- Advanced governance rules
-- Production hardening
-- Comprehensive test coverage
+Autonomous Goal execution is added only after this path is proven.
 
 ---
 
-## Source Code Structure
+## Intended Use Cases
 
-### Project Dependencies (.csproj files)
+LimboDancer is designed as a reusable runtime beneath intelligent applications such as:
 
-**LimboDancer.MCP.Core** (Base library):
-- Target: .NET 9.0
-- No external dependencies (contracts only)
-- Includes: ISpatialPlugin interface
+- enterprise agents;
+- knowledge assistants;
+- operations automation;
+- workflow agents;
+- data reconciliation agents;
+- regulatory and policy assistants;
+- semantic-search systems;
+- autonomous support agents;
+- DevOps agents;
+- research agents;
+- simulation systems;
+- game and world agents.
 
-**LimboDancer.MCP.Plugins.ASL**:
-- Dependencies: Core
-- Implements: Hex-based spatial logic
+The domain changes primarily through:
 
-**LimboDancer.MCP.Plugins.DnD**:
-- Dependencies: Core
-- Implements: Grid-based mechanics
+- ontology;
+- semantic actions;
+- Governance policy;
+- State adapters;
+- executors;
+- Reasoning providers;
+- Decision providers.
 
-**LimboDancer.MCP.Storage**:
-- Dependencies: 
-  - Microsoft.EntityFrameworkCore 9.0.0
-  - Npgsql.EntityFrameworkCore.PostgreSQL 9.0.0
-- References: Core
-
-**LimboDancer.MCP.Vector.AzureSearch**:
-- Dependencies: Azure.Search.Documents 11.6.0
-- References: Core
-
-**LimboDancer.MCP.Graph.CosmosGremlin**:
-- Dependencies: Gremlin.Net 3.7.2
-- References: Core
-
-**LimboDancer.MCP.McpServer**:
-- Dependencies:
-  - ModelContextProtocol 0.3.0-preview.3
-  - All data layer packages
-  - Serilog.AspNetCore 8.0.1
-  - OpenTelemetry packages
-- References: All internal projects
-
-**LimboDancer.MCP.Cli**:
-- Dependencies: System.CommandLine 2.0.0-beta4
-- References: All data layer projects
-
-**LimboDancer.MCP.BlazorConsole**:
-- Target: ASP.NET Core 9.0
-- References: All data layer projects
-
-### Key Implementation Files
-
-**Phase 3 Ontology Implementation**:
-- `OntologyExtractionEngine.cs` - Enhanced extraction with canonical IDs
-- `PatternExtractor.cs` - Nested exception and matrix rule detection
-- `ReferenceDataManager.cs` - JSON document integration
-- `SpatialPluginRegistry.cs` - Plugin discovery and loading
-
-**Enhanced Node Types**:
-- `RuleNode.cs` - Preserves canonical IDs
-- `ExceptionNode.cs` - Precedence weights
-- `MatrixRuleNode.cs` - Multi-dimensional tables
-- `HexState.cs` - Dynamic terrain tracking
-
-**MCP Tools**:
-- `OntologyExtractionTool.cs` - System type parameter
-- `SpatialQueryTool.cs` - Plugin-aware queries
-- `ReferenceDataTool.cs` - Board data loading
-- `StateManagementTool.cs` - Dynamic modifications
-
-**Infrastructure**:
-- `SearchIndexBuilder.cs` - Azure AI Search index management
-- `GremlinClientFactory.cs` - Cosmos Gremlin connection pooling
-- `AuthExtensions.cs` - Entra ID authentication setup
-- `HttpTransport.cs` - Server-Sent Events implementation
+The cognitive runtime remains largely the same.
 
 ---
 
-## Implementation Notes
+## What LimboDancer Is Not
 
-### Security Considerations
-- All operations require tenant scope
-- Cross-tenant queries explicitly forbidden
-- JWT authentication via Entra ID
-- Role-based access control (Reader/Operator)
-- Plugin sandboxing for untrusted domains
+LimboDancer is not primarily:
 
-### Performance Optimizations
-- Pre-computed spatial data (LOS)
-- Dynamic state overlay pattern
-- Canonical ID indexing
-- Plugin-specific caching
-- Lazy reference data loading
+```text
+an MCP server
+an LLM wrapper
+a chatbot
+a vector database abstraction
+a workflow engine
+a policy engine
+a planner
+an agent framework
+```
 
-### Failure Modes and Resilience
-- Circuit breakers for LLM throttling
-- Graceful degradation to BM25 search
-- Retry with backoff for Cosmos 429s
-- Dead letter queue for Service Bus
-- Plugin fallback to generic
+It incorporates or integrates capabilities associated with several of those categories, but none of them defines the system.
 
-### Future Considerations
-- .NET Aspire adoption for local orchestration
-- Graph engine evaluation (Cosmos Gremlin vs Neo4j)
-- RDF/OWL reasoning integration
-- Advanced planner (DAG/graph executor)
-- Multi-board spatial composition
+A more accurate description is:
+
+> **LimboDancer is an execution environment for governed machine cognition.**
+
+And the repository's core definition is:
+
+> **LimboDancer is a domain-aware runtime that lets AI systems reason, choose, and act against real state without giving the AI direct authority over the world.**
 
 ---
 
-*This document represents the complete LimboDancer.MCP system design, combining architectural vision with concrete implementation details including Phase 3 enhancements. The source code serves as the authoritative reference for all implementation specifics.*
+## Design Documentation
+
+The active architecture and implementation documents are under `src/docs/`.
+
+Key documents include:
+
+- `LimboDancer.Agentic.CognitiveRuntime Plane Architecture Analysis.md`
+- `LimboDancer.Agentic.CognitiveRuntime Plane Architecture Codebase Validation.md`
+- `LimboDancer.Agentic.CognitiveRuntime Runtime Orchestration Model.md`
+- `LimboDancer.Agentic.CognitiveRuntime Plane Runtime Design.md`
+- `LimboDancer.Agentic.CognitiveRuntime Plane Runtime Specification.md`
+- `LimboDancer.Agentic.CognitiveRuntime Implementation Plan.md`
+- `Decision Plane Architecture.md`
+
+The **Plane Runtime Specification** is normative for implementation. The **Implementation Plan** defines the current engineering sequence.
+
+---
+
+## Current Engineering Direction
+
+The implementation strategy is intentionally incremental:
+
+```text
+Build boundary
+    |
+    v
+Action authority
+    |
+    v
+Diagnostics
+    |
+    v
+Execution Gate
+    |
+    v
+Audit
+    |
+    v
+Tenant-safe State infrastructure
+    |
+    v
+Directed actions
+    |
+    v
+MCP adapter + Host
+    |
+    v
+Autonomous contracts
+    |
+    v
+Observation + Semantic resolution
+    |
+    v
+Decision
+    |
+    v
+Reasoning
+    |
+    v
+Goal orchestration
+    |
+    v
+Provider evaluation
+    |
+    v
+Legacy retirement
+```
+
+The architecture deliberately establishes authority and runtime invariants before expanding cognitive capability.
