@@ -15,7 +15,7 @@ It defines:
 
 - the canonical runtime vocabulary;
 - the six architectural planes;
-- Governance and Orchestration;
+- Governance, Diagnostics, and Orchestration;
 - the runtime authority model;
 - Goal lifecycle;
 - semantic action model;
@@ -25,7 +25,7 @@ It defines:
 - Decision Plane boundaries;
 - execution authorization;
 - preconditions and effects;
-- observation and verification;
+- observation, diagnostics, and verification;
 - audit and replay;
 - concurrency and stale-state handling;
 - failure, retry, escalation, and confirmation behavior;
@@ -52,6 +52,7 @@ Decision selects.
 Execution acts.
 State remembers.
 Orchestration coordinates.
+Diagnostics assure.
 ```
 
 No single model, protocol, tool, database, or provider defines the runtime.
@@ -143,7 +144,7 @@ Candidate status does not imply permission.
 
 ### 4.8 PermittedAction
 
-A **PermittedAction** is a candidate that has passed the deterministic semantic and governance constraints required before selection.
+A **PermittedAction** is a candidate that has passed the deterministic semantic and governance constraints required before autonomous selection. Directed invocation may produce a SelectedAction from an explicitly requested, constraint-valid action without invoking the Decision Plane.
 
 ### 4.9 Decision
 
@@ -157,7 +158,7 @@ A Decision MAY:
 
 ### 4.10 SelectedAction
 
-A **SelectedAction** is a PermittedAction chosen by the caller in directed invocation or by the Decision Plane in autonomous invocation.
+A **SelectedAction** is an action that has passed the applicable semantic and governance constraints and has been selected either explicitly by the caller in directed invocation or by the Decision Plane in autonomous invocation.
 
 Selection is not final execution authorization.
 
@@ -186,6 +187,45 @@ An **Effect** is an expected semantic state transition associated with successfu
 The **OrchestrationContext** is the typed runtime envelope carrying identity, Goal, observations, stage results, budgets, action state, and audit correlation through the lifecycle.
 
 It SHALL NOT become an unstructured shared-state dictionary.
+
+### 4.16 Diagnostic Check
+
+A **Diagnostic Check** is a registered, purposeful evaluation of a runtime invariant, readiness condition, integrity property, or behavioral expectation for a defined execution context.
+
+A Diagnostic Check produces evidence. It does not itself grant or revoke authority.
+
+### 4.17 Diagnostic Finding
+
+A **Diagnostic Finding** is the structured result of a Diagnostic Check.
+
+A finding SHALL identify at least:
+
+- check identity;
+- execution phase;
+- status or severity;
+- stable reason code;
+- human-readable summary;
+- relevant evidence or evidence references;
+- timestamp;
+- correlation and tenant context where applicable.
+
+### 4.18 Diagnostic Policy
+
+**Diagnostic Policy** determines the runtime disposition associated with a Diagnostic Finding.
+
+Possible dispositions include:
+
+```text
+Continue
+ContinueDegraded
+Retry
+ReObserve
+Escalate
+Block
+FailGoal
+```
+
+Diagnostics detect conditions. Diagnostic Policy determines their operational consequence.
 
 ## 5. Architectural Planes
 
@@ -287,7 +327,7 @@ It SHALL NOT:
 
 The Execution Plane SHALL perform AuthorizedActions.
 
-It SHALL contain:
+It SHALL contain or host the execution boundary for:
 
 - the final execution gate;
 - executor bindings;
@@ -325,14 +365,15 @@ Governance includes:
 - quotas;
 - secrets;
 - audit;
-- telemetry;
 - compliance constraints.
+
+Governance MAY consume telemetry and Diagnostic Findings as policy evidence, but telemetry and Diagnostics remain distinct architectural concerns.
 
 ```text
 +------------------------------------------------------+
 |             GOVERNANCE / CONTROL FABRIC             |
 | identity | tenant | authorization | policy | risk   |
-| audit | telemetry | confirmation | quotas | secrets |
+| audit | compliance | confirmation | quotas | secrets |
 +------------------------------------------------------+
         |        |        |        |        |        |
         v        v        v        v        v        v
@@ -355,7 +396,369 @@ Governance denials SHALL NOT be converted into Decision candidates.
 
 Governance decisions SHALL emit structured reason codes suitable for audit.
 
-## 7. Orchestration
+## 7. Diagnostic Fabric
+
+Diagnostics SHALL be a first-class cross-cutting runtime assurance capability.
+
+Diagnostics asks:
+
+> Is this part of the runtime healthy, coherent, correctly configured, and behaving within expected bounds for this execution context?
+
+Diagnostics SHALL NOT be modeled as a seventh plane.
+
+It spans every plane and may execute at lifecycle transitions, within a phase, and after consequential execution.
+
+```text
++------------------------------------------------------+
+|                 DIAGNOSTIC FABRIC                    |
+| health | integrity | validity | readiness | drift   |
+| consistency | correctness | performance | behavior  |
++------------------------------------------------------+
+        |        |        |        |        |        |
+        v        v        v        v        v        v
+ Interaction Reason Semantic Decision Execution State
+```
+
+Diagnostics SHALL remain distinct from Governance, Observability, and Effect Verification.
+
+```text
+Telemetry
+    = raw signals and measurements
+
+Observability
+    = understanding runtime behavior from signals
+
+Diagnostics
+    = explicit checks against expected invariants or conditions
+
+Governance
+    = authority and policy response
+
+Effect Verification
+    = comparison of expected semantic effects with observed post-state
+```
+
+A Diagnostic Finding MAY inform Governance or Orchestration, but the finding itself SHALL NOT constitute authorization.
+
+### 7.1 Diagnostic Categories
+
+The runtime SHALL support three broad diagnostic categories.
+
+| Category | Question | Example |
+|---|---|---|
+| Structural | Is the runtime assembled correctly? | Does every ActionDescriptor resolve to a registered executor binding? |
+| Contextual | Is this execution context internally valid? | Does the current candidate belong to the active tenant and descriptor version? |
+| Behavioral | Is the runtime behaving within expected bounds? | Is repeated identical reasoning occurring without state change? |
+
+Structural diagnostics MAY run at startup, deployment validation, registry publication, or on demand.
+
+Contextual diagnostics SHOULD run within the Goal lifecycle where the relevant execution context exists.
+
+Behavioral diagnostics MAY combine current execution evidence with telemetry and historical baselines.
+
+### 7.2 Diagnostic Positions
+
+Diagnostic Checks SHALL support execution positions appropriate to their purpose.
+
+```text
+Pre-flight
+    before a phase or consequential action
+
+In-flight
+    while work is executing
+
+Post-flight
+    after a phase or consequential action
+```
+
+Pre-flight diagnostics SHOULD evaluate readiness, integrity, configuration, mappings, dependency availability, and contextual invariants.
+
+In-flight diagnostics MAY evaluate timeouts, cancellation, retry behavior, duplicate execution, resource consumption, and dependency degradation.
+
+Post-flight diagnostics SHOULD evaluate result integrity, unexpected side effects, state consistency, audit completeness, and runtime anomalies.
+
+### 7.3 Diagnostic Context
+
+Diagnostic Checks SHALL execute against an explicit, typed DiagnosticContext or a plane-specific context derived from the OrchestrationContext.
+
+A DiagnosticContext SHOULD expose only information needed by the check.
+
+Conceptually:
+
+```text
+DiagnosticContext
+├── GoalId / StepId
+├── CorrelationId
+├── TenantId
+├── Principal
+├── Plane
+├── Lifecycle phase
+├── Diagnostic position
+├── ActionDescriptor / version, if applicable
+├── Candidate / Selected / Authorized action, if applicable
+├── Relevant observations and versions
+├── Execution result, if applicable
+├── Expected and observed effects, if applicable
+├── Budget and timing information
+└── Trace / audit references
+```
+
+Diagnostic contexts SHALL NOT become a mechanism for bypassing plane contracts or exposing unrestricted global state.
+
+### 7.4 Diagnostic Check Contract
+
+Diagnostic Checks SHOULD be independently registered and testable.
+
+A conceptual contract is:
+
+```csharp
+public interface IDiagnosticCheck<in TContext>
+{
+    string Id { get; }
+    DiagnosticPhase Phase { get; }
+    DiagnosticPosition Position { get; }
+
+    Task<DiagnosticResult> EvaluateAsync(
+        TContext context,
+        CancellationToken ct = default);
+}
+```
+
+A conceptual result is:
+
+```csharp
+public sealed record DiagnosticResult(
+    string CheckId,
+    DiagnosticStatus Status,
+    string Code,
+    string? Message,
+    IReadOnlyDictionary<string, object?> Evidence);
+```
+
+These examples define the design shape, not final implementation signatures.
+
+### 7.5 Diagnostic Status and Severity
+
+The Diagnostic Fabric SHALL distinguish diagnostic status from action risk.
+
+A diagnostic result SHOULD support statuses equivalent to:
+
+```text
+Pass
+Info
+Warning
+Degraded
+Fail
+Indeterminate
+```
+
+`ActionRisk` and `DiagnosticStatus` are different dimensions.
+
+For example:
+
+```text
+ActionRisk: ReadOnly
+Diagnostic: tenant filter absent
+DiagnosticStatus: Fail
+Disposition: Block
+```
+
+A low-risk action does not make a critical integrity failure acceptable.
+
+### 7.6 Diagnostic Disposition
+
+Diagnostic results SHALL be evaluated by Diagnostic Policy and/or the existing Governance and Orchestration policy mechanisms.
+
+A finding MAY result in:
+
+- continuing normally;
+- continuing in degraded mode;
+- bounded retry;
+- re-observation;
+- provider fallback;
+- escalation;
+- execution block;
+- Goal failure.
+
+The same diagnostic status MAY have different dispositions depending on:
+
+- action risk;
+- plane;
+- execution phase;
+- environment;
+- tenant policy;
+- whether the check protects a hard system invariant.
+
+Critical invariants such as tenant isolation SHALL fail closed.
+
+Performance degradation MAY permit continued execution.
+
+### 7.7 Plane-Specific Diagnostic Catalog
+
+Each plane SHALL expose meaningful diagnostics appropriate to its responsibilities.
+
+| Plane | Representative diagnostics |
+|---|---|
+| Interaction | protocol version supported; authentication established; tenant resolved; correlation established; input schema valid; action binding exists; request limits valid |
+| Reasoning | observation requirements satisfied; unresolved entity references; repeated-plan/loop detection; step explosion; reasoning budget; unresolvable capability requests |
+| Semantic | ontology version valid; action IRI resolves; property/relation mappings resolve; aliases unambiguous; descriptor semantics valid; preconditions/effects reference known vocabulary |
+| Decision | candidate set non-empty when selection is requested; all submitted candidates are permitted; no duplicates; provider eligible; returned selection belongs to submitted set; result structurally valid; latency/cost within provider budget |
+| Execution | executor binding resolves; dependency ready; arguments conform; action version current; idempotency key present where required; duplicate execution detection; timeout/cancellation behavior; result schema valid |
+| State | tenant scope present; schema/index version current; graph/vector/relational state accessible as required; embedding dimensions correct; partition/filter invariants satisfied; consistency expectations met |
+
+This catalog is illustrative rather than exhaustive.
+
+### 7.8 Lifecycle Diagnostic Hooks
+
+The runtime SHALL support diagnostics at meaningful lifecycle transitions.
+
+| Lifecycle stage | Representative checks |
+|---|---|
+| Admit | identity, tenant, protocol integrity, correlation |
+| Observe | freshness, provenance, tenant scope, state version |
+| Reason | loop detection, budget, unresolved references |
+| Resolve | ontology integrity, descriptor consistency, binding validity |
+| Constrain | constraint completeness, hard-invariant evaluation completeness |
+| Decide | candidate integrity, provider eligibility, result validity |
+| Gate | stale state, confirmation validity, executor readiness, descriptor version |
+| Execute | timeout, retry, idempotency, duplicate execution, dependency health |
+| Verify | expected versus observed effects, unexpected mutations, consistency |
+| Complete | audit completeness, unresolved anomalies, terminal-state coherence |
+
+Diagnostics SHOULD be selected contextually rather than executing every registered check for every Goal.
+
+### 7.9 Action Diagnostic Profile
+
+ActionDescriptors SHOULD be able to reference diagnostics appropriate to that action.
+
+Conceptually:
+
+```text
+ActionDescriptor
+├── ...
+├── DiagnosticProfile
+│   ├── PreExecutionChecks
+│   ├── InExecutionChecks
+│   └── PostExecutionChecks
+└── VerificationProfile
+```
+
+ActionDescriptor diagnostic entries SHOULD reference registered diagnostic definitions rather than embed arbitrary executable delegates.
+
+This preserves portability, versioning, auditability, and provider independence.
+
+### 7.10 Diagnostics and Effect Verification
+
+Diagnostics and Effect Verification SHALL remain distinct.
+
+Example:
+
+```text
+Expected semantic effect:
+reservation.status == Confirmed
+
+Effect Verification:
+Did reservation.status become Confirmed?
+
+Diagnostics:
+Was a duplicate event published?
+Did any cross-tenant mutation occur?
+Was the audit record written?
+Did graph and relational projections remain consistent?
+Did execution exceed an abnormal latency threshold?
+```
+
+Effect Verification establishes whether intended semantic outcomes occurred.
+
+Diagnostics evaluates surrounding runtime integrity and behavior.
+
+### 7.11 Diagnostics and Observability
+
+Observability SHALL supply much of the evidence consumed by behavioral diagnostics.
+
+Diagnostics MAY use:
+
+- logs;
+- traces;
+- metrics;
+- state queries;
+- schema registries;
+- descriptor registries;
+- provider metadata;
+- audit records.
+
+Diagnostics SHALL NOT be reduced to log emission.
+
+A purposeful invariant check is a diagnostic even when its evidence comes from telemetry.
+
+### 7.12 Diagnostic Audit
+
+Consequential Diagnostic Findings SHALL be auditable.
+
+Audit SHOULD capture:
+
+- check ID and version;
+- phase and position;
+- status;
+- reason code;
+- evidence reference;
+- resulting disposition;
+- action and descriptor version when applicable;
+- tenant and correlation;
+- duration;
+- whether the finding affected control flow.
+
+Diagnostic audit SHALL follow the same sensitive-data minimization rules as the rest of the runtime.
+
+### DESIGN RULE DX-1
+
+Every consequential execution phase SHALL support contextual Diagnostic Checks appropriate to its plane, action, risk, and current execution context.
+
+### DESIGN RULE DX-2
+
+Diagnostic Findings SHALL be structured, auditable, and distinguishable from authorization decisions.
+
+### DESIGN RULE DX-3
+
+Diagnostics SHALL NOT grant permission or override failed Governance or semantic constraints.
+
+### DESIGN RULE DX-4
+
+Hard system invariants, including tenant isolation and authoritative action identity, SHALL fail closed when a diagnostic establishes that the invariant cannot be satisfied.
+
+### DESIGN RULE DX-5
+
+Diagnostics SHOULD operate pre-flight, in-flight, and post-flight where those positions provide meaningful assurance.
+
+### DESIGN RULE DX-6
+
+Diagnostic Policy MAY vary by action risk, environment, execution phase, and tenant policy.
+
+### DESIGN RULE DX-7
+
+Diagnostic checks SHALL be independently testable and SHOULD have stable identifiers and versions.
+
+### DESIGN RULE DX-8
+
+A model or Decision provider SHALL NOT be the sole authority for declaring a hard diagnostic invariant satisfied.
+
+### DESIGN RULE DX-9
+
+ActionDescriptors MAY reference registered Diagnostic Checks but SHALL NOT accept caller-supplied diagnostics as authoritative replacements for server-defined checks.
+
+### DESIGN RULE DX-10
+
+Diagnostic execution SHALL respect runtime budgets and SHALL avoid creating unbounded recursive diagnostics.
+
+### DESIGN RULE DX-11
+
+Failure or timeout of a required hard-invariant diagnostic SHALL fail closed unless an explicit trusted policy defines a safe degraded behavior.
+
+### DESIGN RULE DX-12
+
+Diagnostics SHALL be observable themselves: duration, failures, skipped checks, and policy dispositions SHOULD be measurable.
+
+## 8. Orchestration
 
 Orchestration SHALL coordinate movement through the planes.
 
@@ -391,7 +794,7 @@ The current chat-session orchestrator SHALL NOT define the future cognitive orch
 
 Chat/session orchestration and Goal orchestration are separate concerns.
 
-## 8. Runtime Authority Model
+## 9. Runtime Authority Model
 
 Authority SHALL narrow as work moves toward execution.
 
@@ -434,7 +837,7 @@ Candidate membership SHALL NOT imply permission.
 
 Selection SHALL NOT imply authorization.
 
-## 9. ActionDescriptor Design
+## 10. ActionDescriptor Design
 
 Every executable capability SHALL have a server-authoritative ActionDescriptor.
 
@@ -457,6 +860,8 @@ ActionDescriptor
 ├── Idempotency semantics
 ├── Reversibility/compensation metadata
 ├── Executor binding
+├── Diagnostic profile
+├── Verification profile
 └── Observability metadata
 ```
 
@@ -484,7 +889,11 @@ The design SHALL permit ActionDescriptors to be sourced from generated ontology 
 
 The authoritative source mechanism remains an implementation decision.
 
-## 10. Initial Risk Model
+### DESIGN RULE AD-6
+
+ActionDescriptor diagnostic references SHALL identify registered checks or profiles and SHALL be versionable independently from caller input.
+
+## 11. Initial Risk Model
 
 The initial runtime risk taxonomy SHALL support at least:
 
@@ -508,7 +917,7 @@ Risk SHALL influence:
 
 Exact thresholds SHALL be configurable policy.
 
-## 11. Action Registry and Binding
+## 12. Action Registry and Binding
 
 The runtime SHALL provide an authoritative registry of known actions.
 
@@ -546,7 +955,7 @@ A protocol binding SHALL NOT alter authoritative risk, preconditions, effects, o
 
 Multiple protocol bindings MAY reference the same semantic action.
 
-## 12. Directed Invocation
+## 13. Directed Invocation
 
 Directed invocation occurs when the caller explicitly selects an action.
 
@@ -573,13 +982,19 @@ Evaluate governance
 SelectedAction
     |
     v
+Pre-flight Diagnostics
+    |
+    v
 Final Execution Gate
     |
     v
 AuthorizedAction
     |
     v
-Execute
+Execute + In-flight Diagnostics
+    |
+    v
+Post-flight Diagnostics
     |
     v
 Verify / Audit
@@ -597,7 +1012,7 @@ Directed invocation SHALL NOT bypass semantic constraints, governance, or the fi
 
 Existing MCP clients SHOULD remain compatible as the gate is introduced.
 
-## 13. Autonomous Invocation
+## 14. Autonomous Invocation
 
 Autonomous invocation occurs when the caller supplies a Goal rather than an action.
 
@@ -618,9 +1033,13 @@ Constrain
   |
 Decide
   |
+Pre-flight Diagnostics
+  |
 Gate
   |
-Execute
+Execute + In-flight Diagnostics
+  |
+Post-flight Diagnostics
   |
 Verify Effects
   |
@@ -645,7 +1064,7 @@ Decision SHALL receive only PermittedActions.
 
 If no PermittedAction exists, Decision SHALL NOT be invoked.
 
-## 14. Goal Lifecycle State Machine
+## 15. Goal Lifecycle State Machine
 
 The runtime SHALL expose an explicit lifecycle.
 
@@ -671,6 +1090,8 @@ Cancelled
 
 A runtime implementation MAY refine these states.
 
+Diagnostic hooks SHALL attach to lifecycle states and transitions without requiring Diagnostics to become a separate lifecycle state.
+
 ### DESIGN RULE GL-1
 
 State transitions SHALL be observable.
@@ -683,7 +1104,7 @@ Terminal states SHALL include structured reason information.
 
 Abstention SHALL be a normal terminal or transition outcome, not an exception.
 
-## 15. Observation Design
+## 16. Observation Design
 
 Observations SHALL represent state evidence available to reasoning, constraints, and verification.
 
@@ -709,7 +1130,7 @@ Critical state used to authorize a write SHOULD carry a version or concurrency t
 
 Sensitive observation payloads SHOULD be referenced rather than duplicated into audit records where practical.
 
-## 16. Planning
+## 17. Planning
 
 A Plan SHALL represent proposed future work.
 
@@ -729,7 +1150,7 @@ Plans MAY be revised after every new Observation.
 
 The planner SHALL express desired semantic outcomes rather than inventing unregistered executor names.
 
-## 17. Action Resolution
+## 18. Action Resolution
 
 Action resolution SHALL map a semantic need to finite ActionCandidates.
 
@@ -755,7 +1176,7 @@ Ontology-bound identifiers SHALL NOT silently fall through to physical storage i
 
 Resolution SHALL produce explicit evidence sufficient to understand why an action was considered applicable.
 
-## 18. Constraint Pipeline
+## 19. Constraint Pipeline
 
 Before Decision, candidates SHALL pass deterministic constraints.
 
@@ -794,7 +1215,7 @@ Decision providers SHALL NOT be able to restore a removed candidate.
 
 Constraint failures SHALL produce structured reason codes.
 
-## 19. Decision Plane Design
+## 20. Decision Plane Design
 
 The Decision Plane operates over a finite set of PermittedActions.
 
@@ -839,7 +1260,7 @@ Decision confidence SHALL be treated as evidence consumed by policy.
 
 Jev, LLMs, rules, classifiers, and composite strategies SHALL be implementations behind the same architectural boundary.
 
-## 20. Decision Provider Routing
+## 21. Decision Provider Routing
 
 Provider routing MAY use:
 
@@ -877,7 +1298,7 @@ Providers SHALL report results. They SHALL NOT decide whether their own result s
 
 Escalation policy SHALL be external to individual providers.
 
-## 21. Final Execution Gate
+## 22. Final Execution Gate
 
 The Execution Gate is the final deterministic authority before consequential execution.
 
@@ -913,7 +1334,7 @@ The gate SHALL revalidate critical mutable state rather than relying solely on e
 
 A stale decision SHALL normally trigger re-observation rather than blind execution or blind retry.
 
-## 22. Concurrency and TOCTOU
+## 23. Concurrency and TOCTOU
 
 LimboDancer SHALL assume state can change between observation and execution.
 
@@ -946,7 +1367,7 @@ Stores supporting optimistic concurrency SHOULD expose version information throu
 
 A stale SelectedAction SHALL NOT automatically inherit authorization after re-observation.
 
-## 23. Executors
+## 24. Executors
 
 Executors SHALL perform operational work.
 
@@ -971,7 +1392,7 @@ Executors SHALL NOT invoke a Decision provider to determine whether they should 
 
 Executor implementations MAY use MCP tools, application services, workflows, message buses, or external APIs.
 
-## 24. Preconditions
+## 25. Preconditions
 
 Preconditions SHALL be classified by authority.
 
@@ -999,7 +1420,7 @@ Caller-supplied preconditions MAY be treated as requests or additional restricti
 
 The current pattern in which `HistoryAppendTool` accepts authoritative preconditions from input SHALL be retired through migration.
 
-## 25. Effects
+## 26. Effects
 
 Expected effects SHALL be associated with authoritative action definitions.
 
@@ -1023,7 +1444,7 @@ Execution success SHALL NOT automatically imply semantic effect success.
 
 Effects SHOULD be verified against observed post-execution state where technically feasible and proportionate to risk.
 
-## 26. Effect Verification
+## 27. Effect Verification
 
 Verification results SHALL support:
 
@@ -1038,7 +1459,7 @@ A contradicted high-risk effect SHOULD trigger escalation, recovery, or compensa
 
 Verification MAY be asynchronous where immediate observation is impossible.
 
-## 27. Reversibility and Compensation
+## 28. Reversibility and Compensation
 
 Action metadata SHOULD describe reversibility.
 
@@ -1060,7 +1481,7 @@ Authorization of an action SHALL NOT automatically authorize its compensation ac
 
 Compensation SHALL pass current semantic, governance, and execution constraints.
 
-## 28. Human Confirmation
+## 29. Human Confirmation
 
 Human confirmation is a Governance mechanism.
 
@@ -1096,7 +1517,7 @@ Approval SHALL be bound to action identity, arguments, tenant, and relevant vers
 
 The runtime SHALL revalidate mutable constraints after approval.
 
-## 29. Multi-Step Goals
+## 30. Multi-Step Goals
 
 Each consequential step of a multi-step Goal SHALL pass through the runtime authority lifecycle.
 
@@ -1119,7 +1540,7 @@ A Plan SHALL NOT grant blanket authorization to future steps.
 
 New observations MAY invalidate remaining Plan steps.
 
-## 30. Budgets
+## 31. Budgets
 
 Autonomous execution SHALL be bounded.
 
@@ -1141,7 +1562,7 @@ Budget exhaustion SHALL terminate or escalate execution.
 
 Budget enforcement SHALL be independent of model cooperation.
 
-## 31. Error Taxonomy
+## 32. Error Taxonomy
 
 Runtime failures SHALL be stage-aware.
 
@@ -1156,6 +1577,8 @@ SemanticConstraintFailure
 GovernanceDenial
 DecisionAbstention
 DecisionProviderError
+DiagnosticFailure
+DiagnosticIndeterminate
 StaleStateError
 ExecutionDenied
 ExecutionError
@@ -1172,7 +1595,7 @@ Abstention and governance denial SHALL NOT be represented as generic executor ex
 
 Errors SHALL carry stable reason codes suitable for telemetry and audit.
 
-## 32. Retry Design
+## 33. Retry Design
 
 Retry behavior SHALL depend on stage and action semantics.
 
@@ -1184,6 +1607,8 @@ Examples:
 | governance denial | no unchanged retry |
 | semantic precondition failure | re-observe or re-reason |
 | decision provider timeout | provider retry/fallback by policy |
+| required diagnostic transient failure | bounded diagnostic retry or fail closed by policy |
+| diagnostic integrity failure | apply diagnostic disposition; do not blind retry |
 | stale state | re-observe |
 | idempotent executor transient failure | bounded retry |
 | non-idempotent executor timeout | reconcile execution state before retry |
@@ -1193,7 +1618,7 @@ Examples:
 
 There SHALL NOT be a universal retry policy for the entire cognitive loop.
 
-## 33. Audit Design
+## 34. Audit Design
 
 Every consequential runtime step SHALL emit structured audit information.
 
@@ -1211,6 +1636,7 @@ The audit model SHOULD include:
 - candidate set;
 - semantic constraint results;
 - governance results;
+- diagnostic findings and dispositions;
 - decision provider/version;
 - selected action;
 - confidence/distribution where available;
@@ -1233,7 +1659,7 @@ Audit SHALL capture the decision boundary without requiring hidden model chain-o
 
 Sensitive data SHOULD be referenced, hashed, redacted, or minimized where full persistence is unnecessary.
 
-## 34. Replay Design
+## 35. Replay Design
 
 Replay SHALL allow historical decision contexts to be evaluated without replaying consequential side effects.
 
@@ -1254,7 +1680,7 @@ Replay SHALL be able to stop before execution.
 
 Provider benchmarking SHOULD use replayable historical contexts plus curated labeled cases.
 
-## 35. Observability
+## 36. Observability
 
 Runtime telemetry SHOULD expose:
 
@@ -1278,9 +1704,11 @@ Runtime telemetry SHOULD expose:
 
 Observability SHALL distinguish system safety from model quality.
 
+Observability provides signals and evidence. Diagnostics performs explicit checks against runtime expectations and invariants. Governance and Orchestration determine the operational response to those findings.
+
 A zero policy-violation rate is an architectural property, not a model benchmark.
 
-## 36. Host Architecture
+## 37. Host Architecture
 
 Interaction hosts SHALL converge on a host-neutral LimboDancer runtime contract.
 
@@ -1312,7 +1740,7 @@ Shared runtime composition SHOULD move behind host-neutral service registration 
 
 Readiness checks SHOULD be observational. Schema migration SHOULD be a deployment/startup concern rather than normal readiness behavior.
 
-## 37. Dependency Rules
+## 38. Dependency Rules
 
 ### DESIGN RULE DEP-1
 
@@ -1341,7 +1769,7 @@ Semantic/application services SHALL NOT depend on contracts declared inside prot
 
 Plane boundaries SHALL guide dependency direction but SHALL NOT require one project per plane.
 
-## 38. Initial Mapping of Existing Tools
+## 39. Initial Mapping of Existing Tools
 
 The four current tools SHALL receive initial semantic action identities.
 
@@ -1358,7 +1786,7 @@ These identifiers are design placeholders until aligned with the canonical ontol
 
 The bindings SHALL allow existing MCP names to remain stable.
 
-## 39. Migration of HistoryAppend
+## 40. Migration of HistoryAppend
 
 `HistoryAppendTool` is the first important migration case because it currently accepts:
 
@@ -1389,7 +1817,7 @@ HistoryAppend executor
 
 Migration SHOULD preserve protocol compatibility where necessary, but caller-provided semantic authority SHALL be deprecated and eventually removed.
 
-## 40. Tenant Design
+## 41. Tenant Design
 
 Tenant isolation SHALL be structural.
 
@@ -1413,7 +1841,7 @@ Audit SHALL record tenant identity.
 
 The existing history-read and graph-read paths SHALL be verified for explicit or global-filter tenant enforcement before autonomous execution is enabled.
 
-## 41. Semantic Fail-Closed Behavior
+## 42. Semantic Fail-Closed Behavior
 
 Ontology-constrained runtime paths SHALL fail closed.
 
@@ -1431,7 +1859,7 @@ Unknown effect mappings SHALL produce explicit verification/execution failure ac
 
 This rule specifically addresses the current mixed behavior in graph precondition/effect mapping.
 
-## 42. Security Boundary
+## 43. Security Boundary
 
 Probabilistic systems SHALL be treated as untrusted advisors with respect to execution authority.
 
@@ -1447,7 +1875,7 @@ They MAY propose or select within permitted boundaries.
 
 They SHALL NOT define those boundaries.
 
-## 43. Initial Runtime Component Model
+## 44. Initial Runtime Component Model
 
 The target component relationships are:
 
@@ -1485,11 +1913,17 @@ Provider             |             Services
                      |
                      v
                   State
+
+Diagnostic Runner / Registry participates across
+admission, observation, reasoning, resolution,
+decision, gate, execution, verification, and completion.
 ```
 
 Governance services participate in the constraint pipeline, gate, confirmation, audit, and host admission.
 
-## 44. Initial Implementation Boundary
+Diagnostic services participate across all planes and lifecycle phases but do not replace the authority of those components.
+
+## 45. Initial Implementation Boundary
 
 The first implementation increment SHALL establish a trustworthy execution convergence point before autonomous Decision is introduced.
 
@@ -1528,7 +1962,27 @@ Record:
 - gate result;
 - execution outcome.
 
-### Increment 4: Semantic authority migration
+### Increment 4: Diagnostic substrate
+
+Define:
+
+- diagnostic status and severity;
+- DiagnosticContext;
+- diagnostic check/result contracts;
+- diagnostic registry;
+- diagnostic policy/disposition;
+- pre-flight execution hooks;
+- structured diagnostic audit events.
+
+Implement initial hard-invariant checks for:
+
+- tenant context;
+- action registration;
+- descriptor version;
+- executor binding;
+- semantic mapping validity.
+
+### Increment 5: Semantic authority migration
 
 Move authoritative preconditions/effects out of caller control.
 
@@ -1536,7 +1990,7 @@ Correct fail-open semantic mappings.
 
 Verify tenant enforcement on State reads.
 
-### Increment 5: Autonomous contracts
+### Increment 6: Autonomous contracts
 
 Add:
 
@@ -1549,17 +2003,17 @@ Add:
 - `IDecisionProvider`;
 - Goal orchestration.
 
-### Increment 6: Baseline autonomous loop
+### Increment 7: Baseline autonomous loop
 
 Implement a deterministic or structured baseline provider.
 
 Do not introduce specialized provider routing until the lifecycle is observable and replayable.
 
-### Increment 7: Provider evaluation
+### Increment 8: Provider evaluation
 
 Add Jev and other providers behind the established contract and evaluate using replay.
 
-## 45. Testing Requirements
+## 46. Testing Requirements
 
 The runtime design SHALL be tested at authority boundaries.
 
@@ -1590,6 +2044,19 @@ Initial required test classes include:
 - provider cannot select removed candidate;
 - abstention produces no execution.
 
+### Diagnostics
+
+- required hard-invariant checks execute;
+- contextual checks receive only the expected context;
+- unknown diagnostic ID fails according to profile policy;
+- critical tenant diagnostic blocks;
+- warning diagnostic can continue under policy;
+- indeterminate required diagnostic fails closed;
+- diagnostic finding and disposition are audited;
+- Decision output outside candidate set is diagnosed and rejected;
+- diagnostic checks cannot grant authorization;
+- diagnostic timeout obeys budget and policy.
+
 ### Execution gate
 
 - valid directed invocation allowed;
@@ -1610,7 +2077,7 @@ Initial required test classes include:
 - descriptor version recorded;
 - no hidden reasoning required.
 
-## 46. Non-Goals of the First Design Increment
+## 47. Non-Goals of the First Design Increment
 
 The first implementation SHALL NOT attempt to solve all agent behavior.
 
@@ -1629,7 +2096,7 @@ Specifically, the first increment does not require:
 
 The design deliberately establishes authority and contracts before expanding cognition.
 
-## 47. Design Decisions Held Open
+## 48. Design Decisions Held Open
 
 The following remain intentionally open until implementation analysis provides stronger evidence:
 
@@ -1645,10 +2112,12 @@ The following remain intentionally open until implementation analysis provides s
 10. How complex multi-step transactional actions are represented.
 11. Whether effect verification is synchronous or asynchronous per action.
 12. Exact provider-routing policy.
+13. The persistence and retention model for Diagnostic Findings.
+14. Whether diagnostic profiles are primarily ActionDescriptor metadata, registry configuration, ontology artifacts, or a hybrid.
 
 These are implementation or subsequent design decisions. They do not alter the core authority model.
 
-## 48. Acceptance Criteria for the Runtime Design
+## 49. Acceptance Criteria for the Runtime Design
 
 The design is successfully realized when all of the following are true:
 
@@ -1670,8 +2139,12 @@ The design is successfully realized when all of the following are true:
 16. Decision providers can be replaced without modifying executors.
 17. Interaction hosts share the same runtime authority model.
 18. No model provider is an authorization authority.
+19. Consequential lifecycle phases support contextual Diagnostic Checks.
+20. Hard-invariant diagnostics fail closed.
+21. Diagnostic findings are distinct from Governance decisions and are auditable.
+22. ActionDescriptors can bind versioned diagnostic profiles without accepting caller-defined authoritative checks.
 
-## 49. Canonical Runtime Sequence
+## 50. Canonical Runtime Sequence
 
 The canonical autonomous sequence is:
 
@@ -1711,6 +2184,9 @@ Decision
 SelectedAction
   |
   v
+Pre-flight Diagnostics
+  |
+  v
 Final Execution Gate
   |
   +--> Deny / Stale / Confirm
@@ -1719,10 +2195,13 @@ Final Execution Gate
 AuthorizedAction
   |
   v
-Executor
+Executor + In-flight Diagnostics
   |
   v
 ExecutedAction
+  |
+  v
+Post-flight Diagnostics
   |
   v
 Observe effects
@@ -1758,13 +2237,19 @@ Semantic + Governance constraints
 SelectedAction
   |
   v
+Pre-flight Diagnostics
+  |
+  v
 Final Execution Gate
   |
   v
 AuthorizedAction
   |
   v
-Executor
+Executor + In-flight Diagnostics
+  |
+  v
+Post-flight Diagnostics
   |
   v
 Verify + Audit
@@ -1772,7 +2257,7 @@ Verify + Audit
 
 Both paths converge on the same execution authority model.
 
-## 50. Final Design Statement
+## 51. Final Design Statement
 
 LimboDancer SHALL NOT be designed as an LLM that happens to call MCP tools.
 
@@ -1780,6 +2265,6 @@ It SHALL be designed as a governed runtime in which goals cross explicit semanti
 
 The essential design is:
 
-> **A Goal enters through Interaction. Orchestration carries it through the runtime. Reasoning proposes how to advance it. Semantics resolves those proposals into known capabilities. Governance removes what is not permitted. Decision selects among what remains. The Execution Gate revalidates authority against current state. Execution acts. State records the result. Verification compares reality with expected effects. New observations feed the next cognitive cycle.**
+> **A Goal enters through Interaction. Orchestration carries it through the runtime. Reasoning proposes how to advance it. Semantics resolves those proposals into known capabilities. Governance removes what is not permitted. Decision selects among what remains. Diagnostics continuously tests the integrity and fitness of the current execution context. The Execution Gate revalidates authority against current state. Execution acts. State records the result. Verification compares reality with expected effects. New observations feed the next cognitive cycle.**
 
-This design makes agency explicit, bounded, testable, auditable, and independent of any particular intelligence provider.
+This design makes agency explicit, bounded, diagnosable, testable, auditable, and independent of any particular intelligence provider.
