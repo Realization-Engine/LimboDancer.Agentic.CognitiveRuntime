@@ -211,7 +211,9 @@ A finding SHALL identify at least:
 
 ### 4.18 Diagnostic Policy
 
-**Diagnostic Policy** determines the runtime disposition associated with a Diagnostic Finding.
+**Diagnostic Policy** is governed policy that maps a Diagnostic Finding to an allowed runtime disposition. It is not an independent authority domain.
+
+Permission-affecting dispositions are enforced through Governance and the Execution Gate. Lifecycle-control dispositions are coordinated by Orchestration.
 
 Possible dispositions include:
 
@@ -567,7 +569,9 @@ A low-risk action does not make a critical integrity failure acceptable.
 
 ### 7.6 Diagnostic Disposition
 
-Diagnostic results SHALL be evaluated by Diagnostic Policy and/or the existing Governance and Orchestration policy mechanisms.
+Diagnostic results SHALL be evaluated under Diagnostic Policy.
+
+Diagnostic Policy is implemented through existing authority boundaries: Governance and the Execution Gate own dispositions that permit or block consequential execution; Orchestration owns non-authority lifecycle responses such as retry, re-observation, degradation, and escalation.
 
 A finding MAY result in:
 
@@ -2265,6 +2269,6 @@ It SHALL be designed as a governed runtime in which goals cross explicit semanti
 
 The essential design is:
 
-> **A Goal enters through Interaction. Orchestration carries it through the runtime. Reasoning proposes how to advance it. Semantics resolves those proposals into known capabilities. Governance removes what is not permitted. Decision selects among what remains. Diagnostics continuously tests the integrity and fitness of the current execution context. The Execution Gate revalidates authority against current state. Execution acts. State records the result. Verification compares reality with expected effects. New observations feed the next cognitive cycle.**
+> **A Goal enters through Interaction. Orchestration carries it through the runtime. Reasoning proposes how to advance it. Semantics resolves those proposals into known capabilities. Governance removes what is not permitted. Decision selects among what remains. Diagnostics applies contextual checks to the integrity and fitness of the current execution context. The Execution Gate revalidates authority against current state. Execution acts. State records the result. Verification compares reality with expected effects. New observations feed the next cognitive cycle.**
 
 This design makes agency explicit, bounded, diagnosable, testable, auditable, and independent of any particular intelligence provider.
