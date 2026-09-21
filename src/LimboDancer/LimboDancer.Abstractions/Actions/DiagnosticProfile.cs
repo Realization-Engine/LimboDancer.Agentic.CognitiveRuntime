@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using LimboDancer.Abstractions.Diagnostics;
 
 namespace LimboDancer.Abstractions.Actions;
 
@@ -9,20 +10,20 @@ public sealed class DiagnosticProfile
         get;
     } = new([]);
 
-    public DiagnosticProfile(IEnumerable<string> checkIds)
+    public DiagnosticProfile(IEnumerable<DiagnosticReference> checks)
     {
-        ArgumentNullException.ThrowIfNull(checkIds);
+        ArgumentNullException.ThrowIfNull(checks);
 
-        var values = checkIds.ToArray();
-        if (values.Any(string.IsNullOrWhiteSpace))
+        var values = checks.ToArray();
+        if (values.Any(static check => check is null))
         {
-            throw new ArgumentException("Diagnostic check identifiers cannot be empty.", nameof(checkIds));
+            throw new ArgumentException("Diagnostic references cannot be null.", nameof(checks));
         }
 
-        CheckIds = new ReadOnlyCollection<string>(values);
+        Checks = new ReadOnlyCollection<DiagnosticReference>(values);
     }
 
-    public IReadOnlyList<string> CheckIds
+    public IReadOnlyList<DiagnosticReference> Checks
     {
         get;
     }

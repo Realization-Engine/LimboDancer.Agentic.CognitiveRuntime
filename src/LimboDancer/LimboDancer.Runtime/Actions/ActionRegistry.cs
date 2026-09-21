@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using LimboDancer.Abstractions.Actions;
+using LimboDancer.Runtime.Diagnostics;
 
 namespace LimboDancer.Runtime.Actions;
 
@@ -10,7 +11,9 @@ public sealed class ActionRegistry : IActionRegistry
     private readonly ReadOnlyDictionary<ActionId, ActionDescriptor> unambiguousDescriptors;
     private readonly ReadOnlyCollection<ActionDescriptor> publishedDescriptors;
 
-    public ActionRegistry(IEnumerable<ActionDescriptor> descriptors)
+    public ActionRegistry(
+        IEnumerable<ActionDescriptor> descriptors,
+        IDiagnosticProfileValidator? diagnosticProfileValidator = null)
     {
         ArgumentNullException.ThrowIfNull(descriptors);
 
@@ -18,6 +21,15 @@ public sealed class ActionRegistry : IActionRegistry
         foreach (var descriptor in descriptors)
         {
             ArgumentNullException.ThrowIfNull(descriptor);
+
+            if (descriptor.Diagnostics.Checks.Any(static reference => reference.Required)
+                && diagnosticProfileValidator is null)
+            {
+                throw new InvalidOperationException(
+                    $"Action '{descriptor.Id}' requires diagnostic checks, but no profile validator was provided.");
+            }
+
+            diagnosticProfileValidator?.EnsureRequiredChecksResolvable(descriptor.Diagnostics);
 
             if (!byIdentity.TryAdd((descriptor.Id, descriptor.Version), descriptor))
             {

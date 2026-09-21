@@ -78,7 +78,8 @@ public sealed class ActionRegistryTests
         IEnumerable<string>? permissions = null,
         IEnumerable<PreconditionDescriptor>? preconditions = null,
         IEnumerable<EffectDescriptor>? effects = null,
-        string version = "1") => new(
+        string version = "1",
+        DiagnosticProfile? diagnostics = null) => new(
             WellKnownActions.HistoryRead,
             new ActionVersion(version),
             "History read",
@@ -95,7 +96,8 @@ public sealed class ActionRegistryTests
             preconditions,
             effects,
             IdempotencyMode.Intrinsic,
-            new ExecutorBinding("runtime:executor/HistoryRead"));
+            new ExecutorBinding("runtime:executor/HistoryRead"),
+            diagnostics);
 
     private static PreconditionDescriptor CreatePrecondition(string id = "precondition") => new(
         id,
