@@ -7,6 +7,7 @@
 
 
 **Canonical system identity:** `LimboDancer.Agentic.CognitiveRuntime`  
+**.NET root namespace / project prefix:** `LimboDancer`  
 **Legacy code status:** Existing `LimboDancer.MCP.*` projects are reference implementations only. Conforming new production code MUST NOT depend on them.
 
 ## 1. Purpose
@@ -117,38 +118,40 @@ A move to `net11.0` MUST be an explicit repository-wide framework decision, not 
 All newly authored production runtime code MUST use the root namespace:
 
 ```text
-LimboDancer.Agentic.CognitiveRuntime
+LimboDancer
 ```
+
+The product/repository identity remains `LimboDancer.Agentic.CognitiveRuntime`; this does not require repeating `Agentic.CognitiveRuntime` in every .NET namespace.
 
 Subnamespaces MAY include:
 
 ```text
-LimboDancer.Agentic.CognitiveRuntime.Abstractions
-LimboDancer.Agentic.CognitiveRuntime.Runtime
-LimboDancer.Agentic.CognitiveRuntime.Semantics
-LimboDancer.Agentic.CognitiveRuntime.Diagnostics
-LimboDancer.Agentic.CognitiveRuntime.Decision
-LimboDancer.Agentic.CognitiveRuntime.Execution
-LimboDancer.Agentic.CognitiveRuntime.Observations
-LimboDancer.Agentic.CognitiveRuntime.State.*
-LimboDancer.Agentic.CognitiveRuntime.Adapters.*
+LimboDancer.Abstractions
+LimboDancer.Runtime
+LimboDancer.Semantics
+LimboDancer.Diagnostics
+LimboDancer.Decision
+LimboDancer.Execution
+LimboDancer.Observations
+LimboDancer.State.*
+LimboDancer.Adapters.*
 ```
 
 ### SPEC-PLAT-4
 
-New production runtime types MUST NOT be introduced under `LimboDancer.MCP.*`.
+New production runtime types MUST use the `LimboDancer.*` namespace family and MUST NOT be introduced under `LimboDancer.MCP.*`.
 
 ### 4.4 Zero Legacy Production Dependency
 
 The implementation is a clean reimplementation.
 
-No new production project under `LimboDancer.Agentic.CognitiveRuntime.*` may reference a `LimboDancer.MCP.*` project.
+No new production project under the new `LimboDancer.*` project family may reference a `LimboDancer.MCP.*` project.
 
 The dependency boundary is:
 
 ```text
 Legacy source/reference               New production runtime
-LimboDancer.MCP.*                     LimboDancer.Agentic.CognitiveRuntime.*
+LimboDancer.MCP.*                     LimboDancer.*
         |                                          ^
         | inspect/copy/refactor/test               |
         +------------------------------------------+
@@ -159,11 +162,11 @@ NO project reference crosses this boundary.
 
 ### SPEC-PLAT-5
 
-A conforming `LimboDancer.Agentic.CognitiveRuntime.*` production project MUST have zero project references to `LimboDancer.MCP.*`.
+A conforming new `LimboDancer.*` production project MUST have zero project references to `LimboDancer.MCP.*`.
 
 ### SPEC-PLAT-6
 
-A conforming `LimboDancer.Agentic.CognitiveRuntime.*` production assembly MUST NOT require a `LimboDancer.MCP.*` assembly at runtime.
+A conforming new `LimboDancer.*` production assembly MUST NOT require a `LimboDancer.MCP.*` assembly at runtime.
 
 ### SPEC-PLAT-7
 
@@ -2085,16 +2088,16 @@ Reimplemented history, graph, and vector capabilities MAY sit behind executor or
 
 ## 54. Namespace and Placement Guidance
 
-The new implementation MUST be created entirely under the `LimboDancer.Agentic.CognitiveRuntime.*` project and namespace family.
+The new implementation MUST be created entirely under the `LimboDancer.*` project and namespace family.
 
 Recommended initial projects are:
 
 ```text
-LimboDancer.Agentic.CognitiveRuntime.Abstractions
-LimboDancer.Agentic.CognitiveRuntime.Runtime
-LimboDancer.Agentic.CognitiveRuntime.Infrastructure
-LimboDancer.Agentic.CognitiveRuntime.Adapters.Mcp
-LimboDancer.Agentic.CognitiveRuntime.Host
+LimboDancer.Abstractions
+LimboDancer.Runtime
+LimboDancer.Infrastructure
+LimboDancer.Adapters.Mcp
+LimboDancer.Host
 ```
 
 Plane and fabric separation SHOULD initially be expressed primarily through namespaces inside Runtime:
@@ -2344,7 +2347,7 @@ New runtime != Legacy runtime dependency
 The required implementation order is:
 
 ```text
-1. Create the five-project net10.0 solution skeleton
+1. Create the five-project net10.0 `LimboDancer.*` solution skeleton
 2. Add CI guard forbidding LimboDancer.MCP.* production references
 3. Implement runtime/action identifiers and ActionDescriptor
 4. Implement action registry and MCP action bindings
@@ -2387,7 +2390,7 @@ The runtime MUST know:
 
 No model, caller, tool name, diagnostic, or transport adapter may skip that chain.
 
-The target runtime is a clean implementation under the `LimboDancer.Agentic.CognitiveRuntime.*` namespace family, with no production dependency on the legacy `LimboDancer.MCP.*` codebase.
+The target runtime is a clean implementation under the `LimboDancer.*` .NET namespace family, while the product/repository remains `LimboDancer.Agentic.CognitiveRuntime`, with no production dependency on the legacy `LimboDancer.MCP.*` codebase.
 
 It is therefore not a tool-calling LLM.
 
