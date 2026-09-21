@@ -10,7 +10,7 @@
 
 LimboDancer must support domains whose authoritative knowledge is distributed across structured rules, prose, tables, examples, cross-references, reference data, and changing world state.
 
-This document preserves the still-valid domain-modeling requirements extracted from the retired root-level `docs/limbodancer-system-design.md`. The original historical design is retained as `docs/ASL/legacy-limbodancer-mcp-system-design.md`. This document does not preserve that design's MCP-centric product boundary, legacy project layout, plugin architecture, deployment topology, or direct tool-execution model.
+This document preserves the still-valid domain-modeling requirements extracted from the retired root-level `docs/limbodancer-system-design.md` and the retired `Documentation/Ontology and Agentic AI.md`. The original historical ASL-centered design is retained as `docs/ASL/legacy-limbodancer-mcp-system-design.md`. This document does not preserve the retired material's MCP-centric product boundary, legacy project layout, plugin architecture, deployment topology, ReAct/tool-execution assumptions, or speculative implementation schedules.
 
 The runtime authority model remains defined by the normative specification:
 
@@ -153,7 +153,49 @@ source material
 
 Probabilistic extraction may propose artifacts. Only validated, published artifacts may participate as trusted runtime semantics.
 
-## 10. Deferred implementation choices
+## 10. Semantic artifact distinctions
+
+The runtime should keep several related artifacts conceptually distinct:
+
+- an **ontology** defines domain concepts, properties, relations, constraints, and semantic action vocabulary;
+- a **taxonomy** organizes concepts into a hierarchy but does not, by itself, define the full domain semantics;
+- a **schema** defines structural expectations for stored data or exchanged payloads;
+- a **knowledge graph** records instance facts and relationships interpreted through semantic definitions;
+- a **validation shape or rule set** checks selected structural or semantic invariants.
+
+One physical artifact may serve more than one of these roles, but the roles must not be conflated. A payload satisfying a schema is not necessarily semantically valid, and a fact existing in a graph does not make that fact current, trusted, or sufficient to authorize an action.
+
+## 11. Representation strategies
+
+Representation mechanisms are complementary choices rather than competing product identities:
+
+- **RDF and OWL** can provide global identifiers, formal semantics, and bounded inference where their complexity is justified;
+- **property graphs** can provide efficient traversal and developer-friendly relationship storage;
+- **JSON-LD** can carry linked semantic identifiers in web and action payloads;
+- **JSON Schema, Protobuf, and equivalent contract formats** can provide strong structural validation at system boundaries;
+- **SHACL or equivalent validation mechanisms** can express selected graph and semantic constraints.
+
+The runtime should choose the least complex representation that preserves the meaning, validation, interoperability, and evidence requirements of the concrete use case. No representation engine is execution authority, and inference results used on consequential paths remain subject to provenance, confidence, semantic resolution, deterministic constraints, Governance, Diagnostics, and the Execution Gate.
+
+## 12. Modeling and evolution discipline
+
+Ontology and domain models should grow from demonstrated runtime needs rather than speculative completeness.
+
+The initial model for a domain should focus on the entities, relations, actions, constraints, and observations required by concrete use cases. New vocabulary should be added when it enables a required action, invariant, explanation, interoperability boundary, or evidence query.
+
+Published semantic artifacts should be treated with the same discipline as code:
+
+- assign stable identities and explicit versions;
+- review changes and record provenance;
+- test representative resolutions, constraints, and mappings;
+- define compatibility expectations and migration behavior;
+- detect ambiguous aliases and breaking vocabulary changes;
+- keep inference profiles bounded and operationally observable;
+- retire superseded artifacts without silently changing the meaning of recorded evidence.
+
+Full ontology reasoning, cross-ontology mapping, multi-agent vocabularies, and learned skill graphs remain optional future capabilities. They should be introduced only when concrete requirements justify their operational and governance costs.
+
+## 13. Deferred implementation choices
 
 These requirements intentionally do not prescribe:
 
