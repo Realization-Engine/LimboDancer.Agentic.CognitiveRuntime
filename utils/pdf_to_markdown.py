@@ -1041,7 +1041,7 @@ def main():
     ap = argparse.ArgumentParser(description='Structure-aware PDF to Markdown converter.')
     ap.add_argument('pdf', help='input PDF')
     ap.add_argument('-o', '--outdir', default='out', help='output folder (default: out)')
-    ap.add_argument('--outfile', help='markdown file name (default: <pdf name>.md)')
+    ap.add_argument('--outfile', help='markdown file name (default: <pdf name>.md, trailing number padded to 4 digits)')
     ap.add_argument('--first', type=int, default=1, help='first page (1-based)')
     ap.add_argument('--last', type=int, default=None, help='last page (default: end)')
     ap.add_argument('--figure-pages', help='comma list of pages with figures, e.g. 45,46,48')
@@ -1078,7 +1078,11 @@ def main():
     cfg['page_image'] = args.page_image
     cfg['tables_as_text'] = args.tables_as_text
 
-    outfile = args.outfile or os.path.splitext(os.path.basename(args.pdf))[0] + '.md'
+    # a trailing number in the name is zero-padded so split-page files sort in order
+    # ("eASLRB_v3_01 43.pdf" -> "eASLRB_v3_01 0043.md")
+    stem = os.path.splitext(os.path.basename(args.pdf))[0]
+    stem = re.sub(r'(\d+)$', lambda m: m.group(1).zfill(4), stem)
+    outfile = args.outfile or stem + '.md'
     Converter(args.pdf, args.outdir, cfg).run(args.first, args.last, outfile)
 
 
