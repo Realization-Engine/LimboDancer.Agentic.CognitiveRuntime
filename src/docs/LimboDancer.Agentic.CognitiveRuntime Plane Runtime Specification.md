@@ -57,6 +57,8 @@ Orchestration
 Audit / Replay
 ```
 
+Implementation principle: preserve authority boundaries while minimizing machinery. Components SHOULD be introduced only when they enforce a required boundary or satisfy a concrete current use case.
+
 It does not prescribe:
 
 - a specific LLM provider;
@@ -65,7 +67,8 @@ It does not prescribe:
 - a one-project-per-plane source layout;
 - a particular persistence implementation for audit;
 - a particular ontology persistence mechanism;
-- a particular deployment topology.
+- a particular deployment topology;
+- exact signatures for supporting conceptual types not explicitly defined as required contracts in this document.
 
 ## 4. Platform, Project, and Dependency Requirements
 
@@ -241,6 +244,7 @@ The runtime MUST use stable identifiers for authority-bearing entities.
 At minimum:
 
 ```csharp
+public readonly record struct RuntimeInvocationId(Guid Value);
 public readonly record struct GoalId(Guid Value);
 public readonly record struct StepId(Guid Value);
 public readonly record struct CorrelationId(string Value);
@@ -382,7 +386,7 @@ Equivalent names MAY be used if semantics are preserved.
 
 Allowed transitions MUST be explicitly validated.
 
-Minimum allowed flow:
+Minimum autonomous Goal flow:
 
 ```text
 Admitted
@@ -396,6 +400,19 @@ Admitted
   -> Verifying
   -> Completed
 ```
+
+Directed invocation does not require the Reasoning or Decision states. Its minimum execution progression is:
+
+```text
+Admitted
+  -> Constraining
+  -> Gating
+  -> Executing
+  -> Verifying
+  -> Completed
+```
+
+A directed invocation MAY still be associated with a Goal, but it MUST NOT be forced into a synthetic Goal solely for correlation. RuntimeInvocationId is the common correlation identity for both modes.
 
 Additional valid transitions include:
 
@@ -474,37 +491,44 @@ Initial working mappings are:
 
 These identifiers MAY be revised before ontology publication, but once published they MUST be versioned rather than silently repurposed.
 
-## 11. ActionRisk Contract
+## 11. Action Risk Profile
 
-The runtime MUST define at least:
+Risk characteristics are orthogonal and MUST NOT be represented as a single mutually exclusive severity enum.
+
+Minimum conceptual model:
 
 ```csharp
-public enum ActionRisk
-{
-    ReadOnly,
-    IdempotentWrite,
-    ReversibleWrite,
-    DestructiveWrite,
-    ExternalSideEffect,
-    PrivilegedAction
-}
+public enum ActionMutability { ReadOnly, Write }
+public enum ActionIdempotency { Idempotent, NonIdempotent }
+public enum ActionReversibility { Reversible, Compensatable, Irreversible }
+public enum ActionBoundary { Internal, ExternalSideEffect }
+public enum ActionPrivilege { Normal, Privileged }
+
+public sealed record ActionRiskProfile(
+    ActionMutability Mutability,
+    ActionIdempotency Idempotency,
+    ActionReversibility Reversibility,
+    ActionBoundary Boundary,
+    ActionPrivilege Privilege);
 ```
+
+Governance MAY derive a policy-specific risk level from this profile, but the derived level MUST NOT erase the underlying dimensions.
 
 ### SPEC-RISK-1
 
-Risk MUST come from trusted server-side action metadata or Governance policy.
+Risk characteristics MUST come from trusted server-side action metadata or Governance policy.
 
 ### SPEC-RISK-2
 
-Caller input MUST NOT reduce ActionRisk.
+Caller input MUST NOT reduce or rewrite any ActionRiskProfile dimension.
 
 ### SPEC-RISK-3
 
-A provider MUST NOT alter ActionRisk.
+A provider MUST NOT alter ActionRiskProfile.
 
 ### SPEC-RISK-4
 
-Risk MUST be available to the Execution Gate and Diagnostic Policy.
+ActionRiskProfile MUST be available to the Execution Gate and Diagnostic Policy.
 
 ## 12. ActionDescriptor Contract
 
@@ -524,7 +548,7 @@ public sealed record ActionDescriptor
     public required JsonElement InputSchema { get; init; }
     public JsonElement? OutputSchema { get; init; }
 
-    public required ActionRisk Risk { get; init; }
+    public required ActionRiskProfile Risk { get; init; }
 
     public IReadOnlySet<string> RequiredPermissions { get; init; }
         = new HashSet<string>();
@@ -799,7 +823,7 @@ Each rejection MUST identify candidate ID, constraint ID, authority class, and r
 
 ### SPEC-CON-4
 
-An empty permitted set MUST bypass the Decision provider and produce a no-candidate outcome.
+An empty permitted set MUST bypass the Decision provider and produce a runtime/orchestration no-permitted-action outcome. It MUST NOT create a provider DecisionResult.
 
 ## 19. PermittedAction
 
@@ -828,8 +852,7 @@ public enum DecisionOutcome
 {
     Selected,
     Abstained,
-    Escalated,
-    NoCandidate
+    Escalated
 }
 ```
 
@@ -962,14 +985,19 @@ The runtime MUST support registered diagnostic checks.
 Required types:
 
 ```csharp
-public enum DiagnosticStatus
+public enum DiagnosticOutcome
 {
     Pass,
-    Info,
-    Warning,
-    Degraded,
     Fail,
     Indeterminate
+}
+
+public enum DiagnosticSeverity
+{
+    Info,
+    Warning,
+    Error,
+    Critical
 }
 
 public enum DiagnosticPosition
@@ -1000,7 +1028,8 @@ public sealed record DiagnosticFinding
 {
     public required DiagnosticCheckId CheckId { get; init; }
     public required string CheckVersion { get; init; }
-    public required DiagnosticStatus Status { get; init; }
+    public required DiagnosticOutcome Outcome { get; init; }
+    public required DiagnosticSeverity Severity { get; init; }
     public required string Code { get; init; }
     public required string Summary { get; init; }
 
@@ -1044,11 +1073,11 @@ Diagnostic evidence MUST be serializable or referentially auditable.
 
 ### SPEC-DX-5
 
-A hard-invariant diagnostic returning `Fail` MUST result in a blocking disposition.
+A hard-invariant diagnostic with Outcome `Fail` MUST result in a blocking disposition.
 
 ### SPEC-DX-6
 
-A required hard-invariant diagnostic returning `Indeterminate` due to unresolved state, timeout, or unavailable evaluator MUST fail closed unless an explicit trusted degraded-mode policy applies.
+A hard-invariant diagnostic with Outcome `Indeterminate` due to unresolved state, timeout, unavailable evaluator, or missing evidence MUST fail closed. Hard invariants do not have degraded-mode exceptions.
 
 ### SPEC-DX-7
 
@@ -1065,7 +1094,8 @@ Minimum conceptual contract:
 ```csharp
 public sealed record DiagnosticContext
 {
-    public required GoalId GoalId { get; init; }
+    public required RuntimeInvocationId InvocationId { get; init; }
+    public GoalId? GoalId { get; init; }
     public StepId? StepId { get; init; }
     public required CorrelationId CorrelationId { get; init; }
     public required Guid TenantId { get; init; }
@@ -1096,21 +1126,21 @@ DiagnosticContext MUST preserve tenant and correlation identity.
 
 Diagnostics MUST NOT use DiagnosticContext as an unrestricted route to global State.
 
-## 25. Diagnostic Registry and Profiles
+## 25. Diagnostic Runner and Profiles
 
-Required registry:
+The first implementation MUST expose a small diagnostic execution boundary rather than requiring a general-purpose plugin registry.
+
+Required conceptual interface:
 
 ```csharp
-public interface IDiagnosticRegistry
+public interface IDiagnosticRunner
 {
-    bool TryGet(
-        DiagnosticCheckId id,
-        string? version,
-        out object check);
+    Task<IReadOnlyList<DiagnosticFinding>> RunAsync(
+        DiagnosticContext context,
+        DiagnosticProfile profile,
+        CancellationToken ct = default);
 }
 ```
-
-Implementation MAY expose stronger generic APIs internally.
 
 ActionDescriptor MUST support a DiagnosticProfile.
 
@@ -1120,13 +1150,15 @@ Minimum conceptual form:
 public sealed record DiagnosticReference(
     DiagnosticCheckId Id,
     string? Version,
-    bool Required);
+    bool Required,
+    GoalLifecycleState? Phase,
+    DiagnosticPosition Position);
 
 public sealed record DiagnosticProfile(
-    IReadOnlyList<DiagnosticReference> PreExecution,
-    IReadOnlyList<DiagnosticReference> InExecution,
-    IReadOnlyList<DiagnosticReference> PostExecution);
+    IReadOnlyList<DiagnosticReference> Checks);
 ```
+
+The runner MAY use an internal registry or dependency-injection collection of IDiagnosticCheck implementations. A separately public diagnostic-registry interface is not required for v1.
 
 ### SPEC-DXP-1
 
@@ -1138,7 +1170,11 @@ Caller-provided diagnostic references MUST NOT replace authoritative profile ent
 
 ### SPEC-DXP-3
 
-Missing optional diagnostics MAY generate a warning but MUST NOT silently masquerade as successful execution of the diagnostic.
+Missing optional diagnostics MAY generate a warning finding but MUST NOT silently masquerade as successful execution of the diagnostic.
+
+### SPEC-DXP-4
+
+Diagnostic registration MUST preserve check type safety. A normative public contract MUST NOT resolve checks as untyped object values.
 
 ## 26. Diagnostic Policy
 
@@ -1155,7 +1191,7 @@ public interface IDiagnosticPolicy
 
 ### SPEC-DPOL-1
 
-Diagnostic Policy MUST NOT create an authority path that bypasses Governance or the Execution Gate.
+Diagnostic Policy MUST NOT create an authority path that bypasses Governance or the Execution Gate. Hard-invariant diagnostics always fail closed on Fail or Indeterminate; policy discretion applies only to non-hard diagnostics.
 
 ### SPEC-DPOL-2
 
@@ -1179,6 +1215,13 @@ A conforming first implementation MUST provide at least the following checks.
 - authenticated principal present where required;
 - action binding resolves;
 - input schema valid.
+
+### Reasoning
+
+- repeated-plan or repeated-next-step loop detection;
+- runtime budget still available;
+- unresolved semantic/entity references identified;
+- requested capability can be represented by known semantic actions.
 
 ### Semantic
 
@@ -1224,8 +1267,9 @@ Minimum conceptual contract:
 ```csharp
 public sealed record ExecutionContext
 {
-    public required GoalId GoalId { get; init; }
-    public required StepId StepId { get; init; }
+    public required RuntimeInvocationId InvocationId { get; init; }
+    public GoalId? GoalId { get; init; }
+    public StepId? StepId { get; init; }
     public required CorrelationId CorrelationId { get; init; }
 
     public required Guid TenantId { get; init; }
@@ -1243,7 +1287,7 @@ public sealed record ExecutionContext
 
 ### SPEC-EXECCTX-1
 
-ExecutionContext tenant MUST equal Goal tenant.
+When GoalId is present, ExecutionContext tenant MUST equal the Goal tenant. Directed invocations without a Goal MUST still carry the admitted immutable tenant.
 
 ### SPEC-EXECCTX-2
 
@@ -1347,7 +1391,7 @@ AuthorizedAction MUST be runtime-created.
 
 ### SPEC-AUTH-2
 
-Transport deserialization MUST NOT allow a caller to manufacture an AuthorizedAction accepted by an executor.
+Transport deserialization MUST NOT allow a caller to manufacture an AuthorizedAction accepted by an executor. In-process v1 implementations SHOULD enforce this by construction using internal constructors/factories or otherwise inaccessible creation paths; cryptographic authorization envelopes are NOT required unless execution crosses a trust/process boundary.
 
 ### SPEC-AUTH-3
 
@@ -1620,8 +1664,9 @@ Minimum logical fields:
 
 ```text
 AuditId
-GoalId
-StepId
+RuntimeInvocationId
+GoalId (when applicable)
+StepId (when applicable)
 CorrelationId
 TenantId
 PrincipalId
@@ -1629,13 +1674,13 @@ Origin
 LifecycleState
 ActionId
 ActionVersion
-CandidateId
+CandidateId (when applicable)
 SelectionOrigin
-DecisionProviderId
-DecisionProviderVersion
-DecisionOutcome
-Confidence
-ActionRisk
+DecisionProviderId (when applicable)
+DecisionProviderVersion (when applicable)
+DecisionOutcome (when applicable)
+Confidence (when applicable)
+ActionRiskProfile
 ConstraintResults
 DiagnosticFindings
 DiagnosticDispositions
@@ -1653,7 +1698,7 @@ Cost/TokenMetadata
 TerminalReason
 ```
 
-Fields MAY be normalized across multiple tables/documents/events.
+Fields MAY be normalized across multiple tables/documents/events. Fields marked when applicable MUST NOT be fabricated for directed invocations or other paths where the corresponding stage did not occur.
 
 ### SPEC-AUD-1
 
@@ -1766,13 +1811,9 @@ The orchestrator MUST apply diagnostic lifecycle dispositions such as Retry, ReO
 
 The orchestrator MUST create or preserve StepId for each consequential step.
 
-## 43. Direct MCP Runtime Integration
+## 43. New MCP Adapter Integration
 
-The existing MCP path currently resolves:
-
-```text
-tool name -> McpServer registry -> tool executor
-```
+The legacy MCP path is behavioral reference only. The new runtime MUST implement a new MCP adapter under the LimboDancer.Agentic.CognitiveRuntime namespace family.
 
 The conforming target path MUST be:
 
@@ -1786,44 +1827,44 @@ tool name
 -> required pre-flight diagnostics
 -> IExecutionGate
 -> AuthorizedAction
--> existing tool/application executor
--> in/post-flight diagnostics
+-> new action executor
+-> applicable post-flight diagnostics
 -> effect verification where applicable
 -> audit
 ```
 
 ### SPEC-MCP-1
 
-The public MCP tool name MAY remain unchanged.
+Public MCP tool names MAY remain unchanged where compatibility is required.
 
 ### SPEC-MCP-2
 
-The existing tool implementation MAY initially remain the underlying executor adapter.
+The new MCP adapter MUST NOT depend on legacy LimboDancer.MCP.McpServer or legacy tool assemblies.
 
 ### SPEC-MCP-3
 
-`McpServer.ExecuteToolAsync` MUST eventually route through the action authority path rather than directly invoking the registered executor.
+Directed MCP execution MUST route through the new common Execution Gate.
 
 ### SPEC-MCP-4
 
-MCP tool listing SHOULD continue to expose transport-facing schemas without exposing internal authorization tokens.
+MCP tool listing SHOULD expose transport-facing schemas without exposing internal authorization types.
 
-## 44. HistoryAppend Migration Specification
+## 44. HistoryAppend Reimplementation Specification
 
-The current `HistoryAppendTool` accepts caller-supplied `preconditions` and `effects`.
+The legacy `HistoryAppendTool` accepted caller-supplied `preconditions` and `effects`. This is reference behavior that MUST NOT be reproduced as authoritative semantics.
 
 The target runtime MUST move authoritative preconditions/effects to the ActionDescriptor or associated trusted semantic definitions.
 
-Migration requirements:
+Reimplementation requirements:
 
 1. Define `ldm:action/HistoryAppend`.
 2. Register the descriptor.
 3. Bind `history_append` to the descriptor.
 4. Define authoritative preconditions/effects server-side.
-5. Treat legacy caller preconditions, during compatibility migration only, as additional restrictive assertions.
+5. If protocol compatibility requires accepting legacy caller preconditions, treat them only as additional restrictive assertions.
 6. Never allow caller preconditions to remove authoritative checks.
 7. Ignore or reject caller effects for authority purposes.
-8. Remove authoritative caller effects from the protocol when compatibility permits.
+8. Prefer a clean new protocol shape that omits authoritative caller effects.
 
 ### SPEC-HIST-1
 
@@ -1855,11 +1896,11 @@ Diagnostics MUST verify tenant invariants at critical boundaries.
 
 ### SPEC-TEN-6
 
-The current HistoryService read path MUST be verified for an EF global tenant filter or changed to include explicit tenant filtering before autonomous runtime enablement.
+The new history-read implementation MUST enforce tenant filtering explicitly or through a verified global mechanism before autonomous runtime enablement.
 
 ### SPEC-TEN-7
 
-The current graph read path MUST be verified for tenant isolation before autonomous runtime enablement.
+The new graph-read implementation MUST enforce tenant isolation before autonomous runtime enablement.
 
 ### SPEC-TEN-8
 
@@ -1881,7 +1922,7 @@ Required semantic mappings MUST fail closed when unresolved.
 
 ### SPEC-SEM-4
 
-The current GraphPreconditionsService raw-predicate fallback MUST be removed or constrained before conforming autonomous execution.
+The new semantic precondition evaluator MUST NOT reproduce the legacy GraphPreconditionsService raw-predicate fallback.
 
 ### SPEC-SEM-5
 
@@ -1957,7 +1998,7 @@ The runtime SHOULD expose at least:
 - action resolution candidate count;
 - rejected/permitted candidate count;
 - Governance denials;
-- diagnostic status counts;
+- diagnostic outcome/severity counts;
 - diagnostic dispositions;
 - Decision provider latency;
 - provider fallback count;
@@ -1966,7 +2007,7 @@ The runtime SHOULD expose at least:
 - Execution Gate outcomes;
 - stale-state count;
 - executor latency and errors;
-- verification status counts;
+- verification outcome/severity counts;
 - retry counts;
 - token/cost metrics where available.
 
@@ -2027,40 +2068,55 @@ A conforming first implementation SHOULD define equivalents of:
 ```text
 IActionRegistry
 IActionBindingRegistry
+IExecutionGate
+IActionExecutor
+IDiagnosticRunner
+IAuditSink
+
+Second-stage autonomous runtime adds:
 IActionResolver
 IActionConstraintPipeline
 IDecisionProvider
-IDiagnosticRegistry
-IDiagnosticPolicy
-IExecutionGate
-IActionExecutor
 IEffectVerifier
 IGoalOrchestrator
 ```
 
-Existing services such as history, graph, and vector services MAY remain behind executor adapters.
+Reimplemented history, graph, and vector capabilities MAY sit behind executor or infrastructure adapters. Legacy LimboDancer.MCP assemblies MUST NOT.
 
 ## 54. Namespace and Placement Guidance
 
 The new implementation MUST be created entirely under the `LimboDancer.Agentic.CognitiveRuntime.*` project and namespace family.
 
-Recommended initial logical projects are:
+Recommended initial projects are:
 
 ```text
 LimboDancer.Agentic.CognitiveRuntime.Abstractions
 LimboDancer.Agentic.CognitiveRuntime.Runtime
-LimboDancer.Agentic.CognitiveRuntime.Semantics
-LimboDancer.Agentic.CognitiveRuntime.Diagnostics
-LimboDancer.Agentic.CognitiveRuntime.Decision
-LimboDancer.Agentic.CognitiveRuntime.Execution
-LimboDancer.Agentic.CognitiveRuntime.State.Relational
-LimboDancer.Agentic.CognitiveRuntime.State.Graph
-LimboDancer.Agentic.CognitiveRuntime.State.Vector
+LimboDancer.Agentic.CognitiveRuntime.Infrastructure
 LimboDancer.Agentic.CognitiveRuntime.Adapters.Mcp
 LimboDancer.Agentic.CognitiveRuntime.Host
 ```
 
-This list is a starting partition, not a requirement for one project per plane.
+Plane and fabric separation SHOULD initially be expressed primarily through namespaces inside Runtime:
+
+```text
+Runtime.Semantics
+Runtime.Diagnostics
+Runtime.Decision
+Runtime.Execution
+Runtime.Orchestration
+Runtime.Observations
+```
+
+Infrastructure SHOULD initially group concrete implementations through namespaces such as:
+
+```text
+Infrastructure.Relational
+Infrastructure.Graph
+Infrastructure.Vector
+```
+
+Assemblies SHOULD be split later only when there is a concrete dependency, deployment, ownership, packaging, or isolation reason.
 
 The implementation SHOULD optimize for:
 
@@ -2080,24 +2136,29 @@ New adapters MAY reproduce required legacy protocol behavior but MUST depend onl
 
 ## 55. Required First Implementation Slice
 
-The first conforming slice MUST implement:
+The first conforming slice MUST prove the common authority boundary with minimal machinery.
 
-1. `ActionId`, `ActionVersion`, `ActionRisk`.
+It MUST implement:
+
+1. `RuntimeInvocationId`, `ActionId`, `ActionVersion`, and `ActionRiskProfile`.
 2. `ActionDescriptor`.
 3. `IActionRegistry`.
 4. `ActionBinding` and `IActionBindingRegistry`.
-5. descriptors for the four current MCP tools.
+5. new descriptors for the four compatibility MCP capabilities.
 6. `ExecutionContext`.
-7. `IExecutionGate`.
-8. `AuthorizedAction`.
-9. diagnostic core types.
-10. `IDiagnosticRegistry`.
-11. `IDiagnosticPolicy`.
-12. hard diagnostics for tenant, descriptor version, executor binding, and semantic mapping.
-13. structured gate audit.
-14. routing of directed MCP execution through the gate.
+7. `SelectedAction`.
+8. `IExecutionGate`.
+9. `AuthorizedAction`.
+10. `DiagnosticFinding`, `IDiagnosticCheck<TContext>`, and `IDiagnosticRunner`.
+11. hard checks for tenant, descriptor version, executor binding, and required semantic mappings.
+12. `IActionExecutor`.
+13. `IAuditSink` or equivalent structured audit boundary.
+14. a new MCP adapter routing directed invocation through the gate.
+15. new implementations of the required history, graph, vector, and ontology-backed behaviors needed by those four actions.
 
-The first slice does NOT require autonomous Reasoning or Decision.
+The first slice MUST NOT require autonomous Reasoning, a Decision provider, provider routing, human confirmation infrastructure, a replay engine, compensation execution, or distributed authorization tokens.
+
+The first slice SHOULD support effect verification only where a reimplemented action has a concrete, inexpensive, meaningful effect to verify.
 
 ## 56. Required Second Implementation Slice
 
@@ -2114,9 +2175,9 @@ The second conforming slice MUST implement:
 9. SelectedAction.
 10. IGoalOrchestrator.
 11. autonomous pre-flight diagnostics.
-12. decision audit/replay capture.
+12. replay-capable decision audit capture.
 
-A deterministic RuleDecisionProvider SHOULD be implemented first as a reference provider.
+A deterministic RuleDecisionProvider SHOULD be implemented first as a reference provider. Provider routing and escalation chains SHOULD be deferred until at least two real providers exist.
 
 ## 57. Required Conformance Tests
 
@@ -2156,9 +2217,9 @@ A conforming implementation MUST include automated tests for the following.
 
 - hard invariant pass continues;
 - hard invariant fail blocks;
-- required diagnostic indeterminate fails closed;
+- hard-invariant diagnostic indeterminate fails closed;
 - warning may continue under policy;
-- DiagnosticFinding includes ID/version/code/status;
+- DiagnosticFinding includes ID/version/code/outcome/severity;
 - disposition is audited;
 - diagnostic timeout consumes budget;
 - diagnostic cannot create AuthorizedAction.
@@ -2183,7 +2244,7 @@ A conforming implementation MUST include automated tests for the following.
 
 ### 57.8 Executor
 
-- executor cannot accept externally manufactured authorization;
+- executor cannot accept externally manufactured authorization through protocol/deserialization paths;
 - output schema validated;
 - idempotent retry behavior tested;
 - non-idempotent uncertain timeout invokes reconciliation path.
@@ -2207,16 +2268,16 @@ A conforming implementation MUST include automated tests for the following.
 
 ## 58. Required Legacy Behavior Corrections During Reimplementation
 
-The following legacy behaviors MUST NOT be copied unchanged into the new runtime. They MUST be corrected or explicitly proven safe in the new implementation before autonomous execution is enabled:
+The following legacy behaviors MUST NOT be copied unchanged into the new runtime. They are reference-source defects or ambiguities that MUST be corrected in the new implementation before autonomous execution is enabled:
 
-1. verify or add tenant filtering to `HistoryService.ListAsync`;
-2. verify graph read tenant isolation;
-3. remove fail-open raw predicate fallback in `GraphPreconditionsService`;
+1. implement tenant-safe history reads rather than reproducing the ambiguous `HistoryService.ListAsync` behavior;
+2. implement explicit/verified graph-read tenant isolation;
+3. do not reproduce the fail-open raw predicate fallback from `GraphPreconditionsService`;
 4. ensure unknown ontology filters do not silently broaden security-sensitive graph queries;
-5. remove authoritative caller-controlled effects from `HistoryAppendTool`;
-6. move stable history/precondition contracts out of protocol tool source files;
-7. route direct MCP execution through the common Execution Gate;
-8. establish common host-neutral runtime contracts for both server hosts.
+5. do not reproduce authoritative caller-controlled effects from `HistoryAppendTool`;
+6. define stable history/precondition contracts directly in the new host-neutral runtime;
+7. implement new directed MCP execution through the common Execution Gate;
+8. establish new host-neutral runtime contracts independent of legacy server hosts.
 
 ## 59. Acceptance Criteria
 
@@ -2283,27 +2344,27 @@ New runtime != Legacy runtime dependency
 The required implementation order is:
 
 ```text
-1. Create new `net10.0` project family under `LimboDancer.Agentic.CognitiveRuntime.*`
-2. Add CI dependency guard forbidding references to `LimboDancer.MCP.*`
-3. Runtime identifiers and ActionDescriptor
-2. Action registry and bindings
-3. Diagnostic core and structural diagnostics
-4. ExecutionContext and Execution Gate
-5. Directed MCP convergence
-6. Audit
-7. Semantic authority migration
-8. Tenant-read enforcement verification
-9. Goal / Observation / Candidate contracts
-10. Constraint pipeline
-11. Decision contracts
-12. Goal orchestration
-13. Baseline deterministic provider
-14. Effect verification
-15. Replay
-16. Specialized providers such as Jev / LLM decision providers
+1. Create the five-project net10.0 solution skeleton
+2. Add CI guard forbidding LimboDancer.MCP.* production references
+3. Implement runtime/action identifiers and ActionDescriptor
+4. Implement action registry and MCP action bindings
+5. Implement minimal diagnostic contracts and runner
+6. Implement ExecutionContext, Execution Gate, and AuthorizedAction
+7. Implement new directed MCP adapter and new executors
+8. Implement structured audit capture
+9. Reimplement semantic authority and tenant-safe State behavior
+10. Prove the four directed compatibility actions end-to-end
+11. Add Goal / Observation / ActionCandidate contracts
+12. Add ActionResolver and constraint pipeline
+13. Add Decision contracts and deterministic reference provider
+14. Add Goal orchestration
+15. Add opt-in effect verification where meaningful
+16. Add replay-capable audit data; defer replay engine until useful
+17. Add additional Decision providers such as Jev or LLM providers
+18. Add provider routing, human confirmation, compensation, or distributed authorization only when concrete use cases require them
 ```
 
-This ordering ensures that probabilistic decision-making is introduced only after the execution authority boundary exists.
+This ordering preserves the architectural boundaries while minimizing speculative infrastructure. Probabilistic decision-making is introduced only after the execution authority boundary exists and has been proven through directed invocation.
 
 ## 62. Final Specification Statement
 
