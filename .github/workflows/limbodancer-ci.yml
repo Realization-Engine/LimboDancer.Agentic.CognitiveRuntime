@@ -1,0 +1,39 @@
+name: LimboDancer CI
+
+on:
+  push:
+    branches:
+      - decision-plane
+    paths:
+      - "src/LimboDancer/**"
+      - ".github/workflows/limbodancer-ci.yml"
+  pull_request:
+    paths:
+      - "src/LimboDancer/**"
+      - ".github/workflows/limbodancer-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore src/LimboDancer/LimboDancer.sln
+
+      - name: Build
+        run: dotnet build src/LimboDancer/LimboDancer.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test src/LimboDancer/LimboDancer.sln --configuration Release --no-build
