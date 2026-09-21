@@ -27,15 +27,33 @@ public sealed class DirectedActionRequest
         Arguments = arguments.Clone();
     }
 
-    public RuntimeInvocationId InvocationId { get; }
+    public RuntimeInvocationId InvocationId
+    {
+        get;
+    }
 
-    public CorrelationId CorrelationId { get; }
+    public CorrelationId CorrelationId
+    {
+        get;
+    }
 
-    public Guid TenantId { get; }
+    public Guid TenantId
+    {
+        get;
+    }
 
-    public string Protocol { get; }
+    public string Protocol
+    {
+        get;
+    }
 
-    public string ExternalActionName { get; }
+    public string ExternalActionName
+    {
+        get;
+    }
 
-    public JsonElement Arguments { get; }
+    public JsonElement Arguments
+    {
+        get;
+    }
 }

@@ -4,7 +4,10 @@ namespace LimboDancer.Abstractions.Actions;
 
 public sealed class DiagnosticProfile
 {
-    public static DiagnosticProfile Empty { get; } = new([]);
+    public static DiagnosticProfile Empty
+    {
+        get;
+    } = new([]);
 
     public DiagnosticProfile(IEnumerable<string> checkIds)
     {
@@ -19,5 +22,8 @@ public sealed class DiagnosticProfile
         CheckIds = new ReadOnlyCollection<string>(values);
     }
 
-    public IReadOnlyList<string> CheckIds { get; }
+    public IReadOnlyList<string> CheckIds
+    {
+        get;
+    }
 }

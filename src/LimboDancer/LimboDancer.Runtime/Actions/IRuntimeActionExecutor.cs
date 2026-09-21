@@ -8,7 +8,13 @@ namespace LimboDancer.Runtime.Actions;
 /// </summary>
 public interface IRuntimeActionExecutor
 {
-    ActionId ActionId { get; }
+    ActionId ActionId
+    {
+        get;
+    }
 
-    ExecutorBinding Binding { get; }
+    ExecutorBinding Binding
+    {
+        get;
+    }
 }

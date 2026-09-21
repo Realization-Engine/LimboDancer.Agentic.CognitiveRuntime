@@ -8,7 +8,10 @@ public readonly record struct CorrelationId
         Value = value;
     }
 
-    public string Value { get; }
+    public string Value
+    {
+        get;
+    }
 
     public override string ToString() => Value;
 }

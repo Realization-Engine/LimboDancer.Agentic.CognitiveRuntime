@@ -28,13 +28,28 @@ public sealed class PreconditionDescriptor
         Required = required;
     }
 
-    public string Id { get; }
+    public string Id
+    {
+        get;
+    }
 
-    public PreconditionKind Kind { get; }
+    public PreconditionKind Kind
+    {
+        get;
+    }
 
-    public string EvaluatorId { get; }
+    public string EvaluatorId
+    {
+        get;
+    }
 
-    public JsonElement Parameters { get; }
+    public JsonElement Parameters
+    {
+        get;
+    }
 
-    public bool Required { get; }
+    public bool Required
+    {
+        get;
+    }
 }

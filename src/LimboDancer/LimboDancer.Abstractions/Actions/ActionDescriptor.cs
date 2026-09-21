@@ -50,31 +50,73 @@ public sealed class ActionDescriptor
         Verification = verification ?? VerificationProfile.Default;
     }
 
-    public ActionId Id { get; }
+    public ActionId Id
+    {
+        get;
+    }
 
-    public ActionVersion Version { get; }
+    public ActionVersion Version
+    {
+        get;
+    }
 
-    public string Name { get; }
+    public string Name
+    {
+        get;
+    }
 
-    public string? Description { get; }
+    public string? Description
+    {
+        get;
+    }
 
-    public JsonElement InputSchema { get; }
+    public JsonElement InputSchema
+    {
+        get;
+    }
 
-    public JsonElement? OutputSchema { get; }
+    public JsonElement? OutputSchema
+    {
+        get;
+    }
 
-    public ActionRiskProfile Risk { get; }
+    public ActionRiskProfile Risk
+    {
+        get;
+    }
 
-    public IReadOnlySet<string> RequiredPermissions { get; }
+    public IReadOnlySet<string> RequiredPermissions
+    {
+        get;
+    }
 
-    public IReadOnlyList<PreconditionDescriptor> Preconditions { get; }
+    public IReadOnlyList<PreconditionDescriptor> Preconditions
+    {
+        get;
+    }
 
-    public IReadOnlyList<EffectDescriptor> ExpectedEffects { get; }
+    public IReadOnlyList<EffectDescriptor> ExpectedEffects
+    {
+        get;
+    }
 
-    public IdempotencyMode Idempotency { get; }
+    public IdempotencyMode Idempotency
+    {
+        get;
+    }
 
-    public ExecutorBinding Executor { get; }
+    public ExecutorBinding Executor
+    {
+        get;
+    }
 
-    public DiagnosticProfile Diagnostics { get; }
+    public DiagnosticProfile Diagnostics
+    {
+        get;
+    }
 
-    public VerificationProfile Verification { get; }
+    public VerificationProfile Verification
+    {
+        get;
+    }
 }

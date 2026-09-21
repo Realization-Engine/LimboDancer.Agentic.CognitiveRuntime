@@ -8,7 +8,10 @@ public readonly record struct RuntimeInvocationId
         Value = value;
     }
 
-    public Guid Value { get; }
+    public Guid Value
+    {
+        get;
+    }
 
     public static RuntimeInvocationId New() => new(Guid.NewGuid());
 

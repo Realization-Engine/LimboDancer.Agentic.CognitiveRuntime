@@ -22,11 +22,23 @@ public sealed record ActionBinding
         Version = version;
     }
 
-    public string Protocol { get; }
+    public string Protocol
+    {
+        get;
+    }
 
-    public string ExternalName { get; }
+    public string ExternalName
+    {
+        get;
+    }
 
-    public ActionId ActionId { get; }
+    public ActionId ActionId
+    {
+        get;
+    }
 
-    public ActionVersion? Version { get; }
+    public ActionVersion? Version
+    {
+        get;
+    }
 }

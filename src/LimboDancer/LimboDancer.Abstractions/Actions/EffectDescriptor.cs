@@ -19,11 +19,23 @@ public sealed class EffectDescriptor
         RequiredVerification = requiredVerification;
     }
 
-    public string Id { get; }
+    public string Id
+    {
+        get;
+    }
 
-    public string EffectType { get; }
+    public string EffectType
+    {
+        get;
+    }
 
-    public JsonElement Definition { get; }
+    public JsonElement Definition
+    {
+        get;
+    }
 
-    public bool RequiredVerification { get; }
+    public bool RequiredVerification
+    {
+        get;
+    }
 }
