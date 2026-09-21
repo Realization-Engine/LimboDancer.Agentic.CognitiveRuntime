@@ -85,10 +85,10 @@ Additional assemblies require a concrete dependency, deployment, packaging, owne
 
 ## 3. Solution Strategy
 
-Create a new solution at repository root:
+Create the new solution in a physically isolated subtree:
 
 ```text
-LimboDancer.sln
+src/LimboDancer/LimboDancer.sln
 ```
 
 The legacy solution remains temporarily:
@@ -109,6 +109,8 @@ LimboDancer.sln
 
 The new solution MUST NOT include legacy production projects.
 
+The `src/LimboDancer/` subtree is the physical boundary for new architecture build configuration, package management, and project files. New `Directory.Build.*` and `Directory.Packages.props` files SHOULD live inside that subtree so they do not alter legacy `LimboDancer.MCP.*` builds.
+
 Legacy test projects MAY remain in the legacy solution until corresponding behavior is replaced.
 
 ## 4. Initial Project Topology
@@ -117,17 +119,24 @@ Create:
 
 ```text
 src/
-  LimboDancer.Abstractions/
-  LimboDancer.Runtime/
-  LimboDancer.Infrastructure/
-  LimboDancer.Adapters.Mcp/
-  LimboDancer.Host/
+  LimboDancer/
+    LimboDancer.sln
+    Directory.Build.props
+    Directory.Packages.props
 
-src/tests/
-  LimboDancer.Tests.Unit/
-  LimboDancer.Tests.Integration/
-  LimboDancer.Tests.Architecture/
+    LimboDancer.Abstractions/
+    LimboDancer.Runtime/
+    LimboDancer.Infrastructure/
+    LimboDancer.Adapters.Mcp/
+    LimboDancer.Host/
+
+    tests/
+      LimboDancer.Tests.Unit/
+      LimboDancer.Tests.Integration/
+      LimboDancer.Tests.Architecture/
 ```
+
+This keeps the new build graph, package policy, and analyzer configuration physically isolated from the legacy project tree.
 
 Recommended responsibilities:
 
@@ -182,33 +191,89 @@ LimboDancer.Runtime.Verification
 
 ## 6. Project Reference Rules
 
-Initial allowed production references:
+Initial production dependency direction:
 
 ```text
-LimboDancer.Abstractions
-        ^
-        |
-        +-----------------------+
-        |                       |
-LimboDancer.Runtime      LimboDancer.Infrastructure
-        ^                       ^
-        |                       |
-        +-----------+-----------+
-                    |
-           LimboDancer.Host
+                    +-------------------------+
+                    | LimboDancer.Abstractions|
+                    +-----------+-------------+
+                                ^
+                    +-----------+-----------+
+                    |                       |
+          +---------+---------+   +---------+-------------+
+          | LimboDancer.Runtime|   | LimboDancer.Infrastructure |
+          +---------+---------+   +-----------------------+
                     ^
                     |
-          LimboDancer.Adapters.Mcp
+          +---------+-------------+
+          | LimboDancer.Adapters.Mcp |
+          +-----------------------+
+
+                   composed by
+
+          +-----------------------+
+          |   LimboDancer.Host    |
+          +-----------------------+
 ```
 
-The exact adapter/host reference direction may be implemented through host composition, but the following rules are mandatory:
+The Host is the composition root. The Adapter MUST NOT depend on the Host.
+
+Mandatory rules:
 
 1. `LimboDancer.Abstractions` references no other LimboDancer production project.
-2. `LimboDancer.Runtime` references `LimboDancer.Abstractions`, not infrastructure SDK projects.
-3. `LimboDancer.Infrastructure` references `LimboDancer.Abstractions` and MAY implement interfaces consumed by Runtime.
-4. `LimboDancer.Adapters.Mcp` references only new LimboDancer projects and MCP packages.
-5. `LimboDancer.Host` is the composition root and may reference all new production projects required for composition.
+2. `LimboDancer.Runtime` references `LimboDancer.Abstractions` only.
+3. `LimboDancer.Infrastructure` references `LimboDancer.Abstractions` and implements inward-facing ports.
+4. `LimboDancer.Adapters.Mcp` references `LimboDancer.Abstractions` and, only if necessary, `LimboDancer.Runtime` application contracts. It MUST NOT reference `LimboDancer.Host`.
+5. `LimboDancer.Host` may reference all new production projects required for composition.
 6. No new production project references any `LimboDancer.MCP.*` project.
+
+### Runtime application entry point
+
+Introduce a host-neutral directed execution boundary early:
+
+```text
+IDirectedActionRuntime
+DirectedActionRequest
+DirectedActionResult
+```
+
+The MCP adapter calls this boundary. It MUST NOT assemble the authority pipeline itself.
+
+Conceptual flow:
+
+```text
+MCP Adapter
+    |
+    v
+IDirectedActionRuntime
+    |
+    v
+binding
+descriptor
+constraints
+diagnostics
+gate
+executor
+audit
+```
+
+### Infrastructure ports
+
+Runtime MUST access State through inward-facing contracts declared in `LimboDancer.Abstractions`, for example:
+
+```text
+IHistoryReader
+IHistoryWriter
+IGraphQueryReader
+IGraphStateReader
+IGraphStateWriter
+IMemorySearch
+IOntologyResolver
+```
+
+Only add ports actually required by implemented behavior.
+
+`LimboDancer.Infrastructure` implements these contracts using EF Core, Gremlin, Azure Search, ontology persistence, or other provider SDKs.
 
 ## 7. Build and Repository Baseline
 
@@ -233,11 +298,11 @@ Before runtime code:
 ### Recommended repository files
 
 ```text
-Directory.Build.props
-Directory.Build.targets          // only if required
-Directory.Packages.props         // recommended after package inventory
-global.json                      // pin approved .NET 10 SDK band
-LimboDancer.sln
+src/LimboDancer/Directory.Build.props
+src/LimboDancer/Directory.Build.targets      // only if required
+src/LimboDancer/Directory.Packages.props     // recommended after package inventory
+src/LimboDancer/LimboDancer.sln
+global.json                                  // repository-level only if both new and legacy builds can safely share it
 ```
 
 Do not mechanically copy legacy package references.
@@ -246,10 +311,10 @@ Each package must have an identified consumer in the new architecture.
 
 ### Exit criteria
 
-- `dotnet restore LimboDancer.sln` succeeds;
-- `dotnet build LimboDancer.sln` succeeds;
+- `dotnet restore src/LimboDancer/LimboDancer.sln` succeeds;
+- `dotnet build src/LimboDancer/LimboDancer.sln` succeeds;
 - tests execute;
-- architecture test fails when a synthetic `LimboDancer.MCP.*` project reference is introduced;
+- architecture test inspects the real project graph and fails if any new production project references `LimboDancer.MCP.*`;
 - no new production project references a legacy project.
 
 ### Suggested PR
@@ -300,6 +365,12 @@ LimboDancer.Runtime/
     ActionRegistry.cs
     IActionBindingRegistry.cs
     ActionBindingRegistry.cs
+    IActionExecutorResolver.cs
+    ActionExecutorResolver.cs
+  Directed/
+    IDirectedActionRuntime.cs
+    DirectedActionRequest.cs
+    DirectedActionResult.cs
 ```
 
 Supporting conceptual types should be implemented only to the depth required by the first four actions.
@@ -341,7 +412,9 @@ Use these only to extract:
 - unknown protocol binding fails;
 - binding cannot alter descriptor risk/preconditions/effects;
 - descriptor version is immutable after registration;
-- descriptors with missing required executor binding cannot become executable.
+- descriptors with missing required executor binding cannot become executable;
+- executor binding resolves only to a registered new-runtime executor;
+- directed runtime entry point does not expose protocol SDK types.
 
 ### Exit criteria
 
@@ -399,7 +472,7 @@ Implement checks for:
 
 - tenant context present;
 - ActionDescriptor registered/current;
-- executor binding resolvable;
+- executor binding resolvable through `IActionExecutorResolver`;
 - required semantic mapping resolvable.
 
 Hard-invariant outcomes:
@@ -466,6 +539,19 @@ LimboDancer.Runtime/
     IActionExecutor.cs
     ActionExecutionResult.cs
 ```
+
+### Directed constraint boundary
+
+Before or as part of this increment, define a small deterministic directed constraint abstraction, for example:
+
+```text
+IActionConstraintEvaluator
+ConstraintEvaluationResult
+```
+
+It evaluates the applicable trusted semantic, Governance, tenant, argument-validation, and precondition constraints for one explicitly selected action.
+
+The later autonomous `IActionConstraintPipeline` SHOULD reuse the same underlying evaluators across multiple ActionCandidates rather than implementing a second constraint system.
 
 ### Gate responsibilities
 
@@ -571,7 +657,7 @@ Do not create a sophisticated event-sourcing subsystem unless required.
 
 ### Exit criteria
 
-Every gate outcome and executor outcome is reconstructable from structured audit evidence.
+The directed authority path is reconstructable from structured audit evidence: invocation identity, action identity/version, diagnostic findings, gate result, authorization result, and executor outcome.
 
 ### Suggested PR
 
@@ -588,6 +674,22 @@ Reimplement only the State capabilities required by the four compatibility actio
 ```text
 LimboDancer.Infrastructure
 ```
+
+### Ports first
+
+Before implementing provider code, add only the inward-facing State contracts required by the four actions to `LimboDancer.Abstractions`.
+
+Initial likely ports:
+
+```text
+IHistoryReader
+IHistoryWriter
+IGraphQueryReader
+IMemorySearch
+IOntologyResolver
+```
+
+Add mutation-specific graph ports only if HistoryAppend or another migrated action actually requires them.
 
 ### Namespaces
 
@@ -787,7 +889,7 @@ LimboDancer.Adapters.Mcp
 - external-name -> ActionBinding resolution;
 - argument normalization;
 - creation of RuntimeInvocationId/CorrelationId;
-- admitted principal/tenant context transfer;
+- transfer of already-admitted principal/tenant context;
 - call into Runtime directed-execution API;
 - protocol-safe response/error mapping.
 
@@ -817,7 +919,7 @@ Compatibility of legacy caller-controlled semantic fields is optional and must n
 - known tool binds;
 - unknown tool rejected;
 - invalid args rejected;
-- tenant/principal established before runtime call;
+- trusted tenant/principal context is supplied by the Host/admission boundary and transferred unchanged by the adapter;
 - directed call does not invoke Decision provider;
 - authorization object cannot enter from request;
 - runtime reason codes map to protocol-safe errors.
@@ -861,7 +963,8 @@ LimboDancer.Host
 - readiness is observational;
 - DB/schema migration is not normal readiness work;
 - no legacy production project reference;
-- no runtime authority logic in Program/bootstrap code.
+- no runtime authority logic in Program/bootstrap code;
+- Host references and composes `LimboDancer.Adapters.Mcp`; the adapter never references Host.
 
 ### Tests
 
@@ -956,7 +1059,7 @@ Contract/state-machine tests before provider implementation.
 
 ### Exit criteria
 
-A deterministic test harness can construct a Goal and advance it to a valid SelectedAction without executing it.
+A deterministic test harness can construct a Goal, validate lifecycle state transitions, and represent ActionCandidate / PermittedAction / Decision contracts without executing anything. Producing a real autonomous SelectedAction is deferred until the deterministic Decision provider exists.
 
 ### Suggested PR
 
@@ -1049,7 +1152,55 @@ A Goal can progress through Decision to SelectedAction deterministically.
 
 **PR-14: Deterministic Decision Plane**
 
-## 20. Increment 12: Goal Orchestration
+## 20. Increment 12: Minimal Reasoning Boundary
+
+### Objective
+
+Introduce the Reasoning contract before the orchestrator depends on it, without requiring an LLM.
+
+### Namespace
+
+```text
+LimboDancer.Runtime.Reasoning
+```
+
+### Contracts
+
+Define the smallest viable abstraction needed for:
+
+- structured Goal interpretation;
+- semantic-intent proposal;
+- missing-observation request;
+- plan/subgoal proposal where needed;
+- result synthesis boundary.
+
+The first implementation SHOULD be deterministic and minimal, for example a structured pass-through provider that accepts an already-structured Goal and returns its semantic intent unchanged.
+
+Reasoning MUST NOT:
+
+- invoke IActionExecutor;
+- construct AuthorizedAction;
+- invent unregistered semantic actions;
+- override semantic/governance constraints.
+
+### Diagnostics
+
+Add:
+
+- repeated next-step detection;
+- repeated plan without state change;
+- unresolved entity/semantic references;
+- reasoning deadline/step budget.
+
+### Exit criteria
+
+The runtime has a real Reasoning boundary that can be composed by Orchestration without requiring an LLM.
+
+### Suggested PR
+
+**PR-15: Minimal Reasoning boundary**
+
+## 21. Increment 13: Goal Orchestration
 
 ### Objective
 
@@ -1069,7 +1220,7 @@ Implement:
 - RuntimeInvocationId creation;
 - lifecycle state transition validation;
 - observations;
-- reasoning placeholder/structured planner boundary;
+- the minimal Reasoning provider;
 - action resolution;
 - constraints;
 - Decision;
@@ -1105,57 +1256,11 @@ Token/cost/external-call budgets can be added when actual providers require them
 
 ### Exit criteria
 
-A simple Goal can complete end-to-end with the deterministic provider.
+A simple Goal can complete end-to-end using the minimal Reasoning provider and deterministic Decision provider.
 
 ### Suggested PR
 
-**PR-15: Goal orchestration loop**
-
-## 21. Increment 13: Reasoning Provider Boundary
-
-### Objective
-
-Add open-ended reasoning without conflating it with Decision.
-
-### Namespace
-
-```text
-LimboDancer.Runtime.Reasoning
-```
-
-### Contracts
-
-Define the smallest viable reasoning abstraction needed for:
-
-- Goal interpretation;
-- plan/subgoal proposal;
-- missing-observation request;
-- semantic intent production;
-- result synthesis.
-
-Reasoning MUST NOT:
-
-- invoke IActionExecutor;
-- construct AuthorizedAction;
-- invent unregistered semantic actions;
-- override semantic/governance constraints.
-
-### Diagnostics
-
-Add:
-
-- repeated next-step detection;
-- repeated plan without state change;
-- unresolved entity/semantic references;
-- reasoning deadline/step budget.
-
-### Exit criteria
-
-Reasoning can influence what is resolved, but cannot bypass action resolution or execution authority.
-
-### Suggested PR
-
-**PR-16: Reasoning boundary**
+**PR-16: Goal orchestration loop**
 
 ## 22. Increment 14: Effect Verification
 
@@ -1307,7 +1412,7 @@ Focus on boundaries with real infrastructure semantics:
 
 Enforce:
 
-- no `LimboDancer.MCP.*` production project reference;
+- no `LimboDancer.MCP.*` production project reference by inspecting the actual project graph;
 - Abstractions has no outward project references;
 - Runtime does not reference infrastructure SDK projects;
 - protocol SDK types do not appear in core authority contracts;
@@ -1406,7 +1511,7 @@ stable implementation checkpoint
 
 ### Milestone 0: Build boundary
 
-`LimboDancer.sln` exists, builds, tests, and has no legacy production dependency.
+`src/LimboDancer/LimboDancer.sln` exists, builds, tests, and has no legacy production dependency.
 
 ### Milestone A: Directed authority runtime
 
@@ -1448,8 +1553,8 @@ PR-11  New runtime host
 PR-12  Autonomous runtime contracts
 PR-13  Observation and semantic action resolution
 PR-14  Deterministic Decision Plane
-PR-15  Goal orchestration loop
-PR-16  Reasoning boundary
+PR-15  Minimal Reasoning boundary
+PR-16  Goal orchestration loop
 PR-17  Effect verification
 PR-18  Replay-capable decision evidence
 
@@ -1483,9 +1588,9 @@ No Decision-provider choice, policy-engine choice, replay-engine design, or huma
 The first engineering change should be deliberately small:
 
 ```text
-Create LimboDancer.sln
-Create five production projects
-Create three test projects
+Create src/LimboDancer/LimboDancer.sln
+Create five production projects under src/LimboDancer
+Create three test projects under src/LimboDancer/tests
 Target net10.0
 Establish project references
 Add CI architecture guard
