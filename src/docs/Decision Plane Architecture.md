@@ -1,12 +1,16 @@
-# LimboDancer.MCP Decision Plane Architecture
+# LimboDancer.Agentic.CognitiveRuntime Decision Plane Architecture
 
 **Status:** Architectural analysis and implementation direction  
 **Branch:** `decision-plane`  
 **Scope:** Decision architecture, semantic action resolution, execution gating, provider abstraction, audit, and evaluation
 
+
+**Canonical system identity:** `LimboDancer.Agentic.CognitiveRuntime`  
+**Legacy implementation namespace:** Existing `LimboDancer.MCP.*` assemblies retain their current names until an explicit code migration is performed.
+
 ## 1. Executive Summary
 
-LimboDancer.MCP already contains the foundations of an ontology-first agent platform: durable history, vector memory, a knowledge graph, ontology runtime services, tenant isolation, MCP tools, and graph precondition/effect services. The missing architectural layer is the mechanism that turns an agent goal into a constrained, explainable, auditable choice of action.
+LimboDancer.Agentic.CognitiveRuntime already contains the foundations of an ontology-first agent platform: durable history, vector memory, a knowledge graph, ontology runtime services, tenant isolation, MCP tools, and graph precondition/effect services. The missing architectural layer is the mechanism that turns an agent goal into a constrained, explainable, auditable choice of action.
 
 Today, the MCP runtime is fundamentally a direct dispatcher. A tool name is supplied, the corresponding tool is resolved, and the tool executes. Some semantic controls exist inside individual tools, but there is no centralized runtime responsible for discovering valid actions, applying authoritative constraints, choosing among allowed actions, handling uncertainty, and recording why the action was selected.
 
@@ -755,13 +759,13 @@ Two options should be considered during implementation:
 A possible future structure is:
 
 ```text
-LimboDancer.MCP.Intelligence
+LimboDancer.Agentic.CognitiveRuntime.Intelligence
     Abstractions/
     Reasoning/
     Decisions/
 
-LimboDancer.MCP.Intelligence.OpenAI
-LimboDancer.MCP.Intelligence.Jev
+LimboDancer.Agentic.CognitiveRuntime.Intelligence.OpenAI
+LimboDancer.Agentic.CognitiveRuntime.Intelligence.Jev
 ```
 
 The exact project decomposition is less important than preserving dependency direction.
