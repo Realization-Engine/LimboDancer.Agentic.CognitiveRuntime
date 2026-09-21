@@ -5,6 +5,7 @@
 **Product / repository identity:** `LimboDancer.Agentic.CognitiveRuntime`  
 **.NET root namespace / project prefix:** `LimboDancer`  
 **Target framework:** `net10.0` / C# 14  
+**Legacy source root:** `src/Legacy/`  
 **Normative source:** `LimboDancer.Agentic.CognitiveRuntime Plane Runtime Specification.md`  
 **Supporting design:** `LimboDancer.Agentic.CognitiveRuntime Plane Runtime Design.md`
 
