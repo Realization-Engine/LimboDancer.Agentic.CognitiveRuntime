@@ -7,7 +7,7 @@
 
 
 **Canonical system identity:** `LimboDancer.Agentic.CognitiveRuntime`  
-**Legacy implementation namespace:** Existing `LimboDancer.MCP.*` assemblies retain their current names until an explicit code migration is performed.
+**Legacy code status:** Existing `LimboDancer.MCP.*` projects are reference implementations only. Conforming new production code MUST NOT depend on them.
 
 ## 1. Purpose
 
@@ -67,25 +67,135 @@ It does not prescribe:
 - a particular ontology persistence mechanism;
 - a particular deployment topology.
 
-## 4. Required Runtime Assemblies and Dependency Direction
+## 4. Platform, Project, and Dependency Requirements
 
-The implementation MAY retain the current project structure initially.
+### 4.1 Target Framework
 
-However, runtime contracts defined by this specification MUST be host-neutral.
+All newly created production projects for the new architecture MUST initially target:
 
-The following dependency rule is REQUIRED:
-
-```text
-Interaction adapters
-        |
-        v
-Runtime/Application contracts
-        ^
-        |
-Provider and infrastructure implementations
+```xml
+<TargetFramework>net10.0</TargetFramework>
 ```
 
-Core runtime contracts MUST NOT reference:
+The implementation baseline is .NET 10 LTS and C# 14.
+
+Projects MUST remain on supported .NET 10 servicing levels.
+
+### SPEC-PLAT-1
+
+New production projects MUST target `net10.0` until the .NET 11 GA upgrade checkpoint is completed.
+
+### SPEC-PLAT-2
+
+Preview or release-candidate-only .NET APIs MUST NOT become required production dependencies without a separately documented architectural decision.
+
+### 4.2 .NET 11 GA Upgrade Checkpoint
+
+After .NET 11 General Availability, the implementation MUST perform and record an upgrade assessment covering at least:
+
+- SDK/runtime stability;
+- ASP.NET Core;
+- EF Core;
+- MCP packages;
+- AI/model-provider packages;
+- Azure SDK dependencies;
+- test infrastructure;
+- deployment platform support;
+- diagnostics and observability libraries.
+
+The assessment MAY approve migration to `net11.0`.
+
+### SPEC-PLAT-3
+
+A move to `net11.0` MUST be an explicit repository-wide framework decision, not an accidental per-project divergence.
+
+### 4.3 New Namespace Family
+
+All newly authored production runtime code MUST use the root namespace:
+
+```text
+LimboDancer.Agentic.CognitiveRuntime
+```
+
+Subnamespaces MAY include:
+
+```text
+LimboDancer.Agentic.CognitiveRuntime.Abstractions
+LimboDancer.Agentic.CognitiveRuntime.Runtime
+LimboDancer.Agentic.CognitiveRuntime.Semantics
+LimboDancer.Agentic.CognitiveRuntime.Diagnostics
+LimboDancer.Agentic.CognitiveRuntime.Decision
+LimboDancer.Agentic.CognitiveRuntime.Execution
+LimboDancer.Agentic.CognitiveRuntime.Observations
+LimboDancer.Agentic.CognitiveRuntime.State.*
+LimboDancer.Agentic.CognitiveRuntime.Adapters.*
+```
+
+### SPEC-PLAT-4
+
+New production runtime types MUST NOT be introduced under `LimboDancer.MCP.*`.
+
+### 4.4 Zero Legacy Production Dependency
+
+The implementation is a clean reimplementation.
+
+No new production project under `LimboDancer.Agentic.CognitiveRuntime.*` may reference a `LimboDancer.MCP.*` project.
+
+The dependency boundary is:
+
+```text
+Legacy source/reference               New production runtime
+LimboDancer.MCP.*                     LimboDancer.Agentic.CognitiveRuntime.*
+        |                                          ^
+        | inspect/copy/refactor/test               |
+        +------------------------------------------+
+                 source transfer only
+
+NO project reference crosses this boundary.
+```
+
+### SPEC-PLAT-5
+
+A conforming `LimboDancer.Agentic.CognitiveRuntime.*` production project MUST have zero project references to `LimboDancer.MCP.*`.
+
+### SPEC-PLAT-6
+
+A conforming `LimboDancer.Agentic.CognitiveRuntime.*` production assembly MUST NOT require a `LimboDancer.MCP.*` assembly at runtime.
+
+### SPEC-PLAT-7
+
+CI MUST include an architectural dependency test that fails if a new production project references a legacy `LimboDancer.MCP.*` project.
+
+### 4.5 Legacy Code Usage
+
+Legacy source MAY be inspected, copied, or used to derive tests and compatibility fixtures.
+
+Copied code MUST be treated as newly admitted code.
+
+Before admission, copied code MUST be reviewed for:
+
+- correct plane/fabric ownership;
+- dependency direction;
+- tenant isolation;
+- fail-closed semantics;
+- Governance boundaries;
+- Diagnostic hooks;
+- Execution Gate compatibility;
+- asynchronous/cancellation behavior;
+- current .NET APIs;
+- testability.
+
+### SPEC-PLAT-8
+
+Copying a legacy file and changing only its namespace MUST NOT be considered sufficient architectural migration.
+
+### SPEC-PLAT-9
+
+Any copied behavior that conflicts with the Plane Runtime Design or this specification MUST be changed rather than preserved for compatibility.
+
+### 4.6 Host-Neutral Contracts
+
+Core runtime contracts MUST remain host-neutral and MUST NOT reference:
 
 - ASP.NET controller types;
 - MCP SDK types;
@@ -95,7 +205,34 @@ Core runtime contracts MUST NOT reference:
 - Jev SDK types;
 - OpenAI or other model-vendor SDK types.
 
-The current `LimboDancer.MCP.McpServer` MAY temporarily host implementations, but interfaces introduced by this specification MUST be suitable for later extraction without signature redesign.
+Interaction adapters and infrastructure implementations MUST depend toward runtime/application contracts.
+
+### SPEC-PLAT-10
+
+Protocol and infrastructure SDK types MUST NOT leak into core runtime authority contracts.
+
+### 4.7 Legacy Retirement
+
+The target end state is removal of the legacy `LimboDancer.MCP.*` production projects.
+
+Deletion readiness MUST require:
+
+- specification conformance;
+- required feature parity;
+- tenant-isolation conformance;
+- protocol compatibility where required;
+- data/state migration validation;
+- operational diagnostics;
+- deployment validation;
+- replacement of all required legacy runtime behaviors.
+
+### SPEC-PLAT-11
+
+Legacy deletion MUST be treated as a planned completion milestone.
+
+### SPEC-PLAT-12
+
+No legacy project may be retained solely because the new runtime accidentally depends on it.
 
 ## 5. Canonical Identifier Types
 
@@ -1905,22 +2042,41 @@ Existing services such as history, graph, and vector services MAY remain behind 
 
 ## 54. Namespace and Placement Guidance
 
-This specification does not mandate final projects, but the initial implementation SHOULD avoid declaring new stable contracts under `McpServer.Tools`.
+The new implementation MUST be created entirely under the `LimboDancer.Agentic.CognitiveRuntime.*` project and namespace family.
 
-Recommended logical namespaces:
+Recommended initial logical projects are:
 
 ```text
-LimboDancer.Agentic.CognitiveRuntime.Core.Runtime
-LimboDancer.Agentic.CognitiveRuntime.Core.Actions
-LimboDancer.Agentic.CognitiveRuntime.Core.Decision
-LimboDancer.Agentic.CognitiveRuntime.Core.Diagnostics
-LimboDancer.Agentic.CognitiveRuntime.Core.Execution
-LimboDancer.Agentic.CognitiveRuntime.Core.Observations
+LimboDancer.Agentic.CognitiveRuntime.Abstractions
+LimboDancer.Agentic.CognitiveRuntime.Runtime
+LimboDancer.Agentic.CognitiveRuntime.Semantics
+LimboDancer.Agentic.CognitiveRuntime.Diagnostics
+LimboDancer.Agentic.CognitiveRuntime.Decision
+LimboDancer.Agentic.CognitiveRuntime.Execution
+LimboDancer.Agentic.CognitiveRuntime.State.Relational
+LimboDancer.Agentic.CognitiveRuntime.State.Graph
+LimboDancer.Agentic.CognitiveRuntime.State.Vector
+LimboDancer.Agentic.CognitiveRuntime.Adapters.Mcp
+LimboDancer.Agentic.CognitiveRuntime.Host
 ```
 
-If Core becomes too broad, a future `LimboDancer.Agentic.CognitiveRuntime.Abstractions` project MAY be introduced.
+This list is a starting partition, not a requirement for one project per plane.
 
-The first implementation SHOULD optimize for dependency correctness rather than project count.
+The implementation SHOULD optimize for:
+
+- dependency correctness;
+- independently testable contracts;
+- clear provider/infrastructure boundaries;
+- minimal cyclic references;
+- clean eventual deletion of `LimboDancer.MCP.*`.
+
+### SPEC-NS-1
+
+Stable new contracts MUST NOT be declared inside legacy `LimboDancer.MCP.*` projects.
+
+### SPEC-NS-2
+
+New adapters MAY reproduce required legacy protocol behavior but MUST depend only on new runtime contracts and approved external packages.
 
 ## 55. Required First Implementation Slice
 
@@ -2049,9 +2205,9 @@ A conforming implementation MUST include automated tests for the following.
 - replay stops before side effects;
 - hidden model reasoning not required.
 
-## 58. Required Current-Code Corrections Before Autonomous Enablement
+## 58. Required Legacy Behavior Corrections During Reimplementation
 
-The following current-code issues MUST be resolved or explicitly proven safe before autonomous execution is enabled:
+The following legacy behaviors MUST NOT be copied unchanged into the new runtime. They MUST be corrected or explicitly proven safe in the new implementation before autonomous execution is enabled:
 
 1. verify or add tenant filtering to `HistoryService.ListAsync`;
 2. verify graph read tenant isolation;
@@ -2085,7 +2241,10 @@ The Plane Runtime Specification is implemented when all of the following are tru
 17. Replay can reconstruct the decision boundary without side effects.
 18. Provider implementations are replaceable.
 19. No model or diagnostic component can grant execution authority independently.
-20. Existing MCP tool names remain usable through action bindings.
+20. Existing MCP tool names remain usable through new action bindings where compatibility is required.
+21. All new production projects target the approved framework baseline.
+22. No new production project or runtime assembly depends on `LimboDancer.MCP.*`.
+23. The legacy `LimboDancer.MCP.*` production projects can be deleted without breaking the new runtime.
 
 ## 60. Specification Invariants
 
@@ -2115,6 +2274,8 @@ Plan != Future authorization
 Caller input != Authoritative policy
 
 Model output != Execution authority
+
+New runtime != Legacy runtime dependency
 ```
 
 ## 61. Implementation Sequence
@@ -2122,7 +2283,9 @@ Model output != Execution authority
 The required implementation order is:
 
 ```text
-1. Runtime identifiers and ActionDescriptor
+1. Create new `net10.0` project family under `LimboDancer.Agentic.CognitiveRuntime.*`
+2. Add CI dependency guard forbidding references to `LimboDancer.MCP.*`
+3. Runtime identifiers and ActionDescriptor
 2. Action registry and bindings
 3. Diagnostic core and structural diagnostics
 4. ExecutionContext and Execution Gate
@@ -2163,6 +2326,8 @@ The runtime MUST know:
 
 No model, caller, tool name, diagnostic, or transport adapter may skip that chain.
 
-The target runtime is therefore not a tool-calling LLM.
+The target runtime is a clean implementation under the `LimboDancer.Agentic.CognitiveRuntime.*` namespace family, with no production dependency on the legacy `LimboDancer.MCP.*` codebase.
+
+It is therefore not a tool-calling LLM.
 
 It is a governed, diagnosable, ontology-constrained execution system with replaceable reasoning and decision intelligence.
