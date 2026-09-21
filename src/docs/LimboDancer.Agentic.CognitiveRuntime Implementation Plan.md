@@ -82,7 +82,9 @@ A legacy class that mixes transport, semantics, tenancy, persistence, and execut
 
 ### IP-5: Keep the first solution small
 
-Begin with five production projects.
+Begin with five runtime production projects.
+
+A separate `LimboDancer.AppHost` MAY provide outer application and process orchestration. It is operational composition support, not a sixth cognitive-runtime production layer.
 
 Do not create a project for every plane.
 
@@ -134,6 +136,7 @@ src/
     LimboDancer.Infrastructure/
     LimboDancer.Adapters.Mcp/
     LimboDancer.Host/
+    LimboDancer.AppHost/
 
     tests/
       LimboDancer.Tests.Unit/
@@ -151,7 +154,8 @@ Recommended responsibilities:
 | `LimboDancer.Runtime` | Runtime behavior: actions, constraints, diagnostics, gate, execution coordination, later reasoning/decision/orchestration |
 | `LimboDancer.Infrastructure` | PostgreSQL, graph, vector, ontology persistence/providers and external service implementations |
 | `LimboDancer.Adapters.Mcp` | MCP protocol translation and action bindings |
-| `LimboDancer.Host` | Composition root, DI, authentication, configuration, health/telemetry, process hosting |
+| `LimboDancer.Host` | Runtime composition root, DI, authentication, configuration, health/telemetry, process hosting |
+| `LimboDancer.AppHost` | Aspire application topology, local process/resource orchestration, service wiring, and operational dashboard |
 | `LimboDancer.Tests.Unit` | Unit tests for contracts and runtime behavior |
 | `LimboDancer.Tests.Integration` | Cross-project and infrastructure integration tests |
 | `LimboDancer.Tests.Architecture` | Dependency and namespace conformance tests |
@@ -182,6 +186,7 @@ LimboDancer.Infrastructure.Ontology
 LimboDancer.Adapters.Mcp
 
 LimboDancer.Host
+LimboDancer.AppHost
 ```
 
 Second-stage autonomous namespaces SHOULD be introduced only when required:
@@ -218,10 +223,16 @@ Initial production dependency direction:
 
           +-----------------------+
           |   LimboDancer.Host    |
+          +-----------+-----------+
+                      ^
+                      |
+          +-----------+-----------+
+          | LimboDancer.AppHost   |
           +-----------------------+
+             outer orchestration
 ```
 
-The Host is the composition root. The Adapter MUST NOT depend on the Host.
+`LimboDancer.Host` is the runtime composition root. `LimboDancer.AppHost` is an outer Aspire application-orchestration project. The Adapter MUST NOT depend on either host.
 
 Mandatory rules:
 
@@ -231,6 +242,16 @@ Mandatory rules:
 4. `LimboDancer.Adapters.Mcp` references `LimboDancer.Abstractions` and, only if necessary, `LimboDancer.Runtime` application contracts. It MUST NOT reference `LimboDancer.Host`.
 5. `LimboDancer.Host` may reference all new production projects required for composition.
 6. No new production project references any `LimboDancer.MCP.*` project.
+7. `LimboDancer.AppHost` references `LimboDancer.Host` only; no runtime project may reference the AppHost.
+8. Aspire SDK and hosting types MUST NOT appear in `LimboDancer.Abstractions` or `LimboDancer.Runtime`.
+9. Aspire operational telemetry MUST NOT replace runtime diagnostics, Governance decisions, Execution Gate results, or authoritative audit evidence.
+10. The AppHost MAY describe only infrastructure and services admitted by the current runtime implementation; it MUST NOT make deferred provider choices by implication.
+
+### Aspire operational boundary
+
+Aspire orchestration starts processes and infrastructure, supplies configuration and service discovery, and exposes operational health and telemetry. LimboDancer runtime orchestration governs goals, action candidates, decisions, authorization, execution, verification, and audit. These two meanings of orchestration MUST remain distinct.
+
+The initial AppHost orchestrates `LimboDancer.Host` only. PostgreSQL, Redis, graph, vector, cloud, or other integrations are added only when the corresponding inward-facing port and provider implementation have been admitted. `LimboDancer.Host` MUST remain independently runnable without Aspire.
 
 ### Runtime application entry point
 
@@ -287,7 +308,7 @@ Before runtime code:
 ### Work
 
 - create `LimboDancer.sln`;
-- create the five production projects and three test projects;
+- create the five runtime production projects, the outer `LimboDancer.AppHost`, and three test projects;
 - target all new projects at `net10.0`;
 - enable nullable reference types;
 - enable implicit usings unless a project has a concrete reason not to;
@@ -1665,7 +1686,8 @@ The first engineering change should be deliberately small:
 
 ```text
 Create src/LimboDancer/LimboDancer.sln
-Create five production projects under src/LimboDancer
+Create five runtime production projects under src/LimboDancer
+Create the bounded LimboDancer.AppHost outer orchestration project
 Create three test projects under src/LimboDancer/tests
 Target net10.0
 Establish project references

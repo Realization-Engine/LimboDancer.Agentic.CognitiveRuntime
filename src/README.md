@@ -24,10 +24,13 @@ src/LimboDancer/
   LimboDancer.Infrastructure/
   LimboDancer.Adapters.Mcp/
   LimboDancer.Host/
+  LimboDancer.AppHost/
   tests/
 ```
 
-All new projects target `net10.0`. Architecture tests enforce the approved project dependency graph and forbid references from new production projects into `src/Legacy/` or the `LimboDancer.MCP.*` project family.
+All new projects target `net10.0`. The five runtime production projects retain the approved dependency graph. `LimboDancer.AppHost` is an outer Aspire application-orchestration project that references `LimboDancer.Host` only; it does not participate in runtime action authority. Architecture tests enforce these boundaries and forbid references from new projects into `src/Legacy/` or the `LimboDancer.MCP.*` project family.
+
+The initial AppHost deliberately orchestrates only `LimboDancer.Host`. State services and Aspire integrations are admitted later only after the corresponding runtime ports and provider decisions exist. Aspire operational telemetry does not replace LimboDancer diagnostics, Governance decisions, the Execution Gate, or authoritative runtime audit evidence.
 
 The exact implementation sequence and admission criteria are defined in the [Implementation Plan](<./docs/LimboDancer.Agentic.CognitiveRuntime Implementation Plan.md>). The [documentation index](./docs/) identifies the normative specification and its supporting design documents.
 

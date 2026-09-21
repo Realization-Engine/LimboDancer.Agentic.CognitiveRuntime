@@ -19,12 +19,13 @@ public sealed class ProductionDependencyTests
                     "LimboDancer.Adapters.Mcp",
                 ],
                 StringComparer.Ordinal),
+            ["LimboDancer.AppHost"] = new HashSet<string>(["LimboDancer.Host"], StringComparer.Ordinal),
         };
 
     [Fact]
-    public void ProductionProjectsDoNotReferenceLegacyProjects()
+    public void SolutionProjectsDoNotReferenceLegacyProjects()
     {
-        var violations = ReadProductionProjectReferences()
+        var violations = ReadSolutionProjectReferences()
             .Where(reference =>
                 reference.ReferencedProject.StartsWith("LimboDancer.MCP.", StringComparison.Ordinal)
                 || IsBelowLegacyRoot(reference.ResolvedPath))
@@ -33,13 +34,13 @@ public sealed class ProductionDependencyTests
 
         Assert.True(
             violations.Length == 0,
-            $"New production projects must not reference src/Legacy or LimboDancer.MCP.*:{Environment.NewLine}{string.Join(Environment.NewLine, violations)}");
+            $"New solution projects must not reference src/Legacy or LimboDancer.MCP.*:{Environment.NewLine}{string.Join(Environment.NewLine, violations)}");
     }
 
     [Fact]
-    public void ProductionProjectReferencesFollowTheApprovedDependencyGraph()
+    public void SolutionProjectReferencesFollowTheApprovedDependencyGraph()
     {
-        var violations = ReadProductionProjectReferences()
+        var violations = ReadSolutionProjectReferences()
             .Where(reference =>
                 !AllowedProjectReferences.TryGetValue(reference.SourceProject, out var allowed)
                 || !allowed.Contains(reference.ReferencedProject))
@@ -52,15 +53,35 @@ public sealed class ProductionDependencyTests
     }
 
     [Fact]
-    public void SolutionContainsExactlyTheApprovedProductionProjects()
+    public void SolutionContainsExactlyTheApprovedTopLevelProjects()
     {
-        var actualProjects = GetProductionProjectFiles()
+        var actualProjects = GetSolutionProjectFiles()
             .Select(Path.GetFileNameWithoutExtension)
             .ToHashSet(StringComparer.Ordinal);
 
         Assert.True(
             actualProjects.SetEquals(AllowedProjectReferences.Keys),
             $"Expected: {string.Join(", ", AllowedProjectReferences.Keys)}{Environment.NewLine}Actual: {string.Join(", ", actualProjects)}");
+    }
+
+    [Fact]
+    public void RuntimeAuthorityProjectsDoNotDependOnAspire()
+    {
+        var protectedProjects = new[]
+        {
+            "LimboDancer.Abstractions",
+            "LimboDancer.Runtime",
+        };
+
+        var violations = GetSolutionProjectFiles()
+            .Where(project => protectedProjects.Contains(Path.GetFileNameWithoutExtension(project), StringComparer.Ordinal))
+            .Where(project => File.ReadAllText(project).Contains("Aspire.", StringComparison.Ordinal))
+            .Select(project => Path.GetRelativePath(FindSolutionRoot(), project))
+            .ToArray();
+
+        Assert.True(
+            violations.Length == 0,
+            $"Runtime authority projects must not depend on Aspire:{Environment.NewLine}{string.Join(Environment.NewLine, violations)}");
     }
 
     [Fact]
@@ -89,9 +110,9 @@ public sealed class ProductionDependencyTests
             $"Projects must not disable TreatWarningsAsErrors:{Environment.NewLine}{string.Join(Environment.NewLine, overrides)}");
     }
 
-    private static IEnumerable<ProjectReference> ReadProductionProjectReferences()
+    private static IEnumerable<ProjectReference> ReadSolutionProjectReferences()
     {
-        foreach (var projectFile in GetProductionProjectFiles())
+        foreach (var projectFile in GetSolutionProjectFiles())
         {
             var sourceProject = Path.GetFileNameWithoutExtension(projectFile);
             var projectDirectory = Path.GetDirectoryName(projectFile)!;
@@ -114,7 +135,7 @@ public sealed class ProductionDependencyTests
         }
     }
 
-    private static string[] GetProductionProjectFiles()
+    private static string[] GetSolutionProjectFiles()
     {
         var solutionRoot = FindSolutionRoot();
 

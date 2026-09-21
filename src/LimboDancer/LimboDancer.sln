@@ -12,6 +12,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LimboDancer.Adapters.Mcp", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LimboDancer.Host", "LimboDancer.Host\LimboDancer.Host.csproj", "{0B4D0C8A-5675-46CC-B411-B975B0312DDD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LimboDancer.AppHost", "LimboDancer.AppHost\LimboDancer.AppHost.csproj", "{D0F9E16B-0242-4E17-8436-BC330FE76E58}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LimboDancer.Tests.Unit", "tests\LimboDancer.Tests.Unit\LimboDancer.Tests.Unit.csproj", "{674AA1A4-84C4-4DF3-BD6E-144247068406}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LimboDancer.Tests.Integration", "tests\LimboDancer.Tests.Integration\LimboDancer.Tests.Integration.csproj", "{BA5B047A-C991-4162-B624-D62640FC00ED}"
@@ -44,6 +46,10 @@ Global
 		{0B4D0C8A-5675-46CC-B411-B975B0312DDD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0B4D0C8A-5675-46CC-B411-B975B0312DDD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0B4D0C8A-5675-46CC-B411-B975B0312DDD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D0F9E16B-0242-4E17-8436-BC330FE76E58}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D0F9E16B-0242-4E17-8436-BC330FE76E58}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D0F9E16B-0242-4E17-8436-BC330FE76E58}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D0F9E16B-0242-4E17-8436-BC330FE76E58}.Release|Any CPU.Build.0 = Release|Any CPU
 		{674AA1A4-84C4-4DF3-BD6E-144247068406}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{674AA1A4-84C4-4DF3-BD6E-144247068406}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{674AA1A4-84C4-4DF3-BD6E-144247068406}.Release|Any CPU.ActiveCfg = Release|Any CPU
