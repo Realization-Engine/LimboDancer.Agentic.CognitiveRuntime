@@ -95,7 +95,7 @@ public sealed class DiagnosticRunnerTests
         using var cancellationSource = new CancellationTokenSource();
         await cancellationSource.CancelAsync();
 
-        await Assert.ThrowsAsync<OperationCanceledException>(
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
             () => runner.RunAsync(CreateContext(), CreateProfile(), cancellationSource.Token));
     }
 
@@ -105,7 +105,7 @@ public sealed class DiagnosticRunnerTests
         var runner = new DiagnosticRunner([new NeverCompletingCheck()]);
         using var cancellationSource = new CancellationTokenSource(TimeSpan.FromMilliseconds(25));
 
-        await Assert.ThrowsAsync<OperationCanceledException>(
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
             () => runner.RunAsync(CreateContext(), CreateProfile(), cancellationSource.Token));
     }
 
