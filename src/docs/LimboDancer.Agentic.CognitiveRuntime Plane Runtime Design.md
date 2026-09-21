@@ -5,6 +5,8 @@
 **Scope:** Target runtime design for the LimboDancer plane architecture  
 **Supporting analysis:** `LimboDancer.Agentic.CognitiveRuntime Plane Architecture Analysis.md`, `LimboDancer.Agentic.CognitiveRuntime Plane Architecture Codebase Validation.md`, `LimboDancer.Agentic.CognitiveRuntime Runtime Orchestration Model.md`, `Decision Plane Architecture.md`
 
+**Reference-domain requirements:** `docs/ASL/legacy-limbodancer-mcp-system-design.md`
+
 
 **Canonical system identity:** `LimboDancer.Agentic.CognitiveRuntime`  
 **.NET root namespace / project prefix:** `LimboDancer`  
@@ -27,6 +29,7 @@ It defines:
 - semantic action model;
 - directed and autonomous invocation;
 - action resolution;
+- evidence-backed domain conclusions and explanation;
 - deterministic constraints;
 - Decision Plane boundaries;
 - execution authorization;
@@ -47,7 +50,9 @@ This document intentionally stops short of prescribing every C# type or project 
 
 LimboDancer SHALL operate as an ontology-constrained cognitive runtime.
 
-The runtime SHALL transform goals into governed actions through explicit authority transitions.
+The runtime SHALL transform goals that require operational work into governed actions through explicit authority transitions.
+
+The runtime SHALL also support goals whose successful terminal outcome is an evidence-backed domain conclusion rather than a state-changing action. Producing a conclusion SHALL NOT implicitly create execution authority.
 
 The canonical authority flow is:
 
@@ -236,6 +241,24 @@ FailGoal
 ```
 
 Diagnostics detect conditions. Diagnostic Policy determines their operational consequence.
+
+### 4.19 DomainConclusion
+
+A **DomainConclusion** is a semantic interpretation of a question or proposition grounded in authoritative material, observations, applicable rules and exceptions, and deterministic calculations.
+
+A DomainConclusion is not an ActionCandidate, SelectedAction, AuthorizedAction, or permission to mutate state.
+
+A DomainConclusion SHOULD carry or reference:
+
+- the question or proposition evaluated;
+- a definitive, qualified, indeterminate, or abstention disposition;
+- applicable semantic rules and controlling exceptions;
+- material observations and calculated facts;
+- source, ontology, and state-version provenance;
+- assumptions, ambiguity, and missing or conflicting evidence;
+- an explanation suitable for the caller.
+
+The exact implementation contract is deferred until a concrete reference-domain slice justifies it.
 
 ## 5. Platform Baseline and Clean-Reimplementation Strategy
 
@@ -1299,6 +1322,32 @@ Critical state used to authorize a write SHOULD carry a version or concurrency t
 
 Sensitive observation payloads SHOULD be referenced rather than duplicated into audit records where practical.
 
+### 17.1 Domain Adjudication and Explanation
+
+A Goal MAY terminate successfully with a DomainConclusion when the requested outcome is understanding or adjudication rather than state mutation.
+
+Domain adjudication MAY use semantic retrieval, graph traversal, authoritative rule resolution, exception precedence, current observations, and registered deterministic calculations. Each contributes evidence; none independently grants authority.
+
+### DESIGN RULE DC-1
+
+The runtime SHALL distinguish a DomainConclusion from every action-authority type.
+
+### DESIGN RULE DC-2
+
+A DomainConclusion SHALL preserve sufficient evidence and provenance to explain its semantic basis.
+
+### DESIGN RULE DC-3
+
+Missing, stale, ambiguous, or conflicting material evidence SHALL produce a qualified, indeterminate, re-observe, or abstention outcome rather than fabricated certainty.
+
+### DESIGN RULE DC-4
+
+A DomainConclusion SHALL NOT authorize a subsequent mutation. A requested mutation SHALL independently enter the applicable directed or autonomous action-authority path and revalidate material state.
+
+### DESIGN RULE DC-5
+
+User-facing explanation SHALL remain distinguishable from runtime audit evidence even when both reference the same rules, observations, calculations, and provenance.
+
 ## 18. Planning
 
 A Plan SHALL represent proposed future work.
@@ -1938,6 +1987,42 @@ Semantic/application services SHALL NOT depend on contracts declared inside prot
 
 Plane boundaries SHALL guide dependency direction but SHALL NOT require one project per plane.
 
+### 39.1 Domain Package Integration Boundary
+
+Concrete domains SHALL integrate through domain-neutral LimboDancer contracts and Host composition. The complete design guidance is defined in `LimboDancer.Agentic.CognitiveRuntime Domain Integration Model.md`.
+
+### DESIGN RULE DOM-1
+
+Runtime projects SHALL NOT reference ASL or another concrete domain package.
+
+### DESIGN RULE DOM-2
+
+A domain package MAY depend on approved LimboDancer abstractions and SHALL NOT redefine runtime authority transitions.
+
+### DESIGN RULE DOM-3
+
+The Host SHALL compose the runtime with selected domain packages. Protocol adapters SHALL NOT serve as the domain-integration boundary.
+
+### DESIGN RULE DOM-4
+
+Domain packages SHOULD reuse existing Observation, semantic-action, constraint, Diagnostic, executor, effect-verification, and audit contracts before proposing new extension interfaces.
+
+### DESIGN RULE DOM-5
+
+Domain-specific infrastructure and provider SDK types SHALL remain behind inward-facing ports.
+
+### DESIGN RULE DOM-6
+
+Domain and package identity, version, tenant, evidence provenance, and state-version information SHALL remain explicit where required for semantic resolution or DomainConclusion integrity.
+
+### DESIGN RULE DOM-7
+
+A generalized plugin registry, dynamic domain discovery, and domain activation lifecycle SHALL NOT be introduced until multiple concrete domains demonstrate requirements that Host composition cannot satisfy cleanly.
+
+### DESIGN RULE DOM-8
+
+Concrete domain-integration interfaces SHALL be admitted only from a named scenario after the authority primitive on which they depend has been implemented and tested.
+
 ## 40. Initial Mapping of Existing Tools
 
 The four current tools SHALL receive initial semantic action identities.
@@ -2334,6 +2419,11 @@ The design is successfully realized when all of the following are true:
 20. Hard-invariant diagnostics fail closed.
 21. Diagnostic findings are distinct from Governance decisions and are auditable.
 22. ActionDescriptors can bind versioned diagnostic profiles without accepting caller-defined authoritative checks.
+23. A domain question can terminate with an evidence-backed DomainConclusion without inventing a state-changing action.
+24. Domain conclusions remain distinct from action selection, authorization, and execution.
+25. Material rule, ontology, reference-data, or observed-state changes can qualify, invalidate, or trigger recomputation of dependent conclusions.
+26. Incomplete or conflicting evidence can produce an explicit indeterminate or abstention outcome.
+27. The ASL reference-domain scenarios can be realized without embedding ASL-specific concepts in the runtime kernel.
 
 ## 51. Canonical Runtime Sequence
 

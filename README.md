@@ -728,6 +728,32 @@ And the repository's core definition is:
 
 ---
 
+## Original Product Goal and Reference Domain
+
+The cognitive runtime exists to serve a concrete product goal: turn complex authoritative material into operational domain knowledge that can be interpreted against current state to produce explainable conclusions and safely governed actions.
+
+Advanced Squad Leader (ASL) is the first reference domain and architectural fitness test. It requires the runtime to reconcile canonical rules, hierarchies, cross-references, nested exceptions, tables, spatial relationships, reference maps, and changing game state.
+
+The target outcome is broader than retrieval:
+
+```text
+authoritative rules and reference material
+-> validated semantic model
+-> current observations
+-> rule, exception, and domain calculation
+-> evidence-backed DomainConclusion
+   or
+-> governed AuthorizedAction
+```
+
+A DomainConclusion explains what the modeled rules and evidence imply. It is not permission to mutate state. Any requested mutation independently passes through the runtime authority model and Execution Gate.
+
+The ASL requirements do not dictate the runtime's project layout, storage products, protocols, or implementation sequence. They define concrete capabilities the reusable architecture must ultimately support without embedding ASL-specific concepts in the runtime kernel.
+
+See `docs/ASL/legacy-limbodancer-mcp-system-design.md` for the current ASL reference-domain requirements, acceptance scenarios, and preserved historical design.
+
+---
+
 ## Design Documentation
 
 The active architecture and implementation documents are under `src/docs/`.
@@ -741,11 +767,13 @@ Key documents include:
 - `LimboDancer.Agentic.CognitiveRuntime Plane Runtime Specification.md`
 - `LimboDancer.Agentic.CognitiveRuntime Implementation Plan.md`
 - `LimboDancer.Agentic.CognitiveRuntime Domain Knowledge Modeling Requirements.md`
+- `LimboDancer.Agentic.CognitiveRuntime Domain Integration Model.md`
 - `Decision Plane Architecture.md`
+- `docs/ASL/legacy-limbodancer-mcp-system-design.md` — ASL reference-domain requirements and historical design source
 
-The **Plane Runtime Specification** is normative for implementation. The **Implementation Plan** defines the current engineering sequence. The **Domain Knowledge Modeling Requirements** document is non-normative supporting guidance for semantic and state representations.
+The **Plane Runtime Specification** is normative for implementation. The **Implementation Plan** defines the current engineering sequence. The **Domain Knowledge Modeling Requirements** document provides supporting guidance for semantic and state representations. The **Domain Integration Model** defines how separate domain packages depend on and compose with the runtime and when their shared contracts may be introduced.
 
-Domain and use-case reference material lives under `docs/`. Advanced Squad Leader material is consolidated under `docs/ASL/` and is not normative for the runtime architecture.
+Domain and use-case reference material lives under `docs/`. Advanced Squad Leader material is consolidated under `docs/ASL/`. Its requirements are authoritative for reference-domain capability but do not override the runtime architecture or its authority semantics.
 
 ---
 

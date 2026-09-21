@@ -9,6 +9,10 @@
 **Normative source:** `LimboDancer.Agentic.CognitiveRuntime Plane Runtime Specification.md`  
 **Supporting design:** `LimboDancer.Agentic.CognitiveRuntime Plane Runtime Design.md`
 
+**Domain integration design:** `LimboDancer.Agentic.CognitiveRuntime Domain Integration Model.md`
+
+**Reference-domain requirements:** `docs/ASL/legacy-limbodancer-mcp-system-design.md`
+
 ## 1. Purpose
 
 This document converts the approved Plane Runtime Specification into an ordered engineering plan.
@@ -1000,11 +1004,23 @@ Before autonomous work begins, all of the following MUST be true:
 
 This milestone should receive a dedicated architecture/conformance review before autonomous implementation begins.
 
+The Milestone A review SHALL also select the first ASL read-only adjudication scenario and use it to approve the smallest domain-neutral vocabulary needed by PR-12 and PR-13. This is a design and contract-admission checkpoint, not authorization to implement a generalized domain framework.
+
+The review must identify:
+
+- domain, package, and canonical-source identities;
+- required observations and versions;
+- semantic and exception-resolution steps;
+- deterministic calculations;
+- DomainConclusion, ambiguity, explanation, and audit needs;
+- which existing runtime ports are sufficient;
+- which new interface, if any, has concrete justification.
+
 ## 17. Increment 9: Autonomous Runtime Contracts
 
 ### Objective
 
-Add only the contracts necessary to move from explicit action invocation to Goal-driven execution.
+Add only the contracts necessary to move from explicit action invocation to Goal-driven execution and evidence-backed conclusion outcomes.
 
 ### Projects
 
@@ -1034,6 +1050,10 @@ DecisionResult
 DecisionOutcome
 RuntimeBudget
 GoalResult
+DomainQuestion (if admitted by the Milestone A scenario)
+DomainConclusion (if admitted by the Milestone A scenario)
+ConclusionDisposition (if admitted by the Milestone A scenario)
+Domain/package and evidence-reference primitives proven necessary by the scenario
 ```
 
 ### Runtime interfaces
@@ -1052,7 +1072,9 @@ IGoalOrchestrator
 - empty permitted set does not call Decision;
 - Decision sees only PermittedAction;
 - provider selection outside candidate set is rejected;
-- Decision never creates authorization.
+- Decision never creates authorization;
+- DomainConclusion never creates execution authority;
+- domain-neutral primitives contain no ASL or infrastructure SDK types.
 
 ### Tests
 
@@ -1060,7 +1082,7 @@ Contract/state-machine tests before provider implementation.
 
 ### Exit criteria
 
-A deterministic test harness can construct a Goal, validate lifecycle state transitions, and represent ActionCandidate / PermittedAction / Decision contracts without executing anything. Producing a real autonomous SelectedAction is deferred until the deterministic Decision provider exists.
+A deterministic test harness can construct a Goal, validate lifecycle state transitions, represent ActionCandidate / PermittedAction / Decision contracts, and represent a DomainConclusion terminal outcome without executing anything. Producing a real autonomous SelectedAction is deferred until the deterministic Decision provider exists.
 
 ### Suggested PR
 
@@ -1087,7 +1109,9 @@ LimboDancer.Runtime.Semantics
 - finite candidate generation;
 - semantic constraint evaluation;
 - tenant-scoped observations;
-- resolution diagnostics.
+- resolution diagnostics;
+- minimal domain-package, entity-resolution, evidence, or conclusion-resolution contracts admitted by the Milestone A scenario;
+- Host-composable domain registration through existing runtime ports.
 
 ### Tests
 
@@ -1095,11 +1119,14 @@ LimboDancer.Runtime.Semantics
 - unresolved required ontology references fail closed;
 - observations preserve tenant/version/provenance;
 - duplicate candidates rejected;
-- failed hard precondition removes candidate.
+- failed hard precondition removes candidate;
+- a minimal fake domain proves approved contracts are not ASL-specific;
+- Runtime has no dependency on ASL or another concrete domain package;
+- removing the fake or ASL package does not break core runtime conformance.
 
 ### Exit criteria
 
-A Goal can produce a finite, auditable set of PermittedActions.
+A Goal can produce a finite, auditable set of PermittedActions. When DomainConclusion contracts are admitted, a fake domain can also produce an evidence-backed terminal conclusion without creating action authority.
 
 ### Suggested PR
 
@@ -1383,6 +1410,31 @@ Do not implement merely because the architecture permits them:
 
 Each requires a concrete scenario and a small design note before implementation.
 
+### 25.1 ASL Reference-Domain Capability Horizon
+
+ASL is the first reference domain against which the completed runtime architecture will be tested. Its requirements are defined in `docs/ASL/legacy-limbodancer-mcp-system-design.md`.
+
+The package boundary, contract-admission rules, and interface timing are defined in `LimboDancer.Agentic.CognitiveRuntime Domain Integration Model.md`.
+
+This horizon does not expand PR-01 through PR-18. It prevents the authority substrate from becoming detached from the concrete product scenario that motivated it.
+
+After the applicable runtime boundaries are proven, plan small evidence-driven slices for:
+
+1. authoritative ASL source identity and provenance;
+2. versioned ASL ontology and rule-package publication;
+3. board, terrain, and other reference-state access;
+4. dynamic game-state observations;
+5. rule hierarchy, cross-reference, condition, and exception resolution;
+6. registered spatial calculations such as coordinate, adjacency, distance, and line-of-sight evaluation;
+7. DomainConclusion and explanation output;
+8. staleness, ambiguity, and indeterminate-result handling;
+9. governed ASL state mutations through the common Execution Gate;
+10. end-to-end conformance tests for the reference scenarios.
+
+The first ASL slice SHOULD be read-only adjudication. It should prove that authoritative rules, current state, exception resolution, and deterministic calculations can produce an evidence-backed conclusion without fabricating execution authority.
+
+Exact projects, persistence products, representation formats, and PR numbers remain deferred until the selected scenario supplies concrete requirements.
+
 ## 26. Test Strategy
 
 ### Unit tests
@@ -1432,6 +1484,21 @@ The architecture test project SHOULD provide a small explicit mapping from criti
 - diagnostic hard invariants;
 - Execution Gate authorization;
 - legacy dependency prohibition.
+
+### Reference-domain conformance tests
+
+When ASL reference-domain slices begin, trace tests to `ASL-RD-*` requirements and the named acceptance scenarios.
+
+The initial suite SHOULD prove:
+
+- canonical rule and source provenance preservation;
+- rule, condition, and exception applicability traces;
+- reference-state and changing-state version capture;
+- deterministic spatial-calculation evidence;
+- DomainConclusion explanation and indeterminate outcomes;
+- invalidation or qualification after material state changes;
+- independent authorization and revalidation for requested mutations;
+- absence of ASL-specific dependencies in the runtime kernel.
 
 ## 27. Legacy Source Admission Checklist
 
@@ -1534,6 +1601,10 @@ Reasoning and multiple Decision providers can be evaluated behind stable contrac
 
 The new runtime satisfies required parity and all legacy production projects can be removed.
 
+### Milestone F: ASL reference-domain realization
+
+The runtime satisfies the current ASL reference-domain requirements through evidence-backed adjudication, explanation, change-sensitive conclusions, and governed state mutation without embedding ASL-specific concepts in the runtime kernel.
+
 ## 32. Recommended PR Sequence
 
 ```text
@@ -1567,6 +1638,10 @@ PR-N   Provider routing only when evidence justifies it
 --- final migration ---
 
 Dedicated legacy retirement PR series
+
+--- reference-domain realization ---
+
+RD-01+ ASL slices selected from concrete acceptance scenarios
 ```
 
 The PR numbering is planning guidance, not a requirement. PRs may be split further when reviewability benefits, but major authority boundaries SHOULD NOT be collapsed into one large initial rewrite.

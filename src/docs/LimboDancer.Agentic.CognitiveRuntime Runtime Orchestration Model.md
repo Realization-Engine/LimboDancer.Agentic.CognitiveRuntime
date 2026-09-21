@@ -4,6 +4,8 @@
 **Branch:** `decision-plane`  
 **Companion documents:** `LimboDancer.Agentic.CognitiveRuntime Plane Architecture Analysis.md`, `LimboDancer.Agentic.CognitiveRuntime Plane Architecture Codebase Validation.md`, `Decision Plane Architecture.md`
 
+**Reference-domain requirements:** `docs/ASL/legacy-limbodancer-mcp-system-design.md`
+
 
 **Canonical system identity:** `LimboDancer.Agentic.CognitiveRuntime`  
 **Legacy implementation namespace:** Existing `LimboDancer.MCP.*` assemblies retain their current names until an explicit code migration is performed.
@@ -28,7 +30,7 @@ The unresolved question is operational:
 
 > What actually happens, in what order, when a request enters LimboDancer?
 
-The answer must support both explicit MCP tool invocation and autonomous agent behavior without confusing their authority models.
+The answer must support explicit MCP tool invocation, autonomous agent behavior, and evidence-backed domain conclusions without confusing semantic interpretation with execution authority.
 
 This document defines that runtime lifecycle before implementation contracts are introduced.
 
@@ -204,7 +206,7 @@ Example:
 "Find the relevant memory and update the trip state if the reservation is confirmed."
 ```
 
-The runtime must determine what action should occur.
+The runtime must determine what evidence and semantic outcome satisfy the Goal and what actions, if any, should occur.
 
 The path is:
 
@@ -510,6 +512,24 @@ Reasoning determines whether:
 - human intervention is required.
 
 This produces the agentic loop.
+
+### Domain-conclusion terminal path
+
+Not every Goal requires a state-changing action. After sufficient observations, semantic resolution, and deterministic calculations exist, Reasoning and Semantics may produce a DomainConclusion and complete the Goal.
+
+```text
+Observe
+-> resolve authoritative semantics
+-> perform required read-only calculations
+-> evaluate evidence sufficiency and consistency
+-> DomainConclusion
+-> explanation and audit evidence
+-> Complete
+```
+
+This path does not convert the conclusion into execution authority. If the caller subsequently requests a mutation, that request independently enters directed or autonomous action resolution and revalidates material state.
+
+Missing, stale, ambiguous, or conflicting material evidence may instead produce re-observation, a qualified conclusion, an indeterminate result, or abstention.
 
 ## 9. The Agentic Loop
 
@@ -957,6 +977,8 @@ public interface IGoalOrchestrator
 }
 ```
 
+`GoalResult` must eventually accommodate a DomainConclusion terminal outcome in addition to action execution, abstention, escalation, failure, and cancellation. The exact result type remains deferred until a reference-domain slice makes the contract concrete.
+
 ### Action resolution
 
 ```csharp
@@ -1071,6 +1093,7 @@ Suggested states:
 Admitted
 Observing
 Reasoning
+Concluding
 Resolving
 Constraining
 Deciding
@@ -1079,6 +1102,7 @@ Gating
 Executing
 Verifying
 Completed
+Indeterminate
 Abstained
 Escalated
 Failed
@@ -1398,6 +1422,9 @@ Observation returned
 Reasoning synthesizes result
     |
     v
+DomainConclusion with evidence and explanation
+    |
+    v
 Complete
 ```
 
@@ -1528,6 +1555,9 @@ The runtime orchestration model establishes these invariants:
 18. Tenant scope is carried through the complete lifecycle.
 19. Orchestration coordinates authority but does not replace it.
 20. Interaction transports requests but does not define domain semantics.
+21. A Goal may complete with an evidence-backed DomainConclusion without creating a state-changing action.
+22. A DomainConclusion is not execution authority or permission for a later mutation.
+23. Material evidence ambiguity or staleness produces qualification, re-observation, indeterminate outcome, or abstention rather than fabricated certainty.
 
 ## 37. Consequences for Decision Plane Interfaces
 
@@ -1629,13 +1659,15 @@ Orchestration coordinates every transition.
 
 State feeds new observations back into Reasoning.
 
+When the requested outcome is understanding rather than mutation, Orchestration may terminate with an evidence-backed DomainConclusion after semantic resolution and any required read-only capabilities. Any registered read or calculation action used to acquire that evidence still follows its applicable authority path. Synthesizing the conclusion does not manufacture an additional action or execution authority.
+
 ## 40. Conclusion
 
 The runtime architecture should not be built around an LLM calling tools.
 
-It should be built around **goals moving through explicit authority transitions**.
+It should be built around **goals moving through explicit semantic transitions and, when operational action is required, explicit authority transitions**.
 
-The crucial convergence is the trusted ActionDescriptor and final Execution Gate.
+For governed action, the crucial convergence is the trusted ActionDescriptor and final Execution Gate. For domain adjudication, the crucial outcome is an evidence-backed DomainConclusion whose provenance, assumptions, and state dependencies remain explicit.
 
 That allows LimboDancer to support both deterministic MCP clients and autonomous agents without creating two execution systems.
 

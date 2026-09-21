@@ -5,6 +5,8 @@
 **Source design:** `LimboDancer.Agentic.CognitiveRuntime Plane Runtime Design.md`  
 **Audience:** Runtime, MCP, ontology, diagnostics, infrastructure, and test engineers
 
+**Reference-domain requirements:** `docs/ASL/legacy-limbodancer-mcp-system-design.md`
+
 
 **Canonical system identity:** `LimboDancer.Agentic.CognitiveRuntime`  
 **.NET root namespace / project prefix:** `LimboDancer`  
@@ -42,7 +44,7 @@ A component is conformant only when all applicable **MUST** and **MUST NOT** req
 
 ## 3. Specification Scope
 
-This specification covers the runtime boundary from admitted request through authorized execution and effect verification.
+This specification covers the runtime boundary from admitted request through a terminal outcome, including evidence-backed domain conclusion or authorized execution and effect verification.
 
 It covers:
 
@@ -60,6 +62,10 @@ Audit / Replay
 ```
 
 Implementation principle: preserve authority boundaries while minimizing machinery. Components SHOULD be introduced only when they enforce a required boundary or satisfy a concrete current use case.
+
+The runtime capability horizon includes evidence-backed domain adjudication as well as governed action. A domain question may terminate with a DomainConclusion without producing a state-changing action. This specification does not yet require a concrete DomainConclusion C# contract in the first implementation slice, but implementations MUST preserve the distinction between semantic conclusion and execution authority.
+
+The ASL reference-domain requirements in `docs/ASL/legacy-limbodancer-mcp-system-design.md` are the initial end-to-end fitness criteria for that horizon. They do not override this specification's authority model or prescribe runtime structure.
 
 It does not prescribe:
 
@@ -479,6 +485,30 @@ Observation producers MUST NOT return cross-tenant state.
 ### SPEC-OBS-4
 
 Observation provenance SHOULD be sufficient to identify the source system or query class without requiring sensitive query contents to be persisted.
+
+### 9.1 Domain Conclusion Capability Horizon
+
+A DomainConclusion is a semantic interpretation grounded in authoritative material, observations, applicable rules and exceptions, and deterministic calculations.
+
+### SPEC-CONCL-1
+
+A DomainConclusion MUST NOT be treated as an ActionCandidate, PermittedAction, SelectedAction, AuthorizedAction, or permission to mutate state.
+
+### SPEC-CONCL-2
+
+An implementation claiming reference-domain adjudication conformance MUST preserve or reference the question evaluated, conclusion disposition, material evidence, applicable rules and exceptions, ontology and state versions, assumptions, unresolved ambiguity, and explanation provenance.
+
+### SPEC-CONCL-3
+
+Missing, stale, ambiguous, or conflicting material evidence MUST NOT be converted into a definitive conclusion without an explicit, deterministic basis. The runtime MUST support a qualified, indeterminate, re-observe, or abstention outcome.
+
+### SPEC-CONCL-4
+
+A mutation requested after a DomainConclusion MUST independently enter the applicable directed or autonomous authority path and revalidate material state.
+
+### SPEC-CONCL-5
+
+The concrete DomainConclusion contract and persistence model MAY be deferred until a reference-domain implementation slice, provided earlier runtime contracts do not preclude these requirements.
 
 ## 10. Semantic Action Identity
 
@@ -2138,6 +2168,30 @@ Stable new contracts MUST NOT be declared inside legacy `LimboDancer.MCP.*` proj
 
 New adapters MAY reproduce required legacy protocol behavior but MUST depend only on new runtime contracts and approved external packages.
 
+### 54.1 Domain Package Integration
+
+Concrete domain implementations are separately composed packages. The design and contract-admission process are defined in `LimboDancer.Agentic.CognitiveRuntime Domain Integration Model.md`.
+
+### SPEC-DOM-1
+
+Runtime production projects MUST NOT reference ASL or another concrete domain package.
+
+### SPEC-DOM-2
+
+A domain package MUST integrate through approved domain-neutral LimboDancer contracts and MUST NOT redefine, bypass, or weaken runtime authority transitions.
+
+### SPEC-DOM-3
+
+The Host MUST compose selected domain packages with the runtime. Protocol adapters MUST NOT be required as the domain integration mechanism.
+
+### SPEC-DOM-4
+
+Domain-specific infrastructure SDK types MUST NOT appear in domain-neutral runtime contracts.
+
+### SPEC-DOM-5
+
+Concrete domain-integration interfaces MUST NOT be added solely for hypothetical extensibility. Their owning plane, authority, context, failure behavior, and reference-domain justification MUST be documented before admission.
+
 ## 55. Required First Implementation Slice
 
 The first conforming slice MUST prove the common authority boundary with minimal machinery.
@@ -2310,6 +2364,8 @@ The Plane Runtime Specification is implemented when all of the following are tru
 21. All new production projects target the approved framework baseline.
 22. No new production project or runtime assembly depends on `LimboDancer.MCP.*`.
 23. The legacy `LimboDancer.MCP.*` production projects can be deleted without breaking the new runtime.
+24. The runtime preserves a non-mutating domain-conclusion outcome distinct from action authority.
+25. An implementation claiming ASL reference-domain conformance satisfies the current requirements and acceptance scenarios in `docs/ASL/legacy-limbodancer-mcp-system-design.md`.
 
 ## 60. Specification Invariants
 
@@ -2339,6 +2395,10 @@ Plan != Future authorization
 Caller input != Authoritative policy
 
 Model output != Execution authority
+
+Domain conclusion != Execution authority
+
+Domain conclusion != Permission to mutate state
 
 New runtime != Legacy runtime dependency
 ```

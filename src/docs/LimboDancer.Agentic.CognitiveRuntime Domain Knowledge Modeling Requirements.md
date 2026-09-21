@@ -135,7 +135,37 @@ A domain-specific capability may:
 
 It may not create an unregistered action, bypass Governance or Diagnostics, or convert model output directly into execution authority.
 
-## 9. Ingestion and generation
+## 9. Domain adjudication and conclusions
+
+LimboDancer must support domain questions whose successful outcome is an evidence-backed interpretation rather than a state mutation.
+
+A **DomainConclusion** is a semantic interpretation grounded in authoritative material, observations, applicable rules, exceptions, and deterministic calculations. It is not an action, permission, or execution authority.
+
+A DomainConclusion should identify:
+
+- the question or proposition evaluated;
+- the conclusion and whether it is definitive, qualified, indeterminate, or an abstention;
+- applicable rules, controlling exceptions, and material calculations;
+- evidence, provenance, ontology versions, and state-version references;
+- assumptions, ambiguity, and missing or conflicting evidence;
+- an explanation appropriate for the caller.
+
+The runtime must distinguish answering a question from changing the world:
+
+```text
+domain question -> DomainConclusion
+requested mutation -> SelectedAction -> AuthorizedAction -> ExecutedAction
+```
+
+A conclusion must not silently survive a material change to a rule, ontology, reference artifact, or observed state on which it depended. The runtime should invalidate, qualify, or recompute conclusions derived from superseded evidence.
+
+When evidence is incomplete, stale, ambiguous, or conflicting, the system should return an explicit indeterminate or abstention outcome and identify the evidence problem rather than fabricate certainty.
+
+User-facing explanation and runtime audit are complementary. Explanation communicates the domain basis of a conclusion; audit reconstructs how the runtime processed it.
+
+The ASL reference-domain requirements and acceptance scenarios in `docs/ASL/legacy-limbodancer-mcp-system-design.md` provide the initial architectural fitness test for this capability.
+
+## 10. Ingestion and generation
 
 Document extraction and ontology generation remain valuable future capabilities, but they are outside the first directed-runtime implementation sequence.
 
@@ -153,7 +183,7 @@ source material
 
 Probabilistic extraction may propose artifacts. Only validated, published artifacts may participate as trusted runtime semantics.
 
-## 10. Semantic artifact distinctions
+## 11. Semantic artifact distinctions
 
 The runtime should keep several related artifacts conceptually distinct:
 
@@ -165,7 +195,7 @@ The runtime should keep several related artifacts conceptually distinct:
 
 One physical artifact may serve more than one of these roles, but the roles must not be conflated. A payload satisfying a schema is not necessarily semantically valid, and a fact existing in a graph does not make that fact current, trusted, or sufficient to authorize an action.
 
-## 11. Representation strategies
+## 12. Representation strategies
 
 Representation mechanisms are complementary choices rather than competing product identities:
 
@@ -177,7 +207,7 @@ Representation mechanisms are complementary choices rather than competing produc
 
 The runtime should choose the least complex representation that preserves the meaning, validation, interoperability, and evidence requirements of the concrete use case. No representation engine is execution authority, and inference results used on consequential paths remain subject to provenance, confidence, semantic resolution, deterministic constraints, Governance, Diagnostics, and the Execution Gate.
 
-## 12. Modeling and evolution discipline
+## 13. Modeling and evolution discipline
 
 Ontology and domain models should grow from demonstrated runtime needs rather than speculative completeness.
 
@@ -195,7 +225,7 @@ Published semantic artifacts should be treated with the same discipline as code:
 
 Full ontology reasoning, cross-ontology mapping, multi-agent vocabularies, and learned skill graphs remain optional future capabilities. They should be introduced only when concrete requirements justify their operational and governance costs.
 
-## 13. Deferred implementation choices
+## 14. Deferred implementation choices
 
 These requirements intentionally do not prescribe:
 
