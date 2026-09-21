@@ -5,10 +5,10 @@ namespace LimboDancer.Runtime.Actions;
 
 public interface IActionRegistry
 {
-    bool TryGet(
+    public bool TryGet(
         ActionId id,
         ActionVersion? version,
         [NotNullWhen(true)] out ActionDescriptor? descriptor);
 
-    IReadOnlyList<ActionDescriptor> List();
+    public IReadOnlyList<ActionDescriptor> List();
 }

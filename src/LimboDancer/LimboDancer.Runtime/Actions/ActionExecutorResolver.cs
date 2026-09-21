@@ -5,7 +5,7 @@ namespace LimboDancer.Runtime.Actions;
 
 public sealed class ActionExecutorResolver : IActionExecutorResolver
 {
-    private readonly IReadOnlyDictionary<ExecutorBinding, IRuntimeActionExecutor> executors;
+    private readonly Dictionary<ExecutorBinding, IRuntimeActionExecutor> executors;
 
     public ActionExecutorResolver(IEnumerable<IRuntimeActionExecutor> executors)
     {

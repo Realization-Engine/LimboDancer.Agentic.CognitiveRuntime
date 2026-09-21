@@ -5,7 +5,7 @@ namespace LimboDancer.Runtime.Actions;
 
 public interface IActionBindingRegistry
 {
-    bool TryResolve(
+    public bool TryResolve(
         string protocol,
         string externalName,
         [NotNullWhen(true)] out ActionBinding? binding);

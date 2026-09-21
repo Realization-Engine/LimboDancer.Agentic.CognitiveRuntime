@@ -6,9 +6,9 @@ namespace LimboDancer.Runtime.Actions;
 
 public sealed class ActionRegistry : IActionRegistry
 {
-    private readonly IReadOnlyDictionary<(ActionId Id, ActionVersion Version), ActionDescriptor> descriptors;
-    private readonly IReadOnlyDictionary<ActionId, ActionDescriptor> unambiguousDescriptors;
-    private readonly IReadOnlyList<ActionDescriptor> publishedDescriptors;
+    private readonly ReadOnlyDictionary<(ActionId Id, ActionVersion Version), ActionDescriptor> descriptors;
+    private readonly ReadOnlyDictionary<ActionId, ActionDescriptor> unambiguousDescriptors;
+    private readonly ReadOnlyCollection<ActionDescriptor> publishedDescriptors;
 
     public ActionRegistry(IEnumerable<ActionDescriptor> descriptors)
     {

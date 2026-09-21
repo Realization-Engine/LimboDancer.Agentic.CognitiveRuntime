@@ -5,7 +5,7 @@ namespace LimboDancer.Runtime.Actions;
 
 public sealed class ActionBindingRegistry : IActionBindingRegistry
 {
-    private readonly IReadOnlyDictionary<(string Protocol, string ExternalName), ActionBinding> bindings;
+    private readonly Dictionary<(string Protocol, string ExternalName), ActionBinding> bindings;
 
     public ActionBindingRegistry(IEnumerable<ActionBinding> bindings)
     {

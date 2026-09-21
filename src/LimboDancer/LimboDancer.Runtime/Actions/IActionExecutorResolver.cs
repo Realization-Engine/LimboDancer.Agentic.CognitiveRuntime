@@ -5,7 +5,7 @@ namespace LimboDancer.Runtime.Actions;
 
 public interface IActionExecutorResolver
 {
-    bool TryResolve(
+    public bool TryResolve(
         ExecutorBinding binding,
         [NotNullWhen(true)] out IRuntimeActionExecutor? executor);
 }
