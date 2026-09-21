@@ -7,7 +7,7 @@
 
 **Canonical system identity:** `LimboDancer.Agentic.CognitiveRuntime`  
 **Legacy implementation namespace:** Existing `LimboDancer.MCP.*` assemblies retain their current names until an explicit code migration is performed.
-**Legacy source root:** `src/Legacy/`  
+**Legacy source root:** `src/Legacy/` (temporary; delete after required legacy behavior is ported)  
 
 ## 1. Purpose
 
