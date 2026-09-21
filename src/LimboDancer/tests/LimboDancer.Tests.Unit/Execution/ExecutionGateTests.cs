@@ -1,5 +1,6 @@
 using System.Text.Json;
 using LimboDancer.Abstractions.Actions;
+using LimboDancer.Abstractions.Audit;
 using LimboDancer.Abstractions.Diagnostics;
 using LimboDancer.Abstractions.Execution;
 using LimboDancer.Abstractions.Runtime;
@@ -37,6 +38,70 @@ public sealed class ExecutionGateTests
     }
 
     [Fact]
+    public async Task AuthorizationAndExecutionAreRecordedWithoutPayloads()
+    {
+        var descriptor = ActionRegistryTests.CreateDescriptor();
+        var auditSink = new RecordingAuditSink();
+        var gate = CreateGate(descriptor, Satisfied(), auditSink: auditSink);
+
+        var gateResult = await gate.AuthorizeAsync(CreateSelection(descriptor), CreateContext());
+        var authorized = Assert.IsType<AuthorizedAction>(gateResult.AuthorizedAction);
+        var executor = new AuditedActionExecutor(
+            new TestRuntimeExecutor(descriptor.Id, descriptor.Executor),
+            auditSink);
+        var executionResult = await executor.ExecuteAsync(authorized);
+
+        Assert.True(executionResult.Succeeded);
+        var gateEvent = Assert.Single(
+            auditSink.Events,
+            static auditEvent => auditEvent.EventType == AuditEventType.GateAuthorized);
+        Assert.Equal(descriptor.Id, gateEvent.ActionId);
+        Assert.Equal(descriptor.Version, gateEvent.ActionVersion);
+        Assert.Equal(authorized.InvocationId, gateEvent.InvocationId);
+        Assert.Equal(authorized.CorrelationId, gateEvent.CorrelationId);
+        Assert.Equal(authorized.TenantId, gateEvent.TenantId);
+        Assert.Equal(authorized.PrincipalId, gateEvent.PrincipalId);
+        Assert.Equal(authorized.AuthorizationId, gateEvent.AuthorizationId);
+        var constraintEvent = Assert.Single(
+            auditSink.Events,
+            static auditEvent => auditEvent.EventType == AuditEventType.ConstraintEvaluated);
+        Assert.Equal(ConstraintEvaluationOutcome.Satisfied.ToString(), constraintEvent.OutcomeCode);
+        var completed = Assert.Single(
+            auditSink.Events,
+            static auditEvent => auditEvent.EventType == AuditEventType.ExecutorCompleted);
+        Assert.Equal("test.success", completed.ExecutionCode);
+        Assert.DoesNotContain(
+            typeof(RuntimeAuditEvent).GetProperties(),
+            static property => property.Name.Contains("Argument", StringComparison.OrdinalIgnoreCase)
+                || property.Name.Contains("Prompt", StringComparison.OrdinalIgnoreCase)
+                || property.Name.Contains("Reasoning", StringComparison.OrdinalIgnoreCase)
+                || property.Name.Contains("ChainOfThought", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task ExecutorFailureIsRecordedAndRethrown()
+    {
+        var descriptor = ActionRegistryTests.CreateDescriptor();
+        var auditSink = new RecordingAuditSink();
+        var gate = CreateGate(descriptor, Satisfied(), auditSink: auditSink);
+        var gateResult = await gate.AuthorizeAsync(CreateSelection(descriptor), CreateContext());
+        var authorized = Assert.IsType<AuthorizedAction>(gateResult.AuthorizedAction);
+        var executor = new AuditedActionExecutor(
+            new ThrowingExecutor(descriptor.Id, descriptor.Executor),
+            auditSink);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => executor.ExecuteAsync(authorized));
+
+        var failed = Assert.Single(
+            auditSink.Events,
+            static auditEvent => auditEvent.EventType == AuditEventType.ExecutorFailed);
+        Assert.Equal("Exception", failed.OutcomeCode);
+        Assert.Equal(authorized.AuthorizationId, failed.AuthorizationId);
+        Assert.Null(failed.ExecutionCode);
+    }
+
+    [Fact]
     public async Task MissingTenantDenies()
     {
         var descriptor = ActionRegistryTests.CreateDescriptor();
@@ -56,13 +121,19 @@ public sealed class ExecutionGateTests
     public async Task PermissionDenialDenies()
     {
         var descriptor = ActionRegistryTests.CreateDescriptor(permissions: ["history:read"]);
-        var gate = CreateGate(descriptor, Satisfied());
+        var auditSink = new RecordingAuditSink();
+        var gate = CreateGate(descriptor, Satisfied(), auditSink: auditSink);
 
         var result = await gate.AuthorizeAsync(CreateSelection(descriptor), CreateContext());
 
         Assert.Equal(ExecutionGateOutcome.Denied, result.Outcome);
         Assert.Contains("permission.missing:history:read", result.ReasonCodes);
         Assert.Null(result.AuthorizedAction);
+        var denied = Assert.Single(
+            auditSink.Events,
+            static auditEvent => auditEvent.EventType == AuditEventType.GateDenied);
+        Assert.Equal(ExecutionGateOutcome.Denied, denied.ExecutionGateOutcome);
+        Assert.Equal(descriptor.Version, denied.ActionVersion);
     }
 
     [Fact]
@@ -86,7 +157,12 @@ public sealed class ExecutionGateTests
         var descriptor = ActionRegistryTests.CreateDescriptor(
             diagnostics: new DiagnosticProfile([reference]));
         var finding = CreateFinding(DiagnosticOutcome.Fail, DiagnosticSeverity.Critical);
-        var gate = CreateGate(descriptor, Satisfied(), new StubDiagnosticCheck(finding));
+        var auditSink = new RecordingAuditSink();
+        var gate = CreateGate(
+            descriptor,
+            Satisfied(),
+            new StubDiagnosticCheck(finding),
+            auditSink);
 
         var result = await gate.AuthorizeAsync(
             CreateSelection(descriptor),
@@ -95,6 +171,13 @@ public sealed class ExecutionGateTests
         Assert.Equal(ExecutionGateOutcome.DiagnosticBlocked, result.Outcome);
         Assert.Contains($"diagnostic.blocked:{CheckId}", result.ReasonCodes);
         Assert.Null(result.AuthorizedAction);
+        var diagnosticEvent = Assert.Single(
+            auditSink.Events,
+            static auditEvent => auditEvent.EventType == AuditEventType.DiagnosticEvaluated);
+        Assert.Equal(finding.CheckId, diagnosticEvent.DiagnosticFinding!.CheckId);
+        Assert.Equal(finding.Outcome, diagnosticEvent.DiagnosticFinding.Outcome);
+        Assert.Null(typeof(AuditDiagnosticFinding).GetProperty("Evidence"));
+        Assert.Equal(DiagnosticDisposition.Block, diagnosticEvent.DiagnosticDisposition);
     }
 
     [Fact]
@@ -204,7 +287,8 @@ public sealed class ExecutionGateTests
     private static ExecutionGate CreateGate(
         ActionDescriptor descriptor,
         ConstraintEvaluationResult constraintResult,
-        IDiagnosticCheck<DiagnosticContext>? diagnosticCheck = null)
+        IDiagnosticCheck<DiagnosticContext>? diagnosticCheck = null,
+        IAuditSink? auditSink = null)
     {
         IDiagnosticCheck<DiagnosticContext>[] diagnosticChecks =
             diagnosticCheck is null ? [] : [diagnosticCheck];
@@ -217,7 +301,8 @@ public sealed class ExecutionGateTests
             new ActionExecutorResolver([executor]),
             new StubConstraintEvaluator(constraintResult),
             new DiagnosticPolicy(),
-            new DefaultExecutionRiskPolicy());
+            new DefaultExecutionRiskPolicy(),
+            auditSink ?? new RecordingAuditSink());
     }
 
     private static SelectedAction CreateSelection(
@@ -320,6 +405,37 @@ public sealed class ExecutionGateTests
             ArgumentNullException.ThrowIfNull(action);
             cancellationToken.ThrowIfCancellationRequested();
             return Task.FromResult(new ActionExecutionResult(succeeded: true, "test.success"));
+        }
+    }
+
+    private sealed record ThrowingExecutor(
+        ActionId ActionId,
+        ExecutorBinding Binding) : IActionExecutor
+    {
+        public Task<ActionExecutionResult> ExecuteAsync(
+            AuthorizedAction action,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(action);
+            cancellationToken.ThrowIfCancellationRequested();
+            throw new InvalidOperationException("Sensitive internal failure detail.");
+        }
+    }
+
+    private sealed class RecordingAuditSink : IAuditSink
+    {
+        private readonly List<RuntimeAuditEvent> events = [];
+
+        public IReadOnlyList<RuntimeAuditEvent> Events => events;
+
+        public ValueTask WriteAsync(
+            RuntimeAuditEvent auditEvent,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(auditEvent);
+            cancellationToken.ThrowIfCancellationRequested();
+            events.Add(auditEvent);
+            return ValueTask.CompletedTask;
         }
     }
 }

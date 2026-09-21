@@ -1,4 +1,5 @@
 using LimboDancer.Abstractions.Actions;
+using LimboDancer.Abstractions.Audit;
 using LimboDancer.Abstractions.Diagnostics;
 using LimboDancer.Abstractions.Execution;
 using LimboDancer.Abstractions.Runtime;
@@ -14,6 +15,7 @@ public sealed class ExecutionGate : IExecutionGate
     private readonly IActionConstraintEvaluator constraintEvaluator;
     private readonly IDiagnosticPolicy diagnosticPolicy;
     private readonly IExecutionRiskPolicy riskPolicy;
+    private readonly IAuditSink auditSink;
     private readonly TimeProvider timeProvider;
 
     public ExecutionGate(
@@ -22,6 +24,7 @@ public sealed class ExecutionGate : IExecutionGate
         IActionConstraintEvaluator constraintEvaluator,
         IDiagnosticPolicy diagnosticPolicy,
         IExecutionRiskPolicy riskPolicy,
+        IAuditSink auditSink,
         TimeProvider? timeProvider = null)
     {
         this.actionRegistry = actionRegistry ?? throw new ArgumentNullException(nameof(actionRegistry));
@@ -29,6 +32,7 @@ public sealed class ExecutionGate : IExecutionGate
         this.constraintEvaluator = constraintEvaluator ?? throw new ArgumentNullException(nameof(constraintEvaluator));
         this.diagnosticPolicy = diagnosticPolicy ?? throw new ArgumentNullException(nameof(diagnosticPolicy));
         this.riskPolicy = riskPolicy ?? throw new ArgumentNullException(nameof(riskPolicy));
+        this.auditSink = auditSink ?? throw new ArgumentNullException(nameof(auditSink));
         this.timeProvider = timeProvider ?? TimeProvider.System;
     }
 
@@ -41,6 +45,16 @@ public sealed class ExecutionGate : IExecutionGate
         ArgumentNullException.ThrowIfNull(context);
         cancellationToken.ThrowIfCancellationRequested();
 
+        var result = await AuthorizeCoreAsync(action, context, cancellationToken).ConfigureAwait(false);
+        await WriteGateAuditAsync(action, context, result, cancellationToken).ConfigureAwait(false);
+        return result;
+    }
+
+    private async Task<ExecutionGateResult> AuthorizeCoreAsync(
+        SelectedAction action,
+        LimboDancer.Abstractions.Execution.ExecutionContext context,
+        CancellationToken cancellationToken)
+    {
         if (context.TenantId == Guid.Empty
             || context.Principal.TenantId != context.TenantId)
         {
@@ -90,13 +104,35 @@ public sealed class ExecutionGate : IExecutionGate
         }
         catch (Exception)
         {
+            await WriteConstraintAuditAsync(
+                    action,
+                    context,
+                    ConstraintEvaluationOutcome.Indeterminate.ToString(),
+                    ["constraint.indeterminate"],
+                    cancellationToken)
+                .ConfigureAwait(false);
             return Denied("constraint.indeterminate");
         }
 
         if (constraintResult is null)
         {
+            await WriteConstraintAuditAsync(
+                    action,
+                    context,
+                    ConstraintEvaluationOutcome.Indeterminate.ToString(),
+                    ["constraint.indeterminate"],
+                    cancellationToken)
+                .ConfigureAwait(false);
             return Denied("constraint.indeterminate");
         }
+
+        await WriteConstraintAuditAsync(
+                action,
+                context,
+                constraintResult.Outcome.ToString(),
+                constraintResult.ReasonCodes,
+                cancellationToken)
+            .ConfigureAwait(false);
 
         if (constraintResult.Outcome == ConstraintEvaluationOutcome.Stale)
         {
@@ -114,7 +150,12 @@ public sealed class ExecutionGate : IExecutionGate
                 ReasonsOrDefault(constraintResult.ReasonCodes, "constraint.not_satisfied"));
         }
 
-        var diagnosticFailure = EvaluateDiagnostics(descriptor, context.DiagnosticFindings);
+        var diagnosticFailure = await EvaluateDiagnosticsAsync(
+                descriptor,
+                action,
+                context,
+                cancellationToken)
+            .ConfigureAwait(false);
         if (diagnosticFailure is not null)
         {
             return diagnosticFailure;
@@ -154,16 +195,21 @@ public sealed class ExecutionGate : IExecutionGate
         var authorized = new AuthorizedAction(
             Guid.NewGuid().ToString("N"),
             action,
+            context.InvocationId,
+            context.CorrelationId,
             context.TenantId,
+            context.Principal.PrincipalId,
             timeProvider.GetUtcNow(),
             expiresAt: null,
             constraintResult.ValidatedStateVersions);
         return new ExecutionGateResult(ExecutionGateOutcome.Authorized, authorized);
     }
 
-    private ExecutionGateResult? EvaluateDiagnostics(
+    private async Task<ExecutionGateResult?> EvaluateDiagnosticsAsync(
         ActionDescriptor descriptor,
-        IReadOnlyList<DiagnosticFinding> findings)
+        SelectedAction action,
+        LimboDancer.Abstractions.Execution.ExecutionContext context,
+        CancellationToken cancellationToken)
     {
         foreach (var reference in descriptor.Diagnostics.Checks)
         {
@@ -173,7 +219,7 @@ public sealed class ExecutionGate : IExecutionGate
                 continue;
             }
 
-            var finding = findings.FirstOrDefault(candidate =>
+            var finding = context.DiagnosticFindings.FirstOrDefault(candidate =>
                 candidate.CheckId == reference.Id
                 && (reference.Version is null
                     || string.Equals(reference.Version, candidate.CheckVersion, StringComparison.Ordinal)));
@@ -181,6 +227,15 @@ public sealed class ExecutionGate : IExecutionGate
             {
                 if (reference.Required)
                 {
+                    await WriteDiagnosticAuditAsync(
+                            action,
+                            context,
+                            finding: null,
+                            disposition: null,
+                            outcomeCode: "MissingRequired",
+                            reasonCodes: [$"diagnostic.missing:{reference.Id}"],
+                            cancellationToken: cancellationToken)
+                        .ConfigureAwait(false);
                     return Result(
                         ExecutionGateOutcome.DiagnosticBlocked,
                         $"diagnostic.missing:{reference.Id}");
@@ -198,10 +253,29 @@ public sealed class ExecutionGate : IExecutionGate
             }
             catch (Exception)
             {
+                await WriteDiagnosticAuditAsync(
+                        action,
+                        context,
+                        finding,
+                        disposition: null,
+                        outcomeCode: "PolicyIndeterminate",
+                        reasonCodes: [$"diagnostic.indeterminate:{reference.Id}"],
+                        cancellationToken: cancellationToken)
+                    .ConfigureAwait(false);
                 return Result(
                     ExecutionGateOutcome.DiagnosticBlocked,
                     $"diagnostic.indeterminate:{reference.Id}");
             }
+
+            await WriteDiagnosticAuditAsync(
+                    action,
+                    context,
+                    finding,
+                    disposition,
+                    disposition.ToString(),
+                    reasonCodes: null,
+                    cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
             if (disposition is not DiagnosticDisposition.Continue
                 and not DiagnosticDisposition.ContinueDegraded)
@@ -214,6 +288,98 @@ public sealed class ExecutionGate : IExecutionGate
 
         return null;
     }
+
+    private ValueTask WriteConstraintAuditAsync(
+        SelectedAction action,
+        LimboDancer.Abstractions.Execution.ExecutionContext context,
+        string outcomeCode,
+        IReadOnlyList<string> reasonCodes,
+        CancellationToken cancellationToken) => auditSink.WriteAsync(
+            CreateAuditEvent(
+                AuditEventType.ConstraintEvaluated,
+                action,
+                context,
+                outcomeCode: outcomeCode,
+                reasonCodes: reasonCodes),
+            cancellationToken);
+
+    private ValueTask WriteDiagnosticAuditAsync(
+        SelectedAction action,
+        LimboDancer.Abstractions.Execution.ExecutionContext context,
+        DiagnosticFinding? finding,
+        DiagnosticDisposition? disposition,
+        string outcomeCode,
+        IReadOnlyList<string>? reasonCodes,
+        CancellationToken cancellationToken) => auditSink.WriteAsync(
+            CreateAuditEvent(
+                AuditEventType.DiagnosticEvaluated,
+                action,
+                context,
+                outcomeCode: outcomeCode,
+                reasonCodes: reasonCodes,
+                diagnosticFinding: finding,
+                diagnosticDisposition: disposition),
+            cancellationToken);
+
+    private ValueTask WriteGateAuditAsync(
+        SelectedAction action,
+        LimboDancer.Abstractions.Execution.ExecutionContext context,
+        ExecutionGateResult result,
+        CancellationToken cancellationToken)
+    {
+        var eventType = result.Outcome switch
+        {
+            ExecutionGateOutcome.Authorized => AuditEventType.GateAuthorized,
+            ExecutionGateOutcome.Stale => AuditEventType.GateStale,
+            _ => AuditEventType.GateDenied,
+        };
+
+        return auditSink.WriteAsync(
+            CreateAuditEvent(
+                eventType,
+                action,
+                context,
+                outcomeCode: result.Outcome.ToString(),
+                reasonCodes: result.ReasonCodes,
+                executionGateOutcome: result.Outcome,
+                authorizationId: result.AuthorizedAction?.AuthorizationId),
+            cancellationToken);
+    }
+
+    private RuntimeAuditEvent CreateAuditEvent(
+        AuditEventType eventType,
+        SelectedAction action,
+        LimboDancer.Abstractions.Execution.ExecutionContext context,
+        string? outcomeCode = null,
+        IReadOnlyList<string>? reasonCodes = null,
+        DiagnosticFinding? diagnosticFinding = null,
+        DiagnosticDisposition? diagnosticDisposition = null,
+        ExecutionGateOutcome? executionGateOutcome = null,
+        string? authorizationId = null) => new(
+            Guid.NewGuid(),
+            eventType,
+            context.InvocationId,
+            context.CorrelationId,
+            context.TenantId,
+            timeProvider.GetUtcNow(),
+            action.Candidate.Descriptor.Id,
+            action.Candidate.Descriptor.Version,
+            context.Principal.PrincipalId,
+            action.Candidate.CandidateId,
+            action.Origin,
+            outcomeCode,
+            reasonCodes,
+            diagnosticFinding is null
+                ? null
+                : new AuditDiagnosticFinding(
+                    diagnosticFinding.CheckId,
+                    diagnosticFinding.CheckVersion,
+                    diagnosticFinding.Outcome,
+                    diagnosticFinding.Severity,
+                    diagnosticFinding.Code),
+            diagnosticDisposition,
+            executionGateOutcome,
+            authorizationId);
 
     private static ExecutionGateResult Denied(string reasonCode) =>
         Result(ExecutionGateOutcome.Denied, reasonCode);

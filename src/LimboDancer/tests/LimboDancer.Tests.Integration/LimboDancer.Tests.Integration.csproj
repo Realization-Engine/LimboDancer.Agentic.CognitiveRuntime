@@ -13,5 +13,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\LimboDancer.Host\LimboDancer.Host.csproj" />
+    <ProjectReference Include="..\..\LimboDancer.Infrastructure\LimboDancer.Infrastructure.csproj" />
   </ItemGroup>
 </Project>
