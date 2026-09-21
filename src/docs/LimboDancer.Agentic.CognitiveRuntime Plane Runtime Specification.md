@@ -9,7 +9,7 @@
 **Canonical system identity:** `LimboDancer.Agentic.CognitiveRuntime`  
 **.NET root namespace / project prefix:** `LimboDancer`  
 **Legacy code status:** Existing `LimboDancer.MCP.*` projects are reference implementations only. Conforming new production code MUST NOT depend on them.
-**Legacy source root:** `src/Legacy/`  
+**Legacy source root:** `src/Legacy/` (temporary; delete after required legacy behavior is ported)  
 
 ## 1. Purpose
 
