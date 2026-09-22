@@ -11,6 +11,7 @@ using LimboDancer.Runtime.Actions;
 using LimboDancer.Runtime.Diagnostics;
 using LimboDancer.Runtime.Decision;
 using LimboDancer.Runtime.Directed;
+using LimboDancer.Runtime.Reasoning;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.Configuration;
@@ -32,6 +33,7 @@ public sealed class RuntimeHostTests
         var constraintPipeline = provider.GetRequiredService<IActionConstraintPipeline>();
         var packageResolver = provider.GetRequiredService<IDomainPackageResolver>();
         var decisionPlane = provider.GetRequiredService<IDecisionPlane>();
+        var reasoningEngine = provider.GetRequiredService<IReasoningEngine>();
         var validator = provider.GetRequiredService<RuntimeStructureValidator>();
         var hostedServices = provider.GetServices<IHostedService>().ToArray();
 
@@ -39,6 +41,7 @@ public sealed class RuntimeHostTests
         Assert.NotNull(actionResolver);
         Assert.NotNull(constraintPipeline);
         Assert.NotNull(decisionPlane);
+        Assert.NotNull(reasoningEngine);
         var unavailablePackage = await packageResolver.ResolveAsync(new DomainPackageRef(
             new DomainId("unregistered-domain"),
             "unregistered-package",

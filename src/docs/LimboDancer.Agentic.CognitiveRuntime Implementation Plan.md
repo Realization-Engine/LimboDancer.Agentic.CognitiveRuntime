@@ -1340,6 +1340,21 @@ The runtime has a real Reasoning boundary that can be composed by Orchestration 
 
 **PR-15: Minimal Reasoning boundary**
 
+### Implemented baseline
+
+The minimal Reasoning baseline now:
+
+- defines structured action-proposal, observation-required, completed, and abstained result dispositions;
+- provides a deterministic pass-through provider that preserves an already structured Goal intent and arguments without using an LLM;
+- carries proposed semantic action intent explicitly into registered action resolution rather than mutating the Goal or creating candidates directly;
+- blocks unregistered semantic intent before it can proceed to resolution;
+- fingerprints proposals and observed state to detect repeated proposals without state change and repeated next steps;
+- enforces Reasoning deadline and step budgets through a composable guard;
+- exposes bounded observation-request and result-synthesis shapes for the later orchestration loop; and
+- composes the provider, guard, and Reasoning engine in the Host.
+
+Reasoning remains proposal-only. Its contracts have no executor or authorization dependency, and all proposed action intent must still pass through registered resolution, constraints, Decision, and the Execution Gate. No LLM, plan framework, Goal loop, or autonomous execution path is introduced.
+
 ## 22. Increment 13: Goal Orchestration
 
 ### Objective

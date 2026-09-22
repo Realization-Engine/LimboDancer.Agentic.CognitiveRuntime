@@ -7,13 +7,18 @@ namespace LimboDancer.Abstractions.Actions;
 
 public sealed class ActionResolutionContext
 {
-    public ActionResolutionContext(Goal goal, StepId stepId, IEnumerable<Observation>? observations = null)
+    public ActionResolutionContext(
+        Goal goal,
+        StepId stepId,
+        IEnumerable<Observation>? observations = null,
+        SemanticActionIntent? intent = null)
     {
         ArgumentNullException.ThrowIfNull(goal);
         ArgumentOutOfRangeException.ThrowIfEqual(stepId.Value, Guid.Empty);
         Goal = goal;
         StepId = stepId;
         Observations = CopyObservations(goal, observations);
+        Intent = intent ?? new SemanticActionIntent(goal.Intent, goal.Inputs);
     }
 
     public Goal Goal
@@ -27,6 +32,11 @@ public sealed class ActionResolutionContext
     }
 
     public IReadOnlyList<Observation> Observations
+    {
+        get;
+    }
+
+    public SemanticActionIntent Intent
     {
         get;
     }

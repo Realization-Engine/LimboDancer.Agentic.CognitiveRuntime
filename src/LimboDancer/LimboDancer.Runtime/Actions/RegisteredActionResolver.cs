@@ -18,7 +18,7 @@ public sealed class RegisteredActionResolver : IActionResolver
     {
         ArgumentNullException.ThrowIfNull(context);
         cancellationToken.ThrowIfCancellationRequested();
-        var actionId = new ActionId(context.Goal.Intent);
+        var actionId = new ActionId(context.Intent.Value);
         if (!actionRegistry.TryGet(actionId, null, out var descriptor))
         {
             return Task.FromResult<IReadOnlyList<ActionCandidate>>([]);
@@ -37,7 +37,7 @@ public sealed class RegisteredActionResolver : IActionResolver
         var candidate = new ActionCandidate(
             $"{context.Goal.Id}:{context.StepId}:{descriptor.Id}:{descriptor.Version}",
             descriptor,
-            context.Goal.Inputs,
+            context.Intent.Arguments,
             evidenceRefs,
             stateVersions);
         return Task.FromResult<IReadOnlyList<ActionCandidate>>([candidate]);

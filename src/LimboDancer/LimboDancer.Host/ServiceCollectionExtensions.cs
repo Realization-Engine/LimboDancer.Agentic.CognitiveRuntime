@@ -2,6 +2,7 @@ using LimboDancer.Abstractions.Actions;
 using LimboDancer.Abstractions.Audit;
 using LimboDancer.Abstractions.Decision;
 using LimboDancer.Abstractions.Domain;
+using LimboDancer.Abstractions.Reasoning;
 using LimboDancer.Abstractions.State.Graph;
 using LimboDancer.Abstractions.State.History;
 using LimboDancer.Abstractions.State.Memory;
@@ -21,6 +22,7 @@ using LimboDancer.Runtime.Decision;
 using LimboDancer.Runtime.Directed;
 using LimboDancer.Runtime.Domain;
 using LimboDancer.Runtime.Execution;
+using LimboDancer.Runtime.Reasoning;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -96,6 +98,9 @@ public static class ServiceCollectionExtensions
             new DomainPackageRegistry(provider.GetServices<DomainPackageDescriptor>()));
         services.AddSingleton<IDecisionProvider, RuleDecisionProvider>();
         services.AddSingleton<IDecisionPlane, DecisionPlane>();
+        services.AddSingleton<IReasoningProvider, PassThroughReasoningProvider>();
+        services.AddSingleton<ReasoningGuard>();
+        services.AddSingleton<IReasoningEngine, ReasoningEngine>();
 
         services.AddSingleton<IActionExecutor, HistoryReadExecutor>();
         services.AddSingleton<IActionExecutor, HistoryAppendExecutor>();
