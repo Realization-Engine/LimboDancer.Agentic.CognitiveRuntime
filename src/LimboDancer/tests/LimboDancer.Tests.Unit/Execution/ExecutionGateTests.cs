@@ -169,6 +169,7 @@ public sealed class ExecutionGateTests
             CreateContext(diagnosticFindings: [finding]));
 
         Assert.Equal(ExecutionGateOutcome.DiagnosticBlocked, result.Outcome);
+        Assert.Equal(DiagnosticDisposition.Block, result.DiagnosticDisposition);
         Assert.Contains($"diagnostic.blocked:{CheckId}", result.ReasonCodes);
         Assert.Null(result.AuthorizedAction);
         var diagnosticEvent = Assert.Single(

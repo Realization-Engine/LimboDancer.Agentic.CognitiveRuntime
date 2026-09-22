@@ -45,6 +45,7 @@ public static class GoalLifecycleTransitionPolicy
             GoalLifecycleState.Gating => to is GoalLifecycleState.Executing
                 or GoalLifecycleState.AwaitingConfirmation
                 or GoalLifecycleState.Abstained
+                or GoalLifecycleState.Escalated
                 or GoalLifecycleState.Observing,
             GoalLifecycleState.AwaitingConfirmation => to is GoalLifecycleState.Gating
                 or GoalLifecycleState.Abstained

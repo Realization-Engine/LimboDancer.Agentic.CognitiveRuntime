@@ -1428,6 +1428,7 @@ The initial Goal orchestration baseline now:
 - re-enters the complete resolution, constraint, Decision, diagnostic, and gate path for every additional step;
 - bounds action steps, observation-provider calls, stale-state retries, and wall-clock time;
 - re-observes and revalidates after a stale gate result without reusing the stale authorization;
+- preserves diagnostic `Retry`, `ReObserve`, `Escalate`, and `FailGoal` dispositions across the gate boundary and applies them through the bounded lifecycle;
 - terminates explicitly for completion, abstention, escalation, failure, and cancellation; and
 - refuses to override semantic or Governance denial.
 

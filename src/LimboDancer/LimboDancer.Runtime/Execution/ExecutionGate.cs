@@ -282,7 +282,8 @@ public sealed class ExecutionGate : IExecutionGate
             {
                 return Result(
                     ExecutionGateOutcome.DiagnosticBlocked,
-                    $"diagnostic.blocked:{reference.Id}");
+                    $"diagnostic.blocked:{reference.Id}",
+                    disposition);
             }
         }
 
@@ -386,7 +387,12 @@ public sealed class ExecutionGate : IExecutionGate
 
     private static ExecutionGateResult Result(
         ExecutionGateOutcome outcome,
-        string reasonCode) => new(outcome, authorizedAction: null, [reasonCode]);
+        string reasonCode,
+        DiagnosticDisposition? diagnosticDisposition = null) => new(
+            outcome,
+            authorizedAction: null,
+            [reasonCode],
+            diagnosticDisposition);
 
     private static IReadOnlyList<string> ReasonsOrDefault(
         IReadOnlyList<string> reasons,

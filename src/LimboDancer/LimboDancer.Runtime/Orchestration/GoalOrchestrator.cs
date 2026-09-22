@@ -283,13 +283,67 @@ public sealed class GoalOrchestrator : IGoalOrchestrator
                     return Terminal(goal, ref state, GoalLifecycleState.Escalated, "confirmation.required");
                 }
 
+                if (gate.Outcome == ExecutionGateOutcome.DiagnosticBlocked)
+                {
+                    if (gate.DiagnosticDisposition == DiagnosticDisposition.Escalate)
+                    {
+                        return Terminal(
+                            goal,
+                            ref state,
+                            GoalLifecycleState.Escalated,
+                            GateReason(gate));
+                    }
+
+                    if (gate.DiagnosticDisposition == DiagnosticDisposition.FailGoal)
+                    {
+                        return Terminal(
+                            goal,
+                            ref state,
+                            GoalLifecycleState.Failed,
+                            GateReason(gate));
+                    }
+
+                    if (gate.DiagnosticDisposition is DiagnosticDisposition.Retry
+                        or DiagnosticDisposition.ReObserve)
+                    {
+                        if (retries >= budget.MaxRetries)
+                        {
+                            return Terminal(goal, ref state, GoalLifecycleState.Failed, "budget.retry_exhausted");
+                        }
+
+                        retries++;
+                        history.RemoveAt(history.Count - 1);
+                        Transition(ref state, GoalLifecycleState.Observing);
+                        if (gate.DiagnosticDisposition == DiagnosticDisposition.ReObserve)
+                        {
+                            var refreshFailure = await AcquireObservationsAsync(
+                                    observationQueries.Values,
+                                    goal,
+                                    budget,
+                                    observations,
+                                    observationQueries,
+                                    externalCalls,
+                                    cancellationToken)
+                                .ConfigureAwait(false);
+                            externalCalls += observationQueries.Count;
+                            if (refreshFailure is not null)
+                            {
+                                return Terminal(goal, ref state, GoalLifecycleState.Failed, refreshFailure);
+                            }
+                        }
+
+                        Transition(ref state, GoalLifecycleState.Reasoning);
+                        continue;
+                    }
+                }
+
                 if (gate.Outcome != ExecutionGateOutcome.Authorized || gate.AuthorizedAction is null)
                 {
                     return Terminal(
                         goal,
                         ref state,
                         GoalLifecycleState.Abstained,
-                        gate.ReasonCodes.Count == 0 ? "gate.denied" : gate.ReasonCodes[0]);
+                        GateReason(gate));
                 }
 
                 var descriptor = selected.Candidate.Descriptor;
@@ -374,6 +428,9 @@ public sealed class GoalOrchestrator : IGoalOrchestrator
         Transition(ref state, terminalState);
         return Result(goal, terminalState, reasonCode, output);
     }
+
+    private static string GateReason(ExecutionGateResult gate) =>
+        gate.ReasonCodes.Count == 0 ? "gate.denied" : gate.ReasonCodes[0];
 
     private static GoalResult Result(
         Goal goal,

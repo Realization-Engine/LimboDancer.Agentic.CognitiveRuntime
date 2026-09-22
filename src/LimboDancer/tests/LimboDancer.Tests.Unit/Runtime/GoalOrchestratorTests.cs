@@ -1,6 +1,7 @@
 using System.Text.Json;
 using LimboDancer.Abstractions.Actions;
 using LimboDancer.Abstractions.Audit;
+using LimboDancer.Abstractions.Diagnostics;
 using LimboDancer.Abstractions.Observations;
 using LimboDancer.Abstractions.Reasoning;
 using LimboDancer.Abstractions.Runtime;
@@ -196,6 +197,49 @@ public sealed class GoalOrchestratorTests
         Assert.Empty(executor.Authorizations);
     }
 
+    [Theory]
+    [InlineData(DiagnosticDisposition.Retry)]
+    [InlineData(DiagnosticDisposition.ReObserve)]
+    public async Task DiagnosticRetryDispositionReentersAuthorityPipeline(
+        DiagnosticDisposition disposition)
+    {
+        var descriptor = ActionRegistryTests.CreateDescriptor();
+        var executor = new RecordingExecutor(descriptor);
+        var gate = new DiagnosticSequenceGate(disposition);
+        var orchestrator = CreateOrchestrator(
+            [descriptor],
+            [executor],
+            executionGate: gate,
+            budget: CreateBudget(maxSteps: 1, maxRetries: 1));
+
+        var result = await orchestrator.RunAsync(CreateGoal(descriptor.Id.Value));
+
+        Assert.Equal(GoalLifecycleState.Completed, result.TerminalState);
+        Assert.Equal(2, gate.CallCount);
+        Assert.Single(executor.Authorizations);
+    }
+
+    [Theory]
+    [InlineData(DiagnosticDisposition.Escalate, GoalLifecycleState.Escalated)]
+    [InlineData(DiagnosticDisposition.FailGoal, GoalLifecycleState.Failed)]
+    public async Task DiagnosticTerminalDispositionIsPreserved(
+        DiagnosticDisposition disposition,
+        GoalLifecycleState expectedState)
+    {
+        var descriptor = ActionRegistryTests.CreateDescriptor();
+        var executor = new RecordingExecutor(descriptor);
+        var orchestrator = CreateOrchestrator(
+            [descriptor],
+            [executor],
+            executionGate: new DiagnosticSequenceGate(disposition));
+
+        var result = await orchestrator.RunAsync(CreateGoal(descriptor.Id.Value));
+
+        Assert.Equal(expectedState, result.TerminalState);
+        Assert.Equal("diagnostic.test", result.Reason.Code);
+        Assert.Empty(executor.Authorizations);
+    }
+
     private static GoalOrchestrator CreateOrchestrator(
         IReadOnlyList<ActionDescriptor> descriptors,
         IReadOnlyList<RecordingExecutor> executors,
@@ -204,6 +248,7 @@ public sealed class GoalOrchestratorTests
         IActionConstraintPipeline? constraintPipeline = null,
         IObservationProvider? observationProvider = null,
         IActionConstraintEvaluator? gateConstraintEvaluator = null,
+        IExecutionGate? executionGate = null,
         RuntimeBudget? budget = null)
     {
         var registry = new ActionRegistry(descriptors);
@@ -218,7 +263,7 @@ public sealed class GoalOrchestratorTests
             constraintPipeline ?? new SemanticActionConstraintPipeline([]),
             new DecisionPlane(new RuleDecisionProvider(), auditSink),
             new DiagnosticRunner([]),
-            new ExecutionGate(
+            executionGate ?? new ExecutionGate(
                 registry,
                 executorResolver,
                 gateConstraintEvaluator ?? new FailClosedActionConstraintEvaluator(),
@@ -434,6 +479,46 @@ public sealed class GoalOrchestratorTests
                 package,
                 $"state-{CallCount}");
             return ValueTask.FromResult(new ObservationAcquisitionResult(query, [observation]));
+        }
+    }
+
+    private sealed class DiagnosticSequenceGate(
+        DiagnosticDisposition firstDisposition) : IExecutionGate
+    {
+        public int CallCount
+        {
+            get;
+            private set;
+        }
+
+        public Task<ExecutionGateResult> AuthorizeAsync(
+            SelectedAction action,
+            LimboDancer.Abstractions.Execution.ExecutionContext context,
+            CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            CallCount++;
+            if (CallCount == 1)
+            {
+                return Task.FromResult(new ExecutionGateResult(
+                    ExecutionGateOutcome.DiagnosticBlocked,
+                    authorizedAction: null,
+                    ["diagnostic.test"],
+                    firstDisposition));
+            }
+
+            return Task.FromResult(new ExecutionGateResult(
+                ExecutionGateOutcome.Authorized,
+                new AuthorizedAction(
+                    Guid.NewGuid().ToString("N"),
+                    action,
+                    context.InvocationId,
+                    context.CorrelationId,
+                    context.TenantId,
+                    context.Principal.PrincipalId,
+                    DateTimeOffset.UtcNow,
+                    expiresAt: null,
+                    validatedStateVersions: null)));
         }
     }
 }

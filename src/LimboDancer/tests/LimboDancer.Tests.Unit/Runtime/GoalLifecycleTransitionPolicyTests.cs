@@ -37,6 +37,7 @@ public sealed class GoalLifecycleTransitionPolicyTests
     [InlineData(GoalLifecycleState.Reasoning, GoalLifecycleState.Completed)]
     [InlineData(GoalLifecycleState.Gating, GoalLifecycleState.AwaitingConfirmation)]
     [InlineData(GoalLifecycleState.Gating, GoalLifecycleState.Abstained)]
+    [InlineData(GoalLifecycleState.Gating, GoalLifecycleState.Escalated)]
     [InlineData(GoalLifecycleState.AwaitingConfirmation, GoalLifecycleState.Gating)]
     [InlineData(GoalLifecycleState.AwaitingConfirmation, GoalLifecycleState.Escalated)]
     [InlineData(GoalLifecycleState.Verifying, GoalLifecycleState.Reasoning)]
