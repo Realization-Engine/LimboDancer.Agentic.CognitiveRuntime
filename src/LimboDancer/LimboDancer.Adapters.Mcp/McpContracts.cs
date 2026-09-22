@@ -39,6 +39,7 @@ public sealed class McpDiscoveryResult
 
         Server = server;
         ProtocolVersions = new ReadOnlyCollection<string>(versions);
+        SupportsTools = true;
     }
 
     public McpServerIdentity Server
@@ -51,7 +52,10 @@ public sealed class McpDiscoveryResult
         get;
     }
 
-    public bool SupportsTools => true;
+    public bool SupportsTools
+    {
+        get;
+    }
 }
 
 public sealed record McpLegacyInitializeRequest(

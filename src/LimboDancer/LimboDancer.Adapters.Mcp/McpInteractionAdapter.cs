@@ -154,7 +154,7 @@ public sealed class McpInteractionAdapter : IMcpInteractionAdapter
     private static McpProtocolError MapError(DirectedActionExecutionResult result)
     {
         var runtimeCode = result.Execution?.Code
-            ?? result.ReasonCodes.FirstOrDefault()
+            ?? (result.ReasonCodes.Count > 0 ? result.ReasonCodes[0] : null)
             ?? "runtime.failed";
         if (result.Resolution is DirectedActionResolution.UnknownBinding or DirectedActionResolution.UnknownAction)
         {
