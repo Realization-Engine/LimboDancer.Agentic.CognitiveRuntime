@@ -36,11 +36,17 @@ public static class DecisionProviderEvaluator
                 }
 
                 DecisionResultValidator.Validate(decision, evidence.PermittedCandidates);
+                var correct = IsCorrect(evaluationCase, decision);
                 results.Add(new DecisionEvaluationResult(
                     evaluationCase.CaseId,
-                    IsCorrect(evaluationCase, decision),
+                    correct,
                     ProviderFailed: false,
                     Disagreed(evidence.Decision, decision),
+                    WrongChoice: decision.Outcome == DecisionOutcome.Selected && !correct,
+                    evaluationCase.ExpectedOutcome,
+                    evaluationCase.ActionRisk,
+                    evaluationCase.WrongChoiceSeverity,
+                    evaluationCase.IsAmbiguous,
                     decision));
             }
             catch (OperationCanceledException)
@@ -54,6 +60,11 @@ public static class DecisionProviderEvaluator
                     Correct: false,
                     ProviderFailed: true,
                     DisagreedWithOriginal: false,
+                    WrongChoice: false,
+                    evaluationCase.ExpectedOutcome,
+                    evaluationCase.ActionRisk,
+                    evaluationCase.WrongChoiceSeverity,
+                    evaluationCase.IsAmbiguous,
                     Decision: null));
             }
         }

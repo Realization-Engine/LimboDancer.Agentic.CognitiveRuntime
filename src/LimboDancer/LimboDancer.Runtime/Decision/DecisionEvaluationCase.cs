@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using LimboDancer.Abstractions.Actions;
 using LimboDancer.Abstractions.Decision;
 using LimboDancer.Abstractions.Evidence;
 
@@ -10,6 +11,9 @@ public sealed class DecisionEvaluationCase
         string caseId,
         RuntimeStepEvidence evidence,
         DecisionOutcome expectedOutcome,
+        ActionRiskProfile actionRisk,
+        DecisionWrongChoiceSeverity wrongChoiceSeverity,
+        bool isAmbiguous = false,
         IEnumerable<string>? acceptableCandidateIds = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(caseId);
@@ -17,6 +21,12 @@ public sealed class DecisionEvaluationCase
         if (!Enum.IsDefined(expectedOutcome))
         {
             throw new ArgumentOutOfRangeException(nameof(expectedOutcome));
+        }
+
+        ArgumentNullException.ThrowIfNull(actionRisk);
+        if (!Enum.IsDefined(wrongChoiceSeverity))
+        {
+            throw new ArgumentOutOfRangeException(nameof(wrongChoiceSeverity));
         }
 
         var acceptable = (acceptableCandidateIds ?? []).ToArray();
@@ -44,6 +54,9 @@ public sealed class DecisionEvaluationCase
         CaseId = caseId;
         Evidence = evidence;
         ExpectedOutcome = expectedOutcome;
+        ActionRisk = actionRisk;
+        WrongChoiceSeverity = wrongChoiceSeverity;
+        IsAmbiguous = isAmbiguous;
         AcceptableCandidateIds = new ReadOnlyCollection<string>(acceptable);
     }
 
@@ -58,6 +71,21 @@ public sealed class DecisionEvaluationCase
     }
 
     public DecisionOutcome ExpectedOutcome
+    {
+        get;
+    }
+
+    public ActionRiskProfile ActionRisk
+    {
+        get;
+    }
+
+    public DecisionWrongChoiceSeverity WrongChoiceSeverity
+    {
+        get;
+    }
+
+    public bool IsAmbiguous
     {
         get;
     }

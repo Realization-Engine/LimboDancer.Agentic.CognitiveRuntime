@@ -1601,6 +1601,8 @@ The first provider experiment adds an explicitly configured `OpenAiDecisionProvi
 - remains disabled unless the Host explicitly selects OpenAI and supplies a key, pinned model, endpoint, limits, and prices; and
 - includes a replay-only labeled evaluation utility that cannot authorize or execute actions.
 
+The follow-up evaluation checkpoint adds explicit ambiguity, orthogonal action-risk, and wrong-choice-severity labels plus reports for selection correctness, abstention quality, invalid-result rate, latency, tokens, cost, confidence calibration error, deterministic-baseline disagreement, and severe wrong choices. Recorded and synthetic cases prove the measurement contract but do not establish live-model quality. OpenAI adoption remains deferred until an operator-controlled run uses a representative redacted corpus, a pinned model and prices, finite budgets, and documented acceptance thresholds.
+
 The deterministic rule provider remains the default. PR-19 does not add provider routing, fallback, retries, live-provider CI, or production-provider adoption.
 
 ## 27. Deferred Until Concrete Use Cases
