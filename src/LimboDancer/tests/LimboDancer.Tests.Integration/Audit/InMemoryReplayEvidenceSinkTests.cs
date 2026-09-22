@@ -33,7 +33,7 @@ public sealed class InMemoryReplayEvidenceSinkTests
             null,
             GoalOrigin.System,
             "test-intent",
-            JsonSerializer.SerializeToElement(new { }),
+            JsonSerializer.SerializeToElement(new Dictionary<string, string>()),
             now);
         return new RuntimeStepEvidence(
             Guid.NewGuid(),
