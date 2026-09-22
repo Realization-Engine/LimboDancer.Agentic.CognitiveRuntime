@@ -49,17 +49,38 @@ public sealed class OrchestrationContext
         Decision = decision;
     }
 
-    public Goal Goal { get; }
+    public Goal Goal
+    {
+        get;
+    }
 
-    public RuntimePrincipal Principal { get; }
+    public RuntimePrincipal Principal
+    {
+        get;
+    }
 
-    public RuntimeBudget Budget { get; }
+    public RuntimeBudget Budget
+    {
+        get;
+    }
 
-    public GoalLifecycleState State { get; }
+    public GoalLifecycleState State
+    {
+        get;
+    }
 
-    public StepId? StepId { get; }
+    public StepId? StepId
+    {
+        get;
+    }
 
-    public IReadOnlyList<Observation> Observations { get; }
+    public IReadOnlyList<Observation> Observations
+    {
+        get;
+    }
 
-    public DecisionResult? Decision { get; }
+    public DecisionResult? Decision
+    {
+        get;
+    }
 }
