@@ -1194,6 +1194,20 @@ A Goal can produce a finite, auditable set of PermittedActions. When DomainConcl
 
 **PR-13: Observation and semantic action resolution**
 
+### Implemented baseline
+
+The observation and semantic-resolution baseline now:
+
+- resolves only exact registered domain-package versions and reports unavailable versions explicitly;
+- bounds observation queries and enforces unique, tenant-scoped, package-exact results with version and provenance retention;
+- represents entity resolution as explicit resolved, unresolved, or ambiguous outcomes with canonical and evidence references;
+- supplies a conclusion-resolution context containing only an exact package, pre-resolved entities, supplied observations, and bounded calculation evidence;
+- resolves exact registered action intent into a finite candidate set and returns no candidate for unknown action semantics;
+- evaluates required semantic preconditions into permitted or rejected candidate typestate and fails closed for missing evaluators or unhandled required constraint classes; and
+- makes package resolution, action resolution, and semantic constraint evaluation composable by the Host without registering a concrete domain.
+
+A removable fake domain in the test assembly proves the four approved package, observation, entity, and conclusion ports without ASL vocabulary. Its conformance cases keep unknown, ambiguous, stale, conflicting, and cross-tenant evidence from producing a definitive conclusion. No generalized domain service, rule engine, plugin loader, ASL package, Decision provider, or autonomous execution path is introduced.
+
 ## 19. Increment 11: Deterministic Decision Provider
 
 ### Objective

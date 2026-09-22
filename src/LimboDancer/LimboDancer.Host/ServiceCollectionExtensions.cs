@@ -1,4 +1,6 @@
+using LimboDancer.Abstractions.Actions;
 using LimboDancer.Abstractions.Audit;
+using LimboDancer.Abstractions.Domain;
 using LimboDancer.Abstractions.State.Graph;
 using LimboDancer.Abstractions.State.History;
 using LimboDancer.Abstractions.State.Memory;
@@ -15,6 +17,7 @@ using LimboDancer.Runtime.Actions.History;
 using LimboDancer.Runtime.Actions.Memory;
 using LimboDancer.Runtime.Diagnostics;
 using LimboDancer.Runtime.Directed;
+using LimboDancer.Runtime.Domain;
 using LimboDancer.Runtime.Execution;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Configuration;
@@ -84,6 +87,11 @@ public static class ServiceCollectionExtensions
             new ActionBindingRegistry(BuiltInActionCatalog.CreateMcpBindings()));
         services.AddSingleton<IActionRegistry>(static _ =>
             new ActionRegistry(BuiltInActionCatalog.CreateDescriptors()));
+        services.AddSingleton<IActionResolver, RegisteredActionResolver>();
+        services.AddSingleton<IActionConstraintPipeline>(static provider =>
+            new SemanticActionConstraintPipeline(provider.GetServices<ISemanticPreconditionEvaluator>()));
+        services.AddSingleton<IDomainPackageResolver>(static provider =>
+            new DomainPackageRegistry(provider.GetServices<DomainPackageDescriptor>()));
 
         services.AddSingleton<IActionExecutor, HistoryReadExecutor>();
         services.AddSingleton<IActionExecutor, HistoryAppendExecutor>();

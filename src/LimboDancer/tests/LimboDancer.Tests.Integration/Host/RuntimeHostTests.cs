@@ -1,7 +1,9 @@
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Json;
+using LimboDancer.Abstractions.Actions;
 using LimboDancer.Abstractions.Audit;
+using LimboDancer.Abstractions.Domain;
 using LimboDancer.Adapters.Mcp;
 using LimboDancer.Host;
 using LimboDancer.Infrastructure.Audit;
@@ -25,10 +27,20 @@ public sealed class RuntimeHostTests
 
         var runtime = provider.GetRequiredService<IDirectedActionRuntime>();
         var adapter = provider.GetRequiredService<IMcpInteractionAdapter>();
+        var actionResolver = provider.GetRequiredService<IActionResolver>();
+        var constraintPipeline = provider.GetRequiredService<IActionConstraintPipeline>();
+        var packageResolver = provider.GetRequiredService<IDomainPackageResolver>();
         var validator = provider.GetRequiredService<RuntimeStructureValidator>();
         var hostedServices = provider.GetServices<IHostedService>().ToArray();
 
         Assert.NotNull(runtime);
+        Assert.NotNull(actionResolver);
+        Assert.NotNull(constraintPipeline);
+        var unavailablePackage = await packageResolver.ResolveAsync(new DomainPackageRef(
+            new DomainId("unregistered-domain"),
+            "unregistered-package",
+            "1"));
+        Assert.Equal(DomainPackageResolutionOutcome.Unavailable, unavailablePackage.Outcome);
         Assert.Equal(4, adapter.ListTools().Count);
         Assert.True(validator.Validate().IsValid);
         foreach (var hostedService in hostedServices)
