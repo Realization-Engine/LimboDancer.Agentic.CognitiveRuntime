@@ -23,6 +23,7 @@ When documents disagree, use this order of authority:
 | [Implementation Plan](<./LimboDancer.Agentic.CognitiveRuntime Implementation Plan.md>) | Ordered milestones, pull-request sequence, tests, and acceptance gates. |
 | [Milestone A Conformance Review](<./LimboDancer.Agentic.CognitiveRuntime Milestone A Conformance Review.md>) | Directed-runtime conformance decision, first ASL adjudication scenario, and approved PR-12/PR-13 contract boundary. |
 | [Milestone B Conformance Review](<./LimboDancer.Agentic.CognitiveRuntime Milestone B Conformance Review.md>) | Autonomous-selection conformance decision, integrated Goal-to-SelectedAction proof, and approved PR-15 Reasoning boundary. |
+| [Milestone C Conformance Review](<./LimboDancer.Agentic.CognitiveRuntime Milestone C Conformance Review.md>) | Autonomous-execution conformance decision, bounded multi-step Goal loop, diagnostic lifecycle handling, and approved PR-17 verification boundary. |
 
 ## Architecture analyses and runtime models
 
@@ -46,7 +47,7 @@ Advanced Squad Leader is the first reference domain and architectural fitness te
 
 ## Current source status
 
-The new `.NET 10` production solution is active under `src/LimboDancer/`. Milestone A includes the directed action-authority substrate, Diagnostics, the Execution Gate, audit, tenant-safe reference State providers, four compatibility actions, the MCP interaction adapter, and the independently runnable Host. Milestone B adds the domain-neutral observation and semantic-resolution boundaries plus the deterministic, audited Goal-to-SelectedAction path.
+The new `.NET 10` production solution is active under `src/LimboDancer/`. Milestone A includes the directed action-authority substrate, Diagnostics, the Execution Gate, audit, tenant-safe reference State providers, four compatibility actions, the MCP interaction adapter, and the independently runnable Host. Milestone B adds the domain-neutral observation and semantic-resolution boundaries plus the deterministic, audited Goal-to-SelectedAction path. Milestone C adds deterministic Reasoning and a bounded, deny-by-default autonomous Goal loop that revalidates every step through the common authority path.
 
 - `src/LimboDancer/` — active production projects and conformance tests;
 - `src/Legacy/` — isolated `LimboDancer.MCP.*` implementation retained temporarily for behavioral reference; and

@@ -1434,7 +1434,28 @@ The initial Goal orchestration baseline now:
 
 The Host composes the orchestrator with deny-by-default admission and an empty observation provider. A trusted adapter must replace admission before autonomous execution is available. Effect verification remains the next increment; the current `Verifying` stage records the execution outcome for Reasoning but does not claim semantic effect verification.
 
-## 23. Increment 14: Effect Verification
+## 23. Milestone C: Autonomous Execution Conformance
+
+### Review requirement
+
+Before effect verification broadens the operational surface, verify that PR-15 and PR-16 preserve the authority hierarchy across a bounded autonomous execution loop.
+
+The review MUST confirm:
+
+- admission supplies identity and budget without granting orchestration authority to invent them;
+- canonical, abstaining, no-candidate, cancellation, stale-state, retry, and multi-step paths terminate deterministically;
+- every action step repeats resolution, constraints, Decision, diagnostics, and gate authorization;
+- diagnostic lifecycle dispositions remain actionable across the gate boundary;
+- semantic and Governance denial cannot be overridden;
+- only the Execution Gate creates `AuthorizedAction`;
+- execution uses the audited executor boundary; and
+- the Host remains deny-by-default until a trusted adapter supplies admission.
+
+### Review outcome
+
+Milestone C is approved in the [Milestone C Conformance Review](<./LimboDancer.Agentic.CognitiveRuntime Milestone C Conformance Review.md>). The review closed the diagnostic-disposition propagation gap, confirmed the bounded multi-step authority chain, and admitted only opt-in deterministic effect verification for PR-17.
+
+## 24. Increment 14: Effect Verification
 
 ### Objective
 
@@ -1475,7 +1496,7 @@ Do not turn verification into a second diagnostic framework.
 
 **PR-17: Effect verification**
 
-## 24. Increment 15: Replay-Capable Evidence
+## 25. Increment 15: Replay-Capable Evidence
 
 ### Objective
 
@@ -1503,7 +1524,7 @@ A general replay engine is not yet required.
 
 **PR-18: Replay-capable decision evidence**
 
-## 25. Increment 16: Additional Decision Providers
+## 26. Increment 16: Additional Decision Providers
 
 ### Objective
 
@@ -1536,7 +1557,7 @@ Provider routing SHOULD NOT be added until at least two real providers have enou
 
 One PR per provider.
 
-## 26. Deferred Until Concrete Use Cases
+## 27. Deferred Until Concrete Use Cases
 
 Do not implement merely because the architecture permits them:
 
@@ -1579,7 +1600,7 @@ The first ASL slice SHOULD be read-only adjudication. It should prove that autho
 
 Exact projects, persistence products, representation formats, and PR numbers remain deferred until the selected scenario supplies concrete requirements.
 
-## 27. Test Strategy
+## 28. Test Strategy
 
 ### Unit tests
 
@@ -1644,7 +1665,7 @@ The initial suite SHOULD prove:
 - independent authorization and revalidation for requested mutations;
 - absence of ASL-specific dependencies in the runtime kernel.
 
-## 28. Legacy Source Admission Checklist
+## 29. Legacy Source Admission Checklist
 
 Whenever code is copied or closely adapted from `LimboDancer.MCP.*`, the PR must answer:
 
@@ -1660,7 +1681,7 @@ Whenever code is copied or closely adapted from `LimboDancer.MCP.*`, the PR must
 10. What tests prove preserved behavior and corrected defects?
 11. Does the new implementation have any legacy project/assembly dependency? It must not.
 
-## 29. PR Discipline
+## 30. PR Discipline
 
 Each PR SHOULD:
 
@@ -1674,7 +1695,7 @@ Each PR SHOULD:
 
 Do not mix broad legacy deletion into implementation PRs until replacement parity exists.
 
-## 30. Legacy Retirement Plan
+## 31. Legacy Retirement Plan
 
 Legacy deletion begins only after the new runtime reaches required parity. The intended end state is deletion of the entire `src/Legacy/` directory as one retirement unit.
 
@@ -1703,7 +1724,7 @@ Legacy deletion begins only after the new runtime reaches required parity. The i
 
 Legacy removal should be performed in dedicated PRs after parity, not piecemeal during early implementation.
 
-## 31. .NET 11 Upgrade Checkpoint
+## 32. .NET 11 Upgrade Checkpoint
 
 After .NET 11 GA, perform the specification-required upgrade assessment.
 
@@ -1719,7 +1740,7 @@ stable implementation checkpoint
 -> continue feature work
 ```
 
-## 32. Milestone Summary
+## 33. Milestone Summary
 
 ### Milestone 0: Build boundary
 
@@ -1735,7 +1756,7 @@ Goal -> Observation -> Resolution -> PermittedAction -> Decision -> SelectedActi
 
 ### Milestone C: Autonomous execution runtime
 
-Goal orchestration can execute bounded multi-step work through the common gate.
+Goal orchestration can execute bounded multi-step work through the common gate. This milestone is approved in the [Milestone C Conformance Review](<./LimboDancer.Agentic.CognitiveRuntime Milestone C Conformance Review.md>).
 
 ### Milestone D: Intelligence evaluation
 
@@ -1749,7 +1770,7 @@ The new runtime satisfies required parity and all legacy production projects can
 
 The runtime satisfies the current ASL reference-domain requirements through evidence-backed adjudication, explanation, change-sensitive conclusions, and governed state mutation without embedding ASL-specific concepts in the runtime kernel.
 
-## 33. Recommended PR Sequence
+## 34. Recommended PR Sequence
 
 ```text
 PR-01  New .NET 10 solution baseline
@@ -1774,6 +1795,9 @@ PR-14  Deterministic Decision Plane
 
 PR-15  Minimal Reasoning boundary
 PR-16  Goal orchestration loop
+
+--- Milestone C review ---
+
 PR-17  Effect verification
 PR-18  Replay-capable decision evidence
 
@@ -1793,7 +1817,7 @@ RD-01+ ASL slices selected from concrete acceptance scenarios
 
 The PR numbering is planning guidance, not a requirement. PRs may be split further when reviewability benefits, but major authority boundaries SHOULD NOT be collapsed into one large initial rewrite.
 
-## 34. Definition of Implementation Ready
+## 35. Definition of Implementation Ready
 
 Implementation may begin when:
 
@@ -1806,7 +1830,7 @@ Implementation may begin when:
 
 No Decision-provider choice, policy-engine choice, replay-engine design, or human-confirmation UX is required before implementation starts.
 
-## 35. First Concrete Engineering Task
+## 36. First Concrete Engineering Task
 
 The first engineering change should be deliberately small:
 
