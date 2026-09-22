@@ -99,7 +99,8 @@
       "limbodancer.adapters.mcp": {
         "type": "Project",
         "dependencies": {
-          "LimboDancer.Abstractions": "[1.0.0, )"
+          "LimboDancer.Abstractions": "[1.0.0, )",
+          "LimboDancer.Runtime": "[1.0.0, )"
         }
       },
       "limbodancer.host": {

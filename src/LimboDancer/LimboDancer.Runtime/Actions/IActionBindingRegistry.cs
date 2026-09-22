@@ -5,6 +5,8 @@ namespace LimboDancer.Runtime.Actions;
 
 public interface IActionBindingRegistry
 {
+    public IReadOnlyList<ActionBinding> List(string protocol);
+
     public bool TryResolve(
         string protocol,
         string externalName,

@@ -6,6 +6,7 @@ namespace LimboDancer.Runtime.Actions;
 public sealed class ActionBindingRegistry : IActionBindingRegistry
 {
     private readonly Dictionary<(string Protocol, string ExternalName), ActionBinding> bindings;
+    private readonly IReadOnlyList<ActionBinding> publishedBindings;
 
     public ActionBindingRegistry(IEnumerable<ActionBinding> bindings)
     {
@@ -25,6 +26,20 @@ public sealed class ActionBindingRegistry : IActionBindingRegistry
         }
 
         this.bindings = registered;
+        publishedBindings = Array.AsReadOnly(
+            registered.Values
+                .OrderBy(static binding => binding.Protocol, StringComparer.Ordinal)
+                .ThenBy(static binding => binding.ExternalName, StringComparer.Ordinal)
+                .ToArray());
+    }
+
+    public IReadOnlyList<ActionBinding> List(string protocol)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(protocol);
+        return Array.AsReadOnly(
+            publishedBindings
+                .Where(binding => string.Equals(binding.Protocol, protocol, StringComparison.Ordinal))
+                .ToArray());
     }
 
     public bool TryResolve(

@@ -909,7 +909,8 @@ LimboDancer.Adapters.Mcp
 
 ### Responsibilities
 
-- MCP initialization;
+- modern MCP `server/discover` capability advertisement;
+- bounded legacy `initialize` compatibility for `2025-11-25` and earlier clients;
 - tool listing;
 - tool execution request parsing;
 - external-name -> ActionBinding resolution;
@@ -918,6 +919,11 @@ LimboDancer.Adapters.Mcp
 - transfer of already-admitted principal/tenant context;
 - call into Runtime directed-execution API;
 - protocol-safe response/error mapping.
+
+The adapter targets the stateless MCP `2026-07-28` lifecycle. Protocol version,
+client identity, and client capabilities arrive per request; protocol sessions are
+not an authority source. Legacy initialization support may counter-offer the
+latest handshake-era revision but MUST NOT create runtime authorization state.
 
 The adapter MUST NOT:
 
@@ -941,7 +947,8 @@ Compatibility of legacy caller-controlled semantic fields is optional and must n
 
 ### Tests
 
-- initialize/list tools;
+- modern discovery and legacy initialize compatibility;
+- list tools;
 - known tool binds;
 - unknown tool rejected;
 - invalid args rejected;

@@ -84,6 +84,7 @@ public sealed class DirectedActionRuntimeTests
             typeof(IDirectedActionRuntime),
             typeof(DirectedActionRequest),
             typeof(DirectedActionResult),
+            typeof(DirectedActionExecutionResult),
         };
 
         var exposedTypes = contractTypes
@@ -111,6 +112,7 @@ public sealed class DirectedActionRuntimeTests
                 [new ActionBinding("mcp", "history_get", descriptor.Id, descriptor.Version)]),
             new ActionRegistry([descriptor]),
             new ActionExecutorResolver(executors),
+            new StubExecutionGate(),
             auditSink ?? new RecordingAuditSink());
     }
 
@@ -149,6 +151,24 @@ public sealed class DirectedActionRuntimeTests
             ArgumentNullException.ThrowIfNull(action);
             cancellationToken.ThrowIfCancellationRequested();
             return Task.FromResult(new ActionExecutionResult(succeeded: true, "test.success"));
+        }
+    }
+
+    private sealed class StubExecutionGate : IExecutionGate
+    {
+        public Task<ExecutionGateResult> AuthorizeAsync(
+            SelectedAction action,
+            LimboDancer.Abstractions.Execution.ExecutionContext context,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(action);
+            ArgumentNullException.ThrowIfNull(context);
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(
+                new ExecutionGateResult(
+                    ExecutionGateOutcome.Denied,
+                    authorizedAction: null,
+                    ["test.denied"]));
         }
     }
 

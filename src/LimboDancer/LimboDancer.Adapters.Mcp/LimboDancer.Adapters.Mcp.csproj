@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="..\LimboDancer.Abstractions\LimboDancer.Abstractions.csproj" />
+    <ProjectReference Include="..\LimboDancer.Runtime\LimboDancer.Runtime.csproj" />
   </ItemGroup>
 </Project>

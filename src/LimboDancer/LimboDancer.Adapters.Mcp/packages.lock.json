@@ -4,6 +4,12 @@
     "net10.0": {
       "limbodancer.abstractions": {
         "type": "Project"
+      },
+      "limbodancer.runtime": {
+        "type": "Project",
+        "dependencies": {
+          "LimboDancer.Abstractions": "[1.0.0, )"
+        }
       }
     }
   }
