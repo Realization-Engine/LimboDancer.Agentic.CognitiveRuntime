@@ -5,6 +5,8 @@ public enum AuditEventType
     InvocationAdmitted,
     ActionResolved,
     ConstraintEvaluated,
+    DecisionEvaluated,
+    DecisionRejected,
     DiagnosticEvaluated,
     GateAuthorized,
     GateDenied,

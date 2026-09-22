@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using LimboDancer.Abstractions.Actions;
+using LimboDancer.Abstractions.Decision;
 using LimboDancer.Abstractions.Diagnostics;
 using LimboDancer.Abstractions.Execution;
 using LimboDancer.Abstractions.Runtime;
@@ -27,7 +28,13 @@ public sealed class RuntimeAuditEvent
         ExecutionGateOutcome? executionGateOutcome = null,
         string? authorizationId = null,
         string? executionCode = null,
-        TimeSpan? duration = null)
+        TimeSpan? duration = null,
+        GoalId? goalId = null,
+        StepId? stepId = null,
+        DecisionOutcome? decisionOutcome = null,
+        string? decisionProviderId = null,
+        string? decisionProviderVersion = null,
+        double? decisionConfidence = null)
     {
         ArgumentOutOfRangeException.ThrowIfEqual(auditId, Guid.Empty);
         ArgumentOutOfRangeException.ThrowIfEqual(invocationId.Value, Guid.Empty);
@@ -67,6 +74,37 @@ public sealed class RuntimeAuditEvent
             throw new ArgumentOutOfRangeException(nameof(duration), duration, "Duration cannot be negative.");
         }
 
+        if (goalId is { Value: var goalValue })
+        {
+            ArgumentOutOfRangeException.ThrowIfEqual(goalValue, Guid.Empty);
+        }
+
+        if (stepId is { Value: var stepValue })
+        {
+            ArgumentOutOfRangeException.ThrowIfEqual(stepValue, Guid.Empty);
+        }
+
+        if (decisionOutcome is { } outcome && !Enum.IsDefined(outcome))
+        {
+            throw new ArgumentOutOfRangeException(nameof(decisionOutcome));
+        }
+
+        if (decisionProviderId is not null)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(decisionProviderId);
+        }
+
+        if (decisionProviderVersion is not null)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(decisionProviderVersion);
+        }
+
+        if (decisionConfidence is < 0 or > 1
+            || (decisionConfidence is { } confidenceValue && !double.IsFinite(confidenceValue)))
+        {
+            throw new ArgumentOutOfRangeException(nameof(decisionConfidence));
+        }
+
         var reasons = (reasonCodes ?? []).ToArray();
         if (reasons.Any(string.IsNullOrWhiteSpace))
         {
@@ -92,6 +130,12 @@ public sealed class RuntimeAuditEvent
         AuthorizationId = authorizationId;
         ExecutionCode = executionCode;
         Duration = duration;
+        GoalId = goalId;
+        StepId = stepId;
+        DecisionOutcome = decisionOutcome;
+        DecisionProviderId = decisionProviderId;
+        DecisionProviderVersion = decisionProviderVersion;
+        DecisionConfidence = decisionConfidence;
     }
 
     public Guid AuditId
@@ -185,6 +229,36 @@ public sealed class RuntimeAuditEvent
     }
 
     public TimeSpan? Duration
+    {
+        get;
+    }
+
+    public GoalId? GoalId
+    {
+        get;
+    }
+
+    public StepId? StepId
+    {
+        get;
+    }
+
+    public DecisionOutcome? DecisionOutcome
+    {
+        get;
+    }
+
+    public string? DecisionProviderId
+    {
+        get;
+    }
+
+    public string? DecisionProviderVersion
+    {
+        get;
+    }
+
+    public double? DecisionConfidence
     {
         get;
     }

@@ -284,7 +284,7 @@ public sealed class ExecutionGateTests
         Assert.Equal(typeof(AuthorizedAction), parameterType);
     }
 
-    private static ExecutionGate CreateGate(
+    internal static ExecutionGate CreateGate(
         ActionDescriptor descriptor,
         ConstraintEvaluationResult constraintResult,
         IDiagnosticCheck<DiagnosticContext>? diagnosticCheck = null,
@@ -311,7 +311,7 @@ public sealed class ExecutionGateTests
             new ActionCandidate("candidate-1", descriptor, ParseJson(arguments)),
             SelectionOrigin.DirectedCaller);
 
-    private static RuntimeExecutionContext CreateContext(
+    internal static RuntimeExecutionContext CreateContext(
         Guid? tenantId = null,
         RuntimePrincipal? principal = null,
         IEnumerable<DiagnosticFinding>? diagnosticFindings = null)

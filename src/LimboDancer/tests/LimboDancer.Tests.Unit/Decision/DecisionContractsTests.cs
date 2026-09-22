@@ -36,13 +36,17 @@ public sealed class DecisionContractsTests
     }
 
     [Fact]
-    public void ValidSelectionIsValidatedButCannotYetCreateSelectionOrAuthorization()
+    public void ValidDecisionSelectionRetainsEvidenceButDoesNotCreateAuthorization()
     {
         var permitted = CreatePermitted("candidate-1");
         var decision = Selected("candidate-1");
 
         DecisionResultValidator.Validate(decision, [permitted]);
 
+        var selection = new SelectedAction(permitted.Candidate, decision);
+
+        Assert.Equal(SelectionOrigin.DecisionProvider, selection.Origin);
+        Assert.Same(decision, selection.Decision);
         Assert.Throws<ArgumentException>(() => new SelectedAction(
             permitted.Candidate,
             SelectionOrigin.DecisionProvider));
@@ -68,6 +72,7 @@ public sealed class DecisionContractsTests
         var candidatesParameter = Assert.Single(method!.GetParameters(), parameter => parameter.Name == "candidates");
 
         Assert.Equal(typeof(IReadOnlyList<PermittedAction>), candidatesParameter.ParameterType);
+        Assert.NotNull(typeof(IDecisionProvider).GetProperty(nameof(IDecisionProvider.ProviderId)));
     }
 
     private static PermittedAction CreatePermitted(string candidateId) => new(

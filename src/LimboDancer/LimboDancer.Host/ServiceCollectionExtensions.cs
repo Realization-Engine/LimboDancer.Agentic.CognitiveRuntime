@@ -1,5 +1,6 @@
 using LimboDancer.Abstractions.Actions;
 using LimboDancer.Abstractions.Audit;
+using LimboDancer.Abstractions.Decision;
 using LimboDancer.Abstractions.Domain;
 using LimboDancer.Abstractions.State.Graph;
 using LimboDancer.Abstractions.State.History;
@@ -16,6 +17,7 @@ using LimboDancer.Runtime.Actions.Graph;
 using LimboDancer.Runtime.Actions.History;
 using LimboDancer.Runtime.Actions.Memory;
 using LimboDancer.Runtime.Diagnostics;
+using LimboDancer.Runtime.Decision;
 using LimboDancer.Runtime.Directed;
 using LimboDancer.Runtime.Domain;
 using LimboDancer.Runtime.Execution;
@@ -92,6 +94,8 @@ public static class ServiceCollectionExtensions
             new SemanticActionConstraintPipeline(provider.GetServices<ISemanticPreconditionEvaluator>()));
         services.AddSingleton<IDomainPackageResolver>(static provider =>
             new DomainPackageRegistry(provider.GetServices<DomainPackageDescriptor>()));
+        services.AddSingleton<IDecisionProvider, RuleDecisionProvider>();
+        services.AddSingleton<IDecisionPlane, DecisionPlane>();
 
         services.AddSingleton<IActionExecutor, HistoryReadExecutor>();
         services.AddSingleton<IActionExecutor, HistoryAppendExecutor>();

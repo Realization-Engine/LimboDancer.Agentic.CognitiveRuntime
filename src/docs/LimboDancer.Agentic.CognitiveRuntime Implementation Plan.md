@@ -1256,6 +1256,21 @@ A Goal can progress through Decision to SelectedAction deterministically.
 
 **PR-14: Deterministic Decision Plane**
 
+### Implemented baseline
+
+The deterministic Decision baseline now:
+
+- provides a reference rule provider that selects one permitted candidate, abstains from an empty set, and escalates multiple permitted candidates;
+- wraps providers in a Decision Plane that validates provider identity, candidate containment, and distribution containment before materializing selection;
+- bypasses the provider when no candidate survived constraints and records an explicit abstention;
+- materializes `SelectedAction` only from a validated selected result while retaining the complete `DecisionResult` as evidence;
+- represents abstention and escalation without a selected action, preventing either outcome from reaching execution;
+- audits accepted, rejected, and provider-failed Decision outcomes with Goal, Step, provider, candidate, outcome, reason, and confidence fields;
+- leaves `AuthorizedAction` creation exclusively inside the Execution Gate; and
+- revalidates decision-selected actions at the gate, including current constraint and state-version checks.
+
+The Host composes the deterministic provider and Decision Plane, but no Goal orchestration loop or autonomous execution path is added in this increment. Alternative providers remain behind the same contract.
+
 ## 20. Increment 12: Minimal Reasoning Boundary
 
 ### Objective
