@@ -1832,6 +1832,8 @@ PR-16  Goal orchestration loop
 PR-17  Effect verification
 PR-18  Replay-capable decision evidence
 
+--- Milestone D review ---
+
 --- provider work ---
 
 PR-19+ Jev / LLM / other Decision providers
