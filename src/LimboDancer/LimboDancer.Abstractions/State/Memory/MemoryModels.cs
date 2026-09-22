@@ -29,7 +29,7 @@ public sealed class MemorySearchQuery
         QueryVector = Array.AsReadOnly(vector);
     }
 
-    public string QueryText
+    public string? QueryText
     {
         get;
     }

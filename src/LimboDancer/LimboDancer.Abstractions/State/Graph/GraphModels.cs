@@ -1,3 +1,5 @@
+using System.Collections.ObjectModel;
+
 namespace LimboDancer.Abstractions.State.Graph;
 
 public enum GraphComparisonOperator

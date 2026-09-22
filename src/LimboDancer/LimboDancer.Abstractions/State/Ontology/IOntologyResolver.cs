@@ -2,13 +2,13 @@ namespace LimboDancer.Abstractions.State.Ontology;
 
 public interface IOntologyResolver
 {
-    ValueTask<OntologyMapping?> ResolveAsync(
+    public ValueTask<OntologyMapping?> ResolveAsync(
         TenantScope tenant,
         OntologyTermKind kind,
         string predicate,
         CancellationToken cancellationToken = default);
 
-    ValueTask<OntologyMapping?> ResolveStorageNameAsync(
+    public ValueTask<OntologyMapping?> ResolveStorageNameAsync(
         TenantScope tenant,
         OntologyTermKind kind,
         string storageName,

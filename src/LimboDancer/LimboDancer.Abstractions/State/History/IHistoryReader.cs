@@ -2,7 +2,7 @@ namespace LimboDancer.Abstractions.State.History;
 
 public interface IHistoryReader
 {
-    ValueTask<IReadOnlyList<HistoryEntry>> ListAsync(
+    public ValueTask<IReadOnlyList<HistoryEntry>> ListAsync(
         TenantScope tenant,
         string sessionId,
         int limit,
