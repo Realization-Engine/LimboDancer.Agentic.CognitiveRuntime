@@ -69,33 +69,75 @@ public sealed class RuntimeStepEvidence
         Verification = verification;
     }
 
-    public Guid EvidenceId { get; }
+    public Guid EvidenceId
+    {
+        get;
+    }
 
-    public RuntimeInvocationId InvocationId { get; }
+    public RuntimeInvocationId InvocationId
+    {
+        get;
+    }
 
-    public Goal Goal { get; }
+    public Goal Goal
+    {
+        get;
+    }
 
-    public StepId StepId { get; }
+    public StepId StepId
+    {
+        get;
+    }
 
-    public RuntimeBudget Budget { get; }
+    public RuntimeBudget Budget
+    {
+        get;
+    }
 
-    public DateTimeOffset RecordedAt { get; }
+    public DateTimeOffset RecordedAt
+    {
+        get;
+    }
 
-    public IReadOnlyList<Observation> Observations { get; }
+    public IReadOnlyList<Observation> Observations
+    {
+        get;
+    }
 
-    public IReadOnlyList<ActionCandidate> Candidates { get; }
+    public IReadOnlyList<ActionCandidate> Candidates
+    {
+        get;
+    }
 
-    public IReadOnlyList<PermittedAction> PermittedCandidates { get; }
+    public IReadOnlyList<PermittedAction> PermittedCandidates
+    {
+        get;
+    }
 
-    public IReadOnlyList<RejectedCandidate> RejectedCandidates { get; }
+    public IReadOnlyList<RejectedCandidate> RejectedCandidates
+    {
+        get;
+    }
 
-    public DecisionResult? Decision { get; }
+    public DecisionResult? Decision
+    {
+        get;
+    }
 
-    public GateEvidence? Gate { get; }
+    public GateEvidence? Gate
+    {
+        get;
+    }
 
-    public ExecutionEvidence? Execution { get; }
+    public ExecutionEvidence? Execution
+    {
+        get;
+    }
 
-    public EffectVerificationResult? Verification { get; }
+    public EffectVerificationResult? Verification
+    {
+        get;
+    }
 
     private static ReadOnlyCollection<T> Copy<T>(IEnumerable<T>? values, string parameterName)
         where T : class
@@ -144,7 +186,7 @@ public sealed class RuntimeStepEvidence
 
     private static void EnsureDecision(
         DecisionResult? decision,
-        IReadOnlyList<PermittedAction> permitted)
+        ReadOnlyCollection<PermittedAction> permitted)
     {
         if (decision is null)
         {
