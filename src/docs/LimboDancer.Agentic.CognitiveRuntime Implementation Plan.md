@@ -1136,6 +1136,20 @@ A deterministic test harness can construct a Goal, validate lifecycle state tran
 
 **PR-12: Autonomous runtime contracts**
 
+### Implemented baseline
+
+The autonomous contract baseline now:
+
+- introduces typed Goal, Step, observation, budget, and orchestration context contracts with tenant-bound inputs;
+- defines explicit lifecycle transitions, including bounded retry, confirmation, abstention, escalation, failure, and cancellation paths;
+- separates finite ActionCandidate resolution, constraint evaluation, PermittedAction typestate, and Decision provider inputs;
+- validates that provider selections and score distributions refer only to the supplied permitted candidate set;
+- admits the Milestone A domain-neutral package, semantic identifier, canonical reference, evidence, question, and conclusion vocabulary;
+- represents evidence-backed DomainConclusion values as terminal Goal results without creating action selection or execution authority; and
+- retains autonomous SelectedAction materialization for the deterministic provider increment.
+
+Contract and state-machine tests prove the admitted boundaries without adding a provider, orchestrator implementation, generalized domain framework, or concrete ASL package.
+
 ## 18. Increment 10: Observation and Semantic Resolution
 
 ### Objective
