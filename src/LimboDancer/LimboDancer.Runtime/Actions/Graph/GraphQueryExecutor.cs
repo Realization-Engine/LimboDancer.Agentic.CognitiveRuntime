@@ -109,7 +109,7 @@ public sealed class GraphQueryExecutor : IActionExecutor
         JsonElement arguments,
         TenantScope tenant,
         bool useOntology,
-        ICollection<GraphPropertyFilter> destination,
+        List<GraphPropertyFilter> destination,
         CancellationToken cancellationToken)
     {
         if (!arguments.TryGetProperty("filters", out var filters)
@@ -169,7 +169,7 @@ public sealed class GraphQueryExecutor : IActionExecutor
         JsonElement arguments,
         TenantScope tenant,
         bool useOntology,
-        ICollection<GraphTraversalStep> destination,
+        List<GraphTraversalStep> destination,
         CancellationToken cancellationToken)
     {
         if (!arguments.TryGetProperty("traverse", out var traversal)
