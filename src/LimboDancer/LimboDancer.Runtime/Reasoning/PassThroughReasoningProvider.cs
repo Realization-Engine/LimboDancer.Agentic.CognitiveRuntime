@@ -28,7 +28,10 @@ public sealed class PassThroughReasoningProvider : IReasoningProvider
                     ProviderId,
                     "reasoning.single_action_completed",
                     output: outcome.Output ?? JsonSerializer.SerializeToElement(
-                        new { outcome.Code }),
+                        new
+                        {
+                            outcome.Code,
+                        }),
                     providerVersion: ProviderVersion)
                 : new ReasoningResult(
                     ReasoningDisposition.Abstained,
