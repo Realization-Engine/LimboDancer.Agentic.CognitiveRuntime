@@ -30,4 +30,24 @@ public static class WellKnownActions
     {
         get;
     } = new("ldm:action/MemorySearch");
+
+    public static ExecutorBinding HistoryReadExecutor
+    {
+        get;
+    } = new("runtime:executor/HistoryRead");
+
+    public static ExecutorBinding HistoryAppendExecutor
+    {
+        get;
+    } = new("runtime:executor/HistoryAppend");
+
+    public static ExecutorBinding GraphQueryExecutor
+    {
+        get;
+    } = new("runtime:executor/GraphQuery");
+
+    public static ExecutorBinding MemorySearchExecutor
+    {
+        get;
+    } = new("runtime:executor/MemorySearch");
 }

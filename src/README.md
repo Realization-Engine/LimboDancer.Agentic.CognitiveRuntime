@@ -10,7 +10,7 @@ This directory is the transition boundary between the legacy `LimboDancer.MCP` i
 | [`docs/`](./docs/) | Active documentation | Current runtime specifications, design guidance, implementation planning, and retained legacy reference documents. |
 | [`Legacy/`](./Legacy/) | Temporary legacy source | Previous `LimboDancer.MCP.*` projects retained only as behavioral and migration references. |
 
-The new production solution under `src/LimboDancer/` now contains the action-authority, diagnostic, execution-gate, audit, and tenant-safe State foundations. Runtime contracts and behavior continue to be introduced incrementally in the order defined by the implementation plan.
+The new production solution under `src/LimboDancer/` now contains the action-authority, diagnostic, execution-gate, audit, and tenant-safe State foundations, plus new-runtime executors for the four initial directed actions. Runtime contracts and behavior continue to be introduced incrementally in the order defined by the implementation plan.
 
 ## Active production layout
 
