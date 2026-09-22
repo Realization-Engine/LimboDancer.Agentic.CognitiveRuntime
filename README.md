@@ -768,6 +768,7 @@ Key documents include:
 - `LimboDancer.Agentic.CognitiveRuntime Implementation Plan.md`
 - `LimboDancer.Agentic.CognitiveRuntime Domain Knowledge Modeling Requirements.md`
 - `LimboDancer.Agentic.CognitiveRuntime Domain Integration Model.md`
+- `LimboDancer.Agentic.CognitiveRuntime Native Local Decision Model.md`
 - `Decision Plane Architecture.md`
 - `docs/ASL/legacy-limbodancer-mcp-system-design.md` — ASL reference-domain requirements and historical design source
 

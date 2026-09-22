@@ -36,6 +36,7 @@ When documents disagree, use this order of authority:
 | [Plane Architecture Codebase Validation](<./LimboDancer.Agentic.CognitiveRuntime Plane Architecture Codebase Validation.md>) | Tests the plane model against the legacy implementation and identifies gaps. |
 | [Decision Plane Architecture](<./Decision Plane Architecture.md>) | Defines bounded selection, abstention, escalation, and the relationship between decision and execution authority. |
 | [Runtime Orchestration Model](<./LimboDancer.Agentic.CognitiveRuntime Runtime Orchestration Model.md>) | Defines how goals and directed requests progress across runtime authority boundaries. |
+| [Native Local Decision Model](<./LimboDancer.Agentic.CognitiveRuntime Native Local Decision Model.md>) | Research direction for a future LimboDancer-owned local semantic choice engine, including surveyed implementations, invariants, corpus requirements, and the evidence gate that keeps implementation deferred. |
 
 ## Domain integration and knowledge modeling
 

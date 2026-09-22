@@ -1563,7 +1563,7 @@ Add alternative intelligence behind the stable Decision contract.
 
 Candidates include:
 
-- Jev/System One;
+- LimboDancer-native local semantic choice model;
 - LLM structured-choice provider;
 - local classifier;
 - composite strategies later.
@@ -1604,6 +1604,12 @@ The first provider experiment adds an explicitly configured `OpenAiDecisionProvi
 The follow-up evaluation checkpoint adds explicit ambiguity, orthogonal action-risk, and wrong-choice-severity labels plus reports for selection correctness, abstention quality, invalid-result rate, latency, tokens, cost, confidence calibration error, deterministic-baseline disagreement, and severe wrong choices. Recorded and synthetic cases prove the measurement contract but do not establish live-model quality. OpenAI adoption remains deferred until an operator-controlled run uses a representative redacted corpus, a pinned model and prices, finite budgets, and documented acceptance thresholds.
 
 The deterministic rule provider remains the default. PR-19 does not add provider routing, fallback, retries, live-provider CI, or production-provider adoption.
+
+### Future native local Decision model direction
+
+The [Native Local Decision Model](<./LimboDancer.Agentic.CognitiveRuntime Native Local Decision Model.md>) records a future research direction synthesized from Jev-style open implementations. It narrows the prospective capability to bounded selection among runtime-supplied candidates plus explicit abstention and escalation, while retaining the existing `IDecisionProvider`, `DecisionResult`, Decision Plane validation, Execution Gate, and Effect Verification boundaries.
+
+This direction is not an admitted increment. Do not implement a second non-reference provider, model service, training pipeline, router, or fallback from this note. The next eligible activity remains operator-controlled evidence preparation under the PR-19 Evaluation Review. A local-provider design slice requires a representative reviewed corpus, pinned inference identity, finite evaluation budget, repeated offline results, and documented acceptance thresholds for one bounded Decision class.
 
 ## 27. Deferred Until Concrete Use Cases
 
