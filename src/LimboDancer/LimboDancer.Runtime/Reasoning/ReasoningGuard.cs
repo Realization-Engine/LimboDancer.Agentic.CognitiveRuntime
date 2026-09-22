@@ -43,7 +43,9 @@ public sealed class ReasoningGuard
                 reasons.Add("reasoning.semantic_intent_unresolved");
             }
 
-            var previous = context.History.LastOrDefault();
+            var previous = context.History.Count == 0
+                ? null
+                : context.History[^1];
             if (previous is not null
                 && string.Equals(
                     previous.ProposalFingerprint,
