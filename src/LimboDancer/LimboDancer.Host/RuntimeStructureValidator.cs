@@ -84,7 +84,10 @@ public sealed class RuntimeStructureValidationResult
         Failures = new ReadOnlyCollection<string>(failures.ToArray());
     }
 
-    public IReadOnlyList<string> Failures { get; }
+    public IReadOnlyList<string> Failures
+    {
+        get;
+    }
 
     public bool IsValid => Failures.Count == 0;
 }

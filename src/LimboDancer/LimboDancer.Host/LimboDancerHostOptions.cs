@@ -19,7 +19,11 @@ public sealed class ApiKeyCredentialOptions
 
     public string PrincipalId { get; set; } = string.Empty;
 
-    public Guid TenantId { get; set; }
+    public Guid TenantId
+    {
+        get;
+        set;
+    }
 
     public List<string> Permissions { get; set; } = [];
 }

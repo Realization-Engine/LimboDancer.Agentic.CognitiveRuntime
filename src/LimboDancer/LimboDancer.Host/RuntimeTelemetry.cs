@@ -17,7 +17,10 @@ public sealed class RuntimeTelemetry : IDisposable
         toolCallFailures = meter.CreateCounter<long>("limbodancer.mcp.tool_call_failures");
     }
 
-    public ActivitySource ActivitySource { get; }
+    public ActivitySource ActivitySource
+    {
+        get;
+    }
 
     public void RecordToolCall(bool failed)
     {

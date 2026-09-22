@@ -29,7 +29,7 @@ public sealed class FailClosedActionConstraintEvaluatorTests
                     "state.current",
                     PreconditionKind.Operational,
                     "test.evaluator",
-                    JsonSerializer.SerializeToElement(new { }),
+                    ParseJson("{}"),
                     required: true),
             ]),
             CreateContext());
@@ -45,7 +45,7 @@ public sealed class FailClosedActionConstraintEvaluatorTests
             new ActionVersion("1.0.0"),
             "Test action",
             "Test action.",
-            JsonSerializer.SerializeToElement(new { type = "object" }),
+            ParseJson("""{"type":"object"}"""),
             outputSchema: null,
             new ActionRiskProfile(
                 ActionMutability.ReadOnly,
@@ -59,7 +59,7 @@ public sealed class FailClosedActionConstraintEvaluatorTests
             IdempotencyMode.Intrinsic,
             new ExecutorBinding("test"));
         return new SelectedAction(
-            new ActionCandidate("candidate", descriptor, JsonSerializer.SerializeToElement(new { })),
+            new ActionCandidate("candidate", descriptor, ParseJson("{}")),
             SelectionOrigin.DirectedCaller);
     }
 
@@ -72,5 +72,11 @@ public sealed class FailClosedActionConstraintEvaluatorTests
             tenantId,
             new RuntimePrincipal("principal", tenantId, isAuthenticated: true),
             new RuntimeBudget(1, DateTimeOffset.UtcNow.AddMinutes(1), null, null, 1, 0));
+    }
+
+    private static JsonElement ParseJson(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        return document.RootElement.Clone();
     }
 }
