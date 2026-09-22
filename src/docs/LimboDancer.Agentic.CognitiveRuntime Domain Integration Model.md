@@ -19,7 +19,7 @@ This document defines:
 - how the first ASL scenario will drive the contracts;
 - which generalized extension mechanisms remain deferred.
 
-It does not define final C# signatures. Concrete contracts will be admitted during the Milestone A review and PR-12/PR-13 only when a selected ASL scenario demonstrates their need.
+It does not define final C# signatures. The [Milestone A Conformance Review](<./LimboDancer.Agentic.CognitiveRuntime Milestone A Conformance Review.md>) selected occupied-building entry eligibility as the first ASL scenario and admitted the minimum PR-12/PR-13 contract boundary. Concrete signatures remain subject to those limits.
 
 ## 2. Core integration principle
 
@@ -118,7 +118,7 @@ ConclusionDisposition
 DomainConclusion
 ```
 
-These names are design candidates, not approved contracts. Each type must be justified by a concrete scenario and must remain free of ASL-specific vocabulary and infrastructure SDK types.
+The Milestone A review approved these names for PR-12 because the selected scenario exercises each one. Exact signatures remain implementation decisions. Each type must remain free of ASL-specific vocabulary and infrastructure SDK types.
 
 Domain and package identity must be carried with tenant context where required. A conclusion must identify the semantic package and material evidence versions used to interpret the domain state.
 
@@ -201,6 +201,8 @@ Select the first ASL read-only adjudication scenario and document:
 - explanation and audit expectations.
 
 Use that scenario to approve the smallest domain-neutral vocabulary. Reject interfaces that the scenario does not exercise.
+
+This checkpoint is complete. The selected scenario, approved vocabulary, admitted extension responsibilities, deferred interfaces, and required conformance tests are recorded in the Milestone A Conformance Review.
 
 ### PR-12: Autonomous runtime contracts
 

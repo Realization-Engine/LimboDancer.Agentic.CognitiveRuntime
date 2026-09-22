@@ -21,6 +21,7 @@ When documents disagree, use this order of authority:
 | [Plane Runtime Specification](<./LimboDancer.Agentic.CognitiveRuntime Plane Runtime Specification.md>) | Normative runtime contract and conformance requirements. |
 | [Plane Runtime Design](<./LimboDancer.Agentic.CognitiveRuntime Plane Runtime Design.md>) | Detailed target design for the six-plane runtime and cross-cutting fabrics. |
 | [Implementation Plan](<./LimboDancer.Agentic.CognitiveRuntime Implementation Plan.md>) | Ordered milestones, pull-request sequence, tests, and acceptance gates. |
+| [Milestone A Conformance Review](<./LimboDancer.Agentic.CognitiveRuntime Milestone A Conformance Review.md>) | Directed-runtime conformance decision, first ASL adjudication scenario, and approved PR-12/PR-13 contract boundary. |
 
 ## Architecture analyses and runtime models
 
@@ -44,12 +45,13 @@ Advanced Squad Leader is the first reference domain and architectural fitness te
 
 ## Current source status
 
-The new production solution has not yet been generated. The present source tree contains:
+The new `.NET 10` production solution is active under `src/LimboDancer/`. Milestone A now includes the directed action-authority substrate, Diagnostics, the Execution Gate, audit, tenant-safe reference State providers, four compatibility actions, the MCP interaction adapter, and the independently runnable Host.
 
-- `src/Legacy/` — isolated `LimboDancer.MCP.*` implementation retained temporarily for behavioral reference;
-- `src/docs/` — current specifications and planning documents, plus legacy documentation awaiting retirement or migration.
+- `src/LimboDancer/` — active production projects and conformance tests;
+- `src/Legacy/` — isolated `LimboDancer.MCP.*` implementation retained temporarily for behavioral reference; and
+- `src/docs/` — current specifications, reviews, planning documents, and legacy documentation awaiting retirement or migration.
 
-The planned `src/LimboDancer/` project structure is a target described by the implementation plan. New production code must not depend on `src/Legacy/`.
+New production code must not depend on `src/Legacy/`. Architecture tests enforce the approved project graph and legacy boundary.
 
 See the [`src/` overview](../) for the current and target source layouts.
 

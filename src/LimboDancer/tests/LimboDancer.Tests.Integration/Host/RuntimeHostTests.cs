@@ -1,10 +1,15 @@
+using System.Net.Http.Json;
 using System.Security.Claims;
+using System.Text.Json;
+using LimboDancer.Abstractions.Audit;
 using LimboDancer.Adapters.Mcp;
 using LimboDancer.Host;
 using LimboDancer.Infrastructure.Audit;
 using LimboDancer.Runtime.Actions;
 using LimboDancer.Runtime.Diagnostics;
 using LimboDancer.Runtime.Directed;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -110,6 +115,66 @@ public sealed class RuntimeHostTests
             .ToArray();
 
         Assert.Empty(legacyAssemblies);
+    }
+
+    [Fact]
+    public async Task HostStartsAndAdmitsAuthenticatedTenantIntoMcpInvocation()
+    {
+        var tenantId = Guid.NewGuid();
+        var arguments = new[]
+        {
+            "--urls=http://127.0.0.1:0",
+            "--LimboDancer:ApiKeys:0:Key=integration-key",
+            "--LimboDancer:ApiKeys:0:PrincipalId=integration-principal",
+            $"--LimboDancer:ApiKeys:0:TenantId={tenantId:D}",
+        };
+        await using var application = HostApplication.Build(arguments);
+        await application.StartAsync(CancellationToken.None);
+
+        var addressFeature = application.Services
+            .GetRequiredService<IServer>()
+            .Features
+            .Get<IServerAddressesFeature>();
+        Assert.NotNull(addressFeature);
+        using var client = new HttpClient
+        {
+            BaseAddress = new Uri(Assert.Single(addressFeature.Addresses)),
+        };
+
+        using var liveResponse = await client.GetAsync("/health/live");
+        using var readyResponse = await client.GetAsync("/health/ready");
+        using var anonymousToolsResponse = await client.GetAsync("/mcp/tools");
+        Assert.True(liveResponse.IsSuccessStatusCode);
+        Assert.True(readyResponse.IsSuccessStatusCode);
+        Assert.Equal(
+            System.Net.HttpStatusCode.Unauthorized,
+            anonymousToolsResponse.StatusCode);
+
+        client.DefaultRequestHeaders.Add("X-LimboDancer-Key", "integration-key");
+        using var toolsResponse = await client.GetAsync("/mcp/tools");
+        Assert.True(toolsResponse.IsSuccessStatusCode);
+        using var response = await client.PostAsJsonAsync(
+            "/mcp/tools/call",
+            new
+            {
+                name = "history_get",
+                arguments = JsonSerializer.SerializeToElement(new Dictionary<string, string>
+                {
+                    ["sessionId"] = "conformance-session",
+                }),
+                protocolVersion = McpProtocolVersions.Modern,
+                clientName = "conformance-client",
+                clientVersion = "1.0",
+            });
+
+        Assert.True(response.IsSuccessStatusCode);
+        var admitted = Assert.Single(
+            application.Services
+                .GetRequiredService<InMemoryAuditSink>()
+                .Snapshot()
+                .Where(static auditEvent => auditEvent.EventType == AuditEventType.InvocationAdmitted));
+        Assert.Equal(tenantId, admitted.TenantId);
+        await application.StopAsync(CancellationToken.None);
     }
 
     private static ServiceCollection CreateServices()

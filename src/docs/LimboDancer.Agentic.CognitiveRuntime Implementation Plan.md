@@ -1060,6 +1060,10 @@ The review must identify:
 - which existing runtime ports are sufficient;
 - which new interface, if any, has concrete justification.
 
+### Review outcome
+
+Milestone A is approved in the [Milestone A Conformance Review](<./LimboDancer.Agentic.CognitiveRuntime Milestone A Conformance Review.md>). The review selected **ASL Scenario A1: occupied-building entry eligibility**, closed the executable-Host proof gap with a loopback HTTP conformance test, admitted the minimum domain-neutral conclusion vocabulary for PR-12, and bounded the package, observation, entity-resolution, and conclusion-resolution responsibilities eligible for PR-13.
+
 ## 17. Increment 9: Autonomous Runtime Contracts
 
 ### Objective
