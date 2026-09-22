@@ -19,11 +19,7 @@ public sealed class OpenAiDecisionProviderOptions
             throw new ArgumentException("The OpenAI endpoint must be an absolute HTTPS URI.", nameof(endpoint));
         }
 
-        if (timeout <= TimeSpan.Zero)
-        {
-            throw new ArgumentOutOfRangeException(nameof(timeout));
-        }
-
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(timeout, TimeSpan.Zero);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxOutputTokens);
         ArgumentOutOfRangeException.ThrowIfNegative(inputCostPerMillionTokens);
         ArgumentOutOfRangeException.ThrowIfNegative(outputCostPerMillionTokens);

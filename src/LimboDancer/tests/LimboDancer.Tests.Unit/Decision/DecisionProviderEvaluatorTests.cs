@@ -22,7 +22,7 @@ public sealed class DecisionProviderEvaluatorTests
             DecisionOutcome.Selected,
             ["candidate-1"]);
 
-        var evaluation = await new DecisionProviderEvaluator().EvaluateAsync(provider, [evaluationCase]);
+        var evaluation = await DecisionProviderEvaluator.EvaluateAsync(provider, [evaluationCase]);
 
         var result = Assert.Single(evaluation.Results);
         Assert.True(result.Correct);

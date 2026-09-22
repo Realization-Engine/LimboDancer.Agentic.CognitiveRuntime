@@ -15,6 +15,18 @@ public sealed class OpenAiDecisionProvider : IDecisionProvider, IDisposable
     private const string Instructions = "Select only from the supplied permitted candidates. "
         + "Return Selected, Abstained, or Escalated using the required schema. "
         + "Use a stable concise reason code. Do not include hidden reasoning.";
+    private static readonly string[] DecisionOutcomes = ["Selected", "Abstained", "Escalated"];
+    private static readonly string[] StringOrNull = ["string", "null"];
+    private static readonly string[] NumberOrNull = ["number", "null"];
+    private static readonly string[] DistributionRequired = ["candidateId", "probability"];
+    private static readonly string[] DecisionRequired =
+    [
+        "outcome",
+        "selectedCandidateId",
+        "reasonCode",
+        "confidence",
+        "distribution",
+    ];
     private readonly HttpClient httpClient;
     private readonly OpenAiDecisionProviderOptions options;
     private readonly TimeProvider timeProvider;
@@ -99,7 +111,9 @@ public sealed class OpenAiDecisionProvider : IDecisionProvider, IDisposable
         }
     }
 
-    private string CreateInput(DecisionContext context, IReadOnlyList<PermittedAction> candidates)
+    private static string CreateInput(
+        DecisionContext context,
+        IReadOnlyList<PermittedAction> candidates)
     {
         var payload = new
         {
@@ -189,10 +203,25 @@ public sealed class OpenAiDecisionProvider : IDecisionProvider, IDisposable
         type = "object",
         properties = new
         {
-            outcome = new { type = "string", @enum = new[] { "Selected", "Abstained", "Escalated" } },
-            selectedCandidateId = new { type = new[] { "string", "null" } },
-            reasonCode = new { type = "string" },
-            confidence = new { type = new[] { "number", "null" }, minimum = 0, maximum = 1 },
+            outcome = new
+            {
+                type = "string",
+                @enum = DecisionOutcomes,
+            },
+            selectedCandidateId = new
+            {
+                type = StringOrNull,
+            },
+            reasonCode = new
+            {
+                type = "string",
+            },
+            confidence = new
+            {
+                type = NumberOrNull,
+                minimum = 0,
+                maximum = 1,
+            },
             distribution = new
             {
                 type = "array",
@@ -201,15 +230,23 @@ public sealed class OpenAiDecisionProvider : IDecisionProvider, IDisposable
                     type = "object",
                     properties = new
                     {
-                        candidateId = new { type = "string" },
-                        probability = new { type = "number", minimum = 0, maximum = 1 },
+                        candidateId = new
+                        {
+                            type = "string",
+                        },
+                        probability = new
+                        {
+                            type = "number",
+                            minimum = 0,
+                            maximum = 1,
+                        },
                     },
-                    required = new[] { "candidateId", "probability" },
+                    required = DistributionRequired,
                     additionalProperties = false,
                 },
             },
         },
-        required = new[] { "outcome", "selectedCandidateId", "reasonCode", "confidence", "distribution" },
+        required = DecisionRequired,
         additionalProperties = false,
     });
 

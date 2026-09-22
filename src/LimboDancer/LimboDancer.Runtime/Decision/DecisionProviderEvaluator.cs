@@ -2,9 +2,9 @@ using LimboDancer.Abstractions.Decision;
 
 namespace LimboDancer.Runtime.Decision;
 
-public sealed class DecisionProviderEvaluator
+public static class DecisionProviderEvaluator
 {
-    public async Task<DecisionProviderEvaluation> EvaluateAsync(
+    public static async Task<DecisionProviderEvaluation> EvaluateAsync(
         IDecisionProvider provider,
         IReadOnlyList<DecisionEvaluationCase> cases,
         CancellationToken cancellationToken = default)
