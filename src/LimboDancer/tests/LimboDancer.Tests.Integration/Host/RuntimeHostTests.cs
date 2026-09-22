@@ -171,8 +171,8 @@ public sealed class RuntimeHostTests
         var admitted = Assert.Single(
             application.Services
                 .GetRequiredService<InMemoryAuditSink>()
-                .Snapshot()
-                .Where(static auditEvent => auditEvent.EventType == AuditEventType.InvocationAdmitted));
+                .Snapshot(),
+            static auditEvent => auditEvent.EventType == AuditEventType.InvocationAdmitted);
         Assert.Equal(tenantId, admitted.TenantId);
         await application.StopAsync(CancellationToken.None);
     }
