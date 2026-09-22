@@ -38,6 +38,8 @@ The initial host intentionally uses the admitted in-memory reference providers. 
 
 The exact implementation sequence and admission criteria are defined in the [Implementation Plan](<./docs/LimboDancer.Agentic.CognitiveRuntime Implementation Plan.md>). The [documentation index](./docs/) identifies the normative specification and its supporting design documents.
 
+Milestones A and B are approved. The runtime now has both a governed directed-execution path and a deterministic autonomous-selection path. Reasoning and Goal orchestration remain the next bounded increments; autonomous selection still creates no execution authority until the existing gate independently authorizes current state.
+
 ## Legacy boundary
 
 New production projects must not reference projects or assemblies under `Legacy/`. Required behavior may be inspected, reimplemented, tested, and admitted into the new architecture. The intended end state is deletion of `src/Legacy/` after the necessary behavior has been ported and validated.

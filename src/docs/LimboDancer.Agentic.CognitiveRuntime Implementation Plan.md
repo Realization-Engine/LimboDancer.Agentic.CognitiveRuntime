@@ -1271,7 +1271,28 @@ The deterministic Decision baseline now:
 
 The Host composes the deterministic provider and Decision Plane, but no Goal orchestration loop or autonomous execution path is added in this increment. Alternative providers remain behind the same contract.
 
-## 20. Increment 12: Minimal Reasoning Boundary
+## 20. Milestone B: Autonomous Selection Conformance
+
+Before Reasoning and Goal orchestration are implemented, the complete deterministic selection path MUST be proven without creating execution authority.
+
+The milestone requires:
+
+1. one integrated Goal-to-SelectedAction conformance test;
+2. finite registered candidates grounded in versioned observations;
+3. fail-closed required semantic constraints;
+4. Decision access only to `PermittedAction`;
+5. provider bypass for an empty permitted set;
+6. explicit selection, abstention, and escalation behavior;
+7. invalid provider-result rejection;
+8. structured Decision audit evidence;
+9. independent Execution Gate revalidation; and
+10. continued separation of `DomainConclusion`, `SelectedAction`, and `AuthorizedAction`.
+
+### Review outcome
+
+Milestone B is approved in the [Milestone B Conformance Review](<./LimboDancer.Agentic.CognitiveRuntime Milestone B Conformance Review.md>). The review closed the integrated-path proof gap with a deterministic Goal-to-SelectedAction conformance test, confirmed the selection and authority boundaries, and admitted only the minimal deterministic Reasoning work described by PR-15.
+
+## 21. Increment 12: Minimal Reasoning Boundary
 
 ### Objective
 
@@ -1319,7 +1340,7 @@ The runtime has a real Reasoning boundary that can be composed by Orchestration 
 
 **PR-15: Minimal Reasoning boundary**
 
-## 21. Increment 13: Goal Orchestration
+## 22. Increment 13: Goal Orchestration
 
 ### Objective
 
@@ -1381,7 +1402,7 @@ A simple Goal can complete end-to-end using the minimal Reasoning provider and d
 
 **PR-16: Goal orchestration loop**
 
-## 22. Increment 14: Effect Verification
+## 23. Increment 14: Effect Verification
 
 ### Objective
 
@@ -1422,7 +1443,7 @@ Do not turn verification into a second diagnostic framework.
 
 **PR-17: Effect verification**
 
-## 23. Increment 15: Replay-Capable Evidence
+## 24. Increment 15: Replay-Capable Evidence
 
 ### Objective
 
@@ -1450,7 +1471,7 @@ A general replay engine is not yet required.
 
 **PR-18: Replay-capable decision evidence**
 
-## 24. Increment 16: Additional Decision Providers
+## 25. Increment 16: Additional Decision Providers
 
 ### Objective
 
@@ -1483,7 +1504,7 @@ Provider routing SHOULD NOT be added until at least two real providers have enou
 
 One PR per provider.
 
-## 25. Deferred Until Concrete Use Cases
+## 26. Deferred Until Concrete Use Cases
 
 Do not implement merely because the architecture permits them:
 
@@ -1526,7 +1547,7 @@ The first ASL slice SHOULD be read-only adjudication. It should prove that autho
 
 Exact projects, persistence products, representation formats, and PR numbers remain deferred until the selected scenario supplies concrete requirements.
 
-## 26. Test Strategy
+## 27. Test Strategy
 
 ### Unit tests
 
@@ -1591,7 +1612,7 @@ The initial suite SHOULD prove:
 - independent authorization and revalidation for requested mutations;
 - absence of ASL-specific dependencies in the runtime kernel.
 
-## 27. Legacy Source Admission Checklist
+## 28. Legacy Source Admission Checklist
 
 Whenever code is copied or closely adapted from `LimboDancer.MCP.*`, the PR must answer:
 
@@ -1607,7 +1628,7 @@ Whenever code is copied or closely adapted from `LimboDancer.MCP.*`, the PR must
 10. What tests prove preserved behavior and corrected defects?
 11. Does the new implementation have any legacy project/assembly dependency? It must not.
 
-## 28. PR Discipline
+## 29. PR Discipline
 
 Each PR SHOULD:
 
@@ -1621,7 +1642,7 @@ Each PR SHOULD:
 
 Do not mix broad legacy deletion into implementation PRs until replacement parity exists.
 
-## 29. Legacy Retirement Plan
+## 30. Legacy Retirement Plan
 
 Legacy deletion begins only after the new runtime reaches required parity. The intended end state is deletion of the entire `src/Legacy/` directory as one retirement unit.
 
@@ -1650,7 +1671,7 @@ Legacy deletion begins only after the new runtime reaches required parity. The i
 
 Legacy removal should be performed in dedicated PRs after parity, not piecemeal during early implementation.
 
-## 30. .NET 11 Upgrade Checkpoint
+## 31. .NET 11 Upgrade Checkpoint
 
 After .NET 11 GA, perform the specification-required upgrade assessment.
 
@@ -1666,7 +1687,7 @@ stable implementation checkpoint
 -> continue feature work
 ```
 
-## 31. Milestone Summary
+## 32. Milestone Summary
 
 ### Milestone 0: Build boundary
 
@@ -1678,7 +1699,7 @@ The four compatibility MCP capabilities run entirely through the new ActionDescr
 
 ### Milestone B: Autonomous selection runtime
 
-Goal -> Observation -> Resolution -> PermittedAction -> Decision -> SelectedAction works with deterministic Decision.
+Goal -> Observation -> Resolution -> PermittedAction -> Decision -> SelectedAction works with deterministic Decision. This milestone is approved in the [Milestone B Conformance Review](<./LimboDancer.Agentic.CognitiveRuntime Milestone B Conformance Review.md>).
 
 ### Milestone C: Autonomous execution runtime
 
@@ -1696,7 +1717,7 @@ The new runtime satisfies required parity and all legacy production projects can
 
 The runtime satisfies the current ASL reference-domain requirements through evidence-backed adjudication, explanation, change-sensitive conclusions, and governed state mutation without embedding ASL-specific concepts in the runtime kernel.
 
-## 32. Recommended PR Sequence
+## 33. Recommended PR Sequence
 
 ```text
 PR-01  New .NET 10 solution baseline
@@ -1716,6 +1737,9 @@ PR-11  New runtime host
 PR-12  Autonomous runtime contracts
 PR-13  Observation and semantic action resolution
 PR-14  Deterministic Decision Plane
+
+--- Milestone B review ---
+
 PR-15  Minimal Reasoning boundary
 PR-16  Goal orchestration loop
 PR-17  Effect verification
@@ -1737,7 +1761,7 @@ RD-01+ ASL slices selected from concrete acceptance scenarios
 
 The PR numbering is planning guidance, not a requirement. PRs may be split further when reviewability benefits, but major authority boundaries SHOULD NOT be collapsed into one large initial rewrite.
 
-## 33. Definition of Implementation Ready
+## 34. Definition of Implementation Ready
 
 Implementation may begin when:
 
@@ -1750,7 +1774,7 @@ Implementation may begin when:
 
 No Decision-provider choice, policy-engine choice, replay-engine design, or human-confirmation UX is required before implementation starts.
 
-## 34. First Concrete Engineering Task
+## 35. First Concrete Engineering Task
 
 The first engineering change should be deliberately small:
 

@@ -78,6 +78,20 @@ public sealed class SemanticResolutionTests
     }
 
     [Fact]
+    public async Task RequiredConstraintOutsideSemanticPipelineFailsClosed()
+    {
+        var candidate = CreateCandidate(PreconditionKind.Governance);
+        var pipeline = new SemanticActionConstraintPipeline([]);
+
+        var result = await pipeline.EvaluateAsync([candidate], CreateConstraintContext());
+
+        Assert.Empty(result.Permitted);
+        Assert.Equal(
+            "constraint.not_evaluated",
+            Assert.Single(Assert.Single(result.Rejected).ConstraintResults).ReasonCode);
+    }
+
+    [Fact]
     public async Task DuplicateCandidateIdentityIsRejected()
     {
         var candidate = CreateCandidate();
@@ -98,11 +112,12 @@ public sealed class SemanticResolutionTests
         GoalContractsTests.ParseJson("{}"),
         DateTimeOffset.UtcNow);
 
-    private static ActionCandidate CreateCandidate()
+    private static ActionCandidate CreateCandidate(
+        PreconditionKind kind = PreconditionKind.Semantic)
     {
         var precondition = new PreconditionDescriptor(
             "fake.semantic.required",
-            PreconditionKind.Semantic,
+            kind,
             StubSemanticEvaluator.Id,
             GoalContractsTests.ParseJson("{}"),
             required: true);
