@@ -52,7 +52,11 @@ public sealed class RuntimeHostTests
             null,
             GoalOrigin.System,
             "ldm:action/HistoryRead",
-            JsonSerializer.SerializeToElement(new { sessionId = "session-1" }),
+            JsonSerializer.SerializeToElement(
+                new
+                {
+                    sessionId = "session-1",
+                }),
             DateTimeOffset.UtcNow));
         Assert.Equal(GoalLifecycleState.Failed, autonomousResult.TerminalState);
         Assert.Equal("admission.policy_not_configured", autonomousResult.Reason.Code);
