@@ -24,6 +24,14 @@ namespace LimboDancer.Tests.Integration.Mcp;
 
 public sealed class McpInteractionAdapterTests
 {
+    private static readonly string[] ExpectedToolNames =
+    [
+        "graph_query",
+        "history_append",
+        "history_get",
+        "memory_search",
+    ];
+
     [Fact]
     public void DiscoveryAndLegacyInitializationAdvertiseSupportedLifecycleModels()
     {
@@ -46,7 +54,7 @@ public sealed class McpInteractionAdapterTests
         var tools = CreateFixture().Adapter.ListTools();
 
         Assert.Equal(
-            new[] { "graph_query", "history_append", "history_get", "memory_search" },
+            ExpectedToolNames,
             tools.Select(static tool => tool.Name));
         Assert.All(tools, static tool => Assert.Equal(JsonValueKind.Object, tool.InputSchema.ValueKind));
     }
