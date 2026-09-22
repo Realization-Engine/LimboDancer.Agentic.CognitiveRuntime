@@ -2,7 +2,9 @@ using LimboDancer.Abstractions.Actions;
 using LimboDancer.Abstractions.Audit;
 using LimboDancer.Abstractions.Decision;
 using LimboDancer.Abstractions.Domain;
+using LimboDancer.Abstractions.Observations;
 using LimboDancer.Abstractions.Reasoning;
+using LimboDancer.Abstractions.Runtime;
 using LimboDancer.Abstractions.State.Graph;
 using LimboDancer.Abstractions.State.History;
 using LimboDancer.Abstractions.State.Memory;
@@ -22,6 +24,7 @@ using LimboDancer.Runtime.Decision;
 using LimboDancer.Runtime.Directed;
 using LimboDancer.Runtime.Domain;
 using LimboDancer.Runtime.Execution;
+using LimboDancer.Runtime.Orchestration;
 using LimboDancer.Runtime.Reasoning;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Configuration;
@@ -101,6 +104,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IReasoningProvider, PassThroughReasoningProvider>();
         services.AddSingleton<ReasoningGuard>();
         services.AddSingleton<IReasoningEngine, ReasoningEngine>();
+        services.TryAddSingleton<IGoalAdmissionPolicy, DenyAllGoalAdmissionPolicy>();
+        services.TryAddSingleton<IObservationProvider, EmptyObservationProvider>();
+        services.AddSingleton<IGoalOrchestrator, GoalOrchestrator>();
 
         services.AddSingleton<IActionExecutor, HistoryReadExecutor>();
         services.AddSingleton<IActionExecutor, HistoryAppendExecutor>();

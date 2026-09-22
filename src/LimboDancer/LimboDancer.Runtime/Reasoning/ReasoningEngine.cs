@@ -65,6 +65,14 @@ public sealed class ReasoningEngine : IReasoningEngine
                     .OrderBy(static observation => observation.ObservationId, StringComparer.Ordinal)
                     .Select(static observation =>
                         $"{observation.ObservationId}:{observation.Version ?? "unversioned"}"));
+        if (context.ActionOutcomes.Count != 0)
+        {
+            state = string.Join(
+                "\n",
+                new[] { state }.Concat(context.ActionOutcomes.Select(static outcome =>
+                    $"{outcome.StepId}:{outcome.SemanticIntent}:{outcome.Succeeded}:{outcome.Code}:{outcome.Output?.GetRawText()}")));
+        }
+
         return new ReasoningStepRecord(
             intent.Value,
             Fingerprint(proposal),

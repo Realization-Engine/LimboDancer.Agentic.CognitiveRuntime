@@ -4,6 +4,7 @@ using System.Text.Json;
 using LimboDancer.Abstractions.Actions;
 using LimboDancer.Abstractions.Audit;
 using LimboDancer.Abstractions.Domain;
+using LimboDancer.Abstractions.Runtime;
 using LimboDancer.Adapters.Mcp;
 using LimboDancer.Host;
 using LimboDancer.Infrastructure.Audit;
@@ -34,6 +35,7 @@ public sealed class RuntimeHostTests
         var packageResolver = provider.GetRequiredService<IDomainPackageResolver>();
         var decisionPlane = provider.GetRequiredService<IDecisionPlane>();
         var reasoningEngine = provider.GetRequiredService<IReasoningEngine>();
+        var goalOrchestrator = provider.GetRequiredService<IGoalOrchestrator>();
         var validator = provider.GetRequiredService<RuntimeStructureValidator>();
         var hostedServices = provider.GetServices<IHostedService>().ToArray();
 
@@ -42,6 +44,18 @@ public sealed class RuntimeHostTests
         Assert.NotNull(constraintPipeline);
         Assert.NotNull(decisionPlane);
         Assert.NotNull(reasoningEngine);
+        Assert.NotNull(goalOrchestrator);
+        var autonomousResult = await goalOrchestrator.RunAsync(new Goal(
+            GoalId.New(),
+            new CorrelationId("host-composition"),
+            Guid.NewGuid(),
+            null,
+            GoalOrigin.System,
+            "ldm:action/HistoryRead",
+            JsonSerializer.SerializeToElement(new { sessionId = "session-1" }),
+            DateTimeOffset.UtcNow));
+        Assert.Equal(GoalLifecycleState.Failed, autonomousResult.TerminalState);
+        Assert.Equal("admission.policy_not_configured", autonomousResult.Reason.Code);
         var unavailablePackage = await packageResolver.ResolveAsync(new DomainPackageRef(
             new DomainId("unregistered-domain"),
             "unregistered-package",

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using LimboDancer.Abstractions.Actions;
 using LimboDancer.Abstractions.Reasoning;
 
@@ -18,6 +19,23 @@ public sealed class PassThroughReasoningProvider : IReasoningProvider
     {
         ArgumentNullException.ThrowIfNull(context);
         cancellationToken.ThrowIfCancellationRequested();
+        if (context.ActionOutcomes.Count != 0)
+        {
+            var outcome = context.ActionOutcomes[^1];
+            return Task.FromResult(outcome.Succeeded
+                ? new ReasoningResult(
+                    ReasoningDisposition.Completed,
+                    ProviderId,
+                    "reasoning.single_action_completed",
+                    output: outcome.Output ?? JsonSerializer.SerializeToElement(new { outcome.Code }),
+                    providerVersion: ProviderVersion)
+                : new ReasoningResult(
+                    ReasoningDisposition.Abstained,
+                    ProviderId,
+                    "reasoning.action_failed",
+                    providerVersion: ProviderVersion));
+        }
+
         return Task.FromResult(new ReasoningResult(
             ReasoningDisposition.ProposedAction,
             ProviderId,

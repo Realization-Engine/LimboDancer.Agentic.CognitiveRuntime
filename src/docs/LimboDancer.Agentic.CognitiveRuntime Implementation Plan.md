@@ -1417,6 +1417,22 @@ A simple Goal can complete end-to-end using the minimal Reasoning provider and d
 
 **PR-16: Goal orchestration loop**
 
+### Implemented baseline
+
+The initial Goal orchestration baseline now:
+
+- obtains the authenticated principal and bounded `RuntimeBudget` from an explicit admission policy rather than manufacturing authority inside orchestration;
+- assigns one `RuntimeInvocationId` per admitted Goal and preserves Goal, correlation, tenant, invocation, and step identity through the lifecycle;
+- coordinates observation requests, proposal-only Reasoning, registered action resolution, semantic constraints, deterministic Decision, pre-flight diagnostics, the common Execution Gate, and audited execution;
+- returns successful execution to Reasoning so it can complete or propose a different next step;
+- re-enters the complete resolution, constraint, Decision, diagnostic, and gate path for every additional step;
+- bounds action steps, observation-provider calls, stale-state retries, and wall-clock time;
+- re-observes and revalidates after a stale gate result without reusing the stale authorization;
+- terminates explicitly for completion, abstention, escalation, failure, and cancellation; and
+- refuses to override semantic or Governance denial.
+
+The Host composes the orchestrator with deny-by-default admission and an empty observation provider. A trusted adapter must replace admission before autonomous execution is available. Effect verification remains the next increment; the current `Verifying` stage records the execution outcome for Reasoning but does not claim semantic effect verification.
+
 ## 23. Increment 14: Effect Verification
 
 ### Objective

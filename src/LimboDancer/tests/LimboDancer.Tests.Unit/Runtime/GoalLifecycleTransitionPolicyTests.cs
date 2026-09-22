@@ -33,8 +33,12 @@ public sealed class GoalLifecycleTransitionPolicyTests
     [InlineData(GoalLifecycleState.Resolving, GoalLifecycleState.Abstained)]
     [InlineData(GoalLifecycleState.Constraining, GoalLifecycleState.Abstained)]
     [InlineData(GoalLifecycleState.Deciding, GoalLifecycleState.Escalated)]
+    [InlineData(GoalLifecycleState.Reasoning, GoalLifecycleState.Observing)]
+    [InlineData(GoalLifecycleState.Reasoning, GoalLifecycleState.Completed)]
     [InlineData(GoalLifecycleState.Gating, GoalLifecycleState.AwaitingConfirmation)]
+    [InlineData(GoalLifecycleState.Gating, GoalLifecycleState.Abstained)]
     [InlineData(GoalLifecycleState.AwaitingConfirmation, GoalLifecycleState.Gating)]
+    [InlineData(GoalLifecycleState.AwaitingConfirmation, GoalLifecycleState.Escalated)]
     [InlineData(GoalLifecycleState.Verifying, GoalLifecycleState.Reasoning)]
     public void BoundedBranchesAreValid(GoalLifecycleState from, GoalLifecycleState to)
     {

@@ -29,13 +29,13 @@ public sealed class ReasoningGuard
             reasons.Add("reasoning.deadline_exceeded");
         }
 
-        if (context.History.Count >= context.Budget.MaxSteps)
-        {
-            reasons.Add("reasoning.step_budget_exhausted");
-        }
-
         if (result.Disposition == ReasoningDisposition.ProposedAction)
         {
+            if (context.History.Count >= context.Budget.MaxSteps)
+            {
+                reasons.Add("reasoning.step_budget_exhausted");
+            }
+
             ArgumentNullException.ThrowIfNull(result.Intent);
             ArgumentNullException.ThrowIfNull(proposedStep);
             if (!actionRegistry.TryGet(new ActionId(result.Intent.Value), version: null, out _))

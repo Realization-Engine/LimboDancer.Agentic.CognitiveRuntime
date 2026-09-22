@@ -30,7 +30,10 @@ public static class GoalLifecycleTransitionPolicy
         {
             GoalLifecycleState.Admitted => to == GoalLifecycleState.Observing,
             GoalLifecycleState.Observing => to == GoalLifecycleState.Reasoning,
-            GoalLifecycleState.Reasoning => to == GoalLifecycleState.Resolving,
+            GoalLifecycleState.Reasoning => to is GoalLifecycleState.Observing
+                or GoalLifecycleState.Resolving
+                or GoalLifecycleState.Completed
+                or GoalLifecycleState.Abstained,
             GoalLifecycleState.Resolving => to is GoalLifecycleState.Constraining
                 or GoalLifecycleState.Completed
                 or GoalLifecycleState.Abstained,
@@ -41,9 +44,11 @@ public static class GoalLifecycleTransitionPolicy
                 or GoalLifecycleState.Escalated,
             GoalLifecycleState.Gating => to is GoalLifecycleState.Executing
                 or GoalLifecycleState.AwaitingConfirmation
+                or GoalLifecycleState.Abstained
                 or GoalLifecycleState.Observing,
             GoalLifecycleState.AwaitingConfirmation => to is GoalLifecycleState.Gating
-                or GoalLifecycleState.Abstained,
+                or GoalLifecycleState.Abstained
+                or GoalLifecycleState.Escalated,
             GoalLifecycleState.Executing => to == GoalLifecycleState.Verifying,
             GoalLifecycleState.Verifying => to is GoalLifecycleState.Completed
                 or GoalLifecycleState.Reasoning,

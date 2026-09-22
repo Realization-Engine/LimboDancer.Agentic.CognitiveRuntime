@@ -13,7 +13,8 @@ public sealed class ReasoningContext
         StepId stepId,
         RuntimeBudget budget,
         IEnumerable<Observation>? observations = null,
-        IEnumerable<ReasoningStepRecord>? history = null)
+        IEnumerable<ReasoningStepRecord>? history = null,
+        IEnumerable<ReasoningActionOutcome>? actionOutcomes = null)
     {
         ArgumentOutOfRangeException.ThrowIfEqual(invocationId.Value, Guid.Empty);
         ArgumentNullException.ThrowIfNull(goal);
@@ -31,12 +32,19 @@ public sealed class ReasoningContext
             throw new ArgumentException("Reasoning history cannot contain null values.", nameof(history));
         }
 
+        var outcomeValues = (actionOutcomes ?? []).ToArray();
+        if (outcomeValues.Any(static item => item is null))
+        {
+            throw new ArgumentException("Reasoning action outcomes cannot contain null values.", nameof(actionOutcomes));
+        }
+
         InvocationId = invocationId;
         Goal = goal;
         StepId = stepId;
         Budget = budget;
         Observations = new ReadOnlyCollection<Observation>(observationValues);
         History = new ReadOnlyCollection<ReasoningStepRecord>(historyValues);
+        ActionOutcomes = new ReadOnlyCollection<ReasoningActionOutcome>(outcomeValues);
     }
 
     public RuntimeInvocationId InvocationId
@@ -65,6 +73,11 @@ public sealed class ReasoningContext
     }
 
     public IReadOnlyList<ReasoningStepRecord> History
+    {
+        get;
+    }
+
+    public IReadOnlyList<ReasoningActionOutcome> ActionOutcomes
     {
         get;
     }
