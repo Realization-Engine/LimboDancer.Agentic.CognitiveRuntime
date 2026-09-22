@@ -41,6 +41,7 @@ public sealed class GoalLifecycleTransitionPolicyTests
     [InlineData(GoalLifecycleState.AwaitingConfirmation, GoalLifecycleState.Gating)]
     [InlineData(GoalLifecycleState.AwaitingConfirmation, GoalLifecycleState.Escalated)]
     [InlineData(GoalLifecycleState.Verifying, GoalLifecycleState.Reasoning)]
+    [InlineData(GoalLifecycleState.Verifying, GoalLifecycleState.Escalated)]
     public void BoundedBranchesAreValid(GoalLifecycleState from, GoalLifecycleState to)
     {
         Assert.True(GoalLifecycleTransitionPolicy.CanTransition(from, to));

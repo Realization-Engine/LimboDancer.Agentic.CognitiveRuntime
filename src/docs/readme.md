@@ -47,7 +47,7 @@ Advanced Squad Leader is the first reference domain and architectural fitness te
 
 ## Current source status
 
-The new `.NET 10` production solution is active under `src/LimboDancer/`. Milestone A includes the directed action-authority substrate, Diagnostics, the Execution Gate, audit, tenant-safe reference State providers, four compatibility actions, the MCP interaction adapter, and the independently runnable Host. Milestone B adds the domain-neutral observation and semantic-resolution boundaries plus the deterministic, audited Goal-to-SelectedAction path. Milestone C adds deterministic Reasoning and a bounded, deny-by-default autonomous Goal loop that revalidates every step through the common authority path.
+The new `.NET 10` production solution is active under `src/LimboDancer/`. Milestone A includes the directed action-authority substrate, Diagnostics, the Execution Gate, audit, tenant-safe reference State providers, four compatibility actions, the MCP interaction adapter, and the independently runnable Host. Milestone B adds the domain-neutral observation and semantic-resolution boundaries plus the deterministic, audited Goal-to-SelectedAction path. Milestone C adds deterministic Reasoning and a bounded, deny-by-default autonomous Goal loop that revalidates every step through the common authority path. The first post-Milestone C increment adds opt-in deterministic Effect Verification without treating executor success as semantic proof.
 
 - `src/LimboDancer/` — active production projects and conformance tests;
 - `src/Legacy/` — isolated `LimboDancer.MCP.*` implementation retained temporarily for behavioral reference; and

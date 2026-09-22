@@ -6,12 +6,14 @@ using LimboDancer.Abstractions.Observations;
 using LimboDancer.Abstractions.Reasoning;
 using LimboDancer.Abstractions.Runtime;
 using LimboDancer.Abstractions.Execution;
+using LimboDancer.Abstractions.Verification;
 using LimboDancer.Runtime.Actions;
 using LimboDancer.Runtime.Decision;
 using LimboDancer.Runtime.Diagnostics;
 using LimboDancer.Runtime.Execution;
 using LimboDancer.Runtime.Orchestration;
 using LimboDancer.Runtime.Reasoning;
+using LimboDancer.Runtime.Verification;
 using LimboDancer.Tests.Unit.Actions;
 using LimboDancer.Tests.Unit.Domain;
 using LimboDancer.Tests.Unit.Observations;
@@ -240,6 +242,26 @@ public sealed class GoalOrchestratorTests
         Assert.Empty(executor.Authorizations);
     }
 
+    [Fact]
+    public async Task ContradictedRequiredEffectInvokesConfiguredPolicy()
+    {
+        var descriptor = CreateVerifiableDescriptor();
+        var executor = new RecordingExecutor(descriptor);
+        var policy = new RecordingVerificationPolicy(EffectVerificationDisposition.Escalate);
+        var orchestrator = CreateOrchestrator(
+            [descriptor],
+            [executor],
+            effectEvaluators: [new ContradictingEffectEvaluator()],
+            effectVerificationPolicy: policy);
+
+        var result = await orchestrator.RunAsync(CreateGoal(descriptor.Id.Value));
+
+        Assert.Equal(GoalLifecycleState.Escalated, result.TerminalState);
+        Assert.Equal("verification.contradicted", result.Reason.Code);
+        Assert.Equal(1, policy.CallCount);
+        Assert.Single(executor.Authorizations);
+    }
+
     private static GoalOrchestrator CreateOrchestrator(
         IReadOnlyList<ActionDescriptor> descriptors,
         IReadOnlyList<RecordingExecutor> executors,
@@ -249,6 +271,8 @@ public sealed class GoalOrchestratorTests
         IObservationProvider? observationProvider = null,
         IActionConstraintEvaluator? gateConstraintEvaluator = null,
         IExecutionGate? executionGate = null,
+        IEnumerable<IEffectEvaluator>? effectEvaluators = null,
+        IEffectVerificationPolicy? effectVerificationPolicy = null,
         RuntimeBudget? budget = null)
     {
         var registry = new ActionRegistry(descriptors);
@@ -271,7 +295,9 @@ public sealed class GoalOrchestratorTests
                 new DefaultExecutionRiskPolicy(),
                 auditSink),
             executorResolver,
-            auditSink);
+            auditSink,
+            new EffectVerifier(effectEvaluators ?? [], auditSink),
+            effectVerificationPolicy ?? new DefaultEffectVerificationPolicy());
     }
 
     private static Goal CreateGoal(string intent) => new(
@@ -323,6 +349,32 @@ public sealed class GoalOrchestratorTests
             expectedEffects: [],
             source.Idempotency,
             new ExecutorBinding(executorId));
+    }
+
+    private static ActionDescriptor CreateVerifiableDescriptor()
+    {
+        var source = ActionRegistryTests.CreateDescriptor();
+        return new ActionDescriptor(
+            source.Id,
+            source.Version,
+            source.Name,
+            source.Description,
+            source.InputSchema,
+            source.OutputSchema,
+            source.Risk,
+            requiredPermissions: [],
+            preconditions: [],
+            expectedEffects:
+            [
+                new EffectDescriptor(
+                    "test-effect",
+                    ContradictingEffectEvaluator.Type,
+                    GoalContractsTests.ParseJson("{}"),
+                    requiredVerification: true),
+            ],
+            source.Idempotency,
+            source.Executor,
+            verification: new VerificationProfile(RequireEffectVerification: true));
     }
 
     private sealed class AdmittingPolicy(RuntimeBudget budget) : IGoalAdmissionPolicy
@@ -519,6 +571,45 @@ public sealed class GoalOrchestratorTests
                     DateTimeOffset.UtcNow,
                     expiresAt: null,
                     validatedStateVersions: null)));
+        }
+    }
+
+    private sealed class ContradictingEffectEvaluator : IEffectEvaluator
+    {
+        public const string Type = "test-effect";
+
+        public string EffectType => Type;
+
+        public ValueTask<EffectVerificationFinding> EvaluateAsync(
+            AuthorizedAction action,
+            ActionExecutionResult execution,
+            EffectDescriptor expectedEffect,
+            VerificationContext context,
+            CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return ValueTask.FromResult(new EffectVerificationFinding(
+                expectedEffect.Id,
+                VerificationStatus.Contradicted,
+                "verification.effect_mismatch"));
+        }
+    }
+
+    private sealed class RecordingVerificationPolicy(
+        EffectVerificationDisposition disposition) : IEffectVerificationPolicy
+    {
+        public int CallCount
+        {
+            get;
+            private set;
+        }
+
+        public EffectVerificationDisposition Evaluate(
+            AuthorizedAction action,
+            EffectVerificationResult verification)
+        {
+            CallCount++;
+            return disposition;
         }
     }
 }

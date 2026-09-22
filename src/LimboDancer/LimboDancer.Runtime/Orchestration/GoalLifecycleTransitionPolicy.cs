@@ -52,7 +52,8 @@ public static class GoalLifecycleTransitionPolicy
                 or GoalLifecycleState.Escalated,
             GoalLifecycleState.Executing => to == GoalLifecycleState.Verifying,
             GoalLifecycleState.Verifying => to is GoalLifecycleState.Completed
-                or GoalLifecycleState.Reasoning,
+                or GoalLifecycleState.Reasoning
+                or GoalLifecycleState.Escalated,
             _ => false,
         };
     }

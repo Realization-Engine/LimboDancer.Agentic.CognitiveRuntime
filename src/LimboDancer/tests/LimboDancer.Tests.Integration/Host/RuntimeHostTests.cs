@@ -13,6 +13,7 @@ using LimboDancer.Runtime.Diagnostics;
 using LimboDancer.Runtime.Decision;
 using LimboDancer.Runtime.Directed;
 using LimboDancer.Runtime.Reasoning;
+using LimboDancer.Runtime.Verification;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.Configuration;
@@ -36,6 +37,7 @@ public sealed class RuntimeHostTests
         var decisionPlane = provider.GetRequiredService<IDecisionPlane>();
         var reasoningEngine = provider.GetRequiredService<IReasoningEngine>();
         var goalOrchestrator = provider.GetRequiredService<IGoalOrchestrator>();
+        var effectVerifier = provider.GetRequiredService<IEffectVerifier>();
         var validator = provider.GetRequiredService<RuntimeStructureValidator>();
         var hostedServices = provider.GetServices<IHostedService>().ToArray();
 
@@ -45,6 +47,7 @@ public sealed class RuntimeHostTests
         Assert.NotNull(decisionPlane);
         Assert.NotNull(reasoningEngine);
         Assert.NotNull(goalOrchestrator);
+        Assert.NotNull(effectVerifier);
         var autonomousResult = await goalOrchestrator.RunAsync(new Goal(
             GoalId.New(),
             new CorrelationId("host-composition"),

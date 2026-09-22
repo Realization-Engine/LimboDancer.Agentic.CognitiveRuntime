@@ -26,6 +26,7 @@ using LimboDancer.Runtime.Domain;
 using LimboDancer.Runtime.Execution;
 using LimboDancer.Runtime.Orchestration;
 using LimboDancer.Runtime.Reasoning;
+using LimboDancer.Runtime.Verification;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -106,6 +107,12 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IReasoningEngine, ReasoningEngine>();
         services.TryAddSingleton<IGoalAdmissionPolicy, DenyAllGoalAdmissionPolicy>();
         services.TryAddSingleton<IObservationProvider, EmptyObservationProvider>();
+        services.AddSingleton<IEffectVerifier>(static provider =>
+            new EffectVerifier(
+                provider.GetServices<IEffectEvaluator>(),
+                provider.GetRequiredService<IAuditSink>(),
+                provider.GetRequiredService<TimeProvider>()));
+        services.AddSingleton<IEffectVerificationPolicy, DefaultEffectVerificationPolicy>();
         services.AddSingleton<IGoalOrchestrator, GoalOrchestrator>();
 
         services.AddSingleton<IActionExecutor, HistoryReadExecutor>();

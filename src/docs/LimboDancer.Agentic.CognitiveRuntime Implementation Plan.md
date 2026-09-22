@@ -1496,6 +1496,22 @@ Do not turn verification into a second diagnostic framework.
 
 **PR-17: Effect verification**
 
+### Implemented baseline
+
+The initial Effect Verification baseline now:
+
+- keeps verification contracts and evaluators separate from Diagnostics;
+- evaluates only trusted `ActionDescriptor.ExpectedEffects` when the descriptor's verification profile opts in;
+- provides deterministic evaluator routing by trusted effect type;
+- represents per-effect and aggregate `Verified`, `PartiallyVerified`, `Unverifiable`, and `Contradicted` outcomes explicitly;
+- never treats a successful executor result as effect verification;
+- refreshes known observations after execution before verification;
+- audits every aggregate verification result with action, authorization, execution, Goal, and Step identity;
+- invokes an injected verification policy for every opt-in result; and
+- escalates contradicted or materially unverifiable outcomes under the default risk-aware policy without manufacturing recovery authority.
+
+Compensation remains a separately governed future action. PR-17 does not invoke an executor from verification, reuse Diagnostics semantics, or claim that actions without an opt-in profile were verified.
+
 ## 25. Increment 15: Replay-Capable Evidence
 
 ### Objective

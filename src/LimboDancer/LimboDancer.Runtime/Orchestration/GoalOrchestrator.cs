@@ -6,11 +6,13 @@ using LimboDancer.Abstractions.Execution;
 using LimboDancer.Abstractions.Observations;
 using LimboDancer.Abstractions.Reasoning;
 using LimboDancer.Abstractions.Runtime;
+using LimboDancer.Abstractions.Verification;
 using LimboDancer.Runtime.Actions;
 using LimboDancer.Runtime.Decision;
 using LimboDancer.Runtime.Diagnostics;
 using LimboDancer.Runtime.Execution;
 using LimboDancer.Runtime.Reasoning;
+using LimboDancer.Runtime.Verification;
 using RuntimeExecutionContext = LimboDancer.Abstractions.Execution.ExecutionContext;
 
 namespace LimboDancer.Runtime.Orchestration;
@@ -27,6 +29,8 @@ public sealed class GoalOrchestrator : IGoalOrchestrator
     private readonly IExecutionGate executionGate;
     private readonly IActionExecutorResolver executorResolver;
     private readonly IAuditSink auditSink;
+    private readonly IEffectVerifier effectVerifier;
+    private readonly IEffectVerificationPolicy effectVerificationPolicy;
     private readonly TimeProvider timeProvider;
 
     public GoalOrchestrator(
@@ -40,6 +44,8 @@ public sealed class GoalOrchestrator : IGoalOrchestrator
         IExecutionGate executionGate,
         IActionExecutorResolver executorResolver,
         IAuditSink auditSink,
+        IEffectVerifier effectVerifier,
+        IEffectVerificationPolicy effectVerificationPolicy,
         TimeProvider? timeProvider = null)
     {
         this.admissionPolicy = admissionPolicy ?? throw new ArgumentNullException(nameof(admissionPolicy));
@@ -52,6 +58,9 @@ public sealed class GoalOrchestrator : IGoalOrchestrator
         this.executionGate = executionGate ?? throw new ArgumentNullException(nameof(executionGate));
         this.executorResolver = executorResolver ?? throw new ArgumentNullException(nameof(executorResolver));
         this.auditSink = auditSink ?? throw new ArgumentNullException(nameof(auditSink));
+        this.effectVerifier = effectVerifier ?? throw new ArgumentNullException(nameof(effectVerifier));
+        this.effectVerificationPolicy = effectVerificationPolicy
+            ?? throw new ArgumentNullException(nameof(effectVerificationPolicy));
         this.timeProvider = timeProvider ?? TimeProvider.System;
     }
 
@@ -353,20 +362,95 @@ public sealed class GoalOrchestrator : IGoalOrchestrator
                     return Terminal(goal, ref state, GoalLifecycleState.Failed, "executor.unresolved");
                 }
 
+                var beforeExecutionObservations = observations.Values.ToArray();
                 Transition(ref state, GoalLifecycleState.Executing);
                 var execution = await new AuditedActionExecutor(executor, auditSink, timeProvider)
                     .ExecuteAsync(gate.AuthorizedAction, cancellationToken)
                     .ConfigureAwait(false);
                 Transition(ref state, GoalLifecycleState.Verifying);
+                if (!execution.Succeeded)
+                {
+                    actionOutcomes.Add(new ReasoningActionOutcome(
+                        stepId,
+                        reasoning.Result.Intent!.Value,
+                        succeeded: false,
+                        execution.Code,
+                        execution.Output));
+                    return Terminal(goal, ref state, GoalLifecycleState.Failed, execution.Code);
+                }
+
+                EffectVerificationResult? verification = null;
+                if (descriptor.Verification.RequireEffectVerification)
+                {
+                    var refreshFailure = await AcquireObservationsAsync(
+                            observationQueries.Values,
+                            goal,
+                            budget,
+                            observations,
+                            observationQueries,
+                            externalCalls,
+                            cancellationToken)
+                        .ConfigureAwait(false);
+                    externalCalls += observationQueries.Count;
+                    if (refreshFailure is not null)
+                    {
+                        return Terminal(goal, ref state, GoalLifecycleState.Failed, refreshFailure);
+                    }
+
+                    verification = await effectVerifier.VerifyAsync(
+                            gate.AuthorizedAction,
+                            execution,
+                            descriptor.ExpectedEffects,
+                            new VerificationContext(
+                                invocationId,
+                                goal,
+                                stepId,
+                                beforeExecutionObservations,
+                                observations.Values),
+                            cancellationToken)
+                        .ConfigureAwait(false);
+                }
+
                 actionOutcomes.Add(new ReasoningActionOutcome(
                     stepId,
                     reasoning.Result.Intent!.Value,
-                    execution.Succeeded,
+                    succeeded: true,
                     execution.Code,
-                    execution.Output));
-                if (!execution.Succeeded)
+                    execution.Output,
+                    verification?.Status));
+                if (verification is not null)
                 {
-                    return Terminal(goal, ref state, GoalLifecycleState.Failed, execution.Code);
+                    EffectVerificationDisposition disposition;
+                    try
+                    {
+                        disposition = effectVerificationPolicy.Evaluate(gate.AuthorizedAction, verification);
+                        if (!Enum.IsDefined(disposition))
+                        {
+                            throw new InvalidOperationException("Effect verification policy returned an invalid disposition.");
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        return Terminal(goal, ref state, GoalLifecycleState.Failed, "verification.policy_failed");
+                    }
+
+                    if (disposition == EffectVerificationDisposition.Escalate)
+                    {
+                        return Terminal(
+                            goal,
+                            ref state,
+                            GoalLifecycleState.Escalated,
+                            verification.ReasonCode);
+                    }
+
+                    if (disposition == EffectVerificationDisposition.FailGoal)
+                    {
+                        return Terminal(
+                            goal,
+                            ref state,
+                            GoalLifecycleState.Failed,
+                            verification.ReasonCode);
+                    }
                 }
 
                 Transition(ref state, GoalLifecycleState.Reasoning);

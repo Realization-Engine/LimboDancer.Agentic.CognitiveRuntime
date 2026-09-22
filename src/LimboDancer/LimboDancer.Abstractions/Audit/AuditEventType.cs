@@ -14,4 +14,5 @@ public enum AuditEventType
     ExecutorStarted,
     ExecutorCompleted,
     ExecutorFailed,
+    EffectVerificationEvaluated,
 }
