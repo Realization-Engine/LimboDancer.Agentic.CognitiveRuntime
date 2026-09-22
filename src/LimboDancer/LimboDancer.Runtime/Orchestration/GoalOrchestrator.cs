@@ -328,8 +328,8 @@ public sealed class GoalOrchestrator : IGoalOrchestrator
         IEnumerable<ObservationQuery> requests,
         Goal goal,
         RuntimeBudget budget,
-        IDictionary<string, Observation> observations,
-        IDictionary<string, ObservationQuery> knownQueries,
+        Dictionary<string, Observation> observations,
+        Dictionary<string, ObservationQuery> knownQueries,
         int externalCalls,
         CancellationToken cancellationToken)
     {
