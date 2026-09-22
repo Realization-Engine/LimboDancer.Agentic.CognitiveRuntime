@@ -117,7 +117,11 @@ public sealed class OpenAiDecisionProviderTests
                     },
                 },
             },
-            usage = new { input_tokens = 10, output_tokens = 1 },
+            usage = new
+            {
+                input_tokens = 10,
+                output_tokens = 1,
+            },
         }));
         using var provider = CreateProvider(handler);
         var (context, candidates) = await CreateDecisionBoundaryAsync();
@@ -215,7 +219,11 @@ public sealed class OpenAiDecisionProviderTests
                     },
                 },
             },
-            usage = new { input_tokens = inputTokens, output_tokens = outputTokens },
+            usage = new
+            {
+                input_tokens = inputTokens,
+                output_tokens = outputTokens,
+            },
         });
     }
 
