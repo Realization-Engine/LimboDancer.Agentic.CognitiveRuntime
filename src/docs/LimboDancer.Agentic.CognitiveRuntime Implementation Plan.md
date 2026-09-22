@@ -1540,6 +1540,21 @@ A general replay engine is not yet required.
 
 **PR-18: Replay-capable decision evidence**
 
+### Implemented baseline
+
+The initial replay-capable evidence baseline now:
+
+- appends one immutable evidence record for every autonomous action attempt that reaches resolution;
+- preserves the exact Goal, budget, observations, descriptor versions, candidate set, and constraint partition seen by the Decision boundary;
+- captures Decision provider identity/version and the complete validated Decision result;
+- projects gate, execution, and effect-verification outcomes into evidence-only contracts;
+- references an authorization by identifier without retaining an `AuthorizedAction` or creating executable authority;
+- records denied, stale, confirmation-required, diagnostic-blocked, failed-execution, verified, and policy-terminal attempts before orchestration exits or retries;
+- exposes a tenant-scoped in-memory reference sink for composition and conformance tests; and
+- proves in a test utility that a historical `DecisionContext` can be reconstructed from the stored record.
+
+PR-18 does not execute stored evidence, reissue authorization, route providers, or introduce a general replay engine. Durable production persistence and retention policy remain provider-specific infrastructure work.
+
 ## 26. Increment 16: Additional Decision Providers
 
 ### Objective

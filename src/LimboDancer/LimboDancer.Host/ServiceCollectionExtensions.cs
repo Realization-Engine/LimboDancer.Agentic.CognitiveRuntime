@@ -2,6 +2,7 @@ using LimboDancer.Abstractions.Actions;
 using LimboDancer.Abstractions.Audit;
 using LimboDancer.Abstractions.Decision;
 using LimboDancer.Abstractions.Domain;
+using LimboDancer.Abstractions.Evidence;
 using LimboDancer.Abstractions.Observations;
 using LimboDancer.Abstractions.Reasoning;
 using LimboDancer.Abstractions.Runtime;
@@ -87,6 +88,9 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton<InMemoryAuditSink>();
         services.AddSingleton<IAuditSink>(static provider => provider.GetRequiredService<InMemoryAuditSink>());
+        services.AddSingleton<InMemoryReplayEvidenceSink>();
+        services.AddSingleton<IReplayEvidenceSink>(static provider =>
+            provider.GetRequiredService<InMemoryReplayEvidenceSink>());
     }
 
     private static void AddRuntime(IServiceCollection services)

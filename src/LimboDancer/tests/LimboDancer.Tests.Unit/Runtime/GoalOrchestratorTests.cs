@@ -2,6 +2,8 @@ using System.Text.Json;
 using LimboDancer.Abstractions.Actions;
 using LimboDancer.Abstractions.Audit;
 using LimboDancer.Abstractions.Diagnostics;
+using LimboDancer.Abstractions.Decision;
+using LimboDancer.Abstractions.Evidence;
 using LimboDancer.Abstractions.Observations;
 using LimboDancer.Abstractions.Reasoning;
 using LimboDancer.Abstractions.Runtime;
@@ -36,6 +38,62 @@ public sealed class GoalOrchestratorTests
         Assert.True(result.Output!.Value.GetProperty("ok").GetBoolean());
         Assert.Single(executor.Authorizations);
         Assert.Equal(SelectionOrigin.DecisionProvider, executor.Authorizations[0].Selected.Origin);
+    }
+
+    [Fact]
+    public async Task CapturedEvidenceReconstructsHistoricalDecisionContext()
+    {
+        var descriptor = ActionRegistryTests.CreateDescriptor();
+        var executor = new RecordingExecutor(descriptor);
+        var package = DomainResolutionContractsTests.CreatePackage("1.0");
+        var observationProvider = new VersionedObservationProvider(package);
+        var evidenceSink = new RecordingReplayEvidenceSink();
+        var provider = new DelegateReasoningProvider(context =>
+        {
+            if (context.ActionOutcomes.Count != 0)
+            {
+                return Completed();
+            }
+
+            return context.Observations.Count == 0
+                ? new ReasoningResult(
+                    ReasoningDisposition.ObservationRequired,
+                    DelegateReasoningProvider.Id,
+                    "reasoning.observe",
+                    observationRequests:
+                    [
+                        ObservationAcquisitionContractsTests.CreateQuery(context.Goal.TenantId, package),
+                    ])
+                : Proposed(descriptor.Id.Value);
+        });
+        var orchestrator = CreateOrchestrator(
+            [descriptor],
+            [executor],
+            provider,
+            observationProvider: observationProvider,
+            replayEvidenceSink: evidenceSink);
+
+        var result = await orchestrator.RunAsync(CreateGoal(descriptor.Id.Value));
+
+        Assert.Equal(GoalLifecycleState.Completed, result.TerminalState);
+        var evidence = Assert.Single(evidenceSink.Records);
+        var reconstructed = ReconstructDecisionContext(evidence);
+        Assert.Equal(evidence.InvocationId, reconstructed.InvocationId);
+        Assert.Equal(evidence.Goal.Id, reconstructed.Goal.Id);
+        Assert.Equal(evidence.StepId, reconstructed.StepId);
+        Assert.Same(evidence.Budget, reconstructed.Budget);
+        Assert.Equal(evidence.Observations, reconstructed.Observations);
+        var candidate = Assert.Single(evidence.Candidates);
+        Assert.Equal(descriptor.Id, candidate.Descriptor.Id);
+        Assert.Equal(descriptor.Version, candidate.Descriptor.Version);
+        Assert.NotNull(Assert.Single(evidence.Observations).Version);
+        Assert.Single(evidence.PermittedCandidates);
+        Assert.Empty(evidence.RejectedCandidates);
+        Assert.Equal(RuleDecisionProvider.Id, evidence.Decision!.ProviderId);
+        Assert.Equal(DecisionOutcome.Selected, evidence.Decision.Outcome);
+        Assert.Equal(ExecutionGateOutcome.Authorized, evidence.Gate!.Outcome);
+        Assert.True(evidence.Execution!.Succeeded);
+        Assert.Null(evidence.Verification);
     }
 
     [Fact]
@@ -160,6 +218,7 @@ public sealed class GoalOrchestratorTests
         var second = CreateDescriptor("ldm:action/Second", "runtime:executor/Second");
         var firstExecutor = new RecordingExecutor(first);
         var secondExecutor = new RecordingExecutor(second);
+        var evidenceSink = new RecordingReplayEvidenceSink();
         var provider = new DelegateReasoningProvider(context => context.ActionOutcomes.Count switch
         {
             0 => Proposed(first.Id.Value),
@@ -170,7 +229,8 @@ public sealed class GoalOrchestratorTests
             [first, second],
             [firstExecutor, secondExecutor],
             provider,
-            budget: CreateBudget(maxSteps: 2));
+            budget: CreateBudget(maxSteps: 2),
+            replayEvidenceSink: evidenceSink);
 
         var result = await orchestrator.RunAsync(CreateGoal(first.Id.Value));
 
@@ -180,6 +240,8 @@ public sealed class GoalOrchestratorTests
         Assert.NotEqual(
             firstExecutor.Authorizations[0].AuthorizationId,
             secondExecutor.Authorizations[0].AuthorizationId);
+        Assert.Equal(2, evidenceSink.Records.Count);
+        Assert.Equal(2, evidenceSink.Records.Select(static item => item.StepId).Distinct().Count());
     }
 
     [Fact]
@@ -187,16 +249,25 @@ public sealed class GoalOrchestratorTests
     {
         var descriptor = ActionRegistryTests.CreateDescriptor();
         var executor = new RecordingExecutor(descriptor);
+        var evidenceSink = new RecordingReplayEvidenceSink();
         var orchestrator = CreateOrchestrator(
             [descriptor],
             [executor],
-            constraintPipeline: new GovernanceDenyingConstraintPipeline());
+            constraintPipeline: new GovernanceDenyingConstraintPipeline(),
+            replayEvidenceSink: evidenceSink);
 
         var result = await orchestrator.RunAsync(CreateGoal(descriptor.Id.Value));
 
         Assert.Equal(GoalLifecycleState.Abstained, result.TerminalState);
         Assert.Equal("constraint.no_permitted_candidates", result.Reason.Code);
         Assert.Empty(executor.Authorizations);
+        var evidence = Assert.Single(evidenceSink.Records);
+        Assert.Single(evidence.Candidates);
+        Assert.Empty(evidence.PermittedCandidates);
+        Assert.Equal(
+            "governance.denied",
+            Assert.Single(Assert.Single(evidence.RejectedCandidates).ConstraintResults).ReasonCode);
+        Assert.Null(evidence.Decision);
     }
 
     [Theory]
@@ -248,11 +319,13 @@ public sealed class GoalOrchestratorTests
         var descriptor = CreateVerifiableDescriptor();
         var executor = new RecordingExecutor(descriptor);
         var policy = new RecordingVerificationPolicy(EffectVerificationDisposition.Escalate);
+        var evidenceSink = new RecordingReplayEvidenceSink();
         var orchestrator = CreateOrchestrator(
             [descriptor],
             [executor],
             effectEvaluators: [new ContradictingEffectEvaluator()],
-            effectVerificationPolicy: policy);
+            effectVerificationPolicy: policy,
+            replayEvidenceSink: evidenceSink);
 
         var result = await orchestrator.RunAsync(CreateGoal(descriptor.Id.Value));
 
@@ -260,6 +333,7 @@ public sealed class GoalOrchestratorTests
         Assert.Equal("verification.contradicted", result.Reason.Code);
         Assert.Equal(1, policy.CallCount);
         Assert.Single(executor.Authorizations);
+        Assert.Equal(VerificationStatus.Contradicted, Assert.Single(evidenceSink.Records).Verification!.Status);
     }
 
     private static GoalOrchestrator CreateOrchestrator(
@@ -273,7 +347,8 @@ public sealed class GoalOrchestratorTests
         IExecutionGate? executionGate = null,
         IEnumerable<IEffectEvaluator>? effectEvaluators = null,
         IEffectVerificationPolicy? effectVerificationPolicy = null,
-        RuntimeBudget? budget = null)
+        RuntimeBudget? budget = null,
+        IReplayEvidenceSink? replayEvidenceSink = null)
     {
         var registry = new ActionRegistry(descriptors);
         var auditSink = new RecordingAuditSink();
@@ -296,9 +371,17 @@ public sealed class GoalOrchestratorTests
                 auditSink),
             executorResolver,
             auditSink,
+            replayEvidenceSink ?? new RecordingReplayEvidenceSink(),
             new EffectVerifier(effectEvaluators ?? [], auditSink),
             effectVerificationPolicy ?? new DefaultEffectVerificationPolicy());
     }
+
+    private static DecisionContext ReconstructDecisionContext(RuntimeStepEvidence evidence) => new(
+        evidence.InvocationId,
+        evidence.Goal,
+        evidence.StepId,
+        evidence.Budget,
+        evidence.Observations);
 
     private static Goal CreateGoal(string intent) => new(
         GoalId.New(),
@@ -453,6 +536,20 @@ public sealed class GoalOrchestratorTests
             CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            return ValueTask.CompletedTask;
+        }
+    }
+
+    private sealed class RecordingReplayEvidenceSink : IReplayEvidenceSink
+    {
+        public List<RuntimeStepEvidence> Records { get; } = [];
+
+        public ValueTask WriteAsync(
+            RuntimeStepEvidence evidence,
+            CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            Records.Add(evidence);
             return ValueTask.CompletedTask;
         }
     }

@@ -2,6 +2,7 @@ using LimboDancer.Abstractions.Actions;
 using LimboDancer.Abstractions.Audit;
 using LimboDancer.Abstractions.Decision;
 using LimboDancer.Abstractions.Diagnostics;
+using LimboDancer.Abstractions.Evidence;
 using LimboDancer.Abstractions.Execution;
 using LimboDancer.Abstractions.Observations;
 using LimboDancer.Abstractions.Reasoning;
@@ -29,6 +30,7 @@ public sealed class GoalOrchestrator : IGoalOrchestrator
     private readonly IExecutionGate executionGate;
     private readonly IActionExecutorResolver executorResolver;
     private readonly IAuditSink auditSink;
+    private readonly IReplayEvidenceSink replayEvidenceSink;
     private readonly IEffectVerifier effectVerifier;
     private readonly IEffectVerificationPolicy effectVerificationPolicy;
     private readonly TimeProvider timeProvider;
@@ -44,6 +46,7 @@ public sealed class GoalOrchestrator : IGoalOrchestrator
         IExecutionGate executionGate,
         IActionExecutorResolver executorResolver,
         IAuditSink auditSink,
+        IReplayEvidenceSink replayEvidenceSink,
         IEffectVerifier effectVerifier,
         IEffectVerificationPolicy effectVerificationPolicy,
         TimeProvider? timeProvider = null)
@@ -58,6 +61,8 @@ public sealed class GoalOrchestrator : IGoalOrchestrator
         this.executionGate = executionGate ?? throw new ArgumentNullException(nameof(executionGate));
         this.executorResolver = executorResolver ?? throw new ArgumentNullException(nameof(executorResolver));
         this.auditSink = auditSink ?? throw new ArgumentNullException(nameof(auditSink));
+        this.replayEvidenceSink = replayEvidenceSink
+            ?? throw new ArgumentNullException(nameof(replayEvidenceSink));
         this.effectVerifier = effectVerifier ?? throw new ArgumentNullException(nameof(effectVerifier));
         this.effectVerificationPolicy = effectVerificationPolicy
             ?? throw new ArgumentNullException(nameof(effectVerificationPolicy));
@@ -183,39 +188,54 @@ public sealed class GoalOrchestrator : IGoalOrchestrator
                 var stepRecord = reasoning.StepRecord
                     ?? throw new InvalidOperationException("An action proposal requires a Reasoning step record.");
                 history.Add(stepRecord);
+                var stepObservations = observations.Values.ToArray();
                 Transition(ref state, GoalLifecycleState.Resolving);
                 var candidates = await actionResolver.ResolveAsync(
                         new ActionResolutionContext(
                             goal,
                             stepId,
-                            observations.Values,
+                            stepObservations,
                             reasoning.Result.Intent),
                         cancellationToken)
                     .ConfigureAwait(false);
+                var evidence = new RuntimeStepEvidenceCapture(
+                    replayEvidenceSink,
+                    timeProvider,
+                    invocationId,
+                    goal,
+                    stepId,
+                    budget,
+                    stepObservations,
+                    candidates);
                 if (candidates.Count == 0)
                 {
+                    await evidence.WriteAsync(cancellationToken).ConfigureAwait(false);
                     return Terminal(goal, ref state, GoalLifecycleState.Abstained, "resolution.no_candidates");
                 }
 
                 Transition(ref state, GoalLifecycleState.Constraining);
                 var constrained = await constraintPipeline.EvaluateAsync(
                         candidates,
-                        new ConstraintContext(goal, stepId, principal, budget, observations.Values),
+                        new ConstraintContext(goal, stepId, principal, budget, stepObservations),
                         cancellationToken)
                     .ConfigureAwait(false);
+                evidence.SetConstraints(constrained);
                 if (constrained.Permitted.Count == 0)
                 {
+                    await evidence.WriteAsync(cancellationToken).ConfigureAwait(false);
                     return Terminal(goal, ref state, GoalLifecycleState.Abstained, "constraint.no_permitted_candidates");
                 }
 
                 Transition(ref state, GoalLifecycleState.Deciding);
                 var decision = await decisionPlane.DecideAsync(
-                        new DecisionContext(invocationId, goal, stepId, budget, observations.Values),
+                        new DecisionContext(invocationId, goal, stepId, budget, stepObservations),
                         constrained.Permitted,
                         cancellationToken)
                     .ConfigureAwait(false);
+                evidence.SetDecision(decision.Decision);
                 if (decision.Decision.Outcome == DecisionOutcome.Abstained)
                 {
+                    await evidence.WriteAsync(cancellationToken).ConfigureAwait(false);
                     return Terminal(
                         goal,
                         ref state,
@@ -225,6 +245,7 @@ public sealed class GoalOrchestrator : IGoalOrchestrator
 
                 if (decision.Decision.Outcome == DecisionOutcome.Escalated)
                 {
+                    await evidence.WriteAsync(cancellationToken).ConfigureAwait(false);
                     return Terminal(
                         goal,
                         ref state,
@@ -257,13 +278,16 @@ public sealed class GoalOrchestrator : IGoalOrchestrator
                             findings),
                         cancellationToken)
                     .ConfigureAwait(false);
+                evidence.SetGate(gate);
                 if (gate.Outcome == ExecutionGateOutcome.Stale)
                 {
                     if (retries >= budget.MaxRetries)
                     {
+                        await evidence.WriteAsync(cancellationToken).ConfigureAwait(false);
                         return Terminal(goal, ref state, GoalLifecycleState.Failed, "budget.retry_exhausted");
                     }
 
+                    await evidence.WriteAsync(cancellationToken).ConfigureAwait(false);
                     retries++;
                     history.RemoveAt(history.Count - 1);
                     Transition(ref state, GoalLifecycleState.Observing);
@@ -288,6 +312,7 @@ public sealed class GoalOrchestrator : IGoalOrchestrator
 
                 if (gate.Outcome == ExecutionGateOutcome.ConfirmationRequired)
                 {
+                    await evidence.WriteAsync(cancellationToken).ConfigureAwait(false);
                     Transition(ref state, GoalLifecycleState.AwaitingConfirmation);
                     return Terminal(goal, ref state, GoalLifecycleState.Escalated, "confirmation.required");
                 }
@@ -296,6 +321,7 @@ public sealed class GoalOrchestrator : IGoalOrchestrator
                 {
                     if (gate.DiagnosticDisposition == DiagnosticDisposition.Escalate)
                     {
+                        await evidence.WriteAsync(cancellationToken).ConfigureAwait(false);
                         return Terminal(
                             goal,
                             ref state,
@@ -305,6 +331,7 @@ public sealed class GoalOrchestrator : IGoalOrchestrator
 
                     if (gate.DiagnosticDisposition == DiagnosticDisposition.FailGoal)
                     {
+                        await evidence.WriteAsync(cancellationToken).ConfigureAwait(false);
                         return Terminal(
                             goal,
                             ref state,
@@ -317,9 +344,11 @@ public sealed class GoalOrchestrator : IGoalOrchestrator
                     {
                         if (retries >= budget.MaxRetries)
                         {
+                            await evidence.WriteAsync(cancellationToken).ConfigureAwait(false);
                             return Terminal(goal, ref state, GoalLifecycleState.Failed, "budget.retry_exhausted");
                         }
 
+                        await evidence.WriteAsync(cancellationToken).ConfigureAwait(false);
                         retries++;
                         history.RemoveAt(history.Count - 1);
                         Transition(ref state, GoalLifecycleState.Observing);
@@ -348,6 +377,7 @@ public sealed class GoalOrchestrator : IGoalOrchestrator
 
                 if (gate.Outcome != ExecutionGateOutcome.Authorized || gate.AuthorizedAction is null)
                 {
+                    await evidence.WriteAsync(cancellationToken).ConfigureAwait(false);
                     return Terminal(
                         goal,
                         ref state,
@@ -359,6 +389,7 @@ public sealed class GoalOrchestrator : IGoalOrchestrator
                 if (!executorResolver.TryResolve(descriptor.Executor, out var executor)
                     || executor.ActionId != descriptor.Id)
                 {
+                    await evidence.WriteAsync(cancellationToken).ConfigureAwait(false);
                     return Terminal(goal, ref state, GoalLifecycleState.Failed, "executor.unresolved");
                 }
 
@@ -367,6 +398,7 @@ public sealed class GoalOrchestrator : IGoalOrchestrator
                 var execution = await new AuditedActionExecutor(executor, auditSink, timeProvider)
                     .ExecuteAsync(gate.AuthorizedAction, cancellationToken)
                     .ConfigureAwait(false);
+                evidence.SetExecution(execution);
                 Transition(ref state, GoalLifecycleState.Verifying);
                 if (!execution.Succeeded)
                 {
@@ -376,6 +408,7 @@ public sealed class GoalOrchestrator : IGoalOrchestrator
                         succeeded: false,
                         execution.Code,
                         execution.Output));
+                    await evidence.WriteAsync(cancellationToken).ConfigureAwait(false);
                     return Terminal(goal, ref state, GoalLifecycleState.Failed, execution.Code);
                 }
 
@@ -394,6 +427,7 @@ public sealed class GoalOrchestrator : IGoalOrchestrator
                     externalCalls += observationQueries.Count;
                     if (refreshFailure is not null)
                     {
+                        await evidence.WriteAsync(cancellationToken).ConfigureAwait(false);
                         return Terminal(goal, ref state, GoalLifecycleState.Failed, refreshFailure);
                     }
 
@@ -409,6 +443,7 @@ public sealed class GoalOrchestrator : IGoalOrchestrator
                                 observations.Values),
                             cancellationToken)
                         .ConfigureAwait(false);
+                    evidence.SetVerification(verification);
                 }
 
                 actionOutcomes.Add(new ReasoningActionOutcome(
@@ -431,11 +466,13 @@ public sealed class GoalOrchestrator : IGoalOrchestrator
                     }
                     catch (Exception)
                     {
+                        await evidence.WriteAsync(cancellationToken).ConfigureAwait(false);
                         return Terminal(goal, ref state, GoalLifecycleState.Failed, "verification.policy_failed");
                     }
 
                     if (disposition == EffectVerificationDisposition.Escalate)
                     {
+                        await evidence.WriteAsync(cancellationToken).ConfigureAwait(false);
                         return Terminal(
                             goal,
                             ref state,
@@ -445,6 +482,7 @@ public sealed class GoalOrchestrator : IGoalOrchestrator
 
                     if (disposition == EffectVerificationDisposition.FailGoal)
                     {
+                        await evidence.WriteAsync(cancellationToken).ConfigureAwait(false);
                         return Terminal(
                             goal,
                             ref state,
@@ -453,6 +491,7 @@ public sealed class GoalOrchestrator : IGoalOrchestrator
                     }
                 }
 
+                await evidence.WriteAsync(cancellationToken).ConfigureAwait(false);
                 Transition(ref state, GoalLifecycleState.Reasoning);
             }
         }

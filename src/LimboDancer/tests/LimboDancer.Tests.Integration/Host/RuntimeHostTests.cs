@@ -4,6 +4,7 @@ using System.Text.Json;
 using LimboDancer.Abstractions.Actions;
 using LimboDancer.Abstractions.Audit;
 using LimboDancer.Abstractions.Domain;
+using LimboDancer.Abstractions.Evidence;
 using LimboDancer.Abstractions.Runtime;
 using LimboDancer.Adapters.Mcp;
 using LimboDancer.Host;
@@ -38,6 +39,7 @@ public sealed class RuntimeHostTests
         var reasoningEngine = provider.GetRequiredService<IReasoningEngine>();
         var goalOrchestrator = provider.GetRequiredService<IGoalOrchestrator>();
         var effectVerifier = provider.GetRequiredService<IEffectVerifier>();
+        var replayEvidenceSink = provider.GetRequiredService<IReplayEvidenceSink>();
         var validator = provider.GetRequiredService<RuntimeStructureValidator>();
         var hostedServices = provider.GetServices<IHostedService>().ToArray();
 
@@ -48,6 +50,7 @@ public sealed class RuntimeHostTests
         Assert.NotNull(reasoningEngine);
         Assert.NotNull(goalOrchestrator);
         Assert.NotNull(effectVerifier);
+        Assert.NotNull(replayEvidenceSink);
         var autonomousResult = await goalOrchestrator.RunAsync(new Goal(
             GoalId.New(),
             new CorrelationId("host-composition"),
