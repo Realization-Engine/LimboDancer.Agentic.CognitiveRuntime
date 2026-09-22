@@ -1,9 +1,10 @@
 namespace LimboDancer.Host;
 
-internal static class Program
+public static class Program
 {
-    private static void Main()
+    public static async Task Main(string[] args)
     {
-        // Composition is introduced incrementally as runtime contracts become executable.
+        var application = HostApplication.Build(args);
+        await application.RunAsync().ConfigureAwait(false);
     }
 }

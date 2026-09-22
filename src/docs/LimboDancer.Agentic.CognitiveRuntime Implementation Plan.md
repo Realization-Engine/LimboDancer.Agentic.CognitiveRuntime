@@ -1015,6 +1015,22 @@ The new runtime can be launched independently of `src/Legacy/LimboDancer.MCP.sln
 
 **PR-11: New runtime host**
 
+### Implemented baseline
+
+The initial Host is an independently runnable ASP.NET Core process that:
+
+- composes the directed runtime, MCP adapter, and admitted in-memory reference providers;
+- validates options plus descriptor, binding, diagnostic, and executor structure at startup;
+- fails closed for unconfigured authentication and for descriptors whose preconditions have no concrete evaluator;
+- derives tenant and principal context from authenticated credentials rather than request payloads;
+- hosts discovery, legacy initialization, tool listing, and tool invocation HTTP endpoints;
+- exposes observational liveness and readiness probes without schema or State mutation;
+- propagates request cancellation into adapter/runtime execution;
+- provides host-level activity and metric instrumentation without replacing runtime audit evidence; and
+- remains runnable directly while the AppHost supplies only outer Aspire orchestration and readiness wiring.
+
+The initial credential scheme is a bounded host admission mechanism, not a permanent identity-provider decision. A later deployment may replace it with an admitted external authentication provider while preserving `IMcpCallerContextFactory` and the rule that caller payloads cannot establish authority.
+
 ## 16. Milestone A: Directed Runtime Conformance
 
 Before autonomous work begins, all of the following MUST be true:

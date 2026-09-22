@@ -1,0 +1,128 @@
+using LimboDancer.Abstractions.Audit;
+using LimboDancer.Abstractions.State.Graph;
+using LimboDancer.Abstractions.State.History;
+using LimboDancer.Abstractions.State.Memory;
+using LimboDancer.Abstractions.State.Ontology;
+using LimboDancer.Adapters.Mcp;
+using LimboDancer.Infrastructure.Audit;
+using LimboDancer.Infrastructure.Graph;
+using LimboDancer.Infrastructure.Ontology;
+using LimboDancer.Infrastructure.Relational;
+using LimboDancer.Infrastructure.Vector;
+using LimboDancer.Runtime.Actions;
+using LimboDancer.Runtime.Actions.Graph;
+using LimboDancer.Runtime.Actions.History;
+using LimboDancer.Runtime.Actions.Memory;
+using LimboDancer.Runtime.Diagnostics;
+using LimboDancer.Runtime.Directed;
+using LimboDancer.Runtime.Execution;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
+
+namespace LimboDancer.Host;
+
+public static class ServiceCollectionExtensions
+{
+    public static IServiceCollection AddLimboDancerHost(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(configuration);
+
+        services.AddSingleton<IValidateOptions<LimboDancerHostOptions>, LimboDancerHostOptionsValidator>();
+        services.AddOptions<LimboDancerHostOptions>()
+            .Bind(configuration.GetSection(LimboDancerHostOptions.SectionName))
+            .ValidateOnStart();
+
+        services.AddAuthentication(ApiKeyAuthenticationHandler.SchemeName)
+            .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(
+                ApiKeyAuthenticationHandler.SchemeName,
+                static _ => { });
+        services.AddAuthorization();
+
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddSingleton<RuntimeTelemetry>();
+        services.AddSingleton<IMcpCallerContextFactory, McpCallerContextFactory>();
+
+        AddInfrastructure(services);
+        AddRuntime(services);
+
+        services.AddSingleton<RuntimeStructureValidator>();
+        services.AddHostedService<RuntimeStartupValidationService>();
+        services.AddHealthChecks()
+            .AddCheck<RuntimeReadinessHealthCheck>("runtime_structure", tags: ["ready"]);
+        return services;
+    }
+
+    private static void AddInfrastructure(IServiceCollection services)
+    {
+        services.AddSingleton<InMemoryHistoryStore>();
+        services.AddSingleton<IHistoryReader>(static provider => provider.GetRequiredService<InMemoryHistoryStore>());
+        services.AddSingleton<IHistoryWriter>(static provider => provider.GetRequiredService<InMemoryHistoryStore>());
+
+        services.AddSingleton<InMemoryGraphStore>();
+        services.AddSingleton<IGraphQueryReader>(static provider => provider.GetRequiredService<InMemoryGraphStore>());
+        services.AddSingleton<IGraphStateWriter>(static provider => provider.GetRequiredService<InMemoryGraphStore>());
+
+        services.AddSingleton<InMemoryMemorySearch>();
+        services.AddSingleton<IMemorySearch>(static provider => provider.GetRequiredService<InMemoryMemorySearch>());
+        services.AddSingleton<InMemoryOntologyResolver>();
+        services.AddSingleton<IOntologyResolver>(static provider => provider.GetRequiredService<InMemoryOntologyResolver>());
+
+        services.AddSingleton<InMemoryAuditSink>();
+        services.AddSingleton<IAuditSink>(static provider => provider.GetRequiredService<InMemoryAuditSink>());
+    }
+
+    private static void AddRuntime(IServiceCollection services)
+    {
+        services.AddSingleton<IActionBindingRegistry>(static _ =>
+            new ActionBindingRegistry(BuiltInActionCatalog.CreateMcpBindings()));
+        services.AddSingleton<IActionRegistry>(static _ =>
+            new ActionRegistry(BuiltInActionCatalog.CreateDescriptors()));
+
+        services.AddSingleton<IActionExecutor, HistoryReadExecutor>();
+        services.AddSingleton<IActionExecutor, HistoryAppendExecutor>();
+        services.AddSingleton<IActionExecutor, GraphQueryExecutor>();
+        services.AddSingleton<IActionExecutor, MemorySearchExecutor>();
+        services.AddSingleton<IActionExecutorResolver>(static provider =>
+            new ActionExecutorResolver(provider.GetServices<IActionExecutor>()));
+
+        services.AddSingleton<IDiagnosticCheck<DiagnosticContext>, ActionDescriptorCurrentCheck>();
+        services.AddSingleton<IDiagnosticCheck<DiagnosticContext>, ExecutorBindingResolvableCheck>();
+        services.AddSingleton<IDiagnosticCheck<DiagnosticContext>, TenantContextPresentCheck>();
+        services.AddSingleton<DiagnosticRunner>(static provider =>
+            new DiagnosticRunner(
+                provider.GetServices<IDiagnosticCheck<DiagnosticContext>>(),
+                timeProvider: provider.GetRequiredService<TimeProvider>()));
+        services.AddSingleton<IDiagnosticRunner>(static provider => provider.GetRequiredService<DiagnosticRunner>());
+        services.AddSingleton<IDiagnosticProfileValidator>(static provider => provider.GetRequiredService<DiagnosticRunner>());
+        services.AddSingleton<IDiagnosticPolicy, DiagnosticPolicy>();
+
+        services.AddSingleton<IActionConstraintEvaluator, FailClosedActionConstraintEvaluator>();
+        services.AddSingleton<IExecutionRiskPolicy, DefaultExecutionRiskPolicy>();
+        services.AddSingleton<IExecutionGate, ExecutionGate>();
+        services.AddSingleton<IDirectedActionRuntime, DirectedActionRuntime>();
+
+        services.AddSingleton<McpServerIdentity>(static provider =>
+        {
+            var options = provider.GetRequiredService<IOptions<LimboDancerHostOptions>>().Value;
+            return new McpServerIdentity(options.ServerName, options.ServerVersion);
+        });
+        services.AddSingleton<IMcpInteractionAdapter>(static provider =>
+        {
+            var options = provider.GetRequiredService<IOptions<LimboDancerHostOptions>>().Value;
+            return new McpInteractionAdapter(
+                provider.GetRequiredService<IDirectedActionRuntime>(),
+                provider.GetRequiredService<IActionBindingRegistry>(),
+                provider.GetRequiredService<IActionRegistry>(),
+                provider.GetRequiredService<McpServerIdentity>(),
+                provider.GetRequiredService<TimeProvider>(),
+                TimeSpan.FromSeconds(options.InvocationTimeoutSeconds));
+        });
+    }
+}

@@ -1,5 +1,47 @@
 # LimboDancer MCP Configuration Guide
 
+## Active runtime Host
+
+The new runtime process is `src/LimboDancer/LimboDancer.Host`. Its initial configuration surface is:
+
+```json
+{
+  "LimboDancer": {
+    "ServerName": "LimboDancer",
+    "ServerVersion": "0.1.0",
+    "InvocationTimeoutSeconds": 30,
+    "ApiKeys": [
+      {
+        "Key": "<secret-from-a-secure-configuration-provider>",
+        "PrincipalId": "operator-or-service-identity",
+        "TenantId": "11111111-1111-1111-1111-111111111111",
+        "Permissions": []
+      }
+    ]
+  }
+}
+```
+
+Do not commit API keys. Supply them through environment variables, user secrets, or a deployment secret provider. The environment-variable form for the first key is `LimboDancer__ApiKeys__0__Key`; the remaining credential fields use the same double-underscore nesting convention.
+
+The Host validates this configuration on startup. It starts with no configured credentials, but all protected MCP tool endpoints then return an authentication challenge. Tenant identity is taken from the matched credential and cannot be supplied by the MCP call payload.
+
+| Endpoint | Authentication | Purpose |
+| --- | --- | --- |
+| `GET /.well-known/mcp` | Anonymous | MCP server discovery |
+| `POST /mcp/server/discover` | Anonymous | Modern MCP server discovery method |
+| `POST /mcp/initialize` | Anonymous | Legacy MCP initialization compatibility |
+| `GET /mcp/tools` | API key | Published tool descriptors |
+| `POST /mcp/tools/call` | API key | Governed directed invocation |
+| `GET /health/live` | Anonymous | Process liveness |
+| `GET /health/ready` | Anonymous | Observational runtime-structure readiness |
+
+Send the API key in `X-LimboDancer-Key`. Readiness never performs schema migration or mutates authoritative State.
+
+## Legacy configuration reference
+
+The remaining sections describe the temporary projects under `src/Legacy/`. They are retained only for migration reference and are not read by the new runtime Host.
+
 ## Required Configuration
 
 ### Storage (PostgreSQL)
