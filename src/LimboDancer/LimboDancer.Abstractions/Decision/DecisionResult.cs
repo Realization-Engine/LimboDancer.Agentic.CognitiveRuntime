@@ -13,7 +13,8 @@ public sealed class DecisionResult
         IEnumerable<KeyValuePair<string, double>>? distribution = null,
         string? providerVersion = null,
         TimeSpan? latency = null,
-        decimal? cost = null)
+        decimal? cost = null,
+        DecisionTokenUsage? tokenUsage = null)
     {
         if (!Enum.IsDefined(outcome))
         {
@@ -71,6 +72,7 @@ public sealed class DecisionResult
         Distribution = new ReadOnlyDictionary<string, double>(distributionValues);
         Latency = latency;
         Cost = cost;
+        TokenUsage = tokenUsage;
     }
 
     public DecisionOutcome Outcome
@@ -114,6 +116,11 @@ public sealed class DecisionResult
     }
 
     public decimal? Cost
+    {
+        get;
+    }
+
+    public DecisionTokenUsage? TokenUsage
     {
         get;
     }

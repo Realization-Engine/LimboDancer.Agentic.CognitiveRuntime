@@ -12,6 +12,7 @@ using LimboDancer.Abstractions.State.Memory;
 using LimboDancer.Abstractions.State.Ontology;
 using LimboDancer.Adapters.Mcp;
 using LimboDancer.Infrastructure.Audit;
+using LimboDancer.Infrastructure.Decision;
 using LimboDancer.Infrastructure.Graph;
 using LimboDancer.Infrastructure.Ontology;
 using LimboDancer.Infrastructure.Relational;
@@ -56,6 +57,7 @@ public static class ServiceCollectionExtensions
                 ApiKeyAuthenticationHandler.SchemeName,
                 static _ => { });
         services.AddAuthorization();
+        services.AddHttpClient();
 
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<RuntimeTelemetry>();
@@ -104,7 +106,27 @@ public static class ServiceCollectionExtensions
             new SemanticActionConstraintPipeline(provider.GetServices<ISemanticPreconditionEvaluator>()));
         services.AddSingleton<IDomainPackageResolver>(static provider =>
             new DomainPackageRegistry(provider.GetServices<DomainPackageDescriptor>()));
-        services.AddSingleton<IDecisionProvider, RuleDecisionProvider>();
+        services.AddSingleton<IDecisionProvider>(static provider =>
+        {
+            var options = provider.GetRequiredService<IOptions<LimboDancerHostOptions>>().Value;
+            if (!string.Equals(options.DecisionProvider, "OpenAI", StringComparison.Ordinal))
+            {
+                return new RuleDecisionProvider();
+            }
+
+            var openAi = options.OpenAiDecision;
+            return new OpenAiDecisionProvider(
+                provider.GetRequiredService<IHttpClientFactory>().CreateClient(),
+                new OpenAiDecisionProviderOptions(
+                    openAi.ApiKey,
+                    openAi.Model,
+                    new Uri(openAi.Endpoint, UriKind.Absolute),
+                    TimeSpan.FromSeconds(openAi.TimeoutSeconds),
+                    openAi.MaxOutputTokens,
+                    openAi.InputCostPerMillionTokens,
+                    openAi.OutputCostPerMillionTokens),
+                provider.GetRequiredService<TimeProvider>());
+        });
         services.AddSingleton<IDecisionPlane, DecisionPlane>();
         services.AddSingleton<IReasoningProvider, PassThroughReasoningProvider>();
         services.AddSingleton<ReasoningGuard>();

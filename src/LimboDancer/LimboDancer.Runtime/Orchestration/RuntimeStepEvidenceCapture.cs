@@ -16,7 +16,7 @@ internal sealed class RuntimeStepEvidenceCapture
     private readonly RuntimeInvocationId invocationId;
     private readonly Goal goal;
     private readonly StepId stepId;
-    private readonly RuntimeBudget budget;
+    private RuntimeBudget budget;
     private readonly IReadOnlyList<Observation> observations;
     private readonly IReadOnlyList<ActionCandidate> candidates;
     private ConstraintPipelineResult? constrained;
@@ -51,6 +51,9 @@ internal sealed class RuntimeStepEvidenceCapture
 
     public void SetDecision(DecisionResult value) =>
         decision = value ?? throw new ArgumentNullException(nameof(value));
+
+    public void SetDecisionBudget(RuntimeBudget value) =>
+        budget = value ?? throw new ArgumentNullException(nameof(value));
 
     public void SetGate(ExecutionGateResult value) =>
         gate = value ?? throw new ArgumentNullException(nameof(value));

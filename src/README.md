@@ -38,7 +38,7 @@ The initial host intentionally uses the admitted in-memory reference providers. 
 
 The exact implementation sequence and admission criteria are defined in the [Implementation Plan](<./docs/LimboDancer.Agentic.CognitiveRuntime Implementation Plan.md>). The [documentation index](./docs/) identifies the normative specification and its supporting design documents.
 
-Milestones A through D are approved. The runtime now has a governed directed-execution path, a deterministic autonomous-selection and orchestration path, opt-in effect verification, and replay-capable Decision evidence. Stored evidence is not authority: execution still requires a fresh pass through the existing gate, and a general replay engine remains deferred. Additional Decision providers may now proceed one bounded experiment at a time under the Milestone D entry conditions; routing remains deferred until comparative evidence exists.
+Milestones A through D are approved. The runtime now has a governed directed-execution path, a deterministic autonomous-selection and orchestration path, opt-in effect verification, and replay-capable Decision evidence. Stored evidence is not authority: execution still requires a fresh pass through the existing gate, and a general replay engine remains deferred. PR-19 adds a disabled-by-default OpenAI structured-output Decision provider with bounded token/cost accounting and replay-only evaluation; the rule provider remains the default, and routing remains deferred until comparative evidence exists.
 
 ## Legacy boundary
 

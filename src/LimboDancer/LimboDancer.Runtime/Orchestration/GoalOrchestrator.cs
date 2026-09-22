@@ -112,6 +112,8 @@ public sealed class GoalOrchestrator : IGoalOrchestrator
             var actionOutcomes = new List<ReasoningActionOutcome>();
             var externalCalls = 0;
             var retries = 0;
+            long decisionTokensUsed = 0;
+            decimal decisionCostUsed = 0;
 
             Transition(ref state, GoalLifecycleState.Observing);
             Transition(ref state, GoalLifecycleState.Reasoning);
@@ -227,12 +229,27 @@ public sealed class GoalOrchestrator : IGoalOrchestrator
                 }
 
                 Transition(ref state, GoalLifecycleState.Deciding);
+                var decisionBudget = RemainingDecisionBudget(
+                    budget,
+                    decisionTokensUsed,
+                    decisionCostUsed);
+                evidence.SetDecisionBudget(decisionBudget);
                 var decision = await decisionPlane.DecideAsync(
-                        new DecisionContext(invocationId, goal, stepId, budget, stepObservations),
+                        new DecisionContext(invocationId, goal, stepId, decisionBudget, stepObservations),
                         constrained.Permitted,
                         cancellationToken)
                     .ConfigureAwait(false);
                 evidence.SetDecision(decision.Decision);
+                if (!TryConsumeDecisionBudget(
+                    budget,
+                    decision.Decision,
+                    ref decisionTokensUsed,
+                    ref decisionCostUsed))
+                {
+                    await evidence.WriteAsync(cancellationToken).ConfigureAwait(false);
+                    return Terminal(goal, ref state, GoalLifecycleState.Failed, "budget.decision_exceeded");
+                }
+
                 if (decision.Decision.Outcome == DecisionOutcome.Abstained)
                 {
                     await evidence.WriteAsync(cancellationToken).ConfigureAwait(false);
@@ -539,6 +556,46 @@ public sealed class GoalOrchestrator : IGoalOrchestrator
         }
 
         return null;
+    }
+
+    private static RuntimeBudget RemainingDecisionBudget(
+        RuntimeBudget budget,
+        long tokensUsed,
+        decimal costUsed) => new(
+            budget.MaxSteps,
+            budget.Deadline,
+            budget.MaxTokens is null ? null : Math.Max(0, budget.MaxTokens.Value - tokensUsed),
+            budget.MaxCost is null ? null : Math.Max(0, budget.MaxCost.Value - costUsed),
+            budget.MaxExternalCalls,
+            budget.MaxRetries);
+
+    private static bool TryConsumeDecisionBudget(
+        RuntimeBudget budget,
+        DecisionResult decision,
+        ref long tokensUsed,
+        ref decimal costUsed)
+    {
+        long nextTokens;
+        decimal nextCost;
+        try
+        {
+            nextTokens = checked(tokensUsed + (decision.TokenUsage?.TotalTokens ?? 0));
+            nextCost = checked(costUsed + (decision.Cost ?? 0));
+        }
+        catch (OverflowException)
+        {
+            return false;
+        }
+
+        if ((budget.MaxTokens is { } maxTokens && nextTokens > maxTokens)
+            || (budget.MaxCost is { } maxCost && nextCost > maxCost))
+        {
+            return false;
+        }
+
+        tokensUsed = nextTokens;
+        costUsed = nextCost;
+        return true;
     }
 
     private static GoalResult Terminal(

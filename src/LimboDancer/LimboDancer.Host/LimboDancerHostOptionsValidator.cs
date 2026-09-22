@@ -24,6 +24,17 @@ internal sealed class LimboDancerHostOptionsValidator : IValidateOptions<LimboDa
             failures.Add("LimboDancer:InvocationTimeoutSeconds must be between 1 and 300.");
         }
 
+        if (!string.Equals(options.DecisionProvider, "Rule", StringComparison.Ordinal)
+            && !string.Equals(options.DecisionProvider, "OpenAI", StringComparison.Ordinal))
+        {
+            failures.Add("LimboDancer:DecisionProvider must be Rule or OpenAI.");
+        }
+
+        if (string.Equals(options.DecisionProvider, "OpenAI", StringComparison.Ordinal))
+        {
+            ValidateOpenAiDecision(options.OpenAiDecision, failures);
+        }
+
         for (var index = 0; index < options.ApiKeys.Count; index++)
         {
             var credential = options.ApiKeys[index];
@@ -51,5 +62,38 @@ internal sealed class LimboDancerHostOptionsValidator : IValidateOptions<LimboDa
         return failures.Count == 0
             ? ValidateOptionsResult.Success
             : ValidateOptionsResult.Fail(failures);
+    }
+
+    private static void ValidateOpenAiDecision(
+        OpenAiDecisionProviderHostOptions options,
+        List<string> failures)
+    {
+        if (string.IsNullOrWhiteSpace(options.ApiKey)
+            || string.IsNullOrWhiteSpace(options.Model))
+        {
+            failures.Add("LimboDancer:OpenAiDecision requires ApiKey and a pinned Model.");
+        }
+
+        if (!Uri.TryCreate(options.Endpoint, UriKind.Absolute, out var endpoint)
+            || endpoint.Scheme != Uri.UriSchemeHttps)
+        {
+            failures.Add("LimboDancer:OpenAiDecision:Endpoint must be an absolute HTTPS URI.");
+        }
+
+        if (options.TimeoutSeconds is < 1 or > 300)
+        {
+            failures.Add("LimboDancer:OpenAiDecision:TimeoutSeconds must be between 1 and 300.");
+        }
+
+        if (options.MaxOutputTokens < 1)
+        {
+            failures.Add("LimboDancer:OpenAiDecision:MaxOutputTokens must be positive.");
+        }
+
+        if (options.InputCostPerMillionTokens <= 0
+            || options.OutputCostPerMillionTokens <= 0)
+        {
+            failures.Add("LimboDancer:OpenAiDecision model token prices must be positive.");
+        }
     }
 }

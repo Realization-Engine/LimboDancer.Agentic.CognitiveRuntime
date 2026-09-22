@@ -3,12 +3,14 @@ using System.Security.Claims;
 using System.Text.Json;
 using LimboDancer.Abstractions.Actions;
 using LimboDancer.Abstractions.Audit;
+using LimboDancer.Abstractions.Decision;
 using LimboDancer.Abstractions.Domain;
 using LimboDancer.Abstractions.Evidence;
 using LimboDancer.Abstractions.Runtime;
 using LimboDancer.Adapters.Mcp;
 using LimboDancer.Host;
 using LimboDancer.Infrastructure.Audit;
+using LimboDancer.Infrastructure.Decision;
 using LimboDancer.Runtime.Actions;
 using LimboDancer.Runtime.Diagnostics;
 using LimboDancer.Runtime.Decision;
@@ -36,6 +38,7 @@ public sealed class RuntimeHostTests
         var constraintPipeline = provider.GetRequiredService<IActionConstraintPipeline>();
         var packageResolver = provider.GetRequiredService<IDomainPackageResolver>();
         var decisionPlane = provider.GetRequiredService<IDecisionPlane>();
+        var decisionProvider = provider.GetRequiredService<IDecisionProvider>();
         var reasoningEngine = provider.GetRequiredService<IReasoningEngine>();
         var goalOrchestrator = provider.GetRequiredService<IGoalOrchestrator>();
         var effectVerifier = provider.GetRequiredService<IEffectVerifier>();
@@ -47,6 +50,7 @@ public sealed class RuntimeHostTests
         Assert.NotNull(actionResolver);
         Assert.NotNull(constraintPipeline);
         Assert.NotNull(decisionPlane);
+        Assert.IsType<RuleDecisionProvider>(decisionProvider);
         Assert.NotNull(reasoningEngine);
         Assert.NotNull(goalOrchestrator);
         Assert.NotNull(effectVerifier);
@@ -77,6 +81,30 @@ public sealed class RuntimeHostTests
         {
             await hostedService.StartAsync(CancellationToken.None);
         }
+    }
+
+    [Fact]
+    public void OpenAiDecisionProviderRequiresExplicitCompleteConfiguration()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["LimboDancer:ServerName"] = "LimboDancer.Tests",
+                ["LimboDancer:ServerVersion"] = "1.0.0",
+                ["LimboDancer:InvocationTimeoutSeconds"] = "10",
+                ["LimboDancer:DecisionProvider"] = "OpenAI",
+                ["LimboDancer:OpenAiDecision:ApiKey"] = "test-key",
+                ["LimboDancer:OpenAiDecision:Model"] = "test-model-2026-09-01",
+                ["LimboDancer:OpenAiDecision:InputCostPerMillionTokens"] = "1",
+                ["LimboDancer:OpenAiDecision:OutputCostPerMillionTokens"] = "2",
+            })
+            .Build();
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddLimboDancerHost(configuration);
+        using var provider = services.BuildServiceProvider();
+
+        Assert.IsType<OpenAiDecisionProvider>(provider.GetRequiredService<IDecisionProvider>());
     }
 
     [Fact]

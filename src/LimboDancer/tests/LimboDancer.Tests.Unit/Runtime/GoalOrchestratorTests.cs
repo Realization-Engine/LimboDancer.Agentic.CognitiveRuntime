@@ -245,6 +245,45 @@ public sealed class GoalOrchestratorTests
     }
 
     [Fact]
+    public async Task DecisionTokenBudgetAccumulatesAcrossStepsBeforeGate()
+    {
+        var first = ActionRegistryTests.CreateDescriptor();
+        var second = CreateDescriptor("ldm:action/Second", "runtime:executor/Second");
+        var firstExecutor = new RecordingExecutor(first);
+        var secondExecutor = new RecordingExecutor(second);
+        var provider = new DelegateReasoningProvider(context => context.ActionOutcomes.Count switch
+        {
+            0 => Proposed(first.Id.Value),
+            1 => Proposed(second.Id.Value),
+            _ => Completed(),
+        });
+        var decisionProvider = new BudgetConsumingDecisionProvider(tokensPerDecision: 6);
+        var orchestrator = CreateOrchestrator(
+            [first, second],
+            [firstExecutor, secondExecutor],
+            provider,
+            budget: new RuntimeBudget(
+                2,
+                DateTimeOffset.UtcNow.AddMinutes(1),
+                maxTokens: 10,
+                maxCost: null,
+                maxExternalCalls: 0,
+                maxRetries: 0),
+            decisionProvider: decisionProvider);
+
+        var result = await orchestrator.RunAsync(CreateGoal(first.Id.Value));
+
+        Assert.Equal(GoalLifecycleState.Failed, result.TerminalState);
+        Assert.Equal("budget.decision_exceeded", result.Reason.Code);
+        Assert.Single(firstExecutor.Authorizations);
+        Assert.Empty(secondExecutor.Authorizations);
+        Assert.Collection(
+            decisionProvider.TokenBudgets,
+            value => Assert.Equal(10, value),
+            value => Assert.Equal(4, value));
+    }
+
+    [Fact]
     public async Task GovernanceDenialCannotBeOverriddenByOrchestration()
     {
         var descriptor = ActionRegistryTests.CreateDescriptor();
@@ -348,7 +387,8 @@ public sealed class GoalOrchestratorTests
         IEnumerable<IEffectEvaluator>? effectEvaluators = null,
         IEffectVerificationPolicy? effectVerificationPolicy = null,
         RuntimeBudget? budget = null,
-        IReplayEvidenceSink? replayEvidenceSink = null)
+        IReplayEvidenceSink? replayEvidenceSink = null,
+        IDecisionProvider? decisionProvider = null)
     {
         var registry = new ActionRegistry(descriptors);
         var auditSink = new RecordingAuditSink();
@@ -360,7 +400,7 @@ public sealed class GoalOrchestratorTests
             observationProvider ?? new EmptyObservationProvider(),
             actionResolver ?? new RegisteredActionResolver(registry),
             constraintPipeline ?? new SemanticActionConstraintPipeline([]),
-            new DecisionPlane(new RuleDecisionProvider(), auditSink),
+            new DecisionPlane(decisionProvider ?? new RuleDecisionProvider(), auditSink),
             new DiagnosticRunner([]),
             executionGate ?? new ExecutionGate(
                 registry,
@@ -707,6 +747,36 @@ public sealed class GoalOrchestratorTests
         {
             CallCount++;
             return disposition;
+        }
+    }
+
+    private sealed class BudgetConsumingDecisionProvider(long tokensPerDecision) : IDecisionProvider
+    {
+        public const string Id = "test:decision/BudgetConsuming";
+
+        public string ProviderId => Id;
+
+        public string? ProviderVersion => "1";
+
+        public List<long?> TokenBudgets
+        {
+            get;
+        } = [];
+
+        public Task<DecisionResult> DecideAsync(
+            DecisionContext context,
+            IReadOnlyList<PermittedAction> candidates,
+            CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            TokenBudgets.Add(context.Budget.MaxTokens);
+            return Task.FromResult(new DecisionResult(
+                DecisionOutcome.Selected,
+                Assert.Single(candidates).Candidate.CandidateId,
+                ProviderId,
+                "decision.test",
+                providerVersion: ProviderVersion,
+                tokenUsage: new DecisionTokenUsage(0, tokensPerDecision)));
         }
     }
 }

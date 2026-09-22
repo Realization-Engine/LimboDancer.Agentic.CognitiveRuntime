@@ -1588,6 +1588,21 @@ Provider routing SHOULD NOT be added until at least two real providers have enou
 
 One PR per provider.
 
+### PR-19 implemented baseline
+
+The first provider experiment adds an explicitly configured `OpenAiDecisionProvider` that:
+
+- uses the OpenAI Responses API with strict JSON Schema output, no tools, and response storage disabled;
+- sees only the existing Decision context and permitted candidates;
+- returns the existing validated `DecisionResult` with latency, token usage, and calculated cost evidence;
+- applies a finite timeout and conservative pre-invocation token/cost eligibility checks;
+- participates in cumulative per-Goal Decision token and cost accounting before any gate or execution;
+- treats refusal, incomplete, malformed, transport-failed, and out-of-set output as provider failure rather than abstention;
+- remains disabled unless the Host explicitly selects OpenAI and supplies a key, pinned model, endpoint, limits, and prices; and
+- includes a replay-only labeled evaluation utility that cannot authorize or execute actions.
+
+The deterministic rule provider remains the default. PR-19 does not add provider routing, fallback, retries, live-provider CI, or production-provider adoption.
+
 ## 27. Deferred Until Concrete Use Cases
 
 Do not implement merely because the architecture permits them:
