@@ -140,7 +140,7 @@ public sealed class EffectVerifier : IEffectVerifier
         }
     }
 
-    private static VerificationStatus Aggregate(IReadOnlyList<EffectVerificationFinding> findings)
+    private static VerificationStatus Aggregate(List<EffectVerificationFinding> findings)
     {
         if (findings.Count == 0
             || findings.All(static finding => finding.Status == VerificationStatus.Unverifiable))
