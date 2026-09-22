@@ -13,7 +13,7 @@ public sealed class FakeDomainConformanceTests
     {
         var tenantId = Guid.NewGuid();
         var package = DomainResolutionContractsTests.CreatePackage("1.0");
-        IDomainPackageResolver packageResolver = new DomainPackageRegistry(
+        var packageResolver = new DomainPackageRegistry(
             [CreatePackageDescriptor(package)]);
         IDomainEntityResolver entityResolver = new FakeEntityResolver();
         IObservationProvider observationProvider = new FakeObservationProvider();
