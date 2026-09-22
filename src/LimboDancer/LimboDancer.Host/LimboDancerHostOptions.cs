@@ -29,9 +29,17 @@ public sealed class OpenAiDecisionProviderHostOptions
 
     public int MaxOutputTokens { get; set; } = 256;
 
-    public decimal InputCostPerMillionTokens { get; set; }
+    public decimal InputCostPerMillionTokens
+    {
+        get;
+        set;
+    }
 
-    public decimal OutputCostPerMillionTokens { get; set; }
+    public decimal OutputCostPerMillionTokens
+    {
+        get;
+        set;
+    }
 }
 
 public sealed class ApiKeyCredentialOptions
