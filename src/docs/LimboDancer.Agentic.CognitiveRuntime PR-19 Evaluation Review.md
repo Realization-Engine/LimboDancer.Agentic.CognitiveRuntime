@@ -70,3 +70,5 @@ This review does not admit:
 ## 6. Next checkpoint
 
 The next checkpoint is an operator-produced evaluation report for one pinned model against a representative labeled corpus. If that evidence supports adoption, a separate review must define the exact admitted decision class and thresholds. Provider routing remains ineligible until at least two non-reference providers have comparable evidence.
+
+Corpus preparation and execution are governed by the [Decision Evaluation Corpus Specification and Runbook](<./LimboDancer.Agentic.CognitiveRuntime Decision Evaluation Corpus Specification and Runbook.md>). The ASL 3.10 rulebook Markdown may supply verified rule evidence and expert case-construction inputs under that process, but it is not historical Decision evidence or a provider-adoption corpus by itself.

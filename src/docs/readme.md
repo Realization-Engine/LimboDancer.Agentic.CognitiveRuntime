@@ -27,6 +27,7 @@ When documents disagree, use this order of authority:
 | [Milestone D Conformance Review](<./LimboDancer.Agentic.CognitiveRuntime Milestone D Conformance Review.md>) | Effect-verification and replay-evidence conformance decision plus the bounded entry conditions for additional Decision providers. |
 | [PR-19 OpenAI Decision Provider Design](<./LimboDancer.Agentic.CognitiveRuntime PR-19 OpenAI Decision Provider Design.md>) | Bounded structured-output provider slice, budget semantics, configuration boundary, and replay-only evaluation requirements. |
 | [PR-19 Evaluation Review](<./LimboDancer.Agentic.CognitiveRuntime PR-19 Evaluation Review.md>) | Provider-boundary conformance evidence, offline evaluation measures, and the evidence still required before adoption. |
+| [Decision Evaluation Corpus Specification and Runbook](<./LimboDancer.Agentic.CognitiveRuntime Decision Evaluation Corpus Specification and Runbook.md>) | Corpus evidence classes, manifest and review requirements, ASL rule-source profile, holdout controls, thresholds, and operator-run procedure. |
 
 ## Architecture analyses and runtime models
 

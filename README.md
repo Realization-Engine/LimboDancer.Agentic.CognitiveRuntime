@@ -770,6 +770,7 @@ Key documents include:
 - `LimboDancer.Agentic.CognitiveRuntime Domain Integration Model.md`
 - `LimboDancer.Agentic.CognitiveRuntime Native Local Decision Model.md`
 - `LimboDancer.Agentic.CognitiveRuntime Anthropic Decision Provider Feasibility and Design.md`
+- `LimboDancer.Agentic.CognitiveRuntime Decision Evaluation Corpus Specification and Runbook.md`
 - `Decision Plane Architecture.md`
 - `docs/ASL/legacy-limbodancer-mcp-system-design.md` — ASL reference-domain requirements and historical design source
 
