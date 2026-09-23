@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:limbodancer:asl:tir:curated-review-transition:schema:1.0.0",
+  "title": "ASL Curated Review Transition",
+  "description": "Exact opening or rejection attestation; acceptance and supersession are unavailable in this version.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaId", "schemaVersion", "recordId", "canonicalization", "subject", "submissionBundleSha256", "priorRecordRef", "priorStatus", "requestedStatus", "action", "actor", "rationale", "evidenceRefs", "createdAt", "createdAtSource", "recordSha256"],
+  "properties": {
+    "schemaId": {"const": "urn:limbodancer:asl:tir:curated-review-transition:schema:1.0.0"},
+    "schemaVersion": {"const": "1.0.0"},
+    "recordId": {"$ref": "#/$defs/recordId"},
+    "canonicalization": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": {"const": "asl-tir-curated-review-transition-canonical-json"},
+        "version": {"const": "1.0.0"}
+      }
+    },
+    "subject": {
+      "type": "object", "additionalProperties": false,
+      "required": ["proposalSchemaId", "proposalSha256", "sourceTirDocumentSha256", "sourceArtifactId", "sourceArtifactSha256"],
+      "properties": {
+        "proposalSchemaId": {"const": "urn:limbodancer:asl:tir:curated-proposal:schema:1.0.0"},
+        "proposalSha256": {"$ref": "#/$defs/sha256"},
+        "sourceTirDocumentSha256": {"$ref": "#/$defs/sha256"},
+        "sourceArtifactId": {"type": "string", "pattern": "^asl-tir:sha256:[0-9a-f]{64}$"},
+        "sourceArtifactSha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "submissionBundleSha256": {"$ref": "#/$defs/sha256"},
+    "priorRecordRef": {"oneOf": [{"$ref": "#/$defs/recordId"}, {"type": "null"}]},
+    "priorStatus": {"enum": ["proposed", "in-review"]},
+    "requestedStatus": {"enum": ["in-review", "rejected"]},
+    "action": {"enum": ["openReview", "reject"]},
+    "actor": {
+      "type": "object", "additionalProperties": false,
+      "required": ["identity", "role"],
+      "properties": {
+        "identity": {"$ref": "#/$defs/nonEmptyString"},
+        "role": {"const": "domainReviewer"}
+      }
+    },
+    "rationale": {"$ref": "#/$defs/nonEmptyString"},
+    "evidenceRefs": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}},
+    "createdAt": {"type": "string", "format": "date-time", "pattern": "Z$"},
+    "createdAtSource": {"$ref": "#/$defs/nonEmptyString"},
+    "recordSha256": {"$ref": "#/$defs/sha256"}
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "action": {"const": "openReview"},
+        "priorRecordRef": {"type": "null"},
+        "priorStatus": {"const": "proposed"},
+        "requestedStatus": {"const": "in-review"}
+      }
+    },
+    {
+      "properties": {
+        "action": {"const": "reject"},
+        "priorRecordRef": {"$ref": "#/$defs/recordId"},
+        "priorStatus": {"const": "in-review"},
+        "requestedStatus": {"const": "rejected"}
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "recordId": {"type": "string", "pattern": "^asl-curated-review:sha256:[0-9a-f]{64}$"},
+    "nonEmptyString": {"type": "string", "minLength": 1, "pattern": "\\S"}
+  }
+}

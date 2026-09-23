@@ -4,7 +4,7 @@ namespace LimboDancer.Domains.Asl.Authoring.Tests;
 
 public sealed class TirCuratedReviewBundleTests
 {
-    private static readonly DateTimeOffset SubmittedAt = new(
+    internal static readonly DateTimeOffset SubmittedAt = new(
         2026, 9, 23, 13, 0, 0, TimeSpan.Zero);
 
     [Fact]
@@ -104,7 +104,7 @@ public sealed class TirCuratedReviewBundleTests
             document, proposal, sourceBundle, proposal.CreatedAt.AddMinutes(-1), "fixture"));
     }
 
-    private static TirReviewBundle SourceBundle(TirDocument document, string declaredUse) =>
+    internal static TirReviewBundle SourceBundle(TirDocument document, string declaredUse) =>
         TirReviewStateProjector.CreateBundle(
             document, document.Artifacts[0].Envelope.ArtifactId,
             TirStructuralValidator.Policy, declaredUse, ["scope:example"], [],
