@@ -24,7 +24,10 @@ public static partial class TirStructuralValidator
         reviewGate=notApplicable
         """;
 
-    public static TirValidationPolicy Policy { get; } =
+    public static TirValidationPolicy Policy
+    {
+        get;
+    } =
         new(
             PolicyId,
             PolicyVersion,
