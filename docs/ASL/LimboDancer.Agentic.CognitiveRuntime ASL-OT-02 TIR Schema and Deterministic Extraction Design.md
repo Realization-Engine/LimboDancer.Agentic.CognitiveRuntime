@@ -450,3 +450,19 @@ The first admitted consumers are deliberately narrow:
 Artifact occurrence disambiguators for cross-references and example markers now use the persisted UTF-8 start byte rather than a C# UTF-16 index. This changes their extracted artifact identities under the new schema but makes those identities portable.
 
 This increment does not recover the eight damaged parent boundaries and does not claim exact example or table extents. It establishes the evidence-addressing contract required to make those later changes reviewable. The next increment may use unique, explicit sub-fragment markers to recover `A7.37`, `A7.8`, and `E1.93`, while retaining a diagnostic whenever a candidate is absent or ambiguous.
+
+## 20. TIR 1.3 required embedded-boundary recovery
+
+Extractor 1.5 uses the TIR 1.3 sub-fragment contract to recover the three damaged Rule boundaries without modifying the converted Markdown and without inferring rule meaning. Recovery is gated by existing hierarchy evidence: an embedded declaration is eligible only when an already-extracted child requires its normalized identifier and none of that child's permitted parent keys resolves to an existing Rule or Section.
+
+Three explicit marker forms are admitted:
+
+- an exact bold Rule declaration embedded inside another paragraph, which recovers `A7.37` from the declaration merged into the `A7.36` fragment;
+- an OCR-spaced Rule declaration inside structured text, which recovers `A7.8`; and
+- an exact Rule declaration inside structured text, which recovers `E1.93`.
+
+Each recovered Rule cites only the matched declaration marker through exact UTF-8 byte offsets. It does not claim that the containing fragment, adjacent prose, figure, or structured-text block is the complete Rule extent. The confidence basis records both `required-missing-parent-boundary` and the observed marker form. An otherwise matching declaration is ignored when no extracted child requires it. Multiple eligible markers for the same normalized identifier remain duplicate candidates, causing the existing duplicate and ambiguous-parent diagnostics instead of an arbitrary selection.
+
+Across the registered Chapters A-E corpus, this recovery adds exactly three Rule artifacts, increasing the Rule count from 1,998 to 2,001. All eight missing-parent diagnostics resolve. Fourteen previously missing chapter-qualified references also resolve against the recovered Rules, reducing missing-reference diagnostics from 46 to 32 and total diagnostics from 54 to 32. The other extraction counts remain unchanged: 105 Sections, 4,834 cross-references, 358 examples, and 21 tables.
+
+These recovered artifacts remain `extracted`, `unmodeled`, and `captured`, with `semanticId: null`. Structural recovery does not establish semantic scope, applicability, precedence, or ontology acceptance. Complete example extents and table-row reconstruction remain deferred; either requires its own deterministic boundary contract and review corpus.

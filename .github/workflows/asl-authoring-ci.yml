@@ -45,18 +45,5 @@ jobs:
       - name: Build
         run: dotnet build src/ASL/LimboDancer.Domains.Asl.sln --configuration Release --no-restore --warnaserror
 
-      - name: Emit candidate structural TIR for boundary recovery
-        run: |
-          dotnet run --project src/ASL/LimboDancer.Domains.Asl.Authoring.Cli --configuration Release --no-build -- \
-            --source-commit a3254ff1d492dbdd28483d86f5b42437b48e80d4 \
-            --registry-output /tmp/asl-source-registry.json \
-            --verification-output /tmp/asl-verification-sample.json \
-            --tir-output /tmp/asl-structural-sample.json \
-            --tir-created-at 2026-09-23T12:00:00Z
-          echo TIR_SAMPLE_BASE64_BEGIN
-          base64 --wrap=0 /tmp/asl-structural-sample.json
-          echo
-          echo TIR_SAMPLE_BASE64_END
-
       - name: Test source registry and fragment locator
         run: dotnet test src/ASL/LimboDancer.Domains.Asl.sln --configuration Release --no-build --no-restore
