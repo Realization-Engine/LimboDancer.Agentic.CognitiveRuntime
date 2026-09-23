@@ -146,6 +146,6 @@ ASL-OT-03 may now define the validation and review workflow subject to these con
 
 ## 10. Next checkpoint
 
-The next admitted slice is **ASL-OT-03: Validation and Review Workflow**. Its first deliverable should be a design document defining validation stages, review records, diagnostic disposition, source-verification gates, semantic proposal states, and the exact conditions under which an artifact may advance beyond `captured`.
+The next admitted slice is **ASL-OT-03: Validation and Review Workflow**. Its first deliverable is the [ASL-OT-03 Validation and Review Workflow Design](<./LimboDancer.Agentic.CognitiveRuntime ASL-OT-03 Validation and Review Workflow Design.md>), which proposes validation stages, review records, diagnostic disposition, source-verification gates, semantic proposal states, and the exact conditions under which an artifact may advance beyond `captured`.
 
 ASL-OT-04 semantic curation does not begin automatically. It remains blocked until the ASL-OT-03 design and acceptance gate are approved.
