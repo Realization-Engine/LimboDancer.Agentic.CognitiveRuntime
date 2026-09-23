@@ -8,6 +8,8 @@
 
 **Architecture authority:** Non-normative for runtime structure, technology selection, project layout, implementation sequence, and deployment topology. The Plane Runtime Specification remains authoritative for runtime execution and authority semantics.
 
+**Transformation authority:** The [ASL Ontology Transformation Specification](<./LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md>) governs current rulebook-to-package authoring, validation, publication, and first-slice implementation.
+
 ## 1. Original product intent
 
 LimboDancer was created to turn complex authoritative material into operational domain knowledge that an AI system can use against current state.
