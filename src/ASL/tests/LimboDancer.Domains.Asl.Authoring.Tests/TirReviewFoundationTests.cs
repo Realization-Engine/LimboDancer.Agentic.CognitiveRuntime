@@ -55,7 +55,10 @@ public sealed class TirReviewFoundationTests
         var original = CreateDocument(artifact);
         var changed = CreateDocument(artifact with
         {
-            Payload = artifact.Payload with { SiblingOrder = 1 },
+            Payload = artifact.Payload with
+            {
+                SiblingOrder = 1,
+            },
         });
 
         var originalDigest = TirCanonicalJson.ComputeArtifactSha256(
@@ -92,7 +95,16 @@ public sealed class TirReviewFoundationTests
                 new TirValidationGateResult(TirValidationGate.Identity, TirValidationGateStatus.Failed, [firstFinding.FindingId]),
                 new TirValidationGateResult(TirValidationGate.Structural, TirValidationGateStatus.Failed, [secondFinding.FindingId]),
             ],
-            [firstFinding with { EvidenceRefs = ["evidence:a", "evidence:b"] }, secondFinding with { EvidenceRefs = ["evidence:c", "evidence:d"] }],
+            [
+                firstFinding with
+                {
+                    EvidenceRefs = ["evidence:a", "evidence:b"],
+                },
+                secondFinding with
+                {
+                    EvidenceRefs = ["evidence:c", "evidence:d"],
+                },
+            ],
             [ReviewRecordId('1'), ReviewRecordId('2')]);
 
         Assert.Equal(
@@ -110,7 +122,10 @@ public sealed class TirReviewFoundationTests
             [new TirValidationGateResult(TirValidationGate.Identity, TirValidationGateStatus.Failed, [finding.FindingId])],
             [finding],
             []);
-        var changedSubject = subject with { ArtifactSha256 = Sha('9') };
+        var changedSubject = subject with
+        {
+            ArtifactSha256 = Sha('9'),
+        };
         var changedFinding = CreateFinding(
             changedSubject,
             finding.Code,
@@ -123,7 +138,13 @@ public sealed class TirReviewFoundationTests
             []);
         var payloadChangedRecord = record with
         {
-            Findings = [finding with { Message = "A changed finding message." }],
+            Findings =
+            [
+                finding with
+                {
+                    Message = "A changed finding message.",
+                },
+            ],
         };
 
         Assert.NotEqual(
@@ -155,7 +176,10 @@ public sealed class TirReviewFoundationTests
             ["evidence:a", "evidence:b"]);
         var changedPolicy = TirReviewIdentity.CreateFindingId(
             subject,
-            policy with { ConfigurationSha256 = Sha('8') },
+            policy with
+            {
+                ConfigurationSha256 = Sha('8'),
+            },
             TirValidationGate.Structural,
             "ASL-TIR-001",
             subject.ArtifactId,
@@ -181,7 +205,10 @@ public sealed class TirReviewFoundationTests
     public void CanonicalWriterRejectsNonUtcTimestampsAndInvalidActorAuthority()
     {
         var record = CreateReview([]);
-        var nonUtc = record with { CreatedAt = CreatedAt.ToOffset(TimeSpan.FromHours(1)) };
+        var nonUtc = record with
+        {
+            CreatedAt = CreatedAt.ToOffset(TimeSpan.FromHours(1)),
+        };
         var wrongRole = record with
         {
             Actor = new TirReviewActor("reviewer@example.invalid", TirReviewActorRole.Validator),
