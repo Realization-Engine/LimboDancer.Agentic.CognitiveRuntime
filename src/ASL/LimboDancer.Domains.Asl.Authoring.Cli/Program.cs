@@ -88,7 +88,7 @@ public static class Program
             throw new ArgumentException("--tir-output and --tir-created-at must be supplied together.");
         }
 
-        var tirCreatedAt = tirCreatedAtValue is null
+        DateTimeOffset? tirCreatedAt = tirCreatedAtValue is null
             ? null
             : DateTimeOffset.Parse(
                 tirCreatedAtValue,
