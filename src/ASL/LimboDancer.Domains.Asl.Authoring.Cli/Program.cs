@@ -35,14 +35,15 @@ public static class Program
                         "operator-supplied-reproducible-build-metadata"));
                 var sample = TirStructuralExtractor.SelectRepresentativeSample(tir);
                 ManifestJson.WriteFile(options.TirOutput, TirCanonicalJson.Serialize(sample));
+                var sectionCount = tir.Artifacts.Count(static artifact => artifact is TirSectionArtifact);
+                var ruleCount = tir.Artifacts.Count(static artifact => artifact is TirRuleArtifact);
+                var crossReferenceCount = tir.Artifacts.Count(static artifact => artifact is TirCrossReferenceArtifact);
+                var exampleCount = tir.Artifacts.Count(static artifact => artifact is TirExampleArtifact);
+                var tableCount = tir.Artifacts.Count(static artifact => artifact is TirTableArtifact);
+                var missingParentCount = tir.Diagnostics.Count(
+                    static diagnostic => diagnostic.Code == "TIR-MISSING-PARENT");
                 Console.WriteLine(FormattableString.Invariant(
-                    $"TIR extraction summary: sections={tir.Artifacts.Count(static artifact => artifact is TirSectionArtifact)}, "
-                    + $"rules={tir.Artifacts.Count(static artifact => artifact is TirRuleArtifact)}, "
-                    + $"crossReferences={tir.Artifacts.Count(static artifact => artifact is TirCrossReferenceArtifact)}, "
-                    + $"examples={tir.Artifacts.Count(static artifact => artifact is TirExampleArtifact)}, "
-                    + $"tables={tir.Artifacts.Count(static artifact => artifact is TirTableArtifact)}, "
-                    + $"diagnostics={tir.Diagnostics.Count}, "
-                    + $"missingParents={tir.Diagnostics.Count(static diagnostic => diagnostic.Code == "TIR-MISSING-PARENT")}."));
+                    $"TIR extraction summary: sections={sectionCount}, rules={ruleCount}, crossReferences={crossReferenceCount}, examples={exampleCount}, tables={tableCount}, diagnostics={tir.Diagnostics.Count}, missingParents={missingParentCount}."));
             }
 
             return 0;
