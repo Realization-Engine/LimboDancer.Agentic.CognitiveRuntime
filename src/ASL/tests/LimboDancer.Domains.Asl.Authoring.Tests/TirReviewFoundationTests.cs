@@ -21,7 +21,7 @@ public sealed class TirReviewFoundationTests
             "docs",
             "ASL",
             "Schemas",
-            "asl-tir-review-record-1.0.schema.json");
+            "asl-tir-review-record-1.1.schema.json");
         using var schema = JsonDocument.Parse(File.ReadAllBytes(schemaPath));
         var root = schema.RootElement;
         var kinds = root
@@ -32,6 +32,7 @@ public sealed class TirReviewFoundationTests
             .Select(static item => item.GetString())
             .ToArray();
         var subject = root.GetProperty("$defs").GetProperty("subject");
+        var definitions = root.GetProperty("$defs");
 
         Assert.Equal(TirReviewCanonicalJson.SchemaId, root.GetProperty("$id").GetString());
         Assert.Equal(5, kinds.Length);
@@ -46,6 +47,20 @@ public sealed class TirReviewFoundationTests
         Assert.Contains(
             "artifactSha256",
             subject.GetProperty("required").EnumerateArray().Select(static item => item.GetString()));
+        Assert.Contains(
+            "sourceEvidence",
+            definitions
+                .GetProperty("sourceVerificationPayload")
+                .GetProperty("required")
+                .EnumerateArray()
+                .Select(static item => item.GetString()));
+        Assert.Contains(
+            "severity",
+            definitions
+                .GetProperty("findingReference")
+                .GetProperty("required")
+                .EnumerateArray()
+                .Select(static item => item.GetString()));
     }
 
     [Fact]
@@ -243,7 +258,15 @@ public sealed class TirReviewFoundationTests
                 null,
                 [],
                 SourceFragment(),
-                [new TirDependency(TirDependencyKind.Figure, "images/example.png")],
+                new TirSourceEvidenceContext(
+                    "asl-easlrb-3.10-a-e",
+                    Sha('a'),
+                    "3.10",
+                    "docs/ASL/Rulebook_Markdown/chapter-a.md",
+                    Sha('2'),
+                    43,
+                    43),
+                [new TirVerifiedDependency(TirDependencyKind.Figure, "images/example.png", Sha('4'))],
                 "manual visual comparison",
                 TirSourceVerificationDisposition.Verified,
                 null,
@@ -259,6 +282,7 @@ public sealed class TirReviewFoundationTests
                     TirFindingOrigin.ExtractedDiagnostic,
                     $"asl-tir-diagnostic:sha256:{Sha('7')}",
                     "ASL-TIR-MISSING-REFERENCE",
+                    TirDiagnosticSeverity.Warning,
                     null),
                 TirFindingDisposition.Deferred,
                 "Outside the current review scope.",

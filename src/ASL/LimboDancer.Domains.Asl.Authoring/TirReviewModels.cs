@@ -100,10 +100,25 @@ public sealed record TirValidationGateResult(
     TirValidationGateStatus Status,
     IReadOnlyList<string> FindingIds);
 
+public sealed record TirSourceEvidenceContext(
+    string RegistryId,
+    string RegistrySha256,
+    string Edition,
+    string SourcePath,
+    string SourceArtifactSha256,
+    int? StartPage,
+    int? EndPage);
+
+public sealed record TirVerifiedDependency(
+    TirDependencyKind Kind,
+    string Target,
+    string Sha256);
+
 public sealed record TirFindingReference(
     TirFindingOrigin Origin,
     string FindingId,
     string Code,
+    TirDiagnosticSeverity Severity,
     string? ReportRecordRef);
 
 public abstract record TirReviewRecord(
@@ -149,7 +164,8 @@ public sealed record TirSourceVerificationRecord(
     TirReviewTool? Tool,
     IReadOnlyList<string> PrerequisiteRecordRefs,
     TirSourceFragmentReference SourceFragment,
-    IReadOnlyList<TirDependency> Dependencies,
+    TirSourceEvidenceContext SourceEvidence,
+    IReadOnlyList<TirVerifiedDependency> Dependencies,
     string ComparisonMethod,
     TirSourceVerificationDisposition Disposition,
     string? ObservedDiscrepancy,

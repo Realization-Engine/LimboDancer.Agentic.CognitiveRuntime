@@ -8,10 +8,10 @@ namespace LimboDancer.Domains.Asl.Authoring;
 
 public static partial class TirReviewCanonicalJson
 {
-    public const string SchemaId = "urn:limbodancer:asl:tir:review-record:schema:1.0.0";
-    public const string SchemaVersion = "1.0.0";
+    public const string SchemaId = "urn:limbodancer:asl:tir:review-record:schema:1.1.0";
+    public const string SchemaVersion = "1.1.0";
     public const string ProfileName = "asl-tir-review-canonical-json";
-    public const string ProfileVersion = "1.0.0";
+    public const string ProfileVersion = "1.1.0";
 
     public static string Serialize(TirReviewRecord record)
     {
@@ -210,6 +210,16 @@ public static partial class TirReviewCanonicalJson
     {
         writer.WritePropertyName("sourceFragment");
         WriteSourceFragment(writer, record.SourceFragment);
+        writer.WritePropertyName("sourceEvidence");
+        writer.WriteStartObject();
+        writer.WriteString("registryId", record.SourceEvidence.RegistryId);
+        writer.WriteString("registrySha256", record.SourceEvidence.RegistrySha256);
+        writer.WriteString("edition", record.SourceEvidence.Edition);
+        writer.WriteString("sourcePath", record.SourceEvidence.SourcePath);
+        writer.WriteString("sourceArtifactSha256", record.SourceEvidence.SourceArtifactSha256);
+        WriteNullableNumber(writer, "startPage", record.SourceEvidence.StartPage);
+        WriteNullableNumber(writer, "endPage", record.SourceEvidence.EndPage);
+        writer.WriteEndObject();
         writer.WritePropertyName("dependencies");
         writer.WriteStartArray();
         foreach (var dependency in record.Dependencies
@@ -219,6 +229,7 @@ public static partial class TirReviewCanonicalJson
             writer.WriteStartObject();
             writer.WriteString("kind", DependencyKind(dependency.Kind));
             writer.WriteString("target", dependency.Target);
+            writer.WriteString("sha256", dependency.Sha256);
             writer.WriteEndObject();
         }
 
@@ -238,6 +249,7 @@ public static partial class TirReviewCanonicalJson
         writer.WriteString("origin", FindingOrigin(record.Finding.Origin));
         writer.WriteString("findingId", record.Finding.FindingId);
         writer.WriteString("code", record.Finding.Code);
+        writer.WriteString("severity", DiagnosticSeverity(record.Finding.Severity));
         WriteNullableString(writer, "reportRecordRef", record.Finding.ReportRecordRef);
         writer.WriteEndObject();
         writer.WriteString("disposition", FindingDisposition(record.Disposition));
@@ -507,10 +519,41 @@ public static partial class TirReviewCanonicalJson
         }
 
         ValidateSourceFragment(record.SourceFragment);
+        Require(record.SourceEvidence.RegistryId, nameof(record.SourceEvidence.RegistryId));
+        ValidateSha256(
+            record.SourceEvidence.RegistrySha256,
+            nameof(record.SourceEvidence.RegistrySha256));
+        Require(record.SourceEvidence.Edition, nameof(record.SourceEvidence.Edition));
+        Require(record.SourceEvidence.SourcePath, nameof(record.SourceEvidence.SourcePath));
+        ValidateSha256(
+            record.SourceEvidence.SourceArtifactSha256,
+            nameof(record.SourceEvidence.SourceArtifactSha256));
+        if ((record.SourceEvidence.StartPage is null) != (record.SourceEvidence.EndPage is null)
+            || record.SourceEvidence.StartPage is < 1
+            || record.SourceEvidence.EndPage < record.SourceEvidence.StartPage)
+        {
+            throw new InvalidOperationException(
+                "Source-evidence pages must both be null or form a positive ordered range.");
+        }
+
         Require(record.ComparisonMethod, nameof(record.ComparisonMethod));
+        var dependencies = new HashSet<(TirDependencyKind Kind, string Target)>();
         foreach (var dependency in record.Dependencies)
         {
+            if (dependency.Kind is not TirDependencyKind.Figure
+                and not TirDependencyKind.Table)
+            {
+                throw new InvalidOperationException(
+                    "Source verification may hash only figure and table dependencies.");
+            }
+
             Require(dependency.Target, nameof(dependency.Target));
+            ValidateSha256(dependency.Sha256, nameof(dependency.Sha256));
+            if (!dependencies.Add((dependency.Kind, dependency.Target)))
+            {
+                throw new InvalidOperationException(
+                    "Verified source dependencies must be unique by kind and target.");
+            }
         }
 
         ValidateStringSet(record.CorrectionProposalRefs, nameof(record.CorrectionProposalRefs), false);
@@ -526,6 +569,20 @@ public static partial class TirReviewCanonicalJson
         {
             throw new InvalidOperationException("A source mismatch requires discrepancy details.");
         }
+
+        if (record.Disposition != TirSourceVerificationDisposition.Verified
+            && string.IsNullOrWhiteSpace(record.ObservedDiscrepancy))
+        {
+            throw new InvalidOperationException(
+                "A non-verified source record requires discrepancy or indeterminacy details.");
+        }
+
+        if (record.Disposition == TirSourceVerificationDisposition.Mismatch
+            && record.CorrectionProposalRefs.Count == 0)
+        {
+            throw new InvalidOperationException(
+                "A source mismatch requires a correction proposal reference.");
+        }
     }
 
     private static void ValidateDiagnosticDisposition(TirDiagnosticDispositionRecord record)
@@ -537,16 +594,53 @@ public static partial class TirReviewCanonicalJson
                 "A diagnostic disposition requires a domain-reviewer or adjudicator role.");
         }
 
-        if (!AnyFindingIdRegex().IsMatch(record.Finding.FindingId))
+        var validFindingId = record.Finding.Origin switch
+        {
+            TirFindingOrigin.ExtractedDiagnostic => DiagnosticIdRegex().IsMatch(
+                record.Finding.FindingId),
+            TirFindingOrigin.ValidationFinding => FindingIdRegex().IsMatch(
+                record.Finding.FindingId),
+            _ => false,
+        };
+        if (!validFindingId)
         {
             throw new InvalidOperationException("Diagnostic disposition finding identity is invalid.");
         }
 
         Require(record.Finding.Code, nameof(record.Finding.Code));
+        if (record.Finding.Origin == TirFindingOrigin.ExtractedDiagnostic
+            && record.Finding.ReportRecordRef is not null)
+        {
+            throw new InvalidOperationException(
+                "An extracted diagnostic cannot claim a validation-report reference.");
+        }
+
+        if (record.Finding.Origin == TirFindingOrigin.ValidationFinding
+            && record.Finding.ReportRecordRef is null)
+        {
+            throw new InvalidOperationException(
+                "A validation finding requires its validation-report reference.");
+        }
+
         ValidateOptionalRecordRef(record.Finding.ReportRecordRef, nameof(record.Finding.ReportRecordRef));
         Require(record.Rationale, nameof(record.Rationale));
         ValidateStringSequence(record.EvidenceRefs, nameof(record.EvidenceRefs));
         ValidateOptionalReference(record.ReplacementRef, nameof(record.ReplacementRef));
+        if (record.Disposition == TirFindingDisposition.Resolved
+            && record.ReplacementRef is null)
+        {
+            throw new InvalidOperationException(
+                "A resolved finding requires changed-evidence or replacement-subject reference.");
+        }
+
+        if ((record.Disposition is TirFindingDisposition.Resolved
+                or TirFindingDisposition.NotApplicable
+                or TirFindingDisposition.AcceptedLimitation)
+            && record.EvidenceRefs.Count == 0)
+        {
+            throw new InvalidOperationException(
+                "This diagnostic disposition requires supporting evidence.");
+        }
     }
 
     private static void ValidateReview(TirReviewDecisionRecord record)
@@ -830,6 +924,6 @@ public static partial class TirReviewCanonicalJson
     [GeneratedRegex("^asl-tir-finding:sha256:[0-9a-f]{64}$", RegexOptions.CultureInvariant)]
     private static partial Regex FindingIdRegex();
 
-    [GeneratedRegex("^asl-tir-(?:diagnostic|finding):sha256:[0-9a-f]{64}$", RegexOptions.CultureInvariant)]
-    private static partial Regex AnyFindingIdRegex();
+    [GeneratedRegex("^asl-tir-diagnostic:sha256:[0-9a-f]{64}$", RegexOptions.CultureInvariant)]
+    private static partial Regex DiagnosticIdRegex();
 }

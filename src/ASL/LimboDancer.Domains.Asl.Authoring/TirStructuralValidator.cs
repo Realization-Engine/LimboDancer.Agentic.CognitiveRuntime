@@ -47,18 +47,12 @@ public static partial class TirStructuralValidator
 
         // Canonical serialization is the input boundary. An unsupported or internally
         // malformed document cannot produce an exact review subject or a report.
-        var documentSha256 = TirCanonicalJson.ComputePayloadSha256(document);
         var artifact = document.Artifacts.SingleOrDefault(candidate => string.Equals(
             candidate.Envelope.ArtifactId,
             artifactId,
             StringComparison.Ordinal))
             ?? throw new InvalidOperationException($"TIR artifact was not found: {artifactId}.");
-        var subject = new TirReviewSubjectReference(
-            documentSha256,
-            artifactId,
-            TirCanonicalJson.ComputeArtifactSha256(document, artifactId),
-            document.SchemaId,
-            document.PackageCandidate);
+        var subject = TirReviewSubjects.Create(document, artifactId);
         var findings = new List<TirValidationFinding>();
 
         ValidateIdentity(document, artifact, subject, findings);
