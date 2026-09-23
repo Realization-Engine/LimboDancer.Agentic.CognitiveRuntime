@@ -80,7 +80,7 @@ public sealed class TirStructuralExtractorTests
         {
             Fragment(SourceFragmentKind.Heading, null, null, 1, content: "## *16. BATTLEFIELD INTEGRITY\n"),
             Fragment(SourceFragmentKind.RuleText, "16.1", "A16.1", 2),
-            Fragment(SourceFragmentKind.Paragraph, null, null, 3, content: "**17. AEROSANS**<sup>14</sup>\n"),
+            Fragment(SourceFragmentKind.RuleContinuation, "16.1", "A16.1", 3, content: "**17. AEROSANS**<sup>14</sup>\n"),
             Fragment(SourceFragmentKind.RuleText, "17.1", "A17.1", 4),
             Fragment(SourceFragmentKind.StructuredText, null, null, 5, content: "```text\n36. PREPARED FIRE ZONE^2^0\n```\n"),
             Fragment(SourceFragmentKind.RuleText, "36.2", "A36.2", 6),
@@ -120,11 +120,14 @@ public sealed class TirStructuralExtractorTests
         {
             Fragment(SourceFragmentKind.Heading, null, null, 1, content: "## 14. SNIPERS\n"),
             Fragment(SourceFragmentKind.RuleText, "14.01", "A14.01", 2),
-            Fragment(SourceFragmentKind.RuleText, "7.3", "A7.3", 3),
-            Fragment(SourceFragmentKind.RuleText, "7.301", "A7.301", 4),
-            Fragment(SourceFragmentKind.RuleText, "7.309", "A7.309", 5),
-            Fragment(SourceFragmentKind.RuleText, "2.24", "A2.24", 6),
-            Fragment(SourceFragmentKind.RuleText, "2.2401", "A2.2401", 7),
+            Fragment(SourceFragmentKind.Heading, null, null, 3, content: "## 7. FIRE ATTACKS\n"),
+            Fragment(SourceFragmentKind.RuleText, "7.3", "A7.3", 4),
+            Fragment(SourceFragmentKind.RuleText, "7.301", "A7.301", 5),
+            Fragment(SourceFragmentKind.RuleText, "7.309", "A7.309", 6),
+            Fragment(SourceFragmentKind.Heading, null, null, 7, content: "## 2. EQUIPMENT\n"),
+            Fragment(SourceFragmentKind.RuleText, "2.2", "A2.2", 8),
+            Fragment(SourceFragmentKind.RuleText, "2.24", "A2.24", 9),
+            Fragment(SourceFragmentKind.RuleText, "2.2401", "A2.2401", 10),
         };
 
         var document = Extract(fragments);

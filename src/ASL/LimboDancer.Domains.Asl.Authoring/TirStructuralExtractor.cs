@@ -831,6 +831,7 @@ public static partial class TirStructuralExtractor
 
                 break;
             case SourceFragmentKind.Paragraph:
+            case SourceFragmentKind.RuleContinuation:
                 match = BoldMajorSectionDeclarationRegex().Match(content);
                 if (match.Success)
                 {
