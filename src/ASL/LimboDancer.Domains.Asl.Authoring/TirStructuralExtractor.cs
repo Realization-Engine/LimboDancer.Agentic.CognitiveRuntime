@@ -11,15 +11,15 @@ public sealed record TirExtractionOptions(
 public static partial class TirStructuralExtractor
 {
     public const string ExtractorName = "LimboDancer.Domains.Asl.Authoring.StructuralExtractor";
-    public const string ExtractorVersion = "1.2.0";
+    public const string ExtractorVersion = "1.3.0";
 
     public static string ConfigurationSha256
     {
         get;
     } = Hashing.Sha256Text(
-        "asl-tir-structural-extractor/v1.2\n"
+        "asl-tir-structural-extractor/v1.3\n"
         + "sourceFragment,section,rule,crossReference,example,table\n"
-        + "publishedIdentifier,chapterContext,headingPath,digitHierarchy,sourceOrder,explicitMarkers\n"
+        + "publishedIdentifier,chapterContext,majorSectionBoundary,digitHierarchy,zeroPaddedChild,sourceOrder,explicitMarkers\n"
         + "no-semantic-inference");
 
     public static TirDocument Extract(
@@ -244,17 +244,16 @@ public static partial class TirStructuralExtractor
                 StringComparer.Ordinal);
         var siblingOrder = new Dictionary<string, int>(StringComparer.Ordinal);
         var extracted = new List<ExtractedSection>();
-        foreach (var fragment in fragments.Where(static fragment => fragment.Kind == SourceFragmentKind.Heading))
+        foreach (var fragment in fragments)
         {
-            var match = MajorSectionHeadingRegex().Match(fragment.Content.TrimEnd('\r', '\n'));
-            if (!match.Success || !chapterBySourceId.TryGetValue(fragment.SourceId, out var chapter))
+            if (!TryGetSectionBoundary(fragment, out var boundary)
+                || !chapterBySourceId.TryGetValue(fragment.SourceId, out var chapter))
             {
                 continue;
             }
 
-            var publishedId = match.Groups["identifier"].Value;
+            var publishedId = boundary.PublishedId;
             var normalizedId = $"{chapter.ToUpperInvariant()}{publishedId}";
-            var title = match.Groups["title"].Value.Trim();
             var order = siblingOrder.GetValueOrDefault(chapter);
             siblingOrder[chapter] = order + 1;
             var artifactId = TirArtifactIdentity.Create(
@@ -274,16 +273,17 @@ public static partial class TirStructuralExtractor
                 [SourceReference(fragment)],
                 [],
                 1m,
-                ["chapter-context", "exact-numbered-heading"],
+                boundary.ConfidenceBasis,
                 createdBy);
             var artifact = new TirSectionArtifact(
                 envelope,
                 new TirSectionPayload(
-                    title,
-                    2,
+                    boundary.Title,
+                    boundary.Kind,
+                    boundary.SourceHeadingLevel,
                     null,
                     TirHierarchyStatus.Root,
-                    [TirHierarchyBasis.ChapterContext, TirHierarchyBasis.HeadingPath],
+                    boundary.HierarchyBasis,
                     order));
             extracted.Add(new ExtractedSection(normalizedId, artifact));
         }
@@ -361,7 +361,9 @@ public static partial class TirStructuralExtractor
         var parentArtifactsByKey = candidatesByKey.ToDictionary(
             static item => item.Key,
             item => item.Value
-                .Select(candidate => new StructuralParent(artifactIds[candidate], false))
+                .Select(candidate => new StructuralParent(
+                    artifactIds[candidate],
+                    [TirHierarchyBasis.PublishedIdentifier, TirHierarchyBasis.ChapterContext]))
                 .ToList(),
             StringComparer.Ordinal);
         foreach (var section in sections)
@@ -372,18 +374,22 @@ public static partial class TirStructuralExtractor
                 parentArtifactsByKey.Add(section.NormalizedId, artifacts);
             }
 
-            artifacts.Add(new StructuralParent(section.Artifact.Envelope.ArtifactId, true));
+            artifacts.Add(new StructuralParent(
+                section.Artifact.Envelope.ArtifactId,
+                section.Artifact.Payload.HierarchyBasis));
         }
 
         var siblingOrder = new Dictionary<string, int>(StringComparer.Ordinal);
         var extracted = new List<ExtractedRule>(candidates.Count);
         foreach (var candidate in candidates)
         {
-            var parentKey = ParentHierarchyKey(candidate.NormalizedId);
-            var siblingKey = parentKey ?? candidate.NormalizedId[..1];
+            var parentKeys = ParentHierarchyKeys(candidate.NormalizedId);
+            var hierarchy = ResolveHierarchy(parentKeys, parentArtifactsByKey);
+            var siblingKey = hierarchy.ParentKey
+                ?? parentKeys.FirstOrDefault()
+                ?? candidate.NormalizedId[..1];
             var order = siblingOrder.GetValueOrDefault(siblingKey);
             siblingOrder[siblingKey] = order + 1;
-            var hierarchy = ResolveHierarchy(parentKey, parentArtifactsByKey);
             var sourceReferences = candidate.Evidence.Select(SourceReference).ToArray();
             var dependencies = candidate.Evidence
                 .SelectMany(fragment => fragment.Dependencies.Select(dependency => new TirDependency(
@@ -395,6 +401,11 @@ public static partial class TirStructuralExtractor
             if (!string.Equals(candidate.PublishedId, candidate.NormalizedId, StringComparison.Ordinal))
             {
                 confidenceBasis.Add("chapter-local-identifier-normalized");
+            }
+
+            if (hierarchy.UsedZeroPaddedChildConvention)
+            {
+                confidenceBasis.Add("zero-padded-child-convention");
             }
 
             var envelope = Envelope(
@@ -415,7 +426,7 @@ public static partial class TirStructuralExtractor
                     hierarchy.Status,
                     hierarchy.Basis,
                     order));
-            extracted.Add(new ExtractedRule(candidate, artifact, parentKey));
+            extracted.Add(new ExtractedRule(candidate, artifact, hierarchy.ParentKey));
         }
 
         return extracted;
@@ -684,40 +695,45 @@ public static partial class TirStructuralExtractor
     }
 
     private static HierarchyResolution ResolveHierarchy(
-        string? parentKey,
+        IReadOnlyList<string> parentKeys,
         Dictionary<string, List<StructuralParent>> parentArtifactsByKey)
     {
-        if (parentKey is null)
+        if (parentKeys.Count == 0)
         {
-            return new HierarchyResolution(null, TirHierarchyStatus.Root, []);
+            return new HierarchyResolution(null, null, TirHierarchyStatus.Root, [], false);
         }
 
-        if (!parentArtifactsByKey.TryGetValue(parentKey, out var parents))
+        var parentKey = parentKeys.FirstOrDefault(parentArtifactsByKey.ContainsKey);
+        if (parentKey is null)
         {
             return new HierarchyResolution(
                 null,
+                parentKeys[0],
                 TirHierarchyStatus.Missing,
-                [TirHierarchyBasis.PublishedIdentifier]);
+                [TirHierarchyBasis.PublishedIdentifier],
+                false);
         }
+
+        var parents = parentArtifactsByKey[parentKey];
+        var usedZeroPaddedChildConvention = parentKeys.Count > 1
+            && string.Equals(parentKey, parentKeys[1], StringComparison.Ordinal);
 
         if (parents.Count > 1)
         {
             return new HierarchyResolution(
                 null,
+                parentKey,
                 TirHierarchyStatus.Ambiguous,
-                [TirHierarchyBasis.PublishedIdentifier, TirHierarchyBasis.ChapterContext]);
+                [TirHierarchyBasis.PublishedIdentifier, TirHierarchyBasis.ChapterContext],
+                usedZeroPaddedChildConvention);
         }
 
         return new HierarchyResolution(
             parents[0].ArtifactId,
+            parentKey,
             TirHierarchyStatus.Supported,
-            parents[0].IsSection
-                ? [
-                    TirHierarchyBasis.PublishedIdentifier,
-                    TirHierarchyBasis.ChapterContext,
-                    TirHierarchyBasis.HeadingPath,
-                ]
-                : [TirHierarchyBasis.PublishedIdentifier, TirHierarchyBasis.ChapterContext]);
+            parents[0].Basis.ToArray(),
+            usedZeroPaddedChildConvention);
     }
 
     private static TirArtifactEnvelope Envelope(
@@ -762,19 +778,100 @@ public static partial class TirStructuralExtractor
             fragment.Locator.EndLine);
     }
 
-    private static string? ParentHierarchyKey(string normalizedId)
+    private static IReadOnlyList<string> ParentHierarchyKeys(string normalizedId)
     {
         var match = ChapterLocalRuleRegex().Match(normalizedId);
         if (!match.Success)
         {
-            return null;
+            return [];
         }
 
         var chapterAndMajor = $"{match.Groups["chapter"].Value}{match.Groups["major"].Value}";
         var fraction = match.Groups["fraction"].Value;
-        return fraction.Length == 1
+        var directParent = fraction.Length == 1
             ? chapterAndMajor
             : $"{chapterAndMajor}.{fraction[..^1]}";
+        if (fraction.Length < 2 || fraction[^2] != '0' || fraction[^1] == '0')
+        {
+            return [directParent];
+        }
+
+        var zeroPaddedParentFraction = fraction[..^2];
+        var zeroPaddedParent = zeroPaddedParentFraction.Length == 0
+            ? chapterAndMajor
+            : $"{chapterAndMajor}.{zeroPaddedParentFraction}";
+        return string.Equals(directParent, zeroPaddedParent, StringComparison.Ordinal)
+            ? [directParent]
+            : [directParent, zeroPaddedParent];
+    }
+
+    private static bool TryGetSectionBoundary(SourceFragment fragment, out SectionBoundary boundary)
+    {
+        var content = fragment.Content.TrimEnd('\r', '\n');
+        Match match;
+        switch (fragment.Kind)
+        {
+            case SourceFragmentKind.Heading:
+                match = MajorSectionHeadingRegex().Match(content);
+                if (match.Success)
+                {
+                    boundary = new SectionBoundary(
+                        match.Groups["identifier"].Value,
+                        match.Groups["title"].Value.Trim(),
+                        TirSectionBoundaryKind.MarkdownHeading,
+                        2,
+                        [
+                            TirHierarchyBasis.PublishedIdentifier,
+                            TirHierarchyBasis.ChapterContext,
+                            TirHierarchyBasis.HeadingPath,
+                        ],
+                        ["chapter-context", "exact-numbered-heading"]);
+                    return true;
+                }
+
+                break;
+            case SourceFragmentKind.Paragraph:
+                match = BoldMajorSectionDeclarationRegex().Match(content);
+                if (match.Success)
+                {
+                    boundary = new SectionBoundary(
+                        match.Groups["identifier"].Value,
+                        match.Groups["title"].Value.Trim(),
+                        TirSectionBoundaryKind.BoldDeclaration,
+                        null,
+                        [
+                            TirHierarchyBasis.PublishedIdentifier,
+                            TirHierarchyBasis.ChapterContext,
+                            TirHierarchyBasis.SourceOrder,
+                        ],
+                        ["chapter-context", "exact-bold-major-section-declaration"]);
+                    return true;
+                }
+
+                break;
+            case SourceFragmentKind.StructuredText:
+                match = StructuredTextMajorSectionDeclarationRegex().Match(content);
+                if (match.Success)
+                {
+                    boundary = new SectionBoundary(
+                        match.Groups["identifier"].Value,
+                        match.Groups["title"].Value.Trim(),
+                        TirSectionBoundaryKind.StructuredTextDeclaration,
+                        null,
+                        [
+                            TirHierarchyBasis.PublishedIdentifier,
+                            TirHierarchyBasis.ChapterContext,
+                            TirHierarchyBasis.SourceOrder,
+                        ],
+                        ["chapter-context", "exact-structured-text-major-section-declaration"]);
+                    return true;
+                }
+
+                break;
+        }
+
+        boundary = null!;
+        return false;
     }
 
     private static string ResolveDependency(string sourcePath, string dependency)
@@ -815,7 +912,17 @@ public static partial class TirStructuralExtractor
 
     private sealed record ExtractedSection(string NormalizedId, TirSectionArtifact Artifact);
 
-    private sealed record StructuralParent(string ArtifactId, bool IsSection);
+    private sealed record SectionBoundary(
+        string PublishedId,
+        string Title,
+        TirSectionBoundaryKind Kind,
+        int? SourceHeadingLevel,
+        TirHierarchyBasis[] HierarchyBasis,
+        string[] ConfidenceBasis);
+
+    private sealed record StructuralParent(
+        string ArtifactId,
+        IReadOnlyList<TirHierarchyBasis> Basis);
 
     private sealed record ExtractedRule(
         RuleCandidate Candidate,
@@ -824,11 +931,19 @@ public static partial class TirStructuralExtractor
 
     private sealed record HierarchyResolution(
         string? ParentArtifactId,
+        string? ParentKey,
         TirHierarchyStatus Status,
-        TirHierarchyBasis[] Basis);
+        TirHierarchyBasis[] Basis,
+        bool UsedZeroPaddedChildConvention);
 
-    [GeneratedRegex(@"^##\s+(?<identifier>\d+)\.\s+(?<title>.+?)\s*$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"^##\s+\*?(?<identifier>\d+)\.\s+(?<title>.+?)\s*$", RegexOptions.CultureInvariant)]
     private static partial Regex MajorSectionHeadingRegex();
+
+    [GeneratedRegex(@"^\*\*(?<identifier>\d+)\.\s+(?<title>.+?)\*{2,}(?:\s*<sup>.*?</sup>\*{0,2})?\s*$", RegexOptions.CultureInvariant)]
+    private static partial Regex BoldMajorSectionDeclarationRegex();
+
+    [GeneratedRegex(@"^\s*(?<identifier>\d+)\.\s+(?<title>[A-Z][A-Z &/-]+?)(?:\^[0-9^]+)?\s*$", RegexOptions.Multiline | RegexOptions.CultureInvariant)]
+    private static partial Regex StructuredTextMajorSectionDeclarationRegex();
 
     [GeneratedRegex(@"^(?<chapter>[A-Z])(?<major>\d+)\.(?<fraction>\d+)$", RegexOptions.CultureInvariant)]
     private static partial Regex ChapterLocalRuleRegex();

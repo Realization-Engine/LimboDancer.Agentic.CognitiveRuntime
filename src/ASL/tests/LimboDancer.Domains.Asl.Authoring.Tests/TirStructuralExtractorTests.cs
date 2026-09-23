@@ -37,6 +37,8 @@ public sealed class TirStructuralExtractorTests
         Assert.Null(root.Payload.DirectParentArtifactId);
         Assert.Equal("A1", section.Envelope.NormalizedPublishedId);
         Assert.Equal("PERSONNEL COUNTERS", section.Payload.Title);
+        Assert.Equal(TirSectionBoundaryKind.MarkdownHeading, section.Payload.BoundaryKind);
+        Assert.Equal(2, section.Payload.SourceHeadingLevel);
         Assert.Equal(TirHierarchyStatus.Supported, child.Payload.HierarchyStatus);
         Assert.Equal(section.Envelope.ArtifactId, child.Payload.DirectParentArtifactId);
         Assert.Equal(0, child.Payload.SiblingOrder);
@@ -68,6 +70,80 @@ public sealed class TirStructuralExtractorTests
         Assert.Equal(section.Envelope.ArtifactId, rules["A1.1"].Payload.DirectParentArtifactId);
         Assert.Equal(rules["A1.1"].Envelope.ArtifactId, rules["A1.11"].Payload.DirectParentArtifactId);
         Assert.Equal(rules["A1.11"].Envelope.ArtifactId, rules["A1.111"].Payload.DirectParentArtifactId);
+        Assert.Empty(document.Diagnostics);
+    }
+
+    [Fact]
+    public void AlternateMajorSectionDeclarationsRemainExplicitlyTyped()
+    {
+        var fragments = new[]
+        {
+            Fragment(SourceFragmentKind.Heading, null, null, 1, content: "## *16. BATTLEFIELD INTEGRITY\n"),
+            Fragment(SourceFragmentKind.RuleText, "16.1", "A16.1", 2),
+            Fragment(SourceFragmentKind.Paragraph, null, null, 3, content: "**17. AEROSANS**<sup>14</sup>\n"),
+            Fragment(SourceFragmentKind.RuleText, "17.1", "A17.1", 4),
+            Fragment(SourceFragmentKind.StructuredText, null, null, 5, content: "```text\n36. PREPARED FIRE ZONE^2^0\n```\n"),
+            Fragment(SourceFragmentKind.RuleText, "36.2", "A36.2", 6),
+        };
+
+        var document = Extract(fragments);
+        var sections = document.Artifacts
+            .OfType<TirSectionArtifact>()
+            .ToDictionary(static section => section.Envelope.NormalizedPublishedId!, StringComparer.Ordinal);
+        var rules = document.Artifacts
+            .OfType<TirRuleArtifact>()
+            .ToDictionary(static rule => rule.Envelope.NormalizedPublishedId!, StringComparer.Ordinal);
+
+        Assert.Equal(TirSectionBoundaryKind.MarkdownHeading, sections["A16"].Payload.BoundaryKind);
+        Assert.Equal(2, sections["A16"].Payload.SourceHeadingLevel);
+        Assert.Equal(TirSectionBoundaryKind.BoldDeclaration, sections["A17"].Payload.BoundaryKind);
+        Assert.Null(sections["A17"].Payload.SourceHeadingLevel);
+        Assert.Equal(
+            TirSectionBoundaryKind.StructuredTextDeclaration,
+            sections["A36"].Payload.BoundaryKind);
+        Assert.Equal(
+            sections["A16"].Envelope.ArtifactId,
+            rules["A16.1"].Payload.DirectParentArtifactId);
+        Assert.Equal(
+            sections["A17"].Envelope.ArtifactId,
+            rules["A17.1"].Payload.DirectParentArtifactId);
+        Assert.Equal(
+            sections["A36"].Envelope.ArtifactId,
+            rules["A36.2"].Payload.DirectParentArtifactId);
+        Assert.Empty(document.Diagnostics);
+    }
+
+    [Fact]
+    public void ZeroPaddedChildrenFallBackToPublishedParentConvention()
+    {
+        var fragments = new[]
+        {
+            Fragment(SourceFragmentKind.Heading, null, null, 1, content: "## 14. SNIPERS\n"),
+            Fragment(SourceFragmentKind.RuleText, "14.01", "A14.01", 2),
+            Fragment(SourceFragmentKind.RuleText, "7.3", "A7.3", 3),
+            Fragment(SourceFragmentKind.RuleText, "7.301", "A7.301", 4),
+            Fragment(SourceFragmentKind.RuleText, "7.309", "A7.309", 5),
+            Fragment(SourceFragmentKind.RuleText, "2.24", "A2.24", 6),
+            Fragment(SourceFragmentKind.RuleText, "2.2401", "A2.2401", 7),
+        };
+
+        var document = Extract(fragments);
+        var section = Assert.Single(
+            document.Artifacts.OfType<TirSectionArtifact>(),
+            static artifact => artifact.Envelope.NormalizedPublishedId == "A14");
+        var rules = document.Artifacts
+            .OfType<TirRuleArtifact>()
+            .ToDictionary(static rule => rule.Envelope.NormalizedPublishedId!, StringComparer.Ordinal);
+
+        Assert.Equal(section.Envelope.ArtifactId, rules["A14.01"].Payload.DirectParentArtifactId);
+        Assert.Equal(rules["A7.3"].Envelope.ArtifactId, rules["A7.301"].Payload.DirectParentArtifactId);
+        Assert.Equal(rules["A7.3"].Envelope.ArtifactId, rules["A7.309"].Payload.DirectParentArtifactId);
+        Assert.Equal(rules["A2.24"].Envelope.ArtifactId, rules["A2.2401"].Payload.DirectParentArtifactId);
+        Assert.All(
+            new[] { rules["A14.01"], rules["A7.301"], rules["A7.309"], rules["A2.2401"] },
+            static rule => Assert.Contains(
+                "zero-padded-child-convention",
+                rule.Envelope.ConfidenceBasis));
         Assert.Empty(document.Diagnostics);
     }
 

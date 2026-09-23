@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:limbodancer:asl:tir:schema:1.1.0",
+  "$id": "urn:limbodancer:asl:tir:schema:1.2.0",
   "title": "LimboDancer ASL Transformation Intermediate Representation",
   "description": "Canonical structural authoring representation for ASL-OT-02. Semantic artifact kinds are reserved but are not emitted by the ASL-OT-02 structural writer.",
   "type": "object",
@@ -20,10 +20,10 @@
   ],
   "properties": {
     "schemaId": {
-      "const": "urn:limbodancer:asl:tir:schema:1.1.0"
+      "const": "urn:limbodancer:asl:tir:schema:1.2.0"
     },
     "schemaVersion": {
-      "const": "1.1.0"
+      "const": "1.2.0"
     },
     "packageCandidate": {
       "$ref": "#/$defs/packageCandidate"
@@ -549,7 +549,8 @@
       "additionalProperties": false,
       "required": [
         "title",
-        "headingLevel",
+        "boundaryKind",
+        "sourceHeadingLevel",
         "directParentArtifactId",
         "hierarchyStatus",
         "hierarchyBasis",
@@ -560,8 +561,20 @@
           "type": "string",
           "minLength": 1
         },
-        "headingLevel": {
-          "const": 2
+        "boundaryKind": {
+          "enum": [
+            "markdownHeading",
+            "boldDeclaration",
+            "structuredTextDeclaration"
+          ]
+        },
+        "sourceHeadingLevel": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "maximum": 6
         },
         "directParentArtifactId": {
           "type": "null"

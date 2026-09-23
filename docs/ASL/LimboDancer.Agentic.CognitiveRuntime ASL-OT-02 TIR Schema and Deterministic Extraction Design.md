@@ -360,7 +360,7 @@ These are authoring implementation decisions. They do not admit runtime contract
 
 The first ASL-OT-02 implementation slice establishes the following admitted foundation:
 
-- `docs/ASL/Schemas/asl-tir-1.1.schema.json` defines schema identity `urn:limbodancer:asl:tir:schema:1.1.0`, the complete required artifact-kind vocabulary, the common envelope, and kind-specific structural payloads;
+- `docs/ASL/Schemas/asl-tir-1.2.schema.json` defines schema identity `urn:limbodancer:asl:tir:schema:1.2.0`, the complete required artifact-kind vocabulary, the common envelope, and kind-specific structural payloads;
 - `TirModels.cs` defines the ASL-owned C# document, envelope, provenance, dependency, diagnostic, and structural payload types;
 - strongly typed structural artifacts exist for `SourceFragment`, `Section`, `Rule`, `CrossReference`, `Example`, and `Table`;
 - the remaining required artifact kinds are reserved in the versioned vocabulary but cannot be emitted by the structural canonical writer;
@@ -379,7 +379,7 @@ The second ASL-OT-02 implementation slice deterministically maps the complete re
 - every located source fragment becomes a `SourceFragment` artifact without duplicating its rulebook text;
 - every mechanically recognized rule-text boundary becomes a `Rule` artifact;
 - rule evidence contains the ordered rule-text fragment and contiguous continuation, figure, or structured fragments carrying the same published identity;
-- level-2 numbered headings such as `## 1. PERSONNEL COUNTERS` become chapter-qualified `Section` anchors such as `A1`;
+- explicit major-section declarations become chapter-qualified `Section` anchors such as `A1`; the payload distinguishes numbered Markdown headings, bold numbered declarations, and numbered declarations recovered from structured text;
 - general chapter rules such as `A.1` retain their exact normalized identity and are not conflated with Section `A1`;
 - chapter-local rule identifiers use ASL's digit hierarchy: `A1.1` belongs to Section `A1`, `A1.11` belongs to Rule `A1.1`, and `A1.111` belongs to Rule `A1.11`;
 - direct parents resolve only when the exact normalized Rule or Section candidate is unique;
@@ -419,3 +419,17 @@ The migration also corrects the earlier hierarchy comparison assumption. TIR 1.0
 This evidence-bounded change reduces missing-parent diagnostics from 914 to 67. It does not suppress the remainder. The 67 retained findings identify absent or irregular structural anchors in the registered source and remain review inputs until a source convention or adjudicated mapping explains them.
 
 The next extraction increment should audit those 67 remaining parent findings and define exact example-span and table-row recovery. Those concerns remain separate from semantic formalization, ontology acceptance, publication, and runtime authority.
+
+## 18. TIR 1.2 missing-parent audit
+
+The TIR 1.2 audit classified all 67 TIR 1.1 missing-parent diagnostics against the registered source:
+
+- 18 rules use the ASL zero-padded child convention. Examples include `A7.301` through `A7.309` as children of `A7.3`, `C2.2401` as a child of `C2.24`, and `A14.01` as a child of Section `A14`;
+- 41 rules belong beneath nine explicit major sections whose converted boundaries are not all ordinary level-2 Markdown headings: one emphasized heading, seven bold declarations, and one declaration inside structured text; and
+- eight rules depend on three boundaries damaged or merged during conversion: `A7.37`, `A7.8`, and `E1.93`.
+
+TIR 1.2 admits the first two classes because each has an explicit, repeatable source convention. Section payloads now record `boundaryKind` and nullable `sourceHeadingLevel`, avoiding the false claim that every section came from a Markdown heading. Zero-padded parent fallback is attempted only for a final two-digit group `01` through `09`, and only resolves when the resulting exact Rule or Section identity exists.
+
+The full Chapters A-E extraction now contains 105 Sections and 1,998 Rules. Missing-parent diagnostics fall from 67 to eight; the 46 missing cross-reference targets remain unchanged, for 54 diagnostics in total. The final eight parent findings are retained rather than inferred because the available fragment boundaries contain damaged spacing, embedded rule declarations, or adjacent prose. Recovering them requires finer source-span support, not another identifier heuristic.
+
+The next extraction increment should establish sub-fragment source spans before attempting exact recovery of those eight boundaries, example prose, or table rows. Semantic formalization remains deferred.

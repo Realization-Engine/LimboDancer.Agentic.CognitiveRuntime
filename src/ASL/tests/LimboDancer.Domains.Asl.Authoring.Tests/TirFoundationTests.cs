@@ -21,7 +21,7 @@ public sealed class TirFoundationTests
             "docs",
             "ASL",
             "Schemas",
-            "asl-tir-1.1.schema.json");
+            "asl-tir-1.2.schema.json");
         using var schema = JsonDocument.Parse(File.ReadAllBytes(schemaPath));
         var definitions = schema.RootElement.GetProperty("$defs");
         var artifactProperties = definitions

@@ -72,6 +72,13 @@ public enum TirHierarchyStatus
     Ambiguous,
 }
 
+public enum TirSectionBoundaryKind
+{
+    MarkdownHeading,
+    BoldDeclaration,
+    StructuredTextDeclaration,
+}
+
 public enum TirReferenceResolutionStatus
 {
     Resolved,
@@ -145,7 +152,8 @@ public sealed record TirSourceFragmentArtifact(
 
 public sealed record TirSectionPayload(
     string Title,
-    int HeadingLevel,
+    TirSectionBoundaryKind BoundaryKind,
+    int? SourceHeadingLevel,
     string? DirectParentArtifactId,
     TirHierarchyStatus HierarchyStatus,
     IReadOnlyList<TirHierarchyBasis> HierarchyBasis,

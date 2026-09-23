@@ -8,8 +8,8 @@ namespace LimboDancer.Domains.Asl.Authoring;
 
 public static partial class TirCanonicalJson
 {
-    public const string SchemaId = "urn:limbodancer:asl:tir:schema:1.1.0";
-    public const string SchemaVersion = "1.1.0";
+    public const string SchemaId = "urn:limbodancer:asl:tir:schema:1.2.0";
+    public const string SchemaVersion = "1.2.0";
     public const string ProfileName = "asl-tir-canonical-json";
     public const string ProfileVersion = "1.0.0";
 
@@ -180,7 +180,15 @@ public static partial class TirCanonicalJson
                 break;
             case TirSectionArtifact section:
                 writer.WriteString("title", section.Payload.Title);
-                writer.WriteNumber("headingLevel", section.Payload.HeadingLevel);
+                writer.WriteString("boundaryKind", SectionBoundaryKind(section.Payload.BoundaryKind));
+                if (section.Payload.SourceHeadingLevel is null)
+                {
+                    writer.WriteNull("sourceHeadingLevel");
+                }
+                else
+                {
+                    writer.WriteNumber("sourceHeadingLevel", section.Payload.SourceHeadingLevel.Value);
+                }
                 WriteHierarchyPayload(
                     writer,
                     section.Payload.DirectParentArtifactId,
@@ -501,6 +509,14 @@ public static partial class TirCanonicalJson
         TirHierarchyStatus.Candidate => "candidate",
         TirHierarchyStatus.Missing => "missing",
         TirHierarchyStatus.Ambiguous => "ambiguous",
+        _ => throw new ArgumentOutOfRangeException(nameof(value), value, null),
+    };
+
+    private static string SectionBoundaryKind(TirSectionBoundaryKind value) => value switch
+    {
+        TirSectionBoundaryKind.MarkdownHeading => "markdownHeading",
+        TirSectionBoundaryKind.BoldDeclaration => "boldDeclaration",
+        TirSectionBoundaryKind.StructuredTextDeclaration => "structuredTextDeclaration",
         _ => throw new ArgumentOutOfRangeException(nameof(value), value, null),
     };
 
