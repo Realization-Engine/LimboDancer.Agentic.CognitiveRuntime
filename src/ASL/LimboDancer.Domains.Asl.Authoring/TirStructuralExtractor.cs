@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace LimboDancer.Domains.Asl.Authoring;
@@ -11,15 +12,15 @@ public sealed record TirExtractionOptions(
 public static partial class TirStructuralExtractor
 {
     public const string ExtractorName = "LimboDancer.Domains.Asl.Authoring.StructuralExtractor";
-    public const string ExtractorVersion = "1.3.0";
+    public const string ExtractorVersion = "1.4.0";
 
     public static string ConfigurationSha256
     {
         get;
     } = Hashing.Sha256Text(
-        "asl-tir-structural-extractor/v1.3\n"
+        "asl-tir-structural-extractor/v1.4\n"
         + "sourceFragment,section,rule,crossReference,example,table\n"
-        + "publishedIdentifier,chapterContext,majorSectionBoundary,digitHierarchy,zeroPaddedChild,sourceOrder,explicitMarkers\n"
+        + "publishedIdentifier,chapterContext,majorSectionBoundary,digitHierarchy,zeroPaddedChild,sourceOrder,utf8ByteSpans,explicitMarkers\n"
         + "no-semantic-inference");
 
     public static TirDocument Extract(
@@ -270,7 +271,10 @@ public static partial class TirStructuralExtractor
                 options,
                 publishedId,
                 normalizedId,
-                [SourceReference(fragment)],
+                [SourceReference(
+                    fragment,
+                    boundary.StartCharacterOffset,
+                    boundary.EndCharacterOffsetExclusive)],
                 [],
                 1m,
                 boundary.ConfidenceBasis,
@@ -467,6 +471,7 @@ public static partial class TirStructuralExtractor
                 var resolvedTargetId = targets is { Length: 1 }
                     ? targets[0].Envelope.ArtifactId
                     : null;
+                var span = CreateUtf8ByteSpan(fragment.Content, match.Index, match.Index + match.Length);
                 var artifactId = TirArtifactIdentity.Create(
                     new TirArtifactIdentityInput(
                         TirArtifactKind.CrossReference,
@@ -474,7 +479,7 @@ public static partial class TirStructuralExtractor
                         referenceText,
                         normalizedCandidate,
                         [fragment.FragmentId],
-                        $"offset:{match.Index.ToString(CultureInfo.InvariantCulture)}"));
+                        $"utf8-byte-offset:{span.Start.ToString(CultureInfo.InvariantCulture)}"));
                 var dependencies = resolvedTargetId is null
                     ? Array.Empty<TirDependency>()
                     : new[] { new TirDependency(TirDependencyKind.Artifact, resolvedTargetId) };
@@ -484,7 +489,7 @@ public static partial class TirStructuralExtractor
                     options,
                     referenceText,
                     normalizedCandidate,
-                    [SourceReference(fragment)],
+                    [SourceReference(fragment, span)],
                     dependencies,
                     1m,
                     ["explicit-chapter-qualified-reference"],
@@ -527,6 +532,7 @@ public static partial class TirStructuralExtractor
             foreach (Match match in ExplicitExampleRegex().Matches(fragment.Content))
             {
                 var illustrates = ruleIdsByFragment.GetValueOrDefault(fragment.FragmentId) ?? [];
+                var span = CreateUtf8ByteSpan(fragment.Content, match.Index, match.Index + match.Length);
                 var artifactId = TirArtifactIdentity.Create(
                     new TirArtifactIdentityInput(
                         TirArtifactKind.Example,
@@ -534,7 +540,7 @@ public static partial class TirStructuralExtractor
                         null,
                         null,
                         [fragment.FragmentId],
-                        $"offset:{match.Index.ToString(CultureInfo.InvariantCulture)}"));
+                        $"utf8-byte-offset:{span.Start.ToString(CultureInfo.InvariantCulture)}"));
                 var dependencies = illustrates
                     .Select(static ruleId => new TirDependency(TirDependencyKind.Artifact, ruleId))
                     .ToArray();
@@ -544,7 +550,7 @@ public static partial class TirStructuralExtractor
                     options,
                     null,
                     null,
-                    [SourceReference(fragment)],
+                    [SourceReference(fragment, span)],
                     dependencies,
                     1m,
                     ["explicit-example-marker"],
@@ -767,7 +773,28 @@ public static partial class TirStructuralExtractor
             []);
     }
 
-    private static TirSourceFragmentReference SourceReference(SourceFragment fragment)
+    private static TirSourceFragmentReference SourceReference(
+        SourceFragment fragment,
+        int? startCharacterOffset = null,
+        int? endCharacterOffsetExclusive = null)
+    {
+        if ((startCharacterOffset is null) != (endCharacterOffsetExclusive is null))
+        {
+            throw new ArgumentException("Sub-fragment character offsets must both be null or both be present.");
+        }
+
+        var span = startCharacterOffset is null
+            ? (Utf8Span?)null
+            : CreateUtf8ByteSpan(
+                fragment.Content,
+                startCharacterOffset.Value,
+                endCharacterOffsetExclusive!.Value);
+        return SourceReference(fragment, span);
+    }
+
+    private static TirSourceFragmentReference SourceReference(
+        SourceFragment fragment,
+        Utf8Span? span)
     {
         return new TirSourceFragmentReference(
             fragment.FragmentId,
@@ -775,7 +802,39 @@ public static partial class TirStructuralExtractor
             fragment.SourceSha256,
             fragment.ContentSha256,
             fragment.Locator.StartLine,
-            fragment.Locator.EndLine);
+            fragment.Locator.EndLine,
+            span?.Start,
+            span?.EndExclusive);
+    }
+
+    private static Utf8Span CreateUtf8ByteSpan(
+        string content,
+        int startCharacterOffset,
+        int endCharacterOffsetExclusive)
+    {
+        if (startCharacterOffset < 0
+            || endCharacterOffsetExclusive <= startCharacterOffset
+            || endCharacterOffsetExclusive > content.Length
+            || IsInsideSurrogatePair(content, startCharacterOffset)
+            || IsInsideSurrogatePair(content, endCharacterOffsetExclusive))
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(startCharacterOffset),
+                "Sub-fragment character offsets must describe a non-empty Unicode boundary within the fragment.");
+        }
+
+        var start = Encoding.UTF8.GetByteCount(content.AsSpan(0, startCharacterOffset));
+        var length = Encoding.UTF8.GetByteCount(
+            content.AsSpan(startCharacterOffset, endCharacterOffsetExclusive - startCharacterOffset));
+        return new Utf8Span(start, start + length);
+    }
+
+    private static bool IsInsideSurrogatePair(string content, int offset)
+    {
+        return offset > 0
+            && offset < content.Length
+            && char.IsHighSurrogate(content[offset - 1])
+            && char.IsLowSurrogate(content[offset]);
     }
 
     private static IReadOnlyList<string> ParentHierarchyKeys(string normalizedId)
@@ -820,6 +879,8 @@ public static partial class TirStructuralExtractor
                         match.Groups["title"].Value.Trim(),
                         TirSectionBoundaryKind.MarkdownHeading,
                         2,
+                        null,
+                        null,
                         [
                             TirHierarchyBasis.PublishedIdentifier,
                             TirHierarchyBasis.ChapterContext,
@@ -840,6 +901,8 @@ public static partial class TirStructuralExtractor
                         match.Groups["title"].Value.Trim(),
                         TirSectionBoundaryKind.BoldDeclaration,
                         null,
+                        null,
+                        null,
                         [
                             TirHierarchyBasis.PublishedIdentifier,
                             TirHierarchyBasis.ChapterContext,
@@ -859,6 +922,8 @@ public static partial class TirStructuralExtractor
                         match.Groups["title"].Value.Trim(),
                         TirSectionBoundaryKind.StructuredTextDeclaration,
                         null,
+                        match.Index,
+                        match.Index + match.Length,
                         [
                             TirHierarchyBasis.PublishedIdentifier,
                             TirHierarchyBasis.ChapterContext,
@@ -918,8 +983,12 @@ public static partial class TirStructuralExtractor
         string Title,
         TirSectionBoundaryKind Kind,
         int? SourceHeadingLevel,
+        int? StartCharacterOffset,
+        int? EndCharacterOffsetExclusive,
         TirHierarchyBasis[] HierarchyBasis,
         string[] ConfidenceBasis);
+
+    private readonly record struct Utf8Span(int Start, int EndExclusive);
 
     private sealed record StructuralParent(
         string ArtifactId,

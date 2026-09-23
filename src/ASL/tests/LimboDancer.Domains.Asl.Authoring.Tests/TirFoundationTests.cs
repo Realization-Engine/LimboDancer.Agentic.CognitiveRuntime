@@ -21,7 +21,7 @@ public sealed class TirFoundationTests
             "docs",
             "ASL",
             "Schemas",
-            "asl-tir-1.2.schema.json");
+            "asl-tir-1.3.schema.json");
         using var schema = JsonDocument.Parse(File.ReadAllBytes(schemaPath));
         var definitions = schema.RootElement.GetProperty("$defs");
         var artifactProperties = definitions
@@ -139,6 +139,26 @@ public sealed class TirFoundationTests
         Assert.Contains("extracted, unmodeled, captured", exception.Message, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void CanonicalWriterRejectsUnpairedSubFragmentOffsets()
+    {
+        var artifact = CreateRule("1.1", "A1.1", '1');
+        var source = artifact.Envelope.SourceFragments[0] with
+        {
+            StartUtf8ByteOffset = 0,
+            EndUtf8ByteOffsetExclusive = null,
+        };
+        var changed = artifact with
+        {
+            Envelope = artifact.Envelope with { SourceFragments = [source] },
+        };
+
+        var exception = Assert.Throws<InvalidOperationException>(
+            () => TirCanonicalJson.Serialize(CreateDocument([changed])));
+
+        Assert.Contains("both be null or both be present", exception.Message, StringComparison.Ordinal);
+    }
+
     private static TirDocument CreateDocument(TirArtifact[] artifacts)
     {
         return new TirDocument(
@@ -174,7 +194,15 @@ public sealed class TirFoundationTests
             publishedId,
             normalizedId,
             null,
-            [new TirSourceFragmentReference(fragmentId, "chapter-a", Sha('d'), Sha('e'), 10, 11)],
+            [new TirSourceFragmentReference(
+                fragmentId,
+                "chapter-a",
+                Sha('d'),
+                Sha('e'),
+                10,
+                11,
+                null,
+                null)],
             [
                 new TirDependency(TirDependencyKind.Footnote, "footnote:2"),
                 new TirDependency(TirDependencyKind.Figure, "images/example.png"),

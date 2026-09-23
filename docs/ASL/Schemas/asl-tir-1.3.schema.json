@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:limbodancer:asl:tir:schema:1.2.0",
+  "$id": "urn:limbodancer:asl:tir:schema:1.3.0",
   "title": "LimboDancer ASL Transformation Intermediate Representation",
   "description": "Canonical structural authoring representation for ASL-OT-02. Semantic artifact kinds are reserved but are not emitted by the ASL-OT-02 structural writer.",
   "type": "object",
@@ -20,10 +20,10 @@
   ],
   "properties": {
     "schemaId": {
-      "const": "urn:limbodancer:asl:tir:schema:1.2.0"
+      "const": "urn:limbodancer:asl:tir:schema:1.3.0"
     },
     "schemaVersion": {
-      "const": "1.2.0"
+      "const": "1.3.0"
     },
     "packageCandidate": {
       "$ref": "#/$defs/packageCandidate"
@@ -148,13 +148,41 @@
     "sourceFragmentReference": {
       "type": "object",
       "additionalProperties": false,
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "properties": {
+                "startUtf8ByteOffset": {
+                  "type": "null"
+                },
+                "endUtf8ByteOffsetExclusive": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "properties": {
+                "startUtf8ByteOffset": {
+                  "type": "integer"
+                },
+                "endUtf8ByteOffsetExclusive": {
+                  "type": "integer"
+                }
+              }
+            }
+          ]
+        }
+      ],
       "required": [
         "fragmentId",
         "sourceId",
         "sourceSha256",
         "contentSha256",
         "startLine",
-        "endLine"
+        "endLine",
+        "startUtf8ByteOffset",
+        "endUtf8ByteOffsetExclusive"
       ],
       "properties": {
         "fragmentId": {
@@ -177,6 +205,20 @@
         },
         "endLine": {
           "type": "integer",
+          "minimum": 1
+        },
+        "startUtf8ByteOffset": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "endUtf8ByteOffsetExclusive": {
+          "type": [
+            "integer",
+            "null"
+          ],
           "minimum": 1
         }
       }

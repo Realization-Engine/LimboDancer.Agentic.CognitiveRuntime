@@ -360,7 +360,7 @@ These are authoring implementation decisions. They do not admit runtime contract
 
 The first ASL-OT-02 implementation slice establishes the following admitted foundation:
 
-- `docs/ASL/Schemas/asl-tir-1.2.schema.json` defines schema identity `urn:limbodancer:asl:tir:schema:1.2.0`, the complete required artifact-kind vocabulary, the common envelope, and kind-specific structural payloads;
+- `docs/ASL/Schemas/asl-tir-1.3.schema.json` defines schema identity `urn:limbodancer:asl:tir:schema:1.3.0`, the complete required artifact-kind vocabulary, the common envelope, and kind-specific structural payloads;
 - `TirModels.cs` defines the ASL-owned C# document, envelope, provenance, dependency, diagnostic, and structural payload types;
 - strongly typed structural artifacts exist for `SourceFragment`, `Section`, `Rule`, `CrossReference`, `Example`, and `Table`;
 - the remaining required artifact kinds are reserved in the versioned vocabulary but cannot be emitted by the structural canonical writer;
@@ -433,3 +433,20 @@ TIR 1.2 admits the first two classes because each has an explicit, repeatable so
 The full Chapters A-E extraction now contains 105 Sections and 1,998 Rules. Missing-parent diagnostics fall from 67 to eight; the 46 missing cross-reference targets remain unchanged, for 54 diagnostics in total. The final eight parent findings are retained rather than inferred because the available fragment boundaries contain damaged spacing, embedded rule declarations, or adjacent prose. Recovering them requires finer source-span support, not another identifier heuristic.
 
 The next extraction increment should establish sub-fragment source spans before attempting exact recovery of those eight boundaries, example prose, or table rows. Semantic formalization remains deferred.
+
+## 19. TIR 1.3 sub-fragment source spans
+
+TIR 1.3 adds an exact, language-independent sub-fragment span to every source-fragment reference. `startUtf8ByteOffset` is inclusive and `endUtf8ByteOffsetExclusive` is exclusive; both are measured against the UTF-8 encoding of the immutable fragment content identified by `contentSha256`. The values must either both be null or both be present. Null values mean that the complete fragment is evidence, while a numeric pair identifies a non-empty byte range within it.
+
+UTF-8 byte positions are persisted instead of .NET UTF-16 character indices so another implementation can recover identical evidence without reproducing C# string indexing. The C# extractor rejects negative, empty, reversed, out-of-range, or surrogate-splitting character inputs before converting them to UTF-8 offsets. The canonical writer independently rejects unpaired, empty, or reversed persisted spans.
+
+The first admitted consumers are deliberately narrow:
+
+- each `CrossReference` points to the exact chapter-qualified reference token;
+- each `Example` points to the exact `EX:` marker, not yet the complete example prose;
+- a `Section` recovered from structured text points to its exact declaration line; and
+- Rule, Table, ordinary heading Section, bold-declaration Section, and SourceFragment artifacts continue to cite their complete fragments.
+
+Artifact occurrence disambiguators for cross-references and example markers now use the persisted UTF-8 start byte rather than a C# UTF-16 index. This changes their extracted artifact identities under the new schema but makes those identities portable.
+
+This increment does not recover the eight damaged parent boundaries and does not claim exact example or table extents. It establishes the evidence-addressing contract required to make those later changes reviewable. The next increment may use unique, explicit sub-fragment markers to recover `A7.37`, `A7.8`, and `E1.93`, while retaining a diagnostic whenever a candidate is absent or ambiguous.

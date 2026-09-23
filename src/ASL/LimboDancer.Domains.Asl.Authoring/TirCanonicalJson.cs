@@ -8,8 +8,8 @@ namespace LimboDancer.Domains.Asl.Authoring;
 
 public static partial class TirCanonicalJson
 {
-    public const string SchemaId = "urn:limbodancer:asl:tir:schema:1.2.0";
-    public const string SchemaVersion = "1.2.0";
+    public const string SchemaId = "urn:limbodancer:asl:tir:schema:1.3.0";
+    public const string SchemaVersion = "1.3.0";
     public const string ProfileName = "asl-tir-canonical-json";
     public const string ProfileVersion = "1.0.0";
 
@@ -128,6 +128,11 @@ public static partial class TirCanonicalJson
             writer.WriteString("contentSha256", sourceFragment.ContentSha256);
             writer.WriteNumber("startLine", sourceFragment.StartLine);
             writer.WriteNumber("endLine", sourceFragment.EndLine);
+            WriteNullableNumber(writer, "startUtf8ByteOffset", sourceFragment.StartUtf8ByteOffset);
+            WriteNullableNumber(
+                writer,
+                "endUtf8ByteOffsetExclusive",
+                sourceFragment.EndUtf8ByteOffsetExclusive);
             writer.WriteEndObject();
         }
 
@@ -429,6 +434,21 @@ public static partial class TirCanonicalJson
             if (sourceFragment.StartLine < 1 || sourceFragment.EndLine < sourceFragment.StartLine)
             {
                 throw new InvalidOperationException("Source-fragment line ranges must be positive and ordered.");
+            }
+
+            if ((sourceFragment.StartUtf8ByteOffset is null)
+                != (sourceFragment.EndUtf8ByteOffsetExclusive is null))
+            {
+                throw new InvalidOperationException(
+                    "Sub-fragment UTF-8 byte offsets must either both be null or both be present.");
+            }
+
+            if (sourceFragment.StartUtf8ByteOffset is not null
+                && (sourceFragment.StartUtf8ByteOffset < 0
+                    || sourceFragment.EndUtf8ByteOffsetExclusive <= sourceFragment.StartUtf8ByteOffset))
+            {
+                throw new InvalidOperationException(
+                    "Sub-fragment UTF-8 byte offsets must be non-negative, non-empty, and ordered.");
             }
         }
     }

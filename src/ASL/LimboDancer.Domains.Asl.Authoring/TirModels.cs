@@ -108,7 +108,9 @@ public sealed record TirSourceFragmentReference(
     string SourceSha256,
     string ContentSha256,
     int StartLine,
-    int EndLine);
+    int EndLine,
+    int? StartUtf8ByteOffset,
+    int? EndUtf8ByteOffsetExclusive);
 
 public sealed record TirDependency(TirDependencyKind Kind, string Target);
 

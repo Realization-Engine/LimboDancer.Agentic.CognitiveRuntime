@@ -6,7 +6,7 @@ This directory contains deterministic review artifacts produced by the C# ASL au
 
 `asl-3.10-a-e.structural-sample.tir.json` is a metadata-only representative sample extracted from the registered ASL 3.10 Chapters A-E source set. It contains selected `SourceFragment`, `Section`, structural `Rule`, `CrossReference`, `Example`, and `Table` artifacts, their ordered source evidence, hierarchy and reference-resolution results, dependencies, diagnostics, provenance, and canonical payload digest.
 
-The sample does not duplicate rulebook prose. It preserves source hashes and locators that recover the applicable wording from the controlled source tree.
+The sample does not duplicate rulebook prose. It preserves source hashes and locators that recover the applicable wording from the controlled source tree. Each source-fragment reference also carries a nullable UTF-8 byte span. A null/null span denotes the complete immutable fragment; numeric `startUtf8ByteOffset` and exclusive `endUtf8ByteOffsetExclusive` values identify exact evidence inside that fragment.
 
 Every artifact remains:
 
@@ -17,7 +17,7 @@ Every artifact remains:
 
 The sample is not a reviewed ontology, published domain package, tactical Decision corpus, or execution authority. Parent and cross-reference resolution describe published-number structure only. A `Section` is a structural anchor extracted from one of three explicit major-section boundary forms: a numbered Markdown heading, a bold numbered declaration, or a numbered declaration in structured text. Its payload identifies the observed boundary kind and records a source heading level only when one actually exists. General rules such as `A.1` remain distinct from section identity `A1`. Within a section, ASL's digit hierarchy makes `A1.1` a child of Section `A1`, `A1.11` a child of Rule `A1.1`, and `A1.111` a child of Rule `A1.11`. Zero-padded child cases such as `A7.301` resolve to `A7.3`, and `A14.01` resolves to Section `A14`, only when the corresponding structural parent exists. Example artifacts record explicit `EX:` markers, and table artifacts record explicitly labelled fenced blocks with unverified structure. None of these artifacts asserts semantic scope, applicability, exception precedence, table-cell meaning, or legal interpretation.
 
-The committed TIR 1.2 sample contains 49 artifacts: 29 source fragments, five sections, 11 structural rules, two cross-references, one example, and one table. Its single diagnostic preserves an unresolved reference target selected for review.
+The committed TIR 1.3 sample contains 49 artifacts: 29 source fragments, five sections, 11 structural rules, two cross-references, one example, and one table. Cross-reference occurrences and `EX:` markers use exact sub-fragment spans; whole-fragment evidence remains explicitly unbounded. Its single diagnostic preserves an unresolved reference target selected for review.
 
 ## Regeneration
 

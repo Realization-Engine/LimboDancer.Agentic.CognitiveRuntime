@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace LimboDancer.Domains.Asl.Authoring.Tests;
 
 public sealed class TirStructuralExtractorTests
@@ -101,6 +103,10 @@ public sealed class TirStructuralExtractorTests
         Assert.Equal(
             TirSectionBoundaryKind.StructuredTextDeclaration,
             sections["A36"].Payload.BoundaryKind);
+        AssertSpanEquals(
+            fragments[4].Content,
+            "36. PREPARED FIRE ZONE^2^0",
+            sections["A36"].Envelope.SourceFragments[0]);
         Assert.Equal(
             sections["A16"].Envelope.ArtifactId,
             rules["A16.1"].Payload.DirectParentArtifactId);
@@ -190,7 +196,7 @@ public sealed class TirStructuralExtractorTests
     {
         var fragments = new[]
         {
-            Fragment(SourceFragmentKind.RuleText, "A.1", "A.1", 1, content: "**A.1:** See B1.1, B9.9, and 1.2.\n"),
+            Fragment(SourceFragmentKind.RuleText, "A.1", "A.1", 1, content: "**A.1:** Café — see B1.1, B9.9, and 1.2.\n"),
             Fragment(SourceFragmentKind.RuleText, "B.1", "B.1", 2),
             Fragment(SourceFragmentKind.RuleText, "1.1", "B1.1", 3),
         };
@@ -206,6 +212,8 @@ public sealed class TirStructuralExtractorTests
         Assert.Null(missing.Payload.ResolvedTargetArtifactId);
         Assert.DoesNotContain(references, static item => item.Payload.ReferenceText == "A.1");
         Assert.DoesNotContain(references, static item => item.Payload.ReferenceText == "1.2");
+        AssertSpanEquals(fragments[0].Content, "B1.1", resolved.Envelope.SourceFragments[0]);
+        AssertSpanEquals(fragments[0].Content, "B9.9", missing.Envelope.SourceFragments[0]);
         Assert.Contains(
             document.Diagnostics,
             diagnostic => diagnostic.Code == "TIR-MISSING-REFERENCE-TARGET"
@@ -217,7 +225,7 @@ public sealed class TirStructuralExtractorTests
     {
         var fragments = new[]
         {
-            Fragment(SourceFragmentKind.RuleText, "A.1", "A.1", 1, content: "**A.1:** EX: mechanical illustration.\n"),
+            Fragment(SourceFragmentKind.RuleText, "A.1", "A.1", 1, content: "**A.1:** naïve EX: mechanical illustration.\n"),
             Fragment(SourceFragmentKind.StructuredText, "A.1", "A.1", 2, content: "```text\nRESULT TABLE\n```\n"),
         };
 
@@ -233,6 +241,9 @@ public sealed class TirStructuralExtractorTests
         Assert.Empty(table.Payload.NoteFragmentIds);
         Assert.Equal(TirFormalizationStatus.Unmodeled, example.Envelope.FormalizationStatus);
         Assert.Equal(TirReviewStatus.Captured, table.Envelope.ReviewStatus);
+        AssertSpanEquals(fragments[0].Content, "EX:", example.Envelope.SourceFragments[0]);
+        Assert.Null(table.Envelope.SourceFragments[0].StartUtf8ByteOffset);
+        Assert.Null(table.Envelope.SourceFragments[0].EndUtf8ByteOffsetExclusive);
     }
 
     [Fact]
@@ -297,6 +308,20 @@ public sealed class TirStructuralExtractorTests
                 new TirPackageCandidate("asl", "easlrb-3.10-a-e", "0.0.0-candidate.1"),
                 CreatedAt,
                 "test-fixture"));
+    }
+
+    private static void AssertSpanEquals(
+        string content,
+        string expected,
+        TirSourceFragmentReference sourceReference)
+    {
+        var characterOffset = content.IndexOf(expected, StringComparison.Ordinal);
+        Assert.True(characterOffset >= 0);
+        var start = Encoding.UTF8.GetByteCount(content.AsSpan(0, characterOffset));
+        var end = start + Encoding.UTF8.GetByteCount(expected);
+
+        Assert.Equal(start, sourceReference.StartUtf8ByteOffset);
+        Assert.Equal(end, sourceReference.EndUtf8ByteOffsetExclusive);
     }
 
     private static SourceRegistryManifest Registry()
