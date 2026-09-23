@@ -229,6 +229,8 @@ Only if the frozen baseline and corpus size justify it, compare LoRA/readout spe
 
 Compare the candidate with `RuleDecisionProvider` and the existing OpenAI provider on the same representative corpus, budgets, and acceptance thresholds. Define the exact admitted Decision class if, and only if, the evidence supports adoption.
 
+The [Anthropic Decision Provider Feasibility and Design](<./LimboDancer.Agentic.CognitiveRuntime Anthropic Decision Provider Feasibility and Design.md>) records a separate remote structured-output candidate. If both directions are eventually admitted for evaluation, Anthropic and the native model must use the same corpus, labels, budgets, and thresholds. Neither is a prerequisite for the other.
+
 ### Stage 6 - Routing review
 
 Provider routing or fallback remains a separate architecture decision. It is ineligible until at least two non-reference providers possess comparable evidence and a policy can be justified without weakening failure semantics or budgets.
