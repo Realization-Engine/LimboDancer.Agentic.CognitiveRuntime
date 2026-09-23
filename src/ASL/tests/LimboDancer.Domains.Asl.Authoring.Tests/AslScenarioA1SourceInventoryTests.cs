@@ -61,7 +61,10 @@ public sealed class AslScenarioA1SourceInventoryTests
         {
             Fragments = manifests.Fragments.Select(fragment =>
                 fragment.Locator.NormalizedElementId == "A4.14"
-                    ? fragment with { SourceSha256 = new string('0', 64) }
+                    ? fragment with
+                    {
+                        SourceSha256 = new string('0', 64),
+                    }
                     : fragment).ToArray(),
         };
         Assert.Throws<InvalidOperationException>(() => AslScenarioA1SourceInventory.Extract(changed));
