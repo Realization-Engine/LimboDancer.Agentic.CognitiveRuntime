@@ -49,3 +49,20 @@ jobs:
 
       - name: Test source registry and fragment locator
         run: dotnet test src/ASL/LimboDancer.Domains.Asl.sln --configuration Release --no-build --no-restore
+
+      - name: Generate and check Scenario A1 source verification batch
+        run: |
+          dotnet run --project src/ASL/LimboDancer.Domains.Asl.Authoring.Cli --configuration Release --no-build --no-restore -- \
+            --source-commit a3254ff1d492dbdd28483d86f5b42437b48e80d4 \
+            --registry-output "$RUNNER_TEMP/asl-source-registry.json" \
+            --verification-output "$RUNNER_TEMP/asl-verification-sample.json" \
+            --a1-attestation docs/ASL/SourceRegistry/asl-scenario-a1.source-attestation.json \
+            --a1-verification-output "$RUNNER_TEMP/asl-scenario-a1.source-verification.json"
+          if [ -f docs/ASL/SourceRegistry/asl-scenario-a1.source-verification.json ]; then
+            cmp docs/ASL/SourceRegistry/asl-scenario-a1.source-verification.json "$RUNNER_TEMP/asl-scenario-a1.source-verification.json"
+          else
+            echo 'ASL_A1_VERIFICATION_BASE64_BEGIN'
+            base64 -w0 "$RUNNER_TEMP/asl-scenario-a1.source-verification.json"
+            echo
+            echo 'ASL_A1_VERIFICATION_BASE64_END'
+          fi
