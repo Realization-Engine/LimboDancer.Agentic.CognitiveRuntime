@@ -11,7 +11,7 @@ Several documents predate the current six-plane architecture and may mention `.N
 ## Current implementation sequence
 
 ```text
-ASL-OT-01  Source registry and fragment locator
+ASL-OT-01  Source registry and fragment locator (complete)
 ASL-OT-02  Transformation intermediate representation
 ASL-OT-03  Validation and review workflow
 ASL-OT-04  Scenario A1 semantic package
@@ -24,6 +24,8 @@ No current ASL artifact authorizes execution. A `DomainConclusion` remains an in
 ## Domain documents
 
 - `LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md` — current rulebook-to-ontology authoring, validation, publication, and first-slice specification.
+- `LimboDancer.Agentic.CognitiveRuntime ASL-OT-01 Source Registry Review.md` — conformance decision and implementation evidence for source registration and fragment location.
+- `SourceRegistry/` — reproducible source registry, unverified representative fragment sample, and operator instructions.
 - `asl-map-architecture.md` — map, scene, hex, terrain, and rendering model.
 - `asl-schema-appendix.md` — detailed schema reference.
 - `legacy-limbodancer-mcp-system-design.md` — current ASL reference-domain requirements and acceptance scenarios followed by the preserved MCP-era system design.

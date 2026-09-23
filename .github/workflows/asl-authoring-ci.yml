@@ -1,0 +1,39 @@
+name: ASL Authoring CI
+
+on:
+  push:
+    branches:
+      - decision-plane
+    paths:
+      - "utils/asl_ot/**"
+      - "utils/pdf_to_markdown.py"
+      - "docs/ASL/Rulebook_Markdown/**"
+      - "docs/ASL/SourceRegistry/**"
+      - ".github/workflows/asl-authoring-ci.yml"
+  pull_request:
+    paths:
+      - "utils/asl_ot/**"
+      - "utils/pdf_to_markdown.py"
+      - "docs/ASL/Rulebook_Markdown/**"
+      - "docs/ASL/SourceRegistry/**"
+      - ".github/workflows/asl-authoring-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  source-conformance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Test source registry and fragment locator
+        run: python -m unittest discover -s utils/asl_ot/tests -v

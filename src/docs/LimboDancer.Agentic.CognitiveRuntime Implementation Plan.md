@@ -1662,6 +1662,8 @@ The first ASL slice SHOULD be read-only adjudication. It should prove that autho
 
 The admitted planning sequence is `ASL-OT-01` source registry and fragment location, `ASL-OT-02` transformation intermediate representation, `ASL-OT-03` validation and review, `ASL-OT-04` the Scenario A1 semantic package, `ASL-OT-05` immutable publication and exact resolution, and `ASL-OT-06` read-only occupied-building entry adjudication. Implementation begins only after the applicable specification gate is accepted.
 
+ASL-OT-01 is complete and approved in the [ASL-OT-01 Source Registry Review](<../../docs/ASL/LimboDancer.Agentic.CognitiveRuntime ASL-OT-01 Source Registry Review.md>). It registers seven Markdown artifacts and 661 images, pins source and converter hashes, supplies deterministic structural fragment locators, and retains an explicitly unverified fourteen-fragment review sample. ASL-OT-02 is the next eligible slice; ontology semantics, publication, runtime resolution, and provider evidence remain deferred.
+
 Exact projects, persistence products, canonical serialization format, and PR numbers remain deferred until each slice supplies concrete requirements.
 
 ## 28. Test Strategy

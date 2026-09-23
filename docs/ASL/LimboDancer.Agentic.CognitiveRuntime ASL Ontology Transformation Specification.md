@@ -1,6 +1,6 @@
 # LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification
 
-**Status:** Current authoring specification; implementation not yet admitted
+**Status:** Accepted; ASL-OT-01 implemented
 
 **Date:** 2026-09-23
 
@@ -154,6 +154,28 @@ Canonical runtime references use the existing `CanonicalReference` contract: exa
 Semantic artifact identifiers MUST be stable within a published package and MUST use the existing opaque `SemanticIdentifier` at runtime boundaries. They MUST NOT encode storage keys, graph-provider syntax, C# type names, or mutable display labels.
 
 Aliases improve discovery but always resolve to a canonical semantic identifier with explicit ambiguity handling.
+
+### 6.4 Source fragments
+
+A source fragment is an immutable, hash-addressed, precisely located unit of content from a registered authoritative source. It preserves the source evidence from which transformation artifacts are proposed, reviewed, and published.
+
+A fragment is a provenance unit. It is not an ontology artifact, a semantic rule, an arbitrary token window, or a vector-index chunk. Its record MUST contain:
+
+- registered source identity and path;
+- exact start and end lines plus applicable page markers and heading path;
+- exact extracted content hash;
+- a fragment identity derived from its source, locator, and content hash;
+- structural kind;
+- published and chapter-normalized element identifiers when applicable;
+- required image or other source dependencies;
+- relevant conversion markers such as inline footnote references; and
+- verification status against the authoritative edition.
+
+Fragments SHOULD follow structural source boundaries such as a heading, rule paragraph, continuation, figure reference, or laid-out table/chart block. A rule spanning pages is represented by ordered fragments rather than a fabricated contiguous source passage. Conversely, one fragment may support several proposed semantic artifacts, such as a Rule, Condition, Exception, and CrossReference.
+
+Original extracted content remains unchanged. Corrected, dehyphenated, or search-normalized text is a derived representation with its own transformation provenance; it MUST NOT silently replace the fragment. Vector chunks MAY be derived from fragments for discovery, but they are rebuildable retrieval projections and are not authoritative source fragments.
+
+Fragment identity proves which source bytes and location supported a proposal. It does not prove that the proposal's semantic interpretation is correct.
 
 ## 7. Transformation intermediate representation
 
@@ -527,7 +549,7 @@ At minimum, the transformation suite MUST prove:
 
 ## 19. Implementation admission gate
 
-ASL-OT-01 may begin when this specification is accepted. Later slices require the preceding slice's artifacts and tests.
+This specification was accepted on 2026-09-23. ASL-OT-01 is implemented and reviewed in the [ASL-OT-01 Source Registry Review](<./LimboDancer.Agentic.CognitiveRuntime ASL-OT-01 Source Registry Review.md>). Later slices require the preceding slice's artifacts and tests.
 
 Before ASL-OT-04 begins, reviewers MUST approve:
 
