@@ -13,8 +13,8 @@ Several documents predate the current six-plane architecture and may mention `.N
 ```text
 ASL-OT-01  Source registry and fragment locator (complete)
 ASL-OT-02  Transformation intermediate representation (complete)
-ASL-OT-03  Validation and review workflow (03.1-03.3 complete; 03.4 captured-bundle foundation in progress)
-ASL-OT-04  Scenario A1 semantic package
+ASL-OT-03  Validation and review workflow (03.1-03.3 complete; 03.4 non-accepting review foundation in progress)
+ASL-OT-04  Scenario A1 semantic package (admission pending)
 ASL-OT-05  Immutable publication and exact resolution
 ASL-OT-06  Occupied-building entry adjudication
 ```
@@ -27,12 +27,15 @@ No current ASL artifact authorizes execution. A `DomainConclusion` remains an in
 - `LimboDancer.Agentic.CognitiveRuntime ASL-OT-01 Source Registry Review.md` — conformance decision and implementation evidence for source registration and fragment location.
 - `LimboDancer.Agentic.CognitiveRuntime ASL-OT-02 TIR Schema and Deterministic Extraction Design.md` — C# design boundary for the TIR schema, deterministic structural extraction, exact sub-fragment evidence, required embedded-boundary recovery, ASL-OT-01 parity, canonical serialization, and reviewable diagnostics.
 - `LimboDancer.Agentic.CognitiveRuntime ASL-OT-02 TIR Review.md` — approval decision, implementation evidence, corpus results, accepted structural interpretations, residual diagnostics, and ASL-OT-03 entry conditions.
-- `LimboDancer.Agentic.CognitiveRuntime ASL-OT-03 Validation and Review Workflow Design.md` — accepted immutable validation reports, structural validation, source-verification records, diagnostic dispositions, review/adjudication ledger, state projection, acceptance gates, and implementation increments; records the implemented ASL-OT-03.1 through ASL-OT-03.3 boundaries.
+- `LimboDancer.Agentic.CognitiveRuntime ASL-OT-03 Validation and Review Workflow Design.md` — accepted validation/review contract; records completed 03.1–03.3 and the partial 03.4 non-accepting implementation.
+- `LimboDancer.Agentic.CognitiveRuntime ASL-OT-03.5 Conformance and ASL-OT-04 Admission Review.md` — draft admission inventory, candidate Scenario A1 source boundary, and exact evidence still required before ASL-OT-04.
 - `SourceRegistry/` — reproducible source registry, unverified representative fragment sample, and operator instructions.
 - `Schemas/asl-tir-1.3.schema.json` — versioned ASL-OT-02 structural TIR envelope and artifact schema, including typed section boundaries and exact UTF-8 sub-fragment spans.
 - `Schemas/asl-tir-review-record-1.0.schema.json` — versioned ASL-OT-03 immutable review-record family and exact-subject identity contract.
 - `Schemas/asl-tir-review-record-1.1.schema.json` — current ASL-OT-03 review-record schema, adding complete source-evidence context, verified dependency hashes, and finding severity while retaining schema 1.0 unchanged.
 - `Schemas/asl-tir-review-bundle-1.0.schema.json` — captured-TIR review-bundle schema; does not authorize curated or accepted states.
+- `Schemas/asl-tir-curated-proposal-1.0.schema.json` and `Schemas/asl-tir-curated-review-bundle-1.0.schema.json` — exact authored proposal and proposed-only submission.
+- `Schemas/asl-tir-curated-review-transition-1.0.schema.json` and `Schemas/asl-tir-curated-review-bundle-1.1.schema.json` — non-accepting review opening/rejection records and history.
 - `TIR/` — deterministic metadata-only structural TIR review artifacts and regeneration instructions.
 - `asl-map-architecture.md` — map, scene, hex, terrain, and rendering model.
 - `asl-schema-appendix.md` — detailed schema reference.
