@@ -179,6 +179,8 @@ resolve published package
 
 The first runtime interfaces should consume a validated, published domain package. They should not assume that document extraction or ontology generation occurs during a live invocation.
 
+The [ASL Ontology Transformation Specification](<../../docs/ASL/LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md>) now defines the ASL-specific authoring lifecycle, loss-aware intermediate representation, validation and review gates, immutable package profile, and first scenario-driven publication slice. It does not add authoring responsibilities to live runtime contracts.
+
 Authoring interfaces such as extraction, validation, and publication ports should be defined only when the ingestion implementation slice begins.
 
 ## 9. Contract timing
