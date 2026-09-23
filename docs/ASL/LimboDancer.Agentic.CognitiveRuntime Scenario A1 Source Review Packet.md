@@ -1,13 +1,13 @@
 # Scenario A1 source review packet
 
-**Status:** Ready for independent source review; no source-verification disposition approved  
+**Status:** Source fidelity attested by the source provider for 11 exact subjects; semantic review and dependency closure pending
 **Edition:** 3.01 delivery ZIP as identified by the source provider; supplied PDF SHA-256 `957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247`  
 **Source boundary:** TOC, Index/Glossary, Chapters A–E and their registered images; PDF physical pages 6–253 only  
 **Registered source commit:** `a3254ff1d492dbdd28483d86f5b42437b48e80d4`
 
 ## Review subjects
 
-The [C# candidate inventory](<./SourceRegistry/asl-scenario-a1.candidate-source-inventory.json>) gives exact source IDs, fragment IDs, content hashes, line spans, conversion page markers and separately checked PDF pages. The [comparison evidence](<./SourceRegistry/asl-scenario-a1.pdf-comparison.json>) records the nine complete prose comparisons, one linked footnote and one visual comparison. Neither document contains source-verification approval. There are **11 distinct review subjects**: nine rule prose fragments, one Chapter A footnote fragment, and one figure-reference fragment with a registered image dependency.
+The [C# candidate inventory](<./SourceRegistry/asl-scenario-a1.candidate-source-inventory.json>) gives exact source IDs, fragment IDs, content hashes, line spans, conversion page markers and separately checked PDF pages. The [comparison evidence](<./SourceRegistry/asl-scenario-a1.pdf-comparison.json>) records the nine complete prose comparisons, one linked footnote and one visual comparison. The [source-provider attestation](<./SourceRegistry/asl-scenario-a1.source-attestation.json>) names **11 distinct review subjects**: nine rule prose fragments, one Chapter A footnote fragment, and one figure-reference fragment with a registered image dependency. The [generated verification batch](<./SourceRegistry/asl-scenario-a1.source-verification.json>) binds each subject to a full TIR artifact and records its `Verified` source-fidelity disposition. The attestation records a conversation identity; it does not independently authenticate a named reviewer.
 
 | Source subject | Physical PDF page | Review point |
 | --- | --- | --- |
@@ -23,16 +23,16 @@ The [C# candidate inventory](<./SourceRegistry/asl-scenario-a1.candidate-source-
 | Chapter A footnote 3, linked from A4.15 | 101 | Markdown still inherits page 98; reviewer determines whether the note carries any rule-critical meaning. |
 | B23.9221 figure reference | 141 | Registered `images/eASLRB_v3_01-p141-1.png` SHA-256 `ce441cb728f2c000f18fb05c9f823ea158c636255bff1f1d23a723c217d9a6c6`; inspect the Breach counter against the PDF. |
 
-The tool-assisted comparison found matching alphanumeric sequences for all ten prose subjects. Punctuation differs only by PDF line-layout hyphens in A12.15, B23.922, B23.9221, and footnote 3. The Breach image was visually matched to the rendered page; pixel identity is not asserted. This finding supports source review; it does not certify the conversion or establish rule meaning.
+The tool-assisted comparison found matching alphanumeric sequences for all ten prose subjects. Punctuation differs only by PDF line-layout hyphens in A12.15, B23.922, B23.9221, and footnote 3. The Breach image was visually matched to the rendered page; pixel identity is not asserted. The source provider subsequently attested the PDF fidelity of all 11 cited subjects. Neither comparison nor attestation establishes rule meaning.
 
 ## Formal record handoff
 
-The existing `TirSourceVerificationService.CreateRecord` accepts an exact TIR artifact and source fragment, checks registry and fragment hashes, and produces a `TirSourceVerificationRecord` with verifier identity, comparison method and disposition. The current committed TIR **representative sample** contains none of these A1 artifacts. Before creating a record, regenerate the **full** TIR from the pinned registry and source bytes and identify its exact source-fragment artifact for each of the 11 subjects. Bind each record to the full TIR document digest and artifact digest. Do not create a placeholder `Verified` record or claim an independent reviewer acted when they have not.
+`AslScenarioA1VerificationBatchBuilder` validates the pinned PDF digest and all 11 attested fragment IDs, extracts the **full** TIR from the registered source bytes, and passes each exact source-fragment artifact to `TirSourceVerificationService.CreateRecord`. The batch binds records to the full document and artifact digests. The committed TIR **representative sample** remains separate and does not contain the A1 artifacts. CI regenerates the batch from the C# CLI and compares its bytes with the committed file. The record identifies the source provider's conversation attestation; it does not claim an independently authenticated verifier or a second independent review.
 
-For each subject the independent source verifier should:
+For each subject, a future independent source verifier can examine the existing disposition and:
 
 1. Confirm the PDF checksum and the relevant page, the complete Markdown fragment and its hash, and any linked figure/footnote or page continuation. Keep PDF physical pages distinct from conversion markers.
-2. Record their own identity, review time, comparison method, artifact reference, disposition and observed discrepancy using the C# review contract. The comparison report is evidence to inspect, not the review decision.
+2. Record their own identity, review time, comparison method, artifact reference, disposition and observed discrepancy using the C# review contract. The comparison report is evidence to inspect, not a second review decision.
 3. Use `Verified` only for a fully checked source fragment and required dependencies. Use `Mismatch` or `Indeterminate` with an explanation when the conversion, visual evidence or source boundary cannot be established. The PDF page corrections are provenance and should appear in the record's method/discrepancy context, since the current `TirSourceEvidenceContext` carries the Markdown locator page.
 4. Preserve all 11 independently reviewable subjects and link the A4.15 and B23.9221 records to their footnote and image checks. A registered image hash establishes its bytes, not the accuracy of its visual transcription.
 

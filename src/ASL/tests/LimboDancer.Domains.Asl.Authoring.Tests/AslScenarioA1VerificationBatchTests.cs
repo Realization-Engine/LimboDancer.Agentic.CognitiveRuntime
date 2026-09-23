@@ -49,6 +49,9 @@ public sealed class AslScenarioA1VerificationBatchTests
         Assert.Equal(11, serialized.RootElement.GetProperty("records").GetArrayLength());
         Assert.Equal("source-fidelity-verified-semantic-review-pending",
             serialized.RootElement.GetProperty("status").GetString());
+        var committedBatchPath = Path.Combine(RepositoryPaths.Root, "docs", "ASL", "SourceRegistry",
+            "asl-scenario-a1.source-verification.json");
+        Assert.Equal(File.ReadAllText(committedBatchPath), batch.Serialize());
     }
 
     [Fact]

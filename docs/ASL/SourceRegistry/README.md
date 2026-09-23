@@ -14,6 +14,8 @@ The authoring scope is **only the TOC, Index/Glossary, and Chapters A–E**: sev
 | `asl-3.10-a-e.verification-sample.json` | Fourteen representative fragment locators covering structural kinds, Chapters A-E, chapter-local identifiers, a footnote marker, and figure dependency. Every entry remains `unverified`. |
 | `asl-scenario-a1.candidate-source-inventory.json` | Eight candidate rule identifiers, ten exact rule-associated fragments (including a page continuation and a figure reference), plus the linked Chapter A footnote 3 fragment. Its status is `candidate-unverified`. |
 | `asl-scenario-a1.pdf-comparison.json` | Tool-assisted comparison of nine A1 prose fragments, the linked Chapter A footnote 3, and the registered Breach figure against the supplied PDF. Preserves layout differences and `unverified` status pending independent source review. |
+| `asl-scenario-a1.source-attestation.json` | Records the source provider's conversation attestation of the PDF digest and all 11 initial fragment IDs, without independently authenticating a named actor. |
+| `asl-scenario-a1.source-verification.json` | C# generated `Verified` source-fidelity records for the 11 attested subjects, bound to exact artifacts in the full TIR; no semantic review or dependency closure is asserted. |
 
 The manifests contain locators and hashes, not duplicated rule text. The Markdown and image files under `../Rulebook_Markdown/` remain the registered content.
 
@@ -33,17 +35,30 @@ dotnet run --project src/ASL/LimboDancer.Domains.Asl.Authoring.Cli -- \
 dotnet test src/ASL/LimboDancer.Domains.Asl.sln
 ```
 
+Regenerate the separate Scenario A1 verification batch from the committed attestation:
+
+```bash
+dotnet run --project src/ASL/LimboDancer.Domains.Asl.Authoring.Cli -- \
+  --source-commit a3254ff1d492dbdd28483d86f5b42437b48e80d4 \
+  --registry-output docs/ASL/SourceRegistry/asl-3.10-a-e.source-registry.json \
+  --verification-output docs/ASL/SourceRegistry/asl-3.10-a-e.verification-sample.json \
+  --a1-attestation docs/ASL/SourceRegistry/asl-scenario-a1.source-attestation.json \
+  --a1-verification-output docs/ASL/SourceRegistry/asl-scenario-a1.source-verification.json
+```
+
+CI regenerates the batch and compares it byte for byte with the committed copy.
+
 Regeneration is deterministic for the same source bytes, converter, source commit, and locator implementation. A source or converter change alters the applicable hash and causes the committed-manifest conformance test to fail until the change is reviewed and intentionally registered.
 
 The A1 inventory fails closed if the pinned Chapter A/B source digests, an expected rule declaration or the linked footnote differ. Its `conversionStartPage` and `conversionEndPage` reproduce Markdown markers, whereas `pdfStartPage` and `pdfEndPage` record the separately checked physical PDF location. A4.14 and A4.15 have conversion page 48 and PDF page 49. B23.922 consists of separate rule-text and continuation fragments on pages 140 and 141. B23.9221 also records its adjacent figure-reference dependency. Chapter A footnote 3 inherits conversion page 98 but occurs on PDF page 101. This structural inventory is not a verification record and does not establish rule meaning or dependency closure.
 
-The PDF comparison file is review evidence, not an automatically accepted `TirSourceVerificationRecord`. It records matching alphanumeric sequences across the complete bounded paragraphs and identifies only line-layout hyphens among the remaining punctuation differences. A source verifier must inspect the cited PDF pages, confirm the footnote and figure dependencies, and create the formal per-fragment review records for the relevant TIR artifacts before marking a fragment `verified`.
+The PDF comparison file is review evidence, not an automatically accepted `TirSourceVerificationRecord`. It records matching alphanumeric sequences across the complete bounded paragraphs and identifies only line-layout hyphens among the remaining punctuation differences. The source provider attested fidelity for the initial 11 subjects in conversation; the C# builder validates the pinned PDF digest and fragment set, regenerates the full TIR, and creates exact per-fragment `Verified` records. Additional source subjects require their own attestation and verification. Neither the comparison nor these records establish semantic meaning.
 
-The [Scenario A1 source review packet](<../LimboDancer.Agentic.CognitiveRuntime Scenario A1 Source Review Packet.md>) lists the 11 review subjects, formal record handoff and a narrowly scoped first case for dependency review.
+The [Scenario A1 source review packet](<../LimboDancer.Agentic.CognitiveRuntime Scenario A1 Source Review Packet.md>) lists the 11 reviewed subjects and a narrowly scoped first case for dependency review.
 
 ## Verification boundary
 
-`unverified` means the fragment has been located and hashed but has not been compared with the authoritative ASL 3.01 edition. Moving a sample to `verified` requires a human review record covering the fragment and every required table, figure, or footnote dependency.
+`unverified` in the earlier inventory and representative sample describes their state at generation time and is preserved as historical evidence. The separate verification batch records the later source-provider disposition for its 11 exact subjects. Any newly verified subject requires a review record covering the fragment and its required table, figure, or footnote dependencies.
 
 Neither manifest is an ontology, published domain package, tactical policy, Decision corpus, or execution authority.
 
