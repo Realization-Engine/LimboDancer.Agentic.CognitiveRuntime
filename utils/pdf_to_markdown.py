@@ -14,7 +14,8 @@ Options added for multi-column rulebooks (e.g. the ASL rulebook):
   * --columns 2         read each column top to bottom; full-width items split bands
   * --auto-figures      find maps, counters and diagrams on every page and rasterize them
   * --tables-as-text    write tables and columnar lists as laid-out ```text blocks
-  * --page-image        embed the whole page as an image, then its charts as text blocks
+  * --break-on-bold     every bold line starts a paragraph (index/glossary entries)
+  * --page-image[-pages] whole page as an image, then its charts as text blocks
   * --top-lim / --foot-frac / --footer-re   running head and footer bands
 
 Usage:
@@ -294,6 +295,7 @@ class Converter:
         os.makedirs(self.imgdir, exist_ok=True)
         self.footer_re = re.compile(cfg['footer_re'])
         self.figure_pages = set(cfg['figure_pages'])
+        self.page_image_pages = set(cfg.get('page_image_pages') or [])
         self.toc = self.doc.get_toc()
         self.toc_by_page = {}
         for lvl, title, pno in self.toc:
@@ -429,6 +431,7 @@ class Converter:
 
         lines = [r for r, size in allines
                  if (size <= lsize or r.width <= lwidth) and not stacked(r) and not in_row(r)
+                 and size < self.cfg.get('heading_size', 12.5)   # a section heading is not a label
                  and r not in rule_heads and not next_to_prose(r)]
         for _ in range(3):                                      # multi-line labels
             grew = False
@@ -504,6 +507,11 @@ class Converter:
         W, H = page.rect.width, page.rect.height
         top_lim = self.cfg['top_lim']
         foot_lim = H * self.cfg['foot_frac']
+        # a chart/divider page inside a chapter: whole page as art, charts as text,
+        # and no running-head or footer band (its charts run the full page)
+        page_img = bool(self.cfg.get('page_image')) or pno in self.page_image_pages
+        if pno in self.page_image_pages:
+            top_lim, foot_lim = 0.0, H
 
         # --- figures: images + vector drawings, only on known figure pages ---
         fig_rects = []
@@ -536,13 +544,16 @@ class Converter:
                 rows = [r for r in rows if any(c.strip() for c in r)]
                 if len(rows) < 2:
                     continue
+                # a "table" whose cells hold paragraphs is really page text
+                if max((len(c) for r in rows for c in r), default=0) > 200:
+                    continue
                 tables.append((pymupdf.Rect(b), rows))
         except Exception:
             pass
         table_rects = [t[0] for t in tables]
 
         # --- figures found automatically: raster images plus colored vector art ---
-        if self.cfg.get('auto_figures') and not fig_rects and not self.cfg.get('page_image'):
+        if self.cfg.get('auto_figures') and not fig_rects and not page_img:
             fig_rects = self.auto_figures(page, top_lim, foot_lim, table_rects)
             # grid lines inside a map or diagram are not a table
             def inside_fig(t):
@@ -552,13 +563,18 @@ class Converter:
 
         # --- chart pages: each chart box becomes a layout-preserving text block ---
         chart_rects = []
-        tl = [pymupdf.Rect(l['bbox']) for b in page.get_text('dict')['blocks'] if b['type'] == 0
+        tl = [(pymupdf.Rect(l['bbox']), max(s['size'] for s in l['spans']))
+              for b in page.get_text('dict')['blocks'] if b['type'] == 0
               for l in b['lines'] if ''.join(s['text'] for s in l['spans']).strip()]
-        tl = [r for r in tl if top_lim < r.y1 and r.y0 < foot_lim
+        big = self.cfg.get('heading_size', 12.5)
+        tl = [(r, sz) for r, sz in tl if top_lim < r.y1 and r.y0 < foot_lim
               and not any(f.contains((r.tl + r.br) / 2) for f in fig_rects)]
-        if self.cfg.get('page_image'):
+        heads = [r for r, sz in tl if sz >= big]        # section headings stay text
+        tl = [r for r, sz in tl if sz < big]
+        if page_img:
             # titles, headers and lightly tinted rows next to a chart belong to it
-            chart_rects = grow_regions(self.auto_figures(page, top_lim, foot_lim, []), tl)
+            # on a chart page the big title belongs to its chart, so headings count too
+            chart_rects = grow_regions(self.auto_figures(page, top_lim, foot_lim, []), tl + heads)
         elif self.cfg.get('tables_as_text'):
             # ruled/shaded tables and side-by-side short lines (lists, small DRM
             # charts) read far better as laid-out text than as prose or GFM tables
@@ -651,7 +667,40 @@ class Converter:
             else:
                 keep.append(it)
         items = keep
-        items.sort(key=lambda i: (round(i['y0'], 1), i['x0']))
+        items.sort(key=lambda i: (round(i['y0'] * 2) / 2, i['x0']))
+
+        # a bullet glyph is its own item, and may sit a little above or below the
+        # line it introduces: attach it to the nearest text to its right
+        glyphs = [it for it in items if norm(it['text']) in ('•', '▪', '◦')]
+        for g in glyphs:
+            gy = (g['y0'] + g['y1']) / 2
+            cand = [it for it in items if it is not g and abs((it['y0'] + it['y1']) / 2 - gy) < 5
+                    and 0 <= it['x0'] - g['x1'] < 40]
+            if cand:
+                target = min(cand, key=lambda i: i['x0'])
+                target['bullet_x'] = g['x0']
+                items.remove(g)
+
+        # pieces of one line, split by the PDF at a justified gap, are rejoined
+        # (a heading set as "E." + "MISCELLANEOUS", a list number and its text);
+        # the columns of a two-column list stay apart, they sit much further out
+        merged = []
+        for it in items:
+            prev = merged[-1] if merged else None
+            colw = W / self.cfg.get('columns', 1)
+            if prev is not None and abs(it['y0'] - prev['y0']) < 2.5 \
+                    and 0 <= it['x0'] - prev['x1'] <= self.cfg.get('line_gap', 14) \
+                    and int(prev['x0'] // colw) == int(it['x0'] // colw):
+                # normalize the seam to a single space (the PDF may hold a tab there)
+                head = prev['spans'][:-1] + [dict(prev['spans'][-1], text=prev['spans'][-1]['text'].rstrip())]
+                tail = [dict(it['spans'][0], text=it['spans'][0]['text'].lstrip())] + it['spans'][1:]
+                prev['spans'] = head + [dict(prev['spans'][-1], text=' ')] + tail
+                prev['text'] = prev['text'].rstrip() + ' ' + it['text'].lstrip()
+                prev['x1'] = it['x1']
+                prev['y1'] = max(prev['y1'], it['y1'])
+            else:
+                merged.append(it)
+        items = merged
 
         # --- one reading-order flow of lines, tables, figures ---
         flow = [('line', it['y0'], it, it['x0'], it['x1']) for it in items]
@@ -669,14 +718,16 @@ class Converter:
             def key(e):
                 band = sum(1 for c in cuts if c <= e[1])
                 col = -1 if spanning(e) else min(ncols - 1, int(((e[3] + e[4]) / 2) // colw))
-                return (band, col, e[1], e[3])
+                # bucket y so pieces of one line (whose y can differ slightly,
+                # e.g. a bullet glyph set a little lower) stay left to right
+                return (band, col, round(e[1] * 2) / 2, e[3], e[1])
             flow.sort(key=key)
         else:
-            flow.sort(key=lambda e: e[1])
+            flow.sort(key=lambda e: (round(e[1] * 2) / 2, e[3], e[1]))
         flow = [e[:3] for e in flow]
 
         blocks = []
-        if self.cfg.get('page_image'):
+        if page_img:
             # whole page as one picture (dense charts); text and tables still follow
             name = f'{self.stem}-p{pno}-page.png'
             page.get_pixmap(dpi=self.cfg['figure_dpi']).save(os.path.join(self.imgdir, name))
@@ -753,8 +804,14 @@ class Converter:
             if matched and (first_bold or maxsize >= 12):
                 matched[2] = True
                 flush()
-                blocks.append({'kind': 'heading', 'level': matched[0], 'text': ntext})
-                continue
+                # a bookmark whose entry is a whole rule ("A.6 IN/INTO") sits at the
+                # head of that rule's text: keep the bookmark title as the heading and
+                # let the line itself carry on as the rule's first paragraph
+                whole_line = norm(ntext).lower() == matched[1].lower()
+                blocks.append({'kind': 'heading', 'level': matched[0],
+                               'text': ntext if whole_line else matched[1]})
+                if whole_line:
+                    continue
 
             # heading from font size
             if first_bold and maxsize >= 12.5 and not allcode and len(ntext) >= 3:
@@ -819,7 +876,7 @@ class Converter:
 
             # bullet
             m_b = re.match(r'^\s*([•▪◦o])\s+', ntext)
-            if bullet_at is not None or \
+            if bullet_at is not None or it.get('bullet_x') is not None or \
                     (m_b and ('Black' in fonts[0] or 'Symbol' in fonts[0] or ntext[0] in '•▪◦')):
                 flush()
                 if ncols > 1:
@@ -835,7 +892,7 @@ class Converter:
                 body = inline(keep).lstrip()
                 if not dropped:
                     body = re.sub(r'^[•▪◦]\s*', '', body)
-                gx0 = it['x0'] if bullet_at is None else bullet_at
+                gx0 = it.get('bullet_x', bullet_at if bullet_at is not None else it['x0'])
                 bullet_at = None
                 blocks.append({'kind': 'bullet', 'level': lvl, 'text': body, 'last_y1': it['y1'],
                                'gx0': gx0, 'last_y0': it['y0'], 'last_x1': it['x1']})
@@ -845,12 +902,22 @@ class Converter:
             md = inline(spans)
             # a bold rule number (e.g. "A.2", "7.309", "EX:") opens a new paragraph
             rule_start = first_bold and re.match(r'^(\(?[A-Z]?\.?\d+(\.\d+)*|EX\b|NOTE\b)', ntext)
+            # in an index or glossary every entry opens in bold, and its runover
+            # lines are set flush with it, so bold is the only paragraph break
+            if self.cfg.get('break_on_bold') and first_bold:
+                rule_start = True
             if para is not None:
                 gap = it['y0'] - para['last_y1']
                 # the rest of a line that the PDF split at a wide justified gap
                 same_row = abs(it['y0'] - para['last_y0']) < 2.5 and it['x0'] >= para['last_x1'] - 1
-                # paragraph continuing at the top of the next column
-                col_wrap = ncols > 1 and gap < 0 and it['x0'] - para['x0'] > W / ncols * 0.8
+                # paragraph continuing at the top of the next column: it must
+                # really be a further column, not a piece set far right on this line
+                # ... and the paragraph must actually run to the foot of its column:
+                # a last line stopping short of the column edge ends it
+                col_wrap = ncols > 1 and gap < -10 \
+                    and int(it['x0'] // (W / ncols)) > int(para['x0'] // (W / ncols)) \
+                    and it['x0'] - para['x0'] > W / ncols * 0.8 \
+                    and para['last_x1'] > (int(para['x0'] // (W / ncols)) + 1) * (W / ncols) - 24
                 # lines narrowed or shifted by a figure the text wraps around
                 def beside_fig(y0, y1):
                     return any(f.y0 < y1 and f.y1 > y0 for f in fig_rects)
@@ -860,7 +927,7 @@ class Converter:
                 centered = gap <= 4 and abs((it['x0'] + it['x1']) / 2 - para['last_cx']) < 6
                 if not rule_start and (same_row or col_wrap or around_fig or centered
                                        or (gap <= 7 and abs(it['x0'] - para['x0']) < 8)):
-                    if col_wrap or around_fig:
+                    if (col_wrap or around_fig) and not same_row:
                         para['x0'] = it['x0']
                     para['text'] = join_wrapped(para['text'], md)
                     para['last_y1'] = it['y1']
@@ -1032,6 +1099,21 @@ class Converter:
 
 
 # -------------------------------------------------------------------- CLI ---
+def page_list(s):
+    """"106-111,250" -> [106, ..., 111, 250]"""
+    out = []
+    for part in (s or '').split(','):
+        part = part.strip()
+        if not part:
+            continue
+        if '-' in part:
+            a, b = part.split('-')
+            out += list(range(int(a), int(b) + 1))
+        else:
+            out.append(int(part))
+    return out
+
+
 def page_range(s):
     a, b = s.split('-')
     return int(a), int(b)
@@ -1052,7 +1134,9 @@ def main():
     ap.add_argument('--foot-frac', type=float, help='footer band starts at this fraction of page height')
     ap.add_argument('--footer-re', help='regex for footer lines in the footer band')
     ap.add_argument('--auto-figures', action='store_true', help='detect figures on every page')
+    ap.add_argument('--page-image-pages', help='pages to treat as whole-page charts, e.g. 106-111,250')
     ap.add_argument('--page-image', action='store_true', help='embed each whole page as an image before its text')
+    ap.add_argument('--break-on-bold', action='store_true', help='start a new paragraph at every bold line (index/glossary entries)')
     ap.add_argument('--tables-as-text', action='store_true', help='write tables and columnar lists as laid-out text blocks')
     ap.add_argument('--columns', type=int, default=1, help='text columns per page (default: 1)')
     args = ap.parse_args()
@@ -1076,7 +1160,9 @@ def main():
     cfg['columns'] = args.columns
     cfg['auto_figures'] = args.auto_figures
     cfg['page_image'] = args.page_image
+    cfg['page_image_pages'] = page_list(args.page_image_pages)
     cfg['tables_as_text'] = args.tables_as_text
+    cfg['break_on_bold'] = args.break_on_bold
 
     # a trailing number in the name is zero-padded so split-page files sort in order
     # ("eASLRB_v3_01 43.pdf" -> "eASLRB_v3_01 0043.md")
