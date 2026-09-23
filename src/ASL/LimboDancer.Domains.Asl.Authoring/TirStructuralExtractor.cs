@@ -386,7 +386,7 @@ public static partial class TirStructuralExtractor
             var parentKeys = ParentHierarchyKeys(candidate.NormalizedId);
             var hierarchy = ResolveHierarchy(parentKeys, parentArtifactsByKey);
             var siblingKey = hierarchy.ParentKey
-                ?? parentKeys.FirstOrDefault()
+                ?? (parentKeys.Count == 0 ? null : parentKeys[0])
                 ?? candidate.NormalizedId[..1];
             var order = siblingOrder.GetValueOrDefault(siblingKey);
             siblingOrder[siblingKey] = order + 1;
