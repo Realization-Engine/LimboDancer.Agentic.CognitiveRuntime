@@ -8,6 +8,23 @@ public sealed class TirReviewProjectionTests
         2026, 9, 23, 12, 0, 0, TimeSpan.Zero);
 
     [Fact]
+    public void BundleSchemaDeclaresCapturedOnlyProjectionAndVersionedRecordReference()
+    {
+        var path = Path.Combine(RepositoryPaths.Root, "docs", "ASL", "Schemas",
+            "asl-tir-review-bundle-1.0.schema.json");
+        using var schema = JsonDocument.Parse(File.ReadAllBytes(path));
+        var root = schema.RootElement;
+
+        Assert.Equal(TirReviewBundleJson.SchemaId, root.GetProperty("$id").GetString());
+        Assert.Equal("captured", root.GetProperty("properties")
+            .GetProperty("projection").GetProperty("properties")
+            .GetProperty("reviewStatus").GetProperty("const").GetString());
+        Assert.Equal(TirReviewCanonicalJson.SchemaId,
+            root.GetProperty("properties").GetProperty("records")
+                .GetProperty("items").GetProperty("$ref").GetString());
+    }
+
+    [Fact]
     public void CapturedBundleIsCanonicalAcrossRecordEnumerationOrder()
     {
         var document = Document();
