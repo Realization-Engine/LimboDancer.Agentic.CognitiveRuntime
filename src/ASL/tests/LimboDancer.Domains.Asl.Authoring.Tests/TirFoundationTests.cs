@@ -150,7 +150,10 @@ public sealed class TirFoundationTests
         };
         var changed = artifact with
         {
-            Envelope = artifact.Envelope with { SourceFragments = [source] },
+            Envelope = artifact.Envelope with
+            {
+                SourceFragments = [source],
+            },
         };
 
         var exception = Assert.Throws<InvalidOperationException>(
