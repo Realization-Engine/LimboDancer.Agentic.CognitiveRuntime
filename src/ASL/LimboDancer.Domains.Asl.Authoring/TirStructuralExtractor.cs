@@ -410,7 +410,7 @@ public static partial class TirStructuralExtractor
         int fragmentIndex,
         string chapter,
         MatchCollection matches,
-        IReadOnlySet<string> requiredMissingParentKeys,
+        HashSet<string> requiredMissingParentKeys,
         string confidenceBasis)
     {
         foreach (Match match in matches)
