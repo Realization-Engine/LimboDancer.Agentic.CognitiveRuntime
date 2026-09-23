@@ -64,7 +64,7 @@ public static class Program
             Required(values, "--verification-output"));
     }
 
-    private static string Required(IReadOnlyDictionary<string, string> values, string name)
+    private static string Required(Dictionary<string, string> values, string name)
     {
         return values.TryGetValue(name, out var value) && !string.IsNullOrWhiteSpace(value)
             ? value

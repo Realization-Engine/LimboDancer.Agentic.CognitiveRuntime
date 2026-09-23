@@ -49,7 +49,9 @@ public sealed class MarkdownFragmentLocatorTests
         var figure = Assert.Single(
             fragments,
             static fragment => fragment.Kind == SourceFragmentKind.FigureReference);
-        Assert.Equal(new[] { "images/example.png" }, figure.Dependencies);
+        Assert.Collection(
+            figure.Dependencies,
+            static dependency => Assert.Equal("images/example.png", dependency));
         Assert.Contains(fragments, static fragment => fragment.Kind == SourceFragmentKind.StructuredText);
     }
 
