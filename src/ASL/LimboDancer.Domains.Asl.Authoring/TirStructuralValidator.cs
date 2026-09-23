@@ -24,10 +24,11 @@ public static partial class TirStructuralValidator
         reviewGate=notApplicable
         """;
 
-    public static TirValidationPolicy Policy { get; } = new(
-        PolicyId,
-        PolicyVersion,
-        Hashing.Sha256Text(PolicyMaterial));
+    public static TirValidationPolicy Policy { get; } =
+        new(
+            PolicyId,
+            PolicyVersion,
+            Hashing.Sha256Text(PolicyMaterial));
 
     public static TirValidationReportRecord CreateReport(
         TirDocument document,
@@ -212,7 +213,7 @@ public static partial class TirStructuralValidator
     private static void ValidateHierarchy(
         TirDocument document,
         TirArtifact artifact,
-        IReadOnlyDictionary<string, TirArtifact> artifactsById,
+        Dictionary<string, TirArtifact> artifactsById,
         TirReviewSubjectReference subject,
         List<TirValidationFinding> findings)
     {
@@ -394,7 +395,7 @@ public static partial class TirStructuralValidator
 
     private static void ValidateDependencies(
         TirArtifact artifact,
-        IReadOnlyDictionary<string, TirArtifact> artifactsById,
+        Dictionary<string, TirArtifact> artifactsById,
         TirReviewSubjectReference subject,
         List<TirValidationFinding> findings)
     {
@@ -417,7 +418,7 @@ public static partial class TirStructuralValidator
 
     private static void ValidateCrossReference(
         TirCrossReferenceArtifact crossReference,
-        IReadOnlyDictionary<string, TirArtifact> artifactsById,
+        Dictionary<string, TirArtifact> artifactsById,
         TirReviewSubjectReference subject,
         List<TirValidationFinding> findings)
     {
@@ -500,7 +501,7 @@ public static partial class TirStructuralValidator
 
     private static void ValidateExample(
         TirExampleArtifact example,
-        IReadOnlyDictionary<string, TirArtifact> artifactsById,
+        Dictionary<string, TirArtifact> artifactsById,
         TirReviewSubjectReference subject,
         List<TirValidationFinding> findings)
     {
