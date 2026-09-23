@@ -394,7 +394,9 @@ public static partial class TirStructuralExtractor
                 ?? candidate.NormalizedId[..1];
             var order = siblingOrder.GetValueOrDefault(siblingKey);
             siblingOrder[siblingKey] = order + 1;
-            var sourceReferences = candidate.Evidence.Select(SourceReference).ToArray();
+            var sourceReferences = candidate.Evidence
+                .Select(static fragment => SourceReference(fragment))
+                .ToArray();
             var dependencies = candidate.Evidence
                 .SelectMany(fragment => fragment.Dependencies.Select(dependency => new TirDependency(
                     TirDependencyKind.Figure,
