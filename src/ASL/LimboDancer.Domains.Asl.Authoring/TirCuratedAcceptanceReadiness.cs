@@ -20,13 +20,34 @@ public sealed record TirCuratedAcceptanceBlocker(
 /// Diagnostic snapshot only. No acceptance or publication API consumes this type.
 /// An assessment is never an authorization or a substitute for semantic gates.
 /// </summary>
-public sealed record TirCuratedAcceptanceReadiness(
-    string ReviewHistorySha256,
-    TirCuratedReviewSubjectReference Subject,
-    string DeclaredUse,
-    IReadOnlyList<TirCuratedAcceptanceBlocker> Blockers)
+public sealed class TirCuratedAcceptanceReadiness
 {
-    public bool CanAccept => false;
+    internal TirCuratedAcceptanceReadiness(
+        string reviewHistorySha256,
+        TirCuratedReviewSubjectReference subject,
+        string declaredUse,
+        IReadOnlyList<TirCuratedAcceptanceBlocker> blockers)
+    {
+        if (blockers.Count == 0)
+        {
+            throw new InvalidOperationException("Acceptance readiness requires explicit blockers.");
+        }
+
+        ReviewHistorySha256 = reviewHistorySha256;
+        Subject = subject;
+        DeclaredUse = declaredUse;
+        Blockers = blockers;
+    }
+
+    public string ReviewHistorySha256 { get; }
+
+    public TirCuratedReviewSubjectReference Subject { get; }
+
+    public string DeclaredUse { get; }
+
+    public IReadOnlyList<TirCuratedAcceptanceBlocker> Blockers { get; }
+
+    public bool CanAccept => Blockers.Count == 0;
 }
 
 public static class TirCuratedAcceptanceReadinessEvaluator
