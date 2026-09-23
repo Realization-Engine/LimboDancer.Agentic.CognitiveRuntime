@@ -119,6 +119,7 @@ Each manifest case record MUST contain:
 | `actionRisk` | The existing orthogonal `ActionRiskProfile`; not a label for tactical desirability. |
 | `wrongChoiceSeverity` | Expected consequence of an incorrect selection: `Low`, `Medium`, `High`, or `Critical`. |
 | `ruleEvidenceRefs` | Sources supporting legality, applicability, and constraints. |
+| `semanticPackageRefs` | Exact ontology/rule-package versions used to resolve entities, conditions, exceptions, and candidates. |
 | `decisionEvidenceRefs` | Sources supporting the expected outcome and acceptable set. |
 | `counterfactual` | Boolean plus parent case when true. |
 | `representativeness` | Prespecified workload strata used for coverage reporting. |
@@ -126,7 +127,7 @@ Each manifest case record MUST contain:
 | `labelReview` | Author, independent reviewer, disposition, adjudicator if needed, timestamps, and rationale hash. |
 | `caseStatus` | `draft`, `reviewed`, `adjudicated`, `excluded`, or `frozen`. Only frozen cases may enter a reported run. |
 
-`ruleEvidenceRefs` and `decisionEvidenceRefs` are deliberately separate. A rule citation can prove that an option is legal or illegal. It usually cannot prove that one legal option is tactically preferable.
+`ruleEvidenceRefs`, `semanticPackageRefs`, and `decisionEvidenceRefs` are deliberately separate. A rule citation and its reviewed ontology projection can prove that an option is legal or illegal. They usually cannot prove that one legal option is tactically preferable.
 
 ### 5.3 Label semantics
 
@@ -211,6 +212,28 @@ The rulebook cannot alone establish:
 - provider fitness or production adoption.
 
 Copyrighted rule text and images SHOULD remain in the controlled source registry. Evaluation artifacts SHOULD prefer stable locators, short necessary excerpts, and hashes over duplicating source material. Distribution MUST follow the recorded source restrictions.
+
+### 7.4 Ontology transformation boundary
+
+The intended ASL pipeline is ontology-first:
+
+```text
+verified rulebook fragments
+-> structure-aware extraction
+-> proposed ASL ontology artifacts
+-> deterministic validation and expert review
+-> immutable published ASL ontology/rule package
+-> semantic resolution, adjudication, and candidate constraints
+-> Decision boundary only when multiple permitted actions remain
+```
+
+The ontology package MUST represent the distinctions required by `ASL-RD-001` through `ASL-RD-015`, including canonical source identity, rules, definitions, examples, conditions, effects, exceptions and nested exceptions, cross-references, tables or matrices, phase restrictions, entities, properties, relations, aliases, and provenance. Source text, the extracted intermediate representation, and the published semantic artifact MUST remain traceable in both directions.
+
+An extraction model or LLM MAY propose artifacts. It MUST NOT publish them as authoritative. Publication requires deterministic validation plus the declared human review. Validation MUST cover at least canonical identifier preservation, hierarchy integrity, reference resolution, exception/precedence consistency, required visual and table dependencies, terminology consistency, duplicate or conflicting definitions, provenance completeness, and package/version isolation.
+
+The legacy `LimboDancer.MCP.Ontology` code is reference material for generic entities, properties, relations, enums, aliases, shapes, provenance, tenant scope, validation, export, and repository boundaries. It is not a completed ASL ingestion implementation: the historical design's specialized rule extraction and `RuleNode`, `ExceptionNode`, `ConditionNode`, `ReferenceNode`, `ExampleNode`, `DefinitionNode`, `PhaseNode`, and `MatrixRuleNode` capabilities are not present as an operational pipeline in the checked-in legacy source. New ASL packages MUST selectively reimplement useful behavior behind the current domain-package and runtime contracts rather than restoring the MCP-centered architecture.
+
+Every corpus case whose candidates depend on ASL semantics MUST pin the published ontology/rule-package identity and content hash in `semanticPackageRefs`. Changing that package invalidates the case's semantic derivation until the candidate set and label are revalidated. The ontology package can establish meaning and permitted alternatives; it does not supply a tactical preference label unless the published artifact contains an independently governed policy expressly intended to do so.
 
 ## 8. Decision-class definition
 
@@ -448,11 +471,14 @@ The ASL 3.10 A-E Markdown set enables the following bounded work now:
 
 1. freeze a source-registry snapshot at the rulebook commit;
 2. build chapter-aware rule-fragment locators with page and dependency hashes;
-3. verify a sampled set of prose, tables, figures, footnotes, and cross-references against the authoritative edition;
-4. use verified fragments to design ASL rule-conformance cases and the first read-only adjudication slice; and
-5. define a genuine ASL Decision class only after the runtime exposes bounded, already permitted alternatives.
+3. define a source-to-ontology intermediate representation for rules, definitions, conditions, effects, exceptions, references, examples, phases, and matrices;
+4. transform verified fragments into proposed ontology artifacts while retaining bidirectional provenance;
+5. validate canonical IDs, hierarchy, references, precedence, terminology, required visuals/tables, coverage, and conflicts;
+6. review and publish an immutable, versioned ASL ontology/rule package through the separate domain-package boundary;
+7. use that package to drive ASL rule-conformance cases and the first read-only adjudication slice; and
+8. define a genuine ASL Decision class only after the runtime exposes bounded, already permitted alternatives.
 
-These steps improve ASL source and semantic evidence. They do not satisfy the provider-adoption gate until representative historical Decision boundaries and independent decision labels exist.
+These steps realize the original ontology-first product intent within the current cognitive-runtime architecture. They improve ASL source and semantic evidence, but they do not satisfy the provider-adoption gate until representative historical Decision boundaries and independent decision labels exist.
 
 ## 16. Exit criteria for corpus readiness
 
