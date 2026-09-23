@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:limbodancer:asl:tir:curated-proposal:schema:1.0.0",
+  "title": "ASL TIR Curated Proposal Draft",
+  "description": "Exact non-executable authored text pinned to a captured TIR source. Does not certify semantic validation or authorize review acceptance.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaId", "schemaVersion", "canonicalization", "sourceSubject", "semanticAuthorIdentity", "declaredUse", "proposalText", "createdAt", "createdAtSource", "proposalSha256"],
+  "properties": {
+    "schemaId": {"const": "urn:limbodancer:asl:tir:curated-proposal:schema:1.0.0"},
+    "schemaVersion": {"const": "1.0.0"},
+    "canonicalization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": {"const": "asl-tir-curated-proposal-canonical-json"},
+        "version": {"const": "1.0.0"}
+      }
+    },
+    "sourceSubject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tirDocumentSha256", "artifactId", "artifactSha256", "schemaId", "packageCandidate"],
+      "properties": {
+        "tirDocumentSha256": {"$ref": "#/$defs/sha256"},
+        "artifactId": {"type": "string", "pattern": "^asl-tir:sha256:[0-9a-f]{64}$"},
+        "artifactSha256": {"$ref": "#/$defs/sha256"},
+        "schemaId": {"const": "urn:limbodancer:asl:tir:schema:1.3.0"},
+        "packageCandidate": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["domainId", "packageId", "version"],
+          "properties": {
+            "domainId": {"$ref": "#/$defs/nonEmptyString"},
+            "packageId": {"$ref": "#/$defs/nonEmptyString"},
+            "version": {"$ref": "#/$defs/nonEmptyString"}
+          }
+        }
+      }
+    },
+    "semanticAuthorIdentity": {"$ref": "#/$defs/nonEmptyString"},
+    "declaredUse": {"$ref": "#/$defs/nonEmptyString"},
+    "proposalText": {"$ref": "#/$defs/nonEmptyString"},
+    "createdAt": {"type": "string", "format": "date-time", "pattern": "Z$"},
+    "createdAtSource": {"$ref": "#/$defs/nonEmptyString"},
+    "proposalSha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "nonEmptyString": {"type": "string", "minLength": 1, "pattern": "\\S"}
+  }
+}

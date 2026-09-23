@@ -1,6 +1,6 @@
 # LimboDancer.Agentic.CognitiveRuntime ASL-OT-03 Validation and Review Workflow Design
 
-**Status:** Accepted; ASL-OT-03.1 through ASL-OT-03.3 implemented; ASL-OT-03.4 captured-evidence foundation in progress
+**Status:** Accepted; ASL-OT-03.1 through ASL-OT-03.3 implemented; ASL-OT-03.4 captured-evidence and curated-proposal identity foundations in progress
 
 **Date:** 2026-09-23
 
@@ -489,6 +489,14 @@ Disposition records never remove or rewrite the original diagnostic or validatio
 The C# `TirReviewStateProjector` and versioned `Schemas/asl-tir-review-bundle-1.0.schema.json` introduce a canonical, hash-addressed bundle for an exact **captured TIR 1.3 artifact**. Bundle generation recomputes the document and artifact digests, validates record subjects and identities, closes prerequisite references and detects cycles, checks validation-policy and finding/disposition bindings, and derives open and blocking findings. Canonical serialization embeds the review records, pins the external TIR document by digest, sorts unordered coverage and record sets, and reprojects before writing; an asserted state cannot override the computed one. A source TIR document with that exact digest is required to reproduce the bundle.
 
 `TirReviewTransitionRules.ValidateShape` tests permitted edges, matching prior status, the ban on transitioning extracted evidence, and independent reviewer identity. It is **not** an acceptance authorization: it does not assert that reports, source verification, dependency closure, and adjudication are sufficient. A TIR 1.3 bundle always projects `captured / unmodeled`, and any review or adjudication transition against it fails closed. This is intentional because the current TIR canonical writer admits only extracted artifacts; a curated semantic revision with verifiable content does not yet exist. ASL-OT-03.4 remains open until an exact curated subject representation and its acceptance prerequisites can be validated end-to-end. No accepted review bundle or definitive Scenario A1 authority is claimed.
+
+### 19.5 Exact curated-proposal draft (partial ASL-OT-03.4)
+
+`TirCuratedProposalJson` and `Schemas/asl-tir-curated-proposal-1.0.schema.json` define a separate, canonical, SHA-256-addressed **draft**. The draft contains the exact captured TIR source subject (document digest, artifact identity and digest, TIR schema, and package candidate), semantic-author identity, declared use, verbatim proposal text, and UTC timestamp with source. Its `proposalSha256` hashes the canonical payload excluding that digest field. The C# writer recomputes the source subject from the supplied TIR document before serializing; changing source evidence, author, use, text, or time creates a distinct proposal or invalidates the stale source binding. No TIR 1.3 schema or existing review-record/bundle version is reinterpreted.
+
+The text is an opaque human-authored interpretation, not a rule expression or validated ontology. This draft does **not** assert `proposed`, `in-review`, `accepted`, or `formalizationStatus`; it is not yet a subject accepted by review-record schema 1.1 or review-bundle schema 1.0. In particular, a digest and an identity string alone do not prove source fidelity, semantic completeness, role authorization, or dependency closure. The draft supplies exact bytes for a future versioned curated subject; it does not bypass ASL-OT-04 semantic modeling.
+
+The next 03.4 increment must define a versioned review-subject and bundle contract for curated material, binding the exact proposal bytes and their source, then project legal transition history with evidence-linked prerequisites. Before acceptance, the projector must check applicable validation gates (including an actually implemented semantic gate), verified source and use-specific dependency closure, disposition of blocking findings, independent review, and material-disagreement adjudication. Until these checks exist and reproduce, acceptance and supersession must fail closed. Synthetic fixtures may test the workflow but must not be described as accepted ASL semantics or runtime authority.
 
 ## 20. Completion boundary
 
