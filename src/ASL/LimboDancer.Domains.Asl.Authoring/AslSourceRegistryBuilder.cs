@@ -25,7 +25,7 @@ public static partial class AslSourceRegistryBuilder
 {
     public const string SchemaVersion = "1.0.0";
     public const string RegistryId = "asl-easlrb-3.10-a-e";
-    public const string Edition = "3.10";
+    public const string Edition = "3.01";
     public const string SourceRoot = "docs/ASL/Rulebook_Markdown";
     public const string ConversionToolPath = "utils/pdf_to_markdown.py";
 

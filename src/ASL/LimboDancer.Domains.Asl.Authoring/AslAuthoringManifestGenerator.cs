@@ -5,7 +5,7 @@ namespace LimboDancer.Domains.Asl.Authoring;
 public static class AslAuthoringManifestGenerator
 {
     public const string VerificationPurpose =
-        "Representative fragments awaiting comparison with the authoritative ASL 3.10 edition.";
+        "Representative fragments awaiting comparison with the authoritative ASL 3.01 edition.";
 
     public const string VerificationSelectionPolicy =
         "First structural examples plus chapter coverage and selected chapter-local identifiers.";

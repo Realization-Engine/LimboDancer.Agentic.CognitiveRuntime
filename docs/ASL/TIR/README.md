@@ -6,7 +6,7 @@ ASL-OT-02 is approved by the [ASL-OT-02 TIR Review](<../LimboDancer.Agentic.Cogn
 
 ## Current artifact
 
-`asl-3.10-a-e.structural-sample.tir.json` is a metadata-only representative sample extracted from the registered ASL 3.10 Chapters A-E source set. It contains selected `SourceFragment`, `Section`, structural `Rule`, `CrossReference`, `Example`, and `Table` artifacts, their ordered source evidence, hierarchy and reference-resolution results, dependencies, diagnostics, provenance, and canonical payload digest.
+`asl-3.10-a-e.structural-sample.tir.json` is a metadata-only representative sample extracted from the registered ASL 3.01 Chapters A-E source set. It contains selected `SourceFragment`, `Section`, structural `Rule`, `CrossReference`, `Example`, and `Table` artifacts, their ordered source evidence, hierarchy and reference-resolution results, dependencies, diagnostics, provenance, and canonical payload digest.
 
 The sample does not duplicate rulebook prose. It preserves source hashes and locators that recover the applicable wording from the controlled source tree. Each source-fragment reference also carries a nullable UTF-8 byte span. A null/null span denotes the complete immutable fragment; numeric `startUtf8ByteOffset` and exclusive `endUtf8ByteOffsetExclusive` values identify exact evidence inside that fragment.
 

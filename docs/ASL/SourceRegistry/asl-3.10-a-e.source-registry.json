@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
   "registryId": "asl-easlrb-3.10-a-e",
-  "edition": "3.10",
+  "edition": "3.01",
   "sourceCommit": "a3254ff1d492dbdd28483d86f5b42437b48e80d4",
   "sourceRoot": "docs/ASL/Rulebook_Markdown",
   "generator": {

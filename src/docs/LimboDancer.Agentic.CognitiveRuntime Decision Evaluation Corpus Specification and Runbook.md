@@ -20,7 +20,7 @@ This document is a preparation and evaluation standard. It does not approve a pr
 
 A provider-adoption claim MUST be based on a frozen, representative, independently reviewed corpus of historical Decision boundaries for a named Decision class.
 
-Authoritative rules, synthetic cases, and expert reconstructions are valuable supporting evidence, but none may be reported as historical Decision evidence. In particular, the ASL 3.10 rulebook Markdown is authoritative source material for rule interpretation and case construction; it is not a record of runtime decisions and does not identify the tactically preferred candidate by itself.
+Authoritative rules, synthetic cases, and expert reconstructions are valuable supporting evidence, but none may be reported as historical Decision evidence. In particular, the ASL 3.01 rulebook Markdown is authoritative source material for rule interpretation and case construction; it is not a record of runtime decisions and does not identify the tactically preferred candidate by itself.
 
 The deterministic `RuleDecisionProvider` remains the production default until a separate adoption review accepts a provider for an explicitly bounded workload.
 
@@ -154,7 +154,7 @@ Each source record MUST include:
 
 Source references SHOULD identify fragments rather than only files. A fragment reference SHOULD be resolvable from the frozen source version and include a fragment hash.
 
-## 7. ASL 3.10 rulebook profile
+## 7. ASL 3.01 rulebook profile
 
 The Markdown under `docs/ASL/Rulebook_Markdown/` is admitted as an authoritative-source preparation input for the ASL reference domain, subject to human verification against the source edition for rule-critical use.
 
@@ -163,10 +163,10 @@ The Markdown under `docs/ASL/Rulebook_Markdown/` is admitted as an authoritative
 Rule identifiers MUST be normalized to include the chapter even where the converted Markdown contains only a local numeric heading. Examples:
 
 ```text
-asl-3.10:A.6
-asl-3.10:A1.1
-asl-3.10:B1.13
-asl-3.10:C1.2
+asl-3.01:A.6
+asl-3.01:A1.1
+asl-3.01:B1.13
+asl-3.01:C1.2
 ```
 
 Each reference MUST also retain:
@@ -469,7 +469,7 @@ Evaluation tooling MUST remain replay-only. It MUST NOT expose authorization, ga
 
 ## 15. ASL work enabled by the new commits
 
-The ASL 3.10 A-E Markdown set enables the following bounded work now:
+The ASL 3.01 A-E Markdown set enables the following bounded work now:
 
 1. freeze a source-registry snapshot at the rulebook commit;
 2. build chapter-aware rule-fragment locators with page and dependency hashes;

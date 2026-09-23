@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
   "registryId": "asl-easlrb-3.10-a-e",
-  "purpose": "Representative fragments awaiting comparison with the authoritative ASL 3.10 edition.",
+  "purpose": "Representative fragments awaiting comparison with the authoritative ASL 3.01 edition.",
   "selectionPolicy": "First structural examples plus chapter coverage and selected chapter-local identifiers.",
   "requiresAuthoritativeEditionComparison": true,
   "fragments": [

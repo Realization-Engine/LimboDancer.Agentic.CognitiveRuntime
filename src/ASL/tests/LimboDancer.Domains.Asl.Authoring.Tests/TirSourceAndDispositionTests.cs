@@ -255,7 +255,7 @@ public sealed class TirSourceAndDispositionTests
             artifactId,
             registry,
             fragment,
-            "operator comparison with authoritative ASL 3.10 edition",
+            "operator comparison with authoritative ASL 3.01 edition",
             disposition,
             discrepancy,
             correctionProposalRefs,

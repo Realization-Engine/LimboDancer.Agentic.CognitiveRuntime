@@ -1,6 +1,8 @@
-# ASL 3.10 Source Registry
+# ASL 3.01 Source Registry
 
-This directory contains the committed ASL-OT-01 provenance outputs for the ASL 3.10 Chapters A-E authoring source.
+This directory contains the committed ASL-OT-01 provenance outputs for the ASL 3.01 Chapters A-E authoring source.
+
+The user identified the delivery ZIP as version 3.01, matching the converted image filename stem `eASLRB_v3_01`. The PDF credits still read “Version 3.0; June 2025.” The original `3.10` edition designation was erroneous. Existing `3.10` spellings in registry IDs, source IDs, candidate IDs and filenames are immutable historical identifiers, not the edition value; changing them would re-key fragment evidence and downstream citations. The declared edition is `3.01`. The supplied PDF is identified by SHA-256 `957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247` and is not copied into this repository.
 
 ## Artifacts
 
@@ -30,7 +32,7 @@ Regeneration is deterministic for the same source bytes, converter, source commi
 
 ## Verification boundary
 
-`unverified` means the fragment has been located and hashed but has not been compared with the authoritative ASL 3.10 edition. Moving a sample to `verified` requires a human review record covering the fragment and every required table, figure, or footnote dependency.
+`unverified` means the fragment has been located and hashed but has not been compared with the authoritative ASL 3.01 edition. Moving a sample to `verified` requires a human review record covering the fragment and every required table, figure, or footnote dependency.
 
 Neither manifest is an ontology, published domain package, tactical policy, Decision corpus, or execution authority.
 

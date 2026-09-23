@@ -12,7 +12,7 @@
 
 ## 1. Review decision
 
-ASL-OT-02 conforms to the accepted ASL Ontology Transformation Specification and satisfies its completion boundary. Given the pinned ASL 3.10 Chapters A-E source set, the C# authoring implementation reproducibly describes source fragments, structural Sections and Rules, hierarchy, explicit identifiers, explicit reference occurrences, example markers, table/chart blocks, and provenance without claiming semantic completeness or authority.
+ASL-OT-02 conforms to the accepted ASL Ontology Transformation Specification and satisfies its completion boundary. Given the pinned ASL 3.01 Chapters A-E source set, the C# authoring implementation reproducibly describes source fragments, structural Sections and Rules, hierarchy, explicit identifiers, explicit reference occurrences, example markers, table/chart blocks, and provenance without claiming semantic completeness or authority.
 
 ASL-OT-03 may proceed to define validation, review-state transitions, and human-adjudication gates. This approval does not validate any ASL rule interpretation, accept any semantic artifact, publish a runtime package, or authorize execution.
 
@@ -20,7 +20,7 @@ ASL-OT-03 may proceed to define validation, review-state transitions, and human-
 
 | Item | Reviewed value |
 | --- | --- |
-| Registered source edition | ASL 3.10, Chapters A-E |
+| Registered source edition | ASL 3.01, Chapters A-E |
 | Pinned source commit | `a3254ff1d492dbdd28483d86f5b42437b48e80d4` |
 | TIR schema | `urn:limbodancer:asl:tir:schema:1.3.0` |
 | Extractor | `LimboDancer.Domains.Asl.Authoring.StructuralExtractor` 1.5.0 |

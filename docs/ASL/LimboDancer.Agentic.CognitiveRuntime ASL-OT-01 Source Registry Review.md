@@ -10,7 +10,7 @@
 
 ## 1. Review decision
 
-ASL-OT-01 conforms to the accepted ASL Ontology Transformation Specification. The slice registers the ASL 3.10 Chapters A-E source set, produces deterministic structural fragment locators, commits a representative unverified review sample, and adds isolated authoring CI without introducing ontology semantics or runtime dependencies.
+ASL-OT-01 conforms to the accepted ASL Ontology Transformation Specification. The slice registers the ASL 3.01 Chapters A-E source set, produces deterministic structural fragment locators, commits a representative unverified review sample, and adds isolated authoring CI without introducing ontology semantics or runtime dependencies.
 
 ASL-OT-02 may proceed under the accepted specification. Human comparison with the authoritative edition remains required before any rule-critical fragment can become verified or support an accepted semantic artifact.
 

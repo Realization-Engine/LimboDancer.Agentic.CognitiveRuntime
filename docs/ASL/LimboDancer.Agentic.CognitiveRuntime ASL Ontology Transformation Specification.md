@@ -4,13 +4,13 @@
 
 **Date:** 2026-09-23
 
-**Reference domain:** Advanced Squad Leader 3.10, Chapters A-E
+**Reference domain:** Advanced Squad Leader 3.01, Chapters A-E
 
 **Authority:** Subordinate to the Plane Runtime Specification and Plane Runtime Design; implements the ASL reference-domain requirements and Domain Integration Model
 
 ## 1. Purpose
 
-This specification defines how LimboDancer transforms the ASL 3.10 rulebook into a reviewed, immutable, versioned ontology and rule package that the cognitive runtime can resolve exactly.
+This specification defines how LimboDancer transforms the ASL 3.01 rulebook into a reviewed, immutable, versioned ontology and rule package that the cognitive runtime can resolve exactly.
 
 It restores the original ontology-first product intent within the current architecture:
 
@@ -88,7 +88,7 @@ The Host composes the runtime and ASL packages. Authoring tools may be separate 
 
 ### 5.1 Registered source set
 
-The initial transformation source is the ASL 3.10 Markdown set under `docs/ASL/Rulebook_Markdown/`:
+The initial transformation source is the ASL 3.01 Markdown set under `docs/ASL/Rulebook_Markdown/`:
 
 - table of contents;
 - index and glossary;

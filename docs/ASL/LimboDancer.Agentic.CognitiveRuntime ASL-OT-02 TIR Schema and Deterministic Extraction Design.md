@@ -336,7 +336,7 @@ The C# test suite must prove:
 
 ASL-OT-02 is complete when the repository can truthfully state:
 
-> Given the pinned ASL 3.10 Chapters A-E sources, the C# authoring implementation reproducibly describes structural elements, hierarchy, explicit identifiers, reference occurrences, and source boundaries while preserving exact provenance and marking all unformalized meaning honestly.
+> Given the pinned ASL 3.01 Chapters A-E sources, the C# authoring implementation reproducibly describes structural elements, hierarchy, explicit identifiers, reference occurrences, and source boundaries while preserving exact provenance and marking all unformalized meaning honestly.
 
 ASL-OT-02 is not complete merely because the extractor can answer ASL questions or generate plausible ontology objects. It does not answer ASL rules questions.
 
