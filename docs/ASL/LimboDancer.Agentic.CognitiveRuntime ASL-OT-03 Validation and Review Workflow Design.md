@@ -1,6 +1,6 @@
 # LimboDancer.Agentic.CognitiveRuntime ASL-OT-03 Validation and Review Workflow Design
 
-**Status:** Proposed; implementation not begun
+**Status:** Accepted; ASL-OT-03.1 implemented
 
 **Date:** 2026-09-23
 
@@ -430,6 +430,20 @@ The review workflow should be implemented in small, independently testable incre
 
 Semantic artifact kinds and Scenario A1 meaning remain ASL-OT-04 work. ASL-OT-03 may use synthetic semantic fixtures to prove workflow gates but must not claim those fixtures as accepted ASL semantics.
 
+### 19.1 Implemented foundation
+
+ASL-OT-03.1 is implemented as the narrow record and identity foundation for the later workflow increments:
+
+- `Schemas/asl-tir-review-record-1.0.schema.json` defines the immutable validation-report, source-verification, diagnostic-disposition, review, and adjudication record family;
+- ASL-owned C# records represent the exact review subject, actors, tools, policies, findings, gate results, decisions, and record payloads;
+- the review subject binds the canonical TIR document digest, stable artifact identity, canonical artifact digest, TIR schema, and package candidate;
+- canonical C# serialization produces `asl-tir-review:sha256:` record identities and lowercase SHA-256 payload digests;
+- deterministic finding identities bind the exact subject, validation policy, gate, code, optional artifact, and evidence set;
+- set-valued collections sort ordinally, while reviewer rationale evidence retains supplied order because that order can carry explanatory meaning; and
+- serialization fails closed for unsupported subject schemas, invalid identities or hashes, non-UTC timestamps, duplicate set members, invalid role-to-record combinations, and internally inconsistent validation findings.
+
+This increment does not implement validators, verify source content, apply diagnostic dispositions, project review state, enforce transitions, or create a review bundle. Those behaviors remain in ASL-OT-03.2 through ASL-OT-03.5. A representative bundle is deliberately deferred until ASL-OT-03.4 supplies the state projection it must prove.
+
 ## 20. Completion boundary
 
 ASL-OT-03 is complete when the repository can truthfully state:
@@ -467,7 +481,7 @@ ASL-OT-03 does not include:
 
 ## 22. Admission decisions
 
-Implementation should begin only after these proposed design constraints are accepted:
+The following design constraints are accepted and govern implementation:
 
 1. review subjects bind both stable artifact identity and exact canonical content digest;
 2. captured extraction remains immutable;
