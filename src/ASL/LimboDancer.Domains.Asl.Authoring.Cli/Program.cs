@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 using LimboDancer.Domains.Asl.Authoring;
 
 namespace LimboDancer.Domains.Asl.Authoring.Cli;
@@ -26,6 +27,15 @@ public static class Program
                 ManifestJson.WriteFile(
                     options.ScenarioA1Output,
                     AslScenarioA1SourceInventory.Extract(manifests).Serialize());
+            }
+            if (options.ScenarioA1Attestation is not null && options.ScenarioA1VerificationOutput is not null)
+            {
+                var attestation = JsonSerializer.Deserialize<AslScenarioA1SourceAttestation>(
+                    File.ReadAllText(options.ScenarioA1Attestation),
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                    ?? throw new InvalidOperationException("Scenario A1 attestation is empty.");
+                var batch = AslScenarioA1VerificationBatchBuilder.Build(manifests, attestation);
+                ManifestJson.WriteFile(options.ScenarioA1VerificationOutput, batch.Serialize());
             }
             if (options.TirOutput is not null && options.TirCreatedAt is not null)
             {
@@ -57,6 +67,7 @@ public static class Program
         catch (Exception exception) when (exception is ArgumentException
             or IOException
             or InvalidOperationException
+            or JsonException
             or SourceRegistryException)
         {
             Console.Error.WriteLine(exception.Message);
@@ -89,6 +100,8 @@ public static class Program
                 "--tir-output",
                 "--tir-created-at",
                 "--a1-output",
+                "--a1-attestation",
+                "--a1-verification-output",
             ],
             StringComparer.Ordinal);
         var unknown = values.Keys.Where(key => !supported.Contains(key)).ToArray();
@@ -104,6 +117,13 @@ public static class Program
             throw new ArgumentException("--tir-output and --tir-created-at must be supplied together.");
         }
 
+        var a1Attestation = values.GetValueOrDefault("--a1-attestation");
+        var a1VerificationOutput = values.GetValueOrDefault("--a1-verification-output");
+        if ((a1Attestation is null) != (a1VerificationOutput is null))
+        {
+            throw new ArgumentException("--a1-attestation and --a1-verification-output must be supplied together.");
+        }
+
         DateTimeOffset? tirCreatedAt = tirCreatedAtValue is null
             ? null
             : DateTimeOffset.Parse(
@@ -117,7 +137,9 @@ public static class Program
             Required(values, "--verification-output"),
             tirOutput,
             tirCreatedAt,
-            values.GetValueOrDefault("--a1-output"));
+            values.GetValueOrDefault("--a1-output"),
+            a1Attestation,
+            a1VerificationOutput);
     }
 
     private static string Required(Dictionary<string, string> values, string name)
@@ -137,7 +159,7 @@ public static class Program
         return "Usage: dotnet run --project src/ASL/LimboDancer.Domains.Asl.Authoring.Cli -- "
             + "[--repository-root PATH] --source-commit SHA --registry-output PATH "
             + "--verification-output PATH [--tir-output PATH --tir-created-at UTC_TIMESTAMP] "
-            + "[--a1-output PATH]";
+            + "[--a1-output PATH] [--a1-attestation PATH --a1-verification-output PATH]";
     }
 
     private sealed record Options(
@@ -147,5 +169,7 @@ public static class Program
         string VerificationOutput,
         string? TirOutput,
         DateTimeOffset? TirCreatedAt,
-        string? ScenarioA1Output);
+        string? ScenarioA1Output,
+        string? ScenarioA1Attestation,
+        string? ScenarioA1VerificationOutput);
 }
