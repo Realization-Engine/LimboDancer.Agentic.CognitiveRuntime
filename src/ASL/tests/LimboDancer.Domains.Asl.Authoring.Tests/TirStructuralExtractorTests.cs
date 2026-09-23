@@ -80,6 +80,56 @@ public sealed class TirStructuralExtractorTests
     }
 
     [Fact]
+    public void ExtractsOnlyChapterQualifiedCrossReferencesAndReportsResolution()
+    {
+        var fragments = new[]
+        {
+            Fragment(SourceFragmentKind.RuleText, "A.1", "A.1", 1, content: "**A.1:** See B1.1, B9.9, and 1.2.\n"),
+            Fragment(SourceFragmentKind.RuleText, "B.1", "B.1", 2),
+            Fragment(SourceFragmentKind.RuleText, "1.1", "B1.1", 3),
+        };
+
+        var document = Extract(fragments);
+        var references = document.Artifacts.OfType<TirCrossReferenceArtifact>().ToArray();
+        var resolved = Assert.Single(references, static item => item.Payload.ReferenceText == "B1.1");
+        var missing = Assert.Single(references, static item => item.Payload.ReferenceText == "B9.9");
+
+        Assert.Equal(TirReferenceResolutionStatus.Resolved, resolved.Payload.ResolutionStatus);
+        Assert.NotNull(resolved.Payload.ResolvedTargetArtifactId);
+        Assert.Equal(TirReferenceResolutionStatus.Missing, missing.Payload.ResolutionStatus);
+        Assert.Null(missing.Payload.ResolvedTargetArtifactId);
+        Assert.DoesNotContain(references, static item => item.Payload.ReferenceText == "A.1");
+        Assert.DoesNotContain(references, static item => item.Payload.ReferenceText == "1.2");
+        Assert.Contains(
+            document.Diagnostics,
+            diagnostic => diagnostic.Code == "TIR-MISSING-REFERENCE-TARGET"
+                && diagnostic.ArtifactId == missing.Envelope.ArtifactId);
+    }
+
+    [Fact]
+    public void ExplicitMarkersProduceUnmodeledExampleAndUnverifiedTableArtifacts()
+    {
+        var fragments = new[]
+        {
+            Fragment(SourceFragmentKind.RuleText, "A.1", "A.1", 1, content: "**A.1:** EX: mechanical illustration.\n"),
+            Fragment(SourceFragmentKind.StructuredText, "A.1", "A.1", 2, content: "```text\nRESULT TABLE\n```\n"),
+        };
+
+        var document = Extract(fragments);
+        var rule = Assert.Single(document.Artifacts.OfType<TirRuleArtifact>());
+        var example = Assert.Single(document.Artifacts.OfType<TirExampleArtifact>());
+        var table = Assert.Single(document.Artifacts.OfType<TirTableArtifact>());
+
+        Assert.Collection(
+            example.Payload.IllustratesArtifactIds,
+            artifactId => Assert.Equal(rule.Envelope.ArtifactId, artifactId));
+        Assert.False(table.Payload.StructureVerified);
+        Assert.Empty(table.Payload.NoteFragmentIds);
+        Assert.Equal(TirFormalizationStatus.Unmodeled, example.Envelope.FormalizationStatus);
+        Assert.Equal(TirReviewStatus.Captured, table.Envelope.ReviewStatus);
+    }
+
+    [Fact]
     public void RepresentativeSampleRetainsSelectedRuleEvidenceWithoutSemanticPromotion()
     {
         var fragments = new[]
@@ -160,9 +210,10 @@ public sealed class TirStructuralExtractorTests
         string? publishedId,
         string? normalizedId,
         int line,
-        string? dependency = null)
+        string? dependency = null,
+        string? content = null)
     {
-        var content = $"fragment-{line}\n";
+        content ??= $"fragment-{line}\n";
         var contentHash = Hashing.Sha256Text(content);
         return new SourceFragment(
             $"asl-fragment:sha256:{Hashing.Sha256Text($"fragment-{line}")}",

@@ -274,7 +274,7 @@ public static partial class MarkdownFragmentLocator
     [GeneratedRegex(@"!\[[^\]]*\]\((?<path>[^)]+)\)", RegexOptions.CultureInvariant)]
     private static partial Regex InlineFigureRegex();
 
-    [GeneratedRegex(@"^\*\*(?:\\?\*)?(?<id>(?:[A-Z]\.)?\d+(?:\.\d+)*)\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"^\*\*(?:\\?\*)?(?<id>(?:[A-Z]\.\d+(?:\.\d+)*|\d+\.\d+(?:\.\d+)*))\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex RuleRegex();
 
     [GeneratedRegex(@"^[A-Z](?:\.|\d)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]

@@ -96,6 +96,26 @@ public sealed class MarkdownFragmentLocatorTests
     }
 
     [Fact]
+    public void BareNumberedNotesAndListItemsAreNotRuleBoundaries()
+    {
+        const string content = """
+            **1.** *A.2 ERRORS:* Designer note.
+
+            **1)** First procedural choice.
+            """;
+
+        var fragments = MarkdownFragmentLocator.Locate(
+            "source",
+            "source.md",
+            Hashing.Sha256Text(content),
+            "A",
+            content);
+
+        Assert.All(fragments, static fragment => Assert.Equal(SourceFragmentKind.Paragraph, fragment.Kind));
+        Assert.All(fragments, static fragment => Assert.Null(fragment.Locator.PublishedElementId));
+    }
+
+    [Fact]
     public void UnregisteredFigureDependencyFailsClosed()
     {
         const string content = "![Figure](images/missing.png)\n";

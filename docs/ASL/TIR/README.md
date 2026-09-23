@@ -4,7 +4,7 @@ This directory contains deterministic review artifacts produced by the C# ASL au
 
 ## Current artifact
 
-`asl-3.10-a-e.structural-sample.tir.json` is a metadata-only representative sample extracted from the registered ASL 3.10 Chapters A-E source set. It contains selected `SourceFragment` and structural `Rule` artifacts, their ordered source evidence, hierarchy results, dependencies, diagnostics, provenance, and canonical payload digest.
+`asl-3.10-a-e.structural-sample.tir.json` is a metadata-only representative sample extracted from the registered ASL 3.10 Chapters A-E source set. It contains selected `SourceFragment`, structural `Rule`, `CrossReference`, `Example`, and `Table` artifacts, their ordered source evidence, hierarchy and reference-resolution results, dependencies, diagnostics, provenance, and canonical payload digest.
 
 The sample does not duplicate rulebook prose. It preserves source hashes and locators that recover the applicable wording from the controlled source tree.
 
@@ -15,7 +15,7 @@ Every artifact remains:
 - `reviewStatus: captured`; and
 - `semanticId: null`.
 
-The sample is not a reviewed ontology, published domain package, tactical Decision corpus, or execution authority. Parent resolution describes published-number structure only. It does not assert semantic scope, applicability, exception precedence, or legal interpretation.
+The sample is not a reviewed ontology, published domain package, tactical Decision corpus, or execution authority. Parent and cross-reference resolution describe published-number structure only. Example artifacts record explicit `EX:` markers, and table artifacts record explicitly labelled fenced blocks with unverified structure. None of these artifacts asserts semantic scope, applicability, exception precedence, table-cell meaning, or legal interpretation.
 
 ## Regeneration
 

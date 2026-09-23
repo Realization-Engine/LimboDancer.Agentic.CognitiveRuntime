@@ -386,8 +386,26 @@ The second ASL-OT-02 implementation slice deterministically maps the complete re
 - duplicate normalized identifiers, missing parents, and ambiguous parents produce deterministic diagnostics; and
 - figure dependencies are normalized to registered repository-relative paths.
 
-The committed `TIR/asl-3.10-a-e.structural-sample.tir.json` contains 24 selected artifacts: 16 source fragments and eight structural rules. Its eight diagnostics expose five duplicate top-level identifiers and three consequently ambiguous parent resolutions in the mechanically located sample. These are review findings, not silently corrected extraction results. In particular, a bold identifier at a structural boundary may still be a repeated reference rather than a new normative rule; resolving that distinction requires an explicit structural rule and test, not semantic guesswork.
+The original structural sample exposed five duplicate top-level identifiers and three consequently ambiguous parent resolutions. Inspection established a deterministic source convention behind those findings: chapter-local rule identifiers contain a numeric dot, while bare forms such as `**1.**` and `**1)**` are numbered commentary notes or list items. The fragment locator now requires at least one numeric dot for a chapter-local rule boundary while continuing to admit chapter-prefixed forms such as `A.1`. This removes the false rule artifacts at their source rather than suppressing valid duplicate diagnostics downstream.
 
 The C# CLI regenerates the registry, ASL-OT-01 verification sample, and structural TIR sample in one operation. The conformance suite compares the committed TIR bytes with current C# extraction and canonical serialization.
 
-The next increment captures explicit cross-reference occurrences and improves structural classification of repeated rule identifiers, examples, and table boundaries. It must preserve the current diagnostics until deterministic evidence justifies a narrower classification.
+## 16. Implemented explicit structural markers
+
+The third ASL-OT-02 implementation slice adds three evidence-bounded artifact kinds without interpreting rule meaning:
+
+- a `CrossReference` is emitted only for a chapter-qualified occurrence such as `A.8` or `B23.71`; the occurrence that declares the containing rule's own leading identifier is excluded;
+- a chapter-dot candidate such as `A.8` and a compact candidate such as `A8.15` use the same hierarchy comparison convention as Rule artifacts while preserving their source spelling;
+- reference resolution is `resolved` only when exactly one structural Rule candidate exists, and missing or ambiguous targets remain explicit diagnostics;
+- chapter-local occurrences such as `1.2`, ranges, pronouns, and phrases such as “the preceding rule” are not promoted to references in this slice;
+- an `Example` is emitted for each exact uppercase `EX:` marker and points to the containing Rule only when the enclosing fragment is already Rule evidence;
+- the example artifact retains the whole immutable source fragment because the current source locator does not establish an exact end boundary for example prose; and
+- a `Table` is emitted only when a fenced `StructuredText` fragment contains the explicit uppercase label `TABLE` or `CHART`; its cells are not reconstructed and `structureVerified` remains `false`.
+
+All three kinds remain `extracted`, `unmodeled`, and `captured`, with `semanticId: null`. A resolved cross-reference asserts only a unique structural target. An example link asserts only containment within located Rule evidence. A table boundary asserts only an explicit source label.
+
+Across the registered Chapters A-E corpus, the deterministic C# rules locate 1,998 structural Rule artifacts, 4,834 explicit chapter-qualified cross-reference occurrences, 358 explicit example markers, and 21 explicitly labelled table/chart blocks. Of the reference occurrences, 4,788 resolve uniquely and 46 have no target in the registered scope. The remaining 914 diagnostics are missing structural parents, principally because section headings have not been promoted to Rule artifacts. These counts describe extraction behavior; they are not a completeness or correctness claim about the ASL ontology.
+
+The committed representative sample contains 37 artifacts: 22 source fragments, nine structural rules, two cross-references (one resolved and one missing), one example, and one table. Its single diagnostic preserves the selected missing reference. Exact canonical bytes remain checked against C# regeneration.
+
+The next increment should decide whether section headings require a distinct structural artifact or a hierarchy-anchor representation before attempting to reduce missing-parent diagnostics. It should also define exact example-span and table-row recovery separately from semantic formalization.

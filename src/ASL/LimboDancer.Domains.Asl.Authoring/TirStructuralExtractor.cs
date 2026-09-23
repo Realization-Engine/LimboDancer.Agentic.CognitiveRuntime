@@ -1,3 +1,6 @@
+using System.Globalization;
+using System.Text.RegularExpressions;
+
 namespace LimboDancer.Domains.Asl.Authoring;
 
 public sealed record TirExtractionOptions(
@@ -5,18 +8,18 @@ public sealed record TirExtractionOptions(
     DateTimeOffset CreatedAt,
     string CreatedAtSource);
 
-public static class TirStructuralExtractor
+public static partial class TirStructuralExtractor
 {
     public const string ExtractorName = "LimboDancer.Domains.Asl.Authoring.StructuralExtractor";
-    public const string ExtractorVersion = "1.0.0";
+    public const string ExtractorVersion = "1.1.0";
 
     public static string ConfigurationSha256
     {
         get;
     } = Hashing.Sha256Text(
-        "asl-tir-structural-extractor/v1\n"
-        + "sourceFragment,rule\n"
-        + "publishedIdentifier,chapterContext,sourceOrder\n"
+        "asl-tir-structural-extractor/v1.1\n"
+        + "sourceFragment,rule,crossReference,example,table\n"
+        + "publishedIdentifier,chapterContext,sourceOrder,explicitMarkers\n"
         + "no-semantic-inference");
 
     public static TirDocument Extract(
@@ -43,10 +46,27 @@ public static class TirStructuralExtractor
             .ToArray();
         var candidates = LocateRuleCandidates(fragments);
         var ruleArtifacts = CreateRuleArtifacts(candidates, registry.RegistryId, options, createdBy);
-        var diagnostics = CreateDiagnostics(ruleArtifacts);
-        var artifacts = new List<TirArtifact>(sourceArtifacts.Length + ruleArtifacts.Count);
+        var crossReferences = CreateCrossReferenceArtifacts(
+            fragments,
+            ruleArtifacts,
+            registry.RegistryId,
+            options,
+            createdBy);
+        var examples = CreateExampleArtifacts(
+            fragments,
+            ruleArtifacts,
+            registry.RegistryId,
+            options,
+            createdBy);
+        var tables = CreateTableArtifacts(fragments, registry.RegistryId, options, createdBy);
+        var diagnostics = CreateDiagnostics(ruleArtifacts, crossReferences);
+        var artifacts = new List<TirArtifact>(
+            sourceArtifacts.Length + ruleArtifacts.Count + crossReferences.Count + examples.Count + tables.Count);
         artifacts.AddRange(sourceArtifacts);
         artifacts.AddRange(ruleArtifacts.Select(static item => item.Artifact));
+        artifacts.AddRange(crossReferences);
+        artifacts.AddRange(examples);
+        artifacts.AddRange(tables);
 
         return new TirDocument(
             TirCanonicalJson.SchemaId,
@@ -81,6 +101,9 @@ public static class TirStructuralExtractor
 
         var sourceArtifacts = document.Artifacts.OfType<TirSourceFragmentArtifact>().ToArray();
         var ruleArtifacts = document.Artifacts.OfType<TirRuleArtifact>().ToArray();
+        var crossReferences = document.Artifacts.OfType<TirCrossReferenceArtifact>().ToArray();
+        var examples = document.Artifacts.OfType<TirExampleArtifact>().ToArray();
+        var tables = document.Artifacts.OfType<TirTableArtifact>().ToArray();
         foreach (var kind in Enum.GetValues<SourceFragmentKind>())
         {
             Add(sourceArtifacts.FirstOrDefault(artifact => artifact.Payload.FragmentKind == kind));
@@ -102,8 +125,31 @@ public static class TirStructuralExtractor
         }
 
         Add(sourceArtifacts.FirstOrDefault(static artifact => artifact.Payload.HasFootnoteMarkers));
+        Add(crossReferences.FirstOrDefault(static artifact =>
+            artifact.Payload.ResolutionStatus == TirReferenceResolutionStatus.Resolved));
+        Add(crossReferences.FirstOrDefault(static artifact =>
+            artifact.Payload.ResolutionStatus == TirReferenceResolutionStatus.Missing));
+        Add(examples.FirstOrDefault(static artifact => artifact.Payload.IllustratesArtifactIds.Count > 0)
+            ?? examples.FirstOrDefault());
+        Add(tables.FirstOrDefault());
+
+        var artifactById = document.Artifacts.ToDictionary(
+            static artifact => artifact.Envelope.ArtifactId,
+            StringComparer.Ordinal);
+        var relatedArtifactIds = selected.Values
+            .OfType<TirCrossReferenceArtifact>()
+            .Select(static artifact => artifact.Payload.ResolvedTargetArtifactId)
+            .Where(static artifactId => artifactId is not null)
+            .Concat(selected.Values
+                .OfType<TirExampleArtifact>()
+                .SelectMany(static artifact => artifact.Payload.IllustratesArtifactIds))
+            .ToArray();
+        foreach (var artifactId in relatedArtifactIds)
+        {
+            Add(artifactById[artifactId!]);
+        }
+
         var evidenceFragmentIds = selected.Values
-            .OfType<TirRuleArtifact>()
             .SelectMany(static artifact => artifact.Envelope.SourceFragments)
             .Select(static fragment => fragment.FragmentId)
             .ToHashSet(StringComparer.Ordinal);
@@ -277,7 +323,170 @@ public static class TirStructuralExtractor
         return extracted;
     }
 
-    private static List<TirDiagnostic> CreateDiagnostics(List<ExtractedRule> extractedRules)
+    private static List<TirCrossReferenceArtifact> CreateCrossReferenceArtifacts(
+        IReadOnlyList<SourceFragment> fragments,
+        List<ExtractedRule> extractedRules,
+        string registryId,
+        TirExtractionOptions options,
+        TirCreatedBy createdBy)
+    {
+        var rulesByKey = extractedRules
+            .GroupBy(static rule => rule.Candidate.HierarchyKey, StringComparer.Ordinal)
+            .ToDictionary(
+                static group => group.Key,
+                static group => group.Select(static rule => rule.Artifact).ToArray(),
+                StringComparer.Ordinal);
+        var artifacts = new List<TirCrossReferenceArtifact>();
+        foreach (var fragment in fragments)
+        {
+            foreach (Match match in ExplicitCrossReferenceRegex().Matches(fragment.Content))
+            {
+                var referenceText = match.Groups["reference"].Value;
+                var normalizedCandidate = referenceText.ToUpperInvariant();
+                if (IsBoundaryIdentifierOccurrence(fragment, match, normalizedCandidate))
+                {
+                    continue;
+                }
+
+                var hierarchyKey = HierarchyKey(normalizedCandidate);
+                rulesByKey.TryGetValue(hierarchyKey, out var targets);
+                var resolutionStatus = targets switch
+                {
+                    { Length: 1 } => TirReferenceResolutionStatus.Resolved,
+                    { Length: > 1 } => TirReferenceResolutionStatus.Ambiguous,
+                    _ => TirReferenceResolutionStatus.Missing,
+                };
+                var resolvedTargetId = targets is { Length: 1 }
+                    ? targets[0].Envelope.ArtifactId
+                    : null;
+                var artifactId = TirArtifactIdentity.Create(
+                    new TirArtifactIdentityInput(
+                        TirArtifactKind.CrossReference,
+                        registryId,
+                        referenceText,
+                        normalizedCandidate,
+                        [fragment.FragmentId],
+                        $"offset:{match.Index.ToString(CultureInfo.InvariantCulture)}"));
+                var dependencies = resolvedTargetId is null
+                    ? Array.Empty<TirDependency>()
+                    : new[] { new TirDependency(TirDependencyKind.Artifact, resolvedTargetId) };
+                var envelope = Envelope(
+                    artifactId,
+                    TirArtifactKind.CrossReference,
+                    options,
+                    referenceText,
+                    normalizedCandidate,
+                    [SourceReference(fragment)],
+                    dependencies,
+                    1m,
+                    ["explicit-chapter-qualified-reference"],
+                    createdBy);
+                artifacts.Add(new TirCrossReferenceArtifact(
+                    envelope,
+                    new TirCrossReferencePayload(
+                        referenceText,
+                        fragment.FragmentId,
+                        normalizedCandidate,
+                        resolutionStatus,
+                        resolvedTargetId)));
+            }
+        }
+
+        return artifacts;
+    }
+
+    private static List<TirExampleArtifact> CreateExampleArtifacts(
+        IReadOnlyList<SourceFragment> fragments,
+        List<ExtractedRule> extractedRules,
+        string registryId,
+        TirExtractionOptions options,
+        TirCreatedBy createdBy)
+    {
+        var ruleIdsByFragment = extractedRules
+            .SelectMany(rule => rule.Artifact.Envelope.SourceFragments.Select(source => new
+            {
+                source.FragmentId,
+                rule.Artifact.Envelope.ArtifactId,
+            }))
+            .GroupBy(static item => item.FragmentId, StringComparer.Ordinal)
+            .ToDictionary(
+                static group => group.Key,
+                static group => group.Select(static item => item.ArtifactId).Distinct().ToArray(),
+                StringComparer.Ordinal);
+        var artifacts = new List<TirExampleArtifact>();
+        foreach (var fragment in fragments)
+        {
+            foreach (Match match in ExplicitExampleRegex().Matches(fragment.Content))
+            {
+                var illustrates = ruleIdsByFragment.GetValueOrDefault(fragment.FragmentId) ?? [];
+                var artifactId = TirArtifactIdentity.Create(
+                    new TirArtifactIdentityInput(
+                        TirArtifactKind.Example,
+                        registryId,
+                        null,
+                        null,
+                        [fragment.FragmentId],
+                        $"offset:{match.Index.ToString(CultureInfo.InvariantCulture)}"));
+                var dependencies = illustrates
+                    .Select(static ruleId => new TirDependency(TirDependencyKind.Artifact, ruleId))
+                    .ToArray();
+                var envelope = Envelope(
+                    artifactId,
+                    TirArtifactKind.Example,
+                    options,
+                    null,
+                    null,
+                    [SourceReference(fragment)],
+                    dependencies,
+                    1m,
+                    ["explicit-example-marker"],
+                    createdBy);
+                artifacts.Add(new TirExampleArtifact(envelope, new TirExamplePayload(illustrates)));
+            }
+        }
+
+        return artifacts;
+    }
+
+    private static List<TirTableArtifact> CreateTableArtifacts(
+        IReadOnlyList<SourceFragment> fragments,
+        string registryId,
+        TirExtractionOptions options,
+        TirCreatedBy createdBy)
+    {
+        var artifacts = new List<TirTableArtifact>();
+        foreach (var fragment in fragments.Where(static fragment =>
+            fragment.Kind == SourceFragmentKind.StructuredText
+            && ExplicitTableLabelRegex().IsMatch(fragment.Content)))
+        {
+            var artifactId = TirArtifactIdentity.Create(
+                new TirArtifactIdentityInput(
+                    TirArtifactKind.Table,
+                    registryId,
+                    fragment.Locator.PublishedElementId,
+                    fragment.Locator.NormalizedElementId,
+                    [fragment.FragmentId],
+                    string.Empty));
+            var envelope = Envelope(
+                artifactId,
+                TirArtifactKind.Table,
+                options,
+                fragment.Locator.PublishedElementId,
+                fragment.Locator.NormalizedElementId,
+                [SourceReference(fragment)],
+                [],
+                1m,
+                ["explicit-table-or-chart-label"],
+                createdBy);
+            artifacts.Add(new TirTableArtifact(envelope, new TirTablePayload([], false)));
+        }
+
+        return artifacts;
+    }
+
+    private static List<TirDiagnostic> CreateDiagnostics(
+        List<ExtractedRule> extractedRules,
+        List<TirCrossReferenceArtifact> crossReferences)
     {
         var diagnostics = new List<TirDiagnostic>();
         foreach (var group in extractedRules.GroupBy(
@@ -320,7 +529,40 @@ public static class TirStructuralExtractor
             }
         }
 
+        foreach (var crossReference in crossReferences)
+        {
+            if (crossReference.Payload.ResolutionStatus == TirReferenceResolutionStatus.Missing)
+            {
+                diagnostics.Add(new TirDiagnostic(
+                    "TIR-MISSING-REFERENCE-TARGET",
+                    TirDiagnosticSeverity.Warning,
+                    crossReference.Envelope.ArtifactId,
+                    $"Reference target '{crossReference.Payload.NormalizedTargetCandidate}' was not found."));
+            }
+            else if (crossReference.Payload.ResolutionStatus == TirReferenceResolutionStatus.Ambiguous)
+            {
+                diagnostics.Add(new TirDiagnostic(
+                    "TIR-AMBIGUOUS-REFERENCE-TARGET",
+                    TirDiagnosticSeverity.Error,
+                    crossReference.Envelope.ArtifactId,
+                    $"Reference target '{crossReference.Payload.NormalizedTargetCandidate}' is ambiguous."));
+            }
+        }
+
         return diagnostics;
+    }
+
+    private static bool IsBoundaryIdentifierOccurrence(
+        SourceFragment fragment,
+        Match match,
+        string normalizedCandidate)
+    {
+        return match.Index < 12
+            && fragment.Locator.NormalizedElementId is not null
+            && string.Equals(
+                HierarchyKey(fragment.Locator.NormalizedElementId),
+                HierarchyKey(normalizedCandidate),
+                StringComparison.Ordinal);
     }
 
     private static HierarchyResolution ResolveHierarchy(
@@ -458,4 +700,13 @@ public static class TirStructuralExtractor
         string? ParentArtifactId,
         TirHierarchyStatus Status,
         TirHierarchyBasis[] Basis);
+
+    [GeneratedRegex(@"(?<![A-Za-z0-9])(?<reference>[A-E](?:\.\d+(?:\.\d+)*|\d+\.\d+(?:\.\d+)*))(?![A-Za-z0-9])", RegexOptions.CultureInvariant)]
+    private static partial Regex ExplicitCrossReferenceRegex();
+
+    [GeneratedRegex(@"(?<![A-Za-z])EX:", RegexOptions.CultureInvariant)]
+    private static partial Regex ExplicitExampleRegex();
+
+    [GeneratedRegex(@"\b(?:TABLE|CHART)\b", RegexOptions.CultureInvariant)]
+    private static partial Regex ExplicitTableLabelRegex();
 }
