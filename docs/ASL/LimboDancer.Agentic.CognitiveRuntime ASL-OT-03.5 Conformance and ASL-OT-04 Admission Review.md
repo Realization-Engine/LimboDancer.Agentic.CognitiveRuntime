@@ -44,17 +44,32 @@ The first closure expansion must examine at least A4.132 (road entry), A2.4 (cum
 | Formalization status and roles | ASL-OT-03 design distinguishes unmodeled/partial/validated and records actor roles. | Accepted design; source attestation does not authenticate a person. |
 | Candidate A1 fragment coverage | The committed verification sample has 14 fragments, all `unverified`; none has the eight normalized identifiers above. The committed TIR sample has no matching A1 artifacts. | Exact A1 fragment IDs and spans still need C# locator/extractor output and authoritative comparison. |
 | Source dependencies | Candidate text names exception and cross-reference targets, and fortified breach refers to another rule. | Dependency and evaluation closure not yet enumerated or reviewed. |
-| Package manifest profile | Specification §11 lists required fields but leaves canonical serialization to the first slice. | No versioned canonical manifest profile or review approval yet. |
+| Package manifest profile | Specification §11 lists required fields but leaves canonical serialization to the first slice. The candidate profile below is a review proposal. | No implemented/versioned schema or review approval yet. |
 | Structural/review implementation | Hosted CI passes; captured bundles, curated submission and non-accepting history, and a blocked readiness assessment exist. | ASL-OT-03.4 remains partial; no acceptance projection or adjudication contract. |
 | ASL-OT-03.5 completion | No representative committed curated review bundle, complete declared-use source-verification record set, or ASL-OT-03 approval review exists. | Pending; do not announce ASL-OT-03 complete. |
 
-## 4. Required next evidence
+## 4. Proposed candidate-package manifest profile for review
+
+This is a **design proposal**, not a published package manifest or an approved canonical schema. An ASL-OT-04 candidate should carry an immutable root digest over a canonical UTF-8 JSON payload excluding its own digest field. The first C# implementation should version the schema and canonicalization profile together; object-property order is fixed, set-valued arrays sort by their canonical IDs, and meaningful ordered sequences retain order. The writer must recompute referenced artifacts and report digests from their actual bytes before output. A caller-supplied hash or approval flag is never sufficient.
+
+| Proposed field family | Minimum content and boundary |
+| --- | --- |
+| Identity | Candidate domain/package/version, manifest schema/profile version, creation time and source. **No published `DomainPackageRef`.** |
+| Source baseline | Exact ASL 3.10 registry ID, registry digest, source commit, applicable chapter/file digests, redistribution restrictions, and edition verification references. |
+| Structural baseline | TIR schema/profile/extractor identities, exact TIR document digest, source fragment IDs and spans, and structural diagnostic IDs in the declared scope. |
+| Curated inventory | Exact per-artifact semantic kind, identity, schema version, digest, source-fragment references, dependencies, formalization coverage, and unmodeled/ambiguous/conflicting portions. No free-form prose can masquerade as a validated expression. |
+| Evidence | Source-verification records, validation reports and policy digests, diagnostic dispositions, reviewer/adjudication record IDs, effective review status, and declared-use dependency closure. References must resolve to accompanying canonical content. |
+| Compatibility | Candidate dependency versions, applicable scenario/case identifiers, migration and compatibility classification, and known unsupported branches. Publication/supersession timestamps are absent until ASL-OT-05. |
+
+Review decisions still needed: whether a single root manifest embeds the source/review records or includes them as a content-addressed inventory; which semantic artifact schema binds rule expressions and exception precedence; what counts as closed dependency evidence for a declared use; and how an explicit `partial` artifact excludes definitive cases. The C# schema, writer, and conformance tests should follow those decisions rather than choose them implicitly during ASL-OT-04 coding. This profile is sufficient for reviewers to evaluate the intended **candidate** boundary; it does not claim a publishable package format.
+
+## 5. Required next evidence
 
 1. Fix an explicit **case scope** for the first A1 examples: unit type, phase, occupant state, building status, available MF, and scenario modifiers. List which cases must abstain rather than silently treating exclusions as false.
 2. Use the **C#** locator/extractor against the registered source commit to produce exact fragment IDs, line/byte spans, dependencies, and corresponding structural artifacts for that scope. Re-run conformance if the source bytes or extractor version change.
 3. Compare each required fragment and visual/table dependency with the authoritative ASL edition. Record an exact `SourceVerificationRecord` per fragment, with the verifier's identity, method, edition, and disposition. Preserve differences; do not repair converted text in place.
 4. Review the dependency graph with an ASL domain reviewer, including phase, stacking, concealed occupants, fortified entry, breach, exceptions, and any controlling SSR. Resolve or scope the relevant TIR diagnostics. Record the approved subset and excluded branches explicitly.
-5. Specify a versioned **candidate package manifest profile** with canonical bytes/digest and the fields required by specification §11. It must distinguish candidate from published `DomainPackageRef` and preserve source and review references without granting publication.
+5. Review the proposed **candidate package manifest profile** above, resolve its four open design decisions, then implement a versioned C# schema/writer with reproducible hashes. Preserve the distinction from a published `DomainPackageRef`.
 6. Complete the ASL-OT-03.4 acceptance/adjudication contract only when a real semantic representation can be validated; commit a representative review bundle and the ASL-OT-03.5 conformance result. Independent reviewers then decide the §19 admission gate before ASL-OT-04 scenario semantics are asserted.
 
 No Python source or dependency is introduced into the ASL implementation. The older PDF-to-Markdown converter remains outside this work.
