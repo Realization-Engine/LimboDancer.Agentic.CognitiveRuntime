@@ -1,6 +1,6 @@
 # LimboDancer.Agentic.CognitiveRuntime ASL-OT-03 Validation and Review Workflow Design
 
-**Status:** Accepted; ASL-OT-03.1 and ASL-OT-03.2 implemented
+**Status:** Accepted; ASL-OT-03.1 through ASL-OT-03.3 implemented
 
 **Date:** 2026-09-23
 
@@ -458,7 +458,31 @@ The input boundary first requires the TIR schema, canonicalization profile, hash
 - confirms that captured TIR has not claimed semantic, review, publication, conclusion, or action authority; and
 - emits deterministic findings and explicit results for all seven gates, marking semantic and review validation `notApplicable` until their owning increments exist.
 
-Warnings and errors both fail their applicable structural gate; later disposition and acceptance policy must decide whether a finding blocks a declared use. The validator never repairs source material, mutates captured TIR, changes formalization or review status, verifies authoritative source content, or grants acceptance. Source comparison and diagnostic disposition remain ASL-OT-03.3, while transition legality and review bundles remain ASL-OT-03.4.
+Warnings and errors both fail their applicable structural gate; later disposition and acceptance policy must decide whether a finding blocks a declared use. The validator never repairs source material, mutates captured TIR, changes formalization or review status, verifies authoritative source content, or grants acceptance. At completion of 03.2, source comparison and diagnostic disposition remained assigned to ASL-OT-03.3; transition legality and review bundles remain ASL-OT-03.4.
+
+### 19.3 Implemented source verification and diagnostic disposition
+
+ASL-OT-03.3 implements exact source-evidence attestation and fail-closed finding disposition in C#. Because the 03.1 record schema did not yet carry the complete edition, path, page, dependency-hash, and finding-severity evidence required by this design, this increment preserves schema 1.0 unchanged and introduces `Schemas/asl-tir-review-record-1.1.schema.json`. The canonical review writer now emits schema and canonicalization version 1.1.
+
+`TirSourceVerificationService` constructs a source-verification record only after it proves that:
+
+- the supplied source registry identity, canonical digest, and source commit reproduce the exact TIR document reference;
+- the fragment belongs to the selected artifact and reproduces its registered source identity, source hash, content hash, line bounds, and optional UTF-8 sub-fragment bounds;
+- edition, source path, source-artifact digest, and page range remain explicit in the record;
+- required figure and table dependencies resolve to pinned registry artifacts and retain their SHA-256 digests; and
+- a missing dependency uses `dependencyMissing`, while `verified` cannot conceal missing evidence.
+
+The comparison disposition remains an operator attestation. The implementation validates the evidence bound by that attestation but does not independently authenticate the operator, obtain the authoritative edition, or infer that matching converted Markdown alone proves authoritative fidelity. A mismatch requires discrepancy details and a correction-proposal reference; any other non-verified disposition requires explicit discrepancy or indeterminacy details.
+
+`TirDiagnosticIdentity` gives every extracted diagnostic a deterministic `asl-tir-diagnostic:sha256:` identity bound to the exact subject, original code, severity, artifact association, and message. `TirDiagnosticDispositionService` creates dispositions for either an extracted diagnostic or a validation finding, retaining severity and pinning validation findings to their exact report record. The canonical contract enforces these rules:
+
+- extracted diagnostics cannot claim a validation-report reference;
+- validation findings must claim their exact report reference;
+- `resolved` requires supporting evidence and a changed-evidence or replacement-subject reference;
+- `notApplicable` and `acceptedLimitation` require supporting evidence; and
+- `deferred` and `acceptedLimitation` remain open and block definitive use.
+
+Disposition records never remove or rewrite the original diagnostic or validation finding. Whether a valid disposition permits a review-state transition remains ASL-OT-03.4 work; this increment does not project state, accept an artifact, or create a review bundle.
 
 ## 20. Completion boundary
 

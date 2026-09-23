@@ -111,6 +111,37 @@ public sealed class TirSourceAndDispositionTests
     }
 
     [Fact]
+    public void SourceMismatchRequiresDiscrepancyAndCorrectionProposal()
+    {
+        var registry = Registry(includeImage: false);
+        var fragment = Fragment("**A.1:** Source text.\n", []);
+        var document = Extract(registry, fragment);
+        var rule = Assert.Single(document.Artifacts.OfType<TirRuleArtifact>());
+
+        var exception = Assert.Throws<InvalidOperationException>(
+            () => Verify(
+                document,
+                rule.Envelope.ArtifactId,
+                registry,
+                fragment,
+                TirSourceVerificationDisposition.Mismatch,
+                "The authoritative edition uses different punctuation.",
+                []));
+        var record = Verify(
+            document,
+            rule.Envelope.ArtifactId,
+            registry,
+            fragment,
+            TirSourceVerificationDisposition.Mismatch,
+            "The authoritative edition uses different punctuation.",
+            ["proposal:correct-punctuation"]);
+
+        Assert.Contains("correction proposal", exception.Message, StringComparison.Ordinal);
+        Assert.Equal(TirSourceVerificationDisposition.Mismatch, record.Disposition);
+        Assert.Contains("proposal:correct-punctuation", record.CorrectionProposalRefs);
+    }
+
+    [Fact]
     public void ExtractedDiagnosticIdentityAndDeferredDispositionRemainOpen()
     {
         var registry = Registry(includeImage: false);
