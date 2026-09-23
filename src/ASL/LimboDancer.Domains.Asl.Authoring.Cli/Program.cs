@@ -42,7 +42,7 @@ public static class Program
                     + $"examples={tir.Artifacts.Count(static artifact => artifact is TirExampleArtifact)}, "
                     + $"tables={tir.Artifacts.Count(static artifact => artifact is TirTableArtifact)}, "
                     + $"diagnostics={tir.Diagnostics.Count}, "
-                    + $"missingParents={tir.Diagnostics.Count(static diagnostic => diagnostic.Code == \"TIR-MISSING-PARENT\")}."));
+                    + $"missingParents={tir.Diagnostics.Count(static diagnostic => diagnostic.Code == "TIR-MISSING-PARENT")}."));
             }
 
             return 0;
