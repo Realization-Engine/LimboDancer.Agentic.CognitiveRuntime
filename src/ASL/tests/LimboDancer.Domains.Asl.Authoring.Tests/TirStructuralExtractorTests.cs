@@ -157,6 +157,87 @@ public sealed class TirStructuralExtractorTests
     }
 
     [Fact]
+    public void RecoversOnlyRequiredParentsFromExactEmbeddedBoundaryMarkers()
+    {
+        const string embeddedBold = "**7.36 ASSAULT FIRE:** text **\\*7.37 INCREMENTAL IFT (IIFT):** text\n";
+        const string structured = "```text\n0 ROF   7.6 RULE TITLE:\n```\n";
+        const string spaced = "```text\n7  .  8  P  I  N  : text\n```\n";
+        const string unneeded = "text **7.99 UNNEEDED RULE:** text\n";
+        var fragments = new[]
+        {
+            Fragment(SourceFragmentKind.Heading, null, null, 1, content: "## 7. FIRE ATTACKS\n"),
+            Fragment(SourceFragmentKind.RuleText, "7.3", "A7.3", 2),
+            Fragment(SourceFragmentKind.RuleText, "7.36", "A7.36", 3, content: embeddedBold),
+            Fragment(SourceFragmentKind.RuleText, "7.371", "A7.371", 4),
+            Fragment(SourceFragmentKind.StructuredText, "7.36", "A7.36", 5, content: structured),
+            Fragment(SourceFragmentKind.RuleText, "7.61", "A7.61", 6),
+            Fragment(SourceFragmentKind.StructuredText, "7.61", "A7.61", 7, content: spaced),
+            Fragment(SourceFragmentKind.RuleText, "7.81", "A7.81", 8),
+            Fragment(SourceFragmentKind.RuleContinuation, "7.81", "A7.81", 9, content: unneeded),
+        };
+
+        var document = Extract(fragments);
+        var rules = document.Artifacts
+            .OfType<TirRuleArtifact>()
+            .ToDictionary(static rule => rule.Envelope.NormalizedPublishedId!, StringComparer.Ordinal);
+
+        Assert.Equal(rules["A7.37"].Envelope.ArtifactId, rules["A7.371"].Payload.DirectParentArtifactId);
+        Assert.Equal(rules["A7.6"].Envelope.ArtifactId, rules["A7.61"].Payload.DirectParentArtifactId);
+        Assert.Equal(rules["A7.8"].Envelope.ArtifactId, rules["A7.81"].Payload.DirectParentArtifactId);
+        Assert.DoesNotContain("A7.99", rules.Keys);
+        AssertSpanEquals(
+            embeddedBold,
+            "**\\*7.37 INCREMENTAL IFT (IIFT):**",
+            rules["A7.37"].Envelope.SourceFragments[0]);
+        AssertSpanEquals(structured, "7.6 RULE TITLE:", rules["A7.6"].Envelope.SourceFragments[0]);
+        AssertSpanEquals(spaced, "7  .  8  P  I  N  :", rules["A7.8"].Envelope.SourceFragments[0]);
+        Assert.All(
+            new[] { rules["A7.37"], rules["A7.6"], rules["A7.8"] },
+            static rule => Assert.Contains(
+                "required-missing-parent-boundary",
+                rule.Envelope.ConfidenceBasis));
+        Assert.Empty(document.Diagnostics);
+    }
+
+    [Fact]
+    public void MultipleEmbeddedMarkersLeaveRequiredParentAmbiguous()
+    {
+        var fragments = new[]
+        {
+            Fragment(SourceFragmentKind.Heading, null, null, 1, content: "## 7. FIRE ATTACKS\n"),
+            Fragment(
+                SourceFragmentKind.Paragraph,
+                null,
+                null,
+                2,
+                content: "text **7.6 RULE TITLE:** text\n"),
+            Fragment(
+                SourceFragmentKind.Paragraph,
+                null,
+                null,
+                3,
+                content: "text **7.6 RULE TITLE:** text\n"),
+            Fragment(SourceFragmentKind.RuleText, "7.61", "A7.61", 4),
+        };
+
+        var document = Extract(fragments);
+        var recovered = document.Artifacts
+            .OfType<TirRuleArtifact>()
+            .Where(static rule => rule.Envelope.NormalizedPublishedId == "A7.6")
+            .ToArray();
+        var child = Assert.Single(
+            document.Artifacts.OfType<TirRuleArtifact>(),
+            static rule => rule.Envelope.NormalizedPublishedId == "A7.61");
+
+        Assert.Equal(2, recovered.Length);
+        Assert.Equal(TirHierarchyStatus.Ambiguous, child.Payload.HierarchyStatus);
+        Assert.Contains(
+            document.Diagnostics,
+            diagnostic => diagnostic.Code == "TIR-AMBIGUOUS-PARENT"
+                && diagnostic.ArtifactId == child.Envelope.ArtifactId);
+    }
+
+    [Fact]
     public void MissingParentProducesExplicitDiagnostic()
     {
         var document = Extract([Fragment(SourceFragmentKind.RuleText, "1.1", "A1.1", 1)]);

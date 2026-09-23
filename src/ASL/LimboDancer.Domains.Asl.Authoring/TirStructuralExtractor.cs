@@ -12,15 +12,15 @@ public sealed record TirExtractionOptions(
 public static partial class TirStructuralExtractor
 {
     public const string ExtractorName = "LimboDancer.Domains.Asl.Authoring.StructuralExtractor";
-    public const string ExtractorVersion = "1.4.0";
+    public const string ExtractorVersion = "1.5.0";
 
     public static string ConfigurationSha256
     {
         get;
     } = Hashing.Sha256Text(
-        "asl-tir-structural-extractor/v1.4\n"
+        "asl-tir-structural-extractor/v1.5\n"
         + "sourceFragment,section,rule,crossReference,example,table\n"
-        + "publishedIdentifier,chapterContext,majorSectionBoundary,digitHierarchy,zeroPaddedChild,sourceOrder,utf8ByteSpans,explicitMarkers\n"
+        + "publishedIdentifier,chapterContext,majorSectionBoundary,digitHierarchy,zeroPaddedChild,sourceOrder,utf8ByteSpans,explicitMarkers,requiredEmbeddedRuleBoundary\n"
         + "no-semantic-inference");
 
     public static TirDocument Extract(
@@ -46,7 +46,7 @@ public static partial class TirStructuralExtractor
             .Select(fragment => CreateSourceFragmentArtifact(fragment, options, createdBy))
             .ToArray();
         var sectionArtifacts = CreateSectionArtifacts(registry, fragments, options, createdBy);
-        var candidates = LocateRuleCandidates(fragments);
+        var candidates = LocateRuleCandidates(registry, fragments, sectionArtifacts);
         var ruleArtifacts = CreateRuleArtifacts(
             candidates,
             sectionArtifacts,
@@ -295,7 +295,10 @@ public static partial class TirStructuralExtractor
         return extracted;
     }
 
-    private static List<RuleCandidate> LocateRuleCandidates(IReadOnlyList<SourceFragment> fragments)
+    private static List<RuleCandidate> LocateRuleCandidates(
+        SourceRegistryManifest registry,
+        IReadOnlyList<SourceFragment> fragments,
+        IReadOnlyList<ExtractedSection> sections)
     {
         var candidates = new List<RuleCandidate>();
         var index = 0;
@@ -326,11 +329,113 @@ public static partial class TirStructuralExtractor
             candidates.Add(new RuleCandidate(
                 fragment.Locator.PublishedElementId,
                 fragment.Locator.NormalizedElementId,
-                evidence));
+                evidence,
+                null,
+                index,
+                0,
+                null));
             index = end;
         }
 
-        return candidates;
+        var availableParentKeys = candidates
+            .Select(static candidate => candidate.NormalizedId)
+            .Concat(sections.Select(static section => section.NormalizedId))
+            .ToHashSet(StringComparer.Ordinal);
+        var requiredMissingParentKeys = candidates
+            .Select(static candidate => ParentHierarchyKeys(candidate.NormalizedId))
+            .Where(static keys => keys.Count > 0)
+            .Where(keys => !keys.Any(availableParentKeys.Contains))
+            .Select(static keys => keys[0])
+            .ToHashSet(StringComparer.Ordinal);
+        if (requiredMissingParentKeys.Count == 0)
+        {
+            return candidates;
+        }
+
+        var chapterBySourceId = registry.Artifacts
+            .Where(static artifact => artifact.Chapter is not null)
+            .ToDictionary(
+                static artifact => artifact.SourceId,
+                static artifact => artifact.Chapter!,
+                StringComparer.Ordinal);
+        for (var fragmentIndex = 0; fragmentIndex < fragments.Count; fragmentIndex++)
+        {
+            var fragment = fragments[fragmentIndex];
+            if (!chapterBySourceId.TryGetValue(fragment.SourceId, out var chapter))
+            {
+                continue;
+            }
+
+            AddRecoveredRuleBoundaryCandidates(
+                candidates,
+                fragment,
+                fragmentIndex,
+                chapter,
+                EmbeddedBoldRuleDeclarationRegex().Matches(fragment.Content),
+                requiredMissingParentKeys,
+                "exact-embedded-bold-rule-declaration");
+            if (fragment.Kind != SourceFragmentKind.StructuredText)
+            {
+                continue;
+            }
+
+            AddRecoveredRuleBoundaryCandidates(
+                candidates,
+                fragment,
+                fragmentIndex,
+                chapter,
+                StructuredTextRuleDeclarationRegex().Matches(fragment.Content),
+                requiredMissingParentKeys,
+                "exact-structured-text-rule-declaration");
+            AddRecoveredRuleBoundaryCandidates(
+                candidates,
+                fragment,
+                fragmentIndex,
+                chapter,
+                SpacedStructuredTextRuleDeclarationRegex().Matches(fragment.Content),
+                requiredMissingParentKeys,
+                "exact-spaced-structured-text-rule-declaration");
+        }
+
+        return candidates
+            .OrderBy(static candidate => candidate.SourceFragmentIndex)
+            .ThenBy(static candidate => candidate.SourceCharacterOffset)
+            .ThenBy(static candidate => candidate.NormalizedId, StringComparer.Ordinal)
+            .ToList();
+    }
+
+    private static void AddRecoveredRuleBoundaryCandidates(
+        List<RuleCandidate> candidates,
+        SourceFragment fragment,
+        int fragmentIndex,
+        string chapter,
+        MatchCollection matches,
+        IReadOnlySet<string> requiredMissingParentKeys,
+        string confidenceBasis)
+    {
+        foreach (Match match in matches)
+        {
+            var publishedId = NormalizeEmbeddedPublishedId(match.Groups["identifier"].Value);
+            var normalizedId = MarkdownFragmentLocator.NormalizeRuleId(publishedId, chapter);
+            if (!requiredMissingParentKeys.Contains(normalizedId))
+            {
+                continue;
+            }
+
+            candidates.Add(new RuleCandidate(
+                publishedId,
+                normalizedId,
+                [fragment],
+                CreateUtf8ByteSpan(fragment.Content, match.Index, match.Index + match.Length),
+                fragmentIndex,
+                match.Index,
+                confidenceBasis));
+        }
+    }
+
+    private static string NormalizeEmbeddedPublishedId(string value)
+    {
+        return string.Concat(value.Where(static character => !char.IsWhiteSpace(character)));
     }
 
     private static List<ExtractedRule> CreateRuleArtifacts(
@@ -359,7 +464,11 @@ public static partial class TirStructuralExtractor
                         candidate.PublishedId,
                         candidate.NormalizedId,
                         candidate.Evidence.Select(static fragment => fragment.FragmentId).ToArray(),
-                        duplicate ? candidate.Evidence[0].FragmentId : string.Empty)));
+                        candidate.ExactBoundarySpan is { } boundarySpan
+                            ? $"utf8-byte-offset:{boundarySpan.Start.ToString(CultureInfo.InvariantCulture)}"
+                            : duplicate
+                                ? candidate.Evidence[0].FragmentId
+                                : string.Empty)));
         }
 
         var parentArtifactsByKey = candidatesByKey.ToDictionary(
@@ -394,15 +503,19 @@ public static partial class TirStructuralExtractor
                 ?? candidate.NormalizedId[..1];
             var order = siblingOrder.GetValueOrDefault(siblingKey);
             siblingOrder[siblingKey] = order + 1;
-            var sourceReferences = candidate.Evidence
-                .Select(static fragment => SourceReference(fragment))
-                .ToArray();
-            var dependencies = candidate.Evidence
-                .SelectMany(fragment => fragment.Dependencies.Select(dependency => new TirDependency(
-                    TirDependencyKind.Figure,
-                    ResolveDependency(fragment.SourcePath, dependency))))
-                .Distinct()
-                .ToArray();
+            var sourceReferences = candidate.ExactBoundarySpan is { } boundarySpan
+                ? new[] { SourceReference(candidate.Evidence[0], boundarySpan) }
+                : candidate.Evidence
+                    .Select(static fragment => SourceReference(fragment))
+                    .ToArray();
+            var dependencies = candidate.ExactBoundarySpan is not null
+                ? Array.Empty<TirDependency>()
+                : candidate.Evidence
+                    .SelectMany(fragment => fragment.Dependencies.Select(dependency => new TirDependency(
+                        TirDependencyKind.Figure,
+                        ResolveDependency(fragment.SourcePath, dependency))))
+                    .Distinct()
+                    .ToArray();
             var confidenceBasis = new List<string> { "exact-published-identifier-match" };
             if (!string.Equals(candidate.PublishedId, candidate.NormalizedId, StringComparison.Ordinal))
             {
@@ -412,6 +525,12 @@ public static partial class TirStructuralExtractor
             if (hierarchy.UsedZeroPaddedChildConvention)
             {
                 confidenceBasis.Add("zero-padded-child-convention");
+            }
+
+            if (candidate.RecoveredBoundaryConfidenceBasis is not null)
+            {
+                confidenceBasis.Add("required-missing-parent-boundary");
+                confidenceBasis.Add(candidate.RecoveredBoundaryConfidenceBasis);
             }
 
             var envelope = Envelope(
@@ -976,7 +1095,11 @@ public static partial class TirStructuralExtractor
     private sealed record RuleCandidate(
         string PublishedId,
         string NormalizedId,
-        List<SourceFragment> Evidence);
+        List<SourceFragment> Evidence,
+        Utf8Span? ExactBoundarySpan,
+        int SourceFragmentIndex,
+        int SourceCharacterOffset,
+        string? RecoveredBoundaryConfidenceBasis);
 
     private sealed record ExtractedSection(string NormalizedId, TirSectionArtifact Artifact);
 
@@ -1016,6 +1139,15 @@ public static partial class TirStructuralExtractor
 
     [GeneratedRegex(@"^\s*(?<identifier>\d+)\.\s+(?<title>[A-Z][A-Z &/-]+?)(?:\^[0-9^]+)?\s*$", RegexOptions.Multiline | RegexOptions.CultureInvariant)]
     private static partial Regex StructuredTextMajorSectionDeclarationRegex();
+
+    [GeneratedRegex(@"\*\*(?:\\?\*)?(?<identifier>\d+\.\d+(?:\.\d+)*)\s+[A-Z][A-Z0-9 &/()\-]+?:\*\*", RegexOptions.CultureInvariant)]
+    private static partial Regex EmbeddedBoldRuleDeclarationRegex();
+
+    [GeneratedRegex(@"(?<=\s)(?<identifier>\d+\.\d+(?:\.\d+)*)\s+[A-Z][A-Z0-9 &/()\-]+?:", RegexOptions.CultureInvariant)]
+    private static partial Regex StructuredTextRuleDeclarationRegex();
+
+    [GeneratedRegex(@"^[ \t]*(?<identifier>\d(?:[ \t]*\d)*[ \t]*\.[ \t]*\d(?:[ \t]*\d)*)[ \t]+[A-Z](?:[ \t]{2,}[A-Z])*[ \t]*:", RegexOptions.Multiline | RegexOptions.CultureInvariant)]
+    private static partial Regex SpacedStructuredTextRuleDeclarationRegex();
 
     [GeneratedRegex(@"^(?<chapter>[A-Z])(?<major>\d+)\.(?<fraction>\d+)$", RegexOptions.CultureInvariant)]
     private static partial Regex ChapterLocalRuleRegex();
