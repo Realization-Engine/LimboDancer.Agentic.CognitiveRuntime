@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:limbodancer:asl:tir:review-bundle:schema:1.0.0",
+  "title": "ASL TIR captured-review bundle",
+  "description": "An exact captured TIR subject, embedded immutable review evidence, and fail-closed projection. This schema does not authorize a curated accepted state.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaId", "schemaVersion", "canonicalization", "tirDocumentSha256", "artifactId", "artifactSha256", "tirSchemaId", "packageCandidate", "policy", "declaredUse", "coverageRefs", "records", "projection", "createdAt", "createdAtSource", "bundleSha256"],
+  "properties": {
+    "schemaId": { "const": "urn:limbodancer:asl:tir:review-bundle:schema:1.0.0" },
+    "schemaVersion": { "const": "1.0.0" },
+    "canonicalization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "const": "asl-tir-review-bundle-canonical-json" },
+        "version": { "const": "1.0.0" }
+      }
+    },
+    "tirDocumentSha256": { "$ref": "#/$defs/sha256" },
+    "artifactId": { "type": "string", "pattern": "^asl-tir:sha256:[0-9a-f]{64}$" },
+    "artifactSha256": { "$ref": "#/$defs/sha256" },
+    "tirSchemaId": { "const": "urn:limbodancer:asl:tir:schema:1.3.0" },
+    "packageCandidate": { "$ref": "asl-tir-review-record-1.1.schema.json#/$defs/packageCandidate" },
+    "policy": { "$ref": "asl-tir-review-record-1.1.schema.json#/$defs/policy" },
+    "declaredUse": { "type": "string", "minLength": 1 },
+    "coverageRefs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "records": {
+      "type": "array",
+      "items": { "$ref": "asl-tir-review-record-1.1.schema.json" }
+    },
+    "projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reviewStatus", "formalizationStatus", "openFindingIds", "blockingFindingIds"],
+      "properties": {
+        "reviewStatus": { "const": "captured" },
+        "formalizationStatus": { "const": "unmodeled" },
+        "openFindingIds": { "$ref": "#/$defs/findingIds" },
+        "blockingFindingIds": { "$ref": "#/$defs/findingIds" }
+      }
+    },
+    "createdAt": { "type": "string", "format": "date-time", "pattern": "Z$" },
+    "createdAtSource": { "type": "string", "minLength": 1 },
+    "bundleSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "findingIds": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^asl-tir-(diagnostic|finding):sha256:[0-9a-f]{64}$"
+      }
+    }
+  }
+}
