@@ -38,6 +38,11 @@ public sealed class AslScenarioA1SourceInventoryTests
         var illustration = Assert.Single(breach.Fragments, fragment => fragment.Kind == SourceFragmentKind.FigureReference);
         Assert.Equal(1564, illustration.StartLine);
         Assert.Contains("images/eASLRB_v3_01-p141-1.png", illustration.Dependencies);
+        var footnote = Assert.Single(inventory.LinkedFootnotes);
+        Assert.Equal("A4.15", footnote.LinkedRuleId);
+        Assert.Equal(2079, footnote.StartLine);
+        Assert.Equal(98, footnote.ConversionPage);
+        Assert.Equal(101, footnote.PdfPage);
         Assert.All(inventory.Rules.SelectMany(rule => rule.Fragments), fragment =>
         {
             Assert.StartsWith("asl-fragment:sha256:", fragment.FragmentId, StringComparison.Ordinal);

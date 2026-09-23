@@ -189,5 +189,18 @@
         }
       ]
     }
+  ],
+  "linkedFootnotes": [
+    {
+      "linkedRuleId": "A4.15",
+      "fragmentId": "asl-fragment:sha256:cacce25a5228c68c7443b25ba8fe70309720daf212fbcf744c84fb75c46f9040",
+      "sourceId": "asl-easlrb-3.10:chapter-a",
+      "sourceSha256": "6347534e64f739cacc57dd75c3d604997723fd0b4988565609deeff007a8843d",
+      "contentSha256": "123e7ab5ff81e475b5887af6f237213e97d8c12896e23291e3b0aa4d192ad41a",
+      "startLine": 2079,
+      "endLine": 2079,
+      "conversionPage": 98,
+      "pdfPage": 101
+    }
   ]
 }

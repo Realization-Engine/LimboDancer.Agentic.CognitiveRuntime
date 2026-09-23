@@ -23,11 +23,23 @@ public sealed record AslScenarioA1RuleEvidence(
     int PdfEndPage,
     IReadOnlyList<AslScenarioA1FragmentEvidence> Fragments);
 
+public sealed record AslScenarioA1LinkedFootnote(
+    string LinkedRuleId,
+    string FragmentId,
+    string SourceId,
+    string SourceSha256,
+    string ContentSha256,
+    int StartLine,
+    int EndLine,
+    int? ConversionPage,
+    int PdfPage);
+
 public sealed record AslScenarioA1SourceInventory(
     string RegistryId,
     string Edition,
     string PdfSha256,
-    IReadOnlyList<AslScenarioA1RuleEvidence> Rules)
+    IReadOnlyList<AslScenarioA1RuleEvidence> Rules,
+    IReadOnlyList<AslScenarioA1LinkedFootnote> LinkedFootnotes)
 {
     // These physical PDF page locations were visually checked against the supplied file.
     // The source hash prevents applying the correction to a different conversion.
@@ -114,11 +126,34 @@ public sealed record AslScenarioA1SourceInventory(
                     fragment.Dependencies)).ToArray()));
         }
 
+        var footnotes = manifests.Fragments.Where(fragment =>
+                fragment.SourceSha256 == ChapterASha256
+                && fragment.Kind == SourceFragmentKind.Paragraph
+                && fragment.Locator.StartLine == 2079
+                && fragment.Locator.EndLine == 2079
+                && fragment.Content.StartsWith("**3.** *4.15 INFANTRY OVR:*", StringComparison.Ordinal))
+            .ToArray();
+        if (footnotes.Length != 1 || footnotes[0].Locator.StartPage != 98)
+        {
+            throw new InvalidOperationException("The linked Chapter A footnote 3 changed; review its PDF locator again.");
+        }
+
+        var footnote = footnotes[0];
         return new AslScenarioA1SourceInventory(
             manifests.Registry.RegistryId,
             manifests.Registry.Edition,
             PdfDigest,
-            rules);
+            rules,
+            [new AslScenarioA1LinkedFootnote(
+                "A4.15",
+                footnote.FragmentId,
+                footnote.SourceId,
+                footnote.SourceSha256,
+                footnote.ContentSha256,
+                footnote.Locator.StartLine,
+                footnote.Locator.EndLine,
+                footnote.Locator.StartPage,
+                101)]);
     }
 
     public string Serialize()
@@ -175,6 +210,26 @@ public sealed record AslScenarioA1SourceInventory(
                     writer.WriteEndObject();
                 }
                 writer.WriteEndArray();
+                writer.WriteEndObject();
+            }
+            writer.WriteEndArray();
+            writer.WritePropertyName("linkedFootnotes");
+            writer.WriteStartArray();
+            foreach (var footnote in LinkedFootnotes)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("linkedRuleId", footnote.LinkedRuleId);
+                writer.WriteString("fragmentId", footnote.FragmentId);
+                writer.WriteString("sourceId", footnote.SourceId);
+                writer.WriteString("sourceSha256", footnote.SourceSha256);
+                writer.WriteString("contentSha256", footnote.ContentSha256);
+                writer.WriteNumber("startLine", footnote.StartLine);
+                writer.WriteNumber("endLine", footnote.EndLine);
+                if (footnote.ConversionPage is int conversionPage)
+                {
+                    writer.WriteNumber("conversionPage", conversionPage);
+                }
+                writer.WriteNumber("pdfPage", footnote.PdfPage);
                 writer.WriteEndObject();
             }
             writer.WriteEndArray();

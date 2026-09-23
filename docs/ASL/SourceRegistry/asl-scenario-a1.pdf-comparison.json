@@ -176,7 +176,8 @@
     "alphanumericSequenceMatch": true,
     "observedDifference": "PDF line-wrap discretionary hyphen only",
     "sourceVerificationStatus": "unverified",
-    "layoutHyphenDifferences": 1
+    "layoutHyphenDifferences": 1,
+    "conversionPage": 98
   },
   "figure": {
     "linkedRuleId": "B23.9221",

@@ -73,7 +73,14 @@ public static partial class AslSourceRegistryBuilder
         {
             var relativeImage = ToRepositoryPath(Path.GetRelativePath(imagesRoot, path));
             var sourceId = $"asl-easlrb-3.10:image/{relativeImage}";
-            artifacts.Add(CreateArtifact(root, path, sourceId, SourceArtifactKind.Image, null));
+            var artifact = CreateArtifact(root, path, sourceId, SourceArtifactKind.Image, null);
+            if (artifact.StartPage is null or < 6 or > 253)
+            {
+                throw new SourceRegistryException(
+                    $"ASL image is outside the TOC, Index/Glossary, and Chapters A-E page scope (6-253): {relativeImage}");
+            }
+
+            artifacts.Add(artifact);
         }
 
         artifacts.Sort((left, right) => StringComparer.Ordinal.Compare(left.Path, right.Path));

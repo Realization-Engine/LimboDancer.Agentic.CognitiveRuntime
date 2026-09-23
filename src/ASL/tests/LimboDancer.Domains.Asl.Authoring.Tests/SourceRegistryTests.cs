@@ -61,6 +61,36 @@ public sealed class SourceRegistryTests
     }
 
     [Fact]
+    public void ImageOutsideRegisteredChapterScopeFailsClosed()
+    {
+        using var temporary = new TemporaryDirectory();
+        var source = Path.Combine(temporary.Path, "docs", "ASL", "Rulebook_Markdown");
+        Directory.CreateDirectory(Path.Combine(source, "images"));
+        foreach (var name in new[]
+        {
+            "00 - Table of Contents.md",
+            "01 - Index and Glossary.md",
+            "02 - Chapter A - Infantry and Basic Game Rules.md",
+            "03 - Chapter B - Terrain.md",
+            "04 - Chapter C - Ordnance and Offboard Artillery.md",
+            "05 - Chapter D - Vehicles.md",
+            "06 - Chapter E - Miscellaneous.md",
+        })
+        {
+            File.WriteAllText(Path.Combine(source, name), "<!-- page 6 -->\n");
+        }
+
+        var converter = Path.Combine(temporary.Path, "utils", "pdf_to_markdown.py");
+        Directory.CreateDirectory(Path.GetDirectoryName(converter)!);
+        File.WriteAllText(converter, "external utility");
+        File.WriteAllText(Path.Combine(source, "images", "eASLRB_v3_01-p254-1.png"), "test image");
+
+        var exception = Assert.Throws<SourceRegistryException>(
+            () => AslSourceRegistryBuilder.Build(temporary.Path, SourceCommit));
+        Assert.Contains("outside the TOC", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void VerificationSampleIsMetadataOnlyAndUnverified()
     {
         var samplePath = Path.Combine(
