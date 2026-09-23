@@ -1,0 +1,118 @@
+namespace LimboDancer.Domains.Asl.Authoring;
+
+/// <summary>
+/// Declared facts for a bounded investigation case, not observations inferred from a board.
+/// A false or unknown fact moves the case outside this investigation scope.
+/// </summary>
+public sealed record AslScenarioA1CaseFacts(
+    bool? IsKnownGoodOrderInfantrySquad,
+    bool? IsAttackerMovementPhase,
+    bool? CanMoveThisPhase,
+    bool? IsAdjacentGroundLevelOrdinaryBuilding,
+    bool? IsDestinationKnownEmpty,
+    bool? HasNoRoadBypassElevationOrAdditionalTerrain,
+    bool? HasEnoughMovementFactors,
+    bool? IsBelowStackingLimit,
+    bool? HasNoSpecialRuleOrOtherModifier)
+{
+    public static AslScenarioA1CaseFacts DeclaredFirstCase { get; } =
+        new(true, true, true, true, true, true, true, true, true);
+}
+
+public enum AslScenarioA1CaseBlockerKind
+{
+    FactOutsideDeclaredScope,
+    SourceRuleNotLocated,
+    SourceFragmentUnverified,
+    DependencyAndSemanticReviewPending,
+}
+
+public sealed record AslScenarioA1CaseBlocker(
+    AslScenarioA1CaseBlockerKind Kind,
+    string Reference);
+
+public sealed record AslScenarioA1CaseAssessment(
+    IReadOnlyList<string> RequiredRuleIds,
+    IReadOnlyList<string> ExcludedBranchRuleIds,
+    IReadOnlyList<AslScenarioA1CaseBlocker> Blockers)
+{
+    // A source inventory is not an accepted semantic rule model or a legality decision.
+    public bool CanIssueDefinitiveRuling => false;
+}
+
+public static class AslScenarioA1CaseAssessor
+{
+    // Candidate baseline for one declared MPh entry into an empty ordinary building.
+    // The domain reviewer must extend or correct this list and approve its applicability.
+    private static readonly string[] RequiredRules =
+    [
+        "A2.4", "A2.8", "A3.3", "A4.1", "A4.11", "A4.13", "A4.14",
+        "A5.1", "A5.11", "B23.1", "B23.4",
+    ];
+
+    // A reviewer must confirm the declared facts really exclude these branches.
+    private static readonly string[] ExcludedBranchRules =
+    [
+        "A4.132", "A4.134", "A4.15", "A4.7", "A12.15",
+        "B23.711", "B23.922", "B23.9221",
+    ];
+
+    public static AslScenarioA1CaseAssessment Assess(
+        AslScenarioA1CaseFacts facts,
+        IReadOnlyList<SourceFragment> fragments,
+        IReadOnlySet<string> verifiedFragmentIds)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(fragments);
+        ArgumentNullException.ThrowIfNull(verifiedFragmentIds);
+
+        var blockers = new List<AslScenarioA1CaseBlocker>();
+        (string Name, bool? Value)[] declaredFacts =
+        [
+            (nameof(facts.IsKnownGoodOrderInfantrySquad), facts.IsKnownGoodOrderInfantrySquad),
+            (nameof(facts.IsAttackerMovementPhase), facts.IsAttackerMovementPhase),
+            (nameof(facts.CanMoveThisPhase), facts.CanMoveThisPhase),
+            (nameof(facts.IsAdjacentGroundLevelOrdinaryBuilding), facts.IsAdjacentGroundLevelOrdinaryBuilding),
+            (nameof(facts.IsDestinationKnownEmpty), facts.IsDestinationKnownEmpty),
+            (nameof(facts.HasNoRoadBypassElevationOrAdditionalTerrain), facts.HasNoRoadBypassElevationOrAdditionalTerrain),
+            (nameof(facts.HasEnoughMovementFactors), facts.HasEnoughMovementFactors),
+            (nameof(facts.IsBelowStackingLimit), facts.IsBelowStackingLimit),
+            (nameof(facts.HasNoSpecialRuleOrOtherModifier), facts.HasNoSpecialRuleOrOtherModifier),
+        ];
+        foreach (var (name, value) in declaredFacts)
+        {
+            if (value is not true)
+            {
+                blockers.Add(new AslScenarioA1CaseBlocker(
+                    AslScenarioA1CaseBlockerKind.FactOutsideDeclaredScope, name));
+            }
+        }
+
+        foreach (var ruleId in RequiredRules)
+        {
+            var ruleFragments = fragments.Where(fragment =>
+                    fragment.Locator.NormalizedElementId == ruleId
+                    && fragment.Kind is SourceFragmentKind.RuleText or SourceFragmentKind.RuleContinuation)
+                .ToArray();
+            if (!ruleFragments.Any(fragment => fragment.Kind == SourceFragmentKind.RuleText))
+            {
+                blockers.Add(new AslScenarioA1CaseBlocker(
+                    AslScenarioA1CaseBlockerKind.SourceRuleNotLocated, ruleId));
+                continue;
+            }
+
+            foreach (var fragment in ruleFragments.Where(fragment =>
+                !verifiedFragmentIds.Contains(fragment.FragmentId)))
+            {
+                blockers.Add(new AslScenarioA1CaseBlocker(
+                    AslScenarioA1CaseBlockerKind.SourceFragmentUnverified,
+                    fragment.FragmentId));
+            }
+        }
+
+        blockers.Add(new AslScenarioA1CaseBlocker(
+            AslScenarioA1CaseBlockerKind.DependencyAndSemanticReviewPending,
+            "Scenario A1 first-case applicability, exceptions and dependency closure"));
+        return new AslScenarioA1CaseAssessment(RequiredRules, ExcludedBranchRules, blockers);
+    }
+}

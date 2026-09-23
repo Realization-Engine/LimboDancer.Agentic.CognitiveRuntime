@@ -50,3 +50,9 @@ Use a synthetic *candidate* case: a known Good Order, unpinned Infantry squad at
 | Excluded branches | A4.132 (road), A4.134 (Minimum Move), A4.15 (OVR), A4.7 (APh), A12.15 (concealed occupancy), B23.922/23.9221 (fortified entry/breach) | Compare applicability and explicit exclusion assumptions; unknown occupant or terrain status must abstain. |
 
 This is an **initial dependency inventory**, not a closed rule graph or a positive legality label. The independent ASL domain reviewer must examine cross-references and exceptions under the declared facts, add any missing rules, and either approve a closed case scope or require abstention. Dependencies outside TOC, Index/Glossary, and A–E remain unresolved unless the source boundary is explicitly revised.
+
+### C# first-case assessment
+
+`AslScenarioA1CaseAssessor` captures nine declared case facts and locates an initial 11-rule baseline: A2.4, A2.8, A3.3, A4.1, A4.11, A4.13, A4.14, A5.1, A5.11, B23.1 and B23.4. Of these, A2.8, A4.14 and B23.4 have the source-provider fidelity attestation above; the other **eight rule declarations still need PDF fidelity review**, including any continuations. The eight separately listed exclusion branches are A4.132, A4.134, A4.15, A4.7, A12.15, B23.711, B23.922 and B23.9221. A domain reviewer must confirm both the baseline and the applicability of each exclusion; a declared absent feature does not automatically prove its branch irrelevant under all exceptions.
+
+The xUnit cases check missing baseline verification, unknown occupancy, a conflicting special-rule fact, and the semantic gate even if every candidate source ID is marked verified. This assessment always refuses a definitive entry ruling. It is an explicit worklist and scope check, not a semantic interpreter or an admission decision.
