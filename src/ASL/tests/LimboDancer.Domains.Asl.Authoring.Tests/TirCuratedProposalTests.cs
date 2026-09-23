@@ -38,20 +38,39 @@ public sealed class TirCuratedProposalTests
         var proposal = Proposal(document);
         var digest = TirCuratedProposalJson.ComputePayloadSha256(proposal, document);
 
-        Assert.NotEqual(digest, TirCuratedProposalJson.ComputePayloadSha256(
-            proposal with { ProposalText = "A different interpretation." }, document));
-        Assert.NotEqual(digest, TirCuratedProposalJson.ComputePayloadSha256(
-            proposal with { DeclaredUse = "another use" }, document));
-        Assert.NotEqual(digest, TirCuratedProposalJson.ComputePayloadSha256(
-            proposal with { SemanticAuthorIdentity = "another author" }, document));
+        var changedText = proposal with
+        {
+            ProposalText = "A different interpretation.",
+        };
+        var changedUse = proposal with
+        {
+            DeclaredUse = "another use",
+        };
+        var changedAuthor = proposal with
+        {
+            SemanticAuthorIdentity = "another author",
+        };
+        Assert.NotEqual(digest, TirCuratedProposalJson.ComputePayloadSha256(changedText, document));
+        Assert.NotEqual(digest, TirCuratedProposalJson.ComputePayloadSha256(changedUse, document));
+        Assert.NotEqual(digest, TirCuratedProposalJson.ComputePayloadSha256(changedAuthor, document));
 
-        var changed = document with { Diagnostics = [new TirDiagnostic(
-            "CHANGED", TirDiagnosticSeverity.Warning,
-            proposal.SourceSubject.ArtifactId, "Changed extraction evidence.")] };
+        var changed = document with
+        {
+            Diagnostics = [new TirDiagnostic(
+                "CHANGED", TirDiagnosticSeverity.Warning,
+                proposal.SourceSubject.ArtifactId, "Changed extraction evidence.")],
+        };
         Assert.Throws<InvalidOperationException>(() => TirCuratedProposalJson.Serialize(proposal, changed));
+        var changedSubject = proposal.SourceSubject with
+        {
+            ArtifactSha256 = new string('0', 64),
+        };
+        var stale = proposal with
+        {
+            SourceSubject = changedSubject,
+        };
         Assert.Throws<InvalidOperationException>(() => TirCuratedProposalJson.Serialize(
-            proposal with { SourceSubject = proposal.SourceSubject with { ArtifactSha256 = new string('0', 64) } },
-            document));
+            stale, document));
     }
 
     [Fact]
@@ -59,10 +78,18 @@ public sealed class TirCuratedProposalTests
     {
         var document = Document();
         var proposal = Proposal(document);
+        var localTimestamp = proposal with
+        {
+            CreatedAt = Timestamp.ToOffset(TimeSpan.FromHours(1)),
+        };
+        var blankText = proposal with
+        {
+            ProposalText = "  ",
+        };
         Assert.Throws<InvalidOperationException>(() => TirCuratedProposalJson.Serialize(
-            proposal with { CreatedAt = Timestamp.ToOffset(TimeSpan.FromHours(1)) }, document));
+            localTimestamp, document));
         Assert.Throws<InvalidOperationException>(() => TirCuratedProposalJson.Serialize(
-            proposal with { ProposalText = "  " }, document));
+            blankText, document));
     }
 
     private static TirCuratedProposal Proposal(TirDocument document) => new(
