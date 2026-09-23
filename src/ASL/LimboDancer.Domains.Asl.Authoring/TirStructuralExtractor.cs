@@ -10,7 +10,10 @@ public static class TirStructuralExtractor
     public const string ExtractorName = "LimboDancer.Domains.Asl.Authoring.StructuralExtractor";
     public const string ExtractorVersion = "1.0.0";
 
-    public static string ConfigurationSha256 { get; } = Hashing.Sha256Text(
+    public static string ConfigurationSha256
+    {
+        get;
+    } = Hashing.Sha256Text(
         "asl-tir-structural-extractor/v1\n"
         + "sourceFragment,rule\n"
         + "publishedIdentifier,chapterContext,sourceOrder\n"
