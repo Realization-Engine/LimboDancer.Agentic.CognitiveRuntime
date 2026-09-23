@@ -417,7 +417,9 @@ public static partial class TirCanonicalJson
 
     private static string FormatTimestamp(DateTimeOffset value)
     {
-        return value.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture);
+        return value.ToUniversalTime().ToString(
+            "yyyy-MM-dd'T'HH:mm:ss.fffffff'Z'",
+            CultureInfo.InvariantCulture);
     }
 
     private static string ArtifactOrigin(TirArtifactOrigin value) => value switch

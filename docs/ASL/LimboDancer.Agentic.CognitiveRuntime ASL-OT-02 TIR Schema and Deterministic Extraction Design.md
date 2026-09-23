@@ -370,4 +370,24 @@ The first ASL-OT-02 implementation slice establishes the following admitted foun
 
 The canonical writer deliberately preserves source-fragment and table-note order because those sequences carry source meaning. It sorts set-like collections such as artifacts, dependencies, confidence bases, review references, and diagnostics by declared ordinal keys.
 
-This foundation does not implement document extraction. The next implementation slice maps the registered ASL-OT-01 fragments into `SourceFragment` and structural `Rule` artifacts, emits hierarchy candidates and diagnostics, and commits a representative generated TIR artifact for review.
+This foundation is extended by the deterministic extraction increment described in section 15.
+
+## 15. Implemented structural extraction
+
+The second ASL-OT-02 implementation slice deterministically maps the complete registered ASL-OT-01 fragment stream into structural TIR metadata:
+
+- every located source fragment becomes a `SourceFragment` artifact without duplicating its rulebook text;
+- every mechanically recognized rule-text boundary becomes a `Rule` artifact;
+- rule evidence contains the ordered rule-text fragment and contiguous continuation, figure, or structured fragments carrying the same published identity;
+- the hierarchy comparison key reconciles chapter headings such as `A.1` with chapter-qualified local identifiers such as `A1.1` without altering either preserved identifier;
+- direct parents resolve only when the published-number candidate is unique;
+- roots, supported parents, missing parents, and ambiguous parents remain distinguishable;
+- sibling order follows registered source order within the same structural parent candidate;
+- duplicate normalized identifiers, missing parents, and ambiguous parents produce deterministic diagnostics; and
+- figure dependencies are normalized to registered repository-relative paths.
+
+The committed `TIR/asl-3.10-a-e.structural-sample.tir.json` contains 24 selected artifacts: 16 source fragments and eight structural rules. Its eight diagnostics expose five duplicate top-level identifiers and three consequently ambiguous parent resolutions in the mechanically located sample. These are review findings, not silently corrected extraction results. In particular, a bold identifier at a structural boundary may still be a repeated reference rather than a new normative rule; resolving that distinction requires an explicit structural rule and test, not semantic guesswork.
+
+The C# CLI regenerates the registry, ASL-OT-01 verification sample, and structural TIR sample in one operation. The conformance suite compares the committed TIR bytes with current C# extraction and canonical serialization.
+
+The next increment captures explicit cross-reference occurrences and improves structural classification of repeated rule identifiers, examples, and table boundaries. It must preserve the current diagnostics until deterministic evidence justifies a narrower classification.

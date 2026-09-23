@@ -28,6 +28,7 @@ No current ASL artifact authorizes execution. A `DomainConclusion` remains an in
 - `LimboDancer.Agentic.CognitiveRuntime ASL-OT-02 TIR Schema and Deterministic Extraction Design.md` — C# design boundary for the TIR schema, deterministic structural extraction, ASL-OT-01 parity, canonical serialization, and reviewable diagnostics.
 - `SourceRegistry/` — reproducible source registry, unverified representative fragment sample, and operator instructions.
 - `Schemas/asl-tir-1.0.schema.json` — versioned ASL-OT-02 structural TIR envelope and artifact schema.
+- `TIR/` — deterministic metadata-only structural TIR review artifacts and regeneration instructions.
 - `asl-map-architecture.md` — map, scene, hex, terrain, and rendering model.
 - `asl-schema-appendix.md` — detailed schema reference.
 - `legacy-limbodancer-mcp-system-design.md` — current ASL reference-domain requirements and acceptance scenarios followed by the preserved MCP-era system design.

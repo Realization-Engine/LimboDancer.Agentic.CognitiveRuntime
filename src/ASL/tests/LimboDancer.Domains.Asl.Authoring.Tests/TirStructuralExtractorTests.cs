@@ -2,6 +2,8 @@ namespace LimboDancer.Domains.Asl.Authoring.Tests;
 
 public sealed class TirStructuralExtractorTests
 {
+    private const string SourceCommit = "a3254ff1d492dbdd28483d86f5b42437b48e80d4";
+
     private static readonly DateTimeOffset CreatedAt = new(
         2026,
         9,
@@ -105,6 +107,29 @@ public sealed class TirStructuralExtractorTests
             static artifact => Assert.Equal(
                 TirFormalizationStatus.Unmodeled,
                 artifact.Envelope.FormalizationStatus));
+    }
+
+    [Fact]
+    public void CommittedStructuralSampleMatchesCurrentCSharpExtraction()
+    {
+        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var extracted = TirStructuralExtractor.Extract(
+            manifests.Registry,
+            manifests.Fragments,
+            new TirExtractionOptions(
+                new TirPackageCandidate("asl", "easlrb-3.10-a-e", "0.0.0-candidate.1"),
+                CreatedAt,
+                "operator-supplied-reproducible-build-metadata"));
+        var expected = TirCanonicalJson.Serialize(
+            TirStructuralExtractor.SelectRepresentativeSample(extracted));
+        var samplePath = Path.Combine(
+            RepositoryPaths.Root,
+            "docs",
+            "ASL",
+            "TIR",
+            "asl-3.10-a-e.structural-sample.tir.json");
+
+        Assert.Equal(expected, File.ReadAllText(samplePath));
     }
 
     private static TirDocument Extract(SourceFragment[] fragments)

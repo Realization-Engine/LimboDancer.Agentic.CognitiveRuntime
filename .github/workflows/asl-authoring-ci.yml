@@ -10,6 +10,7 @@ on:
       - "docs/ASL/Rulebook_Markdown/**"
       - "docs/ASL/SourceRegistry/**"
       - "docs/ASL/Schemas/**"
+      - "docs/ASL/TIR/**"
       - ".github/workflows/asl-authoring-ci.yml"
   pull_request:
     paths:
@@ -18,6 +19,7 @@ on:
       - "docs/ASL/Rulebook_Markdown/**"
       - "docs/ASL/SourceRegistry/**"
       - "docs/ASL/Schemas/**"
+      - "docs/ASL/TIR/**"
       - ".github/workflows/asl-authoring-ci.yml"
 
 permissions:
