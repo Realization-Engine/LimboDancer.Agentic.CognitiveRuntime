@@ -15,7 +15,7 @@ public sealed record AslScenarioA1CaseFacts(
     bool? IsBelowStackingLimit,
     bool? HasNoSpecialRuleOrOtherModifier)
 {
-    public static AslScenarioA1CaseFacts DeclaredFirstCase { get; } =
+    public static AslScenarioA1CaseFacts CreateDeclaredFirstCase() =>
         new(true, true, true, true, true, true, true, true, true);
 }
 
@@ -37,7 +37,7 @@ public sealed record AslScenarioA1CaseAssessment(
     IReadOnlyList<AslScenarioA1CaseBlocker> Blockers)
 {
     // A source inventory is not an accepted semantic rule model or a legality decision.
-    public bool CanIssueDefinitiveRuling => false;
+    public bool CanIssueDefinitiveRuling => Blockers.Count == 0;
 }
 
 public static class AslScenarioA1CaseAssessor

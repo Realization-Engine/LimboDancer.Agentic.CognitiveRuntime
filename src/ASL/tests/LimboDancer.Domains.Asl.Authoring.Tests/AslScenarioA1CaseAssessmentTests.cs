@@ -15,7 +15,7 @@ public sealed class AslScenarioA1CaseAssessmentTests
             .ToHashSet(StringComparer.Ordinal);
 
         var result = AslScenarioA1CaseAssessor.Assess(
-            AslScenarioA1CaseFacts.DeclaredFirstCase, manifests.Fragments, verified);
+            AslScenarioA1CaseFacts.CreateDeclaredFirstCase(), manifests.Fragments, verified);
         Assert.False(result.CanIssueDefinitiveRuling);
         Assert.Contains("A2.4", result.RequiredRuleIds);
         Assert.Contains("A3.3", result.RequiredRuleIds);
@@ -42,7 +42,7 @@ public sealed class AslScenarioA1CaseAssessmentTests
     public void UnknownOccupancyOrSpecialRulePreventsFirstCaseScope()
     {
         var result = AslScenarioA1CaseAssessor.Assess(
-            AslScenarioA1CaseFacts.DeclaredFirstCase with
+            AslScenarioA1CaseFacts.CreateDeclaredFirstCase() with
             {
                 IsDestinationKnownEmpty = null,
                 HasNoSpecialRuleOrOtherModifier = false,
@@ -66,7 +66,7 @@ public sealed class AslScenarioA1CaseAssessmentTests
         var all = manifests.Fragments.Select(fragment => fragment.FragmentId)
             .ToHashSet(StringComparer.Ordinal);
         var result = AslScenarioA1CaseAssessor.Assess(
-            AslScenarioA1CaseFacts.DeclaredFirstCase, manifests.Fragments, all);
+            AslScenarioA1CaseFacts.CreateDeclaredFirstCase(), manifests.Fragments, all);
 
         Assert.DoesNotContain(result.Blockers, blocker =>
             blocker.Kind is AslScenarioA1CaseBlockerKind.SourceRuleNotLocated
