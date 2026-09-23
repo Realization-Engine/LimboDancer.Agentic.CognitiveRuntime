@@ -29,8 +29,9 @@ ASL-OT-02 may proceed under the accepted specification. Human comparison with th
 | Fail-closed source changes | Pass | The registry builder rejects missing or unexpected Markdown sources, and tests compare the committed manifest with current bytes. |
 | Reproducibility | Pass | Stable source bytes produce identical registry values and fragment identities. |
 | Review honesty | Pass | All fourteen representative samples are explicitly `unverified`; no comparison with the authoritative edition is claimed. |
-| Runtime isolation | Pass | Implementation is a dependency-free offline Python authoring package under `utils/asl_ot`; no runtime project or reference changed. |
-| CI coverage | Pass | `ASL Authoring CI` runs the eight source-registry and fragment-locator tests when authoring sources, manifests, converter, or tooling change. |
+| Runtime isolation | Pass | Implementation is an ASL-owned C# authoring library and CLI in the separate `src/ASL/` solution; no project under `src/LimboDancer/` references it. |
+| Repository language boundary | Pass | Repository-owned ASL authoring source and CI are C#. `utils/pdf_to_markdown.py` remains an unchanged outside conversion utility. |
+| CI coverage | Pass | `ASL Authoring CI` restores, builds with warnings as errors, and runs the source-registry, fragment-locator, manifest-parity, and architecture tests when authoring sources, manifests, converter, or tooling change. |
 
 ## 3. Fragment interpretation
 
@@ -53,12 +54,7 @@ ASL-OT-01 does not provide:
 
 ## 5. Test result
 
-```text
-Ran 8 tests
-OK
-```
-
-The execution environment did not require the .NET SDK because this slice is isolated offline authoring tooling with no runtime dependency.
+The C# conformance suite contains eleven tests: the eight original source-registry and fragment-locator cases, a committed verification-sample parity test, and two architecture-boundary tests. CI is the supported execution environment and uses the repository's .NET 10 baseline.
 
 ## 6. Next checkpoint
 

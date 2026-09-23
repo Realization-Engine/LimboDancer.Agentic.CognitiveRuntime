@@ -517,7 +517,7 @@ Rule-conformance and DomainConclusion cases validate the ontology and adjudicati
 The first ASL authoring work SHOULD proceed as these reviewable slices:
 
 1. **ASL-OT-01 — Source registry and fragment locator**: freeze A-E sources, normalize chapter-aware locators, hash dependencies, and verify representative prose/table/figure fragments.
-2. **ASL-OT-02 — TIR schema and deterministic extraction**: define the artifact envelope and parse hierarchy, identifiers, references, and source boundaries without claiming semantic completeness.
+2. **ASL-OT-02 — TIR schema and deterministic extraction**: implement the [C# TIR design](<./LimboDancer.Agentic.CognitiveRuntime ASL-OT-02 TIR Schema and Deterministic Extraction Design.md>), define the artifact envelope, and parse hierarchy, identifiers, references, and source boundaries without claiming semantic completeness.
 3. **ASL-OT-03 — Validation and review workflow**: implement identity, structure, provenance, formalization, and review-state gates.
 4. **ASL-OT-04 — Scenario A1 semantic package**: curate the minimum entities, relations, conditions, rules, exceptions, and shapes for occupied-building entry.
 5. **ASL-OT-05 — Immutable publication and exact resolution**: publish one versioned package and resolve it through existing domain contracts.

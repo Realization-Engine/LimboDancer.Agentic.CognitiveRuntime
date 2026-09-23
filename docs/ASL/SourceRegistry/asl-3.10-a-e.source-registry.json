@@ -5,8 +5,8 @@
   "sourceCommit": "a3254ff1d492dbdd28483d86f5b42437b48e80d4",
   "sourceRoot": "docs/ASL/Rulebook_Markdown",
   "generator": {
-    "name": "utils.asl_ot",
-    "version": "0.1.0"
+    "name": "LimboDancer.Domains.Asl.Authoring",
+    "version": "1.0.0"
   },
   "distribution": {
     "containsCopyrightedMaterial": true,

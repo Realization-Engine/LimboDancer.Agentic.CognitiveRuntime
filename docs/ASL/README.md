@@ -25,6 +25,7 @@ No current ASL artifact authorizes execution. A `DomainConclusion` remains an in
 
 - `LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md` — current rulebook-to-ontology authoring, validation, publication, and first-slice specification.
 - `LimboDancer.Agentic.CognitiveRuntime ASL-OT-01 Source Registry Review.md` — conformance decision and implementation evidence for source registration and fragment location.
+- `LimboDancer.Agentic.CognitiveRuntime ASL-OT-02 TIR Schema and Deterministic Extraction Design.md` — C# design boundary for the TIR schema, deterministic structural extraction, ASL-OT-01 parity, canonical serialization, and reviewable diagnostics.
 - `SourceRegistry/` — reproducible source registry, unverified representative fragment sample, and operator instructions.
 - `asl-map-architecture.md` — map, scene, hex, terrain, and rendering model.
 - `asl-schema-appendix.md` — detailed schema reference.
