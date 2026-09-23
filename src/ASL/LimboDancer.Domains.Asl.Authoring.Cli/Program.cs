@@ -6,6 +6,11 @@ namespace LimboDancer.Domains.Asl.Authoring.Cli;
 
 public static class Program
 {
+    private static readonly JsonSerializerOptions AttestationJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+    };
+
     public static int Main(string[] args)
     {
         try
@@ -32,7 +37,7 @@ public static class Program
             {
                 var attestation = JsonSerializer.Deserialize<AslScenarioA1SourceAttestation>(
                     File.ReadAllText(options.ScenarioA1Attestation),
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                    AttestationJsonOptions)
                     ?? throw new InvalidOperationException("Scenario A1 attestation is empty.");
                 var batch = AslScenarioA1VerificationBatchBuilder.Build(manifests, attestation);
                 ManifestJson.WriteFile(options.ScenarioA1VerificationOutput, batch.Serialize());

@@ -5,6 +5,10 @@ namespace LimboDancer.Domains.Asl.Authoring.Tests;
 public sealed class AslScenarioA1VerificationBatchTests
 {
     private const string SourceCommit = "a3254ff1d492dbdd28483d86f5b42437b48e80d4";
+    private static readonly JsonSerializerOptions AttestationJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+    };
     [Fact]
     public void AttestedSourceSubjectsBindToFullTirWithoutAcceptingSemantics()
     {
@@ -56,9 +60,15 @@ public sealed class AslScenarioA1VerificationBatchTests
         Assert.Equal(inventory.PdfSha256, attestation.PdfSha256);
 
         Assert.Throws<InvalidOperationException>(() => AslScenarioA1VerificationBatchBuilder.Build(
-            manifests, attestation with { PdfSha256 = new string('0', 64) }));
+            manifests, attestation with
+            {
+                PdfSha256 = new string('0', 64),
+            }));
         Assert.Throws<InvalidOperationException>(() => AslScenarioA1VerificationBatchBuilder.Build(
-            manifests, attestation with { ApprovedFragmentIds = attestation.ApprovedFragmentIds.Skip(1).ToArray() }));
+            manifests, attestation with
+            {
+                ApprovedFragmentIds = attestation.ApprovedFragmentIds.Skip(1).ToArray(),
+            }));
     }
 
     private static AslScenarioA1SourceAttestation ReadAttestation()
@@ -66,7 +76,7 @@ public sealed class AslScenarioA1VerificationBatchTests
         var path = Path.Combine(RepositoryPaths.Root, "docs", "ASL", "SourceRegistry",
             "asl-scenario-a1.source-attestation.json");
         return JsonSerializer.Deserialize<AslScenarioA1SourceAttestation>(
-            File.ReadAllText(path), new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+            File.ReadAllText(path), AttestationJsonOptions)
             ?? throw new InvalidOperationException("Source attestation could not be read.");
     }
 }
