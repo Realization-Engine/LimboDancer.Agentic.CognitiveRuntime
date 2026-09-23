@@ -46,6 +46,7 @@ When documents disagree, use this order of authority:
 | --- | --- |
 | [Domain Integration Model](<./LimboDancer.Agentic.CognitiveRuntime Domain Integration Model.md>) | Defines the boundary, dependency direction, composition model, and interface timing for separately implemented domain packages. |
 | [Domain Knowledge Modeling Requirements](<./LimboDancer.Agentic.CognitiveRuntime Domain Knowledge Modeling Requirements.md>) | Supporting guidance for authoritative knowledge, semantic evidence, and changing domain state. |
+| [ASL Ontology Transformation Specification](<../../docs/ASL/LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md>) | Current authoring lifecycle, intermediate representation, validation and publication gates, package profile, and first occupied-building adjudication slice. |
 | [ASL reference-domain requirements](<../../docs/ASL/legacy-limbodancer-mcp-system-design.md>) | Concrete requirements and acceptance scenarios the reusable architecture must ultimately support. |
 | [ASL documentation index](../../docs/ASL/) | Index of ASL domain research, schemas, prototypes, and historical material. |
 
