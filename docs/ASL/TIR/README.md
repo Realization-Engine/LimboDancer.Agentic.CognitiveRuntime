@@ -4,7 +4,7 @@ This directory contains deterministic review artifacts produced by the C# ASL au
 
 ## Current artifact
 
-`asl-3.10-a-e.structural-sample.tir.json` is a metadata-only representative sample extracted from the registered ASL 3.10 Chapters A-E source set. It contains selected `SourceFragment`, structural `Rule`, `CrossReference`, `Example`, and `Table` artifacts, their ordered source evidence, hierarchy and reference-resolution results, dependencies, diagnostics, provenance, and canonical payload digest.
+`asl-3.10-a-e.structural-sample.tir.json` is a metadata-only representative sample extracted from the registered ASL 3.10 Chapters A-E source set. It contains selected `SourceFragment`, `Section`, structural `Rule`, `CrossReference`, `Example`, and `Table` artifacts, their ordered source evidence, hierarchy and reference-resolution results, dependencies, diagnostics, provenance, and canonical payload digest.
 
 The sample does not duplicate rulebook prose. It preserves source hashes and locators that recover the applicable wording from the controlled source tree.
 
@@ -15,7 +15,9 @@ Every artifact remains:
 - `reviewStatus: captured`; and
 - `semanticId: null`.
 
-The sample is not a reviewed ontology, published domain package, tactical Decision corpus, or execution authority. Parent and cross-reference resolution describe published-number structure only. Example artifacts record explicit `EX:` markers, and table artifacts record explicitly labelled fenced blocks with unverified structure. None of these artifacts asserts semantic scope, applicability, exception precedence, table-cell meaning, or legal interpretation.
+The sample is not a reviewed ontology, published domain package, tactical Decision corpus, or execution authority. Parent and cross-reference resolution describe published-number structure only. A `Section` is a structural anchor extracted from an exact level-2 numbered heading; it does not assert rule semantics. General rules such as `A.1` remain distinct from section identity `A1`. Within a section, ASL's digit hierarchy makes `A1.1` a child of Section `A1`, `A1.11` a child of Rule `A1.1`, and `A1.111` a child of Rule `A1.11`. Example artifacts record explicit `EX:` markers, and table artifacts record explicitly labelled fenced blocks with unverified structure. None of these artifacts asserts semantic scope, applicability, exception precedence, table-cell meaning, or legal interpretation.
+
+The committed TIR 1.1 sample contains 49 artifacts: 29 source fragments, five sections, 11 structural rules, two cross-references, one example, and one table. Its single diagnostic preserves an unresolved reference target selected for review.
 
 ## Regeneration
 

@@ -360,9 +360,9 @@ These are authoring implementation decisions. They do not admit runtime contract
 
 The first ASL-OT-02 implementation slice establishes the following admitted foundation:
 
-- `docs/ASL/Schemas/asl-tir-1.0.schema.json` defines schema identity `urn:limbodancer:asl:tir:schema:1.0.0`, the complete required artifact-kind vocabulary, the common envelope, and kind-specific structural payloads;
+- `docs/ASL/Schemas/asl-tir-1.1.schema.json` defines schema identity `urn:limbodancer:asl:tir:schema:1.1.0`, the complete required artifact-kind vocabulary, the common envelope, and kind-specific structural payloads;
 - `TirModels.cs` defines the ASL-owned C# document, envelope, provenance, dependency, diagnostic, and structural payload types;
-- strongly typed structural artifacts exist for `SourceFragment`, `Rule`, `CrossReference`, `Example`, and `Table`;
+- strongly typed structural artifacts exist for `SourceFragment`, `Section`, `Rule`, `CrossReference`, `Example`, and `Table`;
 - the remaining required artifact kinds are reserved in the versioned vocabulary but cannot be emitted by the structural canonical writer;
 - `TirArtifactIdentity` derives stable identities from kind, source-registry identity, published structural identity, ordered source-fragment identities, and an explicit deterministic disambiguator;
 - `TirCanonicalJson` fixes property order, ordinal set ordering, explicit nulls, invariant UTC formatting, and SHA-256 calculation over the canonical payload excluding the digest field itself; and
@@ -379,8 +379,10 @@ The second ASL-OT-02 implementation slice deterministically maps the complete re
 - every located source fragment becomes a `SourceFragment` artifact without duplicating its rulebook text;
 - every mechanically recognized rule-text boundary becomes a `Rule` artifact;
 - rule evidence contains the ordered rule-text fragment and contiguous continuation, figure, or structured fragments carrying the same published identity;
-- the hierarchy comparison key reconciles chapter headings such as `A.1` with chapter-qualified local identifiers such as `A1.1` without altering either preserved identifier;
-- direct parents resolve only when the published-number candidate is unique;
+- level-2 numbered headings such as `## 1. PERSONNEL COUNTERS` become chapter-qualified `Section` anchors such as `A1`;
+- general chapter rules such as `A.1` retain their exact normalized identity and are not conflated with Section `A1`;
+- chapter-local rule identifiers use ASL's digit hierarchy: `A1.1` belongs to Section `A1`, `A1.11` belongs to Rule `A1.1`, and `A1.111` belongs to Rule `A1.11`;
+- direct parents resolve only when the exact normalized Rule or Section candidate is unique;
 - roots, supported parents, missing parents, and ambiguous parents remain distinguishable;
 - sibling order follows registered source order within the same structural parent candidate;
 - duplicate normalized identifiers, missing parents, and ambiguous parents produce deterministic diagnostics; and
@@ -395,7 +397,7 @@ The C# CLI regenerates the registry, ASL-OT-01 verification sample, and structur
 The third ASL-OT-02 implementation slice adds three evidence-bounded artifact kinds without interpreting rule meaning:
 
 - a `CrossReference` is emitted only for a chapter-qualified occurrence such as `A.8` or `B23.71`; the occurrence that declares the containing rule's own leading identifier is excluded;
-- a chapter-dot candidate such as `A.8` and a compact candidate such as `A8.15` use the same hierarchy comparison convention as Rule artifacts while preserving their source spelling;
+- a chapter-dot candidate such as `A.8` and a compact candidate such as `A8.15` preserve their source spelling and resolve against exact normalized Rule identity;
 - reference resolution is `resolved` only when exactly one structural Rule candidate exists, and missing or ambiguous targets remain explicit diagnostics;
 - chapter-local occurrences such as `1.2`, ranges, pronouns, and phrases such as “the preceding rule” are not promoted to references in this slice;
 - an `Example` is emitted for each exact uppercase `EX:` marker and points to the containing Rule only when the enclosing fragment is already Rule evidence;
@@ -404,8 +406,16 @@ The third ASL-OT-02 implementation slice adds three evidence-bounded artifact ki
 
 All three kinds remain `extracted`, `unmodeled`, and `captured`, with `semanticId: null`. A resolved cross-reference asserts only a unique structural target. An example link asserts only containment within located Rule evidence. A table boundary asserts only an explicit source label.
 
-Across the registered Chapters A-E corpus, the deterministic C# rules locate 1,998 structural Rule artifacts, 4,834 explicit chapter-qualified cross-reference occurrences, 358 explicit example markers, and 21 explicitly labelled table/chart blocks. Of the reference occurrences, 4,788 resolve uniquely and 46 have no target in the registered scope. The remaining 914 diagnostics are missing structural parents, principally because section headings have not been promoted to Rule artifacts. These counts describe extraction behavior; they are not a completeness or correctness claim about the ASL ontology.
+Across the registered Chapters A-E corpus, the deterministic C# rules locate 96 structural Section artifacts, 1,998 structural Rule artifacts, 4,834 explicit chapter-qualified cross-reference occurrences, 358 explicit example markers, and 21 explicitly labelled table/chart blocks. Of the reference occurrences, 4,788 resolve uniquely and 46 have no target in the registered scope. The corpus also retains 67 missing-parent diagnostics. These counts describe extraction behavior; they are not a completeness or correctness claim about the ASL ontology.
 
-The committed representative sample contains 37 artifacts: 22 source fragments, nine structural rules, two cross-references (one resolved and one missing), one example, and one table. Its single diagnostic preserves the selected missing reference. Exact canonical bytes remain checked against C# regeneration.
+The committed representative sample contains 49 artifacts: 29 source fragments, five sections, 11 structural rules, two cross-references (one resolved and one missing), one example, and one table. Its single diagnostic preserves the selected missing reference. Exact canonical bytes remain checked against C# regeneration.
 
-The next increment should decide whether section headings require a distinct structural artifact or a hierarchy-anchor representation before attempting to reduce missing-parent diagnostics. It should also define exact example-span and table-row recovery separately from semantic formalization.
+## 17. TIR 1.1 section decision and migration record
+
+TIR 1.1 resolves the open section-representation question by introducing a dedicated structural `Section` artifact. The extractor admits only exact level-2 numbered headings and records their title, heading level, source evidence, sibling order, and root hierarchy status. This is intentionally narrower than treating every Markdown heading as a section and does not promote headings to semantic Rules.
+
+The migration also corrects the earlier hierarchy comparison assumption. TIR 1.0 treated `A.1` and the section stem of `A1.1` as equivalent for parent matching. Inspection of the source shows that these are different published structures: `A.1` is a general chapter Rule, while `A1` is the chapter's numbered Section 1. TIR 1.1 therefore preserves and resolves these identities separately and derives nested Rule parents by removing one trailing digit from the final numeric component, not by removing the final dot-delimited component.
+
+This evidence-bounded change reduces missing-parent diagnostics from 914 to 67. It does not suppress the remainder. The 67 retained findings identify absent or irregular structural anchors in the registered source and remain review inputs until a source convention or adjudicated mapping explains them.
+
+The next extraction increment should audit those 67 remaining parent findings and define exact example-span and table-row recovery. Those concerns remain separate from semantic formalization, ontology acceptance, publication, and runtime authority.
