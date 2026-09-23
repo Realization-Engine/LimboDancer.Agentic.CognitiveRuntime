@@ -1,7 +1,7 @@
 # LimboDancer.Agentic.CognitiveRuntime Native Local Decision Model
 
 **Status:** Research direction; implementation not admitted  
-**Date:** 2026-09-22  
+**Date:** 2026-09-23<br>
 **Branch:** `decision-plane`  
 **Governing authority:** Plane Runtime Specification, Decision Plane Architecture, Milestone D Conformance Review, and PR-19 Evaluation Review
 
@@ -83,10 +83,13 @@ The following projects were reviewed as design evidence. Their reported quality,
 | [Bespoke Nimble](https://github.com/bespokelabsai/nimble) | Candidate-logit training and contrastive examples that flip one decisive fact | Use ontology-guided counterfactuals as supplemental training and diagnostic data | Its published labels are synthetic and not human-reviewed; no root license file was present in the reviewed snapshot |
 | [Laya](https://github.com/NandhaKishorM/laya) | Compact bidirectional encoders and typed Decision heads | Consider a later high-throughput specialist once real candidate cardinality and context distributions are known | Fixed context and specialization tradeoffs must be tested on LimboDancer workloads |
 | [OpenJev / Verdict](https://github.com/Heman10x-NGU/Verdict-open-jev) | ModernBERT plus a classification head and an explicit insufficient-evidence route | Treat non-selection as first-class and measure it explicitly | Model-scored abstention must still map into LimboDancer policy semantics |
+| [AnyJev](https://github.com/nokia-applied-research/AnyJev) | Layered open-model readout: option-order and prior debiasing at L0, temperature calibration at L1, and per-question closed-form hidden-state heads at L2 | Make Decision quality explicit and enforceable; retain negative results; evaluate frozen readout, calibration, and specialization as separate stages | Pre-alpha; L0 batch priors and routed L2 adaptation can be history-dependent; L2 currently requires local hidden-state access; reported typed-decision labels are teacher-model judgments rather than LimboDancer ground truth |
 | [GLiNER2](https://github.com/fastino-ai/GLiNER2) | Schema-conditioned extraction, classification, records, and relations | Strong candidate for upstream observation-to-fact extraction in the Semantic Plane | It should not collapse semantic grounding and action selection into one boundary |
 | [djev](https://github.com/Davipar/djev-dev) | DiffusionGemma answer canvas with typed probability readout and multimodal inputs | Preserve as a future multimodal research path | Operational weight and specialized GPU requirements make it unsuitable for the first local slice |
 
 The synthesis matters more than selecting a repository to fork. LimboDancer should borrow tested ideas while preserving its own contracts and authority model.
+
+AnyJev is the closest surveyed implementation to the staged native-model direction, but it does not alter the admission gate or select an implementation. Its direct readout and order-sensitivity controls are Stage 1-2 evidence; its L1 temperature profile is a Stage 3 calibration technique; and its labeled, question-specific L2 head is a Stage 4 specialization technique even though it uses a closed-form solve rather than gradient fine-tuning. Any future evaluation must pin these levels independently instead of treating `auto` routing as one indivisible provider behavior.
 
 ## 5. Proposed bounded capability
 
@@ -100,6 +103,8 @@ BoundedChoice
 ```
 
 General `Choice`, `Score`, and binary `Noul` APIs are not required. Adding them would expand the runtime contract before a concrete use case exists.
+
+AnyJev's general-purpose `choice`, `score`, and `noul` surface is therefore an internal implementation reference, not a proposed LimboDancer API. An adapter would remain limited to `BoundedChoice`, would supply only already permitted candidate identifiers, and would project results into the existing result algebra. AnyJev does not currently provide first-class, distinct `ABSTAIN` and `ESCALATE` outcomes, so those semantics may not be inferred from an ordinary option or confidence threshold without a separately reviewed outcome policy.
 
 The provider may internally score candidates plus special outcomes, but its adapter must project them into the existing result algebra:
 
@@ -213,6 +218,8 @@ Obtain the operator-controlled corpus, labeling protocol, pinned evaluation budg
 
 Evaluate one pinned, unchanged open-weight model using direct candidate-logit readout. No fine-tuning, routing, fallback, or production composition.
 
+For AnyJev, this means evaluating one explicitly configured raw or L0 path without `auto` routing. Raw readout is a diagnostic baseline only. Each L0 correction must be measured separately because permutation marginalization and batch-prior correction have different invariants and failure modes.
+
 ### Stage 2 - Inference invariants
 
 Add shared-state reuse only after branch isolation, numerical equivalence, ordering sensitivity, cancellation, timeout, and bounded-resource behavior are proven.
@@ -221,9 +228,13 @@ Add shared-state reuse only after branch isolation, numerical equivalence, order
 
 Fit and test calibration only on proper non-test splits. Bind the resulting profile to the complete inference identity and reject incompatible profiles.
 
+An AnyJev L1 artifact is eligible here only after LimboDancer adds the missing provenance envelope around the model and tokenizer revisions, encoding and candidate mapping, calibration-corpus split, AnyJev revision, inference configuration, and artifact digest. A model-name string and question hash are not a sufficient inference identity.
+
 ### Stage 4 - Specialization study
 
 Only if the frozen baseline and corpus size justify it, compare LoRA/readout specialization with a compact encoder specialist. Include negative-transfer and out-of-distribution tests. Improvement on training-shaped data is not sufficient.
+
+AnyJev L2 belongs in this stage. Its per-question LDA or ridge head can change candidate ranking and must be treated as learned specialization even though fitting is a gradient-free closed-form solve. Routed rewording adaptation must be disabled for the first reproducibility run or captured as an explicitly versioned, replayable artifact; served-engine L2 remains ineligible until hidden-state extraction and early-exit behavior are proven for the selected runtime.
 
 ### Stage 5 - Adoption review
 
@@ -309,7 +320,7 @@ Until then, the native local model remains a documented research direction rathe
 
 ## Appendix A - Reviewed source snapshots
 
-The survey reflects the following repository snapshots reviewed on 2026-09-22:
+The survey reflects the following repository snapshots reviewed on 2026-09-22 and 2026-09-23:
 
 | Repository | Commit |
 | --- | --- |
@@ -320,6 +331,7 @@ The survey reflects the following repository snapshots reviewed on 2026-09-22:
 | `bespokelabsai/nimble` | `f136b3f` |
 | `NandhaKishorM/laya` | `c752770` |
 | `Heman10x-NGU/Verdict-open-jev` | `30f1556` |
+| `nokia-applied-research/AnyJev` | `3cd8c6f` |
 | `fastino-ai/GLiNER2` | `4abb613` |
 | `Davipar/djev-dev` | `3ce907e` |
 
