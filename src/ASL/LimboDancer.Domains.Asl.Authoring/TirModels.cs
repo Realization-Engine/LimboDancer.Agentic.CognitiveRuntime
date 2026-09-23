@@ -64,6 +64,7 @@ public enum TirHierarchyBasis
 
 public enum TirHierarchyStatus
 {
+    Root,
     Supported,
     Candidate,
     Missing,

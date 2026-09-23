@@ -29,7 +29,7 @@ public static class AslAuthoringManifestGenerator
         }
 
         ValidateFragmentDependencies(fragments, registry.Artifacts.Select(static artifact => artifact.Path));
-        return new GeneratedManifests(registry, SelectVerificationSample(fragments));
+        return new GeneratedManifests(registry, fragments, SelectVerificationSample(fragments));
     }
 
     public static IReadOnlyList<SourceFragment> SelectVerificationSample(IReadOnlyList<SourceFragment> fragments)
@@ -129,4 +129,5 @@ public static class AslAuthoringManifestGenerator
 
 public sealed record GeneratedManifests(
     SourceRegistryManifest Registry,
+    IReadOnlyList<SourceFragment> Fragments,
     IReadOnlyList<SourceFragment> VerificationSample);

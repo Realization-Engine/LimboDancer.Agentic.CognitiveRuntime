@@ -508,7 +508,7 @@
           ]
         },
         "hierarchyStatus": {
-          "enum": ["supported", "candidate", "missing", "ambiguous"]
+          "enum": ["root", "supported", "candidate", "missing", "ambiguous"]
         },
         "hierarchyBasis": {
           "type": "array",

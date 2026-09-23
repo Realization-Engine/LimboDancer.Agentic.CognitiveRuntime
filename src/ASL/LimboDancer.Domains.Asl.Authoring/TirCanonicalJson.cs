@@ -468,6 +468,7 @@ public static partial class TirCanonicalJson
 
     private static string HierarchyStatus(TirHierarchyStatus value) => value switch
     {
+        TirHierarchyStatus.Root => "root",
         TirHierarchyStatus.Supported => "supported",
         TirHierarchyStatus.Candidate => "candidate",
         TirHierarchyStatus.Missing => "missing",

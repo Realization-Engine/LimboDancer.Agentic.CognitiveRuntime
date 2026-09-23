@@ -1,3 +1,4 @@
+using System.Globalization;
 using LimboDancer.Domains.Asl.Authoring;
 
 namespace LimboDancer.Domains.Asl.Authoring.Cli;
@@ -20,6 +21,22 @@ public static class Program
                 ManifestJson.SerializeVerificationSample(
                     manifests.Registry.RegistryId,
                     manifests.VerificationSample));
+            if (options.TirOutput is not null && options.TirCreatedAt is not null)
+            {
+                var tir = TirStructuralExtractor.Extract(
+                    manifests.Registry,
+                    manifests.Fragments,
+                    new TirExtractionOptions(
+                        new TirPackageCandidate(
+                            "asl",
+                            "easlrb-3.10-a-e",
+                            "0.0.0-candidate.1"),
+                        options.TirCreatedAt.Value,
+                        "operator-supplied-reproducible-build-metadata"));
+                var sample = TirStructuralExtractor.SelectRepresentativeSample(tir);
+                ManifestJson.WriteFile(options.TirOutput, TirCanonicalJson.Serialize(sample));
+            }
+
             return 0;
         }
         catch (Exception exception) when (exception is ArgumentException
@@ -49,7 +66,14 @@ public static class Program
         }
 
         var supported = new HashSet<string>(
-            ["--repository-root", "--source-commit", "--registry-output", "--verification-output"],
+            [
+                "--repository-root",
+                "--source-commit",
+                "--registry-output",
+                "--verification-output",
+                "--tir-output",
+                "--tir-created-at",
+            ],
             StringComparer.Ordinal);
         var unknown = values.Keys.Where(key => !supported.Contains(key)).ToArray();
         if (unknown.Length > 0)
@@ -57,11 +81,26 @@ public static class Program
             throw new ArgumentException($"Unknown option: {string.Join(", ", unknown)}");
         }
 
+        var tirOutput = values.GetValueOrDefault("--tir-output");
+        var tirCreatedAtValue = values.GetValueOrDefault("--tir-created-at");
+        if ((tirOutput is null) != (tirCreatedAtValue is null))
+        {
+            throw new ArgumentException("--tir-output and --tir-created-at must be supplied together.");
+        }
+
+        var tirCreatedAt = tirCreatedAtValue is null
+            ? null
+            : DateTimeOffset.Parse(
+                tirCreatedAtValue,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
         return new Options(
             values.GetValueOrDefault("--repository-root", Directory.GetCurrentDirectory()),
             Required(values, "--source-commit"),
             Required(values, "--registry-output"),
-            Required(values, "--verification-output"));
+            Required(values, "--verification-output"),
+            tirOutput,
+            tirCreatedAt);
     }
 
     private static string Required(Dictionary<string, string> values, string name)
@@ -79,12 +118,15 @@ public static class Program
     private static string Usage()
     {
         return "Usage: dotnet run --project src/ASL/LimboDancer.Domains.Asl.Authoring.Cli -- "
-            + "[--repository-root PATH] --source-commit SHA --registry-output PATH --verification-output PATH";
+            + "[--repository-root PATH] --source-commit SHA --registry-output PATH "
+            + "--verification-output PATH [--tir-output PATH --tir-created-at UTC_TIMESTAMP]";
     }
 
     private sealed record Options(
         string RepositoryRoot,
         string SourceCommit,
         string RegistryOutput,
-        string VerificationOutput);
+        string VerificationOutput,
+        string? TirOutput,
+        DateTimeOffset? TirCreatedAt);
 }
