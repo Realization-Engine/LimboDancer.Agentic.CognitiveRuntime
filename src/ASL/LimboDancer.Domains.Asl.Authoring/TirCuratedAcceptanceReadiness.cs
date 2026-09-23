@@ -39,13 +39,25 @@ public sealed class TirCuratedAcceptanceReadiness
         Blockers = blockers;
     }
 
-    public string ReviewHistorySha256 { get; }
+    public string ReviewHistorySha256
+    {
+        get;
+    }
 
-    public TirCuratedReviewSubjectReference Subject { get; }
+    public TirCuratedReviewSubjectReference Subject
+    {
+        get;
+    }
 
-    public string DeclaredUse { get; }
+    public string DeclaredUse
+    {
+        get;
+    }
 
-    public IReadOnlyList<TirCuratedAcceptanceBlocker> Blockers { get; }
+    public IReadOnlyList<TirCuratedAcceptanceBlocker> Blockers
+    {
+        get;
+    }
 
     public bool CanAccept => Blockers.Count == 0;
 }
