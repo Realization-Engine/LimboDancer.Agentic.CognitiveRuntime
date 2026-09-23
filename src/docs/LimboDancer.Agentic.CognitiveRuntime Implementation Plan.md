@@ -1641,7 +1641,7 @@ Each requires a concrete scenario and a small design note before implementation.
 
 ASL is the first reference domain against which the completed runtime architecture will be tested. Its requirements are defined in `docs/ASL/legacy-limbodancer-mcp-system-design.md`.
 
-The package boundary, contract-admission rules, and interface timing are defined in `LimboDancer.Agentic.CognitiveRuntime Domain Integration Model.md`.
+The package boundary, contract-admission rules, and interface timing are defined in `LimboDancer.Agentic.CognitiveRuntime Domain Integration Model.md`. The source-to-package authoring lifecycle and first implementation slices are defined in [ASL Ontology Transformation Specification](<../../docs/ASL/LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md>).
 
 This horizon does not expand PR-01 through PR-18. It prevents the authority substrate from becoming detached from the concrete product scenario that motivated it.
 
@@ -1660,7 +1660,9 @@ After the applicable runtime boundaries are proven, plan small evidence-driven s
 
 The first ASL slice SHOULD be read-only adjudication. It should prove that authoritative rules, current state, exception resolution, and deterministic calculations can produce an evidence-backed conclusion without fabricating execution authority.
 
-Exact projects, persistence products, representation formats, and PR numbers remain deferred until the selected scenario supplies concrete requirements.
+The admitted planning sequence is `ASL-OT-01` source registry and fragment location, `ASL-OT-02` transformation intermediate representation, `ASL-OT-03` validation and review, `ASL-OT-04` the Scenario A1 semantic package, `ASL-OT-05` immutable publication and exact resolution, and `ASL-OT-06` read-only occupied-building entry adjudication. Implementation begins only after the applicable specification gate is accepted.
+
+Exact projects, persistence products, canonical serialization format, and PR numbers remain deferred until each slice supplies concrete requirements.
 
 ## 28. Test Strategy
 
