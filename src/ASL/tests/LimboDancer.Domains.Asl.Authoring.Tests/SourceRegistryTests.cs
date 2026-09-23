@@ -9,10 +9,8 @@ public sealed class SourceRegistryTests
     [Fact]
     public void RegisteredRepositorySourceSetIsCompleteAndReproducible()
     {
-        var builder = new AslSourceRegistryBuilder();
-
-        var first = builder.Build(RepositoryPaths.Root, SourceCommit);
-        var second = builder.Build(RepositoryPaths.Root, SourceCommit);
+        var first = AslSourceRegistryBuilder.Build(RepositoryPaths.Root, SourceCommit);
+        var second = AslSourceRegistryBuilder.Build(RepositoryPaths.Root, SourceCommit);
 
         Assert.Equal(ManifestJson.SerializeRegistry(first), ManifestJson.SerializeRegistry(second));
         Assert.Equal(7, first.Artifacts.Count(static artifact => artifact.Kind == SourceArtifactKind.Markdown));
@@ -31,7 +29,7 @@ public sealed class SourceRegistryTests
     public void CommittedRegistryMatchesCurrentSourceBytes()
     {
         var expected = ManifestJson.SerializeRegistry(
-            new AslSourceRegistryBuilder().Build(RepositoryPaths.Root, SourceCommit));
+            AslSourceRegistryBuilder.Build(RepositoryPaths.Root, SourceCommit));
         var manifestPath = Path.Combine(
             RepositoryPaths.Root,
             "docs",
@@ -57,7 +55,7 @@ public sealed class SourceRegistryTests
         File.WriteAllText(converter, "tool");
 
         var exception = Assert.Throws<SourceRegistryException>(
-            () => new AslSourceRegistryBuilder().Build(temporary.Path, SourceCommit));
+            () => AslSourceRegistryBuilder.Build(temporary.Path, SourceCommit));
 
         Assert.Contains("missing=[", exception.Message, StringComparison.Ordinal);
     }
@@ -86,7 +84,7 @@ public sealed class SourceRegistryTests
     [Fact]
     public void CommittedVerificationSampleMatchesCurrentSourceBytes()
     {
-        var manifests = new AslAuthoringManifestGenerator().Generate(RepositoryPaths.Root, SourceCommit);
+        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
         var expected = ManifestJson.SerializeVerificationSample(
             manifests.Registry.RegistryId,
             manifests.VerificationSample);

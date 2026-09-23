@@ -26,7 +26,7 @@ public sealed class MarkdownFragmentLocatorTests
             """;
         var sourceHash = Hashing.Sha256Text(content);
 
-        var fragments = new MarkdownFragmentLocator().Locate(
+        var fragments = MarkdownFragmentLocator.Locate(
             "asl-easlrb-3.10:chapter-a",
             "chapter-a.md",
             sourceHash,
@@ -56,14 +56,13 @@ public sealed class MarkdownFragmentLocatorTests
     [Fact]
     public void FragmentIdentityChangesWithSourceContent()
     {
-        var locator = new MarkdownFragmentLocator();
         const string firstContent = "**1.1** First.\n";
         const string changedContent = "**1.1** Changed.\n";
         var firstHash = Hashing.Sha256Text(firstContent);
         var changedHash = Hashing.Sha256Text(changedContent);
-        var first = Assert.Single(locator.Locate("source", "source.md", firstHash, "B", firstContent));
-        var repeated = Assert.Single(locator.Locate("source", "source.md", firstHash, "B", firstContent));
-        var changed = Assert.Single(locator.Locate("source", "source.md", changedHash, "B", changedContent));
+        var first = Assert.Single(MarkdownFragmentLocator.Locate("source", "source.md", firstHash, "B", firstContent));
+        var repeated = Assert.Single(MarkdownFragmentLocator.Locate("source", "source.md", firstHash, "B", firstContent));
+        var changed = Assert.Single(MarkdownFragmentLocator.Locate("source", "source.md", changedHash, "B", changedContent));
 
         Assert.Equal(first.FragmentId, repeated.FragmentId);
         Assert.NotEqual(first.FragmentId, changed.FragmentId);
@@ -82,7 +81,7 @@ public sealed class MarkdownFragmentLocatorTests
         var content = File.ReadAllText(path);
         var sourcePath = relative.Replace(Path.DirectorySeparatorChar, '/');
 
-        var fragments = new MarkdownFragmentLocator().Locate(
+        var fragments = MarkdownFragmentLocator.Locate(
             "asl-easlrb-3.10:chapter-b",
             sourcePath,
             Hashing.Sha256File(path),
@@ -98,7 +97,7 @@ public sealed class MarkdownFragmentLocatorTests
     public void UnregisteredFigureDependencyFailsClosed()
     {
         const string content = "![Figure](images/missing.png)\n";
-        var fragments = new MarkdownFragmentLocator().Locate(
+        var fragments = MarkdownFragmentLocator.Locate(
             "source",
             "docs/source.md",
             Hashing.Sha256Text(content),

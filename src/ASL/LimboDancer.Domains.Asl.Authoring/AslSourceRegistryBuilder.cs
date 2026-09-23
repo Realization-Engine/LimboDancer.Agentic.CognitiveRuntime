@@ -21,7 +21,7 @@ public sealed class SourceRegistryException : Exception
     }
 }
 
-public sealed partial class AslSourceRegistryBuilder
+public static partial class AslSourceRegistryBuilder
 {
     public const string SchemaVersion = "1.0.0";
     public const string RegistryId = "asl-easlrb-3.10-a-e";
@@ -42,7 +42,7 @@ public sealed partial class AslSourceRegistryBuilder
                 ["06 - Chapter E - Miscellaneous.md"] = new("asl-easlrb-3.10:chapter-e", "E"),
             });
 
-    public SourceRegistryManifest Build(string repositoryRoot, string sourceCommit)
+    public static SourceRegistryManifest Build(string repositoryRoot, string sourceCommit)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(repositoryRoot);
 

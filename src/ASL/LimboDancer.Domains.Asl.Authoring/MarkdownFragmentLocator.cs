@@ -3,9 +3,9 @@ using System.Text.RegularExpressions;
 
 namespace LimboDancer.Domains.Asl.Authoring;
 
-public sealed partial class MarkdownFragmentLocator
+public static partial class MarkdownFragmentLocator
 {
-    public IReadOnlyList<SourceFragment> Locate(
+    public static IReadOnlyList<SourceFragment> Locate(
         string sourceId,
         string sourcePath,
         string sourceSha256,
@@ -234,7 +234,7 @@ public sealed partial class MarkdownFragmentLocator
             FootnoteRegex().IsMatch(content));
     }
 
-    private static IReadOnlyList<string> SplitLinesKeepingEndings(string value)
+    private static List<string> SplitLinesKeepingEndings(string value)
     {
         var lines = new List<string>();
         var start = 0;

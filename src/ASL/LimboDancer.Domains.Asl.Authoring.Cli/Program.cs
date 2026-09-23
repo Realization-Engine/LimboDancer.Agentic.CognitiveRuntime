@@ -9,7 +9,7 @@ public static class Program
         try
         {
             var options = ParseArguments(args);
-            var manifests = new AslAuthoringManifestGenerator().Generate(
+            var manifests = AslAuthoringManifestGenerator.Generate(
                 options.RepositoryRoot,
                 options.SourceCommit);
             ManifestJson.WriteFile(

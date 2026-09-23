@@ -2,7 +2,7 @@ using System.Text;
 
 namespace LimboDancer.Domains.Asl.Authoring;
 
-public sealed class AslAuthoringManifestGenerator
+public static class AslAuthoringManifestGenerator
 {
     public const string VerificationPurpose =
         "Representative fragments awaiting comparison with the authoritative ASL 3.10 edition.";
@@ -10,18 +10,17 @@ public sealed class AslAuthoringManifestGenerator
     public const string VerificationSelectionPolicy =
         "First structural examples plus chapter coverage and selected chapter-local identifiers.";
 
-    public GeneratedManifests Generate(string repositoryRoot, string sourceCommit)
+    public static GeneratedManifests Generate(string repositoryRoot, string sourceCommit)
     {
         var root = Path.GetFullPath(repositoryRoot);
-        var registry = new AslSourceRegistryBuilder().Build(root, sourceCommit);
+        var registry = AslSourceRegistryBuilder.Build(root, sourceCommit);
         var fragments = new List<SourceFragment>();
-        var locator = new MarkdownFragmentLocator();
 
         foreach (var artifact in registry.Artifacts.Where(static artifact => artifact.Kind == SourceArtifactKind.Markdown))
         {
             var path = Path.Combine(root, artifact.Path.Replace('/', Path.DirectorySeparatorChar));
             var content = File.ReadAllText(path, Encoding.UTF8);
-            fragments.AddRange(locator.Locate(
+            fragments.AddRange(MarkdownFragmentLocator.Locate(
                 artifact.SourceId,
                 artifact.Path,
                 artifact.Sha256,
