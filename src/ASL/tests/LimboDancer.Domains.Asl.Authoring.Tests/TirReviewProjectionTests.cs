@@ -102,6 +102,34 @@ public sealed class TirReviewProjectionTests
         Assert.Throws<InvalidOperationException>(() => Bundle(document, [wrongPolicy]));
     }
 
+    [Fact]
+    public void CuratedTransitionPolicyRejectsAuthorSelfApprovalAndIllegalEdges()
+    {
+        var document = Document();
+        var subject = TirReviewSubjects.Create(document, document.Artifacts[0].Envelope.ArtifactId);
+        var transition = new TirReviewDecisionRecord(
+            subject, CreatedAt, "fixture",
+            new TirReviewActor("reviewer", TirReviewActorRole.DomainReviewer),
+            null, [], TirReviewStatus.InReview, TirReviewStatus.Accepted,
+            TirReviewDecision.Approve, [], [], [], [], "Reviewed evidence.", []);
+
+        TirReviewTransitionRules.ValidateShape(
+            transition, TirReviewStatus.InReview, TirArtifactOrigin.Curated,
+            "author");
+        Assert.Throws<InvalidOperationException>(() => TirReviewTransitionRules.ValidateShape(
+            transition, TirReviewStatus.InReview, TirArtifactOrigin.Curated,
+            "reviewer"));
+        Assert.Throws<InvalidOperationException>(() => TirReviewTransitionRules.ValidateShape(
+            transition, TirReviewStatus.InReview, TirArtifactOrigin.Extracted,
+            "author"));
+        Assert.Throws<InvalidOperationException>(() => TirReviewTransitionRules.ValidateShape(
+            transition with
+            {
+                RequestedStatus = TirReviewStatus.Superseded,
+            }, TirReviewStatus.InReview, TirArtifactOrigin.Curated,
+            "author"));
+    }
+
     private static TirReviewBundle Bundle(TirDocument document, IReadOnlyList<TirReviewRecord> records)
     {
         return TirReviewStateProjector.CreateBundle(

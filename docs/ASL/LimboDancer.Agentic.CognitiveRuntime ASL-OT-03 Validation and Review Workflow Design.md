@@ -1,6 +1,6 @@
 # LimboDancer.Agentic.CognitiveRuntime ASL-OT-03 Validation and Review Workflow Design
 
-**Status:** Accepted; ASL-OT-03.1 through ASL-OT-03.3 implemented
+**Status:** Accepted; ASL-OT-03.1 through ASL-OT-03.3 implemented; ASL-OT-03.4 captured-evidence foundation in progress
 
 **Date:** 2026-09-23
 
@@ -483,6 +483,12 @@ The comparison disposition remains an operator attestation. The implementation v
 - `deferred` and `acceptedLimitation` remain open and block definitive use.
 
 Disposition records never remove or rewrite the original diagnostic or validation finding. Whether a valid disposition permits a review-state transition remains ASL-OT-03.4 work; this increment does not project state, accept an artifact, or create a review bundle.
+
+### 19.4 Captured-evidence projection foundation (partial ASL-OT-03.4)
+
+The C# `TirReviewStateProjector` and versioned `Schemas/asl-tir-review-bundle-1.0.schema.json` introduce a canonical, hash-addressed bundle for an exact **captured TIR 1.3 artifact**. Bundle generation recomputes the document and artifact digests, validates record subjects and identities, closes prerequisite references and detects cycles, checks validation-policy and finding/disposition bindings, and derives open and blocking findings. Canonical serialization embeds the review records, pins the external TIR document by digest, sorts unordered coverage and record sets, and reprojects before writing; an asserted state cannot override the computed one. A source TIR document with that exact digest is required to reproduce the bundle.
+
+`TirReviewTransitionRules.ValidateShape` tests permitted edges, matching prior status, the ban on transitioning extracted evidence, and independent reviewer identity. It is **not** an acceptance authorization: it does not assert that reports, source verification, dependency closure, and adjudication are sufficient. A TIR 1.3 bundle always projects `captured / unmodeled`, and any review or adjudication transition against it fails closed. This is intentional because the current TIR canonical writer admits only extracted artifacts; a curated semantic revision with verifiable content does not yet exist. ASL-OT-03.4 remains open until an exact curated subject representation and its acceptance prerequisites can be validated end-to-end. No accepted review bundle or definitive Scenario A1 authority is claimed.
 
 ## 20. Completion boundary
 

@@ -13,7 +13,7 @@ Several documents predate the current six-plane architecture and may mention `.N
 ```text
 ASL-OT-01  Source registry and fragment locator (complete)
 ASL-OT-02  Transformation intermediate representation (complete)
-ASL-OT-03  Validation and review workflow (03.1-03.3 complete; 03.4 next)
+ASL-OT-03  Validation and review workflow (03.1-03.3 complete; 03.4 captured-bundle foundation in progress)
 ASL-OT-04  Scenario A1 semantic package
 ASL-OT-05  Immutable publication and exact resolution
 ASL-OT-06  Occupied-building entry adjudication
@@ -32,6 +32,7 @@ No current ASL artifact authorizes execution. A `DomainConclusion` remains an in
 - `Schemas/asl-tir-1.3.schema.json` — versioned ASL-OT-02 structural TIR envelope and artifact schema, including typed section boundaries and exact UTF-8 sub-fragment spans.
 - `Schemas/asl-tir-review-record-1.0.schema.json` — versioned ASL-OT-03 immutable review-record family and exact-subject identity contract.
 - `Schemas/asl-tir-review-record-1.1.schema.json` — current ASL-OT-03 review-record schema, adding complete source-evidence context, verified dependency hashes, and finding severity while retaining schema 1.0 unchanged.
+- `Schemas/asl-tir-review-bundle-1.0.schema.json` — captured-TIR review-bundle schema; does not authorize curated or accepted states.
 - `TIR/` — deterministic metadata-only structural TIR review artifacts and regeneration instructions.
 - `asl-map-architecture.md` — map, scene, hex, terrain, and rendering model.
 - `asl-schema-appendix.md` — detailed schema reference.
