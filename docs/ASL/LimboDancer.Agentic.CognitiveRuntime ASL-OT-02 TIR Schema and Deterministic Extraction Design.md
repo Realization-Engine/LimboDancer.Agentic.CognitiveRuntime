@@ -1,6 +1,7 @@
 # LimboDancer.Agentic.CognitiveRuntime ASL-OT-02 TIR Schema and Deterministic Extraction Design
 
-**Status:** In progress; schema and canonical C# foundation implemented
+**Status:** Approved; implementation complete under the ASL-OT-02 TIR Review
+
 **Date:** 2026-09-23  
 **Branch:** `decision-plane`  
 **Implementation language:** C# on the repository's current .NET baseline  

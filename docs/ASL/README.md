@@ -12,8 +12,8 @@ Several documents predate the current six-plane architecture and may mention `.N
 
 ```text
 ASL-OT-01  Source registry and fragment locator (complete)
-ASL-OT-02  Transformation intermediate representation (in progress)
-ASL-OT-03  Validation and review workflow
+ASL-OT-02  Transformation intermediate representation (complete)
+ASL-OT-03  Validation and review workflow (next)
 ASL-OT-04  Scenario A1 semantic package
 ASL-OT-05  Immutable publication and exact resolution
 ASL-OT-06  Occupied-building entry adjudication
@@ -26,6 +26,7 @@ No current ASL artifact authorizes execution. A `DomainConclusion` remains an in
 - `LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md` — current rulebook-to-ontology authoring, validation, publication, and first-slice specification.
 - `LimboDancer.Agentic.CognitiveRuntime ASL-OT-01 Source Registry Review.md` — conformance decision and implementation evidence for source registration and fragment location.
 - `LimboDancer.Agentic.CognitiveRuntime ASL-OT-02 TIR Schema and Deterministic Extraction Design.md` — C# design boundary for the TIR schema, deterministic structural extraction, exact sub-fragment evidence, required embedded-boundary recovery, ASL-OT-01 parity, canonical serialization, and reviewable diagnostics.
+- `LimboDancer.Agentic.CognitiveRuntime ASL-OT-02 TIR Review.md` — approval decision, implementation evidence, corpus results, accepted structural interpretations, residual diagnostics, and ASL-OT-03 entry conditions.
 - `SourceRegistry/` — reproducible source registry, unverified representative fragment sample, and operator instructions.
 - `Schemas/asl-tir-1.3.schema.json` — versioned ASL-OT-02 structural TIR envelope and artifact schema, including typed section boundaries and exact UTF-8 sub-fragment spans.
 - `TIR/` — deterministic metadata-only structural TIR review artifacts and regeneration instructions.

@@ -1,6 +1,6 @@
 # LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification
 
-**Status:** Accepted; ASL-OT-01 implemented
+**Status:** Accepted; ASL-OT-01 and ASL-OT-02 implemented
 
 **Date:** 2026-09-23
 
