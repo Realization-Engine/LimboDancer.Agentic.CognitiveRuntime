@@ -549,7 +549,7 @@ At minimum, the transformation suite MUST prove:
 
 ## 19. Implementation admission gate
 
-This specification was accepted on 2026-09-23. ASL-OT-01 is implemented and reviewed in the [ASL-OT-01 Source Registry Review](<./LimboDancer.Agentic.CognitiveRuntime ASL-OT-01 Source Registry Review.md>), and ASL-OT-02 is implemented and reviewed in the [ASL-OT-02 TIR Review](<./LimboDancer.Agentic.CognitiveRuntime ASL-OT-02 TIR Review.md>). The accepted [ASL-OT-03 Validation and Review Workflow Design](<./LimboDancer.Agentic.CognitiveRuntime ASL-OT-03 Validation and Review Workflow Design.md>) governs the current implementation gate; ASL-OT-03.1 supplies its versioned review-record schema and canonical identity foundation. Later slices require the preceding slice's artifacts and tests.
+This specification was accepted on 2026-09-23. ASL-OT-01 is implemented and reviewed in the [ASL-OT-01 Source Registry Review](<./LimboDancer.Agentic.CognitiveRuntime ASL-OT-01 Source Registry Review.md>), and ASL-OT-02 is implemented and reviewed in the [ASL-OT-02 TIR Review](<./LimboDancer.Agentic.CognitiveRuntime ASL-OT-02 TIR Review.md>). The accepted [ASL-OT-03 Validation and Review Workflow Design](<./LimboDancer.Agentic.CognitiveRuntime ASL-OT-03 Validation and Review Workflow Design.md>) governs the current implementation gate; ASL-OT-03.1 supplies its versioned review-record schema and canonical identity foundation, and ASL-OT-03.2 supplies deterministic TIR 1.3 structural validation. Later slices require the preceding slice's artifacts and tests.
 
 Before ASL-OT-04 begins, reviewers MUST approve:
 

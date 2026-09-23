@@ -1,6 +1,6 @@
 # LimboDancer.Agentic.CognitiveRuntime ASL-OT-03 Validation and Review Workflow Design
 
-**Status:** Accepted; ASL-OT-03.1 implemented
+**Status:** Accepted; ASL-OT-03.1 and ASL-OT-03.2 implemented
 
 **Date:** 2026-09-23
 
@@ -442,7 +442,23 @@ ASL-OT-03.1 is implemented as the narrow record and identity foundation for the 
 - set-valued collections sort ordinally, while reviewer rationale evidence retains supplied order because that order can carry explanatory meaning; and
 - serialization fails closed for unsupported subject schemas, invalid identities or hashes, non-UTC timestamps, duplicate set members, invalid role-to-record combinations, and internally inconsistent validation findings.
 
-This increment does not implement validators, verify source content, apply diagnostic dispositions, project review state, enforce transitions, or create a review bundle. Those behaviors remain in ASL-OT-03.2 through ASL-OT-03.5. A representative bundle is deliberately deferred until ASL-OT-03.4 supplies the state projection it must prove.
+At its completion, this increment did not implement validators, verify source content, apply diagnostic dispositions, project review state, enforce transitions, or create a review bundle. Those behaviors were assigned to ASL-OT-03.2 through ASL-OT-03.5. A representative bundle remains deliberately deferred until ASL-OT-03.4 supplies the state projection it must prove.
+
+### 19.2 Implemented structural validation
+
+ASL-OT-03.2 implements the deterministic C# `TirStructuralValidator` for the exact TIR 1.3 subject selected from a containing document. Its versioned `asl-tir-1.3-structural` policy produces the immutable validation-report records introduced by ASL-OT-03.1.
+
+The input boundary first requires the TIR schema, canonicalization profile, hashes, artifact types, captured authority state, and canonical payload to be valid. If those prerequisites fail, validation fails before a report can claim an exact subject. For an admitted subject, the validator:
+
+- reproduces artifact identities and detects normalized-identity collisions within artifact-kind scope;
+- checks hierarchy basis, parent existence and kind, sibling order, candidate/missing/ambiguous relationships, and cycles;
+- checks artifact-dependency closure, resolved and unresolved cross-reference consistency, example targets, and table-note fragment references;
+- binds artifact creator identity and source revision to the containing extractor and source registry;
+- requires evidence to resolve to a matching registered source-fragment artifact with compatible hashes and bounds;
+- confirms that captured TIR has not claimed semantic, review, publication, conclusion, or action authority; and
+- emits deterministic findings and explicit results for all seven gates, marking semantic and review validation `notApplicable` until their owning increments exist.
+
+Warnings and errors both fail their applicable structural gate; later disposition and acceptance policy must decide whether a finding blocks a declared use. The validator never repairs source material, mutates captured TIR, changes formalization or review status, verifies authoritative source content, or grants acceptance. Source comparison and diagnostic disposition remain ASL-OT-03.3, while transition legality and review bundles remain ASL-OT-03.4.
 
 ## 20. Completion boundary
 
