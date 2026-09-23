@@ -4,10 +4,11 @@
 **Assessment date:** 2026-09-23  
 **Source baseline:** ASL 3.10 A-E registry at `a3254ff1d492dbdd28483d86f5b42437b48e80d4`  
 **Implementation baseline:** `decision-plane` commit `456872a56270bab59fadfaad8409e7c7a096be5e`
+**Original PDF supplied for comparison:** `eASLRB_v3_01.pdf`, SHA-256 `957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247` (716 pages; not stored in this repository). Its introductory credits identify **“Version 3.0; June 2025”** on physical PDF page 5 (roman-numbered page iii); the registry instead declares edition `3.10`.
 
 ## 1. Decision
 
-The current ASL authoring code can pin source bytes, extract structure, create review evidence, and project a non-accepting curated review history. It **cannot** validate ASL semantics or authorize an accepted proposal. The [Ontology Transformation Specification](<./LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md>) §19 requires an approved package manifest profile and **exact verified Scenario A1 source subset** before ASL-OT-04 begins. Neither is presently available. This review inventories the candidate subset and records the remaining gate work; it grants no ASL-OT-04 admission, semantic labels, or publication authority.
+The current ASL authoring code can pin source bytes, extract structure, create review evidence, and project a non-accepting curated review history. It **cannot** validate ASL semantics or authorize an accepted proposal. The [Ontology Transformation Specification](<./LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md>) §19 requires an approved package manifest profile and **exact verified Scenario A1 source subset** before ASL-OT-04 begins. Neither is presently available. The PDF used to generate the Markdown has now been supplied; the initial comparison below establishes candidate locations and exposes a conversion boundary discrepancy and an **unresolved edition designation mismatch**. This review grants no ASL-OT-04 admission, semantic labels, or publication authority.
 
 The hosted [ASL Authoring CI run](https://github.com/Realization-Engine/LimboDancer.Agentic.CognitiveRuntime/actions/runs/35927212328) built the .NET 10 solution and passed 72 tests, none skipped. Those tests establish implementation behavior and source hash reproducibility; they do not compare the Markdown with an authoritative ASL edition or certify a semantic interpretation.
 
@@ -20,18 +21,22 @@ The candidate below is an **investigation set**, not an exhaustive dependency cl
 | [Chapter A](<./Rulebook_Markdown/02 - Chapter A - Infantry and Basic Game Rules.md>) | `6347534e64f739cacc57dd75c3d604997723fd0b4988565609deeff007a8843d` | Location, movement phase, occupant and concealment rules. |
 | [Chapter B](<./Rulebook_Markdown/03 - Chapter B - Terrain.md>) | `836b1ce5f845efd1c21250a9e6a39e4054ea9398f370305bc3771b6e7f826982` | Building entry and fortified-location restrictions. |
 
-The line and page values below are positions in these exact registered Markdown bytes. Page markers come from the conversion, and neither page markers nor text have been checked against the authoritative edition. The normalized identifiers are **candidate lookup labels** here; no canonical semantic identity or individual fragment ID has been assigned by this review.
+The line and page values below are positions in these exact registered Markdown bytes. The Markdown's `<!-- page N -->` markers attempt to identify the **physical PDF page index** (starting at 1), not the page label printed within each chapter. The PDF column records a visual check of the supplied original PDF; this is a location and initial text comparison, not a complete character-by-character or visual-dependency attestation. The normalized identifiers are **candidate lookup labels** here; no canonical semantic identity or individual fragment ID has been assigned by this review.
 
-| Candidate | Markdown line; printed page marker | Why it enters review | Known closure question |
-| --- | --- | --- | --- |
-| A2.8 | A:189; p.47 | Distinguishes a hex from its constituent Locations. | Which building levels and units share the target Location? |
-| A4.14 | A:255; p.48 | Movement-phase enemy-occupancy restriction and listed exceptions. | Which exception branches matter for the chosen unit and modifiers? |
-| A4.15 | A:257; p.48 | Infantry overrun exception involving an enemy SMC. | NTC, unit type, occupant count, and any linked detection conditions. |
-| A4.7 | A:329; p.52 | Advance-phase eligibility and movement limits. | APh unit state, accessibility, and linked restrictions. |
-| A12.15 | A:1042; p.78 | Detection during attempted entry into a concealed unit's Location. | Hidden/concealed occupant evidence and follow-on branches. |
-| B23.4 | B:1382; p.136 | Ordinary building entry and level-change costs. | Road, bypass, terrain and MF interactions. |
-| B23.922 | B:1556; p.140 | Fortified-building entry restriction with a breach exception. | Enemy squad status/equivalence and fortified-location evidence. |
-| B23.9221 | B:1562; p.141 | Breach path for the fortified-building exception. | Breach creation and whether the proposed entry traverses it. |
+| Candidate | Markdown line; conversion page marker | Original PDF physical page | Why it enters review | Known closure question |
+| --- | --- | --- | --- | --- |
+| A2.8 | A:189; p.47 | 47 | Distinguishes a hex from its constituent Locations. | Which building levels and units share the target Location? |
+| A4.14 | A:255; p.48 | **49** | Movement-phase enemy-occupancy restriction and listed exceptions. | Which exception branches matter for the chosen unit and modifiers? |
+| A4.15 | A:257; p.48 | **49** | Infantry overrun exception involving an enemy SMC. | NTC, unit type, occupant count, and any linked detection conditions. |
+| A4.7 | A:329; p.52 | 52 | Advance-phase eligibility and movement limits. | APh unit state, accessibility, and linked restrictions. |
+| A12.15 | A:1042; p.78 | 78 | Detection during attempted entry into a concealed unit's Location. | Hidden/concealed occupant evidence and follow-on branches. |
+| B23.4 | B:1382; p.136 | 136 | Ordinary building entry and level-change costs. | Road, bypass, terrain and MF interactions. |
+| B23.922 | B:1556; p.140, continued at p.141 | 140–141 | Fortified-building entry restriction with a breach exception. | Enemy squad status/equivalence and fortified-location evidence. |
+| B23.9221 | B:1562; p.141 | 141 | Breach path for the fortified-building exception. | Breach creation and whether the proposed entry traverses it. |
+
+**Comparison finding:** A4.14 and A4.15 are visibly on PDF page 49 (chapter page A7), although the preceding Markdown marker remains `<!-- page 48 -->`; the conversion does not insert the page-49 marker at that boundary. B23.922 spans pages 140–141 and crosses a page marker *inside* its paragraph. An identifier-to-page lookup based only on the preceding Markdown marker would miscite A4.14/A4.15; a fragment extractor that stops at a page marker would truncate B23.922. Keep the registered Markdown bytes intact, record the corrected PDF locator as separate provenance, and test both boundaries in the C# locator/extractor before issuing exact fragment verification records. The visual spot check found the candidate headings and the corresponding opening rule content on the cited PDF pages; it did not certify every character, footnote, figure, or dependency.
+
+**Edition identity finding:** The supplied file's name includes `v3_01`, its own credits say `Version 3.0; June 2025`, and the source registry calls the converted source `3.10`. These are three different version strings. The supplied file is useful as the *provenance PDF for the conversion* on the user's account, but its embedded version statement does not establish that it is an authoritative `3.10` edition. Obtain a documented mapping or correct the registry/specification baseline through an explicit versioned change before attesting an edition match. Do not silently rename the pinned source registry or infer `3.10` from the filename.
 
 The first closure expansion must examine at least A4.132 (road entry), A2.4 (cumulative terrain), applicable A5 stacking limits, B23.711 (breach creation), and the exceptions cited by A4.14. The exact list depends on the independently approved case scope. Vehicles, cavalry, unknown SSR effects, concealed occupants, and unmodeled exceptions must yield non-definitive outcomes unless their own dependencies are verified and modeled. A positive or negative label inferred from only the table above would be unsupported.
 
@@ -40,9 +45,9 @@ The first closure expansion must examine at least A4.132 (road entry), A2.4 (cum
 | Gate item | Observed evidence | Disposition |
 | --- | --- | --- |
 | TIR schema and identity | TIR 1.3 and the ASL-OT-02 review are committed. | Approved for structural extraction, not semantic meaning. |
-| Canonical locator and source bytes | Source registry pins A-E at the cited commit; current Chapter A/B SHA-256 values match the registry. | Reproducible conversion input; no authoritative-edition comparison. |
+| Canonical locator and source bytes | Source registry pins A-E at the cited commit; current Chapter A/B SHA-256 values match the registry. The supplied 716-page PDF is separately identified by its SHA-256 above; candidate locations were visually compared. | Reproducible conversion input and initial original-PDF comparison; exact fragment verification remains pending. PDF says version 3.0 while registry says 3.10. |
 | Formalization status and roles | ASL-OT-03 design distinguishes unmodeled/partial/validated and records actor roles. | Accepted design; source attestation does not authenticate a person. |
-| Candidate A1 fragment coverage | The committed verification sample has 14 fragments, all `unverified`; none has the eight normalized identifiers above. The committed TIR sample has no matching A1 artifacts. | Exact A1 fragment IDs and spans still need C# locator/extractor output and authoritative comparison. |
+| Candidate A1 fragment coverage | The committed verification sample has 14 fragments, all `unverified`; none has the eight normalized identifiers above. The committed TIR sample has no matching A1 artifacts. The PDF comparison found a missing page-49 marker and a paragraph crossing pages 140–141. | Exact A1 fragment IDs, full spans, edition comparison, and visual-dependency checks still need recorded C# locator/extractor output. |
 | Source dependencies | Candidate text names exception and cross-reference targets, and fortified breach refers to another rule. | Dependency and evaluation closure not yet enumerated or reviewed. |
 | Package manifest profile | Specification §11 lists required fields but leaves canonical serialization to the first slice. The candidate profile below is a review proposal. | No implemented/versioned schema or review approval yet. |
 | Structural/review implementation | Hosted CI passes; captured bundles, curated submission and non-accepting history, and a blocked readiness assessment exist. | ASL-OT-03.4 remains partial; no acceptance projection or adjudication contract. |
@@ -67,7 +72,7 @@ Review decisions still needed: whether a single root manifest embeds the source/
 
 1. Fix an explicit **case scope** for the first A1 examples: unit type, phase, occupant state, building status, available MF, and scenario modifiers. List which cases must abstain rather than silently treating exclusions as false.
 2. Use the **C#** locator/extractor against the registered source commit to produce exact fragment IDs, line/byte spans, dependencies, and corresponding structural artifacts for that scope. Re-run conformance if the source bytes or extractor version change.
-3. Compare each required fragment and visual/table dependency with the authoritative ASL edition. Record an exact `SourceVerificationRecord` per fragment, with the verifier's identity, method, edition, and disposition. Preserve differences; do not repair converted text in place.
+3. Resolve the version-string discrepancy (`3.0` in the supplied PDF, `v3_01` in the filename, `3.10` in the registry) with traceable source/version evidence or an explicitly reviewed source-baseline correction. Then compare each required fragment and visual/table dependency in full against the confirmed source PDF, checking the A4.14/A4.15 page-49 locator and the B23.922 page crossing explicitly. Record an exact `SourceVerificationRecord` per fragment, with the verifier's identity, method, edition, and disposition. Preserve differences; do not repair converted text in place.
 4. Review the dependency graph with an ASL domain reviewer, including phase, stacking, concealed occupants, fortified entry, breach, exceptions, and any controlling SSR. Resolve or scope the relevant TIR diagnostics. Record the approved subset and excluded branches explicitly.
 5. Review the proposed **candidate package manifest profile** above, resolve its four open design decisions, then implement a versioned C# schema/writer with reproducible hashes. Preserve the distinction from a published `DomainPackageRef`.
 6. Complete the ASL-OT-03.4 acceptance/adjudication contract only when a real semantic representation can be validated; commit a representative review bundle and the ASL-OT-03.5 conformance result. Independent reviewers then decide the §19 admission gate before ASL-OT-04 scenario semantics are asserted.
