@@ -21,6 +21,12 @@ public static class Program
                 ManifestJson.SerializeVerificationSample(
                     manifests.Registry.RegistryId,
                     manifests.VerificationSample));
+            if (options.ScenarioA1Output is not null)
+            {
+                ManifestJson.WriteFile(
+                    options.ScenarioA1Output,
+                    AslScenarioA1SourceInventory.Extract(manifests).Serialize());
+            }
             if (options.TirOutput is not null && options.TirCreatedAt is not null)
             {
                 var tir = TirStructuralExtractor.Extract(
@@ -82,6 +88,7 @@ public static class Program
                 "--verification-output",
                 "--tir-output",
                 "--tir-created-at",
+                "--a1-output",
             ],
             StringComparer.Ordinal);
         var unknown = values.Keys.Where(key => !supported.Contains(key)).ToArray();
@@ -109,7 +116,8 @@ public static class Program
             Required(values, "--registry-output"),
             Required(values, "--verification-output"),
             tirOutput,
-            tirCreatedAt);
+            tirCreatedAt,
+            values.GetValueOrDefault("--a1-output"));
     }
 
     private static string Required(Dictionary<string, string> values, string name)
@@ -128,7 +136,8 @@ public static class Program
     {
         return "Usage: dotnet run --project src/ASL/LimboDancer.Domains.Asl.Authoring.Cli -- "
             + "[--repository-root PATH] --source-commit SHA --registry-output PATH "
-            + "--verification-output PATH [--tir-output PATH --tir-created-at UTC_TIMESTAMP]";
+            + "--verification-output PATH [--tir-output PATH --tir-created-at UTC_TIMESTAMP] "
+            + "[--a1-output PATH]";
     }
 
     private sealed record Options(
@@ -137,5 +146,6 @@ public static class Program
         string RegistryOutput,
         string VerificationOutput,
         string? TirOutput,
-        DateTimeOffset? TirCreatedAt);
+        DateTimeOffset? TirCreatedAt,
+        string? ScenarioA1Output);
 }
