@@ -92,12 +92,12 @@ public sealed class TirCuratedProposalTests
             blankText, document));
     }
 
-    private static TirCuratedProposal Proposal(TirDocument document) => new(
+    internal static TirCuratedProposal Proposal(TirDocument document) => new(
         TirReviewSubjects.Create(document, document.Artifacts[0].Envelope.ArtifactId),
         "author", "structural example", "A proposed interpretation, not executable semantics.",
         Timestamp, "fixture");
 
-    private static TirDocument Document()
+    internal static TirDocument Document()
     {
         static string Sha(char value) => new(value, 64);
         var candidate = new TirPackageCandidate("asl", "fixture", "0.0.0-candidate.1");

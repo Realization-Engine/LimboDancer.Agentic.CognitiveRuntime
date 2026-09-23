@@ -1,6 +1,6 @@
 # LimboDancer.Agentic.CognitiveRuntime ASL-OT-03 Validation and Review Workflow Design
 
-**Status:** Accepted; ASL-OT-03.1 through ASL-OT-03.3 implemented; ASL-OT-03.4 captured-evidence and curated-proposal identity foundations in progress
+**Status:** Accepted; ASL-OT-03.1 through ASL-OT-03.3 implemented; ASL-OT-03.4 captured-evidence and curated-submission foundations in progress
 
 **Date:** 2026-09-23
 
@@ -496,7 +496,13 @@ The C# `TirReviewStateProjector` and versioned `Schemas/asl-tir-review-bundle-1.
 
 The text is an opaque human-authored interpretation, not a rule expression or validated ontology. This draft does **not** assert `proposed`, `in-review`, `accepted`, or `formalizationStatus`; it is not yet a subject accepted by review-record schema 1.1 or review-bundle schema 1.0. In particular, a digest and an identity string alone do not prove source fidelity, semantic completeness, role authorization, or dependency closure. The draft supplies exact bytes for a future versioned curated subject; it does not bypass ASL-OT-04 semantic modeling.
 
-The next 03.4 increment must define a versioned review-subject and bundle contract for curated material, binding the exact proposal bytes and their source, then project legal transition history with evidence-linked prerequisites. Before acceptance, the projector must check applicable validation gates (including an actually implemented semantic gate), verified source and use-specific dependency closure, disposition of blocking findings, independent review, and material-disagreement adjudication. Until these checks exist and reproduce, acceptance and supersession must fail closed. Synthetic fixtures may test the workflow but must not be described as accepted ASL semantics or runtime authority.
+### 19.6 Curated submission subject and bundle (partial ASL-OT-03.4)
+
+`TirCuratedReviewSubjects` identifies a distinct curated submission using the proposal schema ID, proposal payload digest, and exact captured source subject. `TirCuratedReviewBundleJson` and `Schemas/asl-tir-curated-review-bundle-1.0.schema.json` bind that subject to the complete proposal payload, the canonical digest and schema of a separately reproducible captured-source review bundle, the declared use, and a UTC submission time. The writer recomputes the proposal and source-bundle digests, checks both against the same source TIR document and declared use, and rejects a stale or forged subject, source projection, or premature submission. The source TIR document and captured review bundle must accompany a submission for independent reproduction; a digest alone does not provide their contents.
+
+This first submission schema has exactly one effective state: `proposed / unmodeled`. The state means only that the authored text was submitted with identified source evidence. It cannot carry curated review records, and neither an embedded captured validation report nor a source-verification record is an approval of the new proposal. Review-record schema 1.1 and captured review-bundle schema 1.0 remain unchanged. No reviewer transition, semantic validation, acceptance, supersession, publication, or runtime authority follows from a submission digest.
+
+The next 03.4 increment must version the review-record and curated-bundle contracts to express legal transition history with evidence-linked prerequisites. Before acceptance, the projector must check applicable validation gates (including an actually implemented semantic gate), verified source and use-specific dependency closure, disposition of blocking findings, independent review, and material-disagreement adjudication. Until these checks exist and reproduce, acceptance and supersession must fail closed. Synthetic fixtures may test the workflow but must not be described as accepted ASL semantics or runtime authority.
 
 ## 20. Completion boundary
 
