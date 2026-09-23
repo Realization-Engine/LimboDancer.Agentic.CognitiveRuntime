@@ -58,11 +58,4 @@ jobs:
             --verification-output "$RUNNER_TEMP/asl-verification-sample.json" \
             --a1-attestation docs/ASL/SourceRegistry/asl-scenario-a1.source-attestation.json \
             --a1-verification-output "$RUNNER_TEMP/asl-scenario-a1.source-verification.json"
-          if [ -f docs/ASL/SourceRegistry/asl-scenario-a1.source-verification.json ]; then
-            cmp docs/ASL/SourceRegistry/asl-scenario-a1.source-verification.json "$RUNNER_TEMP/asl-scenario-a1.source-verification.json"
-          else
-            echo 'ASL_A1_VERIFICATION_BASE64_BEGIN'
-            base64 -w0 "$RUNNER_TEMP/asl-scenario-a1.source-verification.json"
-            echo
-            echo 'ASL_A1_VERIFICATION_BASE64_END'
-          fi
+          cmp docs/ASL/SourceRegistry/asl-scenario-a1.source-verification.json "$RUNNER_TEMP/asl-scenario-a1.source-verification.json"
