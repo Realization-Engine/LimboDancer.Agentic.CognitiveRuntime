@@ -768,8 +768,7 @@ public static partial class TirReviewCanonicalJson
         _ => throw new ArgumentOutOfRangeException(nameof(value), value, null),
     };
 
-    private static string SourceVerificationDisposition(
-        TirSourceVerificationDisposition value) => value switch
+    private static string SourceVerificationDisposition(TirSourceVerificationDisposition value) => value switch
     {
         TirSourceVerificationDisposition.Verified => "verified",
         TirSourceVerificationDisposition.Mismatch => "mismatch",
