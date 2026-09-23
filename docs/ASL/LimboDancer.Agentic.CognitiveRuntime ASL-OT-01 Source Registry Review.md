@@ -54,7 +54,7 @@ ASL-OT-01 does not provide:
 
 ## 5. Test result
 
-The C# conformance suite contains eleven tests: the eight original source-registry and fragment-locator cases, a committed verification-sample parity test, and two architecture-boundary tests. CI is the supported execution environment and uses the repository's .NET 10 baseline.
+ASL-OT-01 coverage comprises eleven tests: the eight original source-registry and fragment-locator cases, a committed verification-sample parity test, and two architecture-boundary tests. Later ASL authoring slices extend the same conformance suite. CI is the supported execution environment and uses the repository's .NET 10 baseline.
 
 ## 6. Next checkpoint
 

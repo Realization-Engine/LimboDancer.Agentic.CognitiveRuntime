@@ -1,6 +1,6 @@
 # LimboDancer.Agentic.CognitiveRuntime ASL-OT-02 TIR Schema and Deterministic Extraction Design
 
-**Status:** Design record; implementation not yet begun  
+**Status:** In progress; schema and canonical C# foundation implemented
 **Date:** 2026-09-23  
 **Branch:** `decision-plane`  
 **Implementation language:** C# on the repository's current .NET baseline  
@@ -355,3 +355,19 @@ Before implementation begins, the ASL-OT-02 change should confirm:
 8. exact generated artifacts committed for review.
 
 These are authoring implementation decisions. They do not admit runtime contracts, persistence products, ontology engines, or publication infrastructure.
+
+## 14. Implemented foundation
+
+The first ASL-OT-02 implementation slice establishes the following admitted foundation:
+
+- `docs/ASL/Schemas/asl-tir-1.0.schema.json` defines schema identity `urn:limbodancer:asl:tir:schema:1.0.0`, the complete required artifact-kind vocabulary, the common envelope, and kind-specific structural payloads;
+- `TirModels.cs` defines the ASL-owned C# document, envelope, provenance, dependency, diagnostic, and structural payload types;
+- strongly typed structural artifacts exist for `SourceFragment`, `Rule`, `CrossReference`, `Example`, and `Table`;
+- the remaining required artifact kinds are reserved in the versioned vocabulary but cannot be emitted by the structural canonical writer;
+- `TirArtifactIdentity` derives stable identities from kind, source-registry identity, published structural identity, ordered source-fragment identities, and an explicit deterministic disambiguator;
+- `TirCanonicalJson` fixes property order, ordinal set ordering, explicit nulls, invariant UTC formatting, and SHA-256 calculation over the canonical payload excluding the digest field itself; and
+- the writer fails closed if an ASL-OT-02 artifact claims a semantic identity or advances beyond `extracted`, `unmodeled`, and `captured`.
+
+The canonical writer deliberately preserves source-fragment and table-note order because those sequences carry source meaning. It sorts set-like collections such as artifacts, dependencies, confidence bases, review references, and diagnostics by declared ordinal keys.
+
+This foundation does not implement document extraction. The next implementation slice maps the registered ASL-OT-01 fragments into `SourceFragment` and structural `Rule` artifacts, emits hierarchy candidates and diagnostics, and commits a representative generated TIR artifact for review.

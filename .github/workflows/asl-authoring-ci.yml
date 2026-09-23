@@ -9,6 +9,7 @@ on:
       - "utils/pdf_to_markdown.py"
       - "docs/ASL/Rulebook_Markdown/**"
       - "docs/ASL/SourceRegistry/**"
+      - "docs/ASL/Schemas/**"
       - ".github/workflows/asl-authoring-ci.yml"
   pull_request:
     paths:
@@ -16,6 +17,7 @@ on:
       - "utils/pdf_to_markdown.py"
       - "docs/ASL/Rulebook_Markdown/**"
       - "docs/ASL/SourceRegistry/**"
+      - "docs/ASL/Schemas/**"
       - ".github/workflows/asl-authoring-ci.yml"
 
 permissions:
