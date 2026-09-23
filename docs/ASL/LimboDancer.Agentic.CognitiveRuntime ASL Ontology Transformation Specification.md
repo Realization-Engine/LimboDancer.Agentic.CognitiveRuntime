@@ -99,6 +99,8 @@ The initial transformation source is the ASL 3.01 Markdown set under `docs/ASL/R
 - Chapter E, Miscellaneous; and
 - extracted figures under `images/`.
 
+The edition source boundary is **the TOC, Index/Glossary, and Chapters A–E only** (physical PDF pages 6–253 for the supplied 716-page PDF). Material after Chapter E is outside this source baseline. A reference to an excluded section remains an unresolved or separately scoped dependency, never an implicit extension of the ontology source set.
+
 The source registry MUST pin the repository commit, file path, whole-file SHA-256, edition, chapter, page range, conversion tool version, and applicable distribution restrictions.
 
 ### 5.2 Conversion characteristics
