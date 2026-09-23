@@ -31,6 +31,23 @@ public static partial class TirCanonicalJson
         return Hashing.Sha256Text(SerializePayload(document));
     }
 
+    public static string SerializeArtifactPayload(TirDocument document, string artifactId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(artifactId);
+        Validate(document);
+        var artifact = document.Artifacts.SingleOrDefault(item => string.Equals(
+            item.Envelope.ArtifactId,
+            artifactId,
+            StringComparison.Ordinal))
+            ?? throw new InvalidOperationException($"TIR artifact was not found: {artifactId}.");
+        return Write(writer => WriteArtifact(writer, artifact));
+    }
+
+    public static string ComputeArtifactSha256(TirDocument document, string artifactId)
+    {
+        return Hashing.Sha256Text(SerializeArtifactPayload(document, artifactId));
+    }
+
     private static string Write(Action<Utf8JsonWriter> write)
     {
         using var stream = new MemoryStream();
