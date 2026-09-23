@@ -3,6 +3,7 @@ namespace LimboDancer.Domains.Asl.Authoring;
 public enum TirArtifactKind
 {
     SourceFragment,
+    Section,
     Rule,
     Definition,
     Condition,
@@ -140,6 +141,17 @@ public sealed record TirSourceFragmentPayload(
 public sealed record TirSourceFragmentArtifact(
     TirArtifactEnvelope Envelope,
     TirSourceFragmentPayload Payload)
+    : TirArtifact(Envelope);
+
+public sealed record TirSectionPayload(
+    string Title,
+    int HeadingLevel,
+    string? DirectParentArtifactId,
+    TirHierarchyStatus HierarchyStatus,
+    IReadOnlyList<TirHierarchyBasis> HierarchyBasis,
+    int? SiblingOrder);
+
+public sealed record TirSectionArtifact(TirArtifactEnvelope Envelope, TirSectionPayload Payload)
     : TirArtifact(Envelope);
 
 public sealed record TirRulePayload(

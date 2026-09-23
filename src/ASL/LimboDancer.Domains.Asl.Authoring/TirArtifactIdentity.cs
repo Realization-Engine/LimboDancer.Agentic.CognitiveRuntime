@@ -42,6 +42,7 @@ internal static class TirValues
     public static string ArtifactKind(TirArtifactKind value) => value switch
     {
         TirArtifactKind.SourceFragment => "sourceFragment",
+        TirArtifactKind.Section => "section",
         TirArtifactKind.Rule => "rule",
         TirArtifactKind.Definition => "definition",
         TirArtifactKind.Condition => "condition",

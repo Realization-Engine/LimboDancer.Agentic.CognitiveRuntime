@@ -8,8 +8,8 @@ namespace LimboDancer.Domains.Asl.Authoring;
 
 public static partial class TirCanonicalJson
 {
-    public const string SchemaId = "urn:limbodancer:asl:tir:schema:1.0.0";
-    public const string SchemaVersion = "1.0.0";
+    public const string SchemaId = "urn:limbodancer:asl:tir:schema:1.1.0";
+    public const string SchemaVersion = "1.1.0";
     public const string ProfileName = "asl-tir-canonical-json";
     public const string ProfileVersion = "1.0.0";
 
@@ -178,27 +178,23 @@ public static partial class TirCanonicalJson
                     "verificationStatus",
                     Verification(sourceFragment.Payload.VerificationStatus));
                 break;
+            case TirSectionArtifact section:
+                writer.WriteString("title", section.Payload.Title);
+                writer.WriteNumber("headingLevel", section.Payload.HeadingLevel);
+                WriteHierarchyPayload(
+                    writer,
+                    section.Payload.DirectParentArtifactId,
+                    section.Payload.HierarchyStatus,
+                    section.Payload.HierarchyBasis,
+                    section.Payload.SiblingOrder);
+                break;
             case TirRuleArtifact rule:
-                WriteNullableString(writer, "directParentArtifactId", rule.Payload.DirectParentArtifactId);
-                writer.WriteString("hierarchyStatus", HierarchyStatus(rule.Payload.HierarchyStatus));
-                writer.WritePropertyName("hierarchyBasis");
-                writer.WriteStartArray();
-                foreach (var basis in rule.Payload.HierarchyBasis
-                    .OrderBy(static item => HierarchyBasis(item), StringComparer.Ordinal))
-                {
-                    writer.WriteStringValue(HierarchyBasis(basis));
-                }
-
-                writer.WriteEndArray();
-                if (rule.Payload.SiblingOrder is null)
-                {
-                    writer.WriteNull("siblingOrder");
-                }
-                else
-                {
-                    writer.WriteNumber("siblingOrder", rule.Payload.SiblingOrder.Value);
-                }
-
+                WriteHierarchyPayload(
+                    writer,
+                    rule.Payload.DirectParentArtifactId,
+                    rule.Payload.HierarchyStatus,
+                    rule.Payload.HierarchyBasis,
+                    rule.Payload.SiblingOrder);
                 break;
             case TirCrossReferenceArtifact crossReference:
                 writer.WriteString("referenceText", crossReference.Payload.ReferenceText);
@@ -234,6 +230,35 @@ public static partial class TirCanonicalJson
         }
 
         writer.WriteEndObject();
+    }
+
+    private static void WriteHierarchyPayload(
+        Utf8JsonWriter writer,
+        string? directParentArtifactId,
+        TirHierarchyStatus hierarchyStatus,
+        IReadOnlyList<TirHierarchyBasis> hierarchyBasis,
+        int? siblingOrder)
+    {
+        WriteNullableString(writer, "directParentArtifactId", directParentArtifactId);
+        writer.WriteString("hierarchyStatus", HierarchyStatus(hierarchyStatus));
+        writer.WritePropertyName("hierarchyBasis");
+        writer.WriteStartArray();
+        foreach (var basis in hierarchyBasis.OrderBy(
+            static item => HierarchyBasis(item),
+            StringComparer.Ordinal))
+        {
+            writer.WriteStringValue(HierarchyBasis(basis));
+        }
+
+        writer.WriteEndArray();
+        if (siblingOrder is null)
+        {
+            writer.WriteNull("siblingOrder");
+        }
+        else
+        {
+            writer.WriteNumber("siblingOrder", siblingOrder.Value);
+        }
     }
 
     private static void WriteSourceLocator(Utf8JsonWriter writer, SourceLocator locator)
@@ -350,6 +375,7 @@ public static partial class TirCanonicalJson
         var expectedKind = artifact switch
         {
             TirSourceFragmentArtifact => TirArtifactKind.SourceFragment,
+            TirSectionArtifact => TirArtifactKind.Section,
             TirRuleArtifact => TirArtifactKind.Rule,
             TirCrossReferenceArtifact => TirArtifactKind.CrossReference,
             TirExampleArtifact => TirArtifactKind.Example,

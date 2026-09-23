@@ -21,7 +21,7 @@ public sealed class TirFoundationTests
             "docs",
             "ASL",
             "Schemas",
-            "asl-tir-1.0.schema.json");
+            "asl-tir-1.1.schema.json");
         using var schema = JsonDocument.Parse(File.ReadAllBytes(schemaPath));
         var definitions = schema.RootElement.GetProperty("$defs");
         var artifactProperties = definitions
@@ -34,8 +34,9 @@ public sealed class TirFoundationTests
             .Select(static item => item.GetString())
             .ToArray();
 
-        Assert.Equal(17, kinds.Length);
+        Assert.Equal(18, kinds.Length);
         Assert.Contains("sourceFragment", kinds);
+        Assert.Contains("section", kinds);
         Assert.Contains("rule", kinds);
         Assert.Contains("exception", kinds);
         Assert.Contains("validationShape", kinds);

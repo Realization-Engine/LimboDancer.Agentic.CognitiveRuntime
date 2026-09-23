@@ -19,13 +19,15 @@ public sealed class TirStructuralExtractorTests
         var fragments = new[]
         {
             Fragment(SourceFragmentKind.RuleText, "A.1", "A.1", 1),
-            Fragment(SourceFragmentKind.RuleText, "1.1", "A1.1", 2),
-            Fragment(SourceFragmentKind.RuleContinuation, "1.1", "A1.1", 3),
-            Fragment(SourceFragmentKind.FigureReference, "1.1", "A1.1", 4, "images/example.png"),
-            Fragment(SourceFragmentKind.RuleText, "1.2", "A1.2", 5),
+            Fragment(SourceFragmentKind.Heading, null, null, 2, content: "## 1. PERSONNEL COUNTERS\n"),
+            Fragment(SourceFragmentKind.RuleText, "1.1", "A1.1", 3),
+            Fragment(SourceFragmentKind.RuleContinuation, "1.1", "A1.1", 4),
+            Fragment(SourceFragmentKind.FigureReference, "1.1", "A1.1", 5, "images/example.png"),
+            Fragment(SourceFragmentKind.RuleText, "1.2", "A1.2", 6),
         };
 
         var document = Extract(fragments);
+        var section = Assert.Single(document.Artifacts.OfType<TirSectionArtifact>());
         var rules = document.Artifacts.OfType<TirRuleArtifact>().ToArray();
         var root = Assert.Single(rules, static rule => rule.Envelope.NormalizedPublishedId == "A.1");
         var child = Assert.Single(rules, static rule => rule.Envelope.NormalizedPublishedId == "A1.1");
@@ -33,14 +35,39 @@ public sealed class TirStructuralExtractorTests
 
         Assert.Equal(TirHierarchyStatus.Root, root.Payload.HierarchyStatus);
         Assert.Null(root.Payload.DirectParentArtifactId);
+        Assert.Equal("A1", section.Envelope.NormalizedPublishedId);
+        Assert.Equal("PERSONNEL COUNTERS", section.Payload.Title);
         Assert.Equal(TirHierarchyStatus.Supported, child.Payload.HierarchyStatus);
-        Assert.Equal(root.Envelope.ArtifactId, child.Payload.DirectParentArtifactId);
+        Assert.Equal(section.Envelope.ArtifactId, child.Payload.DirectParentArtifactId);
         Assert.Equal(0, child.Payload.SiblingOrder);
         Assert.Equal(1, sibling.Payload.SiblingOrder);
         Assert.Equal(3, child.Envelope.SourceFragments.Count);
         Assert.Contains(
             child.Envelope.Dependencies,
             static dependency => dependency.Target.EndsWith("/images/example.png", StringComparison.Ordinal));
+        Assert.Empty(document.Diagnostics);
+    }
+
+    [Fact]
+    public void DecimalDigitsProduceNestedRuleHierarchyBelowSection()
+    {
+        var fragments = new[]
+        {
+            Fragment(SourceFragmentKind.Heading, null, null, 1, content: "## 1. PERSONNEL COUNTERS\n"),
+            Fragment(SourceFragmentKind.RuleText, "1.1", "A1.1", 2),
+            Fragment(SourceFragmentKind.RuleText, "1.11", "A1.11", 3),
+            Fragment(SourceFragmentKind.RuleText, "1.111", "A1.111", 4),
+        };
+
+        var document = Extract(fragments);
+        var section = Assert.Single(document.Artifacts.OfType<TirSectionArtifact>());
+        var rules = document.Artifacts
+            .OfType<TirRuleArtifact>()
+            .ToDictionary(static rule => rule.Envelope.NormalizedPublishedId!, StringComparer.Ordinal);
+
+        Assert.Equal(section.Envelope.ArtifactId, rules["A1.1"].Payload.DirectParentArtifactId);
+        Assert.Equal(rules["A1.1"].Envelope.ArtifactId, rules["A1.11"].Payload.DirectParentArtifactId);
+        Assert.Equal(rules["A1.11"].Envelope.ArtifactId, rules["A1.111"].Payload.DirectParentArtifactId);
         Assert.Empty(document.Diagnostics);
     }
 
@@ -134,7 +161,7 @@ public sealed class TirStructuralExtractorTests
     {
         var fragments = new[]
         {
-            Fragment(SourceFragmentKind.Heading, null, null, 1),
+            Fragment(SourceFragmentKind.Heading, null, null, 1, content: "## 1. PERSONNEL COUNTERS\n"),
             Fragment(SourceFragmentKind.RuleText, "A.1", "A.1", 2),
             Fragment(SourceFragmentKind.RuleText, "1.1", "A1.1", 3),
             Fragment(SourceFragmentKind.RuleContinuation, "1.1", "A1.1", 4),
@@ -202,7 +229,15 @@ public sealed class TirStructuralExtractorTests
             new string('c', 40),
             AslSourceRegistryBuilder.SourceRoot,
             new ConversionTool(AslSourceRegistryBuilder.ConversionToolPath, Sha('f')),
-            []);
+            [
+                new SourceArtifact(
+                    "asl-easlrb-3.10:chapter-a",
+                    "docs/ASL/Rulebook_Markdown/chapter-a.md",
+                    SourceArtifactKind.Markdown,
+                    Sha('a'),
+                    0,
+                    "A"),
+            ]);
     }
 
     private static SourceFragment Fragment(
