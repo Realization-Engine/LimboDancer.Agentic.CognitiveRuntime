@@ -1611,6 +1611,12 @@ The [Native Local Decision Model](<./LimboDancer.Agentic.CognitiveRuntime Native
 
 This direction is not an admitted increment. Do not implement a second non-reference provider, model service, training pipeline, router, or fallback from this note. The next eligible activity remains operator-controlled evidence preparation under the PR-19 Evaluation Review. A local-provider design slice requires a representative reviewed corpus, pinned inference identity, finite evaluation budget, repeated offline results, and documented acceptance thresholds for one bounded Decision class.
 
+### Future Anthropic Decision provider direction
+
+The [Anthropic Decision Provider Feasibility and Design](<./LimboDancer.Agentic.CognitiveRuntime Anthropic Decision Provider Feasibility and Design.md>) records technical due diligence for a possible remote structured-output implementation of the existing `IDecisionProvider`. Storyvizor supplies tested Anthropic SDK lifecycle experience; the official SDK supplies typed Messages, structured output, usage, stop reasons, and cancellation. LimboDancer retains canonical input, budgets, semantic validation, replay evidence, and all execution authority.
+
+This direction is not an admitted increment. Any future slice must use one non-streaming, tool-free, stateless invocation; disable SDK retries; fail closed on refusal, truncation, unexpected stop reasons, malformed output, and unknown candidates; and preserve PR-19's deadline, token, cost, and replay-only rules. It remains blocked by the same representative-corpus and acceptance-threshold gate as every other non-reference provider.
+
 ## 27. Deferred Until Concrete Use Cases
 
 Do not implement merely because the architecture permits them:

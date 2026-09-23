@@ -37,6 +37,7 @@ When documents disagree, use this order of authority:
 | [Decision Plane Architecture](<./Decision Plane Architecture.md>) | Defines bounded selection, abstention, escalation, and the relationship between decision and execution authority. |
 | [Runtime Orchestration Model](<./LimboDancer.Agentic.CognitiveRuntime Runtime Orchestration Model.md>) | Defines how goals and directed requests progress across runtime authority boundaries. |
 | [Native Local Decision Model](<./LimboDancer.Agentic.CognitiveRuntime Native Local Decision Model.md>) | Research direction for a future LimboDancer-owned local semantic choice engine, including surveyed implementations, invariants, corpus requirements, and the evidence gate that keeps implementation deferred. |
+| [Anthropic Decision Provider Feasibility and Design](<./LimboDancer.Agentic.CognitiveRuntime Anthropic Decision Provider Feasibility and Design.md>) | Candidate remote-provider design based on Storyvizor, cookbook, and the official Anthropic C# SDK; implementation remains outside the admission gate. |
 
 ## Domain integration and knowledge modeling
 

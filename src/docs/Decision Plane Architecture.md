@@ -484,6 +484,16 @@ This provides a baseline and handles decisions requiring richer semantic interpr
 
 The provider should be constrained to the supplied candidate set.
 
+#### 12.2.1 Implemented OpenAI baseline
+
+PR-19 implements a disabled-by-default `OpenAiDecisionProvider` as the first remote structured-output experiment. It remains replay-only pending representative evidence and explicit acceptance thresholds.
+
+#### 12.2.2 Anthropic candidate
+
+A future `AnthropicDecisionProvider` can use the official Anthropic C# SDK behind the same `IDecisionProvider` boundary. The [Anthropic Decision Provider Feasibility and Design](<./LimboDancer.Agentic.CognitiveRuntime Anthropic Decision Provider Feasibility and Design.md>) defines the SDK constraints, fail-closed stop-reason policy, budget semantics, and admission gate.
+
+Anthropic is a candidate implementation, not an architectural dependency. No implementation is admitted by this classification.
+
 ### 12.3 JevDecisionProvider
 
 A specialized typed decision provider can implement the same contract.
