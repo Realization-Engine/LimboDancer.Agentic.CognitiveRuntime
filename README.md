@@ -598,23 +598,23 @@ LimboDancer.Infrastructure.Ontology
 
 ## Legacy Implementation
 
-The previous `LimboDancer.MCP.*` implementation has been isolated under:
+The previous `LimboDancer.MCP.*` implementation is archived under:
 
 ```text
-src/Legacy/
+src/_Legacy/
 ```
 
 including its legacy solution:
 
 ```text
-src/Legacy/LimboDancer.MCP.sln
+src/_Legacy/LimboDancer.MCP.sln
 ```
 
-Legacy code is behavioral reference only.
+The archive is retained for archival purposes only. It is not built by CI, is not maintained, and will not be deleted.
 
 New production projects must not reference legacy projects or assemblies.
 
-The migration model is:
+The model for carrying legacy behavior forward is:
 
 ```text
 inspect legacy behavior
@@ -630,12 +630,9 @@ admit into the new architecture
     |
     v
 prove parity and conformance
-    |
-    v
-delete src/Legacy/
 ```
 
-The intended end state is complete removal of the `src/Legacy/` directory.
+The archive itself is not modified by this process.
 
 ---
 

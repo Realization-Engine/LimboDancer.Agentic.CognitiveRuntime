@@ -11,7 +11,7 @@
 **Canonical system identity:** `LimboDancer.Agentic.CognitiveRuntime`  
 **.NET root namespace / project prefix:** `LimboDancer`  
 **Legacy code status:** Existing `LimboDancer.MCP.*` projects are reference implementations only. Conforming new production code MUST NOT depend on them.
-**Legacy source root:** `src/Legacy/` (temporary; delete after required legacy behavior is ported)  
+**Legacy archive root:** `src/_Legacy/` (archival only; retained, not built, not referenced)  
 
 ## 1. Purpose
 
@@ -224,11 +224,11 @@ Interaction adapters and infrastructure implementations MUST depend toward runti
 
 Protocol and infrastructure SDK types MUST NOT leak into core runtime authority contracts.
 
-### 4.7 Legacy Retirement
+### 4.7 Legacy Archive
 
-The target end state is removal of the legacy `LimboDancer.MCP.*` production projects.
+The legacy `LimboDancer.MCP.*` projects are retained under `src/_Legacy/` for archival purposes only. The target end state is a new runtime that does not depend on them; the archive itself is not deleted.
 
-Deletion readiness MUST require:
+Legacy independence MUST require:
 
 - specification conformance;
 - required feature parity;
@@ -241,7 +241,7 @@ Deletion readiness MUST require:
 
 ### SPEC-PLAT-11
 
-Legacy deletion MUST be treated as a planned completion milestone.
+Legacy independence MUST be treated as a planned completion milestone. Reaching it does not remove the `src/_Legacy/` archive.
 
 ### SPEC-PLAT-12
 

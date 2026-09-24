@@ -60,10 +60,10 @@ Advanced Squad Leader is the first reference domain and architectural fitness te
 The new `.NET 10` production solution is active under `src/LimboDancer/`. Milestone A includes the directed action-authority substrate, Diagnostics, the Execution Gate, audit, tenant-safe reference State providers, four compatibility actions, the MCP interaction adapter, and the independently runnable Host. Milestone B adds the domain-neutral observation and semantic-resolution boundaries plus the deterministic, audited Goal-to-SelectedAction path. Milestone C adds deterministic Reasoning and a bounded, deny-by-default autonomous Goal loop that revalidates every step through the common authority path. Milestone D adds opt-in deterministic Effect Verification and tenant-scoped replay-capable Decision evidence without treating executor success as semantic proof or stored evidence as execution authority. PR-19 adds the first disabled-by-default structured-output provider experiment and complete offline replay measures while retaining the deterministic rule provider as the default; adoption remains deferred pending representative operator-controlled evidence. ASL-OT-01 adds isolated offline source registration and deterministic fragment location for the ASL 3.01 A-E corpus without adding ontology semantics or runtime dependencies.
 
 - `src/LimboDancer/` — active production projects and conformance tests;
-- `src/Legacy/` — isolated `LimboDancer.MCP.*` implementation retained temporarily for behavioral reference; and
+- `src/_Legacy/` — archived `LimboDancer.MCP.*` implementation, retained for archival purposes only; and
 - `src/docs/` — current specifications, reviews, planning documents, and legacy documentation awaiting retirement or migration.
 
-New production code must not depend on `src/Legacy/`. Architecture tests enforce the approved project graph and legacy boundary.
+New production code must not depend on `src/_Legacy/`. Architecture tests enforce the approved project graph and legacy boundary.
 
 See the [`src/` overview](../) for the current and target source layouts.
 

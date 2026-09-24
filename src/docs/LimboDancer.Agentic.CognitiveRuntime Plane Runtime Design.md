@@ -11,7 +11,7 @@
 **Canonical system identity:** `LimboDancer.Agentic.CognitiveRuntime`  
 **.NET root namespace / project prefix:** `LimboDancer`  
 **Legacy code status:** Existing `LimboDancer.MCP.*` projects are reference implementations only. New architecture code SHALL NOT depend on them and they are intended for deletion after replacement.
-**Legacy source root:** `src/Legacy/` (temporary; delete after required legacy behavior is ported)  
+**Legacy archive root:** `src/_Legacy/` (archival only; retained, not built, not referenced)  
 
 ## 1. Purpose
 
@@ -351,9 +351,9 @@ Every copied or reimplemented legacy capability SHALL pass three questions befor
 
 Copying a class into a new namespace without architectural review SHALL NOT constitute migration completion.
 
-### 5.6 Legacy Retirement
+### 5.6 Legacy Archive
 
-The legacy `LimboDancer.MCP.*` projects SHALL be deleted after the new runtime satisfies:
+The legacy `LimboDancer.MCP.*` projects are retained under `src/_Legacy/` for archival purposes only. The new runtime SHALL NOT depend on them, and SHALL reach independence from legacy behavior by satisfying:
 
 - required functional parity;
 - specification conformance;
@@ -363,7 +363,7 @@ The legacy `LimboDancer.MCP.*` projects SHALL be deleted after the new runtime s
 - State migration requirements;
 - operational deployment validation.
 
-Legacy deletion is an intended end state, not an optional cleanup task.
+Legacy independence is an intended end state, not an optional cleanup task. The archive is not deleted when it is reached.
 
 ### DESIGN RULE PLAT-1
 

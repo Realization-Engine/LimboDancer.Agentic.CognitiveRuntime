@@ -28,7 +28,7 @@ src/LimboDancer/
   tests/
 ```
 
-All new projects target `net10.0`. The five runtime production projects retain the approved dependency graph. `LimboDancer.AppHost` is an outer Aspire application-orchestration project that references `LimboDancer.Host` only; it does not participate in runtime action authority. Architecture tests enforce these boundaries and forbid references from new projects into `src/Legacy/` or the `LimboDancer.MCP.*` project family.
+All new projects target `net10.0`. The five runtime production projects retain the approved dependency graph. `LimboDancer.AppHost` is an outer Aspire application-orchestration project that references `LimboDancer.Host` only; it does not participate in runtime action authority. Architecture tests enforce these boundaries and forbid references from new projects into `src/_Legacy/` or the `LimboDancer.MCP.*` project family.
 
 The initial AppHost deliberately orchestrates only `LimboDancer.Host`. The State ports are provider-neutral, and the first Infrastructure implementations are deterministic in-memory reference providers used to prove tenant isolation and fail-closed semantic behavior. PostgreSQL, graph, vector, ontology persistence, and their Aspire resources are admitted only when a concrete provider is selected and configured. Aspire operational telemetry does not replace LimboDancer diagnostics, Governance decisions, the Execution Gate, or authoritative runtime audit evidence.
 
@@ -42,4 +42,4 @@ Milestones A through D are approved. The runtime now has a governed directed-exe
 
 ## Legacy boundary
 
-New production projects must not reference projects or assemblies under `Legacy/`. Required behavior may be inspected, reimplemented, tested, and admitted into the new architecture. The intended end state is deletion of `src/Legacy/` after the necessary behavior has been ported and validated.
+New production projects must not reference projects or assemblies under `_Legacy/`. Required behavior may be inspected, reimplemented, tested, and admitted into the new architecture. `src/_Legacy/` is retained for archival purposes only; it is not maintained and will not be deleted.

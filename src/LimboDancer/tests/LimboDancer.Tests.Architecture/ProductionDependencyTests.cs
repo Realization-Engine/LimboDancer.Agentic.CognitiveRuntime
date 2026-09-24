@@ -34,7 +34,7 @@ public sealed class ProductionDependencyTests
 
         Assert.True(
             violations.Length == 0,
-            $"New solution projects must not reference src/Legacy or LimboDancer.MCP.*:{Environment.NewLine}{string.Join(Environment.NewLine, violations)}");
+            $"New solution projects must not reference src/_Legacy or LimboDancer.MCP.*:{Environment.NewLine}{string.Join(Environment.NewLine, violations)}");
     }
 
     [Fact]
@@ -161,7 +161,7 @@ public sealed class ProductionDependencyTests
     private static bool IsBelowLegacyRoot(string path)
     {
         var normalizedPath = path.Replace('\\', '/');
-        return normalizedPath.Contains("/src/Legacy/", StringComparison.OrdinalIgnoreCase);
+        return normalizedPath.Contains("/src/_Legacy/", StringComparison.OrdinalIgnoreCase);
     }
 
     private sealed record ProjectReference(

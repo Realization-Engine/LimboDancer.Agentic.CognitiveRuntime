@@ -40,7 +40,7 @@ Send the API key in `X-LimboDancer-Key`. Readiness never performs schema migrati
 
 ## Legacy configuration reference
 
-The remaining sections describe the temporary projects under `src/Legacy/`. They are retained only for migration reference and are not read by the new runtime Host.
+The remaining sections describe the archived projects under `src/_Legacy/`. They are retained for archival purposes only and are not read by the new runtime Host.
 
 ## Required Configuration
 

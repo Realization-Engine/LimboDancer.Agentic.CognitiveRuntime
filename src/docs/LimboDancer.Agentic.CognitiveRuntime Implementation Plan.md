@@ -5,7 +5,7 @@
 **Product / repository identity:** `LimboDancer.Agentic.CognitiveRuntime`  
 **.NET root namespace / project prefix:** `LimboDancer`  
 **Target framework:** `net10.0` / C# 14  
-**Legacy source root:** `src/Legacy/` (temporary; delete after required legacy behavior is ported)  
+**Legacy archive root:** `src/_Legacy/` (archival only; retained, not built, not referenced)  
 **Normative source:** `LimboDancer.Agentic.CognitiveRuntime Plane Runtime Specification.md`  
 **Supporting design:** `LimboDancer.Agentic.CognitiveRuntime Plane Runtime Design.md`
 
@@ -98,17 +98,17 @@ Create the new solution in a physically isolated subtree:
 src/LimboDancer/LimboDancer.sln
 ```
 
-The legacy source tree and legacy solution are now fully contained under `src/Legacy/`:
+The legacy source tree and legacy solution are now fully contained under `src/_Legacy/`:
 
 ```text
-src/Legacy/LimboDancer.MCP.sln
+src/_Legacy/LimboDancer.MCP.sln
 ```
 
 The two solutions serve different purposes during reimplementation:
 
 ```text
-src/Legacy/LimboDancer.MCP.sln
-    legacy behavioral reference
+src/_Legacy/LimboDancer.MCP.sln
+    archived legacy implementation (archival only)
 
 LimboDancer.sln
     new production architecture
@@ -416,7 +416,7 @@ These remain working identifiers until the ontology namespace is finalized.
 
 ### Legacy source to inspect
 
-- `src/Legacy/LimboDancer.MCP.McpServer/McpServer.cs`
+- `src/_Legacy/LimboDancer.MCP.McpServer/McpServer.cs`
 - four existing tool implementations;
 - current JSON schemas / JSON-LD action metadata;
 - ontology action/property mappings.
@@ -730,27 +730,27 @@ LimboDancer.Infrastructure.Ontology
 
 Relational:
 
-- `src/Legacy/LimboDancer.MCP.Storage/`;
-- `src/Legacy/LimboDancer.MCP.McpServer/Services/HistoryService.cs` or its current legacy location;
+- `src/_Legacy/LimboDancer.MCP.Storage/`;
+- `src/_Legacy/LimboDancer.MCP.McpServer/Services/HistoryService.cs` or its current legacy location;
 - EF models and migrations.
 
 Graph:
 
-- `src/Legacy/LimboDancer.MCP.Graph.CosmosGremlin/`;
-- `src/Legacy/LimboDancer.MCP.McpServer/` implementation of `TenantScopedGraphStore`;
+- `src/_Legacy/LimboDancer.MCP.Graph.CosmosGremlin/`;
+- `src/_Legacy/LimboDancer.MCP.McpServer/` implementation of `TenantScopedGraphStore`;
 - graph query services;
-- `src/Legacy/LimboDancer.MCP.McpServer/` implementation of `GraphPreconditionsService`;
-- `src/Legacy/LimboDancer.MCP.McpServer/` implementation of `GraphEffectsService`.
+- `src/_Legacy/LimboDancer.MCP.McpServer/` implementation of `GraphPreconditionsService`;
+- `src/_Legacy/LimboDancer.MCP.McpServer/` implementation of `GraphEffectsService`.
 
 Vector:
 
-- `src/Legacy/LimboDancer.MCP.Vector.AzureSearch/`;
-- `src/Legacy/LimboDancer.MCP.McpServer/` implementation of `VectorSearchService`;
+- `src/_Legacy/LimboDancer.MCP.Vector.AzureSearch/`;
+- `src/_Legacy/LimboDancer.MCP.McpServer/` implementation of `VectorSearchService`;
 - tenant filter construction.
 
 Ontology:
 
-- `src/Legacy/LimboDancer.MCP.Ontology/`;
+- `src/_Legacy/LimboDancer.MCP.Ontology/`;
 - property/relation mapping;
 - ontology repository contracts and validators.
 
@@ -1009,7 +1009,7 @@ LimboDancer.Host
 
 ### Exit criteria
 
-The new runtime can be launched independently of `src/Legacy/LimboDancer.MCP.sln`.
+The new runtime can be launched independently of `src/_Legacy/LimboDancer.MCP.sln`.
 
 ### Suggested PR
 
@@ -1763,13 +1763,13 @@ Each PR SHOULD:
 - update this plan only when implementation evidence changes sequencing;
 - reference applicable `SPEC-*` requirements in the PR description.
 
-Do not mix broad legacy deletion into implementation PRs until replacement parity exists.
+Do not modify the `src/_Legacy/` archive in implementation PRs.
 
-## 31. Legacy Retirement Plan
+## 31. Legacy Archive Plan
 
-Legacy deletion begins only after the new runtime reaches required parity. The intended end state is deletion of the entire `src/Legacy/` directory as one retirement unit.
+`src/_Legacy/`, including `src/_Legacy/LimboDancer.MCP.sln`, is retained for archival purposes only. It is not maintained, not built by CI, and not deleted. The intended end state is a new runtime that is fully independent of it.
 
-### Retirement prerequisites
+### Independence prerequisites
 
 - directed MCP parity confirmed;
 - autonomous target capabilities implemented;
@@ -1780,19 +1780,15 @@ Legacy deletion begins only after the new runtime reaches required parity. The i
 - no CI workflow requires legacy production projects;
 - documentation points to the new runtime.
 
-### Retirement sequence
+### Independence sequence
 
-1. mark legacy projects frozen;
-2. remove legacy projects from active CI/deployment;
-3. archive any required compatibility fixtures;
-4. delete obsolete `LimboDancer.MCP.*` production projects;
-5. delete legacy-only tests;
-6. delete the entire `src/Legacy/` tree, including `src/Legacy/LimboDancer.MCP.sln`;
-7. remove obsolete package/config entries;
-8. run full new-solution conformance suite;
-9. update repository README/architecture index.
+1. keep the archive frozen;
+2. keep legacy projects out of active CI/deployment;
+3. copy any required compatibility fixtures into the new solution;
+4. run full new-solution conformance suite;
+5. update repository README/architecture index.
 
-Legacy removal should be performed in dedicated PRs after parity, not piecemeal during early implementation.
+Independence work should be performed in dedicated PRs after parity, not piecemeal during early implementation.
 
 ## 32. .NET 11 Upgrade Checkpoint
 
@@ -1832,9 +1828,9 @@ Goal orchestration can execute bounded multi-step work through the common gate. 
 
 Reasoning and multiple Decision providers can be evaluated behind stable contracts.
 
-### Milestone E: Legacy retirement
+### Milestone E: Legacy independence
 
-The new runtime satisfies required parity and all legacy production projects can be removed.
+The new runtime satisfies required parity and no active project, workflow, or deployment depends on the `src/_Legacy/` archive.
 
 ### Milestone F: ASL reference-domain realization
 
@@ -1880,7 +1876,7 @@ PR-N   Provider routing only when evidence justifies it
 
 --- final migration ---
 
-Dedicated legacy retirement PR series
+Dedicated legacy independence PR series (archive retained)
 
 --- reference-domain realization ---
 

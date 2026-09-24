@@ -49,4 +49,4 @@ No current ASL artifact authorizes execution. A `DomainConclusion` remains an in
 
 The HTML, JavaScript, and JSON files in this subtree are ASL visualization prototypes and reference data. The `Hex Generators/` subtree contains later modular renderer experiments.
 
-The legacy .NET ASL sample application remains under `src/Legacy/Samples/ASL/` until the broader legacy migration determines its disposition.
+The legacy .NET ASL sample application is archived under `src/_Legacy/Samples/ASL/` for archival purposes only.
