@@ -106,6 +106,26 @@ public sealed class AslScenarioA1OccupiedMatrixTests
             .Concat(reviewed.NewlyVerifiedRecords)
             .Concat(occupied.Records)
             .Select(record => record.SourceFragment.FragmentId).ToHashSet(StringComparer.Ordinal);
+        using var postReveal = Read("asl-scenario-a1.post-reveal-package.json");
+        using var inventory = Read("asl-scenario-a1.candidate-source-inventory.json");
+        Assert.Equal(Digest("asl-scenario-a1.occupied-package.json"),
+            postReveal.RootElement.GetProperty("priorPackageManifestSha256").GetString());
+        Assert.Equal(inventory.RootElement.GetProperty("pdfSha256").GetString(),
+            postReveal.RootElement.GetProperty("sourcePdfSha256").GetString());
+        foreach (var source in postReveal.RootElement.GetProperty("sourceFragments").EnumerateArray())
+        {
+            var id = source.GetProperty("ruleId").GetString();
+            var registered = Assert.Single(inventory.RootElement.GetProperty("rules")
+                .EnumerateArray().Where(item => item.GetProperty("normalizedRuleId").GetString() == id));
+            Assert.Equal(source.GetProperty("physicalPdfPage").GetInt32(),
+                registered.GetProperty("pdfStartPage").GetInt32());
+            var fragment = Assert.Single(registered.GetProperty("fragments").EnumerateArray());
+            Assert.Equal(fragment.GetProperty("fragmentId").GetString(),
+                source.GetProperty("fragmentId").GetString());
+            Assert.Equal(fragment.GetProperty("contentSha256").GetString(),
+                source.GetProperty("contentSha256").GetString());
+            Assert.Contains(fragment.GetProperty("fragmentId").GetString()!, verified);
+        }
         using var matrix = Read("asl-scenario-a1.occupied-case-matrix.json");
         var cases = matrix.RootElement.GetProperty("cases").EnumerateArray().ToArray();
         foreach (var item in cases)

@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "published-bounded-post-reveal-package",
+  "domainId": "asl",
+  "packageId": "scenario-a1-concealment-post-reveal",
+  "declaredUse": "Ordinary Movement Phase attempted entry into a board 01 ground-level building after A12.15 defender resolution",
+  "priorPackageManifestSha256": "2ab3bde60ecc9855f2e35197e1921cfcfee3e8da3cd168a9cceef66ada6be6e9",
+  "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+  "sourceFragments": [
+    {
+      "ruleId": "A12.15",
+      "physicalPdfPage": 78,
+      "fragmentId": "asl-fragment:sha256:e92332292b4bde444aff7f84127793084e1f0ecfd99af9750da6e4aa8af40ea3",
+      "contentSha256": "ce0cc02826bf66951ff4a1ce06b7a51d105eb2f2540f3710c2e49c2455306fcf"
+    },
+    {
+      "ruleId": "A4.14",
+      "physicalPdfPage": 49,
+      "fragmentId": "asl-fragment:sha256:d22c4de11eefffac89c9585633ca3f4eeff313cc2d1ddd535975e1e8c23e0e69",
+      "contentSha256": "65adb630eb862eb54b49feb1e414bdf9b0c5132f8d0c55e6eaa94eb5b44c6995"
+    }
+  ],
+  "acceptedCaseIds": [
+    "A1-post-reveal-nondummy-forced-back",
+    "A1-post-reveal-dummies-only-continue"
+  ],
+  "nonDefinitiveCaseId": "A1-concealed-occupancy-attempt",
+  "exclusions": [
+    "unresolved defender reveal",
+    "concealed or Dummy attacker",
+    "bypass",
+    "A4.14 Movement Phase entry exceptions",
+    "Infantry overrun election",
+    "follow-on fire and resulting game-state mutation"
+  ]
+}
