@@ -87,3 +87,7 @@ Review decisions still needed: whether a single root manifest embeds the source/
 6. Complete the ASL-OT-03.4 acceptance/adjudication contract only when a real semantic representation can be validated; commit a representative review bundle and the ASL-OT-03.5 conformance result. Independent reviewers then decide the §19 admission gate before ASL-OT-04 scenario semantics are asserted.
 
 No Python source or dependency is introduced into the ASL implementation. The older PDF-to-Markdown converter remains outside this work.
+
+## Subsequent bounded Scenario A1 progress (2026-09-24)
+
+The earlier draft assessment and candidate profile above remain historical. Later commits recorded delegated xUnit review of 11 baseline subjects, ten further first-case fragments and a separate page-698 chart; a digest-pinned read-only adapter now handles only the declared empty-building case. The [occupied-building case matrix](<./SourceRegistry/asl-scenario-a1.occupied-case-matrix.json>) adds two narrow prohibited-entry labels under explicit exclusion facts and records unresolved branches. Its xUnit review checks exact registered fragments and existing verification records. This does **not** satisfy the ASL-OT-03.4 semantic acceptance contract, approve the candidate manifest profile, or grant full ASL-OT-04 admission. B23.711, A5.5 and Infantry OVR continuation still need source and semantic review before their branches can be adjudicated.
