@@ -33,7 +33,9 @@ export function create(host, dotnet) {
             return;
         }
 
-        state.drag = { id: event.pointerId, x: event.clientX, y: event.clientY, box: { ...state.box }, moved: false };
+        // Pointer capture retargets pointerup to the SVG root. Remember the actual counter hit here.
+        const placementId = event.target.closest?.("[data-placement-id]")?.getAttribute("data-placement-id");
+        state.drag = { id: event.pointerId, x: event.clientX, y: event.clientY, box: { ...state.box }, moved: false, placementId };
         svg.setPointerCapture(event.pointerId);
     });
 
@@ -61,9 +63,8 @@ export function create(host, dotnet) {
             return;
         }
 
-        const counter = event.target.closest?.("[data-placement-id]");
-        if (counter) {
-            state.dotnet.invokeMethodAsync("OnUnitClick", counter.getAttribute("data-placement-id"));
+        if (drag.placementId && state.svg.querySelector("#layer-units")) {
+            state.dotnet.invokeMethodAsync("OnUnitClick", drag.placementId);
             return;
         }
 
