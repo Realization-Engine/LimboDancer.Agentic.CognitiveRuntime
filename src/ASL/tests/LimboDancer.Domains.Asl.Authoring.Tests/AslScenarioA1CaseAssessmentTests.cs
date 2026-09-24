@@ -29,7 +29,7 @@ public sealed class AslScenarioA1CaseAssessmentTests
             blocker.Kind == AslScenarioA1CaseBlockerKind.DependencyAndSemanticReviewPending);
         Assert.Contains(result.Blockers, blocker =>
             blocker.Kind == AslScenarioA1CaseBlockerKind.SourceBoundaryUnresolved
-            && blocker.Reference.Contains("PDF page 698", StringComparison.Ordinal));
+            && blocker.Reference == Assert.Single(result.UnresolvedSupplementalSources).CandidateId);
         Assert.DoesNotContain(result.Blockers, blocker =>
             blocker.Kind == AslScenarioA1CaseBlockerKind.SourceRuleNotLocated);
         foreach (var id in new[] { "A2.4", "A3.3", "A4.1", "A4.11", "A4.13", "A5.1", "A5.11", "B23.1" })
@@ -89,6 +89,43 @@ public sealed class AslScenarioA1CaseAssessmentTests
         Assert.False(result.CanIssueDefinitiveRuling);
         Assert.Contains(result.Blockers, blocker =>
             blocker.Kind == AslScenarioA1CaseBlockerKind.DependencyAndSemanticReviewPending);
+        Assert.Contains(result.Blockers, blocker =>
+            blocker.Kind == AslScenarioA1CaseBlockerKind.SourceBoundaryUnresolved);
+    }
+
+    [Fact]
+    public void BuildingChartEvidenceIsOutsideOriginalRegistryAndCannotCloseCase()
+    {
+        var candidate = AslScenarioA1CaseAssessor.CreateBuildingChartCandidate();
+        var path = Path.Combine(RepositoryPaths.Root, "docs", "ASL", "SourceRegistry",
+            "asl-scenario-a1.backmatter-chart-candidate.json");
+        using var evidence = JsonDocument.Parse(File.ReadAllText(path));
+        var root = evidence.RootElement;
+
+        Assert.Equal(candidate.CandidateId, root.GetProperty("candidateId").GetString());
+        Assert.Equal(candidate.PhysicalPdfPage, root.GetProperty("physicalPdfPage").GetInt32());
+        Assert.Equal(candidate.SourcePdfSha256, root.GetProperty("sourcePdfSha256").GetString());
+        Assert.Equal("candidate-unverified-outside-initial-registry", root.GetProperty("status").GetString());
+        var rows = root.GetProperty("rows").EnumerateArray().ToArray();
+        Assert.Collection(rows,
+            wooden => Assert.Equal("23. Wooden Building", wooden.GetProperty("rowLabel").GetString()),
+            stone => Assert.Equal("23. Stone Building", stone.GetProperty("rowLabel").GetString()));
+        Assert.All(rows, row =>
+        {
+            Assert.Equal(2, row.GetProperty("entryMf").GetInt32());
+            Assert.Equal("candidate-unverified", row.GetProperty("sourceStatus").GetString());
+        });
+
+        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        Assert.DoesNotContain(manifests.Registry.Artifacts, artifact =>
+            artifact.StartPage == candidate.PhysicalPdfPage || artifact.EndPage == candidate.PhysicalPdfPage);
+        var result = AslScenarioA1CaseAssessor.Assess(
+            AslScenarioA1CaseFacts.CreateDeclaredFirstCase(), manifests.Fragments,
+            manifests.Fragments.Select(fragment => fragment.FragmentId).ToHashSet(StringComparer.Ordinal));
+        Assert.False(result.CanIssueDefinitiveRuling);
+        Assert.Contains(result.Blockers, blocker =>
+            blocker.Kind == AslScenarioA1CaseBlockerKind.SourceBoundaryUnresolved
+            && blocker.Reference == candidate.CandidateId);
     }
 
     [Fact]

@@ -32,9 +32,15 @@ public sealed record AslScenarioA1CaseBlocker(
     AslScenarioA1CaseBlockerKind Kind,
     string Reference);
 
+public sealed record AslScenarioA1SupplementalSourceCandidate(
+    string CandidateId,
+    int PhysicalPdfPage,
+    string SourcePdfSha256);
+
 public sealed record AslScenarioA1CaseAssessment(
     IReadOnlyList<string> RequiredRuleIds,
     IReadOnlyList<string> ExcludedBranchRuleIds,
+    IReadOnlyList<AslScenarioA1SupplementalSourceCandidate> UnresolvedSupplementalSources,
     IReadOnlyList<AslScenarioA1CaseBlocker> Blockers)
 {
     // A source inventory is not an accepted semantic rule model or a legality decision.
@@ -43,6 +49,10 @@ public sealed record AslScenarioA1CaseAssessment(
 
 public static class AslScenarioA1CaseAssessor
 {
+    public static AslScenarioA1SupplementalSourceCandidate CreateBuildingChartCandidate() =>
+        new("asl-supplement:b-terrain-chart-building-entry", 698,
+            AslScenarioA1SourceInventory.PdfDigest);
+
     // Candidate baseline for one declared MPh entry into an empty ordinary building.
     // The domain reviewer must extend or correct this list and approve its applicability.
     private static readonly string[] RequiredRules =
@@ -113,13 +123,14 @@ public static class AslScenarioA1CaseAssessor
             }
         }
 
+        var chartCandidate = CreateBuildingChartCandidate();
         blockers.Add(new AslScenarioA1CaseBlocker(
             AslScenarioA1CaseBlockerKind.SourceBoundaryUnresolved,
-            "A4.13 cites the Chapter B Terrain Chart on PDF page 698, outside pages 6-253; "
-                + "review whether B23.4 supplies the complete ordinary building entry cost."));
+            chartCandidate.CandidateId));
         blockers.Add(new AslScenarioA1CaseBlocker(
             AslScenarioA1CaseBlockerKind.DependencyAndSemanticReviewPending,
             "Scenario A1 first-case applicability, exceptions and dependency closure"));
-        return new AslScenarioA1CaseAssessment(RequiredRules, ExcludedBranchRules, blockers);
+        return new AslScenarioA1CaseAssessment(RequiredRules, ExcludedBranchRules,
+            [chartCandidate], blockers);
     }
 }

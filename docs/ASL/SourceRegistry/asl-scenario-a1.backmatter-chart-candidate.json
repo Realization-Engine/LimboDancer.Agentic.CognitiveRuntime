@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "candidate-unverified-outside-initial-registry",
+  "candidateId": "asl-supplement:b-terrain-chart-building-entry",
+  "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+  "physicalPdfPage": 698,
+  "chartTitle": "B. Terrain Chart",
+  "requiredFor": "Scenario A1 first case: A4.13 and B23.4 building entry cost cross-check",
+  "extractor": "pdftotext 24.02.0 -f 698 -l 698 -layout",
+  "extractedPageTextSha256": "49ea0f434ce54197afa41fc95e78d0b809aa954d587406fe7e7078dbafdacdd0",
+  "infantryMfColumnHeaderLineSha256": "34795a99b5040d423ee3122ae349ee29d7209fb652ecc2ca86893677c564eef7",
+  "rows": [
+    {
+      "rowLabel": "23. Wooden Building",
+      "entryMf": 2,
+      "extractedLineSha256": "f214c485edac00238b31566adb08392f180d5f95c65bcddc6922699a51fd6e9c",
+      "sourceStatus": "candidate-unverified"
+    },
+    {
+      "rowLabel": "23. Stone Building",
+      "entryMf": 2,
+      "extractedLineSha256": "0d5d111f3ecf9e46084bbbfa775f67875b9ce8faa0c0bf60d508f8b058e27fa7",
+      "sourceStatus": "candidate-unverified"
+    }
+  ],
+  "qualification": "Building row notes and the chart legend remain part of the candidate dependency; road and Bypass entry are excluded by the declared first-case facts.",
+  "attestation": "Tool-assisted extraction and visual page review; no human fidelity attestation or registry admission."
+}

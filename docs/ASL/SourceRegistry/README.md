@@ -18,6 +18,7 @@ The authoring scope is **only the TOC, Index/Glossary, and Chapters A–E**: sev
 | `asl-scenario-a1.source-verification.json` | C# generated `Verified` source-fidelity records for the 11 attested subjects, bound to exact artifacts in the full TIR; no semantic review or dependency closure is asserted. |
 | `asl-scenario-a1.first-case-pdf-comparison.json` | Tool-assisted PDF comparisons for eight additional first-case rule declarations and the two linked figure-reference fragments. All ten subjects remain `unverified` pending source-provider review. |
 | `asl-scenario-a1.pending-comparison-records.json` | C# generated `Indeterminate` source-verification records for those ten comparison subjects, bound to the same full TIR digest as the first 11 verified subjects. Human attestation is pending. |
+| `asl-scenario-a1.backmatter-chart-candidate.json` | Bounded page-698 B. Terrain Chart candidate: exact PDF, extraction, MF column and two building-row hashes; remains outside the initial source registry and unverified. |
 
 The manifests contain locators and hashes, not duplicated rule text. The Markdown and image files under `../Rulebook_Markdown/` remain the registered content.
 
