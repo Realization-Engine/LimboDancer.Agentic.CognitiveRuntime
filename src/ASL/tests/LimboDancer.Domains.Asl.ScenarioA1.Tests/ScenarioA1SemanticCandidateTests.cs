@@ -28,7 +28,7 @@ public sealed class ScenarioA1SemanticCandidateTests
     {
         var candidate = new ScenarioA1SemanticCandidate();
         var semanticCase = Assert.Single(candidate.Cases, item => item.Id == caseId);
-        var facts = semanticCase.Predicates.ToDictionary(item => item.Key, item => item.Equals);
+        var facts = semanticCase.Predicates.ToDictionary(item => item.Key, item => item.ExpectedValue);
         var result = candidate.Evaluate(caseId, facts);
         Assert.Equal(expected, result.Disposition);
         Assert.Equal(semanticCase.SourceRules, result.SourceRules);

@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace LimboDancer.Domains.Asl.ScenarioA1;
 
-public sealed record ScenarioA1Predicate(string Key, string Equals);
+public sealed record ScenarioA1Predicate(string Key, string ExpectedValue);
 public sealed record ScenarioA1SemanticCase(string Id, string ReviewStatus, string ExpectedDisposition,
     IReadOnlyList<string> SourceRules, IReadOnlyList<ScenarioA1Predicate> Predicates);
 public sealed record ScenarioA1SemanticResult(string Disposition, IReadOnlyList<string> SourceRules);
@@ -46,7 +46,7 @@ public sealed class ScenarioA1SemanticCandidate
                 || (status == "reviewed-bounded" && predicates.Length == 0)
                 || (status != "reviewed-bounded" && predicates.Length != 0)
                 || predicates.Any(item => string.IsNullOrWhiteSpace(item.Key)
-                    || string.IsNullOrWhiteSpace(item.Equals))
+                    || string.IsNullOrWhiteSpace(item.ExpectedValue))
                 || predicates.Select(item => item.Key).Distinct(StringComparer.Ordinal).Count() != predicates.Length
                 || (status == "reviewed-bounded" && disposition is not ("eligible-2mf" or "prohibited"))
                 || (status == "deferred" && disposition != "abstained")
@@ -89,7 +89,7 @@ public sealed class ScenarioA1SemanticCandidate
             return new ScenarioA1SemanticResult("indeterminate", semanticCase.SourceRules);
         }
         if (facts.Count != semanticCase.Predicates.Count
-            || semanticCase.Predicates.Any(item => facts[item.Key] != item.Equals))
+            || semanticCase.Predicates.Any(item => facts[item.Key] != item.ExpectedValue))
         {
             return new ScenarioA1SemanticResult("abstained", semanticCase.SourceRules);
         }
