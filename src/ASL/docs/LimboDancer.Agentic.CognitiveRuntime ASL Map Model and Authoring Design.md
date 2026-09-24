@@ -128,7 +128,7 @@ The Terrain Grid is never shown to users directly (ASL-MAP-064). `GridOutlineTra
 - **Regions:** one region per 4-connected component of cells with the same `(terrain code, elevation)`. Each region is a set of closed rings along pixel edges: an outer ring and zero or more holes, with integer vertices at pixel corners.
 - **Vertices:** only at turns; collinear pixel-edge steps are merged.
 - **Order:** regions are sorted by `(code, elevation, top-left cell in column-major order)`. Rings start at their top-left vertex and run clockwise for outer rings and counterclockwise for holes. The output is therefore canonical.
-- **Losslessness:** filling the outlines under the coverage rule of section 5.3 reproduces the grid exactly. Tests check this for synthetic and random grids and, with a VASL checkout, for board 01 through the rendered Exact paths; the ASL-MAP-05 batch run extends it to every ingested board.
+- **Losslessness:** filling the outlines under the coverage rule of section 5.3 reproduces the grid exactly. Tests check this for synthetic and random grids and, with a VASL checkout, for board 01 through the rendered Exact paths. Since ASL-MAP-05, `GridOutlineVerifier` checks it for every ingested board in each fidelity batch, for both the terrain and the elevation outlines.
 
 Measured sizes (ASL-MAP-04): board 01 traces to 132 regions and 47,240 turn vertices. Board 04, whose dithered grain is the worst case measured, traces to 6,924 regions. Tracing takes 140 to 390 ms per board.
 

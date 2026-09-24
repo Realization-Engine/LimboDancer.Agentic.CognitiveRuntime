@@ -354,7 +354,7 @@ When a user starts from a verified VASL board (ASL-MAP-055):
 As built in ASL-MAP-04:
 
 - `Maps.Tests` adds outline tracer tests: a uniform grid, a hole, a corner pinch, elevation splits, ring orientation, and random grids refilled losslessly. It also adds `HexAt` tests.
-- `Maps.Rendering.Tests` covers SvgWriter numbers and escaping; determinism; well-formedness; unique ids; layer order; no raster images; fragment shape; and lossless refill of the Exact paths. It also compares both views of a synthetic 3 by 2 board with golden files in `Golden/`; set `ASL_MAPS_UPDATE_GOLDEN=1` to regenerate them. With a VASL checkout, it refills board 01 as well. Refilling every ingested board and recording hashes is left for the ASL-MAP-05 batch run.
+- `Maps.Rendering.Tests` covers SvgWriter numbers and escaping; determinism; well-formedness; unique ids; layer order; no raster images; fragment shape; and lossless refill of the Exact paths. It also compares both views of a synthetic 3 by 2 board with golden files in `Golden/`; set `ASL_MAPS_UPDATE_GOLDEN=1` to regenerate them. With a VASL checkout, it refills board 01 as well. ASL-MAP-05 adds `BoardRenderChecks` tests and a batch over every ingested board that requires lossless terrain and elevation outlines and raster-free SVG for both views.
 - `MapStudio.Tests` runs the Studio with `WebApplicationFactory` and a fake board provider. It tests layer and document responses, entity tags and 304 responses, trace mode, 404 cases, and the prerendered library and viewer pages. bUnit tests arrive with the component split in ASL-MAP-07.
 
 Browser automation (for example, Playwright) is deferred. It can be added when the editor stabilizes, without changing the design.
@@ -365,7 +365,7 @@ Browser automation (for example, Playwright) is deferred. It can be added when t
 |---|---|
 | ASL-MAP-01 | the four projects and their solution entries (section 2); `Maps.Tests` and `Maps.Vasl.Tests`; a minimal Studio page reporting configuration status. `Maps.Rendering.Tests` and `MapStudio.Tests` are added in ASL-MAP-04 with the first rendering and Studio code. |
 | ASL-MAP-04 | SvgWriter, `catalog` theme, Exact and Hex-fact views, render endpoints, board library and viewer, inspector (as built: section 9.1) |
-| ASL-MAP-05 | `/fidelity` batch pages and job runner |
+| ASL-MAP-05 | `/fidelity` batch pages and job runner (as built: section 9.2) |
 | ASL-MAP-07 | `board` theme, Styled and Comparison views, editor, patches |
 
 ### 9.1 ASL-MAP-04 as built
@@ -379,6 +379,21 @@ ASL-MAP-04 delivers a smaller surface than sections 4 and 5 describe. The rest m
 - **Viewport.** `boardViewport.js` creates the `<svg>` itself, imports every layer of the view, and toggles layers with CSS. It pans by drag, zooms by wheel about the pointer, and keeps the zoom when switching views. It reports clicks only; hover, keyboard zoom, and patches wait for ASL-MAP-07. The selected hex is outlined by a polygon that the module draws from vertices the server sends.
 - **Legend.** In the Exact view, hexside terrain uses its catalog color, matching the paths. The hex-side palette is used only in the Hex-fact view.
 - **Local run.** Static web assets resolve from build output only in the Development environment, so run the Studio from source with `--environment Development`.
+
+### 9.2 ASL-MAP-05 as built
+
+- **Batch.** `VaslBatchImporter` in `Maps.Vasl` (Ingestion Design section 10.1) runs every board. `IFidelityBatch` and its VASL implementation, `VaslFidelityBatch`, add `BoardRenderChecks` from `Maps.Rendering` for each ingested board. The checks are:
+  - `exact-outlines` and `elevation-outlines`: `GridOutlineVerifier` refills the traced outlines one (code, elevation) at a time under the even-odd rule, as the Exact view draws them, and counts cells that are uncovered, covered twice, or covered by the wrong key;
+  - `exact-svg` and `hexfacts-svg`: each view's full document, recorded by SHA-256, size, and render time, and required to contain no `<image>` element.
+- **Job runner.** `FidelityJobRunner` runs one batch at a time in the background, with progress and cancellation. Boards run by the batch are not kept in the viewer's cache, so a full run does not hold every grid in memory.
+- **Reports.** `FidelityReportStore` saves each completed report as `{CacheRoot}/fidelity/fidelity-{UTC start}.json`. `AslMaps:CacheRoot` defaults to `%LOCALAPPDATA%/LimboDancer/AslMaps/cache`, outside the repository. `GET /fidelity/reports/{id}.json` serves a saved report; ids are validated against a fixed pattern.
+- **Page.** `/fidelity` starts and cancels a run and shows progress. It lists saved reports and shows the selected one:
+  - a summary with its source, tool versions, and median stage timings;
+  - a table of boards with outcome, F1, F2, the checks (each detail in a tooltip), diagnostics, and time;
+  - F2 differences, expandable per board, with the first 200 shown and the rest in the JSON.
+  The table can be filtered to boards in scope, boards not verified, or all boards.
+- **Library.** The "Check all" button is replaced by a link to `/fidelity`. For a board that has not been opened, the library shows the latest report's result, marked "(batch)", only when the report still applies: the board's `LOSData` and metadata blobs, the catalog blob, and the importer, derivation, and renderer versions must all match the current ones. A stale report never marks a board verified.
+- **Measured.** In the Studio, a Debug build, the full run with rendering checks took 53 seconds for 297 directories. In the Release test run, the batch without rendering checks takes about 11 seconds, and the batch with rendering checks about 30 seconds.
 
 ## 10. Open issues
 

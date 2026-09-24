@@ -424,13 +424,30 @@ The C# test ingests the board from the configured local source, derives Hex Fact
 | `BoardMetadataParser` | section 6.1 |
 | `SharedBoardMetadataParser` | builds the `TerrainCatalog` defined in `Maps` (sections 6.2 and 6.3) |
 | `VaslBoardImporter` | orchestration, scope check, override consistency, provenance, diagnostics |
-| `VaslBatchImporter` | all boards in scope, with a per-board result and no fail-fast (ASL-MAP-035) |
+| `VaslBatchImporter` | every board, with a per-board result and no fail-fast (ASL-MAP-035); section 10.1 |
 
 `LimboDancer.Domains.Asl.Maps` holds `BoardGeometry`, `TerrainCatalog`, `TerrainGrid`, `HexFacts`, and `VaslCompatibleHexFactDerivation`, none of which depend on VASL file formats.
 
-**Memory and performance.** A standard grid is 1,161,000 cells stored as two arrays (`byte[]` codes, `sbyte[]` elevations), about 2.3 MB per board. Decoding streams through `GZipStream` and a block reader without buffering the full stream. Derivation touches a bounded neighborhood per hex, apart from the border-rectangle scans in steps 10 and 12. A full board is expected to derive in well under a second. The ASL-MAP-05 batch test records actual timings.
+**Memory and performance.** A standard grid is 1,161,000 cells stored as two arrays (`byte[]` codes, `sbyte[]` elevations), about 2.3 MB per board. Decoding streams through `GZipStream` and a block reader without buffering the full stream. Derivation touches a bounded neighborhood per hex, apart from the border-rectangle scans in steps 10 and 12. Measured in ASL-MAP-05 (Release build, one development workstation, boards run in parallel): the full batch of 297 board directories finishes in about 11 seconds. Per verified board, the median is 34 ms to import, 396 ms to derive, and 51 ms for F2; the slowest board takes 2.7 seconds in total. Derivation is the dominant stage, as expected from the border-rectangle scans.
 
 **Determinism.** No culture-sensitive formatting, no hash-ordered iteration in outputs, and no floating-point results in canonical output other than geometry constants serialized with invariant formatting.
+
+### 10.1 Batch runs (ASL-MAP-05)
+
+`VaslBatchImporter.Run` takes every board directory, or a named subset, and runs each board through the scope check, import and F1, derivation, F2 against the fixture directory, and any additional checks the caller supplies. The Studio adds rendering checks (Architecture and Rendering Design, section 9.2). Boards run in parallel. Results keep VASL board-name order, and one board's failure never stops the batch; an unexpected exception becomes `BATCH-001` on that board. Cancellation stops the run without a report.
+
+Each board ends with one outcome:
+
+| Outcome | Meaning |
+|---|---|
+| `Verified` | F1 pass, F2 pass, and every additional check passed |
+| `Ingested` | ingested, but F2 has no fixture, F2 failed, or a check failed; the reason is recorded |
+| `Failed` | refused with an error diagnostic |
+| `OutOfScope` | `VASL-SCOPE-001`, with the reason |
+
+The result is a `FidelityReport`: report version, start time, duration, VASL commit, catalog blob, tool versions (importer, derivation, report, and renderer when rendering checks run), and one entry per board. Each entry has its outcome, reason, `LOSData` and metadata blob ids (recorded for failed boards too), F1 status, F2 status with every coordinate-level difference, the additional checks, the diagnostics, and stage timings. It serializes to indented JSON with camel-case names and enum names as strings.
+
+Scenario M2 on the pinned checkout: 156 boards verified, `bd79` failed with `VASL-META-000`, `bdLFT1` failed with `VASL-LOS-005`, and 139 directories out of scope. The 139 include 5 directories whose names are not valid board references, which the Studio library does not list.
 
 ## 11. Deferred VASL features
 
@@ -474,6 +491,7 @@ The C# test ingests the board from the configured local source, derives Hex Fact
 | `VASL-CAT-003` | error | unknown `LOSCategory` value in catalog |
 | `VASL-CAT-004` | error | duplicate terrain name in catalog |
 | `VASL-CAT-005` | error | missing or unparseable `terrainType` attribute |
+| `BATCH-001` | error | unexpected exception while running one board in a batch; the batch continues |
 
 A board is eligible for verified status (ASL-MAP-044) only with no error diagnostics, F1 pass, and F2 pass.
 
@@ -490,6 +508,10 @@ A board is eligible for verified status (ASL-MAP-044) only with no error diagnos
 | override consistency for board 01 (63 of 63) | local VASL | skipped |
 | F2 for board 01, then every fixture | local VASL plus fixtures | skipped |
 | archive and source-directory equality | local VASL | skipped |
+| scope check agrees with import for every board | local VASL | skipped |
+| full batch: every fixture board verified, every other outcome explained, report JSON round trip, timings | local VASL plus fixtures | skipped |
+| batch with additional checks, a subset, progress, and cancellation | local VASL | skipped |
+| report JSON round trip | synthetic | yes |
 
 ## 15. Requirement coverage
 

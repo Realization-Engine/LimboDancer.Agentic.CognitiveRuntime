@@ -1,6 +1,4 @@
 using System.Collections.Concurrent;
-using System.IO.Compression;
-using System.Text.Json;
 using LimboDancer.Domains.Asl.Maps;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Maps.Derivation;
@@ -39,8 +37,17 @@ public sealed record StudioBoard(
 /// <summary>A load outcome. <see cref="OutOfScope"/> marks a board the importer declines by design, such as a non-geomorphic board.</summary>
 public sealed record BoardLoadResult(StudioBoard? Board, IReadOnlyList<MapDiagnostic> Diagnostics, bool OutOfScope = false);
 
-/// <summary>A library entry. <see cref="Scope"/> is decided from metadata alone, before the board is loaded.</summary>
-public sealed record BoardListing(BoardRef Ref, string Title, BoardScope Scope = BoardScope.InScope, string? ScopeReason = null);
+/// <summary>
+/// A library entry. <see cref="Scope"/> is decided from metadata alone, before the board is loaded. The source blobs
+/// identify the bytes a batch result must have been computed from to still apply.
+/// </summary>
+public sealed record BoardListing(
+    BoardRef Ref,
+    string Title,
+    BoardScope Scope = BoardScope.InScope,
+    string? ScopeReason = null,
+    string? LosDataBlob = null,
+    string? MetadataBlob = null);
 
 /// <summary>The boards the Studio can show. VASL boards today; authored boards arrive with ASL-MAP-07.</summary>
 public interface IBoardProvider
@@ -51,27 +58,18 @@ public interface IBoardProvider
         get;
     }
 
+    /// <summary>The Git blob id of the terrain catalog source, or null when it is unavailable.</summary>
+    public string? CatalogBlob
+    {
+        get;
+    }
+
     public IReadOnlyList<BoardListing> List();
 
     public BoardLoadResult Load(BoardRef board);
 
     /// <summary>The result of an earlier load, without loading.</summary>
     public BoardLoadResult? Cached(BoardRef board);
-}
-
-/// <summary>Studio configuration (Architecture and Rendering Design, section 4.2).</summary>
-public sealed class StudioOptions
-{
-    public string? VaslRoot
-    {
-        get; set;
-    }
-
-    /// <summary>Directory of F2 oracle fixtures; defaults to the repository's test fixtures when found.</summary>
-    public string? OracleFixtures
-    {
-        get; set;
-    }
 }
 
 /// <summary>Loads VASL boards on demand from the configured checkout, caching each result for the process lifetime.</summary>
@@ -87,12 +85,14 @@ public sealed class VaslBoardProvider : IBoardProvider
     {
         ArgumentNullException.ThrowIfNull(options);
         vasl = VaslSource.TryOpen(options.VaslRoot);
-        oracleFixtures = options.OracleFixtures ?? FindRepositoryFixtures();
+        oracleFixtures = options.ResolveOracleFixtures();
         catalog = new Lazy<SharedBoardMetadataResult?>(() => vasl?.ReadTerrainCatalog());
         listing = new Lazy<IReadOnlyList<BoardListing>>(ListUncached);
     }
 
     public string? SourceDescription => vasl is null ? null : $"VASL checkout {vasl.Root} at {vasl.Git?.HeadCommit ?? "an unknown commit"}";
+
+    public string? CatalogBlob => catalog.Value?.Catalog is null ? null : vasl!.SharedBoardMetadataProvenance().ContentBlob;
 
     public IReadOnlyList<BoardListing> List() => listing.Value;
 
@@ -120,8 +120,11 @@ public sealed class VaslBoardProvider : IBoardProvider
         {
             if (BoardRef.TryParse("bd" + name, out var boardRef))
             {
-                var scope = VaslBoardImporter.CheckScope(VaslBoardSource.SourceDirectory(vasl, name));
-                entries.Add(new BoardListing(boardRef, "VASL board " + name, scope.Scope, scope.Reason));
+                var source = VaslBoardSource.SourceDirectory(vasl, name);
+                var scope = VaslBoardImporter.CheckScope(source);
+                var losData = scope.Scope == BoardScope.OutOfScope ? null : source.ReadEntry(VaslBoardSource.LosDataEntry);
+                entries.Add(new BoardListing(boardRef, "VASL board " + name, scope.Scope, scope.Reason,
+                    losData is null ? null : GitBlob.Sha(losData), scope.MetadataBytes is null ? null : GitBlob.Sha(scope.MetadataBytes)));
             }
         }
 
@@ -157,33 +160,8 @@ public sealed class VaslBoardProvider : IBoardProvider
             diagnostics);
     }
 
-    private F2Result? CheckF2(IngestedBoard board, HexFactSet facts)
-    {
-        var path = oracleFixtures is null ? null : Path.Combine(oracleFixtures, board.Board.Value + ".hexfacts.json.gz");
-        if (path is null || !File.Exists(path))
-        {
-            return null;
-        }
-
-        using var file = File.OpenRead(path);
-        using var gzip = new GZipStream(file, CompressionMode.Decompress);
-        using var fixture = JsonDocument.Parse(gzip);
-        return HexFactFidelity.Compare(board, facts, fixture);
-    }
+    private F2Result? CheckF2(IngestedBoard board, HexFactSet facts) => HexFactFidelity.CompareWithFixture(board, facts, oracleFixtures);
 
     private static BoardLoadResult Failed(MapDiagnostic diagnostic) => new(null, [diagnostic]);
 
-    private static string? FindRepositoryFixtures()
-    {
-        for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
-        {
-            var candidate = Path.Combine(directory.FullName, "src", "ASL", "tests", "LimboDancer.Domains.Asl.Maps.Vasl.Tests", "Oracle");
-            if (Directory.Exists(candidate))
-            {
-                return candidate;
-            }
-        }
-
-        return null;
-    }
 }

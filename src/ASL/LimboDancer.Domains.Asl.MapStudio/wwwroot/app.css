@@ -187,3 +187,40 @@ label.toggle {
     border-color: #e3a3a0;
     background: #fbeceb;
 }
+
+h2.page {
+    font-size: 1.05rem;
+    margin: 0.2rem 0 0.8rem;
+}
+
+dl.report {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.15rem 0.8rem;
+    font-size: 0.9rem;
+}
+
+dl.report dt {
+    color: var(--muted);
+}
+
+dl.report dd {
+    margin: 0;
+}
+
+td.number {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+ul.differences {
+    margin: 0.3rem 0;
+    padding-left: 1.2rem;
+    font-size: 0.8rem;
+    max-height: 16rem;
+    overflow-y: auto;
+}
+
+header.studio a + a {
+    margin-left: -0.5rem;
+}
