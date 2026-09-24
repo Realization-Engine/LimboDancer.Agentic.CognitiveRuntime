@@ -31,7 +31,8 @@ function viewportFixture() {
         }
     };
     globalThis.fetch = async () => ({ ok: true, async text() { return "<svg><g id=\"layer-grid\"/></svg>"; } });
-    const viewport = create({ replaceChildren() {} }, { invokeMethodAsync(...args) { calls.push(args); } });
+    const host = { replaceChildren() {}, addEventListener() {}, focus() {}, classList: { toggle() {} } };
+    const viewport = create(host, { invokeMethodAsync(...args) { calls.push(args); } });
     return { viewport, svg, handlers, calls };
 }
 
