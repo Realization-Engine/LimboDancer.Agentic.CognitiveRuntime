@@ -7,6 +7,8 @@ public sealed class AslScenarioA1ChartReviewTests
     private const string SourceCommit = "a3254ff1d492dbdd28483d86f5b42437b48e80d4";
     private const string RegistryHash = "f73705eb8d8d3e3350bcbe81ab60e433f516bf7c691132a4f9ee866463a7bbef";
     private const string ComparisonHash = "d0a0fa8db20eabce3890f87e2fda3418fae147d1493f4190bf6658ee6ceef520";
+    private static readonly JsonSerializerOptions WebJsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly string[] ExpectedRuleBasis = ["A4.13", "B23.4"];
 
     [Fact]
     public void UserDelegatedReviewAcceptsPinnedChartFidelityAndCaseSpecificInterpretation()
@@ -26,9 +28,8 @@ public sealed class AslScenarioA1ChartReviewTests
         Assert.Contains("Stone building row only", decision.NoteAppliesTo);
         Assert.Contains("excludes road and VBM", decision.NoteAppliesTo);
         Assert.Contains("Controlling Infantry MF entrance-cost table", decision.ChartRole);
-        Assert.Equal(new[] { "A4.13", "B23.4" }, decision.RuleBasis);
-        var generated = JsonSerializer.SerializeToElement(decision,
-            new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        Assert.Equal(ExpectedRuleBasis, decision.RuleBasis);
+        var generated = JsonSerializer.SerializeToElement(decision, WebJsonOptions);
         Assert.True(JsonElement.DeepEquals(published.RootElement, generated));
 
         var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
