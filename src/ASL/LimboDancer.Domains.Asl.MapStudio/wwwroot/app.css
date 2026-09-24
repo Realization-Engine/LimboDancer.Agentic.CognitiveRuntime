@@ -1,0 +1,153 @@
+:root {
+    --ink: #1d232a;
+    --muted: #5b6570;
+    --line: #d5dae0;
+    --panel: #f5f7f9;
+    --accent: #1f4e79;
+    --pass: #2e6b2e;
+    --fail: #a12622;
+    font-family: "Segoe UI", system-ui, sans-serif;
+    color: var(--ink);
+    background: #ffffff;
+}
+
+body {
+    margin: 0;
+}
+
+header.studio {
+    display: flex;
+    align-items: baseline;
+    gap: 1.5rem;
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid var(--line);
+}
+
+header.studio h1 {
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+header.studio a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+main {
+    padding: 0.8rem 1rem;
+}
+
+table.library {
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+table.library th,
+table.library td {
+    padding: 0.25rem 0.8rem 0.25rem 0;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+    vertical-align: top;
+}
+
+.pass {
+    color: var(--pass);
+}
+
+.fail {
+    color: var(--fail);
+}
+
+.muted {
+    color: var(--muted);
+}
+
+.viewer {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 22rem;
+    gap: 1rem;
+    height: calc(100vh - 5.5rem);
+}
+
+.viewer .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 1rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.viewer .stage {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.board-host {
+    flex: 1;
+    min-height: 0;
+    border: 1px solid var(--line);
+    background: var(--panel);
+}
+
+.board-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: crosshair;
+    touch-action: none;
+    user-select: none;
+}
+
+.board-highlight {
+    fill: none;
+    stroke: #ff00ff;
+    stroke-width: 3;
+    pointer-events: none;
+}
+
+.inspector {
+    overflow-y: auto;
+    font-size: 0.85rem;
+    border-left: 1px solid var(--line);
+    padding-left: 1rem;
+}
+
+.inspector h2 {
+    font-size: 1rem;
+    margin: 0.2rem 0 0.4rem;
+}
+
+.inspector h3 {
+    font-size: 0.9rem;
+    margin: 0.8rem 0 0.3rem;
+}
+
+.inspector dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.15rem 0.6rem;
+    margin: 0;
+}
+
+.inspector dt {
+    color: var(--muted);
+}
+
+.inspector dd {
+    margin: 0;
+}
+
+.inspector table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.inspector td,
+.inspector th {
+    text-align: left;
+    padding: 0.1rem 0.4rem 0.1rem 0;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+}

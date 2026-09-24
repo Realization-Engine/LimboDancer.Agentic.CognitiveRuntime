@@ -1,40 +1,117 @@
 @page "/"
-@using LimboDancer.Domains.Asl.Maps.Geometry
-@using LimboDancer.Domains.Asl.Maps.Vasl
-@inject IConfiguration Configuration
+@implements IDisposable
+@inject IBoardProvider Boards
 
-<PageTitle>ASL Map Studio</PageTitle>
+<PageTitle>Board library - ASL Map Studio</PageTitle>
 
-<p>Board viewing and authoring arrive in ASL-MAP-04 and ASL-MAP-07. This page reports the configuration status.</p>
-
-<dl>
-    <dt>Standard geomorphic board</dt>
-    <dd>@geometry.WidthInHexes by @geometry.HeightInHexes hexes, @geometry.HexCount hex records, @geometry.GridWidth by @geometry.GridHeight grid</dd>
-    <dt>VASL checkout (@VaslSource.ConfigurationKey)</dt>
-    <dd>@vaslStatus</dd>
-    <dt>Terrain catalog</dt>
-    <dd>@catalogStatus</dd>
-</dl>
+@if (Boards.SourceDescription is null)
+{
+    <p>No board source is configured. Set <code>AslMaps:VaslRoot</code> to a local VASL repository checkout.</p>
+}
+else
+{
+    <p class="muted">@Boards.SourceDescription. @listing.Count boards.</p>
+    <p>
+        <button @onclick="CheckAll" disabled="@checking">Check all boards</button>
+        @if (checking)
+        {
+            <span class="muted"> Checked @checkedCount of @listing.Count.</span>
+        }
+    </p>
+    <table class="library">
+        <thead>
+            <tr>
+                <th>Board</th>
+                <th>Status</th>
+                <th>F1 (grid)</th>
+                <th>F2 (hex facts)</th>
+                <th>Diagnostics</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var entry in listing)
+            {
+                var result = Boards.Cached(entry.Ref);
+                <tr>
+                    <td><a href="@($"boards/{entry.Ref.Value}")">@entry.Title</a></td>
+                    @if (result is null)
+                    {
+                        <td class="muted" colspan="4">Not loaded</td>
+                    }
+                    else if (result.OutOfScope)
+                    {
+                        <td class="muted">Out of scope</td>
+                        <td></td>
+                        <td></td>
+                        <td>@Describe(result.Diagnostics)</td>
+                    }
+                    else if (result.Board is not { } board)
+                    {
+                        <td class="fail">Failed</td>
+                        <td></td>
+                        <td></td>
+                        <td>@Describe(result.Diagnostics)</td>
+                    }
+                    else
+                    {
+                        <td class="@(board.Status == BoardStatus.Verified ? "pass" : "")">@board.Status</td>
+                        <td class="@(board.F1.Passed ? "pass" : "fail")">@board.F1.Status</td>
+                        <td class="@F2Class(board)">@F2Text(board)</td>
+                        <td>@Describe(board.Diagnostics)</td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+}
 
 @code {
-    private readonly BoardGeometry geometry = BoardGeometry.StandardGeomorphic;
-    private string vaslStatus = string.Empty;
-    private string catalogStatus = string.Empty;
+    private readonly CancellationTokenSource stopping = new();
+    private IReadOnlyList<BoardListing> listing = [];
+    private bool checking;
+    private int checkedCount;
 
-    protected override void OnInitialized()
+    protected override void OnInitialized() => listing = Boards.List();
+
+    private async Task CheckAll()
     {
-        var source = VaslSource.TryOpen(Configuration[VaslSource.ConfigurationKey]);
-        if (source is null)
+        checking = true;
+        checkedCount = 0;
+        foreach (var entry in listing)
         {
-            vaslStatus = "Not configured. Set AslMaps:VaslRoot to a local VASL repository checkout.";
-            catalogStatus = "Unavailable.";
-            return;
+            if (stopping.IsCancellationRequested)
+            {
+                return;
+            }
+
+            await Task.Run(() => Boards.Load(entry.Ref));
+            checkedCount++;
+            StateHasChanged();
         }
 
-        vaslStatus = source.Root;
-        var result = source.ReadTerrainCatalog();
-        catalogStatus = result.Catalog is { } catalog
-            ? $"{catalog.Count} terrain types loaded."
-            : $"Failed: {string.Join("; ", result.Diagnostics.Select(diagnostic => diagnostic.Code + " " + diagnostic.Message))}";
+        checking = false;
+    }
+
+    private static string F2Text(StudioBoard board) => board.F2 switch
+    {
+        null => "No oracle fixture",
+        { Passed: true } => "Pass",
+        var f2 => $"Fail ({f2.Differences.Count} differences, {f2.Diagnostics.Count} diagnostics)",
+    };
+
+    private static string F2Class(StudioBoard board) => board.F2 switch
+    {
+        null => "muted",
+        { Passed: true } => "pass",
+        _ => "fail",
+    };
+
+    private static string Describe(IReadOnlyList<LimboDancer.Domains.Asl.Maps.MapDiagnostic> diagnostics) =>
+        string.Join("; ", diagnostics.Select(diagnostic => diagnostic.Code));
+
+    public void Dispose()
+    {
+        stopping.Cancel();
+        stopping.Dispose();
     }
 }

@@ -1,4 +1,5 @@
 using LimboDancer.Domains.Asl.MapStudio.Components;
+using LimboDancer.Domains.Asl.MapStudio.Services;
 
 namespace LimboDancer.Domains.Asl.MapStudio;
 
@@ -8,15 +9,15 @@ public static class Program
     {
         var builder = WebApplication.CreateBuilder(args);
         builder.Services.AddRazorComponents().AddInteractiveServerComponents();
+        var options = builder.Configuration.GetSection("AslMaps").Get<StudioOptions>() ?? new StudioOptions();
+        builder.Services.AddSingleton(options);
+        builder.Services.AddSingleton<IBoardProvider, VaslBoardProvider>();
+        builder.Services.AddSingleton<RenderCache>();
 
         var app = builder.Build();
-        if (!app.Environment.IsDevelopment())
-        {
-            app.UseExceptionHandler("/error", createScopeForErrors: true);
-        }
-
         app.UseAntiforgery();
         app.MapStaticAssets();
+        app.MapRenderEndpoints();
         app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
         app.Run();
     }

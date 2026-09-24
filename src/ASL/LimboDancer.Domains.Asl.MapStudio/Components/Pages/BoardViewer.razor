@@ -1,0 +1,343 @@
+@page "/boards/{BoardName}"
+@using System.Globalization
+@using LimboDancer.Domains.Asl.Maps.Coordinates
+@using LimboDancer.Domains.Asl.Maps.Derivation
+@using LimboDancer.Domains.Asl.Maps.Rendering
+@using LimboDancer.Domains.Asl.Maps.Terrain
+@implements IAsyncDisposable
+@inject IBoardProvider Boards
+@inject IJSRuntime JS
+
+<PageTitle>@(board?.Title ?? BoardName) - ASL Map Studio</PageTitle>
+
+@if (loadError is not null)
+{
+    <p class="fail">@loadError</p>
+}
+else if (board is null)
+{
+    <p class="muted">Loading @BoardName...</p>
+}
+
+<div class="viewer" hidden="@(board is null)">
+    <div class="stage">
+        @if (board is not null)
+        {
+            <div class="toolbar">
+                <strong>@board.Title</strong>
+                <span class="@(board.Status == BoardStatus.Verified ? "pass" : "")">@board.Status</span>
+                <label>
+                    View
+                    <select value="@BoardRenderer.ViewName(view)" @onchange="ChangeView">
+                        <option value="exact">Exact</option>
+                        <option value="hexfacts">Hex facts</option>
+                    </select>
+                </label>
+                @foreach (var layer in ToggleLayers)
+                {
+                    <label>
+                        <input type="checkbox" checked="@visible.Contains(layer)" @onchange="@(args => ToggleLayer(layer, (bool)args.Value!))" />
+                        @layer
+                    </label>
+                }
+                @if (view == BoardView.HexFacts)
+                {
+                    <label>
+                        <input type="checkbox" checked="@trace" @onchange="ToggleTrace" />
+                        derivation trace
+                    </label>
+                }
+                <button @onclick="ResetView">Fit</button>
+            </div>
+        }
+        <div class="board-host" @ref="host"></div>
+    </div>
+    <aside class="inspector">
+        @if (selected is { } facts)
+        {
+            <h2>Hex @facts.Hex</h2>
+            <dl>
+                <dt>Base level</dt>
+                <dd>@facts.BaseLevel</dd>
+                <dt>Center terrain</dt>
+                <dd>@Name(facts.Center.Terrain)</dd>
+                <dt>Center source</dt>
+                <dd>@facts.CenterSource</dd>
+                <dt>Stairway</dt>
+                <dd>@(facts.Stairway ? "yes" : "no")</dd>
+                @if (facts.Center.DepressionTerrain is { } depression)
+                {
+                    <dt>Depression</dt>
+                    <dd>@depression.Name</dd>
+                }
+                @if (facts.Bridge is { } bridge)
+                {
+                    <dt>Bridge</dt>
+                    <dd>@Name(bridge.Terrain), road level @bridge.RoadLevel</dd>
+                }
+            </dl>
+
+            <h3>Locations</h3>
+            <table>
+                <tr><th>Level</th><th>Terrain</th><th>Depression</th></tr>
+                @foreach (var location in facts.Locations)
+                {
+                    <tr><td>@location.Level</td><td>@Name(location.Terrain)</td><td>@Name(location.DepressionTerrain)</td></tr>
+                }
+            </table>
+
+            <h3>Hexsides</h3>
+            <table>
+                <tr><th>Side</th><th>Terrain</th><th>Hexside</th><th>Flags</th></tr>
+                @foreach (var side in facts.Hexsides)
+                {
+                    <tr>
+                        <td>@side.Side</td>
+                        <td>@(side.OnMap ? Name(side.Terrain) : "off map")</td>
+                        <td>@Name(side.HexsideTerrain)</td>
+                        <td>@Flags(side)</td>
+                    </tr>
+                }
+            </table>
+        }
+        else
+        {
+            <p class="muted">Click a hex to inspect its derived facts and the grid under the pointer.</p>
+        }
+
+        @if (sample is not null)
+        {
+            <h3>Grid sample</h3>
+            <p>@sample</p>
+        }
+
+        @if (board is not null)
+        {
+            <h3>Provenance</h3>
+            <dl>
+                <dt>Version</dt>
+                <dd><code>@board.Version[..12]</code></dd>
+                @if (board.Provenance is { } provenance)
+                {
+                    <dt>VASL commit</dt>
+                    <dd><code>@(provenance.VaslCommit?[..12] ?? "unknown")</code></dd>
+                    <dt>LOSData</dt>
+                    <dd>@provenance.LosData.RepositoryPath</dd>
+                }
+                <dt>F1</dt>
+                <dd class="@(board.F1.Passed ? "pass" : "fail")">@board.F1.Status</dd>
+                <dt>F2</dt>
+                <dd class="@(board.F2 is { Passed: true } ? "pass" : board.F2 is null ? "muted" : "fail")">
+                    @(board.F2 is null ? "no oracle fixture" : board.F2.Passed ? "Pass" : $"{board.F2.Differences.Count} differences")
+                </dd>
+                <dt>Derivation</dt>
+                <dd>@board.Facts.DerivationVersion</dd>
+                <dt>Renderer</dt>
+                <dd>@BoardRenderer.RendererVersion</dd>
+            </dl>
+        }
+    </aside>
+</div>
+
+@code {
+    private ElementReference host;
+    private IJSObjectReference? module;
+    private IJSObjectReference? viewport;
+    private DotNetObjectReference<BoardViewer>? self;
+    private StudioBoard? board;
+    private string? loadError;
+    private BoardView view = BoardView.Exact;
+    private bool trace;
+    private HashSet<string> visible = [];
+    private HexFacts? selected;
+    private string? sample;
+    private bool viewportPending;
+
+    [Parameter]
+    public string BoardName { get; set; } = string.Empty;
+
+    private IEnumerable<string> ToggleLayers => BoardRenderer.Layers(view).Where(layer => layer != "defs");
+
+    protected override async Task OnParametersSetAsync()
+    {
+        board = null;
+        loadError = null;
+        selected = null;
+        sample = null;
+        if (!BoardRef.TryParse(BoardName, out var boardRef))
+        {
+            loadError = $"{BoardName} is not a board reference.";
+            return;
+        }
+
+        var result = await Task.Run(() => Boards.Load(boardRef));
+        if (result.Board is null)
+        {
+            loadError = $"{BoardName} could not be loaded: " + string.Join("; ", result.Diagnostics.Select(d => d.Code + " " + d.Message));
+            return;
+        }
+
+        board = result.Board;
+        visible = [.. ToggleLayers];
+        viewportPending = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (viewportPending && board is not null)
+        {
+            viewportPending = false;
+            if (viewport is null)
+            {
+                module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/boardViewport.js");
+                self = DotNetObjectReference.Create(this);
+                viewport = await module.InvokeAsync<IJSObjectReference>("create", host, self);
+            }
+
+            await LoadView();
+        }
+    }
+
+    private async Task LoadView()
+    {
+        if (viewport is null || board is null)
+        {
+            return;
+        }
+
+        var baseUrl = $"render/{board.Ref.Value}/{board.Version}/{BoardRenderer.ViewName(view)}";
+        await viewport.InvokeVoidAsync("load", baseUrl, trace ? "?trace=true" : "", BoardRenderer.ViewBox(board.Render, view),
+            BoardRenderer.Layers(view), visible.ToArray());
+        await Highlight();
+    }
+
+    private async Task ChangeView(ChangeEventArgs args)
+    {
+        if (BoardRenderer.TryParseView(args.Value as string, out var next) && next != view)
+        {
+            view = next;
+            visible = [.. ToggleLayers];
+            await LoadView();
+        }
+    }
+
+    private async Task ToggleLayer(string layer, bool on)
+    {
+        if (on)
+        {
+            visible.Add(layer);
+        }
+        else
+        {
+            visible.Remove(layer);
+        }
+
+        if (viewport is not null)
+        {
+            await viewport.InvokeVoidAsync("setVisible", visible.ToArray());
+        }
+    }
+
+    private async Task ToggleTrace(ChangeEventArgs args)
+    {
+        trace = (bool)args.Value!;
+        await LoadView();
+    }
+
+    private async Task ResetView()
+    {
+        if (viewport is not null)
+        {
+            await viewport.InvokeVoidAsync("reset");
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnBoardClick(double x, double y)
+    {
+        if (board is null)
+        {
+            return;
+        }
+
+        var grid = board.Render.Grid;
+        var cellX = (int)Math.Floor(x);
+        var cellY = (int)Math.Floor(y);
+        sample = grid.TryGetCode(cellX, cellY, out var code)
+            ? $"Pixel ({cellX}, {cellY}): code {code} {Name(board.Catalog.TryGet(code, out var type) ? type : null)}, elevation {grid.ElevationAt(cellX, cellY)}"
+            : $"Pixel ({cellX}, {cellY}) is off the grid.";
+        selected = grid.Geometry.HexAt(x, y) is { } hex ? board.Facts[hex] : null;
+        await Highlight();
+        StateHasChanged();
+    }
+
+    private async Task Highlight()
+    {
+        if (viewport is null || board is null)
+        {
+            return;
+        }
+
+        var points = selected is null
+            ? null
+            : string.Join(" ", board.Render.Grid.Geometry.Vertices(selected.Index)
+                .Select(vertex => string.Create(CultureInfo.InvariantCulture, $"{vertex.X},{vertex.Y}")));
+        await viewport.InvokeVoidAsync("highlight", points);
+    }
+
+    private static string Name(TerrainType? terrain) => terrain?.Name ?? "-";
+
+    private static string Flags(HexsideFacts side)
+    {
+        var flags = new List<string>();
+        if (side.Cliff)
+        {
+            flags.Add("cliff");
+        }
+
+        if (side.Slope)
+        {
+            flags.Add("slope");
+        }
+
+        if (side.RailroadEmbankment)
+        {
+            flags.Add("embankment");
+        }
+
+        if (side.PartialOrchard)
+        {
+            flags.Add("partial orchard");
+        }
+
+        if (side.DepressionTerrain is { } depression)
+        {
+            flags.Add(depression.Name);
+        }
+
+        return string.Join(", ", flags);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (viewport is not null)
+            {
+                await viewport.InvokeVoidAsync("dispose");
+                await viewport.DisposeAsync();
+            }
+
+            if (module is not null)
+            {
+                await module.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit is gone; the browser already discarded the viewport.
+        }
+
+        self?.Dispose();
+    }
+}

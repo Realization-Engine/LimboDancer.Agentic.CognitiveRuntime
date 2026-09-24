@@ -152,6 +152,38 @@ public sealed class BoardGeometry
         return new PixelPoint(x, y);
     }
 
+    /// <summary>
+    /// The hex whose center dot is nearest the board point, or null outside the grid. This is a UI hit test; hex-fact
+    /// derivation never uses it.
+    /// </summary>
+    public HexIndex? HexAt(double x, double y)
+    {
+        if (x < 0 || y < 0 || x >= GridWidth || y >= GridHeight)
+        {
+            return null;
+        }
+
+        var approximateColumn = (int)Math.Round((x - A1CenterX) / HexWidth);
+        HexIndex? nearest = null;
+        var nearestDistance = double.MaxValue;
+        for (var column = Math.Max(0, approximateColumn - 1); column <= Math.Min(WidthInHexes - 1, approximateColumn + 1); column++)
+        {
+            for (var row = 0; row < RowCount(column); row++)
+            {
+                var candidate = new HexIndex(column, row);
+                var center = CenterDot(candidate);
+                var distance = ((center.X - x) * (center.X - x)) + ((center.Y - y) * (center.Y - y));
+                if (distance < nearestDistance)
+                {
+                    nearestDistance = distance;
+                    nearest = candidate;
+                }
+            }
+        }
+
+        return nearest;
+    }
+
     /// <summary>The integer center point VASL samples from (<c>Hex.getHexCenter</c>).</summary>
     public GridPoint CenterPoint(HexIndex hex)
     {
