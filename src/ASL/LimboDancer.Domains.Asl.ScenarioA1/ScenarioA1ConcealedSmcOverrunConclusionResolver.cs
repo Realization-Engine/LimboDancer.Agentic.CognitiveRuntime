@@ -74,7 +74,8 @@ public sealed class ScenarioA1ConcealedSmcOverrunConclusionResolver : IDomainCon
                         ambiguities.Add("observation.duplicate-or-nonstring-fact");
                 }
         }
-        if (caseId is null || !cases.TryGetValue(caseId, out var reviewed))
+        ReviewedCase? reviewed = null;
+        if (caseId is null || !cases.TryGetValue(caseId, out reviewed))
             outside.Add("asl.a1.ovr.unknown-case");
         else
         {
