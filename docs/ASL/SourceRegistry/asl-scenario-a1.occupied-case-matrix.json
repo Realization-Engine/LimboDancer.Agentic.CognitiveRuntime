@@ -231,57 +231,190 @@
     },
     {
       "caseId": "A1-fortified-breached-entry",
-      "reviewStatus": "deferred",
-      "expectedDisposition": "abstained",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "qualified-breached-advance-attempt",
       "sourceRules": [
+        "A4.14",
+        "A4.7",
         "B23.922",
         "B23.9221",
         "B23.711"
       ],
       "supplements": [],
-      "declaredFacts": "A breach is asserted but its creation, exact crossed hexside, level and remaining entry restrictions are not verified as one path.",
-      "reason": "B23.9221 refers to B23.711; the latter is located in the registered source but is source-verified in the occupied-case supplement, while the full entry path is semantically unresolved.",
-      "semanticDependencies": [
-        "breach creation",
-        "crossed hexside and level",
-        "remaining fortified entry restrictions"
-      ],
-      "predicates": []
+      "declaredFacts": "Good Order unpinned Infantry makes a one-hex horizontal APh advance across the exact breached hexside at the same level into a Fortified Building Location containing a known unpinned Good Order armed enemy squad. The breach counter is already validly placed and points to that hexside; no other defender, terrain restriction, SSR, portage or CX applies; subsequent CC is unresolved.",
+      "reason": "B23.9221 permits entry through the breached hexside and level as for any building; A4.14 allows enemy-occupied APh entry and A4.7 permits this one-hex advance. This qualifies an attempt only, not successful occupancy or CC resolution.",
+      "predicates": [
+        {
+          "key": "advance",
+          "equals": "oneHorizontalHexSameLevel"
+        },
+        {
+          "key": "breach",
+          "equals": "validCounterAtCrossedHexsideAndLevel"
+        },
+        {
+          "key": "closeCombat",
+          "equals": "unresolved"
+        },
+        {
+          "key": "cx",
+          "equals": "false"
+        },
+        {
+          "key": "location",
+          "equals": "fortifiedBuilding"
+        },
+        {
+          "key": "occupancy",
+          "equals": "exactlyOneKnownUnpinnedGoodOrderArmedEnemySquad"
+        },
+        {
+          "key": "otherOccupants",
+          "equals": "none"
+        },
+        {
+          "key": "phase",
+          "equals": "aph"
+        },
+        {
+          "key": "portage",
+          "equals": "none"
+        },
+        {
+          "key": "specialModifier",
+          "equals": "none"
+        },
+        {
+          "key": "unit",
+          "equals": "goodOrderUnpinnedInfantry"
+        }
+      ]
     },
     {
       "caseId": "A1-stacking-equivalents-needed",
-      "reviewStatus": "deferred",
-      "expectedDisposition": "abstained",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "eligible-3mf-with-overstack-penalty",
       "sourceRules": [
         "A5.1",
         "A5.11",
-        "A5.5"
+        "A5.5",
+        "B23.4"
       ],
       "supplements": [],
-      "declaredFacts": "Destination is not empty and its squad-equivalent count must be calculated rather than declared below limit.",
-      "reason": "A5.5 classification and the resulting stacking calculation are source-verified in the occupied-case supplement but not yet semantically modeled for this broader case.",
-      "semanticDependencies": [
-        "squad-equivalent classification",
-        "location stacking calculation"
-      ],
-      "predicates": []
+      "declaredFacts": "Ordinary ground-level building contains two friendly squads and one friendly unmanned crew or half-squad at the same Location, zero SMC and no enemy or vehicle. One ordinary Infantry squad enters during MPh with at least three MF. No Gun is manned, special terrain, SSR, portage or other modifier applies.",
+      "reason": "A5.5 makes the crew or half-squad one half equivalent; after the entering squad the friendly total is 3.5 equivalents. A5.11 rounds the excess half squad up to one extra MF, added to the reviewed ordinary building 2 MF.",
+      "predicates": [
+        {
+          "key": "friendlySmc",
+          "equals": "0"
+        },
+        {
+          "key": "friendlySquads",
+          "equals": "2"
+        },
+        {
+          "key": "friendlyUnmannedCrewsOrHalfSquads",
+          "equals": "1"
+        },
+        {
+          "key": "incomingSquads",
+          "equals": "1"
+        },
+        {
+          "key": "location",
+          "equals": "adjacentGroundLevelOrdinaryBuilding"
+        },
+        {
+          "key": "mannedGun",
+          "equals": "none"
+        },
+        {
+          "key": "occupancy",
+          "equals": "knownFriendlyOnly"
+        },
+        {
+          "key": "phase",
+          "equals": "mph"
+        },
+        {
+          "key": "remainingMf",
+          "equals": "atLeastThree"
+        },
+        {
+          "key": "roadBypassElevationAdditionalTerrain",
+          "equals": "none"
+        },
+        {
+          "key": "specialModifier",
+          "equals": "none"
+        },
+        {
+          "key": "unit",
+          "equals": "ordinaryInfantrySquad"
+        },
+        {
+          "key": "vehicles",
+          "equals": "none"
+        }
+      ]
     },
     {
       "caseId": "A1-advance-phase-entry",
-      "reviewStatus": "deferred",
-      "expectedDisposition": "abstained",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "qualified-advance-entry-attempt",
       "sourceRules": [
-        "A4.7",
-        "A4.14"
+        "A4.14",
+        "A4.7"
       ],
       "supplements": [],
-      "declaredFacts": "Attempt occurs in APh, outside the reviewed MPh movement and cost facts.",
-      "reason": "A4.14 distinguishes APh, but the APh action and its applicable restrictions are outside the reviewed MPh case.",
-      "semanticDependencies": [
-        "APh eligibility",
-        "applicable advance and occupancy restrictions"
-      ],
-      "predicates": []
+      "declaredFacts": "Good Order unpinned Infantry without a CC or TI marker advances one hex horizontally during APh into the same ordinary building Location as exactly one known unconcealed enemy MMC. No difficult terrain, CX, portage, SSR, fortified building, vehicle or other occupant; CC remains unresolved.",
+      "reason": "A4.7 permits a single horizontal advance by this unit and A4.14 permits entry with an unconcealed enemy during APh. This qualifies the advance attempt without deciding CC or ultimate occupancy.",
+      "predicates": [
+        {
+          "key": "advance",
+          "equals": "oneHorizontalHex"
+        },
+        {
+          "key": "closeCombat",
+          "equals": "unresolved"
+        },
+        {
+          "key": "cx",
+          "equals": "false"
+        },
+        {
+          "key": "difficultTerrain",
+          "equals": "false"
+        },
+        {
+          "key": "location",
+          "equals": "ordinaryBuilding"
+        },
+        {
+          "key": "occupancy",
+          "equals": "exactlyOneKnownUnconcealedEnemyMmc"
+        },
+        {
+          "key": "otherOccupants",
+          "equals": "none"
+        },
+        {
+          "key": "phase",
+          "equals": "aph"
+        },
+        {
+          "key": "portage",
+          "equals": "none"
+        },
+        {
+          "key": "specialModifier",
+          "equals": "none"
+        },
+        {
+          "key": "unit",
+          "equals": "goodOrderUnpinnedInfantryWithoutTiOrCc"
+        }
+      ]
     },
     {
       "caseId": "A1-unknown-location-or-modifier",

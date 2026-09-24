@@ -11,11 +11,11 @@ public sealed record ScenarioA1SemanticResult(string Disposition, IReadOnlyList<
 
 /// <summary>
 /// A digest-pinned candidate profile for exact reviewed cases. It is not a published domain package.
-/// Deferred cases cannot return a definitive semantic result.
+/// Only admitted exact case contracts can return a definitive semantic result.
 /// </summary>
 public sealed class ScenarioA1SemanticCandidate
 {
-    private const string MatrixDigest = "37ddd657d59472e12314ba4d616c08e6db73f0d02d7825772a7995f146ceaa68";
+    private const string MatrixDigest = "3ee7eae916ebe39230bb4b2a634c796c745ca7debcdec3e5d553c60b9130902e";
     private const string ComparisonDigest = "c64fe3229d5a3541357fe6948ec037fcfbdbfde8810a599f21df81aed0a94bc5";
     private readonly IReadOnlyDictionary<string, ScenarioA1SemanticCase> _cases;
     private readonly IReadOnlySet<string> _acceptedCaseIds;
@@ -49,7 +49,7 @@ public sealed class ScenarioA1SemanticCandidate
                 || predicates.Any(item => string.IsNullOrWhiteSpace(item.Key)
                     || string.IsNullOrWhiteSpace(item.ExpectedValue))
                 || predicates.Select(item => item.Key).Distinct(StringComparer.Ordinal).Count() != predicates.Length
-                || (status == "reviewed-bounded" && disposition is not ("eligible-2mf" or "prohibited" or "qualified-overrun-entry-attempt-4mf"))
+                || (status == "reviewed-bounded" && disposition is not ("eligible-2mf" or "prohibited" or "qualified-overrun-entry-attempt-4mf" or "qualified-breached-advance-attempt" or "eligible-3mf-with-overstack-penalty" or "qualified-advance-entry-attempt"))
                 || (status == "deferred" && disposition != "abstained")
                 || (status == "reviewed-nondefinitive" && disposition != "indeterminate"))
             {
@@ -59,7 +59,7 @@ public sealed class ScenarioA1SemanticCandidate
                 status, disposition, ruleIds, predicates);
         }).ToArray();
         if (cases.Length != 9 || cases.Select(item => item.Id).Distinct(StringComparer.Ordinal).Count() != 9
-            || cases.Count(item => item.ReviewStatus == "reviewed-bounded") != 4)
+            || cases.Count(item => item.ReviewStatus == "reviewed-bounded") != 7)
         {
             throw new InvalidOperationException("The candidate case inventory changed.");
         }
@@ -93,6 +93,11 @@ public sealed class ScenarioA1SemanticCandidate
         }
         if (facts.Count != semanticCase.Predicates.Count
             || semanticCase.Predicates.Any(item => facts[item.Key] != item.ExpectedValue))
+        {
+            return new ScenarioA1SemanticResult("abstained", semanticCase.SourceRules);
+        }
+        if (caseId == "A1-stacking-equivalents-needed"
+            && !ScenarioA1StackingCost.IsReviewedThreeMfEntry(facts))
         {
             return new ScenarioA1SemanticResult("abstained", semanticCase.SourceRules);
         }

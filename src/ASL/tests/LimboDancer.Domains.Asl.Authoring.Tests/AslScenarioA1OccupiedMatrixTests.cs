@@ -27,9 +27,9 @@ public sealed class AslScenarioA1OccupiedMatrixTests
             ("A1-fortified-unbreached-enemy-squad", "reviewed-bounded", "prohibited"),
             ("A1-concealed-occupancy-attempt", "reviewed-nondefinitive", "indeterminate"),
             ("A1-single-known-enemy-smc-overrun", "reviewed-bounded", "qualified-overrun-entry-attempt-4mf"),
-            ("A1-fortified-breached-entry", "deferred", "abstained"),
-            ("A1-stacking-equivalents-needed", "deferred", "abstained"),
-            ("A1-advance-phase-entry", "deferred", "abstained"),
+            ("A1-fortified-breached-entry", "reviewed-bounded", "qualified-breached-advance-attempt"),
+            ("A1-stacking-equivalents-needed", "reviewed-bounded", "eligible-3mf-with-overstack-penalty"),
+            ("A1-advance-phase-entry", "reviewed-bounded", "qualified-advance-entry-attempt"),
             ("A1-unknown-location-or-modifier", "reviewed-nondefinitive", "indeterminate"),
         };
         Assert.Equal(approved.Length, cases.Length);
@@ -44,6 +44,7 @@ public sealed class AslScenarioA1OccupiedMatrixTests
             Assert.NotEmpty(item.GetProperty("sourceRules").EnumerateArray());
         });
         Assert.Single(cases, item => item.GetProperty("expectedDisposition").GetString() == "eligible-2mf");
+        Assert.Equal(7, cases.Count(item => item.GetProperty("reviewStatus").GetString() == "reviewed-bounded"));
         Assert.Equal(2, cases.Count(item => item.GetProperty("expectedDisposition").GetString() == "prohibited"));
         Assert.Single(cases, item => item.GetProperty("expectedDisposition").GetString()
             == "qualified-overrun-entry-attempt-4mf");
@@ -117,7 +118,7 @@ public sealed class AslScenarioA1OccupiedMatrixTests
     }
 
     [Fact]
-    public void DelegatedAdmissionBindsExactlyFourCasesAndTwentyEightSourceSubjects()
+    public void DelegatedAdmissionBindsExactlySevenCasesAndTwentyEightSourceSubjects()
     {
         using var admission = Read("asl-scenario-a1.bounded-admission.json");
         using var manifest = Read("asl-scenario-a1.candidate-manifest.json");
@@ -131,12 +132,12 @@ public sealed class AslScenarioA1OccupiedMatrixTests
         Assert.Equal(28, root.GetProperty("verifiedSourceSubjectCount").GetInt32());
         var accepted = root.GetProperty("acceptedCaseIds").EnumerateArray()
             .Select(item => item.GetString()!).ToArray();
-        Assert.Equal(4, accepted.Length);
+        Assert.Equal(7, accepted.Length);
         Assert.Equal(cases.Where(item => item.GetProperty("reviewStatus").GetString()
                 == "reviewed-bounded").Select(item => item.GetProperty("caseId").GetString()!),
             accepted);
         Assert.Contains("A1-single-known-enemy-smc-overrun", accepted);
-        Assert.Equal(3, root.GetProperty("deferredCaseIds").GetArrayLength());
+        Assert.False(root.TryGetProperty("deferredCaseIds", out _));
         Assert.Equal(2, root.GetProperty("nonDefinitiveCaseIds").GetArrayLength());
     }
 

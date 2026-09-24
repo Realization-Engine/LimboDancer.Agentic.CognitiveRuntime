@@ -10,13 +10,13 @@ public sealed class ScenarioA1SemanticCandidateTests
     public void CandidateManifestAndReviewedCasePredicatesArePinned()
     {
         var candidate = new ScenarioA1SemanticCandidate();
-        Assert.Equal("41de9d7f1e54d54abc044df2541a483abd22fa10ce658653198b4b487cfce234",
+        Assert.Equal("6c7a415db0e08c308e20afec9a079da5e700ca9b115794cab0d39c113861fdf5",
             candidate.RootSha256);
         Assert.Equal(9, candidate.Cases.Count);
-        Assert.Equal("33823b6b4e42cf3cb925569e3b407eec754399021b1107010775f96f959e0963",
+        Assert.Equal("007dbe2512c7bd5f0b17c51ad6ab2cea800b4f8e2c47267fb6cc0e5fbc57b2ee",
             ScenarioA1BoundedAdmission.Sha256);
         var definitive = candidate.Cases.Where(item => item.ReviewStatus == "reviewed-bounded").ToArray();
-        Assert.Equal(4, definitive.Length);
+        Assert.Equal(7, definitive.Length);
         Assert.All(definitive, item => Assert.NotEmpty(item.Predicates));
         Assert.All(candidate.Cases.Where(item => item.ReviewStatus != "reviewed-bounded"),
             item => Assert.Empty(item.Predicates));
@@ -27,6 +27,9 @@ public sealed class ScenarioA1SemanticCandidateTests
     [InlineData("A1-known-enemy-mmc-mph", "prohibited")]
     [InlineData("A1-fortified-unbreached-enemy-squad", "prohibited")]
     [InlineData("A1-single-known-enemy-smc-overrun", "qualified-overrun-entry-attempt-4mf")]
+    [InlineData("A1-fortified-breached-entry", "qualified-breached-advance-attempt")]
+    [InlineData("A1-stacking-equivalents-needed", "eligible-3mf-with-overstack-penalty")]
+    [InlineData("A1-advance-phase-entry", "qualified-advance-entry-attempt")]
     public void ExactReviewedPredicatesProduceOnlyTheirScopedDisposition(string caseId, string expected)
     {
         var candidate = new ScenarioA1SemanticCandidate();
@@ -56,6 +59,31 @@ public sealed class ScenarioA1SemanticCandidateTests
             new Dictionary<string, string>()).Disposition);
         Assert.Equal("abstained", candidate.Evaluate("unknown",
             new Dictionary<string, string>()).Disposition);
+    }
+
+    [Fact]
+    public void AdmittedOccupiedBranchesRejectChangedCrossedHexsideStackAndPhase()
+    {
+        var candidate = new ScenarioA1SemanticCandidate();
+        foreach (var id in new[] { "A1-fortified-breached-entry", "A1-stacking-equivalents-needed",
+            "A1-advance-phase-entry" })
+        {
+            var semanticCase = Assert.Single(candidate.Cases, item => item.Id == id);
+            var facts = semanticCase.Predicates.ToDictionary(item => item.Key, item => item.ExpectedValue);
+            facts["phase"] = id == "A1-stacking-equivalents-needed" ? "aph" : "mph";
+            Assert.Equal("abstained", candidate.Evaluate(id, facts).Disposition);
+        }
+        var breach = Assert.Single(candidate.Cases, item => item.Id == "A1-fortified-breached-entry")
+            .Predicates.ToDictionary(item => item.Key, item => item.ExpectedValue);
+        breach["breach"] = "counterAtDifferentHexside";
+        Assert.Equal("abstained", candidate.Evaluate("A1-fortified-breached-entry", breach).Disposition);
+
+        var stack = Assert.Single(candidate.Cases, item => item.Id == "A1-stacking-equivalents-needed")
+            .Predicates.ToDictionary(item => item.Key, item => item.ExpectedValue);
+        Assert.True(ScenarioA1StackingCost.IsReviewedThreeMfEntry(stack));
+        stack["friendlyUnmannedCrewsOrHalfSquads"] = "2";
+        Assert.False(ScenarioA1StackingCost.IsReviewedThreeMfEntry(stack));
+        Assert.Equal("abstained", candidate.Evaluate("A1-stacking-equivalents-needed", stack).Disposition);
     }
 
     [Fact]

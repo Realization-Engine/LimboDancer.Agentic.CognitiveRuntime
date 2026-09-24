@@ -2,15 +2,13 @@
   "schemaVersion": "1.0.0",
   "status": "accepted-bounded-case-profile-by-delegated-xunit-review",
   "authority": "user-directed-xunit-review-2026-09-24",
-  "candidateManifestRootSha256": "41de9d7f1e54d54abc044df2541a483abd22fa10ce658653198b4b487cfce234",
+  "candidateManifestRootSha256": "6c7a415db0e08c308e20afec9a079da5e700ca9b115794cab0d39c113861fdf5",
   "verifiedSourceSubjectCount": 28,
   "acceptedCaseIds": [
     "A1-empty-ordinary-mph",
     "A1-known-enemy-mmc-mph",
     "A1-fortified-unbreached-enemy-squad",
-    "A1-single-known-enemy-smc-overrun"
-  ],
-  "deferredCaseIds": [
+    "A1-single-known-enemy-smc-overrun",
     "A1-fortified-breached-entry",
     "A1-stacking-equivalents-needed",
     "A1-advance-phase-entry"
@@ -19,5 +17,5 @@
     "A1-concealed-occupancy-attempt",
     "A1-unknown-location-or-modifier"
   ],
-  "scope": "Four exact synthetic entry-eligibility cases; Infantry OVR is a qualified attempt before defender response and CC. No board-state attestation, general ASL-OT-04 package admission, publication, or execution authority."
+  "scope": "Seven exact synthetic cases. Fortified Breach and enemy-occupied APh are qualified advance attempts before CC; friendly stacking is the exact two-squad-and-crew entry at 3 MF. No board-state attestation, general ASL-OT-04 package admission, publication, or execution authority."
 }

@@ -3,17 +3,14 @@ using System.Text.Json;
 
 namespace LimboDancer.Domains.Asl.ScenarioA1;
 
-/// <summary>Delegated approval of four exact case labels, not publication of an ASL package.</summary>
+/// <summary>Delegated approval of seven exact case labels, not publication of an ASL package.</summary>
 public static class ScenarioA1BoundedAdmission
 {
-    public const string Sha256 = "33823b6b4e42cf3cb925569e3b407eec754399021b1107010775f96f959e0963";
+    public const string Sha256 = "007dbe2512c7bd5f0b17c51ad6ab2cea800b4f8e2c47267fb6cc0e5fbc57b2ee";
     private static readonly string[] Accepted =
     [
         "A1-empty-ordinary-mph", "A1-known-enemy-mmc-mph",
         "A1-fortified-unbreached-enemy-squad", "A1-single-known-enemy-smc-overrun",
-    ];
-    private static readonly string[] Deferred =
-    [
         "A1-fortified-breached-entry", "A1-stacking-equivalents-needed", "A1-advance-phase-entry",
     ];
     private static readonly string[] NonDefinitive =
@@ -42,15 +39,13 @@ public static class ScenarioA1BoundedAdmission
             || root.GetProperty("candidateManifestRootSha256").GetString() != manifestRootSha256
             || root.GetProperty("verifiedSourceSubjectCount").GetInt32() != 28
             || !Ids(root, "acceptedCaseIds").SequenceEqual(Accepted)
-            || !Ids(root, "deferredCaseIds").SequenceEqual(Deferred)
             || !Ids(root, "nonDefinitiveCaseIds").SequenceEqual(NonDefinitive)
             || cases.Count != 9
             || cases.Any(item =>
                 item.ReviewStatus != (Accepted.Contains(item.Id, StringComparer.Ordinal)
-                    ? "reviewed-bounded" : Deferred.Contains(item.Id, StringComparer.Ordinal)
-                        ? "deferred" : "reviewed-nondefinitive"))
+                    ? "reviewed-bounded" : "reviewed-nondefinitive"))
             || !cases.Select(item => item.Id).ToHashSet(StringComparer.Ordinal)
-                .SetEquals(Accepted.Concat(Deferred).Concat(NonDefinitive)))
+                .SetEquals(Accepted.Concat(NonDefinitive)))
         {
             throw new InvalidOperationException("The case inventory differs from bounded admission.");
         }
