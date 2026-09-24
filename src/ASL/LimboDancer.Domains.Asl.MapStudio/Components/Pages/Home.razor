@@ -2,6 +2,7 @@
 @using LimboDancer.Domains.Asl.Maps.Vasl
 @inject IBoardProvider Boards
 @inject FidelityJobRunner Runner
+@inject AuthoredBoardService Authored
 
 <PageTitle>Board library - ASL Map Studio</PageTitle>
 
@@ -16,6 +17,33 @@
 }
 else
 {
+    <h2 class="page">Authored boards</h2>
+    @if (authored.Count == 0)
+    {
+        <p class="muted">None yet. <a href="author/new">Create a board</a>, blank or from a verified VASL board.</p>
+    }
+    else
+    {
+        <table class="library">
+            <thead>
+                <tr><th>Board</th><th>Reference</th><th>Kept in</th><th></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var entry in authored)
+                {
+                    <tr>
+                        <td><a href="@($"boards/{entry.Ref.Value}")">@entry.Name</a></td>
+                        <td><code>@entry.Ref.Value</code></td>
+                        <td class="muted">@(entry.IsDraft ? "drafts (derived from VASL data)" : "boards folder")</td>
+                        <td><a href="@($"author/{entry.Ref.Value}")">Edit</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <p><a href="author/new">New board</a></p>
+    }
+
+    <h2 class="page">VASL boards</h2>
     var totals = Totals();
     <p class="muted">@Boards.SourceDescription.</p>
     <p class="totals">
@@ -85,7 +113,7 @@ else
                     {
                         <td><a href="@($"boards/{entry.Ref.Value}")">@entry.Title</a></td>
                         <td class="@(board.Status == BoardStatus.Verified ? "pass" : "")">@board.Status</td>
-                        <td class="@(board.F1.Passed ? "pass" : "fail")">@board.F1.Status</td>
+                        <td class="@(board.F1 is { Passed: true } ? "pass" : "fail")">@board.F1?.Status</td>
                         <td class="@F2Class(board)">@F2Text(board)</td>
                         <td><Diagnostics Items="board.Diagnostics" /></td>
                     }
@@ -97,6 +125,7 @@ else
 
 @code {
     private IReadOnlyList<BoardListing> listing = [];
+    private IReadOnlyList<AuthoredListing> authored = [];
     private IReadOnlyList<BoardListing> inScope = [];
     private IReadOnlyList<BoardListing> outOfScope = [];
     private bool showOutOfScope;
@@ -104,6 +133,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         listing = await Task.Run(Boards.List);
+        authored = await Task.Run(Authored.List);
         inScope = listing.Where(entry => entry.Scope != BoardScope.OutOfScope).ToArray();
         outOfScope = listing.Where(entry => entry.Scope == BoardScope.OutOfScope).ToArray();
     }

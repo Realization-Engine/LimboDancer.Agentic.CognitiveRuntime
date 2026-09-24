@@ -71,13 +71,13 @@ public sealed class BoardRendererTests
     [Fact]
     public void ViewNamesRoundTrip()
     {
-        foreach (var view in new[] { BoardView.Exact, BoardView.HexFacts })
+        foreach (var view in Enum.GetValues<BoardView>())
         {
             Assert.True(BoardRenderer.TryParseView(BoardRenderer.ViewName(view), out var parsed));
             Assert.Equal(view, parsed);
         }
 
-        Assert.False(BoardRenderer.TryParseView("styled", out _));
+        Assert.False(BoardRenderer.TryParseView("painted", out _));
         Assert.False(BoardRenderer.TryParseView(null, out _));
     }
 
@@ -203,7 +203,7 @@ public sealed class BoardRendererTests
     /// The committed golden directory, found from the test output by the solution file. <c>CallerFilePath</c> is not
     /// used because continuous-integration builds map source paths.
     /// </summary>
-    private static string GoldenDirectory()
+    internal static string GoldenDirectory()
     {
         for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
         {

@@ -1,0 +1,591 @@
+@page "/author/{BoardName}"
+@using System.Globalization
+@implements IAsyncDisposable
+@inject AuthoredBoardService Authored
+@inject IJSRuntime JS
+
+<PageTitle>Edit @(session?.Name ?? BoardName) - ASL Map Studio</PageTitle>
+
+@if (loadError is not null)
+{
+    <p class="fail">@loadError</p>
+}
+else if (session is null)
+{
+    <p class="muted">Opening @BoardName...</p>
+}
+
+<div class="editor" hidden="@(session is null)">
+    @if (session is not null)
+    {
+        @if (session.IsDraft)
+        {
+            <p class="banner">
+                This board derives from VASL data. It is saved as a draft under the cache and may not be committed to the
+                boards folder until the source-derived content is replaced (ASL-MAP-073, ASL-MAP-074).
+            </p>
+        }
+        <div class="toolbar">
+            <input class="board-name" value="@session.Name" aria-label="Board name" @onchange="Rename" />
+            <span class="muted">@session.Board</span>
+            <span class="@(session.Current.Status == BoardStatus.AuthoredValid ? "pass" : "fail")">@session.Current.Status</span>
+            <span class="muted">version <code>@session.Current.Version[..12]</code></span>
+            <button @onclick="Undo" disabled="@(session.UndoDescription is null)" title="@session.UndoDescription">Undo</button>
+            <button @onclick="Redo" disabled="@(session.RedoDescription is null)" title="@session.RedoDescription">Redo</button>
+            <button @onclick="Save" disabled="@(!session.Dirty)">@(session.IsDraft ? "Save draft" : "Save")</button>
+            <label>
+                View
+                <select value="@BoardRenderer.ViewName(view)" @onchange="ChangeView">
+                    <option value="styled">Styled</option>
+                    <option value="exact">Exact</option>
+                    <option value="hexfacts">Hex facts</option>
+                </select>
+            </label>
+            <label><input type="checkbox" checked="@snap" @onchange="@(args => snap = (bool)args.Value!)" /> snap</label>
+            <a href="@($"boards/{session.Board.Value}")">Open in viewer</a>
+            @if (status is not null)
+            {
+                <span class="@(statusIsError ? "fail" : "muted")">@status</span>
+            }
+        </div>
+    }
+    <div class="editor-body">
+        <div class="editor-tools">
+            <ToolPalette Tool="@tool" ToolChanged="ChangeTool" />
+            @if (session is not null)
+            {
+                <div class="tool-options">
+                    <p class="muted">@EditorTool.Get(tool).Help</p>
+                    @if (ToolKind is { } kind)
+                    {
+                        <label for="tool-code">Terrain</label>
+                        <select id="tool-code" value="@ToolCode(kind)" @onchange="@(args => SetToolCode(kind, args))">
+                            @foreach (var terrain in CodesFor(kind))
+                            {
+                                <option value="@terrain.Code">@terrain.Name</option>
+                            }
+                        </select>
+                    }
+                    @if (tool == EditorTool.Elevation)
+                    {
+                        <label for="tool-level">Level</label>
+                        <input id="tool-level" type="number" min="-9" max="9" value="@level" @onchange="@(args => level = ParseInt(args, level))" />
+                    }
+                    @if (tool == EditorTool.Linear)
+                    {
+                        <label for="tool-width">Width (px)</label>
+                        <input id="tool-width" type="number" min="1" max="60" value="@linearWidth" @onchange="@(args => linearWidth = ParseInt(args, linearWidth))" />
+                        <label><input type="checkbox" checked="@curved" @onchange="@(args => curved = (bool)args.Value!)" /> curved</label>
+                    }
+                    @if (tool == EditorTool.Building)
+                    {
+                        <label for="tool-kit">Footprint</label>
+                        <select id="tool-kit" value="@buildingMode" @onchange="@(args => buildingMode = args.Value as string ?? "centered")">
+                            <option value="centered">centered box</option>
+                            <option value="span-0">span north to south</option>
+                            <option value="span-1">span northeast to southwest</option>
+                            <option value="span-2">span southeast to northwest</option>
+                            @foreach (var side in HexsideDirections.All)
+                            {
+                                <option value="@($"flush-{(int)side}")">flush to @side</option>
+                            }
+                        </select>
+                        <label><input type="checkbox" checked="@joinBuilding" @onchange="@(args => joinBuilding = (bool)args.Value!)" /> join selected building</label>
+                    }
+                    @if (tool == EditorTool.Annotation)
+                    {
+                        <label for="tool-mark">Mark</label>
+                        <select id="tool-mark" value="@mark" @onchange="@(args => mark = Enum.Parse<HexsideMark>(args.Value as string ?? nameof(HexsideMark.Slope)))">
+                            @foreach (var value in Enum.GetValues<HexsideMark>())
+                            {
+                                <option value="@value">@value</option>
+                            }
+                        </select>
+                    }
+                </div>
+            }
+        </div>
+        <div class="stage">
+            <div class="board-host" @ref="host"></div>
+            <p class="muted hint">Drag to pan, wheel or + and - to zoom, 0 to fit. Ctrl+Z undoes, Ctrl+Y redoes, Delete removes the selection, Escape cancels.</p>
+        </div>
+        <aside class="inspector">
+            @if (session is not null)
+            {
+                <div class="tabs" role="tablist">
+                    @foreach (var name in new[] { "Properties", "Layers", "Validation", "Hex" })
+                    {
+                        <button role="tab" class="@(panel == name ? "tab active" : "tab")" aria-selected="@(panel == name)" @onclick="() => panel = name">
+                            @name@(name == "Validation" && session.Current.Validation is { } report ? $" ({report.Summary.Errors + report.Summary.Warnings})" : string.Empty)
+                        </button>
+                    }
+                </div>
+                @switch (panel)
+                {
+                    case "Properties":
+                        <FeatureProperties Feature="SelectedFeature" Catalog="session.Catalog" BaseCode="session.Model.BaseCode"
+                                           OnChange="ReplaceSelected" OnDelete="DeleteFeature" />
+                        break;
+                    case "Layers":
+                        <LayerList Model="session.Model" Catalog="session.Catalog" SelectedId="@selectedId" OnSelect="SelectFeature" />
+                        break;
+                    case "Validation":
+                        <ValidationPanel Report="session.Current.Validation" OnSelect="ShowFinding" />
+                        break;
+                    default:
+                        @if (inspected is { } hex)
+                        {
+                            <HexInspector Board="session.Board" Facts="session.Current.Facts[hex]" Grid="session.Current.Render.Grid" Catalog="session.Catalog"
+                                          Model="session.Model" Validation="session.Current.Validation" OnCopy="CopyLocation" OnSelectFeature="SelectFeature" />
+                        }
+                        else
+                        {
+                            <p class="muted">With the Select tool, click a hex to inspect it.</p>
+                        }
+
+                        break;
+                }
+            }
+        </aside>
+    </div>
+</div>
+
+@code {
+    private static readonly string[] RefreshedLayers = ["exact-terrain", "exact-elevation", "hexfacts", "styled-marks", "legend"];
+    private ElementReference host;
+    private IJSObjectReference? module;
+    private IJSObjectReference? viewport;
+    private DotNetObjectReference<Author>? self;
+    private AuthoringSession? session;
+    private string? loadError;
+    private string? status;
+    private bool statusIsError;
+    private BoardView view = BoardView.Styled;
+    private string tool = EditorTool.Select;
+    private string panel = "Properties";
+    private string? selectedId;
+    private HexIndex? inspected;
+    private bool snap = true;
+    private int level = 1;
+    private int linearWidth = 8;
+    private bool curved;
+    private string buildingMode = "centered";
+    private bool joinBuilding;
+    private HexsideMark mark = HexsideMark.Slope;
+    private readonly Dictionary<TerrainKind, byte> toolCodes = [];
+    private bool viewportPending;
+
+    [Parameter]
+    public string BoardName { get; set; } = string.Empty;
+
+    private Feature? SelectedFeature => session?.Model.Features.FirstOrDefault(feature => feature.Id == selectedId);
+
+    private TerrainKind? ToolKind => tool switch
+    {
+        EditorTool.Area => TerrainKind.Area,
+        EditorTool.Linear => TerrainKind.Linear,
+        EditorTool.Building => TerrainKind.Building,
+        EditorTool.Hexside => TerrainKind.Hexside,
+        _ => null,
+    };
+
+    protected override async Task OnParametersSetAsync()
+    {
+        session = null;
+        loadError = null;
+        if (!BoardRef.TryParse(BoardName, out var board) || board.Kind != BoardRefKind.Authored)
+        {
+            loadError = $"{BoardName} is not an authored board reference (ab-...).";
+            return;
+        }
+
+        if (Authored.Catalog is not { } catalog)
+        {
+            loadError = "Authoring needs the terrain catalog from a configured VASL checkout. See Settings.";
+            return;
+        }
+
+        var (package, draft, diagnostics) = Authored.LoadPackage(board);
+        if (package is null)
+        {
+            loadError = $"{board} could not be opened: " + string.Join("; ", diagnostics.Select(d => d.Code + " " + d.Message));
+            return;
+        }
+
+        session = await Task.Run(() => new AuthoringSession(Authored, catalog.Catalog, package, draft));
+        viewportPending = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (viewportPending && session is not null)
+        {
+            viewportPending = false;
+            if (viewport is null)
+            {
+                module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/boardViewport.js");
+                self = DotNetObjectReference.Create(this);
+                viewport = await module.InvokeAsync<IJSObjectReference>("create", host, self);
+            }
+
+            await LoadView();
+            await viewport.InvokeVoidAsync("setTool", EditorTool.Get(tool).Gesture);
+        }
+    }
+
+    private string BaseUrl => $"render/{session!.Board.Value}/{session.Current.Version}/{BoardRenderer.ViewName(view)}";
+
+    private async Task LoadView()
+    {
+        if (viewport is null || session is null)
+        {
+            return;
+        }
+
+        var layers = BoardRenderer.Layers(view);
+        await viewport.InvokeVoidAsync("load", BaseUrl, "", BoardRenderer.ViewBox(session.Current.Render, view), layers, layers.Where(layer => layer != "defs").ToArray());
+        await Highlight();
+    }
+
+    private async Task ChangeView(ChangeEventArgs args)
+    {
+        if (BoardRenderer.TryParseView(args.Value as string, out var next))
+        {
+            view = next;
+            await LoadView();
+        }
+    }
+
+    private async Task ChangeTool(string next)
+    {
+        tool = next;
+        if (viewport is not null)
+        {
+            await viewport.InvokeVoidAsync("setTool", EditorTool.Get(tool).Gesture);
+        }
+    }
+
+    private IEnumerable<TerrainType> CodesFor(TerrainKind kind) =>
+        session!.Catalog.Types.Where(type => TerrainKinds.KindOf(type) == kind && type.Code != session.Model.BaseCode).OrderBy(type => type.Name, StringComparer.Ordinal);
+
+    private byte ToolCode(TerrainKind kind)
+    {
+        if (!toolCodes.TryGetValue(kind, out var code))
+        {
+            var preferred = kind switch
+            {
+                TerrainKind.Area => "Woods",
+                TerrainKind.Linear => "Paved Road",
+                TerrainKind.Building => "Stone Building",
+                TerrainKind.Hexside => "Wall",
+                _ => null,
+            };
+            code = preferred is not null && session!.Catalog.TryGet(preferred, out var type) ? type.Code : CodesFor(kind).First().Code;
+            toolCodes[kind] = code;
+        }
+
+        return code;
+    }
+
+    private void SetToolCode(TerrainKind kind, ChangeEventArgs args)
+    {
+        if (byte.TryParse(args.Value as string, out var code))
+        {
+            toolCodes[kind] = code;
+        }
+    }
+
+    private static int ParseInt(ChangeEventArgs args, int fallback) => int.TryParse(args.Value as string, out var value) ? value : fallback;
+
+    private void Rename(ChangeEventArgs args)
+    {
+        if (session is not null && args.Value is string name && !string.IsNullOrWhiteSpace(name))
+        {
+            session.Name = name.Trim();
+            status = "Renamed; save to keep it.";
+            statusIsError = false;
+        }
+    }
+
+    private async Task Execute(AuthoringCommand command)
+    {
+        if (session is null)
+        {
+            return;
+        }
+
+        var outcome = await Task.Run(() => session.Execute(command));
+        await Applied(outcome, command.Description);
+    }
+
+    private async Task Undo()
+    {
+        if (session is not null && await Task.Run(session.Undo) is { } outcome)
+        {
+            await Applied(outcome, "undo");
+        }
+    }
+
+    private async Task Redo()
+    {
+        if (session is not null && await Task.Run(session.Redo) is { } outcome)
+        {
+            await Applied(outcome, "redo");
+        }
+    }
+
+    // The edit cycle (section 6.3): patch the Styled features that changed, then refresh the layers a patch does not
+    // cover, by the new version's URLs.
+    private async Task Applied(EditOutcome outcome, string description)
+    {
+        if (!outcome.Succeeded)
+        {
+            status = outcome.Error;
+            statusIsError = true;
+            StateHasChanged();
+            return;
+        }
+
+        status = string.Create(CultureInfo.InvariantCulture, $"{description}: rebuilt in {outcome.Milliseconds:F0} ms");
+        statusIsError = false;
+        if (selectedId is not null && session!.Model.Features.All(feature => feature.Id != selectedId))
+        {
+            selectedId = null;
+        }
+
+        if (viewport is not null && session is not null)
+        {
+            if (view == BoardView.Styled)
+            {
+                var upserts = outcome.Upserted.Select(feature => BoardRenderer.RenderFeature(session.Current.Render, feature.Id)).OfType<FeatureFragment>()
+                    .Select(fragment => new { layer = fragment.Layer, id = fragment.Id, svg = fragment.Svg, before = fragment.BeforeId }).ToArray();
+                var removals = outcome.Removed.Select(removed => new { layer = removed.Layer, id = removed.Id }).ToArray();
+                await viewport.InvokeVoidAsync("applyPatch", new { upserts, removals });
+            }
+
+            var layers = BoardRenderer.Layers(view).Where(layer => view != BoardView.Styled || RefreshedLayers.Contains(layer)).Where(layer => layer != "defs").ToArray();
+            await viewport.InvokeVoidAsync("reloadLayers", BaseUrl, "", layers);
+            await Highlight();
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task Save()
+    {
+        if (session is null)
+        {
+            return;
+        }
+
+        await Task.Run(session.Save);
+        status = session.IsDraft ? "Draft saved under the cache." : "Saved to the boards folder.";
+        statusIsError = false;
+    }
+
+    [JSInvokable]
+    public async Task OnBoardClick(double x, double y)
+    {
+        if (session is null)
+        {
+            return;
+        }
+
+        var model = session.Model;
+        var geometry = model.Geometry;
+        var point = EditorGestures.ToFixed(x, y);
+        switch (tool)
+        {
+            case EditorTool.Select:
+                selectedId = AuthoringGeometry.FeatureAt(model, point)?.Id;
+                inspected = geometry.HexAt(x, y);
+                panel = selectedId is not null ? "Properties" : "Hex";
+                await Highlight();
+                break;
+            case EditorTool.Building when geometry.HexAt(x, y) is { } hex:
+                await Execute(new AddFeature(new BuildingFeature(FeatureIds.NewUlid(), 0, [Footprint(geometry, hex)], ToolCode(TerrainKind.Building),
+                    joinBuilding && SelectedFeature is BuildingFeature selectedBuilding ? selectedBuilding.BuildingId : "B" + FeatureIds.NewUlid()[^6..])));
+                break;
+            case EditorTool.Hexside when AuthoringGeometry.NearestHexside(geometry, point) is { } side:
+                await Execute(EditorGestures.AddHexside(model, ToolCode(TerrainKind.Hexside), side));
+                break;
+            case EditorTool.Stairway when geometry.HexAt(x, y) is { } stairHex:
+                await Execute(new SetStairway(stairHex, !model.Annotations.Stairways.Contains(stairHex)));
+                break;
+            case EditorTool.Annotation when AuthoringGeometry.NearestHexside(geometry, point) is { } markSide:
+                var marks = mark switch
+                {
+                    HexsideMark.Slope => model.Annotations.Hexsides.Slopes,
+                    HexsideMark.RailroadEmbankment => model.Annotations.Hexsides.RailroadEmbankments,
+                    _ => model.Annotations.Hexsides.PartialOrchards,
+                };
+                var on = !(marks.TryGetValue(geometry.NameOf(markSide.Hex), out var sides) && sides.Contains(markSide.Side));
+                await Execute(new SetHexsideMark(mark, markSide, on));
+                break;
+        }
+
+        StateHasChanged();
+    }
+
+    private FeatureShape Footprint(BoardGeometry geometry, HexIndex hex) => buildingMode switch
+    {
+        ['s', 'p', 'a', 'n', '-', var axis] => BuildingKit.Span(geometry, hex, axis - '0'),
+        ['f', 'l', 'u', 's', 'h', '-', var side] => BuildingKit.Flush(geometry, hex, (HexsideDirection)(side - '0')),
+        _ => BuildingKit.Centered(geometry, hex),
+    };
+
+    [JSInvokable]
+    public async Task OnBoardGesture(double[][] points)
+    {
+        if (session is null)
+        {
+            return;
+        }
+
+        var model = session.Model;
+        var snapped = EditorGestures.Snap(model, points.Select(point => (point[0], point[1])), snap);
+        switch (tool)
+        {
+            case EditorTool.Area when snapped.Count >= 3:
+                await Execute(new AddFeature(new AreaTerrainFeature(FeatureIds.NewUlid(), 0, new FeatureShape([snapped]), ToolCode(TerrainKind.Area))));
+                break;
+            case EditorTool.Elevation when snapped.Count >= 3:
+                await Execute(new AddFeature(new ElevationRegion(FeatureIds.NewUlid(), 0, new FeatureShape([snapped]), level)));
+                break;
+            case EditorTool.Linear when snapped.Count >= 2:
+                await Execute(new AddFeature(new LinearTerrainFeature(FeatureIds.NewUlid(), 0, ToolCode(TerrainKind.Linear),
+                    EditorGestures.Centerline(snapped, curved), FixedPoint.FromPixels(linearWidth), null)));
+                break;
+            default:
+                status = "Not enough points for that tool.";
+                statusIsError = true;
+                break;
+        }
+
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public async Task OnBoardDrag(double x0, double y0, double x1, double y1)
+    {
+        if (session is not null && tool == EditorTool.Move && SelectedFeature is { } feature and not HexsideTerrainFeature)
+        {
+            var dx = (int)Math.Round(x1 - x0);
+            var dy = (int)Math.Round(y1 - y0);
+            if (dx != 0 || dy != 0)
+            {
+                await Execute(new ReplaceFeature(EditorGestures.Translate(feature, dx, dy, session.Model.Geometry)));
+                StateHasChanged();
+            }
+        }
+    }
+
+    [JSInvokable]
+    public Task OnBoardHover(double x, double y) => Task.CompletedTask;
+
+    [JSInvokable]
+    public async Task OnBoardKey(string key)
+    {
+        switch (key)
+        {
+            case "Undo":
+                await Undo();
+                break;
+            case "Redo":
+                await Redo();
+                break;
+            case "Delete" when selectedId is not null:
+                await DeleteFeature(selectedId);
+                break;
+            case "Escape":
+                selectedId = null;
+                await Highlight();
+                break;
+        }
+
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public Task OnUnitClick(string placementId) => Task.CompletedTask;
+
+    private Task ReplaceSelected(Feature feature) => Execute(new ReplaceFeature(feature));
+
+    private Task DeleteFeature(string id) => Execute(new RemoveFeature(id));
+
+    private async Task SelectFeature(string id)
+    {
+        selectedId = id;
+        panel = "Properties";
+        await Highlight();
+    }
+
+    private async Task ShowFinding(ValidationFinding finding)
+    {
+        if (finding.FeatureId is not null)
+        {
+            selectedId = finding.FeatureId;
+        }
+
+        if (finding.Hex is { } hex && session is not null && viewport is not null)
+        {
+            inspected = hex;
+            var center = session.Model.Geometry.CenterDot(hex);
+            await viewport.InvokeVoidAsync("focusPoint", center.X, center.Y);
+        }
+
+        await Highlight();
+    }
+
+    private async Task CopyLocation(string location)
+    {
+        if (viewport is not null)
+        {
+            await viewport.InvokeVoidAsync("copyText", location);
+        }
+    }
+
+    // Outlines the selected feature's painted area, or the inspected hex.
+    private async Task Highlight()
+    {
+        if (viewport is null || session is null)
+        {
+            return;
+        }
+
+        string? points = null;
+        if (SelectedFeature is { } feature && AuthoringGeometry.Bounds(session.Model.Geometry, feature) is { } box)
+        {
+            points = string.Create(CultureInfo.InvariantCulture, $"{box.MinX},{box.MinY} {box.MaxX},{box.MinY} {box.MaxX},{box.MaxY} {box.MinX},{box.MaxY}");
+        }
+        else if (inspected is { } hex)
+        {
+            points = string.Join(" ", session.Model.Geometry.Vertices(hex).Select(vertex => string.Create(CultureInfo.InvariantCulture, $"{vertex.X},{vertex.Y}")));
+        }
+
+        await viewport.InvokeVoidAsync("highlight", points);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (viewport is not null)
+            {
+                await viewport.InvokeVoidAsync("dispose");
+                await viewport.DisposeAsync();
+            }
+
+            if (module is not null)
+            {
+                await module.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit is gone; the browser already discarded the viewport.
+        }
+
+        self?.Dispose();
+    }
+}

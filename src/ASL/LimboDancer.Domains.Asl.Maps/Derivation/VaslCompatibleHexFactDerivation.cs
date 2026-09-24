@@ -247,6 +247,12 @@ public static class VaslCompatibleHexFactDerivation
     // the first inherent-terrain cell whose nearest location is the hex center.
     private static void SetInherentTerrain(Context context, HexState hex)
     {
+        // The rectangle scan can only succeed where the rectangle holds an inherent code, which most hexes lack.
+        if (!context.BoxHasInherent(hex))
+        {
+            return;
+        }
+
         var bounds = hex.Border;
         for (var x = bounds.MinX; x < bounds.MinX + bounds.Width && x < context.Geometry.GridWidth; x++)
         {
@@ -454,24 +460,55 @@ public static class VaslCompatibleHexFactDerivation
         return hex.BaseLevel + 1;
     }
 
-    // Scans the border's bounding rectangle, x then y, for the first cell inside the polygon matching the predicate.
+    // The first cell inside the border polygon, scanning its bounding rectangle x then y, whose terrain matches the
+    // predicate. Equivalent to scanning the cells, but answered from the hex's first-occurrence table: the matching
+    // code that occurs earliest in scan order.
     private static bool BorderContains(Context context, HexState hex, Func<TerrainType, bool> predicate, out TerrainType? found)
     {
-        var bounds = hex.Border;
-        for (var x = bounds.MinX; x < bounds.MinX + bounds.Width; x++)
+        var first = context.FirstOccurrence(hex);
+        found = null;
+        var best = int.MaxValue;
+        for (var code = 0; code < first.Length; code++)
         {
-            for (var y = bounds.MinY; y < bounds.MinY + bounds.Height; y++)
+            if (first[code] < best && context.Catalog.TryGet((byte)code, out var terrain) && predicate(terrain))
             {
-                if (bounds.Contains(x, y) && context.TerrainAt(x, y) is { } terrain && predicate(terrain))
-                {
-                    found = terrain;
-                    return true;
-                }
+                best = first[code];
+                found = terrain;
             }
         }
 
-        found = null;
-        return false;
+        return found is not null;
+    }
+
+    // The cells inside each hex's border polygon, in the scan order above, per geometry. Grid-independent, so shared.
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<BoardGeometry, Dictionary<HexIndex, int[]>> BorderCells = [];
+
+    private static int[] CellsInside(BoardGeometry geometry, HexState hex)
+    {
+        var table = BorderCells.GetValue(geometry, _ => []);
+        lock (table)
+        {
+            if (!table.TryGetValue(hex.Index, out var cells))
+            {
+                var list = new List<int>();
+                var bounds = hex.Border;
+                for (var x = bounds.MinX; x < bounds.MinX + bounds.Width; x++)
+                {
+                    for (var y = bounds.MinY; y < bounds.MinY + bounds.Height; y++)
+                    {
+                        if (geometry.ContainsCell(x, y) && bounds.Contains(x, y))
+                        {
+                            list.Add((x * geometry.GridHeight) + y);
+                        }
+                    }
+                }
+
+                cells = [.. list];
+                table[hex.Index] = cells;
+            }
+
+            return cells;
+        }
     }
 
     private static double Distance(double x1, double y1, double x2, double y2)
@@ -484,6 +521,9 @@ public static class VaslCompatibleHexFactDerivation
     private sealed class Context
     {
         private readonly Dictionary<HexIndex, HexState> byIndex;
+        private readonly Dictionary<HexIndex, int[]> firstOccurrence = [];
+        private readonly Dictionary<HexIndex, bool> boxHasInherent = [];
+        private readonly bool[] inherentCodes = new bool[256];
 
         public Context(TerrainGrid grid, TerrainCatalog catalog, HexsideAnnotations annotations)
         {
@@ -494,6 +534,10 @@ public static class VaslCompatibleHexFactDerivation
             var initial = catalog.TryGet(0, out var codeZero) ? codeZero : OpenGround;
             Hexes = Geometry.Hexes().Select(index => new HexState(Geometry, grid, annotations, index, initial)).ToArray();
             byIndex = Hexes.ToDictionary(hex => hex.Index);
+            foreach (var type in catalog.Types)
+            {
+                inherentCodes[type.Code] = type.IsInherent;
+            }
         }
 
         public TerrainGrid Grid
@@ -522,6 +566,52 @@ public static class VaslCompatibleHexFactDerivation
         }
 
         public HexState this[HexIndex index] => byIndex[index];
+
+        /// <summary>Whether any cell of the border's bounding rectangle, clipped to the grid, has an inherent terrain code.</summary>
+        public bool BoxHasInherent(HexState hex)
+        {
+            if (!boxHasInherent.TryGetValue(hex.Index, out var has))
+            {
+                var bounds = hex.Border;
+                var height = Geometry.GridHeight;
+                var codes = Grid.Codes;
+                for (var x = Math.Max(0, bounds.MinX); x < bounds.MinX + bounds.Width && x < Geometry.GridWidth && !has; x++)
+                {
+                    for (var y = Math.Max(0, bounds.MinY); y < bounds.MinY + bounds.Height && y < height; y++)
+                    {
+                        if (inherentCodes[codes[(x * height) + y]])
+                        {
+                            has = true;
+                            break;
+                        }
+                    }
+                }
+
+                boxHasInherent[hex.Index] = has;
+            }
+
+            return has;
+        }
+
+        /// <summary>For each code, the position of its first cell inside the hex border in scan order, or int.MaxValue.</summary>
+        public int[] FirstOccurrence(HexState hex)
+        {
+            if (!firstOccurrence.TryGetValue(hex.Index, out var first))
+            {
+                first = new int[256];
+                Array.Fill(first, int.MaxValue);
+                var codes = Grid.Codes;
+                var cells = CellsInside(Geometry, hex);
+                for (var position = cells.Length - 1; position >= 0; position--)
+                {
+                    first[codes[cells[position]]] = position;
+                }
+
+                firstOccurrence[hex.Index] = first;
+            }
+
+            return first;
+        }
 
         // Map.getGridTerrain: null off the grid.
         public TerrainType? TerrainAt(int x, int y) =>

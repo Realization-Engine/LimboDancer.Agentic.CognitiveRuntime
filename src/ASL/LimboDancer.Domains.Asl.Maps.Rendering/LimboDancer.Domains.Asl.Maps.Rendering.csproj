@@ -2,4 +2,7 @@
   <ItemGroup>
     <ProjectReference Include="..\LimboDancer.Domains.Asl.Maps\LimboDancer.Domains.Asl.Maps.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Themes\*.json" LogicalName="Themes.%(Filename)%(Extension)" />
+  </ItemGroup>
 </Project>

@@ -1,0 +1,115 @@
+{
+  "name": "board",
+  "version": "1.0.0",
+  "description": "Styled view theme: patterned area terrain, textured buildings, two-tone roads, banked streams, and tinted hill levels.",
+  "elevationTints": {
+    "-2": "#9fb487",
+    "-1": "#b3c393",
+    "0": "#d9d4a3",
+    "1": "#cbb57f",
+    "2": "#b99a60",
+    "3": "#a38049",
+    "4": "#8b6a3b",
+    "5": "#745733"
+  },
+  "crest": { "stroke": "#6b4f2a", "strokeWidth": "1.25", "strokeOpacity": "0.8" },
+  "hexsideWidth": 4,
+  "patterns": [
+    {
+      "id": "woods", "width": 14, "height": 14, "background": "#557f3a",
+      "elements": [
+        { "name": "circle", "attributes": { "cx": "3.5", "cy": "3.5", "r": "3", "fill": "#3f6a2b" } },
+        { "name": "circle", "attributes": { "cx": "10.5", "cy": "9", "r": "3.5", "fill": "#467432" } },
+        { "name": "circle", "attributes": { "cx": "4", "cy": "11", "r": "2", "fill": "#6a9448" } }
+      ]
+    },
+    {
+      "id": "orchard", "width": 12, "height": 12, "background": "#c8cf8f",
+      "elements": [ { "name": "circle", "attributes": { "cx": "6", "cy": "6", "r": "3", "fill": "#5f8a3c" } } ]
+    },
+    {
+      "id": "grain", "width": 8, "height": 6, "background": "#dcc87a",
+      "elements": [
+        { "name": "line", "attributes": { "x1": "0", "y1": "1.5", "x2": "8", "y2": "1.5", "stroke": "#b99a45", "stroke-width": "1" } },
+        { "name": "circle", "attributes": { "cx": "2", "cy": "4.5", "r": "0.75", "fill": "#a5883a" } },
+        { "name": "circle", "attributes": { "cx": "6", "cy": "4.5", "r": "0.75", "fill": "#a5883a" } }
+      ]
+    },
+    {
+      "id": "brush", "width": 10, "height": 10, "background": "#b9c48a",
+      "elements": [
+        { "name": "path", "attributes": { "d": "M2 7L3.5 3L5 7M6 9L7.5 5L9 9", "fill": "none", "stroke": "#6f8a45", "stroke-width": "1" } }
+      ]
+    },
+    {
+      "id": "marsh", "width": 12, "height": 8, "background": "#b7cfb8",
+      "elements": [
+        { "name": "path", "attributes": { "d": "M2 6L3 3M3 6L3 2.5M4 6L5 3.5", "fill": "none", "stroke": "#4f7a64", "stroke-width": "0.75" } },
+        { "name": "line", "attributes": { "x1": "7", "y1": "6.5", "x2": "11", "y2": "6.5", "stroke": "#6c9bb2", "stroke-width": "0.75" } }
+      ]
+    },
+    {
+      "id": "graveyard", "width": 10, "height": 10, "background": "#b7c29a",
+      "elements": [
+        { "name": "path", "attributes": { "d": "M5 2V8M3 4H7", "fill": "none", "stroke": "#5d5d5d", "stroke-width": "1" } }
+      ]
+    },
+    {
+      "id": "crags", "width": 10, "height": 10, "background": "#a39b86",
+      "elements": [ { "name": "path", "attributes": { "d": "M1 8L4 2L6 6L9 3", "fill": "none", "stroke": "#5f584a", "stroke-width": "1" } } ]
+    },
+    {
+      "id": "rubble", "width": 8, "height": 8, "background": "#a8a296",
+      "elements": [
+        { "name": "rect", "attributes": { "x": "1", "y": "1", "width": "2", "height": "2", "fill": "#6f6a60" } },
+        { "name": "rect", "attributes": { "x": "5", "y": "4", "width": "2", "height": "2", "fill": "#7d776c" } }
+      ]
+    },
+    {
+      "id": "water", "width": 12, "height": 6, "background": "#7fa9c9",
+      "elements": [ { "name": "path", "attributes": { "d": "M0 3Q3 1.5 6 3T12 3", "fill": "none", "stroke": "#a9c8de", "stroke-width": "0.75" } } ]
+    },
+    {
+      "id": "stone", "width": 8, "height": 6, "background": "#9b9b96",
+      "elements": [ { "name": "path", "attributes": { "d": "M0 3H8M4 0V3M0 3V6", "fill": "none", "stroke": "#7e7e79", "stroke-width": "0.75" } } ]
+    },
+    {
+      "id": "wood", "width": 6, "height": 6, "background": "#b27a45",
+      "elements": [ { "name": "line", "attributes": { "x1": "0", "y1": "3", "x2": "6", "y2": "3", "stroke": "#915f32", "stroke-width": "0.75" } } ]
+    },
+    {
+      "id": "cliff", "width": 4, "height": 4, "background": "#6d5a3a",
+      "elements": [ { "name": "line", "attributes": { "x1": "0", "y1": "4", "x2": "4", "y2": "0", "stroke": "#3f321f", "stroke-width": "1" } } ]
+    }
+  ],
+  "styles": [
+    { "name": "Woods", "fill": "url(#pattern-woods)", "stroke": "#2f4f1f", "strokeWidth": "1" },
+    { "contains": "Forest", "fill": "url(#pattern-woods)", "stroke": "#2f4f1f", "strokeWidth": "1" },
+    { "contains": "Orchard", "fill": "url(#pattern-orchard)", "stroke": "#5f7a3a", "strokeWidth": "0.75" },
+    { "name": "Grain", "fill": "url(#pattern-grain)" },
+    { "contains": "Brush", "fill": "url(#pattern-brush)" },
+    { "contains": "Scrub", "fill": "url(#pattern-brush)" },
+    { "contains": "Marsh", "fill": "url(#pattern-marsh)" },
+    { "contains": "Graveyard", "fill": "url(#pattern-graveyard)", "stroke": "#5d5d5d", "strokeWidth": "0.75" },
+    { "contains": "Crags", "fill": "url(#pattern-crags)" },
+    { "contains": "Rubble", "fill": "url(#pattern-rubble)" },
+    { "category": "Water", "fill": "url(#pattern-water)", "stroke": "#4f7ea6", "strokeWidth": "1" },
+    { "name": "Wall", "stroke": "#5c5a55", "strokeWidth": "4" },
+    { "name": "Hedge", "stroke": "#2e5a24", "strokeWidth": "4", "dash": "3 1.5" },
+    { "contains": "Bocage", "stroke": "#355f2a", "strokeWidth": "6", "dash": "4 1.5" },
+    { "name": "Cliff", "stroke": "url(#pattern-cliff)", "strokeWidth": "6" },
+    { "contains": "Rowhouse", "stroke": "#1f1f1f", "strokeWidth": "3" },
+    { "category": "Hexside", "stroke": "#4d4d4d", "strokeWidth": "3" },
+    { "category": "Factory", "fill": "url(#pattern-stone)", "stroke": "#2b2b2b", "strokeWidth": "1.5", "shadow": true },
+    { "category": "Marketplace", "fill": "#c9b98f", "stroke": "#6e5f3c", "strokeWidth": "1" },
+    { "category": "Building", "contains": "Stone", "fill": "url(#pattern-stone)", "stroke": "#3a3a36", "strokeWidth": "1", "shadow": true },
+    { "category": "Building", "fill": "url(#pattern-wood)", "stroke": "#5a3a1c", "strokeWidth": "1", "shadow": true },
+    { "category": "Bridge", "fill": "#8a8479", "stroke": "#4a463f", "strokeWidth": "1" },
+    { "name": "Paved Road", "fill": "#bdb7a4", "strokes": [ { "color": "#6f6a5c", "extra": "2" }, { "color": "#c9c3ae", "extra": "0" } ] },
+    { "category": "Road", "fill": "#d2bf8c", "strokes": [ { "color": "#9b8756", "extra": "1.5" }, { "color": "#dccb9a", "extra": "0" } ] },
+    { "contains": "Railroad", "fill": "#8f8a80", "strokes": [ { "color": "#4a463f", "extra": "1" }, { "color": "#8f8a80", "extra": "0", "dash": "2 3" } ] },
+    { "contains": "Stream", "fill": "#6f9dc1", "strokes": [ { "color": "#6b5a3a", "extra": "3" }, { "color": "#6f9dc1", "extra": "0" } ] },
+    { "contains": "Gully", "fill": "#9c8a64", "strokes": [ { "color": "#6b5a3a", "extra": "2" }, { "color": "#a8966e", "extra": "0" } ] },
+    { "category": "Depression", "fill": "#a8966e", "strokes": [ { "color": "#6b5a3a", "extra": "2" }, { "color": "#a8966e", "extra": "0" } ] }
+  ]
+}

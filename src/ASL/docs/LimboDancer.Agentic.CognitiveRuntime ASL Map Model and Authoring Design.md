@@ -472,6 +472,30 @@ ASL-MAP-06 delivers the Feature Model, the compiler, the vectorizer, and F3, in 
 
 Deferred to later steps, as the sequence places them: validation (section 6), incremental compilation (section 5.5), authoring commands (section 12), Scenes and composition (section 8), the canonical board package (section 9), and the read API (section 11). Centerline recovery for vectorized linear terrain remains open issue 3.
 
+## 17. ASL-MAP-07 as built
+
+ASL-MAP-07 adds the model-side pieces the Studio editor needs (Architecture and Rendering Design, section 9.4):
+
+- **Canonical package** (section 9):
+  - `CanonicalJson` writes RFC 8785 canonical JSON for the values the model uses: keys sorted by UTF-16 code units, no whitespace, integers only, minimal escapes.
+  - `FeatureModelJson` writes `features.json`, with features in id order and coordinates as raw fixed-point integers; reading it back gives the same bytes.
+  - `BoardPackage` writes `board.json` with the defining fields (format version, board reference, name, geometry, catalog hash, provenance), the features entry hash, and an informational validation summary.
+  - `BoardVersion` is SHA-256 over the canonical sorted (entry name, entry hash) list of the defining manifest fields and `features.json`, so the validation summary never changes identity.
+  - `BoardPackageStore` keeps packages as directories named by slug and refuses a features entry whose hash does not match the manifest (`MAP-PKG-002`).
+  - The grid entry and `hexfacts.json` caches, and zip containers, are not written yet.
+- **Authoring commands** (section 12): `AddFeature`, `ReplaceFeature`, `RemoveFeature`, `SetStairway`, `SetHexsideMark`, and `CompositeCommand`.
+  - Each returns the new model and its inverse, after type validation: codes exist and suit the feature kind (area terrain may also use the base code, to clear terrain), rings have three points, hexside spans are on the board with a valid extent, and centerlines have a width.
+  - Snapping, hexside hit tests, feature hit tests, and the building footprint kit (`BuildingKit.Centered`, `Span`, and `Flush`; spans and flush boxes extend one pixel past their hexsides) are in `AuthoringGeometry`.
+- **Validation** (section 6):
+  - `BoardValidator` implements `MAP-VAL-003`, `004`, `005`, `007`, `010`, `011`, and `012`.
+  - `MAP-VAL-001`, `002`, `006`, and `009` need network and edge analysis. `MAP-VAL-008` needs author intent, which the model does not store yet. These five are deferred.
+- **Derivation speed.** Two changes, both exact, cut a warm full derivation of a standard board from about 380 ms to about 55 ms:
+  - `BorderContains`, which scanned every cell of a hex's bounding rectangle with a polygon test for each bridge, tunnel, and depression query, now answers from a per-hex table of each code's first position in the same scan order. The in-polygon cell lists are cached per geometry.
+  - The inherent-terrain scan returns at once when the hex's rectangle holds no inherent code.
+
+  F2 still passes on all 156 fixture boards. This is why edits meet the latency target without incremental compilation (section 5.5, which remains deferred with its property test).
+- **Still deferred:** Scenes and composition (section 8), the read API (section 11), author intent (section 6), and export to VASL format (ASL-MAP-056).
+
 ## 15. Requirement coverage
 
 | Requirement | Section |

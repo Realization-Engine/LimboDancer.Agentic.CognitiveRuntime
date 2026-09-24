@@ -20,10 +20,33 @@ public sealed class StudioOptions
         get; set;
     }
 
+    /// <summary>Authored board packages; defaults to <c>src/ASL/boards</c> in the repository, else a folder under the cache.</summary>
+    public string? BoardsRoot
+    {
+        get; set;
+    }
+
+    public string ResolveBoardsRoot() => BoardsRoot ?? FindRepositoryDirectory(Path.Combine("src", "ASL", "boards"), mustExist: false) ?? Path.Combine(ResolveCacheRoot(), "boards");
+
     public string? ResolveOracleFixtures() => OracleFixtures ?? FindRepositoryFixtures();
 
     public string ResolveCacheRoot() =>
         CacheRoot ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "LimboDancer", "AslMaps", "cache");
+
+    // The directory under the repository root (found by the ASL solution file), or null outside the repository.
+    private static string? FindRepositoryDirectory(string relative, bool mustExist)
+    {
+        for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, "src", "ASL", "LimboDancer.Domains.Asl.sln")))
+            {
+                var candidate = Path.Combine(directory.FullName, relative);
+                return !mustExist || Directory.Exists(candidate) ? candidate : null;
+            }
+        }
+
+        return null;
+    }
 
     private static string? FindRepositoryFixtures()
     {

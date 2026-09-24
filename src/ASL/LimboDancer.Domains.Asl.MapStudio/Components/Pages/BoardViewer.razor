@@ -1,10 +1,5 @@
 @page "/boards/{BoardName}"
 @using System.Globalization
-@using LimboDancer.Domains.Asl.Maps.Coordinates
-@using LimboDancer.Domains.Asl.Maps.Derivation
-@using LimboDancer.Domains.Asl.Maps.Rendering
-@using LimboDancer.Domains.Asl.Maps.Terrain
-@using LimboDancer.Domains.Asl.MapStudio.Services
 @implements IAsyncDisposable
 @inject IBoardProvider Boards
 @inject IJSRuntime JS
@@ -26,14 +21,36 @@ else if (board is null)
         {
             <div class="toolbar">
                 <strong>@board.Title</strong>
-                <span class="@(board.Status == BoardStatus.Verified ? "pass" : "")">@board.Status</span>
+                <span class="@(board.Status is BoardStatus.Verified or BoardStatus.AuthoredValid ? "pass" : board.Status == BoardStatus.Authored ? "fail" : "")">@board.Status</span>
+                @if (board.IsAuthored)
+                {
+                    <a href="@($"author/{board.Ref.Value}")">Edit</a>
+                }
                 <label>
                     View
                     <select value="@BoardRenderer.ViewName(view)" @onchange="ChangeView">
                         <option value="exact">Exact</option>
+                        <option value="styled">Styled</option>
                         <option value="hexfacts">Hex facts</option>
+                        <option value="comparison">Comparison</option>
                     </select>
                 </label>
+                @if (view == BoardView.Comparison)
+                {
+                    <label>
+                        Show
+                        <select value="@comparisonMode" @onchange="ChangeComparison">
+                            <option value="overlay">overlay</option>
+                            <option value="swipe">swipe</option>
+                            <option value="side">side by side</option>
+                        </select>
+                    </label>
+                    @if (comparisonMode != "side")
+                    {
+                        <input type="range" min="0" max="100" value="@comparisonValue" aria-label="@(comparisonMode == "swipe" ? "Divider position" : "Styled opacity")"
+                               @oninput="ChangeComparisonValue" />
+                    }
+                }
                 @foreach (var layer in ToggleLayers)
                 {
                     <label>
@@ -53,9 +70,14 @@ else if (board is null)
                     <label><input type="checkbox" checked="@showDemoUnits" @onchange="ToggleDemoUnits" /> Demo units</label>
                 }
                 <button @onclick="ResetView">Fit</button>
+                @if (preparing is not null)
+                {
+                    <span class="muted">@preparing</span>
+                }
             </div>
         }
         <div class="board-host" @ref="host"></div>
+        <p class="muted hint">Drag to pan, wheel or + and - to zoom, 0 to fit. Hover a hex to inspect it; click to keep it.</p>
     </div>
     <aside class="inspector">
         @if (selectedUnit is { } unit)
@@ -90,61 +112,23 @@ else if (board is null)
                 }
             }
         }
-        @if (selected is { } facts)
+        @if (board is not null && (selected ?? hovered) is { } facts)
         {
-            <h2>Hex @facts.Hex</h2>
-            <dl>
-                <dt>Base level</dt>
-                <dd>@facts.BaseLevel</dd>
-                <dt>Center terrain</dt>
-                <dd>@Name(facts.Center.Terrain)</dd>
-                <dt>Center source</dt>
-                <dd>@facts.CenterSource</dd>
-                <dt>Stairway</dt>
-                <dd>@(facts.Stairway ? "yes" : "no")</dd>
-                @if (facts.Center.DepressionTerrain is { } depression)
-                {
-                    <dt>Depression</dt>
-                    <dd>@depression.Name</dd>
-                }
-                @if (facts.Bridge is { } bridge)
-                {
-                    <dt>Bridge</dt>
-                    <dd>@Name(bridge.Terrain), road level @bridge.RoadLevel</dd>
-                }
-            </dl>
-
-            <h3>Locations</h3>
-            <table>
-                <tr><th>Level</th><th>Terrain</th><th>Depression</th></tr>
-                @foreach (var location in facts.Locations)
-                {
-                    <tr><td>@location.Level</td><td>@Name(location.Terrain)</td><td>@Name(location.DepressionTerrain)</td></tr>
-                }
-            </table>
-
-            <h3>Hexsides</h3>
-            <table>
-                <tr><th>Side</th><th>Terrain</th><th>Hexside</th><th>Flags</th></tr>
-                @foreach (var side in facts.Hexsides)
-                {
-                    <tr>
-                        <td>@side.Side</td>
-                        <td>@(side.OnMap ? Name(side.Terrain) : "off map")</td>
-                        <td>@Name(side.HexsideTerrain)</td>
-                        <td>@Flags(side)</td>
-                    </tr>
-                }
-            </table>
+            @if (selected is null)
+            {
+                <p class="muted">Hovering. Click to keep this hex.</p>
+            }
+            <HexInspector Board="board.Ref" Facts="facts" Grid="board.Render.Grid" Catalog="board.Catalog"
+                          Model="StyledModel" Validation="board.Validation" OnCopy="CopyLocation" />
         }
         else
         {
-            <p class="muted">Click a hex to inspect its derived facts and the grid under the pointer.</p>
+            <p class="muted">Hover or click a hex to inspect its derived facts and the grid samples behind them.</p>
         }
 
         @if (sample is not null)
         {
-            <h3>Grid sample</h3>
+            <h3>Pixel under the pointer</h3>
             <p>@sample</p>
         }
 
@@ -161,16 +145,29 @@ else if (board is null)
                     <dt>LOSData</dt>
                     <dd>@provenance.LosData.RepositoryPath</dd>
                 }
-                <dt>F1</dt>
-                <dd class="@(board.F1.Passed ? "pass" : "fail")">@board.F1.Status</dd>
-                <dt>F2</dt>
-                <dd class="@(board.F2 is { Passed: true } ? "pass" : board.F2 is null ? "muted" : "fail")">
-                    @(board.F2 is null ? "no oracle fixture" : board.F2.Passed ? "Pass" : $"{board.F2.Differences.Count} differences")
-                </dd>
+                @if (board.F1 is { } f1)
+                {
+                    <dt>F1</dt>
+                    <dd class="@(f1.Passed ? "pass" : "fail")">@f1.Status</dd>
+                    <dt>F2</dt>
+                    <dd class="@(board.F2 is { Passed: true } ? "pass" : board.F2 is null ? "muted" : "fail")">
+                        @(board.F2 is null ? "no oracle fixture" : board.F2.Passed ? "Pass" : $"{board.F2.Differences.Count} differences")
+                    </dd>
+                }
+                @if (board.Validation is { } validation)
+                {
+                    <dt>Validation</dt>
+                    <dd>@validation.Summary.Errors errors, @validation.Summary.Warnings warnings</dd>
+                }
+                @if (StyledModel is { } model)
+                {
+                    <dt>Styled model</dt>
+                    <dd>@model.Features.Count features (@model.Provenance.Kind)</dd>
+                }
                 <dt>Derivation</dt>
                 <dd>@board.Facts.DerivationVersion</dd>
                 <dt>Renderer</dt>
-                <dd>@BoardRenderer.RendererVersion</dd>
+                <dd>@BoardRenderer.RendererVersion, theme @RenderTheme.Board.Name @RenderTheme.Board.Version</dd>
             </dl>
         }
     </aside>
@@ -183,26 +180,35 @@ else if (board is null)
     private DotNetObjectReference<BoardViewer>? self;
     private StudioBoard? board;
     private string? loadError;
+    private string? preparing;
     private BoardView view = BoardView.Exact;
     private bool trace;
     private HashSet<string> visible = [];
     private HexFacts? selected;
+    private HexFacts? hovered;
     private DisplayedUnit? selectedUnit;
     private DemoUnitOverlay? demoOverlay;
     private bool showDemoUnits;
     private string? sample;
     private bool viewportPending;
+    private string comparisonMode = "overlay";
+    private int comparisonValue = 50;
 
     [Parameter]
     public string BoardName { get; set; } = string.Empty;
 
-    private IEnumerable<string> ToggleLayers => BoardRenderer.Layers(view).Where(layer => layer != "defs");
+    private IEnumerable<string> ToggleLayers => BoardRenderer.Layers(view).Where(layer => layer != "defs" && !layer.StartsWith("styled-", StringComparison.Ordinal));
+
+    /// <summary>The Feature Model behind the Styled views, once it exists.</summary>
+    private FeatureModel? StyledModel =>
+        board?.Render.Styled?.Model ?? (board?.StyledRender is { IsValueCreated: true } styled ? styled.Value.Styled?.Model : null);
 
     protected override async Task OnParametersSetAsync()
     {
         board = null;
         loadError = null;
         selected = null;
+        hovered = null;
         selectedUnit = null;
         demoOverlay = null;
         showDemoUnits = false;
@@ -221,9 +227,14 @@ else if (board is null)
         }
 
         board = result.Board;
+        if (board.IsAuthored)
+        {
+            view = BoardView.Styled;
+        }
+
         demoOverlay = DemoUnitOverlayBuilder.Load(board);
         showDemoUnits = demoOverlay is not null;
-        visible = [.. ToggleLayers];
+        visible = [.. BoardRenderer.Layers(view).Where(layer => layer != "defs")];
         viewportPending = true;
     }
 
@@ -250,11 +261,23 @@ else if (board is null)
             return;
         }
 
+        // A VASL board's Styled input is its vectorization, computed once on first use.
+        if (view is BoardView.Styled or BoardView.Comparison && board.Render.Styled is null && board.StyledRender is { IsValueCreated: false } styled)
+        {
+            preparing = "Vectorizing the board for the Styled view...";
+            StateHasChanged();
+            await Task.Run(() => styled.Value);
+            preparing = null;
+        }
+
+        var input = board.InputFor(view) ?? board.Render;
         var baseUrl = $"render/{board.Ref.Value}/{board.Version}/{BoardRenderer.ViewName(view)}";
-        await viewport.InvokeVoidAsync("load", baseUrl, trace ? "?trace=true" : "", BoardRenderer.ViewBox(board.Render, view),
+        await viewport.InvokeVoidAsync("load", baseUrl, trace ? "?trace=true" : "", BoardRenderer.ViewBox(input, view),
             BoardRenderer.Layers(view), visible.ToArray());
+        await viewport.InvokeVoidAsync("setComparison", view == BoardView.Comparison ? comparisonMode : "none", comparisonValue / 100.0);
         await viewport.InvokeVoidAsync("setUnits", showDemoUnits ? demoOverlay?.Svg : null);
         await Highlight();
+        StateHasChanged();
     }
 
     private async Task ToggleDemoUnits(ChangeEventArgs args)
@@ -275,8 +298,26 @@ else if (board is null)
         if (BoardRenderer.TryParseView(args.Value as string, out var next) && next != view)
         {
             view = next;
-            visible = [.. ToggleLayers];
+            visible = [.. BoardRenderer.Layers(view).Where(layer => layer != "defs")];
             await LoadView();
+        }
+    }
+
+    private async Task ChangeComparison(ChangeEventArgs args)
+    {
+        comparisonMode = args.Value as string ?? "overlay";
+        if (viewport is not null)
+        {
+            await viewport.InvokeVoidAsync("setComparison", comparisonMode, comparisonValue / 100.0);
+        }
+    }
+
+    private async Task ChangeComparisonValue(ChangeEventArgs args)
+    {
+        if (int.TryParse(args.Value as string, out var value) && viewport is not null)
+        {
+            comparisonValue = value;
+            await viewport.InvokeVoidAsync("setComparison", comparisonMode, comparisonValue / 100.0);
         }
     }
 
@@ -311,6 +352,14 @@ else if (board is null)
         }
     }
 
+    private async Task CopyLocation(string location)
+    {
+        if (viewport is not null)
+        {
+            await viewport.InvokeVoidAsync("copyText", location);
+        }
+    }
+
     [JSInvokable]
     public async Task OnBoardClick(double x, double y)
     {
@@ -323,13 +372,51 @@ else if (board is null)
         var cellX = (int)Math.Floor(x);
         var cellY = (int)Math.Floor(y);
         sample = grid.TryGetCode(cellX, cellY, out var code)
-            ? $"Pixel ({cellX}, {cellY}): code {code} {Name(board.Catalog.TryGet(code, out var type) ? type : null)}, elevation {grid.ElevationAt(cellX, cellY)}"
+            ? $"Pixel ({cellX}, {cellY}): code {code} {(board.Catalog.TryGet(code, out var type) ? type.Name : "-")}, elevation {grid.ElevationAt(cellX, cellY)}"
             : $"Pixel ({cellX}, {cellY}) is off the grid.";
         selected = grid.Geometry.HexAt(x, y) is { } hex ? board.Facts[hex] : null;
         selectedUnit = null;
         await Highlight();
         StateHasChanged();
     }
+
+    /// <summary>Hover updates the inspector only when the pointer crosses into another hex.</summary>
+    [JSInvokable]
+    public Task OnBoardHover(double x, double y)
+    {
+        if (board is null || selected is not null)
+        {
+            return Task.CompletedTask;
+        }
+
+        var next = board.Render.Grid.Geometry.HexAt(x, y) is { } hex ? board.Facts[hex] : null;
+        if (next?.Index != hovered?.Index)
+        {
+            hovered = next;
+            StateHasChanged();
+        }
+
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public Task OnBoardKey(string key)
+    {
+        if (key == "Escape" && selected is not null)
+        {
+            selected = null;
+            StateHasChanged();
+            return Highlight();
+        }
+
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public Task OnBoardGesture(double[][] points) => Task.CompletedTask;
+
+    [JSInvokable]
+    public Task OnBoardDrag(double x0, double y0, double x1, double y1) => Task.CompletedTask;
 
     [JSInvokable]
     public async Task OnUnitClick(string placementId)
@@ -363,39 +450,6 @@ else if (board is null)
             : string.Join(" ", board.Render.Grid.Geometry.Vertices(selected.Index)
                 .Select(vertex => string.Create(CultureInfo.InvariantCulture, $"{vertex.X},{vertex.Y}")));
         await viewport.InvokeVoidAsync("highlight", points);
-    }
-
-    private static string Name(TerrainType? terrain) => terrain?.Name ?? "-";
-
-    private static string Flags(HexsideFacts side)
-    {
-        var flags = new List<string>();
-        if (side.Cliff)
-        {
-            flags.Add("cliff");
-        }
-
-        if (side.Slope)
-        {
-            flags.Add("slope");
-        }
-
-        if (side.RailroadEmbankment)
-        {
-            flags.Add("embankment");
-        }
-
-        if (side.PartialOrchard)
-        {
-            flags.Add("partial orchard");
-        }
-
-        if (side.DepressionTerrain is { } depression)
-        {
-            flags.Add(depression.Name);
-        }
-
-        return string.Join(", ", flags);
     }
 
     public async ValueTask DisposeAsync()

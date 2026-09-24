@@ -1,0 +1,159 @@
+@page "/author/new"
+@inject AuthoredBoardService Authored
+@inject VaslBoardProvider Vasl
+@inject NavigationManager Navigation
+
+<PageTitle>New board - ASL Map Studio</PageTitle>
+
+<h2 class="page">New board</h2>
+
+@if (Authored.Catalog is null)
+{
+    <p>Authoring needs the terrain catalog from a configured VASL checkout, so every authored board stays exportable to VASL (Model Design section 4.2). See <a href="settings">Settings</a>.</p>
+}
+else
+{
+    <div class="form-grid wide">
+        <label for="board-name">Name</label>
+        <input id="board-name" value="@name" @oninput="NameChanged" />
+
+        <label for="board-slug">Reference</label>
+        <span>ab-<input id="board-slug" value="@slug" @onchange="@(args => slug = Slug(args.Value as string ?? string.Empty))" /></span>
+
+        <label for="board-start">Start from</label>
+        <select id="board-start" value="@start" @onchange="@(args => start = args.Value as string ?? "blank")">
+            <option value="blank">a blank board</option>
+            <option value="vasl">a verified VASL board, vectorized</option>
+        </select>
+
+        @if (start == "blank")
+        {
+            <label for="board-width">Width (hexes)</label>
+            <input id="board-width" type="number" min="2" max="60" value="@width" @onchange="@(args => width = Parse(args, width))" />
+            <label for="board-height">Height (hexes)</label>
+            <input id="board-height" type="number" min="1" max="40" value="@height" @onchange="@(args => height = Parse(args, height))" />
+        }
+        else
+        {
+            <label for="board-source">VASL board</label>
+            <select id="board-source" value="@source" @onchange="@(args => source = args.Value as string)">
+                @foreach (var entry in Vasl.List().Where(entry => entry.Scope == LimboDancer.Domains.Asl.Maps.Vasl.BoardScope.InScope))
+                {
+                    <option value="@entry.Ref.Value">@entry.Title</option>
+                }
+            </select>
+        }
+    </div>
+
+    @if (start == "vasl")
+    {
+        <p class="muted">The new board starts from the vectorized model of the VASL board, with its provenance recorded. It derives from VASL data, so it is saved as a draft under the cache, not in the boards folder (ASL-MAP-074).</p>
+    }
+
+    <p>
+        <button @onclick="Create" disabled="@working">Create</button>
+        @if (message is not null)
+        {
+            <span class="@(failed ? "fail" : "muted")">@message</span>
+        }
+    </p>
+}
+
+@code {
+    private string name = "Untitled board";
+    private string slug = "untitled-board";
+    private string start = "blank";
+    private int width = 33;
+    private int height = 10;
+    private string? source;
+    private bool working;
+    private bool failed;
+    private string? message;
+
+    protected override void OnInitialized() => source = Vasl.List().FirstOrDefault(entry => entry.Scope == LimboDancer.Domains.Asl.Maps.Vasl.BoardScope.InScope)?.Ref.Value;
+
+    private void NameChanged(ChangeEventArgs args)
+    {
+        name = args.Value as string ?? string.Empty;
+        slug = Slug(name);
+    }
+
+    private static int Parse(ChangeEventArgs args, int fallback) => int.TryParse(args.Value as string, out var value) ? value : fallback;
+
+    /// <summary>A lowercase slug of letters, digits, and single hyphens.</summary>
+    public static string Slug(string text)
+    {
+        var builder = new System.Text.StringBuilder();
+        foreach (var character in text.Trim().ToLowerInvariant())
+        {
+            if (char.IsAsciiLetterOrDigit(character))
+            {
+                builder.Append(character);
+            }
+            else if (builder.Length > 0 && builder[^1] != '-')
+            {
+                builder.Append('-');
+            }
+        }
+
+        return builder.ToString().Trim('-');
+    }
+
+    private async Task Create()
+    {
+        failed = false;
+        if (!BoardRef.TryParse("ab-" + slug, out var board))
+        {
+            (failed, message) = (true, "Use lowercase letters, digits, and hyphens for the reference.");
+            return;
+        }
+
+        if (Authored.Exists(board))
+        {
+            (failed, message) = (true, $"{board} already exists.");
+            return;
+        }
+
+        var (catalog, hash) = Authored.Catalog!.Value;
+        working = true;
+        message = start == "vasl" ? "Vectorizing..." : "Creating...";
+        StateHasChanged();
+        try
+        {
+            FeatureModel? model;
+            if (start == "blank")
+            {
+                model = FeatureModel.New(BoardGeometry.Standard(Math.Clamp(width, 2, 60), Math.Clamp(height, 1, 40)), hash);
+            }
+            else
+            {
+                model = await Task.Run(() => FromVasl(catalog));
+                if (model is null)
+                {
+                    (failed, message) = (true, $"{source} could not be ingested.");
+                    return;
+                }
+            }
+
+            var draft = start == "vasl";
+            var package = new BoardPackage(board, string.IsNullOrWhiteSpace(name) ? board.Value : name.Trim(), model);
+            await Task.Run(() => Authored.Save(package, draft));
+            Navigation.NavigateTo($"author/{board.Value}");
+        }
+        finally
+        {
+            working = false;
+        }
+    }
+
+    private FeatureModel? FromVasl(TerrainCatalog catalog)
+    {
+        if (source is null || !BoardRef.TryParse(source, out var sourceRef) || Vasl.Ingest(sourceRef) is not { } ingested)
+        {
+            return null;
+        }
+
+        var facts = LimboDancer.Domains.Asl.Maps.Vasl.HexFactFidelity.Derive(ingested, catalog);
+        return VaslBoardProvider.Vectorize(ingested, facts, catalog).Model;
+    }
+}

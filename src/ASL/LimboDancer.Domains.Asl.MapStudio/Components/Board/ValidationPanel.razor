@@ -1,0 +1,42 @@
+@* Validation findings (Model Design section 6); clicking one selects its feature or zooms to its hex. *@
+
+<div class="validation-panel">
+    @if (Report is null)
+    {
+        <p class="muted">No validation has run.</p>
+    }
+    else
+    {
+        var summary = Report.Summary;
+        <p class="totals">
+            <span class="@(summary.Errors > 0 ? "fail" : "pass")">@summary.Errors errors</span>,
+            @summary.Warnings warnings, @summary.Infos notes.
+        </p>
+        @if (Report.Findings.Count == 0)
+        {
+            <p class="pass">The board is valid.</p>
+        }
+        else
+        {
+            <ul class="plain findings">
+                @foreach (var finding in Report.Findings.OrderByDescending(finding => finding.Severity).ThenBy(finding => finding.Code, StringComparer.Ordinal))
+                {
+                    <li>
+                        <button class="link" @onclick="() => OnSelect.InvokeAsync(finding)">
+                            <span class="diagnostic @finding.Severity.ToString().ToLowerInvariant()">@finding.Code</span>
+                        </button>
+                        @finding.Message
+                    </li>
+                }
+            </ul>
+        }
+    }
+</div>
+
+@code {
+    [Parameter]
+    public ValidationReport? Report { get; set; }
+
+    [Parameter]
+    public EventCallback<ValidationFinding> OnSelect { get; set; }
+}

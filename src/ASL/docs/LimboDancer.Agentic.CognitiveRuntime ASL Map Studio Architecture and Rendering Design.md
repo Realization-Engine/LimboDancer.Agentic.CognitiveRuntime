@@ -367,7 +367,7 @@ Browser automation (for example, Playwright) is deferred. It can be added when t
 | ASL-MAP-04 | SvgWriter, `catalog` theme, Exact and Hex-fact views, render endpoints, board library and viewer, inspector (as built: section 9.1) |
 | ASL-MAP-05 | `/fidelity` batch pages and job runner (as built: section 9.2) |
 | ASL-MAP-06 | F3 as an option of the fidelity batch (as built: section 9.3) |
-| ASL-MAP-07 | `board` theme, Styled and Comparison views, editor, patches |
+| ASL-MAP-07 | `board` theme, Styled and Comparison views, editor, patches (as built: section 9.4) |
 
 ### 9.1 ASL-MAP-04 as built
 
@@ -401,6 +401,51 @@ ASL-MAP-04 delivers a smaller surface than sections 4 and 5 describe. The rest m
 - The `/fidelity` page has an "Include F3" option. With it, each ingested board is also vectorized and recompiled (Model Design section 16). The run records `f3-hexfacts` (identical facts, iterations, pins) and `f3-pixels` (agreement, overlap, and model size, with any threshold failures).
 - F3 checks are informational: a `FidelityCheck` now has a `Gating` flag, and only gating checks decide a board's outcome, because F3 describes the vectorized model and not the board (Model Design section 10). Failed informational checks show as warnings.
 - Reports that include F3 record the compiler and vectorizer versions.
+
+### 9.4 ASL-MAP-07 as built
+
+- **Theme.** The `board` theme is versioned JSON embedded in `Maps.Rendering` (`Themes/board.json`, version 1.0.0).
+  - It defines twelve patterns (woods, orchard, grain, brush, marsh, graveyard, crags, rubble, water, stone, wood, and cliff hatching), hill tints by level with a crest stroke, and ordered style rules.
+  - A rule matches a terrain by exact name, a name substring, and a category, in order; the first match wins. Unmatched codes fall back to their catalog color and are marked "(unstyled)" in the legend.
+  - Pattern elements are data written through `SvgWriter`, so no SVG is built by string concatenation.
+- **Styled view.** Layers `styled-elevation`, `styled-area`, `styled-linear`, `styled-bridges`, `styled-buildings`, `styled-hexside`, and `styled-marks` draw the Feature Model in compile order, one `<g id="f-{FeatureId}">` per feature.
+  - Area and elevation outlines are smoothed as closed Catmull-Rom splines. Their cubic control points are computed in fixed point (one sixth of the neighbor difference, rounded), so the output stays exact and deterministic. Buildings, bridges, and pins keep sharp corners.
+  - Linear terrain with a centerline is drawn as the theme's stacked strokes on the centerline path; vectorized linear terrain is drawn as its filled outline.
+  - Multi-level buildings and factories get a shadow offset by two pixels.
+  - Stairways are squares in `styled-marks`, and fidelity pins are magenta.
+  - For a VASL board, the Styled input is the vectorizer output, computed on first use and cached with the board. Board 01 takes about 5 seconds the first time, and its Styled document is 327 KB with 94 feature groups.
+- **Comparison view.** It layers `exact-terrain`, the styled layers, and `diff`.
+  - The diff layer hatches the cells where the Styled model's compiled grid differs from the board's grid, and outlines hexes whose facts differ. Its summary element carries both counts. On board 01, 8,184 cells differ (99.30% agreement) and 0 hexes, which matches F3.
+  - Overlay with a Styled opacity slider, swipe with a divider, and side by side with synchronized pan and zoom are switched in the browser without re-rendering.
+- **Render patches.** `BoardRenderer.RenderFeature` returns one feature's fragment with its layer and the id of the next feature in paint order.
+  - After an edit, the editor sends the changed features' fragments and the removed ids to the viewport, which replaces, inserts, or removes them by id.
+  - Layers a patch does not cover (Exact, Hex-fact, legend, and the marks layer) are refetched in place by the new version's URLs.
+  - Patches are sent over the circuit rather than an HTTP endpoint, because the session holding the new version lives in the circuit.
+- **Authored boards.** `AuthoredBoardService` keeps packages in `BoardsRoot` (default `src/ASL/boards`), and boards derived from VASL data in `{CacheRoot}/drafts` (ASL-MAP-074).
+  - Each build (compile, derive, validate) is cached by `(board, BoardVersion)`, up to 64 versions, so render URLs for recent edit versions keep working.
+  - `StudioBoardProvider` routes `ab-` references to it and `bd` references to the VASL provider.
+  - Authoring uses the VASL catalog through `ICatalogSource`, so it needs a configured checkout.
+- **Editor** (`/author/{boardRef}`, section 6):
+  - The tool palette has Select, Move, Area, Elevation, Linear (straight or curved through the clicked points), Building (the kit's centered, span, and flush boxes, optionally joining the selected building), Hexside (adds, extends, or removes a span), Stairway, and Annotation (slope, railroad embankment, partial orchard).
+  - Panels show properties, layers, validation, and the hex inspector.
+  - Undo and redo keep stacks of inverse commands; save writes the package.
+  - Keyboard: Ctrl+Z and Ctrl+Y, Delete, Escape, Enter to finish a gesture, and Backspace to drop the last point.
+  - Snapping runs on the server with the priorities of section 6.2.
+  - A banner marks drafts derived from VASL data.
+- **Other pages.**
+  - `/author/new` creates a blank board of any standard size, or a draft from a vectorized VASL board.
+  - `/settings` shows the configuration, cache size, and tool versions.
+  - The library lists authored boards.
+  - The viewer offers all four views; the inspector (section 5.5) shows derived facts in words, the fifteen raw grid samples, the features at the hex center, the hex's validation findings, and the canonical location with a copy button.
+  - Hover updates the inspector when the pointer crosses into another hex, and `+`, `-`, and `0` zoom.
+- **Components.** `HexInspector`, `ValidationPanel`, `ToolPalette`, `FeatureProperties`, and `LayerList` are components with bUnit tests. The viewport remains one module shared by the viewer and the editor.
+- **Measured.** A single-feature edit on a standard board rebuilds in 30 to 50 ms in a Release build, against the 150 ms target of section 6.3; undo to a cached version takes a few milliseconds. This needed the derivation speedup in Model Design section 17, not incremental compilation.
+- **Deferred.**
+  - The scene browser and Scene tool, and the Intent tool (Model Design sections 8.1 and 6).
+  - Incremental compilation (Model Design section 5.5); full rebuilds meet the latency target.
+  - Region-by-region patching of the Exact layer, which is refetched instead.
+  - Autosave of drafts every 30 seconds (section 7).
+  - Bézier handle dragging for the Linear tool; curves come from a Catmull-Rom fit through the clicked points.
 
 ## 10. Open issues
 

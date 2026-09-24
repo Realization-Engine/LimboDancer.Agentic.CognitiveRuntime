@@ -1,0 +1,17 @@
+@* The editor tools (Architecture and Rendering Design, section 6.2). *@
+
+<div class="tool-palette" role="toolbar" aria-label="Editing tools">
+    @foreach (var tool in EditorTool.All)
+    {
+        <button class="@(tool.Key == Tool ? "tool active" : "tool")" title="@tool.Help" aria-pressed="@(tool.Key == Tool)"
+                @onclick="() => ToolChanged.InvokeAsync(tool.Key)">@tool.Label</button>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string Tool { get; set; } = EditorTool.Select;
+
+    [Parameter]
+    public EventCallback<string> ToolChanged { get; set; }
+}

@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using LimboDancer.Domains.Asl.Maps;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Maps.Derivation;
+using LimboDancer.Domains.Asl.Maps.Features;
 using LimboDancer.Domains.Asl.Maps.Rendering;
 using LimboDancer.Domains.Asl.Maps.Terrain;
 using LimboDancer.Domains.Asl.Maps.Vasl;
@@ -16,9 +17,18 @@ public enum BoardStatus
 
     /// <summary>F1 and F2 pass for this exact source.</summary>
     Verified,
+
+    /// <summary>An authored board with validation errors.</summary>
+    Authored,
+
+    /// <summary>An authored board with no validation errors; its Feature Model is the source of truth.</summary>
+    AuthoredValid,
 }
 
-/// <summary>A board ready to view: its render input, derived facts, fidelity results, and provenance.</summary>
+/// <summary>
+/// A board ready to view: its render input, derived facts, fidelity results, and provenance. VASL boards get their
+/// Styled input on first use, by vectorizing; authored boards carry their Feature Model in <see cref="Render"/>.
+/// </summary>
 public sealed record StudioBoard(
     BoardRef Ref,
     string Version,
@@ -26,12 +36,35 @@ public sealed record StudioBoard(
     BoardStatus Status,
     BoardRenderInput Render,
     TerrainCatalog Catalog,
-    F1Result F1,
+    F1Result? F1,
     F2Result? F2,
     BoardProvenance? Provenance,
     IReadOnlyList<MapDiagnostic> Diagnostics)
 {
     public HexFactSet Facts => Render.Facts;
+
+    /// <summary>The vectorized Styled input for a VASL board, computed on first use.</summary>
+    public Lazy<BoardRenderInput>? StyledRender
+    {
+        get; init;
+    }
+
+    public ValidationReport? Validation
+    {
+        get; init;
+    }
+
+    /// <summary>An authored board saved as a draft, such as one derived from a VASL board (ASL-MAP-074).</summary>
+    public bool IsDraft
+    {
+        get; init;
+    }
+
+    public bool IsAuthored => Ref.Kind == BoardRefKind.Authored;
+
+    /// <summary>The render input for a view, or null when the board has no Feature Model for it.</summary>
+    public BoardRenderInput? InputFor(BoardView view) =>
+        view is BoardView.Styled or BoardView.Comparison ? Render.Styled is not null ? Render : StyledRender?.Value : Render;
 }
 
 /// <summary>A load outcome. <see cref="OutOfScope"/> marks a board the importer declines by design, such as a non-geomorphic board.</summary>
@@ -49,7 +82,7 @@ public sealed record BoardListing(
     string? LosDataBlob = null,
     string? MetadataBlob = null);
 
-/// <summary>The boards the Studio can show. VASL boards today; authored boards arrive with ASL-MAP-07.</summary>
+/// <summary>The boards the Studio can show: VASL boards and authored boards.</summary>
 public interface IBoardProvider
 {
     /// <summary>A short description of the source, or null when it is not configured.</summary>
@@ -70,10 +103,22 @@ public interface IBoardProvider
 
     /// <summary>The result of an earlier load, without loading.</summary>
     public BoardLoadResult? Cached(BoardRef board);
+
+    /// <summary>
+    /// One exact version, for render URLs. Authored boards keep recent edit versions; other boards only their current one.
+    /// </summary>
+    public StudioBoard? LoadVersion(BoardRef board, string version) =>
+        Load(board).Board is { } loaded && loaded.Version == version ? loaded : null;
+}
+
+/// <summary>The terrain catalog authored boards use, and its blob (Model Design section 4.2).</summary>
+public interface ICatalogSource
+{
+    public (TerrainCatalog Catalog, string Hash)? Catalog();
 }
 
 /// <summary>Loads VASL boards on demand from the configured checkout, caching each result for the process lifetime.</summary>
-public sealed class VaslBoardProvider : IBoardProvider
+public sealed class VaslBoardProvider : IBoardProvider, ICatalogSource
 {
     private readonly VaslSource? vasl;
     private readonly string? oracleFixtures;
@@ -155,13 +200,71 @@ public sealed class VaslBoardProvider : IBoardProvider
         var title = $"VASL board {board.VaslBoardName} (version {ingested.Metadata.Version})";
         var render = BoardRenderInput.Create(board, title, ingested.Grid, terrain, facts);
         var diagnostics = catalogResult.Diagnostics.Concat(import.Diagnostics).ToArray();
+        var styled = new Lazy<BoardRenderInput>(() =>
+        {
+            var result = Vectorize(ingested, facts, terrain);
+            return BoardRenderInput.Create(board, title, ingested.Grid, terrain, facts, new StyledSource(result.Model, result.Compiled, result.CompiledFacts));
+        });
         return new BoardLoadResult(
-            new StudioBoard(board, ingested.Provenance.LosData.ContentBlob, title, status, render, terrain, ingested.F1, f2, ingested.Provenance, diagnostics),
+            new StudioBoard(board, ingested.Provenance.LosData.ContentBlob, title, status, render, terrain, ingested.F1, f2, ingested.Provenance, diagnostics)
+            {
+                StyledRender = styled,
+            },
             diagnostics);
+    }
+
+    /// <summary>The terrain catalog and its blob, for authored boards, which use the same catalog (Model Design section 4.2).</summary>
+    public (TerrainCatalog Catalog, string Hash)? Catalog() =>
+        catalog.Value?.Catalog is { } terrain ? (terrain, vasl!.SharedBoardMetadataProvenance().ContentBlob) : null;
+
+    /// <summary>Vectorizes an ingested board (Model Design section 7), for the Styled view and for new authored boards.</summary>
+    public static VectorizeResult Vectorize(IngestedBoard board, HexFactSet facts, TerrainCatalog terrain)
+    {
+        ArgumentNullException.ThrowIfNull(board);
+        return Vectorizer.Vectorize(new VectorizerSource(board.Board, board.Provenance.LosData.ContentBlob, board.Grid, facts,
+            HexFactFidelity.Annotations(board.Metadata), board.Provenance.SharedBoardMetadata.ContentBlob), terrain);
+    }
+
+    /// <summary>Imports a VASL board again, for vectorizing it into a new authored board.</summary>
+    public IngestedBoard? Ingest(BoardRef board)
+    {
+        ArgumentNullException.ThrowIfNull(board);
+        return vasl is null || catalog.Value?.Catalog is not { } terrain
+            ? null
+            : VaslBoardImporter.Import(vasl, VaslBoardSource.SourceDirectory(vasl, board.VaslBoardName), terrain).Board;
     }
 
     private F2Result? CheckF2(IngestedBoard board, HexFactSet facts) => HexFactFidelity.CompareWithFixture(board, facts, oracleFixtures);
 
     private static BoardLoadResult Failed(MapDiagnostic diagnostic) => new(null, [diagnostic]);
+}
 
+/// <summary>Routes each board reference to its source: VASL boards to the checkout, authored boards to their packages.</summary>
+public sealed class StudioBoardProvider(VaslBoardProvider vasl, AuthoredBoardService authored) : IBoardProvider
+{
+    public string? SourceDescription => vasl.SourceDescription;
+
+    public string? CatalogBlob => vasl.CatalogBlob;
+
+    public IReadOnlyList<BoardListing> List() => vasl.List();
+
+    public BoardLoadResult Load(BoardRef board)
+    {
+        ArgumentNullException.ThrowIfNull(board);
+        return board.Kind == BoardRefKind.Authored ? authored.Load(board) : vasl.Load(board);
+    }
+
+    public BoardLoadResult? Cached(BoardRef board)
+    {
+        ArgumentNullException.ThrowIfNull(board);
+        return board.Kind == BoardRefKind.Authored ? authored.Load(board) : vasl.Cached(board);
+    }
+
+    public StudioBoard? LoadVersion(BoardRef board, string version)
+    {
+        ArgumentNullException.ThrowIfNull(board);
+        return board.Kind == BoardRefKind.Authored
+            ? authored.LoadVersion(board, version)
+            : vasl.Load(board).Board is { } loaded && loaded.Version == version ? loaded : null;
+    }
 }

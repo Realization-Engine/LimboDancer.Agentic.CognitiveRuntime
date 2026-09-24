@@ -1,0 +1,215 @@
+@* The inspector for one hex (Architecture and Rendering Design, section 5.5): derived facts in words, the raw grid
+   samples the derivation reads, features covering the hex, validation findings, and the canonical location. *@
+
+<div class="hex-inspector">
+    <h2>
+        Hex @Facts.Hex
+        <button class="link" title="Copy the canonical location" @onclick="Copy">@Location</button>
+    </h2>
+    <dl>
+        <dt>Base level</dt>
+        <dd>@Facts.BaseLevel</dd>
+        <dt>Center terrain</dt>
+        <dd>@Name(Facts.Center.Terrain)</dd>
+        <dt>Decided by</dt>
+        <dd>@Trace(Facts.CenterSource)</dd>
+        <dt>Stairway</dt>
+        <dd>@(Facts.Stairway ? "yes" : "no")</dd>
+        @if (Facts.Center.DepressionTerrain is { } depression)
+        {
+            <dt>Depression</dt>
+            <dd>@depression.Name</dd>
+        }
+        @if (Facts.Bridge is { } bridge)
+        {
+            <dt>Bridge</dt>
+            <dd>@Name(bridge.Terrain), road level @bridge.RoadLevel</dd>
+        }
+    </dl>
+
+    <h3>Locations</h3>
+    <table>
+        <tr><th>Level</th><th>Terrain</th><th>Depression</th></tr>
+        @foreach (var location in Facts.Locations)
+        {
+            <tr><td>@location.Level</td><td>@Name(location.Terrain)</td><td>@Name(location.DepressionTerrain)</td></tr>
+        }
+    </table>
+
+    <h3>Hexsides</h3>
+    <table>
+        <tr><th>Side</th><th>Terrain</th><th>Hexside</th><th>Flags</th></tr>
+        @foreach (var side in Facts.Hexsides)
+        {
+            <tr>
+                <td>@side.Side</td>
+                <td>@(side.OnMap ? Name(side.Terrain) : "off map")</td>
+                <td>@Name(side.HexsideTerrain)</td>
+                <td>@Flags(side)</td>
+            </tr>
+        }
+    </table>
+
+    <h3>Grid samples</h3>
+    <table class="samples">
+        <tr><th>Sample</th><th>Pixel</th><th>Terrain</th><th>Elev.</th></tr>
+        @foreach (var (label, point) in Samples())
+        {
+            <tr>
+                <td>@label</td>
+                <td>@point.X, @point.Y</td>
+                @if (Grid.TryGetCode(point.X, point.Y, out var code))
+                {
+                    <td>@Name(Catalog.TryGet(code, out var terrain) ? terrain : null)</td>
+                    <td>@Grid.ElevationAt(point.X, point.Y)</td>
+                }
+                else
+                {
+                    <td class="muted" colspan="2">off the grid</td>
+                }
+            </tr>
+        }
+    </table>
+
+    @if (Model is not null)
+    {
+        <h3>Features at the center</h3>
+        @if (Covering.Count == 0)
+        {
+            <p class="muted">Only the base terrain.</p>
+        }
+        else
+        {
+            <ul class="plain">
+                @foreach (var feature in Covering)
+                {
+                    <li><button class="link" @onclick="() => OnSelectFeature.InvokeAsync(feature.Id)">@Describe(feature)</button></li>
+                }
+            </ul>
+        }
+    }
+
+    @if (Findings.Count > 0)
+    {
+        <h3>Validation</h3>
+        <ul class="plain">
+            @foreach (var finding in Findings)
+            {
+                <li><span class="diagnostic @finding.Severity.ToString().ToLowerInvariant()">@finding.Code</span> @finding.Message</li>
+            }
+        </ul>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public BoardRef Board { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public HexFacts Facts { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public LimboDancer.Domains.Asl.Maps.Grid.TerrainGrid Grid { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public TerrainCatalog Catalog { get; set; } = default!;
+
+    /// <summary>The Feature Model, when the view has one, for the features covering the hex.</summary>
+    [Parameter]
+    public FeatureModel? Model { get; set; }
+
+    [Parameter]
+    public ValidationReport? Validation { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnCopy { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnSelectFeature { get; set; }
+
+    public string Location => $"{Board.Value}:{Facts.Hex}:0";
+
+    private IReadOnlyList<ValidationFinding> Findings =>
+        Validation?.Findings.Where(finding => finding.Hex == Facts.Index).ToArray() ?? [];
+
+    private IReadOnlyList<Feature> Covering
+    {
+        get
+        {
+            if (Model is null)
+            {
+                return [];
+            }
+
+            var center = Grid.Geometry.CenterPoint(Facts.Index);
+            return BoardRenderer.PaintOrder(Model).Reverse()
+                .Where(feature => AuthoringGeometry.Rings(Model.Geometry, feature).Any(rings => Covers(rings, center.X, center.Y)))
+                .ToArray();
+        }
+    }
+
+    private IEnumerable<(string Label, GridPoint Point)> Samples()
+    {
+        var labels = new[] { "center", "center +1 -1", "center +1 +1", "center -1 +1", "center -1 -1", "probe right", "probe left", "probe below", "probe above" };
+        var points = BoardValidator.SamplePoints(Grid.Geometry, Facts.Index).ToArray();
+        for (var index = 0; index < points.Length; index++)
+        {
+            yield return (index < labels.Length ? labels[index] : "edge " + (HexsideDirection)(index - labels.Length), points[index]);
+        }
+    }
+
+    private Task Copy() => OnCopy.InvokeAsync(Location);
+
+    private static bool Covers(IReadOnlyList<IReadOnlyList<FixedVector>> rings, int x, int y)
+    {
+        var covered = false;
+        ShapeRasterizer.Fill(rings.Select(ring => (IReadOnlyList<FixedVector>)ring.Select(point => new FixedVector(point.X - (x * 64), point.Y - (y * 64))).ToArray()),
+            1, 1, (_, _) => covered = true);
+        return covered;
+    }
+
+    private string Describe(Feature feature) =>
+        FeatureDescriptions.Kind(feature) + (TerrainKinds.CodeOf(feature) is { } code && Catalog.TryGet(code, out var terrain) ? ": " + terrain.Name : string.Empty)
+        + (feature is ElevationRegion region ? $": level {region.Level}" : string.Empty);
+
+    private static string Name(TerrainType? terrain) => terrain?.Name ?? "-";
+
+    private static string Trace(CenterTerrainSource source) => source switch
+    {
+        CenterTerrainSource.CenterSample => "the center sample",
+        CenterTerrainSource.HexsideBuildingFallback => "a building at a hexside edge sample",
+        CenterTerrainSource.ProbeBuildingFallback => "a building at a 5-pixel probe",
+        _ => "the default (Open Ground)",
+    };
+
+    private static string Flags(HexsideFacts side)
+    {
+        var flags = new List<string>();
+        if (side.Cliff)
+        {
+            flags.Add("cliff");
+        }
+
+        if (side.Slope)
+        {
+            flags.Add("slope");
+        }
+
+        if (side.RailroadEmbankment)
+        {
+            flags.Add("embankment");
+        }
+
+        if (side.PartialOrchard)
+        {
+            flags.Add("partial orchard");
+        }
+
+        if (side.DepressionTerrain is { } depression)
+        {
+            flags.Add(depression.Name);
+        }
+
+        return string.Join(", ", flags);
+    }
+}

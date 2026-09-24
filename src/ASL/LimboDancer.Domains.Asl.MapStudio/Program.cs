@@ -11,7 +11,10 @@ public static class Program
         builder.Services.AddRazorComponents().AddInteractiveServerComponents();
         var options = builder.Configuration.GetSection("AslMaps").Get<StudioOptions>() ?? new StudioOptions();
         builder.Services.AddSingleton(options);
-        builder.Services.AddSingleton<IBoardProvider, VaslBoardProvider>();
+        builder.Services.AddSingleton<VaslBoardProvider>();
+        builder.Services.AddSingleton<ICatalogSource>(services => services.GetRequiredService<VaslBoardProvider>());
+        builder.Services.AddSingleton<AuthoredBoardService>();
+        builder.Services.AddSingleton<IBoardProvider, StudioBoardProvider>();
         builder.Services.AddSingleton<RenderCache>();
         builder.Services.AddSingleton<FidelityReportStore>();
         builder.Services.AddSingleton<IFidelityBatch, VaslFidelityBatch>();
