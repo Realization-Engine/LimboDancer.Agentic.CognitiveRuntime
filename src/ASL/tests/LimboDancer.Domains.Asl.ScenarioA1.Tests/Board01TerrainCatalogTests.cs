@@ -133,6 +133,96 @@ public sealed class Board01TerrainCatalogTests
                 .ObserveAsync(Query())).Observations);
     }
 
+    [Fact]
+    public async Task SuppliedSnapshotsResolveToReadOnlyConclusionsThroughPublishedPackage()
+    {
+        var package = (await new ScenarioA1OccupiedPackage()
+            .ResolveAsync(ScenarioA1OccupiedPackage.Identity)).Package!;
+        var candidate = new ScenarioA1SemanticCandidate();
+        var resolver = new ScenarioA1OccupiedConclusionResolver();
+        foreach (var (caseId, snapshot) in AdmittedSnapshots())
+        {
+            var observation = Assert.Single((await Provider(snapshot).ObserveAsync(Query()))
+                .Observations);
+            var context = ConclusionContext(package, caseId, observation);
+            var before = observation.Data.GetRawText();
+            var conclusion = await resolver.ConcludeAsync(context);
+            var semantic = candidate.Cases.Single(item => item.Id == caseId);
+            Assert.Equal(semantic.ExpectedDisposition.StartsWith("qualified-", StringComparison.Ordinal)
+                ? ConclusionDisposition.Qualified : ConclusionDisposition.Definitive,
+                conclusion.Disposition);
+            Assert.Equal(caseId, conclusion.Value!.Value.GetProperty("caseId").GetString());
+            Assert.Equal(semantic.SourceRules,
+                conclusion.ApplicableRules.Select(rule => rule.ElementId));
+            Assert.Contains(conclusion.Evidence,
+                item => item.Kind == EvidenceKind.Observation && item.Version == "state-1");
+            Assert.Equal(before, observation.Data.GetRawText());
+
+            var changedVersion = new Observation(observation.ObservationId,
+                observation.Source, observation.TenantId, observation.ObservedAt,
+                observation.Data, observation.ResourceId, "state-2",
+                observation.Provenance, observation.DomainPackage);
+            var stale = await resolver.ConcludeAsync(ConclusionContext(package, caseId,
+                changedVersion));
+            Assert.Equal(ConclusionDisposition.Indeterminate, stale.Disposition);
+            Assert.Null(stale.Value);
+        }
+    }
+
+    [Fact]
+    public async Task MissingOrCrossScopeObservationCannotInheritAnEntryRuling()
+    {
+        var package = (await new ScenarioA1OccupiedPackage()
+            .ResolveAsync(ScenarioA1OccupiedPackage.Identity)).Package!;
+        var resolver = new ScenarioA1OccupiedConclusionResolver();
+        var observation = Assert.Single((await Provider(Snapshot()).ObserveAsync(Query()))
+            .Observations);
+        var context = ConclusionContext(package, "A1-empty-ordinary-mph", observation);
+        var absent = new DomainConclusionContext(context.Question, package,
+            context.EntityResolutions, []);
+        var result = await resolver.ConcludeAsync(absent);
+        Assert.Equal(ConclusionDisposition.Indeterminate, result.Disposition);
+        Assert.Null(result.Value);
+
+        var otherTenant = new Observation(observation.ObservationId, observation.Source,
+            Guid.NewGuid(), observation.ObservedAt, observation.Data,
+            observation.ResourceId, observation.Version, observation.Provenance,
+            observation.DomainPackage);
+        Assert.Throws<ArgumentException>(() => ConclusionContext(package,
+            "A1-empty-ordinary-mph", otherTenant));
+        var otherPackage = new Observation(observation.ObservationId, observation.Source,
+            observation.TenantId, observation.ObservedAt, observation.Data,
+            observation.ResourceId, observation.Version, observation.Provenance,
+            ScenarioA1Package.Identity);
+        Assert.Throws<ArgumentException>(() => ConclusionContext(package,
+            "A1-empty-ordinary-mph", otherPackage));
+    }
+
+    private static DomainConclusionContext ConclusionContext(DomainPackageDescriptor package,
+        string caseId, Observation observation)
+    {
+        var question = new DomainQuestion("board01-" + caseId, Tenant, package.Identity,
+            new SemanticIdentifier(package.Identity.DomainId,
+                ScenarioA1OccupiedConclusionResolver.QuestionKind),
+            JsonSerializer.SerializeToElement(new
+            {
+                unitId = "squad", locationId = "bd01:E4:0", caseId,
+                observationVersion = "state-1",
+            }), Time);
+        DomainEntityResolution Entity(string id) => new(
+            new DomainEntityQuery("entity-" + id, Tenant, package.Identity,
+                new SemanticIdentifier(package.Identity.DomainId, "unit-or-location"), id),
+            DomainEntityResolutionOutcome.Resolved,
+            [new DomainEntityCandidate(
+                new SemanticIdentifier(package.Identity.DomainId, id),
+                package.CanonicalSources[0],
+                new EvidenceReference("entity:" + id, EvidenceKind.CanonicalSource, Tenant,
+                    package.Identity, id, package.Identity.Version, "test"))],
+            ["test.resolution"]);
+        return new DomainConclusionContext(question, package,
+            [Entity("squad"), Entity("bd01:E4:0")], [observation]);
+    }
+
     private static ScenarioA1BoardObservationProvider Provider(ScenarioA1BoardSnapshot snapshot) =>
         new(new Board01ValidatedSnapshotSource(new StubSource(snapshot),
             new Board01TerrainCatalog()));

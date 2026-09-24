@@ -8,4 +8,6 @@ This inventory is **partial**. Absence from the overrides does not establish tha
 
 The supplied snapshot variables now project the seven admitted exact cases: empty building, known enemy MMC, fortified unbreached prohibition, single enemy SMC overrun attempt, breached Advance Phase attempt, friendly overstack cost, and ordinary Advance Phase entry attempt. The adapter returns no observation for concealed or unknown occupancy and for incomplete or conflicting variables. This projection uses E4's explicit ground-level building override in its conformance tests. No LOS parsing is needed for these exact cases; a new case requiring an unlisted building, LOS terrain, or a board variant must add and verify that evidence separately.
 
-Next: exercise the observation-to-`DomainConclusion` boundary for all seven supplied snapshots and confirm refusal, tenant/package isolation, and read-only behavior.
+The end-to-end xUnit suite carries each admitted snapshot through the exact package resolver to a cited, read-only `DomainConclusion`. It checks qualified versus definitive outcomes, missing and changed observation versions, and tenant/package isolation. No action executor or game-state mutation is part of this path. The fixed board metadata is the static terrain evidence; the remaining declared variables are supplied by the tests.
+
+Next: add a new case only with its own source and semantic admission evidence. Parse LOSData if that case needs terrain information absent from these 63 overrides.
