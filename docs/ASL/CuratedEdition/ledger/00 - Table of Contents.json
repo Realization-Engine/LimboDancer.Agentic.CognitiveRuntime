@@ -1,0 +1,70 @@
+{
+ "sourceId": "asl-easlrb-3.10:contents",
+ "basePath": "docs/ASL/Rulebook_Markdown/00 - Table of Contents.md",
+ "baseSha256": "dbe6b4395accd117d6c4a84796c11983243399cae5838c2a27abea1f4c7c59f9",
+ "entries": [
+  {
+   "id": "CONTENTS-00001",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 7,
+   "pdfPage": 6,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "e 6](images/eASLRB_v3_01-p6-1.png)  ## A. INFANTRY AND OTHER BASIC GAME "
+  },
+  {
+   "id": "CONTENTS-00002",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 113,
+   "pdfPage": 7,
+   "placement": "block",
+   "locatedBy": "base-marker",
+   "baseMarker": "present",
+   "context": "eapons (LATW) ```  <!-- page 7 -->  ```text 1.  Vehicle Counters 2.  Veh"
+  },
+  {
+   "id": "CONTENTS-00003",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 228,
+   "pdfPage": 8,
+   "placement": "inline",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": " 1. Purchasing an OB  1. Miniatures 2. Converting ASL rules to Deluxe AS"
+  },
+  {
+   "id": "CONTENTS-00004",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 285,
+   "pdfPage": 9,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "e 9](images/eASLRB_v3_01-p9-1.png)  ## N. ARMORY  The pages for the ASL "
+  },
+  {
+   "id": "CONTENTS-00005",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 427,
+   "pdfPage": 10,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "10](images/eASLRB_v3_01-p10-2.png)  ## T. BLOOD REEF: TARAWA  ```text  9"
+  },
+  {
+   "id": "CONTENTS-00006",
+   "rule": "image-link-rebase",
+   "class": "markup-normalization",
+   "count": 22,
+   "before": "](images/",
+   "after": "](../../Rulebook_Markdown/images/"
+  }
+ ]
+}
