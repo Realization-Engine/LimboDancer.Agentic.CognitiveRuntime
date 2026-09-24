@@ -116,7 +116,7 @@ public sealed class AslScenarioA1OccupiedMatrixTests
         {
             var id = source.GetProperty("ruleId").GetString();
             var registered = Assert.Single(inventory.RootElement.GetProperty("rules")
-                .EnumerateArray().Where(item => item.GetProperty("normalizedRuleId").GetString() == id));
+                .EnumerateArray(), item => item.GetProperty("normalizedRuleId").GetString() == id);
             Assert.Equal(source.GetProperty("physicalPdfPage").GetInt32(),
                 registered.GetProperty("pdfStartPage").GetInt32());
             var fragment = Assert.Single(registered.GetProperty("fragments").EnumerateArray());
