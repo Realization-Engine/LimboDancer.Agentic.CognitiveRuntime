@@ -49,6 +49,39 @@ public sealed record AslScenarioA1CaseAssessment(
 
 public static class AslScenarioA1CaseAssessor
 {
+    public static AslScenarioA1CaseAssessment AssessWithReviewedChart(
+        AslScenarioA1CaseFacts facts,
+        IReadOnlyList<SourceFragment> fragments,
+        IReadOnlySet<string> verifiedFragmentIds,
+        string repositoryRoot,
+        AslScenarioA1ChartReviewDecision decision)
+    {
+        ArgumentNullException.ThrowIfNull(decision);
+        using var registry = System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(
+            repositoryRoot, "docs", "ASL", "SourceRegistry",
+            "asl-scenario-a1.supplementary-source-registry.json")));
+        using var comparison = System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(
+            repositoryRoot, "docs", "ASL", "SourceRegistry",
+            "asl-scenario-a1.backmatter-chart-pdf-comparison.json")));
+        var expected = AslScenarioA1ChartReview.Evaluate(repositoryRoot, registry, comparison);
+        if (!(decision with { RuleBasis = expected.RuleBasis }).Equals(expected)
+            || decision.RuleBasis is null
+            || !decision.RuleBasis.SequenceEqual(expected.RuleBasis))
+            throw new InvalidOperationException("The chart review does not match the pinned evidence.");
+
+        var baseAssessment = Assess(facts, fragments, verifiedFragmentIds);
+        if (baseAssessment.Blockers.Any(blocker => blocker.Kind ==
+            AslScenarioA1CaseBlockerKind.FactOutsideDeclaredScope))
+            return baseAssessment;
+
+        return baseAssessment with
+        {
+            UnresolvedSupplementalSources = [],
+            Blockers = baseAssessment.Blockers.Where(blocker =>
+                blocker.Kind != AslScenarioA1CaseBlockerKind.SourceBoundaryUnresolved).ToArray(),
+        };
+    }
+
     public static AslScenarioA1SupplementalSourceCandidate CreateBuildingChartCandidate() =>
         new("asl-supplement:b-terrain-chart-building-entry", 698,
             AslScenarioA1SourceInventory.PdfDigest);
