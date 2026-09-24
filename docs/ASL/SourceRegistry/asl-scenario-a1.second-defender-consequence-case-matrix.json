@@ -1,0 +1,143 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "reviewed-source-backed-consequence-candidate-no-package-publication",
+  "scope": "A12.15 attempted ordinary building entry after first enemy SMC reveal and elected Infantry OVR; another defender is revealed immediately, before the OVR exception can authorize entry. Read-only return and attempted-entry MF location conclusions only.",
+  "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+  "priorEligibilityMatrixSha256": "7db79dc8a634712983b5a14c5b4353b6a57038c89c822012c614e99105e34e6c",
+  "sourceFragments": [
+    {
+      "ruleId": "A12.15",
+      "physicalPdfPage": 78,
+      "fragmentId": "asl-fragment:sha256:e92332292b4bde444aff7f84127793084e1f0ecfd99af9750da6e4aa8af40ea3",
+      "contentSha256": "ce0cc02826bf66951ff4a1ce06b7a51d105eb2f2540f3710c2e49c2455306fcf"
+    },
+    {
+      "ruleId": "A4.14",
+      "physicalPdfPage": 49,
+      "fragmentId": "asl-fragment:sha256:d22c4de11eefffac89c9585633ca3f4eeff313cc2d1ddd535975e1e8c23e0e69",
+      "contentSha256": "65adb630eb862eb54b49feb1e414bdf9b0c5132f8d0c55e6eaa94eb5b44c6995"
+    },
+    {
+      "ruleId": "A4.15",
+      "physicalPdfPage": 49,
+      "fragmentId": "asl-fragment:sha256:189987c951bbe691bdab278fad56ca4435cd1c038f724d99888121c54c5eaa75",
+      "contentSha256": "969c23764e0e6d3f1ef6d7b53162b6dc9385fa150e5fcd83c021f557ff577390"
+    },
+    {
+      "ruleId": "B23.4",
+      "physicalPdfPage": 136,
+      "fragmentId": "asl-fragment:sha256:686ac055790d97426084d16a48381c5de948b987f4680a47bf00646f387ca4a8",
+      "contentSha256": "5aad8586e209983168fd444994e8fc644d23f5193e1df3bbeaca1a805bc989af"
+    }
+  ],
+  "buildingCostSupplement": "asl-supplement:b-terrain-chart-building-entry",
+  "commonFacts": {
+    "board": "bd01-ground-level-ordinary-building",
+    "phase": "mph",
+    "attacker": "goodOrderUnconcealedNonDummyInfantryMmc",
+    "entryMode": "ordinaryObstacleEntryNotBypass",
+    "initialDefenderState": "concealed",
+    "firstReveal": "enemySmc-under-A12.15",
+    "overrunElection": "elected-after-first-reveal",
+    "previousLocation": "knownLastOccupiedLocation",
+    "attemptedEntryMf": "ordinaryBuildingTwoMf",
+    "a414ExceptionOtherThanInfantryOvr": "none",
+    "specialModifier": "none",
+    "leaderExemption": "none"
+  },
+  "eventOrder": [
+    "attempted-entry-from-known-previous-location",
+    "A12.15-first-SMC-reveal",
+    "attacker-OVR-election",
+    "second-defender-reveal-before-OVR-entry-resolution"
+  ],
+  "timingBoundary": "A4.15 permits the NTC before entry or in the Location when the SMC was concealed. These cases require supplied capability at the second reveal; they do not prescribe a universal NTC versus reveal order. The A12.15 two-MF attempted building entry is already recorded; the doubled OVR entry cost is not inferred to have been paid.",
+  "cases": [
+    {
+      "caseId": "A1-second-defender-consequence-smc-revealed",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "forced-back-attempted-entry-mf-in-previous-location",
+      "sourceRules": ["A12.15", "A4.14", "A4.15", "B23.4"],
+      "facts": {
+        "secondReveal": "revealedEnemySmc-after-election",
+        "attackerCapability": "passedNtcAndAtLeastFourMf"
+      },
+      "reason": "Two revealed SMC deny the Location to an OVR-capable MMC under A4.15. The A4.14 Infantry OVR exception cannot authorize this attempted entry; A12.15 returns the mover to its known previous Location and treats the attempted ordinary building-entry MF as expended there. No additional doubled OVR cost is inferred."
+    },
+    {
+      "caseId": "A1-second-defender-consequence-mmc-revealed",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "forced-back-attempted-entry-mf-in-previous-location",
+      "sourceRules": ["A12.15", "A4.14", "A4.15", "B23.4"],
+      "facts": {
+        "secondReveal": "revealedEnemyMmc-after-election",
+        "attackerCapability": "passedNtcAndAtLeastFourMf"
+      },
+      "reason": "With a revealed enemy MMC the Location fails A4.15's only-one-Known-enemy-SMC condition. Ordinary MPh entry is barred by A4.14; A12.15 returns the mover and locates attempted-entry MF expenditure in its previous Location. No additional doubled OVR cost is inferred."
+    },
+    {
+      "caseId": "A1-second-defender-consequence-other-type",
+      "reviewStatus": "reviewed-nondefinitive",
+      "expectedDisposition": "indeterminate",
+      "sourceRules": ["A12.15", "A4.14", "A4.15", "B23.4"],
+      "facts": {
+        "secondReveal": "revealedOtherNonDummy-after-election",
+        "attackerCapability": "passedNtcAndAtLeastFourMf"
+      },
+      "reason": "The other revealed unit type is outside the reviewed SMC/MMC identity contract."
+    },
+    {
+      "caseId": "A1-second-defender-consequence-unknown-type",
+      "reviewStatus": "reviewed-nondefinitive",
+      "expectedDisposition": "indeterminate",
+      "sourceRules": ["A12.15", "A4.14", "A4.15", "B23.4"],
+      "facts": {
+        "secondReveal": "revealedUnknownType-after-election",
+        "attackerCapability": "passedNtcAndAtLeastFourMf"
+      },
+      "reason": "A further reveal without verified unit identity does not establish the exact OVR exception outcome."
+    },
+    {
+      "caseId": "A1-second-defender-consequence-unrevealed-smc",
+      "reviewStatus": "reviewed-nondefinitive",
+      "expectedDisposition": "indeterminate",
+      "sourceRules": ["A12.15", "A4.14", "A4.15", "B23.4"],
+      "facts": {
+        "secondReveal": "secondSmcKnownButNotRevealed",
+        "attackerCapability": "passedNtcAndAtLeastFourMf"
+      },
+      "reason": "Knowledge of another SMC does not meet A4.15's more-than-one-revealed-SMC condition."
+    },
+    {
+      "caseId": "A1-second-defender-consequence-capability-unresolved",
+      "reviewStatus": "reviewed-nondefinitive",
+      "expectedDisposition": "indeterminate",
+      "sourceRules": ["A12.15", "A4.14", "A4.15", "B23.4"],
+      "facts": {
+        "secondReveal": "revealedEnemySmc-after-election",
+        "attackerCapability": "ntcOrMfUnresolved"
+      },
+      "reason": "The capability condition for denying the Location to the MMC is not supplied."
+    },
+    {
+      "caseId": "A1-second-defender-consequence-mf-insufficient",
+      "reviewStatus": "reviewed-nondefinitive",
+      "expectedDisposition": "abstained",
+      "sourceRules": ["A12.15", "A4.14", "A4.15", "B23.4"],
+      "facts": {
+        "secondReveal": "revealedEnemySmc-after-election",
+        "attackerCapability": "mfInsufficient"
+      },
+      "reason": "An elected attempt with insufficient OVR MF falls outside the exact capable-attacker consequence contract."
+    }
+  ],
+  "admissionRule": "Only exact common and case facts match. Missing previous Location, event order, entry cost or capability is indeterminate; extra or contrary facts abstain. Only the two revealed SMC/MMC cases admit a return and expenditure-location conclusion.",
+  "excludedConsequences": [
+    "additional doubled OVR MF charge",
+    "defensive first fire or residual FP resolution",
+    "FFE, minefield, Wire, Depression, entrenchment or shellhole handling",
+    "concealment loss, MPh termination or subsequent movement execution",
+    "game-state mutation"
+  ],
+  "executionAuthority": "none"
+}

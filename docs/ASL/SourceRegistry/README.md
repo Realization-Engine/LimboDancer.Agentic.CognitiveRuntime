@@ -92,6 +92,8 @@ The supplementary chart registry is reproducible with the C# CLI using the exist
 
 `asl-scenario-a1.second-defender-reveal-case-matrix.json` reviews the next A12.15/A4.15 branch. It distinguishes a second revealed SMC from a revealed MMC and leaves unknown identity, unrevealed units, and incomplete capability nondefinitive. Its xUnit review pins three previously verified source fragments and the prior immutable package digest. `asl-scenario-a1.second-defender-reveal-package.json` publishes a separate exact eligibility-only resolver for two bounded findings. It does not determine forced back, MF expenditure, fire or CC.
 
+`asl-scenario-a1.second-defender-consequence-case-matrix.json` separately reviews the return and attempted-entry MF location after the second SMC or MMC is revealed before OVR entry resolves. Its affirmative xUnit review pins A12.15, A4.14, A4.15, B23.4, the reviewed 2 MF building chart, and the prior eligibility matrix. It admits no doubled OVR charge, follow-on attack, game-state mutation, or package publication.
+
 `unverified` in the earlier inventory and representative sample describes their state at generation time and is preserved as historical evidence. The separate verification batch records the later source-provider disposition for its 11 exact subjects. Any newly verified subject requires a review record covering the fragment and its required table, figure, or footnote dependencies.
 
 Neither manifest is an ontology, published domain package, tactical policy, Decision corpus, or execution authority.
