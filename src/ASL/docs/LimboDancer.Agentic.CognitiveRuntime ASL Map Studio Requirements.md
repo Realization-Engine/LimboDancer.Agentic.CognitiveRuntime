@@ -106,7 +106,7 @@ The model must provide a canonical coordinate type covering board identity, colu
 
 ### ASL-MAP-022: Location identity compatibility
 
-The canonical location identity must be compatible with the `bd01:<hex>:<level>` form already used by `Board01ValidatedSnapshotSource`, or the design must define a lossless mapping to it.
+The canonical location identity must be compatible with the `bd01:<hex>:<level>` form already used by `Board01ValidatedSnapshotSource`, or the design must define a lossless mapping to it. The same form is used for `LocationId` and `PreviousLocationId` in the Scenario A1 second-defender return path and its journal (for example `bd01:D4:0`). ASL-MAP-01 must include a test that every location string used by the Scenario A1 providers, packages, and execution tests parses to a canonical `BoardLocation` and formats back to the identical string.
 
 ### ASL-MAP-023: Geometric relations
 
@@ -269,6 +269,14 @@ Authored boards that do not start from a VASL board are original LimboDancer con
 
 The existing `Board01TerrainCatalog` and Scenario A1 providers must keep working unchanged until a separate reviewed change replaces their evidence source. When that happens, the replacement must reproduce the 63 building overrides exactly and pass the existing Scenario A1 tests.
 
+The catalog's current consumers are:
+
+- `Board01ValidatedSnapshotSource`, defined in the same file, which the original occupied-building board observation provider uses;
+- the post-reveal, concealed-SMC overrun, second-defender eligibility, and second-defender consequence observation providers, which take the concrete `Board01TerrainCatalog` class as a constructor parameter;
+- `ScenarioA1VerifiedReturnConclusionSource` in `LimboDancer.Domains.Asl.Execution`, which constructs it directly and feeds the governed second-defender return action.
+
+Because one consumer is on an execution path, a replacement is a change to execution evidence, not only to read-only conclusions. The reviewed change must first introduce an abstraction those consumers accept, then show that the second-defender return gate-binding, journal, and Host registration tests still pass unchanged.
+
 ### ASL-MAP-082: LOS is out of scope
 
 Line-of-sight calculation is not part of this effort. The grid, geometry, and derivation must nevertheless expose everything a later LOS executor for Scenario B needs, including per-cell terrain and elevation, terrain-type LOS properties, and grid-to-hex mapping.
@@ -285,7 +293,7 @@ The following documents will refine these requirements:
 Proposed implementation sequence:
 
 ```text
-ASL-MAP-01  Geometry, coordinates, and terrain catalog
+ASL-MAP-01  Geometry, coordinates, and terrain catalog; Scenario A1 location-string round trip (ASL-MAP-022)
 ASL-MAP-02  LOSData and metadata ingestion; F1 for board 01
 ASL-MAP-03  Hex-fact derivation and F2 oracle harness; F2 for board 01
 ASL-MAP-04  SVG rendering (Exact and Hex-fact views) and Studio viewer
