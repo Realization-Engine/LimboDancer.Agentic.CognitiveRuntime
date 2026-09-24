@@ -7,6 +7,19 @@ namespace LimboDancer.Domains.Asl.ScenarioA1.Tests;
 public sealed class ScenarioA1SemanticCandidateTests
 {
     [Fact]
+    public void AffirmativeSemanticReviewAcceptsExactlySevenReproducibleContracts()
+    {
+        var candidate = new ScenarioA1SemanticCandidate();
+        ScenarioA1SemanticAcceptance.Validate(candidate);
+        Assert.Equal("7c9157b26fb5d0c23ac1b39f7181127b4d9530af9db6f9a90b05b27e6b8c1b66",
+            ScenarioA1SemanticAcceptance.Sha256);
+        var exactContracts = candidate.Cases.Where(item => item.ReviewStatus == "reviewed-bounded")
+            .Select(item => string.Join('|', item.Predicates.Select(predicate =>
+                predicate.Key + "=" + predicate.ExpectedValue))).ToArray();
+        Assert.Equal(7, exactContracts.Distinct(StringComparer.Ordinal).Count());
+    }
+
+    [Fact]
     public void CandidateManifestAndReviewedCasePredicatesArePinned()
     {
         var candidate = new ScenarioA1SemanticCandidate();

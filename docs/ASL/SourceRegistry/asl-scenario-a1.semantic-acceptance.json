@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "accepted-exact-case-semantic-profile",
+  "declaredUse": "Scenario A1 occupied-building entry eligibility for exact synthetic facts only",
+  "authority": "user-directed-affirmative-xunit-review-2026-09-24",
+  "candidateManifestRootSha256": "6c7a415db0e08c308e20afec9a079da5e700ca9b115794cab0d39c113861fdf5",
+  "boundedAdmissionSha256": "007dbe2512c7bd5f0b17c51ad6ab2cea800b4f8e2c47267fb6cc0e5fbc57b2ee",
+  "occupiedComparisonSha256": "c64fe3229d5a3541357fe6948ec037fcfbdbfde8810a599f21df81aed0a94bc5",
+  "precedence": "unique-exact-case-id-and-complete-predicate-match",
+  "adjudication": "no-conflicting-exact-case-match; unresolved or missing evidence remains nondefinitive",
+  "acceptedCaseIds": [
+    "A1-empty-ordinary-mph",
+    "A1-known-enemy-mmc-mph",
+    "A1-fortified-unbreached-enemy-squad",
+    "A1-single-known-enemy-smc-overrun",
+    "A1-fortified-breached-entry",
+    "A1-stacking-equivalents-needed",
+    "A1-advance-phase-entry"
+  ],
+  "nonDefinitiveCaseIds": [
+    "A1-concealed-occupancy-attempt",
+    "A1-unknown-location-or-modifier"
+  ],
+  "exclusions": [
+    "unverified board-state facts",
+    "unmodeled SSR or additional movement modifier",
+    "defensive response and close combat resolution",
+    "general breach creation and stacking solver"
+  ]
+}
