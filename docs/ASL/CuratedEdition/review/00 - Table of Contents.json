@@ -1,5 +1,15 @@
 {
  "sourceId": "asl-easlrb-3.10:contents",
  "basePath": "docs/ASL/Rulebook_Markdown/00 - Table of Contents.md",
- "items": []
+ "items": [
+  {
+   "id": "CONTENTS-R0001",
+   "rule": "suspected-source-typo",
+   "baseLine": 0,
+   "text": "ForcesKorea",
+   "pdfPage": 10,
+   "context": "W. KOREAN WAR 4. British Commonwealth ForcesKorea",
+   "reason": "words run together as printed in the PDF (no glyph gap); kept as printed, a change needs a cited authority"
+  }
+ ]
 }

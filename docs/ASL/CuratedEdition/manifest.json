@@ -20,7 +20,10 @@
  "tool": {
   "path": "utils/asl_curated_edition/build_curated_edition.py",
   "version": "0.1.0",
-  "sha256": "39a727416b4c134c5a7942d41a37bcd950232d75de00e197d6db8c762b0bf9c3",
+  "sha256": "60e9f80985319a219b33579ee06d25e15266f75cf10d6ee6824557c59d63a003",
+  "modules": {
+   "toc.py": "ccb67d2fd4a1c3ddf342313e08944aed1f756dd17e6f7bca42e184c79b282858"
+  },
   "pymupdf": "1.27.1"
  },
  "files": [
@@ -29,16 +32,18 @@
    "basePath": "docs/ASL/Rulebook_Markdown/00 - Table of Contents.md",
    "baseSha256": "dbe6b4395accd117d6c4a84796c11983243399cae5838c2a27abea1f4c7c59f9",
    "editionPath": "docs/ASL/CuratedEdition/edition/00 - Table of Contents.md",
-   "editionSha256": "a5c1d8a4866a681c5a93b4464642125c213ec4bc3e7c84ccde57da72b38f9011",
+   "editionSha256": "01988a59aa70d68fd317da46eb855f35809251a6092717d50f63599d90ff513a",
    "pdfPages": [
     6,
     10
    ],
    "ledgerCounts": {
-    "image-link-rebase": 1,
-    "page-marker": 5
+    "image-crop": 4,
+    "toc-rebuild": 24
    },
-   "reviewCounts": {},
+   "reviewCounts": {
+    "suspected-source-typo": 1
+   },
    "certifiedSections": []
   },
   {

@@ -40,6 +40,8 @@ Rule meaning is never edited on judgment alone. A suspected error in the rules t
 | `split-emphasis` | markup-normalization | Merges `*a* *b*` and `**a** **b**` runs split by the converter at line boundaries. |
 | `image-link-rebase` | markup-normalization | Points image links at `../../Rulebook_Markdown/images/`. |
 | `symbol-font-glyph` | conversion-fix | Replaces a private-use code point with its Unicode symbol when the PDF shows the glyph set in the expected symbol font. U+F0AB (Wingdings 0xAB, a black five-pointed star) becomes U+2605 `★`, the form the converter already uses elsewhere for the IFT "★ Vehicle line". |
+| `toc-rebuild` | conversion-fix | Rebuilds the Table of Contents (PDF pages 6-10) from span positions in the PDF. The printed TOC sets each chapter's entries in two side-by-side columns; the conversion read the pages as two page-high columns, which interleaved chapter halves and detached headings from their entries. Each entry row is now assigned to the nearest heading above it and the left column is read before the right, giving one ordered list per chapter (H keeps its bulleted sub-list under entry 2, N its paragraph). Chapter banner icons were matched to headings by visual inspection, since the converter did not number them in page order. |
+| `image-crop` | observation | Records registered icon crops with visible defects: `p6-3`, `p7-4` and `p9-1` include the top of the heading below them; `p10-3` has the emblem without its frame. |
 | `blank-page` | observation | Records PDF pages 188, 219 and 252, which carry only the chapter banner and folio. |
 
 The build fails closed when:
@@ -47,22 +49,25 @@ The build fails closed when:
 - the PDF or any registered Markdown file does not match its pinned digest;
 - the edition differs from the base text in anything but hyphens, emphasis markers, whitespace and comments;
 - the number of hyphens removed differs from the number of ledgered removals;
+- for the TOC, the rebuilt text does not carry exactly the words printed on PDF pages 6-10, or it drops an image the conversion referenced;
 - a reviewer decision matches no queued item, or a `source-correction` lacks an authority.
 
 ## Current results
 
 | File | Pages | Hyphens joined | Stale hyphens | Emphasis merges | Page markers | Symbols | Reviewed decisions | Open review items |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| TOC | 6-10 | 0 | 0 | 0 | 5 | 0 | 0 | 0 |
+| TOC (rebuilt) | 6-10 | 0 | 0 | 0 | 5 | 0 | 0 | 1 |
 | Index and Glossary | 11-42 | 134 | 0 | 8 | 32 | 0 | 1 | 0 |
 | Chapter A | 43-111 | 335 | 3 | 265 | 69 | 0 | 20 | 0 |
 | Chapter B | 112-161 | 128 | 0 | 126 | 50 | 0 | 13 | 0 |
 | Chapter C | 162-191 | 189 | 0 | 248 | 30 | 1 | 6 | 0 |
 | Chapter D | 192-221 | 133 | 0 | 92 | 30 | 0 | 3 | 0 |
 | Chapter E | 222-253 | 253 | 4 | 122 | 32 | 5 | 9 | 0 |
-| **Total** | | **1,172** | **7** | **861** | **248** | **6** | **52** | **0** |
+| **Total** | | **1,172** | **7** | **861** | **248** | **6** | **52** | **1** |
 
-The 52 reviewed decisions are 19 joins, 32 retains and 1 replacement (`ground-and` becomes the suspended hyphen `ground- and`). They were approved by the maintainer on 2026-09-23; each carries its rationale in `decisions/decisions.json`. The review queue is empty.
+The 52 reviewed decisions are 19 joins, 32 retains and 1 replacement (`ground-and` becomes the suspended hyphen `ground- and`). They were approved by the maintainer on 2026-09-23; each carries its rationale in `decisions/decisions.json`.
+
+The one open item is in the TOC: W.4 is printed "British Commonwealth ForcesKorea", with no gap between the words in the PDF. It is kept as printed; correcting it is a `source-correction` and needs a cited authority. The rebuilt TOC has 23 headings (22 chapters plus CHARTS); a word comparison shows the conversion had every TOC word, only out of order.
 
 By maintainer convention, a line-end `on-board` or `off-board` keeps its hyphen. Closed forms such as `onboard` and `Offboard` that the PDF prints as closed are left as printed, since changing them would alter the source wording rather than undo a conversion defect.
 
@@ -111,7 +116,7 @@ Add an entry to `decisions/decisions.json` and rebuild:
 
 These defect classes are known and are left for later rules or review:
 
-- **Charts and tables** in ```` ```text ```` blocks are protected from every rule. Their fidelity to the PDF (column alignment, soft hyphens, symbols) has not been checked.
+- **Charts and tables** in ```` ```text ```` blocks inside Chapters A-E are protected from every rule. Their fidelity to the PDF (column alignment, soft hyphens, symbols) has not been checked.
 - **Duplicate headings**: the converter emits an outline heading such as `###### 4.152 CC` directly before the bold rule text `**4.152 CC:**`. They are kept for now; removing them is a structural choice that affects heading-based navigation.
 - **Symbol consistency**: the triangle symbol appears as both U+2206 and U+0394; dash usage mixes en and em dashes where the PDF does.
 - **Residual hyphens**: a small number of line-break hyphens the PDF word stream did not expose (for example `in-volves`) remain. A residual audit against the PDF is the next rule to add.

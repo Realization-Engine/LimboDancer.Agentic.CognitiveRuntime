@@ -51,6 +51,9 @@ import unicodedata
 
 import pymupdf
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import toc  # noqa: E402
+
 TOOL_VERSION = '0.1.0'
 EDITION_ID = 'asl-easlrb-3.01-a-e-curated'
 PDF_SHA256 = '957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247'
@@ -555,6 +558,93 @@ class FileBuild:
         return ''.join(out)
 
 
+TOC_TITLE = 'ADVANCED SQUAD LEADER RULEBOOK TABLE OF CONTENTS'
+CAMEL_RE = re.compile(r'\b[A-Za-z][a-z]{2,}[A-Z][a-z]{2,}\b')
+# registered chapter-banner crops with visible defects (observations only)
+ICON_NOTES = {
+    'eASLRB_v3_01-p6-3.png': 'crop includes the top of the C heading',
+    'eASLRB_v3_01-p7-4.png': 'crop includes the top of the F heading',
+    'eASLRB_v3_01-p9-1.png': 'crop includes the top of the N heading',
+    'eASLRB_v3_01-p10-3.png': 'crop has the emblem only, without the banner frame',
+}
+
+
+def build_toc(art, base, pdf, decisions, prefix):
+    """Rebuild the TOC from PDF span positions (rule toc-rebuild).
+
+    The generic invariant cannot hold here, because entries move. Instead the
+    build fails closed unless the edition carries exactly the words printed on
+    the TOC pages and every image the conversion referenced.
+    """
+    ledger, review, used = [], [], set()
+
+    def lid():
+        return f'{prefix}-{len(ledger) + 1:05d}'
+
+    chapters, stray = toc.extract(pdf.doc, art['startPage'], art['endPage'])
+    text = toc.render(chapters, IMAGE_PREFIX, TOC_TITLE) + '\n'
+
+    pdf_words = collections.Counter()
+    for p in range(art['startPage'], art['endPage'] + 1):
+        for sp in toc._spans(pdf.doc[p - 1]):
+            pdf_words.update(toc.words(sp['text']))
+    body = re.sub(r'<!--.*?-->|!\[[^\]]*\]\([^)]*\)', '', text, flags=re.S).replace(f'**{TOC_TITLE}**', '')
+    if toc.words(body) != pdf_words:
+        diff = (toc.words(body) - pdf_words) + (pdf_words - toc.words(body))
+        sys.exit(f'{art["path"]}: rebuilt TOC words differ from the PDF: {dict(diff)}')
+    base_images = set(re.findall(r'eASLRB_v3_01-p\d+-\d+\.png', base))
+    new_images = set(re.findall(r'eASLRB_v3_01-p\d+-\d+\.png', text))
+    if base_images != new_images:
+        sys.exit(f'{art["path"]}: image set changed: {sorted(base_images ^ new_images)}')
+
+    base_body = re.sub(r'<!--.*?-->|!\[[^\]]*\]\([^)]*\)', '', base, flags=re.S).replace(f'**{TOC_TITLE}**', '')
+    missing = pdf_words - toc.words(base_body)
+    extra = toc.words(base_body) - pdf_words
+    for ch in chapters:
+        letter = ch['heading'].split('.')[0] if re.match(r'^[A-Z]\.', ch['heading']) else None
+        ledger.append({'id': lid(), 'rule': 'toc-rebuild', 'class': 'conversion-fix',
+                       'pdfPage': ch['page'], 'heading': ch['heading'],
+                       'entries': len(ch['entries']),
+                       'subEntries': sum(len(e['sub']) for e in ch['entries']),
+                       'paragraph': bool(ch['para']),
+                       'icon': toc.ICONS.get(letter),
+                       'basis': 'entries assigned to the nearest heading above them; '
+                                'left column read before right column'})
+    ledger.append({'id': lid(), 'rule': 'toc-rebuild', 'class': 'observation',
+                   'note': 'word comparison of the registered conversion with the PDF TOC pages',
+                   'wordsMissingFromConversion': dict(sorted(missing.items())),
+                   'wordsExtraInConversion': dict(sorted(extra.items()))})
+    for img, note in ICON_NOTES.items():
+        ledger.append({'id': lid(), 'rule': 'image-crop', 'class': 'observation',
+                       'image': img, 'note': note})
+
+    problems = toc.check(chapters, stray)
+    for msg in problems:
+        review.append({'id': f'{prefix}-R{len(review) + 1:04d}', 'rule': 'toc-structure',
+                       'baseLine': 0, 'text': '', 'reason': msg})
+    for ch in chapters:
+        for e in ch['entries']:
+            for m in CAMEL_RE.finditer(e['text']):
+                key = ('suspected-source-typo', 0, m.group())
+                dec = decisions.get(key)
+                entry = {'rule': 'suspected-source-typo', 'baseLine': 0, 'text': m.group(),
+                         'pdfPage': ch['page'], 'context': f'{ch["heading"]} {e["n"]}. {e["text"]}'}
+                if dec is not None:
+                    used.add(id(dec))
+                    ledger.append({'id': lid(), 'class': 'reviewed-decision', **entry,
+                                   'decision': dec['decision'], 'decidedBy': dec['decidedBy'],
+                                   'rationale': dec['rationale']})
+                    continue
+                review.append({'id': f'{prefix}-R{len(review) + 1:04d}', **entry,
+                               'reason': 'words run together as printed in the PDF (no glyph gap); '
+                                         'kept as printed, a change needs a cited authority'})
+    stale = [d for d in decisions.values() if id(d) not in used]
+    if stale:
+        sys.exit(f'{art["path"]}: decisions match no review item: '
+                 + ', '.join(f'{d["text"]!r}' for d in stale))
+    return text, ledger, review
+
+
 def load_decisions(path):
     """Reviewer decisions; each must name its reviewer and rationale.
 
@@ -579,6 +669,37 @@ def load_decisions(path):
             sys.exit(f'source-correction decision lacks a cited authority: {d}')
         out.append(d)
     return out
+
+
+def write_outputs(out, art, text, ledger, review, manifest):
+    name = os.path.basename(art['path'])
+    stem = os.path.splitext(name)[0]
+    with open(os.path.join(out, 'edition', name), 'w', encoding='utf-8', newline='\n') as f:
+        f.write(text)
+    ledger_doc = {'sourceId': art['sourceId'], 'basePath': art['path'], 'baseSha256': art['sha256'],
+                  'entries': ledger}
+    review_doc = {'sourceId': art['sourceId'], 'basePath': art['path'], 'items': review}
+    for sub, doc in (('ledger', ledger_doc), ('review', review_doc)):
+        with open(os.path.join(out, sub, stem + '.json'), 'w', encoding='utf-8', newline='\n') as f:
+            json.dump(doc, f, ensure_ascii=False, indent=1)
+            f.write('\n')
+    counts = collections.Counter(e['rule'] for e in ledger)
+    rcounts = collections.Counter(e['rule'] for e in review)
+    manifest['files'].append({
+        'sourceId': art['sourceId'],
+        'basePath': art['path'], 'baseSha256': art['sha256'],
+        'editionPath': f'{OUT_DIR}/edition/{name}', 'editionSha256': sha256_text(text),
+        'pdfPages': [art['startPage'], art['endPage']],
+        'ledgerCounts': dict(sorted(counts.items())),
+        'reviewCounts': dict(sorted(rcounts.items())),
+        'certifiedSections': [],
+    })
+    print(f'{name}: {dict(counts)} review {dict(rcounts)}')
+
+
+def lf_sha256(path):
+    """Digest of a text file with CRLF normalized, as committed."""
+    return hashlib.sha256(open(path, 'rb').read().replace(b'\r\n', b'\n')).hexdigest()
 
 
 def main():
@@ -616,6 +737,8 @@ def main():
                  # LF-normalized so a CRLF checkout reports the committed digest
                  'sha256': hashlib.sha256(open(os.path.abspath(__file__), 'rb').read()
                                           .replace(b'\r\n', b'\n')).hexdigest(),
+                 'modules': {'toc.py': lf_sha256(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                                               'toc.py'))},
                  'pymupdf': pymupdf.VersionBind},
         'files': [],
     }
@@ -629,6 +752,10 @@ def main():
         prefix = art['sourceId'].split(':')[1].upper().replace('CHAPTER-', 'CH')
         mine = {(d['rule'], d['baseLine'], d['text']): d
                 for d in decisions if d['sourceId'] == art['sourceId']}
+        if art['sourceId'].endswith(':contents'):
+            text, ledger, review = build_toc(art, base, pdf, mine, prefix)
+            write_outputs(out, art, text, ledger, review, manifest)
+            continue
         fb = FileBuild(art, base, pdf, prefix, mine)
         fb.place_pages()
         fb.resolve_hyphens()
@@ -651,29 +778,7 @@ def main():
         if removed != ledgered:
             sys.exit(f'{art["path"]}: {removed} hyphens removed but {ledgered} ledgered')
 
-        name = os.path.basename(art['path'])
-        stem = os.path.splitext(name)[0]
-        with open(os.path.join(out, 'edition', name), 'w', encoding='utf-8', newline='\n') as f:
-            f.write(text)
-        ledger_doc = {'sourceId': art['sourceId'], 'basePath': art['path'], 'baseSha256': art['sha256'],
-                      'entries': fb.ledger}
-        review_doc = {'sourceId': art['sourceId'], 'basePath': art['path'], 'items': fb.review}
-        for sub, doc in (('ledger', ledger_doc), ('review', review_doc)):
-            with open(os.path.join(out, sub, stem + '.json'), 'w', encoding='utf-8', newline='\n') as f:
-                json.dump(doc, f, ensure_ascii=False, indent=1)
-                f.write('\n')
-        counts = collections.Counter(e['rule'] for e in fb.ledger)
-        rcounts = collections.Counter(e['rule'] for e in fb.review)
-        manifest['files'].append({
-            'sourceId': art['sourceId'],
-            'basePath': art['path'], 'baseSha256': art['sha256'],
-            'editionPath': f'{OUT_DIR}/edition/{name}', 'editionSha256': sha256_text(text),
-            'pdfPages': [art['startPage'], art['endPage']],
-            'ledgerCounts': dict(sorted(counts.items())),
-            'reviewCounts': dict(sorted(rcounts.items())),
-            'certifiedSections': [],
-        })
-        print(f'{name}: {dict(counts)} review {dict(rcounts)}')
+        write_outputs(out, art, text, fb.ledger, fb.review, manifest)
     with open(os.path.join(out, 'manifest.json'), 'w', encoding='utf-8', newline='\n') as f:
         json.dump(manifest, f, ensure_ascii=False, indent=1)
         f.write('\n')
