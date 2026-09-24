@@ -14,5 +14,6 @@
     <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.semantic-acceptance.json" LogicalName="ScenarioA1.semantic-acceptance.json" />
     <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.occupied-package.json" LogicalName="ScenarioA1.occupied-package.json" />
     <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.conformance-admission.json" LogicalName="ScenarioA1.conformance-admission.json" />
+    <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/vasl-board-01-building-overrides.json" LogicalName="ScenarioA1.board01-buildings.json" />
   </ItemGroup>
 </Project>

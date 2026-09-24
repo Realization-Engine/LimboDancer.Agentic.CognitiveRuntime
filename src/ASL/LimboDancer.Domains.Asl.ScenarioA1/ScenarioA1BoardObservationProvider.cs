@@ -31,7 +31,8 @@ public sealed record ScenarioA1BoardSnapshot(
     bool? HasNoAdditionalTerrain,
     bool? BelowNormalStackingLimit,
     bool? HasNoSpecialModifier,
-    bool? HasNoA414Exception);
+    bool? HasNoA414Exception,
+    ScenarioA1TerrainBinding? Terrain = null);
 
 public interface IScenarioA1BoardSnapshotSource
 {
