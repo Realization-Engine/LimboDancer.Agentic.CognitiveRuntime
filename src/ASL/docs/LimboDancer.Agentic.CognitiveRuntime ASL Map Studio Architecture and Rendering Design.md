@@ -447,6 +447,21 @@ ASL-MAP-04 delivers a smaller surface than sections 4 and 5 describe. The rest m
   - Autosave of drafts every 30 seconds (section 7).
   - Bézier handle dragging for the Linear tool; curves come from a Catmull-Rom fit through the clicked points.
 
+### 9.5 ASL-MAP-08 as built
+
+- **Library.** It lists every board VASL lays out as geomorphic (VASL Board Ingestion Design, section 11.1): 235 on the pinned checkout, all verified. b boards show their Q-to-GG names, and all views work for them. The Styled view vectorizes the new geometries with identical facts. The full F3 thresholds hold on 44 of the 235 boards and are informational.
+- **Maps.** `/maps` composes maps of VASL boards: a board, slot, and reversal per placement, and an ordered list of LOS scenario-specific rules applied to every board, as VASL's board picker applies them.
+  - Placements also have a compact form (`20@0,0[NoStairwells] 21@1,0/r[NoStairwells]`), which the page shows and accepts, and which `/maps?placements=...` prefills. A VASL board's viewer links to it.
+  - **Check** builds the map and reports what VASL would refuse. **Save and view** saves the map as `{BoardsRoot}/maps/{slug}.json`, which holds its name and placements and no VASL data, then opens it at `/boards/map-{slug}`.
+  - `MapService` builds maps on load through `IVaslMapSource`, which `VaslBoardProvider` implements from its load cache.
+  - A map's version is SHA-256 over its placements, their `LOSData` and metadata blobs, the catalog blob, and the builder and derivation versions (ASL-MAP-072).
+  - A map whose placements match an oracle scenario is checked by F2 and shown Verified when it passes; others are Ingested.
+- **Map viewer.** Maps use the board viewer with the Exact and Hex-fact views. Styled and Comparison are offered only when a Feature Model exists: vectorizing whole maps is deferred.
+  - The inspector shows each hex's location in the board placed there (`bd21:N5:0`), from `VaslMap.OwnerOf`.
+  - The provenance panel lists the placements, the map size, and F2.
+- **Rendering.** Geometry-derived coordinates are rounded to the nearest 1/64 pixel, halves away from zero (Model Design section 3.5). Standard geometry is exact, so standard documents, and the goldens, are unchanged.
+- **Deferred.** Styled views of maps, cropped boards, HASL maps, overlays (VASL's come from artwork), and tiling for very large maps (open issue 2).
+
 ## 10. Open issues
 
 1. **Label fonts.** SVG bytes are deterministic, but text appearance depends on the viewer's fonts. Decide whether labels should use a bundled web font served by the Studio, or be converted to paths at render time.

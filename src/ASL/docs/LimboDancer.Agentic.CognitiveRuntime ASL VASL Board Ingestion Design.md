@@ -10,7 +10,7 @@
 
 ## 1. Version 1 scope
 
-Version 1 ingests a **single standard geomorphic board**: 33 by 10 hexes, no non-standard geometry attributes in its metadata, not cropped, not rotated, with no overlay and no SSR transform applied. This matches how VASL loads one uncropped board into a game map. In the pinned checkout, 157 boards meet these conditions; ASL-MAP-02 ingests 156 of them, and every one passes F1 (**verified**). The remaining board, `bdLFT1`, declares a 644-row grid and is refused with `VASL-LOS-005`.
+Version 1 ingests a **single standard geomorphic board**: 33 by 10 hexes, no non-standard geometry attributes in its metadata, not cropped, not rotated, with no overlay and no SSR transform applied. This matches how VASL loads one uncropped board into a game map. In the pinned checkout, 157 boards meet these conditions; ASL-MAP-02 ingests 156 of them, and every one passes F1 (**verified**). The remaining board, `bdLFT1`, declares a 644-row grid and is refused with `VASL-LOS-005`. ASL-MAP-08 widens the scope to every board VASL lays out as geomorphic, and adds scenario-specific rules, reversed boards, and composed maps (section 11.1).
 
 Boards whose metadata sets `A1CenterX`, `A1CenterY`, `hexWidth`, or `hexHeight` to a value other than the standard one (0, 32.25, 56.25, 64.5), sets `altHexGrain` true, or declares any `HexGridConfig`, boards of other sizes, and legacy boards without `BoardMetadata.xml` or `LOSData` are reported as out of version 1 scope (diagnostic `VASL-SCOPE-001`) and are not partially ingested. An attribute that restates the standard value keeps the board in scope. `snapScale` controls VASL counter snapping, not LOS geometry, and does not affect scope.
 
@@ -404,7 +404,7 @@ A Java harness, `src/ASL/tools/vasl-hexfact-oracle/`, produces reference Hex Fac
   4. apply railroad embankments, partial orchards, and slopes; call `resetHexsideLocationNames`; call `resetHexTerrain`; then call `resetHexTerrain` again, as the runtime does.
 - **Construction check (pending review):** a reviewer compares at least 20 hexes in board 01 (including edge half hexes, E4, a wall or hedge hexside, and a stairway hex) with a live VASL session's hex information, and records the result. This checks the harness's construction of the map, which F2 alone cannot: F2 shows that the C# port matches the harness, and the harness runs VASL's code, but only a live session shows that the construction matches what players see.
 - **Output:** the Hex Fact JSON of section 7.3 without `centerSource`, in canonical form (keys in ordinal order, hexes in column-major order, one hex per line), with a header recording the VASL commit, harness version, grid configuration, and the committed Git blob ids of `LOSData`, `BoardMetadata.xml`, and `SharedBoardMetadata.xml`, read from the checkout's git index. The index blob is required because some VASL metadata files are committed with CRLF line endings.
-- **Fixtures:** gzipped, one per ingested board (156 boards, about 1 MB in total), under `src/ASL/tests/LimboDancer.Domains.Asl.Maps.Vasl.Tests/Oracle/bdNN.hexfacts.json.gz`. They contain derived facts only, as allowed by ASL-MAP-073.
+- **Fixtures:** gzipped, one per ingested board (156 boards at ASL-MAP-03, 235 at ASL-MAP-08; about 1.7 MB in total with the map scenarios), under `src/ASL/tests/LimboDancer.Domains.Asl.Maps.Vasl.Tests/Oracle/bdNN.hexfacts.json.gz`. They contain derived facts only, as allowed by ASL-MAP-073.
 
 ### 9.3 F2 comparison
 
@@ -447,7 +447,7 @@ Each board ends with one outcome:
 
 The result is a `FidelityReport`: report version, start time, duration, VASL commit, catalog blob, tool versions (importer, derivation, report, and renderer when rendering checks run), and one entry per board. Each entry has its outcome, reason, `LOSData` and metadata blob ids (recorded for failed boards too), F1 status, F2 status with every coordinate-level difference, the additional checks, the diagnostics, and stage timings. It serializes to indented JSON with camel-case names and enum names as strings.
 
-Scenario M2 on the pinned checkout: 156 boards verified, `bd79` failed with `VASL-META-000`, `bdLFT1` failed with `VASL-LOS-005`, and 139 directories out of scope. The 139 include 5 directories whose names are not valid board references, which the Studio library does not list.
+Scenario M2 on the pinned checkout, as of ASL-MAP-05: 156 boards verified, `bd79` failed with `VASL-META-000`, `bdLFT1` failed with `VASL-LOS-005`, and 139 directories out of scope. As of ASL-MAP-08 (section 11.1): 235 verified, `bd79` failed, and 61 out of scope. The 139 include 5 directories whose names are not valid board references, which the Studio library does not list.
 
 ## 11. Deferred VASL features
 
@@ -459,6 +459,75 @@ Scenario M2 on the pinned checkout: 156 boards verified, `bd79` failed with `VAS
 | Multi-board composition and cropping | half-hex seam merging from the `addLOSDatatoVASLMap` grid loop; crop configurations | composed grid built from placed boards |
 | Custom geometry, alternate hex grain, `EqualRowCount`, a/b boards, HASL and other non-geomorphic maps | `BoardGeometry` variants and the matching `getHexCenterPoint` and `getGEOHexName` branches | new geometry values; derivation unchanged |
 | Legacy V5 `data` files and boards without `LOSData` | not planned; reported as unsupported | none |
+
+### 11.1 ASL-MAP-08 as built
+
+ASL-MAP-08 implements the rows above that VASL's runtime handles without artwork, each checked by F2 against VASL's own code.
+
+**Oracle v2.** The harness (section 9.2, version 1.1.0) now reproduces `ASLMap.buildVASLMap`, `ASLMap.addBoardsToMap`, and `BoardArchive.addLOSDatatoVASLMap` for uncropped boards placed in board slots:
+
+- the map geometry and hex grid VASL builds, including its width count;
+- the half-hex seam rule, `flipTerrainAndElevationGrids`, and the reversed-board hex copy through `Map.flipthehex`, `Hex.copy`, and `Hex.resetTerrain`;
+- the two SSR phases, run by VASL's own `VASLBoard.applyColorSSRulestoTerrainElevationGrids` and `applyColorSSRulestoHexGrid` on a `VASLBoard` given only its archive, rule list, and name;
+- a `resetHexTerrain` after each board and once at the end.
+
+Single-board output is unchanged. `generate-fixtures.ps1 -Scenarios` writes map fixtures from `Oracle/Scenarios/scenarios.txt`, one line per scenario, such as `bd20-bd21r-bd22: 20@0,0 21@1,0/r 22@2,0` or `bd24-reset-then-roads: 24@0,0[GrainToLevel1,RoadsToPaths,NoBridge,AllBuildingsLevel1]`.
+
+**Boards in scope.** A board is in scope when VASL lays it out as geomorphic:
+
+- it is not one of the HASL maps VASL builds with board-specific code (RBv3, RO, DaE, SG, HT, VotG, SaPF, FB);
+- its hex grain is not alternate;
+- half its hex height is one of the A1 heights `Map.createtheHexGrid` lays out (32.25, 32.235, 97.1);
+- a stated `A1CenterX` is 0, or -901 for b boards;
+- a stated `A1CenterY` agrees with half the hex height within half a pixel, or is -612.75 for the lower double-width boards.
+
+`HexGridConfig` does not matter, because VASL's geomorphic path never reads it. The geometry (`BoardGeometry.Vasl`) takes the board's own hex size, puts A1 at (0, half the hex height), and takes the grid size from the `LOSData` header when that grid reaches every hex center dot. b boards name their columns from Q (a letter offset of 16). The lower double-width boards number their rows from 11.
+
+On the pinned checkout, 235 boards are in scope and all 235 pass F1 and F2, including:
+
+- 38 a/b half boards;
+- 17 BFP double-width boards;
+- 20 Deluxe boards (15 by 5 hexes of 168.8 by 194.2 pixels);
+- bd80 to bd82 and bd96 to bd99, whose 56.3125-pixel hexes imply 1802-pixel grids though their LOSData has 1800;
+- `bdLFT1`, with its 644-row grid.
+
+`bd79` still fails on its malformed metadata. The 61 out-of-scope directories are the HASL maps, Dinant (whose 64.4528-pixel hex VASL cannot lay out without a special case), RBv2, legacy boards, and boards without `LOSData`. The derivation needed no change for the new geometries.
+
+**Scenario-specific rules.** `SharedBoardMetadataParser` now reads `LOSSSRules` (153 entries; as in VASL's map, a later duplicate such as `MarshToWater` replaces the earlier one). `VaslMapBuilder` reproduces both phases:
+
+- The grid phase runs `terrainMap`, `elevationMap`, `terrainToElevationMap`, `elevationToTerrainMap`, and `terrainToSelectElevationMap`, the grid parts of the custom rules, and the implied Pacific woods-to-light-jungle change.
+- The hex phase runs `NoStairwells`, `AllBuildingsLevel1`, bridges to fords, woods-road fills, bamboo, dense jungle, and swamp patterns against the hexes as they stand, and repeats the elevation rules. A `terrainToElevationMap` rule there runs a full `resetHexTerrain`.
+
+VASL's quirks are kept:
+
+- Every rule reads and writes the whole map grid, including boards added earlier.
+- Hex-phase rules on a first board see fresh hexes, so `RoadsToPaths` changes nothing there unless an earlier rule reset the hexes.
+- The "GrainTo" repair in `applyTerrainToElevationMapRule` never fires (`=+1` assigns rather than adds).
+- An unknown from-terrain matches nothing.
+- An unknown to-terrain fails only when a cell would take it. VASL throws there and disables LOS, which the builder reports as `VASL-SSR-001`; unsupported custom code is `VASL-SSR-002`.
+
+**Reversed boards and composition.** `BoardPlacement(board, column, row, reversed, rules)` places a board in a slot, and `VaslMapBuilder.Build` produces a `VaslMap`: geometry, grid, facts, and where each board's hexes went.
+
+- A shared edge column belongs to the board placed later, which renames it, as VASL does.
+- `VaslMap.Locate(bd01, E4)` and `OwnerOf(hex)` translate between board locations and map hexes, so locations stay in the placed board's reference (Model Design section 8.2).
+- Metadata annotations go to the first hex in column-major order with the name, so a later board's slopes can land on an earlier board with the same hex name. VASL does this, and so does the builder.
+- VASL counts at most three boards across (its `previousx` sum); wider rows are refused (`VASL-MAP-003`).
+- The derivation became a stateful `VaslMapDerivation`, with passes, renames, and single-hex resets, so these flows are followed step by step. The single-board derivation runs through it unchanged.
+
+**Verification.** 26 scenarios cover reversed single boards, two and three boards across, boards stacked, a two-by-two map with reversed boards, a/b, double-width, and Deluxe pairs, every rule kind, rules after a hex-phase reset, and rules on a later board acting on an earlier one. All 26 pass F2. Mutation checks confirmed the scenarios detect removing:
+
+- the horizontal seam rule;
+- the hex-phase reset;
+- the hex-phase fills and woods-road fill;
+- the single-story chain edits;
+- bridges to fords;
+- the swamp pattern.
+
+The vertical seam row is sampled only by border scans on real boards, so a synthetic test covers it.
+
+**Overlays.** VASL builds overlay terrain from the colors of the overlay artwork (`ASLMap.updateTerrainElevationGridsforOverlays`), and a building overlay may even ask the player for building types. Reading that artwork is prohibited (ASL-MAP-065), so VASL overlays are not ingested. The SSR-driven overlays VASL handles by rule (`LightWoods`, `NoCliffs`) are covered by their rules. Original overlays belong to authored boards, as Scenes (Model Design section 8.1), which remain deferred.
+
+**Still out of scope:** cropped boards, HASL maps, alternate hex grain, overlays from artwork, and the live-session construction check of section 9.2.
 
 ## 12. Resolved issues (ASL-MAP-02 and ASL-MAP-03)
 
