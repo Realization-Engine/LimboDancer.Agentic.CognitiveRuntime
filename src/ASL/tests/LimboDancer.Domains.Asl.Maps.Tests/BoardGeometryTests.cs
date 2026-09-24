@@ -218,6 +218,34 @@ public sealed class BoardGeometryTests
         Assert.Equal(56.25, small.HexWidth);
     }
 
+    [Fact]
+    public void BHalfBoardsAreNamedFromQ()
+    {
+        // 1b: 17 by 20 hexes, 56.3125 wide; VASL names column 0 Q, column 9 Z, column 10 AA, and column 16 GG.
+        var b = BoardGeometry.Vasl(17, 20, 56.3125, 64.5, 901, 1290, columnLetterOffset: 16);
+        Assert.Equal("Q1", b.NameOf(new HexIndex(0, 0)).ToString());
+        Assert.Equal("R0", b.NameOf(new HexIndex(1, 0)).ToString());
+        Assert.Equal("AA20", b.NameOf(new HexIndex(10, 19)).ToString());
+        Assert.Equal("GG20", b.NameOf(new HexIndex(16, 19)).ToString());
+        Assert.Equal(new HexIndex(0, 0), b.IndexOf(HexName.Parse("Q1")));
+        Assert.False(b.TryGetIndex(HexName.Parse("A1"), out _));
+        Assert.Equal(348, b.HexCount);
+
+        // The x center of the last column is clamped to the grid, as in VASL.
+        Assert.Equal(900, b.CenterDot(new HexIndex(16, 0)).X);
+    }
+
+    [Fact]
+    public void LowerDoubleWidthBoardsNumberRowsFromEleven()
+    {
+        var lower = BoardGeometry.Vasl(33, 10, 56.25, 64.47, 1800, 645, rowNumberOffset: 10);
+        Assert.Equal("A11", lower.NameOf(new HexIndex(0, 0)).ToString());
+        Assert.Equal("B10", lower.NameOf(new HexIndex(1, 0)).ToString());
+        Assert.Equal("GG20", lower.NameOf(new HexIndex(32, 9)).ToString());
+        Assert.Equal(new HexIndex(1, 0), lower.IndexOf(HexName.Parse("B10")));
+        Assert.Equal(32.235, lower.A1CenterY);
+    }
+
     private static string Name(HexIndex? hex) => Geometry.NameOf(Assert.NotNull(hex)).ToString();
 
     private static Dictionary<HexIndex, int> ShortestPaths(HexIndex source)

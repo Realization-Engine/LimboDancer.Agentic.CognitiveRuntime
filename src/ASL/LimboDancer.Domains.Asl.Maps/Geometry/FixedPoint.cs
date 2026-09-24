@@ -29,6 +29,21 @@ public readonly record struct FixedPoint(int Raw) : IComparable<FixedPoint>
         return new FixedPoint((int)raw);
     }
 
+    /// <summary>
+    /// The nearest 1/64 pixel value, halves away from zero. Standard geometry is exact in this unit; the hex sizes of
+    /// a/b, BFP double-width, and Deluxe boards are not, so their geometry-derived points are rounded this way.
+    /// </summary>
+    public static FixedPoint FromPixels(double pixels)
+    {
+        var raw = Math.Round(pixels * UnitsPerPixel, MidpointRounding.AwayFromZero);
+        if (double.IsNaN(raw) || raw < int.MinValue || raw > int.MaxValue)
+        {
+            throw new ArgumentOutOfRangeException(nameof(pixels), pixels, "Value is outside the fixed-point range.");
+        }
+
+        return new FixedPoint((int)raw);
+    }
+
     public double ToPixels() => (double)Raw / UnitsPerPixel;
 
     public int CompareTo(FixedPoint other) => Raw.CompareTo(other.Raw);

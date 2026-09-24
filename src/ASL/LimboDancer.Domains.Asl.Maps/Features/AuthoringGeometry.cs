@@ -44,7 +44,7 @@ public static class BuildingKit
     {
         ArgumentNullException.ThrowIfNull(geometry);
         var dot = geometry.CenterDot(hex);
-        return FixedVector.FromExactPixels(dot.X, dot.Y);
+        return FixedVector.FromPixels(dot.X, dot.Y);
     }
 
     public static FixedVector HexsideMidpoint(BoardGeometry geometry, HexsideRef side)
@@ -122,7 +122,7 @@ public static class AuthoringGeometry
             : [];
 
         var centers = nearby.Select(candidate => BuildingKit.Center(geometry, candidate));
-        var vertices = nearby.SelectMany(candidate => geometry.Vertices(candidate)).Select(vertex => FixedVector.FromExactPixels(vertex.X, vertex.Y));
+        var vertices = nearby.SelectMany(candidate => geometry.Vertices(candidate)).Select(vertex => FixedVector.FromPixels(vertex.X, vertex.Y));
         var midpoints = nearby.SelectMany(candidate => HexsideDirections.All.Select(side => BuildingKit.HexsideMidpoint(geometry, new HexsideRef(candidate, side))));
         var featureVertices = model?.Features.SelectMany(feature => FeatureVertices(geometry, feature)) ?? [];
         foreach (var (kind, candidates) in new[] { (SnapKind.HexCenter, centers), (SnapKind.Vertex, vertices), (SnapKind.HexsideMidpoint, midpoints), (SnapKind.FeatureVertex, featureVertices) })

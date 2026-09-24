@@ -11,6 +11,9 @@ public readonly record struct FixedVector(int X, int Y)
 
     public static FixedVector FromExactPixels(double x, double y) => new(FixedPoint.FromExactPixels(x).Raw, FixedPoint.FromExactPixels(y).Raw);
 
+    /// <summary>A geometry-derived point, rounded to the nearest 1/64 pixel (<see cref="FixedPoint.FromPixels(double)"/>).</summary>
+    public static FixedVector FromPixels(double x, double y) => new(FixedPoint.FromPixels(x).Raw, FixedPoint.FromPixels(y).Raw);
+
     public override string ToString() => $"({FixedPoint.FromRaw(X)}, {FixedPoint.FromRaw(Y)})";
 }
 

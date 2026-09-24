@@ -24,7 +24,12 @@ public sealed class HexFactFidelityTests
             Assert.Equal(Path.GetFileName(path).Split('.')[0], source.Board);
             Assert.Matches("^[0-9a-f]{40}$", source.VaslCommit);
             Assert.Matches("^[0-9a-f]{40}$", source.LosDataBlob);
-            Assert.Equal(346, fixture.RootElement.GetProperty("hexes").GetArrayLength());
+            // VASL's geomorphic layout: every column has the first column's hexes, odd-indexed columns one more.
+            var hexes = fixture.RootElement.GetProperty("hexes").EnumerateArray()
+                .Select(hex => (Column: hex.GetProperty("col").GetInt32(), Row: hex.GetProperty("row").GetInt32())).ToArray();
+            var height = hexes.Count(hex => hex.Column == 0);
+            var width = hexes.Max(hex => hex.Column) + 1;
+            Assert.Equal(Enumerable.Range(0, width).Sum(column => height + (column % 2)), hexes.Length);
         }
     }
 

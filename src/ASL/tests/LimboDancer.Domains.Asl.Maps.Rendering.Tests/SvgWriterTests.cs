@@ -12,8 +12,12 @@ public sealed class SvgWriterTests
     [InlineData(0.015625, "0.015625")]
     public void NumbersAreExactAndInvariant(double value, string expected) => Assert.Equal(expected, SvgWriter.Number(value));
 
-    [Fact]
-    public void InexactNumbersAreRefused() => Assert.ThrowsAny<ArgumentException>(() => SvgWriter.Number(0.1));
+    // Non-standard hex sizes give geometry that is not exact in 1/64 pixels; it is rounded to the nearest 1/64.
+    [Theory]
+    [InlineData(0.1, "0.09375")]
+    [InlineData(37.541666666666664, "37.546875")]
+    [InlineData(-0.0078125, "-0.015625")]
+    public void InexactNumbersRoundToTheNearestSixtyFourth(double value, string expected) => Assert.Equal(expected, SvgWriter.Number(value));
 
     [Fact]
     public void TextAndAttributesAreEscaped()
