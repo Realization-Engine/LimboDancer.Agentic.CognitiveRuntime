@@ -70,7 +70,7 @@ public sealed class AslScenarioA1ConcealedSmcMatrixTests
         });
         Assert.Equal("A1-post-reveal-nondummy-forced-back",
             cases[1].GetProperty("predecessorCaseId").GetString());
-        Assert.Single(cases.Where(item => item.GetProperty("expectedDisposition").GetString() == "qualified"));
+        Assert.Single(cases, item => item.GetProperty("expectedDisposition").GetString() == "qualified");
     }
 
     [Fact]
@@ -78,7 +78,7 @@ public sealed class AslScenarioA1ConcealedSmcMatrixTests
     {
         using var matrix = Read("asl-scenario-a1.concealed-smc-overrun-case-matrix.json");
         var cases = matrix.RootElement.GetProperty("cases").EnumerateArray().ToArray();
-        var qualified = Assert.Single(cases.Where(item => item.GetProperty("expectedDisposition").GetString() == "qualified"));
+        var qualified = Assert.Single(cases, item => item.GetProperty("expectedDisposition").GetString() == "qualified");
         var facts = qualified.GetProperty("facts");
         Assert.Equal("elected", facts.GetProperty("overrunElection").GetString());
         Assert.Equal("passed", facts.GetProperty("ntc").GetString());
