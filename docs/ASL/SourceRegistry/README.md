@@ -94,6 +94,8 @@ The supplementary chart registry is reproducible with the C# CLI using the exist
 
 `asl-scenario-a1.second-defender-consequence-case-matrix.json` separately reviews the return and attempted-entry MF location after the second SMC or MMC is revealed before OVR entry resolves. Its affirmative xUnit review pins A12.15, A4.14, A4.15, B23.4, the reviewed 2 MF building chart, and the prior eligibility matrix. It admits no doubled OVR charge, follow-on attack, game-state mutation, or package publication.
 
+`asl-scenario-a1.second-defender-consequence-package.json` publishes those two exact return and attempted-MF-location findings as a distinct immutable, read-only package. The resolver requires a versioned observation and an individually resolved previous Location; unknown and out-of-scope branches do not receive a return destination or MF amount.
+
 `unverified` in the earlier inventory and representative sample describes their state at generation time and is preserved as historical evidence. The separate verification batch records the later source-provider disposition for its 11 exact subjects. Any newly verified subject requires a review record covering the fragment and its required table, figure, or footnote dependencies.
 
 Neither manifest is an ontology, published domain package, tactical policy, Decision corpus, or execution authority.
