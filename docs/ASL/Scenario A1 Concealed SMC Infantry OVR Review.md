@@ -20,3 +20,5 @@ Only one enemy SMC is **revealed first** under A12.15. That does not prove sole 
 | Response or CC already resolved | Abstain pending a separate resolution contract |
 
 The board 01 catalog verifies only the pinned ground-level building terrain. The supplied state source provides occupancy, A12.15 reveal provenance, election, NTC, MF, any further defender reveal, and response status. Missing, stale, contradictory, extra, and wrong-package facts cannot inherit the qualified result. The provider and resolver neither move counters nor spend MF, reveal units, resolve defensive fire, or conduct CC. End-to-end xUnit tests carry supplied state through board validation, exact package, resolver and evidence; the case and provider suites cover all ten branches and negative inputs.
+
+The [September 24 milestone review](<./Scenario A1 Concealed SMC Infantry OVR Milestone Review 2026-09-24.md>) records the admission decision and selects the further-defender reveal as the next separate branch.

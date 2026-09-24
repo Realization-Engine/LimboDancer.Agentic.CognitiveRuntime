@@ -13,6 +13,43 @@ public sealed class ScenarioA1ConcealedSmcOverrunConformanceTests
     private static readonly DateTimeOffset Now = new(2026, 9, 24, 0, 0, 0, TimeSpan.Zero);
     private const string Qualified = "A1-concealed-smc-qualified-response-unresolved";
 
+    [Theory]
+    [InlineData("election-unknown", ConclusionDisposition.Indeterminate)]
+    [InlineData("declined", ConclusionDisposition.Abstained)]
+    [InlineData("ntc-unresolved", ConclusionDisposition.Indeterminate)]
+    [InlineData("ntc-failed", ConclusionDisposition.Indeterminate)]
+    [InlineData("mf-unknown", ConclusionDisposition.Indeterminate)]
+    [InlineData("mf-insufficient", ConclusionDisposition.Abstained)]
+    [InlineData("other-reveal-unresolved", ConclusionDisposition.Indeterminate)]
+    [InlineData("another-defender-revealed", ConclusionDisposition.Indeterminate)]
+    [InlineData("qualified-response-unresolved", ConclusionDisposition.Qualified)]
+    [InlineData("response-resolved", ConclusionDisposition.Abstained)]
+    public async Task EachReviewedBranchTraversesSuppliedStatePackageAndConclusion(
+        string suffix, ConclusionDisposition expected)
+    {
+        var caseId = "A1-concealed-smc-" + suffix;
+        var provider = new ScenarioA1ConcealedSmcOverrunObservationProvider(
+            new StubSource(Branch(suffix)), new Board01TerrainCatalog());
+        var observation = Assert.Single((await provider.ObserveAsync(Query(caseId))).Observations);
+        var descriptor = (await new ScenarioA1ConcealedSmcOverrunPackage()
+            .ResolveAsync(ScenarioA1ConcealedSmcOverrunPackage.Identity)).Package!;
+        var conclusion = await new ScenarioA1ConcealedSmcOverrunConclusionResolver()
+            .ConcludeAsync(Context(descriptor, observation, caseId));
+        Assert.Equal(expected, conclusion.Disposition);
+        Assert.Contains(conclusion.Evidence, item => item.Kind == EvidenceKind.Observation
+            && item.Version == "snapshot-1");
+        if (expected == ConclusionDisposition.Qualified)
+        {
+            Assert.Equal(4, conclusion.Value!.Value.GetProperty("entryMfRequired").GetInt32());
+            Assert.Equal(6, conclusion.ApplicableRules.Count);
+        }
+        else
+        {
+            Assert.Null(conclusion.Value);
+            Assert.Empty(conclusion.ApplicableRules);
+        }
+    }
+
     [Fact]
     public async Task SuppliedRevealAndSoleOccupancyReachOnlyQualifiedAttempt()
     {
@@ -115,6 +152,55 @@ public sealed class ScenarioA1ConcealedSmcOverrunConformanceTests
         ScenarioA1OverrunElection.Elected, ScenarioA1OverrunNtc.Passed,
         ScenarioA1OverrunMf.AtLeastFour, ScenarioA1AdditionalDefenderReveal.None,
         null, true, ScenarioA1OverrunResponse.Unresolved, null);
+
+    private static ScenarioA1ConcealedSmcOverrunSnapshot Branch(string suffix)
+    {
+        var state = Snapshot();
+        return suffix switch
+        {
+            "election-unknown" => BeforeNtc(state) with
+                { OverrunElection = ScenarioA1OverrunElection.Unknown, Ntc = null },
+            "declined" => BeforeNtc(state) with
+                { OverrunElection = ScenarioA1OverrunElection.Declined, Ntc = null },
+            "ntc-unresolved" => BeforeNtc(state) with { Ntc = ScenarioA1OverrunNtc.Unresolved },
+            "ntc-failed" => BeforeNtc(state) with { Ntc = ScenarioA1OverrunNtc.Failed },
+            "mf-unknown" => BeforeMf(state) with { RemainingMf = ScenarioA1OverrunMf.Unknown },
+            "mf-insufficient" => BeforeMf(state) with
+                { RemainingMf = ScenarioA1OverrunMf.Insufficient },
+            "other-reveal-unresolved" => state with
+            {
+                AdditionalDefenderReveal = ScenarioA1AdditionalDefenderReveal.Unresolved,
+                SoleEnemySmcOccupancyVerified = null, DefenderResponseOrImmediateCc = null,
+            },
+            "another-defender-revealed" => state with
+            {
+                AdditionalDefenderReveal = ScenarioA1AdditionalDefenderReveal.AnotherNonDummy,
+                AdditionalDefenderType = ScenarioA1AdditionalDefenderType.Mmc,
+                SoleEnemySmcOccupancyVerified = false, DefenderResponseOrImmediateCc = null,
+            },
+            "qualified-response-unresolved" => state,
+            "response-resolved" => state with
+            {
+                DefenderResponseOrImmediateCc = ScenarioA1OverrunResponse.ResolvedWithOutcome,
+                ResponseOrCcOutcome = "state-source-recorded-outcome",
+            },
+            _ => throw new InvalidOperationException("Unexpected reviewed case."),
+        };
+    }
+
+    private static ScenarioA1ConcealedSmcOverrunSnapshot BeforeNtc(
+        ScenarioA1ConcealedSmcOverrunSnapshot state) => state with
+    {
+        RemainingMf = null, AdditionalDefenderReveal = null, AdditionalDefenderType = null,
+        SoleEnemySmcOccupancyVerified = null, DefenderResponseOrImmediateCc = null,
+    };
+
+    private static ScenarioA1ConcealedSmcOverrunSnapshot BeforeMf(
+        ScenarioA1ConcealedSmcOverrunSnapshot state) => state with
+    {
+        AdditionalDefenderReveal = null, AdditionalDefenderType = null,
+        SoleEnemySmcOccupancyVerified = null, DefenderResponseOrImmediateCc = null,
+    };
 
     private static DomainConclusionContext Context(DomainPackageDescriptor descriptor,
         Observation observation, string caseId)
