@@ -1,0 +1,161 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "reviewed-source-backed-second-defender-candidate-no-package-publication",
+  "scope": "A12.15 first reveals an enemy SMC and attacker elects an immediate Infantry OVR; source-backed eligibility of the single-SMC exception when another non-Dummy defender is revealed in the same Location. No forced-back, MF-spend or execution outcome.",
+  "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+  "priorTransitionReviewSha256": "d1db66dbc66b00272cf458b341f5789512d4900c405024292c676324dcaf32f0",
+  "priorPackageManifestSha256": "052579ea6dcfb2da3221b39c524695a74637645ddd853d9a343c3d2db9b8d553",
+  "sourceRules": [
+    "A12.15",
+    "A4.14",
+    "A4.15"
+  ],
+  "sourceFragments": [
+    {
+      "ruleId": "A12.15",
+      "physicalPdfPage": 78,
+      "fragmentId": "asl-fragment:sha256:e92332292b4bde444aff7f84127793084e1f0ecfd99af9750da6e4aa8af40ea3",
+      "contentSha256": "ce0cc02826bf66951ff4a1ce06b7a51d105eb2f2540f3710c2e49c2455306fcf"
+    },
+    {
+      "ruleId": "A4.14",
+      "physicalPdfPage": 49,
+      "fragmentId": "asl-fragment:sha256:d22c4de11eefffac89c9585633ca3f4eeff313cc2d1ddd535975e1e8c23e0e69",
+      "contentSha256": "65adb630eb862eb54b49feb1e414bdf9b0c5132f8d0c55e6eaa94eb5b44c6995"
+    },
+    {
+      "ruleId": "A4.15",
+      "physicalPdfPage": 49,
+      "fragmentId": "asl-fragment:sha256:189987c951bbe691bdab278fad56ca4435cd1c038f724d99888121c54c5eaa75",
+      "contentSha256": "969c23764e0e6d3f1ef6d7b53162b6dc9385fa150e5fcd83c021f557ff577390"
+    }
+  ],
+  "commonFacts": {
+    "board": "bd01-ground-level-ordinary-building",
+    "phase": "mph",
+    "attacker": "goodOrderUnconcealedNonDummyInfantryMmc",
+    "initialDefenderState": "concealed",
+    "firstReveal": "enemySmc-under-A12.15",
+    "overrunElection": "elected-after-first-reveal",
+    "entryMode": "ordinaryObstacleEntryNotBypass",
+    "a414Exception": "none",
+    "smcOutsideAfv": "true",
+    "specialModifier": "none",
+    "leaderExemption": "none"
+  },
+  "eventOrder": [
+    "A12.15-first-SMC-reveal",
+    "attacker-OVR-election",
+    "second-defender-reveal-if-available"
+  ],
+  "eventOrderBoundary": "NTC may be taken before entry or in the Location when a concealed SMC is encountered; do not impose NTC-before-second-reveal or second-reveal-before-NTC as a universal rule. Capability is evaluated from separately supplied NTC and MF facts at the decision point.",
+  "cases": [
+    {
+      "caseId": "A1-second-defender-smc-revealed",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "single-smc-ovr-denied-by-two-revealed-smc",
+      "sourceRules": [
+        "A12.15",
+        "A4.14",
+        "A4.15"
+      ],
+      "facts": {
+        "secondReveal": "revealedEnemySmc-after-election",
+        "attackerCapability": "passedNtcAndAtLeastFourMf"
+      },
+      "reason": "A4.15 explicitly requires more than one revealed SMC to deny the Location to an OVR-capable MMC. Only the single-SMC OVR eligibility is denied; no forced-back, MF-spend or fire outcome is admitted."
+    },
+    {
+      "caseId": "A1-second-defender-mmc-revealed",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "single-smc-ovr-inapplicable-revealed-mmc",
+      "sourceRules": [
+        "A12.15",
+        "A4.14",
+        "A4.15"
+      ],
+      "facts": {
+        "secondReveal": "revealedEnemyMmc-after-election",
+        "attackerCapability": "passedNtcAndAtLeastFourMf"
+      },
+      "reason": "The Location no longer contains only one Known enemy SMC. A4.15 cannot supply its single-SMC exception; A4.14 remains relevant. No forced-back, MF-spend or fire outcome is admitted."
+    },
+    {
+      "caseId": "A1-second-defender-other-type",
+      "reviewStatus": "reviewed-nondefinitive",
+      "expectedDisposition": "indeterminate",
+      "sourceRules": [
+        "A12.15",
+        "A4.14",
+        "A4.15"
+      ],
+      "facts": {
+        "secondReveal": "revealedOtherNonDummy-after-election",
+        "attackerCapability": "passedNtcAndAtLeastFourMf"
+      },
+      "reason": "The other non-Dummy type is outside the reviewed SMC/MMC identity contract."
+    },
+    {
+      "caseId": "A1-second-defender-unknown-type",
+      "reviewStatus": "reviewed-nondefinitive",
+      "expectedDisposition": "indeterminate",
+      "sourceRules": [
+        "A12.15",
+        "A4.14",
+        "A4.15"
+      ],
+      "facts": {
+        "secondReveal": "revealedUnknownType-after-election",
+        "attackerCapability": "passedNtcAndAtLeastFourMf"
+      },
+      "reason": "A further reveal without a verified unit type cannot be classified."
+    },
+    {
+      "caseId": "A1-second-defender-unrevealed-smc",
+      "reviewStatus": "reviewed-nondefinitive",
+      "expectedDisposition": "indeterminate",
+      "sourceRules": [
+        "A12.15",
+        "A4.14",
+        "A4.15"
+      ],
+      "facts": {
+        "secondReveal": "secondSmcKnownButNotRevealed",
+        "attackerCapability": "passedNtcAndAtLeastFourMf"
+      },
+      "reason": "A4.15 requires more than one SMC revealed to deny OVR to a capable MMC; knowledge of a concealed second SMC is insufficient for that exact conclusion."
+    },
+    {
+      "caseId": "A1-second-defender-capability-unresolved",
+      "reviewStatus": "reviewed-nondefinitive",
+      "expectedDisposition": "indeterminate",
+      "sourceRules": [
+        "A12.15",
+        "A4.14",
+        "A4.15"
+      ],
+      "facts": {
+        "secondReveal": "revealedEnemySmc-after-election",
+        "attackerCapability": "ntcOrMfUnresolved"
+      },
+      "reason": "The attacker capability condition is not supplied; no denial based on the more-than-one-revealed-SMC sentence is admitted."
+    },
+    {
+      "caseId": "A1-second-defender-mf-insufficient",
+      "reviewStatus": "reviewed-nondefinitive",
+      "expectedDisposition": "abstained",
+      "sourceRules": [
+        "A12.15",
+        "A4.14",
+        "A4.15"
+      ],
+      "facts": {
+        "secondReveal": "revealedEnemySmc-after-election",
+        "attackerCapability": "mfInsufficient"
+      },
+      "reason": "The declared OVR-capable attacker scope excludes insufficient MF; no alternative movement rule is adjudicated."
+    }
+  ],
+  "admissionRule": "Only exact common facts and exact case facts may match. Each positive outcome concerns single-SMC OVR eligibility only. Missing event order, unit type, or capability remains indeterminate; extra or contrary facts abstain.",
+  "executionAuthority": "none"
+}

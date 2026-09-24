@@ -4,7 +4,7 @@
 
 **Branch:** `decision-plane`
 
-**Status:** Source semantics reviewed for planning; no new case or package admitted by this document.
+**Status:** Seven source-backed candidate cases reviewed by affirmative xUnit; no package published and no forced-back consequence admitted.
 
 ## Boundary and source evidence
 
@@ -32,4 +32,6 @@ These are the registered and verified source subjects already used by the [trans
 - Review the exact consequence when a second revealed SMC denies the Location and when a revealed MMC defeats the single-SMC condition. In particular, decide whether and when A12.15 forces the mover back and where attempted MF is spent. Do not turn a failed OVR precondition into an executed forced-back move by implication.
 - Keep defender fire, residual FP, FFE/minefield, further movement, and CC out of any conclusion unless separately sourced and reviewed.
 
-An affirmative xUnit review should pin the event vocabulary, source dependencies, and each admitted outcome before a new immutable package is published. The board 01 adapter may validate the terrain; all reveal, unit-type, NTC, MF, and timing facts must come from the supplied state source.
+The affirmative xUnit review pins the event vocabulary, source dependencies, and candidate outcomes before any new immutable package is published. The board 01 adapter may validate the terrain; all reveal, unit-type, NTC, MF, and timing facts must come from the supplied state source.
+
+The [candidate case matrix](<./SourceRegistry/asl-scenario-a1.second-defender-reveal-case-matrix.json>) and its affirmative xUnit review now pin two narrowly bounded eligibility findings: a second **revealed SMC** denies the single-SMC OVR to a supplied OVR-capable MMC, while a **revealed MMC** defeats that single-SMC exception. Five other cases remain indeterminate or abstain. The matrix separates the required first-reveal → election → second-reveal ordering from NTC timing and grants no movement, MF-spend, or execution conclusion. The next increment must publish an immutable package and resolver before any candidate finding can be served.
