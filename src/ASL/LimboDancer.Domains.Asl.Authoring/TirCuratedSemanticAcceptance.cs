@@ -177,9 +177,15 @@ public sealed class TirCuratedAcceptedReview
         Decision = decision;
     }
 
-    public TirCuratedSemanticAcceptance Decision { get; }
+    public TirCuratedSemanticAcceptance Decision
+    {
+        get;
+    }
 
-    public TirReviewStatus EffectiveStatus { get; } = TirReviewStatus.Accepted;
+    public TirReviewStatus EffectiveStatus
+    {
+        get;
+    } = TirReviewStatus.Accepted;
 
     public static TirCuratedAcceptedReview Create(
         TirCuratedReviewHistoryBundle openHistory, TirCuratedSemanticArtifact artifact,

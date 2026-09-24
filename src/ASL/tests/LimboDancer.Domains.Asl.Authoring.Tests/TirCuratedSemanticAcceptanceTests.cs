@@ -65,7 +65,14 @@ public sealed class TirCuratedSemanticAcceptanceTests
         Assert.Throws<InvalidOperationException>(() => TirCuratedAcceptedReview.Create(history,
             artifact with { Rules = [] }, [Approve("reviewer")]));
         Assert.Throws<InvalidOperationException>(() => TirCuratedAcceptedReview.Create(history,
+            artifact with
+            {
+                Rules = [artifact.Rules[0] with { SourceFragmentIds = ["unknown-fragment"] }],
+            }, [Approve("reviewer")]));
+        Assert.Throws<InvalidOperationException>(() => TirCuratedAcceptedReview.Create(history,
             artifact, [Approve("author")]));
+        Assert.Throws<InvalidOperationException>(() => TirCuratedAcceptedReview.Create(history,
+            artifact, [Approve("reviewer"), Approve("reviewer")]));
         var conflicting = artifact with
         {
             Rules = [artifact.Rules[0], artifact.Rules[0] with
