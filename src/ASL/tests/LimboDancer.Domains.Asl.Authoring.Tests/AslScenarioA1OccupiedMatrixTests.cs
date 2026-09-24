@@ -59,8 +59,19 @@ public sealed class AslScenarioA1OccupiedMatrixTests
             chartRegistry, chartComparison);
         var reviewed = AslScenarioA1FinalReviewer.Review(RepositoryPaths.Root,
             manifests, attestation, comparison, chart, AslScenarioA1CaseFacts.CreateDeclaredFirstCase());
+        var occupied = AslScenarioA1OccupiedSourceReview.Build(RepositoryPaths.Root,
+            manifests, attestation);
+        Assert.Equal(7, occupied.Records.Count);
+        Assert.Equal(reviewed.TirDocumentSha256,
+            TirCanonicalJson.ComputePayloadSha256(occupied.SourceDocument));
+        Assert.All(occupied.Records, record =>
+        {
+            Assert.Equal(TirSourceVerificationDisposition.Verified, record.Disposition);
+            Assert.Equal("source-provider:delegated-xunit-review", record.Actor.Identity);
+        });
         var verified = AslScenarioA1VerificationBatchBuilder.Build(manifests, attestation).Records
             .Concat(reviewed.NewlyVerifiedRecords)
+            .Concat(occupied.Records)
             .Select(record => record.SourceFragment.FragmentId).ToHashSet(StringComparer.Ordinal);
         using var matrix = Read("asl-scenario-a1.occupied-case-matrix.json");
         var cases = matrix.RootElement.GetProperty("cases").EnumerateArray().ToArray();
@@ -73,15 +84,10 @@ public sealed class AslScenarioA1OccupiedMatrixTests
                 Assert.Contains(fragments, fragment => fragment.Kind == SourceFragmentKind.RuleText);
                 Assert.All(fragments, fragment => Assert.Contains(fragment.FragmentId, verified));
             }
-            if (item.TryGetProperty("unresolvedRules", out var unresolved))
+            if (item.TryGetProperty("semanticDependencies", out var unresolved))
             {
                 Assert.Equal("deferred", item.GetProperty("reviewStatus").GetString());
-                foreach (var rule in unresolved.EnumerateArray())
-                {
-                    var fragments = RuleFragments(manifests, rule.GetString()!);
-                    Assert.Contains(fragments, fragment => fragment.Kind == SourceFragmentKind.RuleText);
-                    Assert.Contains(fragments, fragment => !verified.Contains(fragment.FragmentId));
-                }
+                Assert.NotEmpty(unresolved.EnumerateArray());
             }
         }
         var first = cases[0];
@@ -89,8 +95,12 @@ public sealed class AslScenarioA1OccupiedMatrixTests
             first.GetProperty("sourceRules").EnumerateArray().Select(rule => rule.GetString()!).ToArray());
         Assert.Equal(AslScenarioA1ChartReview.CandidateId,
             Assert.Single(first.GetProperty("supplements").EnumerateArray()).GetString());
-        Assert.Equal("B23.711", Assert.Single(cases[5].GetProperty("unresolvedRules").EnumerateArray()).GetString());
-        Assert.Equal("A5.5", Assert.Single(cases[6].GetProperty("unresolvedRules").EnumerateArray()).GetString());
+        Assert.Contains("B23.711", cases[5].GetProperty("sourceRules").EnumerateArray()
+            .Select(rule => rule.GetString()));
+        Assert.Contains("A5.5", cases[6].GetProperty("sourceRules").EnumerateArray()
+            .Select(rule => rule.GetString()));
+        Assert.Contains(occupied.Records, record => record.SourceFragment.StartLine == 2087);
+        Assert.Contains(occupied.Records, record => record.SourceFragment.StartLine == 1438);
     }
 
     private static SourceFragment[] RuleFragments(GeneratedManifests manifests, string id) =>

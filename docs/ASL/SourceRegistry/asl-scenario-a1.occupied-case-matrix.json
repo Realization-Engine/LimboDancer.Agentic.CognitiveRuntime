@@ -8,8 +8,22 @@
       "caseId": "A1-empty-ordinary-mph",
       "reviewStatus": "reviewed-bounded",
       "expectedDisposition": "eligible-2mf",
-      "sourceRules": ["A2.4", "A2.8", "A3.3", "A4.1", "A4.11", "A4.13", "A4.14", "A5.1", "A5.11", "B23.1", "B23.4"],
-      "supplements": ["asl-supplement:b-terrain-chart-building-entry"],
+      "sourceRules": [
+        "A2.4",
+        "A2.8",
+        "A3.3",
+        "A4.1",
+        "A4.11",
+        "A4.13",
+        "A4.14",
+        "A5.1",
+        "A5.11",
+        "B23.1",
+        "B23.4"
+      ],
+      "supplements": [
+        "asl-supplement:b-terrain-chart-building-entry"
+      ],
       "declaredFacts": "The nine true facts in the first-case decision, including known empty ground-level ordinary wooden or stone building, sufficient MF, normal stacking and no special modifier.",
       "reason": "Only the previously accepted synthetic first case."
     },
@@ -17,7 +31,10 @@
       "caseId": "A1-known-enemy-mmc-mph",
       "reviewStatus": "reviewed-bounded",
       "expectedDisposition": "prohibited",
-      "sourceRules": ["A2.8", "A4.14"],
+      "sourceRules": [
+        "A2.8",
+        "A4.14"
+      ],
       "supplements": [],
       "declaredFacts": "Known unconcealed armed enemy MMC in the same destination Location during MPh; ordinary Infantry movement; none of the A4.14 exceptions (Berserk, Human Wave, Disrupted, Unarmed, Infantry OVR, PRC or charging Cavalry) applies.",
       "reason": "A4.14 bars ordinary MPh entry into the same Location with an unconcealed enemy; its listed exceptions are explicitly excluded."
@@ -26,7 +43,12 @@
       "caseId": "A1-fortified-unbreached-enemy-squad",
       "reviewStatus": "reviewed-bounded",
       "expectedDisposition": "prohibited",
-      "sourceRules": ["A2.8", "A4.14", "B23.922", "B23.9221"],
+      "sourceRules": [
+        "A2.8",
+        "A4.14",
+        "B23.922",
+        "B23.9221"
+      ],
       "supplements": [],
       "declaredFacts": "Fortified target Location contains a known unpinned Good Order armed enemy squad; entry hexside and level are unbreached; no A4.14 exception or special scenario modifier.",
       "reason": "B23.922 bars entry under these facts; its breach exception B23.9221 is absent. The known enemy independently triggers A4.14 during MPh."
@@ -35,7 +57,10 @@
       "caseId": "A1-concealed-occupancy-attempt",
       "reviewStatus": "reviewed-nondefinitive",
       "expectedDisposition": "indeterminate",
-      "sourceRules": ["A4.14", "A12.15"],
+      "sourceRules": [
+        "A4.14",
+        "A12.15"
+      ],
       "supplements": [],
       "declaredFacts": "Target has a concealed or hidden occupant whose identity is not yet established; no defender reveal, Dummy determination or overrun election is supplied.",
       "reason": "A12.15 describes detection and forced-back consequences; the required reveal and any follow-on exception cannot be inferred before resolution."
@@ -44,50 +69,85 @@
       "caseId": "A1-single-known-enemy-smc-overrun",
       "reviewStatus": "deferred",
       "expectedDisposition": "abstained",
-      "sourceRules": ["A4.14", "A4.15"],
+      "sourceRules": [
+        "A4.14",
+        "A4.15",
+        "A4.151",
+        "A4.152"
+      ],
       "supplements": [],
-      "unresolvedRules": ["A4.151", "A4.152"],
       "declaredFacts": "One known enemy SMC, with NTC, cost, defensive response and immediate CC not fully modeled.",
-      "reason": "A4.15 permits an exceptional attempt subject to its test and follow-on branches; a bare eligibility label would overstate the result."
+      "reason": "A4.15 permits an exceptional attempt subject to its test and follow-on branches; a bare eligibility label would overstate the result.",
+      "semanticDependencies": [
+        "NTC result",
+        "double entry cost",
+        "defensive first fire",
+        "SMC retreat or immediate CC"
+      ]
     },
     {
       "caseId": "A1-fortified-breached-entry",
       "reviewStatus": "deferred",
       "expectedDisposition": "abstained",
-      "sourceRules": ["B23.922", "B23.9221"],
+      "sourceRules": [
+        "B23.922",
+        "B23.9221",
+        "B23.711"
+      ],
       "supplements": [],
-      "unresolvedRules": ["B23.711"],
       "declaredFacts": "A breach is asserted but its creation, exact crossed hexside, level and remaining entry restrictions are not verified as one path.",
-      "reason": "B23.9221 refers to B23.711; the latter is located in the registered source but is not part of the delegated verified subject set."
+      "reason": "B23.9221 refers to B23.711; the latter is located in the registered source but is source-verified in the occupied-case supplement, while the full entry path is semantically unresolved.",
+      "semanticDependencies": [
+        "breach creation",
+        "crossed hexside and level",
+        "remaining fortified entry restrictions"
+      ]
     },
     {
       "caseId": "A1-stacking-equivalents-needed",
       "reviewStatus": "deferred",
       "expectedDisposition": "abstained",
-      "sourceRules": ["A5.1", "A5.11"],
+      "sourceRules": [
+        "A5.1",
+        "A5.11",
+        "A5.5"
+      ],
       "supplements": [],
-      "unresolvedRules": ["A5.5"],
       "declaredFacts": "Destination is not empty and its squad-equivalent count must be calculated rather than declared below limit.",
-      "reason": "A5.5 classification and the resulting stacking calculation have not been verified for this broader case."
+      "reason": "A5.5 classification and the resulting stacking calculation are source-verified in the occupied-case supplement but not yet semantically modeled for this broader case.",
+      "semanticDependencies": [
+        "squad-equivalent classification",
+        "location stacking calculation"
+      ]
     },
     {
       "caseId": "A1-advance-phase-entry",
       "reviewStatus": "deferred",
       "expectedDisposition": "abstained",
-      "sourceRules": ["A4.7", "A4.14"],
+      "sourceRules": [
+        "A4.7",
+        "A4.14"
+      ],
       "supplements": [],
-      "unresolvedRules": [],
       "declaredFacts": "Attempt occurs in APh, outside the reviewed MPh movement and cost facts.",
-      "reason": "A4.14 distinguishes APh, but the APh action and its applicable restrictions are outside the reviewed MPh case."
+      "reason": "A4.14 distinguishes APh, but the APh action and its applicable restrictions are outside the reviewed MPh case.",
+      "semanticDependencies": [
+        "APh eligibility",
+        "applicable advance and occupancy restrictions"
+      ]
     },
     {
       "caseId": "A1-unknown-location-or-modifier",
       "reviewStatus": "reviewed-nondefinitive",
       "expectedDisposition": "indeterminate",
-      "sourceRules": ["A2.8", "A4.14"],
+      "sourceRules": [
+        "A2.8",
+        "A4.14"
+      ],
       "supplements": [],
       "declaredFacts": "Location identity, occupancy or scenario modifier is unknown or contradictory.",
       "reason": "No definitive ruling can inherit the declared case when a controlling fact is unknown."
     }
-  ]
+  ],
+  "occupiedSourceComparison": "asl-scenario-a1.occupied-pdf-comparison.json"
 }
