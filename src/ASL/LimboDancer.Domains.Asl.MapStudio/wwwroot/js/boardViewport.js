@@ -61,13 +61,28 @@ export function create(host, dotnet) {
             return;
         }
 
+        const counter = event.target.closest?.("[data-placement-id]");
+        if (counter) {
+            state.dotnet.invokeMethodAsync("OnUnitClick", counter.getAttribute("data-placement-id"));
+            return;
+        }
+
         const point = toBoard(state, event.clientX, event.clientY);
         state.dotnet.invokeMethodAsync("OnBoardClick", point.x, point.y);
+    });
+
+    svg.addEventListener("keydown", event => {
+        const counter = event.target.closest?.("[data-placement-id]");
+        if (counter && (event.key === "Enter" || event.key === " ")) {
+            event.preventDefault();
+            state.dotnet.invokeMethodAsync("OnUnitClick", counter.getAttribute("data-placement-id"));
+        }
     });
 
     return {
         load: (baseUrl, query, viewBox, layers, visible) => load(state, baseUrl, query, viewBox, layers, visible),
         setVisible: visible => setVisible(state, visible),
+        setUnits: markup => setUnits(state, markup),
         highlight: points => highlight(state, points),
         reset: () => state.home && setBox(state, { ...state.home }),
         dispose: () => host.replaceChildren(),
@@ -111,6 +126,27 @@ function setVisible(state, visible) {
         if (layer && layer !== "defs") {
             group.style.display = visible.includes(layer) ? "" : "none";
         }
+    }
+}
+
+function setUnits(state, markup) {
+    state.svg.querySelector("#layer-units")?.remove();
+    if (!markup) {
+        return;
+    }
+
+    const fragment = new DOMParser().parseFromString(
+        `<svg xmlns="${svgNamespace}">${markup}</svg>`, "image/svg+xml");
+    if (fragment.querySelector("parsererror")) {
+        throw new Error("Invalid demo unit SVG");
+    }
+    const group = fragment.documentElement.firstElementChild;
+    if (group?.id !== "layer-units") {
+        throw new Error("Invalid demo unit layer");
+    }
+    state.svg.appendChild(document.importNode(group, true));
+    if (state.highlight?.isConnected) {
+        state.svg.appendChild(state.highlight);
     }
 }
 

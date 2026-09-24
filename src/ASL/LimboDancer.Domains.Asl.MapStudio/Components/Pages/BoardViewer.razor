@@ -4,6 +4,7 @@
 @using LimboDancer.Domains.Asl.Maps.Derivation
 @using LimboDancer.Domains.Asl.Maps.Rendering
 @using LimboDancer.Domains.Asl.Maps.Terrain
+@using LimboDancer.Domains.Asl.MapStudio.Services
 @implements IAsyncDisposable
 @inject IBoardProvider Boards
 @inject IJSRuntime JS
@@ -47,12 +48,48 @@ else if (board is null)
                         derivation trace
                     </label>
                 }
+                @if (demoOverlay is not null)
+                {
+                    <label><input type="checkbox" checked="@showDemoUnits" @onchange="ToggleDemoUnits" /> Demo units</label>
+                }
                 <button @onclick="ResetView">Fit</button>
             </div>
         }
         <div class="board-host" @ref="host"></div>
     </div>
     <aside class="inspector">
+        @if (selectedUnit is { } unit)
+        {
+            <h2>Demo unit @unit.Placement.Label</h2>
+            <dl>
+                <dt>ID</dt><dd>@unit.Placement.PlacementId</dd>
+                <dt>Side</dt><dd>@unit.Placement.SideId</dd>
+                <dt>Face</dt><dd>@unit.Placement.FaceKey</dd>
+                <dt>Location</dt><dd>@unit.Location</dd>
+            </dl>
+            @if (demoOverlay is { } overlay)
+            {
+                <p class="muted">Illustrative placement from @overlay.FixtureId.</p>
+            }
+        }
+        @if (demoOverlay is { } demo)
+        {
+            @foreach (var diagnostic in demo.Diagnostics)
+            {
+                <p class="fail">Demo units: @diagnostic</p>
+            }
+            @if (selected is { } selectedHex)
+            {
+                @if (demo.Units.Any(u => u.Location.Hex == selectedHex.Hex))
+                {
+                    <h3>Demo units in @selectedHex.Hex (@demo.Units.Count(u => u.Location.Hex == selectedHex.Hex))</h3>
+                    @foreach (var member in demo.Units.Where(u => u.Location.Hex == selectedHex.Hex))
+                    {
+                        <button @onclick="() => SelectUnit(member)">@member.Placement.Label (@member.Location.Level)</button>
+                    }
+                }
+            }
+        }
         @if (selected is { } facts)
         {
             <h2>Hex @facts.Hex</h2>
@@ -150,6 +187,9 @@ else if (board is null)
     private bool trace;
     private HashSet<string> visible = [];
     private HexFacts? selected;
+    private DisplayedUnit? selectedUnit;
+    private DemoUnitOverlay? demoOverlay;
+    private bool showDemoUnits;
     private string? sample;
     private bool viewportPending;
 
@@ -163,6 +203,9 @@ else if (board is null)
         board = null;
         loadError = null;
         selected = null;
+        selectedUnit = null;
+        demoOverlay = null;
+        showDemoUnits = false;
         sample = null;
         if (!BoardRef.TryParse(BoardName, out var boardRef))
         {
@@ -178,6 +221,8 @@ else if (board is null)
         }
 
         board = result.Board;
+        demoOverlay = DemoUnitOverlayBuilder.Load(board);
+        showDemoUnits = demoOverlay is not null;
         visible = [.. ToggleLayers];
         viewportPending = true;
     }
@@ -208,7 +253,21 @@ else if (board is null)
         var baseUrl = $"render/{board.Ref.Value}/{board.Version}/{BoardRenderer.ViewName(view)}";
         await viewport.InvokeVoidAsync("load", baseUrl, trace ? "?trace=true" : "", BoardRenderer.ViewBox(board.Render, view),
             BoardRenderer.Layers(view), visible.ToArray());
+        await viewport.InvokeVoidAsync("setUnits", showDemoUnits ? demoOverlay?.Svg : null);
         await Highlight();
+    }
+
+    private async Task ToggleDemoUnits(ChangeEventArgs args)
+    {
+        showDemoUnits = args.Value is true;
+        if (!showDemoUnits)
+        {
+            selectedUnit = null;
+        }
+        if (viewport is not null)
+        {
+            await viewport.InvokeVoidAsync("setUnits", showDemoUnits ? demoOverlay?.Svg : null);
+        }
     }
 
     private async Task ChangeView(ChangeEventArgs args)
@@ -267,9 +326,30 @@ else if (board is null)
             ? $"Pixel ({cellX}, {cellY}): code {code} {Name(board.Catalog.TryGet(code, out var type) ? type : null)}, elevation {grid.ElevationAt(cellX, cellY)}"
             : $"Pixel ({cellX}, {cellY}) is off the grid.";
         selected = grid.Geometry.HexAt(x, y) is { } hex ? board.Facts[hex] : null;
+        selectedUnit = null;
         await Highlight();
         StateHasChanged();
     }
+
+    [JSInvokable]
+    public async Task OnUnitClick(string placementId)
+    {
+        if (!showDemoUnits || board is null || demoOverlay is null)
+        {
+            return;
+        }
+
+        var unit = demoOverlay.Units.FirstOrDefault(item => item.Placement.PlacementId == placementId);
+        if (unit is not null)
+        {
+            selectedUnit = unit;
+            selected = board.Facts[board.Render.Grid.Geometry.IndexOf(unit.Location.Hex)];
+            await Highlight();
+            StateHasChanged();
+        }
+    }
+
+    private void SelectUnit(DisplayedUnit unit) => selectedUnit = unit;
 
     private async Task Highlight()
     {

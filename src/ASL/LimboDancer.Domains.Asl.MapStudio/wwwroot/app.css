@@ -107,6 +107,15 @@ table.library td {
     pointer-events: none;
 }
 
+#layer-units [data-placement-id] {
+    cursor: pointer;
+}
+
+#layer-units [data-placement-id]:focus-visible rect {
+    stroke: #000000;
+    stroke-width: 2;
+}
+
 .inspector {
     overflow-y: auto;
     font-size: 0.85rem;

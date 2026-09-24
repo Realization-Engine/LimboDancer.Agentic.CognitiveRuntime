@@ -8,4 +8,7 @@
     <ProjectReference Include="..\LimboDancer.Domains.Asl.Maps.Vasl\LimboDancer.Domains.Asl.Maps.Vasl.csproj" />
     <ProjectReference Include="..\LimboDancer.Domains.Asl.Maps.Rendering\LimboDancer.Domains.Asl.Maps.Rendering.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="DemoPlacements\bd01.json" />
+  </ItemGroup>
 </Project>
