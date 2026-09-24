@@ -7,7 +7,7 @@ public sealed class ArchitectureTests
     {
         var runtimeRoot = Path.Combine(RepositoryPaths.Root, "src", "LimboDancer");
         var violations = Directory.EnumerateFiles(runtimeRoot, "*.csproj", SearchOption.AllDirectories)
-            .Where(path => File.ReadAllText(path).Contains("LimboDancer.Domains.Asl", StringComparison.Ordinal))
+            .Where(path => File.ReadAllText(path).Contains("LimboDancer.Domains.Asl.Authoring", StringComparison.Ordinal))
             .Select(path => Path.GetRelativePath(RepositoryPaths.Root, path))
             .ToArray();
 

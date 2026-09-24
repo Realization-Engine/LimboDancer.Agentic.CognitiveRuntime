@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "published-bounded-concealed-smc-overrun-package",
+  "domainId": "asl",
+  "packageId": "scenario-a1-concealment-infantry-overrun",
+  "declaredUse": "A12.15-origin concealed enemy SMC in board 01 ordinary ground-level building, optional A4.15 Infantry OVR and unresolved A4.151/A4.152 continuation",
+  "priorOccupiedPackageManifestSha256": "2ab3bde60ecc9855f2e35197e1921cfcfee3e8da3cd168a9cceef66ada6be6e9",
+  "priorPostRevealPackageManifestSha256": "0d721e581a0201d79cd2ab18c06032c2875c2910c848796dad62052db9b52c0b",
+  "transitionReviewSha256": "d1db66dbc66b00272cf458b341f5789512d4900c405024292c676324dcaf32f0",
+  "caseMatrixSha256": "f64f4749fed87ee9517130ba747ebec4aafee618bd86ab15c4984c6854c09afa",
+  "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+  "sourceFragments": [
+    {
+      "ruleId": "A12.15",
+      "physicalPdfPage": 78,
+      "fragmentId": "asl-fragment:sha256:e92332292b4bde444aff7f84127793084e1f0ecfd99af9750da6e4aa8af40ea3",
+      "contentSha256": "ce0cc02826bf66951ff4a1ce06b7a51d105eb2f2540f3710c2e49c2455306fcf"
+    },
+    {
+      "ruleId": "A4.14",
+      "physicalPdfPage": 49,
+      "fragmentId": "asl-fragment:sha256:d22c4de11eefffac89c9585633ca3f4eeff313cc2d1ddd535975e1e8c23e0e69",
+      "contentSha256": "65adb630eb862eb54b49feb1e414bdf9b0c5132f8d0c55e6eaa94eb5b44c6995"
+    },
+    {
+      "ruleId": "A4.15",
+      "physicalPdfPage": 49,
+      "fragmentId": "asl-fragment:sha256:189987c951bbe691bdab278fad56ca4435cd1c038f724d99888121c54c5eaa75",
+      "contentSha256": "969c23764e0e6d3f1ef6d7b53162b6dc9385fa150e5fcd83c021f557ff577390"
+    },
+    {
+      "ruleId": "A4.151",
+      "physicalPdfPage": 49,
+      "fragmentId": "asl-fragment:sha256:67bd5e3c52d55ddf0979c998075d4f3e5eebd7e5fc5d61d40ac2b453403b9851",
+      "contentSha256": "f0f60602e399e9040e2ef54ac7c3e08b9ffb3d09a707fa5e97380cc8b7930de5"
+    },
+    {
+      "ruleId": "A4.152",
+      "physicalPdfPage": 49,
+      "fragmentId": "asl-fragment:sha256:186a1a2303d8082d4a4db4dae0e5b5299e8bb8c358023c50606fb01a99310c45",
+      "contentSha256": "9897b5b01a0705d2847fc11b34d1c976436ab5a6e3098be7c73844da36d29427"
+    },
+    {
+      "ruleId": "B23.4",
+      "physicalPdfPage": 136,
+      "fragmentId": "asl-fragment:sha256:686ac055790d97426084d16a48381c5de948b987f4680a47bf00646f387ca4a8",
+      "contentSha256": "5aad8586e209983168fd444994e8fc644d23f5193e1df3bbeaca1a805bc989af"
+    }
+  ],
+  "buildingCostSupplement": "asl-supplement:b-terrain-chart-building-entry",
+  "exactCaseIds": [
+    "A1-concealed-smc-election-unknown",
+    "A1-concealed-smc-declined",
+    "A1-concealed-smc-ntc-unresolved",
+    "A1-concealed-smc-ntc-failed",
+    "A1-concealed-smc-mf-unknown",
+    "A1-concealed-smc-mf-insufficient",
+    "A1-concealed-smc-other-reveal-unresolved",
+    "A1-concealed-smc-another-defender-revealed",
+    "A1-concealed-smc-qualified-response-unresolved",
+    "A1-concealed-smc-response-resolved"
+  ],
+  "qualifiedCaseId": "A1-concealed-smc-qualified-response-unresolved",
+  "delegatedCaseId": "A1-concealed-smc-declined",
+  "executionAuthority": "none"
+}

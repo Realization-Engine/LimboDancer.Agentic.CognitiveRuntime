@@ -1,0 +1,99 @@
+{
+  "sourceFragments": [
+    {
+      "ruleId": "A12.15",
+      "physicalPdfPage": 78,
+      "fragmentId": "asl-fragment:sha256:e92332292b4bde444aff7f84127793084e1f0ecfd99af9750da6e4aa8af40ea3",
+      "contentSha256": "ce0cc02826bf66951ff4a1ce06b7a51d105eb2f2540f3710c2e49c2455306fcf"
+    },
+    {
+      "ruleId": "A4.14",
+      "physicalPdfPage": 49,
+      "fragmentId": "asl-fragment:sha256:d22c4de11eefffac89c9585633ca3f4eeff313cc2d1ddd535975e1e8c23e0e69",
+      "contentSha256": "65adb630eb862eb54b49feb1e414bdf9b0c5132f8d0c55e6eaa94eb5b44c6995"
+    },
+    {
+      "ruleId": "A4.15",
+      "physicalPdfPage": 49,
+      "fragmentId": "asl-fragment:sha256:189987c951bbe691bdab278fad56ca4435cd1c038f724d99888121c54c5eaa75",
+      "contentSha256": "969c23764e0e6d3f1ef6d7b53162b6dc9385fa150e5fcd83c021f557ff577390"
+    },
+    {
+      "ruleId": "A4.151",
+      "physicalPdfPage": 49,
+      "fragmentId": "asl-fragment:sha256:67bd5e3c52d55ddf0979c998075d4f3e5eebd7e5fc5d61d40ac2b453403b9851",
+      "contentSha256": "f0f60602e399e9040e2ef54ac7c3e08b9ffb3d09a707fa5e97380cc8b7930de5"
+    },
+    {
+      "ruleId": "A4.152",
+      "physicalPdfPage": 49,
+      "fragmentId": "asl-fragment:sha256:186a1a2303d8082d4a4db4dae0e5b5299e8bb8c358023c50606fb01a99310c45",
+      "contentSha256": "9897b5b01a0705d2847fc11b34d1c976436ab5a6e3098be7c73844da36d29427"
+    },
+    {
+      "ruleId": "B23.4",
+      "physicalPdfPage": 136,
+      "fragmentId": "asl-fragment:sha256:686ac055790d97426084d16a48381c5de948b987f4680a47bf00646f387ca4a8",
+      "contentSha256": "5aad8586e209983168fd444994e8fc644d23f5193e1df3bbeaca1a805bc989af"
+    }
+  ],
+  "schemaVersion": "1.0.0",
+  "status": "reviewed-source-backed-transition-no-package-publication",
+  "scope": "Scenario A1 board 01 ordinary ground-level building; Good Order Infantry MMC in MPh; concealed defender reveals exactly one enemy SMC under A12.15; no bypass, AFV, leader exemption, berserk, other terrain, hindrance, or special modifier",
+  "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+  "priorOccupiedPackageManifestSha256": "2ab3bde60ecc9855f2e35197e1921cfcfee3e8da3cd168a9cceef66ada6be6e9",
+  "priorPostRevealPackageManifestSha256": "0d721e581a0201d79cd2ab18c06032c2875c2910c848796dad62052db9b52c0b",
+  "sourceRules": [
+    "A12.15",
+    "A4.14",
+    "A4.15",
+    "A4.151",
+    "A4.152",
+    "B23.4"
+  ],
+  "buildingCostSupplement": "asl-supplement:b-terrain-chart-building-entry",
+  "reviewedFacts": {
+    "revealProvenance": "A12.15-immediate-defender-reveal",
+    "revealedOccupant": [
+      "exactlyOneEnemySmc",
+      "otherNonDummy",
+      "dummiesOnly",
+      "unresolved"
+    ],
+    "overrunElection": [
+      "elected",
+      "declined",
+      "unknown"
+    ],
+    "ntc": [
+      "passed",
+      "failed",
+      "unresolved"
+    ],
+    "remainingMf": [
+      "atLeastFour",
+      "insufficient",
+      "unknown"
+    ],
+    "additionalDefenderReveal": [
+      "none",
+      "anotherNonDummyRevealed",
+      "unresolved"
+    ],
+    "defenderResponseOrImmediateCc": [
+      "unresolved",
+      "resolvedWithOutcome",
+      "unknown"
+    ]
+  },
+  "semanticDependencies": [
+    "A12.15 detection requires immediate defender reveal; only a revealed SMC permits the attacker to elect an immediate Infantry OVR if possible",
+    "A4.14 excludes ordinary entry into an unconcealed enemy Location during MPh but expressly excepts Infantry OVR",
+    "A4.15 requires a qualified Infantry MMC, a passed NTC, a single Known enemy SMC outside an AFV and double the total MF entrance cost; other concealed units invoke A12.15",
+    "A12.15 requires another non-Dummy defender reveal, if available, when the attacker elects the immediate OVR after only an SMC was revealed",
+    "A4.151 leaves the SMC defensive attack or movement option for subsequent resolution",
+    "A4.152 conditions immediate CC on the SMC remaining with the entering MMC after Defensive First Fire",
+    "B23.4 and the reviewed terrain chart give an ordinary building entrance cost of 2 MF; the qualified doubled cost is 4 MF"
+  ],
+  "reviewBoundary": "Source and semantic dependency review only. No new case, package, state mutation, failed-NTC consequence, second-defender outcome, defensive response, or CC outcome is admitted here."
+}

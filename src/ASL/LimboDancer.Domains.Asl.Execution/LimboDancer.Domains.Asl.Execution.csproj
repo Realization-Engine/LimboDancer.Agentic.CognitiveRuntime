@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RestorePackagesWithLockFile>false</RestorePackagesWithLockFile>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+    <RestoreLockedMode>false</RestoreLockedMode>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../LimboDancer.Domains.Asl.ScenarioA1/LimboDancer.Domains.Asl.ScenarioA1.csproj" />
+    <ProjectReference Include="../../LimboDancer/LimboDancer.Runtime/LimboDancer.Runtime.csproj" />
+  </ItemGroup>
+</Project>

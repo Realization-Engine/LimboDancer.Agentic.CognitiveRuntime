@@ -10,5 +10,7 @@
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
     <ProjectReference Include="../../LimboDancer.Domains.Asl.ScenarioA1/LimboDancer.Domains.Asl.ScenarioA1.csproj" />
+    <ProjectReference Include="../../LimboDancer.Domains.Asl.Execution/LimboDancer.Domains.Asl.Execution.csproj" />
+    <ProjectReference Include="../../../LimboDancer/LimboDancer.Host/LimboDancer.Host.csproj" />
   </ItemGroup>
 </Project>

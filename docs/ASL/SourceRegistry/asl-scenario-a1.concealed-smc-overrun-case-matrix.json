@@ -1,0 +1,242 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "affirmative-xunit-reviewed-case-contract-no-package-publication",
+  "scope": "Only the A12.15-origin concealed enemy SMC branch in an ordinary board 01 ground-level building. Every fact is supplied by the state source, not by VASL.",
+  "transitionReviewSha256": "d1db66dbc66b00272cf458b341f5789512d4900c405024292c676324dcaf32f0",
+  "priorOccupiedPackageManifestSha256": "2ab3bde60ecc9855f2e35197e1921cfcfee3e8da3cd168a9cceef66ada6be6e9",
+  "priorPostRevealPackageManifestSha256": "0d721e581a0201d79cd2ab18c06032c2875c2910c848796dad62052db9b52c0b",
+  "sourceRules": [
+    "A12.15",
+    "A4.14",
+    "A4.15",
+    "A4.151",
+    "A4.152",
+    "B23.4"
+  ],
+  "sourceFragments": [
+    {
+      "ruleId": "A12.15",
+      "physicalPdfPage": 78,
+      "fragmentId": "asl-fragment:sha256:e92332292b4bde444aff7f84127793084e1f0ecfd99af9750da6e4aa8af40ea3",
+      "contentSha256": "ce0cc02826bf66951ff4a1ce06b7a51d105eb2f2540f3710c2e49c2455306fcf"
+    },
+    {
+      "ruleId": "A4.14",
+      "physicalPdfPage": 49,
+      "fragmentId": "asl-fragment:sha256:d22c4de11eefffac89c9585633ca3f4eeff313cc2d1ddd535975e1e8c23e0e69",
+      "contentSha256": "65adb630eb862eb54b49feb1e414bdf9b0c5132f8d0c55e6eaa94eb5b44c6995"
+    },
+    {
+      "ruleId": "A4.15",
+      "physicalPdfPage": 49,
+      "fragmentId": "asl-fragment:sha256:189987c951bbe691bdab278fad56ca4435cd1c038f724d99888121c54c5eaa75",
+      "contentSha256": "969c23764e0e6d3f1ef6d7b53162b6dc9385fa150e5fcd83c021f557ff577390"
+    },
+    {
+      "ruleId": "A4.151",
+      "physicalPdfPage": 49,
+      "fragmentId": "asl-fragment:sha256:67bd5e3c52d55ddf0979c998075d4f3e5eebd7e5fc5d61d40ac2b453403b9851",
+      "contentSha256": "f0f60602e399e9040e2ef54ac7c3e08b9ffb3d09a707fa5e97380cc8b7930de5"
+    },
+    {
+      "ruleId": "A4.152",
+      "physicalPdfPage": 49,
+      "fragmentId": "asl-fragment:sha256:186a1a2303d8082d4a4db4dae0e5b5299e8bb8c358023c50606fb01a99310c45",
+      "contentSha256": "9897b5b01a0705d2847fc11b34d1c976436ab5a6e3098be7c73844da36d29427"
+    },
+    {
+      "ruleId": "B23.4",
+      "physicalPdfPage": 136,
+      "fragmentId": "asl-fragment:sha256:686ac055790d97426084d16a48381c5de948b987f4680a47bf00646f387ca4a8",
+      "contentSha256": "5aad8586e209983168fd444994e8fc644d23f5193e1df3bbeaca1a805bc989af"
+    }
+  ],
+  "commonFacts": {
+    "board": "bd01-ground-level-ordinary-building",
+    "phase": "mph",
+    "attacker": "goodOrderUnconcealedNonDummyInfantryMmc",
+    "entryMode": "ordinaryObstacleEntryNotBypass",
+    "a414Exception": "none",
+    "initialDefenderState": "concealed",
+    "revealProvenance": "A12.15-immediate-defender-reveal",
+    "revealedOccupant": "oneEnemySmc",
+    "otherModifier": "none",
+    "leaderExemption": "none",
+    "entryMfCost": "2"
+  },
+  "cases": [
+    {
+      "caseId": "A1-concealed-smc-election-unknown",
+      "reviewStatus": "reviewed-nondefinitive",
+      "expectedDisposition": "indeterminate",
+      "sourceRules": [
+        "A12.15",
+        "A4.14",
+        "A4.15"
+      ],
+      "facts": {
+        "overrunElection": "unknown"
+      },
+      "reason": "The attacker election is not supplied; do not infer an OVR or forced-back result."
+    },
+    {
+      "caseId": "A1-concealed-smc-declined",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "delegated",
+      "sourceRules": [
+        "A12.15",
+        "A4.14",
+        "A4.15"
+      ],
+      "facts": {
+        "overrunElection": "declined"
+      },
+      "reason": "Refer to the existing A12.15 non-Dummy forced-back conclusion under its own exact package; no new conclusion is admitted.",
+      "predecessorCaseId": "A1-post-reveal-nondummy-forced-back"
+    },
+    {
+      "caseId": "A1-concealed-smc-ntc-unresolved",
+      "reviewStatus": "reviewed-nondefinitive",
+      "expectedDisposition": "indeterminate",
+      "sourceRules": [
+        "A12.15",
+        "A4.14",
+        "A4.15"
+      ],
+      "facts": {
+        "overrunElection": "elected",
+        "ntc": "unresolved"
+      },
+      "reason": "A4.15 requires a passed NTC; the check result is unknown."
+    },
+    {
+      "caseId": "A1-concealed-smc-ntc-failed",
+      "reviewStatus": "reviewed-nondefinitive",
+      "expectedDisposition": "indeterminate",
+      "sourceRules": [
+        "A12.15",
+        "A4.14",
+        "A4.15"
+      ],
+      "facts": {
+        "overrunElection": "elected",
+        "ntc": "failed"
+      },
+      "reason": "The passed-NTC OVR permission is unavailable. Consequences of this failed check and detection are not established by this matrix."
+    },
+    {
+      "caseId": "A1-concealed-smc-mf-unknown",
+      "reviewStatus": "reviewed-nondefinitive",
+      "expectedDisposition": "indeterminate",
+      "sourceRules": [
+        "A12.15",
+        "A4.14",
+        "A4.15",
+        "B23.4"
+      ],
+      "facts": {
+        "overrunElection": "elected",
+        "ntc": "passed",
+        "remainingMf": "unknown"
+      },
+      "reason": "Double the reviewed 2 MF building cost must be established before qualifying the attempt."
+    },
+    {
+      "caseId": "A1-concealed-smc-mf-insufficient",
+      "reviewStatus": "reviewed-nondefinitive",
+      "expectedDisposition": "abstained",
+      "sourceRules": [
+        "A12.15",
+        "A4.14",
+        "A4.15",
+        "B23.4"
+      ],
+      "facts": {
+        "overrunElection": "elected",
+        "ntc": "passed",
+        "remainingMf": "insufficient"
+      },
+      "reason": "Fewer than 4 MF falls outside this exact 4 MF entry-attempt contract; alternate movement provisions are excluded."
+    },
+    {
+      "caseId": "A1-concealed-smc-other-reveal-unresolved",
+      "reviewStatus": "reviewed-nondefinitive",
+      "expectedDisposition": "indeterminate",
+      "sourceRules": [
+        "A12.15",
+        "A4.14",
+        "A4.15"
+      ],
+      "facts": {
+        "overrunElection": "elected",
+        "ntc": "passed",
+        "remainingMf": "atLeastFour",
+        "additionalDefenderReveal": "unresolved"
+      },
+      "reason": "A12.15 may compel another non-Dummy reveal. One revealed SMC does not establish sole occupancy."
+    },
+    {
+      "caseId": "A1-concealed-smc-another-defender-revealed",
+      "reviewStatus": "reviewed-nondefinitive",
+      "expectedDisposition": "indeterminate",
+      "sourceRules": [
+        "A12.15",
+        "A4.14",
+        "A4.15"
+      ],
+      "facts": {
+        "overrunElection": "elected",
+        "ntc": "passed",
+        "remainingMf": "atLeastFour",
+        "additionalDefenderReveal": "anotherNonDummyRevealed"
+      },
+      "reason": "Further defender identity and resulting eligibility require separate review; this case does not inherit the sole-SMC permission."
+    },
+    {
+      "caseId": "A1-concealed-smc-qualified-response-unresolved",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "qualified",
+      "sourceRules": [
+        "A12.15",
+        "A4.14",
+        "A4.15",
+        "A4.151",
+        "A4.152",
+        "B23.4"
+      ],
+      "facts": {
+        "overrunElection": "elected",
+        "ntc": "passed",
+        "remainingMf": "atLeastFour",
+        "additionalDefenderReveal": "none",
+        "soleEnemySmcOccupancy": "verifiedBySuppliedState",
+        "defenderResponseOrImmediateCc": "unresolved"
+      },
+      "reason": "The 4 MF Infantry OVR attempt is qualified. A4.151 defensive options and conditional A4.152 CC remain unresolved; no movement or game-state mutation is authorized."
+    },
+    {
+      "caseId": "A1-concealed-smc-response-resolved",
+      "reviewStatus": "reviewed-nondefinitive",
+      "expectedDisposition": "abstained",
+      "sourceRules": [
+        "A12.15",
+        "A4.14",
+        "A4.15",
+        "A4.151",
+        "A4.152",
+        "B23.4"
+      ],
+      "facts": {
+        "overrunElection": "elected",
+        "ntc": "passed",
+        "remainingMf": "atLeastFour",
+        "additionalDefenderReveal": "none",
+        "soleEnemySmcOccupancy": "verifiedBySuppliedState",
+        "defenderResponseOrImmediateCc": "resolvedWithOutcome"
+      },
+      "reason": "A resolved defensive response or CC is outside the bounded continuation; its outcome must not be inferred."
+    }
+  ],
+  "admissionRule": "Only an exact set of commonFacts plus the listed case facts can match. Missing controlling facts remain indeterminate; contrary values, extra facts, exceptions, and resolved outcomes outside an explicit case abstain. The delegated case is resolved solely by its prior package.",
+  "executionAuthority": "none"
+}

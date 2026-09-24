@@ -1,0 +1,111 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "reviewed-execution-boundary-no-executor-or-state-mutation",
+  "scope": "Only A12.15 return from the attempted ordinary entry into the board 01 ground-level building after a second SMC or MMC defeats the elected Infantry OVR before entry resolves. The prior read-only consequence is a prerequisite, not execution authority.",
+  "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+  "priorConsequenceMatrixSha256": "50375415804bfb8cc0e1a16c09f80a992d4fdcedca19e41234a2a63715214ec2",
+  "priorConsequencePackageSha256": "7aa168439781bf889a5c05d797e86054f9e8baf0f396d76ba3f52a5e81125834",
+  "sourceFragments": [
+    {
+      "ruleId": "A12.15",
+      "physicalPdfPage": 78,
+      "fragmentId": "asl-fragment:sha256:e92332292b4bde444aff7f84127793084e1f0ecfd99af9750da6e4aa8af40ea3",
+      "contentSha256": "ce0cc02826bf66951ff4a1ce06b7a51d105eb2f2540f3710c2e49c2455306fcf"
+    },
+    {
+      "ruleId": "A4.14",
+      "physicalPdfPage": 49,
+      "fragmentId": "asl-fragment:sha256:d22c4de11eefffac89c9585633ca3f4eeff313cc2d1ddd535975e1e8c23e0e69",
+      "contentSha256": "65adb630eb862eb54b49feb1e414bdf9b0c5132f8d0c55e6eaa94eb5b44c6995"
+    },
+    {
+      "ruleId": "A4.15",
+      "physicalPdfPage": 49,
+      "fragmentId": "asl-fragment:sha256:189987c951bbe691bdab278fad56ca4435cd1c038f724d99888121c54c5eaa75",
+      "contentSha256": "969c23764e0e6d3f1ef6d7b53162b6dc9385fa150e5fcd83c021f557ff577390"
+    },
+    {
+      "ruleId": "B23.4",
+      "physicalPdfPage": 136,
+      "fragmentId": "asl-fragment:sha256:686ac055790d97426084d16a48381c5de948b987f4680a47bf00646f387ca4a8",
+      "contentSha256": "5aad8586e209983168fd444994e8fc644d23f5193e1df3bbeaca1a805bc989af"
+    }
+  ],
+  "buildingCostSupplement": "asl-supplement:b-terrain-chart-building-entry",
+  "admittedCaseIds": [
+    "A1-second-defender-consequence-smc-revealed",
+    "A1-second-defender-consequence-mmc-revealed"
+  ],
+  "requiredInput": [
+    "definitive-consequence-with-exact-package-matrix-and-observation-digests",
+    "authenticated-tenant-principal-and-explicit-authorized-action",
+    "exact-unit-target-and-last-occupied-location-identity",
+    "authoritative-current-version-of-one-game-state-aggregate",
+    "unit-at-versioned-pre-return-movement-stage-with-target-attempt-and-ordinary-two-mf-cost-recorded",
+    "second-reveal-precedes-unresolved-OVR-entry",
+    "no-other-A4.14-exception-or-berserk-before-return",
+    "supplied-return-location-hazard-state-or-fail-closed",
+    "stable-idempotency-key-for-this-attempt"
+  ],
+  "coreEffectsFromA1215": [
+    {
+      "effect": "return-to-last-location",
+      "admission": "required-when-no-A4.14-exception-remains",
+      "scope": "The unit is returned from the briefly attempted target to the last occupied Location."
+    },
+    {
+      "effect": "attempted-entry-mf-in-return-location",
+      "admission": "required",
+      "scope": "The recorded ordinary 2 MF attempted-entry cost is attributed to the Location returned to; the state contract must distinguish cost recorded from MF already debited to avoid charging twice. Do not infer an additional doubled OVR cost."
+    },
+    {
+      "effect": "attacker-concealment-lost",
+      "admission": "required-under-this-unconcealed-attacker-scope-no-op",
+      "scope": "A12.15 says the returning mover loses Concealment; the admitted attacker is already unconcealed."
+    },
+    {
+      "effect": "moving-phase-ended",
+      "admission": "required-unless-berserk-first-excluded",
+      "scope": "End the mover's MPh after return; no further movement is inferred."
+    }
+  ],
+  "conditionalFollowOn": [
+    {
+      "trigger": "existing-residual-fp-in-return-location",
+      "ruleEffect": "attack-on-re-entry-even-if-already-attacked-this-phase",
+      "admission": "requires-separate-attack-resolution"
+    },
+    {
+      "trigger": "return-location-ffe-or-minefield",
+      "ruleEffect": "attack-on-re-entry",
+      "admission": "requires-separate-attack-resolution"
+    },
+    {
+      "trigger": "return-location-wire-depression-entrenchment-or-shellhole",
+      "ruleEffect": "special-placement-or-tem-handling",
+      "admission": "requires-separate-location-state-review"
+    },
+    {
+      "trigger": "defender-first-fire-or-snap-shot-on-return",
+      "ruleEffect": "possible-after-return-not-during-brief-target-presence",
+      "admission": "requires-separate-fire-declaration-and-resolution"
+    }
+  ],
+  "initialExecutionSubset": "Return and ordinary attempted-entry MF attribution can be considered only with a confirmed clear return Location (no Residual FP, FFE, minefield, Wire, Depression, entrenchment or shellhole) and no intervening state change. Any unknown or active hazard blocks this subset pending a separately reviewed resolver.",
+  "runtimeBoundary": {
+    "gate": "Registered action, authenticated tenant principal, permissions, exact constraints, diagnostics and risk must yield AuthorizedAction; a read-only domain conclusion alone is insufficient.",
+    "version": "AuthorizedAction.ValidatedStateVersions records checked versions, but the present generic executor does not enforce an ASL aggregate compare-and-swap at the write. An ASL state store must atomically compare the current version and apply all admitted effects or none.",
+    "idempotency": "The same attempt and authorization must not debit MF twice or replay the return; duplicates yield the previously committed result.",
+    "verification": "Audit the action and read back the committed version and effects; unverified or partially verified effects do not authorize additional actions."
+  },
+  "failClosed": [
+    "indeterminate-or-abstained-consequence",
+    "stale-package-observation-or-aggregate-version",
+    "different-tenant-unit-target-or-previous-location",
+    "missing-or-insufficient-action-authority",
+    "unknown-or-active-return-location-hazard",
+    "resolved-OVR-entry-or-changed-movement-phase",
+    "duplicate-attempt-with-conflicting-payload"
+  ],
+  "executionAuthority": "none"
+}
