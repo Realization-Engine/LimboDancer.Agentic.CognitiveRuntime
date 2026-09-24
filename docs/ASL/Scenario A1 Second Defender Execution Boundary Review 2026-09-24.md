@@ -39,3 +39,9 @@ The runtime's `ExecutionGate` checks a registered descriptor, executor binding, 
 ### Pure transition increment
 
 `ScenarioA1SecondDefenderReturnTransition` now evaluates those two exact conclusions against a supplied versioned aggregate without modifying its input. It requires matching package, matrix and observation evidence; a pending return stage; a recorded 2 MF attempt; an unconcealed non-Berserk mover in MPh; and a clear return Location. Its candidate state increments the aggregate version, returns the unit, attributes MF in the previous Location, ends movement and records an attempt fingerprint. If the 2 MF were already debited, it does not debit them again. Identical retries return the committed candidate state unchanged; a conflicting retry fails. Hazard and stale-state cases produce no candidate update. This remains a pure model and is not callable as an authorized action.
+
+### Atomic simulation increment
+
+`IScenarioA1ReturnStateStore` and `ScenarioA1InMemoryReturnStore` now connect the transition to a process-local compare-and-swap store. The store recomputes the pure candidate, rejects a changed payload and compares the entire expected aggregate while holding its lock. `ScenarioA1ReturnSimulation` reads, evaluates and attempts that atomic commit; if it loses the race, it reads again to classify an identical retry as a replay or a changed aggregate as stale. Concurrent xUnit attempts verify that only one version increment and MF debit occur. This is an isolated simulation, not a durable state backend or a registered runtime action. Restart, multiple processes, and external game-state synchronization remain outside this store's guarantees.
+
+The next boundary is a durable game aggregate with atomic writes plus a registered action whose executor requires a gate-produced authorization and validates the aggregate version at commit. The conditional A12.15 attacks and special return placement remain blocked.

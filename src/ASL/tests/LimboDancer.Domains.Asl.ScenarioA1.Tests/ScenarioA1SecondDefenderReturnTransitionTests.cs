@@ -113,7 +113,7 @@ public sealed class ScenarioA1SecondDefenderReturnTransitionTests
                 new ScenarioA1ReturnAttempt("attempt-1", 10, forged)).Status);
     }
 
-    private static ScenarioA1ReturnState State() => new(
+    internal static ScenarioA1ReturnState State() => new(
         Tenant, "game-1", "squad", 10, "snapshot-1", "bd01:E4:0",
         "bd01:E4:0", "bd01:D4:0", 4)
     {
@@ -123,7 +123,7 @@ public sealed class ScenarioA1SecondDefenderReturnTransitionTests
         AttemptedEntryMfRecorded = 2,
     };
 
-    private static async Task<DomainConclusion> Conclusion(string suffix, string reveal)
+    internal static async Task<DomainConclusion> Conclusion(string suffix, string reveal)
     {
         var caseId = "A1-second-defender-consequence-" + suffix;
         var package = ScenarioA1SecondDefenderConsequencePackage.Identity;
