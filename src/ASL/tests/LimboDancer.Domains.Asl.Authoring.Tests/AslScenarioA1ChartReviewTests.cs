@@ -61,10 +61,12 @@ public sealed class AslScenarioA1ChartReviewTests
 
         var decision = AslScenarioA1ChartReview.Evaluate(RepositoryPaths.Root, registry, comparison);
         var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var changed = JsonSerializer.Deserialize<AslScenarioA1ChartReviewDecision>(
+            JsonSerializer.Serialize(decision).Replace(decision.ChartRole,
+                "The chart is optional", StringComparison.Ordinal))!;
         Assert.Throws<InvalidOperationException>(() => AslScenarioA1CaseAssessor.AssessWithReviewedChart(
             AslScenarioA1CaseFacts.CreateDeclaredFirstCase(), manifests.Fragments,
-            new HashSet<string>(StringComparer.Ordinal), RepositoryPaths.Root,
-            decision with { ChartRole = "The chart is optional" }));
+            new HashSet<string>(StringComparer.Ordinal), RepositoryPaths.Root, changed));
     }
 
     private static JsonDocument Read(string filename) => JsonDocument.Parse(File.ReadAllText(
