@@ -32,7 +32,7 @@ An ontology provides this layer, enabling **reasoning, planning, validation, and
 
 ## Ontology in the LimboDancer.MCP Design
 
-From [`LimboDancer.MCP.md`](./LimboDancer.MCP.md):
+From [`LimboDancer.MCP — Design Map.md`](<./LimboDancer.MCP — Design Map.md>):
 
 * **First-class project:** `LimboDancer.MCP.Ontology`
 * **JSON-LD context:** CURIEs for entities like `ldm:Person`, `ldm:Trip`, `ldm:Reservation`, `ldm:Tool`.
@@ -44,7 +44,7 @@ From [`LimboDancer.MCP.md`](./LimboDancer.MCP.md):
 
 ## Ontology Milestones in the Roadmap
 
-From [`LimboDancer.MCP Roadmap.md`](./LimboDancer.MCP%20Roadmap.md):
+From [`LimboDancer.MCP — Roadmap.md`](<./LimboDancer.MCP — Roadmap.md>):
 
 * **Milestone 4 — Ontology v1:**
   JSON-LD context established, EF Core models mapped, and tools expose ontology-bound schemas.

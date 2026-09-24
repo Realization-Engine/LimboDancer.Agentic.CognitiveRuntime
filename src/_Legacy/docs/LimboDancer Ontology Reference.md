@@ -9,7 +9,7 @@ This reference is **per-tenant**. Each ontology is published under a distinct `{
 
 
 > This file is the **source of truth** for ontology terms used in LimboDancer.MCP.
-> It complements [`Ontology and Agentic AI.md`](./Ontology%20and%20Agentic%20AI.md) (conceptual) and the [`Design Map`](./LimboDancer.MCP.md).
+> It complements [`Ontology and Agentic AI in LimboDancer.MCP.md`](<./Ontology and Agentic AI in LimboDancer.MCP.md>) (conceptual) and the [`Design Map`](<./LimboDancer.MCP — Design Map.md>).
 > It evolves milestone by milestone (see Roadmap).
 
 ---
