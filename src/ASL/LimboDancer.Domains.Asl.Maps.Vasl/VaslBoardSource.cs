@@ -62,6 +62,24 @@ public sealed class VaslBoardSource
         ? Directory.Exists(vasl.BoardSourceDirectory(BoardName))
         : File.Exists(vasl.BoardArchivePath(BoardName));
 
+    /// <summary>Whether the board has an entry, without reading its bytes.</summary>
+    public bool HasEntry(string entryName)
+    {
+        if (Kind == VaslBoardSourceKind.SourceDirectory)
+        {
+            return File.Exists(Path.Combine(vasl.BoardSourceDirectory(BoardName), entryName));
+        }
+
+        var archivePath = vasl.BoardArchivePath(BoardName);
+        if (!File.Exists(archivePath))
+        {
+            return false;
+        }
+
+        using var archive = ZipFile.OpenRead(archivePath);
+        return archive.GetEntry(entryName) is not null;
+    }
+
     /// <summary>Reads one entry's bytes, or null when the board has no such entry.</summary>
     public byte[]? ReadEntry(string entryName)
     {

@@ -49,8 +49,8 @@ MapStudio ------> Maps, Maps.Vasl, Maps.Rendering
 - `Maps`, `Maps.Vasl`, and `Maps.Rendering` use only the base class library (`System.IO.Compression`, `System.Xml.Linq`, `System.Text.Json`, `System.Security.Cryptography`). They have no package references.
 - `MapStudio` uses the ASP.NET Core shared framework only.
 - New test packages, added to `src/ASL/Directory.Packages.props`:
-  - `bunit` for component tests;
-  - `Microsoft.AspNetCore.Mvc.Testing` for endpoint tests.
+  - `Microsoft.AspNetCore.Mvc.Testing` for endpoint and prerendered page tests (added in ASL-MAP-04);
+  - `bunit` for component tests, deferred until the viewer is split into the components of section 5.2 (ASL-MAP-07).
 - No map project references `src/LimboDancer` (ASL-MAP-002).
 
 ### 2.3 Existing solution gap
@@ -123,7 +123,7 @@ A code with no style in the `board` theme falls back to its catalog color with a
 3. Fill with the `catalog` theme color and `crispEdges` rendering, so each rendered pixel edge falls on a board pixel edge at 1:1 zoom.
 4. Tag each path with `data-code` and `data-elev`, so the inspector can report exact terrain without a server call when the pointer is over a region.
 
-Board 01 in this form is on the order of 200 KB. A proof of concept using a simpler run-length encoding came to 240 KB. The dithered worst case, board 04, is estimated at under 1 MB.
+Measured in ASL-MAP-04: the board 01 Exact document is 241 KB (132 regions, about 47,000 ring vertices) and renders in about 26 ms from traced outlines. The dithered worst case, board 04, is 646 KB (6,924 regions). Tracing a board takes 140 to 390 ms, and the Studio does it once per board version.
 
 ### 3.6 Hex-fact view
 
@@ -252,7 +252,7 @@ A small ES module, `boardViewport.js`, loaded through `IJSObjectReference`, is t
 - applies per-feature and per-hex fragment patches (section 5.4);
 - switches comparison presentation (side by side, overlay opacity, swipe) with CSS and a second synchronized viewport, without server calls.
 
-Hex hit-testing on the server uses the geometry's `PointToHex`, which reproduces VASL's `gridToHex` (Ingestion Design section 5). The JS copy used for hover throttling is advisory only; the server's answer is authoritative.
+Hex hit-testing on the server uses `BoardGeometry.HexAt`, which returns the hex whose center dot is nearest the point. It is a UI hit test only and is not a port of VASL's `gridToHex`; nothing in ingestion or derivation depends on it. Half hexes whose center dot lies on the grid boundary are still hit by points inside the grid.
 
 ### 5.4 Incremental updates
 
@@ -351,6 +351,12 @@ When a user starts from a verified VASL board (ASL-MAP-055):
 | `MapStudio.Tests` | bUnit tests for toolbar, inspector, and panels; endpoint tests with `WebApplicationFactory` for ETag, caching, content type, and fragment shape; `AuthoringSession` command and patch tests |
 | Manual, recorded in reviews | pan, zoom, hover, and editing interactions in a browser, for ASL-MAP-04 and ASL-MAP-07 |
 
+As built in ASL-MAP-04:
+
+- `Maps.Tests` adds outline tracer tests: a uniform grid, a hole, a corner pinch, elevation splits, ring orientation, and random grids refilled losslessly. It also adds `HexAt` tests.
+- `Maps.Rendering.Tests` covers SvgWriter numbers and escaping; determinism; well-formedness; unique ids; layer order; no raster images; fragment shape; and lossless refill of the Exact paths. It also compares both views of a synthetic 3 by 2 board with golden files in `Golden/`; set `ASL_MAPS_UPDATE_GOLDEN=1` to regenerate them. With a VASL checkout, it refills board 01 as well. Refilling every ingested board and recording hashes is left for the ASL-MAP-05 batch run.
+- `MapStudio.Tests` runs the Studio with `WebApplicationFactory` and a fake board provider. It tests layer and document responses, entity tags and 304 responses, trace mode, 404 cases, and the prerendered library and viewer pages. bUnit tests arrive with the component split in ASL-MAP-07.
+
 Browser automation (for example, Playwright) is deferred. It can be added when the editor stabilizes, without changing the design.
 
 ## 9. Sequence mapping
@@ -358,9 +364,21 @@ Browser automation (for example, Playwright) is deferred. It can be added when t
 | Step | Delivers from this design |
 |---|---|
 | ASL-MAP-01 | the four projects and their solution entries (section 2); `Maps.Tests` and `Maps.Vasl.Tests`; a minimal Studio page reporting configuration status. `Maps.Rendering.Tests` and `MapStudio.Tests` are added in ASL-MAP-04 with the first rendering and Studio code. |
-| ASL-MAP-04 | SvgWriter, `catalog` theme, Exact and Hex-fact views, render endpoints, board library and viewer, inspector |
+| ASL-MAP-04 | SvgWriter, `catalog` theme, Exact and Hex-fact views, render endpoints, board library and viewer, inspector (as built: section 9.1) |
 | ASL-MAP-05 | `/fidelity` batch pages and job runner |
 | ASL-MAP-07 | `board` theme, Styled and Comparison views, editor, patches |
+
+### 9.1 ASL-MAP-04 as built
+
+ASL-MAP-04 delivers a smaller surface than sections 4 and 5 describe. The rest moves to the steps that need it:
+
+- **Services.** `IBoardProvider` and its VASL implementation, `VaslBoardProvider`, combine the roles of `BoardLibrary`, `IngestionService`, `FidelityService`, and `DerivationCache` for VASL boards. A load ingests the board, runs F1, derives Hex Facts, runs F2 against the committed oracle fixture when one exists, and traces outlines. `RenderCache` holds rendered documents and fragments keyed by board, version, view, layer, and trace flag. Both caches are in memory only; `CacheRoot`, `BoardsRoot`, and `JobRunner` are not implemented yet.
+- **Board version.** For VASL boards, the version in render URLs is the `LOSData` content blob SHA.
+- **Endpoints.** `GET /render/{boardRef}/{version}/{view}/{layer}.svg` and `.../document.svg` take only `?trace=true`. There is no `theme` or `options` query yet, because `catalog` is the only theme. A stale version, an unknown board, view, or layer, or a non-SVG file name returns 404.
+- **Pages.** `/` lists the VASL boards whose names are valid board references. Scope is decided when the library opens, from each board's metadata and the presence of LOSData only (`VaslBoardImporter.CheckScope`, which `Import` also uses). By default only in-scope boards are listed: 158 in the pinned checkout, which are the 156 verified boards plus `bd79` and `bdLFT1`, which fail. A toggle shows the 134 out-of-scope boards with the reason for each. A totals line counts verified, ingested, failed, and not-loaded boards. A board's status, F1, F2, and diagnostics appear once it has been loaded, either by opening it or by "Check all boards in scope". Diagnostics are grouped by code and severity, such as "18 × VASL-META-004 (warning)", with the messages in a tooltip. `/boards/{boardRef}` has the Exact and Hex-fact views, layer toggles, a trace toggle, and fit. Its inspector shows the clicked hex's facts, the grid code and elevation under the pointer, and the board's provenance and fidelity. `/fidelity`, `/settings`, and `/author` are not implemented.
+- **Viewport.** `boardViewport.js` creates the `<svg>` itself, imports every layer of the view, and toggles layers with CSS. It pans by drag, zooms by wheel about the pointer, and keeps the zoom when switching views. It reports clicks only; hover, keyboard zoom, and patches wait for ASL-MAP-07. The selected hex is outlined by a polygon that the module draws from vertices the server sends.
+- **Legend.** In the Exact view, hexside terrain uses its catalog color, matching the paths. The hex-side palette is used only in the Hex-fact view.
+- **Local run.** Static web assets resolve from build output only in the Development environment, so run the Studio from source with `--environment Development`.
 
 ## 10. Open issues
 

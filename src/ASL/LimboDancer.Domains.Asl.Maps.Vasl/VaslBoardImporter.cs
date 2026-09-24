@@ -45,6 +45,28 @@ public sealed record BoardImportResult(IngestedBoard? Board, IReadOnlyList<MapDi
     public bool OutOfScope => Diagnostics.Any(diagnostic => diagnostic.Code == "VASL-SCOPE-001");
 }
 
+/// <summary>Whether a board is within version 1 scope, decided from its metadata alone.</summary>
+public enum BoardScope
+{
+    /// <summary>A standard geomorphic board that version 1 ingests.</summary>
+    InScope,
+
+    /// <summary>Recognized and declined by design (<c>VASL-SCOPE-001</c>).</summary>
+    OutOfScope,
+
+    /// <summary>The source is missing or its metadata cannot be read, so scope is unknown.</summary>
+    Unreadable,
+}
+
+/// <summary>The scope decision for one board, with the metadata it was made from.</summary>
+public sealed record BoardScopeResult(BoardScope Scope, BoardMetadata? Metadata, byte[]? MetadataBytes, IReadOnlyList<MapDiagnostic> Diagnostics)
+{
+    /// <summary>The reason a board is out of scope or unreadable, or null when it is in scope.</summary>
+    public string? Reason => Scope == BoardScope.InScope
+        ? null
+        : Diagnostics.LastOrDefault(diagnostic => diagnostic.Code == "VASL-SCOPE-001" || diagnostic.Severity == MapDiagnosticSeverity.Error)?.Message;
+}
+
 /// <summary>
 /// Ingests one VASL board (VASL Board Ingestion Design, sections 1 to 8): version 1 scope check, metadata,
 /// LOSData decoding, catalog coverage, building-override consistency, provenance, and the F1 check.
@@ -61,21 +83,23 @@ public static class VaslBoardImporter
         ["A1CenterY"] = 32.25,
     };
 
-    public static BoardImportResult Import(VaslSource vasl, VaslBoardSource source, TerrainCatalog catalog)
+    /// <summary>
+    /// Decides version 1 scope from the board's metadata only, without reading LOSData. The board library uses this
+    /// to list boards cheaply; <see cref="Import"/> makes the same decision first.
+    /// </summary>
+    public static BoardScopeResult CheckScope(VaslBoardSource source)
     {
-        ArgumentNullException.ThrowIfNull(vasl);
         ArgumentNullException.ThrowIfNull(source);
-        ArgumentNullException.ThrowIfNull(catalog);
-        var diagnostics = new List<MapDiagnostic>();
         if (!source.Exists)
         {
-            return Fail(diagnostics, Error("VASL-SRC-003", $"{source.RepositoryPath} does not exist."));
+            return new BoardScopeResult(BoardScope.Unreadable, null, null, [Error("VASL-SRC-003", $"{source.RepositoryPath} does not exist.")]);
         }
 
         var metadataBytes = source.ReadEntry(VaslBoardSource.MetadataEntry);
         if (metadataBytes is null)
         {
-            return Fail(diagnostics, Scope($"{source.RepositoryPath} has no BoardMetadata.xml (a legacy V5 board)."));
+            return new BoardScopeResult(BoardScope.OutOfScope, null, null,
+                [Scope($"{source.RepositoryPath} has no BoardMetadata.xml (a legacy V5 board).")]);
         }
 
         BoardMetadataResult metadataResult;
@@ -84,17 +108,31 @@ public static class VaslBoardImporter
             metadataResult = BoardMetadataParser.Parse(stream);
         }
 
-        diagnostics.AddRange(metadataResult.Diagnostics);
         if (metadataResult.Metadata is not { } metadata)
+        {
+            return new BoardScopeResult(BoardScope.Unreadable, null, metadataBytes, metadataResult.Diagnostics);
+        }
+
+        var problem = ScopeProblem(metadata) ?? (source.HasEntry(VaslBoardSource.LosDataEntry) ? null : "no LOSData.");
+        return problem is not null
+            ? new BoardScopeResult(BoardScope.OutOfScope, metadata, metadataBytes, [.. metadataResult.Diagnostics, Scope($"bd{source.BoardName}: {problem}")])
+            : new BoardScopeResult(BoardScope.InScope, metadata, metadataBytes, metadataResult.Diagnostics);
+    }
+
+    public static BoardImportResult Import(VaslSource vasl, VaslBoardSource source, TerrainCatalog catalog)
+    {
+        ArgumentNullException.ThrowIfNull(vasl);
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(catalog);
+        var scope = CheckScope(source);
+        var diagnostics = new List<MapDiagnostic>(scope.Diagnostics);
+        if (scope.Scope != BoardScope.InScope)
         {
             return new BoardImportResult(null, diagnostics);
         }
 
-        if (ScopeProblem(metadata) is { } problem)
-        {
-            return Fail(diagnostics, Scope($"bd{source.BoardName}: {problem}"));
-        }
-
+        var metadata = scope.Metadata!;
+        var metadataBytes = scope.MetadataBytes!;
         var losDataBytes = source.ReadEntry(VaslBoardSource.LosDataEntry);
         if (losDataBytes is null)
         {

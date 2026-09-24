@@ -115,6 +115,41 @@ public sealed class LocalVaslBoardTests
         Assert.True(ingested >= 150, $"Only {ingested} boards were ingested.");
     }
 
+    [VaslFact]
+    public void ScopeIsDecidedFromMetadataAndAgreesWithImport()
+    {
+        var vasl = Vasl();
+        var catalog = Catalog();
+        Assert.Equal(BoardScope.InScope, Scope(vasl, "01").Scope);
+        Assert.Equal(BoardScope.Unreadable, Scope(vasl, "79").Scope);
+        var half = Scope(vasl, "1a");
+        Assert.Equal(BoardScope.OutOfScope, half.Scope);
+        Assert.Contains("not a standard geomorphic board", half.Reason, StringComparison.Ordinal);
+
+        // Every board the scope check declines, import declines the same way; every in-scope board either imports or fails with an error.
+        var inScope = 0;
+        foreach (var name in vasl.BoardNames())
+        {
+            var scope = Scope(vasl, name);
+            var import = VaslBoardImporter.Import(vasl, VaslBoardSource.SourceDirectory(vasl, name), catalog);
+            if (scope.Scope == BoardScope.OutOfScope)
+            {
+                Assert.True(import.OutOfScope, $"bd{name} is out of scope but import did not say so.");
+            }
+            else if (scope.Scope == BoardScope.InScope)
+            {
+                inScope++;
+                Assert.False(import.OutOfScope, $"bd{name} is in scope but import declined it.");
+            }
+        }
+
+        // The pinned checkout has 157 in-scope boards (156 ingested plus bdLFT1); bd79 is unreadable.
+        Assert.True(inScope >= 150, $"Only {inScope} boards are in scope.");
+    }
+
+    private static BoardScopeResult Scope(VaslSource vasl, string boardName) =>
+        VaslBoardImporter.CheckScope(VaslBoardSource.SourceDirectory(vasl, boardName));
+
     private static IngestedBoard Import(string boardName)
     {
         var vasl = Vasl();

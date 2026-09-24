@@ -1,40 +1,171 @@
 @page "/"
-@using LimboDancer.Domains.Asl.Maps.Geometry
 @using LimboDancer.Domains.Asl.Maps.Vasl
-@inject IConfiguration Configuration
+@implements IDisposable
+@inject IBoardProvider Boards
 
-<PageTitle>ASL Map Studio</PageTitle>
+<PageTitle>Board library - ASL Map Studio</PageTitle>
 
-<p>Board viewing and authoring arrive in ASL-MAP-04 and ASL-MAP-07. This page reports the configuration status.</p>
-
-<dl>
-    <dt>Standard geomorphic board</dt>
-    <dd>@geometry.WidthInHexes by @geometry.HeightInHexes hexes, @geometry.HexCount hex records, @geometry.GridWidth by @geometry.GridHeight grid</dd>
-    <dt>VASL checkout (@VaslSource.ConfigurationKey)</dt>
-    <dd>@vaslStatus</dd>
-    <dt>Terrain catalog</dt>
-    <dd>@catalogStatus</dd>
-</dl>
+@if (Boards.SourceDescription is null)
+{
+    <p>No board source is configured. Set <code>AslMaps:VaslRoot</code> to a local VASL repository checkout, for example:</p>
+    <ul>
+        <li>user secrets (Development): <code>dotnet user-secrets set AslMaps:VaslRoot E:/path/to/vasl</code> in the MapStudio project directory;</li>
+        <li>an environment variable: <code>AslMaps__VaslRoot</code>;</li>
+        <li>a command-line argument: <code>--AslMaps:VaslRoot=E:/path/to/vasl</code>.</li>
+    </ul>
+}
+else
+{
+    var totals = Totals();
+    <p class="muted">@Boards.SourceDescription.</p>
+    <p class="totals">
+        <strong>@inScope.Count @(inScope.Count == 1 ? "board" : "boards") in scope:</strong>
+        <span class="pass">@totals.Verified verified</span>,
+        @totals.Ingested ingested,
+        <span class="@(totals.Failed > 0 ? "fail" : "")">@totals.Failed failed</span>,
+        <span class="muted">@totals.NotLoaded not loaded</span>.
+        @outOfScope.Count out of scope.
+    </p>
+    <p>
+        <button @onclick="CheckAll" disabled="@checking">Check all boards in scope</button>
+        @if (checking)
+        {
+            <span class="muted"> Checked @checkedCount of @inScope.Count.</span>
+        }
+        <label class="toggle">
+            <input type="checkbox" checked="@showOutOfScope" @onchange="@(args => showOutOfScope = (bool)args.Value!)" />
+            Show out-of-scope boards (@outOfScope.Count)
+        </label>
+    </p>
+    <table class="library">
+        <thead>
+            <tr>
+                <th>Board</th>
+                <th>Status</th>
+                <th>F1 (grid)</th>
+                <th>F2 (hex facts)</th>
+                <th>Diagnostics</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var entry in Visible())
+            {
+                var result = entry.Scope == BoardScope.OutOfScope ? null : Boards.Cached(entry.Ref);
+                <tr>
+                    @if (entry.Scope == BoardScope.OutOfScope)
+                    {
+                        <td>@entry.Title</td>
+                        <td class="muted">Out of scope</td>
+                        <td></td>
+                        <td></td>
+                        <td class="muted">@entry.ScopeReason</td>
+                    }
+                    else if (result is null)
+                    {
+                        <td><a href="@($"boards/{entry.Ref.Value}")">@entry.Title</a></td>
+                        <td class="muted" colspan="4">Not loaded</td>
+                    }
+                    else if (result.Board is not { } board)
+                    {
+                        <td><a href="@($"boards/{entry.Ref.Value}")">@entry.Title</a></td>
+                        <td class="fail">@(result.OutOfScope ? "Out of scope" : "Failed")</td>
+                        <td></td>
+                        <td></td>
+                        <td><Diagnostics Items="result.Diagnostics" /></td>
+                    }
+                    else
+                    {
+                        <td><a href="@($"boards/{entry.Ref.Value}")">@entry.Title</a></td>
+                        <td class="@(board.Status == BoardStatus.Verified ? "pass" : "")">@board.Status</td>
+                        <td class="@(board.F1.Passed ? "pass" : "fail")">@board.F1.Status</td>
+                        <td class="@F2Class(board)">@F2Text(board)</td>
+                        <td><Diagnostics Items="board.Diagnostics" /></td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+}
 
 @code {
-    private readonly BoardGeometry geometry = BoardGeometry.StandardGeomorphic;
-    private string vaslStatus = string.Empty;
-    private string catalogStatus = string.Empty;
+    private readonly CancellationTokenSource stopping = new();
+    private IReadOnlyList<BoardListing> listing = [];
+    private IReadOnlyList<BoardListing> inScope = [];
+    private IReadOnlyList<BoardListing> outOfScope = [];
+    private bool showOutOfScope;
+    private bool checking;
+    private int checkedCount;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        var source = VaslSource.TryOpen(Configuration[VaslSource.ConfigurationKey]);
-        if (source is null)
+        listing = await Task.Run(Boards.List);
+        inScope = listing.Where(entry => entry.Scope != BoardScope.OutOfScope).ToArray();
+        outOfScope = listing.Where(entry => entry.Scope == BoardScope.OutOfScope).ToArray();
+    }
+
+    private IEnumerable<BoardListing> Visible() => showOutOfScope ? listing : inScope;
+
+    private (int Verified, int Ingested, int Failed, int NotLoaded) Totals()
+    {
+        int verified = 0, ingested = 0, failed = 0, notLoaded = 0;
+        foreach (var entry in inScope)
         {
-            vaslStatus = "Not configured. Set AslMaps:VaslRoot to a local VASL repository checkout.";
-            catalogStatus = "Unavailable.";
-            return;
+            switch (Boards.Cached(entry.Ref))
+            {
+                case null:
+                    notLoaded++;
+                    break;
+                case { Board.Status: BoardStatus.Verified }:
+                    verified++;
+                    break;
+                case { Board: not null }:
+                    ingested++;
+                    break;
+                default:
+                    failed++;
+                    break;
+            }
         }
 
-        vaslStatus = source.Root;
-        var result = source.ReadTerrainCatalog();
-        catalogStatus = result.Catalog is { } catalog
-            ? $"{catalog.Count} terrain types loaded."
-            : $"Failed: {string.Join("; ", result.Diagnostics.Select(diagnostic => diagnostic.Code + " " + diagnostic.Message))}";
+        return (verified, ingested, failed, notLoaded);
+    }
+
+    private async Task CheckAll()
+    {
+        checking = true;
+        checkedCount = 0;
+        foreach (var entry in inScope)
+        {
+            if (stopping.IsCancellationRequested)
+            {
+                return;
+            }
+
+            await Task.Run(() => Boards.Load(entry.Ref));
+            checkedCount++;
+            StateHasChanged();
+        }
+
+        checking = false;
+    }
+
+    private static string F2Text(StudioBoard board) => board.F2 switch
+    {
+        null => "No oracle fixture",
+        { Passed: true } => "Pass",
+        var f2 => $"Fail ({f2.Differences.Count} differences, {f2.Diagnostics.Count} diagnostics)",
+    };
+
+    private static string F2Class(StudioBoard board) => board.F2 switch
+    {
+        null => "muted",
+        { Passed: true } => "pass",
+        _ => "fail",
+    };
+
+    public void Dispose()
+    {
+        stopping.Cancel();
+        stopping.Dispose();
     }
 }
