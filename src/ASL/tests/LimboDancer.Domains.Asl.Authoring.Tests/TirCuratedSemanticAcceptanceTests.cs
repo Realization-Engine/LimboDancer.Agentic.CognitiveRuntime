@@ -59,15 +59,27 @@ public sealed class TirCuratedSemanticAcceptanceTests
     {
         var (history, artifact) = ReadyHistory();
         Assert.Throws<InvalidOperationException>(() => TirCuratedAcceptedReview.Create(history,
-            artifact with { DeclaredUse = "another use" }, [Approve("reviewer")]));
-        Assert.Throws<InvalidOperationException>(() => TirCuratedAcceptedReview.Create(history,
-            artifact with { ProposalSha256 = new string('0', 64) }, [Approve("reviewer")]));
-        Assert.Throws<InvalidOperationException>(() => TirCuratedAcceptedReview.Create(history,
-            artifact with { Rules = [] }, [Approve("reviewer")]));
+            artifact with
+            {
+                DeclaredUse = "another use",
+            }, [Approve("reviewer")]));
         Assert.Throws<InvalidOperationException>(() => TirCuratedAcceptedReview.Create(history,
             artifact with
             {
-                Rules = [artifact.Rules[0] with { SourceFragmentIds = ["unknown-fragment"] }],
+                ProposalSha256 = new string('0', 64),
+            }, [Approve("reviewer")]));
+        Assert.Throws<InvalidOperationException>(() => TirCuratedAcceptedReview.Create(history,
+            artifact with
+            {
+                Rules = [],
+            }, [Approve("reviewer")]));
+        Assert.Throws<InvalidOperationException>(() => TirCuratedAcceptedReview.Create(history,
+            artifact with
+            {
+                Rules = [artifact.Rules[0] with
+                {
+                    SourceFragmentIds = ["unknown-fragment"],
+                }],
             }, [Approve("reviewer")]));
         Assert.Throws<InvalidOperationException>(() => TirCuratedAcceptedReview.Create(history,
             artifact, [Approve("author")]));
@@ -77,7 +89,8 @@ public sealed class TirCuratedSemanticAcceptanceTests
         {
             Rules = [artifact.Rules[0], artifact.Rules[0] with
             {
-                RuleId = "other", Outcome = "prohibited",
+                RuleId = "other",
+                Outcome = "prohibited",
             }],
         };
         Assert.Throws<InvalidOperationException>(() => TirCuratedAcceptedReview.Create(
@@ -89,7 +102,10 @@ public sealed class TirCuratedSemanticAcceptanceTests
         };
         var altered = history with
         {
-            Submission = history.Submission with { SourceReviewBundle = noVerification },
+            Submission = history.Submission with
+            {
+                SourceReviewBundle = noVerification,
+            },
         };
         Assert.Throws<InvalidOperationException>(() => TirCuratedAcceptedReview.Create(
             altered, artifact, [Approve("reviewer")]));
