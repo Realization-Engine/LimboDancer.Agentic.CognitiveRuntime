@@ -11,8 +11,19 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace LimboDancer.Domains.Asl.MapStudio.Tests;
 
-/// <summary>Serves the synthetic board only, so the Studio runs without a VASL checkout.</summary>
-internal sealed class FakeBoardProvider : IBoardProvider
+/// <summary>The synthetic catalog stands in for VASL's, so authored boards work without a checkout.</summary>
+internal sealed class FakeCatalogSource : ICatalogSource
+{
+    public const string Hash = "synthetic-catalog";
+
+    public (LimboDancer.Domains.Asl.Maps.Terrain.TerrainCatalog Catalog, string Hash)? Catalog() => (SyntheticBoard.Catalog, Hash);
+}
+
+/// <summary>
+/// Serves the synthetic board, and routes other authored boards to the real authored board service, so the Studio
+/// runs without a VASL checkout.
+/// </summary>
+internal sealed class FakeBoardProvider(AuthoredBoardService authored) : IBoardProvider
 {
     public const string Version = "0123456789abcdef0123456789abcdef01234567";
 
@@ -44,9 +55,12 @@ internal sealed class FakeBoardProvider : IBoardProvider
     ];
 
     public BoardLoadResult Load(BoardRef board) =>
-        board == Board.Ref ? new BoardLoadResult(Board, []) : new BoardLoadResult(null, []);
+        board == Board.Ref ? new BoardLoadResult(Board, []) : board.Kind == BoardRefKind.Authored ? authored.Load(board) : new BoardLoadResult(null, []);
 
     public BoardLoadResult? Cached(BoardRef board) => board == Board.Ref ? Load(board) : null;
+
+    public StudioBoard? LoadVersion(BoardRef board, string version) =>
+        board == Board.Ref ? (Board.Version == version ? Board : null) : board.Kind == BoardRefKind.Authored ? authored.LoadVersion(board, version) : null;
 }
 
 /// <summary>
@@ -62,11 +76,12 @@ public sealed class StudioFactory : WebApplicationFactory<App>
     protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
-        var options = new StudioOptions { CacheRoot = CacheRoot };
+        var options = new StudioOptions { CacheRoot = CacheRoot, BoardsRoot = Path.Combine(CacheRoot, "boards") };
         SeededReportId = new FidelityReportStore(options).Save(FidelityTestData.Report(new DateTimeOffset(2026, 9, 24, 8, 0, 0, TimeSpan.Zero)));
         builder.ConfigureTestServices(services =>
         {
             services.AddSingleton(options);
+            services.AddSingleton<ICatalogSource, FakeCatalogSource>();
             services.AddSingleton<IBoardProvider, FakeBoardProvider>();
             services.AddSingleton<IFidelityBatch>(new FakeFidelityBatch());
         });

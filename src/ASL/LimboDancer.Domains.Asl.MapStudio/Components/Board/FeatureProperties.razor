@@ -1,0 +1,112 @@
+@* Properties of the selected feature. Every change becomes a ReplaceFeature command. *@
+
+<div class="feature-properties">
+    @if (Feature is null)
+    {
+        <p class="muted">Select a feature to edit its properties.</p>
+    }
+    else
+    {
+        <h3>@FeatureDescriptions.Kind(Feature) <span class="muted">@Feature.Id</span></h3>
+        <div class="form-grid">
+            @if (Codes.Count > 0)
+            {
+                <label for="feature-code">Terrain</label>
+                <select id="feature-code" value="@Code" @onchange="ChangeCode">
+                    @foreach (var terrain in Codes)
+                    {
+                        <option value="@terrain.Code">@terrain.Name</option>
+                    }
+                </select>
+            }
+
+            <label for="feature-layer">Layer</label>
+            <input id="feature-layer" type="number" value="@Feature.Layer" @onchange="ChangeLayer" />
+
+            @if (Feature is ElevationRegion region)
+            {
+                <label for="feature-level">Level</label>
+                <input id="feature-level" type="number" min="-9" max="9" value="@region.Level" @onchange="ChangeLevel" />
+            }
+
+            @if (Feature is LinearTerrainFeature { Centerline: not null } linear)
+            {
+                <label for="feature-width">Width (px)</label>
+                <input id="feature-width" type="number" min="1" max="60" value="@(linear.Width.Raw / 64)" @onchange="ChangeWidth" />
+            }
+
+            @if (Feature is BuildingFeature building)
+            {
+                <label for="feature-building">Building id</label>
+                <input id="feature-building" value="@building.BuildingId" @onchange="ChangeBuildingId" />
+            }
+
+            <label for="feature-notes">Notes</label>
+            <input id="feature-notes" value="@Feature.Notes" @onchange="ChangeNotes" />
+        </div>
+        <p><button class="danger" @onclick="() => OnDelete.InvokeAsync(Feature.Id)">Delete feature</button></p>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public Feature? Feature { get; set; }
+
+    [Parameter, EditorRequired]
+    public TerrainCatalog Catalog { get; set; } = default!;
+
+    [Parameter]
+    public byte BaseCode { get; set; }
+
+    [Parameter]
+    public EventCallback<Feature> OnChange { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnDelete { get; set; }
+
+    private int Code => Feature is null ? 0 : TerrainKinds.CodeOf(Feature) ?? 0;
+
+    /// <summary>The catalog codes valid for the selected feature's kind.</summary>
+    private IReadOnlyList<TerrainType> Codes =>
+        Feature is not null && TerrainKinds.RequiredKind(Feature) is { } kind
+            ? Catalog.Types.Where(type => TerrainKinds.KindOf(type) == kind || (kind == TerrainKind.Area && type.Code == BaseCode)).OrderBy(type => type.Name, StringComparer.Ordinal).ToArray()
+            : [];
+
+    private Task ChangeCode(ChangeEventArgs args)
+    {
+        if (Feature is null || !byte.TryParse(args.Value as string, out var code))
+        {
+            return Task.CompletedTask;
+        }
+
+        Feature changed = Feature switch
+        {
+            AreaTerrainFeature area => area with { Code = code },
+            LinearTerrainFeature linear => linear with { Code = code },
+            BridgeFeature bridge => bridge with { Code = code },
+            BuildingFeature building => building with { Code = code },
+            HexsideTerrainFeature hexside => hexside with { Code = code },
+            _ => Feature,
+        };
+        return OnChange.InvokeAsync(changed);
+    }
+
+    private Task ChangeLayer(ChangeEventArgs args) =>
+        Feature is not null && int.TryParse(args.Value as string, out var layer) ? OnChange.InvokeAsync(Feature with { Layer = layer }) : Task.CompletedTask;
+
+    private Task ChangeLevel(ChangeEventArgs args) =>
+        Feature is ElevationRegion region && int.TryParse(args.Value as string, out var level) ? OnChange.InvokeAsync(region with { Level = level }) : Task.CompletedTask;
+
+    private Task ChangeWidth(ChangeEventArgs args) =>
+        Feature is LinearTerrainFeature linear && int.TryParse(args.Value as string, out var width) && width > 0
+            ? OnChange.InvokeAsync(linear with { Width = FixedPoint.FromPixels(width) })
+            : Task.CompletedTask;
+
+    private Task ChangeBuildingId(ChangeEventArgs args) =>
+        Feature is BuildingFeature building && args.Value is string id && !string.IsNullOrWhiteSpace(id)
+            ? OnChange.InvokeAsync(building with { BuildingId = id.Trim() })
+            : Task.CompletedTask;
+
+    private Task ChangeNotes(ChangeEventArgs args) =>
+        Feature is not null ? OnChange.InvokeAsync(Feature with { Notes = string.IsNullOrWhiteSpace(args.Value as string) ? null : (string)args.Value! }) : Task.CompletedTask;
+}

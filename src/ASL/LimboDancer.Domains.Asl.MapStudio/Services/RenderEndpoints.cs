@@ -15,14 +15,20 @@ public sealed class RenderCache
 {
     private readonly ConcurrentDictionary<(string Board, string Version, BoardView View, string Layer, bool Trace), RenderedSvg> cache = new();
 
-    public RenderedSvg Get(StudioBoard board, BoardView view, string layer, bool trace)
+    /// <summary>The rendered layer or document, or null when the board has no input for the view.</summary>
+    public RenderedSvg? Get(StudioBoard board, BoardView view, string layer, bool trace)
     {
         ArgumentNullException.ThrowIfNull(board);
+        if (board.InputFor(view) is not { } input)
+        {
+            return null;
+        }
+
         return cache.GetOrAdd((board.Ref.Value, board.Version, view, layer, trace), key =>
         {
             var svg = key.Layer == "document"
-                ? BoardRenderer.Document(board.Render, view, trace)
-                : BoardRenderer.Fragment(board.Render, view, key.Layer, trace);
+                ? BoardRenderer.Document(input, view, trace)
+                : BoardRenderer.Fragment(input, view, key.Layer, trace);
             var hash = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(svg)));
             return new RenderedSvg(svg, "\"" + hash + "\"");
         });
@@ -66,12 +72,11 @@ public static class RenderEndpoints
             return Results.NotFound();
         }
 
-        if (provider.Load(boardRef).Board is not { } studioBoard || studioBoard.Version != version)
+        if (provider.LoadVersion(boardRef, version) is not { } studioBoard || cache.Get(studioBoard, boardView, layer, trace ?? false) is not { } rendered)
         {
             return Results.NotFound();
         }
 
-        var rendered = cache.Get(studioBoard, boardView, layer, trace ?? false);
         context.Response.Headers.ETag = rendered.ETag;
         context.Response.Headers.CacheControl = "public, max-age=31536000, immutable";
         if (context.Request.Headers.IfNoneMatch.ToString() == rendered.ETag)

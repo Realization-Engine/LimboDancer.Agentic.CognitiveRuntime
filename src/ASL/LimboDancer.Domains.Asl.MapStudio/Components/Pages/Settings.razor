@@ -1,0 +1,47 @@
+@page "/settings"
+@inject StudioOptions Options
+@inject VaslBoardProvider Vasl
+@inject AuthoredBoardService Authored
+
+<PageTitle>Settings - ASL Map Studio</PageTitle>
+
+<h2 class="page">Settings</h2>
+
+<dl class="report">
+    <dt>VASL checkout (<code>AslMaps:VaslRoot</code>)</dt>
+    <dd>@(Vasl.SourceDescription ?? "Not configured. Set AslMaps:VaslRoot to a local VASL repository checkout; VASL boards and authoring are disabled until then.")</dd>
+    <dt>Terrain catalog</dt>
+    <dd>@(Authored.Catalog is { } catalog ? $"{catalog.Catalog.Count} terrain types, blob {catalog.Hash[..12]}" : "unavailable")</dd>
+    <dt>Boards folder (<code>AslMaps:BoardsRoot</code>)</dt>
+    <dd><code>@Options.ResolveBoardsRoot()</code></dd>
+    <dt>Cache (<code>AslMaps:CacheRoot</code>)</dt>
+    <dd><code>@Options.ResolveCacheRoot()</code>, @CacheSize</dd>
+    <dt>Oracle fixtures</dt>
+    <dd><code>@(Options.ResolveOracleFixtures() ?? "not found")</code></dd>
+    <dt>Versions</dt>
+    <dd>
+        importer @LimboDancer.Domains.Asl.Maps.Vasl.VaslBoardImporter.ImporterVersion,
+        derivation @VaslCompatibleHexFactDerivation.Version,
+        compiler @FeatureCompiler.Version,
+        vectorizer @Vectorizer.Version,
+        renderer @BoardRenderer.RendererVersion,
+        theme @RenderTheme.Board.Name @RenderTheme.Board.Version
+    </dd>
+</dl>
+
+@code {
+    private string CacheSize
+    {
+        get
+        {
+            var root = Options.ResolveCacheRoot();
+            if (!Directory.Exists(root))
+            {
+                return "empty";
+            }
+
+            var bytes = new DirectoryInfo(root).EnumerateFiles("*", SearchOption.AllDirectories).Sum(file => file.Length);
+            return $"{bytes / 1024.0 / 1024.0:F1} MB";
+        }
+    }
+}

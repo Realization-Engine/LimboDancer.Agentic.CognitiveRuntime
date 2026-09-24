@@ -61,6 +61,9 @@ public sealed class SvgWriter
 
     public static string Number(int value) => value.ToString(CultureInfo.InvariantCulture);
 
+    /// <summary>A raw 1/64 pixel fixed-point value, written exactly.</summary>
+    public static string Fixed(int raw) => FixedPoint.FromRaw(raw).ToString();
+
     private void WriteTag(string name, (string Name, string Value)[] attributes)
     {
         builder.Append('<').Append(name);
@@ -93,6 +96,13 @@ public sealed class PathData
     public PathData MoveTo(string x, string y) => Append('M', x, y);
 
     public PathData LineTo(string x, string y) => Append('L', x, y);
+
+    /// <summary>A cubic Bézier segment to (x, y) with two control points.</summary>
+    public PathData CubicTo(string x1, string y1, string x2, string y2, string x, string y)
+    {
+        builder.Append('C').Append(x1).Append(' ').Append(y1).Append(' ').Append(x2).Append(' ').Append(y2).Append(' ').Append(x).Append(' ').Append(y);
+        return this;
+    }
 
     public PathData Horizontal(string x)
     {

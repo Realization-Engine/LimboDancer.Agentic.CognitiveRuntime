@@ -1,0 +1,50 @@
+@* Features by kind and paint order, with selection. *@
+
+<div class="layer-list">
+    @if (Model is null || Model.Features.Count == 0)
+    {
+        <p class="muted">No features yet. Pick a tool and draw.</p>
+    }
+    else
+    {
+        @foreach (var group in BoardRenderer.PaintOrder(Model).GroupBy(FeatureDescriptions.Kind))
+        {
+            <h3>@group.Key (@group.Count())</h3>
+            <ul class="plain">
+                @foreach (var feature in group)
+                {
+                    <li class="@(feature.Id == SelectedId ? "selected" : null)">
+                        <button class="link" @onclick="() => OnSelect.InvokeAsync(feature.Id)">@Label(feature)</button>
+                    </li>
+                }
+            </ul>
+        }
+    }
+</div>
+
+@code {
+    [Parameter]
+    public FeatureModel? Model { get; set; }
+
+    [Parameter]
+    public TerrainCatalog? Catalog { get; set; }
+
+    [Parameter]
+    public string? SelectedId { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnSelect { get; set; }
+
+    private string Label(Feature feature)
+    {
+        var name = TerrainKinds.CodeOf(feature) is { } code && Catalog is not null && Catalog.TryGet(code, out var terrain) ? terrain.Name : null;
+        var detail = feature switch
+        {
+            ElevationRegion region => $"level {region.Level}",
+            BuildingFeature building => $"{name} ({building.BuildingId})",
+            HexsideTerrainFeature hexside => $"{name}, {hexside.Spans.Count} hexsides",
+            _ => name ?? string.Empty,
+        };
+        return $"{detail} · layer {feature.Layer} · {(feature.Id.Length > 6 ? feature.Id[^6..] : feature.Id)}";
+    }
+}

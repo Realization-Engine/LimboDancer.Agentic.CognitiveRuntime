@@ -55,16 +55,6 @@ public static class Vectorizer
 
     private const int Background = 0;
 
-    private enum Kind
-    {
-        Base,
-        Area,
-        Linear,
-        Bridge,
-        Building,
-        Hexside,
-    }
-
     public static VectorizeResult Vectorize(VectorizerSource source, TerrainCatalog catalog, VectorizerOptions? options = null)
     {
         ArgumentNullException.ThrowIfNull(source);
@@ -73,7 +63,7 @@ public static class Vectorizer
         var grid = source.Grid;
         var geometry = grid.Geometry;
         var baseCode = catalog.TryGet("Open Ground", out var open) ? open.Code : (byte)0;
-        var kinds = Kinds(catalog, baseCode);
+        var kinds = TerrainKinds.Classify(catalog, baseCode);
 
         // Stage 1: reverse the post-passes.
         var codes = grid.Codes.ToArray();
@@ -84,10 +74,10 @@ public static class Vectorizer
         // Stages 2 to 6: traced passes per kind, and elevation.
         var passes = new List<KindPass>
         {
-            KindPass.Build(geometry, codes, kinds, Kind.Area, DitheredCodes(geometry, grid.Codes, kinds), 0x03),
-            KindPass.Build(geometry, codes, kinds, Kind.Linear, [], 0x04),
-            KindPass.Build(geometry, codes, kinds, Kind.Bridge, [], 0x05),
-            KindPass.Build(geometry, codes, kinds, Kind.Building, [], 0x06),
+            KindPass.Build(geometry, codes, kinds, TerrainKind.Area, DitheredCodes(geometry, grid.Codes, kinds), 0x03),
+            KindPass.Build(geometry, codes, kinds, TerrainKind.Linear, [], 0x04),
+            KindPass.Build(geometry, codes, kinds, TerrainKind.Bridge, [], 0x05),
+            KindPass.Build(geometry, codes, kinds, TerrainKind.Building, [], 0x06),
         };
         var buildingIds = BuildingIds(geometry, passes[3]);
         var elevationPasses = new List<(int Level, BoundarySimplifier Simplifier)>();
@@ -176,30 +166,6 @@ public static class Vectorizer
         return new VectorizeResult(model, compiled.Grid, facts, differences, iteration, diagnostics);
     }
 
-    private static Kind[] Kinds(TerrainCatalog catalog, byte baseCode)
-    {
-        var kinds = new Kind[256];
-        Array.Fill(kinds, Kind.Area);
-        foreach (var type in catalog.Types)
-        {
-            kinds[type.Code] = type switch
-            {
-                _ when type.Code == baseCode => Kind.Base,
-                { IsHexsideTerrain: true } => Kind.Hexside,
-                { IsBuilding: true } => Kind.Building,
-                { IsBridge: true } => Kind.Bridge,
-                _ when type.IsRoad || type.IsDepression || type.Category == LosCategory.Stream || IsLinearName(type.Name) => Kind.Linear,
-                _ => Kind.Area,
-            };
-        }
-
-        return kinds;
-    }
-
-    private static bool IsLinearName(string name) =>
-        name.Contains("Railroad", StringComparison.Ordinal) || name.Contains("Runway", StringComparison.Ordinal)
-        || name.Contains("Path", StringComparison.Ordinal) || name.Contains("Trail", StringComparison.Ordinal);
-
     // Stage 1: depression pixels one level up; exterior factory walls back to their factory where a neighbor shows which.
     private static void ReversePostPasses(BoardGeometry geometry, TerrainCatalog catalog, byte[] codes, sbyte[] elevations)
     {
@@ -279,7 +245,7 @@ public static class Vectorizer
     }
 
     // A code is dithered when fewer than half of its pixels have all four neighbors in the same code (section 7.5).
-    private static HashSet<byte> DitheredCodes(BoardGeometry geometry, ReadOnlySpan<byte> codes, Kind[] kinds)
+    private static HashSet<byte> DitheredCodes(BoardGeometry geometry, ReadOnlySpan<byte> codes, TerrainKind[] kinds)
     {
         var width = geometry.GridWidth;
         var height = geometry.GridHeight;
@@ -302,7 +268,7 @@ public static class Vectorizer
         var dithered = new HashSet<byte>();
         for (var code = 0; code < 256; code++)
         {
-            if (kinds[code] == Kind.Area && total[code] >= 100 && interior[code] * 2 < total[code])
+            if (kinds[code] == TerrainKind.Area && total[code] >= 100 && interior[code] * 2 < total[code])
             {
                 dithered.Add((byte)code);
             }
@@ -320,7 +286,7 @@ public static class Vectorizer
         ArgumentNullException.ThrowIfNull(grid);
         ArgumentNullException.ThrowIfNull(catalog);
         var baseCode = catalog.TryGet("Open Ground", out var open) ? open.Code : (byte)0;
-        return DitheredCodes(grid.Geometry, grid.Codes, Kinds(catalog, baseCode));
+        return DitheredCodes(grid.Geometry, grid.Codes, TerrainKinds.Classify(catalog, baseCode));
     }
 
     private static IEnumerable<Feature> ElevationFeatures(int level, BoundarySimplifier simplifier, int passIndex, Func<PixelBox, double> tolerance)
@@ -673,7 +639,7 @@ public static class Vectorizer
             return labels[cell] == Background ? null : Components[cell];
         }
 
-        public static KindPass Build(BoardGeometry geometry, byte[] codes, Kind[] kinds, Kind kind, HashSet<byte> dithered, byte idPrefix)
+        public static KindPass Build(BoardGeometry geometry, byte[] codes, TerrainKind[] kinds, TerrainKind kind, HashSet<byte> dithered, byte idPrefix)
         {
             var width = geometry.GridWidth;
             var height = geometry.GridHeight;

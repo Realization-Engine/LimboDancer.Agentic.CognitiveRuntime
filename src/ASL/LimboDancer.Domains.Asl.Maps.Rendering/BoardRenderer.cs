@@ -1,6 +1,7 @@
 using System.Globalization;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Maps.Derivation;
+using LimboDancer.Domains.Asl.Maps.Features;
 using LimboDancer.Domains.Asl.Maps.Geometry;
 using LimboDancer.Domains.Asl.Maps.Grid;
 using LimboDancer.Domains.Asl.Maps.Outlines;
@@ -15,23 +16,91 @@ public enum BoardView
 
     /// <summary>Every hex drawn from its derived Hex Facts (ASL-MAP-060, view 3).</summary>
     HexFacts,
+
+    /// <summary>The Feature Model drawn with the <c>board</c> theme (ASL-MAP-060, view 2).</summary>
+    Styled,
+
+    /// <summary>The Exact and Styled views together, with the differences between them (ASL-MAP-060).</summary>
+    Comparison,
 }
 
-/// <summary>Everything a board rendering needs. Outlines are traced once and reused across views and layers.</summary>
-public sealed record BoardRenderInput(
-    BoardRef Board,
-    string Title,
-    TerrainGrid Grid,
-    TerrainCatalog Catalog,
-    HexFactSet Facts,
-    GridOutlines Outlines,
-    GridOutlines ElevationOutlines)
+/// <summary>
+/// The Feature Model behind the Styled and Comparison views, with its compiled grid and derived facts. For an
+/// authored board this is the board itself; for an ingested board it is the vectorizer output.
+/// </summary>
+public sealed record StyledSource(FeatureModel Model, TerrainGrid Grid, HexFactSet Facts);
+
+/// <summary>
+/// Everything a board rendering needs. Outlines are traced on first use and reused across views and layers, so a
+/// rendering that needs no Exact layer never traces the grid.
+/// </summary>
+public sealed class BoardRenderInput
 {
-    public static BoardRenderInput Create(BoardRef board, string title, TerrainGrid grid, TerrainCatalog catalog, HexFactSet facts)
+    private readonly Lazy<GridOutlines> outlines;
+    private readonly Lazy<GridOutlines> elevationOutlines;
+
+    private BoardRenderInput(BoardRef board, string title, TerrainGrid grid, TerrainCatalog catalog, HexFactSet facts, StyledSource? styled, RenderTheme theme)
     {
+        Board = board;
+        Title = title;
+        Grid = grid;
+        Catalog = catalog;
+        Facts = facts;
+        Styled = styled;
+        Theme = theme;
+        outlines = new Lazy<GridOutlines>(() => GridOutlineTracer.Trace(grid));
+        elevationOutlines = new Lazy<GridOutlines>(() =>
+            GridOutlineTracer.Trace(new TerrainGrid(grid.Geometry, new byte[grid.CellCount], grid.Elevations, grid.Stairways)));
+    }
+
+    public BoardRef Board
+    {
+        get;
+    }
+
+    public string Title
+    {
+        get;
+    }
+
+    public TerrainGrid Grid
+    {
+        get;
+    }
+
+    public TerrainCatalog Catalog
+    {
+        get;
+    }
+
+    public HexFactSet Facts
+    {
+        get;
+    }
+
+    /// <summary>The Feature Model for the Styled and Comparison views, or null when the board has none yet.</summary>
+    public StyledSource? Styled
+    {
+        get;
+    }
+
+    public RenderTheme Theme
+    {
+        get;
+    }
+
+    public GridOutlines Outlines => outlines.Value;
+
+    public GridOutlines ElevationOutlines => elevationOutlines.Value;
+
+    public static BoardRenderInput Create(BoardRef board, string title, TerrainGrid grid, TerrainCatalog catalog, HexFactSet facts,
+        StyledSource? styled = null, RenderTheme? theme = null)
+    {
+        ArgumentNullException.ThrowIfNull(board);
         ArgumentNullException.ThrowIfNull(grid);
-        var elevationOnly = new TerrainGrid(grid.Geometry, new byte[grid.CellCount], grid.Elevations, grid.Stairways);
-        return new BoardRenderInput(board, title, grid, catalog, facts, GridOutlineTracer.Trace(grid), GridOutlineTracer.Trace(elevationOnly));
+        ArgumentNullException.ThrowIfNull(catalog);
+        ArgumentNullException.ThrowIfNull(facts);
+        return new BoardRenderInput(board, title, grid, catalog, facts, styled, theme ?? RenderTheme.Board);
     }
 }
 
@@ -39,7 +108,7 @@ public sealed record BoardRenderInput(
 /// Renders boards as SVG documents and per-layer fragments (Architecture and Rendering Design, section 3). Output is a
 /// pure function of the input, view, and trace flag, and never contains raster images (ASL-MAP-064).
 /// </summary>
-public static class BoardRenderer
+public static partial class BoardRenderer
 {
     public const string RendererVersion = "1.0.0";
     public const string SvgNamespace = "http://www.w3.org/2000/svg";
@@ -52,6 +121,8 @@ public static class BoardRenderer
     {
         BoardView.Exact => ["defs", "exact-terrain", "exact-elevation", "grid", "labels", "legend"],
         BoardView.HexFacts => ["defs", "hexfacts", "grid", "labels", "legend"],
+        BoardView.Styled => ["defs", .. StyledLayers, "grid", "labels", "legend"],
+        BoardView.Comparison => ["defs", "exact-terrain", .. StyledLayers, "diff", "grid", "labels", "legend"],
         _ => throw new ArgumentOutOfRangeException(nameof(view), view, "Unknown view."),
     };
 
@@ -100,7 +171,13 @@ public static class BoardRenderer
         return writer.ToString();
     }
 
-    public static string ViewName(BoardView view) => view == BoardView.Exact ? "exact" : "hexfacts";
+    public static string ViewName(BoardView view) => view switch
+    {
+        BoardView.Exact => "exact",
+        BoardView.HexFacts => "hexfacts",
+        BoardView.Styled => "styled",
+        _ => "comparison",
+    };
 
     public static bool TryParseView(string? text, out BoardView view)
     {
@@ -108,6 +185,8 @@ public static class BoardRenderer
         {
             "exact" => BoardView.Exact,
             "hexfacts" => BoardView.HexFacts,
+            "styled" => BoardView.Styled,
+            "comparison" => BoardView.Comparison,
             _ => (BoardView)(-1),
         };
         return Enum.IsDefined(view);
@@ -120,6 +199,11 @@ public static class BoardRenderer
         {
             case "defs":
                 WriteDefs(writer);
+                if (view is BoardView.Styled or BoardView.Comparison)
+                {
+                    WriteThemeDefs(writer, input.Theme);
+                }
+
                 break;
             case "exact-terrain":
                 WriteExactTerrain(writer, input);
@@ -138,6 +222,12 @@ public static class BoardRenderer
                 break;
             case "legend":
                 WriteLegend(writer, input, view, traceMode);
+                break;
+            case "diff":
+                WriteDiff(writer, input);
+                break;
+            case var styled when styled.StartsWith("styled-", StringComparison.Ordinal):
+                WriteStyledLayer(writer, input, styled);
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(layer), layer, "Unknown layer.");
@@ -341,6 +431,11 @@ public static class BoardRenderer
             return Enum.GetValues<CenterTerrainSource>().Select(source => (TraceColor(source), TraceLabel(source))).ToList();
         }
 
+        if (view is BoardView.Styled or BoardView.Comparison)
+        {
+            return StyledLegendEntries(input);
+        }
+
         IEnumerable<byte> codes = view == BoardView.Exact
             ? input.Grid.DistinctCodes()
             : input.Facts.Hexes.Select(hex => hex.Center.Terrain).Concat(input.Facts.Hexes.SelectMany(hex => hex.Hexsides.Select(side => side.HexsideTerrain)))
@@ -353,7 +448,7 @@ public static class BoardRenderer
     private static int LegendHeight(BoardRenderInput input, BoardView view)
     {
         var perRow = Math.Max(1, input.Grid.Geometry.GridWidth / LegendColumnWidth);
-        var entries = Math.Max(LegendEntries(input, view, traceMode: false).Count, Enum.GetValues<CenterTerrainSource>().Length);
+        var entries = Math.Max(LegendEntries(input, view, traceMode: false).Count, view is BoardView.Exact or BoardView.HexFacts ? Enum.GetValues<CenterTerrainSource>().Length : 0);
         return ((entries + perRow - 1) / perRow) * LegendRowHeight;
     }
 
