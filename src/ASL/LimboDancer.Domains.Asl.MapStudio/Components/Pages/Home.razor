@@ -6,7 +6,12 @@
 
 @if (Boards.SourceDescription is null)
 {
-    <p>No board source is configured. Set <code>AslMaps:VaslRoot</code> to a local VASL repository checkout.</p>
+    <p>No board source is configured. Set <code>AslMaps:VaslRoot</code> to a local VASL repository checkout, for example:</p>
+    <ul>
+        <li>user secrets (Development): <code>dotnet user-secrets set AslMaps:VaslRoot E:/path/to/vasl</code> in the MapStudio project directory;</li>
+        <li>an environment variable: <code>AslMaps__VaslRoot</code>;</li>
+        <li>a command-line argument: <code>--AslMaps:VaslRoot=E:/path/to/vasl</code>.</li>
+    </ul>
 }
 else
 {
