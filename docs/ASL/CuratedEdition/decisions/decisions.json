@@ -447,6 +447,33 @@
    "decision": "join",
    "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
    "rationale": "\"is always resolved on the IFT\"; means resolved, not solved again."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-a",
+   "rule": "linebreak-hyphen",
+   "baseLine": 1094,
+   "text": "on-board",
+   "decision": "retain",
+   "decidedBy": "dlandi (maintainer convention, 2026-09-23)",
+   "rationale": "Maintainer convention: on-board and off-board keep the hyphen."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-c",
+   "rule": "linebreak-hyphen",
+   "baseLine": 54,
+   "text": "Off-board",
+   "decision": "retain",
+   "decidedBy": "dlandi (maintainer convention, 2026-09-23)",
+   "rationale": "Maintainer convention: on-board and off-board keep the hyphen."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-e",
+   "rule": "linebreak-hyphen",
+   "baseLine": 815,
+   "text": "off-board",
+   "decision": "retain",
+   "decidedBy": "dlandi (maintainer convention, 2026-09-23)",
+   "rationale": "Maintainer convention: on-board and off-board keep the hyphen."
   }
  ]
 }

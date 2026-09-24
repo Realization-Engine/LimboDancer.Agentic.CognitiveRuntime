@@ -641,6 +641,17 @@
   },
   {
    "id": "CHC-00049",
+   "class": "reviewed-decision",
+   "text": "Off-board",
+   "rule": "linebreak-hyphen",
+   "baseLine": 54,
+   "decision": "retain",
+   "decidedBy": "dlandi (maintainer convention, 2026-09-23)",
+   "rationale": "Maintainer convention: on-board and off-board keep the hyphen.",
+   "queuedReason": "both forms attested"
+  },
+  {
+   "id": "CHC-00050",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 54,
@@ -658,7 +669,7 @@
    }
   },
   {
-   "id": "CHC-00050",
+   "id": "CHC-00051",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 54,
@@ -676,7 +687,7 @@
    }
   },
   {
-   "id": "CHC-00051",
+   "id": "CHC-00052",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 58,
@@ -694,7 +705,7 @@
    }
   },
   {
-   "id": "CHC-00052",
+   "id": "CHC-00053",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 58,
@@ -712,7 +723,7 @@
    }
   },
   {
-   "id": "CHC-00053",
+   "id": "CHC-00054",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 58,
@@ -730,7 +741,7 @@
    }
   },
   {
-   "id": "CHC-00054",
+   "id": "CHC-00055",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 58,
@@ -748,7 +759,7 @@
    }
   },
   {
-   "id": "CHC-00055",
+   "id": "CHC-00056",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 64,
@@ -766,7 +777,7 @@
    }
   },
   {
-   "id": "CHC-00056",
+   "id": "CHC-00057",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 64,
@@ -784,7 +795,7 @@
    }
   },
   {
-   "id": "CHC-00057",
+   "id": "CHC-00058",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 258,
@@ -802,7 +813,7 @@
    }
   },
   {
-   "id": "CHC-00058",
+   "id": "CHC-00059",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 710,
@@ -820,7 +831,7 @@
    }
   },
   {
-   "id": "CHC-00059",
+   "id": "CHC-00060",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 66,
@@ -838,7 +849,7 @@
    }
   },
   {
-   "id": "CHC-00060",
+   "id": "CHC-00061",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 66,
@@ -856,7 +867,7 @@
    }
   },
   {
-   "id": "CHC-00061",
+   "id": "CHC-00062",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 66,
@@ -874,7 +885,7 @@
    }
   },
   {
-   "id": "CHC-00062",
+   "id": "CHC-00063",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 66,
@@ -892,7 +903,7 @@
    }
   },
   {
-   "id": "CHC-00063",
+   "id": "CHC-00064",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 68,
@@ -910,7 +921,7 @@
    }
   },
   {
-   "id": "CHC-00064",
+   "id": "CHC-00065",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 68,
@@ -928,7 +939,7 @@
    }
   },
   {
-   "id": "CHC-00065",
+   "id": "CHC-00066",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 72,
@@ -946,7 +957,7 @@
    }
   },
   {
-   "id": "CHC-00066",
+   "id": "CHC-00067",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 72,
@@ -964,7 +975,7 @@
    }
   },
   {
-   "id": "CHC-00067",
+   "id": "CHC-00068",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 72,
@@ -982,7 +993,7 @@
    }
   },
   {
-   "id": "CHC-00068",
+   "id": "CHC-00069",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 150,
@@ -1000,7 +1011,7 @@
    }
   },
   {
-   "id": "CHC-00069",
+   "id": "CHC-00070",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 150,
@@ -1018,7 +1029,7 @@
    }
   },
   {
-   "id": "CHC-00070",
+   "id": "CHC-00071",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 152,
@@ -1036,7 +1047,7 @@
    }
   },
   {
-   "id": "CHC-00071",
+   "id": "CHC-00072",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 152,
@@ -1054,7 +1065,7 @@
    }
   },
   {
-   "id": "CHC-00072",
+   "id": "CHC-00073",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 156,
@@ -1072,7 +1083,7 @@
    }
   },
   {
-   "id": "CHC-00073",
+   "id": "CHC-00074",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 164,
@@ -1090,7 +1101,7 @@
    }
   },
   {
-   "id": "CHC-00074",
+   "id": "CHC-00075",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 712,
@@ -1108,7 +1119,7 @@
    }
   },
   {
-   "id": "CHC-00075",
+   "id": "CHC-00076",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 164,
@@ -1126,7 +1137,7 @@
    }
   },
   {
-   "id": "CHC-00076",
+   "id": "CHC-00077",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 172,
@@ -1144,7 +1155,7 @@
    }
   },
   {
-   "id": "CHC-00077",
+   "id": "CHC-00078",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 172,
@@ -1162,7 +1173,7 @@
    }
   },
   {
-   "id": "CHC-00078",
+   "id": "CHC-00079",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 178,
@@ -1180,7 +1191,7 @@
    }
   },
   {
-   "id": "CHC-00079",
+   "id": "CHC-00080",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 178,
@@ -1198,7 +1209,7 @@
    }
   },
   {
-   "id": "CHC-00080",
+   "id": "CHC-00081",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 188,
@@ -1216,7 +1227,7 @@
    }
   },
   {
-   "id": "CHC-00081",
+   "id": "CHC-00082",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 222,
@@ -1234,7 +1245,7 @@
    }
   },
   {
-   "id": "CHC-00082",
+   "id": "CHC-00083",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 190,
@@ -1252,7 +1263,7 @@
    }
   },
   {
-   "id": "CHC-00083",
+   "id": "CHC-00084",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 190,
@@ -1270,7 +1281,7 @@
    }
   },
   {
-   "id": "CHC-00084",
+   "id": "CHC-00085",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 190,
@@ -1288,7 +1299,7 @@
    }
   },
   {
-   "id": "CHC-00085",
+   "id": "CHC-00086",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 190,
@@ -1306,7 +1317,7 @@
    }
   },
   {
-   "id": "CHC-00086",
+   "id": "CHC-00087",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 192,
@@ -1324,7 +1335,7 @@
    }
   },
   {
-   "id": "CHC-00087",
+   "id": "CHC-00088",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 922,
@@ -1342,7 +1353,7 @@
    }
   },
   {
-   "id": "CHC-00088",
+   "id": "CHC-00089",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1086,
@@ -1360,7 +1371,7 @@
    }
   },
   {
-   "id": "CHC-00089",
+   "id": "CHC-00090",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 218,
@@ -1373,24 +1384,6 @@
     "pdfBreak": "line-end",
     "pdfBreakAfter": "re-",
     "joinedFormAttested": 63,
-    "hyphenatedFormAttestedMidLine": 0,
-    "basis": "joined-form-attested"
-   }
-  },
-  {
-   "id": "CHC-00090",
-   "rule": "linebreak-hyphen",
-   "class": "conversion-fix",
-   "baseLine": 220,
-   "before": "-",
-   "after": "",
-   "token": "Bom-bardment",
-   "result": "Bombardment",
-   "evidence": {
-    "pdfPage": 167,
-    "pdfBreak": "line-end",
-    "pdfBreakAfter": "Bom-",
-    "joinedFormAttested": 34,
     "hyphenatedFormAttestedMidLine": 0,
     "basis": "joined-form-attested"
    }
@@ -1420,6 +1413,24 @@
    "baseLine": 220,
    "before": "-",
    "after": "",
+   "token": "Bom-bardment",
+   "result": "Bombardment",
+   "evidence": {
+    "pdfPage": 167,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Bom-",
+    "joinedFormAttested": 34,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHC-00093",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 220,
+   "before": "-",
+   "after": "",
    "token": "Sur-vival",
    "result": "Survival",
    "evidence": {
@@ -1432,7 +1443,7 @@
    }
   },
   {
-   "id": "CHC-00093",
+   "id": "CHC-00094",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 222,
@@ -1450,7 +1461,7 @@
    }
   },
   {
-   "id": "CHC-00094",
+   "id": "CHC-00095",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 222,
@@ -1468,7 +1479,7 @@
    }
   },
   {
-   "id": "CHC-00095",
+   "id": "CHC-00096",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 226,
@@ -1486,7 +1497,7 @@
    }
   },
   {
-   "id": "CHC-00096",
+   "id": "CHC-00097",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 226,
@@ -1504,7 +1515,7 @@
    }
   },
   {
-   "id": "CHC-00097",
+   "id": "CHC-00098",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 226,
@@ -1522,7 +1533,7 @@
    }
   },
   {
-   "id": "CHC-00098",
+   "id": "CHC-00099",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 246,
@@ -1540,7 +1551,7 @@
    }
   },
   {
-   "id": "CHC-00099",
+   "id": "CHC-00100",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 350,
@@ -1558,7 +1569,7 @@
    }
   },
   {
-   "id": "CHC-00100",
+   "id": "CHC-00101",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1032,
@@ -1576,7 +1587,7 @@
    }
   },
   {
-   "id": "CHC-00101",
+   "id": "CHC-00102",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 246,
@@ -1594,7 +1605,7 @@
    }
   },
   {
-   "id": "CHC-00102",
+   "id": "CHC-00103",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 378,
@@ -1612,7 +1623,7 @@
    }
   },
   {
-   "id": "CHC-00103",
+   "id": "CHC-00104",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 246,
@@ -1630,7 +1641,7 @@
    }
   },
   {
-   "id": "CHC-00104",
+   "id": "CHC-00105",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 254,
@@ -1648,7 +1659,7 @@
    }
   },
   {
-   "id": "CHC-00105",
+   "id": "CHC-00106",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 260,
@@ -1666,7 +1677,7 @@
    }
   },
   {
-   "id": "CHC-00106",
+   "id": "CHC-00107",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 260,
@@ -1684,7 +1695,7 @@
    }
   },
   {
-   "id": "CHC-00107",
+   "id": "CHC-00108",
    "rule": "linebreak-hyphen",
    "class": "reviewed-decision",
    "baseLine": 290,
@@ -1698,7 +1709,7 @@
    "queuedReason": "neither form attested"
   },
   {
-   "id": "CHC-00108",
+   "id": "CHC-00109",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 296,
@@ -1716,7 +1727,7 @@
    }
   },
   {
-   "id": "CHC-00109",
+   "id": "CHC-00110",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 296,
@@ -1734,7 +1745,7 @@
    }
   },
   {
-   "id": "CHC-00110",
+   "id": "CHC-00111",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 308,
@@ -1752,7 +1763,7 @@
    }
   },
   {
-   "id": "CHC-00111",
+   "id": "CHC-00112",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 318,
@@ -1770,7 +1781,7 @@
    }
   },
   {
-   "id": "CHC-00112",
+   "id": "CHC-00113",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 318,
@@ -1788,7 +1799,7 @@
    }
   },
   {
-   "id": "CHC-00113",
+   "id": "CHC-00114",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 320,
@@ -1806,7 +1817,7 @@
    }
   },
   {
-   "id": "CHC-00114",
+   "id": "CHC-00115",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 320,
@@ -1824,7 +1835,7 @@
    }
   },
   {
-   "id": "CHC-00115",
+   "id": "CHC-00116",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 322,
@@ -1842,7 +1853,7 @@
    }
   },
   {
-   "id": "CHC-00116",
+   "id": "CHC-00117",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 324,
@@ -1860,7 +1871,7 @@
    }
   },
   {
-   "id": "CHC-00117",
+   "id": "CHC-00118",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 578,
@@ -1878,7 +1889,7 @@
    }
   },
   {
-   "id": "CHC-00118",
+   "id": "CHC-00119",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 350,
@@ -1896,7 +1907,7 @@
    }
   },
   {
-   "id": "CHC-00119",
+   "id": "CHC-00120",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 352,
@@ -1914,7 +1925,7 @@
    }
   },
   {
-   "id": "CHC-00120",
+   "id": "CHC-00121",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 574,
@@ -1932,7 +1943,7 @@
    }
   },
   {
-   "id": "CHC-00121",
+   "id": "CHC-00122",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 354,
@@ -1950,7 +1961,7 @@
    }
   },
   {
-   "id": "CHC-00122",
+   "id": "CHC-00123",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 360,
@@ -1968,7 +1979,7 @@
    }
   },
   {
-   "id": "CHC-00123",
+   "id": "CHC-00124",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 362,
@@ -1986,7 +1997,7 @@
    }
   },
   {
-   "id": "CHC-00124",
+   "id": "CHC-00125",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 364,
@@ -2004,7 +2015,7 @@
    }
   },
   {
-   "id": "CHC-00125",
+   "id": "CHC-00126",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 368,
@@ -2022,7 +2033,7 @@
    }
   },
   {
-   "id": "CHC-00126",
+   "id": "CHC-00127",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 918,
@@ -2040,7 +2051,7 @@
    }
   },
   {
-   "id": "CHC-00127",
+   "id": "CHC-00128",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 370,
@@ -2058,7 +2069,7 @@
    }
   },
   {
-   "id": "CHC-00128",
+   "id": "CHC-00129",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 370,
@@ -2076,7 +2087,7 @@
    }
   },
   {
-   "id": "CHC-00129",
+   "id": "CHC-00130",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 370,
@@ -2094,7 +2105,7 @@
    }
   },
   {
-   "id": "CHC-00130",
+   "id": "CHC-00131",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 386,
@@ -2112,28 +2123,10 @@
    }
   },
   {
-   "id": "CHC-00131",
-   "rule": "linebreak-hyphen",
-   "class": "conversion-fix",
-   "baseLine": 966,
-   "before": "-",
-   "after": "",
-   "token": "fir-ing",
-   "result": "firing",
-   "evidence": {
-    "pdfPage": 183,
-    "pdfBreak": "line-end",
-    "pdfBreakAfter": "fir-",
-    "joinedFormAttested": 257,
-    "hyphenatedFormAttestedMidLine": 0,
-    "basis": "joined-form-attested"
-   }
-  },
-  {
    "id": "CHC-00132",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
-   "baseLine": 986,
+   "baseLine": 966,
    "before": "-",
    "after": "",
    "token": "fir-ing",
@@ -2151,6 +2144,24 @@
    "id": "CHC-00133",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
+   "baseLine": 986,
+   "before": "-",
+   "after": "",
+   "token": "fir-ing",
+   "result": "firing",
+   "evidence": {
+    "pdfPage": 183,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "fir-",
+    "joinedFormAttested": 257,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHC-00134",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
    "baseLine": 396,
    "before": "-",
    "after": "",
@@ -2166,7 +2177,7 @@
    }
   },
   {
-   "id": "CHC-00134",
+   "id": "CHC-00135",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 946,
@@ -2184,7 +2195,7 @@
    }
   },
   {
-   "id": "CHC-00135",
+   "id": "CHC-00136",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 966,
@@ -2202,7 +2213,7 @@
    }
   },
   {
-   "id": "CHC-00136",
+   "id": "CHC-00137",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1098,
@@ -2220,7 +2231,7 @@
    }
   },
   {
-   "id": "CHC-00137",
+   "id": "CHC-00138",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 400,
@@ -2238,7 +2249,7 @@
    }
   },
   {
-   "id": "CHC-00138",
+   "id": "CHC-00139",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 404,
@@ -2256,7 +2267,7 @@
    }
   },
   {
-   "id": "CHC-00139",
+   "id": "CHC-00140",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 432,
@@ -2274,7 +2285,7 @@
    }
   },
   {
-   "id": "CHC-00140",
+   "id": "CHC-00141",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 434,
@@ -2292,7 +2303,7 @@
    }
   },
   {
-   "id": "CHC-00141",
+   "id": "CHC-00142",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 698,
@@ -2310,7 +2321,7 @@
    }
   },
   {
-   "id": "CHC-00142",
+   "id": "CHC-00143",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1098,
@@ -2328,7 +2339,7 @@
    }
   },
   {
-   "id": "CHC-00143",
+   "id": "CHC-00144",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1108,
@@ -2346,7 +2357,7 @@
    }
   },
   {
-   "id": "CHC-00144",
+   "id": "CHC-00145",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 558,
@@ -2364,7 +2375,7 @@
    }
   },
   {
-   "id": "CHC-00145",
+   "id": "CHC-00146",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 574,
@@ -2382,7 +2393,7 @@
    }
   },
   {
-   "id": "CHC-00146",
+   "id": "CHC-00147",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 574,
@@ -2400,7 +2411,7 @@
    }
   },
   {
-   "id": "CHC-00147",
+   "id": "CHC-00148",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 574,
@@ -2418,7 +2429,7 @@
    }
   },
   {
-   "id": "CHC-00148",
+   "id": "CHC-00149",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 574,
@@ -2436,7 +2447,7 @@
    }
   },
   {
-   "id": "CHC-00149",
+   "id": "CHC-00150",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 576,
@@ -2454,7 +2465,7 @@
    }
   },
   {
-   "id": "CHC-00150",
+   "id": "CHC-00151",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 896,
@@ -2472,7 +2483,7 @@
    }
   },
   {
-   "id": "CHC-00151",
+   "id": "CHC-00152",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 644,
@@ -2490,7 +2501,7 @@
    }
   },
   {
-   "id": "CHC-00152",
+   "id": "CHC-00153",
    "rule": "stale-hyphen",
    "class": "reviewed-decision",
    "baseLine": 650,
@@ -2504,7 +2515,7 @@
    "queuedReason": "mid-line hyphen after a real prefix; joined form is attested"
   },
   {
-   "id": "CHC-00153",
+   "id": "CHC-00154",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 682,
@@ -2522,7 +2533,7 @@
    }
   },
   {
-   "id": "CHC-00154",
+   "id": "CHC-00155",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 684,
@@ -2540,7 +2551,7 @@
    }
   },
   {
-   "id": "CHC-00155",
+   "id": "CHC-00156",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 688,
@@ -2558,7 +2569,7 @@
    }
   },
   {
-   "id": "CHC-00156",
+   "id": "CHC-00157",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 694,
@@ -2576,7 +2587,7 @@
    }
   },
   {
-   "id": "CHC-00157",
+   "id": "CHC-00158",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 694,
@@ -2594,7 +2605,7 @@
    }
   },
   {
-   "id": "CHC-00158",
+   "id": "CHC-00159",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 694,
@@ -2612,7 +2623,7 @@
    }
   },
   {
-   "id": "CHC-00159",
+   "id": "CHC-00160",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 694,
@@ -2630,7 +2641,7 @@
    }
   },
   {
-   "id": "CHC-00160",
+   "id": "CHC-00161",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 700,
@@ -2648,7 +2659,7 @@
    }
   },
   {
-   "id": "CHC-00161",
+   "id": "CHC-00162",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 706,
@@ -2666,7 +2677,7 @@
    }
   },
   {
-   "id": "CHC-00162",
+   "id": "CHC-00163",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 864,
@@ -2684,7 +2695,7 @@
    }
   },
   {
-   "id": "CHC-00163",
+   "id": "CHC-00164",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 864,
@@ -2702,7 +2713,7 @@
    }
   },
   {
-   "id": "CHC-00164",
+   "id": "CHC-00165",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 864,
@@ -2720,7 +2731,7 @@
    }
   },
   {
-   "id": "CHC-00165",
+   "id": "CHC-00166",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 864,
@@ -2738,7 +2749,7 @@
    }
   },
   {
-   "id": "CHC-00166",
+   "id": "CHC-00167",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 864,
@@ -2756,7 +2767,7 @@
    }
   },
   {
-   "id": "CHC-00167",
+   "id": "CHC-00168",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 864,
@@ -2774,7 +2785,7 @@
    }
   },
   {
-   "id": "CHC-00168",
+   "id": "CHC-00169",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 890,
@@ -2792,7 +2803,7 @@
    }
   },
   {
-   "id": "CHC-00169",
+   "id": "CHC-00170",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 892,
@@ -2810,7 +2821,7 @@
    }
   },
   {
-   "id": "CHC-00170",
+   "id": "CHC-00171",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 894,
@@ -2828,7 +2839,7 @@
    }
   },
   {
-   "id": "CHC-00171",
+   "id": "CHC-00172",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 908,
@@ -2846,7 +2857,7 @@
    }
   },
   {
-   "id": "CHC-00172",
+   "id": "CHC-00173",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 912,
@@ -2864,7 +2875,7 @@
    }
   },
   {
-   "id": "CHC-00173",
+   "id": "CHC-00174",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 912,
@@ -2882,7 +2893,7 @@
    }
   },
   {
-   "id": "CHC-00174",
+   "id": "CHC-00175",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 918,
@@ -2900,7 +2911,7 @@
    }
   },
   {
-   "id": "CHC-00175",
+   "id": "CHC-00176",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 918,
@@ -2918,7 +2929,7 @@
    }
   },
   {
-   "id": "CHC-00176",
+   "id": "CHC-00177",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 920,
@@ -2931,24 +2942,6 @@
     "pdfBreak": "line-end",
     "pdfBreakAfter": "includ-",
     "joinedFormAttested": 168,
-    "hyphenatedFormAttestedMidLine": 0,
-    "basis": "joined-form-attested"
-   }
-  },
-  {
-   "id": "CHC-00177",
-   "rule": "linebreak-hyphen",
-   "class": "conversion-fix",
-   "baseLine": 920,
-   "before": "-",
-   "after": "",
-   "token": "gun-shield",
-   "result": "gunshield",
-   "evidence": {
-    "pdfPage": 182,
-    "pdfBreak": "line-end",
-    "pdfBreakAfter": "gun-",
-    "joinedFormAttested": 23,
     "hyphenatedFormAttestedMidLine": 0,
     "basis": "joined-form-attested"
    }
@@ -2975,6 +2968,24 @@
    "id": "CHC-00179",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
+   "baseLine": 920,
+   "before": "-",
+   "after": "",
+   "token": "gun-shield",
+   "result": "gunshield",
+   "evidence": {
+    "pdfPage": 182,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "gun-",
+    "joinedFormAttested": 23,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHC-00180",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
    "baseLine": 928,
    "before": "-",
    "after": "",
@@ -2990,7 +3001,7 @@
    }
   },
   {
-   "id": "CHC-00180",
+   "id": "CHC-00181",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 940,
@@ -3008,7 +3019,7 @@
    }
   },
   {
-   "id": "CHC-00181",
+   "id": "CHC-00182",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 940,
@@ -3026,7 +3037,7 @@
    }
   },
   {
-   "id": "CHC-00182",
+   "id": "CHC-00183",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 968,
@@ -3044,7 +3055,7 @@
    }
   },
   {
-   "id": "CHC-00183",
+   "id": "CHC-00184",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 970,
@@ -3062,7 +3073,7 @@
    }
   },
   {
-   "id": "CHC-00184",
+   "id": "CHC-00185",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 972,
@@ -3080,7 +3091,7 @@
    }
   },
   {
-   "id": "CHC-00185",
+   "id": "CHC-00186",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 976,
@@ -3098,7 +3109,7 @@
    }
   },
   {
-   "id": "CHC-00186",
+   "id": "CHC-00187",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 986,
@@ -3116,7 +3127,7 @@
    }
   },
   {
-   "id": "CHC-00187",
+   "id": "CHC-00188",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 988,
@@ -3134,7 +3145,7 @@
    }
   },
   {
-   "id": "CHC-00188",
+   "id": "CHC-00189",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 998,
@@ -3152,7 +3163,7 @@
    }
   },
   {
-   "id": "CHC-00189",
+   "id": "CHC-00190",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1004,
@@ -3170,7 +3181,7 @@
    }
   },
   {
-   "id": "CHC-00190",
+   "id": "CHC-00191",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1004,
@@ -3188,7 +3199,7 @@
    }
   },
   {
-   "id": "CHC-00191",
+   "id": "CHC-00192",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1006,
@@ -3206,7 +3217,7 @@
    }
   },
   {
-   "id": "CHC-00192",
+   "id": "CHC-00193",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1006,
@@ -3224,7 +3235,7 @@
    }
   },
   {
-   "id": "CHC-00193",
+   "id": "CHC-00194",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1006,
@@ -3242,7 +3253,7 @@
    }
   },
   {
-   "id": "CHC-00194",
+   "id": "CHC-00195",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1006,
@@ -3260,7 +3271,7 @@
    }
   },
   {
-   "id": "CHC-00195",
+   "id": "CHC-00196",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1016,
@@ -3278,7 +3289,7 @@
    }
   },
   {
-   "id": "CHC-00196",
+   "id": "CHC-00197",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1018,
@@ -3296,7 +3307,7 @@
    }
   },
   {
-   "id": "CHC-00197",
+   "id": "CHC-00198",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1080,
@@ -3314,7 +3325,7 @@
    }
   },
   {
-   "id": "CHC-00198",
+   "id": "CHC-00199",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1020,
@@ -3332,7 +3343,7 @@
    }
   },
   {
-   "id": "CHC-00199",
+   "id": "CHC-00200",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1036,
@@ -3350,28 +3361,10 @@
    }
   },
   {
-   "id": "CHC-00200",
-   "rule": "linebreak-hyphen",
-   "class": "conversion-fix",
-   "baseLine": 1054,
-   "before": "-",
-   "after": "",
-   "token": "MOL-Pro-jector",
-   "result": "MOL-Projector",
-   "evidence": {
-    "pdfPage": 184,
-    "pdfBreak": "line-end",
-    "pdfBreakAfter": "MOL-Pro-",
-    "joinedFormAttested": 21,
-    "hyphenatedFormAttestedMidLine": 0,
-    "basis": "joined-form-attested"
-   }
-  },
-  {
    "id": "CHC-00201",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
-   "baseLine": 1072,
+   "baseLine": 1054,
    "before": "-",
    "after": "",
    "token": "MOL-Pro-jector",
@@ -3389,6 +3382,24 @@
    "id": "CHC-00202",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
+   "baseLine": 1072,
+   "before": "-",
+   "after": "",
+   "token": "MOL-Pro-jector",
+   "result": "MOL-Projector",
+   "evidence": {
+    "pdfPage": 184,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "MOL-Pro-",
+    "joinedFormAttested": 21,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHC-00203",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
    "baseLine": 1054,
    "before": "-",
    "after": "",
@@ -3404,7 +3415,7 @@
    }
   },
   {
-   "id": "CHC-00203",
+   "id": "CHC-00204",
    "class": "reviewed-decision",
    "text": "non-qualified-use",
    "rule": "linebreak-hyphen",
@@ -3415,7 +3426,7 @@
    "queuedReason": "neither form attested"
   },
   {
-   "id": "CHC-00204",
+   "id": "CHC-00205",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1060,
@@ -3433,7 +3444,7 @@
    }
   },
   {
-   "id": "CHC-00205",
+   "id": "CHC-00206",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1060,
@@ -3451,7 +3462,7 @@
    }
   },
   {
-   "id": "CHC-00206",
+   "id": "CHC-00207",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1072,
@@ -3469,7 +3480,7 @@
    }
   },
   {
-   "id": "CHC-00207",
+   "id": "CHC-00208",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1076,
@@ -3487,7 +3498,7 @@
    }
   },
   {
-   "id": "CHC-00208",
+   "id": "CHC-00209",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1080,
@@ -3505,7 +3516,7 @@
    }
   },
   {
-   "id": "CHC-00209",
+   "id": "CHC-00210",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1096,
@@ -3523,7 +3534,7 @@
    }
   },
   {
-   "id": "CHC-00210",
+   "id": "CHC-00211",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1098,
@@ -3541,7 +3552,7 @@
    }
   },
   {
-   "id": "CHC-00211",
+   "id": "CHC-00212",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1098,
@@ -3559,7 +3570,7 @@
    }
   },
   {
-   "id": "CHC-00212",
+   "id": "CHC-00213",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1100,
@@ -3577,7 +3588,7 @@
    }
   },
   {
-   "id": "CHC-00213",
+   "id": "CHC-00214",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1108,
@@ -3595,7 +3606,7 @@
    }
   },
   {
-   "id": "CHC-00214",
+   "id": "CHC-00215",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1114,
@@ -3613,7 +3624,7 @@
    }
   },
   {
-   "id": "CHC-00215",
+   "id": "CHC-00216",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1114,
@@ -3631,7 +3642,7 @@
    }
   },
   {
-   "id": "CHC-00216",
+   "id": "CHC-00217",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1116,
@@ -3649,7 +3660,7 @@
    }
   },
   {
-   "id": "CHC-00217",
+   "id": "CHC-00218",
    "class": "reviewed-decision",
    "text": "shatter-proof",
    "rule": "linebreak-hyphen",
@@ -3660,7 +3671,7 @@
    "queuedReason": "neither form attested"
   },
   {
-   "id": "CHC-00218",
+   "id": "CHC-00219",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1160,
@@ -3678,7 +3689,7 @@
    }
   },
   {
-   "id": "CHC-00219",
+   "id": "CHC-00220",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1162,
@@ -3696,7 +3707,7 @@
    }
   },
   {
-   "id": "CHC-00220",
+   "id": "CHC-00221",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1164,
@@ -3714,7 +3725,7 @@
    }
   },
   {
-   "id": "CHC-00221",
+   "id": "CHC-00222",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1164,
@@ -3732,7 +3743,7 @@
    }
   },
   {
-   "id": "CHC-00222",
+   "id": "CHC-00223",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1166,
@@ -3750,7 +3761,7 @@
    }
   },
   {
-   "id": "CHC-00223",
+   "id": "CHC-00224",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1172,
@@ -3768,7 +3779,7 @@
    }
   },
   {
-   "id": "CHC-00224",
+   "id": "CHC-00225",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1176,
@@ -3786,7 +3797,7 @@
    }
   },
   {
-   "id": "CHC-00225",
+   "id": "CHC-00226",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1182,
@@ -3804,7 +3815,7 @@
    }
   },
   {
-   "id": "CHC-00226",
+   "id": "CHC-00227",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 84,
@@ -3814,7 +3825,7 @@
    "context": "r and remove the AR counter.  **1.32** **BLAST HEIGHT/AREA:** For Observer-LO"
   },
   {
-   "id": "CHC-00227",
+   "id": "CHC-00228",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 88,
@@ -3824,7 +3835,7 @@
    "context": " the Observer’s LOS (1.32).  **1.322** **END OF ACTIONS:** Placing a SR (1.3-"
   },
   {
-   "id": "CHC-00228",
+   "id": "CHC-00229",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 122,
@@ -3834,7 +3845,7 @@
    "context": "also 1.35.  ##### 1.34 FFE:C  **1.34** **FFE:C:** A FFE:C (Continuation) coun"
   },
   {
-   "id": "CHC-00229",
+   "id": "CHC-00230",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 138,
@@ -3844,7 +3855,7 @@
    "context": "wed by a SR) as per 1.3-.31.  **1.35** **CANCELLED SR/FFE:** *Any* Cancellati"
   },
   {
-   "id": "CHC-00230",
+   "id": "CHC-00231",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 140,
@@ -3854,7 +3865,7 @@
    "context": "e removal of that SR counter.  **1.4** **CORRECTING OBA:** An Observer may Co"
   },
   {
-   "id": "CHC-00231",
+   "id": "CHC-00232",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 142,
@@ -3864,7 +3875,7 @@
    "context": "6 will cause a two-hex error.  **1.5** **FFE RESOLUTION:** A new Fire Mission"
   },
   {
-   "id": "CHC-00232",
+   "id": "CHC-00233",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 152,
@@ -3874,7 +3885,7 @@
    "context": " Phone security area (1.23).  **1.51** **ENTERING A FFE:** A HE/WP FFE:1/2/C "
   },
   {
-   "id": "CHC-00233",
+   "id": "CHC-00234",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 156,
@@ -3884,7 +3895,7 @@
    "context": "nterdiction.  ##### 1.52 TEM  **1.52** **TEM:** Indirect Fire IFT resolution "
   },
   {
-   "id": "CHC-00234",
+   "id": "CHC-00235",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 160,
@@ -3894,7 +3905,7 @@
    "context": "(Gunshields).  ##### 1.53 CH  **1.53** **CH:** A HE/WP FFE Original resolutio"
   },
   {
-   "id": "CHC-00235",
+   "id": "CHC-00236",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 162,
@@ -3904,7 +3915,7 @@
    "context": ".75 for HE, and 3.76 for WP.  **1.54** **FRIENDLY UNITS:** Each non-heroic, n"
   },
   {
-   "id": "CHC-00236",
+   "id": "CHC-00237",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 164,
@@ -3914,7 +3925,7 @@
    "context": " or Bombardment.<sup>4</sup>  **1.55** **vs VEHICLE:** The H Vehicle line of "
   },
   {
-   "id": "CHC-00237",
+   "id": "CHC-00238",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 168,
@@ -3924,7 +3935,7 @@
    "context": "ges/eASLRB_v3_01-p165-2.png)  **1.56** **vs CONCEALED UNITS:** The resolution"
   },
   {
-   "id": "CHC-00238",
+   "id": "CHC-00239",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 170,
@@ -3934,7 +3945,7 @@
    "context": "lved vs a concealed unit(s).  **1.57** **FFE LOS HINDRANCE:** A *HE Concentra"
   },
   {
-   "id": "CHC-00239",
+   "id": "CHC-00240",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 172,
@@ -3944,7 +3955,7 @@
    "context": " and E12.75. See also F11.75.  **1.6** **OBSERVER:** An Observer must have a "
   },
   {
-   "id": "CHC-00240",
+   "id": "CHC-00241",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 178,
@@ -3954,7 +3965,7 @@
    "context": " re-establish Radio Contact.  **1.62** **VISION EFFECTS:** When placing/Corre"
   },
   {
-   "id": "CHC-00241",
+   "id": "CHC-00242",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 192,
@@ -3964,7 +3975,7 @@
    "context": "rst Battery* *Access draw]*.  **1.71** **SMOKE:** A SMOKE FFE is treated like"
   },
   {
-   "id": "CHC-00242",
+   "id": "CHC-00243",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 194,
@@ -3974,7 +3985,7 @@
    "context": "oard in the normal manner]*.  **1.72** **HARASSING FIRE:** Whenever a FFE:1 t"
   },
   {
-   "id": "CHC-00243",
+   "id": "CHC-00244",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 210,
@@ -3984,7 +3995,7 @@
    "context": "nario with such capabilities.  **1.8** **BOMBARDMENT:** The following rules, "
   },
   {
-   "id": "CHC-00244",
+   "id": "CHC-00245",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 212,
@@ -3994,7 +4005,7 @@
    "context": "prior to a set-piece attack.  **1.81** **AREA:** Bombardment begins after set"
   },
   {
-   "id": "CHC-00245",
+   "id": "CHC-00246",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 214,
@@ -4004,7 +4015,7 @@
    "context": " the effects of Bombardment.  **1.82** **EFFECTS:** All non-Aerial Personnel "
   },
   {
-   "id": "CHC-00246",
+   "id": "CHC-00247",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 268,
@@ -4014,7 +4025,7 @@
    "context": "es/eASLRB_v3_01-p168-1.png)  **2.241** **FIRST/FINAL FIRE:** A Gun marked wit"
   },
   {
-   "id": "CHC-00247",
+   "id": "CHC-00248",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 270,
@@ -4024,7 +4035,7 @@
    "context": "e Gun can use IFE, see 2.29.  **2.25** **RANGE LIMIT:** Most Gun counters do "
   },
   {
-   "id": "CHC-00248",
+   "id": "CHC-00249",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 272,
@@ -4034,7 +4045,7 @@
    "context": " its maximum. See also 3.52.  **2.26** **SPECIAL AMMO:** Some Guns and certai"
   },
   {
-   "id": "CHC-00249",
+   "id": "CHC-00250",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 274,
@@ -4044,7 +4055,7 @@
    "context": "e side). See also Section 8.  **2.27** **MANHANDLING NUMBER (M#):** Each non-"
   },
   {
-   "id": "CHC-00250",
+   "id": "CHC-00251",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 276,
@@ -4054,7 +4065,7 @@
    "context": "ushing (10.3) requirements.  **2.271** **GUN TARGET SIZE:** The color of the "
   },
   {
-   "id": "CHC-00251",
+   "id": "CHC-00252",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 278,
@@ -4064,7 +4075,7 @@
    "context": "ies when firing at that Gun.  **2.28** **BREAKDOWN:** All Guns have an inhere"
   },
   {
-   "id": "CHC-00252",
+   "id": "CHC-00253",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 282,
@@ -4074,7 +4085,7 @@
    "context": "e Fire—penalties as per A9.3.  **2.3** **360****<sup>o</sup>** **MOUNT:** A 3"
   },
   {
-   "id": "CHC-00253",
+   "id": "CHC-00254",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 282,
@@ -4084,7 +4095,7 @@
    "context": "A9.3.  **2.3** **360****<sup>o</sup>** **MOUNT:** A 360<sup>o</sup> Mount is "
   },
   {
-   "id": "CHC-00254",
+   "id": "CHC-00255",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 284,
@@ -4094,7 +4105,7 @@
    "context": "to various sub-groups (D1.3).  **2.4** **MOVEMENT/FIRE LIMITATIONS:** The des"
   },
   {
-   "id": "CHC-00255",
+   "id": "CHC-00256",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 286,
@@ -4104,7 +4115,7 @@
    "context": "vement (10.). See also A4.41.  **2.5** **CONDITIONAL ROF:** The multiple ROF "
   },
   {
-   "id": "CHC-00256",
+   "id": "CHC-00257",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 288,
@@ -4114,7 +4125,7 @@
    "context": "it once again changes its CA.  **2.6** **GUN DEPRESSION/ELEVATION:** Only mor"
   },
   {
-   "id": "CHC-00257",
+   "id": "CHC-00258",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 290,
@@ -4124,7 +4135,7 @@
    "context": "ility, then its CMG does too.  **2.7** **PROHIBITED HEXES:** A Gun cannot occ"
   },
   {
-   "id": "CHC-00258",
+   "id": "CHC-00259",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 338,
@@ -4134,7 +4145,7 @@
    "context": "ive no wall/hedge TEM (B9.3).  **3.4** **MULTIPLE TARGETS:** A hit obtained o"
   },
   {
-   "id": "CHC-00259",
+   "id": "CHC-00260",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 342,
@@ -4144,7 +4155,7 @@
    "context": "be used* *to attack an AFV.]*  **3.5** **FP MODIFIERS:** Most FP modification"
   },
   {
-   "id": "CHC-00260",
+   "id": "CHC-00261",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 350,
@@ -4154,7 +4165,7 @@
    "context": "Type, the FP is halved twice.  **3.6** **IMPROBABLE HITS:** When firing under"
   },
   {
-   "id": "CHC-00261",
+   "id": "CHC-00262",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 352,
@@ -4164,7 +4175,7 @@
    "context": "hit; otherwise he has missed.  **3.7** **CRITICAL HITS (CH):** A CH is a hit "
   },
   {
-   "id": "CHC-00262",
+   "id": "CHC-00263",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 354,
@@ -4174,7 +4185,7 @@
    "context": "hich equals a Final DR ≤ 3).  **3.71** **RESOLUTION vs NON-ARMORED TARGET:** "
   },
   {
-   "id": "CHC-00263",
+   "id": "CHC-00264",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 426,
@@ -4184,7 +4195,7 @@
    "context": " CA again for the next shot.  **5.13** **BOUNDING FIRST FIRE:** Case A is nev"
   },
   {
-   "id": "CHC-00264",
+   "id": "CHC-00265",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 428,
@@ -4194,7 +4205,7 @@
    "context": "iture (TCA D3.12; VCA D2.11).  **5.2** **CASE B; FIRE IN AFPh:** All ordnance"
   },
   {
-   "id": "CHC-00265",
+   "id": "CHC-00266",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 432,
@@ -4204,7 +4215,7 @@
    "context": "ld add +2 DRM (Case B only).  **5.31** **CASE C****<sup>1</sup>****; BOUNDING"
   },
   {
-   "id": "CHC-00266",
+   "id": "CHC-00267",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 434,
@@ -4214,7 +4225,7 @@
    "context": "does not ap-ply in the AFPh.  **5.32** **CASE C****<sup>2</sup>****; BOUNDING"
   },
   {
-   "id": "CHC-00267",
+   "id": "CHC-00268",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 436,
@@ -4224,7 +4235,7 @@
    "context": " does not apply in the AFPh.  **5.33** **BOUNDING FIRST FIRE:** A vehicle Fir"
   },
   {
-   "id": "CHC-00268",
+   "id": "CHC-00269",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 438,
@@ -4234,7 +4245,7 @@
    "context": " the vehicle expends any MP.  **5.34** **CASE C****<sup>3</sup>****; LATW:** "
   },
   {
-   "id": "CHC-00269",
+   "id": "CHC-00270",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 440,
@@ -4244,7 +4255,7 @@
    "context": "r any of its other subcases.  **5.35** **CASE C****<sup>4</sup>****; MOTION F"
   },
   {
-   "id": "CHC-00270",
+   "id": "CHC-00271",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 442,
@@ -4254,7 +4265,7 @@
    "context": "& 3, 1 & 2, 1 & 1, or 2 & 2).  **5.4** **CASE D; PINNED FIRER:** Any ordnance"
   },
   {
-   "id": "CHC-00271",
+   "id": "CHC-00272",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 448,
@@ -4264,7 +4275,7 @@
    "context": "tween their respective CAFP.  **5.51** **CA CHANGE:** The firer’s CA does not"
   },
   {
-   "id": "CHC-00272",
+   "id": "CHC-00273",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 450,
@@ -4274,7 +4285,7 @@
    "context": "e E DRM *[EXC: VBM; D2.321]*.  **5.6** **CASE F; INTENSIVE FIRE:** Intensive "
   },
   {
-   "id": "CHC-00273",
+   "id": "CHC-00274",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 458,
@@ -4284,7 +4295,7 @@
    "context": "h an Intensive Fire counter.  **5.61** **TO HIT PENALTY:** Any Gun using Inte"
   },
   {
-   "id": "CHC-00274",
+   "id": "CHC-00275",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 464,
@@ -4294,7 +4305,7 @@
    "context": "f Intensive Fire capability.  **5.64** **OVR PREVENTION:** Regardless of the "
   },
   {
-   "id": "CHC-00275",
+   "id": "CHC-00276",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 478,
@@ -4304,7 +4315,7 @@
    "context": "hull hit, there is no effect.  **5.8** **CASE H; CAPTURED GUN:** Any To Hit a"
   },
   {
-   "id": "CHC-00276",
+   "id": "CHC-00277",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 486,
@@ -4314,7 +4325,7 @@
    "context": "h applicable To Hit DRM line.  **6.1** **CASE J; MOVING/MOTION VEHICULAR TARG"
   },
   {
-   "id": "CHC-00277",
+   "id": "CHC-00278",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 490,
@@ -4324,7 +4335,7 @@
    "context": " Case J (+2) plus (+1) = +3.  **6.12** **CASE J****<sup>2</sup>****; LIMITED "
   },
   {
-   "id": "CHC-00278",
+   "id": "CHC-00279",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 494,
@@ -4334,7 +4345,7 @@
    "context": " J<sup>3</sup> to its TH DR.  **6.14** **CASE J****<sup>4</sup>****; FFMO:** "
   },
   {
-   "id": "CHC-00279",
+   "id": "CHC-00280",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 512,
@@ -4344,7 +4355,7 @@
    "context": "r the fourth and fifth shots.  **6.2** **CASE K; CONCEALED TARGET:** Ordnance"
   },
   {
-   "id": "CHC-00280",
+   "id": "CHC-00281",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 514,
@@ -4354,7 +4365,7 @@
    "context": "K is not halved as Area Fire.  **6.3** **CASE L; POINT BLANK RANGE:** Ordnanc"
   },
   {
-   "id": "CHC-00281",
+   "id": "CHC-00282",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 516,
@@ -4364,7 +4375,7 @@
    "context": "in-Motion/Non-Stopped/Aerial.  **6.4** **CASE M; BORE SIGHTED LOCATION:**<sup"
   },
   {
-   "id": "CHC-00282",
+   "id": "CHC-00283",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 534,
@@ -4374,7 +4385,7 @@
    "context": "ame Location. See also E1.71.  **6.5** **CASE N; ACQUIRED TARGET:** When a Gu"
   },
   {
-   "id": "CHC-00283",
+   "id": "CHC-00284",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 544,
@@ -4384,7 +4395,7 @@
    "context": "ein was previously acquired.  **6.52** **BRACKETING:** Acquisition DRM gained"
   },
   {
-   "id": "CHC-00284",
+   "id": "CHC-00285",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 600,
@@ -4394,7 +4405,7 @@
    "context": "ea Target Type hit; 3.332]*.  **7.12** **AERIAL AF:** The Aerial AF is listed"
   },
   {
-   "id": "CHC-00285",
+   "id": "CHC-00286",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 602,
@@ -4404,7 +4415,7 @@
    "context": " tankette’s Aerial AF is “2”.  **7.2** **MODIFIED TK#:** Four modifications o"
   },
   {
-   "id": "CHC-00286",
+   "id": "CHC-00287",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 604,
@@ -4414,7 +4425,7 @@
    "context": " the Basic TK# are possible:  **7.21** **CASE A; AFV REAR TARGET FACING:** Th"
   },
   {
-   "id": "CHC-00287",
+   "id": "CHC-00288",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 606,
@@ -4424,7 +4435,7 @@
    "context": "l Target Facing rules apply.  **7.22** **CASE B; AERIAL/DC/MOL ELEVATION ADVA"
   },
   {
-   "id": "CHC-00288",
+   "id": "CHC-00289",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 606,
@@ -4434,7 +4445,7 @@
    "context": "AERIAL/DC/MOL ELEVATION ADVANTAGE vs** **AFV:** The Basic To Kill number of a"
   },
   {
-   "id": "CHC-00289",
+   "id": "CHC-00290",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 608,
@@ -4444,7 +4455,7 @@
    "context": "e level elevation advantage.  **7.23** **CASE C; AFV CH:** Whenever an AFV is"
   },
   {
-   "id": "CHC-00290",
+   "id": "CHC-00291",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 610,
@@ -4454,7 +4465,7 @@
    "context": "t Type and Indirect Fire CH.  **7.24** **CASE D; RANGE EFFECTS VS AFV:** The "
   },
   {
-   "id": "CHC-00291",
+   "id": "CHC-00292",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 616,
@@ -4464,7 +4475,7 @@
    "context": "res not found on the others.  **7.31** **AP TO KILL TABLE:** Several Gun Cali"
   },
   {
-   "id": "CHC-00292",
+   "id": "CHC-00293",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 618,
@@ -4474,7 +4485,7 @@
    "context": "ities has a Basic TK# of 5.  **7.311** **vs UNARMORED:** Barrel Length, range"
   },
   {
-   "id": "CHC-00293",
+   "id": "CHC-00294",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 620,
@@ -4484,7 +4495,7 @@
    "context": " the Final TK#.<sup>14</sup>  **7.32** **APCR/APDS TO KILL TABLE:** The Germa"
   },
   {
-   "id": "CHC-00294",
+   "id": "CHC-00295",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 624,
@@ -4494,7 +4505,7 @@
    "context": "able for unarmored vehicles.  **7.33** **HEAT TO KILL TABLE:** Barrel lengths"
   },
   {
-   "id": "CHC-00295",
+   "id": "CHC-00296",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 630,
@@ -4504,7 +4515,7 @@
    "context": "# on the HEAT To Kill Table.  **7.34** **HE TO KILL TABLE:** Barrel Length an"
   },
   {
-   "id": "CHC-00296",
+   "id": "CHC-00297",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 710,
@@ -4514,7 +4525,7 @@
    "context": "1 APCR  **8.11 APCR****<sup>18</sup>** **(A)/APDS****<sup>19</sup>** **(D):**"
   },
   {
-   "id": "CHC-00297",
+   "id": "CHC-00298",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 710,
@@ -4524,7 +4535,7 @@
    "context": "</sup>** **(A)/APDS****<sup>19</sup>** **(D):** The availability of APCR, APD"
   },
   {
-   "id": "CHC-00298",
+   "id": "CHC-00299",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 735,
@@ -4534,7 +4545,7 @@
    "context": "l OB is Elite.  #### 8.3 HEAT  **8.3** **HEAT (H):** HEAT<sup>20</sup> is ava"
   },
   {
-   "id": "CHC-00299",
+   "id": "CHC-00300",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 737,
@@ -4544,7 +4555,7 @@
    "context": "ffects as other HEAT rounds.  **8.31** **HE EQUIVALENCY:** The explosive forc"
   },
   {
-   "id": "CHC-00300",
+   "id": "CHC-00301",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 756,
@@ -4554,7 +4565,7 @@
    "context": "[9] cannot leave Residual FP.  **8.4** **CANISTER (C):** Canister<sup>22</sup"
   },
   {
-   "id": "CHC-00301",
+   "id": "CHC-00302",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 776,
@@ -4564,7 +4575,7 @@
    "context": " the hex as an HE KIA result.  **8.5** **SMOKE (s):** Smoke<sup>23</sup> may "
   },
   {
-   "id": "CHC-00302",
+   "id": "CHC-00303",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 786,
@@ -4574,7 +4585,7 @@
    "context": " hex without their Gun (D13).  **8.6** **WHITE PHOSPHORUS (WP):**<sup>25</sup"
   },
   {
-   "id": "CHC-00303",
+   "id": "CHC-00304",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 788,
@@ -4584,7 +4595,7 @@
    "context": "4.31-.32 for further effects.  **8.7** **ILLUMINATING ROUNDS (IR):** Many Ind"
   },
   {
-   "id": "CHC-00304",
+   "id": "CHC-00305",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 792,
@@ -4594,7 +4605,7 @@
    "context": "ition type in limited supply.  **8.9** **DEPLETION NUMBERS:** The number foll"
   },
   {
-   "id": "CHC-00305",
+   "id": "CHC-00306",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 808,
@@ -4604,7 +4615,7 @@
    "context": "ages/eASLRB_v3_01-p179-2.png)  **9.2** **LIGHT MORTARS:** A mortar is classif"
   },
   {
-   "id": "CHC-00306",
+   "id": "CHC-00307",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 818,
@@ -4614,7 +4625,7 @@
    "context": "n purposes (as per A6.11)]*.  **9.31** **SPOTTED FIRE:** Spotted fire is not "
   },
   {
-   "id": "CHC-00307",
+   "id": "CHC-00308",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 820,
@@ -4624,7 +4635,7 @@
    "context": "rtars when it does so attack.  **9.4** **MINIMUM RANGE:** Mortars are unique "
   },
   {
-   "id": "CHC-00308",
+   "id": "CHC-00309",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 824,
@@ -4634,7 +4645,7 @@
    "context": "s maximum range.  #### 9.5 CH  **9.5** **CH:** A mortar generates a CH only o"
   },
   {
-   "id": "CHC-00309",
+   "id": "CHC-00310",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 830,
@@ -4644,7 +4655,7 @@
    "context": "  ## 10. GUN & AMMO MOVEMENT  **10.1** **TOWING:** A vehicle allowed to tow a"
   },
   {
-   "id": "CHC-00310",
+   "id": "CHC-00311",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 832,
@@ -4654,7 +4665,7 @@
    "context": "eparately from its vehicle.  **10.11** **HOOKING UP:** A Stopped vehicle not "
   },
   {
-   "id": "CHC-00311",
+   "id": "CHC-00312",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 838,
@@ -4664,7 +4675,7 @@
    "context": "l a crew for such purposes.  **10.12** **UNHOOKING:** A Stopped vehicle not i"
   },
   {
-   "id": "CHC-00312",
+   "id": "CHC-00313",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 840,
@@ -4674,7 +4685,7 @@
    "context": "eously as it is (un)hooked.  **10.13** **AMMO PP REDUCTION:** The usable Pass"
   },
   {
-   "id": "CHC-00313",
+   "id": "CHC-00314",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 842,
@@ -4684,7 +4695,7 @@
    "context": "o carry the 75\\* RCL’s crew.  **10.2** **(UN)LIMBERING:** Any Gun not indicat"
   },
   {
-   "id": "CHC-00314",
+   "id": "CHC-00315",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 854,
@@ -4694,7 +4705,7 @@
    "context": " not when it has limbered).  **10.23** **QUICK SET-UP (QSU):** A Gun with QSU"
   },
   {
-   "id": "CHC-00315",
+   "id": "CHC-00316",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 856,
@@ -4704,7 +4715,7 @@
    "context": "s QSU, it may instead fire.  **10.24** **LIMBERED FIRE (LF):** Certain Guns m"
   },
   {
-   "id": "CHC-00316",
+   "id": "CHC-00317",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 858,
@@ -4714,7 +4725,7 @@
    "context": "f their counter (see 2.21).  **10.25** **RESTRICTED FIRE, NO MOVEMENT (RFNM):"
   },
   {
-   "id": "CHC-00317",
+   "id": "CHC-00318",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 890,
@@ -4724,7 +4735,7 @@
    "context": "for hooking up or unhooking.  **10.4** **TRAILERS:** A vehicle towing a trail"
   },
   {
-   "id": "CHC-00318",
+   "id": "CHC-00319",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 896,
@@ -4734,7 +4745,7 @@
    "context": "other hooked up for towing.  **10.51** **(UN)LOADING:** A Gun can be (un)load"
   },
   {
-   "id": "CHC-00319",
+   "id": "CHC-00320",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 898,
@@ -4744,7 +4755,7 @@
    "context": "ded any MP in the same MPh.  **10.52** **WRECK:** A vehicle porteeing a Gun i"
   },
   {
-   "id": "CHC-00320",
+   "id": "CHC-00321",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 900,
@@ -4754,7 +4765,7 @@
    "context": " the Gun is eliminated too.  **10.53** **CA & GUNSHIELDS:** When loaded on th"
   },
   {
-   "id": "CHC-00321",
+   "id": "CHC-00322",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 902,
@@ -4764,7 +4775,7 @@
    "context": "Emplaced, non-vehicular AT.  **10.54** **PORTEE FIRE:** Certain Guns (see app"
   },
   {
-   "id": "CHC-00322",
+   "id": "CHC-00323",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 906,
@@ -4774,7 +4785,7 @@
    "context": " NA.  ## 11. GUNS AS TARGETS  **11.1** **NEAR MISS:** Any “hit” vs a Gun usua"
   },
   {
-   "id": "CHC-00323",
+   "id": "CHC-00324",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 908,
@@ -4784,7 +4795,7 @@
    "context": " termed a Direct Hit (11.4).  **11.2** **EMPLACEMENT:** The To Hit procedure "
   },
   {
-   "id": "CHC-00324",
+   "id": "CHC-00325",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1092,
@@ -4794,7 +4805,7 @@
    "context": "es/eASLRB_v3_01-p185-2.png)  **13.61** **HEIGHT RESTRICTIONS:** A PIAT cannot"
   },
   {
-   "id": "CHC-00325",
+   "id": "CHC-00326",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1094,
@@ -4804,7 +4815,7 @@
    "context": "ile out of firing position.  **13.62** **SMC USAGE:** A PIAT can be used by a"
   },
   {
-   "id": "CHC-00326",
+   "id": "CHC-00327",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1096,
@@ -4814,7 +4825,7 @@
    "context": "leader directed the attack.  **13.63** **MALFUNCTION:** A PIAT<sup>36</sup> h"
   },
   {
-   "id": "CHC-00327",
+   "id": "CHC-00328",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1114,
@@ -4824,7 +4835,7 @@
    "context": "above them in the same hex.  **13.81** **DESPERATION:** Whether due to ignora"
   },
   {
-   "id": "CHC-00328",
+   "id": "CHC-00329",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1116,
@@ -4834,7 +4845,7 @@
    "context": "hat To Hit DR. No drm apply.  **13.9** **SHAPED-CHARGE WEAPONS (SCW):** PF/PF"
   },
   {
-   "id": "CHC-00329",
+   "id": "CHC-00330",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 54,
@@ -4844,7 +4855,7 @@
    "context": "pt Radio Contact *[EXC: not if he is* *a Rider, or a Guard whose US# is \\< "
   },
   {
-   "id": "CHC-00330",
+   "id": "CHC-00331",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 64,
@@ -4854,7 +4865,7 @@
    "context": "per 1.21 is mixed back into the Pile* *immediately after being revealed].* "
   },
   {
-   "id": "CHC-00331",
+   "id": "CHC-00332",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 66,
@@ -4864,7 +4875,7 @@
    "context": "ntenance DRM is -2 if the battery is* *70+mm/80+mm battalion mortar OBA**<s"
   },
   {
-   "id": "CHC-00332",
+   "id": "CHC-00333",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 72,
@@ -4874,7 +4885,7 @@
    "context": "h), German, and U.S. OBA *[EXC: Off-* *board Observer (1.63; E7.61)]* and S"
   },
   {
-   "id": "CHC-00333",
+   "id": "CHC-00334",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 84,
@@ -4884,7 +4895,7 @@
    "context": " SR that lands offboard has no Blast* *Height];* see the first 1.62 EX. The"
   },
   {
-   "id": "CHC-00334",
+   "id": "CHC-00335",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 84,
@@ -4894,7 +4905,7 @@
    "context": "t Height of a FFE is the same *[EXC:* *that of a WP FFE rises through the n"
   },
   {
-   "id": "CHC-00335",
+   "id": "CHC-00336",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 84,
@@ -4904,7 +4915,7 @@
    "context": "ard is not a part of the Blast Area,* *regardless of the type of Fire Missi"
   },
   {
-   "id": "CHC-00336",
+   "id": "CHC-00337",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 84,
@@ -4914,7 +4925,7 @@
    "context": "sion (1.7); for a SMOKE FFE see also* *1.71]*. See 1.72 for the Blast Area "
   },
   {
-   "id": "CHC-00337",
+   "id": "CHC-00338",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 140,
@@ -4924,7 +4935,7 @@
    "context": "R and make an Accuracy dr *[EXC: the* *AR may not be placed in the SR/FFE c"
   },
   {
-   "id": "CHC-00338",
+   "id": "CHC-00339",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 140,
@@ -4934,7 +4945,7 @@
    "context": "E counter’s present hex; Accuracy is* *not possible if the SR/FFE must be C"
   },
   {
-   "id": "CHC-00339",
+   "id": "CHC-00340",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 140,
@@ -4944,7 +4955,7 @@
    "context": "as per 1.31 *[EXC: unless the SR/FFE* *must be Corrected (1.335), the Exten"
   },
   {
-   "id": "CHC-00340",
+   "id": "CHC-00341",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 140,
@@ -4954,7 +4965,7 @@
    "context": " of Error is limited to a maximum of* *one hex for each multiple of three h"
   },
   {
-   "id": "CHC-00341",
+   "id": "CHC-00342",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 140,
@@ -4964,7 +4975,7 @@
    "context": " hexes (FRU) from the SR/FFE counter* *to the AR counter (inclusive of the "
   },
   {
-   "id": "CHC-00342",
+   "id": "CHC-00343",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 142,
@@ -4974,7 +4985,7 @@
    "context": " flipped to its FFE:C side *[EXC: if* *Cancelled in the interim; 1.35].* On"
   },
   {
-   "id": "CHC-00343",
+   "id": "CHC-00344",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 150,
@@ -4984,7 +4995,7 @@
    "context": "54) units *[EXC: Aerial units, those* *in sewers/tunnels, non-Vulnerable PR"
   },
   {
-   "id": "CHC-00344",
+   "id": "CHC-00345",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 150,
@@ -4994,7 +5005,7 @@
    "context": "able PRC, and certain Climbing units* *(B11.42)]* in each hex of its Blast "
   },
   {
-   "id": "CHC-00345",
+   "id": "CHC-00346",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 150,
@@ -5004,7 +5015,7 @@
    "context": "’s Caliber Size (C.6) *[EXC: Harass-* *ing Fire (1.72) and Barrage (E12.5) "
   },
   {
-   "id": "CHC-00346",
+   "id": "CHC-00347",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 150,
@@ -5014,7 +5025,7 @@
    "context": "2.5) use modified FP; see 1.71 for a* *SMOKE FFE]*. A hex devoid of units i"
   },
   {
-   "id": "CHC-00347",
+   "id": "CHC-00348",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 152,
@@ -5024,7 +5035,7 @@
    "context": "s: a new resolution DR is made *each* *time* the unit/stack enters-a-new-he"
   },
   {
-   "id": "CHC-00348",
+   "id": "CHC-00349",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 156,
@@ -5034,7 +5045,7 @@
    "context": "tion is subject to TEM *[EXC: Height* *Advantage (B10.31), Crest (B20.92), "
   },
   {
-   "id": "CHC-00349",
+   "id": "CHC-00350",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 156,
@@ -5044,7 +5055,7 @@
    "context": "2), Deir (F4.5), Hillock (F6.5), and* *Dune Crest (F7.513) TEM]* in the nor"
   },
   {
-   "id": "CHC-00350",
+   "id": "CHC-00351",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 162,
@@ -5054,7 +5065,7 @@
    "context": "n-heroic, non-berserk unit *[EXC: an* *Observer within that Blast Area due "
   },
   {
-   "id": "CHC-00351",
+   "id": "CHC-00352",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 162,
@@ -5064,7 +5075,7 @@
    "context": "ue to his Accurate placement/Correc-* *tion of that FFE; units in Locations"
   },
   {
-   "id": "CHC-00352",
+   "id": "CHC-00353",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 164,
@@ -5074,7 +5085,7 @@
    "context": "ties *[EXC: a Final DR ≤ half of the* *Final DR that corresponds to a K/# r"
   },
   {
-   "id": "CHC-00353",
+   "id": "CHC-00354",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 164,
@@ -5084,7 +5095,7 @@
    "context": "sult on that IFT column results in a* *Burning Wreck (B25.14) and the elimi"
   },
   {
-   "id": "CHC-00354",
+   "id": "CHC-00355",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 164,
@@ -5094,7 +5105,7 @@
    "context": "imination of its PRC (D5.6); no more* *vehicle counters can be affected tha"
   },
   {
-   "id": "CHC-00355",
+   "id": "CHC-00356",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 164,
@@ -5104,7 +5115,7 @@
    "context": "an the highest KIA# of that IFT col-* *umn (as given in A7.308)]*; a Final "
   },
   {
-   "id": "CHC-00356",
+   "id": "CHC-00357",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 172,
@@ -5114,7 +5125,7 @@
    "context": "ed unit; vs unit capable of claiming* *bocage TEM vs Observer]*, but only f"
   },
   {
-   "id": "CHC-00357",
+   "id": "CHC-00358",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 188,
@@ -5124,7 +5135,7 @@
    "context": "the Observer’s LOS (and hence, Accu-* *racy dr) from that hex level normall"
   },
   {
-   "id": "CHC-00358",
+   "id": "CHC-00359",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 188,
@@ -5134,7 +5145,7 @@
    "context": "d Observer is always ≤ 1 *[EXC: Pre-* *Registered Fire; 1.73].*  **1.7 FIRE"
   },
   {
-   "id": "CHC-00359",
+   "id": "CHC-00360",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 190,
@@ -5144,7 +5155,7 @@
    "context": "prior to the Mission’s first Battery* *Access draw]*.  **1.71** **SMOKE:** "
   },
   {
-   "id": "CHC-00360",
+   "id": "CHC-00361",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 192,
@@ -5154,7 +5165,7 @@
    "context": ": during the PFPh and DFPh, a WP FFE* *subjects all vulnerable units/PRC in"
   },
   {
-   "id": "CHC-00361",
+   "id": "CHC-00362",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 192,
@@ -5164,7 +5175,7 @@
    "context": " every Blast Area hex—not just those* *in Locations where WP counters are p"
   },
   {
-   "id": "CHC-00362",
+   "id": "CHC-00363",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 192,
@@ -5174,7 +5185,7 @@
    "context": "wind occurs *[EXC: gusts only remove* *Dispersed SMOKE; flip other SMOKE co"
   },
   {
-   "id": "CHC-00363",
+   "id": "CHC-00364",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 212,
@@ -5184,7 +5195,7 @@
    "context": "rdinate of 0 (see A2.2). For *Deluxe* *ASL* see J2.5. EX: The German player"
   },
   {
-   "id": "CHC-00364",
+   "id": "CHC-00365",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 220,
@@ -5194,7 +5205,7 @@
    "context": " NMC *[EXC: Horses, Motorcycles, and* *Boats do not take MC; they are affec"
   },
   {
-   "id": "CHC-00365",
+   "id": "CHC-00366",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 222,
@@ -5204,7 +5215,7 @@
    "context": "tely Fortified building hexes *[EXC:* *Factory]* may increase their Morale "
   },
   {
-   "id": "CHC-00366",
+   "id": "CHC-00367",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 230,
@@ -5214,7 +5225,7 @@
    "context": "2\" counter is a SW. Unlike SW *[EXC:* *U.S. RCL; 12.2]*, a Gun must be mann"
   },
   {
-   "id": "CHC-00367",
+   "id": "CHC-00368",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 246,
@@ -5224,7 +5235,7 @@
    "context": " a Gun is firing while limbered (LF;* *10.24) it uses the limbered Caliber "
   },
   {
-   "id": "CHC-00368",
+   "id": "CHC-00369",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 246,
@@ -5234,7 +5245,7 @@
    "context": "ze for To Hit modifiers but uses the* *unlimbered Caliber Size for determin"
   },
   {
-   "id": "CHC-00369",
+   "id": "CHC-00370",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 264,
@@ -5244,7 +5255,7 @@
    "context": " Case A can apply to non-ordnance/SW* *only if mounted-on/aboard a vehicle "
   },
   {
-   "id": "CHC-00370",
+   "id": "CHC-00371",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 264,
@@ -5254,7 +5265,7 @@
    "context": "e that is changing CA; all such non-* *turret-mounted fire is considered NT"
   },
   {
-   "id": "CHC-00371",
+   "id": "CHC-00372",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 264,
@@ -5264,7 +5275,7 @@
    "context": "T for purposes of TH Case C, and A.5* *applies to any type of FG]*. If the "
   },
   {
-   "id": "CHC-00372",
+   "id": "CHC-00373",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 264,
@@ -5274,7 +5285,7 @@
    "context": "TACKER may declare a Gun Duel *[EXC:* *not if the DEFENDER has done so as p"
   },
   {
-   "id": "CHC-00373",
+   "id": "CHC-00374",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 268,
@@ -5284,7 +5295,7 @@
    "context": "k during that Player Turn *[EXC: OVR* *Prevention; 5.64]* if firing as ordn"
   },
   {
-   "id": "CHC-00374",
+   "id": "CHC-00375",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 286,
@@ -5294,7 +5305,7 @@
    "context": "on of the current Player Turn *[EXC:* *OVR Prevention; 5.64].* EX: A 50L AT"
   },
   {
-   "id": "CHC-00375",
+   "id": "CHC-00376",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 288,
@@ -5304,7 +5315,7 @@
    "context": "lar FT, but not to SW *[EXC: they do* *apply to MTR/INF/RCL ordnance SW]*. "
   },
   {
-   "id": "CHC-00376",
+   "id": "CHC-00377",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 316,
@@ -5314,7 +5325,7 @@
    "context": "shing (10.3), and turreted guns with* *other turreted armament (D3.51)]*. S"
   },
   {
-   "id": "CHC-00377",
+   "id": "CHC-00378",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 318,
@@ -5324,7 +5335,7 @@
    "context": "ic To Hit Number (TH#)*. *Any Gun or* *Ammo modifications (C4) are added di"
   },
   {
-   "id": "CHC-00378",
+   "id": "CHC-00379",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 318,
@@ -5334,7 +5345,7 @@
    "context": "directly to the Basic TH# to achieve* *a Modified TH#*. A Final DR ≤ this M"
   },
   {
-   "id": "CHC-00379",
+   "id": "CHC-00380",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 318,
@@ -5344,7 +5355,7 @@
    "context": "solution *[EXC: Vehicular Overstack-* *ing; A5.132]*. The TH DR is also sub"
   },
   {
-   "id": "CHC-00380",
+   "id": "CHC-00381",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 318,
@@ -5354,7 +5365,7 @@
    "context": "lack *[EXC: the Area Target Type has* *only red Basic TH# which are used by"
   },
   {
-   "id": "CHC-00381",
+   "id": "CHC-00382",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 320,
@@ -5364,7 +5375,7 @@
    "context": "n AFV *[EXC: firing HE or SMOKE when* *using the Area Target Type (3.33)]*."
   },
   {
-   "id": "CHC-00382",
+   "id": "CHC-00383",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 322,
@@ -5374,7 +5385,7 @@
    "context": "EXC: AP or HEAT vs an unarmored tar-* *get (8.31, 11.52)]* and only against"
   },
   {
-   "id": "CHC-00383",
+   "id": "CHC-00384",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 322,
@@ -5384,7 +5395,7 @@
    "context": "s in that Location can be hit *[EXC:* *those immune as per 3.4]*, and all t"
   },
   {
-   "id": "CHC-00384",
+   "id": "CHC-00385",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 324,
@@ -5394,7 +5405,7 @@
    "context": "for those *immune* as per 3.4 *[EXC:* *a mortar also hits all target-hex un"
   },
   {
-   "id": "CHC-00385",
+   "id": "CHC-00386",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 324,
@@ -5404,7 +5415,7 @@
    "context": "t are out of its firer’s (Spotter’s,* *if one is being used; 9.3) LOS if th"
   },
   {
-   "id": "CHC-00386",
+   "id": "CHC-00387",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 324,
@@ -5414,7 +5425,7 @@
    "context": "shot hit the non-hidden enemy target* *that currently was the hardest for i"
   },
   {
-   "id": "CHC-00387",
+   "id": "CHC-00388",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 338,
@@ -5424,7 +5435,7 @@
    "context": "r’s LOS, being too close (2.6) to be* *hit or in a Location immune to a hit"
   },
   {
-   "id": "CHC-00388",
+   "id": "CHC-00389",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 338,
@@ -5434,7 +5445,7 @@
    "context": "t, being non-moving during Defensive* *First Fire, etc*. Hence one shot can"
   },
   {
-   "id": "CHC-00389",
+   "id": "CHC-00390",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 340,
@@ -5444,7 +5455,7 @@
    "context": "EXC: The Infantry Target Type (3.32)* *attacks a specific Location rather t"
   },
   {
-   "id": "CHC-00390",
+   "id": "CHC-00391",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 340,
@@ -5454,7 +5465,7 @@
    "context": "an an entire hex, and cannot be used* *to attack an AFV.]*  **3.5** **FP MO"
   },
   {
-   "id": "CHC-00391",
+   "id": "CHC-00392",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 352,
@@ -5464,7 +5475,7 @@
    "context": "pe or on a LATW TH Table. *[EXC: De-* *liberate Immobilization (5.72). If o"
   },
   {
-   "id": "CHC-00392",
+   "id": "CHC-00393",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 352,
@@ -5474,7 +5485,7 @@
    "context": " the lowest Final TH DR possible for* *that shot would achieve a hit, a CH "
   },
   {
-   "id": "CHC-00393",
+   "id": "CHC-00394",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 352,
@@ -5484,7 +5495,7 @@
    "context": " occurs only on a subsequent dr of 1* *following that hit; a 2-6 results in"
   },
   {
-   "id": "CHC-00394",
+   "id": "CHC-00395",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 352,
@@ -5494,7 +5505,7 @@
    "context": "mal hull hit (or a normal turret hit* *vs a HD vehicle); if the lowest Fina"
   },
   {
-   "id": "CHC-00395",
+   "id": "CHC-00396",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 352,
@@ -5504,7 +5515,7 @@
    "context": "l TH DR possible for that shot would* *be a miss, 3.6 applies.]* A CH also "
   },
   {
-   "id": "CHC-00396",
+   "id": "CHC-00397",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 354,
@@ -5514,7 +5525,7 @@
    "context": "ing a TK DR (7.1) is resolved on the* *pertinent TK Table (7.31-.34) after "
   },
   {
-   "id": "CHC-00397",
+   "id": "CHC-00398",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 354,
@@ -5524,7 +5535,7 @@
    "context": " higher-building-level TEM (B23.32),* *pillbox NCA TEM (B30.113), SMOKE, an"
   },
   {
-   "id": "CHC-00398",
+   "id": "CHC-00399",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 362,
@@ -5534,7 +5545,7 @@
    "context": ", the vehicle always receives the CH* *and any other units affected Collate"
   },
   {
-   "id": "CHC-00399",
+   "id": "CHC-00400",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 372,
@@ -5544,7 +5555,7 @@
    "context": " a HD target is always considered to* *occur vs the turret/upper-superstruc"
   },
   {
-   "id": "CHC-00400",
+   "id": "CHC-00401",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 372,
@@ -5554,7 +5565,7 @@
    "context": "ture, and can occur on an Original 2* *TH DR; 3.7]*. Otherwise, the hit str"
   },
   {
-   "id": "CHC-00401",
+   "id": "CHC-00402",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 376,
@@ -5564,7 +5575,7 @@
    "context": "*To Hit DR*—to achieve the *Modified* *TH#*. The distinction is very import"
   },
   {
-   "id": "CHC-00402",
+   "id": "CHC-00403",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 420,
@@ -5574,7 +5585,7 @@
    "context": "rent CA *[EXC to all: Bounding First* *Firers and vehicles on the road in a"
   },
   {
-   "id": "CHC-00403",
+   "id": "CHC-00404",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 430,
@@ -5584,7 +5595,7 @@
    "context": "during its MPh but does not fire un-* *til its AFPh is using Bounding Fire*"
   },
   {
-   "id": "CHC-00404",
+   "id": "CHC-00405",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 464,
@@ -5594,7 +5605,7 @@
    "context": "nnot be used by a Gun with a “No IF”* *listing on the back of its counter; "
   },
   {
-   "id": "CHC-00405",
+   "id": "CHC-00406",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 486,
@@ -5604,7 +5615,7 @@
    "context": ", or at a vehicle *which has entered* *a new hex* *or used VBM (D2.3)* duri"
   },
   {
-   "id": "CHC-00406",
+   "id": "CHC-00407",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 486,
@@ -5614,7 +5625,7 @@
    "context": "hicle *which has entered* *a new hex* *or used VBM (D2.3)* during that Play"
   },
   {
-   "id": "CHC-00407",
+   "id": "CHC-00408",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 512,
@@ -5624,7 +5635,7 @@
    "context": "DR vs that target *[EXC: when firing* *SMOKE, Case K applies only if the ta"
   },
   {
-   "id": "CHC-00408",
+   "id": "CHC-00409",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 512,
@@ -5634,7 +5645,7 @@
    "context": "target hex contains ≥ one non-hidden* *enemy ground unit but none of those "
   },
   {
-   "id": "CHC-00409",
+   "id": "CHC-00410",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 514,
@@ -5644,7 +5655,7 @@
    "context": "ANK RANGE:** Ordnance *[EXC: non-ATR* *LATW using its own TH table; 13.]* f"
   },
   {
-   "id": "CHC-00410",
+   "id": "CHC-00411",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 532,
@@ -5654,7 +5665,7 @@
    "context": "ack *[EXC: all forms of Residual FP;* *A8.2, A9.22]* vs a unit in the firin"
   },
   {
-   "id": "CHC-00411",
+   "id": "CHC-00412",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 532,
@@ -5664,7 +5675,7 @@
    "context": " attack conducted as Defensive First* *Fire (A8.1) qualifies for this -2 DR"
   },
   {
-   "id": "CHC-00412",
+   "id": "CHC-00413",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 534,
@@ -5674,7 +5685,7 @@
    "context": ": Acquisition DRM cannot be used for* *Deliberate Immobilization attempts; "
   },
   {
-   "id": "CHC-00413",
+   "id": "CHC-00414",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 534,
@@ -5684,7 +5695,7 @@
    "context": "t leaves its present Location *[EXC:* *Gyrostabilizer; 6.55]*—*or* the Gun "
   },
   {
-   "id": "CHC-00414",
+   "id": "CHC-00415",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 544,
@@ -5694,7 +5705,7 @@
    "context": "Acquisition cannot be transferred to* *another Target Type and used vs a co"
   },
   {
-   "id": "CHC-00415",
+   "id": "CHC-00416",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 694,
@@ -5704,7 +5715,7 @@
    "context": "of Target Facing *[EXC: HD to firer;* *D4.2]*. A Final HE/DC To Kill DR one"
   },
   {
-   "id": "CHC-00416",
+   "id": "CHC-00417",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 816,
@@ -5714,7 +5725,7 @@
    "context": "potter (9.3) and its intended target* *is out of its LOS. A mortar designat"
   },
   {
-   "id": "CHC-00417",
+   "id": "CHC-00418",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 816,
@@ -5724,7 +5735,7 @@
    "context": "for Opportunity Fire but not able to* *fire in the AFPh due to no Spotter a"
   },
   {
-   "id": "CHC-00418",
+   "id": "CHC-00419",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 816,
@@ -5734,7 +5745,7 @@
    "context": "no target in its LOS must still roll* *for breakdown purposes (as per A6.11"
   },
   {
-   "id": "CHC-00419",
+   "id": "CHC-00420",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 830,
@@ -5744,7 +5755,7 @@
    "context": ": The +1 per hex MP/MF cost, as well* *as the Reverse/Bypass/wall/hedge/rub"
   },
   {
-   "id": "CHC-00420",
+   "id": "CHC-00421",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 830,
@@ -5754,7 +5765,7 @@
    "context": "ubble/stream towing restrictions, do* *not apply to the vehicular transport"
   },
   {
-   "id": "CHC-00421",
+   "id": "CHC-00422",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 830,
@@ -5764,7 +5775,7 @@
    "context": "pply to the vehicular transport of a* *<sup>5</sup>**/8\" 76-107mm MTR count"
   },
   {
-   "id": "CHC-00422",
+   "id": "CHC-00423",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 830,
@@ -5774,7 +5785,7 @@
    "context": "p>5</sup>**/8\" 76-107mm MTR counter;* *however, all other rules pertinent t"
   },
   {
-   "id": "CHC-00423",
+   "id": "CHC-00424",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 830,
@@ -5784,7 +5795,7 @@
    "context": "Gun towing/pushing do apply to these* *MTR when they are not dm and they ma"
   },
   {
-   "id": "CHC-00424",
+   "id": "CHC-00425",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 838,
@@ -5794,7 +5805,7 @@
    "context": "of its MP/MF allotment *[EXC: if the* *Gun’s M# is circled (e.g., M 6 ), th"
   },
   {
-   "id": "CHC-00425",
+   "id": "CHC-00426",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 838,
@@ -5804,7 +5815,7 @@
    "context": "vehicle must expend two-thirds (FRU)* *of its MP/MF allotment]* under the o"
   },
   {
-   "id": "CHC-00426",
+   "id": "CHC-00427",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 838,
@@ -5814,7 +5825,7 @@
    "context": " in that hex *[EXC: that vehicle may* *expend its remaining MP/MF]*. After "
   },
   {
-   "id": "CHC-00427",
+   "id": "CHC-00428",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 842,
@@ -5824,7 +5835,7 @@
    "context": "e pushed, towed, or hooked up *[EXC:* *Guns with NM (10.26) or RFNM (10.25)"
   },
   {
-   "id": "CHC-00428",
+   "id": "CHC-00429",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 846,
@@ -5834,7 +5845,7 @@
    "context": "A limbered Gun cannot fire *[EXC: LF* *Guns; 10.24]*, nor can it be unlimbe"
   },
   {
-   "id": "CHC-00429",
+   "id": "CHC-00430",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 890,
@@ -5844,7 +5855,7 @@
    "context": " *[EXC: it may not enter a building/* *rubble, nor may it use Reverse Movem"
   },
   {
-   "id": "CHC-00430",
+   "id": "CHC-00431",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 890,
@@ -5854,7 +5865,7 @@
    "context": "ovement or cross an unbreached wall/* *hedge]*.  **10.41** For To Hit purpo"
   },
   {
-   "id": "CHC-00431",
+   "id": "CHC-00432",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 900,
@@ -5864,7 +5875,7 @@
    "context": "teed *[EXC: some Guns are restricted* *by their Note to only the VCA or “re"
   },
   {
-   "id": "CHC-00432",
+   "id": "CHC-00433",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 902,
@@ -5874,7 +5885,7 @@
    "context": "ew while being porteed *[EXC: Bound-* *ing (First) Fire and Motion Fire are"
   },
   {
-   "id": "CHC-00433",
+   "id": "CHC-00434",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 918,
@@ -5884,7 +5895,7 @@
    "context": "ts manning Infantry *[EXC: if AP was* *fired; 11.52].* Gunshield DRM never "
   },
   {
-   "id": "CHC-00434",
+   "id": "CHC-00435",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 920,
@@ -5894,7 +5905,7 @@
    "context": "anning crew *[EXC: +0 for FT (A22.2)* *and +1 for Indirect Fire (11.4)]*. T"
   },
   {
-   "id": "CHC-00435",
+   "id": "CHC-00436",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1020,
@@ -5904,7 +5915,7 @@
    "context": "43 first becomes available in Novem-* *ber, 1942]*. The American units are "
   },
   {
-   "id": "CHC-00436",
+   "id": "CHC-00437",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1112,
@@ -5914,7 +5925,7 @@
    "context": "C: Non-Desperation fire from ground-* *level rubble or the ground floor of "
   },
   {
-   "id": "CHC-00437",
+   "id": "CHC-00438",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1112,
@@ -5924,7 +5935,7 @@
    "context": "ilding (but not from pillbox, sewer,* *or vehicle) is allowed by unpinned u"
   },
   {
-   "id": "CHC-00438",
+   "id": "CHC-00439",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1112,
@@ -5934,7 +5945,7 @@
    "context": "nned units using Opportunity fire or* *applying the Case C**<sup>3</sup>* *"
   },
   {
-   "id": "CHC-00439",
+   "id": "CHC-00440",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1112,
@@ -5944,7 +5955,7 @@
    "context": "* *applying the Case C**<sup>3</sup>* *To Hit DRM (5.34), due to the moveme"
   },
   {
-   "id": "CHC-00440",
+   "id": "CHC-00441",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1112,
@@ -5954,7 +5965,7 @@
    "context": "RM (5.34), due to the movement which* *is assumed necessary to move into an"
   },
   {
-   "id": "CHC-00441",
+   "id": "CHC-00442",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1120,
@@ -5964,7 +5975,7 @@
    "context": "ee 8.31).  ## FOOTNOTES  **1.** *1.2* *RADIO CONTACT ATTEMPT:* We do not me"
   },
   {
-   "id": "CHC-00442",
+   "id": "CHC-00443",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1122,
@@ -5974,7 +5985,7 @@
    "context": "e occurred previously.  **2.** *1.22* *MAINTAINING RADIO CONTACT:* Almost e"
   },
   {
-   "id": "CHC-00443",
+   "id": "CHC-00444",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1124,
@@ -5984,7 +5995,7 @@
    "context": "nds for Fire Missions.  **3.** *1.22* *MAINTAINING RADIO CONTACT:* Admitted"
   },
   {
-   "id": "CHC-00444",
+   "id": "CHC-00445",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1126,
@@ -5994,7 +6005,7 @@
    "context": "upy the same Location.  **4.** *1.54* *FRIENDLY UNITS:* Few things in battl"
   },
   {
-   "id": "CHC-00445",
+   "id": "CHC-00446",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1130,
@@ -6004,7 +6015,7 @@
    "context": "ast not automatically.  **6.** *2.24* *ROF:* If the crew hits the target wi"
   },
   {
-   "id": "CHC-00446",
+   "id": "CHC-00447",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1132,
@@ -6014,7 +6025,7 @@
    "context": " To Hit Resolution DR.  **7.** *3.33* *AREA TARGET TYPE:* Direct Fire on th"
   },
   {
-   "id": "CHC-00447",
+   "id": "CHC-00448",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1134,
@@ -6024,7 +6035,7 @@
    "context": " simulates this tactic.  **8.** *3.8* *MULTIPLE HITS:* The two minute Game "
   },
   {
-   "id": "CHC-00448",
+   "id": "CHC-00449",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1140,
@@ -6034,7 +6045,7 @@
    "context": "matic fire capability.  **9.** *6.17* *EXAMPLE:* A veteran gamer will recog"
   },
   {
-   "id": "CHC-00449",
+   "id": "CHC-00450",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1142,
@@ -6044,7 +6055,7 @@
    "context": " rules presented here.  **10.** *6.4* *BORE SIGHTED LOCATION:* Units in a d"
   },
   {
-   "id": "CHC-00450",
+   "id": "CHC-00451",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1144,
@@ -6054,7 +6065,7 @@
    "context": "pper building levels.  **11.** *6.58* *ACQUISITION COUNTERS:* In most scena"
   },
   {
-   "id": "CHC-00451",
+   "id": "CHC-00452",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1146,
@@ -6064,7 +6075,7 @@
    "context": "inate mix for all six.  **12.** *6.8* *TEM:* Players should realize that us"
   },
   {
-   "id": "CHC-00452",
+   "id": "CHC-00453",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1148,
@@ -6074,7 +6085,7 @@
    "context": " formidable structure.  **13.** *7.1* *TO KILL NUMBERS:* Each TK# represent"
   },
   {
-   "id": "CHC-00453",
+   "id": "CHC-00454",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1150,
@@ -6084,7 +6095,7 @@
    "context": " deadly projectiles.  **14.** *7.311* *vs UNARMORED:* It is interesting to "
   },
   {
-   "id": "CHC-00454",
+   "id": "CHC-00455",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1152,
@@ -6094,7 +6105,7 @@
    "context": "penetrates the armor.  **15.** *7.35* *DUD:* This rule generically encompas"
   },
   {
-   "id": "CHC-00455",
+   "id": "CHC-00456",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1154,
@@ -6104,7 +6115,7 @@
    "context": "uch as a stowage bin).  **16.** *7.4* *SHOCK/UK:* In the early days of rive"
   },
   {
-   "id": "CHC-00456",
+   "id": "CHC-00457",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1158,
@@ -6114,7 +6125,7 @@
    "context": "AP and HE ammunition.  **18.** *8.11* *APCR:* As the tank evolved, attempts"
   },
   {
-   "id": "CHC-00457",
+   "id": "CHC-00458",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1160,
@@ -6124,7 +6135,7 @@
    "context": "ngly rare after 1942.  **19.** *8.11* *APDS:* The British developed a uniqu"
   },
   {
-   "id": "CHC-00458",
+   "id": "CHC-00459",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1162,
@@ -6134,7 +6145,7 @@
    "context": "weight:diameter ratio.  **20.** *8.3* *HEAT:* High Explosive Anti-Tank roun"
   },
   {
-   "id": "CHC-00459",
+   "id": "CHC-00460",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1164,
@@ -6144,7 +6155,7 @@
    "context": "or with molten metal.  **21.** *8.31* *HE EQUIVALENCY:* PF were used agains"
   },
   {
-   "id": "CHC-00460",
+   "id": "CHC-00461",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1166,
@@ -6154,7 +6165,7 @@
    "context": " marginal performance.  **22.** *8.4* *CANISTER:* Canister is an A-P round "
   },
   {
-   "id": "CHC-00461",
+   "id": "CHC-00462",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1168,
@@ -6164,7 +6175,7 @@
    "context": "</sup>/8\" steel balls.  **23.** *8.5* *SMOKE:* Conventional smoke rounds re"
   },
   {
-   "id": "CHC-00462",
+   "id": "CHC-00463",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1172,
@@ -6174,7 +6185,7 @@
    "context": "many rounds are fired.  **25.** *8.6* *WP:* The U.S. used a different chemi"
   },
   {
-   "id": "CHC-00463",
+   "id": "CHC-00464",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1174,
@@ -6184,7 +6195,7 @@
    "context": "ntities were limited.  **26.** *10.1* *TOWING:* Mortars of 76-107mm are exe"
   },
   {
-   "id": "CHC-00464",
+   "id": "CHC-00465",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1176,
@@ -6194,7 +6205,7 @@
    "context": "han towed behind it.  **27.** *10.25* *RFNM:* Guns penalized with RFNM gene"
   },
   {
-   "id": "CHC-00465",
+   "id": "CHC-00466",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1178,
@@ -6204,7 +6215,7 @@
    "context": "e Direct Fire optics.  **28.** *11.1* *NEAR MISS:* A Gun was rarely the tar"
   },
   {
-   "id": "CHC-00466",
+   "id": "CHC-00467",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1182,
@@ -6214,7 +6225,7 @@
    "context": "effect in game terms.  **30.** *13.2* *ATR:* Most ATR are not given a Multi"
   },
   {
-   "id": "CHC-00467",
+   "id": "CHC-00468",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1184,
@@ -6224,7 +6235,7 @@
    "context": "s with one To Hit DR.  **31.** *13.3* *PF:* The PF was a weapon born of nec"
   },
   {
-   "id": "CHC-00468",
+   "id": "CHC-00469",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1186,
@@ -6234,7 +6245,7 @@
    "context": "ame of the scenario.  **32.** *13.31* *PF USAGE:* Alternatively, players lo"
   },
   {
-   "id": "CHC-00469",
+   "id": "CHC-00470",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1188,
@@ -6244,7 +6255,7 @@
    "context": "s with his one shot.  **33.** *13.36* *MALFUNCTION:* A PF, like all SCW wit"
   },
   {
-   "id": "CHC-00470",
+   "id": "CHC-00471",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1190,
@@ -6254,7 +6265,7 @@
    "context": "rator a prime target.  **34.** *13.4* *BAZ:* Like the PF, the performance o"
   },
   {
-   "id": "CHC-00471",
+   "id": "CHC-00472",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1192,
@@ -6264,7 +6275,7 @@
    "context": "arried in the field.  **35.** *13.48* *PSK:* The PSK is an improved German "
   },
   {
-   "id": "CHC-00472",
+   "id": "CHC-00473",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1194,
@@ -6274,7 +6285,7 @@
    "context": "n inherent squad SW.  **36.** *13.63* *PIAT MALFUNCTION:* A PIAT depended o"
   },
   {
-   "id": "CHC-00473",
+   "id": "CHC-00474",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1196,
@@ -6284,7 +6295,7 @@
    "context": "per Infantry platoon.  **37.** *13.7* *ATMM:* An ATMM is a special form of "
   },
   {
-   "id": "CHC-00474",
+   "id": "CHC-00475",
    "rule": "symbol-font-glyph",
    "class": "conversion-fix",
    "baseLine": 1072,
@@ -6302,7 +6313,7 @@
    "context": "a MOL-Pro-jector is attacked on the  Vehicle Line of the IFT using a Kil"
   },
   {
-   "id": "CHC-00475",
+   "id": "CHC-00476",
    "rule": "image-link-rebase",
    "class": "markup-normalization",
    "count": 59,

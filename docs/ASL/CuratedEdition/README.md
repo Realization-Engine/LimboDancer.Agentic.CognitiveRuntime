@@ -55,16 +55,16 @@ The build fails closed when:
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | TOC | 6-10 | 0 | 0 | 0 | 5 | 0 | 0 | 0 |
 | Index and Glossary | 11-42 | 134 | 0 | 8 | 32 | 0 | 1 | 0 |
-| Chapter A | 43-111 | 335 | 3 | 265 | 69 | 0 | 19 | 1 |
+| Chapter A | 43-111 | 335 | 3 | 265 | 69 | 0 | 20 | 0 |
 | Chapter B | 112-161 | 128 | 0 | 126 | 50 | 0 | 13 | 0 |
-| Chapter C | 162-191 | 189 | 0 | 248 | 30 | 1 | 5 | 1 |
+| Chapter C | 162-191 | 189 | 0 | 248 | 30 | 1 | 6 | 0 |
 | Chapter D | 192-221 | 133 | 0 | 92 | 30 | 0 | 3 | 0 |
-| Chapter E | 222-253 | 253 | 4 | 122 | 32 | 5 | 8 | 1 |
-| **Total** | | **1,172** | **7** | **861** | **248** | **6** | **49** | **3** |
+| Chapter E | 222-253 | 253 | 4 | 122 | 32 | 5 | 9 | 0 |
+| **Total** | | **1,172** | **7** | **861** | **248** | **6** | **52** | **0** |
 
-The 49 reviewed decisions are 19 joins, 29 retains and 1 replacement (`ground-and` becomes the suspended hyphen `ground- and`). They were proposed from context and approved by the maintainer on 2026-09-23; each carries its rationale in `decisions/decisions.json`.
+The 52 reviewed decisions are 19 joins, 32 retains and 1 replacement (`ground-and` becomes the suspended hyphen `ground- and`). They were approved by the maintainer on 2026-09-23; each carries its rationale in `decisions/decisions.json`. The review queue is empty.
 
-The 3 open items are the same convention question: whether `on-board` (A, line 1094) and `Off-board`/`off-board` (C, line 54; E, line 815) keep the hyphen or take the closed form. The PDF uses both forms.
+By maintainer convention, a line-end `on-board` or `off-board` keeps its hyphen. Closed forms such as `onboard` and `Offboard` that the PDF prints as closed are left as printed, since changing them would alter the source wording rather than undo a conversion defect.
 
 ## Layout
 

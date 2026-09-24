@@ -1,22 +1,5 @@
 {
  "sourceId": "asl-easlrb-3.10:chapter-a",
  "basePath": "docs/ASL/Rulebook_Markdown/02 - Chapter A - Infantry and Basic Game Rules.md",
- "items": [
-  {
-   "id": "CHA-R0001",
-   "rule": "linebreak-hyphen",
-   "baseLine": 1094,
-   "text": "on-board",
-   "context": "aled by LOS during setup are placed on-board just prior to placing non-OB “?”.  ",
-   "reason": "both forms attested",
-   "candidate": "onboard",
-   "evidence": {
-    "pdfPage": 80,
-    "pdfBreak": "line-end",
-    "pdfBreakAfter": "on-",
-    "joinedFormAttested": 64,
-    "hyphenatedFormAttestedMidLine": 10
-   }
-  }
- ]
+ "items": []
 }

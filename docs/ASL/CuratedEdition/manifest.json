@@ -72,14 +72,12 @@
    ],
    "ledgerCounts": {
     "image-link-rebase": 1,
-    "linebreak-hyphen": 352,
+    "linebreak-hyphen": 353,
     "page-marker": 69,
     "split-emphasis": 265,
     "stale-hyphen": 5
    },
-   "reviewCounts": {
-    "linebreak-hyphen": 1
-   },
+   "reviewCounts": {},
    "certifiedSections": []
   },
   {
@@ -114,15 +112,13 @@
    "ledgerCounts": {
     "blank-page": 1,
     "image-link-rebase": 1,
-    "linebreak-hyphen": 193,
+    "linebreak-hyphen": 194,
     "page-marker": 30,
     "split-emphasis": 248,
     "stale-hyphen": 1,
     "symbol-font-glyph": 1
    },
-   "reviewCounts": {
-    "linebreak-hyphen": 1
-   },
+   "reviewCounts": {},
    "certifiedSections": []
   },
   {
@@ -158,15 +154,13 @@
    "ledgerCounts": {
     "blank-page": 1,
     "image-link-rebase": 1,
-    "linebreak-hyphen": 261,
+    "linebreak-hyphen": 262,
     "page-marker": 32,
     "split-emphasis": 122,
     "stale-hyphen": 4,
     "symbol-font-glyph": 5
    },
-   "reviewCounts": {
-    "linebreak-hyphen": 1
-   },
+   "reviewCounts": {},
    "certifiedSections": []
   }
  ]

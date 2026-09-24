@@ -2729,6 +2729,17 @@
   },
   {
    "id": "CHE-00166",
+   "class": "reviewed-decision",
+   "text": "off-board",
+   "rule": "linebreak-hyphen",
+   "baseLine": 815,
+   "decision": "retain",
+   "decidedBy": "dlandi (maintainer convention, 2026-09-23)",
+   "rationale": "Maintainer convention: on-board and off-board keep the hyphen.",
+   "queuedReason": "both forms attested"
+  },
+  {
+   "id": "CHE-00167",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 815,
@@ -2746,7 +2757,7 @@
    }
   },
   {
-   "id": "CHE-00167",
+   "id": "CHE-00168",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 817,
@@ -2764,7 +2775,7 @@
    }
   },
   {
-   "id": "CHE-00168",
+   "id": "CHE-00169",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 821,
@@ -2782,7 +2793,7 @@
    }
   },
   {
-   "id": "CHE-00169",
+   "id": "CHE-00170",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 823,
@@ -2800,7 +2811,7 @@
    }
   },
   {
-   "id": "CHE-00170",
+   "id": "CHE-00171",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 847,
@@ -2818,7 +2829,7 @@
    }
   },
   {
-   "id": "CHE-00171",
+   "id": "CHE-00172",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 857,
@@ -2836,7 +2847,7 @@
    }
   },
   {
-   "id": "CHE-00172",
+   "id": "CHE-00173",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 847,
@@ -2854,7 +2865,7 @@
    }
   },
   {
-   "id": "CHE-00173",
+   "id": "CHE-00174",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 851,
@@ -2872,7 +2883,7 @@
    }
   },
   {
-   "id": "CHE-00174",
+   "id": "CHE-00175",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 851,
@@ -2890,7 +2901,7 @@
    }
   },
   {
-   "id": "CHE-00175",
+   "id": "CHE-00176",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 855,
@@ -2908,7 +2919,7 @@
    }
   },
   {
-   "id": "CHE-00176",
+   "id": "CHE-00177",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 855,
@@ -2926,7 +2937,7 @@
    }
   },
   {
-   "id": "CHE-00177",
+   "id": "CHE-00178",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 855,
@@ -2944,7 +2955,7 @@
    }
   },
   {
-   "id": "CHE-00178",
+   "id": "CHE-00179",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 855,
@@ -2962,7 +2973,7 @@
    }
   },
   {
-   "id": "CHE-00179",
+   "id": "CHE-00180",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 857,
@@ -2980,7 +2991,7 @@
    }
   },
   {
-   "id": "CHE-00180",
+   "id": "CHE-00181",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1223,
@@ -2998,7 +3009,7 @@
    }
   },
   {
-   "id": "CHE-00181",
+   "id": "CHE-00182",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 857,
@@ -3016,28 +3027,10 @@
    }
   },
   {
-   "id": "CHE-00182",
-   "rule": "linebreak-hyphen",
-   "class": "conversion-fix",
-   "baseLine": 861,
-   "before": "-",
-   "after": "",
-   "token": "Obser-vation",
-   "result": "Observation",
-   "evidence": {
-    "pdfPage": 239,
-    "pdfBreak": "line-end",
-    "pdfBreakAfter": "Obser-",
-    "joinedFormAttested": 20,
-    "hyphenatedFormAttestedMidLine": 0,
-    "basis": "joined-form-attested"
-   }
-  },
-  {
    "id": "CHE-00183",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
-   "baseLine": 863,
+   "baseLine": 861,
    "before": "-",
    "after": "",
    "token": "Obser-vation",
@@ -3058,6 +3051,24 @@
    "baseLine": 863,
    "before": "-",
    "after": "",
+   "token": "Obser-vation",
+   "result": "Observation",
+   "evidence": {
+    "pdfPage": 239,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Obser-",
+    "joinedFormAttested": 20,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00185",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 863,
+   "before": "-",
+   "after": "",
    "token": "advan-tage",
    "result": "advantage",
    "evidence": {
@@ -3070,7 +3081,7 @@
    }
   },
   {
-   "id": "CHE-00185",
+   "id": "CHE-00186",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 863,
@@ -3088,7 +3099,7 @@
    }
   },
   {
-   "id": "CHE-00186",
+   "id": "CHE-00187",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 865,
@@ -3106,7 +3117,7 @@
    }
   },
   {
-   "id": "CHE-00187",
+   "id": "CHE-00188",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 865,
@@ -3124,7 +3135,7 @@
    }
   },
   {
-   "id": "CHE-00188",
+   "id": "CHE-00189",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 865,
@@ -3142,7 +3153,7 @@
    }
   },
   {
-   "id": "CHE-00189",
+   "id": "CHE-00190",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 873,
@@ -3160,7 +3171,7 @@
    }
   },
   {
-   "id": "CHE-00190",
+   "id": "CHE-00191",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1039,
@@ -3178,7 +3189,7 @@
    }
   },
   {
-   "id": "CHE-00191",
+   "id": "CHE-00192",
    "rule": "stale-hyphen",
    "class": "typographic-correction",
    "baseLine": 879,
@@ -3195,7 +3206,7 @@
    }
   },
   {
-   "id": "CHE-00192",
+   "id": "CHE-00193",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 889,
@@ -3213,7 +3224,7 @@
    }
   },
   {
-   "id": "CHE-00193",
+   "id": "CHE-00194",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 889,
@@ -3231,7 +3242,7 @@
    }
   },
   {
-   "id": "CHE-00194",
+   "id": "CHE-00195",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 935,
@@ -3249,7 +3260,7 @@
    }
   },
   {
-   "id": "CHE-00195",
+   "id": "CHE-00196",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 935,
@@ -3267,7 +3278,7 @@
    }
   },
   {
-   "id": "CHE-00196",
+   "id": "CHE-00197",
    "rule": "linebreak-hyphen",
    "class": "reviewed-decision",
    "baseLine": 935,
@@ -3281,7 +3292,7 @@
    "queuedReason": "neither form attested"
   },
   {
-   "id": "CHE-00197",
+   "id": "CHE-00198",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 943,
@@ -3299,7 +3310,7 @@
    }
   },
   {
-   "id": "CHE-00198",
+   "id": "CHE-00199",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 943,
@@ -3317,7 +3328,7 @@
    }
   },
   {
-   "id": "CHE-00199",
+   "id": "CHE-00200",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 943,
@@ -3335,7 +3346,7 @@
    }
   },
   {
-   "id": "CHE-00200",
+   "id": "CHE-00201",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 947,
@@ -3353,7 +3364,7 @@
    }
   },
   {
-   "id": "CHE-00201",
+   "id": "CHE-00202",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 947,
@@ -3371,7 +3382,7 @@
    }
   },
   {
-   "id": "CHE-00202",
+   "id": "CHE-00203",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 947,
@@ -3384,24 +3395,6 @@
     "pdfBreak": "line-end",
     "pdfBreakAfter": "Fol-",
     "joinedFormAttested": 85,
-    "hyphenatedFormAttestedMidLine": 0,
-    "basis": "joined-form-attested"
-   }
-  },
-  {
-   "id": "CHE-00203",
-   "rule": "linebreak-hyphen",
-   "class": "conversion-fix",
-   "baseLine": 953,
-   "before": "-",
-   "after": "",
-   "token": "para-chute",
-   "result": "parachute",
-   "evidence": {
-    "pdfPage": 243,
-    "pdfBreak": "line-end",
-    "pdfBreakAfter": "para-",
-    "joinedFormAttested": 29,
     "hyphenatedFormAttestedMidLine": 0,
     "basis": "joined-form-attested"
    }
@@ -3431,6 +3424,24 @@
    "baseLine": 953,
    "before": "-",
    "after": "",
+   "token": "para-chute",
+   "result": "parachute",
+   "evidence": {
+    "pdfPage": 243,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "para-",
+    "joinedFormAttested": 29,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00206",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 953,
+   "before": "-",
+   "after": "",
    "token": "drift-ing",
    "result": "drifting",
    "evidence": {
@@ -3443,7 +3454,7 @@
    }
   },
   {
-   "id": "CHE-00206",
+   "id": "CHE-00207",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 957,
@@ -3461,7 +3472,7 @@
    }
   },
   {
-   "id": "CHE-00207",
+   "id": "CHE-00208",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 957,
@@ -3479,7 +3490,7 @@
    }
   },
   {
-   "id": "CHE-00208",
+   "id": "CHE-00209",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 957,
@@ -3497,7 +3508,7 @@
    }
   },
   {
-   "id": "CHE-00209",
+   "id": "CHE-00210",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 957,
@@ -3515,7 +3526,7 @@
    }
   },
   {
-   "id": "CHE-00210",
+   "id": "CHE-00211",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 957,
@@ -3533,7 +3544,7 @@
    }
   },
   {
-   "id": "CHE-00211",
+   "id": "CHE-00212",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 963,
@@ -3551,7 +3562,7 @@
    }
   },
   {
-   "id": "CHE-00212",
+   "id": "CHE-00213",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 969,
@@ -3569,7 +3580,7 @@
    }
   },
   {
-   "id": "CHE-00213",
+   "id": "CHE-00214",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 971,
@@ -3587,7 +3598,7 @@
    }
   },
   {
-   "id": "CHE-00214",
+   "id": "CHE-00215",
    "rule": "stale-hyphen",
    "class": "typographic-correction",
    "baseLine": 973,
@@ -3604,7 +3615,7 @@
    }
   },
   {
-   "id": "CHE-00215",
+   "id": "CHE-00216",
    "rule": "stale-hyphen",
    "class": "typographic-correction",
    "baseLine": 973,
@@ -3621,7 +3632,7 @@
    }
   },
   {
-   "id": "CHE-00216",
+   "id": "CHE-00217",
    "rule": "stale-hyphen",
    "class": "typographic-correction",
    "baseLine": 973,
@@ -3638,7 +3649,7 @@
    }
   },
   {
-   "id": "CHE-00217",
+   "id": "CHE-00218",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 987,
@@ -3656,7 +3667,7 @@
    }
   },
   {
-   "id": "CHE-00218",
+   "id": "CHE-00219",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 987,
@@ -3674,7 +3685,7 @@
    }
   },
   {
-   "id": "CHE-00219",
+   "id": "CHE-00220",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 987,
@@ -3692,7 +3703,7 @@
    }
   },
   {
-   "id": "CHE-00220",
+   "id": "CHE-00221",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 987,
@@ -3710,7 +3721,7 @@
    }
   },
   {
-   "id": "CHE-00221",
+   "id": "CHE-00222",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 995,
@@ -3720,24 +3731,6 @@
    "result": "vehicle",
    "evidence": {
     "pdfPage": 244,
-    "pdfBreak": "line-end",
-    "pdfBreakAfter": "ve-",
-    "joinedFormAttested": 1250,
-    "hyphenatedFormAttestedMidLine": 0,
-    "basis": "joined-form-attested"
-   }
-  },
-  {
-   "id": "CHE-00222",
-   "rule": "linebreak-hyphen",
-   "class": "conversion-fix",
-   "baseLine": 1031,
-   "before": "-",
-   "after": "",
-   "token": "ve-hicle",
-   "result": "vehicle",
-   "evidence": {
-    "pdfPage": 245,
     "pdfBreak": "line-end",
     "pdfBreakAfter": "ve-",
     "joinedFormAttested": 1250,
@@ -3767,6 +3760,24 @@
    "id": "CHE-00224",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
+   "baseLine": 1031,
+   "before": "-",
+   "after": "",
+   "token": "ve-hicle",
+   "result": "vehicle",
+   "evidence": {
+    "pdfPage": 245,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "ve-",
+    "joinedFormAttested": 1250,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00225",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
    "baseLine": 995,
    "before": "-",
    "after": "",
@@ -3782,7 +3793,7 @@
    }
   },
   {
-   "id": "CHE-00225",
+   "id": "CHE-00226",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1001,
@@ -3800,7 +3811,7 @@
    }
   },
   {
-   "id": "CHE-00226",
+   "id": "CHE-00227",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1003,
@@ -3818,7 +3829,7 @@
    }
   },
   {
-   "id": "CHE-00227",
+   "id": "CHE-00228",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1003,
@@ -3836,7 +3847,7 @@
    }
   },
   {
-   "id": "CHE-00228",
+   "id": "CHE-00229",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1009,
@@ -3854,7 +3865,7 @@
    }
   },
   {
-   "id": "CHE-00229",
+   "id": "CHE-00230",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1009,
@@ -3872,7 +3883,7 @@
    }
   },
   {
-   "id": "CHE-00230",
+   "id": "CHE-00231",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1009,
@@ -3890,7 +3901,7 @@
    }
   },
   {
-   "id": "CHE-00231",
+   "id": "CHE-00232",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1011,
@@ -3908,7 +3919,7 @@
    }
   },
   {
-   "id": "CHE-00232",
+   "id": "CHE-00233",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1013,
@@ -3926,7 +3937,7 @@
    }
   },
   {
-   "id": "CHE-00233",
+   "id": "CHE-00234",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1015,
@@ -3944,7 +3955,7 @@
    }
   },
   {
-   "id": "CHE-00234",
+   "id": "CHE-00235",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1017,
@@ -3962,7 +3973,7 @@
    }
   },
   {
-   "id": "CHE-00235",
+   "id": "CHE-00236",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1025,
@@ -3980,7 +3991,7 @@
    }
   },
   {
-   "id": "CHE-00236",
+   "id": "CHE-00237",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1027,
@@ -3998,7 +4009,7 @@
    }
   },
   {
-   "id": "CHE-00237",
+   "id": "CHE-00238",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1027,
@@ -4016,7 +4027,7 @@
    }
   },
   {
-   "id": "CHE-00238",
+   "id": "CHE-00239",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1027,
@@ -4034,7 +4045,7 @@
    }
   },
   {
-   "id": "CHE-00239",
+   "id": "CHE-00240",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1027,
@@ -4052,7 +4063,7 @@
    }
   },
   {
-   "id": "CHE-00240",
+   "id": "CHE-00241",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1135,
@@ -4070,7 +4081,7 @@
    }
   },
   {
-   "id": "CHE-00241",
+   "id": "CHE-00242",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1027,
@@ -4088,7 +4099,7 @@
    }
   },
   {
-   "id": "CHE-00242",
+   "id": "CHE-00243",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1029,
@@ -4106,7 +4117,7 @@
    }
   },
   {
-   "id": "CHE-00243",
+   "id": "CHE-00244",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1033,
@@ -4124,7 +4135,7 @@
    }
   },
   {
-   "id": "CHE-00244",
+   "id": "CHE-00245",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1063,
@@ -4142,7 +4153,7 @@
    }
   },
   {
-   "id": "CHE-00245",
+   "id": "CHE-00246",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1069,
@@ -4160,7 +4171,7 @@
    }
   },
   {
-   "id": "CHE-00246",
+   "id": "CHE-00247",
    "rule": "linebreak-hyphen",
    "class": "reviewed-decision",
    "baseLine": 1075,
@@ -4174,7 +4185,7 @@
    "queuedReason": "neither form attested"
   },
   {
-   "id": "CHE-00247",
+   "id": "CHE-00248",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1075,
@@ -4192,7 +4203,7 @@
    }
   },
   {
-   "id": "CHE-00248",
+   "id": "CHE-00249",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1077,
@@ -4210,7 +4221,7 @@
    }
   },
   {
-   "id": "CHE-00249",
+   "id": "CHE-00250",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1085,
@@ -4228,7 +4239,7 @@
    }
   },
   {
-   "id": "CHE-00250",
+   "id": "CHE-00251",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1081,
@@ -4246,7 +4257,7 @@
    }
   },
   {
-   "id": "CHE-00251",
+   "id": "CHE-00252",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1081,
@@ -4264,7 +4275,7 @@
    }
   },
   {
-   "id": "CHE-00252",
+   "id": "CHE-00253",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1085,
@@ -4282,28 +4293,10 @@
    }
   },
   {
-   "id": "CHE-00253",
-   "rule": "linebreak-hyphen",
-   "class": "conversion-fix",
-   "baseLine": 1131,
-   "before": "-",
-   "after": "",
-   "token": "Bar-rage",
-   "result": "Barrage",
-   "evidence": {
-    "pdfPage": 247,
-    "pdfBreak": "line-end",
-    "pdfBreakAfter": "Bar-",
-    "joinedFormAttested": 162,
-    "hyphenatedFormAttestedMidLine": 0,
-    "basis": "joined-form-attested"
-   }
-  },
-  {
    "id": "CHE-00254",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
-   "baseLine": 1133,
+   "baseLine": 1131,
    "before": "-",
    "after": "",
    "token": "Bar-rage",
@@ -4339,6 +4332,24 @@
    "id": "CHE-00256",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
+   "baseLine": 1133,
+   "before": "-",
+   "after": "",
+   "token": "Bar-rage",
+   "result": "Barrage",
+   "evidence": {
+    "pdfPage": 247,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Bar-",
+    "joinedFormAttested": 162,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00257",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
    "baseLine": 1237,
    "before": "-",
    "after": "",
@@ -4354,7 +4365,7 @@
    }
   },
   {
-   "id": "CHE-00257",
+   "id": "CHE-00258",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1133,
@@ -4372,7 +4383,7 @@
    }
   },
   {
-   "id": "CHE-00258",
+   "id": "CHE-00259",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1133,
@@ -4390,7 +4401,7 @@
    }
   },
   {
-   "id": "CHE-00259",
+   "id": "CHE-00260",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1135,
@@ -4408,7 +4419,7 @@
    }
   },
   {
-   "id": "CHE-00260",
+   "id": "CHE-00261",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1135,
@@ -4426,7 +4437,7 @@
    }
   },
   {
-   "id": "CHE-00261",
+   "id": "CHE-00262",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1135,
@@ -4444,7 +4455,7 @@
    }
   },
   {
-   "id": "CHE-00262",
+   "id": "CHE-00263",
    "class": "reviewed-decision",
    "text": "deliberately-drawn",
    "rule": "linebreak-hyphen",
@@ -4455,7 +4466,7 @@
    "queuedReason": "neither form attested"
   },
   {
-   "id": "CHE-00263",
+   "id": "CHE-00264",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1161,
@@ -4473,7 +4484,7 @@
    }
   },
   {
-   "id": "CHE-00264",
+   "id": "CHE-00265",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1163,
@@ -4491,7 +4502,7 @@
    }
   },
   {
-   "id": "CHE-00265",
+   "id": "CHE-00266",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1163,
@@ -4509,7 +4520,7 @@
    }
   },
   {
-   "id": "CHE-00266",
+   "id": "CHE-00267",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1177,
@@ -4527,7 +4538,7 @@
    }
   },
   {
-   "id": "CHE-00267",
+   "id": "CHE-00268",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1179,
@@ -4545,7 +4556,7 @@
    }
   },
   {
-   "id": "CHE-00268",
+   "id": "CHE-00269",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1181,
@@ -4563,7 +4574,7 @@
    }
   },
   {
-   "id": "CHE-00269",
+   "id": "CHE-00270",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1183,
@@ -4581,7 +4592,7 @@
    }
   },
   {
-   "id": "CHE-00270",
+   "id": "CHE-00271",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1183,
@@ -4599,7 +4610,7 @@
    }
   },
   {
-   "id": "CHE-00271",
+   "id": "CHE-00272",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1183,
@@ -4617,7 +4628,7 @@
    }
   },
   {
-   "id": "CHE-00272",
+   "id": "CHE-00273",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1183,
@@ -4635,7 +4646,7 @@
    }
   },
   {
-   "id": "CHE-00273",
+   "id": "CHE-00274",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1183,
@@ -4653,7 +4664,7 @@
    }
   },
   {
-   "id": "CHE-00274",
+   "id": "CHE-00275",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1185,
@@ -4671,7 +4682,7 @@
    }
   },
   {
-   "id": "CHE-00275",
+   "id": "CHE-00276",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1189,
@@ -4689,7 +4700,7 @@
    }
   },
   {
-   "id": "CHE-00276",
+   "id": "CHE-00277",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1191,
@@ -4707,7 +4718,7 @@
    }
   },
   {
-   "id": "CHE-00277",
+   "id": "CHE-00278",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1191,
@@ -4725,7 +4736,7 @@
    }
   },
   {
-   "id": "CHE-00278",
+   "id": "CHE-00279",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1211,
@@ -4743,7 +4754,7 @@
    }
   },
   {
-   "id": "CHE-00279",
+   "id": "CHE-00280",
    "class": "reviewed-decision",
    "text": "shallow-draught",
    "rule": "linebreak-hyphen",
@@ -4754,7 +4765,7 @@
    "queuedReason": "neither form attested"
   },
   {
-   "id": "CHE-00280",
+   "id": "CHE-00281",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1211,
@@ -4772,7 +4783,7 @@
    }
   },
   {
-   "id": "CHE-00281",
+   "id": "CHE-00282",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1211,
@@ -4790,7 +4801,7 @@
    }
   },
   {
-   "id": "CHE-00282",
+   "id": "CHE-00283",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1213,
@@ -4808,7 +4819,7 @@
    }
   },
   {
-   "id": "CHE-00283",
+   "id": "CHE-00284",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1213,
@@ -4826,7 +4837,7 @@
    }
   },
   {
-   "id": "CHE-00284",
+   "id": "CHE-00285",
    "rule": "linebreak-hyphen",
    "class": "reviewed-decision",
    "baseLine": 1215,
@@ -4840,7 +4851,7 @@
    "queuedReason": "neither form attested"
   },
   {
-   "id": "CHE-00285",
+   "id": "CHE-00286",
    "class": "reviewed-decision",
    "text": "real-life",
    "rule": "linebreak-hyphen",
@@ -4851,7 +4862,7 @@
    "queuedReason": "neither form attested"
   },
   {
-   "id": "CHE-00286",
+   "id": "CHE-00287",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1217,
@@ -4869,7 +4880,7 @@
    }
   },
   {
-   "id": "CHE-00287",
+   "id": "CHE-00288",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1217,
@@ -4887,7 +4898,7 @@
    }
   },
   {
-   "id": "CHE-00288",
+   "id": "CHE-00289",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1217,
@@ -4905,7 +4916,7 @@
    }
   },
   {
-   "id": "CHE-00289",
+   "id": "CHE-00290",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1217,
@@ -4923,7 +4934,7 @@
    }
   },
   {
-   "id": "CHE-00290",
+   "id": "CHE-00291",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1217,
@@ -4941,7 +4952,7 @@
    }
   },
   {
-   "id": "CHE-00291",
+   "id": "CHE-00292",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1223,
@@ -4959,7 +4970,7 @@
    }
   },
   {
-   "id": "CHE-00292",
+   "id": "CHE-00293",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1225,
@@ -4977,7 +4988,7 @@
    }
   },
   {
-   "id": "CHE-00293",
+   "id": "CHE-00294",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1225,
@@ -4995,7 +5006,7 @@
    }
   },
   {
-   "id": "CHE-00294",
+   "id": "CHE-00295",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1227,
@@ -5013,7 +5024,7 @@
    }
   },
   {
-   "id": "CHE-00295",
+   "id": "CHE-00296",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1231,
@@ -5031,7 +5042,7 @@
    }
   },
   {
-   "id": "CHE-00296",
+   "id": "CHE-00297",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1233,
@@ -5049,7 +5060,7 @@
    }
   },
   {
-   "id": "CHE-00297",
+   "id": "CHE-00298",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1233,
@@ -5067,7 +5078,7 @@
    }
   },
   {
-   "id": "CHE-00298",
+   "id": "CHE-00299",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1233,
@@ -5085,7 +5096,7 @@
    }
   },
   {
-   "id": "CHE-00299",
+   "id": "CHE-00300",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 494,
@@ -5095,7 +5106,7 @@
    "context": "f snow rules in effect. **SNOW CHART** **Final dr Condition** **drm:**  ![Fig"
   },
   {
-   "id": "CHE-00300",
+   "id": "CHE-00301",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 494,
@@ -5105,7 +5116,7 @@
    "context": " **SNOW CHART** **Final dr Condition** **drm:**  ![Figure from page 230](imag"
   },
   {
-   "id": "CHE-00301",
+   "id": "CHE-00302",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 686,
@@ -5115,7 +5126,7 @@
    "context": "DNANCE & AREA TARGET TYPE ATTACKS vs** **BOATS IN WATER:** All non-ordnance a"
   },
   {
-   "id": "CHE-00302",
+   "id": "CHE-00303",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 688,
@@ -5125,7 +5136,7 @@
    "context": "DNANCE & AREA TARGET TYPE ATTACKS vs** **LANDED/BEACHED BOATS:** All non-ordn"
   },
   {
-   "id": "CHE-00303",
+   "id": "CHE-00304",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 63,
@@ -5135,7 +5146,7 @@
    "context": "Half or Full Moon, the NVR change is* *not necessarily a one-hex change, bu"
   },
   {
-   "id": "CHE-00304",
+   "id": "CHE-00305",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 63,
@@ -5145,7 +5156,7 @@
    "context": "ut is equal to a subsequent Final dr* *that is divided by three (FRU) for a"
   },
   {
-   "id": "CHE-00305",
+   "id": "CHE-00306",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 63,
@@ -5155,7 +5166,7 @@
    "context": "a Half Moon, or divided by two (FRU)* *for a Full Moon.]* When the NVR Chan"
   },
   {
-   "id": "CHE-00306",
+   "id": "CHE-00307",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 63,
@@ -5165,7 +5176,7 @@
    "context": "irst starshell/IR is placed, a dr of* *4 increases the Base NVR]*.  ![Figur"
   },
   {
-   "id": "CHE-00307",
+   "id": "CHE-00308",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 77,
@@ -5175,7 +5186,7 @@
    "context": "its in the same building the minimum* *Base NVR is still 0]*.  **1.16 FORTI"
   },
   {
-   "id": "CHE-00308",
+   "id": "CHE-00309",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 81,
@@ -5185,7 +5196,7 @@
    "context": "hex *[EXC: if zero (1.13) or Illumi-* *nated (1.9)]*.  **1.2 SCENARIO DEFEN"
   },
   {
-   "id": "CHE-00309",
+   "id": "CHE-00310",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 85,
@@ -5195,7 +5206,7 @@
    "context": "h LOS checks are free). *[EXC: If an* *AFV with a radio is allowed to move,"
   },
   {
-   "id": "CHE-00310",
+   "id": "CHE-00311",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 85,
@@ -5205,7 +5216,7 @@
    "context": ", all other friendly Mobile AFV (and* *their PRC as long as they remain PRC"
   },
   {
-   "id": "CHE-00311",
+   "id": "CHE-00312",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 91,
@@ -5215,7 +5226,7 @@
    "context": "ealed and placed on the board *[EXC:* *the type/strength of mines is not re"
   },
   {
-   "id": "CHE-00312",
+   "id": "CHE-00313",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 121,
@@ -5225,7 +5236,7 @@
    "context": "M applies to the Falling DR (B11.41)* *of Climbing units during a night sce"
   },
   {
-   "id": "CHE-00313",
+   "id": "CHE-00314",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 131,
@@ -5235,7 +5246,7 @@
    "context": "lry *[EXC: Infantry represented by a* *Cloaking counter; 1.41]* during a ni"
   },
   {
-   "id": "CHE-00314",
+   "id": "CHE-00315",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 131,
@@ -5245,7 +5256,7 @@
    "context": "d hexside or using Bypass in an Open* *Ground hexside of an Obstacle hex; b"
   },
   {
-   "id": "CHE-00315",
+   "id": "CHE-00316",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 133,
@@ -5255,7 +5266,7 @@
    "context": "ssengers/Riders may unload as if the* *AFV had fired in the PFPh]*.  **1.53"
   },
   {
-   "id": "CHE-00316",
+   "id": "CHE-00317",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 174,
@@ -5265,7 +5276,7 @@
    "context": "EXC: Fire Lanes, mines, Snipers, DC,* *Specific Collateral attacks, Residua"
   },
   {
-   "id": "CHE-00317",
+   "id": "CHE-00318",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 178,
@@ -5275,7 +5286,7 @@
    "context": "nce any starshell/IR has been fired,* *a MG can place a Fire Lane without f"
   },
   {
-   "id": "CHE-00318",
+   "id": "CHE-00319",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 178,
@@ -5285,7 +5296,7 @@
    "context": "iring at any moving target if it can* *place a Fire Lane Residual FP counte"
   },
   {
-   "id": "CHE-00319",
+   "id": "CHE-00320",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 178,
@@ -5295,7 +5306,7 @@
    "context": "r in a Location that is Bore Sighted* *by that MG; however, if it does so i"
   },
   {
-   "id": "CHE-00320",
+   "id": "CHE-00321",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 178,
@@ -5305,7 +5316,7 @@
    "context": " must thereafter place (if otherwise* *able to do so) a Fire Lane to that L"
   },
   {
-   "id": "CHE-00321",
+   "id": "CHE-00322",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 178,
@@ -5315,7 +5326,7 @@
    "context": "ocation in every enemy MPh (and must* *do so before the ATTACKER begins mov"
   },
   {
-   "id": "CHE-00322",
+   "id": "CHE-00323",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 178,
@@ -5325,7 +5336,7 @@
    "context": "ving his first unit in that MPh) un-* *til the start of an enemy MPh in whi"
   },
   {
-   "id": "CHE-00323",
+   "id": "CHE-00324",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 178,
@@ -5335,7 +5346,7 @@
    "context": "h it can see a Known enemy unit. The* *firer must make an IFT DR to check f"
   },
   {
-   "id": "CHE-00324",
+   "id": "CHE-00325",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 178,
@@ -5345,7 +5356,7 @@
    "context": "k for malfunction/cowering/SAN. Once* *that MG’s Bore Sighting advantage ha"
   },
   {
-   "id": "CHE-00325",
+   "id": "CHE-00326",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 178,
@@ -5355,7 +5366,7 @@
    "context": " been lost, it cannot thereafter use* *this Bore Sighted type of Fire Lane."
   },
   {
-   "id": "CHE-00326",
+   "id": "CHE-00327",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 206,
@@ -5365,7 +5376,7 @@
    "context": "aled target *[EXC: if the target can* *be treated as being within NVR, as p"
   },
   {
-   "id": "CHE-00327",
+   "id": "CHE-00328",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 234,
@@ -5375,7 +5386,7 @@
    "context": "C: Cloaking/“?” is lost more readily* *(1.31); an Illuminated Location is t"
   },
   {
-   "id": "CHE-00328",
+   "id": "CHE-00329",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 234,
@@ -5385,7 +5396,7 @@
    "context": "eated as being within the NVR of all* *units that otherwise have a LOS to i"
   },
   {
-   "id": "CHE-00329",
+   "id": "CHE-00330",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 234,
@@ -5395,7 +5406,7 @@
    "context": " Illuminated units can see only Gun-* *flashes and into Illuminated Locatio"
   },
   {
-   "id": "CHE-00330",
+   "id": "CHE-00331",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 257,
@@ -5405,7 +5416,7 @@
    "context": " firer’s concealment *[EXC: a hidden* *or Cloaked unit that fires a Starshe"
   },
   {
-   "id": "CHE-00331",
+   "id": "CHE-00332",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 257,
@@ -5415,7 +5426,7 @@
    "context": "hell must be placed on board beneath* *a “?”]*. A Starshell cannot be fired"
   },
   {
-   "id": "CHE-00332",
+   "id": "CHE-00333",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 277,
@@ -5425,7 +5436,7 @@
    "context": "ilding Locations *[EXC: Dense-Jungle* *(G2.2)/Bamboo]* within three hexes ("
   },
   {
-   "id": "CHE-00333",
+   "id": "CHE-00334",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 288,
@@ -5435,7 +5446,7 @@
    "context": "lacement range (six hexes) and maxi-* *mum range to the Known enemy unit (n"
   },
   {
-   "id": "CHE-00334",
+   "id": "CHE-00335",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 288,
@@ -5445,7 +5456,7 @@
    "context": " (nine hexes) of method 2 do not ap-* *ply to IR. An onboard mortar must ha"
   },
   {
-   "id": "CHE-00335",
+   "id": "CHE-00336",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 288,
@@ -5455,7 +5466,7 @@
    "context": "its initial placement hex within its* *normal range limits (C2.25).]* Other"
   },
   {
-   "id": "CHE-00336",
+   "id": "CHE-00337",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 288,
@@ -5465,7 +5476,7 @@
    "context": "se, method 3 of 1.922 is used *[EXC:* *instead of placing the IR three hexe"
   },
   {
-   "id": "CHE-00337",
+   "id": "CHE-00338",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 288,
@@ -5475,7 +5486,7 @@
    "context": "away from the firer, it is placed in* *any hex (within the mortar’s normal "
   },
   {
-   "id": "CHE-00338",
+   "id": "CHE-00339",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 288,
@@ -5485,7 +5496,7 @@
    "context": " range) that is exactly six (or some* *whole multiple of six) hexes away fr"
   },
   {
-   "id": "CHE-00339",
+   "id": "CHE-00340",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 290,
@@ -5495,7 +5506,7 @@
    "context": "ocations *[EXC: Dense-Jungle/Bamboo;* *G2.3]* within six hexes.<sup>13</sup"
   },
   {
-   "id": "CHE-00340",
+   "id": "CHE-00341",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 300,
@@ -5505,7 +5516,7 @@
    "context": " makes a dr (∆) *[EXC: no dr is made* *if the unit/stack is entering (or en"
   },
   {
-   "id": "CHE-00341",
+   "id": "CHE-00342",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 300,
@@ -5515,7 +5526,7 @@
    "context": " the Location via) a trench/pillbox/* *subterranean passage, or is entering"
   },
   {
-   "id": "CHE-00342",
+   "id": "CHE-00343",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 300,
@@ -5525,7 +5536,7 @@
    "context": "g the Location via a path/TB created* *during play, or if the MF/MP expendi"
   },
   {
-   "id": "CHE-00343",
+   "id": "CHE-00344",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 300,
@@ -5535,7 +5546,7 @@
    "context": "iture is made for Stopping, Delay or* *placing SMOKE; for panjis see also G"
   },
   {
-   "id": "CHE-00344",
+   "id": "CHE-00345",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 306,
@@ -5545,7 +5556,7 @@
    "context": "XC: if placed in/IN a Depression, it* *can Illuminate IN an Accessible Depr"
   },
   {
-   "id": "CHE-00345",
+   "id": "CHE-00346",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 306,
@@ -5555,7 +5566,7 @@
    "context": "pression hex only if those two hexes* *share a Depression hexside]*. Each T"
   },
   {
-   "id": "CHE-00346",
+   "id": "CHE-00347",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 383,
@@ -5565,7 +5576,7 @@
    "context": " weather. Otherwise, *weather condi-* *tions are always considered Clear in"
   },
   {
-   "id": "CHE-00347",
+   "id": "CHE-00348",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 389,
@@ -5575,7 +5586,7 @@
    "context": "event concealment loss *[EXC: Winter* *Camouflage]*.  **3.2 CLEAR:** Weathe"
   },
   {
-   "id": "CHE-00348",
+   "id": "CHE-00349",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 445,
@@ -5585,7 +5596,7 @@
    "context": "EXC: Fog is eliminated only via Wind* *Effects (3.312) and is not subject t"
   },
   {
-   "id": "CHE-00349",
+   "id": "CHE-00350",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 445,
@@ -5595,7 +5606,7 @@
    "context": "o Drift. The Fog DRM is halved (FRU)* *for fire within the same Location.]*"
   },
   {
-   "id": "CHE-00350",
+   "id": "CHE-00351",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 458,
@@ -5605,7 +5616,7 @@
    "context": "XC: Specific Collateral Attack; Fire* *Lane; OBA; Residual FP]* and LOS. Th"
   },
   {
-   "id": "CHE-00351",
+   "id": "CHE-00352",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 486,
@@ -5615,7 +5626,7 @@
    "context": " Specific Collateral Attacks, Direct* *Fire ordnance vs a vehicle (and its "
   },
   {
-   "id": "CHE-00352",
+   "id": "CHE-00353",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 492,
@@ -5625,7 +5636,7 @@
    "context": "ies *[EXC: gullies containing woods/* *brush during Mud, or containing wood"
   },
   {
-   "id": "CHE-00353",
+   "id": "CHE-00354",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 518,
@@ -5635,7 +5646,7 @@
    "context": ">/2. All non-tracked vehicles *[EXC:* *sledges]* must expend one extra MP ("
   },
   {
-   "id": "CHE-00354",
+   "id": "CHE-00355",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 524,
@@ -5645,7 +5656,7 @@
    "context": "ific Collateral Attacks, Direct Fire* *ordnance vs a vehicle (and its PRC)/"
   },
   {
-   "id": "CHE-00355",
+   "id": "CHE-00356",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 552,
@@ -5655,7 +5666,7 @@
    "context": "d in an Interior Building or another* *Drift hex, roll again]*. If placed o"
   },
   {
-   "id": "CHE-00356",
+   "id": "CHE-00357",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 556,
@@ -5665,7 +5676,7 @@
    "context": "[EXC: a Drift can be removed through* *the normal Roadblock Clearance rules"
   },
   {
-   "id": "CHE-00357",
+   "id": "CHE-00358",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 588,
@@ -5675,7 +5686,7 @@
    "context": "hey must be stacked with ≥ 1 non-ski* *Dummy counter(s) at all times or be "
   },
   {
-   "id": "CHE-00358",
+   "id": "CHE-00359",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 588,
@@ -5685,7 +5696,7 @@
    "context": "be removed immediately regardless of* *LOS]*, but allow that Dummy stack to"
   },
   {
-   "id": "CHE-00359",
+   "id": "CHE-00360",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 608,
@@ -5695,7 +5706,7 @@
    "context": "ier charging a Known enemy unit in a* *Location that the Skier cannot norma"
   },
   {
-   "id": "CHE-00360",
+   "id": "CHE-00361",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 608,
@@ -5705,7 +5716,7 @@
    "context": "ally enter (4.3) must change to foot* *mode when it reaches the point where"
   },
   {
-   "id": "CHE-00361",
+   "id": "CHE-00362",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 608,
@@ -5715,7 +5726,7 @@
    "context": " due solely to being on skis, it can* *move no closer to the unit as per A1"
   },
   {
-   "id": "CHE-00362",
+   "id": "CHE-00363",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 640,
@@ -5725,7 +5736,7 @@
    "context": "nter’s MP *[EXC: for Pneumatic boats* *only, each SMC equals 1 PP]*.  **5.1"
   },
   {
-   "id": "CHE-00363",
+   "id": "CHE-00364",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 670,
@@ -5735,7 +5746,7 @@
    "context": "ter Obstacle’s hex center dot *[EXC:* *OVR]*. An abandoned drifting boat be"
   },
   {
-   "id": "CHE-00364",
+   "id": "CHE-00365",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 672,
@@ -5745,7 +5756,7 @@
    "context": "fting or Beaching/un-Beaching *[EXC:* *a German Assault Boat can always mov"
   },
   {
-   "id": "CHE-00365",
+   "id": "CHE-00366",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 672,
@@ -5755,7 +5766,7 @@
    "context": " move in the MPh due to its Inherent* *Driver; 5.11]*. Movement in the APh "
   },
   {
-   "id": "CHE-00366",
+   "id": "CHE-00367",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 686,
@@ -5765,7 +5776,7 @@
    "context": " Fire can affect only the unit being* *moved at the time]*. If the Final IF"
   },
   {
-   "id": "CHE-00367",
+   "id": "CHE-00368",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 688,
@@ -5775,7 +5786,7 @@
    "context": " hits resolved using the Area Target* *Type still have their FP halved]* an"
   },
   {
-   "id": "CHE-00368",
+   "id": "CHE-00369",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 690,
@@ -5785,7 +5796,7 @@
    "context": "ter in that Location per shot *[EXC:* *if using the Area Target Type; C3.33"
   },
   {
-   "id": "CHE-00369",
+   "id": "CHE-00370",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 690,
@@ -5795,7 +5806,7 @@
    "context": "HD vehicular target *[EXC: HD status* *does not apply if the firer is an ai"
   },
   {
-   "id": "CHE-00370",
+   "id": "CHE-00371",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 690,
@@ -5805,7 +5816,7 @@
    "context": "t Type, it sinks (see 5.53) *[EXC: a* *three-boat Small Raft counter is Red"
   },
   {
-   "id": "CHE-00371",
+   "id": "CHE-00372",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 784,
@@ -5815,7 +5826,7 @@
    "context": " Victory Points (A26.212) *[EXC: the* *Passengers of a glider are worth Vic"
   },
   {
-   "id": "CHE-00372",
+   "id": "CHE-00373",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 790,
@@ -5825,7 +5836,7 @@
    "context": "make a ground attack *[EXC: Mistaken* *Attack; 7.32, 7.62]*, and being immu"
   },
   {
-   "id": "CHE-00373",
+   "id": "CHE-00374",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 790,
@@ -5835,7 +5846,7 @@
    "context": "ed on the easiest non-HIP *[EXC: Ob-* *servation Planes may target “empty” "
   },
   {
-   "id": "CHE-00374",
+   "id": "CHE-00375",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 817,
@@ -5845,7 +5856,7 @@
    "context": "*[EXC: Observation Planes and subse-* *quent hexes of a Strafing Run]*) any"
   },
   {
-   "id": "CHE-00375",
+   "id": "CHE-00376",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 821,
@@ -5855,7 +5866,7 @@
    "context": "Hindrance DRM if the K9 orchard were* *out-of-season; B14.2],* but K9 can b"
   },
   {
-   "id": "CHE-00376",
+   "id": "CHE-00377",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 833,
@@ -5865,7 +5876,7 @@
    "context": " both Stuka types always use the 39F* *TK#]*, and is modified only by the A"
   },
   {
-   "id": "CHE-00377",
+   "id": "CHE-00378",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 847,
@@ -5875,7 +5886,7 @@
    "context": "et while in AA mode *[EXC: Vehicular* *AAMG do not use AA counters and can "
   },
   {
-   "id": "CHE-00378",
+   "id": "CHE-00379",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 847,
@@ -5885,7 +5896,7 @@
    "context": " fire at ground/Aerial targets with-* *out consideration of AA mode]*. When"
   },
   {
-   "id": "CHE-00379",
+   "id": "CHE-00380",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 851,
@@ -5895,7 +5906,7 @@
    "context": "nfantry-manned HMG**<sup>21</sup>**,* *vehicular AAMG, and AA-capable MA/CM"
   },
   {
-   "id": "CHE-00380",
+   "id": "CHE-00381",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 851,
@@ -5905,7 +5916,7 @@
    "context": "le MA/CMG can fire at aircraft coun-* *ters as Light AA*. AA Guns with IFE "
   },
   {
-   "id": "CHE-00381",
+   "id": "CHE-00382",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 853,
@@ -5915,7 +5926,7 @@
    "context": "curred last) *[EXC: a Stuka making a* *bomb attack must extend its “flyover"
   },
   {
-   "id": "CHE-00382",
+   "id": "CHE-00383",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 853,
@@ -5925,7 +5936,7 @@
    "context": "“flyover” another three hexes as per* *7.403]*. Damaged/evading aircraft mu"
   },
   {
-   "id": "CHE-00383",
+   "id": "CHE-00384",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 905,
@@ -5935,7 +5946,7 @@
    "context": " modifiers are cumulative *[EXC: the* *drm for vehicles, wrecks, and previo"
   },
   {
-   "id": "CHE-00384",
+   "id": "CHE-00385",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 905,
@@ -5945,7 +5956,7 @@
    "context": "and previously-landed gliders in the* *landing hex can never exceed +1]*. T"
   },
   {
-   "id": "CHE-00385",
+   "id": "CHE-00386",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 923,
@@ -5955,7 +5966,7 @@
    "context": "result is considered a Damage result* *instead]*; the H Aerial DRM does not"
   },
   {
-   "id": "CHE-00386",
+   "id": "CHE-00387",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 953,
@@ -5965,7 +5976,7 @@
    "context": "ite dr (FRU) while Russians increase* *it by 50% (FRD), prior to any Wind a"
   },
   {
-   "id": "CHE-00387",
+   "id": "CHE-00388",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 953,
@@ -5975,7 +5986,7 @@
    "context": "y *[EXC: British paratroopers retain* *possession of (i.e., drop with) thei"
   },
   {
-   "id": "CHE-00388",
+   "id": "CHE-00389",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 953,
@@ -5985,7 +5996,7 @@
    "context": "r LMG, light mortar, and radio coun-* *ters, while U.S. paratroopers retain"
   },
   {
-   "id": "CHE-00389",
+   "id": "CHE-00390",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 953,
@@ -5995,7 +6006,7 @@
    "context": "ir light mortars; they are therefore* *placed in the Cloaking Box with the "
   },
   {
-   "id": "CHE-00390",
+   "id": "CHE-00391",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 969,
@@ -6005,7 +6016,7 @@
    "context": ": If that hex contains a bridge (not* *a foot bridge), it lands on the brid"
   },
   {
-   "id": "CHE-00391",
+   "id": "CHE-00392",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 969,
@@ -6015,7 +6026,7 @@
    "context": "n a dr of 1 or 2 (dr 1 if a one-lane* *bridge); otherwise it lands IN the h"
   },
   {
-   "id": "CHE-00392",
+   "id": "CHE-00393",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 969,
@@ -6025,7 +6036,7 @@
    "context": " There is a -1 drm to this dr if the* *unit is unbroken; for Interior Build"
   },
   {
-   "id": "CHE-00393",
+   "id": "CHE-00394",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 973,
@@ -6035,7 +6046,7 @@
    "context": "contains a SMC/crew, those units are* *revealed at this time with/in place "
   },
   {
-   "id": "CHE-00394",
+   "id": "CHE-00395",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 985,
@@ -6045,7 +6056,7 @@
    "context": " during the APh. Instead, all *[EXC:* *those that have already Deployed; 9."
   },
   {
-   "id": "CHE-00395",
+   "id": "CHE-00396",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1009,
@@ -6055,7 +6066,7 @@
    "context": " CC. *[EXC: If the TI counter is re-* *moved prior to the completion of Rep"
   },
   {
-   "id": "CHE-00396",
+   "id": "CHE-00397",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1009,
@@ -6065,7 +6076,7 @@
    "context": "f Replenishment, that Game Turn does* *not count toward Replenishment and t"
   },
   {
-   "id": "CHE-00397",
+   "id": "CHE-00398",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1009,
@@ -6075,7 +6086,7 @@
    "context": "d the armed vehicle must use its B #* *if it fires that weapon.]* One Ammo "
   },
   {
-   "id": "CHE-00398",
+   "id": "CHE-00399",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1015,
@@ -6085,7 +6096,7 @@
    "context": "t were a detonated Goliath *[EXC: it* *has no designated target and no X#]*"
   },
   {
-   "id": "CHE-00399",
+   "id": "CHE-00400",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1027,
@@ -6095,7 +6106,7 @@
    "context": "e Convoys *[EXC: a “new Convoy” that* *contains only one vehicle; 11.1]*, e"
   },
   {
-   "id": "CHE-00400",
+   "id": "CHE-00401",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1059,
@@ -6105,7 +6116,7 @@
    "context": "ually towing a Gun, it is allowed to* *also carry that Gun’s crew and ammo]"
   },
   {
-   "id": "CHE-00401",
+   "id": "CHE-00402",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1063,
@@ -6115,7 +6126,7 @@
    "context": "ch unit/stack in a Column *[EXC: the* *“lead” unit/stack]* may enter only t"
   },
   {
-   "id": "CHE-00402",
+   "id": "CHE-00403",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1077,
@@ -6125,7 +6136,7 @@
    "context": "zardous Movement DRM *[EXC: a Column* *may voluntarily “initiate” Disbandme"
   },
   {
-   "id": "CHE-00403",
+   "id": "CHE-00404",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1077,
@@ -6135,7 +6146,7 @@
    "context": "ment by expending a MF to do so (and* *declaring Disbandment), but does not"
   },
   {
-   "id": "CHE-00404",
+   "id": "CHE-00405",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1077,
@@ -6145,7 +6156,7 @@
    "context": "actually Disband until after all De-* *fensive First Fire allowed by that M"
   },
   {
-   "id": "CHE-00405",
+   "id": "CHE-00406",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1097,
@@ -6155,7 +6166,7 @@
    "context": "a in their next MPh/APh. *[EXC: If a* *partially-offboard Column Disbands, "
   },
   {
-   "id": "CHE-00406",
+   "id": "CHE-00407",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1097,
@@ -6165,7 +6176,7 @@
    "context": " its offboard units set up again and* *enter in their next allowed phase(s)"
   },
   {
-   "id": "CHE-00407",
+   "id": "CHE-00408",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1115,
@@ -6175,7 +6186,7 @@
    "context": ". *All Pre-Registered hexes assigned* *a Barrage option from the same OBA b"
   },
   {
-   "id": "CHE-00408",
+   "id": "CHE-00409",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1121,
@@ -6185,7 +6196,7 @@
    "context": "*[EXC: when the FFE counter is in or* *adjacent to a Pre-Registered hex, it"
   },
   {
-   "id": "CHE-00409",
+   "id": "CHE-00410",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1121,
@@ -6195,7 +6206,7 @@
    "context": "t cannot be Corrected to another hex* *that is adjacent to that same Pre-Re"
   },
   {
-   "id": "CHE-00410",
+   "id": "CHE-00411",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1127,
@@ -6205,7 +6216,7 @@
    "context": "* A Barrage *[EXC: not Creeping Bar-* *rage]* FFE causes a LOS Hindrance as"
   },
   {
-   "id": "CHE-00411",
+   "id": "CHE-00412",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1129,
@@ -6215,7 +6226,7 @@
    "context": "apable Pre-Registered hex *[EXC: one* *designated for use with a Creeping B"
   },
   {
-   "id": "CHE-00412",
+   "id": "CHE-00413",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1133,
@@ -6225,7 +6236,7 @@
    "context": "layer secretly records *one Barrage-* *capable Pre-Registered hex* (12.2) w"
   },
   {
-   "id": "CHE-00413",
+   "id": "CHE-00414",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1133,
@@ -6235,7 +6246,7 @@
    "context": "). He also secretly records *an Aim-* *ing Hex*, which is any hex that lies"
   },
   {
-   "id": "CHE-00414",
+   "id": "CHE-00415",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1133,
@@ -6245,7 +6256,7 @@
    "context": "endly PFPh only, or in both his PFPh* *and DFPh.*<sup>29</sup> He also secr"
   },
   {
-   "id": "CHE-00415",
+   "id": "CHE-00416",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1133,
@@ -6255,7 +6266,7 @@
    "context": "s *the Game Turn in which the Creep-* *ing Barrage will Lift* (i.e., will e"
   },
   {
-   "id": "CHE-00416",
+   "id": "CHE-00417",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1133,
@@ -6265,7 +6276,7 @@
    "context": "tly, he *prepares his Battery Access* *draw pile, including one extra black"
   },
   {
-   "id": "CHE-00417",
+   "id": "CHE-00418",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1141,
@@ -6275,7 +6286,7 @@
    "context": " and his special Battery Access draw* *was black (or if it is the PFPh of “"
   },
   {
-   "id": "CHE-00418",
+   "id": "CHE-00419",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1153,
@@ -6285,7 +6296,7 @@
    "context": "ter onboard, he must perform one *or* *both* of the following actions in li"
   },
   {
-   "id": "CHE-00419",
+   "id": "CHE-00420",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1157,
@@ -6295,7 +6306,7 @@
    "context": "d recorded “FFE:1”  or “FFE:1-2” for* *his Corrections*, and if the Barrage"
   },
   {
-   "id": "CHE-00420",
+   "id": "CHE-00421",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1165,
@@ -6303,24 +6314,6 @@
    "after": " ",
    "emphasis": "italic",
    "context": "normal +1 *[EXC: +1 if it is raining* *or the scenario has Deep Snow]*.<sup"
-  },
-  {
-   "id": "CHE-00421",
-   "rule": "symbol-font-glyph",
-   "class": "conversion-fix",
-   "baseLine": 853,
-   "before": "",
-   "after": "★",
-   "codePoint": "U+F0AB",
-   "result": "U+2605",
-   "evidence": {
-    "pdfPage": 239,
-    "pdfFonts": [
-     "Wingdings-Regular"
-    ],
-    "glyph": "Wingdings 0xAB black five-pointed star"
-   },
-   "context": "fire vs aircraft is resolved on the  Vehicle Line of the IFT (∆), but is"
   },
   {
    "id": "CHE-00422",
@@ -6338,7 +6331,7 @@
     ],
     "glyph": "Wingdings 0xAB black five-pointed star"
    },
-   "context": " DRM equal to the number inside the  symbol on the aircraft counter.<sup"
+   "context": "fire vs aircraft is resolved on the  Vehicle Line of the IFT (∆), but is"
   },
   {
    "id": "CHE-00423",
@@ -6356,7 +6349,7 @@
     ],
     "glyph": "Wingdings 0xAB black five-pointed star"
    },
-   "context": "/sup> If the Final IFT DR is \\< the  Vehicle Kill Number, the aircraft i"
+   "context": " DRM equal to the number inside the  symbol on the aircraft counter.<sup"
   },
   {
    "id": "CHE-00424",
@@ -6374,7 +6367,7 @@
     ],
     "glyph": "Wingdings 0xAB black five-pointed star"
    },
-   "context": "ted; if the Final IFT DR equals the  Vehicle Kill Number, the aircraft i"
+   "context": "/sup> If the Final IFT DR is \\< the  Vehicle Kill Number, the aircraft i"
   },
   {
    "id": "CHE-00425",
@@ -6392,10 +6385,28 @@
     ],
     "glyph": "Wingdings 0xAB black five-pointed star"
    },
-   "context": ". If the Final IFT DR is one \\> the  Vehicle Kill Number, the aircraft m"
+   "context": "ted; if the Final IFT DR equals the  Vehicle Kill Number, the aircraft i"
   },
   {
    "id": "CHE-00426",
+   "rule": "symbol-font-glyph",
+   "class": "conversion-fix",
+   "baseLine": 853,
+   "before": "",
+   "after": "★",
+   "codePoint": "U+F0AB",
+   "result": "U+2605",
+   "evidence": {
+    "pdfPage": 239,
+    "pdfFonts": [
+     "Wingdings-Regular"
+    ],
+    "glyph": "Wingdings 0xAB black five-pointed star"
+   },
+   "context": ". If the Final IFT DR is one \\> the  Vehicle Kill Number, the aircraft m"
+  },
+  {
+   "id": "CHE-00427",
    "rule": "image-link-rebase",
    "class": "markup-normalization",
    "count": 63,

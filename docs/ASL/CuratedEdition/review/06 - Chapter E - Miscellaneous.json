@@ -1,22 +1,5 @@
 {
  "sourceId": "asl-easlrb-3.10:chapter-e",
  "basePath": "docs/ASL/Rulebook_Markdown/06 - Chapter E - Miscellaneous.md",
- "items": [
-  {
-   "id": "CHE-R0001",
-   "rule": "linebreak-hyphen",
-   "baseLine": 815,
-   "text": "off-board",
-   "context": " not exit it from play by moving it off-board) and attack (without a new Sighting",
-   "reason": "both forms attested",
-   "candidate": "offboard",
-   "evidence": {
-    "pdfPage": 237,
-    "pdfBreak": "line-end",
-    "pdfBreakAfter": "off-",
-    "joinedFormAttested": 84,
-    "hyphenatedFormAttestedMidLine": 3
-   }
-  }
- ]
+ "items": []
 }

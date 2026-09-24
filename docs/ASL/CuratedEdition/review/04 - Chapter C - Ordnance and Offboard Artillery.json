@@ -1,22 +1,5 @@
 {
  "sourceId": "asl-easlrb-3.10:chapter-c",
  "basePath": "docs/ASL/Rulebook_Markdown/04 - Chapter C - Ordnance and Offboard Artillery.md",
- "items": [
-  {
-   "id": "CHC-R0001",
-   "rule": "linebreak-hyphen",
-   "baseLine": 54,
-   "text": "Off-board",
-   "context": "[1.6], or an OP tank [H1.46], or an Off-board Observer [1.63; E7.6]) may attempt ",
-   "reason": "both forms attested",
-   "candidate": "Offboard",
-   "evidence": {
-    "pdfPage": 163,
-    "pdfBreak": "line-end",
-    "pdfBreakAfter": "Off-",
-    "joinedFormAttested": 84,
-    "hyphenatedFormAttestedMidLine": 3
-   }
-  }
- ]
+ "items": []
 }
