@@ -119,3 +119,7 @@ The [conformance admission record](<./SourceRegistry/asl-scenario-a1.conformance
 ## Typed board snapshot adapter
 
 `ScenarioA1BoardObservationProvider` accepts a versioned, tenant-scoped snapshot from an injected `IScenarioA1BoardSnapshotSource`, checks the exact package, unit, target Location, source identity and requested version, then derives only the reviewed empty-building or known unconcealed enemy MMC MPh facts. The caller cannot send a case label in the observation query. Unknown occupants, missing modifiers, contradictory version or scope, and every other state yield no observation with a reason code. The adapter does not implement a board engine or attest the external source's accuracy; deployment must supply a trustworthy snapshot source. The published package identity and seven-case admission remain unchanged.
+
+## Typed curated-review acceptance
+
+The general authoring workflow now has a separate typed-semantic acceptance gate. It replays exact structural and source verification evidence, closes all cited subject fragments, checks the exact proposal and use, rejects conflicting exact predicates, and requires an independent domain approval. If reviewers disagree, a distinct adjudicator must approve before an accepted projection exists. The older diagnostic `TirCuratedAcceptanceReadinessEvaluator` remains blocked for opaque proposal text; its existing open/rejected history is not retroactively changed. The accepted projection does not grant additional Scenario A1 board outcomes or certify the draft curated edition.

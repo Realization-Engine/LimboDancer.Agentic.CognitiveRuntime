@@ -2,6 +2,12 @@ namespace LimboDancer.Domains.Asl.Authoring.Tests;
 
 public sealed class TirStructuralValidatorTests
 {
+    internal static TirDocument ValidSourceDocument() => Extract(
+    [
+        Fragment(SourceFragmentKind.Heading, null, null, 1, "## 1. PERSONNEL COUNTERS\n"),
+        Fragment(SourceFragmentKind.RuleText, "1.1", "A1.1", 2, "**1.1:** A structural rule.\n"),
+    ]);
+
     private static readonly DateTimeOffset CreatedAt = new(
         2026,
         9,
