@@ -7,6 +7,8 @@ public sealed class AslScenarioA1OccupiedMatrixTests
 {
     private const string SourceCommit = "a3254ff1d492dbdd28483d86f5b42437b48e80d4";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly string[] OverrunRuleIds =
+        ["A2.8", "A4.13", "A4.14", "A4.15", "A4.151", "A4.152", "B23.4"];
 
     [Fact]
     public void DelegatedReviewPinsTheFullCaseMatrixAndItsOutcomes()
@@ -107,11 +109,35 @@ public sealed class AslScenarioA1OccupiedMatrixTests
             .Select(rule => rule.GetString()));
         Assert.Contains(occupied.Records, record => record.SourceFragment.StartLine == 2087);
         Assert.Contains(occupied.Records, record => record.SourceFragment.StartLine == 1438);
-        Assert.Equal(new[] { "A2.8", "A4.13", "A4.14", "A4.15", "A4.151", "A4.152", "B23.4" },
+        Assert.Equal(OverrunRuleIds,
             cases[4].GetProperty("sourceRules").EnumerateArray()
                 .Select(rule => rule.GetString()!).ToArray());
         Assert.Equal(AslScenarioA1ChartReview.CandidateId,
             Assert.Single(cases[4].GetProperty("supplements").EnumerateArray()).GetString());
+    }
+
+    [Fact]
+    public void DelegatedAdmissionBindsExactlyFourCasesAndTwentyEightSourceSubjects()
+    {
+        using var admission = Read("asl-scenario-a1.bounded-admission.json");
+        using var manifest = Read("asl-scenario-a1.candidate-manifest.json");
+        using var matrix = Read("asl-scenario-a1.occupied-case-matrix.json");
+        var root = admission.RootElement;
+        var cases = matrix.RootElement.GetProperty("cases").EnumerateArray().ToArray();
+        Assert.Equal("accepted-bounded-case-profile-by-delegated-xunit-review",
+            root.GetProperty("status").GetString());
+        Assert.Equal(manifest.RootElement.GetProperty("rootSha256").GetString(),
+            root.GetProperty("candidateManifestRootSha256").GetString());
+        Assert.Equal(28, root.GetProperty("verifiedSourceSubjectCount").GetInt32());
+        var accepted = root.GetProperty("acceptedCaseIds").EnumerateArray()
+            .Select(item => item.GetString()!).ToArray();
+        Assert.Equal(4, accepted.Length);
+        Assert.Equal(cases.Where(item => item.GetProperty("reviewStatus").GetString()
+                == "reviewed-bounded").Select(item => item.GetProperty("caseId").GetString()!),
+            accepted);
+        Assert.Contains("A1-single-known-enemy-smc-overrun", accepted);
+        Assert.Equal(3, root.GetProperty("deferredCaseIds").GetArrayLength());
+        Assert.Equal(2, root.GetProperty("nonDefinitiveCaseIds").GetArrayLength());
     }
 
     private static SourceFragment[] RuleFragments(GeneratedManifests manifests, string id) =>
