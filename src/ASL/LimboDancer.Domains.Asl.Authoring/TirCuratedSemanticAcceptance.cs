@@ -57,7 +57,9 @@ public static class TirCuratedSemanticAcceptanceGate
             TirCuratedAcceptanceBlockerCode.SourceVerificationMissingOrDisputed or
             TirCuratedAcceptanceBlockerCode.CapturedFindingRequiresScopedResolution).ToArray();
         if (sourceBlockers.Length != 0)
+        {
             throw new InvalidOperationException("Captured source or structural evidence is not ready for semantic review.");
+        }
 
         var submission = openHistory.Submission;
         if (artifact.ProposalSha256 != submission.Subject.ProposalSha256
@@ -66,7 +68,9 @@ public static class TirCuratedSemanticAcceptanceGate
             || artifact.UnsupportedBranches.Any(string.IsNullOrWhiteSpace)
             || artifact.UnsupportedBranches.Distinct(StringComparer.Ordinal).Count()
                 != artifact.UnsupportedBranches.Count)
+        {
             throw new InvalidOperationException("Semantic artifact does not bind the exact proposal and use.");
+        }
 
         var fragments = submission.SourceDocument.Artifacts
             .Single(item => item.Envelope.ArtifactId == submission.Subject.SourceSubject.ArtifactId)
@@ -85,16 +89,22 @@ public static class TirCuratedSemanticAcceptanceGate
                 || rule.SourceFragmentIds.Distinct(StringComparer.Ordinal).Count()
                     != rule.SourceFragmentIds.Count
                 || rule.SourceFragmentIds.Any(id => !fragments.Contains(id)))
+            {
                 throw new InvalidOperationException("Semantic rule has incomplete or unverified source closure.");
+            }
             covered.UnionWith(rule.SourceFragmentIds);
             var key = JsonSerializer.Serialize(rule.Conditions
                 .OrderBy(item => item.Key, StringComparer.Ordinal).ToArray());
             if (contracts.TryGetValue(key, out var previous) && previous != rule.Outcome)
+            {
                 throw new InvalidOperationException("Conflicting exact predicates require a changed semantic artifact.");
+            }
             contracts[key] = rule.Outcome;
         }
         if (!covered.SetEquals(fragments))
+        {
             throw new InvalidOperationException("Declared use does not close every source fragment of the subject.");
+        }
 
         var author = submission.Proposal.SemanticAuthorIdentity;
         if (votes.Count == 0 || votes.Any(item => item.Actor.Role != TirReviewActorRole.DomainReviewer
@@ -103,7 +113,9 @@ public static class TirCuratedSemanticAcceptanceGate
                 || item.Decision is not (TirReviewDecision.Approve or TirReviewDecision.Reject))
             || votes.Select(item => item.Actor.Identity).Distinct(StringComparer.Ordinal).Count() != votes.Count
             || !votes.Any(item => item.Decision == TirReviewDecision.Approve))
+        {
             throw new InvalidOperationException("Acceptance requires an independent affirmative domain review.");
+        }
         var disputed = votes.Any(item => item.Decision == TirReviewDecision.Reject);
         if (disputed ? adjudication is null
                 || adjudication.Actor.Role != TirReviewActorRole.Adjudicator
@@ -112,7 +124,9 @@ public static class TirCuratedSemanticAcceptanceGate
                 || adjudication.Actor.Identity == author
                 || votes.Any(item => item.Actor.Identity == adjudication.Actor.Identity)
             : adjudication is not null)
+        {
             throw new InvalidOperationException("Conflicting reviews require an independent affirmative adjudication.");
+        }
 
         var canonicalRules = artifact.Rules.OrderBy(item => item.RuleId, StringComparer.Ordinal)
             .Select(item => new
@@ -124,16 +138,26 @@ public static class TirCuratedSemanticAcceptanceGate
             }).ToArray();
         var artifactDigest = Digest(JsonSerializer.Serialize(new
         {
-            artifact.ProposalSha256, artifact.DeclaredUse, Rules = canonicalRules,
+            artifact.ProposalSha256,
+            artifact.DeclaredUse,
+            Rules = canonicalRules,
             UnsupportedBranches = artifact.UnsupportedBranches.Order(StringComparer.Ordinal).ToArray(),
         }));
         var votePayload = votes.OrderBy(item => item.Actor.Identity, StringComparer.Ordinal)
             .Select(item => new { item.Actor.Identity, item.Decision, item.Rationale }).ToArray();
         var decisionDigest = Digest(JsonSerializer.Serialize(new
         {
-            PolicyId, readiness.ReviewHistorySha256, artifactDigest, Votes = votePayload,
+            PolicyId,
+            readiness.ReviewHistorySha256,
+            artifactDigest,
+            Votes = votePayload,
             Adjudication = adjudication is null ? null
-                : new { adjudication.Actor.Identity, adjudication.Decision, adjudication.Rationale },
+                : new
+                {
+                    adjudication.Actor.Identity,
+                    adjudication.Decision,
+                    adjudication.Rationale,
+                },
         }));
         return new TirCuratedSemanticAcceptance(readiness.ReviewHistorySha256,
             artifactDigest, decisionDigest, artifact.DeclaredUse,
@@ -154,7 +178,8 @@ public sealed class TirCuratedAcceptedReview
     }
 
     public TirCuratedSemanticAcceptance Decision { get; }
-    public TirReviewStatus EffectiveStatus => TirReviewStatus.Accepted;
+
+    public TirReviewStatus EffectiveStatus { get; } = TirReviewStatus.Accepted;
 
     public static TirCuratedAcceptedReview Create(
         TirCuratedReviewHistoryBundle openHistory, TirCuratedSemanticArtifact artifact,
