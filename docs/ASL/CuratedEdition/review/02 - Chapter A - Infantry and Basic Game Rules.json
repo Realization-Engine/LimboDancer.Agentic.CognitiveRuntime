@@ -1,0 +1,301 @@
+{
+ "sourceId": "asl-easlrb-3.10:chapter-a",
+ "basePath": "docs/ASL/Rulebook_Markdown/02 - Chapter A - Infantry and Basic Game Rules.md",
+ "items": [
+  {
+   "id": "CHA-R0001",
+   "rule": "linebreak-hyphen",
+   "baseLine": 121,
+   "text": "non-Fa-natic",
+   "context": "ce to Recombine]*. A Fanatic HS and non-Fa-natic HS may Recombine, but the resulting",
+   "reason": "neither form attested",
+   "candidate": "non-Fanatic",
+   "evidence": {
+    "pdfPage": 45,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "non-Fa-",
+    "joinedFormAttested": 0,
+    "hyphenatedFormAttestedMidLine": 0
+   }
+  },
+  {
+   "id": "CHA-R0002",
+   "rule": "linebreak-hyphen",
+   "baseLine": 1094,
+   "text": "on-board",
+   "context": "aled by LOS during setup are placed on-board just prior to placing non-OB “?”.  ",
+   "reason": "both forms attested",
+   "candidate": "onboard",
+   "evidence": {
+    "pdfPage": 80,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "on-",
+    "joinedFormAttested": 64,
+    "hyphenatedFormAttestedMidLine": 10
+   }
+  },
+  {
+   "id": "CHA-R0003",
+   "rule": "linebreak-hyphen",
+   "baseLine": 171,
+   "text": "ex-terior",
+   "context": " one <sup>1</sup>/8\" outside of its ex-terior hexside (approximately to the tip o",
+   "reason": "neither form attested",
+   "candidate": "exterior",
+   "evidence": {
+    "pdfPage": 46,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "ex-",
+    "joinedFormAttested": 0,
+    "hyphenatedFormAttestedMidLine": 0
+   }
+  },
+  {
+   "id": "CHA-R0004",
+   "rule": "linebreak-hyphen",
+   "baseLine": 439,
+   "text": "enemy-occupied",
+   "context": "ch Infantry are allowed to enter an enemy-occupied Location during the MPh (4.14). Ord",
+   "reason": "token not found on its PDF page",
+   "pdfPage": 54
+  },
+  {
+   "id": "CHA-R0005",
+   "rule": "linebreak-hyphen",
+   "baseLine": 938,
+   "text": "enemy-occupied",
+   "context": "th a CX 8-0 leader advances into an enemy-occupied Location. The total Ambush Status d",
+   "reason": "token not found on its PDF page",
+   "pdfPage": 73
+  },
+  {
+   "id": "CHA-R0006",
+   "rule": "linebreak-hyphen",
+   "baseLine": 327,
+   "text": "pre-existing",
+   "context": "Area Fire except for Fire Lanes and pre-existing Residual FP, but FFMO/FFNAM DRM app",
+   "reason": "both forms attested",
+   "candidate": "preexisting",
+   "evidence": {
+    "pdfPage": 52,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "pre-",
+    "joinedFormAttested": 1,
+    "hyphenatedFormAttestedMidLine": 5
+   }
+  },
+  {
+   "id": "CHA-R0007",
+   "rule": "linebreak-hyphen",
+   "baseLine": 341,
+   "text": "in-convenience",
+   "context": "exceeded only at increased risk and in-convenience to all of the friendly units therei",
+   "reason": "neither form attested",
+   "candidate": "inconvenience",
+   "evidence": {
+    "pdfPage": 52,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "in-",
+    "joinedFormAttested": 0,
+    "hyphenatedFormAttestedMidLine": 0
+   }
+  },
+  {
+   "id": "CHA-R0008",
+   "rule": "linebreak-hyphen",
+   "baseLine": 574,
+   "text": "already-pinned",
+   "context": " has its FP halved only once, so an already-pinned unit does not take a NTC due to a “",
+   "reason": "neither form attested",
+   "candidate": "alreadypinned",
+   "evidence": {
+    "pdfPage": 58,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "already-",
+    "joinedFormAttested": 0,
+    "hyphenatedFormAttestedMidLine": 0
+   }
+  },
+  {
+   "id": "CHA-R0009",
+   "rule": "linebreak-hyphen",
+   "baseLine": 878,
+   "text": "attack-to-defense",
+   "context": "cked in order to achieve a ratio of attack-to-defense FP strength called odds. For exampl",
+   "reason": "neither form attested",
+   "candidate": "attack-todefense",
+   "evidence": {
+    "pdfPage": 72,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "attack-to-",
+    "joinedFormAttested": 0,
+    "hyphenatedFormAttestedMidLine": 0
+   }
+  },
+  {
+   "id": "CHA-R0010",
+   "rule": "linebreak-hyphen",
+   "baseLine": 1082,
+   "text": "non-Emplaced",
+   "context": "RC), Cavalry, horses, bicycles, and non-Emplaced Guns except that such concealment i",
+   "reason": "token not found on its PDF page",
+   "pdfPage": 79
+  },
+  {
+   "id": "CHA-R0011",
+   "rule": "stale-hyphen",
+   "baseLine": 1120,
+   "text": "un-mounted",
+   "context": "mber occupy the same Location while un-mounted and “accompanied” (13.7).  ![Figure",
+   "reason": "mid-line hyphen after a real prefix; joined form is attested",
+   "candidate": "unmounted",
+   "pdfPage": 81,
+   "evidence": {
+    "joinedFormAttested": 4,
+    "hyphenatedFormAttestedMidLine": 1
+   }
+  },
+  {
+   "id": "CHA-R0012",
+   "rule": "linebreak-hyphen",
+   "baseLine": 1336,
+   "text": "originally-rolled",
+   "context": "ks are re-figured using both of the originally-rolled Original DRs and the new leader’s F",
+   "reason": "neither form attested",
+   "candidate": "originallyrolled",
+   "evidence": {
+    "pdfPage": 85,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "originally-",
+    "joinedFormAttested": 0,
+    "hyphenatedFormAttestedMidLine": 0
+   }
+  },
+  {
+   "id": "CHA-R0013",
+   "rule": "linebreak-hyphen",
+   "baseLine": 1738,
+   "text": "non-alternate",
+   "context": "d Q3 as side hexes). If instead the non-alternate Hex Grain Q2-P2-O3-N3... had been c",
+   "reason": "neither form attested",
+   "candidate": "nonalternate",
+   "evidence": {
+    "pdfPage": 95,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "non-",
+    "joinedFormAttested": 0,
+    "hyphenatedFormAttestedMidLine": 0
+   }
+  },
+  {
+   "id": "CHA-R0014",
+   "rule": "linebreak-hyphen",
+   "baseLine": 1811,
+   "text": "knife-hatchet-sword",
+   "context": "ri knives (which were a combination knife-hatchet-sword). Whenever ≥ one unbroken Gurkha In",
+   "reason": "neither form attested",
+   "candidate": "knife-hatchetsword",
+   "evidence": {
+    "pdfPage": 96,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "knife-hatchet-",
+    "joinedFormAttested": 0,
+    "hyphenatedFormAttestedMidLine": 0
+   }
+  },
+  {
+   "id": "CHA-R0015",
+   "rule": "linebreak-hyphen",
+   "baseLine": 2113,
+   "text": "well-sited",
+   "context": "e lethality of automatic weapons in well-sited defensive positions often caused th",
+   "reason": "neither form attested",
+   "candidate": "wellsited",
+   "evidence": {
+    "pdfPage": 102,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "well-",
+    "joinedFormAttested": 0,
+    "hyphenatedFormAttestedMidLine": 0
+   }
+  },
+  {
+   "id": "CHA-R0016",
+   "rule": "linebreak-hyphen",
+   "baseLine": 2155,
+   "text": "blue-in-blue",
+   "context": "French personnel and SW in two-tone blue-in-blue counters to distinguish them from a",
+   "reason": "neither form attested",
+   "candidate": "bluein-blue",
+   "evidence": {
+    "pdfPage": 103,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "blue-",
+    "joinedFormAttested": 0,
+    "hyphenatedFormAttestedMidLine": 0
+   }
+  },
+  {
+   "id": "CHA-R0017",
+   "rule": "linebreak-hyphen",
+   "baseLine": 2157,
+   "text": "convic-tion",
+   "context": "n, and his will weakened by lack of convic-tion. The Italian soldier fought bravely",
+   "reason": "neither form attested",
+   "candidate": "conviction",
+   "evidence": {
+    "pdfPage": 103,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "convic-",
+    "joinedFormAttested": 0,
+    "hyphenatedFormAttestedMidLine": 0
+   }
+  },
+  {
+   "id": "CHA-R0018",
+   "rule": "linebreak-hyphen",
+   "baseLine": 2157,
+   "text": "sum-marily",
+   "context": "to its need for manpower. They were sum-marily trained and only lightly armed. Bla",
+   "reason": "neither form attested",
+   "candidate": "summarily",
+   "evidence": {
+    "pdfPage": 103,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "sum-",
+    "joinedFormAttested": 0,
+    "hyphenatedFormAttestedMidLine": 0
+   }
+  },
+  {
+   "id": "CHA-R0019",
+   "rule": "stale-hyphen",
+   "baseLine": 2161,
+   "text": "re-fused",
+   "context": "tical and strategic reasons usually re-fused to take offensive action after 1941",
+   "reason": "mid-line hyphen after a real prefix; joined form is attested",
+   "candidate": "refused",
+   "pdfPage": 103,
+   "evidence": {
+    "joinedFormAttested": 4,
+    "hyphenatedFormAttestedMidLine": 1
+   }
+  },
+  {
+   "id": "CHA-R0020",
+   "rule": "linebreak-hyphen",
+   "baseLine": 2183,
+   "text": "design-ing",
+   "context": "r counters in some cases if we were design-ing them today). Those scenarios stand ",
+   "reason": "neither form attested",
+   "candidate": "designing",
+   "evidence": {
+    "pdfPage": 105,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "design-",
+    "joinedFormAttested": 0,
+    "hyphenatedFormAttestedMidLine": 0
+   }
+  }
+ ]
+}

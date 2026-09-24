@@ -1,0 +1,2859 @@
+{
+ "sourceId": "asl-easlrb-3.10:index-glossary",
+ "basePath": "docs/ASL/Rulebook_Markdown/01 - Index and Glossary.md",
+ "baseSha256": "8e1a686a2664af4ea12e6a57580999d2baf47c8770719426766abe88059f9652",
+ "entries": [
+  {
+   "id": "INDEX-GLOSSARY-00001",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 3,
+   "pdfPage": 11,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "<!-- page 11 -->  # INDEX & GLOSSARY:  When numerous r"
+  },
+  {
+   "id": "INDEX-GLOSSARY-00002",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 95,
+   "pdfPage": 12,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "-- page 12 -->  **Air Drop**: E9.1  **Air Support**: E7, [BRT: TCG6] [Ch"
+  },
+  {
+   "id": "INDEX-GLOSSARY-00003",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 187,
+   "pdfPage": 13,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": " [RePh: O11.614]  <!-- page 13 -->  **Armored Assault**: D9.31 [NA with "
+  },
+  {
+   "id": "INDEX-GLOSSARY-00004",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 295,
+   "pdfPage": 14,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "ejection: A20.3]  <!-- page 14 -->  **BAZ** (Bazooka): C13.4 [Desperatio"
+  },
+  {
+   "id": "INDEX-GLOSSARY-00005",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 385,
+   "pdfPage": 15,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "cketing**: C6.52  <!-- page 15 -->  **Breach**: B9.541, B23.711 [Banks: "
+  },
+  {
+   "id": "INDEX-GLOSSARY-00006",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 467,
+   "pdfPage": 16,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "[RePh: O11.6136]  <!-- page 16 -->  **Captured Equipment**: A21 [Dozer: "
+  },
+  {
+   "id": "INDEX-GLOSSARY-00007",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 553,
+   "pdfPage": 17,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "Control**: S16.1  <!-- page 17 -->  **Commando**: H1.24 [ABtF: R6.31, R9"
+  },
+  {
+   "id": "INDEX-GLOSSARY-00008",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 647,
+   "pdfPage": 18,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "VP Total**: P8.2  <!-- page 18 -->  **CVP** (Casualty Victory Points): ("
+  },
+  {
+   "id": "INDEX-GLOSSARY-00009",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 745,
+   "pdfPage": 19,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "- EMY FG: S8.53]  <!-- page 19 -->  **DFPh** (Defensive Fire Phase): A3."
+  },
+  {
+   "id": "INDEX-GLOSSARY-00010",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 847,
+   "pdfPage": 20,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "arpment overlay]  <!-- page 20 -->  **Early Morning**: F11.611  **Early "
+  },
+  {
+   "id": "INDEX-GLOSSARY-00011",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 945,
+   "pdfPage": 21,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": " Dust**: F11.732  <!-- page 21 -->  #### F  **(f)** (French manufacture "
+  },
+  {
+   "id": "INDEX-GLOSSARY-00012",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 1027,
+   "pdfPage": 22,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "nation DRM**: C5  <!-- page 22 -->  **Firing Within Hex** (i.e., firing "
+  },
+  {
+   "id": "INDEX-GLOSSARY-00013",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 1111,
+   "pdfPage": 23,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "ahedron: G14.51]  <!-- page 23 -->  **GLRR** (Ground Level Railroads): B"
+  },
+  {
+   "id": "INDEX-GLOSSARY-00014",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 1207,
+   "pdfPage": 24,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": " **Hammada**: F3  <!-- page 24 -->  **Hamper** (a Final Fire Clearance D"
+  },
+  {
+   "id": "INDEX-GLOSSARY-00015",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 1283,
+   "pdfPage": 25,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "] [Summit: F6.6]  <!-- page 25 -->  **Hillside Walls and Hedges**: B9.6,"
+  },
+  {
+   "id": "INDEX-GLOSSARY-00016",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 1377,
+   "pdfPage": 26,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "depiction: D8.1]  <!-- page 26 -->  **Immune Areas**: C1.81 [Naval Bomba"
+  },
+  {
+   "id": "INDEX-GLOSSARY-00017",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 1475,
+   "pdfPage": 27,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "n Jungle: G2.22]  <!-- page 27 -->  **Jungle**: G2 [Fortifications, Fire"
+  },
+  {
+   "id": "INDEX-GLOSSARY-00018",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 1563,
+   "pdfPage": 28,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "s* listed above]  <!-- page 28 -->  **LMG** (Light Machine Gun): [First "
+  },
+  {
+   "id": "INDEX-GLOSSARY-00019",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 1651,
+   "pdfPage": 29,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "23] [Mud: E3.64]  <!-- page 29 -->  [Rain: E3.54] [S?: S3.321] [Skis: E4"
+  },
+  {
+   "id": "INDEX-GLOSSARY-00020",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 1735,
+   "pdfPage": 30,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "ar Target**: C.8  <!-- page 30 -->  **MP** (Movement Point; a measure of"
+  },
+  {
+   "id": "INDEX-GLOSSARY-00021",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 1847,
+   "pdfPage": 31,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "cle**: A6.2  **OC**: Ocean overlay  **OCEAN**: B21.14, G13.12 [BRT Ocean"
+  },
+  {
+   "id": "INDEX-GLOSSARY-00022",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 1935,
+   "pdfPage": 32,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "alm Trees: T4.1]  <!-- page 32 -->  **Panic**: S6.21-.213, S16.3  **Panj"
+  },
+  {
+   "id": "INDEX-GLOSSARY-00023",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 2015,
+   "pdfPage": 33,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "P8.2, Q9.2, R9.2  <!-- page 33 -->  **Pneumatic Boats**: E5.12  **Pocket"
+  },
+  {
+   "id": "INDEX-GLOSSARY-00024",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 2121,
+   "pdfPage": 34,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "ROF) A9.2, C2.24  <!-- page 34 -->  **RB Cellars**: O6 [NA beneath print"
+  },
+  {
+   "id": "INDEX-GLOSSARY-00025",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 2169,
+   "pdfPage": 35,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "missing",
+   "context": "0.3  **Reserve**: O11.6194b, PCG7a  ****ment NA on Paved Road: C11.2] [M"
+  },
+  {
+   "id": "INDEX-GLOSSARY-00026",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 2251,
+   "pdfPage": 36,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": ": (see Sz) D11.2  <!-- page 36 -->  **Scrounging**: [a Burnt-Out Wreck c"
+  },
+  {
+   "id": "INDEX-GLOSSARY-00027",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 2361,
+   "pdfPage": 37,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "[Motion: D13.32]  <!-- page 37 -->  **Small Arms Fire**: The inherent FP"
+  },
+  {
+   "id": "INDEX-GLOSSARY-00028",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 2455,
+   "pdfPage": 38,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "age DR**: E1.921  <!-- page 38 -->  **Starting**: D2.12 [Reversing: D2.2"
+  },
+  {
+   "id": "INDEX-GLOSSARY-00029",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 2557,
+   "pdfPage": 39,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "ivation: S5.713]  <!-- page 39 -->  #### T  **T** (Fast Turret Traverse)"
+  },
+  {
+   "id": "INDEX-GLOSSARY-00030",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 2667,
+   "pdfPage": 40,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "ocations: B27.6]  <!-- page 40 -->  [Passage: T6.4] [Rally DRM: A10.61] "
+  },
+  {
+   "id": "INDEX-GLOSSARY-00031",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 2757,
+   "pdfPage": 41,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "d as HS: S17.14]  <!-- page 41 -->  **Vehicular MG Fire**: D3.5-.54 [Bou"
+  },
+  {
+   "id": "INDEX-GLOSSARY-00032",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 2849,
+   "pdfPage": 42,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "hedrons: G14.52]  <!-- page 42 -->  **Withdrawal**: A11.2 [AFV: A11.7] ["
+  },
+  {
+   "id": "INDEX-GLOSSARY-00033",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 7,
+   "before": "-",
+   "after": "",
+   "token": "Chap-ter",
+   "result": "Chapter",
+   "evidence": {
+    "pdfPage": 11,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Chap-",
+    "joinedFormAttested": 51,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00034",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 73,
+   "before": "-",
+   "after": "",
+   "token": "ord-nance",
+   "result": "ordnance",
+   "evidence": {
+    "pdfPage": 11,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "ord-",
+    "joinedFormAttested": 248,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00035",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 435,
+   "before": "-",
+   "after": "",
+   "token": "ord-nance",
+   "result": "ordnance",
+   "evidence": {
+    "pdfPage": 15,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "ord-",
+    "joinedFormAttested": 248,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00036",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 127,
+   "before": "-",
+   "after": "",
+   "token": "Re-plenishment",
+   "result": "Replenishment",
+   "evidence": {
+    "pdfPage": 12,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Re-",
+    "joinedFormAttested": 11,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00037",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 153,
+   "before": "-",
+   "after": "",
+   "token": "su-perscript",
+   "result": "superscript",
+   "evidence": {
+    "pdfPage": 12,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "su-",
+    "joinedFormAttested": 22,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00038",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 161,
+   "before": "-",
+   "after": "",
+   "token": "Dis-carding",
+   "result": "Discarding",
+   "evidence": {
+    "pdfPage": 12,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Dis-",
+    "joinedFormAttested": 1,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00039",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 171,
+   "before": "-",
+   "after": "",
+   "token": "en-ters",
+   "result": "enters",
+   "evidence": {
+    "pdfPage": 12,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "en-",
+    "joinedFormAttested": 106,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00040",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 177,
+   "before": "-",
+   "after": "",
+   "token": "Un-armed",
+   "result": "Unarmed",
+   "evidence": {
+    "pdfPage": 12,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Un-",
+    "joinedFormAttested": 72,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00041",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 227,
+   "before": "-",
+   "after": "",
+   "token": "Bridg-es",
+   "result": "Bridges",
+   "evidence": {
+    "pdfPage": 13,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Bridg-",
+    "joinedFormAttested": 41,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00042",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1389,
+   "before": "-",
+   "after": "",
+   "token": "Bridg-es",
+   "result": "Bridges",
+   "evidence": {
+    "pdfPage": 26,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Bridg-",
+    "joinedFormAttested": 41,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00043",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 233,
+   "before": "-",
+   "after": "",
+   "token": "Ger-man",
+   "result": "German",
+   "evidence": {
+    "pdfPage": 13,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Ger-",
+    "joinedFormAttested": 301,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00044",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 257,
+   "before": "-",
+   "after": "",
+   "token": "ref-erence",
+   "result": "reference",
+   "evidence": {
+    "pdfPage": 13,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "ref-",
+    "joinedFormAttested": 13,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00045",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 257,
+   "before": "-",
+   "after": "",
+   "token": "Cap-tured",
+   "result": "Captured",
+   "evidence": {
+    "pdfPage": 13,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Cap-",
+    "joinedFormAttested": 137,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00046",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 279,
+   "before": "-",
+   "after": "",
+   "token": "tun-nel",
+   "result": "tunnel",
+   "evidence": {
+    "pdfPage": 13,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "tun-",
+    "joinedFormAttested": 24,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00047",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 279,
+   "before": "-",
+   "after": "",
+   "token": "al-low",
+   "result": "allow",
+   "evidence": {
+    "pdfPage": 13,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "al-",
+    "joinedFormAttested": 29,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00048",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 291,
+   "before": "-",
+   "after": "",
+   "token": "Intro-duction",
+   "result": "Introduction",
+   "evidence": {
+    "pdfPage": 13,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Intro-",
+    "joinedFormAttested": 5,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00049",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 321,
+   "before": "-",
+   "after": "",
+   "token": "Mas-sacre",
+   "result": "Massacre",
+   "evidence": {
+    "pdfPage": 14,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Mas-",
+    "joinedFormAttested": 16,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00050",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 369,
+   "before": "-",
+   "after": "",
+   "token": "Boule-vards",
+   "result": "Boulevards",
+   "evidence": {
+    "pdfPage": 14,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Boule-",
+    "joinedFormAttested": 8,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00051",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 373,
+   "before": "-",
+   "after": "",
+   "token": "Ac-quired",
+   "result": "Acquired",
+   "evidence": {
+    "pdfPage": 14,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Ac-",
+    "joinedFormAttested": 54,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00052",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 421,
+   "before": "-",
+   "after": "",
+   "token": "in-sea-son",
+   "result": "in-season",
+   "evidence": {
+    "pdfPage": 15,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "in-sea-",
+    "joinedFormAttested": 7,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00053",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 429,
+   "before": "-",
+   "after": "",
+   "token": "Ani-mal-Drawn",
+   "result": "Animal-Drawn",
+   "evidence": {
+    "pdfPage": 15,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Ani-",
+    "joinedFormAttested": 3,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00054",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 435,
+   "before": "-",
+   "after": "",
+   "token": "indi-cates",
+   "result": "indicates",
+   "evidence": {
+    "pdfPage": 15,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "indi-",
+    "joinedFormAttested": 48,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00055",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 437,
+   "before": "-",
+   "after": "",
+   "token": "Chang-ing",
+   "result": "Changing",
+   "evidence": {
+    "pdfPage": 15,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Chang-",
+    "joinedFormAttested": 43,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00056",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 443,
+   "before": "-",
+   "after": "",
+   "token": "strad-dling",
+   "result": "straddling",
+   "evidence": {
+    "pdfPage": 15,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "strad-",
+    "joinedFormAttested": 2,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00057",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 507,
+   "before": "-",
+   "after": "",
+   "token": "Immobiliza-tion",
+   "result": "Immobilization",
+   "evidence": {
+    "pdfPage": 16,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Immobiliza-",
+    "joinedFormAttested": 60,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00058",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 517,
+   "before": "-",
+   "after": "",
+   "token": "Con-script",
+   "result": "Conscript",
+   "evidence": {
+    "pdfPage": 16,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Con-",
+    "joinedFormAttested": 26,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00059",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 545,
+   "before": "-",
+   "after": "",
+   "token": "for-mation",
+   "result": "formation",
+   "evidence": {
+    "pdfPage": 16,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "for-",
+    "joinedFormAttested": 7,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00060",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 547,
+   "before": "-",
+   "after": "",
+   "token": "Pas-sage",
+   "result": "Passage",
+   "evidence": {
+    "pdfPage": 16,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Pas-",
+    "joinedFormAttested": 8,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00061",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 555,
+   "before": "-",
+   "after": "",
+   "token": "Parti-sans",
+   "result": "Partisans",
+   "evidence": {
+    "pdfPage": 17,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Parti-",
+    "joinedFormAttested": 38,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00062",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 559,
+   "before": "-",
+   "after": "",
+   "token": "Interroga-tion",
+   "result": "Interrogation",
+   "evidence": {
+    "pdfPage": 17,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Interroga-",
+    "joinedFormAttested": 20,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00063",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 559,
+   "before": "-",
+   "after": "",
+   "token": "Di-rection",
+   "result": "Direction",
+   "evidence": {
+    "pdfPage": 17,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Di-",
+    "joinedFormAttested": 144,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00064",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 561,
+   "before": "-",
+   "after": "",
+   "token": "Move-ment",
+   "result": "Movement",
+   "evidence": {
+    "pdfPage": 17,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Move-",
+    "joinedFormAttested": 561,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00065",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 615,
+   "before": "-",
+   "after": "",
+   "token": "Move-ment",
+   "result": "Movement",
+   "evidence": {
+    "pdfPage": 17,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Move-",
+    "joinedFormAttested": 561,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00066",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2039,
+   "before": "-",
+   "after": "",
+   "token": "Move-ment",
+   "result": "Movement",
+   "evidence": {
+    "pdfPage": 33,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Move-",
+    "joinedFormAttested": 561,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00067",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 563,
+   "before": "-",
+   "after": "",
+   "token": "kun-ai",
+   "result": "kunai",
+   "evidence": {
+    "pdfPage": 17,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "kun-",
+    "joinedFormAttested": 19,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00068",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 563,
+   "before": "-",
+   "after": "",
+   "token": "Bun-ker",
+   "result": "Bunker",
+   "evidence": {
+    "pdfPage": 17,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Bun-",
+    "joinedFormAttested": 20,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00069",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 573,
+   "before": "-",
+   "after": "",
+   "token": "Advan-tage",
+   "result": "Advantage",
+   "evidence": {
+    "pdfPage": 17,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Advan-",
+    "joinedFormAttested": 111,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00070",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 615,
+   "before": "-",
+   "after": "",
+   "token": "ve-hicles",
+   "result": "vehicles",
+   "evidence": {
+    "pdfPage": 17,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "ve-",
+    "joinedFormAttested": 285,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00071",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 617,
+   "before": "-",
+   "after": "",
+   "token": "Japa-nese",
+   "result": "Japanese",
+   "evidence": {
+    "pdfPage": 17,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Japa-",
+    "joinedFormAttested": 116,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00072",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1527,
+   "before": "-",
+   "after": "",
+   "token": "Japa-nese",
+   "result": "Japanese",
+   "evidence": {
+    "pdfPage": 27,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Japa-",
+    "joinedFormAttested": 116,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00073",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2677,
+   "before": "-",
+   "after": "",
+   "token": "Japa-nese",
+   "result": "Japanese",
+   "evidence": {
+    "pdfPage": 40,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Japa-",
+    "joinedFormAttested": 116,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00074",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 625,
+   "before": "-",
+   "after": "",
+   "token": "ap-plies",
+   "result": "applies",
+   "evidence": {
+    "pdfPage": 17,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "ap-",
+    "joinedFormAttested": 168,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00075",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 649,
+   "before": "-",
+   "after": "",
+   "token": "As-sault",
+   "result": "Assault",
+   "evidence": {
+    "pdfPage": 18,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "As-",
+    "joinedFormAttested": 131,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00076",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 649,
+   "before": "-",
+   "after": "",
+   "token": "Inter-diction",
+   "result": "Interdiction",
+   "evidence": {
+    "pdfPage": 18,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Inter-",
+    "joinedFormAttested": 78,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00077",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 701,
+   "before": "-",
+   "after": "",
+   "token": "Col-lateral",
+   "result": "Collateral",
+   "evidence": {
+    "pdfPage": 18,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Col-",
+    "joinedFormAttested": 74,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00078",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 713,
+   "before": "-",
+   "after": "",
+   "token": "Par-tisans",
+   "result": "Partisans",
+   "evidence": {
+    "pdfPage": 18,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Par-",
+    "joinedFormAttested": 38,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00079",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 771,
+   "before": "-",
+   "after": "",
+   "token": "MOL-Projec-tor",
+   "result": "MOL-Projector",
+   "evidence": {
+    "pdfPage": 19,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "MOL-Projec-",
+    "joinedFormAttested": 21,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00080",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 779,
+   "before": "-",
+   "after": "",
+   "token": "Interdic-tion",
+   "result": "Interdiction",
+   "evidence": {
+    "pdfPage": 19,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Interdic-",
+    "joinedFormAttested": 78,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00081",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 785,
+   "before": "-",
+   "after": "",
+   "token": "Re-duction",
+   "result": "Reduction",
+   "evidence": {
+    "pdfPage": 19,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Re-",
+    "joinedFormAttested": 75,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00082",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 955,
+   "before": "-",
+   "after": "",
+   "token": "Com-mand",
+   "result": "Command",
+   "evidence": {
+    "pdfPage": 21,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Com-",
+    "joinedFormAttested": 35,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00083",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 955,
+   "before": "-",
+   "after": "",
+   "token": "Mis-sion",
+   "result": "Mission",
+   "evidence": {
+    "pdfPage": 21,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Mis-",
+    "joinedFormAttested": 44,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00084",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 977,
+   "before": "-",
+   "after": "",
+   "token": "Unload-ing",
+   "result": "Unloading",
+   "evidence": {
+    "pdfPage": 21,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Unload-",
+    "joinedFormAttested": 22,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00085",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 979,
+   "before": "-",
+   "after": "",
+   "token": "Infan-try",
+   "result": "Infantry",
+   "evidence": {
+    "pdfPage": 21,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Infan-",
+    "joinedFormAttested": 667,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00086",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 993,
+   "before": "-",
+   "after": "",
+   "token": "Para-troops",
+   "result": "Paratroops",
+   "evidence": {
+    "pdfPage": 21,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Para-",
+    "joinedFormAttested": 31,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00087",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1143,
+   "before": "-",
+   "after": "",
+   "token": "Ac-tion",
+   "result": "Action",
+   "evidence": {
+    "pdfPage": 23,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Ac-",
+    "joinedFormAttested": 99,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00088",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1535,
+   "before": "-",
+   "after": "",
+   "token": "Ac-tion",
+   "result": "Action",
+   "evidence": {
+    "pdfPage": 27,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Ac-",
+    "joinedFormAttested": 99,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00089",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1701,
+   "before": "-",
+   "after": "",
+   "token": "Ac-tion",
+   "result": "Action",
+   "evidence": {
+    "pdfPage": 29,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Ac-",
+    "joinedFormAttested": 99,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00090",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1883,
+   "before": "-",
+   "after": "",
+   "token": "Ac-tion",
+   "result": "Action",
+   "evidence": {
+    "pdfPage": 31,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Ac-",
+    "joinedFormAttested": 99,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00091",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1147,
+   "before": "-",
+   "after": "",
+   "token": "En-trance",
+   "result": "Entrance",
+   "evidence": {
+    "pdfPage": 23,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "En-",
+    "joinedFormAttested": 66,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00092",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1149,
+   "before": "-",
+   "after": "",
+   "token": "coun-ter",
+   "result": "counter",
+   "evidence": {
+    "pdfPage": 23,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "coun-",
+    "joinedFormAttested": 1081,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00093",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1151,
+   "before": "-",
+   "after": "",
+   "token": "Build-ing",
+   "result": "Building",
+   "evidence": {
+    "pdfPage": 23,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Build-",
+    "joinedFormAttested": 627,
+    "hyphenatedFormAttestedMidLine": 1,
+    "basis": "mid-line-hyphenated-form-rare"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00094",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1221,
+   "before": "-",
+   "after": "",
+   "token": "Ord-nance",
+   "result": "Ordnance",
+   "evidence": {
+    "pdfPage": 24,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Ord-",
+    "joinedFormAttested": 248,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00095",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1263,
+   "before": "-",
+   "after": "",
+   "token": "hex-spine",
+   "result": "hexspine",
+   "evidence": {
+    "pdfPage": 24,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "hex-",
+    "joinedFormAttested": 62,
+    "hyphenatedFormAttestedMidLine": 1,
+    "basis": "mid-line-hyphenated-form-rare"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00096",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1285,
+   "before": "-",
+   "after": "",
+   "token": "Grave-yard",
+   "result": "Graveyard",
+   "evidence": {
+    "pdfPage": 25,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Grave-",
+    "joinedFormAttested": 41,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00097",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1285,
+   "before": "-",
+   "after": "",
+   "token": "Block-age",
+   "result": "Blockage",
+   "evidence": {
+    "pdfPage": 25,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Block-",
+    "joinedFormAttested": 2,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00098",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1291,
+   "before": "-",
+   "after": "",
+   "token": "Elimi-nated",
+   "result": "Eliminated",
+   "evidence": {
+    "pdfPage": 25,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Elimi-",
+    "joinedFormAttested": 259,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00099",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1303,
+   "before": "-",
+   "after": "",
+   "token": "Gen-eration",
+   "result": "Generation",
+   "evidence": {
+    "pdfPage": 25,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Gen-",
+    "joinedFormAttested": 9,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00100",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1317,
+   "before": "-",
+   "after": "",
+   "token": "conve-nience",
+   "result": "convenience",
+   "evidence": {
+    "pdfPage": 25,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "conve-",
+    "joinedFormAttested": 1,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00101",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1373,
+   "before": "-",
+   "after": "",
+   "token": "Facto-ry",
+   "result": "Factory",
+   "evidence": {
+    "pdfPage": 25,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Facto-",
+    "joinedFormAttested": 101,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00102",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1373,
+   "before": "-",
+   "after": "",
+   "token": "Path-finders",
+   "result": "Pathfinders",
+   "evidence": {
+    "pdfPage": 25,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Path-",
+    "joinedFormAttested": 14,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00103",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1395,
+   "before": "-",
+   "after": "",
+   "token": "build-ing",
+   "result": "building",
+   "evidence": {
+    "pdfPage": 26,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "build-",
+    "joinedFormAttested": 627,
+    "hyphenatedFormAttestedMidLine": 1,
+    "basis": "mid-line-hyphenated-form-rare"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00104",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1411,
+   "before": "-",
+   "after": "",
+   "token": "rep-resented",
+   "result": "represented",
+   "evidence": {
+    "pdfPage": 26,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "rep-",
+    "joinedFormAttested": 69,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00105",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1419,
+   "before": "-",
+   "after": "",
+   "token": "de-bris",
+   "result": "debris",
+   "evidence": {
+    "pdfPage": 26,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "de-",
+    "joinedFormAttested": 81,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00106",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1437,
+   "before": "-",
+   "after": "",
+   "token": "Ar-mor",
+   "result": "Armor",
+   "evidence": {
+    "pdfPage": 26,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Ar-",
+    "joinedFormAttested": 107,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00107",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1467,
+   "before": "-",
+   "after": "",
+   "token": "un-less",
+   "result": "unless",
+   "evidence": {
+    "pdfPage": 26,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "un-",
+    "joinedFormAttested": 326,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00108",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1949,
+   "before": "-",
+   "after": "",
+   "token": "un-less",
+   "result": "unless",
+   "evidence": {
+    "pdfPage": 32,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "un-",
+    "joinedFormAttested": 326,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00109",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1487,
+   "before": "-",
+   "after": "",
+   "token": "Build-ing-Palm",
+   "result": "Building-Palm",
+   "evidence": {
+    "pdfPage": 27,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Build-",
+    "joinedFormAttested": 3,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00110",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1557,
+   "before": "-",
+   "after": "",
+   "token": "elimi-nation",
+   "result": "elimination",
+   "evidence": {
+    "pdfPage": 27,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "elimi-",
+    "joinedFormAttested": 48,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00111",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1559,
+   "before": "-",
+   "after": "",
+   "token": "friend-ly",
+   "result": "friendly",
+   "evidence": {
+    "pdfPage": 27,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "friend-",
+    "joinedFormAttested": 185,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00112",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1567,
+   "before": "-",
+   "after": "",
+   "token": "sew-er",
+   "result": "sewer",
+   "evidence": {
+    "pdfPage": 28,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "sew-",
+    "joinedFormAttested": 87,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00113",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1577,
+   "before": "-",
+   "after": "",
+   "token": "Sea-wall",
+   "result": "Seawall",
+   "evidence": {
+    "pdfPage": 28,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Sea-",
+    "joinedFormAttested": 14,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00114",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1579,
+   "before": "-",
+   "after": "",
+   "token": "re-mains",
+   "result": "remains",
+   "evidence": {
+    "pdfPage": 28,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "re-",
+    "joinedFormAttested": 58,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00115",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1597,
+   "before": "-",
+   "after": "",
+   "token": "Des-ert",
+   "result": "Desert",
+   "evidence": {
+    "pdfPage": 28,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Des-",
+    "joinedFormAttested": 26,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00116",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1613,
+   "before": "-",
+   "after": "",
+   "token": "Cancella-tion",
+   "result": "Cancellation",
+   "evidence": {
+    "pdfPage": 28,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Cancella-",
+    "joinedFormAttested": 6,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00117",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1645,
+   "before": "-",
+   "after": "",
+   "token": "occu-pying",
+   "result": "occupying",
+   "evidence": {
+    "pdfPage": 28,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "occu-",
+    "joinedFormAttested": 17,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00118",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1701,
+   "before": "-",
+   "after": "",
+   "token": "with-out",
+   "result": "without",
+   "evidence": {
+    "pdfPage": 29,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "with-",
+    "joinedFormAttested": 228,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00119",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1703,
+   "before": "-",
+   "after": "",
+   "token": "Au-tomatic",
+   "result": "Automatic",
+   "evidence": {
+    "pdfPage": 29,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Au-",
+    "joinedFormAttested": 41,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00120",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1709,
+   "before": "-",
+   "after": "",
+   "token": "Passen-gers",
+   "result": "Passengers",
+   "evidence": {
+    "pdfPage": 29,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Passen-",
+    "joinedFormAttested": 159,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00121",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1717,
+   "before": "-",
+   "after": "",
+   "token": "expen-diture",
+   "result": "expenditure",
+   "evidence": {
+    "pdfPage": 29,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "expen-",
+    "joinedFormAttested": 102,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00122",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1755,
+   "before": "-",
+   "after": "",
+   "token": "pos-sible",
+   "result": "possible",
+   "evidence": {
+    "pdfPage": 30,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "pos-",
+    "joinedFormAttested": 90,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00123",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1849,
+   "before": "-",
+   "after": "",
+   "token": "de-fined",
+   "result": "defined",
+   "evidence": {
+    "pdfPage": 31,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "de-",
+    "joinedFormAttested": 31,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00124",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1873,
+   "before": "-",
+   "after": "",
+   "token": "Ve-hicles",
+   "result": "Vehicles",
+   "evidence": {
+    "pdfPage": 31,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Ve-",
+    "joinedFormAttested": 285,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00125",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1877,
+   "before": "-",
+   "after": "",
+   "token": "Pos-session",
+   "result": "Possession",
+   "evidence": {
+    "pdfPage": 31,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Pos-",
+    "joinedFormAttested": 26,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00126",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1879,
+   "before": "-",
+   "after": "",
+   "token": "Or-chard",
+   "result": "Orchard",
+   "evidence": {
+    "pdfPage": 31,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Or-",
+    "joinedFormAttested": 99,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00127",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1897,
+   "before": "-",
+   "after": "",
+   "token": "Monas-tery",
+   "result": "Monastery",
+   "evidence": {
+    "pdfPage": 31,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Monas-",
+    "joinedFormAttested": 0,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "parts-are-not-words"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00128",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1897,
+   "before": "-",
+   "after": "",
+   "token": "Rail-road",
+   "result": "Railroad",
+   "evidence": {
+    "pdfPage": 31,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Rail-",
+    "joinedFormAttested": 31,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00129",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1961,
+   "before": "-",
+   "after": "",
+   "token": "Rail-road",
+   "result": "Railroad",
+   "evidence": {
+    "pdfPage": 32,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Rail-",
+    "joinedFormAttested": 31,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00130",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1901,
+   "before": "-",
+   "after": "",
+   "token": "Pris-oners",
+   "result": "Prisoners",
+   "evidence": {
+    "pdfPage": 31,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Pris-",
+    "joinedFormAttested": 72,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00131",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1905,
+   "before": "-",
+   "after": "",
+   "token": "Build-ings",
+   "result": "Buildings",
+   "evidence": {
+    "pdfPage": 31,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Build-",
+    "joinedFormAttested": 70,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00132",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1949,
+   "before": "-",
+   "after": "",
+   "token": "Unpro-tected",
+   "result": "Unprotected",
+   "evidence": {
+    "pdfPage": 32,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Unpro-",
+    "joinedFormAttested": 7,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00133",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1971,
+   "before": "-",
+   "after": "",
+   "token": "Cav-alry",
+   "result": "Cavalry",
+   "evidence": {
+    "pdfPage": 32,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Cav-",
+    "joinedFormAttested": 227,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00134",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2039,
+   "before": "-",
+   "after": "",
+   "token": "Lead-er",
+   "result": "Leader",
+   "evidence": {
+    "pdfPage": 33,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Lead-",
+    "joinedFormAttested": 423,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00135",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2057,
+   "before": "-",
+   "after": "",
+   "token": "Equivalen-cy",
+   "result": "Equivalency",
+   "evidence": {
+    "pdfPage": 33,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Equivalen-",
+    "joinedFormAttested": 31,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00136",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2161,
+   "before": "-",
+   "after": "",
+   "token": "num-ber",
+   "result": "number",
+   "evidence": {
+    "pdfPage": 34,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "num-",
+    "joinedFormAttested": 350,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00137",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2171,
+   "before": "-",
+   "after": "",
+   "token": "Rail-way",
+   "result": "Railway",
+   "evidence": {
+    "pdfPage": 35,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Rail-",
+    "joinedFormAttested": 7,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00138",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2171,
+   "before": "-",
+   "after": "",
+   "token": "Re-vealed",
+   "result": "Revealed",
+   "evidence": {
+    "pdfPage": 35,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Re-",
+    "joinedFormAttested": 63,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00139",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2183,
+   "before": "-",
+   "after": "",
+   "token": "Conceal-ment",
+   "result": "Concealment",
+   "evidence": {
+    "pdfPage": 35,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Conceal-",
+    "joinedFormAttested": 188,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00140",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2201,
+   "before": "-",
+   "after": "",
+   "token": "Sin-gle",
+   "result": "Single",
+   "evidence": {
+    "pdfPage": 35,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Sin-",
+    "joinedFormAttested": 84,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00141",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2201,
+   "before": "-",
+   "after": "",
+   "token": "Rub-ble",
+   "result": "Rubble",
+   "evidence": {
+    "pdfPage": 35,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Rub-",
+    "joinedFormAttested": 244,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00142",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2203,
+   "before": "-",
+   "after": "",
+   "token": "prece-dence",
+   "result": "precedence",
+   "evidence": {
+    "pdfPage": 35,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "prece-",
+    "joinedFormAttested": 9,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00143",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2207,
+   "before": "-",
+   "after": "",
+   "token": "Para-drop",
+   "result": "Paradrop",
+   "evidence": {
+    "pdfPage": 35,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Para-",
+    "joinedFormAttested": 2,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00144",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2207,
+   "before": "-",
+   "after": "",
+   "token": "Abil-ity",
+   "result": "Ability",
+   "evidence": {
+    "pdfPage": 35,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Abil-",
+    "joinedFormAttested": 24,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00145",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2207,
+   "before": "-",
+   "after": "",
+   "token": "At-tached",
+   "result": "Attached",
+   "evidence": {
+    "pdfPage": 35,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "At-",
+    "joinedFormAttested": 12,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00146",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2223,
+   "before": "-",
+   "after": "",
+   "token": "Sea-borne",
+   "result": "Seaborne",
+   "evidence": {
+    "pdfPage": 35,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Sea-",
+    "joinedFormAttested": 20,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00147",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2251,
+   "before": "-",
+   "after": "",
+   "token": "Aban-doning",
+   "result": "Abandoning",
+   "evidence": {
+    "pdfPage": 36,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Aban-",
+    "joinedFormAttested": 6,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00148",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2295,
+   "before": "-",
+   "after": "",
+   "token": "Deploy-ment",
+   "result": "Deployment",
+   "evidence": {
+    "pdfPage": 36,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Deploy-",
+    "joinedFormAttested": 8,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00149",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2307,
+   "before": "-",
+   "after": "",
+   "token": "Exca-vation",
+   "result": "Excavation",
+   "evidence": {
+    "pdfPage": 36,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Exca-",
+    "joinedFormAttested": 2,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00150",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2365,
+   "before": "-",
+   "after": "",
+   "token": "Jap-anese",
+   "result": "Japanese",
+   "evidence": {
+    "pdfPage": 37,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Jap-",
+    "joinedFormAttested": 116,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00151",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2441,
+   "before": "-",
+   "after": "",
+   "token": "Gyrostabi-lizer",
+   "result": "Gyrostabilizer",
+   "evidence": {
+    "pdfPage": 37,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Gyrostabi-",
+    "joinedFormAttested": 17,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00152",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2585,
+   "before": "-",
+   "after": "",
+   "token": "Ve-hicular",
+   "result": "Vehicular",
+   "evidence": {
+    "pdfPage": 39,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Ve-",
+    "joinedFormAttested": 162,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00153",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2589,
+   "before": "-",
+   "after": "",
+   "token": "Doz-er",
+   "result": "Dozer",
+   "evidence": {
+    "pdfPage": 39,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Doz-",
+    "joinedFormAttested": 17,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00154",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2617,
+   "before": "-",
+   "after": "",
+   "token": "modifi-cations",
+   "result": "modifications",
+   "evidence": {
+    "pdfPage": 39,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "modifi-",
+    "joinedFormAttested": 33,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00155",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2631,
+   "before": "-",
+   "after": "",
+   "token": "ap-plicable",
+   "result": "applicable",
+   "evidence": {
+    "pdfPage": 39,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "ap-",
+    "joinedFormAttested": 185,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00156",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2647,
+   "before": "-",
+   "after": "",
+   "token": "bam-boo",
+   "result": "bamboo",
+   "evidence": {
+    "pdfPage": 39,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "bam-",
+    "joinedFormAttested": 35,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00157",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2663,
+   "before": "-",
+   "after": "",
+   "token": "Forti-fication",
+   "result": "Fortification",
+   "evidence": {
+    "pdfPage": 39,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Forti-",
+    "joinedFormAttested": 34,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00158",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2677,
+   "before": "-",
+   "after": "",
+   "token": "Stack-ing",
+   "result": "Stacking",
+   "evidence": {
+    "pdfPage": 40,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Stack-",
+    "joinedFormAttested": 53,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00159",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2695,
+   "before": "-",
+   "after": "",
+   "token": "su-perstructure",
+   "result": "superstructure",
+   "evidence": {
+    "pdfPage": 40,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "su-",
+    "joinedFormAttested": 4,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00160",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2711,
+   "before": "-",
+   "after": "",
+   "token": "normal-ly",
+   "result": "normally",
+   "evidence": {
+    "pdfPage": 40,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "normal-",
+    "joinedFormAttested": 127,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00161",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2723,
+   "before": "-",
+   "after": "",
+   "token": "Inexperi-enced",
+   "result": "Inexperienced",
+   "evidence": {
+    "pdfPage": 40,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Inexperi-",
+    "joinedFormAttested": 62,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00162",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2723,
+   "before": "-",
+   "after": "",
+   "token": "Nar-row",
+   "result": "Narrow",
+   "evidence": {
+    "pdfPage": 40,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Nar-",
+    "joinedFormAttested": 78,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00163",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2747,
+   "before": "-",
+   "after": "",
+   "token": "Nar-row",
+   "result": "Narrow",
+   "evidence": {
+    "pdfPage": 40,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Nar-",
+    "joinedFormAttested": 78,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00164",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2749,
+   "before": "-",
+   "after": "",
+   "token": "Re-verse",
+   "result": "Reverse",
+   "evidence": {
+    "pdfPage": 40,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Re-",
+    "joinedFormAttested": 86,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00165",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2787,
+   "before": "-",
+   "after": "",
+   "token": "at-tack",
+   "result": "attack",
+   "evidence": {
+    "pdfPage": 41,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "at-",
+    "joinedFormAttested": 1052,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00166",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 2829,
+   "before": "-",
+   "after": "",
+   "token": "Cli-mate",
+   "result": "Climate",
+   "evidence": {
+    "pdfPage": 41,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Cli-",
+    "joinedFormAttested": 4,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "INDEX-GLOSSARY-00167",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 779,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "BU Halftrack: D6.66] *[EXC Commissar* *and Japanese leader: A25.222, G1.41]"
+  },
+  {
+   "id": "INDEX-GLOSSARY-00168",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 879,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "ring the scenario *[EXC if it set up* *on a paved road]*. Such a Gun [and i"
+  },
+  {
+   "id": "INDEX-GLOSSARY-00169",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 1557,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "alry: A13.52] [EXC Climbing: B11.42]* *[EXC LC Passengers: G12.13]* [Leader"
+  },
+  {
+   "id": "INDEX-GLOSSARY-00170",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 1557,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "2.13]* [Leadership NA: A10.21] *[EXC* *Motorcyclist: D15.55]* [Prisoner NA:"
+  },
+  {
+   "id": "INDEX-GLOSSARY-00171",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 2313,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "C7.4-.42 [Automatic BU: D6.61] *[EXC* *Carrier: D6.84]* [LC: G12.602] [RePh"
+  },
+  {
+   "id": "INDEX-GLOSSARY-00172",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 2369,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "ing SMOKE consumes a Gun’s ROF *(EXC* *MTR)*: C3.33] [Gusts: B25.651] [Japa"
+  },
+  {
+   "id": "INDEX-GLOSSARY-00173",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 2501,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "a: G11.837] [Sniper Non-Target *(EXC* *Caves)*: A14.22] [Starshells NA: E1."
+  },
+  {
+   "id": "INDEX-GLOSSARY-00174",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 2623,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "6] [Berserk: A15.431] *[EXC Cavalry:* *A13.4]* [vs Caves: G11.833] [Passeng"
+  },
+  {
+   "id": "INDEX-GLOSSARY-00175",
+   "rule": "image-link-rebase",
+   "class": "markup-normalization",
+   "count": 1,
+   "before": "](images/",
+   "after": "](../../Rulebook_Markdown/images/"
+  }
+ ]
+}

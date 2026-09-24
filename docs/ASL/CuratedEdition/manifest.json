@@ -1,0 +1,180 @@
+{
+ "schemaVersion": "1.0.0",
+ "editionId": "asl-easlrb-3.01-a-e-curated",
+ "editionStatus": "draft-uncertified",
+ "edition": "3.01",
+ "baseRegistry": {
+  "path": "docs/ASL/SourceRegistry/asl-3.10-a-e.source-registry.json",
+  "registryId": "asl-easlrb-3.10-a-e",
+  "sha256": "e3094657695d96dc53275fd4d93e42f91c916357c8e093e6284a5563cbe6ee1f"
+ },
+ "pdf": {
+  "fileName": "eASLRB_v3_01.pdf",
+  "sha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+  "pageCount": 716,
+  "evidencePages": [
+   6,
+   253
+  ]
+ },
+ "tool": {
+  "path": "utils/asl_curated_edition/build_curated_edition.py",
+  "version": "0.1.0",
+  "sha256": "37e328415d5a7b80db367d9046fbd1f158d41289e722f4e98a97915001e57c1d",
+  "pymupdf": "1.27.1"
+ },
+ "files": [
+  {
+   "sourceId": "asl-easlrb-3.10:contents",
+   "basePath": "docs/ASL/Rulebook_Markdown/00 - Table of Contents.md",
+   "baseSha256": "dbe6b4395accd117d6c4a84796c11983243399cae5838c2a27abea1f4c7c59f9",
+   "editionPath": "docs/ASL/CuratedEdition/edition/00 - Table of Contents.md",
+   "editionSha256": "a5c1d8a4866a681c5a93b4464642125c213ec4bc3e7c84ccde57da72b38f9011",
+   "pdfPages": [
+    6,
+    10
+   ],
+   "ledgerCounts": {
+    "image-link-rebase": 1,
+    "page-marker": 5
+   },
+   "reviewCounts": {},
+   "certifiedSections": []
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:index-glossary",
+   "basePath": "docs/ASL/Rulebook_Markdown/01 - Index and Glossary.md",
+   "baseSha256": "8e1a686a2664af4ea12e6a57580999d2baf47c8770719426766abe88059f9652",
+   "editionPath": "docs/ASL/CuratedEdition/edition/01 - Index and Glossary.md",
+   "editionSha256": "af927a530a320d5745cae935285425705c84831569e71017349f80f3579bf7b9",
+   "pdfPages": [
+    11,
+    42
+   ],
+   "ledgerCounts": {
+    "image-link-rebase": 1,
+    "linebreak-hyphen": 134,
+    "page-marker": 32,
+    "split-emphasis": 8
+   },
+   "reviewCounts": {
+    "linebreak-hyphen": 1
+   },
+   "certifiedSections": []
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-a",
+   "basePath": "docs/ASL/Rulebook_Markdown/02 - Chapter A - Infantry and Basic Game Rules.md",
+   "baseSha256": "6347534e64f739cacc57dd75c3d604997723fd0b4988565609deeff007a8843d",
+   "editionPath": "docs/ASL/CuratedEdition/edition/02 - Chapter A - Infantry and Basic Game Rules.md",
+   "editionSha256": "81d75cfb288af6ab27a7ac52db22c581356ec63fe702d119a229ba248052a8d2",
+   "pdfPages": [
+    43,
+    111
+   ],
+   "ledgerCounts": {
+    "image-link-rebase": 1,
+    "linebreak-hyphen": 335,
+    "page-marker": 69,
+    "split-emphasis": 265,
+    "stale-hyphen": 3
+   },
+   "reviewCounts": {
+    "linebreak-hyphen": 18,
+    "stale-hyphen": 2
+   },
+   "certifiedSections": []
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-b",
+   "basePath": "docs/ASL/Rulebook_Markdown/03 - Chapter B - Terrain.md",
+   "baseSha256": "836b1ce5f845efd1c21250a9e6a39e4054ea9398f370305bc3771b6e7f826982",
+   "editionPath": "docs/ASL/CuratedEdition/edition/03 - Chapter B - Terrain.md",
+   "editionSha256": "095543c0eed5b3d133ee693e8ba3862e7baf7743e86e1b8ac98996fbe98b15b1",
+   "pdfPages": [
+    112,
+    161
+   ],
+   "ledgerCounts": {
+    "image-link-rebase": 1,
+    "linebreak-hyphen": 128,
+    "page-marker": 50,
+    "split-emphasis": 126
+   },
+   "reviewCounts": {
+    "linebreak-hyphen": 13
+   },
+   "certifiedSections": []
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-c",
+   "basePath": "docs/ASL/Rulebook_Markdown/04 - Chapter C - Ordnance and Offboard Artillery.md",
+   "baseSha256": "71d0a1475709cb57feefb2f1d91b51e3b266b108d77696d83ef641e901b02337",
+   "editionPath": "docs/ASL/CuratedEdition/edition/04 - Chapter C - Ordnance and Offboard Artillery.md",
+   "editionSha256": "c32f16f32e68a226886aa83fe8e9e8a0ef1b698045f64d6ec4403587c9ad8a42",
+   "pdfPages": [
+    162,
+    191
+   ],
+   "ledgerCounts": {
+    "blank-page": 1,
+    "image-link-rebase": 1,
+    "linebreak-hyphen": 189,
+    "page-marker": 30,
+    "split-emphasis": 248
+   },
+   "reviewCounts": {
+    "linebreak-hyphen": 5,
+    "private-use-glyph": 1,
+    "stale-hyphen": 1
+   },
+   "certifiedSections": []
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-d",
+   "basePath": "docs/ASL/Rulebook_Markdown/05 - Chapter D - Vehicles.md",
+   "baseSha256": "0324892377aa710961892034c960d718854055c0f936cb3cbc8dbc938bf10c36",
+   "editionPath": "docs/ASL/CuratedEdition/edition/05 - Chapter D - Vehicles.md",
+   "editionSha256": "8e1becea449e3e15faeeeb084bb2813e7967581ea114004856bbb4995315da05",
+   "pdfPages": [
+    192,
+    221
+   ],
+   "ledgerCounts": {
+    "blank-page": 1,
+    "image-link-rebase": 1,
+    "linebreak-hyphen": 133,
+    "page-marker": 30,
+    "split-emphasis": 92
+   },
+   "reviewCounts": {
+    "linebreak-hyphen": 3
+   },
+   "certifiedSections": []
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-e",
+   "basePath": "docs/ASL/Rulebook_Markdown/06 - Chapter E - Miscellaneous.md",
+   "baseSha256": "614b39baaefe491402f10b283ddef60ee205c2f62b94eb3a3e329a072e0fe7e7",
+   "editionPath": "docs/ASL/CuratedEdition/edition/06 - Chapter E - Miscellaneous.md",
+   "editionSha256": "673dd9162995ec36b89844bb0ffd747f54f312d6757cd44ea667cde99c44b13a",
+   "pdfPages": [
+    222,
+    253
+   ],
+   "ledgerCounts": {
+    "blank-page": 1,
+    "image-link-rebase": 1,
+    "linebreak-hyphen": 253,
+    "page-marker": 32,
+    "split-emphasis": 122,
+    "stale-hyphen": 4
+   },
+   "reviewCounts": {
+    "linebreak-hyphen": 9,
+    "private-use-glyph": 5
+   },
+   "certifiedSections": []
+  }
+ ]
+}
