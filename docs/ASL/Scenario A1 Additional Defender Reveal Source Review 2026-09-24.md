@@ -4,7 +4,7 @@
 
 **Branch:** `decision-plane`
 
-**Status:** Seven source-backed cases pass end-to-end conformance through supplied ordered events, pinned board 01 terrain, immutable eligibility package, and read-only conclusion. No forced-back consequence admitted.
+**Status:** Seven source-backed cases pass end-to-end conformance through separate immutable eligibility and consequence packages. Two exact second-reveal cases conclude a read-only return and attempted-entry MF expenditure in the supplied previous Location; no game-state mutation is admitted.
 
 ## Boundary and source evidence
 
@@ -40,14 +40,16 @@ The [case matrix](<./SourceRegistry/asl-scenario-a1.second-defender-reveal-case-
 
 `ScenarioA1SecondDefenderConformanceTests` feeds all seven reviewed event states through the board 01 observation provider, exact package descriptor, and resolver. It checks the case disposition, pinned matrix and versioned observation evidence, and the absence of any forced-back, MF-spend, or response/CC resolution. It also confirms this package cannot resolve or observe an earlier milestone's identity; the earlier packages remain available under their own identities.
 
-The next source review must decide the exact A12.15 forced-back and MF-expenditure consequences for each disqualified OVR branch, including the event time at which they apply and the supplied state needed to prove it. A definitive **eligibility** finding alone does not authorize moving a unit back, charging MF, or resolving defensive fire or CC.
+The later consequence review below decides the bounded A12.15 return and attempted-entry MF location for two exact disqualified OVR branches. A definitive **eligibility** finding alone does not authorize moving a unit back, charging MF, or resolving defensive fire or CC.
 
 ## Consequence review candidate
 
 The [consequence matrix](<./SourceRegistry/asl-scenario-a1.second-defender-consequence-case-matrix.json>) and its affirmative xUnit review pin a narrower continuation: the first concealed SMC is revealed on attempted ordinary entry, the attacker elects an OVR, and a second SMC or MMC is revealed before OVR entry resolves. The state source must identify the last occupied Location and the ordinary building entry attempt, whose reviewed cost is 2 MF. A second revealed SMC denies the Location under A4.15; a revealed MMC defeats the single-SMC condition. With no other A4.14 exception, A12.15 returns the mover to the prior Location and treats the attempted entry MF as expended there. These are read-only findings; the matrix neither records an additional doubled OVR charge nor executes the return. Other unit identities, unrevealed units, unresolved capability and insufficient MF remain nondefinitive or outside this contract. NTC timing relative to the second reveal remains a supplied fact rather than a universal sequence imposed by this review.
 
-The next increment is an immutable package and resolver for the exact reviewed consequence cases, followed by a supplied-state adapter and end-to-end conformance. Defensive attacks, residual FP, FFE/minefield, other terrain, concealment changes, movement termination and CC require separate handling.
+Defensive attacks, residual FP, FFE/minefield, other terrain, concealment changes, movement termination and CC require separate handling.
 
-The [immutable consequence package](<./SourceRegistry/asl-scenario-a1.second-defender-consequence-package.json>) now resolves the two exact cases as read-only conclusions. Its resolver requires the previous Location both in the observation and as a resolved question entity, returns that Location as the destination and MF expenditure Location, and states the attempted entry cost of 2 MF. It admits no extra OVR MF charge or state execution. A supplied-event observation adapter and end-to-end conformance remain the next increments.
+The [immutable consequence package](<./SourceRegistry/asl-scenario-a1.second-defender-consequence-package.json>) resolves the two exact cases as read-only conclusions. Its resolver requires the previous Location both in the observation and as a resolved question entity, returns that Location as the destination and MF expenditure Location, and states the attempted entry cost of 2 MF. It admits no extra OVR MF charge or state execution.
 
-The consequence adapter now reuses the earlier pinned eligibility projection for the seven event cases, while separately requiring the last occupied Location, attempt event before first reveal, recorded 2 MF ordinary entry, and an OVR entry that has not resolved. It rejects stale, conflicting, late or foreign events. End-to-end conformance remains the final increment.
+The consequence adapter reuses the earlier pinned eligibility projection for the seven event cases, while separately requiring the last occupied Location, attempt event before first reveal, recorded 2 MF ordinary entry, and an OVR entry that has not resolved. It rejects stale, conflicting, late or foreign events. `ScenarioA1SecondDefenderConsequenceConformanceTests` feeds every reviewed case through this adapter, the exact package and the resolver; it checks versioned matrix and observation evidence, the two exact return and MF findings, the five nondefinitive or abstained branches, and separation from the eligibility package.
+
+**Remaining boundary:** These conclusions state rule consequences without executing movement or debiting MF. An execution contract would need separately reviewed authority and handling for the A12.15 follow-on conditions, including attack timing, Residual FP, minefields and FFE. The doubled OVR surcharge is not inferred from an OVR that did not proceed.

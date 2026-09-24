@@ -96,6 +96,8 @@ The supplementary chart registry is reproducible with the C# CLI using the exist
 
 `asl-scenario-a1.second-defender-consequence-package.json` publishes those two exact return and attempted-MF-location findings as a distinct immutable, read-only package. The resolver requires a versioned observation and an individually resolved previous Location; unknown and out-of-scope branches do not receive a return destination or MF amount.
 
+The consequence observation adapter reuses the prior eligibility event projection and adds a supplied previous Location, attempted-entry event and recorded 2 MF cost. End-to-end xUnit conformance covers all seven cases and checks pinned evidence and the absence of execution.
+
 `unverified` in the earlier inventory and representative sample describes their state at generation time and is preserved as historical evidence. The separate verification batch records the later source-provider disposition for its 11 exact subjects. Any newly verified subject requires a review record covering the fragment and its required table, figure, or footnote dependencies.
 
 Neither manifest is an ontology, published domain package, tactical policy, Decision corpus, or execution authority.
