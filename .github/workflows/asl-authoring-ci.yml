@@ -70,3 +70,15 @@ jobs:
             --a1-comparison docs/ASL/SourceRegistry/asl-scenario-a1.first-case-pdf-comparison.json \
             --a1-comparison-output "$RUNNER_TEMP/asl-scenario-a1.pending-comparison-records.json"
           cmp docs/ASL/SourceRegistry/asl-scenario-a1.pending-comparison-records.json "$RUNNER_TEMP/asl-scenario-a1.pending-comparison-records.json"
+
+      - name: Regenerate bounded Scenario A1 chart supplement
+        run: |
+          dotnet run --project src/ASL/LimboDancer.Domains.Asl.Authoring.Cli --configuration Release --no-build --no-restore -- \
+            --source-commit a3254ff1d492dbdd28483d86f5b42437b48e80d4 \
+            --registry-output "$RUNNER_TEMP/asl-source-registry.json" \
+            --verification-output "$RUNNER_TEMP/asl-verification-sample.json" \
+            --a1-supplement-candidate docs/ASL/SourceRegistry/asl-scenario-a1.backmatter-chart-candidate.json \
+            --a1-supplement-output "$RUNNER_TEMP/asl-scenario-a1.supplementary-source-registry.json"
+          diff -u \
+            <(jq -S . docs/ASL/SourceRegistry/asl-scenario-a1.supplementary-source-registry.json) \
+            <(jq -S . "$RUNNER_TEMP/asl-scenario-a1.supplementary-source-registry.json")

@@ -9,6 +9,7 @@
   "extractor": "pdftotext 24.02.0 -f 698 -l 698 -layout",
   "extractedPageTextSha256": "49ea0f434ce54197afa41fc95e78d0b809aa954d587406fe7e7078dbafdacdd0",
   "infantryMfColumnHeaderLineSha256": "34795a99b5040d423ee3122ae349ee29d7209fb652ecc2ca86893677c564eef7",
+  "cotLegendLineSha256": "2bf33fce5d6205c9d6cb64b29603d0434fe59a8ff5845083b19472b0f9706986",
   "rows": [
     {
       "rowLabel": "23. Wooden Building",

@@ -19,6 +19,8 @@ The authoring scope is **only the TOC, Index/Glossary, and Chapters A–E**: sev
 | `asl-scenario-a1.first-case-pdf-comparison.json` | Tool-assisted PDF comparisons for eight additional first-case rule declarations and the two linked figure-reference fragments. All ten subjects remain `unverified` pending source-provider review. |
 | `asl-scenario-a1.pending-comparison-records.json` | C# generated `Indeterminate` source-verification records for those ten comparison subjects, bound to the same full TIR digest as the first 11 verified subjects. Human attestation is pending. |
 | `asl-scenario-a1.backmatter-chart-candidate.json` | Bounded page-698 B. Terrain Chart candidate: exact PDF, extraction, MF column and two building-row hashes; remains outside the initial source registry and unverified. |
+| `Supplements/b-terrain-chart-building-entry.md` | Bounded page-698 transcription of two building entry rows, printed note and relevant legend; requires source review. |
+| `asl-scenario-a1.supplementary-source-registry.json` | Separate C# registered supplement: ties the bounded transcription hash and PDF page evidence to the immutable original registry, with `registered-unverified-supplement` status. |
 
 The manifests contain locators and hashes, not duplicated rule text. The Markdown and image files under `../Rulebook_Markdown/` remain the registered content.
 
@@ -74,6 +76,8 @@ dotnet run --project src/ASL/LimboDancer.Domains.Asl.Authoring.Cli -- \
 ```
 
 The [back-matter boundary review](<../LimboDancer.Agentic.CognitiveRuntime ASL Back-Matter Source Boundary Review.md>) identifies the B. Terrain Chart on physical PDF page 698 and other A–E-related player aids outside the initial registered page range. They are candidates for explicitly reviewed source additions, not implicit members of this registry.
+
+The supplementary chart registry is reproducible with the C# CLI using the existing `--source-commit`, `--registry-output` and `--verification-output` arguments plus `--a1-supplement-candidate docs/ASL/SourceRegistry/asl-scenario-a1.backmatter-chart-candidate.json` and `--a1-supplement-output docs/ASL/SourceRegistry/asl-scenario-a1.supplementary-source-registry.json`. CI checks the generated JSON against the committed file. The user-supplied original PDF is not stored in this repository, so byte and visual fidelity still require source review against that PDF.
 
 ## Verification boundary
 

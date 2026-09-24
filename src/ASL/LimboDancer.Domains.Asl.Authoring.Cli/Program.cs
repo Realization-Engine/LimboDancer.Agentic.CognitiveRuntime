@@ -54,6 +54,15 @@ public static class Program
                 var batch = AslScenarioA1ComparisonBatch.Build(manifests, attestation, comparison);
                 ManifestJson.WriteFile(options.ScenarioA1ComparisonOutput, batch.Serialize());
             }
+            if (options.ScenarioA1SupplementCandidate is not null
+                && options.ScenarioA1SupplementOutput is not null)
+            {
+                using var candidate = JsonDocument.Parse(
+                    File.ReadAllText(options.ScenarioA1SupplementCandidate));
+                var supplement = AslScenarioA1SupplementaryRegistryBuilder.Build(
+                    options.RepositoryRoot, manifests, candidate);
+                ManifestJson.WriteFile(options.ScenarioA1SupplementOutput, supplement.Serialize());
+            }
             if (options.TirOutput is not null && options.TirCreatedAt is not null)
             {
                 var tir = TirStructuralExtractor.Extract(
@@ -121,6 +130,8 @@ public static class Program
                 "--a1-verification-output",
                 "--a1-comparison",
                 "--a1-comparison-output",
+                "--a1-supplement-candidate",
+                "--a1-supplement-output",
             ],
             StringComparer.Ordinal);
         var unknown = values.Keys.Where(key => !supported.Contains(key)).ToArray();
@@ -152,6 +163,13 @@ public static class Program
             throw new ArgumentException("Scenario A1 comparison requires attestation, comparison input and output together.");
         }
 
+        var supplementCandidate = values.GetValueOrDefault("--a1-supplement-candidate");
+        var supplementOutput = values.GetValueOrDefault("--a1-supplement-output");
+        if ((supplementCandidate is null) != (supplementOutput is null))
+        {
+            throw new ArgumentException("Scenario A1 supplement candidate and output must be supplied together.");
+        }
+
         DateTimeOffset? tirCreatedAt = tirCreatedAtValue is null
             ? null
             : DateTimeOffset.Parse(
@@ -169,7 +187,9 @@ public static class Program
             a1Attestation,
             a1VerificationOutput,
             comparison,
-            comparisonOutput);
+            comparisonOutput,
+            supplementCandidate,
+            supplementOutput);
     }
 
     private static string Required(Dictionary<string, string> values, string name)
@@ -190,7 +210,8 @@ public static class Program
             + "[--repository-root PATH] --source-commit SHA --registry-output PATH "
             + "--verification-output PATH [--tir-output PATH --tir-created-at UTC_TIMESTAMP] "
             + "[--a1-output PATH] [--a1-attestation PATH --a1-verification-output PATH] "
-            + "[--a1-attestation PATH --a1-comparison PATH --a1-comparison-output PATH]";
+            + "[--a1-attestation PATH --a1-comparison PATH --a1-comparison-output PATH] "
+            + "[--a1-supplement-candidate PATH --a1-supplement-output PATH]";
     }
 
     private sealed record Options(
@@ -204,5 +225,7 @@ public static class Program
         string? ScenarioA1Attestation,
         string? ScenarioA1VerificationOutput,
         string? ScenarioA1Comparison,
-        string? ScenarioA1ComparisonOutput);
+        string? ScenarioA1ComparisonOutput,
+        string? ScenarioA1SupplementCandidate,
+        string? ScenarioA1SupplementOutput);
 }
