@@ -1,6 +1,6 @@
 # ASL Unit Domain Model Analysis
 
-**Status:** Analysis and proposed model; no implementation or rule admission implied
+**Status:** Long-range analysis, deferred while the [unit map rendering slice](<ASL Unit Map Rendering Slice.md>) is implemented; no implementation or rule admission implied
 
 **Date:** 2026-09-24
 
