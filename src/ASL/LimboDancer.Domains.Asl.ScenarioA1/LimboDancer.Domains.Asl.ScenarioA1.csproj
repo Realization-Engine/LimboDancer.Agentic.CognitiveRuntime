@@ -19,5 +19,7 @@
     <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.concealed-smc-overrun-transition.json" LogicalName="ScenarioA1.concealed-smc-overrun-transition.json" />
     <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.concealed-smc-overrun-case-matrix.json" LogicalName="ScenarioA1.concealed-smc-overrun-matrix.json" />
     <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.concealed-smc-overrun-package.json" LogicalName="ScenarioA1.concealed-smc-overrun-package.json" />
+    <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.second-defender-reveal-case-matrix.json" LogicalName="ScenarioA1.second-defender-matrix.json" />
+    <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.second-defender-reveal-package.json" LogicalName="ScenarioA1.second-defender-package.json" />
   </ItemGroup>
 </Project>
