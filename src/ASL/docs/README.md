@@ -19,7 +19,19 @@ ASL-OT-05  Immutable publication and exact resolution (bounded: exact-case packa
 ASL-OT-06  Occupied-building entry adjudication (bounded: 7 exact cases yield read-only conclusions; 2 remain nondefinitive)
 ```
 
-Scenario A1 has one governed execution path: the second-defender return (`ScenarioA1ReturnAction` in `LimboDancer.Domains.Asl.Execution`). The Host registers it only through the explicit `AddScenarioA1Return` opt-in, and it executes only after the common authority path and Execution Gate, persisting through an atomic versioned journal. No other ASL artifact authorizes execution. A `DomainConclusion` remains an interpretation; any state change independently passes through the common authority path and Execution Gate.
+Scenario A1 continuations, each a separate immutable package reusing the ASL-OT-04 to 06 pipeline:
+
+```text
+Post-reveal concealment           2 bounded A12.15 outcomes (forced back; all-Dummies continuation)
+Concealed-SMC Infantry OVR        10 cases: 1 qualified attempt, 1 delegated, 2 abstained, 6 indeterminate
+Second-defender eligibility       7 cases: 2 definitive, 4 indeterminate, 1 abstained
+Second-defender consequence       7 cases: 2 definitive (return; 2 MF in previous Location), 4 indeterminate, 1 abstained
+Second-defender return execution  gated action for the clear-return subset of the 2 definitive cases
+```
+
+See the [Scenario A1 execution milestone report](<../../docs/LimboDancer.Agentic.CognitiveRuntime Milestone Report 2026-09-24 Scenario A1 Execution.md>) for evidence and limits. The separate map sequence (ASL-MAP-01 to 08) is defined in the [ASL Map Studio Requirements](<./LimboDancer.Agentic.CognitiveRuntime ASL Map Studio Requirements.md>).
+
+Scenario A1 has one governed execution path: the second-defender return (`ScenarioA1ReturnAction` in `LimboDancer.Domains.Asl.Execution`). The Host registers it only through the explicit `AddScenarioA1Return` opt-in, which the production Host does not currently call, and it executes only after the common authority path and Execution Gate, persisting through an atomic versioned journal. No other ASL artifact authorizes execution. A `DomainConclusion` remains an interpretation; any state change independently passes through the common authority path and Execution Gate.
 
 ## Documents
 
