@@ -998,7 +998,7 @@ The plane model suggests the following principles.
 
 ## 24. Relationship to the Decision Plane Analysis
 
-The existing `Decision Plane Architecture.md` should become a specialized deep-dive beneath this broader model.
+The existing `LimboDancer.Agentic.CognitiveRuntime Decision Plane Architecture.md` should become a specialized deep-dive beneath this broader model.
 
 This document defines:
 

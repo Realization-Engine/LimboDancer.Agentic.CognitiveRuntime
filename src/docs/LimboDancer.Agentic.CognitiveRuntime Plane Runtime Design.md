@@ -3,7 +3,7 @@
 **Status:** Design specification  
 **Branch:** `decision-plane`  
 **Scope:** Target runtime design for the LimboDancer plane architecture  
-**Supporting analysis:** `LimboDancer.Agentic.CognitiveRuntime Plane Architecture Analysis.md`, `LimboDancer.Agentic.CognitiveRuntime Plane Architecture Codebase Validation.md`, `LimboDancer.Agentic.CognitiveRuntime Runtime Orchestration Model.md`, `Decision Plane Architecture.md`
+**Supporting analysis:** `LimboDancer.Agentic.CognitiveRuntime Plane Architecture Analysis.md`, `LimboDancer.Agentic.CognitiveRuntime Plane Architecture Codebase Validation.md`, `LimboDancer.Agentic.CognitiveRuntime Runtime Orchestration Model.md`, `LimboDancer.Agentic.CognitiveRuntime Decision Plane Architecture.md`
 
 **Reference-domain requirements:** `src/ASL/docs/LimboDancer.Agentic.CognitiveRuntime ASL Reference-Domain Requirements.md`
 

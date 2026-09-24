@@ -2,7 +2,7 @@
 
 **Status:** Architecture analysis  
 **Branch:** `decision-plane`  
-**Companion documents:** `LimboDancer.Agentic.CognitiveRuntime Plane Architecture Analysis.md`, `LimboDancer.Agentic.CognitiveRuntime Plane Architecture Codebase Validation.md`, `Decision Plane Architecture.md`
+**Companion documents:** `LimboDancer.Agentic.CognitiveRuntime Plane Architecture Analysis.md`, `LimboDancer.Agentic.CognitiveRuntime Plane Architecture Codebase Validation.md`, `LimboDancer.Agentic.CognitiveRuntime Decision Plane Architecture.md`
 
 **Reference-domain requirements:** `src/ASL/docs/LimboDancer.Agentic.CognitiveRuntime ASL Reference-Domain Requirements.md`
 

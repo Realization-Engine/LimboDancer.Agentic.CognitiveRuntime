@@ -2,7 +2,7 @@
 
 **Status:** Codebase validation analysis  
 **Branch:** `decision-plane`  
-**Companion documents:** `LimboDancer.Agentic.CognitiveRuntime Plane Architecture Analysis.md`, `Decision Plane Architecture.md`
+**Companion documents:** `LimboDancer.Agentic.CognitiveRuntime Plane Architecture Analysis.md`, `LimboDancer.Agentic.CognitiveRuntime Decision Plane Architecture.md`
 
 
 **Canonical system identity:** `LimboDancer.Agentic.CognitiveRuntime`  

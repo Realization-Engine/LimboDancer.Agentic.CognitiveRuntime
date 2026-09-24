@@ -768,7 +768,7 @@ Key documents include:
 - `LimboDancer.Agentic.CognitiveRuntime Native Local Decision Model.md`
 - `LimboDancer.Agentic.CognitiveRuntime Anthropic Decision Provider Feasibility and Design.md`
 - `LimboDancer.Agentic.CognitiveRuntime Decision Evaluation Corpus Specification and Runbook.md`
-- `Decision Plane Architecture.md`
+- `LimboDancer.Agentic.CognitiveRuntime Decision Plane Architecture.md`
 - `src/ASL/docs/LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md` — rulebook-to-ontology authoring, validation, publication, and first adjudication slice
 - `src/ASL/docs/LimboDancer.Agentic.CognitiveRuntime ASL Reference-Domain Requirements.md` — ASL reference-domain requirements and acceptance scenarios
 
