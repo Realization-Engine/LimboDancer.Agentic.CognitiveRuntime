@@ -17,6 +17,7 @@ The authoring scope is **only the TOC, Index/Glossary, and Chapters A–E**: sev
 | `asl-scenario-a1.source-attestation.json` | Records the source provider's conversation attestation of the PDF digest and all 11 initial fragment IDs, without independently authenticating a named actor. |
 | `asl-scenario-a1.source-verification.json` | C# generated `Verified` source-fidelity records for the 11 attested subjects, bound to exact artifacts in the full TIR; no semantic review or dependency closure is asserted. |
 | `asl-scenario-a1.first-case-pdf-comparison.json` | Tool-assisted PDF comparisons for eight additional first-case rule declarations and the two linked figure-reference fragments. All ten subjects remain `unverified` pending source-provider review. |
+| `asl-scenario-a1.pending-comparison-records.json` | C# generated `Indeterminate` source-verification records for those ten comparison subjects, bound to the same full TIR digest as the first 11 verified subjects. Human attestation is pending. |
 
 The manifests contain locators and hashes, not duplicated rule text. The Markdown and image files under `../Rulebook_Markdown/` remain the registered content.
 
@@ -58,6 +59,8 @@ The PDF comparison file is review evidence, not an automatically accepted `TirSo
 The [Scenario A1 source review packet](<../LimboDancer.Agentic.CognitiveRuntime Scenario A1 Source Review Packet.md>) lists the 11 reviewed subjects and a narrowly scoped first case for dependency review.
 
 The first-case comparison evidence pins eight more prose fragments and the images for A2.4 and B23.1. B23.1 inherits Markdown conversion page 134 even though its rule and figure appear on physical PDF page 135. The C# conformance test validates all ten fragment IDs, source hashes, line numbers, page markers and registered image hashes; the matching text and visual observations remain review evidence, not verified dispositions.
+
+The [back-matter boundary review](<../LimboDancer.Agentic.CognitiveRuntime ASL Back-Matter Source Boundary Review.md>) identifies the B. Terrain Chart on physical PDF page 698 and other A–E-related player aids outside the initial registered page range. They are candidates for explicitly reviewed source additions, not implicit members of this registry.
 
 ## Verification boundary
 

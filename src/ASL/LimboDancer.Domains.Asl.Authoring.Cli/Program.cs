@@ -42,6 +42,18 @@ public static class Program
                 var batch = AslScenarioA1VerificationBatchBuilder.Build(manifests, attestation);
                 ManifestJson.WriteFile(options.ScenarioA1VerificationOutput, batch.Serialize());
             }
+            if (options.ScenarioA1Attestation is not null
+                && options.ScenarioA1Comparison is not null
+                && options.ScenarioA1ComparisonOutput is not null)
+            {
+                var attestation = JsonSerializer.Deserialize<AslScenarioA1SourceAttestation>(
+                    File.ReadAllText(options.ScenarioA1Attestation),
+                    AttestationJsonOptions)
+                    ?? throw new InvalidOperationException("Scenario A1 attestation is empty.");
+                using var comparison = JsonDocument.Parse(File.ReadAllText(options.ScenarioA1Comparison));
+                var batch = AslScenarioA1ComparisonBatch.Build(manifests, attestation, comparison);
+                ManifestJson.WriteFile(options.ScenarioA1ComparisonOutput, batch.Serialize());
+            }
             if (options.TirOutput is not null && options.TirCreatedAt is not null)
             {
                 var tir = TirStructuralExtractor.Extract(
@@ -107,6 +119,8 @@ public static class Program
                 "--a1-output",
                 "--a1-attestation",
                 "--a1-verification-output",
+                "--a1-comparison",
+                "--a1-comparison-output",
             ],
             StringComparer.Ordinal);
         var unknown = values.Keys.Where(key => !supported.Contains(key)).ToArray();
@@ -124,9 +138,18 @@ public static class Program
 
         var a1Attestation = values.GetValueOrDefault("--a1-attestation");
         var a1VerificationOutput = values.GetValueOrDefault("--a1-verification-output");
-        if ((a1Attestation is null) != (a1VerificationOutput is null))
+        var comparison = values.GetValueOrDefault("--a1-comparison");
+        var comparisonOutput = values.GetValueOrDefault("--a1-comparison-output");
+        if (a1VerificationOutput is not null && a1Attestation is null)
         {
-            throw new ArgumentException("--a1-attestation and --a1-verification-output must be supplied together.");
+            throw new ArgumentException("--a1-verification-output requires --a1-attestation.");
+        }
+
+        if ((comparison is null) != (comparisonOutput is null)
+            || (comparison is not null && a1Attestation is null)
+            || (a1Attestation is not null && a1VerificationOutput is null && comparison is null))
+        {
+            throw new ArgumentException("Scenario A1 comparison requires attestation, comparison input and output together.");
         }
 
         DateTimeOffset? tirCreatedAt = tirCreatedAtValue is null
@@ -144,7 +167,9 @@ public static class Program
             tirCreatedAt,
             values.GetValueOrDefault("--a1-output"),
             a1Attestation,
-            a1VerificationOutput);
+            a1VerificationOutput,
+            comparison,
+            comparisonOutput);
     }
 
     private static string Required(Dictionary<string, string> values, string name)
@@ -164,7 +189,8 @@ public static class Program
         return "Usage: dotnet run --project src/ASL/LimboDancer.Domains.Asl.Authoring.Cli -- "
             + "[--repository-root PATH] --source-commit SHA --registry-output PATH "
             + "--verification-output PATH [--tir-output PATH --tir-created-at UTC_TIMESTAMP] "
-            + "[--a1-output PATH] [--a1-attestation PATH --a1-verification-output PATH]";
+            + "[--a1-output PATH] [--a1-attestation PATH --a1-verification-output PATH] "
+            + "[--a1-attestation PATH --a1-comparison PATH --a1-comparison-output PATH]";
     }
 
     private sealed record Options(
@@ -176,5 +202,7 @@ public static class Program
         DateTimeOffset? TirCreatedAt,
         string? ScenarioA1Output,
         string? ScenarioA1Attestation,
-        string? ScenarioA1VerificationOutput);
+        string? ScenarioA1VerificationOutput,
+        string? ScenarioA1Comparison,
+        string? ScenarioA1ComparisonOutput);
 }

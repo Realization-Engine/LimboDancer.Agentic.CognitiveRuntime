@@ -24,6 +24,7 @@ public enum AslScenarioA1CaseBlockerKind
     FactOutsideDeclaredScope,
     SourceRuleNotLocated,
     SourceFragmentUnverified,
+    SourceBoundaryUnresolved,
     DependencyAndSemanticReviewPending,
 }
 
@@ -112,6 +113,10 @@ public static class AslScenarioA1CaseAssessor
             }
         }
 
+        blockers.Add(new AslScenarioA1CaseBlocker(
+            AslScenarioA1CaseBlockerKind.SourceBoundaryUnresolved,
+            "A4.13 cites the Chapter B Terrain Chart on PDF page 698, outside pages 6-253; "
+                + "review whether B23.4 supplies the complete ordinary building entry cost."));
         blockers.Add(new AslScenarioA1CaseBlocker(
             AslScenarioA1CaseBlockerKind.DependencyAndSemanticReviewPending,
             "Scenario A1 first-case applicability, exceptions and dependency closure"));

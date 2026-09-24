@@ -26,7 +26,10 @@ public sealed record AslScenarioA1VerificationBatch(
         {
             writer.WriteStartObject();
             writer.WriteString("schemaVersion", "1.0.0");
-            writer.WriteString("status", "source-fidelity-verified-semantic-review-pending");
+            writer.WriteString("status", Records.All(static record =>
+                record.Disposition == TirSourceVerificationDisposition.Verified)
+                ? "source-fidelity-verified-semantic-review-pending"
+                : "source-comparison-indeterminate-semantic-review-pending");
             writer.WriteString("sourceDocumentSha256", TirCanonicalJson.ComputePayloadSha256(SourceDocument));
             writer.WritePropertyName("records");
             writer.WriteStartArray();

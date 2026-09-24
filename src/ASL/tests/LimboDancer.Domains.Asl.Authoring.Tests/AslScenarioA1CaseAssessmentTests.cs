@@ -27,6 +27,9 @@ public sealed class AslScenarioA1CaseAssessmentTests
         Assert.Contains("B23.711", result.ExcludedBranchRuleIds);
         Assert.Contains(result.Blockers, blocker =>
             blocker.Kind == AslScenarioA1CaseBlockerKind.DependencyAndSemanticReviewPending);
+        Assert.Contains(result.Blockers, blocker =>
+            blocker.Kind == AslScenarioA1CaseBlockerKind.SourceBoundaryUnresolved
+            && blocker.Reference.Contains("PDF page 698", StringComparison.Ordinal));
         Assert.DoesNotContain(result.Blockers, blocker =>
             blocker.Kind == AslScenarioA1CaseBlockerKind.SourceRuleNotLocated);
         foreach (var id in new[] { "A2.4", "A3.3", "A4.1", "A4.11", "A4.13", "A5.1", "A5.11", "B23.1" })

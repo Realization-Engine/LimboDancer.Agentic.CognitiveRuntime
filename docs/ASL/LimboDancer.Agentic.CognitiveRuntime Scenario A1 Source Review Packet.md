@@ -57,6 +57,8 @@ This is an **initial dependency inventory**, not a closed rule graph or a positi
 
 The xUnit cases check missing baseline verification (including both figures), unknown occupancy, a conflicting special-rule fact, and the semantic gate even if every candidate source ID is marked verified. They also check that the additional comparison references ten exact registered fragments and registered image hashes. This assessment always refuses a definitive entry ruling. It is an explicit worklist and scope check, not a semantic interpreter or an admission decision.
 
+The C# pending-comparison batch records an `Indeterminate` disposition for each of the ten new subjects against the **same full TIR document** as the first 11 verified subjects. It records the comparison process as its actor and explicitly states that human source-fidelity attestation is pending. An image hash is a byte-level dependency check, and a visual match is a comparison observation; neither permits `Verified` without the additional source review. This batch does not change the first 11 records.
+
 ### Dependency review findings to resolve
 
 The first-case baseline is **not closed**. This preliminary reading of the registered source identifies at least these additional checks for an ASL domain reviewer:
@@ -70,3 +72,5 @@ The first-case baseline is **not closed**. This preliminary reading of the regis
 | Scenario special rules and excluded branches | Do any SSR, setup condition, or rule exception override the declared ordinary entry case? | Explicit absence is a declared fact; an unexamined scenario cannot supply it. |
 
 These findings do not make A5.5 or a chart automatically controlling. The domain reviewer must decide applicability, enumerate any added exact source fragments, and record the rejected and unresolved branches before proposing a closed dependency set.
+
+The [back-matter boundary review](<./LimboDancer.Agentic.CognitiveRuntime ASL Back-Matter Source Boundary Review.md>) finds the B. Terrain Chart on physical PDF page **698**, outside the original 6–253 source registry. It identifies other A–E-labelled aids in the back matter and proposes adding only separately reviewed artifacts whose exact use is required. No page-698 content is in the current source registry or verification batches.
