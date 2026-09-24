@@ -86,19 +86,20 @@ public static class AslScenarioA1FinalReviewer
 
         var assessed = AslScenarioA1CaseAssessor.AssessWithReviewedChart(
             facts, manifests.Fragments, verifiedIds, repositoryRoot, chartDecision);
+        var hasOutsideScope = assessed.Blockers.Any(blocker =>
+            blocker.Kind == AslScenarioA1CaseBlockerKind.FactOutsideDeclaredScope);
         if (!assessed.RequiredRuleIds.SequenceEqual(ApprovedRequiredRules, StringComparer.Ordinal)
             || !assessed.ExcludedBranchRuleIds.SequenceEqual(ApprovedExcludedBranches, StringComparer.Ordinal)
-            || assessed.UnresolvedSupplementalSources.Count != 0
+            || (!hasOutsideScope && assessed.UnresolvedSupplementalSources.Count != 0)
             || assessed.Blockers.Any(blocker =>
                 blocker.Kind != AslScenarioA1CaseBlockerKind.FactOutsideDeclaredScope
-                && blocker.Kind != AslScenarioA1CaseBlockerKind.DependencyAndSemanticReviewPending)
+                && blocker.Kind != AslScenarioA1CaseBlockerKind.DependencyAndSemanticReviewPending
+                && !(hasOutsideScope && blocker.Kind == AslScenarioA1CaseBlockerKind.SourceBoundaryUnresolved))
             || assessed.Blockers.Count(blocker =>
                 blocker.Kind == AslScenarioA1CaseBlockerKind.DependencyAndSemanticReviewPending) != 1)
         {
             throw new InvalidOperationException("The assessed case differs from the delegated dependency decision.");
         }
-        var hasOutsideScope = assessed.Blockers.Any(blocker =>
-            blocker.Kind == AslScenarioA1CaseBlockerKind.FactOutsideDeclaredScope);
 
         var completed = hasOutsideScope ? assessed : assessed with
         {
