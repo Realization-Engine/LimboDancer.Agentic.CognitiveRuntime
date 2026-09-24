@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Runtime.CompilerServices;
 using System.Xml.Linq;
 using LimboDancer.Domains.Asl.Maps.Geometry;
 using LimboDancer.Domains.Asl.Maps.Grid;
@@ -98,7 +97,7 @@ public sealed class BoardRendererTests
     public void SyntheticBoardMatchesGolden(BoardView view)
     {
         var actual = BoardRenderer.Document(Synthetic.Value, view);
-        var path = Path.Combine(SourceDirectory(), "Golden", $"synthetic-{BoardRenderer.ViewName(view)}.svg");
+        var path = Path.Combine(GoldenDirectory(), $"synthetic-{BoardRenderer.ViewName(view)}.svg");
         if (Environment.GetEnvironmentVariable(UpdateGoldenVariable) == "1")
         {
             File.WriteAllText(path, actual);
@@ -200,5 +199,20 @@ public sealed class BoardRendererTests
         return int.Parse(data.AsSpan(start, index - start), CultureInfo.InvariantCulture);
     }
 
-    private static string SourceDirectory([CallerFilePath] string path = "") => Path.GetDirectoryName(path)!;
+    /// <summary>
+    /// The committed golden directory, found from the test output by the solution file. <c>CallerFilePath</c> is not
+    /// used because continuous-integration builds map source paths.
+    /// </summary>
+    private static string GoldenDirectory()
+    {
+        for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, "src", "ASL", "LimboDancer.Domains.Asl.sln")))
+            {
+                return Path.Combine(directory.FullName, "src", "ASL", "tests", "LimboDancer.Domains.Asl.Maps.Rendering.Tests", "Golden");
+            }
+        }
+
+        throw new DirectoryNotFoundException("Could not locate the repository root from " + AppContext.BaseDirectory);
+    }
 }
