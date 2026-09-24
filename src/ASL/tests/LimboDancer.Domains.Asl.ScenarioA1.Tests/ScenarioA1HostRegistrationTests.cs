@@ -35,8 +35,8 @@ public sealed class ScenarioA1HostRegistrationTests
         Assert.True(optedIn.GetRequiredService<IActionBindingRegistry>().TryResolve(
             "asl", "scenario-a1-second-defender-return", out var binding));
         Assert.Equal(ScenarioA1ReturnAction.Id, binding.ActionId);
-        Assert.Empty(optedIn.GetRequiredService<IActionBindingRegistry>().List("mcp")
-            .Where(item => item.ActionId == ScenarioA1ReturnAction.Id));
+        Assert.DoesNotContain(optedIn.GetRequiredService<IActionBindingRegistry>().List("mcp"),
+            item => item.ActionId == ScenarioA1ReturnAction.Id);
         Assert.IsType<DefaultExecutionRiskPolicy>(optedIn.GetRequiredService<IExecutionRiskPolicy>());
         Assert.True(optedIn.GetRequiredService<RuntimeStructureValidator>().Validate().IsValid);
     }
