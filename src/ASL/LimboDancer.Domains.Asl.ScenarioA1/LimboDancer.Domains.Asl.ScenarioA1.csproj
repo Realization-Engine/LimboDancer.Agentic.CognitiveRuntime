@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RestorePackagesWithLockFile>false</RestorePackagesWithLockFile>
+    <RestoreLockedMode>false</RestoreLockedMode>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../LimboDancer/LimboDancer.Abstractions/LimboDancer.Abstractions.csproj" />
+    <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.first-case-review-decision.json" LogicalName="ScenarioA1.review.json" />
+  </ItemGroup>
+</Project>
