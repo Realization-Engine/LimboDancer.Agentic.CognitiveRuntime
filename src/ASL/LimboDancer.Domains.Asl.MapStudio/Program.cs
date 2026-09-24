@@ -13,6 +13,9 @@ public static class Program
         builder.Services.AddSingleton(options);
         builder.Services.AddSingleton<IBoardProvider, VaslBoardProvider>();
         builder.Services.AddSingleton<RenderCache>();
+        builder.Services.AddSingleton<FidelityReportStore>();
+        builder.Services.AddSingleton<IFidelityBatch, VaslFidelityBatch>();
+        builder.Services.AddSingleton<FidelityJobRunner>();
 
         var app = builder.Build();
         app.UseAntiforgery();

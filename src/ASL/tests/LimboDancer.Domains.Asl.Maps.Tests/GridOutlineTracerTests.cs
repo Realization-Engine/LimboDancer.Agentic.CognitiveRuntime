@@ -88,6 +88,24 @@ public sealed class GridOutlineTracerTests
     }
 
     [Fact]
+    public void VerifierAcceptsTracedOutlinesAndLocatesDamage()
+    {
+        var grid = Build(Small, (x, y) => x is >= 10 and < 20 && y is >= 5 and < 8 ? (byte)3 : (byte)0, (x, _) => x < 50 ? (sbyte)0 : (sbyte)1);
+        var outlines = GridOutlineTracer.Trace(grid);
+        Assert.True(GridOutlineVerifier.Verify(grid, outlines).Lossless);
+
+        // Dropping the building leaves its 30 cells uncovered, because the open-ground ring keeps its hole.
+        var withoutBlock = new GridOutlines(Small, outlines.Regions.Where(region => region.Code != 3).ToArray());
+        var damaged = GridOutlineVerifier.Verify(grid, withoutBlock);
+        Assert.Equal(30, damaged.MismatchedCells);
+        Assert.Equal(new GridPoint(10, 5), damaged.FirstMismatch);
+
+        // Relabeling a region paints its cells with the wrong key.
+        var relabeled = new GridOutlines(Small, outlines.Regions.Select(region => region.Code == 3 ? region with { Code = 4 } : region).ToArray());
+        Assert.Equal(30, GridOutlineVerifier.Verify(grid, relabeled).MismatchedCells);
+    }
+
+    [Fact]
     public void CoverageFillsEvenOdd()
     {
         GridPoint[] outer = [new(0, 0), new(4, 0), new(4, 4), new(0, 4)];

@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.IO.Compression;
 using System.Text.Json;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Maps.Derivation;
@@ -31,6 +32,29 @@ public static class HexFactFidelity
             ToDictionary(metadata.RailroadEmbankments),
             ToDictionary(metadata.PartialOrchards));
         return VaslCompatibleHexFactDerivation.Derive(board.Grid, catalog, annotations);
+    }
+
+    /// <summary>The fixture file name for a board, such as <c>bd01.hexfacts.json.gz</c>.</summary>
+    public static string FixtureFileName(BoardRef board)
+    {
+        ArgumentNullException.ThrowIfNull(board);
+        return board.Value + ".hexfacts.json.gz";
+    }
+
+    /// <summary>Compares with the board's fixture in a directory, or returns null when there is no fixture.</summary>
+    public static F2Result? CompareWithFixture(IngestedBoard board, HexFactSet derived, string? fixtureDirectory)
+    {
+        ArgumentNullException.ThrowIfNull(board);
+        var path = fixtureDirectory is null ? null : Path.Combine(fixtureDirectory, FixtureFileName(board.Board));
+        if (path is null || !File.Exists(path))
+        {
+            return null;
+        }
+
+        using var file = File.OpenRead(path);
+        using var gzip = new GZipStream(file, CompressionMode.Decompress);
+        using var fixture = JsonDocument.Parse(gzip);
+        return Compare(board, derived, fixture);
     }
 
     public static OracleSource ReadSource(JsonDocument fixture)

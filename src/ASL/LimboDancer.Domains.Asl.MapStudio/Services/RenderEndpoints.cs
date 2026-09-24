@@ -39,6 +39,16 @@ public static class RenderEndpoints
     {
         ArgumentNullException.ThrowIfNull(endpoints);
         endpoints.MapGet("/render/{board}/{version}/{view}/{file}", Render);
+        endpoints.MapGet("/fidelity/reports/{file}", Report);
+    }
+
+    /// <summary>A saved fidelity report as JSON, for download.</summary>
+    private static IResult Report(string file, FidelityReportStore store)
+    {
+        var id = file.EndsWith(".json", StringComparison.Ordinal) ? file[..^5] : null;
+        return id is not null && store.ReadJson(id) is { } json
+            ? Results.Text(json, "application/json", Encoding.UTF8)
+            : Results.NotFound();
     }
 
     private static IResult Render(string board, string version, string view, string file, bool? trace,

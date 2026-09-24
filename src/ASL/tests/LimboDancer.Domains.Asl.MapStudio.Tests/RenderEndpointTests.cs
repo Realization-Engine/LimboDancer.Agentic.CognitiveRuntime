@@ -28,11 +28,18 @@ internal sealed class FakeBoardProvider : IBoardProvider
         Provenance: null,
         Diagnostics: []);
 
+    public static readonly string Catalog = new('c', 40);
+    public static readonly string Board02LosData = new('2', 40);
+    public static readonly string Board02Metadata = new('3', 40);
+
     public string? SourceDescription => "Synthetic test source";
+
+    public string? CatalogBlob => Catalog;
 
     public IReadOnlyList<BoardListing> List() =>
     [
         new BoardListing(Board.Ref, Board.Title),
+        new BoardListing(BoardRef.Parse("bd02"), "VASL board 02", BoardScope.InScope, null, Board02LosData, Board02Metadata),
         new BoardListing(BoardRef.Parse("bd1a"), "VASL board 1a", BoardScope.OutOfScope, "bd1a: 17 by 10 hexes is not a standard geomorphic board."),
     ];
 
@@ -42,15 +49,36 @@ internal sealed class FakeBoardProvider : IBoardProvider
     public BoardLoadResult? Cached(BoardRef board) => board == Board.Ref ? Load(board) : null;
 }
 
+/// <summary>
+/// The Studio with the fake provider, a fake batch, and a temporary cache seeded with one saved report, so no test
+/// touches VASL or the user's real cache.
+/// </summary>
 public sealed class StudioFactory : WebApplicationFactory<App>
 {
+    public string CacheRoot { get; } = Path.Combine(Path.GetTempPath(), "asl-mapstudio-tests-" + Guid.NewGuid().ToString("N"));
+
+    public string SeededReportId { get; private set; } = string.Empty;
+
     protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
+        var options = new StudioOptions { CacheRoot = CacheRoot };
+        SeededReportId = new FidelityReportStore(options).Save(FidelityTestData.Report(new DateTimeOffset(2026, 9, 24, 8, 0, 0, TimeSpan.Zero)));
         builder.ConfigureTestServices(services =>
         {
+            services.AddSingleton(options);
             services.AddSingleton<IBoardProvider, FakeBoardProvider>();
+            services.AddSingleton<IFidelityBatch>(new FakeFidelityBatch());
         });
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        base.Dispose(disposing);
+        if (disposing && Directory.Exists(CacheRoot))
+        {
+            Directory.Delete(CacheRoot, recursive: true);
+        }
     }
 }
 
@@ -126,7 +154,9 @@ public sealed class RenderEndpointTests(StudioFactory factory) : IClassFixture<S
         var html = await client.GetStringAsync(new Uri("/", UriKind.Relative));
         Assert.Contains("Synthetic test source", html, StringComparison.Ordinal);
         Assert.Contains("href=\"boards/ab-synthetic\"", html, StringComparison.Ordinal);
-        Assert.Contains("1 board in scope", html, StringComparison.Ordinal);
+        Assert.Contains("2 boards in scope", html, StringComparison.Ordinal);
+        Assert.Contains(">2 verified<", html, StringComparison.Ordinal);
+        Assert.Contains("Verified (batch)", html, StringComparison.Ordinal);
         Assert.Contains("Show out-of-scope boards (1)", html, StringComparison.Ordinal);
         Assert.DoesNotContain("VASL board 1a", html, StringComparison.Ordinal);
     }

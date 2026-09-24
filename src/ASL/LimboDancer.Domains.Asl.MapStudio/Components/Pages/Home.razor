@@ -1,7 +1,7 @@
 @page "/"
 @using LimboDancer.Domains.Asl.Maps.Vasl
-@implements IDisposable
 @inject IBoardProvider Boards
+@inject FidelityJobRunner Runner
 
 <PageTitle>Board library - ASL Map Studio</PageTitle>
 
@@ -23,15 +23,15 @@ else
         <span class="pass">@totals.Verified verified</span>,
         @totals.Ingested ingested,
         <span class="@(totals.Failed > 0 ? "fail" : "")">@totals.Failed failed</span>,
-        <span class="muted">@totals.NotLoaded not loaded</span>.
+        <span class="muted">@totals.NotLoaded not checked</span>.
         @outOfScope.Count out of scope.
     </p>
     <p>
-        <button @onclick="CheckAll" disabled="@checking">Check all boards in scope</button>
-        @if (checking)
+        @if (Runner.Latest is { } latest)
         {
-            <span class="muted"> Checked @checkedCount of @inScope.Count.</span>
+            <span class="muted">Unopened boards show results from the fidelity report of @latest.Report.StartedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture) when their sources and tools are unchanged.</span>
         }
+        <a href="fidelity">Run the fidelity batch</a>
         <label class="toggle">
             <input type="checkbox" checked="@showOutOfScope" @onchange="@(args => showOutOfScope = (bool)args.Value!)" />
             Show out-of-scope boards (@outOfScope.Count)
@@ -60,10 +60,18 @@ else
                         <td></td>
                         <td class="muted">@entry.ScopeReason</td>
                     }
+                    else if (result is null && Runner.FreshResult(entry, Boards.CatalogBlob) is { } batch)
+                    {
+                        <td><a href="@($"boards/{entry.Ref.Value}")">@entry.Title</a></td>
+                        <td class="@(batch.Outcome == BatchOutcome.Verified ? "pass" : batch.Outcome == BatchOutcome.Failed ? "fail" : "")" title="@batch.Reason">@batch.Outcome (batch)</td>
+                        <td class="@(batch.F1 == F1Status.Pass ? "pass" : "fail")">@batch.F1</td>
+                        <td class="@(batch.F2?.Status == BatchF2.Pass ? "pass" : "muted")">@batch.F2?.Status</td>
+                        <td><Diagnostics Items="batch.Diagnostics" /></td>
+                    }
                     else if (result is null)
                     {
                         <td><a href="@($"boards/{entry.Ref.Value}")">@entry.Title</a></td>
-                        <td class="muted" colspan="4">Not loaded</td>
+                        <td class="muted" colspan="4">Not checked</td>
                     }
                     else if (result.Board is not { } board)
                     {
@@ -88,13 +96,10 @@ else
 }
 
 @code {
-    private readonly CancellationTokenSource stopping = new();
     private IReadOnlyList<BoardListing> listing = [];
     private IReadOnlyList<BoardListing> inScope = [];
     private IReadOnlyList<BoardListing> outOfScope = [];
     private bool showOutOfScope;
-    private bool checking;
-    private int checkedCount;
 
     protected override async Task OnInitializedAsync()
     {
@@ -110,15 +115,22 @@ else
         int verified = 0, ingested = 0, failed = 0, notLoaded = 0;
         foreach (var entry in inScope)
         {
-            switch (Boards.Cached(entry.Ref))
+            var outcome = Boards.Cached(entry.Ref) switch
+            {
+                { Board.Status: BoardStatus.Verified } => BatchOutcome.Verified,
+                { Board: not null } => BatchOutcome.Ingested,
+                not null => BatchOutcome.Failed,
+                null => Runner.FreshResult(entry, Boards.CatalogBlob)?.Outcome,
+            };
+            switch (outcome)
             {
                 case null:
                     notLoaded++;
                     break;
-                case { Board.Status: BoardStatus.Verified }:
+                case BatchOutcome.Verified:
                     verified++;
                     break;
-                case { Board: not null }:
+                case BatchOutcome.Ingested:
                     ingested++;
                     break;
                 default:
@@ -128,25 +140,6 @@ else
         }
 
         return (verified, ingested, failed, notLoaded);
-    }
-
-    private async Task CheckAll()
-    {
-        checking = true;
-        checkedCount = 0;
-        foreach (var entry in inScope)
-        {
-            if (stopping.IsCancellationRequested)
-            {
-                return;
-            }
-
-            await Task.Run(() => Boards.Load(entry.Ref));
-            checkedCount++;
-            StateHasChanged();
-        }
-
-        checking = false;
     }
 
     private static string F2Text(StudioBoard board) => board.F2 switch
@@ -162,10 +155,4 @@ else
         { Passed: true } => "pass",
         _ => "fail",
     };
-
-    public void Dispose()
-    {
-        stopping.Cancel();
-        stopping.Dispose();
-    }
 }
