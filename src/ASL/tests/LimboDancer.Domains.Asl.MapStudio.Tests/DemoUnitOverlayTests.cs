@@ -20,8 +20,10 @@ public sealed class DemoUnitOverlayTests
         var result = Build(fixture);
         var xml = XElement.Parse(result.Svg);
         Assert.Empty(result.Diagnostics);
-        Assert.Equal(new[] { "first", "second", "third" },
-            xml.Elements("g").Select(x => x.Attribute("data-placement-id")!.Value).ToArray());
+        Assert.Collection(xml.Elements("g"),
+            x => Assert.Equal("first", x.Attribute("data-placement-id")!.Value),
+            x => Assert.Equal("second", x.Attribute("data-placement-id")!.Value),
+            x => Assert.Equal("third", x.Attribute("data-placement-id")!.Value));
         Assert.Contains("A&lt;&amp;", result.Svg, StringComparison.Ordinal);
         Assert.Equal("ab-synthetic:B1:1", result.Units[1].Location.ToString());
         Assert.Equal(result.Svg, Build(fixture).Svg);
@@ -30,8 +32,11 @@ public sealed class DemoUnitOverlayTests
     [Fact]
     public void WrongBoardOrVersionDoesNotRenderAnyUnit()
     {
-        var wrongBoard = Build(Fixture(new("a", "ab-synthetic:B1:0", "blue", "A", "front", 0)) with { BoardRef = "bd01" });
-        var wrongVersion = Build(Fixture(new("a", "ab-synthetic:B1:0", "blue", "A", "front", 0)) with { ExpectedBoardVersion = "different" });
+        var placement = new DemoUnitPlacement("a", "ab-synthetic:B1:0", "blue", "A", "front", 0);
+        var wrongBoardFixture = Fixture(placement) with { BoardRef = "bd01" };
+        var wrongVersionFixture = Fixture(placement) with { ExpectedBoardVersion = "different" };
+        var wrongBoard = Build(wrongBoardFixture);
+        var wrongVersion = Build(wrongVersionFixture);
         Assert.Empty(wrongBoard.Units);
         Assert.Empty(wrongVersion.Units);
         Assert.NotEmpty(wrongBoard.Diagnostics);
@@ -57,8 +62,8 @@ public sealed class DemoUnitOverlayTests
     [Fact]
     public void ReplacementSnapshotChangesOnlyOverlayContent()
     {
-        var first = Build(Fixture(new("a", "ab-synthetic:B1:0", "blue", "A", "front", 0)));
-        var second = Build(Fixture(new("a", "ab-synthetic:C1:0", "blue", "A", "front", 0)));
+        var first = Build(Fixture(new DemoUnitPlacement("a", "ab-synthetic:B1:0", "blue", "A", "front", 0)));
+        var second = Build(Fixture(new DemoUnitPlacement("a", "ab-synthetic:C1:0", "blue", "A", "front", 0)));
         Assert.NotEqual(first.Svg, second.Svg);
         Assert.Equal(first.BoardVersion, second.BoardVersion);
         Assert.Single(second.Units);
