@@ -9,6 +9,23 @@ public sealed class AslScenarioA1SecondDefenderExecutionReviewTests
     private const string SourceCommit = "a3254ff1d492dbdd28483d86f5b42437b48e80d4";
     private const string ReviewDigest = "ccec677b126067aa5cca45656b945cd8f34e870ed868b36225defe265e9d2693";
     private static readonly string[] Rules = ["A12.15", "A4.14", "A4.15", "B23.4"];
+    private static readonly string[] AdmittedCases =
+    [
+        "A1-second-defender-consequence-smc-revealed",
+        "A1-second-defender-consequence-mmc-revealed",
+    ];
+    private static readonly string[] CoreEffects =
+    [
+        "return-to-last-location", "attempted-entry-mf-in-return-location",
+        "attacker-concealment-lost", "moving-phase-ended",
+    ];
+    private static readonly string[] FollowOnTriggers =
+    [
+        "existing-residual-fp-in-return-location",
+        "return-location-ffe-or-minefield",
+        "return-location-wire-depression-entrenchment-or-shellhole",
+        "defender-first-fire-or-snap-shot-on-return",
+    ];
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     [Fact]
@@ -67,24 +84,10 @@ public sealed class AslScenarioA1SecondDefenderExecutionReviewTests
     {
         using var review = Read("asl-scenario-a1.second-defender-execution-review.json");
         var root = review.RootElement;
-        Assert.Equal(new[]
-        {
-            "A1-second-defender-consequence-smc-revealed",
-            "A1-second-defender-consequence-mmc-revealed",
-        }, Strings(root.GetProperty("admittedCaseIds")));
-        Assert.Equal(new[]
-        {
-            "return-to-last-location", "attempted-entry-mf-in-return-location",
-            "attacker-concealment-lost", "moving-phase-ended",
-        }, root.GetProperty("coreEffectsFromA1215").EnumerateArray()
+        Assert.Equal(AdmittedCases, Strings(root.GetProperty("admittedCaseIds")));
+        Assert.Equal(CoreEffects, root.GetProperty("coreEffectsFromA1215").EnumerateArray()
             .Select(item => item.GetProperty("effect").GetString()).ToArray());
-        Assert.Equal(new[]
-        {
-            "existing-residual-fp-in-return-location",
-            "return-location-ffe-or-minefield",
-            "return-location-wire-depression-entrenchment-or-shellhole",
-            "defender-first-fire-or-snap-shot-on-return",
-        }, root.GetProperty("conditionalFollowOn").EnumerateArray()
+        Assert.Equal(FollowOnTriggers, root.GetProperty("conditionalFollowOn").EnumerateArray()
             .Select(item => item.GetProperty("trigger").GetString()).ToArray());
         Assert.Contains("compare-and-swap", root.GetProperty("runtimeBoundary")
             .GetProperty("version").GetString());
