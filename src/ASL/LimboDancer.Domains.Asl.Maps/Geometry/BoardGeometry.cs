@@ -75,6 +75,16 @@ public sealed class BoardGeometry
 
     public int HexCount => Enumerable.Range(0, WidthInHexes).Sum(RowCount);
 
+    /// <summary>
+    /// The hex's position in VASL order (<see cref="Hexes"/>), which is also its position in the LOSData
+    /// stairway section.
+    /// </summary>
+    public int HexOrdinal(HexIndex hex)
+    {
+        EnsureContains(hex);
+        return (hex.Column * HeightInHexes) + (hex.Column / 2) + hex.Row;
+    }
+
     /// <summary>The 33 by 10 geomorphic board: 1800 by 645 grid, hex 56.25 by 64.5, A1 center at (0, 32.25).</summary>
     public static BoardGeometry StandardGeomorphic { get; } = Standard(33, 10);
 

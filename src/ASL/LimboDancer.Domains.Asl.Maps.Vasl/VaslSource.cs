@@ -11,15 +11,34 @@ public sealed class VaslSource
     /// <summary>Environment form of <see cref="ConfigurationKey"/>, as .NET configuration maps it.</summary>
     public const string EnvironmentVariable = "AslMaps__VaslRoot";
 
+    public const string SharedBoardMetadataRepositoryPath = "dist/boardData/SharedBoardMetadata.xml";
+
+    private readonly Lazy<GitCheckout?> git;
+
     private VaslSource(string root)
     {
         Root = root;
+        git = new Lazy<GitCheckout?>(() => GitCheckout.TryOpen(root));
     }
 
     public string Root
     {
         get;
     }
+
+    /// <summary>The checkout's git metadata, or null when the root is not a git working tree.</summary>
+    public GitCheckout? Git => git.Value;
+
+    /// <summary>VASL board names with a source directory (<c>boards/src/bdNN</c>), sorted ordinally.</summary>
+    public IReadOnlyList<string> BoardNames() =>
+        Directory.EnumerateDirectories(Path.Combine(Root, "boards", "src"), "bd*")
+            .Select(path => Path.GetFileName(path)[2..])
+            .Where(name => name.Length > 0)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+
+    public SourceFileProvenance SharedBoardMetadataProvenance() =>
+        new(SharedBoardMetadataRepositoryPath, GitBlob.Sha(File.ReadAllBytes(SharedBoardMetadataPath)), Git?.IndexBlob(SharedBoardMetadataRepositoryPath));
 
     public string SharedBoardMetadataPath => Path.Combine(Root, "dist", "boardData", "SharedBoardMetadata.xml");
 

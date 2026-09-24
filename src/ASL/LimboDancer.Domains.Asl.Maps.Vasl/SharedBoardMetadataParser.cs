@@ -205,16 +205,9 @@ public static class SharedBoardMetadataParser
             return false;
         }
 
-        if (value.Equals("true", StringComparison.OrdinalIgnoreCase) || value.Equals("on", StringComparison.OrdinalIgnoreCase)
-            || value.Equals("yes", StringComparison.OrdinalIgnoreCase) || value == "1")
+        if (JdomBoolean.TryParse(value, out var result))
         {
-            return true;
-        }
-
-        if (value.Equals("false", StringComparison.OrdinalIgnoreCase) || value.Equals("off", StringComparison.OrdinalIgnoreCase)
-            || value.Equals("no", StringComparison.OrdinalIgnoreCase) || value == "0")
-        {
-            return false;
+            return result;
         }
 
         diagnostics.Add(Error("VASL-CAT-005", $"Terrain '{label}' has non-boolean {attribute} '{value}'."));

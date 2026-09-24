@@ -10,9 +10,9 @@
 
 ## 1. Version 1 scope
 
-Version 1 ingests a **single standard geomorphic board**: 33 by 10 hexes, no custom geometry attributes in its metadata, not cropped, not rotated, with no overlay and no SSR transform applied. This matches how VASL loads one uncropped board into a game map, and it covers board 01 and the other 140 standard geomorphic boards with `LOSData` in the pinned checkout.
+Version 1 ingests a **single standard geomorphic board**: 33 by 10 hexes, no non-standard geometry attributes in its metadata, not cropped, not rotated, with no overlay and no SSR transform applied. This matches how VASL loads one uncropped board into a game map. In the pinned checkout, 157 boards meet these conditions; ASL-MAP-02 ingests 156 of them, and every one passes F1 (**verified**). The remaining board, `bdLFT1`, declares a 644-row grid and is refused with `VASL-LOS-005`.
 
-Boards that declare custom geometry (`A1CenterX`, `A1CenterY`, `hexWidth`, `hexHeight`, `altHexGrain="TRUE"`, or `HexGridConfig`), boards of other sizes, and legacy boards without `BoardMetadata.xml` are recognized and reported as out of version 1 scope (diagnostic `VASL-SCOPE-001`). They are not partially ingested.
+Boards whose metadata sets `A1CenterX`, `A1CenterY`, `hexWidth`, or `hexHeight` to a value other than the standard one (0, 32.25, 56.25, 64.5), sets `altHexGrain` true, or declares any `HexGridConfig`, boards of other sizes, and legacy boards without `BoardMetadata.xml` or `LOSData` are reported as out of version 1 scope (diagnostic `VASL-SCOPE-001`) and are not partially ingested. An attribute that restates the standard value keeps the board in scope. `snapScale` controls VASL counter snapping, not LOS geometry, and does not affect scope.
 
 ## 2. Findings that shape this design
 
@@ -20,7 +20,7 @@ These were established while preparing this document.
 
 1. **LOSData decodes as expected (verified).** Board 01 `LOSData` is gzip over a Java object stream (`AC ED 00 05`). Decoding gives 33 by 10 hexes, a 1800 by 645 grid, 1,161,000 elevation and terrain pairs, and 346 stairway flags (34 set). Rendering the terrain codes in catalog colors reproduces board 01.
 2. **Block framing is deterministic (verified).** The decompressed stream is 2,333,706 bytes: a 4-byte stream header, a 2,322,362-byte payload, and 11,340 bytes of framing. That is exactly 2,268 `TC_BLOCKDATALONG` headers of 5 bytes, one per 1,024-byte block, which is Java's `ObjectOutputStream` block buffer size. An encoder that follows the same rule reproduces the whole decompressed stream, not only the payload.
-3. **Building-type overrides are baked into LOSData (verified).** `LOSDataEditor` applies `BoardMetadata.xml` building types when it *creates* `LOSData` (`VASL/LOS/LOSDataEditor.java`, "apply building-type transformations"). The runtime load path `BoardArchive.addLOSDatatoVASLMap` never reads them. All 63 board 01 overrides match the terrain code at their hex center pixel. Ingestion therefore checks the overrides for consistency and does not apply them (section 6.4).
+3. **Building-type overrides are written into LOSData when it is created (verified), but the two can drift.** `LOSDataEditor` applies `BoardMetadata.xml` building types when it *creates* `LOSData` (`VASL/LOS/LOSDataEditor.java`, "apply building-type transformations"). The runtime load path `BoardArchive.addLOSDatatoVASLMap` never reads them. All 63 board 01 overrides match the grid. Across the 156 ingested boards, however, 274 of 1,947 overrides on 29 boards disagree with the grid: 158 where the grid holds a generic building type (such as `Stone Building` or `MultipleStone`), 98 where the level count differs, and 18 with no building at the hex center. Their metadata was evidently changed without regenerating `LOSData`. Because VASL itself plays from the grid, ingestion checks the overrides and reports disagreements, but never applies them (section 6.4).
 4. **Depression elevations are also baked in.** `LOSDataEditor` lowers the elevation of depression pixels by one before writing. The grid elevation is therefore final and must not be adjusted again.
 5. **Archive and source directory differ in bytes (verified).** For board 01, `LOSData` has the same Git blob in `boards/bdFiles/bd01` and `boards/src/bd01`. `BoardMetadata.xml`, `data`, and `SSRControls` differ in bytes (the XML difference is line endings only), and the archive also contains a legacy entry named `BoardMetadata` without an extension. Equality between the two sources must therefore be defined per file type (section 8.2).
 6. **The runtime grid configuration is not "Normal".** For a single uncropped board, VASL's runtime constructor (`Map(LinkedList<VASLBoard>, ...)`, `VASL/LOS/Map/Map.java`) sets the configuration to `HalfHexWidthLeftHexFullHeight`. This selects the adjacency rules and edge-hexside flags used during derivation (sections 5.4 and 5.5). The standalone `Map` constructor used by VASL's LOS editor defaults to `Normal` and behaves differently, so the oracle must not use that default.
@@ -210,14 +210,17 @@ Parsed with `System.Xml.Linq`, using the element and attribute names from `VASL/
 | `@boardImageFileName` | `ImageEntryName` | required; recorded in provenance only |
 | `@hasHills` | `HasHills` | recorded |
 | `@width`, `@height` | size in hexes | must equal the LOSData header |
-| `@A1CenterX`, `@A1CenterY`, `@hexWidth`, `@hexHeight`, `@altHexGrain`, `@snapScale`, `@HexGridConfig` | custom geometry | present and non-default means out of version 1 scope (`VASL-SCOPE-001`) |
+| `@A1CenterX`, `@A1CenterY`, `@hexWidth`, `@hexHeight`, `@altHexGrain`, `@HexGridConfig` | custom geometry | a non-standard value means out of version 1 scope (`VASL-SCOPE-001`); see section 1 |
+| `@snapScale` | recorded | counter snapping only; no effect on scope |
 | `buildingTypes/buildingType(@hexName, @buildingTypeName)` | `BuildingTypeOverrides` | consistency check only (section 6.4) |
 | `slopes/slope(@hex, @hexsides)` | `Slopes` | applied in derivation |
 | `rrembankments/rrembankment(@hex, @hexsides)` | `RailroadEmbankments` | applied in derivation |
 | `partialorchards/partialorchard(@hex, @hexsides)` | `PartialOrchards` | applied in derivation |
 | board-specific colors, color SSR, overlay and underlay rules | raw | preserved as raw XML with diagnostic `VASL-META-003`; deferred |
 
-`@hexsides` is a string of hexside digits, for example `"03"` meaning hexsides 0 and 3. A character other than `0` to `5`, or a hex name that does not exist on the board, is `VASL-META-002`. XML comments are ignored. Unknown elements are preserved and reported (`VASL-META-001`), never dropped silently (ASL-MAP-033).
+`@hexsides` is a string of hexside digits, for example `"03"` meaning hexsides 0 and 3. As in VASL, only the first six characters are read, and any character other than `0` to `5` rejects the metadata (`VASL-META-005`); a hex name that is not a valid name is also `VASL-META-005`. A valid name for a hex that is not on the board is ignored, as VASL ignores it, with warning `VASL-META-002`. When a hex appears more than once in a section, the later entry replaces the earlier one in its original position, matching VASL's map semantics. XML comments are ignored. Unknown elements are preserved and reported (`VASL-META-001`), never dropped silently (ASL-MAP-033).
+
+VASL's parser accepts an XML 1.1 declaration, which .NET's does not. Board 23 has one, so a 1.1 declaration is read as 1.0 with `VASL-META-006`; content that XML 1.0 forbids still fails. Board 79's metadata contains `--` inside a comment, which VASL's parser also rejects, so it fails with `VASL-META-000`.
 
 ### 6.2 SharedBoardMetadata.xml and the terrain catalog
 
@@ -260,7 +263,7 @@ For each override, ingestion samples the grid at the hex's center-terrain point 
 - equal: consistent;
 - not equal: `VASL-META-004`, reported with hex, expected, and actual values.
 
-The grid remains authoritative either way (finding 3). This check reproduces the existing `vasl-board-01-building-overrides.json` evidence (63 of 63 consistent) and is the parity bridge to Scenario A1 (ASL-MAP-081).
+The grid remains authoritative either way (finding 3), as it is for VASL at run time. This check reproduces the existing `vasl-board-01-building-overrides.json` evidence (63 of 63 consistent) and is the parity bridge to Scenario A1 (ASL-MAP-081). Consumers of building levels must use derived Hex Facts, never the metadata overrides.
 
 ## 7. Hex-fact derivation
 
@@ -335,7 +338,7 @@ No divergences are adopted in version 1.
 
 `VaslBoardImporter.Import(source, catalog)` returns either diagnostics only (failure), or an `IngestedBoard` containing:
 
-- `BoardIdentity`: `vasl:bdNN@<LOSData blob SHA>`, plus a board version hash (section 8.3);
+- `SourceIdentity`: `vasl:bdNN@<LOSData blob SHA>`. The board version hash of section 8.3 is computed when the canonical board package is implemented; until then the source identity plus the provenance record identify the data;
 - `BoardGeometry`;
 - `TerrainGrid` (codes and elevations, column-major) and stairway flags;
 - parsed `BoardMetadata`, including raw preserved elements;
@@ -444,12 +447,16 @@ The C# test ingests the board from the configured local source, derives Hex Fact
 | `VASL-SRC-000` | error | `VaslRoot` missing or not a VASL checkout |
 | `VASL-SRC-001` | error | `LOSData` differs between archive and source directory |
 | `VASL-SRC-002` | warning | metadata differs semantically between archive and source directory |
+| `VASL-SRC-003` | error | the board source, or its `LOSData` in a comparison, does not exist |
 | `VASL-SCOPE-001` | info | board out of version 1 scope (reason given) |
 | `VASL-LOS-001` to `005` | error | LOSData container, framing, length, or size errors (section 4.3) |
 | `VASL-META-001` | warning | unknown metadata element preserved |
-| `VASL-META-002` | error | invalid hex name or hexside digit in metadata |
+| `VASL-META-000` | error | `BoardMetadata.xml` not well-formed, or without a `boardMetadata` root |
+| `VASL-META-002` | warning | metadata names a hex that is not on the board; ignored, as in VASL |
 | `VASL-META-003` | info | deferred metadata element preserved raw |
 | `VASL-META-004` | warning | building-type override inconsistent with grid |
+| `VASL-META-005` | error | invalid hex name, hexside digit, or required attribute in metadata |
+| `VASL-META-006` | info | XML 1.1 declaration read as XML 1.0 |
 | `VASL-CAT-000` | error | `SharedBoardMetadata.xml` not well-formed or without `terrainTypes` |
 | `VASL-CAT-001` | error | duplicate terrain code in catalog |
 | `VASL-CAT-002` | error | grid uses a code absent from the catalog |
