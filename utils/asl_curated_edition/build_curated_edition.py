@@ -28,6 +28,9 @@ Rules and their change classes:
                        Unicode symbol when the PDF sets it in the expected
                        symbol font (SYMBOL_FONT_MAP)
   * blank-page         (observation) PDF page with no body text
+  * toc-rebuild        (conversion-fix) rebuild the Table of Contents from PDF
+                       span positions; fails closed unless it carries exactly
+                       the printed words and every image the conversion used
 
 Undecidable cases go to review/ unchanged. Reviewer decisions in
 decisions/decisions.json (join, retain or replace, with reviewer and rationale) are
@@ -50,9 +53,6 @@ import sys
 import unicodedata
 
 import pymupdf
-
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import toc  # noqa: E402
 
 TOOL_VERSION = '0.1.0'
 EDITION_ID = 'asl-easlrb-3.01-a-e-curated'
@@ -558,6 +558,153 @@ class FileBuild:
         return ''.join(out)
 
 
+# ------------------------------------------------------------------ TOC ---
+# The printed TOC (PDF pages 6-10) sets each chapter's numbered entries in two
+# side-by-side columns under a centred heading. The registered conversion read
+# those pages as two page-high columns, interleaving chapter halves and
+# detaching headings from their entries. These helpers read span positions
+# instead: each entry row is assigned to the nearest heading above it, and the
+# left column is read before the right column.
+
+TOC_HEAD_SIZE = 14.0   # chapter headings are set at 16 pt, entries at 8 pt
+TOC_RUNNING_HEAD_Y = 40.0  # 'ADVANCED SQUAD LEADER RULEBOOK TABLE OF CONTENTS'
+TOC_FOLIO_Y = 750.0        # roman page number
+TOC_ROW_TOL = 2.5
+TOC_GAP = 1.0             # pt; spans closer than this are one word
+TOC_NUM_RE = re.compile(r'^(\d+)\.$')
+TOC_BULLET = '•'
+
+# Chapter banner icons in the registered image set, identified by visual
+# inspection (the converter did not number them in page order).
+TOC_ICONS = {
+    'A': 'eASLRB_v3_01-p6-1.png', 'B': 'eASLRB_v3_01-p6-2.png', 'C': 'eASLRB_v3_01-p6-3.png',
+    'D': 'eASLRB_v3_01-p7-1.png', 'E': 'eASLRB_v3_01-p7-2.png', 'F': 'eASLRB_v3_01-p7-4.png',
+    'G': 'eASLRB_v3_01-p7-3.png', 'H': 'eASLRB_v3_01-p8-1.png', 'I': 'eASLRB_v3_01-p8-6.png',
+    'J': 'eASLRB_v3_01-p8-2.png', 'K': 'eASLRB_v3_01-p8-3.png', 'L': 'eASLRB_v3_01-p8-4.png',
+    'M': 'eASLRB_v3_01-p8-5.png', 'N': 'eASLRB_v3_01-p9-1.png', 'O': 'eASLRB_v3_01-p9-2.png',
+    'P': 'eASLRB_v3_01-p9-3.png', 'Q': 'eASLRB_v3_01-p9-4.png', 'R': 'eASLRB_v3_01-p9-5.png',
+    'S': 'eASLRB_v3_01-p10-1.png', 'T': 'eASLRB_v3_01-p10-2.png', 'W': 'eASLRB_v3_01-p10-3.png',
+    'Z': 'eASLRB_v3_01-p10-4.png',
+}
+
+
+def toc_spans(page):
+    out = []
+    for b in page.get_text('dict')['blocks']:
+        if b['type'] != 0:
+            continue
+        for line in b['lines']:
+            for s in line['spans']:
+                t = s['text'].replace('\n', ' ')
+                if not t.strip():
+                    continue
+                y0, y1 = s['bbox'][1], s['bbox'][3]
+                if y1 <= TOC_RUNNING_HEAD_Y or y0 >= TOC_FOLIO_Y:
+                    continue
+                out.append({'x0': s['bbox'][0], 'x1': s['bbox'][2], 'y0': y0, 'y1': y1,
+                            'size': s['size'], 'text': t})
+    return out
+
+
+def toc_rows(spans):
+    """Group spans whose tops align into rows, left to right."""
+    rows = []
+    for s in sorted(spans, key=lambda s: (s['y0'], s['x0'])):
+        if rows and abs(rows[-1][0]['y0'] - s['y0']) <= TOC_ROW_TOL:
+            rows[-1].append(s)
+        else:
+            rows.append([s])
+    return [sorted(r, key=lambda s: s['x0']) for r in rows]
+
+
+def toc_join(spans):
+    """Concatenate spans, adding a space where the PDF leaves a visible gap."""
+    out, prev = '', None
+    for s in spans:
+        if prev is not None and s['x0'] - prev['x1'] > TOC_GAP and out[-1:] != ' ' and s['text'][:1] != ' ':
+            out += ' '
+        out += s['text']
+        prev = s
+    return re.sub(r'\s+', ' ', out).strip()
+
+
+def toc_extract(doc, first=6, last=10):
+    """Return chapters in printed order and anything that could not be placed."""
+    chapters, stray = [], []
+    for p in range(first, last + 1):
+        page = doc[p - 1]
+        mid = page.rect.width / 2
+        page_chapters = []
+        body = []
+        for row in toc_rows(toc_spans(page)):
+            heads = [s for s in row if s['size'] >= TOC_HEAD_SIZE]
+            if heads:
+                page_chapters.append({'heading': toc_join(heads), 'page': p, 'y': heads[0]['y0'],
+                                      'cols': {'L': [], 'R': []}, 'para': []})
+                row = [s for s in row if s['size'] < TOC_HEAD_SIZE]
+            body.extend(row)
+        for s in body:
+            owner = None
+            for ch in page_chapters:
+                if ch['y'] < s['y0']:
+                    owner = ch
+            if owner is None:
+                stray.append({'page': p, 'text': s['text']})
+                continue
+            owner['cols']['L' if s['x0'] < mid else 'R'].append(s)
+        for ch in page_chapters:
+            entries = []
+            for col in ('L', 'R'):
+                for row in toc_rows(ch['cols'][col]):
+                    head = row[0]['text'].strip()
+                    m = TOC_NUM_RE.match(head)
+                    if m:
+                        entries.append({'n': int(m.group(1)), 'text': toc_join(row[1:]), 'sub': []})
+                    elif head == TOC_BULLET and entries:
+                        entries[-1]['sub'].append(toc_join(row[1:]))
+                    else:
+                        ch['para'].append(toc_join(row))
+            ch['entries'] = entries
+            del ch['cols']
+        chapters.extend(page_chapters)
+    return chapters, stray
+
+
+def toc_render(chapters, image_prefix, title):
+    out = [f'**{title}**', '']
+    page = None
+    for ch in chapters:
+        if ch['page'] != page:
+            page = ch['page']
+            out += [f'<!-- pdf-page {page} -->', '']
+        letter = ch['heading'].split('.')[0] if re.match(r'^[A-Z]\.', ch['heading']) else None
+        if letter in TOC_ICONS:
+            out += [f'![Figure from page {page}]({image_prefix}{TOC_ICONS[letter]})', '']
+        out += [f'## {ch["heading"]}', '']
+        if ch['para']:
+            out += [' '.join(ch['para']), '']
+        if ch['entries']:
+            for e in ch['entries']:
+                out.append(f'{e["n"]}. {e["text"]}')
+                out += [f'   - {s}' for s in e['sub']]
+            out.append('')
+    return '\n'.join(out)
+
+
+def toc_words(text):
+    return collections.Counter(re.findall(r'[A-Za-z0-9]+', text))
+
+
+def toc_check(chapters, stray):
+    """Structural problems that must go to review rather than be guessed."""
+    problems = [f'text on page {s["page"]} above the first heading: {s["text"]!r}' for s in stray]
+    for ch in chapters:
+        nums = [e['n'] for e in ch['entries']]
+        if nums and nums != list(range(1, len(nums) + 1)):
+            problems.append(f'{ch["heading"]}: entry numbers {nums} are not 1..{len(nums)}')
+    return problems
+
+
 TOC_TITLE = 'ADVANCED SQUAD LEADER RULEBOOK TABLE OF CONTENTS'
 CAMEL_RE = re.compile(r'\b[A-Za-z][a-z]{2,}[A-Z][a-z]{2,}\b')
 # registered chapter-banner crops with visible defects (observations only)
@@ -581,16 +728,16 @@ def build_toc(art, base, pdf, decisions, prefix):
     def lid():
         return f'{prefix}-{len(ledger) + 1:05d}'
 
-    chapters, stray = toc.extract(pdf.doc, art['startPage'], art['endPage'])
-    text = toc.render(chapters, IMAGE_PREFIX, TOC_TITLE) + '\n'
+    chapters, stray = toc_extract(pdf.doc, art['startPage'], art['endPage'])
+    text = toc_render(chapters, IMAGE_PREFIX, TOC_TITLE) + '\n'
 
     pdf_words = collections.Counter()
     for p in range(art['startPage'], art['endPage'] + 1):
-        for sp in toc._spans(pdf.doc[p - 1]):
-            pdf_words.update(toc.words(sp['text']))
+        for sp in toc_spans(pdf.doc[p - 1]):
+            pdf_words.update(toc_words(sp['text']))
     body = re.sub(r'<!--.*?-->|!\[[^\]]*\]\([^)]*\)', '', text, flags=re.S).replace(f'**{TOC_TITLE}**', '')
-    if toc.words(body) != pdf_words:
-        diff = (toc.words(body) - pdf_words) + (pdf_words - toc.words(body))
+    if toc_words(body) != pdf_words:
+        diff = (toc_words(body) - pdf_words) + (pdf_words - toc_words(body))
         sys.exit(f'{art["path"]}: rebuilt TOC words differ from the PDF: {dict(diff)}')
     base_images = set(re.findall(r'eASLRB_v3_01-p\d+-\d+\.png', base))
     new_images = set(re.findall(r'eASLRB_v3_01-p\d+-\d+\.png', text))
@@ -598,8 +745,8 @@ def build_toc(art, base, pdf, decisions, prefix):
         sys.exit(f'{art["path"]}: image set changed: {sorted(base_images ^ new_images)}')
 
     base_body = re.sub(r'<!--.*?-->|!\[[^\]]*\]\([^)]*\)', '', base, flags=re.S).replace(f'**{TOC_TITLE}**', '')
-    missing = pdf_words - toc.words(base_body)
-    extra = toc.words(base_body) - pdf_words
+    missing = pdf_words - toc_words(base_body)
+    extra = toc_words(base_body) - pdf_words
     for ch in chapters:
         letter = ch['heading'].split('.')[0] if re.match(r'^[A-Z]\.', ch['heading']) else None
         ledger.append({'id': lid(), 'rule': 'toc-rebuild', 'class': 'conversion-fix',
@@ -607,7 +754,7 @@ def build_toc(art, base, pdf, decisions, prefix):
                        'entries': len(ch['entries']),
                        'subEntries': sum(len(e['sub']) for e in ch['entries']),
                        'paragraph': bool(ch['para']),
-                       'icon': toc.ICONS.get(letter),
+                       'icon': TOC_ICONS.get(letter),
                        'basis': 'entries assigned to the nearest heading above them; '
                                 'left column read before right column'})
     ledger.append({'id': lid(), 'rule': 'toc-rebuild', 'class': 'observation',
@@ -618,7 +765,7 @@ def build_toc(art, base, pdf, decisions, prefix):
         ledger.append({'id': lid(), 'rule': 'image-crop', 'class': 'observation',
                        'image': img, 'note': note})
 
-    problems = toc.check(chapters, stray)
+    problems = toc_check(chapters, stray)
     for msg in problems:
         review.append({'id': f'{prefix}-R{len(review) + 1:04d}', 'rule': 'toc-structure',
                        'baseLine': 0, 'text': '', 'reason': msg})
@@ -697,11 +844,6 @@ def write_outputs(out, art, text, ledger, review, manifest):
     print(f'{name}: {dict(counts)} review {dict(rcounts)}')
 
 
-def lf_sha256(path):
-    """Digest of a text file with CRLF normalized, as committed."""
-    return hashlib.sha256(open(path, 'rb').read().replace(b'\r\n', b'\n')).hexdigest()
-
-
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--pdf', required=True, help='path to eASLRB_v3_01.pdf')
@@ -737,8 +879,6 @@ def main():
                  # LF-normalized so a CRLF checkout reports the committed digest
                  'sha256': hashlib.sha256(open(os.path.abspath(__file__), 'rb').read()
                                           .replace(b'\r\n', b'\n')).hexdigest(),
-                 'modules': {'toc.py': lf_sha256(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                                               'toc.py'))},
                  'pymupdf': pymupdf.VersionBind},
         'files': [],
     }

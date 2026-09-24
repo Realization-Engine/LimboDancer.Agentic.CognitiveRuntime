@@ -20,10 +20,7 @@
  "tool": {
   "path": "utils/asl_curated_edition/build_curated_edition.py",
   "version": "0.1.0",
-  "sha256": "60e9f80985319a219b33579ee06d25e15266f75cf10d6ee6824557c59d63a003",
-  "modules": {
-   "toc.py": "ccb67d2fd4a1c3ddf342313e08944aed1f756dd17e6f7bca42e184c79b282858"
-  },
+  "sha256": "de5610825de6525ab1c0d09a60d4922677c6a6d60b17e8010926bbb81fee7285",
   "pymupdf": "1.27.1"
  },
  "files": [
