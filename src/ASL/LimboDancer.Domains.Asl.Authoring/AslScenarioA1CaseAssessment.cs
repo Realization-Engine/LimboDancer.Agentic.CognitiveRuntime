@@ -92,7 +92,9 @@ public static class AslScenarioA1CaseAssessor
         {
             var ruleFragments = fragments.Where(fragment =>
                     fragment.Locator.NormalizedElementId == ruleId
-                    && fragment.Kind is SourceFragmentKind.RuleText or SourceFragmentKind.RuleContinuation)
+                    && fragment.Kind is SourceFragmentKind.RuleText
+                        or SourceFragmentKind.RuleContinuation
+                        or SourceFragmentKind.FigureReference)
                 .ToArray();
             if (!ruleFragments.Any(fragment => fragment.Kind == SourceFragmentKind.RuleText))
             {

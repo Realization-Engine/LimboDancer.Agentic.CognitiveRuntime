@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace LimboDancer.Domains.Asl.Authoring.Tests;
 
 public sealed class AslScenarioA1CaseAssessmentTests
@@ -35,6 +37,16 @@ public sealed class AslScenarioA1CaseAssessmentTests
             Assert.Contains(result.Blockers, blocker =>
                 blocker.Kind == AslScenarioA1CaseBlockerKind.SourceFragmentUnverified
                 && blocker.Reference == fragment.FragmentId);
+        }
+
+        foreach (var id in new[] { "A2.4", "B23.1" })
+        {
+            var figure = Assert.Single(manifests.Fragments, candidate =>
+                candidate.Locator.NormalizedElementId == id
+                && candidate.Kind == SourceFragmentKind.FigureReference);
+            Assert.Contains(result.Blockers, blocker =>
+                blocker.Kind == AslScenarioA1CaseBlockerKind.SourceFragmentUnverified
+                && blocker.Reference == figure.FragmentId);
         }
     }
 
@@ -74,5 +86,51 @@ public sealed class AslScenarioA1CaseAssessmentTests
         Assert.False(result.CanIssueDefinitiveRuling);
         Assert.Contains(result.Blockers, blocker =>
             blocker.Kind == AslScenarioA1CaseBlockerKind.DependencyAndSemanticReviewPending);
+    }
+
+    [Fact]
+    public void PdfComparisonEvidencePinsTenExactUnverifiedFragmentsAndTwoImages()
+    {
+        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var path = Path.Combine(RepositoryPaths.Root, "docs", "ASL", "SourceRegistry",
+            "asl-scenario-a1.first-case-pdf-comparison.json");
+        using var evidence = JsonDocument.Parse(File.ReadAllText(path));
+        var root = evidence.RootElement;
+        Assert.Equal(AslScenarioA1SourceInventory.PdfDigest,
+            root.GetProperty("pdfSha256").GetString());
+        Assert.Equal("pdf-comparison-complete-source-verification-pending",
+            root.GetProperty("status").GetString());
+        var records = root.GetProperty("records").EnumerateArray().ToArray();
+        Assert.Equal(10, records.Length);
+        foreach (var record in records)
+        {
+            var fragment = Assert.Single(manifests.Fragments, candidate =>
+                candidate.FragmentId == record.GetProperty("fragmentId").GetString());
+            Assert.Equal(fragment.ContentSha256, record.GetProperty("contentSha256").GetString());
+            Assert.Equal(fragment.SourceSha256, record.GetProperty("sourceSha256").GetString());
+            Assert.Equal(fragment.Locator.StartLine, record.GetProperty("startLine").GetInt32());
+            Assert.Equal(fragment.Locator.StartPage, record.GetProperty("conversionPage").GetInt32());
+            Assert.Equal("unverified", record.GetProperty("sourceVerificationStatus").GetString());
+            if (record.TryGetProperty("imagePath", out var imagePath))
+            {
+                Assert.Equal(SourceFragmentKind.FigureReference, fragment.Kind);
+                Assert.Contains(imagePath.GetString()!, fragment.Dependencies);
+                var image = Assert.Single(manifests.Registry.Artifacts, artifact =>
+                    artifact.Path.EndsWith(imagePath.GetString()!, StringComparison.Ordinal));
+                Assert.Equal(image.Sha256, record.GetProperty("imageSha256").GetString());
+                Assert.True(record.GetProperty("visuallyMatchesRenderedPdf").GetBoolean());
+            }
+            else
+            {
+                Assert.Equal(SourceFragmentKind.RuleText, fragment.Kind);
+                Assert.True(record.GetProperty("alphanumericSequenceMatch").GetBoolean());
+            }
+        }
+
+        Assert.Equal(2, records.Count(record => record.TryGetProperty("imagePath", out _)));
+        Assert.Equal(2, records.Count(record =>
+            record.GetProperty("normalizedRuleId").GetString() == "B23.1"
+            && record.GetProperty("conversionPage").GetInt32() == 134
+            && record.GetProperty("physicalPdfPage").GetInt32() == 135));
     }
 }
