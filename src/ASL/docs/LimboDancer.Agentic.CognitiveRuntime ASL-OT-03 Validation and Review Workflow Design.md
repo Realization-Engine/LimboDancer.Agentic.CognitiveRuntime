@@ -1,6 +1,6 @@
 # LimboDancer.Agentic.CognitiveRuntime ASL-OT-03 Validation and Review Workflow Design
 
-**Status:** Accepted; ASL-OT-03.1 through ASL-OT-03.3 implemented; ASL-OT-03.4 non-accepting review and readiness foundations in progress
+**Status:** Accepted; ASL-OT-03.1 through ASL-OT-03.3 implemented; ASL-OT-03.4 in progress, with a typed-semantic acceptance gate implemented (§19.8) while opaque proposals remain blocked
 
 **Date:** 2026-09-23
 

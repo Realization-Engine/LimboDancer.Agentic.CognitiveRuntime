@@ -1,6 +1,6 @@
 # ASL-OT-03.5 Conformance and ASL-OT-04 Admission Review
 
-**Status:** Draft; admission to ASL-OT-04 not approved  
+**Status:** Bounded ASL-OT-04 admission granted 2026-09-24 for the exact published Scenario A1 profile and declared synthetic use (see [Bounded ASL-OT-04 admission](#bounded-asl-ot-04-admission)); sections 1-5 record the earlier draft assessment  
 **Assessment date:** 2026-09-23  
 **Source baseline:** ASL 3.01 Chapters A-E, registered at source commit `a3254ff1d492dbdd28483d86f5b42437b48e80d4` under the historical `asl-easlrb-3.10-a-e` ID
 **Implementation baseline:** `decision-plane` commit `456872a56270bab59fadfaad8409e7c7a096be5e`
