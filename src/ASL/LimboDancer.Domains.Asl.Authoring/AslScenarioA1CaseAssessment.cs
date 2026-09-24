@@ -64,10 +64,8 @@ public static class AslScenarioA1CaseAssessor
             repositoryRoot, "docs", "ASL", "SourceRegistry",
             "asl-scenario-a1.backmatter-chart-pdf-comparison.json")));
         var expected = AslScenarioA1ChartReview.Evaluate(repositoryRoot, registry, comparison);
-        var identity = decision with { RuleBasis = expected.RuleBasis };
-        if (!identity.Equals(expected)
-            || decision.RuleBasis is null
-            || !decision.RuleBasis.SequenceEqual(expected.RuleBasis))
+        if (System.Text.Json.JsonSerializer.Serialize(decision)
+            != System.Text.Json.JsonSerializer.Serialize(expected))
         {
             throw new InvalidOperationException("The chart review does not match the pinned evidence.");
         }
