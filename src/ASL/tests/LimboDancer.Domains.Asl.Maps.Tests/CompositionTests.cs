@@ -282,3 +282,21 @@ public sealed class CompositionTests
             Height = height,
         };
 }
+
+public sealed class GeometryJsonTests
+{
+    [Fact]
+    public void StandardGeometryKeepsItsShortFormAndVaslLayoutsRoundTrip()
+    {
+        Assert.Equal("standard", Features.FeatureModelJson.GeometryJson(BoardGeometry.StandardGeomorphic)["kind"]);
+
+        var b = BoardGeometry.Vasl(17, 20, 56.3125, 64.5, 901, 1290, columnLetterOffset: 16);
+        var json = Features.CanonicalJson.Serialize(Features.FeatureModelJson.GeometryJson(b));
+        Assert.Equal("{\"columnLetterOffset\":16,\"gridHeight\":1290,\"gridWidth\":901,\"heightInHexes\":20,\"hexHeight\":\"64.5\",\"hexWidth\":\"56.3125\","
+            + "\"kind\":\"vasl\",\"rowNumberOffset\":0,\"widthInHexes\":17}", System.Text.Encoding.UTF8.GetString(json));
+        using var document = System.Text.Json.JsonDocument.Parse(json);
+        var read = Features.FeatureModelJson.ReadGeometry(document.RootElement);
+        Assert.Equal((17, 20, 56.3125, 64.5, 901, 1290, 16, 0),
+            (read.WidthInHexes, read.HeightInHexes, read.HexWidth, read.HexHeight, read.GridWidth, read.GridHeight, read.ColumnLetterOffset, read.RowNumberOffset));
+    }
+}

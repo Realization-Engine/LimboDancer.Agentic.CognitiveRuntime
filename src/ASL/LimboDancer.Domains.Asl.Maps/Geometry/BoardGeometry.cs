@@ -90,11 +90,6 @@ public sealed class BoardGeometry
         get;
     }
 
-    /// <summary>True when the geometry is the 33 by 10 standard geomorphic layout with standard names.</summary>
-    public bool IsStandardGeomorphic =>
-        WidthInHexes == 33 && HeightInHexes == 10 && HexWidth == StandardHexWidth && HexHeight == StandardHexHeight
-        && GridWidth == 1800 && GridHeight == 645 && ColumnLetterOffset == 0 && RowNumberOffset == 0;
-
     public int HexCount => Enumerable.Range(0, WidthInHexes).Sum(RowCount);
 
     /// <summary>

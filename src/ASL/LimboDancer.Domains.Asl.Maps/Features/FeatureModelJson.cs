@@ -152,15 +152,44 @@ public static class FeatureModelJson
         };
     }
 
+    /// <summary>
+    /// The geometry: kind "standard" with the board size for the standard hex, or kind "vasl" with every value of a VASL
+    /// layout (a/b, BFP double-width, and Deluxe boards, Model Design section 3.6). Hex sizes are written as their
+    /// shortest round-trip decimal text, since canonical JSON numbers are integers.
+    /// </summary>
     public static Dictionary<string, object?> GeometryJson(BoardGeometry geometry)
     {
         ArgumentNullException.ThrowIfNull(geometry);
+        if (IsStandard(geometry))
+        {
+            return new Dictionary<string, object?>
+            {
+                ["kind"] = "standard",
+                ["widthInHexes"] = geometry.WidthInHexes,
+                ["heightInHexes"] = geometry.HeightInHexes,
+            };
+        }
+
         return new Dictionary<string, object?>
         {
-            ["kind"] = "standard",
+            ["kind"] = "vasl",
             ["widthInHexes"] = geometry.WidthInHexes,
             ["heightInHexes"] = geometry.HeightInHexes,
+            ["hexWidth"] = geometry.HexWidth.ToString("R", CultureInfo.InvariantCulture),
+            ["hexHeight"] = geometry.HexHeight.ToString("R", CultureInfo.InvariantCulture),
+            ["gridWidth"] = geometry.GridWidth,
+            ["gridHeight"] = geometry.GridHeight,
+            ["columnLetterOffset"] = geometry.ColumnLetterOffset,
+            ["rowNumberOffset"] = geometry.RowNumberOffset,
         };
+    }
+
+    private static bool IsStandard(BoardGeometry geometry)
+    {
+        var standard = BoardGeometry.Standard(geometry.WidthInHexes, geometry.HeightInHexes);
+        return geometry.HexWidth == standard.HexWidth && geometry.HexHeight == standard.HexHeight && geometry.A1CenterX == standard.A1CenterX
+            && geometry.A1CenterY == standard.A1CenterY && geometry.GridWidth == standard.GridWidth && geometry.GridHeight == standard.GridHeight
+            && geometry.ColumnLetterOffset == 0 && geometry.RowNumberOffset == 0;
     }
 
     public static Dictionary<string, object?> Provenance(FeatureProvenance provenance)
@@ -203,12 +232,18 @@ public static class FeatureModelJson
     public static BoardGeometry ReadGeometry(JsonElement element)
     {
         var kind = element.GetProperty("kind").GetString();
-        if (kind != "standard")
+        var width = element.GetProperty("widthInHexes").GetInt32();
+        var height = element.GetProperty("heightInHexes").GetInt32();
+        return kind switch
         {
-            throw new JsonException($"Geometry kind '{kind}' is not supported.");
-        }
-
-        return BoardGeometry.Standard(element.GetProperty("widthInHexes").GetInt32(), element.GetProperty("heightInHexes").GetInt32());
+            "standard" => BoardGeometry.Standard(width, height),
+            "vasl" => BoardGeometry.Vasl(width, height,
+                double.Parse(element.GetProperty("hexWidth").GetString()!, NumberStyles.Float, CultureInfo.InvariantCulture),
+                double.Parse(element.GetProperty("hexHeight").GetString()!, NumberStyles.Float, CultureInfo.InvariantCulture),
+                element.GetProperty("gridWidth").GetInt32(), element.GetProperty("gridHeight").GetInt32(),
+                element.GetProperty("columnLetterOffset").GetInt32(), element.GetProperty("rowNumberOffset").GetInt32()),
+            _ => throw new JsonException($"Geometry kind '{kind}' is not supported."),
+        };
     }
 
     public static FeatureProvenance ReadProvenance(JsonElement element) => new(
