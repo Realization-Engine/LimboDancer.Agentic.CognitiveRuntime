@@ -7,8 +7,8 @@ This directory is the transition boundary between the legacy `LimboDancer.MCP` i
 | Path | Status | Purpose |
 | --- | --- | --- |
 | [`LimboDancer/`](./LimboDancer/) | Active production source | New `.NET 10` runtime solution, production projects, and tests. |
-| [`docs/`](./docs/) | Active documentation | Current runtime specifications, design guidance, implementation planning, and retained legacy reference documents. |
-| [`Legacy/`](./Legacy/) | Temporary legacy source | Previous `LimboDancer.MCP.*` projects retained only as behavioral and migration references. |
+| [`docs/`](./docs/) | Active documentation | Current runtime specifications, design guidance, and implementation planning. |
+| [`_Legacy/`](./_Legacy/) | Archived legacy source | Previous `LimboDancer.MCP.*` projects and their documentation, retained for archival purposes only. |
 
 The new production solution under `src/LimboDancer/` now contains the action-authority, diagnostic, execution-gate, audit, and tenant-safe State foundations; new-runtime executors for the four initial directed actions; a transport-neutral MCP interaction adapter; an independently runnable runtime Host; the autonomous Goal, observation, constraint, Decision, and evidence-backed domain-conclusion contracts; exact package, bounded observation, explicit entity-resolution, conclusion-resolution, registered-action, and semantic-precondition boundaries; a deterministic, audited Decision Plane; a deterministic proposal-only Reasoning boundary; a bounded Goal orchestration loop that revalidates every autonomous step through the common authority path; opt-in deterministic Effect Verification with explicit verified, partial, unverifiable, and contradicted outcomes; and tenant-scoped replay-capable evidence sufficient to reconstruct historical Decision contexts without retaining executable authorization. Autonomous admission remains deny-by-default until a trusted adapter supplies the authenticated principal and runtime budget.
 
