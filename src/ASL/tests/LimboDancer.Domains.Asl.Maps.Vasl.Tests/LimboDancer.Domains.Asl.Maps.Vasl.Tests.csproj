@@ -13,4 +13,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\LimboDancer.Domains.Asl.Maps.Vasl\LimboDancer.Domains.Asl.Maps.Vasl.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Oracle\*.hexfacts.json.gz" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

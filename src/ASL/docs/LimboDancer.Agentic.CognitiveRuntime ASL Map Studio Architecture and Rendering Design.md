@@ -34,7 +34,7 @@ src/ASL/
     LimboDancer.Domains.Asl.Maps.Rendering.Tests/
     LimboDancer.Domains.Asl.MapStudio.Tests/
   tools/
-    vasl-hexfact-oracle/                     Java F2 oracle (Maven; not in the .sln)
+    vasl-hexfact-oracle/                     Java F2 oracle (javac + Maven-resolved classpath; not in the .sln)
   boards/                                    committed authored board packages
 ```
 
