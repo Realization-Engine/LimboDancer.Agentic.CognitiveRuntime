@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Xml;
 using System.Xml.Linq;
+using LimboDancer.Domains.Asl.Maps.Composition;
 using LimboDancer.Domains.Asl.Maps.Terrain;
 
 namespace LimboDancer.Domains.Asl.Maps.Vasl;
@@ -9,15 +10,29 @@ namespace LimboDancer.Domains.Asl.Maps.Vasl;
 public sealed record SharedBoardMetadataResult(TerrainCatalog? Catalog, IReadOnlyList<MapDiagnostic> Diagnostics)
 {
     public bool Succeeded => Catalog is not null;
+
+    /// <summary>The LOS scenario-specific rules (<c>LOSSSRules</c>), empty when the file has none.</summary>
+    public LosSsRuleSet Rules { get; init; } = LosSsRuleSet.Empty;
 }
 
 /// <summary>
-/// Reads the <c>terrainTypes</c> section of VASL's <c>SharedBoardMetadata.xml</c>, following
-/// <c>VASL.build.module.map.boardArchive.SharedBoardMetadata.parseTerrainTypes</c>. Other sections
-/// (colors, SSR rules, counters) are outside version 1 scope and are not read.
+/// Reads the <c>terrainTypes</c> and <c>LOSSSRules</c> sections of VASL's <c>SharedBoardMetadata.xml</c>, following
+/// <c>SharedBoardMetadata.parseTerrainTypes</c> and <c>AbstractMetadata.parseLOSSSRules</c>. Colors and counter rules
+/// concern artwork and counters and are not read.
 /// </summary>
 public static class SharedBoardMetadataParser
 {
+    private static readonly Dictionary<string, LosSsRuleKind> RuleKinds = new(StringComparer.Ordinal)
+    {
+        ["ignore"] = LosSsRuleKind.Ignore,
+        ["customCode"] = LosSsRuleKind.CustomCode,
+        ["terrainMap"] = LosSsRuleKind.TerrainMap,
+        ["elevationMap"] = LosSsRuleKind.ElevationMap,
+        ["terrainToElevationMap"] = LosSsRuleKind.TerrainToElevationMap,
+        ["elevationToTerrainMap"] = LosSsRuleKind.ElevationToTerrainMap,
+        ["terrainToSelectElevationMap"] = LosSsRuleKind.TerrainToSelectElevationMap,
+    };
+
     private static readonly Dictionary<string, LosCategory> Categories = new(StringComparer.Ordinal)
     {
         ["HEXSIDE"] = LosCategory.Hexside,
@@ -88,9 +103,37 @@ public static class SharedBoardMetadataParser
             types.Add(type);
         }
 
+        var rules = ReadRules(document.Root!.Element("LOSSSRules"), diagnostics);
         return diagnostics.Exists(diagnostic => diagnostic.Severity == MapDiagnosticSeverity.Error)
             ? new SharedBoardMetadataResult(null, diagnostics)
-            : new SharedBoardMetadataResult(new TerrainCatalog(types), diagnostics);
+            : new SharedBoardMetadataResult(new TerrainCatalog(types), diagnostics) { Rules = rules };
+    }
+
+    // AbstractMetadata.parseLOSSSRules. VASL rejects the whole file for an invalid rule type; here the rule is skipped
+    // with a warning, so the terrain catalog stays usable and only that rule is unavailable.
+    private static LosSsRuleSet ReadRules(XElement? element, List<MapDiagnostic> diagnostics)
+    {
+        if (element is null)
+        {
+            return LosSsRuleSet.Empty;
+        }
+
+        var rules = new List<LosSsRule>();
+        foreach (var rule in element.Elements("LOSSSRule"))
+        {
+            var name = (string?)rule.Attribute("name");
+            var type = (string?)rule.Attribute("type");
+            if (name is null || type is null || !RuleKinds.TryGetValue(type, out var kind))
+            {
+                diagnostics.Add(new MapDiagnostic("VASL-CAT-006", MapDiagnosticSeverity.Warning,
+                    $"Invalid LOS scenario-specific rule type '{type}' for rule '{name}'."));
+                continue;
+            }
+
+            rules.Add(new LosSsRule(name, kind, (string?)rule.Attribute("fromValue") ?? string.Empty, (string?)rule.Attribute("toValue") ?? string.Empty));
+        }
+
+        return new LosSsRuleSet(rules);
     }
 
     private static TerrainType? ReadTerrainType(XElement element, List<MapDiagnostic> diagnostics)

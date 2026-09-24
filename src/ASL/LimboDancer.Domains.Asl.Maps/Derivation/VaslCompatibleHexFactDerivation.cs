@@ -48,18 +48,32 @@ public static class VaslCompatibleHexFactDerivation
         ArgumentNullException.ThrowIfNull(grid);
         ArgumentNullException.ThrowIfNull(catalog);
         ArgumentNullException.ThrowIfNull(annotations);
-        var context = new Context(grid, catalog, annotations);
-
-        // BoardArchive.addLOSDatatoVASLMap ends with resetHexTerrain, and ASLMap.addBoardsToMap runs it again.
-        for (var pass = 0; pass < 2; pass++)
+        var map = new VaslMapDerivation(grid.Geometry, catalog);
+        foreach (var hex in grid.Geometry.Hexes())
         {
-            foreach (var hex in context.Hexes)
-            {
-                ResetTerrain(context, hex);
-            }
+            map.SetStairway(hex, grid.HasStairway(hex));
         }
 
-        return new HexFactSet(grid.Geometry, Version, context.Hexes.Select(hex => hex.ToFacts()).ToArray());
+        map.ApplyAnnotations(annotations);
+
+        // BoardArchive.addLOSDatatoVASLMap ends with resetHexTerrain, and ASLMap.addBoardsToMap runs it again.
+        map.Pass(grid);
+        map.Pass(grid);
+        return map.Facts();
+    }
+
+    /// <summary>One <c>Hex.resetTerrain</c> call on one hex of a map, against the given grid.</summary>
+    internal static void ResetTerrain(TerrainGrid grid, TerrainCatalog catalog, IReadOnlyDictionary<HexIndex, HexState> hexes, HexState hex) =>
+        ResetTerrain(new Context(grid, catalog, hexes), hex);
+
+    /// <summary>One <c>Map.resetHexTerrain</c> pass: every hex in column-major order.</summary>
+    internal static void Pass(TerrainGrid grid, TerrainCatalog catalog, IReadOnlyList<HexState> order, IReadOnlyDictionary<HexIndex, HexState> hexes)
+    {
+        var context = new Context(grid, catalog, hexes);
+        foreach (var hex in order)
+        {
+            ResetTerrain(context, hex);
+        }
     }
 
     // Hex.resetTerrain
@@ -518,22 +532,21 @@ public static class VaslCompatibleHexFactDerivation
         return Math.Sqrt((dx * dx) + (dy * dy));
     }
 
+    // The grid-dependent view of a pass: the grid, its catalog, and per-hex caches of the grid's cells.
     private sealed class Context
     {
-        private readonly Dictionary<HexIndex, HexState> byIndex;
+        private readonly IReadOnlyDictionary<HexIndex, HexState> byIndex;
         private readonly Dictionary<HexIndex, int[]> firstOccurrence = [];
         private readonly Dictionary<HexIndex, bool> boxHasInherent = [];
         private readonly bool[] inherentCodes = new bool[256];
 
-        public Context(TerrainGrid grid, TerrainCatalog catalog, HexsideAnnotations annotations)
+        public Context(TerrainGrid grid, TerrainCatalog catalog, IReadOnlyDictionary<HexIndex, HexState> hexes)
         {
             Grid = grid;
             Catalog = catalog;
             Geometry = grid.Geometry;
             OpenGround = catalog["Open Ground"];
-            var initial = catalog.TryGet(0, out var codeZero) ? codeZero : OpenGround;
-            Hexes = Geometry.Hexes().Select(index => new HexState(Geometry, grid, annotations, index, initial)).ToArray();
-            byIndex = Hexes.ToDictionary(hex => hex.Index);
+            byIndex = hexes;
             foreach (var type in catalog.Types)
             {
                 inherentCodes[type.Code] = type.IsInherent;
@@ -556,11 +569,6 @@ public static class VaslCompatibleHexFactDerivation
         }
 
         public TerrainType OpenGround
-        {
-            get;
-        }
-
-        public IReadOnlyList<HexState> Hexes
         {
             get;
         }
@@ -621,7 +629,7 @@ public static class VaslCompatibleHexFactDerivation
         public int ElevationAt(int x, int y) => Geometry.ContainsCell(x, y) ? Grid.ElevationAt(x, y) : 0;
     }
 
-    private sealed class LocationState
+    internal sealed class LocationState
     {
         public int Level
         {
@@ -654,21 +662,17 @@ public static class VaslCompatibleHexFactDerivation
         public LocationFacts ToFacts() => new(Level, Terrain, Depression);
     }
 
-    private sealed class HexState
+    internal sealed class HexState
     {
-        public HexState(BoardGeometry geometry, TerrainGrid grid, HexsideAnnotations annotations, HexIndex index, TerrainType initial)
+        public HexState(BoardGeometry geometry, HexIndex index, TerrainType? initial)
         {
             Index = index;
             Name = geometry.NameOf(index);
             CenterPoint = geometry.CenterPoint(index);
             Edges = HexsideDirections.All.Select(side => geometry.EdgeSamplePoint(index, side)).ToArray();
             Border = new JavaPolygon(geometry.Border(index));
-            Stairway = grid.HasStairway(index);
             Center = new LocationState { Terrain = initial };
             Hexsides = Enumerable.Range(0, 6).Select(_ => new LocationState { Terrain = initial }).ToArray();
-            Slope = Flags(annotations.Slopes);
-            RailroadEmbankment = Flags(annotations.RailroadEmbankments);
-            PartialOrchard = Flags(annotations.PartialOrchards);
         }
 
         public HexIndex Index
@@ -678,7 +682,7 @@ public static class VaslCompatibleHexFactDerivation
 
         public HexName Name
         {
-            get;
+            get; set;
         }
 
         public GridPoint CenterPoint
@@ -723,20 +727,11 @@ public static class VaslCompatibleHexFactDerivation
 
         public bool[] Cliff { get; } = new bool[6];
 
-        public bool[] Slope
-        {
-            get;
-        }
+        public bool[] Slope { get; } = new bool[6];
 
-        public bool[] RailroadEmbankment
-        {
-            get;
-        }
+        public bool[] RailroadEmbankment { get; } = new bool[6];
 
-        public bool[] PartialOrchard
-        {
-            get;
-        }
+        public bool[] PartialOrchard { get; } = new bool[6];
 
         public BridgeFacts? Bridge
         {
@@ -774,20 +769,6 @@ public static class VaslCompatibleHexFactDerivation
                 PartialOrchard[side],
                 Hexsides[side].Depression)).ToArray();
             return new HexFacts(Name, Index, BaseLevel, Stairway, Center.ToFacts(), locations, hexsides, Bridge, CenterSource);
-        }
-
-        private bool[] Flags(IReadOnlyDictionary<HexName, IReadOnlySet<HexsideDirection>> source)
-        {
-            var flags = new bool[6];
-            if (source.TryGetValue(Name, out var sides))
-            {
-                foreach (var side in sides)
-                {
-                    flags[(int)side] = true;
-                }
-            }
-
-            return flags;
         }
     }
 }

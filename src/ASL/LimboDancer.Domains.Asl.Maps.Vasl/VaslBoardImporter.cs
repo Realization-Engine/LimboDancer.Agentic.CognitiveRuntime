@@ -73,15 +73,24 @@ public sealed record BoardScopeResult(BoardScope Scope, BoardMetadata? Metadata,
 /// </summary>
 public static class VaslBoardImporter
 {
-    public const string ImporterVersion = "1.0.0";
+    public const string ImporterVersion = "1.1.0";
 
-    private static readonly Dictionary<string, double> StandardGeometryValues = new(StringComparer.Ordinal)
-    {
-        ["hexWidth"] = 56.25,
-        ["hexHeight"] = 64.5,
-        ["A1CenterX"] = 0.0,
-        ["A1CenterY"] = 32.25,
-    };
+    /// <summary>The standard geomorphic hex size, which VASL uses when a board's metadata gives none.</summary>
+    public const double StandardHexWidth = 1800.0 / 32.0;
+
+    public const double StandardHexHeight = 645.0 / 10.0;
+
+    // ASLMap.buildVASLMap sends boards with these names to board-specific HASL code paths.
+    private static readonly HashSet<string> HaslBoards = new(StringComparer.Ordinal) { "RBv3", "RO", "DaE", "SG", "HT", "VotG", "SaPF", "FB" };
+
+    // Map.createtheHexGrid lays out hexes only for these A1 center heights; ASLMap passes half the hex height.
+    private static readonly double[] LaidOutA1CenterY = [32.25, 32.235, -612.75, 97.1];
+
+    // The A1CenterX of b boards (1b to 26b and similar), which VASL names Q1 onward.
+    private const double BBoardA1CenterX = -901;
+
+    // The A1CenterY of the lower boards of BFP double-width pairs, which VASL names A11 onward.
+    private const double DoubleWidthA1CenterY = -612.75;
 
     /// <summary>
     /// Decides version 1 scope from the board's metadata only, without reading LOSData. The board library uses this
@@ -139,11 +148,10 @@ public static class VaslBoardImporter
             return Fail(diagnostics, Scope($"bd{source.BoardName} has no LOSData."));
         }
 
-        var geometry = BoardGeometry.Standard(metadata.Width, metadata.Height);
         LosDataDecodeResult decoded;
         using (var stream = new MemoryStream(losDataBytes))
         {
-            decoded = LosDataCodec.Decode(stream, geometry);
+            decoded = LosDataCodec.Decode(stream, header => GeometryFor(metadata, header));
         }
 
         diagnostics.AddRange(decoded.Diagnostics);
@@ -159,6 +167,7 @@ public static class VaslBoardImporter
                 $"bd{source.BoardName} uses terrain codes absent from the catalog: {string.Join(", ", missingCodes)}."));
         }
 
+        var geometry = grid.Geometry;
         ReportUnknownHexes(metadata, geometry, diagnostics);
         var overrideChecks = CheckBuildingOverrides(metadata, grid, catalog, diagnostics);
         var provenance = new BoardProvenance(
@@ -174,38 +183,93 @@ public static class VaslBoardImporter
         return new BoardImportResult(board, diagnostics);
     }
 
-    /// <summary>Why a board is outside version 1 scope, or null when it is a standard geomorphic board.</summary>
+    /// <summary>
+    /// Why a board is outside the supported scope, or null when VASL lays it out as a geomorphic board (VASL Board
+    /// Ingestion Design, sections 1 and 11.1): its own hex size, the A1 center dot at (0, half a hex height), odd
+    /// columns one hex longer, and names starting at A1, at Q1 for b boards, or at A11 for the lower double-width boards.
+    /// This covers 33 by 10 boards, a/b half boards, and the BFP double-width and Deluxe boards. HASL maps, which VASL
+    /// builds with board-specific code, and boards whose metadata places A1 where VASL's layout does not are out of scope.
+    /// </summary>
     public static string? ScopeProblem(BoardMetadata metadata)
     {
         ArgumentNullException.ThrowIfNull(metadata);
-        if (metadata.Width != 33 || metadata.Height != 10)
+        if (HaslBoards.Contains(metadata.Name))
         {
-            return $"{metadata.Width} by {metadata.Height} hexes is not a standard geomorphic board.";
+            return $"{metadata.Name} is a HASL map that VASL builds with board-specific code.";
         }
 
-        foreach (var (name, value) in metadata.GeometryAttributes)
+        if (metadata.Width < 2 || metadata.Height < 1)
         {
-            if (StandardGeometryValues.TryGetValue(name, out var standard))
-            {
-                if (!double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed) || parsed != standard)
-                {
-                    return $"custom geometry {name}=\"{value}\".";
-                }
-            }
-            else if (name == "altHexGrain")
-            {
-                if (!JdomBoolean.TryParse(value, out var alternate) || alternate)
-                {
-                    return "alternate hex grain.";
-                }
-            }
-            else if (name == "HexGridConfig")
-            {
-                return $"hex grid configuration \"{value}\".";
-            }
+            return $"{metadata.Width} by {metadata.Height} hexes is not a board size VASL lays out.";
+        }
+
+        if (Attribute(metadata, "altHexGrain") is { } grain && (!JdomBoolean.TryParse(grain, out var alternate) || alternate))
+        {
+            return "alternate hex grain.";
+        }
+
+        if (!TryGeometry(metadata, "hexWidth", StandardHexWidth, out var hexWidth) || hexWidth <= 0)
+        {
+            return $"custom geometry hexWidth=\"{Attribute(metadata, "hexWidth")}\".";
+        }
+
+        if (!TryGeometry(metadata, "hexHeight", StandardHexHeight, out var hexHeight) || hexHeight <= 0)
+        {
+            return $"custom geometry hexHeight=\"{Attribute(metadata, "hexHeight")}\".";
+        }
+
+        if (!LaidOutA1CenterY.Contains(hexHeight / 2.0))
+        {
+            return $"custom geometry hexHeight=\"{Attribute(metadata, "hexHeight")}\": VASL lays out no hexes for an A1 center at {hexHeight / 2.0}.";
+        }
+
+        if (!TryGeometry(metadata, "A1CenterX", 0.0, out var a1CenterX) || (a1CenterX != 0.0 && a1CenterX != BBoardA1CenterX))
+        {
+            return $"custom geometry A1CenterX=\"{Attribute(metadata, "A1CenterX")}\".";
+        }
+
+        // VASL's layout puts A1 at half the hex height whatever the metadata says, so a stated value must agree with it.
+        if (!TryGeometry(metadata, "A1CenterY", hexHeight / 2.0, out var a1CenterY)
+            || (Math.Abs(a1CenterY - (hexHeight / 2.0)) > 0.5 && a1CenterY != DoubleWidthA1CenterY))
+        {
+            return $"custom geometry A1CenterY=\"{Attribute(metadata, "A1CenterY")}\".";
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// The layout VASL's runtime gives an in-scope board with this LOSData header. The grid size comes from the header;
+    /// it must reach every hex center dot, or the geometry is given the size the hexes imply and decoding reports the
+    /// difference (<c>VASL-LOS-005</c>).
+    /// </summary>
+    public static BoardGeometry GeometryFor(BoardMetadata metadata, LosDataHeader header)
+    {
+        ArgumentNullException.ThrowIfNull(metadata);
+        TryGeometry(metadata, "hexWidth", StandardHexWidth, out var hexWidth);
+        TryGeometry(metadata, "hexHeight", StandardHexHeight, out var hexHeight);
+        TryGeometry(metadata, "A1CenterX", 0.0, out var a1CenterX);
+        TryGeometry(metadata, "A1CenterY", hexHeight / 2.0, out var a1CenterY);
+        var impliedWidth = (int)Math.Ceiling((metadata.Width - 1) * hexWidth);
+        var impliedHeight = (int)Math.Ceiling(metadata.Height * hexHeight);
+        var reachesCenters = header.GridWidth >= impliedWidth - (hexWidth / 2.0) && header.GridWidth <= impliedWidth + hexWidth
+            && header.GridHeight >= impliedHeight - (hexHeight / 2.0) && header.GridHeight <= impliedHeight + hexHeight;
+        return BoardGeometry.Vasl(metadata.Width, metadata.Height, hexWidth, hexHeight,
+            reachesCenters ? header.GridWidth : impliedWidth,
+            reachesCenters ? header.GridHeight : impliedHeight,
+            a1CenterX == BBoardA1CenterX ? 16 : 0,
+            a1CenterY == DoubleWidthA1CenterY ? 10 : 0);
+    }
+
+    private static string? Attribute(BoardMetadata metadata, string name) =>
+        metadata.GeometryAttributes.TryGetValue(name, out var value) ? value : null;
+
+    // BoardArchive getters: a missing attribute takes the standard value.
+    private static bool TryGeometry(BoardMetadata metadata, string name, double standard, out double value)
+    {
+        value = standard;
+        return Attribute(metadata, name) is not { } text
+            || double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value);
     }
 
     private static void ReportUnknownHexes(BoardMetadata metadata, BoardGeometry geometry, List<MapDiagnostic> diagnostics)

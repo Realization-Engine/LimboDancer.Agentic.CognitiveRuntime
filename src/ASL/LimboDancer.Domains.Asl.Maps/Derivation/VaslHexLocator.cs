@@ -3,21 +3,26 @@ using LimboDancer.Domains.Asl.Maps.Geometry;
 namespace LimboDancer.Domains.Asl.Maps.Derivation;
 
 /// <summary>
-/// VASL's pixel-to-hex lookup, <c>Map.gridToHex</c>, as the LOS editor runs it when it creates <c>LOSData</c>:
-/// the map is built with the "Normal" grid configuration (<c>LOSDataEditor.createNewLOSData</c>). The compiler's cliff
-/// and sunken-road post-passes use it, so compiled grids follow the editor's conventions exactly. Quirks are kept:
-/// only the "grey area" between columns tests polygon containment, and indexing errors return null.
+/// VASL's pixel-to-hex lookup, <c>Map.gridToHex</c>. By default it runs as the LOS editor runs it when it creates
+/// <c>LOSData</c>: the map is built with the "Normal" grid configuration (<c>LOSDataEditor.createNewLOSData</c>). The
+/// compiler's cliff and sunken-road post-passes use it, so compiled grids follow the editor's conventions exactly. With
+/// <c>runtime</c> set it runs as the game runtime's configuration <c>HalfHexWidthLeftHexFullHeight</c> does, which
+/// skips the "Normal" branch; composition and scenario-specific rules use that. Quirks are kept: only the "grey area"
+/// between columns tests polygon containment, and indexing errors return null.
 /// </summary>
 public sealed class VaslHexLocator
 {
     private readonly BoardGeometry geometry;
+    private readonly bool runtime;
     private readonly JavaPolygon[][] borders;
     private readonly JavaPolygon[][] extendedBorders;
 
-    public VaslHexLocator(BoardGeometry geometry)
+    public VaslHexLocator(BoardGeometry geometry, bool runtime = false)
     {
         ArgumentNullException.ThrowIfNull(geometry);
         this.geometry = geometry;
+        this.runtime = runtime;
+        var extension = geometry.HexWidth > 168 && geometry.HexHeight > 194 ? 2 : 1;
         borders = new JavaPolygon[geometry.WidthInHexes][];
         extendedBorders = new JavaPolygon[geometry.WidthInHexes][];
         for (var column = 0; column < geometry.WidthInHexes; column++)
@@ -28,7 +33,7 @@ public sealed class VaslHexLocator
             {
                 var hex = new HexIndex(column, row);
                 borders[column][row] = new JavaPolygon(geometry.Border(hex));
-                extendedBorders[column][row] = new JavaPolygon(ExtendedBorder(geometry.Vertices(hex)));
+                extendedBorders[column][row] = new JavaPolygon(ExtendedBorder(geometry.Vertices(hex), extension));
             }
         }
     }
@@ -102,7 +107,7 @@ public sealed class VaslHexLocator
                     return new HexIndex(column - 1, row + 1);
                 }
             }
-            else if (column % 2 == 0)
+            else if (column % 2 == 0 && !runtime)
             {
                 // The "Normal" configuration branch.
                 if (column + 1 < Columns && row + 1 < Rows(column + 1))
@@ -152,14 +157,14 @@ public sealed class VaslHexLocator
 
     private bool Contains(int column, int row, int x, int y) => borders[column][row].Contains(x, y);
 
-    // Hex.initHexNew: the extended border truncates each vertex and moves it one pixel outward.
-    private static GridPoint[] ExtendedBorder(IReadOnlyList<PixelPoint> vertices)
+    // Hex.initHexNew: the extended border truncates each vertex and moves it outward, two pixels on Deluxe hexes.
+    private static GridPoint[] ExtendedBorder(IReadOnlyList<PixelPoint> vertices, int extension)
     {
         (int Dx, int Dy)[] offsets = [(-1, -1), (1, -1), (1, 0), (1, 1), (-1, 1), (-1, 0)];
         var points = new GridPoint[6];
         for (var index = 0; index < 6; index++)
         {
-            points[index] = new GridPoint((int)vertices[index].X + offsets[index].Dx, (int)vertices[index].Y + offsets[index].Dy);
+            points[index] = new GridPoint((int)vertices[index].X + (offsets[index].Dx * extension), (int)vertices[index].Y + (offsets[index].Dy * extension));
         }
 
         return points;
