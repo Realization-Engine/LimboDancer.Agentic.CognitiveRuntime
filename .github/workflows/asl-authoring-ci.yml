@@ -6,6 +6,7 @@ on:
       - decision-plane
     paths:
       - "src/ASL/**"
+      - "src/LimboDancer/LimboDancer.Host/**"
       - "utils/pdf_to_markdown.py"
       - "docs/ASL/Rulebook_Markdown/**"
       - "docs/ASL/SourceRegistry/**"
@@ -16,6 +17,7 @@ on:
   pull_request:
     paths:
       - "src/ASL/**"
+      - "src/LimboDancer/LimboDancer.Host/**"
       - "utils/pdf_to_markdown.py"
       - "docs/ASL/Rulebook_Markdown/**"
       - "docs/ASL/SourceRegistry/**"
