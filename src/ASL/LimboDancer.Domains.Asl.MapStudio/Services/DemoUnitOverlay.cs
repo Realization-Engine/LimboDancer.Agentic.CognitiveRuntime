@@ -19,6 +19,8 @@ public sealed record DemoUnitOverlay(string Svg, string FixtureId, string BoardV
 /// <summary>Read-only, explicitly synthetic counters. Their positions are never game-state observations.</summary>
 public static class DemoUnitOverlayBuilder
 {
+    private static readonly JsonSerializerOptions FixtureJsonOptions = new(JsonSerializerDefaults.Web);
+
     public static DemoUnitOverlay? Load(StudioBoard board)
     {
         ArgumentNullException.ThrowIfNull(board);
@@ -33,7 +35,7 @@ public static class DemoUnitOverlayBuilder
         using var buffer = new MemoryStream();
         stream.CopyTo(buffer);
         var bytes = buffer.ToArray();
-        var fixture = JsonSerializer.Deserialize<DemoUnitFixture>(bytes, new JsonSerializerOptions(JsonSerializerDefaults.Web))
+        var fixture = JsonSerializer.Deserialize<DemoUnitFixture>(bytes, FixtureJsonOptions)
             ?? throw new InvalidDataException("The bd01 demo fixture is empty.");
         var hash = Convert.ToHexStringLower(SHA256.HashData(bytes));
         return Build(board.Ref, board.Version, board.Render.Grid.Geometry, fixture, hash);
