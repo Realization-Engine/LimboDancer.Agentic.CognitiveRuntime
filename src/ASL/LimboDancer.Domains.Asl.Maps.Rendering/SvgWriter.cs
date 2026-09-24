@@ -56,8 +56,8 @@ public sealed class SvgWriter
         return builder.ToString();
     }
 
-    /// <summary>An exact number: integers as written, other values only when they are exact multiples of 1/64.</summary>
-    public static string Number(double value) => FixedPoint.FromExactPixels(value).ToString();
+    /// <summary>A number in exact decimal form: the value rounded to the nearest 1/64 pixel, which leaves standard geometry exact.</summary>
+    public static string Number(double value) => FixedPoint.FromPixels(value).ToString();
 
     public static string Number(int value) => value.ToString(CultureInfo.InvariantCulture);
 

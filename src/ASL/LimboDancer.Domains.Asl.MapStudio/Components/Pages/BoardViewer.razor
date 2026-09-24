@@ -30,11 +30,25 @@ else if (board is null)
                     View
                     <select value="@BoardRenderer.ViewName(view)" @onchange="ChangeView">
                         <option value="exact">Exact</option>
-                        <option value="styled">Styled</option>
+                        @if (board.HasStyled)
+                        {
+                            <option value="styled">Styled</option>
+                        }
                         <option value="hexfacts">Hex facts</option>
-                        <option value="comparison">Comparison</option>
+                        @if (board.HasStyled)
+                        {
+                            <option value="comparison">Comparison</option>
+                        }
                     </select>
                 </label>
+                @if (board.Ref.Kind == BoardRefKind.Vasl)
+                {
+                    <a href="@($"maps?placements={Uri.EscapeDataString(board.Ref.VaslBoardName + "@0,0")}")">Compose a map</a>
+                }
+                else if (board.Composition is not null)
+                {
+                    <a href="@($"maps?edit={board.Ref.Value}")">Edit map</a>
+                }
                 @if (view == BoardView.Comparison)
                 {
                     <label>
@@ -118,7 +132,7 @@ else if (board is null)
             {
                 <p class="muted">Hovering. Click to keep this hex.</p>
             }
-            <HexInspector Board="board.Ref" Facts="facts" Grid="board.Render.Grid" Catalog="board.Catalog"
+            <HexInspector Board="board.Ref" Facts="facts" Grid="board.Render.Grid" Catalog="board.Catalog" LocationText="@board.LocationOf(facts)"
                           Model="StyledModel" Validation="board.Validation" OnCopy="CopyLocation" />
         }
         else
@@ -138,6 +152,17 @@ else if (board is null)
             <dl>
                 <dt>Version</dt>
                 <dd><code>@board.Version[..12]</code></dd>
+                @if (board.Composition is { } composition)
+                {
+                    <dt>Boards</dt>
+                    <dd><code>@string.Join(" ", composition.Placements)</code></dd>
+                    <dt>Size</dt>
+                    <dd>@composition.Map.Geometry.WidthInHexes by @composition.Map.Geometry.HeightInHexes hexes</dd>
+                    <dt>F2</dt>
+                    <dd class="@(board.F2 is { Passed: true } ? "pass" : board.F2 is null ? "muted" : "fail")">
+                        @(board.F2 is null ? "no oracle scenario" : board.F2.Passed ? "Pass" : $"{board.F2.Differences.Count} differences")
+                    </dd>
+                }
                 @if (board.Provenance is { } provenance)
                 {
                     <dt>VASL commit</dt>
@@ -230,6 +255,10 @@ else if (board is null)
         if (board.IsAuthored)
         {
             view = BoardView.Styled;
+        }
+        else if (!board.HasStyled && view is BoardView.Styled or BoardView.Comparison)
+        {
+            view = BoardView.Exact;
         }
 
         demoOverlay = DemoUnitOverlayBuilder.Load(board);

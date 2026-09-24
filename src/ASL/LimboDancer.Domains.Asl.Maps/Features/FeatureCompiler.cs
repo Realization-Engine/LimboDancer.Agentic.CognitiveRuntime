@@ -136,7 +136,7 @@ public static class FeatureCompiler
         var index = (int)side.Side;
         var a = vertices[index];
         var b = vertices[(index + 1) % 6];
-        return (FixedVector.FromExactPixels(a.X, a.Y), FixedVector.FromExactPixels(b.X, b.Y));
+        return (FixedVector.FromPixels(a.X, a.Y), FixedVector.FromPixels(b.X, b.Y));
     }
 
     private static FixedVector Lerp(FixedVector from, FixedVector to, int sixtyFourths) => new(

@@ -1,0 +1,37 @@
+# F2 oracle scenarios (VASL Board Ingestion Design, section 11). Each line is "name: placement ...", where a placement
+# is board@column,row, optionally /r for a reversed board and [Rule,...] for LOS scenario-specific rules in VASL's order.
+# tools/vasl-hexfact-oracle/generate-fixtures.ps1 -Scenarios writes name.scenario.hexfacts.json.gz beside this file.
+
+# Reversed boards, seams, and board slots
+bd01r: 01@0,0/r
+bd02-bd03: 02@0,0 03@1,0
+bd20-bd21r-bd22: 20@0,0 21@1,0/r 22@2,0
+bd04-over-bd05: 04@0,0 05@0,1
+bd10-bd11r-over-bd12r-bd13: 10@0,0 11@1,0/r 12@0,1/r 13@1,1
+bd1a-bd1b: 1a@0,0 1b@1,0
+bd1ar: 1a@0,0/r
+bdBFPDW1a-over-bdBFPDW1b: BFPDW1a@0,0 BFPDW1b@0,1
+bda-bdb: a@0,0 b@1,0
+bd38-bd26: 38@0,0 26@1,0
+bd37-over-bd27: 37@0,0 27@0,1
+
+# Scenario-specific rules on one board
+bd12-terrain-rules: 12@0,0[BrushToOpenGround,LightWoods,Level2ToLevel1,NoWalls,OrchardOutOfSeason]
+bd13-elevation-rules: 13@0,0[MarshToLevel1,Level_1ToWoods,Marsh0ToLevel0]
+bd20-buildings: 20@0,0[AllBuildingsLevel1,NoStairwells,RowhouseBarsToBuildings]
+bd21-rowhouses-open: 21@0,0[RowhouseBarsToOpenGround]
+bd24-bridges-roads: 24@0,0[NoBridge,RoadsToPaths]
+bd07-swamp: 07@0,0[SwampToSwampPattern,Bamboo]
+bd17-pacific: 17@0,0[Bamboo,PalmTrees]
+bd34-jungle: 34@0,0[DenseJungle,SwampToSwampPattern]
+bd02-no-cliffs: 02@0,0[NoCliffs]
+
+# A terrain-to-elevation rule resets the hexes in the hex phase, so later hex rules see derived hexes
+bd24-reset-then-roads: 24@0,0[GrainToLevel1,RoadsToPaths,NoBridge,AllBuildingsLevel1]
+bd14-reset-then-bamboo: 14@0,0[GrainToLevel1,Bamboo,WoodsToBrush]
+bd34-reset-then-roads: 34@0,0[GrainToLevel1,RoadsToPaths]
+
+# Rules on a later board act on the whole map, including the reset hexes of earlier boards
+bd22-bd23-rules: 22@0,0 23@1,0[NoBridge,RoadsToPaths,AllBuildingsLevel1,Bamboo]
+bd32r-bd36-rules: 32@0,0/r 36@1,0[DenseJungle,SwampToSwampPattern,NoStairwells]
+bd32-bd34-roads: 32@0,0 34@1,0[NoWoodsRoads]

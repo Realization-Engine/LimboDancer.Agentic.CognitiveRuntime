@@ -17,13 +17,18 @@ The VASL checkout. Defaults to the AslMaps__VaslRoot environment variable.
 .PARAMETER Boards
 VASL board names such as 01 or BFPA, as separate arguments or a comma-separated list. Quote them within
 PowerShell ('01','02'), where an unquoted 01 is read as the number 1. Defaults to the boards
-that already have fixtures.
+that already have fixtures. With -Scenarios, these are scenario names instead, and default to every scenario.
+
+.PARAMETER Scenarios
+Generates map scenario fixtures from Oracle/Scenarios/scenarios.txt into Oracle/Scenarios: placed boards,
+reversed boards, and LOS scenario-specific rules (VASL Board Ingestion Design, section 11).
 #>
 [CmdletBinding(PositionalBinding = $false)]
 param(
     [Parameter(Position = 0, ValueFromRemainingArguments)]
     [string[]] $Boards,
-    [string] $VaslRoot = $env:AslMaps__VaslRoot
+    [string] $VaslRoot = $env:AslMaps__VaslRoot,
+    [switch] $Scenarios
 )
 
 $ErrorActionPreference = 'Stop'
@@ -35,9 +40,17 @@ $VaslRoot = (Resolve-Path $VaslRoot).Path
 $Boards = @($Boards | ForEach-Object { $_ -split ',' } | Where-Object { $_ })
 $fixtures = Join-Path $PSScriptRoot '../../tests/LimboDancer.Domains.Asl.Maps.Vasl.Tests/Oracle'
 $fixtures = (Resolve-Path $fixtures).Path
-if (-not $Boards) {
-    $Boards = Get-ChildItem $fixtures -Filter 'bd*.hexfacts.json.gz' |
-        ForEach-Object { $_.Name.Substring(2, $_.Name.IndexOf('.') - 2) }
+if ($Scenarios) {
+    $fixtures = Join-Path $fixtures 'Scenarios'
+    $arguments = @('--scenarios', (Join-Path $fixtures 'scenarios.txt')) + $Boards
+}
+else {
+    if (-not $Boards) {
+        $Boards = Get-ChildItem $fixtures -Filter 'bd*.hexfacts.json.gz' |
+            ForEach-Object { $_.Name.Substring(2, $_.Name.IndexOf('.') - 2) }
+    }
+
+    $arguments = $Boards
 }
 
 $work = Join-Path ([IO.Path]::GetTempPath()) ('vasl-hexfact-oracle-' + [Guid]::NewGuid().ToString('N'))
@@ -60,7 +73,7 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Compiling the oracle failed.' }
 
     $classpath = "$work/classes" + [IO.Path]::PathSeparator + $dependencies
-    & java '-Djava.awt.headless=true' -cp $classpath HexFactOracle $VaslRoot "$work/out" @Boards
+    & java '-Djava.awt.headless=true' -cp $classpath HexFactOracle $VaslRoot "$work/out" @arguments
     if ($LASTEXITCODE -ne 0) { throw 'The oracle reported failures.' }
 
     foreach ($json in Get-ChildItem "$work/out" -Filter '*.hexfacts.json') {

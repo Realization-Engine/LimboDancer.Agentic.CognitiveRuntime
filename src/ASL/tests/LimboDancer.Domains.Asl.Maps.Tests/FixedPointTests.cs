@@ -27,6 +27,14 @@ public sealed class FixedPointTests
         Assert.Throws<ArgumentOutOfRangeException>(() => FixedPoint.FromExactPixels(Math.Cos(Math.PI / 6)));
     }
 
+    [Theory]
+    [InlineData(56.25, 3600)]
+    [InlineData(37.541666666666664, 2403)]
+    [InlineData(0.0078125, 1)]
+    [InlineData(-0.0078125, -1)]
+    [InlineData(-0.0078, 0)]
+    public void GeometryRoundsToTheNearestSixtyFourthAwayFromZero(double pixels, int raw) => Assert.Equal(raw, FixedPoint.FromPixels(pixels).Raw);
+
     [Fact]
     public void EverySixtyFourthFormatsExactly()
     {

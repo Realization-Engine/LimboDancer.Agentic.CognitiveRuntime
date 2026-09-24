@@ -397,3 +397,19 @@ input.board-name {
 table.samples td {
     font-variant-numeric: tabular-nums;
 }
+
+table.placements input[type="number"] {
+    width: 4rem;
+}
+
+ol.rules {
+    margin: 0.3rem 0;
+    padding-left: 1.5rem;
+    font-size: 0.9rem;
+}
+
+textarea.placements-text {
+    width: 100%;
+    max-width: 48rem;
+    font-family: ui-monospace, Consolas, monospace;
+}

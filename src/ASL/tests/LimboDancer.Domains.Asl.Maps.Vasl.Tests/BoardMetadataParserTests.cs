@@ -84,12 +84,26 @@ public sealed class BoardMetadataParserTests
         Assert.Null(VaslBoardImporter.ScopeProblem(metadata));
     }
 
+    // Boards VASL lays out as geomorphic are in scope whatever their size or hex size (VASL Board Ingestion Design, section 11.1).
     [Theory]
-    [InlineData("width=\"33\"", "width=\"17\"", "not a standard geomorphic board")]
-    [InlineData("height=\"10\"", "height=\"10\" hexWidth=\"56.3125\"", "custom geometry hexWidth")]
-    [InlineData("height=\"10\"", "height=\"10\" A1CenterY=\"-612.75\"", "custom geometry A1CenterY")]
+    [InlineData("width=\"33\"", "width=\"17\"")]
+    [InlineData("height=\"10\"", "height=\"10\" hexWidth=\"56.3125\"")]
+    [InlineData("height=\"10\"", "height=\"10\" hexHeight=\"64.47\"")]
+    [InlineData("height=\"10\"", "height=\"10\" A1CenterX=\"-901\" A1CenterY=\"32.25\"")]
+    [InlineData("height=\"10\"", "height=\"10\" A1CenterY=\"-612.75\"")]
+    [InlineData("height=\"10\"", "height=\"10\" HexGridConfig=\"Normal\"")]
+    public void GeomorphicLayoutBoardsAreInScope(string original, string replacement)
+    {
+        var metadata = Parse(Header.Replace(original, replacement, StringComparison.Ordinal) + " />").Metadata!;
+        Assert.Null(VaslBoardImporter.ScopeProblem(metadata));
+    }
+
+    [Theory]
+    [InlineData("name=\"01\"", "name=\"RO\"", "HASL map")]
+    [InlineData("height=\"10\"", "height=\"10\" hexHeight=\"64.4528\"", "lays out no hexes")]
+    [InlineData("height=\"10\"", "height=\"10\" A1CenterX=\"22\"", "custom geometry A1CenterX")]
+    [InlineData("height=\"10\"", "height=\"10\" A1CenterY=\"65\"", "custom geometry A1CenterY")]
     [InlineData("height=\"10\"", "height=\"10\" altHexGrain=\"TRUE\"", "alternate hex grain")]
-    [InlineData("height=\"10\"", "height=\"10\" HexGridConfig=\"FullHex\"", "hex grid configuration")]
     public void NonStandardBoardsAreOutOfScope(string original, string replacement, string reason)
     {
         var metadata = Parse(Header.Replace(original, replacement, StringComparison.Ordinal) + " />").Metadata!;

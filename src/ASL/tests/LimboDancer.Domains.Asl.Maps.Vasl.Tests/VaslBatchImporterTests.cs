@@ -46,10 +46,10 @@ public sealed class VaslBatchImporterTests(ITestOutputHelper output)
 
         Assert.All(fixtureBoards, board => Assert.Equal(BatchOutcome.Verified, report.Boards.Single(result => result.Board == board).Outcome));
 
-        // The pinned checkout: 156 verified; bd79 and bdLFT1 fail with their documented diagnostics.
-        Assert.True(summary.Verified >= 150, $"Only {summary.Verified} boards were verified.");
+        // The pinned checkout: 235 verified, including bdLFT1 with its 644-row grid; bd79 fails with its documented diagnostic.
+        Assert.True(summary.Verified >= 230, $"Only {summary.Verified} boards were verified.");
         AssertFailure(report, "bd79", "VASL-META-000");
-        AssertFailure(report, "bdLFT1", "VASL-LOS-005");
+        Assert.Equal(BatchOutcome.Verified, report.Boards.Single(board => board.Board == "bdLFT1").Outcome);
 
         var verified = report.Boards.Where(board => board.Outcome == BatchOutcome.Verified).ToArray();
         output.WriteLine($"{summary.Boards} boards: {summary.Verified} verified, {summary.Ingested} ingested, {summary.Failed} failed, {summary.OutOfScope} out of scope; {report.DurationMs:F0} ms wall clock.");

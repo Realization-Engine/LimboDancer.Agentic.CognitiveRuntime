@@ -88,7 +88,7 @@ Board numbers are never assumed to map to `bdNN`. The mapping comes from a `Boar
 
 ### 3.5 Fixed-point geometry
 
-All Feature Model coordinates are `FixedPoint` values: signed 32-bit integers in **1/64 pixel** units, in board pixel space (origin at the top-left pixel corner, y down). Compilation uses integer arithmetic only (section 5.3), so compiled grids are identical on every platform. Geometry constants such as 56.25 and 64.5 are exact in this unit (3600 and 4128).
+All Feature Model coordinates are `FixedPoint` values: signed 32-bit integers in **1/64 pixel** units, in board pixel space (origin at the top-left pixel corner, y down). Compilation uses integer arithmetic only (section 5.3), so compiled grids are identical on every platform. Geometry constants such as 56.25 and 64.5 are exact in this unit (3600 and 4128). The hex sizes of a/b, BFP double-width, and Deluxe boards are not; geometry-derived points on those boards (vertices, center dots, SVG numbers) are rounded to the nearest 1/64 pixel, halves away from zero (`FixedPoint.FromPixels`). Feature Model coordinates themselves remain exact.
 
 ### 3.6 Geometry for new boards
 
@@ -350,7 +350,7 @@ A `ComposedMap` is a list of `BoardPlacement(boardVersion, columnOffset, rowOffs
 - Composed Hex Facts are derived from the composed grid.
 - Location text for composed maps uses the placed board's `BoardRef`, for example `bd01:E4:0`. The composition maps it to composed-grid coordinates.
 
-Version 1 defines these types and their tests but does not expose composition in the Studio (sequence ASL-MAP-08).
+As built in ASL-MAP-08 (section 18): `BoardPlacement(board, column, row, reversed, rules)` places boards in slots rather than hex offsets, because VASL's runtime lays maps out by slot, and `VaslMapBuilder` follows VASL's order of operations exactly. Locations on a map use the placed board's reference, through `VaslMap.Locate` and `OwnerOf`.
 
 ## 9. Canonical board package
 
@@ -495,6 +495,18 @@ ASL-MAP-07 adds the model-side pieces the Studio editor needs (Architecture and 
 
   F2 still passes on all 156 fixture boards. This is why edits meet the latency target without incremental compilation (section 5.5, which remains deferred with its property test).
 - **Still deferred:** Scenes and composition (section 8), the read API (section 11), author intent (section 6), and export to VASL format (ASL-MAP-056).
+
+## 18. ASL-MAP-08 as built
+
+ASL-MAP-08 implements the deferred VASL features that need no VASL artwork (VASL Board Ingestion Design, section 11.1; Architecture and Rendering Design, section 9.5).
+
+- **Geometry.** `BoardGeometry.Vasl` describes every layout VASL treats as geomorphic: the board's own hex size, A1 at (0, half the hex height), a grid size from `LOSData`, and naming offsets (b boards start at Q, the lower double-width boards at row 11). `FeatureModelJson` writes such geometry as kind `vasl`, with hex sizes as shortest round-trip decimal text, so drafts from these boards keep their layout. Standard geometry keeps kind `standard` and its bytes.
+- **Composition** (section 8.2): `BoardPlacement`, `VaslMapBuilder`, and `VaslMap`. The builder reproduces VASL's seams, reversal, per-board scenario-specific rules, and passes, and is checked by F2 against 26 oracle scenarios.
+  - `VaslMapDerivation` holds hex state across passes, the step that made this possible; `VaslCompatibleHexFactDerivation.Derive` is its single-board case.
+  - Where VASL would disable LOS, the build fails with a diagnostic (`VASL-MAP-001` to `005`, `VASL-SSR-001` to `003`).
+- **Scenario-specific rules.** `LosSsRuleSet` holds VASL's `LOSSSRules`; each placement lists rule names in the order VASL applies them. A map's version covers its rules, so a map with different rules is a different version (ASL-MAP-072).
+- **Overlays.** VASL overlays are not ingested, because VASL derives their terrain from overlay artwork (ASL-MAP-065). Original overlays are Scenes (section 8.1), still deferred with the scene browser.
+- **Still deferred:** Scenes (section 8.1), the read API (section 11), author intent (section 6), export to VASL format (ASL-MAP-056), cropped boards, HASL maps, and alternate hex grain.
 
 ## 15. Requirement coverage
 

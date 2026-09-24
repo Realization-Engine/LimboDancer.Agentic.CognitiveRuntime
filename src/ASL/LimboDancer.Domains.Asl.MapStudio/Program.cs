@@ -13,7 +13,9 @@ public static class Program
         builder.Services.AddSingleton(options);
         builder.Services.AddSingleton<VaslBoardProvider>();
         builder.Services.AddSingleton<ICatalogSource>(services => services.GetRequiredService<VaslBoardProvider>());
+        builder.Services.AddSingleton<IVaslMapSource>(services => services.GetRequiredService<VaslBoardProvider>());
         builder.Services.AddSingleton<AuthoredBoardService>();
+        builder.Services.AddSingleton<MapService>();
         builder.Services.AddSingleton<IBoardProvider, StudioBoardProvider>();
         builder.Services.AddSingleton<RenderCache>();
         builder.Services.AddSingleton<FidelityReportStore>();

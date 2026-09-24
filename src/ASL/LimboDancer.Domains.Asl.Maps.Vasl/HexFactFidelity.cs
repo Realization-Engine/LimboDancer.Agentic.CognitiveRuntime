@@ -115,7 +115,7 @@ public static class HexFactFidelity
         return new F2Result(differences, []);
     }
 
-    private static void CompareHex(string name, JsonElement expected, HexFacts actual, List<string> differences)
+    internal static void CompareHex(string name, JsonElement expected, HexFacts actual, List<string> differences)
     {
         Check(differences, name, "hex", expected.GetProperty("hex").GetString(), actual.Hex.ToString());
         Check(differences, name, "baseLevel", expected.GetProperty("baseLevel").GetInt32(), actual.BaseLevel);

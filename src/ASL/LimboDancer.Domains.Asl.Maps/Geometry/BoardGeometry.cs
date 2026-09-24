@@ -20,8 +20,10 @@ public sealed class BoardGeometry
     private static readonly double Cos30 = Math.Cos(30.0 * (Math.PI / 180.0));
 
     private BoardGeometry(int widthInHexes, int heightInHexes, double hexWidth, double hexHeight,
-        double a1CenterX, double a1CenterY, int gridWidth, int gridHeight)
+        double a1CenterX, double a1CenterY, int gridWidth, int gridHeight, int columnLetterOffset = 0, int rowNumberOffset = 0)
     {
+        ColumnLetterOffset = columnLetterOffset;
+        RowNumberOffset = rowNumberOffset;
         WidthInHexes = widthInHexes;
         HeightInHexes = heightInHexes;
         HexWidth = hexWidth;
@@ -73,6 +75,21 @@ public sealed class BoardGeometry
         get;
     }
 
+    /// <summary>
+    /// The column letter of hex column 0 as a letter index: 0 (A) on most boards, 16 (Q) on the b half of an a/b
+    /// board pair, which VASL names Q to Z and then AA, BB, and so on (<c>Map.getGEOHexName</c> with <c>isbboard</c>).
+    /// </summary>
+    public int ColumnLetterOffset
+    {
+        get;
+    }
+
+    /// <summary>Added to printed row numbers: 10 on the lower boards of BFP double-width pairs (rows 11 to 20), else 0.</summary>
+    public int RowNumberOffset
+    {
+        get;
+    }
+
     public int HexCount => Enumerable.Range(0, WidthInHexes).Sum(RowCount);
 
     /// <summary>
@@ -97,6 +114,26 @@ public sealed class BoardGeometry
         var gridHeight = (int)Math.Ceiling(heightInHexes * StandardHexHeight);
         return new BoardGeometry(widthInHexes, heightInHexes, StandardHexWidth, StandardHexHeight,
             0.0, StandardHexHeight / 2.0, gridWidth, gridHeight);
+    }
+
+    /// <summary>
+    /// The layout VASL's runtime gives a board it treats as geomorphic (VASL Board Ingestion Design, section 11.1):
+    /// the board's own hex size, the A1 center dot at (0, hexHeight / 2), odd columns one hex longer, and the grid
+    /// size from LOSData. Covers 33 by 10 boards, a/b half boards, BFP double-width and Deluxe boards, and composed maps.
+    /// </summary>
+    public static BoardGeometry Vasl(int widthInHexes, int heightInHexes, double hexWidth, double hexHeight, int gridWidth, int gridHeight,
+        int columnLetterOffset = 0, int rowNumberOffset = 0)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(widthInHexes, 2);
+        ArgumentOutOfRangeException.ThrowIfLessThan(heightInHexes, 1);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(hexWidth);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(hexHeight);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(gridWidth);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(gridHeight);
+        ArgumentOutOfRangeException.ThrowIfNegative(columnLetterOffset);
+        ArgumentOutOfRangeException.ThrowIfNegative(rowNumberOffset);
+        return new BoardGeometry(widthInHexes, heightInHexes, hexWidth, hexHeight, 0.0, hexHeight / 2.0, gridWidth, gridHeight,
+            columnLetterOffset, rowNumberOffset);
     }
 
     public int RowCount(int column)
@@ -126,13 +163,14 @@ public sealed class BoardGeometry
     public HexName NameOf(HexIndex hex)
     {
         EnsureContains(hex);
-        return new HexName(hex.Column, hex.Row + (hex.Column % 2 == 0 ? 1 : 0));
+        return new HexName(hex.Column + ColumnLetterOffset, hex.Row + RowNumberOffset + (hex.Column % 2 == 0 ? 1 : 0));
     }
 
     public bool TryGetIndex(HexName name, out HexIndex hex)
     {
-        hex = new HexIndex(name.Column, name.RowNumber - (name.Column % 2 == 0 ? 1 : 0));
-        return Contains(hex);
+        var column = name.Column - ColumnLetterOffset;
+        hex = new HexIndex(column, name.RowNumber - RowNumberOffset - (column % 2 == 0 ? 1 : 0));
+        return column >= 0 && Contains(hex);
     }
 
     public HexIndex IndexOf(HexName name) =>

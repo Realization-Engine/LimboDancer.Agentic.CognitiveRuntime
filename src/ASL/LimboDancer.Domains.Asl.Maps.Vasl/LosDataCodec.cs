@@ -29,8 +29,18 @@ public static class LosDataCodec
     /// <summary>Decodes LOSData for a board whose metadata declares the given geometry.</summary>
     public static LosDataDecodeResult Decode(Stream losData, BoardGeometry geometry)
     {
-        ArgumentNullException.ThrowIfNull(losData);
         ArgumentNullException.ThrowIfNull(geometry);
+        return Decode(losData, _ => geometry);
+    }
+
+    /// <summary>
+    /// Decodes LOSData whose geometry depends on its header, such as a board whose grid size VASL takes from LOSData.
+    /// The header must still agree with the geometry the function returns.
+    /// </summary>
+    public static LosDataDecodeResult Decode(Stream losData, Func<LosDataHeader, BoardGeometry> geometryFor)
+    {
+        ArgumentNullException.ThrowIfNull(losData);
+        ArgumentNullException.ThrowIfNull(geometryFor);
         byte[] decompressed;
         try
         {
@@ -61,6 +71,7 @@ public static class LosDataCodec
             BinaryPrimitives.ReadInt32BigEndian(payload.AsSpan(8, 4)),
             BinaryPrimitives.ReadInt32BigEndian(payload.AsSpan(12, 4)));
 
+        var geometry = geometryFor(header);
         if (header.WidthInHexes != geometry.WidthInHexes || header.HeightInHexes != geometry.HeightInHexes)
         {
             return Failed(header, decompressed, Error("VASL-LOS-004",

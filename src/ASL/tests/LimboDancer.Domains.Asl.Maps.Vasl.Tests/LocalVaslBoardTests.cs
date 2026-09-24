@@ -111,8 +111,8 @@ public sealed class LocalVaslBoardTests
             }
         }
 
-        // The pinned checkout ingests 156 standard geomorphic boards; allow for a newer checkout.
-        Assert.True(ingested >= 150, $"Only {ingested} boards were ingested.");
+        // The pinned checkout ingests 235 boards in VASL's geomorphic layout; allow for a newer checkout.
+        Assert.True(ingested >= 230, $"Only {ingested} boards were ingested.");
     }
 
     [VaslFact]
@@ -122,9 +122,11 @@ public sealed class LocalVaslBoardTests
         var catalog = Catalog();
         Assert.Equal(BoardScope.InScope, Scope(vasl, "01").Scope);
         Assert.Equal(BoardScope.Unreadable, Scope(vasl, "79").Scope);
-        var half = Scope(vasl, "1a");
-        Assert.Equal(BoardScope.OutOfScope, half.Scope);
-        Assert.Contains("not a standard geomorphic board", half.Reason, StringComparison.Ordinal);
+        Assert.Equal(BoardScope.InScope, Scope(vasl, "1a").Scope);
+        Assert.Equal(BoardScope.InScope, Scope(vasl, "BFPDW1b").Scope);
+        var hasl = Scope(vasl, "RO");
+        Assert.Equal(BoardScope.OutOfScope, hasl.Scope);
+        Assert.Contains("HASL map", hasl.Reason, StringComparison.Ordinal);
 
         // Every board the scope check declines, import declines the same way; every in-scope board either imports or fails with an error.
         var inScope = 0;
@@ -143,8 +145,8 @@ public sealed class LocalVaslBoardTests
             }
         }
 
-        // The pinned checkout has 157 in-scope boards (156 ingested plus bdLFT1); bd79 is unreadable.
-        Assert.True(inScope >= 150, $"Only {inScope} boards are in scope.");
+        // The pinned checkout has 235 in-scope boards in VASL's geomorphic layout; bd79 is unreadable.
+        Assert.True(inScope >= 230, $"Only {inScope} boards are in scope.");
     }
 
     private static BoardScopeResult Scope(VaslSource vasl, string boardName) =>

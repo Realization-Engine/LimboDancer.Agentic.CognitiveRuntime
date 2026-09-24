@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using LimboDancer.Domains.Asl.Maps;
+using LimboDancer.Domains.Asl.Maps.Composition;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Maps.Derivation;
 using LimboDancer.Domains.Asl.Maps.Features;
@@ -62,6 +63,28 @@ public sealed record StudioBoard(
 
     public bool IsAuthored => Ref.Kind == BoardRefKind.Authored;
 
+    /// <summary>The ingested VASL board behind this one, for composing maps.</summary>
+    public IngestedBoard? Ingested
+    {
+        get; init;
+    }
+
+    /// <summary>For a composed map, its placements and where each board's hexes went.</summary>
+    public StudioMap? Composition
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the Styled and Comparison views are available: authored boards and VASL boards, not composed maps.</summary>
+    public bool HasStyled => Render.Styled is not null || StyledRender is not null;
+
+    /// <summary>The canonical location of a hex's ground level: on a map, in the board placed there.</summary>
+    public string LocationOf(HexFacts facts)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        return Composition?.Map.OwnerOf(facts.Index) is { } owner ? $"{owner.Board.Value}:{owner.Hex}:0" : $"{Ref.Value}:{facts.Hex}:0";
+    }
+
     /// <summary>The render input for a view, or null when the board has no Feature Model for it.</summary>
     public BoardRenderInput? InputFor(BoardView view) =>
         view is BoardView.Styled or BoardView.Comparison ? Render.Styled is not null ? Render : StyledRender?.Value : Render;
@@ -118,7 +141,7 @@ public interface ICatalogSource
 }
 
 /// <summary>Loads VASL boards on demand from the configured checkout, caching each result for the process lifetime.</summary>
-public sealed class VaslBoardProvider : IBoardProvider, ICatalogSource
+public sealed class VaslBoardProvider : IBoardProvider, ICatalogSource, IVaslMapSource
 {
     private readonly VaslSource? vasl;
     private readonly string? oracleFixtures;
@@ -209,6 +232,7 @@ public sealed class VaslBoardProvider : IBoardProvider, ICatalogSource
             new StudioBoard(board, ingested.Provenance.LosData.ContentBlob, title, status, render, terrain, ingested.F1, f2, ingested.Provenance, diagnostics)
             {
                 StyledRender = styled,
+                Ingested = ingested,
             },
             diagnostics);
     }
@@ -216,6 +240,19 @@ public sealed class VaslBoardProvider : IBoardProvider, ICatalogSource
     /// <summary>The terrain catalog and its blob, for authored boards, which use the same catalog (Model Design section 4.2).</summary>
     public (TerrainCatalog Catalog, string Hash)? Catalog() =>
         catalog.Value?.Catalog is { } terrain ? (terrain, vasl!.SharedBoardMetadataProvenance().ContentBlob) : null;
+
+    /// <summary>The catalog, its LOS scenario-specific rules, and its blob, for composing maps.</summary>
+    public (TerrainCatalog Catalog, LosSsRuleSet Rules, string CatalogBlob)? Terrain() =>
+        catalog.Value is { Catalog: { } terrain } shared ? (terrain, shared.Rules, vasl!.SharedBoardMetadataProvenance().ContentBlob) : null;
+
+    /// <summary>An ingested VASL board from the load cache.</summary>
+    public IngestedBoard? Ingested(BoardRef board)
+    {
+        ArgumentNullException.ThrowIfNull(board);
+        return board.Kind == BoardRefKind.Vasl ? Load(board).Board?.Ingested : null;
+    }
+
+    public string? OracleFixtures => oracleFixtures;
 
     /// <summary>Vectorizes an ingested board (Model Design section 7), for the Styled view and for new authored boards.</summary>
     public static VectorizeResult Vectorize(IngestedBoard board, HexFactSet facts, TerrainCatalog terrain)
@@ -239,8 +276,11 @@ public sealed class VaslBoardProvider : IBoardProvider, ICatalogSource
     private static BoardLoadResult Failed(MapDiagnostic diagnostic) => new(null, [diagnostic]);
 }
 
-/// <summary>Routes each board reference to its source: VASL boards to the checkout, authored boards to their packages.</summary>
-public sealed class StudioBoardProvider(VaslBoardProvider vasl, AuthoredBoardService authored) : IBoardProvider
+/// <summary>
+/// Routes each board reference to its source: VASL boards to the checkout, authored boards to their packages, and
+/// composed maps to their saved definitions.
+/// </summary>
+public sealed class StudioBoardProvider(VaslBoardProvider vasl, AuthoredBoardService authored, MapService maps) : IBoardProvider
 {
     public string? SourceDescription => vasl.SourceDescription;
 
@@ -251,13 +291,23 @@ public sealed class StudioBoardProvider(VaslBoardProvider vasl, AuthoredBoardSer
     public BoardLoadResult Load(BoardRef board)
     {
         ArgumentNullException.ThrowIfNull(board);
-        return board.Kind == BoardRefKind.Authored ? authored.Load(board) : vasl.Load(board);
+        return board.Kind switch
+        {
+            BoardRefKind.Authored => authored.Load(board),
+            BoardRefKind.ComposedMap => maps.Load(board),
+            _ => vasl.Load(board),
+        };
     }
 
     public BoardLoadResult? Cached(BoardRef board)
     {
         ArgumentNullException.ThrowIfNull(board);
-        return board.Kind == BoardRefKind.Authored ? authored.Load(board) : vasl.Cached(board);
+        return board.Kind switch
+        {
+            BoardRefKind.Authored => authored.Load(board),
+            BoardRefKind.ComposedMap => maps.Load(board),
+            _ => vasl.Cached(board),
+        };
     }
 
     public StudioBoard? LoadVersion(BoardRef board, string version)
@@ -265,6 +315,6 @@ public sealed class StudioBoardProvider(VaslBoardProvider vasl, AuthoredBoardSer
         ArgumentNullException.ThrowIfNull(board);
         return board.Kind == BoardRefKind.Authored
             ? authored.LoadVersion(board, version)
-            : vasl.Load(board).Board is { } loaded && loaded.Version == version ? loaded : null;
+            : Load(board).Board is { } loaded && loaded.Version == version ? loaded : null;
     }
 }

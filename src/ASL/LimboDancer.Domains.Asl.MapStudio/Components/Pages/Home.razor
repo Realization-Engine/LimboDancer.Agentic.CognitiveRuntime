@@ -3,6 +3,7 @@
 @inject IBoardProvider Boards
 @inject FidelityJobRunner Runner
 @inject AuthoredBoardService Authored
+@inject MapService MapStore
 
 <PageTitle>Board library - ASL Map Studio</PageTitle>
 
@@ -41,6 +42,30 @@ else
             </tbody>
         </table>
         <p><a href="author/new">New board</a></p>
+    }
+
+    <h2 class="page">Maps</h2>
+    @if (maps.Count == 0)
+    {
+        <p class="muted">None yet. <a href="maps">Compose a map</a> of placed, reversed, or rule-modified VASL boards.</p>
+    }
+    else
+    {
+        <table class="library">
+            <thead>
+                <tr><th>Map</th><th>Boards</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var map in maps)
+                {
+                    <tr>
+                        <td><a href="@($"boards/{map.Ref.Value}")">@map.Name</a></td>
+                        <td><code>@map.PlacementText</code></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <p><a href="maps">Compose a map</a></p>
     }
 
     <h2 class="page">VASL boards</h2>
@@ -126,6 +151,7 @@ else
 @code {
     private IReadOnlyList<BoardListing> listing = [];
     private IReadOnlyList<AuthoredListing> authored = [];
+    private IReadOnlyList<MapDefinition> maps = [];
     private IReadOnlyList<BoardListing> inScope = [];
     private IReadOnlyList<BoardListing> outOfScope = [];
     private bool showOutOfScope;
@@ -134,6 +160,7 @@ else
     {
         listing = await Task.Run(Boards.List);
         authored = await Task.Run(Authored.List);
+        maps = await Task.Run(MapStore.List);
         inScope = listing.Where(entry => entry.Scope != BoardScope.OutOfScope).ToArray();
         outOfScope = listing.Where(entry => entry.Scope == BoardScope.OutOfScope).ToArray();
     }

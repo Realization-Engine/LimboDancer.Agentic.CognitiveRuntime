@@ -23,7 +23,7 @@ internal sealed class FakeCatalogSource : ICatalogSource
 /// Serves the synthetic board, and routes other authored boards to the real authored board service, so the Studio
 /// runs without a VASL checkout.
 /// </summary>
-internal sealed class FakeBoardProvider(AuthoredBoardService authored) : IBoardProvider
+internal sealed class FakeBoardProvider(AuthoredBoardService authored, MapService maps) : IBoardProvider
 {
     public const string Version = "0123456789abcdef0123456789abcdef01234567";
 
@@ -55,12 +55,60 @@ internal sealed class FakeBoardProvider(AuthoredBoardService authored) : IBoardP
     ];
 
     public BoardLoadResult Load(BoardRef board) =>
-        board == Board.Ref ? new BoardLoadResult(Board, []) : board.Kind == BoardRefKind.Authored ? authored.Load(board) : new BoardLoadResult(null, []);
+        board == Board.Ref ? new BoardLoadResult(Board, [])
+        : board.Kind == BoardRefKind.Authored ? authored.Load(board)
+        : board.Kind == BoardRefKind.ComposedMap ? maps.Load(board)
+        : new BoardLoadResult(null, []);
 
     public BoardLoadResult? Cached(BoardRef board) => board == Board.Ref ? Load(board) : null;
 
     public StudioBoard? LoadVersion(BoardRef board, string version) =>
-        board == Board.Ref ? (Board.Version == version ? Board : null) : board.Kind == BoardRefKind.Authored ? authored.LoadVersion(board, version) : null;
+        board == Board.Ref ? (Board.Version == version ? Board : null)
+        : board.Kind == BoardRefKind.Authored ? authored.LoadVersion(board, version)
+        : board.Kind == BoardRefKind.ComposedMap && maps.Load(board).Board is { } map && map.Version == version ? map : null;
+}
+
+/// <summary>
+/// Serves the synthetic 3 by 2 board as VASL boards bd02 and bd03, with two LOS rules, so maps build without a checkout.
+/// </summary>
+internal sealed class FakeVaslMapSource : IVaslMapSource
+{
+    public static readonly LimboDancer.Domains.Asl.Maps.Composition.LosSsRuleSet Rules = new(
+    [
+        new("NoWhiteHexIDs", LimboDancer.Domains.Asl.Maps.Composition.LosSsRuleKind.Ignore, string.Empty, string.Empty),
+        new("WoodsToOpenGround", LimboDancer.Domains.Asl.Maps.Composition.LosSsRuleKind.TerrainMap, "Woods", "Open Ground"),
+    ]);
+
+    public string? OracleFixtures => null;
+
+    public (LimboDancer.Domains.Asl.Maps.Terrain.TerrainCatalog Catalog, LimboDancer.Domains.Asl.Maps.Composition.LosSsRuleSet Rules, string CatalogBlob)? Terrain() =>
+        (SyntheticBoard.Catalog, Rules, FakeCatalogSource.Hash);
+
+    public IngestedBoard? Ingested(BoardRef board) => board.Value is "bd02" or "bd03" ? Board(board) : null;
+
+    private static IngestedBoard Board(BoardRef board)
+    {
+        var file = new SourceFileProvenance("boards/src/" + board.Value + "/LOSData", new string(board.Value[^1], 40), null);
+        var metadata = new BoardMetadata
+        {
+            Name = board.VaslBoardName,
+            Version = "1",
+            VersionDate = string.Empty,
+            Author = string.Empty,
+            BoardImageFileName = board.Value + ".gif",
+            HasHills = false,
+            Width = 3,
+            Height = 2,
+            GeometryAttributes = new Dictionary<string, string>(),
+            BuildingTypes = [],
+            Slopes = [],
+            RailroadEmbankments = [],
+            PartialOrchards = [],
+            DeferredElements = new Dictionary<string, string>(),
+        };
+        var provenance = new BoardProvenance(null, VaslBoardSourceKind.SourceDirectory, file, file, null, file, VaslBoardImporter.ImporterVersion);
+        return new IngestedBoard(board, SyntheticBoard.Geometry, SyntheticBoard.Grid(), metadata, provenance, new F1Result(F1Status.Pass, "Synthetic."), []);
+    }
 }
 
 /// <summary>
@@ -83,6 +131,7 @@ public sealed class StudioFactory : WebApplicationFactory<App>
             services.AddSingleton(options);
             services.AddSingleton<ICatalogSource, FakeCatalogSource>();
             services.AddSingleton<IBoardProvider, FakeBoardProvider>();
+            services.AddSingleton<IVaslMapSource, FakeVaslMapSource>();
             services.AddSingleton<IFidelityBatch>(new FakeFidelityBatch());
         });
     }

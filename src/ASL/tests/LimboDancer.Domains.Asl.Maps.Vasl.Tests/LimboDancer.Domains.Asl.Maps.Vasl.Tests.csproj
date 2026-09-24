@@ -15,5 +15,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Oracle\*.hexfacts.json.gz" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Oracle\Scenarios\*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

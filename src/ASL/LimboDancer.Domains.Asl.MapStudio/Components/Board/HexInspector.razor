@@ -127,7 +127,11 @@
     [Parameter]
     public EventCallback<string> OnSelectFeature { get; set; }
 
-    public string Location => $"{Board.Value}:{Facts.Hex}:0";
+    /// <summary>Overrides the location shown, such as the placed board's location for a hex of a composed map.</summary>
+    [Parameter]
+    public string? LocationText { get; set; }
+
+    public string Location => LocationText ?? $"{Board.Value}:{Facts.Hex}:0";
 
     private IReadOnlyList<ValidationFinding> Findings =>
         Validation?.Findings.Where(finding => finding.Hex == Facts.Index).ToArray() ?? [];
