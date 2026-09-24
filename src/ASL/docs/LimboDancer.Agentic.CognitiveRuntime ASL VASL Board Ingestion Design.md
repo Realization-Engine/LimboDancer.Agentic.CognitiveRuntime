@@ -24,7 +24,7 @@ These were established while preparing this document.
 4. **Depression elevations are also baked in.** `LOSDataEditor` lowers the elevation of depression pixels by one before writing. The grid elevation is therefore final and must not be adjusted again.
 5. **Archive and source directory differ in bytes (verified).** For board 01, `LOSData` has the same Git blob in `boards/bdFiles/bd01` and `boards/src/bd01`. `BoardMetadata.xml`, `data`, and `SSRControls` differ in bytes (the XML difference is line endings only), and the archive also contains a legacy entry named `BoardMetadata` without an extension. Equality between the two sources must therefore be defined per file type (section 8.2).
 6. **The runtime grid configuration is not "Normal".** For a single uncropped board, VASL's runtime constructor (`Map(LinkedList<VASLBoard>, ...)`, `VASL/LOS/Map/Map.java`) sets the configuration to `HalfHexWidthLeftHexFullHeight`. This selects the adjacency rules and edge-hexside flags used during derivation (sections 5.4 and 5.5). The standalone `Map` constructor used by VASL's LOS editor defaults to `Normal` and behaves differently, so the oracle must not use that default.
-7. **Hex geometry is slightly irregular.** VASL's standard hex is 56.25 by 64.5 pixels (1800 / 32 by 645 / 10, `BoardArchive.GEO_*`). Vertices use `hexWidth * 2 / 3` for side length, while hexside sample points use `cos(30°) * hexHeight / 2`. The hex is not regular, and both formulas must be reproduced exactly.
+7. **Hex geometry is slightly irregular.** VASL's standard hex is 56.25 by 64.5 pixels (1800 / 32 by 645 / 10, `BoardArchive.GEO_*`). Vertices use `hexWidth * 2 / 3` for side length, while hexside sample points use `cos(30°) * hexHeight / 2`. The hex is not regular, and both formulas must be reproduced exactly. VASL computes the hexside offset with `StrictMath.cos` (fdlibm), while .NET uses `Math.Cos`; the two can differ in the last bit. A geometry test proves that no sampled value on a standard board lies within 10^-6 of an integer, so truncation gives the same pixel either way.
 
 ## 3. VASL source layout
 
@@ -195,7 +195,7 @@ Off-board results return no neighbor. The opposite hexside is `(s + 3) % 6`.
 
 `Hex.setHexFlags` marks hexsides off the map only when the configuration equals `Normal`, `Toplefthalfheight`, `FullHex`, `FullHexhalfheight`, or `ToplefthalfheightEqualRowCount`. `HalfHexWidthLeftHexFullHeight` matches none of these. As read from the source, the runtime therefore treats every hexside of every hex as on the map, and edge-hex sampling depends on the clamping in section 5.3. The only other way a hexside is marked off the map is the `OutOfBounds` terrain rule (section 7.2).
 
-This is the kind of behavior the F2 oracle exists to confirm. The derivation must implement what the oracle shows. If the oracle disagrees with this reading, the oracle wins and this section is corrected.
+**Confirmed by the oracle (ASL-MAP-03):** across all 156 ingested boards, VASL reports every hexside of every hex on the map (none of the 323,856 hexsides is off). Only `OutOfBounds` terrain can take a hexside off, and no standard board has any.
 
 ## 6. Metadata
 
@@ -278,7 +278,15 @@ For each hex, following `Hex.resetTerrain`:
 3. **Hexside building fallback.** If the center terrain is not a building, take the first hexside `0..5` whose edge sample point is building terrain, if any.
 4. **Probe building fallback.** If it is still not a building, read the four points 5 pixels from the center in the order `+x`, `-x`, `+y`, `-y`. The **last** building found wins. The source comments call this a board RO hack, but it runs on every board.
 5. If there is still no terrain, use `Open Ground`.
-6. **Building levels.** Apply `Hex.addBuildingLevels`: marketplace center terrain becomes `Open Ground` at ground level; upper-level locations are created from the catalog height, except for the generic `Stone Building` and `Wooden Building` types; stairway retention follows the source. Cellar and rooftop locations follow the same method. The exact level output is pinned by the oracle in ASL-MAP-03.
+6. **Building levels** (`Hex.addBuildingLevels`, pinned by the oracle in ASL-MAP-03), only when the center terrain is a building:
+   1. the stairway is kept only if the hex had one and its terrain is not `Stone Building, 1 Level` or `Wooden Building, 1 Level`; those two types always get a stairway;
+   2. a marketplace's ground location becomes `Open Ground`;
+   3. upper levels 1 to the catalog height are added with the building terrain, except for `Wooden Building`, `Stone Building`, `Huts`, and `MultipleWooden`, and except for factories without a stairway;
+   4. a `Cellar` location at level -1 is added for the same types, except factories;
+   5. a `Rooftop` location is added one level above the highest location (a factory's is at its height plus one), except for the four types above and roofless or gutted buildings;
+   6. a `Wooden Building` hex named I21 to I26, I29, I30, or J21 to J26 gets a level 1 rooftop instead (the board RO warehouse case, matched by name on any board).
+
+   Location links are replaced, never cleared. A factory without a stairway has no upper levels to rebuild, so the second pass (section 7.2) finds the first pass's rooftop still linked and adds another above it. VASL reports this duplicate rooftop on 57 factory hexes of the BFP boards, and the derivation reproduces it.
 7. **Hexside terrain**, for each hexside `s` in `0..5` that is on the map:
    1. read the terrain at the edge sample point;
    2. if metadata declares a railroad embankment on `s`, use `Rrembankment`; if it declares a partial orchard, use `PartialOrchard`;
@@ -298,10 +306,12 @@ Following `BoardArchive.addLOSDatatoVASLMap` and `ASLMap.addBoardsToMap`:
 
 1. Load the grid and stairway flags.
 2. Apply railroad embankments, partial orchards, and slopes from metadata.
-3. Run the per-hex steps for every hex in **column-major order** (all rows of column 0, then column 1, and so on), then rebuild hillocks (`Map.buildHillocks`).
-4. Run step 3 a second time. The runtime calls `resetHexTerrain` twice, once inside `addLOSDatatoVASLMap` and once in `addBoardsToMap`, and because of the hexside propagation in step 11 the second pass can change results.
+3. Run the per-hex steps for every hex in **column-major order** (all rows of column 0, then column 1, and so on).
+4. Run step 3 a second time. The runtime calls `resetHexTerrain` twice, once inside `addLOSDatatoVASLMap` and once in `addBoardsToMap`.
 
-Whether the second pass matters on any real board is an open question for the oracle (section 12). The derivation still reproduces it, so that F2 compares like with like.
+**The second pass matters.** Hexside propagation (step 11) reads the neighbor's current state, so a hexside feature found only by the gap check on a later hex reaches an earlier neighbor only on the second pass. Stale location links produce the duplicate factory rooftops of step 6. The derivation reproduces both passes.
+
+`Map.buildHillocks` also runs after each pass. It groups adjacent hillock hexes for line of sight and does not change any Hex Fact, so it belongs to the later LOS executor, not to the derivation.
 
 ### 7.3 Output: Hex Facts
 
@@ -311,16 +321,15 @@ For each hex, the derivation emits:
 |---|---|
 | `hex` | canonical name, for example `E4` |
 | `col`, `row` | grid index |
-| `centerTerrain` | terrain code and name after all steps |
-| `depressionTerrain` | code or null |
+| `center` | the center location: level in hex, terrain, and depression terrain |
+| `locations` | every location from the lowest to the highest, including the center: level in hex, terrain, depression terrain |
 | `baseLevel` | integer |
 | `stairway` | boolean |
-| `levels` | ordered location list: level in hex, terrain, and bridge, cellar, or rooftop kind |
-| `hexsides[0..5]` | on-map flag, sampled terrain, recorded hexside terrain or null, cliff, slope, depression terrain |
-| `bridge` | terrain, absolute level, and whether single-hex, or null |
-| `derivationTrace` | which step produced the center terrain (sample, hexside fallback, probe fallback, default, inherent, depression, marketplace) |
+| `hexsides[0..5]` | on-map flag, location terrain, recorded hexside terrain or null, cliff, slope, railroad embankment, partial orchard, depression terrain |
+| `bridge` | terrain and road level, or null |
+| `centerSource` | which step decided the center sample: center sample, hexside building fallback, probe building fallback, or default |
 
-`derivationTrace` supports the Studio's "why" inspection (ASL-MAP-062) and difference reports. It is excluded from F2 equality.
+`centerSource` supports the Studio's "why" inspection (ASL-MAP-062) and difference reports. It is excluded from F2 equality and from the oracle output.
 
 ### 7.4 Reproduce or diverge
 
@@ -330,7 +339,7 @@ The rule is **reproduce**. Every quirk in section 7.1 (sampling order, the eleva
 - a derivation option defaulting to VASL behavior;
 - F2 reporting the divergence as expected differences, never silently passing.
 
-No divergences are adopted in version 1.
+No divergences are adopted in version 1. Reproduced behaviors that consumers should know about include the duplicate factory rooftops (section 7.1, step 6), the elevation read at `(cx-1, cy+1)` (step 2), and the name-matched warehouse rooftops and `II50` tunnel terrain.
 
 ## 8. Ingestion output and provenance
 
@@ -387,19 +396,21 @@ For each ingested board: decode, encode, decompress both, compare streams. Repor
 
 A Java harness, `src/ASL/tools/vasl-hexfact-oracle/`, produces reference Hex Facts using VASL's own classes.
 
-- **Build:** Maven, depending on the VASL artifact built from the pinned commit in the local checkout (`mvn install` in `VaslRoot`). The harness is a development tool. It is not a dependency of any .NET project and is not distributed (LGPL 2.1 applies to VASL; the harness stays separate).
+- **Build:** `generate-fixtures.ps1` resolves VASL's dependency classpath (VASSAL 3.7.27 and its dependencies) with the checkout's Maven wrapper, then compiles the harness with `javac` against the checkout's `src` directory, which compiles only the VASL classes the harness uses. VASL's own Maven build is not used, because its pom compiles for Java 11 and cannot read VASSAL 3.7's Java 17 classes. Nothing is written into the VASL checkout. The harness is a development tool. It is not a dependency of any .NET project and is not distributed (LGPL 2.1 applies to VASL; the harness stays separate).
 - **Construction:** the harness reproduces the runtime path for one uncropped, unrotated board without VASSAL's game-module objects:
-  1. parse `SharedBoardMetadata.xml` and `BoardMetadata.xml` with VASL's parser classes;
-  2. construct `VASL.LOS.Map.Map` with the standard geometry (section 5.1) and grid configuration `HalfHexWidthLeftHexFullHeight`;
+  1. parse `SharedBoardMetadata.xml` and `BoardMetadata.xml` with VASL's parser classes, which need no VASSAL runtime objects;
+  2. construct `VASL.LOS.Map.Map` through its standalone constructor with the standard geometry (section 5.1), passing `HalfHexWidthLeftHexFullHeight` as the grid configuration so that adjacency and edge flags behave as at run time;
   3. read `LOSData` with the same loop as `addLOSDatatoVASLMap`: grid, stairways, and `resetHexAndLocationNames`;
   4. apply railroad embankments, partial orchards, and slopes; call `resetHexsideLocationNames`; call `resetHexTerrain`; then call `resetHexTerrain` again, as the runtime does.
-- **Construction check:** before a board's fixtures are accepted, a reviewer compares at least 20 hexes in board 01 (including edge half hexes, E4, a wall or hedge hexside, and a stairway hex) with a live VASL session's hex information, and records the result in the ASL-MAP-03 review. A mismatch means the harness construction is wrong, not the derivation.
-- **Output:** the Hex Fact JSON of section 7.3 without `derivationTrace`, in canonical form (sorted keys, hexes in column-major order, no insignificant whitespace), with a header recording the VASL commit, board source hashes, and harness version.
-- **Fixtures:** stored under `src/ASL/tests/LimboDancer.Domains.Asl.Maps.Vasl.Tests/Oracle/bdNN.hexfacts.json`. They contain derived facts only, as allowed by ASL-MAP-073.
+- **Construction check (pending review):** a reviewer compares at least 20 hexes in board 01 (including edge half hexes, E4, a wall or hedge hexside, and a stairway hex) with a live VASL session's hex information, and records the result. This checks the harness's construction of the map, which F2 alone cannot: F2 shows that the C# port matches the harness, and the harness runs VASL's code, but only a live session shows that the construction matches what players see.
+- **Output:** the Hex Fact JSON of section 7.3 without `centerSource`, in canonical form (keys in ordinal order, hexes in column-major order, one hex per line), with a header recording the VASL commit, harness version, grid configuration, and the committed Git blob ids of `LOSData`, `BoardMetadata.xml`, and `SharedBoardMetadata.xml`, read from the checkout's git index. The index blob is required because some VASL metadata files are committed with CRLF line endings.
+- **Fixtures:** gzipped, one per ingested board (156 boards, about 1 MB in total), under `src/ASL/tests/LimboDancer.Domains.Asl.Maps.Vasl.Tests/Oracle/bdNN.hexfacts.json.gz`. They contain derived facts only, as allowed by ASL-MAP-073.
 
 ### 9.3 F2 comparison
 
 The C# test ingests the board from the configured local source, derives Hex Facts, and compares them with the fixture field by field. Differences are reported per hex, hexside, and field. The test is skipped, not failed, when the local VASL source is absent. A fixture whose recorded source hashes do not match the local source fails with `F2-SOURCE-MISMATCH`, never with a false pass.
+
+**Result (ASL-MAP-03):** all 156 ingested boards pass F2 with no differences. They exercise hedges (94 boards), walls (82), cliffs (28), bocage (4), rowhouse walls, hills and negative base levels, center and hexside depressions (54), bridges (57 hexes on 35 boards), cellars and rooftops, factories, a marketplace, and inherent crags, graveyards, hillocks, and debris. Railroad embankments, partial orchards, tunnels, and `OutOfBounds` hexsides occur on no in-scope board; synthetic tests cover `OutOfBounds` and the annotations.
 
 ## 10. Component design (`LimboDancer.Domains.Asl.Maps.Vasl`)
 
@@ -432,13 +443,13 @@ The C# test ingests the board from the configured local source, derives Hex Fact
 | Custom geometry, alternate hex grain, `EqualRowCount`, a/b boards, HASL and other non-geomorphic maps | `BoardGeometry` variants and the matching `getHexCenterPoint` and `getGEOHexName` branches | new geometry values; derivation unchanged |
 | Legacy V5 `data` files and boards without `LOSData` | not planned; reported as unsupported | none |
 
-## 12. Open issues for ASL-MAP-02 and ASL-MAP-03
+## 12. Resolved issues (ASL-MAP-02 and ASL-MAP-03)
 
-1. **Edge hexside flags (section 5.5).** Confirm with the oracle that the runtime configuration marks no hexside off the map on standard boards.
-2. **Second derivation pass (section 7.2).** Measure on all standard boards whether the second `resetHexTerrain` changes any Hex Fact. If it never does, keep it anyway for fidelity and note the result.
-3. **Building levels (section 7.1, step 6).** Pin the cellar, rooftop, and stairway-retention outputs of `addBuildingLevels` to the oracle before exposing levels to consumers.
-4. **Hillocks.** `buildHillocks` is map-level and matters only on boards with hillock terrain (desert boards). Include it in the oracle output, and defer C# support until a board in scope needs it, failing with a diagnostic rather than guessing.
-5. **Harness construction.** If VASL's parser classes cannot be used without VASSAL runtime objects, the harness may parse the XML itself, but it must still use VASL's `Map`, `Hex`, and `Terrain` classes for derivation.
+1. **Edge hexside flags (section 5.5).** Confirmed: under the runtime configuration no hexside is off the map.
+2. **Second derivation pass (section 7.2).** It matters: hexside propagation and stale location links both depend on it.
+3. **Building levels (section 7.1, step 6).** Pinned by the oracle, including the duplicate factory rooftops.
+4. **Hillocks.** `buildHillocks` does not change Hex Facts; it moves to the LOS executor.
+5. **Harness construction.** VASL's parser classes run without VASSAL runtime objects. The live-session spot check of section 9.2 remains to be recorded.
 
 ## 13. Diagnostics
 
