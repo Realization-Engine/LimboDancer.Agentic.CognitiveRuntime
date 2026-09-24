@@ -15,17 +15,19 @@ public sealed class ArchitectureTests
     }
 
     [Fact]
-    public void RepositoryOwnedAslAuthoringSourceIsCSharp()
+    public void AslAuthoringAndRuntimeRemainCSharpDespiteDraftEditionTooling()
     {
         var unexpectedPython = Directory.EnumerateFiles(
                 RepositoryPaths.Root,
                 "*.py",
                 SearchOption.AllDirectories)
-            .Where(path => !string.Equals(
-                Path.GetRelativePath(RepositoryPaths.Root, path)
-                    .Replace(Path.DirectorySeparatorChar, '/'),
-                AslSourceRegistryBuilder.ConversionToolPath,
-                StringComparison.Ordinal))
+            .Where(path =>
+            {
+                var relative = Path.GetRelativePath(RepositoryPaths.Root, path)
+                    .Replace(Path.DirectorySeparatorChar, '/');
+                return relative != AslSourceRegistryBuilder.ConversionToolPath
+                    && relative != "utils/asl_curated_edition/build_curated_edition.py";
+            })
             .ToArray();
         Assert.Empty(unexpectedPython);
 
@@ -36,5 +38,11 @@ public sealed class ArchitectureTests
             "asl-authoring-ci.yml"));
         Assert.DoesNotContain("setup-python", workflow, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("python -m", workflow, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("build_curated_edition.py", workflow, StringComparison.Ordinal);
+
+        var authoringProjects = Directory.EnumerateFiles(
+            Path.Combine(RepositoryPaths.Root, "src", "ASL"), "*.csproj", SearchOption.AllDirectories);
+        Assert.All(authoringProjects, project =>
+            Assert.DoesNotContain("CuratedEdition", File.ReadAllText(project), StringComparison.Ordinal));
     }
 }
