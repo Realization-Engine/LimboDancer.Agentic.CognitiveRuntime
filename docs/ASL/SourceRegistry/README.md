@@ -84,6 +84,8 @@ The supplementary chart registry is reproducible with the C# CLI using the exist
 
 ## Verification boundary
 
+`asl-scenario-a1.concealed-smc-overrun-transition.json` pins the A12.15 concealed-SMC reveal to the optional A4.15 Infantry OVR branch, with A4.14, A4.151, A4.152, B23.4 and the reviewed building-cost chart. Its affirmative xUnit review checks the exact source subjects and the controlling fact vocabulary. It is a source and semantic dependency record; the branch cases and immutable package are subsequent increments.
+
 `unverified` in the earlier inventory and representative sample describes their state at generation time and is preserved as historical evidence. The separate verification batch records the later source-provider disposition for its 11 exact subjects. Any newly verified subject requires a review record covering the fragment and its required table, figure, or footnote dependencies.
 
 Neither manifest is an ontology, published domain package, tactical policy, Decision corpus, or execution authority.
