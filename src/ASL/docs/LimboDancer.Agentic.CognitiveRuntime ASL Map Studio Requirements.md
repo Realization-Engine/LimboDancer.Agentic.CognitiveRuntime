@@ -30,7 +30,7 @@ These facts were established by reading the VASL source (`vasl-developers/vasl`,
 - `SharedBoardMetadata.xml` defines 181 terrain types (a 182nd element is commented out). Each has a numeric code, name, LOS obstacle and hindrance flags, half-level flag, inherent-terrain flag, height, LOS category, and map color.
 - VASL treats the pixel grid as ground truth. Hex terrain, hexside terrain, and building levels are **derived** from it (`VASL.LOS.Map.Hex.resetTerrain`): center terrain is sampled at the hex center with building fallbacks, and hexside terrain is sampled at edge midpoints with an opposite-hex fallback. `BoardMetadata.xml` building types, which color alone cannot distinguish, are written into the grid when VASL creates `LOSData`.
 - Roads, bridges, railroads, walls, hedges, and rowhouse walls are terrain codes in the grid, not vector features.
-- The VASL checkout contains 265 boards with `BoardMetadata.xml`. 145 are standard 33 by 10 geomorphic boards, and 141 of those have `LOSData`.
+- The VASL checkout contains 265 `BoardMetadata.xml` files (264 are well-formed XML). 180 declare 33 by 10 hexes, 177 of those have `LOSData`, and 157 use only standard geometry. ASL-MAP-02 ingests 156 of those 157 and every one passes F1; `bdLFT1` declares a non-standard 644-row grid.
 - ASL line of sight is traced across depicted terrain (A6), not across hex centers. A hex-only model therefore cannot support true LOS.
 
 ## 3. Package boundary

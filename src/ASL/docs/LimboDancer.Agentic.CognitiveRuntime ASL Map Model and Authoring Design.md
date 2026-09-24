@@ -106,13 +106,12 @@ All Feature Model coordinates are `FixedPoint` values: signed 32-bit integers in
 ```text
 TerrainGrid
   Geometry        BoardGeometry
-  CatalogHash     identity of the TerrainCatalog the codes refer to
   Codes           byte[gridWidth * gridHeight]    column-major, index = x * gridHeight + y
   Elevations      sbyte[gridWidth * gridHeight]   same order
   Stairways       bit set over hex indices
 ```
 
-The grid is immutable. Edits produce a new grid that shares unchanged column blocks. Column-major order matches `LOSData`, so VASL encoding and decoding are copies (Ingestion Design section 4.2).
+The grid holds no catalog reference; the catalog a board's codes refer to is recorded in its provenance (the `SharedBoardMetadata.xml` blob for ingested boards) and in the board package. The grid is immutable. Edits produce a new grid that shares unchanged column blocks. Column-major order matches `LOSData`, so VASL encoding and decoding are copies (Ingestion Design section 4.2).
 
 ### 4.2 Catalog
 
