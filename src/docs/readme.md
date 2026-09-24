@@ -75,7 +75,7 @@ The following documents describe the former `.NET 9`, Azure-first, MCP-centered 
 - [LimboDancer.MCP — Architecture](<./LimboDancer.MCP — Architecture.md>)
 - [LimboDancer.MCP — Design Map](<./LimboDancer.MCP — Design Map.md>)
 - [LimboDancer.MCP — Roadmap](<./LimboDancer.MCP — Roadmap.md>)
-- [Implementation Prototype Plan](<./Implementation Prototype Plan.md>)
+- [Implementation Prototype Plan](<../_Legacy/Implementation Prototype Plan.md>)
 - [Configuration Guide](./CONFIGURATION.md)
 - [Vector Search Configuration](./VECTOR_SEARCH.md)
 - [Tenancy Conventions](./tenancy.md)
