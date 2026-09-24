@@ -7,5 +7,6 @@
     <ProjectReference Include="..\LimboDancer.Runtime\LimboDancer.Runtime.csproj" />
     <ProjectReference Include="..\LimboDancer.Infrastructure\LimboDancer.Infrastructure.csproj" />
     <ProjectReference Include="..\LimboDancer.Adapters.Mcp\LimboDancer.Adapters.Mcp.csproj" />
+    <ProjectReference Include="..\..\ASL\LimboDancer.Domains.Asl.Execution\LimboDancer.Domains.Asl.Execution.csproj" />
   </ItemGroup>
 </Project>

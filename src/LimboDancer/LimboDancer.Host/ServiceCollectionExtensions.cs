@@ -11,6 +11,8 @@ using LimboDancer.Abstractions.State.History;
 using LimboDancer.Abstractions.State.Memory;
 using LimboDancer.Abstractions.State.Ontology;
 using LimboDancer.Adapters.Mcp;
+using LimboDancer.Domains.Asl.Execution;
+using LimboDancer.Domains.Asl.ScenarioA1;
 using LimboDancer.Infrastructure.Audit;
 using LimboDancer.Infrastructure.Decision;
 using LimboDancer.Infrastructure.Graph;
@@ -40,6 +42,36 @@ namespace LimboDancer.Host;
 
 public static class ServiceCollectionExtensions
 {
+    /// <summary>Explicit ASL composition; authoritative case/events and aggregate store are mandatory.</summary>
+    public static IServiceCollection AddScenarioA1Return(
+        this IServiceCollection services,
+        IScenarioA1ReturnCaseSource cases,
+        IScenarioA1SecondDefenderConsequenceSnapshotSource snapshots,
+        IScenarioA1ReturnStateStore store)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(cases);
+        ArgumentNullException.ThrowIfNull(snapshots);
+        ArgumentNullException.ThrowIfNull(store);
+        if (!services.Any(item => item.ServiceType == typeof(IActionConstraintEvaluator)))
+            throw new InvalidOperationException("Register the host before the ASL return action.");
+        services.AddSingleton(cases);
+        services.AddSingleton(snapshots);
+        services.AddSingleton(store);
+        services.AddSingleton<IScenarioA1ReturnConclusionSource>(provider =>
+            new ScenarioA1VerifiedReturnConclusionSource(cases, snapshots,
+                provider.GetRequiredService<TimeProvider>()));
+        services.AddSingleton<IActionExecutor, ScenarioA1ReturnExecutor>();
+        services.Replace(ServiceDescriptor.Singleton<IActionConstraintEvaluator>(provider =>
+            new ScenarioA1ReturnHostConstraintEvaluator(
+                provider.GetRequiredService<IScenarioA1ReturnStateStore>(),
+                provider.GetRequiredService<IScenarioA1ReturnConclusionSource>())));
+        services.AddSingleton(ScenarioA1ReturnAction.Descriptor);
+        services.AddSingleton(new ActionBinding("asl", "scenario-a1-second-defender-return",
+            ScenarioA1ReturnAction.Id, ScenarioA1ReturnAction.Version));
+        return services;
+    }
+
     public static IServiceCollection AddLimboDancerHost(
         this IServiceCollection services,
         IConfiguration configuration)
@@ -97,10 +129,12 @@ public static class ServiceCollectionExtensions
 
     private static void AddRuntime(IServiceCollection services)
     {
-        services.AddSingleton<IActionBindingRegistry>(static _ =>
-            new ActionBindingRegistry(BuiltInActionCatalog.CreateMcpBindings()));
-        services.AddSingleton<IActionRegistry>(static _ =>
-            new ActionRegistry(BuiltInActionCatalog.CreateDescriptors()));
+        services.AddSingleton<IActionBindingRegistry>(static provider =>
+            new ActionBindingRegistry(BuiltInActionCatalog.CreateMcpBindings()
+                .Concat(provider.GetServices<ActionBinding>())));
+        services.AddSingleton<IActionRegistry>(static provider =>
+            new ActionRegistry(BuiltInActionCatalog.CreateDescriptors()
+                .Concat(provider.GetServices<ActionDescriptor>())));
         services.AddSingleton<IActionResolver, RegisteredActionResolver>();
         services.AddSingleton<IActionConstraintPipeline>(static provider =>
             new SemanticActionConstraintPipeline(provider.GetServices<ISemanticPreconditionEvaluator>()));
