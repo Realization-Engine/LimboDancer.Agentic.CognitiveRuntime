@@ -17,6 +17,7 @@ public sealed class ProductionDependencyTests
                     "LimboDancer.Runtime",
                     "LimboDancer.Infrastructure",
                     "LimboDancer.Adapters.Mcp",
+                    "LimboDancer.Domains.Asl.Execution",
                 ],
                 StringComparer.Ordinal),
             ["LimboDancer.AppHost"] = new HashSet<string>(["LimboDancer.Host"], StringComparer.Ordinal),

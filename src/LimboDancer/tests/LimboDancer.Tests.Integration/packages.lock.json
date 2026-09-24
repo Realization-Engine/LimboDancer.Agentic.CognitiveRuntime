@@ -103,11 +103,25 @@
           "LimboDancer.Runtime": "[1.0.0, )"
         }
       },
+      "limbodancer.domains.asl.execution": {
+        "type": "Project",
+        "dependencies": {
+          "LimboDancer.Domains.Asl.ScenarioA1": "[1.0.0, )",
+          "LimboDancer.Runtime": "[1.0.0, )"
+        }
+      },
+      "limbodancer.domains.asl.scenarioa1": {
+        "type": "Project",
+        "dependencies": {
+          "LimboDancer.Abstractions": "[1.0.0, )"
+        }
+      },
       "limbodancer.host": {
         "type": "Project",
         "dependencies": {
           "LimboDancer.Abstractions": "[1.0.0, )",
           "LimboDancer.Adapters.Mcp": "[1.0.0, )",
+          "LimboDancer.Domains.Asl.Execution": "[1.0.0, )",
           "LimboDancer.Infrastructure": "[1.0.0, )",
           "LimboDancer.Runtime": "[1.0.0, )"
         }
