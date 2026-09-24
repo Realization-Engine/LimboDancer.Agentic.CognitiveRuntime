@@ -1,0 +1,8 @@
+<Project>
+  <!-- The archived projects pin package versions in their own .csproj files.
+       This file shadows the repository-root Directory.Packages.props so central
+       package management does not apply to src/_Legacy/. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+</Project>
