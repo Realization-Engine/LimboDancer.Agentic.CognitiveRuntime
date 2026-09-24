@@ -64,15 +64,20 @@ public static class AslScenarioA1CaseAssessor
             repositoryRoot, "docs", "ASL", "SourceRegistry",
             "asl-scenario-a1.backmatter-chart-pdf-comparison.json")));
         var expected = AslScenarioA1ChartReview.Evaluate(repositoryRoot, registry, comparison);
-        if (!(decision with { RuleBasis = expected.RuleBasis }).Equals(expected)
+        var identity = decision with { RuleBasis = expected.RuleBasis };
+        if (!identity.Equals(expected)
             || decision.RuleBasis is null
             || !decision.RuleBasis.SequenceEqual(expected.RuleBasis))
+        {
             throw new InvalidOperationException("The chart review does not match the pinned evidence.");
+        }
 
         var baseAssessment = Assess(facts, fragments, verifiedFragmentIds);
-        if (baseAssessment.Blockers.Any(blocker => blocker.Kind ==
-            AslScenarioA1CaseBlockerKind.FactOutsideDeclaredScope))
+        if (baseAssessment.Blockers.Any(blocker =>
+            blocker.Kind == AslScenarioA1CaseBlockerKind.FactOutsideDeclaredScope))
+        {
             return baseAssessment;
+        }
 
         return baseAssessment with
         {

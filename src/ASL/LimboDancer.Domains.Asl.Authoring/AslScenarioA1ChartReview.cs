@@ -109,6 +109,9 @@ public static class AslScenarioA1ChartReview
 
     private static void Require(bool valid, string message)
     {
-        if (!valid) throw new InvalidOperationException(message);
+        if (!valid)
+        {
+            throw new InvalidOperationException(message);
+        }
     }
 }
