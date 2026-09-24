@@ -88,6 +88,8 @@ The supplementary chart registry is reproducible with the C# CLI using the exist
 
 `asl-scenario-a1.concealed-smc-overrun-case-matrix.json` reviews ten exact continuation boundaries. Only a passed NTC, at least 4 MF, an explicitly verified sole enemy SMC, and unresolved response/CC qualify the OVR attempt. A declined election delegates to the prior post-reveal case under its own contract. Unknown or additional defenders do not inherit the sole-SMC result. This matrix grants no execution authority and is not a published package.
 
+`asl-scenario-a1.concealed-smc-overrun-package.json` publishes the separate immutable package for this continuation. Its resolver admits only the exact qualified observation and returns a read-only attempt conclusion. The other reviewed cases abstain or remain indeterminate; the declined-election case points to the existing post-reveal package. Supplied dynamic state, including sole occupancy, is required and will be projected by the board observation adapter in the next increment.
+
 `unverified` in the earlier inventory and representative sample describes their state at generation time and is preserved as historical evidence. The separate verification batch records the later source-provider disposition for its 11 exact subjects. Any newly verified subject requires a review record covering the fragment and its required table, figure, or footnote dependencies.
 
 Neither manifest is an ontology, published domain package, tactical policy, Decision corpus, or execution authority.
