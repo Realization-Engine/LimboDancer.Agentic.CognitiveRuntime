@@ -12,7 +12,6 @@ on:
       - "docs/ASL/SourceRegistry/**"
       - "docs/ASL/Schemas/**"
       - "docs/ASL/TIR/**"
-      - "docs/ASL/LimboDancer.Agentic.CognitiveRuntime ASL*.md"
       - ".github/workflows/asl-authoring-ci.yml"
   pull_request:
     paths:
@@ -22,7 +21,6 @@ on:
       - "docs/ASL/SourceRegistry/**"
       - "docs/ASL/Schemas/**"
       - "docs/ASL/TIR/**"
-      - "docs/ASL/LimboDancer.Agentic.CognitiveRuntime ASL*.md"
       - ".github/workflows/asl-authoring-ci.yml"
 
 permissions:

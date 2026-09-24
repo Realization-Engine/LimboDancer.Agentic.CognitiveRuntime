@@ -1,6 +1,6 @@
 # Scenario A1 concealment after defender resolution
 
-The existing published occupied-case package keeps `A1-concealed-occupancy-attempt` indeterminate before the defender reveals a unit. This separate [post-reveal package](<./SourceRegistry/asl-scenario-a1.post-reveal-package.json>) admits two exact, test-supplied outcomes under A12.15. It pins the earlier package digest and the existing verified A12.15 and A4.14 fragments to the edition 3.01 PDF (physical pages 78 and 49, printed pages A36 and A7). The xUnit source review checks those fragment IDs and digests against the registered inventory and verified TIR records.
+The existing published occupied-case package keeps `A1-concealed-occupancy-attempt` indeterminate before the defender reveals a unit. This separate [post-reveal package](<../../../docs/ASL/SourceRegistry/asl-scenario-a1.post-reveal-package.json>) admits two exact, test-supplied outcomes under A12.15. It pins the earlier package digest and the existing verified A12.15 and A4.14 fragments to the edition 3.01 PDF (physical pages 78 and 49, printed pages A36 and A7). The xUnit source review checks those fragment IDs and digests against the registered inventory and verified TIR records.
 
 | Supplied defender resolution | Bounded read-only conclusion |
 | --- | --- |

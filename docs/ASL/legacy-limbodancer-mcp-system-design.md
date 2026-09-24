@@ -8,7 +8,7 @@
 
 **Architecture authority:** Non-normative for runtime structure, technology selection, project layout, implementation sequence, and deployment topology. The Plane Runtime Specification remains authoritative for runtime execution and authority semantics.
 
-**Transformation authority:** The [ASL Ontology Transformation Specification](<./LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md>) governs current rulebook-to-package authoring, validation, publication, and first-slice implementation.
+**Transformation authority:** The [ASL Ontology Transformation Specification](<../../src/ASL/docs/LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md>) governs current rulebook-to-package authoring, validation, publication, and first-slice implementation.
 
 ## 1. Original product intent
 

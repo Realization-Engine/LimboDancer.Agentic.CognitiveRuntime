@@ -47,11 +47,12 @@ When documents disagree, use this order of authority:
 | --- | --- |
 | [Domain Integration Model](<./LimboDancer.Agentic.CognitiveRuntime Domain Integration Model.md>) | Defines the boundary, dependency direction, composition model, and interface timing for separately implemented domain packages. |
 | [Domain Knowledge Modeling Requirements](<./LimboDancer.Agentic.CognitiveRuntime Domain Knowledge Modeling Requirements.md>) | Supporting guidance for authoritative knowledge, semantic evidence, and changing domain state. |
-| [ASL Ontology Transformation Specification](<../../docs/ASL/LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md>) | Current authoring lifecycle, intermediate representation, validation and publication gates, package profile, and first occupied-building adjudication slice. |
-| [ASL-OT-01 Source Registry Review](<../../docs/ASL/LimboDancer.Agentic.CognitiveRuntime ASL-OT-01 Source Registry Review.md>) | Approved source registry, fragment-locator evidence, explicit unverified sample, isolation boundary, and ASL-OT-02 admission. |
-| [ASL-OT-02 TIR Schema and Deterministic Extraction Design](<../../docs/ASL/LimboDancer.Agentic.CognitiveRuntime ASL-OT-02 TIR Schema and Deterministic Extraction Design.md>) | C# authoring boundary, TIR schema design, deterministic structural extraction, canonical serialization, and diagnostic requirements. |
+| [ASL Ontology Transformation Specification](<../ASL/docs/LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md>) | Current authoring lifecycle, intermediate representation, validation and publication gates, package profile, and first occupied-building adjudication slice. |
+| [ASL-OT-01 Source Registry Review](<../ASL/docs/LimboDancer.Agentic.CognitiveRuntime ASL-OT-01 Source Registry Review.md>) | Approved source registry, fragment-locator evidence, explicit unverified sample, isolation boundary, and ASL-OT-02 admission. |
+| [ASL-OT-02 TIR Schema and Deterministic Extraction Design](<../ASL/docs/LimboDancer.Agentic.CognitiveRuntime ASL-OT-02 TIR Schema and Deterministic Extraction Design.md>) | C# authoring boundary, TIR schema design, deterministic structural extraction, canonical serialization, and diagnostic requirements. |
 | [ASL reference-domain requirements](<../../docs/ASL/legacy-limbodancer-mcp-system-design.md>) | Concrete requirements and acceptance scenarios the reusable architecture must ultimately support. |
-| [ASL documentation index](../../docs/ASL/) | Index of ASL domain research, schemas, prototypes, and historical material. |
+| [ASL package documentation index](../ASL/docs/) | Index of current ASL specifications, designs, reviews, and implementation sequence. |
+| [ASL documentation index](../../docs/ASL/) | Index of ASL domain research, source data, schemas, prototypes, and historical material. |
 
 Advanced Squad Leader is the first reference domain and architectural fitness test. ASL-specific concepts belong in a separate domain package and must integrate through domain-neutral runtime contracts.
 

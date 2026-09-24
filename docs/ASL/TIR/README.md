@@ -2,7 +2,7 @@
 
 This directory contains deterministic review artifacts produced by the C# ASL authoring solution.
 
-ASL-OT-02 is approved by the [ASL-OT-02 TIR Review](<../LimboDancer.Agentic.CognitiveRuntime ASL-OT-02 TIR Review.md>). The review records the complete-corpus counts, residual diagnostics, accepted source-boundary interpretations, and the gate into ASL-OT-03.
+ASL-OT-02 is approved by the [ASL-OT-02 TIR Review](<../../../src/ASL/docs/LimboDancer.Agentic.CognitiveRuntime ASL-OT-02 TIR Review.md>). The review records the complete-corpus counts, residual diagnostics, accepted source-boundary interpretations, and the gate into ASL-OT-03.
 
 ## Current artifact
 

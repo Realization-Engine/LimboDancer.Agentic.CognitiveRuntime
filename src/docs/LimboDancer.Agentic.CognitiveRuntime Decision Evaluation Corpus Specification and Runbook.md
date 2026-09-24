@@ -215,7 +215,7 @@ Copyrighted rule text and images SHOULD remain in the controlled source registry
 
 ### 7.4 Ontology transformation boundary
 
-The ontology-first authoring lifecycle is governed by the [ASL Ontology Transformation Specification](<../../docs/ASL/LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md>).
+The ontology-first authoring lifecycle is governed by the [ASL Ontology Transformation Specification](<../ASL/docs/LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md>).
 
 The intended ASL pipeline is ontology-first:
 

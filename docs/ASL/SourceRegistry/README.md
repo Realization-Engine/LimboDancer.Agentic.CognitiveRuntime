@@ -62,7 +62,7 @@ The A1 inventory fails closed if the pinned Chapter A/B source digests, an expec
 
 The PDF comparison file is review evidence, not an automatically accepted `TirSourceVerificationRecord`. It records matching alphanumeric sequences across the complete bounded paragraphs and identifies only line-layout hyphens among the remaining punctuation differences. The source provider attested fidelity for the initial 11 subjects in conversation; the C# builder validates the pinned PDF digest and fragment set, regenerates the full TIR, and creates exact per-fragment `Verified` records. Additional source subjects require their own attestation and verification. Neither the comparison nor these records establish semantic meaning.
 
-The [Scenario A1 source review packet](<../LimboDancer.Agentic.CognitiveRuntime Scenario A1 Source Review Packet.md>) lists the 11 reviewed subjects and a narrowly scoped first case for dependency review.
+The [Scenario A1 source review packet](<../../../src/ASL/docs/LimboDancer.Agentic.CognitiveRuntime Scenario A1 Source Review Packet.md>) lists the 11 reviewed subjects and a narrowly scoped first case for dependency review.
 
 The first-case comparison evidence pins eight more prose fragments and the images for A2.4 and B23.1. B23.1 inherits Markdown conversion page 134 even though its rule and figure appear on physical PDF page 135. The C# conformance test validates all ten fragment IDs, source hashes, line numbers, page markers and registered image hashes; the matching text and visual observations remain review evidence, not verified dispositions.
 
@@ -78,7 +78,7 @@ dotnet run --project src/ASL/LimboDancer.Domains.Asl.Authoring.Cli -- \
   --a1-comparison-output docs/ASL/SourceRegistry/asl-scenario-a1.pending-comparison-records.json
 ```
 
-The [back-matter boundary review](<../LimboDancer.Agentic.CognitiveRuntime ASL Back-Matter Source Boundary Review.md>) identifies the B. Terrain Chart on physical PDF page 698 and other A–E-related player aids outside the initial registered page range. They are candidates for explicitly reviewed source additions, not implicit members of this registry.
+The [back-matter boundary review](<../../../src/ASL/docs/LimboDancer.Agentic.CognitiveRuntime ASL Back-Matter Source Boundary Review.md>) identifies the B. Terrain Chart on physical PDF page 698 and other A–E-related player aids outside the initial registered page range. They are candidates for explicitly reviewed source additions, not implicit members of this registry.
 
 The supplementary chart registry is reproducible with the C# CLI using the existing `--source-commit`, `--registry-output` and `--verification-output` arguments plus `--a1-supplement-candidate docs/ASL/SourceRegistry/asl-scenario-a1.backmatter-chart-candidate.json` and `--a1-supplement-output docs/ASL/SourceRegistry/asl-scenario-a1.supplementary-source-registry.json`. CI checks the generated JSON against the committed file. The user-supplied original PDF is not stored in this repository, so byte and visual fidelity still require source review against that PDF.
 

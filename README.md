@@ -747,7 +747,7 @@ A DomainConclusion explains what the modeled rules and evidence imply. It is not
 
 The ASL requirements do not dictate the runtime's project layout, storage products, protocols, or implementation sequence. They define concrete capabilities the reusable architecture must ultimately support without embedding ASL-specific concepts in the runtime kernel.
 
-See `docs/ASL/legacy-limbodancer-mcp-system-design.md` for the current ASL reference-domain requirements, acceptance scenarios, and preserved historical design. The ontology authoring lifecycle is defined in `docs/ASL/LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md`.
+See `docs/ASL/legacy-limbodancer-mcp-system-design.md` for the current ASL reference-domain requirements, acceptance scenarios, and preserved historical design. The ontology authoring lifecycle is defined in `src/ASL/docs/LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md`.
 
 ---
 
@@ -769,7 +769,7 @@ Key documents include:
 - `LimboDancer.Agentic.CognitiveRuntime Anthropic Decision Provider Feasibility and Design.md`
 - `LimboDancer.Agentic.CognitiveRuntime Decision Evaluation Corpus Specification and Runbook.md`
 - `Decision Plane Architecture.md`
-- `docs/ASL/LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md` — rulebook-to-ontology authoring, validation, publication, and first adjudication slice
+- `src/ASL/docs/LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md` — rulebook-to-ontology authoring, validation, publication, and first adjudication slice
 - `docs/ASL/legacy-limbodancer-mcp-system-design.md` — ASL reference-domain requirements and historical design source
 
 The **Plane Runtime Specification** is normative for implementation. The **Implementation Plan** defines the current engineering sequence. The **Domain Knowledge Modeling Requirements** document provides supporting guidance for semantic and state representations. The **Domain Integration Model** defines how separate domain packages depend on and compose with the runtime and when their shared contracts may be introduced. The **ASL Ontology Transformation Specification** defines the separate authoring lifecycle that converts registered rulebook sources into a reviewed, immutable domain package. ASL-OT-01 now provides the reproducible source registry and structural fragment locator while keeping every representative fragment unverified until authoritative-edition review.
