@@ -70,7 +70,8 @@ public sealed class VaslBatchImporterTests(ITestOutputHelper output)
         {
             OracleDirectory = OracleDirectory,
             Boards = ["79", "01", "02"],
-            AdditionalChecks = (board, _, _) => [new FidelityCheck("probe", board.Board.Value != "bd02", "probe detail")],
+            AdditionalChecks = (board, _, _) =>
+                [new FidelityCheck("probe", board.Board.Value != "bd02", "probe detail"), new FidelityCheck("informational", false, "never gates", Gating: false)],
             AdditionalVersions = new Dictionary<string, string> { ["probe"] = "9.9.9" },
         };
         var progress = new List<BatchProgress>();
