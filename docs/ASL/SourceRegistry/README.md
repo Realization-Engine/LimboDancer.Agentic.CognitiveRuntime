@@ -86,6 +86,8 @@ The supplementary chart registry is reproducible with the C# CLI using the exist
 
 `asl-scenario-a1.concealed-smc-overrun-transition.json` pins the A12.15 concealed-SMC reveal to the optional A4.15 Infantry OVR branch, with A4.14, A4.151, A4.152, B23.4 and the reviewed building-cost chart. Its affirmative xUnit review checks the exact source subjects and the controlling fact vocabulary. It is a source and semantic dependency record; the branch cases and immutable package are subsequent increments.
 
+`asl-scenario-a1.concealed-smc-overrun-case-matrix.json` reviews ten exact continuation boundaries. Only a passed NTC, at least 4 MF, an explicitly verified sole enemy SMC, and unresolved response/CC qualify the OVR attempt. A declined election delegates to the prior post-reveal case under its own contract. Unknown or additional defenders do not inherit the sole-SMC result. This matrix grants no execution authority and is not a published package.
+
 `unverified` in the earlier inventory and representative sample describes their state at generation time and is preserved as historical evidence. The separate verification batch records the later source-provider disposition for its 11 exact subjects. Any newly verified subject requires a review record covering the fragment and its required table, figure, or footnote dependencies.
 
 Neither manifest is an ontology, published domain package, tactical policy, Decision corpus, or execution authority.
