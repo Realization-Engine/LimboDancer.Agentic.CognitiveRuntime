@@ -98,6 +98,46 @@ public sealed class ScenarioA1ReturnGateBindingTests
         Assert.Same(state, await store.ReadAsync(state.TenantId, state.GameId, state.UnitId));
     }
 
+    [Fact]
+    public async Task JournalBackedGateCommitSurvivesRestartAndReplays()
+    {
+        var directory = Path.Combine(Path.GetTempPath(),
+            "asl-gated-return-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var state = ScenarioA1SecondDefenderReturnTransitionTests.State();
+            var conclusion = await Conclusion();
+            var source = new StubConclusions(conclusion);
+            var store = new ScenarioA1JournalReturnStore(directory);
+            await store.SeedAsync(state);
+            var executor = new ScenarioA1ReturnExecutor(store, source);
+            var gate = Gate(store, source, executor, new StubAudit(), new AllowRisk());
+            var selected = Selected(conclusion);
+            var authorization = await gate.AuthorizeAsync(selected, Context(state.TenantId, true));
+            var committed = await executor.ExecuteAsync(
+                Assert.IsType<AuthorizedAction>(authorization.AuthorizedAction));
+            Assert.Equal("asl.a1.return.applied", committed.Code);
+
+            var reopened = new ScenarioA1JournalReturnStore(directory);
+            var executorAfterRestart = new ScenarioA1ReturnExecutor(reopened, source);
+            var gateAfterRestart = Gate(reopened, source, executorAfterRestart,
+                new StubAudit(), new AllowRisk());
+            var replayAuthorization = await gateAfterRestart.AuthorizeAsync(selected,
+                Context(state.TenantId, true));
+            var replay = await executorAfterRestart.ExecuteAsync(
+                Assert.IsType<AuthorizedAction>(replayAuthorization.AuthorizedAction));
+            Assert.Equal("asl.a1.return.replay", replay.Code);
+            var final = (await reopened.ReadAsync(state.TenantId, state.GameId, state.UnitId))!;
+            Assert.Equal(11, final.Version);
+            Assert.Equal(2, final.RemainingMf);
+            Assert.Equal("bd01:D4:0", final.UnitLocationId);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
     private static async Task<DomainConclusion> Conclusion() =>
         await ScenarioA1SecondDefenderReturnTransitionTests.Conclusion(
             "smc-revealed", "revealedEnemySmc-after-election");
