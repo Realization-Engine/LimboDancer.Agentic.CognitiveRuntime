@@ -10,9 +10,9 @@
 
 | Gate | Reviewed evidence | Result |
 | --- | --- | --- |
-| Source fidelity | [Transition review](<./SourceRegistry/asl-scenario-a1.concealed-smc-overrun-transition.json>) pins A12.15, A4.14, A4.15, A4.151, A4.152 and B23.4 fragments; prior PDF comparisons and the reviewed building-cost chart are reused. | Affirmative xUnit review passes. |
-| Exact semantic cases | [Ten-case matrix](<./SourceRegistry/asl-scenario-a1.concealed-smc-overrun-case-matrix.json>) distinguishes election, NTC, MF, additional reveal, sole occupancy and unresolved response/CC. | Only the explicitly verified sole-SMC, passed-NTC, at-least-4-MF attempt qualifies. |
-| Publication | [Immutable package](<./SourceRegistry/asl-scenario-a1.concealed-smc-overrun-package.json>) pins prior occupied and post-reveal package digests, source review and case matrix. | The resolver returns `DomainConclusion` only and rejects a floating package or source set. |
+| Source fidelity | [Transition review](<../../../docs/ASL/SourceRegistry/asl-scenario-a1.concealed-smc-overrun-transition.json>) pins A12.15, A4.14, A4.15, A4.151, A4.152 and B23.4 fragments; prior PDF comparisons and the reviewed building-cost chart are reused. | Affirmative xUnit review passes. |
+| Exact semantic cases | [Ten-case matrix](<../../../docs/ASL/SourceRegistry/asl-scenario-a1.concealed-smc-overrun-case-matrix.json>) distinguishes election, NTC, MF, additional reveal, sole occupancy and unresolved response/CC. | Only the explicitly verified sole-SMC, passed-NTC, at-least-4-MF attempt qualifies. |
+| Publication | [Immutable package](<../../../docs/ASL/SourceRegistry/asl-scenario-a1.concealed-smc-overrun-package.json>) pins prior occupied and post-reveal package digests, source review and case matrix. | The resolver returns `DomainConclusion` only and rejects a floating package or source set. |
 | Observation | The board 01 adapter checks the pinned ground-level building override and consumes versioned test-supplied dynamic state. | Unknown, conflicting, stale, extra, wrong-package or altered-board facts cannot become a qualified observation. |
 | Conformance | The xUnit suite carries each of the ten exact cases from supplied snapshot through board terrain, package, resolver and evidence. Existing occupied and ordinary post-reveal package tests remain in CI. | Qualified output has no MF-spend, movement, reveal, fire or CC execution result. |
 

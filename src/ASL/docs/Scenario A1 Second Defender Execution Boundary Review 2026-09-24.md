@@ -8,7 +8,7 @@
 
 ## What the sources establish
 
-The [consequence package](<./SourceRegistry/asl-scenario-a1.second-defender-consequence-package.json>) answers a read-only question for two exact cases: a second revealed SMC or MMC defeats the elected Infantry OVR before entry resolves. The [execution review](<./SourceRegistry/asl-scenario-a1.second-defender-execution-review.json>) pins that package and the previously verified A12.15, A4.14, A4.15 and B23.4 fragments, as well as the reviewed 2 MF building chart. An affirmative xUnit review verifies those identities and the admitted effect vocabulary.
+The [consequence package](<../../../docs/ASL/SourceRegistry/asl-scenario-a1.second-defender-consequence-package.json>) answers a read-only question for two exact cases: a second revealed SMC or MMC defeats the elected Infantry OVR before entry resolves. The [execution review](<../../../docs/ASL/SourceRegistry/asl-scenario-a1.second-defender-execution-review.json>) pins that package and the previously verified A12.15, A4.14, A4.15 and B23.4 fragments, as well as the reviewed 2 MF building chart. An affirmative xUnit review verifies those identities and the admitted effect vocabulary.
 
 Under the narrow A12.15 facts, the mover returns to its last Location. The ordinary 2 MF attempted-entry expenditure is treated as spent in that Location. A12.15 also says the mover loses Concealment and ends its MPh unless it becomes Berserk first. This case already requires an unconcealed attacker and excludes Berserk, so the concealment effect is a no-op and ending the MPh is a required consequence. The rule does not establish that an additional doubled OVR entrance charge was paid when the OVR could not proceed.
 

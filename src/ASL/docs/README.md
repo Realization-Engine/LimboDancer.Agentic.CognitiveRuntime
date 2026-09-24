@@ -19,7 +19,7 @@ ASL-OT-05  Immutable publication and exact resolution (bounded: exact-case packa
 ASL-OT-06  Occupied-building entry adjudication (bounded: 7 exact cases yield read-only conclusions; 2 remain nondefinitive)
 ```
 
-No current ASL artifact authorizes execution. A `DomainConclusion` remains an interpretation; any state change independently passes through the common authority path and Execution Gate.
+Scenario A1 has one governed execution path: the second-defender return (`ScenarioA1ReturnAction` in `LimboDancer.Domains.Asl.Execution`). The Host registers it only through the explicit `AddScenarioA1Return` opt-in, and it executes only after the common authority path and Execution Gate, persisting through an atomic versioned journal. No other ASL artifact authorizes execution. A `DomainConclusion` remains an interpretation; any state change independently passes through the common authority path and Execution Gate.
 
 ## Documents
 
@@ -33,4 +33,8 @@ No current ASL artifact authorizes execution. A `DomainConclusion` remains an in
 - `LimboDancer.Agentic.CognitiveRuntime ASL Back-Matter Source Boundary Review.md`: candidate supplement for A-E-labelled charts and aids outside the initial PDF pages 6-253, including the B. Terrain Chart on page 698.
 - `LimboDancer.Agentic.CognitiveRuntime Scenario A1 Source Review Packet.md`: review subjects, comparison evidence, and delegated review outcome for the bounded Scenario A1 first case.
 - `Scenario A1 Concealment Post-Reveal Review.md`: bounded read-only conclusions under A12.15 after the defender reveals a concealed unit.
+- `Scenario A1 Concealed SMC Infantry OVR Review.md`: the optional Infantry OVR continuation after an A12.15 concealed-SMC reveal, published as a separate exact package with a ten-case matrix.
+- `Scenario A1 Concealed SMC Infantry OVR Milestone Review 2026-09-24.md`: milestone decision closing the concealed-SMC Infantry OVR attempt slice.
+- `Scenario A1 Additional Defender Reveal Source Review 2026-09-24.md`: source review and conformance for a second defender revealed before OVR entry resolves, through separate eligibility and consequence packages.
+- `Scenario A1 Second Defender Execution Boundary Review 2026-09-24.md`: source-backed execution boundary for the second-defender return. Its status line records the state at review time; the governed return path described above was implemented afterwards.
 - `VASL Board 01 Terrain Evidence.md`: partial building-override inventory from VASL board 01 metadata and the validated snapshot rules that depend on it.

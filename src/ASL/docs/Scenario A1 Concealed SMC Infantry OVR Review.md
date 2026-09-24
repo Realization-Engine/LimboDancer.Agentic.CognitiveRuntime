@@ -2,7 +2,7 @@
 
 **Review date:** 2026-09-24
 
-The optional Infantry overrun after an A12.15 concealed-SMC reveal is a separate exact package from both the original known-SMC case and the ordinary post-reveal package. [Transition review](<./SourceRegistry/asl-scenario-a1.concealed-smc-overrun-transition.json>), [ten-case matrix](<./SourceRegistry/asl-scenario-a1.concealed-smc-overrun-case-matrix.json>), and [immutable package](<./SourceRegistry/asl-scenario-a1.concealed-smc-overrun-package.json>) pin the prior package digests and the reviewed source subjects.
+The optional Infantry overrun after an A12.15 concealed-SMC reveal is a separate exact package from both the original known-SMC case and the ordinary post-reveal package. [Transition review](<../../../docs/ASL/SourceRegistry/asl-scenario-a1.concealed-smc-overrun-transition.json>), [ten-case matrix](<../../../docs/ASL/SourceRegistry/asl-scenario-a1.concealed-smc-overrun-case-matrix.json>), and [immutable package](<../../../docs/ASL/SourceRegistry/asl-scenario-a1.concealed-smc-overrun-package.json>) pin the prior package digests and the reviewed source subjects.
 
 ## Source and result
 
