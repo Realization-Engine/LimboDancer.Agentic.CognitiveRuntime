@@ -4,7 +4,7 @@
 
 **Date:** 2026-09-23
 
-**Reference domain:** Advanced Squad Leader 3.01, Chapters A-E
+**Reference domain:** Advanced Squad Leader 3.01; initial conversion covers the TOC, index/glossary, and Chapters A–E
 
 **Authority:** Subordinate to the Plane Runtime Specification and Plane Runtime Design; implements the ASL reference-domain requirements and Domain Integration Model
 
@@ -99,7 +99,7 @@ The initial transformation source is the ASL 3.01 Markdown set under `docs/ASL/R
 - Chapter E, Miscellaneous; and
 - extracted figures under `images/`.
 
-The edition source boundary is **the TOC, Index/Glossary, and Chapters A–E only** (physical PDF pages 6–253 for the supplied 716-page PDF). Material after Chapter E is outside this source baseline. A reference to an excluded section remains an unresolved or separately scoped dependency, never an implicit extension of the ontology source set.
+The TOC, Index/Glossary, and Chapters A–E (physical PDF pages 6–253 of the supplied 716-page PDF) are the **initial registered conversion scope**, not a permanent boundary for the ASL ontology. Other chapters, charts, counter sources, and supplements may be registered as separately identified source sets when relevant. Each new source requires exact provenance, source verification, applicability assessment, and review before its artifacts can enter a published package. A reference outside the currently admitted set remains an unresolved dependency until those steps are complete; it never extends the set implicitly.
 
 **Boundary finding (2026-09-24):** A4.13 cites the B. Terrain Chart, which appears in the supplied PDF on physical page 698 with other A–E-labelled back-matter aids. Thus physical pages 6–253 describe the **initial registered conversion**, not necessarily every artifact needed to interpret A–E. The [back-matter source boundary review](<./LimboDancer.Agentic.CognitiveRuntime ASL Back-Matter Source Boundary Review.md>) records a separately registered, **unverified** bounded chart transcription. Page 698 remains an unresolved external dependency until source verification and an explicit applicability/admission decision; the existing 11 source attestations do not cover it.
 
