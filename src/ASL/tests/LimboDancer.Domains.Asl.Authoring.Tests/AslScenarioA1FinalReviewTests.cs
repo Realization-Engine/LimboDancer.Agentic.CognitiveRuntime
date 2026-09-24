@@ -73,6 +73,45 @@ public sealed class AslScenarioA1FinalReviewTests
         }
     }
 
+    [Theory]
+    [InlineData(nameof(AslScenarioA1CaseFacts.IsKnownGoodOrderInfantrySquad))]
+    [InlineData(nameof(AslScenarioA1CaseFacts.IsAttackerMovementPhase))]
+    [InlineData(nameof(AslScenarioA1CaseFacts.CanMoveThisPhase))]
+    [InlineData(nameof(AslScenarioA1CaseFacts.IsAdjacentGroundLevelOrdinaryBuilding))]
+    [InlineData(nameof(AslScenarioA1CaseFacts.IsDestinationKnownEmpty))]
+    [InlineData(nameof(AslScenarioA1CaseFacts.HasNoRoadBypassElevationOrAdditionalTerrain))]
+    [InlineData(nameof(AslScenarioA1CaseFacts.HasEnoughMovementFactors))]
+    [InlineData(nameof(AslScenarioA1CaseFacts.IsBelowStackingLimit))]
+    [InlineData(nameof(AslScenarioA1CaseFacts.HasNoSpecialRuleOrOtherModifier))]
+    public void EveryDeclaredFactIsRequiredForTheDelegatedRuling(string missingFact)
+    {
+        var (manifests, attestation, comparison, chart) = Inputs();
+        using (comparison)
+        {
+            var facts = AslScenarioA1CaseFacts.CreateDeclaredFirstCase();
+            facts = missingFact switch
+            {
+                nameof(facts.IsKnownGoodOrderInfantrySquad) => facts with { IsKnownGoodOrderInfantrySquad = null },
+                nameof(facts.IsAttackerMovementPhase) => facts with { IsAttackerMovementPhase = null },
+                nameof(facts.CanMoveThisPhase) => facts with { CanMoveThisPhase = null },
+                nameof(facts.IsAdjacentGroundLevelOrdinaryBuilding) => facts with { IsAdjacentGroundLevelOrdinaryBuilding = null },
+                nameof(facts.IsDestinationKnownEmpty) => facts with { IsDestinationKnownEmpty = null },
+                nameof(facts.HasNoRoadBypassElevationOrAdditionalTerrain) => facts with { HasNoRoadBypassElevationOrAdditionalTerrain = null },
+                nameof(facts.HasEnoughMovementFactors) => facts with { HasEnoughMovementFactors = null },
+                nameof(facts.IsBelowStackingLimit) => facts with { IsBelowStackingLimit = null },
+                nameof(facts.HasNoSpecialRuleOrOtherModifier) => facts with { HasNoSpecialRuleOrOtherModifier = null },
+                _ => throw new ArgumentOutOfRangeException(nameof(missingFact)),
+            };
+            var reviewed = AslScenarioA1FinalReviewer.Review(RepositoryPaths.Root,
+                manifests, attestation, comparison, chart, facts);
+            Assert.Equal("outside-declared-case", reviewed.Status);
+            Assert.False(reviewed.Assessment.CanIssueDefinitiveRuling);
+            Assert.Contains(reviewed.Assessment.Blockers, blocker =>
+                blocker.Kind == AslScenarioA1CaseBlockerKind.FactOutsideDeclaredScope
+                && blocker.Reference == missingFact);
+        }
+    }
+
     private static (GeneratedManifests, AslScenarioA1SourceAttestation, JsonDocument,
         AslScenarioA1ChartReviewDecision) Inputs()
     {

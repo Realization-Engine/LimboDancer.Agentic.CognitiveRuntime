@@ -30,6 +30,10 @@ public static class AslScenarioA1FinalReviewer
         "For the declared Good Order Infantry squad during its MPh, entry into an adjacent empty ground-level ordinary wooden or stone building is permitted at 2 MF, provided the declared movement capability, available MF, stacking and absence of special modifiers are true.";
     private static readonly DateTimeOffset ReviewedAt = new(2026, 9, 24, 0, 0, 0, TimeSpan.Zero);
     private static readonly JsonSerializerOptions WebJsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly string[] ApprovedRequiredRules =
+        ["A2.4", "A2.8", "A3.3", "A4.1", "A4.11", "A4.13", "A4.14", "A5.1", "A5.11", "B23.1", "B23.4"];
+    private static readonly string[] ApprovedExcludedBranches =
+        ["A4.132", "A4.134", "A4.15", "A4.7", "A12.15", "B23.711", "B23.922", "B23.9221"];
 
     public static AslScenarioA1FinalReview Review(
         string repositoryRoot, GeneratedManifests manifests,
@@ -82,15 +86,19 @@ public static class AslScenarioA1FinalReviewer
 
         var assessed = AslScenarioA1CaseAssessor.AssessWithReviewedChart(
             facts, manifests.Fragments, verifiedIds, repositoryRoot, chartDecision);
+        if (!assessed.RequiredRuleIds.SequenceEqual(ApprovedRequiredRules, StringComparer.Ordinal)
+            || !assessed.ExcludedBranchRuleIds.SequenceEqual(ApprovedExcludedBranches, StringComparer.Ordinal)
+            || assessed.UnresolvedSupplementalSources.Count != 0
+            || assessed.Blockers.Any(blocker =>
+                blocker.Kind != AslScenarioA1CaseBlockerKind.FactOutsideDeclaredScope
+                && blocker.Kind != AslScenarioA1CaseBlockerKind.DependencyAndSemanticReviewPending)
+            || assessed.Blockers.Count(blocker =>
+                blocker.Kind == AslScenarioA1CaseBlockerKind.DependencyAndSemanticReviewPending) != 1)
+        {
+            throw new InvalidOperationException("The assessed case differs from the delegated dependency decision.");
+        }
         var hasOutsideScope = assessed.Blockers.Any(blocker =>
             blocker.Kind == AslScenarioA1CaseBlockerKind.FactOutsideDeclaredScope);
-        if (assessed.Blockers.Any(blocker => blocker.Kind is
-            AslScenarioA1CaseBlockerKind.SourceFragmentUnverified
-            or AslScenarioA1CaseBlockerKind.SourceRuleNotLocated
-            or AslScenarioA1CaseBlockerKind.SourceBoundaryUnresolved))
-        {
-            throw new InvalidOperationException("Required source evidence is incomplete.");
-        }
 
         var completed = hasOutsideScope ? assessed : assessed with
         {

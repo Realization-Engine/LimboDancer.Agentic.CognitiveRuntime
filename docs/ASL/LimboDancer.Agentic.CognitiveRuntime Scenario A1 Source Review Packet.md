@@ -1,6 +1,6 @@
 # Scenario A1 source review packet
 
-**Status:** Source fidelity attested by the source provider for 11 exact subjects; semantic review and dependency closure pending
+**Status:** Delegated xUnit review accepted the bounded first case for 11 baseline rule IDs, ten additional source subjects and the page-698 chart. General rule interpretation and package admission remain outside this case.
 **Edition:** 3.01 delivery ZIP as identified by the source provider; supplied PDF SHA-256 `957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247`  
 **Source boundary:** TOC, Index/Glossary, Chapters A–E and their registered images; PDF physical pages 6–253 only  
 **Registered source commit:** `a3254ff1d492dbdd28483d86f5b42437b48e80d4`
@@ -38,7 +38,7 @@ For each subject, a future independent source verifier can examine the existing 
 
 The source-verification records address **source fidelity only**. They cannot approve a rule interpretation, dependency closure, candidate package, or tactical outcome.
 
-## First case for dependency review
+## First case: historical dependency inventory
 
 Use a synthetic *candidate* case: a known Good Order, unpinned Infantry squad attempts an MPh ground-level entry into an adjacent ordinary building Location; the destination has no enemy, concealed or hidden occupants, no fortification, no road entry, no Bypass, no elevation change, no additional terrain, no SMOKE, no scenario special rule, enough remaining MF, and stacking below the normal limit. These are declared input facts for a bounded review, not facts inferred from an incomplete board observation or a validated outcome.
 
@@ -51,7 +51,7 @@ Use a synthetic *candidate* case: a known Good Order, unpinned Infantry squad at
 
 This is an **initial dependency inventory**, not a closed rule graph or a positive legality label. The independent ASL domain reviewer must examine cross-references and exceptions under the declared facts, add any missing rules, and either approve a closed case scope or require abstention. Dependencies outside TOC, Index/Glossary, and A–E remain unresolved unless the source boundary is explicitly revised.
 
-### C# first-case assessment
+### Initial C# first-case assessment (before delegated review)
 
 `AslScenarioA1CaseAssessor` captures nine declared case facts and locates an initial 11-rule baseline: A2.4, A2.8, A3.3, A4.1, A4.11, A4.13, A4.14, A5.1, A5.11, B23.1 and B23.4. Of these, A2.8, A4.14 and B23.4 have the source-provider fidelity attestation above. The [additional PDF comparison evidence](<./SourceRegistry/asl-scenario-a1.first-case-pdf-comparison.json>) covers the other **eight rule declarations and two figure-reference fragments**. It finds complete alphanumeric matches for the rule prose after markup/layout normalization; the linked A2.4 and B23.1 images visually match the rendered PDF pages. These ten exact subjects remain **unverified** until a source provider reviews their comparisons and attests them. B23.1 inherits Markdown conversion page 134 but is on physical PDF page **135**, including its illustration; both locations remain distinct in the evidence. The eight separately listed exclusion branches are A4.132, A4.134, A4.15, A4.7, A12.15, B23.711, B23.922 and B23.9221. A domain reviewer must confirm both the baseline and the applicability of each exclusion; a declared absent feature does not automatically prove its branch irrelevant under all exceptions.
 
@@ -59,7 +59,7 @@ The xUnit cases check missing baseline verification (including both figures), un
 
 The C# pending-comparison batch records an `Indeterminate` disposition for each of the ten new subjects against the **same full TIR document** as the first 11 verified subjects. It records the comparison process as its actor and explicitly states that human source-fidelity attestation is pending. An image hash is a byte-level dependency check, and a visual match is a comparison observation; neither permits `Verified` without the additional source review. This batch does not change the first 11 records.
 
-### Dependency review findings to resolve
+### Dependency review findings (resolved for the declared case below)
 
 The first-case baseline is **not closed**. This preliminary reading of the registered source identifies at least these additional checks for an ASL domain reviewer:
 
@@ -73,10 +73,12 @@ The first-case baseline is **not closed**. This preliminary reading of the regis
 
 These findings do not make A5.5 or a chart automatically controlling. The domain reviewer must decide applicability, enumerate any added exact source fragments, and record the rejected and unresolved branches before proposing a closed dependency set.
 
-The [back-matter boundary review](<./LimboDancer.Agentic.CognitiveRuntime ASL Back-Matter Source Boundary Review.md>) finds the B. Terrain Chart on physical PDF page **698**, outside the original 6–253 source registry. The [bounded chart candidate](<./SourceRegistry/asl-scenario-a1.backmatter-chart-candidate.json>) pins the two 2-MF building rows and their page-text provenance. A [separate supplementary registry](<./SourceRegistry/asl-scenario-a1.supplementary-source-registry.json>) pins the bounded transcription in its original unverified state. The source provider subsequently delegated the chart's bounded fidelity and first-case domain review to xUnit; the [review decision](<./SourceRegistry/asl-scenario-a1.chart-review-decision.json>) is checked against both the registry and [PDF comparison](<./SourceRegistry/asl-scenario-a1.backmatter-chart-pdf-comparison.json>) by tests. The reviewed-chart C# assessment clears only this source-boundary blocker; the other ten first-case fragments and full semantic dependency closure remain unresolved. No page-698 content enters the original registry or its verification batches.
+The [back-matter boundary review](<./LimboDancer.Agentic.CognitiveRuntime ASL Back-Matter Source Boundary Review.md>) finds the B. Terrain Chart on physical PDF page **698**, outside the original 6–253 source registry. The [bounded chart candidate](<./SourceRegistry/asl-scenario-a1.backmatter-chart-candidate.json>) pins the two 2-MF building rows and their page-text provenance. A [separate supplementary registry](<./SourceRegistry/asl-scenario-a1.supplementary-source-registry.json>) pins the bounded transcription in its original unverified state. The source provider subsequently delegated the chart's bounded fidelity and first-case domain review to xUnit; the [review decision](<./SourceRegistry/asl-scenario-a1.chart-review-decision.json>) is checked against both the registry and [PDF comparison](<./SourceRegistry/asl-scenario-a1.backmatter-chart-pdf-comparison.json>) by tests. At this intermediate step the reviewed-chart C# assessment cleared only the source-boundary blocker; the ten-fragment and semantic decisions are recorded in the subsequent delegated first-case decision below. No page-698 content enters the original registry or its verification batches.
 
 ## Subsequent delegated first-case decision
 
 The source provider directed xUnit assertions to stand in for the remaining source and domain reviewers. The [first-case decision](<./SourceRegistry/asl-scenario-a1.first-case-review-decision.json>) is a separate, later disposition: `AslScenarioA1FinalReviewTests` checks exact hashes of the ten-fragment PDF comparison, initial 11-fragment attestation and chart review, confirms all ten source subjects against the **same full TIR**, and creates ten `Verified` review records under the explicit delegated xUnit authority. The historical `Indeterminate` comparison batch remains intact as comparison history.
 
 For the declared first case, the domain decision accepts the original 11-rule baseline and the reviewed chart; A5.5 and A4.12 are not added because squad identity, remaining MF and stacking status are supplied facts. Road, Bypass, elevated or compound terrain, hidden occupancy, fortification, SSR and other modifiers are excluded by the declared facts. Under those assumptions an eligible Good Order Infantry squad may enter the adjacent empty ordinary wooden or stone ground-level building during its MPh for **2 MF**. The reviewed assessment has no blockers only for those exact facts. Missing or contrary facts fail the ruling. This is a bounded first-case decision, not a general ASL interpretation, package admission, or proof that external game state satisfies the declared facts.
+
+The final reviewer requires the exact approved 11-rule baseline, eight excluded branches, no unresolved chart source and precisely one semantic-review blocker before it applies the delegated decision. All nine declared facts must be true; the xUnit theory checks each missing fact separately. This pins the decision to the examined dependencies and prevents an expanded rule inventory or unknown case fact from inheriting this ruling.
