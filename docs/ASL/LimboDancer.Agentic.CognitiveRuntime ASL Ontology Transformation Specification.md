@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 8000)
-Total output lines: 567
-
 # LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification
 
 **Status:** Accepted; ASL-OT-01 and ASL-OT-02 complete, ASL-OT-03 in progress
@@ -247,7 +244,71 @@ Conditions MAY be represented by a bounded expression tree whose operands are se
 
 The first slice SHOULD introduce only operators exercised by occupied-building entry eligibility. Unsupported prose remains attached with `formalizationStatus: partial` or `unmodeled`; it MUST NOT be converted into an assumed Boolean result.
 
-### 7.5 Exception…700 tokens truncated…posed normalized fields while retaining original values and transformation records. Ambiguous normalization remains unresolved.
+### 7.5 Exceptions and precedence
+
+Each Exception MUST identify:
+
+- the Rule or Exception it modifies;
+- its applicability conditions;
+- the nature of the modification;
+- the source basis for its precedence;
+- nested exceptions that modify it; and
+- unresolved conflicts or ambiguity.
+
+Numeric precedence weights MUST NOT be invented merely to make traversal convenient. Precedence must be derived from explicit source structure or curated domain policy with provenance.
+
+### 7.6 Tables and figures
+
+A table is not authoritative structured data until its headers, axes, cells, continuations, notes, and visual dependencies are reconstructed and reviewed. A raster image alone is insufficient for deterministic lookup; a parsed table without its source image and hash is insufficient for fidelity review.
+
+Figures that convey geometry, counter attributes, firing arcs, terrain, or other semantics remain registered source dependencies even when structured values are extracted from them.
+
+### 7.7 Examples
+
+Examples MUST remain distinguishable from normative rules. They may clarify an interpretation and support tests, but they MUST NOT silently create a general rule absent source or curated semantic authority.
+
+## 8. Provenance chain
+
+Every published artifact MUST support bidirectional traceability:
+
+```text
+published semantic artifact
+-> accepted TIR artifact
+-> extraction/curation record
+-> verified source fragments
+-> registered source version
+```
+
+and:
+
+```text
+source fragment
+-> extracted/proposed artifacts
+-> review dispositions
+-> published artifacts or explicit exclusions
+```
+
+Provenance MUST record the extraction implementation and version, model and pinned version when used, prompt/schema/configuration digest, deterministic post-processing version, human reviewers, validation report, and transformation timestamps.
+
+A confidence score may prioritize review. It cannot substitute for accepted status.
+
+## 9. Transformation lifecycle
+
+### Stage 1: Register sources
+
+Freeze source files and dependencies; compute hashes; record edition, access, conversion, and distribution metadata; and reject unexpected file changes.
+
+### Stage 2: Segment and locate
+
+Produce immutable SourceFragments using page markers, heading paths, rule boundaries, tables, footnotes, and figure dependencies. Preserve the original extracted content alongside normalized search text.
+
+### Stage 3: Extract structure
+
+Identify candidate rule hierarchy, definitions, conditions, effects, exceptions, references, examples, tables, phases, terms, and domain concepts. Extraction may combine deterministic parsing and probabilistic proposals. Every proposal retains exact source support.
+
+### Stage 4: Normalize without erasing
+
+Resolve chapter-local numbering, whitespace, hyphenation, aliases, and reference targets into proposed normalized fields while retaining original values and transformation records. Ambiguous normalization remains unresolved.
 
 ### Stage 5: Build proposed semantics
 

@@ -21,6 +21,7 @@ The authoring scope is **only the TOC, Index/Glossary, and Chapters A–E**: sev
 | `asl-scenario-a1.backmatter-chart-candidate.json` | Bounded page-698 B. Terrain Chart candidate: exact PDF, extraction, MF column and two building-row hashes; remains outside the initial source registry and unverified. |
 | `Supplements/b-terrain-chart-building-entry.md` | Bounded page-698 transcription of two building entry rows, printed note and relevant legend; requires source review. |
 | `asl-scenario-a1.supplementary-source-registry.json` | Separate C# registered supplement: ties the bounded transcription hash and PDF page evidence to the immutable original registry, with `registered-unverified-supplement` status. |
+| `asl-scenario-a1.backmatter-chart-pdf-comparison.json` | Tool-assisted comparison of the bounded supplement against physical PDF page 698, including the Infantry column, both building rows, note placement and legend; human fidelity attestation remains pending. |
 
 The manifests contain locators and hashes, not duplicated rule text. The Markdown and image files under `../Rulebook_Markdown/` remain the registered content.
 
