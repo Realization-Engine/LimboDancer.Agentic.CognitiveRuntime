@@ -15,9 +15,10 @@ public sealed record ScenarioA1SemanticResult(string Disposition, IReadOnlyList<
 /// </summary>
 public sealed class ScenarioA1SemanticCandidate
 {
-    private const string MatrixDigest = "0986e0657f9c5e39dbac991d1934664acc1044d18f143bc869d42db7868024ff";
+    private const string MatrixDigest = "37ddd657d59472e12314ba4d616c08e6db73f0d02d7825772a7995f146ceaa68";
     private const string ComparisonDigest = "c64fe3229d5a3541357fe6948ec037fcfbdbfde8810a599f21df81aed0a94bc5";
     private readonly IReadOnlyDictionary<string, ScenarioA1SemanticCase> _cases;
+    private readonly IReadOnlySet<string> _acceptedCaseIds;
 
     public ScenarioA1SemanticCandidate()
     {
@@ -48,7 +49,7 @@ public sealed class ScenarioA1SemanticCandidate
                 || predicates.Any(item => string.IsNullOrWhiteSpace(item.Key)
                     || string.IsNullOrWhiteSpace(item.ExpectedValue))
                 || predicates.Select(item => item.Key).Distinct(StringComparer.Ordinal).Count() != predicates.Length
-                || (status == "reviewed-bounded" && disposition is not ("eligible-2mf" or "prohibited"))
+                || (status == "reviewed-bounded" && disposition is not ("eligible-2mf" or "prohibited" or "qualified-overrun-entry-attempt-4mf"))
                 || (status == "deferred" && disposition != "abstained")
                 || (status == "reviewed-nondefinitive" && disposition != "indeterminate"))
             {
@@ -58,11 +59,12 @@ public sealed class ScenarioA1SemanticCandidate
                 status, disposition, ruleIds, predicates);
         }).ToArray();
         if (cases.Length != 9 || cases.Select(item => item.Id).Distinct(StringComparer.Ordinal).Count() != 9
-            || cases.Count(item => item.ReviewStatus == "reviewed-bounded") != 3)
+            || cases.Count(item => item.ReviewStatus == "reviewed-bounded") != 4)
         {
             throw new InvalidOperationException("The candidate case inventory changed.");
         }
         _cases = cases.ToDictionary(item => item.Id, StringComparer.Ordinal);
+        _acceptedCaseIds = ScenarioA1BoundedAdmission.Validate(RootSha256, cases);
     }
 
     public string RootSha256 { get; }
@@ -76,7 +78,8 @@ public sealed class ScenarioA1SemanticCandidate
         {
             return new ScenarioA1SemanticResult("abstained", []);
         }
-        if (semanticCase.ReviewStatus == "deferred")
+        if (semanticCase.ReviewStatus == "deferred" || !_acceptedCaseIds.Contains(caseId)
+            && semanticCase.ReviewStatus == "reviewed-bounded")
         {
             return new ScenarioA1SemanticResult("abstained", semanticCase.SourceRules);
         }

@@ -162,24 +162,72 @@
     },
     {
       "caseId": "A1-single-known-enemy-smc-overrun",
-      "reviewStatus": "deferred",
-      "expectedDisposition": "abstained",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "qualified-overrun-entry-attempt-4mf",
       "sourceRules": [
+        "A2.8",
+        "A4.13",
         "A4.14",
         "A4.15",
         "A4.151",
-        "A4.152"
+        "A4.152",
+        "B23.4"
       ],
-      "supplements": [],
-      "declaredFacts": "One known enemy SMC, with NTC, cost, defensive response and immediate CC not fully modeled.",
-      "reason": "A4.15 permits an exceptional attempt subject to its test and follow-on branches; a bare eligibility label would overstate the result.",
-      "semanticDependencies": [
-        "NTC result",
-        "double entry cost",
-        "defensive first fire",
-        "SMC retreat or immediate CC"
+      "supplements": [
+        "asl-supplement:b-terrain-chart-building-entry"
       ],
-      "predicates": []
+      "declaredFacts": "Good Order Infantry MMC during its MPh attempts ordinary ground-level building entry against exactly one Known enemy SMC not in an AFV; its own NTC has passed, it has at least four MF for double the reviewed 2-MF cost, no other occupant or modifier is present, and SMC response/CC have not yet resolved.",
+      "reason": "A4.15 makes the entry attempt eligible after a passed NTC and double entry cost; A4.151/A4.152 preserve subsequent defender and CC resolution. This is a qualified permission to attempt entry, not a conclusion that movement succeeds or occupancy changes.",
+      "predicates": [
+        {
+          "key": "canMove",
+          "equals": "true"
+        },
+        {
+          "key": "defensiveResponse",
+          "equals": "unresolved"
+        },
+        {
+          "key": "location",
+          "equals": "adjacentGroundLevelOrdinaryBuilding"
+        },
+        {
+          "key": "ntc",
+          "equals": "passedByMovingMmc"
+        },
+        {
+          "key": "occupancy",
+          "equals": "exactlyOneKnownEnemySmc"
+        },
+        {
+          "key": "otherOccupants",
+          "equals": "none"
+        },
+        {
+          "key": "phase",
+          "equals": "mph"
+        },
+        {
+          "key": "remainingMf",
+          "equals": "atLeastFour"
+        },
+        {
+          "key": "roadBypassElevationAdditionalTerrain",
+          "equals": "none"
+        },
+        {
+          "key": "smcInAfv",
+          "equals": "false"
+        },
+        {
+          "key": "specialModifier",
+          "equals": "none"
+        },
+        {
+          "key": "unit",
+          "equals": "knownGoodOrderInfantryMmc"
+        }
+      ]
     },
     {
       "caseId": "A1-fortified-breached-entry",

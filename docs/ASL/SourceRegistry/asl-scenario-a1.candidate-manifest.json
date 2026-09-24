@@ -3,8 +3,8 @@
   "status": "candidate-semantic-profile-not-admitted",
   "candidateId": "asl-scenario-a1-occupied-candidate",
   "sourceDecisionSha256": "75d6ec0573af0a251d6261515c7559237f71f9272453b53cc988567205936007",
-  "caseMatrixSha256": "0986e0657f9c5e39dbac991d1934664acc1044d18f143bc869d42db7868024ff",
+  "caseMatrixSha256": "37ddd657d59472e12314ba4d616c08e6db73f0d02d7825772a7995f146ceaa68",
   "occupiedComparisonSha256": "c64fe3229d5a3541357fe6948ec037fcfbdbfde8810a599f21df81aed0a94bc5",
   "caseCount": 9,
-  "rootSha256": "bb089e5ac3e82067feb76268dae6fc3a5442ef3078a217e8b8e7524b00fe82ac"
+  "rootSha256": "41de9d7f1e54d54abc044df2541a483abd22fa10ce658653198b4b487cfce234"
 }

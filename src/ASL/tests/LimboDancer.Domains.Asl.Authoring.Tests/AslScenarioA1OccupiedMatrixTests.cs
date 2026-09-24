@@ -24,7 +24,7 @@ public sealed class AslScenarioA1OccupiedMatrixTests
             ("A1-known-enemy-mmc-mph", "reviewed-bounded", "prohibited"),
             ("A1-fortified-unbreached-enemy-squad", "reviewed-bounded", "prohibited"),
             ("A1-concealed-occupancy-attempt", "reviewed-nondefinitive", "indeterminate"),
-            ("A1-single-known-enemy-smc-overrun", "deferred", "abstained"),
+            ("A1-single-known-enemy-smc-overrun", "reviewed-bounded", "qualified-overrun-entry-attempt-4mf"),
             ("A1-fortified-breached-entry", "deferred", "abstained"),
             ("A1-stacking-equivalents-needed", "deferred", "abstained"),
             ("A1-advance-phase-entry", "deferred", "abstained"),
@@ -43,6 +43,8 @@ public sealed class AslScenarioA1OccupiedMatrixTests
         });
         Assert.Single(cases, item => item.GetProperty("expectedDisposition").GetString() == "eligible-2mf");
         Assert.Equal(2, cases.Count(item => item.GetProperty("expectedDisposition").GetString() == "prohibited"));
+        Assert.Single(cases, item => item.GetProperty("expectedDisposition").GetString()
+            == "qualified-overrun-entry-attempt-4mf");
     }
 
     [Fact]
@@ -69,7 +71,11 @@ public sealed class AslScenarioA1OccupiedMatrixTests
             Assert.Equal(TirSourceVerificationDisposition.Verified, record.Disposition);
             Assert.Equal("source-provider:delegated-xunit-review", record.Actor.Identity);
         });
-        var verified = AslScenarioA1VerificationBatchBuilder.Build(manifests, attestation).Records
+        var baseline = AslScenarioA1VerificationBatchBuilder.Build(manifests, attestation);
+        Assert.Equal(28, baseline.Records.Count + reviewed.NewlyVerifiedRecords.Count
+            + occupied.Records.Count);
+        Assert.Contains(baseline.Records, record => record.SourceFragment.StartLine == 2079);
+        var verified = baseline.Records
             .Concat(reviewed.NewlyVerifiedRecords)
             .Concat(occupied.Records)
             .Select(record => record.SourceFragment.FragmentId).ToHashSet(StringComparer.Ordinal);
@@ -101,6 +107,11 @@ public sealed class AslScenarioA1OccupiedMatrixTests
             .Select(rule => rule.GetString()));
         Assert.Contains(occupied.Records, record => record.SourceFragment.StartLine == 2087);
         Assert.Contains(occupied.Records, record => record.SourceFragment.StartLine == 1438);
+        Assert.Equal(new[] { "A2.8", "A4.13", "A4.14", "A4.15", "A4.151", "A4.152", "B23.4" },
+            cases[4].GetProperty("sourceRules").EnumerateArray()
+                .Select(rule => rule.GetString()!).ToArray());
+        Assert.Equal(AslScenarioA1ChartReview.CandidateId,
+            Assert.Single(cases[4].GetProperty("supplements").EnumerateArray()).GetString());
     }
 
     private static SourceFragment[] RuleFragments(GeneratedManifests manifests, string id) =>
