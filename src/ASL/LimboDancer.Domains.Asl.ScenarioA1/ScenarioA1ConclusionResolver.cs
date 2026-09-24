@@ -16,7 +16,7 @@ public sealed class ScenarioA1ConclusionResolver : IDomainConclusionResolver
         "isBelowStackingLimit", "hasNoSpecialRuleOrOtherModifier",
     ];
 
-    public ValueTask<DomainConclusion> ConcludeAsync(DomainConclusionContext context,
+    public async ValueTask<DomainConclusion> ConcludeAsync(DomainConclusionContext context,
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -24,8 +24,8 @@ public sealed class ScenarioA1ConclusionResolver : IDomainConclusionResolver
         var question = context.Question;
         if (question.Package != ScenarioA1Package.Identity)
             throw new ArgumentException("The Scenario A1 resolver requires the exact reviewed package.", nameof(context));
-        var pinned = new ScenarioA1Package().ResolveAsync(ScenarioA1Package.Identity,
-            cancellationToken).Result.Package!;
+        var pinned = (await new ScenarioA1Package().ResolveAsync(ScenarioA1Package.Identity,
+            cancellationToken)).Package!;
         if (!context.Package.CanonicalSources.SequenceEqual(pinned.CanonicalSources))
             throw new ArgumentException("The resolved source set differs from the reviewed case.", nameof(context));
 
@@ -99,7 +99,7 @@ public sealed class ScenarioA1ConclusionResolver : IDomainConclusionResolver
                 : "The supplied case cannot inherit the bounded entry ruling.",
             "asl-scenario-a1.first-case-review-decision.json#sha256:" + ScenarioA1Package.DecisionSha256,
             question.AskedAt);
-        return ValueTask.FromResult(conclusion);
+        return conclusion;
     }
 
     private static string? StringParameter(JsonElement data, string name) =>

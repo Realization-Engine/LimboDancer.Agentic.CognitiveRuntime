@@ -77,7 +77,7 @@ public sealed class ScenarioA1Tests
     }
 
     private static DomainPackageDescriptor Descriptor() =>
-        new ScenarioA1Package().ResolveAsync(ScenarioA1Package.Identity).Result.Package!;
+        new ScenarioA1Package().ResolveAsync(ScenarioA1Package.Identity).AsTask().GetAwaiter().GetResult().Package!;
 
     private static DomainConclusionContext Context(DomainPackageDescriptor package, string data,
         bool ambiguous = false, string? version = "state-1")
