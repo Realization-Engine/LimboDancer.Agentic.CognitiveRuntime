@@ -60,6 +60,18 @@ The [Scenario A1 source review packet](<../LimboDancer.Agentic.CognitiveRuntime 
 
 The first-case comparison evidence pins eight more prose fragments and the images for A2.4 and B23.1. B23.1 inherits Markdown conversion page 134 even though its rule and figure appear on physical PDF page 135. The C# conformance test validates all ten fragment IDs, source hashes, line numbers, page markers and registered image hashes; the matching text and visual observations remain review evidence, not verified dispositions.
 
+Regenerate the pending ten-record batch with the C# CLI, passing `--a1-attestation` and the additional options:
+
+```bash
+dotnet run --project src/ASL/LimboDancer.Domains.Asl.Authoring.Cli -- \
+  --source-commit a3254ff1d492dbdd28483d86f5b42437b48e80d4 \
+  --registry-output docs/ASL/SourceRegistry/asl-3.10-a-e.source-registry.json \
+  --verification-output docs/ASL/SourceRegistry/asl-3.10-a-e.verification-sample.json \
+  --a1-attestation docs/ASL/SourceRegistry/asl-scenario-a1.source-attestation.json \
+  --a1-comparison docs/ASL/SourceRegistry/asl-scenario-a1.first-case-pdf-comparison.json \
+  --a1-comparison-output docs/ASL/SourceRegistry/asl-scenario-a1.pending-comparison-records.json
+```
+
 The [back-matter boundary review](<../LimboDancer.Agentic.CognitiveRuntime ASL Back-Matter Source Boundary Review.md>) identifies the B. Terrain Chart on physical PDF page 698 and other A–E-related player aids outside the initial registered page range. They are candidates for explicitly reviewed source additions, not implicit members of this registry.
 
 ## Verification boundary

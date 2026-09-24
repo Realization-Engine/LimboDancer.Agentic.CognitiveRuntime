@@ -29,6 +29,7 @@ No current ASL artifact authorizes execution. A `DomainConclusion` remains an in
 - `LimboDancer.Agentic.CognitiveRuntime ASL-OT-02 TIR Review.md` — approval decision, implementation evidence, corpus results, accepted structural interpretations, residual diagnostics, and ASL-OT-03 entry conditions.
 - `LimboDancer.Agentic.CognitiveRuntime ASL-OT-03 Validation and Review Workflow Design.md` — accepted validation/review contract; records completed 03.1–03.3 and the partial 03.4 non-accepting implementation.
 - `LimboDancer.Agentic.CognitiveRuntime ASL-OT-03.5 Conformance and ASL-OT-04 Admission Review.md` — draft admission inventory, candidate Scenario A1 source boundary, and exact evidence still required before ASL-OT-04.
+- `LimboDancer.Agentic.CognitiveRuntime ASL Back-Matter Source Boundary Review.md` — candidate supplement for A–E-labelled charts and aids outside the initial PDF pages 6–253, including the B. Terrain Chart on page 698.
 - `SourceRegistry/` — reproducible source registry, unverified representative fragment sample, and operator instructions.
 - `Schemas/asl-tir-1.3.schema.json` — versioned ASL-OT-02 structural TIR envelope and artifact schema, including typed section boundaries and exact UTF-8 sub-fragment spans.
 - `Schemas/asl-tir-review-record-1.0.schema.json` — versioned ASL-OT-03 immutable review-record family and exact-subject identity contract.

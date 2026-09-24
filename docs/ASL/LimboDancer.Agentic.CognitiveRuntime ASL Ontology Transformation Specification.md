@@ -101,6 +101,8 @@ The initial transformation source is the ASL 3.01 Markdown set under `docs/ASL/R
 
 The edition source boundary is **the TOC, Index/Glossary, and Chapters A–E only** (physical PDF pages 6–253 for the supplied 716-page PDF). Material after Chapter E is outside this source baseline. A reference to an excluded section remains an unresolved or separately scoped dependency, never an implicit extension of the ontology source set.
 
+**Boundary finding (2026-09-24):** A4.13 cites the B. Terrain Chart, which appears in the supplied PDF on physical page 698 with other A–E-labelled back-matter aids. Thus physical pages 6–253 describe the **initial registered conversion**, not necessarily every artifact needed to interpret A–E. The [back-matter source boundary review](<./LimboDancer.Agentic.CognitiveRuntime ASL Back-Matter Source Boundary Review.md>) proposes admitting exact cited aids through explicit supplementary registration and verification. Until such a scoped revision is reviewed, page 698 remains an unresolved external dependency; the existing 11 source attestations do not cover it.
+
 The source registry MUST pin the repository commit, file path, whole-file SHA-256, edition, chapter, page range, conversion tool version, and applicable distribution restrictions.
 
 ### 5.2 Conversion characteristics

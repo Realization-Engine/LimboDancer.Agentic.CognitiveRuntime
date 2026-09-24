@@ -69,11 +69,4 @@ jobs:
             --a1-attestation docs/ASL/SourceRegistry/asl-scenario-a1.source-attestation.json \
             --a1-comparison docs/ASL/SourceRegistry/asl-scenario-a1.first-case-pdf-comparison.json \
             --a1-comparison-output "$RUNNER_TEMP/asl-scenario-a1.pending-comparison-records.json"
-          if [ -f docs/ASL/SourceRegistry/asl-scenario-a1.pending-comparison-records.json ]; then
-            cmp docs/ASL/SourceRegistry/asl-scenario-a1.pending-comparison-records.json "$RUNNER_TEMP/asl-scenario-a1.pending-comparison-records.json"
-          else
-            echo 'ASL_A1_PENDING_BASE64_BEGIN'
-            base64 -w0 "$RUNNER_TEMP/asl-scenario-a1.pending-comparison-records.json"
-            echo
-            echo 'ASL_A1_PENDING_BASE64_END'
-          fi
+          cmp docs/ASL/SourceRegistry/asl-scenario-a1.pending-comparison-records.json "$RUNNER_TEMP/asl-scenario-a1.pending-comparison-records.json"

@@ -37,6 +37,9 @@ public sealed class AslScenarioA1ComparisonBatchTests
         using var json = JsonDocument.Parse(batch.Serialize());
         Assert.Equal("source-comparison-indeterminate-semantic-review-pending",
             json.RootElement.GetProperty("status").GetString());
+        var committedPath = Path.Combine(RepositoryPaths.Root, "docs", "ASL", "SourceRegistry",
+            "asl-scenario-a1.pending-comparison-records.json");
+        Assert.Equal(File.ReadAllText(committedPath), batch.Serialize());
     }
 
     [Fact]
