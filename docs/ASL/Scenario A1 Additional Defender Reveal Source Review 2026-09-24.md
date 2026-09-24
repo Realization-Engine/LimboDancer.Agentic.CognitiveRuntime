@@ -4,7 +4,7 @@
 
 **Branch:** `decision-plane`
 
-**Status:** Seven source-backed cases reviewed by affirmative xUnit; separate immutable eligibility package published. No forced-back consequence admitted.
+**Status:** Seven source-backed cases pass end-to-end conformance through supplied ordered events, pinned board 01 terrain, immutable eligibility package, and read-only conclusion. No forced-back consequence admitted.
 
 ## Boundary and source evidence
 
@@ -34,4 +34,10 @@ These are the registered and verified source subjects already used by the [trans
 
 The affirmative xUnit review pins the event vocabulary, source dependencies, and candidate outcomes before any new immutable package is published. The board 01 adapter may validate the terrain; all reveal, unit-type, NTC, MF, and timing facts must come from the supplied state source.
 
-The [case matrix](<./SourceRegistry/asl-scenario-a1.second-defender-reveal-case-matrix.json>) and its affirmative xUnit review pin two narrowly bounded eligibility findings: a second **revealed SMC** denies the single-SMC OVR to a supplied OVR-capable MMC, while a **revealed MMC** defeats that single-SMC exception. Five other cases remain indeterminate or abstain. The matrix separates the required first-reveal → election → second-reveal ordering from NTC timing and grants no movement, MF-spend, or execution conclusion. The [new immutable package](<./SourceRegistry/asl-scenario-a1.second-defender-reveal-package.json>) and resolver serve only these exact read-only eligibility findings. The observation adapter projects supplied ordered events and MF at the second reveal; this bounded projection requires a passed NTC recorded before that reveal and makes no claim that this is the universal rule sequence. End-to-end conformance remains the next increment.
+The [case matrix](<./SourceRegistry/asl-scenario-a1.second-defender-reveal-case-matrix.json>) and its affirmative xUnit review pin two narrowly bounded eligibility findings: a second **revealed SMC** denies the single-SMC OVR to a supplied OVR-capable MMC, while a **revealed MMC** defeats that single-SMC exception. Five other cases remain indeterminate or abstain. The matrix separates the required first-reveal → election → second-reveal ordering from NTC timing and grants no movement, MF-spend, or execution conclusion. The [new immutable package](<./SourceRegistry/asl-scenario-a1.second-defender-reveal-package.json>) and resolver serve only these exact read-only eligibility findings. The observation adapter projects supplied ordered events and MF at the second reveal; this bounded projection requires a passed NTC recorded before that reveal and makes no claim that this is the universal rule sequence.
+
+## End-to-end conformance and remaining consequence
+
+`ScenarioA1SecondDefenderConformanceTests` feeds all seven reviewed event states through the board 01 observation provider, exact package descriptor, and resolver. It checks the case disposition, pinned matrix and versioned observation evidence, and the absence of any forced-back, MF-spend, or response/CC resolution. It also confirms this package cannot resolve or observe an earlier milestone's identity; the earlier packages remain available under their own identities.
+
+The next source review must decide the exact A12.15 forced-back and MF-expenditure consequences for each disqualified OVR branch, including the event time at which they apply and the supplied state needed to prove it. A definitive **eligibility** finding alone does not authorize moving a unit back, charging MF, or resolving defensive fire or CC.
