@@ -44,8 +44,14 @@ internal sealed class FakeFidelityBatch : IFidelityBatch
 
     public bool IsAvailable => true;
 
-    public FidelityReport Run(IProgress<BatchProgress> progress, CancellationToken cancellationToken)
+    public bool? LastIncludedF3
     {
+        get; private set;
+    }
+
+    public FidelityReport Run(bool includeF3, IProgress<BatchProgress> progress, CancellationToken cancellationToken)
+    {
+        LastIncludedF3 = includeF3;
         progress.Report(new BatchProgress(1, 2, "bd02"));
         if (BlockUntilCanceled)
         {
@@ -66,13 +72,17 @@ public sealed class FidelityRunnerTests : IDisposable
     public async Task ARunSavesItsReportAndBecomesTheLatest()
     {
         var store = new FidelityReportStore(options);
-        using var runner = new FidelityJobRunner(new FakeFidelityBatch(), store);
+        var batch = new FakeFidelityBatch();
+        using var runner = new FidelityJobRunner(batch, store);
         var changes = 0;
         runner.Changed += () => Interlocked.Increment(ref changes);
 
         Assert.Null(runner.Latest);
-        Assert.True(runner.Start());
+        Assert.True(runner.Start(includeF3: true));
         await runner.Completion!;
+
+        Assert.True(batch.LastIncludedF3);
+        Assert.True(runner.IncludesF3);
 
         Assert.Equal(FidelityJobState.Completed, runner.State);
         Assert.Equal(new BatchProgress(2, 2, "bd79"), runner.Progress);
@@ -181,6 +191,7 @@ public sealed class FidelityPageTests(StudioFactory factory) : IClassFixture<Stu
         using var client = factory.CreateClient();
         var html = await client.GetStringAsync(new Uri("/fidelity", UriKind.Relative));
         Assert.Contains("Run batch", html, StringComparison.Ordinal);
+        Assert.Contains("Include F3", html, StringComparison.Ordinal);
         Assert.Contains("2 boards in scope", html, StringComparison.Ordinal);
         Assert.Contains("href=\"boards/bd02\"", html, StringComparison.Ordinal);
         Assert.Contains("VASL-META-000 (error)", html, StringComparison.Ordinal);

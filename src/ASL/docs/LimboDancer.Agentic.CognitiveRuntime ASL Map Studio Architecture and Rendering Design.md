@@ -366,6 +366,7 @@ Browser automation (for example, Playwright) is deferred. It can be added when t
 | ASL-MAP-01 | the four projects and their solution entries (section 2); `Maps.Tests` and `Maps.Vasl.Tests`; a minimal Studio page reporting configuration status. `Maps.Rendering.Tests` and `MapStudio.Tests` are added in ASL-MAP-04 with the first rendering and Studio code. |
 | ASL-MAP-04 | SvgWriter, `catalog` theme, Exact and Hex-fact views, render endpoints, board library and viewer, inspector (as built: section 9.1) |
 | ASL-MAP-05 | `/fidelity` batch pages and job runner (as built: section 9.2) |
+| ASL-MAP-06 | F3 as an option of the fidelity batch (as built: section 9.3) |
 | ASL-MAP-07 | `board` theme, Styled and Comparison views, editor, patches |
 
 ### 9.1 ASL-MAP-04 as built
@@ -394,6 +395,12 @@ ASL-MAP-04 delivers a smaller surface than sections 4 and 5 describe. The rest m
   The table can be filtered to boards in scope, boards not verified, or all boards.
 - **Library.** The "Check all" button is replaced by a link to `/fidelity`. For a board that has not been opened, the library shows the latest report's result, marked "(batch)", only when the report still applies: the board's `LOSData` and metadata blobs, the catalog blob, and the importer, derivation, and renderer versions must all match the current ones. A stale report never marks a board verified.
 - **Measured.** In the Studio, a Debug build, the full run with rendering checks took 53 seconds for 297 directories. In the Release test run, the batch without rendering checks takes about 11 seconds, and the batch with rendering checks about 30 seconds.
+
+### 9.3 ASL-MAP-06 as built
+
+- The `/fidelity` page has an "Include F3" option. With it, each ingested board is also vectorized and recompiled (Model Design section 16). The run records `f3-hexfacts` (identical facts, iterations, pins) and `f3-pixels` (agreement, overlap, and model size, with any threshold failures).
+- F3 checks are informational: a `FidelityCheck` now has a `Gating` flag, and only gating checks decide a board's outcome, because F3 describes the vectorized model and not the board (Model Design section 10). Failed informational checks show as warnings.
+- Reports that include F3 record the compiler and vectorizer versions.
 
 ## 10. Open issues
 

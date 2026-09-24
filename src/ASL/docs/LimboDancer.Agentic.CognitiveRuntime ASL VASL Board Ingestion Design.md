@@ -440,7 +440,7 @@ Each board ends with one outcome:
 
 | Outcome | Meaning |
 |---|---|
-| `Verified` | F1 pass, F2 pass, and every additional check passed |
+| `Verified` | F1 pass, F2 pass, and every gating additional check passed; informational checks such as F3 are recorded but do not decide the outcome |
 | `Ingested` | ingested, but F2 has no fixture, F2 failed, or a check failed; the reason is recorded |
 | `Failed` | refused with an error diagnostic |
 | `OutOfScope` | `VASL-SCOPE-001`, with the reason |

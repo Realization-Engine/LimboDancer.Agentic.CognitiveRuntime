@@ -44,7 +44,7 @@ These observations from decoding VASL boards drive the compiler and vectorizer d
    - depression elevation minus one;
    - sunken road pixels become Elevated Road at elevation 1 in level-1 hexes, and elevation -1 elsewhere;
    - stairways from stairway-colored pixels.
-   
+
    A grid that VASL-compatible derivation treats correctly has to obey the same conventions.
 6. **The standard hex is not regular.** Width 56.25 and height 64.5 give a height to width ratio of 1.1467, not the regular 1.1547 (Ingestion Design finding 7). Rotating geometry by 60 degrees in pixel space does not map the hex grid onto itself.
 
@@ -186,15 +186,19 @@ Rowhouse partitions are `HexsideTerrain` features using the rowhouse wall codes,
 5. **Bridges.**
 6. **Buildings:** by `Layer`.
 7. **Hexside terrain:** stroke each hexside segment with the standard width of 6 pixels (configurable per catalog code, minimum 3), centered on the hexside and clipped to the given extent.
-8. **Fidelity pins:** by `Layer`.
-9. **Post-passes**, reproducing `LOSDataEditor` conventions (finding 5), in its order:
-   1. cliff pixels take the lower of the two adjacent hexes' base levels;
-   2. exterior factory walls;
+8. **Post-passes**, reproducing `LOSDataEditor` conventions (finding 5), in its order:
+   1. cliff pixels take the base level of the hex that `gridToHex` assigns them to (see below);
+   2. exterior factory walls: factory pixels with a non-factory 4-neighbor become the matching wall code, with edges clamped to the pixel itself;
    3. depression-category pixels: elevation minus one;
    4. sunken road pixels: Elevated Road at elevation 1 in hexes whose base level is 1, otherwise elevation -1.
-   
-   Base levels for passes 1 and 4 come from an intermediate derivation of the grid produced by stages 1 to 8, exactly as `LOSDataEditor` calls `resetHexTerrain` between its passes.
+
+   Base levels for passes 1 and 4 come from an intermediate derivation of the grid as it stands before each pass, exactly as `LOSDataEditor` calls `resetHexTerrain` between its passes. Each derivation runs only when the grid contains a cliff or sunken road pixel.
+9. **Fidelity pins:** by `Layer`, over the post-pass result.
 10. **Stairways:** copied from `HexAnnotations`.
+
+**Cliff rule, as built (ASL-MAP-06).** VASL's editor builds its map with the "Normal" grid configuration (`LOSDataEditor.createNewLOSData`). Under that configuration `Map.getAdjacentHex` matches neither of its configuration branches and returns the hex itself, so "the lower of the two adjacent hexes' base levels" is always the base level of the cliff pixel's own hex. `VaslHexLocator` ports `Map.gridToHex` for that configuration, including its column bands, polygon tests, and the extended border, and the compiler uses it for passes 1 and 4.
+
+**Fidelity pins after the post-passes, as built (ASL-MAP-06).** Pins carry the final source code and elevation and are painted after the post-passes, not before them. A pin can then reproduce any VASL artifact, including one created by a post-pass, and the post-passes still see the grid the shapes produce.
 
 **Cell coverage rule.** A cell `(x, y)` is covered by a shape when its center `(x + 0.5, y + 0.5)` lies inside the shape under the nonzero winding rule. There is no anti-aliasing. Curves are flattened with a fixed subdivision rule (section 5.4). Strokes are converted to polygons (butt caps on hexside strokes; round joins and caps on linear terrain) before filling. Coverage is computed with a scanline algorithm over 64-bit integer edge arithmetic.
 
@@ -257,7 +261,7 @@ Because of the second, it runs for every board a user opens in Styled view, not 
    - Add one to the elevation of depression-category pixels (finding 2).
    - Record sunken and elevated road pixels as `LinearTerrain` codes as they stand.
    - Record factory wall pixels as belonging to their factory.
-   
+
    After this stage, compiling the output reapplies the passes and returns the original values.
 2. **Hexside terrain.** For each hexside whose derived facts record hexside terrain, emit a `HexsideTerrain` ref with that code. The extent is estimated from the pixel run along the hexside. Mask those pixels from later stages.
 3. **Buildings.** Take connected components of building-code pixels per code, trace their outer boundaries, and simplify (section 7.3).
@@ -304,6 +308,22 @@ F3 (ASL-MAP-043) is measured by compiling the vectorized model and comparing it 
 A code is **dithered** when fewer than 50% of its source pixels have all four neighbors in the same code. On the measured boards, grain falls between 25% and 29%, and every other code with material area falls between 76% and 96%.
 
 The thresholds are initial values, to be calibrated on board 01 in ASL-MAP-06 and then on the batch. They may be tightened without review. Loosening one requires a recorded review decision.
+
+**Calibration on board 01 (ASL-MAP-06).** Board 01 meets every threshold with the initial values:
+- Hex Facts are identical after 2 iterations, with no fidelity pins;
+- code agreement is 99.30% and elevation agreement 100%;
+- every gated code overlaps at 0.96 or more.
+
+The model has 94 features and 6,707 vertices, against 47,240 in the exact outlines. One calibration was needed: at the 1.5 pixel tolerance, dirt roads overlapped at 0.946, because narrow shapes lose proportionally more area to simplification. Linear terrain therefore uses a tolerance of 1.0 pixel, which raises dirt roads to 0.960.
+
+**Decision: hexside terrain is reported, not gated (ASL-MAP-06).** The Feature Model represents hexside terrain as refs stroked at a standard or measured width (section 5.2), not as the painted pixel shapes. On the batch, walls, hedges, and cliffs overlap at 0.45 to 0.92 while their Hex Facts are identical. Their overlap is reported like dithered codes and does not gate F3. This is a recorded loosening of the per-code overlap threshold for hexside codes only.
+
+**Batch findings (ASL-MAP-06).** Across the 156 verified boards, Hex Facts are identical on every board, and 24 boards meet every pixel threshold. The rest fall short on code agreement (86.6% to 99%), for three measured reasons:
+1. closing dithered grain into solid fields, as section 7.2 intends (on board 16, 92,802 of 96,941 mismatched pixels);
+2. hexside strokes against the painted wall, hedge, and cliff pixels;
+3. simplification at road, building, and woods boundaries, which is symmetric (as many pixels gained as lost).
+
+Scrub on boards 26 to 31 is not dithered by the section 7.5 rule but overlaps at 0.83 to 0.91. Elevation agreement is below 99.5% on four hilly boards (08, 09, 15, 25). Batch-wide calibration of these thresholds remains open (section 14).
 
 ## 8. Scenes and composition
 
@@ -433,6 +453,24 @@ A new board starts from `BoardGeometry.Standard(33, 10)` or explicit dimensions 
 2. **Dithered terrain and LOS.** Solid grain regions in authored boards will produce more hindrance pixels on an LOS trace than VASL's dithered grain. This does not affect Hex Facts, but it affects the later Scenario B executor. Decide then whether authored grain should be dithered by the compiler.
 3. **Centerline recovery** for vectorized linear terrain (section 7.2, stage 4).
 4. **Seam rule details** for composition and rotated boards, pinned by oracle fixtures from VASL multi-board maps once composition is implemented.
+5. **Batch calibration of the F3 pixel thresholds** (section 7.5): decide whether code agreement should exclude cells of dithered codes, whether scrub needs its own rule, and whether elevation boundaries need a lower tolerance on hilly boards.
+
+## 16. ASL-MAP-06 as built
+
+ASL-MAP-06 delivers the Feature Model, the compiler, the vectorizer, and F3, in `LimboDancer.Domains.Asl.Maps.Features`:
+
+- **Feature Model** (section 5): `FeatureModel`, the feature kinds of section 5.2 with fixed-point geometry (`FixedVector`, `FeatureShape`, `CenterlinePath`, `HexsideSpan`), `HexAnnotations`, `FeatureProvenance`, and `FeatureIds` (ULIDs for authored features; deterministic ULID-shaped ids for generated ones). A `HexsideSpan` may carry its own width, which the vectorizer measures.
+- **Compiler** (sections 5.3 and 5.4): `FeatureCompiler` with `ShapeRasterizer` (nonzero winding over 64-bit integer edge arithmetic, cell centers on a left edge inside and on a right edge outside), `FixedGeometry` (integer square root, cubic flattening with integer Bernstein weights, stroke quads, and 16-sided round joins from a fixed table), and `VaslHexLocator`. A test pins the SHA-256 of a compiled sample model, so the Windows and Linux CI runs must agree byte for byte.
+- **Vectorizer** (section 7):
+  - `Vectorizer` reverses the post-passes: depression pixels go one level up, and exterior factory walls return to the nearest factory interior of a matching type.
+  - It traces one label image per kind (area, linear, bridge, building). Higher kinds are under-filled with the nearest lower label, so lower layers continue beneath higher ones. Dithered area codes are closed with a 3 by 3 square before tracing.
+  - `BoundarySimplifier` splits boundaries into chains at junctions and simplifies each chain once, so neighbors share it.
+  - Hexside terrain comes from the derived facts, with the extent measured from 33 samples along the side and the width from the median of five cross-sections. Nested elevation regions are traced per level.
+  - The fidelity loop first drops tolerance to 0 within 6 pixels of a failing hex. It then pins only the pixels the derivation samples for that hex (center, its diagonal neighbors, the four 5-pixel probes, and the edge samples on both sides), and only after that the differing pixels over a widening area. With this order, the batch needs 0 to 588 pins per board, all of them single pixels.
+- **F3** (section 7.5): `F3Fidelity` measures fact identity, code and elevation agreement, per-code overlap, pins, and model size. `F3Checks` runs it as informational batch checks.
+- **Comparison**: `HexFactComparer` compares fact sets field by field, excluding the derivation trace, for F3.
+
+Deferred to later steps, as the sequence places them: validation (section 6), incremental compilation (section 5.5), authoring commands (section 12), Scenes and composition (section 8), the canonical board package (section 9), and the read API (section 11). Centerline recovery for vectorized linear terrain remains open issue 3.
 
 ## 15. Requirement coverage
 

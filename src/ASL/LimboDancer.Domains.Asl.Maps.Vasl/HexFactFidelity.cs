@@ -26,12 +26,14 @@ public static class HexFactFidelity
     public static HexFactSet Derive(IngestedBoard board, TerrainCatalog catalog)
     {
         ArgumentNullException.ThrowIfNull(board);
-        var metadata = board.Metadata;
-        var annotations = new HexsideAnnotations(
-            ToDictionary(metadata.Slopes),
-            ToDictionary(metadata.RailroadEmbankments),
-            ToDictionary(metadata.PartialOrchards));
-        return VaslCompatibleHexFactDerivation.Derive(board.Grid, catalog, annotations);
+        return VaslCompatibleHexFactDerivation.Derive(board.Grid, catalog, Annotations(board.Metadata));
+    }
+
+    /// <summary>The metadata's slopes, railroad embankments, and partial orchards as derivation annotations.</summary>
+    public static HexsideAnnotations Annotations(BoardMetadata metadata)
+    {
+        ArgumentNullException.ThrowIfNull(metadata);
+        return new HexsideAnnotations(ToDictionary(metadata.Slopes), ToDictionary(metadata.RailroadEmbankments), ToDictionary(metadata.PartialOrchards));
     }
 
     /// <summary>The fixture file name for a board, such as <c>bd01.hexfacts.json.gz</c>.</summary>

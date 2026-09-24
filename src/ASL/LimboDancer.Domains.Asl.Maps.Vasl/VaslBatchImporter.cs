@@ -10,7 +10,7 @@ namespace LimboDancer.Domains.Asl.Maps.Vasl;
 [JsonConverter(typeof(JsonStringEnumConverter<BatchOutcome>))]
 public enum BatchOutcome
 {
-    /// <summary>F1, F2, and every additional check passed.</summary>
+    /// <summary>F1, F2, and every gating additional check passed.</summary>
     Verified,
 
     /// <summary>Ingested, but F2 has no fixture or a check did not pass.</summary>
@@ -197,7 +197,7 @@ public static class VaslBatchImporter
             var batchF2 = f2 is null
                 ? new BatchF2(BatchF2.NoFixture, [], [])
                 : new BatchF2(f2.Passed ? BatchF2.Pass : BatchF2.Fail, f2.Differences, f2.Diagnostics);
-            var verified = ingested.F1.Passed && f2 is { Passed: true } && checks.All(check => check.Passed);
+            var verified = ingested.F1.Passed && f2 is { Passed: true } && checks.All(check => check.Passed || !check.Gating);
             var why = verified ? null : WhyNotVerified(ingested, batchF2, checks);
             return new BatchBoardResult(board, verified ? BatchOutcome.Verified : BatchOutcome.Ingested, why,
                 ingested.Provenance.LosData.ContentBlob, ingested.Provenance.Metadata.ContentBlob, ingested.F1.Status, ingested.F1.Detail,
@@ -224,7 +224,7 @@ public static class VaslBatchImporter
             reasons.Add(f2.Status == BatchF2.NoFixture ? "no F2 fixture" : $"F2 failed ({f2.Differences.Count} differences, {f2.Diagnostics.Count} diagnostics)");
         }
 
-        reasons.AddRange(checks.Where(check => !check.Passed).Select(check => $"{check.Name}: {check.Detail}"));
+        reasons.AddRange(checks.Where(check => !check.Passed && check.Gating).Select(check => $"{check.Name}: {check.Detail}"));
         return string.Join("; ", reasons);
     }
 

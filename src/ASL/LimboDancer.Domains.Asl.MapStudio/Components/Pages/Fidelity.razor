@@ -18,6 +18,10 @@ else
 {
     <p>
         <button @onclick="Start" disabled="@(Runner.State == FidelityJobState.Running)">Run batch</button>
+        <label class="toggle">
+            <input type="checkbox" checked="@includeF3" disabled="@(Runner.State == FidelityJobState.Running)" @onchange="@(args => includeF3 = (bool)args.Value!)" />
+            Include F3 (vectorize and recompile every board)
+        </label>
         @if (Runner.State == FidelityJobState.Running)
         {
             <button @onclick="Runner.Cancel">Cancel</button>
@@ -33,7 +37,7 @@ else
             <span class="fail">The last run failed: @Runner.Error</span>
         }
     </p>
-    <p class="muted">A run ingests every VASL board and checks F1, F2 against the oracle fixtures, lossless outlines, and both SVG views. Reports are saved under <code>@Store.Directory</code>.</p>
+    <p class="muted">A run ingests every VASL board and checks F1, F2 against the oracle fixtures, lossless outlines, and both SVG views. F3 checks are informational: they describe the vectorized model and never change a board's outcome. Reports are saved under <code>@Store.Directory</code>.</p>
 }
 
 @if (reports.Count > 0)
@@ -156,7 +160,7 @@ else
                     <td>
                         @foreach (var check in board.Checks)
                         {
-                            <span class="diagnostic @(check.Passed ? "info" : "error")" title="@check.Detail">@check.Name</span>
+                            <span class="diagnostic @(check.Passed ? "info" : check.Gating ? "error" : "warning")" title="@check.Detail">@check.Name</span>
                         }
                     </td>
                     <td>
@@ -182,6 +186,7 @@ else
     private string? selectedId;
     private FidelityReport? report;
     private string filter = "in-scope";
+    private bool includeF3;
 
     protected override void OnInitialized()
     {
@@ -203,7 +208,7 @@ else
         }
     }
 
-    private void Start() => Runner.Start();
+    private void Start() => Runner.Start(includeF3);
 
     private void Select(ChangeEventArgs args)
     {

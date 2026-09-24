@@ -1,5 +1,7 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
+using LimboDancer.Domains.Asl.Maps;
+using LimboDancer.Domains.Asl.Maps.Features;
 using LimboDancer.Domains.Asl.Maps.Rendering;
 using LimboDancer.Domains.Asl.Maps.Vasl;
 
@@ -14,7 +16,8 @@ public interface IFidelityBatch
         get;
     }
 
-    public FidelityReport Run(IProgress<BatchProgress> progress, CancellationToken cancellationToken);
+    /// <summary>Runs every board; with <paramref name="includeF3"/>, also vectorizes and recompiles each one.</summary>
+    public FidelityReport Run(bool includeF3, IProgress<BatchProgress> progress, CancellationToken cancellationToken);
 }
 
 /// <summary>The VASL fidelity batch: F1, F2 against the oracle fixtures, and rendering checks for every board.</summary>
@@ -24,15 +27,31 @@ public sealed class VaslFidelityBatch(StudioOptions options) : IFidelityBatch
 
     public bool IsAvailable => vasl is not null;
 
-    public FidelityReport Run(IProgress<BatchProgress> progress, CancellationToken cancellationToken)
+    public FidelityReport Run(bool includeF3, IProgress<BatchProgress> progress, CancellationToken cancellationToken)
     {
         var source = vasl ?? throw new InvalidOperationException("No VASL checkout is configured.");
+        var versions = new Dictionary<string, string> { ["renderer"] = BoardRenderer.RendererVersion };
+        if (includeF3)
+        {
+            versions["compiler"] = FeatureCompiler.Version;
+            versions["vectorizer"] = Vectorizer.Version;
+        }
+
         return VaslBatchImporter.Run(source, new VaslBatchOptions
         {
             OracleDirectory = options.ResolveOracleFixtures(),
             AdditionalChecks = (board, facts, catalog) =>
-                BoardRenderChecks.Run(BoardRenderInput.Create(board.Board, board.Board.Value, board.Grid, catalog, facts)),
-            AdditionalVersions = new Dictionary<string, string> { ["renderer"] = BoardRenderer.RendererVersion },
+            {
+                var checks = new List<FidelityCheck>(BoardRenderChecks.Run(BoardRenderInput.Create(board.Board, board.Board.Value, board.Grid, catalog, facts)));
+                if (includeF3)
+                {
+                    checks.AddRange(F3Checks.Run(new VectorizerSource(board.Board, board.Provenance.LosData.ContentBlob, board.Grid, facts,
+                        HexFactFidelity.Annotations(board.Metadata), board.Provenance.SharedBoardMetadata.ContentBlob), catalog));
+                }
+
+                return checks;
+            },
+            AdditionalVersions = versions,
         }, progress, cancellationToken);
     }
 }
@@ -174,8 +193,14 @@ public sealed class FidelityJobRunner(IFidelityBatch batch, FidelityReportStore 
         }
     }
 
+    /// <summary>Whether the running or last batch included F3.</summary>
+    public bool IncludesF3
+    {
+        get; private set;
+    }
+
     /// <summary>Starts a batch unless one is running or no source is configured; returns whether it started.</summary>
-    public bool Start()
+    public bool Start(bool includeF3 = false)
     {
         lock (gate)
         {
@@ -187,10 +212,11 @@ public sealed class FidelityJobRunner(IFidelityBatch batch, FidelityReportStore 
             cancellation?.Dispose();
             cancellation = new CancellationTokenSource();
             State = FidelityJobState.Running;
+            IncludesF3 = includeF3;
             Progress = null;
             Error = null;
             var token = cancellation.Token;
-            Completion = Task.Run(() => Execute(token), CancellationToken.None);
+            Completion = Task.Run(() => Execute(includeF3, token), CancellationToken.None);
         }
 
         Changed?.Invoke();
@@ -239,12 +265,12 @@ public sealed class FidelityJobRunner(IFidelityBatch batch, FidelityReportStore 
         && report.Versions.GetValueOrDefault("derivation") == LimboDancer.Domains.Asl.Maps.Derivation.VaslCompatibleHexFactDerivation.Version
         && report.Versions.GetValueOrDefault("renderer") == BoardRenderer.RendererVersion;
 
-    private void Execute(CancellationToken token)
+    private void Execute(bool includeF3, CancellationToken token)
     {
         var state = FidelityJobState.Completed;
         try
         {
-            var report = batch.Run(new CallbackProgress(this), token);
+            var report = batch.Run(includeF3, new CallbackProgress(this), token);
             var id = store.Save(report);
             lock (gate)
             {
