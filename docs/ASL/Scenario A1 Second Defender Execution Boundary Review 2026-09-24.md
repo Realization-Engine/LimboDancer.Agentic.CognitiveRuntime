@@ -35,3 +35,7 @@ The runtime's `ExecutionGate` checks a registered descriptor, executor binding, 
 2. Implement an atomic compare-and-swap store behind a domain-specific interface; keep it isolated from VASL board metadata, which supplies only static terrain.
 3. Bind an action descriptor and executor through the existing gate with explicit permissions and exact preconditions, then verify effects by reading the committed aggregate. Only the reviewed clear-return subset is eligible.
 4. Review conditional attacks and special return terrain separately before any executor handles those states.
+
+### Pure transition increment
+
+`ScenarioA1SecondDefenderReturnTransition` now evaluates those two exact conclusions against a supplied versioned aggregate without modifying its input. It requires matching package, matrix and observation evidence; a pending return stage; a recorded 2 MF attempt; an unconcealed non-Berserk mover in MPh; and a clear return Location. Its candidate state increments the aggregate version, returns the unit, attributes MF in the previous Location, ends movement and records an attempt fingerprint. If the 2 MF were already debited, it does not debit them again. Identical retries return the committed candidate state unchanged; a conflicting retry fails. Hazard and stale-state cases produce no candidate update. This remains a pure model and is not callable as an authorized action.
