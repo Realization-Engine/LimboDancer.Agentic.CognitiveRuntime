@@ -6,6 +6,8 @@
 
 **Baseline:** `main@cbf0ee3` (ASL-MAP-04 board viewer)
 
+**Implementation design:** [ASL Unit Counter Map Rendering Design](<ASL Unit Counter Map Rendering Design.md>) specifies the actual input sources, fixture binding, code boundaries, and integration checks.
+
 ## Goal and boundary
 
 Display one or more unit counters at named locations on a map built by the parallel map effort. The first result should let a viewer identify a counter, see its side and displayed face, tell which hex and level it occupies, and inspect a stack of counters. A user-supplied placement snapshot is enough for this slice. This work does not establish the legal presence, movement, ownership, concealment, combat characteristics, or authority of any unit.
