@@ -13,5 +13,6 @@
     <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.bounded-admission.json" LogicalName="ScenarioA1.bounded-admission.json" />
     <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.semantic-acceptance.json" LogicalName="ScenarioA1.semantic-acceptance.json" />
     <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.occupied-package.json" LogicalName="ScenarioA1.occupied-package.json" />
+    <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.conformance-admission.json" LogicalName="ScenarioA1.conformance-admission.json" />
   </ItemGroup>
 </Project>

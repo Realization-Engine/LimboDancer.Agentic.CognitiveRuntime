@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "admitted-bounded-asl-ot-04-exact-case-package",
+  "authority": "user-directed-affirmative-xunit-review-2026-09-24",
+  "declaredUse": "Scenario A1 occupied-building entry eligibility for exact synthetic facts only",
+  "packageManifestSha256": "2ab3bde60ecc9855f2e35197e1921cfcfee3e8da3cd168a9cceef66ada6be6e9",
+  "semanticAcceptanceSha256": "7c9157b26fb5d0c23ac1b39f7181127b4d9530af9db6f9a90b05b27e6b8c1b66",
+  "boundedAdmissionSha256": "007dbe2512c7bd5f0b17c51ad6ab2cea800b4f8e2c47267fb6cc0e5fbc57b2ee",
+  "candidateManifestRootSha256": "6c7a415db0e08c308e20afec9a079da5e700ca9b115794cab0d39c113861fdf5",
+  "verifiedSourceSubjectCount": 28,
+  "admittedExactCaseCount": 7,
+  "nonDefinitiveCaseCount": 2,
+  "requiredConformance": [
+    "eligible and prohibited results",
+    "controlling breach and overrun exceptions",
+    "qualified advance before close combat",
+    "missing controlling fact and ambiguous entity",
+    "exact package and tenant isolation",
+    "observation version drift",
+    "read-only conclusion"
+  ],
+  "limitations": "No generic TIR curated acceptance, unverified board-state inference, draft curated-edition certification, or action execution."
+}

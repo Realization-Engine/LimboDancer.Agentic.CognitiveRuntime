@@ -27,15 +27,18 @@ public sealed class ScenarioA1OccupiedConclusionResolver : IDomainConclusionReso
         var outside = new List<string>();
         if (question.Kind.Value != QuestionKind)
             outside.Add("question.kind-outside-admitted-use");
-        if (question.Parameters.EnumerateObject().Count() != 3)
+        if (question.Parameters.EnumerateObject().Count() != 4)
             outside.Add("question.unreviewed-parameter");
         if (context.CalculationEvidence.Count != 0)
             outside.Add("calculation.outside-declared-case");
         var unitId = Parameter(question.Parameters, "unitId");
         var locationId = Parameter(question.Parameters, "locationId");
         var caseId = Parameter(question.Parameters, "caseId");
+        var expectedVersion = Parameter(question.Parameters, "observationVersion");
         if (unitId is null || locationId is null || caseId is null || unitId == locationId)
             ambiguities.Add("question.subjects-or-case-missing");
+        if (expectedVersion is null)
+            ambiguities.Add("question.observation-version-missing");
         if (context.EntityResolutions.Count != 2 || unitId is null || locationId is null
             || new[] { unitId, locationId }.Any(id => context.EntityResolutions.Count(result =>
                 result.Query.Reference == id && result.Outcome == DomainEntityResolutionOutcome.Resolved) != 1))
@@ -45,6 +48,8 @@ public sealed class ScenarioA1OccupiedConclusionResolver : IDomainConclusionReso
         if (observation is null || observation.Version is null
             || observation.ResourceId != locationId || observation.ObservedAt > question.AskedAt)
             ambiguities.Add("observation.exact-version-and-location-required");
+        else if (observation.Version != expectedVersion)
+            ambiguities.Add("observation.version-changed-during-adjudication");
         var facts = new Dictionary<string, string>(StringComparer.Ordinal);
         if (observation is not null)
         {

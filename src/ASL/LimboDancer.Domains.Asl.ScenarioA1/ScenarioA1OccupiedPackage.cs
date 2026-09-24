@@ -14,6 +14,7 @@ public sealed class ScenarioA1OccupiedPackage : IDomainPackageResolver
 
     public ScenarioA1OccupiedPackage()
     {
+        ScenarioA1ConformanceAdmission.Validate();
         var candidate = new ScenarioA1SemanticCandidate();
         ScenarioA1SemanticAcceptance.Validate(candidate);
         using var stream = typeof(ScenarioA1OccupiedPackage).Assembly

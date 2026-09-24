@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Security.Cryptography;
 
 namespace LimboDancer.Domains.Asl.Authoring.Tests;
 
@@ -9,6 +10,29 @@ public sealed class AslScenarioA1OccupiedMatrixTests
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private static readonly string[] OverrunRuleIds =
         ["A2.8", "A4.13", "A4.14", "A4.15", "A4.151", "A4.152", "B23.4"];
+
+    [Fact]
+    public void AffirmativePackageAdmissionBindsExactSourceAndReviewDigests()
+    {
+        using var admission = Read("asl-scenario-a1.conformance-admission.json");
+        var root = admission.RootElement;
+        Assert.Equal("admitted-bounded-asl-ot-04-exact-case-package",
+            root.GetProperty("status").GetString());
+        Assert.Equal("user-directed-affirmative-xunit-review-2026-09-24",
+            root.GetProperty("authority").GetString());
+        Assert.Equal(Digest("asl-scenario-a1.occupied-package.json"),
+            root.GetProperty("packageManifestSha256").GetString());
+        Assert.Equal(Digest("asl-scenario-a1.semantic-acceptance.json"),
+            root.GetProperty("semanticAcceptanceSha256").GetString());
+        Assert.Equal(Digest("asl-scenario-a1.bounded-admission.json"),
+            root.GetProperty("boundedAdmissionSha256").GetString());
+        using var manifest = Read("asl-scenario-a1.candidate-manifest.json");
+        Assert.Equal(manifest.RootElement.GetProperty("rootSha256").GetString(),
+            root.GetProperty("candidateManifestRootSha256").GetString());
+        Assert.Equal(28, root.GetProperty("verifiedSourceSubjectCount").GetInt32());
+        Assert.Equal(7, root.GetProperty("admittedExactCaseCount").GetInt32());
+        Assert.Equal(2, root.GetProperty("nonDefinitiveCaseCount").GetInt32());
+    }
 
     [Fact]
     public void DelegatedReviewPinsTheFullCaseMatrixAndItsOutcomes()
@@ -149,4 +173,7 @@ public sealed class AslScenarioA1OccupiedMatrixTests
 
     private static JsonDocument Read(string name) => JsonDocument.Parse(File.ReadAllText(
         Path.Combine(RepositoryPaths.Root, "docs", "ASL", "SourceRegistry", name)));
+
+    private static string Digest(string name) => Convert.ToHexStringLower(SHA256.HashData(
+        File.ReadAllBytes(Path.Combine(RepositoryPaths.Root, "docs", "ASL", "SourceRegistry", name))));
 }

@@ -12,6 +12,34 @@ public sealed class ScenarioA1OccupiedPackageTests
     private static readonly DateTimeOffset Now = new(2026, 9, 24, 0, 0, 0, TimeSpan.Zero);
 
     [Fact]
+    public async Task AffirmativeConformanceAdmitsScopedPackageAndCitesControllingExceptions()
+    {
+        ScenarioA1ConformanceAdmission.Validate();
+        Assert.Equal("7a8cc062e3d60b7289e30a50981120e56544c1fc3555eb82cc6731473b9b14c8",
+            ScenarioA1ConformanceAdmission.Sha256);
+        var candidate = new ScenarioA1SemanticCandidate();
+        var resolver = new ScenarioA1OccupiedConclusionResolver();
+        var descriptor = Descriptor();
+        foreach (var (id, exception) in new[]
+        {
+            ("A1-fortified-breached-entry", "B23.9221"),
+            ("A1-single-known-enemy-smc-overrun", "A4.15"),
+            ("A1-advance-phase-entry", "A4.14"),
+        })
+        {
+            var semanticCase = candidate.Cases.Single(item => item.Id == id);
+            var facts = semanticCase.Predicates.ToDictionary(item => item.Key, item => item.ExpectedValue);
+            var conclusion = await resolver.ConcludeAsync(Context(descriptor, id, facts));
+            Assert.Equal(ConclusionDisposition.Qualified, conclusion.Disposition);
+            Assert.True(conclusion.Value!.Value.GetProperty("attemptOnly").GetBoolean());
+            Assert.Contains(conclusion.ControllingExceptions, rule => rule.ElementId == exception);
+            facts.Remove(semanticCase.Predicates.Single(item => item.Key == "phase").Key);
+            Assert.Equal(ConclusionDisposition.Indeterminate,
+                (await resolver.ConcludeAsync(Context(descriptor, id, facts))).Disposition);
+        }
+    }
+
+    [Fact]
     public async Task PackageIsImmutableAndDoesNotSupersedeFirstCaseIdentity()
     {
         var package = new ScenarioA1OccupiedPackage();
@@ -73,6 +101,9 @@ public sealed class ScenarioA1OccupiedPackageTests
         var facts = exact.Predicates.ToDictionary(item => item.Key, item => item.ExpectedValue);
         Assert.Equal(ConclusionDisposition.Indeterminate,
             (await resolver.ConcludeAsync(Context(descriptor, exact.Id, facts, version: null))).Disposition);
+        Assert.Contains((await resolver.ConcludeAsync(Context(descriptor, exact.Id, facts,
+            version: "state-2"))).Ambiguities,
+            reason => reason == "observation.version-changed-during-adjudication");
         Assert.Equal(ConclusionDisposition.Indeterminate,
             (await resolver.ConcludeAsync(Context(descriptor, exact.Id, facts, ambiguous: true))).Disposition);
         facts["unreviewedModifier"] = "present";
@@ -105,7 +136,10 @@ public sealed class ScenarioA1OccupiedPackageTests
     {
         var question = new DomainQuestion("entry-" + caseId, Tenant, package.Identity,
             new SemanticIdentifier(package.Identity.DomainId, ScenarioA1OccupiedConclusionResolver.QuestionKind),
-            JsonSerializer.SerializeToElement(new { unitId = "squad", locationId = "building", caseId }), Now);
+            JsonSerializer.SerializeToElement(new
+            {
+                unitId = "squad", locationId = "building", caseId, observationVersion = "state-1",
+            }), Now);
         DomainEntityResolution Entity(string id) => new(
             new DomainEntityQuery("query-" + id, Tenant, package.Identity,
                 new SemanticIdentifier(package.Identity.DomainId, "unit-or-location"), id),
