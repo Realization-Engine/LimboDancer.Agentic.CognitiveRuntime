@@ -10,7 +10,7 @@
 
 LimboDancer must support domains whose authoritative knowledge is distributed across structured rules, prose, tables, examples, cross-references, reference data, and changing world state.
 
-This document preserves the still-valid domain-modeling requirements extracted from the retired root-level `docs/limbodancer-system-design.md` and the retired `Documentation/Ontology and Agentic AI.md`. The original historical ASL-centered design is retained as `docs/ASL/legacy-limbodancer-mcp-system-design.md`. This document does not preserve the retired material's MCP-centric product boundary, legacy project layout, plugin architecture, deployment topology, ReAct/tool-execution assumptions, or speculative implementation schedules.
+This document preserves the still-valid domain-modeling requirements extracted from the retired root-level `docs/limbodancer-system-design.md` and the retired `Documentation/Ontology and Agentic AI.md`. The original historical MCP-era design is retained as `src/_Legacy/legacy-limbodancer-mcp-system-design.md`; the ASL reference-domain requirements extracted from it are maintained in `src/ASL/docs/LimboDancer.Agentic.CognitiveRuntime ASL Reference-Domain Requirements.md`. This document does not preserve the retired material's MCP-centric product boundary, legacy project layout, plugin architecture, deployment topology, ReAct/tool-execution assumptions, or speculative implementation schedules.
 
 The runtime authority model remains defined by the normative specification:
 
@@ -163,7 +163,7 @@ When evidence is incomplete, stale, ambiguous, or conflicting, the system should
 
 User-facing explanation and runtime audit are complementary. Explanation communicates the domain basis of a conclusion; audit reconstructs how the runtime processed it.
 
-The ASL reference-domain requirements and acceptance scenarios in `docs/ASL/legacy-limbodancer-mcp-system-design.md` provide the initial architectural fitness test for this capability.
+The ASL reference-domain requirements and acceptance scenarios in `src/ASL/docs/LimboDancer.Agentic.CognitiveRuntime ASL Reference-Domain Requirements.md` provide the initial architectural fitness test for this capability.
 
 ## 10. Ingestion and generation
 

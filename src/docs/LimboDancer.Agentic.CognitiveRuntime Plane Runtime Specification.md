@@ -5,7 +5,7 @@
 **Source design:** `LimboDancer.Agentic.CognitiveRuntime Plane Runtime Design.md`  
 **Audience:** Runtime, MCP, ontology, diagnostics, infrastructure, and test engineers
 
-**Reference-domain requirements:** `docs/ASL/legacy-limbodancer-mcp-system-design.md`
+**Reference-domain requirements:** `src/ASL/docs/LimboDancer.Agentic.CognitiveRuntime ASL Reference-Domain Requirements.md`
 
 
 **Canonical system identity:** `LimboDancer.Agentic.CognitiveRuntime`  
@@ -65,7 +65,7 @@ Implementation principle: preserve authority boundaries while minimizing machine
 
 The runtime capability horizon includes evidence-backed domain adjudication as well as governed action. A domain question may terminate with a DomainConclusion without producing a state-changing action. This specification does not yet require a concrete DomainConclusion C# contract in the first implementation slice, but implementations MUST preserve the distinction between semantic conclusion and execution authority.
 
-The ASL reference-domain requirements in `docs/ASL/legacy-limbodancer-mcp-system-design.md` are the initial end-to-end fitness criteria for that horizon. They do not override this specification's authority model or prescribe runtime structure.
+The ASL reference-domain requirements in `src/ASL/docs/LimboDancer.Agentic.CognitiveRuntime ASL Reference-Domain Requirements.md` are the initial end-to-end fitness criteria for that horizon. They do not override this specification's authority model or prescribe runtime structure.
 
 It does not prescribe:
 
@@ -2365,7 +2365,7 @@ The Plane Runtime Specification is implemented when all of the following are tru
 22. No new production project or runtime assembly depends on `LimboDancer.MCP.*`.
 23. The legacy `LimboDancer.MCP.*` production projects can be deleted without breaking the new runtime.
 24. The runtime preserves a non-mutating domain-conclusion outcome distinct from action authority.
-25. An implementation claiming ASL reference-domain conformance satisfies the current requirements and acceptance scenarios in `docs/ASL/legacy-limbodancer-mcp-system-design.md`.
+25. An implementation claiming ASL reference-domain conformance satisfies the current requirements and acceptance scenarios in `src/ASL/docs/LimboDancer.Agentic.CognitiveRuntime ASL Reference-Domain Requirements.md`.
 
 ## 60. Specification Invariants
 

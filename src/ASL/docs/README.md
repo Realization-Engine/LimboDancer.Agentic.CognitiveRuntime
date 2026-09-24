@@ -2,7 +2,7 @@
 
 This directory holds the current specifications, designs, and reviews for the Advanced Squad Leader (ASL) domain package under `src/ASL/`.
 
-ASL is the first reference domain and architectural fitness test for LimboDancer. ASL-specific concepts are not part of the core `LimboDancer.Agentic.CognitiveRuntime` architecture. The requirements and acceptance scenarios in [`docs/ASL/legacy-limbodancer-mcp-system-design.md`](<../../../docs/ASL/legacy-limbodancer-mcp-system-design.md>) are authoritative for reference-domain capability but do not prescribe runtime structure, technology choices, or implementation sequence.
+ASL is the first reference domain and architectural fitness test for LimboDancer. ASL-specific concepts are not part of the core `LimboDancer.Agentic.CognitiveRuntime` architecture. The requirements and acceptance scenarios in the [ASL Reference-Domain Requirements](<./LimboDancer.Agentic.CognitiveRuntime ASL Reference-Domain Requirements.md>) are authoritative for reference-domain capability but do not prescribe runtime structure, technology choices, or implementation sequence.
 
 The separate-package boundary and contract timing are defined in the [Domain Integration Model](<../../docs/LimboDancer.Agentic.CognitiveRuntime Domain Integration Model.md>). The [ASL Ontology Transformation Specification](<./LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md>) governs the rulebook-to-package authoring lifecycle, validation and publication gates, and first occupied-building adjudication slice.
 
@@ -23,6 +23,7 @@ No current ASL artifact authorizes execution. A `DomainConclusion` remains an in
 
 ## Documents
 
+- `LimboDancer.Agentic.CognitiveRuntime ASL Reference-Domain Requirements.md`: normative ASL reference-domain requirements (ASL-RD-001 through ASL-RD-015), end-to-end acceptance scenarios, and traceability to the runtime planes.
 - `LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md`: current rulebook-to-ontology authoring, validation, publication, and first-slice specification.
 - `LimboDancer.Agentic.CognitiveRuntime ASL-OT-01 Source Registry Review.md`: conformance decision and implementation evidence for source registration and fragment location.
 - `LimboDancer.Agentic.CognitiveRuntime ASL-OT-02 TIR Schema and Deterministic Extraction Design.md`: C# design boundary for the TIR schema, deterministic structural extraction, exact sub-fragment evidence, required embedded-boundary recovery, ASL-OT-01 parity, canonical serialization, and reviewable diagnostics.

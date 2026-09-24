@@ -4,7 +4,7 @@
 **Branch:** `decision-plane`  
 **Companion documents:** `LimboDancer.Agentic.CognitiveRuntime Plane Architecture Analysis.md`, `LimboDancer.Agentic.CognitiveRuntime Plane Architecture Codebase Validation.md`, `Decision Plane Architecture.md`
 
-**Reference-domain requirements:** `docs/ASL/legacy-limbodancer-mcp-system-design.md`
+**Reference-domain requirements:** `src/ASL/docs/LimboDancer.Agentic.CognitiveRuntime ASL Reference-Domain Requirements.md`
 
 
 **Canonical system identity:** `LimboDancer.Agentic.CognitiveRuntime`  

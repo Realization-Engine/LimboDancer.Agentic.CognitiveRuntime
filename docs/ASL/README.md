@@ -4,7 +4,7 @@ This subtree contains Advanced Squad Leader (ASL) domain research, source data, 
 
 The current ASL specifications, designs, reviews, and implementation sequence are in [`src/ASL/docs/`](../../src/ASL/docs/), alongside the domain package they govern. The source data, schemas, and generated artifacts below are the evidence those documents cite.
 
-ASL is the first reference domain and architectural fitness test for LimboDancer. ASL-specific concepts are not part of the core `LimboDancer.Agentic.CognitiveRuntime` architecture. The requirements and acceptance scenarios in `legacy-limbodancer-mcp-system-design.md` are authoritative for reference-domain capability but do not prescribe runtime structure, technology choices, or implementation sequence.
+ASL is the first reference domain and architectural fitness test for LimboDancer. ASL-specific concepts are not part of the core `LimboDancer.Agentic.CognitiveRuntime` architecture. The requirements and acceptance scenarios in the [ASL Reference-Domain Requirements](<../../src/ASL/docs/LimboDancer.Agentic.CognitiveRuntime ASL Reference-Domain Requirements.md>) are authoritative for reference-domain capability but do not prescribe runtime structure, technology choices, or implementation sequence.
 
 Several documents predate the current six-plane architecture and may mention `.NET 9`, `LimboDancer.MCP`, direct MCP tools, legacy source paths, or earlier ontology implementation choices. Treat those details as historical unless a current document under `src/docs/` or `src/ASL/docs/` explicitly adopts them.
 
@@ -21,17 +21,18 @@ Several documents predate the current six-plane architecture and may mention `.N
 - `Schemas/asl-tir-curated-review-transition-1.0.schema.json` and `Schemas/asl-tir-curated-review-bundle-1.1.schema.json`: non-accepting review opening/rejection records and history.
 - `TIR/`: deterministic metadata-only structural TIR review artifacts and regeneration instructions.
 
-## Domain requirements and design notes
+## Map generators, design notes, and prototypes
 
-- `legacy-limbodancer-mcp-system-design.md`: current ASL reference-domain requirements and acceptance scenarios followed by the preserved MCP-era system design.
+`MapGenerators/` holds the ASL map and renderer material:
+
 - `asl-map-architecture.md`: map, scene, hex, terrain, and rendering model.
 - `asl-schema-appendix.md`: detailed schema reference.
 - `asl-board-hex-management.md`: historical board, LOS, and dynamic-state design notes.
 - `asl-rulebook-semantic-primer.md`: historical semantic-search, RDF, and validation exploration.
 - `asl-building-renderer-discussion-01.md`: building-renderer design notes.
+- HTML, JavaScript, and JSON files: ASL visualization prototypes and sample board data.
+- `Hex Generators/`: later modular renderer experiments.
 
-## Prototypes and sample data
+## Legacy material
 
-The HTML, JavaScript, and JSON files in this subtree are ASL visualization prototypes and reference data. The `Hex Generators/` subtree contains later modular renderer experiments.
-
-The legacy .NET ASL sample application is archived under `src/_Legacy/Samples/ASL/` for archival purposes only.
+The legacy MCP-era system design is archived as [`src/_Legacy/legacy-limbodancer-mcp-system-design.md`](<../../src/_Legacy/legacy-limbodancer-mcp-system-design.md>), and the legacy .NET ASL sample application is archived under `src/_Legacy/Samples/ASL/`. Both are kept for archival purposes only.

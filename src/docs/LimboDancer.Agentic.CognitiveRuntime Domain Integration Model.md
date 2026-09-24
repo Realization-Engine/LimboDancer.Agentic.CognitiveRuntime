@@ -4,7 +4,7 @@
 
 **Authority:** Subordinate to the Plane Runtime Specification and Plane Runtime Design
 
-**Reference domain:** `docs/ASL/legacy-limbodancer-mcp-system-design.md`
+**Reference domain:** `src/ASL/docs/LimboDancer.Agentic.CognitiveRuntime ASL Reference-Domain Requirements.md`
 
 ## 1. Purpose
 

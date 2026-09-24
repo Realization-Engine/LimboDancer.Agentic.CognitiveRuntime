@@ -11,7 +11,7 @@
 
 **Domain integration design:** `LimboDancer.Agentic.CognitiveRuntime Domain Integration Model.md`
 
-**Reference-domain requirements:** `docs/ASL/legacy-limbodancer-mcp-system-design.md`
+**Reference-domain requirements:** `src/ASL/docs/LimboDancer.Agentic.CognitiveRuntime ASL Reference-Domain Requirements.md`
 
 ## 1. Purpose
 
@@ -1639,7 +1639,7 @@ Each requires a concrete scenario and a small design note before implementation.
 
 ### 25.1 ASL Reference-Domain Capability Horizon
 
-ASL is the first reference domain against which the completed runtime architecture will be tested. Its requirements are defined in `docs/ASL/legacy-limbodancer-mcp-system-design.md`.
+ASL is the first reference domain against which the completed runtime architecture will be tested. Its requirements are defined in `src/ASL/docs/LimboDancer.Agentic.CognitiveRuntime ASL Reference-Domain Requirements.md`.
 
 The package boundary, contract-admission rules, and interface timing are defined in `LimboDancer.Agentic.CognitiveRuntime Domain Integration Model.md`. The source-to-package authoring lifecycle and first implementation slices are defined in [ASL Ontology Transformation Specification](<../ASL/docs/LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md>).
 
