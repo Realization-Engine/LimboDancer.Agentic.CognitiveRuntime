@@ -1,4 +1,5 @@
 @page "/"
+@using LimboDancer.Domains.Asl.Maps.Vasl
 @implements IDisposable
 @inject IBoardProvider Boards
 
@@ -15,13 +16,26 @@
 }
 else
 {
-    <p class="muted">@Boards.SourceDescription. @listing.Count boards.</p>
+    var totals = Totals();
+    <p class="muted">@Boards.SourceDescription.</p>
+    <p class="totals">
+        <strong>@inScope.Count @(inScope.Count == 1 ? "board" : "boards") in scope:</strong>
+        <span class="pass">@totals.Verified verified</span>,
+        @totals.Ingested ingested,
+        <span class="@(totals.Failed > 0 ? "fail" : "")">@totals.Failed failed</span>,
+        <span class="muted">@totals.NotLoaded not loaded</span>.
+        @outOfScope.Count out of scope.
+    </p>
     <p>
-        <button @onclick="CheckAll" disabled="@checking">Check all boards</button>
+        <button @onclick="CheckAll" disabled="@checking">Check all boards in scope</button>
         @if (checking)
         {
-            <span class="muted"> Checked @checkedCount of @listing.Count.</span>
+            <span class="muted"> Checked @checkedCount of @inScope.Count.</span>
         }
+        <label class="toggle">
+            <input type="checkbox" checked="@showOutOfScope" @onchange="@(args => showOutOfScope = (bool)args.Value!)" />
+            Show out-of-scope boards (@outOfScope.Count)
+        </label>
     </p>
     <table class="library">
         <thead>
@@ -34,35 +48,38 @@ else
             </tr>
         </thead>
         <tbody>
-            @foreach (var entry in listing)
+            @foreach (var entry in Visible())
             {
-                var result = Boards.Cached(entry.Ref);
+                var result = entry.Scope == BoardScope.OutOfScope ? null : Boards.Cached(entry.Ref);
                 <tr>
-                    <td><a href="@($"boards/{entry.Ref.Value}")">@entry.Title</a></td>
-                    @if (result is null)
+                    @if (entry.Scope == BoardScope.OutOfScope)
                     {
-                        <td class="muted" colspan="4">Not loaded</td>
-                    }
-                    else if (result.OutOfScope)
-                    {
+                        <td>@entry.Title</td>
                         <td class="muted">Out of scope</td>
                         <td></td>
                         <td></td>
-                        <td>@Describe(result.Diagnostics)</td>
+                        <td class="muted">@entry.ScopeReason</td>
+                    }
+                    else if (result is null)
+                    {
+                        <td><a href="@($"boards/{entry.Ref.Value}")">@entry.Title</a></td>
+                        <td class="muted" colspan="4">Not loaded</td>
                     }
                     else if (result.Board is not { } board)
                     {
-                        <td class="fail">Failed</td>
+                        <td><a href="@($"boards/{entry.Ref.Value}")">@entry.Title</a></td>
+                        <td class="fail">@(result.OutOfScope ? "Out of scope" : "Failed")</td>
                         <td></td>
                         <td></td>
-                        <td>@Describe(result.Diagnostics)</td>
+                        <td><Diagnostics Items="result.Diagnostics" /></td>
                     }
                     else
                     {
+                        <td><a href="@($"boards/{entry.Ref.Value}")">@entry.Title</a></td>
                         <td class="@(board.Status == BoardStatus.Verified ? "pass" : "")">@board.Status</td>
                         <td class="@(board.F1.Passed ? "pass" : "fail")">@board.F1.Status</td>
                         <td class="@F2Class(board)">@F2Text(board)</td>
-                        <td>@Describe(board.Diagnostics)</td>
+                        <td><Diagnostics Items="board.Diagnostics" /></td>
                     }
                 </tr>
             }
@@ -73,16 +90,51 @@ else
 @code {
     private readonly CancellationTokenSource stopping = new();
     private IReadOnlyList<BoardListing> listing = [];
+    private IReadOnlyList<BoardListing> inScope = [];
+    private IReadOnlyList<BoardListing> outOfScope = [];
+    private bool showOutOfScope;
     private bool checking;
     private int checkedCount;
 
-    protected override void OnInitialized() => listing = Boards.List();
+    protected override async Task OnInitializedAsync()
+    {
+        listing = await Task.Run(Boards.List);
+        inScope = listing.Where(entry => entry.Scope != BoardScope.OutOfScope).ToArray();
+        outOfScope = listing.Where(entry => entry.Scope == BoardScope.OutOfScope).ToArray();
+    }
+
+    private IEnumerable<BoardListing> Visible() => showOutOfScope ? listing : inScope;
+
+    private (int Verified, int Ingested, int Failed, int NotLoaded) Totals()
+    {
+        int verified = 0, ingested = 0, failed = 0, notLoaded = 0;
+        foreach (var entry in inScope)
+        {
+            switch (Boards.Cached(entry.Ref))
+            {
+                case null:
+                    notLoaded++;
+                    break;
+                case { Board.Status: BoardStatus.Verified }:
+                    verified++;
+                    break;
+                case { Board: not null }:
+                    ingested++;
+                    break;
+                default:
+                    failed++;
+                    break;
+            }
+        }
+
+        return (verified, ingested, failed, notLoaded);
+    }
 
     private async Task CheckAll()
     {
         checking = true;
         checkedCount = 0;
-        foreach (var entry in listing)
+        foreach (var entry in inScope)
         {
             if (stopping.IsCancellationRequested)
             {
@@ -110,9 +162,6 @@ else
         { Passed: true } => "pass",
         _ => "fail",
     };
-
-    private static string Describe(IReadOnlyList<LimboDancer.Domains.Asl.Maps.MapDiagnostic> diagnostics) =>
-        string.Join("; ", diagnostics.Select(diagnostic => diagnostic.Code));
 
     public void Dispose()
     {

@@ -151,3 +151,39 @@ table.library td {
     border-bottom: 1px solid var(--line);
     vertical-align: top;
 }
+
+.totals {
+    font-size: 0.95rem;
+}
+
+label.toggle {
+    margin-left: 1.5rem;
+    font-size: 0.9rem;
+}
+
+.diagnostic {
+    display: inline-block;
+    margin: 0 0.4rem 0.15rem 0;
+    padding: 0 0.35rem;
+    border-radius: 3px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    cursor: help;
+    border: 1px solid var(--line);
+}
+
+.diagnostic.info {
+    color: var(--muted);
+}
+
+.diagnostic.warning {
+    color: #8a5a00;
+    border-color: #e0c27a;
+    background: #fdf6e3;
+}
+
+.diagnostic.error {
+    color: var(--fail);
+    border-color: #e3a3a0;
+    background: #fbeceb;
+}

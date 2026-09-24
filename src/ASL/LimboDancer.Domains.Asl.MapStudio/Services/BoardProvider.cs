@@ -39,7 +39,8 @@ public sealed record StudioBoard(
 /// <summary>A load outcome. <see cref="OutOfScope"/> marks a board the importer declines by design, such as a non-geomorphic board.</summary>
 public sealed record BoardLoadResult(StudioBoard? Board, IReadOnlyList<MapDiagnostic> Diagnostics, bool OutOfScope = false);
 
-public sealed record BoardListing(BoardRef Ref, string Title);
+/// <summary>A library entry. <see cref="Scope"/> is decided from metadata alone, before the board is loaded.</summary>
+public sealed record BoardListing(BoardRef Ref, string Title, BoardScope Scope = BoardScope.InScope, string? ScopeReason = null);
 
 /// <summary>The boards the Studio can show. VASL boards today; authored boards arrive with ASL-MAP-07.</summary>
 public interface IBoardProvider
@@ -80,6 +81,7 @@ public sealed class VaslBoardProvider : IBoardProvider
     private readonly string? oracleFixtures;
     private readonly Lazy<SharedBoardMetadataResult?> catalog;
     private readonly ConcurrentDictionary<string, Lazy<BoardLoadResult>> cache = new(StringComparer.Ordinal);
+    private readonly Lazy<IReadOnlyList<BoardListing>> listing;
 
     public VaslBoardProvider(StudioOptions options)
     {
@@ -87,17 +89,12 @@ public sealed class VaslBoardProvider : IBoardProvider
         vasl = VaslSource.TryOpen(options.VaslRoot);
         oracleFixtures = options.OracleFixtures ?? FindRepositoryFixtures();
         catalog = new Lazy<SharedBoardMetadataResult?>(() => vasl?.ReadTerrainCatalog());
+        listing = new Lazy<IReadOnlyList<BoardListing>>(ListUncached);
     }
 
     public string? SourceDescription => vasl is null ? null : $"VASL checkout {vasl.Root} at {vasl.Git?.HeadCommit ?? "an unknown commit"}";
 
-    public IReadOnlyList<BoardListing> List() =>
-        vasl is null
-            ? []
-            : vasl.BoardNames()
-                .Select(name => BoardRef.TryParse("bd" + name, out var boardRef) ? new BoardListing(boardRef, "VASL board " + name) : null)
-                .OfType<BoardListing>()
-                .ToArray();
+    public IReadOnlyList<BoardListing> List() => listing.Value;
 
     public BoardLoadResult? Cached(BoardRef board)
     {
@@ -109,6 +106,26 @@ public sealed class VaslBoardProvider : IBoardProvider
     {
         ArgumentNullException.ThrowIfNull(board);
         return cache.GetOrAdd(board.Value, _ => new Lazy<BoardLoadResult>(() => LoadUncached(board))).Value;
+    }
+
+    private BoardListing[] ListUncached()
+    {
+        if (vasl is null)
+        {
+            return [];
+        }
+
+        var entries = new List<BoardListing>();
+        foreach (var name in vasl.BoardNames())
+        {
+            if (BoardRef.TryParse("bd" + name, out var boardRef))
+            {
+                var scope = VaslBoardImporter.CheckScope(VaslBoardSource.SourceDirectory(vasl, name));
+                entries.Add(new BoardListing(boardRef, "VASL board " + name, scope.Scope, scope.Reason));
+            }
+        }
+
+        return [.. entries];
     }
 
     private BoardLoadResult LoadUncached(BoardRef board)

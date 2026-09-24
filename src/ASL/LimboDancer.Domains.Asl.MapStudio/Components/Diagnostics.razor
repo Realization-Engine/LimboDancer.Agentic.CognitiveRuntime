@@ -1,0 +1,21 @@
+@using LimboDancer.Domains.Asl.Maps
+
+@* Diagnostics grouped by code and severity; hover a group for its messages. *@
+@foreach (var group in DiagnosticSummary.Group(Items))
+{
+    <span class="diagnostic @group.Severity.ToString().ToLowerInvariant()" title="@Tooltip(group)">@group.Label</span>
+}
+
+@code {
+    private const int TooltipMessages = 10;
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<MapDiagnostic> Items { get; set; } = [];
+
+    private static string Tooltip(DiagnosticGroup group)
+    {
+        var shown = group.Messages.Take(TooltipMessages);
+        var more = group.Messages.Count > TooltipMessages ? $"\n... and {group.Messages.Count - TooltipMessages} more" : string.Empty;
+        return string.Join("\n", shown) + more;
+    }
+}
