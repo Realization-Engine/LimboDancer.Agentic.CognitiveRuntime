@@ -1,22 +1,5 @@
 {
  "sourceId": "asl-easlrb-3.10:index-glossary",
  "basePath": "docs/ASL/Rulebook_Markdown/01 - Index and Glossary.md",
- "items": [
-  {
-   "id": "INDEX-GLOSSARY-R0001",
-   "rule": "linebreak-hyphen",
-   "baseLine": 81,
-   "text": "on-board",
-   "context": ".4 [Deirs: F4.51] [Hillock: F6.52] [on-board LC: G12.43]  **AFV/Wreck TEM**: D9.",
-   "reason": "both forms attested",
-   "candidate": "onboard",
-   "evidence": {
-    "pdfPage": 11,
-    "pdfBreak": "line-end",
-    "pdfBreakAfter": "on-",
-    "joinedFormAttested": 64,
-    "hyphenatedFormAttestedMidLine": 10
-   }
-  }
- ]
+ "items": []
 }

@@ -20,7 +20,7 @@
  "tool": {
   "path": "utils/asl_curated_edition/build_curated_edition.py",
   "version": "0.1.0",
-  "sha256": "37e328415d5a7b80db367d9046fbd1f158d41289e722f4e98a97915001e57c1d",
+  "sha256": "39a727416b4c134c5a7942d41a37bcd950232d75de00e197d6db8c762b0bf9c3",
   "pymupdf": "1.27.1"
  },
  "files": [
@@ -53,13 +53,11 @@
    ],
    "ledgerCounts": {
     "image-link-rebase": 1,
-    "linebreak-hyphen": 134,
+    "linebreak-hyphen": 135,
     "page-marker": 32,
     "split-emphasis": 8
    },
-   "reviewCounts": {
-    "linebreak-hyphen": 1
-   },
+   "reviewCounts": {},
    "certifiedSections": []
   },
   {
@@ -67,21 +65,20 @@
    "basePath": "docs/ASL/Rulebook_Markdown/02 - Chapter A - Infantry and Basic Game Rules.md",
    "baseSha256": "6347534e64f739cacc57dd75c3d604997723fd0b4988565609deeff007a8843d",
    "editionPath": "docs/ASL/CuratedEdition/edition/02 - Chapter A - Infantry and Basic Game Rules.md",
-   "editionSha256": "81d75cfb288af6ab27a7ac52db22c581356ec63fe702d119a229ba248052a8d2",
+   "editionSha256": "66a65e8b4b0633bfdd303d498752c3ec2130f133a23ba372a0de49088399b5a3",
    "pdfPages": [
     43,
     111
    ],
    "ledgerCounts": {
     "image-link-rebase": 1,
-    "linebreak-hyphen": 335,
+    "linebreak-hyphen": 352,
     "page-marker": 69,
     "split-emphasis": 265,
-    "stale-hyphen": 3
+    "stale-hyphen": 5
    },
    "reviewCounts": {
-    "linebreak-hyphen": 18,
-    "stale-hyphen": 2
+    "linebreak-hyphen": 1
    },
    "certifiedSections": []
   },
@@ -90,20 +87,18 @@
    "basePath": "docs/ASL/Rulebook_Markdown/03 - Chapter B - Terrain.md",
    "baseSha256": "836b1ce5f845efd1c21250a9e6a39e4054ea9398f370305bc3771b6e7f826982",
    "editionPath": "docs/ASL/CuratedEdition/edition/03 - Chapter B - Terrain.md",
-   "editionSha256": "095543c0eed5b3d133ee693e8ba3862e7baf7743e86e1b8ac98996fbe98b15b1",
+   "editionSha256": "2a2af4ec4e2a8ffc834d32b9a9105a56cfece2746c30f791512333287c4c2567",
    "pdfPages": [
     112,
     161
    ],
    "ledgerCounts": {
     "image-link-rebase": 1,
-    "linebreak-hyphen": 128,
+    "linebreak-hyphen": 141,
     "page-marker": 50,
     "split-emphasis": 126
    },
-   "reviewCounts": {
-    "linebreak-hyphen": 13
-   },
+   "reviewCounts": {},
    "certifiedSections": []
   },
   {
@@ -111,7 +106,7 @@
    "basePath": "docs/ASL/Rulebook_Markdown/04 - Chapter C - Ordnance and Offboard Artillery.md",
    "baseSha256": "71d0a1475709cb57feefb2f1d91b51e3b266b108d77696d83ef641e901b02337",
    "editionPath": "docs/ASL/CuratedEdition/edition/04 - Chapter C - Ordnance and Offboard Artillery.md",
-   "editionSha256": "c32f16f32e68a226886aa83fe8e9e8a0ef1b698045f64d6ec4403587c9ad8a42",
+   "editionSha256": "8a0515b4e715be16c01b7cbc9b0d9b4fb2c42a26dfb372cd733d74d522e74b4f",
    "pdfPages": [
     162,
     191
@@ -119,14 +114,14 @@
    "ledgerCounts": {
     "blank-page": 1,
     "image-link-rebase": 1,
-    "linebreak-hyphen": 189,
+    "linebreak-hyphen": 193,
     "page-marker": 30,
-    "split-emphasis": 248
+    "split-emphasis": 248,
+    "stale-hyphen": 1,
+    "symbol-font-glyph": 1
    },
    "reviewCounts": {
-    "linebreak-hyphen": 5,
-    "private-use-glyph": 1,
-    "stale-hyphen": 1
+    "linebreak-hyphen": 1
    },
    "certifiedSections": []
   },
@@ -143,13 +138,11 @@
    "ledgerCounts": {
     "blank-page": 1,
     "image-link-rebase": 1,
-    "linebreak-hyphen": 133,
+    "linebreak-hyphen": 136,
     "page-marker": 30,
     "split-emphasis": 92
    },
-   "reviewCounts": {
-    "linebreak-hyphen": 3
-   },
+   "reviewCounts": {},
    "certifiedSections": []
   },
   {
@@ -157,7 +150,7 @@
    "basePath": "docs/ASL/Rulebook_Markdown/06 - Chapter E - Miscellaneous.md",
    "baseSha256": "614b39baaefe491402f10b283ddef60ee205c2f62b94eb3a3e329a072e0fe7e7",
    "editionPath": "docs/ASL/CuratedEdition/edition/06 - Chapter E - Miscellaneous.md",
-   "editionSha256": "673dd9162995ec36b89844bb0ffd747f54f312d6757cd44ea667cde99c44b13a",
+   "editionSha256": "1e91300e3297eb2404e8692b5d899a48501f70c7525633e4a286f147d2874e5f",
    "pdfPages": [
     222,
     253
@@ -165,14 +158,14 @@
    "ledgerCounts": {
     "blank-page": 1,
     "image-link-rebase": 1,
-    "linebreak-hyphen": 253,
+    "linebreak-hyphen": 261,
     "page-marker": 32,
     "split-emphasis": 122,
-    "stale-hyphen": 4
+    "stale-hyphen": 4,
+    "symbol-font-glyph": 5
    },
    "reviewCounts": {
-    "linebreak-hyphen": 9,
-    "private-use-glyph": 5
+    "linebreak-hyphen": 1
    },
    "certifiedSections": []
   }

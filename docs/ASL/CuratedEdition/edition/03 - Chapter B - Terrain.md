@@ -109,7 +109,7 @@ EX: A LOS traced from 15Y6 to U8 is a Continuous Slope LOS and would be affected
 
 #### 2.4
 
-**2.4** Infantry may enter a shellhole hex at a cost of one or two MF. If it expends one MF to enter a shellhole hex it may be subject to FFMO (or Interdiction in the RtPh) in that hex during that MPh until pinned. If it expends two MF in entering the hex, or starts the phase therein, it is considered in a shellhole and not subject to FFMO penalties. Cavalry and horse-drawn vehicles must enter at the two MF rate even though they never receive the protective TEM benefits of a shellhole hex. The MF cost to enter a gully shellhole Location is as per 19.4. EX: On the *RED BARRICADES* map, a squad IN CC3 may move INTO the BB3 gul-ly-shellhole Location at a cost of two MF, or three MF if also using the shellhole TEM. It may continue movement into AA3 at a cost of two MF (Open Ground) or three MF (if using the shellhole TEM).
+**2.4** Infantry may enter a shellhole hex at a cost of one or two MF. If it expends one MF to enter a shellhole hex it may be subject to FFMO (or Interdiction in the RtPh) in that hex during that MPh until pinned. If it expends two MF in entering the hex, or starts the phase therein, it is considered in a shellhole and not subject to FFMO penalties. Cavalry and horse-drawn vehicles must enter at the two MF rate even though they never receive the protective TEM benefits of a shellhole hex. The MF cost to enter a gully shellhole Location is as per 19.4. EX: On the *RED BARRICADES* map, a squad IN CC3 may move INTO the BB3 gully-shellhole Location at a cost of two MF, or three MF if also using the shellhole TEM. It may continue movement into AA3 at a cost of two MF (Open Ground) or three MF (if using the shellhole TEM).
 
 ![Figure from page 113](../../Rulebook_Markdown/images/eASLRB_v3_01-p113-4.png)
 
@@ -451,7 +451,7 @@ EX: If the 4-6-7 in 3Z3 were beneath a foxhole, no LOS would exist between the 4
 
 ##### 9.31
 
-**9.31** The wall/hedge TEM is not cumulative with positive TEM of other terrain in that hex, although it is cumulative with LOS Hindrances and SMOKE. A target unit claiming WA (9.32) does not receive in-hex TEM *[EXC: Runway (7.3); Air Bursts (9.34)]*, but receives wall/hedge TEM if applicable *[EXC: it may elect instead to receive appropriate TEM for Emplace- ment or for a friendly AFV with which it shares WA (D9.3)]*. A target unit not claiming WA receives only in-hex TEM, but may instead use wall/hedge TEM vs enemy units which do not have WA over the hexside. In any case the wall/hedge TEM applies only as per 9.3. In order for a wall to justify firing HEAT at Infantry/Cavalry (C8.31), those units must be claiming-WA/receiv-ing-Wall-TEM. The amount of Residual FP left by an attack that crosses a wall/hedge hexside is reduced by that hexside TEM (A8.26) if hexside TEM could have been claimed against at least one firing unit—even if the moving unit is not claiming hexside TEM. See 9.36 and D4. for wall-TEM/HD-status for vehicles.
+**9.31** The wall/hedge TEM is not cumulative with positive TEM of other terrain in that hex, although it is cumulative with LOS Hindrances and SMOKE. A target unit claiming WA (9.32) does not receive in-hex TEM *[EXC: Runway (7.3); Air Bursts (9.34)]*, but receives wall/hedge TEM if applicable *[EXC: it may elect instead to receive appropriate TEM for Emplace- ment or for a friendly AFV with which it shares WA (D9.3)]*. A target unit not claiming WA receives only in-hex TEM, but may instead use wall/hedge TEM vs enemy units which do not have WA over the hexside. In any case the wall/hedge TEM applies only as per 9.3. In order for a wall to justify firing HEAT at Infantry/Cavalry (C8.31), those units must be claiming-WA/receiving-Wall-TEM. The amount of Residual FP left by an attack that crosses a wall/hedge hexside is reduced by that hexside TEM (A8.26) if hexside TEM could have been claimed against at least one firing unit—even if the moving unit is not claiming hexside TEM. See 9.36 and D4. for wall-TEM/HD-status for vehicles.
 
 **9.32 WALL ADVANTAGE (WA):** A unit may claim WA over a same level wall/hedge hexside if it is an armed, unbroken ground level unit which is not: a vehicle eligible to receive in-hex TEM of ≥ 1 *[EXC: Height Advantage (10.31)/Cactus Patch (14.7)/Olive Grove (14.8)]*, in Column/Convoy, in a Fortified building possessing a Gun, on a bridge *[EXC: over a Roadblock]*, in a pillbox/cave, beneath an entrenchment counter, above Wire/Panji or in a Location containing a non-hidden, non-prisoner enemy *[EXC: “broken” vehicle (A12.1)]* unit. A unit in Bypass may claim WA only over the hexside it straddles and the two hexsides of its hex that join that hexside. Units in a Location do not need to share the same WA status, but are still considered in the same Location for all purposes. Broken or unarmed units may (must if 9.323 applies) claim WA if other units in the same Location claim WA.
 
@@ -1167,7 +1167,7 @@ EX: A unit IN 13P5 can see P3, N4, O4, Q3, N6, M7, and all adjacent hexes, but c
 
 **20.43 DEEP:** If a stream is deep, Infantry/Cavalry enter at a cost of four MF and become CX *[EXC: broken/Beserk units]* (A4.72 would apply to an advance entry)—regardless of whether the move is through a stream hexside or not, or whether the unit was previously CX or not.
 
-**20.44 FLOODED:** If a stream is flooded, it is one level higher than it would normally be (i.e., usually level 0), and is treated as a flooded pond. All map-board-depicted ponds in a scenario that has a flooded stream are also one level higher than normal, as per 21.21. See 16.6 for a flooded stream’s effect on marsh.
+**20.44 FLOODED:** If a stream is flooded, it is one level higher than it would normally be (i.e., usually level 0), and is treated as a flooded pond. All mapboard-depicted ponds in a scenario that has a flooded stream are also one level higher than normal, as per 21.21. See 16.6 for a flooded stream’s effect on marsh.
 
 **20.45 EXIT:** There is no cost for leaving a stream hex other than the normal doubling of MF (or a four MP increase) when moving to a hex of higher elevation *[EXC: Abrupt Elevation Change; 10.5]*.
 
@@ -1297,7 +1297,7 @@ Place the Current counter in a river hex proper side up as a constant reminder o
 
 **21.5** No Fortifications are allowed in a Water Obstacle.
 
-**21.6 ICE:** All Water Obstacles (except an ocean) freeze in sub-zero tem-perature scenarios. When frozen, Water Obstacle hexes are treated as Open Ground for all purposes. Ice is removed from any hex in which an Original HE attack DR scores a KIA on the IFT or when the ice collapses. Mark such hexes as clear water by the placement of a coin or a Collapsed Ice counter (available in *ARMIES OF OBLIVION*). The ice may collapse under the weight of any vehicle of ≥ five tons as per the rules for bridge collapse (6.42; treating the Weight Limit for all ice hexes as equal to that of the highest weight sustained thus far by any ice hex), causing the elimination of all units in that hex and all future vehicles ≥ that weight venturing onto the ice. Wire and unhidden mines are the only Fortifications allowed in an ice hex.
+**21.6 ICE:** All Water Obstacles (except an ocean) freeze in sub-zero temperature scenarios. When frozen, Water Obstacle hexes are treated as Open Ground for all purposes. Ice is removed from any hex in which an Original HE attack DR scores a KIA on the IFT or when the ice collapses. Mark such hexes as clear water by the placement of a coin or a Collapsed Ice counter (available in *ARMIES OF OBLIVION*). The ice may collapse under the weight of any vehicle of ≥ five tons as per the rules for bridge collapse (6.42; treating the Weight Limit for all ice hexes as equal to that of the highest weight sustained thus far by any ice hex), causing the elimination of all units in that hex and all future vehicles ≥ that weight venturing onto the ice. Wire and unhidden mines are the only Fortifications allowed in an ice hex.
 
 ![Figure from page 135](../../Rulebook_Markdown/images/eASLRB_v3_01-p135-4.png)
 
@@ -1634,7 +1634,7 @@ EX: Hex 6J8 is a third level building which has just been rubbled from the secon
 
 ![Figure from page 142](../../Rulebook_Markdown/images/eASLRB_v3_01-p142-1.png)
 
-**24.72 FIRE:** Unpinned, Good Order Infantry may attempt to ex-tinguish a Flame in the same Location during its own MPh/DFPh as Hazardous Movement, provided the unit declares such an attempt, has not already moved or fired (or directed fire) during that Player Turn, and is not engaging in any other activity during that phase (as evidenced by placement of a TI counter). If more than one Flame counter exists in a Location, each must be cleared separately with its own separate DR, although all extinguishing units may attempt to put out each Flame. A Blaze cannot be extinguished by Clearance attempts. An extinguished Flame leaves the terrain in its pre-Fire condition.
+**24.72 FIRE:** Unpinned, Good Order Infantry may attempt to extinguish a Flame in the same Location during its own MPh/DFPh as Hazardous Movement, provided the unit declares such an attempt, has not already moved or fired (or directed fire) during that Player Turn, and is not engaging in any other activity during that phase (as evidenced by placement of a TI counter). If more than one Flame counter exists in a Location, each must be cleared separately with its own separate DR, although all extinguishing units may attempt to put out each Flame. A Blaze cannot be extinguished by Clearance attempts. An extinguished Flame leaves the terrain in its pre-Fire condition.
 
 ![Figure from page 142](../../Rulebook_Markdown/images/eASLRB_v3_01-p142-2.png)
 
@@ -2188,7 +2188,7 @@ EX: An entrenched Infantry unit in M3 can, if not Pushing a Gun, move/rout/advan
 
 ![Figure from page 153](../../Rulebook_Markdown/images/eASLRB_v3_01-p153-3.png)
 
-**31.3 SINGLE-HEX TWO-STORY HOUSE:** A building with a *large* white center dot (EX: 45E8) is a 1<sup>1</sup>/2-level LOS obstacle with both a ground-and first-level Location and an inherent stairwell. Like a Single Story House (23.21), it has no Rooftop Location. In all other respects it is a normal building.
+**31.3 SINGLE-HEX TWO-STORY HOUSE:** A building with a *large* white center dot (EX: 45E8) is a 1<sup>1</sup>/2-level LOS obstacle with both a ground- and first-level Location and an inherent stairwell. Like a Single Story House (23.21), it has no Rooftop Location. In all other respects it is a normal building.
 
 **32. RAILROADS****<sup>10</sup>**
 

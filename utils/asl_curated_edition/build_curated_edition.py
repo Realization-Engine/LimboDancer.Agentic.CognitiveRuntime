@@ -24,10 +24,13 @@ Rules and their change classes:
                        runs split by the converter (rendered text unchanged)
   * image-link-rebase  (markup-normalization) point image links at the
                        registered image directory
+  * symbol-font-glyph  (conversion-fix) map a private-use code point to its
+                       Unicode symbol when the PDF sets it in the expected
+                       symbol font (SYMBOL_FONT_MAP)
   * blank-page         (observation) PDF page with no body text
 
 Undecidable cases go to review/ unchanged. Reviewer decisions in
-decisions/decisions.json (join or retain, with reviewer and rationale) are
+decisions/decisions.json (join, retain or replace, with reviewer and rationale) are
 applied as class `reviewed-decision`; a decision that matches no queued item
 fails the build. The build also fails unless the edition equals the base text
 once hyphens, emphasis markers, whitespace and comments are removed, and
@@ -73,6 +76,11 @@ PROTECT_RES = [
     re.compile(r'<!--.*?-->', re.S),               # comments
     re.compile(r'</?[A-Za-z][^>]*>'),              # html tags
 ]
+# symbol-font code points the text layer exposes as private-use characters:
+# code point -> (required PDF font, Unicode replacement, description)
+SYMBOL_FONT_MAP = {
+    0xF0AB: ('Wingdings', 0x2605, 'Wingdings 0xAB black five-pointed star'),
+}
 # prefixes that also form legitimate hyphenated words (re-fused vs refused)
 PREFIXES = {'re', 'pre', 'co', 'de', 'non', 'un', 'sub', 'semi', 'anti', 'multi', 'self', 'ex', 'over', 'under', 'inter', 'counter'}
 PUA_RE = re.compile(r'[\ue000-\uf8ff]')
@@ -106,6 +114,7 @@ class PdfEvidence:
         self.first, self.last = first, last
         self.body = {}            # page -> list of (text, line_end)
         self.blocks = {}          # page -> list of block texts in content order
+        self.glyphs = {}          # page -> Counter of (private-use code point, font)
         for p in range(first, last + 1):
             page = self.doc[p - 1]
             foot = page.rect.height * FOOT_FRAC
@@ -119,6 +128,14 @@ class PdfEvidence:
             self.body[p] = seq
             self.blocks[p] = [fold(b[4]) for b in page.get_text('blocks', sort=False)
                               if b[6] == 0 and b[3] > TOP_LIM and b[1] < foot]
+            glyphs = collections.Counter()
+            for blk in page.get_text('rawdict')['blocks']:
+                for line in blk.get('lines', []):
+                    for span in line['spans']:
+                        for ch in span['chars']:
+                            if 0xE000 <= ord(ch['c']) <= 0xF8FF:
+                                glyphs[(ord(ch['c']), span['font'])] += 1
+            self.glyphs[p] = glyphs
         self.occ = collections.defaultdict(list)   # token -> [(page, break_idx)]
         self.joined = collections.Counter()        # unbroken lowercase word forms
         self.hyph_midline = collections.Counter()  # hyphenated forms seen mid-line
@@ -171,6 +188,8 @@ def invariant_form(text):
     """Text with every change class the builder may make stripped out."""
     text = re.sub(r'<!--.*?-->', '', text, flags=re.S)
     text = text.replace('](' + IMAGE_PREFIX, '](images/')
+    for cp, (_, uni, _) in SYMBOL_FONT_MAP.items():
+        text = text.replace(chr(cp), chr(uni))
     return re.sub(r'[-*\s]', '', text)
 
 
@@ -244,6 +263,13 @@ class FileBuild:
         if dec['decision'] == 'retain':
             self.ledger.append({'id': f'{self.prefix}-{len(self.ledger) + 1:05d}',
                                 'class': 'reviewed-decision', 'text': text, **base})
+            return
+        if dec['decision'] == 'replace':
+            # the fail-closed invariant still limits the difference to the
+            # permitted classes (hyphens, emphasis, whitespace)
+            self.add(rule, 'reviewed-decision', off, end, dec['replacement'], token=text,
+                     result=dec['replacement'],
+                     **{key: v for key, v in base.items() if key not in ('rule', 'baseLine')})
             return
         # join: remove the hyphen at hyphenIndex (0-based among the token's hyphens)
         idx = [i for i, c in enumerate(text) if c == '-']
@@ -492,6 +518,17 @@ class FileBuild:
 
     def flag_glyphs(self):
         for m in PUA_RE.finditer(self.src):
+            if self.protected[m.start()]:
+                continue
+            cp, pg = ord(m.group()), self.page_of(m.start())
+            known = SYMBOL_FONT_MAP.get(cp)
+            fonts = sorted({f for (c, f) in self.pdf.glyphs.get(pg, {}) if c == cp})
+            if known and fonts and all(known[0] in f for f in fonts):
+                self.add('symbol-font-glyph', 'conversion-fix', m.start(), m.end(), chr(known[1]),
+                         codePoint=f'U+{cp:04X}', result=f'U+{known[1]:04X}',
+                         evidence={'pdfPage': pg, 'pdfFonts': fonts, 'glyph': known[2]},
+                         context=self.context(m.start(), m.end()))
+                continue
             self.flag('private-use-glyph', m.start(), m.end(),
                       f'private-use code point U+{ord(m.group()):04X} has no Unicode meaning; '
                       'compare the symbol on the PDF page', pdfPage=self.page_of(m.start()))
@@ -521,7 +558,8 @@ class FileBuild:
 def load_decisions(path):
     """Reviewer decisions; each must name its reviewer and rationale.
 
-    Only `join` and `retain` are accepted for conversion and typographic rules.
+    `join`, `retain` and `replace` are accepted; a replacement may differ from
+    the base only in hyphens, emphasis markers and whitespace.
     Any decision whose class is `source-correction` must cite an authority
     (for example an official errata document); none is supported yet.
     """
@@ -533,8 +571,10 @@ def load_decisions(path):
         for field in ('sourceId', 'rule', 'baseLine', 'text', 'decision', 'decidedBy', 'rationale'):
             if not d.get(field) and d.get(field) != 0:
                 sys.exit(f'decision {d} lacks {field}')
-        if d['decision'] not in ('join', 'retain'):
+        if d['decision'] not in ('join', 'retain', 'replace'):
             sys.exit(f'decision {d["decision"]!r} is not supported: {d}')
+        if d['decision'] == 'replace' and not d.get('replacement'):
+            sys.exit(f'replace decision lacks a replacement: {d}')
         if d.get('class') == 'source-correction' and not d.get('authority'):
             sys.exit(f'source-correction decision lacks a cited authority: {d}')
         out.append(d)
@@ -606,7 +646,8 @@ def main():
         uncommented = [re.sub(r'<!--.*?-->', '', x, flags=re.S) for x in (base, text)]
         removed = uncommented[0].count('-') - uncommented[1].count('-')
         ledgered = sum(1 for e in fb.ledger
-                       if e['rule'] in ('linebreak-hyphen', 'stale-hyphen') and 'result' in e)
+                       if e['rule'] in ('linebreak-hyphen', 'stale-hyphen') and 'result' in e
+                       and e.get('decision') != 'replace')
         if removed != ledgered:
             sys.exit(f'{art["path"]}: {removed} hyphens removed but {ledgered} ledgered')
 

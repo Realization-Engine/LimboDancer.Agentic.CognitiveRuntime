@@ -1,54 +1,5 @@
 {
  "sourceId": "asl-easlrb-3.10:chapter-d",
  "basePath": "docs/ASL/Rulebook_Markdown/05 - Chapter D - Vehicles.md",
- "items": [
-  {
-   "id": "CHD-R0001",
-   "rule": "linebreak-hyphen",
-   "baseLine": 145,
-   "text": "record-keeping",
-   "context": "erent vehicles of the same type for record-keeping/Target-Acquisition-(C6.58) purposes",
-   "reason": "neither form attested",
-   "candidate": "recordkeeping",
-   "evidence": {
-    "pdfPage": 194,
-    "pdfBreak": "line-end",
-    "pdfBreakAfter": "record-",
-    "joinedFormAttested": 0,
-    "hyphenatedFormAttestedMidLine": 0
-   }
-  },
-  {
-   "id": "CHD-R0002",
-   "rule": "linebreak-hyphen",
-   "baseLine": 464,
-   "text": "cross-the-hexside",
-   "context": "ted after the AFV expends the MP to cross-the-hexside/exit-the-gully but before it enters",
-   "reason": "neither form attested",
-   "candidate": "cross-thehexside",
-   "evidence": {
-    "pdfPage": 202,
-    "pdfBreak": "line-end",
-    "pdfBreakAfter": "cross-the-",
-    "joinedFormAttested": 0,
-    "hyphenatedFormAttestedMidLine": 0
-   }
-  },
-  {
-   "id": "CHD-R0003",
-   "rule": "linebreak-hyphen",
-   "baseLine": 1150,
-   "text": "mass-produced",
-   "context": "hese tracked, armored vehicles were mass-produced by a variety of manufacturers in ma",
-   "reason": "neither form attested",
-   "candidate": "massproduced",
-   "evidence": {
-    "pdfPage": 217,
-    "pdfBreak": "line-end",
-    "pdfBreakAfter": "mass-",
-    "joinedFormAttested": 0,
-    "hyphenatedFormAttestedMidLine": 0
-   }
-  }
- ]
+ "items": []
 }

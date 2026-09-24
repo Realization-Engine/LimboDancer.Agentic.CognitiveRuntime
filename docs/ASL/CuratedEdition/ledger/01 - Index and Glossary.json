@@ -411,6 +411,17 @@
   },
   {
    "id": "INDEX-GLOSSARY-00036",
+   "class": "reviewed-decision",
+   "text": "on-board",
+   "rule": "linebreak-hyphen",
+   "baseLine": 81,
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Compound adjective (\"on-board LC\"); hyphenated form is used in the rulebook.",
+   "queuedReason": "both forms attested"
+  },
+  {
+   "id": "INDEX-GLOSSARY-00037",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 127,
@@ -428,7 +439,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00037",
+   "id": "INDEX-GLOSSARY-00038",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 153,
@@ -446,7 +457,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00038",
+   "id": "INDEX-GLOSSARY-00039",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 161,
@@ -464,7 +475,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00039",
+   "id": "INDEX-GLOSSARY-00040",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 171,
@@ -482,7 +493,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00040",
+   "id": "INDEX-GLOSSARY-00041",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 177,
@@ -500,7 +511,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00041",
+   "id": "INDEX-GLOSSARY-00042",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 227,
@@ -518,7 +529,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00042",
+   "id": "INDEX-GLOSSARY-00043",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1389,
@@ -536,7 +547,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00043",
+   "id": "INDEX-GLOSSARY-00044",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 233,
@@ -554,7 +565,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00044",
+   "id": "INDEX-GLOSSARY-00045",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 257,
@@ -572,7 +583,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00045",
+   "id": "INDEX-GLOSSARY-00046",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 257,
@@ -590,7 +601,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00046",
+   "id": "INDEX-GLOSSARY-00047",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 279,
@@ -608,7 +619,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00047",
+   "id": "INDEX-GLOSSARY-00048",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 279,
@@ -626,7 +637,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00048",
+   "id": "INDEX-GLOSSARY-00049",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 291,
@@ -644,7 +655,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00049",
+   "id": "INDEX-GLOSSARY-00050",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 321,
@@ -662,7 +673,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00050",
+   "id": "INDEX-GLOSSARY-00051",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 369,
@@ -680,7 +691,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00051",
+   "id": "INDEX-GLOSSARY-00052",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 373,
@@ -698,7 +709,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00052",
+   "id": "INDEX-GLOSSARY-00053",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 421,
@@ -716,7 +727,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00053",
+   "id": "INDEX-GLOSSARY-00054",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 429,
@@ -734,7 +745,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00054",
+   "id": "INDEX-GLOSSARY-00055",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 435,
@@ -752,7 +763,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00055",
+   "id": "INDEX-GLOSSARY-00056",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 437,
@@ -770,7 +781,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00056",
+   "id": "INDEX-GLOSSARY-00057",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 443,
@@ -788,7 +799,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00057",
+   "id": "INDEX-GLOSSARY-00058",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 507,
@@ -806,7 +817,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00058",
+   "id": "INDEX-GLOSSARY-00059",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 517,
@@ -824,7 +835,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00059",
+   "id": "INDEX-GLOSSARY-00060",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 545,
@@ -842,7 +853,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00060",
+   "id": "INDEX-GLOSSARY-00061",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 547,
@@ -860,7 +871,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00061",
+   "id": "INDEX-GLOSSARY-00062",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 555,
@@ -878,7 +889,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00062",
+   "id": "INDEX-GLOSSARY-00063",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 559,
@@ -896,7 +907,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00063",
+   "id": "INDEX-GLOSSARY-00064",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 559,
@@ -914,7 +925,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00064",
+   "id": "INDEX-GLOSSARY-00065",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 561,
@@ -932,7 +943,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00065",
+   "id": "INDEX-GLOSSARY-00066",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 615,
@@ -950,7 +961,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00066",
+   "id": "INDEX-GLOSSARY-00067",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2039,
@@ -968,7 +979,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00067",
+   "id": "INDEX-GLOSSARY-00068",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 563,
@@ -986,7 +997,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00068",
+   "id": "INDEX-GLOSSARY-00069",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 563,
@@ -1004,7 +1015,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00069",
+   "id": "INDEX-GLOSSARY-00070",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 573,
@@ -1022,7 +1033,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00070",
+   "id": "INDEX-GLOSSARY-00071",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 615,
@@ -1040,7 +1051,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00071",
+   "id": "INDEX-GLOSSARY-00072",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 617,
@@ -1058,7 +1069,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00072",
+   "id": "INDEX-GLOSSARY-00073",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1527,
@@ -1076,7 +1087,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00073",
+   "id": "INDEX-GLOSSARY-00074",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2677,
@@ -1094,7 +1105,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00074",
+   "id": "INDEX-GLOSSARY-00075",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 625,
@@ -1112,7 +1123,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00075",
+   "id": "INDEX-GLOSSARY-00076",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 649,
@@ -1130,7 +1141,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00076",
+   "id": "INDEX-GLOSSARY-00077",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 649,
@@ -1148,7 +1159,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00077",
+   "id": "INDEX-GLOSSARY-00078",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 701,
@@ -1166,7 +1177,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00078",
+   "id": "INDEX-GLOSSARY-00079",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 713,
@@ -1184,7 +1195,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00079",
+   "id": "INDEX-GLOSSARY-00080",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 771,
@@ -1202,7 +1213,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00080",
+   "id": "INDEX-GLOSSARY-00081",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 779,
@@ -1220,7 +1231,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00081",
+   "id": "INDEX-GLOSSARY-00082",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 785,
@@ -1238,7 +1249,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00082",
+   "id": "INDEX-GLOSSARY-00083",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 955,
@@ -1256,7 +1267,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00083",
+   "id": "INDEX-GLOSSARY-00084",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 955,
@@ -1274,7 +1285,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00084",
+   "id": "INDEX-GLOSSARY-00085",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 977,
@@ -1292,7 +1303,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00085",
+   "id": "INDEX-GLOSSARY-00086",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 979,
@@ -1310,7 +1321,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00086",
+   "id": "INDEX-GLOSSARY-00087",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 993,
@@ -1328,7 +1339,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00087",
+   "id": "INDEX-GLOSSARY-00088",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1143,
@@ -1346,7 +1357,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00088",
+   "id": "INDEX-GLOSSARY-00089",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1535,
@@ -1364,7 +1375,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00089",
+   "id": "INDEX-GLOSSARY-00090",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1701,
@@ -1382,7 +1393,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00090",
+   "id": "INDEX-GLOSSARY-00091",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1883,
@@ -1400,7 +1411,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00091",
+   "id": "INDEX-GLOSSARY-00092",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1147,
@@ -1418,7 +1429,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00092",
+   "id": "INDEX-GLOSSARY-00093",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1149,
@@ -1436,7 +1447,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00093",
+   "id": "INDEX-GLOSSARY-00094",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1151,
@@ -1454,7 +1465,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00094",
+   "id": "INDEX-GLOSSARY-00095",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1221,
@@ -1472,7 +1483,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00095",
+   "id": "INDEX-GLOSSARY-00096",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1263,
@@ -1490,7 +1501,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00096",
+   "id": "INDEX-GLOSSARY-00097",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1285,
@@ -1508,7 +1519,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00097",
+   "id": "INDEX-GLOSSARY-00098",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1285,
@@ -1526,7 +1537,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00098",
+   "id": "INDEX-GLOSSARY-00099",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1291,
@@ -1544,7 +1555,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00099",
+   "id": "INDEX-GLOSSARY-00100",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1303,
@@ -1562,7 +1573,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00100",
+   "id": "INDEX-GLOSSARY-00101",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1317,
@@ -1580,7 +1591,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00101",
+   "id": "INDEX-GLOSSARY-00102",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1373,
@@ -1598,7 +1609,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00102",
+   "id": "INDEX-GLOSSARY-00103",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1373,
@@ -1616,7 +1627,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00103",
+   "id": "INDEX-GLOSSARY-00104",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1395,
@@ -1634,7 +1645,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00104",
+   "id": "INDEX-GLOSSARY-00105",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1411,
@@ -1652,7 +1663,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00105",
+   "id": "INDEX-GLOSSARY-00106",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1419,
@@ -1670,7 +1681,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00106",
+   "id": "INDEX-GLOSSARY-00107",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1437,
@@ -1688,7 +1699,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00107",
+   "id": "INDEX-GLOSSARY-00108",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1467,
@@ -1706,7 +1717,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00108",
+   "id": "INDEX-GLOSSARY-00109",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1949,
@@ -1724,7 +1735,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00109",
+   "id": "INDEX-GLOSSARY-00110",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1487,
@@ -1742,7 +1753,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00110",
+   "id": "INDEX-GLOSSARY-00111",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1557,
@@ -1760,7 +1771,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00111",
+   "id": "INDEX-GLOSSARY-00112",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1559,
@@ -1778,7 +1789,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00112",
+   "id": "INDEX-GLOSSARY-00113",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1567,
@@ -1796,7 +1807,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00113",
+   "id": "INDEX-GLOSSARY-00114",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1577,
@@ -1814,7 +1825,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00114",
+   "id": "INDEX-GLOSSARY-00115",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1579,
@@ -1832,7 +1843,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00115",
+   "id": "INDEX-GLOSSARY-00116",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1597,
@@ -1850,7 +1861,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00116",
+   "id": "INDEX-GLOSSARY-00117",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1613,
@@ -1868,7 +1879,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00117",
+   "id": "INDEX-GLOSSARY-00118",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1645,
@@ -1886,7 +1897,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00118",
+   "id": "INDEX-GLOSSARY-00119",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1701,
@@ -1904,7 +1915,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00119",
+   "id": "INDEX-GLOSSARY-00120",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1703,
@@ -1922,7 +1933,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00120",
+   "id": "INDEX-GLOSSARY-00121",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1709,
@@ -1940,7 +1951,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00121",
+   "id": "INDEX-GLOSSARY-00122",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1717,
@@ -1958,7 +1969,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00122",
+   "id": "INDEX-GLOSSARY-00123",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1755,
@@ -1976,7 +1987,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00123",
+   "id": "INDEX-GLOSSARY-00124",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1849,
@@ -1994,7 +2005,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00124",
+   "id": "INDEX-GLOSSARY-00125",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1873,
@@ -2012,7 +2023,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00125",
+   "id": "INDEX-GLOSSARY-00126",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1877,
@@ -2030,7 +2041,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00126",
+   "id": "INDEX-GLOSSARY-00127",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1879,
@@ -2048,7 +2059,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00127",
+   "id": "INDEX-GLOSSARY-00128",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1897,
@@ -2066,7 +2077,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00128",
+   "id": "INDEX-GLOSSARY-00129",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1897,
@@ -2084,7 +2095,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00129",
+   "id": "INDEX-GLOSSARY-00130",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1961,
@@ -2102,7 +2113,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00130",
+   "id": "INDEX-GLOSSARY-00131",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1901,
@@ -2120,7 +2131,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00131",
+   "id": "INDEX-GLOSSARY-00132",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1905,
@@ -2138,7 +2149,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00132",
+   "id": "INDEX-GLOSSARY-00133",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1949,
@@ -2156,7 +2167,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00133",
+   "id": "INDEX-GLOSSARY-00134",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1971,
@@ -2174,7 +2185,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00134",
+   "id": "INDEX-GLOSSARY-00135",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2039,
@@ -2192,7 +2203,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00135",
+   "id": "INDEX-GLOSSARY-00136",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2057,
@@ -2210,7 +2221,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00136",
+   "id": "INDEX-GLOSSARY-00137",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2161,
@@ -2228,7 +2239,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00137",
+   "id": "INDEX-GLOSSARY-00138",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2171,
@@ -2246,7 +2257,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00138",
+   "id": "INDEX-GLOSSARY-00139",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2171,
@@ -2264,7 +2275,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00139",
+   "id": "INDEX-GLOSSARY-00140",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2183,
@@ -2282,7 +2293,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00140",
+   "id": "INDEX-GLOSSARY-00141",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2201,
@@ -2300,7 +2311,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00141",
+   "id": "INDEX-GLOSSARY-00142",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2201,
@@ -2318,7 +2329,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00142",
+   "id": "INDEX-GLOSSARY-00143",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2203,
@@ -2336,7 +2347,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00143",
+   "id": "INDEX-GLOSSARY-00144",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2207,
@@ -2354,7 +2365,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00144",
+   "id": "INDEX-GLOSSARY-00145",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2207,
@@ -2372,7 +2383,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00145",
+   "id": "INDEX-GLOSSARY-00146",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2207,
@@ -2390,7 +2401,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00146",
+   "id": "INDEX-GLOSSARY-00147",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2223,
@@ -2408,7 +2419,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00147",
+   "id": "INDEX-GLOSSARY-00148",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2251,
@@ -2426,7 +2437,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00148",
+   "id": "INDEX-GLOSSARY-00149",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2295,
@@ -2444,7 +2455,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00149",
+   "id": "INDEX-GLOSSARY-00150",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2307,
@@ -2462,7 +2473,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00150",
+   "id": "INDEX-GLOSSARY-00151",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2365,
@@ -2480,7 +2491,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00151",
+   "id": "INDEX-GLOSSARY-00152",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2441,
@@ -2498,7 +2509,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00152",
+   "id": "INDEX-GLOSSARY-00153",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2585,
@@ -2516,7 +2527,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00153",
+   "id": "INDEX-GLOSSARY-00154",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2589,
@@ -2534,7 +2545,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00154",
+   "id": "INDEX-GLOSSARY-00155",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2617,
@@ -2552,7 +2563,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00155",
+   "id": "INDEX-GLOSSARY-00156",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2631,
@@ -2570,7 +2581,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00156",
+   "id": "INDEX-GLOSSARY-00157",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2647,
@@ -2588,7 +2599,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00157",
+   "id": "INDEX-GLOSSARY-00158",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2663,
@@ -2606,7 +2617,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00158",
+   "id": "INDEX-GLOSSARY-00159",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2677,
@@ -2624,7 +2635,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00159",
+   "id": "INDEX-GLOSSARY-00160",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2695,
@@ -2642,7 +2653,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00160",
+   "id": "INDEX-GLOSSARY-00161",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2711,
@@ -2660,7 +2671,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00161",
+   "id": "INDEX-GLOSSARY-00162",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2723,
@@ -2678,7 +2689,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00162",
+   "id": "INDEX-GLOSSARY-00163",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2723,
@@ -2696,7 +2707,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00163",
+   "id": "INDEX-GLOSSARY-00164",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2747,
@@ -2714,7 +2725,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00164",
+   "id": "INDEX-GLOSSARY-00165",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2749,
@@ -2732,7 +2743,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00165",
+   "id": "INDEX-GLOSSARY-00166",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2787,
@@ -2750,7 +2761,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00166",
+   "id": "INDEX-GLOSSARY-00167",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2829,
@@ -2768,7 +2779,7 @@
    }
   },
   {
-   "id": "INDEX-GLOSSARY-00167",
+   "id": "INDEX-GLOSSARY-00168",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 779,
@@ -2778,7 +2789,7 @@
    "context": "BU Halftrack: D6.66] *[EXC Commissar* *and Japanese leader: A25.222, G1.41]"
   },
   {
-   "id": "INDEX-GLOSSARY-00168",
+   "id": "INDEX-GLOSSARY-00169",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 879,
@@ -2788,7 +2799,7 @@
    "context": "ring the scenario *[EXC if it set up* *on a paved road]*. Such a Gun [and i"
   },
   {
-   "id": "INDEX-GLOSSARY-00169",
+   "id": "INDEX-GLOSSARY-00170",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1557,
@@ -2798,7 +2809,7 @@
    "context": "alry: A13.52] [EXC Climbing: B11.42]* *[EXC LC Passengers: G12.13]* [Leader"
   },
   {
-   "id": "INDEX-GLOSSARY-00170",
+   "id": "INDEX-GLOSSARY-00171",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1557,
@@ -2808,7 +2819,7 @@
    "context": "2.13]* [Leadership NA: A10.21] *[EXC* *Motorcyclist: D15.55]* [Prisoner NA:"
   },
   {
-   "id": "INDEX-GLOSSARY-00171",
+   "id": "INDEX-GLOSSARY-00172",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2313,
@@ -2818,7 +2829,7 @@
    "context": "C7.4-.42 [Automatic BU: D6.61] *[EXC* *Carrier: D6.84]* [LC: G12.602] [RePh"
   },
   {
-   "id": "INDEX-GLOSSARY-00172",
+   "id": "INDEX-GLOSSARY-00173",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2369,
@@ -2828,7 +2839,7 @@
    "context": "ing SMOKE consumes a Gun’s ROF *(EXC* *MTR)*: C3.33] [Gusts: B25.651] [Japa"
   },
   {
-   "id": "INDEX-GLOSSARY-00173",
+   "id": "INDEX-GLOSSARY-00174",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2501,
@@ -2838,7 +2849,7 @@
    "context": "a: G11.837] [Sniper Non-Target *(EXC* *Caves)*: A14.22] [Starshells NA: E1."
   },
   {
-   "id": "INDEX-GLOSSARY-00174",
+   "id": "INDEX-GLOSSARY-00175",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2623,
@@ -2848,7 +2859,7 @@
    "context": "6] [Berserk: A15.431] *[EXC Cavalry:* *A13.4]* [vs Caves: G11.833] [Passeng"
   },
   {
-   "id": "INDEX-GLOSSARY-00175",
+   "id": "INDEX-GLOSSARY-00176",
    "rule": "image-link-rebase",
    "class": "markup-normalization",
    "count": 1,

@@ -39,6 +39,7 @@ Rule meaning is never edited on judgment alone. A suspected error in the rules t
 | `stale-hyphen` | typographic-correction | Removes a hyphen that the PDF prints mid-line inside an ordinary word, such as `condi-tions` on page 103, where the joined word is attested and the suffix is not a word. When the left part is a real prefix (`re-`, `pre-`, `non-` and others), the case is queued instead, because `re-fused` and `refused` are both possible. |
 | `split-emphasis` | markup-normalization | Merges `*a* *b*` and `**a** **b**` runs split by the converter at line boundaries. |
 | `image-link-rebase` | markup-normalization | Points image links at `../../Rulebook_Markdown/images/`. |
+| `symbol-font-glyph` | conversion-fix | Replaces a private-use code point with its Unicode symbol when the PDF shows the glyph set in the expected symbol font. U+F0AB (Wingdings 0xAB, a black five-pointed star) becomes U+2605 `★`, the form the converter already uses elsewhere for the IFT "★ Vehicle line". |
 | `blank-page` | observation | Records PDF pages 188, 219 and 252, which carry only the chapter banner and folio. |
 
 The build fails closed when:
@@ -50,18 +51,20 @@ The build fails closed when:
 
 ## Current results
 
-| File | Pages | Hyphens joined | Stale hyphens | Emphasis merges | Page markers | Review items |
-| --- | --- | ---: | ---: | ---: | ---: | ---: |
-| TOC | 6-10 | 0 | 0 | 0 | 5 | 0 |
-| Index and Glossary | 11-42 | 134 | 0 | 8 | 32 | 1 |
-| Chapter A | 43-111 | 335 | 3 | 265 | 69 | 20 |
-| Chapter B | 112-161 | 128 | 0 | 126 | 50 | 13 |
-| Chapter C | 162-191 | 189 | 0 | 248 | 30 | 7 |
-| Chapter D | 192-221 | 133 | 0 | 92 | 30 | 3 |
-| Chapter E | 222-253 | 253 | 4 | 122 | 32 | 14 |
-| **Total** | | **1,172** | **7** | **861** | **248** | **58** |
+| File | Pages | Hyphens joined | Stale hyphens | Emphasis merges | Page markers | Symbols | Reviewed decisions | Open review items |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| TOC | 6-10 | 0 | 0 | 0 | 5 | 0 | 0 | 0 |
+| Index and Glossary | 11-42 | 134 | 0 | 8 | 32 | 0 | 1 | 0 |
+| Chapter A | 43-111 | 335 | 3 | 265 | 69 | 0 | 19 | 1 |
+| Chapter B | 112-161 | 128 | 0 | 126 | 50 | 0 | 13 | 0 |
+| Chapter C | 162-191 | 189 | 0 | 248 | 30 | 1 | 5 | 1 |
+| Chapter D | 192-221 | 133 | 0 | 92 | 30 | 0 | 3 | 0 |
+| Chapter E | 222-253 | 253 | 4 | 122 | 32 | 5 | 8 | 1 |
+| **Total** | | **1,172** | **7** | **861** | **248** | **6** | **49** | **3** |
 
-The 58 review items are 49 hyphens the evidence cannot decide, 3 mid-line hyphens after a real prefix, and 6 private-use glyphs (U+F0AB, a symbol-font character printed before "Vehicle Line" and on aircraft counters) that need comparison with the printed symbol.
+The 49 reviewed decisions are 19 joins, 29 retains and 1 replacement (`ground-and` becomes the suspended hyphen `ground- and`). They were proposed from context and approved by the maintainer on 2026-09-23; each carries its rationale in `decisions/decisions.json`.
+
+The 3 open items are the same convention question: whether `on-board` (A, line 1094) and `Off-board`/`off-board` (C, line 54; E, line 815) keep the hyphen or take the closed form. The PDF uses both forms.
 
 ## Layout
 
@@ -70,7 +73,7 @@ The 58 review items are 49 hyphens the evidence cannot decide, 3 mid-line hyphen
 | `edition/` | The curated Markdown, one file per registered source file, same names. |
 | `ledger/` | Every change per file: rule, class, base line, before/after, PDF page and evidence. |
 | `review/` | Cases left unchanged for a reviewer, with context and evidence. |
-| `decisions/decisions.json` | Reviewer decisions that resolve review items (`join` or `retain`). Empty at present. |
+| `decisions/decisions.json` | Reviewer decisions that resolve review items (`join`, `retain` or `replace`). |
 | `manifest.json` | Digests of the PDF, the base registry, each base file, each edition file and the builder, plus per-file counts and the (empty) certified-section list. |
 | `.gitattributes` | Forces LF so checked-out bytes match the manifest digests. |
 
@@ -102,7 +105,7 @@ Add an entry to `decisions/decisions.json` and rebuild:
 }
 ```
 
-`baseLine` and `text` come from the review item. For a token with more than one hyphen, a `join` also needs `hyphenIndex` (0-based). Decisions are keyed to the pinned base text, so they stay valid across rebuilds.
+`baseLine` and `text` come from the review item. For a token with more than one hyphen, a `join` also needs `hyphenIndex` (0-based). A `replace` needs `replacement`, and the replacement may differ from the base only in hyphens, emphasis markers and whitespace; the build fails otherwise. Decisions are keyed to the pinned base text, so they stay valid across rebuilds.
 
 ## Not yet addressed
 

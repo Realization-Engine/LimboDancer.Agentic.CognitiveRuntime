@@ -592,6 +592,20 @@
   {
    "id": "CHB-00053",
    "rule": "linebreak-hyphen",
+   "class": "reviewed-decision",
+   "baseLine": 112,
+   "before": "-",
+   "after": "",
+   "token": "gul-ly-shellhole",
+   "result": "gully-shellhole",
+   "decision": "join",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Line-break split of a single word; context confirms the joined word.",
+   "queuedReason": "neither form attested"
+  },
+  {
+   "id": "CHB-00054",
+   "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 184,
    "before": "-",
@@ -608,7 +622,7 @@
    }
   },
   {
-   "id": "CHB-00054",
+   "id": "CHB-00055",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1114,
@@ -626,7 +640,7 @@
    }
   },
   {
-   "id": "CHB-00055",
+   "id": "CHB-00056",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1214,
@@ -644,7 +658,7 @@
    }
   },
   {
-   "id": "CHB-00056",
+   "id": "CHB-00057",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 188,
@@ -662,7 +676,18 @@
    }
   },
   {
-   "id": "CHB-00057",
+   "id": "CHB-00058",
+   "class": "reviewed-decision",
+   "text": "multi-hex",
+   "rule": "linebreak-hyphen",
+   "baseLine": 1961,
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Hyphenated form is the rulebook usage for this compound adjective.",
+   "queuedReason": "both forms attested"
+  },
+  {
+   "id": "CHB-00059",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 298,
@@ -680,43 +705,43 @@
    }
   },
   {
-   "id": "CHB-00058",
-   "rule": "linebreak-hyphen",
-   "class": "conversion-fix",
-   "baseLine": 302,
-   "before": "-",
-   "after": "",
-   "token": "cur-rent",
-   "result": "current",
-   "evidence": {
-    "pdfPage": 116,
-    "pdfBreak": "line-end",
-    "pdfBreakAfter": "cur-",
-    "joinedFormAttested": 147,
-    "hyphenatedFormAttestedMidLine": 0,
-    "basis": "joined-form-attested"
-   }
-  },
-  {
-   "id": "CHB-00059",
-   "rule": "linebreak-hyphen",
-   "class": "conversion-fix",
-   "baseLine": 302,
-   "before": "-",
-   "after": "",
-   "token": "cur-rent",
-   "result": "current",
-   "evidence": {
-    "pdfPage": 116,
-    "pdfBreak": "line-end",
-    "pdfBreakAfter": "cur-",
-    "joinedFormAttested": 147,
-    "hyphenatedFormAttestedMidLine": 0,
-    "basis": "joined-form-attested"
-   }
-  },
-  {
    "id": "CHB-00060",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 302,
+   "before": "-",
+   "after": "",
+   "token": "cur-rent",
+   "result": "current",
+   "evidence": {
+    "pdfPage": 116,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "cur-",
+    "joinedFormAttested": 147,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHB-00061",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 302,
+   "before": "-",
+   "after": "",
+   "token": "cur-rent",
+   "result": "current",
+   "evidence": {
+    "pdfPage": 116,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "cur-",
+    "joinedFormAttested": 147,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHB-00062",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 302,
@@ -734,7 +759,7 @@
    }
   },
   {
-   "id": "CHB-00061",
+   "id": "CHB-00063",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 302,
@@ -752,7 +777,7 @@
    }
   },
   {
-   "id": "CHB-00062",
+   "id": "CHB-00064",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 304,
@@ -770,7 +795,7 @@
    }
   },
   {
-   "id": "CHB-00063",
+   "id": "CHB-00065",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 342,
@@ -788,7 +813,7 @@
    }
   },
   {
-   "id": "CHB-00064",
+   "id": "CHB-00066",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 452,
@@ -806,7 +831,7 @@
    }
   },
   {
-   "id": "CHB-00065",
+   "id": "CHB-00067",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 354,
@@ -824,7 +849,7 @@
    }
   },
   {
-   "id": "CHB-00066",
+   "id": "CHB-00068",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 354,
@@ -842,7 +867,7 @@
    }
   },
   {
-   "id": "CHB-00067",
+   "id": "CHB-00069",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 356,
@@ -860,7 +885,7 @@
    }
   },
   {
-   "id": "CHB-00068",
+   "id": "CHB-00070",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 358,
@@ -878,7 +903,7 @@
    }
   },
   {
-   "id": "CHB-00069",
+   "id": "CHB-00071",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 360,
@@ -896,7 +921,7 @@
    }
   },
   {
-   "id": "CHB-00070",
+   "id": "CHB-00072",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 364,
@@ -914,7 +939,7 @@
    }
   },
   {
-   "id": "CHB-00071",
+   "id": "CHB-00073",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 364,
@@ -932,7 +957,7 @@
    }
   },
   {
-   "id": "CHB-00072",
+   "id": "CHB-00074",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 402,
@@ -950,7 +975,7 @@
    }
   },
   {
-   "id": "CHB-00073",
+   "id": "CHB-00075",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2490,
@@ -968,7 +993,7 @@
    }
   },
   {
-   "id": "CHB-00074",
+   "id": "CHB-00076",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 402,
@@ -986,7 +1011,7 @@
    }
   },
   {
-   "id": "CHB-00075",
+   "id": "CHB-00077",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 462,
@@ -1004,7 +1029,7 @@
    }
   },
   {
-   "id": "CHB-00076",
+   "id": "CHB-00078",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1362,
@@ -1022,7 +1047,7 @@
    }
   },
   {
-   "id": "CHB-00077",
+   "id": "CHB-00079",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 404,
@@ -1040,7 +1065,7 @@
    }
   },
   {
-   "id": "CHB-00078",
+   "id": "CHB-00080",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 408,
@@ -1058,7 +1083,7 @@
    }
   },
   {
-   "id": "CHB-00079",
+   "id": "CHB-00081",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 412,
@@ -1076,7 +1101,7 @@
    }
   },
   {
-   "id": "CHB-00080",
+   "id": "CHB-00082",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 414,
@@ -1094,7 +1119,7 @@
    }
   },
   {
-   "id": "CHB-00081",
+   "id": "CHB-00083",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 412,
@@ -1112,7 +1137,7 @@
    }
   },
   {
-   "id": "CHB-00082",
+   "id": "CHB-00084",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 412,
@@ -1130,7 +1155,7 @@
    }
   },
   {
-   "id": "CHB-00083",
+   "id": "CHB-00085",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 414,
@@ -1148,7 +1173,7 @@
    }
   },
   {
-   "id": "CHB-00084",
+   "id": "CHB-00086",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1166,
@@ -1166,7 +1191,7 @@
    }
   },
   {
-   "id": "CHB-00085",
+   "id": "CHB-00087",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 414,
@@ -1184,7 +1209,7 @@
    }
   },
   {
-   "id": "CHB-00086",
+   "id": "CHB-00088",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 440,
@@ -1202,7 +1227,7 @@
    }
   },
   {
-   "id": "CHB-00087",
+   "id": "CHB-00089",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 440,
@@ -1220,7 +1245,7 @@
    }
   },
   {
-   "id": "CHB-00088",
+   "id": "CHB-00090",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 440,
@@ -1238,43 +1263,43 @@
    }
   },
   {
-   "id": "CHB-00089",
-   "rule": "linebreak-hyphen",
-   "class": "conversion-fix",
-   "baseLine": 440,
-   "before": "-",
-   "after": "",
-   "token": "By-pass",
-   "result": "Bypass",
-   "evidence": {
-    "pdfPage": 119,
-    "pdfBreak": "line-end",
-    "pdfBreakAfter": "By-",
-    "joinedFormAttested": 242,
-    "hyphenatedFormAttestedMidLine": 0,
-    "basis": "joined-form-attested"
-   }
-  },
-  {
-   "id": "CHB-00090",
-   "rule": "linebreak-hyphen",
-   "class": "conversion-fix",
-   "baseLine": 440,
-   "before": "-",
-   "after": "",
-   "token": "By-pass",
-   "result": "Bypass",
-   "evidence": {
-    "pdfPage": 119,
-    "pdfBreak": "line-end",
-    "pdfBreakAfter": "By-",
-    "joinedFormAttested": 242,
-    "hyphenatedFormAttestedMidLine": 0,
-    "basis": "joined-form-attested"
-   }
-  },
-  {
    "id": "CHB-00091",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 440,
+   "before": "-",
+   "after": "",
+   "token": "By-pass",
+   "result": "Bypass",
+   "evidence": {
+    "pdfPage": 119,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "By-",
+    "joinedFormAttested": 242,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHB-00092",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 440,
+   "before": "-",
+   "after": "",
+   "token": "By-pass",
+   "result": "Bypass",
+   "evidence": {
+    "pdfPage": 119,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "By-",
+    "joinedFormAttested": 242,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHB-00093",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 440,
@@ -1292,7 +1317,7 @@
    }
   },
   {
-   "id": "CHB-00092",
+   "id": "CHB-00094",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 452,
@@ -1310,7 +1335,21 @@
    }
   },
   {
-   "id": "CHB-00093",
+   "id": "CHB-00095",
+   "rule": "linebreak-hyphen",
+   "class": "reviewed-decision",
+   "baseLine": 452,
+   "before": "-",
+   "after": "",
+   "token": "receiv-ing-Wall-TEM",
+   "result": "receiving-Wall-TEM",
+   "decision": "join",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Line-break split of a single word; context confirms the joined word.",
+   "queuedReason": "neither form attested"
+  },
+  {
+   "id": "CHB-00096",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 454,
@@ -1328,7 +1367,7 @@
    }
   },
   {
-   "id": "CHB-00094",
+   "id": "CHB-00097",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 454,
@@ -1346,7 +1385,7 @@
    }
   },
   {
-   "id": "CHB-00095",
+   "id": "CHB-00098",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 462,
@@ -1364,7 +1403,7 @@
    }
   },
   {
-   "id": "CHB-00096",
+   "id": "CHB-00099",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 462,
@@ -1382,7 +1421,7 @@
    }
   },
   {
-   "id": "CHB-00097",
+   "id": "CHB-00100",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 462,
@@ -1400,7 +1439,7 @@
    }
   },
   {
-   "id": "CHB-00098",
+   "id": "CHB-00101",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 462,
@@ -1418,7 +1457,7 @@
    }
   },
   {
-   "id": "CHB-00099",
+   "id": "CHB-00102",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 776,
@@ -1436,7 +1475,7 @@
    }
   },
   {
-   "id": "CHB-00100",
+   "id": "CHB-00103",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1326,
@@ -1454,7 +1493,7 @@
    }
   },
   {
-   "id": "CHB-00101",
+   "id": "CHB-00104",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1362,
@@ -1472,7 +1511,7 @@
    }
   },
   {
-   "id": "CHB-00102",
+   "id": "CHB-00105",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1384,
@@ -1490,7 +1529,7 @@
    }
   },
   {
-   "id": "CHB-00103",
+   "id": "CHB-00106",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1508,
@@ -1508,7 +1547,7 @@
    }
   },
   {
-   "id": "CHB-00104",
+   "id": "CHB-00107",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1508,
@@ -1526,7 +1565,7 @@
    }
   },
   {
-   "id": "CHB-00105",
+   "id": "CHB-00108",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 462,
@@ -1544,7 +1583,7 @@
    }
   },
   {
-   "id": "CHB-00106",
+   "id": "CHB-00109",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 462,
@@ -1562,7 +1601,7 @@
    }
   },
   {
-   "id": "CHB-00107",
+   "id": "CHB-00110",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 462,
@@ -1580,7 +1619,7 @@
    }
   },
   {
-   "id": "CHB-00108",
+   "id": "CHB-00111",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 998,
@@ -1598,7 +1637,7 @@
    }
   },
   {
-   "id": "CHB-00109",
+   "id": "CHB-00112",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 462,
@@ -1616,7 +1655,7 @@
    }
   },
   {
-   "id": "CHB-00110",
+   "id": "CHB-00113",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1362,
@@ -1634,7 +1673,7 @@
    }
   },
   {
-   "id": "CHB-00111",
+   "id": "CHB-00114",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 470,
@@ -1652,7 +1691,7 @@
    }
   },
   {
-   "id": "CHB-00112",
+   "id": "CHB-00115",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 470,
@@ -1670,7 +1709,18 @@
    }
   },
   {
-   "id": "CHB-00113",
+   "id": "CHB-00116",
+   "class": "reviewed-decision",
+   "text": "Single-Story",
+   "rule": "linebreak-hyphen",
+   "baseLine": 535,
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine hyphen in the PDF; the line-end position does not make it a soft break.",
+   "queuedReason": "token not found on its PDF page"
+  },
+  {
+   "id": "CHB-00117",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 604,
@@ -1688,7 +1738,7 @@
    }
   },
   {
-   "id": "CHB-00114",
+   "id": "CHB-00118",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 608,
@@ -1706,7 +1756,7 @@
    }
   },
   {
-   "id": "CHB-00115",
+   "id": "CHB-00119",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 608,
@@ -1724,7 +1774,7 @@
    }
   },
   {
-   "id": "CHB-00116",
+   "id": "CHB-00120",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 636,
@@ -1742,7 +1792,7 @@
    }
   },
   {
-   "id": "CHB-00117",
+   "id": "CHB-00121",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 636,
@@ -1760,7 +1810,7 @@
    }
   },
   {
-   "id": "CHB-00118",
+   "id": "CHB-00122",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1202,
@@ -1778,7 +1828,7 @@
    }
   },
   {
-   "id": "CHB-00119",
+   "id": "CHB-00123",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 638,
@@ -1796,7 +1846,7 @@
    }
   },
   {
-   "id": "CHB-00120",
+   "id": "CHB-00124",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 650,
@@ -1814,7 +1864,7 @@
    }
   },
   {
-   "id": "CHB-00121",
+   "id": "CHB-00125",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 650,
@@ -1832,7 +1882,7 @@
    }
   },
   {
-   "id": "CHB-00122",
+   "id": "CHB-00126",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 738,
@@ -1850,7 +1900,7 @@
    }
   },
   {
-   "id": "CHB-00123",
+   "id": "CHB-00127",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1224,
@@ -1868,7 +1918,7 @@
    }
   },
   {
-   "id": "CHB-00124",
+   "id": "CHB-00128",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 764,
@@ -1886,7 +1936,7 @@
    }
   },
   {
-   "id": "CHB-00125",
+   "id": "CHB-00129",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 776,
@@ -1904,7 +1954,7 @@
    }
   },
   {
-   "id": "CHB-00126",
+   "id": "CHB-00130",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 764,
@@ -1922,7 +1972,7 @@
    }
   },
   {
-   "id": "CHB-00127",
+   "id": "CHB-00131",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 764,
@@ -1940,7 +1990,7 @@
    }
   },
   {
-   "id": "CHB-00128",
+   "id": "CHB-00132",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 764,
@@ -1958,7 +2008,7 @@
    }
   },
   {
-   "id": "CHB-00129",
+   "id": "CHB-00133",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 768,
@@ -1976,7 +2026,7 @@
    }
   },
   {
-   "id": "CHB-00130",
+   "id": "CHB-00134",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 778,
@@ -1994,7 +2044,7 @@
    }
   },
   {
-   "id": "CHB-00131",
+   "id": "CHB-00135",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 778,
@@ -2012,7 +2062,7 @@
    }
   },
   {
-   "id": "CHB-00132",
+   "id": "CHB-00136",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 796,
@@ -2030,7 +2080,7 @@
    }
   },
   {
-   "id": "CHB-00133",
+   "id": "CHB-00137",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 800,
@@ -2048,7 +2098,7 @@
    }
   },
   {
-   "id": "CHB-00134",
+   "id": "CHB-00138",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 814,
@@ -2066,7 +2116,7 @@
    }
   },
   {
-   "id": "CHB-00135",
+   "id": "CHB-00139",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 962,
@@ -2084,7 +2134,7 @@
    }
   },
   {
-   "id": "CHB-00136",
+   "id": "CHB-00140",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 968,
@@ -2102,7 +2152,7 @@
    }
   },
   {
-   "id": "CHB-00137",
+   "id": "CHB-00141",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 980,
@@ -2120,7 +2170,7 @@
    }
   },
   {
-   "id": "CHB-00138",
+   "id": "CHB-00142",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 992,
@@ -2138,7 +2188,7 @@
    }
   },
   {
-   "id": "CHB-00139",
+   "id": "CHB-00143",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1002,
@@ -2156,7 +2206,7 @@
    }
   },
   {
-   "id": "CHB-00140",
+   "id": "CHB-00144",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1106,
@@ -2174,7 +2224,7 @@
    }
   },
   {
-   "id": "CHB-00141",
+   "id": "CHB-00145",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1114,
@@ -2192,7 +2242,21 @@
    }
   },
   {
-   "id": "CHB-00142",
+   "id": "CHB-00146",
+   "rule": "linebreak-hyphen",
+   "class": "reviewed-decision",
+   "baseLine": 1168,
+   "before": "-",
+   "after": "",
+   "token": "map-board-depicted",
+   "result": "mapboard-depicted",
+   "decision": "join",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Line-break split of a single word; context confirms the joined word.",
+   "queuedReason": "neither form attested"
+  },
+  {
+   "id": "CHB-00147",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1170,
@@ -2210,7 +2274,7 @@
    }
   },
   {
-   "id": "CHB-00143",
+   "id": "CHB-00148",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1172,
@@ -2228,7 +2292,7 @@
    }
   },
   {
-   "id": "CHB-00144",
+   "id": "CHB-00149",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1202,
@@ -2246,7 +2310,7 @@
    }
   },
   {
-   "id": "CHB-00145",
+   "id": "CHB-00150",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1202,
@@ -2264,7 +2328,7 @@
    }
   },
   {
-   "id": "CHB-00146",
+   "id": "CHB-00151",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1202,
@@ -2282,7 +2346,7 @@
    }
   },
   {
-   "id": "CHB-00147",
+   "id": "CHB-00152",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1202,
@@ -2300,7 +2364,7 @@
    }
   },
   {
-   "id": "CHB-00148",
+   "id": "CHB-00153",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1212,
@@ -2318,7 +2382,7 @@
    }
   },
   {
-   "id": "CHB-00149",
+   "id": "CHB-00154",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1212,
@@ -2336,7 +2400,7 @@
    }
   },
   {
-   "id": "CHB-00150",
+   "id": "CHB-00155",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1212,
@@ -2354,7 +2418,7 @@
    }
   },
   {
-   "id": "CHB-00151",
+   "id": "CHB-00156",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1214,
@@ -2372,7 +2436,7 @@
    }
   },
   {
-   "id": "CHB-00152",
+   "id": "CHB-00157",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1282,
@@ -2390,7 +2454,21 @@
    }
   },
   {
-   "id": "CHB-00153",
+   "id": "CHB-00158",
+   "rule": "linebreak-hyphen",
+   "class": "reviewed-decision",
+   "baseLine": 1298,
+   "before": "-",
+   "after": "",
+   "token": "tem-perature",
+   "result": "temperature",
+   "decision": "join",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Line-break split of a single word; context confirms the joined word.",
+   "queuedReason": "neither form attested"
+  },
+  {
+   "id": "CHB-00159",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1298,
@@ -2408,7 +2486,7 @@
    }
   },
   {
-   "id": "CHB-00154",
+   "id": "CHB-00160",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1298,
@@ -2426,7 +2504,7 @@
    }
   },
   {
-   "id": "CHB-00155",
+   "id": "CHB-00161",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1306,
@@ -2444,7 +2522,7 @@
    }
   },
   {
-   "id": "CHB-00156",
+   "id": "CHB-00162",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1332,
@@ -2462,7 +2540,7 @@
    }
   },
   {
-   "id": "CHB-00157",
+   "id": "CHB-00163",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1344,
@@ -2480,7 +2558,7 @@
    }
   },
   {
-   "id": "CHB-00158",
+   "id": "CHB-00164",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1358,
@@ -2498,7 +2576,7 @@
    }
   },
   {
-   "id": "CHB-00159",
+   "id": "CHB-00165",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1372,
@@ -2516,7 +2594,7 @@
    }
   },
   {
-   "id": "CHB-00160",
+   "id": "CHB-00166",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1382,
@@ -2534,7 +2612,7 @@
    }
   },
   {
-   "id": "CHB-00161",
+   "id": "CHB-00167",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1384,
@@ -2552,7 +2630,7 @@
    }
   },
   {
-   "id": "CHB-00162",
+   "id": "CHB-00168",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1384,
@@ -2570,7 +2648,7 @@
    }
   },
   {
-   "id": "CHB-00163",
+   "id": "CHB-00169",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1388,
@@ -2588,7 +2666,7 @@
    }
   },
   {
-   "id": "CHB-00164",
+   "id": "CHB-00170",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1502,
@@ -2606,7 +2684,32 @@
    }
   },
   {
-   "id": "CHB-00165",
+   "id": "CHB-00171",
+   "class": "reviewed-decision",
+   "text": "vice-versa",
+   "rule": "linebreak-hyphen",
+   "baseLine": 2079,
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine hyphen in the PDF; the line-end position does not make it a soft break.",
+   "queuedReason": "token not found on its PDF page"
+  },
+  {
+   "id": "CHB-00172",
+   "rule": "linebreak-hyphen",
+   "class": "reviewed-decision",
+   "baseLine": 1635,
+   "before": "-",
+   "after": "",
+   "token": "ex-tinguish",
+   "result": "extinguish",
+   "decision": "join",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Line-break split of a single word; context confirms the joined word.",
+   "queuedReason": "neither form attested"
+  },
+  {
+   "id": "CHB-00173",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1635,
@@ -2624,7 +2727,7 @@
    }
   },
   {
-   "id": "CHB-00166",
+   "id": "CHB-00174",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 1645,
@@ -2642,7 +2745,40 @@
    }
   },
   {
-   "id": "CHB-00167",
+   "id": "CHB-00175",
+   "class": "reviewed-decision",
+   "text": "within-the-CA-of",
+   "rule": "linebreak-hyphen",
+   "baseLine": 2081,
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine compound; the hyphen belongs to the printed term.",
+   "queuedReason": "neither form attested"
+  },
+  {
+   "id": "CHB-00176",
+   "class": "reviewed-decision",
+   "text": "Target-Type",
+   "rule": "linebreak-hyphen",
+   "baseLine": 2115,
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine hyphen in the PDF; the line-end position does not make it a soft break.",
+   "queuedReason": "token not found on its PDF page"
+  },
+  {
+   "id": "CHB-00177",
+   "class": "reviewed-decision",
+   "text": "its-occupant",
+   "rule": "linebreak-hyphen",
+   "baseLine": 2115,
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine compound; the hyphen belongs to the printed term.",
+   "queuedReason": "neither form attested"
+  },
+  {
+   "id": "CHB-00178",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2149,
@@ -2660,7 +2796,21 @@
    }
   },
   {
-   "id": "CHB-00168",
+   "id": "CHB-00179",
+   "rule": "linebreak-hyphen",
+   "class": "reviewed-decision",
+   "baseLine": 2191,
+   "before": "ground-and",
+   "after": "ground- and",
+   "token": "ground-and",
+   "result": "ground- and",
+   "decision": "replace",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Suspended hyphen (\"a ground- and first-level Location\"); the converter dropped the space after the line-end hyphen.",
+   "queuedReason": "neither form attested"
+  },
+  {
+   "id": "CHB-00180",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2271,
@@ -2678,7 +2828,7 @@
    }
   },
   {
-   "id": "CHB-00169",
+   "id": "CHB-00181",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2271,
@@ -2696,7 +2846,18 @@
    }
   },
   {
-   "id": "CHB-00170",
+   "id": "CHB-00182",
+   "class": "reviewed-decision",
+   "text": "in-Motion",
+   "rule": "linebreak-hyphen",
+   "baseLine": 2426,
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine hyphen in the PDF; the line-end position does not make it a soft break.",
+   "queuedReason": "token not found on its PDF page"
+  },
+  {
+   "id": "CHB-00183",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2317,
@@ -2714,7 +2875,7 @@
    }
   },
   {
-   "id": "CHB-00171",
+   "id": "CHB-00184",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2474,
@@ -2732,7 +2893,7 @@
    }
   },
   {
-   "id": "CHB-00172",
+   "id": "CHB-00185",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2478,
@@ -2750,7 +2911,7 @@
    }
   },
   {
-   "id": "CHB-00173",
+   "id": "CHB-00186",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2482,
@@ -2768,7 +2929,7 @@
    }
   },
   {
-   "id": "CHB-00174",
+   "id": "CHB-00187",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2482,
@@ -2786,7 +2947,7 @@
    }
   },
   {
-   "id": "CHB-00175",
+   "id": "CHB-00188",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2486,
@@ -2804,7 +2965,7 @@
    }
   },
   {
-   "id": "CHB-00176",
+   "id": "CHB-00189",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2488,
@@ -2822,7 +2983,7 @@
    }
   },
   {
-   "id": "CHB-00177",
+   "id": "CHB-00190",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2490,
@@ -2840,7 +3001,7 @@
    }
   },
   {
-   "id": "CHB-00178",
+   "id": "CHB-00191",
    "rule": "linebreak-hyphen",
    "class": "conversion-fix",
    "baseLine": 2494,
@@ -2858,7 +3019,7 @@
    }
   },
   {
-   "id": "CHB-00179",
+   "id": "CHB-00192",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 28,
@@ -2868,7 +3029,7 @@
    "context": "             37.   Debris ```  **B.1** **SYMBOLOGY:** For aesthetic purposes,"
   },
   {
-   "id": "CHB-00180",
+   "id": "CHB-00193",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 38,
@@ -2878,7 +3039,7 @@
    "context": "rification may prove helpful.  **B.4** **HINDRANCE LEVEL:** In the course of "
   },
   {
-   "id": "CHB-00181",
+   "id": "CHB-00194",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 40,
@@ -2888,7 +3049,7 @@
    "context": "o affect a LOS over that hex.  **B.5** **CONTINUOUS SLOPE:** A Continuous Slo"
   },
   {
-   "id": "CHB-00182",
+   "id": "CHB-00195",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 46,
@@ -2898,7 +3059,7 @@
    "context": "ch are at the same elevation.  **B.6** **INHERENT TERRAIN:** Certain terrain "
   },
   {
-   "id": "CHB-00183",
+   "id": "CHB-00196",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 48,
@@ -2908,7 +3069,7 @@
    "context": "he two Hindrance DRM is used.  **B.7** **LOS & TERRAIN CHECKS:** To make LOS "
   },
   {
-   "id": "CHB-00184",
+   "id": "CHB-00197",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 68,
@@ -2918,7 +3079,7 @@
    "context": " types of Open Ground hexes.  **1.11** **ROADS:** The presence of a road modi"
   },
   {
-   "id": "CHB-00185",
+   "id": "CHB-00198",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 150,
@@ -2928,7 +3089,7 @@
    "context": "sing the road movement rate.  **3.43** **ROAD-NEGATING TERRAIN:** Infantry ma"
   },
   {
-   "id": "CHB-00186",
+   "id": "CHB-00199",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 190,
@@ -2938,7 +3099,7 @@
    "context": "1</sup>/2 = 4<sup>1</sup>/2.  **4.43** **SUNKEN LANE:** A Sunken Road can be "
   },
   {
-   "id": "CHB-00187",
+   "id": "CHB-00200",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 298,
@@ -2948,7 +3109,7 @@
    "context": "ges/eASLRB_v3_01-p116-7.png)  **6.41** **PONTOON:** Only pontoon bridges, whi"
   },
   {
-   "id": "CHB-00188",
+   "id": "CHB-00201",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 302,
@@ -2958,7 +3119,7 @@
    "context": "ges/eASLRB_v3_01-p116-2.png)  **6.42** **COLLAPSE:** Wooden bridges may colla"
   },
   {
-   "id": "CHB-00189",
+   "id": "CHB-00202",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 306,
@@ -2968,7 +3129,7 @@
    "context": " doubled while on a bridge.  **6.431** **ONE-LANE:** Once a vehicle moves acr"
   },
   {
-   "id": "CHB-00190",
+   "id": "CHB-00203",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 310,
@@ -2978,7 +3139,7 @@
    "context": "ges/eASLRB_v3_01-p116-8.png)  **6.44** **FOOT BRIDGES:** A foot bridge is a <"
   },
   {
-   "id": "CHB-00191",
+   "id": "CHB-00204",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 314,
@@ -2988,7 +3149,7 @@
    "context": "ges/eASLRB_v3_01-p116-3.png)  **6.45** **UNDERWATER:** Occasionally, pontoon "
   },
   {
-   "id": "CHB-00192",
+   "id": "CHB-00205",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 316,
@@ -2998,7 +3159,7 @@
    "context": "nd disallow Road bonus (3.4).  **6.5** **BURNING:** Stone Bridges do not burn"
   },
   {
-   "id": "CHB-00193",
+   "id": "CHB-00206",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 440,
@@ -3008,7 +3169,7 @@
    "context": "cked at the Y8-Y9-Z8 vertex.  **9.21** **ENTRENCHMENTS:** A unit in an entren"
   },
   {
-   "id": "CHB-00194",
+   "id": "CHB-00207",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 604,
@@ -3018,7 +3179,7 @@
    "context": "ages/eASLRB_v3_01-p124-6.png)  **9.6** **HILLSIDE WALL/HEDGE:** A Hillside wa"
   },
   {
-   "id": "CHB-00195",
+   "id": "CHB-00208",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 640,
@@ -3028,7 +3189,7 @@
    "context": "bstructions.  **10.2 DIFFERENT LEVEL** **LOS:** A lower level unit may trace "
   },
   {
-   "id": "CHB-00196",
+   "id": "CHB-00209",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 854,
@@ -3038,7 +3199,7 @@
    "context": "with a +3 DRM.  **13.421 TRAIL BREAK** **(TB):** Anytime a fully-tracked AFV "
   },
   {
-   "id": "CHB-00197",
+   "id": "CHB-00210",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1004,
@@ -3048,7 +3209,7 @@
    "context": " is treated as a river hex.  **16.43** **BOG:** Any ground level or level -1 "
   },
   {
-   "id": "CHB-00198",
+   "id": "CHB-00211",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1010,
@@ -3058,7 +3219,7 @@
    "context": "sh unless on a bridge (6.6).  **16.6** **WATER DEPTH:** The scenario-defined "
   },
   {
-   "id": "CHB-00199",
+   "id": "CHB-00212",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1022,
@@ -3068,7 +3229,7 @@
    "context": " pay double Open Ground COT.  **16.8** **WEATHER:** Marsh hexes are treated a"
   },
   {
-   "id": "CHB-00200",
+   "id": "CHB-00213",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1156,
@@ -3078,7 +3239,7 @@
    "context": " by the current EC drm (25.5).  **dr** **Depth**  ![Figure from page 132](ima"
   },
   {
-   "id": "CHB-00201",
+   "id": "CHB-00214",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1246,
@@ -3088,7 +3249,7 @@
    "context": "rce as per the following table. **dr** **Force**  ![Figure from page 134](ima"
   },
   {
-   "id": "CHB-00202",
+   "id": "CHB-00215",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1350,
@@ -3098,7 +3259,7 @@
    "context": "es/eASLRB_v3_01-p136-6.png)  **23.22** **TWO STORY HOUSE:** A multi-hex build"
   },
   {
-   "id": "CHB-00203",
+   "id": "CHB-00216",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1470,
@@ -3108,7 +3269,7 @@
    "context": "tween them. **CUTAWAY SECTIONAL VIEW** **OF SPLIT LEVEL BUILDING** **SHOWING "
   },
   {
-   "id": "CHB-00204",
+   "id": "CHB-00217",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1470,
@@ -3118,7 +3279,7 @@
    "context": "NAL VIEW** **OF SPLIT LEVEL BUILDING** **SHOWING FLOOR CONNECTIONS**  ![Figur"
   },
   {
-   "id": "CHB-00205",
+   "id": "CHB-00218",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 40,
@@ -3128,7 +3289,7 @@
    "context": "S *[EXC: walls/hedges and AFV/wrecks* *(D9.4)]* even though the latter term"
   },
   {
-   "id": "CHB-00206",
+   "id": "CHB-00219",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 294,
@@ -3138,7 +3299,7 @@
    "context": "at bridge *[EXC: by Scaling (23.424)* *and using a Climbing counter in the "
   },
   {
-   "id": "CHB-00207",
+   "id": "CHB-00220",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 306,
@@ -3148,7 +3309,7 @@
    "context": " a +2 size modifier, and motorcycles* *are never blocked]*. Normal Wreck Re"
   },
   {
-   "id": "CHB-00208",
+   "id": "CHB-00221",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 354,
@@ -3158,7 +3319,7 @@
    "context": "1Y9) are Manhole Locations *[EXC: on* *Deluxe ASL boards only hexes marked "
   },
   {
-   "id": "CHB-00209",
+   "id": "CHB-00222",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 354,
@@ -3168,7 +3329,7 @@
    "context": "ed with a black circle contain Sewer* *Locations]*.  **8.2 SEWER LOCATION:*"
   },
   {
-   "id": "CHB-00210",
+   "id": "CHB-00223",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 356,
@@ -3178,7 +3339,7 @@
    "context": "a Sewer Emergence dr (8.42) *earlier* *that Player Turn.* Reciprocity (A6.5"
   },
   {
-   "id": "CHB-00211",
+   "id": "CHB-00224",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 364,
@@ -3188,7 +3349,7 @@
    "context": "n if enemy occupied *[EXC: Fortified* *Building; 23.922]*. If the non-sewer"
   },
   {
-   "id": "CHB-00212",
+   "id": "CHB-00225",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 412,
@@ -3198,7 +3359,7 @@
    "context": "hat is specified by building/hex co-* *ordinate cannot be forfeited; see al"
   },
   {
-   "id": "CHB-00213",
+   "id": "CHB-00226",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 448,
@@ -3208,7 +3369,7 @@
    "context": "*[EXC: if thrown across a wall/hedge* *hexside, the TEM applies to both the"
   },
   {
-   "id": "CHB-00214",
+   "id": "CHB-00227",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 452,
@@ -3218,7 +3379,7 @@
    "context": "receive appropriate TEM for Emplace-* *ment or for a friendly AFV with whic"
   },
   {
-   "id": "CHB-00215",
+   "id": "CHB-00228",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 454,
@@ -3228,7 +3389,7 @@
    "context": "ge (10.31)/Cactus Patch (14.7)/Olive* *Grove (14.8)]*, in Column/Convoy, in"
   },
   {
-   "id": "CHB-00216",
+   "id": "CHB-00229",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 458,
@@ -3238,7 +3399,7 @@
    "context": "he viewer’s hex *[EXC: Entrenchments* *(9.21); bocage (9.521)]*.  ###### 9."
   },
   {
-   "id": "CHB-00217",
+   "id": "CHB-00230",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 462,
@@ -3248,7 +3409,7 @@
    "context": "er hexsides *[EXC: in Deluxe ASL, WA* *is claimed/retained/lost per hexside"
   },
   {
-   "id": "CHB-00218",
+   "id": "CHB-00231",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 470,
@@ -3258,7 +3419,7 @@
    "context": "ntarily claim or forfeit WA. *Claim-* *ing* WA is voluntary *[EXC: 9.323]*,"
   },
   {
-   "id": "CHB-00219",
+   "id": "CHB-00232",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 535,
@@ -3268,7 +3429,7 @@
    "context": "igher-level viewer *[EXC: The number* *of blind hexes can be reduced to zer"
   },
   {
-   "id": "CHB-00220",
+   "id": "CHB-00233",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 608,
@@ -3278,7 +3439,7 @@
    "context": "hind a Hillside wall/hedge still has* *its LOS restricted as per 9.21]*. It"
   },
   {
-   "id": "CHB-00221",
+   "id": "CHB-00234",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 608,
@@ -3288,7 +3449,7 @@
    "context": "h the hill depiction meets the wall/* *hedge depiction* is considered to be"
   },
   {
-   "id": "CHB-00222",
+   "id": "CHB-00235",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 632,
@@ -3298,7 +3459,7 @@
    "context": "portion of the hill hex *[EXC: Newer* *boards may depict visible Crest Line"
   },
   {
-   "id": "CHB-00223",
+   "id": "CHB-00236",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 636,
@@ -3308,7 +3469,7 @@
    "context": "used to determine LOS as is the case* *with Inherent Terrain]*<sup>3A</sup>"
   },
   {
-   "id": "CHB-00224",
+   "id": "CHB-00237",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 640,
@@ -3318,7 +3479,7 @@
    "context": "r elevation *[EXC: A unit may always* *trace a LOS through a Crest Line* *i"
   },
   {
-   "id": "CHB-00225",
+   "id": "CHB-00238",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 640,
@@ -3328,7 +3489,7 @@
    "context": "s* *trace a LOS through a Crest Line* *in an adjacent hex of lower elevatio"
   },
   {
-   "id": "CHB-00226",
+   "id": "CHB-00239",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 640,
@@ -3338,7 +3499,7 @@
    "context": "evation (15Y4 can fire through Y3 to* *Y2 and along the Y3-Z3 hexside to* *"
   },
   {
-   "id": "CHB-00227",
+   "id": "CHB-00240",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 640,
@@ -3348,7 +3509,7 @@
    "context": "* *Y2 and along the Y3-Z3 hexside to* *Z2 but it cannot fire through Z3 to "
   },
   {
-   "id": "CHB-00228",
+   "id": "CHB-00241",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 650,
@@ -3358,7 +3519,7 @@
    "context": "elevation level difference caused by* *that Crest Line and the next hex alo"
   },
   {
-   "id": "CHB-00229",
+   "id": "CHB-00242",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 650,
@@ -3368,7 +3529,7 @@
    "context": "the LOS is ≥ two, at least one Blind* *Hex is created (unless adjacent) eve"
   },
   {
-   "id": "CHB-00230",
+   "id": "CHB-00243",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 650,
@@ -3378,7 +3539,7 @@
    "context": "within five hexes of the higher lev-* *el firing hex]*. One Blind Hex is cr"
   },
   {
-   "id": "CHB-00231",
+   "id": "CHB-00244",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 711,
@@ -3388,7 +3549,7 @@
    "context": "such as 24E6-E7 or dF1-G1 of *Deluxe* *ASL*).  ```text                     "
   },
   {
-   "id": "CHB-00232",
+   "id": "CHB-00245",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 746,
@@ -3398,7 +3559,7 @@
    "context": "Location *[EXC: LATW other than PIAT* *(C13.61) or MTR with minimum range o"
   },
   {
-   "id": "CHB-00233",
+   "id": "CHB-00246",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 834,
@@ -3408,7 +3569,7 @@
    "context": "LOS *[EXC: Forest (13.7); Pine Woods* *(13.8)]*. Like most LOS obstacles, t"
   },
   {
-   "id": "CHB-00234",
+   "id": "CHB-00247",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 840,
@@ -3418,7 +3579,7 @@
    "context": "hex is always considered on the road* *unless beneath a partial Trail Break"
   },
   {
-   "id": "CHB-00235",
+   "id": "CHB-00248",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 850,
@@ -3428,7 +3589,7 @@
    "context": " a Bog DR *[EXC: Motorcycles must be* *pushed]*. Such movement is possible "
   },
   {
-   "id": "CHB-00236",
+   "id": "CHB-00249",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 874,
@@ -3438,7 +3599,7 @@
    "context": "a woods hex *[EXC: on a road or IN a* *stream]* even if on a TB.  #### 13.5"
   },
   {
-   "id": "CHB-00237",
+   "id": "CHB-00250",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 992,
@@ -3448,7 +3609,7 @@
    "context": "x *[EXC: vs a bridge or units on the* *bridge]* is halved due to the muffli"
   },
   {
-   "id": "CHB-00238",
+   "id": "CHB-00251",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1044,
@@ -3458,7 +3619,7 @@
    "context": "s may never occupy a crag hex *[EXC:* *dm mortars may be portaged into/out "
   },
   {
-   "id": "CHB-00239",
+   "id": "CHB-00252",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1126,
@@ -3468,7 +3629,7 @@
    "context": "d by A6.3 *[EXC: such a unit that is* *non-adjacent to a Hill Depression he"
   },
   {
-   "id": "CHB-00240",
+   "id": "CHB-00253",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1126,
@@ -3478,7 +3639,7 @@
    "context": "x can ignore the A6.3 “one level per* *hex of range” requirement for having"
   },
   {
-   "id": "CHB-00241",
+   "id": "CHB-00254",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1126,
@@ -3488,7 +3649,7 @@
    "context": "a LOS INTO that hex if his otherwise* *unblocked LOS enters that hex in con"
   },
   {
-   "id": "CHB-00242",
+   "id": "CHB-00255",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1182,
@@ -3498,7 +3659,7 @@
    "context": " a flooded stream is still one level* *higher; 20.44]*. If a non-dry stream"
   },
   {
-   "id": "CHB-00243",
+   "id": "CHB-00256",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1282,
@@ -3508,7 +3669,7 @@
    "context": "elevation entered *[EXC: Abrupt Ele-* *vation Change; 10.5]*. Fording units"
   },
   {
-   "id": "CHB-00244",
+   "id": "CHB-00257",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1382,
@@ -3518,7 +3679,7 @@
    "context": "ass portion of the hex contains oth-* *er than Open Ground such as 2I9 (A2."
   },
   {
-   "id": "CHB-00245",
+   "id": "CHB-00258",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1384,
@@ -3528,7 +3689,7 @@
    "context": "rketplace (23.73); Factory Stairwell* *(23.742)]* and does so at a total MP"
   },
   {
-   "id": "CHB-00246",
+   "id": "CHB-00259",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1404,
@@ -3538,7 +3699,7 @@
    "context": " APh, *[EXC: moving between hexes of* *a Split level Building; 23.72-.722]*"
   },
   {
-   "id": "CHB-00247",
+   "id": "CHB-00260",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1442,
@@ -3548,7 +3709,7 @@
    "context": "EXC to both: if the DC malfunctions;* *A23.4]*. Place a Breach counter in t"
   },
   {
-   "id": "CHB-00248",
+   "id": "CHB-00261",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1498,
@@ -3558,7 +3719,7 @@
    "context": "occupants are at ground level *[EXC:* *rooftops; 23.8]*.<sup>3C</sup>  ####"
   },
   {
-   "id": "CHB-00249",
+   "id": "CHB-00262",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1508,
@@ -3568,7 +3729,7 @@
    "context": "entering the non-factory hex. *[EXC:* *Any vehicle may enter/exit a Factory"
   },
   {
-   "id": "CHB-00250",
+   "id": "CHB-00263",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1512,
@@ -3578,7 +3739,7 @@
    "context": "pen Ground costs provided the hex is* *controlled by friendly forces (the s"
   },
   {
-   "id": "CHB-00251",
+   "id": "CHB-00264",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1512,
@@ -3588,7 +3749,7 @@
    "context": "ell symbol in this case representing* *a vehicular-sized entrance)]*. A veh"
   },
   {
-   "id": "CHB-00252",
+   "id": "CHB-00265",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1514,
@@ -3598,7 +3759,7 @@
    "context": "y *[EXC: it does not hinder LOS over* *(B.4) it]*. Normal rubble rules (24."
   },
   {
-   "id": "CHB-00253",
+   "id": "CHB-00266",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1524,
@@ -3608,7 +3769,7 @@
    "context": "nemy units need only be unbroken (as* *opposed to Good Order) to prohibit s"
   },
   {
-   "id": "CHB-00254",
+   "id": "CHB-00267",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1534,
@@ -3618,7 +3779,7 @@
    "context": "t *[EXC: for MF-expenditure, LOF and* *Residual-FP purposes; see 23.88]*. I"
   },
   {
-   "id": "CHB-00255",
+   "id": "CHB-00268",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1570,
@@ -3628,7 +3789,7 @@
    "context": "hex are penalized by a -1 DRM *[EXC:* *Flames caused by MOL attacks are pen"
   },
   {
-   "id": "CHB-00256",
+   "id": "CHB-00269",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1594,
@@ -3638,7 +3799,7 @@
    "context": "ession levels *[EXC: rubbled bridge;* *6.331]*. A unit IN such a hex must e"
   },
   {
-   "id": "CHB-00257",
+   "id": "CHB-00270",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1602,
@@ -3648,7 +3809,7 @@
    "context": " Fortified Building is not increased* *due to the Fortification]*. Rubble c"
   },
   {
-   "id": "CHB-00258",
+   "id": "CHB-00271",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1681,
@@ -3658,7 +3819,7 @@
    "context": "ttack *[EXC: a Collateral Attack; an* *attack using the Vehicle Target Type"
   },
   {
-   "id": "CHB-00259",
+   "id": "CHB-00272",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1685,
@@ -3668,7 +3829,7 @@
    "context": " to the resulting smoke *[EXC: Heavy* *Winds 25.63]*. This extra MP expendi"
   },
   {
-   "id": "CHB-00260",
+   "id": "CHB-00273",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1691,
@@ -3678,7 +3839,7 @@
    "context": "e in Heavy Winds (25.63); two levels* *in a Mild Breeze (A24.4)]* above the"
   },
   {
-   "id": "CHB-00261",
+   "id": "CHB-00274",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1697,
@@ -3688,7 +3849,7 @@
    "context": "*[EXC: units in Melee/pinned may not* *leave during the RtPh and are elimin"
   },
   {
-   "id": "CHB-00262",
+   "id": "CHB-00275",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1755,
@@ -3698,7 +3859,7 @@
    "context": ") during Heavy Winds *[EXC: if being* *fired directly “with the wind”]*. “N"
   },
   {
-   "id": "CHB-00263",
+   "id": "CHB-00276",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1781,
@@ -3708,7 +3869,7 @@
    "context": "anating from that Blaze hex is never* *affected by Gusts*].  **25.66 COLLAP"
   },
   {
-   "id": "CHB-00264",
+   "id": "CHB-00277",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1807,
@@ -3718,7 +3879,7 @@
    "context": "ocation *[EXC: Wire on and beneath a* *bridge]*. A leader on Wire can still"
   },
   {
-   "id": "CHB-00265",
+   "id": "CHB-00278",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1811,
@@ -3728,7 +3889,7 @@
    "context": "Wire *[EXC: Units returned to a Wire* *Location after attempted entry of a "
   },
   {
-   "id": "CHB-00266",
+   "id": "CHB-00279",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1897,
@@ -3738,7 +3899,7 @@
    "context": "trench counter during play *[EXC: dm* *mortars]*.  ![Figure from page 147]("
   },
   {
-   "id": "CHB-00267",
+   "id": "CHB-00280",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1929,
@@ -3748,7 +3909,7 @@
    "context": "ay *[EXC: A-T mines in hard-surfaced* *terrain; 28.53]*. Minefields are ava"
   },
   {
-   "id": "CHB-00268",
+   "id": "CHB-00281",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1933,
@@ -3758,7 +3919,7 @@
    "context": "ld attacks are resolved with half FP* *in Deep Snow and a +1 DRM applies]*."
   },
   {
-   "id": "CHB-00269",
+   "id": "CHB-00282",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1967,
@@ -3768,7 +3929,7 @@
    "context": "vered in a minefield laid out as per* *28.46, mark that hex with a Dummy Mi"
   },
   {
-   "id": "CHB-00270",
+   "id": "CHB-00283",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 1997,
@@ -3778,7 +3939,7 @@
    "context": "or through a minefield *[EXC: the TB* *may not be placed if that AFV is usi"
   },
   {
-   "id": "CHB-00271",
+   "id": "CHB-00284",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2027,
@@ -3788,7 +3949,7 @@
    "context": "oadblock extension can apply only to* *Direct Fire]*.  **29.4** No vehicle "
   },
   {
-   "id": "CHB-00272",
+   "id": "CHB-00285",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2053,
@@ -3798,7 +3959,7 @@
    "context": "lly *[EXC: the NCA TEM is considered* *to be zero for CH resolution]*. Cani"
   },
   {
-   "id": "CHB-00273",
+   "id": "CHB-00286",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2065,
@@ -3808,7 +3969,7 @@
    "context": "e with any other +/- TEM *[EXC: mud/* *deep-snow TEM, for certain HE attack"
   },
   {
-   "id": "CHB-00274",
+   "id": "CHB-00287",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2079,
@@ -3818,7 +3979,7 @@
    "context": "with any other MF expenditure *[EXC:* *during the RtPh; 30.41]*. If a unit "
   },
   {
-   "id": "CHB-00275",
+   "id": "CHB-00288",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2085,
@@ -3828,7 +3989,7 @@
    "context": "e MF to enter the pillbox hex *[EXC:* *tunnel (8.6); bunker (30.8)]*. EX: A"
   },
   {
-   "id": "CHB-00276",
+   "id": "CHB-00289",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2105,
@@ -3838,7 +3999,7 @@
    "context": "t in the pillbox hex *[EXC: MPh/RtPh* *exit via a tunnel; 8.61-.62]*. CC is"
   },
   {
-   "id": "CHB-00277",
+   "id": "CHB-00290",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2105,
@@ -3848,7 +4009,7 @@
    "context": "illbox *[EXC: Hand-to-Hand CC is NA;* *no Melee results (30.1; A11.15)]*. C"
   },
   {
-   "id": "CHB-00278",
+   "id": "CHB-00291",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2109,
@@ -3858,7 +4019,7 @@
    "context": "ry/exit restrictions given in 30.42,* *30.44 and 30.6 still apply]*.  **30."
   },
   {
-   "id": "CHB-00279",
+   "id": "CHB-00292",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2115,
@@ -3868,7 +4029,7 @@
    "context": "IFT Original DR *[EXC: Final DR, for* *a Set DC; 30.31; A23.7]* vs it/its-c"
   },
   {
-   "id": "CHB-00280",
+   "id": "CHB-00293",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2115,
@@ -3878,7 +4039,7 @@
    "context": " 70mm *[EXC: of ≥ 100mm, vs a “gray”* *pillbox]*. When a pillbox is elimina"
   },
   {
-   "id": "CHB-00281",
+   "id": "CHB-00294",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2125,
@@ -3888,7 +4049,7 @@
    "context": "re *[EXC: VCA change (D2.33) remains* *one MP (MF for a Wag­on)]*. Infantry"
   },
   {
-   "id": "CHB-00282",
+   "id": "CHB-00295",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2125,
@@ -3898,7 +4059,7 @@
    "context": " a Crest Line hexside, only SMOKE in* *the lower hex can do so]*. EX: See t"
   },
   {
-   "id": "CHB-00283",
+   "id": "CHB-00296",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2145,
@@ -3908,7 +4069,7 @@
    "context": "that hexside, a Blaze counter *[EXC:* *burning wreck along another hexside]"
   },
   {
-   "id": "CHB-00284",
+   "id": "CHB-00297",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2175,
@@ -3918,7 +4079,7 @@
    "context": "If that hexside is also a Crest Line* *hexside, only the mines in the lower"
   },
   {
-   "id": "CHB-00285",
+   "id": "CHB-00298",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2185,
@@ -3928,7 +4089,7 @@
    "context": " Fortified, has no Rooftop Location,* *and the +1 drm for stone rubble dete"
   },
   {
-   "id": "CHB-00286",
+   "id": "CHB-00299",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2199,
@@ -3938,7 +4099,7 @@
    "context": "nter a RR hex is different from that* *of a paved road (see 32.3); Streetfi"
   },
   {
-   "id": "CHB-00287",
+   "id": "CHB-00300",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2199,
@@ -3948,7 +4109,7 @@
    "context": "hting, Manhole Locations, Dash, Road* *Bonus, Road Movement rate, and the -"
   },
   {
-   "id": "CHB-00288",
+   "id": "CHB-00301",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2199,
@@ -3958,7 +4119,7 @@
    "context": "he -2 Manhandling DRM for crossing a* *road hexside are NA; and Hidden Mine"
   },
   {
-   "id": "CHB-00289",
+   "id": "CHB-00302",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2211,
@@ -3968,7 +4129,7 @@
    "context": "no other terrain *[EXC: potential RR* *Crossings, 32.4]*, other terrain typ"
   },
   {
-   "id": "CHB-00290",
+   "id": "CHB-00303",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2215,
@@ -3978,7 +4139,7 @@
    "context": "n-Ground terrain (32.3); units which* *qualify for pillbox/shellhole/artifi"
   },
   {
-   "id": "CHB-00291",
+   "id": "CHB-00304",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2239,
@@ -3988,7 +4149,7 @@
    "context": "may enter/exit the road Location via* *a RR hexside]*.<sup>15</sup>  **32.4"
   },
   {
-   "id": "CHB-00292",
+   "id": "CHB-00305",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2241,
@@ -3998,7 +4159,7 @@
    "context": "may expend the normal non-RR-hexside* *COT to enter the RR Location]*.<sup>"
   },
   {
-   "id": "CHB-00293",
+   "id": "CHB-00306",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2275,
@@ -4008,7 +4169,7 @@
    "context": "cle exclusive of hexsides *[EXC: any* *such RR depiction that crosses a hex"
   },
   {
-   "id": "CHB-00294",
+   "id": "CHB-00307",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2275,
@@ -4018,7 +4179,7 @@
    "context": "de between adjacent hexes, each with* *a Rail Car counter, prevents Bypass/"
   },
   {
-   "id": "CHB-00295",
+   "id": "CHB-00308",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2275,
@@ -4028,7 +4189,7 @@
    "context": "OS along that hexside just as if the* *hexside was covered by printed Rail "
   },
   {
-   "id": "CHB-00296",
+   "id": "CHB-00309",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2275,
@@ -4038,7 +4199,7 @@
    "context": "epiction; if one of those hexes were* *instead rubble, it would also preven"
   },
   {
-   "id": "CHB-00297",
+   "id": "CHB-00310",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2289,
@@ -4048,7 +4209,7 @@
    "context": "in such an Accessible hex, along the* *non-stream hexside they cross, at a "
   },
   {
-   "id": "CHB-00298",
+   "id": "CHB-00311",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2289,
@@ -4058,7 +4219,7 @@
    "context": "y cross, at a cost of three MF for a* *stream- brush/woods hex or two MF fo"
   },
   {
-   "id": "CHB-00299",
+   "id": "CHB-00312",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2289,
@@ -4068,7 +4229,7 @@
    "context": "s hex or two MF for a stream-orchard* *hex. Otherwise, 20.91 applies unchan"
   },
   {
-   "id": "CHB-00300",
+   "id": "CHB-00313",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2321,
@@ -4078,7 +4239,7 @@
    "context": "e as per 23.41 *[EXC: a Tower has no* *cellar and adds an extra -1 drm to t"
   },
   {
-   "id": "CHB-00301",
+   "id": "CHB-00314",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2321,
@@ -4088,7 +4249,7 @@
    "context": "colored dr of the AFV’s Bog Check as* *though the tower was a single story "
   },
   {
-   "id": "CHB-00302",
+   "id": "CHB-00315",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2337,
@@ -4098,7 +4259,7 @@
    "context": " same-level LOS *[EXC: the DRM is +2* *per hex]* that also applies as a DRM"
   },
   {
-   "id": "CHB-00303",
+   "id": "CHB-00316",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2407,
@@ -4108,7 +4269,7 @@
    "context": "d (24.71; 37.7); Roadblock placement* *(29.1)*]. Therefore, Dash (A4.63), r"
   },
   {
-   "id": "CHB-00304",
+   "id": "CHB-00317",
    "rule": "split-emphasis",
    "class": "markup-normalization",
    "baseLine": 2484,
@@ -4118,7 +4279,7 @@
    "context": " the Sighting TC DRM.  **17.** *33.1* *STREAM-HEX TERRAIN:* Although stream"
   },
   {
-   "id": "CHB-00305",
+   "id": "CHB-00318",
    "rule": "image-link-rebase",
    "class": "markup-normalization",
    "count": 224,

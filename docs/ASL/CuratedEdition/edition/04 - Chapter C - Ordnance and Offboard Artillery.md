@@ -285,7 +285,7 @@ DEFENDER, and the DEFENDER’s attack is not Reaction Fire (D7.2). Neither the +
 
 **2.6 GUN DEPRESSION/ELEVATION:** Only mortars, AA Guns (2.22) and Guns capable of using AA fire may fire-at/affect a higher-level target if the range to that target is \< the elevation difference between the firer’s and the target’s Location. Otherwise, a Gun may fire-at/affect a different-level target only if the range is ≥ the elevation difference between them *[EXC: cliff; B11.31-.32]*. A Gun in a building hex may not fire at a lower-level target in its own hex, and may fire at an higher-level target in its hex only if it is an AA Gun of ≤ 40mm. These restrictions also apply to non-AA vehicular MG and to vehicular FT, but not to SW *[EXC: they do apply to MTR/INF/RCL ordnance SW]*. If a vehicle’s MA has AA capability, then its CMG does too.
 
-**2.7 PROHIBITED HEXES:** A Gun cannot occupy an upper building level *[EXC: Fortified Buildings and mortars on Rooftops]*, nor can it occupy a Water Obstacle, crag *[EXC: mortars; B17.4]*, marsh, or Irrigated-paddy <!-- pdf-page 169 --> (G8.12) unless dm and possessed or in/on a vehicle/boat. Small-Tar-get-Size Guns and AT/INF Guns that are not large targets are the only <sup>5</sup>/8" non-vehicular Gun counters that may ever occupy a building/rubble hex *[EXC: Rooftop mortars (B23.85); Fortified Building (B23.93)]*.
+**2.7 PROHIBITED HEXES:** A Gun cannot occupy an upper building level *[EXC: Fortified Buildings and mortars on Rooftops]*, nor can it occupy a Water Obstacle, crag *[EXC: mortars; B17.4]*, marsh, or Irrigated-paddy <!-- pdf-page 169 --> (G8.12) unless dm and possessed or in/on a vehicle/boat. Small-Target-Size Guns and AT/INF Guns that are not large targets are the only <sup>5</sup>/8" non-vehicular Gun counters that may ever occupy a building/rubble hex *[EXC: Rooftop mortars (B23.85); Fortified Building (B23.93)]*.
 
 **2.8 FIRE & MOVEMENT:** A Gun can fire during the same Player Turn after it has entered a new Location only if it is vehicular-mounted. See A4.41 for stationary Guns and moving crews.
 
@@ -645,7 +645,7 @@ EX: A LMG at Level 2 fires at the rear Target Facing of an adjacent PzKpfw IIA, 
 
 **7.344 FT/MOL:** No AF apply to a FT/MOL attack. The Basic TK# of both FT and MOL attacks are increased by +1 if the AFV is CE, or by +2 if the AFV is OT (both modifiers can apply only to a FT attack; MOL attacks can be modified by only one or the other). To Kill Modification Cases C and D are NA to FT/MOL. However, the Basic TK# of a FT is halved if it is firing at Long Range. Other factors (e.g., “?”/CX/SMOKE/ Hindrance/TEM/AFPh-use) do not modify the Basic TK#.
 
-**7.345 MORTARS:** Mortar fire, being indirect in trajectory, is always re-solved on the IFT (1.55) and therefore never uses the HE (or any other) To Kill Table.
+**7.345 MORTARS:** Mortar fire, being indirect in trajectory, is always resolved on the IFT (1.55) and therefore never uses the HE (or any other) To Kill Table.
 
 ###### 7.346 DC
 
@@ -1067,7 +1067,7 @@ its vehicular hits on the PSK column of the C7.33 HEAT To Kill Table, and is ava
 
 **13.54 vs AFV:** An AFV hit by a MOL-Projector is affected exactly as if hit by a MOL (A22.612). However, the *only* possible modifications to the MOL-Projector attack’s Basic TK number are: +1 for hitting an OT AFV; +1 for a rear Target Facing hit; and doubling due to a CH. A hit also causes a 4-FP Specific Collateral Attack vs an AFV’s Vulnerable PRC.
 
-**13.55 vs UNARMORED VEHICLE:** An unarmored vehicle hit (or Partially Armored Vehicle hit in an unarmored Aspect; 3.9) by a MOL-Projector is attacked on the  Vehicle Line of the IFT using a Kill number of 9. A CH doubles this Kill number to 18.
+**13.55 vs UNARMORED VEHICLE:** An unarmored vehicle hit (or Partially Armored Vehicle hit in an unarmored Aspect; 3.9) by a MOL-Projector is attacked on the ★ Vehicle Line of the IFT using a Kill number of 9. A CH doubles this Kill number to 18.
 
 **13.56 vs INFANTRY/GUN:** An Infantry-target/non-vehicular-Gun hit by a MOL-Projector is affected exactly as if hit by a 4-FP HE attack. A CH causes an 8-FP attack with applicable reversed TEM (or, vs the Gun, eliminates it and its manning Infantry).
 

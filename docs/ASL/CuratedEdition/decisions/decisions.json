@@ -1,4 +1,452 @@
 {
  "schemaVersion": "1.0.0",
- "decisions": []
+ "decisions": [
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-a",
+   "rule": "linebreak-hyphen",
+   "baseLine": 327,
+   "text": "pre-existing",
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Hyphenated form is the rulebook usage for this compound adjective."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-b",
+   "rule": "linebreak-hyphen",
+   "baseLine": 1961,
+   "text": "multi-hex",
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Hyphenated form is the rulebook usage for this compound adjective."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:index-glossary",
+   "rule": "linebreak-hyphen",
+   "baseLine": 81,
+   "text": "on-board",
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Compound adjective (\"on-board LC\"); hyphenated form is used in the rulebook."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-a",
+   "rule": "linebreak-hyphen",
+   "baseLine": 439,
+   "text": "enemy-occupied",
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine hyphen in the PDF; the line-end position does not make it a soft break."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-a",
+   "rule": "linebreak-hyphen",
+   "baseLine": 938,
+   "text": "enemy-occupied",
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine hyphen in the PDF; the line-end position does not make it a soft break."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-a",
+   "rule": "linebreak-hyphen",
+   "baseLine": 1082,
+   "text": "non-Emplaced",
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine hyphen in the PDF; the line-end position does not make it a soft break."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-b",
+   "rule": "linebreak-hyphen",
+   "baseLine": 535,
+   "text": "Single-Story",
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine hyphen in the PDF; the line-end position does not make it a soft break."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-b",
+   "rule": "linebreak-hyphen",
+   "baseLine": 2079,
+   "text": "vice-versa",
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine hyphen in the PDF; the line-end position does not make it a soft break."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-b",
+   "rule": "linebreak-hyphen",
+   "baseLine": 2115,
+   "text": "Target-Type",
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine hyphen in the PDF; the line-end position does not make it a soft break."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-b",
+   "rule": "linebreak-hyphen",
+   "baseLine": 2426,
+   "text": "in-Motion",
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine hyphen in the PDF; the line-end position does not make it a soft break."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-a",
+   "rule": "linebreak-hyphen",
+   "baseLine": 121,
+   "text": "non-Fa-natic",
+   "decision": "join",
+   "hyphenIndex": 1,
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Line-break split of a single word; context confirms the joined word."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-a",
+   "rule": "linebreak-hyphen",
+   "baseLine": 171,
+   "text": "ex-terior",
+   "decision": "join",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Line-break split of a single word; context confirms the joined word."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-a",
+   "rule": "linebreak-hyphen",
+   "baseLine": 341,
+   "text": "in-convenience",
+   "decision": "join",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Line-break split of a single word; context confirms the joined word."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-a",
+   "rule": "linebreak-hyphen",
+   "baseLine": 2157,
+   "text": "convic-tion",
+   "decision": "join",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Line-break split of a single word; context confirms the joined word."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-a",
+   "rule": "linebreak-hyphen",
+   "baseLine": 2157,
+   "text": "sum-marily",
+   "decision": "join",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Line-break split of a single word; context confirms the joined word."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-a",
+   "rule": "linebreak-hyphen",
+   "baseLine": 2183,
+   "text": "design-ing",
+   "decision": "join",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Line-break split of a single word; context confirms the joined word."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-b",
+   "rule": "linebreak-hyphen",
+   "baseLine": 112,
+   "text": "gul-ly-shellhole",
+   "decision": "join",
+   "hyphenIndex": 0,
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Line-break split of a single word; context confirms the joined word."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-b",
+   "rule": "linebreak-hyphen",
+   "baseLine": 452,
+   "text": "receiv-ing-Wall-TEM",
+   "decision": "join",
+   "hyphenIndex": 0,
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Line-break split of a single word; context confirms the joined word."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-b",
+   "rule": "linebreak-hyphen",
+   "baseLine": 1168,
+   "text": "map-board-depicted",
+   "decision": "join",
+   "hyphenIndex": 0,
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Line-break split of a single word; context confirms the joined word."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-b",
+   "rule": "linebreak-hyphen",
+   "baseLine": 1298,
+   "text": "tem-perature",
+   "decision": "join",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Line-break split of a single word; context confirms the joined word."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-b",
+   "rule": "linebreak-hyphen",
+   "baseLine": 1635,
+   "text": "ex-tinguish",
+   "decision": "join",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Line-break split of a single word; context confirms the joined word."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-c",
+   "rule": "linebreak-hyphen",
+   "baseLine": 290,
+   "text": "Small-Tar-get-Size",
+   "decision": "join",
+   "hyphenIndex": 1,
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Line-break split of a single word; context confirms the joined word."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-e",
+   "rule": "linebreak-hyphen",
+   "baseLine": 464,
+   "text": "rain-fall",
+   "decision": "join",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Line-break split of a single word; context confirms the joined word."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-e",
+   "rule": "linebreak-hyphen",
+   "baseLine": 935,
+   "text": "mor-tally",
+   "decision": "join",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Line-break split of a single word; context confirms the joined word."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-e",
+   "rule": "linebreak-hyphen",
+   "baseLine": 1075,
+   "text": "fore-goes",
+   "decision": "join",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Line-break split of a single word; context confirms the joined word."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-e",
+   "rule": "linebreak-hyphen",
+   "baseLine": 1215,
+   "text": "re-appearing",
+   "decision": "join",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Line-break split of a single word; context confirms the joined word. Pairs with \"disappearing\"."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-a",
+   "rule": "linebreak-hyphen",
+   "baseLine": 574,
+   "text": "already-pinned",
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine compound; the hyphen belongs to the printed term."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-a",
+   "rule": "linebreak-hyphen",
+   "baseLine": 878,
+   "text": "attack-to-defense",
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine compound; the hyphen belongs to the printed term."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-a",
+   "rule": "linebreak-hyphen",
+   "baseLine": 1336,
+   "text": "originally-rolled",
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine compound; the hyphen belongs to the printed term."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-a",
+   "rule": "linebreak-hyphen",
+   "baseLine": 1738,
+   "text": "non-alternate",
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine compound; the hyphen belongs to the printed term."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-a",
+   "rule": "linebreak-hyphen",
+   "baseLine": 1811,
+   "text": "knife-hatchet-sword",
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine compound; the hyphen belongs to the printed term."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-a",
+   "rule": "linebreak-hyphen",
+   "baseLine": 2113,
+   "text": "well-sited",
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine compound; the hyphen belongs to the printed term."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-a",
+   "rule": "linebreak-hyphen",
+   "baseLine": 2155,
+   "text": "blue-in-blue",
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine compound; the hyphen belongs to the printed term."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-b",
+   "rule": "linebreak-hyphen",
+   "baseLine": 2081,
+   "text": "within-the-CA-of",
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine compound; the hyphen belongs to the printed term."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-b",
+   "rule": "linebreak-hyphen",
+   "baseLine": 2115,
+   "text": "its-occupant",
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine compound; the hyphen belongs to the printed term."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-c",
+   "rule": "linebreak-hyphen",
+   "baseLine": 290,
+   "text": "Irrigated-paddy",
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine compound; the hyphen belongs to the printed term."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-c",
+   "rule": "linebreak-hyphen",
+   "baseLine": 1060,
+   "text": "non-qualified-use",
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine compound; the hyphen belongs to the printed term."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-c",
+   "rule": "linebreak-hyphen",
+   "baseLine": 1158,
+   "text": "shatter-proof",
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine compound; the hyphen belongs to the printed term."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-d",
+   "rule": "linebreak-hyphen",
+   "baseLine": 145,
+   "text": "record-keeping",
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine compound; the hyphen belongs to the printed term."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-d",
+   "rule": "linebreak-hyphen",
+   "baseLine": 464,
+   "text": "cross-the-hexside",
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine compound; the hyphen belongs to the printed term."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-d",
+   "rule": "linebreak-hyphen",
+   "baseLine": 1150,
+   "text": "mass-produced",
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine compound; the hyphen belongs to the printed term."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-e",
+   "rule": "linebreak-hyphen",
+   "baseLine": 570,
+   "text": "Ski-capable",
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine compound; the hyphen belongs to the printed term."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-e",
+   "rule": "linebreak-hyphen",
+   "baseLine": 1135,
+   "text": "deliberately-drawn",
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine compound; the hyphen belongs to the printed term."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-e",
+   "rule": "linebreak-hyphen",
+   "baseLine": 1211,
+   "text": "shallow-draught",
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine compound; the hyphen belongs to the printed term."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-e",
+   "rule": "linebreak-hyphen",
+   "baseLine": 1217,
+   "text": "real-life",
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine compound; the hyphen belongs to the printed term."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-b",
+   "rule": "linebreak-hyphen",
+   "baseLine": 2191,
+   "text": "ground-and",
+   "decision": "replace",
+   "replacement": "ground- and",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Suspended hyphen (\"a ground- and first-level Location\"); the converter dropped the space after the line-end hyphen."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-a",
+   "rule": "stale-hyphen",
+   "baseLine": 1120,
+   "text": "un-mounted",
+   "decision": "join",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Stray hyphen printed mid-line; the same section (A13.2, page 80) prints \"unmounted\"."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-a",
+   "rule": "stale-hyphen",
+   "baseLine": 2161,
+   "text": "re-fused",
+   "decision": "join",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Historical note on Finnish forces declining offensive action; means \"refused\", not a fuse."
+  },
+  {
+   "sourceId": "asl-easlrb-3.10:chapter-c",
+   "rule": "stale-hyphen",
+   "baseLine": 650,
+   "text": "re-solved",
+   "decision": "join",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "\"is always resolved on the IFT\"; means resolved, not solved again."
+  }
+ ]
 }

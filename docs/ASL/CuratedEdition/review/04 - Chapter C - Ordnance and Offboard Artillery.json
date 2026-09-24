@@ -5,22 +5,6 @@
   {
    "id": "CHC-R0001",
    "rule": "linebreak-hyphen",
-   "baseLine": 290,
-   "text": "Irrigated-paddy",
-   "context": " *[EXC: mortars; B17.4]*, marsh, or Irrigated-paddy (G8.12) unless dm and possessed or ",
-   "reason": "neither form attested",
-   "candidate": "Irrigatedpaddy",
-   "evidence": {
-    "pdfPage": 168,
-    "pdfBreak": "page-end",
-    "pdfBreakAfter": "Irrigated-",
-    "joinedFormAttested": 0,
-    "hyphenatedFormAttestedMidLine": 0
-   }
-  },
-  {
-   "id": "CHC-R0002",
-   "rule": "linebreak-hyphen",
    "baseLine": 54,
    "text": "Off-board",
    "context": "[1.6], or an OP tank [H1.46], or an Off-board Observer [1.63; E7.6]) may attempt ",
@@ -33,77 +17,6 @@
     "joinedFormAttested": 84,
     "hyphenatedFormAttestedMidLine": 3
    }
-  },
-  {
-   "id": "CHC-R0003",
-   "rule": "linebreak-hyphen",
-   "baseLine": 290,
-   "text": "Small-Tar-get-Size",
-   "context": " possessed or in/on a vehicle/boat. Small-Tar-get-Size Guns and AT/INF Guns that are not l",
-   "reason": "neither form attested",
-   "candidate": "Small-Target-Size",
-   "evidence": {
-    "pdfPage": 169,
-    "pdfBreak": "line-end",
-    "pdfBreakAfter": "Small-Tar-",
-    "joinedFormAttested": 0,
-    "hyphenatedFormAttestedMidLine": 0
-   }
-  },
-  {
-   "id": "CHC-R0004",
-   "rule": "stale-hyphen",
-   "baseLine": 650,
-   "text": "re-solved",
-   "context": "g indirect in trajectory, is always re-solved on the IFT (1.55) and therefore nev",
-   "reason": "mid-line hyphen after a real prefix; joined form is attested",
-   "candidate": "resolved",
-   "pdfPage": 177,
-   "evidence": {
-    "joinedFormAttested": 186,
-    "hyphenatedFormAttestedMidLine": 1
-   }
-  },
-  {
-   "id": "CHC-R0005",
-   "rule": "linebreak-hyphen",
-   "baseLine": 1060,
-   "text": "non-qualified-use",
-   "context": "on-heroic leader may use one *with* non-qualified-use penalties. A Russian hero may use o",
-   "reason": "neither form attested",
-   "candidate": "nonqualified-use",
-   "evidence": {
-    "pdfPage": 184,
-    "pdfBreak": "line-end",
-    "pdfBreakAfter": "non-",
-    "joinedFormAttested": 0,
-    "hyphenatedFormAttestedMidLine": 0
-   }
-  },
-  {
-   "id": "CHC-R0006",
-   "rule": "linebreak-hyphen",
-   "baseLine": 1158,
-   "text": "shatter-proof",
-   "context": "giving both a higher velocity and a shatter-proof projectile. The only drawback to su",
-   "reason": "neither form attested",
-   "candidate": "shatterproof",
-   "evidence": {
-    "pdfPage": 186,
-    "pdfBreak": "line-end",
-    "pdfBreakAfter": "shatter-",
-    "joinedFormAttested": 0,
-    "hyphenatedFormAttestedMidLine": 0
-   }
-  },
-  {
-   "id": "CHC-R0007",
-   "rule": "private-use-glyph",
-   "baseLine": 1072,
-   "text": "",
-   "context": "a MOL-Pro-jector is attacked on the  Vehicle Line of the IFT using a Kil",
-   "reason": "private-use code point U+F0AB has no Unicode meaning; compare the symbol on the PDF page",
-   "pdfPage": 184
   }
  ]
 }
