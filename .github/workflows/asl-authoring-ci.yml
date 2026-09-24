@@ -1,0 +1,88 @@
+name: ASL Authoring CI
+
+on:
+  push:
+    branches:
+      - decision-plane
+      - main
+    paths:
+      - "src/ASL/**"
+      - "utils/pdf_to_markdown.py"
+      - "docs/ASL/Rulebook_Markdown/**"
+      - "docs/ASL/SourceRegistry/**"
+      - "docs/ASL/Schemas/**"
+      - "docs/ASL/TIR/**"
+      - "docs/ASL/LimboDancer.Agentic.CognitiveRuntime ASL*.md"
+      - ".github/workflows/asl-authoring-ci.yml"
+  pull_request:
+    paths:
+      - "src/ASL/**"
+      - "utils/pdf_to_markdown.py"
+      - "docs/ASL/Rulebook_Markdown/**"
+      - "docs/ASL/SourceRegistry/**"
+      - "docs/ASL/Schemas/**"
+      - "docs/ASL/TIR/**"
+      - "docs/ASL/LimboDancer.Agentic.CognitiveRuntime ASL*.md"
+      - ".github/workflows/asl-authoring-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  source-conformance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore src/ASL/LimboDancer.Domains.Asl.sln --locked-mode
+
+      - name: Build
+        run: dotnet build src/ASL/LimboDancer.Domains.Asl.sln --configuration Release --no-restore --warnaserror
+
+      - name: Test source registry and fragment locator
+        run: dotnet test src/ASL/LimboDancer.Domains.Asl.sln --configuration Release --no-build --no-restore
+
+      - name: Test bounded Scenario A1 domain adapter
+        run: dotnet test src/ASL/tests/LimboDancer.Domains.Asl.ScenarioA1.Tests/LimboDancer.Domains.Asl.ScenarioA1.Tests.csproj --configuration Release --warnaserror -p:RestoreLockedMode=false
+
+      - name: Generate and check Scenario A1 source verification batch
+        run: |
+          dotnet run --project src/ASL/LimboDancer.Domains.Asl.Authoring.Cli --configuration Release --no-build --no-restore -- \
+            --source-commit a3254ff1d492dbdd28483d86f5b42437b48e80d4 \
+            --registry-output "$RUNNER_TEMP/asl-source-registry.json" \
+            --verification-output "$RUNNER_TEMP/asl-verification-sample.json" \
+            --a1-attestation docs/ASL/SourceRegistry/asl-scenario-a1.source-attestation.json \
+            --a1-verification-output "$RUNNER_TEMP/asl-scenario-a1.source-verification.json"
+          cmp docs/ASL/SourceRegistry/asl-scenario-a1.source-verification.json "$RUNNER_TEMP/asl-scenario-a1.source-verification.json"
+
+      - name: Generate and check pending Scenario A1 comparison records
+        run: |
+          dotnet run --project src/ASL/LimboDancer.Domains.Asl.Authoring.Cli --configuration Release --no-build --no-restore -- \
+            --source-commit a3254ff1d492dbdd28483d86f5b42437b48e80d4 \
+            --registry-output "$RUNNER_TEMP/asl-source-registry.json" \
+            --verification-output "$RUNNER_TEMP/asl-verification-sample.json" \
+            --a1-attestation docs/ASL/SourceRegistry/asl-scenario-a1.source-attestation.json \
+            --a1-comparison docs/ASL/SourceRegistry/asl-scenario-a1.first-case-pdf-comparison.json \
+            --a1-comparison-output "$RUNNER_TEMP/asl-scenario-a1.pending-comparison-records.json"
+          cmp docs/ASL/SourceRegistry/asl-scenario-a1.pending-comparison-records.json "$RUNNER_TEMP/asl-scenario-a1.pending-comparison-records.json"
+
+      - name: Regenerate bounded Scenario A1 chart supplement
+        run: |
+          dotnet run --project src/ASL/LimboDancer.Domains.Asl.Authoring.Cli --configuration Release --no-build --no-restore -- \
+            --source-commit a3254ff1d492dbdd28483d86f5b42437b48e80d4 \
+            --registry-output "$RUNNER_TEMP/asl-source-registry.json" \
+            --verification-output "$RUNNER_TEMP/asl-verification-sample.json" \
+            --a1-supplement-candidate docs/ASL/SourceRegistry/asl-scenario-a1.backmatter-chart-candidate.json \
+            --a1-supplement-output "$RUNNER_TEMP/asl-scenario-a1.supplementary-source-registry.json"
+          diff -u \
+            <(jq -S . docs/ASL/SourceRegistry/asl-scenario-a1.supplementary-source-registry.json) \
+            <(jq -S . "$RUNNER_TEMP/asl-scenario-a1.supplementary-source-registry.json")

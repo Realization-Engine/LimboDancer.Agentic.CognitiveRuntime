@@ -1,0 +1,819 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:limbodancer:asl:tir:review-record:schema:1.0.0",
+  "title": "LimboDancer ASL TIR Review Record",
+  "description": "Canonical immutable ASL-OT-03 validation, source-verification, diagnostic-disposition, review, or adjudication record.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaId",
+    "schemaVersion",
+    "recordId",
+    "recordKind",
+    "subject",
+    "createdAt",
+    "createdAtSource",
+    "actor",
+    "tool",
+    "prerequisiteRecordRefs",
+    "canonicalization",
+    "payload",
+    "recordSha256"
+  ],
+  "properties": {
+    "schemaId": {
+      "const": "urn:limbodancer:asl:tir:review-record:schema:1.0.0"
+    },
+    "schemaVersion": {
+      "const": "1.0.0"
+    },
+    "recordId": {
+      "$ref": "#/$defs/reviewRecordId"
+    },
+    "recordKind": {
+      "enum": [
+        "validationReport",
+        "sourceVerification",
+        "diagnosticDisposition",
+        "review",
+        "adjudication"
+      ]
+    },
+    "subject": {
+      "$ref": "#/$defs/subject"
+    },
+    "createdAt": {
+      "$ref": "#/$defs/utcTimestamp"
+    },
+    "createdAtSource": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "actor": {
+      "$ref": "#/$defs/actor"
+    },
+    "tool": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/tool"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "prerequisiteRecordRefs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/reviewRecordId"
+      }
+    },
+    "canonicalization": {
+      "$ref": "#/$defs/canonicalization"
+    },
+    "payload": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/validationReportPayload"
+        },
+        {
+          "$ref": "#/$defs/sourceVerificationPayload"
+        },
+        {
+          "$ref": "#/$defs/diagnosticDispositionPayload"
+        },
+        {
+          "$ref": "#/$defs/reviewPayload"
+        },
+        {
+          "$ref": "#/$defs/adjudicationPayload"
+        }
+      ]
+    },
+    "recordSha256": {
+      "$ref": "#/$defs/sha256"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "recordKind": {
+            "const": "validationReport"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "actor": {
+            "properties": {
+              "role": {
+                "const": "validator"
+              }
+            }
+          },
+          "tool": {
+            "$ref": "#/$defs/tool"
+          },
+          "payload": {
+            "$ref": "#/$defs/validationReportPayload"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "recordKind": {
+            "const": "sourceVerification"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "actor": {
+            "properties": {
+              "role": {
+                "const": "sourceVerifier"
+              }
+            }
+          },
+          "payload": {
+            "$ref": "#/$defs/sourceVerificationPayload"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "recordKind": {
+            "const": "diagnosticDisposition"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "actor": {
+            "properties": {
+              "role": {
+                "enum": [
+                  "domainReviewer",
+                  "adjudicator"
+                ]
+              }
+            }
+          },
+          "payload": {
+            "$ref": "#/$defs/diagnosticDispositionPayload"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "recordKind": {
+            "const": "review"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "actor": {
+            "properties": {
+              "role": {
+                "const": "domainReviewer"
+              }
+            }
+          },
+          "payload": {
+            "$ref": "#/$defs/reviewPayload"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "recordKind": {
+            "const": "adjudication"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "actor": {
+            "properties": {
+              "role": {
+                "const": "adjudicator"
+              }
+            }
+          },
+          "payload": {
+            "$ref": "#/$defs/adjudicationPayload"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "nullableString": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "artifactId": {
+      "type": "string",
+      "pattern": "^asl-tir:sha256:[0-9a-f]{64}$"
+    },
+    "findingId": {
+      "type": "string",
+      "pattern": "^asl-tir-finding:sha256:[0-9a-f]{64}$"
+    },
+    "anyFindingId": {
+      "type": "string",
+      "pattern": "^asl-tir-(diagnostic|finding):sha256:[0-9a-f]{64}$"
+    },
+    "reviewRecordId": {
+      "type": "string",
+      "pattern": "^asl-tir-review:sha256:[0-9a-f]{64}$"
+    },
+    "utcTimestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "packageCandidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "domainId",
+        "packageId",
+        "version"
+      ],
+      "properties": {
+        "domainId": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "packageId": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "version": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tirDocumentSha256",
+        "artifactId",
+        "artifactSha256",
+        "schemaId",
+        "packageCandidate"
+      ],
+      "properties": {
+        "tirDocumentSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "artifactId": {
+          "$ref": "#/$defs/artifactId"
+        },
+        "artifactSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "schemaId": {
+          "const": "urn:limbodancer:asl:tir:schema:1.3.0"
+        },
+        "packageCandidate": {
+          "$ref": "#/$defs/packageCandidate"
+        }
+      }
+    },
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "identity",
+        "role"
+      ],
+      "properties": {
+        "identity": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "role": {
+          "enum": [
+            "validator",
+            "sourceVerifier",
+            "semanticAuthor",
+            "domainReviewer",
+            "adjudicator",
+            "releaseApprover"
+          ]
+        }
+      }
+    },
+    "tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version",
+        "configurationSha256"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "version": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "configurationSha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "canonicalization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version"
+      ],
+      "properties": {
+        "name": {
+          "const": "asl-tir-review-canonical-json"
+        },
+        "version": {
+          "const": "1.0.0"
+        }
+      }
+    },
+    "stringSet": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/nonEmptyString"
+      }
+    },
+    "stringSequence": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/nonEmptyString"
+      }
+    },
+    "recordRefSet": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/reviewRecordId"
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policyId",
+        "version",
+        "configurationSha256"
+      ],
+      "properties": {
+        "policyId": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "version": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "configurationSha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "validationGate": {
+      "enum": [
+        "inputSchema",
+        "identity",
+        "structural",
+        "sourceProvenance",
+        "semantic",
+        "review",
+        "architectureAuthority"
+      ]
+    },
+    "validationFinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "findingId",
+        "code",
+        "severity",
+        "gate",
+        "artifactId",
+        "message",
+        "evidenceRefs"
+      ],
+      "properties": {
+        "findingId": {
+          "$ref": "#/$defs/findingId"
+        },
+        "code": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "severity": {
+          "enum": [
+            "information",
+            "warning",
+            "error"
+          ]
+        },
+        "gate": {
+          "$ref": "#/$defs/validationGate"
+        },
+        "artifactId": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/artifactId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "message": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "evidenceRefs": {
+          "$ref": "#/$defs/stringSet"
+        }
+      }
+    },
+    "validationGateResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gate",
+        "status",
+        "findingIds"
+      ],
+      "properties": {
+        "gate": {
+          "$ref": "#/$defs/validationGate"
+        },
+        "status": {
+          "enum": [
+            "passed",
+            "failed",
+            "notApplicable"
+          ]
+        },
+        "findingIds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/findingId"
+          }
+        }
+      }
+    },
+    "validationReportPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policy",
+        "gateResults",
+        "findings"
+      ],
+      "properties": {
+        "policy": {
+          "$ref": "#/$defs/policy"
+        },
+        "gateResults": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/validationGateResult"
+          }
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/validationFinding"
+          }
+        }
+      }
+    },
+    "sourceFragmentReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fragmentId",
+        "sourceId",
+        "sourceSha256",
+        "contentSha256",
+        "startLine",
+        "endLine",
+        "startUtf8ByteOffset",
+        "endUtf8ByteOffsetExclusive"
+      ],
+      "properties": {
+        "fragmentId": {
+          "type": "string",
+          "pattern": "^asl-fragment:sha256:[0-9a-f]{64}$"
+        },
+        "sourceId": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "sourceSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "contentSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "startLine": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "endLine": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "startUtf8ByteOffset": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "endUtf8ByteOffsetExclusive": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "startUtf8ByteOffset": {
+              "type": "null"
+            },
+            "endUtf8ByteOffsetExclusive": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "properties": {
+            "startUtf8ByteOffset": {
+              "type": "integer"
+            },
+            "endUtf8ByteOffsetExclusive": {
+              "type": "integer"
+            }
+          }
+        }
+      ]
+    },
+    "dependency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "target"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "source",
+            "artifact",
+            "figure",
+            "table",
+            "footnote"
+          ]
+        },
+        "target": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "sourceVerificationPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourceFragment",
+        "dependencies",
+        "comparisonMethod",
+        "disposition",
+        "observedDiscrepancy",
+        "correctionProposalRefs"
+      ],
+      "properties": {
+        "sourceFragment": {
+          "$ref": "#/$defs/sourceFragmentReference"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/dependency"
+          }
+        },
+        "comparisonMethod": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "disposition": {
+          "enum": [
+            "verified",
+            "mismatch",
+            "dependencyMissing",
+            "indeterminate"
+          ]
+        },
+        "observedDiscrepancy": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "correctionProposalRefs": {
+          "$ref": "#/$defs/stringSet"
+        }
+      }
+    },
+    "findingReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "origin",
+        "findingId",
+        "code",
+        "reportRecordRef"
+      ],
+      "properties": {
+        "origin": {
+          "enum": [
+            "extractedDiagnostic",
+            "validationFinding"
+          ]
+        },
+        "findingId": {
+          "$ref": "#/$defs/anyFindingId"
+        },
+        "code": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "reportRecordRef": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/reviewRecordId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "diagnosticDispositionPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "finding",
+        "disposition",
+        "rationale",
+        "evidenceRefs",
+        "replacementRef"
+      ],
+      "properties": {
+        "finding": {
+          "$ref": "#/$defs/findingReference"
+        },
+        "disposition": {
+          "enum": [
+            "resolved",
+            "notApplicable",
+            "deferred",
+            "acceptedLimitation"
+          ]
+        },
+        "rationale": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "evidenceRefs": {
+          "$ref": "#/$defs/stringSequence"
+        },
+        "replacementRef": {
+          "$ref": "#/$defs/nullableString"
+        }
+      }
+    },
+    "reviewStatus": {
+      "enum": [
+        "captured",
+        "proposed",
+        "inReview",
+        "accepted",
+        "rejected",
+        "superseded"
+      ]
+    },
+    "reviewDecision": {
+      "enum": [
+        "approve",
+        "reject",
+        "requestChanges",
+        "abstain"
+      ]
+    },
+    "reviewPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "priorStatus",
+        "requestedStatus",
+        "decision",
+        "sourceVerificationRecordRefs",
+        "validationReportRefs",
+        "diagnosticDispositionRefs",
+        "reviewedDependencyRefs",
+        "rationale",
+        "evidenceRefs"
+      ],
+      "properties": {
+        "priorStatus": {
+          "$ref": "#/$defs/reviewStatus"
+        },
+        "requestedStatus": {
+          "$ref": "#/$defs/reviewStatus"
+        },
+        "decision": {
+          "$ref": "#/$defs/reviewDecision"
+        },
+        "sourceVerificationRecordRefs": {
+          "$ref": "#/$defs/recordRefSet"
+        },
+        "validationReportRefs": {
+          "$ref": "#/$defs/recordRefSet"
+        },
+        "diagnosticDispositionRefs": {
+          "$ref": "#/$defs/recordRefSet"
+        },
+        "reviewedDependencyRefs": {
+          "$ref": "#/$defs/stringSet"
+        },
+        "rationale": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "evidenceRefs": {
+          "$ref": "#/$defs/stringSequence"
+        }
+      }
+    },
+    "adjudicationPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "conflictingReviewRecordRefs",
+        "disputedQuestions",
+        "decision",
+        "rationale",
+        "evidenceRefs",
+        "authorizedStatus"
+      ],
+      "properties": {
+        "conflictingReviewRecordRefs": {
+          "$ref": "#/$defs/recordRefSet"
+        },
+        "disputedQuestions": {
+          "$ref": "#/$defs/stringSet"
+        },
+        "decision": {
+          "$ref": "#/$defs/reviewDecision"
+        },
+        "rationale": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "evidenceRefs": {
+          "$ref": "#/$defs/stringSequence"
+        },
+        "authorizedStatus": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/reviewStatus"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,30 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LimboDancer.Domains.Asl.Authoring", "LimboDancer.Domains.Asl.Authoring\LimboDancer.Domains.Asl.Authoring.csproj", "{EE0F6D14-375A-4955-8BDC-D103E880A1A5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LimboDancer.Domains.Asl.Authoring.Cli", "LimboDancer.Domains.Asl.Authoring.Cli\LimboDancer.Domains.Asl.Authoring.Cli.csproj", "{9700A31C-21EE-4F23-B294-0F0D7A450728}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LimboDancer.Domains.Asl.Authoring.Tests", "tests\LimboDancer.Domains.Asl.Authoring.Tests\LimboDancer.Domains.Asl.Authoring.Tests.csproj", "{250F5FD8-A032-4853-8592-311B86EC6ACD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EE0F6D14-375A-4955-8BDC-D103E880A1A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE0F6D14-375A-4955-8BDC-D103E880A1A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE0F6D14-375A-4955-8BDC-D103E880A1A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE0F6D14-375A-4955-8BDC-D103E880A1A5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9700A31C-21EE-4F23-B294-0F0D7A450728}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9700A31C-21EE-4F23-B294-0F0D7A450728}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9700A31C-21EE-4F23-B294-0F0D7A450728}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9700A31C-21EE-4F23-B294-0F0D7A450728}.Release|Any CPU.Build.0 = Release|Any CPU
+		{250F5FD8-A032-4853-8592-311B86EC6ACD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{250F5FD8-A032-4853-8592-311B86EC6ACD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{250F5FD8-A032-4853-8592-311B86EC6ACD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{250F5FD8-A032-4853-8592-311B86EC6ACD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

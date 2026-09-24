@@ -1,0 +1,208 @@
+﻿@page "/"
+
+@using AslHexMap.Core.Schema
+@using AslHexMap.Core.Rendering
+@using AslHexMap.Services
+@inject JsonBoardLoader Loader
+@inject BoardRenderingService RenderingService
+@inject LegendBuilderService LegendBuilder
+
+<div class="container-fluid py-3">
+    <div class="row g-3">
+        <!-- Controls -->
+        <div class="col-12">
+            <div class="d-flex flex-wrap align-items-end gap-3">
+                <div>
+                    <label class="form-label mb-1">JSON file</label>
+                    <input class="form-control" style="min-width: 320px;"
+                           @bind="_fileName" @bind:event="oninput" />
+                </div>
+
+                <div>
+                    <label class="form-label mb-1">Hex size</label>
+                    <input type="number" class="form-control" style="width: 110px;"
+                           min="18" max="72" step="2"
+                           @bind="_renderOptions.HexSize" @bind:event="oninput" @bind:after="RebuildAsync" />
+                </div>
+
+                <div class="form-check mt-4">
+                    <input class="form-check-input" type="checkbox" id="chkLabels"
+                           @bind="_renderOptions.ShowLabels" @bind:after="RebuildAsync" />
+                    <label class="form-check-label" for="chkLabels">Labels</label>
+                </div>
+
+                <div class="form-check mt-4">
+                    <input class="form-check-input" type="checkbox" id="chkRoads"
+                           @bind="_renderOptions.ShowRoads" @bind:after="RebuildAsync" />
+                    <label class="form-check-label" for="chkRoads">Roads</label>
+                </div>
+
+                <div class="form-check mt-4">
+                    <input class="form-check-input" type="checkbox" id="chkFeatures"
+                           @bind="_renderOptions.UseFeatureOverlays" @bind:after="RebuildAsync" />
+                    <label class="form-check-label" for="chkFeatures">Feature overlays</label>
+                </div>
+
+                <button class="btn btn-primary mt-3" @onclick="LoadAndRenderAsync">
+                    Load & Render
+                </button>
+
+                @if (!string.IsNullOrWhiteSpace(_error))
+                {
+                    <div class="text-danger ms-2">@_error</div>
+                }
+            </div>
+        </div>
+
+        <!-- Map + Legend -->
+        <div class="col-12 col-lg-9">
+            <div class="border rounded p-2 bg-white" style="min-height: 360px; overflow:auto;">
+                @if (!string.IsNullOrEmpty(_svg))
+                {
+                    @((MarkupString)_svg)
+                }
+                else
+                {
+                    <div class="text-muted">Load a JSON map to render…</div>
+                }
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-3">
+            <div class="border rounded p-3 bg-white">
+                <h6 class="mb-3">Legend</h6>
+
+                @if (_legend?.HasItems != true)
+                {
+                    <div class="text-muted">No items to display yet.</div>
+                }
+                else
+                {
+                    @if (_legend.BaseTerrain.Count > 0)
+                    {
+                        <div class="mb-3">
+                            <div class="fw-semibold small text-uppercase text-secondary mb-1">Base Terrain</div>
+                            <ul class="list-unstyled mb-0">
+                                @foreach (var item in _legend.BaseTerrain)
+                                {
+                                    <li class="mb-1 d-flex align-items-center gap-2">
+                                        <span class="legend-swatch">
+                                            @((MarkupString)Renderer.RenderLegendIcon(item.Token, 14))
+                                        </span>
+                                        <span>@item.Label</span>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    @if (_legend.BuildingFeatures.Count > 0)
+                    {
+                        <div class="mb-0">
+                            <div class="fw-semibold small text-uppercase text-secondary mb-1">Building Features</div>
+                            <ul class="list-unstyled mb-0">
+                                @foreach (var item in _legend.BuildingFeatures)
+                                {
+                                    <li class="mb-1 d-flex align-items-center gap-2">
+                                        <span class="legend-swatch">
+                                            @((MarkupString)Renderer.RenderLegendIcon(item.Token, 14))
+                                        </span>
+                                        <span>@item.Label</span>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    // --- UI State ---
+    private string _fileName = "asl_board_features_demo.json";
+    private RenderOptions _renderOptions = new();
+    
+    private string _svg = "";
+    private string _error = "";
+    private BoardData? _board;
+    private LegendViewModel? _legend;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAndRenderAsync();
+    }
+
+    private async Task LoadAndRenderAsync()
+    {
+        await ClearErrorAndResetState();
+        
+        try
+        {
+            _board = await Loader.LoadSampleAsync(_fileName);
+            await RebuildAsync();
+        }
+        catch (Exception ex)
+        {
+            await HandleLoadError(ex);
+        }
+    }
+
+    private async Task RebuildAsync()
+    {
+        if (_board is null)
+        {
+            await ResetRenderState();
+            return;
+        }
+
+        try
+        {
+            // Validate render options
+            var validationErrors = RenderingService.ValidateRenderOptions(_renderOptions);
+            if (validationErrors.Count > 0)
+            {
+                _error = string.Join(", ", validationErrors);
+                StateHasChanged();
+                return;
+            }
+
+            // Render the board
+            var renderResult = await RenderingService.RenderBoardAsync(_board, _renderOptions);
+            _svg = renderResult.Svg;
+
+            // Build the legend
+            _legend = await LegendBuilder.BuildLegendAsync(renderResult.Usage);
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _error = $"Rendering error: {ex.Message}";
+            StateHasChanged();
+        }
+    }
+
+    private async Task ClearErrorAndResetState()
+    {
+        _error = "";
+        await Task.CompletedTask;
+    }
+
+    private async Task HandleLoadError(Exception ex)
+    {
+        _board = null;
+        await ResetRenderState();
+        _error = ex.Message;
+        StateHasChanged();
+    }
+
+    private async Task ResetRenderState()
+    {
+        _svg = "";
+        _legend = null;
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+}

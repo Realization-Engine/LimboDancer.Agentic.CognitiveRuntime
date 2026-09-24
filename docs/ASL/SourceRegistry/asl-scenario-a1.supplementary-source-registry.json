@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "registered-unverified-supplement",
+  "parentRegistryId": "asl-easlrb-3.10-a-e",
+  "parentRegistrySha256": "257412f9aed1e4d9c82b852c74910d7f3cf8551f77fbe583575cd2c26397ec10",
+  "parentSourceCommit": "a3254ff1d492dbdd28483d86f5b42437b48e80d4",
+  "candidateId": "asl-supplement:b-terrain-chart-building-entry",
+  "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+  "physicalPdfPage": 698,
+  "extractor": "pdftotext 24.02.0 -f 698 -l 698 -layout",
+  "extractedPageTextSha256": "49ea0f434ce54197afa41fc95e78d0b809aa954d587406fe7e7078dbafdacdd0",
+  "infantryMfColumnHeaderLineSha256": "34795a99b5040d423ee3122ae349ee29d7209fb652ecc2ca86893677c564eef7",
+  "cotLegendLineSha256": "2bf33fce5d6205c9d6cb64b29603d0434fe59a8ff5845083b19472b0f9706986",
+  "transcriptionPath": "docs/ASL/SourceRegistry/Supplements/b-terrain-chart-building-entry.md",
+  "transcriptionSha256": "21afa438c3d247f4238c82fb45b9a381cc4ae34ed2b4bf1edf50a8f812797b0b",
+  "rows": [
+    {
+      "rowLabel": "23. Wooden Building",
+      "infantryEntryMf": 2,
+      "extractedLineSha256": "f214c485edac00238b31566adb08392f180d5f95c65bcddc6922699a51fd6e9c"
+    },
+    {
+      "rowLabel": "23. Stone Building",
+      "infantryEntryMf": 2,
+      "extractedLineSha256": "0d5d111f3ecf9e46084bbbfa775f67875b9ce8faa0c0bf60d508f8b058e27fa7"
+    }
+  ]
+}

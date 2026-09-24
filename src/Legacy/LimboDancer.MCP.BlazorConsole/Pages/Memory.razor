@@ -1,0 +1,123 @@
+@page "/memory"
+@inject SearchClient Search
+@using LimboDancer.MCP.Vector.AzureSearch.Models
+
+<h3>Vector Memory (Azure AI Search)</h3>
+
+@if (!TenantState.HasTenant)
+{
+    <p style="color: var(--muted);">Select a tenant to search memory.</p>
+}
+else
+{
+    <div class="searchpanel">
+        <input class="text" @bind="query" placeholder="Query text…" />
+        <input class="text" @bind="tag" placeholder="Filter tag (equals) e.g. kind:vector" />
+        <input class="text" @bind="sourceId" placeholder="Filter SourceId (equals)" />
+        <button class="btn" @onclick="DoSearchAsync">Search</button>
+    </div>
+
+    @if (busy)
+    {
+        <p>Searching…</p>
+    }
+    else if (results is null)
+    {
+        <p>Enter a query to search.</p>
+    }
+    else
+    {
+        <table class="grid-table">
+            <thead>
+                <tr>
+                    <th>Score</th>
+                    <th>Id</th>
+                    <th>SourceId</th>
+                    <th>Tags</th>
+                    <th>Preview</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (results.Count == 0)
+                {
+                    <tr><td colspan="5">No results.</td></tr>
+                }
+                else
+                {
+                    @foreach (var r in results)
+                    {
+                        <tr>
+                            <td>@r.Score.ToString("F3")</td>
+                            <td>@r.Doc.Id</td>
+                            <td>@r.Doc.SourceId</td>
+                            <td>@r.Doc.Tags</td>
+                            <td>@(r.Doc.Content?.Length > 180 ? r.Doc.Content[..180] + "…" : r.Doc.Content)</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    }
+}
+
+@code {
+    [CascadingParameter] public LimboDancer.MCP.BlazorConsole.Services.TenantUiState TenantState { get; set; } = default!;
+
+    private string? query;
+    private string? tag;
+    private string? sourceId;
+    private bool busy;
+    private List<(MemoryDoc Doc, double Score)>? results;
+
+    private async Task DoSearchAsync()
+    {
+        if (!TenantState.HasTenant) return;
+        busy = true;
+        results = new List<(MemoryDoc, double)>();
+
+        var options = new SearchOptions
+        {
+            Size = 50
+        };
+
+        // Convert IList<string> to List<string> for AddRange
+        var selectFields = new List<string> { "id", "content", "tags", "sourceId" };
+        foreach (var field in selectFields)
+        {
+            options.Select.Add(field);
+        }
+
+        var searchFields = new List<string> { "content", "tags", "sourceId" };
+        foreach (var field in searchFields)
+        {
+            options.SearchFields.Add(field);
+        }
+
+        var filters = new List<string>();
+
+        // Strict tenant filter
+        var tenantFilter = $"tenantId eq '{TenantState.TenantId!.Value}'";
+        filters.Add(tenantFilter);
+
+        if (!string.IsNullOrWhiteSpace(tag))
+            filters.Add($"tags eq '{Escape(tag)}'");
+        if (!string.IsNullOrWhiteSpace(sourceId))
+            filters.Add($"sourceId eq '{Escape(sourceId)}'");
+
+        if (filters.Count > 0)
+            options.Filter = string.Join(" and ", filters);
+
+        var q = string.IsNullOrWhiteSpace(query) ? "" : query!;
+        var resp = await Search.SearchAsync<MemoryDoc>(q, options);
+
+        await foreach (var r in resp.Value.GetResultsAsync())
+        {
+            var doc = r.Document!;
+            results.Add((doc, r.Score ?? 0));
+        }
+
+        busy = false;
+    }
+
+    private static string Escape(string s) => s.Replace("'", "''");
+}

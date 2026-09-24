@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:limbodancer:asl:tir:curated-review-bundle:schema:1.0.0",
+  "title": "ASL Curated Proposal Submission Bundle",
+  "description": "Submission manifest for an exact authored proposal and captured source review bundle. This version cannot express review acceptance.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaId", "schemaVersion", "canonicalization", "subject", "proposal", "sourceReviewBundleSchemaId", "sourceReviewBundleSha256", "declaredUse", "reviewStatus", "formalizationStatus", "createdAt", "createdAtSource", "bundleSha256"],
+  "properties": {
+    "schemaId": {"const": "urn:limbodancer:asl:tir:curated-review-bundle:schema:1.0.0"},
+    "schemaVersion": {"const": "1.0.0"},
+    "canonicalization": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": {"const": "asl-tir-curated-review-bundle-canonical-json"},
+        "version": {"const": "1.0.0"}
+      }
+    },
+    "subject": {
+      "type": "object", "additionalProperties": false,
+      "required": ["proposalSchemaId", "proposalSha256", "sourceTirDocumentSha256", "sourceArtifactId", "sourceArtifactSha256"],
+      "properties": {
+        "proposalSchemaId": {"const": "urn:limbodancer:asl:tir:curated-proposal:schema:1.0.0"},
+        "proposalSha256": {"$ref": "#/$defs/sha256"},
+        "sourceTirDocumentSha256": {"$ref": "#/$defs/sha256"},
+        "sourceArtifactId": {"type": "string", "pattern": "^asl-tir:sha256:[0-9a-f]{64}$"},
+        "sourceArtifactSha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "proposal": {"$ref": "urn:limbodancer:asl:tir:curated-proposal:schema:1.0.0"},
+    "sourceReviewBundleSchemaId": {"const": "urn:limbodancer:asl:tir:review-bundle:schema:1.0.0"},
+    "sourceReviewBundleSha256": {"$ref": "#/$defs/sha256"},
+    "declaredUse": {"type": "string", "minLength": 1, "pattern": "\\S"},
+    "reviewStatus": {"const": "proposed"},
+    "formalizationStatus": {"const": "unmodeled"},
+    "createdAt": {"type": "string", "format": "date-time", "pattern": "Z$"},
+    "createdAtSource": {"type": "string", "minLength": 1, "pattern": "\\S"},
+    "bundleSha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

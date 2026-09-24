@@ -1,0 +1,6417 @@
+{
+ "sourceId": "asl-easlrb-3.10:chapter-e",
+ "basePath": "docs/ASL/Rulebook_Markdown/06 - Chapter E - Miscellaneous.md",
+ "baseSha256": "614b39baaefe491402f10b283ddef60ee205c2f62b94eb3a3e329a072e0fe7e7",
+ "entries": [
+  {
+   "id": "CHE-00001",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 15,
+   "pdfPage": 222,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "                  12.  Barrage ```  **E.1 OPTIONAL/SSR:** Chapter E is c"
+  },
+  {
+   "id": "CHE-00002",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 71,
+   "pdfPage": 223,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "_01-p222-3.png)  <!-- page 223 -->  EX: The base NVR is 3; there is no C"
+  },
+  {
+   "id": "CHE-00003",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 113,
+   "pdfPage": 224,
+   "placement": "inline-after-split-word",
+   "locatedBy": "pdf-text",
+   "baseMarker": "missing",
+   "context": "o identify it, and is used in place of actual units. Each Cloaking count"
+  },
+  {
+   "id": "CHE-00004",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 147,
+   "pdfPage": 225,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "own enemy unit.  <!-- page 225 -->  **1.55 JITTER FIRE:** Jitter Fire ca"
+  },
+  {
+   "id": "CHE-00005",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 198,
+   "pdfPage": 226,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "ss Illuminated.  <!-- page 226 -->  **1.8 GUNFLASHES:** Gunflashes are *"
+  },
+  {
+   "id": "CHE-00006",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 269,
+   "pdfPage": 227,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "tarshell in I7.  <!-- page 227 -->  **2.** If the Starshell firer has a "
+  },
+  {
+   "id": "CHE-00007",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 314,
+   "pdfPage": 228,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": ", TB and paths.  <!-- page 228 -->  ## 2. INTERROGATION  **2.1 INCIDENCE"
+  },
+  {
+   "id": "CHE-00008",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 389,
+   "pdfPage": 229,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "/Fog/Mist/Rain/  <!-- page 229 -->  Falling Snow occur in a scenario. A "
+  },
+  {
+   "id": "CHE-00009",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 482,
+   "pdfPage": 230,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "0](images/eASLRB_v3_01-p230-1.png)  3.54 EX: Infantry moving from 24G3 t"
+  },
+  {
+   "id": "CHE-00010",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 524,
+   "pdfPage": 231,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "Ground (B12.6).  <!-- page 231 -->  **3.731 HE ATTACKS:** All HE (not HE"
+  },
+  {
+   "id": "CHE-00011",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 588,
+   "pdfPage": 232,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "_01-p231-5.png)  <!-- page 232 -->  ters (A12.11) in all aspects *[EXC: "
+  },
+  {
+   "id": "CHE-00012",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 632,
+   "pdfPage": 233,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "s a BPV of “1”.  <!-- page 233 -->  ## 5. BOATS  **5.1 COUNTERS:** There"
+  },
+  {
+   "id": "CHE-00013",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 672,
+   "pdfPage": 234,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": " closest to that Random Direction.  **5.3 WATER MOVEMENT:** Once in the "
+  },
+  {
+   "id": "CHE-00014",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 704,
+   "pdfPage": 235,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "missing",
+   "context": " (A20.3) without harming the boat.  ## 6. SWIMMING  **6.1 WATER ENTRY:**"
+  },
+  {
+   "id": "CHE-00015",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 748,
+   "pdfPage": 236,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "be placed onboard in his next MPh.  **7.21 ENTRY:** Upon mapboard entry,"
+  },
+  {
+   "id": "CHE-00016",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 788,
+   "pdfPage": 237,
+   "placement": "inline",
+   "locatedBy": "pdf-text",
+   "baseMarker": "missing",
+   "context": "ess of his choice. All Aerial units are considered to be at sufficient e"
+  },
+  {
+   "id": "CHE-00017",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 823,
+   "pdfPage": 238,
+   "placement": "inline-after-split-word",
+   "locatedBy": "pdf-text",
+   "baseMarker": "missing",
+   "context": " target hex of its initial tar-get. At this point it cannot attack again"
+  },
+  {
+   "id": "CHE-00018",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 851,
+   "pdfPage": 239,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "9](images/eASLRB_v3_01-p239-1.png)  **7.51 LIGHT AA:** Because aircraft "
+  },
+  {
+   "id": "CHE-00019",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 869,
+   "pdfPage": 240,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "r comes first).  <!-- page 240 -->  EX: It is the German MPh in a 1944 s"
+  },
+  {
+   "id": "CHE-00020",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 877,
+   "pdfPage": 241,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": " its next shot.  <!-- page 241 -->  ## 8. GLIDERS  **8.1 USAGE:** Glider"
+  },
+  {
+   "id": "CHE-00021",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 923,
+   "pdfPage": 242,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "*[EXC: gliders*  <!-- page 242 -->  *do not burn, and an Immobilization "
+  },
+  {
+   "id": "CHE-00022",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 951,
+   "pdfPage": 243,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": ". With the Drop  <!-- page 243 -->  Points of all Wings thus determined,"
+  },
+  {
+   "id": "CHE-00023",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 977,
+   "pdfPage": 244,
+   "placement": "inline",
+   "locatedBy": "pdf-text",
+   "baseMarker": "missing",
+   "context": "inal Fire using normal LOS and fire rules vs ground targets. Any paratro"
+  },
+  {
+   "id": "CHE-00024",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 1021,
+   "pdfPage": 245,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "onary Location.  <!-- page 245 -->  ## 11. CONVOYS  **11.1 COMPOSITION:*"
+  },
+  {
+   "id": "CHE-00025",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 1065,
+   "pdfPage": 246,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "missing",
+   "context": "ntarily created during a scenario.  ##### 11.51 SW  **11.51 SW:** All SW"
+  },
+  {
+   "id": "CHE-00026",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 1115,
+   "pdfPage": 247,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "_01-p246-3.png)  <!-- page 247 -->  **12.2 SETUP:** Prior to setup, all "
+  },
+  {
+   "id": "CHE-00027",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 1141,
+   "pdfPage": 248,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "ter which he then performs step 3.  **1)**\t *If it is the PFPh of Game T"
+  },
+  {
+   "id": "CHE-00028",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 1175,
+   "pdfPage": 249,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "present",
+   "context": "normal OBA use.  <!-- page 249 -->  ## CHAPTER E FOOTNOTES  **1.** *1.1 "
+  },
+  {
+   "id": "CHE-00029",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 1211,
+   "pdfPage": 250,
+   "placement": "block",
+   "locatedBy": "pdf-text",
+   "baseMarker": "missing",
+   "context": "ve use of infantry-pulled sledges.  **15.** *5.1 BOAT COUNTERS:* The thr"
+  },
+  {
+   "id": "CHE-00030",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 1239,
+   "pdfPage": 251,
+   "placement": "inline-after-split-word",
+   "locatedBy": "pdf-text",
+   "baseMarker": "missing",
+   "context": "g lighter than expected resistance, its pace was still tied to that of t"
+  },
+  {
+   "id": "CHE-00031",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 1250,
+   "pdfPage": 252,
+   "placement": "block",
+   "locatedBy": "base-marker",
+   "baseMarker": "present",
+   "context": "s to normal use.  <!-- page 252 --> <!-- page 253 -->  ![Figure from pag"
+  },
+  {
+   "id": "CHE-00032",
+   "rule": "page-marker",
+   "class": "conversion-fix",
+   "baseLine": 1252,
+   "pdfPage": 253,
+   "placement": "block",
+   "locatedBy": "base-marker",
+   "baseMarker": "present",
+   "context": "!-- page 252 --> <!-- page 253 -->  ![Figure from page 253](images/eASLR"
+  },
+  {
+   "id": "CHE-00033",
+   "rule": "blank-page",
+   "class": "observation",
+   "pdfPage": 252,
+   "note": "no body text; running head, banner and folio only"
+  },
+  {
+   "id": "CHE-00034",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 823,
+   "before": "-",
+   "after": "",
+   "token": "tar-get",
+   "result": "target",
+   "evidence": {
+    "pdfPage": 237,
+    "pdfBreak": "page-end",
+    "pdfBreakAfter": "tar-",
+    "joinedFormAttested": 1026,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00035",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 73,
+   "before": "-",
+   "after": "",
+   "token": "When-ever",
+   "result": "Whenever",
+   "evidence": {
+    "pdfPage": 223,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "When-",
+    "joinedFormAttested": 104,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00036",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 77,
+   "before": "-",
+   "after": "",
+   "token": "be-comes",
+   "result": "becomes",
+   "evidence": {
+    "pdfPage": 223,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "be-",
+    "joinedFormAttested": 116,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00037",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1013,
+   "before": "-",
+   "after": "",
+   "token": "be-comes",
+   "result": "becomes",
+   "evidence": {
+    "pdfPage": 244,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "be-",
+    "joinedFormAttested": 116,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00038",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 79,
+   "before": "-",
+   "after": "",
+   "token": "pill-box",
+   "result": "pillbox",
+   "evidence": {
+    "pdfPage": 223,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "pill-",
+    "joinedFormAttested": 220,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00039",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 79,
+   "before": "-",
+   "after": "",
+   "token": "ex-tra",
+   "result": "extra",
+   "evidence": {
+    "pdfPage": 223,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "ex-",
+    "joinedFormAttested": 83,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00040",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 81,
+   "before": "-",
+   "after": "",
+   "token": "de-piction",
+   "result": "depiction",
+   "evidence": {
+    "pdfPage": 223,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "de-",
+    "joinedFormAttested": 89,
+    "hyphenatedFormAttestedMidLine": 1,
+    "basis": "mid-line-hyphenated-form-rare"
+   }
+  },
+  {
+   "id": "CHE-00041",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 83,
+   "before": "-",
+   "after": "",
+   "token": "sce-nario",
+   "result": "scenario",
+   "evidence": {
+    "pdfPage": 223,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "sce-",
+    "joinedFormAttested": 268,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00042",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 190,
+   "before": "-",
+   "after": "",
+   "token": "sce-nario",
+   "result": "scenario",
+   "evidence": {
+    "pdfPage": 225,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "sce-",
+    "joinedFormAttested": 268,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00043",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 83,
+   "before": "-",
+   "after": "",
+   "token": "Conceal-ment",
+   "result": "Concealment",
+   "evidence": {
+    "pdfPage": 223,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Conceal-",
+    "joinedFormAttested": 188,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00044",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 83,
+   "before": "-",
+   "after": "",
+   "token": "set-ting",
+   "result": "setting",
+   "evidence": {
+    "pdfPage": 223,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "set-",
+    "joinedFormAttested": 9,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00045",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 180,
+   "before": "-",
+   "after": "",
+   "token": "Cloak-ing",
+   "result": "Cloaking",
+   "evidence": {
+    "pdfPage": 225,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Cloak-",
+    "joinedFormAttested": 65,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00046",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 180,
+   "before": "-",
+   "after": "",
+   "token": "Ran-dom",
+   "result": "Random",
+   "evidence": {
+    "pdfPage": 225,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Ran-",
+    "joinedFormAttested": 122,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00047",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 957,
+   "before": "-",
+   "after": "",
+   "token": "Ran-dom",
+   "result": "Random",
+   "evidence": {
+    "pdfPage": 243,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Ran-",
+    "joinedFormAttested": 122,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00048",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 180,
+   "before": "-",
+   "after": "",
+   "token": "con-tents",
+   "result": "contents",
+   "evidence": {
+    "pdfPage": 225,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "con-",
+    "joinedFormAttested": 35,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00049",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 190,
+   "before": "-",
+   "after": "",
+   "token": "maxi-mum",
+   "result": "maximum",
+   "evidence": {
+    "pdfPage": 225,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "maxi-",
+    "joinedFormAttested": 43,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00050",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 194,
+   "before": "-",
+   "after": "",
+   "token": "sta-tus",
+   "result": "status",
+   "evidence": {
+    "pdfPage": 225,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "sta-",
+    "joinedFormAttested": 239,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00051",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 198,
+   "before": "-",
+   "after": "",
+   "token": "Loca-tion",
+   "result": "Location",
+   "evidence": {
+    "pdfPage": 226,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Loca-",
+    "joinedFormAttested": 1171,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00052",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 341,
+   "before": "-",
+   "after": "",
+   "token": "Loca-tion",
+   "result": "Location",
+   "evidence": {
+    "pdfPage": 228,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Loca-",
+    "joinedFormAttested": 1171,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00053",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 999,
+   "before": "-",
+   "after": "",
+   "token": "Loca-tion",
+   "result": "Location",
+   "evidence": {
+    "pdfPage": 244,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Loca-",
+    "joinedFormAttested": 1171,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00054",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1031,
+   "before": "-",
+   "after": "",
+   "token": "Loca-tion",
+   "result": "Location",
+   "evidence": {
+    "pdfPage": 245,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Loca-",
+    "joinedFormAttested": 1171,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00055",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 198,
+   "before": "-",
+   "after": "",
+   "token": "Bound-ing",
+   "result": "Bounding",
+   "evidence": {
+    "pdfPage": 226,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Bound-",
+    "joinedFormAttested": 80,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00056",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 198,
+   "before": "-",
+   "after": "",
+   "token": "Gun-flash",
+   "result": "Gunflash",
+   "evidence": {
+    "pdfPage": 226,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Gun-",
+    "joinedFormAttested": 32,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00057",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 206,
+   "before": "-",
+   "after": "",
+   "token": "Gun-flash",
+   "result": "Gunflash",
+   "evidence": {
+    "pdfPage": 226,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Gun-",
+    "joinedFormAttested": 32,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00058",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 198,
+   "before": "-",
+   "after": "",
+   "token": "au-tomatically",
+   "result": "automatically",
+   "evidence": {
+    "pdfPage": 226,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "au-",
+    "joinedFormAttested": 81,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00059",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 198,
+   "before": "-",
+   "after": "",
+   "token": "place-ment",
+   "result": "placement",
+   "evidence": {
+    "pdfPage": 226,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "place-",
+    "joinedFormAttested": 141,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00060",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1161,
+   "before": "-",
+   "after": "",
+   "token": "place-ment",
+   "result": "placement",
+   "evidence": {
+    "pdfPage": 248,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "place-",
+    "joinedFormAttested": 141,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00061",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 198,
+   "before": "-",
+   "after": "",
+   "token": "coun-ter",
+   "result": "counter",
+   "evidence": {
+    "pdfPage": 226,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "coun-",
+    "joinedFormAttested": 1081,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00062",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 664,
+   "before": "-",
+   "after": "",
+   "token": "coun-ter",
+   "result": "counter",
+   "evidence": {
+    "pdfPage": 233,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "coun-",
+    "joinedFormAttested": 1081,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00063",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 943,
+   "before": "-",
+   "after": "",
+   "token": "coun-ter",
+   "result": "counter",
+   "evidence": {
+    "pdfPage": 242,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "coun-",
+    "joinedFormAttested": 1081,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00064",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1009,
+   "before": "-",
+   "after": "",
+   "token": "coun-ter",
+   "result": "counter",
+   "evidence": {
+    "pdfPage": 244,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "coun-",
+    "joinedFormAttested": 1081,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00065",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1163,
+   "before": "-",
+   "after": "",
+   "token": "coun-ter",
+   "result": "counter",
+   "evidence": {
+    "pdfPage": 248,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "coun-",
+    "joinedFormAttested": 1081,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00066",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 212,
+   "before": "-",
+   "after": "",
+   "token": "Reduc-tion",
+   "result": "Reduction",
+   "evidence": {
+    "pdfPage": 226,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Reduc-",
+    "joinedFormAttested": 75,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00067",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 654,
+   "before": "-",
+   "after": "",
+   "token": "Reduc-tion",
+   "result": "Reduction",
+   "evidence": {
+    "pdfPage": 233,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Reduc-",
+    "joinedFormAttested": 75,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00068",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 220,
+   "before": "-",
+   "after": "",
+   "token": "deto-nates",
+   "result": "detonates",
+   "evidence": {
+    "pdfPage": 226,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "deto-",
+    "joinedFormAttested": 7,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00069",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 222,
+   "before": "-",
+   "after": "",
+   "token": "Loca-tions",
+   "result": "Locations",
+   "evidence": {
+    "pdfPage": 226,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Loca-",
+    "joinedFormAttested": 132,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00070",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 226,
+   "before": "-",
+   "after": "",
+   "token": "Ob-servers",
+   "result": "Observers",
+   "evidence": {
+    "pdfPage": 226,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Ob-",
+    "joinedFormAttested": 5,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00071",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 232,
+   "before": "-",
+   "after": "",
+   "token": "disman-tling",
+   "result": "dismantling",
+   "evidence": {
+    "pdfPage": 226,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "disman-",
+    "joinedFormAttested": 0,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "parts-are-not-words"
+   }
+  },
+  {
+   "id": "CHE-00072",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 234,
+   "before": "-",
+   "after": "",
+   "token": "ef-fect",
+   "result": "effect",
+   "evidence": {
+    "pdfPage": 226,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "ef-",
+    "joinedFormAttested": 238,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00073",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 393,
+   "before": "-",
+   "after": "",
+   "token": "ef-fect",
+   "result": "effect",
+   "evidence": {
+    "pdfPage": 229,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "ef-",
+    "joinedFormAttested": 238,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00074",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 286,
+   "before": "-",
+   "after": "",
+   "token": "conceal-ment",
+   "result": "concealment",
+   "evidence": {
+    "pdfPage": 227,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "conceal-",
+    "joinedFormAttested": 188,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00075",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 286,
+   "before": "-",
+   "after": "",
+   "token": "Ac-cess",
+   "result": "Access",
+   "evidence": {
+    "pdfPage": 227,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Ac-",
+    "joinedFormAttested": 61,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00076",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 288,
+   "before": "-",
+   "after": "",
+   "token": "mal-functions",
+   "result": "malfunctions",
+   "evidence": {
+    "pdfPage": 227,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "mal-",
+    "joinedFormAttested": 18,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00077",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 290,
+   "before": "-",
+   "after": "",
+   "token": "non-subterra-nean",
+   "result": "non-subterranean",
+   "evidence": {
+    "pdfPage": 227,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "non-subterra-",
+    "joinedFormAttested": 3,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00078",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 292,
+   "before": "-",
+   "after": "",
+   "token": "lev-els",
+   "result": "levels",
+   "evidence": {
+    "pdfPage": 227,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "lev-",
+    "joinedFormAttested": 99,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00079",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 300,
+   "before": "-",
+   "after": "",
+   "token": "Search-es",
+   "result": "Searches",
+   "evidence": {
+    "pdfPage": 227,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Search-",
+    "joinedFormAttested": 1,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00080",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 300,
+   "before": "-",
+   "after": "",
+   "token": "hex-side",
+   "result": "hexside",
+   "evidence": {
+    "pdfPage": 227,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "hex-",
+    "joinedFormAttested": 644,
+    "hyphenatedFormAttestedMidLine": 1,
+    "basis": "mid-line-hyphenated-form-rare"
+   }
+  },
+  {
+   "id": "CHE-00081",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 306,
+   "before": "-",
+   "after": "",
+   "token": "Lo-cation",
+   "result": "Location",
+   "evidence": {
+    "pdfPage": 227,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Lo-",
+    "joinedFormAttested": 1171,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00082",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 596,
+   "before": "-",
+   "after": "",
+   "token": "Lo-cation",
+   "result": "Location",
+   "evidence": {
+    "pdfPage": 232,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Lo-",
+    "joinedFormAttested": 1171,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00083",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1071,
+   "before": "-",
+   "after": "",
+   "token": "Lo-cation",
+   "result": "Location",
+   "evidence": {
+    "pdfPage": 246,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Lo-",
+    "joinedFormAttested": 1171,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00084",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 306,
+   "before": "-",
+   "after": "",
+   "token": "includ-ing",
+   "result": "including",
+   "evidence": {
+    "pdfPage": 227,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "includ-",
+    "joinedFormAttested": 168,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00085",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 306,
+   "before": "-",
+   "after": "",
+   "token": "dur-ing",
+   "result": "during",
+   "evidence": {
+    "pdfPage": 227,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "dur-",
+    "joinedFormAttested": 792,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00086",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 712,
+   "before": "-",
+   "after": "",
+   "token": "dur-ing",
+   "result": "during",
+   "evidence": {
+    "pdfPage": 235,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "dur-",
+    "joinedFormAttested": 792,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00087",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 782,
+   "before": "-",
+   "after": "",
+   "token": "dur-ing",
+   "result": "during",
+   "evidence": {
+    "pdfPage": 236,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "dur-",
+    "joinedFormAttested": 792,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00088",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1177,
+   "before": "-",
+   "after": "",
+   "token": "dur-ing",
+   "result": "during",
+   "evidence": {
+    "pdfPage": 249,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "dur-",
+    "joinedFormAttested": 792,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00089",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 306,
+   "before": "-",
+   "after": "",
+   "token": "al-lowing",
+   "result": "allowing",
+   "evidence": {
+    "pdfPage": 227,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "al-",
+    "joinedFormAttested": 23,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00090",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 331,
+   "before": "-",
+   "after": "",
+   "token": "Au-tomatic",
+   "result": "Automatic",
+   "evidence": {
+    "pdfPage": 228,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Au-",
+    "joinedFormAttested": 41,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00091",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 331,
+   "before": "-",
+   "after": "",
+   "token": "non-con-cealed",
+   "result": "non-concealed",
+   "evidence": {
+    "pdfPage": 228,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "non-con-",
+    "joinedFormAttested": 4,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00092",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 337,
+   "before": "-",
+   "after": "",
+   "token": "For-tification",
+   "result": "Fortification",
+   "evidence": {
+    "pdfPage": 228,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "For-",
+    "joinedFormAttested": 34,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00093",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 343,
+   "before": "-",
+   "after": "",
+   "token": "informa-tion",
+   "result": "information",
+   "evidence": {
+    "pdfPage": 228,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "informa-",
+    "joinedFormAttested": 25,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00094",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 343,
+   "before": "-",
+   "after": "",
+   "token": "con-sidered",
+   "result": "considered",
+   "evidence": {
+    "pdfPage": 228,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "con-",
+    "joinedFormAttested": 315,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00095",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 347,
+   "before": "-",
+   "after": "",
+   "token": "Infor-mation",
+   "result": "Information",
+   "evidence": {
+    "pdfPage": 228,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Infor-",
+    "joinedFormAttested": 25,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00096",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 383,
+   "before": "-",
+   "after": "",
+   "token": "pur-chase",
+   "result": "purchase",
+   "evidence": {
+    "pdfPage": 228,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "pur-",
+    "joinedFormAttested": 31,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00097",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 383,
+   "before": "-",
+   "after": "",
+   "token": "dic-tated",
+   "result": "dictated",
+   "evidence": {
+    "pdfPage": 228,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "dic-",
+    "joinedFormAttested": 2,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00098",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 383,
+   "before": "-",
+   "after": "",
+   "token": "determina-tion",
+   "result": "determination",
+   "evidence": {
+    "pdfPage": 228,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "determina-",
+    "joinedFormAttested": 39,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00099",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 383,
+   "before": "-",
+   "after": "",
+   "token": "acti-vate",
+   "result": "activate",
+   "evidence": {
+    "pdfPage": 228,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "acti-",
+    "joinedFormAttested": 2,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00100",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 389,
+   "before": "-",
+   "after": "",
+   "token": "cu-mulative",
+   "result": "cumulative",
+   "evidence": {
+    "pdfPage": 229,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "cu-",
+    "joinedFormAttested": 71,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00101",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 389,
+   "before": "-",
+   "after": "",
+   "token": "at-tack",
+   "result": "attack",
+   "evidence": {
+    "pdfPage": 229,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "at-",
+    "joinedFormAttested": 1052,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00102",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 458,
+   "before": "-",
+   "after": "",
+   "token": "mul-tiple",
+   "result": "multiple",
+   "evidence": {
+    "pdfPage": 229,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "mul-",
+    "joinedFormAttested": 148,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00103",
+   "rule": "linebreak-hyphen",
+   "class": "reviewed-decision",
+   "baseLine": 464,
+   "before": "-",
+   "after": "",
+   "token": "rain-fall",
+   "result": "rainfall",
+   "decision": "join",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Line-break split of a single word; context confirms the joined word.",
+   "queuedReason": "neither form attested"
+  },
+  {
+   "id": "CHE-00104",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 470,
+   "before": "-",
+   "after": "",
+   "token": "ema-nating",
+   "result": "emanating",
+   "evidence": {
+    "pdfPage": 229,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "ema-",
+    "joinedFormAttested": 4,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00105",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 498,
+   "before": "-",
+   "after": "",
+   "token": "Over-cast",
+   "result": "Overcast",
+   "evidence": {
+    "pdfPage": 230,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Over-",
+    "joinedFormAttested": 34,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00106",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 504,
+   "before": "-",
+   "after": "",
+   "token": "Hin-drance",
+   "result": "Hindrance",
+   "evidence": {
+    "pdfPage": 230,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Hin-",
+    "joinedFormAttested": 241,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00107",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 510,
+   "before": "-",
+   "after": "",
+   "token": "un-less",
+   "result": "unless",
+   "evidence": {
+    "pdfPage": 230,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "un-",
+    "joinedFormAttested": 326,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00108",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1067,
+   "before": "-",
+   "after": "",
+   "token": "un-less",
+   "result": "unless",
+   "evidence": {
+    "pdfPage": 246,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "un-",
+    "joinedFormAttested": 326,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00109",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 510,
+   "before": "-",
+   "after": "",
+   "token": "pro-visions",
+   "result": "provisions",
+   "evidence": {
+    "pdfPage": 230,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "pro-",
+    "joinedFormAttested": 7,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00110",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 512,
+   "before": "-",
+   "after": "",
+   "token": "adja-cent",
+   "result": "adjacent",
+   "evidence": {
+    "pdfPage": 230,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "adja-",
+    "joinedFormAttested": 286,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00111",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 726,
+   "before": "-",
+   "after": "",
+   "token": "adja-cent",
+   "result": "adjacent",
+   "evidence": {
+    "pdfPage": 235,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "adja-",
+    "joinedFormAttested": 286,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00112",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 518,
+   "before": "-",
+   "after": "",
+   "token": "by-passed",
+   "result": "bypassed",
+   "evidence": {
+    "pdfPage": 230,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "by-",
+    "joinedFormAttested": 21,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00113",
+   "class": "reviewed-decision",
+   "text": "Ski-capable",
+   "rule": "linebreak-hyphen",
+   "baseLine": 570,
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine compound; the hyphen belongs to the printed term.",
+   "queuedReason": "neither form attested"
+  },
+  {
+   "id": "CHE-00114",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 596,
+   "before": "-",
+   "after": "",
+   "token": "ad-vance",
+   "result": "advance",
+   "evidence": {
+    "pdfPage": 232,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "ad-",
+    "joinedFormAttested": 96,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00115",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 606,
+   "before": "-",
+   "after": "",
+   "token": "ord-nance",
+   "result": "ordnance",
+   "evidence": {
+    "pdfPage": 232,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "ord-",
+    "joinedFormAttested": 248,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00116",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1213,
+   "before": "-",
+   "after": "",
+   "token": "ord-nance",
+   "result": "ordnance",
+   "evidence": {
+    "pdfPage": 250,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "ord-",
+    "joinedFormAttested": 248,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00117",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 636,
+   "before": "-",
+   "after": "",
+   "token": "Inher-ent",
+   "result": "Inherent",
+   "evidence": {
+    "pdfPage": 233,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Inher-",
+    "joinedFormAttested": 240,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00118",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 640,
+   "before": "-",
+   "after": "",
+   "token": "por-tage",
+   "result": "portage",
+   "evidence": {
+    "pdfPage": 233,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "por-",
+    "joinedFormAttested": 44,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00119",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 642,
+   "before": "-",
+   "after": "",
+   "token": "depic-tions",
+   "result": "depictions",
+   "evidence": {
+    "pdfPage": 233,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "depic-",
+    "joinedFormAttested": 12,
+    "hyphenatedFormAttestedMidLine": 1,
+    "basis": "mid-line-hyphenated-form-rare"
+   }
+  },
+  {
+   "id": "CHE-00120",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 642,
+   "before": "-",
+   "after": "",
+   "token": "Casu-alty",
+   "result": "Casualty",
+   "evidence": {
+    "pdfPage": 233,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Casu-",
+    "joinedFormAttested": 103,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00121",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 971,
+   "before": "-",
+   "after": "",
+   "token": "Casu-alty",
+   "result": "Casualty",
+   "evidence": {
+    "pdfPage": 243,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Casu-",
+    "joinedFormAttested": 103,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00122",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 642,
+   "before": "-",
+   "after": "",
+   "token": "Man-handled",
+   "result": "Manhandled",
+   "evidence": {
+    "pdfPage": 233,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Man-",
+    "joinedFormAttested": 4,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00123",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 650,
+   "before": "-",
+   "after": "",
+   "token": "How-ever",
+   "result": "However",
+   "evidence": {
+    "pdfPage": 233,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "How-",
+    "joinedFormAttested": 271,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00124",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1033,
+   "before": "-",
+   "after": "",
+   "token": "How-ever",
+   "result": "However",
+   "evidence": {
+    "pdfPage": 245,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "How-",
+    "joinedFormAttested": 271,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00125",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 654,
+   "before": "-",
+   "after": "",
+   "token": "correspond-ing",
+   "result": "corresponding",
+   "evidence": {
+    "pdfPage": 233,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "correspond-",
+    "joinedFormAttested": 12,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00126",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 654,
+   "before": "-",
+   "after": "",
+   "token": "al-though",
+   "result": "although",
+   "evidence": {
+    "pdfPage": 233,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "al-",
+    "joinedFormAttested": 173,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00127",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1229,
+   "before": "-",
+   "after": "",
+   "token": "al-though",
+   "result": "although",
+   "evidence": {
+    "pdfPage": 250,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "al-",
+    "joinedFormAttested": 173,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00128",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 656,
+   "before": "-",
+   "after": "",
+   "token": "over-land",
+   "result": "overland",
+   "evidence": {
+    "pdfPage": 233,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "over-",
+    "joinedFormAttested": 3,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00129",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 658,
+   "before": "-",
+   "after": "",
+   "token": "consid-ered",
+   "result": "considered",
+   "evidence": {
+    "pdfPage": 233,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "consid-",
+    "joinedFormAttested": 315,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00130",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 658,
+   "before": "-",
+   "after": "",
+   "token": "re-quired",
+   "result": "required",
+   "evidence": {
+    "pdfPage": 233,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "re-",
+    "joinedFormAttested": 74,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00131",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 658,
+   "before": "-",
+   "after": "",
+   "token": "Eleva-tion",
+   "result": "Elevation",
+   "evidence": {
+    "pdfPage": 233,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Eleva-",
+    "joinedFormAttested": 199,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00132",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 664,
+   "before": "-",
+   "after": "",
+   "token": "plac-ing",
+   "result": "placing",
+   "evidence": {
+    "pdfPage": 233,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "plac-",
+    "joinedFormAttested": 70,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00133",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 664,
+   "before": "-",
+   "after": "",
+   "token": "re-quires",
+   "result": "requires",
+   "evidence": {
+    "pdfPage": 233,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "re-",
+    "joinedFormAttested": 50,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00134",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 712,
+   "before": "-",
+   "after": "",
+   "token": "re-quires",
+   "result": "requires",
+   "evidence": {
+    "pdfPage": 235,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "re-",
+    "joinedFormAttested": 50,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00135",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 664,
+   "before": "-",
+   "after": "",
+   "token": "ex-pend",
+   "result": "expend",
+   "evidence": {
+    "pdfPage": 233,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "ex-",
+    "joinedFormAttested": 108,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00136",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1013,
+   "before": "-",
+   "after": "",
+   "token": "ex-pend",
+   "result": "expend",
+   "evidence": {
+    "pdfPage": 244,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "ex-",
+    "joinedFormAttested": 108,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00137",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 664,
+   "before": "-",
+   "after": "",
+   "token": "interme-diate",
+   "result": "intermediate",
+   "evidence": {
+    "pdfPage": 233,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "interme-",
+    "joinedFormAttested": 13,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00138",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 664,
+   "before": "-",
+   "after": "",
+   "token": "Man-handling",
+   "result": "Manhandling",
+   "evidence": {
+    "pdfPage": 233,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Man-",
+    "joinedFormAttested": 38,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00139",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 664,
+   "before": "-",
+   "after": "",
+   "token": "Pro-vided",
+   "result": "Provided",
+   "evidence": {
+    "pdfPage": 233,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Pro-",
+    "joinedFormAttested": 132,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00140",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 702,
+   "before": "-",
+   "after": "",
+   "token": "defend-ing",
+   "result": "defending",
+   "evidence": {
+    "pdfPage": 234,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "defend-",
+    "joinedFormAttested": 28,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00141",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 702,
+   "before": "-",
+   "after": "",
+   "token": "elimi-nated",
+   "result": "eliminated",
+   "evidence": {
+    "pdfPage": 234,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "elimi-",
+    "joinedFormAttested": 259,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00142",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 969,
+   "before": "-",
+   "after": "",
+   "token": "elimi-nated",
+   "result": "eliminated",
+   "evidence": {
+    "pdfPage": 243,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "elimi-",
+    "joinedFormAttested": 259,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00143",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 985,
+   "before": "-",
+   "after": "",
+   "token": "elimi-nated",
+   "result": "eliminated",
+   "evidence": {
+    "pdfPage": 244,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "elimi-",
+    "joinedFormAttested": 259,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00144",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 706,
+   "before": "-",
+   "after": "",
+   "token": "anoth-er",
+   "result": "another",
+   "evidence": {
+    "pdfPage": 235,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "anoth-",
+    "joinedFormAttested": 232,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00145",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 710,
+   "before": "-",
+   "after": "",
+   "token": "dif-ference",
+   "result": "difference",
+   "evidence": {
+    "pdfPage": 235,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "dif-",
+    "joinedFormAttested": 19,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00146",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 712,
+   "before": "-",
+   "after": "",
+   "token": "friend-ly",
+   "result": "friendly",
+   "evidence": {
+    "pdfPage": 235,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "friend-",
+    "joinedFormAttested": 185,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00147",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 712,
+   "before": "-",
+   "after": "",
+   "token": "success-fully",
+   "result": "successfully",
+   "evidence": {
+    "pdfPage": 235,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "success-",
+    "joinedFormAttested": 24,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00148",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 720,
+   "before": "-",
+   "after": "",
+   "token": "leader-ship",
+   "result": "leadership",
+   "evidence": {
+    "pdfPage": 235,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "leader-",
+    "joinedFormAttested": 133,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00149",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 722,
+   "before": "-",
+   "after": "",
+   "token": "plat-forms",
+   "result": "platforms",
+   "evidence": {
+    "pdfPage": 235,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "plat-",
+    "joinedFormAttested": 1,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00150",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 722,
+   "before": "-",
+   "after": "",
+   "token": "elim-inated",
+   "result": "eliminated",
+   "evidence": {
+    "pdfPage": 235,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "elim-",
+    "joinedFormAttested": 259,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00151",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 726,
+   "before": "-",
+   "after": "",
+   "token": "elim-inated",
+   "result": "eliminated",
+   "evidence": {
+    "pdfPage": 235,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "elim-",
+    "joinedFormAttested": 259,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00152",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 724,
+   "before": "-",
+   "after": "",
+   "token": "follow-ing",
+   "result": "following",
+   "evidence": {
+    "pdfPage": 235,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "follow-",
+    "joinedFormAttested": 85,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00153",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 726,
+   "before": "-",
+   "after": "",
+   "token": "Person-nel",
+   "result": "Personnel",
+   "evidence": {
+    "pdfPage": 235,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Person-",
+    "joinedFormAttested": 206,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00154",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 782,
+   "before": "-",
+   "after": "",
+   "token": "Aer-ial",
+   "result": "Aerial",
+   "evidence": {
+    "pdfPage": 236,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Aer-",
+    "joinedFormAttested": 169,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00155",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 965,
+   "before": "-",
+   "after": "",
+   "token": "Aer-ial",
+   "result": "Aerial",
+   "evidence": {
+    "pdfPage": 243,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Aer-",
+    "joinedFormAttested": 169,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00156",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 782,
+   "before": "-",
+   "after": "",
+   "token": "result-ing",
+   "result": "resulting",
+   "evidence": {
+    "pdfPage": 236,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "result-",
+    "joinedFormAttested": 75,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00157",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 782,
+   "before": "-",
+   "after": "",
+   "token": "Dam-ages",
+   "result": "Damages",
+   "evidence": {
+    "pdfPage": 236,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Dam-",
+    "joinedFormAttested": 5,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00158",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 788,
+   "before": "-",
+   "after": "",
+   "token": "pre-vent",
+   "result": "prevent",
+   "evidence": {
+    "pdfPage": 236,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "pre-",
+    "joinedFormAttested": 34,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00159",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 788,
+   "before": "-",
+   "after": "",
+   "token": "en-emy",
+   "result": "enemy",
+   "evidence": {
+    "pdfPage": 236,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "en-",
+    "joinedFormAttested": 601,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00160",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 788,
+   "before": "-",
+   "after": "",
+   "token": "el-evation",
+   "result": "elevation",
+   "evidence": {
+    "pdfPage": 237,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "el-",
+    "joinedFormAttested": 199,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00161",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 790,
+   "before": "-",
+   "after": "",
+   "token": "speci-fied",
+   "result": "specified",
+   "evidence": {
+    "pdfPage": 237,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "speci-",
+    "joinedFormAttested": 55,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00162",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 823,
+   "before": "-",
+   "after": "",
+   "token": "speci-fied",
+   "result": "specified",
+   "evidence": {
+    "pdfPage": 237,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "speci-",
+    "joinedFormAttested": 55,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00163",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 790,
+   "before": "-",
+   "after": "",
+   "token": "re-sults",
+   "result": "results",
+   "evidence": {
+    "pdfPage": 237,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "re-",
+    "joinedFormAttested": 132,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00164",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 790,
+   "before": "-",
+   "after": "",
+   "token": "tar-get",
+   "result": "target",
+   "evidence": {
+    "pdfPage": 237,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "tar-",
+    "joinedFormAttested": 1026,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00165",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 790,
+   "before": "-",
+   "after": "",
+   "token": "fol-lowing",
+   "result": "following",
+   "evidence": {
+    "pdfPage": 237,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "fol-",
+    "joinedFormAttested": 85,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00166",
+   "class": "reviewed-decision",
+   "text": "off-board",
+   "rule": "linebreak-hyphen",
+   "baseLine": 815,
+   "decision": "retain",
+   "decidedBy": "dlandi (maintainer convention, 2026-09-23)",
+   "rationale": "Maintainer convention: on-board and off-board keep the hyphen.",
+   "queuedReason": "both forms attested"
+  },
+  {
+   "id": "CHE-00167",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 815,
+   "before": "-",
+   "after": "",
+   "token": "ini-tial",
+   "result": "initial",
+   "evidence": {
+    "pdfPage": 237,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "ini-",
+    "joinedFormAttested": 52,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00168",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 817,
+   "before": "-",
+   "after": "",
+   "token": "re-solving",
+   "result": "resolving",
+   "evidence": {
+    "pdfPage": 237,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "re-",
+    "joinedFormAttested": 28,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00169",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 821,
+   "before": "-",
+   "after": "",
+   "token": "build-ing",
+   "result": "building",
+   "evidence": {
+    "pdfPage": 237,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "build-",
+    "joinedFormAttested": 627,
+    "hyphenatedFormAttestedMidLine": 1,
+    "basis": "mid-line-hyphenated-form-rare"
+   }
+  },
+  {
+   "id": "CHE-00170",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 823,
+   "before": "-",
+   "after": "",
+   "token": "to-ward",
+   "result": "toward",
+   "evidence": {
+    "pdfPage": 237,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "to-",
+    "joinedFormAttested": 29,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00171",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 847,
+   "before": "-",
+   "after": "",
+   "token": "air-craft",
+   "result": "aircraft",
+   "evidence": {
+    "pdfPage": 238,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "air-",
+    "joinedFormAttested": 131,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00172",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 857,
+   "before": "-",
+   "after": "",
+   "token": "air-craft",
+   "result": "aircraft",
+   "evidence": {
+    "pdfPage": 239,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "air-",
+    "joinedFormAttested": 131,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00173",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 847,
+   "before": "-",
+   "after": "",
+   "token": "ex-hausted",
+   "result": "exhausted",
+   "evidence": {
+    "pdfPage": 238,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "ex-",
+    "joinedFormAttested": 6,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00174",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 851,
+   "before": "-",
+   "after": "",
+   "token": "coun-ters",
+   "result": "counters",
+   "evidence": {
+    "pdfPage": 239,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "coun-",
+    "joinedFormAttested": 241,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00175",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 851,
+   "before": "-",
+   "after": "",
+   "token": "re-duced",
+   "result": "reduced",
+   "evidence": {
+    "pdfPage": 239,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "re-",
+    "joinedFormAttested": 106,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00176",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 855,
+   "before": "-",
+   "after": "",
+   "token": "al-ways",
+   "result": "always",
+   "evidence": {
+    "pdfPage": 239,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "al-",
+    "joinedFormAttested": 184,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00177",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 855,
+   "before": "-",
+   "after": "",
+   "token": "combina-tion",
+   "result": "combination",
+   "evidence": {
+    "pdfPage": 239,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "combina-",
+    "joinedFormAttested": 38,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00178",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 855,
+   "before": "-",
+   "after": "",
+   "token": "Oth-erwise",
+   "result": "Otherwise",
+   "evidence": {
+    "pdfPage": 239,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Oth-",
+    "joinedFormAttested": 192,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00179",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 855,
+   "before": "-",
+   "after": "",
+   "token": "Origi-nal",
+   "result": "Original",
+   "evidence": {
+    "pdfPage": 239,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Origi-",
+    "joinedFormAttested": 346,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00180",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 857,
+   "before": "-",
+   "after": "",
+   "token": "attack-ing",
+   "result": "attacking",
+   "evidence": {
+    "pdfPage": 239,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "attack-",
+    "joinedFormAttested": 69,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00181",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1223,
+   "before": "-",
+   "after": "",
+   "token": "attack-ing",
+   "result": "attacking",
+   "evidence": {
+    "pdfPage": 250,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "attack-",
+    "joinedFormAttested": 69,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00182",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 857,
+   "before": "-",
+   "after": "",
+   "token": "Mal-function",
+   "result": "Malfunction",
+   "evidence": {
+    "pdfPage": 239,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Mal-",
+    "joinedFormAttested": 73,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00183",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 861,
+   "before": "-",
+   "after": "",
+   "token": "Obser-vation",
+   "result": "Observation",
+   "evidence": {
+    "pdfPage": 239,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Obser-",
+    "joinedFormAttested": 20,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00184",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 863,
+   "before": "-",
+   "after": "",
+   "token": "Obser-vation",
+   "result": "Observation",
+   "evidence": {
+    "pdfPage": 239,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Obser-",
+    "joinedFormAttested": 20,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00185",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 863,
+   "before": "-",
+   "after": "",
+   "token": "advan-tage",
+   "result": "advantage",
+   "evidence": {
+    "pdfPage": 239,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "advan-",
+    "joinedFormAttested": 111,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00186",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 863,
+   "before": "-",
+   "after": "",
+   "token": "Sight-ing",
+   "result": "Sighting",
+   "evidence": {
+    "pdfPage": 239,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Sight-",
+    "joinedFormAttested": 73,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00187",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 865,
+   "before": "-",
+   "after": "",
+   "token": "Spot-ting",
+   "result": "Spotting",
+   "evidence": {
+    "pdfPage": 239,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Spot-",
+    "joinedFormAttested": 15,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00188",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 865,
+   "before": "-",
+   "after": "",
+   "token": "oc-curs",
+   "result": "occurs",
+   "evidence": {
+    "pdfPage": 239,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "oc-",
+    "joinedFormAttested": 75,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00189",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 865,
+   "before": "-",
+   "after": "",
+   "token": "Cor-rected",
+   "result": "Corrected",
+   "evidence": {
+    "pdfPage": 239,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Cor-",
+    "joinedFormAttested": 18,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00190",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 873,
+   "before": "-",
+   "after": "",
+   "token": "at-tacked",
+   "result": "attacked",
+   "evidence": {
+    "pdfPage": 240,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "at-",
+    "joinedFormAttested": 158,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00191",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1039,
+   "before": "-",
+   "after": "",
+   "token": "at-tacked",
+   "result": "attacked",
+   "evidence": {
+    "pdfPage": 245,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "at-",
+    "joinedFormAttested": 158,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00192",
+   "rule": "stale-hyphen",
+   "class": "typographic-correction",
+   "baseLine": 879,
+   "before": "-",
+   "after": "",
+   "token": "ca-pacity",
+   "result": "capacity",
+   "evidence": {
+    "pdfPage": 241,
+    "pdfBreak": "none (printed mid-line)",
+    "joinedFormAttested": 70,
+    "hyphenatedFormAttestedMidLine": 1,
+    "basis": "suffix-is-not-a-word"
+   }
+  },
+  {
+   "id": "CHE-00193",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 889,
+   "before": "-",
+   "after": "",
+   "token": "Play-er",
+   "result": "Player",
+   "evidence": {
+    "pdfPage": 241,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Play-",
+    "joinedFormAttested": 442,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00194",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 889,
+   "before": "-",
+   "after": "",
+   "token": "invol-untarily",
+   "result": "involuntarily",
+   "evidence": {
+    "pdfPage": 241,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "invol-",
+    "joinedFormAttested": 2,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00195",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 935,
+   "before": "-",
+   "after": "",
+   "token": "Mul-tiple",
+   "result": "Multiple",
+   "evidence": {
+    "pdfPage": 242,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Mul-",
+    "joinedFormAttested": 148,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00196",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 935,
+   "before": "-",
+   "after": "",
+   "token": "Ap-proach",
+   "result": "Approach",
+   "evidence": {
+    "pdfPage": 242,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Ap-",
+    "joinedFormAttested": 23,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00197",
+   "rule": "linebreak-hyphen",
+   "class": "reviewed-decision",
+   "baseLine": 935,
+   "before": "-",
+   "after": "",
+   "token": "mor-tally",
+   "result": "mortally",
+   "decision": "join",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Line-break split of a single word; context confirms the joined word.",
+   "queuedReason": "neither form attested"
+  },
+  {
+   "id": "CHE-00198",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 943,
+   "before": "-",
+   "after": "",
+   "token": "compo-nent",
+   "result": "component",
+   "evidence": {
+    "pdfPage": 242,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "compo-",
+    "joinedFormAttested": 6,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00199",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 943,
+   "before": "-",
+   "after": "",
+   "token": "re-cords",
+   "result": "records",
+   "evidence": {
+    "pdfPage": 242,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "re-",
+    "joinedFormAttested": 8,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00200",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 943,
+   "before": "-",
+   "after": "",
+   "token": "re-sult",
+   "result": "result",
+   "evidence": {
+    "pdfPage": 242,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "re-",
+    "joinedFormAttested": 200,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00201",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 947,
+   "before": "-",
+   "after": "",
+   "token": "predes-ignates",
+   "result": "predesignates",
+   "evidence": {
+    "pdfPage": 242,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "predes-",
+    "joinedFormAttested": 1,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00202",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 947,
+   "before": "-",
+   "after": "",
+   "token": "play-ing",
+   "result": "playing",
+   "evidence": {
+    "pdfPage": 242,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "play-",
+    "joinedFormAttested": 23,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00203",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 947,
+   "before": "-",
+   "after": "",
+   "token": "Fol-lowing",
+   "result": "Following",
+   "evidence": {
+    "pdfPage": 242,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Fol-",
+    "joinedFormAttested": 85,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00204",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 953,
+   "before": "-",
+   "after": "",
+   "token": "para-chute",
+   "result": "parachute",
+   "evidence": {
+    "pdfPage": 243,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "para-",
+    "joinedFormAttested": 29,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00205",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 953,
+   "before": "-",
+   "after": "",
+   "token": "para-chute",
+   "result": "parachute",
+   "evidence": {
+    "pdfPage": 243,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "para-",
+    "joinedFormAttested": 29,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00206",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 953,
+   "before": "-",
+   "after": "",
+   "token": "drift-ing",
+   "result": "drifting",
+   "evidence": {
+    "pdfPage": 243,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "drift-",
+    "joinedFormAttested": 18,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00207",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 957,
+   "before": "-",
+   "after": "",
+   "token": "para-chutes",
+   "result": "parachutes",
+   "evidence": {
+    "pdfPage": 243,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "para-",
+    "joinedFormAttested": 14,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00208",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 957,
+   "before": "-",
+   "after": "",
+   "token": "Hazard-ous",
+   "result": "Hazardous",
+   "evidence": {
+    "pdfPage": 243,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Hazard-",
+    "joinedFormAttested": 32,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00209",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 957,
+   "before": "-",
+   "after": "",
+   "token": "Haz-ardous",
+   "result": "Hazardous",
+   "evidence": {
+    "pdfPage": 243,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Haz-",
+    "joinedFormAttested": 32,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00210",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 957,
+   "before": "-",
+   "after": "",
+   "token": "Al-though",
+   "result": "Although",
+   "evidence": {
+    "pdfPage": 243,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Al-",
+    "joinedFormAttested": 173,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00211",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 957,
+   "before": "-",
+   "after": "",
+   "token": "bar-ring",
+   "result": "barring",
+   "evidence": {
+    "pdfPage": 243,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "bar-",
+    "joinedFormAttested": 23,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00212",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 963,
+   "before": "-",
+   "after": "",
+   "token": "com-bination",
+   "result": "combination",
+   "evidence": {
+    "pdfPage": 243,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "com-",
+    "joinedFormAttested": 38,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00213",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 969,
+   "before": "-",
+   "after": "",
+   "token": "para-troops",
+   "result": "paratroops",
+   "evidence": {
+    "pdfPage": 243,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "para-",
+    "joinedFormAttested": 31,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00214",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 971,
+   "before": "-",
+   "after": "",
+   "token": "Bro-ken",
+   "result": "Broken",
+   "evidence": {
+    "pdfPage": 243,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Bro-",
+    "joinedFormAttested": 365,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00215",
+   "rule": "stale-hyphen",
+   "class": "typographic-correction",
+   "baseLine": 973,
+   "before": "-",
+   "after": "",
+   "token": "us-ing",
+   "result": "using",
+   "evidence": {
+    "pdfPage": 243,
+    "pdfBreak": "none (printed mid-line)",
+    "joinedFormAttested": 400,
+    "hyphenatedFormAttestedMidLine": 1,
+    "basis": "suffix-is-not-a-word"
+   }
+  },
+  {
+   "id": "CHE-00216",
+   "rule": "stale-hyphen",
+   "class": "typographic-correction",
+   "baseLine": 973,
+   "before": "-",
+   "after": "",
+   "token": "Build-ing",
+   "result": "Building",
+   "evidence": {
+    "pdfPage": 243,
+    "pdfBreak": "none (printed mid-line)",
+    "joinedFormAttested": 627,
+    "hyphenatedFormAttestedMidLine": 1,
+    "basis": "suffix-is-not-a-word"
+   }
+  },
+  {
+   "id": "CHE-00217",
+   "rule": "stale-hyphen",
+   "class": "typographic-correction",
+   "baseLine": 973,
+   "before": "-",
+   "after": "",
+   "token": "immedi-ate",
+   "result": "immediate",
+   "evidence": {
+    "pdfPage": 243,
+    "pdfBreak": "none (printed mid-line)",
+    "joinedFormAttested": 21,
+    "hyphenatedFormAttestedMidLine": 1,
+    "basis": "suffix-is-not-a-word"
+   }
+  },
+  {
+   "id": "CHE-00218",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 987,
+   "before": "-",
+   "after": "",
+   "token": "un-used",
+   "result": "unused",
+   "evidence": {
+    "pdfPage": 244,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "un-",
+    "joinedFormAttested": 8,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00219",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 987,
+   "before": "-",
+   "after": "",
+   "token": "oth-erwise",
+   "result": "otherwise",
+   "evidence": {
+    "pdfPage": 244,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "oth-",
+    "joinedFormAttested": 192,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00220",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 987,
+   "before": "-",
+   "after": "",
+   "token": "bro-ken",
+   "result": "broken",
+   "evidence": {
+    "pdfPage": 244,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "bro-",
+    "joinedFormAttested": 365,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00221",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 987,
+   "before": "-",
+   "after": "",
+   "token": "In-tegrity",
+   "result": "Integrity",
+   "evidence": {
+    "pdfPage": 244,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "In-",
+    "joinedFormAttested": 59,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00222",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 995,
+   "before": "-",
+   "after": "",
+   "token": "ve-hicle",
+   "result": "vehicle",
+   "evidence": {
+    "pdfPage": 244,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "ve-",
+    "joinedFormAttested": 1250,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00223",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1031,
+   "before": "-",
+   "after": "",
+   "token": "ve-hicle",
+   "result": "vehicle",
+   "evidence": {
+    "pdfPage": 245,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "ve-",
+    "joinedFormAttested": 1250,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00224",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1031,
+   "before": "-",
+   "after": "",
+   "token": "ve-hicle",
+   "result": "vehicle",
+   "evidence": {
+    "pdfPage": 245,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "ve-",
+    "joinedFormAttested": 1250,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00225",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 995,
+   "before": "-",
+   "after": "",
+   "token": "Immo-bile",
+   "result": "Immobile",
+   "evidence": {
+    "pdfPage": 244,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Immo-",
+    "joinedFormAttested": 37,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00226",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1001,
+   "before": "-",
+   "after": "",
+   "token": "can-not",
+   "result": "cannot",
+   "evidence": {
+    "pdfPage": 244,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "can-",
+    "joinedFormAttested": 450,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00227",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1003,
+   "before": "-",
+   "after": "",
+   "token": "Replen-ished",
+   "result": "Replenished",
+   "evidence": {
+    "pdfPage": 244,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Replen-",
+    "joinedFormAttested": 2,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00228",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1003,
+   "before": "-",
+   "after": "",
+   "token": "Replen-ishment",
+   "result": "Replenishment",
+   "evidence": {
+    "pdfPage": 244,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Replen-",
+    "joinedFormAttested": 11,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00229",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1009,
+   "before": "-",
+   "after": "",
+   "token": "rea-son",
+   "result": "reason",
+   "evidence": {
+    "pdfPage": 244,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "rea-",
+    "joinedFormAttested": 20,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00230",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1009,
+   "before": "-",
+   "after": "",
+   "token": "iden-tically",
+   "result": "identically",
+   "evidence": {
+    "pdfPage": 244,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "iden-",
+    "joinedFormAttested": 2,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00231",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1009,
+   "before": "-",
+   "after": "",
+   "token": "com-pletion",
+   "result": "completion",
+   "evidence": {
+    "pdfPage": 244,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "com-",
+    "joinedFormAttested": 3,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00232",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1011,
+   "before": "-",
+   "after": "",
+   "token": "De-pletion",
+   "result": "Depletion",
+   "evidence": {
+    "pdfPage": 244,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "De-",
+    "joinedFormAttested": 53,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00233",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1013,
+   "before": "-",
+   "after": "",
+   "token": "trans-fer",
+   "result": "transfer",
+   "evidence": {
+    "pdfPage": 244,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "trans-",
+    "joinedFormAttested": 23,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00234",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1015,
+   "before": "-",
+   "after": "",
+   "token": "ex-plodes",
+   "result": "explodes",
+   "evidence": {
+    "pdfPage": 244,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "ex-",
+    "joinedFormAttested": 3,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00235",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1017,
+   "before": "-",
+   "after": "",
+   "token": "im-mobile",
+   "result": "immobile",
+   "evidence": {
+    "pdfPage": 244,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "im-",
+    "joinedFormAttested": 37,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00236",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1025,
+   "before": "-",
+   "after": "",
+   "token": "Fur-thermore",
+   "result": "Furthermore",
+   "evidence": {
+    "pdfPage": 245,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Fur-",
+    "joinedFormAttested": 13,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00237",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1027,
+   "before": "-",
+   "after": "",
+   "token": "Im-mobilization",
+   "result": "Immobilization",
+   "evidence": {
+    "pdfPage": 245,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Im-",
+    "joinedFormAttested": 60,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00238",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1027,
+   "before": "-",
+   "after": "",
+   "token": "al-ready",
+   "result": "already",
+   "evidence": {
+    "pdfPage": 245,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "al-",
+    "joinedFormAttested": 134,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00239",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1027,
+   "before": "-",
+   "after": "",
+   "token": "ex-pends",
+   "result": "expends",
+   "evidence": {
+    "pdfPage": 245,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "ex-",
+    "joinedFormAttested": 53,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00240",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1027,
+   "before": "-",
+   "after": "",
+   "token": "com-pleted",
+   "result": "completed",
+   "evidence": {
+    "pdfPage": 245,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "com-",
+    "joinedFormAttested": 15,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00241",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1135,
+   "before": "-",
+   "after": "",
+   "token": "com-pleted",
+   "result": "completed",
+   "evidence": {
+    "pdfPage": 247,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "com-",
+    "joinedFormAttested": 15,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00242",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1027,
+   "before": "-",
+   "after": "",
+   "token": "half-tracks",
+   "result": "halftracks",
+   "evidence": {
+    "pdfPage": 245,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "half-",
+    "joinedFormAttested": 16,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00243",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1029,
+   "before": "-",
+   "after": "",
+   "token": "re-mainder",
+   "result": "remainder",
+   "evidence": {
+    "pdfPage": 245,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "re-",
+    "joinedFormAttested": 19,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00244",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1033,
+   "before": "-",
+   "after": "",
+   "token": "Con-voy",
+   "result": "Convoy",
+   "evidence": {
+    "pdfPage": 245,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Con-",
+    "joinedFormAttested": 93,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00245",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1063,
+   "before": "-",
+   "after": "",
+   "token": "affect-ed",
+   "result": "affected",
+   "evidence": {
+    "pdfPage": 245,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "affect-",
+    "joinedFormAttested": 104,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00246",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1069,
+   "before": "-",
+   "after": "",
+   "token": "continu-ously",
+   "result": "continuously",
+   "evidence": {
+    "pdfPage": 246,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "continu-",
+    "joinedFormAttested": 0,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "parts-are-not-words"
+   }
+  },
+  {
+   "id": "CHE-00247",
+   "rule": "linebreak-hyphen",
+   "class": "reviewed-decision",
+   "baseLine": 1075,
+   "before": "-",
+   "after": "",
+   "token": "fore-goes",
+   "result": "foregoes",
+   "decision": "join",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Line-break split of a single word; context confirms the joined word.",
+   "queuedReason": "neither form attested"
+  },
+  {
+   "id": "CHE-00248",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1075,
+   "before": "-",
+   "after": "",
+   "token": "join-ing",
+   "result": "joining",
+   "evidence": {
+    "pdfPage": 246,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "join-",
+    "joinedFormAttested": 2,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00249",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1077,
+   "before": "-",
+   "after": "",
+   "token": "Dis-bandment",
+   "result": "Disbandment",
+   "evidence": {
+    "pdfPage": 246,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Dis-",
+    "joinedFormAttested": 7,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00250",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1085,
+   "before": "-",
+   "after": "",
+   "token": "Dis-bandment",
+   "result": "Disbandment",
+   "evidence": {
+    "pdfPage": 246,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Dis-",
+    "joinedFormAttested": 7,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00251",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1081,
+   "before": "-",
+   "after": "",
+   "token": "con-ducted",
+   "result": "conducted",
+   "evidence": {
+    "pdfPage": 246,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "con-",
+    "joinedFormAttested": 11,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00252",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1081,
+   "before": "-",
+   "after": "",
+   "token": "immedi-ately",
+   "result": "immediately",
+   "evidence": {
+    "pdfPage": 246,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "immedi-",
+    "joinedFormAttested": 125,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00253",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1085,
+   "before": "-",
+   "after": "",
+   "token": "with-in",
+   "result": "within",
+   "evidence": {
+    "pdfPage": 246,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "with-",
+    "joinedFormAttested": 258,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00254",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1131,
+   "before": "-",
+   "after": "",
+   "token": "Bar-rage",
+   "result": "Barrage",
+   "evidence": {
+    "pdfPage": 247,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Bar-",
+    "joinedFormAttested": 162,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00255",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1133,
+   "before": "-",
+   "after": "",
+   "token": "Bar-rage",
+   "result": "Barrage",
+   "evidence": {
+    "pdfPage": 247,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Bar-",
+    "joinedFormAttested": 162,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00256",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1133,
+   "before": "-",
+   "after": "",
+   "token": "Bar-rage",
+   "result": "Barrage",
+   "evidence": {
+    "pdfPage": 247,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Bar-",
+    "joinedFormAttested": 162,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00257",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1237,
+   "before": "-",
+   "after": "",
+   "token": "Bar-rage",
+   "result": "Barrage",
+   "evidence": {
+    "pdfPage": 250,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Bar-",
+    "joinedFormAttested": 162,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00258",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1133,
+   "before": "-",
+   "after": "",
+   "token": "Pre-Regis-tered",
+   "result": "Pre-Registered",
+   "evidence": {
+    "pdfPage": 247,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Pre-Regis-",
+    "joinedFormAttested": 47,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00259",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1133,
+   "before": "-",
+   "after": "",
+   "token": "av-erage",
+   "result": "average",
+   "evidence": {
+    "pdfPage": 247,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "av-",
+    "joinedFormAttested": 11,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00260",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1135,
+   "before": "-",
+   "after": "",
+   "token": "be-gins",
+   "result": "begins",
+   "evidence": {
+    "pdfPage": 247,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "be-",
+    "joinedFormAttested": 31,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00261",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1135,
+   "before": "-",
+   "after": "",
+   "token": "Scenar-io",
+   "result": "Scenario",
+   "evidence": {
+    "pdfPage": 247,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Scenar-",
+    "joinedFormAttested": 268,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00262",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1135,
+   "before": "-",
+   "after": "",
+   "token": "Creep-ing",
+   "result": "Creeping",
+   "evidence": {
+    "pdfPage": 247,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Creep-",
+    "joinedFormAttested": 74,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00263",
+   "class": "reviewed-decision",
+   "text": "deliberately-drawn",
+   "rule": "linebreak-hyphen",
+   "baseLine": 1135,
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine compound; the hyphen belongs to the printed term.",
+   "queuedReason": "neither form attested"
+  },
+  {
+   "id": "CHE-00264",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1161,
+   "before": "-",
+   "after": "",
+   "token": "origi-nal",
+   "result": "original",
+   "evidence": {
+    "pdfPage": 248,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "origi-",
+    "joinedFormAttested": 346,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00265",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1163,
+   "before": "-",
+   "after": "",
+   "token": "Correc-tion",
+   "result": "Correction",
+   "evidence": {
+    "pdfPage": 248,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "Correc-",
+    "joinedFormAttested": 8,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00266",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1163,
+   "before": "-",
+   "after": "",
+   "token": "spe-cial",
+   "result": "special",
+   "evidence": {
+    "pdfPage": 248,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "spe-",
+    "joinedFormAttested": 92,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00267",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1177,
+   "before": "-",
+   "after": "",
+   "token": "coordi-nating",
+   "result": "coordinating",
+   "evidence": {
+    "pdfPage": 249,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "coordi-",
+    "joinedFormAttested": 0,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "parts-are-not-words"
+   }
+  },
+  {
+   "id": "CHE-00268",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1179,
+   "before": "-",
+   "after": "",
+   "token": "explo-sions",
+   "result": "explosions",
+   "evidence": {
+    "pdfPage": 249,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "explo-",
+    "joinedFormAttested": 0,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "parts-are-not-words"
+   }
+  },
+  {
+   "id": "CHE-00269",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1181,
+   "before": "-",
+   "after": "",
+   "token": "de-fenders",
+   "result": "defenders",
+   "evidence": {
+    "pdfPage": 249,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "de-",
+    "joinedFormAttested": 13,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00270",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1183,
+   "before": "-",
+   "after": "",
+   "token": "in-filtrate",
+   "result": "infiltrate",
+   "evidence": {
+    "pdfPage": 249,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "in-",
+    "joinedFormAttested": 1,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00271",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1183,
+   "before": "-",
+   "after": "",
+   "token": "appear-ing",
+   "result": "appearing",
+   "evidence": {
+    "pdfPage": 249,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "appear-",
+    "joinedFormAttested": 3,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00272",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1183,
+   "before": "-",
+   "after": "",
+   "token": "il-lustrates",
+   "result": "illustrates",
+   "evidence": {
+    "pdfPage": 249,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "il-",
+    "joinedFormAttested": 1,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00273",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1183,
+   "before": "-",
+   "after": "",
+   "token": "at-tempt",
+   "result": "attempt",
+   "evidence": {
+    "pdfPage": 249,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "at-",
+    "joinedFormAttested": 293,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00274",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1183,
+   "before": "-",
+   "after": "",
+   "token": "elimi-nating",
+   "result": "eliminating",
+   "evidence": {
+    "pdfPage": 249,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "elimi-",
+    "joinedFormAttested": 11,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00275",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1185,
+   "before": "-",
+   "after": "",
+   "token": "sur-prise",
+   "result": "surprise",
+   "evidence": {
+    "pdfPage": 249,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "sur-",
+    "joinedFormAttested": 4,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00276",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1189,
+   "before": "-",
+   "after": "",
+   "token": "fight-ing",
+   "result": "fighting",
+   "evidence": {
+    "pdfPage": 249,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "fight-",
+    "joinedFormAttested": 56,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00277",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1191,
+   "before": "-",
+   "after": "",
+   "token": "es-timated",
+   "result": "estimated",
+   "evidence": {
+    "pdfPage": 249,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "es-",
+    "joinedFormAttested": 1,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00278",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1191,
+   "before": "-",
+   "after": "",
+   "token": "hori-zon",
+   "result": "horizon",
+   "evidence": {
+    "pdfPage": 249,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "hori-",
+    "joinedFormAttested": 0,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "parts-are-not-words"
+   }
+  },
+  {
+   "id": "CHE-00279",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1211,
+   "before": "-",
+   "after": "",
+   "token": "pro-vide",
+   "result": "provide",
+   "evidence": {
+    "pdfPage": 250,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "pro-",
+    "joinedFormAttested": 18,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00280",
+   "class": "reviewed-decision",
+   "text": "shallow-draught",
+   "rule": "linebreak-hyphen",
+   "baseLine": 1211,
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine compound; the hyphen belongs to the printed term.",
+   "queuedReason": "neither form attested"
+  },
+  {
+   "id": "CHE-00281",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1211,
+   "before": "-",
+   "after": "",
+   "token": "prox-imity",
+   "result": "proximity",
+   "evidence": {
+    "pdfPage": 250,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "prox-",
+    "joinedFormAttested": 4,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00282",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1211,
+   "before": "-",
+   "after": "",
+   "token": "re-quire",
+   "result": "require",
+   "evidence": {
+    "pdfPage": 250,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "re-",
+    "joinedFormAttested": 33,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00283",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1213,
+   "before": "-",
+   "after": "",
+   "token": "motion-less",
+   "result": "motionless",
+   "evidence": {
+    "pdfPage": 250,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "motion-",
+    "joinedFormAttested": 1,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00284",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1213,
+   "before": "-",
+   "after": "",
+   "token": "unload-ing",
+   "result": "unloading",
+   "evidence": {
+    "pdfPage": 250,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "unload-",
+    "joinedFormAttested": 22,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00285",
+   "rule": "linebreak-hyphen",
+   "class": "reviewed-decision",
+   "baseLine": 1215,
+   "before": "-",
+   "after": "",
+   "token": "re-appearing",
+   "result": "reappearing",
+   "decision": "join",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Line-break split of a single word; context confirms the joined word. Pairs with \"disappearing\".",
+   "queuedReason": "neither form attested"
+  },
+  {
+   "id": "CHE-00286",
+   "class": "reviewed-decision",
+   "text": "real-life",
+   "rule": "linebreak-hyphen",
+   "baseLine": 1217,
+   "decision": "retain",
+   "decidedBy": "dlandi (approved Claude-proposed disposition, 2026-09-23)",
+   "rationale": "Genuine compound; the hyphen belongs to the printed term.",
+   "queuedReason": "neither form attested"
+  },
+  {
+   "id": "CHE-00287",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1217,
+   "before": "-",
+   "after": "",
+   "token": "arma-ments",
+   "result": "armaments",
+   "evidence": {
+    "pdfPage": 250,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "arma-",
+    "joinedFormAttested": 2,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00288",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1217,
+   "before": "-",
+   "after": "",
+   "token": "de-picted",
+   "result": "depicted",
+   "evidence": {
+    "pdfPage": 250,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "de-",
+    "joinedFormAttested": 24,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00289",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1217,
+   "before": "-",
+   "after": "",
+   "token": "capabil-ity",
+   "result": "capability",
+   "evidence": {
+    "pdfPage": 250,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "capabil-",
+    "joinedFormAttested": 65,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00290",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1217,
+   "before": "-",
+   "after": "",
+   "token": "vary-ing",
+   "result": "varying",
+   "evidence": {
+    "pdfPage": 250,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "vary-",
+    "joinedFormAttested": 5,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00291",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1217,
+   "before": "-",
+   "after": "",
+   "token": "vari-ous",
+   "result": "various",
+   "evidence": {
+    "pdfPage": 250,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "vari-",
+    "joinedFormAttested": 20,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00292",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1223,
+   "before": "-",
+   "after": "",
+   "token": "nec-essary",
+   "result": "necessary",
+   "evidence": {
+    "pdfPage": 250,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "nec-",
+    "joinedFormAttested": 54,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00293",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1225,
+   "before": "-",
+   "after": "",
+   "token": "ar-mored",
+   "result": "armored",
+   "evidence": {
+    "pdfPage": 250,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "ar-",
+    "joinedFormAttested": 117,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00294",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1225,
+   "before": "-",
+   "after": "",
+   "token": "vulnera-ble",
+   "result": "vulnerable",
+   "evidence": {
+    "pdfPage": 250,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "vulnera-",
+    "joinedFormAttested": 83,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00295",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1227,
+   "before": "-",
+   "after": "",
+   "token": "imme-diate",
+   "result": "immediate",
+   "evidence": {
+    "pdfPage": 250,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "imme-",
+    "joinedFormAttested": 21,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00296",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1231,
+   "before": "-",
+   "after": "",
+   "token": "De-ployment",
+   "result": "Deployment",
+   "evidence": {
+    "pdfPage": 250,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "De-",
+    "joinedFormAttested": 8,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00297",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1233,
+   "before": "-",
+   "after": "",
+   "token": "mag-azines",
+   "result": "magazines",
+   "evidence": {
+    "pdfPage": 250,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "mag-",
+    "joinedFormAttested": 0,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "parts-are-not-words"
+   }
+  },
+  {
+   "id": "CHE-00298",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1233,
+   "before": "-",
+   "after": "",
+   "token": "subma-chineguns",
+   "result": "submachineguns",
+   "evidence": {
+    "pdfPage": 250,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "subma-",
+    "joinedFormAttested": 0,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "parts-are-not-words"
+   }
+  },
+  {
+   "id": "CHE-00299",
+   "rule": "linebreak-hyphen",
+   "class": "conversion-fix",
+   "baseLine": 1233,
+   "before": "-",
+   "after": "",
+   "token": "ac-tion",
+   "result": "action",
+   "evidence": {
+    "pdfPage": 250,
+    "pdfBreak": "line-end",
+    "pdfBreakAfter": "ac-",
+    "joinedFormAttested": 99,
+    "hyphenatedFormAttestedMidLine": 0,
+    "basis": "joined-form-attested"
+   }
+  },
+  {
+   "id": "CHE-00300",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 494,
+   "before": "** **",
+   "after": " ",
+   "emphasis": "bold",
+   "context": "f snow rules in effect. **SNOW CHART** **Final dr Condition** **drm:**  ![Fig"
+  },
+  {
+   "id": "CHE-00301",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 494,
+   "before": "** **",
+   "after": " ",
+   "emphasis": "bold",
+   "context": " **SNOW CHART** **Final dr Condition** **drm:**  ![Figure from page 230](imag"
+  },
+  {
+   "id": "CHE-00302",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 686,
+   "before": "** **",
+   "after": " ",
+   "emphasis": "bold",
+   "context": "DNANCE & AREA TARGET TYPE ATTACKS vs** **BOATS IN WATER:** All non-ordnance a"
+  },
+  {
+   "id": "CHE-00303",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 688,
+   "before": "** **",
+   "after": " ",
+   "emphasis": "bold",
+   "context": "DNANCE & AREA TARGET TYPE ATTACKS vs** **LANDED/BEACHED BOATS:** All non-ordn"
+  },
+  {
+   "id": "CHE-00304",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 63,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "Half or Full Moon, the NVR change is* *not necessarily a one-hex change, bu"
+  },
+  {
+   "id": "CHE-00305",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 63,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "ut is equal to a subsequent Final dr* *that is divided by three (FRU) for a"
+  },
+  {
+   "id": "CHE-00306",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 63,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "a Half Moon, or divided by two (FRU)* *for a Full Moon.]* When the NVR Chan"
+  },
+  {
+   "id": "CHE-00307",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 63,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "irst starshell/IR is placed, a dr of* *4 increases the Base NVR]*.  ![Figur"
+  },
+  {
+   "id": "CHE-00308",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 77,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "its in the same building the minimum* *Base NVR is still 0]*.  **1.16 FORTI"
+  },
+  {
+   "id": "CHE-00309",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 81,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "hex *[EXC: if zero (1.13) or Illumi-* *nated (1.9)]*.  **1.2 SCENARIO DEFEN"
+  },
+  {
+   "id": "CHE-00310",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 85,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "h LOS checks are free). *[EXC: If an* *AFV with a radio is allowed to move,"
+  },
+  {
+   "id": "CHE-00311",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 85,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": ", all other friendly Mobile AFV (and* *their PRC as long as they remain PRC"
+  },
+  {
+   "id": "CHE-00312",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 91,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "ealed and placed on the board *[EXC:* *the type/strength of mines is not re"
+  },
+  {
+   "id": "CHE-00313",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 121,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "M applies to the Falling DR (B11.41)* *of Climbing units during a night sce"
+  },
+  {
+   "id": "CHE-00314",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 131,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "lry *[EXC: Infantry represented by a* *Cloaking counter; 1.41]* during a ni"
+  },
+  {
+   "id": "CHE-00315",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 131,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "d hexside or using Bypass in an Open* *Ground hexside of an Obstacle hex; b"
+  },
+  {
+   "id": "CHE-00316",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 133,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "ssengers/Riders may unload as if the* *AFV had fired in the PFPh]*.  **1.53"
+  },
+  {
+   "id": "CHE-00317",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 174,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "EXC: Fire Lanes, mines, Snipers, DC,* *Specific Collateral attacks, Residua"
+  },
+  {
+   "id": "CHE-00318",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 178,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "nce any starshell/IR has been fired,* *a MG can place a Fire Lane without f"
+  },
+  {
+   "id": "CHE-00319",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 178,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "iring at any moving target if it can* *place a Fire Lane Residual FP counte"
+  },
+  {
+   "id": "CHE-00320",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 178,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "r in a Location that is Bore Sighted* *by that MG; however, if it does so i"
+  },
+  {
+   "id": "CHE-00321",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 178,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": " must thereafter place (if otherwise* *able to do so) a Fire Lane to that L"
+  },
+  {
+   "id": "CHE-00322",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 178,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "ocation in every enemy MPh (and must* *do so before the ATTACKER begins mov"
+  },
+  {
+   "id": "CHE-00323",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 178,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "ving his first unit in that MPh) un-* *til the start of an enemy MPh in whi"
+  },
+  {
+   "id": "CHE-00324",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 178,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "h it can see a Known enemy unit. The* *firer must make an IFT DR to check f"
+  },
+  {
+   "id": "CHE-00325",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 178,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "k for malfunction/cowering/SAN. Once* *that MG’s Bore Sighting advantage ha"
+  },
+  {
+   "id": "CHE-00326",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 178,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": " been lost, it cannot thereafter use* *this Bore Sighted type of Fire Lane."
+  },
+  {
+   "id": "CHE-00327",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 206,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "aled target *[EXC: if the target can* *be treated as being within NVR, as p"
+  },
+  {
+   "id": "CHE-00328",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 234,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "C: Cloaking/“?” is lost more readily* *(1.31); an Illuminated Location is t"
+  },
+  {
+   "id": "CHE-00329",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 234,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "eated as being within the NVR of all* *units that otherwise have a LOS to i"
+  },
+  {
+   "id": "CHE-00330",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 234,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": " Illuminated units can see only Gun-* *flashes and into Illuminated Locatio"
+  },
+  {
+   "id": "CHE-00331",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 257,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": " firer’s concealment *[EXC: a hidden* *or Cloaked unit that fires a Starshe"
+  },
+  {
+   "id": "CHE-00332",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 257,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "hell must be placed on board beneath* *a “?”]*. A Starshell cannot be fired"
+  },
+  {
+   "id": "CHE-00333",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 277,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "ilding Locations *[EXC: Dense-Jungle* *(G2.2)/Bamboo]* within three hexes ("
+  },
+  {
+   "id": "CHE-00334",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 288,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "lacement range (six hexes) and maxi-* *mum range to the Known enemy unit (n"
+  },
+  {
+   "id": "CHE-00335",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 288,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": " (nine hexes) of method 2 do not ap-* *ply to IR. An onboard mortar must ha"
+  },
+  {
+   "id": "CHE-00336",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 288,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "its initial placement hex within its* *normal range limits (C2.25).]* Other"
+  },
+  {
+   "id": "CHE-00337",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 288,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "se, method 3 of 1.922 is used *[EXC:* *instead of placing the IR three hexe"
+  },
+  {
+   "id": "CHE-00338",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 288,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "away from the firer, it is placed in* *any hex (within the mortar’s normal "
+  },
+  {
+   "id": "CHE-00339",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 288,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": " range) that is exactly six (or some* *whole multiple of six) hexes away fr"
+  },
+  {
+   "id": "CHE-00340",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 290,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "ocations *[EXC: Dense-Jungle/Bamboo;* *G2.3]* within six hexes.<sup>13</sup"
+  },
+  {
+   "id": "CHE-00341",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 300,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": " makes a dr (∆) *[EXC: no dr is made* *if the unit/stack is entering (or en"
+  },
+  {
+   "id": "CHE-00342",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 300,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": " the Location via) a trench/pillbox/* *subterranean passage, or is entering"
+  },
+  {
+   "id": "CHE-00343",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 300,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "g the Location via a path/TB created* *during play, or if the MF/MP expendi"
+  },
+  {
+   "id": "CHE-00344",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 300,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "iture is made for Stopping, Delay or* *placing SMOKE; for panjis see also G"
+  },
+  {
+   "id": "CHE-00345",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 306,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "XC: if placed in/IN a Depression, it* *can Illuminate IN an Accessible Depr"
+  },
+  {
+   "id": "CHE-00346",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 306,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "pression hex only if those two hexes* *share a Depression hexside]*. Each T"
+  },
+  {
+   "id": "CHE-00347",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 383,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": " weather. Otherwise, *weather condi-* *tions are always considered Clear in"
+  },
+  {
+   "id": "CHE-00348",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 389,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "event concealment loss *[EXC: Winter* *Camouflage]*.  **3.2 CLEAR:** Weathe"
+  },
+  {
+   "id": "CHE-00349",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 445,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "EXC: Fog is eliminated only via Wind* *Effects (3.312) and is not subject t"
+  },
+  {
+   "id": "CHE-00350",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 445,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "o Drift. The Fog DRM is halved (FRU)* *for fire within the same Location.]*"
+  },
+  {
+   "id": "CHE-00351",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 458,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "XC: Specific Collateral Attack; Fire* *Lane; OBA; Residual FP]* and LOS. Th"
+  },
+  {
+   "id": "CHE-00352",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 486,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": " Specific Collateral Attacks, Direct* *Fire ordnance vs a vehicle (and its "
+  },
+  {
+   "id": "CHE-00353",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 492,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "ies *[EXC: gullies containing woods/* *brush during Mud, or containing wood"
+  },
+  {
+   "id": "CHE-00354",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 518,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": ">/2. All non-tracked vehicles *[EXC:* *sledges]* must expend one extra MP ("
+  },
+  {
+   "id": "CHE-00355",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 524,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "ific Collateral Attacks, Direct Fire* *ordnance vs a vehicle (and its PRC)/"
+  },
+  {
+   "id": "CHE-00356",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 552,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "d in an Interior Building or another* *Drift hex, roll again]*. If placed o"
+  },
+  {
+   "id": "CHE-00357",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 556,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "[EXC: a Drift can be removed through* *the normal Roadblock Clearance rules"
+  },
+  {
+   "id": "CHE-00358",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 588,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "hey must be stacked with ≥ 1 non-ski* *Dummy counter(s) at all times or be "
+  },
+  {
+   "id": "CHE-00359",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 588,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "be removed immediately regardless of* *LOS]*, but allow that Dummy stack to"
+  },
+  {
+   "id": "CHE-00360",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 608,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "ier charging a Known enemy unit in a* *Location that the Skier cannot norma"
+  },
+  {
+   "id": "CHE-00361",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 608,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "ally enter (4.3) must change to foot* *mode when it reaches the point where"
+  },
+  {
+   "id": "CHE-00362",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 608,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": " due solely to being on skis, it can* *move no closer to the unit as per A1"
+  },
+  {
+   "id": "CHE-00363",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 640,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "nter’s MP *[EXC: for Pneumatic boats* *only, each SMC equals 1 PP]*.  **5.1"
+  },
+  {
+   "id": "CHE-00364",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 670,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "ter Obstacle’s hex center dot *[EXC:* *OVR]*. An abandoned drifting boat be"
+  },
+  {
+   "id": "CHE-00365",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 672,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "fting or Beaching/un-Beaching *[EXC:* *a German Assault Boat can always mov"
+  },
+  {
+   "id": "CHE-00366",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 672,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": " move in the MPh due to its Inherent* *Driver; 5.11]*. Movement in the APh "
+  },
+  {
+   "id": "CHE-00367",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 686,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": " Fire can affect only the unit being* *moved at the time]*. If the Final IF"
+  },
+  {
+   "id": "CHE-00368",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 688,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": " hits resolved using the Area Target* *Type still have their FP halved]* an"
+  },
+  {
+   "id": "CHE-00369",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 690,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "ter in that Location per shot *[EXC:* *if using the Area Target Type; C3.33"
+  },
+  {
+   "id": "CHE-00370",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 690,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "HD vehicular target *[EXC: HD status* *does not apply if the firer is an ai"
+  },
+  {
+   "id": "CHE-00371",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 690,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "t Type, it sinks (see 5.53) *[EXC: a* *three-boat Small Raft counter is Red"
+  },
+  {
+   "id": "CHE-00372",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 784,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": " Victory Points (A26.212) *[EXC: the* *Passengers of a glider are worth Vic"
+  },
+  {
+   "id": "CHE-00373",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 790,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "make a ground attack *[EXC: Mistaken* *Attack; 7.32, 7.62]*, and being immu"
+  },
+  {
+   "id": "CHE-00374",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 790,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "ed on the easiest non-HIP *[EXC: Ob-* *servation Planes may target “empty” "
+  },
+  {
+   "id": "CHE-00375",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 817,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "*[EXC: Observation Planes and subse-* *quent hexes of a Strafing Run]*) any"
+  },
+  {
+   "id": "CHE-00376",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 821,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "Hindrance DRM if the K9 orchard were* *out-of-season; B14.2],* but K9 can b"
+  },
+  {
+   "id": "CHE-00377",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 833,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": " both Stuka types always use the 39F* *TK#]*, and is modified only by the A"
+  },
+  {
+   "id": "CHE-00378",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 847,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "et while in AA mode *[EXC: Vehicular* *AAMG do not use AA counters and can "
+  },
+  {
+   "id": "CHE-00379",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 847,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": " fire at ground/Aerial targets with-* *out consideration of AA mode]*. When"
+  },
+  {
+   "id": "CHE-00380",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 851,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "nfantry-manned HMG**<sup>21</sup>**,* *vehicular AAMG, and AA-capable MA/CM"
+  },
+  {
+   "id": "CHE-00381",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 851,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "le MA/CMG can fire at aircraft coun-* *ters as Light AA*. AA Guns with IFE "
+  },
+  {
+   "id": "CHE-00382",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 853,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "curred last) *[EXC: a Stuka making a* *bomb attack must extend its “flyover"
+  },
+  {
+   "id": "CHE-00383",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 853,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "“flyover” another three hexes as per* *7.403]*. Damaged/evading aircraft mu"
+  },
+  {
+   "id": "CHE-00384",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 905,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": " modifiers are cumulative *[EXC: the* *drm for vehicles, wrecks, and previo"
+  },
+  {
+   "id": "CHE-00385",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 905,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "and previously-landed gliders in the* *landing hex can never exceed +1]*. T"
+  },
+  {
+   "id": "CHE-00386",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 923,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "result is considered a Damage result* *instead]*; the H Aerial DRM does not"
+  },
+  {
+   "id": "CHE-00387",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 953,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "ite dr (FRU) while Russians increase* *it by 50% (FRD), prior to any Wind a"
+  },
+  {
+   "id": "CHE-00388",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 953,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "y *[EXC: British paratroopers retain* *possession of (i.e., drop with) thei"
+  },
+  {
+   "id": "CHE-00389",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 953,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "r LMG, light mortar, and radio coun-* *ters, while U.S. paratroopers retain"
+  },
+  {
+   "id": "CHE-00390",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 953,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "ir light mortars; they are therefore* *placed in the Cloaking Box with the "
+  },
+  {
+   "id": "CHE-00391",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 969,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": ": If that hex contains a bridge (not* *a foot bridge), it lands on the brid"
+  },
+  {
+   "id": "CHE-00392",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 969,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "n a dr of 1 or 2 (dr 1 if a one-lane* *bridge); otherwise it lands IN the h"
+  },
+  {
+   "id": "CHE-00393",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 969,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": " There is a -1 drm to this dr if the* *unit is unbroken; for Interior Build"
+  },
+  {
+   "id": "CHE-00394",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 973,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "contains a SMC/crew, those units are* *revealed at this time with/in place "
+  },
+  {
+   "id": "CHE-00395",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 985,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": " during the APh. Instead, all *[EXC:* *those that have already Deployed; 9."
+  },
+  {
+   "id": "CHE-00396",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 1009,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": " CC. *[EXC: If the TI counter is re-* *moved prior to the completion of Rep"
+  },
+  {
+   "id": "CHE-00397",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 1009,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "f Replenishment, that Game Turn does* *not count toward Replenishment and t"
+  },
+  {
+   "id": "CHE-00398",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 1009,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "d the armed vehicle must use its B #* *if it fires that weapon.]* One Ammo "
+  },
+  {
+   "id": "CHE-00399",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 1015,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "t were a detonated Goliath *[EXC: it* *has no designated target and no X#]*"
+  },
+  {
+   "id": "CHE-00400",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 1027,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "e Convoys *[EXC: a “new Convoy” that* *contains only one vehicle; 11.1]*, e"
+  },
+  {
+   "id": "CHE-00401",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 1059,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "ually towing a Gun, it is allowed to* *also carry that Gun’s crew and ammo]"
+  },
+  {
+   "id": "CHE-00402",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 1063,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "ch unit/stack in a Column *[EXC: the* *“lead” unit/stack]* may enter only t"
+  },
+  {
+   "id": "CHE-00403",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 1077,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "zardous Movement DRM *[EXC: a Column* *may voluntarily “initiate” Disbandme"
+  },
+  {
+   "id": "CHE-00404",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 1077,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "ment by expending a MF to do so (and* *declaring Disbandment), but does not"
+  },
+  {
+   "id": "CHE-00405",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 1077,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "actually Disband until after all De-* *fensive First Fire allowed by that M"
+  },
+  {
+   "id": "CHE-00406",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 1097,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "a in their next MPh/APh. *[EXC: If a* *partially-offboard Column Disbands, "
+  },
+  {
+   "id": "CHE-00407",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 1097,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": " its offboard units set up again and* *enter in their next allowed phase(s)"
+  },
+  {
+   "id": "CHE-00408",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 1115,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": ". *All Pre-Registered hexes assigned* *a Barrage option from the same OBA b"
+  },
+  {
+   "id": "CHE-00409",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 1121,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "*[EXC: when the FFE counter is in or* *adjacent to a Pre-Registered hex, it"
+  },
+  {
+   "id": "CHE-00410",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 1121,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "t cannot be Corrected to another hex* *that is adjacent to that same Pre-Re"
+  },
+  {
+   "id": "CHE-00411",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 1127,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "* A Barrage *[EXC: not Creeping Bar-* *rage]* FFE causes a LOS Hindrance as"
+  },
+  {
+   "id": "CHE-00412",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 1129,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "apable Pre-Registered hex *[EXC: one* *designated for use with a Creeping B"
+  },
+  {
+   "id": "CHE-00413",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 1133,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "layer secretly records *one Barrage-* *capable Pre-Registered hex* (12.2) w"
+  },
+  {
+   "id": "CHE-00414",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 1133,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "). He also secretly records *an Aim-* *ing Hex*, which is any hex that lies"
+  },
+  {
+   "id": "CHE-00415",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 1133,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "endly PFPh only, or in both his PFPh* *and DFPh.*<sup>29</sup> He also secr"
+  },
+  {
+   "id": "CHE-00416",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 1133,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "s *the Game Turn in which the Creep-* *ing Barrage will Lift* (i.e., will e"
+  },
+  {
+   "id": "CHE-00417",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 1133,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "tly, he *prepares his Battery Access* *draw pile, including one extra black"
+  },
+  {
+   "id": "CHE-00418",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 1141,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": " and his special Battery Access draw* *was black (or if it is the PFPh of “"
+  },
+  {
+   "id": "CHE-00419",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 1153,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "ter onboard, he must perform one *or* *both* of the following actions in li"
+  },
+  {
+   "id": "CHE-00420",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 1157,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "d recorded “FFE:1”  or “FFE:1-2” for* *his Corrections*, and if the Barrage"
+  },
+  {
+   "id": "CHE-00421",
+   "rule": "split-emphasis",
+   "class": "markup-normalization",
+   "baseLine": 1165,
+   "before": "* *",
+   "after": " ",
+   "emphasis": "italic",
+   "context": "normal +1 *[EXC: +1 if it is raining* *or the scenario has Deep Snow]*.<sup"
+  },
+  {
+   "id": "CHE-00422",
+   "rule": "symbol-font-glyph",
+   "class": "conversion-fix",
+   "baseLine": 853,
+   "before": "",
+   "after": "★",
+   "codePoint": "U+F0AB",
+   "result": "U+2605",
+   "evidence": {
+    "pdfPage": 239,
+    "pdfFonts": [
+     "Wingdings-Regular"
+    ],
+    "glyph": "Wingdings 0xAB black five-pointed star"
+   },
+   "context": "fire vs aircraft is resolved on the  Vehicle Line of the IFT (∆), but is"
+  },
+  {
+   "id": "CHE-00423",
+   "rule": "symbol-font-glyph",
+   "class": "conversion-fix",
+   "baseLine": 853,
+   "before": "",
+   "after": "★",
+   "codePoint": "U+F0AB",
+   "result": "U+2605",
+   "evidence": {
+    "pdfPage": 239,
+    "pdfFonts": [
+     "Wingdings-Regular"
+    ],
+    "glyph": "Wingdings 0xAB black five-pointed star"
+   },
+   "context": " DRM equal to the number inside the  symbol on the aircraft counter.<sup"
+  },
+  {
+   "id": "CHE-00424",
+   "rule": "symbol-font-glyph",
+   "class": "conversion-fix",
+   "baseLine": 853,
+   "before": "",
+   "after": "★",
+   "codePoint": "U+F0AB",
+   "result": "U+2605",
+   "evidence": {
+    "pdfPage": 239,
+    "pdfFonts": [
+     "Wingdings-Regular"
+    ],
+    "glyph": "Wingdings 0xAB black five-pointed star"
+   },
+   "context": "/sup> If the Final IFT DR is \\< the  Vehicle Kill Number, the aircraft i"
+  },
+  {
+   "id": "CHE-00425",
+   "rule": "symbol-font-glyph",
+   "class": "conversion-fix",
+   "baseLine": 853,
+   "before": "",
+   "after": "★",
+   "codePoint": "U+F0AB",
+   "result": "U+2605",
+   "evidence": {
+    "pdfPage": 239,
+    "pdfFonts": [
+     "Wingdings-Regular"
+    ],
+    "glyph": "Wingdings 0xAB black five-pointed star"
+   },
+   "context": "ted; if the Final IFT DR equals the  Vehicle Kill Number, the aircraft i"
+  },
+  {
+   "id": "CHE-00426",
+   "rule": "symbol-font-glyph",
+   "class": "conversion-fix",
+   "baseLine": 853,
+   "before": "",
+   "after": "★",
+   "codePoint": "U+F0AB",
+   "result": "U+2605",
+   "evidence": {
+    "pdfPage": 239,
+    "pdfFonts": [
+     "Wingdings-Regular"
+    ],
+    "glyph": "Wingdings 0xAB black five-pointed star"
+   },
+   "context": ". If the Final IFT DR is one \\> the  Vehicle Kill Number, the aircraft m"
+  },
+  {
+   "id": "CHE-00427",
+   "rule": "image-link-rebase",
+   "class": "markup-normalization",
+   "count": 63,
+   "before": "](images/",
+   "after": "](../../Rulebook_Markdown/images/"
+  }
+ ]
+}

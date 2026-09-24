@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "candidate-semantic-profile-not-admitted",
+  "candidateId": "asl-scenario-a1-occupied-candidate",
+  "sourceDecisionSha256": "75d6ec0573af0a251d6261515c7559237f71f9272453b53cc988567205936007",
+  "caseMatrixSha256": "3ee7eae916ebe39230bb4b2a634c796c745ca7debcdec3e5d553c60b9130902e",
+  "occupiedComparisonSha256": "c64fe3229d5a3541357fe6948ec037fcfbdbfde8810a599f21df81aed0a94bc5",
+  "caseCount": 9,
+  "rootSha256": "6c7a415db0e08c308e20afec9a079da5e700ca9b115794cab0d39c113861fdf5"
+}

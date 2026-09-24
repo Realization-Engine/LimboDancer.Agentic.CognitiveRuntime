@@ -1,0 +1,59 @@
+# Build outputs
+[Bb]in/
+[Oo]bj/
+[Aa]rtifacts/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+
+# IDE and user-specific state
+.vs/
+.idea/
+.vscode/
+.aspire/
+*.suo
+*.user
+*.userosscache
+*.rsuser
+*.sln.docstates
+*.DotSettings.user
+
+# Test, coverage, and benchmark output
+[Tt]est[Rr]esults*/
+coverage*.json
+coverage*.xml
+coverage*.info
+*.coverage
+*.coveragexml
+BenchmarkDotNet.Artifacts/
+
+# NuGet and package output
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nupkg
+*.snupkg
+*.nuget.props
+*.nuget.targets
+
+# Generated build metadata and logs
+*.binlog
+*.log
+*.tlog
+*.pdb
+*.cache
+project.assets.json
+project.nuget.cache
+*.runtimeconfig.json
+
+# Local-only configuration
+.env
+.env.*
+!.env.example
+appsettings.*.local.json
+
+# Operating-system files
+.DS_Store
+Thumbs.db

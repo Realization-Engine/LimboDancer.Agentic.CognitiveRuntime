@@ -1,0 +1,313 @@
+{
+  "schemaVersion": "1.0.0",
+  "registryId": "asl-easlrb-3.10-a-e",
+  "purpose": "Representative fragments awaiting comparison with the authoritative ASL 3.01 edition.",
+  "selectionPolicy": "First structural examples plus chapter coverage and selected chapter-local identifiers.",
+  "requiresAuthoritativeEditionComparison": true,
+  "fragments": [
+    {
+      "fragmentId": "asl-fragment:sha256:438ae51c8ec31b14f18a4d08c948633d11fa4082c540d19879678a92823da12d",
+      "sourceId": "asl-easlrb-3.10:contents",
+      "sourcePath": "docs/ASL/Rulebook_Markdown/00 - Table of Contents.md",
+      "sourceSha256": "dbe6b4395accd117d6c4a84796c11983243399cae5838c2a27abea1f4c7c59f9",
+      "kind": "heading",
+      "contentSha256": "4b7d4c14137d753945f5c501742192c603be41ed7cf4ab667cdb3634dd5043f4",
+      "locator": {
+        "startLine": 7,
+        "endLine": 7,
+        "startPage": 6,
+        "endPage": 6,
+        "headingPath": [
+          "A. INFANTRY AND OTHER BASIC GAME RULES"
+        ]
+      },
+      "dependencies": [],
+      "hasFootnoteMarkers": false,
+      "verificationStatus": "unverified"
+    },
+    {
+      "fragmentId": "asl-fragment:sha256:cbd613bb76f2441e376def3896143b8fde1a44bf4b45e28edcb858e8e1882c67",
+      "sourceId": "asl-easlrb-3.10:chapter-a",
+      "sourcePath": "docs/ASL/Rulebook_Markdown/02 - Chapter A - Infantry and Basic Game Rules.md",
+      "sourceSha256": "6347534e64f739cacc57dd75c3d604997723fd0b4988565609deeff007a8843d",
+      "kind": "ruleText",
+      "contentSha256": "4e2911a75893441f17751ce1058f61698ef6f5af29cbd00d391c370337236427",
+      "locator": {
+        "startLine": 23,
+        "endLine": 23,
+        "startPage": 43,
+        "endPage": 43,
+        "headingPath": [
+          "A. INFANTRY AND BASIC GAME RULES"
+        ],
+        "publishedElementId": "A.1",
+        "normalizedElementId": "A.1"
+      },
+      "dependencies": [],
+      "hasFootnoteMarkers": false,
+      "verificationStatus": "unverified"
+    },
+    {
+      "fragmentId": "asl-fragment:sha256:f608d6d1ca9db7c303a18b8539db3eb1a82a65ed737b18680794a6c27884d99c",
+      "sourceId": "asl-easlrb-3.10:chapter-a",
+      "sourcePath": "docs/ASL/Rulebook_Markdown/02 - Chapter A - Infantry and Basic Game Rules.md",
+      "sourceSha256": "6347534e64f739cacc57dd75c3d604997723fd0b4988565609deeff007a8843d",
+      "kind": "ruleContinuation",
+      "contentSha256": "108f6b1347357b2fa11710651553cdd485e39ce16d0b3627e99f0881287d95a7",
+      "locator": {
+        "startLine": 57,
+        "endLine": 57,
+        "startPage": 44,
+        "endPage": 44,
+        "headingPath": [
+          "A. INFANTRY AND BASIC GAME RULES",
+          "A.6 IN/INTO",
+          "A.8 ADJACENT"
+        ],
+        "publishedElementId": "A.12",
+        "normalizedElementId": "A.12"
+      },
+      "dependencies": [],
+      "hasFootnoteMarkers": false,
+      "verificationStatus": "unverified"
+    },
+    {
+      "fragmentId": "asl-fragment:sha256:aa21f1cac4b8a591e047d770cf24685c9ba5c9dfa1d24fee4b9f731bbdc61e68",
+      "sourceId": "asl-easlrb-3.10:contents",
+      "sourcePath": "docs/ASL/Rulebook_Markdown/00 - Table of Contents.md",
+      "sourceSha256": "dbe6b4395accd117d6c4a84796c11983243399cae5838c2a27abea1f4c7c59f9",
+      "kind": "figureReference",
+      "contentSha256": "5476e8afc091e18259ca047c5ceb43398f28e7eae6ab98199340533c46cf4b2c",
+      "locator": {
+        "startLine": 5,
+        "endLine": 5,
+        "startPage": 6,
+        "endPage": 6,
+        "headingPath": []
+      },
+      "dependencies": [
+        "images/eASLRB_v3_01-p6-1.png"
+      ],
+      "hasFootnoteMarkers": false,
+      "verificationStatus": "unverified"
+    },
+    {
+      "fragmentId": "asl-fragment:sha256:796a44ed35ecab405e61d408fd12aca7ce34bc40811013bf7cf5046f8ec84e32",
+      "sourceId": "asl-easlrb-3.10:contents",
+      "sourcePath": "docs/ASL/Rulebook_Markdown/00 - Table of Contents.md",
+      "sourceSha256": "dbe6b4395accd117d6c4a84796c11983243399cae5838c2a27abea1f4c7c59f9",
+      "kind": "structuredText",
+      "contentSha256": "6a82c6742f21a85def351c4c13998028ee1a8830d7efaef3c353f2dcb8f9a88e",
+      "locator": {
+        "startLine": 9,
+        "endLine": 23,
+        "startPage": 6,
+        "endPage": 6,
+        "headingPath": [
+          "A. INFANTRY AND OTHER BASIC GAME RULES"
+        ]
+      },
+      "dependencies": [],
+      "hasFootnoteMarkers": false,
+      "verificationStatus": "unverified"
+    },
+    {
+      "fragmentId": "asl-fragment:sha256:4dc9c4fad88efea27dea5b8d3b86153a5007263323b2dfe702e5c99b3844d1fe",
+      "sourceId": "asl-easlrb-3.10:contents",
+      "sourcePath": "docs/ASL/Rulebook_Markdown/00 - Table of Contents.md",
+      "sourceSha256": "dbe6b4395accd117d6c4a84796c11983243399cae5838c2a27abea1f4c7c59f9",
+      "kind": "paragraph",
+      "contentSha256": "bf3d3c293de1a42d84f0ba27bb6e24614af47e0604c0d7e1d77f94889f9c28fe",
+      "locator": {
+        "startLine": 3,
+        "endLine": 3,
+        "startPage": 6,
+        "endPage": 6,
+        "headingPath": []
+      },
+      "dependencies": [],
+      "hasFootnoteMarkers": false,
+      "verificationStatus": "unverified"
+    },
+    {
+      "fragmentId": "asl-fragment:sha256:9148ea214d5f95ad06d5ed3a7453800aa48f7eddb4d6f1dce1e4fb7110289857",
+      "sourceId": "asl-easlrb-3.10:chapter-b",
+      "sourcePath": "docs/ASL/Rulebook_Markdown/03 - Chapter B - Terrain.md",
+      "sourceSha256": "836b1ce5f845efd1c21250a9e6a39e4054ea9398f370305bc3771b6e7f826982",
+      "kind": "ruleText",
+      "contentSha256": "4f52c7b4e406b6b00a18985607aa769045a0efc924585d0724189b2fb92edf35",
+      "locator": {
+        "startLine": 28,
+        "endLine": 28,
+        "startPage": 112,
+        "endPage": 112,
+        "headingPath": [
+          "B. TERRAIN"
+        ],
+        "publishedElementId": "B.1",
+        "normalizedElementId": "B.1"
+      },
+      "dependencies": [],
+      "hasFootnoteMarkers": false,
+      "verificationStatus": "unverified"
+    },
+    {
+      "fragmentId": "asl-fragment:sha256:b62ecab3ea9ae88460fa67aba5aaf9911e10a81427a6039616ca40abaabfb29f",
+      "sourceId": "asl-easlrb-3.10:chapter-c",
+      "sourcePath": "docs/ASL/Rulebook_Markdown/04 - Chapter C - Ordnance and Offboard Artillery.md",
+      "sourceSha256": "71d0a1475709cb57feefb2f1d91b51e3b266b108d77696d83ef641e901b02337",
+      "kind": "ruleText",
+      "contentSha256": "331c7d89603441143270767c43fb4052da069494f9543c854fa7eee19fa24fa2",
+      "locator": {
+        "startLine": 18,
+        "endLine": 18,
+        "startPage": 162,
+        "endPage": 162,
+        "headingPath": [
+          "C. ORDNANCE & OFFBOARD ARTILLERY (OBA)"
+        ],
+        "publishedElementId": "C.1",
+        "normalizedElementId": "C.1"
+      },
+      "dependencies": [],
+      "hasFootnoteMarkers": false,
+      "verificationStatus": "unverified"
+    },
+    {
+      "fragmentId": "asl-fragment:sha256:3b0b8d0ee81cabdbf0d194dd9a1a421920703a35ad67a6e15a2971a1b96a749d",
+      "sourceId": "asl-easlrb-3.10:chapter-d",
+      "sourcePath": "docs/ASL/Rulebook_Markdown/05 - Chapter D - Vehicles.md",
+      "sourceSha256": "0324892377aa710961892034c960d718854055c0f936cb3cbc8dbc938bf10c36",
+      "kind": "ruleText",
+      "contentSha256": "5bdd30e052d910e44f7a4167610551635ce66ab1acb93480509e9ddad8ac1596",
+      "locator": {
+        "startLine": 18,
+        "endLine": 18,
+        "startPage": 192,
+        "endPage": 192,
+        "headingPath": [
+          "D. VEHICLES"
+        ],
+        "publishedElementId": "D.1",
+        "normalizedElementId": "D.1"
+      },
+      "dependencies": [],
+      "hasFootnoteMarkers": false,
+      "verificationStatus": "unverified"
+    },
+    {
+      "fragmentId": "asl-fragment:sha256:c85dd3252907f4ae4ee1d022b82bd96a86b7680477774750b059f4e8a5deb049",
+      "sourceId": "asl-easlrb-3.10:chapter-e",
+      "sourcePath": "docs/ASL/Rulebook_Markdown/06 - Chapter E - Miscellaneous.md",
+      "sourceSha256": "614b39baaefe491402f10b283ddef60ee205c2f62b94eb3a3e329a072e0fe7e7",
+      "kind": "ruleText",
+      "contentSha256": "8e6596aabd337f9de0aaee9b8b02408e3dab378f0d415e8eb4af80e6dc9880c1",
+      "locator": {
+        "startLine": 15,
+        "endLine": 15,
+        "startPage": 222,
+        "endPage": 222,
+        "headingPath": [
+          "E. MISCELLANEOUS"
+        ],
+        "publishedElementId": "E.1",
+        "normalizedElementId": "E.1"
+      },
+      "dependencies": [],
+      "hasFootnoteMarkers": false,
+      "verificationStatus": "unverified"
+    },
+    {
+      "fragmentId": "asl-fragment:sha256:c387f64ad3a9e9ed918099ca4d8396bb9e9307e95b07ce5f140efcbdd2fa0cef",
+      "sourceId": "asl-easlrb-3.10:chapter-a",
+      "sourcePath": "docs/ASL/Rulebook_Markdown/02 - Chapter A - Infantry and Basic Game Rules.md",
+      "sourceSha256": "6347534e64f739cacc57dd75c3d604997723fd0b4988565609deeff007a8843d",
+      "kind": "ruleText",
+      "contentSha256": "ce00461ab974c873440e42fc9b6e38ec8cd860d21c92e95ad5b3054042c93f78",
+      "locator": {
+        "startLine": 81,
+        "endLine": 81,
+        "startPage": 44,
+        "endPage": 44,
+        "headingPath": [
+          "A. INFANTRY AND BASIC GAME RULES",
+          "1. PERSONNEL COUNTERS"
+        ],
+        "publishedElementId": "1.1",
+        "normalizedElementId": "A1.1"
+      },
+      "dependencies": [],
+      "hasFootnoteMarkers": false,
+      "verificationStatus": "unverified"
+    },
+    {
+      "fragmentId": "asl-fragment:sha256:50f711bfa7540bdec715cac06e6dc833de6c73bdaed4a494dff7efe6b84fb6e5",
+      "sourceId": "asl-easlrb-3.10:chapter-b",
+      "sourcePath": "docs/ASL/Rulebook_Markdown/03 - Chapter B - Terrain.md",
+      "sourceSha256": "836b1ce5f845efd1c21250a9e6a39e4054ea9398f370305bc3771b6e7f826982",
+      "kind": "ruleText",
+      "contentSha256": "335ae3bc3793d6c1fdf4f158f6f20db8253d081b1684dfab5be0b2b1b0f774fa",
+      "locator": {
+        "startLine": 72,
+        "endLine": 72,
+        "startPage": 113,
+        "endPage": 113,
+        "headingPath": [
+          "B. TERRAIN",
+          "1. OPEN GROUND",
+          "1.1"
+        ],
+        "publishedElementId": "1.13",
+        "normalizedElementId": "B1.13"
+      },
+      "dependencies": [],
+      "hasFootnoteMarkers": false,
+      "verificationStatus": "unverified"
+    },
+    {
+      "fragmentId": "asl-fragment:sha256:648a4994b69182e84d9e6e7ba26b0ded294644ac92853e56df532d1dcc5c2815",
+      "sourceId": "asl-easlrb-3.10:chapter-c",
+      "sourcePath": "docs/ASL/Rulebook_Markdown/04 - Chapter C - Ordnance and Offboard Artillery.md",
+      "sourceSha256": "71d0a1475709cb57feefb2f1d91b51e3b266b108d77696d83ef641e901b02337",
+      "kind": "ruleText",
+      "contentSha256": "6df117e2bf784568f48d20c19ca18809bde79a7ab4650f0844546e7fdd2dd11f",
+      "locator": {
+        "startLine": 54,
+        "endLine": 54,
+        "startPage": 163,
+        "endPage": 163,
+        "headingPath": [
+          "C. ORDNANCE & OFFBOARD ARTILLERY (OBA)",
+          "1. OFFBOARD ARTILLERY (OBA)",
+          "1.1"
+        ],
+        "publishedElementId": "1.2",
+        "normalizedElementId": "C1.2"
+      },
+      "dependencies": [],
+      "hasFootnoteMarkers": true,
+      "verificationStatus": "unverified"
+    },
+    {
+      "fragmentId": "asl-fragment:sha256:f97561fc52e3c71c50a2d443bcc9cc270888897ef9e404e93be7222da157b709",
+      "sourceId": "asl-easlrb-3.10:index-glossary",
+      "sourcePath": "docs/ASL/Rulebook_Markdown/01 - Index and Glossary.md",
+      "sourceSha256": "8e1a686a2664af4ea12e6a57580999d2baf47c8770719426766abe88059f9652",
+      "kind": "paragraph",
+      "contentSha256": "37a972c311ab377257d01ba302a1e7a3196b676ab95e0f7829bb855ea20d1170",
+      "locator": {
+        "startLine": 15,
+        "endLine": 15,
+        "startPage": 11,
+        "endPage": 11,
+        "headingPath": [
+          "INDEX & GLOSSARY:",
+          "A"
+        ]
+      },
+      "dependencies": [],
+      "hasFootnoteMarkers": true,
+      "verificationStatus": "unverified"
+    }
+  ]
+}

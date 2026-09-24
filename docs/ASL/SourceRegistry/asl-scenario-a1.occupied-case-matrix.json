@@ -1,0 +1,435 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "user-delegated-xunit-review-bounded",
+  "sourceDecision": "asl-scenario-a1.first-case-review-decision.json",
+  "caseScope": "Known Infantry squad and a particular building Location; no SSR or unmodeled movement modifier unless explicitly stated by a case. A case is an input contract, not an inference from board state.",
+  "cases": [
+    {
+      "caseId": "A1-empty-ordinary-mph",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "eligible-2mf",
+      "sourceRules": [
+        "A2.4",
+        "A2.8",
+        "A3.3",
+        "A4.1",
+        "A4.11",
+        "A4.13",
+        "A4.14",
+        "A5.1",
+        "A5.11",
+        "B23.1",
+        "B23.4"
+      ],
+      "supplements": [
+        "asl-supplement:b-terrain-chart-building-entry"
+      ],
+      "declaredFacts": "The nine true facts in the first-case decision, including known empty ground-level ordinary wooden or stone building, sufficient MF, normal stacking and no special modifier.",
+      "reason": "Only the previously accepted synthetic first case.",
+      "predicates": [
+        {
+          "key": "canMove",
+          "equals": "true"
+        },
+        {
+          "key": "location",
+          "equals": "adjacentGroundLevelOrdinaryBuilding"
+        },
+        {
+          "key": "occupancy",
+          "equals": "knownEmpty"
+        },
+        {
+          "key": "phase",
+          "equals": "mph"
+        },
+        {
+          "key": "remainingMf",
+          "equals": "atLeastTwo"
+        },
+        {
+          "key": "roadBypassElevationAdditionalTerrain",
+          "equals": "none"
+        },
+        {
+          "key": "specialModifier",
+          "equals": "none"
+        },
+        {
+          "key": "stacking",
+          "equals": "belowNormalLimit"
+        },
+        {
+          "key": "unit",
+          "equals": "knownGoodOrderInfantrySquad"
+        }
+      ]
+    },
+    {
+      "caseId": "A1-known-enemy-mmc-mph",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "prohibited",
+      "sourceRules": [
+        "A2.8",
+        "A4.14"
+      ],
+      "supplements": [],
+      "declaredFacts": "Known unconcealed armed enemy MMC in the same destination Location during MPh; ordinary Infantry movement; none of the A4.14 exceptions (Berserk, Human Wave, Disrupted, Unarmed, Infantry OVR, PRC or charging Cavalry) applies.",
+      "reason": "A4.14 bars ordinary MPh entry into the same Location with an unconcealed enemy; its listed exceptions are explicitly excluded.",
+      "predicates": [
+        {
+          "key": "a414Exception",
+          "equals": "none"
+        },
+        {
+          "key": "location",
+          "equals": "knownBuildingLocation"
+        },
+        {
+          "key": "occupancy",
+          "equals": "knownUnconcealedEnemyMmc"
+        },
+        {
+          "key": "phase",
+          "equals": "mph"
+        },
+        {
+          "key": "specialModifier",
+          "equals": "none"
+        },
+        {
+          "key": "unit",
+          "equals": "ordinaryInfantry"
+        }
+      ]
+    },
+    {
+      "caseId": "A1-fortified-unbreached-enemy-squad",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "prohibited",
+      "sourceRules": [
+        "A2.8",
+        "A4.14",
+        "B23.922",
+        "B23.9221"
+      ],
+      "supplements": [],
+      "declaredFacts": "Fortified target Location contains a known unpinned Good Order armed enemy squad; entry hexside and level are unbreached; no A4.14 exception or special scenario modifier.",
+      "reason": "B23.922 bars entry under these facts; its breach exception B23.9221 is absent. The known enemy independently triggers A4.14 during MPh.",
+      "predicates": [
+        {
+          "key": "a414Exception",
+          "equals": "none"
+        },
+        {
+          "key": "breach",
+          "equals": "noneAtEntryHexsideAndLevel"
+        },
+        {
+          "key": "location",
+          "equals": "knownFortifiedBuildingLocation"
+        },
+        {
+          "key": "occupancy",
+          "equals": "knownUnpinnedGoodOrderArmedEnemySquad"
+        },
+        {
+          "key": "phase",
+          "equals": "mph"
+        },
+        {
+          "key": "specialModifier",
+          "equals": "none"
+        },
+        {
+          "key": "unit",
+          "equals": "ordinaryInfantry"
+        }
+      ]
+    },
+    {
+      "caseId": "A1-concealed-occupancy-attempt",
+      "reviewStatus": "reviewed-nondefinitive",
+      "expectedDisposition": "indeterminate",
+      "sourceRules": [
+        "A4.14",
+        "A12.15"
+      ],
+      "supplements": [],
+      "declaredFacts": "Target has a concealed or hidden occupant whose identity is not yet established; no defender reveal, Dummy determination or overrun election is supplied.",
+      "reason": "A12.15 describes detection and forced-back consequences; the required reveal and any follow-on exception cannot be inferred before resolution.",
+      "predicates": []
+    },
+    {
+      "caseId": "A1-single-known-enemy-smc-overrun",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "qualified-overrun-entry-attempt-4mf",
+      "sourceRules": [
+        "A2.8",
+        "A4.13",
+        "A4.14",
+        "A4.15",
+        "A4.151",
+        "A4.152",
+        "B23.4"
+      ],
+      "supplements": [
+        "asl-supplement:b-terrain-chart-building-entry"
+      ],
+      "declaredFacts": "Good Order Infantry MMC during its MPh attempts ordinary ground-level building entry against exactly one Known enemy SMC not in an AFV; its own NTC has passed, it has at least four MF for double the reviewed 2-MF cost, no other occupant or modifier is present, and SMC response/CC have not yet resolved.",
+      "reason": "A4.15 makes the entry attempt eligible after a passed NTC and double entry cost; A4.151/A4.152 preserve subsequent defender and CC resolution. This is a qualified permission to attempt entry, not a conclusion that movement succeeds or occupancy changes.",
+      "predicates": [
+        {
+          "key": "canMove",
+          "equals": "true"
+        },
+        {
+          "key": "defensiveResponse",
+          "equals": "unresolved"
+        },
+        {
+          "key": "location",
+          "equals": "adjacentGroundLevelOrdinaryBuilding"
+        },
+        {
+          "key": "ntc",
+          "equals": "passedByMovingMmc"
+        },
+        {
+          "key": "occupancy",
+          "equals": "exactlyOneKnownEnemySmc"
+        },
+        {
+          "key": "otherOccupants",
+          "equals": "none"
+        },
+        {
+          "key": "phase",
+          "equals": "mph"
+        },
+        {
+          "key": "remainingMf",
+          "equals": "atLeastFour"
+        },
+        {
+          "key": "roadBypassElevationAdditionalTerrain",
+          "equals": "none"
+        },
+        {
+          "key": "smcInAfv",
+          "equals": "false"
+        },
+        {
+          "key": "specialModifier",
+          "equals": "none"
+        },
+        {
+          "key": "unit",
+          "equals": "knownGoodOrderInfantryMmc"
+        }
+      ]
+    },
+    {
+      "caseId": "A1-fortified-breached-entry",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "qualified-breached-advance-attempt",
+      "sourceRules": [
+        "A4.14",
+        "A4.7",
+        "B23.922",
+        "B23.9221",
+        "B23.711"
+      ],
+      "supplements": [],
+      "declaredFacts": "Good Order unpinned Infantry makes a one-hex horizontal APh advance across the exact breached hexside at the same level into a Fortified Building Location containing a known unpinned Good Order armed enemy squad. The breach counter is already validly placed and points to that hexside; no other defender, terrain restriction, SSR, portage or CX applies; subsequent CC is unresolved.",
+      "reason": "B23.9221 permits entry through the breached hexside and level as for any building; A4.14 allows enemy-occupied APh entry and A4.7 permits this one-hex advance. This qualifies an attempt only, not successful occupancy or CC resolution.",
+      "predicates": [
+        {
+          "key": "advance",
+          "equals": "oneHorizontalHexSameLevel"
+        },
+        {
+          "key": "breach",
+          "equals": "validCounterAtCrossedHexsideAndLevel"
+        },
+        {
+          "key": "closeCombat",
+          "equals": "unresolved"
+        },
+        {
+          "key": "cx",
+          "equals": "false"
+        },
+        {
+          "key": "location",
+          "equals": "fortifiedBuilding"
+        },
+        {
+          "key": "occupancy",
+          "equals": "exactlyOneKnownUnpinnedGoodOrderArmedEnemySquad"
+        },
+        {
+          "key": "otherOccupants",
+          "equals": "none"
+        },
+        {
+          "key": "phase",
+          "equals": "aph"
+        },
+        {
+          "key": "portage",
+          "equals": "none"
+        },
+        {
+          "key": "specialModifier",
+          "equals": "none"
+        },
+        {
+          "key": "unit",
+          "equals": "goodOrderUnpinnedInfantry"
+        }
+      ]
+    },
+    {
+      "caseId": "A1-stacking-equivalents-needed",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "eligible-3mf-with-overstack-penalty",
+      "sourceRules": [
+        "A5.1",
+        "A5.11",
+        "A5.5",
+        "B23.4"
+      ],
+      "supplements": [],
+      "declaredFacts": "Ordinary ground-level building contains two friendly squads and one friendly unmanned crew or half-squad at the same Location, zero SMC and no enemy or vehicle. One ordinary Infantry squad enters during MPh with at least three MF. No Gun is manned, special terrain, SSR, portage or other modifier applies.",
+      "reason": "A5.5 makes the crew or half-squad one half equivalent; after the entering squad the friendly total is 3.5 equivalents. A5.11 rounds the excess half squad up to one extra MF, added to the reviewed ordinary building 2 MF.",
+      "predicates": [
+        {
+          "key": "friendlySmc",
+          "equals": "0"
+        },
+        {
+          "key": "friendlySquads",
+          "equals": "2"
+        },
+        {
+          "key": "friendlyUnmannedCrewsOrHalfSquads",
+          "equals": "1"
+        },
+        {
+          "key": "incomingSquads",
+          "equals": "1"
+        },
+        {
+          "key": "location",
+          "equals": "adjacentGroundLevelOrdinaryBuilding"
+        },
+        {
+          "key": "mannedGun",
+          "equals": "none"
+        },
+        {
+          "key": "occupancy",
+          "equals": "knownFriendlyOnly"
+        },
+        {
+          "key": "phase",
+          "equals": "mph"
+        },
+        {
+          "key": "remainingMf",
+          "equals": "atLeastThree"
+        },
+        {
+          "key": "roadBypassElevationAdditionalTerrain",
+          "equals": "none"
+        },
+        {
+          "key": "specialModifier",
+          "equals": "none"
+        },
+        {
+          "key": "unit",
+          "equals": "ordinaryInfantrySquad"
+        },
+        {
+          "key": "vehicles",
+          "equals": "none"
+        }
+      ]
+    },
+    {
+      "caseId": "A1-advance-phase-entry",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "qualified-advance-entry-attempt",
+      "sourceRules": [
+        "A4.14",
+        "A4.7"
+      ],
+      "supplements": [],
+      "declaredFacts": "Good Order unpinned Infantry without a CC or TI marker advances one hex horizontally during APh into the same ordinary building Location as exactly one known unconcealed enemy MMC. No difficult terrain, CX, portage, SSR, fortified building, vehicle or other occupant; CC remains unresolved.",
+      "reason": "A4.7 permits a single horizontal advance by this unit and A4.14 permits entry with an unconcealed enemy during APh. This qualifies the advance attempt without deciding CC or ultimate occupancy.",
+      "predicates": [
+        {
+          "key": "advance",
+          "equals": "oneHorizontalHex"
+        },
+        {
+          "key": "closeCombat",
+          "equals": "unresolved"
+        },
+        {
+          "key": "cx",
+          "equals": "false"
+        },
+        {
+          "key": "difficultTerrain",
+          "equals": "false"
+        },
+        {
+          "key": "location",
+          "equals": "ordinaryBuilding"
+        },
+        {
+          "key": "occupancy",
+          "equals": "exactlyOneKnownUnconcealedEnemyMmc"
+        },
+        {
+          "key": "otherOccupants",
+          "equals": "none"
+        },
+        {
+          "key": "phase",
+          "equals": "aph"
+        },
+        {
+          "key": "portage",
+          "equals": "none"
+        },
+        {
+          "key": "specialModifier",
+          "equals": "none"
+        },
+        {
+          "key": "unit",
+          "equals": "goodOrderUnpinnedInfantryWithoutTiOrCc"
+        }
+      ]
+    },
+    {
+      "caseId": "A1-unknown-location-or-modifier",
+      "reviewStatus": "reviewed-nondefinitive",
+      "expectedDisposition": "indeterminate",
+      "sourceRules": [
+        "A2.8",
+        "A4.14"
+      ],
+      "supplements": [],
+      "declaredFacts": "Location identity, occupancy or scenario modifier is unknown or contradictory.",
+      "reason": "No definitive ruling can inherit the declared case when a controlling fact is unknown.",
+      "predicates": []
+    }
+  ],
+  "occupiedSourceComparison": "asl-scenario-a1.occupied-pdf-comparison.json",
+  "semanticProfile": "bounded-exact-case-predicates-v1"
+}

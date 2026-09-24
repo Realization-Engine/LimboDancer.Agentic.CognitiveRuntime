@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:limbodancer:asl:tir:curated-review-bundle:schema:1.1.0",
+  "title": "ASL Curated Review History Bundle",
+  "description": "Reproducible non-accepting opening or rejection history over an exact curated submission.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaId", "schemaVersion", "canonicalization", "submission", "submissionBundleSha256", "transitions", "reviewStatus", "formalizationStatus", "createdAt", "createdAtSource", "bundleSha256"],
+  "properties": {
+    "schemaId": {"const": "urn:limbodancer:asl:tir:curated-review-bundle:schema:1.1.0"},
+    "schemaVersion": {"const": "1.1.0"},
+    "canonicalization": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": {"const": "asl-tir-curated-review-bundle-canonical-json"},
+        "version": {"const": "1.1.0"}
+      }
+    },
+    "submission": {"$ref": "urn:limbodancer:asl:tir:curated-review-bundle:schema:1.0.0"},
+    "submissionBundleSha256": {"$ref": "#/$defs/sha256"},
+    "transitions": {
+      "type": "array", "minItems": 1, "maxItems": 2,
+      "items": {"$ref": "urn:limbodancer:asl:tir:curated-review-transition:schema:1.0.0"}
+    },
+    "reviewStatus": {"enum": ["in-review", "rejected"]},
+    "formalizationStatus": {"const": "unmodeled"},
+    "createdAt": {"type": "string", "format": "date-time", "pattern": "Z$"},
+    "createdAtSource": {"type": "string", "minLength": 1, "pattern": "\\S"},
+    "bundleSha256": {"$ref": "#/$defs/sha256"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"reviewStatus": {"const": "in-review"}}},
+      "then": {"properties": {"transitions": {"maxItems": 1}}}
+    },
+    {
+      "if": {"properties": {"reviewStatus": {"const": "rejected"}}},
+      "then": {"properties": {"transitions": {"minItems": 2}}}
+    }
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

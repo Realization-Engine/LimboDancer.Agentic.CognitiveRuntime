@@ -1,0 +1,469 @@
+# LimboDancer.Agentic.CognitiveRuntime ASL-OT-02 TIR Schema and Deterministic Extraction Design
+
+**Status:** Approved; implementation complete under the ASL-OT-02 TIR Review
+
+**Date:** 2026-09-23  
+**Branch:** `decision-plane`  
+**Implementation language:** C# on the repository's current .NET baseline  
+**Governing authority:** ASL Ontology Transformation Specification, Domain Integration Model, and ASL-OT-01 Source Registry Review
+
+## 1. Purpose
+
+This document preserves the design boundary for `ASL-OT-02`: the Transformation Intermediate Representation (`TIR`) schema and deterministic extraction of ASL rulebook structure.
+
+ASL-OT-02 is the bridge between locating exact source evidence and proposing reviewed ontology semantics. Its governing rule is:
+
+> The TIR records what can be established mechanically about source structure, identity, boundaries, and explicit references. It does not turn prose into executable semantics.
+
+This slice defines a C# authoring implementation. It does not add ASL vocabulary or authoring responsibilities to `LimboDancer.Abstractions` or `LimboDancer.Runtime`, publish an ontology package, or create runtime authority.
+
+## 2. Architectural position
+
+The transformation layers remain distinct:
+
+| Layer | What it knows | Authority |
+| --- | --- | --- |
+| Source registry | Which files and images constitute the pinned source edition | Source identity only |
+| Source fragment | Exact source bytes, location, page, heading path, and dependencies | Evidence only |
+| TIR artifact | Structural role, published identity, hierarchy, boundaries, and explicit references | Authoring proposal |
+| Curated semantic artifact | Reviewed entities, conditions, effects, exceptions, and relations | Accepted only after review |
+| Published package | Immutable accepted semantic artifacts | Runtime-resolvable domain authority |
+
+For example, a fragment may establish that exact lines occur on a page, carry local published identifier `1.13`, appear in Chapter B, and mention another rule or figure. A TIR artifact may then record that the source structurally presents a Rule, preserve `1.13`, retain separate normalized identifier `B1.13`, attach ordered fragments, identify a supported parent candidate, and capture explicit reference occurrences.
+
+The TIR may not yet claim the formal condition, effect, exception status, precedence, or Scenario A1 consequence of that wording.
+
+```text
+registered sources
+-> immutable fragments
+-> deterministic structural extraction
+-> captured TIR artifacts
+-> ASL-OT-03 validation and review
+-> ASL-OT-04 semantic curation
+```
+
+Without this boundary, Markdown extraction, semantic interpretation, and acceptance would be collapsed into one unauditable operation.
+
+## 3. C# implementation decision
+
+The repository's implementation language is C#. ASL-OT-02 MUST therefore be implemented as C#/.NET authoring code and tests.
+
+The former Python package under `utils/asl_ot` was used to establish the first ASL-OT-01 source-registry and fragment-locator evidence. Its behavior was ported to the isolated `src/ASL/` C# authoring solution, with committed-manifest and representative-case parity tests. The committed JSON manifests and approved review remain valid, language-neutral artifacts.
+
+ASL-OT-02 MUST NOT introduce a production or CI dependency on Python. The C# implementation of the required ASL-OT-01 registry generation and fragment-location behavior is the normative baseline. `utils/pdf_to_markdown.py` remains an outside conversion utility and is not an implementation precedent for authoring or runtime code.
+
+The authoring implementation belongs outside the runtime kernel. The established boundary is the separate `src/ASL/LimboDancer.Domains.Asl.sln`, containing the ASL-owned `LimboDancer.Domains.Asl.Authoring` library, its focused test project, and the `LimboDancer.Domains.Asl.Authoring.Cli` operator entry point used to regenerate committed manifests. ASL-OT-02 extends these projects rather than adding ASL types to the runtime solution. The permanent dependency rules are:
+
+1. `LimboDancer.Runtime` MUST NOT reference the ASL authoring project.
+2. `LimboDancer.Abstractions` MUST NOT contain TIR or extraction types.
+3. The ASL authoring project MAY use domain-neutral value concepts only where an already admitted contract is genuinely required.
+4. Source parsing, TIR schema types, canonical serialization, diagnostics, and authoring provenance remain ASL-owned.
+5. Removing the ASL authoring project MUST leave the runtime build and conformance suite intact.
+
+The C# implementation should use `System.Text.Json`, `System.Security.Cryptography`, and other base-class-library facilities unless a dependency is justified and reviewed.
+
+## 4. Inputs inherited from ASL-OT-01
+
+ASL-OT-02 consumes the approved ASL-OT-01 evidence boundary:
+
+- seven registered Markdown artifacts;
+- 661 registered image artifacts;
+- pinned source commit and converter hash;
+- whole-file SHA-256 values and byte sizes;
+- structural fragment kinds;
+- source, line, page, and heading-path locators;
+- exact fragment content hashes;
+- preserved published identifiers and separate chapter-normalized identifiers;
+- image dependencies and footnote markers; and
+- explicit `unverified` source-verification status.
+
+The C# implementation MUST reject a changed, incomplete, or incompatible registry rather than reinterpret it silently. It MUST preserve the original fragment identities and exact source hashes.
+
+## 5. ASL-OT-02 extraction scope
+
+The complete TIR schema will describe the artifact kinds required by the governing specification. Deterministic extraction will initially populate only fields supported by source structure.
+
+### 5.1 Source evidence
+
+Each registered fragment is represented by or referenced through a `SourceFragment` TIR artifact. Generated TIR files SHOULD NOT duplicate the complete rulebook text. Ordered fragment identities, locators, and hashes must make the exact wording recoverable from the registered source.
+
+### 5.2 Structural Rule artifacts
+
+For each mechanically recognized rule identifier, the extractor creates a structural `Rule` artifact containing:
+
+- stable authoring artifact identity;
+- exact published identifier;
+- separate chapter-normalized identifier;
+- ordered source-fragment references;
+- page and heading context;
+- direct-parent candidate and its evidence;
+- sibling order where supported;
+- explicit dependencies; and
+- captured extraction provenance and diagnostics.
+
+Calling the artifact a `Rule` means that the source structurally presents it as a rule. It does not mean that the rule's semantics have been formalized.
+
+An extracted Rule begins with:
+
+```json
+{
+  "origin": "extracted",
+  "formalizationStatus": "unmodeled",
+  "reviewStatus": "captured",
+  "semanticId": null
+}
+```
+
+ASL-OT-02 MUST NOT advance an artifact to `proposed`, `in-review`, `validated`, or `accepted`.
+
+### 5.3 Hierarchy
+
+Hierarchy may be derived only from documented structural evidence, including:
+
+- published identifier structure;
+- chapter context;
+- heading path; and
+- source ordering.
+
+Each hierarchy relationship records its basis. When these signals disagree, the extractor records an unresolved diagnostic rather than guessing.
+
+The output distinguishes:
+
+- supported direct parent;
+- parent candidate requiring review;
+- missing parent;
+- duplicate normalized identifier;
+- ambiguous hierarchy; and
+- illegal cycle.
+
+ASL-OT-02 detects and reports structural defects. ASL-OT-03 defines the review and acceptance workflow that resolves them.
+
+### 5.4 Cross-reference occurrences
+
+The extractor captures explicit reference occurrences with:
+
+- exact reference text;
+- containing fragment and line location;
+- chapter context;
+- normalized target candidate;
+- resolution status: `resolved`, `ambiguous`, `missing`, or `unresolved`;
+- resolved target artifact identity when unique; and
+- figure, table, or footnote dependencies.
+
+The extractor MUST NOT infer implicit references such as pronouns, “the preceding rule,” or a semantic relationship absent from the source. A structural reference may resolve to `B1.13` without asserting that the relationship is an exception, prerequisite, clarification, or precedence rule.
+
+### 5.5 Structured source boundaries
+
+The extractor recognizes boundaries already supported by source evidence:
+
+- headings;
+- rule text;
+- rule continuations;
+- explicit examples;
+- table or chart blocks;
+- figure references;
+- footnote-bearing material; and
+- ordinary paragraphs.
+
+A `Table` artifact at this stage may identify its source boundary, ordered fragments, notes, and image dependencies. It MUST NOT claim that headers, axes, cells, or continuation structure are authoritative until reconstruction and review have occurred.
+
+Examples remain distinguishable from normative rules and cannot create general semantics.
+
+## 6. TIR document and artifact profile
+
+The canonical TIR document should contain:
+
+- TIR schema identifier and version;
+- candidate package identity;
+- source-registry identity and digest;
+- source commit;
+- extractor identity, assembly version, and configuration digest;
+- canonical serialization profile;
+- deterministically ordered artifacts;
+- extraction diagnostics summary; and
+- document digest calculated over the canonical payload.
+
+Every artifact carries the common envelope required by the transformation specification:
+
+| Field | ASL-OT-02 interpretation |
+| --- | --- |
+| `artifactId` | Deterministic authoring identity, stable for unchanged structural evidence. |
+| `artifactKind` | One declared TIR artifact kind. |
+| `packageCandidate` | Candidate identity only; never a published package reference. |
+| `publishedId` | Exact identifier as presented by the source. |
+| `normalizedPublishedId` | Separate chapter-aware identifier used for deterministic resolution. |
+| `semanticId` | `null` unless a later curated step assigns one. |
+| `sourceFragments` | Ordered fragment identities, locators, and hashes. |
+| `dependencies` | Typed source or artifact dependencies supported by evidence. |
+| `origin` | `extracted` for deterministic output. |
+| `formalizationStatus` | `unmodeled` for structural extraction. |
+| `reviewStatus` | `captured` for structural extraction. |
+| `confidence` | Structural extraction signal only; never semantic authority. |
+| `confidenceBasis` | Machine-readable reason for the structural confidence value. |
+| `createdBy` | Extractor assembly, version, configuration, and source revision. |
+| `createdAt` | Reproducible provenance value supplied under section 7.3. |
+| `reviewRecordRefs` | Empty during ASL-OT-02. |
+
+Artifact-kind payloads are discriminated C# records or classes. The canonical JSON representation is the interchange and review artifact; C# type names are not semantic identifiers and MUST NOT leak into published identity.
+
+## 7. Determinism, identity, and canonical serialization
+
+### 7.1 Artifact identity
+
+`artifactId` is derived deterministically from:
+
+- artifact kind;
+- registered source identity;
+- published or normalized structural identity when present;
+- ordered source-fragment identities; and
+- a deterministic disambiguator when several artifacts share a boundary.
+
+It MUST NOT depend on enumeration order, database keys, wall-clock time, random values, C# type names, or mutable display text.
+
+### 7.2 Canonical JSON
+
+The implementation MUST define one canonical UTF-8 JSON profile with:
+
+- fixed property order;
+- fixed artifact and dependency ordering;
+- ordinal string comparison;
+- invariant formatting;
+- explicit null policy;
+- LF line endings; and
+- no platform-dependent values.
+
+The implementation should use an explicit canonical writer rather than assume the default `System.Text.Json` object traversal is a hashing contract. SHA-256 digests are calculated over canonical UTF-8 bytes.
+
+Given identical registry, sources, extractor version, schema version, configuration, and reproducible build metadata, the extractor produces identical artifact identities, hierarchy, reference states, ordering, canonical bytes, diagnostics, and digest.
+
+### 7.3 Time metadata
+
+A wall-clock timestamp would make identical extraction output differ. `createdAt` MUST therefore be supplied as reproducible build metadata and excluded from identity derivation. The extraction run records the supplied timestamp and its source. CI regeneration uses the committed build value or another explicitly fixed value.
+
+Volatile operator-run timestamps belong in a non-canonical run report, not in the hashed TIR payload.
+
+### 7.4 Confidence
+
+Confidence reports structural extraction quality only. It should be accompanied by a finite, declared basis such as:
+
+- exact published-identifier match;
+- chapter-local identifier normalized from registered context;
+- heading-supported boundary;
+- reference-pattern candidate;
+- ambiguous structural evidence; or
+- manual structural correction.
+
+High extraction confidence does not raise `formalizationStatus` and does not establish semantic correctness.
+
+## 8. Diagnostics and fail-closed behavior
+
+The extractor emits a deterministic diagnostics report that includes at least:
+
+- duplicate identifiers;
+- malformed identifiers;
+- missing, ambiguous, or conflicting parents;
+- hierarchy cycles;
+- unresolved, missing, and ambiguous references;
+- discontinuous or cross-page Rule boundaries;
+- table and figure dependencies;
+- footnote-bearing fragments;
+- unclassified structural material;
+- registry or fragment hash incompatibility; and
+- canonical serialization or identity collisions.
+
+Declining to classify is a correct result. The extractor MUST fail closed when source identity, hashes, schema version, required dependencies, or canonical identity are invalid. Ordinary unresolved semantics remain captured diagnostics and do not become fabricated values.
+
+## 9. Explicit exclusions
+
+ASL-OT-02 does not:
+
+- extract formal conditions or effects from prose;
+- determine that prose is legally controlling;
+- infer exception status or precedence;
+- promote examples into normative rules;
+- treat an unreviewed table reconstruction as authoritative;
+- correct or normalize source wording silently;
+- assign accepted semantic identities;
+- publish an ontology or domain package;
+- create a `DomainConclusion`;
+- add ASL dependencies to the runtime kernel;
+- introduce graph, vector, LLM, or classifier authority;
+- implement provider evaluation; or
+- grant execution authority.
+
+A probabilistic system may later propose annotations, but proposals remain distinguishable, reproducible evidence and require the ASL-OT-03 review path.
+
+## 10. Expected implementation deliverables
+
+ASL-OT-02 should deliver:
+
+1. versioned TIR JSON Schema;
+2. ASL-owned C# TIR envelope and discriminated artifact types;
+3. use of the established C# source-registry and fragment-locator implementation;
+4. deterministic C# structural extractor;
+5. canonical JSON writer and digest calculator;
+6. complete metadata-focused Chapters A-E TIR output;
+7. deterministic extraction diagnostics report;
+8. representative verification sample;
+9. unit and conformance tests;
+10. `ASL-OT-02 TIR Review` document; and
+11. .NET CI coverage for the authoring project.
+
+The C# ASL Authoring CI is already normative for ASL-OT-01 behavior. ASL-OT-02 extends that path with extraction and reproducibility tests; it does not restore a Python authoring dependency.
+
+## 11. Test requirements
+
+The C# test suite must prove:
+
+- committed ASL-OT-01 registry and representative fragments deserialize without loss;
+- C# fragment identity and locator behavior match the approved cases;
+- changed or missing source bytes fail closed;
+- chapter-local identifiers normalize without overwriting published identity;
+- repeated extraction produces identical canonical bytes and hashes;
+- filesystem and collection enumeration order do not affect output;
+- Rule boundaries retain ordered fragments and dependencies;
+- supported hierarchy is reproducible;
+- missing parents, duplicates, and cycles are diagnosed;
+- references resolve only when structurally unique;
+- ambiguous and missing references remain explicit;
+- figures, tables, footnotes, and examples retain their structural distinctions;
+- extracted artifacts remain `unmodeled` and `captured`;
+- no automatic Condition, Effect, Exception, or accepted semantic artifact is fabricated;
+- no TIR or ASL authoring dependency enters `LimboDancer.Abstractions` or `LimboDancer.Runtime`; and
+- generated artifacts reproduce on the repository's supported CI environment.
+
+## 12. Completion and review boundary
+
+ASL-OT-02 is complete when the repository can truthfully state:
+
+> Given the pinned ASL 3.01 Chapters A-E sources, the C# authoring implementation reproducibly describes structural elements, hierarchy, explicit identifiers, reference occurrences, and source boundaries while preserving exact provenance and marking all unformalized meaning honestly.
+
+ASL-OT-02 is not complete merely because the extractor can answer ASL questions or generate plausible ontology objects. It does not answer ASL rules questions.
+
+ASL-OT-03 follows by defining identity, structure, provenance, formalization, review-state, and human-adjudication gates. ASL-OT-04 then curates the minimum accepted semantic artifacts for Scenario A1. No later slice begins automatically when this implementation completes.
+
+## 13. Admission checkpoint
+
+Before implementation begins, the ASL-OT-02 change should confirm:
+
+1. C# project and solution placement outside the runtime kernel;
+2. TIR schema version and namespace;
+3. artifact identity derivation;
+4. canonical JSON profile;
+5. reproducible `createdAt` handling;
+6. structural confidence representation;
+7. compatibility with the established C# ASL-OT-01 behavior; and
+8. exact generated artifacts committed for review.
+
+These are authoring implementation decisions. They do not admit runtime contracts, persistence products, ontology engines, or publication infrastructure.
+
+## 14. Implemented foundation
+
+The first ASL-OT-02 implementation slice establishes the following admitted foundation:
+
+- `docs/ASL/Schemas/asl-tir-1.3.schema.json` defines schema identity `urn:limbodancer:asl:tir:schema:1.3.0`, the complete required artifact-kind vocabulary, the common envelope, and kind-specific structural payloads;
+- `TirModels.cs` defines the ASL-owned C# document, envelope, provenance, dependency, diagnostic, and structural payload types;
+- strongly typed structural artifacts exist for `SourceFragment`, `Section`, `Rule`, `CrossReference`, `Example`, and `Table`;
+- the remaining required artifact kinds are reserved in the versioned vocabulary but cannot be emitted by the structural canonical writer;
+- `TirArtifactIdentity` derives stable identities from kind, source-registry identity, published structural identity, ordered source-fragment identities, and an explicit deterministic disambiguator;
+- `TirCanonicalJson` fixes property order, ordinal set ordering, explicit nulls, invariant UTC formatting, and SHA-256 calculation over the canonical payload excluding the digest field itself; and
+- the writer fails closed if an ASL-OT-02 artifact claims a semantic identity or advances beyond `extracted`, `unmodeled`, and `captured`.
+
+The canonical writer deliberately preserves source-fragment and table-note order because those sequences carry source meaning. It sorts set-like collections such as artifacts, dependencies, confidence bases, review references, and diagnostics by declared ordinal keys.
+
+This foundation is extended by the deterministic extraction increment described in section 15.
+
+## 15. Implemented structural extraction
+
+The second ASL-OT-02 implementation slice deterministically maps the complete registered ASL-OT-01 fragment stream into structural TIR metadata:
+
+- every located source fragment becomes a `SourceFragment` artifact without duplicating its rulebook text;
+- every mechanically recognized rule-text boundary becomes a `Rule` artifact;
+- rule evidence contains the ordered rule-text fragment and contiguous continuation, figure, or structured fragments carrying the same published identity;
+- explicit major-section declarations become chapter-qualified `Section` anchors such as `A1`; the payload distinguishes numbered Markdown headings, bold numbered declarations, and numbered declarations recovered from structured text;
+- general chapter rules such as `A.1` retain their exact normalized identity and are not conflated with Section `A1`;
+- chapter-local rule identifiers use ASL's digit hierarchy: `A1.1` belongs to Section `A1`, `A1.11` belongs to Rule `A1.1`, and `A1.111` belongs to Rule `A1.11`;
+- direct parents resolve only when the exact normalized Rule or Section candidate is unique;
+- roots, supported parents, missing parents, and ambiguous parents remain distinguishable;
+- sibling order follows registered source order within the same structural parent candidate;
+- duplicate normalized identifiers, missing parents, and ambiguous parents produce deterministic diagnostics; and
+- figure dependencies are normalized to registered repository-relative paths.
+
+The original structural sample exposed five duplicate top-level identifiers and three consequently ambiguous parent resolutions. Inspection established a deterministic source convention behind those findings: chapter-local rule identifiers contain a numeric dot, while bare forms such as `**1.**` and `**1)**` are numbered commentary notes or list items. The fragment locator now requires at least one numeric dot for a chapter-local rule boundary while continuing to admit chapter-prefixed forms such as `A.1`. This removes the false rule artifacts at their source rather than suppressing valid duplicate diagnostics downstream.
+
+The C# CLI regenerates the registry, ASL-OT-01 verification sample, and structural TIR sample in one operation. The conformance suite compares the committed TIR bytes with current C# extraction and canonical serialization.
+
+## 16. Implemented explicit structural markers
+
+The third ASL-OT-02 implementation slice adds three evidence-bounded artifact kinds without interpreting rule meaning:
+
+- a `CrossReference` is emitted only for a chapter-qualified occurrence such as `A.8` or `B23.71`; the occurrence that declares the containing rule's own leading identifier is excluded;
+- a chapter-dot candidate such as `A.8` and a compact candidate such as `A8.15` preserve their source spelling and resolve against exact normalized Rule identity;
+- reference resolution is `resolved` only when exactly one structural Rule candidate exists, and missing or ambiguous targets remain explicit diagnostics;
+- chapter-local occurrences such as `1.2`, ranges, pronouns, and phrases such as “the preceding rule” are not promoted to references in this slice;
+- an `Example` is emitted for each exact uppercase `EX:` marker and points to the containing Rule only when the enclosing fragment is already Rule evidence;
+- the example artifact retains the whole immutable source fragment because the current source locator does not establish an exact end boundary for example prose; and
+- a `Table` is emitted only when a fenced `StructuredText` fragment contains the explicit uppercase label `TABLE` or `CHART`; its cells are not reconstructed and `structureVerified` remains `false`.
+
+All three kinds remain `extracted`, `unmodeled`, and `captured`, with `semanticId: null`. A resolved cross-reference asserts only a unique structural target. An example link asserts only containment within located Rule evidence. A table boundary asserts only an explicit source label.
+
+Across the registered Chapters A-E corpus, the deterministic C# rules locate 96 structural Section artifacts, 1,998 structural Rule artifacts, 4,834 explicit chapter-qualified cross-reference occurrences, 358 explicit example markers, and 21 explicitly labelled table/chart blocks. Of the reference occurrences, 4,788 resolve uniquely and 46 have no target in the registered scope. The corpus also retains 67 missing-parent diagnostics. These counts describe extraction behavior; they are not a completeness or correctness claim about the ASL ontology.
+
+The committed representative sample contains 49 artifacts: 29 source fragments, five sections, 11 structural rules, two cross-references (one resolved and one missing), one example, and one table. Its single diagnostic preserves the selected missing reference. Exact canonical bytes remain checked against C# regeneration.
+
+## 17. TIR 1.1 section decision and migration record
+
+TIR 1.1 resolves the open section-representation question by introducing a dedicated structural `Section` artifact. The extractor admits only exact level-2 numbered headings and records their title, heading level, source evidence, sibling order, and root hierarchy status. This is intentionally narrower than treating every Markdown heading as a section and does not promote headings to semantic Rules.
+
+The migration also corrects the earlier hierarchy comparison assumption. TIR 1.0 treated `A.1` and the section stem of `A1.1` as equivalent for parent matching. Inspection of the source shows that these are different published structures: `A.1` is a general chapter Rule, while `A1` is the chapter's numbered Section 1. TIR 1.1 therefore preserves and resolves these identities separately and derives nested Rule parents by removing one trailing digit from the final numeric component, not by removing the final dot-delimited component.
+
+This evidence-bounded change reduces missing-parent diagnostics from 914 to 67. It does not suppress the remainder. The 67 retained findings identify absent or irregular structural anchors in the registered source and remain review inputs until a source convention or adjudicated mapping explains them.
+
+The next extraction increment should audit those 67 remaining parent findings and define exact example-span and table-row recovery. Those concerns remain separate from semantic formalization, ontology acceptance, publication, and runtime authority.
+
+## 18. TIR 1.2 missing-parent audit
+
+The TIR 1.2 audit classified all 67 TIR 1.1 missing-parent diagnostics against the registered source:
+
+- 18 rules use the ASL zero-padded child convention. Examples include `A7.301` through `A7.309` as children of `A7.3`, `C2.2401` as a child of `C2.24`, and `A14.01` as a child of Section `A14`;
+- 41 rules belong beneath nine explicit major sections whose converted boundaries are not all ordinary level-2 Markdown headings: one emphasized heading, seven bold declarations, and one declaration inside structured text; and
+- eight rules depend on three boundaries damaged or merged during conversion: `A7.37`, `A7.8`, and `E1.93`.
+
+TIR 1.2 admits the first two classes because each has an explicit, repeatable source convention. Section payloads now record `boundaryKind` and nullable `sourceHeadingLevel`, avoiding the false claim that every section came from a Markdown heading. Zero-padded parent fallback is attempted only for a final two-digit group `01` through `09`, and only resolves when the resulting exact Rule or Section identity exists.
+
+The full Chapters A-E extraction now contains 105 Sections and 1,998 Rules. Missing-parent diagnostics fall from 67 to eight; the 46 missing cross-reference targets remain unchanged, for 54 diagnostics in total. The final eight parent findings are retained rather than inferred because the available fragment boundaries contain damaged spacing, embedded rule declarations, or adjacent prose. Recovering them requires finer source-span support, not another identifier heuristic.
+
+The next extraction increment should establish sub-fragment source spans before attempting exact recovery of those eight boundaries, example prose, or table rows. Semantic formalization remains deferred.
+
+## 19. TIR 1.3 sub-fragment source spans
+
+TIR 1.3 adds an exact, language-independent sub-fragment span to every source-fragment reference. `startUtf8ByteOffset` is inclusive and `endUtf8ByteOffsetExclusive` is exclusive; both are measured against the UTF-8 encoding of the immutable fragment content identified by `contentSha256`. The values must either both be null or both be present. Null values mean that the complete fragment is evidence, while a numeric pair identifies a non-empty byte range within it.
+
+UTF-8 byte positions are persisted instead of .NET UTF-16 character indices so another implementation can recover identical evidence without reproducing C# string indexing. The C# extractor rejects negative, empty, reversed, out-of-range, or surrogate-splitting character inputs before converting them to UTF-8 offsets. The canonical writer independently rejects unpaired, empty, or reversed persisted spans.
+
+The first admitted consumers are deliberately narrow:
+
+- each `CrossReference` points to the exact chapter-qualified reference token;
+- each `Example` points to the exact `EX:` marker, not yet the complete example prose;
+- a `Section` recovered from structured text points to its exact declaration line; and
+- Rule, Table, ordinary heading Section, bold-declaration Section, and SourceFragment artifacts continue to cite their complete fragments.
+
+Artifact occurrence disambiguators for cross-references and example markers now use the persisted UTF-8 start byte rather than a C# UTF-16 index. This changes their extracted artifact identities under the new schema but makes those identities portable.
+
+This increment does not recover the eight damaged parent boundaries and does not claim exact example or table extents. It establishes the evidence-addressing contract required to make those later changes reviewable. The next increment may use unique, explicit sub-fragment markers to recover `A7.37`, `A7.8`, and `E1.93`, while retaining a diagnostic whenever a candidate is absent or ambiguous.
+
+## 20. TIR 1.3 required embedded-boundary recovery
+
+Extractor 1.5 uses the TIR 1.3 sub-fragment contract to recover the three damaged Rule boundaries without modifying the converted Markdown and without inferring rule meaning. Recovery is gated by existing hierarchy evidence: an embedded declaration is eligible only when an already-extracted child requires its normalized identifier and none of that child's permitted parent keys resolves to an existing Rule or Section.
+
+Three explicit marker forms are admitted:
+
+- an exact bold Rule declaration embedded inside another paragraph, which recovers `A7.37` from the declaration merged into the `A7.36` fragment;
+- an OCR-spaced Rule declaration inside structured text, which recovers `A7.8`; and
+- an exact Rule declaration inside structured text, which recovers `E1.93`.
+
+Each recovered Rule cites only the matched declaration marker through exact UTF-8 byte offsets. It does not claim that the containing fragment, adjacent prose, figure, or structured-text block is the complete Rule extent. The confidence basis records both `required-missing-parent-boundary` and the observed marker form. An otherwise matching declaration is ignored when no extracted child requires it. Multiple eligible markers for the same normalized identifier remain duplicate candidates, causing the existing duplicate and ambiguous-parent diagnostics instead of an arbitrary selection.
+
+Across the registered Chapters A-E corpus, this recovery adds exactly three Rule artifacts, increasing the Rule count from 1,998 to 2,001. All eight missing-parent diagnostics resolve. Fourteen previously missing chapter-qualified references also resolve against the recovered Rules, reducing missing-reference diagnostics from 46 to 32 and total diagnostics from 54 to 32. The other extraction counts remain unchanged: 105 Sections, 4,834 cross-references, 358 examples, and 21 tables.
+
+These recovered artifacts remain `extracted`, `unmodeled`, and `captured`, with `semanticId: null`. Structural recovery does not establish semantic scope, applicability, precedence, or ontology acceptance. Complete example extents and table-row reconstruction remain deferred; either requires its own deterministic boundary contract and review corpus.

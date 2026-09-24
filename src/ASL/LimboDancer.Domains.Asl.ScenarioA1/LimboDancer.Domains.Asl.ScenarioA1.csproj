@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RestorePackagesWithLockFile>false</RestorePackagesWithLockFile>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+    <RestoreLockedMode>false</RestoreLockedMode>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../LimboDancer/LimboDancer.Abstractions/LimboDancer.Abstractions.csproj" />
+    <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.first-case-review-decision.json" LogicalName="ScenarioA1.review.json" />
+    <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.occupied-case-matrix.json" LogicalName="ScenarioA1.matrix.json" />
+    <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.occupied-pdf-comparison.json" LogicalName="ScenarioA1.occupied-comparison.json" />
+    <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.candidate-manifest.json" LogicalName="ScenarioA1.candidate-manifest.json" />
+    <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.bounded-admission.json" LogicalName="ScenarioA1.bounded-admission.json" />
+    <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.semantic-acceptance.json" LogicalName="ScenarioA1.semantic-acceptance.json" />
+    <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.occupied-package.json" LogicalName="ScenarioA1.occupied-package.json" />
+    <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.conformance-admission.json" LogicalName="ScenarioA1.conformance-admission.json" />
+    <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/vasl-board-01-building-overrides.json" LogicalName="ScenarioA1.board01-buildings.json" />
+    <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.post-reveal-package.json" LogicalName="ScenarioA1.post-reveal-package.json" />
+  </ItemGroup>
+</Project>

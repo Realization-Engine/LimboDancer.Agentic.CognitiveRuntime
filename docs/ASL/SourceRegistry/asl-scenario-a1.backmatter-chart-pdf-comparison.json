@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "pdf-comparison-complete-source-verification-pending",
+  "subject": "asl-supplement:b-terrain-chart-building-entry",
+  "supplementRegistry": "docs/ASL/SourceRegistry/asl-scenario-a1.supplementary-source-registry.json",
+  "transcription": "docs/ASL/SourceRegistry/Supplements/b-terrain-chart-building-entry.md",
+  "transcriptionSha256": "21afa438c3d247f4238c82fb45b9a381cc4ae34ed2b4bf1edf50a8f812797b0b",
+  "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+  "physicalPdfPage": 698,
+  "comparisonMethod": "Rendered page visually inspected and compared with the bounded transcription; pdftotext 24.02.0 -f 698 -l 698 -layout output and four complete extracted lines, including trailing LF, independently rehashed against the registered candidate.",
+  "extractedPageTextSha256": "49ea0f434ce54197afa41fc95e78d0b809aa954d587406fe7e7078dbafdacdd0",
+  "observations": [
+    {
+      "item": "MF entrance costs, Infantry column",
+      "extractedLineSha256": "34795a99b5040d423ee3122ae349ee29d7209fb652ecc2ca86893677c564eef7",
+      "matchesTranscription": true,
+      "finding": "The 2 entries are aligned under Infantry in the MF ENTRANCE COSTS group."
+    },
+    {
+      "item": "23. Wooden Building",
+      "extractedLineSha256": "f214c485edac00238b31566adb08392f180d5f95c65bcddc6922699a51fd6e9c",
+      "matchesTranscription": true,
+      "finding": "Printed Infantry entrance cost is 2 MF."
+    },
+    {
+      "item": "23. Stone Building",
+      "extractedLineSha256": "0d5d111f3ecf9e46084bbbfa775f67875b9ce8faa0c0bf60d508f8b058e27fa7",
+      "matchesTranscription": true,
+      "finding": "Printed Infantry entrance cost is 2 MF; the note 'Move assumes no road or VBM' is in this row's Notes column."
+    },
+    {
+      "item": "COT legend",
+      "extractedLineSha256": "2bf33fce5d6205c9d6cb64b29603d0434fe59a8ff5845083b19472b0f9706986",
+      "matchesTranscription": true,
+      "finding": "Printed legend defines COT as Cost of Terrain; neither of the two building Infantry cells uses COT."
+    }
+  ],
+  "openQuestion": "Whether the stone-row note qualifies just that row or other movement costs, and whether this chart controls the declared Scenario A1 case, require a domain review. The bounded transcription reports its visible placement without settling applicability.",
+  "sourceVerificationStatus": "unverified",
+  "attestation": "Tool-assisted PDF comparison only; no source-provider fidelity attestation or domain admission for this supplementary subject."
+}

@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\LimboDancer.Abstractions\LimboDancer.Abstractions.csproj" />
+    <ProjectReference Include="..\LimboDancer.Runtime\LimboDancer.Runtime.csproj" />
+    <ProjectReference Include="..\LimboDancer.Infrastructure\LimboDancer.Infrastructure.csproj" />
+    <ProjectReference Include="..\LimboDancer.Adapters.Mcp\LimboDancer.Adapters.Mcp.csproj" />
+  </ItemGroup>
+</Project>

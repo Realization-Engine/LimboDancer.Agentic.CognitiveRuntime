@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "published-bounded-exact-case-package",
+  "domainId": "asl",
+  "packageId": "scenario-a1-occupied-exact",
+  "declaredUse": "Scenario A1 occupied-building entry eligibility for exact synthetic facts only",
+  "semanticAcceptanceSha256": "7c9157b26fb5d0c23ac1b39f7181127b4d9530af9db6f9a90b05b27e6b8c1b66",
+  "candidateManifestRootSha256": "6c7a415db0e08c308e20afec9a079da5e700ca9b115794cab0d39c113861fdf5",
+  "boundedAdmissionSha256": "007dbe2512c7bd5f0b17c51ad6ab2cea800b4f8e2c47267fb6cc0e5fbc57b2ee",
+  "sourceComparisonSha256": "c64fe3229d5a3541357fe6948ec037fcfbdbfde8810a599f21df81aed0a94bc5",
+  "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+  "verifiedSourceSubjectCount": 28,
+  "acceptedCaseIds": [
+    "A1-empty-ordinary-mph",
+    "A1-known-enemy-mmc-mph",
+    "A1-fortified-unbreached-enemy-squad",
+    "A1-single-known-enemy-smc-overrun",
+    "A1-fortified-breached-entry",
+    "A1-stacking-equivalents-needed",
+    "A1-advance-phase-entry"
+  ],
+  "nonDefinitiveCaseIds": [
+    "A1-concealed-occupancy-attempt",
+    "A1-unknown-location-or-modifier"
+  ],
+  "compatibility": "exact-case-only; unknown cases abstain; no general board-state inference or action execution"
+}

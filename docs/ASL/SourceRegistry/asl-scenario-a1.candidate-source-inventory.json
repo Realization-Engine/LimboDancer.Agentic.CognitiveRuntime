@@ -1,0 +1,206 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "candidate-unverified",
+  "registryId": "asl-easlrb-3.10-a-e",
+  "edition": "3.01",
+  "pdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+  "rules": [
+    {
+      "normalizedRuleId": "A2.8",
+      "sourceId": "asl-easlrb-3.10:chapter-a",
+      "sourceSha256": "6347534e64f739cacc57dd75c3d604997723fd0b4988565609deeff007a8843d",
+      "pdfStartPage": 47,
+      "pdfEndPage": 47,
+      "fragments": [
+        {
+          "fragmentId": "asl-fragment:sha256:1bd27fc897ea2be19fb0c3bc14a10eb68a0322b38e223cd9614e2000f24cc52f",
+          "contentSha256": "9f6231434c4b9042fd384e219116bf065566497117830fa01fdb21c32fb35034",
+          "kind": "RuleText",
+          "startLine": 189,
+          "endLine": 189,
+          "conversionStartPage": 47,
+          "conversionEndPage": 47,
+          "hasFootnoteMarkers": false,
+          "dependencies": []
+        }
+      ]
+    },
+    {
+      "normalizedRuleId": "A4.14",
+      "sourceId": "asl-easlrb-3.10:chapter-a",
+      "sourceSha256": "6347534e64f739cacc57dd75c3d604997723fd0b4988565609deeff007a8843d",
+      "pdfStartPage": 49,
+      "pdfEndPage": 49,
+      "fragments": [
+        {
+          "fragmentId": "asl-fragment:sha256:d22c4de11eefffac89c9585633ca3f4eeff313cc2d1ddd535975e1e8c23e0e69",
+          "contentSha256": "65adb630eb862eb54b49feb1e414bdf9b0c5132f8d0c55e6eaa94eb5b44c6995",
+          "kind": "RuleText",
+          "startLine": 255,
+          "endLine": 255,
+          "conversionStartPage": 48,
+          "conversionEndPage": 48,
+          "hasFootnoteMarkers": false,
+          "dependencies": []
+        }
+      ]
+    },
+    {
+      "normalizedRuleId": "A4.15",
+      "sourceId": "asl-easlrb-3.10:chapter-a",
+      "sourceSha256": "6347534e64f739cacc57dd75c3d604997723fd0b4988565609deeff007a8843d",
+      "pdfStartPage": 49,
+      "pdfEndPage": 49,
+      "fragments": [
+        {
+          "fragmentId": "asl-fragment:sha256:189987c951bbe691bdab278fad56ca4435cd1c038f724d99888121c54c5eaa75",
+          "contentSha256": "969c23764e0e6d3f1ef6d7b53162b6dc9385fa150e5fcd83c021f557ff577390",
+          "kind": "RuleText",
+          "startLine": 257,
+          "endLine": 257,
+          "conversionStartPage": 48,
+          "conversionEndPage": 48,
+          "hasFootnoteMarkers": true,
+          "dependencies": []
+        }
+      ]
+    },
+    {
+      "normalizedRuleId": "A4.7",
+      "sourceId": "asl-easlrb-3.10:chapter-a",
+      "sourceSha256": "6347534e64f739cacc57dd75c3d604997723fd0b4988565609deeff007a8843d",
+      "pdfStartPage": 52,
+      "pdfEndPage": 52,
+      "fragments": [
+        {
+          "fragmentId": "asl-fragment:sha256:87050a0d3e7b34fd1a2cb5e1668063e3baf1434a1eb42c1f4cfa77d074c7fd54",
+          "contentSha256": "86e4d96a037e9e8ceb7fda4f55fd3255e61b30a2fbfc4550e94680c3b16b9abb",
+          "kind": "RuleText",
+          "startLine": 329,
+          "endLine": 329,
+          "conversionStartPage": 52,
+          "conversionEndPage": 52,
+          "hasFootnoteMarkers": false,
+          "dependencies": []
+        }
+      ]
+    },
+    {
+      "normalizedRuleId": "A12.15",
+      "sourceId": "asl-easlrb-3.10:chapter-a",
+      "sourceSha256": "6347534e64f739cacc57dd75c3d604997723fd0b4988565609deeff007a8843d",
+      "pdfStartPage": 78,
+      "pdfEndPage": 78,
+      "fragments": [
+        {
+          "fragmentId": "asl-fragment:sha256:e92332292b4bde444aff7f84127793084e1f0ecfd99af9750da6e4aa8af40ea3",
+          "contentSha256": "ce0cc02826bf66951ff4a1ce06b7a51d105eb2f2540f3710c2e49c2455306fcf",
+          "kind": "RuleText",
+          "startLine": 1042,
+          "endLine": 1042,
+          "conversionStartPage": 78,
+          "conversionEndPage": 78,
+          "hasFootnoteMarkers": false,
+          "dependencies": []
+        }
+      ]
+    },
+    {
+      "normalizedRuleId": "B23.4",
+      "sourceId": "asl-easlrb-3.10:chapter-b",
+      "sourceSha256": "836b1ce5f845efd1c21250a9e6a39e4054ea9398f370305bc3771b6e7f826982",
+      "pdfStartPage": 136,
+      "pdfEndPage": 136,
+      "fragments": [
+        {
+          "fragmentId": "asl-fragment:sha256:686ac055790d97426084d16a48381c5de948b987f4680a47bf00646f387ca4a8",
+          "contentSha256": "5aad8586e209983168fd444994e8fc644d23f5193e1df3bbeaca1a805bc989af",
+          "kind": "RuleText",
+          "startLine": 1382,
+          "endLine": 1382,
+          "conversionStartPage": 136,
+          "conversionEndPage": 136,
+          "hasFootnoteMarkers": false,
+          "dependencies": []
+        }
+      ]
+    },
+    {
+      "normalizedRuleId": "B23.922",
+      "sourceId": "asl-easlrb-3.10:chapter-b",
+      "sourceSha256": "836b1ce5f845efd1c21250a9e6a39e4054ea9398f370305bc3771b6e7f826982",
+      "pdfStartPage": 140,
+      "pdfEndPage": 141,
+      "fragments": [
+        {
+          "fragmentId": "asl-fragment:sha256:fd2cfad5baf39a27c7001dd2eec858a909f9dcf21c8e20af3caeb59ba0204f8b",
+          "contentSha256": "8a5a75670cd036b21ee5c270f616e51f0c2af0a35571ee6c3064b7e8b82b7566",
+          "kind": "RuleText",
+          "startLine": 1556,
+          "endLine": 1556,
+          "conversionStartPage": 140,
+          "conversionEndPage": 140,
+          "hasFootnoteMarkers": false,
+          "dependencies": []
+        },
+        {
+          "fragmentId": "asl-fragment:sha256:0bd22c62715b0a18c151d65df9417115a4734057f73f4e3c1d5d69170d93ab05",
+          "contentSha256": "b4de83f1bdd36be0abb272f53c416f37f2fb6688ce73943b117d936e498f438e",
+          "kind": "RuleContinuation",
+          "startLine": 1560,
+          "endLine": 1560,
+          "conversionStartPage": 141,
+          "conversionEndPage": 141,
+          "hasFootnoteMarkers": false,
+          "dependencies": []
+        }
+      ]
+    },
+    {
+      "normalizedRuleId": "B23.9221",
+      "sourceId": "asl-easlrb-3.10:chapter-b",
+      "sourceSha256": "836b1ce5f845efd1c21250a9e6a39e4054ea9398f370305bc3771b6e7f826982",
+      "pdfStartPage": 141,
+      "pdfEndPage": 141,
+      "fragments": [
+        {
+          "fragmentId": "asl-fragment:sha256:89e3353bc496b4fd1666fa17f53ee2bb8817765cf330e0efdc3a055efee7ae33",
+          "contentSha256": "87f89fec6c1a2a30948fd9b2f79eda4de9b28f1aaa4cd9a6dc5d389e88c216db",
+          "kind": "RuleText",
+          "startLine": 1562,
+          "endLine": 1562,
+          "conversionStartPage": 141,
+          "conversionEndPage": 141,
+          "hasFootnoteMarkers": false,
+          "dependencies": []
+        },
+        {
+          "fragmentId": "asl-fragment:sha256:8db1bc1e85dc45a0cbfca8653bb816c84a54ea899bd3994ce1a0b5c1df5dac4f",
+          "contentSha256": "94ff039fae17b5387fc8d28caeb7599285a8b9b33da9f8295870efe3e787af8b",
+          "kind": "FigureReference",
+          "startLine": 1564,
+          "endLine": 1564,
+          "conversionStartPage": 141,
+          "conversionEndPage": 141,
+          "hasFootnoteMarkers": false,
+          "dependencies": [
+            "images/eASLRB_v3_01-p141-1.png"
+          ]
+        }
+      ]
+    }
+  ],
+  "linkedFootnotes": [
+    {
+      "linkedRuleId": "A4.15",
+      "fragmentId": "asl-fragment:sha256:cacce25a5228c68c7443b25ba8fe70309720daf212fbcf744c84fb75c46f9040",
+      "sourceId": "asl-easlrb-3.10:chapter-a",
+      "sourceSha256": "6347534e64f739cacc57dd75c3d604997723fd0b4988565609deeff007a8843d",
+      "contentSha256": "123e7ab5ff81e475b5887af6f237213e97d8c12896e23291e3b0aa4d192ad41a",
+      "startLine": 2079,
+      "endLine": 2079,
+      "conversionPage": 98,
+      "pdfPage": 101
+    }
+  ]
+}

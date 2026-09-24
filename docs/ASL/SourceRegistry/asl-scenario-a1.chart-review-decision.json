@@ -1,0 +1,16 @@
+{
+  "subject": "asl-supplement:b-terrain-chart-building-entry",
+  "status": "accepted-by-user-delegated-xunit-review",
+  "reviewerAuthority": "user-directed-xunit-review-2026-09-24",
+  "registrySha256": "f73705eb8d8d3e3350bcbe81ab60e433f516bf7c691132a4f9ee866463a7bbef",
+  "comparisonSha256": "d0a0fa8db20eabce3890f87e2fda3418fae147d1493f4190bf6658ee6ceef520",
+  "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+  "physicalPdfPage": 698,
+  "woodenBuildingInfantryMf": 2,
+  "stoneBuildingInfantryMf": 2,
+  "stoneRowNote": "Move assumes no road or VBM",
+  "noteAppliesTo": "Stone building row only; the wooden row has no such printed note. The declared case excludes road and VBM.",
+  "chartRole": "Controlling Infantry MF entrance-cost table cited by A4.13; B23.4 agrees at 2 MF for ordinary building entry.",
+  "caseScope": "Declared first case: ground-level ordinary wooden or stone building; no road, Bypass, elevation change, additional terrain, or SSR",
+  "ruleBasis": ["A4.13", "B23.4"]
+}
