@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\LimboDancer.Domains.Asl.Maps\LimboDancer.Domains.Asl.Maps.csproj" />
+  </ItemGroup>
+</Project>

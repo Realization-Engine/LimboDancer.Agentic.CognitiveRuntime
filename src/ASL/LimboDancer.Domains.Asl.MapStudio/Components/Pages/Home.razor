@@ -1,0 +1,40 @@
+@page "/"
+@using LimboDancer.Domains.Asl.Maps.Geometry
+@using LimboDancer.Domains.Asl.Maps.Vasl
+@inject IConfiguration Configuration
+
+<PageTitle>ASL Map Studio</PageTitle>
+
+<p>Board viewing and authoring arrive in ASL-MAP-04 and ASL-MAP-07. This page reports the configuration status.</p>
+
+<dl>
+    <dt>Standard geomorphic board</dt>
+    <dd>@geometry.WidthInHexes by @geometry.HeightInHexes hexes, @geometry.HexCount hex records, @geometry.GridWidth by @geometry.GridHeight grid</dd>
+    <dt>VASL checkout (@VaslSource.ConfigurationKey)</dt>
+    <dd>@vaslStatus</dd>
+    <dt>Terrain catalog</dt>
+    <dd>@catalogStatus</dd>
+</dl>
+
+@code {
+    private readonly BoardGeometry geometry = BoardGeometry.StandardGeomorphic;
+    private string vaslStatus = string.Empty;
+    private string catalogStatus = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        var source = VaslSource.TryOpen(Configuration[VaslSource.ConfigurationKey]);
+        if (source is null)
+        {
+            vaslStatus = "Not configured. Set AslMaps:VaslRoot to a local VASL repository checkout.";
+            catalogStatus = "Unavailable.";
+            return;
+        }
+
+        vaslStatus = source.Root;
+        var result = source.ReadTerrainCatalog();
+        catalogStatus = result.Catalog is { } catalog
+            ? $"{catalog.Count} terrain types loaded."
+            : $"Failed: {string.Join("; ", result.Diagnostics.Select(diagnostic => diagnostic.Code + " " + diagnostic.Message))}";
+    }
+}

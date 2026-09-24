@@ -234,7 +234,9 @@ Parsed with `System.Xml.Linq`, using the element and attribute names from `VASL/
 
 The rest of `SharedBoardMetadata.xml` (colors, color SSR, LOS SSR rules, overlay and underlay rules, counter rules) is out of version 1 scope. It contributes to the catalog hash, but is not modeled.
 
-The pinned catalog has 182 `terrainType` elements. The name `Scrub` appears twice, with codes 100 and 121. Names are therefore not unique, and the catalog is keyed by code.
+The pinned catalog has 181 `terrainType` elements (**verified** by XML parsing in ASL-MAP-01). A 182nd element, `Scrub` with code 121, is inside an XML comment and is not part of the catalog. Codes run from 0 to 213 with gaps; no terrain type uses the STREAM category. Codes and names are both unique. VASL keys its terrain table by name and the grid by code, so the catalog is keyed by code and also rejects duplicate names (`VASL-CAT-004`). Line 1839 carries stray text after its element, which the parser ignores as XML text.
+
+Attributes are parsed as VASL's JDOM calls parse them: integers and floats from the trimmed value, and booleans accepting `true`, `on`, `yes`, or `1` and `false`, `off`, `no`, or `0`, case-insensitively. A missing or unparseable attribute is `VASL-CAT-005`; a document without a `terrainTypes` element, or not well-formed, is `VASL-CAT-000`.
 
 ### 6.3 Terrain predicates
 
@@ -448,9 +450,12 @@ The C# test ingests the board from the configured local source, derives Hex Fact
 | `VASL-META-002` | error | invalid hex name or hexside digit in metadata |
 | `VASL-META-003` | info | deferred metadata element preserved raw |
 | `VASL-META-004` | warning | building-type override inconsistent with grid |
+| `VASL-CAT-000` | error | `SharedBoardMetadata.xml` not well-formed or without `terrainTypes` |
 | `VASL-CAT-001` | error | duplicate terrain code in catalog |
 | `VASL-CAT-002` | error | grid uses a code absent from the catalog |
 | `VASL-CAT-003` | error | unknown `LOSCategory` value in catalog |
+| `VASL-CAT-004` | error | duplicate terrain name in catalog |
+| `VASL-CAT-005` | error | missing or unparseable `terrainType` attribute |
 
 A board is eligible for verified status (ASL-MAP-044) only with no error diagnostics, F1 pass, and F2 pass.
 
