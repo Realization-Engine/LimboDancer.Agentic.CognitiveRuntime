@@ -357,7 +357,7 @@ Browser automation (for example, Playwright) is deferred. It can be added when t
 
 | Step | Delivers from this design |
 |---|---|
-| ASL-MAP-01 | project skeletons and solution entries (section 2) |
+| ASL-MAP-01 | the four projects and their solution entries (section 2); `Maps.Tests` and `Maps.Vasl.Tests`; a minimal Studio page reporting configuration status. `Maps.Rendering.Tests` and `MapStudio.Tests` are added in ASL-MAP-04 with the first rendering and Studio code. |
 | ASL-MAP-04 | SvgWriter, `catalog` theme, Exact and Hex-fact views, render endpoints, board library and viewer, inspector |
 | ASL-MAP-05 | `/fidelity` batch pages and job runner |
 | ASL-MAP-07 | `board` theme, Styled and Comparison views, editor, patches |

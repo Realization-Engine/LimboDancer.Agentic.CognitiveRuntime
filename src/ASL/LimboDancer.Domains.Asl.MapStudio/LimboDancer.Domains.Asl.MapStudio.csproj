@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <ProjectReference Include="..\LimboDancer.Domains.Asl.Maps\LimboDancer.Domains.Asl.Maps.csproj" />
+    <ProjectReference Include="..\LimboDancer.Domains.Asl.Maps.Vasl\LimboDancer.Domains.Asl.Maps.Vasl.csproj" />
+    <ProjectReference Include="..\LimboDancer.Domains.Asl.Maps.Rendering\LimboDancer.Domains.Asl.Maps.Rendering.csproj" />
+  </ItemGroup>
+</Project>
