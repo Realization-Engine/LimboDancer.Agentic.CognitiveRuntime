@@ -33,8 +33,14 @@ public sealed class DemoUnitOverlayTests
     public void WrongBoardOrVersionDoesNotRenderAnyUnit()
     {
         var placement = new DemoUnitPlacement("a", "ab-synthetic:B1:0", "blue", "A", "front", 0);
-        var wrongBoardFixture = Fixture(placement) with { BoardRef = "bd01" };
-        var wrongVersionFixture = Fixture(placement) with { ExpectedBoardVersion = "different" };
+        var wrongBoardFixture = Fixture(placement) with
+        {
+            BoardRef = "bd01"
+        };
+        var wrongVersionFixture = Fixture(placement) with
+        {
+            ExpectedBoardVersion = "different"
+        };
         var wrongBoard = Build(wrongBoardFixture);
         var wrongVersion = Build(wrongVersionFixture);
         Assert.Empty(wrongBoard.Units);
