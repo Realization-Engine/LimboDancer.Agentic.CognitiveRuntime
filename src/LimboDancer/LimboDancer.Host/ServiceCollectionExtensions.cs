@@ -54,7 +54,9 @@ public static class ServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(snapshots);
         ArgumentNullException.ThrowIfNull(store);
         if (!services.Any(item => item.ServiceType == typeof(IActionConstraintEvaluator)))
+        {
             throw new InvalidOperationException("Register the host before the ASL return action.");
+        }
         services.AddSingleton(cases);
         services.AddSingleton(snapshots);
         services.AddSingleton(store);
