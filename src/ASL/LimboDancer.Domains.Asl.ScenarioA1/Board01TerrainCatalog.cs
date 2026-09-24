@@ -78,7 +78,9 @@ public sealed class Board01ValidatedSnapshotSource(
             || !catalog.IsSupportedGroundLevel(terrain)
             || locationId != "bd01:" + terrain.Hex + ":0"
             || snapshot.IsKnownBuildingLocation != true
-            || (snapshot.Occupancy == ScenarioA1BoardOccupancy.KnownEmpty
+            || ((snapshot.Occupancy is ScenarioA1BoardOccupancy.KnownEmpty
+                    or ScenarioA1BoardOccupancy.ExactlyOneKnownEnemySmc
+                    or ScenarioA1BoardOccupancy.KnownFriendlyOnly)
                 && snapshot.IsAdjacentGroundLevelOrdinaryBuilding != true))
             return null;
         return snapshot;

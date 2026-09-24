@@ -80,6 +80,132 @@ public sealed class Board01TerrainCatalogTests
         }
     }
 
+    [Fact]
+    public async Task SuppliedVariablesCoverAllAdmittedCasesAndRefuseIncompleteState()
+    {
+        var candidate = new ScenarioA1SemanticCandidate();
+        var cases = AdmittedSnapshots();
+        Assert.Equal(7, cases.Length);
+        foreach (var (caseId, snapshot) in cases)
+        {
+            var provider = Provider(snapshot);
+            var result = await provider.ObserveAsync(Query());
+            Assert.Equal("asl.a1.board.exact-case:" + caseId, Assert.Single(result.ReasonCodes));
+            var observation = Assert.Single(result.Observations);
+            var facts = observation.Data.EnumerateObject().ToDictionary(
+                item => item.Name, item => item.Value.GetString()!, StringComparer.Ordinal);
+            Assert.Equal(candidate.Cases.Single(item => item.Id == caseId).ExpectedDisposition,
+                candidate.Evaluate(caseId, facts).Disposition);
+
+            var omitted = snapshot with { HasNoSpecialModifier = null };
+            Assert.Empty((await Provider(omitted).ObserveAsync(Query())).Observations);
+        }
+
+        var fortified = cases.Single(item =>
+            item.CaseId == "A1-fortified-unbreached-enemy-squad").Snapshot;
+        foreach (var changed in new[]
+        {
+            fortified with { Additional = fortified.Additional! with
+                { HasNoBreachAtEntryHexsideAndLevel = null } },
+            fortified with { Additional = fortified.Additional! with
+                { IsAdvancePhase = true } },
+            fortified with { IsMovementPhase = false },
+        })
+            Assert.Empty((await Provider(changed).ObserveAsync(Query())).Observations);
+
+        var stacking = cases.Single(item =>
+            item.CaseId == "A1-stacking-equivalents-needed").Snapshot;
+        Assert.Empty((await Provider(stacking with { Additional = stacking.Additional! with
+            { FriendlySquads = 3 } }).ObserveAsync(Query())).Observations);
+
+        var breach = cases.Single(item => item.CaseId == "A1-fortified-breached-entry").Snapshot;
+        Assert.Empty((await Provider(breach with { Additional = breach.Additional! with
+            { HasValidBreachAtCrossedHexsideAndLevel = false } }).ObserveAsync(Query())).Observations);
+        Assert.Empty((await Provider(breach with { IsMovementPhase = true })
+            .ObserveAsync(Query())).Observations);
+
+        foreach (var occupancy in new[]
+        {
+            ScenarioA1BoardOccupancy.ConcealedOrHidden,
+            ScenarioA1BoardOccupancy.Unknown,
+        })
+            Assert.Empty((await Provider(Snapshot() with { Occupancy = occupancy })
+                .ObserveAsync(Query())).Observations);
+    }
+
+    private static ScenarioA1BoardObservationProvider Provider(ScenarioA1BoardSnapshot snapshot) =>
+        new(new Board01ValidatedSnapshotSource(new StubSource(snapshot),
+            new Board01TerrainCatalog()));
+
+    private static (string CaseId, ScenarioA1BoardSnapshot Snapshot)[] AdmittedSnapshots()
+    {
+        var baseline = Snapshot();
+        return
+        [
+            ("A1-empty-ordinary-mph", baseline),
+            ("A1-known-enemy-mmc-mph", baseline with
+            {
+                Occupancy = ScenarioA1BoardOccupancy.KnownUnconcealedEnemyMmc,
+                IsAdjacentGroundLevelOrdinaryBuilding = null,
+            }),
+            ("A1-fortified-unbreached-enemy-squad", baseline with
+            {
+                Occupancy = ScenarioA1BoardOccupancy.KnownUnpinnedGoodOrderArmedEnemySquad,
+                IsAdjacentGroundLevelOrdinaryBuilding = null,
+                Additional = new()
+                {
+                    IsFortified = true, HasNoBreachAtEntryHexsideAndLevel = true,
+                },
+            }),
+            ("A1-single-known-enemy-smc-overrun", baseline with
+            {
+                Occupancy = ScenarioA1BoardOccupancy.ExactlyOneKnownEnemySmc,
+                Additional = new()
+                {
+                    IsGoodOrderInfantryMmc = true, OwnNtcPassed = true,
+                    IsSmcOutsideAfv = true, HasNoOtherOccupants = true,
+                    DefensiveResponseUnresolved = true, HasAtLeastFourMf = true,
+                },
+            }),
+            ("A1-fortified-breached-entry", baseline with
+            {
+                Occupancy = ScenarioA1BoardOccupancy.KnownUnpinnedGoodOrderArmedEnemySquad,
+                IsMovementPhase = false, IsAdjacentGroundLevelOrdinaryBuilding = null,
+                Additional = new()
+                {
+                    IsFortified = true, IsAdvancePhase = true,
+                    HasValidBreachAtCrossedHexsideAndLevel = true,
+                    IsOneHorizontalHexSameLevel = true, HasNoOtherOccupants = true,
+                    CloseCombatUnresolved = true, IsNotCx = true, HasNoPortage = true,
+                    IsGoodOrderUnpinnedInfantry = true,
+                },
+            }),
+            ("A1-stacking-equivalents-needed", baseline with
+            {
+                Occupancy = ScenarioA1BoardOccupancy.KnownFriendlyOnly,
+                Additional = new()
+                {
+                    HasAtLeastThreeMf = true, FriendlySquads = 2,
+                    FriendlyUnmannedCrewsOrHalfSquads = 1, FriendlySmc = 0,
+                    IncomingSquads = 1, HasNoVehicles = true, HasNoMannedGun = true,
+                },
+            }),
+            ("A1-advance-phase-entry", baseline with
+            {
+                Occupancy = ScenarioA1BoardOccupancy.ExactlyOneKnownUnconcealedEnemyMmc,
+                IsMovementPhase = false, IsAdjacentGroundLevelOrdinaryBuilding = null,
+                Additional = new()
+                {
+                    IsAdvancePhase = true, IsOneHorizontalHex = true,
+                    CloseCombatUnresolved = true, IsNotCx = true,
+                    IsNotDifficultTerrain = true, HasNoOtherOccupants = true,
+                    HasNoPortage = true,
+                    IsGoodOrderUnpinnedInfantryWithoutTiOrCc = true,
+                },
+            }),
+        ];
+    }
+
     private static ScenarioA1BoardSnapshot Snapshot() =>
         new(Tenant, ScenarioA1OccupiedPackage.Identity, "squad", "bd01:E4:0",
             "state-1", Time, "test-snapshot", ScenarioA1BoardOccupancy.KnownEmpty,
