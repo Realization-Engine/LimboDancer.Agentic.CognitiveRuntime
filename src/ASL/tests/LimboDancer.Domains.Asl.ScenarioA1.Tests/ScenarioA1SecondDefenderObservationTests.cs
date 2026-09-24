@@ -35,7 +35,7 @@ public sealed class ScenarioA1SecondDefenderObservationTests
         {
             SecondDefenderState = state,
             SecondRevealOrdinal = state == ScenarioA1SecondDefenderState.KnownSmcNotRevealed
-                ? null : 3,
+                ? null : 4,
             Ntc = ntc, NtcOrdinal = ntc == ScenarioA1OverrunNtc.Unresolved ? null : 1,
             MfAtSecondReveal = mf,
         };
