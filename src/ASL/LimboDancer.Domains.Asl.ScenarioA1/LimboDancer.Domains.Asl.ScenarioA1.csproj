@@ -7,5 +7,8 @@
   <ItemGroup>
     <ProjectReference Include="../../LimboDancer/LimboDancer.Abstractions/LimboDancer.Abstractions.csproj" />
     <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.first-case-review-decision.json" LogicalName="ScenarioA1.review.json" />
+    <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.occupied-case-matrix.json" LogicalName="ScenarioA1.matrix.json" />
+    <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.occupied-pdf-comparison.json" LogicalName="ScenarioA1.occupied-comparison.json" />
+    <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.candidate-manifest.json" LogicalName="ScenarioA1.candidate-manifest.json" />
   </ItemGroup>
 </Project>

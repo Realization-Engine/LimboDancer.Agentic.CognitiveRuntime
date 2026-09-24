@@ -25,7 +25,45 @@
         "asl-supplement:b-terrain-chart-building-entry"
       ],
       "declaredFacts": "The nine true facts in the first-case decision, including known empty ground-level ordinary wooden or stone building, sufficient MF, normal stacking and no special modifier.",
-      "reason": "Only the previously accepted synthetic first case."
+      "reason": "Only the previously accepted synthetic first case.",
+      "predicates": [
+        {
+          "key": "canMove",
+          "equals": "true"
+        },
+        {
+          "key": "location",
+          "equals": "adjacentGroundLevelOrdinaryBuilding"
+        },
+        {
+          "key": "occupancy",
+          "equals": "knownEmpty"
+        },
+        {
+          "key": "phase",
+          "equals": "mph"
+        },
+        {
+          "key": "remainingMf",
+          "equals": "atLeastTwo"
+        },
+        {
+          "key": "roadBypassElevationAdditionalTerrain",
+          "equals": "none"
+        },
+        {
+          "key": "specialModifier",
+          "equals": "none"
+        },
+        {
+          "key": "stacking",
+          "equals": "belowNormalLimit"
+        },
+        {
+          "key": "unit",
+          "equals": "knownGoodOrderInfantrySquad"
+        }
+      ]
     },
     {
       "caseId": "A1-known-enemy-mmc-mph",
@@ -37,7 +75,33 @@
       ],
       "supplements": [],
       "declaredFacts": "Known unconcealed armed enemy MMC in the same destination Location during MPh; ordinary Infantry movement; none of the A4.14 exceptions (Berserk, Human Wave, Disrupted, Unarmed, Infantry OVR, PRC or charging Cavalry) applies.",
-      "reason": "A4.14 bars ordinary MPh entry into the same Location with an unconcealed enemy; its listed exceptions are explicitly excluded."
+      "reason": "A4.14 bars ordinary MPh entry into the same Location with an unconcealed enemy; its listed exceptions are explicitly excluded.",
+      "predicates": [
+        {
+          "key": "a414Exception",
+          "equals": "none"
+        },
+        {
+          "key": "location",
+          "equals": "knownBuildingLocation"
+        },
+        {
+          "key": "occupancy",
+          "equals": "knownUnconcealedEnemyMmc"
+        },
+        {
+          "key": "phase",
+          "equals": "mph"
+        },
+        {
+          "key": "specialModifier",
+          "equals": "none"
+        },
+        {
+          "key": "unit",
+          "equals": "ordinaryInfantry"
+        }
+      ]
     },
     {
       "caseId": "A1-fortified-unbreached-enemy-squad",
@@ -51,7 +115,37 @@
       ],
       "supplements": [],
       "declaredFacts": "Fortified target Location contains a known unpinned Good Order armed enemy squad; entry hexside and level are unbreached; no A4.14 exception or special scenario modifier.",
-      "reason": "B23.922 bars entry under these facts; its breach exception B23.9221 is absent. The known enemy independently triggers A4.14 during MPh."
+      "reason": "B23.922 bars entry under these facts; its breach exception B23.9221 is absent. The known enemy independently triggers A4.14 during MPh.",
+      "predicates": [
+        {
+          "key": "a414Exception",
+          "equals": "none"
+        },
+        {
+          "key": "breach",
+          "equals": "noneAtEntryHexsideAndLevel"
+        },
+        {
+          "key": "location",
+          "equals": "knownFortifiedBuildingLocation"
+        },
+        {
+          "key": "occupancy",
+          "equals": "knownUnpinnedGoodOrderArmedEnemySquad"
+        },
+        {
+          "key": "phase",
+          "equals": "mph"
+        },
+        {
+          "key": "specialModifier",
+          "equals": "none"
+        },
+        {
+          "key": "unit",
+          "equals": "ordinaryInfantry"
+        }
+      ]
     },
     {
       "caseId": "A1-concealed-occupancy-attempt",
@@ -63,7 +157,8 @@
       ],
       "supplements": [],
       "declaredFacts": "Target has a concealed or hidden occupant whose identity is not yet established; no defender reveal, Dummy determination or overrun election is supplied.",
-      "reason": "A12.15 describes detection and forced-back consequences; the required reveal and any follow-on exception cannot be inferred before resolution."
+      "reason": "A12.15 describes detection and forced-back consequences; the required reveal and any follow-on exception cannot be inferred before resolution.",
+      "predicates": []
     },
     {
       "caseId": "A1-single-known-enemy-smc-overrun",
@@ -83,7 +178,8 @@
         "double entry cost",
         "defensive first fire",
         "SMC retreat or immediate CC"
-      ]
+      ],
+      "predicates": []
     },
     {
       "caseId": "A1-fortified-breached-entry",
@@ -101,7 +197,8 @@
         "breach creation",
         "crossed hexside and level",
         "remaining fortified entry restrictions"
-      ]
+      ],
+      "predicates": []
     },
     {
       "caseId": "A1-stacking-equivalents-needed",
@@ -118,7 +215,8 @@
       "semanticDependencies": [
         "squad-equivalent classification",
         "location stacking calculation"
-      ]
+      ],
+      "predicates": []
     },
     {
       "caseId": "A1-advance-phase-entry",
@@ -134,7 +232,8 @@
       "semanticDependencies": [
         "APh eligibility",
         "applicable advance and occupancy restrictions"
-      ]
+      ],
+      "predicates": []
     },
     {
       "caseId": "A1-unknown-location-or-modifier",
@@ -146,8 +245,10 @@
       ],
       "supplements": [],
       "declaredFacts": "Location identity, occupancy or scenario modifier is unknown or contradictory.",
-      "reason": "No definitive ruling can inherit the declared case when a controlling fact is unknown."
+      "reason": "No definitive ruling can inherit the declared case when a controlling fact is unknown.",
+      "predicates": []
     }
   ],
-  "occupiedSourceComparison": "asl-scenario-a1.occupied-pdf-comparison.json"
+  "occupiedSourceComparison": "asl-scenario-a1.occupied-pdf-comparison.json",
+  "semanticProfile": "bounded-exact-case-predicates-v1"
 }
