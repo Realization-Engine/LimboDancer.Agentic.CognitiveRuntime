@@ -35,6 +35,15 @@ public sealed record GameState(
     IReadOnlyList<EquipmentInstance> Equipment,
     IReadOnlyList<EntityInstance> Entities)
 {
+    /// <summary>The SSRs in force, as <c>game-started</c> named them; empty means none.</summary>
+    public IReadOnlyList<string> SpecialRules { get; init; } = [];
+
+    /// <summary>The side that had the first Player Turn: a new Game Turn starts when it is phasing again.</summary>
+    public string FirstSide { get; init; } = string.Empty;
+
+    /// <summary>The source of the game's first event: <c>fixture</c>, or an accepted live source.</summary>
+    public string Source { get; init; } = string.Empty;
+
     /// <summary>The closed set of perspectives for this game: each side, then the adjudicator (ASL-UNIT-030).</summary>
     public IReadOnlyList<Perspective> Perspectives => [.. Sides.Select(side => Perspective.Side(side.Id)), Perspective.Adjudicator];
 

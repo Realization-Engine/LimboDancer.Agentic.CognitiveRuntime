@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\LimboDancer.Domains.Asl.Units\LimboDancer.Domains.Asl.Units.csproj" />
+    <ProjectReference Include="..\LimboDancer.Domains.Asl.ScenarioA1\LimboDancer.Domains.Asl.ScenarioA1.csproj" />
+    <ProjectReference Include="..\..\LimboDancer\LimboDancer.Runtime\LimboDancer.Runtime.csproj" />
+  </ItemGroup>
+</Project>

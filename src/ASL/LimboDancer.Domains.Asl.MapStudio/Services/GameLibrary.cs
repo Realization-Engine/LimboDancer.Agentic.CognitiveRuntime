@@ -30,8 +30,11 @@ public sealed record GameProjection(GameEntry Game, GameView View, UnitPlacement
 /// chains of the boards in play when the Studio can load them, and projected by perspective for the display. Nothing
 /// here writes game state; the records are display input (ASL-UNIT-050, D2).
 /// </summary>
-public sealed class GameLibrary(UnitLibrary units, IBoardProvider boards)
+public sealed class GameLibrary(UnitLibrary units, IBoardProvider boards, LivePlay? live = null)
 {
+    /// <summary>The prefix of a live game's name, such as <c>live:village</c>.</summary>
+    public const string LivePrefix = "live:";
+
     private const string Suffix = ".game.json";
     private readonly ConcurrentDictionary<string, GameEntry> embedded = new(StringComparer.Ordinal);
     private readonly Lazy<IReadOnlyList<UnitCatalog>> catalogs = new(() =>
@@ -39,14 +42,28 @@ public sealed class GameLibrary(UnitLibrary units, IBoardProvider boards)
 
     public IReadOnlyList<UnitCatalog> Catalogs => catalogs.Value;
 
-    /// <summary>The embedded records, then saved ones whose names are not embedded.</summary>
-    public IReadOnlyList<string> Names => [.. UnitGames.Names, .. Saved().Where(name => !UnitGames.Names.Contains(name))];
+    /// <summary>The embedded records, saved ones whose names are not embedded, then the live games.</summary>
+    public IReadOnlyList<string> Names =>
+        [.. UnitGames.Names, .. Saved().Where(name => !UnitGames.Names.Contains(name)), .. (live?.Games() ?? []).Select(scope => LivePrefix + scope.Game)];
 
     private string GamesRoot => Path.Combine(units.UnitsRoot, "games");
 
     public GameEntry Load(string name)
     {
         ArgumentNullException.ThrowIfNull(name);
+        if (name.StartsWith(LivePrefix, StringComparison.Ordinal) && live is not null)
+        {
+            var game = name[LivePrefix.Length..];
+            var record = live.Store.Read(new GameScope(LivePlay.Tenant, game));
+            var history = live.History(game);
+            return record is null || history is null
+                ? Replay(name, null)
+                : new GameEntry(name, record with
+                {
+                    Label = record.Label + " (live)"
+                }, history, history.Diagnostics);
+        }
+
         if (UnitGames.Names.Contains(name))
         {
             return embedded.GetOrAdd(name, _ => Replay(name, UnitGames.Read(name)));

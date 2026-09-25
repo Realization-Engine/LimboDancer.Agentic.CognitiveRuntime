@@ -37,7 +37,11 @@ public sealed record NewInstance(
     Holding? Holding,
     IReadOnlyDictionary<string, ConditionState> Conditions);
 
-/// <summary><c>game-started</c>: the sides, the map in play, the catalog, and the opening turn and phase.</summary>
+/// <summary>
+/// <c>game-started</c>: the sides, the map in play, the catalog, and the opening turn and phase. A game that is not
+/// synthetic must come from an accepted live source (ASL-UNIT-050, D2). <see cref="SpecialRules"/> names the scenario's
+/// SSRs in force; an empty list means none.
+/// </summary>
 public sealed record GameStarted(
     IReadOnlyList<SideState> Sides,
     MapInPlay Map,
@@ -45,7 +49,10 @@ public sealed record GameStarted(
     int Turn,
     string Phase,
     string PhasingSide,
-    bool Synthetic) : EventPayload;
+    bool Synthetic) : EventPayload
+{
+    public IReadOnlyList<string> SpecialRules { get; init; } = [];
+}
 
 /// <summary><c>phase-changed</c>.</summary>
 public sealed record PhaseChanged(int Turn, string Phase, string PhasingSide) : EventPayload;

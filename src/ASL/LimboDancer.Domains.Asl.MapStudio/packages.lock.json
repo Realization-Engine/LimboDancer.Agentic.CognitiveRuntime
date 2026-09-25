@@ -8,6 +8,9 @@
         "resolved": "10.0.12",
         "contentHash": "+sIBo9AMBZH46qHWHQdfzcGMt+RuBaPYrUMOAM9VjA7MQ9QtIez3lq1C3E05+Yroa94KKt3DSWaxmCI4H28a9Q=="
       },
+      "limbodancer.abstractions": {
+        "type": "Project"
+      },
       "limbodancer.domains.asl.maps": {
         "type": "Project"
       },
@@ -23,6 +26,20 @@
           "LimboDancer.Domains.Asl.Maps": "[1.0.0, )"
         }
       },
+      "limbodancer.domains.asl.play": {
+        "type": "Project",
+        "dependencies": {
+          "LimboDancer.Domains.Asl.ScenarioA1": "[1.0.0, )",
+          "LimboDancer.Domains.Asl.Units": "[1.0.0, )",
+          "LimboDancer.Runtime": "[1.0.0, )"
+        }
+      },
+      "limbodancer.domains.asl.scenarioa1": {
+        "type": "Project",
+        "dependencies": {
+          "LimboDancer.Abstractions": "[1.0.0, )"
+        }
+      },
       "limbodancer.domains.asl.units": {
         "type": "Project",
         "dependencies": {
@@ -34,6 +51,12 @@
         "dependencies": {
           "LimboDancer.Domains.Asl.Maps.Rendering": "[1.0.0, )",
           "LimboDancer.Domains.Asl.Units": "[1.0.0, )"
+        }
+      },
+      "limbodancer.runtime": {
+        "type": "Project",
+        "dependencies": {
+          "LimboDancer.Abstractions": "[1.0.0, )"
         }
       }
     }

@@ -327,7 +327,7 @@ else
         _ => string.Empty,
     };
 
-    private static string PhaseLabel(string phase) => phase switch
+    internal static string PhaseLabel(string phase) => phase switch
     {
         "rph" => "Rally Phase",
         "pfph" => "Prep Fire Phase",

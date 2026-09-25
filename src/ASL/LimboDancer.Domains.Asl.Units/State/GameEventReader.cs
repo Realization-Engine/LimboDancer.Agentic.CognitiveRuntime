@@ -165,7 +165,10 @@ public static class GameEventReader
                 return reference is null || mapVersion is null || catalog is null || phase is null || phasing is null || turn is null
                     ? null
                     : new GameStarted(sides, new MapInPlay(reference, mapVersion, boards), catalog, turn.Value, phase, phasing,
-                        fields.OptionalBoolean(payload, "synthetic", path));
+                        fields.OptionalBoolean(payload, "synthetic", path))
+                    {
+                        SpecialRules = fields.StringList(payload, "specialRules", path),
+                    };
             case "phase-changed":
                 var nextTurn = fields.OptionalInteger(payload, "turn", path);
                 var nextPhase = fields.RequiredString(payload, "phase", path);
