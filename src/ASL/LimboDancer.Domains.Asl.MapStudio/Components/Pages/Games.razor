@@ -271,9 +271,13 @@ else
     {
         if (entry is not null && state is not null)
         {
-            Navigation.NavigateTo($"boards/{BoardName}?units={GamesLibrary.ShowOnBoard(entry, perspective, revision)}");
+            Navigation.NavigateTo(BoardLink(BoardName, entry.Name, perspective, revision));
         }
     }
+
+    /// <summary>The board viewer showing a game's projection for a perspective at a revision.</summary>
+    public static string BoardLink(string board, string game, Perspective perspective, long revision) =>
+        $"boards/{board}?game={Uri.EscapeDataString(game)}&perspective={Uri.EscapeDataString(perspective.Name)}&revision={revision.ToString(CultureInfo.InvariantCulture)}";
 
     private MarkupString Preview(string id) =>
         renderer is not null && documents.TryGetValue(id, out var document)

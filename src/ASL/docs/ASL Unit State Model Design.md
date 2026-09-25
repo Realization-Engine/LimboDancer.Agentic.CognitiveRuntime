@@ -138,9 +138,9 @@ Nothing withheld is in the view, so neither the display nor a log can leak it. T
 
 ## 10. Display and the Game states page
 
-`GameDocuments.For(view)` turns a view into unit documents: each unit is its definition's document (Catalog Design, section 8) with its true vocabulary states as states, a sealed presence is a concealed placeholder, and an entity is its kind at its location. Equipment has no definitions and is not drawn. This is step 6's display from projections, built only for the synthetic fixtures; it reads nothing but the view.
+`GameDocuments.For(view)` turns a view into unit documents: each unit is its definition's document (Catalog Design, section 8) with its true vocabulary states as states, a sealed presence is a concealed placeholder, and an entity is its kind at its location. Equipment has no definitions and is not drawn. It reads nothing but the view; step 6 makes it the board viewer's input (Unit Display Design, section 20).
 
-Map Studio's **Game states** page (`/units/games`) replays each fixture, against the location chains of the boards the Studio can load. It shows a perspective picker and a revision slider; the turn, phase, and stamp; the units with a preview, their location, conditions, derived Good Order, lineage, and custody; the sealed presences; equipment and entities; and the events the perspective is entitled to. **Show on board** registers the view as a generated, read-only placement set and opens the board viewer with it, so the German view of revision 8 shows three German counters and a Russian "?" at E4, and nothing of the hidden leader.
+Map Studio's **Game states** page (`/units/games`) replays each fixture, against the location chains of the boards the Studio can load. It shows a perspective picker and a revision slider; the turn, phase, and stamp; the units with a preview, their location, conditions, derived Good Order, lineage, and custody; the sealed presences; equipment and entities; and the events the perspective is entitled to. **Show on board** opens the board viewer on the view (Unit Display Design, section 20), so the German view of revision 8 shows three German counters and a Russian "?" at E4, and nothing of the hidden leader.
 
 ## 11. The fixture
 

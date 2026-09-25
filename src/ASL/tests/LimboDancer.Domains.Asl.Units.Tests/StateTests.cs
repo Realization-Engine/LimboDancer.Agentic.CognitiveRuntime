@@ -217,6 +217,21 @@ public sealed class StateTests
     }
 
     [Fact]
+    public void PossessedEquipmentIsDrawnWithItsHolderAndDroppedEquipmentAlone()
+    {
+        var vocabulary = UnitsTestData.Asl.Value;
+        var held = GameDocuments.For(GameView.Of(Replayed(), 5, Perspective.Side("german")), vocabulary, [Catalog.Value]);
+        var holder = Assert.Single(held, document => document.Id == "g1");
+        Assert.Equal(("g-lmg", "asl:mg"), (Assert.Single(holder.Attached).Id, holder.Attached[0].Kind));
+        Assert.DoesNotContain(held, document => document.Id == "g-lmg");
+
+        var history = Project(Then(16, new InstanceEliminated("g1")));
+        var dropped = GameDocuments.For(GameView.Of(history, 17, Perspective.Side("german")), vocabulary, [Catalog.Value]);
+        Assert.DoesNotContain(dropped, document => document.Id == "g1");
+        Assert.Equal("bd01:E4:0", Assert.Single(dropped, document => document.Id == "g-lmg").Location);
+    }
+
+    [Fact]
     public void AConclusionGoesStaleAfterALaterEvent()
     {
         var history = Replayed();

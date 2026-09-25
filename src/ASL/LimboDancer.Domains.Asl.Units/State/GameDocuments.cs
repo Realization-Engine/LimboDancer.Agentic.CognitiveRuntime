@@ -7,8 +7,10 @@ namespace LimboDancer.Domains.Asl.Units.State;
 /// <summary>
 /// Unit documents for a perspective's view (ASL-UNIT-070): what the display draws, made only from the view, so it
 /// never receives what the perspective may not know (ASL-UNIT-031). Each unit is its definition's document
-/// (<see cref="CatalogDocuments"/>) with the conditions that are vocabulary states as its states; a sealed presence
-/// is a concealed placeholder; an entity is its kind alone. Equipment has no catalog definitions yet and is not drawn.
+/// (<see cref="CatalogDocuments"/>) with the conditions that are vocabulary states as its states (ASL-UNIT-077) and its
+/// facing; the equipment it possesses is attached to it; a sealed presence is a concealed placeholder; equipment
+/// without a holder, or manned in its own Location, and entities are their kinds at their locations. Equipment has no
+/// catalog definitions yet, so it is drawn by kind alone.
 /// </summary>
 public static class GameDocuments
 {
@@ -17,6 +19,10 @@ public static class GameDocuments
         ArgumentNullException.ThrowIfNull(view);
         ArgumentNullException.ThrowIfNull(vocabulary);
         ArgumentNullException.ThrowIfNull(catalogs);
+        var packs = catalogs.Count > 0 ? catalogs[0].Vocabulary : [.. vocabulary.Packs.Select(pack => pack.Identity)];
+        string[] States(IGameObject item) =>
+            [.. vocabulary.States.Select(state => state.Name).Where(name => GameState.Condition(item, name) == ConditionState.True)];
+
         var documents = new List<UnitDocument>();
         foreach (var unit in view.Units)
         {
@@ -28,29 +34,42 @@ public static class GameDocuments
                 continue;
             }
 
-            var states = vocabulary.States.Select(state => state.Name).Where(name => GameState.Condition(unit, name) == ConditionState.True).ToArray();
+            UnitDocument[] attached = [.. view.Equipment.Where(item => item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unit.Id)
+                .Select(item => new UnitDocument(packs, item.Id, item.Kind, null, null, [], [], States(item), []))];
             documents.Add(made.Document with
             {
-                States = states
+                States = States(unit),
+                Attached = attached,
+                Facing = unit.Position is MapPosition { Facing: { } facing } && vocabulary.HasFacing(unit.Kind) ? facing : null,
             });
         }
 
-        var packs = catalogs.Count > 0 ? catalogs[0].Vocabulary : [.. vocabulary.Packs.Select(pack => pack.Identity)];
         foreach (var presence in view.Sealed)
         {
             documents.Add(new UnitDocument(packs, presence.PlacementId, VocabularyNames.RootKind, presence.Side, presence.Location.ToString(), [], [], [], [],
                 Concealed: true));
         }
 
+        foreach (var item in view.Equipment.Where(item => item.Holding is null or { Role: HoldingRole.Manned }))
+        {
+            if (view.Locations.TryGetValue(item.Id, out var position))
+            {
+                documents.Add(new UnitDocument(packs, item.Id, item.Kind, item.Side, position.Location.ToString(), [], [], States(item), [])
+                {
+                    Facing = item.Position is MapPosition { Facing: { } facing } && vocabulary.HasFacing(item.Kind) ? facing : null,
+                });
+            }
+        }
+
         foreach (var entity in view.Entities)
         {
             if (view.Locations.TryGetValue(entity.Id, out var position))
             {
-                documents.Add(new UnitDocument(packs, entity.Id, entity.Kind, entity.Side, position.Location.ToString(), [], [], [], []));
+                documents.Add(new UnitDocument(packs, entity.Id, entity.Kind, entity.Side, position.Location.ToString(), [], [], States(entity), []));
             }
         }
 
-        // Stack order follows the order units were listed at each location, entities first so units draw above them.
+        // Stack order follows the order listed at each location, entities first so units draw above them.
         var ordered = documents.OrderBy(document => vocabulary.IsA(document.Kind, "asl:entity") ? 0 : 1).ToList();
         return [.. ordered.Select(document => document with
         {

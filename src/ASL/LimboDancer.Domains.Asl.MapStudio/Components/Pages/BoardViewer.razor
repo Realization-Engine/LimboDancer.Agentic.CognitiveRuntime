@@ -1,8 +1,10 @@
 @page "/boards/{BoardName}"
 @using System.Globalization
+@using LimboDancer.Domains.Asl.Units.State
 @implements IAsyncDisposable
 @inject IBoardProvider Boards
 @inject UnitLibrary UnitLibrary
+@inject GameLibrary Games
 @inject IJSRuntime JS
 
 <PageTitle>@(board?.Title ?? BoardName) - ASL Map Studio</PageTitle>
@@ -80,17 +82,43 @@ else if (board is null)
                         derivation trace
                     </label>
                 }
-                @if (unitSets.Count > 0)
+                @if (unitSets.Count > 0 || unitGames.Count > 0)
                 {
                     <label><input type="checkbox" checked="@showUnits" @onchange="ToggleUnits" /> Units</label>
                     @if (showUnits)
                     {
-                        <select value="@unitSetId" @onchange="ChangeUnitSet" aria-label="Placement set">
-                            @foreach (var entry in unitSets)
+                        <select id="units-source" value="@unitSourceKey" @onchange="ChangeUnitSource" aria-label="Units source">
+                            @if (unitGames.Count > 0)
                             {
-                                <option value="@entry.Set.SetId">@entry.Set.Label@(entry.Set.Synthetic ? " (synthetic)" : "")</option>
+                                <optgroup label="Games, projected by perspective">
+                                    @foreach (var game in unitGames)
+                                    {
+                                        <option value="@(GamePrefix + game.Name)">@game.Label@(game.Record?.Synthetic == true ? " (synthetic)" : "")</option>
+                                    }
+                                </optgroup>
+                            }
+                            @if (unitSets.Count > 0)
+                            {
+                                <optgroup label="Placement sets">
+                                    @foreach (var entry in unitSets)
+                                    {
+                                        <option value="@(SetPrefix + entry.Set.SetId)">@entry.Set.Label@(entry.Set.Synthetic ? " (synthetic)" : "")</option>
+                                    }
+                                </optgroup>
                             }
                         </select>
+                        @if (gameProjection is { } projection)
+                        {
+                            <select id="units-perspective" value="@projection.View.Perspective.Name" @onchange="ChangePerspective" aria-label="Perspective">
+                                @foreach (var option in projection.Game.History!.States[^1].Perspectives)
+                                {
+                                    <option value="@option.Name">@option.Name</option>
+                                }
+                            </select>
+                            <button id="units-previous" disabled="@(gameRevision <= 1)" @onclick="() => StepRevision(-1)" aria-label="Previous revision">&lsaquo;</button>
+                            <span id="units-revision" class="muted">revision @gameRevision of @projection.Game.History!.States.Count</span>
+                            <button id="units-next" disabled="@(gameRevision >= projection.Game.History!.States.Count)" @onclick="() => StepRevision(1)" aria-label="Next revision">&rsaquo;</button>
+                        }
                         <select value="@unitSheet" @onchange="ChangeUnitSheet" aria-label="Unit style sheet">
                             @foreach (var name in UnitLibrary.SheetNames())
                             {
@@ -122,7 +150,47 @@ else if (board is null)
                 }
                 <dt>Location</dt><dd>@unit.Location</dd>
             </dl>
-            @if (unitOverlay is { } overlay && UnitSet is { } shown)
+            @if (gameProjection is { } shownGame)
+            {
+                var gameView = shownGame.View;
+                @if (gameView.Units.FirstOrDefault(item => item.Id == unit.Document.Id) is { } instance)
+                {
+                    <h3>In the game</h3>
+                    <dl class="unit-details" id="unit-game-facts">
+                        <dt>Side</dt><dd>@instance.Side</dd>
+                        <dt>Conditions</dt><dd>@ConditionsText(instance)</dd>
+                        <dt>Good Order</dt><dd>@Conditions.Name(GameState.GoodOrder(instance, UnitLibrary.Vocabulary))</dd>
+                        <dt>MF spent this phase</dt><dd>@instance.MfSpent</dd>
+                        @if (instance.From.Count > 0)
+                        {
+                            <dt>Produced from</dt><dd>@string.Join(", ", instance.From)</dd>
+                        }
+                        @if (instance.Custodian is { } custodian)
+                        {
+                            <dt>Prisoner of</dt><dd>@custodian</dd>
+                        }
+                        @if (instance.Position is ContainedPosition contained)
+                        {
+                            <dt>Inside</dt><dd>@contained.Container (@contained.Role)</dd>
+                        }
+                    </dl>
+                }
+                else if (gameView.Sealed.Any(presence => presence.PlacementId == unit.Document.Id))
+                {
+                    <p id="unit-game-facts">A concealed presence: its identity and conditions are withheld from @gameView.Perspective.Name.</p>
+                }
+                else if (gameView.Equipment.Cast<IGameObject>().Concat(gameView.Entities).FirstOrDefault(item => item.Id == unit.Document.Id) is { } other)
+                {
+                    <h3>In the game</h3>
+                    <dl class="unit-details" id="unit-game-facts">
+                        <dt>Side</dt><dd>@(other.Side ?? "none")</dd>
+                        <dt>Conditions</dt><dd>@ConditionsText(other)</dd>
+                    </dl>
+                }
+
+                <p class="muted">Projection of @shownGame.Game.Label for @gameView.Perspective.Name at revision @gameView.Stamp.Revision; a synthetic game, not a live one.</p>
+            }
+            else if (unitOverlay is { } overlay && UnitSet is { } shown)
             {
                 <p class="muted">@(shown.Set.Synthetic ? "Synthetic placement" : "Placement") from @shown.Set.Label (@overlay.SetId); display only, not game state.</p>
             }
@@ -231,8 +299,14 @@ else if (board is null)
     private HexFacts? hovered;
     private PlacedUnit? selectedUnit;
     private UnitOverlay? unitOverlay;
+    private const string GamePrefix = "game:";
+    private const string SetPrefix = "set:";
     private IReadOnlyList<UnitSetEntry> unitSets = [];
-    private string? unitSetId;
+    private IReadOnlyList<GameEntry> unitGames = [];
+    private string? unitSourceKey;
+    private GameProjection? gameProjection;
+    private string gamePerspective = Perspective.AdjudicatorName;
+    private long gameRevision;
     private string unitSheet = UnitLibrary.DefaultSheet;
     private bool showUnits;
     private string? sample;
@@ -247,7 +321,19 @@ else if (board is null)
     [SupplyParameterFromQuery(Name = "units")]
     public string? UnitsQuery { get; set; }
 
-    private UnitSetEntry? UnitSet => unitSets.FirstOrDefault(entry => entry.Set.SetId == unitSetId);
+    /// <summary>A game to show projected for a perspective at a revision (Unit Display Design, section 20).</summary>
+    [SupplyParameterFromQuery(Name = "game")]
+    public string? GameQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "perspective")]
+    public string? PerspectiveQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "revision")]
+    public long? RevisionQuery { get; set; }
+
+    private UnitSetEntry? UnitSet => unitSourceKey is { } key && key.StartsWith(SetPrefix, StringComparison.Ordinal)
+        ? unitSets.FirstOrDefault(entry => entry.Set.SetId == key[SetPrefix.Length..])
+        : null;
 
     private IEnumerable<string> ToggleLayers => BoardRenderer.Layers(view).Where(layer => layer != "defs" && !layer.StartsWith("styled-", StringComparison.Ordinal));
 
@@ -264,6 +350,8 @@ else if (board is null)
         selectedUnit = null;
         unitOverlay = null;
         unitSets = [];
+        unitGames = [];
+        gameProjection = null;
         showUnits = false;
         sample = null;
         if (!BoardRef.TryParse(BoardName, out var boardRef))
@@ -290,8 +378,17 @@ else if (board is null)
         }
 
         unitSets = UnitLibrary.SetsFor(board);
-        unitSetId = unitSets.Any(entry => entry.Set.SetId == UnitsQuery) ? UnitsQuery : unitSets.FirstOrDefault()?.Set.SetId;
-        showUnits = unitSetId is not null;
+        unitGames = Games.GamesFor(board);
+
+        // Games are projected by perspective and come first; a placement set shows when one is asked for.
+        gamePerspective = PerspectiveQuery ?? Perspective.AdjudicatorName;
+        gameRevision = RevisionQuery ?? long.MaxValue;
+        unitSourceKey = unitGames.Any(game => game.Name == GameQuery) ? GamePrefix + GameQuery
+            : unitSets.Any(entry => entry.Set.SetId == UnitsQuery) ? SetPrefix + UnitsQuery
+            : unitGames.FirstOrDefault() is { } firstGame ? GamePrefix + firstGame.Name
+            : unitSets.FirstOrDefault() is { } firstSet ? SetPrefix + firstSet.Set.SetId
+            : null;
+        showUnits = unitSourceKey is not null;
         BuildUnits();
         visible = [.. BoardRenderer.Layers(view).Where(layer => layer != "defs")];
         viewportPending = true;
@@ -342,8 +439,21 @@ else if (board is null)
     /// <summary>Builds the Units layer for the chosen set and sheet. It replaces only <c>layer-units</c>; board layers are untouched.</summary>
     private void BuildUnits()
     {
-        unitOverlay = board is not null && UnitSet is { } entry && UnitLibrary.Renderer(unitSheet) is { } renderer
-            ? UnitLibrary.Overlay(board, entry.Set, renderer)
+        gameProjection = null;
+        UnitPlacementSet? set = UnitSet?.Set;
+        if (unitSourceKey is { } key && key.StartsWith(GamePrefix, StringComparison.Ordinal)
+            && unitGames.FirstOrDefault(game => game.Name == key[GamePrefix.Length..]) is { History: { } history } game)
+        {
+            gameRevision = Math.Clamp(gameRevision, 1, history.States.Count);
+            var perspectives = history.At(gameRevision)!.Perspectives;
+            var perspective = perspectives.FirstOrDefault(item => item.Name == gamePerspective) ?? Perspective.Adjudicator;
+            gamePerspective = perspective.Name;
+            gameProjection = Games.Projection(game, perspective, gameRevision);
+            set = gameProjection.Set;
+        }
+
+        unitOverlay = board is not null && set is not null && UnitLibrary.Renderer(unitSheet) is { } renderer
+            ? UnitLibrary.Overlay(board, set, renderer)
             : null;
         if (selectedUnit is { } current)
         {
@@ -370,12 +480,37 @@ else if (board is null)
         await PushUnits();
     }
 
-    private async Task ChangeUnitSet(ChangeEventArgs args)
+    private async Task ChangeUnitSource(ChangeEventArgs args)
     {
-        unitSetId = args.Value as string;
+        unitSourceKey = args.Value as string;
+        gameRevision = long.MaxValue;
+        gamePerspective = Perspective.AdjudicatorName;
         selectedUnit = null;
         BuildUnits();
         await PushUnits();
+    }
+
+    private async Task ChangePerspective(ChangeEventArgs args)
+    {
+        gamePerspective = args.Value as string ?? Perspective.AdjudicatorName;
+        BuildUnits();
+        await PushUnits();
+    }
+
+    private async Task StepRevision(int delta)
+    {
+        gameRevision += delta;
+        BuildUnits();
+        await PushUnits();
+    }
+
+    private static string ConditionsText(IGameObject item)
+    {
+        var shown = item.Conditions.Where(pair => pair.Value is not ConditionState.False)
+            .Select(pair => pair.Value == ConditionState.True ? pair.Key.Replace("asl:", string.Empty, StringComparison.Ordinal)
+                : $"{pair.Key.Replace("asl:", string.Empty, StringComparison.Ordinal)} {Conditions.Name(pair.Value)}")
+            .ToArray();
+        return shown.Length == 0 ? "none" : string.Join(", ", shown);
     }
 
     private async Task ChangeUnitSheet(ChangeEventArgs args)
