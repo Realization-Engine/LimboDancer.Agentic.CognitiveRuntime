@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Text;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Units;
+using LimboDancer.Domains.Asl.Units.Catalog;
 using LimboDancer.Domains.Asl.Units.Documents;
 using LimboDancer.Domains.Asl.Units.Rendering;
 using LimboDancer.Domains.Asl.Units.Rendering.Palettes;
@@ -12,6 +13,12 @@ namespace LimboDancer.Domains.Asl.MapStudio.Services;
 
 /// <summary>A placement set and where it came from: shipped with the Studio, or saved from the Unit Lab.</summary>
 public sealed record UnitSetEntry(UnitPlacementSet Set, bool BuiltIn, IReadOnlyList<UnitDiagnostic> Diagnostics);
+
+/// <summary>
+/// A definition from a catalog that is not synthetic, made into a unit document the Lab can start from. <see cref="Key"/>
+/// is the picker value, <c>catalog:{catalog}/{definition}</c>.
+/// </summary>
+public sealed record CatalogChoice(string Key, UnitDocument Document, DefinitionReference Definition, CatalogPublication Publication);
 
 /// <summary>
 /// The Studio's unit display inputs (Unit Display Design, sections 8 and 10): the built-in vocabulary, the two ASL
@@ -26,6 +33,7 @@ public sealed class UnitLibrary(StudioOptions options)
     private readonly ConcurrentDictionary<string, PaletteSet> palettes = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<(string SheetHash, string Palette), UnitRenderer> renderers = new();
     private IReadOnlyList<UnitDocument>? examples;
+    private IReadOnlyList<CatalogChoice>? catalogChoices;
 
     public UnitVocabulary Vocabulary => vocabulary.Value;
 
@@ -33,6 +41,12 @@ public sealed class UnitLibrary(StudioOptions options)
 
     /// <summary>The synthetic example documents the Lab offers as starting points.</summary>
     public IReadOnlyList<UnitDocument> Examples => examples ??= UnitExamples.Catalog(Vocabulary);
+
+    /// <summary>
+    /// The definitions of every embedded catalog that is not synthetic, as unit documents with printed values only
+    /// (Scenario A1 Catalog Design, section 8). A catalog that does not read is left out.
+    /// </summary>
+    public IReadOnlyList<CatalogChoice> CatalogChoices => catalogChoices ??= ReadCatalogChoices();
 
     public IReadOnlyList<string> PaletteNames => PaletteSetReader.BuiltIn;
 
@@ -182,6 +196,29 @@ public sealed class UnitLibrary(StudioOptions options)
         Directory.CreateDirectory(PlacementsRoot);
         File.WriteAllText(Path.Combine(PlacementsRoot, set.SetId + ".units.json"), UnitDocumentJson.Write(set, Vocabulary), new UTF8Encoding(false));
         return null;
+    }
+
+    private List<CatalogChoice> ReadCatalogChoices()
+    {
+        var choices = new List<CatalogChoice>();
+        foreach (var name in UnitCatalogs.Names)
+        {
+            if (UnitCatalogs.Read(name, Vocabulary)?.Catalog is not { Publication: not CatalogPublication.Synthetic } catalog)
+            {
+                continue;
+            }
+
+            foreach (var definition in catalog.Definitions)
+            {
+                if (CatalogDocuments.ToDocument(catalog, definition, Vocabulary, definition.Id).Result is { } result)
+                {
+                    choices.Add(new CatalogChoice($"catalog:{catalog.Identity.Catalog}/{definition.Id}", result.Document, result.Definition,
+                        catalog.Publication));
+                }
+            }
+        }
+
+        return choices;
     }
 
     private string StylesRoot => Path.Combine(UnitsRoot, "styles");

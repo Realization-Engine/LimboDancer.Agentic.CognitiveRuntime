@@ -172,6 +172,8 @@ A catalog's identity (ASL-UNIT-080) is its id, its version, and the SHA-256 of i
 
 Definitions use the display's vocabulary (the `asl` pack, [Display Design](<ASL Unit Display Design.md>), section 3.1) for kinds, faces, attributes, and traits, so a definition can become a unit document without translation. `CatalogDocuments.ToDocument` makes one: the nationality becomes the side, printed values go on the face they are printed on (or on the unit for unit-scoped attributes), and present traits become the face's traits. Values not printed and absent traits are left out. The document is read back through `UnitDocumentReader`, so it is always valid against the vocabulary, and it is returned with its `DefinitionReference`. It carries no states: conditions are game state (step 4), and the document is a projection (ASL-UNIT-070, 074).
 
+**In the Unit Lab.** The Lab's "Start from" list offers every definition of each embedded catalog that is not synthetic, in its own group after the synthetic examples, labelled with the catalog version and publication. Choosing one loads the definition's unit document; the line under the list names the catalog version and definition, with the full `DefinitionReference` as its tooltip. Edits in the Lab make a Lab document, not a catalog definition. A definition whose broken-side values are `not-in-source` shows no broken face.
+
 The Unit Display Design's section 4.1 table is the list of what a Personnel counter prints; the worksheet asks for each of those facts that a transcriber can read from the counter. The Unit Size Number is not transcribed: it follows from the kind (A1.6, p. 45) and is the vocabulary's size class.
 
 ## 9. Source registration for D1

@@ -22,13 +22,32 @@
                 Start from
                 <select id="lab-example" value="@exampleId" @onchange="LoadExample">
                     <option value="">a new squad</option>
-                    @foreach (var example in Library.Examples)
+                    <optgroup label="Synthetic examples">
+                        @foreach (var example in Library.Examples)
+                        {
+                            <option value="@example.Id">@UnitLabels.AccessibleName(example, Library.Vocabulary)</option>
+                        }
+                    </optgroup>
+                    @foreach (var group in Library.CatalogChoices.GroupBy(choice => choice.Definition.Catalog))
                     {
-                        <option value="@example.Id">@UnitLabels.AccessibleName(example, Library.Vocabulary)</option>
+                        <optgroup label="@($"Catalog {group.Key.Catalog}@{group.Key.Version} ({group.First().Publication.ToString().ToLowerInvariant()})")">
+                            @foreach (var choice in group)
+                            {
+                                <option value="@choice.Key">@UnitLabels.AccessibleName(choice.Document, Library.Vocabulary)</option>
+                            }
+                        </optgroup>
                     }
                 </select>
             </label>
         </div>
+        @if (catalogChoice is not null)
+        {
+            <p id="lab-catalog-source" class="muted" title="@catalogChoice.Definition.ToString()">
+                From @($"{catalogChoice.Definition.Catalog.Catalog}@{catalogChoice.Definition.Catalog.Version}"), definition @catalogChoice.Definition.Definition:
+                printed values from a @catalogChoice.Publication.ToString().ToLowerInvariant() catalog, with no states.
+                Edits here make a Lab document, not a catalog definition.
+            </p>
+        }
 
         <UnitEditor Draft="draft" Vocabulary="Library.Vocabulary" OnChange="Refresh" />
 
@@ -211,6 +230,7 @@
 
     private UnitDraft draft = new();
     private string exampleId = string.Empty;
+    private CatalogChoice? catalogChoice;
     private UnitDocument? document;
     private string json = string.Empty;
     private List<UnitDiagnostic> diagnostics = [];
@@ -259,7 +279,10 @@
     private void LoadExample(ChangeEventArgs args)
     {
         exampleId = args.Value as string ?? string.Empty;
-        draft = Library.Examples.FirstOrDefault(example => example.Id == exampleId) is { } example ? UnitDraft.From(example) : new UnitDraft();
+        catalogChoice = Library.CatalogChoices.FirstOrDefault(choice => choice.Key == exampleId);
+        draft = catalogChoice is not null ? UnitDraft.From(catalogChoice.Document)
+            : Library.Examples.FirstOrDefault(example => example.Id == exampleId) is { } example ? UnitDraft.From(example)
+            : new UnitDraft();
         Refresh();
     }
 

@@ -145,6 +145,41 @@ public sealed class UnitStudioTests : IDisposable
     }
 
     [Fact]
+    public void ThePublishedCatalogIsOfferedWithPrintedValuesOnly()
+    {
+        var choices = library.CatalogChoices;
+        Assert.Equal(["attacker-squad", "attacker-half-squad", "defender-squad", "defender-leader"], choices.Select(choice => choice.Definition.Definition));
+        Assert.All(choices, choice =>
+        {
+            Assert.Equal(Units.Catalog.CatalogPublication.Published, choice.Publication);
+            Assert.Equal("asl-scenario-a1", choice.Definition.Catalog.Catalog);
+            Assert.Empty(choice.Document.States);
+        });
+        var squad = choices[0].Document;
+        Assert.Equal("german", squad.Side);
+        Assert.Equal(4, squad.Value("front", "asl:firepower")!.Number);
+    }
+
+    [Fact]
+    public void TheLabStartsFromACatalogDefinition()
+    {
+        var lab = context.Render<UnitLab>();
+        Assert.DoesNotContain("lab-catalog-source", lab.Markup, StringComparison.Ordinal);
+        lab.Find("#lab-example").Change("catalog:asl-scenario-a1/defender-squad");
+        Assert.Contains("Russian", lab.Find("#lab-name").TextContent, StringComparison.Ordinal);
+        Assert.Contains("4-4-7", lab.Find("#lab-name").TextContent, StringComparison.Ordinal);
+        var source = lab.Find("#lab-catalog-source");
+        Assert.Contains("asl-scenario-a1@1.0.0, definition defender-squad", source.TextContent, StringComparison.Ordinal);
+        Assert.StartsWith("asl-scenario-a1@1.0.0+sha256:", source.GetAttribute("title"), StringComparison.Ordinal);
+        Assert.EndsWith("#defender-squad", source.GetAttribute("title"), StringComparison.Ordinal);
+        Assert.DoesNotContain("The document is refused", lab.Markup, StringComparison.Ordinal);
+        Assert.DoesNotContain("class=\"fail\"", lab.Find("#lab-findings").OuterHtml, StringComparison.Ordinal);
+
+        lab.Find("#lab-example").Change("example-squad");
+        Assert.DoesNotContain("lab-catalog-source", lab.Markup, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void ThePlausibilityCheckWarnsInTheLab()
     {
         var lab = context.Render<UnitLab>();
