@@ -172,6 +172,18 @@ public static class GameEventWriter
             case InstanceEliminated eliminated:
                 writer.WriteString("id", eliminated.Id);
                 break;
+            case EntryAttempted attempted:
+                writer.WriteString("id", attempted.Id);
+                writer.WriteString("target", attempted.Target.ToString());
+                writer.WriteNumber("mf", attempted.Mf);
+                break;
+            case EntryForcedBack forced:
+                writer.WriteString("id", forced.Id);
+                writer.WriteString("attempt", forced.Attempt);
+                writer.WriteString("returnedTo", forced.ReturnedTo.ToString());
+                writer.WriteNumber("mf", forced.Mf);
+                writer.WriteBoolean("followOnFireResolved", forced.FollowOnFireResolved);
+                break;
             case InstanceCaptured captured:
                 writer.WriteString("id", captured.Id);
                 writer.WriteString("custodian", captured.Custodian);

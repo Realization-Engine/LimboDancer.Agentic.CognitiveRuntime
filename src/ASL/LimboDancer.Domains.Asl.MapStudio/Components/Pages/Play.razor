@@ -31,6 +31,15 @@
     </label>
     @if (state is not null)
     {
+        <label>
+            View as
+            <select id="play-perspective" value="@viewAs" @onchange="@(args => viewAs = args.Value as string ?? viewAs)">
+                @foreach (var perspective in state.Perspectives)
+                {
+                    <option value="@perspective.Name">@(perspective.IsAdjudicator ? "the adjudicator" : perspective.Name)</option>
+                }
+            </select>
+        </label>
         <a id="play-view" href="@Games.BoardLink(state.Map.Boards[0].Board.Value, GameLibrary.LivePrefix + gameId, Perspective.Adjudicator, state.Revision)">View on @state.Map.Boards[0].Board.Value</a>
     }
 </div>
@@ -115,8 +124,12 @@ else if (state is not null)
             </select>
         </label>
         <label>Building <input id="enter-location" value="@enterLocation" @onchange="@(args => enterLocation = args.Value as string ?? string.Empty)" size="12" /></label>
-        <button id="propose-enter" @onclick="ProposeEntry">Propose: enter an empty building</button>
+        <button id="propose-enter" @onclick="ProposeEntry">Propose: enter a building</button>
     </div>
+    <p class="muted">
+        The adjudicator decides an entry from the whole game. An entry into a building the moving side cannot see into is only declared when proposed;
+        what it finds there is disclosed when it is confirmed.
+    </p>
 }
 
 @if (pending is { } proposal)
@@ -124,15 +137,15 @@ else if (state is not null)
     <div id="play-proposal">
         <h3>@proposal.Action.Name</h3>
         <p class="@(proposal.Result.Outcome is PlayOutcome.NeedsConfirmation or PlayOutcome.Committed or PlayOutcome.Replay ? "pass" : "fail")">
-            <strong id="play-outcome">@OutcomeText(proposal.Result.Outcome)</strong>
+            <strong id="play-outcome">@OutcomeText(proposal.Result.Outcome, Withheld(proposal))</strong>
         </p>
         <ul id="play-reasons">
-            @foreach (var reason in proposal.Result.Reasons)
+            @foreach (var reason in Reasons(proposal))
             {
                 <li>@reason</li>
             }
         </ul>
-        @if (proposal.Result.Plan?.Entry is { } review)
+        @if (proposal.Result.Plan?.Entry is { } review && !Withheld(proposal))
         {
             <table class="library" id="play-facts">
                 <thead><tr><th>Reviewed fact (Scenario A1 first case)</th><th>From the game</th></tr></thead>
@@ -159,23 +172,34 @@ else if (state is not null)
 @if (state is not null)
 {
     <h3>Units</h3>
+    <p class="muted" id="play-units-view">As @(Viewer.IsAdjudicator ? "the adjudicator sees them: every unit" : $"{Viewer.Name} sees them"), at revision @state.Revision.</p>
     <table class="library" id="play-units">
         <thead><tr><th>Id</th><th>Side</th><th>Kind</th><th>Location</th><th>MF spent</th><th>Conditions</th></tr></thead>
         <tbody>
-            @foreach (var unit in state.Units)
+            @foreach (var unit in VisibleUnits)
             {
                 <tr data-unit="@unit.Id">
                     <td>@unit.Id</td><td>@unit.Side</td><td>@unit.Kind.Replace("asl:", string.Empty, StringComparison.Ordinal)</td>
-                    <td>@(state.Location(unit.Id)?.Location.ToString() ?? unit.Status.ToString().ToLowerInvariant())</td><td>@unit.MfSpent</td>
+                    <td>@(state.Location(unit.Id)?.Location.ToString() ?? unit.Status.ToString().ToLowerInvariant())</td>
+                    <td>@unit.MfSpent@(unit.MovementEnded ? ", movement ended" : "")</td>
                     <td>@string.Join(", ", unit.Conditions.Where(pair => pair.Value == ConditionState.True).Select(pair => pair.Key.Replace("asl:", string.Empty, StringComparison.Ordinal)))</td>
+                </tr>
+            }
+            @foreach (var presence in SealedPresences)
+            {
+                <tr data-sealed="@presence.PlacementId">
+                    <td>?</td><td>@presence.Side</td><td>concealed</td><td>@presence.Location</td><td></td><td></td>
                 </tr>
             }
         </tbody>
     </table>
-    <details>
-        <summary>Audit (latest)</summary>
-        <pre class="json">@string.Join("\n", Live.Audit.Tail(12))</pre>
-    </details>
+    @if (Viewer.IsAdjudicator)
+    {
+        <details>
+            <summary>Audit (latest)</summary>
+            <pre class="json">@string.Join("\n", Live.Audit.Tail(12))</pre>
+        </details>
+    }
 }
 
 @code {
@@ -200,6 +224,27 @@ else if (state is not null)
     private string enterUnit = string.Empty;
     private string enterLocation = "bd01:E4:0";
     private Proposal? pending;
+    private string viewAs = string.Empty;
+
+    /// <summary>The perspective the page shows: a side, or the adjudicator, who sees everything (D3).</summary>
+    private Perspective Viewer => state?.Perspectives.FirstOrDefault(perspective => perspective.Name == viewAs) ?? Perspective.Adjudicator;
+
+    private GameView? View => state is not null && history is not null && history.Current is not null ? GameView.Of(history, state.Revision, Viewer) : null;
+
+    private IEnumerable<UnitInstance> VisibleUnits => Viewer.IsAdjudicator || View is null ? state?.Units ?? [] : View.Units;
+
+    private IEnumerable<SealedPresence> SealedPresences => Viewer.IsAdjudicator || View is null ? [] : View.Sealed;
+
+    /// <summary>
+    /// Whether the proposal's outcome is withheld from the current viewer: an entry the moving side cannot see into, viewed
+    /// by anyone but the adjudicator (Occupied and Concealed Entry Design, section 7).
+    /// </summary>
+    private bool Withheld(Proposal proposal) => !Viewer.IsAdjudicator && proposal.Result.Plan?.Disclosure is { Withheld: true };
+
+    private IReadOnlyList<string> Reasons(Proposal proposal) =>
+        !Viewer.IsAdjudicator && proposal.Result.Plan is { Disclosure: { } disclosure } plan
+            ? disclosure.ReasonsForMover(plan, confirmed: proposal.Result.Outcome != PlayOutcome.NeedsConfirmation)
+            : proposal.Result.Reasons;
 
     [SupplyParameterFromQuery(Name = "game")]
     public string? GameQuery { get; set; }
@@ -235,6 +280,11 @@ else if (state is not null)
         {
             enterUnit = state.Units.FirstOrDefault()?.Id ?? string.Empty;
         }
+
+        if (state is not null && !state.Perspectives.Any(perspective => perspective.Name == viewAs))
+        {
+            viewAs = state.PhasingSide;
+        }
     }
 
     private void AddPlacement()
@@ -260,7 +310,7 @@ else if (state is not null)
             conditions = new Dictionary<string, bool>
             {
                 ["asl:broken"] = false, ["asl:berserk"] = false, ["asl:captured"] = false, ["asl:melee"] = false, ["asl:ti"] = false,
-                ["asl:concealed"] = item.Concealed, ["asl:hidden"] = item.Hidden,
+                ["asl:disrupted"] = false, ["asl:concealed"] = item.Concealed, ["asl:hidden"] = item.Hidden,
             },
         })];
         var catalog = PublishedCatalog is { } published ? $"{published.Identity.Catalog}@{published.Identity.Version}" : string.Empty;
@@ -283,7 +333,7 @@ else if (state is not null)
     private Task ProposeAdvance() => Propose(GameActions.AdvancePhase,
         JsonSerializer.SerializeToElement(new { gameId, attemptId = Attempt("advance"), expectedRevision = (long)history!.Events.Count }));
 
-    private Task ProposeEntry() => Propose(GameActions.EnterEmptyBuilding, JsonSerializer.SerializeToElement(new
+    private Task ProposeEntry() => Propose(GameActions.EnterBuilding, JsonSerializer.SerializeToElement(new
     {
         gameId, attemptId = Attempt("enter"), expectedRevision = (long)history!.Events.Count, unitId = enterUnit, location = enterLocation.Trim(),
     }));
@@ -326,8 +376,9 @@ else if (state is not null)
 
     private static string Attempt(string kind) => $"{kind}-{Guid.NewGuid():N}"[..(kind.Length + 13)];
 
-    private static string OutcomeText(PlayOutcome outcome) => outcome switch
+    private static string OutcomeText(PlayOutcome outcome, bool withheld) => outcome switch
     {
+        PlayOutcome.NeedsConfirmation when withheld => "The entry is declared. Confirm to commit it and resolve what it finds.",
         PlayOutcome.NeedsConfirmation => "Every check passed. Confirm to commit.",
         PlayOutcome.Committed => "Committed through the Execution Gate.",
         PlayOutcome.Replay => "Already committed by this attempt; nothing changed.",

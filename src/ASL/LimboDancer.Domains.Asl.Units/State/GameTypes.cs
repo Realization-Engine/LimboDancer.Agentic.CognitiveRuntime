@@ -208,7 +208,8 @@ public interface IGameObject
 /// <summary>
 /// A unit instance (ASL-UNIT-021): stable id within its game, the definition it was created from, its owning side, its
 /// conditions, and its position. <see cref="From"/> names the instances it was produced from, if any, and
-/// <see cref="MfSpent"/> the MF its moves have spent in the current phase.
+/// <see cref="MfSpent"/> the MF its moves have spent in the current phase. <see cref="MovementEnded"/> is set when the
+/// unit may not move again in the phase, as after being forced back (A12.15, p. 78), and is cleared at every phase change.
 /// </summary>
 public sealed record UnitInstance(
     string Id,
@@ -220,7 +221,8 @@ public sealed record UnitInstance(
     InstanceStatus Status,
     IReadOnlyList<string> From,
     string? Custodian = null,
-    int MfSpent = 0) : IGameObject
+    int MfSpent = 0,
+    bool MovementEnded = false) : IGameObject
 {
     string? IGameObject.Side => Side;
 }

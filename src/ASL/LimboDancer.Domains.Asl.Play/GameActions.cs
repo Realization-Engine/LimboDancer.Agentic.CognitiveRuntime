@@ -59,7 +59,24 @@ public static class GameActions
             package = ScenarioA1Package.Identity.ToString()
         }));
 
-    public static IReadOnlyList<ActionDescriptor> All { get; } = [Setup, AdvancePhase, EnterEmptyBuilding];
+    public static readonly ActionDescriptor EnterBuilding = Descriptor("asl.game.enter-building", "Enter a building",
+        "Move a Good Order squad into an adjacent ground-level ordinary building in its MPh. The adjudicator routes the entry to the reviewed Scenario A1 case that covers the target: an empty building is entered for 2 MF, a known enemy refuses the entry (A4.14), and one concealed or hidden enemy MMC is revealed and forces the squad back (A12.15). Anything else is refused.",
+        PlayPermission, "asl.game.reviewed-entry-cases-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "unitId", "location"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "unitId": { "type": "string" }, "location": { "type": "string" }
+          }
+        }
+        """, JsonSerializer.SerializeToElement(new
+        {
+            packages = new[] { ScenarioA1Package.Identity.ToString(), ScenarioA1OccupiedPackage.Identity.ToString(), ScenarioA1PostRevealPackage.Identity.ToString() }
+        }));
+
+    public static IReadOnlyList<ActionDescriptor> All { get; } = [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding];
 
     public static string VersionKey(Guid tenant, string game) => $"asl.game:{tenant:N}:{game}";
 

@@ -46,6 +46,7 @@ public static class GameProjector
         List<UnitDiagnostic> diagnostics)
     {
         private readonly HashSet<string> eventIds = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, EntryAttempted> openAttempts = new(StringComparer.Ordinal);
         private UnitCatalog? catalog;
         private string path = string.Empty;
 
@@ -70,6 +71,8 @@ public static class GameProjector
                 LineageRecorded lineage => RecordLineage(previous, lineage),
                 InstanceEliminated eliminated => Eliminate(previous, eliminated.Id),
                 InstanceCaptured captured => Capture(previous, captured),
+                EntryAttempted attempted => Attempt(previous, attempted, gameEvent.EventId),
+                EntryForcedBack forced => ForceBack(previous, forced, gameEvent.Causes),
                 _ => Fail<GameState>("UNIT-STATE-001", $"'{gameEvent.Type}' has no projection."),
             };
 
@@ -183,14 +186,16 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-015", $"Turn {change.Turn} is before the current turn {state.Turn}.");
             }
 
-            // MF are spent within a phase, so a new phase starts every unit at none spent.
+            // MF are spent within a phase, so a new phase starts every unit at none spent and free to move; an attempt
+            // left open cannot be resolved in a later phase.
+            openAttempts.Clear();
             return CheckPhase(state, change.Turn, change.Phase, change.PhasingSide)
                 ? state with
                 {
                     Turn = change.Turn,
                     Phase = change.Phase,
                     PhasingSide = change.PhasingSide,
-                    Units = [.. state.Units.Select(unit => unit.MfSpent == 0 ? unit : unit with { MfSpent = 0 })],
+                    Units = [.. state.Units.Select(unit => unit is { MfSpent: 0, MovementEnded: false } ? unit : unit with { MfSpent = 0, MovementEnded = false })],
                 }
                 : null;
         }
@@ -315,6 +320,11 @@ public static class GameProjector
                 return null;
             }
 
+            if (item is UnitInstance { MovementEnded: true } && move.Mf is > 0)
+            {
+                return Fail<GameState>("UNIT-STATE-018", $"'{item.Id}' may not move again this phase (A4.1, p. 48).");
+            }
+
             if (move.Mf is < 0)
             {
                 return Fail<GameState>("UNIT-STATE-010", "A move cannot spend negative MF.");
@@ -331,6 +341,79 @@ public static class GameProjector
                 EntityInstance entity => Replace(state, entity with { Position = move.Position }),
                 _ => Fail<GameState>("UNIT-STATE-012", "Equipment moves with equipment-transferred."),
             };
+        }
+
+        /// <summary>An entry attempt in the MPh by a unit of the phasing side that may still move; nothing changes until it resolves.</summary>
+        private GameState? Attempt(GameState state, EntryAttempted attempt, string eventId)
+        {
+            if (Active(state, attempt.Id) is not { } item)
+            {
+                return null;
+            }
+
+            if (item is not UnitInstance unit)
+            {
+                return Fail<GameState>("UNIT-STATE-018", $"'{attempt.Id}' is not a unit, so it cannot attempt an entry.");
+            }
+
+            if (state.Phase != "mph" || state.PhasingSide != unit.Side)
+            {
+                return Fail<GameState>("UNIT-STATE-018", $"'{unit.Id}' can attempt an entry only in the MPh of its own side.");
+            }
+
+            if (unit.MovementEnded)
+            {
+                return Fail<GameState>("UNIT-STATE-018", $"'{unit.Id}' may not move again this phase (A4.1, p. 48).");
+            }
+
+            if (attempt.Mf < 0)
+            {
+                return Fail<GameState>("UNIT-STATE-010", "An attempt cannot cost negative MF.");
+            }
+
+            if (!CheckPosition(state, unit.Kind, new MapPosition(attempt.Target)))
+            {
+                return null;
+            }
+
+            openAttempts[eventId] = attempt;
+            return state;
+        }
+
+        /// <summary>The unit returns to where it is, the attempt's MF are spent there, and its movement ends (A12.15, p. 78).</summary>
+        private GameState? ForceBack(GameState state, EntryForcedBack forced, IReadOnlyList<string> causes)
+        {
+            if (!openAttempts.TryGetValue(forced.Attempt, out var attempt) || attempt.Id != forced.Id)
+            {
+                return Fail<GameState>("UNIT-STATE-018", $"'{forced.Attempt}' is not an open entry attempt by '{forced.Id}'.");
+            }
+
+            if (!causes.Contains(forced.Attempt, StringComparer.Ordinal))
+            {
+                return Fail<GameState>("UNIT-STATE-018", "A forced back names its attempt among its causes.");
+            }
+
+            if (forced.Mf != attempt.Mf)
+            {
+                return Fail<GameState>("UNIT-STATE-018", $"The attempt cost {attempt.Mf} MF, not {forced.Mf}.");
+            }
+
+            if (Active(state, forced.Id) is not UnitInstance unit)
+            {
+                return null;
+            }
+
+            if (state.Location(unit.Id)?.Location != forced.ReturnedTo)
+            {
+                return Fail<GameState>("UNIT-STATE-018", $"'{unit.Id}' is not at {forced.ReturnedTo}, the location it is forced back to.");
+            }
+
+            openAttempts.Remove(forced.Attempt);
+            return Replace(state, unit with
+            {
+                MfSpent = unit.MfSpent + forced.Mf,
+                MovementEnded = true
+            });
         }
 
         private GameState? Transfer(GameState state, EquipmentTransferred transfer)

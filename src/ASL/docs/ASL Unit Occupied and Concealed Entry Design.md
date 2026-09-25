@@ -1,6 +1,6 @@
 # ASL Unit Occupied and Concealed Entry Design
 
-**Status:** Proposed. Designed before code, on `feature/asl-unit-step8-design`; built in the order of section 13.
+**Status:** Built in the order of section 13. Parts 1 and 2 are recorded in sections 3 and 5; part 3 in section 14.
 
 **Date:** 2026-09-26
 
@@ -236,3 +236,31 @@ Each part goes on its own feature branch, and each branch compiles, passes all t
 3. `feature/asl-unit-concealed-entry`: sections 4 and 6 to 11.
 
 This design and the execution boundary review are merged first, on their own branch, so each part starts from them.
+
+## 14. As built (part 3)
+
+Part 3 follows sections 4 and 6 to 11, with these decisions and corrections made while building it:
+
+- **Where things live.**
+  - `LiveBoardSnapshotSource` and `LivePostRevealSnapshotSource` in the Play project return the one snapshot the planner built, and only for the exact tenant, package, unit, and location.
+  - `GamePlanner.PlanEnterBuildingAsync` routes the entry.
+  - `EntryRoute` and `EntryDisclosure` carry the route and what the moving side may be told.
+- **Refusals the side may see at once.** A refusal that depends only on the mover and the terrain is denied at proposal, like any other action, and names its facts (`play.fact-false`, `play.fact-unknown`). Examples: the wrong phase, a target that is not adjacent, too few MF, or movement ended. It reveals nothing about the target.
+- **Withheld entries skip the gate at proposal.** Running the gate on a proposal would deny a refused entry at once, and that would tell the side that something hidden is there. So a withheld entry with no mover refusal returns NeedsConfirmation without the gate, and the gate runs, and decides, only on confirmation. The audit therefore records a withheld entry once, at confirmation.
+- **A4.14 exceptions.**
+  - A Berserk mover is refused earlier, because it is not in Good Order.
+  - A Disrupted mover, or one whose Disrupted state is unknown, is refused with `play.a414-exception`. Setup placements, on the page and in the tests, now set `asl:disrupted` to false.
+  - Unarmed has no declared condition, so no live unit can be Unarmed. A captured mover is refused.
+- **Return hazards.** The review said setup could not place fortifications; it can, as entities by kind, and the review is corrected. The planner refuses when any fortification, Residual FP, or fire entity is at the return location.
+- **Outside the reviewed cases.** A target holding several concealed units, an SMC, a friendly unit, a mix, or an entity is refused with `play.outside-reviewed-cases`. The side sees that reason only when every occupant is visible to it. Otherwise it sees `play.adjudicator-cannot-resolve` after confirming.
+- **Units.**
+  - `entry-attempted` and `entry-forced-back` are replayed with the checks of section 8 (code UNIT-STATE-018).
+  - An open attempt cannot be resolved after a phase change.
+  - A unit whose movement has ended cannot spend MF on a move.
+- **Map Studio.**
+  - The Play page proposes `asl.game.enter-building`.
+  - A "View as" selector defaults to the phasing side. A side's view hides the facts and conclusion of a withheld entry, lists only the units that side sees, with sealed presences as "?", and leaves out the audit tail.
+- **Tests.**
+  - Units, `EntryEventTests`: 14 cases.
+  - Play, `ConcealedEntryTests`: 13 cases on the board 01 oracle fixture, covering U4 to U8 over a live game.
+  - Map Studio: a side's view of a declared entry, and the adjudicator view for the audit and the facts.

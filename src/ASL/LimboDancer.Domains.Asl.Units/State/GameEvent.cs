@@ -1,3 +1,5 @@
+using LimboDancer.Domains.Asl.Maps.Coordinates;
+
 namespace LimboDancer.Domains.Asl.Units.State;
 
 /// <summary>
@@ -90,6 +92,20 @@ public sealed record LineageRecorded(LineageAction Action, IReadOnlyList<string>
 
 /// <summary><c>instance-eliminated</c>.</summary>
 public sealed record InstanceEliminated(string Id) : EventPayload;
+
+/// <summary>
+/// <c>entry-attempted</c>: a unit attempts, in its MPh, to enter <paramref name="Target"/> at a cost of <paramref name="Mf"/> MF
+/// (Occupied and Concealed Entry Design, section 8). It records the cost only: the unit does not move and spends
+/// nothing until the attempt is resolved.
+/// </summary>
+public sealed record EntryAttempted(string Id, BoardLocation Target, int Mf) : EventPayload;
+
+/// <summary>
+/// <c>entry-forced-back</c>: the unit of the attempt <paramref name="Attempt"/> is forced back to the location it tried to
+/// leave, the attempt's MF count as spent there, and its MPh ends (A12.15, p. 78). <paramref name="FollowOnFireResolved"/>
+/// records whether fire on the return was resolved; no action resolves it yet.
+/// </summary>
+public sealed record EntryForcedBack(string Id, string Attempt, BoardLocation ReturnedTo, int Mf, bool FollowOnFireResolved) : EventPayload;
 
 /// <summary><c>instance-captured</c>: a unit becomes a prisoner in the custody of an enemy unit (A20.2, A20.5).</summary>
 public sealed record InstanceCaptured(string Id, string Custodian) : EventPayload;

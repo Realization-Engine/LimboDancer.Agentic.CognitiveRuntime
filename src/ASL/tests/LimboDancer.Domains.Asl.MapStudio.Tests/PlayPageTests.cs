@@ -124,6 +124,10 @@ public sealed class PlayPageTests : IDisposable
         Assert.Contains("Revision 2", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
         Assert.Contains("Setup is open", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
         Assert.NotEmpty(page.FindAll("#play-units tr[data-unit='g1']"));
+
+        // The audit tail is the adjudicator's; a side's view does not show it.
+        Assert.DoesNotContain("ExecutorCompleted", page.Markup, StringComparison.Ordinal);
+        page.Find("#play-perspective").Change(Perspective.AdjudicatorName);
         Assert.Contains("ExecutorCompleted", page.Markup, StringComparison.Ordinal);
     }
 
@@ -136,6 +140,7 @@ public sealed class PlayPageTests : IDisposable
         Commit(page, "#propose-advance");
         Assert.Contains("Movement Phase", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
 
+        page.Find("#play-perspective").Change(Perspective.AdjudicatorName);
         page.Find("#enter-location").Change(building);
         page.Find("#propose-enter").Click();
         page.WaitForAssertion(() => Assert.NotEmpty(page.FindAll("#play-facts")));
@@ -145,6 +150,25 @@ public sealed class PlayPageTests : IDisposable
         page.WaitForAssertion(() => Assert.Contains("Committed", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
         var row = page.Find("#play-units tr[data-unit='g1']").TextContent;
         Assert.Contains(building, row, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TheMovingSideSeesAnEntryOnlyAsDeclaredUntilItIsConfirmed()
+    {
+        // Occupied and Concealed Entry Design, section 7: the side cannot tell from the proposal whether the building is empty.
+        var (from, building) = EntryPair();
+        var page = StartGame(from);
+        Commit(page, "#propose-advance");
+        Commit(page, "#propose-advance");
+        page.Find("#enter-location").Change(building);
+        page.Find("#propose-enter").Click();
+        page.WaitForAssertion(() => Assert.Contains("The entry is declared", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+        Assert.Empty(page.FindAll("#play-facts"));
+        Assert.Equal([EntryDisclosure.ResolvedOnConfirmation], page.FindAll("#play-reasons li").Select(item => item.TextContent));
+
+        page.Find("#play-confirm").Click();
+        page.WaitForAssertion(() => Assert.Contains("Committed", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+        Assert.Contains(building, page.Find("#play-units tr[data-unit='g1']").TextContent, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -159,6 +183,9 @@ public sealed class PlayPageTests : IDisposable
         Assert.Empty(page.FindAll("#play-confirm"));
         var reasons = page.FindAll("#play-reasons li").Select(item => item.TextContent).ToList();
         Assert.Equal(reasons.Count, reasons.Distinct(StringComparer.Ordinal).Count());
+
+        // The refusal depends only on the mover and the terrain, so the side is told why at once.
+        Assert.Contains("play.fact-false: isAdjacentGroundLevelOrdinaryBuilding", reasons);
         Assert.Contains("Revision 4", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
     }
 
