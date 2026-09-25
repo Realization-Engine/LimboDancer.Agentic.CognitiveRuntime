@@ -64,3 +64,5 @@ Scenario A1 has one governed execution path: the second-defender return (`Scenar
 - `ASL Unit Model Decisions D1 to D4.md`: the decision memo for the unit model's counter data source, live game source, perspective set, and first slice, decided on 2026-09-25.
 - `ASL Unit Counter Map Rendering Design.md`, `ASL Unit Map Rendering Slice.md`, and `ASL Unit Domain Model Analysis.md`: the first counter overlay, now superseded by the display design, and the background unit analysis.
 - `VASL Board 01 Terrain Evidence.md`: partial building-override inventory from VASL board 01 metadata and the validated snapshot rules that depend on it.
+- [NET Dice Roller Requirements](<NET Dice Roller Requirements.md>): approved requirements for the implemented standalone dice library and the planned ASL audit boundary.
+- [NET Dice Roller Design](<NET Dice Roller Design.md>): implemented minimal API and random generation, validation results, and planned governed ASL integration.
