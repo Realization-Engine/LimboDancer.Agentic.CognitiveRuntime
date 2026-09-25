@@ -10,7 +10,7 @@ internal static class Glyphs
 {
     public static readonly IReadOnlySet<string> Names = new HashSet<string>(StringComparer.Ordinal)
     {
-        "size-figures", "mg", "ft", "dc", "radio", "mortar", "latw", "smoke",
+        "size-figures", "mg", "ft", "dc", "radio", "mortar", "latw", "smoke", "gun", "aa-gun", "rcl", "limbered-gun",
     };
 
     /// <summary>Draws a glyph in a box; returns false for an unknown name.</summary>
@@ -29,7 +29,7 @@ internal static class Glyphs
                 }
 
                 return true;
-            case "mg" or "ft" or "dc" or "radio" or "mortar" or "latw" or "smoke":
+            case "mg" or "ft" or "dc" or "radio" or "mortar" or "latw" or "smoke" or "gun" or "aa-gun" or "rcl" or "limbered-gun":
                 Equipment(svg, name, box, color);
                 return true;
             default:
@@ -142,6 +142,36 @@ internal static class Glyphs
                 Circle(0.32, 0.6, 0.18);
                 Circle(0.55, 0.45, 0.22);
                 Circle(0.72, 0.64, 0.16);
+                break;
+
+            // Guns point east, so a sheet can rotate them to their facing.
+            case "gun":
+                Polygon((0.3, 0.44), (0.98, 0.47), (0.98, 0.53), (0.3, 0.56));
+                Polygon((0.26, 0.3), (0.36, 0.3), (0.36, 0.7), (0.26, 0.7));
+                Circle(0.34, 0.26, 0.08, filled: false);
+                Circle(0.34, 0.74, 0.08, filled: false);
+                Line(0.26, 0.46, 0.04, 0.3);
+                Line(0.26, 0.54, 0.04, 0.7);
+                break;
+            case "aa-gun":
+                Circle(0.45, 0.5, 0.2, filled: false);
+                Polygon((0.4, 0.46), (0.95, 0.2), (0.98, 0.26), (0.45, 0.56));
+                Line(0.2, 0.85, 0.7, 0.15);
+                Line(0.2, 0.15, 0.7, 0.85);
+                break;
+            case "rcl":
+                Polygon((0.06, 0.44), (0.96, 0.44), (0.96, 0.56), (0.06, 0.56));
+                Polygon((0.02, 0.4), (0.1, 0.44), (0.1, 0.56), (0.02, 0.6));
+                Line(0.5, 0.56, 0.35, 0.85);
+                Line(0.5, 0.56, 0.65, 0.85);
+                Line(0.5, 0.56, 0.5, 0.9);
+                break;
+            case "limbered-gun":
+                Polygon((0.02, 0.47), (0.62, 0.44), (0.62, 0.56), (0.02, 0.53));
+                Polygon((0.58, 0.3), (0.68, 0.3), (0.68, 0.7), (0.58, 0.7));
+                Circle(0.63, 0.24, 0.1, filled: false);
+                Circle(0.63, 0.76, 0.1, filled: false);
+                Line(0.68, 0.5, 0.98, 0.5);
                 break;
         }
     }

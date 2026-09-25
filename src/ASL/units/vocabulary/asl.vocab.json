@@ -1,7 +1,7 @@
 {
   "pack": "asl",
-  "version": "1.0.0",
-  "label": "ASL Personnel and support weapons",
+  "version": "1.1.0",
+  "label": "ASL Personnel, support weapons, and Guns",
   "note": "Original LimboDancer vocabulary. Rule references are to the registered rulebook PDF by physical page; no rulebook text or counter artwork.",
   "extends": [],
   "sides": [
@@ -19,7 +19,8 @@
     { "name": "broken", "label": "broken" },
     { "name": "wounded", "label": "wounded" },
     { "name": "malfunctioned", "label": "malfunctioned" },
-    { "name": "reverse", "label": "reverse" }
+    { "name": "reverse", "label": "reverse" },
+    { "name": "limbered", "label": "limbered" }
   ],
   "attributes": [
     { "name": "asl:firepower", "label": "Firepower", "type": "integer", "scope": "face", "rule": "A1.21, p. 44" },
@@ -71,7 +72,41 @@
         { "name": "piat", "label": "PIAT", "short": "PIAT" },
         { "name": "pf", "label": "PF", "short": "PF" }
       ]
-    }
+    },
+    { "name": "asl:designation", "label": "Designation", "type": "text", "scope": "face", "rule": "C2.2, p. 167" },
+    { "name": "asl:caliber", "label": "Caliber Size", "type": "integer", "scope": "face", "unit": "mm", "rule": "C2.21, p. 167" },
+    {
+      "name": "asl:caliber-suffix", "label": "Caliber suffix", "type": "enumeration", "scope": "face", "rule": "C2.21, p. 167",
+      "members": [
+        { "name": "star", "label": "*", "short": "*" },
+        { "name": "l", "label": "L", "short": "L" },
+        { "name": "ll", "label": "LL", "short": "LL" }
+      ]
+    },
+    {
+      "name": "asl:gun-type", "label": "Gun type", "type": "enumeration", "scope": "face", "rule": "C2.22, p. 167",
+      "members": [
+        { "name": "mtr", "label": "mortar", "short": "MTR" },
+        { "name": "at", "label": "anti-tank gun", "short": "AT" },
+        { "name": "inf", "label": "infantry howitzer", "short": "INF" },
+        { "name": "art", "label": "artillery", "short": "ART" },
+        { "name": "rcl", "label": "recoilless rifle", "short": "RCL" },
+        { "name": "aa", "label": "anti-aircraft gun", "short": "AA" }
+      ]
+    },
+    { "name": "asl:range-minimum", "label": "Minimum range", "type": "integer", "scope": "face", "rule": "C2.25, p. 168" },
+    { "name": "asl:range-maximum", "label": "Maximum range", "type": "integer", "scope": "face", "rule": "C2.25, p. 168" },
+    { "name": "asl:special-ammo", "label": "Special ammunition", "type": "list", "items": "text", "separator": " ", "scope": "face", "rule": "C2.26, p. 168" },
+    { "name": "asl:manhandling", "label": "Manhandling Number", "type": "integer", "scope": "face", "rule": "C2.27, p. 168" },
+    {
+      "name": "asl:target-size", "label": "Gun Target Size", "type": "enumeration", "scope": "face", "rule": "C2.271, p. 168",
+      "members": [
+        { "name": "small", "label": "Small Target", "short": "small" },
+        { "name": "large", "label": "Large Target", "short": "large" }
+      ]
+    },
+    { "name": "asl:ife", "label": "Infantry Firepower Equivalent", "type": "integer", "scope": "face", "rule": "C2.29, p. 168" },
+    { "name": "asl:removal", "label": "Removal Number", "type": "integer", "scope": "face", "faces": ["malfunctioned"], "rule": "C2.2, p. 167" }
   ],
   "traits": [
     { "name": "asl:assault-fire", "label": "Assault Fire", "short": "AF", "rule": "A1.21, p. 44" },
@@ -81,7 +116,13 @@
     { "name": "asl:sapper", "label": "Sapper", "short": "SAP", "rule": "A1.5, p. 45" },
     { "name": "asl:assault-engineer", "label": "Assault Engineer", "short": "AE", "rule": "A1.5, p. 45" },
     { "name": "asl:breakdown-removes", "label": "Eliminated on breakdown (X#)", "short": "X#", "rule": "A9.7, p. 65" },
-    { "name": "asl:field-phone", "label": "Field phone", "short": "PHONE", "rule": "C1.2 to C1.23, p. 163" }
+    { "name": "asl:field-phone", "label": "Field phone", "short": "PHONE", "rule": "C1.2 to C1.23, p. 163" },
+    { "name": "asl:no-ap", "label": "Cannot fire AP", "short": "AP NA", "rule": "C2.21, p. 167" },
+    { "name": "asl:no-he", "label": "Cannot fire HE", "short": "HE NA", "rule": "C2.21, p. 167" },
+    { "name": "asl:mount-360", "label": "360° Mount", "short": "360", "rule": "C2.3, p. 168" },
+    { "name": "asl:qsu", "label": "Quick Set-Up", "short": "QSU", "rule": "C2.4, p. 168" },
+    { "name": "asl:nm", "label": "No Movement", "short": "NM", "rule": "C2.4, p. 168" },
+    { "name": "asl:rfnm", "label": "Restricted Fire, No Movement", "short": "RFNM", "rule": "C2.4, p. 168" }
   ],
   "states": [
     { "name": "asl:broken", "label": "broken", "short": "BRK", "face": "broken", "group": "morale-status", "rule": "A10, pp. 65 to 71" },
@@ -94,7 +135,8 @@
     { "name": "asl:wounded", "label": "wounded", "short": "WND", "face": "wounded", "rule": "A15.2, p. 83; A17, p. 85" },
     { "name": "asl:disrupted", "label": "disrupted", "short": "DIS", "rule": "A19.12, p. 86" },
     { "name": "asl:concealed", "label": "concealed", "short": "?", "rule": "A12, pp. 76 to 80" },
-    { "name": "asl:malfunctioned", "label": "malfunctioned", "short": "MAL", "face": "malfunctioned", "rule": "A9.7, p. 65" }
+    { "name": "asl:malfunctioned", "label": "malfunctioned", "short": "MAL", "face": "malfunctioned", "rule": "A9.7, p. 65" },
+    { "name": "asl:limbered", "label": "limbered", "short": "LMB", "face": "limbered", "rule": "C2.2, p. 167" }
   ],
   "kinds": [
     {
@@ -152,18 +194,30 @@
     { "name": "asl:dc", "label": "demolition charge", "extends": "asl:sw", "rule": "A23.1, p. 90",
       "attachedName": { "default": "{kind} {firepower}" } },
     {
-      "name": "asl:latw", "label": "LATW", "extends": "asl:sw", "attributes": ["asl:latw-type"], "rule": "C13.1, p. 183",
+      "name": "asl:latw", "label": "LATW", "extends": "asl:sw", "attributes": ["asl:latw-type", "asl:caliber", "asl:range-maximum", "asl:special-ammo"], "rule": "C13.1, p. 183",
       "accessibleName": { "default": "{side} {latw-type} {kind} {identity}, breakdown {breakdown}" },
       "attachedName": { "default": "{latw-type}" }
     },
-    { "name": "asl:light-mortar", "label": "light mortar", "extends": "asl:sw", "rule": "C13.1, p. 183",
-      "accessibleName": { "default": "{side} {kind} {identity}, breakdown {breakdown}" },
+    { "name": "asl:light-mortar", "label": "light mortar", "extends": "asl:sw", "rule": "C2.21, p. 167; C13.1, p. 183",
+      "attributes": ["asl:caliber", "asl:range-minimum", "asl:range-maximum", "asl:special-ammo"], "traits": ["asl:no-ap", "asl:no-he"],
+      "accessibleName": { "default": "{side} {caliber}mm {kind} {identity}, breakdown {breakdown}" },
       "attachedName": { "default": "{kind}" } },
     {
       "name": "asl:radio", "label": "radio", "extends": "asl:sw", "faces": ["reverse"], "attributes": ["asl:contact", "asl:contact-dates"],
       "traits": ["asl:field-phone"], "rule": "C1.2 to C1.23, p. 163",
       "accessibleName": { "default": "{side} {kind} {identity}, contact {contact}" },
       "attachedName": { "default": "{kind} {contact}" }
+    },
+    {
+      "name": "asl:gun", "label": "Gun", "extends": "asl:equipment", "faces": ["front", "malfunctioned", "limbered"], "facing": true, "rule": "C2.2 to C2.29, pp. 167 to 168",
+      "attributes": ["asl:designation", "asl:gun-type", "asl:caliber", "asl:caliber-suffix", "asl:rate-of-fire", "asl:ife", "asl:range-minimum", "asl:range-maximum",
+        "asl:special-ammo", "asl:manhandling", "asl:target-size", "asl:breakdown", "asl:repair", "asl:removal", "asl:identity"],
+      "traits": ["asl:no-ap", "asl:no-he", "asl:mount-360", "asl:qsu", "asl:nm", "asl:rfnm"],
+      "accessibleName": {
+        "default": "{side} {caliber}{caliber-suffix?} {gun-type} {designation} {identity}, ROF {rate-of-fire}, M{manhandling}",
+        "limbered": "{side} limbered {caliber}{caliber-suffix?} {gun-type} {designation} {identity}, M{manhandling}",
+        "malfunctioned": "{side} malfunctioned {caliber}{caliber-suffix?} {gun-type} {designation} {identity}, repair {repair}, removal {removal}"
+      }
     }
   ]
 }

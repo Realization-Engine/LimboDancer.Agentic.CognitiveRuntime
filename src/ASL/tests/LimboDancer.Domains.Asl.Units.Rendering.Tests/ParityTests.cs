@@ -34,6 +34,19 @@ public sealed class ParityTests
           "faces": { "front": { "contact": [6, 7, 8], "breakdown": 11, "portage": 1 }, "reverse": { "contact-dates": ["to 6/42", "7/42 on"] } } }
         """;
 
+    private const string Gun = """
+        { "id": "u", "kind": "asl:gun", "side": "german", "facing": "north-east",
+          "faces": { "front": { "designation": "PaK 40", "gun-type": "at", "caliber": 75, "caliber-suffix": "l", "rate-of-fire": 2, "ife": 3, "range-minimum": 2, "range-maximum": 40, "special-ammo": ["H6"], "manhandling": 8, "breakdown": 11 }, "malfunctioned": { "repair": 1, "removal": 6 }, "limbered": { "manhandling": 8 } } }
+        """;
+
+    private const string LightMortar = """
+        { "id": "u", "kind": "asl:light-mortar", "side": "british", "faces": { "front": { "caliber": 50, "range-minimum": 2, "range-maximum": 13, "breakdown": 12, "portage": 2 } } }
+        """;
+
+    private const string Latw = """
+        { "id": "u", "kind": "asl:latw", "side": "german", "faces": { "front": { "latw-type": "psk", "caliber": 88, "range-maximum": 4, "breakdown": 10, "portage": 2 } } }
+        """;
+
     /// <summary>Each row: without the fact, with it, the face to show (or null), and where the difference is under classic and digital.</summary>
     public static TheoryData<string, string, string, string?, string, string> Rows() => new()
     {
@@ -92,6 +105,38 @@ public sealed class ParityTests
         { "Wounded SMC", Leader, WithStates(Leader, "asl:wounded"), null, "badge", "badge" },
         { "Disrupted", Squad, WithStates(Squad, "asl:disrupted"), null, "badge", "badge" },
         { "Concealed, owner's view", Squad, WithStates(Squad, "asl:concealed"), null, "face", "face" },
+
+        // 4.4 Guns and ordnance values.
+        { "Gun Caliber Size", Gun.Replace("\"caliber\": 75, ", "", StringComparison.Ordinal), Gun, null, "slot:cal", "slot:cal" },
+        { "Cannot fire AP", Gun, WithTrait(Gun, "front", "asl:no-ap"), null, "slot:cal", "slot:cal" },
+        { "Cannot fire HE", Gun, WithTrait(Gun, "front", "asl:no-he"), null, "slot:cal", "slot:cal" },
+        { "Caliber suffix", Gun.Replace("\"caliber-suffix\": \"l\", ", "", StringComparison.Ordinal), Gun, null, "slot:cal", "slot:cal" },
+        { "Gun type", Gun, Gun.Replace("\"gun-type\": \"at\"", "\"gun-type\": \"inf\"", StringComparison.Ordinal), null, "slot:type", "slot:type" },
+        { "Gun designation", Gun.Replace("\"designation\": \"PaK 40\", ", "", StringComparison.Ordinal), Gun, null, "details", "details" },
+        { "Facing and Covered Arc", Gun.Replace(" \"facing\": \"north-east\",", "", StringComparison.Ordinal), Gun, null, "slot:glyph", "direction" },
+        { "Gun ROF", Gun.Replace("\"rate-of-fire\": 2, ", "", StringComparison.Ordinal), Gun, null, "slot:rof", "badge" },
+        { "Range limit", Gun.Replace("\"range-minimum\": 2, \"range-maximum\": 40, ", "", StringComparison.Ordinal), Gun, null, "slot:range", "slot:range" },
+        { "Minimum range", Gun.Replace("\"range-minimum\": 2, ", "", StringComparison.Ordinal), Gun, null, "slot:range", "slot:range" },
+        { "Special ammunition", Gun.Replace("\"special-ammo\": [\"H6\"], ", "", StringComparison.Ordinal), Gun, null, "slot:ammo", "slot:ammo" },
+        { "Manhandling Number", Gun.Replace("\"manhandling\": 8, ", "", StringComparison.Ordinal), Gun, null, "slot:mnum", "slot:mnum" },
+        { "Small Target", Gun, Gun.Replace("\"manhandling\": 8, ", "\"manhandling\": 8, \"target-size\": \"small\", ", StringComparison.Ordinal), null, "slot:mnum", "slot:mnum" },
+        { "Large Target", Gun, Gun.Replace("\"manhandling\": 8, ", "\"manhandling\": 8, \"target-size\": \"large\", ", StringComparison.Ordinal), null, "slot:mnum", "slot:mnum" },
+        { "Gun breakdown", Gun.Replace(", \"breakdown\": 11", "", StringComparison.Ordinal), Gun, null, "slot:bd", "slot:bd" },
+        { "IFE", Gun.Replace("\"ife\": 3, ", "", StringComparison.Ordinal), Gun, null, "slot:ife", "badge" },
+        { "360 Mount", Gun, WithTrait(Gun, "front", "asl:mount-360"), null, "slot:glyph", "badge" },
+        { "Quick Set-Up", Gun, WithTrait(Gun, "front", "asl:qsu"), null, "slot:mv", "badge" },
+        { "No Movement", Gun, WithTrait(Gun, "front", "asl:nm"), null, "slot:mv", "badge" },
+        { "Restricted Fire, No Movement", Gun, WithTrait(Gun, "front", "asl:rfnm"), null, "slot:mv", "badge" },
+        { "Gun malfunctioned side", Gun, WithStates(Gun, "asl:malfunctioned"), null, "face", "face" },
+        { "Gun Repair Number", Gun.Replace("\"repair\": 1, ", "", StringComparison.Ordinal), Gun, "malfunctioned", "slot:repair", "slot:repair" },
+        { "Gun Removal Number", Gun.Replace(", \"removal\": 6", "", StringComparison.Ordinal), Gun, "malfunctioned", "slot:removal", "slot:removal" },
+        { "Limbered side", Gun, WithStates(Gun, "asl:limbered"), null, "face", "face" },
+        { "Limbered Fire values", Gun, Gun.Replace("\"limbered\": { \"manhandling\": 8 }", "\"limbered\": { \"caliber\": 75, \"manhandling\": 8 }", StringComparison.Ordinal),
+            "limbered", "slot:cal", "slot:cal" },
+        { "Light mortar Caliber Size", LightMortar.Replace("\"caliber\": 50, ", "", StringComparison.Ordinal), LightMortar, null, "slot:cal", "slot:cal" },
+        { "Light mortar range limit", LightMortar.Replace("\"range-minimum\": 2, \"range-maximum\": 13, ", "", StringComparison.Ordinal), LightMortar, null, "slot:range", "slot:range" },
+        { "LATW Caliber Size", Latw.Replace("\"caliber\": 88, ", "", StringComparison.Ordinal), Latw, null, "slot:cal", "slot:cal" },
+        { "LATW range limit", Latw.Replace("\"range-maximum\": 4, ", "", StringComparison.Ordinal), Latw, null, "slot:range", "slot:range" },
     };
 
     [Theory]
@@ -137,6 +182,8 @@ public sealed class ParityTests
 
         regions["badge"] = string.Concat(own.Where(element => element.Attribute("data-badge") is not null).Select(element => element.ToString()));
         regions["face"] = string.Concat(own.Where(element => element.Attribute("data-face") is not null).Select(element => element.ToString()));
+        regions["direction"] = string.Concat(own.Where(element => element.Attribute("data-facing") is not null || element.Attribute("data-covered-arc") is not null)
+            .Select(element => element.ToString()));
         regions["details"] = string.Join("\n", UnitLabels.Details(document, RenderingTestData.Vocabulary.Value, face));
         return regions;
     }

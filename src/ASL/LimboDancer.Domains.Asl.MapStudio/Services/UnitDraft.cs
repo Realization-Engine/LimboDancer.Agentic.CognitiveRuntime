@@ -34,6 +34,12 @@ public sealed class UnitDraft
         get; set;
     }
 
+    /// <summary>The faced hexspine, for kinds that face one, such as Guns (C3.2).</summary>
+    public UnitFacing? Facing
+    {
+        get; set;
+    }
+
     /// <summary>Form text by face, then by qualified attribute name.</summary>
     public Dictionary<string, Dictionary<string, string>> Faces { get; } = new(StringComparer.Ordinal);
 
@@ -127,6 +133,7 @@ public sealed class UnitDraft
             Concealed = document.Concealed,
             SizeClass = document.SizeClass,
             StackOrder = document.StackOrder,
+            Facing = document.Facing,
         };
         foreach (var face in document.Faces)
         {
@@ -188,6 +195,11 @@ public sealed class UnitDraft
         if (location is not null)
         {
             writer.WriteString("location", location);
+        }
+
+        if (Facing is { } facing && !Concealed && vocabulary.HasKind(Kind) && vocabulary.HasFacing(Kind))
+        {
+            writer.WriteString("facing", facing.Name());
         }
 
         if (Concealed)

@@ -118,6 +118,13 @@ public sealed class UnitRenderer
             return;
         }
 
+        if (document.Facing is { } arcFacing && evaluator.Ident(style["covered-arc"]) == "wedge")
+        {
+            var length = size * (evaluator.Number(style["covered-arc-length"]) ?? 2.5);
+            var arcColor = evaluator.Color(style["covered-arc-color"]) ?? Palette.For(side).Accent;
+            CoveredArc(svg, arcFacing, centerX, centerY, length, size, arcColor);
+        }
+
         // Carried equipment is tucked under the owner's lower edge, so it is drawn first.
         if (owner is null && document.Attached.Count > 0)
         {
@@ -180,6 +187,11 @@ public sealed class UnitRenderer
             };
         }
 
+        if (style["pattern"] is { } crossed && evaluator.Ident([crossed[0]]) == "cross")
+        {
+            Cross(svg, x0, y0, size, crossed.Count > 1 ? evaluator.Color(crossed.Skip(1).ToArray()) ?? ink : ink);
+        }
+
         var textColor = evaluator.Color(style["color"]) ?? ink;
         if (style["glyph"] is { } watermark && evaluator.Glyph(watermark) is { } mark)
         {
@@ -189,10 +201,54 @@ public sealed class UnitRenderer
         }
 
         WriteSlots(svg, subject, owner, style, evaluator, inner, size, tier, textColor, side, warnings);
+        if (document.Facing is { } markFacing && evaluator.Ident(style["direction-mark"]) == "arrow")
+        {
+            DirectionArrow(svg, markFacing, centerX, centerY, size, evaluator.Color(style["direction-color"]) ?? stroke);
+        }
+
         if (evaluator.Ident(style["badges"]) != "none")
         {
             WriteBadges(svg, style, evaluator, x0, y0, size, ink);
         }
+    }
+
+    /// <summary>The Covered Arc (C3.2): the 60 degree wedge between the two hex rows that meet at the faced hexspine.</summary>
+    private static void CoveredArc(SvgWriter svg, UnitFacing facing, double centerX, double centerY, double length, double size, string color)
+    {
+        var degrees = facing.Degrees();
+        (double X, double Y) Point(double angle) =>
+            (centerX + (length * Math.Cos(angle * Math.PI / 180)), centerY + (length * Math.Sin(angle * Math.PI / 180)));
+        var (x1, y1) = Point(degrees - 30);
+        var (x2, y2) = Point(degrees + 30);
+        var path = new PathData().MoveTo(N(centerX), N(centerY)).LineTo(N(x1), N(y1)).LineTo(N(x2), N(y2)).Close();
+        svg.Empty("path", ("d", path.ToString()), ("fill", color), ("fill-opacity", "0.16"), ("stroke", color), ("stroke-width", N(size * 0.03)),
+            ("stroke-dasharray", $"{N(size * 0.12)} {N(size * 0.08)}"), ("pointer-events", "none"), ("data-covered-arc", facing.Name()));
+    }
+
+    /// <summary>A triangle just outside the face, pointing at the faced hexspine.</summary>
+    private static void DirectionArrow(SvgWriter svg, UnitFacing facing, double centerX, double centerY, double size, string color)
+    {
+        var angle = facing.Degrees() * Math.PI / 180;
+        var (dx, dy) = (Math.Cos(angle), Math.Sin(angle));
+        var reach = size * 0.5 / Math.Max(Math.Abs(dx), Math.Abs(dy));
+        var baseDistance = reach + (size * 0.03);
+        var tipDistance = reach + (size * 0.24);
+        var half = size * 0.13;
+        var path = new PathData()
+            .MoveTo(N(centerX + (dx * tipDistance)), N(centerY + (dy * tipDistance)))
+            .LineTo(N(centerX + (dx * baseDistance) - (dy * half)), N(centerY + (dy * baseDistance) + (dx * half)))
+            .LineTo(N(centerX + (dx * baseDistance) + (dy * half)), N(centerY + (dy * baseDistance) - (dx * half)))
+            .Close();
+        svg.Empty("path", ("d", path.ToString()), ("fill", color), ("data-facing", facing.Name()));
+    }
+
+    /// <summary>The cross printed over a malfunctioned Gun's reverse side.</summary>
+    private static void Cross(SvgWriter svg, double x0, double y0, double size, string color)
+    {
+        svg.Start("g", ("data-pattern", "cross"), ("stroke", color), ("stroke-width", N(size * 0.05)), ("opacity", "0.55"));
+        svg.Empty("line", ("x1", N(x0 + (size * 0.08))), ("y1", N(y0 + (size * 0.08))), ("x2", N(x0 + (size * 0.92))), ("y2", N(y0 + (size * 0.92))));
+        svg.Empty("line", ("x1", N(x0 + (size * 0.92))), ("y1", N(y0 + (size * 0.08))), ("x2", N(x0 + (size * 0.08))), ("y2", N(y0 + (size * 0.92))));
+        svg.End();
     }
 
     private void WriteSlots(SvgWriter svg, StyleSubject subject, StyleSubject? owner, ComputedStyle face, Evaluator faceEvaluator, Box inner, double size,
@@ -274,6 +330,14 @@ public sealed class UnitRenderer
                 }
             }
 
+            var rotation = slotStyle["rotate"] is { } rotate
+                ? evaluator.Ident(rotate) == "facing" ? subject.Document.Facing?.Degrees() : (int?)evaluator.Number(rotate)
+                : null;
+            if (rotation is { } turn && turn != 0)
+            {
+                svg.Start("g", ("transform", string.Create(CultureInfo.InvariantCulture, $"rotate({turn} {N(box.CenterX)} {N(box.CenterY)})")));
+            }
+
             if (evaluator.Glyph(content) is { } glyph)
             {
                 if (!Glyphs.Draw(svg, glyph.Name, glyph.Argument, box, color, subject.Document.Figures(Vocabulary) ?? 1))
@@ -316,6 +380,11 @@ public sealed class UnitRenderer
                     svg.Text(raised);
                     svg.End();
                 }
+            }
+
+            if (rotation is { } turned && turned != 0)
+            {
+                svg.End();
             }
 
             svg.End();
@@ -372,11 +441,11 @@ public sealed class UnitRenderer
             badges.Add((text, position, Math.Max(height, TextWidth(text, fontSize) + (size * 0.14))));
         }
 
-        // Each edge holds what fits in a little more than the face width; the rest collapse into a count badge.
+        // Each edge holds what fits in a quarter more than the face width; the rest collapse into a count badge.
         foreach (var edge in new[] { "top", "bottom" })
         {
             var onEdge = badges.Where(badge => badge.Position.StartsWith(edge, StringComparison.Ordinal)).ToList();
-            var available = size * 1.1;
+            var available = size * 1.25;
             var kept = new List<(string Text, string Position, double Width)>();
             var used = 0.0;
             for (var index = 0; index < onEdge.Count; index++)
@@ -525,8 +594,8 @@ public sealed class UnitRenderer
         }
 
         /// <summary>
-        /// An attribute's displayed value. The option <c>first</c> takes a list's first item; a face name, such as
-        /// <c>front</c>, reads that face when the shown face lacks the value.
+        /// An attribute's displayed value. The option <c>first</c> takes a list's first item; <c>optional</c> gives an
+        /// empty value instead of none; a face name, such as <c>front</c>, reads that face when the shown face lacks the value.
         /// </summary>
         private string? Attribute(string name, string? option)
         {
@@ -544,9 +613,9 @@ public sealed class UnitRenderer
             if (!renderer.Vocabulary.HasKind(document.Kind) ||
                 !renderer.Vocabulary.TryResolveAttribute(document.Kind, name, out var attribute, out _) ||
                 (document.Value(subject.Face, attribute.Name) ??
-                 (option is not null && option != "first" ? document.Face(option)?.Value(attribute.Name) : null)) is not { } value)
+                 (option is not null and not "first" and not "optional" ? document.Face(option)?.Value(attribute.Name) : null)) is not { } value)
             {
-                return null;
+                return option == "optional" ? string.Empty : null;
             }
 
             return option == "first" && value.Items.Count > 0 ? value.Items[0] : value.Display;

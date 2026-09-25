@@ -91,6 +91,11 @@ public static class UnitDocumentJson
             writer.WriteString("location", document.Location);
         }
 
+        if (document.Facing is { } facing)
+        {
+            writer.WriteString("facing", facing.Name());
+        }
+
         if (document.Concealed)
         {
             writer.WriteBoolean("concealed", true);

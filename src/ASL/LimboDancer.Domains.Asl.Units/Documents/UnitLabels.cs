@@ -24,6 +24,11 @@ public static class UnitLabels
 
         var shown = face ?? document.ShownFace(vocabulary);
         var parts = new List<string> { Fill(vocabulary.AccessibleTemplate(document.Kind, shown), document, vocabulary, shown) };
+        if (document.Facing is { } facing)
+        {
+            parts.Add("facing " + facing.Label());
+        }
+
         parts.AddRange(document.States.Select(state => vocabulary.TryGetState(state, out var definition) ? definition.Label : state));
         if (document.Attached.Count > 0)
         {
@@ -68,6 +73,11 @@ public static class UnitLabels
 
         var shown = face ?? document.ShownFace(vocabulary);
         rows.Add(new("Face", vocabulary.FaceLabel(shown)));
+        if (document.Facing is { } facing)
+        {
+            rows.Add(new("Facing", facing.Label() + " hexspine"));
+        }
+
         if (document.Face(shown) is { } current)
         {
             rows.AddRange(current.Values.Select(Row));
@@ -104,7 +114,8 @@ public static class UnitLabels
 
     /// <summary>
     /// Fills a template such as "{side} {class} {kind} {identity}, {firepower}-{range}-{morale}". A word with a missing
-    /// value is dropped, and a comma-separated part is dropped when none of its values is present.
+    /// value is dropped, unless the value is optional, as in <c>{caliber}{caliber-suffix?}</c>; a comma-separated part is
+    /// dropped when none of its values is present.
     /// </summary>
     internal static string Fill(string template, UnitDocument document, UnitVocabulary vocabulary, string face)
     {
@@ -136,11 +147,13 @@ public static class UnitLabels
                     }
 
                     builder.Append(word, index, open - index);
-                    placeholders++;
-                    var value = Resolve(word[(open + 1)..close], document, vocabulary, face);
+                    var name = word[(open + 1)..close];
+                    var optional = name.EndsWith('?');
+                    placeholders += optional ? 0 : 1;
+                    var value = Resolve(optional ? name[..^1] : name, document, vocabulary, face);
                     if (value is null)
                     {
-                        missing = true;
+                        missing |= !optional;
                     }
                     else
                     {
