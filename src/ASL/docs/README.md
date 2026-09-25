@@ -56,6 +56,7 @@ Scenario A1 has one governed execution path: the second-defender return (`Scenar
 - `LimboDancer.Agentic.CognitiveRuntime ASL Unit Requirements.md`: proposed requirements (ASL-UNIT-001 onward) for the unit model, its package boundary, and the unit display.
 - `ASL Unit Display Design.md`: accepted design for the unit vocabulary, unit documents, style sheets, SVG rendering, the Units layer, and the Unit Lab; all four phases (Personnel and SW, Guns, vehicles, and entities that are not units) are built, as recorded in its sections 16 to 19.
 - `ASL Scenario A1 Catalog Design.md`: step 3 of the unit sequence: the definition model, catalog versions, the D1 counter-sheet source registration and transcription format, and the cross-checks against the Scenario A1 snapshots.
+- `ASL Unit State Model Design.md`: step 4 of the unit sequence: game and side state, instances and lineage, conditions, positions against the location chain, relationships, events, perspectives, and the Game states page.
 - `ASL Unit Model Decisions D1 to D4.md`: the decision memo for the unit model's counter data source, live game source, perspective set, and first slice, decided on 2026-09-25.
 - `ASL Unit Counter Map Rendering Design.md`, `ASL Unit Map Rendering Slice.md`, and `ASL Unit Domain Model Analysis.md`: the first counter overlay, now superseded by the display design, and the background unit analysis.
 - `VASL Board 01 Terrain Evidence.md`: partial building-override inventory from VASL board 01 metadata and the validated snapshot rules that depend on it.

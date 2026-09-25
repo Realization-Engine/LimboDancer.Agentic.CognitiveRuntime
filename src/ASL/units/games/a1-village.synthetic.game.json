@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "tenant": "3f6a9c1e-0000-4000-8000-00000000a101",
+  "game": "a1-village-synthetic",
+  "label": "Synthetic game: a German platoon clears a Russian-held building on board 01",
+  "synthetic": true,
+  "note": "Synthetic fixture. The definitions come from the published Scenario A1 catalog; every event, position, condition, ELR, and SAN is invented for tests and display, never game state (ASL-UNIT-050).",
+  "events": [
+    {
+      "eventId": "e01", "revision": 1, "time": "2026-09-26T09:00:00Z", "source": "fixture", "type": "game-started", "visibility": "all",
+      "payload": {
+        "sides": [
+          { "id": "german", "nationality": "german", "elr": 3, "san": 3 },
+          { "id": "russian", "nationality": "russian", "elr": 3, "san": 4 }
+        ],
+        "map": { "reference": "bd01", "version": "8d77d26222b7bb21d8c1fdda6ba05b447f63c317", "boards": [ { "board": "bd01", "version": "8d77d26222b7bb21d8c1fdda6ba05b447f63c317" } ] },
+        "catalog": "asl-scenario-a1@1.0.0", "turn": 1, "phase": "rph", "phasingSide": "german", "synthetic": true
+      }
+    },
+    {
+      "eventId": "e02", "revision": 2, "time": "2026-09-26T09:00:01Z", "source": "fixture", "type": "instance-created", "visibility": "all",
+      "payload": { "instance": { "id": "g1", "kind": "asl:squad", "definition": "attacker-squad", "side": "german", "position": { "at": "bd01:D4:0" },
+        "conditions": { "asl:broken": false, "asl:berserk": false, "asl:captured": false, "asl:melee": false, "asl:concealed": false, "asl:hidden": false } } }
+    },
+    {
+      "eventId": "e03", "revision": 3, "time": "2026-09-26T09:00:02Z", "source": "fixture", "type": "instance-created", "visibility": "all",
+      "payload": { "instance": { "id": "g2", "kind": "asl:squad", "definition": "attacker-squad", "side": "german", "position": { "at": "bd01:D4:0" },
+        "conditions": { "asl:broken": false, "asl:berserk": false, "asl:captured": false, "asl:melee": false, "asl:concealed": false, "asl:hidden": false } } }
+    },
+    {
+      "eventId": "e04", "revision": 4, "time": "2026-09-26T09:00:03Z", "source": "fixture", "type": "instance-created", "visibility": "all",
+      "payload": { "instance": { "id": "gh1", "kind": "asl:half-squad", "definition": "attacker-half-squad", "side": "german", "position": { "at": "bd01:D4:0" },
+        "conditions": { "asl:broken": false, "asl:berserk": false, "asl:captured": false, "asl:melee": false, "asl:concealed": false, "asl:hidden": false } } }
+    },
+    {
+      "eventId": "e05", "revision": 5, "time": "2026-09-26T09:00:04Z", "source": "fixture", "type": "instance-created", "visibility": "all",
+      "payload": { "instance": { "id": "g-lmg", "kind": "asl:mg", "side": "german", "holding": { "holder": "g1", "role": "possessed" },
+        "conditions": { "asl:malfunctioned": false } } }
+    },
+    {
+      "eventId": "e06", "revision": 6, "time": "2026-09-26T09:00:05Z", "source": "fixture", "type": "instance-created", "visibility": ["russian"],
+      "payload": { "instance": { "id": "r1", "kind": "asl:squad", "definition": "defender-squad", "side": "russian", "position": { "at": "bd01:E4:0" },
+        "conditions": { "asl:broken": false, "asl:berserk": false, "asl:captured": false, "asl:melee": false, "asl:concealed": true, "asl:hidden": false } } }
+    },
+    {
+      "eventId": "e07", "revision": 7, "time": "2026-09-26T09:00:06Z", "source": "fixture", "type": "instance-created", "visibility": "all",
+      "payload": { "instance": { "id": "f1", "kind": "asl:foxhole", "side": "russian", "position": { "at": "bd01:E5:0" } } }
+    },
+    {
+      "eventId": "e08", "revision": 8, "time": "2026-09-26T09:00:07Z", "source": "fixture", "type": "instance-created", "visibility": ["russian"],
+      "payload": { "instance": { "id": "r2", "kind": "asl:leader", "definition": "defender-leader", "side": "russian", "position": { "in": "f1", "role": "in-fortification" },
+        "conditions": { "asl:broken": false, "asl:berserk": false, "asl:captured": false, "asl:melee": false, "asl:concealed": false, "asl:hidden": true } } }
+    },
+    {
+      "eventId": "e09", "revision": 9, "time": "2026-09-26T09:05:00Z", "source": "fixture", "type": "phase-changed", "visibility": "all",
+      "payload": { "turn": 1, "phase": "mph", "phasingSide": "german" }
+    },
+    {
+      "eventId": "e10", "revision": 10, "time": "2026-09-26T09:06:00Z", "source": "fixture", "type": "conditions-changed", "visibility": "all", "causes": ["e09"],
+      "payload": { "id": "r1", "conditions": { "asl:concealed": false } }
+    },
+    {
+      "eventId": "e11", "revision": 11, "time": "2026-09-26T09:10:00Z", "source": "fixture", "type": "phase-changed", "visibility": "all",
+      "payload": { "turn": 1, "phase": "dfph", "phasingSide": "german" }
+    },
+    {
+      "eventId": "e12", "revision": 12, "time": "2026-09-26T09:11:00Z", "source": "fixture", "type": "lineage", "visibility": "all",
+      "payload": { "action": "reduced", "consumed": ["g2"], "produced": [ { "id": "g2-hs", "kind": "asl:half-squad", "definition": "attacker-half-squad",
+        "conditions": { "asl:broken": false, "asl:berserk": false, "asl:captured": false, "asl:melee": false, "asl:concealed": false, "asl:hidden": false } } ] }
+    },
+    {
+      "eventId": "e13", "revision": 13, "time": "2026-09-26T09:15:00Z", "source": "fixture", "type": "phase-changed", "visibility": "all",
+      "payload": { "turn": 1, "phase": "afph", "phasingSide": "german" }
+    },
+    {
+      "eventId": "e14", "revision": 14, "time": "2026-09-26T09:16:00Z", "source": "fixture", "type": "conditions-changed", "visibility": "all",
+      "payload": { "id": "r1", "conditions": { "asl:broken": true } }
+    },
+    {
+      "eventId": "e15", "revision": 15, "time": "2026-09-26T09:20:00Z", "source": "fixture", "type": "phase-changed", "visibility": "all",
+      "payload": { "turn": 1, "phase": "aph", "phasingSide": "german" }
+    },
+    {
+      "eventId": "e16", "revision": 16, "time": "2026-09-26T09:21:00Z", "source": "fixture", "type": "instance-moved", "visibility": "all",
+      "payload": { "id": "g1", "position": { "at": "bd01:E4:0" } }
+    },
+    {
+      "eventId": "e17", "revision": 17, "time": "2026-09-26T09:25:00Z", "source": "fixture", "type": "phase-changed", "visibility": "all",
+      "payload": { "turn": 1, "phase": "ccph", "phasingSide": "german" }
+    },
+    {
+      "eventId": "e18", "revision": 18, "time": "2026-09-26T09:26:00Z", "source": "fixture", "type": "instance-captured", "visibility": "all", "causes": ["e17"],
+      "payload": { "id": "r1", "custodian": "g1" }
+    }
+  ]
+}
