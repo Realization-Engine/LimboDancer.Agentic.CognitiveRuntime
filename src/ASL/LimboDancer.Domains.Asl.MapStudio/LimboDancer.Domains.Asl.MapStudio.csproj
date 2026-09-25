@@ -9,8 +9,4 @@
     <ProjectReference Include="..\LimboDancer.Domains.Asl.Maps.Rendering\LimboDancer.Domains.Asl.Maps.Rendering.csproj" />
     <ProjectReference Include="..\LimboDancer.Domains.Asl.Units.Rendering\LimboDancer.Domains.Asl.Units.Rendering.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <!-- Synthetic unit examples (src/ASL/units/examples): the Lab's starting documents and the built-in placement sets. -->
-    <EmbeddedResource Include="..\units\examples\*.units.json" LogicalName="UnitExamples.%(Filename)%(Extension)" Link="UnitExamples\%(Filename)%(Extension)" />
-  </ItemGroup>
 </Project>

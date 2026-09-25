@@ -3,6 +3,8 @@
     <ProjectReference Include="..\LimboDancer.Domains.Asl.Maps\LimboDancer.Domains.Asl.Maps.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="..\units\vocabulary\*.vocab.json" LogicalName="Vocabulary.%(Filename)%(Extension)" Link="Vocabulary\%(Filename)%(Extension)" />
+    <!-- WithCulture="false": names such as catalog.units.json would otherwise be read as resources for a culture "units" on Linux. -->
+    <EmbeddedResource Include="..\units\vocabulary\*.vocab.json" LogicalName="Vocabulary.%(Filename)%(Extension)" Link="Vocabulary\%(Filename)%(Extension)" WithCulture="false" />
+    <EmbeddedResource Include="..\units\examples\*.units.json" LogicalName="Examples.%(Filename)%(Extension)" Link="Examples\%(Filename)%(Extension)" WithCulture="false" />
   </ItemGroup>
 </Project>

@@ -4,7 +4,7 @@
     <ProjectReference Include="..\LimboDancer.Domains.Asl.Maps.Rendering\LimboDancer.Domains.Asl.Maps.Rendering.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="..\units\styles\*.uss" LogicalName="Styles.%(Filename)%(Extension)" Link="Styles\%(Filename)%(Extension)" />
-    <EmbeddedResource Include="..\units\palettes\*.palette.json" LogicalName="Palettes.%(Filename)%(Extension)" Link="Palettes\%(Filename)%(Extension)" />
+    <EmbeddedResource Include="..\units\styles\*.uss" LogicalName="Styles.%(Filename)%(Extension)" Link="Styles\%(Filename)%(Extension)" WithCulture="false" />
+    <EmbeddedResource Include="..\units\palettes\*.palette.json" LogicalName="Palettes.%(Filename)%(Extension)" Link="Palettes\%(Filename)%(Extension)" WithCulture="false" />
   </ItemGroup>
 </Project>
