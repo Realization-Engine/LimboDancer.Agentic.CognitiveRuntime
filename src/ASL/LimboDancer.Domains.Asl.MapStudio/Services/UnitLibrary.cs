@@ -32,7 +32,7 @@ public sealed class UnitLibrary(StudioOptions options)
     public string UnitsRoot => Path.Combine(options.ResolveBoardsRoot(), "units");
 
     /// <summary>The synthetic example documents the Lab offers as starting points.</summary>
-    public IReadOnlyList<UnitDocument> Examples => examples ??= ReadExamples(Vocabulary);
+    public IReadOnlyList<UnitDocument> Examples => examples ??= UnitExamples.Catalog(Vocabulary);
 
     public IReadOnlyList<string> PaletteNames => PaletteSetReader.BuiltIn;
 
@@ -87,14 +87,8 @@ public sealed class UnitLibrary(StudioOptions options)
     public IReadOnlyList<UnitSetEntry> Sets()
     {
         var entries = new List<UnitSetEntry>();
-        var assembly = typeof(UnitLibrary).Assembly;
-        foreach (var resource in assembly.GetManifestResourceNames().Where(name => name.StartsWith("UnitExamples.", StringComparison.Ordinal) &&
-            name.EndsWith(".units.json", StringComparison.Ordinal) && !name.EndsWith("catalog.units.json", StringComparison.Ordinal)).Order(StringComparer.Ordinal))
+        foreach (var result in UnitExamples.PlacementSets(Vocabulary))
         {
-            using var stream = assembly.GetManifestResourceStream(resource)!;
-            using var buffer = new MemoryStream();
-            stream.CopyTo(buffer);
-            var result = UnitPlacementSetReader.Read(buffer.ToArray(), Vocabulary);
             if (result.Set is { } set)
             {
                 entries.Add(new UnitSetEntry(set, BuiltIn: true, result.Diagnostics));
@@ -198,12 +192,4 @@ public sealed class UnitLibrary(StudioOptions options)
 
     private static string FileName(string id) => string.Concat(id.Select(character => char.IsAsciiLetterOrDigit(character) || character is '-' or '_' ? character : '-'));
 
-    private static IReadOnlyList<UnitDocument> ReadExamples(UnitVocabulary vocabulary)
-    {
-        using var stream = typeof(UnitLibrary).Assembly.GetManifestResourceStream("UnitExamples.catalog.units.json")
-            ?? throw new InvalidOperationException("The unit example catalog is not embedded.");
-        using var buffer = new MemoryStream();
-        stream.CopyTo(buffer);
-        return UnitDocumentReader.Read(buffer.ToArray(), vocabulary).Documents;
-    }
 }

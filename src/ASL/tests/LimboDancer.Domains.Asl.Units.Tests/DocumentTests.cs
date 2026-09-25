@@ -79,6 +79,16 @@ public sealed class DocumentTests
         Assert.Equal(["bd01"], set.Set.Boards.Select(board => board.Value));
     }
 
+    [Fact]
+    public void TheExamplesAreEmbeddedInTheUnitsAssembly()
+    {
+        var vocabulary = UnitsTestData.Asl.Value;
+        Assert.Equal(12, UnitExamples.Catalog(vocabulary).Count);
+        var set = Assert.Single(UnitExamples.PlacementSets(vocabulary));
+        Assert.Empty(set.Diagnostics);
+        Assert.Equal("bd01-demo", set.Set!.SetId);
+    }
+
     [Theory]
     [InlineData("\"kind\": \"asl:squad\"", "\"kind\": \"asl:platoon\"", "UNIT-DOC-002")]
     [InlineData("\"firepower\": 4", "\"firepower\": \"4\"", "UNIT-DOC-004")]

@@ -4,5 +4,6 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="..\units\vocabulary\*.vocab.json" LogicalName="Vocabulary.%(Filename)%(Extension)" Link="Vocabulary\%(Filename)%(Extension)" />
+    <EmbeddedResource Include="..\units\examples\*.units.json" LogicalName="Examples.%(Filename)%(Extension)" Link="Examples\%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>
