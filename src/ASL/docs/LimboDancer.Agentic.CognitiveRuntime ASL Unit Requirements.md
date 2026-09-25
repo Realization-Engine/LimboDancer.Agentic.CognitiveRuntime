@@ -61,9 +61,12 @@ The model must classify Personnel as SMC (leader, hero) or MMC (squad, half-squa
 
 Each printed characteristic (for example FP, range, morale, broken-side values, ELR and leadership markings, US#, portage, caliber, ROF, armor, MP) must be stored as a typed value with its source. A definition's key must identify more than the printed strength triple: nationality, class, face, and applicability are part of it.
 
-### ASL-UNIT-012: A registered counter data source
+### ASL-UNIT-012: Face content and counter data
 
-No definition may be published until its counter data source is chosen, registered, and reviewed under the source rules of the Ontology Transformation Specification. The rulebook alone is not sufficient (section 2). Candidates include the published counter sheets and the VASL module's piece definitions; the latter have not been examined and would need the same licensing boundary the map effort applies to VASL boards. Counter artwork is never evidence of a printed value.
+Two sources are needed and are decided separately:
+
+- **Face content**, what a unit's display must be able to show, comes from the rulebook's counter anatomy (A1.2 to A1.6, A9, C2.2, D1). The [ASL Unit Display Design](<ASL Unit Display Design.md>), section 4, records it with rule and page and is the information-parity reference for ASL-UNIT-075.
+- **Counter data**, the printed values of particular units for real scenarios, needs a chosen counter data source (decision D1). No definition may be published until that source is chosen, registered, and reviewed under the source rules of the Ontology Transformation Specification. The rulebook alone is not sufficient (section 2). Candidates include the published counter sheets and the VASL module's piece definitions; the latter have not been examined and would need the same licensing boundary the map effort applies to VASL boards. Counter artwork is never evidence of a printed value.
 
 ### ASL-UNIT-013: Printed and effective values
 
@@ -173,6 +176,30 @@ The overlay must work on every board the Studio shows, on authored boards, and o
 
 Counter artwork may be committed only with recorded provenance and usage rights. Original generated counters are always permitted.
 
+### ASL-UNIT-073: Open unit vocabulary
+
+What units can exist, and what can be said about them, must be declared data: versioned, namespaced vocabulary packs of kinds, attributes, traits, and states. A pack may extend another pack's kinds. The ASL rulebook is one pack; units beyond the rulebook are other packs, added without code changes.
+
+### ASL-UNIT-074: Documents and style sheets
+
+A unit's structure (a unit document: kind, side, location, faces, values, traits, states, attached equipment) must be kept separate from its appearance (a style sheet of selectors and declarations). A document never states how anything looks.
+
+### ASL-UNIT-075: Information parity
+
+Under the ASL style sheets, every fact a printed ASL counter conveys must be readable from the digital unit. The look is free.
+
+### ASL-UNIT-076: Detail by zoom
+
+A unit must show less detail when small on screen and more when large, by declared detail tiers, without a new request to the server.
+
+### ASL-UNIT-077: States on the unit
+
+Conditions that cardboard shows with separate marker counters (broken, pinned, CX, and the rest) must be drawn as states of the unit itself, styled by the style sheet.
+
+### ASL-UNIT-078: Deterministic, accessible output
+
+The same vocabulary, document, style sheet, detail tier, and perspective must produce the same SVG bytes. Every drawn unit must have an accessible name built from the vocabulary's labels.
+
 ## 11. Provenance and versions
 
 ### ASL-UNIT-080: Definition catalog versions
@@ -187,19 +214,20 @@ Rule text, charts, and counter data used by the unit model follow the source reg
 
 | Decision | Blocks | Options |
 |---|---|---|
-| D1. Counter data source | ASL-UNIT-012, all definitions | Published counter sheets transcribed and reviewed; VASL module piece definitions, subject to licensing review; a mix. |
-| D2. Live game source | ASL-UNIT-050, 060 against a real game | VASL saved-game adapter; Map Studio setup and play editor; LimboDancer engine. |
+| D1. Counter data source | ASL-UNIT-012 counter data, catalog definitions (not the display) | Published counter sheets transcribed and reviewed; VASL module piece definitions, subject to licensing review; a mix. Deferred: the display does not need it. |
+| D2. Live game source | ASL-UNIT-050, 060 against a real game (not the display) | VASL saved-game adapter; Map Studio setup and play editor; LimboDancer engine. Deferred: display input comes from the Unit Lab and fixtures, labelled synthetic. |
 | D3. Perspective set | ASL-UNIT-030 | Each side plus adjudicator (proposed); anything wider. |
 | D4. First slice boundary | ASL-UNIT-062 | The Scenario A1 case list (proposed), or a wider Infantry slice. |
 
 ## 13. Sequence
 
-1. **Decisions:** settle D1 to D4. Register the chosen counter source.
-2. **Scenario A1 catalog:** the Infantry Personnel definitions ASL-UNIT-062 needs, with source-backed values and round-trip tests.
-3. **State model:** game and side state, instances, conditions, positions against the map location chain, relationships, events, and perspectives, tested with synthetic fixtures.
-4. **Read contract:** ASL-UNIT-060 and 061, read-only, together with the map read API (ASL-MAP-080). Cross-check against the existing Scenario A1 snapshots, which stay unchanged (ASL-MAP-081).
-5. **Display from projections:** move the overlay to `Units.Rendering` and feed it projections on any board or map.
-6. **Governed writes:** one reviewed transition at a time, only after D2 is settled.
+1. **Display:** the [ASL Unit Display Design](<ASL Unit Display Design.md>), Personnel and SW first, then Guns and vehicles (ASL-UNIT-070 to 078). It needs neither D1 nor D2.
+2. **Decisions:** settle D1 to D4. Register the chosen counter source.
+3. **Scenario A1 catalog:** the Infantry Personnel definitions ASL-UNIT-062 needs, with source-backed values and round-trip tests.
+4. **State model:** game and side state, instances, conditions, positions against the map location chain, relationships, events, and perspectives, tested with synthetic fixtures.
+5. **Read contract:** ASL-UNIT-060 and 061, read-only, together with the map read API (ASL-MAP-080). Cross-check against the existing Scenario A1 snapshots, which stay unchanged (ASL-MAP-081).
+6. **Display from projections:** feed the display the projections of the state model, filtered by perspective.
+7. **Governed writes:** one reviewed transition at a time, only after D2 is settled.
 
 ## 14. Acceptance scenarios
 
@@ -217,6 +245,7 @@ Rule text, charts, and counter data used by the unit model follow the source reg
 | ASL-RD-002, 003 (rule semantics, applicability) | ASL-UNIT-010, 011, 013, 014 |
 | ASL-RD-005 (reference and changing state) | ASL-UNIT-011, 020 to 026, 040 |
 | ASL-RD-006 (spatial reasoning) | ASL-UNIT-024, 060, 071 |
+| ASL-RD-009 (explanation), display | ASL-UNIT-073 to 078 |
 | ASL-RD-008, 012 (conclusions and governed change) | ASL-UNIT-042, 050 |
 | ASL-RD-009 (explanation and traceability) | ASL-UNIT-011, 040, 080, 081 |
 | ASL-RD-010 (change sensitivity) | ASL-UNIT-041, 080 |

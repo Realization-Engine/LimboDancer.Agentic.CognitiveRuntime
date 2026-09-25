@@ -1,6 +1,6 @@
 # ASL Unit Display Design
 
-**Status:** Proposed design for review; no implementation in this change
+**Status:** Accepted design, with the open questions decided (section 15); no implementation in this change
 
 **Date:** 2026-09-24
 
@@ -294,7 +294,7 @@ A kind need not extend an ASL kind at all; it then starts from the base `unit` s
 
 ### 7.1 Size and detail levels
 
-A face is square, sized in board pixels relative to the hex: by default 0.55 of the hex height (about 35 pixels on a standard board, close to a half-inch counter on a 3/4-inch hex). The detail level follows the viewport's zoom, measured as screen pixels per board pixel:
+A face is square, sized in board pixels relative to the hex: by default 0.55 of the hex height (about 35 pixels on a standard board, close to a half-inch counter on a 3/4-inch hex). This is a starting value to try in the Unit Lab, not a fixed rule: `face-size` is an ordinary style property, so a sheet can change it. The detail level follows the viewport's zoom, measured as screen pixels per board pixel:
 
 | Tier | When | Default content |
 |---|---|---|
@@ -317,7 +317,12 @@ The renderer never decides what a viewer may see. A source that hides a unit sen
 
 ### 7.4 Side palette
 
-A side is a named palette with `fill`, `fill-muted`, `ink`, and `accent` roles, defined in the style sheet's `@tokens` or a palette file. The default palettes follow ASL's customary nationality colors. These are a convention, not artwork, and a pack or sheet can replace them.
+A side is a named palette with `fill`, `fill-muted`, `ink`, and `accent` roles. Palettes live in palette files, separate from style sheets, and a style sheet or the viewer selects one set. Two sets ship:
+
+- **`asl-customary`**: ASL's customary nationality colors (for example German field grey, Russian brown, American olive). These are a convention, not artwork.
+- **`limbodancer`**: palettes of our own, designed for contrast on the digital map and for color-blind readers, with the same roles.
+
+Both ASL style sheets work with either set; `asl-classic` defaults to `asl-customary` and `asl-digital` to `limbodancer`. A pack can add sets or palettes for its own sides.
 
 ### 7.5 SVG output
 
@@ -374,18 +379,20 @@ A separate, optional check reports combinations the ASL rules forbid, with the r
 
 The style language and layout are designed for all four phases now; only the vocabulary grows.
 
-## 14. Requirement changes proposed
+## 14. Requirement changes
 
-To be made in the Unit Requirements when this design is accepted:
+Made in the Unit Requirements on 2026-09-24, when this design was accepted:
 
 - **ASL-UNIT-012** splits: the face content the display must carry is taken from the rulebook's counter anatomy (this document, section 4), now; per-unit printed values for real scenarios keep the counter data source decision (D1), later.
 - **D2** is deferred: display input is documents from the Lab or fixtures, labelled synthetic (already allowed by ASL-UNIT-050).
 - New requirements: an open unit vocabulary with packs (ASL-UNIT-073); separation of documents and style sheets (ASL-UNIT-074); information parity with printed counters under the ASL sheets (ASL-UNIT-075); detail tiers (ASL-UNIT-076); states drawn on the unit rather than as stacked markers (ASL-UNIT-077); deterministic, accessible SVG (ASL-UNIT-078).
 - The sequence in section 13 of the Unit Requirements moves the display ahead of the catalog and state model.
 
-## 15. Open questions
+## 15. Decisions
 
-1. **Style language.** A CSS-like text syntax (proposed) is familiar and readable but needs a parser. The alternative is style rules as JSON, which needs no parser and is harder to read and write by hand.
-2. **Side palettes.** ASL's customary nationality colors as the default (proposed), or palettes of our own.
-3. **Figures.** Size shown by 1 to 3 figure glyphs in both sheets (proposed), or abstract symbols in the digital sheet.
-4. **Face size.** 0.55 of the hex height (proposed), or smaller with more reliance on detail tiers.
+Decided on 2026-09-24:
+
+1. **Style language:** the CSS-like text syntax of section 3.3, with our own parser.
+2. **Side palettes:** both. ASL's customary nationality colors and palettes of our own ship as two palette sets (section 7.4).
+3. **Figures:** unit size is shown by 1 to 3 figure glyphs in both ASL sheets.
+4. **Face size:** 0.55 of the hex height, to be tried in the Unit Lab and adjusted through `face-size` if it does not read well (section 7.1).
