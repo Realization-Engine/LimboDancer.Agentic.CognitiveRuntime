@@ -230,6 +230,17 @@ public static class GameEventReader
                 return forcedId is null || forcedAttempt is null || returnedTo is null || forcedMf is null
                     ? Missing(diagnostics, "A forced back names the unit, its attempt, the location it returns to, and its MF.", path)
                     : new EntryForcedBack(forcedId, forcedAttempt, returnedTo, forcedMf.Value, fields.OptionalBoolean(payload, "followOnFireResolved", path));
+            case "dice-rolled":
+                var roll = fields.RequiredString(payload, "roll", path);
+                var purpose = fields.RequiredString(payload, "purpose", path);
+                var count = fields.OptionalInteger(payload, "count", path);
+                var rollSides = fields.OptionalInteger(payload, "sides", path);
+                var source = fields.RequiredString(payload, "source", path);
+                var actor = fields.RequiredString(payload, "actor", path);
+                var values = ReadIntegers(payload, "values", path, diagnostics);
+                return roll is null || purpose is null || count is null || rollSides is null || source is null || actor is null || values is null
+                    ? Missing(diagnostics, "A roll names its id, purpose, count, sides, values, source, and actor.", path)
+                    : new DiceRolled(roll, purpose, count.Value, rollSides.Value, values, source, actor);
             case "instance-captured":
                 var captured = fields.RequiredString(payload, "id", path);
                 var custodian = fields.RequiredString(payload, "custodian", path);
@@ -273,6 +284,29 @@ public static class GameEventReader
             var other => Invalid<HoldingRole>(diagnostics, $"'{other}' is not possessed, manned, or towed.", path),
         };
         return holder is null || role is null ? null : new Holding(holder, role.Value);
+    }
+
+    private static List<int>? ReadIntegers(JsonElement item, string name, string path, List<UnitDiagnostic> diagnostics)
+    {
+        if (!item.TryGetProperty(name, out var array) || array.ValueKind != JsonValueKind.Array)
+        {
+            diagnostics.Add(UnitDiagnostic.Error(Code, $"'{name}' must be a list of integers.", path + "." + name));
+            return null;
+        }
+
+        var values = new List<int>();
+        foreach (var value in array.EnumerateArray())
+        {
+            if (value.ValueKind != JsonValueKind.Number || !value.TryGetInt32(out var number))
+            {
+                diagnostics.Add(UnitDiagnostic.Error(Code, $"'{name}' must be a list of integers.", path + "." + name));
+                return null;
+            }
+
+            values.Add(number);
+        }
+
+        return values;
     }
 
     private static BoardLocation? ReadLocation(JsonElement item, string name, string path, JsonFields fields, List<UnitDiagnostic> diagnostics)

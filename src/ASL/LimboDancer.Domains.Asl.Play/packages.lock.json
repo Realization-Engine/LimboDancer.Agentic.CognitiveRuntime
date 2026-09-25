@@ -5,6 +5,9 @@
       "limbodancer.abstractions": {
         "type": "Project"
       },
+      "limbodancer.dice": {
+        "type": "Project"
+      },
       "limbodancer.domains.asl.maps": {
         "type": "Project"
       },

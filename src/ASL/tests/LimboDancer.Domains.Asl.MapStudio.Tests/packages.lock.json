@@ -571,6 +571,9 @@
       "limbodancer.abstractions": {
         "type": "Project"
       },
+      "limbodancer.dice": {
+        "type": "Project"
+      },
       "limbodancer.domains.asl.maps": {
         "type": "Project"
       },
@@ -599,6 +602,7 @@
       "limbodancer.domains.asl.play": {
         "type": "Project",
         "dependencies": {
+          "LimboDancer.Dice": "[1.0.0, )",
           "LimboDancer.Domains.Asl.ScenarioA1": "[1.0.0, )",
           "LimboDancer.Domains.Asl.Units": "[1.0.0, )",
           "LimboDancer.Runtime": "[1.0.0, )"

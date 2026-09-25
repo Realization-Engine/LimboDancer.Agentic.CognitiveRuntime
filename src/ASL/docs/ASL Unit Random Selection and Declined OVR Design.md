@@ -52,6 +52,20 @@ Everything in the step 8 design, section 2, still holds. This step adds:
   - `GameActionExecutor` calls `AppendRolled` when the plan has a roll, and `Append` otherwise.
   - It reads the effect back from the log and reports the recorded values from the log, never from memory.
   - The effect check covers the pending branch: the revealed SMC is known, and the attempt is open.
+- **As built** (part 1).
+  - `PlannedRoll`, `IGameStore.AppendRolled`, and the executor wiring are in the Play project. `Append` and `AppendRolled` share one commit path under the per-game lock, and `AppendRolled` draws only after the replay and revision checks.
+  - `dice-rolled` is replayed with UNIT-STATE-019. Its checks: the source is `system`, the count is 1 to 100, the sides are at least 2, the count and the values agree, every value is in bounds, and each roll id is recorded once.
+  - An entry attempt reused with other inputs is refused with `play.attempt-reused`.
+  - Tests: `DiceEventTests` (Units, 9) and `DiceStoreTests` (Play, 7) cover:
+    - one draw per commit;
+    - a replay without a draw;
+    - a stale revision without a draw;
+    - a generator failure that writes nothing;
+    - batches that do not replay or do not start the attempt;
+    - four concurrent confirmations committing one roll;
+    - a reused attempt.
+
+    The executor's rolled path is exercised in part 2, where the first action with a roll exists.
 
 ## 4. Events
 

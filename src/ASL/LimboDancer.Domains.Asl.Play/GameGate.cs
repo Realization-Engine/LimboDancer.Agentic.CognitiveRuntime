@@ -1,3 +1,4 @@
+using LimboDancer.Dice;
 using System.Globalization;
 using System.Text.Json;
 using LimboDancer.Abstractions.Actions;
@@ -44,8 +45,10 @@ public sealed class GameConstraintEvaluator(GamePlanner planner) : IActionConstr
 /// Commits one governed game action: it accepts only a gate-produced authorization, plans again, appends at the
 /// validated revision, and reads the effect back before reporting success (ASL-UNIT-042).
 /// </summary>
-public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner planner, IGameStore store) : IActionExecutor
+public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner planner, IGameStore store, DiceRoller? roller = null) : IActionExecutor
 {
+    private readonly DiceRoller dice = roller ?? new DiceRoller();
+
     public ActionId ActionId => descriptor.Id;
 
     public ExecutorBinding Binding => descriptor.Executor;
@@ -76,7 +79,9 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
             return Failed(plan.Status == GamePlanStatus.Stale ? "play.gate-state-stale" : "play.refused-at-commit");
         }
 
-        var appended = store.Append(plan.Scope, plan.Label, plan.ExpectedRevision, plan.Events, planner.Replay);
+        var appended = plan.Roll is { } roll
+            ? store.AppendRolled(plan.Scope, plan.Label, plan.ExpectedRevision, plan.FirstEventId!, roll, dice, planner.Replay)
+            : store.Append(plan.Scope, plan.Label, plan.ExpectedRevision, plan.Events, planner.Replay);
         if (appended.Status == AppendStatus.Replay)
         {
             return Succeeded("play.replay", plan, appended.Revision);
@@ -87,17 +92,23 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
             return Failed(appended.Status == AppendStatus.Stale ? "play.gate-state-stale" : "play.commit-refused");
         }
 
-        // Verified effect: the stored log replays, ends with exactly these events, and shows their effect.
+        // Verified effect: the stored log replays, ends with exactly these events, and shows their effect. A rolled batch is
+        // read back from the log, never from memory, so its recorded values are what the caller sees (DICE-11).
         var stored = store.Read(plan.Scope);
         var history = stored is null ? null : planner.Replay(stored.Events);
-        if (history?.Current is not { } state || state.Revision != plan.ExpectedRevision + plan.Events.Count
-            || !stored!.Events.TakeLast(plan.Events.Count).Select(item => item.EventId).SequenceEqual(plan.Events.Select(item => item.EventId))
-            || !EffectHolds(state, plan))
+        var committed = plan.Roll is null ? plan : plan with
+        {
+            Events = [.. stored?.Events.Skip((int)plan.ExpectedRevision) ?? []]
+        };
+        if (history?.Current is not { } state || committed.Events.Count == 0 || state.Revision != plan.ExpectedRevision + committed.Events.Count
+            || !stored!.Events.TakeLast(committed.Events.Count).Select(item => item.EventId).SequenceEqual(committed.Events.Select(item => item.EventId))
+            || (plan.Roll is not null && committed.Events[0].EventId != plan.FirstEventId)
+            || !EffectHolds(state, committed))
         {
             return Failed("play.effect-readback-failed");
         }
 
-        return Succeeded("play.committed", plan, state.Revision);
+        return Succeeded("play.committed", committed, state.Revision);
     }
 
     private static bool EffectHolds(GameState state, GamePlan plan) => plan.Events[^1].Payload switch
@@ -194,14 +205,14 @@ public sealed class GamePlay
     private readonly ExecutionGate gate;
     private readonly Dictionary<ActionId, IActionExecutor> executors;
 
-    public GamePlay(GamePlanner planner, IGameStore store, IAuditSink audit, IExecutionRiskPolicy? risk = null)
+    public GamePlay(GamePlanner planner, IGameStore store, IAuditSink audit, IExecutionRiskPolicy? risk = null, DiceRoller? roller = null)
     {
         ArgumentNullException.ThrowIfNull(planner);
         ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(audit);
         this.planner = planner;
         confirmation = new ConfirmationPolicy(risk ?? new DefaultExecutionRiskPolicy());
-        IActionExecutor[] bound = [.. GameActions.All.Select(descriptor => new GameActionExecutor(descriptor, planner, store))];
+        IActionExecutor[] bound = [.. GameActions.All.Select(descriptor => new GameActionExecutor(descriptor, planner, store, roller))];
         executors = bound.ToDictionary(executor => executor.ActionId, executor => (IActionExecutor)new AuditedActionExecutor(executor, audit));
         gate = new ExecutionGate(new ActionRegistry(GameActions.All), new ActionExecutorResolver(bound), new GameConstraintEvaluator(planner),
             new DiagnosticPolicy(), confirmation, audit);

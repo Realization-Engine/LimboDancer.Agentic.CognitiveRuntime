@@ -184,6 +184,21 @@ public static class GameEventWriter
                 writer.WriteNumber("mf", forced.Mf);
                 writer.WriteBoolean("followOnFireResolved", forced.FollowOnFireResolved);
                 break;
+            case DiceRolled rolled:
+                writer.WriteString("roll", rolled.Roll);
+                writer.WriteString("purpose", rolled.Purpose);
+                writer.WriteNumber("count", rolled.Count);
+                writer.WriteNumber("sides", rolled.Sides);
+                writer.WriteStartArray("values");
+                foreach (var value in rolled.Values)
+                {
+                    writer.WriteNumberValue(value);
+                }
+
+                writer.WriteEndArray();
+                writer.WriteString("source", rolled.Source);
+                writer.WriteString("actor", rolled.Actor);
+                break;
             case InstanceCaptured captured:
                 writer.WriteString("id", captured.Id);
                 writer.WriteString("custodian", captured.Custodian);

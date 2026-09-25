@@ -1,3 +1,4 @@
+using LimboDancer.Dice;
 using System.Collections.Concurrent;
 using System.Text;
 using LimboDancer.Domains.Asl.Units;
@@ -32,6 +33,12 @@ public enum AppendStatus
 public sealed record AppendResult(AppendStatus Status, long Revision, IReadOnlyList<UnitDiagnostic> Diagnostics);
 
 /// <summary>
+/// A roll an action needs (Random Selection and Declined OVR Design, section 3): what it is for, what to draw, and a pure
+/// function from the drawn result to the complete batch of events. The store draws it inside its commit, never before.
+/// </summary>
+public sealed record PlannedRoll(string Purpose, RollRequest Request, Func<RollResult, IReadOnlyList<GameEvent>> Build);
+
+/// <summary>
 /// Where live games are kept (ASL-UNIT-040, 042): one ordered event log per game. Appends are atomic, happen only at
 /// the expected revision, and only when the whole log still replays without error.
 /// </summary>
@@ -42,6 +49,14 @@ public interface IGameStore
     public IReadOnlyList<GameScope> List(Guid tenant);
 
     public AppendResult Append(GameScope scope, string label, long expectedRevision, IReadOnlyList<GameEvent> events,
+        Func<IReadOnlyList<GameEvent>, GameHistory> replay);
+
+    /// <summary>
+    /// Draws a planned roll and appends the events built from it, atomically (DICE-08, DICE-10, DICE-11): a committed
+    /// attempt is a Replay and draws nothing, a stale revision draws nothing, and a draw whose events are not written
+    /// leaves no trace.
+    /// </summary>
+    public AppendResult AppendRolled(GameScope scope, string label, long expectedRevision, string firstEventId, PlannedRoll roll, DiceRoller roller,
         Func<IReadOnlyList<GameEvent>, GameHistory> replay);
 }
 
@@ -73,8 +88,25 @@ public sealed class FileGameStore(string root) : IGameStore
     public AppendResult Append(GameScope scope, string label, long expectedRevision, IReadOnlyList<GameEvent> events,
         Func<IReadOnlyList<GameEvent>, GameHistory> replay)
     {
-        ArgumentNullException.ThrowIfNull(scope);
         ArgumentNullException.ThrowIfNull(events);
+        return Commit(scope, label, expectedRevision, events.Count > 0 ? events[0].EventId : null, () => events, replay);
+    }
+
+    public AppendResult AppendRolled(GameScope scope, string label, long expectedRevision, string firstEventId, PlannedRoll roll, DiceRoller roller,
+        Func<IReadOnlyList<GameEvent>, GameHistory> replay)
+    {
+        ArgumentNullException.ThrowIfNull(firstEventId);
+        ArgumentNullException.ThrowIfNull(roll);
+        ArgumentNullException.ThrowIfNull(roller);
+
+        // The draw happens here, inside the lock and after the attempt and revision checks, and nowhere else.
+        return Commit(scope, label, expectedRevision, firstEventId, () => roll.Build(roller.Roll(roll.Request)), replay);
+    }
+
+    private AppendResult Commit(GameScope scope, string label, long expectedRevision, string? firstEventId, Func<IReadOnlyList<GameEvent>> events,
+        Func<IReadOnlyList<GameEvent>, GameHistory> replay)
+    {
+        ArgumentNullException.ThrowIfNull(scope);
         ArgumentNullException.ThrowIfNull(replay);
         if (!VocabularyNamesSlug(scope.Game))
         {
@@ -86,7 +118,7 @@ public sealed class FileGameStore(string root) : IGameStore
         {
             var current = File.Exists(path) ? GameEventReader.Read(File.ReadAllBytes(path)).Record : null;
             var existing = current?.Events ?? [];
-            if (events.Count > 0 && existing.Any(item => item.EventId == events[0].EventId))
+            if (firstEventId is not null && existing.Any(item => item.EventId == firstEventId))
             {
                 return new AppendResult(AppendStatus.Replay, existing.Count, []);
             }
@@ -97,7 +129,14 @@ public sealed class FileGameStore(string root) : IGameStore
                     [UnitDiagnostic.Error("PLAY-002", $"The game is at revision {existing.Count}, not the expected {expectedRevision}.")]);
             }
 
-            GameEvent[] all = [.. existing, .. events];
+            var batch = events();
+            if (firstEventId is not null && (batch.Count == 0 || batch[0].EventId != firstEventId))
+            {
+                return new AppendResult(AppendStatus.Invalid, existing.Count,
+                    [UnitDiagnostic.Error("PLAY-003", $"The events built for the attempt must start with '{firstEventId}'.")]);
+            }
+
+            GameEvent[] all = [.. existing, .. batch];
             var history = replay(all);
             if (history.HasErrors)
             {
