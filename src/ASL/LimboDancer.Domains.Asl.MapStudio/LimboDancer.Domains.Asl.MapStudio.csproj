@@ -8,5 +8,6 @@
     <ProjectReference Include="..\LimboDancer.Domains.Asl.Maps.Vasl\LimboDancer.Domains.Asl.Maps.Vasl.csproj" />
     <ProjectReference Include="..\LimboDancer.Domains.Asl.Maps.Rendering\LimboDancer.Domains.Asl.Maps.Rendering.csproj" />
     <ProjectReference Include="..\LimboDancer.Domains.Asl.Units.Rendering\LimboDancer.Domains.Asl.Units.Rendering.csproj" />
+    <ProjectReference Include="..\LimboDancer.Domains.Asl.Play\LimboDancer.Domains.Asl.Play.csproj" />
   </ItemGroup>
 </Project>

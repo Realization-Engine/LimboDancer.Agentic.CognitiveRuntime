@@ -188,7 +188,7 @@ else if (board is null)
                     </dl>
                 }
 
-                <p class="muted">Projection of @shownGame.Game.Label for @gameView.Perspective.Name at revision @gameView.Stamp.Revision; a synthetic game, not a live one.</p>
+                <p class="muted">Projection of @shownGame.Game.Label for @gameView.Perspective.Name at revision @gameView.Stamp.Revision; @(shownGame.Game.Record?.Synthetic == false ? "a live game, changed only through the governed path." : "a synthetic game, not a live one.")</p>
             }
             else if (unitOverlay is { } overlay && UnitSet is { } shown)
             {

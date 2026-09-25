@@ -1,0 +1,338 @@
+@page "/games/play"
+@using System.Globalization
+@using System.Text.Json
+@using LimboDancer.Abstractions.Actions
+@using LimboDancer.Abstractions.Domain
+@using LimboDancer.Domains.Asl.Play
+@using LimboDancer.Domains.Asl.Units.Catalog
+@using LimboDancer.Domains.Asl.Units.State
+@inject LivePlay Live
+@inject UnitLibrary Library
+@inject NavigationManager Navigation
+
+<PageTitle>Play - ASL Map Studio</PageTitle>
+
+<h2>Play</h2>
+<p class="muted">
+    Live games are the Studio's chosen game source (D2). Every change is a registered action through the Execution Gate: the Studio proposes it,
+    the gate checks it against the current game, boards, and catalog, and it commits only after you confirm. Nothing here edits a game directly.
+</p>
+
+<div class="toolbar">
+    <label>
+        Game
+        <select id="play-game" value="@gameId" @onchange="ChangeGame">
+            <option value="">a new game</option>
+            @foreach (var scope in Live.Games())
+            {
+                <option value="@scope.Game">@scope.Game</option>
+            }
+        </select>
+    </label>
+    @if (state is not null)
+    {
+        <a id="play-view" href="@Games.BoardLink(state.Map.Boards[0].Board.Value, GameLibrary.LivePrefix + gameId, Perspective.Adjudicator, state.Revision)">View on @state.Map.Boards[0].Board.Value</a>
+    }
+</div>
+
+@if (history is null)
+{
+    <h3>New game</h3>
+    <div class="fields">
+        <label for="new-id">Game id</label><input id="new-id" value="@newId" @onchange="@(args => newId = args.Value as string ?? string.Empty)" placeholder="village" />
+        <label for="new-label">Label</label><input id="new-label" value="@newLabel" @onchange="@(args => newLabel = args.Value as string ?? string.Empty)" />
+        <label for="new-board">Board</label><input id="new-board" value="@newBoard" @onchange="@(args => newBoard = args.Value as string ?? string.Empty)" />
+        <label for="new-first">First side</label>
+        <select id="new-first" value="@firstSide" @onchange="@(args => firstSide = args.Value as string ?? firstSide)">
+            @foreach (var side in Library.Vocabulary.Sides)
+            {
+                <option value="@side.Name">@side.Label</option>
+            }
+        </select>
+        <label for="new-second">Second side</label>
+        <select id="new-second" value="@secondSide" @onchange="@(args => secondSide = args.Value as string ?? secondSide)">
+            @foreach (var side in Library.Vocabulary.Sides)
+            {
+                <option value="@side.Name">@side.Label</option>
+            }
+        </select>
+    </div>
+}
+else if (state is not null)
+{
+    <p id="play-summary">
+        <strong>@(history.Current is not null ? $"Revision {state.Revision}" : "The game does not replay")</strong>:
+        turn @state.Turn, @state.Phase.ToUpperInvariant(), @state.PhasingSide phasing.
+        @(SetupOpen ? "Setup is open." : "Play has started; setup is closed.")
+    </p>
+}
+
+@if (history is null || SetupOpen)
+{
+    <h3>Setup</h3>
+    <div class="toolbar">
+        <label>
+            Unit
+            <select id="place-definition" value="@placeDefinition" @onchange="@(args => placeDefinition = args.Value as string ?? string.Empty)">
+                @foreach (var definition in Definitions)
+                {
+                    <option value="@definition.Id">@definition.Id (@definition.Nationality @definition.Kind.Replace("asl:", string.Empty, StringComparison.Ordinal))</option>
+                }
+            </select>
+        </label>
+        <label>Id <input id="place-id" value="@placeId" @onchange="@(args => placeId = args.Value as string ?? string.Empty)" size="8" /></label>
+        <label>Location <input id="place-location" value="@placeLocation" @onchange="@(args => placeLocation = args.Value as string ?? string.Empty)" size="12" /></label>
+        <label><input id="place-concealed" type="checkbox" checked="@placeConcealed" @onchange="@(args => placeConcealed = args.Value is true)" /> concealed</label>
+        <label><input id="place-hidden" type="checkbox" checked="@placeHidden" @onchange="@(args => placeHidden = args.Value is true)" /> hidden</label>
+        <button id="place-add" @onclick="AddPlacement">Add</button>
+    </div>
+    @if (placements.Count > 0)
+    {
+        <ul id="place-list">
+            @foreach (var placement in placements)
+            {
+                <li>@placement.Id: @placement.Definition at @placement.Location@(placement.Concealed ? ", concealed" : "")@(placement.Hidden ? ", hidden" : "") <button class="link" @onclick="() => placements.Remove(placement)">remove</button></li>
+            }
+        </ul>
+    }
+    <button id="propose-setup" disabled="@(placements.Count == 0)" @onclick="ProposeSetup">Propose setup</button>
+}
+
+@if (state is not null && history?.Current is not null)
+{
+    <h3>Play</h3>
+    <div class="toolbar">
+        <button id="propose-advance" @onclick="ProposeAdvance">Propose: advance the phase</button>
+    </div>
+    <div class="toolbar">
+        <label>
+            Unit
+            <select id="enter-unit" value="@enterUnit" @onchange="@(args => enterUnit = args.Value as string ?? string.Empty)">
+                @foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active))
+                {
+                    <option value="@unit.Id">@unit.Id (@unit.Side)</option>
+                }
+            </select>
+        </label>
+        <label>Building <input id="enter-location" value="@enterLocation" @onchange="@(args => enterLocation = args.Value as string ?? string.Empty)" size="12" /></label>
+        <button id="propose-enter" @onclick="ProposeEntry">Propose: enter an empty building</button>
+    </div>
+}
+
+@if (pending is { } proposal)
+{
+    <div id="play-proposal">
+        <h3>@proposal.Action.Name</h3>
+        <p class="@(proposal.Result.Outcome is PlayOutcome.NeedsConfirmation or PlayOutcome.Committed or PlayOutcome.Replay ? "pass" : "fail")">
+            <strong id="play-outcome">@OutcomeText(proposal.Result.Outcome)</strong>
+        </p>
+        <ul id="play-reasons">
+            @foreach (var reason in proposal.Result.Reasons)
+            {
+                <li>@reason</li>
+            }
+        </ul>
+        @if (proposal.Result.Plan?.Entry is { } review)
+        {
+            <table class="library" id="play-facts">
+                <thead><tr><th>Reviewed fact (Scenario A1 first case)</th><th>From the game</th></tr></thead>
+                <tbody>
+                    @foreach (var (name, value) in review.Facts)
+                    {
+                        <tr data-fact="@name"><td>@name</td><td class="@(value == true ? "pass" : value == false ? "fail" : "muted")">@(value?.ToString().ToLowerInvariant() ?? "unknown")</td></tr>
+                    }
+                </tbody>
+            </table>
+            <p id="play-conclusion">
+                Conclusion: <strong>@review.Conclusion.Disposition</strong>. @review.Conclusion.Explanation
+                <span class="muted">(@review.Conclusion.ExplanationProvenance)</span>
+            </p>
+        }
+        @if (proposal.Result.Outcome == PlayOutcome.NeedsConfirmation)
+        {
+            <button id="play-confirm" @onclick="Confirm">Confirm</button>
+            <button id="play-cancel" class="link" @onclick="() => pending = null">Cancel</button>
+        }
+    </div>
+}
+
+@if (state is not null)
+{
+    <h3>Units</h3>
+    <table class="library" id="play-units">
+        <thead><tr><th>Id</th><th>Side</th><th>Kind</th><th>Location</th><th>MF spent</th><th>Conditions</th></tr></thead>
+        <tbody>
+            @foreach (var unit in state.Units)
+            {
+                <tr data-unit="@unit.Id">
+                    <td>@unit.Id</td><td>@unit.Side</td><td>@unit.Kind.Replace("asl:", string.Empty, StringComparison.Ordinal)</td>
+                    <td>@(state.Location(unit.Id)?.Location.ToString() ?? unit.Status.ToString().ToLowerInvariant())</td><td>@unit.MfSpent</td>
+                    <td>@string.Join(", ", unit.Conditions.Where(pair => pair.Value == ConditionState.True).Select(pair => pair.Key.Replace("asl:", string.Empty, StringComparison.Ordinal)))</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <details>
+        <summary>Audit (latest)</summary>
+        <pre class="json">@string.Join("\n", Live.Audit.Tail(12))</pre>
+    </details>
+}
+
+@code {
+    private sealed record Placement(string Id, string Definition, string Kind, string Side, string Location, bool Concealed, bool Hidden);
+
+    private sealed record Proposal(ActionDescriptor Action, JsonElement Arguments, PlayResult Result);
+
+    private string gameId = string.Empty;
+    private GameHistory? history;
+    private GameState? state;
+    private string newId = "village";
+    private string newLabel = "Village";
+    private string newBoard = "bd01";
+    private string firstSide = "german";
+    private string secondSide = "russian";
+    private readonly List<Placement> placements = [];
+    private string placeDefinition = string.Empty;
+    private string placeId = string.Empty;
+    private string placeLocation = "bd01:D4:0";
+    private bool placeConcealed;
+    private bool placeHidden;
+    private string enterUnit = string.Empty;
+    private string enterLocation = "bd01:E4:0";
+    private Proposal? pending;
+
+    [SupplyParameterFromQuery(Name = "game")]
+    public string? GameQuery { get; set; }
+
+    private IReadOnlyList<UnitDefinition> Definitions =>
+        [.. Live.Catalogs.Where(catalog => catalog.Publication == CatalogPublication.Published).SelectMany(catalog => catalog.Definitions)];
+
+    private UnitCatalog? PublishedCatalog => Live.Catalogs.FirstOrDefault(catalog => catalog.Publication == CatalogPublication.Published);
+
+    /// <summary>Setup stays open until the first event that is not the start or a placement.</summary>
+    private bool SetupOpen => history is { } shown && shown.Events.All(item => item.Payload is GameStarted or InstanceCreated);
+
+    protected override void OnInitialized()
+    {
+        placeDefinition = Definitions.FirstOrDefault()?.Id ?? string.Empty;
+        gameId = GameQuery ?? string.Empty;
+        Refresh();
+    }
+
+    private void ChangeGame(ChangeEventArgs args)
+    {
+        gameId = args.Value as string ?? string.Empty;
+        pending = null;
+        placements.Clear();
+        Refresh();
+    }
+
+    private void Refresh()
+    {
+        history = gameId.Length > 0 ? Live.History(gameId) : null;
+        state = history?.Current ?? (history is { States.Count: > 0 } ? history.States[^1] : null);
+        if (state is not null && !state.Units.Any(unit => unit.Id == enterUnit))
+        {
+            enterUnit = state.Units.FirstOrDefault()?.Id ?? string.Empty;
+        }
+    }
+
+    private void AddPlacement()
+    {
+        if (Definitions.FirstOrDefault(definition => definition.Id == placeDefinition) is not { } definition)
+        {
+            return;
+        }
+
+        var id = placeId.Trim().Length > 0 ? placeId.Trim() : $"{definition.Id}-{placements.Count + 1}";
+        var side = new[] { firstSide, secondSide }.Contains(definition.Nationality) ? definition.Nationality
+            : state?.Sides.FirstOrDefault(item => item.Nationality == definition.Nationality)?.Id ?? definition.Nationality;
+        placements.Add(new Placement(id, definition.Id, definition.Kind, side, placeLocation.Trim(), placeConcealed, placeHidden));
+        placeId = string.Empty;
+    }
+
+    private async Task ProposeSetup()
+    {
+        var game = history is null ? newId.Trim() : gameId;
+        object[] units = [.. placements.Select(item => (object)new
+        {
+            id = item.Id, kind = item.Kind, definition = item.Definition, side = item.Side, position = new { at = item.Location },
+            conditions = new Dictionary<string, bool>
+            {
+                ["asl:broken"] = false, ["asl:berserk"] = false, ["asl:captured"] = false, ["asl:melee"] = false, ["asl:ti"] = false,
+                ["asl:concealed"] = item.Concealed, ["asl:hidden"] = item.Hidden,
+            },
+        })];
+        var catalog = PublishedCatalog is { } published ? $"{published.Identity.Catalog}@{published.Identity.Version}" : string.Empty;
+        var arguments = history is null
+            ? JsonSerializer.SerializeToElement(new
+            {
+                gameId = game, attemptId = Attempt("setup"), expectedRevision = 0L,
+                start = new
+                {
+                    label = newLabel, catalog, boards = new[] { newBoard.Trim() }, firstSide,
+                    sides = new[] { new { id = firstSide, nationality = firstSide }, new { id = secondSide, nationality = secondSide } },
+                },
+                placements = units,
+            })
+            : JsonSerializer.SerializeToElement(new { gameId = game, attemptId = Attempt("setup"), expectedRevision = (long)history.Events.Count, placements = units });
+        gameId = game;
+        await Propose(GameActions.Setup, arguments);
+    }
+
+    private Task ProposeAdvance() => Propose(GameActions.AdvancePhase,
+        JsonSerializer.SerializeToElement(new { gameId, attemptId = Attempt("advance"), expectedRevision = (long)history!.Events.Count }));
+
+    private Task ProposeEntry() => Propose(GameActions.EnterEmptyBuilding, JsonSerializer.SerializeToElement(new
+    {
+        gameId, attemptId = Attempt("enter"), expectedRevision = (long)history!.Events.Count, unitId = enterUnit, location = enterLocation.Trim(),
+    }));
+
+    private async Task Propose(ActionDescriptor action, JsonElement arguments)
+    {
+        pending = new Proposal(action, arguments, await Run(() => Live.Play.ProposeAsync(action, arguments, Live.Principal)));
+        Refresh();
+    }
+
+    /// <summary>Runs a gate call; a failure inside it, such as a reviewed package that no longer verifies, is reported, not thrown.</summary>
+    private static async Task<PlayResult> Run(Func<Task<PlayResult>> call)
+    {
+        try
+        {
+            return await call();
+        }
+        catch (InvalidOperationException exception)
+        {
+            return new PlayResult(PlayOutcome.Failed, new LimboDancer.Abstractions.Runtime.CorrelationId("failed"), ["play.error: " + exception.Message], null);
+        }
+    }
+
+    private async Task Confirm()
+    {
+        if (pending is not { } proposal)
+        {
+            return;
+        }
+
+        var result = await Run(() => Live.Play.ConfirmAsync(proposal.Action, proposal.Arguments, Live.Principal, proposal.Result.Correlation));
+        pending = proposal with { Result = result };
+        if (result.Outcome is PlayOutcome.Committed or PlayOutcome.Replay && proposal.Action == GameActions.Setup)
+        {
+            placements.Clear();
+        }
+
+        Refresh();
+    }
+
+    private static string Attempt(string kind) => $"{kind}-{Guid.NewGuid():N}"[..(kind.Length + 13)];
+
+    private static string OutcomeText(PlayOutcome outcome) => outcome switch
+    {
+        PlayOutcome.NeedsConfirmation => "Every check passed. Confirm to commit.",
+        PlayOutcome.Committed => "Committed through the Execution Gate.",
+        PlayOutcome.Replay => "Already committed by this attempt; nothing changed.",
+        PlayOutcome.Stale => "Stale: the game moved on since the proposal. Propose again.",
+        PlayOutcome.Denied => "Refused by the gate.",
+        _ => "Failed.",
+    };
+}
