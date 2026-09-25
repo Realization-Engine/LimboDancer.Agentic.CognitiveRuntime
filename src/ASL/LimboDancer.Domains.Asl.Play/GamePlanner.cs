@@ -99,6 +99,21 @@ public sealed record GamePlan(
     {
         get; init;
     }
+
+    /// <summary>
+    /// A roll the action needs. A plan with a roll is Ready with no events: the store draws the roll inside its commit
+    /// and builds the events from it (Random Selection and Declined OVR Design, section 3).
+    /// </summary>
+    public PlannedRoll? Roll
+    {
+        get; init;
+    }
+
+    /// <summary>The id the plan's first event has, known before any roll: a committed attempt is found by it.</summary>
+    public string? FirstEventId
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -150,9 +165,12 @@ public sealed class GamePlanner(IGameStore store, IBoardCatalog boards, UnitVoca
         var record = store.Read(scope);
         var existing = record?.Events ?? [];
         var label = record?.Label ?? gameId;
-        if (existing.Any(item => item.EventId == EventId(attemptId, 1)))
+        if (existing.FirstOrDefault(item => item.EventId == EventId(attemptId, 1)) is { } committed)
         {
-            return new GamePlan(GamePlanStatus.Replay, scope, label, expected, [], ["play.replay"]);
+            // DICE-10: the same attempt with different inputs is not a replay.
+            return ReusedWithOtherInputs(action, arguments, committed)
+                ? Refused(scope, label, expected, $"play.attempt-reused: the attempt '{attemptId}' was committed with different inputs")
+                : new GamePlan(GamePlanStatus.Replay, scope, label, expected, [], ["play.replay"]);
         }
 
         if (existing.Count != expected)
@@ -483,6 +501,27 @@ public sealed class GamePlanner(IGameStore store, IBoardCatalog boards, UnitVoca
             [$"play.forced-back: {unit.Id} attempts {target}, {defender.Id} is revealed, and {unit.Id} returns to {from} with 2 MF spent and its MPh ended ({conclusion.ConclusionId})"])
         {
             Disclosure = new EntryDisclosure(unit.Side, EntryRoute.Concealed, withheld, [])
+        };
+    }
+
+    /// <summary>
+    /// Whether a committed attempt was for other inputs than these: an entry's first event names its unit and target, so
+    /// an entry attempt reused for another unit or location is not a replay (DICE-10).
+    /// </summary>
+    private static bool ReusedWithOtherInputs(ActionDescriptor action, JsonElement arguments, GameEvent committed)
+    {
+        if (action.Id.Value is not ("asl.game.enter-building" or "asl.game.enter-empty-building"))
+        {
+            return false;
+        }
+
+        var unitId = Text(arguments, "unitId", out var unitText) ? unitText : null;
+        var target = Text(arguments, "location", out var locationText) && BoardLocation.TryParse(locationText, out var parsed) ? parsed : null;
+        return committed.Payload switch
+        {
+            EntryAttempted attempted => attempted.Id != unitId || attempted.Target != target,
+            InstanceMoved moved => moved.Id != unitId || moved.Position is not MapPosition { Location: var at } || at != target,
+            _ => true,
         };
     }
 

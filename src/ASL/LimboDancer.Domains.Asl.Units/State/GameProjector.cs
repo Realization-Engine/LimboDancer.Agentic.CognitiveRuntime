@@ -47,6 +47,7 @@ public static class GameProjector
     {
         private readonly HashSet<string> eventIds = new(StringComparer.Ordinal);
         private readonly Dictionary<string, EntryAttempted> openAttempts = new(StringComparer.Ordinal);
+        private readonly HashSet<string> rolls = new(StringComparer.Ordinal);
         private UnitCatalog? catalog;
         private string path = string.Empty;
 
@@ -73,6 +74,7 @@ public static class GameProjector
                 InstanceCaptured captured => Capture(previous, captured),
                 EntryAttempted attempted => Attempt(previous, attempted, gameEvent.EventId),
                 EntryForcedBack forced => ForceBack(previous, forced, gameEvent.Causes),
+                DiceRolled rolled => Roll(previous, rolled),
                 _ => Fail<GameState>("UNIT-STATE-001", $"'{gameEvent.Type}' has no projection."),
             };
 
@@ -414,6 +416,35 @@ public static class GameProjector
                 MfSpent = unit.MfSpent + forced.Mf,
                 MovementEnded = true
             });
+        }
+
+        /// <summary>
+        /// A recorded roll (DICE-12): replay uses its values and checks their count and bounds; it never draws. The roll
+        /// changes no state.
+        /// </summary>
+        private GameState? Roll(GameState state, DiceRolled roll)
+        {
+            if (roll.Source != DiceRolled.SystemSource)
+            {
+                return Fail<GameState>("UNIT-STATE-019", $"A roll comes from the system, not '{roll.Source}'.");
+            }
+
+            if (roll.Count is < 1 or > 100 || roll.Sides < 2 || roll.Values.Count != roll.Count)
+            {
+                return Fail<GameState>("UNIT-STATE-019", $"A roll of {roll.Count} dice with {roll.Sides} sides cannot record {roll.Values.Count} values.");
+            }
+
+            if (roll.Values.Any(value => value < 1 || value > roll.Sides))
+            {
+                return Fail<GameState>("UNIT-STATE-019", $"Every value of a roll is between 1 and {roll.Sides}.");
+            }
+
+            if (!rolls.Add(roll.Roll))
+            {
+                return Fail<GameState>("UNIT-STATE-019", $"The roll '{roll.Roll}' is recorded twice.");
+            }
+
+            return state;
         }
 
         private GameState? Transfer(GameState state, EquipmentTransferred transfer)

@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <InternalsVisibleTo Include="LimboDancer.Dice.Tests" />
+    <InternalsVisibleTo Include="LimboDancer.Domains.Asl.Play.Tests" />
   </ItemGroup>
 </Project>

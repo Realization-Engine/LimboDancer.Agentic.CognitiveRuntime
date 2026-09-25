@@ -107,5 +107,16 @@ public sealed record EntryAttempted(string Id, BoardLocation Target, int Mf) : E
 /// </summary>
 public sealed record EntryForcedBack(string Id, string Attempt, BoardLocation ReturnedTo, int Mf, bool FollowOnFireResolved) : EventPayload;
 
+/// <summary>
+/// <c>dice-rolled</c>: a roll drawn by the system inside a game commit and recorded, never drawn again
+/// (DICE-09, DICE-12; Random Selection and Declined OVR Design, section 4). <paramref name="Values"/> are in generation
+/// order. The roll changes no state; the events that follow it apply its result.
+/// </summary>
+public sealed record DiceRolled(string Roll, string Purpose, int Count, int Sides, IReadOnlyList<int> Values, string Source, string Actor) : EventPayload
+{
+    /// <summary>The only source of a recorded roll: the system, not a player.</summary>
+    public const string SystemSource = "system";
+}
+
 /// <summary><c>instance-captured</c>: a unit becomes a prisoner in the custody of an enemy unit (A20.2, A20.5).</summary>
 public sealed record InstanceCaptured(string Id, string Custodian) : EventPayload;
