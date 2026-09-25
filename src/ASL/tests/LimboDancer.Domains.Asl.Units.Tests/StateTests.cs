@@ -212,7 +212,9 @@ public sealed class StateTests
 
         var german = GameDocuments.For(GameView.Of(Replayed(), 23, Perspective.Side("german")), vocabulary, [Catalog.Value]);
         Assert.Equal(["asl:concealed"], Assert.Single(german, document => document.Id == "g3").States);
-        Assert.Contains(german, document => document.Id == "gh2" && document.Location == "bd01:C4:0");
+        var hidden = Assert.Single(german, document => document.Id == "gh2");
+        Assert.Equal("bd01:C4:0", hidden.Location);
+        Assert.Equal(["asl:hidden"], hidden.States);
     }
 
     [Fact]

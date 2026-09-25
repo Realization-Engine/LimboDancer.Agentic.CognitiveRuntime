@@ -1,6 +1,6 @@
 {
   "pack": "asl",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "label": "ASL Personnel, support weapons, Guns, vehicles, and entities that are not units",
   "note": "Original LimboDancer vocabulary. Rule references are to the registered rulebook PDF by physical page; no rulebook text or counter artwork.",
   "extends": [],
@@ -250,6 +250,7 @@
     { "name": "asl:wounded", "label": "wounded", "short": "WND", "face": "wounded", "rule": "A15.2, p. 83; A17, p. 85" },
     { "name": "asl:disrupted", "label": "disrupted", "short": "DIS", "rule": "A19.12, p. 86" },
     { "name": "asl:concealed", "label": "concealed", "short": "?", "rule": "A12, pp. 76 to 80" },
+    { "name": "asl:hidden", "label": "hidden", "short": "HIP", "rule": "A12.3, p. 80" },
     { "name": "asl:malfunctioned", "label": "malfunctioned", "short": "MAL", "face": "malfunctioned", "rule": "A9.7, p. 65" },
     { "name": "asl:limbered", "label": "limbered", "short": "LMB", "face": "limbered", "rule": "C2.2, p. 167" },
     { "name": "asl:wrecked", "label": "wrecked", "short": "WRK", "face": "wreck", "rule": "D1.9, p. 195" },

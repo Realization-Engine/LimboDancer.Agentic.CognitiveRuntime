@@ -356,6 +356,8 @@ asl|unit:asl\:wounded   { badge: "WND" top-left; }
 asl|unit:asl\:berserk   { stroke: token(alert); stroke-width: 0.09; badge: "BSK" top-left; }
 asl|unit:asl\:fanatic   { stroke: token(warning); stroke-width: 0.09; badge: "FAN" top-left; }
 asl|unit:asl\:concealed { stroke: token(conceal); stroke-style: dashed; stroke-width: 0.07; badge: "?" top-left; }
+/* Hidden Initial Placement (A12.3): only its owner is ever sent the unit, so only the owner sees this mark. */
+asl|unit:asl\:hidden    { stroke: token(conceal); stroke-style: dashed; stroke-width: 0.07; badge: "HIP" top-left; }
 
 /* Mid tier: the Strength Factor or leader values, class, and state badges. */
 @detail mid {

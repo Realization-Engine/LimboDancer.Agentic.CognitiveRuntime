@@ -241,6 +241,7 @@ On cardboard these are separate marker counters stacked on the unit. Here they a
 | Wounded (SMC) | A15.2, p. 83; A17, p. 85 | `asl:wounded` (switches a hero to its wounded face) | wounded face or badge |
 | Disrupted | A19.12, p. 86 | `asl:disrupted` | badge |
 | Concealed | A12, pp. 76 to 80 | a concealed placeholder document (section 7.3) | "?" placeholder |
+| Hidden (HIP), owner's view | A12.3, p. 80 | `asl:hidden` (since `asl@1.4.0`; the opponent is never sent the unit) | concealment frame and "HIP" badge |
 | Malfunctioned (SW) | A9.7, p. 65 | `asl:malfunctioned` | malfunctioned face |
 
 States are open: a pack adds its own, and a style sheet decides how they show. Badges beyond the face size collapse into a count with the full list in the inspector.
@@ -615,16 +616,17 @@ Built on branch `feature/asl-unit-display-projections`, from `main@e57993c`, as 
 - **Board viewer.** The Units source picker lists the games that have anything to draw on the board or map, projected by perspective, before the placement sets. For a game it adds a perspective picker and revision stepping. The query `?game={name}&perspective={side or adjudicator}&revision={n}` opens a projection directly, and the Game states page's Show on board uses it. A board with a game opens on the game's adjudicator view at its latest revision.
 - **Unit details.** For a game, selecting a unit shows the facts its counter cannot: side, every condition that is not false (including hidden, captured, and Melee), derived Good Order, MF spent this phase, lineage, custody, and containment. A sealed presence says that its identity and conditions are withheld from the perspective.
 - **Every map (ASL-UNIT-071).** Positions keep the placed board's reference, so a game on boards placed in a composed map shows on that map through its translation, as placement sets do.
+- **Hidden mark (`asl@1.4.0`).** The vocabulary gains the state `asl:hidden` (A12.3, p. 80), and both sheets draw it as the concealment frame with a "HIP" badge. Only the unit's owner and the adjudicator are ever sent a hidden unit, so only they see the mark; the other side receives nothing (section 7.3). Documents written against `asl@1.3.0` still read.
 - **Saved games.** Besides the embedded fixtures, the Studio reads synthetic game records saved as `{boards folder}/units/games/{name}.game.json`.
 - **Retired.** The generated placement sets of step 4, which the Games page registered in the unit library, are gone: a projection is built when the viewer asks for it and is never stored.
 
 ### 20.2 Departures and limits
 
 - **Equipment is drawn by kind.** No catalog defines SW or Guns yet, so an attached LMG reads "with MG" and shows no values.
-- **Undrawn conditions.** Hidden, captured, and Melee have no drawn form; they are shown in the details panel. An owner sees its own hidden unit drawn normally.
+- **Undrawn conditions.** Captured and Melee have no drawn form; they are shown in the details panel.
 - **Synthetic only.** Every game is a fixture until a live source is chosen (D2); the details panel says so.
 - **Both sides filtered.** The fixture's hidden and concealed units were all Russian, so only the German view was filtered. It gains two German units at revisions 22 and 23, both visible only to the German side: a concealed squad `g3` in `bd01:C5:0` and a hidden half-squad `gh2` in `bd01:C4:0`. The Russian view now draws a German "?" at C5 and nothing at C4, and neither id reaches the page.
 
 ### 20.3 Tests
 
-`Units.Tests` (300): possessed equipment attached to its holder, and dropped equipment drawn alone; the Russian view and its documents, symmetric with the German ones: the concealed German squad a sealed presence, the hidden German half-squad absent, and no German id in what the Russian side receives; a Russian case read that sees nothing of either. `MapStudio.Tests` (77): a projection holds only what the perspective may know and is never stored as a placement set; the Game states page for the Russian side; a game on placed boards shows on their composed map with the translated hex; the viewer opens a game projection by query for the chosen perspective, with no trace of the other side's hidden unit.
+`Units.Tests` (301): possessed equipment attached to its holder, and dropped equipment drawn alone; the Russian view and its documents, symmetric with the German ones: the concealed German squad a sealed presence, the hidden German half-squad absent, and no German id in what the Russian side receives; a Russian case read that sees nothing of either; the hidden German half-squad drawn for its owner with the `asl:hidden` state. `Units.Rendering.Tests` (322): the hidden state's parity row and goldens under both sheets. `MapStudio.Tests` (77): a projection holds only what the perspective may know and is never stored as a placement set; the Game states page for the Russian side; a game on placed boards shows on their composed map with the translated hex; the viewer opens a game projection by query for the chosen perspective, with no trace of the other side's hidden unit.

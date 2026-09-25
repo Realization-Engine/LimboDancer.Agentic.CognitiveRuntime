@@ -10,7 +10,7 @@ public sealed class VocabularyTests
     public void TheAslPackLoadsWithAVersionIdentity()
     {
         var vocabulary = UnitsTestData.Asl.Value;
-        Assert.Equal("asl@1.3.0", vocabulary.Identity);
+        Assert.Equal("asl@1.4.0", vocabulary.Identity);
         Assert.Equal(64, vocabulary.Hash.Length);
         Assert.Equal(vocabulary.Hash, UnitVocabulary.Asl().Hash);
     }
@@ -130,7 +130,7 @@ public sealed class VocabularyTests
     public void APackCanExtendAslKindsAndAddAttributes()
     {
         var vocabulary = UnitsTestData.WithSla();
-        Assert.Equal("asl@1.3.0+sla@0.1.0", vocabulary.Identity);
+        Assert.Equal("asl@1.4.0+sla@0.1.0", vocabulary.Identity);
         Assert.True(vocabulary.IsA("sla:scavenger-band", "asl:personnel"));
         Assert.True(vocabulary.IsA("sla:mutant", "unit"));
         Assert.False(vocabulary.IsA("sla:mutant", "asl:unit"));

@@ -45,7 +45,7 @@ The kind decides which record an instance is: below `asl:equipment` it is equipm
 
 ## 4. Conditions and Good Order
 
-Each condition is its own dimension (ASL-UNIT-023), keyed by name, with one of five states: `true`, `false`, `unknown` (the default, when nothing is recorded), `withheld` (exists, but this perspective may not know it), and `inapplicable`. The names are the vocabulary's states plus three the display does not draw: `asl:hidden` (Hidden Initial Placement, A12.3, p. 80), `asl:captured` (A20.2, p. 86), and `asl:melee` (A11.15, p. 72). States the vocabulary groups as exclusive, such as broken and berserk, cannot both be true.
+Each condition is its own dimension (ASL-UNIT-023), keyed by name, with one of five states: `true`, `false`, `unknown` (the default, when nothing is recorded), `withheld` (exists, but this perspective may not know it), and `inapplicable`. The names are the vocabulary's states, among them `asl:hidden` (Hidden Initial Placement, A12.3, p. 80, a vocabulary state since `asl@1.4.0`), plus two the display does not draw: `asl:captured` (A20.2, p. 86) and `asl:melee` (A11.15, p. 72). States the vocabulary groups as exclusive, such as broken and berserk, cannot both be true.
 
 Good Order is derived, never stored: a Personnel unit neither broken, berserk, captured, nor held in Melee (Index and Glossary, Good Order, p. 23). It is `false` if any of those is true, `true` if all are known false, and `unknown` otherwise. For other kinds it is `inapplicable`, because a vehicular crew's stun and shock are not yet modelled.
 

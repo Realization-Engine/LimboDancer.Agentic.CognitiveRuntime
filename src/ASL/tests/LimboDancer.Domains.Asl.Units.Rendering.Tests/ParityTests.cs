@@ -122,6 +122,7 @@ public sealed class ParityTests
         { "Wounded SMC", Leader, WithStates(Leader, "asl:wounded"), null, "badge", "badge" },
         { "Disrupted", Squad, WithStates(Squad, "asl:disrupted"), null, "badge", "badge" },
         { "Concealed, owner's view", Squad, WithStates(Squad, "asl:concealed"), null, "face", "face" },
+        { "Hidden (HIP), owner's view", Squad, WithStates(Squad, "asl:hidden"), null, "face", "face" },
 
         // 4.4 Guns and ordnance values.
         { "Gun Caliber Size", Gun.Replace("\"caliber\": 75, ", "", StringComparison.Ordinal), Gun, null, "slot:cal", "slot:cal" },

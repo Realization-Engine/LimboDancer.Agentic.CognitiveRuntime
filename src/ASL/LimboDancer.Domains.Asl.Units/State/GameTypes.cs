@@ -68,7 +68,7 @@ public enum ConditionState
 
 /// <summary>
 /// The condition dimensions an instance can have (ASL-UNIT-023): each a separate dimension, never one state enumeration.
-/// They are the vocabulary's states, which the display draws, plus three the display does not draw.
+/// They are the vocabulary's states, which the display draws, plus two the display does not draw.
 /// </summary>
 public static class Conditions
 {
@@ -76,7 +76,10 @@ public static class Conditions
     public const string Berserk = "asl:berserk";
     public const string Concealed = "asl:concealed";
 
-    /// <summary>Hidden Initial Placement (A12.3, p. 80): the opponent is told nothing, not even presence.</summary>
+    /// <summary>
+    /// Hidden Initial Placement (A12.3, p. 80): the opponent is told nothing, not even presence. A vocabulary state since
+    /// <c>asl@1.4.0</c>, so its owner sees it drawn.
+    /// </summary>
     public const string Hidden = "asl:hidden";
 
     /// <summary>Captured (A20.2, p. 86), held by a captor (A20.5, p. 87).</summary>
@@ -86,7 +89,7 @@ public static class Conditions
     public const string Melee = "asl:melee";
 
     /// <summary>Conditions the state model adds to the vocabulary's states; they have no drawn form.</summary>
-    public static IReadOnlyList<string> Undrawn { get; } = [Hidden, Captured, Melee];
+    public static IReadOnlyList<string> Undrawn { get; } = [Captured, Melee];
 
     public static bool IsDeclared(string name, Vocabulary.UnitVocabulary vocabulary) =>
         Undrawn.Contains(name, StringComparer.Ordinal) || vocabulary.TryGetState(name, out _);

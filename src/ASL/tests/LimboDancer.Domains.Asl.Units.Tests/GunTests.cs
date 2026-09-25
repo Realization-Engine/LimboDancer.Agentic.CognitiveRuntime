@@ -110,7 +110,8 @@ public sealed class GunTests
     [InlineData("asl@1.1.0", true)]
     [InlineData("asl@1.2.0", true)]
     [InlineData("asl@1.3.0", true)]
-    [InlineData("asl@1.4.0", false)]
+    [InlineData("asl@1.4.0", true)]
+    [InlineData("asl@1.5.0", false)]
     [InlineData("asl@2.0.0", false)]
     [InlineData("asl@0.9.0", false)]
     public void ADocumentReadsUnderALaterMinorVersionOfItsPack(string reference, bool served) =>
