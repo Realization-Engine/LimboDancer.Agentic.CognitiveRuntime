@@ -1,10 +1,10 @@
 # ASL Unit Domain Model Analysis
 
-**Status:** Long-range analysis, deferred while the [unit map rendering slice](<ASL Unit Map Rendering Slice.md>) is implemented; no implementation or rule admission implied
+**Status:** Background analysis. The normative requirements drawn from it are the [ASL Unit Requirements](<LimboDancer.Agentic.CognitiveRuntime ASL Unit Requirements.md>), which govern where the two differ. The [unit map rendering slice](<ASL Unit Map Rendering Slice.md>) it was deferred behind is built. No implementation or rule admission is implied.
 
-**Date:** 2026-09-24
+**Date:** 2026-09-24; revised the same day after a review against the PDF (see "Review notes" at the end)
 
-**Repository baseline:** `main@41d824b`
+**Repository baseline:** `main@41d824b` originally; revised at `main@bdd6d9d` (after ASL-MAP-08)
 
 **Source:** *ASL Rulebook*, `eASLRB_v3_01.pdf`, 716 physical PDF pages. Page numbers below are **physical PDF page numbers**, followed by printed rule numbers. The existing Markdown conversion begins with the TOC, index, and Chapters A–E (PDF pp. 6–253); the full unit ontology may use all applicable chapters, charts and counter sources after exact registration and review. See [ASL Ontology Transformation Specification](<LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md>), §5.
 
@@ -24,15 +24,19 @@ The table lists principal A–E rule families as a starting inventory. It is not
 | Personnel definition and printed values | PDF pp. 44–45, A1.121–1.25, A1.4–1.6: squad, HS, crew, FP, range, morale, identity, class, broken side, special status, US#. | Store face-specific printed stats and counter markings with their source and applicable nationality/date. Do not infer capability from a `4-6-7` string alone. |
 | Leaders and heroes | PDF pp. 43–44, A.10, A1.11; pp. 83–84, A15.2; pp. 85–86, A17–19. | Model SMC subtype, leadership DRM, heroic/wound state and resulting replacement or loss separately from MMC combat stats. |
 | Squad/HS transformations | PDF pp. 45, A1.3–1.32; 85–86, A16 and A19.1–19.13. | Reduction, deployment, recombination, ELR replacement, disruption and battle hardening are events that may change definition and/or counter cardinality. Preserve lineage. |
-| Personnel condition and action | PDF pp. 43, A.7 Good Order; 45, A1.4–1.5; 48–52, A4 movement; 65–69, A10 morale/rout; 76–80, A12 concealment; 83–85, A15–17. | Keep condition dimensions explicit: broken, pinned, CX, TI, berserk, fanatic, wounded, concealed/hidden and movement/phase. Good Order is a rule-derived predicate, not a universal single state enum. |
+| Personnel condition and action | PDF pp. 43, A.7 Good Order; 45, A1.4–1.5; 48–52, A4 movement; 65–71, A10 morale/rout; 76–80, A12 concealment; 83–85, A15–17. | Keep condition dimensions explicit: broken, pinned, CX, TI, berserk, fanatic, wounded, concealed/hidden and movement/phase. Good Order is a rule-derived predicate, not a universal single state enum. |
 | Position and stacking | PDF pp. 45–47, A1.6, A2.2, A2.8; pp. 52–53, A5. | Unit position can be a hex, level, vehicle, conveyance or other placement; US# and stacking are context dependent. A board hex alone is insufficient. |
 | SW and possession | PDF pp. 50–51, A4.4–4.5; pp. 56–57, A7.35; pp. 62–65, A9; pp. 88–91, A21–23. | A support weapon is an equipment instance with its own identity, usage, portage, ammunition and malfunction state. Possession, carriage, firing and captured use are relationships/events; a SW is not automatically a unit. |
 | Guns and manning | PDF pp. 167–169, C2.2–2.3; 179–183, C9–12; 183–185, C13. | Gun is an ordnance/equipment entity with caliber/type, ammo, CA, manhandling/towing/emplacement, malfunction and a manning relationship. Do not equate Gun counter, manning crew and vehicle main armament. |
 | Vehicles and crews | PDF pp. 192–199, D1–2; pp. 199–204, D3–5. | Vehicle definition includes chassis/armor/armament/mobility/transport features; instance includes location, facing, motion, damage, CE/BU, load and inherent crew. Armed inherent crew and unarmed inherent driver differ (D5.1). |
 | PRC, transport and mounting | PDF pp. 58, A7.821; 203–206, D5–6; 80–82, A13 Cavalry. | Personnel may be passengers, riders, crew or cavalry; role and containment vary with time. Personnel and Infantry are not interchangeable predicates. |
-| Combat and casualties | PDF pp. 54–62, A7–8; 65–76, A10–11; 176–179, C7–8; 199–204, D3–5. | Attack outcome must be recorded as events and projected to unit, equipment, crew and vehicle effects independently. |
+| Combat and casualties | PDF pp. 54–62, A7–8; 65–76, A10–11; 175–179, C7–8; 199–204, D3–5. | Attack outcome must be recorded as events and projected to unit, equipment, crew and vehicle effects independently. |
 | Nationality, substitution and exceptions | PDF pp. 86, A19; 93–99, A25; Chapter A National Capabilities Chart references. | Definition lookup needs nationality, class/type, time/SSR applicability and substitution mappings. Later module-specific nationality rules remain separate dependencies. |
 | Prisoners and capture | PDF pp. 86–88, A20–21. | Capture changes custody, possession and sometimes use restrictions; it is not a simple Boolean on a counter. |
+| Snipers and side values | PDF p. 82, A14.1; p. 86, A19.1. | "A Sniper counter is not a unit" (A14.1). Each side's SAN and ELR come from its scenario OB: they are side state, not unit state. |
+| Fortifications | PDF pp. 140–141, B23.92 (fortified buildings); p. 146, B27 foxholes; p. 150, B30 pillboxes. | Fortifications are counters that change where and how units are positioned and protected; they are entities, not unit flags. |
+| Offboard artillery | PDF p. 163, C1. | OBA observers, radios and field phones are relationships and equipment; the battery itself is offboard. |
+| Armor Leaders | PDF p. 200, D3.42. | An Armor Leader sets its vehicle's inherent crew morale: a relationship between a SMC and a vehicle's crew. |
 
 **Full-rulebook coverage required:** The PDF also has rules after p. 253 (for example modules G and W) and back-matter charts. Inventory and incorporate their unit definitions, states and exceptions by module and applicability; register exact sources and review each semantic artifact before publication. Index entries and counter art point to controlling sections; they do not themselves authorize mechanics. The definition catalog requires counter and National Capabilities Chart evidence, not just textual taxonomy.
 
@@ -63,7 +67,7 @@ Proposed conceptual types (names are candidates, not code committed here):
 | `EquipmentDefinition` / `EquipmentInstance` | Printed SW or Gun characteristics; game-scoped identity, condition and use state. | Possession, capture, ammo, breakdown/repair, destruction, placement or limbering changes. |
 | `VehicleDefinition` / `VehicleInstance` | Vehicle data, crew/armament/transport slots; actual motion, damage, facing, load and crew status. | A vehicle event occurs. Vehicle can be a specialized `UnitInstance` without treating its Gun as a free-standing Gun. |
 | `CounterRepresentation` | Physical or virtual counter face and mapping to one or more game entities; source identifier where available. | Counter is flipped, removed, replaced or generated. This is presentation/evidence, not the game entity's identity. |
-| `GameState` | Game/scenario ID, sides, board package versions, phase/turn, scenario rule overlays, visibility perspective and monotonic revision. | A committed, sequenced game event occurs. |
+| `GameState` | Game/scenario ID, sides with their nationality, ELR and SAN, board package or composed-map versions, phase/turn, scenario rule overlays, visibility perspective and monotonic revision. | A committed, sequenced game event occurs. |
 
 Use disjoint *kind* classifications for SMC leader/hero, MMC squad/HS/Infantry crew/dismounted vehicular crew, and vehicle. Model Guns and SW as equipment unless a specific rule calls for a unit relationship. Inherent crew is a component of its vehicle until an abandonment/survival event yields a separately represented crew. Some counter types and roles need additional classifications; avoid a closed exhaustive enum until the relevant chapters and charts have been curated.
 
@@ -74,7 +78,7 @@ Printed FP/range/morale, broken morale, ELR markings, leadership DRM, Smoke/Assa
 The authoritative instance projection should carry, at minimum:
 
 1. **Scope and consistency:** tenant, game/scenario, unit ID, definition revision, event-stream revision, observed UTC timestamp, source ID, visibility perspective, board/scenario package versions.
-2. **Position:** typed `LocationRef` with map/board, hex, level and placement/status where applicable; previous and attempted locations belong to movement history, not an overwritten `LocationId`. Integrate with `Maps.Coordinates` while checking that the actual board/scene version matches.
+2. **Position:** typed `LocationRef` with map/board, hex, and one location in the hex's derived location chain (ground, building level, cellar, bridge, depression), a hexside and facing where needed, or containment (vehicle, fortification, conveyance); previous and attempted locations belong to movement history, not an overwritten `LocationId`. Integrate with `Maps.Coordinates` and the map's `LocationFacts` while checking that the actual board or composed-map version matches. On a composed map (ASL-MAP-08) a position keeps its placed board's reference.
 3. **Conditions:** separate dimensions for Good Order inputs, broken/disrupted/pinned/TI/CX, berserk/fanatic, wounded, concealed/hidden/dummy state and capture. Model unknown, inapplicable and withheld facts distinctly; avoid defaulting unobserved conditions to false.
 4. **Operational role:** on foot, cavalry, passenger, rider, inherent or dismounted crew, with vehicle/mount references and eligibility to count as Infantry at the observed instant.
 5. **Turn activity:** phase, movement status, remaining and spent MF/MP, MF/MP expenditure location, fire/ROF and use restrictions, attempted entry and result. Costs and entitlements need event provenance.
@@ -89,7 +93,7 @@ Prefer an authoritative, ordered `GameEvent` stream with a versioned projection 
 | Event family | Typical state changes | Source anchors |
 |---|---|---|
 | Deploy/recombine/reduce/replace/eliminate | One-to-many or many-to-one instance lineage, new definitions, possessions and stack positions. | A1.3–1.32 (PDF p. 45); A19 (p. 86). |
-| Morale and Heat of Battle | Broken/rally/disrupted/berserk/fanatic/heroic, possibly definition or cardinality changes. | A10 (pp. 65–69); A15–16 (pp. 83–85). |
+| Morale and Heat of Battle | Broken/rally/disrupted/berserk/fanatic/heroic, possibly definition or cardinality changes. | A10 (pp. 65–71); A15–16 (pp. 83–85). |
 | Reveal/conceal/hide | Visibility and counter representation, reveal ordering and occupancy evidence. | A12 (pp. 76–80). |
 | Move/board/unload/abandon | Position, role, vehicle occupancy, MF/MP and component separation. | A4 (pp. 48–52); A13 (pp. 80–82); D5–6 (pp. 203–206). |
 | Acquire/drop/fire/repair/destroy equipment | Equipment condition, holder and usage; Gun manning/towing state. | A4.4 (p. 50); A9 (pp. 62–65); C10–11 (pp. 180–182). |
@@ -123,4 +127,15 @@ The write side must require the reviewed exact-case conclusion, an expected vers
 4. Add a read-only authoritative adapter that projects existing game case/events into Scenario A1 snapshots and cross-checks board facts, provenance and version. Exercise unknown, stale, conflicting, hidden and second-reveal cases.
 5. Only then integrate authorized write events, one narrowly reviewed transition at a time, with atomic revision checks, effect verification and explicit live-use risk authorization.
 
+**Revised sequence:** The [ASL Unit Requirements](<LimboDancer.Agentic.CognitiveRuntime ASL Unit Requirements.md>), section 13, replace this sequence. The main change is scope: instead of registering the whole rulebook first (step 1 above), the first slice covers only what the reviewed Scenario A1 cases read, after two decisions this analysis left open: where printed counter values come from, and where live game state comes from.
+
 **Review gates:** This document is a modeling proposal. No full rules coverage, counter catalog completeness, scenario state authority, host opt-in, or new action authority follows from it. Each later source family, transition and live-use path needs its own testable package contract and explicit review.
+
+## Review notes (2026-09-24)
+
+The analysis was checked against the registered PDF (`eASLRB_v3_01.pdf`, SHA-256 `957de75b...a247`, 716 physical pages):
+
+- About 40 page citations were compared with the rule headings on those physical pages. All sub-rule citations were correct. Two section ranges were widened: A10 runs to p. 71 (A11 starts on p. 72), and C7 starts on p. 175. The D5.1 description of inherent crews and drivers matches the rule text.
+- Four families were missing and are now in the inventory: Snipers and side values (A14.1, A19.1), fortifications (B23, B27, B30), offboard artillery (C1), and Armor Leaders (D3.42).
+- The position model now refers to the map's location chains and composed maps, which were built after this analysis was written.
+- Two gaps are now decisions in the Unit Requirements (D1, D2): the rulebook does not supply per-counter printed values (the N Armory is absent, and Chapter H's notes do not give every value), and no live game source exists for the read contract.

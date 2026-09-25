@@ -1,10 +1,10 @@
 # ASL Unit Map Rendering Slice
 
-**Status:** Proposed first slice; analysis only
+**Status:** Built (commits `88b9077` to `6620817`). The display requirements for later unit work are ASL-UNIT-070 to 072 in the [ASL Unit Requirements](<LimboDancer.Agentic.CognitiveRuntime ASL Unit Requirements.md>).
 
-**Date:** 2026-09-24
+**Date:** 2026-09-24; status revised the same day
 
-**Baseline:** `main@cbf0ee3` (ASL-MAP-04 board viewer)
+**Baseline:** `main@cbf0ee3` (ASL-MAP-04 board viewer); revised at `main@bdd6d9d` (after ASL-MAP-08)
 
 **Implementation design:** [ASL Unit Counter Map Rendering Design](<ASL Unit Counter Map Rendering Design.md>) specifies the actual input sources, fixture binding, code boundaries, and integration checks.
 
@@ -50,6 +50,22 @@ For a first demonstration, use a small, checked-in example placement set against
 5. Support an empty snapshot, one counter, counters in different hexes, and several counters in one hex. Board-view changes between Exact and HexFacts keep the same placement snapshot and anchor coordinates. Board changes require a new placement snapshot or an empty overlay.
 
 The overlay may initially be generated server-side as a standalone SVG fragment, then inserted into the existing inline SVG by the Studio. Any endpoint for it must key caching by both board and placement revision (and art version), or use a non-immutable response. The existing board-only endpoints and their year-long immutable cache policy remain specific to terrain layers.
+
+## As built
+
+The slice was implemented in Map Studio as a "Demo units" overlay on bd01 with three counters. Against the cases below:
+
+- One counter, two hexes, and a three-counter stack render, sort stably, and are listed in the inspector.
+- Invalid input (wrong board or pinned version, off-board hex, duplicate ID, bad face or side) is diagnosed and nothing is moved.
+- Counter click and keyboard selection work, including while a drag is in progress, and bare terrain still selects the hex.
+- A changed snapshot replaces only the unit layer.
+
+Not yet met or since changed:
+
+- **Upper-level placement:** the level appears in the inspector and accessible name, but no level badge is drawn.
+- **Missing art fallback, facing, and `counterArt` mapping:** not built; all counters use one generated style.
+- **"Both available views":** the viewer now has four views (Exact, Styled, Hex facts, Comparison); only the first two were in scope when this was written.
+- **Other boards:** the fixture is bd01 only. Composed maps (ASL-MAP-08) can now place counters through placed-board locations; ASL-UNIT-071 requires display on every board and map.
 
 ## First acceptance cases
 
