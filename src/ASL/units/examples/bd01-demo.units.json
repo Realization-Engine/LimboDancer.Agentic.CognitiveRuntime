@@ -3,7 +3,7 @@
   "setId": "bd01-demo",
   "label": "Synthetic units on board 01",
   "synthetic": true,
-  "vocabulary": ["asl@1.0.0"],
+  "vocabulary": ["asl@1.1.0"],
   "units": [
     {
       "id": "demo-a",
@@ -56,6 +56,17 @@
         "broken": { "broken-morale": 6, "bpv": 5, "traits": ["asl:self-rally"] }
       },
       "states": ["asl:broken"]
+    },
+    {
+      "id": "demo-e",
+      "kind": "asl:gun",
+      "side": "german",
+      "location": "bd01:C3:0",
+      "facing": "south-east",
+      "faces": {
+        "front": { "gun-type": "at", "caliber": 50, "caliber-suffix": "l", "rate-of-fire": 2, "manhandling": 9 },
+        "malfunctioned": { "repair": 1, "removal": 6 }
+      }
     }
   ]
 }

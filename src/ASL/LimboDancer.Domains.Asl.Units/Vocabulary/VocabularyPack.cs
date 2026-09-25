@@ -42,6 +42,12 @@ public sealed record AttributeDefinition(
 {
     public string LocalName => VocabularyNames.Local(Name);
 
+    /// <summary>How a list's items are joined when shown, such as <c>6/7/8</c>; <c>/</c> unless the pack says otherwise.</summary>
+    public string Separator
+    {
+        get; init;
+    } = "/";
+
     public EnumerationMember? Member(string name) => Members.FirstOrDefault(member => member.Name == name);
 }
 
@@ -72,7 +78,14 @@ public sealed record KindDefinition(
     int? SizeClass,
     IReadOnlyDictionary<string, string> AccessibleName,
     IReadOnlyDictionary<string, string> AttachedName,
-    string? Rule);
+    string? Rule)
+{
+    /// <summary>Whether units of this kind face a hexspine (C3.2); null inherits the parent's answer.</summary>
+    public bool? Facing
+    {
+        get; init;
+    }
+}
 
 /// <summary>Attributes and traits a pack adds to a kind of a pack it extends.</summary>
 public sealed record KindAugment(string Kind, IReadOnlyList<string> Attributes, IReadOnlyList<string> Traits);

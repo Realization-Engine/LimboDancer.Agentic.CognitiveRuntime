@@ -55,7 +55,7 @@ public sealed class UnitStudioTests : IDisposable
         Assert.True(entry.Set.Synthetic);
         Assert.Equal("bd01-demo", entry.Set.SetId);
         Assert.Empty(library.SetsFor(FakeBoardProvider.Board));
-        Assert.Equal(12, library.Examples.Count);
+        Assert.Equal(16, library.Examples.Count);
     }
 
     [Fact]
@@ -166,6 +166,20 @@ public sealed class UnitStudioTests : IDisposable
         Assert.Contains("with light MG", lab.Find("#lab-name").TextContent, StringComparison.Ordinal);
         lab.Find("#att0-remove").Click();
         Assert.DoesNotContain("with", lab.Find("#lab-name").TextContent, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AGunsFacingIsChosenInTheLab()
+    {
+        var lab = context.Render<UnitLab>();
+        lab.Find("#lab-example").Change("example-at-gun");
+        Assert.EndsWith("facing north-east", lab.Find("#lab-name").TextContent, StringComparison.Ordinal);
+        lab.Find("#unit-facing").Change("west");
+        Assert.EndsWith("facing west", lab.Find("#lab-name").TextContent, StringComparison.Ordinal);
+        Assert.Contains("data-covered-arc=\"west\"", lab.Markup, StringComparison.Ordinal);
+        Assert.Contains("limbered face", lab.Markup, StringComparison.Ordinal);
+        lab.Find("#lab-example").Change("example-squad");
+        Assert.Empty(lab.FindAll("#unit-facing"));
     }
 
     [Fact]

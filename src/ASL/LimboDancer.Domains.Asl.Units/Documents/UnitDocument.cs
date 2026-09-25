@@ -18,7 +18,7 @@ public sealed record UnitValue(AttributeDefinition Attribute, int? Number, strin
         AttributeType.Number => Number!.Value.ToString(CultureInfo.InvariantCulture),
         AttributeType.Rating => Signed(Number!.Value),
         AttributeType.Enumeration => Attribute.Member(Text!)?.Abbreviation ?? Text!,
-        AttributeType.List => string.Join('/', Items),
+        AttributeType.List => string.Join(Attribute.Separator, Items),
         _ => Text ?? string.Empty,
     };
 
@@ -58,7 +58,8 @@ public sealed record UnitDocument(
     IReadOnlyList<UnitDocument> Attached,
     int StackOrder = 0,
     bool Concealed = false,
-    int? SizeClass = null)
+    int? SizeClass = null,
+    UnitFacing? Facing = null)
 {
     public UnitFace? Face(string name) => Faces.FirstOrDefault(face => face.Name == name);
 

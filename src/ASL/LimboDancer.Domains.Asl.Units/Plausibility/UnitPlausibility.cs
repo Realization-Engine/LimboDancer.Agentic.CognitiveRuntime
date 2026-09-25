@@ -55,5 +55,23 @@ public static class UnitPlausibility
         {
             warnings.Add(new("A9.7, p. 65", "This MG has no Breakdown Number. Unless the inherent B12 is meant, state it.", document.Id));
         }
+
+        foreach (var face in document.Faces)
+        {
+            if (face.HasTrait("asl:no-ap") && face.HasTrait("asl:no-he"))
+            {
+                warnings.Add(new("C2.21, p. 167", $"The {face.Name} face can fire neither AP nor HE.", document.Id));
+            }
+
+            if (Is("asl:gun") && Has(face, "asl:ife") && face.Value("asl:rate-of-fire") is not { Number: > 1 })
+            {
+                warnings.Add(new("C2.29, p. 168", $"The {face.Name} face has an IFE but no Multiple ROF; IFE is for Guns with a high ROF.", document.Id));
+            }
+
+            if (face.Value("asl:range-minimum") is { Number: { } minimum } && face.Value("asl:range-maximum") is { Number: { } maximum } && minimum > maximum)
+            {
+                warnings.Add(new("C2.25, p. 168", $"The {face.Name} face's minimum range exceeds its maximum.", document.Id));
+            }
+        }
     }
 }

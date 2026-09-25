@@ -141,6 +141,10 @@ public sealed class GoldenTests
             ["kind-light-mortar"] = catalog["example-mortar"],
             ["kind-radio"] = catalog["example-radio"],
             ["kind-concealed-placeholder"] = catalog["example-concealed"],
+            ["kind-gun-at"] = catalog["example-at-gun"],
+            ["kind-gun-aa"] = catalog["example-aa-gun"],
+            ["kind-gun-mtr"] = catalog["example-mortar-gun"],
+            ["kind-gun-inf"] = catalog["example-inf-gun"],
         };
         foreach (var state in RenderingTestData.Vocabulary.Value.States)
         {
@@ -148,6 +152,7 @@ public sealed class GoldenTests
             {
                 "asl:malfunctioned" => catalog["example-mmg"],
                 "asl:wounded" => catalog["example-hero"],
+                "asl:limbered" => catalog["example-aa-gun"],
                 _ => catalog["example-squad"],
             };
             documents["state-" + state.Name[4..]] = target with
@@ -157,6 +162,12 @@ public sealed class GoldenTests
             };
         }
 
+        // A Gun's malfunctioned side differs from a support weapon's: Repair and Removal Numbers (C2.2).
+        documents["state-malfunctioned-gun"] = catalog["example-at-gun"] with
+        {
+            Id = "state-malfunctioned-gun",
+            States = ["asl:malfunctioned"]
+        };
         return documents;
     }
 

@@ -99,18 +99,8 @@ asl|dc {
 }
 asl|dc::slot(glyph) { content: glyph(dc); }
 asl|dc::slot(label) { content: "DC"; }
-asl|latw {
-  face-template: "glyph glyph"
-                 "label label"
-                 "bd    pp";
-}
 asl|latw::slot(glyph) { content: glyph(latw); }
 asl|latw::slot(label) { content: attr(latw-type, front); }
-asl|light-mortar {
-  face-template: "glyph glyph"
-                 "label label"
-                 "bd    pp";
-}
 asl|light-mortar::slot(glyph) { content: glyph(mortar); }
 asl|light-mortar::slot(label) { content: "MTR"; }
 
@@ -139,6 +129,70 @@ asl|sw:face(malfunctioned) {
 }
 asl|sw:face(malfunctioned)::slot(repair) { content: "R" attr(repair); font-size: 0.3; font-weight: bold; }
 
+/* Ordnance values of Guns, light mortars, and LATW (C2.21 to C2.26). */
+asl|gun::slot(cal), asl|sw[caliber]::slot(cal) { content: attr(caliber) attr(caliber-suffix, optional); font-weight: bold; }
+asl|gun.asl\:no-ap::slot(cal), asl|sw.asl\:no-ap::slot(cal) { mark: overline; }
+asl|gun.asl\:no-he::slot(cal), asl|sw.asl\:no-he::slot(cal) { mark: underline; }
+asl|gun[range-maximum]::slot(range), asl|sw[range-maximum]::slot(range) { content: "[" attr(range-maximum) "]"; }
+asl|gun[range-minimum][range-maximum]::slot(range), asl|sw[range-minimum][range-maximum]::slot(range) { content: "[" attr(range-minimum) "-" attr(range-maximum) "]"; }
+asl|gun::slot(ammo), asl|sw::slot(ammo) { content: attr(special-ammo); }
+asl|gun::slot(type) { content: attr(gun-type, front); font-weight: bold; }
+asl|gun::slot(mnum) { content: "M" attr(manhandling); }
+asl|gun[target-size=small]::slot(mnum) { fill: #ffffff; badge-shape: circle; color: #111111; }
+asl|gun[target-size=large]::slot(mnum) { color: token(alert); font-weight: bold; }
+asl|gun::slot(bd) { content: "B" attr(breakdown); }
+asl|gun::slot(glyph) { content: glyph(gun); }
+asl|gun[gun-type=mtr]::slot(glyph) { content: glyph(mortar); }
+asl|gun[gun-type=aa]::slot(glyph) { content: glyph(aa-gun); }
+asl|gun[gun-type=rcl]::slot(glyph) { content: glyph(rcl); }
+asl|gun:face(limbered)::slot(glyph) { content: glyph(limbered-gun); }
+asl|gun:face(malfunctioned)::slot(repair) { content: "R" attr(repair); font-weight: bold; }
+asl|gun:face(malfunctioned)::slot(removal) { content: "X" attr(removal); font-weight: bold; }
+
+/* Guns (C2.2 to C2.3): upright faces, a direction arrow at the faced hexspine, and the Covered Arc at the near tier (C3.2). */
+asl|gun {
+  face-template: "glyph glyph type"
+                 "cal   cal   mnum"
+                 "ammo  range bd";
+  direction-mark: arrow;
+  covered-arc: wedge;
+}
+asl|gun::slot(type)  { font-size: 0.2; }
+asl|gun::slot(cal)   { font-size: 0.3; }
+asl|gun::slot(mnum)  { font-size: 0.17; }
+asl|gun::slot(ammo)  { font-size: 0.13; }
+asl|gun::slot(range) { font-size: 0.14; }
+asl|gun::slot(bd)    { font-size: 0.14; }
+asl|gun[rate-of-fire] { badge: "ROF" attr(rate-of-fire) top-right; }
+asl|gun[ife] { badge: "IFE" attr(ife) bottom-left; }
+asl|gun.asl\:mount-360 { badge: "360" top-left; }
+asl|gun.asl\:qsu  { badge: "QSU" bottom-right; }
+asl|gun.asl\:nm   { badge: "NM" bottom-right; }
+asl|gun.asl\:rfnm { badge: "RFNM" bottom-right; }
+asl|gun:face(limbered) {
+  fill: side(fill-muted);
+  face-template: "glyph glyph type"
+                 "cal   cal   mnum";
+  covered-arc: none;
+}
+asl|gun:face(malfunctioned) {
+  fill: side(fill-muted);
+  pattern: stripes token(warning);
+  face-template: "repair glyph   type"
+                 "repair removal removal";
+  covered-arc: none;
+}
+asl|gun:face(malfunctioned)::slot(repair), asl|gun:face(malfunctioned)::slot(removal) { font-size: 0.24; }
+
+/* Light mortars and LATW with their ordnance values. */
+asl|light-mortar, asl|latw {
+  face-template: "glyph label"
+                 "cal   range"
+                 "bd    pp";
+}
+asl|light-mortar::slot(cal), asl|latw::slot(cal) { font-size: 0.22; }
+asl|light-mortar::slot(range), asl|latw::slot(range) { font-size: 0.14; }
+
 /* States drawn on the unit (ASL-UNIT-077). */
 asl|unit:asl\:pinned    { badge: "PIN" top-right; }
 asl|unit:asl\:cx        { badge: "CX" top-right; }
@@ -162,7 +216,10 @@ asl|unit:asl\:concealed { stroke: token(conceal); stroke-style: dashed; stroke-w
   asl|radio { face-template: "label" "contact"; }
   asl|radio:face(reverse) { face-template: "label"; }
   asl|sw:face(malfunctioned) { face-template: "label" "repair"; }
-  unit::slot(fp), unit::slot(range), unit::slot(morale), unit::slot(bmorale), unit::slot(drm) { mark: none; }
+  asl|gun { face-template: "glyph type" "cal cal"; covered-arc: none; }
+  asl|gun:face(limbered) { face-template: "glyph type"; }
+  asl|gun:face(malfunctioned) { face-template: "repair removal"; }
+  unit::slot(fp), unit::slot(range), unit::slot(morale), unit::slot(bmorale), unit::slot(drm), unit::slot(cal) { mark: none; }
   asl|leader::slot(drm) { mark: circle; }
   asl|personnel:face(broken).asl\:self-rally::slot(bmorale) { mark: box; }
 }
@@ -179,5 +236,11 @@ asl|unit:asl\:concealed { stroke: token(conceal); stroke-style: dashed; stroke-w
   asl|latw::slot(glyph) { content: glyph(latw); }
   asl|light-mortar::slot(glyph) { content: glyph(mortar); }
   asl|radio::slot(glyph) { content: glyph(radio); }
+  asl|gun { covered-arc: none; }
+  asl|gun::slot(glyph) { content: glyph(gun); }
+  asl|gun[gun-type=mtr]::slot(glyph) { content: glyph(mortar); }
+  asl|gun[gun-type=aa]::slot(glyph) { content: glyph(aa-gun); }
+  asl|gun[gun-type=rcl]::slot(glyph) { content: glyph(rcl); }
+  asl|gun:face(limbered)::slot(glyph) { content: glyph(limbered-gun); }
   unit::attached(asl|equipment) { display: none; }
 }

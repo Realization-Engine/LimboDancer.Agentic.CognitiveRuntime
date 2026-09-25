@@ -18,7 +18,7 @@ public static class UnitDocumentReader
 {
     private static readonly HashSet<string> DocumentFields = new(StringComparer.Ordinal)
     {
-        "vocabulary", "id", "kind", "side", "location", "faces", "unit", "states", "attached", "stackOrder", "concealed", "sizeClass", "note",
+        "vocabulary", "id", "kind", "side", "location", "facing", "faces", "unit", "states", "attached", "stackOrder", "concealed", "sizeClass", "note",
     };
 
     private static readonly HashSet<string> PlaceholderFields = new(StringComparer.Ordinal)
@@ -119,7 +119,7 @@ public static class UnitDocumentReader
         }
         else
         {
-            foreach (var reference in packs.Where(reference => !vocabulary.Packs.Any(pack => pack.Identity == reference)))
+            foreach (var reference in packs.Where(reference => !vocabulary.Serves(reference)))
             {
                 diagnostics.Add(UnitDiagnostic.Error("UNIT-DOC-011", $"The document was written against '{reference}', which is not loaded ({vocabulary.Identity}).", path));
             }
@@ -164,6 +164,23 @@ public static class UnitDocumentReader
         }
 
         var stackOrder = fields.OptionalInteger(element, "stackOrder", path) ?? 0;
+        UnitFacing? facing = null;
+        if (fields.OptionalString(element, "facing", path) is { } facingText && !concealed)
+        {
+            if (!UnitFacings.TryParse(facingText, out var parsedFacing))
+            {
+                diagnostics.Add(UnitDiagnostic.Error("UNIT-DOC-018", $"'{facingText}' is not a hexspine; use {string.Join(", ", UnitFacings.All)}.", path));
+            }
+            else if (attached || kind is null || !vocabulary.HasFacing(kind))
+            {
+                diagnostics.Add(UnitDiagnostic.Error("UNIT-DOC-018",
+                    attached ? "Attached equipment has no facing of its own." : $"The kind '{kind}' has no facing.", path));
+            }
+            else
+            {
+                facing = parsedFacing;
+            }
+        }
         var faces = new List<UnitFace>();
         var unit = new List<UnitValue>();
         var states = new List<string>();
@@ -210,7 +227,7 @@ public static class UnitDocumentReader
             return null;
         }
 
-        return new UnitDocument(packs, id, kind, side, location, faces, unit, states, attachments, stackOrder, concealed, sizeClass);
+        return new UnitDocument(packs, id, kind, side, location, faces, unit, states, attachments, stackOrder, concealed, sizeClass, facing);
     }
 
     private static List<UnitFace> ReadFaces(JsonElement element, UnitVocabulary vocabulary, string kind, string path, List<UnitDiagnostic> diagnostics)

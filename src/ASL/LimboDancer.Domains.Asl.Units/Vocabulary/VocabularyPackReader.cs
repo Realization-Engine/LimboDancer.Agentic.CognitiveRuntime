@@ -151,7 +151,10 @@ public static class VocabularyPackReader
 
             attributes.Add(new AttributeDefinition(attributeName, fields.OptionalString(item, "label", path) ?? VocabularyNames.Local(attributeName),
                 type, scope, fields.OptionalString(item, "unit", path), members, itemType, fields.StringList(item, "faces", path),
-                fields.OptionalString(item, "rule", path)));
+                fields.OptionalString(item, "rule", path))
+            {
+                Separator = fields.OptionalString(item, "separator", path) ?? "/",
+            });
         }
 
         var traits = new List<TraitDefinition>();
@@ -187,7 +190,10 @@ public static class VocabularyPackReader
             kinds.Add(new KindDefinition(kindName, fields.OptionalString(item, "label", path) ?? VocabularyNames.Local(kindName),
                 fields.OptionalString(item, "extends", path), fields.StringList(item, "faces", path), fields.StringList(item, "attributes", path),
                 fields.StringList(item, "traits", path), sizeClass, fields.Templates(item, "accessibleName", path),
-                fields.Templates(item, "attachedName", path), fields.OptionalString(item, "rule", path)));
+                fields.Templates(item, "attachedName", path), fields.OptionalString(item, "rule", path))
+            {
+                Facing = item.TryGetProperty("facing", out _) ? fields.OptionalBoolean(item, "facing", path) : null,
+            });
         }
 
         var augments = new List<KindAugment>();

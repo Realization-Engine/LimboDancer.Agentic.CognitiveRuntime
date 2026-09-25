@@ -19,6 +19,18 @@
             <option value="@side.Name">@side.Label</option>
         }
     </select>
+    @if (!IsAttached && !Draft.Concealed && Vocabulary.HasKind(Draft.Kind) && Vocabulary.HasFacing(Draft.Kind))
+    {
+        <label for="@($"{Prefix}-facing")" title="C3.2, p. 169">Facing (hexspine)</label>
+        <select id="@($"{Prefix}-facing")" value="@(Draft.Facing?.Name() ?? string.Empty)"
+                @onchange="@(args => Change(() => Draft.Facing = UnitFacings.TryParse(args.Value as string, out var facing) ? facing : null))">
+            <option value="">not given</option>
+            @foreach (var name in UnitFacings.All)
+            {
+                <option value="@name">@name</option>
+            }
+        </select>
+    }
     @if (!IsAttached)
     {
         <label for="@($"{Prefix}-concealed")">Concealed placeholder</label>

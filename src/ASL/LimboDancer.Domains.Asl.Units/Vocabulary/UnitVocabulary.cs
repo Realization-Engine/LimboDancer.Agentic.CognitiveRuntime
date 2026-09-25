@@ -84,7 +84,7 @@ public sealed class UnitVocabulary
             {
                 var at = reference.IndexOf('@', StringComparison.Ordinal);
                 var name = at < 0 ? reference : reference[..at];
-                if (!byName.TryGetValue(name, out var extended) || (at >= 0 && extended.Version != reference[(at + 1)..]))
+                if (!byName.TryGetValue(name, out var extended) || (at >= 0 && !Compatible(extended.Version, reference[(at + 1)..])))
                 {
                     diagnostics.Add(UnitDiagnostic.Error("UNIT-VOC-008", $"The pack extends '{reference}', which is not loaded.", pack.Identity));
                 }
@@ -216,6 +216,27 @@ public sealed class UnitVocabulary
         return new UnitVocabularyResult(diagnostics.Count == 0 ? vocabulary : null, diagnostics);
     }
 
+    /// <summary>
+    /// Whether a document's pack reference, such as <c>asl@1.0.0</c>, is served by a loaded pack: the same pack and
+    /// major version, at the same or a later minor and patch version. Packs only add declarations within a major version.
+    /// </summary>
+    public bool Serves(string reference)
+    {
+        ArgumentNullException.ThrowIfNull(reference);
+        var at = reference.IndexOf('@', StringComparison.Ordinal);
+        if (at < 0 || !VocabularyPackReader.IsVersion(reference[(at + 1)..]))
+        {
+            return false;
+        }
+
+        return Packs.Any(pack => pack.Pack == reference[..at] && Compatible(pack.Version, reference[(at + 1)..]));
+    }
+
+    /// <summary>Whether a loaded version serves a wanted one: the same major version, and not older.</summary>
+    private static bool Compatible(string loadedVersion, string wantedVersion) =>
+        Version.TryParse(loadedVersion, out var loaded) && Version.TryParse(wantedVersion, out var wanted) &&
+        loaded.Major == wanted.Major && loaded >= wanted;
+
     public bool TryGetKind(string name, out KindDefinition kind) => kinds.TryGetValue(name, out kind!);
 
     public KindDefinition Kind(string name) =>
@@ -240,6 +261,9 @@ public sealed class UnitVocabulary
     public IReadOnlyCollection<string> AcceptedTraits(string kind) => Info(kind).Traits;
 
     public int? SizeClass(string kind) => Info(kind).SizeClass;
+
+    /// <summary>Whether units of a kind face a hexspine, so a document may give their facing (C3.2).</summary>
+    public bool HasFacing(string kind) => Info(kind).Facing;
 
     public bool TryGetAttribute(string name, out AttributeDefinition attribute) => attributes.TryGetValue(name, out attribute!);
 
@@ -349,6 +373,7 @@ public sealed class UnitVocabulary
             var attributeSet = new HashSet<string>(StringComparer.Ordinal);
             var traitSet = new HashSet<string>(StringComparer.Ordinal);
             int? sizeClass = null;
+            var facing = false;
             for (var index = chain.Count - 1; index >= 0; index--)
             {
                 var definition = kinds[chain[index]];
@@ -362,12 +387,13 @@ public sealed class UnitVocabulary
                 }
 
                 sizeClass = definition.SizeClass ?? sizeClass;
+                facing = definition.Facing ?? facing;
             }
 
-            info[kind] = new KindInfo(chain, faceList, attributeSet, traitSet, sizeClass);
+            info[kind] = new KindInfo(chain, faceList, attributeSet, traitSet, sizeClass, facing);
         }
     }
 
     private sealed record KindInfo(IReadOnlyList<string> Ancestors, IReadOnlyList<string> Faces, IReadOnlySet<string> Attributes,
-        IReadOnlySet<string> Traits, int? SizeClass);
+        IReadOnlySet<string> Traits, int? SizeClass, bool Facing);
 }

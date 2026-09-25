@@ -118,5 +118,8 @@ public static class StyleProperties
 
         // Decoration.
         "badge", "badges", "badge-fill", "badge-color", "badge-shape", "glyph", "face",
+
+        // Direction: a unit that faces a hexspine (C3.2).
+        "rotate", "direction-mark", "direction-color", "covered-arc", "covered-arc-length", "covered-arc-color",
     };
 }
