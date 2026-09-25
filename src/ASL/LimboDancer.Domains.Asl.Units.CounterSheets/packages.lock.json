@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "dependencies": {
+    "net10.0": {
+      "limbodancer.domains.asl.maps": {
+        "type": "Project"
+      },
+      "limbodancer.domains.asl.units": {
+        "type": "Project",
+        "dependencies": {
+          "LimboDancer.Domains.Asl.Maps": "[1.0.0, )"
+        }
+      }
+    }
+  }
+}

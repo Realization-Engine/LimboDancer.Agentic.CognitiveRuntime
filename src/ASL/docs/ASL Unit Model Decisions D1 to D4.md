@@ -78,7 +78,7 @@ A wider slice can follow one reviewed slice at a time, as ASL-UNIT-062 requires.
 ## Next steps
 
 - [x] Record the decisions in the Unit Requirements (section 12), with the date.
-- [ ] Register the counter source under the Ontology Transformation Specification: the counter sheets used, the transcription, and its reviewer.
+- [x] Register the counter source under the Ontology Transformation Specification: the counter sheets used, the transcription, and its reviewer ([Scenario A1 Catalog Design](<ASL Scenario A1 Catalog Design.md>), section 9). The first transcription reads the rulebook's charts at the user's request, a recorded departure from D1; Dennis Landi reviewed it on 2026-09-25.
 - [ ] If VASL is to be the cross-check, run the licensing review of the module's piece definitions first.
-- [ ] Transcribe and review the Scenario A1 Infantry counters, then start step 3: the Scenario A1 catalog, with round-trip tests.
+- [x] Transcribe and review the Scenario A1 Infantry counters, then start step 3: the Scenario A1 catalog, with round-trip tests.
 - [ ] Name the perspectives (each side, adjudicator) in the state model design for step 4.

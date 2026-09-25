@@ -1,0 +1,58 @@
+sheet,counter,face,attribute,value,transcriber,reviewer,note
+NCC,attacker-squad,counter,kind,asl:squad,Claude (claude-opus-5-5),Dennis Landi,NCC SQUAD column
+NCC,attacker-squad,counter,nationality,german,Claude (claude-opus-5-5),Dennis Landi,NCC GERMAN section; attacker by scenario choice
+NCC,attacker-squad,front,firepower,4,Claude (claude-opus-5-5),Dennis Landi,"NCC GERMAN, class 1 row: 4^1-6-7^7 (6 underlined), BPV 10"
+NCC,attacker-squad,front,range,6,Claude (claude-opus-5-5),Dennis Landi,"NCC GERMAN, class 1 row: 4^1-6-7^7 (6 underlined), BPV 10"
+NCC,attacker-squad,front,morale,7,Claude (claude-opus-5-5),Dennis Landi,"NCC GERMAN, class 1 row: 4^1-6-7^7 (6 underlined), BPV 10"
+NCC,attacker-squad,front,identity,not-in-source,Claude (claude-opus-5-5),Dennis Landi,A1.24: each counter has its own letter; the chart shows none
+NCC,attacker-squad,front,class,1st-line,Claude (claude-opus-5-5),Dennis Landi,NCC CLASS column: 1
+NCC,attacker-squad,front,class-variant,not-printed,Claude (claude-opus-5-5),Dennis Landi,NCC CLASS column: 1 without circle or square (A1.25)
+NCC,attacker-squad,front,smoke-exponent,1,Claude (claude-opus-5-5),Dennis Landi,NCC: superscript 1 after FP 4 (A1.21)
+NCC,attacker-squad,front,asl:assault-fire,no,Claude (claude-opus-5-5),Dennis Landi,NCC: FP 4 not underlined (A1.21)
+NCC,attacker-squad,front,asl:spraying-fire,yes,Claude (claude-opus-5-5),Dennis Landi,NCC: range 6 underlined (A1.22)
+NCC,attacker-squad,front,asl:elr-5,no,Claude (claude-opus-5-5),Dennis Landi,NCC: morale 7 not underlined (A1.23)
+NCC,attacker-squad,front,asl:assault-engineer,no,Claude (claude-opus-5-5),Dennis Landi,NCC: no AE superscript on the class
+NCC,attacker-squad,broken,broken-morale,7,Claude (claude-opus-5-5),Dennis Landi,NCC: superscript 7 after morale 7 (chart legend)
+NCC,attacker-squad,broken,bpv,10,Claude (claude-opus-5-5),Dennis Landi,NCC BPV column
+NCC,attacker-squad,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),Dennis Landi,The chart shows no broken side (A10.63)
+NCC,attacker-half-squad,counter,kind,asl:half-squad,Claude (claude-opus-5-5),Dennis Landi,NCC HS column
+NCC,attacker-half-squad,counter,nationality,german,Claude (claude-opus-5-5),Dennis Landi,NCC GERMAN section
+NCC,attacker-half-squad,front,firepower,2,Claude (claude-opus-5-5),Dennis Landi,"NCC GERMAN, class 1 row, HS column: 2-4-7^6, BPV 4"
+NCC,attacker-half-squad,front,range,4,Claude (claude-opus-5-5),Dennis Landi,"NCC GERMAN, class 1 row, HS column: 2-4-7^6, BPV 4"
+NCC,attacker-half-squad,front,morale,7,Claude (claude-opus-5-5),Dennis Landi,"NCC GERMAN, class 1 row, HS column: 2-4-7^6, BPV 4"
+NCC,attacker-half-squad,front,identity,not-in-source,Claude (claude-opus-5-5),Dennis Landi,A1.24: each counter has its own letter; the chart shows none
+NCC,attacker-half-squad,front,class,1st-line,Claude (claude-opus-5-5),Dennis Landi,"NCC CLASS column: 1, same row as the squad"
+NCC,attacker-half-squad,front,class-variant,not-printed,Claude (claude-opus-5-5),Dennis Landi,NCC CLASS column: 1 without circle or square (A1.25)
+NCC,attacker-half-squad,front,smoke-exponent,not-printed,Claude (claude-opus-5-5),Dennis Landi,NCC HS column: no superscript after FP 2
+NCC,attacker-half-squad,front,asl:assault-fire,no,Claude (claude-opus-5-5),Dennis Landi,NCC HS column: FP 2 not underlined
+NCC,attacker-half-squad,front,asl:spraying-fire,no,Claude (claude-opus-5-5),Dennis Landi,NCC HS column: range 4 not underlined
+NCC,attacker-half-squad,front,asl:elr-5,no,Claude (claude-opus-5-5),Dennis Landi,NCC HS column: morale 7 not underlined
+NCC,attacker-half-squad,front,asl:assault-engineer,no,Claude (claude-opus-5-5),Dennis Landi,NCC: no AE superscript on the class
+NCC,attacker-half-squad,broken,broken-morale,6,Claude (claude-opus-5-5),Dennis Landi,NCC HS column: superscript 6 after morale 7
+NCC,attacker-half-squad,broken,bpv,4,Claude (claude-opus-5-5),Dennis Landi,NCC HS BPV column
+NCC,attacker-half-squad,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),Dennis Landi,The chart shows no broken side (A10.63)
+NCC,defender-squad,counter,kind,asl:squad,Claude (claude-opus-5-5),Dennis Landi,NCC SQUAD column
+NCC,defender-squad,counter,nationality,russian,Claude (claude-opus-5-5),Dennis Landi,NCC RUSSIAN section; defender by scenario choice
+NCC,defender-squad,front,firepower,4,Claude (claude-opus-5-5),Dennis Landi,"NCC RUSSIAN, boxed class 1 row: 4-4-7^7, BPV 7"
+NCC,defender-squad,front,range,4,Claude (claude-opus-5-5),Dennis Landi,"NCC RUSSIAN, boxed class 1 row: 4-4-7^7, BPV 7"
+NCC,defender-squad,front,morale,7,Claude (claude-opus-5-5),Dennis Landi,"NCC RUSSIAN, boxed class 1 row: 4-4-7^7, BPV 7"
+NCC,defender-squad,front,identity,not-in-source,Claude (claude-opus-5-5),Dennis Landi,A1.24: each counter has its own letter; the chart shows none
+NCC,defender-squad,front,class,1st-line,Claude (claude-opus-5-5),Dennis Landi,NCC CLASS column: 1 in a square
+NCC,defender-squad,front,class-variant,square,Claude (claude-opus-5-5),Dennis Landi,NCC CLASS column: 1 in a square (A1.25)
+NCC,defender-squad,front,smoke-exponent,not-printed,Claude (claude-opus-5-5),Dennis Landi,NCC: no superscript after FP 4
+NCC,defender-squad,front,asl:assault-fire,no,Claude (claude-opus-5-5),Dennis Landi,NCC: FP 4 not underlined (A1.21)
+NCC,defender-squad,front,asl:spraying-fire,no,Claude (claude-opus-5-5),Dennis Landi,NCC: range 4 not underlined (A1.22)
+NCC,defender-squad,front,asl:elr-5,no,Claude (claude-opus-5-5),Dennis Landi,NCC: morale 7 not underlined (A1.23)
+NCC,defender-squad,front,asl:assault-engineer,no,Claude (claude-opus-5-5),Dennis Landi,NCC: no AE superscript on the class
+NCC,defender-squad,broken,broken-morale,7,Claude (claude-opus-5-5),Dennis Landi,NCC: superscript 7 after morale 7 (chart legend)
+NCC,defender-squad,broken,bpv,7,Claude (claude-opus-5-5),Dennis Landi,NCC BPV column
+NCC,defender-squad,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),Dennis Landi,The chart shows no broken side (A10.63)
+LCT,defender-leader,counter,kind,asl:leader,Claude (claude-opus-5-5),Dennis Landi,A18.2 Leader Creation Table
+LCT,defender-leader,counter,nationality,russian,Claude (claude-opus-5-5),Dennis Landi,Assigned by the scenario: the table applies to every nationality that creates leaders
+LCT,defender-leader,front,identity,not-in-source,Claude (claude-opus-5-5),Dennis Landi,The table gives no leader name
+LCT,defender-leader,front,leadership,0,Claude (claude-opus-5-5),Dennis Landi,"A18.2 Leader Creation Table: leader 8-0 (dr 2,3); A10.7: morale 8, leadership DRM 0"
+LCT,defender-leader,front,morale,8,Claude (claude-opus-5-5),Dennis Landi,"A18.2 Leader Creation Table: leader 8-0 (dr 2,3); A10.7: morale 8, leadership DRM 0"
+LCT,defender-leader,front,asl:elr-5,not-in-source,Claude (claude-opus-5-5),Dennis Landi,The table shows no underline
+LCT,defender-leader,broken,broken-morale,not-in-source,Claude (claude-opus-5-5),Dennis Landi,The table shows no broken side
+LCT,defender-leader,broken,bpv,not-in-source,Claude (claude-opus-5-5),Dennis Landi,The table gives no BPV
+LCT,defender-leader,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),Dennis Landi,The table shows no broken side; A10.71 lets any broken leader attempt Self-Rally
