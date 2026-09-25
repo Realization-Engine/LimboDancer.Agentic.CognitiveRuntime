@@ -236,6 +236,12 @@ public sealed record OpenAttempt(string EventId, string Unit, BoardLocation Targ
 {
     /// <summary>The units a Random Selection roll selected for the reveal; empty when no roll was made.</summary>
     public IReadOnlyList<string> Revealing { get; init; } = [];
+
+    /// <summary>The attacker's OVR choice once declared, or null while none is made.</summary>
+    public string? Declaration
+    {
+        get; init;
+    }
 }
 
 /// <summary>A support weapon or Gun instance (ASL-UNIT-022): its own identity and condition, and at most one holder.</summary>

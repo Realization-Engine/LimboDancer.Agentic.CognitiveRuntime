@@ -204,6 +204,11 @@ public static class GameEventWriter
                 writer.WriteString("attempt", selection.Attempt);
                 Strings(writer, "subjects", selection.Subjects);
                 break;
+            case OverrunDeclared declared:
+                writer.WriteString("id", declared.Id);
+                writer.WriteString("attempt", declared.Attempt);
+                writer.WriteString("choice", declared.Choice);
+                break;
             case InstanceCaptured captured:
                 writer.WriteString("id", captured.Id);
                 writer.WriteString("custodian", captured.Custodian);

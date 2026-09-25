@@ -75,6 +75,7 @@ public static class GameProjector
                 EntryForcedBack forced => ForceBack(previous, forced, gameEvent.Causes),
                 DiceRolled rolled => Roll(previous, rolled),
                 RandomSelection selection => Select(previous, selection),
+                OverrunDeclared declared => Declare(previous, declared),
                 _ => Fail<GameState>("UNIT-STATE-001", $"'{gameEvent.Type}' has no projection."),
             };
 
@@ -440,6 +441,38 @@ public static class GameProjector
             };
         }
 
+        /// <summary>
+        /// The attacker's OVR choice for an open attempt (A12.15, p. 78): made once, by the attempt's unit, after every unit
+        /// the attempt had to reveal is known.
+        /// </summary>
+        private GameState? Declare(GameState state, OverrunDeclared declared)
+        {
+            if (state.OpenAttempts.FirstOrDefault(open => open.EventId == declared.Attempt) is not { } attempt || attempt.Unit != declared.Id)
+            {
+                return Fail<GameState>("UNIT-STATE-021", $"'{declared.Attempt}' is not an open entry attempt by '{declared.Id}'.");
+            }
+
+            if (declared.Choice is not (OverrunDeclared.Declined or OverrunDeclared.Elected))
+            {
+                return Fail<GameState>("UNIT-STATE-021", $"'{declared.Choice}' is not declined or elected.");
+            }
+
+            if (attempt.Declaration is not null)
+            {
+                return Fail<GameState>("UNIT-STATE-021", $"The attempt '{attempt.EventId}' already has a declaration.");
+            }
+
+            if (attempt.Revealing.Any(id => state.Unit(id) is not { } selected || GameState.Condition(selected, Conditions.Concealed) != ConditionState.False))
+            {
+                return Fail<GameState>("UNIT-STATE-021", "A declaration follows the reveal of every selected unit.");
+            }
+
+            return state with
+            {
+                OpenAttempts = [.. state.OpenAttempts.Select(open => open.EventId == attempt.EventId ? open with { Declaration = declared.Choice } : open)]
+            };
+        }
+
         /// <summary>The unit returns to where it is, the attempt's MF are spent there, and its movement ends (A12.15, p. 78).</summary>
         private GameState? ForceBack(GameState state, EntryForcedBack forced, IReadOnlyList<string> causes)
         {
@@ -461,6 +494,12 @@ public static class GameProjector
             if (Active(state, forced.Id) is not UnitInstance unit)
             {
                 return null;
+            }
+
+            // An elected OVR is not forced back: what follows it is another transition (step 10).
+            if (attempt.Declaration == OverrunDeclared.Elected)
+            {
+                return Fail<GameState>("UNIT-STATE-021", $"The attempt '{attempt.EventId}' elected an OVR, so it is not forced back.");
             }
 
             if (attempt.Revealing.FirstOrDefault(id => state.Unit(id) is { } selected

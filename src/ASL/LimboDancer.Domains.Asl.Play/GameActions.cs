@@ -76,7 +76,24 @@ public static class GameActions
             packages = new[] { ScenarioA1Package.Identity.ToString(), ScenarioA1OccupiedPackage.Identity.ToString(), ScenarioA1PostRevealPackage.Identity.ToString() }
         }));
 
-    public static IReadOnlyList<ActionDescriptor> All { get; } = [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding];
+    public static readonly ActionDescriptor DeclareOverrun = Descriptor("asl.game.declare-overrun", "Declare an Infantry OVR",
+        "After an entry reveals a lone enemy SMC, record the attacker's choice (A12.15, A4.15). Declining forces the unit back through the reviewed delegation to the PostReveal forced back; electing is refused until the OVR NTC is reviewed.",
+        PlayPermission, "asl.game.reviewed-ovr-declaration-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "unitId", "choice"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "unitId": { "type": "string" }, "choice": { "type": "string", "enum": ["decline", "elect"] }
+          }
+        }
+        """, JsonSerializer.SerializeToElement(new
+        {
+            packages = new[] { ScenarioA1ConcealedSmcOverrunPackage.Identity.ToString(), ScenarioA1PostRevealPackage.Identity.ToString() }
+        }));
+
+    public static IReadOnlyList<ActionDescriptor> All { get; } = [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding, DeclareOverrun];
 
     public static string VersionKey(Guid tenant, string game) => $"asl.game:{tenant:N}:{game}";
 

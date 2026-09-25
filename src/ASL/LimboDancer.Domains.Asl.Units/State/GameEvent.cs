@@ -125,5 +125,15 @@ public sealed record DiceRolled(string Roll, string Purpose, int Count, int Side
 /// </summary>
 public sealed record RandomSelection(string Roll, string Attempt, IReadOnlyList<string> Subjects) : EventPayload;
 
+/// <summary>
+/// <c>overrun-declared</c>: the attacker's choice, after an entry reveals a lone SMC, whether to attempt an Infantry OVR
+/// (A12.15, p. 78; A4.15, p. 49). <paramref name="Choice"/> is <see cref="Declined"/> or <see cref="Elected"/>.
+/// </summary>
+public sealed record OverrunDeclared(string Id, string Attempt, string Choice) : EventPayload
+{
+    public const string Declined = "declined";
+    public const string Elected = "elected";
+}
+
 /// <summary><c>instance-captured</c>: a unit becomes a prisoner in the custody of an enemy unit (A20.2, A20.5).</summary>
 public sealed record InstanceCaptured(string Id, string Custodian) : EventPayload;

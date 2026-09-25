@@ -1,6 +1,6 @@
 # ASL Unit Random Selection and Declined OVR Design
 
-**Status:** Proposed. Designed before code, on `feature/asl-unit-step9-design`; built in the order of section 12.
+**Status:** Built in the order of section 12. Parts 1 and 2 are recorded in sections 3 and 5, and part 3 in section 6.
 
 **Date:** 2026-09-26
 
@@ -134,6 +134,20 @@ Disclosure follows step 8, section 7. The proposal is withheld, and the side see
 - **Elected.** Refused with the generic "the adjudicator cannot resolve" reason. Nothing changes and the attempt stays pending. Because every election is refused, the refusal discloses nothing.
 
 The phase cannot advance while a declaration is pending. The page shows why.
+
+**As built** (part 3).
+
+- **Planner.** `GamePlanner.PlanDeclareAsync` finds the unit's open attempt and requires that it revealed exactly one SMC and nothing else.
+  - An election is refused with the generic reason, and nothing changes.
+  - A decline builds the ConcealedSmcOverrun snapshot from the game. The SMC counts as concealed at the start unless this attempt placed it beneath a "?", and as revealed by the attempt when a reveal names the attempt as its cause.
+  - The resolver's delegation reason must be present. The planner then asks PostReveal over the candidate state and commits `overrun-declared` and `entry-forced-back` on a Definitive conclusion.
+  - The same declaration attempt with the other choice is refused with `play.attempt-reused`.
+- **Units.** `overrun-declared` is replayed with UNIT-STATE-021. The checks: the attempt is open, the unit is the attempt's, the choice is declined or elected, there is one declaration per attempt, and the declaration comes after every selected unit is revealed. An attempt that elected an OVR cannot be forced back.
+- **Map Studio.** The pending notice offers "decline the OVR" and "elect the OVR", which propose `asl.game.declare-overrun`.
+- **Tests.**
+  - Units, `OverrunDeclarationEventTests`: 7 cases.
+  - Play, `DeclareOverrunTests`: 3 cases. They cover U10 with a lone concealed leader, a decline after a Random Selection reveals a lone leader, and a declaration without a pending attempt.
+  - The Play page test drives both buttons.
 
 ## 7. Map Studio
 
