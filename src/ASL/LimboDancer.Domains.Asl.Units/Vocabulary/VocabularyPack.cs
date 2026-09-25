@@ -91,6 +91,12 @@ public sealed record KindDefinition(
     {
         get; init;
     }
+
+    /// <summary>Whether units of this kind point at a hexside, as a roadblock does (B29.1); null inherits.</summary>
+    public bool? Hexside
+    {
+        get; init;
+    }
 }
 
 /// <summary>Attributes and traits a pack adds to a kind of a pack it extends.</summary>

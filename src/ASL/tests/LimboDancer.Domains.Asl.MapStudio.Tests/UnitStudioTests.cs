@@ -55,7 +55,7 @@ public sealed class UnitStudioTests : IDisposable
         Assert.True(entry.Set.Synthetic);
         Assert.Equal("bd01-demo", entry.Set.SetId);
         Assert.Empty(library.SetsFor(FakeBoardProvider.Board));
-        Assert.Equal(21, library.Examples.Count);
+        Assert.Equal(33, library.Examples.Count);
     }
 
     [Fact]
@@ -194,6 +194,18 @@ public sealed class UnitStudioTests : IDisposable
         Assert.Contains("wreck face", lab.Markup, StringComparison.Ordinal);
         lab.Find("#lab-example").Change("example-at-gun");
         Assert.Empty(lab.FindAll("#unit-turret-facing"));
+    }
+
+    [Fact]
+    public void ARoadblocksHexsideIsChosenInTheLab()
+    {
+        var lab = context.Render<UnitLab>();
+        lab.Find("#lab-example").Change("example-roadblock");
+        Assert.Contains("across the north-east hexside", lab.Find("#lab-name").TextContent, StringComparison.Ordinal);
+        lab.Find("#unit-hexside").Change("south");
+        Assert.Contains("across the south hexside", lab.Find("#lab-name").TextContent, StringComparison.Ordinal);
+        Assert.Contains("data-hexside=\"south\"", lab.Markup, StringComparison.Ordinal);
+        Assert.Empty(lab.FindAll("#unit-facing"));
     }
 
     [Fact]

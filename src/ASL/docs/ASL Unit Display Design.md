@@ -1,6 +1,6 @@
 # ASL Unit Display Design
 
-**Status:** Accepted design, with the open questions decided (section 15). Phases 1 (Personnel and SW), 2 (Guns), and 3 (vehicles) are built; sections 16 to 18 record what was built and where it departs from this design.
+**Status:** Accepted design, with the open questions decided (section 15). All four phases are built: Personnel and SW, Guns, vehicles, and entities that are not units; sections 16 to 19 record what was built and where it departs from this design.
 
 **Date:** 2026-09-24
 
@@ -181,7 +181,7 @@ Values are literals, `attr(name)`, `token(name)`, `side(role)`, and `glyph(name,
 
 The language is deliberately small, and is parsed by our own parser. It is not browser CSS, and nothing reaches the browser except the SVG it produces.
 
-## 4. The ASL pack: Personnel, SW, Guns, and vehicles
+## 4. The ASL pack
 
 Each row is one fact a printed counter conveys: where the rulebook defines it, the vocabulary term that carries it, and how the two ASL style sheets show it. The `asl-classic` sheet keeps the printed convention; the `asl-digital` sheet chooses a clearer digital form. This table is the information-parity test (principle 2).
 
@@ -300,6 +300,32 @@ Added with phase 3 from the vehicle counter anatomy (D1.1 to D1.9, pp. 193 to 19
 | Turret facing (TCA) when it differs from the hull | D3.12, p. 199 | document `turretFacing` | outlined arrow; a turret ring and gun at the far tier | outlined arrow; TCA wedge at the near tier |
 | Motion | D2.4, p. 198 | state `asl:motion` | "Motion" chip | "MOT" badge |
 | Buttoned Up, Crew Exposed | D5.2 to D5.3, p. 203 | states `asl:bu`, `asl:ce` | "BU" or "CE" chip | "BU" or "CE" badge |
+
+### 4.6 Entities that are not units
+
+Added with phase 4 (ASL-UNIT-026). Each is its own kind under `asl:entity`, which sits beside `asl:unit` under the display's root kind, so no unit rule or style (state badges included) applies to them.
+
+| Printed fact | Rule, page | Vocabulary | `asl-classic` | `asl-digital` |
+|---|---|---|---|---|
+| Sniper counter, "not a unit" | A14.01, p. 81 | kind `asl:sniper` | crosshair and "SNIPER" | the same |
+| Pinned Sniper: red-on-white side | A14.31, p. 82 | face `pinned`; state `asl:pinned` switches to it | red on white | red on white |
+| Sniper Activation Number (in the OB, not on the counter) | A14.1, p. 81 | `san` | detail panel | SAN badge |
+| Foxhole and its capacity (`1S`, `2S`, `3S`) | B27.1 to B27.12, p. 146 | kind `asl:foxhole`, `capacity` | capacity label | capacity label |
+| Trench, A-T Ditch | B27.5 to B27.51, p. 147 | kind `asl:trench`, trait `asl:anti-tank-ditch` | label | label |
+| Wire | B26.1, p. 145 | kind `asl:wire` | wire glyph and label | the same |
+| Minefield: A-P factors (6, 8, 12) and A-T Mines (1 to 5) | B28.1, p. 148; B28.5, p. 149 | kind `asl:minefield`, `ap-strength`, `at-strength` | factors under the glyph | the same |
+| Known and Dummy minefields | B28.45, p. 148; B28.47, p. 148 | traits `asl:known-minefield`, `asl:dummy-minefield` | "KNOWN" or "DUMMY" | the same |
+| Roadblock arrow pointing at the obstructed hexside | B29.1, p. 150 | kind `asl:roadblock`; document `hexside` | bar turned to the hexside | arrow at the hexside |
+| Pillbox Strength Factors: stacking capacity, CA and NCA Defense Modifications | B30.11 to B30.113, p. 150 | kind `asl:pillbox`, `capacity`, `ca-defense`, `nca-defense` | `1+5+7` under the glyph | the same |
+| Pillbox arrow at a hexspine, defining its CA | B30.1, p. 150 | document `facing` | glyph turned to the hexspine | arrow; CA wedge at the near tier |
+| Fortified Building Location | B23.9, p. 140 | kind `asl:fortified-location` | glyph and label | the same |
+| SMOKE and its Hindrance (+3 smoke, +2 WP at full strength) | A24.2, p. 91; A24.5, p. 92 | kind `asl:smoke`, `hindrance` | hindrance beside the glyph | the same |
+| White Phosphorus | A24.3, p. 92 | trait `asl:white-phosphorus` | "WP", white face | the same |
+| Dispersed SMOKE side | A24.5, p. 92; A24.62, p. 93 | face `dispersed`; state `asl:dispersed` | fainter face, "DISPERSED" | dashed frame, "DISPERSED" |
+| Residual FP | A8.2, p. 60 | kind `asl:residual`, `residual-fp` | large number | large number |
+| Blaze; Wreck Blaze | B25.1, B25.14, p. 143 | kind `asl:fire`, trait `asl:wreck-blaze` | orange face, "BLAZE" or "WRECK BLAZE" | the same |
+| Flame: the flipped Blaze with Clearance and Hamper Numbers | B25.15, p. 143 | face `flame`, `clearance-number`, `hamper-number`; state `asl:flame` | "C#" and "H#" | the same |
+| Rubble: brown if wooden, gray if stone | B24.1, p. 141 | kind `asl:rubble`, `construction` | brown or gray face | the same |
 
 ## 5. Creating new units
 
@@ -431,7 +457,7 @@ A separate, optional check reports combinations the ASL rules forbid, with the r
 1. **Personnel and SW (this document):** the vocabulary model, documents, style language, cascade, layout, SVG, the `asl` Personnel and SW pack, both ASL sheets, the Lab, and the Units layer in the viewer.
 2. **Guns:** ordnance attributes (caliber and AP/HE limits, type, ROF, range limit, special ammunition, M#, IFE, target size), facing and covered arc drawn as a direction, limbered and malfunctioned faces (C2.2 to C2.29, pp. 167 to 168). LATW and light mortar values arrive here. Built; see sections 4.4 and 17.
 3. **Vehicles:** movement type, armor status, main and secondary armament, turret types, ground pressure, armor factors with turret variants, target size, vehicular MGs, wreck face, hull and turret facing, motion, BU and CE (D1.1 to D1.9, pp. 193 to 195). Built; see sections 4.5 and 18.
-4. **Entities that are not units:** snipers, fortifications, informational markers (ASL-UNIT-026).
+4. **Entities that are not units:** snipers, fortifications, informational markers (ASL-UNIT-026). Built; see sections 4.6 and 19.
 
 The style language and layout are designed for all four phases now; only the vocabulary grows.
 
@@ -554,3 +580,27 @@ Built on branch `feature/asl-units-03`, from `main@b76fc72`. Section 4.5 is the 
 ### 18.3 Tests
 
 `Units.Tests` (180): the vehicle terms, faces and turret facing, names, the turret facing errors, and the vehicle plausibility checks. `Units.Rendering.Tests` (264): 37 new parity rows for section 4.5 under both sheets, goldens for five vehicles and the wrecked, Motion, BU, and CE states under each sheet, turret mark and arc tests, movement and MA type symbol tests, and MG factor text. `MapStudio.Tests` (64): choosing a turret facing in the Lab.
+
+## 19. As built: phase 4
+
+Built on branch `feature/asl-units-04`, from `main@5800065`. Section 4.6 is the parity table for this phase. With it, every phase of section 13 is built.
+
+### 19.1 What was added
+
+- **Vocabulary `asl@1.3.0`.** The kind `asl:entity` with `asl:sniper`, `asl:fortification` (`asl:foxhole`, `asl:trench`, `asl:wire`, `asl:minefield`, `asl:roadblock`, `asl:pillbox`, `asl:fortified-location`), and `asl:marker` (`asl:smoke`, `asl:residual`, `asl:fire`, `asl:rubble`) below it; the attributes and traits of section 4.6; the faces `pinned`, `dispersed`, and `flame`; the states `asl:dispersed` and `asl:flame`. `asl:pinned` now switches to a `pinned` face where a document has one, which only a Sniper can; units keep their PIN badge.
+- **Entities, not flagged units.** `asl:entity` extends the display's root kind, not `asl:unit`, so the Unit rules (state badges, attachments) never reach an entity, and an entity needs no flag to tell it apart (ASL-UNIT-026).
+- **Hexside.** A kind may declare `"hexside": true`; a document of such a kind may give `hexside`, the side its arrow points at: `north`, `north-east`, `south-east`, `south`, `south-west`, or `north-west`. It is refused elsewhere (UNIT-DOC-018). Names add ", across the north-east hexside"; `rotate: hexside` turns a slot, and `direction-mark: arrow` points at the hexside.
+- **Glyphs.** Original `crosshair`, `foxhole`, `trench`, `wire`, `mines`, `roadblock`, `pillbox`, `fortified`, `fire`, `rubble`, and `residual` glyphs.
+- **Sheets.** Both show each entity as a glyph with its label or values; Snipers and Fortifications take their side's colors and markers neutral ones. `asl-digital` adds a SAN badge, the roadblock's hexside arrow, and the pillbox's CA arrow and wedge; `asl-classic` turns the roadblock bar and the pillbox glyph instead.
+- **Plausibility.** A SAN outside 2 to 7 (A14.1), A-P minefield factors other than 6, 8, or 12 (B28.1), and A-T Mines outside one to five factors (B28.5).
+- **Studio.** The Lab offers a hexside selector for kinds that point at one; the examples add twelve synthetic entities, and `bd01-demo` adds a Sniper, a pillbox, and Dispersed SMOKE.
+
+### 19.2 Departures and limits
+
+- **Hidden minefields** are recorded secretly and have no counter until revealed (B28.1); a source that reveals one sends a minefield document, as for any perspective (section 7.3).
+- **Other markers.** Only SMOKE, Residual FP, Fire, and Rubble are modelled. Fire Lanes, Acquisition, OBA, and turn and phase markers are left for later packs.
+- **Capacities and extensions.** Trench capacity limits (B27.51) and the roadblock's extension to adjacent woods or buildings (B29.2) are rules, not printed facts, and are not drawn.
+
+### 19.3 Tests
+
+`Units.Tests` (201): each entity outside the unit tree, the pinned Sniper face, names, the hexside, and the Sniper and minefield plausibility checks. `Units.Rendering.Tests` (319): 25 new parity rows for section 4.6 under both sheets and goldens for every entity kind and the pinned Sniper, Dispersed, and Flame sides under each sheet. `MapStudio.Tests` (65): choosing a roadblock's hexside in the Lab.

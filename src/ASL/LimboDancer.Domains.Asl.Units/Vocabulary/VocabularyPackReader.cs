@@ -194,6 +194,7 @@ public static class VocabularyPackReader
             {
                 Facing = item.TryGetProperty("facing", out _) ? fields.OptionalBoolean(item, "facing", path) : null,
                 Turret = item.TryGetProperty("turret", out _) ? fields.OptionalBoolean(item, "turret", path) : null,
+                Hexside = item.TryGetProperty("hexside", out _) ? fields.OptionalBoolean(item, "hexside", path) : null,
             });
         }
 

@@ -280,6 +280,72 @@ asl|unit:asl\:bu     { badge: "BU" top-left; }
 asl|unit:asl\:ce     { badge: "CE" top-left; }
 asl|unit:asl\:motion { badge: "MOT" top-right; }
 
+/* Entities that are not units (ASL-UNIT-026): a Sniper, Fortifications, and informational markers. No asl|unit rule
+   applies to them. Snipers and Fortifications take their side's colors; markers are neutral. */
+asl|entity::slot(glyph) { content: glyph(crosshair); }
+asl|foxhole::slot(glyph) { content: glyph(foxhole); }
+asl|trench::slot(glyph) { content: glyph(trench); }
+asl|wire::slot(glyph) { content: glyph(wire); }
+asl|minefield::slot(glyph) { content: glyph(mines); }
+asl|roadblock::slot(glyph) { content: glyph(roadblock); rotate: hexside; }
+asl|pillbox::slot(glyph) { content: glyph(pillbox); }
+asl|fortified-location::slot(glyph) { content: glyph(fortified); }
+asl|smoke::slot(glyph) { content: glyph(smoke); }
+asl|residual::slot(glyph) { content: glyph(residual); }
+asl|fire::slot(glyph) { content: glyph(fire); }
+asl|rubble::slot(glyph) { content: glyph(rubble); }
+asl|entity { face-template: "glyph" "label"; }
+asl|entity::slot(label) { font-weight: bold; }
+asl|sniper::slot(label) { content: "SNIPER"; }
+asl|sniper:face(pinned) { fill: #ffffff; stroke: token(alert); color: token(alert); }
+asl|foxhole::slot(label) { content: attr(capacity) "S"; }
+asl|trench::slot(label) { content: "TRENCH"; }
+asl|trench.asl\:anti-tank-ditch::slot(label) { content: "A-T DITCH"; }
+asl|wire::slot(label) { content: "WIRE"; }
+asl|minefield { face-template: "glyph glyph" "ap at" "label label"; }
+asl|minefield::slot(ap) { content: attr(ap-strength); font-weight: bold; }
+asl|minefield::slot(at) { content: attr(at-strength) "AT"; font-weight: bold; }
+asl|minefield::slot(label) { content: "MINES"; }
+asl|minefield.asl\:known-minefield::slot(label) { content: "KNOWN"; }
+asl|minefield.asl\:dummy-minefield::slot(label) { content: "DUMMY"; }
+asl|roadblock::slot(label) { content: "ROADBLOCK"; }
+asl|pillbox { face-template: "glyph glyph glyph" "cap ca nca"; }
+asl|pillbox::slot(cap) { content: attr(capacity); font-weight: bold; }
+asl|pillbox::slot(ca)  { content: attr(ca-defense); font-weight: bold; }
+asl|pillbox::slot(nca) { content: attr(nca-defense); font-weight: bold; }
+asl|fortified-location::slot(label) { content: "FORTIFIED"; }
+asl|marker { stroke: #333333; color: #111111; }
+asl|smoke { fill: #cfd4d8; face-template: "glyph hind" "label label"; }
+asl|smoke::slot(hind) { content: attr(hindrance); font-weight: bold; }
+asl|smoke::slot(label) { content: "SMOKE"; }
+asl|smoke.asl\:white-phosphorus { fill: #f7f7f2; }
+asl|smoke.asl\:white-phosphorus::slot(label) { content: "WP"; }
+asl|smoke:face(dispersed)::slot(label) { content: "DISPERSED"; }
+asl|residual { fill: #fff1a8; face-template: "value"; }
+asl|residual::slot(value) { content: attr(residual-fp); font-weight: bold; }
+asl|fire { fill: #f28c28; }
+asl|fire::slot(label) { content: "BLAZE"; }
+asl|fire.asl\:wreck-blaze::slot(label) { content: "WRECK BLAZE"; }
+asl|fire:face(flame) { fill: #ffd47a; face-template: "glyph glyph" "clear hamper" "label label"; }
+asl|fire:face(flame)::slot(label)  { content: "FLAME"; }
+asl|fire:face(flame)::slot(clear)  { content: "C" attr(clearance-number); font-weight: bold; }
+asl|fire:face(flame)::slot(hamper) { content: "H" attr(hamper-number); font-weight: bold; }
+asl|rubble { fill: #9a9a96; }
+asl|rubble[construction=wooden] { fill: #9b6b3f; }
+asl|rubble::slot(label) { content: "RUBBLE"; }
+
+asl|entity::slot(label) { font-size: 0.16; }
+asl|minefield::slot(ap), asl|minefield::slot(at) { font-size: 0.24; }
+asl|minefield::slot(label), asl|trench::slot(label), asl|fortified-location::slot(label), asl|roadblock::slot(label) { font-size: 0.13; }
+asl|sniper[san] { badge: "SAN" attr(san) top-right; }
+asl|roadblock { direction-mark: arrow; }
+asl|pillbox { direction-mark: arrow; covered-arc: wedge; }
+asl|pillbox::slot(cap), asl|pillbox::slot(ca), asl|pillbox::slot(nca) { font-size: 0.24; }
+asl|smoke::slot(hind) { font-size: 0.28; }
+asl|smoke:face(dispersed) { stroke-style: dashed; }
+asl|residual::slot(value) { font-size: 0.5; }
+asl|fire:face(flame)::slot(clear), asl|fire:face(flame)::slot(hamper) { font-size: 0.2; }
+
 /* States drawn on the unit (ASL-UNIT-077). */
 asl|unit:asl\:pinned    { badge: "PIN" top-right; }
 asl|unit:asl\:cx        { badge: "CX" top-right; }
@@ -304,6 +370,7 @@ asl|unit:asl\:concealed { stroke: token(conceal); stroke-style: dashed; stroke-w
   asl|radio:face(reverse) { face-template: "label"; }
   asl|sw:face(malfunctioned) { face-template: "label" "repair"; }
   asl|gun { face-template: "glyph type" "cal cal"; covered-arc: none; }
+  asl|pillbox { covered-arc: none; }
   asl|gun:face(limbered) { face-template: "glyph type"; }
   asl|gun:face(malfunctioned) { face-template: "repair removal"; }
   asl|vehicle { face-template: "glyph mp" "ma afront"; covered-arc: none; turret-arc: none; }
@@ -338,5 +405,19 @@ asl|unit:asl\:concealed { stroke: token(conceal); stroke-style: dashed; stroke-w
   asl|vehicle[movement-type=truck]::slot(glyph) { content: glyph(truck); }
   asl|vehicle[movement-type=motorcycle]::slot(glyph) { content: glyph(motorcycle); }
   asl|vehicle:face(wreck)::slot(glyph) { content: glyph(wreck); }
+  asl|entity { face-template: "glyph"; }
+  asl|entity::slot(glyph) { content: glyph(crosshair); }
+  asl|foxhole::slot(glyph) { content: glyph(foxhole); }
+  asl|trench::slot(glyph) { content: glyph(trench); }
+  asl|wire::slot(glyph) { content: glyph(wire); }
+  asl|minefield::slot(glyph) { content: glyph(mines); }
+  asl|roadblock::slot(glyph) { content: glyph(roadblock); rotate: hexside; }
+  asl|pillbox::slot(glyph) { content: glyph(pillbox); }
+  asl|fortified-location::slot(glyph) { content: glyph(fortified); }
+  asl|smoke::slot(glyph) { content: glyph(smoke); }
+  asl|residual::slot(glyph) { content: glyph(residual); }
+  asl|fire::slot(glyph) { content: glyph(fire); }
+  asl|rubble::slot(glyph) { content: glyph(rubble); }
+  asl|pillbox { covered-arc: none; }
   unit::attached(asl|equipment) { display: none; }
 }

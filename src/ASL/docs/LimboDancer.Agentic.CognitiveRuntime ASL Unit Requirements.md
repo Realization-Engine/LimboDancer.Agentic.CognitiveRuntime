@@ -221,7 +221,7 @@ Rule text, charts, and counter data used by the unit model follow the source reg
 
 ## 13. Sequence
 
-1. **Display:** the [ASL Unit Display Design](<ASL Unit Display Design.md>), Personnel and SW first, then Guns, then vehicles (all three built; its sections 16 to 18), then entities that are not units (ASL-UNIT-070 to 078). It needs neither D1 nor D2.
+1. **Display:** the [ASL Unit Display Design](<ASL Unit Display Design.md>), Personnel and SW first, then Guns, vehicles, and entities that are not units (all four built; its sections 16 to 19) (ASL-UNIT-070 to 078). It needs neither D1 nor D2.
 2. **Decisions:** settle D1 to D4. Register the chosen counter source.
 3. **Scenario A1 catalog:** the Infantry Personnel definitions ASL-UNIT-062 needs, with source-backed values and round-trip tests.
 4. **State model:** game and side state, instances, conditions, positions against the map location chain, relationships, events, and perspectives, tested with synthetic fixtures.

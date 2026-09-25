@@ -101,6 +101,11 @@ public static class UnitDocumentJson
             writer.WriteString("turretFacing", turretFacing.Name());
         }
 
+        if (document.Hexside is { } hexside)
+        {
+            writer.WriteString("hexside", hexside.Name());
+        }
+
         if (document.Concealed)
         {
             writer.WriteBoolean("concealed", true);

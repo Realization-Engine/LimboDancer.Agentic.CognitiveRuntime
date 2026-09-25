@@ -31,6 +31,18 @@
             }
         </select>
     }
+    @if (!IsAttached && !Draft.Concealed && Vocabulary.HasKind(Draft.Kind) && Vocabulary.HasHexside(Draft.Kind))
+    {
+        <label for="@($"{Prefix}-hexside")" title="B29.1, p. 150">Hexside</label>
+        <select id="@($"{Prefix}-hexside")" value="@(Draft.Hexside?.Name() ?? string.Empty)"
+                @onchange="@(args => Change(() => Draft.Hexside = UnitHexsides.TryParse(args.Value as string, out var hexside) ? hexside : null))">
+            <option value="">not given</option>
+            @foreach (var name in UnitHexsides.All)
+            {
+                <option value="@name">@name</option>
+            }
+        </select>
+    }
     @if (!IsAttached && !Draft.Concealed && Vocabulary.HasKind(Draft.Kind) && Vocabulary.HasTurret(Draft.Kind))
     {
         <label for="@($"{Prefix}-turret-facing")" title="D3.12, p. 199">Turret facing</label>

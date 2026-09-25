@@ -108,7 +108,7 @@ public sealed class OverlayTests
         var overlay = UnitOverlayBuilder.Build(UnitMapTarget.ForBoard(BoardRef.Parse("bd01"), BoardGeometry.StandardGeomorphic), set.SetId, set.Units,
             RenderingTestData.Renderer(UnitStyles.Digital));
         Assert.Empty(overlay.Diagnostics);
-        Assert.Equal(["demo-a", "demo-b", "demo-c", "demo-d", "demo-e", "demo-f"], overlay.Units.Select(unit => unit.Document.Id).Order(StringComparer.Ordinal));
+        Assert.Equal(["demo-a", "demo-b", "demo-c", "demo-d", "demo-e", "demo-f", "demo-g", "demo-h", "demo-i"], overlay.Units.Select(unit => unit.Document.Id).Order(StringComparer.Ordinal));
         Assert.Equal("German 1st Line squad A, 4-6-7, pinned, with light MG 3-6", overlay.Units.Single(unit => unit.Document.Id == "demo-a").Name);
     }
 

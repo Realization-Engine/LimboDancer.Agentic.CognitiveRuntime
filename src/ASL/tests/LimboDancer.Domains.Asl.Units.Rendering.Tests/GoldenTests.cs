@@ -150,6 +150,18 @@ public sealed class GoldenTests
             ["kind-vehicle-halftrack"] = catalog["example-halftrack"],
             ["kind-vehicle-armored-car"] = catalog["example-armored-car"],
             ["kind-vehicle-truck"] = catalog["example-truck"],
+            ["kind-entity-sniper"] = catalog["example-sniper"],
+            ["kind-entity-foxhole"] = catalog["example-foxhole"],
+            ["kind-entity-trench"] = catalog["example-trench"],
+            ["kind-entity-wire"] = catalog["example-wire"],
+            ["kind-entity-minefield"] = catalog["example-minefield"],
+            ["kind-entity-roadblock"] = catalog["example-roadblock"],
+            ["kind-entity-pillbox"] = catalog["example-pillbox"],
+            ["kind-entity-fortified"] = catalog["example-fortified"],
+            ["kind-entity-smoke"] = catalog["example-smoke"],
+            ["kind-entity-residual"] = catalog["example-residual"],
+            ["kind-entity-fire"] = catalog["example-fire"],
+            ["kind-entity-rubble"] = catalog["example-rubble"],
         };
         foreach (var state in RenderingTestData.Vocabulary.Value.States)
         {
@@ -160,6 +172,8 @@ public sealed class GoldenTests
                 "asl:limbered" => catalog["example-aa-gun"],
                 "asl:wrecked" or "asl:bu" or "asl:ce" => catalog["example-tank"],
                 "asl:motion" => catalog["example-halftrack"],
+                "asl:dispersed" => catalog["example-smoke"],
+                "asl:flame" => catalog["example-fire"],
                 _ => catalog["example-squad"],
             };
             documents["state-" + state.Name[4..]] = target with
@@ -170,6 +184,13 @@ public sealed class GoldenTests
         }
 
         // A Gun's malfunctioned side differs from a support weapon's: Repair and Removal Numbers (C2.2).
+        // A pinned Sniper shows its red-on-white side (A14.31), where a pinned unit shows a badge.
+        documents["state-pinned-sniper"] = catalog["example-sniper"] with
+        {
+            Id = "state-pinned-sniper",
+            States = ["asl:pinned"],
+            Faces = [new UnitFace("pinned", [], [])]
+        };
         documents["state-malfunctioned-gun"] = catalog["example-at-gun"] with
         {
             Id = "state-malfunctioned-gun",

@@ -18,7 +18,7 @@ public static class UnitDocumentReader
 {
     private static readonly HashSet<string> DocumentFields = new(StringComparer.Ordinal)
     {
-        "vocabulary", "id", "kind", "side", "location", "facing", "turretFacing", "faces", "unit", "states", "attached", "stackOrder", "concealed", "sizeClass", "note",
+        "vocabulary", "id", "kind", "side", "location", "facing", "turretFacing", "hexside", "faces", "unit", "states", "attached", "stackOrder", "concealed", "sizeClass", "note",
     };
 
     private static readonly HashSet<string> PlaceholderFields = new(StringComparer.Ordinal)
@@ -182,6 +182,23 @@ public static class UnitDocumentReader
             }
         }
 
+        UnitHexside? hexside = null;
+        if (fields.OptionalString(element, "hexside", path) is { } hexsideText && !concealed)
+        {
+            if (!UnitHexsides.TryParse(hexsideText, out var parsedHexside))
+            {
+                diagnostics.Add(UnitDiagnostic.Error("UNIT-DOC-018", $"'{hexsideText}' is not a hexside; use {string.Join(", ", UnitHexsides.All)}.", path));
+            }
+            else if (attached || kind is null || !vocabulary.HasHexside(kind))
+            {
+                diagnostics.Add(UnitDiagnostic.Error("UNIT-DOC-018", $"The kind '{kind}' does not point at a hexside.", path));
+            }
+            else
+            {
+                hexside = parsedHexside;
+            }
+        }
+
         UnitFacing? turretFacing = null;
         if (fields.OptionalString(element, "turretFacing", path) is { } turretText && !concealed)
         {
@@ -248,7 +265,7 @@ public static class UnitDocumentReader
             return null;
         }
 
-        return new UnitDocument(packs, id, kind, side, location, faces, unit, states, attachments, stackOrder, concealed, sizeClass, facing, turretFacing);
+        return new UnitDocument(packs, id, kind, side, location, faces, unit, states, attachments, stackOrder, concealed, sizeClass, facing, turretFacing, hexside);
     }
 
     private static List<UnitFace> ReadFaces(JsonElement element, UnitVocabulary vocabulary, string kind, string path, List<UnitDiagnostic> diagnostics)
