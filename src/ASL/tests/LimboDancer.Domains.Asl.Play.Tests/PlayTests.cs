@@ -343,20 +343,60 @@ public sealed class PlayTests : IDisposable
         Assert.Equal(revision, store.Read(new GameScope(Tenant, "village"))!.Events.Count);
     }
 
+    [Theory]
+    [InlineData(1, true)]
+    [InlineData(2, true)]
+    [InlineData(3, false)]
+    public async Task AFirstLineSquadHasFourMovementFactors(int spent, bool enough)
+    {
+        // Every definition in the published catalog is 1st Line, so no live squad is Inexperienced (A4.11, p. 48).
+        await GameInMph();
+        var state = Current();
+        var squad = state.Unit("g1")! with
+        {
+            MfSpent = spent
+        };
+        var facts = Planner().EntryFacts(state with
+        {
+            Units = [squad]
+        }, squad, BoardLocation.Parse("bd01:E4:0"));
+        Assert.Equal(enough, facts["hasEnoughMovementFactors"]);
+    }
+
+    [Fact]
+    public async Task AnEntryAfterTwoMovementFactorsIsDefinitive()
+    {
+        // Step 7 left this case Indeterminate; with the squad's class known, its fourth MF is known too.
+        await GameInMph();
+        var state = Current();
+        var squad = state.Unit("g1")! with
+        {
+            MfSpent = 2
+        };
+        var review = await Planner().ReviewEntryAsync(new GameScope(Tenant, "village"), state with
+        {
+            Units = [squad]
+        }, squad, BoardLocation.Parse("bd01:E4:0"));
+        Assert.Equal(ConclusionDisposition.Definitive, review.Conclusion.Disposition);
+    }
+
     [Fact]
     public async Task AFactTheStateCannotEstablishKeepsTheCaseIndeterminate()
     {
         var play = await GameInMph();
         var planner = Planner();
         var state = Current();
-        var spentTwo = state.Unit("g1")! with
+        // A squad whose definition is not in the planner's catalogs has no known class, so after exactly 2 MF neither
+        // allotment can be ruled out (A4.11, p. 48; A19.31, p. 86).
+        var unclassed = state.Unit("g1")! with
         {
-            MfSpent = 2
+            MfSpent = 2,
+            Definition = new DefinitionReference(new CatalogIdentity("other-catalog", "1.0.0", "none"), "attacker-squad")
         };
         var facts = planner.EntryFacts(state with
         {
-            Units = [spentTwo]
-        }, spentTwo, BoardLocation.Parse("bd01:E4:0"));
+            Units = [unclassed]
+        }, unclassed, BoardLocation.Parse("bd01:E4:0"));
         Assert.Null(facts["hasEnoughMovementFactors"]);
 
         var unverified = new GamePlanner(store, new InMemoryBoardCatalog([Board(BoardReadStatus.Ingested)]), Vocabulary, [Catalog]);

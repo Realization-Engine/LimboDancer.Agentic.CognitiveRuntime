@@ -96,6 +96,7 @@ A case read (ASL-UNIT-060) is not used to build these. The planner already holds
 - **MF allowance.** A Good Order MMC has 4 MF, or 3 if Inexperienced (A4.11, p. 48; A19.31, p. 86). The remaining MF is the allowance less MF spent. The first case's `hasEnoughMovementFactors` becomes remaining MF of 2 or more, and is unknown only when the status is unknown. An entry after exactly 2 MF is then Definitive for a 1st Line squad.
 - **Out of scope:** the leader's MF bonus (a stack moving with a leader) and conveyances. Movement is still one unit at a time.
 - **Counters.** Every definition in the published catalog is 1st Line, so no live unit is Inexperienced today. The Green and Conscript paths are tested at the derivation level with synthetic definitions. A Green or Conscript counter is published only when the user supplies its printed values.
+- **As built** (part 2). `Experience.Inexperienced` and `Experience.MfAllowance` in the Units project derive the status and allowance, resolving the definition through the unit's catalog reference. `GamePlanner.EntryFacts` uses the allowance, and `GamePlanner.ReviewEntryAsync` gives the facts and conclusion for one state. `ExperienceTests` cover every class, the leader exemption and its limits, and units that are not MMC; the Play tests show that a 1st Line squad after exactly 2 MF has enough MF and that its entry is Definitive.
 
 ## 6. The entry action
 
