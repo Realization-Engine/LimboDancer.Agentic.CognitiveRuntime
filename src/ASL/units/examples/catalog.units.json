@@ -1,6 +1,6 @@
 [
   {
-    "vocabulary": ["asl@1.1.0"],
+    "vocabulary": ["asl@1.2.0"],
     "id": "example-squad",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:squad",
@@ -22,7 +22,7 @@
     ]
   },
   {
-    "vocabulary": ["asl@1.1.0"],
+    "vocabulary": ["asl@1.2.0"],
     "id": "example-half-squad",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:half-squad",
@@ -33,7 +33,7 @@
     }
   },
   {
-    "vocabulary": ["asl@1.1.0"],
+    "vocabulary": ["asl@1.2.0"],
     "id": "example-crew",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:crew",
@@ -44,7 +44,7 @@
     }
   },
   {
-    "vocabulary": ["asl@1.1.0"],
+    "vocabulary": ["asl@1.2.0"],
     "id": "example-leader",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:leader",
@@ -55,7 +55,7 @@
     }
   },
   {
-    "vocabulary": ["asl@1.1.0"],
+    "vocabulary": ["asl@1.2.0"],
     "id": "example-hero",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:hero",
@@ -66,7 +66,7 @@
     }
   },
   {
-    "vocabulary": ["asl@1.1.0"],
+    "vocabulary": ["asl@1.2.0"],
     "id": "example-mmg",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:mg",
@@ -77,7 +77,7 @@
     }
   },
   {
-    "vocabulary": ["asl@1.1.0"],
+    "vocabulary": ["asl@1.2.0"],
     "id": "example-ft",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:ft",
@@ -87,7 +87,7 @@
     }
   },
   {
-    "vocabulary": ["asl@1.1.0"],
+    "vocabulary": ["asl@1.2.0"],
     "id": "example-dc",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:dc",
@@ -95,7 +95,7 @@
     "faces": { "front": { "firepower": 30, "portage": 2 } }
   },
   {
-    "vocabulary": ["asl@1.1.0"],
+    "vocabulary": ["asl@1.2.0"],
     "id": "example-latw",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:latw",
@@ -103,7 +103,7 @@
     "faces": { "front": { "latw-type": "psk", "caliber": 88, "range-maximum": 4, "breakdown": 10, "portage": 2 } }
   },
   {
-    "vocabulary": ["asl@1.1.0"],
+    "vocabulary": ["asl@1.2.0"],
     "id": "example-mortar",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:light-mortar",
@@ -111,7 +111,7 @@
     "faces": { "front": { "caliber": 50, "rate-of-fire": 2, "range-minimum": 2, "range-maximum": 13, "breakdown": 12, "portage": 2, "traits": ["asl:no-ap"] } }
   },
   {
-    "vocabulary": ["asl@1.1.0"],
+    "vocabulary": ["asl@1.2.0"],
     "id": "example-radio",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:radio",
@@ -123,7 +123,7 @@
     }
   },
   {
-    "vocabulary": ["asl@1.1.0"],
+    "vocabulary": ["asl@1.2.0"],
     "id": "example-concealed",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "unit",
@@ -132,7 +132,7 @@
     "sizeClass": 3
   },
   {
-    "vocabulary": ["asl@1.1.0"],
+    "vocabulary": ["asl@1.2.0"],
     "id": "example-at-gun",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:gun",
@@ -144,7 +144,7 @@
     }
   },
   {
-    "vocabulary": ["asl@1.1.0"],
+    "vocabulary": ["asl@1.2.0"],
     "id": "example-aa-gun",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:gun",
@@ -156,7 +156,7 @@
     }
   },
   {
-    "vocabulary": ["asl@1.1.0"],
+    "vocabulary": ["asl@1.2.0"],
     "id": "example-mortar-gun",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:gun",
@@ -168,7 +168,7 @@
     }
   },
   {
-    "vocabulary": ["asl@1.1.0"],
+    "vocabulary": ["asl@1.2.0"],
     "id": "example-inf-gun",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:gun",
@@ -177,6 +177,74 @@
     "faces": {
       "front": { "gun-type": "inf", "caliber": 75, "caliber-suffix": "star", "rate-of-fire": 2, "manhandling": 10, "breakdown": 11, "target-size": "large", "special-ammo": ["H5"], "traits": ["asl:qsu"] },
       "malfunctioned": { "repair": 2, "removal": 6, "traits": ["asl:qsu"] }
+    }
+  },
+  {
+    "vocabulary": ["asl@1.2.0"],
+    "id": "example-tank",
+    "note": "Synthetic example: illustrative values, not a catalog entry.",
+    "kind": "asl:vehicle",
+    "side": "german",
+    "facing": "east",
+    "turretFacing": "north-east",
+    "faces": {
+      "front": { "designation": "PzKpfw IVH", "identity": "A", "movement-type": "fully-tracked", "movement-points": 12, "af-front": 8, "af-side": 3,
+        "ma-type": "t", "caliber": 75, "caliber-suffix": "ll", "rate-of-fire": 1, "special-ammo": ["A4", "S7"], "bmg": 2, "cmg": 4 },
+      "wreck": { "crew-survival": 7 }
+    },
+    "states": ["asl:bu"]
+  },
+  {
+    "vocabulary": ["asl@1.2.0"],
+    "id": "example-assault-gun",
+    "note": "Synthetic example: illustrative values, not a catalog entry.",
+    "kind": "asl:vehicle",
+    "side": "german",
+    "facing": "south-east",
+    "faces": {
+      "front": { "designation": "StuG IIIB", "identity": "B", "ground-pressure": "low", "movement-type": "fully-tracked", "movement-points": 12, "af-front": 8,
+        "af-side": 3, "turret-af-front": "superior", "target-size": "small", "ma-type": "nt", "caliber": 75, "caliber-suffix": "star", "breakdown": 11,
+        "traits": ["asl:mechanically-unreliable"] },
+      "wreck": { "crew-survival": 6 }
+    }
+  },
+  {
+    "vocabulary": ["asl@1.2.0"],
+    "id": "example-halftrack",
+    "note": "Synthetic example: illustrative values, not a catalog entry.",
+    "kind": "asl:vehicle",
+    "side": "german",
+    "facing": "west",
+    "faces": {
+      "front": { "designation": "SPW 251/1", "identity": "C", "movement-type": "half-tracked", "movement-points": 16, "af-front": 1, "af-side": 1,
+        "ma-weapon": "aamg", "aamg": 3, "passenger-capacity": 15, "towing": 7, "traits": ["asl:open-topped"] },
+      "wreck": { "crew-survival": 5 }
+    },
+    "states": ["asl:ce", "asl:motion"]
+  },
+  {
+    "vocabulary": ["asl@1.2.0"],
+    "id": "example-armored-car",
+    "note": "Synthetic example: illustrative values, not a catalog entry.",
+    "kind": "asl:vehicle",
+    "side": "russian",
+    "facing": "north-west",
+    "turretFacing": "west",
+    "faces": {
+      "front": { "identity": "D", "ground-pressure": "high", "movement-type": "armored-car", "movement-points": 30, "af-front": 1, "af-side": 0,
+        "turret-af-side": "inferior", "target-size": "small", "ma-type": "st", "ma-weapon": "mg", "cmg": 4, "passenger-capacity": 2 }
+    }
+  },
+  {
+    "vocabulary": ["asl@1.2.0"],
+    "id": "example-truck",
+    "note": "Synthetic example: illustrative values, not a catalog entry.",
+    "kind": "asl:vehicle",
+    "side": "american",
+    "facing": "east",
+    "faces": {
+      "front": { "designation": "2.5-ton truck", "identity": "E", "movement-type": "truck", "movement-points": 30, "target-size": "very-small",
+        "towing": 10, "passenger-capacity": 9, "traits": ["asl:unarmored"] }
     }
   }
 ]

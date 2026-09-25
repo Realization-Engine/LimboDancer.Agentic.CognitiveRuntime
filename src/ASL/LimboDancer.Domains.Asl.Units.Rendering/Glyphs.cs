@@ -11,6 +11,7 @@ internal static class Glyphs
     public static readonly IReadOnlySet<string> Names = new HashSet<string>(StringComparer.Ordinal)
     {
         "size-figures", "mg", "ft", "dc", "radio", "mortar", "latw", "smoke", "gun", "aa-gun", "rcl", "limbered-gun",
+        "tank", "halftrack", "armored-car", "truck", "motorcycle", "wreck",
     };
 
     /// <summary>Draws a glyph in a box; returns false for an unknown name.</summary>
@@ -29,7 +30,8 @@ internal static class Glyphs
                 }
 
                 return true;
-            case "mg" or "ft" or "dc" or "radio" or "mortar" or "latw" or "smoke" or "gun" or "aa-gun" or "rcl" or "limbered-gun":
+            case "mg" or "ft" or "dc" or "radio" or "mortar" or "latw" or "smoke" or "gun" or "aa-gun" or "rcl" or "limbered-gun"
+                or "tank" or "halftrack" or "armored-car" or "truck" or "motorcycle" or "wreck":
                 Equipment(svg, name, box, color);
                 return true;
             default:
@@ -165,6 +167,55 @@ internal static class Glyphs
                 Line(0.5, 0.56, 0.35, 0.85);
                 Line(0.5, 0.56, 0.65, 0.85);
                 Line(0.5, 0.56, 0.5, 0.9);
+                break;
+            // Vehicles are drawn from above, front to the east, so a sheet can turn them to their hull facing.
+            case "tank":
+                Polygon((0.1, 0.22), (0.9, 0.22), (0.9, 0.32), (0.1, 0.32));
+                Polygon((0.1, 0.68), (0.9, 0.68), (0.9, 0.78), (0.1, 0.78));
+                Polygon((0.14, 0.34), (0.86, 0.34), (0.86, 0.66), (0.14, 0.66));
+                Circle(0.46, 0.5, 0.11, filled: false);
+                Line(0.57, 0.5, 0.98, 0.5);
+                break;
+            case "halftrack":
+                Polygon((0.08, 0.26), (0.55, 0.26), (0.55, 0.36), (0.08, 0.36));
+                Polygon((0.08, 0.64), (0.55, 0.64), (0.55, 0.74), (0.08, 0.74));
+                Polygon((0.1, 0.36), (0.8, 0.36), (0.92, 0.44), (0.92, 0.56), (0.8, 0.64), (0.1, 0.64));
+                Circle(0.78, 0.28, 0.06, filled: false);
+                Circle(0.78, 0.72, 0.06, filled: false);
+                break;
+            case "armored-car":
+                Polygon((0.12, 0.34), (0.8, 0.34), (0.92, 0.42), (0.92, 0.58), (0.8, 0.66), (0.12, 0.66));
+                foreach (var u in new[] { 0.24, 0.72 })
+                {
+                    Circle(u, 0.27, 0.06, filled: false);
+                    Circle(u, 0.73, 0.06, filled: false);
+                }
+
+                Line(0.52, 0.5, 0.96, 0.5);
+                break;
+            case "truck":
+                Polygon((0.06, 0.32), (0.62, 0.32), (0.62, 0.68), (0.06, 0.68));
+                Polygon((0.66, 0.36), (0.9, 0.36), (0.95, 0.44), (0.95, 0.56), (0.9, 0.64), (0.66, 0.64));
+                foreach (var u in new[] { 0.2, 0.46, 0.8 })
+                {
+                    Circle(u, 0.27, 0.05, filled: false);
+                    Circle(u, 0.73, 0.05, filled: false);
+                }
+
+                break;
+            case "motorcycle":
+                Line(0.14, 0.5, 0.86, 0.5);
+                Circle(0.14, 0.5, 0.08, filled: false);
+                Circle(0.86, 0.5, 0.08, filled: false);
+                Line(0.7, 0.36, 0.7, 0.64);
+                Polygon((0.34, 0.54), (0.5, 0.54), (0.5, 0.74), (0.34, 0.74));
+                break;
+            case "wreck":
+                Polygon((0.12, 0.3), (0.84, 0.26), (0.9, 0.7), (0.16, 0.74));
+                Line(0.2, 0.2, 0.8, 0.8);
+                Line(0.8, 0.2, 0.2, 0.8);
+                Circle(0.5, 0.14, 0.07);
+                Circle(0.62, 0.08, 0.05);
                 break;
             case "limbered-gun":
                 Polygon((0.02, 0.47), (0.62, 0.44), (0.62, 0.56), (0.02, 0.53));

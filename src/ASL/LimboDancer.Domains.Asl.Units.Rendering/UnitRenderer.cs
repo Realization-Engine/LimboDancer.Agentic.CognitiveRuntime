@@ -122,7 +122,15 @@ public sealed class UnitRenderer
         {
             var length = size * (evaluator.Number(style["covered-arc-length"]) ?? 2.5);
             var arcColor = evaluator.Color(style["covered-arc-color"]) ?? Palette.For(side).Accent;
-            CoveredArc(svg, arcFacing, centerX, centerY, length, size, arcColor);
+            CoveredArc(svg, arcFacing, centerX, centerY, length, size, arcColor, "data-covered-arc");
+        }
+
+        var turret = document.TurretFacing is { } turretFacing && turretFacing != document.Facing ? turretFacing : (UnitFacing?)null;
+        if (turret is { } turretArc && evaluator.Ident(style["turret-arc"]) == "wedge")
+        {
+            var length = size * (evaluator.Number(style["turret-arc-length"]) ?? 2.2);
+            var arcColor = evaluator.Color(style["turret-arc-color"]) ?? Palette.For(side).Ink;
+            CoveredArc(svg, turretArc, centerX, centerY, length, size, arcColor, "data-turret-arc");
         }
 
         // Carried equipment is tucked under the owner's lower edge, so it is drawn first.
@@ -203,7 +211,21 @@ public sealed class UnitRenderer
         WriteSlots(svg, subject, owner, style, evaluator, inner, size, tier, textColor, side, warnings);
         if (document.Facing is { } markFacing && evaluator.Ident(style["direction-mark"]) == "arrow")
         {
-            DirectionArrow(svg, markFacing, centerX, centerY, size, evaluator.Color(style["direction-color"]) ?? stroke);
+            DirectionArrow(svg, markFacing, centerX, centerY, size, evaluator.Color(style["direction-color"]) ?? stroke, filled: true);
+        }
+
+        if (turret is { } turretMark)
+        {
+            var color = evaluator.Color(style["turret-color"]) ?? stroke;
+            switch (evaluator.Ident(style["turret-mark"]))
+            {
+                case "arrow":
+                    DirectionArrow(svg, turretMark, centerX, centerY, size, color, filled: false);
+                    break;
+                case "barrel":
+                    TurretBarrel(svg, turretMark, centerX, centerY, size, color);
+                    break;
+            }
         }
 
         if (evaluator.Ident(style["badges"]) != "none")
@@ -213,7 +235,7 @@ public sealed class UnitRenderer
     }
 
     /// <summary>The Covered Arc (C3.2): the 60 degree wedge between the two hex rows that meet at the faced hexspine.</summary>
-    private static void CoveredArc(SvgWriter svg, UnitFacing facing, double centerX, double centerY, double length, double size, string color)
+    private static void CoveredArc(SvgWriter svg, UnitFacing facing, double centerX, double centerY, double length, double size, string color, string marker)
     {
         var degrees = facing.Degrees();
         (double X, double Y) Point(double angle) =>
@@ -222,24 +244,47 @@ public sealed class UnitRenderer
         var (x2, y2) = Point(degrees + 30);
         var path = new PathData().MoveTo(N(centerX), N(centerY)).LineTo(N(x1), N(y1)).LineTo(N(x2), N(y2)).Close();
         svg.Empty("path", ("d", path.ToString()), ("fill", color), ("fill-opacity", "0.16"), ("stroke", color), ("stroke-width", N(size * 0.03)),
-            ("stroke-dasharray", $"{N(size * 0.12)} {N(size * 0.08)}"), ("pointer-events", "none"), ("data-covered-arc", facing.Name()));
+            ("stroke-dasharray", $"{N(size * 0.12)} {N(size * 0.08)}"), ("pointer-events", "none"), (marker, facing.Name()));
     }
 
-    /// <summary>A triangle just outside the face, pointing at the faced hexspine.</summary>
-    private static void DirectionArrow(SvgWriter svg, UnitFacing facing, double centerX, double centerY, double size, string color)
+    /// <summary>
+    /// A triangle just outside the face, pointing at the faced hexspine: filled for the hull, outlined and a little
+    /// farther out for a turret facing apart from it.
+    /// </summary>
+    private static void DirectionArrow(SvgWriter svg, UnitFacing facing, double centerX, double centerY, double size, string color, bool filled)
     {
         var angle = facing.Degrees() * Math.PI / 180;
         var (dx, dy) = (Math.Cos(angle), Math.Sin(angle));
         var reach = size * 0.5 / Math.Max(Math.Abs(dx), Math.Abs(dy));
-        var baseDistance = reach + (size * 0.03);
-        var tipDistance = reach + (size * 0.24);
+        var baseDistance = reach + (size * (filled ? 0.03 : 0.08));
+        var tipDistance = reach + (size * (filled ? 0.24 : 0.3));
         var half = size * 0.13;
         var path = new PathData()
             .MoveTo(N(centerX + (dx * tipDistance)), N(centerY + (dy * tipDistance)))
             .LineTo(N(centerX + (dx * baseDistance) - (dy * half)), N(centerY + (dy * baseDistance) + (dx * half)))
             .LineTo(N(centerX + (dx * baseDistance) + (dy * half)), N(centerY + (dy * baseDistance) - (dx * half)))
             .Close();
-        svg.Empty("path", ("d", path.ToString()), ("fill", color), ("data-facing", facing.Name()));
+        if (filled)
+        {
+            svg.Empty("path", ("d", path.ToString()), ("fill", color), ("data-facing", facing.Name()));
+        }
+        else
+        {
+            svg.Empty("path", ("d", path.ToString()), ("fill", "#ffffff"), ("stroke", color), ("stroke-width", N(size * 0.04)),
+                ("data-turret-facing", facing.Name()));
+        }
+    }
+
+    /// <summary>A turret drawn over the face, as a turret counter sits on a vehicle: a ring and its gun toward the turret facing.</summary>
+    private static void TurretBarrel(SvgWriter svg, UnitFacing facing, double centerX, double centerY, double size, string color)
+    {
+        var angle = facing.Degrees() * Math.PI / 180;
+        svg.Start("g", ("data-turret-facing", facing.Name()), ("pointer-events", "none"));
+        svg.Empty("circle", ("cx", N(centerX)), ("cy", N(centerY)), ("r", N(size * 0.14)), ("fill", "none"), ("stroke", color), ("stroke-width", N(size * 0.05)));
+        svg.Empty("line", ("x1", N(centerX + (Math.Cos(angle) * size * 0.14))), ("y1", N(centerY + (Math.Sin(angle) * size * 0.14))),
+            ("x2", N(centerX + (Math.Cos(angle) * size * 0.72))), ("y2", N(centerY + (Math.Sin(angle) * size * 0.72))), ("stroke", color),
+            ("stroke-width", N(size * 0.07)), ("stroke-linecap", "round"));
+        svg.End();
     }
 
     /// <summary>The cross printed over a malfunctioned Gun's reverse side.</summary>
@@ -319,19 +364,21 @@ public sealed class UnitRenderer
             svg.Start("g", ("data-slot", region.Name));
             if (evaluator.Color(slotStyle["fill"]) is { } background)
             {
-                if (evaluator.Ident(slotStyle["badge-shape"]) == "circle")
-                {
-                    svg.Empty("circle", ("cx", N(box.CenterX)), ("cy", N(box.CenterY)), ("r", N(Math.Min(box.Width, box.Height) * 0.48)), ("fill", background));
-                }
-                else
-                {
-                    svg.Empty("rect", ("x", N(box.X + (size * 0.01))), ("y", N(box.Y + (size * 0.01))), ("width", N(box.Width - (size * 0.02))),
-                        ("height", N(box.Height - (size * 0.02))), ("rx", N(size * 0.04)), ("fill", background));
-                }
+                SlotBackground(svg, evaluator.Ident(slotStyle["badge-shape"]), box, size, background);
+            }
+
+            if (evaluator.Ident(slotStyle["outline"]) is { } outline and not "none")
+            {
+                SlotOutline(svg, outline, box, size, evaluator.Color(slotStyle["outline-color"]) ?? color, subject, warnings);
             }
 
             var rotation = slotStyle["rotate"] is { } rotate
-                ? evaluator.Ident(rotate) == "facing" ? subject.Document.Facing?.Degrees() : (int?)evaluator.Number(rotate)
+                ? evaluator.Ident(rotate) switch
+                {
+                    "facing" => subject.Document.Facing?.Degrees(),
+                    "turret-facing" => (subject.Document.TurretFacing ?? subject.Document.Facing)?.Degrees(),
+                    _ => (int?)evaluator.Number(rotate),
+                }
                 : null;
             if (rotation is { } turn && turn != 0)
             {
@@ -388,6 +435,72 @@ public sealed class UnitRenderer
             }
 
             svg.End();
+        }
+    }
+
+    /// <summary>
+    /// A shape behind a slot: a box by default, a circle, or the movement type symbols of D1.1 (oval for fully tracked,
+    /// circle and oval for half-tracked, two circles for trucks).
+    /// </summary>
+    private static void SlotBackground(SvgWriter svg, string? shape, Box box, double size, string fill)
+    {
+        var radius = Math.Min(box.Width, box.Height) * 0.46;
+        switch (shape)
+        {
+            case "circle":
+                svg.Empty("circle", ("cx", N(box.CenterX)), ("cy", N(box.CenterY)), ("r", N(Math.Min(box.Width, box.Height) * 0.48)), ("fill", fill));
+                break;
+            case "oval":
+                svg.Empty("ellipse", ("cx", N(box.CenterX)), ("cy", N(box.CenterY)), ("rx", N(Math.Min(box.Width * 0.48, radius * 1.7))), ("ry", N(radius * 0.8)),
+                    ("fill", fill), ("data-shape", "oval"));
+                break;
+            case "circle-oval":
+                svg.Start("g", ("data-shape", "circle-oval"));
+                svg.Empty("circle", ("cx", N(box.CenterX - (radius * 0.75))), ("cy", N(box.CenterY)), ("r", N(radius * 0.7)), ("fill", fill));
+                svg.Empty("ellipse", ("cx", N(box.CenterX + (radius * 0.55))), ("cy", N(box.CenterY)), ("rx", N(radius * 0.95)), ("ry", N(radius * 0.7)), ("fill", fill));
+                svg.End();
+                break;
+            case "figure-eight":
+                svg.Start("g", ("data-shape", "figure-eight"));
+                svg.Empty("circle", ("cx", N(box.CenterX - (radius * 0.6))), ("cy", N(box.CenterY)), ("r", N(radius * 0.72)), ("fill", fill));
+                svg.Empty("circle", ("cx", N(box.CenterX + (radius * 0.6))), ("cy", N(box.CenterY)), ("r", N(radius * 0.72)), ("fill", fill));
+                svg.End();
+                break;
+            default:
+                svg.Empty("rect", ("x", N(box.X + (size * 0.01))), ("y", N(box.Y + (size * 0.01))), ("width", N(box.Width - (size * 0.02))),
+                    ("height", N(box.Height - (size * 0.02))), ("rx", N(size * 0.04)), ("fill", fill));
+                break;
+        }
+    }
+
+    /// <summary>An outline round a slot, such as the MA type symbols of D1.31 to D1.322 round a vehicle's depiction.</summary>
+    private static void SlotOutline(SvgWriter svg, string outline, Box box, double size, string color, StyleSubject subject, List<RenderWarning> warnings)
+    {
+        var half = Math.Min(box.Width, box.Height) * 0.47;
+        var thin = N(size * 0.025);
+        var thick = N(size * 0.06);
+        switch (outline)
+        {
+            case "circle":
+                svg.Empty("circle", ("cx", N(box.CenterX)), ("cy", N(box.CenterY)), ("r", N(half)), ("fill", "none"), ("stroke", color), ("stroke-width", thin),
+                    ("data-outline", outline));
+                return;
+            case "square" or "thick-square":
+                svg.Empty("rect", ("x", N(box.CenterX - half)), ("y", N(box.CenterY - half)), ("width", N(half * 2)), ("height", N(half * 2)), ("fill", "none"),
+                    ("stroke", color), ("stroke-width", outline == "square" ? thin : thick), ("data-outline", outline));
+                return;
+            case "cornerless-square":
+                var gap = half * 0.35;
+                var path = new PathData()
+                    .MoveTo(N(box.CenterX - half + gap), N(box.CenterY - half)).LineTo(N(box.CenterX + half - gap), N(box.CenterY - half))
+                    .MoveTo(N(box.CenterX + half), N(box.CenterY - half + gap)).LineTo(N(box.CenterX + half), N(box.CenterY + half - gap))
+                    .MoveTo(N(box.CenterX + half - gap), N(box.CenterY + half)).LineTo(N(box.CenterX - half + gap), N(box.CenterY + half))
+                    .MoveTo(N(box.CenterX - half), N(box.CenterY + half - gap)).LineTo(N(box.CenterX - half), N(box.CenterY - half + gap));
+                svg.Empty("path", ("d", path.ToString()), ("fill", "none"), ("stroke", color), ("stroke-width", thick), ("data-outline", outline));
+                return;
+            default:
+                warnings.Add(new(subject.Document.Id, $"'{outline}' is not an outline; use circle, square, thick-square, cornerless-square, or none."));
+                return;
         }
     }
 
@@ -613,9 +726,14 @@ public sealed class UnitRenderer
             if (!renderer.Vocabulary.HasKind(document.Kind) ||
                 !renderer.Vocabulary.TryResolveAttribute(document.Kind, name, out var attribute, out _) ||
                 (document.Value(subject.Face, attribute.Name) ??
-                 (option is not null and not "first" and not "optional" ? document.Face(option)?.Value(attribute.Name) : null)) is not { } value)
+                 (option is not null and not "first" and not "optional" and not "dash" ? document.Face(option)?.Value(attribute.Name) : null)) is not { } value)
             {
-                return option == "optional" ? string.Empty : null;
+                return option switch
+                {
+                    "optional" => string.Empty,
+                    "dash" => "-",
+                    _ => null,
+                };
             }
 
             return option == "first" && value.Items.Count > 0 ? value.Items[0] : value.Display;

@@ -1,6 +1,6 @@
 # ASL Unit Display Design
 
-**Status:** Accepted design, with the open questions decided (section 15). Phase 1 (Personnel and SW) and phase 2 (Guns) are built; sections 16 and 17 record what was built and where it departs from this design.
+**Status:** Accepted design, with the open questions decided (section 15). Phases 1 (Personnel and SW), 2 (Guns), and 3 (vehicles) are built; sections 16 to 18 record what was built and where it departs from this design.
 
 **Date:** 2026-09-24
 
@@ -181,7 +181,7 @@ Values are literals, `attr(name)`, `token(name)`, `side(role)`, and `glyph(name,
 
 The language is deliberately small, and is parsed by our own parser. It is not browser CSS, and nothing reaches the browser except the SVG it produces.
 
-## 4. The ASL pack: Personnel, SW, and Guns
+## 4. The ASL pack: Personnel, SW, Guns, and vehicles
 
 Each row is one fact a printed counter conveys: where the rulebook defines it, the vocabulary term that carries it, and how the two ASL style sheets show it. The `asl-classic` sheet keeps the printed convention; the `asl-digital` sheet chooses a clearer digital form. This table is the information-parity test (principle 2).
 
@@ -271,6 +271,35 @@ Added with phase 2 from the Gun counter anatomy (C2.2 to C2.4, pp. 167 and 168).
 | Limbered side, with Caliber Size and ROF when it may fire limbered | C2.2, p. 167; C10.24, p. 180 | face `limbered`; state `asl:limbered` | reverse side, limbered silhouette, LF values | muted face, limbered glyph, LF values |
 | Light mortar Caliber Size and range limit | C2.21, p. 167; C2.25, p. 168 | `caliber`, `range-minimum`, `range-maximum`, `asl:no-ap` | Caliber Size and `[#-#]` | Caliber Size and `[#-#]` |
 | LATW Caliber Size and range limit | C13.1, p. 183; C2.25, p. 168 | `caliber`, `range-maximum` | Caliber Size and `[#]` | Caliber Size and `[#]` |
+
+### 4.5 Vehicles
+
+Added with phase 3 from the vehicle counter anatomy (D1.1 to D1.9, pp. 193 to 195), with hull and turret facing (D3.1 to D3.12, p. 199), Motion (D2.4, p. 198), and BU and CE (D5.2 to D5.3, p. 203). Vehicles are units (`asl:vehicle` under `asl:unit`).
+
+| Printed fact | Rule, page | Vocabulary | `asl-classic` | `asl-digital` |
+|---|---|---|---|---|
+| Movement type: the white symbol behind the MP (circle, oval, circle and oval, two circles; a white counter for motorcycles) | D1.1 to D1.15, p. 193 | `movement-type` | the symbol behind the MP; overhead depiction by type | the same |
+| Movement Points, and amphibious MP as a superscript | D1.1, p. 193 | `movement-points`, `amphibious-mp` | large number upper right, superscript | large number, superscript |
+| Red MP: mechanical reliability | D1.1, p. 193; D2.51, p. 198 | trait `asl:mechanically-unreliable` | MP in red | MP in red |
+| Unarmored: two H symbols under the MP | D1.21, p. 193 | trait `asl:unarmored` | "H" in place of both AF | "H" in place of both AF |
+| Partially armored: an H beside the side/rear AF, "T" when only the rear turret is unarmored | D1.22, p. 193 | traits `asl:partially-armored`, `asl:rear-turret-unarmored` | "H" or "TH" after the side/rear AF | the same |
+| Open-topped: the depiction on a white background | D1.23, p. 194 | trait `asl:open-topped` (closed-topped otherwise, D1.24) | white disc behind the depiction | white disc behind the glyph |
+| MA: Caliber Size, or MG, FT, ATR, AAMG | D1.3, p. 194 | `caliber`, `caliber-suffix`, `ma-weapon`; `asl:no-ap`, `asl:no-he` | lower left | lower left |
+| MA type: thin circle (T), thin square (ST), thick square (RST), thick square without corners (1MT), none (NT) | D1.31 to D1.33, p. 194 | `ma-type` | outline round the depiction | outline round the glyph |
+| Secondary Armament, prefixed T or B | D1.34, p. 194 | `sa-mount`, `sa-caliber` | above the MA | small text |
+| ID letter; Ground Pressure: boxed (low), circled (high) | D1.4 to D1.43, p. 194 | `identity`, `ground-pressure` | upper left, boxed or circled | the same |
+| Name beside the depiction | D1.4, p. 194 | `designation` | detail panel and accessible name | detail panel and accessible name |
+| Towing Number `T#`, Passenger capacity `#PP` | D1.5, p. 194 | `towing`, `passenger-capacity` | small text | small text |
+| Front and side/rear Armor Factors | D1.6 to D1.62, p. 194 | `af-front`, `af-side` | stacked under the MP | side by side, beside the MA |
+| Superior (boxed) or inferior (circled) turret AF | D1.63 to D1.64, p. 194 | `turret-af-front`, `turret-af-side` | AF boxed or circled | AF boxed or circled |
+| Target Size: red AF (large, very large), AF on white dots (small, very small) | D1.7 to D1.75, pp. 194 to 195 | `target-size` (five sizes with the Gun sizes) | red AF or white dots | red AF or white dots |
+| Vehicular MG `b/c/a`, rear MG superscripts, Fixed-Mount BMG on a white dot | D1.8 to D1.83, p. 195 | `bmg`, `cmg`, `aamg`, `hull-rear-mg`, `turret-rear-mg`, trait `asl:fixed-bmg` | `b/c/a` lower right | `b/c/a` |
+| Vehicular FT in red: mounting, FP, X#; underscored FP for range 2 | D1.8, p. 195 | `vehicle-ft-mount`, `vehicle-ft-firepower`, `vehicle-ft-removal`, trait `asl:vehicle-ft-range-2` | red text, underlined for range 2 | badge |
+| Wreck side with its Crew Survival Number | D1.9, p. 195; D5.6, p. 204 | face `wreck`, `crew-survival`; state `asl:wrecked` | wreck depiction on a light face, "CS#" | the same |
+| Hull facing (VCA) | D3.11, p. 199 | document `facing` | depiction turned to the hexspine | arrow; VCA wedge at the near tier |
+| Turret facing (TCA) when it differs from the hull | D3.12, p. 199 | document `turretFacing` | outlined arrow; a turret ring and gun at the far tier | outlined arrow; TCA wedge at the near tier |
+| Motion | D2.4, p. 198 | state `asl:motion` | "Motion" chip | "MOT" badge |
+| Buttoned Up, Crew Exposed | D5.2 to D5.3, p. 203 | states `asl:bu`, `asl:ce` | "BU" or "CE" chip | "BU" or "CE" badge |
 
 ## 5. Creating new units
 
@@ -401,7 +430,7 @@ A separate, optional check reports combinations the ASL rules forbid, with the r
 
 1. **Personnel and SW (this document):** the vocabulary model, documents, style language, cascade, layout, SVG, the `asl` Personnel and SW pack, both ASL sheets, the Lab, and the Units layer in the viewer.
 2. **Guns:** ordnance attributes (caliber and AP/HE limits, type, ROF, range limit, special ammunition, M#, IFE, target size), facing and covered arc drawn as a direction, limbered and malfunctioned faces (C2.2 to C2.29, pp. 167 to 168). LATW and light mortar values arrive here. Built; see sections 4.4 and 17.
-3. **Vehicles:** movement type, armor status, main and secondary armament, turret types, ground pressure, armor factors with turret variants, target size, vehicular MGs, wreck face, hull and turret facing, motion, BU and CE (D1.1 to D1.9, pp. 193 to 195).
+3. **Vehicles:** movement type, armor status, main and secondary armament, turret types, ground pressure, armor factors with turret variants, target size, vehicular MGs, wreck face, hull and turret facing, motion, BU and CE (D1.1 to D1.9, pp. 193 to 195). Built; see sections 4.5 and 18.
 4. **Entities that are not units:** snipers, fortifications, informational markers (ASL-UNIT-026).
 
 The style language and layout are designed for all four phases now; only the vocabulary grows.
@@ -500,3 +529,28 @@ Built on branch `feature/asl-units-02`, from `main@43d06ea`. Section 4.4 is the 
 ### 17.3 Tests
 
 `Units.Tests` (135): the Gun terms, faces and facing, names, the facing errors, version compatibility, and the Gun plausibility checks. `Units.Rendering.Tests` (200): 29 new parity rows for section 4.4 under both sheets, goldens for four Gun types, the limbered state, and a malfunctioned Gun under each sheet, and direction tests (the arrow for each hexspine, the 60 degree wedge at the near tier only, the classic silhouette's rotation, the classic cross). `MapStudio.Tests` (63): choosing a Gun's facing in the Lab.
+
+## 18. As built: phase 3
+
+Built on branch `feature/asl-units-03`, from `main@b76fc72`. Section 4.5 is the parity table for this phase.
+
+### 18.1 What was added
+
+- **Vocabulary `asl@1.2.0`.** The kind `asl:vehicle` (under `asl:unit`) with faces `front` and `wreck`; the attributes and traits of section 4.5; the states `asl:wrecked` (shows the wreck face), `asl:motion`, `asl:bu`, and `asl:ce` (BU and CE exclude each other). `asl:target-size` gains `very-small` and `very-large`, so Guns and vehicles share one Target Size attribute.
+- **Turret facing.** A kind may declare `"turret": true` (inherited). A document of such a kind may give `turretFacing` beside its hull `facing`; it needs a hull facing and is refused otherwise (UNIT-DOC-018). Names add ", turret facing west" when it differs from the hull, and the detail panel lists it.
+- **Style language.** `turret-mark: arrow | barrel`, `turret-color`, `turret-arc: wedge`, `turret-arc-length`, `turret-arc-color`; the turret is drawn only when its facing differs from the hull's, as a turret counter is placed only then (D3.12). `rotate: turret-facing`. Slot backgrounds gain the movement type symbols (`badge-shape: oval | circle-oval | figure-eight`). `outline: circle | square | thick-square | cornerless-square` draws the MA type symbols. `attr(name, dash)` gives "-" for a missing value, for MG factors such as `-/-/3`.
+- **Glyphs.** Original overhead `tank`, `halftrack`, `armored-car`, `truck`, `motorcycle`, and `wreck` glyphs, pointing east.
+- **Sheets.** Both lay a vehicle out as printed. `asl-classic` turns the depiction to the hull facing and shows a separate turret as an outlined arrow, or at the far tier as a turret ring and gun over the depiction. `asl-digital` keeps the face upright, with filled and outlined arrows for hull and turret and both arcs at the near tier. A wreck shows no direction.
+- **Plausibility.** An AF outside the eleven values (D1.6), an unarmored face with armor (D1.21), and a turret facing on a non-turreted MA (D3.12).
+- **Studio.** The Lab offers a turret facing selector for kinds with a turret; the examples add five synthetic vehicles (a tank, an assault gun, a halftrack, an armored car, a truck), and `bd01-demo` places a tank at I3.
+
+### 18.2 Departures and limits
+
+- **Rear MG superscripts.** A hull or turret Rear MG is shown as one superscript after the MG factors, not beside the BMG or CMG it follows.
+- **Fixed-Mount BMG.** Marked by circling the MG factors rather than a white dot under the BMG alone.
+- **Counter-back notes.** Gyrostabilizers, smoke dispensers, lack of radio, CMG restrictions, and other notes on the wreck side (D1.9) are not modelled; special ammunition can be given on either face.
+- **Optional armament** (D1.84) is a purchase rule and is not modelled.
+
+### 18.3 Tests
+
+`Units.Tests` (180): the vehicle terms, faces and turret facing, names, the turret facing errors, and the vehicle plausibility checks. `Units.Rendering.Tests` (264): 37 new parity rows for section 4.5 under both sheets, goldens for five vehicles and the wrecked, Motion, BU, and CE states under each sheet, turret mark and arc tests, movement and MA type symbol tests, and MG factor text. `MapStudio.Tests` (64): choosing a turret facing in the Lab.

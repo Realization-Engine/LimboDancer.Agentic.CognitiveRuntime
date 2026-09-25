@@ -96,6 +96,11 @@ public static class UnitDocumentJson
             writer.WriteString("facing", facing.Name());
         }
 
+        if (document.TurretFacing is { } turretFacing)
+        {
+            writer.WriteString("turretFacing", turretFacing.Name());
+        }
+
         if (document.Concealed)
         {
             writer.WriteBoolean("concealed", true);

@@ -193,6 +193,7 @@ public static class VocabularyPackReader
                 fields.Templates(item, "attachedName", path), fields.OptionalString(item, "rule", path))
             {
                 Facing = item.TryGetProperty("facing", out _) ? fields.OptionalBoolean(item, "facing", path) : null,
+                Turret = item.TryGetProperty("turret", out _) ? fields.OptionalBoolean(item, "turret", path) : null,
             });
         }
 

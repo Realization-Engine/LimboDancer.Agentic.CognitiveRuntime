@@ -40,6 +40,12 @@ public sealed class UnitDraft
         get; set;
     }
 
+    /// <summary>The turret's faced hexspine, for kinds with a turret, such as vehicles (D3.12).</summary>
+    public UnitFacing? TurretFacing
+    {
+        get; set;
+    }
+
     /// <summary>Form text by face, then by qualified attribute name.</summary>
     public Dictionary<string, Dictionary<string, string>> Faces { get; } = new(StringComparer.Ordinal);
 
@@ -134,6 +140,7 @@ public sealed class UnitDraft
             SizeClass = document.SizeClass,
             StackOrder = document.StackOrder,
             Facing = document.Facing,
+            TurretFacing = document.TurretFacing,
         };
         foreach (var face in document.Faces)
         {
@@ -200,6 +207,10 @@ public sealed class UnitDraft
         if (Facing is { } facing && !Concealed && vocabulary.HasKind(Kind) && vocabulary.HasFacing(Kind))
         {
             writer.WriteString("facing", facing.Name());
+            if (TurretFacing is { } turret && vocabulary.HasTurret(Kind))
+            {
+                writer.WriteString("turretFacing", turret.Name());
+            }
         }
 
         if (Concealed)

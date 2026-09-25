@@ -55,7 +55,7 @@ public sealed class UnitStudioTests : IDisposable
         Assert.True(entry.Set.Synthetic);
         Assert.Equal("bd01-demo", entry.Set.SetId);
         Assert.Empty(library.SetsFor(FakeBoardProvider.Board));
-        Assert.Equal(16, library.Examples.Count);
+        Assert.Equal(21, library.Examples.Count);
     }
 
     [Fact]
@@ -180,6 +180,20 @@ public sealed class UnitStudioTests : IDisposable
         Assert.Contains("limbered face", lab.Markup, StringComparison.Ordinal);
         lab.Find("#lab-example").Change("example-squad");
         Assert.Empty(lab.FindAll("#unit-facing"));
+    }
+
+    [Fact]
+    public void AVehiclesTurretFacingIsChosenInTheLab()
+    {
+        var lab = context.Render<UnitLab>();
+        lab.Find("#lab-example").Change("example-tank");
+        Assert.Contains("turret facing north-east", lab.Find("#lab-name").TextContent, StringComparison.Ordinal);
+        lab.Find("#unit-turret-facing").Change("south-west");
+        Assert.Contains("turret facing south-west", lab.Find("#lab-name").TextContent, StringComparison.Ordinal);
+        Assert.Contains("data-turret-arc=\"south-west\"", lab.Markup, StringComparison.Ordinal);
+        Assert.Contains("wreck face", lab.Markup, StringComparison.Ordinal);
+        lab.Find("#lab-example").Change("example-at-gun");
+        Assert.Empty(lab.FindAll("#unit-turret-facing"));
     }
 
     [Fact]

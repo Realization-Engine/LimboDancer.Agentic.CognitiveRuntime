@@ -47,6 +47,11 @@ public sealed class ParityTests
         { "id": "u", "kind": "asl:latw", "side": "german", "faces": { "front": { "latw-type": "psk", "caliber": 88, "range-maximum": 4, "breakdown": 10, "portage": 2 } } }
         """;
 
+    private const string Vehicle = """
+        { "id": "u", "kind": "asl:vehicle", "side": "german", "facing": "east", "turretFacing": "north-east",
+          "faces": { "front": { "designation": "PzKpfw IVH", "identity": "A", "movement-type": "fully-tracked", "movement-points": 12, "amphibious-mp": 5, "af-front": 8, "af-side": 3, "ma-type": "t", "caliber": 75, "caliber-suffix": "ll", "rate-of-fire": 1, "breakdown": 11, "special-ammo": ["A4"], "sa-mount": "bow", "sa-caliber": 37, "towing": 3, "passenger-capacity": 4, "bmg": 2, "cmg": 4, "aamg": 1, "vehicle-ft-mount": "bow", "vehicle-ft-firepower": 24, "vehicle-ft-removal": 10 }, "wreck": { "crew-survival": 7 } } }
+        """;
+
     /// <summary>Each row: without the fact, with it, the face to show (or null), and where the difference is under classic and digital.</summary>
     public static TheoryData<string, string, string, string?, string, string> Rows() => new()
     {
@@ -137,6 +142,45 @@ public sealed class ParityTests
         { "Light mortar range limit", LightMortar.Replace("\"range-minimum\": 2, \"range-maximum\": 13, ", "", StringComparison.Ordinal), LightMortar, null, "slot:range", "slot:range" },
         { "LATW Caliber Size", Latw.Replace("\"caliber\": 88, ", "", StringComparison.Ordinal), Latw, null, "slot:cal", "slot:cal" },
         { "LATW range limit", Latw.Replace("\"range-maximum\": 4, ", "", StringComparison.Ordinal), Latw, null, "slot:range", "slot:range" },
+
+        // 4.5 Vehicles.
+        { "Movement type", Vehicle, Vehicle.Replace("\"fully-tracked\"", "\"half-tracked\"", StringComparison.Ordinal), null, "slot:mp", "slot:mp" },
+        { "Movement Points", Vehicle.Replace("\"movement-points\": 12, ", "", StringComparison.Ordinal), Vehicle, null, "slot:mp", "slot:mp" },
+        { "Amphibious MP", Vehicle.Replace("\"amphibious-mp\": 5, ", "", StringComparison.Ordinal), Vehicle, null, "slot:mp", "slot:mp" },
+        { "Mechanical Reliability", Vehicle, WithTrait(Vehicle, "front", "asl:mechanically-unreliable"), null, "slot:mp", "slot:mp" },
+        { "Unarmored", Vehicle, WithTrait(Vehicle, "front", "asl:unarmored"), null, "slot:afront", "slot:afront" },
+        { "Partially armored", Vehicle, WithTrait(Vehicle, "front", "asl:partially-armored"), null, "slot:aside", "slot:aside" },
+        { "Open-topped", Vehicle, WithTrait(Vehicle, "front", "asl:open-topped"), null, "slot:glyph", "slot:glyph" },
+        { "MA Caliber Size", Vehicle.Replace("\"caliber\": 75, ", "", StringComparison.Ordinal), Vehicle, null, "slot:ma", "slot:ma" },
+        { "MA MG, FT, or ATR", Vehicle, Vehicle.Replace("\"caliber\": 75, ", "\"ma-weapon\": \"mg\", ", StringComparison.Ordinal), null, "slot:ma", "slot:ma" },
+        { "MA type", Vehicle, Vehicle.Replace("\"ma-type\": \"t\"", "\"ma-type\": \"st\"", StringComparison.Ordinal), null, "slot:glyph", "slot:glyph" },
+        { "Secondary Armament", Vehicle.Replace("\"sa-mount\": \"bow\", \"sa-caliber\": 37, ", "", StringComparison.Ordinal), Vehicle, null, "slot:sa", "slot:sa" },
+        { "Vehicle ID letter", Vehicle.Replace("\"identity\": \"A\", ", "", StringComparison.Ordinal), Vehicle, null, "slot:id", "slot:id" },
+        { "Low Ground Pressure", Vehicle, Vehicle.Replace("\"identity\": \"A\", ", "\"identity\": \"A\", \"ground-pressure\": \"low\", ", StringComparison.Ordinal), null, "slot:id", "slot:id" },
+        { "High Ground Pressure", Vehicle, Vehicle.Replace("\"identity\": \"A\", ", "\"identity\": \"A\", \"ground-pressure\": \"high\", ", StringComparison.Ordinal), null, "slot:id", "slot:id" },
+        { "Vehicle designation", Vehicle.Replace("\"designation\": \"PzKpfw IVH\", ", "", StringComparison.Ordinal), Vehicle, null, "details", "details" },
+        { "Towing Number", Vehicle.Replace("\"towing\": 3, ", "", StringComparison.Ordinal), Vehicle, null, "slot:tow", "slot:tow" },
+        { "Passenger capacity", Vehicle.Replace("\"passenger-capacity\": 4, ", "", StringComparison.Ordinal), Vehicle, null, "slot:pp", "slot:pp" },
+        { "Front Armor Factor", Vehicle.Replace("\"af-front\": 8, ", "", StringComparison.Ordinal), Vehicle, null, "slot:afront", "slot:afront" },
+        { "Side/Rear Armor Factor", Vehicle.Replace("\"af-side\": 3, ", "", StringComparison.Ordinal), Vehicle, null, "slot:aside", "slot:aside" },
+        { "Superior turret", Vehicle, Vehicle.Replace("\"af-front\": 8, ", "\"af-front\": 8, \"turret-af-front\": \"superior\", ", StringComparison.Ordinal), null, "slot:afront", "slot:afront" },
+        { "Inferior turret", Vehicle, Vehicle.Replace("\"af-side\": 3, ", "\"af-side\": 3, \"turret-af-side\": \"inferior\", ", StringComparison.Ordinal), null, "slot:aside", "slot:aside" },
+        { "Very Large Target", Vehicle, Vehicle.Replace("\"af-side\": 3, ", "\"af-side\": 3, \"target-size\": \"very-large\", ", StringComparison.Ordinal), null, "slot:aside", "slot:aside" },
+        { "Large Target", Vehicle, Vehicle.Replace("\"af-side\": 3, ", "\"af-side\": 3, \"target-size\": \"large\", ", StringComparison.Ordinal), null, "slot:afront", "slot:afront" },
+        { "Small Target", Vehicle, Vehicle.Replace("\"af-side\": 3, ", "\"af-side\": 3, \"target-size\": \"small\", ", StringComparison.Ordinal), null, "slot:afront", "slot:afront" },
+        { "Very Small Target", Vehicle, Vehicle.Replace("\"af-side\": 3, ", "\"af-side\": 3, \"target-size\": \"very-small\", ", StringComparison.Ordinal), null, "slot:aside", "slot:aside" },
+        { "Vehicular MG", Vehicle.Replace("\"bmg\": 2, \"cmg\": 4, \"aamg\": 1, ", "", StringComparison.Ordinal), Vehicle, null, "slot:mg", "slot:mg" },
+        { "AAMG", Vehicle.Replace("\"aamg\": 1, ", "", StringComparison.Ordinal), Vehicle, null, "slot:mg", "slot:mg" },
+        { "Rear MG", Vehicle, Vehicle.Replace("\"bmg\": 2, ", "\"bmg\": 2, \"hull-rear-mg\": 1, ", StringComparison.Ordinal), null, "slot:mg", "slot:mg" },
+        { "Fixed-Mount BMG", Vehicle, WithTrait(Vehicle, "front", "asl:fixed-bmg"), null, "slot:mg", "slot:mg" },
+        { "Vehicular FT", Vehicle.Replace(", \"vehicle-ft-mount\": \"bow\", \"vehicle-ft-firepower\": 24, \"vehicle-ft-removal\": 10", "", StringComparison.Ordinal), Vehicle, null, "slot:ft", "badge" },
+        { "Hull facing", Vehicle.Replace(" \"facing\": \"east\", \"turretFacing\": \"north-east\",", "", StringComparison.Ordinal), Vehicle.Replace(" \"turretFacing\": \"north-east\",", "", StringComparison.Ordinal).Replace("\"east\"", "\"west\"", StringComparison.Ordinal), null, "slot:glyph", "direction" },
+        { "Turret facing", Vehicle.Replace(" \"turretFacing\": \"north-east\",", "", StringComparison.Ordinal), Vehicle, null, "direction", "direction" },
+        { "Wreck side", Vehicle, WithStates(Vehicle, "asl:wrecked"), null, "face", "face" },
+        { "Crew Survival Number", Vehicle.Replace("\"crew-survival\": 7", "", StringComparison.Ordinal), Vehicle, "wreck", "slot:cs", "slot:cs" },
+        { "Motion", Vehicle, WithStates(Vehicle, "asl:motion"), null, "badge", "badge" },
+        { "Buttoned Up", Vehicle, WithStates(Vehicle, "asl:bu"), null, "badge", "badge" },
+        { "Crew Exposed", Vehicle, WithStates(Vehicle, "asl:ce"), null, "badge", "badge" },
     };
 
     [Theory]
@@ -182,7 +226,8 @@ public sealed class ParityTests
 
         regions["badge"] = string.Concat(own.Where(element => element.Attribute("data-badge") is not null).Select(element => element.ToString()));
         regions["face"] = string.Concat(own.Where(element => element.Attribute("data-face") is not null).Select(element => element.ToString()));
-        regions["direction"] = string.Concat(own.Where(element => element.Attribute("data-facing") is not null || element.Attribute("data-covered-arc") is not null)
+        regions["direction"] = string.Concat(own.Where(element => element.Attribute("data-facing") is not null || element.Attribute("data-covered-arc") is not null ||
+                element.Attribute("data-turret-facing") is not null || element.Attribute("data-turret-arc") is not null)
             .Select(element => element.ToString()));
         regions["details"] = string.Join("\n", UnitLabels.Details(document, RenderingTestData.Vocabulary.Value, face));
         return regions;

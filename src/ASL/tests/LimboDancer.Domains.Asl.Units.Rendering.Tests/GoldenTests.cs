@@ -145,6 +145,11 @@ public sealed class GoldenTests
             ["kind-gun-aa"] = catalog["example-aa-gun"],
             ["kind-gun-mtr"] = catalog["example-mortar-gun"],
             ["kind-gun-inf"] = catalog["example-inf-gun"],
+            ["kind-vehicle-tank"] = catalog["example-tank"],
+            ["kind-vehicle-assault-gun"] = catalog["example-assault-gun"],
+            ["kind-vehicle-halftrack"] = catalog["example-halftrack"],
+            ["kind-vehicle-armored-car"] = catalog["example-armored-car"],
+            ["kind-vehicle-truck"] = catalog["example-truck"],
         };
         foreach (var state in RenderingTestData.Vocabulary.Value.States)
         {
@@ -153,6 +158,8 @@ public sealed class GoldenTests
                 "asl:malfunctioned" => catalog["example-mmg"],
                 "asl:wounded" => catalog["example-hero"],
                 "asl:limbered" => catalog["example-aa-gun"],
+                "asl:wrecked" or "asl:bu" or "asl:ce" => catalog["example-tank"],
+                "asl:motion" => catalog["example-halftrack"],
                 _ => catalog["example-squad"],
             };
             documents["state-" + state.Name[4..]] = target with

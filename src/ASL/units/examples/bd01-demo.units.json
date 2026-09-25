@@ -3,7 +3,7 @@
   "setId": "bd01-demo",
   "label": "Synthetic units on board 01",
   "synthetic": true,
-  "vocabulary": ["asl@1.1.0"],
+  "vocabulary": ["asl@1.2.0"],
   "units": [
     {
       "id": "demo-a",
@@ -67,6 +67,20 @@
         "front": { "gun-type": "at", "caliber": 50, "caliber-suffix": "l", "rate-of-fire": 2, "manhandling": 9 },
         "malfunctioned": { "repair": 1, "removal": 6 }
       }
+    },
+    {
+      "id": "demo-f",
+      "kind": "asl:vehicle",
+      "side": "russian",
+      "location": "bd01:I3:0",
+      "facing": "west",
+      "turretFacing": "south-west",
+      "faces": {
+        "front": { "identity": "A", "movement-type": "fully-tracked", "movement-points": 13, "af-front": 8, "af-side": 4, "ma-type": "st",
+          "caliber": 76, "caliber-suffix": "l", "bmg": 2, "cmg": 2 },
+        "wreck": { "crew-survival": 6 }
+      },
+      "states": ["asl:bu"]
     }
   ]
 }

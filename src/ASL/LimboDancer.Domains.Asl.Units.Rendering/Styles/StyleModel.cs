@@ -121,5 +121,8 @@ public static class StyleProperties
 
         // Direction: a unit that faces a hexspine (C3.2).
         "rotate", "direction-mark", "direction-color", "covered-arc", "covered-arc-length", "covered-arc-color",
+
+        // Turret direction: a vehicle's turret facing apart from its hull (D3.12), and a slot outline such as an MA type symbol.
+        "turret-mark", "turret-color", "turret-arc", "turret-arc-length", "turret-arc-color", "outline", "outline-color",
     };
 }

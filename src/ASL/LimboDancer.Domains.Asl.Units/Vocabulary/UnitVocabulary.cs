@@ -265,6 +265,9 @@ public sealed class UnitVocabulary
     /// <summary>Whether units of a kind face a hexspine, so a document may give their facing (C3.2).</summary>
     public bool HasFacing(string kind) => Info(kind).Facing;
 
+    /// <summary>Whether units of a kind may give a turret facing apart from their hull facing (D3.12).</summary>
+    public bool HasTurret(string kind) => Info(kind).Turret;
+
     public bool TryGetAttribute(string name, out AttributeDefinition attribute) => attributes.TryGetValue(name, out attribute!);
 
     public bool TryGetTrait(string name, out TraitDefinition trait) => traits.TryGetValue(name, out trait!);
@@ -374,6 +377,7 @@ public sealed class UnitVocabulary
             var traitSet = new HashSet<string>(StringComparer.Ordinal);
             int? sizeClass = null;
             var facing = false;
+            var turret = false;
             for (var index = chain.Count - 1; index >= 0; index--)
             {
                 var definition = kinds[chain[index]];
@@ -388,12 +392,13 @@ public sealed class UnitVocabulary
 
                 sizeClass = definition.SizeClass ?? sizeClass;
                 facing = definition.Facing ?? facing;
+                turret = definition.Turret ?? turret;
             }
 
-            info[kind] = new KindInfo(chain, faceList, attributeSet, traitSet, sizeClass, facing);
+            info[kind] = new KindInfo(chain, faceList, attributeSet, traitSet, sizeClass, facing, turret);
         }
     }
 
     private sealed record KindInfo(IReadOnlyList<string> Ancestors, IReadOnlyList<string> Faces, IReadOnlySet<string> Attributes,
-        IReadOnlySet<string> Traits, int? SizeClass, bool Facing);
+        IReadOnlySet<string> Traits, int? SizeClass, bool Facing, bool Turret);
 }
