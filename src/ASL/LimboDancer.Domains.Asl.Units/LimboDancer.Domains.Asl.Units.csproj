@@ -7,5 +7,6 @@
     <EmbeddedResource Include="..\units\vocabulary\*.vocab.json" LogicalName="Vocabulary.%(Filename)%(Extension)" Link="Vocabulary\%(Filename)%(Extension)" WithCulture="false" />
     <EmbeddedResource Include="..\units\examples\*.units.json" LogicalName="Examples.%(Filename)%(Extension)" Link="Examples\%(Filename)%(Extension)" WithCulture="false" />
     <EmbeddedResource Include="..\units\catalog\*.catalog.json" LogicalName="Catalogs.%(Filename)%(Extension)" Link="Catalogs\%(Filename)%(Extension)" WithCulture="false" />
+    <EmbeddedResource Include="..\units\games\*.game.json" LogicalName="Games.%(Filename)%(Extension)" Link="Games\%(Filename)%(Extension)" WithCulture="false" />
   </ItemGroup>
 </Project>

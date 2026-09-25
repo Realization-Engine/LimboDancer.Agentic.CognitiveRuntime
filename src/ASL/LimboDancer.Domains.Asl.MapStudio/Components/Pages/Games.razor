@@ -1,0 +1,257 @@
+@page "/units/games"
+@using System.Globalization
+@using LimboDancer.Domains.Asl.Units.State
+@inject GameLibrary GamesLibrary
+@inject UnitLibrary Library
+@inject NavigationManager Navigation
+
+<PageTitle>Game states - ASL Map Studio</PageTitle>
+
+<h2>Game states</h2>
+<p class="muted">
+    Replay a synthetic game fixture event by event and read it from each side or as the adjudicator. A side's view leaves out what that side
+    cannot know: hidden units are absent and concealed enemies are only a presence. Fixtures are display input, never game state.
+</p>
+
+@if (GamesLibrary.Names.Count == 0)
+{
+    <p class="fail">No game fixtures are embedded.</p>
+}
+else
+{
+    <div class="toolbar">
+        <label>
+            Game
+            <select id="game-name" value="@name" @onchange="ChangeGame">
+                @foreach (var gameName in GamesLibrary.Names)
+                {
+                    <option value="@gameName">@gameName</option>
+                }
+            </select>
+        </label>
+        @if (state is not null)
+        {
+            <label>
+                Perspective
+                <select id="game-perspective" value="@perspective.Name" @onchange="ChangePerspective">
+                    @foreach (var option in state.Perspectives)
+                    {
+                        <option value="@option.Name">@option.Name</option>
+                    }
+                </select>
+            </label>
+            <button id="game-previous" disabled="@(revision <= 1)" @onclick="() => Step(-1)">Previous</button>
+            <input id="game-revision" type="range" min="1" max="@entry!.History!.States.Count" value="@revision" @onchange="ChangeRevision" aria-label="Revision" />
+            <button id="game-next" disabled="@(revision >= entry.History.States.Count)" @onclick="() => Step(1)">Next</button>
+            <button id="game-show" @onclick="ShowOnBoard">Show on @BoardName</button>
+        }
+    </div>
+
+    @if (entry is not null)
+    {
+        <ul id="game-findings">
+            @foreach (var diagnostic in entry.Diagnostics)
+            {
+                <li class="@(diagnostic.Severity == UnitDiagnosticSeverity.Error ? "fail" : "muted")">@diagnostic</li>
+            }
+            @if (entry.PositionsChecked)
+            {
+                <li class="pass">Every position was checked against the location chains of @BoardName, version @state?.Map.Boards[0].Version[..12].</li>
+            }
+        </ul>
+    }
+
+    @if (view is not null && state is not null)
+    {
+        <p id="game-summary">
+            <strong>Revision @revision of @entry!.History!.States.Count</strong>:
+            turn @view.Turn, @PhaseLabel(view.Phase), @view.PhasingSide phasing; @view.Perspective.Name's view.
+            <span class="muted">@(state.Synthetic ? "Synthetic fixture." : string.Empty) Stamp: @view.Stamp.Scope.Game at revision @view.Stamp.Revision.</span>
+        </p>
+
+        <h3>Units</h3>
+        <table class="library" id="game-units">
+            <thead><tr><th></th><th>Id</th><th>Unit</th><th>Location</th><th>Conditions</th><th>Good Order</th><th>Lineage and custody</th></tr></thead>
+            <tbody>
+                @foreach (var unit in view.Units)
+                {
+                    <tr data-unit="@unit.Id">
+                        <td>@Preview(unit.Id)</td>
+                        <td>@unit.Id</td>
+                        <td>@Label(unit.Id, unit.Kind)</td>
+                        <td>@LocationText(unit.Id, unit.Position)</td>
+                        <td>@ConditionsText(unit)</td>
+                        <td>@Conditions.Name(GameState.GoodOrder(unit, Library.Vocabulary))</td>
+                        <td>@LineageText(unit)</td>
+                    </tr>
+                }
+                @foreach (var presence in view.Sealed)
+                {
+                    <tr data-unit="@presence.PlacementId">
+                        <td>@Preview(presence.PlacementId)</td>
+                        <td>@presence.PlacementId</td>
+                        <td>concealed @presence.Side presence</td>
+                        <td>@presence.Location</td>
+                        <td>withheld</td>
+                        <td>withheld</td>
+                        <td></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        @if (view.Equipment.Count > 0 || view.Entities.Count > 0)
+        {
+            <h3>Equipment and entities that are not units</h3>
+            <table class="library" id="game-others">
+                <thead><tr><th>Id</th><th>Kind</th><th>Side</th><th>Where</th></tr></thead>
+                <tbody>
+                    @foreach (var equipment in view.Equipment)
+                    {
+                        <tr><td>@equipment.Id</td><td>@equipment.Kind</td><td>@equipment.Side</td><td>@(equipment.Holding is { } holding ? $"{holding.Role.ToString().ToLowerInvariant()} by {holding.Holder}" : LocationText(equipment.Id, equipment.Position))</td></tr>
+                    }
+                    @foreach (var entity in view.Entities)
+                    {
+                        <tr><td>@entity.Id</td><td>@entity.Kind</td><td>@entity.Side</td><td>@LocationText(entity.Id, entity.Position)</td></tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        <h3>Events @view.Perspective.Name is entitled to</h3>
+        <ol id="game-events" class="muted">
+            @foreach (var item in view.Events)
+            {
+                <li value="@item.Revision" class="@(item.Revision == revision ? "pass" : "")">@item.Type @EventText(item)</li>
+            }
+        </ol>
+    }
+}
+
+@code {
+    private string name = string.Empty;
+    private GameEntry? entry;
+    private GameState? state;
+    private GameView? view;
+    private Perspective perspective = Perspective.Adjudicator;
+    private long revision = 1;
+    private Dictionary<string, UnitDocument> documents = new(StringComparer.Ordinal);
+    private UnitRenderer? renderer;
+
+    private string BoardName => state?.Map.Boards.FirstOrDefault()?.Board.Value ?? "the board";
+
+    protected override void OnInitialized()
+    {
+        renderer = Library.Renderer(UnitLibrary.DefaultSheet);
+        if (GamesLibrary.Names.FirstOrDefault() is { } first)
+        {
+            Open(first);
+        }
+    }
+
+    private void Open(string gameName)
+    {
+        name = gameName;
+        entry = GamesLibrary.Load(gameName);
+        revision = entry.History?.States.Count ?? 0;
+        perspective = Perspective.Adjudicator;
+        Refresh();
+    }
+
+    private void ChangeGame(ChangeEventArgs args) => Open(args.Value as string ?? string.Empty);
+
+    private void ChangePerspective(ChangeEventArgs args)
+    {
+        perspective = new Perspective(args.Value as string ?? Perspective.AdjudicatorName);
+        Refresh();
+    }
+
+    private void ChangeRevision(ChangeEventArgs args)
+    {
+        revision = long.TryParse(args.Value as string, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) ? value : revision;
+        Refresh();
+    }
+
+    private void Step(int delta)
+    {
+        revision += delta;
+        Refresh();
+    }
+
+    private void Refresh()
+    {
+        state = entry?.History?.At(revision);
+        view = state is null ? null : GameView.Of(entry!.History!, revision, perspective);
+        documents = view is null ? new(StringComparer.Ordinal)
+            : GameDocuments.For(view, Library.Vocabulary, GamesLibrary.Catalogs).ToDictionary(document => document.Id, StringComparer.Ordinal);
+    }
+
+    private void ShowOnBoard()
+    {
+        if (entry is not null && state is not null)
+        {
+            Navigation.NavigateTo($"boards/{BoardName}?units={GamesLibrary.ShowOnBoard(entry, perspective, revision)}");
+        }
+    }
+
+    private MarkupString Preview(string id) =>
+        renderer is not null && documents.TryGetValue(id, out var document)
+            ? (MarkupString)UnitPreview.Document(renderer, document, [DetailTier.Mid], null, 0.8, [])
+            : default;
+
+    private string Label(string id, string kind) =>
+        documents.TryGetValue(id, out var document) ? UnitLabels.AccessibleName(document, Library.Vocabulary) : kind;
+
+    private string LocationText(string id, Position position) =>
+        view!.Locations.TryGetValue(id, out var location)
+            ? location.Location + (position is ContainedPosition contained ? $" (in {contained.Container})" : string.Empty)
+            : position switch
+            {
+                OffMapPosition => "off map",
+                NotEnteredPosition => "not entered",
+                _ => string.Empty,
+            };
+
+    private static string ConditionsText(UnitInstance unit)
+    {
+        var shown = unit.Conditions.Where(pair => pair.Value is not ConditionState.False)
+            .Select(pair => pair.Value == ConditionState.True ? pair.Key.Replace("asl:", string.Empty, StringComparison.Ordinal)
+                : $"{pair.Key.Replace("asl:", string.Empty, StringComparison.Ordinal)} {Conditions.Name(pair.Value)}")
+            .ToArray();
+        return shown.Length == 0 ? "none" : string.Join(", ", shown);
+    }
+
+    private static string LineageText(UnitInstance unit) =>
+        string.Join("; ", new[]
+        {
+            unit.From.Count > 0 ? $"from {string.Join(", ", unit.From)}" : null,
+            unit.Custodian is { } custodian ? $"prisoner of {custodian}" : null,
+        }.OfType<string>());
+
+    private static string EventText(GameEvent item) => item.Payload switch
+    {
+        GameStarted started => $": {string.Join(" v ", started.Sides.Select(side => side.Id))} on {started.Map.Reference}",
+        PhaseChanged phase => $": turn {phase.Turn}, {PhaseLabel(phase.Phase)}",
+        InstanceCreated created => $": {created.Instance.Id} ({created.Instance.Kind})",
+        InstanceMoved moved => $": {moved.Id} to {moved.Position}",
+        ConditionsChanged changed => $": {changed.Id} {string.Join(", ", changed.Conditions.Select(pair => $"{pair.Key.Replace("asl:", string.Empty, StringComparison.Ordinal)} {Conditions.Name(pair.Value)}"))}",
+        LineageRecorded lineage => $": {lineage.Action.ToString().ToLowerInvariant()} {string.Join(", ", lineage.Consumed)} into {string.Join(", ", lineage.Produced.Select(produced => produced.Id))}",
+        InstanceCaptured captured => $": {captured.Id} by {captured.Custodian}",
+        InstanceEliminated eliminated => $": {eliminated.Id}",
+        EquipmentTransferred transferred => $": {transferred.Id}",
+        _ => string.Empty,
+    };
+
+    private static string PhaseLabel(string phase) => phase switch
+    {
+        "rph" => "Rally Phase",
+        "pfph" => "Prep Fire Phase",
+        "mph" => "Movement Phase",
+        "dfph" => "Defensive Fire Phase",
+        "afph" => "Advancing Fire Phase",
+        "rtph" => "Rout Phase",
+        "aph" => "Advance Phase",
+        "ccph" => "Close Combat Phase",
+        _ => phase,
+    };
+}
