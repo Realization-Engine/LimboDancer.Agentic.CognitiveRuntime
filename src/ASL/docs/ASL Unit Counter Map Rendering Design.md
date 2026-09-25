@@ -1,10 +1,10 @@
 # ASL Unit Counter Map Rendering Design
 
-**Status:** Proposed design for review; no implementation in this change
+**Status:** Implemented (commits `88b9077` to `6620817`), with the departures listed under "As built" in section 5. Later display work follows ASL-UNIT-070 to 072 in the [ASL Unit Requirements](<LimboDancer.Agentic.CognitiveRuntime ASL Unit Requirements.md>).
 
-**Date:** 2026-09-24
+**Date:** 2026-09-24; status revised the same day
 
-**Baseline:** `main@db38688`, Map Studio through ASL-MAP-04
+**Baseline:** `main@db38688`, Map Studio through ASL-MAP-04; revised at `main@bdd6d9d` (after ASL-MAP-08)
 
 **Scope:** Read-only display of one or more unit counters on a board; implements the first slice in [ASL Unit Map Rendering Slice](<ASL Unit Map Rendering Slice.md>). The [broader unit domain analysis](<ASL Unit Domain Model Analysis.md>) is deferred.
 
@@ -83,5 +83,12 @@ Both `BoardRenderer.Document` and its existing golden SVG tests remain board-onl
 | Multiple counters | One counter, separate hexes, and a three-counter stack render in both views; inspector can identify every placement and its level. |
 | Isolation | Fixture refresh changes only `layer-units`; board SVG bytes, board-only ETags, terrain facts and board version do not change. |
 | Interaction | Unit click/keyboard selection, terrain click, zoom/pan, board switch and view switch preserve the intended selection and overlay behavior. |
+
+**As built.** Departures from this design:
+
+- **Code location:** the DTOs and renderer are in Map Studio (`Services/DemoUnitOverlay.cs`), not a `LimboDancer.Domains.Asl.Units.Rendering` project. ASL-UNIT-001 moves them there when the unit projects are created.
+- **Level badge:** section 3 calls for one; it is not drawn yet.
+- **Views:** the overlay is loaded with the view the page opens in; the Styled and Comparison views added in ASL-MAP-07 are not covered by the checks above.
+- **Verification gaps:** selection surviving a board or view switch, and unchanged board-only ETags, are not asserted by tests.
 
 Implementation handoff: add the fixture schema and one demo fixture; add the DTO, validator and pure unit overlay renderer with focused tests; integrate the overlay and selection into Map Studio; run the board renderer's existing tests to catch regressions to board-only output. Stop there. A curated counter catalog, ASL game state, concealment rules, movement, and Scenario A1 state sourcing belong to later designs.
