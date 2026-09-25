@@ -242,7 +242,33 @@ Decided on 2026-09-25 as recommended in the [Decision Memo for D1 to D4](<ASL Un
    6. *Acceptance.* U4 to U6 run end to end over a live game in which a reveal occurred, and U7 and U8 (section 14) pass. The Play page offers the new entry, shows the facts and conclusion, and shows the reveal in each side's view.
 
    Designed and built in the [ASL Unit Occupied and Concealed Entry Design](<ASL Unit Occupied and Concealed Entry Design.md>), with the [post-reveal forced-back execution boundary review](<Scenario A1 Post-Reveal Forced-Back Execution Boundary Review.md>).
-9. **Declarations and dice (outline):** OVR elections, NTC and other rolls as recorded, governed events, with a decision on who rolls and how a roll's provenance is kept. This unlocks the ConcealedSmcOverrun, SecondDefender, and SecondDefenderConsequence packages in live play, and must decide whether the existing return aggregate of the Execution adapter is retired or moved onto live game events. It is scoped in detail when step 8 is built.
+9. **Random Selection and the declined OVR:** finish the reveal side of A12.15 (p. 78) in live play with reviewed conclusions only, and bring system dice into games through the [.NET Dice Roller](<NET Dice Roller Requirements.md>) (DICE-07 to DICE-12). In order:
+   1. *Random Selection source review.* A short review, before code, of Random Selection (A.9, p. 43) as it resolves an A12.15 reveal among several concealed units:
+      - hidden units are placed beneath a "?" first;
+      - one dr per unit, and the highest is revealed;
+      - every unit tied for the highest is revealed.
+
+      It must confirm that the reviewed PostReveal forced back applies once the reveal is resolved this way, whatever the number of units in the location.
+   2. *Dice in the game store.* A `dice-rolled` event and a store operation that draws inside the per-game commit lock, after gate authorization and the revision and attempt checks, following the [.NET Dice Roller Design](<NET Dice Roller Design.md>), sections 3 and 4. Planning, previews, gate evaluation, and replay never draw; a committed attempt returns its recorded values; an unfavorable result is recorded like any other.
+   3. *Several concealed units.* The entry of step 8 extends to a target holding several enemy units, each concealed or hidden. A Random Selection roll decides the reveal:
+      - if any revealed unit is a non-Dummy MMC, or more than one SMC is revealed (A4.15, p. 49), the PostReveal forced back commits with the roll;
+      - if exactly one SMC is revealed, the entry stops at a pending declaration (part 4).
+
+      Dummies stay out of scope.
+   4. *The OVR declaration.* When the only unit revealed is one SMC, the attacker may choose an Infantry OVR (A12.15; A4.15, p. 49). The attempt stays open as a pending declaration: the unit may not act, and the phase may not advance, until the choice is made.
+      - A new registered action records the choice.
+      - Declining commits the PostReveal forced back, which the reviewed matrix already names for this case (`A1-concealed-smc-declined`).
+      - Electing is refused with a generic "the adjudicator cannot resolve" reason, and the attempt stays pending, until step 10 reviews the NTC and what follows it.
+      - The entry of step 8 into a location holding exactly one concealed SMC then leads to this declaration instead of being refused.
+   5. *Acceptance.* U9 and U10 (section 14) pass. The Play page shows the roll and its values in each side's view, and offers the declaration while one is pending.
+
+   Designed in its own design document, with the Random Selection review, written on the step's design branch before code. The Execution adapter's return aggregate is left as it is until step 10.
+10. **The Infantry OVR (outline):** OVR election and its NTC as a governed declaration and a system roll, and the second-defender return. It needs a new source review first:
+    - the OVR NTC: a DR at or below the unit's morale, with a DRM equal to the target's TEM (A4.15, p. 49; A7.305, p. 55; building TEM, B23.3, p. 136), and the leader's exemption;
+    - what follows a failed NTC;
+    - a policy for a lone SMC that survives to its options and immediate CC (A4.151 and A4.152, p. 49), which need the IFT and CC tables.
+
+    It then brings the ConcealedSmcOverrun, SecondDefender, and SecondDefenderConsequence packages into live play, and decides whether the Execution adapter's return aggregate is retired or moved onto live game events.
 
 Later candidates, not yet sequenced: composed maps in the Play page (placed boards, reversal, and entry across a board seam, so U3 runs over a live game); LOS (ASL-MAP-082) and then Fire; scenario OB and SSR checks at setup, which need the scenario cards as a registered source; and a read-only VASL saved-game import, which needs a format and licensing review first.
 
@@ -256,6 +282,8 @@ Later candidates, not yet sequenced: composed maps in the Play page (placed boar
 - **U6, nondefinitive read.** Given a location whose occupants are only partly known to the reader, the Scenario A1 read returns a nondefinitive result rather than a sole defender.
 - **U7, forced back.** Given a live game in which a Good Order squad attempts, in its MPh, to enter an adjacent building location holding one hidden enemy squad, the committed events show the attempt, the reveal it caused, and the squad in its previous location with the attempted MF counted there and its MPh ended; the attacker's view shows the revealed squad, and confirming the same attempt again changes nothing.
 - **U8, occupied refusal.** Given a live game in which the target location holds a known, unconcealed enemy squad, the entry is refused with the A4.14 conclusion as its reason, and the game's revision is unchanged.
+- **U9, Random Selection.** Given a live game in which a squad attempts, in its MPh, to enter a building location holding two concealed enemy squads, one committed roll records one dr per unit in the event log. The revealed squad forces the mover back as in U7. Replaying the game reproduces the reveal without drawing dice, and confirming the same attempt again returns the recorded roll.
+- **U10, declined OVR.** Given a live game in which the only unit revealed by an entry is one enemy SMC, the attempt is pending and the phase cannot advance. An election is refused and nothing changes. A decline commits the forced back of U7, citing the reviewed delegation.
 
 ## 15. Traceability
 
