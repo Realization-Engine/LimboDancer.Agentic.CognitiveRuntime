@@ -78,7 +78,7 @@ The entry case is the Scenario A1 first case, whose reviewed decision permits a 
 | `isAdjacentGroundLevelOrdinaryBuilding` | The target is one hex away, at level 0, and its terrain is a wooden or stone building of any height, as VASL names them (B23.1, p. 134) |
 | `isDestinationKnownEmpty` | No other unit is in the target location. The planner reads the whole game, concealed and hidden units included, never a side's view |
 | `hasNoRoadBypassElevationOrAdditionalTerrain` | Same base level; the crossed hexside has no hexside terrain, road, cliff, slope, or embankment; neither location is in a depression |
-| `hasEnoughMovementFactors` | A Good Order MMC has 4 MF, 3 if Inexperienced (A4.11, p. 48), which the model does not track: 1 MF or less spent is true, 3 or more is false, and 2 is unknown |
+| `hasEnoughMovementFactors` | A Good Order MMC has 4 MF, 3 if Inexperienced (A4.11, p. 48). As built at step 7 the model did not track the status, so 2 MF spent was unknown; since step 8, part 2, the status is derived from the definition's class ([Occupied and Concealed Entry Design](<ASL Unit Occupied and Concealed Entry Design.md>), section 5), and the fact is unknown only when the class is |
 | `isBelowStackingLimit` | The target location is empty, so stacking holds |
 | `hasNoSpecialRuleOrOtherModifier` | The game names no special rules |
 
@@ -107,6 +107,6 @@ A live test on the real VASL board 01 found that its buildings are named with th
 
 - Fire, Opportunity Fire, and every other transition; each needs its own reviewed case first.
 - Scenario OB and SSR checks at setup, and special rules beyond recording their names.
-- Inexperienced status, so an entry after exactly 2 MF stays Indeterminate.
+- Inexperienced status, so an entry after exactly 2 MF stays Indeterminate. Added at step 8, part 2.
 - Multi-user play and per-side sign-in; the Studio's single user acts for both sides.
 - A VASL saved-game import (D2's later, read-only source).

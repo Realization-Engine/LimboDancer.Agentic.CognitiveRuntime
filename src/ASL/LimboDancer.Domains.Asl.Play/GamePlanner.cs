@@ -220,9 +220,8 @@ public sealed class GamePlanner(IGameStore store, IBoardCatalog boards, UnitVoca
             return Refused(scope, label, expected, $"play.unit-unavailable: no active unit '{unitId}'");
         }
 
-        var facts = EntryFacts(state, unit, target);
-        var conclusion = await ConcludeAsync(scope, state, unit, target, facts, cancellationToken);
-        var review = new EntryReview(facts, conclusion);
+        var review = await ReviewEntryAsync(scope, state, unit, target, cancellationToken);
+        var conclusion = review.Conclusion;
         if (conclusion.Disposition != ConclusionDisposition.Definitive)
         {
             return new GamePlan(GamePlanStatus.Refused, scope, label, expected, [],
@@ -233,6 +232,18 @@ public sealed class GamePlanner(IGameStore store, IBoardCatalog boards, UnitVoca
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
             [Event(scope, attemptId, 1, expected, "instance-moved", move, ScenarioA1Package.Identity.ToString(), visibility: null)],
             [$"play.enter: {unit.Id} into {target} for 2 MF ({conclusion.ConclusionId})"], review);
+    }
+
+    /// <summary>The nine facts of an entry and the reviewed first case's conclusion from them, for one state of a game.</summary>
+    public async Task<EntryReview> ReviewEntryAsync(GameScope scope, GameState state, UnitInstance unit, BoardLocation target,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(scope);
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(unit);
+        ArgumentNullException.ThrowIfNull(target);
+        var facts = EntryFacts(state, unit, target);
+        return new EntryReview(facts, await ConcludeAsync(scope, state, unit, target, facts, cancellationToken));
     }
 
     /// <summary>
@@ -288,9 +299,11 @@ public sealed class GamePlanner(IGameStore store, IBoardCatalog boards, UnitVoca
                     && !crossed.Cliff && !crossed.Slope && !crossed.RailroadEmbankment && crossed.DepressionTerrain is null
                     && fromRead.Level.DepressionTerrain is null && targetRead.Level.DepressionTerrain is null,
 
-            // A4.11 (p. 48): a Good Order MMC has four MF, three if Inexperienced, which the model does not track. Two MF
-            // remain under either allotment after one MF spent, and under neither after three.
-            ["hasEnoughMovementFactors"] = unit.MfSpent <= 1 ? true : unit.MfSpent >= 3 ? false : null,
+            // A4.11 (p. 48) and A19.31 (p. 86): a Good Order MMC has four MF, three if Inexperienced. When the status is
+            // unknown, two MF remain under either allotment after one MF spent, and under neither after three.
+            ["hasEnoughMovementFactors"] = Experience.MfAllowance(state, unit, catalogs, vocabulary) is { } allowance
+                ? allowance - unit.MfSpent >= 2
+                : unit.MfSpent <= 1 ? true : unit.MfSpent >= 3 ? false : null,
             ["isBelowStackingLimit"] = occupants.Length == 0,
             ["hasNoSpecialRuleOrOtherModifier"] = state.SpecialRules.Count == 0,
         };
