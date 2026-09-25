@@ -10,8 +10,18 @@ public sealed record ScenarioA1TerrainBinding(
 
 public sealed record Board01Building(string Material, int Levels);
 
+/// <summary>
+/// The terrain evidence the Scenario A1 packages accept: whether a supplied binding names a supported ground-level
+/// building location. The packages are bounded to the explicit building-type overrides of the pinned board 01
+/// metadata; an implementation may read that evidence from a different source (ASL-MAP-081) but never widen it.
+/// </summary>
+public interface IScenarioA1TerrainEvidence
+{
+    bool IsSupportedGroundLevel(ScenarioA1TerrainBinding? binding);
+}
+
 /// <summary>Only the explicit building-type overrides in VASL board 01 metadata.</summary>
-public sealed class Board01TerrainCatalog
+public sealed class Board01TerrainCatalog : IScenarioA1TerrainEvidence
 {
     public const string BoardId = "01";
     public const string BoardVersion = "6.9";
@@ -63,7 +73,7 @@ public sealed class Board01TerrainCatalog
 
 /// <summary>Checks supplied snapshot terrain claims against the pinned board 01 overrides.</summary>
 public sealed class Board01ValidatedSnapshotSource(
-    IScenarioA1BoardSnapshotSource source, Board01TerrainCatalog catalog)
+    IScenarioA1BoardSnapshotSource source, IScenarioA1TerrainEvidence catalog)
     : IScenarioA1BoardSnapshotSource
 {
     public async ValueTask<ScenarioA1BoardSnapshot?> ReadAsync(Guid tenantId,

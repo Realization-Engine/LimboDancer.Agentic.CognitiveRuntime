@@ -29,7 +29,7 @@ public interface IScenarioA1PostRevealSnapshotSource
 
 /// <summary>Projects only fully resolved, ordinary board 01 entry attempts.</summary>
 public sealed class ScenarioA1PostRevealObservationProvider(
-    IScenarioA1PostRevealSnapshotSource source, Board01TerrainCatalog terrain)
+    IScenarioA1PostRevealSnapshotSource source, IScenarioA1TerrainEvidence terrain)
     : IObservationProvider
 {
     public const string QueryKind = "scenario-a1-post-reveal-location";

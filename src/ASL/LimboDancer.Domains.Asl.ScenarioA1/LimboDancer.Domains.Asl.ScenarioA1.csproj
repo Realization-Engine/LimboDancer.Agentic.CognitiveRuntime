@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../LimboDancer/LimboDancer.Abstractions/LimboDancer.Abstractions.csproj" />
+    <ProjectReference Include="../LimboDancer.Domains.Asl.Maps/LimboDancer.Domains.Asl.Maps.csproj" />
     <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.first-case-review-decision.json" LogicalName="ScenarioA1.review.json" />
     <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.occupied-case-matrix.json" LogicalName="ScenarioA1.matrix.json" />
     <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.occupied-pdf-comparison.json" LogicalName="ScenarioA1.occupied-comparison.json" />

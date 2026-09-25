@@ -47,7 +47,7 @@ public interface IScenarioA1ConcealedSmcOverrunSnapshotSource
 
 /// <summary>Projects a single exact reviewed case from supplied state after board terrain validation.</summary>
 public sealed class ScenarioA1ConcealedSmcOverrunObservationProvider(
-    IScenarioA1ConcealedSmcOverrunSnapshotSource source, Board01TerrainCatalog terrain)
+    IScenarioA1ConcealedSmcOverrunSnapshotSource source, IScenarioA1TerrainEvidence terrain)
     : IObservationProvider
 {
     public const string QueryKind = "scenario-a1-concealed-smc-overrun-location";

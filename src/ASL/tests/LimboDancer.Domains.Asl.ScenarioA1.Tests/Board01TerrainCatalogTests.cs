@@ -56,6 +56,24 @@ public sealed class Board01TerrainCatalogTests
     }
 
     [Fact]
+    public async Task TerrainReadThroughTheMapReadApiAdmitsTheSameCases()
+    {
+        // ASL-MAP-081: the same reviewed cases, with the evidence read from board 01 through the map read API.
+        var read = new BoardCatalogTerrainEvidence(
+            new LimboDancer.Domains.Asl.Maps.Read.InMemoryBoardCatalog([Board01Fixture.Handle()]));
+        foreach (var (caseId, snapshot) in AdmittedSnapshots())
+        {
+            var result = await Provider(snapshot, read).ObserveAsync(Query());
+            Assert.Equal("asl.a1.board.exact-case:" + caseId, Assert.Single(result.ReasonCodes));
+        }
+
+        var disagreeing = new BoardCatalogTerrainEvidence(
+            new LimboDancer.Domains.Asl.Maps.Read.InMemoryBoardCatalog(
+                [Board01Fixture.Handle(changed: ("E4", "Wooden Building"))]));
+        Assert.Empty((await Provider(Snapshot(), disagreeing).ObserveAsync(Query())).Observations);
+    }
+
+    [Fact]
     public async Task ChangedBoardIdentityUnknownHexOverlayOrUnsupportedLevelCannotSupplyTerrain()
     {
         var initial = Snapshot();
@@ -223,9 +241,10 @@ public sealed class Board01TerrainCatalogTests
             [Entity("squad"), Entity("bd01:E4:0")], [observation]);
     }
 
-    private static ScenarioA1BoardObservationProvider Provider(ScenarioA1BoardSnapshot snapshot) =>
+    private static ScenarioA1BoardObservationProvider Provider(ScenarioA1BoardSnapshot snapshot,
+        IScenarioA1TerrainEvidence? terrain = null) =>
         new(new Board01ValidatedSnapshotSource(new StubSource(snapshot),
-            new Board01TerrainCatalog()));
+            terrain ?? new Board01TerrainCatalog()));
 
     private static (string CaseId, ScenarioA1BoardSnapshot Snapshot)[] AdmittedSnapshots()
     {
