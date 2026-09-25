@@ -77,6 +77,7 @@ public sealed class PlayTests : IDisposable
             ["asl:captured"] = false,
             ["asl:melee"] = false,
             ["asl:ti"] = false,
+            ["asl:disrupted"] = false,
             ["asl:concealed"] = concealed,
             ["asl:hidden"] = hidden,
         },
@@ -439,7 +440,8 @@ public sealed class PlayTests : IDisposable
     [Fact]
     public void TheActionsAreRegisteredWritesThatNeedConfirmation()
     {
-        Assert.Equal(["asl.game.setup", "asl.game.advance-phase", "asl.game.enter-empty-building"], GameActions.All.Select(action => action.Id.Value));
+        Assert.Equal(["asl.game.setup", "asl.game.advance-phase", "asl.game.enter-empty-building", "asl.game.enter-building"],
+            GameActions.All.Select(action => action.Id.Value));
         Assert.All(GameActions.All, action => Assert.Equal(Abstractions.Actions.ActionReversibility.Irreversible, action.Risk.Reversibility));
         var precondition = Assert.Single(GameActions.EnterEmptyBuilding.Preconditions);
         Assert.Contains(ScenarioA1Package.Identity.ToString(), precondition.Parameters.GetRawText(), StringComparison.Ordinal);

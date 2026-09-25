@@ -215,6 +215,21 @@ public static class GameEventReader
                 return action is null ? null : new LineageRecorded(action.Value, fields.StringList(payload, "consumed", path), produced);
             case "instance-eliminated":
                 return fields.RequiredString(payload, "id", path) is { } eliminated ? new InstanceEliminated(eliminated) : null;
+            case "entry-attempted":
+                var attemptingId = fields.RequiredString(payload, "id", path);
+                var attemptTarget = ReadLocation(payload, "target", path, fields, diagnostics);
+                var attemptMf = fields.OptionalInteger(payload, "mf", path);
+                return attemptingId is null || attemptTarget is null || attemptMf is null
+                    ? Missing(diagnostics, "An attempt names the unit, its target location, and its MF.", path)
+                    : new EntryAttempted(attemptingId, attemptTarget, attemptMf.Value);
+            case "entry-forced-back":
+                var forcedId = fields.RequiredString(payload, "id", path);
+                var forcedAttempt = fields.RequiredString(payload, "attempt", path);
+                var returnedTo = ReadLocation(payload, "returnedTo", path, fields, diagnostics);
+                var forcedMf = fields.OptionalInteger(payload, "mf", path);
+                return forcedId is null || forcedAttempt is null || returnedTo is null || forcedMf is null
+                    ? Missing(diagnostics, "A forced back names the unit, its attempt, the location it returns to, and its MF.", path)
+                    : new EntryForcedBack(forcedId, forcedAttempt, returnedTo, forcedMf.Value, fields.OptionalBoolean(payload, "followOnFireResolved", path));
             case "instance-captured":
                 var captured = fields.RequiredString(payload, "id", path);
                 var custodian = fields.RequiredString(payload, "custodian", path);
@@ -258,6 +273,22 @@ public static class GameEventReader
             var other => Invalid<HoldingRole>(diagnostics, $"'{other}' is not possessed, manned, or towed.", path),
         };
         return holder is null || role is null ? null : new Holding(holder, role.Value);
+    }
+
+    private static BoardLocation? ReadLocation(JsonElement item, string name, string path, JsonFields fields, List<UnitDiagnostic> diagnostics)
+    {
+        if (fields.RequiredString(item, name, path) is not { } text)
+        {
+            return null;
+        }
+
+        if (!BoardLocation.TryParse(text, out var location))
+        {
+            diagnostics.Add(UnitDiagnostic.Error(Code, $"'{text}' is not a location such as bd01:E4:0.", path + "." + name));
+            return null;
+        }
+
+        return location;
     }
 
     private static Position? ReadPosition(JsonElement item, string name, string path, JsonFields fields, List<UnitDiagnostic> diagnostics)

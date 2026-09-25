@@ -102,6 +102,11 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
 
     private static bool EffectHolds(GameState state, GamePlan plan) => plan.Events[^1].Payload switch
     {
+        // A forced back: the mover is where it started, with its movement ended, and every defender the plan revealed is known.
+        EntryForcedBack forced => state.Unit(forced.Id) is { MovementEnded: true } unit && state.Location(unit.Id)?.Location == forced.ReturnedTo
+            && plan.Events.Select(item => item.Payload).OfType<ConditionsChanged>().All(changed => state.Unit(changed.Id) is { } revealed
+                && GameState.Condition(revealed, Conditions.Concealed) == ConditionState.False
+                && GameState.Condition(revealed, Conditions.Hidden) == ConditionState.False),
         InstanceMoved moved => state.Unit(moved.Id) is { } unit && state.Location(unit.Id) is { } at
             && moved.Position is MapPosition target && at.Location == target.Location,
         PhaseChanged phase => state.Phase == phase.Phase && state.PhasingSide == phase.PhasingSide && state.Turn == phase.Turn,
@@ -135,6 +140,15 @@ public sealed class ConfirmationPolicy(IExecutionRiskPolicy inner) : IExecutionR
         lock (confirmed)
         {
             confirmed.Add(correlation.Value);
+        }
+    }
+
+    /// <summary>Whether the proposal with this correlation id is confirmed and not yet used.</summary>
+    public bool IsConfirmed(CorrelationId correlation)
+    {
+        lock (confirmed)
+        {
+            return confirmed.Contains(correlation.Value);
         }
     }
 
@@ -218,6 +232,16 @@ public sealed class GamePlay
         ArgumentNullException.ThrowIfNull(action);
         ArgumentNullException.ThrowIfNull(principal);
         var plan = await planner.PlanAsync(action, arguments, principal.TenantId, cancellationToken);
+
+        // A withheld entry is only declared when proposed: running the gate would tell the mover's side whether the
+        // target hides a unit. The gate runs, and decides, when the entry is confirmed (Occupied and Concealed Entry
+        // Design, section 7). A refusal that depends only on the mover and the terrain reveals nothing, so it is denied now.
+        if (!confirmation.IsConfirmed(correlation) && plan.Disclosure is { Withheld: true, MoverReasons.Count: 0 }
+            && plan.Status is GamePlanStatus.Ready or GamePlanStatus.Refused)
+        {
+            return new PlayResult(PlayOutcome.NeedsConfirmation, correlation, plan.Reasons, plan);
+        }
+
         var context = new RuntimeExecutionContext(RuntimeInvocationId.New(), correlation, principal.TenantId, principal,
             new RuntimeBudget(10, DateTimeOffset.UtcNow.AddMinutes(1), null, null, 10, 1));
         var selected = new SelectedAction(new ActionCandidate("play", action, arguments), SelectionOrigin.DirectedCaller);

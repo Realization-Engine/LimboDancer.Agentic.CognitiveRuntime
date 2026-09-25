@@ -282,14 +282,20 @@ public sealed class CaseReader(IGameSource games, IBoardCatalog boards, Vocabula
             LineageRecorded lineage => lineage.Consumed.Any(ids.Contains) || lineage.Produced.Any(produced => ids.Contains(produced.Id) || AtLocation(produced.Position)),
             InstanceEliminated eliminated => ids.Contains(eliminated.Id),
             InstanceCaptured captured => ids.Contains(captured.Id) || ids.Contains(captured.Custodian),
+            EntryAttempted attempted => ids.Contains(attempted.Id) || locations.Contains(attempted.Target),
+            EntryForcedBack forced => ids.Contains(forced.Id) || locations.Contains(forced.ReturnedTo),
             _ => false,
         };
     }
 
-    /// <summary>A reveal: concealment or hidden placement lost (A12.15, p. 78; A12.3, p. 80).</summary>
+    /// <summary>
+    /// A reveal: concealment or hidden placement lost (A12.15, p. 78; A12.3, p. 80). A hidden unit placed beneath a "?"
+    /// becomes concealed, which is not a reveal.
+    /// </summary>
     private static bool IsReveal(GameEvent item) =>
-        item.Payload is ConditionsChanged changed && changed.Conditions.Any(pair =>
-            pair.Key is Conditions.Concealed or Conditions.Hidden && pair.Value == ConditionState.False);
+        item.Payload is ConditionsChanged changed
+        && changed.Conditions.Any(pair => pair.Key is Conditions.Concealed or Conditions.Hidden && pair.Value == ConditionState.False)
+        && !changed.Conditions.Any(pair => pair.Key == Conditions.Concealed && pair.Value == ConditionState.True);
 
     private static CaseReadResult Fail(CaseReadStatus status, string code, string reason) => new(status, code, reason, null);
 }

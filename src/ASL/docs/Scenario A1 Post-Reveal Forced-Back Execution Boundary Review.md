@@ -44,7 +44,7 @@ A live game may commit the forced back only when every one of these holds. Each 
 | Return hazard (A12.15) | Why a live game excludes it |
 |---|---|
 | Residual FP, FFE | The live source has no fire or artillery event, so none can exist. The planner also refuses if an entity of either kind is at the return location. |
-| Minefield, Wire, entrenchment, shellhole | Setup places only catalog definitions, so none can be placed. The planner also refuses if an entity of those kinds is at the return location. |
+| Minefield, Wire, entrenchment, shellhole | Setup can place fortification entities by kind (corrected at build: an earlier version of this review said it could not). The planner refuses if any fortification, Residual FP, or fire entity is at the return location. |
 | Depression | Derived from the map: the planner requires the return location to have no depression terrain, as the first case already does |
 | Defensive First Fire and Snap Shots on return | Opportunities, not effects. The forced back does not decide them, and the event records that follow-on fire is unresolved. When Fire becomes an action, it must be able to act on this return. |
 
