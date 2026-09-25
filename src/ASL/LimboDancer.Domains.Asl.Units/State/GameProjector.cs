@@ -11,7 +11,7 @@ namespace LimboDancer.Domains.Asl.Units.State;
 public static class GameProjector
 {
     public static GameHistory Project(IReadOnlyList<GameEvent> events, UnitVocabulary vocabulary, IReadOnlyList<UnitCatalog> catalogs,
-        ILocationChains? chains = null)
+        ILocationChains? chains = null, IReadOnlyCollection<string>? liveSources = null)
     {
         ArgumentNullException.ThrowIfNull(events);
         ArgumentNullException.ThrowIfNull(vocabulary);
@@ -23,7 +23,7 @@ public static class GameProjector
             diagnostics.Add(UnitDiagnostic.Warning("UNIT-STATE-020", "No location chains were given, so map positions are not checked against the boards in play."));
         }
 
-        var replay = new Replay(vocabulary, catalogs, chains, diagnostics);
+        var replay = new Replay(vocabulary, catalogs, chains, liveSources ?? [], diagnostics);
         foreach (var gameEvent in events)
         {
             var errors = Errors(diagnostics);
@@ -42,7 +42,8 @@ public static class GameProjector
     private static int Errors(List<UnitDiagnostic> diagnostics) =>
         diagnostics.Count(diagnostic => diagnostic.Severity == UnitDiagnosticSeverity.Error);
 
-    private sealed class Replay(UnitVocabulary vocabulary, IReadOnlyList<UnitCatalog> catalogs, ILocationChains? chains, List<UnitDiagnostic> diagnostics)
+    private sealed class Replay(UnitVocabulary vocabulary, IReadOnlyList<UnitCatalog> catalogs, ILocationChains? chains, IReadOnlyCollection<string> liveSources,
+        List<UnitDiagnostic> diagnostics)
     {
         private readonly HashSet<string> eventIds = new(StringComparer.Ordinal);
         private UnitCatalog? catalog;
@@ -125,10 +126,10 @@ public static class GameProjector
 
         private GameState? Start(GameEvent gameEvent, GameStarted started)
         {
-            if (!started.Synthetic)
+            if (!started.Synthetic && !liveSources.Contains(gameEvent.Source, StringComparer.Ordinal))
             {
-                // ASL-UNIT-050: until a live source is chosen (D2), all unit state is labelled synthetic.
-                return Fail<GameState>("UNIT-STATE-017", "No live game source has been chosen, so a game must be synthetic.");
+                // ASL-UNIT-050, D2: a game that is not synthetic must come from an accepted live source.
+                return Fail<GameState>("UNIT-STATE-017", $"'{gameEvent.Source}' is not an accepted live game source, so the game must be synthetic.");
             }
 
             if (started.Sides.Count == 0 || started.Sides.Select(side => side.Id).Distinct(StringComparer.Ordinal).Count() != started.Sides.Count
@@ -166,7 +167,12 @@ public static class GameProjector
             }
 
             var state = new GameState(gameEvent.Scope, gameEvent.Revision, gameEvent.Time, started.Synthetic, started.Sides, started.Map,
-                catalog.Identity, started.Turn, started.Phase, started.PhasingSide, [], [], []);
+                catalog.Identity, started.Turn, started.Phase, started.PhasingSide, [], [], [])
+            {
+                SpecialRules = started.SpecialRules,
+                FirstSide = started.PhasingSide,
+                Source = gameEvent.Source,
+            };
             return CheckPhase(state, started.Turn, started.Phase, started.PhasingSide) ? state : null;
         }
 
