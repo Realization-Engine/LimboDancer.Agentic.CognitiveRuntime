@@ -118,5 +118,12 @@ public sealed record DiceRolled(string Roll, string Purpose, int Count, int Side
     public const string SystemSource = "system";
 }
 
+/// <summary>
+/// <c>random-selection</c>: which unit each die of a Random Selection roll belongs to (A.9, p. 43), for an open entry
+/// attempt (A12.15, p. 78). <paramref name="Subjects"/> are in die order. The units with the highest value are the ones
+/// the attempt reveals. It is visible only to the side whose units are selected, since it names concealed units.
+/// </summary>
+public sealed record RandomSelection(string Roll, string Attempt, IReadOnlyList<string> Subjects) : EventPayload;
+
 /// <summary><c>instance-captured</c>: a unit becomes a prisoner in the custody of an enemy unit (A20.2, A20.5).</summary>
 public sealed record InstanceCaptured(string Id, string Custodian) : EventPayload;

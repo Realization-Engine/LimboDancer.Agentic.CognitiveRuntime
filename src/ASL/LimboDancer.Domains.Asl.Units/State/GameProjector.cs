@@ -46,8 +46,7 @@ public static class GameProjector
         List<UnitDiagnostic> diagnostics)
     {
         private readonly HashSet<string> eventIds = new(StringComparer.Ordinal);
-        private readonly Dictionary<string, EntryAttempted> openAttempts = new(StringComparer.Ordinal);
-        private readonly HashSet<string> rolls = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, DiceRolled> rolls = new(StringComparer.Ordinal);
         private UnitCatalog? catalog;
         private string path = string.Empty;
 
@@ -75,6 +74,7 @@ public static class GameProjector
                 EntryAttempted attempted => Attempt(previous, attempted, gameEvent.EventId),
                 EntryForcedBack forced => ForceBack(previous, forced, gameEvent.Causes),
                 DiceRolled rolled => Roll(previous, rolled),
+                RandomSelection selection => Select(previous, selection),
                 _ => Fail<GameState>("UNIT-STATE-001", $"'{gameEvent.Type}' has no projection."),
             };
 
@@ -188,9 +188,13 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-015", $"Turn {change.Turn} is before the current turn {state.Turn}.");
             }
 
-            // MF are spent within a phase, so a new phase starts every unit at none spent and free to move; an attempt
-            // left open cannot be resolved in a later phase.
-            openAttempts.Clear();
+            // An entry attempt is resolved within its phase: the phase may not change while one is open.
+            if (state.OpenAttempts.Count > 0)
+            {
+                return Fail<GameState>("UNIT-STATE-018", $"The entry attempt '{state.OpenAttempts[0].EventId}' is open, so the phase may not change.");
+            }
+
+            // MF are spent within a phase, so a new phase starts every unit at none spent and free to move.
             return CheckPhase(state, change.Turn, change.Phase, change.PhasingSide)
                 ? state with
                 {
@@ -327,6 +331,11 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-018", $"'{item.Id}' may not move again this phase (A4.1, p. 48).");
             }
 
+            if (state.OpenAttempts.Any(open => open.Unit == item.Id))
+            {
+                return Fail<GameState>("UNIT-STATE-018", $"'{item.Id}' has an open entry attempt, so it may not move.");
+            }
+
             if (move.Mf is < 0)
             {
                 return Fail<GameState>("UNIT-STATE-010", "A move cannot spend negative MF.");
@@ -368,6 +377,11 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-018", $"'{unit.Id}' may not move again this phase (A4.1, p. 48).");
             }
 
+            if (state.OpenAttempts.Any(open => open.Unit == unit.Id))
+            {
+                return Fail<GameState>("UNIT-STATE-018", $"'{unit.Id}' already has an open entry attempt.");
+            }
+
             if (attempt.Mf < 0)
             {
                 return Fail<GameState>("UNIT-STATE-010", "An attempt cannot cost negative MF.");
@@ -378,14 +392,58 @@ public static class GameProjector
                 return null;
             }
 
-            openAttempts[eventId] = attempt;
-            return state;
+            return state with
+            {
+                OpenAttempts = [.. state.OpenAttempts, new OpenAttempt(eventId, unit.Id, attempt.Target, attempt.Mf)]
+            };
+        }
+
+        /// <summary>
+        /// A Random Selection for an open attempt (A.9, p. 43): its roll is recorded, has one die per subject, and every
+        /// subject is an active unit at the attempt's target. The units with the highest value must be the ones revealed.
+        /// </summary>
+        private GameState? Select(GameState state, RandomSelection selection)
+        {
+            if (state.OpenAttempts.FirstOrDefault(open => open.EventId == selection.Attempt) is not { } attempt)
+            {
+                return Fail<GameState>("UNIT-STATE-020", $"'{selection.Attempt}' is not an open entry attempt.");
+            }
+
+            if (attempt.Revealing.Count > 0)
+            {
+                return Fail<GameState>("UNIT-STATE-020", $"The attempt '{attempt.EventId}' already has a Random Selection.");
+            }
+
+            if (!rolls.TryGetValue(selection.Roll, out var roll))
+            {
+                return Fail<GameState>("UNIT-STATE-020", $"'{selection.Roll}' is not a recorded roll.");
+            }
+
+            if (selection.Subjects.Count != roll.Count || selection.Subjects.Distinct(StringComparer.Ordinal).Count() != selection.Subjects.Count)
+            {
+                return Fail<GameState>("UNIT-STATE-020", $"A selection names one distinct unit for each of the {roll.Count} dice.");
+            }
+
+            foreach (var subject in selection.Subjects)
+            {
+                if (state.Unit(subject) is not { Status: InstanceStatus.Active } || state.Location(subject)?.Location != attempt.Target)
+                {
+                    return Fail<GameState>("UNIT-STATE-020", $"'{subject}' is not an active unit at {attempt.Target}.");
+                }
+            }
+
+            var highest = roll.Values.Max();
+            string[] revealing = [.. selection.Subjects.Where((_, index) => roll.Values[index] == highest)];
+            return state with
+            {
+                OpenAttempts = [.. state.OpenAttempts.Select(open => open.EventId == attempt.EventId ? open with { Revealing = revealing } : open)]
+            };
         }
 
         /// <summary>The unit returns to where it is, the attempt's MF are spent there, and its movement ends (A12.15, p. 78).</summary>
         private GameState? ForceBack(GameState state, EntryForcedBack forced, IReadOnlyList<string> causes)
         {
-            if (!openAttempts.TryGetValue(forced.Attempt, out var attempt) || attempt.Id != forced.Id)
+            if (state.OpenAttempts.FirstOrDefault(open => open.EventId == forced.Attempt) is not { } attempt || attempt.Unit != forced.Id)
             {
                 return Fail<GameState>("UNIT-STATE-018", $"'{forced.Attempt}' is not an open entry attempt by '{forced.Id}'.");
             }
@@ -405,13 +463,21 @@ public static class GameProjector
                 return null;
             }
 
+            if (attempt.Revealing.FirstOrDefault(id => state.Unit(id) is { } selected
+                && (GameState.Condition(selected, Conditions.Concealed) != ConditionState.False || GameState.Condition(selected, Conditions.Hidden) == ConditionState.True)) is { } unrevealed)
+            {
+                return Fail<GameState>("UNIT-STATE-020", $"'{unrevealed}' was selected for the reveal but is still concealed.");
+            }
+
             if (state.Location(unit.Id)?.Location != forced.ReturnedTo)
             {
                 return Fail<GameState>("UNIT-STATE-018", $"'{unit.Id}' is not at {forced.ReturnedTo}, the location it is forced back to.");
             }
 
-            openAttempts.Remove(forced.Attempt);
-            return Replace(state, unit with
+            return Replace(state with
+            {
+                OpenAttempts = [.. state.OpenAttempts.Where(open => open.EventId != attempt.EventId)]
+            }, unit with
             {
                 MfSpent = unit.MfSpent + forced.Mf,
                 MovementEnded = true
@@ -439,7 +505,7 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-019", $"Every value of a roll is between 1 and {roll.Sides}.");
             }
 
-            if (!rolls.Add(roll.Roll))
+            if (!rolls.TryAdd(roll.Roll, roll))
             {
                 return Fail<GameState>("UNIT-STATE-019", $"The roll '{roll.Roll}' is recorded twice.");
             }
@@ -494,6 +560,14 @@ public static class GameProjector
             if (!CheckConditions(merged))
             {
                 return null;
+            }
+
+            // A Random Selection decides which units an attempt reveals (A.9, p. 43): no other unit at its target loses concealment.
+            var revealed = change.Conditions.TryGetValue(Conditions.Concealed, out var concealed) && concealed == ConditionState.False;
+            if (revealed && state.Location(item.Id)?.Location is { } at
+                && state.OpenAttempts.FirstOrDefault(open => open.Target == at && open.Revealing.Count > 0) is { } selected && !selected.Revealing.Contains(item.Id))
+            {
+                return Fail<GameState>("UNIT-STATE-020", $"'{item.Id}' was not selected for the reveal of the attempt '{selected.EventId}'.");
             }
 
             return item switch
