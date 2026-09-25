@@ -71,11 +71,11 @@ public sealed class DocumentTests
         var vocabulary = UnitsTestData.Asl.Value;
         var catalog = UnitDocumentReader.Read(File.ReadAllBytes(Path.Combine(UnitsTestData.UnitsDirectory(), "examples", "catalog.units.json")), vocabulary);
         Assert.Empty(catalog.Diagnostics);
-        Assert.Equal(21, catalog.Documents.Count);
+        Assert.Equal(33, catalog.Documents.Count);
         var set = UnitPlacementSetReader.Read(File.ReadAllBytes(Path.Combine(UnitsTestData.UnitsDirectory(), "examples", "bd01-demo.units.json")), vocabulary);
         Assert.Empty(set.Diagnostics);
         Assert.True(set.Set!.Synthetic);
-        Assert.Equal(6, set.Set.Units.Count);
+        Assert.Equal(9, set.Set.Units.Count);
         Assert.Equal(["bd01"], set.Set.Boards.Select(board => board.Value));
     }
 
@@ -83,7 +83,7 @@ public sealed class DocumentTests
     public void TheExamplesAreEmbeddedInTheUnitsAssembly()
     {
         var vocabulary = UnitsTestData.Asl.Value;
-        Assert.Equal(21, UnitExamples.Catalog(vocabulary).Count);
+        Assert.Equal(33, UnitExamples.Catalog(vocabulary).Count);
         var set = Assert.Single(UnitExamples.PlacementSets(vocabulary));
         Assert.Empty(set.Diagnostics);
         Assert.Equal("bd01-demo", set.Set!.SetId);

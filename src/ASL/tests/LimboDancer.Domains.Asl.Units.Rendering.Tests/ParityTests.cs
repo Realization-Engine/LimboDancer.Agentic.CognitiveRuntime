@@ -52,6 +52,18 @@ public sealed class ParityTests
           "faces": { "front": { "designation": "PzKpfw IVH", "identity": "A", "movement-type": "fully-tracked", "movement-points": 12, "amphibious-mp": 5, "af-front": 8, "af-side": 3, "ma-type": "t", "caliber": 75, "caliber-suffix": "ll", "rate-of-fire": 1, "breakdown": 11, "special-ammo": ["A4"], "sa-mount": "bow", "sa-caliber": 37, "towing": 3, "passenger-capacity": 4, "bmg": 2, "cmg": 4, "aamg": 1, "vehicle-ft-mount": "bow", "vehicle-ft-firepower": 24, "vehicle-ft-removal": 10 }, "wreck": { "crew-survival": 7 } } }
         """;
 
+    private const string Sniper = """{ "id": "u", "kind": "asl:sniper", "side": "german", "faces": { "front": { }, "pinned": { } }, "unit": { "san": 3 } }""";
+
+    private const string Minefield = """{ "id": "u", "kind": "asl:minefield", "side": "german", "faces": { "front": { "ap-strength": 6, "at-strength": 2 } } }""";
+
+    private const string Pillbox = """{ "id": "u", "kind": "asl:pillbox", "side": "german", "facing": "west", "faces": { "front": { "capacity": 1, "ca-defense": 5, "nca-defense": 7 } } }""";
+
+    private const string Smoke = """{ "id": "u", "kind": "asl:smoke", "faces": { "front": { "hindrance": 3 }, "dispersed": { "hindrance": 2 } } }""";
+
+    private const string Fire = """{ "id": "u", "kind": "asl:fire", "faces": { "front": { }, "flame": { "clearance-number": 6, "hamper-number": 4 } } }""";
+
+    private const string Trench = """{ "id": "u", "kind": "asl:trench", "side": "russian" }""";
+
     /// <summary>Each row: without the fact, with it, the face to show (or null), and where the difference is under classic and digital.</summary>
     public static TheoryData<string, string, string, string?, string, string> Rows() => new()
     {
@@ -181,6 +193,33 @@ public sealed class ParityTests
         { "Motion", Vehicle, WithStates(Vehicle, "asl:motion"), null, "badge", "badge" },
         { "Buttoned Up", Vehicle, WithStates(Vehicle, "asl:bu"), null, "badge", "badge" },
         { "Crew Exposed", Vehicle, WithStates(Vehicle, "asl:ce"), null, "badge", "badge" },
+
+        // 4.6 Entities that are not units.
+        { "Sniper counter", Trench, Sniper, null, "slot:label", "slot:label" },
+        { "Pinned Sniper side", Sniper, WithStates(Sniper, "asl:pinned"), null, "face", "face" },
+        { "Sniper Activation Number", Sniper.Replace(", \"unit\": { \"san\": 3 }", "", StringComparison.Ordinal), Sniper, null, "details", "badge" },
+        { "Foxhole capacity", """{ "id": "u", "kind": "asl:foxhole", "faces": { "front": { "capacity": 1 } } }""", """{ "id": "u", "kind": "asl:foxhole", "faces": { "front": { "capacity": 2 } } }""", null, "slot:label", "slot:label" },
+        { "A-T Ditch", Trench, """{ "id": "u", "kind": "asl:trench", "side": "russian", "faces": { "front": { "traits": ["asl:anti-tank-ditch"] } } }""", null, "slot:label", "slot:label" },
+        { "Wire", Trench, """{ "id": "u", "kind": "asl:wire", "side": "russian" }""", null, "slot:glyph", "slot:glyph" },
+        { "A-P minefield factors", Minefield.Replace("\"ap-strength\": 6, ", "", StringComparison.Ordinal), Minefield, null, "slot:ap", "slot:ap" },
+        { "A-T Mines", Minefield.Replace(", \"at-strength\": 2", "", StringComparison.Ordinal), Minefield, null, "slot:at", "slot:at" },
+        { "Known Minefield", Minefield, WithTrait(Minefield, "front", "asl:known-minefield"), null, "slot:label", "slot:label" },
+        { "Dummy minefield", Minefield, WithTrait(Minefield, "front", "asl:dummy-minefield"), null, "slot:label", "slot:label" },
+        { "Roadblock hexside", """{ "id": "u", "kind": "asl:roadblock" }""", """{ "id": "u", "kind": "asl:roadblock", "hexside": "south-west" }""", null, "slot:glyph", "direction" },
+        { "Pillbox stacking capacity", Pillbox.Replace("\"capacity\": 1, ", "", StringComparison.Ordinal), Pillbox, null, "slot:cap", "slot:cap" },
+        { "Pillbox CA Defense Modification", Pillbox.Replace("\"ca-defense\": 5, ", "", StringComparison.Ordinal), Pillbox, null, "slot:ca", "slot:ca" },
+        { "Pillbox NCA Defense Modification", Pillbox.Replace(", \"nca-defense\": 7", "", StringComparison.Ordinal), Pillbox, null, "slot:nca", "slot:nca" },
+        { "Pillbox CA", Pillbox.Replace(" \"facing\": \"west\",", "", StringComparison.Ordinal), Pillbox, null, "slot:glyph", "direction" },
+        { "Fortified Building Location", Trench, """{ "id": "u", "kind": "asl:fortified-location", "side": "russian" }""", null, "slot:label", "slot:label" },
+        { "SMOKE Hindrance", Smoke.Replace("\"hindrance\": 3 }, ", "}, ", StringComparison.Ordinal), Smoke, null, "slot:hind", "slot:hind" },
+        { "White Phosphorus", Smoke, WithTrait(Smoke, "front", "asl:white-phosphorus"), null, "slot:label", "slot:label" },
+        { "Dispersed SMOKE", Smoke, WithStates(Smoke, "asl:dispersed"), null, "face", "face" },
+        { "Residual FP", """{ "id": "u", "kind": "asl:residual", "faces": { "front": { "residual-fp": 4 } } }""", """{ "id": "u", "kind": "asl:residual", "faces": { "front": { "residual-fp": 8 } } }""", null, "slot:value", "slot:value" },
+        { "Flame side", Fire, WithStates(Fire, "asl:flame"), null, "face", "face" },
+        { "Clearance Number", Fire.Replace("\"clearance-number\": 6, ", "", StringComparison.Ordinal), Fire, "flame", "slot:clear", "slot:clear" },
+        { "Hamper Number", Fire.Replace(", \"hamper-number\": 4", "", StringComparison.Ordinal), Fire, "flame", "slot:hamper", "slot:hamper" },
+        { "Wreck Blaze", Fire, Fire.Replace("\"front\": { }", "\"front\": { \"traits\": [\"asl:wreck-blaze\"] }", StringComparison.Ordinal), null, "slot:label", "slot:label" },
+        { "Rubble construction", """{ "id": "u", "kind": "asl:rubble", "faces": { "front": { "construction": "stone" } } }""", """{ "id": "u", "kind": "asl:rubble", "faces": { "front": { "construction": "wooden" } } }""", null, "face", "face" },
     };
 
     [Theory]
@@ -227,7 +266,8 @@ public sealed class ParityTests
         regions["badge"] = string.Concat(own.Where(element => element.Attribute("data-badge") is not null).Select(element => element.ToString()));
         regions["face"] = string.Concat(own.Where(element => element.Attribute("data-face") is not null).Select(element => element.ToString()));
         regions["direction"] = string.Concat(own.Where(element => element.Attribute("data-facing") is not null || element.Attribute("data-covered-arc") is not null ||
-                element.Attribute("data-turret-facing") is not null || element.Attribute("data-turret-arc") is not null)
+                element.Attribute("data-turret-facing") is not null || element.Attribute("data-turret-arc") is not null ||
+                element.Attribute("data-hexside") is not null)
             .Select(element => element.ToString()));
         regions["details"] = string.Join("\n", UnitLabels.Details(document, RenderingTestData.Vocabulary.Value, face));
         return regions;

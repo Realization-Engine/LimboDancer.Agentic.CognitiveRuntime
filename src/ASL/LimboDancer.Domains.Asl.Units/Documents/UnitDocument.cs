@@ -60,7 +60,8 @@ public sealed record UnitDocument(
     bool Concealed = false,
     int? SizeClass = null,
     UnitFacing? Facing = null,
-    UnitFacing? TurretFacing = null)
+    UnitFacing? TurretFacing = null,
+    UnitHexside? Hexside = null)
 {
     public UnitFace? Face(string name) => Faces.FirstOrDefault(face => face.Name == name);
 

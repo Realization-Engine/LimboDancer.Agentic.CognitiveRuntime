@@ -46,6 +46,12 @@ public sealed class UnitDraft
         get; set;
     }
 
+    /// <summary>The hexside pointed at, for kinds such as roadblocks (B29.1).</summary>
+    public UnitHexside? Hexside
+    {
+        get; set;
+    }
+
     /// <summary>Form text by face, then by qualified attribute name.</summary>
     public Dictionary<string, Dictionary<string, string>> Faces { get; } = new(StringComparer.Ordinal);
 
@@ -141,6 +147,7 @@ public sealed class UnitDraft
             StackOrder = document.StackOrder,
             Facing = document.Facing,
             TurretFacing = document.TurretFacing,
+            Hexside = document.Hexside,
         };
         foreach (var face in document.Faces)
         {
@@ -202,6 +209,11 @@ public sealed class UnitDraft
         if (location is not null)
         {
             writer.WriteString("location", location);
+        }
+
+        if (Hexside is { } hexside && !Concealed && vocabulary.HasKind(Kind) && vocabulary.HasHexside(Kind))
+        {
+            writer.WriteString("hexside", hexside.Name());
         }
 
         if (Facing is { } facing && !Concealed && vocabulary.HasKind(Kind) && vocabulary.HasFacing(Kind))

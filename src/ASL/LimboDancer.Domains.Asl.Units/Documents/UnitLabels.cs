@@ -34,6 +34,11 @@ public static class UnitLabels
             parts.Add("turret facing " + turret.Label());
         }
 
+        if (document.Hexside is { } hexside)
+        {
+            parts.Add("across the " + hexside.Name() + " hexside");
+        }
+
         parts.AddRange(document.States.Select(state => vocabulary.TryGetState(state, out var definition) ? definition.Label : state));
         if (document.Attached.Count > 0)
         {
@@ -86,6 +91,11 @@ public static class UnitLabels
         if (document.TurretFacing is { } turretFacing)
         {
             rows.Add(new("Turret facing", turretFacing.Label() + " hexspine"));
+        }
+
+        if (document.Hexside is { } hexsideRow)
+        {
+            rows.Add(new("Hexside", hexsideRow.Name()));
         }
 
         if (document.Face(shown) is { } current)

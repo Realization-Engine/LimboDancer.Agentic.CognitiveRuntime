@@ -1,6 +1,6 @@
 [
   {
-    "vocabulary": ["asl@1.2.0"],
+    "vocabulary": ["asl@1.3.0"],
     "id": "example-squad",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:squad",
@@ -22,7 +22,7 @@
     ]
   },
   {
-    "vocabulary": ["asl@1.2.0"],
+    "vocabulary": ["asl@1.3.0"],
     "id": "example-half-squad",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:half-squad",
@@ -33,7 +33,7 @@
     }
   },
   {
-    "vocabulary": ["asl@1.2.0"],
+    "vocabulary": ["asl@1.3.0"],
     "id": "example-crew",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:crew",
@@ -44,7 +44,7 @@
     }
   },
   {
-    "vocabulary": ["asl@1.2.0"],
+    "vocabulary": ["asl@1.3.0"],
     "id": "example-leader",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:leader",
@@ -55,7 +55,7 @@
     }
   },
   {
-    "vocabulary": ["asl@1.2.0"],
+    "vocabulary": ["asl@1.3.0"],
     "id": "example-hero",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:hero",
@@ -66,7 +66,7 @@
     }
   },
   {
-    "vocabulary": ["asl@1.2.0"],
+    "vocabulary": ["asl@1.3.0"],
     "id": "example-mmg",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:mg",
@@ -77,7 +77,7 @@
     }
   },
   {
-    "vocabulary": ["asl@1.2.0"],
+    "vocabulary": ["asl@1.3.0"],
     "id": "example-ft",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:ft",
@@ -87,7 +87,7 @@
     }
   },
   {
-    "vocabulary": ["asl@1.2.0"],
+    "vocabulary": ["asl@1.3.0"],
     "id": "example-dc",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:dc",
@@ -95,7 +95,7 @@
     "faces": { "front": { "firepower": 30, "portage": 2 } }
   },
   {
-    "vocabulary": ["asl@1.2.0"],
+    "vocabulary": ["asl@1.3.0"],
     "id": "example-latw",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:latw",
@@ -103,7 +103,7 @@
     "faces": { "front": { "latw-type": "psk", "caliber": 88, "range-maximum": 4, "breakdown": 10, "portage": 2 } }
   },
   {
-    "vocabulary": ["asl@1.2.0"],
+    "vocabulary": ["asl@1.3.0"],
     "id": "example-mortar",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:light-mortar",
@@ -111,7 +111,7 @@
     "faces": { "front": { "caliber": 50, "rate-of-fire": 2, "range-minimum": 2, "range-maximum": 13, "breakdown": 12, "portage": 2, "traits": ["asl:no-ap"] } }
   },
   {
-    "vocabulary": ["asl@1.2.0"],
+    "vocabulary": ["asl@1.3.0"],
     "id": "example-radio",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:radio",
@@ -123,7 +123,7 @@
     }
   },
   {
-    "vocabulary": ["asl@1.2.0"],
+    "vocabulary": ["asl@1.3.0"],
     "id": "example-concealed",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "unit",
@@ -132,7 +132,7 @@
     "sizeClass": 3
   },
   {
-    "vocabulary": ["asl@1.2.0"],
+    "vocabulary": ["asl@1.3.0"],
     "id": "example-at-gun",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:gun",
@@ -144,7 +144,7 @@
     }
   },
   {
-    "vocabulary": ["asl@1.2.0"],
+    "vocabulary": ["asl@1.3.0"],
     "id": "example-aa-gun",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:gun",
@@ -156,7 +156,7 @@
     }
   },
   {
-    "vocabulary": ["asl@1.2.0"],
+    "vocabulary": ["asl@1.3.0"],
     "id": "example-mortar-gun",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:gun",
@@ -168,7 +168,7 @@
     }
   },
   {
-    "vocabulary": ["asl@1.2.0"],
+    "vocabulary": ["asl@1.3.0"],
     "id": "example-inf-gun",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:gun",
@@ -180,7 +180,7 @@
     }
   },
   {
-    "vocabulary": ["asl@1.2.0"],
+    "vocabulary": ["asl@1.3.0"],
     "id": "example-tank",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:vehicle",
@@ -195,7 +195,7 @@
     "states": ["asl:bu"]
   },
   {
-    "vocabulary": ["asl@1.2.0"],
+    "vocabulary": ["asl@1.3.0"],
     "id": "example-assault-gun",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:vehicle",
@@ -209,7 +209,7 @@
     }
   },
   {
-    "vocabulary": ["asl@1.2.0"],
+    "vocabulary": ["asl@1.3.0"],
     "id": "example-halftrack",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:vehicle",
@@ -223,7 +223,7 @@
     "states": ["asl:ce", "asl:motion"]
   },
   {
-    "vocabulary": ["asl@1.2.0"],
+    "vocabulary": ["asl@1.3.0"],
     "id": "example-armored-car",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:vehicle",
@@ -236,7 +236,7 @@
     }
   },
   {
-    "vocabulary": ["asl@1.2.0"],
+    "vocabulary": ["asl@1.3.0"],
     "id": "example-truck",
     "note": "Synthetic example: illustrative values, not a catalog entry.",
     "kind": "asl:vehicle",
@@ -246,5 +246,95 @@
       "front": { "designation": "2.5-ton truck", "identity": "E", "movement-type": "truck", "movement-points": 30, "target-size": "very-small",
         "towing": 10, "passenger-capacity": 9, "traits": ["asl:unarmored"] }
     }
+  },
+  {
+    "vocabulary": ["asl@1.3.0"],
+    "id": "example-sniper",
+    "note": "Synthetic example: illustrative values, not a catalog entry.",
+    "kind": "asl:sniper",
+    "side": "german",
+    "unit": { "san": 3 }
+  },
+  {
+    "vocabulary": ["asl@1.3.0"],
+    "id": "example-foxhole",
+    "note": "Synthetic example: illustrative values, not a catalog entry.",
+    "kind": "asl:foxhole",
+    "side": "russian",
+    "faces": { "front": { "capacity": 2 } }
+  },
+  {
+    "vocabulary": ["asl@1.3.0"],
+    "id": "example-trench",
+    "note": "Synthetic example: illustrative values, not a catalog entry.",
+    "kind": "asl:trench",
+    "side": "russian"
+  },
+  {
+    "vocabulary": ["asl@1.3.0"],
+    "id": "example-wire",
+    "note": "Synthetic example: illustrative values, not a catalog entry.",
+    "kind": "asl:wire",
+    "side": "german"
+  },
+  {
+    "vocabulary": ["asl@1.3.0"],
+    "id": "example-minefield",
+    "note": "Synthetic example: illustrative values, not a catalog entry.",
+    "kind": "asl:minefield",
+    "side": "german",
+    "faces": { "front": { "ap-strength": 6, "at-strength": 2, "traits": ["asl:known-minefield"] } }
+  },
+  {
+    "vocabulary": ["asl@1.3.0"],
+    "id": "example-roadblock",
+    "note": "Synthetic example: illustrative values, not a catalog entry.",
+    "kind": "asl:roadblock",
+    "side": "american",
+    "hexside": "north-east"
+  },
+  {
+    "vocabulary": ["asl@1.3.0"],
+    "id": "example-pillbox",
+    "note": "Synthetic example: illustrative values, not a catalog entry.",
+    "kind": "asl:pillbox",
+    "side": "german",
+    "facing": "west",
+    "faces": { "front": { "capacity": 1, "ca-defense": 5, "nca-defense": 7 } }
+  },
+  {
+    "vocabulary": ["asl@1.3.0"],
+    "id": "example-fortified",
+    "note": "Synthetic example: illustrative values, not a catalog entry.",
+    "kind": "asl:fortified-location",
+    "side": "russian"
+  },
+  {
+    "vocabulary": ["asl@1.3.0"],
+    "id": "example-smoke",
+    "note": "Synthetic example: illustrative values, not a catalog entry.",
+    "kind": "asl:smoke",
+    "faces": { "front": { "hindrance": 3 }, "dispersed": { "hindrance": 2 } }
+  },
+  {
+    "vocabulary": ["asl@1.3.0"],
+    "id": "example-residual",
+    "note": "Synthetic example: illustrative values, not a catalog entry.",
+    "kind": "asl:residual",
+    "faces": { "front": { "residual-fp": 4 } }
+  },
+  {
+    "vocabulary": ["asl@1.3.0"],
+    "id": "example-fire",
+    "note": "Synthetic example: illustrative values, not a catalog entry.",
+    "kind": "asl:fire",
+    "faces": { "flame": { "clearance-number": 6, "hamper-number": 4 } }
+  },
+  {
+    "vocabulary": ["asl@1.3.0"],
+    "id": "example-rubble",
+    "note": "Synthetic example: illustrative values, not a catalog entry.",
+    "kind": "asl:rubble",
+    "faces": { "front": { "construction": "stone" } }
   }
 ]

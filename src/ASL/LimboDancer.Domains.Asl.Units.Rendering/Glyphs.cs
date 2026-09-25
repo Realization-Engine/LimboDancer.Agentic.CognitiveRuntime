@@ -12,6 +12,7 @@ internal static class Glyphs
     {
         "size-figures", "mg", "ft", "dc", "radio", "mortar", "latw", "smoke", "gun", "aa-gun", "rcl", "limbered-gun",
         "tank", "halftrack", "armored-car", "truck", "motorcycle", "wreck",
+        "crosshair", "foxhole", "trench", "wire", "mines", "roadblock", "pillbox", "fortified", "fire", "rubble", "residual",
     };
 
     /// <summary>Draws a glyph in a box; returns false for an unknown name.</summary>
@@ -31,7 +32,8 @@ internal static class Glyphs
 
                 return true;
             case "mg" or "ft" or "dc" or "radio" or "mortar" or "latw" or "smoke" or "gun" or "aa-gun" or "rcl" or "limbered-gun"
-                or "tank" or "halftrack" or "armored-car" or "truck" or "motorcycle" or "wreck":
+                or "tank" or "halftrack" or "armored-car" or "truck" or "motorcycle" or "wreck"
+                or "crosshair" or "foxhole" or "trench" or "wire" or "mines" or "roadblock" or "pillbox" or "fortified" or "fire" or "rubble" or "residual":
                 Equipment(svg, name, box, color);
                 return true;
             default:
@@ -216,6 +218,62 @@ internal static class Glyphs
                 Line(0.8, 0.2, 0.2, 0.8);
                 Circle(0.5, 0.14, 0.07);
                 Circle(0.62, 0.08, 0.05);
+                break;
+            // Entities that are not units (ASL-UNIT-026). The roadblock's bar points east, so a sheet can turn it to its hexside.
+            case "crosshair":
+                Circle(0.5, 0.5, 0.3, filled: false);
+                Line(0.5, 0.06, 0.5, 0.34);
+                Line(0.5, 0.66, 0.5, 0.94);
+                Line(0.06, 0.5, 0.34, 0.5);
+                Line(0.66, 0.5, 0.94, 0.5);
+                break;
+            case "foxhole":
+                Polygon((0.1, 0.52), (0.2, 0.7), (0.8, 0.7), (0.9, 0.52), (0.78, 0.6), (0.22, 0.6));
+                break;
+            case "trench":
+                Polygon((0.04, 0.44), (0.3, 0.44), (0.4, 0.3), (0.6, 0.3), (0.7, 0.44), (0.96, 0.44), (0.96, 0.56), (0.64, 0.56), (0.56, 0.42),
+                    (0.44, 0.42), (0.36, 0.56), (0.04, 0.56));
+                break;
+            case "wire":
+                Line(0.06, 0.62, 0.94, 0.62);
+                foreach (var u in new[] { 0.14, 0.32, 0.5, 0.68, 0.86 })
+                {
+                    Line(u - 0.07, 0.36, u + 0.07, 0.62);
+                    Line(u + 0.07, 0.36, u - 0.07, 0.62);
+                }
+
+                break;
+            case "mines":
+                foreach (var (u, v) in new[] { (0.25, 0.3), (0.55, 0.25), (0.8, 0.45), (0.35, 0.62), (0.65, 0.72) })
+                {
+                    Circle(u, v, 0.08);
+                }
+
+                break;
+            case "roadblock":
+                Polygon((0.7, 0.1), (0.86, 0.1), (0.86, 0.9), (0.7, 0.9));
+                Line(0.2, 0.5, 0.62, 0.5);
+                Polygon((0.62, 0.42), (0.7, 0.5), (0.62, 0.58));
+                break;
+            case "pillbox":
+                Polygon((0.12, 0.8), (0.12, 0.42), (0.5, 0.18), (0.88, 0.42), (0.88, 0.8));
+                Line(0.3, 0.56, 0.7, 0.56);
+                break;
+            case "fortified":
+                Polygon((0.14, 0.86), (0.14, 0.3), (0.32, 0.3), (0.32, 0.18), (0.44, 0.18), (0.44, 0.3), (0.56, 0.3), (0.56, 0.18), (0.68, 0.18),
+                    (0.68, 0.3), (0.86, 0.3), (0.86, 0.86));
+                break;
+            case "fire":
+                Polygon((0.5, 0.06), (0.66, 0.34), (0.8, 0.24), (0.84, 0.6), (0.7, 0.9), (0.3, 0.9), (0.16, 0.6), (0.26, 0.36), (0.38, 0.46));
+                break;
+            case "rubble":
+                Polygon((0.1, 0.8), (0.24, 0.56), (0.4, 0.8));
+                Polygon((0.34, 0.8), (0.5, 0.44), (0.7, 0.8));
+                Polygon((0.62, 0.8), (0.76, 0.6), (0.92, 0.8));
+                break;
+            case "residual":
+                Circle(0.5, 0.5, 0.34, filled: false);
+                Circle(0.5, 0.5, 0.12);
                 break;
             case "limbered-gun":
                 Polygon((0.02, 0.47), (0.62, 0.44), (0.62, 0.56), (0.02, 0.53));

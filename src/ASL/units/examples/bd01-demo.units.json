@@ -3,7 +3,7 @@
   "setId": "bd01-demo",
   "label": "Synthetic units on board 01",
   "synthetic": true,
-  "vocabulary": ["asl@1.2.0"],
+  "vocabulary": ["asl@1.3.0"],
   "units": [
     {
       "id": "demo-a",
@@ -81,6 +81,28 @@
         "wreck": { "crew-survival": 6 }
       },
       "states": ["asl:bu"]
+    },
+    {
+      "id": "demo-g",
+      "kind": "asl:sniper",
+      "side": "russian",
+      "location": "bd01:K5:0",
+      "unit": { "san": 4 }
+    },
+    {
+      "id": "demo-h",
+      "kind": "asl:pillbox",
+      "side": "german",
+      "location": "bd01:D6:0",
+      "facing": "east",
+      "faces": { "front": { "capacity": 1, "ca-defense": 5, "nca-defense": 7 } }
+    },
+    {
+      "id": "demo-i",
+      "kind": "asl:smoke",
+      "location": "bd01:G6:0",
+      "faces": { "front": { "hindrance": 3 }, "dispersed": { "hindrance": 2 } },
+      "states": ["asl:dispersed"]
     }
   ]
 }

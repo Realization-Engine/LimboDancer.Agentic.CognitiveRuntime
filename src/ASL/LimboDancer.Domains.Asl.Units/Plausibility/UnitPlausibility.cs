@@ -64,8 +64,23 @@ public static class UnitPlausibility
             warnings.Add(new("D3.12, p. 199", "A non-turreted MA has no turret facing.", document.Id));
         }
 
+        if (Is("asl:sniper") && document.Unit.FirstOrDefault(value => value.Attribute.Name == "asl:san") is { Number: { } san } && (san < 2 || san > 7))
+        {
+            warnings.Add(new("A14.1, p. 81", $"A SAN of {san} is outside 2 to 7; a Sniper with a SAN below 2 is removed.", document.Id));
+        }
+
         foreach (var face in document.Faces)
         {
+            if (Is("asl:minefield") && face.Value("asl:ap-strength") is { Number: { } factors } && factors is not (6 or 8 or 12))
+            {
+                warnings.Add(new("B28.1, p. 148", $"An A-P minefield has 6, 8, or 12 factors, not {factors}.", document.Id));
+            }
+
+            if (Is("asl:minefield") && face.Value("asl:at-strength") is { Number: { } mines } && mines is < 1 or > 5)
+            {
+                warnings.Add(new("B28.5, p. 149", $"A-T Mines number one to five factors, not {mines}.", document.Id));
+            }
+
             if (Is("asl:vehicle"))
             {
                 foreach (var armor in new[] { "asl:af-front", "asl:af-side" })

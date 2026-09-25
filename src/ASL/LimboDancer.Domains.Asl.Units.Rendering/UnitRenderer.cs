@@ -214,6 +214,12 @@ public sealed class UnitRenderer
             DirectionArrow(svg, markFacing, centerX, centerY, size, evaluator.Color(style["direction-color"]) ?? stroke, filled: true);
         }
 
+        if (document.Hexside is { } markHexside && evaluator.Ident(style["direction-mark"]) == "arrow")
+        {
+            Arrow(svg, markHexside.Degrees(), centerX, centerY, size, evaluator.Color(style["direction-color"]) ?? stroke, filled: true,
+                ("data-hexside", markHexside.Name()));
+        }
+
         if (turret is { } turretMark)
         {
             var color = evaluator.Color(style["turret-color"]) ?? stroke;
@@ -251,9 +257,13 @@ public sealed class UnitRenderer
     /// A triangle just outside the face, pointing at the faced hexspine: filled for the hull, outlined and a little
     /// farther out for a turret facing apart from it.
     /// </summary>
-    private static void DirectionArrow(SvgWriter svg, UnitFacing facing, double centerX, double centerY, double size, string color, bool filled)
+    private static void DirectionArrow(SvgWriter svg, UnitFacing facing, double centerX, double centerY, double size, string color, bool filled) =>
+        Arrow(svg, facing.Degrees(), centerX, centerY, size, color, filled, (filled ? "data-facing" : "data-turret-facing", facing.Name()));
+
+    /// <summary>A triangle just outside the face, pointing in a direction given in SVG degrees.</summary>
+    private static void Arrow(SvgWriter svg, int degrees, double centerX, double centerY, double size, string color, bool filled, (string Name, string Value) marker)
     {
-        var angle = facing.Degrees() * Math.PI / 180;
+        var angle = degrees * Math.PI / 180;
         var (dx, dy) = (Math.Cos(angle), Math.Sin(angle));
         var reach = size * 0.5 / Math.Max(Math.Abs(dx), Math.Abs(dy));
         var baseDistance = reach + (size * (filled ? 0.03 : 0.08));
@@ -266,12 +276,11 @@ public sealed class UnitRenderer
             .Close();
         if (filled)
         {
-            svg.Empty("path", ("d", path.ToString()), ("fill", color), ("data-facing", facing.Name()));
+            svg.Empty("path", ("d", path.ToString()), ("fill", color), marker);
         }
         else
         {
-            svg.Empty("path", ("d", path.ToString()), ("fill", "#ffffff"), ("stroke", color), ("stroke-width", N(size * 0.04)),
-                ("data-turret-facing", facing.Name()));
+            svg.Empty("path", ("d", path.ToString()), ("fill", "#ffffff"), ("stroke", color), ("stroke-width", N(size * 0.04)), marker);
         }
     }
 
@@ -377,6 +386,7 @@ public sealed class UnitRenderer
                 {
                     "facing" => subject.Document.Facing?.Degrees(),
                     "turret-facing" => (subject.Document.TurretFacing ?? subject.Document.Facing)?.Degrees(),
+                    "hexside" => subject.Document.Hexside?.Degrees(),
                     _ => (int?)evaluator.Number(rotate),
                 }
                 : null;
