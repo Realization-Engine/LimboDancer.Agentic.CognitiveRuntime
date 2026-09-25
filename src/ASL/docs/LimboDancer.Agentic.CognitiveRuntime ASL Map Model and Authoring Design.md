@@ -414,6 +414,8 @@ BoardHandle
 
 `LocationFacts` carries the Hex Facts for the hex and level, the `BoardVersion`, the status, and an evidence reference suitable for an `Observation`.
 
+**As built** (2026-09-26, [ASL Unit Read Contract Design](<ASL Unit Read Contract Design.md>), section 2): `Read/BoardCatalog.cs` provides `IBoardCatalog`, `InMemoryBoardCatalog`, `BoardHandle` (`Resolve`, `HexFacts`, `Neighbor`, `Distance`), and `LocationRead`, the as-built name of the resolved location, since `LocationFacts` already names one level of a hex. `BoardReadStatus` carries the verification status. The grid view is not built yet.
+
 A consumer that receives a nondefinitive status must not produce a definitive conclusion from terrain facts (ASL-MAP-044, ASL-RD-011). This API has no ASL runtime dependency. Wrapping it in `IObservationProvider` implementations is the ASL package's job, as `ScenarioA1BoardObservationProvider` does today.
 
 **Scenario A1** keeps `Board01TerrainCatalog` unchanged (ASL-MAP-081). A later reviewed change may back it with `IBoardCatalog` for `bd01`. That change must reproduce the 63 overrides through the Ingestion Design's override consistency check and pass the existing Scenario A1 tests.

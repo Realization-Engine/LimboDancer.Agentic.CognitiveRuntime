@@ -53,8 +53,8 @@ public sealed record PhaseChanged(int Turn, string Phase, string PhasingSide) : 
 /// <summary><c>instance-created</c>: a unit, piece of equipment, or entity enters the game.</summary>
 public sealed record InstanceCreated(NewInstance Instance) : EventPayload;
 
-/// <summary><c>instance-moved</c>: a unit or entity takes a new position.</summary>
-public sealed record InstanceMoved(string Id, Position Position) : EventPayload;
+/// <summary><c>instance-moved</c>: a unit or entity takes a new position, spending <paramref name="Mf"/> MF when given.</summary>
+public sealed record InstanceMoved(string Id, Position Position, int? Mf = null) : EventPayload;
 
 /// <summary><c>equipment-transferred</c>: equipment changes holder, or is left at a map position with none.</summary>
 public sealed record EquipmentTransferred(string Id, Holding? Holding, Position? Position) : EventPayload;

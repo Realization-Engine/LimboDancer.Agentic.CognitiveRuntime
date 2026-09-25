@@ -91,6 +91,18 @@
     {
       "eventId": "e18", "revision": 18, "time": "2026-09-26T09:26:00Z", "source": "fixture", "type": "instance-captured", "visibility": "all", "causes": ["e17"],
       "payload": { "id": "r1", "custodian": "g1" }
+    },
+    {
+      "eventId": "e19", "revision": 19, "time": "2026-09-26T09:40:00Z", "source": "fixture", "type": "phase-changed", "visibility": "all",
+      "payload": { "turn": 2, "phase": "mph", "phasingSide": "german" }
+    },
+    {
+      "eventId": "e20", "revision": 20, "time": "2026-09-26T09:41:00Z", "source": "fixture", "type": "instance-moved", "visibility": "all",
+      "payload": { "id": "gh1", "position": { "at": "bd01:D5:0" }, "mf": 1 }
+    },
+    {
+      "eventId": "e21", "revision": 21, "time": "2026-09-26T09:42:00Z", "source": "fixture", "type": "conditions-changed", "visibility": "all", "causes": ["e20"],
+      "payload": { "id": "r2", "conditions": { "asl:hidden": false } }
     }
   ]
 }

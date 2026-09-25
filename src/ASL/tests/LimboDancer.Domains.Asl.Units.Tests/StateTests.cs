@@ -83,14 +83,16 @@ public sealed class StateTests
     public void TheFixtureReplaysIntoOneStatePerRevision()
     {
         var history = Replayed();
-        Assert.Equal(18, history.States.Count);
+        Assert.Equal(21, history.States.Count);
         var state = history.Current!;
-        Assert.Equal(18, state.Revision);
+        Assert.Equal(21, state.Revision);
         Assert.True(state.Synthetic);
         Assert.Equal("asl-scenario-a1", state.Catalog.Catalog);
         Assert.Equal(["german", "russian", "adjudicator"], state.Perspectives.Select(perspective => perspective.Name));
         Assert.Equal(3, state.Side("russian")!.Elr);
-        Assert.Equal(("ccph", 1), (state.Phase, state.Turn));
+        Assert.Equal(("mph", 2), (state.Phase, state.Turn));
+        Assert.Equal(1, state.Unit("gh1")!.MfSpent);
+        Assert.Equal(0, history.At(19)!.Unit("gh1")!.MfSpent);
         Assert.Equal($"asl-scenario-a1@1.0.0+sha256:{Catalog.Value.Identity.Hash}#attacker-squad", state.Unit("g1")!.Definition!.ToString());
     }
 
@@ -113,7 +115,7 @@ public sealed class StateTests
         Assert.Equal(ConditionState.False, GameState.Condition(history.At(10)!.Unit("r1")!, Conditions.Concealed));
         Assert.Equal(InstanceStatus.Active, history.At(11)!.Unit("g2")!.Status);
         Assert.Null(history.At(0));
-        Assert.Null(history.At(19));
+        Assert.Null(history.At(22));
     }
 
     [Fact]

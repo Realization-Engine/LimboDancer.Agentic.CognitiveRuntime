@@ -204,7 +204,8 @@ public interface IGameObject
 
 /// <summary>
 /// A unit instance (ASL-UNIT-021): stable id within its game, the definition it was created from, its owning side, its
-/// conditions, and its position. <see cref="From"/> names the instances it was produced from, if any.
+/// conditions, and its position. <see cref="From"/> names the instances it was produced from, if any, and
+/// <see cref="MfSpent"/> the MF its moves have spent in the current phase.
 /// </summary>
 public sealed record UnitInstance(
     string Id,
@@ -215,7 +216,8 @@ public sealed record UnitInstance(
     IReadOnlyDictionary<string, ConditionState> Conditions,
     InstanceStatus Status,
     IReadOnlyList<string> From,
-    string? Custodian = null) : IGameObject
+    string? Custodian = null,
+    int MfSpent = 0) : IGameObject
 {
     string? IGameObject.Side => Side;
 }

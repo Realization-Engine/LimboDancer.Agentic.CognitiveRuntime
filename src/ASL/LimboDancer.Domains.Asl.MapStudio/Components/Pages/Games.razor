@@ -1,6 +1,7 @@
 @page "/units/games"
 @using System.Globalization
 @using LimboDancer.Domains.Asl.Units.State
+@using LimboDancer.Domains.Asl.Maps.Read
 @inject GameLibrary GamesLibrary
 @inject UnitLibrary Library
 @inject NavigationManager Navigation
@@ -118,6 +119,54 @@ else
             </table>
         }
 
+        <h3>Read a case</h3>
+        <p class="muted">
+            ReadCase (ASL-UNIT-060) asks what a unit attempting something at a location reads: one snapshot of the game as it stood at revision @revision,
+            as @view.Perspective.Name may know it, or an explicit nondefinitive result.
+        </p>
+        <div class="toolbar">
+            <label>
+                Attacker
+                <select id="case-attacker" value="@caseAttacker" @onchange="@(args => caseAttacker = args.Value as string ?? string.Empty)">
+                    @foreach (var unit in view.Units.Where(unit => view.Perspective.IsAdjudicator || unit.Side == view.Perspective.Name))
+                    {
+                        <option value="@unit.Id">@unit.Id: @Label(unit.Id, unit.Kind)</option>
+                    }
+                </select>
+            </label>
+            <label>Location <input id="case-location" value="@caseLocation" @onchange="@(args => caseLocation = args.Value as string ?? string.Empty)" /></label>
+            <label>Expected revision <input id="case-expected" type="number" value="@caseExpected" @onchange="@(args => caseExpected = long.TryParse(args.Value as string, out var value) ? value : caseExpected)" /></label>
+            <button id="case-read" @onclick="ReadCase">Read</button>
+        </div>
+        @if (caseResult is { } result)
+        {
+            <div id="case-result">
+                <p class="@(result.IsDefinitive ? "pass" : "fail")"><strong>@result.Status</strong> (@result.Code): @result.Reason</p>
+                @if (result.Snapshot is { } snapshot)
+                {
+                    <table class="library">
+                        <tbody>
+                            <tr><th>Stamp</th><td>revision @snapshot.Stamp.Revision, @snapshot.Source, @snapshot.Time.ToString("u", CultureInfo.InvariantCulture); turn @snapshot.Turn, @PhaseLabel(snapshot.Phase)</td></tr>
+                            <tr><th>Attacker</th><td>@snapshot.Attacker.Unit.Id (@snapshot.Attacker.Definition.Id), Good Order @Conditions.Name(snapshot.Attacker.GoodOrder), @snapshot.Attacker.MfSpent MF spent this phase</td></tr>
+                            <tr><th>Previous location</th><td>@LocationReadText(snapshot.Previous)</td></tr>
+                            <tr><th>Location</th><td>@LocationReadText(snapshot.Target)@(snapshot.Distance is { } distance ? $"; {distance} hex(es) from the previous location" : string.Empty)</td></tr>
+                            <tr>
+                                <th>Occupants</th>
+                                <td id="case-occupants">
+                                    @string.Join(", ", snapshot.Occupancy.Units.Select(unit => $"{unit.Id} ({unit.Side} {unit.Kind.Replace("asl:", string.Empty, StringComparison.Ordinal)})")
+                                        .Concat(snapshot.Occupancy.Sealed.Select(presence => $"{presence.PlacementId} (concealed {presence.Side})"))
+                                        .Concat(snapshot.Occupancy.Entities.Select(entity => $"{entity.Id} ({entity.Kind.Replace("asl:", string.Empty, StringComparison.Ordinal)})")).DefaultIfEmpty("none seen"))
+                                    <br /><span class="muted">@(snapshot.Occupancy.Complete ? "Complete: nothing can be there unseen." : $"Incomplete: {snapshot.Occupancy.IncompleteReason}")</span>
+                                </td>
+                            </tr>
+                            <tr><th>Sole enemy</th><td id="case-sole">@SoleText(snapshot)</td></tr>
+                            <tr><th>Events this phase</th><td>@string.Join("; ", snapshot.Events.Select(item => $"r{item.Revision} {item.Type}{EventText(item)}{(snapshot.Reveals.Contains(item) ? " (reveal)" : string.Empty)}").DefaultIfEmpty("none"))</td></tr>
+                        </tbody>
+                    </table>
+                }
+            </div>
+        }
+
         <h3>Events @view.Perspective.Name is entitled to</h3>
         <ol id="game-events" class="muted">
             @foreach (var item in view.Events)
@@ -136,6 +185,10 @@ else
     private Perspective perspective = Perspective.Adjudicator;
     private long revision = 1;
     private Dictionary<string, UnitDocument> documents = new(StringComparer.Ordinal);
+    private string caseAttacker = string.Empty;
+    private string caseLocation = "bd01:E4:0";
+    private long caseExpected;
+    private CaseReadResult? caseResult;
     private UnitRenderer? renderer;
 
     private string BoardName => state?.Map.Boards.FirstOrDefault()?.Board.Value ?? "the board";
@@ -184,6 +237,34 @@ else
         view = state is null ? null : GameView.Of(entry!.History!, revision, perspective);
         documents = view is null ? new(StringComparer.Ordinal)
             : GameDocuments.For(view, Library.Vocabulary, GamesLibrary.Catalogs).ToDictionary(document => document.Id, StringComparer.Ordinal);
+        caseExpected = revision;
+        caseResult = null;
+        var attackers = view?.Units.Where(unit => view.Perspective.IsAdjudicator || unit.Side == view.Perspective.Name).Select(unit => unit.Id).ToArray() ?? [];
+        if (!attackers.Contains(caseAttacker))
+        {
+            caseAttacker = attackers.FirstOrDefault() ?? string.Empty;
+        }
+    }
+
+    private void ReadCase()
+    {
+        if (entry is null)
+        {
+            return;
+        }
+
+        caseResult = BoardLocation.TryParse(caseLocation.Trim(), out var location)
+            ? GamesLibrary.ReadCase(entry, revision, caseAttacker, location, caseExpected, perspective)
+            : new CaseReadResult(CaseReadStatus.Inconsistent, "CASE-009", $"'{caseLocation}' is not a location such as bd01:E4:0.", null);
+    }
+
+    private static string LocationReadText(LocationRead read) =>
+        $"{read.Location}: {read.Level.Terrain?.Name ?? "no terrain"}, level {read.Level.Level}; board version {read.BoardVersion[..Math.Min(12, read.BoardVersion.Length)]}, {read.Status}";
+
+    private static string SoleText(CaseSnapshot snapshot)
+    {
+        var (unit, reason) = snapshot.Occupancy.SoleEnemy(snapshot.Attacker.Unit.Side);
+        return unit is not null ? $"{unit.Id}, definitively" : $"not definitive: {reason}";
     }
 
     private void ShowOnBoard()
