@@ -11,7 +11,7 @@
 **Related documents:**
 
 - [ASL Unit Domain Model Analysis](<ASL Unit Domain Model Analysis.md>) is the background analysis these requirements are drawn from. Where the two differ, this document governs.
-- [ASL Unit Map Rendering Slice](<ASL Unit Map Rendering Slice.md>) and [ASL Unit Counter Map Rendering Design](<ASL Unit Counter Map Rendering Design.md>) govern the read-only counter display, which is already built. Section 10 states how display relates to the unit model.
+- [ASL Unit Display Design](<ASL Unit Display Design.md>) governs the unit display; its phase 1 (Personnel and SW) is built. [ASL Unit Map Rendering Slice](<ASL Unit Map Rendering Slice.md>) and [ASL Unit Counter Map Rendering Design](<ASL Unit Counter Map Rendering Design.md>) record the first counter overlay, which it replaces. Section 10 states how display relates to the unit model.
 - [ASL Map Studio Requirements](<LimboDancer.Agentic.CognitiveRuntime ASL Map Studio Requirements.md>) and the map design documents own boards, locations, and terrain facts.
 
 ## 1. Purpose
@@ -39,8 +39,8 @@ The unit model must be delivered as ASL domain-package projects under `src/ASL/`
 
 | Project | Responsibility |
 |---|---|
-| `LimboDancer.Domains.Asl.Units` | Definitions, instances, typed state, relationships and their invariants, events, and pure projections. No UI, storage policy, or source-specific parsing. |
-| `LimboDancer.Domains.Asl.Units.Rendering` | The counter display contract and its SVG overlay. The existing `DemoUnitOverlay` in Map Studio moves here when this project is created. |
+| `LimboDancer.Domains.Asl.Units` | Definitions, instances, typed state, relationships and their invariants, events, and pure projections. No UI, storage policy, or source-specific parsing. It now holds the unit vocabulary, display documents, and the plausibility check; definitions and state follow (section 13). |
+| `LimboDancer.Domains.Asl.Units.Rendering` | The unit display: style sheets, layout, SVG, and the overlay. It replaced the former `DemoUnitOverlay` in Map Studio. |
 | Source adapters, one per chosen source (ASL-UNIT-012, ASL-UNIT-050) | Reading a counter data source or a live game source into the model, with provenance. |
 
 ### ASL-UNIT-002: Runtime isolation
@@ -221,7 +221,7 @@ Rule text, charts, and counter data used by the unit model follow the source reg
 
 ## 13. Sequence
 
-1. **Display:** the [ASL Unit Display Design](<ASL Unit Display Design.md>), Personnel and SW first, then Guns and vehicles (ASL-UNIT-070 to 078). It needs neither D1 nor D2.
+1. **Display:** the [ASL Unit Display Design](<ASL Unit Display Design.md>), Personnel and SW first (built; its section 16), then Guns and vehicles (ASL-UNIT-070 to 078). It needs neither D1 nor D2.
 2. **Decisions:** settle D1 to D4. Register the chosen counter source.
 3. **Scenario A1 catalog:** the Infantry Personnel definitions ASL-UNIT-062 needs, with source-backed values and round-trip tests.
 4. **State model:** game and side state, instances, conditions, positions against the map location chain, relationships, events, and perspectives, tested with synthetic fixtures.

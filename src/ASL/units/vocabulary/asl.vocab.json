@@ -1,0 +1,169 @@
+{
+  "pack": "asl",
+  "version": "1.0.0",
+  "label": "ASL Personnel and support weapons",
+  "note": "Original LimboDancer vocabulary. Rule references are to the registered rulebook PDF by physical page; no rulebook text or counter artwork.",
+  "extends": [],
+  "sides": [
+    { "name": "american", "label": "American" },
+    { "name": "british", "label": "British" },
+    { "name": "finnish", "label": "Finnish" },
+    { "name": "french", "label": "French" },
+    { "name": "german", "label": "German" },
+    { "name": "italian", "label": "Italian" },
+    { "name": "japanese", "label": "Japanese" },
+    { "name": "russian", "label": "Russian" }
+  ],
+  "faces": [
+    { "name": "front", "label": "front" },
+    { "name": "broken", "label": "broken" },
+    { "name": "wounded", "label": "wounded" },
+    { "name": "malfunctioned", "label": "malfunctioned" },
+    { "name": "reverse", "label": "reverse" }
+  ],
+  "attributes": [
+    { "name": "asl:firepower", "label": "Firepower", "type": "integer", "scope": "face", "rule": "A1.21, p. 44" },
+    { "name": "asl:range", "label": "Normal Range", "type": "integer", "scope": "face", "rule": "A1.22, p. 44" },
+    { "name": "asl:morale", "label": "Morale", "type": "integer", "scope": "face", "rule": "A1.23, p. 44" },
+    { "name": "asl:identity", "label": "Identity", "type": "text", "scope": "face", "rule": "A1.24, p. 44" },
+    {
+      "name": "asl:class", "label": "Class", "type": "enumeration", "scope": "face", "rule": "A1.25, p. 44",
+      "members": [
+        { "name": "elite", "label": "Elite", "short": "E" },
+        { "name": "1st-line", "label": "1st Line", "short": "1" },
+        { "name": "2nd-line", "label": "2nd Line", "short": "2" },
+        { "name": "green", "label": "Green", "short": "G" },
+        { "name": "conscript", "label": "Conscript", "short": "C" }
+      ]
+    },
+    {
+      "name": "asl:class-variant", "label": "Class variant", "type": "enumeration", "scope": "face", "rule": "A1.25, p. 44",
+      "members": [
+        { "name": "circle", "label": "circled class", "short": "circle" },
+        { "name": "square", "label": "squared class", "short": "square" }
+      ]
+    },
+    { "name": "asl:broken-morale", "label": "Broken Morale Level", "type": "integer", "scope": "face", "faces": ["broken"], "rule": "A1.4, p. 45" },
+    { "name": "asl:bpv", "label": "Basic Point Value", "type": "integer", "scope": "face", "rule": "A1.4, p. 45" },
+    { "name": "asl:smoke-exponent", "label": "Smoke Placement Exponent", "type": "integer", "scope": "unit", "rule": "A1.21, p. 44" },
+    { "name": "asl:unit-size", "label": "Unit Size Number", "type": "integer", "scope": "unit", "rule": "A1.6, p. 45" },
+    { "name": "asl:leadership", "label": "Leadership DRM", "type": "rating", "scope": "face", "rule": "A10.7, p. 68" },
+    {
+      "name": "asl:size", "label": "MG size", "type": "enumeration", "scope": "face", "rule": "A9.1, p. 62",
+      "members": [
+        { "name": "light", "label": "light", "short": "LMG" },
+        { "name": "medium", "label": "medium", "short": "MMG" },
+        { "name": "heavy", "label": "heavy", "short": "HMG" }
+      ]
+    },
+    { "name": "asl:breakdown", "label": "Breakdown Number", "type": "integer", "scope": "face", "rule": "A9.7, p. 65" },
+    { "name": "asl:rate-of-fire", "label": "Multiple ROF", "type": "integer", "scope": "face", "rule": "A9.2, p. 62" },
+    { "name": "asl:portage", "label": "Portage cost", "type": "integer", "scope": "face", "unit": "PP", "rule": "A4.4, p. 50" },
+    { "name": "asl:repair", "label": "Repair Number", "type": "integer", "scope": "face", "faces": ["malfunctioned"], "rule": "A9.7 to A9.72, p. 65" },
+    { "name": "asl:contact", "label": "Radio Contact value", "type": "list", "items": "integer", "scope": "face", "rule": "C1.2 to C1.23, p. 163" },
+    { "name": "asl:contact-dates", "label": "Contact value dates", "type": "list", "items": "text", "scope": "face", "faces": ["reverse"], "rule": "C1.2 to C1.23, p. 163" },
+    {
+      "name": "asl:latw-type", "label": "LATW type", "type": "enumeration", "scope": "face", "rule": "C13.1, p. 183",
+      "members": [
+        { "name": "atr", "label": "ATR", "short": "ATR" },
+        { "name": "psk", "label": "PSK", "short": "PSK" },
+        { "name": "baz", "label": "BAZ", "short": "BAZ" },
+        { "name": "piat", "label": "PIAT", "short": "PIAT" },
+        { "name": "pf", "label": "PF", "short": "PF" }
+      ]
+    }
+  ],
+  "traits": [
+    { "name": "asl:assault-fire", "label": "Assault Fire", "short": "AF", "rule": "A1.21, p. 44" },
+    { "name": "asl:spraying-fire", "label": "Spraying Fire", "short": "SF", "rule": "A1.22, p. 44" },
+    { "name": "asl:elr-5", "label": "ELR 5", "short": "ELR5", "rule": "A1.23, p. 44" },
+    { "name": "asl:self-rally", "label": "Self-Rally", "short": "SR", "faces": ["broken"], "rule": "A1.4, p. 45" },
+    { "name": "asl:sapper", "label": "Sapper", "short": "SAP", "rule": "A1.5, p. 45" },
+    { "name": "asl:assault-engineer", "label": "Assault Engineer", "short": "AE", "rule": "A1.5, p. 45" },
+    { "name": "asl:breakdown-removes", "label": "Eliminated on breakdown (X#)", "short": "X#", "rule": "A9.7, p. 65" },
+    { "name": "asl:field-phone", "label": "Field phone", "short": "PHONE", "rule": "C1.2 to C1.23, p. 163" }
+  ],
+  "states": [
+    { "name": "asl:broken", "label": "broken", "short": "BRK", "face": "broken", "group": "morale-status", "rule": "A10, pp. 65 to 71" },
+    { "name": "asl:berserk", "label": "berserk", "short": "BSK", "group": "morale-status", "rule": "A15.4, p. 83" },
+    { "name": "asl:pinned", "label": "pinned", "short": "PIN", "rule": "A7.8, p. 58" },
+    { "name": "asl:cx", "label": "counter exhausted", "short": "CX", "rule": "A4.51, p. 51" },
+    { "name": "asl:dm", "label": "desperation morale", "short": "DM", "rule": "A10.62, p. 68" },
+    { "name": "asl:ti", "label": "temporarily immobilized", "short": "TI", "rule": "A4.8, p. 52" },
+    { "name": "asl:fanatic", "label": "fanatic", "short": "FAN", "rule": "A10.8, p. 69" },
+    { "name": "asl:wounded", "label": "wounded", "short": "WND", "face": "wounded", "rule": "A15.2, p. 83; A17, p. 85" },
+    { "name": "asl:disrupted", "label": "disrupted", "short": "DIS", "rule": "A19.12, p. 86" },
+    { "name": "asl:concealed", "label": "concealed", "short": "?", "rule": "A12, pp. 76 to 80" },
+    { "name": "asl:malfunctioned", "label": "malfunctioned", "short": "MAL", "face": "malfunctioned", "rule": "A9.7, p. 65" }
+  ],
+  "kinds": [
+    {
+      "name": "asl:unit", "label": "unit", "faces": ["front"],
+      "accessibleName": { "default": "{side} {kind} {identity}" }
+    },
+    {
+      "name": "asl:personnel", "label": "Personnel", "extends": "asl:unit", "faces": ["front", "broken"],
+      "attributes": ["asl:firepower", "asl:range", "asl:morale", "asl:identity", "asl:class", "asl:class-variant", "asl:broken-morale", "asl:bpv", "asl:smoke-exponent", "asl:unit-size"],
+      "traits": ["asl:assault-fire", "asl:spraying-fire", "asl:elr-5", "asl:self-rally", "asl:sapper", "asl:assault-engineer"],
+      "accessibleName": {
+        "default": "{side} {class} {kind} {identity}, {firepower}-{range}-{morale}",
+        "broken": "{side} {class} {kind} {identity}, broken morale {broken-morale}"
+      }
+    },
+    { "name": "asl:mmc", "label": "MMC", "extends": "asl:personnel", "rule": "A1.1 to A1.123, p. 44" },
+    { "name": "asl:squad", "label": "squad", "extends": "asl:mmc", "sizeClass": 3, "rule": "A1.1 to A1.123, p. 44" },
+    { "name": "asl:half-squad", "label": "half-squad", "extends": "asl:mmc", "sizeClass": 2, "rule": "A1.1 to A1.123, p. 44" },
+    { "name": "asl:crew", "label": "crew", "extends": "asl:mmc", "sizeClass": 2, "rule": "A1.1 to A1.123, p. 44" },
+    { "name": "asl:smc", "label": "SMC", "extends": "asl:personnel", "sizeClass": 1, "rule": "A1.1 to A1.123, p. 44" },
+    {
+      "name": "asl:leader", "label": "leader", "extends": "asl:smc", "attributes": ["asl:leadership"], "rule": "A10.7, p. 68",
+      "accessibleName": {
+        "default": "{side} {kind} {identity}, leadership {leadership}, morale {morale}",
+        "broken": "{side} {kind} {identity}, broken morale {broken-morale}"
+      }
+    },
+    {
+      "name": "asl:hero", "label": "hero", "extends": "asl:smc", "faces": ["wounded"], "rule": "A15.2, p. 83",
+      "accessibleName": {
+        "default": "{side} {kind} {identity}, {firepower}-{range}-{morale}",
+        "wounded": "{side} wounded {kind} {identity}, {firepower}-{range}-{morale}"
+      }
+    },
+    { "name": "asl:equipment", "label": "equipment", "extends": "asl:unit" },
+    {
+      "name": "asl:sw", "label": "SW", "extends": "asl:equipment", "faces": ["front", "malfunctioned"],
+      "attributes": ["asl:firepower", "asl:range", "asl:breakdown", "asl:rate-of-fire", "asl:portage", "asl:repair", "asl:identity"],
+      "traits": ["asl:breakdown-removes"],
+      "accessibleName": {
+        "default": "{side} {kind} {identity}, {firepower}-{range}, breakdown {breakdown}",
+        "malfunctioned": "{side} malfunctioned {kind} {identity}, repair {repair}"
+      },
+      "attachedName": { "default": "{kind} {firepower}-{range}", "malfunctioned": "malfunctioned {kind}" }
+    },
+    {
+      "name": "asl:mg", "label": "MG", "extends": "asl:sw", "attributes": ["asl:size"], "rule": "A9.1, p. 62",
+      "accessibleName": {
+        "default": "{side} {size} {kind} {identity}, {firepower}-{range}, breakdown {breakdown}, ROF {rate-of-fire}",
+        "malfunctioned": "{side} malfunctioned {size} {kind} {identity}, repair {repair}"
+      },
+      "attachedName": { "default": "{size} {kind} {firepower}-{range}", "malfunctioned": "malfunctioned {size} {kind}" }
+    },
+    { "name": "asl:ft", "label": "flamethrower", "extends": "asl:sw", "rule": "A22.1, p. 89" },
+    { "name": "asl:dc", "label": "demolition charge", "extends": "asl:sw", "rule": "A23.1, p. 90",
+      "attachedName": { "default": "{kind} {firepower}" } },
+    {
+      "name": "asl:latw", "label": "LATW", "extends": "asl:sw", "attributes": ["asl:latw-type"], "rule": "C13.1, p. 183",
+      "accessibleName": { "default": "{side} {latw-type} {kind} {identity}, breakdown {breakdown}" },
+      "attachedName": { "default": "{latw-type}" }
+    },
+    { "name": "asl:light-mortar", "label": "light mortar", "extends": "asl:sw", "rule": "C13.1, p. 183",
+      "accessibleName": { "default": "{side} {kind} {identity}, breakdown {breakdown}" },
+      "attachedName": { "default": "{kind}" } },
+    {
+      "name": "asl:radio", "label": "radio", "extends": "asl:sw", "faces": ["reverse"], "attributes": ["asl:contact", "asl:contact-dates"],
+      "traits": ["asl:field-phone"], "rule": "C1.2 to C1.23, p. 163",
+      "accessibleName": { "default": "{side} {kind} {identity}, contact {contact}" },
+      "attachedName": { "default": "{kind} {contact}" }
+    }
+  ]
+}

@@ -1,0 +1,159 @@
+@using LimboDancer.Domains.Asl.Units.Vocabulary
+
+@* Forms generated from the vocabulary (Unit Display Design, section 10): the kind's faces, attributes, traits, and states. *@
+<div class="fields">
+    <label for="@($"{Prefix}-id")">ID</label>
+    <input id="@($"{Prefix}-id")" value="@Draft.Id" @onchange="@(args => Change(() => Draft.Id = args.Value as string ?? string.Empty))" />
+    <label for="@($"{Prefix}-kind")">Kind</label>
+    <select id="@($"{Prefix}-kind")" value="@Draft.Kind" disabled="@Draft.Concealed" @onchange="@(args => Change(() => Draft.Kind = args.Value as string ?? Draft.Kind))">
+        @foreach (var kind in Vocabulary.Kinds.Where(kind => kind.Name != VocabularyNames.RootKind))
+        {
+            <option value="@kind.Name">@kind.Name (@kind.Label)</option>
+        }
+    </select>
+    <label for="@($"{Prefix}-side")">Side</label>
+    <select id="@($"{Prefix}-side")" value="@(Draft.Side ?? string.Empty)" @onchange="@(args => Change(() => Draft.Side = args.Value as string is { Length: > 0 } side ? side : null))">
+        <option value="">@(IsAttached ? "the owner's" : "none")</option>
+        @foreach (var side in Vocabulary.Sides)
+        {
+            <option value="@side.Name">@side.Label</option>
+        }
+    </select>
+    @if (!IsAttached)
+    {
+        <label for="@($"{Prefix}-concealed")">Concealed placeholder</label>
+        <input id="@($"{Prefix}-concealed")" type="checkbox" checked="@Draft.Concealed" @onchange="@(args => Change(() => Draft.Concealed = args.Value is true))" />
+        @if (Draft.Concealed)
+        {
+            <label for="@($"{Prefix}-size-class")">Size class</label>
+            <select id="@($"{Prefix}-size-class")" value="@(Draft.SizeClass?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty)"
+                    @onchange="@(args => Change(() => Draft.SizeClass = int.TryParse(args.Value as string, out var size) ? size : null))">
+                <option value="">not known to the viewer</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+            </select>
+        }
+    }
+</div>
+
+@if (Draft.Concealed)
+{
+    <p class="muted">A concealed placeholder carries only side, location, and an optional size class (section 7.3).</p>
+}
+else if (Vocabulary.HasKind(Draft.Kind))
+{
+    @foreach (var face in Vocabulary.Faces(Draft.Kind))
+    {
+        <fieldset>
+            <legend>@Vocabulary.FaceLabel(face) face</legend>
+            <div class="fields">
+                @foreach (var definition in Attributes(AttributeScope.Face).Where(item => item.Faces.Count == 0 || item.Faces.Contains(face)))
+                {
+                    var id = $"{Prefix}-{face}-{definition.LocalName}";
+                    <label for="@id" title="@definition.Rule">@definition.Label</label>
+                    @Input(id, definition, Draft.Value(face, definition.Name), text => Draft.SetValue(face, definition.Name, text))
+                }
+            </div>
+            <div class="checks">
+                @foreach (var trait in Traits().Where(trait => trait.Faces.Count == 0 || trait.Faces.Contains(face)))
+                {
+                    <label title="@trait.Rule">
+                        <input id="@($"{Prefix}-{face}-{VocabularyNames.Local(trait.Name)}")" type="checkbox" checked="@Draft.HasTrait(face, trait.Name)"
+                               @onchange="@(args => Change(() => Draft.SetTrait(face, trait.Name, args.Value is true)))" />
+                        @trait.Label
+                    </label>
+                }
+            </div>
+        </fieldset>
+    }
+
+    @if (Attributes(AttributeScope.Unit).Any())
+    {
+        <fieldset>
+            <legend>Whole unit</legend>
+            <div class="fields">
+                @foreach (var definition in Attributes(AttributeScope.Unit))
+                {
+                    var id = $"{Prefix}-unit-{definition.LocalName}";
+                    <label for="@id" title="@definition.Rule">@definition.Label</label>
+                    @Input(id, definition, Draft.UnitValue(definition.Name), text => Draft.SetUnitValue(definition.Name, text))
+                }
+            </div>
+        </fieldset>
+    }
+
+    <fieldset>
+        <legend>States</legend>
+        <div class="checks">
+            @foreach (var state in Vocabulary.States)
+            {
+                <label title="@state.Rule">
+                    <input id="@($"{Prefix}-state-{VocabularyNames.Local(state.Name)}")" type="checkbox" checked="@Draft.States.Contains(state.Name)"
+                           @onchange="@(args => Change(() => Draft.SetState(state.Name, args.Value is true)))" />
+                    @state.Label
+                </label>
+            }
+        </div>
+    </fieldset>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public UnitDraft Draft { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public UnitVocabulary Vocabulary { get; set; } = default!;
+
+    /// <summary>The prefix of every input id, so forms for the owner and each attachment stay distinct.</summary>
+    [Parameter]
+    public string Prefix { get; set; } = "unit";
+
+    [Parameter]
+    public bool IsAttached { get; set; }
+
+    [Parameter]
+    public EventCallback OnChange { get; set; }
+
+    private IEnumerable<AttributeDefinition> Attributes(AttributeScope scope) =>
+        Vocabulary.AcceptedAttributes(Draft.Kind)
+            .Select(name => Vocabulary.TryGetAttribute(name, out var definition) ? definition : null)
+            .OfType<AttributeDefinition>()
+            .Where(definition => definition.Scope == scope)
+            .OrderBy(definition => Order(definition.Name));
+
+    private IEnumerable<TraitDefinition> Traits() =>
+        Vocabulary.AcceptedTraits(Draft.Kind)
+            .Select(name => Vocabulary.TryGetTrait(name, out var trait) ? trait : null)
+            .OfType<TraitDefinition>()
+            .OrderBy(trait => trait.Name, StringComparer.Ordinal);
+
+    /// <summary>Attributes in the order the kind and its ancestors declare them, root first.</summary>
+    private int Order(string name)
+    {
+        var order = Vocabulary.Ancestors(Draft.Kind).Reverse().SelectMany(kind => Vocabulary.Kind(kind).Attributes).ToList();
+        var index = order.IndexOf(name);
+        return index < 0 ? int.MaxValue : index;
+    }
+
+    private RenderFragment Input(string id, AttributeDefinition definition, string value, Action<string?> set) => definition.Type switch
+    {
+        AttributeType.Enumeration => @<select id="@id" value="@value" @onchange="@(args => Change(() => set(args.Value as string)))">
+                                         <option value=""></option>
+                                         @foreach (var member in definition.Members)
+                                         {
+                                             <option value="@member.Name">@member.Label</option>
+                                         }
+                                     </select>,
+        AttributeType.Number or AttributeType.Rating => @<input id="@id" type="number" step="1" value="@value" @onchange="@(args => Change(() => set(args.Value as string)))" />,
+        AttributeType.List => @<input id="@id" value="@value" placeholder="@(definition.ItemType == AttributeType.Number ? "6/7/8" : "comma separated")"
+                                      @onchange="@(args => Change(() => set(args.Value as string)))" />,
+        _ => @<input id="@id" value="@value" @onchange="@(args => Change(() => set(args.Value as string)))" />,
+    };
+
+    private Task Change(Action change)
+    {
+        change();
+        return OnChange.InvokeAsync();
+    }
+}

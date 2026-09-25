@@ -1,0 +1,17 @@
+{
+  "set": "asl-customary",
+  "version": "1.0.0",
+  "label": "ASL customary nationality colors",
+  "note": "Approximations of the nationality colors ASL players customarily associate with each side. A convention, not counter artwork.",
+  "fallback": { "fill": "#d9d4c7", "fill-muted": "#aaa598", "ink": "#17212b", "accent": "#5a4a3a" },
+  "sides": {
+    "american": { "fill": "#8b9a5b", "fill-muted": "#646f41", "ink": "#101408", "accent": "#e3d9a6" },
+    "british": { "fill": "#c8b48a", "fill-muted": "#8f8062", "ink": "#1c160c", "accent": "#6b1f1f" },
+    "finnish": { "fill": "#c9ced4", "fill-muted": "#8f959c", "ink": "#101820", "accent": "#1f4f8b" },
+    "french": { "fill": "#7f9cc4", "fill-muted": "#5b708c", "ink": "#0b1422", "accent": "#e8e1cf" },
+    "german": { "fill": "#7b8c97", "fill-muted": "#58646c", "ink": "#0e1419", "accent": "#e6e2d6" },
+    "italian": { "fill": "#a9b39a", "fill-muted": "#79806e", "ink": "#12160c", "accent": "#3b5b2f" },
+    "japanese": { "fill": "#d8b640", "fill-muted": "#9b822d", "ink": "#1a1405", "accent": "#8b1e1e" },
+    "russian": { "fill": "#9b7b52", "fill-muted": "#6f583a", "ink": "#140e06", "accent": "#e8d7b0" }
+  }
+}

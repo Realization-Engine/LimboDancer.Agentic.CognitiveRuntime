@@ -588,7 +588,21 @@
         "dependencies": {
           "LimboDancer.Domains.Asl.Maps": "[1.0.0, )",
           "LimboDancer.Domains.Asl.Maps.Rendering": "[1.0.0, )",
-          "LimboDancer.Domains.Asl.Maps.Vasl": "[1.0.0, )"
+          "LimboDancer.Domains.Asl.Maps.Vasl": "[1.0.0, )",
+          "LimboDancer.Domains.Asl.Units.Rendering": "[1.0.0, )"
+        }
+      },
+      "limbodancer.domains.asl.units": {
+        "type": "Project",
+        "dependencies": {
+          "LimboDancer.Domains.Asl.Maps": "[1.0.0, )"
+        }
+      },
+      "limbodancer.domains.asl.units.rendering": {
+        "type": "Project",
+        "dependencies": {
+          "LimboDancer.Domains.Asl.Maps.Rendering": "[1.0.0, )",
+          "LimboDancer.Domains.Asl.Units": "[1.0.0, )"
         }
       }
     }

@@ -1,0 +1,17 @@
+{
+  "set": "limbodancer",
+  "version": "1.0.0",
+  "label": "LimboDancer side palettes",
+  "note": "Original palettes for the digital map: light fills with dark ink for text contrast. The side hues have not yet been checked with a color-vision simulator.",
+  "fallback": { "fill": "#e4e4e4", "fill-muted": "#b8b8b8", "ink": "#111111", "accent": "#555555" },
+  "sides": {
+    "american": { "fill": "#b9dcae", "fill-muted": "#8aa681", "ink": "#0f1f0b", "accent": "#2f6b22" },
+    "british": { "fill": "#f0d9a1", "fill-muted": "#b6a377", "ink": "#211806", "accent": "#8a5a00" },
+    "finnish": { "fill": "#dde3ea", "fill-muted": "#a6adb5", "ink": "#0d1620", "accent": "#2a5d9f" },
+    "french": { "fill": "#c3d3f5", "fill-muted": "#8e9cba", "ink": "#0b1530", "accent": "#3050a0" },
+    "german": { "fill": "#a8cdea", "fill-muted": "#7c98ae", "ink": "#08192a", "accent": "#0b5c9e" },
+    "italian": { "fill": "#d7c6ec", "fill-muted": "#a193b2", "ink": "#1a0f2a", "accent": "#5e3a8c" },
+    "japanese": { "fill": "#f5e38a", "fill-muted": "#b8a966", "ink": "#221c00", "accent": "#8a6d00" },
+    "russian": { "fill": "#f2b8a2", "fill-muted": "#b58a79", "ink": "#2a0f06", "accent": "#b0461f" }
+  }
+}
