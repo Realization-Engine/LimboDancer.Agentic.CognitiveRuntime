@@ -4,13 +4,13 @@ This folder registers the published counter sheets as the source of printed coun
 
 | File | Content |
 |---|---|
-| `asl-counter-sheets.scenario-a1.source-record.json` | The source record. Status: `transcribed-unreviewed`. |
+| `asl-counter-sheets.scenario-a1.source-record.json` | The source record. Status: `reviewed`. |
 | `scenario-a1.counter-worksheet.csv` | The worksheet: 57 rows for four counters, with no values. |
 | `scenario-a1.counter-transcription.csv` | The worksheet with its values filled in, by Claude on 2026-09-25 from the registered rulebook's charts (see below). |
 
 ## First transcription
 
-At the user's request, Claude filled in the worksheet from the A./G. National Capabilities Chart (physical PDF page 695) and the A18.2 Leader Creation Table (page 694), not from physical counter sheets: a German 1st Line 4-6-7 squad and 2-4-7 half-squad attack a Russian 1st Line 4-4-7 squad (class 1 in a square) and an 8-0 leader. Values the charts do not show are `not-in-source`. The [Scenario A1 Catalog Design](<../../../../src/ASL/docs/ASL Scenario A1 Catalog Design.md>), section 9.1, gives the details. The reviewer should check every row against the published counters; where they differ, the counter governs under D1.
+At the user's request, Claude filled in the worksheet from the A./G. National Capabilities Chart (physical PDF page 695) and the A18.2 Leader Creation Table (page 694), not from physical counter sheets: a German 1st Line 4-6-7 squad and 2-4-7 half-squad attack a Russian 1st Line 4-4-7 squad (class 1 in a square) and an 8-0 leader. Values the charts do not show are `not-in-source`. The [Scenario A1 Catalog Design](<../../../../src/ASL/docs/ASL Scenario A1 Catalog Design.md>), section 9.1, gives the details. Dennis Landi reviewed all 57 rows on 2026-09-25 and confirmed them; the published catalog is `src/ASL/units/catalog/scenario-a1.catalog.json`. Where a physical counter differs from the chart, the counter governs under D1.
 
 No counter artwork, scans, or photographs belong here. VASL piece definitions are not used (D1).
 

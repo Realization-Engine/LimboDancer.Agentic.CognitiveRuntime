@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "sourceId": "asl-counter-sheets:scenario-a1",
   "kind": "rulebook-chart-transcription",
-  "status": "transcribed-unreviewed",
+  "status": "reviewed",
   "decision": "D1, decided 2026-09-25: the published counter sheets, transcribed and reviewed, are the source of record for printed counter values (ASL Unit Requirements, section 12).",
   "d1Departure": "On 2026-09-25 the user asked Claude to fill in the worksheet itself. No physical counter sheets were available to Claude, so this transcription reads the registered rulebook's charts instead: A1.1 (p. 44) says the values of each unit are listed on the National Capabilities Chart (A25). Values the charts do not show are recorded as not-in-source. The reviewer should compare every row with the published counters; where a counter and the chart differ, the counter governs under D1.",
   "scope": "The four counters the Scenario A1 catalog slots need, listed in scenario-a1.counter-worksheet.csv. No other counter is registered by this record.",
@@ -34,14 +34,14 @@
     "format": "asl-counter-transcription/1",
     "path": "docs/ASL/SourceRegistry/CounterSheets/scenario-a1.counter-transcription.csv",
     "worksheet": "docs/ASL/SourceRegistry/CounterSheets/scenario-a1.counter-worksheet.csv",
-    "sha256": "cafc72d553e98b4d2e74b510571e016b8f9866aaa9aa0db83955fa77897dd189",
+    "sha256": "cc33b7f8df7a9ab01c14d79a41025bf3dce731d0a12f59193635af04fe453ab5",
     "transcriber": "Claude (claude-opus-5-5)",
     "transcribedOn": "2026-09-25"
   },
   "review": {
-    "reviewer": null,
-    "reviewedOn": null,
-    "method": null
+    "reviewer": "Dennis Landi",
+    "reviewedOn": "2026-09-25",
+    "method": "The user reviewed all 57 rows in conversation on 2026-09-25, as a table of every value with the chart each came from, and confirmed them all without correction. The not-in-source rows remain unknown."
   },
   "meaning": {
     "rulebookPdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",

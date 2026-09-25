@@ -1,6 +1,6 @@
 # ASL Scenario A1 Catalog Design
 
-**Status:** Built; the first transcription is committed as a draft catalog, awaiting review
+**Status:** Built; the Scenario A1 catalog is published from a transcription reviewed on 2026-09-25
 
 **Date:** 2026-09-25
 
@@ -23,7 +23,7 @@ This step delivers:
 - cross-check hooks against the existing Scenario A1 snapshots, which stay unchanged;
 - a synthetic catalog, clearly labelled, for tests until the reviewed transcription exists.
 
-The first transcription, of four counters for a German attack on a Russian-held village, is committed and builds a draft catalog. It is not published until it is reviewed (section 9.1).
+The first transcription, of four counters for a German attack on a Russian-held village, was reviewed by Dennis Landi on 2026-09-25 and builds the published catalog (section 9.1).
 
 ## 2. What the Scenario A1 cases read
 
@@ -220,7 +220,7 @@ Underlines, superscripts, and class borders were read visually from renderings o
 
 **Not in the source.** The charts list types, not counters, so these rows are `not-in-source`: every identity letter (A1.24, p. 44), every broken-side Self-Rally square (A10.63, p. 68), and the leader's ELR underline, broken morale, and BPV. A10.71 (p. 69) lets any broken leader attempt Self-Rally, but that is a rule, not a printed square. The leader's nationality is the scenario's choice, since the table applies to every nationality that creates leaders.
 
-**Transcriber.** Claude (`claude-opus-5-5`) is recorded as transcriber. The draft catalog `src/ASL/units/catalog/scenario-a1.catalog.json` is built from the transcription and embedded; it becomes published only after a second person reviews it.
+**Transcriber and review.** Claude (`claude-opus-5-5`) is recorded as transcriber. Dennis Landi reviewed all 57 rows on 2026-09-25, from a table of every value and the chart it came from, and confirmed them without correction; he is recorded as reviewer in every row and in the source record, whose status is `reviewed`. The published catalog `src/ASL/units/catalog/scenario-a1.catalog.json` is built from the transcription and embedded. The `not-in-source` rows stay unknown; a later transcription from the counters themselves can fill them as a new catalog version.
 
 ## 10. The source adapter
 
@@ -253,7 +253,7 @@ Synthetic definitions use deliberately low values and invented dates (1901), and
 
 ## 13. Not in this step
 
-- Review of the first transcription against the published counters, and the values the charts do not show (section 9.1).
+- The values the charts do not show (identity letters, Self-Rally squares, and the leader's ELR underline, broken morale, and BPV), and a comparison with the physical counter sheets that D1 names as the source of record (section 9.1).
 - Reviewed applicability, national dates, and substitution mappings: they need a registered source for A25 and Chapter H charts.
 - Effective values produced by rules: later steps, one reviewed transition at a time.
 - Kinds beyond the four counters: added one reviewed slice at a time (ASL-UNIT-062).

@@ -3,19 +3,20 @@
   "catalog": "asl-scenario-a1",
   "version": "1.0.0",
   "label": "Scenario A1 catalog: Infantry Personnel for the reviewed Scenario A1 cases",
-  "publication": "draft",
+  "publication": "published",
   "vocabulary": [
     "asl@1.3.0"
   ],
   "sources": [
     {
       "id": "asl-counter-sheets:scenario-a1",
-      "status": "transcribed-unreviewed",
+      "status": "reviewed",
       "record": "docs/ASL/SourceRegistry/CounterSheets/asl-counter-sheets.scenario-a1.source-record.json",
-      "recordSha256": "c479fbf62e3d366dfb07a12daa43126677fd48a6383974130d1716ee4e9dcd8d",
+      "recordSha256": "a86a145227ae79bbd880eb69827139d5e4ab0f358b2b9e34d9cf1df9f0bc6587",
       "transcription": "docs/ASL/SourceRegistry/CounterSheets/scenario-a1.counter-transcription.csv",
-      "transcriptionSha256": "cafc72d553e98b4d2e74b510571e016b8f9866aaa9aa0db83955fa77897dd189",
-      "transcriber": "Claude (claude-opus-5-5)"
+      "transcriptionSha256": "cc33b7f8df7a9ab01c14d79a41025bf3dce731d0a12f59193635af04fe453ab5",
+      "transcriber": "Claude (claude-opus-5-5)",
+      "reviewer": "Dennis Landi"
     }
   ],
   "slots": [
