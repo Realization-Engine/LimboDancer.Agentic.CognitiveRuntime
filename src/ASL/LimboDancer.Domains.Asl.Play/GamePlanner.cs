@@ -57,8 +57,15 @@ public sealed record GamePlan(
 public sealed class GamePlanner(IGameStore store, IBoardCatalog boards, UnitVocabulary vocabulary, IReadOnlyList<UnitCatalog> catalogs,
     TimeProvider? time = null)
 {
-    /// <summary>The reviewed chart rows for an ordinary building (B23; the reviewed B. Terrain Chart supplement).</summary>
-    private static readonly HashSet<string> OrdinaryBuildings = new(StringComparer.Ordinal) { "Wooden Building", "Stone Building" };
+    /// <summary>
+    /// The terrain of an ordinary wooden or stone building (B23; the reviewed B. Terrain Chart supplement): the reviewed
+    /// case covers its ground level whatever the building's height, so the multi-level names VASL boards use count too.
+    /// </summary>
+    private static readonly HashSet<string> OrdinaryBuildings = new(
+        from material in new[] { "Wooden", "Stone" }
+        from suffix in new[] { string.Empty, ", 1 Level", ", 2 Level", ", 3 Level", ", 4 Level" }
+        select $"{material} Building{suffix}",
+        StringComparer.Ordinal);
 
     private readonly TimeProvider clock = time ?? TimeProvider.System;
 

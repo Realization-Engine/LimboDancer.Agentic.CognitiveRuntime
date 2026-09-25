@@ -232,7 +232,7 @@ public sealed class GamePlay
                     correlation, [result.Code, .. plan.Reasons], plan);
             default:
                 return new PlayResult(plan.Status == GamePlanStatus.Stale ? PlayOutcome.Stale : PlayOutcome.Denied, correlation,
-                    [.. authorization.ReasonCodes, .. plan.Reasons], plan);
+                    [.. authorization.ReasonCodes.Concat(plan.Reasons).Distinct(StringComparer.Ordinal)], plan);
         }
     }
 }

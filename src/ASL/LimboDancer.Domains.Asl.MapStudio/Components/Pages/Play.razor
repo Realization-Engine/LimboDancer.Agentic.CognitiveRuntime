@@ -62,7 +62,7 @@ else if (state is not null)
 {
     <p id="play-summary">
         <strong>@(history.Current is not null ? $"Revision {state.Revision}" : "The game does not replay")</strong>:
-        turn @state.Turn, @state.Phase.ToUpperInvariant(), @state.PhasingSide phasing.
+        turn @state.Turn, @Games.PhaseLabel(state.Phase), @state.PhasingSide phasing.
         @(SetupOpen ? "Setup is open." : "Play has started; setup is closed.")
     </p>
 }

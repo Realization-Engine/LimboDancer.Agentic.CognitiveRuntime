@@ -30,16 +30,17 @@ public sealed class PlayTests : IDisposable
     private readonly string root = Path.Combine(Path.GetTempPath(), "asl-play-" + Guid.NewGuid().ToString("N"));
     private readonly FileGameStore store;
     private readonly RecordingAudit audit = new();
+    private TerrainType e4 = Wooden;
 
     public PlayTests() => store = new FileGameStore(root);
 
-    private static BoardHandle Board(BoardReadStatus status = BoardReadStatus.Verified)
+    private BoardHandle Board(BoardReadStatus status = BoardReadStatus.Verified)
     {
         var geometry = BoardGeometry.StandardGeomorphic;
         HexFacts[] hexes = [.. geometry.Hexes().Select(index =>
         {
             var name = geometry.NameOf(index);
-            var level = new LocationFacts(0, name.ToString() == "E4" ? Wooden : Open, null);
+            var level = new LocationFacts(0, name.ToString() == "E4" ? e4 : Open, null);
             HexsideFacts[] sides = [.. Enum.GetValues<HexsideDirection>().Select(side => new HexsideFacts(side, true, null, null, false, false, false, false, null))];
             return new HexFacts(name, index, 0, false, level, [level], sides, null, CenterTerrainSource.CenterSample);
         })];
@@ -263,6 +264,26 @@ public sealed class PlayTests : IDisposable
         Assert.Equal(2, state.Unit("g1")!.MfSpent);
         var move = store.Read(new GameScope(Tenant, "village"))!.Events[^1];
         Assert.Equal(("instance-moved", ScenarioA1Package.Identity.ToString()), (move.Type, move.RulePackage));
+    }
+
+    public static TheoryData<string, LosCategory, bool> BuildingTerrain => new()
+    {
+        { "Stone Building", LosCategory.Building, true },
+        { "Wooden Building, 1 Level", LosCategory.Building, true },
+        { "Stone Building, 2 Level", LosCategory.Building, true },
+        { "Wooden Factory, 1.5 Level", LosCategory.Factory, false },
+    };
+
+    /// <summary>The reviewed case covers the ground level of any ordinary wooden or stone building, as VASL boards name them.</summary>
+    [Theory]
+    [MemberData(nameof(BuildingTerrain))]
+    public async Task TheGroundLevelOfAnyOrdinaryBuildingIsCovered(string terrain, LosCategory category, bool covered)
+    {
+        e4 = new TerrainType { Code = 3, Name = terrain, Category = category };
+        var play = await GameInMph();
+        var proposed = await play.ProposeAsync(GameActions.EnterEmptyBuilding, EntryArgs("enter-1", 4), Player);
+        Assert.Equal(covered, proposed.Plan!.Entry!.Facts["isAdjacentGroundLevelOrdinaryBuilding"]);
+        Assert.Equal(covered ? PlayOutcome.NeedsConfirmation : PlayOutcome.Denied, proposed.Outcome);
     }
 
     [Fact]
