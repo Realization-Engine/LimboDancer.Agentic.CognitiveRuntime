@@ -66,7 +66,7 @@ Each printed characteristic (for example FP, range, morale, broken-side values, 
 Two sources are needed and are decided separately:
 
 - **Face content**, what a unit's display must be able to show, comes from the rulebook's counter anatomy (A1.2 to A1.6, A9, C2.2, D1). The [ASL Unit Display Design](<ASL Unit Display Design.md>), section 4, records it with rule and page and is the information-parity reference for ASL-UNIT-075.
-- **Counter data**, the printed values of particular units for real scenarios, needs a chosen counter data source (decision D1). No definition may be published until that source is chosen, registered, and reviewed under the source rules of the Ontology Transformation Specification. The rulebook alone is not sufficient (section 2). Candidates include the published counter sheets and the VASL module's piece definitions; the latter have not been examined and would need the same licensing boundary the map effort applies to VASL boards. Counter artwork is never evidence of a printed value.
+- **Counter data**, the printed values of particular units for real scenarios, comes from the counter data source chosen in decision D1 (section 12): the published counter sheets, transcribed and reviewed. No definition may be published until that source is registered and reviewed under the source rules of the Ontology Transformation Specification. The rulebook alone is not sufficient (section 2). Candidates include the published counter sheets and the VASL module's piece definitions; the latter have not been examined and would need the same licensing boundary the map effort applies to VASL boards. Counter artwork is never evidence of a printed value.
 
 ### ASL-UNIT-013: Printed and effective values
 
@@ -116,7 +116,7 @@ Snipers, fortifications, and informational markers must be modeled as their own 
 
 ### ASL-UNIT-030: Perspectives
 
-Every read must name a perspective from a closed set: each side, and an adjudicator who sees everything. Adding a perspective is a reviewed change.
+Every read must name a perspective from a closed set: each side, and an adjudicator who sees everything (decision D3). Perspectives are named, so adding one is a reviewed change that needs no change to the model.
 
 ### ASL-UNIT-031: Filtering at the source
 
@@ -210,24 +210,26 @@ The definition catalog must have a version identity that changes when any defini
 
 Rule text, charts, and counter data used by the unit model follow the source registration, review, and publication rules of the Ontology Transformation Specification. Page and source citations use physical PDF pages.
 
-## 12. Open decisions
+## 12. Decisions
 
-| Decision | Blocks | Options |
+Decided on 2026-09-25 as recommended in the [Decision Memo for D1 to D4](<ASL Unit Model Decisions D1 to D4.md>), which records the options and trade-offs.
+
+| Decision | Blocks | Decided |
 |---|---|---|
-| D1. Counter data source | ASL-UNIT-012 counter data, catalog definitions (not the display) | Published counter sheets transcribed and reviewed; VASL module piece definitions, subject to licensing review; a mix. Deferred: the display does not need it. |
-| D2. Live game source | ASL-UNIT-050, 060 against a real game (not the display) | VASL saved-game adapter; Map Studio setup and play editor; LimboDancer engine. Deferred: display input comes from the Unit Lab and fixtures, labelled synthetic. |
-| D3. Perspective set | ASL-UNIT-030 | Each side plus adjudicator (proposed); anything wider. |
-| D4. First slice boundary | ASL-UNIT-062 | The Scenario A1 case list (proposed), or a wider Infantry slice. |
+| D1. Counter data source | ASL-UNIT-012 counter data, catalog definitions (not the display) | A mix. The published counter sheets, transcribed and reviewed, are the source of record; each transcription is registered under ASL-UNIT-081 with the sheets used and its reviewer. VASL module piece definitions may serve only as a local, uncommitted cross-check, and only after a licensing review, as the map work treats the VASL board checkout. |
+| D2. Live game source | ASL-UNIT-050, 060 against a real game (not the display) | Deferred until governed writes (section 13, step 7). When needed, a Map Studio setup and play editor comes first, building on the Unit Lab and placement sets; a VASL saved-game import may follow as a read-only source. Until then display input stays the Unit Lab and fixtures, labelled synthetic. |
+| D3. Perspective set | ASL-UNIT-030 | Each side plus an adjudicator. Perspectives are named, so a later addition is a reviewed change without a model change. |
+| D4. First slice boundary | ASL-UNIT-062 | The Scenario A1 case list, cross-checked against the existing Scenario A1 snapshots (ASL-MAP-081). Wider slices follow one reviewed slice at a time. |
 
 ## 13. Sequence
 
 1. **Display:** the [ASL Unit Display Design](<ASL Unit Display Design.md>), Personnel and SW first, then Guns, vehicles, and entities that are not units (all four built; its sections 16 to 19) (ASL-UNIT-070 to 078). It needs neither D1 nor D2.
-2. **Decisions:** settle D1 to D4. Register the chosen counter source.
+2. **Decisions:** D1 to D4 decided on 2026-09-25 (section 12). Still to do: register the chosen counter source (the counter sheets and their transcription) and, if VASL is to be the cross-check, run its licensing review.
 3. **Scenario A1 catalog:** the Infantry Personnel definitions ASL-UNIT-062 needs, with source-backed values and round-trip tests.
 4. **State model:** game and side state, instances, conditions, positions against the map location chain, relationships, events, and perspectives, tested with synthetic fixtures.
 5. **Read contract:** ASL-UNIT-060 and 061, read-only, together with the map read API (ASL-MAP-080). Cross-check against the existing Scenario A1 snapshots, which stay unchanged (ASL-MAP-081).
 6. **Display from projections:** feed the display the projections of the state model, filtered by perspective.
-7. **Governed writes:** one reviewed transition at a time, only after D2 is settled.
+7. **Governed writes:** one reviewed transition at a time, with the live game source of D2 chosen at that point.
 
 ## 14. Acceptance scenarios
 
