@@ -33,7 +33,7 @@ public sealed class GameStatesTests : IDisposable
     {
         var entry = games.Load("a1-village.synthetic");
         Assert.False(entry.History!.HasErrors);
-        Assert.Equal(21, entry.History.States.Count);
+        Assert.Equal(23, entry.History.States.Count);
 
         // The synthetic board provider has no bd01, so positions cannot be checked, and the entry says so.
         Assert.False(entry.PositionsChecked);
@@ -44,7 +44,7 @@ public sealed class GameStatesTests : IDisposable
     public void TheAdjudicatorSeesEverything()
     {
         var page = context.Render<Games>();
-        Assert.Contains("Revision 21 of 21", page.Find("#game-summary").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Revision 23 of 23", page.Find("#game-summary").TextContent, StringComparison.Ordinal);
         Assert.NotEmpty(page.FindAll("#game-units tr[data-unit='r2']"));
         Assert.Contains("prisoner of g1", page.Find("#game-units tr[data-unit='r1']").TextContent, StringComparison.Ordinal);
         Assert.Contains("from g2", page.Find("#game-units tr[data-unit='g2-hs']").TextContent, StringComparison.Ordinal);
@@ -56,7 +56,7 @@ public sealed class GameStatesTests : IDisposable
         var page = context.Render<Games>();
         page.Find("#game-perspective").Change("german");
         page.Find("#game-revision").Change("8");
-        Assert.Contains("Revision 8 of 21", page.Find("#game-summary").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Revision 8 of 23", page.Find("#game-summary").TextContent, StringComparison.Ordinal);
         Assert.Empty(page.FindAll("#game-units tr[data-unit='r1']"));
         Assert.Empty(page.FindAll("#game-units tr[data-unit='r2']"));
         Assert.Contains("withheld", page.Find("#game-units tr[data-unit='sealed-1']").TextContent, StringComparison.Ordinal);
@@ -65,8 +65,24 @@ public sealed class GameStatesTests : IDisposable
 
         page.Find("#game-next").Click();
         page.Find("#game-next").Click();
-        Assert.Contains("Revision 10 of 21", page.Find("#game-summary").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Revision 10 of 23", page.Find("#game-summary").TextContent, StringComparison.Ordinal);
         Assert.NotEmpty(page.FindAll("#game-units tr[data-unit='r1']"));
+    }
+
+    [Fact]
+    public void TheRussianSideSeesOnlyWhatItMayKnow()
+    {
+        var page = context.Render<Games>();
+        page.Find("#game-perspective").Change("russian");
+        Assert.Contains("Revision 23 of 23", page.Find("#game-summary").TextContent, StringComparison.Ordinal);
+        Assert.Empty(page.FindAll("#game-units tr[data-unit='g3']"));
+        Assert.Empty(page.FindAll("#game-units tr[data-unit='gh2']"));
+        Assert.Contains("concealed german presence", page.Find("#game-units tr[data-unit='sealed-1']").TextContent, StringComparison.Ordinal);
+        Assert.DoesNotContain("gh2", page.Markup, StringComparison.Ordinal);
+
+        var projection = games.Projection(games.Load("a1-village.synthetic"), Perspective.Side("russian"), 23);
+        Assert.DoesNotContain(projection.Set.Units, unit => unit.Id is "g3" or "gh2");
+        Assert.Contains(projection.Set.Units, unit => unit.Id == "sealed-1" && unit.Concealed && unit.Location == "bd01:C5:0");
     }
 
     [Fact]

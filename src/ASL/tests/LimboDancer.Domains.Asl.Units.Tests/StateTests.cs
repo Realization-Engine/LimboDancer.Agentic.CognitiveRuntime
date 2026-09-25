@@ -83,9 +83,9 @@ public sealed class StateTests
     public void TheFixtureReplaysIntoOneStatePerRevision()
     {
         var history = Replayed();
-        Assert.Equal(21, history.States.Count);
+        Assert.Equal(23, history.States.Count);
         var state = history.Current!;
-        Assert.Equal(21, state.Revision);
+        Assert.Equal(23, state.Revision);
         Assert.True(state.Synthetic);
         Assert.Equal("asl-scenario-a1", state.Catalog.Catalog);
         Assert.Equal(["german", "russian", "adjudicator"], state.Perspectives.Select(perspective => perspective.Name));
@@ -115,7 +115,7 @@ public sealed class StateTests
         Assert.Equal(ConditionState.False, GameState.Condition(history.At(10)!.Unit("r1")!, Conditions.Concealed));
         Assert.Equal(InstanceStatus.Active, history.At(11)!.Unit("g2")!.Status);
         Assert.Null(history.At(0));
-        Assert.Null(history.At(22));
+        Assert.Null(history.At(24));
     }
 
     [Fact]
@@ -175,6 +175,44 @@ public sealed class StateTests
         var adjudicator = GameView.Of(history, 8, Perspective.Adjudicator);
         Assert.Equal(5, adjudicator.Units.Count);
         Assert.Equal(8, adjudicator.Events.Count);
+    }
+
+    [Fact]
+    public void TheRussianSideDoesNotSeeHiddenGermansAndSeesConcealedOnesAsSealedPresence()
+    {
+        var history = Replayed();
+        var russian = GameView.Of(history, 23, Perspective.Side("russian"));
+        Assert.DoesNotContain(russian.Units, unit => unit.Id is "g3" or "gh2");
+        var sealedPresence = Assert.Single(russian.Sealed);
+        Assert.Equal(("sealed-1", "german", "bd01:C5:0"), (sealedPresence.PlacementId, sealedPresence.Side, sealedPresence.Location.ToString()));
+        Assert.DoesNotContain(russian.Events, item => item.EventId is "e22" or "e23");
+        Assert.Contains(russian.Units, unit => unit.Id == "g1");
+
+        // Filtering at the source: the Russian side receives no German ids it may not know.
+        var serialized = JsonSerializer.Serialize(russian);
+        Assert.DoesNotContain("\"g3\"", serialized, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"gh2\"", serialized, StringComparison.Ordinal);
+
+        var german = GameView.Of(history, 23, Perspective.Side("german"));
+        Assert.Contains(german.Units, unit => unit.Id == "g3" && GameState.Condition(unit, Conditions.Concealed) == ConditionState.True);
+        Assert.Contains(german.Units, unit => unit.Id == "gh2" && GameState.Condition(unit, Conditions.Hidden) == ConditionState.True);
+        Assert.Empty(german.Sealed);
+        Assert.Contains(german.Events, item => item.EventId == "e23");
+    }
+
+    [Fact]
+    public void TheRussianDisplayReceivesOnlyItsView()
+    {
+        var vocabulary = UnitsTestData.Asl.Value;
+        var russian = GameDocuments.For(GameView.Of(Replayed(), 23, Perspective.Side("russian")), vocabulary, [Catalog.Value]);
+        var placeholder = Assert.Single(russian, document => document.Concealed);
+        Assert.Equal(("sealed-1", "bd01:C5:0", "german"), (placeholder.Id, placeholder.Location, placeholder.Side));
+        Assert.DoesNotContain(russian, document => document.Id is "g3" or "gh2");
+        Assert.DoesNotContain(russian, document => document.Location == "bd01:C4:0");
+
+        var german = GameDocuments.For(GameView.Of(Replayed(), 23, Perspective.Side("german")), vocabulary, [Catalog.Value]);
+        Assert.Equal(["asl:concealed"], Assert.Single(german, document => document.Id == "g3").States);
+        Assert.Contains(german, document => document.Id == "gh2" && document.Location == "bd01:C4:0");
     }
 
     [Fact]

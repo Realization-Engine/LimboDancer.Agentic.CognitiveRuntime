@@ -144,7 +144,7 @@ Map Studio's **Game states** page (`/units/games`) replays each fixture, against
 
 ## 11. The fixture
 
-`src/ASL/units/games/a1-village.synthetic.game.json`, 18 events in turn 1 (the read contract adds three in turn 2, Read Contract Design, section 9): a German platoon (two 4-6-7 squads, a 2-4-7 half-squad, and an LMG) at `bd01:D4:0` attacks a concealed Russian 4-4-7 in `bd01:E4:0`, while an 8-0 leader waits hidden in a foxhole in `bd01:E5:0`. The Russian squad is revealed in the MPh, one German squad is reduced in the DFPh, the Russian squad breaks in the AFPh, a German squad advances into E4 in the APh, and captures it in the CCPh. The definitions come from the published catalog; every event, position, condition, ELR, and SAN is invented.
+`src/ASL/units/games/a1-village.synthetic.game.json`, 18 events in turn 1 (the read contract adds three in turn 2, Read Contract Design, section 9, and display from projections two more, Unit Display Design, section 20.2): a German platoon (two 4-6-7 squads, a 2-4-7 half-squad, and an LMG) at `bd01:D4:0` attacks a concealed Russian 4-4-7 in `bd01:E4:0`, while an 8-0 leader waits hidden in a foxhole in `bd01:E5:0`. The Russian squad is revealed in the MPh, one German squad is reduced in the DFPh, the Russian squad breaks in the AFPh, a German squad advances into E4 in the APh, and captures it in the CCPh. The definitions come from the published catalog; every event, position, condition, ELR, and SAN is invented.
 
 The fixture plays board 01 at version `8d77d26222b7bb21d8c1fdda6ba05b447f63c317`, the Git blob of `boards/src/bd01/LOSData` in the VASL checkout, which is the version the Studio derives its hex facts from. With the checkout configured, the Studio checks every position against those chains.
 

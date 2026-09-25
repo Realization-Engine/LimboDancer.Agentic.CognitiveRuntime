@@ -118,6 +118,28 @@ public sealed class CaseReadTests
     }
 
     [Fact]
+    public void TheRussianSideCannotSeeTheHiddenOrConcealedGermans()
+    {
+        var history = History(23);
+        var reader = Reader(history);
+        var hidden = reader.Read(Request("r2", "bd01:C4:0", revision: 23, perspective: "russian")).Snapshot!.Occupancy;
+        Assert.Empty(hidden.Units);
+        Assert.Empty(hidden.Sealed);
+        Assert.False(hidden.Complete);
+
+        var concealed = reader.Read(Request("r2", "bd01:C5:0", revision: 23, perspective: "russian")).Snapshot!.Occupancy;
+        Assert.Empty(concealed.Units);
+        Assert.Equal(("german", "bd01:C5:0"), (Assert.Single(concealed.Sealed).Side, concealed.Sealed[0].Location.ToString()));
+        Assert.Null(concealed.SoleEnemy("russian").Unit);
+
+        var adjudicator = reader.Read(Request("r2", "bd01:C4:0", revision: 23)).Snapshot!.Occupancy;
+        Assert.Equal(["gh2"], adjudicator.Units.Select(unit => unit.Id));
+        Assert.Equal("gh2", adjudicator.SoleEnemy("russian").Unit!.Id);
+        Assert.Equal((CaseReadStatus.Unavailable, "CASE-006"), (reader.Read(Request("gh2", "bd01:C5:0", revision: 23, perspective: "russian")).Status,
+            reader.Read(Request("gh2", "bd01:C5:0", revision: 23, perspective: "russian")).Code));
+    }
+
+    [Fact]
     public void AHiddenUnitCannotBeTheAttackerOfAnotherSidesRead()
     {
         var german = Reader(History(9)).Read(Request("r2", "bd01:E4:0", revision: 9, perspective: "german"));
