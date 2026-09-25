@@ -1,7 +1,8 @@
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Maps.Read;
+using LimboDancer.Domains.Asl.ScenarioA1;
 
-namespace LimboDancer.Domains.Asl.ScenarioA1;
+namespace LimboDancer.Domains.Asl.Play;
 
 /// <summary>
 /// The Scenario A1 terrain evidence read through the map read API (ASL-MAP-081; Occupied and Concealed Entry Design,

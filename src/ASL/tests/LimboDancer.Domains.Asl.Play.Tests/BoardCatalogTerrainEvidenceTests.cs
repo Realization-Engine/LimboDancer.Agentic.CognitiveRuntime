@@ -1,13 +1,16 @@
 using System.IO.Compression;
 using System.Text.Json;
+using LimboDancer.Abstractions.Domain;
+using LimboDancer.Abstractions.Observations;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Maps.Derivation;
 using LimboDancer.Domains.Asl.Maps.Geometry;
 using LimboDancer.Domains.Asl.Maps.Read;
 using LimboDancer.Domains.Asl.Maps.Terrain;
+using LimboDancer.Domains.Asl.ScenarioA1;
 using Xunit;
 
-namespace LimboDancer.Domains.Asl.ScenarioA1.Tests;
+namespace LimboDancer.Domains.Asl.Play.Tests;
 
 /// <summary>
 /// The Scenario A1 terrain evidence read through the map read API (ASL-MAP-081; Occupied and Concealed Entry Design,
@@ -96,10 +99,22 @@ public sealed class BoardCatalogTerrainEvidenceTests
         var read = new BoardCatalogTerrainEvidence(new InMemoryBoardCatalog([Board01Fixture.Handle()]));
         var binding = Binding("E4");
         Assert.True(read.IsSupportedGroundLevel(binding));
-        Assert.False(read.IsSupportedGroundLevel(binding with { BoardVersion = "6.8" }));
-        Assert.False(read.IsSupportedGroundLevel(binding with { MetadataGitBlobSha = "different" }));
-        Assert.False(read.IsSupportedGroundLevel(binding with { Level = 1 }));
-        Assert.False(read.IsSupportedGroundLevel(binding with { Variant = "NoRoads" }));
+        Assert.False(read.IsSupportedGroundLevel(binding with
+        {
+            BoardVersion = "6.8"
+        }));
+        Assert.False(read.IsSupportedGroundLevel(binding with
+        {
+            MetadataGitBlobSha = "different"
+        }));
+        Assert.False(read.IsSupportedGroundLevel(binding with
+        {
+            Level = 1
+        }));
+        Assert.False(read.IsSupportedGroundLevel(binding with
+        {
+            Variant = "NoRoads"
+        }));
         Assert.False(read.IsSupportedGroundLevel(null));
     }
 
@@ -109,6 +124,54 @@ public sealed class BoardCatalogTerrainEvidenceTests
         Assert.Equal("Stone Building, 2 Level", BoardCatalogTerrainEvidence.TerrainName(new Board01Building("stone", 2)));
         Assert.Equal("Wooden Building, 1 Level", BoardCatalogTerrainEvidence.TerrainName(new Board01Building("wooden", 1)));
         Assert.Throws<InvalidOperationException>(() => BoardCatalogTerrainEvidence.TerrainName(new Board01Building("brick", 1)));
+    }
+
+    [Fact]
+    public async Task TheOccupiedProviderAdmitsTheSameCasesWithTerrainReadFromTheBoard()
+    {
+        var read = new BoardCatalogTerrainEvidence(new InMemoryBoardCatalog([Board01Fixture.Handle()]));
+        var empty = OccupiedSnapshot();
+        var enemy = empty with
+        {
+            Occupancy = ScenarioA1BoardOccupancy.KnownUnconcealedEnemyMmc,
+            IsAdjacentGroundLevelOrdinaryBuilding = null
+        };
+        foreach (var (snapshot, caseId) in new[] { (empty, "A1-empty-ordinary-mph"), (enemy, "A1-known-enemy-mmc-mph") })
+        {
+            foreach (var terrain in new IScenarioA1TerrainEvidence[] { new Board01TerrainCatalog(), read })
+            {
+                var result = await OccupiedProvider(snapshot, terrain).ObserveAsync(OccupiedQuery());
+                Assert.Equal("asl.a1.board.exact-case:" + caseId, Assert.Single(result.ReasonCodes));
+            }
+        }
+
+        var disagreeing = new BoardCatalogTerrainEvidence(new InMemoryBoardCatalog([Board01Fixture.Handle(changed: ("E4", "Wooden Building"))]));
+        Assert.Empty((await OccupiedProvider(empty, disagreeing).ObserveAsync(OccupiedQuery())).Observations);
+    }
+
+    private static readonly Guid Tenant = Guid.Parse("e753fdf9-d585-45cf-a7fa-d0f2cf625276");
+
+    private static ScenarioA1BoardSnapshot OccupiedSnapshot() =>
+        new(Tenant, ScenarioA1OccupiedPackage.Identity, "squad", "bd01:E4:0", "state-1", new DateTimeOffset(2026, 9, 26, 0, 0, 0, TimeSpan.Zero),
+            "test-snapshot", ScenarioA1BoardOccupancy.KnownEmpty, true, true, true, true, true, true, true, true, true, true, Binding("E4"));
+
+    private static ScenarioA1BoardObservationProvider OccupiedProvider(ScenarioA1BoardSnapshot snapshot, IScenarioA1TerrainEvidence terrain) =>
+        new(new Board01ValidatedSnapshotSource(new StubSource(snapshot), terrain));
+
+    private static ObservationQuery OccupiedQuery() =>
+        new("query", Tenant, ScenarioA1OccupiedPackage.Identity,
+            new SemanticIdentifier(new DomainId("asl"), ScenarioA1BoardObservationProvider.QueryKind),
+            JsonSerializer.SerializeToElement(new
+            {
+                unitId = "squad",
+                locationId = "bd01:E4:0",
+                observationVersion = "state-1"
+            }), 1);
+
+    private sealed class StubSource(ScenarioA1BoardSnapshot snapshot) : IScenarioA1BoardSnapshotSource
+    {
+        public ValueTask<ScenarioA1BoardSnapshot?> ReadAsync(Guid tenantId, DomainPackageRef package, string unitId, string locationId,
+            CancellationToken cancellationToken = default) => ValueTask.FromResult<ScenarioA1BoardSnapshot?>(snapshot);
     }
 
     internal static ScenarioA1TerrainBinding Binding(string hex) =>

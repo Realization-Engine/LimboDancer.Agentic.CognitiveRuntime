@@ -45,7 +45,7 @@ Everything in the Governed Writes Design, section 4, still holds: the planner pl
 Today the five providers take the concrete `Board01TerrainCatalog`, and `Board01ValidatedSnapshotSource` wraps the occupied-case source with it. Each accepts a location only if it is one of the 63 building hexes whose type the pinned board 01 metadata states outright (version 6.9, metadata blob `e91b0d99...`), at level 0. The reviewed packages are bounded to that evidence, so this step keeps the same 63 hexes. What it changes is where the evidence is read from.
 
 - **`IScenarioA1TerrainEvidence`.** A new interface in the Scenario A1 project with the one member the providers use: `IsSupportedGroundLevel(ScenarioA1TerrainBinding?)`. `Board01TerrainCatalog` implements it unchanged. The five providers and `Board01ValidatedSnapshotSource` take the interface instead of the class. Only the constructor parameter types change. The package manifests, matrices, and digests do not.
-- **`BoardCatalogTerrainEvidence`.** A second implementation over `IBoardCatalog`. It is true only when every one of these holds:
+- **`BoardCatalogTerrainEvidence`.** A second implementation over `IBoardCatalog`, in the Play project. It is not in the Scenario A1 project: the runtime Host references the Execution adapter, which references Scenario A1, so a Maps reference there would bring the Maps project into the Host. It is true only when every one of these holds:
   - the binding names board 01 at the pinned metadata version and blob;
   - the handle's typed VASL source matches that pin (below);
   - the hex is one of the 63 override hexes;
@@ -54,6 +54,7 @@ Today the five providers take the concrete `Board01TerrainCatalog`, and `Board01
   That last check is the override consistency check of the Ingestion Design, section 6.4, made at read time. A board that disagrees is not evidence.
 - **Typed board source.** `BoardHandle` gains an optional `VaslSource` record: board name, metadata version, metadata blob, LOSData blob, and commit. `StudioBoardCatalog` fills it from the board's `BoardProvenance`. The free-text `Provenance` stays for display. Authored and synthetic boards have none, so the Scenario A1 packages cannot be used on them.
 - **Parity.** A test builds a handle from the committed board 01 Hex Fact oracle fixture (`bd01.hexfacts.json.gz`) with its recorded source identities. It checks that the two implementations agree on every hex of the board: 63 true, all others false. This test runs in CI without a VASL checkout. The existing `All63Board01BuildingOverridesAgreeWithTheGrid` test still covers the live VASL board in the run with `AslMaps__VaslRoot` set.
+- **As built** (part 1). The parity and disagreement checks, and the Occupied provider over both implementations, are in `BoardCatalogTerrainEvidenceTests` in the Play tests. The existing Scenario A1 tests, including the second-defender gate binding, journal, and Host registration tests, pass unchanged.
 - **Unchanged.** `ScenarioA1VerifiedReturnConclusionSource` in the Execution adapter keeps `Board01TerrainCatalog`. Step 9 decides that adapter's future.
 
 ## 4. Live snapshot sources
