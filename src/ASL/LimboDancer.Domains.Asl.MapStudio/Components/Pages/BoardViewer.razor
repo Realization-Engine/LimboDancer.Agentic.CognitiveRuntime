@@ -2,6 +2,7 @@
 @using System.Globalization
 @implements IAsyncDisposable
 @inject IBoardProvider Boards
+@inject UnitLibrary UnitLibrary
 @inject IJSRuntime JS
 
 <PageTitle>@(board?.Title ?? BoardName) - ASL Map Studio</PageTitle>
@@ -79,10 +80,26 @@ else if (board is null)
                         derivation trace
                     </label>
                 }
-                @if (demoOverlay is not null)
+                @if (unitSets.Count > 0)
                 {
-                    <label><input type="checkbox" checked="@showDemoUnits" @onchange="ToggleDemoUnits" /> Demo units</label>
+                    <label><input type="checkbox" checked="@showUnits" @onchange="ToggleUnits" /> Units</label>
+                    @if (showUnits)
+                    {
+                        <select value="@unitSetId" @onchange="ChangeUnitSet" aria-label="Placement set">
+                            @foreach (var entry in unitSets)
+                            {
+                                <option value="@entry.Set.SetId">@entry.Set.Label@(entry.Set.Synthetic ? " (synthetic)" : "")</option>
+                            }
+                        </select>
+                        <select value="@unitSheet" @onchange="ChangeUnitSheet" aria-label="Unit style sheet">
+                            @foreach (var name in UnitLibrary.SheetNames())
+                            {
+                                <option value="@name">@name</option>
+                            }
+                        </select>
+                    }
                 }
+                <a href="@($"units/lab?board={board.Ref.Value}")">Unit Lab</a>
                 <button @onclick="ResetView">Fit</button>
                 @if (preparing is not null)
                 {
@@ -96,34 +113,35 @@ else if (board is null)
     <aside class="inspector">
         @if (selectedUnit is { } unit)
         {
-            <h2>Demo unit @unit.Placement.Label</h2>
-            <dl>
-                <dt>ID</dt><dd>@unit.Placement.PlacementId</dd>
-                <dt>Side</dt><dd>@unit.Placement.SideId</dd>
-                <dt>Face</dt><dd>@unit.Placement.FaceKey</dd>
+            <h2 class="unit-name">@unit.Name</h2>
+            <dl class="unit-details">
+                <dt>ID</dt><dd>@unit.Document.Id</dd>
+                @foreach (var detail in UnitLabels.Details(unit.Document, UnitLibrary.Vocabulary))
+                {
+                    <dt>@detail.Label</dt><dd>@detail.Value</dd>
+                }
                 <dt>Location</dt><dd>@unit.Location</dd>
             </dl>
-            @if (demoOverlay is { } overlay)
+            @if (unitOverlay is { } overlay && UnitSet is { } shown)
             {
-                <p class="muted">Illustrative placement from @overlay.FixtureId.</p>
+                <p class="muted">@(shown.Set.Synthetic ? "Synthetic placement" : "Placement") from @shown.Set.Label (@overlay.SetId); display only, not game state.</p>
             }
         }
-        @if (demoOverlay is { } demo)
+        @if (showUnits && unitOverlay is { } units)
         {
-            @foreach (var diagnostic in demo.Diagnostics)
+            @foreach (var diagnostic in units.Diagnostics)
             {
-                <p class="fail">Demo units: @diagnostic</p>
+                <p class="fail">Units: @diagnostic</p>
             }
-            @if (selected is { } selectedHex)
+            @if (selected is { } selectedHex && units.At(selectedHex.Index).ToArray() is { Length: > 0 } members)
             {
-                @if (demo.Units.Any(u => u.Location.Hex == selectedHex.Hex))
-                {
-                    <h3>Demo units in @selectedHex.Hex (@demo.Units.Count(u => u.Location.Hex == selectedHex.Hex))</h3>
-                    @foreach (var member in demo.Units.Where(u => u.Location.Hex == selectedHex.Hex))
+                <h3>Units in @selectedHex.Hex (@members.Length)</h3>
+                <ul class="unit-list">
+                    @foreach (var member in members)
                     {
-                        <button @onclick="() => SelectUnit(member)">@member.Placement.Label (@member.Location.Level)</button>
+                        <li><button class="link" @onclick="() => SelectUnit(member)">@member.Name</button>@(member.Shown ? "" : " (not drawn; stack beyond six)")</li>
                     }
-                }
+                </ul>
             }
         }
         @if (board is not null && (selected ?? hovered) is { } facts)
@@ -211,9 +229,12 @@ else if (board is null)
     private HashSet<string> visible = [];
     private HexFacts? selected;
     private HexFacts? hovered;
-    private DisplayedUnit? selectedUnit;
-    private DemoUnitOverlay? demoOverlay;
-    private bool showDemoUnits;
+    private PlacedUnit? selectedUnit;
+    private UnitOverlay? unitOverlay;
+    private IReadOnlyList<UnitSetEntry> unitSets = [];
+    private string? unitSetId;
+    private string unitSheet = UnitLibrary.DefaultSheet;
+    private bool showUnits;
     private string? sample;
     private bool viewportPending;
     private string comparisonMode = "overlay";
@@ -221,6 +242,12 @@ else if (board is null)
 
     [Parameter]
     public string BoardName { get; set; } = string.Empty;
+
+    /// <summary>A placement set to show, such as one just saved in the Unit Lab.</summary>
+    [SupplyParameterFromQuery(Name = "units")]
+    public string? UnitsQuery { get; set; }
+
+    private UnitSetEntry? UnitSet => unitSets.FirstOrDefault(entry => entry.Set.SetId == unitSetId);
 
     private IEnumerable<string> ToggleLayers => BoardRenderer.Layers(view).Where(layer => layer != "defs" && !layer.StartsWith("styled-", StringComparison.Ordinal));
 
@@ -235,8 +262,9 @@ else if (board is null)
         selected = null;
         hovered = null;
         selectedUnit = null;
-        demoOverlay = null;
-        showDemoUnits = false;
+        unitOverlay = null;
+        unitSets = [];
+        showUnits = false;
         sample = null;
         if (!BoardRef.TryParse(BoardName, out var boardRef))
         {
@@ -261,8 +289,10 @@ else if (board is null)
             view = BoardView.Exact;
         }
 
-        demoOverlay = DemoUnitOverlayBuilder.Load(board);
-        showDemoUnits = demoOverlay is not null;
+        unitSets = UnitLibrary.SetsFor(board);
+        unitSetId = unitSets.Any(entry => entry.Set.SetId == UnitsQuery) ? UnitsQuery : unitSets.FirstOrDefault()?.Set.SetId;
+        showUnits = unitSetId is not null;
+        BuildUnits();
         visible = [.. BoardRenderer.Layers(view).Where(layer => layer != "defs")];
         viewportPending = true;
     }
@@ -304,22 +334,55 @@ else if (board is null)
         await viewport.InvokeVoidAsync("load", baseUrl, trace ? "?trace=true" : "", BoardRenderer.ViewBox(input, view),
             BoardRenderer.Layers(view), visible.ToArray());
         await viewport.InvokeVoidAsync("setComparison", view == BoardView.Comparison ? comparisonMode : "none", comparisonValue / 100.0);
-        await viewport.InvokeVoidAsync("setUnits", showDemoUnits ? demoOverlay?.Svg : null);
+        await viewport.InvokeVoidAsync("setUnits", showUnits ? unitOverlay?.Svg : null);
         await Highlight();
         StateHasChanged();
     }
 
-    private async Task ToggleDemoUnits(ChangeEventArgs args)
+    /// <summary>Builds the Units layer for the chosen set and sheet. It replaces only <c>layer-units</c>; board layers are untouched.</summary>
+    private void BuildUnits()
     {
-        showDemoUnits = args.Value is true;
-        if (!showDemoUnits)
+        unitOverlay = board is not null && UnitSet is { } entry && UnitLibrary.Renderer(unitSheet) is { } renderer
+            ? UnitLibrary.Overlay(board, entry.Set, renderer)
+            : null;
+        if (selectedUnit is { } current)
+        {
+            selectedUnit = unitOverlay?.Units.FirstOrDefault(unit => unit.Document.Id == current.Document.Id);
+        }
+    }
+
+    private async Task PushUnits()
+    {
+        if (viewport is not null)
+        {
+            await viewport.InvokeVoidAsync("setUnits", showUnits ? unitOverlay?.Svg : null);
+        }
+    }
+
+    private async Task ToggleUnits(ChangeEventArgs args)
+    {
+        showUnits = args.Value is true;
+        if (!showUnits)
         {
             selectedUnit = null;
         }
-        if (viewport is not null)
-        {
-            await viewport.InvokeVoidAsync("setUnits", showDemoUnits ? demoOverlay?.Svg : null);
-        }
+
+        await PushUnits();
+    }
+
+    private async Task ChangeUnitSet(ChangeEventArgs args)
+    {
+        unitSetId = args.Value as string;
+        selectedUnit = null;
+        BuildUnits();
+        await PushUnits();
+    }
+
+    private async Task ChangeUnitSheet(ChangeEventArgs args)
+    {
+        unitSheet = args.Value as string ?? UnitLibrary.DefaultSheet;
+        BuildUnits();
+        await PushUnits();
     }
 
     private async Task ChangeView(ChangeEventArgs args)
@@ -448,24 +511,24 @@ else if (board is null)
     public Task OnBoardDrag(double x0, double y0, double x1, double y1) => Task.CompletedTask;
 
     [JSInvokable]
-    public async Task OnUnitClick(string placementId)
+    public async Task OnUnitClick(string unitId)
     {
-        if (!showDemoUnits || board is null || demoOverlay is null)
+        if (!showUnits || board is null || unitOverlay is null)
         {
             return;
         }
 
-        var unit = demoOverlay.Units.FirstOrDefault(item => item.Placement.PlacementId == placementId);
+        var unit = unitOverlay.Units.FirstOrDefault(item => item.Document.Id == unitId);
         if (unit is not null)
         {
             selectedUnit = unit;
-            selected = board.Facts[board.Render.Grid.Geometry.IndexOf(unit.Location.Hex)];
+            selected = board.Facts[unit.Hex];
             await Highlight();
             StateHasChanged();
         }
     }
 
-    private void SelectUnit(DisplayedUnit unit) => selectedUnit = unit;
+    private void SelectUnit(PlacedUnit unit) => selectedUnit = unit;
 
     private async Task Highlight()
     {

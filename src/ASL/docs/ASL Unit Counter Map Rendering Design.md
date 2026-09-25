@@ -1,6 +1,6 @@
 # ASL Unit Counter Map Rendering Design
 
-**Status:** Implemented (commits `88b9077` to `6620817`), with the departures listed under "As built" in section 5. Later display work follows ASL-UNIT-070 to 072 in the [ASL Unit Requirements](<LimboDancer.Agentic.CognitiveRuntime ASL Unit Requirements.md>).
+**Status:** Implemented (commits `88b9077` to `6620817`), then superseded for its drawing by phase 1 of the [ASL Unit Display Design](<ASL Unit Display Design.md>) (section 16): the Units layer and `UnitOverlayBuilder` in `LimboDancer.Domains.Asl.Units.Rendering` replace `DemoUnitOverlay` and its `bd01` fixture. Its isolation and interaction rules still apply, and so does its binding, except that placement sets carry no pinned board version (Display Design, section 16.3).
 
 **Date:** 2026-09-24; status revised the same day
 
@@ -90,5 +90,7 @@ Both `BoardRenderer.Document` and its existing golden SVG tests remain board-onl
 - **Level badge:** section 3 calls for one; it is not drawn yet.
 - **Views:** the overlay is loaded with the view the page opens in; the Styled and Comparison views added in ASL-MAP-07 are not covered by the checks above.
 - **Verification gaps:** selection surviving a board or view switch, and unchanged board-only ETags, are not asserted by tests.
+
+Resolved by the Unit Display Design, phase 1: the code now lives in `LimboDancer.Domains.Asl.Units.Rendering`; stacks at a level other than ground get a level tab; the Units layer is loaded again with every view, including Styled and Comparison; and a placement set may name any board or map rather than one pinned board. A set is still display input only and is marked synthetic when it comes from the Lab or a fixture.
 
 Implementation handoff: add the fixture schema and one demo fixture; add the DTO, validator and pure unit overlay renderer with focused tests; integrate the overlay and selection into Map Studio; run the board renderer's existing tests to catch regressions to board-only output. Stop there. A curated counter catalog, ASL game state, concealment rules, movement, and Scenario A1 state sourcing belong to later designs.

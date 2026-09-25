@@ -1,6 +1,6 @@
 # ASL Unit Display Design
 
-**Status:** Accepted design, with the open questions decided (section 15); no implementation in this change
+**Status:** Accepted design, with the open questions decided (section 15). Phase 1 (Personnel and SW) is built; section 16 records what was built and where it departs from this design.
 
 **Date:** 2026-09-24
 
@@ -396,3 +396,52 @@ Decided on 2026-09-24:
 2. **Side palettes:** both. ASL's customary nationality colors and palettes of our own ship as two palette sets (section 7.4).
 3. **Figures:** unit size is shown by 1 to 3 figure glyphs in both ASL sheets.
 4. **Face size:** 0.55 of the hex height, to be tried in the Unit Lab and adjusted through `face-size` if it does not read well (section 7.1).
+
+## 16. As built: phase 1
+
+Built on branch `feature/asl-units-01`, from `main@cdc738b`.
+
+### 16.1 Projects and files
+
+| Project or folder | Content |
+|---|---|
+| `LimboDancer.Domains.Asl.Units` | `Vocabulary/`: pack model, `VocabularyPackReader`, `UnitVocabulary`. `Documents/`: `UnitDocument`, `UnitDocumentReader`, `UnitPlacementSet`, `UnitDocumentJson` (canonical writer), `UnitLabels` (accessible names and detail rows). `Plausibility/UnitPlausibility`. References `Maps` for locations. |
+| `LimboDancer.Domains.Asl.Units.Rendering` | `Styles/`: style model, `StyleSheetParser`, `StyleCascade`. `Palettes/PaletteSet`. `UnitRenderer` (layout and SVG), `Glyphs`, `UnitOverlay` (targets, overlay builder, preview), `UnitStyles`. References `Units` and `Maps.Rendering`. |
+| `src/ASL/units/` | `vocabulary/asl.vocab.json`, `styles/asl-classic.uss` and `asl-digital.uss`, `palettes/asl-customary.palette.json` and `limbodancer.palette.json`, and synthetic `examples/` (`catalog.units.json` for the Lab, `bd01-demo.units.json` as the built-in placement set). They are embedded in the projects that read them. |
+| Map Studio | `Services/UnitLibrary`, `Services/UnitDraft`, `Components/Units/UnitEditor.razor`, `Components/Pages/UnitLab.razor`, the Units layer in `BoardViewer.razor`, and tier switching in `boardViewport.js`. `DemoUnitOverlay` and its `bd01.json` fixture are removed. |
+
+Neither unit project references Blazor. Both have test projects, with central package versions and lock files.
+
+### 16.2 Additions to the design
+
+- **Vocabulary.** A pack also declares its `sides` and `faces` with labels. A kind may set `sizeClass` (1 to 3 figures), an `accessibleName` template, and an `attachedName` template, each by face with a `default`. An attribute or trait may name the faces it belongs on. The core kind `unit` is the root every kind extends. An `augments` list adds attributes and traits to a kind of a pack the pack extends. An attribute may be written by its local name (`firepower`) when exactly one attribute the kind accepts has that name.
+- **Documents.** A document may carry `sizeClass` and a free `note`. A placement set is `{ schemaVersion, setId, label, synthetic, vocabulary, units }`; each unit is a document with a location.
+- **Style language.**
+  - `:face(name)` matches the shown face, so a sheet styles a face whether a state selected it or the Lab forced it.
+  - `@palette name;` names the sheet's default palette set.
+  - `attr(name, first)` takes a list's first item; `attr(name, front)` reads another face when the shown face lacks the value, which lets a malfunctioned face keep its MG size label. `attr()` also reads `id`, `side`, and `size-class`.
+  - Further properties: `attachment-scale`, `display`, `stroke-style`, `align`, `badges`, `badge-fill`, `badge-color`, `badge-shape`.
+  - Lengths are fractions: `face-size` of the hex height, everything else of the face size.
+- **Layout.** Attached equipment is drawn first, so the owner covers its upper part. Stacks overlap at 0.62 of the face size. Units at different levels of one hex form separate stacks, each non-ground stack with a level tab (`L1`, `L2`, or `C` for a cellar). The overlay's accessible names add ", level N".
+- **Tiers.** The viewport picks far below 16 screen pixels per face, mid to 40, and near above, from the layer's `data-face-size` and the zoom, and sets `data-active-tier`; CSS shows one tier.
+- **Studio.** The viewer's Units layer lists the placement sets that have a unit on the displayed board or map, a sheet selector, and `?units=` to open a set. The inspector shows the unit's accessible name, detail rows, location, and every member of the selected hex's stacks. The Lab edits a unit through forms generated from the vocabulary, previews every sheet at every tier, each face, and the owner's and opponent's views, edits a sheet live with diagnostics, runs the plausibility check, and places units on any board or composed map. It saves under `{boards folder}/units/`: `documents/`, `styles/`, and `placements/`. Built-in sheet names and set ids are read-only.
+
+### 16.3 Departures
+
+- **`@detail` precedence.** Rules inside a matching `@detail` block outrank every rule outside one; specificity and order decide within each group. Section 3.3 left detail rules in the ordinary cascade, where a far-tier rule for `asl|personnel` would lose to the base rule for `asl|leader`.
+- **Badges accumulate.** Every matching `badge` declaration adds a badge, in cascade order, instead of the last one winning; `badges: none` hides them. Otherwise two states on one unit could not both show.
+- **Radio value in force.** There is no scenario date yet, so `asl-digital` shows the first value of a contact series; the full series and its dates are in the detail panel and on the reverse face.
+- **Kind label on hover.** The unit's `<title>` is its accessible name, which includes the kind label.
+- **Text width.** Marks and badges size text by an estimate of 0.6 em per character; there are no font metrics.
+- **Plausibility** is shown in the Lab only, not in the viewer's inspector.
+- **No pinned board version.** A placement set names hexes by board and is anchored through the displayed board's geometry when the viewer loads it. The Counter Rendering Design's optional `expectedBoardVersion` is not carried over; a unit whose hex is not on the displayed board or map is left out with a diagnostic, never moved.
+
+### 16.4 Tests
+
+`Units.Tests` (101): the pack and every section 4 term, extension packs and their refusals, document errors with paths, names, details, canonical writing, placement sets, and the plausibility rules. `Units.Rendering.Tests` (146): parser diagnostics with line and column, the cascade, extension styling, one parity case per row of section 4 under both sheets, one golden per kind and state under each sheet (far, mid, and near side by side), a pairwise set, determinism, accessibility, and overlay placement on a standard board, a b board, and a composed map. Map Studio tests cover the unit library, Lab forms with bUnit, the viewer's Units layer, and, in `boardViewport.pointer.test.mjs`, unit selection under pointer capture, keyboard selection, and tier switching.
+
+### 16.5 Not yet done
+
+- The `limbodancer` palettes have not been checked with a color-vision simulator.
+- The vocabulary file's canonical form is a convention; its identity hash normalizes line endings only.
+- Guns, vehicles, and entities that are not units (section 13, phases 2 to 4).

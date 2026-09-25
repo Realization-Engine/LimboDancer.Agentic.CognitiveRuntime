@@ -32,10 +32,10 @@ export function create(host, dotnet) {
 
         host.focus({ preventScroll: true });
 
-        // Pointer capture retargets pointerup to the SVG root. Remember the actual counter hit here.
-        const placementId = event.target.closest?.("[data-placement-id]")?.getAttribute("data-placement-id");
+        // Pointer capture retargets pointerup to the SVG root. Remember the actual unit hit here.
+        const unitId = event.target.closest?.("[data-unit-id]")?.getAttribute("data-unit-id");
         state.drag = {
-            id: event.pointerId, x: event.clientX, y: event.clientY, box: { ...state.box }, moved: false, placementId,
+            id: event.pointerId, x: event.clientX, y: event.clientY, box: { ...state.box }, moved: false, unitId,
             start: toBoard(state, event.clientX, event.clientY),
         };
         svg.setPointerCapture(event.pointerId);
@@ -88,8 +88,8 @@ export function create(host, dotnet) {
             return;
         }
 
-        if (drag.placementId && state.svg.querySelector("#layer-units")) {
-            state.dotnet.invokeMethodAsync("OnUnitClick", drag.placementId);
+        if (drag.unitId && state.svg.querySelector("#layer-units")) {
+            state.dotnet.invokeMethodAsync("OnUnitClick", drag.unitId);
             return;
         }
 
@@ -110,17 +110,17 @@ export function create(host, dotnet) {
     });
 
     svg.addEventListener("keydown", event => {
-        const counter = event.target.closest?.("[data-placement-id]");
-        if (counter && (event.key === "Enter" || event.key === " ")) {
+        const unit = event.target.closest?.("[data-unit-id]");
+        if (unit && (event.key === "Enter" || event.key === " ")) {
             event.preventDefault();
             event.stopPropagation();
-            state.dotnet.invokeMethodAsync("OnUnitClick", counter.getAttribute("data-placement-id"));
+            state.dotnet.invokeMethodAsync("OnUnitClick", unit.getAttribute("data-unit-id"));
         }
     });
 
     // Keyboard zoom and editing shortcuts while the board has focus (section 5.3).
     host.addEventListener("keydown", event => {
-        if (event.target.closest?.("[data-placement-id]")) {
+        if (event.target.closest?.("[data-unit-id]")) {
             return;
         }
 
@@ -417,15 +417,36 @@ function setUnits(state, markup) {
     const fragment = new DOMParser().parseFromString(
         `<svg xmlns="${svgNamespace}">${markup}</svg>`, "image/svg+xml");
     if (fragment.querySelector("parsererror")) {
-        throw new Error("Invalid demo unit SVG");
+        throw new Error("Invalid unit SVG");
     }
     const group = fragment.documentElement.firstElementChild;
     if (group?.id !== "layer-units") {
-        throw new Error("Invalid demo unit layer");
+        throw new Error("Invalid unit layer");
     }
     state.svg.appendChild(document.importNode(group, true));
     if (state.highlight?.isConnected) {
         state.svg.appendChild(state.highlight);
+    }
+
+    updateUnitTier(state);
+}
+
+// Unit detail tiers (Unit Display Design, section 7.1): the overlay carries every tier, and zoom picks one from the
+// face size on screen, so zooming never asks the server again.
+export function unitTier(faceSize, clientWidth, boxWidth) {
+    const onScreen = clientWidth > 0 && boxWidth > 0 ? faceSize * clientWidth / boxWidth : faceSize;
+    return onScreen < 16 ? "far" : onScreen <= 40 ? "mid" : "near";
+}
+
+function updateUnitTier(state) {
+    const layer = state.svg.querySelector("#layer-units");
+    if (!layer || !state.box) {
+        return;
+    }
+
+    const tier = unitTier(Number(layer.getAttribute("data-face-size")) || 0, state.svg.clientWidth, state.box.width);
+    if (layer.getAttribute("data-active-tier") !== tier) {
+        layer.setAttribute("data-active-tier", tier);
     }
 }
 
@@ -449,6 +470,7 @@ function setBox(state, box) {
     const value = `${box.x} ${box.y} ${box.width} ${box.height}`;
     state.svg.setAttribute("viewBox", value);
     state.side?.setAttribute("viewBox", value);
+    updateUnitTier(state);
 }
 
 function toBoard(state, clientX, clientY) {

@@ -1,0 +1,455 @@
+@page "/units/lab"
+@using System.Globalization
+@using LimboDancer.Domains.Asl.MapStudio.Components.Units
+@using LimboDancer.Domains.Asl.Units.Plausibility
+@using LimboDancer.Domains.Asl.Units.Vocabulary
+@inject UnitLibrary Library
+@inject IBoardProvider Boards
+@inject MapService Maps
+
+<PageTitle>Unit Lab - ASL Map Studio</PageTitle>
+
+<h2>Unit Lab</h2>
+<p class="muted">
+    Describe a unit in the vocabulary (@Library.Vocabulary.Identity), preview it under each style sheet and detail tier, edit a sheet,
+    and place units on a board or map. Documents made here are synthetic display input, never game state.
+</p>
+
+<div class="lab">
+    <section>
+        <div class="toolbar">
+            <label>
+                Start from
+                <select id="lab-example" value="@exampleId" @onchange="LoadExample">
+                    <option value="">a new squad</option>
+                    @foreach (var example in Library.Examples)
+                    {
+                        <option value="@example.Id">@UnitLabels.AccessibleName(example, Library.Vocabulary)</option>
+                    }
+                </select>
+            </label>
+        </div>
+
+        <UnitEditor Draft="draft" Vocabulary="Library.Vocabulary" OnChange="Refresh" />
+
+        @if (!draft.Concealed)
+        {
+            <h3>Attached equipment</h3>
+            @for (var index = 0; index < draft.Attached.Count; index++)
+            {
+                var item = draft.Attached[index];
+                var position = index;
+                <fieldset class="attached">
+                    <legend>Item @(position + 1) <button class="link" id="@($"att{position}-remove")" @onclick="() => RemoveAttached(position)">remove</button></legend>
+                    <UnitEditor Draft="item" Vocabulary="Library.Vocabulary" Prefix="@($"att{position}")" IsAttached="true" OnChange="Refresh" />
+                </fieldset>
+            }
+            <button id="lab-attach" @onclick="AddAttached">Attach equipment</button>
+        }
+    </section>
+
+    <section>
+        <h3>Preview</h3>
+        @if (document is null)
+        {
+            <p class="fail">The document is refused; see the diagnostics below.</p>
+        }
+        else
+        {
+            <div class="previews">
+                <span></span><strong>far</strong><strong>mid</strong><strong>near</strong>
+                @foreach (var row in previews)
+                {
+                    <span class="preview-label">@row.Label</span>
+                    @foreach (var svg in row.Svgs)
+                    {
+                        <span class="preview" data-preview="@row.Label">@((MarkupString)svg)</span>
+                    }
+                }
+            </div>
+
+            <h4>Faces and perspectives under @sheetName</h4>
+            <div class="previews">
+                @foreach (var (label, svg) in faces)
+                {
+                    <span class="preview" data-preview="@label" title="@label">@((MarkupString)svg)<br /><small>@label</small></span>
+                }
+            </div>
+
+            <h4>Accessible name</h4>
+            <p id="lab-name">@UnitLabels.AccessibleName(document, Library.Vocabulary)</p>
+            <details>
+                <summary>Detail panel</summary>
+                <dl>
+                    @foreach (var detail in UnitLabels.Details(document, Library.Vocabulary))
+                    {
+                        <dt>@detail.Label</dt><dd>@detail.Value</dd>
+                    }
+                </dl>
+            </details>
+        }
+
+        <h3>Findings</h3>
+        <ul id="lab-findings">
+            @foreach (var diagnostic in diagnostics)
+            {
+                <li class="@(diagnostic.Severity == UnitDiagnosticSeverity.Error ? "fail" : "")">@diagnostic</li>
+            }
+            @foreach (var warning in plausibility)
+            {
+                <li class="plausibility">Plausibility (@warning.Rule): @warning.Message</li>
+            }
+            @foreach (var warning in renderWarnings)
+            {
+                <li class="muted">Style: @warning.Message</li>
+            }
+            @if (diagnostics.Count == 0 && plausibility.Count == 0 && renderWarnings.Count == 0)
+            {
+                <li class="pass">No findings.</li>
+            }
+        </ul>
+
+        <div class="toolbar">
+            <button id="lab-save-document" disabled="@(document is null)" @onclick="SaveDocument">Save document</button>
+            @if (documentMessage is not null)
+            {
+                <span class="muted">@documentMessage</span>
+            }
+        </div>
+        <details>
+            <summary>Document JSON</summary>
+            <pre class="json">@json</pre>
+        </details>
+
+        <h3>Style sheet</h3>
+        <div class="toolbar">
+            <label>
+                Edit
+                <select id="lab-sheet" value="@sheetName" @onchange="ChangeSheet">
+                    @foreach (var name in Library.SheetNames())
+                    {
+                        <option value="@name">@name</option>
+                    }
+                </select>
+            </label>
+            <label>
+                Palette
+                <select id="lab-palette" value="@(palette ?? string.Empty)" @onchange="ChangePalette">
+                    <option value="">the sheet's own</option>
+                    @foreach (var name in Library.PaletteNames)
+                    {
+                        <option value="@name">@name</option>
+                    }
+                </select>
+            </label>
+        </div>
+        <textarea id="lab-sheet-text" class="sheet" spellcheck="false" value="@sheetText" @oninput="EditSheet"></textarea>
+        <ul id="lab-sheet-diagnostics">
+            @foreach (var diagnostic in sheetDiagnostics)
+            {
+                <li class="@(diagnostic.Severity == StyleDiagnosticSeverity.Error ? "fail" : "muted")">@diagnostic</li>
+            }
+        </ul>
+        <div class="toolbar">
+            <input id="lab-sheet-name" value="@saveSheetName" placeholder="my-sheet" @onchange="@(args => saveSheetName = args.Value as string ?? string.Empty)" />
+            <button id="lab-save-sheet" disabled="@(parsedSheet is null)" @onclick="SaveSheet">Save sheet as</button>
+            @if (sheetMessage is not null)
+            {
+                <span class="muted">@sheetMessage</span>
+            }
+        </div>
+
+        <h3>Place on a board or map</h3>
+        <div class="fields">
+            <label for="lab-board">Board or map</label>
+            <input id="lab-board" list="lab-boards" value="@boardText" placeholder="bd01" @onchange="@(args => boardText = args.Value as string ?? string.Empty)" />
+            <datalist id="lab-boards">
+                @foreach (var listing in boardListings)
+                {
+                    <option value="@listing">@listing</option>
+                }
+            </datalist>
+            <label for="lab-hex">Hex</label>
+            <input id="lab-hex" value="@hexText" placeholder="E4, or bd01:E4 on a map" @onchange="@(args => hexText = args.Value as string ?? string.Empty)" />
+            <label for="lab-level">Level</label>
+            <input id="lab-level" type="number" step="1" value="@level" @onchange="@(args => level = int.TryParse(args.Value as string, out var value) ? value : 0)" />
+            <label for="lab-set">Placement set</label>
+            <input id="lab-set" value="@setId" @onchange="@(args => setId = args.Value as string ?? string.Empty)" />
+            <label for="lab-set-label">Set label</label>
+            <input id="lab-set-label" value="@setLabel" @onchange="@(args => setLabel = args.Value as string ?? string.Empty)" />
+        </div>
+        <div class="toolbar">
+            <button id="lab-place" disabled="@(document is null)" @onclick="Place">Place this unit</button>
+            <button id="lab-load-set" @onclick="LoadSet">Load set</button>
+            <button id="lab-save-set" disabled="@(placed.Count == 0)" @onclick="SaveSet">Save set</button>
+            @if (placeMessage is not null)
+            {
+                <span class="@(placeFailed ? "fail" : "muted")">@placeMessage</span>
+            }
+        </div>
+        @if (placed.Count > 0)
+        {
+            <ul id="lab-placed">
+                @foreach (var unit in placed)
+                {
+                    <li>
+                        @unit.Location: @UnitLabels.AccessibleName(unit, Library.Vocabulary)
+                        <button class="link" @onclick="() => Unplace(unit)">remove</button>
+                    </li>
+                }
+            </ul>
+        }
+        @if (savedBoard is not null)
+        {
+            <p><a id="lab-view" href="@($"boards/{savedBoard}?units={setId}")">View @setId on @savedBoard</a></p>
+        }
+    </section>
+</div>
+
+@code {
+    private static readonly DetailTier[] Tiers = [DetailTier.Far, DetailTier.Mid, DetailTier.Near];
+
+    private UnitDraft draft = new();
+    private string exampleId = string.Empty;
+    private UnitDocument? document;
+    private string json = string.Empty;
+    private List<UnitDiagnostic> diagnostics = [];
+    private IReadOnlyList<PlausibilityWarning> plausibility = [];
+    private List<RenderWarning> renderWarnings = [];
+    private List<(string Label, string[] Svgs)> previews = [];
+    private List<(string Label, string Svg)> faces = [];
+    private string? documentMessage;
+
+    private string sheetName = UnitLibrary.DefaultSheet;
+    private string sheetText = string.Empty;
+    private string? palette;
+    private StyleSheet? parsedSheet;
+    private IReadOnlyList<StyleDiagnostic> sheetDiagnostics = [];
+    private string saveSheetName = string.Empty;
+    private string? sheetMessage;
+
+    private IReadOnlyList<string> boardListings = [];
+    private string boardText = string.Empty;
+    private string hexText = string.Empty;
+    private int level;
+    private string setId = "lab-units";
+    private string setLabel = "Unit Lab placements";
+    private List<UnitDocument> placed = [];
+    private string? placeMessage;
+    private bool placeFailed;
+    private string? savedBoard;
+
+    [SupplyParameterFromQuery(Name = "board")]
+    public string? BoardQuery { get; set; }
+
+    protected override void OnInitialized()
+    {
+        boardText = BoardQuery ?? "bd01";
+        boardListings = [.. Boards.List().Select(listing => listing.Ref.Value).Concat(Maps.List().Select(map => map.Ref.Value)).Distinct().Order(StringComparer.Ordinal)];
+        if (Library.Examples.FirstOrDefault() is { } first)
+        {
+            exampleId = first.Id;
+            draft = UnitDraft.From(first);
+        }
+
+        LoadSheetText();
+        Refresh();
+    }
+
+    private void LoadExample(ChangeEventArgs args)
+    {
+        exampleId = args.Value as string ?? string.Empty;
+        draft = Library.Examples.FirstOrDefault(example => example.Id == exampleId) is { } example ? UnitDraft.From(example) : new UnitDraft();
+        Refresh();
+    }
+
+    private void AddAttached()
+    {
+        draft.Attached.Add(new UnitDraft { Id = $"{draft.Id}-sw{draft.Attached.Count + 1}", Kind = "asl:mg", Side = null });
+        Refresh();
+    }
+
+    private void RemoveAttached(int index)
+    {
+        draft.Attached.RemoveAt(index);
+        Refresh();
+    }
+
+    private void ChangeSheet(ChangeEventArgs args)
+    {
+        sheetName = args.Value as string ?? UnitLibrary.DefaultSheet;
+        LoadSheetText();
+        Refresh();
+    }
+
+    private void ChangePalette(ChangeEventArgs args)
+    {
+        palette = args.Value as string is { Length: > 0 } name ? name : null;
+        Refresh();
+    }
+
+    private void EditSheet(ChangeEventArgs args)
+    {
+        sheetText = args.Value as string ?? string.Empty;
+        ParseSheet();
+        Refresh();
+    }
+
+    private void LoadSheetText()
+    {
+        sheetText = Library.SheetText(sheetName) ?? string.Empty;
+        saveSheetName = Library.IsBuiltInSheet(sheetName) ? sheetName + "-edited" : sheetName;
+        ParseSheet();
+    }
+
+    private void ParseSheet()
+    {
+        var result = Library.ParseSheet(sheetName, sheetText);
+        parsedSheet = result.Sheet;
+        sheetDiagnostics = result.Diagnostics;
+        sheetMessage = null;
+    }
+
+    /// <summary>Reads the draft as a document and redraws every preview.</summary>
+    private void Refresh()
+    {
+        json = draft.ToJson(Library.Vocabulary);
+        var read = UnitDocumentReader.Read(json, Library.Vocabulary);
+        diagnostics = [.. read.Diagnostics];
+        document = read.Documents.Count == 1 ? read.Documents[0] : null;
+        plausibility = document is null ? [] : UnitPlausibility.Check(document, Library.Vocabulary);
+        renderWarnings = [];
+        previews = [];
+        faces = [];
+        documentMessage = null;
+        if (document is null)
+        {
+            return;
+        }
+
+        foreach (var name in UnitStyles.BuiltIn.Where(name => name != sheetName || parsedSheet is null))
+        {
+            if (Library.Renderer(name, palette) is { } renderer)
+            {
+                previews.Add((name, [.. Tiers.Select(tier => UnitPreview.Document(renderer, document, [tier], null, 1.6, []))]));
+            }
+        }
+
+        if (parsedSheet is null)
+        {
+            return;
+        }
+
+        var edited = Library.Renderer(parsedSheet, palette);
+        var warnings = new List<RenderWarning>();
+        previews.Add((sheetName, [.. Tiers.Select(tier => UnitPreview.Document(edited, document, [tier], null, 1.6, warnings))]));
+        renderWarnings = [.. warnings.Distinct()];
+        foreach (var face in document.Faces.Select(face => face.Name))
+        {
+            faces.Add(($"{Library.Vocabulary.FaceLabel(face)} face", UnitPreview.Document(edited, document, [DetailTier.Near], face, 1.6, [])));
+        }
+
+        // The opponent sees a concealed unit as a placeholder with only its side and size class (section 7.3).
+        var opponent = document.HasState("asl:concealed")
+            ? new UnitDocument(document.Vocabulary, document.Id, VocabularyNames.RootKind, document.Side, document.Location, [], [], [], [], document.StackOrder,
+                Concealed: true, SizeClass: document.Figures(Library.Vocabulary))
+            : document;
+        faces.Add(("owner's view", UnitPreview.Document(edited, document, [DetailTier.Near], null, 1.6, [])));
+        faces.Add(("opponent's view", UnitPreview.Document(edited, opponent, [DetailTier.Near], null, 1.6, [])));
+    }
+
+    private void SaveDocument()
+    {
+        if (document is not null)
+        {
+            documentMessage = "Saved to " + Library.SaveDocument(document);
+        }
+    }
+
+    private void SaveSheet()
+    {
+        if (parsedSheet is null)
+        {
+            return;
+        }
+
+        var error = Library.SaveSheet(saveSheetName, sheetText);
+        sheetMessage = error ?? $"Saved as {saveSheetName}.";
+        if (error is null)
+        {
+            sheetName = saveSheetName;
+            ParseSheet();
+            sheetMessage = $"Saved as {saveSheetName}.";
+            Refresh();
+        }
+    }
+
+    /// <summary>Adds a copy of the document at a hex; the board or map's geometry decides whether the hex exists.</summary>
+    private void Place()
+    {
+        placeFailed = true;
+        if (document is null)
+        {
+            return;
+        }
+
+        if (!BoardRef.TryParse(boardText.Trim(), out var boardRef) || Boards.Load(boardRef).Board is not { } board)
+        {
+            placeMessage = $"'{boardText}' is not a board or map the Studio can load.";
+            return;
+        }
+
+        var hex = hexText.Trim();
+        var text = hex.Contains(':', StringComparison.Ordinal) ? $"{hex}:{level.ToString(CultureInfo.InvariantCulture)}"
+            : $"{board.Ref.Value}:{hex}:{level.ToString(CultureInfo.InvariantCulture)}";
+        if (!BoardLocation.TryParse(text, out var location) || UnitLibrary.TargetFor(board).Locate(location) is null)
+        {
+            placeMessage = $"{text} is not a hex on {board.Ref.Value}.";
+            return;
+        }
+
+        var id = document.Id;
+        for (var suffix = 2; placed.Any(unit => unit.Id == id); suffix++)
+        {
+            id = $"{document.Id}-{suffix.ToString(CultureInfo.InvariantCulture)}";
+        }
+
+        placed.Add(document with { Id = id, Location = location.ToString() });
+        placeFailed = false;
+        placeMessage = $"Placed {id} at {location}.";
+        savedBoard = null;
+        boardText = board.Ref.Value;
+    }
+
+    private void Unplace(UnitDocument unit)
+    {
+        placed.Remove(unit);
+        savedBoard = null;
+    }
+
+    private void LoadSet()
+    {
+        if (Library.Set(setId.Trim()) is { } entry)
+        {
+            placed = [.. entry.Set.Units];
+            setLabel = entry.Set.Label;
+            placeFailed = false;
+            placeMessage = $"Loaded {entry.Set.Units.Count} units from {entry.Set.SetId}{(entry.BuiltIn ? "; it ships with the Studio, so save it under another id" : "")}.";
+        }
+        else
+        {
+            placeFailed = true;
+            placeMessage = $"There is no placement set '{setId}'.";
+        }
+    }
+
+    private void SaveSet()
+    {
+        var set = new UnitPlacementSet(setId.Trim(), setLabel.Trim().Length > 0 ? setLabel.Trim() : setId.Trim(), Synthetic: true,
+            [.. Library.Vocabulary.Packs.Select(pack => pack.Identity)], placed, string.Empty);
+        var error = Library.SaveSet(set);
+        placeFailed = error is not null;
+        placeMessage = error ?? $"Saved {placed.Count} units as {set.SetId}.";
+        savedBoard = error is null && BoardRef.TryParse(boardText.Trim(), out var boardRef) ? boardRef.Value : null;
+    }
+}

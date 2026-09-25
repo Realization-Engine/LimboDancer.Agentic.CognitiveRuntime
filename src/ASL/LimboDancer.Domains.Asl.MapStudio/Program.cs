@@ -21,6 +21,7 @@ public static class Program
         builder.Services.AddSingleton<FidelityReportStore>();
         builder.Services.AddSingleton<IFidelityBatch, VaslFidelityBatch>();
         builder.Services.AddSingleton<FidelityJobRunner>();
+        builder.Services.AddSingleton<UnitLibrary>();
 
         var app = builder.Build();
         app.UseAntiforgery();

@@ -7,8 +7,10 @@
     <ProjectReference Include="..\LimboDancer.Domains.Asl.Maps\LimboDancer.Domains.Asl.Maps.csproj" />
     <ProjectReference Include="..\LimboDancer.Domains.Asl.Maps.Vasl\LimboDancer.Domains.Asl.Maps.Vasl.csproj" />
     <ProjectReference Include="..\LimboDancer.Domains.Asl.Maps.Rendering\LimboDancer.Domains.Asl.Maps.Rendering.csproj" />
+    <ProjectReference Include="..\LimboDancer.Domains.Asl.Units.Rendering\LimboDancer.Domains.Asl.Units.Rendering.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="DemoPlacements\bd01.json" />
+    <!-- Synthetic unit examples (src/ASL/units/examples): the Lab's starting documents and the built-in placement sets. -->
+    <EmbeddedResource Include="..\units\examples\*.units.json" LogicalName="UnitExamples.%(Filename)%(Extension)" Link="UnitExamples\%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>
