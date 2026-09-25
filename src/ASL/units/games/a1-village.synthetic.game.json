@@ -103,6 +103,16 @@
     {
       "eventId": "e21", "revision": 21, "time": "2026-09-26T09:42:00Z", "source": "fixture", "type": "conditions-changed", "visibility": "all", "causes": ["e20"],
       "payload": { "id": "r2", "conditions": { "asl:hidden": false } }
+    },
+    {
+      "eventId": "e22", "revision": 22, "time": "2026-09-26T09:43:00Z", "source": "fixture", "type": "instance-created", "visibility": ["german"],
+      "payload": { "instance": { "id": "g3", "kind": "asl:squad", "definition": "attacker-squad", "side": "german", "position": { "at": "bd01:C5:0" },
+        "conditions": { "asl:broken": false, "asl:berserk": false, "asl:captured": false, "asl:melee": false, "asl:concealed": true, "asl:hidden": false } } }
+    },
+    {
+      "eventId": "e23", "revision": 23, "time": "2026-09-26T09:44:00Z", "source": "fixture", "type": "instance-created", "visibility": ["german"],
+      "payload": { "instance": { "id": "gh2", "kind": "asl:half-squad", "definition": "attacker-half-squad", "side": "german", "position": { "at": "bd01:C4:0" },
+        "conditions": { "asl:broken": false, "asl:berserk": false, "asl:captured": false, "asl:melee": false, "asl:concealed": false, "asl:hidden": true } } }
     }
   ]
 }

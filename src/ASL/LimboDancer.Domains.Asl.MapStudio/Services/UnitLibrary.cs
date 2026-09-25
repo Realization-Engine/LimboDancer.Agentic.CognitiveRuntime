@@ -34,7 +34,6 @@ public sealed class UnitLibrary(StudioOptions options)
     private readonly ConcurrentDictionary<(string SheetHash, string Palette), UnitRenderer> renderers = new();
     private IReadOnlyList<UnitDocument>? examples;
     private IReadOnlyList<CatalogChoice>? catalogChoices;
-    private readonly ConcurrentDictionary<string, UnitPlacementSet> generated = new(StringComparer.Ordinal);
 
     public UnitVocabulary Vocabulary => vocabulary.Value;
 
@@ -98,17 +97,7 @@ public sealed class UnitLibrary(StudioOptions options)
         return renderers.GetOrAdd((sheet.Hash, paletteName), _ => new UnitRenderer(Vocabulary, sheet, Palette(paletteName)));
     }
 
-    /// <summary>
-    /// Adds a set made by the Studio for display, such as a game view (<see cref="GameLibrary"/>). Generated sets are
-    /// synthetic, read-only, and kept only while the Studio runs.
-    /// </summary>
-    public void Register(UnitPlacementSet set)
-    {
-        ArgumentNullException.ThrowIfNull(set);
-        generated[set.SetId] = set;
-    }
-
-    /// <summary>Every placement set: the built-in synthetic examples, generated sets, then sets saved from the Lab.</summary>
+    /// <summary>Every placement set: the built-in synthetic examples, then sets saved from the Lab.</summary>
     public IReadOnlyList<UnitSetEntry> Sets()
     {
         var entries = new List<UnitSetEntry>();
@@ -119,8 +108,6 @@ public sealed class UnitLibrary(StudioOptions options)
                 entries.Add(new UnitSetEntry(set, BuiltIn: true, result.Diagnostics));
             }
         }
-
-        entries.AddRange(generated.Values.OrderBy(set => set.SetId, StringComparer.Ordinal).Select(set => new UnitSetEntry(set, BuiltIn: true, [])));
 
         if (Directory.Exists(PlacementsRoot))
         {

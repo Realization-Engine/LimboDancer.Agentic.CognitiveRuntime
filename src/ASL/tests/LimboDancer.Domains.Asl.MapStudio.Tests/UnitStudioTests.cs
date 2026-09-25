@@ -6,6 +6,7 @@ using LimboDancer.Domains.Asl.Maps.Composition;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Units.Documents;
 using LimboDancer.Domains.Asl.Units.Rendering;
+using LimboDancer.Domains.Asl.Units.State;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LimboDancer.Domains.Asl.MapStudio.Tests;
@@ -300,5 +301,29 @@ public sealed class UnitViewerTests(StudioFactory factory) : IClassFixture<Studi
         var lab = await client.GetStringAsync(new Uri("/units/lab?board=ab-synthetic", UriKind.Relative));
         Assert.Contains("Unit Lab", lab, StringComparison.Ordinal);
         Assert.Contains("value=\"ab-synthetic\"", lab, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task TheViewerProjectsAGameForTheChosenPerspective()
+    {
+        var options = factory.Services.GetRequiredService<StudioOptions>();
+        var folder = Path.Combine(options.ResolveBoardsRoot(), "units", "games");
+        Directory.CreateDirectory(folder);
+        await File.WriteAllTextAsync(Path.Combine(folder, "viewer-game.game.json"), GameStatesTests.GameOn(["ab-synthetic"], "ab-synthetic:C1:0", "ab-synthetic:C2:0", FakeBoardProvider.Board.Version));
+
+        using var client = factory.CreateClient();
+        var html = await client.GetStringAsync(new Uri("/boards/ab-synthetic?game=viewer-game&perspective=german&revision=3", UriKind.Relative));
+        Assert.Contains("Games, projected by perspective", html, StringComparison.Ordinal);
+        Assert.Contains("value=\"game:viewer-game\"", html, StringComparison.Ordinal);
+        Assert.Contains("revision 3 of 3", html, StringComparison.Ordinal);
+        Assert.Contains("id=\"units-perspective\"", html, StringComparison.Ordinal);
+
+        // What the German side receives has no trace of the hidden Russian leader.
+        var games = factory.Services.GetRequiredService<GameLibrary>();
+        var projection = games.Projection(games.Load("viewer-game"), Perspective.Side("german"), 3);
+        Assert.Equal(["a1"], projection.Set.Units.Select(unit => unit.Id));
+        Assert.DoesNotContain("hidden-leader", html, StringComparison.Ordinal);
+        var adjudicator = games.Projection(games.Load("viewer-game"), Perspective.Adjudicator, 3);
+        Assert.Equal(["a1", "hidden-leader"], adjudicator.Set.Units.Select(unit => unit.Id).Order(StringComparer.Ordinal));
     }
 }
