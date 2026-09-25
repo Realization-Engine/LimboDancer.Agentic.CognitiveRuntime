@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "catalog": "asl-scenario-a1-synthetic",
+  "version": "1.0.0",
+  "label": "Synthetic Scenario A1 catalog: illustrative values for tests, not counter data",
+  "publication": "synthetic",
+  "vocabulary": ["asl@1.3.0"],
+  "sources": [
+    { "id": "synthetic", "status": "synthetic" }
+  ],
+  "slots": [
+    { "id": "a1-moving-squad", "kind": "asl:squad", "label": "The moving Infantry squad of the empty-building and stacking cases" },
+    { "id": "a1-moving-mmc", "kind": "asl:mmc", "label": "The moving Infantry MMC of the OVR, concealed SMC, and second defender cases" },
+    { "id": "a1-moving-infantry", "kind": "asl:personnel", "label": "The moving ordinary Infantry of the occupied, fortified, advance, and post-reveal cases" },
+    { "id": "a1-friendly-half-squad", "kind": "asl:half-squad", "label": "The friendly half-squad already in the Location of the stacking case" },
+    { "id": "a1-defending-squad", "kind": "asl:squad", "label": "The armed enemy squad in the fortified building" },
+    { "id": "a1-defending-mmc", "kind": "asl:mmc", "label": "The known enemy MMC of the occupied-building and advance cases" },
+    { "id": "a1-defending-smc", "kind": "asl:smc", "label": "The enemy SMC: known in the OVR case, concealed and revealed under A12.15 in the others" },
+    { "id": "a1-second-defender-smc", "kind": "asl:smc", "label": "A second enemy SMC revealed before OVR entry resolves" },
+    { "id": "a1-second-defender-mmc", "kind": "asl:mmc", "label": "An enemy MMC revealed before OVR entry resolves" }
+  ],
+  "definitions": [
+    {
+      "id": "attacker-squad",
+      "kind": "asl:squad", "kindRow": 2,
+      "nationality": "american", "nationalityRow": 3,
+      "class": "green",
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "attacker-squad" },
+      "applicability": { "status": "unreviewed" },
+      "slots": ["a1-moving-squad", "a1-moving-mmc", "a1-moving-infantry"],
+      "values": [
+        { "face": "front", "attribute": "firepower", "value": 1, "row": 4 },
+        { "face": "front", "attribute": "range", "value": 2, "row": 5 },
+        { "face": "front", "attribute": "morale", "value": 3, "row": 6 },
+        { "face": "front", "attribute": "identity", "value": "S", "row": 7 },
+        { "face": "front", "attribute": "class", "value": "green", "row": 8 },
+        { "face": "front", "attribute": "class-variant", "printed": false, "row": 9 },
+        { "face": "front", "attribute": "smoke-exponent", "value": 1, "row": 10 },
+        { "face": "front", "trait": "asl:assault-fire", "present": true, "row": 11 },
+        { "face": "front", "trait": "asl:spraying-fire", "present": false, "row": 12 },
+        { "face": "front", "trait": "asl:elr-5", "present": false, "row": 13 },
+        { "face": "front", "trait": "asl:assault-engineer", "present": false, "row": 14 },
+        { "face": "broken", "attribute": "broken-morale", "value": 4, "row": 15 },
+        { "face": "broken", "attribute": "bpv", "value": 5, "row": 16 },
+        { "face": "broken", "trait": "asl:self-rally", "present": true, "row": 17 }
+      ]
+    },
+    {
+      "id": "attacker-half-squad",
+      "kind": "asl:half-squad", "kindRow": 18,
+      "nationality": "american", "nationalityRow": 19,
+      "class": "green",
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "attacker-half-squad" },
+      "applicability": { "status": "unreviewed" },
+      "slots": ["a1-friendly-half-squad"],
+      "values": [
+        { "face": "front", "attribute": "firepower", "value": 1, "row": 20 },
+        { "face": "front", "attribute": "range", "value": 1, "row": 21 },
+        { "face": "front", "attribute": "morale", "value": 3, "row": 22 },
+        { "face": "front", "attribute": "identity", "printed": false, "row": 23 },
+        { "face": "front", "attribute": "class", "value": "green", "row": 24 },
+        { "face": "broken", "attribute": "broken-morale", "value": 4, "row": 25 },
+        { "face": "broken", "attribute": "bpv", "value": 2, "row": 26 }
+      ]
+    },
+    {
+      "id": "defender-squad",
+      "kind": "asl:squad", "kindRow": 27,
+      "nationality": "italian", "nationalityRow": 28,
+      "class": "conscript",
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "defender-squad" },
+      "applicability": { "status": "reviewed", "from": "1901-01", "to": "1901-12", "basis": "Synthetic dates for lookup tests; no rule or source" },
+      "slots": ["a1-defending-squad", "a1-defending-mmc", "a1-second-defender-mmc"],
+      "values": [
+        { "face": "front", "attribute": "firepower", "value": 2, "row": 29 },
+        { "face": "front", "attribute": "range", "value": 1, "row": 30 },
+        { "face": "front", "attribute": "morale", "value": 2, "row": 31 },
+        { "face": "front", "attribute": "class", "value": "conscript", "row": 32 },
+        { "face": "front", "attribute": "class-variant", "value": "square", "row": 33 },
+        { "face": "broken", "attribute": "broken-morale", "value": 3, "row": 34 }
+      ]
+    },
+    {
+      "id": "defender-leader",
+      "kind": "asl:leader", "kindRow": 35,
+      "nationality": "italian", "nationalityRow": 36,
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "defender-leader" },
+      "applicability": { "status": "unreviewed" },
+      "slots": ["a1-defending-smc", "a1-second-defender-smc"],
+      "values": [
+        { "face": "front", "attribute": "leadership", "value": 0, "row": 37 },
+        { "face": "front", "attribute": "morale", "value": 4, "row": 38 },
+        { "face": "broken", "attribute": "broken-morale", "value": 5, "row": 39 },
+        { "face": "broken", "trait": "asl:self-rally", "present": true, "row": 40 }
+      ]
+    }
+  ]
+}

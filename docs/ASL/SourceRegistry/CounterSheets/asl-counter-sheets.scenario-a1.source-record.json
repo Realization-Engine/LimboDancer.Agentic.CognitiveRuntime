@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "sourceId": "asl-counter-sheets:scenario-a1",
+  "kind": "published-counter-sheets",
+  "status": "awaiting-transcription",
+  "decision": "D1, decided 2026-09-25: the published counter sheets, transcribed and reviewed, are the source of record for printed counter values (ASL Unit Requirements, section 12).",
+  "scope": "The four counters the Scenario A1 catalog slots need, listed in scenario-a1.counter-worksheet.csv. No other counter is registered by this record.",
+  "sheets": [],
+  "transcription": {
+    "format": "asl-counter-transcription/1",
+    "path": "docs/ASL/SourceRegistry/CounterSheets/scenario-a1.counter-transcription.csv",
+    "worksheet": "docs/ASL/SourceRegistry/CounterSheets/scenario-a1.counter-worksheet.csv",
+    "sha256": null,
+    "transcriber": null,
+    "transcribedOn": null
+  },
+  "review": {
+    "reviewer": null,
+    "reviewedOn": null,
+    "method": null
+  },
+  "meaning": {
+    "rulebookPdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+    "rules": "Counter anatomy defines what each printed value means: A1.21 to A1.25 (p. 44), A1.4 (p. 45), A10.7 (p. 68), A25.01 (p. 93); physical PDF pages. The rulebook does not give the values of particular counters."
+  },
+  "distribution": "Printed values are recorded as facts. No counter artwork, scans, or photographs are committed, and the sheets are not copied (ASL-UNIT-072).",
+  "crossChecks": {
+    "vasl": "Not used. D1 allows VASL piece definitions only as a local, uncommitted cross-check after a licensing review, which has not been run."
+  }
+}

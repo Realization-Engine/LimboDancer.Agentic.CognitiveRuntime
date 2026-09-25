@@ -386,7 +386,13 @@ public static class UnitDocumentReader
             return null;
         }
 
-        var value = property.Value;
+        return ConvertValue(attribute, property.Value, property.Name, attributePath, diagnostics);
+    }
+
+    /// <summary>Converts a JSON value to an attribute's type; returns null, with an error recorded, when it does not fit.</summary>
+    internal static UnitValue? ConvertValue(AttributeDefinition attribute, JsonElement value, string name, string attributePath,
+        List<UnitDiagnostic> diagnostics)
+    {
         switch (attribute.Type)
         {
             case AttributeType.Number when value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var number):
@@ -422,7 +428,7 @@ public static class UnitDocumentReader
                     else
                     {
                         diagnostics.Add(UnitDiagnostic.Error("UNIT-DOC-004",
-                            $"'{property.Name}' must be a list of {(attribute.ItemType == AttributeType.Number ? "whole numbers" : "strings")}.", attributePath));
+                            $"'{name}' must be a list of {(attribute.ItemType == AttributeType.Number ? "whole numbers" : "strings")}.", attributePath));
                         return null;
                     }
                 }
@@ -436,7 +442,7 @@ public static class UnitDocumentReader
                     AttributeType.List => "a list",
                     _ => "a string",
                 };
-                diagnostics.Add(UnitDiagnostic.Error("UNIT-DOC-004", $"'{property.Name}' must be {expected}.", attributePath));
+                diagnostics.Add(UnitDiagnostic.Error("UNIT-DOC-004", $"'{name}' must be {expected}.", attributePath));
                 return null;
         }
     }
