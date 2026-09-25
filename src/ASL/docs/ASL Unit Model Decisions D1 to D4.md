@@ -41,6 +41,8 @@ Open question: which counter sheets are to hand for the Scenario A1 nationalitie
 
 Recommendation: keep D2 deferred until step 7; when it is needed, start with a Map Studio setup and play editor, and add a VASL saved-game import later as a read-only source.
 
+Outcome: decided on 2026-09-26, at step 7, as recommended: the Map Studio play editor ([Governed Writes Design](<ASL Unit Governed Writes Design.md>), section 3).
+
 D2 blocks only reading a real game and governed writes. Steps 3 to 6 run on synthetic fixtures and the catalog, and the display already takes its input from the Unit Lab and fixtures, labelled synthetic.
 
 | Option | Strengths | Costs and risks |

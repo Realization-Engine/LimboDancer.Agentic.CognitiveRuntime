@@ -5,7 +5,7 @@ using LimboDancer.Domains.Asl.ScenarioA1;
 namespace LimboDancer.Domains.Asl.Play;
 
 /// <summary>
-/// The registered actions that may change a live game (ASL-UNIT-042; Governed Writes Design, section 4). Each commits
+/// The registered actions that may change a live game (ASL-UNIT-042; Governed Writes Design, section 5). Each commits
 /// events through the Execution Gate only. They are internal and cannot be undone once committed, so the default risk
 /// policy asks for confirmation.
 /// </summary>

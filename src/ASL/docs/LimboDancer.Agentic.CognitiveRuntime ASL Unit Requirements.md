@@ -41,6 +41,7 @@ The unit model must be delivered as ASL domain-package projects under `src/ASL/`
 |---|---|
 | `LimboDancer.Domains.Asl.Units` | Definitions, instances, typed state, relationships and their invariants, events, and pure projections. No UI, storage policy, or source-specific parsing. It now holds the unit vocabulary, display documents, and the plausibility check; definitions and state follow (section 13). |
 | `LimboDancer.Domains.Asl.Units.Rendering` | The unit display: style sheets, layout, SVG, and the overlay. It replaced the former `DemoUnitOverlay` in Map Studio. |
+| `LimboDancer.Domains.Asl.Play` | The live game source of D2 and its governed writes: the game store, the registered actions, the planner, and their wiring to the Execution Gate ([Governed Writes Design](<ASL Unit Governed Writes Design.md>)). |
 | Source adapters, one per chosen source (ASL-UNIT-012, ASL-UNIT-050) | Reading a counter data source or a live game source into the model, with provenance. |
 
 ### ASL-UNIT-002: Runtime isolation
@@ -148,6 +149,8 @@ Before any component claims to report the current state of a real game, one live
 
 Until then, all unit state is fixture data, labelled as synthetic, and must not reach Scenario A1 adjudication or an Execution Gate.
 
+Chosen under D2 (section 12): the Map Studio setup and play editor. Live games carry the source `map-studio`, change only through registered actions and the Execution Gate, and are refused by any reader that does not accept that source; fixtures stay synthetic ([Governed Writes Design](<ASL Unit Governed Writes Design.md>), sections 2 and 3).
+
 ## 9. Scenario A1 read contract
 
 ### ASL-UNIT-060: Read contract
@@ -217,7 +220,7 @@ Decided on 2026-09-25 as recommended in the [Decision Memo for D1 to D4](<ASL Un
 | Decision | Blocks | Decided |
 |---|---|---|
 | D1. Counter data source | ASL-UNIT-012 counter data, catalog definitions (not the display) | A mix. The published counter sheets, transcribed and reviewed, are the source of record; each transcription is registered under ASL-UNIT-081 with the sheets used and its reviewer. VASL module piece definitions may serve only as a local, uncommitted cross-check, and only after a licensing review, as the map work treats the VASL board checkout. |
-| D2. Live game source | ASL-UNIT-050, 060 against a real game (not the display) | Deferred until governed writes (section 13, step 7). When needed, a Map Studio setup and play editor comes first, building on the Unit Lab and placement sets; a VASL saved-game import may follow as a read-only source. Until then display input stays the Unit Lab and fixtures, labelled synthetic. |
+| D2. Live game source | ASL-UNIT-050, 060 against a real game (not the display) | Decided on 2026-09-26, at step 7: a Map Studio setup and play editor, whose games change only through governed writes ([Governed Writes Design](<ASL Unit Governed Writes Design.md>)). A VASL saved-game import may follow as a read-only source. Fixtures and Unit Lab sets stay synthetic. |
 | D3. Perspective set | ASL-UNIT-030 | Each side plus an adjudicator. Perspectives are named, so a later addition is a reviewed change without a model change. |
 | D4. First slice boundary | ASL-UNIT-062 | The Scenario A1 case list, cross-checked against the existing Scenario A1 snapshots (ASL-MAP-081). Wider slices follow one reviewed slice at a time. |
 
@@ -229,7 +232,7 @@ Decided on 2026-09-25 as recommended in the [Decision Memo for D1 to D4](<ASL Un
 4. **State model:** game and side state, instances, conditions, positions against the map location chain, relationships, events, and perspectives, tested with synthetic fixtures. Built in the [ASL Unit State Model Design](<ASL Unit State Model Design.md>), with a Game states page in Map Studio.
 5. **Read contract:** ASL-UNIT-060 and 061, read-only, together with the map read API (ASL-MAP-080). Cross-check against the existing Scenario A1 snapshots, which stay unchanged (ASL-MAP-081). Built in the [ASL Unit Read Contract Design](<ASL Unit Read Contract Design.md>), with a Read a case panel in Map Studio.
 6. **Display from projections:** feed the display the projections of the state model, filtered by perspective. Built for the synthetic games ([Unit Display Design](<ASL Unit Display Design.md>), section 20).
-7. **Governed writes:** one reviewed transition at a time, with the live game source of D2 chosen at that point.
+7. **Governed writes:** one reviewed transition at a time, with the live game source of D2 chosen at that point. Built in the [ASL Unit Governed Writes Design](<ASL Unit Governed Writes Design.md>): D2 decided as the Map Studio play editor; setup, the sequence of play, and entry into an empty building as registered actions through the Execution Gate; and a Play page in Map Studio. Further transitions follow, each with its own reviewed case.
 
 ## 14. Acceptance scenarios
 

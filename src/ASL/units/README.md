@@ -11,4 +11,4 @@ Data for the [ASL Unit Display Design](../docs/ASL%20Unit%20Display%20Design.md)
 | `games/` | Synthetic game records (`{name}.game.json`): ordered events the [State Model Design](../docs/ASL%20Unit%20State%20Model%20Design.md) replays. They are fixtures, never game state. |
 | `examples/` | Synthetic unit documents and placement sets. Their values are illustrative, not catalog entries, and they are never game state. |
 
-The Unit Lab in Map Studio saves documents, sheets, and placement sets under the configured boards folder, in `units/`.
+The Unit Lab in Map Studio saves documents, sheets, and placement sets under the configured boards folder, in `units/`. Live games, set up and played on the Play page, are kept there too, in `units/live/`, and change only through the governed path of the [Governed Writes Design](../docs/ASL%20Unit%20Governed%20Writes%20Design.md); they are never committed.

@@ -54,7 +54,7 @@ internal sealed class BuildingBoards(MapService maps) : IBoardProvider
     }
 }
 
-/// <summary>The Play page and live games (Governed Writes Design, section 9), on the verified synthetic board.</summary>
+/// <summary>The Play page and live games (Governed Writes Design, section 10), on the verified synthetic board.</summary>
 public sealed class PlayPageTests : IDisposable
 {
     private readonly string root = Path.Combine(Path.GetTempPath(), "asl-play-" + Guid.NewGuid().ToString("N"));

@@ -50,7 +50,7 @@ public sealed record GamePlan(
 }
 
 /// <summary>
-/// Plans the governed game actions (Governed Writes Design, sections 5 to 7) from current, server-owned state: it
+/// Plans the governed game actions (Governed Writes Design, sections 6 to 8) from current, server-owned state: it
 /// re-reads the game, the boards, and the catalog every time it is asked, so the gate and the executor each plan
 /// afresh. It never writes.
 /// </summary>
@@ -237,7 +237,7 @@ public sealed class GamePlanner(IGameStore store, IBoardCatalog boards, UnitVoca
 
     /// <summary>
     /// The nine facts of the reviewed first case, derived from live state and the map read API (Governed Writes Design,
-    /// section 7). A fact the state cannot establish is null, never guessed, so the reviewed resolver stays indeterminate.
+    /// section 8). A fact the state cannot establish is null, never guessed, so the reviewed resolver stays indeterminate.
     /// </summary>
     public IReadOnlyDictionary<string, bool?> EntryFacts(GameState state, UnitInstance unit, BoardLocation target)
     {
