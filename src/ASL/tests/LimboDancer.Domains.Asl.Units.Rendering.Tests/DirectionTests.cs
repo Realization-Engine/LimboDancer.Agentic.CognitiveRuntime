@@ -96,6 +96,55 @@ public sealed class DirectionTests
         Assert.Contains("data-covered-arc=\"south-east\"", overlay.Svg, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData(UnitStyles.Digital, DetailTier.Near, "arrow", true)]
+    [InlineData(UnitStyles.Digital, DetailTier.Mid, "arrow", false)]
+    [InlineData(UnitStyles.Classic, DetailTier.Near, "arrow", false)]
+    [InlineData(UnitStyles.Classic, DetailTier.Far, "barrel", false)]
+    public void ATurretFacingApartFromTheHullIsDrawnWithItsArc(string sheet, DetailTier tier, string mark, bool arc)
+    {
+        var tank = RenderingTestData.Catalog.Value["example-tank"];
+        var svg = RenderingTestData.Render(RenderingTestData.Renderer(sheet), tank, tier);
+        var turret = svg.Descendants().Single(element => element.Attribute("data-turret-facing") is not null);
+        Assert.Equal("north-east", turret.Attribute("data-turret-facing")!.Value);
+        Assert.Equal(mark == "barrel" ? "g" : "path", turret.Name.LocalName);
+        Assert.Equal(arc, svg.Descendants().Any(element => element.Attribute("data-turret-arc")?.Value == "north-east"));
+
+        // A turret facing the hull's way is no separate mark (D3.12).
+        var aligned = RenderingTestData.Render(RenderingTestData.Renderer(sheet), tank with
+        {
+            TurretFacing = tank.Facing
+        }, tier);
+        Assert.DoesNotContain(aligned.Descendants(), element => element.Attribute("data-turret-facing") is not null);
+    }
+
+    [Theory]
+    [InlineData("example-tank", "oval", "circle")]
+    [InlineData("example-halftrack", "circle-oval", null)]
+    [InlineData("example-truck", "figure-eight", null)]
+    [InlineData("example-assault-gun", "oval", null)]
+    public void TheMovementTypeAndMaTypeSymbolsAreDrawn(string example, string movement, string? outline)
+    {
+        var svg = RenderingTestData.Render(RenderingTestData.Renderer(UnitStyles.Classic), RenderingTestData.Catalog.Value[example]);
+        var mp = svg.Descendants().Single(element => element.Attribute("data-slot")?.Value == "mp");
+        var shape = mp.Elements().First();
+        Assert.Equal(movement, shape.Attribute("data-shape")?.Value ?? shape.Name.LocalName switch
+        {
+            "ellipse" => "oval",
+            var other => other
+        });
+        var glyph = svg.Descendants().Single(element => element.Attribute("data-slot")?.Value == "glyph");
+        Assert.Equal(outline, glyph.Descendants().FirstOrDefault(element => element.Attribute("data-outline") is not null)?.Attribute("data-outline")!.Value);
+    }
+
+    [Fact]
+    public void MgFactorsReadBowCoaxialAndAntiAircraft()
+    {
+        var renderer = RenderingTestData.Renderer(UnitStyles.Digital);
+        Assert.Equal("2/4", CascadeTests.Slots(RenderingTestData.Render(renderer, RenderingTestData.Catalog.Value["example-tank"]))["mg"]);
+        Assert.Equal("-/-/3", CascadeTests.Slots(RenderingTestData.Render(renderer, RenderingTestData.Catalog.Value["example-halftrack"]))["mg"]);
+    }
+
     private static XElement Render(string sheet, string facing, DetailTier tier)
     {
         var gun = RenderingTestData.Document($$"""

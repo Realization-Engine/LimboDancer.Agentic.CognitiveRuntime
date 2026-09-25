@@ -196,6 +196,89 @@ asl|light-mortar, asl|latw {
 asl|light-mortar::slot(cal), asl|latw::slot(cal) { font-size: 0.22; }
 asl|light-mortar::slot(range), asl|latw::slot(range) { font-size: 0.13; }
 
+/* Vehicles (D1.1 to D1.9, pp. 193 to 195): the ID letter upper left, the MP over its movement type symbol upper right,
+   front and side/rear AF beneath it, and the armament along the bottom. */
+asl|vehicle::slot(glyph) { content: glyph(tank); }
+asl|vehicle[movement-type=half-tracked]::slot(glyph) { content: glyph(halftrack); }
+asl|vehicle[movement-type=armored-car]::slot(glyph) { content: glyph(armored-car); }
+asl|vehicle[movement-type=truck]::slot(glyph) { content: glyph(truck); }
+asl|vehicle[movement-type=motorcycle]::slot(glyph) { content: glyph(motorcycle); }
+asl|vehicle:face(wreck)::slot(glyph) { content: glyph(wreck); }
+asl|vehicle.asl\:open-topped::slot(glyph) { fill: #ffffff; badge-shape: circle; }
+asl|vehicle[ma-type=t]::slot(glyph)   { outline: circle; }
+asl|vehicle[ma-type=st]::slot(glyph)  { outline: square; }
+asl|vehicle[ma-type=rst]::slot(glyph) { outline: thick-square; }
+asl|vehicle[ma-type="1mt"]::slot(glyph) { outline: cornerless-square; }
+asl|vehicle::slot(id) { content: attr(identity); font-weight: bold; }
+asl|vehicle[ground-pressure=low]::slot(id)  { mark: box; }
+asl|vehicle[ground-pressure=high]::slot(id) { mark: circle; }
+asl|vehicle::slot(mp) { content: attr(movement-points); font-weight: bold; color: #111111; fill: #ffffff; badge-shape: oval; }
+asl|vehicle[movement-type=armored-car]::slot(mp) { badge-shape: circle; }
+asl|vehicle[movement-type=half-tracked]::slot(mp) { badge-shape: circle-oval; }
+asl|vehicle[movement-type=truck]::slot(mp)       { badge-shape: figure-eight; }
+asl|vehicle[movement-type=motorcycle]::slot(mp)  { fill: none; }
+asl|vehicle[movement-type=motorcycle] { fill: #ffffff; }
+asl|vehicle[amphibious-mp]::slot(mp) { superscript: attr(amphibious-mp); }
+asl|vehicle.asl\:mechanically-unreliable::slot(mp) { color: token(alert); }
+asl|vehicle::slot(afront) { content: attr(af-front); font-weight: bold; }
+asl|vehicle::slot(aside)  { content: attr(af-side); font-weight: bold; }
+asl|vehicle.asl\:unarmored::slot(afront), asl|vehicle.asl\:unarmored::slot(aside) { content: "H"; }
+asl|vehicle.asl\:partially-armored::slot(aside) { content: attr(af-side) "H"; }
+asl|vehicle.asl\:partially-armored.asl\:rear-turret-unarmored::slot(aside) { content: attr(af-side) "TH"; }
+asl|vehicle[turret-af-front=superior]::slot(afront) { mark: box; }
+asl|vehicle[turret-af-front=inferior]::slot(afront) { mark: circle; }
+asl|vehicle[turret-af-side=superior]::slot(aside)   { mark: box; }
+asl|vehicle[turret-af-side=inferior]::slot(aside)   { mark: circle; }
+asl|vehicle[target-size=large]::slot(afront), asl|vehicle[target-size=very-large]::slot(afront), asl|vehicle[target-size=very-large]::slot(aside) { color: token(alert); }
+asl|vehicle[target-size=small]::slot(afront), asl|vehicle[target-size=very-small]::slot(afront), asl|vehicle[target-size=very-small]::slot(aside) {
+  fill: #ffffff; badge-shape: circle; color: #111111;
+}
+asl|vehicle::slot(ma) { content: attr(caliber) attr(caliber-suffix, optional); font-weight: bold; }
+asl|vehicle[ma-weapon]::slot(ma) { content: attr(ma-weapon); font-size: 0.11; }
+asl|vehicle.asl\:no-ap::slot(ma) { mark: overline; }
+asl|vehicle.asl\:no-he::slot(ma) { mark: underline; }
+asl|vehicle::slot(sa)   { content: attr(sa-mount) attr(sa-caliber); }
+asl|vehicle::slot(rof)  { content: attr(rate-of-fire); mark: box; }
+asl|vehicle::slot(bd)   { content: "B" attr(breakdown); }
+asl|vehicle::slot(ammo) { content: attr(special-ammo); }
+asl|vehicle::slot(tow)  { content: "T" attr(towing); }
+asl|vehicle::slot(pp)   { content: attr(passenger-capacity) "PP"; }
+asl|vehicle[bmg]::slot(mg), asl|vehicle[cmg]::slot(mg) { content: attr(bmg, dash) "/" attr(cmg, dash); }
+asl|vehicle[aamg]::slot(mg) { content: attr(bmg, dash) "/" attr(cmg, dash) "/" attr(aamg); }
+asl|vehicle[hull-rear-mg]::slot(mg) { superscript: "R" attr(hull-rear-mg); }
+asl|vehicle[turret-rear-mg]::slot(mg) { superscript: "R" attr(turret-rear-mg); }
+asl|vehicle.asl\:fixed-bmg::slot(mg) { mark: circle; }
+asl|vehicle::slot(ft) { content: attr(vehicle-ft-mount) attr(vehicle-ft-firepower) " X" attr(vehicle-ft-removal); color: token(alert); font-weight: bold; }
+asl|vehicle.asl\:vehicle-ft-range-2::slot(ft) { mark: underline; }
+asl|vehicle:face(wreck) { fill: #eeeeee; direction-mark: none; turret-mark: none; covered-arc: none; turret-arc: none; }
+asl|vehicle:face(wreck)::slot(cs) { content: "CS" attr(crew-survival); font-weight: bold; }
+
+asl|vehicle {
+  face-template: "id   glyph glyph glyph mp"
+                 "pp   glyph glyph glyph afront"
+                 "sa   glyph glyph glyph aside"
+                 "ma   ma    rof   bd    tow"
+                 "ammo ammo  ft    mg    mg";
+  turret-mark: arrow;
+}
+asl|vehicle::slot(glyph) { rotate: facing; }
+asl|vehicle::slot(mp) { font-size: 0.2; }
+asl|vehicle::slot(afront), asl|vehicle::slot(aside) { font-size: 0.14; }
+asl|vehicle::slot(id) { font-size: 0.13; }
+asl|vehicle::slot(ma) { font-size: 0.17; align: start; }
+asl|vehicle::slot(pp), asl|vehicle::slot(sa), asl|vehicle::slot(rof), asl|vehicle::slot(bd), asl|vehicle::slot(tow), asl|vehicle::slot(mg),
+asl|vehicle::slot(ft), asl|vehicle::slot(ammo) { font-size: 0.1; }
+asl|vehicle:face(wreck) {
+  face-template: "id    .     .     cs"
+                 "glyph glyph glyph glyph"
+                 "glyph glyph glyph glyph"
+                 "ammo  ammo  ammo  .";
+}
+asl|vehicle:face(wreck)::slot(cs) { font-size: 0.15; }
+asl|unit:asl\:bu     { badge: "BU" top-left; }
+asl|unit:asl\:ce     { badge: "CE" top-left; }
+asl|unit:asl\:motion { badge: "Motion" top-right; }
+
 /* States, drawn as marker chips on the unit rather than separate counters (ASL-UNIT-077). */
 asl|unit:asl\:pinned    { badge: "Pin" top-right; }
 asl|unit:asl\:cx        { badge: "CX" top-right; }
@@ -221,7 +304,9 @@ asl|unit:asl\:concealed { stroke: token(conceal); stroke-style: dashed; stroke-w
   asl|gun { face-template: "glyph type" "cal cal"; }
   asl|gun:face(limbered) { face-template: "glyph type"; }
   asl|gun:face(malfunctioned) { face-template: "repair removal"; }
-  unit::slot(fp), unit::slot(range), unit::slot(morale), unit::slot(bmorale), unit::slot(cal) { mark: none; superscript: none; }
+  asl|vehicle { face-template: "glyph mp" "ma afront"; }
+  asl|vehicle:face(wreck) { face-template: "glyph cs"; }
+  unit::slot(fp), unit::slot(range), unit::slot(morale), unit::slot(bmorale), unit::slot(cal), unit::slot(ma) { mark: none; superscript: none; }
   asl|personnel:face(broken).asl\:self-rally::slot(bmorale) { mark: box; }
 }
 
@@ -242,5 +327,13 @@ asl|unit:asl\:concealed { stroke: token(conceal); stroke-style: dashed; stroke-w
   asl|gun[gun-type=aa]::slot(glyph) { content: glyph(aa-gun); }
   asl|gun[gun-type=rcl]::slot(glyph) { content: glyph(rcl); }
   asl|gun:face(limbered)::slot(glyph) { content: glyph(limbered-gun); }
+  asl|vehicle { face-template: "glyph"; turret-mark: barrel; }
+  asl|vehicle::slot(glyph) { rotate: facing; }
+  asl|vehicle::slot(glyph) { content: glyph(tank); }
+  asl|vehicle[movement-type=half-tracked]::slot(glyph) { content: glyph(halftrack); }
+  asl|vehicle[movement-type=armored-car]::slot(glyph) { content: glyph(armored-car); }
+  asl|vehicle[movement-type=truck]::slot(glyph) { content: glyph(truck); }
+  asl|vehicle[movement-type=motorcycle]::slot(glyph) { content: glyph(motorcycle); }
+  asl|vehicle:face(wreck)::slot(glyph) { content: glyph(wreck); }
   unit::attached(asl|equipment) { display: none; }
 }

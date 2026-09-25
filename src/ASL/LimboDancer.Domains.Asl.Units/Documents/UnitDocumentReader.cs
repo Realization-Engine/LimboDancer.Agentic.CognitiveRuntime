@@ -18,7 +18,7 @@ public static class UnitDocumentReader
 {
     private static readonly HashSet<string> DocumentFields = new(StringComparer.Ordinal)
     {
-        "vocabulary", "id", "kind", "side", "location", "facing", "faces", "unit", "states", "attached", "stackOrder", "concealed", "sizeClass", "note",
+        "vocabulary", "id", "kind", "side", "location", "facing", "turretFacing", "faces", "unit", "states", "attached", "stackOrder", "concealed", "sizeClass", "note",
     };
 
     private static readonly HashSet<string> PlaceholderFields = new(StringComparer.Ordinal)
@@ -181,6 +181,27 @@ public static class UnitDocumentReader
                 facing = parsedFacing;
             }
         }
+
+        UnitFacing? turretFacing = null;
+        if (fields.OptionalString(element, "turretFacing", path) is { } turretText && !concealed)
+        {
+            if (!UnitFacings.TryParse(turretText, out var parsedTurret))
+            {
+                diagnostics.Add(UnitDiagnostic.Error("UNIT-DOC-018", $"'{turretText}' is not a hexspine; use {string.Join(", ", UnitFacings.All)}.", path));
+            }
+            else if (attached || kind is null || !vocabulary.HasTurret(kind))
+            {
+                diagnostics.Add(UnitDiagnostic.Error("UNIT-DOC-018", $"The kind '{kind}' has no turret facing.", path));
+            }
+            else if (facing is null)
+            {
+                diagnostics.Add(UnitDiagnostic.Error("UNIT-DOC-018", "A turret facing needs a hull facing (D3.12).", path));
+            }
+            else
+            {
+                turretFacing = parsedTurret;
+            }
+        }
         var faces = new List<UnitFace>();
         var unit = new List<UnitValue>();
         var states = new List<string>();
@@ -227,7 +248,7 @@ public static class UnitDocumentReader
             return null;
         }
 
-        return new UnitDocument(packs, id, kind, side, location, faces, unit, states, attachments, stackOrder, concealed, sizeClass, facing);
+        return new UnitDocument(packs, id, kind, side, location, faces, unit, states, attachments, stackOrder, concealed, sizeClass, facing, turretFacing);
     }
 
     private static List<UnitFace> ReadFaces(JsonElement element, UnitVocabulary vocabulary, string kind, string path, List<UnitDiagnostic> diagnostics)

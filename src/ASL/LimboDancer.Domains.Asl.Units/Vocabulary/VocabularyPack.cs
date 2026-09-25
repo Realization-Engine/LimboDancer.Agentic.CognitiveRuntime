@@ -85,6 +85,12 @@ public sealed record KindDefinition(
     {
         get; init;
     }
+
+    /// <summary>Whether units of this kind may carry a turret facing apart from their hull facing (D3.12); null inherits.</summary>
+    public bool? Turret
+    {
+        get; init;
+    }
 }
 
 /// <summary>Attributes and traits a pack adds to a kind of a pack it extends.</summary>

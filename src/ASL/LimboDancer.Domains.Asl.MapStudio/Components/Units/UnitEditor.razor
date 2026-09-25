@@ -31,6 +31,18 @@
             }
         </select>
     }
+    @if (!IsAttached && !Draft.Concealed && Vocabulary.HasKind(Draft.Kind) && Vocabulary.HasTurret(Draft.Kind))
+    {
+        <label for="@($"{Prefix}-turret-facing")" title="D3.12, p. 199">Turret facing</label>
+        <select id="@($"{Prefix}-turret-facing")" value="@(Draft.TurretFacing?.Name() ?? string.Empty)"
+                @onchange="@(args => Change(() => Draft.TurretFacing = UnitFacings.TryParse(args.Value as string, out var facing) ? facing : null))">
+            <option value="">with the hull</option>
+            @foreach (var name in UnitFacings.All)
+            {
+                <option value="@name">@name</option>
+            }
+        </select>
+    }
     @if (!IsAttached)
     {
         <label for="@($"{Prefix}-concealed")">Concealed placeholder</label>
