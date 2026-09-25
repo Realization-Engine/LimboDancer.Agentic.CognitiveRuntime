@@ -1,6 +1,6 @@
 # ASL Scenario A1 Catalog Design
 
-**Status:** Built with synthetic definitions; the counter-sheet transcription is awaiting its transcriber
+**Status:** Built; the first transcription is committed as a draft catalog, awaiting review
 
 **Date:** 2026-09-25
 
@@ -23,7 +23,7 @@ This step delivers:
 - cross-check hooks against the existing Scenario A1 snapshots, which stay unchanged;
 - a synthetic catalog, clearly labelled, for tests until the reviewed transcription exists.
 
-No printed counter value is in the repository yet. The values come from the transcriber (section 9).
+The first transcription, of four counters for a German attack on a Russian-held village, is committed and builds a draft catalog. It is not published until it is reviewed (section 9.1).
 
 ## 2. What the Scenario A1 cases read
 
@@ -80,11 +80,12 @@ Only `Found` is definitive. No status returns the nearest match.
 
 Each printed characteristic is a `PrintedValue` (ASL-UNIT-011): the face it is printed on, the vocabulary attribute or trait, a typed value, and a `ValueSource` naming the counter and the transcription row. Values use the `asl` vocabulary's types (`integer`, `rating`, `enumeration`, `text`, `list`), so the catalog and the display agree on what a value is.
 
-A value is one of three things:
+A value is one of four things:
 
 - an attribute with its printed value, such as firepower 4;
 - an attribute the transcriber checked and found not printed (`printed: false`), such as a class variant on a counter without one; this is a recorded fact, distinct from a value nobody has looked at;
-- a trait marking, present or absent, such as the underlined firepower of `asl:assault-fire` (A1.21, p. 44).
+- a trait marking, present or absent, such as the underlined firepower of `asl:assault-fire` (A1.21, p. 44);
+- a characteristic the source consulted does not show (`recorded: false`), such as a squad's identity letter when the source is a chart that lists types rather than counters (A1.24, p. 44). Nothing is known about it, which is not the same as knowing it is not printed.
 
 A value belongs on a face the kind has, and on the face the vocabulary allows (the broken morale level on the broken face, A1.4, p. 45). An attribute the vocabulary scopes to the whole unit, such as the smoke exponent, is recorded on the face it is printed on and shown on the unit.
 
@@ -188,7 +189,7 @@ D1 made the published counter sheets, transcribed and reviewed, the source of re
 
 - `sheet` is an id from the source record's `sheets` list, where each sheet is identified by title, publisher, product, and printing.
 - `counter` is the worksheet's counter id; `face` is `front`, `broken`, or `counter` for the kind and nationality.
-- `attribute` is a vocabulary attribute or trait name; `value` is what is printed: a number, a signed number for leadership, a class member name, `yes` or `no` for a trait, or `not-printed`.
+- `attribute` is a vocabulary attribute or trait name; `value` is what is printed: a number, a signed number for leadership, a class member name, `yes` or `no` for a trait, `not-printed`, or `not-in-source` when the source consulted does not show it.
 - `transcriber` and `reviewer` name the people; the row number is the line number in the file.
 
 **Lifecycle.** The record's status moves from `awaiting-transcription` to `transcribed-unreviewed` when the transcription is committed with its hash and transcriber, and to `reviewed` when a second person has checked every row against the sheets and signed each row. The adapter builds a draft catalog from a transcribed source and a published one from a reviewed source; each state is committed, and a test rebuilds the catalog from the committed sources and compares it byte for byte.
@@ -196,6 +197,30 @@ D1 made the published counter sheets, transcribed and reviewed, the source of re
 **Distribution.** Printed values are recorded as facts. No counter artwork, scans, or photographs are committed, and the sheets are not copied (ASL-UNIT-072). Counter artwork is never evidence of a value (ASL-UNIT-012).
 
 **VASL.** VASL piece definitions are not used. D1 allows them only as a local, uncommitted cross-check after a licensing review, which is not part of this step.
+
+### 9.1 The first transcription
+
+On 2026-09-25 the user asked Claude to fill in the worksheet itself, choosing a practical scenario. No physical counter sheets were available to Claude, so the transcription departs from D1's source of record and reads the registered rulebook's charts instead. A1.1 (p. 44) says the values of each unit are listed on the National Capabilities Chart (A25). The source record states this departure, and the reviewer is asked to compare every row with the published counters; where a counter and the chart differ, the counter governs under D1.
+
+**Scenario.** An Eastern Front village fight on board 01. A German 1st Line rifle platoon clears buildings held by a Russian 1st Line rifle company, whose squads fight concealed and from fortified buildings under an 8-0 leader. It covers every reviewed case:
+
+| Counter | Chosen | Cases |
+|---|---|---|
+| `attacker-squad` | German 1st Line squad, 4-6-7 | enters the empty and occupied buildings, advances, overruns the lone leader, and makes up the stacking case |
+| `attacker-half-squad` | German 1st Line half-squad, 2-4-7 | already in the stacking-case building |
+| `defender-squad` | Russian 1st Line squad (class 1 in a square), 4-4-7 | holds the occupied and fortified buildings; the second defending MMC |
+| `defender-leader` | Russian 8-0 leader | the concealed SMC revealed under A12.15 (p. 78), and a second SMC |
+
+**Sources.** Two chart "sheets" in the registered PDF (SHA-256 `957de75b...a247`):
+
+- `NCC`, the A./G. National Capabilities Chart, physical page 695: squad and half-squad Strength Factors, the superscript smoke exponent and broken morale level (the chart's legend), BPV, class and its circle or square, the underlines of A1.21 to A1.23, and the AE superscript for Assault Engineers.
+- `LCT`, the A18.2 Leader Creation Table, physical page 694: the 8-0 leader type; A10.7 (p. 68) reads it as morale 8 and leadership DRM 0.
+
+Underlines, superscripts, and class borders were read visually from renderings of the chart regions, which are not committed; the text layer only located rows. The record pins the `pdftotext 4.00 -layout` text hash of each page. The counter pictures beside the charts were not used (ASL-UNIT-012).
+
+**Not in the source.** The charts list types, not counters, so these rows are `not-in-source`: every identity letter (A1.24, p. 44), every broken-side Self-Rally square (A10.63, p. 68), and the leader's ELR underline, broken morale, and BPV. A10.71 (p. 69) lets any broken leader attempt Self-Rally, but that is a rule, not a printed square. The leader's nationality is the scenario's choice, since the table applies to every nationality that creates leaders.
+
+**Transcriber.** Claude (`claude-opus-5-5`) is recorded as transcriber. The draft catalog `src/ASL/units/catalog/scenario-a1.catalog.json` is built from the transcription and embedded; it becomes published only after a second person reviews it.
 
 ## 10. The source adapter
 
@@ -206,7 +231,7 @@ ASL-UNIT-001 keeps source-specific parsing out of `LimboDancer.Domains.Asl.Units
 3. makes one definition per counter, with its kind, nationality, and class from the rows, and each other row as one typed value with its row number;
 4. validates the result with `UnitCatalogReader` and writes it in canonical form.
 
-Its diagnostics are UNIT-CS-001 to 006 for the transcription, 010 and 011 for the source record, and 020 to 022 for the manifest and values. The published catalog is committed as `src/ASL/units/catalog/scenario-a1.catalog.json` and embedded in `Units` beside the synthetic one; `UnitCatalogs` reads either.
+Its diagnostics are UNIT-CS-001 to 006 for the transcription, 010 and 011 for the source record, and 020 to 022 for the manifest and values. The catalog built from the transcription is committed as `src/ASL/units/catalog/scenario-a1.catalog.json` (a draft until the source is reviewed) and embedded in `Units` beside the synthetic one; `UnitCatalogs` reads either.
 
 ## 11. Cross-check hooks
 
@@ -228,7 +253,7 @@ Synthetic definitions use deliberately low values and invented dates (1901), and
 
 ## 13. Not in this step
 
-- Printed values for real counters: awaiting the transcription and its review (section 9).
+- Review of the first transcription against the published counters, and the values the charts do not show (section 9.1).
 - Reviewed applicability, national dates, and substitution mappings: they need a registered source for A25 and Chapter H charts.
 - Effective values produced by rules: later steps, one reviewed transition at a time.
 - Kinds beyond the four counters: added one reviewed slice at a time (ASL-UNIT-062).

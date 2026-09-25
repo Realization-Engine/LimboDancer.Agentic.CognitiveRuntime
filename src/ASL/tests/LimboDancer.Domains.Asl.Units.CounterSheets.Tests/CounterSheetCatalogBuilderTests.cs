@@ -64,6 +64,18 @@ public sealed class CounterSheetCatalogBuilderTests
     }
 
     [Fact]
+    public void NotInSourceIsRecordedApartFromNotPrinted()
+    {
+        var transcription = SyntheticTranscription()
+            .Replace("defender-leader,broken,bpv,1", "defender-leader,broken,bpv,not-in-source", StringComparison.Ordinal)
+            .Replace("defender-leader,broken,asl:self-rally,no", "defender-leader,broken,asl:self-rally,not-in-source", StringComparison.Ordinal);
+        var leader = Build(transcription, Record(transcription)).Catalog!.Definition("defender-leader")!;
+        Assert.True(leader.Printed("broken", "asl:bpv")!.NotInSource);
+        Assert.True(leader.Printed("broken", "asl:self-rally")!.NotInSource);
+        Assert.True(leader.Printed("front", "asl:identity")!.NotPrinted);
+    }
+
+    [Fact]
     public void TheBuiltCatalogIsCanonicalAndItsDefinitionsBecomeDocuments()
     {
         var transcription = SyntheticTranscription();

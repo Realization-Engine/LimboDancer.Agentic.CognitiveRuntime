@@ -37,6 +37,9 @@ public static class CounterTranscription
     /// <summary>The value written for an attribute the counter does not print.</summary>
     public const string NotPrinted = "not-printed";
 
+    /// <summary>The value written when the source consulted does not show the characteristic at all.</summary>
+    public const string NotInSource = "not-in-source";
+
     /// <summary>The face written for facts about the whole counter: its kind and its nationality.</summary>
     public const string CounterFace = "counter";
 

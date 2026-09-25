@@ -88,6 +88,8 @@
       "applicability": { "status": "unreviewed" },
       "slots": ["a1-defending-smc", "a1-second-defender-smc"],
       "values": [
+        { "face": "front", "attribute": "identity", "recorded": false, "row": 41 },
+        { "face": "front", "trait": "asl:elr-5", "recorded": false, "row": 42 },
         { "face": "front", "attribute": "leadership", "value": 0, "row": 37 },
         { "face": "front", "attribute": "morale", "value": 4, "row": 38 },
         { "face": "broken", "attribute": "broken-morale", "value": 5, "row": 39 },

@@ -100,7 +100,7 @@ public static class CounterSheetCatalogBuilder
             var path = $"line {row.Row}";
             if (row.Value.Length == 0)
             {
-                diagnostics.Add(UnitDiagnostic.Error("UNIT-CS-004", $"No value: write what is printed, or {CounterTranscription.NotPrinted}.", path));
+                diagnostics.Add(UnitDiagnostic.Error("UNIT-CS-004", $"No value: write what is printed, {CounterTranscription.NotPrinted}, or {CounterTranscription.NotInSource}.", path));
             }
 
             if (record.Sheets.All(sheet => sheet.Id != row.Sheet))
@@ -247,7 +247,7 @@ public static class CounterSheetCatalogBuilder
         writer.WriteNumber("nationalityRow", nationalityRow.Row);
         var classRow = counterRows.FirstOrDefault(row => row.Face != CounterTranscription.CounterFace
             && vocabulary.TryResolveAttribute(kind, row.Attribute, out var attribute, out _) && attribute.Name == "asl:class");
-        if (classRow is not null && classRow.Value != CounterTranscription.NotPrinted)
+        if (classRow is not null && classRow.Value is not (CounterTranscription.NotPrinted or CounterTranscription.NotInSource))
         {
             writer.WriteString("class", classRow.Value);
         }
@@ -298,12 +298,18 @@ public static class CounterSheetCatalogBuilder
         if (vocabulary.TryGetTrait(row.Attribute, out _))
         {
             writer.WriteString("trait", row.Attribute);
-            if (row.Value is not ("yes" or "no"))
+            if (row.Value == CounterTranscription.NotInSource)
+            {
+                writer.WriteBoolean("recorded", false);
+            }
+            else if (row.Value is not ("yes" or "no"))
             {
                 diagnostics.Add(UnitDiagnostic.Error("UNIT-CS-022", $"A trait is written yes or no, not '{row.Value}'.", path));
             }
-
-            writer.WriteBoolean("present", row.Value == "yes");
+            else
+            {
+                writer.WriteBoolean("present", row.Value == "yes");
+            }
         }
         else
         {
@@ -311,6 +317,10 @@ public static class CounterSheetCatalogBuilder
             if (row.Value == CounterTranscription.NotPrinted)
             {
                 writer.WriteBoolean("printed", false);
+            }
+            else if (row.Value == CounterTranscription.NotInSource)
+            {
+                writer.WriteBoolean("recorded", false);
             }
             else if (!vocabulary.TryResolveAttribute(kind, row.Attribute, out var attribute, out _))
             {

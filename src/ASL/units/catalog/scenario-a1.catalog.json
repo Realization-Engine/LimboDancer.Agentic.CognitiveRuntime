@@ -1,0 +1,460 @@
+{
+  "schemaVersion": 1,
+  "catalog": "asl-scenario-a1",
+  "version": "1.0.0",
+  "label": "Scenario A1 catalog: Infantry Personnel for the reviewed Scenario A1 cases",
+  "publication": "draft",
+  "vocabulary": [
+    "asl@1.3.0"
+  ],
+  "sources": [
+    {
+      "id": "asl-counter-sheets:scenario-a1",
+      "status": "transcribed-unreviewed",
+      "record": "docs/ASL/SourceRegistry/CounterSheets/asl-counter-sheets.scenario-a1.source-record.json",
+      "recordSha256": "c479fbf62e3d366dfb07a12daa43126677fd48a6383974130d1716ee4e9dcd8d",
+      "transcription": "docs/ASL/SourceRegistry/CounterSheets/scenario-a1.counter-transcription.csv",
+      "transcriptionSha256": "cafc72d553e98b4d2e74b510571e016b8f9866aaa9aa0db83955fa77897dd189",
+      "transcriber": "Claude (claude-opus-5-5)"
+    }
+  ],
+  "slots": [
+    {
+      "id": "a1-moving-squad",
+      "kind": "asl:squad",
+      "label": "The moving Infantry squad of the empty-building and stacking cases"
+    },
+    {
+      "id": "a1-moving-mmc",
+      "kind": "asl:mmc",
+      "label": "The moving Infantry MMC of the OVR, concealed SMC, and second defender cases"
+    },
+    {
+      "id": "a1-moving-infantry",
+      "kind": "asl:personnel",
+      "label": "The moving ordinary Infantry of the occupied, fortified, advance, and post-reveal cases"
+    },
+    {
+      "id": "a1-friendly-half-squad",
+      "kind": "asl:half-squad",
+      "label": "The friendly half-squad already in the Location of the stacking case"
+    },
+    {
+      "id": "a1-defending-squad",
+      "kind": "asl:squad",
+      "label": "The armed enemy squad in the fortified building"
+    },
+    {
+      "id": "a1-defending-mmc",
+      "kind": "asl:mmc",
+      "label": "The known enemy MMC of the occupied-building and advance cases"
+    },
+    {
+      "id": "a1-defending-smc",
+      "kind": "asl:smc",
+      "label": "The enemy SMC: known in the OVR case, concealed and revealed under A12.15 in the others"
+    },
+    {
+      "id": "a1-second-defender-smc",
+      "kind": "asl:smc",
+      "label": "A second enemy SMC revealed before OVR entry resolves"
+    },
+    {
+      "id": "a1-second-defender-mmc",
+      "kind": "asl:mmc",
+      "label": "An enemy MMC revealed before OVR entry resolves"
+    }
+  ],
+  "definitions": [
+    {
+      "id": "attacker-squad",
+      "kind": "asl:squad",
+      "kindRow": 2,
+      "nationality": "german",
+      "nationalityRow": 3,
+      "class": "1st-line",
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "NCC",
+        "counter": "attacker-squad"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [
+        "a1-moving-squad",
+        "a1-moving-mmc",
+        "a1-moving-infantry"
+      ],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 4,
+          "row": 4
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 6,
+          "row": 5
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 7,
+          "row": 6
+        },
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 7
+        },
+        {
+          "face": "front",
+          "attribute": "class",
+          "value": "1st-line",
+          "row": 8
+        },
+        {
+          "face": "front",
+          "attribute": "class-variant",
+          "printed": false,
+          "row": 9
+        },
+        {
+          "face": "front",
+          "attribute": "smoke-exponent",
+          "value": 1,
+          "row": 10
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-fire",
+          "present": false,
+          "row": 11
+        },
+        {
+          "face": "front",
+          "trait": "asl:spraying-fire",
+          "present": true,
+          "row": 12
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "present": false,
+          "row": 13
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-engineer",
+          "present": false,
+          "row": 14
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 7,
+          "row": 15
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "value": 10,
+          "row": 16
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "recorded": false,
+          "row": 17
+        }
+      ]
+    },
+    {
+      "id": "attacker-half-squad",
+      "kind": "asl:half-squad",
+      "kindRow": 18,
+      "nationality": "german",
+      "nationalityRow": 19,
+      "class": "1st-line",
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "NCC",
+        "counter": "attacker-half-squad"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [
+        "a1-friendly-half-squad"
+      ],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 2,
+          "row": 20
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 4,
+          "row": 21
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 7,
+          "row": 22
+        },
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 23
+        },
+        {
+          "face": "front",
+          "attribute": "class",
+          "value": "1st-line",
+          "row": 24
+        },
+        {
+          "face": "front",
+          "attribute": "class-variant",
+          "printed": false,
+          "row": 25
+        },
+        {
+          "face": "front",
+          "attribute": "smoke-exponent",
+          "printed": false,
+          "row": 26
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-fire",
+          "present": false,
+          "row": 27
+        },
+        {
+          "face": "front",
+          "trait": "asl:spraying-fire",
+          "present": false,
+          "row": 28
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "present": false,
+          "row": 29
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-engineer",
+          "present": false,
+          "row": 30
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 6,
+          "row": 31
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "value": 4,
+          "row": 32
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "recorded": false,
+          "row": 33
+        }
+      ]
+    },
+    {
+      "id": "defender-squad",
+      "kind": "asl:squad",
+      "kindRow": 34,
+      "nationality": "russian",
+      "nationalityRow": 35,
+      "class": "1st-line",
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "NCC",
+        "counter": "defender-squad"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [
+        "a1-defending-squad",
+        "a1-defending-mmc",
+        "a1-second-defender-mmc"
+      ],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 4,
+          "row": 36
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 4,
+          "row": 37
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 7,
+          "row": 38
+        },
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 39
+        },
+        {
+          "face": "front",
+          "attribute": "class",
+          "value": "1st-line",
+          "row": 40
+        },
+        {
+          "face": "front",
+          "attribute": "class-variant",
+          "value": "square",
+          "row": 41
+        },
+        {
+          "face": "front",
+          "attribute": "smoke-exponent",
+          "printed": false,
+          "row": 42
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-fire",
+          "present": false,
+          "row": 43
+        },
+        {
+          "face": "front",
+          "trait": "asl:spraying-fire",
+          "present": false,
+          "row": 44
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "present": false,
+          "row": 45
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-engineer",
+          "present": false,
+          "row": 46
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 7,
+          "row": 47
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "value": 7,
+          "row": 48
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "recorded": false,
+          "row": 49
+        }
+      ]
+    },
+    {
+      "id": "defender-leader",
+      "kind": "asl:leader",
+      "kindRow": 50,
+      "nationality": "russian",
+      "nationalityRow": 51,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "LCT",
+        "counter": "defender-leader"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [
+        "a1-defending-smc",
+        "a1-second-defender-smc"
+      ],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 52
+        },
+        {
+          "face": "front",
+          "attribute": "leadership",
+          "value": 0,
+          "row": 53
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 8,
+          "row": 54
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "recorded": false,
+          "row": 55
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "recorded": false,
+          "row": 56
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "recorded": false,
+          "row": 57
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "recorded": false,
+          "row": 58
+        }
+      ]
+    }
+  ]
+}

@@ -457,13 +457,17 @@ public static class UnitCatalogReader
             return null;
         }
 
-        if (!entry.TryGetProperty("present", out var present) || present.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+        var hasPresent = entry.TryGetProperty("present", out var present);
+        var notInSource = NotRecorded(entry);
+        if (hasPresent == notInSource || (hasPresent && present.ValueKind is not (JsonValueKind.True or JsonValueKind.False)))
         {
-            diagnostics.Add(UnitDiagnostic.Error("UNIT-CAT-011", "A trait records 'present' as true or false.", path));
+            diagnostics.Add(UnitDiagnostic.Error("UNIT-CAT-011", "A trait records either 'present' as true or false, or \"recorded\": false.", path));
             return null;
         }
 
-        return new PrintedValue(face, name, null, present.GetBoolean(), source);
+        return notInSource
+            ? new PrintedValue(face, name, true, PrintedState.NotInSource, null, null, source)
+            : new PrintedValue(face, name, true, PrintedState.Printed, null, present.GetBoolean(), source);
     }
 
     private static PrintedValue? ReadAttribute(JsonElement entry, string path, string kind, string face, string name, ValueSource source,
@@ -485,22 +489,27 @@ public static class UnitCatalogReader
 
         var hasValue = entry.TryGetProperty("value", out var element);
         var notPrinted = entry.TryGetProperty("printed", out var printed) && printed.ValueKind == JsonValueKind.False;
-        if (hasValue == notPrinted)
+        var notInSource = NotRecorded(entry);
+        if ((hasValue ? 1 : 0) + (notPrinted ? 1 : 0) + (notInSource ? 1 : 0) != 1)
         {
-            diagnostics.Add(UnitDiagnostic.Error("UNIT-CAT-011", "An attribute records either a 'value' or \"printed\": false.", path));
+            diagnostics.Add(UnitDiagnostic.Error("UNIT-CAT-011", "An attribute records exactly one of a 'value', \"printed\": false, or \"recorded\": false.", path));
             return null;
         }
 
-        if (notPrinted)
+        if (notPrinted || notInSource)
         {
-            return new PrintedValue(face, attribute.Name, null, null, source);
+            return new PrintedValue(face, attribute.Name, false, notPrinted ? PrintedState.NotPrinted : PrintedState.NotInSource, null, null, source);
         }
 
         var converted = new List<UnitDiagnostic>();
         var value = UnitDocumentReader.ConvertValue(attribute, element, name, path, converted);
         diagnostics.AddRange(converted.Select(diagnostic => diagnostic with { Code = "UNIT-CAT-011" }));
-        return value is null ? null : new PrintedValue(face, attribute.Name, value, null, source);
+        return value is null ? null : new PrintedValue(face, attribute.Name, false, PrintedState.Printed, value, null, source);
     }
+
+    /// <summary>Whether a value entry says the source consulted does not show it.</summary>
+    private static bool NotRecorded(JsonElement entry) =>
+        entry.TryGetProperty("recorded", out var recorded) && recorded.ValueKind == JsonValueKind.False;
 
     private static void CheckDefinitions(List<UnitDefinition> definitions, List<UnitDiagnostic> diagnostics)
     {

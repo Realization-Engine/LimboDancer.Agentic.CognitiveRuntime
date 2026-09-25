@@ -102,22 +102,22 @@ public static class UnitCatalogJson
         {
             writer.WriteStartObject();
             writer.WriteString("face", value.Face);
-            if (value.TraitPresent is { } present)
+            writer.WriteString(value.IsTrait ? "trait" : "attribute", value.IsTrait ? value.Name : vocabulary.ShortName(definition.Kind, value.Name));
+            if (value.NotInSource)
             {
-                writer.WriteString("trait", value.Name);
-                writer.WriteBoolean("present", present);
+                writer.WriteBoolean("recorded", false);
+            }
+            else if (value.NotPrinted)
+            {
+                writer.WriteBoolean("printed", false);
+            }
+            else if (value.IsTrait)
+            {
+                writer.WriteBoolean("present", value.TraitPresent!.Value);
             }
             else
             {
-                writer.WriteString("attribute", vocabulary.ShortName(definition.Kind, value.Name));
-                if (value.Value is { } typed)
-                {
-                    WriteValue(writer, "value", typed);
-                }
-                else
-                {
-                    writer.WriteBoolean("printed", false);
-                }
+                WriteValue(writer, "value", value.Value!);
             }
 
             writer.WriteNumber("row", value.Source.Row);

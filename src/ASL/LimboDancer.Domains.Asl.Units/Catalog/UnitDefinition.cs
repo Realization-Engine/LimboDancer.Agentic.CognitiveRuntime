@@ -56,17 +56,29 @@ public sealed record ValueSource(CounterReference Counter, string Face, int Row)
     public override string ToString() => $"{Counter} {Face}, row {Row}";
 }
 
+/// <summary>What a transcription row says about a characteristic.</summary>
+public enum PrintedState
+{
+    /// <summary>The source shows it: an attribute's value, or a trait marking present or absent.</summary>
+    Printed,
+
+    /// <summary>The attribute was checked and the counter does not print it.</summary>
+    NotPrinted,
+
+    /// <summary>The source consulted does not show it, so nothing is known about it. Distinct from not printed.</summary>
+    NotInSource,
+}
+
 /// <summary>
 /// One printed characteristic of a counter face (ASL-UNIT-011): an attribute with its typed value, an attribute the
-/// counter does not print, or a trait marking that is present or absent. Printed values are never changed by rules;
-/// rules produce <see cref="EffectiveValue"/>s instead (ASL-UNIT-013).
+/// counter does not print, a trait marking that is present or absent, or a characteristic the source does not show.
+/// Printed values are never changed by rules; rules produce <see cref="EffectiveValue"/>s instead (ASL-UNIT-013).
 /// </summary>
-public sealed record PrintedValue(string Face, string Name, UnitValue? Value, bool? TraitPresent, ValueSource Source)
+public sealed record PrintedValue(string Face, string Name, bool IsTrait, PrintedState State, UnitValue? Value, bool? TraitPresent, ValueSource Source)
 {
-    public bool IsTrait => TraitPresent is not null;
+    public bool NotPrinted => State == PrintedState.NotPrinted;
 
-    /// <summary>The attribute was checked on the counter and is not printed there.</summary>
-    public bool NotPrinted => !IsTrait && Value is null;
+    public bool NotInSource => State == PrintedState.NotInSource;
 }
 
 public enum ApplicabilityStatus

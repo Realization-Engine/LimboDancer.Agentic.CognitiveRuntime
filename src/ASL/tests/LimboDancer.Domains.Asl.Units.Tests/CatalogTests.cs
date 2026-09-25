@@ -128,6 +128,17 @@ public sealed class CatalogTests
         Assert.True(squad.Printed("front", "asl:assault-fire")!.TraitPresent);
         Assert.False(squad.Printed("front", "asl:spraying-fire")!.TraitPresent);
         Assert.Equal(["front", "broken"], squad.Faces);
+
+        // Not in the source is not the same as not printed: nothing is known about it.
+        var leader = Synthetic().Definition("defender-leader")!;
+        var identity = leader.Printed("front", "asl:identity")!;
+        Assert.True(identity.NotInSource);
+        Assert.False(identity.NotPrinted);
+        Assert.Null(identity.Value);
+        var elr = leader.Printed("front", "asl:elr-5")!;
+        Assert.True(elr.IsTrait);
+        Assert.True(elr.NotInSource);
+        Assert.Null(elr.TraitPresent);
     }
 
     [Fact]
@@ -231,6 +242,8 @@ public sealed class CatalogTests
 
         var leader = CatalogDocuments.ToDocument(catalog, catalog.Definition("defender-leader")!, vocabulary, "leader").Result!.Document;
         Assert.Equal(0, leader.Value("front", "asl:leadership")!.Number);
+        Assert.Null(leader.Face("front")!.Value("asl:identity"));
+        Assert.False(leader.Face("front")!.HasTrait("asl:elr-5"));
         Assert.Equal(5, leader.Value("broken", "asl:broken-morale")!.Number);
     }
 
@@ -329,6 +342,8 @@ public sealed class CatalogTests
         { "trait-face", "UNIT-CAT-011" },
         { "value-type", "UNIT-CAT-011" },
         { "value-and-not-printed", "UNIT-CAT-011" },
+        { "value-and-not-in-source", "UNIT-CAT-011" },
+        { "trait-present-and-not-in-source", "UNIT-CAT-011" },
         { "row", "UNIT-CAT-011" },
         { "applicability-missing", "UNIT-CAT-015" },
         { "applicability-date", "UNIT-CAT-015" },
@@ -397,6 +412,12 @@ public sealed class CatalogTests
                 break;
             case "value-and-not-printed":
                 Value(squad, "front", "firepower")["printed"] = false;
+                break;
+            case "value-and-not-in-source":
+                Value(squad, "front", "firepower")["recorded"] = false;
+                break;
+            case "trait-present-and-not-in-source":
+                Value(squad, "front", "asl:assault-fire")["recorded"] = false;
                 break;
             case "row":
                 Value(squad, "front", "firepower")["row"] = 0;

@@ -224,8 +224,8 @@ Decided on 2026-09-25 as recommended in the [Decision Memo for D1 to D4](<ASL Un
 ## 13. Sequence
 
 1. **Display:** the [ASL Unit Display Design](<ASL Unit Display Design.md>), Personnel and SW first, then Guns, vehicles, and entities that are not units (all four built; its sections 16 to 19) (ASL-UNIT-070 to 078). It needs neither D1 nor D2.
-2. **Decisions:** D1 to D4 decided on 2026-09-25 (section 12). The counter-sheet source is registered, awaiting its transcription ([Scenario A1 Catalog Design](<ASL Scenario A1 Catalog Design.md>), section 9). Still to do: if VASL is to be the cross-check, run its licensing review.
-3. **Scenario A1 catalog:** the Infantry Personnel definitions ASL-UNIT-062 needs, with source-backed values and round-trip tests. Designed and built in the [Scenario A1 Catalog Design](<ASL Scenario A1 Catalog Design.md>), with synthetic definitions until the reviewed transcription is published.
+2. **Decisions:** D1 to D4 decided on 2026-09-25 (section 12). The counter source is registered and transcribed, awaiting review ([Scenario A1 Catalog Design](<ASL Scenario A1 Catalog Design.md>), section 9). Still to do: if VASL is to be the cross-check, run its licensing review.
+3. **Scenario A1 catalog:** the Infantry Personnel definitions ASL-UNIT-062 needs, with source-backed values and round-trip tests. Designed and built in the [Scenario A1 Catalog Design](<ASL Scenario A1 Catalog Design.md>), with a draft catalog from the first transcription until it is reviewed.
 4. **State model:** game and side state, instances, conditions, positions against the map location chain, relationships, events, and perspectives, tested with synthetic fixtures.
 5. **Read contract:** ASL-UNIT-060 and 061, read-only, together with the map read API (ASL-MAP-080). Cross-check against the existing Scenario A1 snapshots, which stay unchanged (ASL-MAP-081).
 6. **Display from projections:** feed the display the projections of the state model, filtered by perspective.

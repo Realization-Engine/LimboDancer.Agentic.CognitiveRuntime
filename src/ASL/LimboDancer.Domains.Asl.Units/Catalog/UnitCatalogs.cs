@@ -4,7 +4,7 @@ namespace LimboDancer.Domains.Asl.Units.Catalog;
 
 /// <summary>
 /// The catalogs in <c>src/ASL/units/catalog</c>, by name: <c>scenario-a1.synthetic</c>, whose values are illustrative
-/// and never counter data, and <c>scenario-a1</c> once its transcription is reviewed and published.
+/// and never counter data, and <c>scenario-a1</c>, built from the counter transcription: a draft until it is reviewed.
 /// </summary>
 public static class UnitCatalogs
 {

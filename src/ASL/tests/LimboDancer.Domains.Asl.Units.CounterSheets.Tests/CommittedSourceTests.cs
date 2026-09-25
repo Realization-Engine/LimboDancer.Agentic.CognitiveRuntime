@@ -85,7 +85,7 @@ public sealed class CommittedSourceTests
 
         var build = CounterSheetCatalogBuilder.Build(Bytes(ManifestPath), Bytes(RecordPath), Bytes(TranscriptionPath), Bytes(WorksheetPath), AslVocabulary.Value);
         Assert.Empty(build.Diagnostics);
-        var committed = File.ReadAllText(Full(PublishedCatalogPath)).ReplaceLineEndings("\n");
+        var committed = File.Exists(Full(PublishedCatalogPath)) ? File.ReadAllText(Full(PublishedCatalogPath)).ReplaceLineEndings("\n") : null;
         if (committed != build.Json)
         {
             var output = Path.Combine(AppContext.BaseDirectory, "scenario-a1.catalog.json");
