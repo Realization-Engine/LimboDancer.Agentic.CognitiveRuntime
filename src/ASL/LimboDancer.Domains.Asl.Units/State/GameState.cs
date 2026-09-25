@@ -41,6 +41,9 @@ public sealed record GameState(
     /// <summary>The side that had the first Player Turn: a new Game Turn starts when it is phasing again.</summary>
     public string FirstSide { get; init; } = string.Empty;
 
+    /// <summary>Entry attempts not yet resolved; while any is open the phase may not change.</summary>
+    public IReadOnlyList<OpenAttempt> OpenAttempts { get; init; } = [];
+
     /// <summary>The source of the game's first event: <c>fixture</c>, or an accepted live source.</summary>
     public string Source { get; init; } = string.Empty;
 

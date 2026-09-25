@@ -202,16 +202,21 @@ public sealed class ConcealedEntryTests : IDisposable
     }
 
     [Theory]
-    [InlineData("two-concealed", "play.outside-reviewed-cases")]
-    [InlineData("concealed-leader", "play.outside-reviewed-cases")]
+    [InlineData("hidden-leader", "play.outside-reviewed-cases")]
+    [InlineData("hidden-leader-with-squad", "play.outside-reviewed-cases")]
+    [InlineData("known-and-concealed", "play.outside-reviewed-cases")]
     [InlineData("return-wire", "play.return-hazard")]
     public async Task AnEntryNoReviewedCaseCoversIsRefusedWithoutNamingWhatIsHidden(string change, string reason)
     {
+        // Several concealed units and a lone concealed SMC are resolved in step 9; a hidden SMC, and known units mixed
+        // with concealed ones, stay outside the reviewed cases (Random Selection reveal review).
         var play = change switch
         {
-            "two-concealed" => await GameInMph(Placement("r1", "defender-squad", "russian", "bd01:E4:0", concealed: true),
-                Placement("r2", "defender-squad", "russian", "bd01:E4:0", hidden: true)),
-            "concealed-leader" => await GameInMph(Placement("r1", "defender-leader", "russian", "bd01:E4:0", concealed: true)),
+            "hidden-leader" => await GameInMph(Placement("r1", "defender-leader", "russian", "bd01:E4:0", hidden: true)),
+            "hidden-leader-with-squad" => await GameInMph(Placement("r1", "defender-leader", "russian", "bd01:E4:0", hidden: true),
+                Placement("r2", "defender-squad", "russian", "bd01:E4:0", concealed: true)),
+            "known-and-concealed" => await GameInMph(Placement("r1", "defender-squad", "russian", "bd01:E4:0"),
+                Placement("r2", "defender-squad", "russian", "bd01:E4:0", concealed: true)),
             _ => await GameInMph(Placement("r1", "defender-squad", "russian", "bd01:E4:0", hidden: true), Entity("w1", "asl:wire", "russian", "bd01:D4:0")),
         };
         var start = Revision;

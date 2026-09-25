@@ -241,6 +241,12 @@ public static class GameEventReader
                 return roll is null || purpose is null || count is null || rollSides is null || source is null || actor is null || values is null
                     ? Missing(diagnostics, "A roll names its id, purpose, count, sides, values, source, and actor.", path)
                     : new DiceRolled(roll, purpose, count.Value, rollSides.Value, values, source, actor);
+            case "random-selection":
+                var selectionRoll = fields.RequiredString(payload, "roll", path);
+                var selectionAttempt = fields.RequiredString(payload, "attempt", path);
+                return selectionRoll is null || selectionAttempt is null
+                    ? Missing(diagnostics, "A selection names its roll and its attempt.", path)
+                    : new RandomSelection(selectionRoll, selectionAttempt, fields.StringList(payload, "subjects", path));
             case "instance-captured":
                 var captured = fields.RequiredString(payload, "id", path);
                 var custodian = fields.RequiredString(payload, "custodian", path);

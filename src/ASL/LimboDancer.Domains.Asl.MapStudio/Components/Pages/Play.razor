@@ -171,6 +171,27 @@ else if (state is not null)
 
 @if (state is not null)
 {
+    @foreach (var open in state.OpenAttempts)
+    {
+        <p class="fail" data-open-attempt="@open.EventId">
+            The entry attempt of @open.Unit into @open.Target awaits the attacker's Infantry OVR declaration (A12.15, p. 78). The phase cannot advance until it is made.
+        </p>
+    }
+
+    @if (Rolls.Count > 0)
+    {
+        <h3>Rolls</h3>
+        <ul id="play-rolls">
+            @foreach (var (roll, subjects) in Rolls)
+            {
+                <li data-roll="@roll.Roll">
+                    @roll.Purpose: @string.Join(", ", roll.Values)@(subjects is null ? "" : $" for {string.Join(", ", subjects)}")
+                    <span class="muted">(@roll.Count d@(roll.Sides), drawn by the @roll.Source for @roll.Actor)</span>
+                </li>
+            }
+        </ul>
+    }
+
     <h3>Units</h3>
     <p class="muted" id="play-units-view">As @(Viewer.IsAdjudicator ? "the adjudicator sees them: every unit" : $"{Viewer.Name} sees them"), at revision @state.Revision.</p>
     <table class="library" id="play-units">
@@ -232,6 +253,16 @@ else if (state is not null)
     private GameView? View => state is not null && history is not null && history.Current is not null ? GameView.Of(history, state.Revision, Viewer) : null;
 
     private IEnumerable<UnitInstance> VisibleUnits => Viewer.IsAdjudicator || View is null ? state?.Units ?? [] : View.Units;
+
+    /// <summary>
+    /// The rolls the viewer may see, latest first, with the unit each die belongs to when the viewer may see that too:
+    /// the adjudicator, or the side whose units were selected (Random Selection and Declined OVR Design, section 7).
+    /// </summary>
+    private IReadOnlyList<(DiceRolled Roll, IReadOnlyList<string>? Subjects)> Rolls => history is null
+        ? []
+        : [.. history.Events.Where(item => item.IsVisibleTo(Viewer)).Select(item => item.Payload).OfType<DiceRolled>().Reverse().Take(6)
+            .Select(roll => (roll, history.Events.Where(item => item.IsVisibleTo(Viewer)).Select(item => item.Payload).OfType<RandomSelection>()
+                .FirstOrDefault(selection => selection.Roll == roll.Roll)?.Subjects))];
 
     private IEnumerable<SealedPresence> SealedPresences => Viewer.IsAdjudicator || View is null ? [] : View.Sealed;
 

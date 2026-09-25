@@ -189,6 +189,79 @@ public sealed class PlayPageTests : IDisposable
         Assert.Contains("Revision 4", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
     }
 
+    /// <summary>A game in the German MPh with g1 in A1 and the Russian units given, each concealed, in B1.</summary>
+    private IRenderedComponent<PlayPage> GameWithDefenders(params (string Id, string Definition)[] defenders)
+    {
+        var page = context.Render<PlayPage>();
+        page.Find("#new-board").Change(Board);
+        page.Find("#place-id").Change("g1");
+        page.Find("#place-location").Change($"{Board}:A1:0");
+        page.Find("#place-add").Click();
+        foreach (var (id, definition) in defenders)
+        {
+            page.Find("#place-definition").Change(definition);
+            page.Find("#place-id").Change(id);
+            page.Find("#place-location").Change($"{Board}:B1:0");
+            page.Find("#place-concealed").Change(true);
+            page.Find("#place-add").Click();
+            page.Find("#place-concealed").Change(false);
+        }
+
+        Commit(page, "#propose-setup");
+        Commit(page, "#propose-advance");
+        Commit(page, "#propose-advance");
+        return page;
+    }
+
+    /// <summary>Appends a committed batch the way the store does, so the page can be shown a rolled or pending entry.</summary>
+    private void Append(params (string Type, EventPayload Payload, string[]? Visibility)[] batch)
+    {
+        var scope = new GameScope(LivePlay.Tenant, "village");
+        var existing = live.Store.Read(scope)!.Events;
+        GameEvent[] events = [.. batch.Select((item, index) => new GameEvent(scope, $"enter-1-{index + 1}", existing.Count + index + 1, DateTimeOffset.UnixEpoch,
+            LiveGames.Source, item.Type, item.Payload, null, index == 0 ? [] : ["enter-1-1"], item.Visibility))];
+        Assert.Equal(AppendStatus.Committed, live.Store.Append(scope, "Village", existing.Count, events, live.Planner.Replay).Status);
+    }
+
+    private static readonly Dictionary<string, ConditionState> Revealed = new() { [Conditions.Concealed] = ConditionState.False };
+
+    [Fact]
+    public void RollsAreShownToEveryoneAndTheirSubjectsOnlyToTheSelectedSideAndTheAdjudicator()
+    {
+        var page = GameWithDefenders(("r1", "defender-squad"), ("r2", "defender-squad"));
+        var a1 = BoardLocation.Parse($"{Board}:A1:0");
+        Append(("entry-attempted", new EntryAttempted("g1", BoardLocation.Parse($"{Board}:B1:0"), 2), null),
+            ("dice-rolled", new DiceRolled("enter-1-roll-1", "random-selection", 2, 6, [6, 2], DiceRolled.SystemSource, "studio-user"), null),
+            ("random-selection", new RandomSelection("enter-1-roll-1", "enter-1-1", ["r1", "r2"]), ["russian"]),
+            ("conditions-changed", new ConditionsChanged("r1", Revealed), null),
+            ("entry-forced-back", new EntryForcedBack("g1", "enter-1-1", a1, 2, false), null));
+        page.Find("#play-game").Change("village");
+
+        var german = page.Find("#play-rolls li").TextContent;
+        Assert.Contains("random-selection: 6, 2", german, StringComparison.Ordinal);
+        Assert.DoesNotContain("r2", german, StringComparison.Ordinal);
+        Assert.Contains("movement ended", page.Find("#play-units tr[data-unit='g1']").TextContent, StringComparison.Ordinal);
+
+        page.Find("#play-perspective").Change("russian");
+        Assert.Contains("for r1, r2", page.Find("#play-rolls li").TextContent, StringComparison.Ordinal);
+        page.Find("#play-perspective").Change(Perspective.AdjudicatorName);
+        Assert.Contains("for r1, r2", page.Find("#play-rolls li").TextContent, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void APendingDeclarationIsShownAndBlocksThePhase()
+    {
+        var page = GameWithDefenders(("l1", "defender-leader"));
+        Append(("entry-attempted", new EntryAttempted("g1", BoardLocation.Parse($"{Board}:B1:0"), 2), null),
+            ("conditions-changed", new ConditionsChanged("l1", Revealed), null));
+        page.Find("#play-game").Change("village");
+        Assert.Contains("awaits the attacker's Infantry OVR declaration", page.Find("[data-open-attempt='enter-1-1']").TextContent, StringComparison.Ordinal);
+
+        page.Find("#propose-advance").Click();
+        page.WaitForAssertion(() => Assert.Contains("Refused", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+        Assert.Contains(page.FindAll("#play-reasons li"), item => item.TextContent.StartsWith("play.declaration-pending", StringComparison.Ordinal));
+    }
+
     [Fact]
     public void ALiveGameIsListedAndReplaysInTheGameLibrary()
     {

@@ -104,6 +104,24 @@ The planner checks the forced-back branch once, before the roll: it asks PostRev
 
 Disclosure follows step 8, section 7. The proposal is withheld, and the side sees the roll and the reveal only once they are committed.
 
+**As built** (part 2).
+
+- **Planner.** `PlanConcealedEntryAsync` covers the three concealed routes: one MMC (step 8), `LoneSmc`, and `RandomSelection`.
+  - It checks the forced back once, before any roll, over a candidate state that reveals one MMC, or two SMC when there is no MMC. `PostRevealAsync` returns the conclusion.
+  - A Random Selection plan is Ready with a `PlannedRoll` and no events. Its build function adds `dice-rolled`, `random-selection`, and the reveals, and adds the forced back unless exactly one SMC is revealed.
+  - `PlanAsync` takes the acting principal, which the gate, the executor, and the Play page pass, and records it as the roll's `actor`.
+  - Advancing the phase is refused with `play.declaration-pending` while an attempt is open, and a unit with an open attempt fails `canMoveThisPhase`.
+- **Units.**
+  - `GameState.OpenAttempts` replaces the projector's private dictionary. `OpenAttempt.Revealing` holds the units a selection chose.
+  - The selection checks use UNIT-STATE-020: its roll is recorded with one die per distinct subject; every subject is an active unit at the target; there is one selection per attempt; only selected units lose concealment at the target; and a forced back comes only after every selected unit is revealed.
+- **Refused before any roll.** A hidden SMC, alone or among others, and known units mixed with concealed ones, are refused as outside the reviewed cases.
+- **Map Studio.** The Play page lists recent rolls. Each side sees the values; the adjudicator and the selected side also see which die was whose. The page also states when an attempt awaits a declaration. The Decline and Elect controls come in part 3.
+- **Tests.**
+  - Units, `RandomSelectionEventTests`: 13 cases.
+  - Play, `RandomSelectionTests`: 10 cases, with fixed rolls from the Dice seam. They cover U9, ties, hidden units placed first, every SMC branch, a lone concealed SMC without a roll, and a replay that never calls the roller.
+  - Map Studio: 2 page tests.
+  - The step 8 refusal cases were updated for the routes this part adds.
+
 ## 6. The OVR declaration
 
 `asl.game.declare-overrun` (new) is a registered action with the permission `asl.game.play`. It is Irreversible and needs confirmation. Its arguments are the game, attempt id, expected revision, unit, and `choice`.

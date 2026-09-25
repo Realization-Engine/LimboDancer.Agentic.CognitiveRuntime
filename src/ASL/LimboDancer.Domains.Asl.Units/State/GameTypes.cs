@@ -227,6 +227,17 @@ public sealed record UnitInstance(
     string? IGameObject.Side => Side;
 }
 
+/// <summary>
+/// An entry attempt not yet resolved (Random Selection and Declined OVR Design, section 4): its first event, its unit,
+/// target, and MF, and the units a Random Selection requires it to reveal. While it is open the phase may not change
+/// and its unit may not move.
+/// </summary>
+public sealed record OpenAttempt(string EventId, string Unit, BoardLocation Target, int Mf)
+{
+    /// <summary>The units a Random Selection roll selected for the reveal; empty when no roll was made.</summary>
+    public IReadOnlyList<string> Revealing { get; init; } = [];
+}
+
 /// <summary>A support weapon or Gun instance (ASL-UNIT-022): its own identity and condition, and at most one holder.</summary>
 public sealed record EquipmentInstance(
     string Id,

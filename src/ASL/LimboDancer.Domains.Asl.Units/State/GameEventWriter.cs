@@ -199,6 +199,11 @@ public static class GameEventWriter
                 writer.WriteString("source", rolled.Source);
                 writer.WriteString("actor", rolled.Actor);
                 break;
+            case RandomSelection selection:
+                writer.WriteString("roll", selection.Roll);
+                writer.WriteString("attempt", selection.Attempt);
+                Strings(writer, "subjects", selection.Subjects);
+                break;
             case InstanceCaptured captured:
                 writer.WriteString("id", captured.Id);
                 writer.WriteString("custodian", captured.Custodian);

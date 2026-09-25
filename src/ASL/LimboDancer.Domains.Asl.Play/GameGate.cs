@@ -29,7 +29,8 @@ public sealed class GameConstraintEvaluator(GamePlanner planner) : IActionConstr
             return new ConstraintEvaluationResult(ConstraintEvaluationOutcome.Failed, ["play.unregistered-action"]);
         }
 
-        var plan = await planner.PlanAsync(action.Candidate.Descriptor, action.Candidate.Arguments, context.TenantId, cancellationToken);
+        var plan = await planner.PlanAsync(action.Candidate.Descriptor, action.Candidate.Arguments, context.TenantId, context.Principal.PrincipalId,
+            cancellationToken);
         return plan.Status switch
         {
             GamePlanStatus.Ready or GamePlanStatus.Replay => new ConstraintEvaluationResult(ConstraintEvaluationOutcome.Satisfied, plan.Reasons,
@@ -61,7 +62,7 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
             return Failed("play.invalid-authorized-action");
         }
 
-        var plan = await planner.PlanAsync(descriptor, action.Selected.Candidate.Arguments, action.TenantId, cancellationToken);
+        var plan = await planner.PlanAsync(descriptor, action.Selected.Candidate.Arguments, action.TenantId, action.PrincipalId, cancellationToken);
         var key = GameActions.VersionKey(action.TenantId, plan.Scope.Game);
         if (!action.ValidatedStateVersions.TryGetValue(key, out var validated)
             || validated != plan.ExpectedRevision.ToString(CultureInfo.InvariantCulture))
@@ -115,14 +116,22 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
     {
         // A forced back: the mover is where it started, with its movement ended, and every defender the plan revealed is known.
         EntryForcedBack forced => state.Unit(forced.Id) is { MovementEnded: true } unit && state.Location(unit.Id)?.Location == forced.ReturnedTo
-            && plan.Events.Select(item => item.Payload).OfType<ConditionsChanged>().All(changed => state.Unit(changed.Id) is { } revealed
-                && GameState.Condition(revealed, Conditions.Concealed) == ConditionState.False
-                && GameState.Condition(revealed, Conditions.Hidden) == ConditionState.False),
+            && Revealed(state, plan),
+
+        // A pending declaration: every unit the plan revealed is known, and its attempt is still open.
+        ConditionsChanged => plan.Events.Select(item => item.Payload).OfType<EntryAttempted>().Any()
+            && state.OpenAttempts.Any(open => open.EventId == plan.Events[0].EventId) && Revealed(state, plan),
         InstanceMoved moved => state.Unit(moved.Id) is { } unit && state.Location(unit.Id) is { } at
             && moved.Position is MapPosition target && at.Location == target.Location,
         PhaseChanged phase => state.Phase == phase.Phase && state.PhasingSide == phase.PhasingSide && state.Turn == phase.Turn,
         _ => plan.Events.Select(item => item.Payload).OfType<InstanceCreated>().All(created => state.Find(created.Instance.Id) is not null),
     };
+
+    /// <summary>Every unit the plan's events reveal is known after the commit; a placement beneath a "?" reveals nothing.</summary>
+    private static bool Revealed(GameState state, GamePlan plan) => plan.Events.Select(item => item.Payload).OfType<ConditionsChanged>()
+        .Where(changed => changed.Conditions.TryGetValue(Conditions.Concealed, out var concealed) && concealed == ConditionState.False)
+        .All(changed => state.Unit(changed.Id) is { } revealed && GameState.Condition(revealed, Conditions.Concealed) == ConditionState.False
+            && GameState.Condition(revealed, Conditions.Hidden) == ConditionState.False);
 
     private static ActionExecutionResult Succeeded(string code, GamePlan plan, long revision) => new(true, code,
         JsonSerializer.SerializeToElement(new
@@ -220,7 +229,7 @@ public sealed class GamePlay
 
     /// <summary>Plans an action without the gate, to show what it would do.</summary>
     public Task<GamePlan> PreviewAsync(ActionDescriptor action, JsonElement arguments, Guid tenant, CancellationToken cancellationToken = default) =>
-        planner.PlanAsync(action, arguments, tenant, cancellationToken);
+        planner.PlanAsync(action, arguments, tenant, cancellationToken: cancellationToken);
 
     /// <summary>Runs the gate; commits only if no confirmation is needed.</summary>
     public Task<PlayResult> ProposeAsync(ActionDescriptor action, JsonElement arguments, RuntimePrincipal principal, CancellationToken cancellationToken = default) =>
@@ -242,7 +251,7 @@ public sealed class GamePlay
     {
         ArgumentNullException.ThrowIfNull(action);
         ArgumentNullException.ThrowIfNull(principal);
-        var plan = await planner.PlanAsync(action, arguments, principal.TenantId, cancellationToken);
+        var plan = await planner.PlanAsync(action, arguments, principal.TenantId, principal.PrincipalId, cancellationToken);
 
         // A withheld entry is only declared when proposed: running the gate would tell the mover's side whether the
         // target hides a unit. The gate runs, and decides, when the entry is confirmed (Occupied and Concealed Entry
