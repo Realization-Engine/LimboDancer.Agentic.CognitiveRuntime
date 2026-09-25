@@ -29,7 +29,7 @@ public sealed class GameStatesTests : IDisposable
     {
         var entry = games.Load("a1-village.synthetic");
         Assert.False(entry.History!.HasErrors);
-        Assert.Equal(18, entry.History.States.Count);
+        Assert.Equal(21, entry.History.States.Count);
 
         // The synthetic board provider has no bd01, so positions cannot be checked, and the entry says so.
         Assert.False(entry.PositionsChecked);
@@ -40,7 +40,7 @@ public sealed class GameStatesTests : IDisposable
     public void TheAdjudicatorSeesEverything()
     {
         var page = context.Render<Games>();
-        Assert.Contains("Revision 18 of 18", page.Find("#game-summary").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Revision 21 of 21", page.Find("#game-summary").TextContent, StringComparison.Ordinal);
         Assert.NotEmpty(page.FindAll("#game-units tr[data-unit='r2']"));
         Assert.Contains("prisoner of g1", page.Find("#game-units tr[data-unit='r1']").TextContent, StringComparison.Ordinal);
         Assert.Contains("from g2", page.Find("#game-units tr[data-unit='g2-hs']").TextContent, StringComparison.Ordinal);
@@ -52,7 +52,7 @@ public sealed class GameStatesTests : IDisposable
         var page = context.Render<Games>();
         page.Find("#game-perspective").Change("german");
         page.Find("#game-revision").Change("8");
-        Assert.Contains("Revision 8 of 18", page.Find("#game-summary").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Revision 8 of 21", page.Find("#game-summary").TextContent, StringComparison.Ordinal);
         Assert.Empty(page.FindAll("#game-units tr[data-unit='r1']"));
         Assert.Empty(page.FindAll("#game-units tr[data-unit='r2']"));
         Assert.Contains("withheld", page.Find("#game-units tr[data-unit='sealed-1']").TextContent, StringComparison.Ordinal);
@@ -61,7 +61,7 @@ public sealed class GameStatesTests : IDisposable
 
         page.Find("#game-next").Click();
         page.Find("#game-next").Click();
-        Assert.Contains("Revision 10 of 18", page.Find("#game-summary").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Revision 10 of 21", page.Find("#game-summary").TextContent, StringComparison.Ordinal);
         Assert.NotEmpty(page.FindAll("#game-units tr[data-unit='r1']"));
     }
 
@@ -79,6 +79,35 @@ public sealed class GameStatesTests : IDisposable
         {
             Units = []
         }));
+    }
+
+    [Fact]
+    public void ACaseReadSaysWhenTheBoardCannotBeRead()
+    {
+        // The synthetic board provider has no bd01, so the map read API cannot resolve the location.
+        var page = context.Render<Games>();
+        page.Find("#case-attacker").Change("gh1");
+        page.Find("#case-location").Change("bd01:E5:0");
+        page.Find("#case-read").Click();
+        Assert.Contains("Unavailable (CASE-009)", page.Find("#case-result").TextContent, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ACaseReadAtAnOldRevisionIsStale()
+    {
+        var page = context.Render<Games>();
+        page.Find("#case-expected").Change("20");
+        page.Find("#case-read").Click();
+        Assert.Contains("Stale (CASE-005)", page.Find("#case-result").TextContent, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ASideCanOnlyReadItsOwnUnitsAsAttackers()
+    {
+        var page = context.Render<Games>();
+        page.Find("#game-perspective").Change("german");
+        Assert.DoesNotContain(page.FindAll("#case-attacker option"), option => option.GetAttribute("value") is "r1" or "r2");
+        Assert.Contains(page.FindAll("#case-attacker option"), option => option.GetAttribute("value") == "gh1");
     }
 
     public void Dispose()

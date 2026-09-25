@@ -36,6 +36,23 @@ public sealed class GameLibrary(UnitLibrary units, IBoardProvider boards)
         return entries.GetOrAdd(name, Replay);
     }
 
+    /// <summary>
+    /// Reads a case (ASL-UNIT-060) in the game as it stood at <paramref name="asOf"/>: the events through that revision
+    /// replayed, read through the map read API over the Studio's boards.
+    /// </summary>
+    public CaseReadResult ReadCase(GameEntry entry, long asOf, string attacker, BoardLocation location, long expectedRevision, Perspective perspective)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+        if (entry.Record is null)
+        {
+            return new CaseReadResult(CaseReadStatus.Unavailable, "CASE-002", $"{entry.Name} did not read.", null);
+        }
+
+        var history = GameProjector.Project([.. entry.Record.Events.Take((int)asOf)], units.Vocabulary, Catalogs, Chains(entry.Record));
+        var reader = new CaseReader(new HistoryGameSource([history]), new StudioBoardCatalog(boards), units.Vocabulary, Catalogs);
+        return reader.Read(new CaseRequest(entry.Record.Events[0].Scope, "map-studio-game-states", attacker, location, expectedRevision, perspective));
+    }
+
     /// <summary>Registers the view as a placement set for the board viewer and returns the set id.</summary>
     public string ShowOnBoard(GameEntry entry, Perspective perspective, long revision)
     {

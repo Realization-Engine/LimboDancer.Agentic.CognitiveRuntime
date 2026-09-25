@@ -227,7 +227,7 @@ Decided on 2026-09-25 as recommended in the [Decision Memo for D1 to D4](<ASL Un
 2. **Decisions:** D1 to D4 decided on 2026-09-25 (section 12). The counter source is registered, transcribed, and reviewed ([Scenario A1 Catalog Design](<ASL Scenario A1 Catalog Design.md>), section 9). Still to do: if VASL is to be the cross-check, run its licensing review.
 3. **Scenario A1 catalog:** the Infantry Personnel definitions ASL-UNIT-062 needs, with source-backed values and round-trip tests. Designed and built in the [Scenario A1 Catalog Design](<ASL Scenario A1 Catalog Design.md>), and published from the reviewed transcription (built).
 4. **State model:** game and side state, instances, conditions, positions against the map location chain, relationships, events, and perspectives, tested with synthetic fixtures. Built in the [ASL Unit State Model Design](<ASL Unit State Model Design.md>), with a Game states page in Map Studio.
-5. **Read contract:** ASL-UNIT-060 and 061, read-only, together with the map read API (ASL-MAP-080). Cross-check against the existing Scenario A1 snapshots, which stay unchanged (ASL-MAP-081).
+5. **Read contract:** ASL-UNIT-060 and 061, read-only, together with the map read API (ASL-MAP-080). Cross-check against the existing Scenario A1 snapshots, which stay unchanged (ASL-MAP-081). Built in the [ASL Unit Read Contract Design](<ASL Unit Read Contract Design.md>), with a Read a case panel in Map Studio.
 6. **Display from projections:** feed the display the projections of the state model, filtered by perspective. Started for the synthetic fixtures (State Model Design, section 10).
 7. **Governed writes:** one reviewed transition at a time, with the live game source of D2 chosen at that point.
 

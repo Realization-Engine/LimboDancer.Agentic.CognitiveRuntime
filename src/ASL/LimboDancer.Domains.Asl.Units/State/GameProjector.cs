@@ -177,12 +177,14 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-015", $"Turn {change.Turn} is before the current turn {state.Turn}.");
             }
 
+            // MF are spent within a phase, so a new phase starts every unit at none spent.
             return CheckPhase(state, change.Turn, change.Phase, change.PhasingSide)
                 ? state with
                 {
                     Turn = change.Turn,
                     Phase = change.Phase,
-                    PhasingSide = change.PhasingSide
+                    PhasingSide = change.PhasingSide,
+                    Units = [.. state.Units.Select(unit => unit.MfSpent == 0 ? unit : unit with { MfSpent = 0 })],
                 }
                 : null;
         }
@@ -307,9 +309,19 @@ public static class GameProjector
                 return null;
             }
 
+            if (move.Mf is < 0)
+            {
+                return Fail<GameState>("UNIT-STATE-010", "A move cannot spend negative MF.");
+            }
+
+            if (move.Mf is not null && item is not UnitInstance)
+            {
+                return Fail<GameState>("UNIT-STATE-010", "Only units spend MF.");
+            }
+
             return item switch
             {
-                UnitInstance unit => Replace(state, unit with { Position = move.Position }),
+                UnitInstance unit => Replace(state, unit with { Position = move.Position, MfSpent = unit.MfSpent + (move.Mf ?? 0) }),
                 EntityInstance entity => Replace(state, entity with { Position = move.Position }),
                 _ => Fail<GameState>("UNIT-STATE-012", "Equipment moves with equipment-transferred."),
             };

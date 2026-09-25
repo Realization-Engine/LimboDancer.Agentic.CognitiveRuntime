@@ -86,7 +86,7 @@ Every change is a `GameEvent` (ASL-UNIT-040) with the envelope scope, event id, 
 | `game-started` | sides, map in play, catalog, opening turn, phase, and phasing side; must be synthetic |
 | `phase-changed` | turn, phase, phasing side |
 | `instance-created` | a new unit, equipment, or entity |
-| `instance-moved` | a unit or entity's new position |
+| `instance-moved` | a unit or entity's new position, and the MF the move spent (added in step 5) |
 | `equipment-transferred` | a new holder, or a map position with none |
 | `conditions-changed` | new values for some condition dimensions |
 | `lineage` | the action, the consumed ids, the produced instances |
@@ -134,7 +134,7 @@ Nothing withheld is in the view, so neither the display nor a log can leak it. T
 
 ## 9. Stamps and staleness
 
-`GameState.Stamp` is the scope, revision, and map version a conclusion used (ASL-UNIT-041). `Check(stamp)` returns `Current` when both are unchanged, `Stale` after any later event or a different map version, and `OtherGame` for another scope. Staleness is by revision; narrowing it to the events that affect a conclusion comes with the read contract (step 5).
+`GameState.Stamp` is the scope, revision, and map version a conclusion used (ASL-UNIT-041). `Check(stamp)` returns `Current` when both are unchanged, `Stale` after any later event or a different map version, and `OtherGame` for another scope. Staleness here is by revision. The read contract narrows it to the events that affect a case ([Read Contract Design](<ASL Unit Read Contract Design.md>), section 6).
 
 ## 10. Display and the Game states page
 
@@ -144,7 +144,7 @@ Map Studio's **Game states** page (`/units/games`) replays each fixture, against
 
 ## 11. The fixture
 
-`src/ASL/units/games/a1-village.synthetic.game.json`, 18 events: a German platoon (two 4-6-7 squads, a 2-4-7 half-squad, and an LMG) at `bd01:D4:0` attacks a concealed Russian 4-4-7 in `bd01:E4:0`, while an 8-0 leader waits hidden in a foxhole in `bd01:E5:0`. The Russian squad is revealed in the MPh, one German squad is reduced in the DFPh, the Russian squad breaks in the AFPh, a German squad advances into E4 in the APh, and captures it in the CCPh. The definitions come from the published catalog; every event, position, condition, ELR, and SAN is invented.
+`src/ASL/units/games/a1-village.synthetic.game.json`, 18 events in turn 1 (the read contract adds three in turn 2, Read Contract Design, section 9): a German platoon (two 4-6-7 squads, a 2-4-7 half-squad, and an LMG) at `bd01:D4:0` attacks a concealed Russian 4-4-7 in `bd01:E4:0`, while an 8-0 leader waits hidden in a foxhole in `bd01:E5:0`. The Russian squad is revealed in the MPh, one German squad is reduced in the DFPh, the Russian squad breaks in the AFPh, a German squad advances into E4 in the APh, and captures it in the CCPh. The definitions come from the published catalog; every event, position, condition, ELR, and SAN is invented.
 
 The fixture plays board 01 at version `8d77d26222b7bb21d8c1fdda6ba05b447f63c317`, the Git blob of `boards/src/bd01/LOSData` in the VASL checkout, which is the version the Studio derives its hex facts from. With the checkout configured, the Studio checks every position against those chains.
 
@@ -156,6 +156,6 @@ The fixture plays board 01 at version `8d77d26222b7bb21d8c1fdda6ba05b447f63c317`
 ## 13. Not in this step
 
 - A live game source and governed writes (D2, ASL-UNIT-042, 050).
-- The read contract `ReadCase` and nondefinitive reads (ASL-UNIT-060, 061), with narrower staleness: step 5.
+- The read contract `ReadCase` and nondefinitive reads (ASL-UNIT-060, 061), with narrower staleness: built in step 5 ([Read Contract Design](<ASL Unit Read Contract Design.md>)).
 - Equipment and vehicle definitions, inherent crews, leadership participation, and transport beyond containment.
 - Redacting parts of an event for a side; events are shown or withheld whole.
