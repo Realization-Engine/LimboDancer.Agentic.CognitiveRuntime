@@ -53,7 +53,7 @@ public interface IScenarioA1SecondDefenderSnapshotSource
 
 /// <summary>Projects only exact, ordered supplied events into a pinned eligibility observation.</summary>
 public sealed class ScenarioA1SecondDefenderObservationProvider(
-    IScenarioA1SecondDefenderSnapshotSource source, Board01TerrainCatalog terrain)
+    IScenarioA1SecondDefenderSnapshotSource source, IScenarioA1TerrainEvidence terrain)
     : IObservationProvider
 {
     public const string QueryKind = "scenario-a1-second-defender-location";

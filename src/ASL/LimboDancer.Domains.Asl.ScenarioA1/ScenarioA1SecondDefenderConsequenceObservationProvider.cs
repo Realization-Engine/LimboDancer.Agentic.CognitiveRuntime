@@ -20,7 +20,7 @@ public interface IScenarioA1SecondDefenderConsequenceSnapshotSource
 
 /// <summary>Projects supplied ordered events and attempted entry without executing consequences.</summary>
 public sealed class ScenarioA1SecondDefenderConsequenceObservationProvider(
-    IScenarioA1SecondDefenderConsequenceSnapshotSource source, Board01TerrainCatalog terrain)
+    IScenarioA1SecondDefenderConsequenceSnapshotSource source, IScenarioA1TerrainEvidence terrain)
     : IObservationProvider
 {
     public const string QueryKind = "scenario-a1-second-defender-consequence-location";

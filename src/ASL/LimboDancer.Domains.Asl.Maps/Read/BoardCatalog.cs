@@ -42,12 +42,19 @@ public sealed record LocationRead(
 public sealed record LocationReadResult(LocationRead? Read, IReadOnlyList<MapDiagnostic> Diagnostics);
 
 /// <summary>
+/// The typed source identity of a board read from VASL: the VASL board name, the version its metadata declares, the Git
+/// blobs of its metadata and LOSData, and the VASL commit when known. Evidence pinned to a VASL source (ASL-MAP-081)
+/// compares these, never the free-text provenance.
+/// </summary>
+public sealed record VaslBoardSource(string BoardName, string MetadataVersion, string MetadataBlob, string LosDataBlob, string? Commit);
+
+/// <summary>
 /// A read-only handle on one exact version of a board (ASL-MAP-080): its derived hex facts, status, and provenance.
 /// Positions are resolved against this version only.
 /// </summary>
 public sealed class BoardHandle
 {
-    public BoardHandle(BoardRef board, string version, BoardReadStatus status, string provenance, HexFactSet facts)
+    public BoardHandle(BoardRef board, string version, BoardReadStatus status, string provenance, HexFactSet facts, VaslBoardSource? vaslSource = null)
     {
         ArgumentNullException.ThrowIfNull(board);
         ArgumentNullException.ThrowIfNull(version);
@@ -58,6 +65,7 @@ public sealed class BoardHandle
         Status = status;
         Provenance = provenance;
         Facts = facts;
+        VaslSource = vaslSource;
     }
 
     public BoardRef Ref
@@ -82,6 +90,12 @@ public sealed class BoardHandle
     }
 
     public HexFactSet Facts
+    {
+        get;
+    }
+
+    /// <summary>The typed VASL source, or null for an authored or synthetic board.</summary>
+    public VaslBoardSource? VaslSource
     {
         get;
     }

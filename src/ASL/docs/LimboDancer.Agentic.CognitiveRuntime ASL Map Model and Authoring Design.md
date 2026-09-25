@@ -418,7 +418,7 @@ BoardHandle
 
 A consumer that receives a nondefinitive status must not produce a definitive conclusion from terrain facts (ASL-MAP-044, ASL-RD-011). This API has no ASL runtime dependency. Wrapping it in `IObservationProvider` implementations is the ASL package's job, as `ScenarioA1BoardObservationProvider` does today.
 
-**Scenario A1** keeps `Board01TerrainCatalog` unchanged (ASL-MAP-081). A later reviewed change may back it with `IBoardCatalog` for `bd01`. That change must reproduce the 63 overrides through the Ingestion Design's override consistency check and pass the existing Scenario A1 tests.
+**Scenario A1** keeps `Board01TerrainCatalog` unchanged (ASL-MAP-081). Since unit step 8, part 1, its evidence can also be read through `IBoardCatalog` for `bd01`: `BoardCatalogTerrainEvidence` accepts the same 63 overrides only when the board's derived ground-level terrain agrees with each, which is the Ingestion Design's override consistency check at read time, and `BoardHandle.VaslSource` names the pinned metadata.
 
 ## 12. Authoring operations
 

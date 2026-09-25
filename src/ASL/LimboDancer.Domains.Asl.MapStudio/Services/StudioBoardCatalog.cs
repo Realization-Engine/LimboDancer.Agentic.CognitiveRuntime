@@ -18,9 +18,15 @@ public sealed class StudioBoardCatalog(IBoardProvider boards) : IBoardCatalog
             return new BoardReadResult(null, [new MapDiagnostic("MAP-READ-001", MapDiagnosticSeverity.Error, $"The Studio cannot load {board}.")]);
         }
 
-        var handle = new BoardHandle(loaded.Ref, loaded.Version, Status(loaded.Status), Provenance(loaded), loaded.Facts);
+        var handle = new BoardHandle(loaded.Ref, loaded.Version, Status(loaded.Status), Provenance(loaded), loaded.Facts, VaslSource(loaded));
         return new InMemoryBoardCatalog([handle]).TryGetBoard(board, version);
     }
+
+    /// <summary>The typed VASL source of an ingested board: its metadata version and blob, LOSData blob, and commit.</summary>
+    private static VaslBoardSource? VaslSource(StudioBoard board) => board is { Provenance: { } provenance, Ingested: { } ingested }
+        ? new VaslBoardSource(board.Ref.VaslBoardName, ingested.Metadata.Version, provenance.Metadata.IndexBlob ?? provenance.Metadata.ContentBlob,
+            provenance.LosData.ContentBlob, provenance.VaslCommit)
+        : null;
 
     private static BoardReadStatus Status(BoardStatus status) => status switch
     {

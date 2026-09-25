@@ -12,5 +12,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\LimboDancer.Domains.Asl.Play\LimboDancer.Domains.Asl.Play.csproj" />
+    <None Include="../LimboDancer.Domains.Asl.Maps.Vasl.Tests/Oracle/bd01.hexfacts.json.gz" Link="Oracle/bd01.hexfacts.json.gz" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
