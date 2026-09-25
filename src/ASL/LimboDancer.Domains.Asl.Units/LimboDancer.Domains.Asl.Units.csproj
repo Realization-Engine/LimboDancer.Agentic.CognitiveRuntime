@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\LimboDancer.Domains.Asl.Maps\LimboDancer.Domains.Asl.Maps.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\units\vocabulary\*.vocab.json" LogicalName="Vocabulary.%(Filename)%(Extension)" Link="Vocabulary\%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

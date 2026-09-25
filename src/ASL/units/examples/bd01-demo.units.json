@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "setId": "bd01-demo",
+  "label": "Synthetic units on board 01",
+  "synthetic": true,
+  "vocabulary": ["asl@1.0.0"],
+  "units": [
+    {
+      "id": "demo-a",
+      "kind": "asl:squad",
+      "side": "german",
+      "location": "bd01:E4:0",
+      "faces": {
+        "front": { "firepower": 4, "range": 6, "morale": 7, "identity": "A", "class": "1st-line", "traits": ["asl:assault-fire"] },
+        "broken": { "broken-morale": 7, "bpv": 10 }
+      },
+      "unit": { "smoke-exponent": 1 },
+      "states": ["asl:pinned"],
+      "attached": [
+        {
+          "id": "demo-a-lmg",
+          "kind": "asl:mg",
+          "faces": {
+            "front": { "size": "light", "firepower": 3, "range": 6, "breakdown": 12, "rate-of-fire": 1, "portage": 1 },
+            "malfunctioned": { "repair": 6 }
+          }
+        }
+      ]
+    },
+    {
+      "id": "demo-b",
+      "kind": "asl:leader",
+      "side": "german",
+      "location": "bd01:E4:0",
+      "faces": {
+        "front": { "leadership": -1, "morale": 8 },
+        "broken": { "broken-morale": 8 }
+      },
+      "stackOrder": 1
+    },
+    {
+      "id": "demo-c",
+      "kind": "unit",
+      "side": "russian",
+      "location": "bd01:F4:1",
+      "concealed": true,
+      "sizeClass": 3
+    },
+    {
+      "id": "demo-d",
+      "kind": "asl:half-squad",
+      "side": "russian",
+      "location": "bd01:G5:0",
+      "faces": {
+        "front": { "firepower": 2, "range": 2, "morale": 7, "identity": "B", "class": "2nd-line" },
+        "broken": { "broken-morale": 6, "bpv": 5, "traits": ["asl:self-rally"] }
+      },
+      "states": ["asl:broken"]
+    }
+  ]
+}

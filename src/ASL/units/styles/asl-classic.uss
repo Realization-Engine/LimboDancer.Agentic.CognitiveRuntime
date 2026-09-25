@@ -1,0 +1,179 @@
+/* asl-classic: ASL Personnel and support weapons following the printed counter conventions (Unit Display Design, section 4).
+   Original LimboDancer style sheet: the layout conventions of printed counters, no counter artwork.
+   Lengths: face-size is a fraction of the hex height; every other length is a fraction of the face size. */
+
+@palette asl-customary;
+
+@tokens {
+  marker: #f4f1e8;
+  marker-ink: #1b1b1b;
+  alert: #b22222;
+  warning: #d4a017;
+  conceal: #1b1b1b;
+}
+
+/* Base style for every unit, including kinds that extend no ASL kind. */
+unit {
+  face-size: 0.55;
+  shape: square;
+  corner-radius: 0.05;
+  fill: side(fill);
+  stroke: side(ink);
+  stroke-width: 0.03;
+  color: side(ink);
+  badge-fill: token(marker);
+  badge-color: token(marker-ink);
+  face-template: "fig";
+}
+unit::slot(fig) { content: glyph(size-figures); }
+
+/* A concealed placeholder (section 7.3). */
+unit:concealed { face-template: "q"; }
+unit:concealed::slot(q) { content: "?"; font-weight: bold; font-size: 0.66; }
+
+/* Personnel, front face: the silhouette, the class upper right, and the Strength Factor with its identity letter. */
+asl|personnel {
+  face-template: "fig fig   fig   fig   class  class"
+                 "fig fig   fig   fig   class  class"
+                 "fp  d1    range d2    morale ident";
+}
+asl|personnel::slot(fig)    { content: glyph(size-figures); }
+asl|personnel::slot(class)  { content: attr(class); font-size: 0.24; font-weight: bold; }
+asl|personnel::slot(fp)     { content: attr(firepower); font-size: 0.28; font-weight: bold; }
+asl|personnel::slot(d1)     { content: "-"; font-size: 0.24; }
+asl|personnel::slot(range)  { content: attr(range); font-size: 0.28; font-weight: bold; }
+asl|personnel::slot(d2)     { content: "-"; font-size: 0.24; }
+asl|personnel::slot(morale) { content: attr(morale); font-size: 0.28; font-weight: bold; }
+asl|personnel::slot(ident)  { content: attr(identity); font-size: 0.2; }
+asl|personnel[class-variant=circle]::slot(class) { mark: circle; }
+asl|personnel[class-variant=square]::slot(class) { mark: box; }
+asl|personnel.asl\:assault-fire::slot(fp)      { mark: underline; }
+asl|personnel.asl\:spraying-fire::slot(range)  { mark: underline; }
+asl|personnel.asl\:elr-5::slot(morale)         { mark: underline; }
+asl|personnel[smoke-exponent]::slot(fp)        { superscript: attr(smoke-exponent); }
+
+/* Crews carry a numeral above the silhouette instead of a letter after the Strength Factor. */
+asl|crew {
+  face-template: "ident ident ident ident class  class"
+                 "fig   fig   fig   fig   class  class"
+                 "fp    d1    range d2    morale .";
+}
+
+/* Personnel, broken face: prone figures, the Basic Point Value upper left, the Broken Morale Level large lower right. */
+asl|personnel:face(broken) {
+  fill: side(fill-muted);
+  face-template: "bpv bpv .       ."
+                 "fig fig bmorale bmorale"
+                 "fig fig bmorale bmorale";
+}
+asl|personnel:face(broken)::slot(fig)     { content: glyph(size-figures, prone); }
+asl|personnel:face(broken)::slot(bpv)     { content: attr(bpv); font-size: 0.18; align: start; }
+asl|personnel:face(broken)::slot(bmorale) { content: attr(broken-morale); font-size: 0.36; font-weight: bold; }
+asl|personnel:face(broken).asl\:self-rally::slot(bmorale) { mark: box; }
+
+/* Leaders: the leadership DRM on top, morale below. */
+asl|leader {
+  face-template: "fig   drm"
+                 "fig   morale"
+                 "ident ident";
+}
+asl|leader::slot(drm)    { content: attr(leadership); font-size: 0.3; font-weight: bold; }
+asl|leader::slot(morale) { content: attr(morale); font-size: 0.3; font-weight: bold; }
+asl|leader::slot(ident)  { font-size: 0.16; }
+
+/* Support weapons: the size or type label, FP-range, and Breakdown, ROF, and portage. */
+asl|sw {
+  face-template: "label label label"
+                 "fp    dash  range"
+                 "bd    rof   pp";
+}
+asl|sw::slot(label) { font-size: 0.22; font-weight: bold; }
+asl|sw::slot(fp)    { content: attr(firepower); font-size: 0.3; font-weight: bold; }
+asl|sw::slot(dash)  { content: "-"; font-size: 0.3; }
+asl|sw::slot(range) { content: attr(range); font-size: 0.3; font-weight: bold; }
+asl|sw::slot(bd)    { content: "B" attr(breakdown); font-size: 0.17; }
+asl|sw.asl\:breakdown-removes::slot(bd) { content: "X" attr(breakdown); }
+asl|sw::slot(rof)   { content: attr(rate-of-fire); font-size: 0.18; mark: box; }
+asl|sw::slot(pp)    { content: attr(portage) "PP"; font-size: 0.17; }
+
+asl|mg::slot(label) { content: attr(size, front); }
+asl|ft::slot(label) { content: "FT"; }
+asl|dc {
+  face-template: "label label"
+                 "fp    fp"
+                 "bd    pp";
+}
+asl|dc::slot(label) { content: "DC"; }
+asl|latw {
+  face-template: "label label"
+                 "bd    pp";
+}
+asl|latw::slot(label) { content: attr(latw-type, front); }
+asl|light-mortar {
+  face-template: "label label"
+                 "bd    pp";
+}
+asl|light-mortar::slot(label) { content: "MTR"; }
+
+/* Radios: the full contact series on the front, its dates on the reverse. */
+asl|radio {
+  face-template: "label   label"
+                 "contact contact"
+                 "bd      pp";
+}
+asl|radio::slot(label)   { content: "RADIO"; font-size: 0.18; }
+asl|radio.asl\:field-phone::slot(label) { content: "PHONE"; }
+asl|radio::slot(contact) { content: attr(contact); font-size: 0.26; font-weight: bold; }
+asl|radio:face(reverse) {
+  face-template: "label"
+                 "dates";
+}
+asl|radio:face(reverse)::slot(dates) { content: attr(contact-dates); font-size: 0.15; }
+
+/* The malfunctioned side and its Repair Number. */
+asl|sw:face(malfunctioned) {
+  fill: side(fill-muted);
+  face-template: "label"
+                 "repair";
+}
+asl|sw:face(malfunctioned)::slot(repair) { content: "R" attr(repair); font-size: 0.32; font-weight: bold; }
+
+/* States, drawn as marker chips on the unit rather than separate counters (ASL-UNIT-077). */
+asl|unit:asl\:pinned    { badge: "Pin" top-right; }
+asl|unit:asl\:cx        { badge: "CX" top-right; }
+asl|unit:asl\:dm        { badge: "DM" top-right; }
+asl|unit:asl\:ti        { badge: "TI" top-right; }
+asl|unit:asl\:disrupted { badge: "Dis" top-left; }
+asl|unit:asl\:wounded   { badge: "Wnd" top-left; }
+asl|unit:asl\:berserk   { stroke: token(alert); stroke-width: 0.09; badge: "Bsk" top-left; }
+asl|unit:asl\:fanatic   { stroke: token(warning); stroke-width: 0.09; badge: "Fan" top-left; }
+asl|unit:asl\:concealed { stroke: token(conceal); stroke-style: dashed; stroke-width: 0.07; badge: "?" top-left; }
+
+@detail mid {
+  unit:concealed { face-template: "q"; }
+  asl|personnel { face-template: "fig fig fig fig class" "fp d1 range d2 morale"; }
+  asl|personnel:face(broken) { face-template: "fig" "bmorale"; }
+  asl|leader { face-template: "drm" "morale"; }
+  asl|sw { face-template: "label label label" "fp dash range"; }
+  asl|dc { face-template: "label" "fp"; }
+  asl|latw, asl|light-mortar { face-template: "label"; }
+  asl|radio { face-template: "label" "contact"; }
+  asl|radio:face(reverse) { face-template: "label"; }
+  asl|sw:face(malfunctioned) { face-template: "label" "repair"; }
+  unit::slot(fp), unit::slot(range), unit::slot(morale), unit::slot(bmorale) { mark: none; superscript: none; }
+  asl|personnel:face(broken).asl\:self-rally::slot(bmorale) { mark: box; }
+}
+
+@detail far {
+  unit { face-template: "fig"; badges: none; }
+  unit::slot(fig) { content: glyph(size-figures); }
+  unit:concealed { face-template: "q"; }
+  asl|personnel:face(broken)::slot(fig) { content: glyph(size-figures, prone); }
+  asl|mg::slot(fig) { content: glyph(mg); }
+  asl|ft::slot(fig) { content: glyph(ft); }
+  asl|dc::slot(fig) { content: glyph(dc); }
+  asl|latw::slot(fig) { content: glyph(latw); }
+  asl|light-mortar::slot(fig) { content: glyph(mortar); }
+  asl|radio::slot(fig) { content: glyph(radio); }
+  unit::attached(asl|equipment) { display: none; }
+}

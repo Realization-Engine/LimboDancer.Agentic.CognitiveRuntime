@@ -1,0 +1,134 @@
+[
+  {
+    "vocabulary": ["asl@1.0.0"],
+    "id": "example-squad",
+    "note": "Synthetic example: illustrative values, not a catalog entry.",
+    "kind": "asl:squad",
+    "side": "german",
+    "faces": {
+      "front": { "firepower": 4, "range": 6, "morale": 7, "identity": "A", "class": "1st-line", "traits": ["asl:assault-fire"] },
+      "broken": { "broken-morale": 7, "bpv": 10, "traits": ["asl:self-rally"] }
+    },
+    "unit": { "smoke-exponent": 1 },
+    "attached": [
+      {
+        "id": "example-squad-lmg",
+        "kind": "asl:mg",
+        "faces": {
+          "front": { "size": "light", "firepower": 3, "range": 6, "breakdown": 12, "rate-of-fire": 1, "portage": 1 },
+          "malfunctioned": { "repair": 6 }
+        }
+      }
+    ]
+  },
+  {
+    "vocabulary": ["asl@1.0.0"],
+    "id": "example-half-squad",
+    "note": "Synthetic example: illustrative values, not a catalog entry.",
+    "kind": "asl:half-squad",
+    "side": "russian",
+    "faces": {
+      "front": { "firepower": 2, "range": 2, "morale": 7, "identity": "B", "class": "2nd-line" },
+      "broken": { "broken-morale": 6, "bpv": 5 }
+    }
+  },
+  {
+    "vocabulary": ["asl@1.0.0"],
+    "id": "example-crew",
+    "note": "Synthetic example: illustrative values, not a catalog entry.",
+    "kind": "asl:crew",
+    "side": "american",
+    "faces": {
+      "front": { "firepower": 2, "range": 2, "morale": 7, "identity": "3" },
+      "broken": { "broken-morale": 7 }
+    }
+  },
+  {
+    "vocabulary": ["asl@1.0.0"],
+    "id": "example-leader",
+    "note": "Synthetic example: illustrative values, not a catalog entry.",
+    "kind": "asl:leader",
+    "side": "german",
+    "faces": {
+      "front": { "leadership": -1, "morale": 8 },
+      "broken": { "broken-morale": 8 }
+    }
+  },
+  {
+    "vocabulary": ["asl@1.0.0"],
+    "id": "example-hero",
+    "note": "Synthetic example: illustrative values, not a catalog entry.",
+    "kind": "asl:hero",
+    "side": "american",
+    "faces": {
+      "front": { "firepower": 1, "range": 4, "morale": 9 },
+      "wounded": { "firepower": 1, "range": 3, "morale": 8 }
+    }
+  },
+  {
+    "vocabulary": ["asl@1.0.0"],
+    "id": "example-mmg",
+    "note": "Synthetic example: illustrative values, not a catalog entry.",
+    "kind": "asl:mg",
+    "side": "german",
+    "faces": {
+      "front": { "size": "medium", "firepower": 5, "range": 12, "breakdown": 11, "rate-of-fire": 2, "portage": 2 },
+      "malfunctioned": { "repair": 5 }
+    }
+  },
+  {
+    "vocabulary": ["asl@1.0.0"],
+    "id": "example-ft",
+    "note": "Synthetic example: illustrative values, not a catalog entry.",
+    "kind": "asl:ft",
+    "side": "russian",
+    "faces": {
+      "front": { "firepower": 24, "range": 1, "breakdown": 10, "portage": 2, "traits": ["asl:breakdown-removes"] }
+    }
+  },
+  {
+    "vocabulary": ["asl@1.0.0"],
+    "id": "example-dc",
+    "note": "Synthetic example: illustrative values, not a catalog entry.",
+    "kind": "asl:dc",
+    "side": "american",
+    "faces": { "front": { "firepower": 30, "portage": 2 } }
+  },
+  {
+    "vocabulary": ["asl@1.0.0"],
+    "id": "example-latw",
+    "note": "Synthetic example: illustrative values, not a catalog entry.",
+    "kind": "asl:latw",
+    "side": "german",
+    "faces": { "front": { "latw-type": "psk", "breakdown": 10, "portage": 2 } }
+  },
+  {
+    "vocabulary": ["asl@1.0.0"],
+    "id": "example-mortar",
+    "note": "Synthetic example: illustrative values, not a catalog entry.",
+    "kind": "asl:light-mortar",
+    "side": "british",
+    "faces": { "front": { "breakdown": 12, "portage": 2 } }
+  },
+  {
+    "vocabulary": ["asl@1.0.0"],
+    "id": "example-radio",
+    "note": "Synthetic example: illustrative values, not a catalog entry.",
+    "kind": "asl:radio",
+    "side": "russian",
+    "faces": {
+      "front": { "contact": [6, 7, 8], "breakdown": 11, "portage": 1 },
+      "reverse": { "contact-dates": ["to 6/42", "7/42 to 5/43", "6/43 on"] },
+      "malfunctioned": { "repair": 6 }
+    }
+  },
+  {
+    "vocabulary": ["asl@1.0.0"],
+    "id": "example-concealed",
+    "note": "Synthetic example: illustrative values, not a catalog entry.",
+    "kind": "unit",
+    "side": "german",
+    "concealed": true,
+    "sizeClass": 3
+  }
+]
