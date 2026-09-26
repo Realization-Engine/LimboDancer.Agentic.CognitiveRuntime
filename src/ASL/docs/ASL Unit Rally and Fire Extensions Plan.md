@@ -69,6 +69,12 @@ What this settles:
 - **Dummies (step 21):** a Dummy has no printed values; the counter examples show the concealment counter, and how many each side has is a setup fact.
 - **Support weapons (step 23):** the Support Weapons Chart (registered p. 108; also pp. 687 and 694) gives each SW type's operational capabilities (how many a squad, crew or HS, or SMC may fire, at what cost to inherent FP, and notes A to M), and says that portage costs are "as per counter listing"; it gives no FP, range, B#, ROF, or repair numbers. The Allotment Charts give counts, not values, and the Counter Examples show one example of each type (the MMG shown is 4-10, B11, ROF 2, R2, X6). The values of each nation's own LMG, MMG, and HMG are not listed as text. Ruling R0.3 decides where they come from.
 
+**Manufactured values.** The Index (pp. 11 to 40) was checked for every LMG, MMG, HMG, and MG entry: each points to a usage rule (A4.41, A9, A9.2 to A9.21, A9.8, A21, B20.95, D6.1, E7.51, G1.611, G13.4211), and none to a listing of values. The user ruled (R0.3) that a value no source gives is manufactured. So that a manufactured value is never mistaken for a printed one:
+
+- Each manufactured value is recorded in the catalog with its own provenance, `manufactured`, naming the ruling, instead of a page and transcription digest; the catalog's review lists every such value.
+- A manufactured value starts from the nearest shown source: the Counter Examples' MMG (4-10, B11, ROF 2, R2, X6, p. 676) for a MMG, and the rules' constraints (A9.1: FP-Range; A9.2: ROF; A9.7 and A9.72: B#, R#, X#; A21.11: captured penalties). Where nothing is shown, the user chooses the value in the review sitting.
+- A manufactured value is replaced, and the catalog republished, if a source for it is later registered.
+
 Two cautions for transcription:
 
 - Pages 328 to 380 and 676 to 677 lie outside the registered pages 6 to 253, so they need registering as a bounded supplement, as step 17 did for pages 692 and 698 (ruling R0.3).
@@ -257,7 +263,7 @@ The Windows LF clone and Docker checks take about ten minutes run in parallel, a
 ### 11.3 What the user provides
 
 - Rulings on the tables in sections 4 to 8 (accept, change, or reject each proposal), including R0.1 on transcribing from the registered chart copies.
-- The Scenario A1 support weapons' printed values (ruling R0.3); ordnance and vehicle values come from the Chapter H listings.
+- Approval of the manufactured SW values for the Scenario A1 weapons (ruling R0.3); ordnance and vehicle values come from the Chapter H listings.
 - Spot-checks of the new chart transcriptions against rendered page images.
 
 ## 12. Source ruling
@@ -266,4 +272,4 @@ The Windows LF clone and Docker checks take about ten minutes run in parallel, a
 |---|---|---|
 | R0.1 | Transcribe new charts from the registered copies (pp. 106 to 111, 160, 189 to 191, 220 to 221) rather than registering back-matter pages? | Yes. The step 17 supplement for pp. 692 and 698 stays as recorded. |
 | R0.2 | An Original MC or rally DR of 2 and Heat of Battle (section 3.4) | Record a deviation for this pass: resolve the 2 as its MC or rally result, say in the record that Heat of Battle was not taken, and review A15 first in the next pass. |
-| R0.3 | Counter sources (section 3.3): register Chapter H's listings (pp. 328 to 380 as needed) and the Counter Examples (pp. 676 and 677) as a bounded supplement? Where do each nation's SW values come from? | Register them, transcribing only the rows the scenario uses. For SW, take the scenario's weapons from the user's counters (or their photographs), since the PDF shows one example per type; a nation's SW values are not to be extrapolated from another nation's example. |
+| R0.3 | Counter sources (section 3.3) | **Ruled by the user, 2026-09-26:** where no source gives a printed value a scenario needs, the value is manufactured. Chapter H's listings and the Counter Examples are registered as a bounded supplement for the values they do give. |
