@@ -321,7 +321,14 @@ Decided on 2026-09-25 as recommended in the [Decision Memo for D1 to D4](<ASL Un
     5. *Acceptance.* U16 (section 14) passes.
 
     Designed and built in the [ASL Unit LOS Slice 3 Design](<ASL Unit LOS Slice 3 Design.md>).
-16. **The full VASL LOS result:** hexside and bypass aiming points (VASL's auxiliary LOS points), the hindrance of each hex and rule as VASL reports it so Fire can apply the DRM later, and LOS from a unit's position in a live game on the Play page. Still no game action uses LOS. Planned in outline, detailed when step 15 is merged.
+16. **The full VASL LOS result:** complete what the read reports, so Fire can later rely on it. Still no game action uses LOS. In order:
+    1. *The hindrance breakdown.* The read reports what VASL's `LOSResult` keeps: the largest map hindrance at each range, and the point where the first hindrance was met, besides the total of step 13.
+    2. *Hexside locations and aiming points.* A hexside location (a bypass location) as source or target, aimed at its LOS point or at its auxiliary LOS point, as VASL's `Map.LOS` takes them.
+    3. *Oracle fixtures.* The oracle's LOS mode records the breakdown on every pair, and a hexside mode writes pairs from hexside locations, with both aiming points, on boards chosen for walls, depressions, and bocage.
+    4. *LOS from a unit.* The Play page checks LOS from a unit the viewer can see, at its location, to a location, and shows the result with its hindrance breakdown; the board viewer shows the breakdown too.
+    5. *Acceptance.* U17 (section 14) passes.
+
+    Designed in the [ASL Unit LOS Result Design](<ASL Unit LOS Result Design.md>).
 
 Later candidates, not yet sequenced: revisiting the Java VASL oracle tool, which the user allowed on 2026-09-26 only to generate test fixtures, for now; multi-user play, which must first close the lone-SMC election probe of step 11; the lone SMC's options and immediate CC after an OVR (A4.151 and A4.152), once the IFT and CC tables are registered; Fire, on the LOS of step 13, once the IFT is registered; scenario OB and SSR checks at setup, which need the scenario cards as a registered source; and a read-only VASL saved-game import, which needs a format and licensing review first.
 
@@ -343,6 +350,7 @@ Later candidates, not yet sequenced: revisiting the Java VASL oracle tool, which
 - **U14, LOS.** Given the LOS oracle's pairs of locations on its fixture boards, the LOS read agrees with VASL on every pair: whether LOS is blocked, the hex where it is first blocked, and the range. The same pairs agree on a placed map of those boards, and a read on a board whose status is not Verified or AuthoredValid is nondefinitive.
 - **U15, LOS over depressions and cliffs.** On every LOS fixture of steps 13 and 14, the read agrees with VASL on every pair it answers; on boards 01 and 11 it answers every pair; and every unanswered pair on the new fixtures names a rule that step 15 reproduces. The answered counts are pinned.
 - **U16, LOS over the remaining terrain.** On every LOS fixture of steps 13 to 15, the read agrees with VASL on every pair it answers, and every unanswered pair names a rule that no fixture board exercises (partial orchards, entrenchments) or a situation the as-built notes list with its reason. The answered counts are pinned.
+- **U17, the full LOS result.** On every LOS fixture, every answered pair agrees with VASL on the hindrance at each range and the first hindrance point as well as the result of U14; on the hexside fixtures, every pair from a hexside location, aimed at either point, agrees where it is answered; and on the Play page, LOS from a unit the viewer can see is checked and drawn with its breakdown.
 
 ## 15. Traceability
 
