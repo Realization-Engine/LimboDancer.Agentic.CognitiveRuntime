@@ -24,14 +24,26 @@ VASL's `LOSResult.addMapHindrance` keeps, for each range from the source, the la
 
 A hexside location in VASL (`Hex.getHexsideLocation`) has an LOS point at one vertex of the hexside, an auxiliary LOS point at the next, and an edge point at the hexside's middle. `Map.LOS` starts or ends at the auxiliary point when its `useAux` flag is set.
 
-- `LosCalculator.Check` accepts a `BoardLocation` with a hexside, as `bd01:E4:0:N` names it, and an aim for each end: the LOS point, or the auxiliary point.
+- `LosCalculator.Check` accepts a `BoardLocation` with a hexside, as `bd01:E4:0/0` names it (side 0 to 5, north first), and an aim for each end: the LOS point, or the auxiliary point.
 - Its elevation follows `setSourceAndTargetElevations`: a non-center location in a depression hex is one level higher.
 - Everything the walk does with the source and target hex applies unchanged; the rules that test `isCenterLocation` take the hexside branch.
 
 ## 4. The oracle
 
 - **Breakdown on every pair.** The LOS mode writes each pair's map hindrances by range and its first hindrance point, read from `LOSResult` (its hindrance map is not public, so the harness reads the field). The LOS harness becomes 1.2.0 and every LOS fixture is regenerated; the other fields are unchanged.
-- **Hexside fixtures.** A hexside mode writes `bdNN.los-hexside.json.gz`: from each hexside location of every tenth column and fifth row, with each aiming point, to every center location within range 8. Sources are named `bdNN:HEX:level:SIDE` and carry `aux`. Boards: 01 (walls, hedges, buildings), 12 (depressions and rowhouses), and BFP D (bocage).
+- **Hexside fixtures.** A hexside mode writes `bdNN.los-hexside.json.gz`: from each hexside location of every tenth column and fifth row, with each aiming point, to every center location within range 8. Sources are named `bdNN:HEX:level/side` and carry `sourceAux`. Boards: 01 (walls, hedges, buildings), 12 (depressions and rowhouses), and BFP D (bocage).
+
+**As built** (part 1).
+- The LOS harness is 1.2.0. Each pair adds `firstHindranceAt` and `firstHindranceHex`, and `hindrances`: VASL's range and value pairs, read by reflection from `LOSResult.mapHindrances` and written in range order. Every LOS fixture was regenerated; results and pair counts are unchanged. Fixture headers gain `mode` (`center` or `hexside`).
+- `--los-hexside` and `-Hexside` write the hexside fixtures. A hexside pair adds `sourceAux`; its source is written with its side, as `BoardLocation` reads it.
+
+  | Fixture | Pairs | Blocked | With a hindrance |
+  |---|---|---|---|
+  | `bd01.los-hexside` | 20,388 | 14,984 | 0 |
+  | `bd12.los-hexside` | 13,668 | 7,496 | 1,874 |
+  | `bdBFPD.los-hexside` | 11,304 | 7,732 | 2,834 |
+
+- `LosFixtureTests` covers both modes: the header, hexside sources and `sourceAux`, and each breakdown, whose values sum to the total's floor with a first point exactly when there is a hindrance.
 
 ## 5. LOS from a unit
 

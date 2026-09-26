@@ -30,7 +30,9 @@ Fixtures are written gzipped to `src/ASL/tests/LimboDancer.Domains.Asl.Maps.Vasl
 
 `-Los` writes LOS fixtures instead of hex facts (LOS Design, section 4). The harness builds the map as above, then runs VASL's own `Map.LOS` from every location of each observer hex (every fifth column and third row of the map) to every location within range 12, with no counters and not at night. `Map.LOS` asks the game module for the scenario information on every call, so the harness installs a stub module holding one `ScenInfo`, made without its constructor, whose night setting is "No".
 
-Each pair records the source and target as board-relative locations (`bd01:E4:1`), whether LOS is blocked, VASL's blocking point and the hex there, the range, the hindrance total, and VASL's reason. Where VASL's own LOS throws, as it does for some lines beside the map edge, the pair records the exception's name as `vaslError` in place of a result (harness 1.1.0). The header records the observer stride, the range, and the same sources as the hex-fact fixtures.
+Each pair records the source and target as board-relative locations (`bd01:E4:1`), whether LOS is blocked, VASL's blocking point and the hex there, the range, the hindrance total, and VASL's reason. Where VASL's own LOS throws, as it does for some lines beside the map edge, the pair records the exception's name as `vaslError` in place of a result (harness 1.1.0). Each pair also records VASL's largest map hindrance at each range and the first point where a hindrance was met, read from `LOSResult` (harness 1.2.0).
+
+`-Hexside` (with `-Los`) writes `bdNN.los-hexside.json.gz`: from each hexside location of every tenth column and fifth row, aimed at its LOS point and at its auxiliary LOS point (`sourceAux`), to every center location within range 8. Hexside locations are named with their side, as `bd01:E4:0/3`. The header records the observer stride, the range, and the same sources as the hex-fact fixtures.
 
 ```powershell
 ./generate-fixtures.ps1 -VaslRoot E:/Archive/GitHub/dlandi/vasl -Los 01 11       # bdNN.los.json.gz
