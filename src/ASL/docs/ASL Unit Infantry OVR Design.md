@@ -38,6 +38,14 @@ Everything in the step 9 design, section 2, still holds: every branch is decided
 - **Roll ids.** Roll ids are `{attempt}-roll-{n}`, numbered in draw order, so each `dice-rolled` event has a stable identity.
 - **Existing plans.** The Random Selection plan of step 9 moves to the new shape with one draw. Its events and ids are unchanged.
 
+**As built** (part 1).
+- `PlannedRoll(Purpose, Build)` takes the draw function, and `AppendRolled` passes `roller.Roll`.
+- `task-check` is replayed with UNIT-STATE-022 as section 4 states.
+- `OpenAttempt` records `TaskCheckPassed` and `SecondSelection`. Every other forced back after an election is refused with UNIT-STATE-021, and a selection after an election is refused with UNIT-STATE-020 unless it follows a passed NTC.
+- Tests:
+  - Units, `TaskCheckEventTests`: 12 cases.
+  - Store, `DiceStoreTests`: two cases in which the second roll is drawn only when the first calls for it, and a replay draws nothing.
+
 ## 4. The task check
 
 `task-check` (new) records one Task Check:

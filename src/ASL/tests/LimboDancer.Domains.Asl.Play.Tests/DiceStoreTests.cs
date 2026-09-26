@@ -53,12 +53,36 @@ public sealed class DiceStoreTests : IDisposable
     private static DiceRoller Throwing() => new(_ => throw new InvalidOperationException("The roller was called."));
 
     private static PlannedRoll Roll(string attempt, long expected, string? firstId = null) =>
-        new("random-selection", new RollRequest(2, 6), result =>
-        [
-            new GameEvent(Scope, firstId ?? attempt + "-1", expected + 1, DateTimeOffset.UnixEpoch, LiveGames.Source, "dice-rolled",
-                new DiceRolled(attempt + "-roll-1", "random-selection", result.Request.Count, result.Request.Sides, result.Values, DiceRolled.SystemSource, "player"),
-                null, [], null),
-        ]);
+        new("random-selection", draw =>
+        {
+            var result = draw(new RollRequest(2, 6));
+            return
+            [
+                new GameEvent(Scope, firstId ?? attempt + "-1", expected + 1, DateTimeOffset.UnixEpoch, LiveGames.Source, "dice-rolled",
+                    new DiceRolled(attempt + "-roll-1", "random-selection", result.Request.Count, result.Request.Sides, result.Values, DiceRolled.SystemSource, "player"),
+                    null, [], null),
+            ];
+        });
+
+    /// <summary>A batch that draws a second roll only when the first totals at least <paramref name="threshold"/>.</summary>
+    private static PlannedRoll TwoRolls(string attempt, long expected, int threshold) =>
+        new("test", draw =>
+        {
+            var first = draw(new RollRequest(2, 6));
+            List<GameEvent> events =
+            [
+                new(Scope, attempt + "-1", expected + 1, DateTimeOffset.UnixEpoch, LiveGames.Source, "dice-rolled",
+                    new DiceRolled(attempt + "-roll-1", "test", 2, 6, first.Values, DiceRolled.SystemSource, "player"), null, [], null),
+            ];
+            if (first.Values.Sum() >= threshold)
+            {
+                var second = draw(new RollRequest(1, 6));
+                events.Add(new(Scope, attempt + "-2", expected + 2, DateTimeOffset.UnixEpoch, LiveGames.Source, "dice-rolled",
+                    new DiceRolled(attempt + "-roll-2", "test", 1, 6, second.Values, DiceRolled.SystemSource, "player"), null, [], null));
+            }
+
+            return events;
+        });
 
     private AppendResult Append(string attempt, long expected, DiceRoller roller, string? firstId = null) =>
         store.AppendRolled(Scope, "Village test", expected, attempt + "-1", Roll(attempt, expected, firstId), roller, Planner().Replay);
@@ -122,6 +146,23 @@ public sealed class DiceStoreTests : IDisposable
         Assert.Equal([2, 5], Assert.IsType<DiceRolled>(store.Read(Scope)!.Events[^1].Payload).Values);
     }
 
+    [Theory]
+    [InlineData(6, 6, 1, 3)]
+    [InlineData(1, 2, 0, 2)]
+    public async Task RollsAreDrawnOnDemandAndOnlyForTheBranchTaken(int first, int second, int extraRolls, int draws)
+    {
+        // Rolls on demand (Infantry OVR Design, section 3): the second roll is drawn only when the first calls for it.
+        await SetUp();
+        var before = Revision;
+        var counting = new Counting(first, second, 4);
+        Assert.Equal(AppendStatus.Committed, store.AppendRolled(Scope, "Village test", before, "pair-1", TwoRolls("pair", before, 7), counting.Roller,
+            Planner().Replay).Status);
+        Assert.Equal(draws, counting.Draws);
+        Assert.Equal(1 + extraRolls, store.Read(Scope)!.Events.Skip((int)before).Count(item => item.Payload is DiceRolled));
+        Assert.Equal(AppendStatus.Replay, store.AppendRolled(Scope, "Village test", before, "pair-1", TwoRolls("pair", before, 7), Throwing(),
+            Planner().Replay).Status);
+    }
+
     [Fact]
     public async Task AStaleRevisionDrawsNothing()
     {
@@ -145,11 +186,15 @@ public sealed class DiceStoreTests : IDisposable
         await SetUp();
         var before = Revision;
         Assert.Equal(AppendStatus.Invalid, Append("roll", before, new Counting(1, 1).Roller, firstId: "other-1").Status);
-        var tooHigh = store.AppendRolled(Scope, "Village test", before, "bad-1", new PlannedRoll("random-selection", new RollRequest(2, 6), result =>
-            [
-                new GameEvent(Scope, "bad-1", before + 1, DateTimeOffset.UnixEpoch, LiveGames.Source, "dice-rolled",
-                    new DiceRolled("bad-roll-1", "random-selection", 2, 6, [7, 1], DiceRolled.SystemSource, "player"), null, [], null),
-            ]), new Counting(1, 1).Roller, Planner().Replay);
+        var tooHigh = store.AppendRolled(Scope, "Village test", before, "bad-1", new PlannedRoll("random-selection", draw =>
+            {
+                draw(new RollRequest(2, 6));
+                return
+                [
+                    new GameEvent(Scope, "bad-1", before + 1, DateTimeOffset.UnixEpoch, LiveGames.Source, "dice-rolled",
+                        new DiceRolled("bad-roll-1", "random-selection", 2, 6, [7, 1], DiceRolled.SystemSource, "player"), null, [], null),
+                ];
+            }), new Counting(1, 1).Roller, Planner().Replay);
         Assert.Equal(AppendStatus.Invalid, tooHigh.Status);
         Assert.Equal(before, Revision);
     }

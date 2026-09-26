@@ -242,6 +242,18 @@ public sealed record OpenAttempt(string EventId, string Unit, BoardLocation Targ
     {
         get; init;
     }
+
+    /// <summary>Whether the OVR NTC after an election passed; null until it is taken.</summary>
+    public bool? TaskCheckPassed
+    {
+        get; init;
+    }
+
+    /// <summary>Whether a Random Selection followed the passed OVR NTC, revealing the second defender.</summary>
+    public bool SecondSelection
+    {
+        get; init;
+    }
 }
 
 /// <summary>A support weapon or Gun instance (ASL-UNIT-022): its own identity and condition, and at most one holder.</summary>

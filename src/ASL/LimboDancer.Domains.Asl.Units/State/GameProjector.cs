@@ -76,6 +76,7 @@ public static class GameProjector
                 DiceRolled rolled => Roll(previous, rolled),
                 RandomSelection selection => Select(previous, selection),
                 OverrunDeclared declared => Declare(previous, declared),
+                TaskCheck check => Check(previous, check),
                 _ => Fail<GameState>("UNIT-STATE-001", $"'{gameEvent.Type}' has no projection."),
             };
 
@@ -410,9 +411,14 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-020", $"'{selection.Attempt}' is not an open entry attempt.");
             }
 
-            if (attempt.Revealing.Count > 0)
+            // After an election, one selection may follow a passed OVR NTC, for the second defender; otherwise an attempt
+            // has at most one selection, for its first reveal.
+            var second = attempt.Declaration == OverrunDeclared.Elected;
+            if (second ? attempt.TaskCheckPassed != true || attempt.SecondSelection : attempt.Revealing.Count > 0)
             {
-                return Fail<GameState>("UNIT-STATE-020", $"The attempt '{attempt.EventId}' already has a Random Selection.");
+                return Fail<GameState>("UNIT-STATE-020", second
+                    ? $"After an election, one Random Selection follows only a passed NTC."
+                    : $"The attempt '{attempt.EventId}' already has a Random Selection.");
             }
 
             if (!rolls.TryGetValue(selection.Roll, out var roll))
@@ -437,7 +443,9 @@ public static class GameProjector
             string[] revealing = [.. selection.Subjects.Where((_, index) => roll.Values[index] == highest)];
             return state with
             {
-                OpenAttempts = [.. state.OpenAttempts.Select(open => open.EventId == attempt.EventId ? open with { Revealing = revealing } : open)]
+                OpenAttempts = [.. state.OpenAttempts.Select(open => open.EventId == attempt.EventId
+                    ? open with { Revealing = revealing, SecondSelection = second }
+                    : open)]
             };
         }
 
@@ -473,6 +481,49 @@ public static class GameProjector
             };
         }
 
+        /// <summary>
+        /// A Task Check for an elected OVR (A10.1, p. 65): its roll is two recorded dice, its final DR is the dice plus
+        /// every modifier, it passes at or below the Morale Level, and that Morale Level is the unit's printed morale.
+        /// </summary>
+        private GameState? Check(GameState state, TaskCheck check)
+        {
+            if (check.Purpose != TaskCheck.OvrNtc)
+            {
+                return Fail<GameState>("UNIT-STATE-022", $"'{check.Purpose}' is not a reviewed Task Check.");
+            }
+
+            if (state.OpenAttempts.FirstOrDefault(open => open.Unit == check.Id) is not { } attempt
+                || attempt.Declaration != OverrunDeclared.Elected || attempt.TaskCheckPassed is not null)
+            {
+                return Fail<GameState>("UNIT-STATE-022", $"'{check.Id}' has no elected OVR awaiting its NTC.");
+            }
+
+            if (!rolls.TryGetValue(check.Roll, out var roll) || roll.Count != 2 || roll.Sides != 6)
+            {
+                return Fail<GameState>("UNIT-STATE-022", $"'{check.Roll}' is not a recorded roll of two dice.");
+            }
+
+            var expected = roll.Values.Sum() + check.Modifiers.Sum(modifier => modifier.Value);
+            if (check.FinalDr != expected || check.Passed != (check.FinalDr <= check.MoraleLevel))
+            {
+                return Fail<GameState>("UNIT-STATE-022",
+                    $"The final DR is {expected}, and against Morale Level {check.MoraleLevel} it {(expected <= check.MoraleLevel ? "passes" : "fails")}.");
+            }
+
+            var printed = state.Unit(check.Id) is { Definition: { } reference }
+                ? catalogs.FirstOrDefault(item => item.Identity == reference.Catalog)?.Definition(reference.Definition)?.Printed("front", "asl:morale")?.Value?.Number
+                : null;
+            if (printed != check.MoraleLevel)
+            {
+                return Fail<GameState>("UNIT-STATE-022", $"The Morale Level {check.MoraleLevel} is not the unit's printed morale.");
+            }
+
+            return state with
+            {
+                OpenAttempts = [.. state.OpenAttempts.Select(open => open.EventId == attempt.EventId ? open with { TaskCheckPassed = check.Passed } : open)]
+            };
+        }
+
         /// <summary>The unit returns to where it is, the attempt's MF are spent there, and its movement ends (A12.15, p. 78).</summary>
         private GameState? ForceBack(GameState state, EntryForcedBack forced, IReadOnlyList<string> causes)
         {
@@ -496,10 +547,12 @@ public static class GameProjector
                 return null;
             }
 
-            // An elected OVR is not forced back: what follows it is another transition (step 10).
-            if (attempt.Declaration == OverrunDeclared.Elected)
+            // After an elected OVR the mover is forced back only in the two reviewed outcomes: a failed NTC, or a passed NTC
+            // followed by a second reveal that denies the OVR (Scenario A1 OVR NTC Review).
+            if (attempt.Declaration == OverrunDeclared.Elected && !(attempt.TaskCheckPassed == false || attempt.SecondSelection))
             {
-                return Fail<GameState>("UNIT-STATE-021", $"The attempt '{attempt.EventId}' elected an OVR, so it is not forced back.");
+                return Fail<GameState>("UNIT-STATE-021",
+                    $"The attempt '{attempt.EventId}' elected an OVR; it is forced back only after a failed NTC or a second reveal.");
             }
 
             if (attempt.Revealing.FirstOrDefault(id => state.Unit(id) is { } selected
