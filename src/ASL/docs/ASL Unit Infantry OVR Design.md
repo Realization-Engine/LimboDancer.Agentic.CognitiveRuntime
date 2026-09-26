@@ -97,6 +97,16 @@ One further selection is allowed on an attempt after a passed task check, and it
 
 **Observation provider.** The Scenario A1 project gains `ScenarioA1OvrNtcObservationProvider`, with its snapshot record and source interface. It follows the other providers: it checks the board 01 terrain evidence and maps the snapshot to the package's exact facts. The Play project gains `LiveOvrNtcSnapshotSource`. The package's manifest, matrix, and digests are unchanged.
 
+**As built** (part 2).
+- `GamePlanner.PlanElectAsync` takes the election after the checks it shares with a decline: the pending attempt, the lone revealed SMC, the board 01 binding, and a clear return. On the synthetic board of the Studio tests, an election is therefore refused as outside the reviewed board, as a decline is.
+- An election with fewer than four MF left is refused with `play.election-unavailable`, which cites the `A1-ovr-ntc-mf-insufficient` conclusion.
+- Both reachable branches are read Definitive through `ScenarioA1OvrNtcObservationProvider` over `LiveOvrNtcSnapshotSource`, before the roll.
+- Every event of an election carries the OVR NTC package as its rule package. The Random Selection after a pass draws one die per remaining concealed MMC or SMC, in ordinal id order.
+- Tests:
+  - Play, `DeclareOverrunTests`: U11 (a failed NTC, then a replay that draws nothing), U12, the wooden building's TEM of 2, and fewer than four MF. The lone SMC refusal stays in the existing test.
+  - Scenario A1, `ScenarioA1OvrNtcObservationTests`: each of the five cases, and 13 snapshots outside the scope or the reviewed cases.
+  - Map Studio, `PlayPageTests`: the NTC arithmetic. The Elect button's commit is covered by the Play tests, since the page tests run on a synthetic board.
+
 ## 6. The lone SMC and the probe
 
 An election against a lone SMC is refused with the generic "the adjudicator cannot resolve" reason. The refusal, and equally an accepted election, tells the attacker whether another concealed unit is in the location. The requirements record this as a known limitation, accepted while the Studio's single user acts for both sides. Multi-user play must close it first. Among the ways to do so: elections could be offered only once A4.151 and A4.152 are reviewed, or an unresolvable election could halt for an adjudicator.

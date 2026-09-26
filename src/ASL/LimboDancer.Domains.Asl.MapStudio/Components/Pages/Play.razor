@@ -187,7 +187,7 @@ else if (state is not null)
             @foreach (var (roll, subjects) in Rolls)
             {
                 <li data-roll="@roll.Roll">
-                    @roll.Purpose: @string.Join(", ", roll.Values)@(subjects is null ? "" : $" for {string.Join(", ", subjects)}")
+                    @RollText(roll)@(subjects is null ? "" : $" for {string.Join(", ", subjects)}")
                     <span class="muted">(@roll.Count d@(roll.Sides), drawn by the @roll.Source for @roll.Actor)</span>
                 </li>
             }
@@ -265,6 +265,23 @@ else if (state is not null)
         : [.. history.Events.Where(item => item.IsVisibleTo(Viewer)).Select(item => item.Payload).OfType<DiceRolled>().Reverse().Take(6)
             .Select(roll => (roll, history.Events.Where(item => item.IsVisibleTo(Viewer)).Select(item => item.Payload).OfType<RandomSelection>()
                 .FirstOrDefault(selection => selection.Roll == roll.Roll)?.Subjects))];
+
+    /// <summary>
+    /// A roll with its purpose; an NTC also shows its arithmetic from the task check that used it (Infantry OVR Design,
+    /// section 7), for example "OVR NTC: 3, 5 + 3 (TEM) = 11 against morale 7: failed".
+    /// </summary>
+    private string RollText(DiceRolled roll)
+    {
+        var check = history?.Events.Select(item => item.Payload).OfType<TaskCheck>().FirstOrDefault(item => item.Roll == roll.Roll);
+        if (check is null)
+        {
+            return $"{roll.Purpose}: {string.Join(", ", roll.Values)}";
+        }
+
+        var modifiers = string.Concat(check.Modifiers.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Math.Abs(item.Value)} ({(item.Source == "B23.3" ? "TEM" : item.Source)})"));
+        return $"{(check.Purpose == TaskCheck.OvrNtc ? "OVR NTC" : check.Purpose)}: {string.Join(", ", roll.Values)}{modifiers} = {check.FinalDr} "
+            + $"against morale {check.MoraleLevel}: {(check.Passed ? "passed" : "failed")}";
+    }
 
     private IEnumerable<SealedPresence> SealedPresences => Viewer.IsAdjudicator || View is null ? [] : View.Sealed;
 

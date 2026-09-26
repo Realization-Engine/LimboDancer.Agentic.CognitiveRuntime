@@ -191,7 +191,7 @@ public sealed class GamePlanner(IGameStore store, IBoardCatalog boards, UnitVoca
             "asl.game.setup" => PlanSetup(scope, arguments, existing, attemptId, expected, ref label),
             "asl.game.advance-phase" => PlanAdvance(scope, existing, attemptId, expected, label),
             "asl.game.enter-empty-building" => await PlanEntryAsync(scope, arguments, existing, attemptId, expected, label, cancellationToken),
-            "asl.game.declare-overrun" => await PlanDeclareAsync(scope, arguments, existing, attemptId, expected, label, cancellationToken),
+            "asl.game.declare-overrun" => await PlanDeclareAsync(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown", cancellationToken),
             "asl.game.enter-building" => await PlanEnterBuildingAsync(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown", cancellationToken),
             _ => Refused(scope, label, expected, "play.unknown-action"),
         };
@@ -630,7 +630,7 @@ public sealed class GamePlanner(IGameStore store, IBoardCatalog boards, UnitVoca
     /// reason until step 10 reviews the NTC and what follows it; since every election is refused, the refusal discloses nothing.
     /// </summary>
     private async Task<GamePlan> PlanDeclareAsync(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId,
-        long expected, string label, CancellationToken cancellationToken)
+        long expected, string label, string actor, CancellationToken cancellationToken)
     {
         if (!Text(arguments, "unitId", out var unitId) || !Text(arguments, "choice", out var choice) || choice is not ("decline" or "elect"))
         {
@@ -658,11 +658,6 @@ public sealed class GamePlanner(IGameStore store, IBoardCatalog boards, UnitVoca
         }
 
         var smc = revealed[0];
-        if (choice == "elect")
-        {
-            return Refused(scope, label, expected, EntryDisclosure.CannotResolve
-                + " (an elected Infantry OVR needs its NTC and what follows it, which step 10 reviews)");
-        }
 
         var from = state.Location(unit.Id)!.Location;
         var hazards = state.At(from).Where(item => vocabulary.IsA(item.Kind, "asl:fortification") || vocabulary.IsA(item.Kind, "asl:residual")
@@ -690,6 +685,11 @@ public sealed class GamePlanner(IGameStore store, IBoardCatalog boards, UnitVoca
             && changed.Conditions.TryGetValue(Conditions.Concealed, out var concealed) && concealed == ConditionState.True);
         var revealedByAttempt = attemptEvents.Any(item => item.Causes.Contains(open.EventId) && item.Payload is ConditionsChanged changed && changed.Id == smc.Id
             && changed.Conditions.TryGetValue(Conditions.Concealed, out var concealed) && concealed == ConditionState.False);
+        if (choice == "elect")
+        {
+            return await PlanElectAsync(scope, state, unit, open, smc, from, facts, binding, !placedBeneathQuestionMark, revealedByAttempt, attemptId, expected,
+                label, actor, cancellationToken);
+        }
 
         var now = clock.GetUtcNow();
         var version = $"r{state.Revision}";
@@ -756,6 +756,165 @@ public sealed class GamePlanner(IGameStore store, IBoardCatalog boards, UnitVoca
             : new GamePlan(GamePlanStatus.Ready, scope, label, expected, events,
                 [$"play.declined: {unit.Id} declines the OVR against {smc.Id}; the reviewed matrix delegates the case ({delegation.ConclusionId}), "
                     + $"and {unit.Id} returns to {from} with {open.Mf} MF spent and its MPh ended ({conclusion.ConclusionId})"]);
+    }
+
+    /// <summary>
+    /// An elected Infantry OVR after a lone SMC reveal (Infantry OVR Design, section 5): the NTC is rolled first; a failure
+    /// forces the mover back, and a pass is followed by a Random Selection among the other concealed units, their reveal,
+    /// and the forced back. Both branches are checked Definitive against the OVR NTC package before any roll.
+    /// </summary>
+    private async Task<GamePlan> PlanElectAsync(GameScope scope, GameState state, UnitInstance unit, OpenAttempt open, UnitInstance smc,
+        BoardLocation from, IReadOnlyDictionary<string, bool?> facts, ScenarioA1TerrainBinding binding, bool initiallyConcealed, bool revealedByAttempt,
+        string attemptId, long expected, string label, string actor, CancellationToken cancellationToken)
+    {
+        // A12.15 offers the OVR only if possible, and A4.15 doubles the MF of entry: four MF must be left. The attempt's own
+        // MF are not yet spent.
+        var remaining = Experience.MfAllowance(state, unit, catalogs, vocabulary) is { } allowance ? allowance - unit.MfSpent : (int?)null;
+        if (remaining is null)
+        {
+            return Refused(scope, label, expected, "play.election-unavailable: the mover's MF allowance is unknown");
+        }
+
+        var observed = await OvrNtcAsync(scope, state, unit, open, from, facts, binding, initiallyConcealed, revealedByAttempt,
+            remaining >= 4 ? ScenarioA1OvrElection.Elected : ScenarioA1OvrElection.Requested,
+            remaining >= 4 ? ScenarioA1OvrRemainingMf.AtLeastFour : ScenarioA1OvrRemainingMf.BelowFour,
+            remaining >= 4 ? ScenarioA1OvrNtcResult.Failed : null, null, null, remaining >= 4 ? "A1-ovr-ntc-failed" : "A1-ovr-ntc-mf-insufficient",
+            cancellationToken);
+        if (remaining < 4)
+        {
+            return Refused(scope, label, expected,
+                $"play.election-unavailable: {unit.Id} has {remaining} MF left, and an Infantry OVR needs four (A4.15, p. 49) ({observed.ConclusionId})");
+        }
+
+        // Another concealed non-Dummy unit must be present; against a lone SMC a passed NTC leads to its options and CC,
+        // which are unreviewed. The refusal says only that the adjudicator cannot resolve the election (Infantry OVR
+        // Design, section 6).
+        UnitInstance[] others = [.. state.At(open.Target).OfType<UnitInstance>()
+            .Where(item => item.Id != smc.Id && item.Side != unit.Side && GameState.Condition(item, Conditions.Concealed) == ConditionState.True
+                && (vocabulary.IsA(item.Kind, "asl:mmc") || vocabulary.IsA(item.Kind, "asl:smc")))];
+        if (others.Length == 0)
+        {
+            return Refused(scope, label, expected, EntryDisclosure.CannotResolve + " (the election could lead to outcomes that are not yet reviewed)");
+        }
+
+        if (observed.Disposition != ConclusionDisposition.Definitive)
+        {
+            return Refused(scope, label, expected, ["play.not-definitive: the OVR NTC failed case is not Definitive", .. observed.Reasons]);
+        }
+
+        var passedBranch = await OvrNtcAsync(scope, state, unit, open, from, facts, binding, initiallyConcealed, revealedByAttempt,
+            ScenarioA1OvrElection.Elected, ScenarioA1OvrRemainingMf.AtLeastFour, ScenarioA1OvrNtcResult.Passed, ScenarioA1OtherConcealedNonDummy.Present, true,
+            "A1-ovr-ntc-passed-second-defender-revealed", cancellationToken);
+        if (passedBranch.Disposition != ConclusionDisposition.Definitive)
+        {
+            return Refused(scope, label, expected, ["play.not-definitive: the OVR NTC passed case is not Definitive", .. passedBranch.Reasons]);
+        }
+
+        // The NTC: two dice against the Morale Level, with the building TEM as DRM (A10.1, p. 65; B23.3, p. 136).
+        var morale = unit.Definition is { } reference
+            ? catalogs.FirstOrDefault(item => item.Identity == reference.Catalog)?.Definition(reference.Definition)?.Printed("front", "asl:morale")?.Value?.Number
+            : null;
+        if (morale is not { } moraleLevel || !new Board01TerrainCatalog().TryGetBuilding(binding.Hex, out var building))
+        {
+            return Refused(scope, label, expected, "play.ntc-unavailable: the mover's printed morale or the building's construction is unknown");
+        }
+
+        var tem = new TaskCheckModifier("B23.3", building!.Material == "stone" ? 3 : 2);
+        var package = ScenarioA1OvrNtcPackage.Identity.ToString();
+        var declaration = EventId(attemptId, 1);
+        string[] order = [.. others.Select(item => item.Id).Order(StringComparer.Ordinal)];
+        var defenderSide = smc.Side;
+        IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
+        {
+            List<GameEvent> events =
+            [
+                Event(scope, attemptId, 1, expected, "overrun-declared", new OverrunDeclared(unit.Id, open.EventId, OverrunDeclared.Elected), package, null,
+                    [open.EventId]),
+            ];
+            var ntc = draw(new RollRequest(2, 6));
+            var ntcRoll = $"{attemptId}-roll-1";
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled",
+                new DiceRolled(ntcRoll, TaskCheck.OvrNtc, 2, 6, ntc.Values, DiceRolled.SystemSource, actor), package, null, [open.EventId, declaration]));
+            var finalDr = ntc.Values.Sum() + tem.Value;
+            var passed = finalDr <= moraleLevel;
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "task-check",
+                new TaskCheck(unit.Id, ntcRoll, TaskCheck.OvrNtc, moraleLevel, [tem], finalDr, passed), package, null, [open.EventId, declaration]));
+            if (passed)
+            {
+                // A passed NTC makes the MMC capable of OVR; the DEFENDER must then reveal another non-Dummy unit, chosen by
+                // Random Selection (A12.15, p. 78; A.9, p. 43).
+                var selection = draw(new RollRequest(order.Length, 6));
+                var selectionRoll = $"{attemptId}-roll-2";
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled",
+                    new DiceRolled(selectionRoll, "random-selection", order.Length, 6, selection.Values, DiceRolled.SystemSource, actor), package, null,
+                    [open.EventId, declaration]));
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "random-selection", new RandomSelection(selectionRoll, open.EventId, order),
+                    package, [defenderSide], [open.EventId, declaration]));
+                var highest = selection.Values.Max();
+                foreach (var id in order.Where((_, index) => selection.Values[index] == highest))
+                {
+                    events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(id,
+                        new Dictionary<string, ConditionState> { [Conditions.Hidden] = ConditionState.False, [Conditions.Concealed] = ConditionState.False }),
+                        package, null, [open.EventId, declaration]));
+                }
+            }
+
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "entry-forced-back", new EntryForcedBack(unit.Id, open.EventId, from, open.Mf, false),
+                package, null, [open.EventId, declaration]));
+            return events;
+        }
+
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
+            [$"play.elected: {unit.Id} attempts an Infantry OVR against {smc.Id}. The NTC is two dice + {tem.Value} (B23.3) against morale {moraleLevel}; "
+                + $"a failure forces {unit.Id} back ({observed.ConclusionId}), and a pass reveals another unit by Random Selection and forces it back ({passedBranch.ConclusionId})"])
+        {
+            Roll = new PlannedRoll(TaskCheck.OvrNtc, Build),
+            FirstEventId = declaration,
+        };
+    }
+
+    /// <summary>The OVR NTC package's conclusion for one branch of an election, over a live snapshot of that branch.</summary>
+    private async Task<(ConclusionDisposition Disposition, string? ConclusionId, IReadOnlyList<string> Reasons)> OvrNtcAsync(GameScope scope, GameState state,
+        UnitInstance unit, OpenAttempt open, BoardLocation from, IReadOnlyDictionary<string, bool?> facts, ScenarioA1TerrainBinding binding, bool initiallyConcealed,
+        bool revealedByAttempt, ScenarioA1OvrElection election, ScenarioA1OvrRemainingMf remainingMf, ScenarioA1OvrNtcResult? ntc,
+        ScenarioA1OtherConcealedNonDummy? other, bool? secondReveal, string caseId, CancellationToken cancellationToken)
+    {
+        var now = clock.GetUtcNow();
+        var version = $"r{state.Revision}";
+        var locationId = open.Target.ToString();
+        var snapshot = new ScenarioA1OvrNtcSnapshot(scope.Tenant, ScenarioA1OvrNtcPackage.Identity, unit.Id, locationId, from.ToString(), version, now,
+            LiveGames.Source, binding, facts["isAttackerMovementPhase"], facts["isKnownGoodOrderInfantrySquad"], initiallyConcealed, revealedByAttempt, true,
+            A414Exception(unit) is false, facts["hasNoSpecialRuleOrOtherModifier"], true, election, remainingMf, ntc, other, secondReveal);
+        var provider = new ScenarioA1OvrNtcObservationProvider(new LiveOvrNtcSnapshotSource(snapshot), new BoardCatalogTerrainEvidence(boards));
+        var descriptor = (await new ScenarioA1OvrNtcPackage().ResolveAsync(ScenarioA1OvrNtcPackage.Identity, cancellationToken)).Package!;
+        var observed = await provider.ObserveAsync(Query(scope, descriptor.Identity, ScenarioA1OvrNtcObservationProvider.QueryKind, unit.Id, locationId, version),
+            cancellationToken);
+        if (observed.Observations.Count != 1)
+        {
+            return (ConclusionDisposition.Abstained, null, ["play.not-definitive: the OVR NTC package observed no reviewed case", .. observed.ReasonCodes]);
+        }
+
+        var question = new DomainQuestion($"{ScenarioA1OvrNtcConclusionResolver.QuestionKind}-{scope.Game}-r{state.Revision}-{unit.Id}-{caseId}", scope.Tenant,
+            descriptor.Identity, new SemanticIdentifier(descriptor.Identity.DomainId, ScenarioA1OvrNtcConclusionResolver.QuestionKind),
+            JsonSerializer.SerializeToElement(new
+            {
+                unitId = unit.Id,
+                locationId,
+                previousLocationId = from.ToString(),
+                observationVersion = version,
+                caseId
+            }), now);
+        DomainEntityResolution Entity(string id) => new(
+            new DomainEntityQuery("query-" + id, scope.Tenant, descriptor.Identity, new SemanticIdentifier(descriptor.Identity.DomainId, "unit-or-location"), id),
+            DomainEntityResolutionOutcome.Resolved,
+            [new DomainEntityCandidate(new SemanticIdentifier(descriptor.Identity.DomainId, id), descriptor.CanonicalSources[0],
+                new EvidenceReference("entity:" + id, EvidenceKind.Observation, scope.Tenant, descriptor.Identity, id,
+                    state.Revision.ToString(CultureInfo.InvariantCulture), LiveGames.Source))],
+            ["asl.live-game.resolution"]);
+        var conclusion = await new ScenarioA1OvrNtcConclusionResolver().ConcludeAsync(
+            new DomainConclusionContext(question, descriptor, [Entity(unit.Id), Entity(locationId), Entity(from.ToString())], [observed.Observations[0]]),
+            cancellationToken);
+        return (conclusion.Disposition, conclusion.ConclusionId, conclusion.ReasonCodes);
     }
 
     /// <summary>The reason the concealed-SMC OVR resolver gives when it delegates a declined election to the PostReveal package.</summary>

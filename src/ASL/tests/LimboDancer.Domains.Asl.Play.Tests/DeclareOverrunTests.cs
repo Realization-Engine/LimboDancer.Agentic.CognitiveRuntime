@@ -1,6 +1,7 @@
 using System.Text.Json;
 using LimboDancer.Abstractions.Audit;
 using LimboDancer.Dice;
+using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Maps.Read;
 using LimboDancer.Domains.Asl.Units.Catalog;
 using LimboDancer.Domains.Asl.Units.State;
@@ -10,7 +11,8 @@ namespace LimboDancer.Domains.Asl.Play.Tests;
 
 /// <summary>
 /// The attacker's Infantry OVR declaration after a lone SMC reveal (Random Selection and Declined OVR Design, section 6;
-/// U10): a decline commits the forced back through the reviewed delegation, and an election is refused with nothing changed.
+/// U10): a decline commits the forced back through the reviewed delegation. An election (Infantry OVR Design, section 5;
+/// U11, U12) rolls the NTC when another concealed unit is present, and is refused against a lone SMC with nothing changed.
 /// </summary>
 public sealed class DeclareOverrunTests : IDisposable
 {
@@ -27,12 +29,21 @@ public sealed class DeclareOverrunTests : IDisposable
     private readonly FileGameStore store;
     private readonly IBoardCatalog boards = new InMemoryBoardCatalog([Board01Fixture.Handle()]);
     private int draws;
+    private string from = "bd01:D4:0";
+    private int spentBeforeEntry;
 
     public DeclareOverrunTests() => store = new FileGameStore(root);
 
     private GamePlanner Planner() => new(store, boards, Vocabulary, [Catalog]);
 
     private DiceRoller Fixed(params int[] values) => new(_ => values[draws++ % values.Length] - 1);
+
+    /// <summary>A roller that returns the given values once each, in order, and fails on any further draw.</summary>
+    private static DiceRoller Once(params int[] values)
+    {
+        var queue = new Queue<int>(values);
+        return new(_ => queue.Dequeue() - 1);
+    }
 
     private GamePlay Play(DiceRoller? roller = null) => new(Planner(), store, new NullAudit(), roller: roller ?? new(_ => throw new InvalidOperationException("No roll.")));
 
@@ -72,7 +83,10 @@ public sealed class DeclareOverrunTests : IDisposable
         return await play.ConfirmAsync(action, arguments, Player, proposed.Correlation);
     }
 
-    /// <summary>A game whose German squad g1 in D4 has entered E4 and revealed a lone SMC, leaving the attempt pending.</summary>
+    /// <summary>
+    /// A game whose German squad g1 (in D4 unless <see cref="from"/> says otherwise) has entered the first defender's
+    /// location and revealed a lone SMC, leaving the attempt pending. <see cref="spentBeforeEntry"/> MF are spent in place first.
+    /// </summary>
     private async Task Pending(DiceRoller? roller, params object[] defenders)
     {
         var play = Play(roller);
@@ -89,7 +103,7 @@ public sealed class DeclareOverrunTests : IDisposable
                 firstSide = "german",
                 sides = new[] { new { id = "german", nationality = "german" }, new { id = "russian", nationality = "russian" } },
             },
-            placements = new[] { Placement("g1", "attacker-squad", "bd01:D4:0", side: "german") }.Concat(defenders).ToArray(),
+            placements = new[] { Placement("g1", "attacker-squad", from, side: "german") }.Concat(defenders).ToArray(),
         }))).Outcome);
         for (var step = 0; step < 2; step++)
         {
@@ -102,6 +116,22 @@ public sealed class DeclareOverrunTests : IDisposable
                 }))).Outcome);
         }
 
+        if (spentBeforeEntry > 0)
+        {
+            var existing = store.Read(Scope)!.Events;
+            var spend = existing[^1] with
+            {
+                EventId = "spend-1",
+                Revision = existing.Count + 1,
+                Type = "instance-moved",
+                Payload = new InstanceMoved("g1", new MapPosition(BoardLocation.Parse(from)), spentBeforeEntry),
+                Causes = [],
+                Visibility = null,
+            };
+            Assert.Equal(AppendStatus.Committed, store.Append(Scope, "Village test", existing.Count, [spend], Planner().Replay).Status);
+        }
+
+        var target = JsonSerializer.SerializeToElement(defenders[0]).GetProperty("position").GetProperty("at").GetString();
         Assert.Equal(PlayOutcome.Committed, (await Commit(play, GameActions.EnterBuilding,
             Args(new
             {
@@ -109,7 +139,7 @@ public sealed class DeclareOverrunTests : IDisposable
                 attemptId = "enter-1",
                 expectedRevision = Revision,
                 unitId = "g1",
-                location = "bd01:E4:0"
+                location = target
             }))).Outcome);
         Assert.Single(Current.OpenAttempts);
     }
@@ -179,6 +209,81 @@ public sealed class DeclareOverrunTests : IDisposable
         var again = await Play().ProposeAsync(GameActions.DeclareOverrun, Declare("decline", attempt: "declare-2"), Player);
         Assert.Equal(PlayOutcome.Denied, again.Outcome);
         Assert.StartsWith("play.no-pending-declaration", Assert.Single(again.Plan!.Reasons), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AFailedNtcRevealsNothingFurtherAndForcesTheMoverBack()
+    {
+        // U11: l1 is revealed by Random Selection and r1 stays concealed; the NTC of 4, 4 + 3 (stone E4) = 11 fails morale 7.
+        await Pending(Fixed(6, 1), Placement("l1", "defender-leader", "bd01:E4:0", concealed: true), Placement("r1", "defender-squad", "bd01:E4:0", concealed: true));
+        var pending = Revision;
+        var elect = await Commit(Play(Once(4, 4)), GameActions.DeclareOverrun, Declare("elect"));
+        Assert.Equal(PlayOutcome.Committed, elect.Outcome);
+        Assert.Contains(elect.Plan!.Reasons, reason => reason.StartsWith("play.elected", StringComparison.Ordinal));
+
+        var events = store.Read(Scope)!.Events.Skip((int)pending).ToArray();
+        Assert.Equal(["overrun-declared", "dice-rolled", "task-check", "entry-forced-back"], events.Select(item => item.Type));
+        Assert.All(events, item => Assert.Equal(ScenarioA1.ScenarioA1OvrNtcPackage.Identity.ToString(), item.RulePackage));
+        Assert.Equal(OverrunDeclared.Elected, Assert.IsType<OverrunDeclared>(events[0].Payload).Choice);
+        var roll = Assert.IsType<DiceRolled>(events[1].Payload);
+        Assert.Equal(("declare-1-roll-1", TaskCheck.OvrNtc), (roll.Roll, roll.Purpose));
+        Assert.Equal([4, 4], roll.Values);
+        var check = Assert.IsType<TaskCheck>(events[2].Payload);
+        Assert.Equal((7, 11, false), (check.MoraleLevel, check.FinalDr, check.Passed));
+        Assert.Equal([new TaskCheckModifier("B23.3", 3)], check.Modifiers);
+        Assert.Equal(("bd01:D4:0", 2, true), (Current.Location("g1")!.Location.ToString(), Current.Unit("g1")!.MfSpent, Current.Unit("g1")!.MovementEnded));
+        Assert.Equal(ConditionState.True, GameState.Condition(Current.Unit("r1")!, Conditions.Concealed));
+        Assert.Empty(Current.OpenAttempts);
+
+        // A repeated confirmation returns the recorded rolls without drawing.
+        Assert.Equal(PlayOutcome.Replay, (await Play().ConfirmAsync(GameActions.DeclareOverrun, Declare("elect", expected: pending), Player, elect.Correlation)).Outcome);
+        Assert.Equal(pending + 4, Revision);
+    }
+
+    [Fact]
+    public async Task APassedNtcRevealsTheOtherUnitByRandomSelectionAndForcesTheMoverBack()
+    {
+        // U12: 1, 2 + 3 = 6 passes; the Random Selection among the remaining concealed units then reveals r1.
+        await Pending(Fixed(6, 1), Placement("l1", "defender-leader", "bd01:E4:0", concealed: true), Placement("r1", "defender-squad", "bd01:E4:0", concealed: true));
+        var pending = Revision;
+        Assert.Equal(PlayOutcome.Committed, (await Commit(Play(Once(1, 2, 3)), GameActions.DeclareOverrun, Declare("elect"))).Outcome);
+
+        var events = store.Read(Scope)!.Events.Skip((int)pending).ToArray();
+        Assert.Equal(["overrun-declared", "dice-rolled", "task-check", "dice-rolled", "random-selection", "conditions-changed", "entry-forced-back"],
+            events.Select(item => item.Type));
+        Assert.True(Assert.IsType<TaskCheck>(events[2].Payload).Passed);
+        var selection = Assert.IsType<DiceRolled>(events[3].Payload);
+        Assert.Equal(("declare-1-roll-2", "random-selection", 1), (selection.Roll, selection.Purpose, selection.Count));
+        Assert.Equal(["r1"], Assert.IsType<RandomSelection>(events[4].Payload).Subjects);
+        Assert.Equal(["russian"], events[4].Visibility);
+        Assert.Equal(ConditionState.False, GameState.Condition(Current.Unit("r1")!, Conditions.Concealed));
+        Assert.Equal(("bd01:D4:0", true), (Current.Location("g1")!.Location.ToString(), Current.Unit("g1")!.MovementEnded));
+        Assert.Empty(Current.OpenAttempts);
+    }
+
+    [Fact]
+    public async Task AWoodenBuildingGivesATemOfTwo()
+    {
+        // g1 in the stone L7 enters the wooden K7: 3, 3 + 2 = 8 fails morale 7.
+        from = "bd01:L7:0";
+        await Pending(Fixed(6, 1), Placement("l1", "defender-leader", "bd01:K7:0", concealed: true), Placement("r1", "defender-squad", "bd01:K7:0", concealed: true));
+        var pending = Revision;
+        Assert.Equal(PlayOutcome.Committed, (await Commit(Play(Once(3, 3)), GameActions.DeclareOverrun, Declare("elect"))).Outcome);
+        var check = Assert.IsType<TaskCheck>(store.Read(Scope)!.Events[(int)pending + 2].Payload);
+        Assert.Equal([new TaskCheckModifier("B23.3", 2)], check.Modifiers);
+        Assert.Equal((8, false), (check.FinalDr, check.Passed));
+    }
+
+    [Fact]
+    public async Task AnElectionWithFewerThanFourMfIsRefused()
+    {
+        spentBeforeEntry = 1;
+        await Pending(Fixed(6, 1), Placement("l1", "defender-leader", "bd01:E4:0", concealed: true), Placement("r1", "defender-squad", "bd01:E4:0", concealed: true));
+        var pending = Revision;
+        var elect = await Play().ProposeAsync(GameActions.DeclareOverrun, Declare("elect"), Player);
+        Assert.Equal(PlayOutcome.Denied, elect.Outcome);
+        Assert.StartsWith("play.election-unavailable: g1 has 3 MF left", Assert.Single(elect.Plan!.Reasons), StringComparison.Ordinal);
+        Assert.Equal(pending, Revision);
     }
 
     public void Dispose()
