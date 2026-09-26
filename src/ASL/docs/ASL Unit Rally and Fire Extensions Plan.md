@@ -1,6 +1,6 @@
 # ASL Unit Rally and Fire Extensions Plan
 
-**Status:** Draft for review. Nothing here is built. It proposes unit steps 19 to 25, the rulings each needs before code, and how to build the first group in one implementation pass.
+**Status:** Rulings accepted by the user on 2026-09-26; nothing is built yet. It sets out unit steps 19 to 25, the rulings for steps 19 to 23, and how to build them in one implementation pass. Everything the rulings leave out, and each recorded deviation, is in the [ASL Unit Backlog](<ASL Unit Backlog.md>).
 
 **Date:** 2026-09-26
 
@@ -84,13 +84,13 @@ Two cautions for transcription:
 
 A15.1 (p. 83) calls for a Heat of Battle DR after "any Original MC or Rally (not Self-Rally) DR of 2". Step 17 excluded Heat of Battle, but the Fire package still resolves an MC whose Original DR is 2 as an ordinary pass: `ScenarioA1FireCalculator` handles an Original 12 and not a 2. So an attack that calls for an MC can reach an outcome the package does not decide, and step 18's pre-check does not catch it. The same 2 decides a leader-led rally (step 19) and an FPF firer's NMC (step 22).
 
-Ruling R0.2 chooses between:
+Ruling R0.2 chose among these (the user accepted option 3):
 
 1. **Review A15 now**, in step 19: A15.1 to A15.5 (pp. 83 to 84) and the Heat of Battle chart (p. 108). Its results open Heroes (A15.2), Battle Hardening (A15.3), Berserk (A15.4), and Surrender (A15.5), each with its own rules. This is the faithful choice and makes step 19 about twice as large.
 2. **Refuse**: treat any MC or rally that can roll an Original 2 as undecided. This refuses nearly every fire attack that calls for an MC and every leader-led rally, so it undoes most of step 18.
 3. **Record a deviation**: an Original 2 is resolved as its MC or rally result, the record says that Heat of Battle was not taken, and the package's review lists the deviation until A15 is reviewed.
 
-The proposed answer is 3 for this pass, with A15 as the first step of the next pass, since option 1 alone would outgrow the pass and option 2 undoes working play. Whichever is chosen, the Fire package and its reachability walk change in step 19, part 1.
+Option 3 applies for this pass, with A15 as the first step of the next pass, since option 1 alone would outgrow the pass and option 2 undoes working play. Whichever is chosen, the Fire package and its reachability walk change in step 19, part 1.
 
 ## 4. Step 19: Rally
 
@@ -108,9 +108,9 @@ DM is removed at the end of every RPh (A10.62), not its start, so a unit rallies
 4. *Visibility.* Rally DRs are public. A concealed unit that rallies in LOS of a Good Order enemy within 16 hexes loses "?"; otherwise its rally stays with its side, and a public report says only that a rally was attempted in that Location, if ruling R19.8 admits one.
 5. *The Play page.* An RPh panel lists each side's broken units with the leader choices and the DRM, and shows each attempt's arithmetic.
 
-**Rulings needed.**
+**Rulings** (accepted by the user, 2026-09-26; items left out are in the backlog).
 
-| Id | Question | Proposed answer |
+| Id | Question | Answer |
 |---|---|---|
 | R19.1 | Which DM sources does the game track? | Breaking this Player Turn, and being attacked while broken by enough FP to cause a NMC. Leave the ADJACENT and RtPh sources out until routing exists. |
 | R19.2 | A leader-led Original 2 calls for Heat of Battle (A15.1, p. 83), which is out of scope. | As R0.2 (section 3.4): the rally succeeds and the record says Heat of Battle was not taken. |
@@ -138,9 +138,9 @@ Step 19 opens with the Fire package change R0.2 calls for (part 1), since it fix
 3. *The fire action.* `firers` may span Locations; the planner reads LOS per firer and refuses a group with a member whose LOS is blocked, before any roll (ruling R20.2). A7.55 applies per Location. The fire record holds several firer Locations.
 4. *Markers.* An AFPh attack is recorded by its fire record. The marker question is ruling R20.3.
 
-**Rulings needed.**
+**Rulings** (accepted by the user, 2026-09-26; items left out are in the backlog).
 
-| Id | Question | Proposed answer |
+| Id | Question | Answer |
 |---|---|---|
 | R20.1 | Opportunity Fire (A7.25) | Out. |
 | R20.2 | A member with blocked LOS | Refused before any roll (the planner knows LOS), not A6.11's fired-and-wasted. |
@@ -160,9 +160,9 @@ Step 19 opens with the Fire package change R0.2 calls for (part 1), since it fix
 3. *Fire at a Location with no known target.* Ruling R21.1. If admitted, the action commits whatever the Location holds, even nothing, so a refusal no longer tells the firing side that a hidden unit is there. That closes the known limitation of step 18, part 5.
 4. *Visibility.* A hidden unit's result is the owner's; the public report carries the arithmetic. A Dummy's removal is public.
 
-**Rulings needed.**
+**Rulings** (accepted by the user, 2026-09-26; items left out are in the backlog).
 
-| Id | Question | Proposed answer |
+| Id | Question | Answer |
 |---|---|---|
 | R21.1 | May a side fire at a Location where it sees nothing? | Yes; the attack commits with its roll and markers, and resolves against whatever is there. |
 | R21.2 | A Dummy in LOS | Resolved by the Concealment Table: removed on PTC or worse. |
@@ -184,9 +184,9 @@ This is the largest Infantry step, because Defensive First Fire needs movement t
 4. *Residual FP.* A Location marker (ASL-UNIT-026 entity) placed after DFF, SFF, or FPF at half the highest column used, reduced by A8.26, which attacks a unit that enters or spends MF there, first and automatically, and is removed at the end of the MPh.
 5. *Vocabulary asl@1.6.0.* `asl:first-fire` and the Residual FP entity, drawn.
 
-**Rulings needed.**
+**Rulings** (accepted by the user, 2026-09-26; items left out are in the backlog).
 
-| Id | Question | Proposed answer |
+| Id | Question | Answer |
 |---|---|---|
 | R22.1 | The defender's window | Explicit: a pending movement the DEFENDER closes by firing or passing. |
 | R22.2 | Assault Movement; Hazardous Movement | Assault in; Hazardous out. |
@@ -213,9 +213,9 @@ This is the largest Infantry step, because Defensive First Fire needs movement t
 4. *Actions.* `asl.game.fire` names the weapons each firer uses; `asl.game.repair` in the RPh (A9.72), exclusive with a rally attempt by the same unit (A3.1).
 5. *Markers.* `asl:malfunctioned` exists; a SW carries its user's Prep or Final Fire state.
 
-**Rulings needed.**
+**Rulings** (accepted by the user, 2026-09-26; items left out are in the backlog).
 
-| Id | Question | Proposed answer |
+| Id | Question | Answer |
 |---|---|---|
 | R23.1 | Which SW | The weapons the Scenario A1 card gives each side, with values manufactured under R0.3 and approved by the user. |
 | R23.2 | Multiple ROF | In, as a new attack by the weapon alone, marked like the first. |
@@ -241,7 +241,7 @@ The Windows LF clone and Docker checks take about ten minutes run in parallel, a
 
 ### 11.1 Stages
 
-1. **This plan** (documents only): the requirements' steps 19 to 25 and this document. The user reviews it and marks the proposed rulings to change.
+1. **This plan** (documents only): the requirements' steps 19 to 25, this document, and the backlog. Its rulings were accepted on 2026-09-26.
 2. **One review sitting.** For steps 19 to 23 together: the rule fragments of sections 4 to 8 registered and verified against their pages, transcriptions of the registered chart pages each step uses (with the user's spot-checks), and one review document per package recording the rulings. The user supplies the SW and Dummy counter values at this point. No live code changes in this stage, so it needs no checks of its own beyond the targeted tests.
 3. **One implementation branch**, `feature/asl-unit-rally-fire`, built in dependency order so each part stands on the last:
    1. Shared model: vocabulary asl@1.6.0 (First Fire, Dummy, Residual FP entity), catalog 1.2.0 (SW definitions), equipment definitions, the colored die, ADJACENT in the map read.
@@ -262,13 +262,13 @@ The Windows LF clone and Docker checks take about ten minutes run in parallel, a
 
 ### 11.3 What the user provides
 
-- Rulings on the tables in sections 4 to 8 (accept, change, or reject each proposal), including R0.1 on transcribing from the registered chart copies.
+- Rulings on the tables in sections 4 to 8 and 12: accepted on 2026-09-26.
 - Approval of the manufactured SW values for the Scenario A1 weapons (ruling R0.3); ordnance and vehicle values come from the Chapter H listings.
 - Spot-checks of the new chart transcriptions against rendered page images.
 
 ## 12. Source ruling
 
-| Id | Question | Proposed answer |
+| Id | Question | Answer |
 |---|---|---|
 | R0.1 | Transcribe new charts from the registered copies (pp. 106 to 111, 160, 189 to 191, 220 to 221) rather than registering back-matter pages? | Yes. The step 17 supplement for pp. 692 and 698 stays as recorded. |
 | R0.2 | An Original MC or rally DR of 2 and Heat of Battle (section 3.4) | Record a deviation for this pass: resolve the 2 as its MC or rally result, say in the record that Heat of Battle was not taken, and review A15 first in the next pass. |
