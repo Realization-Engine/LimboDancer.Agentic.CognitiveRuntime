@@ -24,6 +24,13 @@ public sealed class LosFixtureTests
         { "bd12.los.json.gz", 8059 },
         { "bd15.los.json.gz", 6051 },
         { Path.Combine("Scenarios", "bd12-over-bd15.scenario.los.json.gz"), 17588 },
+        { "bd23.los.json.gz", 12866 },
+        { "bd51.los.json.gz", 29151 },
+        { "bd96.los.json.gz", 6079 },
+        { "bdBFPB.los.json.gz", 11882 },
+        { "bdBFPD.los.json.gz", 5566 },
+        { "bdBFPDW2b.los.json.gz", 5584 },
+        { "bdrdx.los.json.gz", 2046 },
     };
 
     [Theory]
@@ -32,7 +39,7 @@ public sealed class LosFixtureTests
     {
         using var fixture = Load(Path.Combine(OracleDirectory, file));
         var root = fixture.RootElement;
-        Assert.Equal(("1.0.0", 12, "HalfHexWidthLeftHexFullHeight"),
+        Assert.Equal(("1.1.0", 12, "HalfHexWidthLeftHexFullHeight"),
             (root.GetProperty("harnessVersion").GetString(), root.GetProperty("losRange").GetInt32(), root.GetProperty("gridConfiguration").GetString()));
         Assert.Matches("^[0-9a-f]{40}$", root.GetProperty("vaslCommit").GetString()!);
 
