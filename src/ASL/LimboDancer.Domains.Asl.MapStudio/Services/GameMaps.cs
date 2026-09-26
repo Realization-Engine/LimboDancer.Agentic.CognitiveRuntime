@@ -45,8 +45,12 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, RenderCache
                 $"{map.Boards[0].Board} version {map.Boards[0].Version} is not available.")]);
     }
 
-    /// <summary>Draws a live game at a revision for a viewer, with a location highlighted when given.</summary>
-    public GameMapDrawing Draw(string gameId, MapInPlay map, Perspective viewer, long revision, BoardLocation? highlight = null)
+    /// <summary>
+    /// Draws a live game at a revision for a viewer, with a location highlighted when given, and any extra layer (such
+    /// as an LOS line) on top.
+    /// </summary>
+    public GameMapDrawing Draw(string gameId, MapInPlay map, Perspective viewer, long revision, BoardLocation? highlight = null,
+        Func<StudioBoard, string>? extraLayer = null)
     {
         ArgumentNullException.ThrowIfNull(map);
         ArgumentNullException.ThrowIfNull(viewer);
@@ -73,6 +77,11 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, RenderCache
             var points = string.Join(' ', board.Render.Grid.Geometry.Vertices(hex)
                 .Select(point => string.Create(CultureInfo.InvariantCulture, $"{point.X:0.##},{point.Y:0.##}")));
             layers.Add($"<polygon id=\"play-highlight\" class=\"play-highlight\" points=\"{points}\" fill=\"none\" stroke=\"#d00\" stroke-width=\"4\"/>");
+        }
+
+        if (extraLayer is not null)
+        {
+            layers.Add(extraLayer(board));
         }
 
         var svg = rendered.Svg;

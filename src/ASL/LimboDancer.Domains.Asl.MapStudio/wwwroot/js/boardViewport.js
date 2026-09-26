@@ -157,6 +157,7 @@ export function create(host, dotnet) {
         reloadLayers: (baseUrl, query, layers) => reloadLayers(state, baseUrl, query, layers),
         setVisible: visible => setVisible(state, visible),
         setUnits: markup => setUnits(state, markup),
+        setLos: markup => setLos(state, markup),
         highlight: points => highlight(state, points),
         setTool: tool => setTool(state, tool),
         applyPatch: patch => applyPatch(state, patch),
@@ -406,6 +407,22 @@ function reset(state) {
     if (state.home) {
         setBox(state, { ...state.home });
     }
+}
+
+// The LOS layer (LOS Design, section 6): a line and the blocking hex, drawn above the units.
+function setLos(state, markup) {
+    state.svg.querySelector("#layer-los")?.remove();
+    if (!markup) {
+        return;
+    }
+
+    const fragment = new DOMParser().parseFromString(
+        `<svg xmlns="${svgNamespace}">${markup}</svg>`, "image/svg+xml");
+    const group = fragment.documentElement.firstElementChild;
+    if (fragment.querySelector("parsererror") || group?.id !== "layer-los") {
+        throw new Error("Invalid LOS layer");
+    }
+    state.svg.appendChild(document.importNode(group, true));
 }
 
 function setUnits(state, markup) {

@@ -20,7 +20,7 @@ public sealed class LosFidelityTests(ITestOutputHelper output)
 {
     private static readonly string OracleDirectory = Path.Combine(AppContext.BaseDirectory, "Oracle");
 
-    private static readonly ConcurrentDictionary<string, Comparison> Comparisons = new(StringComparer.Ordinal);
+    private static readonly ConcurrentDictionary<string, LosFidelityResult> Comparisons = new(StringComparer.Ordinal);
 
     /// <summary>Each fixture with the number of pairs the read answers, pinned at the value reached.</summary>
     public static TheoryData<string, int> Fixtures => new()
@@ -112,40 +112,10 @@ public sealed class LosFidelityTests(ITestOutputHelper output)
         Assert.Throws<ArgumentException>(() => LosCalculator.Check(map, new BoardLocation(other.Board, other.Hex, 0), BoardLocation.Parse("bd01:E4:0")));
     }
 
-    private static Comparison Compare(string file) => Comparisons.GetOrAdd(file, name =>
+    private static LosFidelityResult Compare(string file) => Comparisons.GetOrAdd(file, name =>
     {
-        using var fixture = Load(Path.Combine(OracleDirectory, name));
-        var root = fixture.RootElement;
-        var map = BuildMap(root.GetProperty("scenario").GetString(), root.GetProperty("boards")[0].GetProperty("board").GetString());
-        var comparison = new Comparison();
-        foreach (var pair in root.GetProperty("pairs").EnumerateArray())
-        {
-            comparison.Pairs++;
-            var source = Location(pair, "source");
-            var target = Location(pair, "target");
-            var result = LosCalculator.Check(map, source, target);
-            if (!result.IsAnswered)
-            {
-                comparison.Unsupported[result.Reason] = comparison.Unsupported.GetValueOrDefault(result.Reason) + 1;
-                continue;
-            }
-
-            comparison.Answered++;
-            var expected = (Blocked: pair.GetProperty("blocked").GetBoolean(), Hex: pair.GetProperty("blockedHex").GetString(),
-                Range: pair.GetProperty("range").GetInt32(), Hindrance: pair.GetProperty("hindrance").GetInt32(), Reason: pair.GetProperty("reason").GetString());
-            var actual = (Blocked: result.IsBlocked == true, Hex: result.BlockedAt is { Board: { } board, Hex: { } hex } ? $"{board}:{hex}" : null,
-                result.Range, result.Hindrance, result.Reason);
-            if (expected == actual)
-            {
-                comparison.Agreed++;
-            }
-            else
-            {
-                comparison.Disagreements.Add($"{source} -> {target}: VASL {expected}, read {actual}");
-            }
-        }
-
-        return comparison;
+        var fixture = LosFidelity.Read(Path.Combine(OracleDirectory, name));
+        return LosFidelity.Compare(BuildMap(fixture.Scenario, fixture.Placements[0].Board.Value), fixture);
     });
 
     // A single board is read through its handle; a scenario is built as VaslMapTests builds it.
@@ -187,28 +157,6 @@ public sealed class LosFidelityTests(ITestOutputHelper output)
         using var file = File.OpenRead(path);
         using var gzip = new GZipStream(file, CompressionMode.Decompress);
         return JsonDocument.Parse(gzip);
-    }
-
-    private sealed class Comparison
-    {
-        public int Pairs
-        {
-            get; set;
-        }
-
-        public int Answered
-        {
-            get; set;
-        }
-
-        public int Agreed
-        {
-            get; set;
-        }
-
-        public Dictionary<string, int> Unsupported { get; } = new(StringComparer.Ordinal);
-
-        public List<string> Disagreements { get; } = [];
     }
 }
 

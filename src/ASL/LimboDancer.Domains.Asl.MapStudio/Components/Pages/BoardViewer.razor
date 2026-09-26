@@ -5,6 +5,7 @@
 @inject IBoardProvider Boards
 @inject UnitLibrary UnitLibrary
 @inject GameLibrary Games
+@inject StudioLos Los
 @inject IJSRuntime JS
 
 <PageTitle>@(board?.Title ?? BoardName) - ASL Map Studio</PageTitle>
@@ -211,6 +212,27 @@ else if (board is null)
                     }
                 </ul>
             }
+        }
+        @if (board is not null)
+        {
+            <details id="los-panel" open="@(losCheck is not null)">
+                <summary>LOS</summary>
+                <p class="muted">VASL's LOS for the blocked-or-clear slice (LOS Design): from one location to another, such as bd01:E4:0.</p>
+                <div class="fields">
+                    <label for="los-source">From</label>
+                    <span><input id="los-source" value="@losSource" @onchange="@(args => losSource = args.Value as string ?? string.Empty)" />
+                        <button class="link" id="los-source-selected" disabled="@(selected is null)" @onclick="() => losSource = SelectedLocation()">selected hex</button></span>
+                    <label for="los-target">To</label>
+                    <span><input id="los-target" value="@losTarget" @onchange="@(args => losTarget = args.Value as string ?? string.Empty)" />
+                        <button class="link" id="los-target-selected" disabled="@(selected is null)" @onclick="() => losTarget = SelectedLocation()">selected hex</button></span>
+                </div>
+                <button id="los-check" @onclick="CheckLos">Check LOS</button>
+                <button id="los-clear" disabled="@(losCheck is null)" @onclick="ClearLos">Clear</button>
+                @if (losCheck is { } check)
+                {
+                    <p id="los-result" class="@(check.Result?.IsBlocked == true ? "fail" : check.Result?.IsAnswered == true ? "pass" : "muted")" data-status="@(check.Result?.Status.ToString() ?? "Refused")">@check.Summary</p>
+                }
+            </details>
         }
         @if (board is not null && (selected ?? hovered) is { } facts)
         {
@@ -432,8 +454,39 @@ else if (board is null)
             BoardRenderer.Layers(view), visible.ToArray());
         await viewport.InvokeVoidAsync("setComparison", view == BoardView.Comparison ? comparisonMode : "none", comparisonValue / 100.0);
         await viewport.InvokeVoidAsync("setUnits", showUnits ? unitOverlay?.Svg : null);
+        await viewport.InvokeVoidAsync("setLos", losCheck is not null ? Los.Layer(board, losCheck) : null);
         await Highlight();
         StateHasChanged();
+    }
+
+    private string losSource = string.Empty;
+    private string losTarget = string.Empty;
+    private LosCheck? losCheck;
+
+    private string SelectedLocation() => board is not null && selected is { } facts ? board.LocationOf(facts) : string.Empty;
+
+    /// <summary>Checks LOS between the two locations and draws the line (LOS Design, section 6).</summary>
+    private async Task CheckLos()
+    {
+        if (board is null)
+        {
+            return;
+        }
+
+        losCheck = Los.Check(board, losSource, losTarget);
+        if (viewport is not null)
+        {
+            await viewport.InvokeVoidAsync("setLos", Los.Layer(board, losCheck));
+        }
+    }
+
+    private async Task ClearLos()
+    {
+        losCheck = null;
+        if (viewport is not null)
+        {
+            await viewport.InvokeVoidAsync("setLos", (string?)null);
+        }
     }
 
     /// <summary>Builds the Units layer for the chosen set and sheet. It replaces only <c>layer-units</c>; board layers are untouched.</summary>

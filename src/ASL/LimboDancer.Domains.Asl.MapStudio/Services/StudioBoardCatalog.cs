@@ -1,6 +1,8 @@
 using LimboDancer.Domains.Asl.Maps;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
+using LimboDancer.Domains.Asl.Maps.Los;
 using LimboDancer.Domains.Asl.Maps.Read;
+
 
 namespace LimboDancer.Domains.Asl.MapStudio.Services;
 
@@ -18,7 +20,14 @@ public sealed class StudioBoardCatalog(IBoardProvider boards) : IBoardCatalog
             return new BoardReadResult(null, [new MapDiagnostic("MAP-READ-001", MapDiagnosticSeverity.Error, $"The Studio cannot load {board}.")]);
         }
 
-        var handle = new BoardHandle(loaded.Ref, loaded.Version, Status(loaded.Status), Provenance(loaded), loaded.Facts, VaslSource(loaded));
+        // LOS data (LOS Design, section 5): the board's grid and catalog, and a VASL board's hexside annotations.
+        var handle = new BoardHandle(loaded.Ref, loaded.Version, Status(loaded.Status), Provenance(loaded), loaded.Facts, VaslSource(loaded))
+        {
+            Los = loaded.Composition is not null ? null
+                : loaded.Ingested is { } ingested
+                    ? new LosData(loaded.Render.Grid, loaded.Catalog, Maps.Vasl.HexFactFidelity.Annotations(ingested.Metadata), new([]))
+                    : new LosData(loaded.Render.Grid, loaded.Catalog),
+        };
         return new InMemoryBoardCatalog([handle]).TryGetBoard(board, version);
     }
 

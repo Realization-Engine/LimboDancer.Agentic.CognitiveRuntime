@@ -5,6 +5,7 @@
 @implements IDisposable
 @inject FidelityJobRunner Runner
 @inject FidelityReportStore Store
+@inject StudioLos Los
 
 <PageTitle>Fidelity - ASL Map Studio</PageTitle>
 
@@ -40,6 +41,40 @@ else
     <p class="muted">A run ingests every VASL board and checks F1, F2 against the oracle fixtures, lossless outlines, and both SVG views. F3 checks are informational: they describe the vectorized model and never change a board's outcome. Reports are saved under <code>@Store.Directory</code>.</p>
 }
 
+<h3>LOS against VASL</h3>
+@if (Los.Fixtures() is { Count: > 0 } losFixtures)
+{
+    <p>
+        <button id="los-fidelity-run" @onclick="CheckLos" disabled="@(losRunning || !Runner.IsAvailable)">Check LOS</button>
+        <span class="muted">The LOS read (LOS Design) against VASL's own LOS on each of the @losFixtures.Count LOS oracle fixtures. An answered pair that disagrees fails the check; unanswered pairs are listed by the rule not yet reproduced.</span>
+    </p>
+    @if (losRunning)
+    {
+        <p class="muted">Checking @losProgress...</p>
+    }
+    @if (losResults.Count > 0)
+    {
+        <table class="library" id="los-fidelity">
+            <thead><tr><th>Fixture</th><th>Pairs</th><th>Answered</th><th>Agreed</th><th>Outcome</th><th>Not reproduced yet</th></tr></thead>
+            <tbody>
+                @foreach (var result in losResults)
+                {
+                    <tr data-fixture="@result.Fixture">
+                        <td>@result.Fixture</td><td>@result.Pairs</td><td>@result.Answered</td><td>@result.Agreed</td>
+                        <td class="@(result.Passed ? "pass" : "fail")">@(result.Passed ? "Pass" : $"Fail: {result.Disagreements.Count} disagree")</td>
+                        <td>@string.Join("; ", result.Unsupported.OrderByDescending(item => item.Value).Select(item => $"{item.Key} ({item.Value})"))</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+else
+{
+    <p class="muted">No LOS oracle fixtures were found.</p>
+}
+
+<h3>Batch reports</h3>
 @if (reports.Count > 0)
 {
     <p>
@@ -209,6 +244,28 @@ else
     }
 
     private void Start() => Runner.Start(includeF3);
+
+    private readonly List<LimboDancer.Domains.Asl.Maps.Vasl.LosFidelityResult> losResults = [];
+    private bool losRunning;
+    private string losProgress = string.Empty;
+
+    /// <summary>Compares the LOS read with every LOS oracle fixture (LOS Design, section 8), one fixture at a time.</summary>
+    private async Task CheckLos()
+    {
+        losRunning = true;
+        losResults.Clear();
+        foreach (var fixture in Los.Fixtures())
+        {
+            losProgress = Path.GetFileName(fixture);
+            StateHasChanged();
+            if (await Task.Run(() => Los.Compare(fixture)) is { } result)
+            {
+                losResults.Add(result);
+            }
+        }
+
+        losRunning = false;
+    }
 
     private void Select(ChangeEventArgs args)
     {

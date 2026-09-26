@@ -1,6 +1,6 @@
 # ASL Unit LOS Design
 
-**Status:** Proposed. Designed before code, on `feature/asl-unit-step13-design`; to be built in the order of section 9.
+**Status:** Built in the order of section 9. Part 1 is recorded in section 4, part 2 in section 5, and part 3 in section 8.
 
 **Date:** 2026-09-26
 
@@ -155,6 +155,16 @@ The LF clone and Docker verify each part as before.
 ## 8. The fidelity record
 
 The Fidelity page gains an LOS row per fixture: pairs, answered, agreed, and unsupported by rule. A disagreement on an answered pair fails the check, as F2 does.
+
+**As built** (part 3).
+- `StudioLos` (Map Studio services) reads LOS over a loaded board or composed map, draws the LOS layer (the line, dashed beyond the blocking point, and the blocking hex outlined), and compares the read with the LOS fixtures. On a single board a location may omit the board, as in `E4` or `E4:1`.
+- A composed map is definitive when every placed board is Verified or AuthoredValid, as `LosMap.ForPlacedMap` judges it. A map built from placements that match no oracle scenario is itself only Ingested, but its terrain is its boards'.
+- The board viewer has an LOS panel whose locations can be typed or taken from the selected hex; the layer is drawn through a new `setLos` in the viewport script. The Play page has the same panel over the game's map, drawn into the inline map.
+- The Fidelity page has an "LOS against VASL" section: pairs, answered, agreed, outcome, and unanswered pairs by rule, for every LOS fixture the Studio finds. It runs on request, not as part of the board batch.
+- The fixture comparison is `LosFidelity` in Maps.Vasl, shared by the page and `LosFidelityTests`.
+- Studio board handles carry `LosData`: the board's grid and catalog, with a VASL board's hexside annotations.
+- Live check, with the VASL checkout: on board 01, K1 to A3 is blocked at D2 with VASL's point and reason; the Fidelity page passes all four fixtures with the counts of section 5; on the step 12 seam game, LOS from bd02:G10 to bd01:G4 is drawn across the seam, blocked at bd01:G1.
+- Tests, Map Studio: `StudioLosTests` (a clear pair, a blocked pair with its layer, an unverified board, refused locations, and a composed map judged by its boards, on a synthetic geomorphic board with woods) and a Play page test of the LOS panel over the game's map.
 
 ## 9. Build order
 
