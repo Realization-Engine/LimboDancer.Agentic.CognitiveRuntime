@@ -135,5 +135,20 @@ public sealed record OverrunDeclared(string Id, string Attempt, string Choice) :
     public const string Elected = "elected";
 }
 
+/// <summary>One DRM of a Task Check, with the rule it comes from.</summary>
+public sealed record TaskCheckModifier(string Source, int Value);
+
+/// <summary>
+/// <c>task-check</c>: a Task Check taken by <paramref name="Id"/> with the recorded roll <paramref name="Roll"/>
+/// (A10.1, p. 65; the NTC entry, p. 30; Infantry OVR Design, section 4). It records its arithmetic, which replay
+/// recomputes: the final DR is the dice plus every modifier, and the check passes at or below the Morale Level.
+/// </summary>
+public sealed record TaskCheck(string Id, string Roll, string Purpose, int MoraleLevel, IReadOnlyList<TaskCheckModifier> Modifiers, int FinalDr, bool Passed)
+    : EventPayload
+{
+    /// <summary>The NTC an Infantry OVR takes (A4.15, p. 49).</summary>
+    public const string OvrNtc = "ovr-ntc";
+}
+
 /// <summary><c>instance-captured</c>: a unit becomes a prisoner in the custody of an enemy unit (A20.2, A20.5).</summary>
 public sealed record InstanceCaptured(string Id, string Custodian) : EventPayload;

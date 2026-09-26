@@ -254,6 +254,33 @@ public static class GameEventReader
                 return declaringId is null || declaredAttempt is null || choice is null
                     ? Missing(diagnostics, "A declaration names the unit, its attempt, and the choice.", path)
                     : new OverrunDeclared(declaringId, declaredAttempt, choice);
+            case "task-check":
+                var checkingId = fields.RequiredString(payload, "id", path);
+                var checkRoll = fields.RequiredString(payload, "roll", path);
+                var checkPurpose = fields.RequiredString(payload, "purpose", path);
+                var morale = fields.OptionalInteger(payload, "moraleLevel", path);
+                var finalDr = fields.OptionalInteger(payload, "finalDr", path);
+                var modifiers = new List<TaskCheckModifier>();
+                foreach (var (item, itemPath) in fields.Objects(payload, "modifiers", path))
+                {
+                    var modifierSource = fields.RequiredString(item, "source", itemPath);
+                    var value = fields.OptionalInteger(item, "value", itemPath);
+                    if (modifierSource is null || value is null)
+                    {
+                        return Missing(diagnostics, "A modifier names its source and value.", itemPath);
+                    }
+
+                    modifiers.Add(new TaskCheckModifier(modifierSource, value.Value));
+                }
+
+                if (!payload.TryGetProperty("passed", out var passed) || passed.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+                {
+                    return Missing(diagnostics, "A task check records whether it passed.", path);
+                }
+
+                return checkingId is null || checkRoll is null || checkPurpose is null || morale is null || finalDr is null
+                    ? Missing(diagnostics, "A task check names the unit, its roll, its purpose, the Morale Level, and the final DR.", path)
+                    : new TaskCheck(checkingId, checkRoll, checkPurpose, morale.Value, modifiers, finalDr.Value, passed.GetBoolean());
             case "instance-captured":
                 var captured = fields.RequiredString(payload, "id", path);
                 var custodian = fields.RequiredString(payload, "custodian", path);

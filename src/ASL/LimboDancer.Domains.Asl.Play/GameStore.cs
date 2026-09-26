@@ -33,10 +33,11 @@ public enum AppendStatus
 public sealed record AppendResult(AppendStatus Status, long Revision, IReadOnlyList<UnitDiagnostic> Diagnostics);
 
 /// <summary>
-/// A roll an action needs (Random Selection and Declined OVR Design, section 3): what it is for, what to draw, and a pure
-/// function from the drawn result to the complete batch of events. The store draws it inside its commit, never before.
+/// The rolls an action needs (Infantry OVR Design, section 3): what they are for, and a pure function that builds the
+/// complete batch of events, asking the draw function for each roll only when the outcome so far needs it. The store
+/// calls it inside its commit, never before, so every roll is drawn there and nothing is drawn for a branch not taken.
 /// </summary>
-public sealed record PlannedRoll(string Purpose, RollRequest Request, Func<RollResult, IReadOnlyList<GameEvent>> Build);
+public sealed record PlannedRoll(string Purpose, Func<Func<RollRequest, RollResult>, IReadOnlyList<GameEvent>> Build);
 
 /// <summary>
 /// Where live games are kept (ASL-UNIT-040, 042): one ordered event log per game. Appends are atomic, happen only at
@@ -100,7 +101,7 @@ public sealed class FileGameStore(string root) : IGameStore
         ArgumentNullException.ThrowIfNull(roller);
 
         // The draw happens here, inside the lock and after the attempt and revision checks, and nowhere else.
-        return Commit(scope, label, expectedRevision, firstEventId, () => roll.Build(roller.Roll(roll.Request)), replay);
+        return Commit(scope, label, expectedRevision, firstEventId, () => roll.Build(roller.Roll), replay);
     }
 
     private AppendResult Commit(GameScope scope, string label, long expectedRevision, string? firstEventId, Func<IReadOnlyList<GameEvent>> events,

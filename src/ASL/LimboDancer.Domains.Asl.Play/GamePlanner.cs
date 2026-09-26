@@ -552,9 +552,10 @@ public sealed class GamePlanner(IGameStore store, IBoardCatalog boards, UnitVoca
                     // Die order is fixed, by unit id, so replay can recompute the reveal from the recorded values.
                     string[] order = [.. defenders.Select(item => item.Id).Order(StringComparer.Ordinal)];
                     var defenderSide = defenders[0].Side;
-                    IReadOnlyList<GameEvent> Build(RollResult roll)
+                    IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
                     {
                         var events = Prefix();
+                        var roll = draw(new RollRequest(order.Length, 6));
                         var rollId = $"{attemptId}-roll-1";
                         events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled",
                             new DiceRolled(rollId, "random-selection", roll.Request.Count, roll.Request.Sides, roll.Values, DiceRolled.SystemSource, actor), package, null,
@@ -580,7 +581,7 @@ public sealed class GamePlanner(IGameStore store, IBoardCatalog boards, UnitVoca
                         [$"play.random-selection: one dr for each of the {order.Length} units at {target} decides the reveal (A.9, p. 43); a revealed MMC, or more than one revealed SMC, forces {unit.Id} back ({conclusion.ConclusionId})"])
                     {
                         Disclosure = new EntryDisclosure(unit.Side, route, withheld, []),
-                        Roll = new PlannedRoll("random-selection", new RollRequest(order.Length, 6), Build),
+                        Roll = new PlannedRoll("random-selection", Build),
                         FirstEventId = attempt,
                     };
                 }

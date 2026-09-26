@@ -209,6 +209,24 @@ public static class GameEventWriter
                 writer.WriteString("attempt", declared.Attempt);
                 writer.WriteString("choice", declared.Choice);
                 break;
+            case TaskCheck check:
+                writer.WriteString("id", check.Id);
+                writer.WriteString("roll", check.Roll);
+                writer.WriteString("purpose", check.Purpose);
+                writer.WriteNumber("moraleLevel", check.MoraleLevel);
+                writer.WriteStartArray("modifiers");
+                foreach (var modifier in check.Modifiers)
+                {
+                    writer.WriteStartObject();
+                    writer.WriteString("source", modifier.Source);
+                    writer.WriteNumber("value", modifier.Value);
+                    writer.WriteEndObject();
+                }
+
+                writer.WriteEndArray();
+                writer.WriteNumber("finalDr", check.FinalDr);
+                writer.WriteBoolean("passed", check.Passed);
+                break;
             case InstanceCaptured captured:
                 writer.WriteString("id", captured.Id);
                 writer.WriteString("custodian", captured.Custodian);
