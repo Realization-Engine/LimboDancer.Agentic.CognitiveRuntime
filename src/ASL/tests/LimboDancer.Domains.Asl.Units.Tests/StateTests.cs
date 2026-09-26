@@ -93,7 +93,7 @@ public sealed class StateTests
         Assert.Equal(("mph", 2), (state.Phase, state.Turn));
         Assert.Equal(1, state.Unit("gh1")!.MfSpent);
         Assert.Equal(0, history.At(19)!.Unit("gh1")!.MfSpent);
-        Assert.Equal($"asl-scenario-a1@1.0.0+sha256:{Catalog.Value.Identity.Hash}#attacker-squad", state.Unit("g1")!.Definition!.ToString());
+        Assert.Equal($"asl-scenario-a1@1.1.0+sha256:{Catalog.Value.Identity.Hash}#attacker-squad", state.Unit("g1")!.Definition!.ToString());
     }
 
     [Fact]

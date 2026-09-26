@@ -224,6 +224,28 @@ Underlines, superscripts, and class borders were read visually from renderings o
 
 **Transcriber and review.** Claude (`claude-opus-5-5`) is recorded as transcriber. Dennis Landi reviewed all 57 rows on 2026-09-25, from a table of every value and the chart it came from, and confirmed them without correction; he is recorded as reviewer in every row and in the source record, whose status is `reviewed`. The published catalog `src/ASL/units/catalog/scenario-a1.catalog.json` is built from the transcription and embedded. The `not-in-source` rows stay unknown; a later transcription from the counters themselves can fill them as a new catalog version.
 
+### 9.2 The Fire additions (catalog 1.1.0)
+
+On 2026-09-26 the Fire package (unit step 18) needed nine more counters: the Russian 1st Line HS, for Casualty Reduction of the Russian squad (A7.302, p. 55), and the Replacement units and leaders of A19.12 and A19.13 (p. 86). They were read from the same NCC sheet as the first transcription, and each Replacement follows A19.13: the Class drops, no part of the Strength Factor rises, and at least one falls.
+
+| Counter | Values (NCC, p. 695) | Replaces or Reduces |
+|---|---|---|
+| `defender-half-squad` | Russian boxed class 1 HS, 2-3-7, broken 6, BPV 3 | Casualty Reduction of `defender-squad` |
+| `attacker-2nd-line-squad` | German class 2, 4-4-7 (range underlined), broken 7, BPV 7 | Replacement of `attacker-squad`; the boxed 5-3-7 is excluded because its FP would rise |
+| `attacker-2nd-line-half-squad` | German class 2 HS, 2-3-7, broken 6, BPV 3 | Replacement of `attacker-half-squad` |
+| `attacker-conscript-squad` | German class C, 4-3-6 (range underlined), broken 5, BPV 5 | Replacement of `attacker-2nd-line-squad` |
+| `attacker-conscript-half-squad` | German class C HS, 2-3-6, broken 4, BPV 2 | Replacement of `attacker-2nd-line-half-squad` |
+| `defender-conscript-squad` | Russian class C, 4-2-6, broken 5, BPV 4 | Replacement of `defender-squad` (Russians have no 2nd Line) |
+| `defender-conscript-half-squad` | Russian class C HS, 2-2-6, broken 4, BPV 1 | Replacement of `defender-half-squad` |
+| `defender-leader-7-0` | 7-0, broken 7 | Replacement of the 8-0 ("next lower quality") |
+| `defender-leader-6-plus-1` | 6+1, broken 6 | Replacement of the 7-0 |
+
+The boxed class of the Russian 1st Line row is the square of A10.63 (p. 68): Self-Rally capability, not the underscored Morale Factor of A19.13.
+
+**The leaders.** The rulebook shows a leader's broken morale only in counter artwork (the counter examples on p. 676 are one raster image), which ASL-UNIT-012 does not admit. The user supplied the broken morale of the 8-0, 7-0, and 6+1 (8, 7, and 6) from the printed counters, so every leader row now cites the reviewer's counters (sheet `USR`), with the A18.2 Leader Creation Table (p. 694) as a cross-check of the front values. The 8-0's broken morale, `not-in-source` in 1.0.0, is 8.
+
+**Review and version.** The user accepted all 130 added rows on 2026-09-26. Added definitions make a minor version (section 7), so the catalog is `asl-scenario-a1@1.1.0`. The new definitions fill no slot, since no Scenario A1 snapshot fact names them. The synthetic catalog gains matching synthetic definitions, with key facts distinct from the first four. Games that name 1.0.0 are development data; the committed ones now name 1.1.0.
+
 ## 10. The source adapter
 
 ASL-UNIT-001 keeps source-specific parsing out of `LimboDancer.Domains.Asl.Units`, so the transcription is read by a separate source adapter, `LimboDancer.Domains.Asl.Units.CounterSheets`, which references only `Units`. `CounterSheetCatalogBuilder` takes the catalog manifest (`src/ASL/units/catalog/scenario-a1.catalog-manifest.json`: id, version, slots, and which counter fills which slot), the source record, the transcription, and the worksheet, and:

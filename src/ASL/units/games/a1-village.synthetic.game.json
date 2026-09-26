@@ -14,7 +14,7 @@
           { "id": "russian", "nationality": "russian", "elr": 3, "san": 4 }
         ],
         "map": { "reference": "bd01", "version": "8d77d26222b7bb21d8c1fdda6ba05b447f63c317", "boards": [ { "board": "bd01", "version": "8d77d26222b7bb21d8c1fdda6ba05b447f63c317" } ] },
-        "catalog": "asl-scenario-a1@1.0.0", "turn": 1, "phase": "rph", "phasingSide": "german", "synthetic": true
+        "catalog": "asl-scenario-a1@1.1.0", "turn": 1, "phase": "rph", "phasingSide": "german", "synthetic": true
       }
     },
     {

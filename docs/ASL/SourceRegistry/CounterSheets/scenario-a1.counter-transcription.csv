@@ -47,12 +47,142 @@ NCC,defender-squad,front,asl:assault-engineer,no,Claude (claude-opus-5-5),Dennis
 NCC,defender-squad,broken,broken-morale,7,Claude (claude-opus-5-5),Dennis Landi,NCC: superscript 7 after morale 7 (chart legend)
 NCC,defender-squad,broken,bpv,7,Claude (claude-opus-5-5),Dennis Landi,NCC BPV column
 NCC,defender-squad,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),Dennis Landi,The chart shows no broken side (A10.63)
-LCT,defender-leader,counter,kind,asl:leader,Claude (claude-opus-5-5),Dennis Landi,A18.2 Leader Creation Table
-LCT,defender-leader,counter,nationality,russian,Claude (claude-opus-5-5),Dennis Landi,Assigned by the scenario: the table applies to every nationality that creates leaders
-LCT,defender-leader,front,identity,not-in-source,Claude (claude-opus-5-5),Dennis Landi,The table gives no leader name
-LCT,defender-leader,front,leadership,0,Claude (claude-opus-5-5),Dennis Landi,"A18.2 Leader Creation Table: leader 8-0 (dr 2,3); A10.7: morale 8, leadership DRM 0"
-LCT,defender-leader,front,morale,8,Claude (claude-opus-5-5),Dennis Landi,"A18.2 Leader Creation Table: leader 8-0 (dr 2,3); A10.7: morale 8, leadership DRM 0"
-LCT,defender-leader,front,asl:elr-5,not-in-source,Claude (claude-opus-5-5),Dennis Landi,The table shows no underline
-LCT,defender-leader,broken,broken-morale,not-in-source,Claude (claude-opus-5-5),Dennis Landi,The table shows no broken side
-LCT,defender-leader,broken,bpv,not-in-source,Claude (claude-opus-5-5),Dennis Landi,The table gives no BPV
-LCT,defender-leader,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),Dennis Landi,The table shows no broken side; A10.71 lets any broken leader attempt Self-Rally
+USR,defender-leader,counter,kind,asl:leader,Claude (claude-opus-5-5),Dennis Landi,Printed on the reviewer's counter; cross-check: A18.2 Leader Creation Table
+USR,defender-leader,counter,nationality,russian,Claude (claude-opus-5-5),Dennis Landi,Printed on the reviewer's counter; cross-check: Assigned by the scenario: the table applies to every nationality that creates leaders
+USR,defender-leader,front,identity,not-in-source,Claude (claude-opus-5-5),Dennis Landi,Printed on the reviewer's counter; cross-check: The table gives no leader name
+USR,defender-leader,front,leadership,0,Claude (claude-opus-5-5),Dennis Landi,"Printed on the reviewer's counter; cross-check: A18.2 Leader Creation Table: leader 8-0 (dr 2,3); A10.7: morale 8, leadership DRM 0"
+USR,defender-leader,front,morale,8,Claude (claude-opus-5-5),Dennis Landi,"Printed on the reviewer's counter; cross-check: A18.2 Leader Creation Table: leader 8-0 (dr 2,3); A10.7: morale 8, leadership DRM 0"
+USR,defender-leader,front,asl:elr-5,not-in-source,Claude (claude-opus-5-5),Dennis Landi,Printed on the reviewer's counter; cross-check: The table shows no underline
+USR,defender-leader,broken,broken-morale,8,Claude (claude-opus-5-5),Dennis Landi,Supplied by the reviewer from the printed counter on 2026-09-26 (ASL-UNIT-012: not read from counter artwork)
+USR,defender-leader,broken,bpv,not-in-source,Claude (claude-opus-5-5),Dennis Landi,Printed on the reviewer's counter; cross-check: The table gives no BPV
+USR,defender-leader,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),Dennis Landi,Printed on the reviewer's counter; cross-check: The table shows no broken side; A10.71 lets any broken leader attempt Self-Rally
+NCC,defender-half-squad,counter,kind,asl:half-squad,Claude (claude-opus-5-5),Dennis Landi,NCC HS column
+NCC,defender-half-squad,counter,nationality,russian,Claude (claude-opus-5-5),Dennis Landi,NCC RUSSIAN section
+NCC,defender-half-squad,front,firepower,2,Claude (claude-opus-5-5),Dennis Landi,"NCC RUSSIAN, boxed class 1 row, HS column: 2-3-7^6, BPV 3"
+NCC,defender-half-squad,front,range,3,Claude (claude-opus-5-5),Dennis Landi,"NCC RUSSIAN, boxed class 1 row, HS column: 2-3-7^6, BPV 3"
+NCC,defender-half-squad,front,morale,7,Claude (claude-opus-5-5),Dennis Landi,"NCC RUSSIAN, boxed class 1 row, HS column: 2-3-7^6, BPV 3"
+NCC,defender-half-squad,front,identity,not-in-source,Claude (claude-opus-5-5),Dennis Landi,A1.24: each counter has its own letter; the chart shows none
+NCC,defender-half-squad,front,class,1st-line,Claude (claude-opus-5-5),Dennis Landi,NCC CLASS column: 1 in a square
+NCC,defender-half-squad,front,class-variant,square,Claude (claude-opus-5-5),Dennis Landi,NCC CLASS column: 1 in a square (A1.25)
+NCC,defender-half-squad,front,smoke-exponent,not-printed,Claude (claude-opus-5-5),Dennis Landi,NCC HS column: no superscript after FP 2
+NCC,defender-half-squad,front,asl:assault-fire,no,Claude (claude-opus-5-5),Dennis Landi,NCC HS column: FP 2 not underlined (A1.21)
+NCC,defender-half-squad,front,asl:spraying-fire,no,Claude (claude-opus-5-5),Dennis Landi,NCC HS column: range 3 not underlined (A1.22)
+NCC,defender-half-squad,front,asl:elr-5,no,Claude (claude-opus-5-5),Dennis Landi,NCC HS column: morale 7 not underlined (A1.23)
+NCC,defender-half-squad,front,asl:assault-engineer,no,Claude (claude-opus-5-5),Dennis Landi,NCC: no AE superscript on the class
+NCC,defender-half-squad,broken,broken-morale,6,Claude (claude-opus-5-5),Dennis Landi,NCC HS column: superscript 6 after morale 7 (chart legend)
+NCC,defender-half-squad,broken,bpv,3,Claude (claude-opus-5-5),Dennis Landi,NCC HS BPV column
+NCC,defender-half-squad,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),Dennis Landi,The chart shows no broken side (A10.63)
+NCC,attacker-2nd-line-squad,counter,kind,asl:squad,Claude (claude-opus-5-5),Dennis Landi,NCC SQUAD column
+NCC,attacker-2nd-line-squad,counter,nationality,german,Claude (claude-opus-5-5),Dennis Landi,NCC GERMAN section
+NCC,attacker-2nd-line-squad,front,firepower,4,Claude (claude-opus-5-5),Dennis Landi,"NCC GERMAN, class 2 row: 4-4-7^7 (range 4 underlined), BPV 7"
+NCC,attacker-2nd-line-squad,front,range,4,Claude (claude-opus-5-5),Dennis Landi,"NCC GERMAN, class 2 row: 4-4-7^7 (range 4 underlined), BPV 7"
+NCC,attacker-2nd-line-squad,front,morale,7,Claude (claude-opus-5-5),Dennis Landi,"NCC GERMAN, class 2 row: 4-4-7^7 (range 4 underlined), BPV 7"
+NCC,attacker-2nd-line-squad,front,identity,not-in-source,Claude (claude-opus-5-5),Dennis Landi,A1.24: each counter has its own letter; the chart shows none
+NCC,attacker-2nd-line-squad,front,class,2nd-line,Claude (claude-opus-5-5),Dennis Landi,NCC CLASS column: 2
+NCC,attacker-2nd-line-squad,front,class-variant,not-printed,Claude (claude-opus-5-5),Dennis Landi,NCC CLASS column: 2 without circle or square (A1.25)
+NCC,attacker-2nd-line-squad,front,smoke-exponent,not-printed,Claude (claude-opus-5-5),Dennis Landi,NCC SQUAD column: no superscript after FP 4
+NCC,attacker-2nd-line-squad,front,asl:assault-fire,no,Claude (claude-opus-5-5),Dennis Landi,NCC SQUAD column: FP 4 not underlined (A1.21)
+NCC,attacker-2nd-line-squad,front,asl:spraying-fire,yes,Claude (claude-opus-5-5),Dennis Landi,NCC SQUAD column: range 4 underlined (A1.22)
+NCC,attacker-2nd-line-squad,front,asl:elr-5,no,Claude (claude-opus-5-5),Dennis Landi,NCC SQUAD column: morale 7 not underlined (A1.23)
+NCC,attacker-2nd-line-squad,front,asl:assault-engineer,no,Claude (claude-opus-5-5),Dennis Landi,NCC: no AE superscript on the class
+NCC,attacker-2nd-line-squad,broken,broken-morale,7,Claude (claude-opus-5-5),Dennis Landi,NCC SQUAD column: superscript 7 after morale 7 (chart legend)
+NCC,attacker-2nd-line-squad,broken,bpv,7,Claude (claude-opus-5-5),Dennis Landi,NCC BPV column
+NCC,attacker-2nd-line-squad,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),Dennis Landi,The chart shows no broken side (A10.63)
+NCC,attacker-2nd-line-half-squad,counter,kind,asl:half-squad,Claude (claude-opus-5-5),Dennis Landi,NCC HS column
+NCC,attacker-2nd-line-half-squad,counter,nationality,german,Claude (claude-opus-5-5),Dennis Landi,NCC GERMAN section
+NCC,attacker-2nd-line-half-squad,front,firepower,2,Claude (claude-opus-5-5),Dennis Landi,"NCC GERMAN, class 2 row, HS column: 2-3-7^6, BPV 3"
+NCC,attacker-2nd-line-half-squad,front,range,3,Claude (claude-opus-5-5),Dennis Landi,"NCC GERMAN, class 2 row, HS column: 2-3-7^6, BPV 3"
+NCC,attacker-2nd-line-half-squad,front,morale,7,Claude (claude-opus-5-5),Dennis Landi,"NCC GERMAN, class 2 row, HS column: 2-3-7^6, BPV 3"
+NCC,attacker-2nd-line-half-squad,front,identity,not-in-source,Claude (claude-opus-5-5),Dennis Landi,A1.24: each counter has its own letter; the chart shows none
+NCC,attacker-2nd-line-half-squad,front,class,2nd-line,Claude (claude-opus-5-5),Dennis Landi,NCC CLASS column: 2
+NCC,attacker-2nd-line-half-squad,front,class-variant,not-printed,Claude (claude-opus-5-5),Dennis Landi,NCC CLASS column: 2 without circle or square (A1.25)
+NCC,attacker-2nd-line-half-squad,front,smoke-exponent,not-printed,Claude (claude-opus-5-5),Dennis Landi,NCC HS column: no superscript after FP 2
+NCC,attacker-2nd-line-half-squad,front,asl:assault-fire,no,Claude (claude-opus-5-5),Dennis Landi,NCC HS column: FP 2 not underlined (A1.21)
+NCC,attacker-2nd-line-half-squad,front,asl:spraying-fire,no,Claude (claude-opus-5-5),Dennis Landi,NCC HS column: range 3 not underlined (A1.22)
+NCC,attacker-2nd-line-half-squad,front,asl:elr-5,no,Claude (claude-opus-5-5),Dennis Landi,NCC HS column: morale 7 not underlined (A1.23)
+NCC,attacker-2nd-line-half-squad,front,asl:assault-engineer,no,Claude (claude-opus-5-5),Dennis Landi,NCC: no AE superscript on the class
+NCC,attacker-2nd-line-half-squad,broken,broken-morale,6,Claude (claude-opus-5-5),Dennis Landi,NCC HS column: superscript 6 after morale 7 (chart legend)
+NCC,attacker-2nd-line-half-squad,broken,bpv,3,Claude (claude-opus-5-5),Dennis Landi,NCC HS BPV column
+NCC,attacker-2nd-line-half-squad,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),Dennis Landi,The chart shows no broken side (A10.63)
+NCC,attacker-conscript-squad,counter,kind,asl:squad,Claude (claude-opus-5-5),Dennis Landi,NCC SQUAD column
+NCC,attacker-conscript-squad,counter,nationality,german,Claude (claude-opus-5-5),Dennis Landi,NCC GERMAN section
+NCC,attacker-conscript-squad,front,firepower,4,Claude (claude-opus-5-5),Dennis Landi,"NCC GERMAN, class C row: 4-3-6^5 (range 3 underlined), BPV 5"
+NCC,attacker-conscript-squad,front,range,3,Claude (claude-opus-5-5),Dennis Landi,"NCC GERMAN, class C row: 4-3-6^5 (range 3 underlined), BPV 5"
+NCC,attacker-conscript-squad,front,morale,6,Claude (claude-opus-5-5),Dennis Landi,"NCC GERMAN, class C row: 4-3-6^5 (range 3 underlined), BPV 5"
+NCC,attacker-conscript-squad,front,identity,not-in-source,Claude (claude-opus-5-5),Dennis Landi,A1.24: each counter has its own letter; the chart shows none
+NCC,attacker-conscript-squad,front,class,conscript,Claude (claude-opus-5-5),Dennis Landi,NCC CLASS column: C
+NCC,attacker-conscript-squad,front,class-variant,not-printed,Claude (claude-opus-5-5),Dennis Landi,NCC CLASS column: C without circle or square (A1.25)
+NCC,attacker-conscript-squad,front,smoke-exponent,not-printed,Claude (claude-opus-5-5),Dennis Landi,NCC SQUAD column: no superscript after FP 4
+NCC,attacker-conscript-squad,front,asl:assault-fire,no,Claude (claude-opus-5-5),Dennis Landi,NCC SQUAD column: FP 4 not underlined (A1.21)
+NCC,attacker-conscript-squad,front,asl:spraying-fire,yes,Claude (claude-opus-5-5),Dennis Landi,NCC SQUAD column: range 3 underlined (A1.22)
+NCC,attacker-conscript-squad,front,asl:elr-5,no,Claude (claude-opus-5-5),Dennis Landi,NCC SQUAD column: morale 6 not underlined (A1.23)
+NCC,attacker-conscript-squad,front,asl:assault-engineer,no,Claude (claude-opus-5-5),Dennis Landi,NCC: no AE superscript on the class
+NCC,attacker-conscript-squad,broken,broken-morale,5,Claude (claude-opus-5-5),Dennis Landi,NCC SQUAD column: superscript 5 after morale 6 (chart legend)
+NCC,attacker-conscript-squad,broken,bpv,5,Claude (claude-opus-5-5),Dennis Landi,NCC BPV column
+NCC,attacker-conscript-squad,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),Dennis Landi,The chart shows no broken side (A10.63)
+NCC,attacker-conscript-half-squad,counter,kind,asl:half-squad,Claude (claude-opus-5-5),Dennis Landi,NCC HS column
+NCC,attacker-conscript-half-squad,counter,nationality,german,Claude (claude-opus-5-5),Dennis Landi,NCC GERMAN section
+NCC,attacker-conscript-half-squad,front,firepower,2,Claude (claude-opus-5-5),Dennis Landi,"NCC GERMAN, class C row, HS column: 2-3-6^4, BPV 2"
+NCC,attacker-conscript-half-squad,front,range,3,Claude (claude-opus-5-5),Dennis Landi,"NCC GERMAN, class C row, HS column: 2-3-6^4, BPV 2"
+NCC,attacker-conscript-half-squad,front,morale,6,Claude (claude-opus-5-5),Dennis Landi,"NCC GERMAN, class C row, HS column: 2-3-6^4, BPV 2"
+NCC,attacker-conscript-half-squad,front,identity,not-in-source,Claude (claude-opus-5-5),Dennis Landi,A1.24: each counter has its own letter; the chart shows none
+NCC,attacker-conscript-half-squad,front,class,conscript,Claude (claude-opus-5-5),Dennis Landi,NCC CLASS column: C
+NCC,attacker-conscript-half-squad,front,class-variant,not-printed,Claude (claude-opus-5-5),Dennis Landi,NCC CLASS column: C without circle or square (A1.25)
+NCC,attacker-conscript-half-squad,front,smoke-exponent,not-printed,Claude (claude-opus-5-5),Dennis Landi,NCC HS column: no superscript after FP 2
+NCC,attacker-conscript-half-squad,front,asl:assault-fire,no,Claude (claude-opus-5-5),Dennis Landi,NCC HS column: FP 2 not underlined (A1.21)
+NCC,attacker-conscript-half-squad,front,asl:spraying-fire,no,Claude (claude-opus-5-5),Dennis Landi,NCC HS column: range 3 not underlined (A1.22)
+NCC,attacker-conscript-half-squad,front,asl:elr-5,no,Claude (claude-opus-5-5),Dennis Landi,NCC HS column: morale 6 not underlined (A1.23)
+NCC,attacker-conscript-half-squad,front,asl:assault-engineer,no,Claude (claude-opus-5-5),Dennis Landi,NCC: no AE superscript on the class
+NCC,attacker-conscript-half-squad,broken,broken-morale,4,Claude (claude-opus-5-5),Dennis Landi,NCC HS column: superscript 4 after morale 6 (chart legend)
+NCC,attacker-conscript-half-squad,broken,bpv,2,Claude (claude-opus-5-5),Dennis Landi,NCC HS BPV column
+NCC,attacker-conscript-half-squad,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),Dennis Landi,The chart shows no broken side (A10.63)
+NCC,defender-conscript-squad,counter,kind,asl:squad,Claude (claude-opus-5-5),Dennis Landi,NCC SQUAD column
+NCC,defender-conscript-squad,counter,nationality,russian,Claude (claude-opus-5-5),Dennis Landi,NCC RUSSIAN section
+NCC,defender-conscript-squad,front,firepower,4,Claude (claude-opus-5-5),Dennis Landi,"NCC RUSSIAN, class C row: 4-2-6^5, BPV 4"
+NCC,defender-conscript-squad,front,range,2,Claude (claude-opus-5-5),Dennis Landi,"NCC RUSSIAN, class C row: 4-2-6^5, BPV 4"
+NCC,defender-conscript-squad,front,morale,6,Claude (claude-opus-5-5),Dennis Landi,"NCC RUSSIAN, class C row: 4-2-6^5, BPV 4"
+NCC,defender-conscript-squad,front,identity,not-in-source,Claude (claude-opus-5-5),Dennis Landi,A1.24: each counter has its own letter; the chart shows none
+NCC,defender-conscript-squad,front,class,conscript,Claude (claude-opus-5-5),Dennis Landi,NCC CLASS column: C
+NCC,defender-conscript-squad,front,class-variant,not-printed,Claude (claude-opus-5-5),Dennis Landi,NCC CLASS column: C without circle or square (A1.25)
+NCC,defender-conscript-squad,front,smoke-exponent,not-printed,Claude (claude-opus-5-5),Dennis Landi,NCC SQUAD column: no superscript after FP 4
+NCC,defender-conscript-squad,front,asl:assault-fire,no,Claude (claude-opus-5-5),Dennis Landi,NCC SQUAD column: FP 4 not underlined (A1.21)
+NCC,defender-conscript-squad,front,asl:spraying-fire,no,Claude (claude-opus-5-5),Dennis Landi,NCC SQUAD column: range 2 not underlined (A1.22)
+NCC,defender-conscript-squad,front,asl:elr-5,no,Claude (claude-opus-5-5),Dennis Landi,NCC SQUAD column: morale 6 not underlined (A1.23)
+NCC,defender-conscript-squad,front,asl:assault-engineer,no,Claude (claude-opus-5-5),Dennis Landi,NCC: no AE superscript on the class
+NCC,defender-conscript-squad,broken,broken-morale,5,Claude (claude-opus-5-5),Dennis Landi,NCC SQUAD column: superscript 5 after morale 6 (chart legend)
+NCC,defender-conscript-squad,broken,bpv,4,Claude (claude-opus-5-5),Dennis Landi,NCC BPV column
+NCC,defender-conscript-squad,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),Dennis Landi,The chart shows no broken side (A10.63)
+NCC,defender-conscript-half-squad,counter,kind,asl:half-squad,Claude (claude-opus-5-5),Dennis Landi,NCC HS column
+NCC,defender-conscript-half-squad,counter,nationality,russian,Claude (claude-opus-5-5),Dennis Landi,NCC RUSSIAN section
+NCC,defender-conscript-half-squad,front,firepower,2,Claude (claude-opus-5-5),Dennis Landi,"NCC RUSSIAN, class C row, HS column: 2-2-6^4, BPV 1"
+NCC,defender-conscript-half-squad,front,range,2,Claude (claude-opus-5-5),Dennis Landi,"NCC RUSSIAN, class C row, HS column: 2-2-6^4, BPV 1"
+NCC,defender-conscript-half-squad,front,morale,6,Claude (claude-opus-5-5),Dennis Landi,"NCC RUSSIAN, class C row, HS column: 2-2-6^4, BPV 1"
+NCC,defender-conscript-half-squad,front,identity,not-in-source,Claude (claude-opus-5-5),Dennis Landi,A1.24: each counter has its own letter; the chart shows none
+NCC,defender-conscript-half-squad,front,class,conscript,Claude (claude-opus-5-5),Dennis Landi,NCC CLASS column: C
+NCC,defender-conscript-half-squad,front,class-variant,not-printed,Claude (claude-opus-5-5),Dennis Landi,NCC CLASS column: C without circle or square (A1.25)
+NCC,defender-conscript-half-squad,front,smoke-exponent,not-printed,Claude (claude-opus-5-5),Dennis Landi,NCC HS column: no superscript after FP 2
+NCC,defender-conscript-half-squad,front,asl:assault-fire,no,Claude (claude-opus-5-5),Dennis Landi,NCC HS column: FP 2 not underlined (A1.21)
+NCC,defender-conscript-half-squad,front,asl:spraying-fire,no,Claude (claude-opus-5-5),Dennis Landi,NCC HS column: range 2 not underlined (A1.22)
+NCC,defender-conscript-half-squad,front,asl:elr-5,no,Claude (claude-opus-5-5),Dennis Landi,NCC HS column: morale 6 not underlined (A1.23)
+NCC,defender-conscript-half-squad,front,asl:assault-engineer,no,Claude (claude-opus-5-5),Dennis Landi,NCC: no AE superscript on the class
+NCC,defender-conscript-half-squad,broken,broken-morale,4,Claude (claude-opus-5-5),Dennis Landi,NCC HS column: superscript 4 after morale 6 (chart legend)
+NCC,defender-conscript-half-squad,broken,bpv,1,Claude (claude-opus-5-5),Dennis Landi,NCC HS BPV column
+NCC,defender-conscript-half-squad,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),Dennis Landi,The chart shows no broken side (A10.63)
+USR,defender-leader-7-0,counter,kind,asl:leader,Claude (claude-opus-5-5),Dennis Landi,Printed on the reviewer's counter; cross-check: A18.2 Leader Creation Table
+USR,defender-leader-7-0,counter,nationality,russian,Claude (claude-opus-5-5),Dennis Landi,Printed on the reviewer's counter; cross-check: Assigned by the scenario: the Replacement leader of the Russian 8-0 chain (A19.13)
+USR,defender-leader-7-0,front,identity,not-in-source,Claude (claude-opus-5-5),Dennis Landi,Printed on the reviewer's counter; cross-check: The table gives no leader name
+USR,defender-leader-7-0,front,leadership,0,Claude (claude-opus-5-5),Dennis Landi,"Printed on the reviewer's counter; cross-check: A18.2 Leader Creation Table: leader 7-0 (dr 4,5); A10.7: morale 7, leadership DRM 0"
+USR,defender-leader-7-0,front,morale,7,Claude (claude-opus-5-5),Dennis Landi,"Printed on the reviewer's counter; cross-check: A18.2 Leader Creation Table: leader 7-0 (dr 4,5); A10.7: morale 7, leadership DRM 0"
+USR,defender-leader-7-0,front,asl:elr-5,not-in-source,Claude (claude-opus-5-5),Dennis Landi,Printed on the reviewer's counter; cross-check: The table shows no underline
+USR,defender-leader-7-0,broken,broken-morale,7,Claude (claude-opus-5-5),Dennis Landi,Supplied by the reviewer from the printed counter on 2026-09-26 (ASL-UNIT-012: not read from counter artwork)
+USR,defender-leader-7-0,broken,bpv,not-in-source,Claude (claude-opus-5-5),Dennis Landi,Printed on the reviewer's counter; cross-check: The table gives no BPV
+USR,defender-leader-7-0,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),Dennis Landi,Printed on the reviewer's counter; cross-check: The table shows no broken side; A10.71 lets any broken leader attempt Self-Rally
+USR,defender-leader-6-plus-1,counter,kind,asl:leader,Claude (claude-opus-5-5),Dennis Landi,Printed on the reviewer's counter; cross-check: A18.2 Leader Creation Table
+USR,defender-leader-6-plus-1,counter,nationality,russian,Claude (claude-opus-5-5),Dennis Landi,Printed on the reviewer's counter; cross-check: Assigned by the scenario: the Replacement leader of the Russian 8-0 chain (A19.13)
+USR,defender-leader-6-plus-1,front,identity,not-in-source,Claude (claude-opus-5-5),Dennis Landi,Printed on the reviewer's counter; cross-check: The table gives no leader name
+USR,defender-leader-6-plus-1,front,leadership,+1,Claude (claude-opus-5-5),Dennis Landi,"Printed on the reviewer's counter; cross-check: A18.2 Leader Creation Table: leader 6+1 (dr 6); A10.7: morale 6, leadership DRM +1"
+USR,defender-leader-6-plus-1,front,morale,6,Claude (claude-opus-5-5),Dennis Landi,"Printed on the reviewer's counter; cross-check: A18.2 Leader Creation Table: leader 6+1 (dr 6); A10.7: morale 6, leadership DRM +1"
+USR,defender-leader-6-plus-1,front,asl:elr-5,not-in-source,Claude (claude-opus-5-5),Dennis Landi,Printed on the reviewer's counter; cross-check: The table shows no underline
+USR,defender-leader-6-plus-1,broken,broken-morale,6,Claude (claude-opus-5-5),Dennis Landi,Supplied by the reviewer from the printed counter on 2026-09-26 (ASL-UNIT-012: not read from counter artwork)
+USR,defender-leader-6-plus-1,broken,bpv,not-in-source,Claude (claude-opus-5-5),Dennis Landi,Printed on the reviewer's counter; cross-check: The table gives no BPV
+USR,defender-leader-6-plus-1,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),Dennis Landi,Printed on the reviewer's counter; cross-check: The table shows no broken side; A10.71 lets any broken leader attempt Self-Rally

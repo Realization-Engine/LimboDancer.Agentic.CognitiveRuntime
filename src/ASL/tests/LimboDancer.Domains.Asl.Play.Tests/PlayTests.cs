@@ -83,7 +83,7 @@ public sealed class PlayTests : IDisposable
         },
     };
 
-    private static JsonElement SetupArgs(string attempt, long expected, object[] placements, string catalog = "asl-scenario-a1@1.0.0", bool start = true) =>
+    private static JsonElement SetupArgs(string attempt, long expected, object[] placements, string catalog = "asl-scenario-a1@1.1.0", bool start = true) =>
         Args(start
             ? new
             {
