@@ -1,3 +1,4 @@
+using LimboDancer.Domains.Asl.Maps.Composition;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Maps.Derivation;
 using LimboDancer.Domains.Asl.Maps.Geometry;
@@ -63,6 +64,50 @@ public sealed class StudioLosTests : IDisposable
         Assert.Null(off.Result);
         Assert.Contains("not on the map", off.Problem, StringComparison.Ordinal);
         Assert.Equal("<g id=\"layer-los\"></g>", los.Layer(board, off));
+    }
+
+    [Fact]
+    public void AComposedMapIsAsDefinitiveAsItsBoards()
+    {
+        // A map built from placements that match no oracle scenario is only Ingested itself; its boards decide.
+        var verified = new StudioLos(new Boards(BoardStatus.Verified), new MapService(new StudioOptions { CacheRoot = root, BoardsRoot = root }, new FakeVaslMapSource()),
+            new StudioOptions { CacheRoot = root, BoardsRoot = root });
+        Assert.Equal(LosStatus.Blocked, verified.Check(Composed(), "bd02:E2:0", "bd02:E6:0").Result!.Status);
+
+        var ingested = new StudioLos(new Boards(BoardStatus.Ingested), new MapService(new StudioOptions { CacheRoot = root, BoardsRoot = root }, new FakeVaslMapSource()),
+            new StudioOptions { CacheRoot = root, BoardsRoot = root });
+        Assert.Equal(LosStatus.Nondefinitive, ingested.Check(Composed(), "bd02:E2:0", "bd02:E6:0").Result!.Status);
+    }
+
+    /// <summary>bd02 above bd01, both the synthetic board, built as a map the Studio marks Ingested.</summary>
+    private static StudioBoard Composed()
+    {
+        var grid = Board(BoardStatus.Verified).Render.Grid;
+        BoardPlacement[] placements = [new(BoardRef.Parse("bd02"), 0, 0), new(BoardRef.Parse("bd01"), 0, 1)];
+        var map = VaslMapBuilder.Build([.. placements.Select(placement => new PlacedBoard(placement, grid, HexsideAnnotations.None))], Catalog, new LosSsRuleSet([])).Map!;
+        var reference = BoardRef.Parse("map-placed-test");
+        var render = BoardRenderInput.Create(reference, "Placed test map", map.Grid, Catalog, map.Facts);
+        return new StudioBoard(reference, "v-map", "Placed test map", BoardStatus.Ingested, render, Catalog, null, null, null, [])
+        {
+            Composition = new StudioMap(placements, map),
+        };
+    }
+
+    /// <summary>Loads bd01 and bd02 as the synthetic board with one status.</summary>
+    private sealed class Boards(BoardStatus status) : IBoardProvider
+    {
+        public string? SourceDescription => "Synthetic";
+
+        public string? CatalogBlob => null;
+
+        public IReadOnlyList<BoardListing> List() => [];
+
+        public BoardLoadResult Load(BoardRef board) => new(Board(status) with
+        {
+            Ref = board
+        }, []);
+
+        public BoardLoadResult? Cached(BoardRef board) => Load(board);
     }
 
     /// <summary>The synthetic board; each status is its own version, so the LOS maps are cached apart.</summary>

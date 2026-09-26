@@ -164,7 +164,7 @@ The Fidelity page gains an LOS row per fixture: pairs, answered, agreed, and uns
 - The fixture comparison is `LosFidelity` in Maps.Vasl, shared by the page and `LosFidelityTests`.
 - Studio board handles carry `LosData`: the board's grid and catalog, with a VASL board's hexside annotations.
 - Live check, with the VASL checkout: on board 01, K1 to A3 is blocked at D2 with VASL's point and reason; the Fidelity page passes all four fixtures with the counts of section 5; on the step 12 seam game, LOS from bd02:G10 to bd01:G4 is drawn across the seam, blocked at bd01:G1.
-- Tests, Map Studio: `StudioLosTests` (a clear pair, a blocked pair with its layer, an unverified board, and refused locations, on a synthetic geomorphic board with woods) and a Play page test of the LOS panel over the game's map.
+- Tests, Map Studio: `StudioLosTests` (a clear pair, a blocked pair with its layer, an unverified board, refused locations, and a composed map judged by its boards, on a synthetic geomorphic board with woods) and a Play page test of the LOS panel over the game's map.
 
 ## 9. Build order
 
