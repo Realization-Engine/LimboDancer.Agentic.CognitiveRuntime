@@ -97,6 +97,24 @@ public static class Conditions
     /// </summary>
     public const string Hidden = "asl:hidden";
 
+    /// <summary>Pinned (A7.8, p. 58): inherent FP halved; removed in the CCPh (A3.8, p. 47).</summary>
+    public const string Pinned = "asl:pinned";
+
+    /// <summary>Wounded (A17, p. 85): a leader's Morale Level one lower and leadership modifier one worse.</summary>
+    public const string Wounded = "asl:wounded";
+
+    /// <summary>Disrupted (A19.12, p. 86).</summary>
+    public const string Disrupted = "asl:disrupted";
+
+    /// <summary>
+    /// Prep Fire (A3.2, p. 47): the unit fired, or directed fire, in the PFPh; the marker is removed at the end of the AFPh
+    /// (A3.5). A vocabulary state since <c>asl@1.5.0</c>.
+    /// </summary>
+    public const string PrepFire = "asl:prep-fire";
+
+    /// <summary>Final Fire (A3.4, p. 47): the unit fired, or directed fire, in the DFPh; removed at the end of the DFPh.</summary>
+    public const string FinalFire = "asl:final-fire";
+
     /// <summary>Captured (A20.2, p. 86), held by a captor (A20.5, p. 87).</summary>
     public const string Captured = "asl:captured";
 

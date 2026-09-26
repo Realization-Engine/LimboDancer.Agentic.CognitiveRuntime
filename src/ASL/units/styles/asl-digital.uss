@@ -358,6 +358,9 @@ asl|unit:asl\:fanatic   { stroke: token(warning); stroke-width: 0.09; badge: "FA
 asl|unit:asl\:concealed { stroke: token(conceal); stroke-style: dashed; stroke-width: 0.07; badge: "?" top-left; }
 /* Hidden Initial Placement (A12.3): only its owner is ever sent the unit, so only the owner sees this mark. */
 asl|unit:asl\:hidden    { stroke: token(conceal); stroke-style: dashed; stroke-width: 0.07; badge: "HIP" top-left; }
+/* Fire phase markers (A3.2, A3.4): a unit that fired this Player Turn, until the phase that removes the marker. */
+asl|unit:asl\:prep-fire  { badge: "PREP" bottom-right; }
+asl|unit:asl\:final-fire { badge: "FINAL" bottom-right; }
 
 /* Mid tier: the Strength Factor or leader values, class, and state badges. */
 @detail mid {
