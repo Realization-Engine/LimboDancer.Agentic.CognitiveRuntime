@@ -146,13 +146,21 @@ public static class GameEventReader
                 {
                     var boardText = fields.RequiredString(board, "board", boardPath);
                     var boardVersion = fields.RequiredString(board, "version", boardPath);
+                    var column = fields.OptionalInteger(board, "column", boardPath);
+                    var row = fields.OptionalInteger(board, "row", boardPath);
+                    var reversed = fields.OptionalBoolean(board, "reversed", boardPath);
                     if (boardText is not null && !BoardRef.TryParse(boardText, out _))
                     {
                         diagnostics.Add(UnitDiagnostic.Error(Code, $"'{boardText}' is not a board reference.", boardPath));
                     }
+                    else if ((column is null) != (row is null) || (reversed && column is null))
+                    {
+                        diagnostics.Add(UnitDiagnostic.Error(Code, "A placed board needs both 'column' and 'row'; 'reversed' needs them too.", boardPath));
+                    }
                     else if (boardText is not null && boardVersion is not null)
                     {
-                        boards.Add(new PlacedBoard(BoardRef.Parse(boardText), boardVersion));
+                        boards.Add(new PlacedBoard(BoardRef.Parse(boardText), boardVersion,
+                            column is { } slotColumn && row is { } slotRow ? new BoardSlot(slotColumn, slotRow, reversed) : null));
                     }
                 }
 

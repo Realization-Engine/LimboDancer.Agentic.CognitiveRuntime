@@ -114,6 +114,17 @@ The Scenario A1 packages bind only the target's terrain to board 01 (`bd01:{hex}
 
 **The U13 case.** Board 01's reviewed building G1 (wooden) lies in hex row 1 of a column with ten hexes, so its top hexside is the board's edge. With another board placed in the row above, that board's G10, or AA1 when it is reversed, lies across that hexside. A squad there may enter G1. F1 (wooden), R1, and S1 (stone) are also in row 1 of board 01. F1's neighbour F0 is a shared half hex that board 01 owns when it is placed later.
 
+**As built** (part 2).
+- `PlacedBoard` gains an optional `BoardSlot(Column, Row, Reversed)`. `MapInPlay.IsPlaced` is true when every board has one, and `Placements()` gives them as map placements. The writer omits `reversed` when false.
+- The slot checks that need no geometry are `MapLayout.CheckSlots`, shared by the layout and replay. `ILocationChains` gains `Geometry(board)`, a default method returning null, so replay lays the map out, and checks positions in shared half hexes, whenever the chains give every board's geometry. The Studio's and the planner's chains always do.
+- Replay also refuses a board placed twice, whether the map is placed or not.
+- Setup accepts `boards` as references or as placed objects, not mixed. A placed map's reference is `start.map` when given, and otherwise the placements with board references, such as `bd02@0,0/r bd01@0,1`.
+- `EntryFacts` reads through `ComposedMapRead` when the map is placed, and through the target's board as before otherwise.
+- An entry across a seam into a building on another board is refused on confirmation, as every concealed entry's outcome is withheld from the mover until then.
+- Tests:
+  - Units, `MapPlacementTests`: the round trip, an unplaced record, a placed game's replay, four placement refusals, the owner rule for a shared half hex, and U3.
+  - Play, `SeamEntryTests`: U13 from bd02's G10 and from a reversed bd02's AA1 into bd01's G1, an entry into bd02's building refused as outside the reviewed board, and three setup refusals (mixed boards, a row gap, a shared hex under the wrong name).
+
 ## 8. The Play page map
 
 - **Drawing.** The Play page draws the game's map with the units each viewer may see, at the shown revision, using the board viewer's renderer and the game's overlay (ASL-UNIT-071). A single board draws that board.

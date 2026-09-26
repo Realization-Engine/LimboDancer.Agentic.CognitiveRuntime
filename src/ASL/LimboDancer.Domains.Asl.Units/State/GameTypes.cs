@@ -1,3 +1,4 @@
+using LimboDancer.Domains.Asl.Maps.Composition;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Units.Catalog;
 using LimboDancer.Domains.Asl.Units.Documents;
@@ -33,8 +34,14 @@ public sealed record GameScope(Guid Tenant, string Game)
 /// </summary>
 public sealed record SideState(string Id, string Nationality, int? Elr, int? San);
 
-/// <summary>A board placed in the map in play, with the exact board version positions are checked against.</summary>
-public sealed record PlacedBoard(BoardRef Board, string Version);
+/// <summary>Where a board sits in a composed map: its slot, as in <see cref="BoardPlacement"/>, and whether it is reversed.</summary>
+public sealed record BoardSlot(int Column, int Row, bool Reversed);
+
+/// <summary>
+/// A board placed in the map in play, with the exact board version positions are checked against, and its slot when
+/// the map is composed (Composed Maps Design, section 5).
+/// </summary>
+public sealed record PlacedBoard(BoardRef Board, string Version, BoardSlot? Slot = null);
 
 /// <summary>
 /// The board or composed map in play (ASL-UNIT-020, 024): its reference and version, and the boards placed in it.
@@ -43,6 +50,14 @@ public sealed record PlacedBoard(BoardRef Board, string Version);
 public sealed record MapInPlay(string Reference, string Version, IReadOnlyList<PlacedBoard> Boards)
 {
     public PlacedBoard? Board(BoardRef board) => Boards.FirstOrDefault(placed => placed.Board == board);
+
+    /// <summary>Whether every board has a slot, so the map is laid out and reads cross its seams.</summary>
+    public bool IsPlaced => Boards.Count > 0 && Boards.All(board => board.Slot is not null);
+
+    /// <summary>The boards as map placements, or an empty list when the map is not placed.</summary>
+    public IReadOnlyList<BoardPlacement> Placements() => IsPlaced
+        ? [.. Boards.Select(board => new BoardPlacement(board.Board, board.Slot!.Column, board.Slot.Row, board.Slot.Reversed, []))]
+        : [];
 }
 
 /// <summary>The phases of a Player Turn (A3.1 to A3.8, p. 47).</summary>

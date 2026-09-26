@@ -76,13 +76,9 @@ public sealed class MapLayout
 
         // VASL adds boards in board-picker order: row by row, left to right.
         boards = [.. boards.OrderBy(board => board.Placement.Row).ThenBy(board => board.Placement.Column)];
-        var slots = new HashSet<(int, int)>();
-        foreach (var (placement, _) in boards)
+        if (CheckSlots([.. boards.Select(board => board.Placement)]) is { } slotProblem)
         {
-            if (placement.Column < 0 || placement.Row < 0 || !slots.Add((placement.Column, placement.Row)))
-            {
-                return Fail("VASL-MAP-001", $"{placement.Board} is placed in slot ({placement.Column}, {placement.Row}), which is negative or already taken.");
-            }
+            return new MapLayoutResult(null, [slotProblem]);
         }
 
         var first = boards[0].Geometry;
@@ -93,22 +89,6 @@ public sealed class MapLayout
             {
                 return Fail("VASL-MAP-002", $"{placement.Board} has a different hex size; VASL disables LOS for maps with multiple hex sizes.");
             }
-        }
-
-        foreach (var row in boards.GroupBy(board => board.Placement.Row))
-        {
-            var columns = row.Select(board => board.Placement.Column).Order().ToArray();
-            if (columns.Length > VaslMapBuilder.MaxBoardsPerRow || !columns.SequenceEqual(Enumerable.Range(0, columns.Length)))
-            {
-                return Fail("VASL-MAP-003",
-                    $"Row {row.Key} must fill slots 0 to {Math.Min(columns.Length, VaslMapBuilder.MaxBoardsPerRow) - 1} without gaps; VASL lays out at most {VaslMapBuilder.MaxBoardsPerRow} boards across.");
-            }
-        }
-
-        var rowCount = boards.Max(board => board.Placement.Row) + 1;
-        if (!Enumerable.Range(0, rowCount).All(row => boards.Any(board => board.Placement.Row == row)))
-        {
-            return Fail("VASL-MAP-003", "Map rows must be filled from row 0 without gaps.");
         }
 
         // A board's pixel position is the sum of the grid sizes before it in its row and above it.
@@ -156,6 +136,43 @@ public sealed class MapLayout
         return new MapLayoutResult(new MapLayout(mapGeometry, placed), []);
     }
 
+    /// <summary>
+    /// The checks on slots alone, which need no geometry: slots that are not negative or taken twice (VASL-MAP-001), and
+    /// rows filled from slot 0 without gaps, at most three boards across, from row 0 without gaps (VASL-MAP-003).
+    /// </summary>
+    public static MapDiagnostic? CheckSlots(IReadOnlyList<BoardPlacement> placements)
+    {
+        ArgumentNullException.ThrowIfNull(placements);
+        if (placements.Count == 0)
+        {
+            return Error("VASL-MAP-001", "A map needs at least one board.");
+        }
+
+        var slots = new HashSet<(int, int)>();
+        foreach (var placement in placements)
+        {
+            if (placement.Column < 0 || placement.Row < 0 || !slots.Add((placement.Column, placement.Row)))
+            {
+                return Error("VASL-MAP-001", $"{placement.Board} is placed in slot ({placement.Column}, {placement.Row}), which is negative or already taken.");
+            }
+        }
+
+        foreach (var row in placements.GroupBy(placement => placement.Row))
+        {
+            var columns = row.Select(placement => placement.Column).Order().ToArray();
+            if (columns.Length > VaslMapBuilder.MaxBoardsPerRow || !columns.SequenceEqual(Enumerable.Range(0, columns.Length)))
+            {
+                return Error("VASL-MAP-003",
+                    $"Row {row.Key} must fill slots 0 to {Math.Min(columns.Length, VaslMapBuilder.MaxBoardsPerRow) - 1} without gaps; VASL lays out at most {VaslMapBuilder.MaxBoardsPerRow} boards across.");
+            }
+        }
+
+        var rowCount = placements.Max(placement => placement.Row) + 1;
+        return Enumerable.Range(0, rowCount).All(row => placements.Any(placement => placement.Row == row))
+            ? null
+            : Error("VASL-MAP-003", "Map rows must be filled from row 0 without gaps.");
+    }
+
     /// <summary>The map hex a placed board's hex occupies; a shared edge hex answers for both boards.</summary>
     public HexIndex? Locate(BoardRef board, HexName hex) => locations.TryGetValue((board, hex), out var index) ? index : null;
 
@@ -181,6 +198,7 @@ public sealed class MapLayout
         return new HexIndex(board.MapColumn + column, board.MapRow + board.Geometry.RowCount(local.Column) - local.Row - 1);
     }
 
-    private static MapLayoutResult Fail(string code, string message) =>
-        new(null, [new MapDiagnostic(code, MapDiagnosticSeverity.Error, message)]);
+    private static MapLayoutResult Fail(string code, string message) => new(null, [Error(code, message)]);
+
+    private static MapDiagnostic Error(string code, string message) => new(code, MapDiagnosticSeverity.Error, message);
 }

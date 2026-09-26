@@ -1,3 +1,4 @@
+using LimboDancer.Domains.Asl.Maps.Composition;
 using LimboDancer.Domains.Asl.Units.Catalog;
 using LimboDancer.Domains.Asl.Units.Vocabulary;
 
@@ -48,6 +49,7 @@ public static class GameProjector
         private readonly HashSet<string> eventIds = new(StringComparer.Ordinal);
         private readonly Dictionary<string, DiceRolled> rolls = new(StringComparer.Ordinal);
         private UnitCatalog? catalog;
+        private MapLayout? layout;
         private string path = string.Empty;
 
         public GameState? Apply(GameEvent gameEvent, GameState? previous)
@@ -173,6 +175,7 @@ public static class GameProjector
                 }
             }
 
+            CheckPlacement(started.Map);
             var state = new GameState(gameEvent.Scope, gameEvent.Revision, gameEvent.Time, started.Synthetic, started.Sides, started.Map,
                 catalog.Identity, started.Turn, started.Phase, started.PhasingSide, [], [], [])
             {
@@ -803,6 +806,47 @@ public static class GameProjector
             return next;
         }
 
+        /// <summary>
+        /// A composed map's placement (Composed Maps Design, section 5): every board placed or none, each board once, the
+        /// slot rules, and, when the chains give every board's geometry, the whole layout, which positions then use.
+        /// </summary>
+        private void CheckPlacement(MapInPlay map)
+        {
+            if (map.Boards.Select(board => board.Board).Distinct().Count() != map.Boards.Count)
+            {
+                Error("UNIT-STATE-010", "A board is placed more than once in the map in play.");
+                return;
+            }
+
+            if (!map.IsPlaced)
+            {
+                if (map.Boards.Any(board => board.Slot is not null))
+                {
+                    Error("UNIT-STATE-010", "Either every board of the map in play has a slot or none does.");
+                }
+
+                return;
+            }
+
+            if (MapLayout.CheckSlots(map.Placements()) is { } problem)
+            {
+                Error("UNIT-STATE-010", $"{problem.Code}: {problem.Message}");
+                return;
+            }
+
+            if (chains is null || map.Boards.Any(board => chains.Geometry(board.Board) is null))
+            {
+                return;
+            }
+
+            var result = MapLayout.Create([.. map.Placements().Select(placement => (placement, chains.Geometry(placement.Board)!))]);
+            layout = result.Layout;
+            foreach (var diagnostic in result.Diagnostics)
+            {
+                Error("UNIT-STATE-010", $"{diagnostic.Code}: {diagnostic.Message}");
+            }
+        }
+
         private bool CheckPosition(GameState state, string kind, Position position)
         {
             switch (position)
@@ -826,6 +870,12 @@ public static class GameProjector
                     if (chains.Levels(map.Location.Board, map.Location.Hex) is not { } levels)
                     {
                         return Error("UNIT-STATE-010", $"{map.Location.Hex} is not a hex on {map.Location.Board}.");
+                    }
+
+                    if (layout is not null && !layout.IsOwnerName(map.Location.Board, map.Location.Hex)
+                        && layout.Locate(map.Location.Board, map.Location.Hex) is { } shared && layout.OwnerOf(shared) is { } owner)
+                    {
+                        return Error("UNIT-STATE-010", $"{map.Location.Board}:{map.Location.Hex} is a hex shared with {owner.Board}, which names it {owner.Hex}.");
                     }
 
                     if (map.OnBridge ? !chains.HasBridge(map.Location.Board, map.Location.Hex) : !levels.Contains(map.Location.Level))
