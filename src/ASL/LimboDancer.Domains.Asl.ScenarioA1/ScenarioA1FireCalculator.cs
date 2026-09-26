@@ -37,6 +37,60 @@ public static class ScenarioA1FireCalculator
         return new Resolution(attack, reference).Run();
     }
 
+    /// <summary>
+    /// The reasons an attack cannot be committed before any roll (Fire in Live Play, unit step 18): empty when every
+    /// outcome the dice can reach is decided. Every reason the package gives other than a missing roll depends on the
+    /// facts alone, so the check is exact: the facts must stop only at the missing IFT roll, the target side's ELR must be
+    /// declared, a concealed firer or director must have a Good Order target within 16 hexes, and every unit a Reduction
+    /// or Replacement can produce must have its Morale Levels.
+    /// </summary>
+    public static IReadOnlyList<string> Precheck(FireAttack attack, ScenarioA1FireReference reference)
+    {
+        ArgumentNullException.ThrowIfNull(attack);
+        ArgumentNullException.ThrowIfNull(reference);
+        var first = Resolve(attack with { Rolls = new FireRolls(null, null, null, null) }, reference);
+        if (first.Disposition != FireResolution.Indeterminate || first.Reasons is not ["asl.a1.fire.roll-missing:attack"])
+        {
+            return first.Reasons;
+        }
+
+        var reasons = new List<string>();
+        if (attack.TargetSideElr is null)
+        {
+            reasons.Add("asl.a1.fire.elr-undecided:elr-undeclared");
+        }
+
+        var concealed = attack.Firers!.Any(item => item.Concealed == true) || attack.Director?.Concealed == true;
+        if (concealed && !(attack.Range <= 16 && attack.Targets!.Any(item => item.Broken == false)))
+        {
+            reasons.Add("asl.a1.fire.concealment-unreviewed:firer-concealment");
+        }
+
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var pending = new Stack<string>(attack.Targets!.Select(item => item.DefinitionId!));
+        while (pending.TryPop(out var id))
+        {
+            if (!seen.Add(id))
+            {
+                continue;
+            }
+
+            if (!reference.Definitions.TryGetValue(id, out var definition) || definition.Morale is null || definition.BrokenMorale is null
+                || (definition.IsLeader && definition.Leadership is null))
+            {
+                reasons.Add("asl.a1.fire.definition-incomplete:" + id);
+                continue;
+            }
+
+            foreach (var next in new[] { ScenarioA1FireReference.HalfSquadOf(id), ScenarioA1FireReference.ReplacementOf(id) }.OfType<string>())
+            {
+                pending.Push(next);
+            }
+        }
+
+        return reasons;
+    }
+
     private static FireResolution Refused(string disposition, IReadOnlyList<string> reasons) =>
         new(disposition, reasons, null, [], [], null, []);
 
