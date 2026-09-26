@@ -112,6 +112,24 @@ The VASL hex-fact oracle tool (`src/ASL/tools/vasl-hexfact-oracle`) gains an LOS
   Clear and Blocked are definitive only on Verified or AuthoredValid boards; otherwise the status is Nondefinitive with the answer beside it.
 - **Missing geometry.** VASL's extended hex borders become public on `VaslHexLocator`, and the line's hexside crossings, the nearest location, and the hexside of a point are added to the geometry, each tested against VASL through the oracle.
 
+**As built** (part 2).
+- `LimboDancer.Domains.Asl.Maps.Los`: `LosMap` (`ForGrid`, `ForVaslMap`, `ForBoard`, `ForPlacedMap`), `LosCalculator.Check`, `LosResult`, `LosLine` (horizontal and 60-degree tests, `Line2D.linesIntersect`), and `LosUnsupportedRule`, the names an unsupported result gives. `BoardHandle.Los` is an init-only `LosData`: grid, catalog, hexside annotations, and LOS rules.
+- `ForBoard` refuses a handle without LOS data (MAP-LOS-001). `ForPlacedMap` builds with `VaslMapBuilder` and caches by placement text, board versions, and statuses. A board that is not Verified or AuthoredValid gives Nondefinitive, with the answer in `IsBlocked`.
+- A hexside location, a hex off the map, a shared hex named by the board that does not own it, or a level outside the hex's chain throws `ArgumentException`.
+- `VaslHexLocator` gains `ExtendedBorder`, `ExtendedBorderContains`, and `BorderContains`; `LosMap` gains `NearestLocation`, `NearestHexside`, and `HexsidesCrossed`.
+- Reproduced as VASL runs them: the same-hex rule (bridges excepted), A6.8, walls and hedges (B9.2) with `isIgnorableHexsideTerrain`, ground level, split terrain, half-level terrain, terrain higher, terrain height, blind hexes (A6.4, B10.23), inherent spill, and hindrances (B.10). VASL quirks kept: only the level 0 center location takes the even-range shortcut of `getAdjacentHexes`; `getHexsideWhenLOSAlongHexside` fills in missing target hexsides; the blind hex rule clears the result before its odd-range test.
+- Unsupported where the walk would need them: rooftop, cellar, factory, entrenchment, bridge, embankment, or hillock ends; depression ends, slopes, and adjacent hillocks; and, per point, depressions, cliffs, bridges, factories, roofless hexes, rowhouse walls, bocage, partial orchards, embankments, hillocks, rubble, Deir, out-of-season orchards, sand dunes, and Volga piers.
+- U14, Maps.Vasl `LosFidelityTests`: every answered pair agrees on blocked, blocking hex, range, hindrance, and reason text. Answered counts are pinned. Every unanswered pair has a rooftop or cellar end:
+
+  | Fixture | Pairs | Answered and agreed | Unsupported, cellar | Unsupported, rooftop |
+  |---|---|---|---|---|
+  | `bd01.los.json.gz` | 18,251 | 10,701 | 3,775 | 3,775 |
+  | `bd11.los.json.gz` | 5,662 | 5,598 | 32 | 32 |
+  | `bd11-over-bd01.scenario.los.json.gz` | 26,718 | 19,028 | 3,845 | 3,845 |
+  | `bd11r-over-bd01.scenario.los.json.gz` | 26,682 | 19,018 | 3,832 | 3,832 |
+
+- Also in Maps.Vasl: a board with status Ingested answers Nondefinitive, and `ForPlacedMap` from handles answers as the built map. Maps `LosTests` cover the geometry and the read on a synthetic board without VASL.
+
 ## 6. The Studio
 
 - **Board viewer.** On a board or composed map, an LOS tool: choose a source and a target location, by hex name and level or by clicking. The viewer draws the line between the two LOS points and marks the blocking hex, and shows the status, range, hindrance total, and reason.
