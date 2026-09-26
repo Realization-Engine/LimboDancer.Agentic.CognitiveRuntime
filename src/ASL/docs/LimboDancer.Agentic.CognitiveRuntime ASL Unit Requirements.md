@@ -285,7 +285,7 @@ Decided on 2026-09-25 as recommended in the [Decision Memo for D1 to D4](<ASL Un
     5. *Retire the separate return aggregate.* Live games now carry the second-defender return, so remove the Execution adapter's journal store and its return action, and the Host's registration and constraint evaluator. The runtime then no longer references Scenario A1, and the game log is the only source of unit state. The second-defender execution review stays as the record of that work. This part touches the runtime Host and its architecture tests, so it is built on its own branch.
     6. *Acceptance.* U11 and U12 (section 14) pass, and the Play page shows each roll and the task check.
 
-    Designed in its own design document, written on the step's design branch before code.
+    Designed in the [ASL Unit Infantry OVR Design](<ASL Unit Infantry OVR Design.md>).
 
 Later candidates, not yet sequenced: multi-user play, which must first close the lone-SMC election probe of step 11; the lone SMC's options and immediate CC after an OVR (A4.151 and A4.152), once the IFT and CC tables are registered; composed maps in the Play page (placed boards, reversal, and entry across a board seam, so U3 runs over a live game); LOS (ASL-MAP-082) and then Fire; scenario OB and SSR checks at setup, which need the scenario cards as a registered source; and a read-only VASL saved-game import, which needs a format and licensing review first.
 
