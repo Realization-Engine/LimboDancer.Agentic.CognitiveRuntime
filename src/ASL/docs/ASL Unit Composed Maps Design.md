@@ -55,6 +55,15 @@ The map read API (ASL-MAP-080) gains `ComposedMapRead`, built from the layout an
 
 Board handles still come from `IBoardCatalog` at the versions the game records. A board whose status is not Verified or AuthoredValid keeps every fact nondefinitive (ASL-MAP-044).
 
+**As built** (part 1).
+- `MapLayout` (Composition) holds the layout `VaslMapBuilder.Build` used to compute inline; the builder now calls it, and `VaslMap.MapHex` delegates to it.
+- A board placed twice is refused by `ComposedMapRead.Create` (MAP-READ-003), not by the layout, so the maps the builder accepts are unchanged.
+- `Resolve` gives no read, with MAP-READ-004, for a shared hex whose boards disagree, since a read's definitiveness follows its board's status. Callers already treat a missing read as nondefinitive.
+- `Neighbor` takes a direction on the map. On a reversed board that is the opposite of the same side on the board's own hexes, and `Crossed` turns it back before reading each board's hexside.
+- Tests:
+  - Maps, `ComposedMapReadTests`: neighbours and distances across a seam, a reversed board above board 01 (its AA1 above G1), U3's rotated `bd21:N5`, the owner rule and disagreement for a shared hex, agreement of the two edge records of a seam hexside, and the refusals of `Create`.
+  - Maps, `CompositionTests`: the layout agrees with the built map on two rows of two synthetic boards, with and without a reversed board. The design's comparison against the VASL-backed fixtures is covered by these synthetic builds, since the builder now uses the layout itself.
+
 ## 5. The game record
 
 `MapInPlay` gains an optional placement for each board:

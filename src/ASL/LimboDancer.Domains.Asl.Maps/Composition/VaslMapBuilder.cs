@@ -87,16 +87,7 @@ public sealed class VaslMap
     /// <summary>The board and hex name a map hex belongs to; a shared edge hex belongs to the board placed later.</summary>
     public (BoardRef Board, HexName Hex)? OwnerOf(HexIndex hex) => owners.TryGetValue(hex, out var owner) ? owner : null;
 
-    internal static HexIndex MapHex(PlacedBoardLayout board, HexIndex local)
-    {
-        if (!board.Placement.Reversed)
-        {
-            return new HexIndex(board.MapColumn + local.Column, board.MapRow + local.Row);
-        }
-
-        var column = board.Geometry.WidthInHexes - local.Column - 1;
-        return new HexIndex(board.MapColumn + column, board.MapRow + board.Geometry.RowCount(local.Column) - local.Row - 1);
-    }
+    internal static HexIndex MapHex(PlacedBoardLayout board, HexIndex local) => MapLayout.MapHex(board, local);
 }
 
 /// <summary>The outcome of building a map: the map, or the diagnostics that stopped it (VASL would disable LOS).</summary>
@@ -120,9 +111,6 @@ public static class VaslMapBuilder
     /// <summary>VASL counts at most three boards across a map row (the <c>previousx</c> sum in <c>buildVASLMap</c>).</summary>
     public const int MaxBoardsPerRow = 3;
 
-    // Map.createtheHexGrid lays out hexes only for these A1 center heights.
-    private static readonly double[] LaidOutA1CenterY = [32.25, 32.235, -612.75, 97.1];
-
     public static VaslMapResult Build(IReadOnlyList<PlacedBoard> boards, TerrainCatalog catalog, LosSsRuleSet rules)
     {
         ArgumentNullException.ThrowIfNull(boards);
@@ -132,12 +120,15 @@ public static class VaslMapBuilder
 
         // VASL adds boards in board-picker order: row by row, left to right.
         boards = [.. boards.OrderBy(board => board.Placement.Row).ThenBy(board => board.Placement.Column)];
-        if (Layout(boards, diagnostics) is not { } layout)
+        var layout = MapLayout.Create([.. boards.Select(board => (board.Placement, board.Grid.Geometry))]);
+        diagnostics.AddRange(layout.Diagnostics);
+        if (layout.Layout is not { } laid)
         {
             return new VaslMapResult(null, diagnostics);
         }
 
-        var (geometry, placed) = layout;
+        var geometry = laid.Geometry;
+        var placed = laid.Boards.ToArray();
         var grid = new VaslMapGrid(geometry);
         var map = new VaslMapDerivation(geometry, catalog);
         var context = new BuildContext(grid, map, catalog, rules, new VaslHexLocator(geometry, runtime: true), diagnostics);
@@ -153,104 +144,6 @@ public static class VaslMapBuilder
         map.Pass(grid.Snapshot());
         var final = grid.Snapshot(map.HasStairway);
         return new VaslMapResult(new VaslMap(geometry, final, map.Facts(), placed), diagnostics);
-    }
-
-    /// <summary>The map geometry and each board's position, or null with a diagnostic where VASL cannot lay the map out.</summary>
-    private static (BoardGeometry Geometry, PlacedBoardLayout[] Boards)? Layout(IReadOnlyList<PlacedBoard> boards, List<MapDiagnostic> diagnostics)
-    {
-        if (boards.Count == 0)
-        {
-            diagnostics.Add(Error("VASL-MAP-001", "A map needs at least one board."));
-            return null;
-        }
-
-        var slots = new HashSet<(int, int)>();
-        foreach (var board in boards)
-        {
-            if (board.Placement.Column < 0 || board.Placement.Row < 0 || !slots.Add((board.Placement.Column, board.Placement.Row)))
-            {
-                diagnostics.Add(Error("VASL-MAP-001", $"{board.Placement.Board} is placed in slot ({board.Placement.Column}, {board.Placement.Row}), which is negative or already taken."));
-                return null;
-            }
-        }
-
-        var first = boards[0].Grid.Geometry;
-        foreach (var board in boards)
-        {
-            var geometry = board.Grid.Geometry;
-            if (Math.Round(geometry.HexHeight, MidpointRounding.AwayFromZero) != Math.Round(first.HexHeight, MidpointRounding.AwayFromZero)
-                || Math.Round(geometry.HexWidth, MidpointRounding.AwayFromZero) != Math.Round(first.HexWidth, MidpointRounding.AwayFromZero))
-            {
-                diagnostics.Add(Error("VASL-MAP-002", $"{board.Placement.Board} has a different hex size; VASL disables LOS for maps with multiple hex sizes."));
-                return null;
-            }
-        }
-
-        foreach (var row in boards.GroupBy(board => board.Placement.Row))
-        {
-            var columns = row.Select(board => board.Placement.Column).Order().ToArray();
-            if (columns.Length > MaxBoardsPerRow || !columns.SequenceEqual(Enumerable.Range(0, columns.Length)))
-            {
-                diagnostics.Add(Error("VASL-MAP-003",
-                    $"Row {row.Key} must fill slots 0 to {Math.Min(columns.Length, MaxBoardsPerRow) - 1} without gaps; VASL lays out at most {MaxBoardsPerRow} boards across."));
-                return null;
-            }
-        }
-
-        var rowCount = boards.Max(board => board.Placement.Row) + 1;
-        if (!Enumerable.Range(0, rowCount).All(row => boards.Any(board => board.Placement.Row == row)))
-        {
-            diagnostics.Add(Error("VASL-MAP-003", "Map rows must be filled from row 0 without gaps."));
-            return null;
-        }
-
-        // A board's pixel position is the sum of the grid sizes before it in its row and above it.
-        var positions = boards.Select(board =>
-        {
-            var x = boards.Where(other => other.Placement.Row == board.Placement.Row && other.Placement.Column < board.Placement.Column)
-                .Sum(other => other.Grid.Geometry.GridWidth);
-            var y = Enumerable.Range(0, board.Placement.Row)
-                .Sum(row => boards.First(other => other.Placement.Row == row).Grid.Geometry.GridHeight);
-            return (X: x, Y: y);
-        }).ToArray();
-
-        var gridWidth = boards.Select((board, index) => positions[index].X + board.Grid.Geometry.GridWidth).Max();
-        var gridHeight = boards.Select((board, index) => positions[index].Y + board.Grid.Geometry.GridHeight).Max();
-
-        // ASLMap.buildVASLMap: the width counts boards whose bounds move right; each after the first shares a column.
-        var widthInHexes = boards.Where(board => board.Placement.Row == 0)
-            .Sum(board => board.Placement.Column == 0 ? board.Grid.Geometry.WidthInHexes : board.Grid.Geometry.WidthInHexes - 1);
-        var heightInHexes = (int)Math.Floor((gridHeight / first.HexHeight) + 0.5);
-        if (!LaidOutA1CenterY.Contains(first.HexHeight / 2.0))
-        {
-            diagnostics.Add(Error("VASL-MAP-004", $"VASL lays out no hexes for an A1 center at {first.HexHeight / 2.0}."));
-            return null;
-        }
-
-        var mapGeometry = BoardGeometry.Vasl(widthInHexes, heightInHexes, first.HexWidth, first.HexHeight, gridWidth, gridHeight);
-        var locator = new VaslHexLocator(mapGeometry, runtime: true);
-        var placed = new PlacedBoardLayout[boards.Count];
-        for (var index = 0; index < boards.Count; index++)
-        {
-            var (x, y) = positions[index];
-            if (locator.GridToHex(x, y) is not { } start)
-            {
-                diagnostics.Add(Error("VASL-MAP-004", $"No map hex contains the top-left corner ({x}, {y}) of {boards[index].Placement.Board}."));
-                return null;
-            }
-
-            placed[index] = new PlacedBoardLayout(boards[index].Placement, boards[index].Grid.Geometry, x, y, start.Column, start.Row);
-            foreach (var local in boards[index].Grid.Geometry.Hexes())
-            {
-                if (!mapGeometry.Contains(VaslMap.MapHex(placed[index], local)))
-                {
-                    diagnostics.Add(Error("VASL-MAP-004", $"{boards[index].Placement.Board} hex {boards[index].Grid.Geometry.NameOf(local)} falls outside the map's hex grid."));
-                    return null;
-                }
-            }
-        }
-
-        return (mapGeometry, placed);
     }
 
     private sealed record BuildContext(
