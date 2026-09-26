@@ -295,8 +295,15 @@ Decided on 2026-09-25 as recommended in the [Decision Memo for D1 to D4](<ASL Un
     6. *Acceptance.* U3 runs over a live game on a map with a reversed board, and U13 (section 14) passes.
 
     Designed and built in the [ASL Unit Composed Maps Design](<ASL Unit Composed Maps Design.md>).
+13. **LOS, blocked or clear:** a read-only LOS check between two locations of a board or placed map, the first slice of ASL-MAP-082. It changes no game and opens no rule for play: it reports what VASL's LOS reports, so later Fire has a verified LOS to build on. In order:
+    1. *The requirement.* ASL-MAP-082 changes from out of scope to this first slice: LOS between two locations, as VASL's `Map.LOS` computes it for a map without counters, overlays, or scenario-specific rules. The result is whether LOS is blocked, the hex where it is first blocked, and the range. Hindrances are counted and reported, never used as a DRM.
+    2. *A VASL oracle.* The VASL hex-fact oracle tool gains an LOS mode that runs VASL's own `Map.LOS` on sampled pairs of locations of the fixture boards, including upper building levels and hills, and writes the results as fixtures. As for the hex facts, the fixtures hold derived results only, and no VASL code or data is committed.
+    3. *The read.* The map read API (ASL-MAP-080) gains an LOS read over a board handle and over a placed map (step 12), in C#, reproducing VASL's results as the hex-fact derivation does. A read on a board that is not Verified or AuthoredValid is nondefinitive (ASL-MAP-044). A location on a board that is not placed, or not on the map, is refused.
+    4. *The Studio.* The board viewer, on boards and composed maps, and the Play page gain an LOS tool: choose two locations, and see the line, whether it is blocked, and where.
+    5. *Out of scope.* Hindrance DRM, counters (smoke, vehicles, wrecks, OBA), night and illumination, overlays and scenario-specific rules, bypass aiming points, and any use of LOS by a game action.
+    6. *Acceptance.* U14 (section 14) passes.
 
-Later candidates, not yet sequenced: multi-user play, which must first close the lone-SMC election probe of step 11; the lone SMC's options and immediate CC after an OVR (A4.151 and A4.152), once the IFT and CC tables are registered; LOS (ASL-MAP-082) and then Fire; scenario OB and SSR checks at setup, which need the scenario cards as a registered source; and a read-only VASL saved-game import, which needs a format and licensing review first.
+Later candidates, not yet sequenced: multi-user play, which must first close the lone-SMC election probe of step 11; the lone SMC's options and immediate CC after an OVR (A4.151 and A4.152), once the IFT and CC tables are registered; Fire, on the LOS of step 13, once the IFT is registered; scenario OB and SSR checks at setup, which need the scenario cards as a registered source; and a read-only VASL saved-game import, which needs a format and licensing review first.
 
 ## 14. Acceptance scenarios
 
@@ -313,6 +320,7 @@ Later candidates, not yet sequenced: multi-user play, which must first close the
 - **U11, failed OVR NTC.** Given a live game in which an entry reveals a lone concealed SMC and another concealed squad is in the location, an election with at least four MF left records one NTC roll and a task check that fails. The mover is forced back with the ordinary 2 MF, the other squad stays concealed, and replaying the game draws no dice.
 - **U12, passed OVR NTC.** In the same game, an election whose NTC passes records the NTC roll and task check, then a Random Selection roll that reveals the other squad. The mover is forced back with the ordinary 2 MF, citing the OVR NTC package. Confirming the same attempt again returns the recorded rolls.
 - **U13, entry across a seam.** Given a live game on two placed boards, a squad on the other board, in a hex that shares a seam with a board 01 building the reviewed cases cover, may enter that building: the entry facts show it adjacent with its crossed hexside, and the entry commits as it would from board 01. An entry across the same seam into a location the reviewed cases do not cover is refused with its reasons, and nothing changes.
+- **U14, LOS.** Given the LOS oracle's pairs of locations on its fixture boards, the LOS read agrees with VASL on every pair: whether LOS is blocked, the hex where it is first blocked, and the range. The same pairs agree on a placed map of those boards, and a read on a board whose status is not Verified or AuthoredValid is nondefinitive.
 
 ## 15. Traceability
 

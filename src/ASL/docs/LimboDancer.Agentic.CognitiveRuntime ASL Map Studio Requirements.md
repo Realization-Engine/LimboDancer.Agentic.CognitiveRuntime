@@ -281,7 +281,9 @@ Addressed at unit step 8, part 1 ([Occupied and Concealed Entry Design](<ASL Uni
 
 ### ASL-MAP-082: LOS is out of scope
 
-Line-of-sight calculation is not part of this effort. The grid, geometry, and derivation must nevertheless expose everything a later LOS executor for Scenario B needs, including per-cell terrain and elevation, terrain-type LOS properties, and grid-to-hex mapping.
+Line-of-sight calculation was not part of the original effort. The grid, geometry, and derivation must nevertheless expose everything a later LOS executor for Scenario B needs, including per-cell terrain and elevation, terrain-type LOS properties, and grid-to-hex mapping.
+
+Revised at unit step 13 ([ASL Unit Requirements](<LimboDancer.Agentic.CognitiveRuntime ASL Unit Requirements.md>), section 13): a first slice is in scope. LOS between two locations of a board or placed map reproduces VASL's `Map.LOS` for a map without counters, overlays, or scenario-specific rules, verified against VASL itself. It reports whether LOS is blocked, where, and the range, and counts hindrances without using them.
 
 ## 12. Planned documents and sequence
 
