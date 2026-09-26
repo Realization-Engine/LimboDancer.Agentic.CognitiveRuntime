@@ -1,6 +1,6 @@
 # ASL Unit LOS Slice 2 Design
 
-**Status:** Proposed. Designed before code, on `feature/asl-unit-step14-design`; to be built in the order of section 6.
+**Status:** Built in the order of section 6. Part 1 is recorded in section 3, and parts 2 and 3 in section 2.
 
 **Date:** 2026-09-26
 
@@ -46,6 +46,28 @@ The per-hex data the walk needs grows accordingly: each hexside's depression ter
   | `bd12-over-bd15` | 17,588 | 11,252 | depressions 3,050; cliffs 2,629; rowhouse walls 611; bridges 46 |
 
   Pairs with a cellar or rooftop end that are still unanswered cross a depression, cliff, rowhouse wall, or bridge, and are counted under that rule.
+
+**As built** (part 3). Depressions and cliffs:
+- Depressions: the setup's `exitsSourceDepression` and `entersTargetDepression` (a rooftop a full level lower there), and `checkDepressionRule` first in `applyLOSRules`, in every hex: the A6.3 exit and entry tests with `specialtestDepressionGroundLevelOnExit` and `OnEntry`, `losCrossingBridgeDepiction`, `exitsByRoadHexside` and `entersByRoadHexside`, the blind hex rule at a cliff in the source or target hex, and the crest at a vertex (B19.51, `exitHexsideIsCrest`, `enterHexsideIsCrest`). On entering a new hex, `losFollowsDepression` sets `ignoreGroundLevelHex`, which `checkGroundLevelRule` and `checkTerrainHeightRule` honor; the latter also skips depression terrain while the restrictions apply, unless an obstacle stands in the depression hex (B19.21). Streams are depression terrain and take the same rules. Only center locations are read, so the non-center adjustment of `setSourceAndTargetElevations` is never reached.
+- Cliffs: `checkBlindHexRule` tests every cliff pixel, with the exit-hexside exception and, along a hexside, the lower hex's level; `isBlindHex` has its cliff branches (the top of the cliff as ground level, one blind hex fewer). `checkGroundLevelRule` and `checkTerrainHeightRule` take their cliff exceptions along a hexside. Cliff hexsides skip `checkHexsideTerrainRule`.
+- Not reached: the bridge adjustments of the depression rule (bridges stay unsupported), and slopes, which no fixture board has; they stay "Slopes (F2.3)". `LosUnsupportedRule.Depression` and `Cliff` are gone.
+- VASL quirks kept: `getAdjacentHex` with no hexside is the hex itself, and `getHexsideLocation` gives hexside 0, in the crest and cliff tests; `exitsDepressionTerrainHexside` is false along a hexside, so its setup clause never holds, and the entry test uses it too; `losFollowsDepression` reduces to a one-level difference; `ignoreGroundLevelHex` is never reset; a cliff in a depression hex other than the target is ignored ("cliff artwork"). Where VASL would throw (a neighbor off the map), the result is "A line on which VASL's LOS fails"; no fixture pair reaches it.
+- Tests: Maps `LosTests` has a gully exit (blocked leaving the gully, clear to a target higher by the range) and a cliff blind hex (clear over the crest alone, blind below the cliff); each fails with its rule disabled. Maps.Vasl `LosFidelityTests` pins the counts below and asserts that every unanswered pair on the step 14 fixtures names a rule of step 15. Disabling `checkDepressionRule` and the cliff hexside gives 533 disagreements on five fixtures. The Play page LOS test now reads a clear answer.
+- Every answered pair agrees with VASL:
+
+  | Fixture | Pairs | Answered | Unanswered, by rule |
+  |---|---|---|---|
+  | `bd01` | 18,251 | 18,251 | |
+  | `bd11` | 5,662 | 5,662 | |
+  | `bd11-over-bd01` | 26,718 | 26,718 | |
+  | `bd11r-over-bd01` | 26,682 | 26,682 | |
+  | `bd05` | 5,811 | 5,231 | bridges 580 |
+  | `bd09` | 6,124 | 6,124 | |
+  | `bd12` | 8,059 | 7,176 | rowhouse walls 659; bridges 224 |
+  | `bd15` | 6,051 | 6,051 | |
+  | `bd12-over-bd15` | 17,588 | 16,571 | rowhouse walls 672; bridges 345 |
+
+  Pairs that crossed a depression and a bridge or rowhouse wall are now counted under that rule.
 
 ## 3. The fixtures
 

@@ -288,13 +288,13 @@ public sealed class PlayPageTests : IDisposable
     [Fact]
     public void LosIsCheckedOverTheGamesMapAndDrawnOnIt()
     {
-        // The synthetic board's terrain includes a depression, which this slice does not reproduce, so the result says so.
+        // The synthetic board's terrain includes a depression, which the read now answers.
         var page = GameWithDefenders(("r1", "defender-squad"));
         page.Find("#play-los-source").Change($"{Board}:A1:0");
         page.Find("#play-los-target").Change($"{Board}:C1:0");
         page.Find("#play-los-check").Click();
-        Assert.Equal("Unsupported", page.Find("#play-los-result").GetAttribute("data-status"));
-        Assert.Contains("Not reproduced yet: Depressions", page.Find("#play-los-result").TextContent, StringComparison.Ordinal);
+        Assert.Equal("Clear", page.Find("#play-los-result").GetAttribute("data-status"));
+        Assert.StartsWith("Clear, range 2", page.Find("#play-los-result").TextContent, StringComparison.Ordinal);
         Assert.Contains("id=\"layer-los\"", page.Find("#play-map").InnerHtml, StringComparison.Ordinal);
 
         page.Find("#play-los-clear").Click();

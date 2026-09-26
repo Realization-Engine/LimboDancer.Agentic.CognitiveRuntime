@@ -68,6 +68,8 @@ public sealed class LosTests
             IsLowerLosObstacle = true,
             Height = 1,
         },
+        new TerrainType { Code = 30, Name = "Gully", Category = LosCategory.Depression },
+        new TerrainType { Code = 75, Name = "Cliff", Category = LosCategory.Hexside },
     ]);
 
     // E4's center point is (225, 225); this box covers the whole hex.
@@ -185,6 +187,46 @@ public sealed class LosTests
     }
 
     [Fact]
+    public void LosMustLeaveAGullyOnlyWhenTheRangeRestrictionIsMet()
+    {
+        // E2 is a gully hex at level -1; the rest of the column is open ground at level 0. A target one level higher at
+        // range 4 is not higher by the range, so Map.checkDepressionRule blocks the LOS where it leaves the depression,
+        // in E3 (A6.3).
+        var map = Map(PaintLevels((Whole("E2"), "Gully", -1)));
+        var e2 = map.FactsOf(Geometry.IndexOf(HexName.Parse("E2")));
+        Assert.Equal((-1, "Gully"), (e2.BaseLevel, e2.Center.DepressionTerrain?.Name));
+        var exits = LosCalculator.Check(map, Location("E2"), Location("E6"));
+        Assert.Equal((LosStatus.Blocked, true, 4), (exits.Status, exits.IsBlocked, exits.Range));
+        Assert.Equal("Exits depression before range/elevation restrictions are satisfied (A6.3)", exits.Reason);
+        Assert.Equal((Board, HexName.Parse("E3")), (exits.BlockedAt!.Board, exits.BlockedAt.Hex));
+
+        // A target on a level 3 hill is higher by the range, so the LOS may leave the depression.
+        var hill = LosCalculator.Check(Map(PaintLevels((Whole("E2"), "Gully", -1), (Whole("E6"), "Open Ground", 3))), Location("E2"), Location("E6"));
+        Assert.Equal((LosStatus.Clear, false, 4), (hill.Status, hill.IsBlocked, hill.Range));
+    }
+
+    [Fact]
+    public void ACliffHexsideMakesTheHexBelowItBlind()
+    {
+        // E2 is a level 2 hill, E3 and E4 level 1, and a cliff on E4's south hexside drops to E5 at level 0. The level 1
+        // crest alone does not hide E5 from E2, but a cliff hexside crossed next to the lower end does:
+        // Map.checkBlindHexRule tests every cliff pixel and Map.isBlindHex leaves at least one blind hex (B10.23).
+        var e4 = Geometry.CenterPoint(Geometry.IndexOf(HexName.Parse("E4")));
+        var hills = new[] { (Whole("E2"), "Open Ground", 2), (Whole("E3"), "Open Ground", 1), (Whole("E4"), "Open Ground", 1) };
+        var cliff = ((e4.X - 20, e4.Y + 26, e4.X + 20, e4.Y + 37), "Cliff", 1);
+
+        var crest = LosCalculator.Check(Map(PaintLevels(hills)), Location("E2"), Location("E5"));
+        Assert.Equal((LosStatus.Clear, false, 3), (crest.Status, crest.IsBlocked, crest.Range));
+
+        var map = Map(PaintLevels([.. hills, cliff]));
+        Assert.True(map.FactsOf(Geometry.IndexOf(HexName.Parse("E4"))).Hexsides[(int)HexsideDirection.South].Cliff);
+        var blind = LosCalculator.Check(map, Location("E2"), Location("E5"));
+        Assert.Equal((LosStatus.Blocked, true, 3), (blind.Status, blind.IsBlocked, blind.Range));
+        Assert.Equal("Source or Target location is in a blind hex (B10.23)", blind.Reason);
+        Assert.Equal((Board, HexName.Parse("E4")), (blind.BlockedAt!.Board, blind.BlockedAt.Hex));
+    }
+
+    [Fact]
     public void ABoardWithoutLosDataOrVerifiedTerrainIsNotDefinitive()
     {
         var grid = Paint((E4Box, "Woods"));
@@ -216,13 +258,25 @@ public sealed class LosTests
         return (center.X - 25, center.Y - 25, center.X + 25, center.Y + 25);
     }
 
+    // A box a little larger than the hex's extended border, so the whole hex takes the terrain and level.
+    private static (int X0, int Y0, int X1, int Y1) Whole(string hex)
+    {
+        var center = Geometry.CenterPoint(Geometry.IndexOf(HexName.Parse(hex)));
+        return (center.X - 40, center.Y - 34, center.X + 40, center.Y + 36);
+    }
+
     private static LosMap Map(TerrainGrid grid) =>
         LosMap.ForGrid(Board, grid, VaslCompatibleHexFactDerivation.Derive(grid, Catalog, HexsideAnnotations.None), Catalog);
 
-    private static TerrainGrid Paint(params ((int X0, int Y0, int X1, int Y1) Area, string Terrain)[] areas)
+    private static TerrainGrid Paint(params ((int X0, int Y0, int X1, int Y1) Area, string Terrain)[] areas) =>
+        PaintLevels([.. areas.Select(area => (area.Area, area.Terrain, 0))]);
+
+    // Areas painted in order, each with its terrain and ground level; the rest is open ground at level 0.
+    private static TerrainGrid PaintLevels(params ((int X0, int Y0, int X1, int Y1) Area, string Terrain, int Level)[] areas)
     {
         var codes = new byte[Geometry.GridWidth * Geometry.GridHeight];
-        foreach (var ((x0, y0, x1, y1), terrain) in areas)
+        var levels = new sbyte[codes.Length];
+        foreach (var ((x0, y0, x1, y1), terrain, level) in areas)
         {
             var code = Catalog[terrain].Code;
             for (var x = x0; x < x1; x++)
@@ -230,10 +284,11 @@ public sealed class LosTests
                 for (var y = y0; y < y1; y++)
                 {
                     codes[(x * Geometry.GridHeight) + y] = code;
+                    levels[(x * Geometry.GridHeight) + y] = (sbyte)level;
                 }
             }
         }
 
-        return new TerrainGrid(Geometry, codes, new sbyte[codes.Length], new bool[Geometry.HexCount]);
+        return new TerrainGrid(Geometry, codes, levels, new bool[Geometry.HexCount]);
     }
 }
