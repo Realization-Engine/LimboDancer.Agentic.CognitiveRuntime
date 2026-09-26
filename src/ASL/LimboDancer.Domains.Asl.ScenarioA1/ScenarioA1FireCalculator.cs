@@ -4,13 +4,25 @@ using System.Text.RegularExpressions;
 namespace LimboDancer.Domains.Asl.ScenarioA1;
 
 /// <summary>
-/// Resolves a declared fire attack under the reviewed Fire case matrix (unit step 17, revised at step 18; Scenario A1
-/// Fire Review 2026-09-26). It is a pure function of the attack and the pinned reference data: it rolls nothing and changes nothing.
-/// Facts outside the reviewed scope abstain; facts the review leaves undecided, and missing rolls, are Indeterminate.
+/// Resolves a declared fire attack under the reviewed Fire case matrix (unit step 17, revised at steps 18 and 19 to 23;
+/// Scenario A1 Fire Review 2026-09-26). It is a pure function of the attack and the pinned reference data: it rolls
+/// nothing and changes nothing. Facts outside the reviewed scope abstain; facts the review leaves undecided, and missing
+/// rolls, are Indeterminate.
 /// </summary>
 public static class ScenarioA1FireCalculator
 {
-    private static readonly string[] AdmittedPhases = ["PFPh", "DFPh"];
+    public const string FirstFire = "first-fire";
+    public const string SubsequentFirstFire = "subsequent-first-fire";
+    public const string FinalProtectiveFire = "final-protective-fire";
+    public const string ResidualFire = "residual-fp";
+
+    /// <summary>The Residual FP counters (A8.2: at most 12; A7.372: the highest counter at most half the FP used).</summary>
+    public static readonly int[] ResidualCounters = [1, 2, 4, 6, 8, 12];
+
+    private static readonly string[] MovementKinds = [FirstFire, SubsequentFirstFire, FinalProtectiveFire, ResidualFire];
+
+    // The Dummy of a concealment stack (A12.11): no unit, no printed values.
+    private static readonly FireDefinition DummyDefinition = new("dummy", "asl:dummy", string.Empty, null, null, null, null, null, null, null);
 
     public static FireResolution Resolve(FireAttack attack, ScenarioA1FireReference reference)
     {
@@ -40,9 +52,9 @@ public static class ScenarioA1FireCalculator
     /// <summary>
     /// The reasons an attack cannot be committed before any roll (Fire in Live Play, unit step 18): empty when every
     /// outcome the dice can reach is decided. Every reason the package gives other than a missing roll depends on the
-    /// facts alone, so the check is exact: the facts must stop only at the missing IFT roll, the target side's ELR must be
-    /// declared, a concealed firer or director must have a Good Order target within 16 hexes, and every unit a Reduction
-    /// or Replacement can produce must have its Morale Levels.
+    /// facts alone, so the check is exact: the facts must stop only at the missing IFT roll, the target side's ELR (and
+    /// the firing side's, for FPF) must be declared, a concealed firer or director must have a Good Order target within
+    /// 16 hexes, and every unit a Reduction or Replacement can produce must have its Morale Levels.
     /// </summary>
     public static IReadOnlyList<string> Precheck(FireAttack attack, ScenarioA1FireReference reference)
     {
@@ -55,19 +67,31 @@ public static class ScenarioA1FireCalculator
         }
 
         var reasons = new List<string>();
-        if (attack.TargetSideElr is null)
+        if (attack.TargetSideElr is null && attack.Targets!.Any(item => item.Dummy != true))
         {
             reasons.Add("asl.a1.fire.elr-undecided:elr-undeclared");
         }
 
-        var concealed = attack.Firers!.Any(item => item.Concealed == true) || attack.Director?.Concealed == true;
-        if (concealed && !(attack.Range <= 16 && attack.Targets!.Any(item => item.Broken == false)))
+        if (attack.FireKind == FinalProtectiveFire && attack.FiringSideElr is null)
+        {
+            reasons.Add("asl.a1.fire.elr-undecided:firing-side-elr-undeclared");
+        }
+
+        var concealed = attack.Firers?.Any(item => item.Concealed == true) == true || attack.Director?.Concealed == true
+            || attack.OtherDirectors?.Any(item => item.Concealed == true) == true;
+        if (concealed && !(attack.Firers!.All(item => RangeOf(attack, item) <= 16) && attack.Targets!.Any(item => item.Broken == false && item.Dummy != true)))
         {
             reasons.Add("asl.a1.fire.concealment-unreviewed:firer-concealment");
         }
 
         var seen = new HashSet<string>(StringComparer.Ordinal);
-        var pending = new Stack<string>(attack.Targets!.Select(item => item.DefinitionId!));
+        var checkers = attack.Targets!.Where(item => item.Dummy != true).Select(item => item.DefinitionId!);
+        if (attack.FireKind == FinalProtectiveFire)
+        {
+            checkers = checkers.Concat(attack.Firers!.Select(item => item.DefinitionId!));
+        }
+
+        var pending = new Stack<string>(checkers);
         while (pending.TryPop(out var id))
         {
             if (!seen.Add(id))
@@ -94,6 +118,27 @@ public static class ScenarioA1FireCalculator
     private static FireResolution Refused(string disposition, IReadOnlyList<string> reasons) =>
         new(disposition, reasons, null, [], [], null, []);
 
+    private static bool IsMovementFire(FireAttack attack) => attack.FireKind is not null;
+
+    private static bool IsMultiLocation(FireAttack attack) =>
+        attack.Firers is { Count: > 0 } firers && firers.Select(item => item.LocationId).Distinct(StringComparer.Ordinal).Count() > 1;
+
+    private static int? RangeOf(FireAttack attack, FireFirer firer) => firer.Range ?? attack.Range;
+
+    private static bool? SameLevelOf(FireAttack attack, FireFirer firer) => firer.SameLevel ?? attack.SameLevel;
+
+    private static FireLos? LosOf(FireAttack attack, FireFirer firer) => firer.Los ?? attack.Los;
+
+    private static IEnumerable<FireDirector> Directors(FireAttack attack) =>
+        (attack.Director is null ? Array.Empty<FireDirector>() : [attack.Director]).Concat(attack.OtherDirectors ?? []);
+
+    // A8.4: in the DFPh, a unit already marked First Fire fires again as Area Fire at an adjacent or same-hex target.
+    private static bool IsFinalFireAgain(FireAttack attack, FireFirer firer) => attack.Phase == "DFPh" && firer.FirstFireMarked == true;
+
+    // A9.3: a MG firing as Subsequent First Fire or FPF, or in the DFPh while marked First Fire, uses Sustained Fire.
+    private static bool IsSustained(FireAttack attack, FireWeapon weapon) =>
+        attack.FireKind is SubsequentFirstFire or FinalProtectiveFire || (attack.Phase == "DFPh" && weapon.FirstFireMarked == true);
+
     private static List<string> Missing(FireAttack attack)
     {
         var missing = new List<string>();
@@ -105,50 +150,96 @@ public static class ScenarioA1FireCalculator
             }
         }
 
+        void NeedLos(FireLos? los, string at)
+        {
+            Need(los, at + "los");
+            Need(los?.Blocked, at + "los.blocked");
+            Need(los?.HindranceDrm, at + "los.hindranceDrm");
+            Need(los?.HindranceAttributed, at + "los.hindranceAttributed");
+            Need(los?.GrainInLos, at + "los.grainInLos");
+        }
+
+        var residual = attack.FireKind == ResidualFire;
         Need(attack.Phase, "phase");
         Need(attack.FiringSide, "firingSide");
-        Need(attack.FireGroupComplete, "fireGroupComplete");
-        Need(attack.FirerLocationId, "firerLocationId");
         Need(attack.TargetLocationId, "targetLocationId");
-        Need(attack.Range, "range");
-        Need(attack.SameLevel, "sameLevel");
         Need(attack.TargetTerrain, "targetTerrain");
-        Need(attack.Los, "los");
-        Need(attack.Los?.Blocked, "los.blocked");
-        Need(attack.Los?.HindranceDrm, "los.hindranceDrm");
-        Need(attack.Los?.HindranceAttributed, "los.hindranceAttributed");
-        Need(attack.Los?.GrainInLos, "los.grainInLos");
         Need(attack.Rolls, "rolls");
-        if (attack.Firers is null || attack.Firers.Count == 0)
+        if (IsMovementFire(attack))
         {
-            missing.Add("asl.a1.fire.fact-missing:firers");
+            Need(attack.TargetMovement?.AssaultMovement, "targetMovement.assaultMovement");
+        }
+
+        if (residual)
+        {
+            Need(attack.ResidualFp, "residualFp");
         }
         else
         {
-            foreach (var (firer, index) in attack.Firers.Select((item, index) => (item, index)))
+            Need(attack.FireGroupComplete, "fireGroupComplete");
+            Need(attack.FirerLocationId, "firerLocationId");
+            Need(attack.Range, "range");
+            Need(attack.SameLevel, "sameLevel");
+            NeedLos(attack.Los, string.Empty);
+            if (attack.FireKind == SubsequentFirstFire)
             {
-                var at = $"firers[{index}].";
-                Need(firer.UnitId, at + "unitId");
-                Need(firer.DefinitionId, at + "definitionId");
-                Need(firer.LocationId, at + "locationId");
-                Need(firer.Broken, at + "broken");
-                Need(firer.Pinned, at + "pinned");
-                Need(firer.Concealed, at + "concealed");
-                Need(firer.FiredThisPlayerTurn, at + "firedThisPlayerTurn");
-                Need(firer.UsesSupportWeapon, at + "usesSupportWeapon");
+                Need(attack.WithinSubsequentFirstFireRange, "withinSubsequentFirstFireRange");
             }
-        }
 
-        if (attack.Director is { } director)
-        {
-            Need(director.UnitId, "director.unitId");
-            Need(director.DefinitionId, "director.definitionId");
-            Need(director.LocationId, "director.locationId");
-            Need(director.Broken, "director.broken");
-            Need(director.Pinned, "director.pinned");
-            Need(director.Concealed, "director.concealed");
-            Need(director.DirectedThisPlayerTurn, "director.directedThisPlayerTurn");
-            Need(director.Wounded, "director.wounded");
+            if (attack.Firers is null || attack.Firers.Count == 0)
+            {
+                missing.Add("asl.a1.fire.fact-missing:firers");
+            }
+            else
+            {
+                var multi = IsMultiLocation(attack);
+                if (multi)
+                {
+                    Need(attack.FirerLocationsAdjacent, "firerLocationsAdjacent");
+                }
+
+                foreach (var (firer, index) in attack.Firers.Select((item, index) => (item, index)))
+                {
+                    var at = $"firers[{index}].";
+                    Need(firer.UnitId, at + "unitId");
+                    Need(firer.DefinitionId, at + "definitionId");
+                    Need(firer.LocationId, at + "locationId");
+                    Need(firer.Broken, at + "broken");
+                    Need(firer.Pinned, at + "pinned");
+                    Need(firer.Concealed, at + "concealed");
+                    Need(firer.FiredThisPlayerTurn, at + "firedThisPlayerTurn");
+                    Need(firer.UsesSupportWeapon, at + "usesSupportWeapon");
+                    if (multi)
+                    {
+                        Need(firer.Range, at + "range");
+                        Need(firer.SameLevel, at + "sameLevel");
+                        NeedLos(firer.Los, at);
+                    }
+
+                    foreach (var (weapon, slot) in (firer.Weapons ?? []).Select((item, slot) => (item, slot)))
+                    {
+                        var w = $"{at}weapons[{slot}].";
+                        Need(weapon.EquipmentId, w + "equipmentId");
+                        Need(weapon.DefinitionId, w + "definitionId");
+                        Need(weapon.Malfunctioned, w + "malfunctioned");
+                        Need(weapon.FiredThisPlayerTurn, w + "firedThisPlayerTurn");
+                        Need(weapon.FirstFireMarked, w + "firstFireMarked");
+                    }
+                }
+            }
+
+            foreach (var (director, index) in Directors(attack).Select((item, index) => (item, index)))
+            {
+                var at = index == 0 ? "director." : $"otherDirectors[{index - 1}].";
+                Need(director.UnitId, at + "unitId");
+                Need(director.DefinitionId, at + "definitionId");
+                Need(director.LocationId, at + "locationId");
+                Need(director.Broken, at + "broken");
+                Need(director.Pinned, at + "pinned");
+                Need(director.Concealed, at + "concealed");
+                Need(director.DirectedThisPlayerTurn, at + "directedThisPlayerTurn");
+                Need(director.Wounded, at + "wounded");
+            }
         }
 
         if (attack.Targets is null || attack.Targets.Count == 0)
@@ -161,13 +252,17 @@ public static class ScenarioA1FireCalculator
             {
                 var at = $"targets[{index}].";
                 Need(target.UnitId, at + "unitId");
-                Need(target.DefinitionId, at + "definitionId");
+                Need(target.Dummy, at + "dummy");
+                if (target.Dummy != true)
+                {
+                    Need(target.DefinitionId, at + "definitionId");
+                }
+
                 Need(target.LocationId, at + "locationId");
                 Need(target.Broken, at + "broken");
                 Need(target.Pinned, at + "pinned");
                 Need(target.Concealed, at + "concealed");
                 Need(target.Hidden, at + "hidden");
-                Need(target.Dummy, at + "dummy");
                 Need(target.Wounded, at + "wounded");
                 Need(target.Disrupted, at + "disrupted");
             }
@@ -180,82 +275,207 @@ public static class ScenarioA1FireCalculator
     {
         var outside = new List<string>();
         var phase = attack.Phase!;
-        if (!AdmittedPhases.Contains(phase)
-            || (phase == "PFPh" && attack.FiringSide != "phasing")
-            || (phase == "DFPh" && attack.FiringSide != "non-phasing"))
+        var kind = attack.FireKind;
+        var phaseAdmitted = (phase, attack.FiringSide, kind) switch
+        {
+            ("PFPh", "phasing", null) => true,
+            ("AFPh", "phasing", null) => true,
+            ("DFPh", "non-phasing", null) => true,
+            ("MPh", "non-phasing", { } movement) => MovementKinds.Contains(movement),
+            _ => false,
+        };
+        if (!phaseAdmitted)
         {
             outside.Add("asl.a1.fire.phase-outside");
         }
 
-        var firers = attack.Firers!;
         var targets = attack.Targets!;
+        var targetDefinitions = targets.Select(item => item.Dummy == true ? DummyDefinition : reference.Definitions.GetValueOrDefault(item.DefinitionId!))
+            .ToArray();
+        if (kind == ResidualFire)
+        {
+            // A8.22: Residual FP always attacks alone.
+            if (attack.Firers is { Count: > 0 } || attack.Director is not null || attack.OtherDirectors is { Count: > 0 }
+                || !ResidualCounters.Contains(attack.ResidualFp!.Value))
+            {
+                outside.Add("asl.a1.fire.residual-outside");
+            }
+
+            if (targets.Any(item => item.LocationId != attack.TargetLocationId) || targetDefinitions.Any(item => item is null)
+                || !ScenarioA1FireReference.Tem.ContainsKey(attack.TargetTerrain!))
+            {
+                outside.Add("asl.a1.fire.target-outside");
+            }
+
+            if (attack.Rolls is { } residualRolls && Malformed(residualRolls))
+            {
+                outside.Add("asl.a1.fire.roll-malformed");
+            }
+
+            return outside;
+        }
+
+        var firers = attack.Firers!;
         var ids = firers.Select(item => item.UnitId!).Concat(targets.Select(item => item.UnitId!))
-            .Concat(attack.Director is null ? [] : [attack.Director.UnitId!]).ToArray();
+            .Concat(Directors(attack).Select(item => item.UnitId!))
+            .Concat(firers.SelectMany(item => item.Weapons ?? []).Select(item => item.EquipmentId!)).ToArray();
         if (ids.Distinct(StringComparer.Ordinal).Count() != ids.Length)
         {
             outside.Add("asl.a1.fire.unit-listed-twice");
         }
 
-        if (firers.Any(item => item.FiredThisPlayerTurn == true))
-        {
-            outside.Add("asl.a1.fire.firer-already-fired");
-        }
-
         var firerDefinitions = firers.Select(item => reference.Definitions.GetValueOrDefault(item.DefinitionId!)).ToArray();
-        if (attack.FireGroupComplete != true
-            || firers.Any(item => item.LocationId != attack.FirerLocationId || item.Broken == true || item.UsesSupportWeapon == true)
+        var side = firerDefinitions.FirstOrDefault()?.Nationality;
+        var locations = firers.Select(item => item.LocationId!).Distinct(StringComparer.Ordinal).ToArray();
+        var multi = locations.Length > 1;
+
+        // A7.5: a group may span Locations each ADJACENT to another of them; Residual FP never joins a group (A8.22).
+        if (attack.FireGroupComplete != true || !locations.Contains(attack.FirerLocationId) || (multi && attack.FirerLocationsAdjacent != true)
+            || firers.Any(item => item.Broken == true || (item.UsesSupportWeapon == true && item.Weapons is not { Count: > 0 }))
             || firerDefinitions.Any(item => item is null || !item.IsMmc || item.Firepower is null || item.Range is null))
         {
             outside.Add("asl.a1.fire.firer-outside");
         }
 
-        var side = firerDefinitions.FirstOrDefault()?.Nationality;
         if (firerDefinitions.Any(item => item is not null && item.Nationality != side))
         {
             outside.Add("asl.a1.fire.firers-of-two-sides");
         }
 
-        if (attack.Director is { } director)
+        // A9.1, A7.35 to A7.352: MGs of the firer's own side, not malfunctioned; a squad fires at most two, a HS one.
+        foreach (var (firer, definition) in firers.Zip(firerDefinitions))
         {
+            var weapons = firer.Weapons ?? [];
+            if (definition is not null && (weapons.Count > (definition.Kind == "asl:squad" ? 2 : 1)
+                || weapons.Any(weapon => reference.Definitions.GetValueOrDefault(weapon.DefinitionId!) is not { IsMg: true, Firepower: not null, Range: not null } mg
+                    || mg.Nationality != definition.Nationality || weapon.Malfunctioned == true || !WeaponMayFire(attack, weapon))))
+            {
+                outside.Add("asl.a1.fire.weapon-outside");
+            }
+
+            if (firer.UsesInherentFp == false && weapons.Count == 0)
+            {
+                outside.Add("asl.a1.fire.firer-outside");
+            }
+        }
+
+        if (firers.Any(item => !FirerMayFire(attack, item)))
+        {
+            outside.Add("asl.a1.fire.firer-already-fired");
+        }
+
+        // A8.31: FPF by units already marked Final Fire, at an ADJACENT or same-hex moving unit, undirected and not mixed
+        // with other fire (the review leaves direction and mixed groups out).
+        if (kind == FinalProtectiveFire && (Directors(attack).Any() || firers.Any(item => RangeOf(attack, item) > 1)))
+        {
+            outside.Add("asl.a1.fire.fpf-outside");
+        }
+
+        // A8.3: Subsequent First Fire within Normal Range and no farther than the closest armed Known enemy unit.
+        if (kind == SubsequentFirstFire && (attack.WithinSubsequentFirstFireRange != true
+            || firers.Zip(firerDefinitions).Any(pair => pair.Second is { Range: { } range } && RangeOf(attack, pair.First) > range)))
+        {
+            outside.Add("asl.a1.fire.subsequent-first-fire-outside");
+        }
+
+        // A8.4: a First-Fire-marked unit fires again in the DFPh only at an adjacent or same-hex target.
+        if (firers.Any(item => IsFinalFireAgain(attack, item) && RangeOf(attack, item) > 1))
+        {
+            outside.Add("asl.a1.fire.final-fire-outside");
+        }
+
+        var directors = Directors(attack).ToArray();
+        var redirect = kind is SubsequentFirstFire || firers.Any(item => IsFinalFireAgain(attack, item));
+        foreach (var director in directors)
+        {
+            // A7.53, A7.531: an unbroken, unpinned leader of the group's side in one of its Locations; A10.7: he may direct
+            // Subsequent First Fire and Final Fire again.
             var definition = reference.Definitions.GetValueOrDefault(director.DefinitionId!);
             if (definition is null || !definition.IsLeader || definition.Leadership is null || definition.Nationality != side
-                || director.LocationId != attack.FirerLocationId || director.Broken == true || director.Pinned == true
-                || director.DirectedThisPlayerTurn == true)
+                || !locations.Contains(director.LocationId) || director.Broken == true || director.Pinned == true
+                || (director.DirectedThisPlayerTurn == true && !redirect))
             {
                 outside.Add("asl.a1.fire.director-outside");
             }
         }
 
-        var targetDefinitions = targets.Select(item => reference.Definitions.GetValueOrDefault(item.DefinitionId!)).ToArray();
-        if (attack.TargetLocationId == attack.FirerLocationId
+        // A7.531: in a group spanning Locations, direction counts only with a directing leader in every Location; the
+        // review admits direction only then.
+        if (directors.Length > 0 && (directors.Select(item => item.LocationId).Distinct(StringComparer.Ordinal).Count() != directors.Length
+            || (multi && !locations.All(location => directors.Any(item => item.LocationId == location)))
+            || (!multi && directors.Length > 1)))
+        {
+            outside.Add("asl.a1.fire.director-outside");
+        }
+
+        if (locations.Contains(attack.TargetLocationId)
             || targets.Any(item => item.LocationId != attack.TargetLocationId)
-            || targetDefinitions.Any(item => item is null || item.Nationality == side)
+            || targetDefinitions.Any(item => item is null || (item != DummyDefinition && item.Nationality == side))
             || !ScenarioA1FireReference.Tem.ContainsKey(attack.TargetTerrain!))
         {
             outside.Add("asl.a1.fire.target-outside");
         }
 
-        if (attack.Range < 1 || firerDefinitions.Any(item => item?.Range is { } range && attack.Range > 2 * range))
+        foreach (var (firer, definition) in firers.Zip(firerDefinitions))
         {
-            outside.Add("asl.a1.fire.out-of-range");
+            var range = RangeOf(attack, firer);
+            var inherentOut = firer.UsesInherentFp != false && definition?.Range is { } normal && range > 2 * normal;
+            var weaponOut = (firer.Weapons ?? []).Any(weapon => reference.Definitions.GetValueOrDefault(weapon.DefinitionId!)?.Range is { } mgRange
+                && range > 2 * mgRange);
+            if (range < 1 || inherentOut || weaponOut)
+            {
+                outside.Add("asl.a1.fire.out-of-range");
+            }
+
+            if (LosOf(attack, firer)!.Blocked == true)
+            {
+                outside.Add("asl.a1.fire.los-blocked");
+            }
         }
 
-        if (attack.Los!.Blocked == true)
-        {
-            outside.Add("asl.a1.fire.los-blocked");
-        }
-
-        if (attack.Rolls is { } rolls && (!Dice(rolls.Attack, allowEmpty: true)
-            || rolls.RandomSelection?.Values.Any(dr => dr is < 1 or > 6) == true
-            || rolls.Checks?.Values.Any(dice => !Dice(dice, allowEmpty: false)) == true
-            || rolls.LeaderLoss?.Values.Any(dice => !Dice(dice, allowEmpty: false)) == true
-            || rolls.WoundSeverity?.Values.Any(dr => dr is < 1 or > 6) == true))
+        if (attack.Rolls is { } rolls && Malformed(rolls))
         {
             outside.Add("asl.a1.fire.roll-malformed");
         }
 
-        return outside;
+        return outside.Distinct(StringComparer.Ordinal).ToList();
     }
+
+    private static bool Malformed(FireRolls rolls) =>
+        !Dice(rolls.Attack, allowEmpty: true)
+        || rolls.RandomSelection?.Values.Any(dr => dr is < 1 or > 6) == true
+        || rolls.Checks?.Values.Any(dice => !Dice(dice, allowEmpty: false)) == true
+        || rolls.LeaderLoss?.Values.Any(dice => !Dice(dice, allowEmpty: false)) == true
+        || rolls.WoundSeverity?.Values.Any(dr => dr is < 1 or > 6) == true
+        || rolls.WeaponSelection?.Values.Any(dr => dr is < 1 or > 6) == true
+        || rolls.FirerSelection?.Values.Any(dr => dr is < 1 or > 6) == true;
+
+    /// <summary>Whether a unit may fire in this attack under the fire-phase and First Fire rules (A7.1, A8.1, A8.3, A8.31, A8.4, A9.2).</summary>
+    private static bool FirerMayFire(FireAttack attack, FireFirer firer)
+    {
+        var firstFire = firer.FirstFireMarked == true;
+        var finalFire = firer.FinalFireMarked == true;
+
+        // A9.2: a MG that kept its Multiple ROF fires again alone, though its unit is already marked.
+        var rateOfFireShot = firer.UsesInherentFp == false && firer.Weapons is { Count: > 0 };
+        return attack.FireKind switch
+        {
+            FirstFire => rateOfFireShot || (!firstFire && !finalFire && firer.FiredThisPlayerTurn != true),
+            SubsequentFirstFire => firstFire && !finalFire,
+            FinalProtectiveFire => finalFire,
+            _ when attack.Phase == "DFPh" => rateOfFireShot || (!finalFire && (firstFire || firer.FiredThisPlayerTurn != true)),
+            _ => rateOfFireShot || firer.FiredThisPlayerTurn != true,
+        };
+    }
+
+    /// <summary>Whether a MG may fire in this attack: not yet marked, or marked First Fire where Sustained Fire allows it (A8.3, A8.31, A8.4, A9.3).</summary>
+    private static bool WeaponMayFire(FireAttack attack, FireWeapon weapon) => attack.FireKind switch
+    {
+        FinalProtectiveFire => true,
+        SubsequentFirstFire => weapon.FiredThisPlayerTurn != true,
+        _ when attack.Phase == "DFPh" => weapon.FiredThisPlayerTurn != true,
+        _ => weapon.FiredThisPlayerTurn != true && weapon.FirstFireMarked != true,
+    };
 
     private static bool Dice(IReadOnlyList<int>? dice, bool allowEmpty) =>
         dice is null ? allowEmpty : dice.Count == 2 && dice.All(die => die is >= 1 and <= 6);
@@ -263,32 +483,39 @@ public static class ScenarioA1FireCalculator
     private static List<string> Undecided(FireAttack attack, ScenarioA1FireReference reference)
     {
         var undecided = new List<string>();
-        if (attack.SameLevel != true)
+        var targets = attack.Targets!;
+        if (attack.FireKind != ResidualFire)
         {
-            undecided.Add("asl.a1.fire.levels-differ");
+            var firers = attack.Firers!;
+            if (firers.Any(item => SameLevelOf(attack, item) != true))
+            {
+                undecided.Add("asl.a1.fire.levels-differ");
+            }
+
+            if (firers.Select(item => LosOf(attack, item)!).Any(los => los.HindranceAttributed != true || los.HindranceDrm < 0
+                || (los.GrainInLos == true && attack.ScenarioMonth is not (>= 6 and <= 9))))
+            {
+                undecided.Add("asl.a1.fire.hindrance-unattributed");
+            }
         }
 
-        var los = attack.Los!;
-        if (los.HindranceAttributed != true || los.HindranceDrm < 0
-            || (los.GrainInLos == true && attack.ScenarioMonth is not (>= 6 and <= 9)))
-        {
-            undecided.Add("asl.a1.fire.hindrance-unattributed");
-        }
-
-        if (attack.Targets!.Any(item => item.Hidden == true || item.Dummy == true))
-        {
-            undecided.Add("asl.a1.fire.concealment-unreviewed");
-        }
-
-        if (attack.Targets!.Count(item => reference.Definitions[item.DefinitionId!].IsLeader) > 1)
+        var units = targets.Where(item => item.Dummy != true).ToArray();
+        if (units.Count(item => reference.Definitions[item.DefinitionId!].IsLeader) > 1)
         {
             undecided.Add("asl.a1.fire.leaders-interact");
         }
 
         // A19.13's exception for an underscored Morale Factor is not reviewed.
-        if (attack.Targets!.Any(item => reference.Definitions[item.DefinitionId!] is { IsMmc: true, UnderscoredMorale: not false }))
+        if (units.Any(item => reference.Definitions[item.DefinitionId!] is { IsMmc: true, UnderscoredMorale: not false }))
         {
             undecided.Add("asl.a1.fire.elr-undecided:underscored-morale");
+        }
+
+        // A7.83: a pinned mover takes no FFNAM or FFMO, so one attack on a stack mixing pinned and unpinned movers would
+        // need two DRM; the review leaves that out.
+        if (IsMovementFire(attack) && units.Any(item => item.Pinned == true) && units.Any(item => item.Pinned != true))
+        {
+            undecided.Add("asl.a1.fire.movement-drm-differs");
         }
 
         return undecided;
@@ -305,18 +532,54 @@ public static class ScenarioA1FireCalculator
         {
             foreach (var target in attack.Targets!)
             {
-                state[target.UnitId!] = new TargetState(target, reference.Definitions[target.DefinitionId!]);
+                state[target.UnitId!] = new TargetState(target, target.Dummy == true ? DummyDefinition : reference.Definitions[target.DefinitionId!]);
             }
 
-            var arithmetic = Arithmetic();
+            var known = state.Values.Where(unit => !unit.IsConcealedType).ToArray();
+            var concealed = state.Values.Where(unit => unit.IsConcealedType).ToArray();
+            var arithmetic = Arithmetic(known.Length > 0, concealed.Length > 0);
             if (arithmetic is null)
             {
                 return Refused(FireResolution.Indeterminate, undecided);
             }
 
             usedRolls.Add("attack");
-            Apply(arithmetic.Result);
+            var concealedResult = arithmetic.Concealed?.Result ?? arithmetic.Result;
+            if (known.Length > 0)
+            {
+                Apply(arithmetic.Result, known);
+            }
+
+            if (concealed.Length > 0 && undecided.Count == 0)
+            {
+                Apply(concealedResult, concealed);
+            }
+
             LeaderLoss();
+            if (undecided.Count != 0)
+            {
+                return Refused(FireResolution.Indeterminate, undecided.Distinct().ToArray());
+            }
+
+            // A12.14: a concealed target loses "?" on a PTC or worse result; a hidden unit is placed without "?" (A12.3,
+            // A12.31); a Dummy that loses "?" in the LOS of a Good Order enemy is removed (A12.11).
+            if (concealedResult != "none")
+            {
+                foreach (var unit in concealed)
+                {
+                    if (unit.IsDummy)
+                    {
+                        unit.Eliminate("dummy-removed");
+                    }
+                    else
+                    {
+                        unit.ConcealmentLost = true;
+                    }
+                }
+            }
+
+            var weapons = WeaponEffects(arithmetic);
+            var firerEffects = attack.FireKind == FinalProtectiveFire ? FinalProtectiveFireChecks(arithmetic) : null;
             if (undecided.Count != 0)
             {
                 return Refused(FireResolution.Indeterminate, undecided.Distinct().ToArray());
@@ -328,62 +591,58 @@ public static class ScenarioA1FireCalculator
                 return Refused(FireResolution.Abstained, extra);
             }
 
-            if (arithmetic.Result != "none")
-            {
-                // A12.14: a concealed target loses "?" on a PTC or worse result.
-                foreach (var unit in state.Values.Where(unit => unit.Target.Concealed == true))
-                {
-                    unit.ConcealmentLost = true;
-                }
-            }
-
             var firerConcealment = FirerConcealment();
             if (undecided.Count != 0)
             {
                 return Refused(FireResolution.Indeterminate, undecided);
             }
 
-            var marked = attack.Firers!.Select(item => item.UnitId!)
-                .Concat(attack.Director is null ? [] : [attack.Director.UnitId!]).ToArray();
+            var firers = attack.Firers ?? [];
+            var marked = firers.Select(item => item.UnitId!).Concat(Directors(attack).Select(item => item.UnitId!)).ToArray();
             return new FireResolution(FireResolution.Resolved, [], arithmetic,
-                attack.Targets!.Select(item => state[item.UnitId!].Effect()).ToArray(), marked,
-                attack.Phase == "PFPh" ? "prep-fire" : "final-fire", firerConcealment);
+                attack.Targets!.Select(item => state[item.UnitId!].Effect()).ToArray(), marked, FireCounter(), firerConcealment)
+            {
+                WeaponEffects = weapons,
+                FirerEffects = firerEffects,
+            };
         }
 
-        private FireArithmetic? Arithmetic()
+        /// <summary>The fire counter the attack places (A3.2, A3.4, A3.5, A8.1, A8.3, A8.31, A8.4); none for Residual FP.</summary>
+        private string? FireCounter() => attack.FireKind switch
         {
-            var concealedTarget = attack.Targets!.Any(item => item.Concealed == true);
-            var firers = attack.Firers!.Select(firer =>
-            {
-                var definition = reference.Definitions[firer.DefinitionId!];
-                var multipliers = new List<FireModifier>();
-                if (attack.Range == 1)
-                {
-                    multipliers.Add(new FireModifier("point-blank-fire", 2m, "A7.21"));
-                }
+            ResidualFire => null,
+            FirstFire => "first-fire",
+            SubsequentFirstFire or FinalProtectiveFire => "final-fire",
+            _ => attack.Phase is "PFPh" or "AFPh" ? "prep-fire" : "final-fire",
+        };
 
-                if (attack.Range > definition.Range)
-                {
-                    multipliers.Add(new FireModifier("long-range-fire", 0.5m, "A7.22"));
-                }
-
-                if (concealedTarget)
-                {
-                    multipliers.Add(new FireModifier("area-fire-concealed-target", 0.5m, "A7.23"));
-                }
-
-                if (firer.Pinned == true)
-                {
-                    multipliers.Add(new FireModifier("pinned-firer", 0.5m, "A7.8"));
-                }
-
-                var fp = multipliers.Aggregate((decimal)definition.Firepower!.Value, (value, item) => value * item.Value);
-                return new FirerFirepower(firer.UnitId!, definition.Firepower.Value, multipliers, fp);
-            }).ToArray();
-            var total = firers.Sum(item => item.Firepower);
-            var column = Array.FindLastIndex(ScenarioA1FireReference.ColumnFp, fp => fp <= total);
-
+        private FireArithmetic? Arithmetic(bool hasKnown, bool hasConcealed)
+        {
             var dice = attack.Rolls!.Attack;
+            var residual = attack.FireKind == ResidualFire;
+            var firers = new List<FirerFirepower>();
+            decimal known = 0, vsConcealed = 0;
+            if (residual)
+            {
+                // A8.2, A8.22: Residual FP attacks alone, on its own column, never halved.
+                known = vsConcealed = attack.ResidualFp!.Value;
+            }
+            else
+            {
+                if (hasKnown)
+                {
+                    firers.AddRange(Firepower(false));
+                    known = firers.Where(item => item.VsConcealed != true).Sum(item => item.Firepower);
+                }
+
+                if (hasConcealed)
+                {
+                    var concealedFp = Firepower(true).Select(item => hasKnown ? item with { VsConcealed = true } : item).ToArray();
+                    firers.AddRange(concealedFp);
+                    vsConcealed = concealedFp.Sum(item => item.Firepower);
+                }
+            }
+
             if (dice is null)
             {
                 undecided.Add("asl.a1.fire.roll-missing:attack");
@@ -391,10 +650,12 @@ public static class ScenarioA1FireCalculator
             }
 
             var original = dice[0] + dice[1];
-            var cowered = dice[0] == dice[1] && attack.Director is null;
-            var inexperienced = attack.Firers!.Any(item => reference.Definitions[item.DefinitionId!].Class is "green" or "conscript");
+            var directed = Directors(attack).Any();
+
+            // A7.9: a doubles DR with no directing leader shifts the column; Residual FP is never subject to Cowering (A8.224).
+            var cowered = !residual && dice[0] == dice[1] && !directed;
+            var inexperienced = (attack.Firers ?? []).Any(item => reference.Definitions[item.DefinitionId!].Class is "green" or "conscript");
             var shift = cowered ? (inexperienced ? 2 : 1) : 0;
-            var shifted = column < 0 ? -1 : column - shift;
 
             var drm = new List<FireModifier>();
             var tem = ScenarioA1FireReference.Tem[attack.TargetTerrain!];
@@ -403,33 +664,283 @@ public static class ScenarioA1FireCalculator
                 drm.Add(new FireModifier("tem:" + attack.TargetTerrain, tem, "A7.6"));
             }
 
-            if (attack.Los!.HindranceDrm > 0)
+            // A7.52: the worst Hindrance of the group's LOS applies to all of it; Residual FP has none (A8.2).
+            var hindrance = residual ? 0 : attack.Firers!.Max(item => LosOf(attack, item)!.HindranceDrm!.Value);
+            if (hindrance > 0)
             {
-                drm.Add(new FireModifier("los-hindrance", attack.Los.HindranceDrm!.Value, "A6.7"));
+                drm.Add(new FireModifier("los-hindrance", hindrance, "A6.7"));
             }
 
-            if (attack.Director is { } director)
+            // A7.531: the leadership of the directing leader, the worst of them for a group spanning Locations; A17.3: one
+            // worse when wounded.
+            var leadership = Directors(attack)
+                .Select(director => (director.UnitId, Value: reference.Definitions[director.DefinitionId!].Leadership!.Value + (director.Wounded == true ? 1 : 0)))
+                .OrderByDescending(item => item.Value).FirstOrDefault();
+            if (leadership.UnitId is not null)
             {
-                // A17.3: a wounded leader's leadership modifier is one worse.
-                var leadership = reference.Definitions[director.DefinitionId!].Leadership!.Value + (director.Wounded == true ? 1 : 0);
-                drm.Add(new FireModifier("leadership:" + director.UnitId, leadership, "A7.531"));
+                drm.Add(new FireModifier("leadership:" + leadership.UnitId, leadership.Value, "A7.531"));
+            }
+
+            // A4.6, A4.61, A8.13: FFNAM unless Assault Movement, and FFMO in Open Ground with no Hindrance, in Defensive
+            // First Fire only; A7.83: a pinned mover takes neither.
+            if (IsMovementFire(attack) && state.Values.Any(unit => !unit.IsDummy && !unit.Pinned))
+            {
+                if (attack.TargetMovement!.AssaultMovement != true)
+                {
+                    drm.Add(new FireModifier("ffnam", -1m, "A4.6"));
+                }
+
+                if (attack.TargetTerrain == "open-ground" && hindrance == 0)
+                {
+                    drm.Add(new FireModifier("ffmo", -1m, "A4.6"));
+                }
             }
 
             var final = original + (int)drm.Sum(item => item.Value);
-            var result = shifted < 0 ? "none" : reference.Result(final, shifted);
-            return new FireArithmetic(firers, total, column < 0 ? null : ScenarioA1FireReference.ColumnFp[column], shift, cowered,
-                shifted < 0 ? null : ScenarioA1FireReference.ColumnFp[shifted], dice.ToArray(), original, drm, final, result);
+            var main = hasKnown ? known : vsConcealed;
+            var (column, shifted, result) = Column(main, shift, final);
+            FireColumn? second = null;
+            if (hasKnown && hasConcealed && !residual)
+            {
+                var (c2, s2, r2) = Column(vsConcealed, shift, final);
+                second = new FireColumn(vsConcealed, c2, s2, r2);
+            }
+
+            var arithmetic = new FireArithmetic(firers, main, column, shift, cowered, shifted, dice.ToArray(), original, drm, final, result)
+            {
+                Concealed = second,
+            };
+            return arithmetic with { ResidualFp = Residual(arithmetic, hindrance, leadership.UnitId is null ? 0 : leadership.Value) };
         }
 
-        private void Apply(string result)
+        private (int? Column, int? Shifted, string Result) Column(decimal total, int shift, int final)
         {
+            var column = Array.FindLastIndex(ScenarioA1FireReference.ColumnFp, fp => fp <= total);
+            var shifted = column < 0 ? -1 : column - shift;
+            return (column < 0 ? null : ScenarioA1FireReference.ColumnFp[column], shifted < 0 ? null : ScenarioA1FireReference.ColumnFp[shifted],
+                shifted < 0 ? "none" : reference.Result(final, shifted));
+        }
+
+        /// <summary>
+        /// The Residual FP a Defensive First Fire, Subsequent First Fire, or FPF attack leaves (A8.2, A7.372): the highest
+        /// counter at most half the highest column used, up to 12, one counter lower for each point of positive DRM arising
+        /// outside the target hex (A8.26: LOS Hindrance and positive leadership).
+        /// </summary>
+        private int? Residual(FireArithmetic arithmetic, int hindrance, int leadership)
+        {
+            if (attack.FireKind is not (FirstFire or SubsequentFirstFire or FinalProtectiveFire))
+            {
+                return null;
+            }
+
+            var highest = Math.Max(arithmetic.ColumnFp ?? 0, arithmetic.Concealed?.ColumnFp ?? 0);
+            var index = Array.FindLastIndex(ResidualCounters, fp => fp <= highest / 2m);
+            index -= hindrance + Math.Max(leadership, 0);
+            return index < 0 ? null : ResidualCounters[index];
+        }
+
+        private IEnumerable<FirerFirepower> Firepower(bool vsConcealed)
+        {
+            foreach (var firer in attack.Firers!)
+            {
+                var definition = reference.Definitions[firer.DefinitionId!];
+                var range = RangeOf(attack, firer)!.Value;
+                var weapons = firer.Weapons ?? [];
+
+                // A7.351, A7.352: a squad keeps its inherent FP with one SW, not two; a HS loses it with any.
+                var inherent = firer.UsesInherentFp != false && !(definition.Kind == "asl:squad" && weapons.Count >= 2)
+                    && !(definition.Kind == "asl:half-squad" && weapons.Count >= 1);
+                if (inherent)
+                {
+                    var multipliers = Multipliers(range, definition.Range!.Value, vsConcealed, IsFinalFireAgain(attack, firer), sustained: false);
+                    if (firer.Pinned == true)
+                    {
+                        multipliers.Add(new FireModifier("pinned-firer", 0.5m, "A7.8"));
+                    }
+
+                    var fp = multipliers.Aggregate((decimal)definition.Firepower!.Value, (value, item) => value * item.Value);
+
+                    // A7.36: Assault Fire adds one FP after every other modification, rounded up, but not at Long Range.
+                    if (attack.Phase == "AFPh" && definition.AssaultFire == true && range <= definition.Range)
+                    {
+                        multipliers.Add(new FireModifier("assault-fire", 1m, "A7.36"));
+                        fp = Math.Ceiling(fp + 1);
+                    }
+
+                    yield return new FirerFirepower(firer.UnitId!, definition.Firepower.Value, multipliers, fp);
+                }
+
+                foreach (var weapon in weapons)
+                {
+                    var mg = reference.Definitions[weapon.DefinitionId!];
+                    var multipliers = Multipliers(range, mg.Range!.Value, vsConcealed, IsFinalFireAgain(attack, firer), IsSustained(attack, weapon));
+                    var fp = multipliers.Aggregate((decimal)mg.Firepower!.Value, (value, item) => value * item.Value);
+                    yield return new FirerFirepower(weapon.EquipmentId!, mg.Firepower.Value, multipliers, fp) { Operator = firer.UnitId };
+                }
+            }
+        }
+
+        private List<FireModifier> Multipliers(int range, int normalRange, bool vsConcealed, bool finalFireAgain, bool sustained)
+        {
+            var multipliers = new List<FireModifier>();
+            if (range == 1)
+            {
+                multipliers.Add(new FireModifier("point-blank-fire", 2m, "A7.21"));
+            }
+
+            if (range > normalRange)
+            {
+                multipliers.Add(new FireModifier("long-range-fire", 0.5m, "A7.22"));
+            }
+
+            if (vsConcealed)
+            {
+                multipliers.Add(new FireModifier("area-fire-concealed-target", 0.5m, "A7.23"));
+            }
+
+            // A8.3, A8.31, A8.4, A9.3: Subsequent First Fire, FPF, a First-Fire-marked unit's Final Fire, and Sustained Fire
+            // are Area Fire.
+            if (attack.FireKind is SubsequentFirstFire or FinalProtectiveFire || finalFireAgain || sustained)
+            {
+                multipliers.Add(new FireModifier("area-fire", 0.5m, attack.FireKind switch
+                {
+                    SubsequentFirstFire => "A8.3",
+                    FinalProtectiveFire => "A8.31",
+                    _ => finalFireAgain ? "A8.4" : "A9.3",
+                }));
+            }
+
+            if (attack.Phase == "AFPh")
+            {
+                multipliers.Add(new FireModifier("advancing-fire", 0.5m, "A7.24"));
+            }
+
+            return multipliers;
+        }
+
+        /// <summary>What the attack did to each MG: malfunction on the Original DR (A9.7, A9.71) and Multiple ROF on the colored die (A9.2).</summary>
+        private List<FireWeaponEffect>? WeaponEffects(FireArithmetic arithmetic)
+        {
+            var weapons = (attack.Firers ?? []).SelectMany(item => item.Weapons ?? []).ToArray();
+            if (weapons.Length == 0 || undecided.Count != 0)
+            {
+                return null;
+            }
+
+            var original = arithmetic.OriginalDr;
+            var breakdown = weapons.ToDictionary(weapon => weapon.EquipmentId!,
+                weapon => (reference.Definitions[weapon.DefinitionId!].Breakdown ?? 12) - (IsSustained(attack, weapon) ? 2 : 0), StringComparer.Ordinal);
+            var reached = weapons.Where(weapon => original >= breakdown[weapon.EquipmentId!]).Select(weapon => weapon.EquipmentId!).ToArray();
+            var malfunctioned = new HashSet<string>(StringComparer.Ordinal);
+            var selection = new Dictionary<string, int>(StringComparer.Ordinal);
+            if (reached.Length == 1)
+            {
+                malfunctioned.Add(reached[0]);
+            }
+            else if (reached.Length > 1)
+            {
+                // A9.71: Random Selection among the MGs whose B# the DR reached; the highest dr, ties included.
+                foreach (var id in reached)
+                {
+                    if (attack.Rolls!.WeaponSelection?.TryGetValue(id, out var dr) != true)
+                    {
+                        undecided.Add("asl.a1.fire.roll-missing:weaponSelection:" + string.Join(",", reached));
+                        return null;
+                    }
+
+                    selection[id] = dr;
+                    usedRolls.Add("weaponSelection:" + id);
+                }
+
+                var highest = selection.Values.Max();
+                malfunctioned.UnionWith(selection.Where(item => item.Value == highest).Select(item => item.Key));
+            }
+
+            // A9.2: the Original colored dr (the first die of the IFT DR) at most the MG's ROF keeps its Multiple ROF; A9.3:
+            // Sustained Fire forfeits it.
+            var colored = arithmetic.Dice[0];
+            var counter = FireCounter();
+            return weapons.Select(weapon =>
+            {
+                var id = weapon.EquipmentId!;
+                var sustained = IsSustained(attack, weapon);
+                var retained = !malfunctioned.Contains(id) && !sustained && attack.FireKind != FinalProtectiveFire
+                    && reference.Definitions[weapon.DefinitionId!].RateOfFire is { } rof && colored <= rof;
+                return new FireWeaponEffect(id, breakdown[id], malfunctioned.Contains(id), retained, sustained,
+                    retained ? null : sustained ? "final-fire" : counter, selection.TryGetValue(id, out var dr) ? dr : null);
+            }).ToList();
+        }
+
+        /// <summary>
+        /// The NMC FPF inflicts on its firers (A8.31): the Original IFT DR, modified only by leadership (none: the review
+        /// admits FPF undirected), against each FPF firer; a Casualty MC falls on one of two or more by Random Selection.
+        /// </summary>
+        private List<FireUnitEffect>? FinalProtectiveFireChecks(FireArithmetic arithmetic)
+        {
+            if (undecided.Count != 0)
+            {
+                return null;
+            }
+
+            var firers = attack.Firers!.Select(firer => new TargetState(
+                new FireTarget(firer.UnitId, firer.DefinitionId, firer.LocationId, false, firer.Pinned, firer.Concealed, false, false, false, false),
+                reference.Definitions[firer.DefinitionId!])).ToArray();
+            var dice = arithmetic.Dice;
+            var original = arithmetic.OriginalDr;
+            TargetState? casualty = null;
+            if (original == 12 && firers.Length > 1)
+            {
+                var drs = new Dictionary<string, int>(StringComparer.Ordinal);
+                foreach (var firer in firers)
+                {
+                    if (attack.Rolls!.FirerSelection?.TryGetValue(firer.Id, out var dr) != true)
+                    {
+                        undecided.Add("asl.a1.fire.roll-missing:firerSelection:" + string.Join(",", firers.Select(item => item.Id)));
+                        return null;
+                    }
+
+                    drs[firer.Id] = dr;
+                    usedRolls.Add("firerSelection:" + firer.Id);
+                }
+
+                // The highest dr is affected; on a tie, the first of them in the declared order.
+                var highest = drs.Values.Max();
+                casualty = firers.First(item => drs[item.Id] == highest);
+                casualty.RandomSelectionDr = highest;
+            }
+            else if (original == 12)
+            {
+                casualty = firers[0];
+            }
+
+            foreach (var firer in firers)
+            {
+                // A Casualty MC falls only on the selected firer; the others take the NMC as failed.
+                MoraleOutcome(firer, dice, [], "NMC", firingSide: true, casualty: firer == casualty || original != 12);
+                if (undecided.Count != 0)
+                {
+                    return null;
+                }
+            }
+
+            return firers.Select(item => item.Effect()).ToList();
+        }
+
+        private void Apply(string result, IReadOnlyList<TargetState> group)
+        {
+            var units = group.Where(unit => !unit.IsDummy).ToArray();
+            if (units.Length == 0)
+            {
+                return;
+            }
+
             var kia = Regex.Match(result, "^([1-7])KIA$");
             var k = Regex.Match(result, "^K/([1-4])$");
             var mc = Regex.Match(result, "^([1-4])MC$");
             if (kia.Success)
             {
                 var count = int.Parse(kia.Groups[1].Value, CultureInfo.InvariantCulture);
-                var drs = RandomSelection();
+                var drs = RandomSelection(units);
                 if (drs is null)
                 {
                     return;
@@ -457,7 +968,7 @@ public static class ScenarioA1FireCalculator
             }
             else if (k.Success)
             {
-                var drs = RandomSelection();
+                var drs = RandomSelection(units);
                 if (drs is null)
                 {
                     return;
@@ -474,49 +985,53 @@ public static class ScenarioA1FireCalculator
                     }
                 }
 
-                MoraleChecks(int.Parse(k.Groups[1].Value, CultureInfo.InvariantCulture));
+                MoraleChecks(int.Parse(k.Groups[1].Value, CultureInfo.InvariantCulture), units);
             }
             else if (mc.Success)
             {
-                MoraleChecks(int.Parse(mc.Groups[1].Value, CultureInfo.InvariantCulture));
+                MoraleChecks(int.Parse(mc.Groups[1].Value, CultureInfo.InvariantCulture), units);
             }
             else if (result == "NMC")
             {
-                MoraleChecks(0);
+                MoraleChecks(0, units);
             }
             else if (result == "PTC")
             {
-                PinTaskChecks();
+                PinTaskChecks(units);
             }
         }
 
-        private Dictionary<string, int>? RandomSelection()
+        private Dictionary<string, int>? RandomSelection(IReadOnlyList<TargetState> units)
         {
+            // One dr for each unit of the group the result applies to (A.9, A7.301, A7.302).
             var drs = new Dictionary<string, int>(StringComparer.Ordinal);
-            foreach (var id in state.Keys)
+            foreach (var unit in units)
             {
-                if (attack.Rolls!.RandomSelection?.TryGetValue(id, out var dr) != true)
+                if (attack.Rolls!.RandomSelection?.TryGetValue(unit.Id, out var dr) != true)
                 {
-                    undecided.Add("asl.a1.fire.roll-missing:randomSelection:" + id);
+                    undecided.Add("asl.a1.fire.roll-missing:randomSelection:" + string.Join(",", units.Select(item => item.Id)));
                     return null;
                 }
 
-                drs[id] = dr;
-                state[id].RandomSelectionDr = dr;
-                usedRolls.Add("randomSelection:" + id);
+                drs[unit.Id] = dr;
+                unit.RandomSelectionDr = dr;
+                usedRolls.Add("randomSelection:" + unit.Id);
             }
 
             return drs;
         }
 
         // Leaders check first, higher Morale Level first (A10.2), then the other units in the declared order.
-        private TargetState[] CheckOrder() =>
-            state.Values.Where(unit => unit.Definition.IsLeader).OrderByDescending(unit => unit.Definition.Morale)
-                .Concat(state.Values.Where(unit => !unit.Definition.IsLeader)).ToArray();
-
-        private void MoraleChecks(int modifier)
+        private static TargetState[] CheckOrder(IEnumerable<TargetState> units)
         {
-            foreach (var unit in CheckOrder().Where(unit => !unit.Eliminated))
+            var list = units.ToArray();
+            return list.Where(unit => unit.Definition.IsLeader).OrderByDescending(unit => unit.Definition.Morale)
+                .Concat(list.Where(unit => !unit.Definition.IsLeader)).ToArray();
+        }
+
+        private void MoraleChecks(int modifier, IReadOnlyList<TargetState> units)
+        {
+            foreach (var unit in CheckOrder(units).Where(unit => !unit.Eliminated))
             {
                 var check = Check(unit, "MC", "checks", modifier, useLeadership: true);
                 if (check is null)
@@ -532,7 +1047,8 @@ public static class ScenarioA1FireCalculator
             }
         }
 
-        private void MoraleOutcome(TargetState unit, IReadOnlyList<int> dice, List<FireModifier> drm, string kind = "MC")
+        private void MoraleOutcome(TargetState unit, IReadOnlyList<int> dice, List<FireModifier> drm, string kind = "MC", bool firingSide = false,
+            bool casualty = true)
         {
             var morale = unit.MoraleLevel;
             if (morale is null)
@@ -545,15 +1061,15 @@ public static class ScenarioA1FireCalculator
             var final = original + (int)drm.Sum(item => item.Value);
             var passed = final <= morale && original != 12;
             string consequence;
-            if (original == 12 && !unit.Broken)
+            if (original == 12 && casualty && !unit.Broken)
             {
                 // A10.31: a Casualty MC, after any ELR Replacement (A19.13).
-                if (Elr() is not { } elr)
+                if (Elr(firingSide) is not { } limit)
                 {
                     return;
                 }
 
-                if (final - morale.Value > elr ? !ReduceBeyondElr(unit) : !Reduce(unit, "casualty-mc"))
+                if (final - morale.Value > limit ? !ReduceBeyondElr(unit) : !Reduce(unit, "casualty-mc"))
                 {
                     return;
                 }
@@ -565,19 +1081,19 @@ public static class ScenarioA1FireCalculator
 
                 consequence = unit.Eliminated ? "eliminated" : "casualty-reduced-and-broken";
             }
-            else if (original == 12)
+            else if (original == 12 && casualty)
             {
                 unit.Eliminate("eliminated-casualty-mc");
                 consequence = "eliminated";
             }
             else if (!passed && !unit.Broken)
             {
-                if (Elr() is not { } elr)
+                if (Elr(firingSide) is not { } limit)
                 {
                     return;
                 }
 
-                if (final - morale.Value > elr)
+                if (final - morale.Value > limit)
                 {
                     Replace(unit);
                     consequence = unit.Disrupted ? "disrupted" : "replaced";
@@ -608,18 +1124,25 @@ public static class ScenarioA1FireCalculator
                 consequence = "passed";
             }
 
+            // A15.1: an Original MC DR of 2 calls for Heat of Battle, which is not reviewed; the record says so (ruling R0.2).
+            if (original == 2)
+            {
+                unit.Note("heat-of-battle-not-taken");
+            }
+
             unit.Checks.Add(new FireCheck(kind, dice.ToArray(), original, drm, final, morale.Value, passed, consequence));
         }
 
-        private int? Elr()
+        private int? Elr(bool firingSide)
         {
-            // A19.1: the ELR of the target side is a declared fact.
-            if (attack.TargetSideElr is { } elr)
+            // A19.1: the ELR of the checking unit's side is a declared fact: the target side's, or the firing side's for
+            // the NMC FPF inflicts on its firers.
+            if ((firingSide ? attack.FiringSideElr : attack.TargetSideElr) is { } value)
             {
-                return elr;
+                return value;
             }
 
-            undecided.Add("asl.a1.fire.elr-undecided:elr-undeclared");
+            undecided.Add(firingSide ? "asl.a1.fire.elr-undecided:firing-side-elr-undeclared" : "asl.a1.fire.elr-undecided:elr-undeclared");
             return null;
         }
 
@@ -665,9 +1188,9 @@ public static class ScenarioA1FireCalculator
             return Reduce(unit, "casualty-mc");
         }
 
-        private void PinTaskChecks()
+        private void PinTaskChecks(IReadOnlyList<TargetState> units)
         {
-            foreach (var unit in CheckOrder().Where(unit => !unit.Eliminated && !unit.Broken && !unit.Pinned))
+            foreach (var unit in CheckOrder(units).Where(unit => !unit.Eliminated && !unit.Broken && !unit.Pinned))
             {
                 var check = Check(unit, "NTC", "checks", 0, useLeadership: true);
                 if (check is null)
@@ -711,7 +1234,7 @@ public static class ScenarioA1FireCalculator
                 // morale when the checker is a leader; A10.72: a non-zero modifier, a wounded leader's +1 included, cannot
                 // be declined.
                 var leader = state.Values.FirstOrDefault(other => other.Definition.IsLeader && other != unit && !other.Eliminated
-                    && !other.Broken && !other.Pinned
+                    && !other.Broken && !other.Pinned && !other.IsDummy
                     && (!unit.Definition.IsLeader || other.MoraleLevel > unit.MoraleLevel));
                 if (leader?.Leadership is { } leadership and not 0)
                 {
@@ -740,7 +1263,7 @@ public static class ScenarioA1FireCalculator
 
                 // A10.2: an eliminated leader causes LLMC; an unbroken leader that broke causes LLTC.
                 var eliminated = leader.Eliminated;
-                foreach (var unit in state.Values.Where(unit => unit != leader && !unit.Eliminated
+                foreach (var unit in state.Values.Where(unit => unit != leader && !unit.Eliminated && !unit.IsDummy
                     && (eliminated || !unit.Broken) && unit.MoraleLevel < leaderMorale).ToArray())
                 {
                     var check = Check(unit, eliminated ? "LLMC" : "LLTC", "leaderLoss", 0, useLeadership: false);
@@ -833,14 +1356,16 @@ public static class ScenarioA1FireCalculator
             var supplied = (rolls.RandomSelection?.Keys.Select(id => "randomSelection:" + id) ?? [])
                 .Concat(rolls.Checks?.Keys.Select(id => "checks:" + id) ?? [])
                 .Concat(rolls.LeaderLoss?.Keys.Select(id => "leaderLoss:" + id) ?? [])
-                .Concat(rolls.WoundSeverity?.Keys.Select(id => "woundSeverity:" + id) ?? []);
+                .Concat(rolls.WoundSeverity?.Keys.Select(id => "woundSeverity:" + id) ?? [])
+                .Concat(rolls.WeaponSelection?.Keys.Select(id => "weaponSelection:" + id) ?? [])
+                .Concat(rolls.FirerSelection?.Keys.Select(id => "firerSelection:" + id) ?? []);
             return supplied.Where(key => !usedRolls.Contains(key)).Select(key => "asl.a1.fire.extra-roll:" + key).ToList();
         }
 
         private List<string> FirerConcealment()
         {
-            var concealed = attack.Firers!.Where(item => item.Concealed == true).Select(item => item.UnitId!)
-                .Concat(attack.Director is { Concealed: true } director ? [director.UnitId!] : []).ToArray();
+            var concealed = (attack.Firers ?? []).Where(item => item.Concealed == true).Select(item => item.UnitId!)
+                .Concat(Directors(attack).Where(item => item.Concealed == true).Select(item => item.UnitId!)).ToArray();
             if (concealed.Length == 0)
             {
                 return [];
@@ -849,7 +1374,7 @@ public static class ScenarioA1FireCalculator
             // A12.14: a concealed unit that fires or directs fire loses "?" in the LOS of a Good Order enemy ground
             // unit within 16 hexes. The package sees only the target Location, so it decides only when one of its
             // units was Good Order when the attack was made.
-            if (attack.Range <= 16 && attack.Targets!.Any(item => item.Broken == false))
+            if (attack.Firers!.All(item => RangeOf(attack, item) <= 16) && attack.Targets!.Any(item => item.Broken == false && item.Dummy != true))
             {
                 return concealed.ToList();
             }
@@ -868,6 +1393,11 @@ public static class ScenarioA1FireCalculator
         public string Id { get; } = target.UnitId!;
 
         public FireDefinition Definition { get; private set; } = definition;
+
+        public bool IsDummy { get; } = target.Dummy == true;
+
+        /// <summary>Concealed, hidden (A12.3), or a Dummy: attacked on the halved column of A12.13.</summary>
+        public bool IsConcealedType { get; } = target.Concealed == true || target.Hidden == true || target.Dummy == true;
 
         public bool Broken { get; private set; } = target.Broken == true;
 
@@ -889,6 +1419,8 @@ public static class ScenarioA1FireCalculator
 
         public bool Disrupted { get; private set; } = target.Disrupted == true;
 
+        private bool Hidden => Target.Concealed == true || Target.Hidden == true;
+
         /// <summary>The Morale Level before this attack, which an unbroken leader's LLTC compares against (A10.2).</summary>
         public int? InitialMorale { get; } = (target.Broken == true ? definition.BrokenMorale : definition.Morale) - (target.Wounded == true ? 1 : 0);
 
@@ -898,11 +1430,13 @@ public static class ScenarioA1FireCalculator
         /// <summary>The leadership modifier, one worse when wounded (A17.3).</summary>
         public int? Leadership => Definition.Leadership + (Wounded ? 1 : 0);
 
+        public void Note(string item) => events.Add(item);
+
         public void Eliminate(string reason)
         {
             MoraleAtLoss = MoraleLevel;
             Eliminated = true;
-            ConcealmentLost = Target.Concealed == true;
+            ConcealmentLost = Hidden;
             events.Add(reason);
         }
 
@@ -915,7 +1449,7 @@ public static class ScenarioA1FireCalculator
 
             Broken = true;
             Pinned = false;
-            ConcealmentLost = Target.Concealed == true;
+            ConcealmentLost = Hidden;
             if (reason is not null)
             {
                 events.Add(reason);
@@ -925,7 +1459,7 @@ public static class ScenarioA1FireCalculator
         public void Wound()
         {
             Wounded = true;
-            ConcealmentLost = Target.Concealed == true;
+            ConcealmentLost = Hidden;
             events.Add("wounded");
         }
 
@@ -944,12 +1478,12 @@ public static class ScenarioA1FireCalculator
         public void ReduceTo(FireDefinition half, string reason)
         {
             Definition = half;
-            ConcealmentLost = Target.Concealed == true;
+            ConcealmentLost = Hidden;
             events.Add(reason);
         }
 
-        public FireUnitEffect Effect() => new(Id, Target.DefinitionId!, Definition.Id, RandomSelectionDr, Eliminated, Broken && !Eliminated,
-            Pinned && !Broken && !Eliminated, Wounded && !Eliminated, Disrupted && !Eliminated, ConcealmentLost, events.ToArray(),
-            Checks.ToArray());
+        public FireUnitEffect Effect() => new(Id, Target.DefinitionId ?? DummyDefinition.Id, Definition.Id, RandomSelectionDr, Eliminated,
+            Broken && !Eliminated, Pinned && !Broken && !Eliminated, Wounded && !Eliminated, Disrupted && !Eliminated, ConcealmentLost,
+            events.ToArray(), Checks.ToArray());
     }
 }

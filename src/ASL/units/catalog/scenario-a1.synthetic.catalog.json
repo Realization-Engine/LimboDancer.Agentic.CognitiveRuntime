@@ -240,6 +240,74 @@
         { "face": "front", "attribute": "morale", "value": 2, "row": 107 },
         { "face": "broken", "attribute": "broken-morale", "value": 3, "row": 108 }
       ]
+    },
+    {
+      "id": "attacker-lmg",
+      "kind": "asl:mg", "kindRow": 109,
+      "nationality": "american", "nationalityRow": 110,
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "attacker-lmg" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "size", "value": "light", "row": 111 },
+        { "face": "front", "attribute": "firepower", "value": 2, "row": 112 },
+        { "face": "front", "attribute": "range", "value": 4, "row": 113 },
+        { "face": "front", "attribute": "breakdown", "value": 11, "row": 114 },
+        { "face": "front", "attribute": "rate-of-fire", "value": 1, "row": 115 },
+        { "face": "front", "attribute": "portage", "value": 1, "row": 116 },
+        { "face": "malfunctioned", "attribute": "repair", "value": 2, "row": 117 }
+      ]
+    },
+    {
+      "id": "attacker-mmg",
+      "kind": "asl:mg", "kindRow": 119,
+      "nationality": "american", "nationalityRow": 120,
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "attacker-mmg" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "size", "value": "medium", "row": 121 },
+        { "face": "front", "attribute": "firepower", "value": 3, "row": 122 },
+        { "face": "front", "attribute": "range", "value": 5, "row": 123 },
+        { "face": "front", "attribute": "breakdown", "value": 11, "row": 124 },
+        { "face": "front", "attribute": "rate-of-fire", "value": 1, "row": 125 },
+        { "face": "front", "attribute": "portage", "value": 1, "row": 126 },
+        { "face": "malfunctioned", "attribute": "repair", "value": 2, "row": 127 }
+      ]
+    },
+    {
+      "id": "defender-lmg",
+      "kind": "asl:mg", "kindRow": 129,
+      "nationality": "french", "nationalityRow": 130,
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "defender-lmg" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "size", "value": "light", "row": 131 },
+        { "face": "front", "attribute": "firepower", "value": 4, "row": 132 },
+        { "face": "front", "attribute": "range", "value": 6, "row": 133 },
+        { "face": "front", "attribute": "breakdown", "value": 11, "row": 134 },
+        { "face": "front", "attribute": "rate-of-fire", "value": 1, "row": 135 },
+        { "face": "front", "attribute": "portage", "value": 1, "row": 136 },
+        { "face": "malfunctioned", "attribute": "repair", "value": 2, "row": 137 }
+      ]
+    },
+    {
+      "id": "defender-mmg",
+      "kind": "asl:mg", "kindRow": 139,
+      "nationality": "french", "nationalityRow": 140,
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "defender-mmg" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "size", "value": "medium", "row": 141 },
+        { "face": "front", "attribute": "firepower", "value": 5, "row": 142 },
+        { "face": "front", "attribute": "range", "value": 7, "row": 143 },
+        { "face": "front", "attribute": "breakdown", "value": 11, "row": 144 },
+        { "face": "front", "attribute": "rate-of-fire", "value": 1, "row": 145 },
+        { "face": "front", "attribute": "portage", "value": 1, "row": 146 },
+        { "face": "malfunctioned", "attribute": "repair", "value": 2, "row": 147 }
+      ]
     }
   ]
 }

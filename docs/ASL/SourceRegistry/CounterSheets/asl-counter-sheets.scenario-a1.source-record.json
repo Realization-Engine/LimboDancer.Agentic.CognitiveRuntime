@@ -5,7 +5,7 @@
   "status": "reviewed",
   "decision": "D1, decided 2026-09-25: the published counter sheets, transcribed and reviewed, are the source of record for printed counter values (ASL Unit Requirements, section 12).",
   "d1Departure": "On 2026-09-25 the user asked Claude to fill in the worksheet itself. No physical counter sheets were available to Claude, so this transcription reads the registered rulebook's charts instead: A1.1 (p. 44) says the values of each unit are listed on the National Capabilities Chart (A25). Values the charts do not show are recorded as not-in-source. The reviewer should compare every row with the published counters; where a counter and the chart differ, the counter governs under D1.",
-  "scope": "The thirteen counters the Scenario A1 catalog needs, listed in scenario-a1.counter-worksheet.csv: the four counters of the reviewed Scenario A1 cases, and nine added on 2026-09-26 for the Fire package (unit step 18): the Russian HS for Casualty Reduction, and the Replacement units and leaders of A19.13. No other counter is registered by this record.",
+  "scope": "The thirteen counters the Scenario A1 catalog needs, listed in scenario-a1.counter-worksheet.csv: the four counters of the reviewed Scenario A1 cases, and nine added on 2026-09-26 for the Fire package (unit step 18): the Russian HS for Casualty Reduction, and the Replacement units and leaders of A19.13. And four MG counters added on 2026-09-26 for unit step 23, whose values no registered source gives: they are manufactured under ruling R0.3 of the ASL Unit Rally and Fire Extensions Plan and recorded under sheet MFG. No other counter is registered by this record.",
   "scenario": "Eastern Front village fight on board 01: a German 1st Line rifle platoon (4-6-7 squads, with a 2-4-7 half-squad already in the stacking-case building) clears buildings held by a Russian 1st Line rifle company (squared-1 4-4-7 squads) under an 8-0 leader, fighting concealed and from fortified buildings.",
   "sheets": [
     {
@@ -28,6 +28,13 @@
       "publisher": "Multi-Man Publishing",
       "product": "Counters held by the reviewer, Dennis Landi",
       "printing": "Not recorded; on 2026-09-26 the reviewer confirmed the printed values of the three leaders, including the broken morale, which the rulebook shows only in counter artwork (ASL-UNIT-012). The A18.2 Leader Creation Table (sheet LCT) agrees with their front values."
+    },
+    {
+      "id": "MFG",
+      "title": "Manufactured MG values (ruling R0.3)",
+      "publisher": "none",
+      "product": "No printed counter: values manufactured by Claude (claude-opus-5-5) under the user's ruling R0.3 of 2026-09-26, because neither the rulebook text nor its charts list them",
+      "printing": "Not applicable. The Russian MMG follows the MMG of the Counter Examples (physical PDF page 676), whose nationality the page does not state; the other three are chosen within A9.1 (p. 62). A value here is replaced, and the catalog republished, if a source for it is later registered."
     }
   ],
   "extraction": {
@@ -41,14 +48,14 @@
     "format": "asl-counter-transcription/1",
     "path": "docs/ASL/SourceRegistry/CounterSheets/scenario-a1.counter-transcription.csv",
     "worksheet": "docs/ASL/SourceRegistry/CounterSheets/scenario-a1.counter-worksheet.csv",
-    "sha256": "73852539971b48b088f28f6257ec2feaf4d01b4faa28e21be13ebd60577c009d",
+    "sha256": "23999ea653bcce7b7f68fe57790fc34810b770bb767b9c7b7db2c311fdf84b9e",
     "transcriber": "Claude (claude-opus-5-5)",
     "transcribedOn": "2026-09-26"
   },
   "review": {
     "reviewer": "Dennis Landi",
     "reviewedOn": "2026-09-26",
-    "method": "The user reviewed all 57 rows in conversation on 2026-09-25, as a table of every value with the chart each came from, and confirmed them all without correction. The not-in-source rows remain unknown. On 2026-09-26 the user reviewed the 130 rows added for the Fire package, as a table of every value with the chart it came from, and accepted them; the user supplied the broken morale of the three leaders from the printed counters, since the rulebook shows it only in counter artwork (ASL-UNIT-012), and it is recorded under sheet USR."
+    "method": "The user reviewed all 57 rows in conversation on 2026-09-25, as a table of every value with the chart each came from, and confirmed them all without correction. The not-in-source rows remain unknown. On 2026-09-26 the user reviewed the 130 rows added for the Fire package, as a table of every value with the chart it came from, and accepted them; the user supplied the broken morale of the three leaders from the printed counters, since the rulebook shows it only in counter artwork (ASL-UNIT-012), and it is recorded under sheet USR. On 2026-09-26 the user ruled (R0.3) that printed values no source gives are manufactured, and delegated the pass that needs them (unit steps 19 to 23) without further review; the 40 rows of sheet MFG were manufactured under that ruling and were not reviewed value by value. The reviewer column names the record's reviewer because the builder requires it; for sheet MFG it records the delegation, not a comparison with a counter."
   },
   "meaning": {
     "rulebookPdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",

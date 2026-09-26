@@ -20,6 +20,22 @@ public static class AslScenarioA1FireSourceReview
     public const string BranchesComparisonFile = "asl-scenario-a1.fire-branches-pdf-comparison.json";
     public const string BranchesComparisonSha256 = "417ca7726c27e070543f4b8bf75ef5ff79652e0cf3f3509a1c4da252968af155";
 
+    /// <summary>
+    /// The unit step 19 Rally comparison: the RPh, Rally, the terrain bonus, DM, Fate, leader rally, and the Heat of
+    /// Battle and Field Promotion rules whose Original 2 the Rally package records as not taken (ruling R0.2).
+    /// </summary>
+    public const string RallyComparisonFile = "asl-scenario-a1.rally-pdf-comparison.json";
+    public const string RallyComparisonSha256 = "0af34cd4bbdb228b0e20c9edcf706a6cb6c2db045b2754de455782d3d782ef06";
+
+    /// <summary>
+    /// The unit steps 20 to 23 comparison for the revised Fire package: the MPh and AFPh, movement and its DRM,
+    /// Defensive First Fire, Subsequent First Fire, FPF, Residual FP, Final Fire, Advancing Fire and Assault Fire, fire
+    /// groups across Locations (ADJACENT), concealment of hidden units and Dummies, support weapons and MGs, and the
+    /// MF costs of the admitted terrain.
+    /// </summary>
+    public const string ExtensionsComparisonFile = "asl-scenario-a1.fire-extensions-pdf-comparison.json";
+    public const string ExtensionsComparisonSha256 = "b9cb4d0107c23927e7d9e26541087ebb11e3526063fc220a4fc53d85533e45aa";
+
     private const string ChapterA = "asl-easlrb-3.10:chapter-a";
     private const string ChapterB = "asl-easlrb-3.10:chapter-b";
 
@@ -90,6 +106,77 @@ public static class AslScenarioA1FireSourceReview
         ("A17.3", "A17.3", ChapterA, 1324, SourceFragmentKind.RuleText, 85),
     ];
 
+    private static readonly (string Rule, string Registered, string Source, int Line, SourceFragmentKind Kind, int Page)[] RallySubjects =
+    [
+        ("A3.1", "A3.1", ChapterA, 197, SourceFragmentKind.RuleText, 47),
+        ("A10.6", "A10.6", ChapterA, 820, SourceFragmentKind.RuleText, 68),
+        ("A10.61", "A10.61", ChapterA, 822, SourceFragmentKind.RuleText, 68),
+        ("A10.62", "A10.62", ChapterA, 824, SourceFragmentKind.RuleText, 68),
+        ("A10.64", "A10.64", ChapterA, 830, SourceFragmentKind.RuleText, 68),
+        ("A10.71", "A10.71", ChapterA, 838, SourceFragmentKind.RuleText, 69),
+        ("A15.1", "A15.1", ChapterA, 1214, SourceFragmentKind.RuleText, 83),
+        ("A15.1", "A15.1", ChapterA, 1226, SourceFragmentKind.RuleContinuation, 83),
+        ("A18.11", "A18.11", ChapterA, 1332, SourceFragmentKind.RuleText, 85),
+    ];
+
+    private static readonly (string Rule, string Registered, string Source, int Line, SourceFragmentKind Kind, int Page)[] ExtensionSubjects =
+    [
+        ("A3.3", "A3.3", ChapterA, 201, SourceFragmentKind.RuleText, 47),
+        ("A3.5", "A3.5", ChapterA, 205, SourceFragmentKind.RuleText, 47),
+        ("A.8", "A.8", ChapterA, 41, SourceFragmentKind.RuleText, 43),
+        ("A4.1", "A4.1", ChapterA, 231, SourceFragmentKind.RuleText, 48),
+        ("A4.11", "A4.11", ChapterA, 233, SourceFragmentKind.RuleText, 48),
+        ("A4.13", "A4.13", ChapterA, 237, SourceFragmentKind.RuleText, 48),
+        ("A4.132", "A4.132", ChapterA, 241, SourceFragmentKind.RuleText, 48),
+        ("A4.2", "A4.2", ChapterA, 265, SourceFragmentKind.RuleText, 49),
+        ("A4.4", "A4.4", ChapterA, 285, SourceFragmentKind.RuleText, 50),
+        ("A4.6", "A4.6", ChapterA, 311, SourceFragmentKind.RuleText, 51),
+        ("A4.61", "A4.61", ChapterA, 313, SourceFragmentKind.RuleText, 51),
+        ("A4.61", "A4.61", ChapterA, 315, SourceFragmentKind.RuleContinuation, 51),
+        ("A7.24", "A7.24", ChapterA, 453, SourceFragmentKind.RuleText, 55),
+        ("A7.35", "A7.35", ChapterA, 503, SourceFragmentKind.RuleText, 56),
+        ("A7.351", "A7.351", ChapterA, 509, SourceFragmentKind.RuleText, 56),
+        ("A7.352", "A7.352", ChapterA, 511, SourceFragmentKind.RuleText, 56),
+        ("A7.353", "A7.353", ChapterA, 513, SourceFragmentKind.RuleText, 56),
+        ("A7.36", "A7.36", ChapterA, 515, SourceFragmentKind.RuleText, 56),
+        ("A7.372", "A7.372", ChapterA, 525, SourceFragmentKind.RuleText, 57),
+        ("A7.83", "A7.83", ChapterA, 582, SourceFragmentKind.RuleText, 58),
+        ("A8.1", "A8.1", ChapterA, 592, SourceFragmentKind.RuleText, 59),
+        ("A8.11", "A8.11", ChapterA, 594, SourceFragmentKind.RuleText, 59),
+        ("A8.12", "A8.12", ChapterA, 596, SourceFragmentKind.RuleText, 59),
+        ("A8.13", "A8.13", ChapterA, 598, SourceFragmentKind.RuleText, 59),
+        ("A8.14", "A8.14", ChapterA, 600, SourceFragmentKind.RuleText, 59),
+        ("A8.2", "A8.2", ChapterA, 608, SourceFragmentKind.RuleText, 60),
+        ("A8.21", "A8.21", ChapterA, 618, SourceFragmentKind.RuleText, 60),
+        ("A8.22", "A8.22", ChapterA, 620, SourceFragmentKind.RuleText, 60),
+        ("A8.22", "A8.22", ChapterA, 622, SourceFragmentKind.RuleContinuation, 60),
+        ("A8.26", "A8.26", ChapterA, 644, SourceFragmentKind.RuleText, 60),
+        ("A8.3", "A8.3", ChapterA, 656, SourceFragmentKind.RuleText, 61),
+        ("A8.31", "A8.31", ChapterA, 658, SourceFragmentKind.RuleText, 61),
+        ("A8.4", "A8.4", ChapterA, 668, SourceFragmentKind.RuleText, 61),
+        ("A9.1", "A9.1", ChapterA, 682, SourceFragmentKind.RuleText, 62),
+        ("A9.11", "A9.11", ChapterA, 686, SourceFragmentKind.RuleText, 62),
+        ("A9.2", "A9.2", ChapterA, 690, SourceFragmentKind.RuleText, 62),
+        ("A9.3", "A9.3", ChapterA, 716, SourceFragmentKind.RuleText, 63),
+        ("A9.7", "A9.7", ChapterA, 742, SourceFragmentKind.RuleText, 65),
+        ("A9.71", "A9.71", ChapterA, 744, SourceFragmentKind.RuleText, 65),
+        ("A9.72", "A9.72", ChapterA, 746, SourceFragmentKind.RuleText, 65),
+        ("A12.11", "A12.11", ChapterA, 992, SourceFragmentKind.RuleText, 76),
+        ("A12.13", "A12.13", ChapterA, 1017, SourceFragmentKind.RuleText, 77),
+        ("A12.3", "A12.3", ChapterA, 1084, SourceFragmentKind.RuleText, 80),
+        ("A12.31", "A12.31", ChapterA, 1088, SourceFragmentKind.RuleText, 80),
+        ("B3.4", "B3.4", ChapterB, 138, SourceFragmentKind.RuleText, 114),
+        ("B12.4", "B12.4", ChapterB, 804, SourceFragmentKind.RuleText, 127),
+        ("B13.4", "B13.4", ChapterB, 848, SourceFragmentKind.RuleText, 128),
+        ("B14.4", "B14.4", ChapterB, 922, SourceFragmentKind.RuleText, 129),
+        ("B15.4", "B15.4", ChapterB, 962, SourceFragmentKind.RuleText, 129),
+        ("B23.4", "B23.4", ChapterB, 1382, SourceFragmentKind.RuleText, 136),
+    ];
+
+    // Fragments a column break, a boxed example, or a page break interrupts: each part occurs whole in the page text.
+    private static readonly HashSet<(string Rule, int Line)> TwoPartSubjects =
+        [("A7.212", 445), ("A8.26", 644), ("A8.31", 658), ("A9.2", 690), ("B3.4", 138), ("A12.11", 992)];
+
     /// <summary>The verified fragments, in subject order, keyed by rule id for the Fire package.</summary>
     public static IReadOnlyList<(string Rule, int Page, SourceFragment Fragment)> Fragments(GeneratedManifests manifests)
     {
@@ -106,6 +193,17 @@ public static class AslScenarioA1FireSourceReview
         GeneratedManifests manifests, AslScenarioA1SourceAttestation attestation) =>
         Build(repositoryRoot, manifests, attestation, BranchesComparisonFile, BranchesComparisonSha256, BranchSubjects,
             "unit step 18 Fire branches review");
+
+    /// <summary>The unit step 19 subjects of the Rally package.</summary>
+    public static AslScenarioA1VerificationBatch BuildRally(string repositoryRoot,
+        GeneratedManifests manifests, AslScenarioA1SourceAttestation attestation) =>
+        Build(repositoryRoot, manifests, attestation, RallyComparisonFile, RallyComparisonSha256, RallySubjects, "unit step 19 Rally review");
+
+    /// <summary>The unit steps 20 to 23 subjects of the revised Fire package.</summary>
+    public static AslScenarioA1VerificationBatch BuildExtensions(string repositoryRoot,
+        GeneratedManifests manifests, AslScenarioA1SourceAttestation attestation) =>
+        Build(repositoryRoot, manifests, attestation, ExtensionsComparisonFile, ExtensionsComparisonSha256, ExtensionSubjects,
+            "unit steps 20 to 23 Fire extensions review");
 
     private static AslScenarioA1VerificationBatch Build(string repositoryRoot, GeneratedManifests manifests,
         AslScenarioA1SourceAttestation attestation, string file, string digest,
@@ -152,7 +250,7 @@ public static class AslScenarioA1FireSourceReview
             Require(evidence.GetProperty("normalizedAlphanumericSha256").GetString() == Hashing.Sha256Text(normalized)
                 && evidence.GetProperty("normalizedAlphanumericLength").GetInt32() == normalized.Length
                 && (comparison == "complete-alphanumeric-match"
-                    || (comparison == "complete-alphanumeric-match-in-two-parts" && subject.Rule == "A7.212"
+                    || (comparison == "complete-alphanumeric-match-in-two-parts" && TwoPartSubjects.Contains((subject.Rule, subject.Line))
                         && evidence.GetProperty("partLengths").EnumerateArray().Sum(part => part.GetInt32()) == normalized.Length)),
                 "The reviewed text differs from the PDF comparison.");
 

@@ -186,3 +186,43 @@ sheet,counter,face,attribute,value,transcriber,reviewer,note
 ,defender-leader-6-plus-1,broken,broken-morale,,,,"whole number, or not-printed if the counter has no broken side (A1.4)"
 ,defender-leader-6-plus-1,broken,bpv,,,,"whole number, or not-printed (A1.4)"
 ,defender-leader-6-plus-1,broken,asl:self-rally,,,,yes or no: broken morale in a square (A1.4)
+,attacker-lmg,counter,kind,,,,expected asl:mg
+,attacker-lmg,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,attacker-lmg,front,identity,,,,"identity as printed, or not-printed"
+,attacker-lmg,front,size,,,,"light, medium, or heavy (A9.1)"
+,attacker-lmg,front,firepower,,,,whole number (A9.1)
+,attacker-lmg,front,range,,,,whole number (A9.1)
+,attacker-lmg,front,breakdown,,,,whole number (A9.7)
+,attacker-lmg,front,rate-of-fire,,,,"whole number, or not-printed if the MG has no Multiple ROF (A9.2)"
+,attacker-lmg,front,portage,,,,whole number of PP (A4.4)
+,attacker-lmg,malfunctioned,repair,,,,whole number (A9.72)
+,attacker-mmg,counter,kind,,,,expected asl:mg
+,attacker-mmg,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,attacker-mmg,front,identity,,,,"identity as printed, or not-printed"
+,attacker-mmg,front,size,,,,"light, medium, or heavy (A9.1)"
+,attacker-mmg,front,firepower,,,,whole number (A9.1)
+,attacker-mmg,front,range,,,,whole number (A9.1)
+,attacker-mmg,front,breakdown,,,,whole number (A9.7)
+,attacker-mmg,front,rate-of-fire,,,,"whole number, or not-printed if the MG has no Multiple ROF (A9.2)"
+,attacker-mmg,front,portage,,,,whole number of PP (A4.4)
+,attacker-mmg,malfunctioned,repair,,,,whole number (A9.72)
+,defender-lmg,counter,kind,,,,expected asl:mg
+,defender-lmg,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,defender-lmg,front,identity,,,,"identity as printed, or not-printed"
+,defender-lmg,front,size,,,,"light, medium, or heavy (A9.1)"
+,defender-lmg,front,firepower,,,,whole number (A9.1)
+,defender-lmg,front,range,,,,whole number (A9.1)
+,defender-lmg,front,breakdown,,,,whole number (A9.7)
+,defender-lmg,front,rate-of-fire,,,,"whole number, or not-printed if the MG has no Multiple ROF (A9.2)"
+,defender-lmg,front,portage,,,,whole number of PP (A4.4)
+,defender-lmg,malfunctioned,repair,,,,whole number (A9.72)
+,defender-mmg,counter,kind,,,,expected asl:mg
+,defender-mmg,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,defender-mmg,front,identity,,,,"identity as printed, or not-printed"
+,defender-mmg,front,size,,,,"light, medium, or heavy (A9.1)"
+,defender-mmg,front,firepower,,,,whole number (A9.1)
+,defender-mmg,front,range,,,,whole number (A9.1)
+,defender-mmg,front,breakdown,,,,whole number (A9.7)
+,defender-mmg,front,rate-of-fire,,,,"whole number, or not-printed if the MG has no Multiple ROF (A9.2)"
+,defender-mmg,front,portage,,,,whole number of PP (A4.4)
+,defender-mmg,malfunctioned,repair,,,,whole number (A9.72)

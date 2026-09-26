@@ -270,15 +270,30 @@ public sealed class ScenarioA1FirePackageTests
     [Fact]
     public void ConcealmentHalvesFirepowerAndIsLost()
     {
+        // A12.13: the known HS is attacked on the 16 column and the concealed squad on the 8 column, with the same DR:
+        // 3+4 = 7, +2 wooden building, +0 leadership: Final DR 9, a 1MC and a PTC.
         var attack = U18(Rolls([3, 4], checks: new() { ["de-squad"] = [2, 3], ["de-hs"] = [2, 3] })) with
         {
             Firers = [Firer("ru-1", concealed: true), Firer("ru-2")],
             Targets = [Target("de-squad", "attacker-squad", concealed: true), Target("de-hs", "attacker-half-squad")],
         };
         var result = ScenarioA1FireCalculator.Resolve(attack, Reference);
-        Assert.Equal((8m, 8, "PTC"), (result.Arithmetic!.TotalFirepower, result.Arithmetic.ColumnFp!.Value, result.Arithmetic.Result));
+        Assert.Equal((16m, 16, "1MC"), (result.Arithmetic!.TotalFirepower, result.Arithmetic.ColumnFp!.Value, result.Arithmetic.Result));
+        Assert.Equal((8m, 8, "PTC"), (result.Arithmetic.Concealed!.TotalFirepower, result.Arithmetic.Concealed.ColumnFp!.Value,
+            result.Arithmetic.Concealed.Result));
+        Assert.Equal("NTC", Assert.Single(result.Effects.Single(item => item.UnitId == "de-squad").Checks).Kind);
+        Assert.Equal("MC", Assert.Single(result.Effects.Single(item => item.UnitId == "de-hs").Checks).Kind);
         Assert.True(result.Effects.Single(item => item.UnitId == "de-squad").ConcealmentLost);
         Assert.Equal(["ru-1"], result.FirerConcealmentLost);
+
+        // With only concealed targets there is one column, halved as Area Fire (A7.23).
+        var concealedOnly = ScenarioA1FireCalculator.Resolve(attack with
+        {
+            Targets = [Target("de-squad", "attacker-squad", concealed: true)],
+            Rolls = Rolls([3, 4], checks: new() { ["de-squad"] = [2, 3] }),
+        }, Reference);
+        Assert.Equal((8m, "PTC"), (concealedOnly.Arithmetic!.TotalFirepower, concealedOnly.Arithmetic.Result));
+        Assert.Null(concealedOnly.Arithmetic.Concealed);
     }
 
     [Fact]
@@ -292,12 +307,12 @@ public sealed class ScenarioA1FirePackageTests
 
     public static TheoryData<string, string> Refusals => new()
     {
-        { "afph", "asl.a1.fire.phase-outside" },
+        { "mph-without-kind", "asl.a1.fire.phase-outside" },
         { "support-weapon", "asl.a1.fire.firer-outside" },
         { "los-blocked", "asl.a1.fire.los-blocked" },
         { "levels", "asl.a1.fire.levels-differ" },
         { "grain", "asl.a1.fire.hindrance-unattributed" },
-        { "hidden", "asl.a1.fire.concealment-unreviewed" },
+        { "mixed-pinned-movers", "asl.a1.fire.movement-drm-differs" },
         { "elr", "asl.a1.fire.elr-undecided:elr-undeclared" },
         { "roll", "asl.a1.fire.roll-missing:checks:de-hs" },
         { "extra-roll", "asl.a1.fire.extra-roll:leaderLoss:de-hs" },
@@ -311,12 +326,16 @@ public sealed class ScenarioA1FirePackageTests
         var attack = U18(Rolls([3, 4], checks: checks));
         attack = variant switch
         {
-            "afph" => attack with { Phase = "AFPh" },
+            "mph-without-kind" => attack with { Phase = "MPh", FiringSide = "non-phasing" },
             "support-weapon" => attack with { Firers = [Firer("ru-1"), Firer("ru-2") with { UsesSupportWeapon = true }] },
             "los-blocked" => attack with { Los = new FireLos(true, 0, true, false) },
             "levels" => attack with { SameLevel = false },
             "grain" => attack with { Los = new FireLos(false, 1, true, true) },
-            "hidden" => attack with { Targets = [Target("de-squad", "attacker-squad") with { Hidden = true }] },
+            "mixed-pinned-movers" => attack with
+            {
+                Phase = "MPh", FiringSide = "non-phasing", FireKind = ScenarioA1FireCalculator.FirstFire, TargetMovement = new FireMovement(false),
+                Targets = [Target("de-squad", "attacker-squad") with { Pinned = true }, Target("de-hs", "attacker-half-squad")],
+            },
             "elr" => attack with { TargetSideElr = null },
             "roll" => attack with { Rolls = Rolls([3, 4], checks: new() { ["de-squad"] = [2, 3] }) },
             "extra-roll" => attack with { Rolls = Rolls([3, 4], checks: checks, leaderLoss: new() { ["de-hs"] = [1, 1] }) },

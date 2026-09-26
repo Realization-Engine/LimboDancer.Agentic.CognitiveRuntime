@@ -14,7 +14,7 @@ namespace LimboDancer.Domains.Asl.Play;
 public static class LiveFire
 {
     public const string Catalog = "asl-scenario-a1";
-    public const string CatalogVersion = "1.1.0";
+    public const string CatalogVersion = "1.2.0";
 
     public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
@@ -115,9 +115,29 @@ public static class LiveFire
         ArgumentNullException.ThrowIfNull(rolls);
         IReadOnlyList<int>? ift = null;
         Dictionary<string, int>? selection = null;
+        Dictionary<string, int>? weaponSelection = null;
+        Dictionary<string, int>? firerSelection = null;
         Dictionary<string, IReadOnlyList<int>>? checks = null;
         Dictionary<string, IReadOnlyList<int>>? leaderLoss = null;
         Dictionary<string, int>? wounds = null;
+
+        // A selection roll names the units it selects among, one die each, in order.
+        static bool Select(ref Dictionary<string, int>? into, string ids, DiceRolled roll)
+        {
+            var names = ids.Split(',');
+            if (roll.Count != names.Length)
+            {
+                return false;
+            }
+
+            into ??= new(StringComparer.Ordinal);
+            foreach (var (id, index) in names.Select((id, index) => (id, index)))
+            {
+                into[id] = roll.Values[index];
+            }
+
+            return true;
+        }
         foreach (var (key, id) in fire.Rolls)
         {
             if (!rolls.TryGetValue(id, out var roll) || roll.Sides != 6)
@@ -132,9 +152,31 @@ public static class LiveFire
                 case "attack" when roll.Count == 2:
                     ift = roll.Values;
                     break;
-                case "randomSelection" when roll.Count == attack.Targets!.Count:
+                case "randomSelection" when unit.Length == 0 && roll.Count == attack.Targets!.Count:
+                    // A record made before the steps 19 to 23 revision draws one die for every target.
                     selection = attack.Targets.Select((target, index) => (target.UnitId!, roll.Values[index]))
                         .ToDictionary(pair => pair.Item1, pair => pair.Item2, StringComparer.Ordinal);
+                    break;
+                case "randomSelection" when unit.Length > 0:
+                    if (!Select(ref selection, unit, roll))
+                    {
+                        return null;
+                    }
+
+                    break;
+                case "weaponSelection":
+                    if (!Select(ref weaponSelection, unit, roll))
+                    {
+                        return null;
+                    }
+
+                    break;
+                case "firerSelection":
+                    if (!Select(ref firerSelection, unit, roll))
+                    {
+                        return null;
+                    }
+
                     break;
                 case "checks" when roll.Count == 2:
                     (checks ??= new(StringComparer.Ordinal))[unit] = roll.Values;
@@ -150,7 +192,11 @@ public static class LiveFire
             }
         }
 
-        return new FireRolls(ift, selection, checks, leaderLoss, wounds);
+        return new FireRolls(ift, selection, checks, leaderLoss, wounds)
+        {
+            WeaponSelection = weaponSelection,
+            FirerSelection = firerSelection,
+        };
     }
 
     private static bool Is(UnitInstance unit, string condition) => GameState.Condition(unit, condition) == ConditionState.True;

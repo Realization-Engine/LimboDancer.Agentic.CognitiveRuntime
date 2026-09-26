@@ -3,15 +3,15 @@
   "status": "published-bounded-fire-package",
   "domainId": "asl",
   "packageId": "scenario-a1-fire",
-  "priorFirePackageManifestSha256": "45011b56946be8a7aba1676e6aea8d5ad0fa82193e4ebac24e06fd36bdff2b69",
-  "declaredUse": "Read-only conclusions for a declared PFPh or DFPh fire attack by a single-Location fire group of reviewed Scenario A1 MMC, optionally directed by a leader: the FP column, the DRM, the IFT result, and each target unit's effect, under the user's rulings of 2026-09-26, with ELR Replacement, the Russian HS, and wounds decided at unit step 18",
-  "caseMatrixSha256": "81128b0fe8237131970b2970ab026abe086035983bce8b7d6a14aaec605e7c32",
+  "priorFirePackageManifestSha256": "58485196fc3427626945fa62909f0c9c1851c772c515180a44b2d405b54aa3b3",
+  "declaredUse": "Read-only conclusions for a declared fire attack by reviewed Scenario A1 MMC, with their MGs, in the PFPh, AFPh, DFPh, or the MPh (Defensive First Fire, Subsequent First Fire, FPF, and Residual FP), in one Location or across ADJACENT Locations, optionally directed: the FP columns, the DRM, the IFT results, each target unit's effect, each MG's malfunction and Multiple ROF, and the Residual FP left, under the user's rulings of 2026-09-26 (Fire Review; ASL Unit Rally and Fire Extensions Plan, R20.1 to R23.5 and R0.2).",
+  "caseMatrixSha256": "afe819360ce7b662a30eab04b43c5e852f12f17385c26642c54db8c79f7804b6",
   "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
   "chartSupplementSha256": "8499a4ec75da057920fbc05dde60b975f39560803d26ce1433f9c6567a052985",
   "chartReviewDecisionSha256": "a19bf80dedc36fbf36d9356552f28a538faeea9469c8d22daddfabed546fd1e2",
   "iftTranscriptionSha256": "42440dd6facf7aa23cfc8c884ed8c7266f6621b25cb889b679c850098d3a4cec",
   "terrainChartTranscriptionSha256": "afc61e1db4871050d91ab6c58f022ddca86651f8f0104e39408c156e44ffdafa",
-  "catalogSha256": "91228aba9159d3a7786f55cbfea86e43b7ae96776798e96f52e70d6e0d4524cb",
+  "catalogSha256": "cc0273be55fdfbaee00d9f4284d0913898ea6953b6b9c21585dfb0c6665b2795",
   "sourceFragments": [
     {
       "ruleId": "A.5",
@@ -439,6 +439,363 @@
       "startLine": 1372,
       "fragmentId": "asl-fragment:sha256:5b8331ba4d24b32ea6cda7bd479eb72d14f7b86aea80ff783537a31f24a74afc",
       "contentSha256": "0bfc7bb2b0b8fc3ae7a6b8cd5fa21d3910e6cc882113fa4b320ed02ca676c205"
+    },
+    {
+      "ruleId": "A3.3",
+      "physicalPdfPage": 47,
+      "startLine": 201,
+      "fragmentId": "asl-fragment:sha256:305e65159d5b3131f478ac6764208fa79de15b322bd8d5c86ef71e43c94276b4",
+      "contentSha256": "73fc1ce04ee89fdd4f45510c2de5e3f5e01752c6eea26e1a6796df4fdbd792f4"
+    },
+    {
+      "ruleId": "A3.5",
+      "physicalPdfPage": 47,
+      "startLine": 205,
+      "fragmentId": "asl-fragment:sha256:37f3bb53616a23b61022a5ad0cc3d55b6743cdc3c77864ba1899bf7617e36850",
+      "contentSha256": "6f267fa4b2f3d9bad0182384b4821d8e3a1879bc1851fe2ed97a0ba3fb600473"
+    },
+    {
+      "ruleId": "A.8",
+      "physicalPdfPage": 43,
+      "startLine": 41,
+      "fragmentId": "asl-fragment:sha256:5076ca7239d7983c36c94e2d28d102ae45b5edb1d5e88c9d26b0a0164a361cdd",
+      "contentSha256": "56fc6c495a2c1bb33ff68879deec615da394406c80f67fa943624f763cb2a8f3"
+    },
+    {
+      "ruleId": "A4.1",
+      "physicalPdfPage": 48,
+      "startLine": 231,
+      "fragmentId": "asl-fragment:sha256:2a89dc2b192a384001fdb4ffc1089c016cba732c29d7df6b0e60dd751fc84629",
+      "contentSha256": "9fec66bd072baa9aa452d050fee0b49aa2ccbf1386a75270c9bc5268edce17af"
+    },
+    {
+      "ruleId": "A4.11",
+      "physicalPdfPage": 48,
+      "startLine": 233,
+      "fragmentId": "asl-fragment:sha256:5f7cd40345ac74e1a372220f0944a9319f89a452e0470288b920fa162dfea580",
+      "contentSha256": "7441754d978cca57ba36c7b93724fd0df1fc9851de017e641145f5b6ae12aa0c"
+    },
+    {
+      "ruleId": "A4.13",
+      "physicalPdfPage": 48,
+      "startLine": 237,
+      "fragmentId": "asl-fragment:sha256:a1042ce702a417a5e491af4bd65a6dee39c62c16aa1eedd5d7a7cb5436b0d1f5",
+      "contentSha256": "97d73989419a1f880ec1175a51a28475d2a2e132dc9dbd1f9770f287a785a4b2"
+    },
+    {
+      "ruleId": "A4.132",
+      "physicalPdfPage": 48,
+      "startLine": 241,
+      "fragmentId": "asl-fragment:sha256:72524438431bd1b100a7398edd4de54a939ab1132e0415bdef552ca9a83b2cfc",
+      "contentSha256": "5201f9b59d020bcd35a9a4421dc831a110203054e0fd8017137f636819c35633"
+    },
+    {
+      "ruleId": "A4.2",
+      "physicalPdfPage": 49,
+      "startLine": 265,
+      "fragmentId": "asl-fragment:sha256:3ee4dd5f842a89387c152968d1ef75c744d648b18e58f7302838dd4943d8b80b",
+      "contentSha256": "6fe37aaa59e69e4b2d16faedd23efc77be17326f7f49efb8997553a52576ec12"
+    },
+    {
+      "ruleId": "A4.4",
+      "physicalPdfPage": 50,
+      "startLine": 285,
+      "fragmentId": "asl-fragment:sha256:ba5abb52d555fba2f9f5f15aefdfe7a378336f5ed01d7e69bde37c8de7e7198a",
+      "contentSha256": "f6eddf68241589c8fd1d2ae197ab2668cf3e2ff884b7fe35abc2fefe65c6b82d"
+    },
+    {
+      "ruleId": "A4.6",
+      "physicalPdfPage": 51,
+      "startLine": 311,
+      "fragmentId": "asl-fragment:sha256:2c4fb454b4fcc1da2fa12a4471fe0348ca326e4e1b7727fc9d7812f634315a29",
+      "contentSha256": "84a7023aa6f02ba8a3ee3193d5cc1c6c83848c390e9e5709c93a79883e5ff507"
+    },
+    {
+      "ruleId": "A4.61",
+      "physicalPdfPage": 51,
+      "startLine": 313,
+      "fragmentId": "asl-fragment:sha256:c7e3436317848be26a576535c098dc722d85f81f4d477dbbd26f9aa8229b50de",
+      "contentSha256": "f8f659b991249c70858fb2c9824e58e1a44063c2609fce71aafbc0534aa95de7"
+    },
+    {
+      "ruleId": "A4.61",
+      "physicalPdfPage": 51,
+      "startLine": 315,
+      "fragmentId": "asl-fragment:sha256:ba8fed4c0d2efcfd2faf6e6accb8f290afbb90a878d16e0b2f87fc3ee6beb4de",
+      "contentSha256": "9b0dfe4c0eb4de6379d67ea8b76ac59bd87b31e46bc5d5f362ce7920f244576c"
+    },
+    {
+      "ruleId": "A7.24",
+      "physicalPdfPage": 55,
+      "startLine": 453,
+      "fragmentId": "asl-fragment:sha256:be1b8859659b21b226298c1a1ee05f4f8eaba66c7989e82f9f245600f8bd8eff",
+      "contentSha256": "57a925355923eaeebb7444fe8bbd73aa8c5ff1a724b3e3e87ecc3fc7a0c37d55"
+    },
+    {
+      "ruleId": "A7.35",
+      "physicalPdfPage": 56,
+      "startLine": 503,
+      "fragmentId": "asl-fragment:sha256:a9ebdea389e0b719f54c43a7cb2e0e875af2a7a508a9f2ad13fcd9e227155fc3",
+      "contentSha256": "26e99c9b25e8082362b711269c7113d57d6c331c2545badf4c9e4b32d103878d"
+    },
+    {
+      "ruleId": "A7.351",
+      "physicalPdfPage": 56,
+      "startLine": 509,
+      "fragmentId": "asl-fragment:sha256:5801e327efd586b1e3f692cfb6a51fb50aa1656168f862774f4d96d604aacca4",
+      "contentSha256": "66a1e61084c90514dd74c6474cc6bcbd8b3562bdfe16aa30ec72bc98b8ee3dcd"
+    },
+    {
+      "ruleId": "A7.352",
+      "physicalPdfPage": 56,
+      "startLine": 511,
+      "fragmentId": "asl-fragment:sha256:562009b9b57a0cf156bbc9bfce7fb61b25fa44d53c4b302f414503f0e6ed45e4",
+      "contentSha256": "07dfe1da622b1f683bfc82335fa8d8e73d36998c3980d6d1711cefedf23a3f84"
+    },
+    {
+      "ruleId": "A7.353",
+      "physicalPdfPage": 56,
+      "startLine": 513,
+      "fragmentId": "asl-fragment:sha256:5c4718cb930126a0317f825ae7dd11da467faa69429b927bae46362c33c3ccd0",
+      "contentSha256": "aec1a593c8e9dd50ced55e235b9d7005fa3c60c3111e82b33be50290466ffc5a"
+    },
+    {
+      "ruleId": "A7.36",
+      "physicalPdfPage": 56,
+      "startLine": 515,
+      "fragmentId": "asl-fragment:sha256:f143f0559d3539b4c69b15dd48e29f5bebaf23c8f31da8562bd6213dd25e5c22",
+      "contentSha256": "0656f47887cc5725f164c216944efcdad5ea87594cd7db1a71a6c9c6599a8497"
+    },
+    {
+      "ruleId": "A7.372",
+      "physicalPdfPage": 57,
+      "startLine": 525,
+      "fragmentId": "asl-fragment:sha256:4a7e1ad2efae00530a7d9552cb15331bd95084c0adbedaa13aaca1c59922340d",
+      "contentSha256": "6c1dea77b9fe71edbe8a6659843e6d02b18d3930a9a37e28bb03168412f0a20b"
+    },
+    {
+      "ruleId": "A7.83",
+      "physicalPdfPage": 58,
+      "startLine": 582,
+      "fragmentId": "asl-fragment:sha256:c3151c34342d4e22be00cdf02e8f09d7c072045fc267b76604ed4a04b369e547",
+      "contentSha256": "4f1a2c7a7b2b1bd9b7bcda803a99756ed1e2d38cd241763c4e948943d2172ce3"
+    },
+    {
+      "ruleId": "A8.1",
+      "physicalPdfPage": 59,
+      "startLine": 592,
+      "fragmentId": "asl-fragment:sha256:5decaf0026816c9d982b087a4bf5c850a8bac93b165446fea626e4442812650b",
+      "contentSha256": "b45b5fad76897fc3c65fd602cc38604c239ad7b5c192e03cdbf7954e569973cc"
+    },
+    {
+      "ruleId": "A8.11",
+      "physicalPdfPage": 59,
+      "startLine": 594,
+      "fragmentId": "asl-fragment:sha256:64846e487cde39762d917a2de0bc3d024613319be728686b66eaa46a67893a8a",
+      "contentSha256": "2f6aaedc5a1cd14a62533915aaae51ae932e04ed4cd797ff0cf152922e3ebf53"
+    },
+    {
+      "ruleId": "A8.12",
+      "physicalPdfPage": 59,
+      "startLine": 596,
+      "fragmentId": "asl-fragment:sha256:bc6b78779bdff67d1935bd052bc41ca34246deb0b144793951642f343c5e881d",
+      "contentSha256": "7a6d9c75500d74d27a1813711bd4686dfaa482d2ee68253b8e1f0f8a0f0cbcc6"
+    },
+    {
+      "ruleId": "A8.13",
+      "physicalPdfPage": 59,
+      "startLine": 598,
+      "fragmentId": "asl-fragment:sha256:e38216a760858c5dea0aa6042d94aab8f378d4165f6359b5ef57b33a3fc3d563",
+      "contentSha256": "99f46b781f00793a3a1bf151c03e1f6399263816ccd65578687dd19411825dea"
+    },
+    {
+      "ruleId": "A8.14",
+      "physicalPdfPage": 59,
+      "startLine": 600,
+      "fragmentId": "asl-fragment:sha256:6e1102b56e768caff940ee803ea4d059c98a6f1d94bb7c75a4597fa001d8ba02",
+      "contentSha256": "f2a6601f3f8e3edc5fb96388faaa6cb2ef98fbcdb3bdd29fb069bf9c01fdeca1"
+    },
+    {
+      "ruleId": "A8.2",
+      "physicalPdfPage": 60,
+      "startLine": 608,
+      "fragmentId": "asl-fragment:sha256:6af88e229db3b25cfad98bb505b9b365fe6d7625f1d95e57b74884049870e541",
+      "contentSha256": "63b2cc4de0daed5133698e4bf2a8aa253be11e4a09a328186d8b19da7e441e7b"
+    },
+    {
+      "ruleId": "A8.21",
+      "physicalPdfPage": 60,
+      "startLine": 618,
+      "fragmentId": "asl-fragment:sha256:86bfc50ee7678a1d6d40db06851c3d6c5930c5685744906131492e0f69313c91",
+      "contentSha256": "9c99addcde5193e100edd487f755ad610cd0a28e1bb844fd0694f772f8316639"
+    },
+    {
+      "ruleId": "A8.22",
+      "physicalPdfPage": 60,
+      "startLine": 620,
+      "fragmentId": "asl-fragment:sha256:e90c55902730201e0b100521b03e392332c0d0012a29e4ae0e1b72a10a5f3487",
+      "contentSha256": "7901f915e3c134fd4f63183f111989ab6314eb7db0aa3c1cc888067c83194d7a"
+    },
+    {
+      "ruleId": "A8.22",
+      "physicalPdfPage": 60,
+      "startLine": 622,
+      "fragmentId": "asl-fragment:sha256:008c2a9e7931bd96fd298f29294f79b737b035dbd68a3faa2b91988b1a3a6bb6",
+      "contentSha256": "280343ff6ebcd401368406064b6b37844333af2596e274a59f30e82901a2e895"
+    },
+    {
+      "ruleId": "A8.26",
+      "physicalPdfPage": 60,
+      "startLine": 644,
+      "fragmentId": "asl-fragment:sha256:6b0a937f65dad80c07acb85932f5e89311b776c2160cde5ee63ca9292c9650c5",
+      "contentSha256": "345d4171f88058490d03811dff3f05f84f7f1e232265ada51873ac32e8a571c6"
+    },
+    {
+      "ruleId": "A8.3",
+      "physicalPdfPage": 61,
+      "startLine": 656,
+      "fragmentId": "asl-fragment:sha256:5303cfb9ae22f48b743127e59a1bc097f282e938c0a5ab4faf1347c3c01a7f98",
+      "contentSha256": "dca6e02620a47951a9e9f39442e25ecd9a3777ca9df45eb05e98bbc49156983b"
+    },
+    {
+      "ruleId": "A8.31",
+      "physicalPdfPage": 61,
+      "startLine": 658,
+      "fragmentId": "asl-fragment:sha256:4c65522d6e58613b9f9a9586166a66dc364fa14581051ce70d463761218e2c91",
+      "contentSha256": "6e2fbaee246d36baa394b5257fbe846baba6da73bf5787feff3b57407b41a83b"
+    },
+    {
+      "ruleId": "A8.4",
+      "physicalPdfPage": 61,
+      "startLine": 668,
+      "fragmentId": "asl-fragment:sha256:79d2086f74f8b51d93e0fbdf1c7ca62a47e119bcca7d9f1412eb0544a2a3080c",
+      "contentSha256": "875aaedaaf148391320111110458dab710d52be47c1b75583828d9697105af1f"
+    },
+    {
+      "ruleId": "A9.1",
+      "physicalPdfPage": 62,
+      "startLine": 682,
+      "fragmentId": "asl-fragment:sha256:408eca44dd5a75db7646ee6c61456b0de1fc742dd7331c8607390038aeda1933",
+      "contentSha256": "8798b6d6f2d254f61c52de1780a72fe08e243ffad318fef7e58d8d6113a60b09"
+    },
+    {
+      "ruleId": "A9.11",
+      "physicalPdfPage": 62,
+      "startLine": 686,
+      "fragmentId": "asl-fragment:sha256:8f35b82a85bfd75e3c5763e628b1b2c19c0d89e616147117a9516599bebb4474",
+      "contentSha256": "3c63264c37f37a989331a221ba5b356f7ff54518d27c225b05ccf31dfc7cfe12"
+    },
+    {
+      "ruleId": "A9.2",
+      "physicalPdfPage": 62,
+      "startLine": 690,
+      "fragmentId": "asl-fragment:sha256:4bef4e7f46f0717d037015a290734fd98154705e0a6deb97b07c833f709c7ca4",
+      "contentSha256": "2764d2fc76ef39998c873c936ff4b1ec65b62812fd14d556fcf56ea5fc7bf993"
+    },
+    {
+      "ruleId": "A9.3",
+      "physicalPdfPage": 63,
+      "startLine": 716,
+      "fragmentId": "asl-fragment:sha256:cc42843b6016ff8df6775495a4e1d962e7539424b5444e369aa4d4986d90bf00",
+      "contentSha256": "749afdcab388116e4aa8966b1f06212493e30fe26d4d8c42a8fac14ddc69984f"
+    },
+    {
+      "ruleId": "A9.7",
+      "physicalPdfPage": 65,
+      "startLine": 742,
+      "fragmentId": "asl-fragment:sha256:4989d719b162721dbba91fcef27db6a5a9c9cf3b4ca9160b6ac7765eb6013e53",
+      "contentSha256": "d95e716da16c9243f3b591ae692e8a814d02e432d298e47652b3766c307587c0"
+    },
+    {
+      "ruleId": "A9.71",
+      "physicalPdfPage": 65,
+      "startLine": 744,
+      "fragmentId": "asl-fragment:sha256:e8aeb20db36fd4b0225c5a192296c7adcdacffa11ef1c655dfc58710ce583a3e",
+      "contentSha256": "a06d3ddbedc7fd4a18f85e8eafc0820cac5f15d565ce380fe2374fafb50aa385"
+    },
+    {
+      "ruleId": "A9.72",
+      "physicalPdfPage": 65,
+      "startLine": 746,
+      "fragmentId": "asl-fragment:sha256:aa642f218a066d06949f6b9a2de423e1e5da9a42f8451b9dc7b4e3dda4528770",
+      "contentSha256": "4dacf460322318f0008bfb7c4d691d7ba1aaea20b30b6fb17bb5334cd3df84bd"
+    },
+    {
+      "ruleId": "A12.11",
+      "physicalPdfPage": 76,
+      "startLine": 992,
+      "fragmentId": "asl-fragment:sha256:d34062a1dfbf19bd7a8a6741c8441a65b5376e6a266091d5b6df0ecebf54b47d",
+      "contentSha256": "fb424aad9db55a9fc6a39868f8b21d5a894ca8372117d9d65d3e862a3e5da95d"
+    },
+    {
+      "ruleId": "A12.13",
+      "physicalPdfPage": 77,
+      "startLine": 1017,
+      "fragmentId": "asl-fragment:sha256:3a1346fa955f7024523acd25a16d4d742e71fc8f47615ad5eb7fcab9a50e117e",
+      "contentSha256": "32ce15b68e5a1c07ed7c71330a82908ec619d66f0fe6a1237e78f9bedda5a7a4"
+    },
+    {
+      "ruleId": "A12.3",
+      "physicalPdfPage": 80,
+      "startLine": 1084,
+      "fragmentId": "asl-fragment:sha256:13b5b9682eb548c671980957890be6fb61fcecf78602f9b2d2d18e9d8831d966",
+      "contentSha256": "d1502fde42f0b3b46816316e578f56df0e7596d476cc1171db125a348697219f"
+    },
+    {
+      "ruleId": "A12.31",
+      "physicalPdfPage": 80,
+      "startLine": 1088,
+      "fragmentId": "asl-fragment:sha256:1b78e73c814a4d6e27b8800fe026f178f660716c811a8961e54d5fb9e0b8806a",
+      "contentSha256": "6d474462d306a90c43dfd6dbf0e3fc60c941efb4291052c6adbaee696362863b"
+    },
+    {
+      "ruleId": "B3.4",
+      "physicalPdfPage": 114,
+      "startLine": 138,
+      "fragmentId": "asl-fragment:sha256:39fbf031cc96943da80c25abeffd48ad5b38f33b2bec2f71621d48ec696772f0",
+      "contentSha256": "3357aafbc2154ed068880e494143c4ffe9ad8f01ce3daaad1143213186beb7f2"
+    },
+    {
+      "ruleId": "B12.4",
+      "physicalPdfPage": 127,
+      "startLine": 804,
+      "fragmentId": "asl-fragment:sha256:403826d5515e3b362d684e16af57e73714886a95437cb1e61e39e27ec04ae428",
+      "contentSha256": "920df50303bcf1eec5d56c33a7aa108b610602172af939363cb394513312f739"
+    },
+    {
+      "ruleId": "B13.4",
+      "physicalPdfPage": 128,
+      "startLine": 848,
+      "fragmentId": "asl-fragment:sha256:e142dbc1a1b5d83dd6b6077d705143db98fb6832410d6dc4c72771f00afe2406",
+      "contentSha256": "f8e5462f4fa4b1dd329f75ca69da33fb28240e1c6db4c6a38a724ae7568c5e5f"
+    },
+    {
+      "ruleId": "B14.4",
+      "physicalPdfPage": 129,
+      "startLine": 922,
+      "fragmentId": "asl-fragment:sha256:6b44c1c2d4add5d61ca64e8e4ce50a7afa68372016b4eb6b570561f44f1eb7e0",
+      "contentSha256": "b447a0b699d29fb13895b91b4e1fa927266b9912fb8a16ecc1a5210d338c4a61"
+    },
+    {
+      "ruleId": "B15.4",
+      "physicalPdfPage": 129,
+      "startLine": 962,
+      "fragmentId": "asl-fragment:sha256:54bd2bf5e272c8755fff846381980793b8c1fea286d2d174a115f6d4a7f5bc33",
+      "contentSha256": "c0e629830656707fe923f389cbc264f7a3f5865db149896df14e86630e865e67"
+    },
+    {
+      "ruleId": "B23.4",
+      "physicalPdfPage": 136,
+      "startLine": 1382,
+      "fragmentId": "asl-fragment:sha256:686ac055790d97426084d16a48381c5de948b987f4680a47bf00646f387ca4a8",
+      "contentSha256": "5aad8586e209983168fd444994e8fc644d23f5193e1df3bbeaca1a805bc989af"
+    },
+    {
+      "ruleId": "A15.1",
+      "physicalPdfPage": 83,
+      "startLine": 1214,
+      "fragmentId": "asl-fragment:sha256:4d47963659fb7dd5cbe18f8c9c20342e86d82b4de58dcf63e5f1595150f1435b",
+      "contentSha256": "211fa76fd05873eceb92c823cd1a59a4a0d9057624a75a9a73b54a3736478a01"
     }
   ],
   "visualReadings": [
@@ -458,10 +815,17 @@
     "pinOnHighestPassingDr": "admitted-a7.8-opening-read-from-rendered-page",
     "leaderWound": "wound-severity-dr-A17.11; wounded-morale-and-leadership-one-worse-A17.3",
     "russianHalfSquad": "in-catalog-1.1.0",
-    "concealment": "a12.14-and-a7.23-prose-only; concealment-table-unregistered; dummies-and-hip-indeterminate",
+    "concealment": "a12.14-and-a7.23-prose-admitted; hidden-units-attacked-as-concealed-A12.3-and-placed-without-concealment-when-revealed-A12.31; dummies-removed-on-ptc-or-worse-in-los-of-the-good-order-firer-A12.14; mixed-known-and-concealed-targets-one-dr-each-on-its-own-column-A12.13; concealment-table-unregistered (steps 17 and 21, R21.1 to R21.5)",
     "conscriptCasualtyBeyondElr": "own-conscript-hs-broken-and-disrupted",
     "woundedLeaderTakesKMc": "yes-at-lowered-morale",
-    "woundedLeadershipMandatory": "yes-A10.72"
+    "woundedLeadershipMandatory": "yes-A10.72",
+    "heatOfBattle": "original-mc-dr-2-resolved-as-its-mc; heat-of-battle-recorded-not-taken (R0.2)",
+    "advancingFire": "afph-halving-A7.24; assault-fire-plus-one-after-modification-rounded-up-not-at-long-range-A7.36; opportunity-fire-out; afph-attack-marked-prep-fire (R20.1, R20.3)",
+    "fireGroups": "locations-each-adjacent-to-another-A7.5; any-blocked-member-refuses-the-attack; worst-hindrance-once; tem-once; every-member-at-the-targets-level; direction-only-with-a-directing-leader-in-every-location-the-worst-leadership-applies (R20.2, R20.4 to R20.6)",
+    "movementFire": "defensive-first-fire-at-the-moving-stack-A8.1; ffnam-unless-assault-movement-and-ffmo-in-open-ground-without-hindrance-A4.6-A4.61; a-pinned-mover-takes-neither-and-a-stack-mixing-pinned-and-unpinned-movers-is-indeterminate-A7.83; subsequent-first-fire-and-fpf-area-fire-A8.3-A8.31; fpf-undirected-and-unmixed; fpf-firers-nmc-on-the-original-dr-A8.31; final-fire-by-first-fire-marked-units-adjacent-only-A8.4 (R22.1 to R22.8)",
+    "residualFp": "highest-counter-at-most-half-the-highest-column-used-up-to-12-A8.2-A7.372; one-counter-lower-per-point-of-hindrance-or-positive-leadership-A8.26; attacks-alone-never-halved-no-cowering-A8.22 (R22.7)",
+    "supportWeapons": "mgs-of-the-catalog-with-manufactured-values-R0.3; squad-keeps-inherent-fp-with-one-sw-not-two-hs-loses-it-A7.351-A7.352; pinned-halves-inherent-fp-only-A7.8; malfunction-on-original-dr-at-least-b#-A9.7-random-selection-among-several-A9.71; multiple-rof-on-the-colored-die-the-first-die-of-the-ift-dr-A9.2; sustained-fire-b#-minus-2-area-fire-A9.3 (R23.1 to R23.5)",
+    "ffmoTerrain": "ffmo-only-for-a-target-in-open-ground: brush-grain-and-orchard-are-hindrance-terrain-that-cancels-it (review reading of A4.6)"
   },
   "resolution": {
     "firepower": "Each firer's printed FP, doubled for PBF when the target is adjacent at the same level (A7.21), halved beyond Normal Range up to twice it (A7.22), halved when the target Location holds a concealed unit (A7.23), and halved when the firer is pinned (A7.8); fractions are kept and summed (A7.2).",
@@ -484,7 +848,14 @@
     "finalDr": "Original DR plus every DRM (A.17); a Final DR at or below 0, or at or above 15, uses the end row.",
     "effects": "All target units are affected (A7.4). #KIA eliminates the # units with the highest Random Selection dr, ties at the cut included, and breaks the rest, Casualty Reducing any that cannot break (A7.301). K/# Casualty Reduces the unit with the highest dr, ties included, and every other unit takes a #MC (A7.302). NMC and #MC: one DR per unit, leaders first by Morale Level, with the leadership DRM of one unbroken leader of the Location other than the checker (A10.2, A10.21, A10.22); a Final DR above the Morale Level fails: an unbroken unit breaks, a broken unit is Casualty Reduced (A10.3); an Original 12 is a Casualty MC (A10.31); an unbroken unit passing with a Final DR equal to its Morale Level is pinned (A7.8). PTC: each unbroken, unpinned unit takes a NTC and is pinned on failure (A7.305). Then LLMC and LLTC for leader losses (A10.2). A failed MC by an unbroken unit beyond its side's declared ELR Replaces it with the broken unit of lesser quality, or Disrupts it when none exists (A19.12, A19.13); a Casualty MC beyond ELR Reduces a squad to a broken HS of lesser quality, a Conscript squad to its own HS, Disrupted. Casualty Reduction wounds a leader, with a Wound Severity dr: 5 or more, +1 if already wounded, is mortal (A17.11); a wounded leader's Morale Level is one lower and his leadership modifier one worse, which A10.72 does not let his side decline (A17.3).",
     "concealment": "A concealed target unit loses '?' on a PTC or worse result; a concealed firer or directing leader loses '?' when a Good Order target unit is within 16 hexes (A12.14).",
-    "fireCounters": "Every firer and the directing leader are marked with a Prep Fire counter in the PFPh and a Final Fire counter in the DFPh (A3.2, A3.4, A7.531)."
+    "fireCounters": "Every firer and the directing leader are marked with a Prep Fire counter in the PFPh and a Final Fire counter in the DFPh (A3.2, A3.4, A7.531).",
+    "advancingFire": "In the AFPh each firer's Small Arms and MG FP is halved (A7.24); an underlined squad adds one FP to its inherent FP after every other modification, rounded up, except at Long Range (A7.36).",
+    "fireGroups": "A group may span Locations each ADJACENT to another of them (A7.5, A.8); each firer's PBF and Long Range are its own (A7.21, A7.22); the worst Hindrance applies to all (A7.52); leadership applies only with a directing leader in every Location, the worst of them (A7.531).",
+    "movementFire": "Defensive First Fire attacks the moving stack in the Location where it spent MF (A8.1, A8.12), with -1 FFNAM unless it Assault Moved and -1 FFMO in Open Ground without Hindrance (A4.6, A4.61, A8.13); Subsequent First Fire (A8.3) and FPF (A8.31) are Area Fire; after FPF the Original DR is a NMC for each FPF firer, a Casualty MC falling on one of two or more by Random Selection (A8.31); a First-Fire-marked unit fires again in the DFPh only at an adjacent target, as Area Fire (A8.4).",
+    "residualFp": "Defensive First Fire, Subsequent First Fire, and FPF leave the highest Residual FP counter at most half the highest column used, up to 12 (A8.2, A7.372), one counter lower for each point of Hindrance or positive leadership (A8.26); a Residual FP attack is alone, never halved, and not subject to Cowering (A8.22).",
+    "supportWeapons": "Each MG adds its FP, with PBF, Long Range, Area Fire, and AFPh halving but not the pinned firer's halving (A7.8, A9.1); a squad keeps its inherent FP with one SW and loses it with two, a HS loses it with any (A7.351, A7.352); an Original DR at least a MG's B# (lowered by 2 for Sustained Fire, A9.3) malfunctions it, Random Selection choosing among two or more (A9.7, A9.71); a first die at most its ROF keeps its Multiple ROF unless it malfunctioned or used Sustained Fire (A9.2).",
+    "concealmentTypes": "Concealed, hidden (A12.3), and Dummy targets are attacked on the halved column of A12.13 with the same DR as known targets; a PTC or worse result removes a Dummy and costs the others their \"?\" (A12.14, A12.31).",
+    "heatOfBattle": "An Original MC DR of 2 is resolved as its MC and the record says Heat of Battle was not taken (A15.1; ruling R0.2)."
   },
   "exactCaseIds": [
     "A1-fire-resolved",
@@ -492,23 +863,27 @@
     "A1-fire-firer-outside",
     "A1-fire-target-outside",
     "A1-fire-range-or-los-denied",
+    "A1-fire-weapon-outside",
+    "A1-fire-movement-fire-outside",
+    "A1-fire-movement-drm-differs",
     "A1-fire-levels-differ",
     "A1-fire-hindrance-unattributed",
-    "A1-fire-concealment-unreviewed",
     "A1-fire-elr-undecided",
     "A1-fire-leaders-interact",
     "A1-fire-roll-missing"
   ],
   "executionAuthority": "none",
   "excludedOutcomes": [
-    "Defensive First Fire, Final Fire, Subsequent First Fire, and Residual FP",
-    "the AFPh and Opportunity Fire",
-    "multi-Location fire groups, SW, MG, ordnance, and fire by SMC",
-    "vehicles, PRC, and TPBF",
+    "Snap Shots, Bypass, Hazardous Movement, CX, TPBF, and fire across levels",
+    "Opportunity Fire, Spraying Fire, and Fire Lanes",
+    "FPF directed by a leader or mixed with other fire",
+    "ordnance, light mortars, LATW, FT, DC, and MOL",
+    "fire by a SMC, and a squad firing its inherent FP apart from its MG",
+    "captured, dismantled, and transferred SW",
+    "vehicles and PRC",
     "Encirclement",
-    "Rally",
     "Heat of Battle, Berserk, and Heroes",
-    "Dummies, HIP, and the Concealment Table",
+    "the Concealment Table",
     "snipers, SMOKE, night, and weather",
     "any use by a game action",
     "A19.13's exception for an underscored Morale Factor"

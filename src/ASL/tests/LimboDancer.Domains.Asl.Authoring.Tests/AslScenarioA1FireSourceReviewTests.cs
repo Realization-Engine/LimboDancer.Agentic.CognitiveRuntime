@@ -45,6 +45,37 @@ public sealed class AslScenarioA1FireSourceReviewTests
     }
 
     [Fact]
+    public void TheRallySubjectsAreVerified()
+    {
+        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var review = AslScenarioA1FireSourceReview.BuildRally(RepositoryPaths.Root, manifests, Attestation());
+        Assert.Equal(9, review.Records.Count);
+        Assert.All(review.Records, record => Assert.Equal(TirSourceVerificationDisposition.Verified, record.Disposition));
+        var path = Path.Combine(RepositoryPaths.Root, "docs", "ASL", "SourceRegistry", AslScenarioA1FireSourceReview.RallyComparisonFile);
+        Assert.Equal(AslScenarioA1FireSourceReview.RallyComparisonSha256, Hashing.Sha256File(path));
+    }
+
+    [Fact]
+    public void TheExtensionSubjectsAreVerifiedWithTheirInterruptedParts()
+    {
+        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var review = AslScenarioA1FireSourceReview.BuildExtensions(RepositoryPaths.Root, manifests, Attestation());
+        Assert.Equal(50, review.Records.Count);
+        Assert.All(review.Records, record => Assert.Equal(TirSourceVerificationDisposition.Verified, record.Disposition));
+
+        var path = Path.Combine(RepositoryPaths.Root, "docs", "ASL", "SourceRegistry", AslScenarioA1FireSourceReview.ExtensionsComparisonFile);
+        Assert.Equal(AslScenarioA1FireSourceReview.ExtensionsComparisonSha256, Hashing.Sha256File(path));
+        using var json = JsonDocument.Parse(File.ReadAllText(path));
+        var split = json.RootElement.GetProperty("subjects").EnumerateArray()
+            .Where(item => item.GetProperty("comparison").GetString() == "complete-alphanumeric-match-in-two-parts").ToArray();
+        Assert.Equal(["A8.26", "A8.31", "A9.2", "A12.11", "B3.4"], split.Select(item => item.GetProperty("ruleId").GetString()));
+
+        // A12.11 runs from page 76 onto page 77.
+        var a1211 = split.Single(item => item.GetProperty("ruleId").GetString() == "A12.11");
+        Assert.Equal((76, 77), (a1211.GetProperty("physicalPdfPage").GetInt32(), a1211.GetProperty("secondPhysicalPdfPage").GetInt32()));
+    }
+
+    [Fact]
     public void TheComparisonIsPinnedAndRecordsPhysicalPages()
     {
         var path = Path.Combine(RepositoryPaths.Root, "docs", "ASL", "SourceRegistry", AslScenarioA1FireSourceReview.ComparisonFile);

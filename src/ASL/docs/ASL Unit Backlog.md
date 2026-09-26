@@ -86,3 +86,15 @@ Step 17 left these out; steps 19 to 23 do not build them.
 | Ordnance | 24 | Chapter C, pp. 162 to 191; charts on registered pp. 189 to 191; Gun values from Chapter H's Ordnance Listings. |
 | Vehicles | 25 | Chapter D, pp. 192 to 221; Vehicle Listings in Chapter H; vehicular movement, Motion, facing, and ordnance first. |
 | Light mortars and LATW (PSK, BAZ, PIAT, PF, ATR) | 24 | To Hit weapons, with ordnance. |
+
+## 8. Added by the steps 19 to 23 review
+
+| Item | Deferred by | Rules | Depends on |
+|---|---|---|---|
+| Self-Rally capability of the catalog counters | Rally review | A10.63, p. 68 | The broken sides of the counters, which the charts do not show |
+| FPF directed by a leader | Fire review, steps 19 to 23 | A8.31, p. 61; A10.2, p. 65 | Leader loss among FPF firers |
+| A group mixing FPF firers with others | Fire review, steps 19 to 23 | A8.31, p. 61 | Splitting the FPF NMC |
+| One attack on a moving stack mixing pinned and unpinned units | Fire review, steps 19 to 23 | A7.83, p. 58 | Two DRM in one attack |
+| A squad firing its inherent FP apart from its MG | Fire review, steps 19 to 23 | A7.351, p. 56 | Separate attacks in one phase |
+| Fire by a SMC, and a leader firing a MG | Fire review, steps 19 to 23 | A9.12, p. 62 | SMC FP |
+| The Concealment Table | Fire review, steps 17 and 19 to 23 | Registered p. 107 | Its transcription |

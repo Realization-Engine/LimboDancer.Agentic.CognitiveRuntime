@@ -246,6 +246,14 @@ The boxed class of the Russian 1st Line row is the square of A10.63 (p. 68): Sel
 
 **Review and version.** The user accepted all 130 added rows on 2026-09-26. Added definitions make a minor version (section 7), so the catalog is `asl-scenario-a1@1.1.0`. The new definitions fill no slot, since no Scenario A1 snapshot fact names them. The synthetic catalog gains matching synthetic definitions, with key facts distinct from the first four. Games that name 1.0.0 are development data; the committed ones now name 1.1.0.
 
+### 9.3 The MGs (catalog 1.2.0)
+
+Unit step 23 needs MGs, and no registered source lists their values: the Support Weapons Chart (registered p. 108) gives each SW type's capabilities, the Chapter H Allotment Charts give counts, and the Counter Examples (p. 676) show one annotated MMG. The Index names no listing either. On 2026-09-26 the user ruled that values no source gives are manufactured (ruling R0.3 of the ASL Unit Rally and Fire Extensions Plan).
+
+**The rows.** Four counters, 40 rows under a new sheet `MFG`: `attacker-lmg` (German LMG 3-8, B11, ROF 1, 1 PP, R2), `attacker-mmg` (German MMG 5-12, B12, ROF 3, 4 PP, R2), `defender-lmg` (Russian LMG 2-6, B11, ROF 1, 1 PP, R2), and `defender-mmg` (Russian MMG 4-10, B11, ROF 2, 4 PP, R2). The Russian MMG follows the Counter Examples' MMG, whose nationality the page does not state; the others are chosen within A9.1. Every row's note says it is manufactured, and the source record's sheet `MFG` names the ruling.
+
+**Review and version.** The user delegated this pass without value-by-value review, which the source record's review method says; the reviewer column names the record's reviewer because the builder requires it. A value is replaced, and the catalog republished, if a source for it is later registered. Added definitions make a minor version: `asl-scenario-a1@1.2.0`. The synthetic catalog gains matching synthetic MGs.
+
 ## 10. The source adapter
 
 ASL-UNIT-001 keeps source-specific parsing out of `LimboDancer.Domains.Asl.Units`, so the transcription is read by a separate source adapter, `LimboDancer.Domains.Asl.Units.CounterSheets`, which references only `Units`. `CounterSheetCatalogBuilder` takes the catalog manifest (`src/ASL/units/catalog/scenario-a1.catalog-manifest.json`: id, version, slots, and which counter fills which slot), the source record, the transcription, and the worksheet, and:

@@ -153,27 +153,41 @@ public sealed partial class GamePlanner
                 var key = missing["asl.a1.fire.roll-missing:".Length..];
                 var split = key.IndexOf(':', StringComparison.Ordinal);
                 var (kind, unit) = split < 0 ? (key, string.Empty) : (key[..split], key[(split + 1)..]);
+
+                // A Random Selection names the units it selects among, one die each (A.9, A8.31, A9.71).
+                var selected = kind is "randomSelection" or "weaponSelection" or "firerSelection" ? unit.Split(',') : [];
                 var (count, purpose) = kind switch
                 {
                     "attack" => (2, "fire-ift"),
-                    "randomSelection" => (facts.Targets.Count, "fire-random-selection"),
+                    "randomSelection" => (selected.Length, "fire-random-selection"),
+                    "weaponSelection" => (selected.Length, "fire-weapon-selection"),
+                    "firerSelection" => (selected.Length, "fire-firer-selection"),
                     "checks" => (2, "fire-check"),
                     "leaderLoss" => (2, "fire-leader-loss"),
                     _ => (1, "fire-wound-severity"),
                 };
                 var drawn = draw(new RollRequest(count, 6));
                 var rollId = $"{attemptId}-roll-{(rollIds.Count + 1).ToString(CultureInfo.InvariantCulture)}";
-                rollIds[kind == "randomSelection" ? kind : key] = rollId;
+                rollIds[key] = rollId;
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled",
                     new DiceRolled(rollId, purpose, count, 6, drawn.Values, DiceRolled.SystemSource, actor), package, null));
+                Dictionary<string, int> Selection(IReadOnlyDictionary<string, int>? existing)
+                {
+                    var next = existing?.ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal) ?? new(StringComparer.Ordinal);
+                    foreach (var (id, index) in selected.Select((id, index) => (id, index)))
+                    {
+                        next[id] = drawn.Values[index];
+                    }
+
+                    return next;
+                }
+
                 rolls = kind switch
                 {
                     "attack" => rolls with { Attack = drawn.Values },
-                    "randomSelection" => rolls with
-                    {
-                        RandomSelection = facts.Targets.Select((item, index) => (item.UnitId!, drawn.Values[index]))
-                            .ToDictionary(pair => pair.Item1, pair => pair.Item2, StringComparer.Ordinal),
-                    },
+                    "randomSelection" => rolls with { RandomSelection = Selection(rolls.RandomSelection) },
+                    "weaponSelection" => rolls with { WeaponSelection = Selection(rolls.WeaponSelection) },
+                    "firerSelection" => rolls with { FirerSelection = Selection(rolls.FirerSelection) },
                     "checks" => rolls with { Checks = Add(rolls.Checks, unit, drawn.Values) },
                     "leaderLoss" => rolls with { LeaderLoss = Add(rolls.LeaderLoss, unit, drawn.Values) },
                     _ => rolls with { WoundSeverity = Add(rolls.WoundSeverity, unit, drawn.Values[0]) },
@@ -181,7 +195,9 @@ public sealed partial class GamePlanner
             }
 
             // A concealed unit that the attack leaves concealed is not identified to the firing side (A12.14).
-            var hidesIdentity = resolution.Arithmetic!.Result == "none" && facts.Targets.Any(item => item.Concealed == true);
+            // A12.13: concealed, hidden, and Dummy targets have their own column when known targets share the Location.
+            var hiddenResult = resolution.Arithmetic!.Concealed?.Result ?? resolution.Arithmetic.Result;
+            var hidesIdentity = hiddenResult == "none" && facts.Targets.Any(item => item.Concealed == true || item.Hidden == true || item.Dummy == true);
             var fireId = EventId(attemptId, events.Count + 1);
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "fire-resolved",
                 new FireResolved([.. facts.Firers!.Select(item => item.UnitId!)], facts.Director?.UnitId, facts.FirerLocationId!, facts.TargetLocationId!,
