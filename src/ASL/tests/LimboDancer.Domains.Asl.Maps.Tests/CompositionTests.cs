@@ -227,6 +227,34 @@ public sealed class CompositionTests
         Assert.All(facts[new HexIndex(6, 0)].Hexsides, side => Assert.False(side.Slope));
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void TheGeometryOnlyLayoutAgreesWithTheBuiltMap(bool reversed)
+    {
+        // Two rows of two boards, one reversed: every board hex has the same map hex and owner in both.
+        var third = BoardRef.Parse("bd03");
+        var fourth = BoardRef.Parse("bd04");
+        var grid = Grid((x, y) => 0);
+        PlacedBoard[] boards =
+        [
+            Place(First, grid), Place(Second, grid, column: 1, reversed: reversed), Place(third, grid, row: 1), Place(fourth, grid, column: 1, row: 1),
+        ];
+        var map = Build(boards);
+        var layout = MapLayout.Create([.. boards.Select(board => (board.Placement, board.Grid.Geometry))]).Layout!;
+        Assert.Equal((map.Geometry.WidthInHexes, map.Geometry.HeightInHexes), (layout.Geometry.WidthInHexes, layout.Geometry.HeightInHexes));
+        foreach (var board in boards)
+        {
+            foreach (var local in Small.Hexes())
+            {
+                var name = Small.NameOf(local);
+                var index = layout.Locate(board.Placement.Board, name);
+                Assert.Equal(map.Locate(board.Placement.Board, name), index);
+                Assert.Equal(map.OwnerOf(index!.Value), layout.OwnerOf(index.Value));
+            }
+        }
+    }
+
     [Fact]
     public void PlacementsHaveACompactForm()
     {
