@@ -29,6 +29,11 @@ public sealed class LosFidelityTests(ITestOutputHelper output)
         { "bd11.los.json.gz", 5598 },
         { Path.Combine("Scenarios", "bd11-over-bd01.scenario.los.json.gz"), 19028 },
         { Path.Combine("Scenarios", "bd11r-over-bd01.scenario.los.json.gz"), 19018 },
+        { "bd05.los.json.gz", 4522 },
+        { "bd09.los.json.gz", 4454 },
+        { "bd12.los.json.gz", 4645 },
+        { "bd15.los.json.gz", 3714 },
+        { Path.Combine("Scenarios", "bd12-over-bd15.scenario.los.json.gz"), 9960 },
     };
 
     [VaslTheory]
@@ -54,7 +59,6 @@ public sealed class LosFidelityTests(ITestOutputHelper output)
         _ = pinnedAnswered;
         var comparison = Compare(file);
         var names = typeof(LosUnsupportedRule).GetFields().Select(field => (string)field.GetValue(null)!).ToHashSet(StringComparer.Ordinal);
-        Assert.Contains(LosUnsupportedRule.Cellar, comparison.Unsupported.Keys);
         Assert.All(comparison.Unsupported.Keys, rule => Assert.Contains(rule, names));
         Assert.Equal(comparison.Pairs, comparison.Answered + comparison.Unsupported.Values.Sum());
     }

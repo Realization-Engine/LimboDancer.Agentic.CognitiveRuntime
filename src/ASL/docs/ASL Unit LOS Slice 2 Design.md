@@ -37,6 +37,18 @@ The oracle's LOS mode is unchanged. New fixtures, with the same observer stride 
 
 `LosFixtureTests` pins their pair counts. `LosFidelityTests` gains them, pinned at the answered counts each part reaches.
 
+**As built** (part 1). The fixtures, generated with the unchanged oracle; every answered pair already agrees with VASL:
+
+| Fixture | Pairs | Answered | Unanswered, by rule |
+|---|---|---|---|
+| `bd05` | 5,811 | 4,522 | depressions 1,046; bridges 243 |
+| `bd09` | 6,124 | 4,454 | cliffs 1,304; cellars 183; rooftops and factories 183 |
+| `bd12` | 8,059 | 4,645 | depressions 1,736; cellars 661; rooftops and factories 661; rowhouse walls 327; bridges 29 |
+| `bd15` | 6,051 | 3,714 | cliffs 2,037; cellars 150; rooftops and factories 150 |
+| `bd12-over-bd15` | 17,588 | 9,960 | depressions 2,850; cliffs 2,465; cellars 967; rooftops and factories 967; rowhouse walls 335; bridges 44 |
+
+`AnUnsupportedPairNamesItsRule` no longer expects every fixture to have cellar pairs: board 05 has none, and boards 01 and 11 will have none unanswered after part 2.
+
 ## 4. Tests
 
 - **Fidelity:** every answered pair on every fixture agrees with VASL (U14 and U15). The pinned answered counts rise with each part.
