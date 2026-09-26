@@ -27,6 +27,9 @@ The authoring scope is **only the TOC, Index/Glossary, and Chapters A–E**: sev
 | `Supplements/a7-infantry-fire-table.transcription.json` | Bounded IFT transcription: the Personnel result cell of every DR row and FP column, and the DR/FP header. |
 | `Supplements/b-terrain-chart-tem.transcription.json` | Bounded Terrain Chart transcription: the LOS, TEM, and Notes cells of seven rows and five legend entries. |
 | `asl-scenario-a1.fire-chart-review-decision.json` | User-delegated xUnit review of the Fire chart supplement: every item reproduces the extraction, and the user spot-checked nine cells against the rendered pages. It admits the cells as printed, not their use in a fire attack. |
+| `asl-scenario-a1.fire-pdf-comparison.json` | Unit step 17 comparison of 54 Fire rule fragments with their physical page text; `AslScenarioA1FireSourceReview` verifies each under the user's delegated review. |
+| `asl-scenario-a1.fire-case-matrix.json` | Unit step 17 case matrix: the user's Fire rulings of 2026-09-26, the resolution, 13 cases, and digests of the chart supplement, transcriptions, catalog, and 57 verified fragments. |
+| `asl-scenario-a1.fire-package.json` | The published `scenario-a1-fire` package manifest, pinning the matrix; read-only, no execution authority. |
 | `CounterSheets/` | The D1 counter-sheet source for the Scenario A1 unit catalog: its source record, the transcription worksheet, and, once written, the transcription. See its README and the [Scenario A1 Catalog Design](<../../../src/ASL/docs/ASL Scenario A1 Catalog Design.md>). |
 | `asl-scenario-a1.first-case-review-decision.json` | User-delegated xUnit decision over the remaining ten exact TIR subjects and bounded first-case semantics. Pins the previous attestation, comparison, chart decision and TIR digest; an executable test verifies the decision and refuses unknown inputs. |
 
