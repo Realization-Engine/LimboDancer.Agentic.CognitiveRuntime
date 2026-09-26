@@ -20,7 +20,7 @@ public sealed record FireResolved(
 
 /// <summary>
 /// <c>fire-reported</c>: the public part of a fire record that only the target side may see, because the attack left a
-/// concealed target concealed (A12.14, p. 76). It names the record and repeats its Locations and its arithmetic (the
+/// concealed target concealed (A12.14, p. 77). It names the record and repeats its Locations and its arithmetic (the
 /// firers' FP, the column, the DRM, the dice, the final DR, and the IFT result), which name no target unit, so the firing
 /// side learns what it would know at the table. Replay refuses a report that disagrees with its record.
 /// </summary>
