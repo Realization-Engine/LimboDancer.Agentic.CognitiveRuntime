@@ -149,7 +149,13 @@ public sealed class UnitStudioTests : IDisposable
     public void ThePublishedCatalogIsOfferedWithPrintedValuesOnly()
     {
         var choices = library.CatalogChoices;
-        Assert.Equal(["attacker-squad", "attacker-half-squad", "defender-squad", "defender-leader"], choices.Select(choice => choice.Definition.Definition));
+        Assert.Equal(
+            [
+                "attacker-squad", "attacker-half-squad", "defender-squad", "defender-leader", "defender-half-squad", "attacker-2nd-line-squad",
+                "attacker-2nd-line-half-squad", "attacker-conscript-squad", "attacker-conscript-half-squad", "defender-conscript-squad",
+                "defender-conscript-half-squad", "defender-leader-7-0", "defender-leader-6-plus-1",
+            ],
+            choices.Select(choice => choice.Definition.Definition));
         Assert.All(choices, choice =>
         {
             Assert.Equal(Units.Catalog.CatalogPublication.Published, choice.Publication);
