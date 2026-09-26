@@ -249,6 +249,21 @@ public sealed class PlayPageTests : IDisposable
     }
 
     [Fact]
+    public void AnNtcIsShownWithItsArithmetic()
+    {
+        var page = GameWithDefenders(("l1", "defender-leader"), ("r1", "defender-squad"));
+        var a1 = BoardLocation.Parse($"{Board}:A1:0");
+        Append(("entry-attempted", new EntryAttempted("g1", BoardLocation.Parse($"{Board}:B1:0"), 2), null),
+            ("conditions-changed", new ConditionsChanged("l1", Revealed), null),
+            ("overrun-declared", new OverrunDeclared("g1", "enter-1-1", OverrunDeclared.Elected), null),
+            ("dice-rolled", new DiceRolled("enter-1-roll-1", TaskCheck.OvrNtc, 2, 6, [3, 5], DiceRolled.SystemSource, "studio-user"), null),
+            ("task-check", new TaskCheck("g1", "enter-1-roll-1", TaskCheck.OvrNtc, 7, [new TaskCheckModifier("B23.3", 3)], 11, false), null),
+            ("entry-forced-back", new EntryForcedBack("g1", "enter-1-1", a1, 2, false), null));
+        page.Find("#play-game").Change("village");
+        Assert.Contains("OVR NTC: 3, 5 + 3 (TEM) = 11 against morale 7: failed", page.Find("#play-rolls li").TextContent, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void APendingDeclarationIsShownAndBlocksThePhase()
     {
         var page = GameWithDefenders(("l1", "defender-leader"));
@@ -261,12 +276,12 @@ public sealed class PlayPageTests : IDisposable
         page.WaitForAssertion(() => Assert.Contains("Refused", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
         Assert.Contains(page.FindAll("#play-reasons li"), item => item.TextContent.StartsWith("play.declaration-pending", StringComparison.Ordinal));
 
-        // An election is refused until step 10; the synthetic board is not the pinned board 01, so a decline is refused
-        // here too, with its reason, and nothing changes.
+        // The synthetic board is not the pinned board 01, so an election and a decline are both refused here, with that
+        // reason, and nothing changes.
         var revision = live.Store.Read(new GameScope(LivePlay.Tenant, "village"))!.Events.Count;
         page.Find(".declare-elect").Click();
         page.WaitForAssertion(() => Assert.Contains("Refused", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
-        Assert.Contains(page.FindAll("#play-reasons li"), item => item.TextContent.StartsWith("play.adjudicator-cannot-resolve", StringComparison.Ordinal));
+        Assert.Contains(page.FindAll("#play-reasons li"), item => item.TextContent.StartsWith("play.outside-reviewed-board", StringComparison.Ordinal));
         page.Find(".declare-decline").Click();
         page.WaitForAssertion(() => Assert.Contains(page.FindAll("#play-reasons li"), item => item.TextContent.StartsWith("play.outside-reviewed-board", StringComparison.Ordinal)));
         Assert.Equal(revision, live.Store.Read(new GameScope(LivePlay.Tenant, "village"))!.Events.Count);

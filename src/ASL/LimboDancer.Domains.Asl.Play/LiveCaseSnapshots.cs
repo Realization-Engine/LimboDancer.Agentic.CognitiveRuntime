@@ -45,3 +45,16 @@ public sealed class LiveConcealedSmcOverrunSnapshotSource(ScenarioA1ConcealedSmc
             : null);
     }
 }
+
+/// <summary>The OVR NTC snapshot source over a live game, for one branch of an attacker's election.</summary>
+public sealed class LiveOvrNtcSnapshotSource(ScenarioA1OvrNtcSnapshot snapshot) : IScenarioA1OvrNtcSnapshotSource
+{
+    public ValueTask<ScenarioA1OvrNtcSnapshot?> ReadAsync(Guid tenantId, DomainPackageRef package, string unitId, string locationId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        return ValueTask.FromResult(snapshot.TenantId == tenantId && snapshot.Package == package && snapshot.UnitId == unitId && snapshot.LocationId == locationId
+            ? snapshot
+            : null);
+    }
+}
