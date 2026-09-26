@@ -1,0 +1,68 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "pdf-comparison-complete-delegated-xunit-review",
+  "pdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+  "method": "Whole paragraphs compared to pdftotext 4.00 -raw -enc UTF-8 output of each physical PDF page, with line endings normalized to LF, after Markdown markup, ligature, punctuation, case, and whitespace normalization; each normalized paragraph occurs whole in its normalized page text. pdfPageTextSha256 is over that LF page text. The NTC glossary entry is an Index paragraph with no rule id and is matched by source and line. Conversion page markers match the physical pages for all four subjects.",
+  "subjects": [
+    {
+      "ruleId": "A.9",
+      "fragmentId": "asl-fragment:sha256:79b276101baa5aa6918f969c83f86a8fb1727717cbb0dd22dbdc6e89d5a2013f",
+      "sourceId": "asl-easlrb-3.10:chapter-a",
+      "sourceSha256": "6347534e64f739cacc57dd75c3d604997723fd0b4988565609deeff007a8843d",
+      "startLine": 43,
+      "endLine": 43,
+      "contentSha256": "2c2d000af49c2ce84e5a30b2e5a8496a09e82fa68a6bc61aef5b0b658e232697",
+      "kind": "ruleText",
+      "physicalPdfPage": 43,
+      "pdfPageTextSha256": "af0a3f98fde96d93cf63c9382cca643dd8e405dfaa60aa44bbe4d1bedd4ff3b6",
+      "normalizedAlphanumericSha256": "8267c2f0b87e933ee2316dc0c19404b197e8e2ddec3df98615fae4f5e278fde9",
+      "normalizedAlphanumericLength": 1172,
+      "comparison": "complete-alphanumeric-match"
+    },
+    {
+      "ruleId": "A10.1",
+      "fragmentId": "asl-fragment:sha256:885bdc7ae257ae12974bf5511a06740b28001410bf211476e2d154924188af5b",
+      "sourceId": "asl-easlrb-3.10:chapter-a",
+      "sourceSha256": "6347534e64f739cacc57dd75c3d604997723fd0b4988565609deeff007a8843d",
+      "startLine": 762,
+      "endLine": 762,
+      "contentSha256": "4da902b9b8ae459846d9516193bee2c25de69438725655917484f9313399576f",
+      "kind": "ruleText",
+      "physicalPdfPage": 65,
+      "pdfPageTextSha256": "3b42a98b5ed19aba0e50ab036c1b74c9d6e61a5c6e728dfea0bcc28c955dddca",
+      "normalizedAlphanumericSha256": "bad777251c90d40e7683e7abdbb0155f8ebfa5b546c18ac3ff84938c58970fdd",
+      "normalizedAlphanumericLength": 628,
+      "comparison": "complete-alphanumeric-match"
+    },
+    {
+      "ruleId": "B23.3",
+      "fragmentId": "asl-fragment:sha256:5b8331ba4d24b32ea6cda7bd479eb72d14f7b86aea80ff783537a31f24a74afc",
+      "sourceId": "asl-easlrb-3.10:chapter-b",
+      "sourceSha256": "836b1ce5f845efd1c21250a9e6a39e4054ea9398f370305bc3771b6e7f826982",
+      "startLine": 1372,
+      "endLine": 1372,
+      "contentSha256": "0bfc7bb2b0b8fc3ae7a6b8cd5fa21d3910e6cc882113fa4b320ed02ca676c205",
+      "kind": "ruleText",
+      "physicalPdfPage": 136,
+      "pdfPageTextSha256": "61c31e08cc3f649e8509e18c4dbcb40ad061ebe49785e4dfcc853dae24abd21f",
+      "normalizedAlphanumericSha256": "8455d16ae6214aa6f63f2c33439f5345e814a4935e24add92268850c21b2eab1",
+      "normalizedAlphanumericLength": 283,
+      "comparison": "complete-alphanumeric-match"
+    },
+    {
+      "ruleId": "NTC-glossary",
+      "fragmentId": "asl-fragment:sha256:1371497a18cb0ae925c9a34964ed3de4383fbd22f180936c2b83e4a350082b8a",
+      "sourceId": "asl-easlrb-3.10:index-glossary",
+      "sourceSha256": "8e1a686a2664af4ea12e6a57580999d2baf47c8770719426766abe88059f9652",
+      "startLine": 1823,
+      "endLine": 1823,
+      "contentSha256": "47b7f89e2aa1871ebdb308ba1985004ef26bd1abeb7609a6be1979afff5eb882",
+      "kind": "paragraph",
+      "physicalPdfPage": 30,
+      "pdfPageTextSha256": "3fe5172236bf906ad932634f45f8debdb5449f81d3449863a2628a59f77fefb7",
+      "normalizedAlphanumericSha256": "9a2dcaa77ba1d385befaaffabd32fe2340826bbeb4dd07f5d6932670d8b9b962",
+      "normalizedAlphanumericLength": 158,
+      "comparison": "complete-alphanumeric-match"
+    }
+  ]
+}

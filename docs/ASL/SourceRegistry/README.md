@@ -101,6 +101,12 @@ The consequence observation adapter reuses the prior eligibility event projectio
 
 `asl-scenario-a1.second-defender-execution-review.json` pins the next source-backed execution boundary: A12.15 return, attempted-entry MF location, concealment and MPh end for two exact cases; it separately records conditional attacks, special return placement, runtime gating, versioned atomic write and idempotency needs. Its affirmative xUnit review grants no executor or mutation authority. See the [execution boundary review](<../../../src/ASL/docs/Scenario A1 Second Defender Execution Boundary Review 2026-09-24.md>).
 
+`asl-scenario-a1.ovr-ntc-pdf-comparison.json` is the delegated PDF comparison, hashes only, that verifies four further subjects for the OVR NTC review: A.9 Random Selection (p. 43), A10.1 Morale Check and Task Check (p. 65), B23.3 building TEM (p. 136), and the NTC glossary entry (p. 30). `AslScenarioA1OvrNtcSourceReview` pins it and records the subjects Verified, apart from the attestation and the earlier reviews.
+
+`asl-scenario-a1.ovr-ntc-case-matrix.json` records the user's rulings on an elected Infantry OVR after a lone concealed SMC reveal: the NTC comes before the second reveal, which Random Selection chooses, a failed NTC forces the mover back with the ordinary 2 MF, and the NTC resolves from the DR, the Morale Level, and the building TEM. It pins the ConcealedSmcOverrun, PostReveal, and SecondDefenderConsequence package digests and has no execution authority.
+
+`asl-scenario-a1.ovr-ntc-package.json` publishes those five cases as a distinct immutable, read-only package (`scenario-a1-concealment-ovr-ntc`). The resolver requires a versioned observation and the previous Location; it concludes the two forced-back cases Definitive with the ordinary 2 MF in the previous Location, and never executes a roll, a return, or an MF charge.
+
 `unverified` in the earlier inventory and representative sample describes their state at generation time and is preserved as historical evidence. The separate verification batch records the later source-provider disposition for its 11 exact subjects. Any newly verified subject requires a review record covering the fragment and its required table, figure, or footnote dependencies.
 
 Neither manifest is an ontology, published domain package, tactical policy, Decision corpus, or execution authority.

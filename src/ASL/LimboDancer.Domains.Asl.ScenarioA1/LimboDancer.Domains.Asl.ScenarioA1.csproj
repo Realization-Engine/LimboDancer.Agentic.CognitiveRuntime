@@ -23,5 +23,7 @@
     <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.second-defender-reveal-package.json" LogicalName="ScenarioA1.second-defender-package.json" />
     <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.second-defender-consequence-case-matrix.json" LogicalName="ScenarioA1.second-defender-consequence-matrix.json" />
     <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.second-defender-consequence-package.json" LogicalName="ScenarioA1.second-defender-consequence-package.json" />
+    <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.ovr-ntc-case-matrix.json" LogicalName="ScenarioA1.ovr-ntc-matrix.json" WithCulture="false" />
+    <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.ovr-ntc-package.json" LogicalName="ScenarioA1.ovr-ntc-package.json" WithCulture="false" />
   </ItemGroup>
 </Project>
