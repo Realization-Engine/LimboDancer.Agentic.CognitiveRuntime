@@ -27,6 +27,10 @@ reversed boards, and LOS scenario-specific rules (VASL Board Ingestion Design, s
 Generates LOS fixtures (bdNN.los.json.gz, or name.scenario.los.json.gz with -Scenarios) with VASL's own Map.LOS
 (LOS Design, section 4) instead of hex facts. Without boards, regenerates the boards that already have LOS fixtures.
 With -Scenarios, the scenarios come from Oracle/Scenarios/los-scenarios.txt.
+
+.PARAMETER Hexside
+With -Los, generates hexside LOS fixtures (bdNN.los-hexside.json.gz): from hexside locations, aimed at each of their two
+LOS points (LOS Result Design, section 4).
 #>
 [CmdletBinding(PositionalBinding = $false)]
 param(
@@ -34,7 +38,8 @@ param(
     [string[]] $Boards,
     [string] $VaslRoot = $env:AslMaps__VaslRoot,
     [switch] $Scenarios,
-    [switch] $Los
+    [switch] $Los,
+    [switch] $Hexside
 )
 
 $ErrorActionPreference = 'Stop'
@@ -46,7 +51,7 @@ $VaslRoot = (Resolve-Path $VaslRoot).Path
 $Boards = @($Boards | ForEach-Object { $_ -split ',' } | Where-Object { $_ })
 $fixtures = Join-Path $PSScriptRoot '../../tests/LimboDancer.Domains.Asl.Maps.Vasl.Tests/Oracle'
 $fixtures = (Resolve-Path $fixtures).Path
-$kind = if ($Los) { 'los' } else { 'hexfacts' }
+$kind = if ($Los -and $Hexside) { 'los-hexside' } elseif ($Los) { 'los' } else { 'hexfacts' }
 if ($Scenarios) {
     $fixtures = Join-Path $fixtures 'Scenarios'
     $list = if ($Los) { 'los-scenarios.txt' } else { 'scenarios.txt' }
@@ -62,7 +67,7 @@ else {
 }
 
 if ($Los) {
-    $arguments = @('--los') + $arguments
+    $arguments = @($(if ($Hexside) { '--los-hexside' } else { '--los' })) + $arguments
 }
 
 $work = Join-Path ([IO.Path]::GetTempPath()) ('vasl-hexfact-oracle-' + [Guid]::NewGuid().ToString('N'))

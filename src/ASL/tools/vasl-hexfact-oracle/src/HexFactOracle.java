@@ -45,6 +45,7 @@ import VASL.build.module.map.boardPicker.VASLBoard;
  *   HexFactOracle vaslRoot outputDirectory --scenarios file [name...]      writes name.scenario.hexfacts.json
  *   HexFactOracle vaslRoot outputDirectory --los boardName...              writes bdNN.los.json
  *   HexFactOracle vaslRoot outputDirectory --los --scenarios file [name...] writes name.scenario.los.json
+ *   HexFactOracle vaslRoot outputDirectory --los-hexside boardName...      writes bdNN.los-hexside.json
  *
  * The LOS mode (LOS Design, section 4) runs VASL's own Map.LOS from sampled observer locations to every location
  * within LOS_RANGE, with no counters and not at night, and writes the results only.
@@ -55,10 +56,13 @@ import VASL.build.module.map.boardPicker.VASLBoard;
 public final class HexFactOracle {
     static final String HARNESS_VERSION = "1.1.0";
     static final String GRID_CONFIGURATION = "HalfHexWidthLeftHexFullHeight";
-    static final String LOS_HARNESS_VERSION = "1.1.0";
+    static final String LOS_HARNESS_VERSION = "1.2.0";
     static final int LOS_RANGE = 12;
     static final int OBSERVER_COLUMN_STRIDE = 5;
     static final int OBSERVER_ROW_STRIDE = 3;
+    static final int HEXSIDE_RANGE = 8;
+    static final int HEXSIDE_COLUMN_STRIDE = 10;
+    static final int HEXSIDE_ROW_STRIDE = 5;
     static final Pattern PLACEMENT = Pattern.compile("([A-Za-z0-9]+)@(\\d+),(\\d+)(/r)?(?:\\[([A-Za-z0-9_.,]*)\\])?");
 
     private HexFactOracle() {
@@ -81,7 +85,8 @@ public final class HexFactOracle {
         Files.createDirectories(output);
         String commit = headCommit(root);
         int failures = 0;
-        boolean los = args[2].equals("--los");
+        boolean hexside = args[2].equals("--los-hexside");
+        boolean los = hexside || args[2].equals("--los");
         int first = los ? 3 : 2;
         if (los) {
             stubGameModule();
@@ -96,7 +101,7 @@ public final class HexFactOracle {
 
                 failures += los
                         ? write(output.resolve(scenario.name() + ".scenario.los.json"), scenario.name(),
-                                out -> writeLos(out, root, commit, scenario, true))
+                                out -> writeLos(out, root, commit, scenario, true, false))
                         : write(output.resolve(scenario.name() + ".scenario.hexfacts.json"), scenario.name(),
                                 out -> writeScenario(out, root, commit, scenario));
             }
@@ -104,8 +109,10 @@ public final class HexFactOracle {
             for (int index = first; index < args.length; index++) {
                 String board = args[index];
                 Scenario single = new Scenario("bd" + board, List.of(new Placement(board, 0, 0, false, List.of())));
-                failures += los
-                        ? write(output.resolve("bd" + board + ".los.json"), "bd" + board, out -> writeLos(out, root, commit, single, false))
+                failures += hexside
+                        ? write(output.resolve("bd" + board + ".los-hexside.json"), "bd" + board, out -> writeLos(out, root, commit, single, false, true))
+                        : los
+                        ? write(output.resolve("bd" + board + ".los.json"), "bd" + board, out -> writeLos(out, root, commit, single, false, false))
                         : write(output.resolve("bd" + board + ".hexfacts.json"), "bd" + board, out -> writeBoard(out, root, commit, single));
             }
         }
@@ -514,8 +521,16 @@ public final class HexFactOracle {
         return locations;
     }
 
+    // A hexside location is named with its side, as BoardLocation writes it: bd01:E4:0/3.
     private static String locationId(Location location, List<PlacedBoard> boards) {
-        return ownerOf(location.getHex(), boards) + ":" + location.getHex().getName() + ":" + location.getLevelInHex();
+        String id = ownerOf(location.getHex(), boards) + ":" + location.getHex().getName() + ":" + location.getLevelInHex();
+        for (int side = 0; side < 6; side++) {
+            if (location.getHex().getHexsideLocation(side) == location) {
+                return id + "/" + side;
+            }
+        }
+
+        return id;
     }
 
     /**
@@ -523,7 +538,7 @@ public final class HexFactOracle {
      * OBSERVER_COLUMN_STRIDE-th column and OBSERVER_ROW_STRIDE-th row of the map) to every location within LOS_RANGE.
      * Locations are board-relative, named by the board that owns their hex.
      */
-    private static void writeLos(PrintStream out, Path root, String commit, Scenario scenario, boolean composed) throws Exception {
+    private static void writeLos(PrintStream out, Path root, String commit, Scenario scenario, boolean composed, boolean hexside) throws Exception {
         SharedBoardMetadata shared = shared(root);
         List<PlacedBoard> boards = new ArrayList<>();
         Map map = derive(root, scenario, shared, boards);
@@ -543,18 +558,42 @@ public final class HexFactOracle {
         out.print("\n]");
         out.print(",\"gridConfiguration\":\"" + GRID_CONFIGURATION + "\"");
         out.print(",\"harnessVersion\":\"" + LOS_HARNESS_VERSION + "\"");
-        out.print(",\"losRange\":" + LOS_RANGE);
-        out.print(",\"observerStride\":[" + OBSERVER_COLUMN_STRIDE + "," + OBSERVER_ROW_STRIDE + "]");
+        int range = hexside ? HEXSIDE_RANGE : LOS_RANGE;
+        int columnStride = hexside ? HEXSIDE_COLUMN_STRIDE : OBSERVER_COLUMN_STRIDE;
+        int rowStride = hexside ? HEXSIDE_ROW_STRIDE : OBSERVER_ROW_STRIDE;
+        out.print(",\"losRange\":" + range);
+        out.print(",\"mode\":\"" + (hexside ? "hexside" : "center") + "\"");
+        out.print(",\"observerStride\":[" + columnStride + "," + rowStride + "]");
         out.print(",\"pairs\":[\n");
         Hex[][] grid = map.getHexGrid();
         boolean firstPair = true;
-        for (int col = 0; col < grid.length; col += OBSERVER_COLUMN_STRIDE) {
-            for (int row = 0; row < grid[col].length; row += OBSERVER_ROW_STRIDE) {
+        for (int col = 0; col < grid.length; col += columnStride) {
+            for (int row = 0; row < grid[col].length; row += rowStride) {
                 Hex observer = grid[col][row];
-                for (Location source : chain(observer)) {
+                // Center mode: every location of the observer hex. Hexside mode: each hexside location, aimed at its LOS
+                // point and at its auxiliary LOS point.
+                List<Location> sources = new ArrayList<>();
+                List<Boolean> aims = new ArrayList<>();
+                if (hexside) {
+                    for (int side = 0; side < 6; side++) {
+                        sources.add(observer.getHexsideLocation(side));
+                        aims.add(false);
+                        sources.add(observer.getHexsideLocation(side));
+                        aims.add(true);
+                    }
+                } else {
+                    for (Location location : chain(observer)) {
+                        sources.add(location);
+                        aims.add(false);
+                    }
+                }
+
+                for (int index = 0; index < sources.size(); index++) {
+                    Location source = sources.get(index);
+                    boolean aux = aims.get(index);
                     for (Hex[] column : grid) {
                         for (Hex hex : column) {
-                            if (Map.range(observer, hex, map.getMapConfiguration()) > LOS_RANGE) {
+                            if (Map.range(observer, hex, map.getMapConfiguration()) > range) {
                                 continue;
                             }
 
@@ -568,7 +607,7 @@ public final class HexFactOracle {
                                 LOSResult result = new LOSResult();
                                 String failure = null;
                                 try {
-                                    map.LOS(source, false, target, false, result, game, null);
+                                    map.LOS(source, aux, target, false, result, game, null);
                                 } catch (RuntimeException exception) {
                                     failure = exception.getClass().getSimpleName();
                                     result = new LOSResult();
@@ -576,7 +615,7 @@ public final class HexFactOracle {
 
                                 out.print(firstPair ? "" : ",\n");
                                 firstPair = false;
-                                writePair(out, map, boards, source, target, result, failure);
+                                writePair(out, map, boards, source, hexside ? aux : null, target, result, failure);
                             }
                         }
                     }
@@ -591,16 +630,40 @@ public final class HexFactOracle {
         out.print("}\n");
     }
 
-    private static void writePair(PrintStream out, Map map, List<PlacedBoard> boards, Location source, Location target, LOSResult result, String failure) {
+    private static void writePair(PrintStream out, Map map, List<PlacedBoard> boards, Location source, Boolean sourceAux, Location target, LOSResult result,
+            String failure) throws Exception {
         Point at = result.isBlocked() ? result.getBlockedAtPoint() : null;
         Hex atHex = at == null ? null : map.gridToHex(at.x, at.y);
+        Point firstHindrance = result.firstHindranceAt();
+        Hex firstHindranceHex = firstHindrance == null ? null : map.gridToHex(firstHindrance.x, firstHindrance.y);
         out.print("{\"blocked\":" + result.isBlocked());
         out.print(",\"blockedAt\":" + (at == null ? "null" : "[" + at.x + "," + at.y + "]"));
         out.print(",\"blockedHex\":" + (atHex == null ? "null" : "\"" + ownerOf(atHex, boards) + ":" + escape(atHex.getName()) + "\""));
+        out.print(",\"firstHindranceAt\":" + (firstHindrance == null ? "null" : "[" + firstHindrance.x + "," + firstHindrance.y + "]"));
+        out.print(",\"firstHindranceHex\":" + (firstHindranceHex == null ? "null"
+                : "\"" + ownerOf(firstHindranceHex, boards) + ":" + escape(firstHindranceHex.getName()) + "\""));
         out.print(",\"hindrance\":" + result.getHindrance());
+
+        // LOSResult keeps the largest map hindrance at each range in a field without a getter (harness 1.2.0).
+        Field field = LOSResult.class.getDeclaredField("mapHindrances");
+        field.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        java.util.Map<Integer, Double> hindrances = new java.util.TreeMap<>((java.util.Map<Integer, Double>) field.get(result));
+        out.print(",\"hindrances\":[");
+        boolean firstEntry = true;
+        for (java.util.Map.Entry<Integer, Double> entry : hindrances.entrySet()) {
+            out.print((firstEntry ? "" : ",") + "[" + entry.getKey() + "," + entry.getValue() + "]");
+            firstEntry = false;
+        }
+
+        out.print("]");
         out.print(",\"range\":" + result.getRange());
         out.print(",\"reason\":\"" + escape(result.getReason() == null ? "" : result.getReason()) + "\"");
         out.print(",\"source\":\"" + escape(locationId(source, boards)) + "\"");
+        if (sourceAux != null) {
+            out.print(",\"sourceAux\":" + sourceAux);
+        }
+
         out.print(",\"target\":\"" + escape(locationId(target, boards)) + "\"");
         out.print(failure == null ? "}" : ",\"vaslError\":\"" + escape(failure) + "\"}");
     }
