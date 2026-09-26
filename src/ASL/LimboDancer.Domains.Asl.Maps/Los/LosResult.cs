@@ -71,19 +71,33 @@ public static class LosUnsupportedRule
 
     public const string Entrenchment = "Entrenchments (B27.2)";
 
-    public const string Bocage = "Bocage (B9.52)";
-
     public const string PartialOrchard = "Partial orchards (B14.2)";
 
+    /// <summary>Bocage that makes a blind hex (B9.52), which no fixture reaches; bocage that blocks is reproduced.</summary>
+    public const string BocageBlindHex = "Bocage blind hexes (B9.52)";
+
+    /// <summary>
+    /// The hillock outcomes no fixture reaches: a hillock summit, hillocks between a hillock source and its target, a
+    /// second wall or hedge, and a second rubble hex (F6.4). Other hillock LOS is reproduced.
+    /// </summary>
+    public const string HillockCases = "Hillock summits and repeated crossings (F6.4)";
+
+    /// <summary>
+    /// The slope outcomes no fixture reaches: an up-slope end that sees over hexside terrain, or past a hindrance higher
+    /// than both ends (F2.3). Other slope LOS is reproduced.
+    /// </summary>
+    public const string SlopeCases = "Slopes over hexside terrain and hindrances (F2.3)";
+
+    /// <summary>
+    /// The out-of-season orchard outcomes no fixture reaches: an orchard hex whose ground is as high as the higher end,
+    /// and an orchard between the ends' levels in the blind hex rule. Other out-of-season orchard LOS is reproduced.
+    /// </summary>
+    public const string OrchardOutOfSeasonCases = "Out-of-season orchard height and blind hex cases";
+
+    /// <summary>Railroad embankments (<c>checkRBrrembankments</c>) and embankment ends, which no fixture board has.</summary>
     public const string RailroadEmbankment = "Railroad embankments";
 
-    public const string Hillock = "Hillocks (F6.4)";
-
     public const string Deir = "Deir (F4.4)";
-
-    public const string Slope = "Slopes (F2.3)";
-
-    public const string OrchardOutOfSeason = "Out-of-season orchards";
 
     public const string SandDune = "Sand dunes";
 

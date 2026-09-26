@@ -38,8 +38,8 @@ public sealed class LosFidelityTests(ITestOutputHelper output)
         { "bd51.los.json.gz", 29151 },
         { "bd96.los.json.gz", 6079 },
         { "bdBFPB.los.json.gz", 11882 },
-        { "bdBFPD.los.json.gz", 1301 },
-        { "bdBFPDW2b.los.json.gz", 2704 },
+        { "bdBFPD.los.json.gz", 5566 },
+        { "bdBFPDW2b.los.json.gz", 5574 },
         { "bdrdx.los.json.gz", 2046 },
     };
 
@@ -71,60 +71,37 @@ public sealed class LosFidelityTests(ITestOutputHelper output)
     }
 
     /// <summary>
-    /// The fixtures on which every pair is answered: boards 01 and 11 and their seam scenarios (LOS Slice 2 Design,
-    /// section 4), the step 14 fixtures, and the step 15 fixtures of buildings and bridges (LOS Slice 3 Design, part 2).
+    /// U16: on every fixture every pair is answered except where VASL's own LOS fails (LOS Slice 3 Design, parts 2 and 3);
+    /// there the read must not answer, which <see cref="LosFidelity.Compare"/> counts as a disagreement.
     /// </summary>
-    public static TheoryData<string> FullyAnswered => new()
-    {
-        "bd01.los.json.gz",
-        "bd11.los.json.gz",
-        Path.Combine("Scenarios", "bd11-over-bd01.scenario.los.json.gz"),
-        Path.Combine("Scenarios", "bd11r-over-bd01.scenario.los.json.gz"),
-        "bd05.los.json.gz",
-        "bd09.los.json.gz",
-        "bd12.los.json.gz",
-        "bd15.los.json.gz",
-        Path.Combine("Scenarios", "bd12-over-bd15.scenario.los.json.gz"),
-        "bd23.los.json.gz",
-        "bd51.los.json.gz",
-        "bd96.los.json.gz",
-        "bdBFPB.los.json.gz",
-        "bdrdx.los.json.gz",
-    };
-
     [VaslTheory]
-    [MemberData(nameof(FullyAnswered))]
-    public void EveryPairIsAnswered(string file)
+    [MemberData(nameof(Fixtures))]
+    public void EveryPairIsAnsweredWhereVaslAnswers(string file, int pinnedAnswered)
     {
+        _ = pinnedAnswered;
         var comparison = Compare(file);
-        Assert.Empty(comparison.Unsupported);
-        Assert.Equal(comparison.Pairs, comparison.Answered);
+        var fixture = LosFidelity.Read(Path.Combine(OracleDirectory, file));
+        Assert.Equal(fixture.Pairs.Count(pair => pair.VaslError is null), comparison.Answered);
     }
 
-    /// <summary>The fixtures of hexside and rise terrain (LOS Slice 3 Design, part 3).</summary>
-    public static TheoryData<string> Part3Fixtures => new()
+    /// <summary>
+    /// What an unanswered pair may name after step 15 (U16): partial orchards and entrenchments, which no fixture board
+    /// has, and VASL's own failure (LOS Slice 3 Design, section 3).
+    /// </summary>
+    private static readonly HashSet<string> Step15Unanswered = new(StringComparer.Ordinal)
     {
-        "bdBFPD.los.json.gz",
-        "bdBFPDW2b.los.json.gz",
-    };
-
-    /// <summary>The rule groups left to part 3 of step 15, and VASL's own failures (LOS Slice 3 Design, section 3).</summary>
-    private static readonly HashSet<string> Part3Rules = new(StringComparer.Ordinal)
-    {
-        LosUnsupportedRule.Bocage,
-        LosUnsupportedRule.Hillock,
-        LosUnsupportedRule.RailroadEmbankment,
-        LosUnsupportedRule.OrchardOutOfSeason,
-        LosUnsupportedRule.Slope,
+        LosUnsupportedRule.PartialOrchard,
+        LosUnsupportedRule.Entrenchment,
         LosUnsupportedRule.VaslFails,
     };
 
     [VaslTheory]
-    [MemberData(nameof(Part3Fixtures))]
-    public void EveryUnansweredPairOnThePart3FixturesNamesAPart3Rule(string file)
+    [MemberData(nameof(Fixtures))]
+    public void AnUnansweredPairNamesPartialOrchardsEntrenchmentsOrVaslsFailure(string file, int pinnedAnswered)
     {
+        _ = pinnedAnswered;
         var comparison = Compare(file);
-        Assert.All(comparison.Unsupported.Keys, rule => Assert.Contains(rule, Part3Rules));
+        Assert.All(comparison.Unsupported.Keys, rule => Assert.Contains(rule, Step15Unanswered));
     }
 
     [VaslFact]

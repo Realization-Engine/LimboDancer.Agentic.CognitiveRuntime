@@ -90,6 +90,24 @@ public sealed class LosTests
             IsHalfLevelHeight = true,
             Height = 1,
         },
+        new TerrainType
+        {
+            Code = 74,
+            Name = "Bocage",
+            Category = LosCategory.Hexside,
+            IsLosObstacle = true,
+            IsLowerLosObstacle = true,
+            Height = 1,
+        },
+        new TerrainType
+        {
+            Code = 105,
+            Name = "Hillock",
+            Category = LosCategory.Other,
+            IsLosObstacle = true,
+            IsHalfLevelHeight = true,
+            IsInherent = true,
+        },
     ]);
 
     // E4's center point is (225, 225); this box covers the whole hex.
@@ -276,6 +294,36 @@ public sealed class LosTests
         Assert.Equal((LosStatus.Blocked, true, 4), (result.Status, result.IsBlocked, result.Range));
         Assert.Equal("Cannot see through rowhouse/factory wall (B23.71/O5.31)", result.Reason);
         Assert.Equal((Board, HexName.Parse("E4")), (result.BlockedAt!.Board, result.BlockedAt.Hex));
+    }
+
+    [Fact]
+    public void BocageAsHighAsTheHigherEndBlocks()
+    {
+        // Bocage on E4's south hexside is a level high. From a level 1 hill in E2 to open ground in E6 it is as high as
+        // the higher end, with the other lower: Map.checkHexsideTerrainRule blocks (B9.52), where a wall or hedge at the
+        // hill's level would not.
+        var bocage = ((215, 248, 235, 256), "Bocage", 0);
+        var result = LosCalculator.Check(Map(PaintLevels((Whole("E2"), "Open Ground", 1), bocage)), Location("E2"), Location("E6"));
+        Assert.Equal((LosStatus.Blocked, true, 4), (result.Status, result.IsBlocked, result.Range));
+        Assert.Equal("Cannot see through/over bocage (B9.52)", result.Reason);
+        Assert.Equal((Board, HexName.Parse("E4")), (result.BlockedAt!.Board, result.BlockedAt.Hex));
+    }
+
+    [Fact]
+    public void ALosToAHillockIsBlockedByTwoInterveningHillocks()
+    {
+        // E7 is a hillock, and E3 and E5 are two more. From open ground in E1 the LOS to E7 crosses both, which
+        // Map.checkHillockRule counts as it leaves each (F6.4); with only E3 between, E7 is seen.
+        var one = Map(Paint((Around("E3"), "Hillock"), (Around("E7"), "Hillock")));
+        Assert.Equal("Hillock", one.FactsOf(Geometry.IndexOf(HexName.Parse("E7"))).Center.Terrain?.Name);
+        var seen = LosCalculator.Check(one, Location("E1"), Location("E7"));
+        Assert.Equal((LosStatus.Clear, false, 6), (seen.Status, seen.IsBlocked, seen.Range));
+
+        var two = Map(Paint((Around("E3"), "Hillock"), (Around("E5"), "Hillock"), (Around("E7"), "Hillock")));
+        var blocked = LosCalculator.Check(two, Location("E1"), Location("E7"));
+        Assert.Equal((LosStatus.Blocked, true, 6), (blocked.Status, blocked.IsBlocked, blocked.Range));
+        Assert.Equal("Intervening hillock (F6.4)", blocked.Reason);
+        Assert.Equal((Board, HexName.Parse("E6")), (blocked.BlockedAt!.Board, blocked.BlockedAt.Hex));
     }
 
     [Fact]

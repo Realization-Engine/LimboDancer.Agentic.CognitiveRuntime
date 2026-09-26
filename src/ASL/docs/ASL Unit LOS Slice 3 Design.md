@@ -1,6 +1,6 @@
 # ASL Unit LOS Slice 3 Design
 
-**Status:** Proposed. Designed before code, on `feature/asl-unit-step15-plan`; to be built in the order of section 5.
+**Status:** Built in the order of section 5. Part 1 is recorded in section 2, and parts 2 and 3 in section 3.
 
 **Date:** 2026-09-26
 
@@ -91,6 +91,37 @@ Each rule becomes answered only when the fixtures exercise it and every answered
   | `bdBFPB` | 11,882 | 11,882 | |
   | `bdBFPD` | 5,566 | 1,301 | bocage 4,242; slopes 23 |
   | `bdBFPDW2b` | 5,584 | 2,704 | hillocks 2,459; out-of-season orchards 417; VASL fails 4 (of 10) |
+  | `bdrdx` | 2,046 | 2,046 | |
+
+**As built** (part 3).
+- Bocage: the bocage case of `checkHexsideTerrainRule` (it blocks when higher than both ends, as high as both and half a level high, or as high as the higher end with the other lower), and the bocage exits of `checkTerrainIsHigherRule`, `checkTerrainHeightRule`, and `checkBlindHexRule`.
+- Hillocks: `buildHillocks` as `LosMap.HillockOf`, the connected sets of hexes whose center terrain is "Hillock", from the hex facts; the hillock state of `LOSStatus`; `setHillockStatus` on each new hex, with the rubble state (a hex's own rubble only, as there are no counters); `setAdjacentToHillock`; `checkHillockRule` after the blind hex rule, with the wall and hedge crossing tested by the hexside rule on a throwaway result; `hillockRuleApplicable` and `hillockHindranceToLowerElevation` in `checkHalfLevelTerrainRule` (one brush, grain, or rice paddy hindrance); a hillock end half a level higher in `checkTerrainIsHigherRule`; the hillock skips of `checkHexsideTerrainRule` and `checkTerrainHeightRule`.
+- Slopes: `slopes`, `exitsSlopeHexside`, and `entersSlopeHexside`; an up-slope source counts as on a hillock; the slope cases of `checkSplitTerrainRule`, `checkHalfLevelTerrainRule`, `checkTerrainHeightRule`, and `checkBlindHexRule`, and the up-slope level of `isBlindHex`. BFP D's 23 slope pairs all answer.
+- Out-of-season orchards (DW2b's "Orchard, Out of Season" terrain, as VASL reads the board with no scenario): `checkTerrainHeightRule` counts one a level lower and adds a hindrance where its full height is as high as the higher end.
+- Railroad embankments: no fixture reaches `checkRBrrembankments` or an embankment end, so they stay "Railroad embankments".
+- Refused, as no fixture reaches them, where VASL would block, hinder, or clear: "Bocage blind hexes (B9.52)" (the blind hex behind bocage, and `isBlindHex`'s bocage minimum); "Hillock summits and repeated crossings (F6.4)" (summits, hillocks between a hillock source and its target, a second wall or hedge, a second rubble hex); "Slopes over hexside terrain and hindrances (F2.3)" (the `!slopes` exceptions of the hexside and terrain is higher rules); "Out-of-season orchard height and blind hex cases" (an orchard hex whose ground is as high as the higher end, and the orchard case of `checkBlindHexRule`). The names "Bocage (B9.52)", "Hillocks (F6.4)", "Slopes (F2.3)", and "Out-of-season orchards" are gone.
+- VASL's failures: all 10 `vaslError` pairs of DW2b are now named "A line on which VASL's LOS fails", since hillocks no longer stop the read before the crest test; a wall crossing whose hexside is off the map, where VASL's hillock rule would throw, is named the same.
+- VASL quirks kept: a hillock end's `=+ 0.5` sets the adjustment, replacing a rooftop's; with a slope the source counts as on a hillock even where it has none; `setAdjacentToHillock` takes the second hexside's hillock; the `isBlindHex` level for up-slope ends compares the unadjusted elevations and ground level; the hillock rule clears the blocked state after its wall test; the rubble and orchard tests compare exact names, the bocage minimum a substring.
+- Tests: Maps `LosTests` has bocage as high as the higher end, and a target hillock behind two hillocks (F6.4); each fails with its rule disabled. Disabling a rule gives disagreements: bocage in the hexside rule 3,754 (BFP D); the hillock half-level case 1,280, `checkHillockRule` 565, a hillock end's half level 213, `setHillockStatus` 5 (DW2b); slopes 22 (BFP D); the up-slope blind hex 7; the hexside rule's hillock skip 7 (BFP D, through slopes); the orchard's level adjustment 9 (DW2b). `LosFidelityTests` asserts every pair answered except VASL's failures (U16), and that an unanswered pair names only partial orchards, entrenchments, or VASL's failure.
+- Every answered pair agrees with VASL:
+
+  | Fixture | Pairs | Answered | Unanswered, by rule |
+  |---|---|---|---|
+  | `bd01` | 18,251 | 18,251 | |
+  | `bd11` | 5,662 | 5,662 | |
+  | `bd11-over-bd01` | 26,718 | 26,718 | |
+  | `bd11r-over-bd01` | 26,682 | 26,682 | |
+  | `bd05` | 5,811 | 5,811 | |
+  | `bd09` | 6,124 | 6,124 | |
+  | `bd12` | 8,059 | 8,059 | |
+  | `bd15` | 6,051 | 6,051 | |
+  | `bd12-over-bd15` | 17,588 | 17,588 | |
+  | `bd23` | 12,866 | 12,866 | |
+  | `bd51` | 29,151 | 29,151 | |
+  | `bd96` | 6,079 | 6,079 | |
+  | `bdBFPB` | 11,882 | 11,882 | |
+  | `bdBFPD` | 5,566 | 5,566 | |
+  | `bdBFPDW2b` | 5,584 | 5,574 | VASL fails 10 (of 10) |
   | `bdrdx` | 2,046 | 2,046 | |
 
 ## 4. Tests
