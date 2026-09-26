@@ -1,0 +1,179 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "registered-unverified-supplement",
+  "supplementId": "asl-supplement:fire-charts",
+  "parentRegistryId": "asl-easlrb-3.10-a-e",
+  "parentRegistrySha256": "257412f9aed1e4d9c82b852c74910d7f3cf8551f77fbe583575cd2c26397ec10",
+  "parentSourceCommit": "a3254ff1d492dbdd28483d86f5b42437b48e80d4",
+  "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+  "requiredFor": "Unit step 17, the Fire source review: IFT resolution (A7.3) and target TEM and LOS Hindrance (A7.6, A6.7) for PFPh and DFPh fire by a single-Location fire group",
+  "extractor": "pdftotext 4.00 (xpdf) -f N -l N -table -enc UTF-8 -eol unix",
+  "normalization": "Remove U+2022 and U+2021 marks; replace U+00BD with 1/2; collapse each whitespace run to one space and trim; remove the space after U+2264 or U+2265. IFT items are a row's label and cells joined by spaces. Terrain Chart row items are the Terrain, Example, LOS Obstacle/Hindrance, and TEM/Indirect cells joined by ' | ', with a continuation line appended to its cell; notes items are the row's Notes cell; legend items are the legend line. The transcription's none stands for U+2014.",
+  "pages": [
+    {
+      "physicalPdfPage": 692,
+      "chartTitle": "A7 Infantry Fire Table (IFT)",
+      "boundary": "Personnel result cells of every DR row and FP column, and the DR/FP header",
+      "extractedPageTextSha256": "f9c52bdddadab3cf6b3eb6cac8a58ac3a5f55e7ab6f4a73e4b32665173c3d8f9",
+      "transcriptionPath": "docs/ASL/SourceRegistry/Supplements/a7-infantry-fire-table.transcription.json",
+      "transcriptionSha256": "42440dd6facf7aa23cfc8c884ed8c7266f6621b25cb889b679c850098d3a4cec",
+      "items": [
+        {
+          "key": "header",
+          "normalizedSha256": "81a6f0edee076f3f1b404ea91b545b80964fbe8a805fffc0a71b1852c3ab6b16"
+        },
+        {
+          "key": "≤0",
+          "normalizedSha256": "53ad9fc6d7328493531aa11ad230d3a8a0dcb531215b89e0c07c98f1b5664514"
+        },
+        {
+          "key": "1",
+          "normalizedSha256": "f1039ee229047d19001a816570f805c18282795554c2a85ecae38334ffef3feb"
+        },
+        {
+          "key": "2",
+          "normalizedSha256": "f8d1f09439107a3497f7cca256d914bd48021ec08be69dcc39cc69b48ac5c861"
+        },
+        {
+          "key": "3",
+          "normalizedSha256": "19136cff4c050eac7917cccd2696e38574e43ce3efcc2386b4b8594bf1b8d9b7"
+        },
+        {
+          "key": "4",
+          "normalizedSha256": "81aded1177db3bed18bb3c41aa28bb8a0be6cc8a315b0c675aa84e327ae2c1fa"
+        },
+        {
+          "key": "5",
+          "normalizedSha256": "0540d95d22e6e06b132c963e0218e37587ddd22ceffd362ceff884fbfbf049e5"
+        },
+        {
+          "key": "6",
+          "normalizedSha256": "282ac610e5201bfac54a0de764e137ecf88e0e468b9c81af1c12bd300d69c6bf"
+        },
+        {
+          "key": "7",
+          "normalizedSha256": "a8c1711ce82456f06b85bab81cef528d14c249a7fd007c190274668678b8ca9e"
+        },
+        {
+          "key": "8",
+          "normalizedSha256": "6c3b24400cf249d855ed48b8eea6e44490ca3de6f13e2ca07f766f5876483293"
+        },
+        {
+          "key": "9",
+          "normalizedSha256": "b31e97f16fc0ece20009c49079bbe3fd67f92b20d52ecbec7ca023ea663a13a2"
+        },
+        {
+          "key": "10",
+          "normalizedSha256": "a15cc800463d1ee7422fc8ad7e5207dc46b71f097c9ed4f612dc37ad9edfcaf4"
+        },
+        {
+          "key": "11",
+          "normalizedSha256": "5bded3edd68c339e0156dd28ce183c5909b6617103698ca28ca2e09b744e9131"
+        },
+        {
+          "key": "12",
+          "normalizedSha256": "55c55882a6d07a6e567c4f3f7408b430a76c6b47f50edf4f782cb8a530e3f792"
+        },
+        {
+          "key": "13",
+          "normalizedSha256": "e97525bc6178b0054394b232b70543dde6d7ffa5faf4f8f8c8bd810394477c9c"
+        },
+        {
+          "key": "14",
+          "normalizedSha256": "979c34ba3d2cbd5a60806ca7acf161ec9b0d3becd78d95100a552a8d39a7fb01"
+        },
+        {
+          "key": "≥15",
+          "normalizedSha256": "653789990b93d935f85ea4efbd06919007878e27bc7c1e0d7d1b8481e20f0c02"
+        }
+      ]
+    },
+    {
+      "physicalPdfPage": 698,
+      "chartTitle": "B. Terrain Chart",
+      "boundary": "LOS and TEM cells and Notes of seven terrain rows, and five legend entries",
+      "extractedPageTextSha256": "883a6a60c950293fef53ebf95db3c4745e50e0cf1111241a90becbb2989f9692",
+      "transcriptionPath": "docs/ASL/SourceRegistry/Supplements/b-terrain-chart-tem.transcription.json",
+      "transcriptionSha256": "afc61e1db4871050d91ab6c58f022ddca86651f8f0104e39408c156e44ffdafa",
+      "items": [
+        {
+          "key": "1. Open Ground",
+          "normalizedSha256": "11a8e848681de748dab1de32df916b3b91729307889f543e55b6b0b421817d13"
+        },
+        {
+          "key": "1. Open Ground notes",
+          "normalizedSha256": "1cf9bf7778ad5e599ecf539fda30750781f9b968993f440ac76e4d859c228524"
+        },
+        {
+          "key": "12. Brush",
+          "normalizedSha256": "413e76de104f7f32ba5591e3ab99df72d23794674e3964ffb8b3c4a6e11c4b31"
+        },
+        {
+          "key": "12. Brush notes",
+          "normalizedSha256": "aedb5b48e4946dc306effda5e4f5d8481d4b9788c6c317a7ac27a6f89af9db69"
+        },
+        {
+          "key": "13. Woods",
+          "normalizedSha256": "cb9244b130d3ad758854ed37d8448d12a172f5fc4181c9c1632ab8cd342db1a1"
+        },
+        {
+          "key": "13. Woods notes",
+          "normalizedSha256": "fc2a51ddf07e397f4457880572013815566fded3b251366fd85b71b496f07469"
+        },
+        {
+          "key": "14. Orchard",
+          "normalizedSha256": "871f665d52e94942e16d2f095e3152019cedccb16266c512cd8582155dbcbbd2"
+        },
+        {
+          "key": "14. Orchard notes",
+          "normalizedSha256": "8d909f3ac00a0174bdb540af4e64eec412978b6025703659dffc09dfc20ba580"
+        },
+        {
+          "key": "15. Grain",
+          "normalizedSha256": "fcb6585946950546cd68b6edee1bdb0dd0b289728674a837b2b7b6f1678648db"
+        },
+        {
+          "key": "15. Grain notes",
+          "normalizedSha256": "4d0eac5a7ed4aaf2543057f0a76bbfa25464d67bab197dc74215cbb9c24fbb25"
+        },
+        {
+          "key": "23. Wooden Building",
+          "normalizedSha256": "19dceb002e1d6de1b499971626cd9241aa195551d1bc849a5bb3a51203ba298f"
+        },
+        {
+          "key": "23. Wooden Building notes",
+          "normalizedSha256": "6e02395e9c7b80dfc5bd86a1a9d5d83b4169a5b4fd31b5b24d3c1bf16112ee09"
+        },
+        {
+          "key": "23. Stone Building",
+          "normalizedSha256": "bcce87c6059148b5ff341bf7920c9cd07bc6f4c6d372d280ade7451eaf64f713"
+        },
+        {
+          "key": "23. Stone Building notes",
+          "normalizedSha256": "f3c06f3a9943ca878750fa14bf5c35d2616186b2adc6c4a2e3e8b581193f33f0"
+        },
+        {
+          "key": "legend Terrain listed in RED",
+          "normalizedSha256": "7ecd6f7266b3bb205e237a92e5f2f37bc460ded25c20164ec92f54f43d518252"
+        },
+        {
+          "key": "legend †:",
+          "normalizedSha256": "8808eef82274cd0b2e1ac30dea3448e501a0bcad406d3f3169e8590b511a7b76"
+        },
+        {
+          "key": "legend *, **, ***:",
+          "normalizedSha256": "992953c3b5c4e9eccb005a05309691c652f23d992d4d492584edf55a9996ddf7"
+        },
+        {
+          "key": "legend ■:",
+          "normalizedSha256": "cf95d63001edfd3c3c56f48500d104ea8c6ad8566c6e55ed789dd39d0d8d9aac"
+        },
+        {
+          "key": "legend FFMO: -1 DRM",
+          "normalizedSha256": "a9e945b39d6b027bcd5bb8c50f214c00b9e092590d071c33ecda51017854b8e7"
+        }
+      ]
+    }
+  ],
+  "attestation": "Tool-assisted extraction and rendered-page reading; no human fidelity attestation or registry admission."
+}

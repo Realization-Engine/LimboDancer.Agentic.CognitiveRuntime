@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "1.0.0",
+  "chart": "B. Terrain Chart",
+  "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+  "physicalPdfPage": 698,
+  "boundary": "The Terrain, Example, LOS Obstacle/Hindrance, and TEM/Indirect cells and the Notes cell of seven rows, and five legend entries. Movement columns, other rows, and color and underline marks are outside this transcription.",
+  "noEntry": "none stands for the printed dash (no LOS obstacle or hindrance).",
+  "rows": [
+    {
+      "terrain": "1. Open Ground",
+      "example": "1B1",
+      "losObstacleHindrance": "none",
+      "temIndirect": "FFMO: -1*",
+      "notes": "NA if Height Advantage applies"
+    },
+    {
+      "terrain": "12. Brush",
+      "example": "12AA10",
+      "losObstacleHindrance": "Hindrance",
+      "temIndirect": "0",
+      "notes": "Deep Snow becomes Open Ground"
+    },
+    {
+      "terrain": "13. Woods",
+      "example": "1C9",
+      "losObstacleHindrance": "Level-One",
+      "temIndirect": "+1/-1",
+      "notes": "If no road, VBM, or TB"
+    },
+    {
+      "terrain": "14. Orchard",
+      "example": "6F5",
+      "losObstacleHindrance": "■ Level-One* or Hindrance**",
+      "temIndirect": "0",
+      "notes": "*To higher LOS only in Apr-Oct **Max. Hindrance +1 with 2 Level advantage"
+    },
+    {
+      "terrain": "15. Grain",
+      "example": "3K9",
+      "losObstacleHindrance": "Hindrance*",
+      "temIndirect": "0",
+      "notes": "June-Sept only; MF/MP Apr-Sept"
+    },
+    {
+      "terrain": "23. Wooden Building",
+      "example": "1C7",
+      "losObstacleHindrance": "1-3½ Levels",
+      "temIndirect": "+2(+1*)",
+      "notes": "Indirect Fire adds +1/level above target"
+    },
+    {
+      "terrain": "23. Stone Building",
+      "example": "1J2",
+      "losObstacleHindrance": "1-3½ Levels",
+      "temIndirect": "+3(+1*)",
+      "notes": "Move assumes no road or VBM"
+    }
+  ],
+  "legend": [
+    "Terrain listed in RED is Concealment Terrain (A12.12).",
+    "†: Indirect Fire TEM is listed following a “/” only if different from Direct Fire TEM.",
+    "*, **, ***: See Notes Column.",
+    "■: Whole hex affects LOS; not the terrain depiction (Inherent Terrain; B.6).",
+    "FFMO: -1 DRM vs Moving Infantry in Open Ground."
+  ]
+}

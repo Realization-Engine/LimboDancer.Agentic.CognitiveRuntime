@@ -1,0 +1,330 @@
+{
+  "schemaVersion": "1.0.0",
+  "chart": "A7 Infantry Fire Table (IFT)",
+  "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+  "physicalPdfPage": 692,
+  "boundary": "The Personnel result cells of every DR row and FP column, and the DR/FP header. The Vehicle line, the flame, rubble, and minefield marks, the FP modifier and DRM charts, and the other tables on the page are outside this transcription.",
+  "noEffect": "none stands for the printed dash (no effect, A7.306).",
+  "columns": [
+    {
+      "fp": 1,
+      "printedHeader": "1/20"
+    },
+    {
+      "fp": 2,
+      "printedHeader": "2/30"
+    },
+    {
+      "fp": 4,
+      "printedHeader": "4/37"
+    },
+    {
+      "fp": 6,
+      "printedHeader": "6/50"
+    },
+    {
+      "fp": 8,
+      "printedHeader": "8/60"
+    },
+    {
+      "fp": 12,
+      "printedHeader": "12/70"
+    },
+    {
+      "fp": 16,
+      "printedHeader": "16/80"
+    },
+    {
+      "fp": 20,
+      "printedHeader": "20/100"
+    },
+    {
+      "fp": 24,
+      "printedHeader": "24/120"
+    },
+    {
+      "fp": 30,
+      "printedHeader": "30/150"
+    },
+    {
+      "fp": 36,
+      "printedHeader": "36+/200+"
+    }
+  ],
+  "rows": [
+    {
+      "label": "≤0",
+      "dr": 0,
+      "orLess": true,
+      "results": [
+        "1KIA",
+        "2KIA",
+        "2KIA",
+        "3KIA",
+        "3KIA",
+        "3KIA",
+        "4KIA",
+        "4KIA",
+        "5KIA",
+        "6KIA",
+        "7KIA"
+      ]
+    },
+    {
+      "label": "1",
+      "dr": 1,
+      "results": [
+        "K/1",
+        "1KIA",
+        "1KIA",
+        "2KIA",
+        "2KIA",
+        "2KIA",
+        "3KIA",
+        "3KIA",
+        "4KIA",
+        "5KIA",
+        "6KIA"
+      ]
+    },
+    {
+      "label": "2",
+      "dr": 2,
+      "results": [
+        "1MC",
+        "K/1",
+        "K/2",
+        "1KIA",
+        "1KIA",
+        "1KIA",
+        "2KIA",
+        "2KIA",
+        "3KIA",
+        "4KIA",
+        "5KIA"
+      ]
+    },
+    {
+      "label": "3",
+      "dr": 3,
+      "results": [
+        "1MC",
+        "1MC",
+        "2MC",
+        "K/2",
+        "K/2",
+        "K/3",
+        "1KIA",
+        "1KIA",
+        "2KIA",
+        "3KIA",
+        "4KIA"
+      ]
+    },
+    {
+      "label": "4",
+      "dr": 4,
+      "results": [
+        "NMC",
+        "1MC",
+        "1MC",
+        "2MC",
+        "2MC",
+        "3MC",
+        "K/3",
+        "K/4",
+        "1KIA",
+        "2KIA",
+        "3KIA"
+      ]
+    },
+    {
+      "label": "5",
+      "dr": 5,
+      "results": [
+        "PTC",
+        "NMC",
+        "1MC",
+        "1MC",
+        "2MC",
+        "2MC",
+        "3MC",
+        "4MC",
+        "K/4",
+        "1KIA",
+        "2KIA"
+      ]
+    },
+    {
+      "label": "6",
+      "dr": 6,
+      "results": [
+        "none",
+        "PTC",
+        "NMC",
+        "1MC",
+        "1MC",
+        "2MC",
+        "2MC",
+        "3MC",
+        "4MC",
+        "K/4",
+        "1KIA"
+      ]
+    },
+    {
+      "label": "7",
+      "dr": 7,
+      "results": [
+        "none",
+        "none",
+        "PTC",
+        "NMC",
+        "1MC",
+        "1MC",
+        "2MC",
+        "2MC",
+        "3MC",
+        "4MC",
+        "K/4"
+      ]
+    },
+    {
+      "label": "8",
+      "dr": 8,
+      "results": [
+        "none",
+        "none",
+        "none",
+        "PTC",
+        "NMC",
+        "1MC",
+        "1MC",
+        "2MC",
+        "2MC",
+        "3MC",
+        "4MC"
+      ]
+    },
+    {
+      "label": "9",
+      "dr": 9,
+      "results": [
+        "none",
+        "none",
+        "none",
+        "none",
+        "PTC",
+        "NMC",
+        "1MC",
+        "1MC",
+        "2MC",
+        "2MC",
+        "3MC"
+      ]
+    },
+    {
+      "label": "10",
+      "dr": 10,
+      "results": [
+        "none",
+        "none",
+        "none",
+        "none",
+        "none",
+        "PTC",
+        "NMC",
+        "1MC",
+        "1MC",
+        "2MC",
+        "2MC"
+      ]
+    },
+    {
+      "label": "11",
+      "dr": 11,
+      "results": [
+        "none",
+        "none",
+        "none",
+        "none",
+        "none",
+        "none",
+        "PTC",
+        "NMC",
+        "1MC",
+        "1MC",
+        "2MC"
+      ]
+    },
+    {
+      "label": "12",
+      "dr": 12,
+      "results": [
+        "none",
+        "none",
+        "none",
+        "none",
+        "none",
+        "none",
+        "none",
+        "PTC",
+        "NMC",
+        "1MC",
+        "1MC"
+      ]
+    },
+    {
+      "label": "13",
+      "dr": 13,
+      "results": [
+        "none",
+        "none",
+        "none",
+        "none",
+        "none",
+        "none",
+        "none",
+        "none",
+        "PTC",
+        "NMC",
+        "1MC"
+      ]
+    },
+    {
+      "label": "14",
+      "dr": 14,
+      "results": [
+        "none",
+        "none",
+        "none",
+        "none",
+        "none",
+        "none",
+        "none",
+        "none",
+        "none",
+        "PTC",
+        "NMC"
+      ]
+    },
+    {
+      "label": "≥15",
+      "dr": 15,
+      "orMore": true,
+      "results": [
+        "none",
+        "none",
+        "none",
+        "none",
+        "none",
+        "none",
+        "none",
+        "none",
+        "none",
+        "none",
+        "PTC"
+      ]
+    }
+  ]
+}
