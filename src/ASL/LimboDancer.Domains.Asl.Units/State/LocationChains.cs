@@ -1,5 +1,6 @@
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Maps.Derivation;
+using LimboDancer.Domains.Asl.Maps.Geometry;
 
 namespace LimboDancer.Domains.Asl.Units.State;
 
@@ -16,6 +17,9 @@ public interface ILocationChains
     public IReadOnlyList<int>? Levels(BoardRef board, HexName hex);
 
     public bool HasBridge(BoardRef board, HexName hex);
+
+    /// <summary>The board's hex geometry, which lays out a composed map; null when the board is not known.</summary>
+    public BoardGeometry? Geometry(BoardRef board) => null;
 }
 
 /// <summary>Location chains from boards' derived hex facts.</summary>
@@ -35,6 +39,8 @@ public sealed class HexFactLocationChains : ILocationChains
         Facts(board, hex) is { } facts ? [.. facts.Locations.Select(location => location.Level)] : null;
 
     public bool HasBridge(BoardRef board, HexName hex) => Facts(board, hex)?.Bridge is not null;
+
+    public BoardGeometry? Geometry(BoardRef board) => boards.TryGetValue(board, out var entry) ? entry.Facts.Geometry : null;
 
     private HexFacts? Facts(BoardRef board, HexName hex) =>
         boards.TryGetValue(board, out var entry) && entry.Facts.Geometry.TryGetIndex(hex, out var index) ? entry.Facts[index] : null;

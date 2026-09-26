@@ -111,6 +111,16 @@ public static class GameEventWriter
                     writer.WriteStartObject();
                     writer.WriteString("board", board.Board.Value);
                     writer.WriteString("version", board.Version);
+                    if (board.Slot is { } slot)
+                    {
+                        writer.WriteNumber("column", slot.Column);
+                        writer.WriteNumber("row", slot.Row);
+                        if (slot.Reversed)
+                        {
+                            writer.WriteBoolean("reversed", true);
+                        }
+                    }
+
                     writer.WriteEndObject();
                 }
 

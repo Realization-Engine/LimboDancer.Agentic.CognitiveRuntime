@@ -1,10 +1,11 @@
-using LimboDancer.Dice;
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using LimboDancer.Abstractions.Actions;
 using LimboDancer.Abstractions.Domain;
 using LimboDancer.Abstractions.Observations;
+using LimboDancer.Dice;
+using LimboDancer.Domains.Asl.Maps.Composition;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Maps.Derivation;
 using LimboDancer.Domains.Asl.Maps.Geometry;
@@ -1018,23 +1019,40 @@ public sealed class GamePlanner(IGameStore store, IBoardCatalog boards, UnitVoca
 
         var goodOrder = GameState.GoodOrder(unit, vocabulary);
         var from = state.Location(unit.Id);
-        var handle = state.Map.Board(target.Board) is { } placed ? boards.TryGetBoard(target.Board, placed.Version).Board : null;
-        var targetRead = handle?.Resolve(target).Read;
-        var fromRead = from is not null && handle is not null && from.Location.Board == target.Board ? handle.Resolve(from.Location).Read : null;
+
+        // A placed map reads across its seams (Composed Maps Design, section 7); otherwise the target's own board is read.
+        LocationRead? targetRead;
+        LocationRead? fromRead;
+        bool adjacent;
+        HexsideFacts? crossed = null;
+        if (Composed(state) is { } composed)
+        {
+            targetRead = composed.Resolve(target).Read;
+            fromRead = from is not null ? composed.Resolve(from.Location).Read : null;
+            adjacent = targetRead is { IsDefinitive: true } && fromRead is { IsDefinitive: true }
+                && composed.Distance(from!.Location.Board, from.Location.Hex, target.Board, target.Hex) == 1;
+            crossed = adjacent ? composed.Crossed(from!.Location.Board, from.Location.Hex, target.Board, target.Hex)?.Agreed : null;
+        }
+        else
+        {
+            var handle = state.Map.Board(target.Board) is { } placed ? boards.TryGetBoard(target.Board, placed.Version).Board : null;
+            targetRead = handle?.Resolve(target).Read;
+            fromRead = from is not null && handle is not null && from.Location.Board == target.Board ? handle.Resolve(from.Location).Read : null;
+            adjacent = targetRead is { IsDefinitive: true } && fromRead is { IsDefinitive: true } && handle!.Distance(from!.Location.Hex, target.Hex) == 1;
+            if (adjacent)
+            {
+                var side = Enum.GetValues<HexsideDirection>().FirstOrDefault(direction => handle!.Neighbor(from!.Location.Hex, direction) == target.Hex);
+                crossed = fromRead!.Hex.Hexsides.FirstOrDefault(item => item.Side == side);
+            }
+        }
+
         var definitive = targetRead is { IsDefinitive: true } && fromRead is { IsDefinitive: true };
-        var adjacent = definitive && handle!.Distance(from!.Location.Hex, target.Hex) == 1;
 
         bool? And(params bool?[] values) => values.Any(value => value == false) ? false : values.All(value => value == true) ? true : null;
 
         var known = Known(Conditions.Concealed) is { } concealed && Known(Conditions.Hidden) is { } hidden ? !concealed && !hidden : (bool?)null;
         var squad = vocabulary.IsA(unit.Kind, "asl:squad");
         var occupants = state.At(target).Where(item => item.Id != unit.Id).ToArray();
-        HexsideFacts? crossed = null;
-        if (adjacent)
-        {
-            var side = Enum.GetValues<HexsideDirection>().FirstOrDefault(direction => handle!.Neighbor(from!.Location.Hex, direction) == target.Hex);
-            crossed = fromRead!.Hex.Hexsides.FirstOrDefault(item => item.Side == side);
-        }
 
         return new Dictionary<string, bool?>(StringComparer.Ordinal)
         {
@@ -1120,14 +1138,23 @@ public sealed class GamePlanner(IGameStore store, IBoardCatalog boards, UnitVoca
             return false;
         }
 
+        // Each board is a reference, or an object that places it in a composed map (Composed Maps Design, section 6).
         var placed = new JsonArray();
         var versions = new List<string>();
+        var placements = new List<(BoardPlacement Placement, BoardHandle Board)>();
+        var objects = boardList.EnumerateArray().Count(item => item.ValueKind == JsonValueKind.Object);
+        if (objects != 0 && objects != boardList.GetArrayLength())
+        {
+            reason = "play.boards: either every board is placed with its slot or none is";
+            return false;
+        }
+
         foreach (var item in boardList.EnumerateArray())
         {
-            if (item.ValueKind != JsonValueKind.String || !BoardRef.TryParse(item.GetString(), out var board)
-                || boards.TryGetBoard(board).Board is not { } handle)
+            var boardText = item.ValueKind == JsonValueKind.Object ? (Text(item, "board", out var named) ? named : null) : item.ValueKind == JsonValueKind.String ? item.GetString() : null;
+            if (!BoardRef.TryParse(boardText, out var board) || boards.TryGetBoard(board).Board is not { } handle)
             {
-                reason = $"play.boards: the board '{item}' cannot be read";
+                reason = $"play.boards: the board '{boardText ?? item.ToString()}' cannot be read";
                 return false;
             }
 
@@ -1137,8 +1164,47 @@ public sealed class GamePlanner(IGameStore store, IBoardCatalog boards, UnitVoca
                 return false;
             }
 
-            placed.Add(new JsonObject { ["board"] = board.Value, ["version"] = handle.Version });
+            var node = new JsonObject { ["board"] = board.Value, ["version"] = handle.Version };
+            if (item.ValueKind == JsonValueKind.Object)
+            {
+                if (!item.TryGetProperty("column", out var column) || !column.TryGetInt32(out var slotColumn)
+                    || !item.TryGetProperty("row", out var row) || !row.TryGetInt32(out var slotRow))
+                {
+                    reason = $"play.boards: {board} needs a whole-number column and row";
+                    return false;
+                }
+
+                var reversed = item.TryGetProperty("reversed", out var flag) && flag.ValueKind == JsonValueKind.True;
+                node["column"] = slotColumn;
+                node["row"] = slotRow;
+                if (reversed)
+                {
+                    node["reversed"] = true;
+                }
+
+                placements.Add((new BoardPlacement(board, slotColumn, slotRow, reversed, []), handle));
+            }
+
+            placed.Add(node);
             versions.Add(handle.Version);
+        }
+
+        string reference;
+        if (placements.Count > 0)
+        {
+            var composed = ComposedMapRead.Create(placements);
+            if (composed.Read is null)
+            {
+                reason = $"play.boards: the boards cannot be laid out: {string.Join("; ", composed.Diagnostics.Select(item => $"{item.Code} {item.Message}"))}";
+                return false;
+            }
+
+            reference = Text(start, "map", out var savedMap) ? savedMap
+                : string.Join(' ', placements.Select(item => $"{item.Placement.Board.Value}@{item.Placement.Column},{item.Placement.Row}{(item.Placement.Reversed ? "/r" : string.Empty)}"));
+        }
+        else
+        {
+            reference = string.Join('+', placed.Select(item => (string)item!["board"]!));
         }
 
         if (!start.TryGetProperty("sides", out var sides) || !Text(start, "firstSide", out var firstSide))
@@ -1152,7 +1218,7 @@ public sealed class GamePlanner(IGameStore store, IBoardCatalog boards, UnitVoca
             ["sides"] = JsonNode.Parse(sides.GetRawText()),
             ["map"] = new JsonObject
             {
-                ["reference"] = string.Join('+', placed.Select(item => (string)item!["board"]!)),
+                ["reference"] = reference,
                 ["version"] = string.Join('+', versions),
                 ["boards"] = placed,
             },
@@ -1201,6 +1267,28 @@ public sealed class GamePlanner(IGameStore store, IBoardCatalog boards, UnitVoca
         var node = new JsonObject { ["type"] = type, ["payload"] = payload };
         node["visibility"] = visibility is null ? "all" : new JsonArray([.. visibility.Select(side => (JsonNode)side)]);
         return node;
+    }
+
+    /// <summary>The composed read of a placed map at the versions in play, or null when the map is not placed or a board cannot be read.</summary>
+    private ComposedMapRead? Composed(GameState state)
+    {
+        if (!state.Map.IsPlaced)
+        {
+            return null;
+        }
+
+        var placed = new List<(BoardPlacement, BoardHandle)>();
+        foreach (var placement in state.Map.Placements())
+        {
+            if (boards.TryGetBoard(placement.Board, state.Map.Board(placement.Board)!.Version).Board is not { } handle)
+            {
+                return null;
+            }
+
+            placed.Add((placement, handle));
+        }
+
+        return ComposedMapRead.Create(placed).Read;
     }
 
     private List<(BoardRef, string, HexFactSet)>? BoardsOf(IReadOnlyList<GameEvent> events)
