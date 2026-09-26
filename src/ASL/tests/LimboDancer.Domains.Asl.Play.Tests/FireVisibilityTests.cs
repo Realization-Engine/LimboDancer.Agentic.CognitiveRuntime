@@ -6,7 +6,7 @@ namespace LimboDancer.Domains.Asl.Play.Tests;
 /// <summary>
 /// Each side's view of a fire attack (Fire in Live Play, part 5): rolls are public; a concealed target left concealed is
 /// never identified to the firing side, which learns the arithmetic from a public report; any other result reveals it
-/// (A12.14, p. 76); a concealed firer is revealed by firing; and a refusal over a unit the firing side cannot see tells
+/// (A12.14, p. 77); a concealed firer is revealed by firing; and a refusal over a unit the firing side cannot see tells
 /// that side only that the attack is undecided.
 /// </summary>
 public sealed partial class FireTests
