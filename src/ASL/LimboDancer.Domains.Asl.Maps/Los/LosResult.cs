@@ -57,8 +57,10 @@ public static class LosUnsupportedRule
 
     public const string Bridge = "Bridges and tunnels";
 
-    public const string Factory = "Factories, rooftops, and roofless buildings (B23.87)";
+    /// <summary>Factories, their rooftops and walls, and roofless or gutted buildings; rooftops of other buildings are reproduced.</summary>
+    public const string Factory = "Factories and roofless buildings (B23.87)";
 
+    /// <summary>A location below level 0 that is not a cellar; cellars themselves are reproduced.</summary>
     public const string Cellar = "Cellars (O6.3)";
 
     public const string Entrenchment = "Entrenchments (B27.2)";

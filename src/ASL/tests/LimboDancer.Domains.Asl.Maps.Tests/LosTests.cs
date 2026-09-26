@@ -39,6 +39,35 @@ public sealed class LosTests
             IsLowerLosObstacle = true,
             Height = 1,
         },
+        new TerrainType { Code = 2, Name = "Rooftop", Category = LosCategory.Open },
+        new TerrainType
+        {
+            Code = 41,
+            Name = "Stone Building, 1 Level",
+            Category = LosCategory.Building,
+            IsLosObstacle = true,
+            IsLowerLosObstacle = true,
+            IsHalfLevelHeight = true,
+            Height = 1,
+        },
+        new TerrainType
+        {
+            Code = 72,
+            Name = "Wall",
+            Category = LosCategory.Hexside,
+            IsLosObstacle = true,
+            IsLowerLosObstacle = true,
+            IsHalfLevelHeight = true,
+        },
+        new TerrainType
+        {
+            Code = 174,
+            Name = "Cellar",
+            Category = LosCategory.Building,
+            IsLosObstacle = true,
+            IsLowerLosObstacle = true,
+            Height = 1,
+        },
     ]);
 
     // E4's center point is (225, 225); this box covers the whole hex.
@@ -121,6 +150,41 @@ public sealed class LosTests
     }
 
     [Fact]
+    public void ACellarCountsOneLevelHigherAndCannotSeeOverHexsideTerrain()
+    {
+        // E2 is a one-level building, so it has a cellar at level -1. Map.checkTerrainHeightRule counts the cellar one
+        // level higher, so the open ground between is level with both ends and does not block.
+        var cellar = new BoardLocation(Board, HexName.Parse("E2"), -1);
+        var building = (Around("E2"), "Stone Building, 1 Level");
+        var clear = LosCalculator.Check(Map(Paint(building)), cellar, Location("E6"));
+        Assert.Equal((LosStatus.Clear, false, 4), (clear.Status, clear.IsBlocked, clear.Range));
+
+        // A wall in E4, two hexes from each end: Map.checkHexsideTerrainRule (O6.3).
+        var blocked = LosCalculator.Check(Map(Paint(building, ((215, 240, 235, 244), "Wall"))), cellar, Location("E6"));
+        Assert.Equal((LosStatus.Blocked, true), (blocked.Status, blocked.IsBlocked));
+        Assert.Equal("Unit in cellar cannot see over hexside terrain to non-adjacent target (O6.3)", blocked.Reason);
+        Assert.Equal((Board, HexName.Parse("E4")), (blocked.BlockedAt!.Board, blocked.BlockedAt.Hex));
+
+        var seen = LosCalculator.Check(Map(Paint(building, ((215, 240, 235, 244), "Wall"))), Location("E6"), cellar);
+        Assert.Equal("Unit in cellar cannot be seen over hexside terrain by non-adjacent target (O6.3)", seen.Reason);
+    }
+
+    [Fact]
+    public void ARooftopCountsHalfALevelLower()
+    {
+        // E2's rooftop is level 2 of a one-level building, so the rules count it at 1.5. A one-level building in E4 is
+        // then exactly as high as the rooftop (1 plus its half level), which blocks by Map.checkTerrainHeightRule; at 2
+        // the rooftop would see over it.
+        var rooftop = new BoardLocation(Board, HexName.Parse("E2"), 2);
+        var map = Map(Paint((Around("E2"), "Stone Building, 1 Level"), (Around("E4"), "Stone Building, 1 Level")));
+        Assert.Equal("Rooftop", map.FactsOf(Geometry.IndexOf(HexName.Parse("E2"))).Locations[^1].Terrain?.Name);
+        var result = LosCalculator.Check(map, rooftop, Location("E6"));
+        Assert.Equal((LosStatus.Blocked, true, 4), (result.Status, result.IsBlocked, result.Range));
+        Assert.Equal("Must have a height advantage to see over this terrain (A6.2)", result.Reason);
+        Assert.Equal((Board, HexName.Parse("E4")), (result.BlockedAt!.Board, result.BlockedAt.Hex));
+    }
+
+    [Fact]
     public void ABoardWithoutLosDataOrVerifiedTerrainIsNotDefinitive()
     {
         var grid = Paint((E4Box, "Woods"));
@@ -144,6 +208,13 @@ public sealed class LosTests
     }
 
     private static BoardLocation Location(string hex) => new(Board, HexName.Parse(hex), 0);
+
+    // A box well inside the hex, around its center point.
+    private static (int X0, int Y0, int X1, int Y1) Around(string hex)
+    {
+        var center = Geometry.CenterPoint(Geometry.IndexOf(HexName.Parse(hex)));
+        return (center.X - 25, center.Y - 25, center.X + 25, center.Y + 25);
+    }
 
     private static LosMap Map(TerrainGrid grid) =>
         LosMap.ForGrid(Board, grid, VaslCompatibleHexFactDerivation.Derive(grid, Catalog, HexsideAnnotations.None), Catalog);

@@ -25,6 +25,28 @@ Factories and roofless buildings, which VASL treats together with rooftops in so
 
 The per-hex data the walk needs grows accordingly: each hexside's depression terrain and cliff flag already come from the hex facts, and the adjacent hex's base level and depression state come from the map.
 
+**As built** (part 2). Cellars and rooftops:
+- A cellar or rooftop is a location of the hex's center chain, so `setSourceAndTargetElevations` gives it no vertex adjustment. The rules count a cellar one level higher and a rooftop half a level lower unless it is level 1 of its hex, each where VASL does: `checkGroundLevelRule`, `checkTerrainIsHigherRule`, `checkTerrainHeightRule` (the height test only; its exceptions use the plain elevations), and `checkBlindHexRule` both; `checkSplitTerrainRule` the cellar only; `checkHalfLevelTerrainRule` the rooftop only, and only when the other end is not a rooftop; `isBlindHex` the rooftop only, after its same-level test, with a half-level building half a level higher.
+- `checkHexsideTerrainRule`: a cellar source, then a cellar target, takes the O6.3 rule at any hexside terrain, in the source and target hexes too, and never the wall and hedge rule.
+- The rooftop adjustments of `checkBuildingRestrictionRule` and the depression setup apply only to factory rooftops and depression ends, which stay unsupported. Rooftop and cellar terrain along the line has no rule of its own.
+- `LosUnsupportedRule.Factory` is now "Factories and roofless buildings (B23.87)": factory and roofless ends, a rooftop in a factory hex, and factory terrain along the line.
+- Tests: Maps `LosTests` has a cellar to ground pair (clear over open ground, blocked by a wall by O6.3, both ways) and a rooftop pair (blocked by a one-level building as high as the rooftop); Maps.Vasl `LosFidelityTests` asserts boards 01 and 11 and their seam scenarios are fully answered.
+- Every answered pair agrees with VASL:
+
+  | Fixture | Pairs | Answered | Unanswered, by rule |
+  |---|---|---|---|
+  | `bd01` | 18,251 | 18,251 | |
+  | `bd11` | 5,662 | 5,662 | |
+  | `bd11-over-bd01` | 26,718 | 26,718 | |
+  | `bd11r-over-bd01` | 26,682 | 26,682 | |
+  | `bd05` | 5,811 | 4,522 | depressions 1,046; bridges 243 |
+  | `bd09` | 6,124 | 4,462 | cliffs 1,662 |
+  | `bd12` | 8,059 | 5,547 | depressions 1,883; rowhouse walls 598; bridges 31 |
+  | `bd15` | 6,051 | 3,907 | cliffs 2,144 |
+  | `bd12-over-bd15` | 17,588 | 11,252 | depressions 3,050; cliffs 2,629; rowhouse walls 611; bridges 46 |
+
+  Pairs with a cellar or rooftop end that are still unanswered cross a depression, cliff, rowhouse wall, or bridge, and are counted under that rule.
+
 ## 3. The fixtures
 
 The oracle's LOS mode is unchanged. New fixtures, with the same observer stride and range as step 13:
