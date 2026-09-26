@@ -18,5 +18,7 @@
     <None Include="Oracle\*.los.json.gz" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Oracle\*.los-hexside.json.gz" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Oracle\Scenarios\*" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Oracle\Leftovers\*.los.json.gz" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Oracle\Leftovers\maps.xml" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

@@ -97,24 +97,13 @@ public sealed class LosFidelityTests(ITestOutputHelper output)
         Assert.Equal(fixture.Pairs.Count(pair => pair.VaslError is null), comparison.Answered);
     }
 
-    /// <summary>
-    /// What an unanswered pair may name after step 15 (U16): partial orchards and entrenchments, which no fixture board
-    /// has, and VASL's own failure (LOS Slice 3 Design, section 3).
-    /// </summary>
-    private static readonly HashSet<string> Step15Unanswered = new(StringComparer.Ordinal)
-    {
-        LosUnsupportedRule.PartialOrchard,
-        LosUnsupportedRule.Entrenchment,
-        LosUnsupportedRule.VaslFails,
-    };
-
     [VaslTheory]
     [MemberData(nameof(Fixtures))]
-    public void AnUnansweredPairNamesPartialOrchardsEntrenchmentsOrVaslsFailure(string file, int pinnedAnswered)
+    public void AnUnansweredPairNamesVaslsFailure(string file, int pinnedAnswered)
     {
         _ = pinnedAnswered;
         var comparison = Compare(file);
-        Assert.All(comparison.Unsupported.Keys, rule => Assert.Contains(rule, Step15Unanswered));
+        Assert.All(comparison.Unsupported.Keys, rule => Assert.Equal(LosUnsupportedRule.VaslFails, rule));
     }
 
     [VaslFact]

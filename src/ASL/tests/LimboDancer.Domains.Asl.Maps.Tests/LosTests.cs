@@ -116,6 +116,37 @@ public sealed class LosTests
             IsHalfLevelHeight = true,
             IsInherent = true,
         },
+        new TerrainType { Code = 20, Name = "Foxholes", Category = LosCategory.Entrenchment },
+        new TerrainType { Code = 96, Name = "Tunnel", Category = LosCategory.Tunnel },
+        new TerrainType
+        {
+            Code = 200,
+            Name = "PartialOrchard",
+            Category = LosCategory.Hexside,
+            IsLosObstacle = true,
+            IsLowerLosHindrance = true,
+            Height = 1,
+            Split = 0.5f,
+        },
+        new TerrainType
+        {
+            Code = 157,
+            Name = "Rrembankment",
+            Category = LosCategory.Hexside,
+            IsLosObstacle = true,
+            IsLowerLosObstacle = true,
+            IsHalfLevelHeight = true,
+        },
+        new TerrainType
+        {
+            Code = 170,
+            Name = "Roofless Stone Factory, 1.5 Level",
+            Category = LosCategory.Factory,
+            IsLosHindrance = true,
+            IsLowerLosHindrance = true,
+            IsHalfLevelHeight = true,
+            Split = 1.0f,
+        },
     ]);
 
     // E4's center point is (225, 225); this box covers the whole hex.
@@ -398,6 +429,63 @@ public sealed class LosTests
         var map = Assert.IsType<LosMap>(LosMap.ForBoard(authored).Map);
         var result = LosCalculator.Check(map, Location("E2"), Location("E6"));
         Assert.Equal((LosStatus.Nondefinitive, true), (result.Status, result.IsBlocked));
+    }
+
+    // These small cases pin results independently recorded in Oracle/Leftovers, without needing a VASL checkout.
+    [Theory]
+    [InlineData(true, LosStatus.Clear, 1, "")]
+    [InlineData(false, LosStatus.Blocked, 0, "Intervening hexside terrain (B9.2)")]
+    public void AnnotatedOrchardsHinderAndRailroadEmbankmentsBlock(bool orchard, LosStatus status, int hindrance, string reason)
+    {
+        var sides = new Dictionary<HexName, IReadOnlySet<HexsideDirection>>
+        {
+            [HexName.Parse("E4")] = HexsideDirections.All.ToHashSet(),
+        };
+        var none = HexsideAnnotations.None;
+        var annotations = orchard ? none with
+        {
+            PartialOrchards = sides
+        } : none with
+        {
+            RailroadEmbankments = sides
+        };
+        var grid = Paint();
+        var map = LosMap.ForGrid(Board, grid, VaslCompatibleHexFactDerivation.Derive(grid, Catalog, annotations), Catalog);
+        var result = LosCalculator.Check(map, Location("E2"), Location("E6"));
+        Assert.Equal((status, 4, hindrance, reason), (result.Status, result.Range, result.Hindrance, result.Reason));
+    }
+
+    [Fact]
+    public void EntrenchmentEndpointsUseTheHexsideRestrictionInBothDirections()
+    {
+        var map = Map(Paint(((195, 195, 255, 255), "Wall"), (Around("E2"), "Foxholes")));
+        var from = LosCalculator.Check(map, Location("E2"), Location("E6"));
+        var to = LosCalculator.Check(map, Location("E6"), Location("E2"));
+        Assert.Equal(LosStatus.Blocked, from.Status);
+        Assert.Equal(LosStatus.Blocked, to.Status);
+        Assert.Equal("Unit in entrenchment cannot see over hexside terrain to non-adjacent lower target (B27.2)", from.Reason);
+        Assert.Equal("Cannot see non-adjacent unit in higher elevation entrenchment over hexside terrain (B27.2)", to.Reason);
+    }
+
+    [Fact]
+    public void RooflessFactoryAddsTwoHindrance()
+    {
+        var result = LosCalculator.Check(Map(Paint(((195, 195, 255, 255), "Roofless Stone Factory, 1.5 Level"))), Location("E2"), Location("E6"));
+        Assert.Equal((LosStatus.Clear, 2), (result.Status, result.Hindrance));
+        Assert.Equal(new LosHindrance(2, 2), Assert.Single(result.Hindrances));
+        Assert.Equal(new GridPoint(225, 195), result.FirstHindranceAt!.Point);
+    }
+
+    [Fact]
+    public void SameHexTunnelLosPreservesVaslsAsymmetricTest()
+    {
+        var map = Map(Paint(((195, 195, 255, 255), "Tunnel")));
+        var above = new BoardLocation(Board, HexName.Parse("E4"), 1);
+        var up = LosCalculator.Check(map, Location("E4"), above);
+        var down = LosCalculator.Check(map, above, Location("E4"));
+        Assert.Equal(LosStatus.Blocked, up.Status);
+        Assert.Equal("Cannot see location under the bridge", up.Reason);
+        Assert.Equal(LosStatus.Clear, down.Status);
     }
 
     [Fact]
