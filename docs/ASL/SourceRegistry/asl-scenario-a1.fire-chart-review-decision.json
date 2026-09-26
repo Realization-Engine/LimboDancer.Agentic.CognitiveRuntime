@@ -1,0 +1,69 @@
+{
+  "subject": "asl-supplement:fire-charts",
+  "status": "accepted-by-user-delegated-xunit-review",
+  "reviewerAuthority": "user-directed-xunit-review-2026-09-26",
+  "registrySha256": "8499a4ec75da057920fbc05dde60b975f39560803d26ce1433f9c6567a052985",
+  "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+  "physicalPdfPages": [
+    692,
+    698
+  ],
+  "method": "Each transcribed item, normalized as the registry records, hashes to the value pinned from pdftotext 4.00 (xpdf) -f N -l N -table -enc UTF-8 -eol unix; the user compared the listed cells with the rendered pages.",
+  "spotCheck": [
+    {
+      "physicalPdfPage": 692,
+      "row": "4",
+      "column": "16",
+      "transcribed": "K/3"
+    },
+    {
+      "physicalPdfPage": 692,
+      "row": "7",
+      "column": "2",
+      "transcribed": "none"
+    },
+    {
+      "physicalPdfPage": 692,
+      "row": "2",
+      "column": "36",
+      "transcribed": "5KIA"
+    },
+    {
+      "physicalPdfPage": 692,
+      "row": "11",
+      "column": "20",
+      "transcribed": "NMC"
+    },
+    {
+      "physicalPdfPage": 692,
+      "row": "6",
+      "column": "24",
+      "transcribed": "4MC"
+    },
+    {
+      "physicalPdfPage": 698,
+      "row": "23. Stone Building",
+      "column": "TEM/Indirect",
+      "transcribed": "+3(+1*)"
+    },
+    {
+      "physicalPdfPage": 698,
+      "row": "13. Woods",
+      "column": "TEM/Indirect",
+      "transcribed": "+1/-1"
+    },
+    {
+      "physicalPdfPage": 698,
+      "row": "15. Grain",
+      "column": "LOS Obstacle/Hindrance and Notes",
+      "transcribed": "Hindrance*; June-Sept only; MF/MP Apr-Sept"
+    },
+    {
+      "physicalPdfPage": 698,
+      "row": "14. Orchard",
+      "column": "LOS Obstacle/Hindrance",
+      "transcribed": "■ Level-One* or Hindrance**"
+    }
+  ],
+  "scope": "The IFT Personnel result cells and DR/FP header, and the LOS, TEM, and Notes cells of seven Terrain Chart rows with five legend entries, as printed. Their use in a fire attack is decided by the step 17 Fire review."
+}
