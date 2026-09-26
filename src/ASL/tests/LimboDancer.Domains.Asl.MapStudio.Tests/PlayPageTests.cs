@@ -302,6 +302,22 @@ public sealed class PlayPageTests : IDisposable
     }
 
     [Fact]
+    public void LosFromAUnitOffersOnlyUnitsTheViewerCanSee()
+    {
+        var page = GameWithDefenders(("r1", "defender-squad"));
+        page.Find("#play-perspective").Change("german");
+        var offered = page.FindAll("#play-los-unit option").Select(option => option.GetAttribute("value")).ToArray();
+        Assert.Contains("g1", offered);
+        Assert.DoesNotContain("r1", offered);
+
+        page.Find("#play-los-unit").Change("g1");
+        Assert.Equal($"{Board}:A1:0", page.Find("#play-los-source").GetAttribute("value"));
+
+        page.Find("#play-perspective").Change(Perspective.AdjudicatorName);
+        Assert.Contains("r1", page.FindAll("#play-los-unit option").Select(option => option.GetAttribute("value")));
+    }
+
+    [Fact]
     public void PlacedBoardsAreRecordedAndTheMapNeedsTheVaslCheckout()
     {
         // One board placed in slot (0, 0): the game records the placement; drawing a placed map needs the VASL checkout.

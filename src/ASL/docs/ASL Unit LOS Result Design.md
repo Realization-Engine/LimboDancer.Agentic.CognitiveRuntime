@@ -1,6 +1,6 @@
 # ASL Unit LOS Result Design
 
-**Status:** Proposed. Designed before code, on `feature/asl-unit-step16-plan`; to be built in the order of section 6.
+**Status:** Built in the order of section 6. Part 1 is recorded in section 4, part 2 in section 3, and part 3 in section 5.
 
 **Date:** 2026-09-26
 
@@ -63,6 +63,13 @@ A hexside location in VASL (`Hex.getHexsideLocation`) has an LOS point at one ve
 - **Play page.** The LOS panel gains a "From unit" choice listing the units the viewer can see; choosing one fills the source with its location. The result shows the hindrance breakdown ("hindrance 2 at range 3; first at bd01:E4").
 - **Board viewer.** The LOS panel shows the same breakdown.
 - A hidden or concealed enemy is never offered, since the viewer cannot see it; the adjudicator sees every unit.
+
+**As built** (part 3).
+- `LosCheck.Breakdown` writes the breakdown ("Hindrances 1 at range 1, 2 at range 3; first at bd01:E3"), and `Summary` appends it to the result.
+- `StudioLos.Check` takes the source's aim. A hexside location is drawn from its first vertex, or the next when aimed at the auxiliary point, as the read builds its ends.
+- The board viewer's LOS panel accepts hexside locations (`bd01:E4:0/3`) and has a "from a hexside's next vertex" box for the source's aim.
+- The Play page's LOS panel has a "From unit" list of the units the viewer can see at a map location; choosing one fills the source with its location. The adjudicator sees every unit.
+- Tests, Map Studio: the breakdown text, a hexside source aimed at each vertex, and the "From unit" list, which offers the German side its own squad but not a concealed Russian one.
 
 ## 6. Build order
 

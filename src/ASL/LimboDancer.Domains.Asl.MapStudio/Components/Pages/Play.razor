@@ -228,8 +228,16 @@ else if (state is not null)
 
     <details id="play-los" open="@(playLos is not null)">
         <summary>LOS</summary>
-        <p class="muted">VASL's LOS over the game's map (LOS Design): terrain only, so every viewer may check it.</p>
+        <p class="muted">VASL's LOS over the game's map (LOS Designs): terrain only, so every viewer may check it, from a location or from a unit the viewer can see.</p>
         <div class="fields">
+            <label for="play-los-unit">From unit</label>
+            <select id="play-los-unit" @onchange="ChooseLosUnit">
+                <option value="">none</option>
+                @foreach (var unit in VisibleUnits.Where(unit => state?.Location(unit.Id) is not null))
+                {
+                    <option value="@unit.Id">@unit.Id (@state!.Location(unit.Id)!.Location)</option>
+                }
+            </select>
             <label for="play-los-source">From</label><input id="play-los-source" value="@losSource" @onchange="@(args => losSource = args.Value as string ?? string.Empty)" />
             <label for="play-los-target">To</label><input id="play-los-target" value="@losTarget" @onchange="@(args => losTarget = args.Value as string ?? string.Empty)" />
         </div>
@@ -348,6 +356,18 @@ else if (state is not null)
     private string losSource = string.Empty;
     private string losTarget = string.Empty;
     private LosCheck? playLos;
+
+    /// <summary>
+    /// LOS from a unit (LOS Result Design, section 5): only units the viewer can see are offered, and choosing one fills the
+    /// source with its location.
+    /// </summary>
+    private void ChooseLosUnit(ChangeEventArgs args)
+    {
+        if (state is not null && args.Value as string is { Length: > 0 } id && VisibleUnits.Any(unit => unit.Id == id) && state.Location(id) is { } at)
+        {
+            losSource = at.Location.ToString();
+        }
+    }
 
     /// <summary>Checks LOS between two locations of the game's map (LOS Design, section 6).</summary>
     private void CheckLos()

@@ -328,7 +328,7 @@ Decided on 2026-09-25 as recommended in the [Decision Memo for D1 to D4](<ASL Un
     4. *LOS from a unit.* The Play page checks LOS from a unit the viewer can see, at its location, to a location, and shows the result with its hindrance breakdown; the board viewer shows the breakdown too.
     5. *Acceptance.* U17 (section 14) passes.
 
-    Designed in the [ASL Unit LOS Result Design](<ASL Unit LOS Result Design.md>).
+    Designed and built in the [ASL Unit LOS Result Design](<ASL Unit LOS Result Design.md>).
 
 Later candidates, not yet sequenced: revisiting the Java VASL oracle tool, which the user allowed on 2026-09-26 only to generate test fixtures, for now; multi-user play, which must first close the lone-SMC election probe of step 11; the lone SMC's options and immediate CC after an OVR (A4.151 and A4.152), once the IFT and CC tables are registered; Fire, on the LOS of step 13, once the IFT is registered; scenario OB and SSR checks at setup, which need the scenario cards as a registered source; and a read-only VASL saved-game import, which needs a format and licensing review first.
 

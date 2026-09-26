@@ -217,11 +217,12 @@ else if (board is null)
         {
             <details id="los-panel" open="@(losCheck is not null)">
                 <summary>LOS</summary>
-                <p class="muted">VASL's LOS for the blocked-or-clear slice (LOS Design): from one location to another, such as bd01:E4:0.</p>
+                <p class="muted">VASL's LOS (LOS Designs): from one location to another, such as bd01:E4:0, or from a hexside location such as bd01:E4:0/3, aimed at its first vertex or its next.</p>
                 <div class="fields">
                     <label for="los-source">From</label>
                     <span><input id="los-source" value="@losSource" @onchange="@(args => losSource = args.Value as string ?? string.Empty)" />
-                        <button class="link" id="los-source-selected" disabled="@(selected is null)" @onclick="() => losSource = SelectedLocation()">selected hex</button></span>
+                        <button class="link" id="los-source-selected" disabled="@(selected is null)" @onclick="() => losSource = SelectedLocation()">selected hex</button>
+                        <label class="toggle"><input type="checkbox" id="los-source-aux" checked="@losSourceAux" @onchange="@(args => losSourceAux = (bool)args.Value!)" /> from a hexside's next vertex</label></span>
                     <label for="los-target">To</label>
                     <span><input id="los-target" value="@losTarget" @onchange="@(args => losTarget = args.Value as string ?? string.Empty)" />
                         <button class="link" id="los-target-selected" disabled="@(selected is null)" @onclick="() => losTarget = SelectedLocation()">selected hex</button></span>
@@ -462,6 +463,7 @@ else if (board is null)
     private string losSource = string.Empty;
     private string losTarget = string.Empty;
     private LosCheck? losCheck;
+    private bool losSourceAux;
 
     private string SelectedLocation() => board is not null && selected is { } facts ? board.LocationOf(facts) : string.Empty;
 
@@ -473,7 +475,7 @@ else if (board is null)
             return;
         }
 
-        losCheck = Los.Check(board, losSource, losTarget);
+        losCheck = Los.Check(board, losSource, losTarget, losSourceAux ? LimboDancer.Domains.Asl.Maps.Los.LosAim.AuxiliaryPoint : LimboDancer.Domains.Asl.Maps.Los.LosAim.LosPoint);
         if (viewport is not null)
         {
             await viewport.InvokeVoidAsync("setLos", Los.Layer(board, losCheck));
