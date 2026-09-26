@@ -286,8 +286,15 @@ Decided on 2026-09-25 as recommended in the [Decision Memo for D1 to D4](<ASL Un
     6. *Acceptance.* U11 and U12 (section 14) pass, and the Play page shows each roll and the task check.
 
     Designed and built in the [ASL Unit Infantry OVR Design](<ASL Unit Infantry OVR Design.md>).
+12. **Composed maps in live play:** let a live game be played on several placed boards, as Map Studio's map pages already compose them (ASL-MAP-024), with positions kept board-relative (ASL-UNIT-024). No rule area is opened and no reviewed package changes. In order:
+    1. *Placement in the game record.* A game's map records, for each board, its place in the composition and whether it is reversed, beside the board reference and version it already records. A game recorded before this step, with boards and no placement, still replays unchanged. Replay refuses a placement the map builder rejects (VASL-MAP-001 to 004), a board placed twice, and a position on a board that is not in play.
+    2. *Setup.* `asl.game.setup` accepts placed boards: each board with its column, row, and reversal. A single board needs no placement. The Play page's setup offers the same, and can start from a map already defined in Map Studio.
+    3. *Neighbours across a seam.* The map read API (ASL-MAP-080) gains a read over the game's composed map: neighbour, distance, and the crossed hexside for two board-relative locations, including locations on different boards that share a seam. A reversed board keeps its own hex names. A seam hexside takes the merged terrain the map builder gives it. The per-board read stays as it is.
+    4. *Entry facts across a seam.* The entry facts of steps 7 and 8 use the composed read, so adjacency and the crossed hexside are known across a seam. The terrain evidence of the Scenario A1 packages is unchanged: an entry into a board 01 building the reviewed cases cover is decided as before, wherever the mover starts, and any other entry across a seam is refused as outside the reviewed cases.
+    5. *The Play page map.* The Play page draws the game's composed map with the units each viewer may see, reusing the board viewer's overlay (ASL-UNIT-071), and links each location in its tables to the map.
+    6. *Acceptance.* U3 runs over a live game on a map with a reversed board, and U13 (section 14) passes.
 
-Later candidates, not yet sequenced: multi-user play, which must first close the lone-SMC election probe of step 11; the lone SMC's options and immediate CC after an OVR (A4.151 and A4.152), once the IFT and CC tables are registered; composed maps in the Play page (placed boards, reversal, and entry across a board seam, so U3 runs over a live game); LOS (ASL-MAP-082) and then Fire; scenario OB and SSR checks at setup, which need the scenario cards as a registered source; and a read-only VASL saved-game import, which needs a format and licensing review first.
+Later candidates, not yet sequenced: multi-user play, which must first close the lone-SMC election probe of step 11; the lone SMC's options and immediate CC after an OVR (A4.151 and A4.152), once the IFT and CC tables are registered; LOS (ASL-MAP-082) and then Fire; scenario OB and SSR checks at setup, which need the scenario cards as a registered source; and a read-only VASL saved-game import, which needs a format and licensing review first.
 
 ## 14. Acceptance scenarios
 
@@ -303,6 +310,7 @@ Later candidates, not yet sequenced: multi-user play, which must first close the
 - **U10, declined OVR.** Given a live game in which the only unit revealed by an entry is one enemy SMC, the attempt is pending and the phase cannot advance. An election is refused and nothing changes. A decline commits the forced back of U7, citing the reviewed delegation.
 - **U11, failed OVR NTC.** Given a live game in which an entry reveals a lone concealed SMC and another concealed squad is in the location, an election with at least four MF left records one NTC roll and a task check that fails. The mover is forced back with the ordinary 2 MF, the other squad stays concealed, and replaying the game draws no dice.
 - **U12, passed OVR NTC.** In the same game, an election whose NTC passes records the NTC roll and task check, then a Random Selection roll that reveals the other squad. The mover is forced back with the ordinary 2 MF, citing the OVR NTC package. Confirming the same attempt again returns the recorded rolls.
+- **U13, entry across a seam.** Given a live game on two placed boards, a squad on the other board, in a hex that shares a seam with a board 01 building the reviewed cases cover, may enter that building: the entry facts show it adjacent with its crossed hexside, and the entry commits as it would from board 01. An entry across the same seam into a location the reviewed cases do not cover is refused with its reasons, and nothing changes.
 
 ## 15. Traceability
 
