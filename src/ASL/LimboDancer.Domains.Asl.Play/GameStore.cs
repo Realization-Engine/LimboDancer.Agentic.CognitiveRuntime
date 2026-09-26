@@ -144,9 +144,17 @@ public sealed class FileGameStore(string root) : IGameStore
                 return new AppendResult(AppendStatus.Invalid, existing.Count, history.Diagnostics);
             }
 
+            // The log is written only if it reads back: a batch built in memory must meet the rules a stored log meets.
+            var text = GameEventWriter.Write(scope, new GameRecord(current?.Label ?? label, Synthetic: false, all));
+            var reread = GameEventReader.Read(Encoding.UTF8.GetBytes(text));
+            if (reread.HasErrors)
+            {
+                return new AppendResult(AppendStatus.Invalid, existing.Count, reread.Diagnostics);
+            }
+
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             var temporary = path + ".tmp";
-            File.WriteAllText(temporary, GameEventWriter.Write(scope, new GameRecord(current?.Label ?? label, Synthetic: false, all)), new UTF8Encoding(false));
+            File.WriteAllText(temporary, text, new UTF8Encoding(false));
             File.Move(temporary, path, overwrite: true);
             return new AppendResult(AppendStatus.Committed, all.Length, []);
         }

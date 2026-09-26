@@ -112,20 +112,26 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
         return Succeeded("play.committed", committed, state.Revision);
     }
 
-    private static bool EffectHolds(GameState state, GamePlan plan) => plan.Events[^1].Payload switch
-    {
-        // A forced back: the mover is where it started, with its movement ended, and every defender the plan revealed is known.
-        EntryForcedBack forced => state.Unit(forced.Id) is { MovementEnded: true } unit && state.Location(unit.Id)?.Location == forced.ReturnedTo
-            && Revealed(state, plan),
+    private static bool EffectHolds(GameState state, GamePlan plan) => plan.Events.FirstOrDefault(item => item.Payload is FireResolved) is { } fire
+        // A fire attack: the record is kept for the phase, and every firer and the director carry the fire marker.
+        ? state.FiresThisPhase.Any(record => record.EventId == fire.EventId)
+            && ((FireResolved)fire.Payload).Firers.Concat(((FireResolved)fire.Payload).Director is { } director ? [director] : [])
+                .All(id => state.Unit(id) is { } unit && (GameState.Condition(unit, Conditions.PrepFire) == ConditionState.True
+                    || GameState.Condition(unit, Conditions.FinalFire) == ConditionState.True))
+        : plan.Events[^1].Payload switch
+        {
+            // A forced back: the mover is where it started, with its movement ended, and every defender the plan revealed is known.
+            EntryForcedBack forced => state.Unit(forced.Id) is { MovementEnded: true } unit && state.Location(unit.Id)?.Location == forced.ReturnedTo
+                && Revealed(state, plan),
 
-        // A pending declaration: every unit the plan revealed is known, and its attempt is still open.
-        ConditionsChanged => plan.Events.Select(item => item.Payload).OfType<EntryAttempted>().Any()
-            && state.OpenAttempts.Any(open => open.EventId == plan.Events[0].EventId) && Revealed(state, plan),
-        InstanceMoved moved => state.Unit(moved.Id) is { } unit && state.Location(unit.Id) is { } at
-            && moved.Position is MapPosition target && at.Location == target.Location,
-        PhaseChanged phase => state.Phase == phase.Phase && state.PhasingSide == phase.PhasingSide && state.Turn == phase.Turn,
-        _ => plan.Events.Select(item => item.Payload).OfType<InstanceCreated>().All(created => state.Find(created.Instance.Id) is not null),
-    };
+            // A pending declaration: every unit the plan revealed is known, and its attempt is still open.
+            ConditionsChanged => plan.Events.Select(item => item.Payload).OfType<EntryAttempted>().Any()
+                && state.OpenAttempts.Any(open => open.EventId == plan.Events[0].EventId) && Revealed(state, plan),
+            InstanceMoved moved => state.Unit(moved.Id) is { } unit && state.Location(unit.Id) is { } at
+                && moved.Position is MapPosition target && at.Location == target.Location,
+            PhaseChanged phase => state.Phase == phase.Phase && state.PhasingSide == phase.PhasingSide && state.Turn == phase.Turn,
+            _ => plan.Events.Select(item => item.Payload).OfType<InstanceCreated>().All(created => state.Find(created.Instance.Id) is not null),
+        };
 
     /// <summary>Every unit the plan's events reveal is known after the commit; a placement beneath a "?" reveals nothing.</summary>
     private static bool Revealed(GameState state, GamePlan plan) => plan.Events.Select(item => item.Payload).OfType<ConditionsChanged>()
