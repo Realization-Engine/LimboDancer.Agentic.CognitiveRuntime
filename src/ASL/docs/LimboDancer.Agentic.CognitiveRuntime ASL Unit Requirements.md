@@ -311,6 +311,8 @@ Decided on 2026-09-25 as recommended in the [Decision Memo for D1 to D4](<ASL Un
     4. *Oracle fixtures.* LOS fixtures, as in step 13, for boards with depressions and cliffs (among them boards 05, 09, 12, and 15), and a seam scenario that joins a depression board to a cliff board.
     5. *Acceptance.* U15 (section 14) passes.
 
+    Designed in the [ASL Unit LOS Slice 2 Design](<ASL Unit LOS Slice 2 Design.md>).
+
 15. **LOS slice 3: the remaining terrain:** bridges and tunnels, hillocks (F6.4), partial and out-of-season orchards, railroad embankments, bocage, rubble, factories and roofless buildings, rowhouse walls, and entrenchments, with the oracle widened to about ten boards chosen for them. Planned in outline; its details are written into this section when step 14 is merged.
 16. **The full VASL LOS result:** hexside and bypass aiming points (VASL's auxiliary LOS points), the hindrance of each hex and rule as VASL reports it so Fire can apply the DRM later, and LOS from a unit's position in a live game on the Play page. Still no game action uses LOS. Planned in outline, detailed when step 15 is merged.
 
