@@ -313,7 +313,14 @@ Decided on 2026-09-25 as recommended in the [Decision Memo for D1 to D4](<ASL Un
 
     Designed and built in the [ASL Unit LOS Slice 2 Design](<ASL Unit LOS Slice 2 Design.md>).
 
-15. **LOS slice 3: the remaining terrain:** bridges and tunnels, hillocks (F6.4), partial and out-of-season orchards, railroad embankments, bocage, rubble, factories and roofless buildings, rowhouse walls, and entrenchments, with the oracle widened to about ten boards chosen for them. Planned in outline; its details are written into this section when step 14 is merged.
+15. **LOS slice 3: the remaining terrain:** extend the read to the rule groups step 14 leaves unsupported, reproducing VASL as before. In order:
+    1. *Oracle fixtures.* LOS fixtures for boards chosen for these features: board 23 (bridges), board 51 (rowhouses and cellars), board rdx (factories), BFP board D (bocage), BFP board DW2b (hillocks), BFP board B (railroad), and board 96 (rubble).
+    2. *Buildings and bridges.* Bridges and tunnels, rowhouse and factory walls, factories and their rooftops, roofless and gutted buildings, and rubble.
+    3. *Hexside and rise terrain.* Bocage, hillocks (F6.4), railroad embankments, and slopes (F2.3), where the fixture boards have them.
+    4. *What cannot be checked.* Partial orchards, out-of-season orchards, and entrenchments appear on no fixture board. They stay unsupported by name until a board with them is found, since no answer is admitted without a VASL comparison.
+    5. *Acceptance.* U16 (section 14) passes.
+
+    Designed in the [ASL Unit LOS Slice 3 Design](<ASL Unit LOS Slice 3 Design.md>).
 16. **The full VASL LOS result:** hexside and bypass aiming points (VASL's auxiliary LOS points), the hindrance of each hex and rule as VASL reports it so Fire can apply the DRM later, and LOS from a unit's position in a live game on the Play page. Still no game action uses LOS. Planned in outline, detailed when step 15 is merged.
 
 Later candidates, not yet sequenced: revisiting the Java VASL oracle tool, which the user allowed on 2026-09-26 only to generate test fixtures, for now; multi-user play, which must first close the lone-SMC election probe of step 11; the lone SMC's options and immediate CC after an OVR (A4.151 and A4.152), once the IFT and CC tables are registered; Fire, on the LOS of step 13, once the IFT is registered; scenario OB and SSR checks at setup, which need the scenario cards as a registered source; and a read-only VASL saved-game import, which needs a format and licensing review first.
@@ -335,6 +342,7 @@ Later candidates, not yet sequenced: revisiting the Java VASL oracle tool, which
 - **U13, entry across a seam.** Given a live game on two placed boards, a squad on the other board, in a hex that shares a seam with a board 01 building the reviewed cases cover, may enter that building: the entry facts show it adjacent with its crossed hexside, and the entry commits as it would from board 01. An entry across the same seam into a location the reviewed cases do not cover is refused with its reasons, and nothing changes.
 - **U14, LOS.** Given the LOS oracle's pairs of locations on its fixture boards, the LOS read agrees with VASL on every pair: whether LOS is blocked, the hex where it is first blocked, and the range. The same pairs agree on a placed map of those boards, and a read on a board whose status is not Verified or AuthoredValid is nondefinitive.
 - **U15, LOS over depressions and cliffs.** On every LOS fixture of steps 13 and 14, the read agrees with VASL on every pair it answers; on boards 01 and 11 it answers every pair; and every unanswered pair on the new fixtures names a rule that step 15 reproduces. The answered counts are pinned.
+- **U16, LOS over the remaining terrain.** On every LOS fixture of steps 13 to 15, the read agrees with VASL on every pair it answers, and every unanswered pair names a rule that no fixture board exercises (partial orchards, out-of-season orchards, entrenchments) or a situation the as-built notes list with its reason. The answered counts are pinned.
 
 ## 15. Traceability
 
