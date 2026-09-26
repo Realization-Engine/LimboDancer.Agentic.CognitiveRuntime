@@ -345,6 +345,8 @@ Decided on 2026-09-25 as recommended in the [Decision Memo for D1 to D4](<ASL Un
 
     Its review is recorded in a review document, written before the package is published. Printed counter values come only from the reviewed catalog or from the user.
 
+    Done in the [Scenario A1 Fire Review](<Scenario A1 Fire Review 2026-09-26.md>). The user ruled that any directing leader prevents Cowering, that the Hindrance DRM comes from the LOS read for same-level fire only, that LLMC and LLTC are admitted, and that the case declares the target side's ELR; leader wounds and the Russian HS stay Indeterminate. The package `scenario-a1-fire` resolves a declared attack to its FP column, DRM, IFT result, and each target unit's effect.
+
 Later candidates, not yet sequenced: revisiting the Java VASL oracle tool, which the user allowed on 2026-09-26 only to generate test fixtures, for now; multi-user play, which must first close the lone-SMC election probe of step 11; the lone SMC's options and immediate CC after an OVR (A4.151 and A4.152), once the IFT and CC tables are registered; Fire in live play, on the package of step 17; Rally, which step 17 leaves out; scenario OB and SSR checks at setup, which need the scenario cards as a registered source; and a read-only VASL saved-game import, which needs a format and licensing review first.
 
 ## 14. Acceptance scenarios

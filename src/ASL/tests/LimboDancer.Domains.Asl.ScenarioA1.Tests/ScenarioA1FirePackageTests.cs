@@ -135,6 +135,53 @@ public sealed class ScenarioA1FirePackageTests
     }
 
     [Fact]
+    public void ALeaderWhoBreaksCausesALltcAndNoLongerAidsMcs()
+    {
+        var attack = new FireAttack("PFPh", "phasing", true, "bd01:G5:0", "bd01:F5:0",
+            [new FireFirer("de-1", "attacker-squad", "bd01:G5:0", false, false, false, false, false),
+             new FireFirer("de-2", "attacker-squad", "bd01:G5:0", false, false, false, false, false)], null,
+            1, true, new FireLos(false, 0, true, false), null, "open-ground",
+            [new FireTarget("ru-squad", "defender-squad", "bd01:F5:0", false, false, false, false, false),
+             new FireTarget("ru-leader", "defender-leader", "bd01:F5:0", false, false, false, false, false)], 2,
+            Rolls([2, 3], checks: new() { ["ru-leader"] = [3, 3], ["ru-squad"] = [1, 1] }, leaderLoss: new() { ["ru-squad"] = [4, 4] }));
+        var result = ScenarioA1FireCalculator.Resolve(attack, Reference);
+        Assert.Equal(FireResolution.Resolved, result.Disposition);
+        Assert.Equal("3MC", result.Arithmetic!.Result);
+        var leader = result.Effects.Single(item => item.UnitId == "ru-leader");
+        Assert.Equal((9, "broken"), (leader.Checks[0].FinalDr, leader.Checks[0].Consequence));
+        var squad = result.Effects.Single(item => item.UnitId == "ru-squad");
+        Assert.Equal(["MC", "LLTC"], squad.Checks.Select(check => check.Kind));
+        Assert.Equal((5, true), (squad.Checks[0].FinalDr, squad.Checks[0].Passed));
+        Assert.Equal((8, "pinned"), (squad.Checks[1].FinalDr, squad.Checks[1].Consequence));
+        Assert.True(squad.Pinned);
+    }
+
+    [Fact]
+    public void AnOriginalTwelveIsACasualtyMcWithinElr()
+    {
+        var result = ScenarioA1FireCalculator.Resolve(U18(Rolls([4, 4], checks: new() { ["de-squad"] = [6, 6], ["de-hs"] = [1, 1] }), elr: 5),
+            Reference);
+        Assert.Equal((10, "NMC"), (result.Arithmetic!.FinalDr, result.Arithmetic.Result));
+        var squad = result.Effects.Single(item => item.UnitId == "de-squad");
+        Assert.Equal(("attacker-half-squad", true), (squad.FinalDefinitionId, squad.Broken));
+        Assert.Equal("casualty-reduced-and-broken", squad.Checks[0].Consequence);
+
+        var beyond = ScenarioA1FireCalculator.Resolve(U18(Rolls([4, 4], checks: new() { ["de-squad"] = [6, 6], ["de-hs"] = [1, 1] }), elr: 4),
+            Reference);
+        Assert.Contains("asl.a1.fire.elr-undecided:failure-beyond-elr:de-squad", beyond.Reasons);
+    }
+
+    [Fact]
+    public void DefensiveFireIsByTheNonPhasingSideAndMarksFinalFire()
+    {
+        var rolls = Rolls([3, 4], checks: new() { ["de-squad"] = [2, 3], ["de-hs"] = [2, 3] });
+        var result = ScenarioA1FireCalculator.Resolve(U18(rolls) with { Phase = "DFPh", FiringSide = "non-phasing" }, Reference);
+        Assert.Equal((FireResolution.Resolved, "final-fire"), (result.Disposition, result.FireCounter));
+        Assert.Equal(FireResolution.Abstained,
+            ScenarioA1FireCalculator.Resolve(U18(rolls) with { Phase = "DFPh", FiringSide = "phasing" }, Reference).Disposition);
+    }
+
+    [Fact]
     public void ConcealmentHalvesFirepowerAndIsLost()
     {
         var attack = U18(Rolls([3, 4], checks: new() { ["de-squad"] = [2, 3], ["de-hs"] = [2, 3] })) with
