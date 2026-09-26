@@ -35,7 +35,11 @@ public sealed class StudioLos(IBoardProvider boards, MapService maps, StudioOpti
         ArgumentNullException.ThrowIfNull(board);
         return cache.GetOrAdd((board.Ref.Value, board.Version), _ =>
         {
-            var definitive = board.Status is BoardStatus.Verified or BoardStatus.AuthoredValid;
+            // A composed map is as definitive as its boards, as LosMap.ForPlacedMap judges it: a map built from placements
+            // that match no oracle scenario is only Ingested itself, but its terrain is its verified boards'.
+            var definitive = board.Composition is { } placed
+                ? placed.Placements.All(placement => boards.Load(placement.Board).Board?.Status is BoardStatus.Verified or BoardStatus.AuthoredValid)
+                : board.Status is BoardStatus.Verified or BoardStatus.AuthoredValid;
             return board.Composition is { } composition
                 ? LosMap.ForVaslMap(composition.Map, board.Catalog, definitive)
                 : LosMap.ForGrid(board.Ref, board.Render.Grid, board.Facts, board.Catalog, definitive);
