@@ -55,7 +55,26 @@ Ruling R0.1 below asks whether to transcribe from these registered pages. If so,
 
 A12.14 begins on page 77, not 76. The Fire in Live Play Design, the `FireReported` summary, and the visibility tests cite page 76; this plan corrects them.
 
-### 3.3 A gap in step 18: Heat of Battle
+### 3.3 Printed counter values
+
+The user pointed to three places in the PDF where counters are shown (2026-09-26):
+
+- **A1 (p. 44):** the anatomy of a Personnel counter (Firepower, Range, Morale, Class, Identity, Smoke exponent, Assault Fire, Spraying Fire, ELR 5, broken Morale Level, Self-Rally).
+- **Appendix 1, Counter Examples (pp. 676 and 677):** one annotated counter of each type, drawn as images: leaders, heroes, squads, HS, crews, a MMG with its Breakdown Number, Rate of Fire, Repair and Removal Numbers, dm weapons, mortars, the ATR, FT, DC, PSK, radio, field phone, and on page 677 the Gun and vehicle counters.
+- **Chapter H, Design Your Own (from p. 328):** the purchase rules and each nation's SW Allotment Chart (how many of each SW type a game holds; for example German LMG, MMG, HMG, ATR, light mortar, PSK, FT, DC), then each nation's Vehicle Listing and Ordnance Listing with every vehicle's and Gun's values (BPV, RF, dates, size, AF, TA, OT, CS, MP, MA, ROF, B#, IF, BMG, CMG, AAMG, ammunition, and notes): German vehicles from p. 337, German ordnance from p. 351, Russian vehicles from p. 355, Russian ordnance from p. 363, and the other nations after them.
+
+What this settles:
+
+- **Ordnance and vehicles (steps 24 and 25):** the Chapter H listings give the printed values of every Gun and vehicle by nation, so no counter values are needed from the user for them.
+- **Dummies (step 21):** a Dummy has no printed values; the counter examples show the concealment counter, and how many each side has is a setup fact.
+- **Support weapons (step 23):** the Allotment Charts give counts, not values, and the Counter Examples show one example of each type (the MMG shown is 4-10, B11, ROF 2, R2, X6). The values of each nation's own LMG, MMG, and HMG are not listed as text. Ruling R0.3 decides where they come from.
+
+Two cautions for transcription:
+
+- Pages 328 to 380 and 676 to 677 lie outside the registered pages 6 to 253, so they need registering as a bounded supplement, as step 17 did for pages 692 and 698 (ruling R0.3).
+- Several Chapter H pages have an unusable text layer (for example pp. 369, 378, and 379 extract as symbol noise), and the counter examples are images. Their values are read from rendered pages and spot-checked by the user, as step 17 did for chart glyphs.
+
+### 3.4 A gap in step 18: Heat of Battle
 
 A15.1 (p. 83) calls for a Heat of Battle DR after "any Original MC or Rally (not Self-Rally) DR of 2". Step 17 excluded Heat of Battle, but the Fire package still resolves an MC whose Original DR is 2 as an ordinary pass: `ScenarioA1FireCalculator` handles an Original 12 and not a 2. So an attack that calls for an MC can reach an outcome the package does not decide, and step 18's pre-check does not catch it. The same 2 decides a leader-led rally (step 19) and an FPF firer's NMC (step 22).
 
@@ -88,7 +107,7 @@ DM is removed at the end of every RPh (A10.62), not its start, so a unit rallies
 | Id | Question | Proposed answer |
 |---|---|---|
 | R19.1 | Which DM sources does the game track? | Breaking this Player Turn, and being attacked while broken by enough FP to cause a NMC. Leave the ADJACENT and RtPh sources out until routing exists. |
-| R19.2 | A leader-led Original 2 calls for Heat of Battle (A15.1, p. 83), which is out of scope. | As R0.2 (section 3.3): the rally succeeds and the record says Heat of Battle was not taken. |
+| R19.2 | A leader-led Original 2 calls for Heat of Battle (A15.1, p. 83), which is out of scope. | As R0.2 (section 3.4): the rally succeeds and the record says Heat of Battle was not taken. |
 | R19.3 | Is Fate in scope? | Yes: Casualty Reduction and wounds already exist. |
 | R19.4 | Is Field Promotion (A18.11, p. 85) in scope? | No. The first MMC Self-Rally is an ordinary Self-Rally; an Original 2 on it is Indeterminate (Leader Creation stays out). |
 | R19.5 | Which terrain gives -1? | Woods and the ordinary buildings of the Fire package's terrain list; everything else 0 until reviewed. |
@@ -238,7 +257,7 @@ The Windows LF clone and Docker checks take about ten minutes run in parallel, a
 ### 11.3 What the user provides
 
 - Rulings on the tables in sections 4 to 8 (accept, change, or reject each proposal), including R0.1 on transcribing from the registered chart copies.
-- Printed values for the Scenario A1 support weapons and the Dummy counters.
+- The Scenario A1 support weapons' printed values (ruling R0.3); ordnance and vehicle values come from the Chapter H listings.
 - Spot-checks of the new chart transcriptions against rendered page images.
 
 ## 12. Source ruling
@@ -246,4 +265,5 @@ The Windows LF clone and Docker checks take about ten minutes run in parallel, a
 | Id | Question | Proposed answer |
 |---|---|---|
 | R0.1 | Transcribe new charts from the registered copies (pp. 106 to 111, 160, 189 to 191, 220 to 221) rather than registering back-matter pages? | Yes. The step 17 supplement for pp. 692 and 698 stays as recorded. |
-| R0.2 | An Original MC or rally DR of 2 and Heat of Battle (section 3.3) | Record a deviation for this pass: resolve the 2 as its MC or rally result, say in the record that Heat of Battle was not taken, and review A15 first in the next pass. |
+| R0.2 | An Original MC or rally DR of 2 and Heat of Battle (section 3.4) | Record a deviation for this pass: resolve the 2 as its MC or rally result, say in the record that Heat of Battle was not taken, and review A15 first in the next pass. |
+| R0.3 | Counter sources (section 3.3): register Chapter H's listings (pp. 328 to 380 as needed) and the Counter Examples (pp. 676 and 677) as a bounded supplement? Where do each nation's SW values come from? | Register them, transcribing only the rows the scenario uses. For SW, take the scenario's weapons from the user's counters (or their photographs), since the PDF shows one example per type; a nation's SW values are not to be extrapolated from another nation's example. |
