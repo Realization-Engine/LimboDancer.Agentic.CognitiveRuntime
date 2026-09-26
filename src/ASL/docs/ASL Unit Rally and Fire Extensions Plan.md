@@ -67,7 +67,7 @@ What this settles:
 
 - **Ordnance and vehicles (steps 24 and 25):** the Chapter H listings give the printed values of every Gun and vehicle by nation, so no counter values are needed from the user for them.
 - **Dummies (step 21):** a Dummy has no printed values; the counter examples show the concealment counter, and how many each side has is a setup fact.
-- **Support weapons (step 23):** the Allotment Charts give counts, not values, and the Counter Examples show one example of each type (the MMG shown is 4-10, B11, ROF 2, R2, X6). The values of each nation's own LMG, MMG, and HMG are not listed as text. Ruling R0.3 decides where they come from.
+- **Support weapons (step 23):** the Support Weapons Chart (registered p. 108; also pp. 687 and 694) gives each SW type's operational capabilities (how many a squad, crew or HS, or SMC may fire, at what cost to inherent FP, and notes A to M), and says that portage costs are "as per counter listing"; it gives no FP, range, B#, ROF, or repair numbers. The Allotment Charts give counts, not values, and the Counter Examples show one example of each type (the MMG shown is 4-10, B11, ROF 2, R2, X6). The values of each nation's own LMG, MMG, and HMG are not listed as text. Ruling R0.3 decides where they come from.
 
 Two cautions for transcription:
 
