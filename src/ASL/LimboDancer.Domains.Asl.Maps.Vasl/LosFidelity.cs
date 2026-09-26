@@ -165,7 +165,14 @@ public static class LosFidelity
             var actual = (result.IsBlocked == true, result.BlockedAt is { Board: { } board, Hex: { } hex } ? $"{board}:{hex}" : null,
                 result.Range, result.Hindrance, result.Reason, Breakdown(result.Hindrances),
                 First(result.FirstHindranceAt?.Point, result.FirstHindranceAt is { Board: { } firstBoard, Hex: { } firstHex } ? $"{firstBoard}:{firstHex}" : null));
-            if (expected == actual)
+            // The read's own terrain record (Fire in Live Play): every counted range names its hindrance terrain, and brush
+            // and grain, the Hindrances a fire attack admits, are valued 1.
+            if (expected == actual && result.Hindrances.Any(entry => entry.Terrains.Count == 0
+                || (entry.Terrains.All(terrain => terrain is "Brush" or "Grain") && entry.Value != 1)))
+            {
+                disagreements.Add($"{name}: hindrance terrain {string.Join(" ", result.Hindrances.Select(entry => $"{entry.Range}:{entry.Value}[{string.Join(",", entry.Terrains)}]"))}");
+            }
+            else if (expected == actual)
             {
                 agreed++;
             }

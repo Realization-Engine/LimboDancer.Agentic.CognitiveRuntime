@@ -34,9 +34,22 @@ public sealed record LosBlockedAt(GridPoint Point, BoardRef? Board, HexName? Hex
 /// <summary>
 /// One entry of the hindrance breakdown: a range from the source hex and the largest map hindrance met at that range,
 /// as VASL's <c>Map.addHindranceHex</c> values it (1 for most hindrances, 2 for light woods and roofless hexes, 0.5
-/// for light grain and in-season rice paddies).
+/// for light grain and in-season rice paddies). <see cref="Terrains"/> names, in ordinal order, the terrain of every
+/// hindrance hex met at that range (the LOS read's own record, not VASL's), so a rule can tell what the value stands for.
 /// </summary>
-public sealed record LosHindrance(int Range, double Value);
+public sealed record LosHindrance(int Range, double Value)
+{
+    public IReadOnlyList<string> Terrains
+    {
+        get;
+        init;
+    } = [];
+
+    public bool Equals(LosHindrance? other) =>
+        other is not null && Range == other.Range && Value.Equals(other.Value) && Terrains.SequenceEqual(other.Terrains, StringComparer.Ordinal);
+
+    public override int GetHashCode() => HashCode.Combine(Range, Value, Terrains.Count);
+}
 
 /// <summary>
 /// Where LOS first meets a map hindrance (<c>LOSResult.firstHindranceAt</c>): the point on the map's grid and the hex

@@ -237,7 +237,7 @@ public sealed class LosTests
         var e3 = Geometry.CenterPoint(Geometry.IndexOf(HexName.Parse("E3")));
         var result = LosCalculator.Check(Map(Paint((Around("E3"), "Grain"), (Around("E5"), "Light Woods"))), Location("E2"), Location("E6"));
         Assert.Equal((LosStatus.Clear, false, 4, 3), (result.Status, result.IsBlocked, result.Range, result.Hindrance));
-        Assert.Equal([new LosHindrance(1, 1.0), new LosHindrance(3, 2.0)], result.Hindrances);
+        Assert.Equal([new LosHindrance(1, 1.0) { Terrains = ["Grain"] }, new LosHindrance(3, 2.0) { Terrains = ["Light Woods"] }], result.Hindrances);
         Assert.Equal(new LosHindranceAt(new GridPoint(e3.X, e3.Y - 25), Board, HexName.Parse("E3")), result.FirstHindranceAt);
 
         // Open ground has no breakdown and no first point.
@@ -472,7 +472,7 @@ public sealed class LosTests
     {
         var result = LosCalculator.Check(Map(Paint(((195, 195, 255, 255), "Roofless Stone Factory, 1.5 Level"))), Location("E2"), Location("E6"));
         Assert.Equal((LosStatus.Clear, 2), (result.Status, result.Hindrance));
-        Assert.Equal(new LosHindrance(2, 2), Assert.Single(result.Hindrances));
+        Assert.Equal(new LosHindrance(2, 2) { Terrains = ["Roofless Stone Factory, 1.5 Level"] }, Assert.Single(result.Hindrances));
         Assert.Equal(new GridPoint(225, 195), result.FirstHindranceAt!.Point);
     }
 
