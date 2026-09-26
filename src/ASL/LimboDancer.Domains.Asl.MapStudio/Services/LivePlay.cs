@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using LimboDancer.Abstractions.Audit;
 using LimboDancer.Abstractions.Execution;
+using LimboDancer.Dice;
 using LimboDancer.Domains.Asl.Play;
 using LimboDancer.Domains.Asl.Units.Catalog;
 using LimboDancer.Domains.Asl.Units.State;
@@ -11,14 +12,15 @@ namespace LimboDancer.Domains.Asl.MapStudio.Services;
 /// <summary>
 /// The live game source chosen for D2 (Governed Writes Design, section 3): games set up and played in the Studio, kept
 /// under <c>{boards folder}/units/live</c>, and changed only through the governed path. The Studio has one local user,
-/// who holds the setup and play permissions and confirms each write.
+/// who holds the setup and play permissions and confirms each write. A test may supply the dice roller; the Studio uses
+/// the default.
 /// </summary>
 public sealed class LivePlay
 {
     /// <summary>The tenant of the Studio's local user.</summary>
     public static readonly Guid Tenant = Guid.Parse("5a7d1f00-0000-4000-8000-0000000057d0");
 
-    public LivePlay(UnitLibrary units, IBoardProvider boards)
+    public LivePlay(UnitLibrary units, IBoardProvider boards, DiceRoller? roller = null)
     {
         ArgumentNullException.ThrowIfNull(units);
         Root = Path.Combine(units.UnitsRoot, "live");
@@ -26,7 +28,7 @@ public sealed class LivePlay
         Catalogs = [.. UnitCatalogs.Names.Select(name => UnitCatalogs.Read(name, units.Vocabulary)?.Catalog).OfType<UnitCatalog>()];
         Planner = new GamePlanner(Store, new StudioBoardCatalog(boards), units.Vocabulary, Catalogs);
         Audit = new FileAuditSink(Path.Combine(Root, "audit.jsonl"));
-        Play = new GamePlay(Planner, Store, Audit);
+        Play = new GamePlay(Planner, Store, Audit, roller: roller);
     }
 
     public IReadOnlyList<UnitCatalog> Catalogs

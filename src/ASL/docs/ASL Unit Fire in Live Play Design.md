@@ -1,6 +1,6 @@
 # ASL Unit Fire in Live Play Design
 
-**Status:** Parts 1 to 4 of unit step 18 are built; parts 5 and 6 (visibility checks and the Play page's fire panel) and the acceptance run of part 7 follow.
+**Status:** Unit step 18 is built: parts 1 to 4 (the package revision, hindrance terrain, the game model, and the fire action), part 5 (visibility), part 6 (the Play page), and the acceptance run of part 7.
 
 **Date:** 2026-09-26
 
@@ -51,16 +51,37 @@ The planner takes an optional `IFireLosReader`. Without one it builds the LOS ma
 
 **The store.** The Play tests found that a batch whose event type was misnamed replayed in memory and was written, but could not be read back. `FileGameStore` now writes a log only when it reads back.
 
-## 6. Tests
+## 6. Part 5: visibility
+
+Rolls are public. The rest of an attack is shown to each side as it may know it:
+
+- **A concealed target left concealed.** On a result of no effect, `fire-resolved` is visible only to the target side, since its facts and resolution name the target units. A public `fire-reported` event follows it: the record's event id, its two Locations, and its arithmetic (each firer's FP and multipliers, the column and any shift, the DRM, the dice, the Final DR, and the result), which name no target unit. The firing side learns what it would know at the table. Replay refuses a report that is not public, names no earlier record, names a record that every side may see, repeats one already reported, or differs from the record's Locations or arithmetic (UNIT-STATE-025).
+- **Any other result** reveals every concealed target (A12.14, p. 76): the record is public, and the effect events clear "?".
+- **A concealed firer or director** loses "?" by firing, in the public marker event.
+- **Refusals.** When the target Location holds a unit the firing side cannot see, a refusal by the pre-check tells that side only `play.fire-refused` without the package's reasons, which can name a unit's definition (`definition-incomplete`) or its printed values (`underscored-morale`, `leaders-interact`). The target side and the adjudicator see the package's reasons. The plan carries them as a `FireProposal` with the firing side, the target side, the facts, and the firing side's reasons. That a refusal tells the firing side something is there, including a hidden unit, is the known limitation that requirement step 18 accepts.
+
+## 7. Part 6: the Play page
+
+- **New game.** The form records each side's ELR (A19.1) and the scenario month, which the pre-check needs.
+- **The fire panel.** It is offered in the PFPh to the phasing side and in the DFPh to the other side. It lists the Locations that hold the firing side's units, the squads and half-squads there as firers, the leaders there as directors, and as targets the Locations where the firing side sees an enemy unit or knows of a concealed one (A12.11). A hidden unit is not offered.
+- **Before confirmation** the proposal shows the attack's facts from the game and the map: phase and side, the fire group, the target Location, range, level, LOS and its Hindrance DRM, the target's terrain, and the month. The targets themselves are not listed.
+- **After it** the page shows each attack the viewer may see, latest first: each firer's FP and multipliers, the total and its column, the IFT DR with each DRM, the Final DR and result, and, when the viewer may see the record, each target unit's effect with its MC, NTC, LLMC, or LLTC arithmetic. A side shown only the report is told that the target Location's units are not disclosed.
+- **Markers.** The Prep Fire, Final Fire, and pin states are drawn by the vocabulary (part 3) in each side's view of the map, and listed in the units table.
+- **LOS.** The Studio's board handles carry LOS data (`StudioBoardCatalog`), so the Studio's planner reads fire LOS itself, for a single board and a placed map alike; no separate reader was needed.
+- **Dice.** `LivePlay` takes an optional `DiceRoller`, so page tests can fix the rolls; the Studio uses the default.
+
+## 8. Tests
 
 - Maps: the breakdown tests name their terrains; the fixture comparison checks terrains (with the VASL root).
 - Units, `FireRecordTests`: a verified record kept for the phase; refusals without a verifier, with a missing roll, and on disagreement; A7.55; the record and the month round-trip, and a month of 13 is refused; each marker removed by the phase that ends it.
 - Scenario A1, `ScenarioA1FireReachabilityTests`: the exhaustive walk and the pre-check's refusals.
 - Play, `FireTests`: U19 (the committed attack, its events and arithmetic, the markers, a replay that draws nothing, a repeated attempt returned as a replay, and Prep Fire removed after the AFPh); U20 (the fire group rule, a marked firer, fire in the MPh, each before any roll with the revision unchanged); an undeclared ELR and an unanswered LOS refused; Casualty Reduction through lineage; the store's read-back guard.
+- Units, `FireRecordTests`: a fire report accepted, round-tripped, and refused in each way section 6 lists.
+- Play, `FireVisibilityTests` (part 5): each side's view and events for a known target broken, a concealed target left concealed (no event the firing side may see names it; the report gives the arithmetic), a concealed target revealed by any other result, a concealed firer and director revealed, and a hidden target refused with the firing side's reasons withheld.
+- Studio, `PlayPageFireTests` (part 7): U19 on the Play page, on the synthetic board with its stone building and the Studio's own LOS read (the facts before confirmation; the arithmetic, the effects, the units table, and the drawn Prep Fire, pin, and broken states in each side's view; a replay that draws nothing and a repeated attempt; Prep Fire gone after the AFPh and pins after the CCPh); U20 on the page (the fire group rule and a marked firer refused with the revision unchanged, no fire offered in the MPh, an undeclared ELR refused); and a concealed target left concealed, shown to the firing side only as the arithmetic.
+- A live run in the Studio on board bd01 committed a directed attack from D4 on the stone building E4 with the real LOS read and real dice.
 
-## 7. Not yet built
+## 9. Not built
 
-- Part 5: visibility tests over each side's view of a fire attack.
-- Part 6: the Play page's fire panel and the drawn markers in live play.
-- Part 7: the full U19 and U20 run on the Play page.
-- A LOS reader for the Studio's live boards, if their handles do not carry LOS data.
+- Everything step 17 excludes: Defensive First Fire, Final Fire in the AFPh, Subsequent First Fire, Residual FP, multi-Location fire groups, support weapons and MGs, Rally, and the rest of its list.
+- Fire at a Location that holds a hidden unit or a Dummy stays refused (`concealment-unreviewed`).
