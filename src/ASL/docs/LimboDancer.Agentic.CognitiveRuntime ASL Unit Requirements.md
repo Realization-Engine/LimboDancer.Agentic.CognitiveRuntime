@@ -263,14 +263,23 @@ Decided on 2026-09-25 as recommended in the [Decision Memo for D1 to D4](<ASL Un
    5. *Acceptance.* U9 and U10 (section 14) pass. The Play page shows the roll and its values in each side's view, and offers the declaration while one is pending.
 
    Designed and built in the [ASL Unit Random Selection and Declined OVR Design](<ASL Unit Random Selection and Declined OVR Design.md>), with the [Random Selection reveal review](<Scenario A1 Random Selection Reveal Review.md>). The Execution adapter's return aggregate is left as it is until step 10.
-10. **The Infantry OVR (outline):** OVR election and its NTC as a governed declaration and a system roll, and the second-defender return. It needs a new source review first:
-    - the OVR NTC: a DR at or below the unit's morale, with a DRM equal to the target's TEM (A4.15, p. 49; A7.305, p. 55; building TEM, B23.3, p. 136), and the leader's exemption;
-    - what follows a failed NTC;
-    - a policy for a lone SMC that survives to its options and immediate CC (A4.151 and A4.152, p. 49), which need the IFT and CC tables.
+10. **The OVR NTC review:** a review-only step that authors and admits a new reviewed case package for the Infantry OVR's NTC through the source pipeline of the Ontology Transformation Specification. The user is the delegated reviewer. It changes no live play. The package must decide:
+    1. *Resolution.* The NTC passes when the Final DR of two dice is at or below the unit's Morale Level (A10.1, p. 65; NTC in the Index). The DRM equals the TEM of the enemy-occupied building (+3 stone, +2 wooden; B23.3, p. 136), plus any LOS Hindrance in the location (A4.15, p. 49). The unit's printed morale comes from the reviewed catalog.
+    2. *Failure.* The consequence of a failed OVR NTC for a mover that attempted to enter a location whose lone concealed SMC was revealed. A10.1 says the task cannot be performed and no other action may be taken that phase; the package must state whether the A12.15 forced back (p. 78) follows, and with what MF.
+    3. *The second defender.* Which unit the DEFENDER reveals when several non-Dummy units remain concealed (A12.15: by Random Selection or by the DEFENDER's choice), and whether the NTC precedes that reveal. The additional-defender review records that the order is not fixed.
+    4. *Exclusions.* The leader's exemption from the NTC (A4.15), a Berserk mover, and every case the package does not decide stay out of scope.
 
-    It then brings the ConcealedSmcOverrun, SecondDefender, and SecondDefenderConsequence packages into live play, and decides whether the Execution adapter's return aggregate is retired or moved onto live game events.
+    The package pins its source fragments (A4.15, A10.1, A12.15, B23.3) and its case matrix by digest. It has conformance tests like the existing Scenario A1 packages. Its review is recorded in a review document, written before the package is published.
+11. **The Infantry OVR in live play (outline):** wire the step 10 package and the reviewed SecondDefender and SecondDefenderConsequence packages into live games:
+    - an election, allowed only when every outcome of its NTC has a reviewed resolution;
+    - the NTC as a system roll through the dice store of step 9;
+    - the failed NTC as step 10 decides;
+    - the second defender's reveal;
+    - the SecondDefender eligibility conclusion, and the Consequence return committed on its Definitive conclusion.
 
-Later candidates, not yet sequenced: composed maps in the Play page (placed boards, reversal, and entry across a board seam, so U3 runs over a live game); LOS (ASL-MAP-082) and then Fire; scenario OB and SSR checks at setup, which need the scenario cards as a registered source; and a read-only VASL saved-game import, which needs a format and licensing review first.
+    A lone SMC stays refused with the generic reason, since its options and immediate CC (A4.151 and A4.152, p. 49) need the IFT and CC tables; modelling them is a later candidate. The step also decides whether the Execution adapter's separate return aggregate is retired or moved onto live game events. It is scoped in detail when step 10 is done.
+
+Later candidates, not yet sequenced: the lone SMC's options and immediate CC after an OVR (A4.151 and A4.152), once the IFT and CC tables are registered; composed maps in the Play page (placed boards, reversal, and entry across a board seam, so U3 runs over a live game); LOS (ASL-MAP-082) and then Fire; scenario OB and SSR checks at setup, which need the scenario cards as a registered source; and a read-only VASL saved-game import, which needs a format and licensing review first.
 
 ## 14. Acceptance scenarios
 
