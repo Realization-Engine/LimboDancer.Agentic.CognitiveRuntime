@@ -76,6 +76,24 @@ The VASL hex-fact oracle tool (`src/ASL/tools/vasl-hexfact-oracle`) gains an LOS
   - the range, the hindrance total, and VASL's reason text.
 - **Boards.** Board 01, a board with hills and woods chosen in part 1, and one two-board scenario for LOS across a seam.
 
+**As built** (part 1).
+- The LOS mode is a `--los` argument of `HexFactOracle` and a `-Los` switch of `generate-fixtures.ps1`, with its own harness version (1.0.0). Seam scenarios are listed in `Oracle/Scenarios/los-scenarios.txt`, so the hex-fact scenarios are unchanged.
+- The headless spike succeeded: `new VASLGameInterface(null, null)`, and a stub `GameModule` holding a `ScenInfo` with night "No", both made without their constructors.
+- Observers are every location of every fifth column and third row of the map. Board-relative names use the board whose pixel rectangle holds the hex center last, which is the step 12 owner rule.
+- The hill board is board 11: 126 hill hexes, with no cliffs or depressions. The seam scenarios are board 11 above board 01, plain and reversed.
+- Fixtures:
+
+  | Fixture | Pairs | Blocked | Across the seam |
+  |---|---|---|---|
+  | `bd01.los.json.gz` | 18,251 | 15,142 | |
+  | `bd11.los.json.gz` | 5,662 | 4,702 | |
+  | `bd11-over-bd01.scenario.los.json.gz` | 26,718 | 22,461 | 7,983 |
+  | `bd11r-over-bd01.scenario.los.json.gz` | 26,682 | 22,599 | 7,950 |
+
+- Regenerating board 01 twice gave identical bytes.
+- Tests, Maps.Vasl `LosFixtureTests`: each fixture's board sources equal its hex-fact fixture's, every location and blocking hex it names is in the hex facts, the pair counts are pinned, and the seam scenarios have pairs across the seam. They need no VASL checkout. `VaslMapTests` now lists only hex-fact files as scenario fixtures.
+- The user allowed the Java oracle for fixtures provisionally, to be revisited; the unit requirements' later candidates record it.
+
 ## 5. The read
 
 - **LOS data on a board.** `BoardHandle` gains an optional `LosData`: the terrain grid, the hexside annotations, the terrain catalog, and the board's LOS rules. The Map Model design already plans a read-only grid here. VASL and authored boards supply it. A handle without it answers LOS as unsupported.

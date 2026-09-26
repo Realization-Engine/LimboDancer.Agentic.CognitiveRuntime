@@ -22,13 +22,19 @@ that already have fixtures. With -Scenarios, these are scenario names instead, a
 .PARAMETER Scenarios
 Generates map scenario fixtures from Oracle/Scenarios/scenarios.txt into Oracle/Scenarios: placed boards,
 reversed boards, and LOS scenario-specific rules (VASL Board Ingestion Design, section 11).
+
+.PARAMETER Los
+Generates LOS fixtures (bdNN.los.json.gz, or name.scenario.los.json.gz with -Scenarios) with VASL's own Map.LOS
+(LOS Design, section 4) instead of hex facts. Without boards, regenerates the boards that already have LOS fixtures.
+With -Scenarios, the scenarios come from Oracle/Scenarios/los-scenarios.txt.
 #>
 [CmdletBinding(PositionalBinding = $false)]
 param(
     [Parameter(Position = 0, ValueFromRemainingArguments)]
     [string[]] $Boards,
     [string] $VaslRoot = $env:AslMaps__VaslRoot,
-    [switch] $Scenarios
+    [switch] $Scenarios,
+    [switch] $Los
 )
 
 $ErrorActionPreference = 'Stop'
@@ -40,17 +46,23 @@ $VaslRoot = (Resolve-Path $VaslRoot).Path
 $Boards = @($Boards | ForEach-Object { $_ -split ',' } | Where-Object { $_ })
 $fixtures = Join-Path $PSScriptRoot '../../tests/LimboDancer.Domains.Asl.Maps.Vasl.Tests/Oracle'
 $fixtures = (Resolve-Path $fixtures).Path
+$kind = if ($Los) { 'los' } else { 'hexfacts' }
 if ($Scenarios) {
     $fixtures = Join-Path $fixtures 'Scenarios'
-    $arguments = @('--scenarios', (Join-Path $fixtures 'scenarios.txt')) + $Boards
+    $list = if ($Los) { 'los-scenarios.txt' } else { 'scenarios.txt' }
+    $arguments = @('--scenarios', (Join-Path $fixtures $list)) + $Boards
 }
 else {
     if (-not $Boards) {
-        $Boards = Get-ChildItem $fixtures -Filter 'bd*.hexfacts.json.gz' |
+        $Boards = Get-ChildItem $fixtures -Filter "bd*.$kind.json.gz" |
             ForEach-Object { $_.Name.Substring(2, $_.Name.IndexOf('.') - 2) }
     }
 
     $arguments = $Boards
+}
+
+if ($Los) {
+    $arguments = @('--los') + $arguments
 }
 
 $work = Join-Path ([IO.Path]::GetTempPath()) ('vasl-hexfact-oracle-' + [Guid]::NewGuid().ToString('N'))
@@ -76,7 +88,7 @@ try {
     & java '-Djava.awt.headless=true' -cp $classpath HexFactOracle $VaslRoot "$work/out" @arguments
     if ($LASTEXITCODE -ne 0) { throw 'The oracle reported failures.' }
 
-    foreach ($json in Get-ChildItem "$work/out" -Filter '*.hexfacts.json') {
+    foreach ($json in Get-ChildItem "$work/out" -Filter "*.$kind.json") {
         $target = Join-Path $fixtures ($json.Name + '.gz')
         $source = [IO.File]::OpenRead($json.FullName)
         $output = [IO.File]::Create($target)
