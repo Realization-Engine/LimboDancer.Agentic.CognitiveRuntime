@@ -272,16 +272,22 @@ Decided on 2026-09-25 as recommended in the [Decision Memo for D1 to D4](<ASL Un
     The package pins its source fragments (A4.15, A10.1, A12.15, B23.3) and its case matrix by digest. It has conformance tests like the existing Scenario A1 packages. Its review is recorded in a review document, written before the package is published.
 
     Done in the [Scenario A1 OVR NTC Review](<Scenario A1 OVR NTC Review 2026-09-26.md>). The user ruled that the NTC comes before the second reveal, that Random Selection (A.9, p. 43, also verified) chooses the second defender, and that a failed NTC forces the mover back with the ordinary 2 MF. The package `scenario-a1-concealment-ovr-ntc` publishes five cases.
-11. **The Infantry OVR in live play (outline):** wire the step 10 package and the reviewed SecondDefender and SecondDefenderConsequence packages into live games:
-    - an election, allowed only when every outcome of its NTC has a reviewed resolution;
-    - the NTC as a system roll through the dice store of step 9;
-    - the failed NTC as step 10 decides;
-    - the second defender's reveal;
-    - the SecondDefender eligibility conclusion, and the Consequence return committed on its Definitive conclusion.
+11. **The Infantry OVR in live play:** wire the published OVR NTC package of step 10 into live games, so an attacker may elect an Infantry OVR after an entry reveals a lone concealed SMC. In order:
+    1. *Rolls on demand.* A commit may draw more than one roll. Each is drawn inside the per-game lock only when the outcome so far needs it, and each is recorded as its own `dice-rolled` event (DICE-07 to DICE-12). The build function asks for rolls as it goes; nothing is drawn for a branch that is not taken.
+    2. *The task check.* A `task-check` event records an NTC: the unit, the roll, the unit's Morale Level (its printed morale from the reviewed catalog), each DRM (the building TEM of B23.3; no LOS Hindrance and no leadership, as step 10 admits), the final DR, and the result (A10.1, p. 65; the NTC entry, p. 30). Replay recomputes the result from the recorded roll.
+    3. *The election.* `asl.game.declare-overrun` with `elect` commits when:
+       - the attempt is pending with one revealed SMC;
+       - the mover has at least four MF left (A4.15, p. 49);
+       - another concealed non-Dummy unit is in the location.
 
-    A lone SMC stays refused with the generic reason, since its options and immediate CC (A4.151 and A4.152, p. 49) need the IFT and CC tables; modelling them is a later candidate. The step also decides whether the Execution adapter's separate return aggregate is retired or moved onto live game events. It is scoped in detail when step 10 is done.
+       The NTC is rolled first (A4.15). A failure commits the forced back with the ordinary 2 MF and reveals nothing further. A pass is followed by a Random Selection roll among the remaining concealed units (A.9, p. 43), their reveal, and the forced back. Each outcome commits only on the Definitive OVR NTC conclusion, read through a live observation provider for that package and checked before any roll. The replay rule that forbids a forced back after an election allows these two reviewed outcomes.
+    4. *A lone SMC.* An election against a lone SMC stays refused with the generic reason, since a passed NTC leads to its options and immediate CC (A4.151 and A4.152, p. 49), which are unreviewed. The refusal tells the attacker the SMC is alone. That is a known limitation, accepted while the Studio's single user acts for both sides, and to be closed before multi-user play.
+    5. *Retire the separate return aggregate.* Live games now carry the second-defender return, so remove the Execution adapter's journal store and its return action, and the Host's registration and constraint evaluator. The runtime then no longer references Scenario A1, and the game log is the only source of unit state. The second-defender execution review stays as the record of that work. This part touches the runtime Host and its architecture tests, so it is built on its own branch.
+    6. *Acceptance.* U11 and U12 (section 14) pass, and the Play page shows each roll and the task check.
 
-Later candidates, not yet sequenced: the lone SMC's options and immediate CC after an OVR (A4.151 and A4.152), once the IFT and CC tables are registered; composed maps in the Play page (placed boards, reversal, and entry across a board seam, so U3 runs over a live game); LOS (ASL-MAP-082) and then Fire; scenario OB and SSR checks at setup, which need the scenario cards as a registered source; and a read-only VASL saved-game import, which needs a format and licensing review first.
+    Designed in its own design document, written on the step's design branch before code.
+
+Later candidates, not yet sequenced: multi-user play, which must first close the lone-SMC election probe of step 11; the lone SMC's options and immediate CC after an OVR (A4.151 and A4.152), once the IFT and CC tables are registered; composed maps in the Play page (placed boards, reversal, and entry across a board seam, so U3 runs over a live game); LOS (ASL-MAP-082) and then Fire; scenario OB and SSR checks at setup, which need the scenario cards as a registered source; and a read-only VASL saved-game import, which needs a format and licensing review first.
 
 ## 14. Acceptance scenarios
 
@@ -295,6 +301,8 @@ Later candidates, not yet sequenced: the lone SMC's options and immediate CC aft
 - **U8, occupied refusal.** Given a live game in which the target location holds a known, unconcealed enemy squad, the entry is refused with the A4.14 conclusion as its reason, and the game's revision is unchanged.
 - **U9, Random Selection.** Given a live game in which a squad attempts, in its MPh, to enter a building location holding two concealed enemy squads, one committed roll records one dr per unit in the event log. The revealed squad forces the mover back as in U7. Replaying the game reproduces the reveal without drawing dice, and confirming the same attempt again returns the recorded roll.
 - **U10, declined OVR.** Given a live game in which the only unit revealed by an entry is one enemy SMC, the attempt is pending and the phase cannot advance. An election is refused and nothing changes. A decline commits the forced back of U7, citing the reviewed delegation.
+- **U11, failed OVR NTC.** Given a live game in which an entry reveals a lone concealed SMC and another concealed squad is in the location, an election with at least four MF left records one NTC roll and a task check that fails. The mover is forced back with the ordinary 2 MF, the other squad stays concealed, and replaying the game draws no dice.
+- **U12, passed OVR NTC.** In the same game, an election whose NTC passes records the NTC roll and task check, then a Random Selection roll that reveals the other squad. The mover is forced back with the ordinary 2 MF, citing the OVR NTC package. Confirming the same attempt again returns the recorded rolls.
 
 ## 15. Traceability
 
