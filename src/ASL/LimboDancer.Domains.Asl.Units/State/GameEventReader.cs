@@ -176,6 +176,7 @@ public static class GameEventReader
                         fields.OptionalBoolean(payload, "synthetic", path))
                     {
                         SpecialRules = fields.StringList(payload, "specialRules", path),
+                        ScenarioMonth = Month(fields.OptionalInteger(payload, "scenarioMonth", path), path, diagnostics),
                     };
             case "phase-changed":
                 var nextTurn = fields.OptionalInteger(payload, "turn", path);
@@ -289,6 +290,30 @@ public static class GameEventReader
                 return checkingId is null || checkRoll is null || checkPurpose is null || morale is null || finalDr is null
                     ? Missing(diagnostics, "A task check names the unit, its roll, its purpose, the Morale Level, and the final DR.", path)
                     : new TaskCheck(checkingId, checkRoll, checkPurpose, morale.Value, modifiers, finalDr.Value, passed.GetBoolean());
+            case "fire-resolved":
+                var firerLocation = fields.RequiredString(payload, "firerLocation", path);
+                var targetLocation = fields.RequiredString(payload, "targetLocation", path);
+                var fireRolls = new Dictionary<string, string>(StringComparer.Ordinal);
+                if (payload.TryGetProperty("rolls", out var rollMap) && rollMap.ValueKind == JsonValueKind.Object)
+                {
+                    foreach (var entry in rollMap.EnumerateObject())
+                    {
+                        if (entry.Value.ValueKind != JsonValueKind.String)
+                        {
+                            return Missing(diagnostics, "Each fire roll names its roll id.", path + ".rolls");
+                        }
+
+                        fireRolls[entry.Name] = entry.Value.GetString()!;
+                    }
+                }
+
+                var director = fields.OptionalString(payload, "director", path);
+                return firerLocation is null || targetLocation is null
+                    || !payload.TryGetProperty("facts", out var facts) || facts.ValueKind != JsonValueKind.Object
+                    || !payload.TryGetProperty("resolution", out var resolution) || resolution.ValueKind != JsonValueKind.Object
+                    ? Missing(diagnostics, "A fire record names its Locations, facts, and resolution.", path)
+                    : new FireResolved(fields.StringList(payload, "firers", path), director, firerLocation, targetLocation, fireRolls,
+                        facts.Clone(), resolution.Clone());
             case "instance-captured":
                 var captured = fields.RequiredString(payload, "id", path);
                 var custodian = fields.RequiredString(payload, "custodian", path);
@@ -478,5 +503,16 @@ public static class GameEventReader
     {
         diagnostics.Add(UnitDiagnostic.Error(Code, message, path));
         return null;
+    }
+
+    private static int? Month(int? month, string path, List<UnitDiagnostic> diagnostics)
+    {
+        if (month is < 1 or > 12)
+        {
+            diagnostics.Add(UnitDiagnostic.Error(Code, $"'scenarioMonth' {month} is not a month from 1 to 12.", path));
+            return null;
+        }
+
+        return month;
     }
 }

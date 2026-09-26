@@ -129,8 +129,8 @@ public sealed record GamePlan(
 /// re-reads the game, the boards, and the catalog every time it is asked, so the gate and the executor each plan
 /// afresh. It never writes.
 /// </summary>
-public sealed class GamePlanner(IGameStore store, IBoardCatalog boards, UnitVocabulary vocabulary, IReadOnlyList<UnitCatalog> catalogs,
-    TimeProvider? time = null)
+public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, UnitVocabulary vocabulary, IReadOnlyList<UnitCatalog> catalogs,
+    TimeProvider? time = null, IFireLosReader? fireLos = null)
 {
     /// <summary>
     /// The terrain of an ordinary wooden or stone building (B23; the reviewed B. Terrain Chart supplement): the reviewed
@@ -158,7 +158,7 @@ public sealed class GamePlanner(IGameStore store, IBoardCatalog boards, UnitVoca
     public GameHistory Replay(IReadOnlyList<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(events);
-        return GameProjector.Project(events, vocabulary, catalogs, Chains(events), LiveGames.Sources);
+        return GameProjector.Project(events, vocabulary, catalogs, Chains(events), LiveGames.Sources, FireRecordVerifier.Shared);
     }
 
     public async Task<GamePlan> PlanAsync(ActionDescriptor action, JsonElement arguments, Guid tenant, string? actor = null,
@@ -194,6 +194,7 @@ public sealed class GamePlanner(IGameStore store, IBoardCatalog boards, UnitVoca
             "asl.game.enter-empty-building" => await PlanEntryAsync(scope, arguments, existing, attemptId, expected, label, cancellationToken),
             "asl.game.declare-overrun" => await PlanDeclareAsync(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown", cancellationToken),
             "asl.game.enter-building" => await PlanEnterBuildingAsync(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown", cancellationToken),
+            "asl.game.fire" => PlanFire(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             _ => Refused(scope, label, expected, "play.unknown-action"),
         };
 
@@ -1229,6 +1230,11 @@ public sealed class GamePlanner(IGameStore store, IBoardCatalog boards, UnitVoca
             ["synthetic"] = false,
             ["specialRules"] = start.TryGetProperty("specialRules", out var rules) ? JsonNode.Parse(rules.GetRawText()) : new JsonArray(),
         };
+        if (start.TryGetProperty("scenarioMonth", out var month))
+        {
+            // B15: grain is a Hindrance June to September, so fire through grain needs the month.
+            payload["scenarioMonth"] = JsonNode.Parse(month.GetRawText());
+        }
         return true;
     }
 

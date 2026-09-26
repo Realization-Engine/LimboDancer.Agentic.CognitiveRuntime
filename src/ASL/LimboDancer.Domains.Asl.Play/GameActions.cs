@@ -93,7 +93,26 @@ public static class GameActions
             packages = new[] { ScenarioA1ConcealedSmcOverrunPackage.Identity.ToString(), ScenarioA1PostRevealPackage.Identity.ToString() }
         }));
 
-    public static IReadOnlyList<ActionDescriptor> All { get; } = [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding, DeclareOverrun];
+    public static readonly ActionDescriptor Fire = Descriptor("asl.game.fire", "Fire",
+        "Fire a fire group of Good Order squads and half-squads in one Location, optionally directed by a leader there, at another Location in the PFPh (phasing side) or the DFPh (the other side). The attack is resolved by the reviewed Fire package, and only when every outcome the dice can reach is decided; its rolls are drawn as the package asks for them.",
+        PlayPermission, "asl.game.reviewed-fire-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "firers", "target"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "firers": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+            "director": { "type": "string" },
+            "target": { "type": "string" }
+          }
+        }
+        """, JsonSerializer.SerializeToElement(new
+        {
+            package = ScenarioA1FirePackage.Identity.ToString()
+        }));
+
+    public static IReadOnlyList<ActionDescriptor> All { get; } = [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding, DeclareOverrun, Fire];
 
     public static string VersionKey(Guid tenant, string game) => $"asl.game:{tenant:N}:{game}";
 

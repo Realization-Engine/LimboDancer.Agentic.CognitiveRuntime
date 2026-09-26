@@ -12,7 +12,7 @@ namespace LimboDancer.Domains.Asl.Units.State;
 public static class GameProjector
 {
     public static GameHistory Project(IReadOnlyList<GameEvent> events, UnitVocabulary vocabulary, IReadOnlyList<UnitCatalog> catalogs,
-        ILocationChains? chains = null, IReadOnlyCollection<string>? liveSources = null)
+        ILocationChains? chains = null, IReadOnlyCollection<string>? liveSources = null, IFireRecordVerifier? fire = null)
     {
         ArgumentNullException.ThrowIfNull(events);
         ArgumentNullException.ThrowIfNull(vocabulary);
@@ -24,7 +24,7 @@ public static class GameProjector
             diagnostics.Add(UnitDiagnostic.Warning("UNIT-STATE-020", "No location chains were given, so map positions are not checked against the boards in play."));
         }
 
-        var replay = new Replay(vocabulary, catalogs, chains, liveSources ?? [], diagnostics);
+        var replay = new Replay(vocabulary, catalogs, chains, liveSources ?? [], fire, diagnostics);
         foreach (var gameEvent in events)
         {
             var errors = Errors(diagnostics);
@@ -44,7 +44,7 @@ public static class GameProjector
         diagnostics.Count(diagnostic => diagnostic.Severity == UnitDiagnosticSeverity.Error);
 
     private sealed class Replay(UnitVocabulary vocabulary, IReadOnlyList<UnitCatalog> catalogs, ILocationChains? chains, IReadOnlyCollection<string> liveSources,
-        List<UnitDiagnostic> diagnostics)
+        IFireRecordVerifier? fireVerifier, List<UnitDiagnostic> diagnostics)
     {
         private readonly HashSet<string> eventIds = new(StringComparer.Ordinal);
         private readonly Dictionary<string, DiceRolled> rolls = new(StringComparer.Ordinal);
@@ -79,6 +79,7 @@ public static class GameProjector
                 RandomSelection selection => Select(previous, selection),
                 OverrunDeclared declared => Declare(previous, declared),
                 TaskCheck check => Check(previous, check),
+                FireResolved fire => Fire(previous, fire, gameEvent.EventId),
                 _ => Fail<GameState>("UNIT-STATE-001", $"'{gameEvent.Type}' has no projection."),
             };
 
@@ -180,6 +181,7 @@ public static class GameProjector
                 catalog.Identity, started.Turn, started.Phase, started.PhasingSide, [], [], [])
             {
                 SpecialRules = started.SpecialRules,
+                ScenarioMonth = started.ScenarioMonth,
                 FirstSide = started.PhasingSide,
                 Source = gameEvent.Source,
             };
@@ -199,16 +201,66 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-018", $"The entry attempt '{state.OpenAttempts[0].EventId}' is open, so the phase may not change.");
             }
 
-            // MF are spent within a phase, so a new phase starts every unit at none spent and free to move.
+            // MF are spent within a phase, so a new phase starts every unit at none spent and free to move. The phase that
+            // ends removes its markers: Final Fire at the end of the DFPh (A3.4), Prep Fire at the end of the AFPh (A3.5),
+            // and pins in the CCPh (A3.8), all on p. 47.
+            string? cleared = state.Phase switch
+            {
+                "dfph" => Conditions.FinalFire,
+                "afph" => Conditions.PrepFire,
+                "ccph" => Conditions.Pinned,
+                _ => null,
+            };
             return CheckPhase(state, change.Turn, change.Phase, change.PhasingSide)
                 ? state with
                 {
                     Turn = change.Turn,
                     Phase = change.Phase,
                     PhasingSide = change.PhasingSide,
-                    Units = [.. state.Units.Select(unit => unit is { MfSpent: 0, MovementEnded: false } ? unit : unit with { MfSpent = 0, MovementEnded = false })],
+                    FiresThisPhase = [],
+                    Units = [.. state.Units.Select(unit => Clear(unit is { MfSpent: 0, MovementEnded: false } ? unit : unit with { MfSpent = 0, MovementEnded = false },
+                        cleared))],
                 }
                 : null;
+        }
+
+        private static UnitInstance Clear(UnitInstance unit, string? condition) =>
+            condition is null || !unit.Conditions.ContainsKey(condition)
+                ? unit
+                : unit with
+                {
+                    Conditions = unit.Conditions.Where(item => item.Key != condition).ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal),
+                };
+
+        private GameState? Fire(GameState state, FireResolved fire, string eventId)
+        {
+            // Fire in Live Play: the record must reproduce through the Fire package, which the Units project does not
+            // reference, so replay refuses it without a verifier.
+            if (fireVerifier is null)
+            {
+                return Fail<GameState>("UNIT-STATE-023", "A fire record can be replayed only with the Fire verifier.");
+            }
+
+            if (fire.Rolls.Values.FirstOrDefault(roll => !rolls.ContainsKey(roll)) is { } missing)
+            {
+                return Fail<GameState>("UNIT-STATE-023", $"The fire record's roll '{missing}' is not recorded before it.");
+            }
+
+            // A7.55: a Location's units fire at a target once per phase, as one fire group.
+            if (state.FiresThisPhase.Any(item => item.FirerLocation == fire.FirerLocation && item.TargetLocation == fire.TargetLocation))
+            {
+                return Fail<GameState>("UNIT-STATE-024", $"{fire.FirerLocation} has already fired at {fire.TargetLocation} this phase (A7.55).");
+            }
+
+            if (fireVerifier.Verify(state, fire, rolls) is { } reason)
+            {
+                return Fail<GameState>("UNIT-STATE-024", reason);
+            }
+
+            return state with
+            {
+                FiresThisPhase = [.. state.FiresThisPhase, new FireRecord(eventId, fire.FirerLocation, fire.TargetLocation)],
+            };
         }
 
         private bool CheckPhase(GameState state, int turn, string phase, string phasingSide)

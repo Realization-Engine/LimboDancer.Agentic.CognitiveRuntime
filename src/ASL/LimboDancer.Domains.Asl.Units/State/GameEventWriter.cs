@@ -136,6 +136,11 @@ public static class GameEventWriter
                     Strings(writer, "specialRules", started.SpecialRules);
                 }
 
+                if (started.ScenarioMonth is { } month)
+                {
+                    writer.WriteNumber("scenarioMonth", month);
+                }
+
                 break;
             case PhaseChanged phase:
                 writer.WriteNumber("turn", phase.Turn);
@@ -236,6 +241,27 @@ public static class GameEventWriter
                 writer.WriteEndArray();
                 writer.WriteNumber("finalDr", check.FinalDr);
                 writer.WriteBoolean("passed", check.Passed);
+                break;
+            case FireResolved fire:
+                Strings(writer, "firers", fire.Firers);
+                if (fire.Director is { } director)
+                {
+                    writer.WriteString("director", director);
+                }
+
+                writer.WriteString("firerLocation", fire.FirerLocation);
+                writer.WriteString("targetLocation", fire.TargetLocation);
+                writer.WriteStartObject("rolls");
+                foreach (var (key, roll) in fire.Rolls.OrderBy(entry => entry.Key, StringComparer.Ordinal))
+                {
+                    writer.WriteString(key, roll);
+                }
+
+                writer.WriteEndObject();
+                writer.WritePropertyName("facts");
+                fire.Facts.WriteTo(writer);
+                writer.WritePropertyName("resolution");
+                fire.Resolution.WriteTo(writer);
                 break;
             case InstanceCaptured captured:
                 writer.WriteString("id", captured.Id);

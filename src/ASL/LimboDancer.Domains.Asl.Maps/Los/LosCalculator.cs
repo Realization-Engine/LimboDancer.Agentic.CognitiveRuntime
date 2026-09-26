@@ -161,6 +161,9 @@ public static class LosCalculator
         private readonly int[] sourceExitHexsides = [None, None];
         private readonly int[] targetEnterHexsides = [None, None];
         private readonly SortedDictionary<int, double> mapHindrances = [];
+
+        // The terrain of each hindrance hex met, by range from the source hex (the read's own record, beside VASL's values).
+        private readonly SortedDictionary<int, SortedSet<string>> hindranceTerrains = [];
         private readonly bool exitsSourceDepression;
         private readonly bool entersTargetDepression;
 
@@ -359,7 +362,10 @@ public static class LosCalculator
         private LosResult Result()
         {
             var hindrance = Hindrance();
-            var breakdown = mapHindrances.Select(entry => new LosHindrance(entry.Key, entry.Value)).ToArray();
+            var breakdown = mapHindrances.Select(entry => new LosHindrance(entry.Key, entry.Value)
+            {
+                Terrains = hindranceTerrains.TryGetValue(entry.Key, out var names) ? [.. names] : [],
+            }).ToArray();
             LosHindranceAt? first = null;
             if (firstHindranceAt is { } firstPoint)
             {
@@ -2273,6 +2279,13 @@ public static class LosCalculator
             {
                 mapHindrances[atRange] = hindrance;
             }
+
+            if (!hindranceTerrains.TryGetValue(atRange, out var terrains))
+            {
+                hindranceTerrains[atRange] = terrains = new SortedSet<string>(StringComparer.Ordinal);
+            }
+
+            terrains.Add(name);
 
             // LOSResult.setBlockedByHindrance
             if (Hindrance() > 5)

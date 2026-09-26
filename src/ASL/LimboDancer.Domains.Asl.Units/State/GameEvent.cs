@@ -54,6 +54,12 @@ public sealed record GameStarted(
     bool Synthetic) : EventPayload
 {
     public IReadOnlyList<string> SpecialRules { get; init; } = [];
+
+    /// <summary>The scenario's month (1 to 12) when setup records it; grain is a Hindrance only June to September (B15).</summary>
+    public int? ScenarioMonth
+    {
+        get; init;
+    }
 }
 
 /// <summary><c>phase-changed</c>.</summary>

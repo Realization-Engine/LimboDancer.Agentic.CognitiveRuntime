@@ -38,6 +38,15 @@ public sealed record GameState(
     /// <summary>The SSRs in force, as <c>game-started</c> named them; empty means none.</summary>
     public IReadOnlyList<string> SpecialRules { get; init; } = [];
 
+    /// <summary>The scenario's month when setup recorded it (B15: grain is a Hindrance June to September).</summary>
+    public int? ScenarioMonth
+    {
+        get; init;
+    }
+
+    /// <summary>The fire attacks made in the current phase (A7.55); cleared at every phase change.</summary>
+    public IReadOnlyList<FireRecord> FiresThisPhase { get; init; } = [];
+
     /// <summary>The side that had the first Player Turn: a new Game Turn starts when it is phasing again.</summary>
     public string FirstSide { get; init; } = string.Empty;
 

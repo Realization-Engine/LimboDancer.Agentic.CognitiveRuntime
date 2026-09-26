@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
+using LimboDancer.Domains.Asl.Play;
 using LimboDancer.Domains.Asl.Units;
 using LimboDancer.Domains.Asl.Units.Catalog;
 using LimboDancer.Domains.Asl.Units.Documents;
@@ -108,7 +109,7 @@ public sealed class GameLibrary(UnitLibrary units, IBoardProvider boards, LivePl
             return new CaseReadResult(CaseReadStatus.Unavailable, "CASE-002", $"{entry.Name} did not read.", null);
         }
 
-        var history = GameProjector.Project([.. entry.Record.Events.Take((int)asOf)], units.Vocabulary, Catalogs, Chains(entry.Record));
+        var history = GameProjector.Project([.. entry.Record.Events.Take((int)asOf)], units.Vocabulary, Catalogs, Chains(entry.Record), fire: FireRecordVerifier.Shared);
         var reader = new CaseReader(new HistoryGameSource([history]), new StudioBoardCatalog(boards), units.Vocabulary, Catalogs);
         return reader.Read(new CaseRequest(entry.Record.Events[0].Scope, "map-studio-game-states", attacker, location, expectedRevision, perspective));
     }
@@ -124,7 +125,7 @@ public sealed class GameLibrary(UnitLibrary units, IBoardProvider boards, LivePl
             return new GameEntry(name, null, null, read?.Diagnostics ?? [UnitDiagnostic.Error("UNIT-STATE-001", $"There is no game '{name}'.")]);
         }
 
-        var history = GameProjector.Project(record.Events, units.Vocabulary, Catalogs, Chains(record));
+        var history = GameProjector.Project(record.Events, units.Vocabulary, Catalogs, Chains(record), fire: FireRecordVerifier.Shared);
         return new GameEntry(name, record, history, [.. read.Diagnostics, .. history.Diagnostics]);
     }
 
