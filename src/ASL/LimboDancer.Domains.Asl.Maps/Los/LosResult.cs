@@ -51,10 +51,6 @@ public sealed record LosResult(LosStatus Status, bool? IsBlocked, int Range, int
 /// </summary>
 public static class LosUnsupportedRule
 {
-    public const string Depression = "Depressions, gullies, and streams (A6.3)";
-
-    public const string Cliff = "Cliffs (B10.23)";
-
     public const string Bridge = "Bridges and tunnels";
 
     /// <summary>Factories, their rooftops and walls, and roofless or gutted buildings; rooftops of other buildings are reproduced.</summary>

@@ -29,11 +29,11 @@ public sealed class LosFidelityTests(ITestOutputHelper output)
         { "bd11.los.json.gz", 5662 },
         { Path.Combine("Scenarios", "bd11-over-bd01.scenario.los.json.gz"), 26718 },
         { Path.Combine("Scenarios", "bd11r-over-bd01.scenario.los.json.gz"), 26682 },
-        { "bd05.los.json.gz", 4522 },
-        { "bd09.los.json.gz", 4462 },
-        { "bd12.los.json.gz", 5547 },
-        { "bd15.los.json.gz", 3907 },
-        { Path.Combine("Scenarios", "bd12-over-bd15.scenario.los.json.gz"), 11252 },
+        { "bd05.los.json.gz", 5231 },
+        { "bd09.los.json.gz", 6124 },
+        { "bd12.los.json.gz", 7176 },
+        { "bd15.los.json.gz", 6051 },
+        { Path.Combine("Scenarios", "bd12-over-bd15.scenario.los.json.gz"), 16571 },
     };
 
     [VaslTheory]
@@ -79,6 +79,38 @@ public sealed class LosFidelityTests(ITestOutputHelper output)
         var comparison = Compare(file);
         Assert.Empty(comparison.Unsupported);
         Assert.Equal(comparison.Pairs, comparison.Answered);
+    }
+
+    /// <summary>The fixtures of step 14 (LOS Slice 2 Design, section 3): depressions, cliffs, and a seam between them.</summary>
+    public static TheoryData<string> Step14Fixtures => new()
+    {
+        "bd05.los.json.gz",
+        "bd09.los.json.gz",
+        "bd12.los.json.gz",
+        "bd15.los.json.gz",
+        Path.Combine("Scenarios", "bd12-over-bd15.scenario.los.json.gz"),
+    };
+
+    /// <summary>The rule groups left to step 15 (LOS Slice 2 Design, section 4).</summary>
+    private static readonly HashSet<string> Step15Rules = new(StringComparer.Ordinal)
+    {
+        LosUnsupportedRule.Bridge,
+        LosUnsupportedRule.Hillock,
+        LosUnsupportedRule.PartialOrchard,
+        LosUnsupportedRule.RailroadEmbankment,
+        LosUnsupportedRule.Bocage,
+        LosUnsupportedRule.Rubble,
+        LosUnsupportedRule.Factory,
+        LosUnsupportedRule.RowhouseWall,
+        LosUnsupportedRule.Entrenchment,
+    };
+
+    [VaslTheory]
+    [MemberData(nameof(Step14Fixtures))]
+    public void EveryUnansweredPairOnTheStep14FixturesNamesAStep15Rule(string file)
+    {
+        var comparison = Compare(file);
+        Assert.All(comparison.Unsupported.Keys, rule => Assert.Contains(rule, Step15Rules));
     }
 
     [VaslFact]

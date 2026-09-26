@@ -101,6 +101,8 @@ public static class LosCalculator
         private readonly int[] sourceExitHexsides = [None, None];
         private readonly int[] targetEnterHexsides = [None, None];
         private readonly Dictionary<int, double> mapHindrances = [];
+        private readonly bool exitsSourceDepression;
+        private readonly bool entersTargetDepression;
 
         // LOSStatus
         private double enter;
@@ -116,6 +118,7 @@ public static class LosCalculator
         private int rangeToSource;
         private int rangeToTarget;
         private bool losLeavesBuilding;
+        private HexIndex? ignoreGroundLevelHex;
         private bool blocked;
         private string reason = string.Empty;
 
@@ -186,6 +189,22 @@ public static class LosCalculator
             exits = ExitFromCenterHexsides();
             targetEnterHexsides[0] = Opposite(exits[0]);
             targetEnterHexsides[1] = Opposite(exits[1]);
+
+            // exitsSourceDepression and entersTargetDepression: whether the depression restrictions (A6.3) apply to a
+            // depression end. VASL lowers a rooftop a full level here, not the half level of the rules.
+            double sourceHeight = sourceElevation + (sourceIsRooftop && source.Level != 1 ? -1 : 0);
+            double targetHeight = targetElevation + (targetIsRooftop && target.Level != 1 ? -1 : 0);
+            var alongHexside = losIs60Degree || losIsHorizontal;
+            exitsSourceDepression = source.DepressionTerrain is not null
+                && ((targetHeight - sourceHeight > 0 && targetHeight - sourceHeight <= range && range != 1)
+                    || (alongHexside && ExitsDepressionTerrainHexside())
+                    || targetHeight == sourceHeight
+                    || sourceHeight > targetHeight);
+            entersTargetDepression = target.DepressionTerrain is not null
+                && ((sourceHeight - targetHeight > 0 && sourceHeight - targetHeight <= range && range != 1)
+                    || (alongHexside && EntersDepressionTerrainHexside())
+                    || targetHeight == sourceHeight
+                    || targetHeight > sourceHeight);
         }
 
         private int TargetEnterHexspine => losIs60Degree
@@ -259,9 +278,7 @@ public static class LosCalculator
         }
 
         // The parts of the LOSStatus constructor this step does not reproduce: special source and target locations,
-        // depressions (exitsSourceDepression, entersTargetDepression), slopes, and hillocks. Cellars and rooftops of
-        // buildings other than factories are reproduced; VASL's depression setup adjusts rooftops, but only for a
-        // depression end, which is refused.
+        // slopes, and hillocks. Cellars, rooftops of buildings other than factories, and depression ends are reproduced.
         private string? SetupProblem()
         {
             foreach (var (location, hex) in new[] { (source, sourceHex), (target, targetHex) })
@@ -269,11 +286,6 @@ public static class LosCalculator
                 if (location.Terrain is not { } terrain)
                 {
                     return LosUnsupportedRule.MissingLocationTerrain;
-                }
-
-                if (location.DepressionTerrain is not null)
-                {
-                    return LosUnsupportedRule.Depression;
                 }
 
                 if (location.Level < 0 && !terrain.IsCellar)
@@ -328,6 +340,42 @@ public static class LosCalculator
         private bool EntersSlopeHexside() => HasSlope(targetHex, targetEnterHexsides[0]) || HasSlope(targetHex, targetEnterHexsides[1]);
 
         private bool HasSlope(HexIndex hex, int side) => side != None && Facts(hex).Hexsides[side].Slope;
+
+        // LOSStatus.exitsDepressionTerrainHexside: never along a hexside, so its use in the setup is always false.
+        private bool ExitsDepressionTerrainHexside() => !losIs60Degree && !losIsHorizontal
+            && (SideIsDepression(sourceHex, sourceExitHexsides[0]) || SideIsDepression(sourceHex, sourceExitHexsides[1]));
+
+        // LOSStatus.entersDepressionTerrainHexside
+        private bool EntersDepressionTerrainHexside() => !losIs60Degree && !losIsHorizontal
+            && (SideIsDepression(targetHex, targetEnterHexsides[0]) || SideIsDepression(targetHex, targetEnterHexsides[1]));
+
+        private bool SideIsDepression(HexIndex hex, int side) => side != None && Facts(hex).Hexsides[side].DepressionTerrain is not null;
+
+        // LOSStatus.exitHexsideIsCrest: the LOS leaves the source by a crest line hexside, where the base levels differ,
+        // or where a depression hexside separates a depression hex from one that is not.
+        private bool ExitHexsideIsCrest() => IsCrest(sourceHex, sourceExitHexsides[0]) || (!Failed && IsCrest(sourceHex, sourceExitHexsides[1]));
+
+        // LOSStatus.enterHexsideIsCrest
+        private bool EnterHexsideIsCrest() => IsCrest(targetHex, targetEnterHexsides[0]) || (!Failed && IsCrest(targetHex, targetEnterHexsides[1]));
+
+        // One hexside of the crest tests. Java's precedence makes the last test independent of the hexside being set;
+        // with no hexside VASL reads hexside 0 and the hex itself as its neighbor, so that test is then always false.
+        private bool IsCrest(HexIndex hex, int side)
+        {
+            if (VaslAdjacent(hex, side) is not { } adjacent)
+            {
+                Refuse(LosUnsupportedRule.VaslFails);
+                return false;
+            }
+
+            if (side != None && (Facts(hex).BaseLevel != Facts(adjacent).BaseLevel
+                || (IsDepressionHex(hex) && SideIsDepression(hex, side) && !IsDepressionHex(adjacent))))
+            {
+                return true;
+            }
+
+            return !IsDepressionHex(hex) && SideIsDepression(hex, LocationSide(side)) && IsDepressionHex(adjacent);
+        }
 
         private bool AdjacentHillock(HexIndex hex, int[] sides) =>
             sides.Any(side => side != None && Adjacent(hex, side) is { } adjacent && CenterTerrain(adjacent)?.Name == Hillock);
@@ -500,6 +548,8 @@ public static class LosCalculator
             // are we in a new hex?
             if (tempHex != currentHex)
             {
+                // the new hex may be the previous one again, around vertices or along hexsides
+                var newEqualsPreviousHex = false;
                 if (previousHex is null)
                 {
                     previousHex = currentHex;
@@ -508,10 +558,18 @@ public static class LosCalculator
                 {
                     previousHex = currentHex;
                 }
+                else
+                {
+                    newEqualsPreviousHex = true;
+                }
 
                 currentHex = tempHex;
                 rangeToSource = map.Geometry.Distance(currentHex, sourceHex);
                 rangeToTarget = map.Geometry.Distance(currentHex, targetHex);
+                if (LosFollowsDepression(newEqualsPreviousHex))
+                {
+                    ignoreGroundLevelHex = currentHex;
+                }
             }
 
             if (PointProblem() is { } problem)
@@ -519,8 +577,12 @@ public static class LosCalculator
                 return Refuse(problem);
             }
 
-            // No counters, and not at night: the counter terrain, NVR, smoke, vehicle, and OBA rules do nothing. The
-            // depression rule applies only from or to a depression, which is refused before the walk.
+            // No counters, and not at night: the counter terrain, NVR, smoke, vehicle, and OBA rules do nothing.
+            if (CheckDepressionRule())
+            {
+                return true;
+            }
+
             if (CheckBuildingRestrictionRule())
             {
                 return true;
@@ -574,16 +636,6 @@ public static class LosCalculator
         {
             var terrain = currentTerrain!;
             var name = terrain.Name;
-            if (terrain.IsDepression || terrain.IsStream)
-            {
-                return LosUnsupportedRule.Depression;
-            }
-
-            if (terrain.IsCliff)
-            {
-                return LosUnsupportedRule.Cliff;
-            }
-
             if (terrain.IsBridge || terrain.IsTunnel)
             {
                 return LosUnsupportedRule.Bridge;
@@ -656,19 +708,9 @@ public static class LosCalculator
                 return LosUnsupportedRule.MissingLocationTerrain;
             }
 
-            if (facts.Center.DepressionTerrain is not null || center.IsDepression || facts.Hexsides.Any(side => side.DepressionTerrain is not null))
-            {
-                return LosUnsupportedRule.Depression;
-            }
-
             if (facts.Bridge is not null || center.IsBridge || center.IsTunnel)
             {
                 return LosUnsupportedRule.Bridge;
-            }
-
-            if (facts.Hexsides.Any(side => side.Cliff || side.Terrain is { IsCliff: true } || side.HexsideTerrain is { IsCliff: true }))
-            {
-                return LosUnsupportedRule.Cliff;
             }
 
             if (center.IsFactory || center.IsRoofless)
@@ -678,6 +720,214 @@ public static class LosCalculator
 
             return center.Name.Contains(Hillock, StringComparison.Ordinal) ? LosUnsupportedRule.Hillock : null;
         }
+
+        // Map.checkDepressionRule: the depression exit and entry restrictions (A6.3), checked in every hex, and the crest
+        // line at a vertex (B19.51). Its bridge adjustments need a bridge, which is refused.
+        private bool CheckDepressionRule()
+        {
+            var finalSource = sourceElevation + RooftopHalfLevel(sourceIsRooftop, source);
+            var finalTarget = targetElevation + RooftopHalfLevel(targetIsRooftop, target);
+            var currentBase = Facts(currentHex).BaseLevel;
+            var currentIsDepression = IsDepressionHex(currentHex);
+            var cell = (X: (double)currentCol, Y: (double)currentRow);
+            var currentCenter = map.LosPoint(currentHex);
+
+            if (exitsSourceDepression)
+            {
+                var followsDepiction = LosCrossingBridgeDepiction() && !ExitsByRoadHexside();
+                var test1 = rangeToTarget > finalTarget - finalSource && currentHex != targetHex
+                    && !(currentIsDepression && (groundLevel == currentBase || finalSource >= groundLevel || followsDepiction))
+                    && !(!currentIsDepression && groundLevel <= finalSource);
+                if (test1)
+                {
+                    // adjacent hexes across a depression hexside
+                    if (range == 1 && ExitsDepressionTerrainHexside())
+                    {
+                        test1 = false;
+                    }
+
+                    // same-level LOS that follows the depression
+                    if (finalTarget - finalSource == 0 && currentHex != targetHex
+                        && ((currentIsDepression && (groundLevel == currentBase || followsDepiction)) || (!currentIsDepression && groundLevel <= finalTarget)))
+                    {
+                        test1 = false;
+                    }
+
+                    if (SpecialTestDepressionGroundLevel(rangeToTarget, targetElevation, targetPoint))
+                    {
+                        test1 = false;
+                    }
+                }
+
+                var test2 = !test1 && rangeToTarget == 1
+                    && currentIsDepression && !(groundLevel == currentBase || finalSource >= groundLevel || finalTarget > groundLevel) && !followsDepiction
+                    && LosMap.Distance(targetPoint.X, targetPoint.Y, cell.X, cell.Y) > LosMap.Distance(targetPoint.X, targetPoint.Y, currentCenter.X, currentCenter.Y);
+                if (!test1 && !test2 && currentHex == sourceHex && currentTerrain!.IsCliff && CheckBlindHexRule())
+                {
+                    return true;
+                }
+
+                if (test1 || test2)
+                {
+                    return Block("Exits depression before range/elevation restrictions are satisfied (A6.3)");
+                }
+
+                if (ExitHexsideIsCrest() && (losIs60Degree || losIsHorizontal) && finalSource >= finalTarget && !source.Terrain!.IsBridge)
+                {
+                    return Block("Exits Crest Line - Depression hexside at vertex (B19.51)");
+                }
+
+                if (Failed)
+                {
+                    return true;
+                }
+            }
+
+            if (entersTargetDepression)
+            {
+                var followsDepiction = LosCrossingBridgeDepiction() && !EntersByRoadHexside();
+                var test1 = rangeToSource > finalSource - finalTarget && currentHex != sourceHex
+                    && !(currentIsDepression && (groundLevel == currentBase || finalTarget >= groundLevel || followsDepiction))
+                    && !(!currentIsDepression && groundLevel <= finalTarget);
+                if (test1)
+                {
+                    // VASL tests the exit hexsides here too
+                    if (range == 1 && ExitsDepressionTerrainHexside())
+                    {
+                        test1 = false;
+                    }
+
+                    if (finalSource - finalTarget == 0 && currentHex != sourceHex
+                        && ((currentIsDepression && (groundLevel == currentBase || followsDepiction)) || (!currentIsDepression && groundLevel <= finalTarget)))
+                    {
+                        test1 = false;
+                    }
+
+                    if (SpecialTestDepressionGroundLevel(rangeToSource, sourceElevation, sourcePoint))
+                    {
+                        test1 = false;
+                    }
+                }
+
+                var test2 = !test1 && rangeToSource == 1
+                    && currentIsDepression && !(groundLevel == currentBase || finalTarget >= groundLevel || finalSource > groundLevel) && !followsDepiction
+                    && LosMap.Distance(sourcePoint.X, sourcePoint.Y, cell.X, cell.Y) > LosMap.Distance(sourcePoint.X, sourcePoint.Y, currentCenter.X, currentCenter.Y);
+                if (!test1 && !test2 && currentHex == targetHex && currentTerrain!.IsCliff && CheckBlindHexRule())
+                {
+                    return true;
+                }
+
+                if (test1 || test2)
+                {
+                    return Block("Does not enter depression while range/elevation restrictions are satisfied (A6.3)");
+                }
+
+                if (EnterHexsideIsCrest() && (losIs60Degree || losIsHorizontal) && finalTarget >= finalSource && !target.Terrain!.IsBridge)
+                {
+                    return Block("Enters Crest Line - Depression hexside at vertex (B19.51)");
+                }
+
+                if (Failed)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // The rooftop adjustment of the depression rules: half a level lower unless it is level 1 of its hex.
+        private static double RooftopHalfLevel(bool isRooftop, LocationFacts location) => isRooftop && location.Level != 1 ? -0.5 : 0.0;
+
+        // Map.specialtestDepressionGroundLevelOnExit and OnEntry: next to the other end, the ground level between that
+        // end and the depression hex's center is ignored. The end's plain elevation is used.
+        private bool SpecialTestDepressionGroundLevel(int rangeToEnd, int endElevation, GridPoint endPoint)
+        {
+            if (rangeToEnd != 1 || endElevation <= Facts(currentHex).BaseLevel || !IsDepressionHex(currentHex))
+            {
+                return false;
+            }
+
+            var center = map.LosPoint(currentHex);
+            return LosMap.Distance(endPoint.X, endPoint.Y, currentCol, currentRow) < LosMap.Distance(endPoint.X, endPoint.Y, center.X, center.Y);
+        }
+
+        // Map.losCrossingBridgeDepiction: bridge or road terrain at this point.
+        private bool LosCrossingBridgeDepiction() => currentTerrain!.IsBridge || currentTerrain.IsRoad;
+
+        // Map.entersByRoadHexside: the LOS entered this hex from the previous one across a road hexside.
+        private bool EntersByRoadHexside()
+        {
+            if (losIs60Degree || losIsHorizontal || previousHex is not { } previous)
+            {
+                return false;
+            }
+
+            for (var side = 0; side < 6; side++)
+            {
+                if (Adjacent(currentHex, side) == previous && Facts(currentHex).Hexsides[side].Terrain is { IsRoad: true })
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // Map.exitsByRoadHexside: the first hexside of this hex the line crosses is a road hexside.
+        private bool ExitsByRoadHexside()
+        {
+            if (losIs60Degree || losIsHorizontal)
+            {
+                return false;
+            }
+
+            var crossed = map.HexsidesCrossed(currentHex, sourcePoint, targetPoint);
+            return crossed.Count > 0 && Facts(currentHex).Hexsides[(int)crossed[0]].Terrain is { IsRoad: true };
+        }
+
+        // Map.losFollowsDepression, when the LOS enters a new hex: whether the hex's ground level is ignored because the
+        // LOS follows the depression across a depression or water hexside. Never along a hexside.
+        private bool LosFollowsDepression(bool newEqualsPreviousHex)
+        {
+            if (newEqualsPreviousHex || losIsHorizontal || losIs60Degree)
+            {
+                return false;
+            }
+
+            var finalSource = sourceElevation + RooftopHalfLevel(sourceIsRooftop, source);
+            var finalTarget = targetElevation + RooftopHalfLevel(targetIsRooftop, target);
+            var nearest = NearestSide(currentHex);
+            if (exitsSourceDepression && finalTarget > finalSource)
+            {
+                // the hexside crossed nearest the point
+                foreach (var side in map.HexsidesCrossed(currentHex, sourcePoint, targetPoint))
+                {
+                    if ((int)side == nearest && IsDepressionOrWaterSide(currentHex, (int)side))
+                    {
+                        // VASL's range adjustment reduces the test to a difference of one level
+                        return finalTarget - finalSource >= 1;
+                    }
+                }
+            }
+
+            if (entersTargetDepression && finalSource > finalTarget && currentHex != targetHex)
+            {
+                // the hexside crossed away from the point
+                foreach (var side in map.HexsidesCrossed(currentHex, sourcePoint, targetPoint))
+                {
+                    if ((int)side != nearest && IsDepressionOrWaterSide(currentHex, (int)side))
+                    {
+                        return finalSource - finalTarget >= 1;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private bool IsDepressionOrWaterSide(HexIndex hex, int side) =>
+            Facts(hex).Hexsides[side].DepressionTerrain is not null || Facts(hex).Hexsides[side].Terrain is { IsWater: true };
 
         // Map.checkBuildingRestrictionRule, without factories (refused). Its rooftop adjustment is used only by the factory
         // rooftop test (isRooftopLOSBlocked), so a rooftop in another building takes the plain rule.
@@ -862,16 +1112,24 @@ public static class LosCalculator
             return false;
         }
 
-        // Map.checkGroundLevelRule, without railroad embankments, bridges, cliffs, or Deir.
+        // Map.checkGroundLevelRule, without railroad embankments, bridges, or Deir. A hex whose ground level the LOS may
+        // ignore because it follows a depression (losFollowsDepression) does not block.
         private bool CheckGroundLevelRule()
         {
-            if (AlongCliffHexside())
+            // along a cliff hexside the lower of the two hexes counts
+            if (LowerCliffHexLevel() is { } lower && lower <= Math.Max(sourceElevation, targetElevation))
+            {
+                return false;
+            }
+
+            if (Failed)
             {
                 return true;
             }
 
             return groundLevel > sourceElevation + HeightAdjustment(sourceIsCellar, sourceRooftopAdjustment)
                 && groundLevel > targetElevation + HeightAdjustment(targetIsCellar, targetRooftopAdjustment)
+                && ignoreGroundLevelHex != currentHex
                 && Block("Ground level is higher than both the source and target (A6.2)");
         }
 
@@ -879,20 +1137,31 @@ public static class LosCalculator
         // rules make to an end's elevation.
         private static double HeightAdjustment(bool isCellar, double rooftopAdjustment) => isCellar ? 1.0 : rooftopAdjustment;
 
-        // The cliff hexside test of the ground level, terrain height, and blind hex rules: a cliff along the hexside the
-        // LOS follows is refused.
-        private bool AlongCliffHexside()
+        // The cliff hexside test of the ground level and terrain height rules: along a hexside at an odd range, when the
+        // hexside the line follows is a cliff, the lower base level of its two hexes, or the current hex's when the other
+        // is the source or target hex; otherwise null.
+        private int? LowerCliffHexLevel()
         {
-            if ((losIs60Degree || losIsHorizontal) && rangeToSource % 2 != 0)
+            if (!(losIs60Degree || losIsHorizontal) || rangeToSource % 2 == 0)
             {
-                var side = HexsideWhenLosAlongHexside();
-                if (side != None && Facts(currentHex).Hexsides[side].Terrain is { IsCliff: true })
-                {
-                    return Refuse(LosUnsupportedRule.Cliff);
-                }
+                return null;
             }
 
-            return false;
+            var side = HexsideWhenLosAlongHexside();
+            if (side == None || Facts(currentHex).Hexsides[side].Terrain is not { IsCliff: true })
+            {
+                return null;
+            }
+
+            if (Adjacent(currentHex, side) is not { } other)
+            {
+                Refuse(LosUnsupportedRule.VaslFails);
+                return null;
+            }
+
+            return other != sourceHex && other != targetHex
+                ? Math.Min(Facts(currentHex).BaseLevel, Facts(other).BaseLevel)
+                : Facts(currentHex).BaseLevel;
         }
 
         // Map.checkSplitTerrainRule, without slopes. Only a cellar end is adjusted.
@@ -982,8 +1251,8 @@ public static class LosCalculator
             return false;
         }
 
-        // Map.checkTerrainHeightRule, without railroad embankments, out-of-season orchards, slopes, hillocks, factories,
-        // cliffs, or depressions. The cellar and rooftop adjustments apply to the height test only; the exceptions below
+        // Map.checkTerrainHeightRule, without railroad embankments, out-of-season orchards, slopes, hillocks, or factories.
+        // The cellar and rooftop adjustments apply to the height test only; the exceptions below
         // use the plain elevations, as VASL's do.
         private bool CheckTerrainHeightRule()
         {
@@ -1019,9 +1288,24 @@ public static class LosCalculator
                 return false;
             }
 
-            if (AlongCliffHexside())
+            // along a cliff hexside, the lower hex decides
+            if (LowerCliffHexLevel() is { } lower && lower < Math.Max(sourceElevation, targetElevation))
+            {
+                return false;
+            }
+
+            if (Failed)
             {
                 return true;
+            }
+
+            // are the depression exit and entry restrictions satisfied? Terrain obstacles in a depression hex still
+            // count (B19.21).
+            if ((ignoreGroundLevelHex is { } ignored && map.Locator.ExtendedBorderContains(ignored, currentCol, currentRow))
+                || (entersTargetDepression && IsDepressionHex(currentHex))
+                || (exitsSourceDepression && terrain.IsDepression && !(IsDepressionHex(currentHex) && currentTerrainHgt >= 1)))
+            {
+                return false;
             }
 
             // Special case: a source adjacent to a water obstacle looking at a target in it ignores the bit of open
@@ -1037,8 +1321,8 @@ public static class LosCalculator
             return terrain.Name is "Huts" or "Tower Hindrance" ? AddHindranceHex() : Block("Must have a height advantage to see over this terrain (A6.2)");
         }
 
-        // Map.checkBlindHexRule, without slopes, hillocks, bocage, cliffs, factories, roofless buildings, or out-of-season
-        // orchards.
+        // Map.checkBlindHexRule, without slopes, hillocks, bocage, factories, roofless buildings, or out-of-season
+        // orchards. A cliff hexside always takes the blind hex test (B10.23).
         private bool CheckBlindHexRule()
         {
             var terrain = currentTerrain!;
@@ -1047,17 +1331,64 @@ public static class LosCalculator
             var targetHeight = targetElevation + HeightAdjustment(targetIsCellar, targetRooftopAdjustment);
             var lowerEnd = Math.Min(sourceHeight, targetHeight);
             var higherEnd = Math.Max(sourceHeight, targetHeight);
-            if (!(height > lowerEnd && height < higherEnd))
+            if (!terrain.IsCliff && !(height > lowerEnd && height < higherEnd))
             {
                 return false;
             }
 
-            if (AlongCliffHexside())
+            // Along a cliff hexside at an odd range the ground level is the lower of the two hexes', unless the other
+            // hex is the source or target hex.
+            int? cliffGroundLevel = null;
+            var cliffAlongHexsideInThisHex = false;
+            if ((losIs60Degree || losIsHorizontal) && rangeToSource % 2 != 0)
             {
-                return true;
+                var side = HexsideWhenLosAlongHexside();
+                if (side != None && Facts(currentHex).Hexsides[side].Terrain is { IsCliff: true })
+                {
+                    cliffAlongHexsideInThisHex = true;
+                    if (Adjacent(currentHex, side) is not { } other)
+                    {
+                        return Refuse(LosUnsupportedRule.VaslFails);
+                    }
+
+                    if (other != sourceHex && other != targetHex)
+                    {
+                        cliffGroundLevel = Math.Min(Facts(currentHex).BaseLevel, Facts(other).BaseLevel);
+                    }
+                }
             }
 
-            if (!IsBlindHex(currentTerrainHgt))
+            // A cliff on the hexside by which the LOS leaves the source, seen from the hex across it, is not a cliff
+            // hexside here.
+            var isCliffHexside = false;
+            if (terrain.IsCliff)
+            {
+                isCliffHexside = true;
+                foreach (var exitSide in sourceExitHexsides)
+                {
+                    if (VaslAdjacent(sourceHex, exitSide) is not { } adjacent)
+                    {
+                        return Refuse(LosUnsupportedRule.VaslFails);
+                    }
+
+                    if (adjacent != currentHex)
+                    {
+                        continue;
+                    }
+
+                    var opposite = LocationSide(Opposite(exitSide));
+                    var edge = map.EdgePoint(currentHex, (HexsideDirection)opposite);
+                    var center = map.LosPoint(currentHex);
+                    if (Facts(currentHex).Hexsides[opposite].Terrain is { IsCliff: true }
+                        && LosMap.Distance(edge.X, edge.Y, currentCol, currentRow) < LosMap.Distance(center.X, center.Y, currentCol, currentRow))
+                    {
+                        isCliffHexside = false;
+                        break;
+                    }
+                }
+            }
+
+            if (!IsBlindHex(currentTerrainHgt, isCliffHexside, cliffGroundLevel))
             {
                 return false;
             }
@@ -1099,14 +1430,15 @@ public static class LosCalculator
                     : Block("Source or Target location is in a blind hex (A6.4)");
             }
 
-            // see if ground level alone creates a blind hex
-            if (groundLevel > lowerEnd && groundLevel < higherEnd && IsBlindHex(0))
+            // see if a cliff hexside, or ground level alone, creates a blind hex
+            if ((isCliffHexside && !cliffAlongHexsideInThisHex)
+                || (groundLevel > lowerEnd && groundLevel < higherEnd && IsBlindHex(0, false, null)))
             {
                 return Block("Source or Target location is in a blind hex (B10.23)");
             }
 
-            // a hindrance creates a "blind hex", if not the target or source hex
-            if (currentHex != targetHex && currentHex != sourceHex && terrain.Category != LosCategory.Open)
+            // a hindrance creates a "blind hex", if not the target or source hex; a cliff and open ground do not
+            if (currentHex != targetHex && currentHex != sourceHex && !isCliffHexside && terrain.Category != LosCategory.Open)
             {
                 return AddHindranceHex();
             }
@@ -1114,13 +1446,18 @@ public static class LosCalculator
             return false;
         }
 
-        // Map.isBlindHex, without slopes, hillocks, cliffs, bocage, or rowhouse walls. Cellars are not adjusted here.
-        private bool IsBlindHex(int terrainHeight)
+        // Map.isBlindHex, without slopes, hillocks, bocage, or rowhouse walls. Cellars are not adjusted here. A cliff
+        // hexside crossed by the line counts from the top of the cliff and makes one blind hex fewer; along a cliff
+        // hexside the ground level may be the lower hex's (cliffGroundLevel).
+        private bool IsBlindHex(int terrainHeight, bool isCliffHexside = false, int? cliffGroundLevel = null)
         {
             double higher = sourceElevation;
             double lower = targetElevation;
             double rangeFromHigher = rangeToSource;
             double rangeToLower = rangeToTarget;
+            var higherHex = sourceHex;
+            var lowerHex = targetHex;
+            var ground = groundLevel;
 
             // a half-level building counts half a level higher when an end is a rooftop
             var rooftopEnd = sourceRooftopAdjustment != 0.0 || targetRooftopAdjustment != 0.0;
@@ -1141,15 +1478,61 @@ public static class LosCalculator
             {
                 (higher, lower) = (lower, higher);
                 (rangeFromHigher, rangeToLower) = (rangeToLower, rangeFromHigher);
+                (higherHex, lowerHex) = (lowerHex, higherHex);
             }
 
             // round the higher elevation down to a full level only if more than one level above the obstacle (A6.42)
-            if (higher - (groundLevel + terrainHeight) > 1)
+            if (higher - (ground + terrainHeight) > 1)
             {
                 higher = Math.Floor(higher);
             }
 
-            if (terrainHeight == 0)
+            if (isCliffHexside && !(losIs60Degree || losIsHorizontal))
+            {
+                // VASL's fix for cliff artwork: a cliff in a depression hex other than the target is ignored
+                if (IsDepressionHex(currentHex) && currentHex != targetHex)
+                {
+                    return false;
+                }
+
+                // a cliff in the hex next to an end that was already tested (near the higher end, far from the lower)
+                var nearest = NearestSide(currentHex);
+                var nearestTerrain = nearest == None ? CenterTerrain(currentHex) : Facts(currentHex).Hexsides[nearest].Terrain;
+                var nearestIsCliff = nearestTerrain is { IsCliff: true };
+                var currentCenter = map.LosPoint(currentHex);
+                var higherPoint = map.LosPoint(higherHex);
+                var lowerPoint = map.LosPoint(lowerHex);
+                if (rangeFromHigher == 1 && higher > terrainHeight && nearestIsCliff
+                    && LosMap.Distance(higherPoint.X, higherPoint.Y, currentCol, currentRow) < LosMap.Distance(higherPoint.X, higherPoint.Y, currentCenter.X, currentCenter.Y))
+                {
+                    return false;
+                }
+
+                if (rangeToLower == 1 && higher > terrainHeight && nearestIsCliff
+                    && LosMap.Distance(lowerPoint.X, lowerPoint.Y, currentCol, currentRow) > LosMap.Distance(lowerPoint.X, lowerPoint.Y, currentCenter.X, currentCenter.Y))
+                {
+                    return false;
+                }
+
+                // no blind hex when one end is above the cliff and the other at least level with its top
+                var top = Facts(currentHex).BaseLevel;
+                if ((higher >= top && lower > top) || (higher > top && lower >= top))
+                {
+                    return false;
+                }
+
+                // the ground level is the top of the cliff
+                if (top > groundLevel)
+                {
+                    ground = top;
+                }
+            }
+            else if (isCliffHexside && cliffGroundLevel is { } lowerHexLevel)
+            {
+                ground = lowerHexLevel;
+            }
+
+            if ((terrainHeight == 0 && !isCliffHexside) || (isCliffHexside && currentHex == sourceHex))
             {
                 // EXC: non-cliff crest line
                 var depressionAdjustment = 0;
@@ -1159,11 +1542,12 @@ public static class LosCalculator
                     depressionAdjustment = -1;
                 }
 
-                return rangeToLower <= Math.Max((2 * (groundLevel + depressionAdjustment + terrainHeight + terrainHeightAdjustment)) + (rangeFromHigher / 5) - higher - lower, 0);
+                return rangeToLower <= Math.Max((2 * (ground + depressionAdjustment + terrainHeight + terrainHeightAdjustment)) + (rangeFromHigher / 5) - higher - lower, 0);
             }
 
-            // Map.getBlind
-            return rangeToLower <= Math.Max((2 * (groundLevel + terrainHeight + terrainHeightAdjustment)) + (rangeFromHigher / 5) - higher - lower + 1 + 0, 1 + 0);
+            // Map.getBlind; a cliff makes one blind hex fewer
+            var cliffAdjustment = isCliffHexside ? -1 : 0;
+            return rangeToLower <= Math.Max((2 * (ground + terrainHeight + terrainHeightAdjustment)) + (rangeFromHigher / 5) - higher - lower + 1 + cliffAdjustment, 1 + 0);
         }
 
         // Map.addHindranceHex: a hindrance between the source and target, the largest at each range.
@@ -1368,7 +1752,17 @@ public static class LosCalculator
             return true;
         }
 
+        private bool Failed => unsupported is not null;
+
         private int Hindrance() => (int)Math.Floor(mapHindrances.Values.Sum());
+
+        private bool IsDepressionHex(HexIndex hex) => map.FactsOf(hex).Center.DepressionTerrain is not null;
+
+        // Map.getAdjacentHex, which gives the hex itself for no hexside.
+        private HexIndex? VaslAdjacent(HexIndex hex, int side) => side == None ? hex : Adjacent(hex, side);
+
+        // Hex.getHexsideLocation, which gives hexside 0 for no hexside.
+        private static int LocationSide(int side) => side == None ? 0 : side;
 
         private HexFacts Facts(HexIndex hex) => map.FactsOf(hex);
 
