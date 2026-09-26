@@ -263,6 +263,13 @@ public static class GameEventWriter
                 writer.WritePropertyName("resolution");
                 fire.Resolution.WriteTo(writer);
                 break;
+            case FireReported report:
+                writer.WriteString("fire", report.Fire);
+                writer.WriteString("firerLocation", report.FirerLocation);
+                writer.WriteString("targetLocation", report.TargetLocation);
+                writer.WritePropertyName("arithmetic");
+                report.Arithmetic.WriteTo(writer);
+                break;
             case InstanceCaptured captured:
                 writer.WriteString("id", captured.Id);
                 writer.WriteString("custodian", captured.Custodian);

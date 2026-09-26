@@ -356,7 +356,7 @@ Decided on 2026-09-25 as recommended in the [Decision Memo for D1 to D4](<ASL Un
     6. *The Play page.* A fire panel chooses the firers, the director, and the target, shows the facts, the FP arithmetic, the DRM, the Final DR, and each unit's effect in each side's view, and draws the fire markers and pins.
     7. *Acceptance.* U19 and U20 (section 14) pass.
 
-    Parts 1 to 4 are built: part 1 in the [Scenario A1 Fire Review](<Scenario A1 Fire Review 2026-09-26.md>), section "Revision at unit step 18", and parts 2 to 4 in the [ASL Unit Fire in Live Play Design](<ASL Unit Fire in Live Play Design.md>).
+    Done: part 1 in the [Scenario A1 Fire Review](<Scenario A1 Fire Review 2026-09-26.md>), section "Revision at unit step 18", and parts 2 to 7 in the [ASL Unit Fire in Live Play Design](<ASL Unit Fire in Live Play Design.md>). A record that leaves a concealed target concealed is the target side's, and a public report gives the firing side its arithmetic; U19 and U20 pass in the Play tests and on the Play page.
 
 Later candidates, not yet sequenced: revisiting the Java VASL oracle tool, which the user allowed on 2026-09-26 only to generate test fixtures, for now; multi-user play, which must first close the lone-SMC election probe of step 11; the lone SMC's options and immediate CC after an OVR (A4.151 and A4.152), once the IFT and CC tables are registered; Rally, which step 17 leaves out; scenario OB and SSR checks at setup, which need the scenario cards as a registered source; and a read-only VASL saved-game import, which needs a format and licensing review first.
 

@@ -2,5 +2,6 @@
   <ItemGroup>
     <InternalsVisibleTo Include="LimboDancer.Dice.Tests" />
     <InternalsVisibleTo Include="LimboDancer.Domains.Asl.Play.Tests" />
+    <InternalsVisibleTo Include="LimboDancer.Domains.Asl.MapStudio.Tests" />
   </ItemGroup>
 </Project>

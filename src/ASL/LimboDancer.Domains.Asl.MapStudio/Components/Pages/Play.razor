@@ -4,6 +4,7 @@
 @using LimboDancer.Abstractions.Actions
 @using LimboDancer.Abstractions.Domain
 @using LimboDancer.Domains.Asl.Play
+@using LimboDancer.Domains.Asl.ScenarioA1
 @using LimboDancer.Domains.Asl.Units.Catalog
 @using LimboDancer.Domains.Asl.Units.State
 @inject LivePlay Live
@@ -79,6 +80,23 @@
                 <option value="@side.Name">@side.Label</option>
             }
         </select>
+        <label for="new-first-elr">ELR</label>
+        <span>
+            <input id="new-first-elr" value="@firstElr" @onchange="@(args => firstElr = args.Value as string ?? string.Empty)" size="2" /> first side,
+            <input id="new-second-elr" value="@secondElr" @onchange="@(args => secondElr = args.Value as string ?? string.Empty)" size="2" /> second side
+            <span class="muted">the scenario's Experience Level Rating (A19.1), 0 to 5; fire needs the target side's</span>
+        </span>
+        <label for="new-month">Month</label>
+        <span>
+            <select id="new-month" value="@newMonth" @onchange="@(args => newMonth = args.Value as string ?? string.Empty)">
+                <option value="">not recorded</option>
+                @for (var month = 1; month <= 12; month++)
+                {
+                    <option value="@month">@CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(month)</option>
+                }
+            </select>
+            <span class="muted">grain is a Hindrance only from June to September (B15.2)</span>
+        </span>
     </div>
 }
 else if (state is not null)
@@ -144,6 +162,52 @@ else if (state is not null)
         The adjudicator decides an entry from the whole game. An entry into a building the moving side cannot see into is only declared when proposed;
         what it finds there is disclosed when it is confirmed.
     </p>
+    @if (FiringSide is { } firing)
+    {
+        <h4>Fire</h4>
+        <p class="muted" id="fire-side">
+            The @firing side may fire in the @Games.PhaseLabel(state.Phase) (A3.2, A3.4): Good Order squads and half-squads in one Location as one fire group,
+            optionally directed by a leader there, at a Location the @firing side can see into. The reviewed Fire package resolves the attack, and only when
+            every outcome the dice can reach is decided.
+        </p>
+        <div class="toolbar">
+            <label>
+                From
+                <select id="fire-from" value="@fireFrom" @onchange="ChooseFireFrom">
+                    <option value="">choose</option>
+                    @foreach (var at in FireLocations(firing))
+                    {
+                        <option value="@at">@at</option>
+                    }
+                </select>
+            </label>
+            @foreach (var unit in FireGroupAt(firing).Where(unit => unit.Kind != "asl:leader"))
+            {
+                <label><input class="fire-firer" type="checkbox" data-unit="@unit.Id" checked="@fireFirers.Contains(unit.Id)" @onchange="@(args => ToggleFirer(unit.Id, args.Value is true))" /> @unit.Id</label>
+            }
+            <label>
+                Director
+                <select id="fire-director" value="@fireDirector" @onchange="@(args => fireDirector = args.Value as string ?? string.Empty)">
+                    <option value="">none</option>
+                    @foreach (var leader in FireGroupAt(firing).Where(unit => unit.Kind == "asl:leader"))
+                    {
+                        <option value="@leader.Id">@leader.Id</option>
+                    }
+                </select>
+            </label>
+            <label>
+                Target
+                <select id="fire-target" value="@fireTarget" @onchange="@(args => fireTarget = args.Value as string ?? string.Empty)">
+                    <option value="">choose</option>
+                    @foreach (var at in FireTargets(firing))
+                    {
+                        <option value="@at">@at</option>
+                    }
+                </select>
+            </label>
+            <button id="propose-fire" disabled="@(fireFirers.Count == 0 || fireTarget.Length == 0)" @onclick="ProposeFire">Propose: fire</button>
+        </div>
+    }
 }
 
 @if (pending is { } proposal)
@@ -174,6 +238,22 @@ else if (state is not null)
                 Conclusion: <strong>@review.Conclusion.Disposition</strong>. @review.Conclusion.Explanation
                 <span class="muted">(@review.Conclusion.ExplanationProvenance)</span>
             </p>
+        }
+        @if (proposal.Result.Plan?.Fire is { Attack: var attack })
+        {
+            <table class="library" id="fire-facts">
+                <thead><tr><th>Fact of the attack</th><th>From the game and the map</th></tr></thead>
+                <tbody>
+                    <tr data-fact="phase"><td>Phase and side</td><td>@attack.Phase, the @(attack.FiringSide) side</td></tr>
+                    <tr data-fact="firers"><td>Fire group</td><td>@string.Join(", ", attack.Firers!.Select(item => item.UnitId))@(attack.Director is { } director ? $", directed by {director.UnitId}" : "") in @attack.FirerLocationId</td></tr>
+                    <tr data-fact="target"><td>Target Location</td><td>@attack.TargetLocationId</td></tr>
+                    <tr data-fact="range"><td>Range</td><td>@(attack.Range?.ToString(CultureInfo.InvariantCulture) ?? "not read")</td></tr>
+                    <tr data-fact="level"><td>Same level</td><td>@(attack.SameLevel is { } same ? same ? "yes" : "no" : "not read")</td></tr>
+                    <tr data-fact="los"><td>LOS</td><td>@(attack.Los is { } los ? $"{(los.Blocked == true ? "blocked" : "clear")}, Hindrance DRM {los.HindranceDrm}{(los.HindranceAttributed == true ? "" : " (not attributed)")}" : "not read")</td></tr>
+                    <tr data-fact="terrain"><td>Target terrain</td><td>@(attack.TargetTerrain ?? "not read")</td></tr>
+                    <tr data-fact="month"><td>Month</td><td>@(attack.ScenarioMonth?.ToString(CultureInfo.InvariantCulture) ?? "not recorded")</td></tr>
+                </tbody>
+            </table>
         }
         @if (proposal.Result.Outcome == PlayOutcome.NeedsConfirmation)
         {
@@ -206,6 +286,54 @@ else if (state is not null)
                 </li>
             }
         </ul>
+    }
+
+    @if (FireRecords.Count > 0)
+    {
+        <h3>Fire</h3>
+        <div id="play-fires">
+            @foreach (var record in FireRecords)
+            {
+                <div class="fire-record" data-fire="@record.EventId">
+                    <p>
+                        <strong>@string.Join(", ", record.Arithmetic.Firers.Select(item => item.UnitId)) in @record.From fire at @record.Target</strong>@(record.Director is { } director ? $", directed by {director}" : "").
+                    </p>
+                    <ul>
+                        @foreach (var firer in record.Arithmetic.Firers)
+                        {
+                            <li class="fire-fp" data-unit="@firer.UnitId">@firer.UnitId: @firer.Printed FP@(string.Concat(firer.Multipliers.Select(item => $" × {Number(item.Value)} ({item.Name}, {item.Rule})"))) = @Number(firer.Firepower)</li>
+                        }
+                        <li class="fire-column">
+                            Total @Number(record.Arithmetic.TotalFirepower) FP: the @(record.Arithmetic.UnshiftedColumnFp?.ToString(CultureInfo.InvariantCulture) ?? "no") column@(record.Arithmetic.ColumnShift != 0 || record.Arithmetic.Cowered ? $", shifted {record.Arithmetic.ColumnShift}{(record.Arithmetic.Cowered ? " by Cowering (A7.9)" : "")} to the {record.Arithmetic.ColumnFp?.ToString(CultureInfo.InvariantCulture) ?? "no"} column" : "")
+                        </li>
+                        <li class="fire-dr">
+                            IFT DR @string.Join(", ", record.Arithmetic.Dice) = @record.Arithmetic.OriginalDr@(string.Concat(record.Arithmetic.Drm.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({item.Name}, {item.Rule})"))):
+                            Final DR <span class="fire-final-dr">@record.Arithmetic.FinalDr</span>, result <strong class="fire-result">@record.Arithmetic.Result</strong>
+                        </li>
+                    </ul>
+                    @if (record.Effects is { } effects)
+                    {
+                        <table class="library fire-effects">
+                            <thead><tr><th>Target</th><th>Effect</th><th>Checks</th></tr></thead>
+                            <tbody>
+                                @foreach (var effect in effects)
+                                {
+                                    <tr data-unit="@effect.UnitId">
+                                        <td>@effect.UnitId (@effect.DefinitionId@(effect.FinalDefinitionId != effect.DefinitionId ? $", now {effect.FinalDefinitionId}" : ""))</td>
+                                        <td class="fire-effect">@EffectText(effect)</td>
+                                        <td>@string.Join("; ", effect.Checks.Select(CheckText))</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <p class="muted fire-withheld">The target Location's units are not disclosed: the result leaves them concealed (A12.14, p. 76), so only the @(record.TargetSide ?? "target") side sees them.</p>
+                    }
+                </div>
+            }
+        </div>
     }
 
     <h3>Map</h3>
@@ -314,6 +442,17 @@ else if (state is not null)
     private string enterLocation = "bd01:E4:0";
     private Proposal? pending;
     private string viewAs = string.Empty;
+    private string firstElr = string.Empty;
+    private string secondElr = string.Empty;
+    private string newMonth = string.Empty;
+    private string fireFrom = string.Empty;
+    private readonly HashSet<string> fireFirers = new(StringComparer.Ordinal);
+    private string fireDirector = string.Empty;
+    private string fireTarget = string.Empty;
+
+    /// <summary>A fire attack as the viewer may see it: the record, or the public report of one withheld from the viewer.</summary>
+    private sealed record FireView(string EventId, string From, string Target, string? Director, string? TargetSide, FireArithmetic Arithmetic,
+        IReadOnlyList<FireUnitEffect>? Effects);
 
     /// <summary>The perspective the page shows: a side, or the adjudicator, who sees everything (D3).</summary>
     private Perspective Viewer => state?.Perspectives.FirstOrDefault(perspective => perspective.Name == viewAs) ?? Perspective.Adjudicator;
@@ -427,7 +566,140 @@ else if (state is not null)
     private IReadOnlyList<string> Reasons(Proposal proposal) =>
         !Viewer.IsAdjudicator && proposal.Result.Plan is { Disclosure: { } disclosure } plan
             ? disclosure.ReasonsForMover(plan, confirmed: proposal.Result.Outcome != PlayOutcome.NeedsConfirmation)
-            : proposal.Result.Reasons;
+            : proposal.Result.Plan?.Fire is { } fire ? fire.ReasonsFor(proposal.Result.Reasons, Viewer) : proposal.Result.Reasons;
+
+    /// <summary>The side that may fire now: the phasing side in its PFPh, the other side in the DFPh (A3.2, A3.4); none otherwise.</summary>
+    private string? FiringSide => state is null || state.Sides.Count != 2 ? null
+        : state.Phase == "pfph" ? state.PhasingSide
+        : state.Phase == "dfph" ? state.Sides.First(side => side.Id != state.PhasingSide).Id
+        : null;
+
+    /// <summary>The Locations that hold active units of the firing side.</summary>
+    private IEnumerable<string> FireLocations(string side) => state is null ? []
+        : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side).Select(unit => state.Location(unit.Id)?.Location.ToString())
+            .OfType<string>().Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal);
+
+    private IEnumerable<UnitInstance> FireGroupAt(string side) => state is null || fireFrom.Length == 0 ? []
+        : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && state.Location(unit.Id)?.Location.ToString() == fireFrom)
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal);
+
+    /// <summary>
+    /// The Locations the firing side may target: those holding an enemy unit it can see or a concealed one it knows is there
+    /// (A12.11). A hidden unit is not offered, since the firing side does not know of it.
+    /// </summary>
+    private IEnumerable<string> FireTargets(string side)
+    {
+        if (state is null || history?.Current is null || state.Perspectives.FirstOrDefault(item => item.Name == side) is not { } perspective)
+        {
+            return [];
+        }
+
+        var view = GameView.Of(history, state.Revision, perspective);
+        return view.Units.Where(unit => unit.Side != side).Select(unit => view.Locations.TryGetValue(unit.Id, out var at) ? at.Location.ToString() : null)
+            .Concat(view.Sealed.Where(item => item.Side != side).Select(item => item.Location.ToString()))
+            .OfType<string>().Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal);
+    }
+
+    private void ChooseFireFrom(ChangeEventArgs args)
+    {
+        fireFrom = args.Value as string ?? string.Empty;
+        fireFirers.Clear();
+        fireDirector = string.Empty;
+    }
+
+    private void ToggleFirer(string id, bool chosen)
+    {
+        if (chosen)
+        {
+            fireFirers.Add(id);
+        }
+        else
+        {
+            fireFirers.Remove(id);
+        }
+    }
+
+    private Task ProposeFire()
+    {
+        var arguments = new Dictionary<string, object>
+        {
+            ["gameId"] = gameId,
+            ["attemptId"] = Attempt("fire"),
+            ["expectedRevision"] = (long)history!.Events.Count,
+            ["firers"] = fireFirers.Order(StringComparer.Ordinal).ToArray(),
+            ["target"] = fireTarget,
+        };
+        if (fireDirector.Length > 0)
+        {
+            arguments["director"] = fireDirector;
+        }
+
+        return Propose(GameActions.Fire, JsonSerializer.SerializeToElement(arguments));
+    }
+
+    /// <summary>
+    /// The fire attacks the viewer may see, latest first: each record it is entitled to, and for a record withheld from it,
+    /// the public report of its arithmetic (Fire in Live Play, part 5).
+    /// </summary>
+    private IReadOnlyList<FireView> FireRecords
+    {
+        get
+        {
+            if (history is null)
+            {
+                return [];
+            }
+
+            var views = new List<FireView>();
+            foreach (var item in history.Events.Where(item => item.IsVisibleTo(Viewer)))
+            {
+                if (item.Payload is FireResolved fire && fire.Resolution.Deserialize<FireResolution>(LiveFire.Json) is { Arithmetic: { } arithmetic } resolution)
+                {
+                    views.Add(new FireView(item.EventId, fire.FirerLocation, fire.TargetLocation, fire.Director, null, arithmetic, resolution.Effects));
+                }
+                else if (item.Payload is FireReported report && history.Events.FirstOrDefault(other => other.EventId == report.Fire) is { } withheld
+                    && !withheld.IsVisibleTo(Viewer) && report.Arithmetic.Deserialize<FireArithmetic>(LiveFire.Json) is { } reported)
+                {
+                    views.Add(new FireView(report.Fire, report.FirerLocation, report.TargetLocation, null, withheld.Visibility is [{ } only] ? only : null, reported, null));
+                }
+            }
+
+            views.Reverse();
+            return views;
+        }
+    }
+
+    private static string Number(decimal value) => value.ToString("0.##", CultureInfo.InvariantCulture);
+
+    /// <summary>What an attack did to a target unit, in words.</summary>
+    private static string EffectText(FireUnitEffect effect)
+    {
+        List<string> parts = [];
+        if (effect.Eliminated)
+        {
+            parts.Add("eliminated");
+        }
+        else if (effect.FinalDefinitionId != effect.DefinitionId)
+        {
+            parts.Add($"now {effect.FinalDefinitionId}");
+        }
+
+        foreach (var (applies, name) in new[] { (effect.Broken, "broken"), (effect.Pinned, "pinned"), (effect.Wounded, "wounded"), (effect.Disrupted, "Disrupted"),
+            (effect.ConcealmentLost, "concealment lost") })
+        {
+            if (applies)
+            {
+                parts.Add(name);
+            }
+        }
+
+        return parts.Count == 0 ? "unaffected" : string.Join(", ", parts);
+    }
+
+    /// <summary>A MC, NTC, LLMC, or LLTC with its arithmetic, for example "NMC 4, 4 = 8 against 7: failed".</summary>
+    private static string CheckText(FireCheck check) =>
+        $"{check.Kind} {string.Join(", ", check.Dice)}{string.Concat(check.Drm.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({item.Name})"))}"
+        + $" = {check.FinalDr} against {check.MoraleLevel}: {(check.Passed ? "passed" : "failed")}";
 
     [SupplyParameterFromQuery(Name = "game")]
     public string? GameQuery { get; set; }
@@ -501,16 +773,40 @@ else if (state is not null)
             ? JsonSerializer.SerializeToElement(new
             {
                 gameId = game, attemptId = Attempt("setup"), expectedRevision = 0L,
-                start = new
-                {
-                    label = newLabel, catalog, boards = SetupBoards(), map = newMap, firstSide,
-                    sides = new[] { new { id = firstSide, nationality = firstSide }, new { id = secondSide, nationality = secondSide } },
-                },
+                start = Start(catalog),
                 placements = units,
             })
             : JsonSerializer.SerializeToElement(new { gameId = game, attemptId = Attempt("setup"), expectedRevision = (long)history.Events.Count, placements = units });
         gameId = game;
         await Propose(GameActions.Setup, arguments);
+    }
+
+    /// <summary>A new game's start: its sides with their ELRs, and the scenario month when one is chosen.</summary>
+    private Dictionary<string, object?> Start(string catalog)
+    {
+        var start = new Dictionary<string, object?>
+        {
+            ["label"] = newLabel, ["catalog"] = catalog, ["boards"] = SetupBoards(), ["map"] = newMap, ["firstSide"] = firstSide,
+            ["sides"] = new[] { Side(firstSide, firstElr), Side(secondSide, secondElr) },
+        };
+        if (int.TryParse(newMonth, CultureInfo.InvariantCulture, out var month))
+        {
+            start["scenarioMonth"] = month;
+        }
+
+        return start;
+    }
+
+    /// <summary>A side of a new game, with its ELR when one is given (A19.1).</summary>
+    private static Dictionary<string, object> Side(string id, string elr)
+    {
+        var side = new Dictionary<string, object> { ["id"] = id, ["nationality"] = id };
+        if (int.TryParse(elr, CultureInfo.InvariantCulture, out var value))
+        {
+            side["elr"] = value;
+        }
+
+        return side;
     }
 
     private Task ProposeAdvance() => Propose(GameActions.AdvancePhase,

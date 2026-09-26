@@ -108,6 +108,12 @@ public sealed record GamePlan(
         get; init;
     }
 
+    /// <summary>For a fire attack: its facts and what the firing side may be told.</summary>
+    public FireProposal? Fire
+    {
+        get; init;
+    }
+
     /// <summary>
     /// A roll the action needs. A plan with a roll is Ready with no events: the store draws the roll inside its commit
     /// and builds the events from it (Random Selection and Declined OVR Design, section 3).

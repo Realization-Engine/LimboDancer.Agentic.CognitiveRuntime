@@ -158,4 +158,76 @@ public sealed class FireRecordTests
         }];
         Assert.False(Project(events, null).Current!.Unit("g1")!.Conditions.ContainsKey(Conditions.Pinned));
     }
+
+    [Fact]
+    public void AFireReportStandsOnceForAWithheldRecordAndRepeatsItsArithmetic()
+    {
+        var arithmetic = JsonSerializer.SerializeToElement(new
+        {
+            totalFirepower = 8,
+            finalDr = 9,
+            result = "none"
+        });
+        var resolution = JsonSerializer.SerializeToElement(new
+        {
+            disposition = "resolved",
+            arithmetic
+        });
+        List<GameEvent> Events(IReadOnlyList<string>? recordVisibility, params (string Id, EventPayload Payload, IReadOnlyList<string>? Visibility)[] reports)
+        {
+            var events = With(Roll("x-roll-1"), ("f1", "fire-resolved",
+                new FireResolved(["g1"], null, "bd01:D4:0", "bd01:E4:0", new Dictionary<string, string> { ["attack"] = "x-roll-1" }, Facts, resolution)));
+            events[^1] = events[^1] with
+            {
+                Visibility = recordVisibility
+            };
+            foreach (var (id, payload, visibility) in reports)
+            {
+                events.Add(events[^1] with
+                {
+                    EventId = id,
+                    Revision = events[^1].Revision + 1,
+                    Type = "fire-reported",
+                    Payload = payload,
+                    Visibility = visibility
+                });
+            }
+
+            return events;
+        }
+
+        var report = new FireReported("f1", "bd01:D4:0", "bd01:E4:0", arithmetic);
+        var accepted = Events(["russian"], ("r1", report, null));
+        Assert.False(Project(accepted, new Verifier(null)).HasErrors, string.Join(" ", Project(accepted, new Verifier(null)).Diagnostics));
+
+        // The report round-trips.
+        var text = GameEventWriter.Write(accepted[0].Scope, new GameRecord("fire", true, accepted));
+        var read = GameEventReader.Read(Encoding.UTF8.GetBytes(text));
+        Assert.False(read.HasErrors, string.Join(" ", read.Diagnostics));
+        var roundTripped = Assert.IsType<FireReported>(read.Record!.Events[^1].Payload);
+        Assert.Equal(("f1", 9), (roundTripped.Fire, roundTripped.Arithmetic.GetProperty("finalDr").GetInt32()));
+        Assert.Equal(text, GameEventWriter.Write(accepted[0].Scope, read.Record));
+
+        var different = report with
+        {
+            Arithmetic = JsonSerializer.SerializeToElement(new
+            {
+                totalFirepower = 8,
+                finalDr = 10,
+                result = "none"
+            })
+        };
+        foreach (var refused in new[]
+        {
+            Events(null, ("r1", report, null)),                            // the record is public already
+            Events(["russian"], ("r1", report, ["german"])),              // the report is not public
+            Events(["russian"], ("r1", report, null), ("r2", report, null)), // twice
+            Events(["russian"], ("r1", report with { Fire = "x" }, null)),  // no such record
+            Events(["russian"], ("r1", report with { TargetLocation = "bd01:F4:0" }, null)),
+            Events(["russian"], ("r1", different, null)),
+        })
+        {
+            Assert.Contains(Project(refused, new Verifier(null)).Diagnostics, item => item.Code == "UNIT-STATE-025");
+        }
+    }
 }

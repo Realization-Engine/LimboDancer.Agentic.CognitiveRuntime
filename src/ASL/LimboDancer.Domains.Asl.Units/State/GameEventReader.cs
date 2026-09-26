@@ -314,6 +314,14 @@ public static class GameEventReader
                     ? Missing(diagnostics, "A fire record names its Locations, facts, and resolution.", path)
                     : new FireResolved(fields.StringList(payload, "firers", path), director, firerLocation, targetLocation, fireRolls,
                         facts.Clone(), resolution.Clone());
+            case "fire-reported":
+                var reported = fields.RequiredString(payload, "fire", path);
+                var reportedFrom = fields.RequiredString(payload, "firerLocation", path);
+                var reportedAt = fields.RequiredString(payload, "targetLocation", path);
+                return reported is null || reportedFrom is null || reportedAt is null
+                    || !payload.TryGetProperty("arithmetic", out var arithmetic) || arithmetic.ValueKind != JsonValueKind.Object
+                    ? Missing(diagnostics, "A fire report names its record, its Locations, and the arithmetic.", path)
+                    : new FireReported(reported, reportedFrom, reportedAt, arithmetic.Clone());
             case "instance-captured":
                 var captured = fields.RequiredString(payload, "id", path);
                 var custodian = fields.RequiredString(payload, "custodian", path);

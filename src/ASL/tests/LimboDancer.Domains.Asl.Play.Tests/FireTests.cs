@@ -15,7 +15,7 @@ namespace LimboDancer.Domains.Asl.Play.Tests;
 /// half-squad in the stone building E4, with fixed rolls from the Dice seam and a stub LOS reader, since the board
 /// fixture has hex facts but no LOS data.
 /// </summary>
-public sealed class FireTests : IDisposable
+public sealed partial class FireTests : IDisposable
 {
     private static readonly Guid Tenant = Guid.Parse("7b1d2c3e-0000-4000-8000-00000000f118");
     private static readonly GameScope Scope = new(Tenant, "village");
@@ -67,7 +67,7 @@ public sealed class FireTests : IDisposable
 
     private static JsonElement Args(object value) => JsonSerializer.SerializeToElement(value);
 
-    private static object Placement(string id, string kind, string definition, string at, string side) => new
+    private static object Placement(string id, string kind, string definition, string at, string side, bool concealed = false, bool hidden = false) => new
     {
         id,
         kind,
@@ -77,7 +77,7 @@ public sealed class FireTests : IDisposable
         {
             at
         },
-        conditions = new Dictionary<string, bool> { ["asl:broken"] = false, ["asl:concealed"] = false, ["asl:hidden"] = false },
+        conditions = new Dictionary<string, bool> { ["asl:broken"] = false, ["asl:concealed"] = concealed, ["asl:hidden"] = hidden },
     };
 
     private static async Task<PlayResult> Commit(GamePlay play, Abstractions.Actions.ActionDescriptor action, JsonElement arguments)
@@ -92,8 +92,11 @@ public sealed class FireTests : IDisposable
     }
 
     /// <summary>A game in the Russian PFPh: r1, r2, and the 8-0 rl in D4; the German g1 and gh in the stone building E4.</summary>
-    private async Task Setup(int? germanElr = 3)
+    private async Task Setup(int? germanElr = 3, string[]? concealed = null, string[]? hidden = null)
     {
+        object Place(string id, string kind, string definition, string at, string side) =>
+            Placement(id, kind, definition, at, side, concealed?.Contains(id) == true, hidden?.Contains(id) == true);
+
         var play = Play();
         Assert.Equal(PlayOutcome.Committed, (await Commit(play, GameActions.Setup, Args(new
         {
@@ -111,15 +114,15 @@ public sealed class FireTests : IDisposable
             },
             placements = new[]
             {
-                Placement("r1", "asl:squad", "defender-squad", "bd01:D4:0", "russian"),
-                Placement("r2", "asl:squad", "defender-squad", "bd01:D4:0", "russian"),
-                Placement("r3", "asl:squad", "defender-squad", "bd01:D4:0", "russian"),
-                Placement("rl", "asl:leader", "defender-leader", "bd01:D4:0", "russian"),
-                Placement("g1", "asl:squad", "attacker-squad", "bd01:E4:0", "german"),
-                Placement("gh", "asl:half-squad", "attacker-half-squad", "bd01:E4:0", "german"),
-                Placement("r4", "asl:squad", "defender-squad", "bd01:A1:0", "russian"),
-                Placement("r5", "asl:squad", "defender-squad", "bd01:A1:0", "russian"),
-                Placement("g2", "asl:squad", "attacker-squad", "bd01:A2:0", "german"),
+                Place("r1", "asl:squad", "defender-squad", "bd01:D4:0", "russian"),
+                Place("r2", "asl:squad", "defender-squad", "bd01:D4:0", "russian"),
+                Place("r3", "asl:squad", "defender-squad", "bd01:D4:0", "russian"),
+                Place("rl", "asl:leader", "defender-leader", "bd01:D4:0", "russian"),
+                Place("g1", "asl:squad", "attacker-squad", "bd01:E4:0", "german"),
+                Place("gh", "asl:half-squad", "attacker-half-squad", "bd01:E4:0", "german"),
+                Place("r4", "asl:squad", "defender-squad", "bd01:A1:0", "russian"),
+                Place("r5", "asl:squad", "defender-squad", "bd01:A1:0", "russian"),
+                Place("g2", "asl:squad", "attacker-squad", "bd01:A2:0", "german"),
             },
         }))).Outcome);
         await Advance();
