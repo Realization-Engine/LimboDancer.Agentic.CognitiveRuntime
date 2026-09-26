@@ -294,6 +294,8 @@ Decided on 2026-09-25 as recommended in the [Decision Memo for D1 to D4](<ASL Un
     5. *The Play page map.* The Play page draws the game's composed map with the units each viewer may see, reusing the board viewer's overlay (ASL-UNIT-071), and links each location in its tables to the map.
     6. *Acceptance.* U3 runs over a live game on a map with a reversed board, and U13 (section 14) passes.
 
+    Designed in the [ASL Unit Composed Maps Design](<ASL Unit Composed Maps Design.md>).
+
 Later candidates, not yet sequenced: multi-user play, which must first close the lone-SMC election probe of step 11; the lone SMC's options and immediate CC after an OVR (A4.151 and A4.152), once the IFT and CC tables are registered; LOS (ASL-MAP-082) and then Fire; scenario OB and SSR checks at setup, which need the scenario cards as a registered source; and a read-only VASL saved-game import, which needs a format and licensing review first.
 
 ## 14. Acceptance scenarios
