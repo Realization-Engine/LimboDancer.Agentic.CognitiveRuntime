@@ -54,11 +54,18 @@ public sealed class LosLeftoverTests(ITestOutputHelper output)
         { "tunnel", 1100 },
     };
 
+    // Loading from a stream keeps a long Windows path from being parsed as a URI.
+    private static XDocument LoadSpecification()
+    {
+        using var stream = File.OpenRead(Specification);
+        return XDocument.Load(stream);
+    }
+
     [Fact]
     public void EveryControlledMapHasAPinnedFixture()
     {
         var names = Maps.Select(row => (string)row[0]).Order(StringComparer.Ordinal).ToArray();
-        Assert.Equal(names, XDocument.Load(Specification).Root!.Elements("map").Select(map => (string)map.Attribute("name")!).Order(StringComparer.Ordinal));
+        Assert.Equal(names, LoadSpecification().Root!.Elements("map").Select(map => (string)map.Attribute("name")!).Order(StringComparer.Ordinal));
         Assert.Equal(names, Directory.GetFiles(DirectoryPath, "*.los.json.gz").Select(path => Path.GetFileName(path).Split('.')[0]).Order(StringComparer.Ordinal));
     }
 
@@ -150,7 +157,7 @@ public sealed class LosLeftoverTests(ITestOutputHelper output)
 
     private static LosMap Build(string name, TerrainCatalog catalog)
     {
-        var spec = XDocument.Load(Specification).Root!.Elements("map").Single(map => (string?)map.Attribute("name") == name);
+        var spec = LoadSpecification().Root!.Elements("map").Single(map => (string?)map.Attribute("name") == name);
         var codes = new byte[Geometry.GridWidth * Geometry.GridHeight];
         var levels = new sbyte[codes.Length];
         foreach (var paint in spec.Elements("paint"))

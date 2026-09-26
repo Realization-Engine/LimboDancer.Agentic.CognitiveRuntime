@@ -29,6 +29,8 @@ public sealed record AslScenarioA1SupplementaryRegistry(
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = true,
+        // Committed manifests use LF on every OS.
+        NewLine = "\n",
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
 
