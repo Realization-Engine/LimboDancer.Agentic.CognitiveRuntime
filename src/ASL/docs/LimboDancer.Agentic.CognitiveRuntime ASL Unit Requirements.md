@@ -304,6 +304,15 @@ Decided on 2026-09-25 as recommended in the [Decision Memo for D1 to D4](<ASL Un
     6. *Acceptance.* U14 (section 14) passes.
 
     Designed and built in the [ASL Unit LOS Design](<ASL Unit LOS Design.md>).
+14. **LOS slice 2: cellars, rooftops, depressions, and cliffs:** extend the read of step 13 to the rule groups that leave the most pairs unanswered. It stays read-only, reproduces VASL's `Map.LOS`, and keeps every other rule unsupported by name. Steps 14 to 16 were approved together on 2026-09-26, to be built without further review unless a decision is the user's. In order:
+    1. *Cellars and rooftops.* Cellar and rooftop locations as source or target, with VASL's height adjustments (a rooftop half a level or a level lower, a cellar one level higher) and the cellar hexside rule (O6.3). Factories and roofless buildings stay unsupported until step 15.
+    2. *Depressions.* Gullies, streams, and other depression terrain as VASL applies them: exiting and entering a depression (A6.3), LOS along a depression, depression hexsides, and the crest at a vertex (B19.51).
+    3. *Cliffs.* Cliff hexsides, the blind-hex rule at cliffs (B10.23), and the cliff exceptions of the ground-level and terrain-height rules.
+    4. *Oracle fixtures.* LOS fixtures, as in step 13, for boards with depressions and cliffs (among them boards 05, 09, 12, and 15), and a seam scenario that joins a depression board to a cliff board.
+    5. *Acceptance.* U15 (section 14) passes.
+
+15. **LOS slice 3: the remaining terrain:** bridges and tunnels, hillocks (F6.4), partial and out-of-season orchards, railroad embankments, bocage, rubble, factories and roofless buildings, rowhouse walls, and entrenchments, with the oracle widened to about ten boards chosen for them. Planned in outline; its details are written into this section when step 14 is merged.
+16. **The full VASL LOS result:** hexside and bypass aiming points (VASL's auxiliary LOS points), the hindrance of each hex and rule as VASL reports it so Fire can apply the DRM later, and LOS from a unit's position in a live game on the Play page. Still no game action uses LOS. Planned in outline, detailed when step 15 is merged.
 
 Later candidates, not yet sequenced: revisiting the Java VASL oracle tool, which the user allowed on 2026-09-26 only to generate test fixtures, for now; multi-user play, which must first close the lone-SMC election probe of step 11; the lone SMC's options and immediate CC after an OVR (A4.151 and A4.152), once the IFT and CC tables are registered; Fire, on the LOS of step 13, once the IFT is registered; scenario OB and SSR checks at setup, which need the scenario cards as a registered source; and a read-only VASL saved-game import, which needs a format and licensing review first.
 
@@ -323,6 +332,7 @@ Later candidates, not yet sequenced: revisiting the Java VASL oracle tool, which
 - **U12, passed OVR NTC.** In the same game, an election whose NTC passes records the NTC roll and task check, then a Random Selection roll that reveals the other squad. The mover is forced back with the ordinary 2 MF, citing the OVR NTC package. Confirming the same attempt again returns the recorded rolls.
 - **U13, entry across a seam.** Given a live game on two placed boards, a squad on the other board, in a hex that shares a seam with a board 01 building the reviewed cases cover, may enter that building: the entry facts show it adjacent with its crossed hexside, and the entry commits as it would from board 01. An entry across the same seam into a location the reviewed cases do not cover is refused with its reasons, and nothing changes.
 - **U14, LOS.** Given the LOS oracle's pairs of locations on its fixture boards, the LOS read agrees with VASL on every pair: whether LOS is blocked, the hex where it is first blocked, and the range. The same pairs agree on a placed map of those boards, and a read on a board whose status is not Verified or AuthoredValid is nondefinitive.
+- **U15, LOS over depressions and cliffs.** On every LOS fixture of steps 13 and 14, the read agrees with VASL on every pair it answers; on boards 01 and 11 it answers every pair; and every unanswered pair on the new fixtures names a rule that step 15 reproduces. The answered counts are pinned.
 
 ## 15. Traceability
 
