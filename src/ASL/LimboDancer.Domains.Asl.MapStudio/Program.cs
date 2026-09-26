@@ -24,6 +24,7 @@ public static class Program
         builder.Services.AddSingleton<UnitLibrary>();
         builder.Services.AddSingleton<LivePlay>();
         builder.Services.AddSingleton<GameLibrary>();
+        builder.Services.AddSingleton<GameMaps>();
 
         var app = builder.Build();
         app.UseAntiforgery();

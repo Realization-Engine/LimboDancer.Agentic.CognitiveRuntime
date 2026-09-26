@@ -1,11 +1,11 @@
 using Bunit;
-using LimboDancer.Domains.Asl.MapStudio.Services;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Maps.Derivation;
 using LimboDancer.Domains.Asl.Maps.Geometry;
 using LimboDancer.Domains.Asl.Maps.Grid;
 using LimboDancer.Domains.Asl.Maps.Rendering;
 using LimboDancer.Domains.Asl.Maps.Rendering.Tests;
+using LimboDancer.Domains.Asl.MapStudio.Services;
 using LimboDancer.Domains.Asl.Play;
 using LimboDancer.Domains.Asl.Units.State;
 using Microsoft.Extensions.DependencyInjection;
@@ -68,12 +68,14 @@ public sealed class PlayPageTests : IDisposable
     {
         var options = new StudioOptions { CacheRoot = Path.Combine(root, "cache"), BoardsRoot = Path.Combine(root, "boards") };
         library = new UnitLibrary(options);
-        boards = new BuildingBoards(new MapService(options, new FakeVaslMapSource()));
+        var maps = new MapService(options, new FakeVaslMapSource());
+        boards = new BuildingBoards(maps);
         live = new LivePlay(library, boards);
         games = new GameLibrary(library, boards, live);
         context.Services.AddSingleton(library);
         context.Services.AddSingleton(live);
         context.Services.AddSingleton(games);
+        context.Services.AddSingleton(new GameMaps(boards, maps, new RenderCache(), library, games));
     }
 
     private static string Board => FakeBoardProvider.Board.Ref.Value;
@@ -261,6 +263,42 @@ public sealed class PlayPageTests : IDisposable
             ("entry-forced-back", new EntryForcedBack("g1", "enter-1-1", a1, 2, false), null));
         page.Find("#play-game").Change("village");
         Assert.Contains("OVR NTC: 3, 5 + 3 (TEM) = 11 against morale 7: failed", page.Find("#play-rolls li").TextContent, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TheMapIsDrawnWithTheUnitsTheViewerMaySee()
+    {
+        var page = GameWithDefenders(("r1", "defender-squad"));
+        page.Find("#play-perspective").Change(Perspective.AdjudicatorName);
+        Assert.Contains("data-unit-id=\"r1\"", page.Find("#play-map").InnerHtml, StringComparison.Ordinal);
+        Assert.Equal(Board, page.Find("#play-map").GetAttribute("data-source"));
+
+        // The German side sees the concealed r1 only as a sealed presence.
+        page.Find("#play-perspective").Change("german");
+        Assert.Contains("data-unit-id=\"g1\"", page.Find("#play-map").InnerHtml, StringComparison.Ordinal);
+        Assert.DoesNotContain("data-unit-id=\"r1\"", page.Find("#play-map").InnerHtml, StringComparison.Ordinal);
+
+        // Choosing a unit's location highlights its hex.
+        Assert.Empty(page.FindAll("#play-highlight"));
+        page.Find("#play-units tr[data-unit='g1'] .play-locate").Click();
+        Assert.Single(page.FindAll("#play-highlight"));
+    }
+
+    [Fact]
+    public void PlacedBoardsAreRecordedAndTheMapNeedsTheVaslCheckout()
+    {
+        // One board placed in slot (0, 0): the game records the placement; drawing a placed map needs the VASL checkout.
+        var page = context.Render<PlayPage>();
+        page.Find("#new-board").Change($"{Board}@0,0");
+        page.Find("#place-id").Change("g1");
+        page.Find("#place-location").Change($"{Board}:A1:0");
+        page.Find("#place-add").Click();
+        Commit(page, "#propose-setup");
+        var map = live.Planner.Replay(live.Store.Read(new GameScope(LivePlay.Tenant, "village"))!.Events).Current!.Map;
+        Assert.True(map.IsPlaced);
+        Assert.Equal($"{Board}@0,0", map.Reference);
+        Assert.NotEmpty(page.FindAll("#play-map-problems li"));
+        Assert.NotEmpty(page.FindAll("#play-units tr[data-unit='g1']"));
     }
 
     [Fact]

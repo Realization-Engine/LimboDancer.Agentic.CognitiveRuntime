@@ -1,6 +1,6 @@
 # ASL Unit Composed Maps Design
 
-**Status:** Proposed. Designed before code, on `feature/asl-unit-step12-design`; to be built in the order of section 10.
+**Status:** Built in the order of section 10. Part 1 is recorded in section 4, part 2 in section 7, and part 3 in section 8.
 
 **Date:** 2026-09-26
 
@@ -132,6 +132,13 @@ The Scenario A1 packages bind only the target's terrain to board 01 (`bd01:{hex}
 - **Without VASL.** A composed map needs the VASL checkout. Without it, the page says so and shows its tables as now.
 - **Locations.** Selecting a location in the page's tables highlights its hex on the map.
 - **The link.** The "View on" link opens the game's saved map when setup copied one, and otherwise its first board, as now.
+
+**As built** (part 3).
+- `GameMaps` (Map Studio services) finds a game's board or map and draws it. A single board is its exact version. A placed map is the saved map its reference names when the placements match, and otherwise a map built by `MapService.LoadPlacements`, cached under a reference derived from the placement text. A game with several unplaced boards has no map to draw, and the page says so.
+- The drawing is the Exact view's document with the viewer's unit layer, from the same projection the board viewer uses, and a highlight polygon, inlined in the page. It is not the board viewer's zoomable viewport.
+- Setup takes one "Boards" field: one board, or placed boards in the compact form `bd02@0,0/r bd01@0,1`. A saved map can be chosen instead, which fills the field and sends the map's reference. There is no per-board slot editor.
+- Each location in the units table is a button that highlights its hex.
+- Tests, Map Studio `PlayPageTests`: a single-board game's map with the adjudicator's and the German side's units (a concealed squad drawn only for the adjudicator) and the highlight, and a placed setup recorded with its reference, whose map reports that it needs the VASL checkout.
 
 ## 9. Tests
 

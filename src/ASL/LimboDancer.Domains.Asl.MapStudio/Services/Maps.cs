@@ -141,6 +141,20 @@ public sealed class MapService(StudioOptions options, IVaslMapSource source)
         return cache.GetOrAdd(key, _ => new Lazy<BoardLoadResult>(() => LoadUncached(definition))).Value;
     }
 
+    /// <summary>
+    /// Builds placements into a map without saving it, as a live game's map is drawn (Composed Maps Design, section 8);
+    /// the result is cached by placement text under a reference derived from it.
+    /// </summary>
+    public BoardLoadResult LoadPlacements(IReadOnlyList<BoardPlacement> placements)
+    {
+        ArgumentNullException.ThrowIfNull(placements);
+        var text = string.Join(' ', placements);
+        var hash = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text)))[..12];
+        var reference = BoardRef.Parse("map-placed-" + hash);
+        return cache.GetOrAdd(reference.Value + "|" + text,
+            _ => new Lazy<BoardLoadResult>(() => LoadUncached(new MapDefinition(reference, "Game map", placements)))).Value;
+    }
+
     private BoardLoadResult LoadUncached(MapDefinition definition)
     {
         var (built, diagnostics) = Build(definition.Placements);
