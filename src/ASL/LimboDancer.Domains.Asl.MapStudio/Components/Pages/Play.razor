@@ -175,6 +175,8 @@ else if (state is not null)
     {
         <p class="fail" data-open-attempt="@open.EventId">
             The entry attempt of @open.Unit into @open.Target awaits the attacker's Infantry OVR declaration (A12.15, p. 78). The phase cannot advance until it is made.
+            <button class="declare-decline" @onclick='@(() => ProposeDeclaration(open.Unit, "decline"))'>Propose: decline the OVR</button>
+            <button class="declare-elect" @onclick='@(() => ProposeDeclaration(open.Unit, "elect"))'>Propose: elect the OVR</button>
         </p>
     }
 
@@ -367,6 +369,12 @@ else if (state is not null)
     private Task ProposeEntry() => Propose(GameActions.EnterBuilding, JsonSerializer.SerializeToElement(new
     {
         gameId, attemptId = Attempt("enter"), expectedRevision = (long)history!.Events.Count, unitId = enterUnit, location = enterLocation.Trim(),
+    }));
+
+    /// <summary>The attacker's OVR choice for a pending attempt; an election is refused until step 10.</summary>
+    private Task ProposeDeclaration(string unit, string choice) => Propose(GameActions.DeclareOverrun, JsonSerializer.SerializeToElement(new
+    {
+        gameId, attemptId = Attempt("declare"), expectedRevision = (long)history!.Events.Count, unitId = unit, choice,
     }));
 
     private async Task Propose(ActionDescriptor action, JsonElement arguments)

@@ -32,3 +32,16 @@ public sealed class LivePostRevealSnapshotSource(ScenarioA1PostRevealSnapshot sn
             : null);
     }
 }
+
+/// <summary>The concealed-SMC OVR snapshot source over a live game, for the attacker's declaration after a lone SMC reveal.</summary>
+public sealed class LiveConcealedSmcOverrunSnapshotSource(ScenarioA1ConcealedSmcOverrunSnapshot snapshot) : IScenarioA1ConcealedSmcOverrunSnapshotSource
+{
+    public ValueTask<ScenarioA1ConcealedSmcOverrunSnapshot?> ReadAsync(Guid tenantId, DomainPackageRef package, string unitId, string locationId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        return ValueTask.FromResult(snapshot.TenantId == tenantId && snapshot.Package == package && snapshot.UnitId == unitId && snapshot.LocationId == locationId
+            ? snapshot
+            : null);
+    }
+}

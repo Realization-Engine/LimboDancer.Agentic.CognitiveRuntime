@@ -262,7 +262,7 @@ Decided on 2026-09-25 as recommended in the [Decision Memo for D1 to D4](<ASL Un
       - The entry of step 8 into a location holding exactly one concealed SMC then leads to this declaration instead of being refused.
    5. *Acceptance.* U9 and U10 (section 14) pass. The Play page shows the roll and its values in each side's view, and offers the declaration while one is pending.
 
-   Designed in the [ASL Unit Random Selection and Declined OVR Design](<ASL Unit Random Selection and Declined OVR Design.md>), with the [Random Selection reveal review](<Scenario A1 Random Selection Reveal Review.md>). The Execution adapter's return aggregate is left as it is until step 10.
+   Designed and built in the [ASL Unit Random Selection and Declined OVR Design](<ASL Unit Random Selection and Declined OVR Design.md>), with the [Random Selection reveal review](<Scenario A1 Random Selection Reveal Review.md>). The Execution adapter's return aggregate is left as it is until step 10.
 10. **The Infantry OVR (outline):** OVR election and its NTC as a governed declaration and a system roll, and the second-defender return. It needs a new source review first:
     - the OVR NTC: a DR at or below the unit's morale, with a DRM equal to the target's TEM (A4.15, p. 49; A7.305, p. 55; building TEM, B23.3, p. 136), and the leader's exemption;
     - what follows a failed NTC;

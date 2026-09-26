@@ -260,6 +260,16 @@ public sealed class PlayPageTests : IDisposable
         page.Find("#propose-advance").Click();
         page.WaitForAssertion(() => Assert.Contains("Refused", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
         Assert.Contains(page.FindAll("#play-reasons li"), item => item.TextContent.StartsWith("play.declaration-pending", StringComparison.Ordinal));
+
+        // An election is refused until step 10; the synthetic board is not the pinned board 01, so a decline is refused
+        // here too, with its reason, and nothing changes.
+        var revision = live.Store.Read(new GameScope(LivePlay.Tenant, "village"))!.Events.Count;
+        page.Find(".declare-elect").Click();
+        page.WaitForAssertion(() => Assert.Contains("Refused", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+        Assert.Contains(page.FindAll("#play-reasons li"), item => item.TextContent.StartsWith("play.adjudicator-cannot-resolve", StringComparison.Ordinal));
+        page.Find(".declare-decline").Click();
+        page.WaitForAssertion(() => Assert.Contains(page.FindAll("#play-reasons li"), item => item.TextContent.StartsWith("play.outside-reviewed-board", StringComparison.Ordinal)));
+        Assert.Equal(revision, live.Store.Read(new GameScope(LivePlay.Tenant, "village"))!.Events.Count);
     }
 
     [Fact]

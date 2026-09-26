@@ -247,6 +247,13 @@ public static class GameEventReader
                 return selectionRoll is null || selectionAttempt is null
                     ? Missing(diagnostics, "A selection names its roll and its attempt.", path)
                     : new RandomSelection(selectionRoll, selectionAttempt, fields.StringList(payload, "subjects", path));
+            case "overrun-declared":
+                var declaringId = fields.RequiredString(payload, "id", path);
+                var declaredAttempt = fields.RequiredString(payload, "attempt", path);
+                var choice = fields.RequiredString(payload, "choice", path);
+                return declaringId is null || declaredAttempt is null || choice is null
+                    ? Missing(diagnostics, "A declaration names the unit, its attempt, and the choice.", path)
+                    : new OverrunDeclared(declaringId, declaredAttempt, choice);
             case "instance-captured":
                 var captured = fields.RequiredString(payload, "id", path);
                 var custodian = fields.RequiredString(payload, "custodian", path);

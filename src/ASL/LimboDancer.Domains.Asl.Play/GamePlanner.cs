@@ -191,6 +191,7 @@ public sealed class GamePlanner(IGameStore store, IBoardCatalog boards, UnitVoca
             "asl.game.setup" => PlanSetup(scope, arguments, existing, attemptId, expected, ref label),
             "asl.game.advance-phase" => PlanAdvance(scope, existing, attemptId, expected, label),
             "asl.game.enter-empty-building" => await PlanEntryAsync(scope, arguments, existing, attemptId, expected, label, cancellationToken),
+            "asl.game.declare-overrun" => await PlanDeclareAsync(scope, arguments, existing, attemptId, expected, label, cancellationToken),
             "asl.game.enter-building" => await PlanEnterBuildingAsync(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown", cancellationToken),
             _ => Refused(scope, label, expected, "play.unknown-action"),
         };
@@ -622,11 +623,159 @@ public sealed class GamePlanner(IGameStore store, IBoardCatalog boards, UnitVoca
     }
 
     /// <summary>
+    /// The attacker's Infantry OVR declaration for an open attempt that revealed a lone SMC (Random Selection and
+    /// Declined OVR Design, section 6). A decline is resolved through the reviewed delegation: ConcealedSmcOverrun hands
+    /// the declined case to PostReveal, whose Definitive forced back is committed. An election is refused with a generic
+    /// reason until step 10 reviews the NTC and what follows it; since every election is refused, the refusal discloses nothing.
+    /// </summary>
+    private async Task<GamePlan> PlanDeclareAsync(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId,
+        long expected, string label, CancellationToken cancellationToken)
+    {
+        if (!Text(arguments, "unitId", out var unitId) || !Text(arguments, "choice", out var choice) || choice is not ("decline" or "elect"))
+        {
+            return Refused(scope, label, expected, "play.invalid-arguments: unitId and a choice of decline or elect are required");
+        }
+
+        if (Replay(existing).Current is not { } state || state.Unit(unitId) is not { Status: InstanceStatus.Active } unit)
+        {
+            return Refused(scope, label, expected, $"play.unit-unavailable: no active unit '{unitId}'");
+        }
+
+        if (state.OpenAttempts.FirstOrDefault(open => open.Unit == unit.Id && open.Declaration is null) is not { } open)
+        {
+            return Refused(scope, label, expected, $"play.no-pending-declaration: {unit.Id} has no entry attempt awaiting an OVR declaration");
+        }
+
+        // The declaration exists only when the attempt revealed exactly one SMC and nothing else (A12.15, p. 78).
+        var revealed = state.At(open.Target).OfType<UnitInstance>()
+            .Where(item => item.Side != unit.Side && GameState.Condition(item, Conditions.Concealed) == ConditionState.False
+                && GameState.Condition(item, Conditions.Hidden) != ConditionState.True)
+            .ToArray();
+        if (revealed.Length != 1 || !vocabulary.IsA(revealed[0].Kind, "asl:smc") || (open.Revealing.Count > 0 && !open.Revealing.SequenceEqual([revealed[0].Id])))
+        {
+            return Refused(scope, label, expected, "play.no-pending-declaration: the attempt did not reveal exactly one SMC");
+        }
+
+        var smc = revealed[0];
+        if (choice == "elect")
+        {
+            return Refused(scope, label, expected, EntryDisclosure.CannotResolve
+                + " (an elected Infantry OVR needs its NTC and what follows it, which step 10 reviews)");
+        }
+
+        var from = state.Location(unit.Id)!.Location;
+        var hazards = state.At(from).Where(item => vocabulary.IsA(item.Kind, "asl:fortification") || vocabulary.IsA(item.Kind, "asl:residual")
+            || vocabulary.IsA(item.Kind, "asl:fire")).ToArray();
+        if (hazards.Length > 0)
+        {
+            return Refused(scope, label, expected,
+                $"play.return-hazard: {string.Join(", ", hazards.Select(item => item.Kind))} at {from}; the forced back covers only a clear return");
+        }
+
+        if (state.Map.Board(open.Target.Board) is not { } placed || boards.TryGetBoard(open.Target.Board, placed.Version).Board is not { } handle
+            || new BoardCatalogTerrainEvidence(boards).Bind(handle, open.Target) is not { } binding)
+        {
+            return Refused(scope, label, expected, "play.outside-reviewed-board: the reviewed cases cover only the explicit building overrides of VASL board 01");
+        }
+
+        // The facts of the attempt as it was made: the unit's movement is held by the open attempt, which is not a reason
+        // it could not have attempted.
+        var facts = EntryFacts(state with
+        {
+            OpenAttempts = [.. state.OpenAttempts.Where(item => item.EventId != open.EventId)]
+        }, unit, open.Target);
+        var attemptEvents = existing.SkipWhile(item => item.EventId != open.EventId).ToArray();
+        var placedBeneathQuestionMark = attemptEvents.Any(item => item.Payload is ConditionsChanged changed && changed.Id == smc.Id
+            && changed.Conditions.TryGetValue(Conditions.Concealed, out var concealed) && concealed == ConditionState.True);
+        var revealedByAttempt = attemptEvents.Any(item => item.Causes.Contains(open.EventId) && item.Payload is ConditionsChanged changed && changed.Id == smc.Id
+            && changed.Conditions.TryGetValue(Conditions.Concealed, out var concealed) && concealed == ConditionState.False);
+
+        var now = clock.GetUtcNow();
+        var version = $"r{state.Revision}";
+        var locationId = open.Target.ToString();
+        var snapshot = new ScenarioA1ConcealedSmcOverrunSnapshot(scope.Tenant, ScenarioA1ConcealedSmcOverrunPackage.Identity, unit.Id, locationId, version, now,
+            LiveGames.Source, binding,
+            placedBeneathQuestionMark ? ScenarioA1InitialConcealedOccupancy.Hidden : ScenarioA1InitialConcealedOccupancy.Concealed,
+            revealedByAttempt, ScenarioA1RevealedOccupant.EnemySmc, smc.Position is MapPosition,
+            facts["isAttackerMovementPhase"], facts["isKnownGoodOrderInfantrySquad"], facts["isAdjacentGroundLevelOrdinaryBuilding"], true,
+            A414Exception(unit) is false, And(facts["hasNoRoadBypassElevationOrAdditionalTerrain"], facts["hasNoSpecialRuleOrOtherModifier"]),
+
+            // The unit moves alone, so no leader exempts it from anything.
+            true,
+            ScenarioA1OverrunElection.Declined, null, null, null, null, null, null, null);
+        const string caseId = "A1-concealed-smc-declined";
+        var package = (await new ScenarioA1ConcealedSmcOverrunPackage().ResolveAsync(ScenarioA1ConcealedSmcOverrunPackage.Identity, cancellationToken)).Package!;
+        var provider = new ScenarioA1ConcealedSmcOverrunObservationProvider(new LiveConcealedSmcOverrunSnapshotSource(snapshot),
+            new BoardCatalogTerrainEvidence(boards));
+        var observed = await provider.ObserveAsync(new ObservationQuery($"{scope.Game}-{version}-{unit.Id}-ovr", scope.Tenant, package.Identity,
+            new SemanticIdentifier(package.Identity.DomainId, ScenarioA1ConcealedSmcOverrunObservationProvider.QueryKind),
+            JsonSerializer.SerializeToElement(new
+            {
+                unitId = unit.Id,
+                locationId,
+                observationVersion = version,
+                caseId
+            }), 1), cancellationToken);
+        if (observed.Observations.Count != 1)
+        {
+            return Refused(scope, label, expected, ["play.not-definitive: the concealed-SMC OVR package observed no reviewed case", .. observed.ReasonCodes]);
+        }
+
+        var delegation = await new ScenarioA1ConcealedSmcOverrunConclusionResolver().ConcludeAsync(Context(scope, state, package, unit.Id, locationId,
+            ScenarioA1ConcealedSmcOverrunConclusionResolver.QuestionKind, new
+            {
+                unitId = unit.Id,
+                locationId,
+                observationVersion = version,
+                caseId
+            }, observed.Observations[0], now),
+            cancellationToken);
+        if (!delegation.ReasonCodes.Contains(DeclinedDelegation))
+        {
+            return Refused(scope, label, expected, ["play.not-delegated: the concealed-SMC OVR package did not delegate the declined case", .. delegation.ReasonCodes]);
+        }
+
+        var declaration = EventId(attemptId, 1);
+        GameEvent[] events =
+        [
+            Event(scope, attemptId, 1, expected, "overrun-declared", new OverrunDeclared(unit.Id, open.EventId, OverrunDeclared.Declined),
+                ScenarioA1ConcealedSmcOverrunPackage.Identity.ToString(), null, [open.EventId]),
+            Event(scope, attemptId, 2, expected, "entry-forced-back", new EntryForcedBack(unit.Id, open.EventId, from, open.Mf, false),
+                ScenarioA1PostRevealPackage.Identity.ToString(), null, [open.EventId, declaration]),
+        ];
+        var candidate = Replay([.. existing, .. events]);
+        if (candidate.HasErrors || candidate.Current is not { } after)
+        {
+            return Refused(scope, label, expected, [.. candidate.Diagnostics.Where(item => item.Severity == Units.UnitDiagnosticSeverity.Error).Select(item => item.ToString())]);
+        }
+
+        var conclusion = await PostRevealAsync(scope, after, unit, open.Target, from, facts, binding, cancellationToken);
+        return conclusion.Disposition != ConclusionDisposition.Definitive
+            ? Refused(scope, label, expected, [$"play.not-definitive: the PostReveal case is {conclusion.Disposition.ToString().ToLowerInvariant()}", .. conclusion.Reasons])
+            : new GamePlan(GamePlanStatus.Ready, scope, label, expected, events,
+                [$"play.declined: {unit.Id} declines the OVR against {smc.Id}; the reviewed matrix delegates the case ({delegation.ConclusionId}), "
+                    + $"and {unit.Id} returns to {from} with {open.Mf} MF spent and its MPh ended ({conclusion.ConclusionId})"]);
+    }
+
+    /// <summary>The reason the concealed-SMC OVR resolver gives when it delegates a declined election to the PostReveal package.</summary>
+    private const string DeclinedDelegation = "asl.a1.ovr.declined-use-exact-post-reveal-package";
+
+    private static bool? And(bool? left, bool? right) => left == false || right == false ? false : left == true && right == true ? true : null;
+
+    /// <summary>
     /// Whether a committed attempt was for other inputs than these: an entry's first event names its unit and target, so
     /// an entry attempt reused for another unit or location is not a replay (DICE-10).
     /// </summary>
     private static bool ReusedWithOtherInputs(ActionDescriptor action, JsonElement arguments, GameEvent committed)
     {
+        if (action.Id.Value == "asl.game.declare-overrun")
+        {
+            var declared = Text(arguments, "unitId", out var declaringUnit) ? declaringUnit : null;
+            var chosen = Text(arguments, "choice", out var choiceText) ? choiceText : null;
+            return committed.Payload is not OverrunDeclared declaration || declaration.Id != declared
+                || declaration.Choice != (chosen == "decline" ? OverrunDeclared.Declined : OverrunDeclared.Elected);
+        }
+
         if (action.Id.Value is not ("asl.game.enter-building" or "asl.game.enter-empty-building"))
         {
             return false;
