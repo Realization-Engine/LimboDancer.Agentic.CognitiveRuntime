@@ -115,7 +115,7 @@ DM is removed at the end of every RPh (A10.62), not its start, so a unit rallies
 | R19.1 | Which DM sources does the game track? | Breaking this Player Turn, and being attacked while broken by enough FP to cause a NMC. Leave the ADJACENT and RtPh sources out until routing exists. |
 | R19.2 | A leader-led Original 2 calls for Heat of Battle (A15.1, p. 83), which is out of scope. | As R0.2 (section 3.4): the rally succeeds and the record says Heat of Battle was not taken. |
 | R19.3 | Is Fate in scope? | Yes: Casualty Reduction and wounds already exist. |
-| R19.4 | Is Field Promotion (A18.11, p. 85) in scope? | No. The first MMC Self-Rally is an ordinary Self-Rally; an Original 2 on it is Indeterminate (Leader Creation stays out). |
+| R19.4 | Is Field Promotion (A18.11, p. 85) in scope? | No, and as with R0.2: the first MMC Self-Rally is an ordinary Self-Rally, an Original 2 on it rallies the unit, and the record says Leader Creation was not taken. Making the 2 Indeterminate would refuse every such rally. |
 | R19.5 | Which terrain gives -1? | Woods and the ordinary buildings of the Fire package's terrain list; everything else 0 until reviewed. |
 | R19.6 | Order of attempts | Free, except that a lone broken leader must rally first (A10.71). |
 | R19.7 | Which side rallies? | Both, in every RPh. |
@@ -168,7 +168,7 @@ Step 19 opens with the Fire package change R0.2 calls for (part 1), since it fix
 | R21.2 | A Dummy in LOS | Resolved by the Concealment Table: removed on PTC or worse. |
 | R21.3 | A revealed hidden unit | Placed without "?" (A12.31). |
 | R21.4 | Mixed hidden, concealed, and known targets | One DR, each type on its own column (A12.13). |
-| R21.5 | Dummy counters | Printed values (none but the counter) from the user's counter mix; how many per side come from setup. |
+| R21.5 | Dummy counters | A Dummy has no printed values; how many each side has is a setup fact. |
 
 ## 7. Step 22: movement and fire during it
 
@@ -217,7 +217,7 @@ This is the largest Infantry step, because Defensive First Fire needs movement t
 
 | Id | Question | Proposed answer |
 |---|---|---|
-| R23.1 | Which SW | The weapons the Scenario A1 card gives each side, with printed values from the user. |
+| R23.1 | Which SW | The weapons the Scenario A1 card gives each side, with values manufactured under R0.3 and approved by the user. |
 | R23.2 | Multiple ROF | In, as a new attack by the weapon alone, marked like the first. |
 | R23.3 | Sustained Fire, Spraying Fire, Fire Lanes | Sustained Fire in; Spraying Fire and Fire Lanes out (Fire Lanes need step 22's Residual FP and a lane marker). |
 | R23.4 | Transfer, Recovery, dismantling, captured SW | Out; weapons stay with the unit that sets up with them. |
