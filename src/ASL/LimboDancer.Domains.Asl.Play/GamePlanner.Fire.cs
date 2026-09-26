@@ -30,12 +30,12 @@ public sealed record FireProposal(string FiringSide, string TargetSide, FireAtta
     public const string Undisclosed =
         "play.fire-refused: the Fire package does not decide every outcome of an attack on this Location, for reasons about units the firing side cannot see";
 
-    /// <summary>The reasons a perspective may see for a plan.</summary>
-    public IReadOnlyList<string> ReasonsFor(GamePlan plan, Perspective perspective)
+    /// <summary>The reasons a perspective may see, given the reasons of the plan or of its result.</summary>
+    public IReadOnlyList<string> ReasonsFor(IReadOnlyList<string> reasons, Perspective perspective)
     {
-        ArgumentNullException.ThrowIfNull(plan);
+        ArgumentNullException.ThrowIfNull(reasons);
         ArgumentNullException.ThrowIfNull(perspective);
-        return perspective.IsAdjudicator || perspective.Name != FiringSide || FiringSideReasons.Count == 0 ? plan.Reasons : FiringSideReasons;
+        return perspective.IsAdjudicator || perspective.Name != FiringSide || FiringSideReasons.Count == 0 ? reasons : FiringSideReasons;
     }
 }
 
@@ -84,10 +84,8 @@ public sealed partial class GamePlanner
         var firingSide = state.Unit(attack.Firers![0].UnitId!)!.Side;
         var targetSide = state.Unit(attack.Targets![0].UnitId!)!.Side;
         var unseen = attack.Targets.Any(item => !VisibleTo(state.Unit(item.UnitId!)!, firingSide));
-        GamePlan Refuse(FireAttack facts, params string[] reasons) => Refused(scope, label, expected, reasons) with
-        {
-            Fire = new FireProposal(firingSide, targetSide, facts, unseen ? [FireProposal.Undisclosed] : []),
-        };
+        FireProposal Proposal(FireAttack facts, bool undecided = false) =>
+            new(firingSide, targetSide, facts, undecided && unseen ? [FireProposal.Undisclosed] : []);
 
         // A7.55: the units of a Location that fire at a target in a phase form one fire group, so it fires once.
         if (state.FiresThisPhase.Any(record => record.FirerLocation == attack.FirerLocationId && record.TargetLocation == attack.TargetLocationId))
@@ -96,7 +94,7 @@ public sealed partial class GamePlanner
                 $"play.fire-group: {attack.FirerLocationId} has already fired at {attack.TargetLocationId} this phase, and its units fire as one fire group (A7.55, p. 57)")
                 with
             {
-                Fire = new FireProposal(firingSide, targetSide, attack, []),
+                Fire = Proposal(attack)
             };
         }
 
@@ -105,7 +103,7 @@ public sealed partial class GamePlanner
         {
             return Refused(scope, label, expected, mapReason!) with
             {
-                Fire = new FireProposal(firingSide, targetSide, attack, []),
+                Fire = Proposal(attack)
             };
         }
 
@@ -120,7 +118,10 @@ public sealed partial class GamePlanner
         var precheck = ScenarioA1FireCalculator.Precheck(attack, reference);
         if (precheck.Count != 0)
         {
-            return Refuse(attack, ["play.fire-refused: the Fire package does not decide every outcome of this attack", .. precheck]);
+            return Refused(scope, label, expected, ["play.fire-refused: the Fire package does not decide every outcome of this attack", .. precheck]) with
+            {
+                Fire = Proposal(attack, undecided: true)
+            };
         }
 
         var package = ScenarioA1FirePackage.Identity.ToString();
@@ -223,7 +224,7 @@ public sealed partial class GamePlanner
         {
             Roll = new PlannedRoll("fire", Build),
             FirstEventId = EventId(attemptId, 1),
-            Fire = new FireProposal(firingSide, targetSide, facts, []),
+            Fire = Proposal(facts),
         };
     }
 

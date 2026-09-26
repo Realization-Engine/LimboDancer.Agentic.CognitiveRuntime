@@ -116,12 +116,11 @@ public sealed partial class FireTests
         Assert.Equal(revision, Revision);
 
         // The known limitation (step 18, part 5): the firing side learns that something there is undecided, not what.
-        var plan = result.Plan!;
-        var fire = plan.Fire!;
+        var fire = result.Plan!.Fire!;
         Assert.Equal(("russian", "german"), (fire.FiringSide, fire.TargetSide));
-        Assert.Equal([FireProposal.Undisclosed], fire.ReasonsFor(plan, Current.Perspectives.Single(item => item.Name == "russian")));
-        Assert.Contains(fire.ReasonsFor(plan, Perspective.Adjudicator), reason => reason.Contains("concealment-unreviewed", StringComparison.Ordinal));
-        Assert.Contains(fire.ReasonsFor(plan, Current.Perspectives.Single(item => item.Name == "german")),
+        Assert.Equal([FireProposal.Undisclosed], fire.ReasonsFor(result.Reasons, Current.Perspectives.Single(item => item.Name == "russian")));
+        Assert.Contains(fire.ReasonsFor(result.Reasons, Perspective.Adjudicator), reason => reason.Contains("concealment-unreviewed", StringComparison.Ordinal));
+        Assert.Contains(fire.ReasonsFor(result.Reasons, Current.Perspectives.Single(item => item.Name == "german")),
             reason => reason.Contains("concealment-unreviewed", StringComparison.Ordinal));
     }
 }

@@ -566,9 +566,7 @@ else if (state is not null)
     private IReadOnlyList<string> Reasons(Proposal proposal) =>
         !Viewer.IsAdjudicator && proposal.Result.Plan is { Disclosure: { } disclosure } plan
             ? disclosure.ReasonsForMover(plan, confirmed: proposal.Result.Outcome != PlayOutcome.NeedsConfirmation)
-            : proposal.Result.Plan is { Fire: { } fire } firePlan && fire.ReasonsFor(firePlan, Viewer) is var shown && !ReferenceEquals(shown, firePlan.Reasons)
-                ? shown
-                : proposal.Result.Reasons;
+            : proposal.Result.Plan?.Fire is { } fire ? fire.ReasonsFor(proposal.Result.Reasons, Viewer) : proposal.Result.Reasons;
 
     /// <summary>The side that may fire now: the phasing side in its PFPh, the other side in the DFPh (A3.2, A3.4); none otherwise.</summary>
     private string? FiringSide => state is null || state.Sides.Count != 2 ? null
