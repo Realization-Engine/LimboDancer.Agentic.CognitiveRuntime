@@ -1,0 +1,63 @@
+# ASL Unit LOS Slice 2 Design
+
+**Status:** Proposed. Designed before code, on `feature/asl-unit-step14-design`; to be built in the order of section 6.
+
+**Date:** 2026-09-26
+
+**Requirements:** [ASL Unit Requirements](<LimboDancer.Agentic.CognitiveRuntime ASL Unit Requirements.md>), section 13, step 14, and acceptance scenario U15 (section 14).
+
+**Builds on:** the [ASL Unit LOS Design](<ASL Unit LOS Design.md>) (step 13), whose principles all hold: VASL's `Map.LOS` is the reference, reproduced in C# and checked pair by pair against the oracle; a rule not yet reproduced is an unsupported answer with its name; only verified terrain is definitive. The Java oracle is used for fixtures only, provisionally, as the user allowed on 2026-09-26.
+
+## 1. Outcome
+
+The step 13 read answers pairs whose ends are cellars or rooftops, and whose lines cross depressions or cliffs, as VASL does. On boards 01 and 11 every pair is answered. New fixtures cover boards with gullies, streams, and cliffs, and every pair there that is still unanswered names a rule of step 15.
+
+## 2. What changes in the read
+
+`LosCalculator` stops refusing these, in VASL's order:
+
+- **Cellars** (`LOSStatus` setup; `checkHexsideTerrainRule`, O6.3): a cellar source or target at level -1 of its hex, one level higher for the height rules, and "Unit in cellar cannot be seen over hexside terrain by non-adjacent target (O6.3)".
+- **Rooftops** (`setSourceAndTargetElevations` and the per-rule adjustments): a rooftop location a half level lower, or a full level when it is not level 1 of the hex, in the building restriction, the terrain-height and terrain-higher rules, and the depression setup.
+- **Depressions** (`exitsSourceDepression`, `entersTargetDepression`, `checkDepressionRule` and its helpers, `losFollowsDepression`, `ignoreGroundLevelHex`): gullies, streams, and other depression terrain in the hex and on hexsides, the "elevation difference within range" restrictions of A6.3, LOS along a depression, the crest at a vertex (B19.51), and the non-center depression location adjustment in `setSourceAndTargetElevations`.
+- **Cliffs** (`checkBlindHexRule` at cliff hexsides, and the cliff exceptions in `checkGroundLevelRule` and `checkTerrainHeightRule`, B10.23).
+
+Factories and roofless buildings, which VASL treats together with rooftops in some rules, become their own unsupported rule, "Factories and roofless buildings (B23.87)", so a rooftop in an ordinary building is answered while a factory stays unsupported until step 15.
+
+The per-hex data the walk needs grows accordingly: each hexside's depression terrain and cliff flag already come from the hex facts, and the adjacent hex's base level and depression state come from the map.
+
+## 3. The fixtures
+
+The oracle's LOS mode is unchanged. New fixtures, with the same observer stride and range as step 13:
+
+- `bd05.los.json.gz`: woods and depressions;
+- `bd09.los.json.gz`: hills and cliffs;
+- `bd12.los.json.gz`: depressions and buildings;
+- `bd15.los.json.gz`: hills and cliffs;
+- `bd12-over-bd15` in `los-scenarios.txt`: a depression board above a cliff board, across the seam.
+
+`LosFixtureTests` pins their pair counts. `LosFidelityTests` gains them, pinned at the answered counts each part reaches.
+
+## 4. Tests
+
+- **Fidelity:** every answered pair on every fixture agrees with VASL (U14 and U15). The pinned answered counts rise with each part.
+- **Coverage:** on boards 01 and 11, and their seam scenarios, every pair is answered.
+- **Names:** on the new fixtures, every unanswered pair names a rule of step 15 (bridges, hillocks, partial orchards, railroad embankments, bocage, rubble, factories and roofless buildings, rowhouse walls, entrenchments), or one listed in section 7 with a reason.
+- **Synthetic:** a cellar to ground pair, a rooftop pair, a gully exit, and a cliff blind hex on synthetic boards in `LosTests`, so the rules have tests that need no VASL checkout.
+
+## 5. The Studio
+
+No change: the board viewer, the Play page, and the Fidelity page read the new rules and fixtures as they are. The Fidelity page lists the new fixtures because it finds every LOS fixture.
+
+## 6. Build order
+
+1. `feature/asl-unit-los2-fixtures`: the fixtures of section 3, with the fidelity tests pinned at the current answered counts.
+2. `feature/asl-unit-los2-cellars-rooftops`: cellars and rooftops; boards 01 and 11 fully answered.
+3. `feature/asl-unit-los2-depressions-cliffs`: depressions and cliffs; U15.
+
+This design is merged first, on its own branch.
+
+## 7. Not in this step
+
+- The rule groups of step 15.
+- Slopes and hillock-adjacent slopes, unless a depression or cliff pair needs them; any that remain are named in the as-built note of part 3.
+- Everything section 10 of the step 13 design leaves out.
