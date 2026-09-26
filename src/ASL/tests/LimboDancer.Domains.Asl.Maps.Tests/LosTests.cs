@@ -70,6 +70,26 @@ public sealed class LosTests
         },
         new TerrainType { Code = 30, Name = "Gully", Category = LosCategory.Depression },
         new TerrainType { Code = 75, Name = "Cliff", Category = LosCategory.Hexside },
+        new TerrainType
+        {
+            Code = 84,
+            Name = "Stone Bridge",
+            Category = LosCategory.Bridge,
+            IsLosHindrance = true,
+            IsLowerLosHindrance = true,
+            IsHalfLevelHeight = true,
+            Split = 1.0f,
+        },
+        new TerrainType
+        {
+            Code = 77,
+            Name = "Rowhouse Wall, 1 Level",
+            Category = LosCategory.Building,
+            IsLosObstacle = true,
+            IsLowerLosObstacle = true,
+            IsHalfLevelHeight = true,
+            Height = 1,
+        },
     ]);
 
     // E4's center point is (225, 225); this box covers the whole hex.
@@ -224,6 +244,38 @@ public sealed class LosTests
         Assert.Equal((LosStatus.Blocked, true, 3), (blind.Status, blind.IsBlocked, blind.Range));
         Assert.Equal("Source or Target location is in a blind hex (B10.23)", blind.Reason);
         Assert.Equal((Board, HexName.Parse("E4")), (blind.BlockedAt!.Board, blind.BlockedAt.Hex));
+    }
+
+    [Fact]
+    public void ABridgeHindersLosAcrossItOffTheRoad()
+    {
+        // E4 is a gully hex at level -1 with a patch of bridge terrain, so it has a single-hex bridge at road level 0 and a
+        // bridge location above the gully. C3 to G5 crosses the bridge's 32 by 48 pixel shape at E4's center, left and
+        // right of its road: with both ends at the road level, Map.checkBridgeHindranceRule adds a hindrance there.
+        var e4 = Geometry.CenterPoint(Geometry.IndexOf(HexName.Parse("E4")));
+        var map = Map(PaintLevels((Whole("E4"), "Gully", -1), ((e4.X + 3, e4.Y - 27, e4.X + 9, e4.Y - 22), "Stone Bridge", -1)));
+        var facts = map.FactsOf(Geometry.IndexOf(HexName.Parse("E4")));
+        Assert.Equal(new BridgeFacts(Catalog["Stone Bridge"], 0), facts.Bridge);
+        Assert.Equal((1, "Stone Bridge"), (facts.Locations[^1].Level, facts.Locations[^1].Terrain?.Name));
+
+        var across = LosCalculator.Check(map, Location("C3"), Location("G5"));
+        Assert.Equal((LosStatus.Clear, false, 4, 1), (across.Status, across.IsBlocked, across.Range, across.Hindrance));
+
+        // Map.checkSameHexRule: the gully under the bridge cannot be seen from the bridge.
+        var under = LosCalculator.Check(map, new BoardLocation(Board, HexName.Parse("E4"), 1), Location("E4"));
+        Assert.Equal((LosStatus.Blocked, true, 0), (under.Status, under.IsBlocked, under.Range));
+        Assert.Equal("Cannot see location under the bridge", under.Reason);
+    }
+
+    [Fact]
+    public void ARowhouseWallBlocksLosThroughIt()
+    {
+        // A rowhouse wall on E4's south hexside, higher than both ground-level ends: Map.checkHexsideTerrainRule leaves it to
+        // Map.checkRowhouseFactoryWallAndBreach (B23.71), which blocks rather than taking the wall and hedge rule.
+        var result = LosCalculator.Check(Map(Paint(((215, 240, 235, 244), "Rowhouse Wall, 1 Level"))), Location("E2"), Location("E6"));
+        Assert.Equal((LosStatus.Blocked, true, 4), (result.Status, result.IsBlocked, result.Range));
+        Assert.Equal("Cannot see through rowhouse/factory wall (B23.71/O5.31)", result.Reason);
+        Assert.Equal((Board, HexName.Parse("E4")), (result.BlockedAt!.Board, result.BlockedAt.Hex));
     }
 
     [Fact]

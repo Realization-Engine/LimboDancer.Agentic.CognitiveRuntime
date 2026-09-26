@@ -29,18 +29,18 @@ public sealed class LosFidelityTests(ITestOutputHelper output)
         { "bd11.los.json.gz", 5662 },
         { Path.Combine("Scenarios", "bd11-over-bd01.scenario.los.json.gz"), 26718 },
         { Path.Combine("Scenarios", "bd11r-over-bd01.scenario.los.json.gz"), 26682 },
-        { "bd05.los.json.gz", 5231 },
+        { "bd05.los.json.gz", 5811 },
         { "bd09.los.json.gz", 6124 },
-        { "bd12.los.json.gz", 7176 },
+        { "bd12.los.json.gz", 8059 },
         { "bd15.los.json.gz", 6051 },
-        { Path.Combine("Scenarios", "bd12-over-bd15.scenario.los.json.gz"), 16571 },
-        { "bd23.los.json.gz", 11554 },
-        { "bd51.los.json.gz", 26581 },
-        { "bd96.los.json.gz", 5858 },
-        { "bdBFPB.los.json.gz", 7124 },
+        { Path.Combine("Scenarios", "bd12-over-bd15.scenario.los.json.gz"), 17588 },
+        { "bd23.los.json.gz", 12866 },
+        { "bd51.los.json.gz", 29151 },
+        { "bd96.los.json.gz", 6079 },
+        { "bdBFPB.los.json.gz", 11882 },
         { "bdBFPD.los.json.gz", 1301 },
-        { "bdBFPDW2b.los.json.gz", 2684 },
-        { "bdrdx.los.json.gz", 64 },
+        { "bdBFPDW2b.los.json.gz", 2704 },
+        { "bdrdx.los.json.gz", 2046 },
     };
 
     [VaslTheory]
@@ -70,54 +70,61 @@ public sealed class LosFidelityTests(ITestOutputHelper output)
         Assert.Equal(comparison.Pairs, comparison.Answered + comparison.Unsupported.Values.Sum());
     }
 
-    /// <summary>Boards 01 and 11 and their seam scenarios, on which every pair is answered (LOS Slice 2 Design, section 4).</summary>
+    /// <summary>
+    /// The fixtures on which every pair is answered: boards 01 and 11 and their seam scenarios (LOS Slice 2 Design,
+    /// section 4), the step 14 fixtures, and the step 15 fixtures of buildings and bridges (LOS Slice 3 Design, part 2).
+    /// </summary>
     public static TheoryData<string> FullyAnswered => new()
     {
         "bd01.los.json.gz",
         "bd11.los.json.gz",
         Path.Combine("Scenarios", "bd11-over-bd01.scenario.los.json.gz"),
         Path.Combine("Scenarios", "bd11r-over-bd01.scenario.los.json.gz"),
+        "bd05.los.json.gz",
+        "bd09.los.json.gz",
+        "bd12.los.json.gz",
+        "bd15.los.json.gz",
+        Path.Combine("Scenarios", "bd12-over-bd15.scenario.los.json.gz"),
+        "bd23.los.json.gz",
+        "bd51.los.json.gz",
+        "bd96.los.json.gz",
+        "bdBFPB.los.json.gz",
+        "bdrdx.los.json.gz",
     };
 
     [VaslTheory]
     [MemberData(nameof(FullyAnswered))]
-    public void EveryPairIsAnsweredOnBoards01And11(string file)
+    public void EveryPairIsAnswered(string file)
     {
         var comparison = Compare(file);
         Assert.Empty(comparison.Unsupported);
         Assert.Equal(comparison.Pairs, comparison.Answered);
     }
 
-    /// <summary>The fixtures of step 14 (LOS Slice 2 Design, section 3): depressions, cliffs, and a seam between them.</summary>
-    public static TheoryData<string> Step14Fixtures => new()
+    /// <summary>The fixtures of hexside and rise terrain (LOS Slice 3 Design, part 3).</summary>
+    public static TheoryData<string> Part3Fixtures => new()
     {
-        "bd05.los.json.gz",
-        "bd09.los.json.gz",
-        "bd12.los.json.gz",
-        "bd15.los.json.gz",
-        Path.Combine("Scenarios", "bd12-over-bd15.scenario.los.json.gz"),
+        "bdBFPD.los.json.gz",
+        "bdBFPDW2b.los.json.gz",
     };
 
-    /// <summary>The rule groups left to step 15 (LOS Slice 2 Design, section 4).</summary>
-    private static readonly HashSet<string> Step15Rules = new(StringComparer.Ordinal)
+    /// <summary>The rule groups left to part 3 of step 15, and VASL's own failures (LOS Slice 3 Design, section 3).</summary>
+    private static readonly HashSet<string> Part3Rules = new(StringComparer.Ordinal)
     {
-        LosUnsupportedRule.Bridge,
-        LosUnsupportedRule.Hillock,
-        LosUnsupportedRule.PartialOrchard,
-        LosUnsupportedRule.RailroadEmbankment,
         LosUnsupportedRule.Bocage,
-        LosUnsupportedRule.Rubble,
-        LosUnsupportedRule.Factory,
-        LosUnsupportedRule.RowhouseWall,
-        LosUnsupportedRule.Entrenchment,
+        LosUnsupportedRule.Hillock,
+        LosUnsupportedRule.RailroadEmbankment,
+        LosUnsupportedRule.OrchardOutOfSeason,
+        LosUnsupportedRule.Slope,
+        LosUnsupportedRule.VaslFails,
     };
 
     [VaslTheory]
-    [MemberData(nameof(Step14Fixtures))]
-    public void EveryUnansweredPairOnTheStep14FixturesNamesAStep15Rule(string file)
+    [MemberData(nameof(Part3Fixtures))]
+    public void EveryUnansweredPairOnThePart3FixturesNamesAPart3Rule(string file)
     {
         var comparison = Compare(file);
-        Assert.All(comparison.Unsupported.Keys, rule => Assert.Contains(rule, Step15Rules));
+        Assert.All(comparison.Unsupported.Keys, rule => Assert.Contains(rule, Part3Rules));
     }
 
     [VaslFact]

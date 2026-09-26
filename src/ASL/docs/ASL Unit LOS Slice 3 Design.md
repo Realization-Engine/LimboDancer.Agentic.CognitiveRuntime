@@ -64,6 +64,35 @@ A board whose layout the oracle's LOS mode cannot build is replaced by the next 
 
 Each rule becomes answered only when the fixtures exercise it and every answered pair agrees. A rule a board never reaches stays unsupported.
 
+**As built** (part 2).
+- Bridges: bridge locations as ends, among them the depression location under a bridge (the 38 "Cellars (O6.3)" pairs on board 23 were `P7:-1`, the stream under P7's bridge, at level -1); `checkSameHexRule` ("Cannot see location under the bridge"); `checkBridgeHindranceRule`, with the shape of the single-hex bridge `Hex.fixBridgesTunnelWater` makes (32 by 48 pixels at the hex center, unrotated, its road 9 pixels in from each long side), taken from `BridgeFacts` and the hex center, so the derivation is unchanged; the bridge case of `checkGroundLevelRule` and LOS under a bridge in `checkTerrainIsHigherRule`.
+- Rowhouse walls: `checkRowhouseFactoryWallAndBreach` first in `checkHexsideTerrainRule`, before the cellar rule; the rowhouse skip of `checkTerrainHeightRule`; the rowhouse exception of `isBlindHex`.
+- Factories: the factory case of `checkBuildingRestrictionRule` with `isRooftopLOSBlocked`, including the odd-range hexside case with a rooftop end; the factory cases of `checkTerrainIsHigherRule`; outside factory walls and the factory case (off a hexside) of `checkBlindHexRule`; no hindrance from factory terrain in the blind hex rule.
+- Rubble takes the general rules; VASL's rubble state serves only the hillock rule (part 3).
+- Refused, as no fixture reaches them: "Bridge hexes in the depression rule (A6.3)"; "Factory rooftop and hexside cases (B23.87)" (the factory rooftop test of `checkTerrainHeightRule`, the factory blind hex case along a hexside, rubble in `isRooftopLOSBlocked`, LOS up to a rooftop blocked past the first hex, the odd-range case without a rooftop end); "Roofless and gutted buildings (B23.87)"; "Interior factory walls and breaches (B23.71, O5.31)"; "Tunnels"; a bridge hex with a railroad embankment hexside, as "Railroad embankments". The names "Bridges and tunnels", "Factories and roofless buildings (B23.87)", "Rowhouse and factory walls (B23.71)", "Rubble", and "Cellars (O6.3)" are gone.
+- VASL quirks kept: `isRooftopLOSBlocked` adds the terrain height twice and ignores the ground level; the rooftop adjustment is -1 in `checkBuildingRestrictionRule` and `checkRowhouseFactoryWallAndBreach`; the rowhouse blind hex test measures the range from the source for a rising line too; the factory blind hex case compares the target's elevation with twice the terrain height; a rowhouse wall adds a hindrance in `checkBlindHexRule`; the bridge hex stays `ignoreGroundLevelHex` until another replaces it.
+- Tests: Maps `LosTests` has a bridge hindrance off the road with the same-hex bridge rule, and a rowhouse wall; each fails with its rule disabled. Disabling a rule gives disagreements on the part 2 fixtures: rowhouse walls 2,340, the rowhouse blind hex exception 169, factory terrain in `checkTerrainIsHigherRule` 281, the factory restriction 159, the bridge hindrance 56, the rowhouse skip of the height rule 52, the bridge in the ground level rule 15, same-hex bridges 2, the factory blind hex case 1. `LosFidelityTests` asserts every fixture but BFP D and DW2b fully answered, and that those two name only part 3 rules.
+- Every answered pair agrees with VASL:
+
+  | Fixture | Pairs | Answered | Unanswered, by rule |
+  |---|---|---|---|
+  | `bd01` | 18,251 | 18,251 | |
+  | `bd11` | 5,662 | 5,662 | |
+  | `bd11-over-bd01` | 26,718 | 26,718 | |
+  | `bd11r-over-bd01` | 26,682 | 26,682 | |
+  | `bd05` | 5,811 | 5,811 | |
+  | `bd09` | 6,124 | 6,124 | |
+  | `bd12` | 8,059 | 8,059 | |
+  | `bd15` | 6,051 | 6,051 | |
+  | `bd12-over-bd15` | 17,588 | 17,588 | |
+  | `bd23` | 12,866 | 12,866 | |
+  | `bd51` | 29,151 | 29,151 | |
+  | `bd96` | 6,079 | 6,079 | |
+  | `bdBFPB` | 11,882 | 11,882 | |
+  | `bdBFPD` | 5,566 | 1,301 | bocage 4,242; slopes 23 |
+  | `bdBFPDW2b` | 5,584 | 2,704 | hillocks 2,459; out-of-season orchards 417; VASL fails 4 (of 10) |
+  | `bdrdx` | 2,046 | 2,046 | |
+
 ## 4. Tests
 
 - **Fidelity:** every answered pair on every fixture agrees with VASL (U14 to U16), with the answered counts pinned.
