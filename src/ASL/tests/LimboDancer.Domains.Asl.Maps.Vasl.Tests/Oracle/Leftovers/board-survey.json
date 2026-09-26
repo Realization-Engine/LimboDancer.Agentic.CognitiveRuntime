@@ -1,0 +1,5985 @@
+{
+  "vaslCommit": "33324f9adb3b9b97dd93700685103b6940dc9c3c",
+  "sharedMetadataContentBlob": "23c45a44d5deee4bc0c7a734e3ab45c807b86dde",
+  "summary": {
+    "directories": 297,
+    "decodedGrids": 248,
+    "candidateBoards": 5
+  },
+  "boards": [
+    {
+      "board": "bd00",
+      "metadataContentBlob": "569c1260eb82b1acff7cf0c1a3c928ad2c5c9bbd",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "5cff5d4d6c9d9e2a960edc3f6d4286a247c9c4d8",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd00a",
+      "metadataContentBlob": "29932384e871ea068e8c14a253d00a22900e778e",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "e44b4784274f4f597670d1348b73f101eb22b253",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd00b",
+      "metadataContentBlob": "a12e150e0be90ceb5809d257e4473dfe61e31be3",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "e44b4784274f4f597670d1348b73f101eb22b253",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd00dx",
+      "metadataContentBlob": "034cc2cc6f4ab1e0957f974ff6f99a1de9844737",
+      "geometry": {
+        "width": "15",
+        "height": "5",
+        "hexHeight": "194.2",
+        "hexWidth": "168.7857142857",
+        "A1CenterX": "0",
+        "A1CenterY": "97.1"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "d8def334a0b273258f1305f6f79c4017f8dbcba1",
+      "header": [
+        15,
+        5,
+        2363,
+        971
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd01",
+      "metadataContentBlob": "241c827ad48ef2e905c63fc5991a13b4e2fcfc63",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "8d77d26222b7bb21d8c1fdda6ba05b447f63c317",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd02",
+      "metadataContentBlob": "f5c6415ffa74fdbe9f03da8fa45b828a71325157",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "d4d3abd91995f955ae067edaf8dd97c36bd0e16c",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd03",
+      "metadataContentBlob": "3a80e8bfc5d6bfa2eeaaf45c93cb192e82075d46",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "ba2920ce55cd954a62394dc81f35833e24054093",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd04",
+      "metadataContentBlob": "f848af589150664bc0b66d7153b285ecd9705e42",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "4fd9b95d82318c3da7a85a5a4d1f60c14b123078",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd05",
+      "metadataContentBlob": "45c295c7c9c58d4935108180f9e31812b10aeb21",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "6be1f4b1bfe309ac172cda8477dcffa3a3e1a209",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd06",
+      "metadataContentBlob": "e6c86a1e9550feabcb028bc618a2bc23b56142dc",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "f57833dfefd4207afd2ea3314a7a1b435812258a",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd07",
+      "metadataContentBlob": "1a208b9dd06180dd11e98ba7e3ef54fb7cd75b22",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "3ee1b1aa3dfa9140710b4913b05ebd2bf0442549",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd08",
+      "metadataContentBlob": "a3bf21d68c032ad2fa757ebd72f4484e4ec1fbba",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "ce951d30bebcc24b6c7efbcee3c1715592dc4474",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd09",
+      "metadataContentBlob": "97f23661dcfb1fcb51f45cb256583cb44d8bf314",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "6f8604d794924762cdf058b350eee5628589ba7d",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd10",
+      "metadataContentBlob": "0f047adbff4e9272ade915962b7f99041108ad1a",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "87d0e46bd8a526174bf41416daad83bb7f379def",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd10a",
+      "metadataContentBlob": "d83f2c8667b4b9f168be0680cbc0032a52ba48fe",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "cb627e1cf4e1e425bc104593db3f38dc7729c9be",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd10b",
+      "metadataContentBlob": "ae565fdc36a7a11d78312e77b401a432c3d1700c",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125",
+        "A1CenterX": "-901",
+        "A1CenterY": "32.25"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "b8f99b9f0fc22bd47311b9de2121ab94099245b1",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd10z",
+      "metadataContentBlob": "6ea13620371f906f390a20809b8c98c81c24637b",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "1aa4100ccd3798b5eeb46551e3f7d05277b3dcc6",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd11",
+      "metadataContentBlob": "258f2e589c70ef5b8ea76b5a9da698646c6704f9",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "27fd1d2f69773c94817632e39afcb79782ae3500",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd11a",
+      "metadataContentBlob": "13e3ceed599bf66247685a525a60347a8a498282",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "56180f97ea866d8388abd2ee9219632cb6ea851d",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd11b",
+      "metadataContentBlob": "bc5e81b57a21de14a7e8dabb847f39fbebad39a5",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125",
+        "A1CenterX": "-901",
+        "A1CenterY": "32.25"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "f8c11a9463fb09e404030bcc6b6b46670ef47b4f",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd12",
+      "metadataContentBlob": "f0ac52c196ba4456a02a0cf8640b2595fc100071",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "23598be771e7319be738f236f9d918aff373ec02",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd12a",
+      "metadataContentBlob": "23f8531fe9612afc04ef19c012049f003416a6ce",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "4a3c9ba27c6fa4a77b28a646d4ebd25feccc9566",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd12b",
+      "metadataContentBlob": "7cfc1e016bc61352e544d6d4ecc40db0bc6343f2",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125",
+        "A1CenterX": "-901",
+        "A1CenterY": "32.25"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "10e0345df67adecf386f1c362218ca1d47f94b98",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd13",
+      "metadataContentBlob": "3919487ead8d7302d2f907d522432c263168ea51",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "a89b7c131460506fcae304d7ec5ffad90d30fad7",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd13a",
+      "metadataContentBlob": "a51c0fcd63f68726984685f5b0d227a8b6cb7780",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "713ea1ca9cbc2fbe5413dce6b6e2b12a4f5c7cf0",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd13b",
+      "metadataContentBlob": "d8d9948147375ba7535a34f84753dc29a2dab596",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125",
+        "A1CenterX": "-901",
+        "A1CenterY": "32.25"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "860ac3cf06b24f9ffb945f924c84f0c15926f523",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd14",
+      "metadataContentBlob": "531a1707e2ed1db91cf01412ebb339ffc59ecf43",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "36eabe2131733ca6f1f81ea0042c8de3edd8ea0d",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd14a",
+      "metadataContentBlob": "5735f7202b7a949a520e20f3c84f11251d8dc15b",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "0c29ee10ba7bb74c4ff896d6b90879cf15f63dba",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd14b",
+      "metadataContentBlob": "50ca1f14abb84cd6d0647ce974eb30f83f71b4a5",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "c5f9487274793e98abdf1eb8cec0127433a4ac96",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd15",
+      "metadataContentBlob": "b3d86a8121e523446e5e5242ce7e7cecf6d3d14b",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "58809b83e7dec1e61ca4cc4e6cfe11d4cabbc8b7",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd15a",
+      "metadataContentBlob": "45f66059f4c802d56dc53c5331055c57366a1054",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "05f1ba9b19993e021f562688c2ca928d69462749",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd15b",
+      "metadataContentBlob": "1123ad972b93782f8d41c55be9d2d1c515d198cb",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "eb9805a3a39d42ce149d7ee8871fef2f429faa14",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd16",
+      "metadataContentBlob": "1785fc490d7aa02614cf3d317a2979f0fbd9713c",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "85640778a28ad0f154b3b31df33638c86b31bd6b",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd16ab",
+      "metadataError": "missing",
+      "losError": "missing"
+    },
+    {
+      "board": "bd17",
+      "metadataContentBlob": "2f78eb4a9a1655aa3b71405bdb911967dfd2ca0f",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "b0225fd260fa7122dcbfe4b3c0ab3e2bb90763de",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd17ab",
+      "metadataError": "missing",
+      "losError": "missing"
+    },
+    {
+      "board": "bd17z",
+      "metadataContentBlob": "65d08a36d4a1f7c688620717a1eae504db561af2",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "c881ab25bb321f9c9bfa8f44f576494013322518",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd18",
+      "metadataContentBlob": "5ddd71c9ef130f291d712f530bbe50701c8b72a7",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "599cea5c6bfb297d8b1643cf6c92271d5a71ac18",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd18ab",
+      "metadataError": "missing",
+      "losError": "missing"
+    },
+    {
+      "board": "bd19",
+      "metadataContentBlob": "b478bb15c9a071ef8e7c4c15058e189e071a889b",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "4bdf72216d0ed7ce252c9b4522b3c675ab714804",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd19ab",
+      "metadataError": "missing",
+      "losError": "missing"
+    },
+    {
+      "board": "bd1a",
+      "metadataContentBlob": "3b75827091cbea12c720512a6fd799e7da0fccbe",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "580ba36ea37171c3e50ccc6c991f0eaaca764e05",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd1b",
+      "metadataContentBlob": "2fe4d5a1f644279d0021a5bd5306d2714c7fb8c0",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125",
+        "A1CenterX": "-901",
+        "A1CenterY": "32.25"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "14534d9e4709f6242602ec6195fdf23a57f53e56",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd20",
+      "metadataContentBlob": "e29c49a9f12228f9e4cbe113a567442df97ef059",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "812bb7210cff9652a9d280068d1ba1f018ec5054",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd20ab",
+      "metadataError": "missing",
+      "losDataBlob": "ba7193365f19681d61aeb0ce825d7095770437b7",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd21",
+      "metadataContentBlob": "5e1c707cbd94449289cdd544873d92a6b579908c",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "0c9bcc1f03c112627afa1510e30930853bdf6a5f",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd21ab",
+      "metadataError": "missing",
+      "losDataBlob": "f2dd15216177e1bd1a4c1933b18fa628b992298d",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd22",
+      "metadataContentBlob": "01cf6ae127df47766575c1d14881a21dabd07275",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "2c08e2f8f42bbc10f57e73f9b1e964ad9988e52d",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd22ab",
+      "metadataError": "missing",
+      "losDataBlob": "36c445ccb8637801a7feb5ca217308e42ca3db19",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd23",
+      "metadataContentBlob": "c03724ea334c81c9a651692fcc02ddbf08b52488",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "af5f2f64494011e9256e16f0fef1afcf37d22b54",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd23ab",
+      "metadataError": "missing",
+      "losError": "missing"
+    },
+    {
+      "board": "bd24",
+      "metadataContentBlob": "4d238a91d7543da9f7cae96862032eeee1f6c8ea",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "923e299091f11289092b76638b5cdd0585498ff5",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd24ab",
+      "metadataError": "missing",
+      "losError": "missing"
+    },
+    {
+      "board": "bd25",
+      "metadataContentBlob": "39fb2b6e21b3f97bb476b7d28302bf2996dc2837",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "056ab2600def825edaadb7532bea2e1359c2de6f",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd25ab",
+      "metadataError": "missing",
+      "losError": "missing"
+    },
+    {
+      "board": "bd25ETO",
+      "metadataContentBlob": "d977d2667b9e2fa92e75ef6bfda601657a6bc03a",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "056ab2600def825edaadb7532bea2e1359c2de6f",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd26",
+      "metadataContentBlob": "240613f95fed1beb5fcf0702f8e1f242141ca817",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "9807e0831af2b98ce2c4b958b456927a92059afd",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd26ab",
+      "metadataError": "missing",
+      "losError": "missing"
+    },
+    {
+      "board": "bd27",
+      "metadataContentBlob": "dcdd2010126af62bab1353009593dd5d201ccae5",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "f856417b1936188acda6d851fc350768c88cfc8e",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd27ab",
+      "metadataContentBlob": "b57c72fb7be478983ad8031a7335c5b471a88f52",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125",
+        "A1CenterX": "-901",
+        "A1CenterY": "32.25"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "a410c51b6492377a89d1d8934e5704ca42744df1",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd28",
+      "metadataContentBlob": "b1deefe45bd6de2660cb2e0b76fcf09c64ab0e79",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "902c7aaf2bbd232186da428529d211cac61ff37e",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd28ab",
+      "metadataError": "missing",
+      "losError": "missing"
+    },
+    {
+      "board": "bd29",
+      "metadataContentBlob": "1d768e860c543135685316b41e2920a22a34e615",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "44c9d47f11860f1e43944275198c879d9b95de30",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd29a",
+      "metadataContentBlob": "8f4764327e60707292620a7a8309db8bf1a23fcd",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "a268efa6220ab683ff67ea82edbca443b8456145",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd29ab",
+      "metadataError": "missing",
+      "losError": "missing"
+    },
+    {
+      "board": "bd29b",
+      "metadataContentBlob": "0d9e201ffd2a0b3914dba119ff5c9ecb27fb5555",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125",
+        "A1CenterX": "-901",
+        "A1CenterY": "32.25"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "a268efa6220ab683ff67ea82edbca443b8456145",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd2a",
+      "metadataContentBlob": "8699e9d147db2b609009873b9f7e21ac4d337b04",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "ab04ba4abcb95d2178f8b65283c39e42cfc81287",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd2b",
+      "metadataContentBlob": "fd5b8c76571e43e1891915bc155cb28c121471c2",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125",
+        "A1CenterX": "-901",
+        "A1CenterY": "32.25"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "87d5831c98deaf430a79031c34ff6c0a15732c8b",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd30",
+      "metadataContentBlob": "9a882d5c479f78c0ae3969fc0c05cafcb3847e05",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "292bd2d1c0236d6ae39ac8580e08b1b30b40c5c6",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd31",
+      "metadataContentBlob": "cfbcacaf0352fce9295a2274fc9bdf829a66e693",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "57d6cd3c76a7d1b5fc5194f5519ff9e25f533948",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd32",
+      "metadataContentBlob": "d8c4533e6742f68266c6dcd60aa58a80cfbcb153",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "6f8056d8b8d6fa84bcba8bbad753074979ba8873",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd33",
+      "metadataContentBlob": "9bd87f783c6ed98c5283d3bc7484a17409d309fc",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "d3b064829c2c107b8dafe97be70fed2fbf39b5c2",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd34",
+      "metadataContentBlob": "d5bd16666eede82f3e678a95f6678846da9632c3",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "ae95be5bac079a93cfd25db3c191278af7fffc0f",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd35",
+      "metadataContentBlob": "e50940cf63b4d07e11327194b16d0dcc10212455",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "e23b961f06ab66d1c16d8bb511b832ab1137695f",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd36",
+      "metadataContentBlob": "8fe9fac029a9ae6134599c07799f46b32a4cd324",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "6f24c56878e02e6af8ea89f18b7ee04c8c18a4f5",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd37",
+      "metadataContentBlob": "0ade1a8dd3aeb16b227f00e1814b33897a0befc8",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "f4da3528a9c798ec1f8b35c4208d66aa043dc5b7",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd38",
+      "metadataContentBlob": "a7f5f35ebe84e0a6f0ca308b05e402ca4e59b738",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "945c3a1b45d9c31b11701985a7ac5dd743f9c544",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd39",
+      "metadataContentBlob": "30593806c50ecafbc44c09be55de01df101d96d9",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "afd5ef8910b3cc301ad8ab8e6789518618a2345c",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd3a",
+      "metadataContentBlob": "cc2543b4368e3b821821e5b2416984cd60e3f867",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "461280c7542c66dae2aa4fddf94a77cc2032ea59",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd3b",
+      "metadataContentBlob": "da1bae0db02d644361b6edaa0c1fe512b793a532",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125",
+        "A1CenterX": "-901",
+        "A1CenterY": "32.25"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "461280c7542c66dae2aa4fddf94a77cc2032ea59",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd40",
+      "metadataContentBlob": "482470e8e15ef07f108cb18468147e92c3597c9f",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "1f217f90449c096bf1b4aa132b6576faffd51fde",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd41",
+      "metadataContentBlob": "42fc85bc299447be2879cf9cbe69f3a50bb15be8",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "cfb624930f04ad039087411ef882b7c627498a7a",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd42",
+      "metadataContentBlob": "532fd7f0a81226dc735619868c9a4d97bfae4b70",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "f19c6be7a8b334cc601d4adc5eb0c6b57803b364",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd43",
+      "metadataContentBlob": "8f63f69569064c6d90d6ae238a320f3c56376a61",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "6f9713dbc13f94420182cf98d3a784c93c2893a6",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd44",
+      "metadataContentBlob": "6bc097801609cf2ba08c21bfc333084ac6592952",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "b9652698f2a9bdfa9781072dda253acd4c993e98",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd45",
+      "metadataContentBlob": "dcba344990acd487b63fc2324d1fd93bc46e4b2c",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "3e1a9c567c608b46ec8b124706ede47599e2102d",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd46",
+      "metadataContentBlob": "b7e5cb5cffea25493cbfffb99c51d0ebd5434fba",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "b3a94b101880754656a1085daf77b6ce5d36ee02",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd47",
+      "metadataContentBlob": "5de5cadd8ffa5543949c4b1d10f5201ca9f1e729",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "168808d1bde21ec4789e4868743dccc501404aec",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd48",
+      "metadataContentBlob": "f23511365409657bacb29ec68c2d435ed22524ec",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "071ab8d716c28b8b6e68d6642bc2d815605b0ab8",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd49",
+      "metadataContentBlob": "f390fd96e320c4a9a7a3e1d6301d4a4baa5fa76f",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "ce7863128215cbb0d5b138f4034f02cb24bcbc34",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd4a",
+      "metadataContentBlob": "b650b158022dfcea241b4c8ab7968681f65602bf",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.25"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "311489712865af23c7964325c6c28b53385ac001",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd4b",
+      "metadataContentBlob": "50e6f499c74ff18e431265f8833f53819ae6ccba",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125",
+        "A1CenterX": "-901",
+        "A1CenterY": "32.25"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "d78c94993b70b48de517f1be0fd8d83077d7aea1",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd50",
+      "metadataContentBlob": "25c4e863961bed6fb6edf34a4d64d18933a60b27",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "f7d19a1c78d37c67da3debde56dd6d7df9d9e62a",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd51",
+      "metadataContentBlob": "56b1c40b5c3229bc67b4cdb851c9ea4123d1b67b",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "0473c960fadacedcd1f9e703d733a889d7b5d1c9",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd52",
+      "metadataContentBlob": "3990237af177952baadfc8296a51359f50d9dc2c",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "3e67571398b2d51a2e2a09a58789a75fc023221d",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd53",
+      "metadataContentBlob": "a7ebda83fa6d93973cf11abeb028ef8d427d3714",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "f788bf2edf72c1c3c0ce919cbe6c3bd8e0bd5b30",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd54",
+      "metadataContentBlob": "5d0a83876258c12f84d2871cd523a72360b196bb",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "d521b2fe8d2b7f6d5786b4c98c4ab95ab8a97e17",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd55",
+      "metadataContentBlob": "fcf86af2ac814fa2cfdcaa47421b85915fa7123a",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "a212791c13327e7a61018a0bcca3d3d205194c5a",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd56",
+      "metadataContentBlob": "4ba94bcc466908972e1b33e7a14297923e65cb0e",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "05cd322797e712f8b120128ba8f7b15bdd70f307",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd57",
+      "metadataContentBlob": "d9c52bc11efd81b3b6400551aef5cd31c41ddb22",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "6eba1cfff3be67aee7af0a6118fe8b8dc151b7ec",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd58",
+      "metadataContentBlob": "fcf940003fb5d64a07de29c4ccc682ba77bebdc6",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "39e466f88ee68c9158da74a66c25195209496a8b",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd59",
+      "metadataContentBlob": "c484501e44ccd93d00e60eeef3024ece81c77f65",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "5968508369ea3c1d631a7e2d8eccbe815ea15626",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd5a",
+      "metadataContentBlob": "f3f6dad9b25ef38b5593ba199a6741070ef654f0",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "6387a4c46dbfbd4c4fb4b62768a00fb2f4d3df27",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd5b",
+      "metadataContentBlob": "0c7da525a8d61812460ad09f62acfbaa89ed7d38",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125",
+        "A1CenterX": "-901",
+        "A1CenterY": "32.25"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "6eac9bbc51affaf34df780c1ad627acb340aeb55",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd60",
+      "metadataContentBlob": "a79d7cc09bba98248a7694998418d958cd7c7c9b",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "c58a63c0d8efdeabab9bd9450409922106820039",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd61",
+      "metadataContentBlob": "14f1f0d5f799f18261ef9c074951bb45f0d6e815",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "8a684b8f29ef2612d00b61928212aa646c497301",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd62",
+      "metadataContentBlob": "b949c361d0b12ceff9bc91e5f9abb19861a5930f",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "abd50083b9f5c9ad68a0e61622c6232810480d29",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd63",
+      "metadataContentBlob": "f096882e1bee47babd4627bf59c249acf18e2970",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "c3e077767a99a9553007e9c9c9cebe157923dfd7",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd64",
+      "metadataContentBlob": "15d534d07551b4a5a2fdfbc90ee3b75b537ca596",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "11df460a7e516995cde09d47f33d906312df2529",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd65",
+      "metadataContentBlob": "7a064f5d36d66cb78e889a02c4da963537501996",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "3065bf23a271b7a5c16e37fa4aff6b95e2fc50e1",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd66",
+      "metadataContentBlob": "a9f6a7e93deb47f7f38ad31a79eacbe51f3063ea",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "d49f0e76df85ca52576ebf8127be57d51afc9a67",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd67",
+      "metadataContentBlob": "16481a4e7ddcc786c1d57126dff85668e720bda3",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "b242d2daa3661ce7f3e9c9bfe02005179023a3b1",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd68",
+      "metadataContentBlob": "7af4eae739891281472ee9df122e8c5034b7fe7a",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "7e3e250797e7b20d83de50789d81055a341ad1a0",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd69",
+      "metadataContentBlob": "7a9480e132d1373cfe54eae7e9fc9eb54f16733e",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "3f160b8a28974f4a3b2611c03077208d1b4b188e",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd6a",
+      "metadataContentBlob": "72d73e244128651a1d1ffb77822dbfc54a201445",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "75a2c238e6ae12e79d3011379eee7826444c2b5d",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd6b",
+      "metadataContentBlob": "74fa66206880120a9a25cfb7e377198342015ffd",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125",
+        "A1CenterX": "-901",
+        "A1CenterY": "32.25"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "f2fcb228866a21c9dbcf3a2199e3b30ba89ab7c2",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd70",
+      "metadataContentBlob": "f3d5fc1528d2f20cded4ea851ffe2ea48946bf9c",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "165219b1e5ac3f846be5d0a8fe54c956cecac7bd",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd71",
+      "metadataContentBlob": "0c525f884d9d35c3cab024e7151d092248b81c0d",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "0ddd5e56d2d9dbd28467f676d40f5670ed8621f6",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd72",
+      "metadataContentBlob": "da4ff84de8714790c7b469a65666a93073fe8f13",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "cf07d597119590c9f9d2d856bd8c2973a21c4826",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd73",
+      "metadataContentBlob": "fb6da920dbae348d57bd3442b85e36ea2de00884",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "9469ef266520257ddc417ec02bda720be34fcf99",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd74",
+      "metadataContentBlob": "3022147af6fb4aac7ee4d65c4a0eb1b833cc1a7b",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "f0b08a5a0f9528c2ef1d5e5ec819433448e6cbb4",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd75",
+      "metadataContentBlob": "b3064bc2a1de9f159898831fd9d188a901c7f572",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "7aa0a7f63f76216242efb84e80d29965a00fdcc6",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd76",
+      "metadataContentBlob": "8a6df41c094595c9331274af343314c2bc3d8249",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "325ad89f0ed3ff338f71252ee3c9b4becb8024d8",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd77",
+      "metadataContentBlob": "62be8bd00bc0100f46e415ecde1e21d6f292b83f",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "20e2e5bf8f891d275a78c3f963753398c8e7a824",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd78",
+      "metadataContentBlob": "d3d01bbdd79448f9adc15e889dfa7855c34ea0c5",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "e13850115dfdd671e087430a2f30ff2f31bbcd15",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd79",
+      "metadataContentBlob": "b39cd147a19add2c287e1384ff37d0ae5d430e70",
+      "metadataError": "not well-formed (invalid token): line 27, column 8",
+      "losDataBlob": "f3c16a4e0b7b89de64865206ca5e0d4593ceb8db",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd7a",
+      "metadataContentBlob": "80b90c77d3f2e871befa0a6ee84c9c7a8b5a1669",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "66307b814e11a54b68c8ab8f84d18863406bdb4d",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd7b",
+      "metadataContentBlob": "701537b696ca4dd3cee84d98cd05601df1229390",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125",
+        "A1CenterX": "-901",
+        "A1CenterY": "32.25"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "cd55686a8d3526863b3b371e09e402194c3a53ba",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd80",
+      "metadataContentBlob": "d17d383e13d5c56a5aa8df4ed842d7a401b3f58b",
+      "geometry": {
+        "width": "33",
+        "height": "10",
+        "HexGridConfig": "Normal"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "a88fbd043f1719888f129547a39bb8768bed03b7",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd81",
+      "metadataContentBlob": "c9db9214293903fd885298d21dc6d30e6e760ee4",
+      "geometry": {
+        "width": "33",
+        "height": "10",
+        "HexGridConfig": "Normal"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "02adfaddde6bc200f9640715cbb15611f2936fd7",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd82",
+      "metadataContentBlob": "04b94b09bf3efae4941dfa31a9e6a79e77cef8ab",
+      "geometry": {
+        "width": "33",
+        "height": "10",
+        "HexGridConfig": "Normal"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "c896866c5d2286f154ac73ef41f247d40c8f4f3b",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd83",
+      "metadataContentBlob": "a7c72646afe82032400e013a149a298fe6a7b42f",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "473498cc1108a9d5751f17b969affe3794d482bb",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd84",
+      "metadataContentBlob": "d32186b54a826774b9d8eecd6d5681e046da5354",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "b013a699ae2815d2136b961d7861a713d33d6d71",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd85",
+      "metadataContentBlob": "e6353e44378a31a31fac0810eee50400d4010663",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "eebf0aafa880ebe62137dfab3f384331b438de1b",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd86",
+      "metadataContentBlob": "82bfbdef21fa1ef69501870181c47893ccc936e3",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "8a807a96b2b250de595317c58e8247eadf61f33e",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd87",
+      "metadataContentBlob": "7c9f5e16fdc3a73a89b482f87685d11aea0d8756",
+      "geometry": {
+        "width": "33",
+        "height": "10",
+        "hexHeight": "64.5",
+        "hexWidth": "56.25"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "ba69c2aff72c01240eae656a03c522a0e6f84030",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd88",
+      "metadataContentBlob": "6b72c9606898383c29f278be4b480b2ae7a74b59",
+      "geometry": {
+        "width": "33",
+        "height": "10",
+        "hexHeight": "64.5",
+        "hexWidth": "56.25"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "5a11b8a4054bb1062a668b77ec52ec780839efa3",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd89",
+      "metadataContentBlob": "9ef9dc4e6afe29ffce4bbd226eb4935eb86e2a67",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "de11f1342ce43e981876d88abd6116a6f60d4fed",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd8a",
+      "metadataContentBlob": "b328def35df3d2a27d253ff2f8814ecd16822b6f",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "a5717331820e45cc1716d178982bcde1b1e6dcf2",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd8b",
+      "metadataContentBlob": "3886395871d4f7ffbc5d0a43d6c8f9e228982be8",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125",
+        "A1CenterX": "-901",
+        "A1CenterY": "32.25"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "8499273ac555b69360dc9acfe0469e3b0b8bcdcf",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd90",
+      "metadataContentBlob": "dba72db28af968849c11a8d33e0983ff72efa426",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "4726beb761c843781a6a844377043b2ea1902f1f",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd91",
+      "metadataContentBlob": "de6cfc8dc602e194fccf746f6ec2719c22cb95b6",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "eec2f344aa834c1cb4a5d3e0cb842d85379d5efe",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd92",
+      "metadataContentBlob": "c6563c5d60f84a95f4efea3bfdd257b7c67d4e7d",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "0e960db4ad34cbabea81ada8c66b5aca4a81cb1c",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd93",
+      "metadataContentBlob": "04aa64cab2f0687e3facc579e2b78336f5ca843a",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "a91645d9afe2e5e8bd3c1add94f9c75181b08f8d",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd96",
+      "metadataContentBlob": "7f7f96a6f93f4771e950f244da1a85133e5d5902",
+      "geometry": {
+        "width": "33",
+        "height": "10",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "c39d0ee66f4ac977ee4dcbfedd92d7114761eeaf",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd97",
+      "metadataContentBlob": "fb5cce9e992dff7de7cab838ee9976e24abb2586",
+      "geometry": {
+        "width": "33",
+        "height": "10",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "3e9e7453c29d7f2f7775973ac9754459a58658a7",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd98",
+      "metadataContentBlob": "b2481f2f95704d4ce1cbab517a33345b44b93edb",
+      "geometry": {
+        "width": "33",
+        "height": "10",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "5650d02daef854718988c6bb2a850a555a9e28fd",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd99",
+      "metadataContentBlob": "f7ea08210f2b3565b7e9a31a4a3adcc71409fd60",
+      "geometry": {
+        "width": "33",
+        "height": "10",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "d79aaeba8d1d8963a05485553176f3f0624f764e",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd9a",
+      "metadataContentBlob": "82ca8c1739e776da219651c2315c891e6686f9d6",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "a455c58bfda6950b6be8d86b72ff13c1f06de95c",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bd9b",
+      "metadataContentBlob": "fbf2264cff0f12db805e15b5752cc20496bdf840",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125",
+        "A1CenterX": "-901",
+        "A1CenterY": "32.25"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "a455c58bfda6950b6be8d86b72ff13c1f06de95c",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bda",
+      "metadataContentBlob": "a731178ca89898a3990068d0a5a384bd11d27000",
+      "geometry": {
+        "width": "15",
+        "height": "5",
+        "hexHeight": "194.2",
+        "hexWidth": "168.7857142857",
+        "A1CenterX": "0",
+        "A1CenterY": "97.1"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "3ad6de24cacc861c2b364dc904ba8c84291912fb",
+      "header": [
+        15,
+        5,
+        2363,
+        971
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdAF_BiazzaRidge",
+      "metadataError": "missing",
+      "losError": "missing"
+    },
+    {
+      "board": "bdb",
+      "metadataContentBlob": "e3bca8879dfbf542e46ae2adb46d1b6fbda41392",
+      "geometry": {
+        "width": "15",
+        "height": "5",
+        "hexHeight": "194.2",
+        "hexWidth": "168.7857142857",
+        "A1CenterX": "0",
+        "A1CenterY": "97.1"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "d0bf9ef720a7bcdeeb5f9b73a53f421d1cfb23fd",
+      "header": [
+        15,
+        5,
+        2363,
+        971
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBdF",
+      "metadataContentBlob": "05206680cd7cb0d839b62d95f138444e530ddce8",
+      "geometry": {
+        "width": "46",
+        "height": "29",
+        "hexHeight": "64.45",
+        "hexWidth": "56.24",
+        "A1CenterX": "0",
+        "A1CenterY": "64"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losError": "missing"
+    },
+    {
+      "board": "bdBFP1",
+      "metadataContentBlob": "6ae303bb6e44a12292d0a446cfcc0406601b1060",
+      "geometry": {
+        "width": "15",
+        "height": "5",
+        "hexHeight": "194.2",
+        "hexWidth": "168.7857142857",
+        "A1CenterX": "0",
+        "A1CenterY": "97.1"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "469f5d43684dd6e1991a78936cf7e30fa1e2e908",
+      "header": [
+        15,
+        5,
+        2363,
+        971
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFP2",
+      "metadataContentBlob": "ad81d33f91699e8afb344b770aaa8346c5e9485c",
+      "geometry": {
+        "width": "15",
+        "height": "5",
+        "hexHeight": "194.2",
+        "hexWidth": "168.7857142857",
+        "A1CenterX": "0",
+        "A1CenterY": "97.1"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "d8cca007d97bf13d65fb22e6c25346e40ac77cb4",
+      "header": [
+        15,
+        5,
+        2363,
+        971
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPA",
+      "metadataContentBlob": "22e24e700a62fde394c9628238caa7900eba8664",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "1bded735e79679e5dee1055dab0c9cf055ae6d86",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPB",
+      "metadataContentBlob": "ee2e99284ad7fe3efa735b67ed101a2596dc85b2",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "9858fec1433d685f487188c9fb504d5be308b13f",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPC",
+      "metadataContentBlob": "a4c1ac31ee15afc06cb71f401c5b3fc77611b7ed",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "7670da7e1564845b75c35f0fc8a5defeca158125",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPD",
+      "metadataContentBlob": "af51b6b84bb010036ef80faa8096b81fc907bcb6",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "a894e74dcbff806e3a48fb1dd3ead8773178130d",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPDW10a",
+      "metadataContentBlob": "e1071ad96e4447f2019e827aae11ffda94855895",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "486e75cadcf666e5fb76b15f8d7a040a67f0e02e",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPDW10b",
+      "metadataContentBlob": "6fc6867962a95c7e859680b908309ea6aa0954bd",
+      "geometry": {
+        "width": "33",
+        "height": "10",
+        "A1CenterX": "0",
+        "A1CenterY": "-612.75"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "f1ec9838b1d481c5f87150d8fb1f7157e8e496b3",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPDW1a",
+      "metadataContentBlob": "b54814e7a3956bfb9a5a906d3ceb8c7d3a37c5ad",
+      "geometry": {
+        "width": "33",
+        "height": "10",
+        "hexHeight": "64.47",
+        "hexWidth": "56.25"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "ef08a9023c48ec680ff37d7f6f31a14869c1e3a8",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPDW1b",
+      "metadataContentBlob": "044c684e7924cc568ebc5f6cf4cb5c18380b0dc0",
+      "geometry": {
+        "width": "33",
+        "height": "10",
+        "hexHeight": "64.47",
+        "hexWidth": "56.25",
+        "A1CenterX": "0",
+        "A1CenterY": "-612.75"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "88d4ffa2eedf1bc4b34935c06ac238847b13f2e6",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPDW2a",
+      "metadataContentBlob": "f9c5b4dd2c716f67e1627b52abc6abd77d5ab23c",
+      "geometry": {
+        "width": "33",
+        "height": "10",
+        "hexHeight": "64.47",
+        "hexWidth": "56.25"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "8e616e6c6d0ec077d6bce69022dc85a8a8a35c8a",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPDW2b",
+      "metadataContentBlob": "457d8ed6206209b1768fb42d173223ae0953a3ab",
+      "geometry": {
+        "width": "33",
+        "height": "10",
+        "hexHeight": "64.47",
+        "hexWidth": "56.25",
+        "A1CenterX": "0",
+        "A1CenterY": "-612.75"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "931d44ae3b58c5514b28c2d9dadcda950f2d3a36",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPDW3a",
+      "metadataContentBlob": "ed024082014086cbd9384a050b59a6643e471041",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "e8c8a072e7a2d2bc572ba676bd0f4c9c3a8fef60",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPDW3b",
+      "metadataContentBlob": "fd10e8a71c9af09df2e5b3ab3084d0ce73833bba",
+      "geometry": {
+        "width": "33",
+        "height": "10",
+        "A1CenterX": "0",
+        "A1CenterY": "-612.75"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "27f0f9a830d06adbc41031cd8844525fb78cff9f",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPDW4a",
+      "metadataContentBlob": "85566c8d15101d2d1584caa0413ad3443a1939d6",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "167a362be6c9bc17abf3b868876b6d18d3dcbd47",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPDW4b",
+      "metadataContentBlob": "f2c475e3f68ba59ca57d1c74f0ac20daaf308c1d",
+      "geometry": {
+        "width": "33",
+        "height": "10",
+        "A1CenterX": "0",
+        "A1CenterY": "-612.75"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "9e4929f6ba2085ff06b868eb12fa1d5c1c713eba",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPDW5a",
+      "metadataContentBlob": "5b4e81db7875ada3ca430e99e7e2f6ba6b813e78",
+      "geometry": {
+        "width": "33",
+        "height": "10",
+        "hexHeight": "64.47",
+        "hexWidth": "56.25"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "c5b12fc7b626da8248b098e95de06ff9c7dafc24",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPDW5b",
+      "metadataContentBlob": "bfd2ad0b230f6a39711923013d817d8dc7cd7f3c",
+      "geometry": {
+        "width": "33",
+        "height": "10",
+        "hexHeight": "64.47",
+        "hexWidth": "56.25",
+        "A1CenterX": "0",
+        "A1CenterY": "-612.75"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "f82b08c172ddbd72c15b612080f615e3c4d3ba74",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPDW6a",
+      "metadataContentBlob": "f5bd6752d2c398dc0238a41e511d34f11a4c2fe1",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "8fc277f1377a8c1a03b1d7f5513ea1657610257a",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPDW6b",
+      "metadataContentBlob": "fa5c80d09c6f1c489c1792418282ad2457bd95c8",
+      "geometry": {
+        "width": "33",
+        "height": "10",
+        "A1CenterX": "0",
+        "A1CenterY": "-612.75"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "47c0de12a9f3b72db545283a4d1e7fd80c30d5bc",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPDW7a",
+      "metadataContentBlob": "1c4c34099c58f17ec2f11f43beeb3d1008562e06",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "4a31a333f2765fef1211d7027be9451c4fac02e1",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPDW7b",
+      "metadataContentBlob": "735a71e9c3ab618625e45f7ed3b2fa6dbf80bc2b",
+      "geometry": {
+        "width": "33",
+        "height": "10",
+        "A1CenterX": "0",
+        "A1CenterY": "-612.75"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "e872b86e22f492b023cb2aa497dfa43afad1ac8b",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPDW8a",
+      "metadataContentBlob": "512d6f4056df902ee29269a1fc30232f7fbf009d",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "28b35b123e172f197b5e534cc93437768f31373f",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPDW8b",
+      "metadataContentBlob": "d258a2aafde4998996bfafed034f12f613fad77f",
+      "geometry": {
+        "width": "33",
+        "height": "10",
+        "A1CenterX": "0",
+        "A1CenterY": "-612.75"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "5fb8f6cf8e4439ff7bbaca0057a2cdac8f41feb1",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPDW9a",
+      "metadataContentBlob": "7ded4516a0002d106acdfa596a6872018b4c5c32",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "1ac037c17e919f6fd4791c4f4d72d5b7122c2fab",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPDW9b",
+      "metadataContentBlob": "0710548f58b090c53f5a5378d01b59a4f53a7a5f",
+      "geometry": {
+        "width": "33",
+        "height": "10",
+        "A1CenterX": "0",
+        "A1CenterY": "-612.75"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "7cb7351ea7b986c43aeac34d6ccafd620f954252",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPE",
+      "metadataContentBlob": "f658c02974bd6128cb7c77628c7cada63dc9595b",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "1b454a2470b6739a09a855115064407142b00371",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPF",
+      "metadataContentBlob": "4f74161620f19ffed92ef9eba801c303a83f8101",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "a1c0c163fa4a00498cffb0699d925b73b2c7c640",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPG",
+      "metadataContentBlob": "5cd7120522a1641a812fc1f247f7ac53c4b8ae88",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "a19fcfd4f7eec4ad67c7b8f7369f4da7ab989b15",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPGS1",
+      "metadataContentBlob": "ab23dc0c9c163fa545f4b5cafab45af2ef2b0068",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "929754adc74e06ece7c87ef9dc590ce69ff558f1",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPGS3",
+      "metadataContentBlob": "c5d694ae5e42c4a7812977093980641dcf3c7d2a",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "d816d43ac301d1036161099ce8d7472c57eb2d20",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPH",
+      "metadataContentBlob": "ee5f6f5b06ad3553cf1626ee3442684314d490e3",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "fb0cd5fc225d8167671cb5918abb2d0d4e8f4dbb",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPHW1a",
+      "metadataContentBlob": "e499531108ef4061f1ac0f0de173a966bf59f6b2",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "601ed158dab063cd9cd6f75d30876815901d9390",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPHW1b",
+      "metadataContentBlob": "b01521a8d0a9eb39f3a463fe8b9af2b12d84062e",
+      "geometry": {
+        "width": "17",
+        "height": "20",
+        "hexHeight": "64.5",
+        "hexWidth": "56.3125",
+        "A1CenterX": "-901",
+        "A1CenterY": "32.25"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "05fcafa3b9106eeab1a931f81a25e8f9b69b7c30",
+      "header": [
+        17,
+        20,
+        901,
+        1290
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPI",
+      "metadataContentBlob": "0125a61adb439194c0ff0842118fe2a150f15de8",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "e1b68cba3a37aceb93f2cb2ea3c96a88f51b5fd8",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPJ",
+      "metadataContentBlob": "26c8eb0eb6797a6f4ca6e0f55cd1c10e1a6b6967",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "898c9ddc7bc0b29b8abae0ca1a8e0345b8fe6809",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPK",
+      "metadataContentBlob": "821cb8d6477813415a14123cafdb4464c36f3d07",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "894f9804f18fcfd4d9cb2b8310e9dfae9c60e4f0",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPL",
+      "metadataContentBlob": "4c4c30744869016563183f41475925ed0469b4e1",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "6236b6ee40ad8fb4b5966d6151bd0c6912647b8a",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPM",
+      "metadataContentBlob": "55acb214e83400469e7b4c455503b73d56f21d9c",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "344dc7694318a4adf66614cc0dada564e37da089",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPN",
+      "metadataContentBlob": "4741360dbb52410730166db509a706d1431283b8",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "8daceaee993e84eba774cdc19a680b53d43e6667",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPO",
+      "metadataContentBlob": "23b70f38aeabf210374619ec4534169442c02b28",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "7f858c869865bb7bfe48fcd01a3fb1e9c1ec71f4",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPP",
+      "metadataContentBlob": "40e28986755ff42fbbe3219a871346b32e365abc",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "3e2a90f79b10d80b419ffc057ecc4ab68f7424bb",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPQ",
+      "metadataContentBlob": "c6639acc693a917f0972891a1214f5ced5073fff",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "6639b5add9f06fc07eacf16e27c6aabd588f2976",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPR",
+      "metadataContentBlob": "1288b510fa9c1e3d2c5d51a515d6a332f8b0d60b",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "6127dfc93517fbb8ffff97529b599a0337053625",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPS",
+      "metadataContentBlob": "821c05eeb8b8882b42efa9196a7964f2f649e6d9",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "b77e1d0ce9783050cc9ad80e9eeb29c42c4ddf08",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPT",
+      "metadataContentBlob": "3ed5c1735b9b3a8e2db874199f103e82e13ea743",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "cc1339f531c035e2774308d0261780d458721538",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBFPU",
+      "metadataContentBlob": "059369173f09e2e6df0e49854b432230f6f67145",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "393e3f1463eb601e3f3f9a73f507496c3d53b34a",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBG1",
+      "metadataError": "missing",
+      "losError": "missing"
+    },
+    {
+      "board": "bdBlank0",
+      "metadataContentBlob": "fb1af67c1f6b79fa2e44bee31f6347ae46b1fe31",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "2129a36b50c653c8a3d25c5ec25b1cc89885d403",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBlank1",
+      "metadataContentBlob": "0fb8c08a8acc9987ce50b34cd19c13f53fd93c90",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "2129a36b50c653c8a3d25c5ec25b1cc89885d403",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdBRT",
+      "metadataError": "missing",
+      "losError": "missing"
+    },
+    {
+      "board": "bdBRV",
+      "metadataError": "missing",
+      "losError": "missing"
+    },
+    {
+      "board": "bdc",
+      "metadataContentBlob": "77c09afc62b9e93dd939200c5d25486b426c3f84",
+      "geometry": {
+        "width": "15",
+        "height": "5",
+        "hexHeight": "194.2",
+        "hexWidth": "168.7857142857",
+        "A1CenterX": "0",
+        "A1CenterY": "97.1"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "7fe3e7fb5560941e0ae0a48349d4445f6714bbfc",
+      "header": [
+        15,
+        5,
+        2363,
+        971
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdCtR",
+      "metadataContentBlob": "c6f506b8f06f7d172d1df227f8606edd21a88c1b",
+      "geometry": {
+        "width": "50",
+        "height": "31",
+        "A1CenterX": "49",
+        "A1CenterY": "76",
+        "hexWidth": "56.22",
+        "hexHeight": "64.451612",
+        "altHexGrain": "TRUE"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losError": "missing"
+    },
+    {
+      "board": "bdd",
+      "metadataContentBlob": "d077723e6a068099a121bf3c60c9517192705135",
+      "geometry": {
+        "width": "15",
+        "height": "5",
+        "hexHeight": "194.2",
+        "hexWidth": "168.7857142857",
+        "A1CenterX": "0",
+        "A1CenterY": "97.1"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "592777256806bc10309f777ca8ce41676fe10005",
+      "header": [
+        15,
+        5,
+        2363,
+        971
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdDaE",
+      "metadataContentBlob": "ef070053b90d90e06fe1aff3d84490b82368dbb6",
+      "geometry": {
+        "width": "46",
+        "height": "29",
+        "hexHeight": "64.47",
+        "hexWidth": "56.25",
+        "A1CenterX": "37.0",
+        "A1CenterY": "32.25",
+        "HexGridConfig": "FullHexEqualRowCount"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "429855c1c7ac88cdc7f0b37f7365de23336558fe",
+      "header": [
+        46,
+        29,
+        2606,
+        1838
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdDeluxeBlank",
+      "metadataContentBlob": "ede2937c53e658cd6db5e15e12b99ed27005187b",
+      "geometry": {
+        "width": "15",
+        "height": "5",
+        "hexHeight": "194.2",
+        "hexWidth": "168.7857142857",
+        "A1CenterX": "0",
+        "A1CenterY": "97.1"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losError": "missing"
+    },
+    {
+      "board": "bdDinant",
+      "metadataContentBlob": "8a8645327c76e38e088eb64c24d9eff806524d7e",
+      "geometry": {
+        "width": "50",
+        "height": "54",
+        "A1CenterX": "1",
+        "A1CenterY": "32.25",
+        "hexWidth": "56.2245",
+        "hexHeight": "64.4528",
+        "altHexGrain": "FALSE",
+        "HexGridConfig": "Normal"
+      },
+      "annotations": {
+        "partialorchard": 7,
+        "rrembankment": 0
+      },
+      "losDataBlob": "493e7ceb204aa1dce0cf8efcef3206b81f978c5d",
+      "header": [
+        50,
+        54,
+        2758,
+        3481
+      ],
+      "terrainPixels": {
+        "Tunnel": 238,
+        "Railroad, Embankment": 18015
+      },
+      "unknownCodes": []
+    },
+    {
+      "board": "bdDPN5",
+      "metadataContentBlob": "a245b254621bedc8c625a3436fb971777a5eacc6",
+      "geometry": {
+        "width": "33",
+        "height": "10",
+        "hexHeight": "64.47",
+        "hexWidth": "56.25",
+        "A1CenterX": "0",
+        "A1CenterY": "32.5"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losError": "missing"
+    },
+    {
+      "board": "bde",
+      "metadataContentBlob": "efe319c131d89709f861fb6104cf6e0bda0c0907",
+      "geometry": {
+        "width": "15",
+        "height": "5",
+        "hexHeight": "194.2",
+        "hexWidth": "168.7857142857",
+        "A1CenterX": "0",
+        "A1CenterY": "97.1"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "a26be47a2a5fb6522acac49f95404295b88b1cff",
+      "header": [
+        15,
+        5,
+        2363,
+        971
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdEagles",
+      "metadataContentBlob": "40ab1cd46a24a5526797be578f8ab5c162c5b4bf",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losError": "missing"
+    },
+    {
+      "board": "bdf",
+      "metadataContentBlob": "4af1877202ac55e57de6a5b2771874197b95bd2d",
+      "geometry": {
+        "width": "15",
+        "height": "5",
+        "hexHeight": "194.2",
+        "hexWidth": "168.7857142857",
+        "A1CenterX": "0",
+        "A1CenterY": "97.1"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "5c140d183dd2573ac9c7d3dce8181473e2fafede",
+      "header": [
+        15,
+        5,
+        2363,
+        971
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdFB",
+      "metadataContentBlob": "05b2759b8dbf8ea811149aeb32c8a4eee55995b6",
+      "geometry": {
+        "width": "58",
+        "height": "39",
+        "hexHeight": "65.22",
+        "hexWidth": "56.7",
+        "A1CenterX": "84.0",
+        "A1CenterY": "32.0"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losError": "missing"
+    },
+    {
+      "board": "bdFB_NE",
+      "metadataContentBlob": "63a9890a26df5e5bb8ee29d628bd13a46ae14024",
+      "geometry": {
+        "width": "31",
+        "height": "22",
+        "hexHeight": "64.47",
+        "hexWidth": "56.22",
+        "A1CenterX": "173.0",
+        "A1CenterY": "32.0"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losError": "missing"
+    },
+    {
+      "board": "bdFB_NW",
+      "metadataContentBlob": "f049c21111fb8f75c845852022c83179b677891e",
+      "geometry": {
+        "width": "31",
+        "height": "21",
+        "hexHeight": "64.47",
+        "hexWidth": "56.22",
+        "A1CenterX": "172.0",
+        "A1CenterY": "-1096.0"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losError": "missing"
+    },
+    {
+      "board": "bdFB_SE",
+      "metadataContentBlob": "a89a356e8c161a6f05077aef606013c66d648c07",
+      "geometry": {
+        "width": "31",
+        "height": "22",
+        "hexHeight": "64.47",
+        "hexWidth": "56.22",
+        "A1CenterX": "-1499.0",
+        "A1CenterY": "33.0"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losError": "missing"
+    },
+    {
+      "board": "bdFB_SW",
+      "metadataContentBlob": "6b4ec45c64dfe3ca2108b37f9d9c930d6b5317c6",
+      "geometry": {
+        "width": "31",
+        "height": "22",
+        "hexHeight": "64.47",
+        "hexWidth": "56.22",
+        "A1CenterX": "-1500.0",
+        "A1CenterY": "-1097.0"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losError": "missing"
+    },
+    {
+      "board": "bdFrFA",
+      "metadataContentBlob": "1cf4e0f0ab38e7f9bab408b7a67995069cb1fd52",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "f44dea33ad0f2f9be6bc225d93219a68dbabcbd5",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdg",
+      "metadataContentBlob": "dd092f3da0c4102207647ee7b28f19d53ac8fbf9",
+      "geometry": {
+        "width": "15",
+        "height": "5",
+        "hexHeight": "194.2",
+        "hexWidth": "168.7857142857",
+        "A1CenterX": "0",
+        "A1CenterY": "97.1"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "86f2f8a40cc773b721c28ec41b2e6a100f1726f7",
+      "header": [
+        15,
+        5,
+        2363,
+        971
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdgSK",
+      "metadataContentBlob": "dfa58f732cc214b70dc9bb2b2b43fd8dd179efc9",
+      "geometry": {
+        "width": "33",
+        "height": "10",
+        "hexHeight": "64.5",
+        "hexWidth": "56.25"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "9f766a7f1b467304704929b461df7274304d7a5f",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdh",
+      "metadataContentBlob": "6bf754eac6e23155c5ef5d9847f0150f8971baa5",
+      "geometry": {
+        "width": "15",
+        "height": "5",
+        "hexHeight": "194.2",
+        "hexWidth": "168.7857142857",
+        "A1CenterX": "0",
+        "A1CenterY": "97.1"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "b72edb00179b81d6d8b829c4491c8bf292787b70",
+      "header": [
+        15,
+        5,
+        2363,
+        971
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdHC",
+      "metadataContentBlob": "6c83ed2d360879ef337d8cd0754836690240dcc0",
+      "geometry": {
+        "width": "50",
+        "height": "29",
+        "A1CenterX": "37",
+        "A1CenterY": "33",
+        "hexWidth": "56.204081",
+        "hexHeight": "64.464285",
+        "altHexGrain": "FALSE"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losError": "missing"
+    },
+    {
+      "board": "bdHH",
+      "metadataError": "missing",
+      "losError": "missing"
+    },
+    {
+      "board": "bdHS17",
+      "metadataContentBlob": "5fdac43cf6b0ecceb3f252a0d12f7dfcb435be15",
+      "geometry": {
+        "width": "12",
+        "height": "13",
+        "A1CenterX": "46",
+        "A1CenterY": "42",
+        "hexWidth": "56.1818",
+        "hexHeight": "64.4615",
+        "altHexGrain": "FALSE"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losError": "missing"
+    },
+    {
+      "board": "bdhSK",
+      "metadataContentBlob": "90796f12d54e660b6f1d396495e49b452b52882f",
+      "geometry": {
+        "width": "33",
+        "height": "10",
+        "hexWidth": "56.25",
+        "hexHeight": "64.5"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "a33806912e389cef711d0d6c4f282c6419a419b3",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdHT",
+      "metadataContentBlob": "365bd7328b482b4af10c22bfdcaa5fd45e0553a0",
+      "geometry": {
+        "width": "33",
+        "height": "30",
+        "hexWidth": "56.25",
+        "hexHeight": "64.466666",
+        "A1CenterX": "6",
+        "A1CenterY": "32",
+        "HexGridConfig": "Normal",
+        "altHexGrain": "FALSE"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "ccc4c406a2e33220685c549869ba539de34cafef",
+      "header": [
+        33,
+        30,
+        1813,
+        1934
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdHZ1",
+      "metadataContentBlob": "2a99ac777421f7a2d3cf004c2da673c35158f5b7",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "67d5c467b04ba33c5ee5aa9395ac78899b9aba82",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdHZ2",
+      "metadataContentBlob": "5041b306e8be18be9ba279fa4c8b59192e548467",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "3c3078f9674bcceeeb7c05489b86a1956c44bbf2",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdi",
+      "metadataContentBlob": "9e60291823785b9a4967fbc9ff1be8b20db9ba4e",
+      "geometry": {
+        "width": "15",
+        "height": "5",
+        "hexHeight": "194.2",
+        "hexWidth": "168.7857142857",
+        "A1CenterX": "0",
+        "A1CenterY": "97.1"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "4f985e7be16003bcfea07c8cb023fe58ff0a633a",
+      "header": [
+        15,
+        5,
+        2363,
+        971
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdInor",
+      "metadataContentBlob": "368c0e235fb54410b38b9a3e78c232730527d150",
+      "geometry": {
+        "width": "47",
+        "height": "57",
+        "A1CenterX": "74",
+        "A1CenterY": "103",
+        "hexWidth": "55.9783",
+        "hexHeight": "65.0",
+        "altHexGrain": "TRUE"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losError": "missing"
+    },
+    {
+      "board": "bdiSK",
+      "metadataContentBlob": "6e0012190fb527ce167b5b57ff660076151d1dcf",
+      "geometry": {
+        "width": "33",
+        "height": "10",
+        "hexHeight": "64.5",
+        "hexWidth": "56.25"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "e8039eee00d67fddae2686e05650681e0a5d4d8c",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdj",
+      "metadataContentBlob": "c98667bcf72c1688b8baefdbdbdc359670bd384b",
+      "geometry": {
+        "width": "15",
+        "height": "5",
+        "hexHeight": "194.2",
+        "hexWidth": "168.7857142857",
+        "A1CenterX": "0",
+        "A1CenterY": "97.1"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "c25f37d5e5405c546160ae47597b01793add9444",
+      "header": [
+        15,
+        5,
+        2363,
+        971
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdjSK",
+      "metadataContentBlob": "0225b7be4fd202bf343da48c364738feeb1d9dd7",
+      "geometry": {
+        "width": "33",
+        "height": "10",
+        "hexHeight": "64.5",
+        "hexWidth": "56.25"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "0dfe24cb38f39baddd2a4ff90f702a9d2f27b6b1",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdk",
+      "metadataContentBlob": "5da888905e630ac2357df168b033a9246dbf2481",
+      "geometry": {
+        "width": "15",
+        "height": "5",
+        "hexHeight": "194.2",
+        "hexWidth": "168.7857142857",
+        "A1CenterX": "0",
+        "A1CenterY": "97.1"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "7bf081d5e6bc2020f6c780c4175f2a5ce2415168",
+      "header": [
+        15,
+        5,
+        2363,
+        971
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdkSK",
+      "metadataContentBlob": "d6920e5ebd1115d8f832992abed6ed2c054f7d06",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "49ca8d9757c08c681ab092d05e4c38fe02add459",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdl",
+      "metadataContentBlob": "34881340b189af5767f214b1cab0cd0c8c03249d",
+      "geometry": {
+        "width": "15",
+        "height": "5",
+        "hexHeight": "194.2",
+        "hexWidth": "168.7857142857",
+        "A1CenterX": "0",
+        "A1CenterY": "97.1"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "cf20e2c30a65319c5036f7fafb64a1c732824161",
+      "header": [
+        15,
+        5,
+        2363,
+        971
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdLFT1",
+      "metadataContentBlob": "73ab322f7de93f3a120255f7ed3b9fd19508a321",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "90e914316b2c7b0ad62d96a371f00d4e42b6835c",
+      "header": [
+        33,
+        10,
+        1800,
+        644
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdLFT10",
+      "metadataContentBlob": "4fcbe8f86d82b357e9863d4339e05479bf030594",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "2119d77d57e44e1098fe422244baafbedea28b4a",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdLFT2",
+      "metadataContentBlob": "35e025a735b4a63e98ad1a1677495fa4d9480a74",
+      "geometry": {
+        "width": "33",
+        "height": "10",
+        "hexHeight": "64.47",
+        "hexWidth": "56.25",
+        "A1CenterX": "0",
+        "A1CenterY": "32.5"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losError": "missing"
+    },
+    {
+      "board": "bdLFT3",
+      "metadataContentBlob": "f25a1f3ee5d9019078f1f736e66491f8546844ff",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "0143d275ca730ee96d5f0d0f239b07418ba9456c",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdLFT4",
+      "metadataContentBlob": "415f865ce7921f3fc85942ba778ba6a9f1991b93",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "28c663dbea73c8d33cf3753b63af2ad0cf98b0fb",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdLFT5",
+      "metadataContentBlob": "d5fe9d48a49367c221b6a331e2cdc6b8fb1e5d05",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "ff4b844eb1755fc81f6bc6923548e4a67cbd47a5",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdLFT6",
+      "metadataContentBlob": "de25a23cf7c69f156a640282e33d4d84b1eefffa",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "eb1f542311059c692417e1b7686f1ba59b828859",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdLFT7",
+      "metadataContentBlob": "f6ce2ba97ef75e3dd901e10324d108b4f7a38ce5",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "c1f497a82406a6fcc7a8d6f3ab9d596480fb696f",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdLFT8",
+      "metadataContentBlob": "c11768e1ca89f772ac8b817abe20a91dc81cc5cc",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "4eb211b37199aa22c8e2b72cb419cb5efcd66055",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdLFT9",
+      "metadataContentBlob": "18a9e765b85dd77b446b4c4c82e18096e86cd6ac",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "a9e31ef3fe2e8c87ada47b3f1d53052b781e9348",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdlSK",
+      "metadataContentBlob": "ffef3a74d0c27ec634e1a63edc8212e17420ddff",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "7776f8e291a4e0634043213d55a334b3f3f1030b",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdm",
+      "metadataContentBlob": "7310895f9150459395da27765b21333dc8b6a042",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "34d1c8820952babaef72ee9419152ff58561cfc9",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdmdx",
+      "metadataContentBlob": "a2e8d9a3bc7488a6c6cd4e17e61384735b804f33",
+      "geometry": {
+        "width": "15",
+        "height": "5",
+        "hexHeight": "194.2",
+        "hexWidth": "168.7857142857",
+        "A1CenterX": "0",
+        "A1CenterY": "97.1"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "ca975be23df2b144e9116925d623b966ed87eaae",
+      "header": [
+        15,
+        5,
+        2363,
+        971
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdn",
+      "metadataContentBlob": "7b7ea6e7f494c1ea1c3620240c103544018c1020",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "9567943f47deadeb337934fe6d88ed0355bc11c2",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdndx",
+      "metadataContentBlob": "06e4e3f5d15b91868b515af8a7d0007b14a4be6a",
+      "geometry": {
+        "width": "15",
+        "height": "5",
+        "hexHeight": "194.2",
+        "hexWidth": "168.7857142857",
+        "A1CenterX": "0",
+        "A1CenterY": "97.1"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "1c7e7bde0728a74f0592f182f6af55e4366adbbc",
+      "header": [
+        15,
+        5,
+        2363,
+        971
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdNUL",
+      "metadataError": "missing",
+      "losError": "missing"
+    },
+    {
+      "board": "bdNULV",
+      "metadataError": "missing",
+      "losError": "missing"
+    },
+    {
+      "board": "bdo",
+      "metadataContentBlob": "833f8f20264e7bbf61e6aa61cd8b9286a1bd4b4b",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "0bb205eb254d5fae8d507e7490dee88d5cc303ee",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdodx",
+      "metadataContentBlob": "df0535e174d64ff229a6f35c77def974a496009f",
+      "geometry": {
+        "width": "15",
+        "height": "5",
+        "hexHeight": "194.2",
+        "hexWidth": "168.7857142857",
+        "A1CenterX": "0",
+        "A1CenterY": "97.1"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "0ed87506a995fd71418797af7e65718786b457ad",
+      "header": [
+        15,
+        5,
+        2363,
+        971
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdON",
+      "metadataContentBlob": "364595c068307430a57d95b875db95f8dc4cae18",
+      "geometry": {
+        "width": "30",
+        "height": "30",
+        "A1CenterX": "48",
+        "A1CenterY": "48",
+        "hexWidth": "56.233333",
+        "hexHeight": "64.448275",
+        "altHexGrain": "FALSE"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losError": "missing"
+    },
+    {
+      "board": "bdOpV",
+      "metadataError": "missing",
+      "losError": "missing"
+    },
+    {
+      "board": "bdOtOBFP",
+      "metadataContentBlob": "a2dca6e3ae0421c1500bf7bc05d365684c6739bd",
+      "geometry": {
+        "width": "29",
+        "height": "51",
+        "A1CenterX": "10",
+        "A1CenterY": "42",
+        "hexWidth": "56.241379",
+        "hexHeight": "64.442307",
+        "altHexGrain": "FALSE"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losError": "missing"
+    },
+    {
+      "board": "bdp",
+      "metadataContentBlob": "d086d2872ecc4e0eeece53288ca9b26969a544d8",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "a4c68e3b91dc265ca727e6ecc2638d1d79c89ad4",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdPBR",
+      "metadataContentBlob": "1ca9a6c64bcba224ee9a864950ccbb885c5f93b3",
+      "geometry": {
+        "width": "25",
+        "height": "28",
+        "A1CenterX": "1",
+        "A1CenterY": "98",
+        "hexWidth": "56.1818",
+        "hexHeight": "64.2857",
+        "altHexGrain": "TRUE"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losError": "missing"
+    },
+    {
+      "board": "bdpdx",
+      "metadataContentBlob": "7e35c8f2815e76b09a5685a451f31e923a4fb123",
+      "geometry": {
+        "width": "15",
+        "height": "5",
+        "hexHeight": "194.2",
+        "hexWidth": "168.7857142857",
+        "A1CenterX": "0",
+        "A1CenterY": "97.1"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "7b4193a22515c457cc481785e34b6f53f0f61dfb",
+      "header": [
+        15,
+        5,
+        2363,
+        971
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdq",
+      "metadataContentBlob": "3f63a4478357ad2dff91c9198bc0f38c35f8afba",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "52a736f95b2490df44e1bc16bf8310f6719e5e54",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdqdx",
+      "metadataContentBlob": "ae79f2d714676d9e6229b87ee6a7715d96e09670",
+      "geometry": {
+        "width": "15",
+        "height": "5",
+        "hexHeight": "194.2",
+        "hexWidth": "168.7857142857",
+        "A1CenterX": "0",
+        "A1CenterY": "97.1"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "0dbc5f4d23755f9aaabbc68efd1010d413aed580",
+      "header": [
+        15,
+        5,
+        2363,
+        971
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdr",
+      "metadataContentBlob": "839bea516c5ddab01625b40cffc9e47045aad4dc",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "e8eb70c2cde1399acebce4e756688600b5f27ad2",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdRBv2",
+      "metadataContentBlob": "76e2e495bbc16a9c17ccfa1fff3642f81c51485c",
+      "geometry": {
+        "width": "36",
+        "height": "45",
+        "hexHeight": "64.47",
+        "hexWidth": "56.25",
+        "A1CenterX": "22.0",
+        "A1CenterY": "32.25"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 130
+      },
+      "losDataBlob": "8f272424ffcc1785cd6157c7888cb2e060d35858",
+      "header": [
+        36,
+        45,
+        2012,
+        2901
+      ],
+      "terrainPixels": {
+        "Roofless Stone Factory, 1.5 Level": 72656,
+        "Roofless Stone Factory, 2.5 Level": 28749
+      },
+      "unknownCodes": []
+    },
+    {
+      "board": "bdRBv3",
+      "metadataContentBlob": "dbc1355397a8e4d8451d9ea7ad7cf30b59af6987",
+      "geometry": {
+        "width": "36",
+        "height": "45",
+        "hexHeight": "64.47",
+        "hexWidth": "56.25",
+        "A1CenterX": "18.0",
+        "A1CenterY": "32.25",
+        "HexGridConfig": "Normal"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 130
+      },
+      "losDataBlob": "108f0d66eae8a186defb1b76cb72a6f91e74a548",
+      "header": [
+        36,
+        45,
+        2005,
+        2901
+      ],
+      "terrainPixels": {
+        "Roofless Stone Factory, 1.5 Level": 73252,
+        "Roofless Stone Factory, 2.5 Level": 28337
+      },
+      "unknownCodes": []
+    },
+    {
+      "board": "bdrdx",
+      "metadataContentBlob": "0cc9dd347161287f7d451d417296c0d346b4ad49",
+      "geometry": {
+        "width": "15",
+        "height": "5",
+        "hexHeight": "194.2",
+        "hexWidth": "168.7857142857",
+        "A1CenterX": "0",
+        "A1CenterY": "97.1"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "21127d0e6ec49fe0aebc3ae0a61a002cffda3fc4",
+      "header": [
+        15,
+        5,
+        2363,
+        971
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdRileys",
+      "metadataError": "missing",
+      "losError": "missing"
+    },
+    {
+      "board": "bdRO",
+      "metadataContentBlob": "20681acb112e29b6b0016a6bf16b27a89901947d",
+      "geometry": {
+        "width": "36",
+        "height": "49",
+        "hexHeight": "64.47",
+        "hexWidth": "56.25",
+        "A1CenterX": "18",
+        "A1CenterY": "65",
+        "HexGridConfig": "TopLeftHalfHeightEqualRowCount"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 28
+      },
+      "losDataBlob": "fa18730cec03dfbc787ea3a95daa0b19c08a5abc",
+      "header": [
+        36,
+        49,
+        2005,
+        3127
+      ],
+      "terrainPixels": {
+        "Roofless Stone Factory, 1.5 Level": 32269,
+        "Roofless Stone Factory, 2.5 Level": 25483
+      },
+      "unknownCodes": []
+    },
+    {
+      "board": "bds",
+      "metadataContentBlob": "f630c674f06ebbbaf5126ffa0b6172e42ed8d829",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "22afaabbe8a57c256f0d677e9bfa73b0de500613",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdSaF",
+      "metadataError": "missing",
+      "losError": "missing"
+    },
+    {
+      "board": "bdSaFL",
+      "metadataError": "missing",
+      "losError": "missing"
+    },
+    {
+      "board": "bdSaFXL",
+      "metadataError": "missing",
+      "losError": "missing"
+    },
+    {
+      "board": "bdSaPF",
+      "metadataContentBlob": "ed59cc8e5f413adb4f4fcd90e5033ccd91a1305a",
+      "geometry": {
+        "width": "40",
+        "height": "71",
+        "hexHeight": "69.929577",
+        "hexWidth": "60.74359",
+        "A1CenterX": "20",
+        "A1CenterY": "35",
+        "HexGridConfig": "Normal",
+        "altHexGrain": "FALSE"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "0a8f192ed63bc5a2eaa1e87fb3b122db9b301493",
+      "header": [
+        40,
+        71,
+        2411,
+        4966
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdSC",
+      "metadataError": "missing",
+      "losError": "missing"
+    },
+    {
+      "board": "bdSch",
+      "metadataError": "missing",
+      "losError": "missing"
+    },
+    {
+      "board": "bdSeoulN",
+      "metadataError": "missing",
+      "losError": "missing"
+    },
+    {
+      "board": "bdSeoulS",
+      "metadataError": "missing",
+      "losError": "missing"
+    },
+    {
+      "board": "bdSF",
+      "metadataContentBlob": "4d5db79c2d7bb06fe10037de63deeea86f6db91a",
+      "geometry": {
+        "width": "26",
+        "height": "30",
+        "A1CenterX": "18",
+        "A1CenterY": "32",
+        "hexWidth": "56.34",
+        "hexHeight": "64.55",
+        "altHexGrain": "FALSE"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losError": "missing"
+    },
+    {
+      "board": "bdSG",
+      "metadataContentBlob": "20bb61bec8badf6d2a6cc4929988494e53950b83",
+      "geometry": {
+        "width": "31",
+        "height": "18",
+        "hexHeight": "64.25",
+        "hexWidth": "56.25",
+        "A1CenterX": "3.0",
+        "A1CenterY": "34",
+        "HexGridConfig": "Normal"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "ad2b6369c2273181add49dbecfafcb62e47e20d8",
+      "header": [
+        31,
+        18,
+        1693,
+        1166
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdSmithRidgeN",
+      "metadataError": "missing",
+      "losError": "missing"
+    },
+    {
+      "board": "bdSmithRidgeS",
+      "metadataError": "missing",
+      "losError": "missing"
+    },
+    {
+      "board": "bdt",
+      "metadataContentBlob": "1bca810aa12c2abc1a6b0fab70c46f92b5ac8ffb",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "7884112e7e04b746cd2dda906cb52d9f79a064ed",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdTFF1",
+      "metadataContentBlob": "937ec1769eed206cf45c9f155bbe2fe43d8f86df",
+      "geometry": {
+        "width": "49",
+        "height": "29",
+        "hexHeight": "60",
+        "hexWidth": "52",
+        "A1CenterX": "21",
+        "A1CenterY": "31"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losError": "missing"
+    },
+    {
+      "board": "bdTFF2",
+      "metadataContentBlob": "41e36d84c0c13f3149b8bfb4b6e8839e4b803347",
+      "geometry": {
+        "width": "49",
+        "height": "29",
+        "hexHeight": "60",
+        "hexWidth": "52",
+        "A1CenterX": "21",
+        "A1CenterY": "31"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losError": "missing"
+    },
+    {
+      "board": "bdu",
+      "metadataContentBlob": "783d2d30fe3c7ef2964df657e6f3a82a9aaa8b05",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "206c704d1696399d9c0989083dde1c447547a851",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdv",
+      "metadataContentBlob": "0a87209698a0336c71d7439dc5327b2674e7cf94",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "f6f149a15029f8e3df6d3e62a6be11b8ae46f103",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdVoss",
+      "metadataError": "missing",
+      "losError": "missing"
+    },
+    {
+      "board": "bdVotG",
+      "metadataContentBlob": "93af4a97a6266c619a87536e776600b63f9c70cd",
+      "geometry": {
+        "width": "41",
+        "height": "50",
+        "hexWidth": "56.225",
+        "hexHeight": "64.44",
+        "A1CenterX": "37",
+        "A1CenterY": "32.22",
+        "HexGridConfig": "Normal",
+        "altHexGrain": "FALSE"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "5cffea0d66372d4c41a14e97c6467e6c5c2478ca",
+      "header": [
+        41,
+        50,
+        2304,
+        3234
+      ],
+      "terrainPixels": {
+        "Gutted Building Wall, 1 Level": 17937,
+        "Gutted Building Wall, 2 Level": 8649
+      },
+      "unknownCodes": []
+    },
+    {
+      "board": "bdw",
+      "metadataContentBlob": "4e16d0de8f017568b8fcaca33c54992b76b7e614",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "d8786f968db8398817922fc5a579f73787e2f3ad",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdx",
+      "metadataContentBlob": "399302c0ccda3e2df3d75f3e46b326987fb1758a",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "f977e98021de1cbfc39ebb56f26075827d6c80b9",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdy",
+      "metadataContentBlob": "fd3eb879b7969866b9f217d41ffe02c3bd4ec493",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "0dc5da105eee730c6c8a84da1be02f8382280d47",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    },
+    {
+      "board": "bdz",
+      "metadataContentBlob": "88e35714db86e427751d0a8b2763292a88ce0dc7",
+      "geometry": {
+        "width": "33",
+        "height": "10"
+      },
+      "annotations": {
+        "partialorchard": 0,
+        "rrembankment": 0
+      },
+      "losDataBlob": "be117fbd69147cd8a8a26f68ea8e0f9742229cb0",
+      "header": [
+        33,
+        10,
+        1800,
+        645
+      ],
+      "terrainPixels": {},
+      "unknownCodes": []
+    }
+  ]
+}

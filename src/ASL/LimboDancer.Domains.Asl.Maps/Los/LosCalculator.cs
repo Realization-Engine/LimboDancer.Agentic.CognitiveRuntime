@@ -324,7 +324,7 @@ public static class LosCalculator
 
         private int TargetEnterHexspine => losIs60Degree
             ? (colDir == 1 ? (rowDir == 1 ? 0 : 4) : (rowDir == 1 ? 1 : 3))
-            : sourceExitHexspine == None ? None : (colDir == 1 ? 5 : 2);
+            : !losIsHorizontal ? None : (colDir == 1 ? 5 : 2);
 
         public LosResult Run()
         {
@@ -383,17 +383,12 @@ public static class LosCalculator
         }
 
         // Map.checkSameHexRule, for one hex with a center location at either end: building levels, then a bridge at an
-        // end with a center location at the other. Tunnels are not reproduced.
+        // end with a center location at the other. The asymmetric source-tunnel test follows VASL exactly.
         private LosResult CheckSameHexRule()
         {
             if (source.Terrain is not { } sourceTerrain || target.Terrain is not { } targetTerrain)
             {
                 return LosResult.Unsupported(0, LosUnsupportedRule.MissingLocationTerrain);
-            }
-
-            if (sourceTerrain.IsTunnel || targetTerrain.IsTunnel)
-            {
-                return LosResult.Unsupported(0, LosUnsupportedRule.Tunnel);
             }
 
             if (sourceTerrain.IsBuildingTerrain && targetTerrain.IsBuildingTerrain
@@ -402,7 +397,7 @@ public static class LosCalculator
                 return SameHexBlocked("Crosses building level or no stairway");
             }
 
-            return (sourceTerrain.IsBridge && targetIsCenter) || (targetTerrain.IsBridge && sourceIsCenter)
+            return ((sourceTerrain.IsBridge || sourceTerrain.IsTunnel) && targetIsCenter) || ((targetTerrain.IsBridge || sourceTerrain.IsTunnel) && sourceIsCenter)
                 ? SameHexBlocked("Cannot see location under the bridge")
                 : new LosResult(LosStatus.Clear, false, 0, 0, null, string.Empty);
         }
@@ -416,36 +411,14 @@ public static class LosCalculator
             return new LosResult(LosStatus.Blocked, true, 0, 0, new LosBlockedAt(point, owner?.Board, owner?.Hex), why);
         }
 
-        // The parts of the LOSStatus constructor this step does not reproduce: special source and target locations.
-        // Cellars, rooftops, factory and bridge locations (the depression location under a bridge among them), hillocks,
-        // slopes, and depression ends are reproduced.
+        // Every resolved endpoint needs terrain; special endpoint adjustments are applied by the individual rules.
         private string? SetupProblem()
         {
             foreach (var location in new[] { source, target })
             {
-                if (location.Terrain is not { } terrain)
+                if (location.Terrain is null)
                 {
                     return LosUnsupportedRule.MissingLocationTerrain;
-                }
-
-                if (terrain.IsTunnel)
-                {
-                    return LosUnsupportedRule.Tunnel;
-                }
-
-                if (terrain.IsRoofless)
-                {
-                    return LosUnsupportedRule.Roofless;
-                }
-
-                if (terrain.IsEntrenchment)
-                {
-                    return LosUnsupportedRule.Entrenchment;
-                }
-
-                if (terrain.Name.Contains("Railroad, Embankment", StringComparison.Ordinal))
-                {
-                    return LosUnsupportedRule.RailroadEmbankment;
                 }
             }
 
@@ -659,7 +632,11 @@ public static class LosCalculator
             var side = NearestSide(tempHex);
             if (side != None && Facts(tempHex).Hexsides[side].PartialOrchard)
             {
-                return Refuse(LosUnsupportedRule.PartialOrchard);
+                if (Facts(tempHex).Hexsides[side].HexsideTerrain is { IsHexsideTerrain: true } orchard
+                    && orchard.Name.Contains(PartialOrchard, StringComparison.Ordinal))
+                {
+                    currentTerrain = orchard;
+                }
             }
 
             return ApplyLosRules();
@@ -728,11 +705,9 @@ public static class LosCalculator
                 return true;
             }
 
-            // checkRBrrembankments and checkPartialOrchards
-            var nearest = NearestSide(currentHex);
-            if (nearest != None && (Facts(currentHex).Hexsides[nearest].RailroadEmbankment || Facts(currentHex).Hexsides[nearest].PartialOrchard))
+            if (CheckRailroadEmbankments() || CheckPartialOrchards())
             {
-                return Refuse(Facts(currentHex).Hexsides[nearest].RailroadEmbankment ? LosUnsupportedRule.RailroadEmbankment : LosUnsupportedRule.PartialOrchard);
+                return true;
             }
 
             // The current hex is checked only between the source and target, or at the full range from an end that is a
@@ -766,6 +741,88 @@ public static class LosCalculator
             return false;
         }
 
+        private double SourceEmbankmentAdjustment => source.Terrain!.Name.Contains("Railroad, Embankment", StringComparison.Ordinal) ? 0.5 : 0;
+
+        private double TargetEmbankmentAdjustment => target.Terrain!.Name.Contains("Railroad, Embankment", StringComparison.Ordinal) ? 0.5 : 0;
+
+        // Map.checkRBrrembankments: annotation terrain is tested even when the pixel is open ground.
+        private bool CheckRailroadEmbankments()
+        {
+            var side = NearestSide(currentHex);
+            if (side == None || !Facts(currentHex).Hexsides[side].RailroadEmbankment
+                || Facts(currentHex).Hexsides[side].HexsideTerrain is not { IsHexsideTerrain: true } terrain
+                || !terrain.Name.Contains("Rrembankment", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            if (source.Terrain!.IsEntrenchment)
+            {
+                return range > 1 && targetElevation <= sourceElevation
+                    && Block("Unit in entrenchment cannot see over hexside terrain to non-adjacent lower target (B27.2)");
+            }
+
+            if (target.Terrain!.IsEntrenchment)
+            {
+                return range > 1 && targetElevation >= sourceElevation
+                    && Block("Cannot see non-adjacent unit in higher elevation entrenchment over hexside terrain (B27.2)");
+            }
+
+            if (sourceIsCellar)
+            {
+                return range != 1 && rangeToSource == 1 && targetElevation <= sourceElevation + 1
+                    && Block("Unit in cellar cannot see over hexside terrain to non-adjacent target (O6.3)");
+            }
+
+            if (targetIsCellar)
+            {
+                return range != 1 && rangeToTarget == 1 && targetElevation + 1 >= sourceElevation
+                    && Block("Unit in cellar cannot be seen over hexside terrain by non-adjacent target (O6.3)");
+            }
+
+            if (currentHex == sourceHex || currentHex == targetHex
+                || IsIgnorableHexsideTerrain(sourceHex, currentHex, side, sourceExitHexspine)
+                || IsIgnorableHexsideTerrain(targetHex, currentHex, side, TargetEnterHexspine))
+            {
+                return false;
+            }
+
+            if (Adjacent(currentHex, side) is not { } opposite)
+            {
+                return Refuse(LosUnsupportedRule.VaslFails);
+            }
+
+            return opposite != sourceHex && opposite != targetHex && groundLevel == sourceElevation && groundLevel == targetElevation
+                && !slopes && Block("Intervening hexside terrain (B9.2)");
+        }
+
+        // Map.checkPartialOrchards changes the terrain and source exit spine used by the remaining rules.
+        private bool CheckPartialOrchards()
+        {
+            var side = NearestSide(currentHex);
+            if (side == None || !Facts(currentHex).Hexsides[side].PartialOrchard
+                || Facts(currentHex).Hexsides[side].HexsideTerrain is not { IsHexsideTerrain: true } terrain
+                || !terrain.Name.Contains(PartialOrchard, StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            if (currentTerrain!.Name.Contains("Water", StringComparison.Ordinal))
+            {
+                groundLevel++;
+            }
+
+            currentTerrain = map.Catalog[PartialOrchard];
+            currentTerrainHgt = currentTerrain.Height;
+            var exits = ExitFromCenterHexsides();
+            if (exits[0] != None)
+            {
+                sourceExitHexspine = exits[0];
+            }
+
+            return CheckHexsideTerrainRule();
+        }
+
         // The terrain and hex features at this point whose rules are not reproduced.
         private string? PointProblem()
         {
@@ -774,31 +831,6 @@ public static class LosCalculator
             // adjusted.
             var terrain = currentTerrain!;
             var name = terrain.Name;
-            if (terrain.IsRoofless)
-            {
-                return LosUnsupportedRule.Roofless;
-            }
-
-            if (terrain.IsTunnel)
-            {
-                return LosUnsupportedRule.Tunnel;
-            }
-
-            if (terrain.IsEntrenchment)
-            {
-                return LosUnsupportedRule.Entrenchment;
-            }
-
-            if (name.Contains(PartialOrchard, StringComparison.Ordinal))
-            {
-                return LosUnsupportedRule.PartialOrchard;
-            }
-
-            if (name.Contains("Railroad, Embankment", StringComparison.Ordinal) || name.Contains("Rrembankment", StringComparison.Ordinal))
-            {
-                return LosUnsupportedRule.RailroadEmbankment;
-            }
-
             if (name.Contains("Deir", StringComparison.Ordinal))
             {
                 return LosUnsupportedRule.Deir;
@@ -1058,7 +1090,7 @@ public static class LosCalculator
 
         // The factory test of checkBuildingRestrictionRule, for two ends in different hexes: isRooftopLOSBlocked for the
         // current hex, and along a hexside at an odd range, when the current hex blocks and an end is a rooftop, for the
-        // hex across the hexside the line touches instead. The odd-range cases no fixture reaches are refused.
+        // hex across the hexside the line touches instead.
         private bool FactoryRooftopRule(int rooftopAdjustment)
         {
             if (!(losIs60Degree || losIsHorizontal) || rangeToSource % 2 == 0)
@@ -1073,7 +1105,7 @@ public static class LosCalculator
 
             if (RooftopRange() is null)
             {
-                return Refuse(LosUnsupportedRule.FactoryRooftop);
+                return true;
             }
 
             ClearBlocked();
@@ -1082,7 +1114,7 @@ public static class LosCalculator
             var touched = NearestSide(currentHex);
             if (touched != first && touched != second)
             {
-                return Refuse(LosUnsupportedRule.FactoryRooftop);
+                return false;
             }
 
             if (Adjacent(currentHex, touched) is not { } testHex || CenterTerrain(testHex) is not { } testTerrain)
@@ -1094,13 +1126,12 @@ public static class LosCalculator
         }
 
         // Map.isRooftopLOSBlocked: LOS from a rooftop down, or up to one, within a factory. VASL adds the terrain's height
-        // to the height it is given, and compares that with the target's elevation alone. Rubble, which clears the test,
-        // and LOS up to a rooftop blocked beyond the first hex are refused: no fixture reaches them.
+        // to the height it is given, and compares that with the target's elevation alone. Rubble clears the test.
         private bool IsRooftopLosBlocked(HexIndex hex, TerrainType terrain, int terrainHeight, int rooftopAdjustment)
         {
             if (terrain.Name.Contains("Rubble", StringComparison.Ordinal))
             {
-                return Refuse(LosUnsupportedRule.FactoryRooftop);
+                return false;
             }
 
             var hexIsRoofless = IsRooflessHex(hex);
@@ -1115,14 +1146,14 @@ public static class LosCalculator
             {
                 return rangeToSource == 1
                     ? Block("LOS must leave the building before leaving the source hex to see a location with a different elevation (A6.8 Example 2)")
-                    : Refuse(LosUnsupportedRule.FactoryRooftop);
+                    : Block("LOS from/to Factory Rooftop within Factory only exists in same hex ground level location (B23.87)");
             }
 
             return false;
         }
 
-        // Whether a hex's center is roofless or gutted: no fixture has one, so the answer is refused when it is.
-        private bool IsRooflessHex(HexIndex hex) => CenterTerrain(hex) is { IsRoofless: true } && Refuse(LosUnsupportedRule.Roofless);
+        // VASL identifies roofless and gutted hexes by the center terrain.
+        private bool IsRooflessHex(HexIndex hex) => CenterTerrain(hex) is { IsRoofless: true };
 
         // LOSResult.resetreportingonly, with the status's blocked state
         private void ClearBlocked()
@@ -1134,8 +1165,8 @@ public static class LosCalculator
             resultReason = string.Empty;
         }
 
-        // Map.checkHexsideTerrainRule, for rowhouse walls, walls, hedges, bocage, and cellars: no entrenchments or partial
-        // orchards, which are refused. With an end on a hillock the hillock rule decides instead. A rowhouse wall takes
+        // Map.checkHexsideTerrainRule, including entrenchments and partial orchards. With an end on a hillock the
+        // hillock rule decides instead. A rowhouse wall takes
         // its own rule (B23.71) before anything else, cellars included. Bocage blind hexes, and the slope rules' leave to
         // see over hexside terrain, are refused: no fixture reaches them.
         private bool CheckHexsideTerrainRule()
@@ -1152,8 +1183,20 @@ public static class LosCalculator
 
             // A cellar end takes the cellar rule (O6.3) in every hex, the source and target included, and never the
             // wall and hedge rule; the source's cellar is tested first.
-            var sourceAdjustment = sourceIsCellar ? 1.0 : 0.0;
-            var targetAdjustment = targetIsCellar ? 1.0 : 0.0;
+            var sourceAdjustment = sourceIsCellar ? 1.0 : SourceEmbankmentAdjustment;
+            var targetAdjustment = targetIsCellar ? 1.0 : TargetEmbankmentAdjustment;
+            if (source.Terrain!.IsEntrenchment && currentTerrain.Name != "Dune, Crest Low")
+            {
+                return range > 1 && targetElevation <= sourceElevation
+                    && Block("Unit in entrenchment cannot see over hexside terrain to non-adjacent lower target (B27.2)");
+            }
+
+            if (target.Terrain!.IsEntrenchment && currentTerrain.Name != "Dune, Crest Low")
+            {
+                return range > 1 && targetElevation >= sourceElevation
+                    && Block("Cannot see non-adjacent unit in higher elevation entrenchment over hexside terrain (B27.2)");
+            }
+
             if (sourceIsCellar)
             {
                 return range != 1 && rangeToSource != 1 && targetElevation + targetAdjustment <= sourceElevation + sourceAdjustment
@@ -1194,7 +1237,24 @@ public static class LosCalculator
                 return IsBlindHex(currentTerrainHgt) && Refuse(LosUnsupportedRule.BocageBlindHex);
             }
 
-            if (groundLevel == sourceElevation && groundLevel == targetElevation)
+            if (currentTerrain.Name == PartialOrchard)
+            {
+                var top = groundLevel + currentTerrainHgt;
+                if (top < Math.Max(sourceElevation + sourceAdjustment, targetElevation + targetAdjustment)
+                    && top <= Math.Min(sourceElevation + sourceAdjustment, targetElevation + targetAdjustment))
+                {
+                    return false;
+                }
+
+                if (groundLevel == sourceElevation && groundLevel == targetElevation)
+                {
+                    return range > 1 && AddHindranceHex();
+                }
+
+                return IsBlindHex(currentTerrainHgt) && Block("Source or Target location is in a blind hex (B14.2)");
+            }
+
+            if (groundLevel == sourceElevation + sourceAdjustment && groundLevel == targetElevation + targetAdjustment)
             {
                 return slopes ? Refuse(LosUnsupportedRule.SlopeCases) : Block("Intervening hexside terrain (B9.2)");
             }
@@ -1208,6 +1268,11 @@ public static class LosCalculator
         private bool CheckRowhouseFactoryWallAndBreach()
         {
             var terrain = currentTerrain!;
+            if (terrain.Name.Contains("Gutted Building Wall", StringComparison.Ordinal) && (currentHex == sourceHex || currentHex == targetHex))
+            {
+                return false;
+            }
+
             if (terrain.Name.Contains("Interior Factory Wall", StringComparison.Ordinal) || terrain.Name.Contains("Breach", StringComparison.Ordinal))
             {
                 return Refuse(LosUnsupportedRule.InteriorFactoryWall);
@@ -1420,7 +1485,7 @@ public static class LosCalculator
         }
 
         // Map.checkBridgeHindranceRule: with both ends at the bridge's road level, a point on the bridge but off its road
-        // is a hindrance. VASL's exception for a railroad embankment hexside, which no fixture has, is refused.
+        // is a hindrance, except where an embankment hexside raises the bridge by half a level.
         private bool CheckBridgeHindranceRule()
         {
             if (Facts(currentHex).Bridge is not { } bridge || sourceElevation != targetElevation || sourceElevation != bridge.RoadLevel)
@@ -1430,7 +1495,7 @@ public static class LosCalculator
 
             if (Facts(currentHex).Hexsides.Any(side => side.Terrain is { IsDepression: false } terrain && terrain.Name.Contains("Railroad, Embankment", StringComparison.Ordinal)))
             {
-                return Refuse(LosUnsupportedRule.RailroadEmbankment);
+                return false;
             }
 
             return BridgeShapeContains(currentHex, BridgeWidth, 0) && !BridgeShapeContains(currentHex, BridgeWidth - (2 * BridgeRoadInset), BridgeRoadInset)
@@ -1446,7 +1511,7 @@ public static class LosCalculator
             return currentCol >= left && currentCol < left + width && currentRow >= top && currentRow < top + BridgeHeight;
         }
 
-        // Map.checkGroundLevelRule, without railroad embankments or Deir. A hex whose ground level the LOS may ignore
+        // Map.checkGroundLevelRule, without Deir. A hex whose ground level the LOS may ignore
         // because it follows a depression (losFollowsDepression), or where it crosses bridge terrain, does not block;
         // VASL keeps the bridge hex as the ignored hex until another replaces it.
         private bool CheckGroundLevelRule()
@@ -1467,8 +1532,8 @@ public static class LosCalculator
                 return true;
             }
 
-            return groundLevel > sourceElevation + HeightAdjustment(sourceIsCellar, sourceRooftopAdjustment)
-                && groundLevel > targetElevation + HeightAdjustment(targetIsCellar, targetRooftopAdjustment)
+            return groundLevel > sourceElevation + HeightAdjustment(sourceIsCellar, SourceEmbankmentAdjustment != 0 ? SourceEmbankmentAdjustment : sourceRooftopAdjustment)
+                && groundLevel > targetElevation + HeightAdjustment(targetIsCellar, TargetEmbankmentAdjustment != 0 ? TargetEmbankmentAdjustment : targetRooftopAdjustment)
                 && ignoreGroundLevelHex != currentHex
                 && Block("Ground level is higher than both the source and target (A6.2)");
         }
@@ -1530,7 +1595,7 @@ public static class LosCalculator
             return false;
         }
 
-        // Map.checkHalfLevelTerrainRule, without railroad embankments or sand dunes. Where the hillock rules apply, or
+        // Map.checkHalfLevelTerrainRule, without sand dunes. Where the hillock rules apply, or
         // from a hillock down, brush, grain, and in-season rice paddies give one hindrance at most, and nothing else
         // here counts. A rooftop end is adjusted only when the other end is not a rooftop, and a cellar end not at all.
         private bool CheckHalfLevelTerrainRule()
@@ -1547,8 +1612,8 @@ public static class LosCalculator
                 return false;
             }
 
-            var sourceAdjustment = targetIsRooftop ? 0.0 : sourceRooftopAdjustment;
-            var targetAdjustment = sourceIsRooftop ? 0.0 : targetRooftopAdjustment;
+            var sourceAdjustment = SourceEmbankmentAdjustment != 0 ? SourceEmbankmentAdjustment : targetIsRooftop ? 0.0 : sourceRooftopAdjustment;
+            var targetAdjustment = TargetEmbankmentAdjustment != 0 ? TargetEmbankmentAdjustment : sourceIsRooftop ? 0.0 : targetRooftopAdjustment;
             return terrain.IsHalfLevelHeight && !terrain.IsHexsideTerrain
                 && groundLevel + currentTerrainHgt == sourceElevation + sourceAdjustment && groundLevel + currentTerrainHgt == targetElevation + targetAdjustment
                 && !slopes && ApplyHalfLevelTerrain();
@@ -1574,15 +1639,15 @@ public static class LosCalculator
             ? Block("Half level terrain is higher than both the source and/or the target (A6.2)")
             : AddHindranceHex();
 
-        // Map.checkTerrainIsHigherRule, without railroad embankments, sand dunes, or Volga piers. A hillock end counts
+        // Map.checkTerrainIsHigherRule, without sand dunes or Volga piers. A hillock end counts
         // half a level higher (a cellar's adjustment wins over it, and it over a rooftop's). With the slope rules VASL
         // adds no hindrance here, which no fixture reaches, so it is refused.
         private bool CheckTerrainIsHigherRule()
         {
             var terrain = currentTerrain!;
             var obstacleAdjustment = terrain.IsHalfLevelHeight && !terrain.IsHexsideTerrain ? 0.5 : 0.0;
-            var sourceHeight = sourceElevation + (sourceIsCellar ? 1.0 : startsOnHillock ? 0.5 : sourceRooftopAdjustment);
-            var targetHeight = targetElevation + (targetIsCellar ? 1.0 : endsOnHillock ? 0.5 : targetRooftopAdjustment);
+            var sourceHeight = sourceElevation + (sourceIsCellar ? 1.0 : startsOnHillock ? 0.5 : SourceEmbankmentAdjustment != 0 ? SourceEmbankmentAdjustment : sourceRooftopAdjustment);
+            var targetHeight = targetElevation + (targetIsCellar ? 1.0 : endsOnHillock ? 0.5 : TargetEmbankmentAdjustment != 0 ? TargetEmbankmentAdjustment : targetRooftopAdjustment);
 
             // split terrain at the level of both ends has its own rule
             if (terrain.HasSplit && groundLevel == sourceHeight && groundLevel == targetHeight)
@@ -1637,17 +1702,17 @@ public static class LosCalculator
             return false;
         }
 
-        // Map.checkTerrainHeightRule, without railroad embankments. The cellar and rooftop adjustments apply to the height
+        // Map.checkTerrainHeightRule. Cellar, rooftop, and railroad embankment adjustments apply to the height
         // test only; the exceptions below use the plain elevations, as VASL's do. An out-of-season orchard counts a level
         // lower in the height test, and hinders where its full height is as high as the higher end only.
         private bool CheckTerrainHeightRule()
         {
             var terrain = currentTerrain!;
             var isOrchardOutOfSeason = terrain.Name == OrchardOutOfSeason;
-            var obstacleAdjustment = isOrchardOutOfSeason ? -1.0 : terrain.IsHalfLevelHeight && terrain.IsBuilding ? 0.5 : 0.0;
+            var obstacleAdjustment = isOrchardOutOfSeason ? -1.0 : terrain.IsHalfLevelHeight && (terrain.IsBuilding || terrain.Name.Contains("Railroad, Embankment", StringComparison.Ordinal)) ? 0.5 : 0.0;
             var height = groundLevel + currentTerrainHgt + obstacleAdjustment;
-            var sourceHeight = sourceElevation + HeightAdjustment(sourceIsCellar, sourceRooftopAdjustment);
-            var targetHeight = targetElevation + HeightAdjustment(targetIsCellar, targetRooftopAdjustment);
+            var sourceHeight = sourceElevation + HeightAdjustment(sourceIsCellar, SourceEmbankmentAdjustment != 0 ? SourceEmbankmentAdjustment : sourceRooftopAdjustment);
+            var targetHeight = targetElevation + HeightAdjustment(targetIsCellar, TargetEmbankmentAdjustment != 0 ? TargetEmbankmentAdjustment : targetRooftopAdjustment);
             if (height != Math.Max(sourceHeight, targetHeight) || !(height > Math.Min(sourceHeight, targetHeight)))
             {
                 var top = groundLevel + currentTerrainHgt;
@@ -1694,10 +1759,10 @@ public static class LosCalculator
                 return false;
             }
 
-            // within a factory an end is in, VASL's factory rooftop test decides; no fixture reaches it here
+            // Within a factory an end is in, the same rooftop test uses the height rule's +1 adjustment.
             if (!losLeavesBuilding && (source.Terrain!.IsFactory || target.Terrain!.IsFactory) && !terrain.IsOutsideFactoryWall)
             {
-                return Refuse(LosUnsupportedRule.FactoryRooftop);
+                return sourceHex != targetHex && FactoryRooftopRule(RooftopRange() is null ? 0 : 1);
             }
 
             // along a cliff hexside, the lower hex decides
@@ -1820,10 +1885,9 @@ public static class LosCalculator
             const string blindHex = "Source or Target location is in a blind hex (A6.4)";
             if ((terrain.IsLosObstacle && !terrain.IsHexsideTerrain) || terrain.IsOutsideFactoryWall)
             {
-                // VASL lets a roofless hex's obstacle, other than an outside factory wall, through; that is refused
-                if (IsRooflessHex(currentHex))
+                if (IsRooflessHex(currentHex) && !terrain.IsOutsideFactoryWall)
                 {
-                    return true;
+                    return false;
                 }
 
                 // an inherent obstacle that is not the hex's own terrain does not block here
@@ -1853,7 +1917,7 @@ public static class LosCalculator
                     return Refuse(LosUnsupportedRule.VaslFails);
                 }
 
-                return IsRooflessHex(testHex) || Block(blindHex);
+                return !IsRooflessHex(testHex) && Block(blindHex);
             }
 
             // LOS through a factory hex from or to another level outside the factory
@@ -1958,9 +2022,9 @@ public static class LosCalculator
                     && Refuse(LosUnsupportedRule.HillockCases);
             }
 
-            // a hillock next to an end is ignored (no entrenchments: they are refused)
-            if ((sourceAdjacentHillock is { } nearSource && map.HillockOf(currentHex) == nearSource)
-                || (targetAdjacentHillock is { } nearTarget && map.HillockOf(currentHex) == nearTarget))
+            // a hillock next to an end is ignored unless that end is in an entrenchment
+            if ((sourceAdjacentHillock is { } nearSource && map.HillockOf(currentHex) == nearSource && !source.Terrain!.IsEntrenchment)
+                || (targetAdjacentHillock is { } nearTarget && map.HillockOf(currentHex) == nearTarget && !target.Terrain!.IsEntrenchment))
             {
                 return false;
             }
@@ -2167,10 +2231,10 @@ public static class LosCalculator
             var name = terrain.Name;
             var lighter = name.Contains("Rice Paddy, In Season", StringComparison.Ordinal) || name.Contains("Rice Paddy Bank", StringComparison.Ordinal)
                 || name.Contains("Light Grain", StringComparison.Ordinal);
-            var hindrance = 1.0;
+            var hindrance = terrain.IsRoofless ? 2.0 : 1.0;
             if ((losIs60Degree || losIsHorizontal) && rangeToSource % 2 != 0)
             {
-                // Along a hexside only the hexside the line touches counts; a roofless hex across it is refused.
+                // Along a hexside the hex across the touched side determines the roofless hindrance.
                 var first = (sourceExitHexspine + 1) % 6;
                 var second = (sourceExitHexspine + 4) % 6;
                 var touched = NearestSide(currentHex);
@@ -2192,7 +2256,7 @@ public static class LosCalculator
                     }
                 }
             }
-            else if (name.Contains("Light Woods", StringComparison.Ordinal))
+            else if (terrain.IsRoofless || name.Contains("Light Woods", StringComparison.Ordinal))
             {
                 hindrance = 2;
             }

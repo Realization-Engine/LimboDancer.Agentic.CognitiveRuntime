@@ -1,0 +1,126 @@
+<maps>
+  <map name="partial-orchard-0" hexes="C2,C4,C6,D3,D4,D5,E1,E2,E3,E4,E5,E6,E7,F3,F4,F5,G2,G4,G6" hexsides="E3,E4,E5">
+    <annotation hex="E4" kind="partialOrchard" sides="012345" />
+  </map>
+  <map name="railroad-hexside-0" hexes="C2,C4,C6,D3,D4,D5,E1,E2,E3,E4,E5,E6,E7,F3,F4,F5,G2,G4,G6" hexsides="E3,E4,E5">
+    <annotation hex="E4" kind="railroadEmbankment" sides="012345" />
+  </map>
+  <map name="railroad-terrain-0" hexes="C2,C4,C6,D3,D4,D5,E1,E2,E3,E4,E5,E6,E7,F3,F4,F5,G2,G4,G6" hexsides="E3,E4,E5">
+    <paint box="195,195,255,255" terrain="Railroad, Embankment" elevation="0" />
+  </map>
+  <map name="roofless-factory-0" hexes="C2,C4,C6,D3,D4,D5,E1,E2,E3,E4,E5,E6,E7,F3,F4,F5,G2,G4,G6" hexsides="E3,E4,E5">
+    <paint box="195,195,255,255" terrain="Roofless Stone Factory, 1.5 Level" elevation="0" />
+  </map>
+  <map name="gutted-building-0" hexes="C2,C4,C6,D3,D4,D5,E1,E2,E3,E4,E5,E6,E7,F3,F4,F5,G2,G4,G6" hexsides="E3,E4,E5">
+    <paint box="195,195,255,255" terrain="Gutted Stone Building, 2 Level" elevation="0" />
+  </map>
+  <map name="entrenchment-wall-0" hexes="C2,C4,C6,D3,D4,D5,E1,E2,E3,E4,E5,E6,E7,F3,F4,F5,G2,G4,G6" hexsides="E3,E4,E5">
+    <paint box="195,195,255,255" terrain="Wall" elevation="0" />
+    <location hex="E2" terrain="Foxholes" />
+  </map>
+  <map name="partial-orchard-1" hexes="C2,C4,C6,D3,D4,D5,E1,E2,E3,E4,E5,E6,E7,F3,F4,F5,G2,G4,G6" hexsides="E3,E4,E5">
+    <paint box="185,64,265,130" terrain="Open Ground" elevation="1" />
+    <annotation hex="E4" kind="partialOrchard" sides="012345" />
+  </map>
+  <map name="railroad-hexside-1" hexes="C2,C4,C6,D3,D4,D5,E1,E2,E3,E4,E5,E6,E7,F3,F4,F5,G2,G4,G6" hexsides="E3,E4,E5">
+    <paint box="185,64,265,130" terrain="Open Ground" elevation="1" />
+    <annotation hex="E4" kind="railroadEmbankment" sides="012345" />
+  </map>
+  <map name="railroad-terrain-1" hexes="C2,C4,C6,D3,D4,D5,E1,E2,E3,E4,E5,E6,E7,F3,F4,F5,G2,G4,G6" hexsides="E3,E4,E5">
+    <paint box="195,195,255,255" terrain="Railroad, Embankment" elevation="0" />
+    <paint box="185,64,265,130" terrain="Open Ground" elevation="1" />
+  </map>
+  <map name="roofless-factory-1" hexes="C2,C4,C6,D3,D4,D5,E1,E2,E3,E4,E5,E6,E7,F3,F4,F5,G2,G4,G6" hexsides="E3,E4,E5">
+    <paint box="195,195,255,255" terrain="Roofless Stone Factory, 1.5 Level" elevation="0" />
+    <paint box="185,64,265,130" terrain="Open Ground" elevation="1" />
+  </map>
+  <map name="gutted-building-1" hexes="C2,C4,C6,D3,D4,D5,E1,E2,E3,E4,E5,E6,E7,F3,F4,F5,G2,G4,G6" hexsides="E3,E4,E5">
+    <paint box="195,195,255,255" terrain="Gutted Stone Building, 2 Level" elevation="0" />
+    <paint box="185,64,265,130" terrain="Open Ground" elevation="1" />
+  </map>
+  <map name="entrenchment-wall-1" hexes="C2,C4,C6,D3,D4,D5,E1,E2,E3,E4,E5,E6,E7,F3,F4,F5,G2,G4,G6" hexsides="E3,E4,E5">
+    <paint box="195,195,255,255" terrain="Wall" elevation="0" />
+    <paint box="185,64,265,130" terrain="Open Ground" elevation="1" />
+    <location hex="E2" terrain="Foxholes" />
+  </map>
+  <map name="partial-orchard-2" hexes="C2,C4,C6,D3,D4,D5,E1,E2,E3,E4,E5,E6,E7,F3,F4,F5,G2,G4,G6" hexsides="E3,E4,E5">
+    <paint box="185,64,265,130" terrain="Open Ground" elevation="2" />
+    <annotation hex="E4" kind="partialOrchard" sides="012345" />
+  </map>
+  <map name="railroad-hexside-2" hexes="C2,C4,C6,D3,D4,D5,E1,E2,E3,E4,E5,E6,E7,F3,F4,F5,G2,G4,G6" hexsides="E3,E4,E5">
+    <paint box="185,64,265,130" terrain="Open Ground" elevation="2" />
+    <annotation hex="E4" kind="railroadEmbankment" sides="012345" />
+  </map>
+  <map name="railroad-terrain-2" hexes="C2,C4,C6,D3,D4,D5,E1,E2,E3,E4,E5,E6,E7,F3,F4,F5,G2,G4,G6" hexsides="E3,E4,E5">
+    <paint box="195,195,255,255" terrain="Railroad, Embankment" elevation="0" />
+    <paint box="185,64,265,130" terrain="Open Ground" elevation="2" />
+  </map>
+  <map name="roofless-factory-2" hexes="C2,C4,C6,D3,D4,D5,E1,E2,E3,E4,E5,E6,E7,F3,F4,F5,G2,G4,G6" hexsides="E3,E4,E5">
+    <paint box="195,195,255,255" terrain="Roofless Stone Factory, 1.5 Level" elevation="0" />
+    <paint box="185,64,265,130" terrain="Open Ground" elevation="2" />
+  </map>
+  <map name="gutted-building-2" hexes="C2,C4,C6,D3,D4,D5,E1,E2,E3,E4,E5,E6,E7,F3,F4,F5,G2,G4,G6" hexsides="E3,E4,E5">
+    <paint box="195,195,255,255" terrain="Gutted Stone Building, 2 Level" elevation="0" />
+    <paint box="185,64,265,130" terrain="Open Ground" elevation="2" />
+  </map>
+  <map name="entrenchment-wall-2" hexes="C2,C4,C6,D3,D4,D5,E1,E2,E3,E4,E5,E6,E7,F3,F4,F5,G2,G4,G6" hexsides="E3,E4,E5">
+    <paint box="195,195,255,255" terrain="Wall" elevation="0" />
+    <paint box="185,64,265,130" terrain="Open Ground" elevation="2" />
+    <location hex="E2" terrain="Foxholes" />
+  </map>
+  <map name="partial-orchard-water" hexes="C2,C4,C6,D3,D4,D5,E1,E2,E3,E4,E5,E6,E7,F3,F4,F5,G2,G4,G6" hexsides="E3,E4,E5">
+    <paint box="180,160,270,290" terrain="Water" elevation="-1" />
+    <annotation hex="E4" kind="partialOrchard" sides="012345" />
+  </map>
+  <map name="entrenchment-railroad" hexes="C2,C4,C6,D3,D4,D5,E1,E2,E3,E4,E5,E6,E7,F3,F4,F5,G2,G4,G6" hexsides="E3,E4,E5">
+    <annotation hex="E4" kind="railroadEmbankment" sides="012345" />
+    <location hex="E2" terrain="Trench" />
+  </map>
+  <map name="tunnel" hexes="C2,C4,C6,D3,D4,D5,E1,E2,E3,E4,E5,E6,E7,F3,F4,F5,G2,G4,G6" hexsides="E3,E4,E5">
+    <paint box="195,195,255,255" terrain="Tunnel" elevation="0" />
+  </map>
+  <map name="entrenchment-hillock" hexes="C2,C4,C6,D3,D4,D5,E1,E2,E3,E4,E5,E6,E7,F3,F4,F5,G2,G4,G6" hexsides="E3,E4,E5">
+    <paint box="195,195,255,255" terrain="Hillock" elevation="0" />
+    <location hex="E2" terrain="Antitank Trench" />
+  </map>
+  <map name="roofless-tall" hexes="C2,C4,C6,D3,D4,D5,E1,E2,E3,E4,E5,E6,E7,F3,F4,F5,G2,G4,G6" hexsides="E3,E4,E5">
+    <paint box="195,195,255,255" terrain="Roofless Stone Factory, 2.5 Level" elevation="0" />
+  </map>
+  <map name="gutted-factory" hexes="C2,C4,C6,D3,D4,D5,E1,E2,E3,E4,E5,E6,E7,F3,F4,F5,G2,G4,G6" hexsides="E3,E4,E5">
+    <paint box="195,195,255,255" terrain="Gutted Stone Factory, 1.5 Level" elevation="0" />
+  </map>
+  <map name="gutted-tall" hexes="C2,C4,C6,D3,D4,D5,E1,E2,E3,E4,E5,E6,E7,F3,F4,F5,G2,G4,G6" hexsides="E3,E4,E5">
+    <paint box="195,195,255,255" terrain="Gutted Stone Factory, 2.5 Level" elevation="0" />
+  </map>
+  <map name="gutted-wall" hexes="C2,C4,C6,D3,D4,D5,E1,E2,E3,E4,E5,E6,E7,F3,F4,F5,G2,G4,G6" hexsides="E3,E4,E5">
+    <paint box="195,195,255,255" terrain="Gutted Building Wall, 1 Level" elevation="0" />
+  </map>
+  <map name="railroad-cellar" hexes="C2,C4,C6,D3,D4,D5,E1,E2,E3,E4,E5,E6,E7,F3,F4,F5,G2,G4,G6" hexsides="E3,E4,E5">
+    <paint box="195,195,255,255" terrain="Stone Building, 2 Level" elevation="0" />
+    <annotation hex="E3" kind="railroadEmbankment" sides="012345" />
+  </map>
+  <map name="roofless-rooftop" hexes="C2,C4,C6,D3,D4,D5,E1,E2,E3,E4,E5,E6,E7,F3,F4,F5,G2,G4,G6" hexsides="E3,E4,E5">
+    <paint box="195,195,255,255" terrain="Roofless Stone Factory, 1.5 Level" elevation="0" />
+    <paint box="195,130,255,195" terrain="Stone Factory, 1.5 Level" elevation="0" />
+  </map>
+  <map name="roofless-hexside" hexes="C2,C4,C6,D3,D4,D5,E1,E2,E3,E4,E5,E6,E7,F3,F4,F5,G2,G4,G6" hexsides="E3,E4,E5">
+    <paint box="185,190,265,260" terrain="Roofless Stone Factory, 1.5 Level" elevation="0" />
+  </map>
+  <map name="gutted-blind-hex" hexes="C2,C4,C6,D3,D4,D5,E1,E2,E3,E4,E5,E6,E7,F3,F4,F5,G2,G4,G6" hexsides="E3,E4,E5">
+    <paint box="195,195,255,255" terrain="Gutted Stone Building, 2 Level" elevation="1" />
+    <paint box="185,64,265,130" terrain="Open Ground" elevation="5" />
+  </map>
+  <map name="roofless-rubble" hexes="C2,C4,C6,D3,D4,D5,E1,E2,E3,E4,E5,E6,E7,F3,F4,F5,G2,G4,G6" hexsides="E3,E4,E5">
+    <paint box="195,130,255,320" terrain="Stone Factory, 1.5 Level" elevation="0" />
+    <paint box="195,195,255,255" terrain="Stone Rubble" elevation="0" />
+  </map>
+  <map name="railroad-bridge" hexes="C2,C3,C4,C6,D3,D5,E1,E2,E6,E7,F3,F5,G2,G4,G5,G6" hexsides="E3,E5">
+    <paint box="185,191,265,261" terrain="Gully" elevation="-1" />
+    <paint box="228,198,234,203" terrain="Stone Bridge" elevation="-1" />
+    <paint box="222,191,228,195" terrain="Railroad, Embankment" elevation="-1" />
+  </map>
+  <map name="railroad-bridge-control" hexes="C2,C3,C4,C6,D3,D5,E1,E2,E6,E7,F3,F5,G2,G4,G5,G6" hexsides="E3,E5">
+    <paint box="185,191,265,261" terrain="Gully" elevation="-1" />
+    <paint box="228,198,234,203" terrain="Stone Bridge" elevation="-1" />
+  </map>
+</maps>

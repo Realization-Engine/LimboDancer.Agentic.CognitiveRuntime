@@ -102,27 +102,16 @@ public enum LosAim
 /// </summary>
 public static class LosUnsupportedRule
 {
-    /// <summary>Tunnel locations and tunnel terrain; bridges are reproduced.</summary>
-    public const string Tunnel = "Tunnels";
-
     /// <summary>A hex whose center is a bridge, in the depression rule when an end is in a depression.</summary>
     public const string BridgeInDepression = "Bridge hexes in the depression rule (A6.3)";
 
     /// <summary>
-    /// The factory cases no fixture reaches: LOS within a factory along a hexside or past its first hex to a rooftop,
-    /// rubble in the rooftop test, and the rooftop test of the terrain height rule. Other factory LOS is reproduced.
+    /// A factory blind-hex check along a hexside, which no fixture reaches. Factory rooftop LOS is reproduced.
     /// </summary>
     public const string FactoryRooftop = "Factory rooftop and hexside cases (B23.87)";
 
-    /// <summary>Roofless and gutted buildings and factories: their ends, their terrain, and hexes whose center is one.</summary>
-    public const string Roofless = "Roofless and gutted buildings (B23.87)";
-
     /// <summary>Interior factory walls and breaches; rowhouse walls are reproduced.</summary>
     public const string InteriorFactoryWall = "Interior factory walls and breaches (B23.71, O5.31)";
-
-    public const string Entrenchment = "Entrenchments (B27.2)";
-
-    public const string PartialOrchard = "Partial orchards (B14.2)";
 
     /// <summary>Bocage that makes a blind hex (B9.52), which no fixture reaches; bocage that blocks is reproduced.</summary>
     public const string BocageBlindHex = "Bocage blind hexes (B9.52)";
@@ -144,9 +133,6 @@ public static class LosUnsupportedRule
     /// and an orchard between the ends' levels in the blind hex rule. Other out-of-season orchard LOS is reproduced.
     /// </summary>
     public const string OrchardOutOfSeasonCases = "Out-of-season orchard height and blind hex cases";
-
-    /// <summary>Railroad embankments (<c>checkRBrrembankments</c>) and embankment ends, which no fixture board has.</summary>
-    public const string RailroadEmbankment = "Railroad embankments";
 
     public const string Deir = "Deir (F4.4)";
 
