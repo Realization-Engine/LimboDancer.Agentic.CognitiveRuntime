@@ -67,6 +67,31 @@ public sealed class StudioLosTests : IDisposable
     }
 
     [Fact]
+    public void TheSummaryCarriesTheHindranceBreakdown()
+    {
+        var result = new LosResult(LosStatus.Clear, false, 4, 3, null, string.Empty)
+        {
+            Hindrances = [new LosHindrance(1, 1.0), new LosHindrance(3, 2.0)],
+            FirstHindranceAt = new LosHindranceAt(new GridPoint(225, 160), BoardRef.Parse("ab-los"), HexName.Parse("E3")),
+        };
+        var check = new LosCheck("E2", "E6", result, null, null, null);
+        Assert.Equal("Hindrances 1 at range 1, 2 at range 3; first at ab-los:E3", check.Breakdown);
+        Assert.Equal("Clear, range 4, hindrance 3. Hindrances 1 at range 1, 2 at range 3; first at ab-los:E3", check.Summary);
+    }
+
+    [Fact]
+    public void AHexsideSourceIsAimedAtEitherVertex()
+    {
+        var board = Board(BoardStatus.Verified);
+        var first = los.Check(board, "E2:0/2", "E6");
+        var next = los.Check(board, "E2:0/2", "E6", LosAim.AuxiliaryPoint);
+        Assert.NotNull(first.Result);
+        Assert.NotNull(next.Result);
+        Assert.NotEqual(first.From, next.From);
+        Assert.Equal(first.To, next.To);
+    }
+
+    [Fact]
     public void AComposedMapIsAsDefinitiveAsItsBoards()
     {
         // A map built from placements that match no oracle scenario is only Ingested itself; its boards decide.

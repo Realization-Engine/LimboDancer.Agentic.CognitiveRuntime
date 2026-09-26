@@ -10,9 +10,21 @@ namespace LimboDancer.Domains.Asl.MapStudio.Services;
 /// <summary>An LOS check in the Studio: the result, or why the locations could not be read, and the line's end points.</summary>
 public sealed record LosCheck(string Source, string Target, LosResult? Result, string? Problem, GridPoint? From, GridPoint? To)
 {
-    /// <summary>The result in words: the status, range, hindrance total, and the reason or blocking hex.</summary>
+    /// <summary>The result in words: the status, range, hindrance total, and the reason or blocking hex, then the breakdown.</summary>
     public string Summary => Result is not { } result ? Problem ?? string.Empty
-        : result.Status switch
+        : Breakdown.Length == 0 ? Outcome(result) : $"{Outcome(result)}. {Breakdown}";
+
+    /// <summary>
+    /// The hindrance breakdown as VASL keeps it (LOS Result Design, section 2): the largest hindrance at each range and
+    /// the hex where the first was met; empty when there is none.
+    /// </summary>
+    public string Breakdown => Result is { Hindrances.Count: > 0 } result
+        ? $"Hindrances {string.Join(", ", result.Hindrances.Select(item => $"{item.Value.ToString("0.#", CultureInfo.InvariantCulture)} at range {item.Range}"))}"
+            + (result.FirstHindranceAt is { } first ? $"; first at {(first.Board is null || first.Hex is null ? first.ToString() : $"{first.Board}:{first.Hex}")}" : string.Empty)
+        : string.Empty;
+
+    private static string Outcome(LosResult result) =>
+        result.Status switch
         {
             LosStatus.Clear => $"Clear, range {result.Range}, hindrance {result.Hindrance}",
             LosStatus.Blocked => $"Blocked at {result.BlockedAt}, range {result.Range}: {result.Reason}",
@@ -46,8 +58,11 @@ public sealed class StudioLos(IBoardProvider boards, MapService maps, StudioOpti
         });
     }
 
-    /// <summary>Checks LOS between two locations such as <c>bd01:E4:0</c>; a board's own hex may omit the board.</summary>
-    public LosCheck Check(StudioBoard board, string source, string target)
+    /// <summary>
+    /// Checks LOS between two locations such as <c>bd01:E4:0</c>, or a hexside location such as <c>bd01:E4:0/3</c> aimed
+    /// at its LOS point or its auxiliary point; a board's own hex may omit the board.
+    /// </summary>
+    public LosCheck Check(StudioBoard board, string source, string target, LosAim sourceAim = LosAim.LosPoint)
     {
         ArgumentNullException.ThrowIfNull(board);
         if (!TryLocation(board, source, out var from) || !TryLocation(board, target, out var to))
@@ -58,8 +73,8 @@ public sealed class StudioLos(IBoardProvider boards, MapService maps, StudioOpti
         var map = MapFor(board);
         try
         {
-            var result = LosCalculator.Check(map, from, to);
-            return new LosCheck(source, target, result, null, map.LosPoint(map.Locate(from.Board, from.Hex)!.Value), map.LosPoint(map.Locate(to.Board, to.Hex)!.Value));
+            var result = LosCalculator.Check(map, from, sourceAim, to, LosAim.LosPoint);
+            return new LosCheck(source, target, result, null, Point(board, map, from, sourceAim), Point(board, map, to, LosAim.LosPoint));
         }
         catch (ArgumentException exception)
         {
@@ -101,6 +116,21 @@ public sealed class StudioLos(IBoardProvider boards, MapService maps, StudioOpti
 
         parts.Add($"<circle cx=\"{from.X}\" cy=\"{from.Y}\" r=\"5\" fill=\"{color}\"/><circle cx=\"{to.X}\" cy=\"{to.Y}\" r=\"5\" fill=\"{color}\"/>");
         return $"<g id=\"layer-los\" data-status=\"{result.Status}\">{string.Concat(parts)}</g>";
+    }
+
+    // A center location's LOS point is its hex center; a hexside location's is vertex `side`, or the next vertex when
+    // aimed at its auxiliary point, truncated as VASL's hexside locations are (Hex.createLocations).
+    private static GridPoint Point(StudioBoard board, LosMap map, BoardLocation location, LosAim aim)
+    {
+        var hex = map.Locate(location.Board, location.Hex)!.Value;
+        if (location.Side is not { } side)
+        {
+            return map.LosPoint(hex);
+        }
+
+        var vertices = board.Render.Grid.Geometry.Vertices(hex);
+        var vertex = vertices[((int)side + (aim == LosAim.AuxiliaryPoint ? 1 : 0)) % 6];
+        return new GridPoint((int)vertex.X, (int)vertex.Y);
     }
 
     /// <summary>The LOS oracle fixtures the Studio can find.</summary>
