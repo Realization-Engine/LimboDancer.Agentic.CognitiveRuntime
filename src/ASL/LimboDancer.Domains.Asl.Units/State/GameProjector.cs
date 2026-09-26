@@ -1,3 +1,4 @@
+using System.Text.Json;
 using LimboDancer.Domains.Asl.Maps.Composition;
 using LimboDancer.Domains.Asl.Units.Catalog;
 using LimboDancer.Domains.Asl.Units.Vocabulary;
@@ -48,6 +49,7 @@ public static class GameProjector
     {
         private readonly HashSet<string> eventIds = new(StringComparer.Ordinal);
         private readonly Dictionary<string, DiceRolled> rolls = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, (FireResolved Fire, bool Withheld, bool Reported)> fires = new(StringComparer.Ordinal);
         private UnitCatalog? catalog;
         private MapLayout? layout;
         private string path = string.Empty;
@@ -79,7 +81,8 @@ public static class GameProjector
                 RandomSelection selection => Select(previous, selection),
                 OverrunDeclared declared => Declare(previous, declared),
                 TaskCheck check => Check(previous, check),
-                FireResolved fire => Fire(previous, fire, gameEvent.EventId),
+                FireResolved fire => Fire(previous, fire, gameEvent),
+                FireReported report => Report(previous, report, gameEvent),
                 _ => Fail<GameState>("UNIT-STATE-001", $"'{gameEvent.Type}' has no projection."),
             };
 
@@ -232,8 +235,9 @@ public static class GameProjector
                     Conditions = unit.Conditions.Where(item => item.Key != condition).ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal),
                 };
 
-        private GameState? Fire(GameState state, FireResolved fire, string eventId)
+        private GameState? Fire(GameState state, FireResolved fire, GameEvent gameEvent)
         {
+            var eventId = gameEvent.EventId;
             // Fire in Live Play: the record must reproduce through the Fire package, which the Units project does not
             // reference, so replay refuses it without a verifier.
             if (fireVerifier is null)
@@ -257,10 +261,41 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-024", reason);
             }
 
+            fires[eventId] = (fire, gameEvent.Visibility is not null, false);
             return state with
             {
                 FiresThisPhase = [.. state.FiresThisPhase, new FireRecord(eventId, fire.FirerLocation, fire.TargetLocation)],
             };
+        }
+
+        /// <summary>
+        /// A public report of a fire record withheld from the firing side: it must name such a record, once, and repeat
+        /// its Locations and its arithmetic exactly.
+        /// </summary>
+        private GameState? Report(GameState state, FireReported report, GameEvent gameEvent)
+        {
+            if (!fires.TryGetValue(report.Fire, out var recorded))
+            {
+                return Fail<GameState>("UNIT-STATE-025", $"The fire report names '{report.Fire}', which is not a fire record before it.");
+            }
+
+            if (!recorded.Withheld || gameEvent.Visibility is not null || recorded.Reported)
+            {
+                return Fail<GameState>("UNIT-STATE-025",
+                    "A fire report is public, and stands once for a fire record that only the target side may see.");
+            }
+
+            if (report.FirerLocation != recorded.Fire.FirerLocation || report.TargetLocation != recorded.Fire.TargetLocation
+                || !recorded.Fire.Resolution.TryGetProperty("arithmetic", out var arithmetic) || !JsonElement.DeepEquals(arithmetic, report.Arithmetic))
+            {
+                return Fail<GameState>("UNIT-STATE-025", $"The fire report differs from the record '{report.Fire}'.");
+            }
+
+            fires[report.Fire] = recorded with
+            {
+                Reported = true
+            };
+            return state;
         }
 
         private bool CheckPhase(GameState state, int turn, string phase, string phasingSide)

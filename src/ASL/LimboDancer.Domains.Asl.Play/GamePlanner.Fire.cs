@@ -20,6 +20,26 @@ public interface IFireLosReader
 }
 
 /// <summary>
+/// A proposed fire attack (Fire in Live Play, part 5): the facts read from the game and the map, and the reasons the firing
+/// side may see. When the target Location holds a unit the firing side cannot see, a refusal tells that side only that the
+/// Fire package does not decide the attack, since the package's reasons can name the unit or its printed values; the
+/// target side and the adjudicator see the package's reasons.
+/// </summary>
+public sealed record FireProposal(string FiringSide, string TargetSide, FireAttack Attack, IReadOnlyList<string> FiringSideReasons)
+{
+    public const string Undisclosed =
+        "play.fire-refused: the Fire package does not decide every outcome of an attack on this Location, for reasons about units the firing side cannot see";
+
+    /// <summary>The reasons a perspective may see for a plan.</summary>
+    public IReadOnlyList<string> ReasonsFor(GamePlan plan, Perspective perspective)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+        ArgumentNullException.ThrowIfNull(perspective);
+        return perspective.IsAdjudicator || perspective.Name != FiringSide || FiringSideReasons.Count == 0 ? plan.Reasons : FiringSideReasons;
+    }
+}
+
+/// <summary>
 /// Fire in live play (unit step 18): a PFPh or DFPh attack by a fire group in one Location, resolved by the reviewed
 /// Fire package. Every fact comes from the game and the map read; the attack is refused before any roll unless every
 /// outcome the dice can reach is decided (<see cref="ScenarioA1FireCalculator.Precheck"/>), and its rolls are drawn one at
@@ -61,17 +81,32 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, reason!);
         }
 
+        var firingSide = state.Unit(attack.Firers![0].UnitId!)!.Side;
+        var targetSide = state.Unit(attack.Targets![0].UnitId!)!.Side;
+        var unseen = attack.Targets.Any(item => !VisibleTo(state.Unit(item.UnitId!)!, firingSide));
+        GamePlan Refuse(FireAttack facts, params string[] reasons) => Refused(scope, label, expected, reasons) with
+        {
+            Fire = new FireProposal(firingSide, targetSide, facts, unseen ? [FireProposal.Undisclosed] : []),
+        };
+
         // A7.55: the units of a Location that fire at a target in a phase form one fire group, so it fires once.
         if (state.FiresThisPhase.Any(record => record.FirerLocation == attack.FirerLocationId && record.TargetLocation == attack.TargetLocationId))
         {
             return Refused(scope, label, expected,
-                $"play.fire-group: {attack.FirerLocationId} has already fired at {attack.TargetLocationId} this phase, and its units fire as one fire group (A7.55, p. 57)");
+                $"play.fire-group: {attack.FirerLocationId} has already fired at {attack.TargetLocationId} this phase, and its units fire as one fire group (A7.55, p. 57)")
+                with
+            {
+                Fire = new FireProposal(firingSide, targetSide, attack, []),
+            };
         }
 
         var (map, mapReason) = MapFacts(state, BoardLocation.Parse(attack.FirerLocationId!), target);
         if (map is null)
         {
-            return Refused(scope, label, expected, mapReason!);
+            return Refused(scope, label, expected, mapReason!) with
+            {
+                Fire = new FireProposal(firingSide, targetSide, attack, []),
+            };
         }
 
         attack = attack with
@@ -85,12 +120,11 @@ public sealed partial class GamePlanner
         var precheck = ScenarioA1FireCalculator.Precheck(attack, reference);
         if (precheck.Count != 0)
         {
-            return Refused(scope, label, expected, ["play.fire-refused: the Fire package does not decide every outcome of this attack", .. precheck]);
+            return Refuse(attack, ["play.fire-refused: the Fire package does not decide every outcome of this attack", .. precheck]);
         }
 
         var package = ScenarioA1FirePackage.Identity.ToString();
         var facts = attack;
-        var targetSide = state.Unit(facts.Targets![0].UnitId!)!.Side;
         var marker = facts.Phase == "PFPh" ? Conditions.PrepFire : Conditions.FinalFire;
         IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
         {
@@ -152,6 +186,13 @@ public sealed partial class GamePlanner
                 new FireResolved([.. facts.Firers!.Select(item => item.UnitId!)], facts.Director?.UnitId, facts.FirerLocationId!, facts.TargetLocationId!,
                     rollIds, JsonSerializer.SerializeToElement(facts, LiveFire.Json), JsonSerializer.SerializeToElement(resolution, LiveFire.Json)),
                 package, hidesIdentity ? [targetSide] : null));
+            if (hidesIdentity)
+            {
+                // The firing side still learns the arithmetic, which names no target unit.
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "fire-reported",
+                    new FireReported(fireId, facts.FirerLocationId!, facts.TargetLocationId!, JsonSerializer.SerializeToElement(resolution.Arithmetic, LiveFire.Json)),
+                    package, null, [fireId]));
+            }
             foreach (var effect in resolution.Effects)
             {
                 if (EffectEvent(state, effect, attemptId) is { } payload)
@@ -182,6 +223,7 @@ public sealed partial class GamePlanner
         {
             Roll = new PlannedRoll("fire", Build),
             FirstEventId = EventId(attemptId, 1),
+            Fire = new FireProposal(firingSide, targetSide, facts, []),
         };
     }
 
