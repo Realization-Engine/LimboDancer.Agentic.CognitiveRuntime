@@ -31,6 +31,7 @@ public sealed class LosMap
     private readonly HexFacts[] facts;
     private readonly GridPoint[] centers;
     private readonly GridPoint[][] edges;
+    private int[]? hillocks;
 
     private LosMap(TerrainGrid grid, HexFactSet hexFacts, TerrainCatalog catalog, bool isDefinitive,
         Func<BoardRef, HexName, HexIndex?> locate, Func<HexIndex, (BoardRef Board, HexName Hex)?> ownerOf)
@@ -182,6 +183,53 @@ public sealed class LosMap
 
     /// <summary>The hex facts of a map hex.</summary>
     public HexFacts FactsOf(HexIndex hex) => facts[Geometry.HexOrdinal(hex)];
+
+    /// <summary>
+    /// The hillock (F6.4) a hex belongs to, as a number that is the same for every hex of one hillock, or null when the
+    /// hex's center is not hillock terrain. A hillock is a set of adjacent hexes whose center terrain is "Hillock", as
+    /// VASL's <c>Map.buildHillocks</c> builds them from the map's hexes.
+    /// </summary>
+    public int? HillockOf(HexIndex hex)
+    {
+        var hillock = (hillocks ??= BuildHillocks())[Geometry.HexOrdinal(hex)];
+        return hillock < 0 ? null : hillock;
+    }
+
+    // Map.buildHillocks: one hillock per hillock hex, merged while any two are adjacent, which leaves the connected sets
+    // of hillock hexes.
+    private int[] BuildHillocks()
+    {
+        var built = new int[Geometry.HexCount];
+        Array.Fill(built, -1);
+        var next = 0;
+        foreach (var start in Geometry.Hexes())
+        {
+            if (built[Geometry.HexOrdinal(start)] >= 0 || !IsHillockHex(start))
+            {
+                continue;
+            }
+
+            var pending = new Stack<HexIndex>([start]);
+            built[Geometry.HexOrdinal(start)] = next;
+            while (pending.TryPop(out var hex))
+            {
+                foreach (var side in HexsideDirections.All)
+                {
+                    if (Geometry.Neighbor(hex, side) is { } adjacent && built[Geometry.HexOrdinal(adjacent)] < 0 && IsHillockHex(adjacent))
+                    {
+                        built[Geometry.HexOrdinal(adjacent)] = next;
+                        pending.Push(adjacent);
+                    }
+                }
+            }
+
+            next++;
+        }
+
+        return built;
+    }
+
+    private bool IsHillockHex(HexIndex hex) => FactsOf(hex).Center.Terrain?.Name == "Hillock";
 
     /// <summary>The LOS point of the hex's center locations (<c>Hex.getHexCenter</c>); upper levels share it.</summary>
     public GridPoint LosPoint(HexIndex hex) => centers[Geometry.HexOrdinal(hex)];

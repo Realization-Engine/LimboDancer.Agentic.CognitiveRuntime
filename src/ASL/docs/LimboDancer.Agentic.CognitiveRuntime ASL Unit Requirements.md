@@ -320,7 +320,7 @@ Decided on 2026-09-25 as recommended in the [Decision Memo for D1 to D4](<ASL Un
     4. *What cannot be checked.* Partial orchards and entrenchments appear on no fixture board. They stay unsupported by name until a board with them is found, since no answer is admitted without a VASL comparison.
     5. *Acceptance.* U16 (section 14) passes.
 
-    Designed in the [ASL Unit LOS Slice 3 Design](<ASL Unit LOS Slice 3 Design.md>).
+    Designed and built in the [ASL Unit LOS Slice 3 Design](<ASL Unit LOS Slice 3 Design.md>).
 16. **The full VASL LOS result:** hexside and bypass aiming points (VASL's auxiliary LOS points), the hindrance of each hex and rule as VASL reports it so Fire can apply the DRM later, and LOS from a unit's position in a live game on the Play page. Still no game action uses LOS. Planned in outline, detailed when step 15 is merged.
 
 Later candidates, not yet sequenced: revisiting the Java VASL oracle tool, which the user allowed on 2026-09-26 only to generate test fixtures, for now; multi-user play, which must first close the lone-SMC election probe of step 11; the lone SMC's options and immediate CC after an OVR (A4.151 and A4.152), once the IFT and CC tables are registered; Fire, on the LOS of step 13, once the IFT is registered; scenario OB and SSR checks at setup, which need the scenario cards as a registered source; and a read-only VASL saved-game import, which needs a format and licensing review first.
