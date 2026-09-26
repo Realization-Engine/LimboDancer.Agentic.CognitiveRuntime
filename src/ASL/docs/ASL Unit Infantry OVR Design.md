@@ -1,6 +1,6 @@
 # ASL Unit Infantry OVR Design
 
-**Status:** Proposed. Designed before code, on `feature/asl-unit-step11-design`; built in the order of section 10.
+**Status:** Built in the order of section 10. Part 1 is recorded in section 3, part 2 in section 5, and part 3 in section 8.
 
 **Date:** 2026-09-26
 
@@ -126,6 +126,13 @@ The Execution adapter keeps the second-defender return in its own journal, apart
 - the tests of those parts: the return transition, the simulation and journal stores, the gate binding, and the Host registration.
 
 `ProductionDependencyTests` in the runtime's architecture tests then asserts that the runtime references no ASL project (ASL-UNIT-002). The second-defender execution review gains a note that its return aggregate was retired at step 11, and it stays as the record of that work. This part builds and tests the runtime solution as well as the ASL solution.
+
+**As built** (part 3).
+- Removed as listed above. The Scenario A1 test project also drops its references to the Execution project and the runtime Host, which only the removed tests used.
+- The Host's and the integration tests' lock files no longer list the ASL projects.
+- `ProductionDependencyTests` no longer allows the Host to reference the Execution project, and `RuntimeProjectsReferenceNoAslProject` states ASL-UNIT-002 directly.
+- `ScenarioA1LocationCompatibilityTests` in the Maps tests no longer scans the removed project.
+- The Map Studio requirements (ASL-MAP-081) and the ASL docs README record the retirement.
 
 ## 9. Tests
 

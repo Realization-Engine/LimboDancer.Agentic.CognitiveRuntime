@@ -17,7 +17,6 @@ public sealed class ProductionDependencyTests
                     "LimboDancer.Runtime",
                     "LimboDancer.Infrastructure",
                     "LimboDancer.Adapters.Mcp",
-                    "LimboDancer.Domains.Asl.Execution",
                 ],
                 StringComparer.Ordinal),
             ["LimboDancer.AppHost"] = new HashSet<string>(["LimboDancer.Host"], StringComparer.Ordinal),
@@ -36,6 +35,20 @@ public sealed class ProductionDependencyTests
         Assert.True(
             violations.Length == 0,
             $"New solution projects must not reference src/_Legacy or LimboDancer.MCP.*:{Environment.NewLine}{string.Join(Environment.NewLine, violations)}");
+    }
+
+    [Fact]
+    public void RuntimeProjectsReferenceNoAslProject()
+    {
+        // ASL-UNIT-002: ASL depends on the runtime, never the reverse.
+        var violations = ReadSolutionProjectReferences()
+            .Where(reference => reference.ReferencedProject.StartsWith("LimboDancer.Domains.Asl.", StringComparison.Ordinal))
+            .Select(reference => $"{reference.SourceProject} -> {reference.ResolvedPath}")
+            .ToArray();
+
+        Assert.True(
+            violations.Length == 0,
+            $"Runtime projects must not reference ASL projects:{Environment.NewLine}{string.Join(Environment.NewLine, violations)}");
     }
 
     [Fact]

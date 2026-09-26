@@ -5,7 +5,7 @@ using LimboDancer.Domains.Asl.Maps.Geometry;
 namespace LimboDancer.Domains.Asl.Maps.Tests;
 
 /// <summary>
-/// ASL-MAP-022: every board location string the Scenario A1 providers, packages, and execution tests use
+/// ASL-MAP-022: every board location string the Scenario A1 providers, packages, and tests use
 /// must parse to a canonical <see cref="BoardLocation"/> and format back to the identical string.
 /// </summary>
 public sealed partial class ScenarioA1LocationCompatibilityTests
@@ -13,7 +13,6 @@ public sealed partial class ScenarioA1LocationCompatibilityTests
     private static readonly string[] ScannedDirectories =
     [
         Path.Combine("src", "ASL", "LimboDancer.Domains.Asl.ScenarioA1"),
-        Path.Combine("src", "ASL", "LimboDancer.Domains.Asl.Execution"),
         Path.Combine("src", "ASL", "tests", "LimboDancer.Domains.Asl.ScenarioA1.Tests"),
         Path.Combine("docs", "ASL", "SourceRegistry"),
     ];
@@ -29,7 +28,7 @@ public sealed partial class ScenarioA1LocationCompatibilityTests
             .SelectMany(path => LocationPattern().Matches(File.ReadAllText(path)).Select(match => (Path: path, Text: match.Value)))
             .ToArray();
 
-        // The return path, its journal, and the board observation tests all use locations such as bd01:D4:0.
+        // The board observation and post-reveal tests use locations such as bd01:D4:0.
         Assert.Contains(locations, location => location.Text == "bd01:D4:0");
         Assert.Contains(locations, location => location.Text == "bd01:E4:0");
 
