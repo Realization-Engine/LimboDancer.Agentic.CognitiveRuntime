@@ -34,6 +34,17 @@ public sealed class AslScenarioA1FireSourceReviewTests
     }
 
     [Fact]
+    public void TheBranchSubjectsAreVerified()
+    {
+        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var review = AslScenarioA1FireSourceReview.BuildBranches(RepositoryPaths.Root, manifests, Attestation());
+        Assert.Equal(4, review.Records.Count);
+        Assert.All(review.Records, record => Assert.Equal(TirSourceVerificationDisposition.Verified, record.Disposition));
+        var path = Path.Combine(RepositoryPaths.Root, "docs", "ASL", "SourceRegistry", AslScenarioA1FireSourceReview.BranchesComparisonFile);
+        Assert.Equal(AslScenarioA1FireSourceReview.BranchesComparisonSha256, Hashing.Sha256File(path));
+    }
+
+    [Fact]
     public void TheComparisonIsPinnedAndRecordsPhysicalPages()
     {
         var path = Path.Combine(RepositoryPaths.Root, "docs", "ASL", "SourceRegistry", AslScenarioA1FireSourceReview.ComparisonFile);

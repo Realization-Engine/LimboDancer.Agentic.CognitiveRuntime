@@ -16,6 +16,10 @@ public static class AslScenarioA1FireSourceReview
     public const string ComparisonFile = "asl-scenario-a1.fire-pdf-comparison.json";
     public const string ComparisonSha256 = "00673414dabddc4469018c1abb9664325afac84016e63fc7645c5b84dcc023f4";
 
+    /// <summary>The unit step 18 comparison: Self-Rally (A10.63) and Wounds (A17.1, A17.11, A17.3).</summary>
+    public const string BranchesComparisonFile = "asl-scenario-a1.fire-branches-pdf-comparison.json";
+    public const string BranchesComparisonSha256 = "417ca7726c27e070543f4b8bf75ef5ff79652e0cf3f3509a1c4da252968af155";
+
     private const string ChapterA = "asl-easlrb-3.10:chapter-a";
     private const string ChapterB = "asl-easlrb-3.10:chapter-b";
 
@@ -78,6 +82,14 @@ public static class AslScenarioA1FireSourceReview
         ("B15.2", "B15.2", ChapterB, 950, SourceFragmentKind.RuleText, 129),
     ];
 
+    private static readonly (string Rule, string Registered, string Source, int Line, SourceFragmentKind Kind, int Page)[] BranchSubjects =
+    [
+        ("A10.63", "A10.63", ChapterA, 828, SourceFragmentKind.RuleText, 68),
+        ("A17.1", "A17.1", ChapterA, 1316, SourceFragmentKind.RuleText, 85),
+        ("A17.11", "A17.11", ChapterA, 1320, SourceFragmentKind.RuleText, 85),
+        ("A17.3", "A17.3", ChapterA, 1324, SourceFragmentKind.RuleText, 85),
+    ];
+
     /// <summary>The verified fragments, in subject order, keyed by rule id for the Fire package.</summary>
     public static IReadOnlyList<(string Rule, int Page, SourceFragment Fragment)> Fragments(GeneratedManifests manifests)
     {
@@ -86,12 +98,23 @@ public static class AslScenarioA1FireSourceReview
     }
 
     public static AslScenarioA1VerificationBatch Build(string repositoryRoot,
-        GeneratedManifests manifests, AslScenarioA1SourceAttestation attestation)
+        GeneratedManifests manifests, AslScenarioA1SourceAttestation attestation) =>
+        Build(repositoryRoot, manifests, attestation, ComparisonFile, ComparisonSha256, Subjects, "unit step 17 Fire review");
+
+    /// <summary>The unit step 18 subjects that close the Fire package's undecided branches.</summary>
+    public static AslScenarioA1VerificationBatch BuildBranches(string repositoryRoot,
+        GeneratedManifests manifests, AslScenarioA1SourceAttestation attestation) =>
+        Build(repositoryRoot, manifests, attestation, BranchesComparisonFile, BranchesComparisonSha256, BranchSubjects,
+            "unit step 18 Fire branches review");
+
+    private static AslScenarioA1VerificationBatch Build(string repositoryRoot, GeneratedManifests manifests,
+        AslScenarioA1SourceAttestation attestation, string file, string digest,
+        (string Rule, string Registered, string Source, int Line, SourceFragmentKind Kind, int Page)[] subjectList, string review)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(repositoryRoot);
         ArgumentNullException.ThrowIfNull(manifests);
-        var path = Path.Combine(repositoryRoot, "docs", "ASL", "SourceRegistry", ComparisonFile);
-        Require(Hashing.Sha256File(path) == ComparisonSha256, "The reviewed Fire PDF comparison changed.");
+        var path = Path.Combine(repositoryRoot, "docs", "ASL", "SourceRegistry", file);
+        Require(Hashing.Sha256File(path) == digest, "The reviewed Fire PDF comparison changed.");
 
         using var report = JsonDocument.Parse(File.ReadAllText(path));
         var root = report.RootElement;
@@ -101,12 +124,12 @@ public static class AslScenarioA1FireSourceReview
 
         var source = AslScenarioA1VerificationBatchBuilder.Build(manifests, attestation);
         var subjects = root.GetProperty("subjects").EnumerateArray().ToArray();
-        Require(subjects.Length == Subjects.Length, "The Fire source subjects changed.");
+        Require(subjects.Length == subjectList.Length, "The Fire source subjects changed.");
 
         var records = new List<TirSourceVerificationRecord>();
-        for (var index = 0; index < Subjects.Length; index++)
+        for (var index = 0; index < subjectList.Length; index++)
         {
-            var subject = Subjects[index];
+            var subject = subjectList[index];
             var evidence = subjects[index];
             var fragment = Find(manifests, subject);
             var registered = evidence.TryGetProperty("registeredElementId", out var element)
@@ -139,8 +162,8 @@ public static class AslScenarioA1FireSourceReview
             records.Add(TirSourceVerificationService.CreateRecord(
                 source.SourceDocument, artifact.Envelope.ArtifactId, manifests.Registry, fragment,
                 $"Delegated xUnit source review; PDF SHA-256 {AslScenarioA1SourceInventory.PdfDigest}; "
-                    + $"physical PDF page {subject.Page}; comparison SHA-256 {ComparisonSha256}. "
-                    + $"Source for {subject.Rule} in the unit step 17 Fire review.",
+                    + $"physical PDF page {subject.Page}; comparison SHA-256 {digest}. "
+                    + $"Source for {subject.Rule} in the {review}.",
                 TirSourceVerificationDisposition.Verified, null, [],
                 new DateTimeOffset(2026, 9, 26, 0, 0, 0, TimeSpan.Zero),
                 "user-directed-xunit-review-2026-09-26", "source-provider:delegated-xunit-review"));

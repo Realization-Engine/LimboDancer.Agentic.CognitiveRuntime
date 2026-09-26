@@ -124,7 +124,7 @@ public sealed class GameStatesTests : IDisposable
             { "eventId": "e1", "revision": 1, "time": "2026-09-26T09:00:00Z", "source": "test", "type": "game-started",
               "payload": { "sides": [ { "id": "german", "nationality": "german" }, { "id": "russian", "nationality": "russian" } ],
                 "map": { "reference": "test-map", "version": "v1", "boards": [ {{string.Join(", ", boards.Select(board => $$"""{ "board": "{{board}}", "version": "{{version}}" }"""))}} ] },
-                "catalog": "asl-scenario-a1@1.0.0", "turn": 1, "phase": "rph", "phasingSide": "german", "synthetic": true } },
+                "catalog": "asl-scenario-a1@1.1.0", "turn": 1, "phase": "rph", "phasingSide": "german", "synthetic": true } },
             { "eventId": "e2", "revision": 2, "time": "2026-09-26T09:00:01Z", "source": "test", "type": "instance-created",
               "payload": { "instance": { "id": "a1", "kind": "asl:squad", "definition": "attacker-squad", "side": "german", "position": { "at": "{{attackerAt}}" },
                 "conditions": { "asl:broken": false, "asl:berserk": false, "asl:captured": false, "asl:melee": false } } } },

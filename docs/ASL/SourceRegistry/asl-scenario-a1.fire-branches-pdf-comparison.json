@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "pdf-comparison-complete-delegated-xunit-review",
+  "pdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+  "method": "As the step 17 Fire comparison: whole fragments compared to pdftotext 4.00 -raw -enc UTF-8 output of each physical PDF page, with line endings normalized to LF; the fragment loses its Markdown markup, and both sides lose ligatures, punctuation, case, and whitespace; each normalized fragment occurs whole in its normalized page text.",
+  "subjects": [
+    {
+      "ruleId": "A10.63",
+      "fragmentId": "asl-fragment:sha256:b5ec1005c997771e2384da2e041b657e545cd5ec73db8bae9e50c6e6abd3d137",
+      "sourceId": "asl-easlrb-3.10:chapter-a",
+      "sourceSha256": "6347534e64f739cacc57dd75c3d604997723fd0b4988565609deeff007a8843d",
+      "startLine": 828,
+      "endLine": 828,
+      "contentSha256": "7e869eb86204ee844b3d3e25d5ebac0d99e47dd3dfdcebca3492295f0cb56a6b",
+      "kind": "ruleText",
+      "conversionPage": 67,
+      "physicalPdfPage": 68,
+      "pdfPageTextSha256": "c68b6acc03aaa7e2df0583e866d9cfd67f0e2f3cbf76c5668f4a5b3b7ec532b5",
+      "normalizedAlphanumericSha256": "151af11aee576a0d3c41b924b7dbcd56bd66709bc5cefab924b7a43afd4b0941",
+      "normalizedAlphanumericLength": 366,
+      "comparison": "complete-alphanumeric-match"
+    },
+    {
+      "ruleId": "A17.1",
+      "fragmentId": "asl-fragment:sha256:7f9d526fe5622b959203a9e3dd44d2d278293ff450534a13813b5c83ff0b5a3a",
+      "sourceId": "asl-easlrb-3.10:chapter-a",
+      "sourceSha256": "6347534e64f739cacc57dd75c3d604997723fd0b4988565609deeff007a8843d",
+      "startLine": 1316,
+      "endLine": 1316,
+      "contentSha256": "ef61c6df1fe08e3e99cb95b1bb05fceea6078e7abbe170e82ca7b23879a9305d",
+      "kind": "ruleText",
+      "conversionPage": 85,
+      "physicalPdfPage": 85,
+      "pdfPageTextSha256": "5350e9780f753d7529481827ab05ae98820f419b6a6ba00606b4f916d29fc184",
+      "normalizedAlphanumericSha256": "0e6603988dfd5e1a57021b4f2a383aa9550069c043a23d64f5dc835192fe8fcf",
+      "normalizedAlphanumericLength": 329,
+      "comparison": "complete-alphanumeric-match"
+    },
+    {
+      "ruleId": "A17.11",
+      "fragmentId": "asl-fragment:sha256:3b9714ea0d0bd3903aef3f0080cc7247e5b32d444311187f5a2c713a2e2954c2",
+      "sourceId": "asl-easlrb-3.10:chapter-a",
+      "sourceSha256": "6347534e64f739cacc57dd75c3d604997723fd0b4988565609deeff007a8843d",
+      "startLine": 1320,
+      "endLine": 1320,
+      "contentSha256": "4a183fc157b6ddeabea2e473e64330ed40f3cda9109c36e67bb62b78676c25bc",
+      "kind": "ruleText",
+      "conversionPage": 85,
+      "physicalPdfPage": 85,
+      "pdfPageTextSha256": "5350e9780f753d7529481827ab05ae98820f419b6a6ba00606b4f916d29fc184",
+      "normalizedAlphanumericSha256": "2a241bf7858a57ac273ded456a98b64dddced364ec5cc6dd1f441010eacd23c6",
+      "normalizedAlphanumericLength": 294,
+      "comparison": "complete-alphanumeric-match"
+    },
+    {
+      "ruleId": "A17.3",
+      "fragmentId": "asl-fragment:sha256:7ef3fb7d478b3b767c99abf7b60f7ee7315c14757cb09e2f8c91becaf933f739",
+      "sourceId": "asl-easlrb-3.10:chapter-a",
+      "sourceSha256": "6347534e64f739cacc57dd75c3d604997723fd0b4988565609deeff007a8843d",
+      "startLine": 1324,
+      "endLine": 1324,
+      "contentSha256": "92f5c7278bcfced2396cf36fd0d823c128f8cb2213ef32d196c57062d97528ef",
+      "kind": "ruleText",
+      "conversionPage": 85,
+      "physicalPdfPage": 85,
+      "pdfPageTextSha256": "5350e9780f753d7529481827ab05ae98820f419b6a6ba00606b4f916d29fc184",
+      "normalizedAlphanumericSha256": "01cbe9f2b929ac84712b50499b56b436fcdd691ad5ff45392cdc1e17304609a0",
+      "normalizedAlphanumericLength": 360,
+      "comparison": "complete-alphanumeric-match"
+    }
+  ]
+}

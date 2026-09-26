@@ -149,7 +149,13 @@ public sealed class UnitStudioTests : IDisposable
     public void ThePublishedCatalogIsOfferedWithPrintedValuesOnly()
     {
         var choices = library.CatalogChoices;
-        Assert.Equal(["attacker-squad", "attacker-half-squad", "defender-squad", "defender-leader"], choices.Select(choice => choice.Definition.Definition));
+        Assert.Equal(
+            [
+                "attacker-squad", "attacker-half-squad", "defender-squad", "defender-leader", "defender-half-squad", "attacker-2nd-line-squad",
+                "attacker-2nd-line-half-squad", "attacker-conscript-squad", "attacker-conscript-half-squad", "defender-conscript-squad",
+                "defender-conscript-half-squad", "defender-leader-7-0", "defender-leader-6-plus-1",
+            ],
+            choices.Select(choice => choice.Definition.Definition));
         Assert.All(choices, choice =>
         {
             Assert.Equal(Units.Catalog.CatalogPublication.Published, choice.Publication);
@@ -170,8 +176,8 @@ public sealed class UnitStudioTests : IDisposable
         Assert.Contains("Russian", lab.Find("#lab-name").TextContent, StringComparison.Ordinal);
         Assert.Contains("4-4-7", lab.Find("#lab-name").TextContent, StringComparison.Ordinal);
         var source = lab.Find("#lab-catalog-source");
-        Assert.Contains("asl-scenario-a1@1.0.0, definition defender-squad", source.TextContent, StringComparison.Ordinal);
-        Assert.StartsWith("asl-scenario-a1@1.0.0+sha256:", source.GetAttribute("title"), StringComparison.Ordinal);
+        Assert.Contains("asl-scenario-a1@1.1.0, definition defender-squad", source.TextContent, StringComparison.Ordinal);
+        Assert.StartsWith("asl-scenario-a1@1.1.0+sha256:", source.GetAttribute("title"), StringComparison.Ordinal);
         Assert.EndsWith("#defender-squad", source.GetAttribute("title"), StringComparison.Ordinal);
         Assert.DoesNotContain("The document is refused", lab.Markup, StringComparison.Ordinal);
         Assert.DoesNotContain("class=\"fail\"", lab.Find("#lab-findings").OuterHtml, StringComparison.Ordinal);

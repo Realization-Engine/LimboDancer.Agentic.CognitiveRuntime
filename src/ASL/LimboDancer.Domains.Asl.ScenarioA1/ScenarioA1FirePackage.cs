@@ -5,22 +5,25 @@ using LimboDancer.Abstractions.Domain;
 namespace LimboDancer.Domains.Asl.ScenarioA1;
 
 /// <summary>
-/// Pinned read-only package for PFPh and DFPh fire by a single-Location fire group (unit step 17; Scenario A1 Fire
-/// Review 2026-09-26): the FP column, the DRM, the IFT result, and each target unit's effect. It never rolls, fires, or
+/// Pinned read-only package for PFPh and DFPh fire by a single-Location fire group (unit step 17, revised at step 18;
+/// Scenario A1 Fire Review 2026-09-26): the FP column, the DRM, the IFT result, and each target unit's effect. It never rolls, fires, or
 /// changes a game.
 /// </summary>
 public sealed class ScenarioA1FirePackage : IDomainPackageResolver
 {
-    public const string ManifestSha256 = "45011b56946be8a7aba1676e6aea8d5ad0fa82193e4ebac24e06fd36bdff2b69";
-    public const string MatrixSha256 = "82d85ac93e01c81f5888209e6f2d4d5b1f8de6d4f86545d345b5fcbc76af743c";
+    public const string ManifestSha256 = "58485196fc3427626945fa62909f0c9c1851c772c515180a44b2d405b54aa3b3";
+    public const string MatrixSha256 = "81128b0fe8237131970b2970ab026abe086035983bce8b7d6a14aaec605e7c32";
     public const string ChartSupplementId = "asl-supplement:fire-charts";
+
+    /// <summary>The package as first published at unit step 17, before the step 18 revision.</summary>
+    public const string PriorManifestSha256 = "45011b56946be8a7aba1676e6aea8d5ad0fa82193e4ebac24e06fd36bdff2b69";
     public static readonly DomainPackageRef Identity = new(new DomainId("asl"), "scenario-a1-fire", "sha256:" + ManifestSha256);
 
     private static readonly string[] Cases =
     [
         "A1-fire-resolved", "A1-fire-phase-outside", "A1-fire-firer-outside", "A1-fire-target-outside", "A1-fire-range-or-los-denied",
         "A1-fire-levels-differ", "A1-fire-hindrance-unattributed", "A1-fire-concealment-unreviewed", "A1-fire-elr-undecided",
-        "A1-fire-leader-wounded", "A1-fire-reduction-counter-missing", "A1-fire-leaders-interact", "A1-fire-roll-missing",
+        "A1-fire-leaders-interact", "A1-fire-roll-missing",
     ];
 
     private static readonly string[] PinnedDigests =
@@ -45,6 +48,7 @@ public sealed class ScenarioA1FirePackage : IDomainPackageResolver
             || root.GetProperty("executionAuthority").GetString() != "none"
             || reviewed.GetProperty("executionAuthority").GetString() != "none"
             || root.GetProperty("caseMatrixSha256").GetString() != MatrixSha256
+            || root.GetProperty("priorFirePackageManifestSha256").GetString() != PriorManifestSha256
             || !PinnedDigests.All(name => root.GetProperty(name).GetString() == reviewed.GetProperty(name).GetString())
             || !JsonElement.DeepEquals(root.GetProperty("sourceFragments"), reviewed.GetProperty("sourceFragments"))
             || !JsonElement.DeepEquals(root.GetProperty("visualReadings"), reviewed.GetProperty("visualReadings"))

@@ -56,3 +56,133 @@ sheet,counter,face,attribute,value,transcriber,reviewer,note
 ,defender-leader,broken,broken-morale,,,,"whole number, or not-printed if the counter has no broken side (A1.4)"
 ,defender-leader,broken,bpv,,,,"whole number, or not-printed (A1.4)"
 ,defender-leader,broken,asl:self-rally,,,,yes or no: broken morale in a square (A1.4)
+,defender-half-squad,counter,kind,,,,expected asl:half-squad
+,defender-half-squad,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,defender-half-squad,front,firepower,,,,whole number (A1.21)
+,defender-half-squad,front,range,,,,whole number (A1.22)
+,defender-half-squad,front,morale,,,,whole number (A1.23)
+,defender-half-squad,front,identity,,,,"identity letter or crew numeral as printed, or not-printed (A1.24)"
+,defender-half-squad,front,class,,,,"elite, 1st-line, 2nd-line, green, conscript, or not-printed (A1.25)"
+,defender-half-squad,front,class-variant,,,,"circle, square, or not-printed (A1.25)"
+,defender-half-squad,front,smoke-exponent,,,,"whole number, or not-printed (A1.21)"
+,defender-half-squad,front,asl:assault-fire,,,,yes or no: firepower underlined (A1.21)
+,defender-half-squad,front,asl:spraying-fire,,,,yes or no: range underlined (A1.22)
+,defender-half-squad,front,asl:elr-5,,,,yes or no: morale underlined (A1.23)
+,defender-half-squad,front,asl:assault-engineer,,,,yes or no: DC symbol printed (A25.01)
+,defender-half-squad,broken,broken-morale,,,,"whole number, or not-printed if the counter has no broken side (A1.4)"
+,defender-half-squad,broken,bpv,,,,"whole number, or not-printed (A1.4)"
+,defender-half-squad,broken,asl:self-rally,,,,yes or no: broken morale in a square (A1.4)
+,attacker-2nd-line-squad,counter,kind,,,,expected asl:squad
+,attacker-2nd-line-squad,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,attacker-2nd-line-squad,front,firepower,,,,whole number (A1.21)
+,attacker-2nd-line-squad,front,range,,,,whole number (A1.22)
+,attacker-2nd-line-squad,front,morale,,,,whole number (A1.23)
+,attacker-2nd-line-squad,front,identity,,,,"identity letter or crew numeral as printed, or not-printed (A1.24)"
+,attacker-2nd-line-squad,front,class,,,,"elite, 1st-line, 2nd-line, green, conscript, or not-printed (A1.25)"
+,attacker-2nd-line-squad,front,class-variant,,,,"circle, square, or not-printed (A1.25)"
+,attacker-2nd-line-squad,front,smoke-exponent,,,,"whole number, or not-printed (A1.21)"
+,attacker-2nd-line-squad,front,asl:assault-fire,,,,yes or no: firepower underlined (A1.21)
+,attacker-2nd-line-squad,front,asl:spraying-fire,,,,yes or no: range underlined (A1.22)
+,attacker-2nd-line-squad,front,asl:elr-5,,,,yes or no: morale underlined (A1.23)
+,attacker-2nd-line-squad,front,asl:assault-engineer,,,,yes or no: DC symbol printed (A25.01)
+,attacker-2nd-line-squad,broken,broken-morale,,,,"whole number, or not-printed if the counter has no broken side (A1.4)"
+,attacker-2nd-line-squad,broken,bpv,,,,"whole number, or not-printed (A1.4)"
+,attacker-2nd-line-squad,broken,asl:self-rally,,,,yes or no: broken morale in a square (A1.4)
+,attacker-2nd-line-half-squad,counter,kind,,,,expected asl:half-squad
+,attacker-2nd-line-half-squad,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,attacker-2nd-line-half-squad,front,firepower,,,,whole number (A1.21)
+,attacker-2nd-line-half-squad,front,range,,,,whole number (A1.22)
+,attacker-2nd-line-half-squad,front,morale,,,,whole number (A1.23)
+,attacker-2nd-line-half-squad,front,identity,,,,"identity letter or crew numeral as printed, or not-printed (A1.24)"
+,attacker-2nd-line-half-squad,front,class,,,,"elite, 1st-line, 2nd-line, green, conscript, or not-printed (A1.25)"
+,attacker-2nd-line-half-squad,front,class-variant,,,,"circle, square, or not-printed (A1.25)"
+,attacker-2nd-line-half-squad,front,smoke-exponent,,,,"whole number, or not-printed (A1.21)"
+,attacker-2nd-line-half-squad,front,asl:assault-fire,,,,yes or no: firepower underlined (A1.21)
+,attacker-2nd-line-half-squad,front,asl:spraying-fire,,,,yes or no: range underlined (A1.22)
+,attacker-2nd-line-half-squad,front,asl:elr-5,,,,yes or no: morale underlined (A1.23)
+,attacker-2nd-line-half-squad,front,asl:assault-engineer,,,,yes or no: DC symbol printed (A25.01)
+,attacker-2nd-line-half-squad,broken,broken-morale,,,,"whole number, or not-printed if the counter has no broken side (A1.4)"
+,attacker-2nd-line-half-squad,broken,bpv,,,,"whole number, or not-printed (A1.4)"
+,attacker-2nd-line-half-squad,broken,asl:self-rally,,,,yes or no: broken morale in a square (A1.4)
+,attacker-conscript-squad,counter,kind,,,,expected asl:squad
+,attacker-conscript-squad,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,attacker-conscript-squad,front,firepower,,,,whole number (A1.21)
+,attacker-conscript-squad,front,range,,,,whole number (A1.22)
+,attacker-conscript-squad,front,morale,,,,whole number (A1.23)
+,attacker-conscript-squad,front,identity,,,,"identity letter or crew numeral as printed, or not-printed (A1.24)"
+,attacker-conscript-squad,front,class,,,,"elite, 1st-line, 2nd-line, green, conscript, or not-printed (A1.25)"
+,attacker-conscript-squad,front,class-variant,,,,"circle, square, or not-printed (A1.25)"
+,attacker-conscript-squad,front,smoke-exponent,,,,"whole number, or not-printed (A1.21)"
+,attacker-conscript-squad,front,asl:assault-fire,,,,yes or no: firepower underlined (A1.21)
+,attacker-conscript-squad,front,asl:spraying-fire,,,,yes or no: range underlined (A1.22)
+,attacker-conscript-squad,front,asl:elr-5,,,,yes or no: morale underlined (A1.23)
+,attacker-conscript-squad,front,asl:assault-engineer,,,,yes or no: DC symbol printed (A25.01)
+,attacker-conscript-squad,broken,broken-morale,,,,"whole number, or not-printed if the counter has no broken side (A1.4)"
+,attacker-conscript-squad,broken,bpv,,,,"whole number, or not-printed (A1.4)"
+,attacker-conscript-squad,broken,asl:self-rally,,,,yes or no: broken morale in a square (A1.4)
+,attacker-conscript-half-squad,counter,kind,,,,expected asl:half-squad
+,attacker-conscript-half-squad,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,attacker-conscript-half-squad,front,firepower,,,,whole number (A1.21)
+,attacker-conscript-half-squad,front,range,,,,whole number (A1.22)
+,attacker-conscript-half-squad,front,morale,,,,whole number (A1.23)
+,attacker-conscript-half-squad,front,identity,,,,"identity letter or crew numeral as printed, or not-printed (A1.24)"
+,attacker-conscript-half-squad,front,class,,,,"elite, 1st-line, 2nd-line, green, conscript, or not-printed (A1.25)"
+,attacker-conscript-half-squad,front,class-variant,,,,"circle, square, or not-printed (A1.25)"
+,attacker-conscript-half-squad,front,smoke-exponent,,,,"whole number, or not-printed (A1.21)"
+,attacker-conscript-half-squad,front,asl:assault-fire,,,,yes or no: firepower underlined (A1.21)
+,attacker-conscript-half-squad,front,asl:spraying-fire,,,,yes or no: range underlined (A1.22)
+,attacker-conscript-half-squad,front,asl:elr-5,,,,yes or no: morale underlined (A1.23)
+,attacker-conscript-half-squad,front,asl:assault-engineer,,,,yes or no: DC symbol printed (A25.01)
+,attacker-conscript-half-squad,broken,broken-morale,,,,"whole number, or not-printed if the counter has no broken side (A1.4)"
+,attacker-conscript-half-squad,broken,bpv,,,,"whole number, or not-printed (A1.4)"
+,attacker-conscript-half-squad,broken,asl:self-rally,,,,yes or no: broken morale in a square (A1.4)
+,defender-conscript-squad,counter,kind,,,,expected asl:squad
+,defender-conscript-squad,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,defender-conscript-squad,front,firepower,,,,whole number (A1.21)
+,defender-conscript-squad,front,range,,,,whole number (A1.22)
+,defender-conscript-squad,front,morale,,,,whole number (A1.23)
+,defender-conscript-squad,front,identity,,,,"identity letter or crew numeral as printed, or not-printed (A1.24)"
+,defender-conscript-squad,front,class,,,,"elite, 1st-line, 2nd-line, green, conscript, or not-printed (A1.25)"
+,defender-conscript-squad,front,class-variant,,,,"circle, square, or not-printed (A1.25)"
+,defender-conscript-squad,front,smoke-exponent,,,,"whole number, or not-printed (A1.21)"
+,defender-conscript-squad,front,asl:assault-fire,,,,yes or no: firepower underlined (A1.21)
+,defender-conscript-squad,front,asl:spraying-fire,,,,yes or no: range underlined (A1.22)
+,defender-conscript-squad,front,asl:elr-5,,,,yes or no: morale underlined (A1.23)
+,defender-conscript-squad,front,asl:assault-engineer,,,,yes or no: DC symbol printed (A25.01)
+,defender-conscript-squad,broken,broken-morale,,,,"whole number, or not-printed if the counter has no broken side (A1.4)"
+,defender-conscript-squad,broken,bpv,,,,"whole number, or not-printed (A1.4)"
+,defender-conscript-squad,broken,asl:self-rally,,,,yes or no: broken morale in a square (A1.4)
+,defender-conscript-half-squad,counter,kind,,,,expected asl:half-squad
+,defender-conscript-half-squad,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,defender-conscript-half-squad,front,firepower,,,,whole number (A1.21)
+,defender-conscript-half-squad,front,range,,,,whole number (A1.22)
+,defender-conscript-half-squad,front,morale,,,,whole number (A1.23)
+,defender-conscript-half-squad,front,identity,,,,"identity letter or crew numeral as printed, or not-printed (A1.24)"
+,defender-conscript-half-squad,front,class,,,,"elite, 1st-line, 2nd-line, green, conscript, or not-printed (A1.25)"
+,defender-conscript-half-squad,front,class-variant,,,,"circle, square, or not-printed (A1.25)"
+,defender-conscript-half-squad,front,smoke-exponent,,,,"whole number, or not-printed (A1.21)"
+,defender-conscript-half-squad,front,asl:assault-fire,,,,yes or no: firepower underlined (A1.21)
+,defender-conscript-half-squad,front,asl:spraying-fire,,,,yes or no: range underlined (A1.22)
+,defender-conscript-half-squad,front,asl:elr-5,,,,yes or no: morale underlined (A1.23)
+,defender-conscript-half-squad,front,asl:assault-engineer,,,,yes or no: DC symbol printed (A25.01)
+,defender-conscript-half-squad,broken,broken-morale,,,,"whole number, or not-printed if the counter has no broken side (A1.4)"
+,defender-conscript-half-squad,broken,bpv,,,,"whole number, or not-printed (A1.4)"
+,defender-conscript-half-squad,broken,asl:self-rally,,,,yes or no: broken morale in a square (A1.4)
+,defender-leader-7-0,counter,kind,,,,expected asl:leader
+,defender-leader-7-0,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,defender-leader-7-0,front,identity,,,,"identity as printed, or not-printed"
+,defender-leader-7-0,front,leadership,,,,"signed whole number such as -1, 0, or +1 (A10.7)"
+,defender-leader-7-0,front,morale,,,,whole number (A10.7)
+,defender-leader-7-0,front,asl:elr-5,,,,yes or no: morale underlined (A1.23)
+,defender-leader-7-0,broken,broken-morale,,,,"whole number, or not-printed if the counter has no broken side (A1.4)"
+,defender-leader-7-0,broken,bpv,,,,"whole number, or not-printed (A1.4)"
+,defender-leader-7-0,broken,asl:self-rally,,,,yes or no: broken morale in a square (A1.4)
+,defender-leader-6-plus-1,counter,kind,,,,expected asl:leader
+,defender-leader-6-plus-1,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,defender-leader-6-plus-1,front,identity,,,,"identity as printed, or not-printed"
+,defender-leader-6-plus-1,front,leadership,,,,"signed whole number such as -1, 0, or +1 (A10.7)"
+,defender-leader-6-plus-1,front,morale,,,,whole number (A10.7)
+,defender-leader-6-plus-1,front,asl:elr-5,,,,yes or no: morale underlined (A1.23)
+,defender-leader-6-plus-1,broken,broken-morale,,,,"whole number, or not-printed if the counter has no broken side (A1.4)"
+,defender-leader-6-plus-1,broken,bpv,,,,"whole number, or not-printed (A1.4)"
+,defender-leader-6-plus-1,broken,asl:self-rally,,,,yes or no: broken morale in a square (A1.4)

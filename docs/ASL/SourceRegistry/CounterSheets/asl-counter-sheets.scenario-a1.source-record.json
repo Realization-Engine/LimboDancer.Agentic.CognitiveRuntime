@@ -5,7 +5,7 @@
   "status": "reviewed",
   "decision": "D1, decided 2026-09-25: the published counter sheets, transcribed and reviewed, are the source of record for printed counter values (ASL Unit Requirements, section 12).",
   "d1Departure": "On 2026-09-25 the user asked Claude to fill in the worksheet itself. No physical counter sheets were available to Claude, so this transcription reads the registered rulebook's charts instead: A1.1 (p. 44) says the values of each unit are listed on the National Capabilities Chart (A25). Values the charts do not show are recorded as not-in-source. The reviewer should compare every row with the published counters; where a counter and the chart differ, the counter governs under D1.",
-  "scope": "The four counters the Scenario A1 catalog slots need, listed in scenario-a1.counter-worksheet.csv. No other counter is registered by this record.",
+  "scope": "The thirteen counters the Scenario A1 catalog needs, listed in scenario-a1.counter-worksheet.csv: the four counters of the reviewed Scenario A1 cases, and nine added on 2026-09-26 for the Fire package (unit step 18): the Russian HS for Casualty Reduction, and the Replacement units and leaders of A19.13. No other counter is registered by this record.",
   "scenario": "Eastern Front village fight on board 01: a German 1st Line rifle platoon (4-6-7 squads, with a 2-4-7 half-squad already in the stacking-case building) clears buildings held by a Russian 1st Line rifle company (squared-1 4-4-7 squads) under an 8-0 leader, fighting concealed and from fortified buildings.",
   "sheets": [
     {
@@ -20,7 +20,14 @@
       "title": "A18.2 Leader Creation Table",
       "publisher": "Multi-Man Publishing",
       "product": "eASLRB_v3_01.pdf, SHA-256 957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
-      "printing": "Physical PDF page 694"
+      "printing": "Physical PDF page 694; since 2026-09-26 a cross-check for the leaders, whose values are read from sheet USR"
+    },
+    {
+      "id": "USR",
+      "title": "Russian leader counters (8-0, 7-0, 6+1)",
+      "publisher": "Multi-Man Publishing",
+      "product": "Counters held by the reviewer, Dennis Landi",
+      "printing": "Not recorded; on 2026-09-26 the reviewer confirmed the printed values of the three leaders, including the broken morale, which the rulebook shows only in counter artwork (ASL-UNIT-012). The A18.2 Leader Creation Table (sheet LCT) agrees with their front values."
     }
   ],
   "extraction": {
@@ -34,14 +41,14 @@
     "format": "asl-counter-transcription/1",
     "path": "docs/ASL/SourceRegistry/CounterSheets/scenario-a1.counter-transcription.csv",
     "worksheet": "docs/ASL/SourceRegistry/CounterSheets/scenario-a1.counter-worksheet.csv",
-    "sha256": "cc33b7f8df7a9ab01c14d79a41025bf3dce731d0a12f59193635af04fe453ab5",
+    "sha256": "73852539971b48b088f28f6257ec2feaf4d01b4faa28e21be13ebd60577c009d",
     "transcriber": "Claude (claude-opus-5-5)",
-    "transcribedOn": "2026-09-25"
+    "transcribedOn": "2026-09-26"
   },
   "review": {
     "reviewer": "Dennis Landi",
-    "reviewedOn": "2026-09-25",
-    "method": "The user reviewed all 57 rows in conversation on 2026-09-25, as a table of every value with the chart each came from, and confirmed them all without correction. The not-in-source rows remain unknown."
+    "reviewedOn": "2026-09-26",
+    "method": "The user reviewed all 57 rows in conversation on 2026-09-25, as a table of every value with the chart each came from, and confirmed them all without correction. The not-in-source rows remain unknown. On 2026-09-26 the user reviewed the 130 rows added for the Fire package, as a table of every value with the chart it came from, and accepted them; the user supplied the broken morale of the three leaders from the printed counters, since the rulebook shows it only in counter artwork (ASL-UNIT-012), and it is recorded under sheet USR."
   },
   "meaning": {
     "rulebookPdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",

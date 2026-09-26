@@ -78,7 +78,13 @@ public sealed class CatalogTests
         Assert.Equal("asl-scenario-a1-synthetic", catalog.Identity.Catalog);
         Assert.Equal(64, catalog.Identity.Hash.Length);
         Assert.StartsWith("asl-scenario-a1-synthetic@1.0.0+sha256:", catalog.Identity.ToString(), StringComparison.Ordinal);
-        Assert.Equal(["attacker-squad", "attacker-half-squad", "defender-squad", "defender-leader"], catalog.Definitions.Select(definition => definition.Id));
+        Assert.Equal(
+            [
+                "attacker-squad", "attacker-half-squad", "defender-squad", "defender-leader", "defender-half-squad", "attacker-2nd-line-squad",
+                "attacker-2nd-line-half-squad", "attacker-conscript-squad", "attacker-conscript-half-squad", "defender-conscript-squad",
+                "defender-conscript-half-squad", "defender-leader-7-0", "defender-leader-6-plus-1",
+            ],
+            catalog.Definitions.Select(definition => definition.Id));
         Assert.All(catalog.Slots, slot => Assert.NotEmpty(catalog.Filling(slot.Id)));
     }
 
@@ -187,7 +193,7 @@ public sealed class CatalogTests
         var copy = Definition(json, "attacker-squad").DeepClone().AsObject();
         copy["id"] = "attacker-squad-2";
         copy["counter"]!["counter"] = "attacker-squad-2";
-        var row = 100;
+        var row = 1000;
         copy["kindRow"] = row++;
         copy["nationalityRow"] = row++;
         foreach (var value in copy["values"]!.AsArray())

@@ -95,6 +95,151 @@
         { "face": "broken", "attribute": "broken-morale", "value": 5, "row": 39 },
         { "face": "broken", "trait": "asl:self-rally", "present": true, "row": 40 }
       ]
+    },
+    {
+      "id": "defender-half-squad",
+      "kind": "asl:half-squad", "kindRow": 43,
+      "nationality": "italian", "nationalityRow": 44,
+      "class": "conscript",
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "defender-half-squad" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "firepower", "value": 1, "row": 45 },
+        { "face": "front", "attribute": "range", "value": 1, "row": 46 },
+        { "face": "front", "attribute": "morale", "value": 3, "row": 47 },
+        { "face": "front", "attribute": "class", "value": "conscript", "row": 48 },
+        { "face": "broken", "attribute": "broken-morale", "value": 2, "row": 49 },
+        { "face": "broken", "attribute": "bpv", "value": 1, "row": 50 }
+      ]
+    },
+    {
+      "id": "attacker-2nd-line-squad",
+      "kind": "asl:squad", "kindRow": 51,
+      "nationality": "american", "nationalityRow": 52,
+      "class": "2nd-line",
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "attacker-2nd-line-squad" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "firepower", "value": 1, "row": 53 },
+        { "face": "front", "attribute": "range", "value": 2, "row": 54 },
+        { "face": "front", "attribute": "morale", "value": 3, "row": 55 },
+        { "face": "front", "attribute": "class", "value": "2nd-line", "row": 56 },
+        { "face": "broken", "attribute": "broken-morale", "value": 2, "row": 57 },
+        { "face": "broken", "attribute": "bpv", "value": 3, "row": 58 }
+      ]
+    },
+    {
+      "id": "attacker-2nd-line-half-squad",
+      "kind": "asl:half-squad", "kindRow": 59,
+      "nationality": "american", "nationalityRow": 60,
+      "class": "2nd-line",
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "attacker-2nd-line-half-squad" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "firepower", "value": 1, "row": 61 },
+        { "face": "front", "attribute": "range", "value": 1, "row": 62 },
+        { "face": "front", "attribute": "morale", "value": 3, "row": 63 },
+        { "face": "front", "attribute": "class", "value": "2nd-line", "row": 64 },
+        { "face": "broken", "attribute": "broken-morale", "value": 2, "row": 65 },
+        { "face": "broken", "attribute": "bpv", "value": 1, "row": 66 }
+      ]
+    },
+    {
+      "id": "attacker-conscript-squad",
+      "kind": "asl:squad", "kindRow": 67,
+      "nationality": "american", "nationalityRow": 68,
+      "class": "conscript",
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "attacker-conscript-squad" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "firepower", "value": 1, "row": 69 },
+        { "face": "front", "attribute": "range", "value": 1, "row": 70 },
+        { "face": "front", "attribute": "morale", "value": 2, "row": 71 },
+        { "face": "front", "attribute": "class", "value": "conscript", "row": 72 },
+        { "face": "broken", "attribute": "broken-morale", "value": 2, "row": 73 },
+        { "face": "broken", "attribute": "bpv", "value": 2, "row": 74 }
+      ]
+    },
+    {
+      "id": "attacker-conscript-half-squad",
+      "kind": "asl:half-squad", "kindRow": 75,
+      "nationality": "american", "nationalityRow": 76,
+      "class": "conscript",
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "attacker-conscript-half-squad" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "firepower", "value": 1, "row": 77 },
+        { "face": "front", "attribute": "range", "value": 1, "row": 78 },
+        { "face": "front", "attribute": "morale", "value": 2, "row": 79 },
+        { "face": "front", "attribute": "class", "value": "conscript", "row": 80 },
+        { "face": "broken", "attribute": "broken-morale", "value": 2, "row": 81 },
+        { "face": "broken", "attribute": "bpv", "value": 1, "row": 82 }
+      ]
+    },
+    {
+      "id": "defender-conscript-squad",
+      "kind": "asl:squad", "kindRow": 83,
+      "nationality": "italian", "nationalityRow": 84,
+      "class": "green",
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "defender-conscript-squad" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "firepower", "value": 1, "row": 85 },
+        { "face": "front", "attribute": "range", "value": 1, "row": 86 },
+        { "face": "front", "attribute": "morale", "value": 2, "row": 87 },
+        { "face": "front", "attribute": "class", "value": "green", "row": 88 },
+        { "face": "broken", "attribute": "broken-morale", "value": 2, "row": 89 },
+        { "face": "broken", "attribute": "bpv", "value": 2, "row": 90 }
+      ]
+    },
+    {
+      "id": "defender-conscript-half-squad",
+      "kind": "asl:half-squad", "kindRow": 91,
+      "nationality": "italian", "nationalityRow": 92,
+      "class": "green",
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "defender-conscript-half-squad" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "firepower", "value": 1, "row": 93 },
+        { "face": "front", "attribute": "range", "value": 1, "row": 94 },
+        { "face": "front", "attribute": "morale", "value": 2, "row": 95 },
+        { "face": "front", "attribute": "class", "value": "green", "row": 96 },
+        { "face": "broken", "attribute": "broken-morale", "value": 2, "row": 97 },
+        { "face": "broken", "attribute": "bpv", "value": 1, "row": 98 }
+      ]
+    },
+    {
+      "id": "defender-leader-7-0",
+      "kind": "asl:leader", "kindRow": 99,
+      "nationality": "french", "nationalityRow": 100,
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "defender-leader-7-0" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "leadership", "value": 0, "row": 101 },
+        { "face": "front", "attribute": "morale", "value": 3, "row": 102 },
+        { "face": "broken", "attribute": "broken-morale", "value": 4, "row": 103 }
+      ]
+    },
+    {
+      "id": "defender-leader-6-plus-1",
+      "kind": "asl:leader", "kindRow": 104,
+      "nationality": "french", "nationalityRow": 105,
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "defender-leader-6-plus-1" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "leadership", "value": 1, "row": 106 },
+        { "face": "front", "attribute": "morale", "value": 2, "row": 107 },
+        { "face": "broken", "attribute": "broken-morale", "value": 3, "row": 108 }
+      ]
     }
   ]
 }

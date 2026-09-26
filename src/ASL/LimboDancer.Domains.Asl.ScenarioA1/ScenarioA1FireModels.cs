@@ -40,7 +40,8 @@ public sealed record FireDirector(
     bool? Broken,
     bool? Pinned,
     bool? Concealed,
-    bool? DirectedThisPlayerTurn);
+    bool? DirectedThisPlayerTurn,
+    bool? Wounded);
 
 /// <summary>The LOS of unit step 16 from the firers' Location to the target Location.</summary>
 public sealed record FireLos(bool? Blocked, int? HindranceDrm, bool? HindranceAttributed, bool? GrainInLos);
@@ -54,17 +55,21 @@ public sealed record FireTarget(
     bool? Pinned,
     bool? Concealed,
     bool? Hidden,
-    bool? Dummy);
+    bool? Dummy,
+    bool? Wounded,
+    bool? Disrupted);
 
 /// <summary>
 /// Recorded rolls. <see cref="Attack"/> is the IFT DR; <see cref="RandomSelection"/> holds one dr per target unit;
-/// <see cref="Checks"/> holds the MC or NTC DR of a target unit; <see cref="LeaderLoss"/> holds its LLMC or LLTC DR.
+/// <see cref="Checks"/> holds the MC or NTC DR of a target unit; <see cref="LeaderLoss"/> holds its LLMC or LLTC DR;
+/// <see cref="WoundSeverity"/> holds a wounded leader's Wound Severity dr (A17.11).
 /// </summary>
 public sealed record FireRolls(
     IReadOnlyList<int>? Attack,
     IReadOnlyDictionary<string, int>? RandomSelection,
     IReadOnlyDictionary<string, IReadOnlyList<int>>? Checks,
-    IReadOnlyDictionary<string, IReadOnlyList<int>>? LeaderLoss);
+    IReadOnlyDictionary<string, IReadOnlyList<int>>? LeaderLoss,
+    IReadOnlyDictionary<string, int>? WoundSeverity = null);
 
 /// <summary>One modifier with its value and rule.</summary>
 public sealed record FireModifier(string Name, decimal Value, string Rule);
@@ -106,6 +111,8 @@ public sealed record FireUnitEffect(
     bool Eliminated,
     bool Broken,
     bool Pinned,
+    bool Wounded,
+    bool Disrupted,
     bool ConcealmentLost,
     IReadOnlyList<string> Events,
     IReadOnlyList<FireCheck> Checks);

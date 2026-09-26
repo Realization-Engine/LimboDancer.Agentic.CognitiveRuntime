@@ -26,7 +26,13 @@ public sealed class CounterSheetCatalogBuilderTests
         var catalog = build.Catalog!;
         Assert.Equal(CatalogPublication.Draft, catalog.Publication);
         Assert.Equal("asl-scenario-a1", catalog.Identity.Catalog);
-        Assert.Equal(["attacker-squad", "attacker-half-squad", "defender-squad", "defender-leader"], catalog.Definitions.Select(definition => definition.Id));
+        Assert.Equal(
+        [
+            "attacker-squad", "attacker-half-squad", "defender-squad", "defender-leader", "defender-half-squad", "attacker-2nd-line-squad",
+            "attacker-2nd-line-half-squad", "attacker-conscript-squad", "attacker-conscript-half-squad", "defender-conscript-squad",
+            "defender-conscript-half-squad", "defender-leader-7-0", "defender-leader-6-plus-1",
+        ],
+        catalog.Definitions.Select(definition => definition.Id));
 
         var source = Assert.Single(catalog.Sources);
         Assert.Equal(CatalogSourceStatus.TranscribedUnreviewed, source.Status);
