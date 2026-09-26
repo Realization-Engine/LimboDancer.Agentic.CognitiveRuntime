@@ -440,3 +440,7 @@ BenchmarkDotNet.Artifacts/
 ehthumbs.db
 Thumbs.db
 /src/.vs/src/CopilotIndices/17.14.995.13737/CodeChunks.db-shm
+
+# Local Studio launch settings and the Studio's live game store; never committed.
+/.claude/launch.json
+/src/ASL/boards/units/live/
