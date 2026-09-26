@@ -76,7 +76,7 @@ public static class AslScenarioA1OccupiedSourceReview
                 if (!evidence.GetProperty("visuallyMatchesRenderedPdf").GetBoolean()
                     || !fragment.Dependencies.Any(dependency =>
                         imagePath.EndsWith(dependency, StringComparison.Ordinal))
-                    || Hashing.Sha256File(Path.Combine(repositoryRoot, imagePath))
+                    || Hashing.Sha256File(Path.Combine(repositoryRoot, imagePath.Replace('/', Path.DirectorySeparatorChar)))
                         != evidence.GetProperty("imageSha256").GetString())
                 {
                     throw new InvalidOperationException("The Breach image dependency changed.");
