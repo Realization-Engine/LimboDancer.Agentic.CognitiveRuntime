@@ -277,7 +277,7 @@ The catalog's current consumers are:
 
 Because one consumer is on an execution path, a replacement is a change to execution evidence, not only to read-only conclusions. The reviewed change must first introduce an abstraction those consumers accept, then show that the second-defender return gate-binding, journal, and Host registration tests still pass unchanged.
 
-Addressed at unit step 8, part 1 ([Occupied and Concealed Entry Design](<ASL Unit Occupied and Concealed Entry Design.md>), section 3): the providers and `Board01ValidatedSnapshotSource` take `IScenarioA1TerrainEvidence`, which `Board01TerrainCatalog` implements unchanged, and `BoardCatalogTerrainEvidence` reads the same 63 overrides through `IBoardCatalog`. The Execution adapter keeps `Board01TerrainCatalog`.
+Addressed at unit step 8, part 1 ([Occupied and Concealed Entry Design](<ASL Unit Occupied and Concealed Entry Design.md>), section 3): the providers and `Board01ValidatedSnapshotSource` take `IScenarioA1TerrainEvidence`, which `Board01TerrainCatalog` implements unchanged, and `BoardCatalogTerrainEvidence` reads the same 63 overrides through `IBoardCatalog`. The Execution adapter kept `Board01TerrainCatalog` until unit step 11 retired it ([Infantry OVR Design](<ASL Unit Infantry OVR Design.md>), section 8), so no execution path now depends on the concrete catalog.
 
 ### ASL-MAP-082: LOS is out of scope
 
