@@ -32,6 +32,23 @@ public sealed record LosBlockedAt(GridPoint Point, BoardRef? Board, HexName? Hex
 }
 
 /// <summary>
+/// One entry of the hindrance breakdown: a range from the source hex and the largest map hindrance met at that range,
+/// as VASL's <c>Map.addHindranceHex</c> values it (1 for most hindrances, 2 for light woods and roofless hexes, 0.5
+/// for light grain and in-season rice paddies).
+/// </summary>
+public sealed record LosHindrance(int Range, double Value);
+
+/// <summary>
+/// Where LOS first meets a map hindrance (<c>LOSResult.firstHindranceAt</c>): the point on the map's grid and the hex
+/// VASL's <c>Map.gridToHex</c> gives that point, named board-relative by the board that owns it. The hex is null where
+/// VASL finds none.
+/// </summary>
+public sealed record LosHindranceAt(GridPoint Point, BoardRef? Board, HexName? Hex)
+{
+    public override string ToString() => Board is null || Hex is null ? $"({Point.X}, {Point.Y})" : $"{Board}:{Hex} ({Point.X}, {Point.Y})";
+}
+
+/// <summary>
 /// The result of an LOS read, as VASL's <c>LOSResult</c> reports it: whether LOS is blocked, where, the range
 /// (<c>Map.range</c>), the hindrance total (<c>LOSResult.getHindrance</c>: the floor of the sum of the largest map
 /// hindrance at each range), and VASL's reason text when blocked. An unsupported result carries the range and the
@@ -42,7 +59,41 @@ public sealed record LosResult(LosStatus Status, bool? IsBlocked, int Range, int
     /// <summary>Whether the result answers the question: Clear or Blocked, definitive or not.</summary>
     public bool IsAnswered => IsBlocked is not null;
 
+    /// <summary>
+    /// The hindrance breakdown (<c>LOSResult.mapHindrances</c>, kept by <c>addMapHindrance</c>): the largest map
+    /// hindrance at each range from the source hex, in range order. <see cref="Hindrance"/> is the floor of their sum.
+    /// </summary>
+    public IReadOnlyList<LosHindrance> Hindrances
+    {
+        get;
+        init;
+    } = [];
+
+    /// <summary>Where the LOS first met a map hindrance (<c>LOSResult.setFirstHindrance</c>), or null when it met none.</summary>
+    public LosHindranceAt? FirstHindranceAt
+    {
+        get;
+        init;
+    }
+
+    public bool Equals(LosResult? other) =>
+        other is not null && Status == other.Status && IsBlocked == other.IsBlocked && Range == other.Range && Hindrance == other.Hindrance
+        && Equals(BlockedAt, other.BlockedAt) && Reason == other.Reason && Hindrances.SequenceEqual(other.Hindrances)
+        && Equals(FirstHindranceAt, other.FirstHindranceAt);
+
+    public override int GetHashCode() => HashCode.Combine(Status, IsBlocked, Range, Hindrance, BlockedAt, Reason, Hindrances.Count, FirstHindranceAt);
+
     internal static LosResult Unsupported(int range, string rule) => new(LosStatus.Unsupported, null, range, 0, null, rule);
+}
+
+/// <summary>
+/// Which point of a hexside location an LOS starts or ends at (<c>Map.LOS</c>'s <c>useAux</c> flags): the LOS point,
+/// the hexside's counterclockwise vertex, or the auxiliary point, its clockwise vertex. Center locations have one point.
+/// </summary>
+public enum LosAim
+{
+    LosPoint,
+    AuxiliaryPoint,
 }
 
 /// <summary>

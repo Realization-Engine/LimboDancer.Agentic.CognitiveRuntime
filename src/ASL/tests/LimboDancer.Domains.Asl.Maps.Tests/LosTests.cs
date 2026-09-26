@@ -101,6 +101,14 @@ public sealed class LosTests
         },
         new TerrainType
         {
+            Code = 62,
+            Name = "Light Woods",
+            Category = LosCategory.Woods,
+            IsLosHindrance = true,
+            Height = 1,
+        },
+        new TerrainType
+        {
             Code = 105,
             Name = "Hillock",
             Category = LosCategory.Other,
@@ -187,6 +195,58 @@ public sealed class LosTests
     {
         var result = LosCalculator.Check(Map(Paint((E4Box, "Grain"))), Location("E2"), Location("E6"));
         Assert.Equal((LosStatus.Clear, 1), (result.Status, result.Hindrance));
+    }
+
+    [Fact]
+    public void TheBreakdownKeepsEachRangesHindranceAndTheFirstPoint()
+    {
+        // Grain in E3 (range 1 from E2) and light woods in E5 (range 3). Map.addHindranceHex values grain 1 and light
+        // woods 2; LOSResult.addMapHindrance keeps them by range, and the first point is the first grain pixel the
+        // line meets, walking down from E2's center.
+        var e3 = Geometry.CenterPoint(Geometry.IndexOf(HexName.Parse("E3")));
+        var result = LosCalculator.Check(Map(Paint((Around("E3"), "Grain"), (Around("E5"), "Light Woods"))), Location("E2"), Location("E6"));
+        Assert.Equal((LosStatus.Clear, false, 4, 3), (result.Status, result.IsBlocked, result.Range, result.Hindrance));
+        Assert.Equal([new LosHindrance(1, 1.0), new LosHindrance(3, 2.0)], result.Hindrances);
+        Assert.Equal(new LosHindranceAt(new GridPoint(e3.X, e3.Y - 25), Board, HexName.Parse("E3")), result.FirstHindranceAt);
+
+        // Open ground has no breakdown and no first point.
+        var clear = LosCalculator.Check(Map(Paint()), Location("E2"), Location("E6"));
+        Assert.Equal((0, null), (clear.Hindrances.Count, clear.FirstHindranceAt));
+    }
+
+    [Fact]
+    public void AHexsideLocationIsSeenFromTheVertexItIsAimedAt()
+    {
+        // E4's southeast hexside runs from vertex 2 (its right vertex, on E4's row of centers) to vertex 3. Aimed at its
+        // LOS point, the line to G4's center runs along the hexside between F3 and F4, where a strip of woods lies;
+        // aimed at its auxiliary point it rises across F4 below the strip and is clear.
+        var e4 = Geometry.IndexOf(HexName.Parse("E4"));
+        Assert.Equal(("F3", "F4"), (Geometry.NameOf(Geometry.Neighbor(e4, HexsideDirection.NorthEast)!.Value).ToString(),
+            Geometry.NameOf(Geometry.Neighbor(e4, HexsideDirection.SouthEast)!.Value).ToString()));
+        var map = Map(Paint(((270, 215, 295, 227), "Woods")));
+        var source = BoardLocation.Parse("bd01:E4:0/2");
+        var fromLosPoint = LosCalculator.Check(map, source, LosAim.LosPoint, Location("G4"), LosAim.LosPoint);
+        var fromAuxPoint = LosCalculator.Check(map, source, LosAim.AuxiliaryPoint, Location("G4"), LosAim.LosPoint);
+        Assert.Equal((LosStatus.Blocked, 2), (fromLosPoint.Status, fromLosPoint.Range));
+        Assert.Equal((Board, HexName.Parse("F3")), (fromLosPoint.BlockedAt!.Board, fromLosPoint.BlockedAt.Hex));
+        Assert.Equal((LosStatus.Clear, 2), (fromAuxPoint.Status, fromAuxPoint.Range));
+
+        // The two-location overload aims at the LOS point, and a center location's aim changes nothing.
+        Assert.Equal(fromLosPoint, LosCalculator.Check(map, source, Location("G4")));
+        Assert.Equal(LosCalculator.Check(map, Location("G4"), Location("E2")),
+            LosCalculator.Check(map, Location("G4"), LosAim.AuxiliaryPoint, Location("E2"), LosAim.AuxiliaryPoint));
+    }
+
+    [Fact]
+    public void AHexsideLocationInADepressionIsOneLevelHigher()
+    {
+        // E2 is a gully hex at level -1. Its center location is in the depression and cannot see E6 at level 0 (A6.3),
+        // but Map.setSourceAndTargetElevations puts a hexside location of a depression hex a level higher, at the
+        // level of the target, so the line may leave the gully.
+        var map = Map(PaintLevels((Whole("E2"), "Gully", -1)));
+        Assert.Equal(LosStatus.Blocked, LosCalculator.Check(map, Location("E2"), Location("E6")).Status);
+        var hexside = LosCalculator.Check(map, BoardLocation.Parse("bd01:E2:0/3"), Location("E6"));
+        Assert.Equal((LosStatus.Clear, false, 4), (hexside.Status, hexside.IsBlocked, hexside.Range));
     }
 
     [Fact]
@@ -346,7 +406,7 @@ public sealed class LosTests
         var map = Map(Paint());
         Assert.Throws<ArgumentException>(() => LosCalculator.Check(map, Location("E2"), BoardLocation.Parse("bd01:E4:1")));
         Assert.Throws<ArgumentException>(() => LosCalculator.Check(map, Location("E2"), BoardLocation.Parse("bd02:E4:0")));
-        Assert.Throws<ArgumentException>(() => LosCalculator.Check(map, Location("E2"), BoardLocation.Parse("bd01:E4:0/1")));
+        Assert.Throws<ArgumentException>(() => LosCalculator.Check(map, Location("E2"), BoardLocation.Parse("bd01:E4:1/1")));
     }
 
     private static BoardLocation Location(string hex) => new(Board, HexName.Parse(hex), 0);

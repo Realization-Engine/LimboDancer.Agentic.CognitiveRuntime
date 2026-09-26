@@ -6,28 +6,38 @@ using LimboDancer.Domains.Asl.Maps.Terrain;
 namespace LimboDancer.Domains.Asl.Maps.Los;
 
 /// <summary>
-/// A read-only LOS check between two center locations (LOS Design, sections 3 and 5), reproducing VASL's
-/// <c>VASL.LOS.Map.Map.LOS</c> for a map without counters, overlays, or night: the same walk over the terrain grid,
-/// the same rules in the same order, and the same result. Rules this step does not reproduce make the result
-/// unsupported, with the rule's name, at the point where VASL would apply them; nothing falls back to a simpler rule.
+/// A read-only LOS check between two locations (LOS Design, sections 3 and 5; LOS Result Design, sections 2 and 3),
+/// reproducing VASL's <c>VASL.LOS.Map.Map.LOS</c> for a map without counters, overlays, or night: the same walk over
+/// the terrain grid, the same rules in the same order, and the same result, with VASL's hindrance breakdown. Rules this
+/// step does not reproduce make the result unsupported, with the rule's name, at the point where VASL would apply them;
+/// nothing falls back to a simpler rule.
 /// </summary>
 /// <remarks>
-/// Locations are the hex's center locations and their up and down chain, at the hex center, as VASL's center
-/// locations use; hexside (bypass) locations are refused. A location whose board or hex is not on the map, whose hex
-/// another board owns, or whose level is not in the hex's location chain is refused with an
-/// <see cref="ArgumentException"/>.
+/// A location is one of a hex's center locations (its up and down chain, at the hex center), or one of its hexside
+/// locations, as <c>Hex.createLocations</c> makes them: level 0, the LOS point at the hexside's first vertex (clockwise
+/// from the top-left one), the auxiliary point at the next, the hexside's terrain and depression terrain. A location
+/// whose board or hex is not on the map, whose hex another board owns, whose level is not in the hex's location chain,
+/// or a hexside location not at level 0, is refused with an <see cref="ArgumentException"/>.
 /// </remarks>
 public static class LosCalculator
 {
-    /// <summary>Checks LOS from the source location to the target location on the map.</summary>
-    public static LosResult Check(LosMap map, BoardLocation source, BoardLocation target)
+    /// <summary>Checks LOS from the source location to the target location on the map, from and to their LOS points.</summary>
+    public static LosResult Check(LosMap map, BoardLocation source, BoardLocation target) =>
+        Check(map, source, LosAim.LosPoint, target, LosAim.LosPoint);
+
+    /// <summary>
+    /// Checks LOS from the source location to the target location on the map, with an aim for each end: a hexside
+    /// location's LOS point or auxiliary point (<c>Map.LOS</c>'s <c>useAuxSourceLOSPoint</c> and
+    /// <c>useAuxTargetLOSPoint</c>). A center location has one point, so its aim changes nothing.
+    /// </summary>
+    public static LosResult Check(LosMap map, BoardLocation source, LosAim sourceAim, BoardLocation target, LosAim targetAim)
     {
         ArgumentNullException.ThrowIfNull(map);
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(target);
-        var (sourceHex, sourceLevel) = Resolve(map, source, nameof(source));
-        var (targetHex, targetLevel) = Resolve(map, target, nameof(target));
-        var result = new Walk(map, sourceHex, sourceLevel, targetHex, targetLevel).Run();
+        var sourceEnd = Resolve(map, source, sourceAim, nameof(source));
+        var targetEnd = Resolve(map, target, targetAim, nameof(target));
+        var result = new Walk(map, sourceEnd, targetEnd).Run();
         return result.Status is LosStatus.Clear or LosStatus.Blocked && !map.IsDefinitive
             ? result with
             {
@@ -36,13 +46,8 @@ public static class LosCalculator
             : result;
     }
 
-    private static (HexIndex Hex, LocationFacts Level) Resolve(LosMap map, BoardLocation location, string parameter)
+    private static LosEnd Resolve(LosMap map, BoardLocation location, LosAim aim, string parameter)
     {
-        if (location.Side is not null)
-        {
-            throw new ArgumentException($"{location} is a hexside location; LOS reads center locations only.", parameter);
-        }
-
         if (map.Locate(location.Board, location.Hex) is not { } hex)
         {
             throw new ArgumentException($"{location.Board}:{location.Hex} is not on the map.", parameter);
@@ -54,10 +59,44 @@ public static class LosCalculator
         }
 
         var facts = map.FactsOf(hex);
+        if (location.Side is { } side)
+        {
+            // Hex.createLocations: a hexside location is at level 0, with the hexside's terrain and depression terrain
+            // (Hex.resetTerrain and resetHexsideTerrain), its LOS point at vertex side and its auxiliary point at the next,
+            // truncated to integers.
+            if (location.Level != 0)
+            {
+                throw new ArgumentException($"{location} is not a hexside location: hexside locations are at level 0.", parameter);
+            }
+
+            var hexside = facts.Hexsides[(int)side];
+            var vertices = map.Geometry.Vertices(hex);
+            var losVertex = vertices[(int)side];
+            var auxVertex = vertices[((int)side + 1) % 6];
+            var losPoint = new GridPoint((int)losVertex.X, (int)losVertex.Y);
+            var auxPoint = new GridPoint((int)auxVertex.X, (int)auxVertex.Y);
+            return new LosEnd(hex, new LocationFacts(0, hexside.Terrain, hexside.DepressionTerrain), (int)side, aim == LosAim.AuxiliaryPoint ? auxPoint : losPoint,
+                losPoint, auxPoint);
+        }
+
+        var center = map.LosPoint(hex);
         return facts.Locations.FirstOrDefault(level => level.Level == location.Level) is { } found
-            ? (hex, found)
+            ? new LosEnd(hex, found, LosEnd.Center, center, center, center)
             : throw new ArgumentException(
                 $"{location} is not in the hex's location chain ({string.Join(", ", facts.Locations.Select(level => level.Level))}).", parameter);
+    }
+
+    /// <summary>
+    /// One end of an LOS check, as VASL's <c>Location</c> gives it: its hex, its level and terrain, its hexside
+    /// (<see cref="Center"/> for a center location), the point the line starts or ends at, and its LOS and auxiliary
+    /// points.
+    /// </summary>
+    private readonly record struct LosEnd(HexIndex Hex, LocationFacts Location, int Side, GridPoint Point, GridPoint LosPoint, GridPoint AuxPoint)
+    {
+        public const int Center = -1;
+
+        // Location.isCenterLocation: the center location or one above or below it.
+        public bool IsCenter => Side == Center;
     }
 
     /// <summary>
@@ -87,8 +126,19 @@ public static class LosCalculator
         private readonly HexIndex targetHex;
         private readonly LocationFacts source;
         private readonly LocationFacts target;
+        private readonly LosEnd sourceEnd;
+        private readonly LosEnd targetEnd;
+        private readonly bool sourceIsCenter;
+        private readonly bool targetIsCenter;
+
+        // The points the line runs between (LOSStatus.sourceX, sourceY, targetX, and targetY): an end's LOS point, or a
+        // hexside location's auxiliary point when aimed there.
         private readonly GridPoint sourcePoint;
         private readonly GridPoint targetPoint;
+
+        // The ends' hex centers (Hex.getHexCenter), which some rules measure from instead.
+        private readonly GridPoint sourceCenter;
+        private readonly GridPoint targetCenter;
         private readonly int sourceX;
         private readonly int sourceY;
         private readonly int targetX;
@@ -110,7 +160,7 @@ public static class LosCalculator
         private readonly bool losIsHorizontal;
         private readonly int[] sourceExitHexsides = [None, None];
         private readonly int[] targetEnterHexsides = [None, None];
-        private readonly Dictionary<int, double> mapHindrances = [];
+        private readonly SortedDictionary<int, double> mapHindrances = [];
         private readonly bool exitsSourceDepression;
         private readonly bool entersTargetDepression;
 
@@ -154,19 +204,26 @@ public static class LosCalculator
         private bool resultBlocked;
         private GridPoint? blockedAtPoint;
         private string resultReason = string.Empty;
+        private GridPoint? firstHindranceAt;
 
         private string? unsupported;
 
         // LOSStatus constructor
-        public Walk(LosMap map, HexIndex sourceHex, LocationFacts source, HexIndex targetHex, LocationFacts target)
+        public Walk(LosMap map, LosEnd sourceEnd, LosEnd targetEnd)
         {
             this.map = map;
-            this.sourceHex = sourceHex;
-            this.targetHex = targetHex;
-            this.source = source;
-            this.target = target;
-            sourcePoint = map.LosPoint(sourceHex);
-            targetPoint = map.LosPoint(targetHex);
+            this.sourceEnd = sourceEnd;
+            this.targetEnd = targetEnd;
+            sourceHex = sourceEnd.Hex;
+            targetHex = targetEnd.Hex;
+            source = sourceEnd.Location;
+            target = targetEnd.Location;
+            sourceIsCenter = sourceEnd.IsCenter;
+            targetIsCenter = targetEnd.IsCenter;
+            sourcePoint = sourceEnd.Point;
+            targetPoint = targetEnd.Point;
+            sourceCenter = map.LosPoint(sourceHex);
+            targetCenter = map.LosPoint(targetHex);
             sourceX = sourcePoint.X;
             sourceY = sourcePoint.Y;
             targetX = targetPoint.X;
@@ -177,12 +234,13 @@ public static class LosCalculator
             currentHex = sourceHex;
             tempHex = sourceHex;
 
-            // setSourceAndTargetElevations, for center locations.
-            sourceElevation = Facts(sourceHex).BaseLevel + source.Level;
-            targetElevation = Facts(targetHex).BaseLevel + target.Level;
+            // setSourceAndTargetElevations: a hexside location in a depression hex is a level higher ("code to fix
+            // vertex los").
+            sourceElevation = Facts(sourceHex).BaseLevel + source.Level + (!sourceIsCenter && IsDepressionHex(sourceHex) ? 1 : 0);
+            targetElevation = Facts(targetHex).BaseLevel + target.Level + (!targetIsCenter && IsDepressionHex(targetHex) ? 1 : 0);
 
-            // Cellars and rooftops are center locations, so they take no vertex adjustment. The rules below count a
-            // cellar one level higher, and a rooftop half a level lower unless it is level 1 of its hex.
+            // The rules below count a cellar one level higher, and a rooftop half a level lower unless it is level 1 of
+            // its hex, by the end's terrain.
             sourceIsCellar = source.Terrain is { IsCellar: true };
             targetIsCellar = target.Terrain is { IsCellar: true };
             sourceIsRooftop = source.Terrain is { IsRooftop: true };
@@ -208,13 +266,23 @@ public static class LosCalculator
                 sourceExitHexspine = colDir == 1 ? 2 : 5;
             }
 
-            // setEnterExitHexsides for center locations: the target's are the opposite of the source's.
-            var exits = ExitFromCenterHexsides();
+            // setEnterExitHexsides: for a center end, the hexsides the line leaves the source by, and for the target their
+            // opposites; for a hexside end, the hexsides of its hex the line touches.
+            var exits = sourceIsCenter ? ExitFromCenterHexsides() : HexsidesTouched(sourceHex);
             sourceExitHexsides[0] = exits[0];
             sourceExitHexsides[1] = exits[1];
-            exits = ExitFromCenterHexsides();
-            targetEnterHexsides[0] = Opposite(exits[0]);
-            targetEnterHexsides[1] = Opposite(exits[1]);
+            if (targetIsCenter)
+            {
+                exits = ExitFromCenterHexsides();
+                targetEnterHexsides[0] = Opposite(exits[0]);
+                targetEnterHexsides[1] = Opposite(exits[1]);
+            }
+            else
+            {
+                exits = HexsidesTouched(targetHex);
+                targetEnterHexsides[0] = exits[0];
+                targetEnterHexsides[1] = exits[1];
+            }
 
             // exitsSourceDepression and entersTargetDepression: whether the depression restrictions (A6.3) apply to a
             // depression end. VASL lowers a rooftop a full level here, not the half level of the rules.
@@ -260,13 +328,16 @@ public static class LosCalculator
 
         public LosResult Run()
         {
-            // Map.LOS: the same location (never asked by the oracle, but VASL answers it).
-            if (sourceHex == targetHex && source.Level == target.Level)
+            // Map.LOS: the same location, whichever point each end is aimed at (never asked by the oracle, but VASL
+            // answers it).
+            if (sourceHex == targetHex && source.Level == target.Level && sourceEnd.Side == targetEnd.Side)
             {
                 return new LosResult(LosStatus.Clear, false, 0, 0, null, string.Empty);
             }
 
-            if (sourceHex == targetHex)
+            // Map.checkSameHexRule decides when either end is a center location; between two hexside locations of one
+            // hex the walk goes on, at range 0.
+            if (sourceHex == targetHex && (sourceIsCenter || targetIsCenter))
             {
                 return CheckSameHexRule();
             }
@@ -288,19 +359,31 @@ public static class LosCalculator
         private LosResult Result()
         {
             var hindrance = Hindrance();
+            var breakdown = mapHindrances.Select(entry => new LosHindrance(entry.Key, entry.Value)).ToArray();
+            LosHindranceAt? first = null;
+            if (firstHindranceAt is { } firstPoint)
+            {
+                var firstOwner = map.Locator.GridToHex(firstPoint.X, firstPoint.Y) is { } firstHex ? map.OwnerOf(firstHex) : null;
+                first = new LosHindranceAt(firstPoint, firstOwner?.Board, firstOwner?.Hex);
+            }
+
             if (!resultBlocked)
             {
-                return new LosResult(LosStatus.Clear, false, resultRange, hindrance, null, string.Empty);
+                return new LosResult(LosStatus.Clear, false, resultRange, hindrance, null, string.Empty) { Hindrances = breakdown, FirstHindranceAt = first };
             }
 
             var point = blockedAtPoint!.Value;
             var hex = map.Locator.GridToHex(point.X, point.Y);
             var owner = hex is { } index ? map.OwnerOf(index) : null;
-            return new LosResult(LosStatus.Blocked, true, resultRange, hindrance, new LosBlockedAt(point, owner?.Board, owner?.Hex), resultReason);
+            return new LosResult(LosStatus.Blocked, true, resultRange, hindrance, new LosBlockedAt(point, owner?.Board, owner?.Hex), resultReason)
+            {
+                Hindrances = breakdown,
+                FirstHindranceAt = first,
+            };
         }
 
-        // Map.checkSameHexRule, for two center locations of one hex: building levels, then a bridge end. Tunnels, which
-        // VASL tests on the source only, are not reproduced.
+        // Map.checkSameHexRule, for one hex with a center location at either end: building levels, then a bridge at an
+        // end with a center location at the other. Tunnels are not reproduced.
         private LosResult CheckSameHexRule()
         {
             if (source.Terrain is not { } sourceTerrain || target.Terrain is not { } targetTerrain)
@@ -319,14 +402,15 @@ public static class LosCalculator
                 return SameHexBlocked("Crosses building level or no stairway");
             }
 
-            return sourceTerrain.IsBridge || targetTerrain.IsBridge
+            return (sourceTerrain.IsBridge && targetIsCenter) || (targetTerrain.IsBridge && sourceIsCenter)
                 ? SameHexBlocked("Cannot see location under the bridge")
                 : new LosResult(LosStatus.Clear, false, 0, 0, null, string.Empty);
         }
 
+        // The blocked point is the source's LOS point, whichever point the source is aimed at.
         private LosResult SameHexBlocked(string why)
         {
-            var point = sourcePoint;
+            var point = sourceEnd.LosPoint;
             var hex = map.Locator.GridToHex(point.X, point.Y);
             var owner = hex is { } index ? map.OwnerOf(index) : null;
             return new LosResult(LosStatus.Blocked, true, 0, 0, new LosBlockedAt(point, owner?.Board, owner?.Hex), why);
@@ -509,11 +593,12 @@ public static class LosCalculator
         // Map.getAdjacentHexes: the two hexes at a range touched by a line along a hexside; null if not on a hexside.
         private (HexIndex Top, HexIndex? Bottom)? AdjacentHexes(HexIndex rangeHex)
         {
-            // Only the hex's own center location, not its upper levels, takes the even-range shortcut.
-            var sourceIsCenter = source.Level == Facts(sourceHex).Center.Level;
+            // Only the hex's own center location, not its upper levels or a hexside location, takes the even-range
+            // shortcut.
+            var sourceIsHexCenter = sourceIsCenter && source.Level == Facts(sourceHex).Center.Level;
             if (map.Locator.ExtendedBorderContains(sourceHex, currentCol, currentRow)
                 || map.Locator.ExtendedBorderContains(targetHex, currentCol, currentRow)
-                || (sourceIsCenter && map.Geometry.Distance(sourceHex, rangeHex) % 2 == 0))
+                || (sourceIsHexCenter && map.Geometry.Distance(sourceHex, rangeHex) % 2 == 0))
             {
                 return null;
             }
@@ -547,9 +632,10 @@ public static class LosCalculator
                 return false;
             }
 
+            // off the grid VASL reads the missing terrain here and fails
             if (currentTerrain is null)
             {
-                return Refuse(LosUnsupportedRule.UnknownTerrain);
+                return Refuse(map.Grid.TryGetCode(currentCol, currentRow, out _) ? LosUnsupportedRule.UnknownTerrain : LosUnsupportedRule.VaslFails);
             }
 
             if (CenterTerrain(hex) is not { } center)
@@ -582,9 +668,12 @@ public static class LosCalculator
         // Map.applyLOSRules: the rules at one point; adjusts the status when the LOS enters a new hex.
         private bool ApplyLosRules()
         {
+            // Off the grid, as the LOS or auxiliary point of a hexside location of a half hex on the map edge is,
+            // Map.getGridTerrain gives no terrain, and applyLOSRules' catch of the failure to read its height ends the
+            // LOS there with the result so far: clear, at the full range.
             if (currentTerrain is null)
             {
-                return Refuse(LosUnsupportedRule.UnknownTerrain);
+                return map.Grid.TryGetCode(currentCol, currentRow, out _) ? Refuse(LosUnsupportedRule.UnknownTerrain) : true;
             }
 
             currentTerrainHgt = currentTerrain.Height;
@@ -646,11 +735,14 @@ public static class LosCalculator
                 return Refuse(Facts(currentHex).Hexsides[nearest].RailroadEmbankment ? LosUnsupportedRule.RailroadEmbankment : LosUnsupportedRule.PartialOrchard);
             }
 
-            // The current hex is checked only between the source and target. For center locations VASL's tests 3 to 5
-            // never hold, which leaves tests 1 and 2.
-            var test1 = currentHex != sourceHex && range != rangeToTarget;
-            var test2 = currentHex != targetHex && range != rangeToSource;
-            if (test1 && test2)
+            // The current hex is checked only between the source and target, or at the full range from an end that is a
+            // hexside location. Test 3 needs the current hex to be the source hex, which test 1 excludes, so it never holds.
+            var test1 = currentHex != sourceHex && (range != rangeToTarget || !sourceIsCenter);
+            var test2 = currentHex != targetHex && (range != rangeToSource || !targetIsCenter);
+            var test4 = currentHex == targetHex && !currentTerrain.IsOpen && !currentTerrain.IsHexsideTerrain && !targetIsCenter;
+            var test5 = range == rangeToSource && (losIs60Degree || losIsHorizontal) && !currentTerrain.IsOpen && !currentTerrain.IsHexsideTerrain
+                && !targetIsCenter;
+            if (test1 && (test2 || test4 || test5))
             {
                 // ignore inherent terrain that "spills" into an adjacent hex
                 if (currentTerrain.IsInherent && CenterTerrain(currentHex)?.Code != currentTerrain.Code && InherentSpillTest())
@@ -764,7 +856,7 @@ public static class LosCalculator
                         test1 = false;
                     }
 
-                    if (SpecialTestDepressionGroundLevel(rangeToTarget, targetElevation, targetPoint))
+                    if (SpecialTestDepressionGroundLevel(rangeToTarget, targetElevation, targetCenter))
                     {
                         test1 = false;
                     }
@@ -772,7 +864,7 @@ public static class LosCalculator
 
                 var test2 = !test1 && rangeToTarget == 1
                     && currentIsDepression && !(groundLevel == currentBase || finalSource >= groundLevel || finalTarget > groundLevel) && !followsDepiction
-                    && LosMap.Distance(targetPoint.X, targetPoint.Y, cell.X, cell.Y) > LosMap.Distance(targetPoint.X, targetPoint.Y, currentCenter.X, currentCenter.Y);
+                    && LosMap.Distance(targetCenter.X, targetCenter.Y, cell.X, cell.Y) > LosMap.Distance(targetCenter.X, targetCenter.Y, currentCenter.X, currentCenter.Y);
                 if (!test1 && !test2 && currentHex == sourceHex && currentTerrain!.IsCliff && CheckBlindHexRule())
                 {
                     return true;
@@ -814,7 +906,7 @@ public static class LosCalculator
                         test1 = false;
                     }
 
-                    if (SpecialTestDepressionGroundLevel(rangeToSource, sourceElevation, sourcePoint))
+                    if (SpecialTestDepressionGroundLevel(rangeToSource, sourceElevation, sourceCenter))
                     {
                         test1 = false;
                     }
@@ -822,7 +914,7 @@ public static class LosCalculator
 
                 var test2 = !test1 && rangeToSource == 1
                     && currentIsDepression && !(groundLevel == currentBase || finalTarget >= groundLevel || finalSource > groundLevel) && !followsDepiction
-                    && LosMap.Distance(sourcePoint.X, sourcePoint.Y, cell.X, cell.Y) > LosMap.Distance(sourcePoint.X, sourcePoint.Y, currentCenter.X, currentCenter.Y);
+                    && LosMap.Distance(sourceCenter.X, sourceCenter.Y, cell.X, cell.Y) > LosMap.Distance(sourceCenter.X, sourceCenter.Y, currentCenter.X, currentCenter.Y);
                 if (!test1 && !test2 && currentHex == targetHex && currentTerrain!.IsCliff && CheckBlindHexRule())
                 {
                     return true;
@@ -955,7 +1047,8 @@ public static class LosCalculator
                     && Block("LOS must leave the building before leaving the source hex to see a location with a different elevation (A6.8 Example 2)");
             }
 
-            return (source.Terrain!.IsFactory || target.Terrain!.IsFactory) && FactoryRooftopRule(RooftopRange() is null ? 0 : -1);
+            // same-hex LOS, between two hexside locations, is not tested
+            return (source.Terrain!.IsFactory || target.Terrain!.IsFactory) && sourceHex != targetHex && FactoryRooftopRule(RooftopRange() is null ? 0 : -1);
         }
 
         // The rooftop end whose adjustments the factory rules make, the target's over the source's: a rooftop that is
@@ -1572,13 +1665,13 @@ public static class LosCalculator
 
             // B10.2 EXC: ignore same level terrain in a lower adjacent hex, and the reverse
             if (rangeToSource == 1 && currentTerrainHgt + obstacleAdjustment == 0 && sourceElevation > Facts(currentHex).BaseLevel
-                && LosMap.Distance(sourcePoint.X, sourcePoint.Y, cell.X, cell.Y) < LosMap.Distance(sourcePoint.X, sourcePoint.Y, currentCenter.X, currentCenter.Y))
+                && LosMap.Distance(sourceCenter.X, sourceCenter.Y, cell.X, cell.Y) < LosMap.Distance(sourceCenter.X, sourceCenter.Y, currentCenter.X, currentCenter.Y))
             {
                 return false;
             }
 
             if (rangeToTarget == 1 && currentTerrainHgt + obstacleAdjustment == 0 && targetElevation > Facts(currentHex).BaseLevel
-                && LosMap.Distance(targetPoint.X, targetPoint.Y, cell.X, cell.Y) < LosMap.Distance(targetPoint.X, targetPoint.Y, currentCenter.X, currentCenter.Y))
+                && LosMap.Distance(targetCenter.X, targetCenter.Y, cell.X, cell.Y) < LosMap.Distance(targetCenter.X, targetCenter.Y, currentCenter.X, currentCenter.Y))
             {
                 return false;
             }
@@ -1739,7 +1832,8 @@ public static class LosCalculator
                     return false;
                 }
 
-                if (!((losIs60Degree || losIsHorizontal) && terrain.IsBuilding) || rangeToTarget % 2 == 0 || terrain.IsOutsideFactoryWall)
+                // a hexside target counts as at an even range here
+                if (!((losIs60Degree || losIsHorizontal) && terrain.IsBuilding) || rangeToTarget % 2 == 0 || !targetIsCenter || terrain.IsOutsideFactoryWall)
                 {
                     return Block(blindHex);
                 }
@@ -2107,7 +2201,9 @@ public static class LosCalculator
                 hindrance = 0.5;
             }
 
-            // LOSResult.addMapHindrance: keyed by range from the source hex, the larger value kept
+            // LOSResult.addMapHindrance: the first point met (setFirstHindrance), and by range from the source hex, the
+            // larger value kept
+            firstHindranceAt ??= new GridPoint(currentCol, currentRow);
             var atRange = Range(sourceHex, currentHex);
             if (!mapHindrances.TryGetValue(atRange, out var existing) || hindrance > existing)
             {
@@ -2172,6 +2268,27 @@ public static class LosCalculator
             }
 
             return exitHexsides;
+        }
+
+        // setEnterExitHexsides for a hexside end: the hexsides of its hex the line touches, in ascending order (the order
+        // VASL's HashSet of small integers gives), the first two kept. With more than two, removeVertexHexsides drops
+        // those whose LOS or auxiliary point is either end of the line.
+        private int[] HexsidesTouched(HexIndex hex)
+        {
+            var touched = map.HexsidesCrossed(hex, sourcePoint, targetPoint).Select(side => (int)side).ToList();
+            if (touched.Count > 2)
+            {
+                var vertices = map.Geometry.Vertices(hex);
+                touched.RemoveAll(side => IsLineEnd(vertices[side]) || IsLineEnd(vertices[(side + 1) % 6]));
+            }
+
+            return [touched.Count > 0 ? touched[0] : None, touched.Count > 1 ? touched[1] : None];
+        }
+
+        private bool IsLineEnd(PixelPoint vertex)
+        {
+            var point = new GridPoint((int)vertex.X, (int)vertex.Y);
+            return point == sourcePoint || point == targetPoint;
         }
 
         // Map.getHexsideWhenLOSAlongHexside, with its side effect of filling in a missing target entry hexside.

@@ -28,6 +28,19 @@ A hexside location in VASL (`Hex.getHexsideLocation`) has an LOS point at one ve
 - Its elevation follows `setSourceAndTargetElevations`: a non-center location in a depression hex is one level higher.
 - Everything the walk does with the source and target hex applies unchanged; the rules that test `isCenterLocation` take the hexside branch.
 
+**As built** (part 2).
+- `LosResult` gains `Hindrances` (`LosHindrance(Range, Value)`, in range order) and `FirstHindranceAt` (`LosHindranceAt(Point, Board, Hex)`), kept as `addMapHindrance` and `setFirstHindrance` keep them; its equality compares the breakdown by value. `LosCalculator.Check(map, source, sourceAim, target, targetAim)` takes a `LosAim` per end (`LosPoint` or `AuxiliaryPoint`); the two-location overload aims at the LOS points, and a center location ignores its aim.
+- A hexside location is level 0 (as `Hex.createLocations` makes it; other levels are refused), with the hexside's terrain and depression terrain, its LOS point at vertex *side* and its auxiliary point at the next, truncated. Its hex follows the owner rule.
+- Reproduced for hexside ends: `setSourceAndTargetElevations` (+1 in a depression hex), `setEnterExitHexsides` (`getHexsideCrossed` with `removeVertexHexsides`), `getAdjacentHexes` (no even-range shortcut), `applyLOSRules` tests 1, 2, 4 and 5, `checkSameHexRule` (only with a center end; two hexsides of one hex walk at range 0; the bridge test pairs a bridge end with a center end), the blind hex rule's odd-range building test (a hexside target counts as even), and `checkBuildingRestrictionRule`'s same-hex factory exemption. The depression, `specialtestDepressionGroundLevel` and B10.2 tests now measure from the ends' hex centers, as VASL does.
+- VASL quirk: an end point off the grid (a hexside of a map-edge half hex) has no terrain, and `applyLOSRules`' catch ends the LOS at its first point, clear at the full range. The read does the same. Off the grid in `checkLOSOnHexsideRule` VASL would fail; the read names `VaslFails` there.
+- `LosFidelity` reads `hindrances`, `firstHindranceAt`, `firstHindranceHex` and `sourceAux`, compares the breakdown and the first point and hex on every answered pair, and reads a hexside pair from the point VASL used. `LosFidelity.FindHexside` lists the hexside fixtures. Every center fixture stays fully answered (except VASL's 10 failures on `bdBFPDW2b`) with no disagreement on the breakdown.
+
+  | Fixture | Pairs | Answered | Disagreements |
+  |---|---|---|---|
+  | `bd01.los-hexside` | 20,388 | 20,388 | 0 |
+  | `bd12.los-hexside` | 13,668 | 13,668 | 0 |
+  | `bdBFPD.los-hexside` | 11,304 | 11,304 | 0 |
+
 ## 4. The oracle
 
 - **Breakdown on every pair.** The LOS mode writes each pair's map hindrances by range and its first hindrance point, read from `LOSResult` (its hindrance map is not public, so the harness reads the field). The LOS harness becomes 1.2.0 and every LOS fixture is regenerated; the other fields are unchanged.

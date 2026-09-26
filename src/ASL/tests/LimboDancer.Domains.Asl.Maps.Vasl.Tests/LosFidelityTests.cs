@@ -13,8 +13,9 @@ namespace LimboDancer.Domains.Asl.Maps.Vasl.Tests;
 /// <summary>
 /// U14 (LOS Design, section 7): the C# LOS read against VASL's own <c>Map.LOS</c>, pair by pair, on the LOS oracle
 /// fixtures. Every pair the read answers (Clear or Blocked) must agree with VASL on whether LOS is blocked, the hex
-/// where it is blocked, the range, the hindrance total, and the reason text; the number answered is pinned so it can
-/// only rise. The boards are ingested from the VASL checkout, as the F2 tests do.
+/// where it is blocked, the range, the hindrance total, the reason text, and (U17) the hindrance breakdown and first
+/// hindrance point; the number answered is pinned so it can only rise. The hexside fixtures are compared from the
+/// source point VASL used. The boards are ingested from the VASL checkout, as the F2 tests do.
 /// </summary>
 public sealed class LosFidelityTests(ITestOutputHelper output)
 {
@@ -41,7 +42,19 @@ public sealed class LosFidelityTests(ITestOutputHelper output)
         { "bdBFPD.los.json.gz", 5566 },
         { "bdBFPDW2b.los.json.gz", 5574 },
         { "bdrdx.los.json.gz", 2046 },
+        // U17: from hexside locations, aimed at each of their two points (LOS Result Design, section 3)
+        { "bd01.los-hexside.json.gz", 20388 },
+        { "bd12.los-hexside.json.gz", 13668 },
+        { "bdBFPD.los-hexside.json.gz", 11304 },
     };
+
+    [Fact]
+    public void EveryHexsideFixtureIsCompared()
+    {
+        var pinned = Fixtures.Select(row => (string)row[0]).ToHashSet(StringComparer.Ordinal);
+        Assert.Equal(3, LosFidelity.FindHexside(OracleDirectory).Count);
+        Assert.All(LosFidelity.FindHexside(OracleDirectory), path => Assert.Contains(Path.GetFileName(path), pinned));
+    }
 
     [VaslTheory]
     [MemberData(nameof(Fixtures))]
