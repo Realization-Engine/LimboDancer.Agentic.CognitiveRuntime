@@ -449,9 +449,9 @@ public static class ScenarioA1FireCalculator
                     {
                         unit.Break("broken-kia");
                     }
-                    else
+                    else if (!Reduce(unit, "casualty-reduced-kia"))
                     {
-                        Reduce(unit, "casualty-reduced-kia");
+                        return;
                     }
                 }
             }
@@ -467,7 +467,11 @@ public static class ScenarioA1FireCalculator
                 var highest = drs.Values.Max();
                 foreach (var (id, dr) in drs.Where(item => item.Value == highest))
                 {
-                    Reduce(state[id], "casualty-reduced-k");
+                    // Rolls are asked for one at a time: stop at the first one missing.
+                    if (!Reduce(state[id], "casualty-reduced-k"))
+                    {
+                        return;
+                    }
                 }
 
                 MoraleChecks(int.Parse(k.Groups[1].Value, CultureInfo.InvariantCulture));
