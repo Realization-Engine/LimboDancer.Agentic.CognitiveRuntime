@@ -316,8 +316,8 @@ Decided on 2026-09-25 as recommended in the [Decision Memo for D1 to D4](<ASL Un
 15. **LOS slice 3: the remaining terrain:** extend the read to the rule groups step 14 leaves unsupported, reproducing VASL as before. In order:
     1. *Oracle fixtures.* LOS fixtures for boards chosen for these features: board 23 (bridges), board 51 (rowhouses and cellars), board rdx (factories), BFP board D (bocage), BFP board DW2b (hillocks), BFP board B (railroad), and board 96 (rubble).
     2. *Buildings and bridges.* Bridges and tunnels, rowhouse and factory walls, factories and their rooftops, roofless and gutted buildings, and rubble.
-    3. *Hexside and rise terrain.* Bocage, hillocks (F6.4), railroad embankments, and slopes (F2.3), where the fixture boards have them.
-    4. *What cannot be checked.* Partial orchards, out-of-season orchards, and entrenchments appear on no fixture board. They stay unsupported by name until a board with them is found, since no answer is admitted without a VASL comparison.
+    3. *Hexside and rise terrain.* Bocage, hillocks (F6.4), railroad embankments, out-of-season orchards, and slopes (F2.3), where the fixture boards have them.
+    4. *What cannot be checked.* Partial orchards and entrenchments appear on no fixture board. They stay unsupported by name until a board with them is found, since no answer is admitted without a VASL comparison.
     5. *Acceptance.* U16 (section 14) passes.
 
     Designed in the [ASL Unit LOS Slice 3 Design](<ASL Unit LOS Slice 3 Design.md>).
@@ -342,7 +342,7 @@ Later candidates, not yet sequenced: revisiting the Java VASL oracle tool, which
 - **U13, entry across a seam.** Given a live game on two placed boards, a squad on the other board, in a hex that shares a seam with a board 01 building the reviewed cases cover, may enter that building: the entry facts show it adjacent with its crossed hexside, and the entry commits as it would from board 01. An entry across the same seam into a location the reviewed cases do not cover is refused with its reasons, and nothing changes.
 - **U14, LOS.** Given the LOS oracle's pairs of locations on its fixture boards, the LOS read agrees with VASL on every pair: whether LOS is blocked, the hex where it is first blocked, and the range. The same pairs agree on a placed map of those boards, and a read on a board whose status is not Verified or AuthoredValid is nondefinitive.
 - **U15, LOS over depressions and cliffs.** On every LOS fixture of steps 13 and 14, the read agrees with VASL on every pair it answers; on boards 01 and 11 it answers every pair; and every unanswered pair on the new fixtures names a rule that step 15 reproduces. The answered counts are pinned.
-- **U16, LOS over the remaining terrain.** On every LOS fixture of steps 13 to 15, the read agrees with VASL on every pair it answers, and every unanswered pair names a rule that no fixture board exercises (partial orchards, out-of-season orchards, entrenchments) or a situation the as-built notes list with its reason. The answered counts are pinned.
+- **U16, LOS over the remaining terrain.** On every LOS fixture of steps 13 to 15, the read agrees with VASL on every pair it answers, and every unanswered pair names a rule that no fixture board exercises (partial orchards, entrenchments) or a situation the as-built notes list with its reason. The answered counts are pinned.
 
 ## 15. Traceability
 

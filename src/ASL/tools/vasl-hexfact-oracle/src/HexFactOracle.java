@@ -55,7 +55,7 @@ import VASL.build.module.map.boardPicker.VASLBoard;
 public final class HexFactOracle {
     static final String HARNESS_VERSION = "1.1.0";
     static final String GRID_CONFIGURATION = "HalfHexWidthLeftHexFullHeight";
-    static final String LOS_HARNESS_VERSION = "1.0.0";
+    static final String LOS_HARNESS_VERSION = "1.1.0";
     static final int LOS_RANGE = 12;
     static final int OBSERVER_COLUMN_STRIDE = 5;
     static final int OBSERVER_ROW_STRIDE = 3;
@@ -563,11 +563,20 @@ public final class HexFactOracle {
                                     continue;
                                 }
 
+                                // VASL's LOS fails on some lines, such as a crest test beside the map edge; the pair records
+                                // the failure instead of a result (harness 1.1.0).
                                 LOSResult result = new LOSResult();
-                                map.LOS(source, false, target, false, result, game, null);
+                                String failure = null;
+                                try {
+                                    map.LOS(source, false, target, false, result, game, null);
+                                } catch (RuntimeException exception) {
+                                    failure = exception.getClass().getSimpleName();
+                                    result = new LOSResult();
+                                }
+
                                 out.print(firstPair ? "" : ",\n");
                                 firstPair = false;
-                                writePair(out, map, boards, source, target, result);
+                                writePair(out, map, boards, source, target, result, failure);
                             }
                         }
                     }
@@ -582,7 +591,7 @@ public final class HexFactOracle {
         out.print("}\n");
     }
 
-    private static void writePair(PrintStream out, Map map, List<PlacedBoard> boards, Location source, Location target, LOSResult result) {
+    private static void writePair(PrintStream out, Map map, List<PlacedBoard> boards, Location source, Location target, LOSResult result, String failure) {
         Point at = result.isBlocked() ? result.getBlockedAtPoint() : null;
         Hex atHex = at == null ? null : map.gridToHex(at.x, at.y);
         out.print("{\"blocked\":" + result.isBlocked());
@@ -592,7 +601,8 @@ public final class HexFactOracle {
         out.print(",\"range\":" + result.getRange());
         out.print(",\"reason\":\"" + escape(result.getReason() == null ? "" : result.getReason()) + "\"");
         out.print(",\"source\":\"" + escape(locationId(source, boards)) + "\"");
-        out.print(",\"target\":\"" + escape(locationId(target, boards)) + "\"}");
+        out.print(",\"target\":\"" + escape(locationId(target, boards)) + "\"");
+        out.print(failure == null ? "}" : ",\"vaslError\":\"" + escape(failure) + "\"}");
     }
 
     private static void writeHexes(PrintStream out, Map map) {

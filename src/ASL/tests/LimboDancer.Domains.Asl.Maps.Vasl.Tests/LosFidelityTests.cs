@@ -34,6 +34,13 @@ public sealed class LosFidelityTests(ITestOutputHelper output)
         { "bd12.los.json.gz", 7176 },
         { "bd15.los.json.gz", 6051 },
         { Path.Combine("Scenarios", "bd12-over-bd15.scenario.los.json.gz"), 16571 },
+        { "bd23.los.json.gz", 11554 },
+        { "bd51.los.json.gz", 26581 },
+        { "bd96.los.json.gz", 5858 },
+        { "bdBFPB.los.json.gz", 7124 },
+        { "bdBFPD.los.json.gz", 1301 },
+        { "bdBFPDW2b.los.json.gz", 2684 },
+        { "bdrdx.los.json.gz", 64 },
     };
 
     [VaslTheory]

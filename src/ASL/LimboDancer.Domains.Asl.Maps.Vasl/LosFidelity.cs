@@ -9,8 +9,17 @@ namespace LimboDancer.Domains.Asl.Maps.Vasl;
 /// <summary>An LOS oracle fixture: its file, the scenario it was built from (null for one board), its placements, and its pairs.</summary>
 public sealed record LosFixture(string Name, string? Scenario, IReadOnlyList<BoardPlacement> Placements, IReadOnlyList<LosFixturePair> Pairs);
 
-/// <summary>One pair of an LOS oracle fixture: the locations and VASL's own result for them.</summary>
-public sealed record LosFixturePair(BoardLocation Source, BoardLocation Target, bool Blocked, string? BlockedHex, int Range, int Hindrance, string Reason);
+/// <summary>
+/// One pair of an LOS oracle fixture: the locations and VASL's own result for them, or the name of the exception VASL's
+/// LOS threw on this line (harness 1.1.0).
+/// </summary>
+public sealed record LosFixturePair(BoardLocation Source, BoardLocation Target, bool Blocked, string? BlockedHex, int Range, int Hindrance, string Reason)
+{
+    public string? VaslError
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// The comparison of an LOS read with an oracle fixture (LOS Design, sections 7 and 8): the pairs, how many the read
@@ -45,7 +54,10 @@ public static class LosFidelity
         LosFixturePair[] pairs = [.. root.GetProperty("pairs").EnumerateArray().Select(pair => new LosFixturePair(
             BoardLocation.Parse(pair.GetProperty("source").GetString()!), BoardLocation.Parse(pair.GetProperty("target").GetString()!),
             pair.GetProperty("blocked").GetBoolean(), pair.GetProperty("blockedHex").GetString(), pair.GetProperty("range").GetInt32(),
-            pair.GetProperty("hindrance").GetInt32(), pair.GetProperty("reason").GetString() ?? string.Empty))];
+            pair.GetProperty("hindrance").GetInt32(), pair.GetProperty("reason").GetString() ?? string.Empty)
+            {
+                VaslError = pair.TryGetProperty("vaslError", out var error) ? error.GetString() : null,
+            })];
         var name = Path.GetFileName(path);
         return new LosFixture(name[..name.IndexOf('.', StringComparison.Ordinal)], root.GetProperty("scenario").GetString(), placements, pairs);
     }
@@ -77,6 +89,23 @@ public static class LosFidelity
         foreach (var pair in fixture.Pairs)
         {
             var result = LosCalculator.Check(map, pair.Source, pair.Target);
+
+            // Where VASL's own LOS fails, the read must not answer: it names VASL's failure, or an unreproduced rule the
+            // line meets before it.
+            if (pair.VaslError is { } error)
+            {
+                if (result.IsAnswered)
+                {
+                    disagreements.Add($"{pair.Source} -> {pair.Target}: VASL fails ({error}), read {result.Status} {result.Reason}");
+                }
+                else
+                {
+                    unsupported[result.Reason] = unsupported.GetValueOrDefault(result.Reason) + 1;
+                }
+
+                continue;
+            }
+
             if (!result.IsAnswered)
             {
                 unsupported[result.Reason] = unsupported.GetValueOrDefault(result.Reason) + 1;
