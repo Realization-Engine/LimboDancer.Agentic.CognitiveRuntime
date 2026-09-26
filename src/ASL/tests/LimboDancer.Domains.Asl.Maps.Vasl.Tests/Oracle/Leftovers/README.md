@@ -16,10 +16,10 @@ The five terrain groups are exercised with controlled maps and VASL's own `Map.L
 
 No decoded board contains entrenchment terrain. VASL normally supplies entrenchment locations through counters. The user approved controlled oracle fixtures on 2026-09-26 to avoid expanding board ingestion.
 
-Regenerate the survey with Python 3:
+Regenerate the survey with PowerShell 7:
 
 ```powershell
-python ./survey-boards.py E:/Archive/GitHub/dlandi/vasl > board-survey.json
+./survey-boards.ps1 -VaslRoot E:/Archive/GitHub/dlandi/vasl > board-survey.json
 ```
 
 ## Controlled fixtures
