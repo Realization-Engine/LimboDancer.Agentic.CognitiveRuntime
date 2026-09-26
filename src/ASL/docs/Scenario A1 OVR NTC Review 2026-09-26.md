@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-26
 
-**Status:** Case review for unit step 10. The rulings and the [case matrix](<../../../docs/ASL/SourceRegistry/asl-scenario-a1.ovr-ntc-case-matrix.json>) are recorded under the user's delegated xUnit review. The package that publishes them follows in part 3. No live play changes in this step.
+**Status:** Case review for unit step 10, published. The rulings and the [case matrix](<../../../docs/ASL/SourceRegistry/asl-scenario-a1.ovr-ntc-case-matrix.json>) are recorded under the user's delegated xUnit review, and the [OVR NTC package](<../../../docs/ASL/SourceRegistry/asl-scenario-a1.ovr-ntc-package.json>) publishes them read-only (`ScenarioA1OvrNtcPackage`, `ScenarioA1OvrNtcConclusionResolver`). No live play changes in this step.
 
 **Requirements:** [ASL Unit Requirements](<LimboDancer.Agentic.CognitiveRuntime ASL Unit Requirements.md>), section 13, step 10.
 
@@ -55,6 +55,10 @@ Two further points follow from the sources:
 
 - **ConcealedSmcOverrun.** It records an elected OVR's NTC as unresolved or failed, and leaves both Indeterminate. This review decides the failed case. It does not change that package or its digest.
 - **SecondDefender and SecondDefenderConsequence.** Their Definitive cases assume the NTC was passed before the second reveal. Under ruling 1 that order does not arise in live play: the second reveal comes first and denies the OVR without an NTC. Those packages stay as reviewed, and the case `A1-ovr-ntc-election-reveals-another-defender` is the path step 11 wires.
+
+## The package
+
+`scenario-a1-concealment-ovr-ntc` pins the matrix, both predecessor packages, the six source fragments, the rulings, and the NTC resolution by digest, and has no execution authority. Its resolver takes the unit, the attempted and previous locations, the observation version, and the case. It concludes Definitive for the two forced-back cases, with the return, the ordinary 2 MF in the previous Location, and the MPh ended. It concludes Abstained when the election is unavailable, and Indeterminate otherwise. Missing, contrary, extra, and stale facts refuse a conclusion, as in the earlier packages. Its observation provider over live games belongs to step 11.
 
 ## For step 11
 

@@ -1,0 +1,98 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "published-bounded-ovr-ntc-package",
+  "domainId": "asl",
+  "packageId": "scenario-a1-concealment-ovr-ntc",
+  "declaredUse": "Read-only A12.15 and A4.15 conclusions for an elected Infantry OVR after an entry attempt reveals a lone concealed SMC: the second reveal on election, the OVR NTC and its failure, under the user's rulings of 2026-09-26",
+  "priorConcealedSmcOverrunPackageManifestSha256": "052579ea6dcfb2da3221b39c524695a74637645ddd853d9a343c3d2db9b8d553",
+  "priorPostRevealPackageManifestSha256": "0d721e581a0201d79cd2ab18c06032c2875c2910c848796dad62052db9b52c0b",
+  "caseMatrixSha256": "cb6c494ea5972b16cb4191771a5010c525c7fa4b249c48b186e6b585f8041eef",
+  "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+  "sourceFragments": [
+    {
+      "ruleId": "A.9",
+      "physicalPdfPage": 43,
+      "fragmentId": "asl-fragment:sha256:79b276101baa5aa6918f969c83f86a8fb1727717cbb0dd22dbdc6e89d5a2013f",
+      "contentSha256": "2c2d000af49c2ce84e5a30b2e5a8496a09e82fa68a6bc61aef5b0b658e232697"
+    },
+    {
+      "ruleId": "A4.15",
+      "physicalPdfPage": 49,
+      "fragmentId": "asl-fragment:sha256:189987c951bbe691bdab278fad56ca4435cd1c038f724d99888121c54c5eaa75",
+      "contentSha256": "969c23764e0e6d3f1ef6d7b53162b6dc9385fa150e5fcd83c021f557ff577390"
+    },
+    {
+      "ruleId": "A10.1",
+      "physicalPdfPage": 65,
+      "fragmentId": "asl-fragment:sha256:885bdc7ae257ae12974bf5511a06740b28001410bf211476e2d154924188af5b",
+      "contentSha256": "4da902b9b8ae459846d9516193bee2c25de69438725655917484f9313399576f"
+    },
+    {
+      "ruleId": "A12.15",
+      "physicalPdfPage": 78,
+      "fragmentId": "asl-fragment:sha256:e92332292b4bde444aff7f84127793084e1f0ecfd99af9750da6e4aa8af40ea3",
+      "contentSha256": "ce0cc02826bf66951ff4a1ce06b7a51d105eb2f2540f3710c2e49c2455306fcf"
+    },
+    {
+      "ruleId": "B23.3",
+      "physicalPdfPage": 136,
+      "fragmentId": "asl-fragment:sha256:5b8331ba4d24b32ea6cda7bd479eb72d14f7b86aea80ff783537a31f24a74afc",
+      "contentSha256": "0bfc7bb2b0b8fc3ae7a6b8cd5fa21d3910e6cc882113fa4b320ed02ca676c205"
+    },
+    {
+      "ruleId": "NTC-glossary",
+      "physicalPdfPage": 30,
+      "fragmentId": "asl-fragment:sha256:1371497a18cb0ae925c9a34964ed3de4383fbd22f180936c2b83e4a350082b8a",
+      "contentSha256": "47b7f89e2aa1871ebdb308ba1985004ef26bd1abeb7609a6be1979afff5eb882"
+    }
+  ],
+  "rulings": {
+    "order": "second-reveal-on-election-before-any-ntc",
+    "secondDefenderSelection": "random-selection-A.9",
+    "failedNtc": "forced-back-ordinary-entry-mf-in-previous-location-mph-ended",
+    "electionAvailability": "only-with-at-least-four-mf-remaining",
+    "passedNtcAgainstLoneSmc": "unreviewed-smc-options-and-close-combat"
+  },
+  "ntcResolution": {
+    "roll": "two dice, one DR",
+    "morale": "the unit's current Morale Level; its printed morale comes from the reviewed catalog",
+    "drm": {
+      "buildingTem": {
+        "source": "B23.3",
+        "stone": 3,
+        "wooden": 2
+      },
+      "losHindranceInLocation": {
+        "source": "A4.15",
+        "admitted": "none"
+      },
+      "leadership": {
+        "source": "A10.1",
+        "admitted": "none: the MMC moves alone"
+      }
+    },
+    "passWhen": "final DR at or below the Morale Level"
+  },
+  "exactCaseIds": [
+    "A1-ovr-ntc-election-reveals-another-defender",
+    "A1-ovr-ntc-lone-smc-mf-insufficient",
+    "A1-ovr-ntc-failed",
+    "A1-ovr-ntc-passed-against-lone-smc",
+    "A1-ovr-ntc-other-occupants-unknown"
+  ],
+  "positiveCaseIds": [
+    "A1-ovr-ntc-election-reveals-another-defender",
+    "A1-ovr-ntc-lone-smc-mf-insufficient",
+    "A1-ovr-ntc-failed"
+  ],
+  "executionAuthority": "none",
+  "excludedOutcomes": [
+    "leader exemption from the NTC",
+    "Berserk movers",
+    "Dummies",
+    "LOS Hindrance in the Location",
+    "fortified or other non-ordinary buildings",
+    "the SMC's options and CC after a passed NTC (A4.151, A4.152)",
+    "Defensive First Fire and all follow-on fire"
+  ]
+}

@@ -270,6 +270,8 @@ Decided on 2026-09-25 as recommended in the [Decision Memo for D1 to D4](<ASL Un
     4. *Exclusions.* The leader's exemption from the NTC (A4.15), a Berserk mover, and every case the package does not decide stay out of scope.
 
     The package pins its source fragments (A4.15, A10.1, A12.15, B23.3) and its case matrix by digest. It has conformance tests like the existing Scenario A1 packages. Its review is recorded in a review document, written before the package is published.
+
+    Done in the [Scenario A1 OVR NTC Review](<Scenario A1 OVR NTC Review 2026-09-26.md>). The user ruled that the second reveal comes on the election, before any NTC, chosen by Random Selection (A.9, p. 43, also verified), and that a failed NTC forces the mover back with the ordinary 2 MF. The package `scenario-a1-concealment-ovr-ntc` publishes five cases.
 11. **The Infantry OVR in live play (outline):** wire the step 10 package and the reviewed SecondDefender and SecondDefenderConsequence packages into live games:
     - an election, allowed only when every outcome of its NTC has a reviewed resolution;
     - the NTC as a system roll through the dice store of step 9;
