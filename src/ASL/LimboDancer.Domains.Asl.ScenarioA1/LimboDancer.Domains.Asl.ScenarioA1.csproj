@@ -25,5 +25,10 @@
     <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.second-defender-consequence-package.json" LogicalName="ScenarioA1.second-defender-consequence-package.json" />
     <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.ovr-ntc-case-matrix.json" LogicalName="ScenarioA1.ovr-ntc-matrix.json" WithCulture="false" />
     <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.ovr-ntc-package.json" LogicalName="ScenarioA1.ovr-ntc-package.json" WithCulture="false" />
+    <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.fire-case-matrix.json" LogicalName="ScenarioA1.fire-matrix.json" WithCulture="false" />
+    <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.fire-package.json" LogicalName="ScenarioA1.fire-package.json" WithCulture="false" />
+    <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/Supplements/a7-infantry-fire-table.transcription.json" LogicalName="ScenarioA1.fire-ift.json" WithCulture="false" />
+    <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/Supplements/b-terrain-chart-tem.transcription.json" LogicalName="ScenarioA1.fire-terrain-chart.json" WithCulture="false" />
+    <EmbeddedResource Include="../units/catalog/scenario-a1.catalog.json" LogicalName="ScenarioA1.fire-catalog.json" WithCulture="false" />
   </ItemGroup>
 </Project>
