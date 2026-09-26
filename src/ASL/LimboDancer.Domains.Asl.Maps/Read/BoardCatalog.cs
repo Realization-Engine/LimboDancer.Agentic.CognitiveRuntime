@@ -1,6 +1,7 @@
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Maps.Derivation;
 using LimboDancer.Domains.Asl.Maps.Geometry;
+using LimboDancer.Domains.Asl.Maps.Los;
 
 namespace LimboDancer.Domains.Asl.Maps.Read;
 
@@ -101,6 +102,15 @@ public sealed class BoardHandle
     }
 
     public BoardGeometry Geometry => Facts.Geometry;
+
+    /// <summary>
+    /// What an LOS read needs beyond the hex facts (LOS Design, section 5): the terrain grid, the terrain catalog, the
+    /// hexside annotations, and the LOS scenario-specific rules for composing maps. A handle without it answers no LOS.
+    /// </summary>
+    public LosData? Los
+    {
+        get; init;
+    }
 
     /// <summary>The derived facts of a hex, or null when the hex is not on the board.</summary>
     public HexFacts? HexFacts(HexName hex) => Geometry.TryGetIndex(hex, out var index) ? Facts[index] : null;

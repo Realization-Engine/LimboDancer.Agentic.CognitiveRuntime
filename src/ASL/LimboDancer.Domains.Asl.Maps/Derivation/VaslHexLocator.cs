@@ -149,6 +149,30 @@ public sealed class VaslHexLocator
         return Exists(column, row) ? new HexIndex(column, row) : null;
     }
 
+    /// <summary>
+    /// The hex's extended border (<c>Hex.getExtendedHexBorder</c>): each vertex truncated and moved one pixel outward,
+    /// two on Deluxe hexes, clockwise from the top-left vertex. LOS uses it to keep the source and target hexes and to
+    /// find the hexsides a line crosses.
+    /// </summary>
+    public IReadOnlyList<GridPoint> ExtendedBorder(HexIndex hex) => Extended(hex).Points;
+
+    /// <summary>Whether a pixel is inside the hex's extended border, with <c>java.awt.Polygon.contains</c> semantics.</summary>
+    public bool ExtendedBorderContains(HexIndex hex, int x, int y) => Extended(hex).Contains(x, y);
+
+    /// <summary>Whether a pixel is inside the hex's border (<c>Hex.contains</c>): vertices rounded half up.</summary>
+    public bool BorderContains(HexIndex hex, int x, int y)
+    {
+        if (!geometry.Contains(hex))
+        {
+            throw new ArgumentOutOfRangeException(nameof(hex), hex, "Hex is not on this board.");
+        }
+
+        return borders[hex.Column][hex.Row].Contains(x, y);
+    }
+
+    private JavaPolygon Extended(HexIndex hex) =>
+        geometry.Contains(hex) ? extendedBorders[hex.Column][hex.Row] : throw new ArgumentOutOfRangeException(nameof(hex), hex, "Hex is not on this board.");
+
     private int Columns => borders.Length;
 
     private int Rows(int column) => borders[column].Length;
