@@ -163,6 +163,8 @@ public sealed record AslScenarioA1SourceInventory(
         {
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
             Indented = true,
+            // Committed manifests use LF on every OS.
+            NewLine = "\n",
         }))
         {
             writer.WriteStartObject();
