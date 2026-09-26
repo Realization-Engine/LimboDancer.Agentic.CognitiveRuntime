@@ -89,6 +89,12 @@ public static class LosCalculator
         private readonly double deltaY;
         private readonly int sourceElevation;
         private readonly int targetElevation;
+        private readonly bool sourceIsCellar;
+        private readonly bool targetIsCellar;
+        private readonly bool sourceIsRooftop;
+        private readonly bool targetIsRooftop;
+        private readonly double sourceRooftopAdjustment;
+        private readonly double targetRooftopAdjustment;
         private readonly int range;
         private readonly bool losIs60Degree;
         private readonly bool losIsHorizontal;
@@ -145,6 +151,15 @@ public static class LosCalculator
             // setSourceAndTargetElevations, for center locations.
             sourceElevation = Facts(sourceHex).BaseLevel + source.Level;
             targetElevation = Facts(targetHex).BaseLevel + target.Level;
+
+            // Cellars and rooftops are center locations, so they take no vertex adjustment. The rules below count a
+            // cellar one level higher, and a rooftop half a level lower unless it is level 1 of its hex.
+            sourceIsCellar = source.Terrain is { IsCellar: true };
+            targetIsCellar = target.Terrain is { IsCellar: true };
+            sourceIsRooftop = source.Terrain is { IsRooftop: true };
+            targetIsRooftop = target.Terrain is { IsRooftop: true };
+            sourceRooftopAdjustment = sourceIsRooftop && source.Level != 1 ? -0.5 : 0.0;
+            targetRooftopAdjustment = targetIsRooftop && target.Level != 1 ? -0.5 : 0.0;
             range = map.Geometry.Distance(sourceHex, targetHex);
             rangeToTarget = range;
             losLeavesBuilding = CenterTerrain(sourceHex) is not { IsBuilding: true };
@@ -244,10 +259,12 @@ public static class LosCalculator
         }
 
         // The parts of the LOSStatus constructor this step does not reproduce: special source and target locations,
-        // depressions (exitsSourceDepression, entersTargetDepression), slopes, and hillocks.
+        // depressions (exitsSourceDepression, entersTargetDepression), slopes, and hillocks. Cellars and rooftops of
+        // buildings other than factories are reproduced; VASL's depression setup adjusts rooftops, but only for a
+        // depression end, which is refused.
         private string? SetupProblem()
         {
-            foreach (var location in new[] { source, target })
+            foreach (var (location, hex) in new[] { (source, sourceHex), (target, targetHex) })
             {
                 if (location.Terrain is not { } terrain)
                 {
@@ -259,12 +276,13 @@ public static class LosCalculator
                     return LosUnsupportedRule.Depression;
                 }
 
-                if (location.Level < 0 || terrain.IsCellar)
+                if (location.Level < 0 && !terrain.IsCellar)
                 {
                     return LosUnsupportedRule.Cellar;
                 }
 
-                if (terrain.IsRooftop || terrain.IsFactory || terrain.IsRoofless)
+                // A factory rooftop takes the factory rules (isRooftopLOSBlocked, B23.87).
+                if (terrain.IsFactory || terrain.IsRoofless || (terrain.IsRooftop && CenterTerrain(hex) is { IsFactory: true } or { IsRoofless: true }))
                 {
                     return LosUnsupportedRule.Factory;
                 }
@@ -571,14 +589,10 @@ public static class LosCalculator
                 return LosUnsupportedRule.Bridge;
             }
 
-            if (terrain.IsFactory || terrain.IsRoofless || terrain.IsRooftop || terrain.IsOutsideFactoryWall)
+            // Rooftop and cellar terrain met along the line has no rule of its own in VASL; only the ends' are adjusted.
+            if (terrain.IsFactory || terrain.IsRoofless || terrain.IsOutsideFactoryWall)
             {
                 return LosUnsupportedRule.Factory;
-            }
-
-            if (terrain.IsCellar)
-            {
-                return LosUnsupportedRule.Cellar;
             }
 
             if (terrain.IsEntrenchment)
@@ -665,7 +679,8 @@ public static class LosCalculator
             return center.Name.Contains(Hillock, StringComparison.Ordinal) ? LosUnsupportedRule.Hillock : null;
         }
 
-        // Map.checkBuildingRestrictionRule, without factories and rooftops (refused).
+        // Map.checkBuildingRestrictionRule, without factories (refused). Its rooftop adjustment is used only by the factory
+        // rooftop test (isRooftopLOSBlocked), so a rooftop in another building takes the plain rule.
         private bool CheckBuildingRestrictionRule()
         {
             if (!losLeavesBuilding && currentHex != sourceHex && currentTerrain!.IsBuildingTerrain
@@ -677,10 +692,26 @@ public static class LosCalculator
             return false;
         }
 
-        // Map.checkHexsideTerrainRule, for walls and hedges: no hillocks, entrenchments, cellars, bocage, or partial
+        // Map.checkHexsideTerrainRule, for walls, hedges, and cellars: no hillocks, entrenchments, bocage, or partial
         // orchards, which are refused.
         private bool CheckHexsideTerrainRule()
         {
+            // A cellar end takes the cellar rule (O6.3) in every hex, the source and target included, and never the
+            // wall and hedge rule; the source's cellar is tested first.
+            var sourceAdjustment = sourceIsCellar ? 1.0 : 0.0;
+            var targetAdjustment = targetIsCellar ? 1.0 : 0.0;
+            if (sourceIsCellar)
+            {
+                return range != 1 && rangeToSource != 1 && targetElevation + targetAdjustment <= sourceElevation + sourceAdjustment
+                    && Block("Unit in cellar cannot see over hexside terrain to non-adjacent target (O6.3)");
+            }
+
+            if (targetIsCellar)
+            {
+                return range != 1 && rangeToTarget != 1 && targetElevation + targetAdjustment >= sourceElevation + sourceAdjustment
+                    && Block("Unit in cellar cannot be seen over hexside terrain by non-adjacent target (O6.3)");
+            }
+
             var nearest = NearestSide(currentHex);
             var ignore = IsIgnorableHexsideTerrain(sourceHex, currentHex, nearest, sourceExitHexspine)
                 || IsIgnorableHexsideTerrain(targetHex, currentHex, nearest, TargetEnterHexspine);
@@ -831,7 +862,7 @@ public static class LosCalculator
             return false;
         }
 
-        // Map.checkGroundLevelRule, without cellars, rooftops, railroad embankments, bridges, cliffs, or Deir.
+        // Map.checkGroundLevelRule, without railroad embankments, bridges, cliffs, or Deir.
         private bool CheckGroundLevelRule()
         {
             if (AlongCliffHexside())
@@ -839,8 +870,14 @@ public static class LosCalculator
                 return true;
             }
 
-            return groundLevel > sourceElevation && groundLevel > targetElevation && Block("Ground level is higher than both the source and target (A6.2)");
+            return groundLevel > sourceElevation + HeightAdjustment(sourceIsCellar, sourceRooftopAdjustment)
+                && groundLevel > targetElevation + HeightAdjustment(targetIsCellar, targetRooftopAdjustment)
+                && Block("Ground level is higher than both the source and target (A6.2)");
         }
+
+        // The cellar (+1) and rooftop (-0.5) adjustments the ground level, terrain higher, terrain height, and blind hex
+        // rules make to an end's elevation.
+        private static double HeightAdjustment(bool isCellar, double rooftopAdjustment) => isCellar ? 1.0 : rooftopAdjustment;
 
         // The cliff hexside test of the ground level, terrain height, and blind hex rules: a cliff along the hexside the
         // LOS follows is refused.
@@ -858,11 +895,11 @@ public static class LosCalculator
             return false;
         }
 
-        // Map.checkSplitTerrainRule, without cellars and slopes.
+        // Map.checkSplitTerrainRule, without slopes. Only a cellar end is adjusted.
         private bool CheckSplitTerrainRule()
         {
             var terrain = currentTerrain!;
-            if (terrain.HasSplit && groundLevel == sourceElevation && groundLevel == targetElevation)
+            if (terrain.HasSplit && groundLevel == sourceElevation + (sourceIsCellar ? 1.0 : 0.0) && groundLevel == targetElevation + (targetIsCellar ? 1.0 : 0.0))
             {
                 if (terrain.IsLowerLosObstacle || (!losLeavesBuilding && terrain.IsOutsideFactoryWall))
                 {
@@ -878,12 +915,15 @@ public static class LosCalculator
             return false;
         }
 
-        // Map.checkHalfLevelTerrainRule, without hillocks, rooftops, railroad embankments, sand dunes, or slopes.
+        // Map.checkHalfLevelTerrainRule, without hillocks, railroad embankments, sand dunes, or slopes. A rooftop end is
+        // adjusted only when the other end is not a rooftop, and a cellar end not at all.
         private bool CheckHalfLevelTerrainRule()
         {
             var terrain = currentTerrain!;
+            var sourceAdjustment = targetIsRooftop ? 0.0 : sourceRooftopAdjustment;
+            var targetAdjustment = sourceIsRooftop ? 0.0 : targetRooftopAdjustment;
             return terrain.IsHalfLevelHeight && !terrain.IsHexsideTerrain
-                && groundLevel + currentTerrainHgt == sourceElevation && groundLevel + currentTerrainHgt == targetElevation
+                && groundLevel + currentTerrainHgt == sourceElevation + sourceAdjustment && groundLevel + currentTerrainHgt == targetElevation + targetAdjustment
                 && ApplyHalfLevelTerrain();
         }
 
@@ -892,21 +932,23 @@ public static class LosCalculator
             ? Block("Half level terrain is higher than both the source and/or the target (A6.2)")
             : AddHindranceHex();
 
-        // Map.checkTerrainIsHigherRule, without rooftops, railroad embankments, hillocks, cellars, sand dunes, factories,
-        // bridges, Volga piers, or slopes.
+        // Map.checkTerrainIsHigherRule, without railroad embankments, hillocks, sand dunes, factories, bridges, Volga
+        // piers, or slopes.
         private bool CheckTerrainIsHigherRule()
         {
             var terrain = currentTerrain!;
             var obstacleAdjustment = terrain.IsHalfLevelHeight && !terrain.IsHexsideTerrain ? 0.5 : 0.0;
+            var sourceHeight = sourceElevation + HeightAdjustment(sourceIsCellar, sourceRooftopAdjustment);
+            var targetHeight = targetElevation + HeightAdjustment(targetIsCellar, targetRooftopAdjustment);
 
             // split terrain at the level of both ends has its own rule
-            if (terrain.HasSplit && groundLevel == sourceElevation && groundLevel == targetElevation)
+            if (terrain.HasSplit && groundLevel == sourceHeight && groundLevel == targetHeight)
             {
                 return false;
             }
 
             var height = groundLevel + currentTerrainHgt + obstacleAdjustment;
-            if (height > sourceElevation && height > targetElevation)
+            if (height > sourceHeight && height > targetHeight)
             {
                 var oneLevelHindrance = terrain.Name is "Orchard" or "Palm Trees" or "Light Woods";
                 if ((targetHex == currentHex || sourceHex == currentHex) && oneLevelHindrance)
@@ -940,14 +982,17 @@ public static class LosCalculator
             return false;
         }
 
-        // Map.checkTerrainHeightRule, without rooftops, railroad embankments, cellars, out-of-season orchards, slopes,
-        // hillocks, factories, cliffs, or depressions.
+        // Map.checkTerrainHeightRule, without railroad embankments, out-of-season orchards, slopes, hillocks, factories,
+        // cliffs, or depressions. The cellar and rooftop adjustments apply to the height test only; the exceptions below
+        // use the plain elevations, as VASL's do.
         private bool CheckTerrainHeightRule()
         {
             var terrain = currentTerrain!;
             var obstacleAdjustment = terrain.IsHalfLevelHeight && terrain.IsBuilding ? 0.5 : 0.0;
             var height = groundLevel + currentTerrainHgt + obstacleAdjustment;
-            if (height != Math.Max(sourceElevation, targetElevation) || !(height > Math.Min(sourceElevation, targetElevation)))
+            var sourceHeight = sourceElevation + HeightAdjustment(sourceIsCellar, sourceRooftopAdjustment);
+            var targetHeight = targetElevation + HeightAdjustment(targetIsCellar, targetRooftopAdjustment);
+            if (height != Math.Max(sourceHeight, targetHeight) || !(height > Math.Min(sourceHeight, targetHeight)))
             {
                 return false;
             }
@@ -992,13 +1037,17 @@ public static class LosCalculator
             return terrain.Name is "Huts" or "Tower Hindrance" ? AddHindranceHex() : Block("Must have a height advantage to see over this terrain (A6.2)");
         }
 
-        // Map.checkBlindHexRule, without cellars, rooftops, slopes, hillocks, bocage, cliffs, factories, roofless
-        // buildings, or out-of-season orchards.
+        // Map.checkBlindHexRule, without slopes, hillocks, bocage, cliffs, factories, roofless buildings, or out-of-season
+        // orchards.
         private bool CheckBlindHexRule()
         {
             var terrain = currentTerrain!;
             var height = groundLevel + currentTerrainHgt;
-            if (!(height > Math.Min(sourceElevation, targetElevation) && height < Math.Max(sourceElevation, targetElevation)))
+            var sourceHeight = sourceElevation + HeightAdjustment(sourceIsCellar, sourceRooftopAdjustment);
+            var targetHeight = targetElevation + HeightAdjustment(targetIsCellar, targetRooftopAdjustment);
+            var lowerEnd = Math.Min(sourceHeight, targetHeight);
+            var higherEnd = Math.Max(sourceHeight, targetHeight);
+            if (!(height > lowerEnd && height < higherEnd))
             {
                 return false;
             }
@@ -1051,7 +1100,7 @@ public static class LosCalculator
             }
 
             // see if ground level alone creates a blind hex
-            if (groundLevel > Math.Min(sourceElevation, targetElevation) && groundLevel < Math.Max(sourceElevation, targetElevation) && IsBlindHex(0))
+            if (groundLevel > lowerEnd && groundLevel < higherEnd && IsBlindHex(0))
             {
                 return Block("Source or Target location is in a blind hex (B10.23)");
             }
@@ -1065,7 +1114,7 @@ public static class LosCalculator
             return false;
         }
 
-        // Map.isBlindHex, without rooftops, slopes, hillocks, cliffs, bocage, or rowhouse walls.
+        // Map.isBlindHex, without slopes, hillocks, cliffs, bocage, or rowhouse walls. Cellars are not adjusted here.
         private bool IsBlindHex(int terrainHeight)
         {
             double higher = sourceElevation;
@@ -1073,11 +1122,19 @@ public static class LosCalculator
             double rangeFromHigher = rangeToSource;
             double rangeToLower = rangeToTarget;
 
+            // a half-level building counts half a level higher when an end is a rooftop
+            var rooftopEnd = sourceRooftopAdjustment != 0.0 || targetRooftopAdjustment != 0.0;
+            var terrainHeightAdjustment = rooftopEnd && currentTerrain!.IsBuilding && currentTerrain.IsHalfLevelHeight ? 0.5 : 0.0;
+
             // blind hex NA for same-level LOS
             if (higher == lower)
             {
                 return false;
             }
+
+            // the rooftop adjustment comes after the same-level test
+            higher += sourceRooftopAdjustment;
+            lower += targetRooftopAdjustment;
 
             // if LOS rising, swap source and target and use the same logic as LOS falling
             if (higher < lower)
@@ -1102,11 +1159,11 @@ public static class LosCalculator
                     depressionAdjustment = -1;
                 }
 
-                return rangeToLower <= Math.Max((2 * (groundLevel + depressionAdjustment + terrainHeight + 0.0)) + (rangeFromHigher / 5) - higher - lower, 0);
+                return rangeToLower <= Math.Max((2 * (groundLevel + depressionAdjustment + terrainHeight + terrainHeightAdjustment)) + (rangeFromHigher / 5) - higher - lower, 0);
             }
 
             // Map.getBlind
-            return rangeToLower <= Math.Max((2 * (groundLevel + terrainHeight + 0.0)) + (rangeFromHigher / 5) - higher - lower + 1 + 0, 1 + 0);
+            return rangeToLower <= Math.Max((2 * (groundLevel + terrainHeight + terrainHeightAdjustment)) + (rangeFromHigher / 5) - higher - lower + 1 + 0, 1 + 0);
         }
 
         // Map.addHindranceHex: a hindrance between the source and target, the largest at each range.

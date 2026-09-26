@@ -25,15 +25,15 @@ public sealed class LosFidelityTests(ITestOutputHelper output)
     /// <summary>Each fixture with the number of pairs the read answers, pinned at the value reached.</summary>
     public static TheoryData<string, int> Fixtures => new()
     {
-        { "bd01.los.json.gz", 10701 },
-        { "bd11.los.json.gz", 5598 },
-        { Path.Combine("Scenarios", "bd11-over-bd01.scenario.los.json.gz"), 19028 },
-        { Path.Combine("Scenarios", "bd11r-over-bd01.scenario.los.json.gz"), 19018 },
+        { "bd01.los.json.gz", 18251 },
+        { "bd11.los.json.gz", 5662 },
+        { Path.Combine("Scenarios", "bd11-over-bd01.scenario.los.json.gz"), 26718 },
+        { Path.Combine("Scenarios", "bd11r-over-bd01.scenario.los.json.gz"), 26682 },
         { "bd05.los.json.gz", 4522 },
-        { "bd09.los.json.gz", 4454 },
-        { "bd12.los.json.gz", 4645 },
-        { "bd15.los.json.gz", 3714 },
-        { Path.Combine("Scenarios", "bd12-over-bd15.scenario.los.json.gz"), 9960 },
+        { "bd09.los.json.gz", 4462 },
+        { "bd12.los.json.gz", 5547 },
+        { "bd15.los.json.gz", 3907 },
+        { Path.Combine("Scenarios", "bd12-over-bd15.scenario.los.json.gz"), 11252 },
     };
 
     [VaslTheory]
@@ -61,6 +61,24 @@ public sealed class LosFidelityTests(ITestOutputHelper output)
         var names = typeof(LosUnsupportedRule).GetFields().Select(field => (string)field.GetValue(null)!).ToHashSet(StringComparer.Ordinal);
         Assert.All(comparison.Unsupported.Keys, rule => Assert.Contains(rule, names));
         Assert.Equal(comparison.Pairs, comparison.Answered + comparison.Unsupported.Values.Sum());
+    }
+
+    /// <summary>Boards 01 and 11 and their seam scenarios, on which every pair is answered (LOS Slice 2 Design, section 4).</summary>
+    public static TheoryData<string> FullyAnswered => new()
+    {
+        "bd01.los.json.gz",
+        "bd11.los.json.gz",
+        Path.Combine("Scenarios", "bd11-over-bd01.scenario.los.json.gz"),
+        Path.Combine("Scenarios", "bd11r-over-bd01.scenario.los.json.gz"),
+    };
+
+    [VaslTheory]
+    [MemberData(nameof(FullyAnswered))]
+    public void EveryPairIsAnsweredOnBoards01And11(string file)
+    {
+        var comparison = Compare(file);
+        Assert.Empty(comparison.Unsupported);
+        Assert.Equal(comparison.Pairs, comparison.Answered);
     }
 
     [VaslFact]
