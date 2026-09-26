@@ -115,10 +115,36 @@ These points follow from the sources and the catalog:
 
 `ScenarioA1FireConclusionResolver` reads the declared attack from one observation of the target Location and concludes Definitive, Abstained, or Indeterminate with its reasons. Missing, contrary, extra, and stale facts refuse a conclusion, as in the earlier packages.
 
-## For later steps
+## For later steps (as of step 17)
 
 - Fire in live play: a governed fire action that draws its rolls on demand inside the commit, records the attack as events, and places the fire counters.
 - The Russian HS in the catalog, from the user's printed values, so a Russian squad's Reduction is decided.
 - A17 (Wounds), so a leader's Casualty Reduction is decided.
 - ELR from the scenario card, once scenario cards are a registered source.
 - Rally, and the fire phases, weapons, and concealment rules this step leaves out.
+
+## Revision at unit step 18
+
+Step 18 must commit fire only when every outcome the dice can reach is decided, so part 1 closed the branches this review left Indeterminate. The package `scenario-a1-fire` was republished; its step 17 manifest digest (`45011b56...ff2b69`) is pinned in the new manifest as `priorFirePackageManifestSha256`.
+
+**Sources.** Four more fragments are verified through the [Fire branches PDF comparison](<../../../docs/ASL/SourceRegistry/asl-scenario-a1.fire-branches-pdf-comparison.json>) (`AslScenarioA1FireSourceReview.BuildBranches`): A10.63 (Self-Rally, p. 68), A17.1, A17.11, and A17.3 (Wounds, p. 85). A19.12 and A19.13 were verified in step 17.
+
+**Catalog.** The Scenario A1 catalog 1.1.0 adds the Russian HS and the A19.13 Replacement units and leaders, read from the National Capabilities Chart (p. 695), with the leaders' values supplied by the user from the printed counters, since the rulebook shows a leader's broken morale only in counter artwork ([Catalog Design](<ASL Scenario A1 Catalog Design.md>), section 9.2). The boxed class of the Russian 1st Line row marks Self-Rally (A10.63), not the underscored Morale Factor of A19.13.
+
+**What the sources establish.**
+
+- **ELR (A19.12, A19.13).** An unbroken unit that fails a MC by more than its ELR is Replaced by a broken unit of lesser quality and the same size, whose Class drops and no part of whose Strength Factor rises. A leader is Replaced by the next lower quality. A unit that cannot be Replaced is broken and Disrupted. A Casualty MC failure beyond ELR Reduces a squad to a broken HS of lesser quality.
+- **Wounds (A17.1, A17.11, A17.3).** Casualty Reduction wounds a leader. A Wound Severity dr of 5 or 6 (+1 if already wounded) is mortal and treated as a KIA. A wounded man's Morale Level is one lower and his leadership modifier one worse; he never loses more than one of each.
+
+**Rulings** (the user, 2026-09-26):
+
+9. **A Conscript squad whose Casualty MC exceeds its ELR** has no HS of lesser quality; it becomes its own Conscript HS, broken and Disrupted, reading A19.12 with the Casualty Reduction.
+10. **A just-wounded leader takes the #MC** of a K/# result, like a just-Reduced HS, at his lowered Morale Level.
+11. **A wounded leader's +1** applies to each other friendly unit's MC and NTC while he is unbroken in the Location, since A10.72 does not let a player decline a non-zero modifier.
+
+Rulings 4, 6, and 7 of step 17 are superseded: a failure beyond a declared ELR, a leader's wound, and the Russian squad's Reduction are now decided. With no declared ELR, a failed MC by an unbroken unit stays Indeterminate, and A19.13's exception for an underscored Morale Factor stays unreviewed (no catalog unit has one).
+
+**Cases.** `A1-fire-leader-wounded` and `A1-fire-reduction-counter-missing` are removed; the other eleven are unchanged in their dispositions. The calculator takes two more facts per target unit (wounded, Disrupted) and one per director (wounded), and one more roll, the Wound Severity dr. It Replaces or Disrupts on a failure beyond ELR, Reduces beyond ELR on a Casualty MC, wounds a Casualty Reduced leader, and applies a wounded leader's Morale Level and modifier.
+
+**Still Indeterminate.** More than one leader in the target Location, an undeclared ELR, an underscored Morale Factor, levels that differ, an unattributed Hindrance, Dummies and hidden units, and a missing roll.
+

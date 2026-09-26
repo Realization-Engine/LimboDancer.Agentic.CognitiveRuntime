@@ -8,7 +8,7 @@
   "chartReviewDecisionSha256": "a19bf80dedc36fbf36d9356552f28a538faeea9469c8d22daddfabed546fd1e2",
   "iftTranscriptionSha256": "42440dd6facf7aa23cfc8c884ed8c7266f6621b25cb889b679c850098d3a4cec",
   "terrainChartTranscriptionSha256": "afc61e1db4871050d91ab6c58f022ddca86651f8f0104e39408c156e44ffdafa",
-  "catalogSha256": "f2dd9ef1c2e2926051a745a376e2f55baa7200a75d3c20a02c55f5d230bee0fe",
+  "catalogSha256": "91228aba9159d3a7786f55cbfea86e43b7ae96776798e96f52e70d6e0d4524cb",
   "sourceFragments": [
     {
       "ruleId": "A.5",
@@ -284,6 +284,13 @@
       "contentSha256": "48b26782aa13b8acc990f40589087f13ca62fde41be32f39419a60097d2575e7"
     },
     {
+      "ruleId": "A10.63",
+      "physicalPdfPage": 68,
+      "startLine": 828,
+      "fragmentId": "asl-fragment:sha256:b5ec1005c997771e2384da2e041b657e545cd5ec73db8bae9e50c6e6abd3d137",
+      "contentSha256": "7e869eb86204ee844b3d3e25d5ebac0d99e47dd3dfdcebca3492295f0cb56a6b"
+    },
+    {
       "ruleId": "A10.72",
       "physicalPdfPage": 69,
       "startLine": 844,
@@ -331,6 +338,27 @@
       "startLine": 1040,
       "fragmentId": "asl-fragment:sha256:907744d106fd88ec216c7e5c0b86f639b0df763a89ef7a185aaac1e1c6250983",
       "contentSha256": "c42de6f1679a4240c508f4247113d5eebeef7b6c6373f8c4a20fba6bfe5c81d0"
+    },
+    {
+      "ruleId": "A17.1",
+      "physicalPdfPage": 85,
+      "startLine": 1316,
+      "fragmentId": "asl-fragment:sha256:7f9d526fe5622b959203a9e3dd44d2d278293ff450534a13813b5c83ff0b5a3a",
+      "contentSha256": "ef61c6df1fe08e3e99cb95b1bb05fceea6078e7abbe170e82ca7b23879a9305d"
+    },
+    {
+      "ruleId": "A17.3",
+      "physicalPdfPage": 85,
+      "startLine": 1324,
+      "fragmentId": "asl-fragment:sha256:7ef3fb7d478b3b767c99abf7b60f7ee7315c14757cb09e2f8c91becaf933f739",
+      "contentSha256": "92f5c7278bcfced2396cf36fd0d823c128f8cb2213ef32d196c57062d97528ef"
+    },
+    {
+      "ruleId": "A17.11",
+      "physicalPdfPage": 85,
+      "startLine": 1320,
+      "fragmentId": "asl-fragment:sha256:3b9714ea0d0bd3903aef3f0080cc7247e5b32d444311187f5a2c713a2e2954c2",
+      "contentSha256": "4a183fc157b6ddeabea2e473e64330ed40f3cda9109c36e67bb62b78676c25bc"
     },
     {
       "ruleId": "A19.1",
@@ -423,11 +451,14 @@
     "cowering": "any-directing-leader-prevents-cowering",
     "hindrance": "los-read-hindrance-drm-same-level-only; grain-only-with-declared-month-june-to-september",
     "leaderLoss": "llmc-and-lltc-admitted",
-    "elr": "declared-per-side; failure-beyond-elr-indeterminate; undeclared-elr-with-a-failed-mc-indeterminate",
+    "elr": "declared-per-side; failure-beyond-elr-replaced-under-A19.13-or-disrupted-under-A19.12; undeclared-elr-with-a-failed-mc-indeterminate",
     "pinOnHighestPassingDr": "admitted-a7.8-opening-read-from-rendered-page",
-    "leaderWound": "indeterminate-until-a17-reviewed",
-    "russianHalfSquad": "indeterminate-until-in-catalog",
-    "concealment": "a12.14-and-a7.23-prose-only; concealment-table-unregistered; dummies-and-hip-indeterminate"
+    "leaderWound": "wound-severity-dr-A17.11; wounded-morale-and-leadership-one-worse-A17.3",
+    "russianHalfSquad": "in-catalog-1.1.0",
+    "concealment": "a12.14-and-a7.23-prose-only; concealment-table-unregistered; dummies-and-hip-indeterminate",
+    "conscriptCasualtyBeyondElr": "own-conscript-hs-broken-and-disrupted",
+    "woundedLeaderTakesKMc": "yes-at-lowered-morale",
+    "woundedLeadershipMandatory": "yes-A10.72"
   },
   "resolution": {
     "firepower": "Each firer's printed FP, doubled for PBF when the target is adjacent at the same level (A7.21), halved beyond Normal Range up to twice it (A7.22), halved when the target Location holds a concealed unit (A7.23), and halved when the firer is pinned (A7.8); fractions are kept and summed (A7.2).",
@@ -448,7 +479,7 @@
       "leadership": "the directing leader's leadership modifier (A7.531, A10.7)"
     },
     "finalDr": "Original DR plus every DRM (A.17); a Final DR at or below 0, or at or above 15, uses the end row.",
-    "effects": "All target units are affected (A7.4). #KIA eliminates the # units with the highest Random Selection dr, ties at the cut included, and breaks the rest, Casualty Reducing any that cannot break (A7.301). K/# Casualty Reduces the unit with the highest dr, ties included, and every other unit takes a #MC (A7.302). NMC and #MC: one DR per unit, leaders first by Morale Level, with the leadership DRM of one unbroken leader of the Location other than the checker (A10.2, A10.21, A10.22); a Final DR above the Morale Level fails: an unbroken unit breaks, a broken unit is Casualty Reduced (A10.3); an Original 12 is a Casualty MC (A10.31); an unbroken unit passing with a Final DR equal to its Morale Level is pinned (A7.8). PTC: each unbroken, unpinned unit takes a NTC and is pinned on failure (A7.305). Then LLMC and LLTC for leader losses (A10.2).",
+    "effects": "All target units are affected (A7.4). #KIA eliminates the # units with the highest Random Selection dr, ties at the cut included, and breaks the rest, Casualty Reducing any that cannot break (A7.301). K/# Casualty Reduces the unit with the highest dr, ties included, and every other unit takes a #MC (A7.302). NMC and #MC: one DR per unit, leaders first by Morale Level, with the leadership DRM of one unbroken leader of the Location other than the checker (A10.2, A10.21, A10.22); a Final DR above the Morale Level fails: an unbroken unit breaks, a broken unit is Casualty Reduced (A10.3); an Original 12 is a Casualty MC (A10.31); an unbroken unit passing with a Final DR equal to its Morale Level is pinned (A7.8). PTC: each unbroken, unpinned unit takes a NTC and is pinned on failure (A7.305). Then LLMC and LLTC for leader losses (A10.2). A failed MC by an unbroken unit beyond its side's declared ELR Replaces it with the broken unit of lesser quality, or Disrupts it when none exists (A19.12, A19.13); a Casualty MC beyond ELR Reduces a squad to a broken HS of lesser quality, a Conscript squad to its own HS, Disrupted. Casualty Reduction wounds a leader, with a Wound Severity dr: 5 or more, +1 if already wounded, is mortal (A17.11); a wounded leader's Morale Level is one lower and his leadership modifier one worse, which A10.72 does not let his side decline (A17.3).",
     "concealment": "A concealed target unit loses '?' on a PTC or worse result; a concealed firer or directing leader loses '?' when a Good Order target unit is within 16 hexes (A12.14).",
     "fireCounters": "Every firer and the directing leader are marked with a Prep Fire counter in the PFPh and a Final Fire counter in the DFPh (A3.2, A3.4, A7.531)."
   },
@@ -491,7 +522,15 @@
         "A.17",
         "B23.3",
         "B13.3",
-        "B14.3"
+        "B14.3",
+        "A10.72",
+        "A17.1",
+        "A17.11",
+        "A17.3",
+        "A19.1",
+        "A19.11",
+        "A19.12",
+        "A19.13"
       ],
       "reason": "A declared attack inside the reviewed scope, with every roll it needs recorded, resolves to its FP column, DRM, Final DR, IFT result, and the effect on each target unit."
     },
@@ -585,26 +624,7 @@
         "A19.13",
         "A10.31"
       ],
-      "reason": "A MC failed by an unbroken unit is decided only when its side's ELR is declared and the failure is within it; Replacement and Disruption are not reviewed."
-    },
-    {
-      "caseId": "A1-fire-leader-wounded",
-      "reviewStatus": "reviewed-nondefinitive",
-      "expectedDisposition": "indeterminate",
-      "sourceRules": [
-        "A7.302",
-        "A10.3"
-      ],
-      "reason": "Casualty Reduction wounds a leader (A17), which is not reviewed."
-    },
-    {
-      "caseId": "A1-fire-reduction-counter-missing",
-      "reviewStatus": "reviewed-nondefinitive",
-      "expectedDisposition": "indeterminate",
-      "sourceRules": [
-        "A7.302"
-      ],
-      "reason": "Casualty Reduction of a squad whose half-squad is not in the reviewed catalog (the Russian squad) is not decided until the catalog has it."
+      "reason": "A MC failed by an unbroken unit is decided only when its side's ELR is declared; A19.13's exception for an underscored Morale Factor is not reviewed."
     },
     {
       "caseId": "A1-fire-leaders-interact",
@@ -615,7 +635,7 @@
         "A10.21",
         "A10.72"
       ],
-      "reason": "With more than one leader in the target Location the owner chooses the leadership DRM and leader losses can chain; a MC by a broken leader whose broken morale the catalog does not record is not decided."
+      "reason": "With more than one leader in the target Location the owner chooses the leadership DRM and leader losses can chain."
     },
     {
       "caseId": "A1-fire-roll-missing",
@@ -637,12 +657,12 @@
     "vehicles, PRC, and TPBF",
     "Encirclement",
     "Rally",
-    "ELR Replacement and Disruption",
-    "wounds (A17)",
     "Heat of Battle, Berserk, and Heroes",
     "Dummies, HIP, and the Concealment Table",
     "snipers, SMOKE, night, and weather",
-    "any use by a game action"
+    "any use by a game action",
+    "A19.13's exception for an underscored Morale Factor"
   ],
-  "executionAuthority": "none"
+  "executionAuthority": "none",
+  "revision": "Unit step 18, part 1 (2026-09-26): ELR Replacement and Disruption, the Russian HS, and wounds are decided."
 }

@@ -12,7 +12,8 @@ public sealed record FireDefinition(
     int? Range,
     int? Morale,
     int? BrokenMorale,
-    int? Leadership)
+    int? Leadership,
+    bool? UnderscoredMorale)
 {
     public bool IsLeader => Kind == "asl:leader";
 
@@ -39,10 +40,28 @@ public sealed class ScenarioA1FireReference
         ["stone-building"] = 3,
     };
 
-    // The Casualty Reduction a reviewed definition suffers (A7.302): a squad to its half-squad, when the catalog has it.
+    // The Casualty Reduction a squad suffers (A7.302): its half-squad of the same class (catalog 1.1.0).
     private static readonly IReadOnlyDictionary<string, string> HalfSquads = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         ["attacker-squad"] = "attacker-half-squad",
+        ["attacker-2nd-line-squad"] = "attacker-2nd-line-half-squad",
+        ["attacker-conscript-squad"] = "attacker-conscript-half-squad",
+        ["defender-squad"] = "defender-half-squad",
+        ["defender-conscript-squad"] = "defender-conscript-half-squad",
+    };
+
+    // ELR Replacement (A19.13): a unit of lesser quality and the same size, whose Class drops and no part of whose
+    // Strength Factor rises; a leader of the next lower quality. A unit missing here cannot be Replaced (A19.12).
+    private static readonly IReadOnlyDictionary<string, string> Replacements = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["attacker-squad"] = "attacker-2nd-line-squad",
+        ["attacker-half-squad"] = "attacker-2nd-line-half-squad",
+        ["attacker-2nd-line-squad"] = "attacker-conscript-squad",
+        ["attacker-2nd-line-half-squad"] = "attacker-conscript-half-squad",
+        ["defender-squad"] = "defender-conscript-squad",
+        ["defender-half-squad"] = "defender-conscript-half-squad",
+        ["defender-leader"] = "defender-leader-7-0",
+        ["defender-leader-7-0"] = "defender-leader-6-plus-1",
     };
 
     private readonly string[][] results;
@@ -60,6 +79,9 @@ public sealed class ScenarioA1FireReference
 
     /// <summary>The half-squad a squad is Reduced to, or null when the catalog has none.</summary>
     public static string? HalfSquadOf(string definitionId) => HalfSquads.GetValueOrDefault(definitionId);
+
+    /// <summary>The unit that Replaces a definition under A19.13, or null when none can (A19.12).</summary>
+    public static string? ReplacementOf(string definitionId) => Replacements.GetValueOrDefault(definitionId);
 
     internal static ScenarioA1FireReference Load(JsonElement matrix)
     {
@@ -110,6 +132,19 @@ public sealed class ScenarioA1FireReference
             return null;
         }
 
+        bool? Trait(string face, string trait)
+        {
+            foreach (var value in item.GetProperty("values").EnumerateArray())
+            {
+                if (value.GetProperty("face").GetString() == face && value.TryGetProperty("trait", out var name) && name.GetString() == trait)
+                {
+                    return value.TryGetProperty("present", out var present) ? present.GetBoolean() : null;
+                }
+            }
+
+            return null;
+        }
+
         return new FireDefinition(
             item.GetProperty("id").GetString()!,
             item.GetProperty("kind").GetString()!,
@@ -119,6 +154,7 @@ public sealed class ScenarioA1FireReference
             Value("front", "range"),
             Value("front", "morale"),
             Value("broken", "broken-morale"),
-            Value("front", "leadership"));
+            Value("front", "leadership"),
+            Trait("front", "asl:elr-5"));
     }
 }

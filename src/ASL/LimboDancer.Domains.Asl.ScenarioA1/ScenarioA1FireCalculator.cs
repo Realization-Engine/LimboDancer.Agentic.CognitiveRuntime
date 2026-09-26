@@ -4,8 +4,8 @@ using System.Text.RegularExpressions;
 namespace LimboDancer.Domains.Asl.ScenarioA1;
 
 /// <summary>
-/// Resolves a declared fire attack under the reviewed Fire case matrix (unit step 17; Scenario A1 Fire Review
-/// 2026-09-26). It is a pure function of the attack and the pinned reference data: it rolls nothing and changes nothing.
+/// Resolves a declared fire attack under the reviewed Fire case matrix (unit step 17, revised at step 18; Scenario A1
+/// Fire Review 2026-09-26). It is a pure function of the attack and the pinned reference data: it rolls nothing and changes nothing.
 /// Facts outside the reviewed scope abstain; facts the review leaves undecided, and missing rolls, are Indeterminate.
 /// </summary>
 public static class ScenarioA1FireCalculator
@@ -94,6 +94,7 @@ public static class ScenarioA1FireCalculator
             Need(director.Pinned, "director.pinned");
             Need(director.Concealed, "director.concealed");
             Need(director.DirectedThisPlayerTurn, "director.directedThisPlayerTurn");
+            Need(director.Wounded, "director.wounded");
         }
 
         if (attack.Targets is null || attack.Targets.Count == 0)
@@ -113,6 +114,8 @@ public static class ScenarioA1FireCalculator
                 Need(target.Concealed, at + "concealed");
                 Need(target.Hidden, at + "hidden");
                 Need(target.Dummy, at + "dummy");
+                Need(target.Wounded, at + "wounded");
+                Need(target.Disrupted, at + "disrupted");
             }
         }
 
@@ -191,7 +194,8 @@ public static class ScenarioA1FireCalculator
         if (attack.Rolls is { } rolls && (!Dice(rolls.Attack, allowEmpty: true)
             || rolls.RandomSelection?.Values.Any(dr => dr is < 1 or > 6) == true
             || rolls.Checks?.Values.Any(dice => !Dice(dice, allowEmpty: false)) == true
-            || rolls.LeaderLoss?.Values.Any(dice => !Dice(dice, allowEmpty: false)) == true))
+            || rolls.LeaderLoss?.Values.Any(dice => !Dice(dice, allowEmpty: false)) == true
+            || rolls.WoundSeverity?.Values.Any(dr => dr is < 1 or > 6) == true))
         {
             outside.Add("asl.a1.fire.roll-malformed");
         }
@@ -225,6 +229,12 @@ public static class ScenarioA1FireCalculator
         if (attack.Targets!.Count(item => reference.Definitions[item.DefinitionId!].IsLeader) > 1)
         {
             undecided.Add("asl.a1.fire.leaders-interact");
+        }
+
+        // A19.13's exception for an underscored Morale Factor is not reviewed.
+        if (attack.Targets!.Any(item => reference.Definitions[item.DefinitionId!] is { IsMmc: true, UnderscoredMorale: not false }))
+        {
+            undecided.Add("asl.a1.fire.elr-undecided:underscored-morale");
         }
 
         return undecided;
@@ -346,7 +356,9 @@ public static class ScenarioA1FireCalculator
 
             if (attack.Director is { } director)
             {
-                drm.Add(new FireModifier("leadership:" + director.UnitId, reference.Definitions[director.DefinitionId!].Leadership!.Value, "A7.531"));
+                // A17.3: a wounded leader's leadership modifier is one worse.
+                var leadership = reference.Definitions[director.DefinitionId!].Leadership!.Value + (director.Wounded == true ? 1 : 0);
+                drm.Add(new FireModifier("leadership:" + director.UnitId, leadership, "A7.531"));
             }
 
             var final = original + (int)drm.Sum(item => item.Value);
@@ -477,13 +489,13 @@ public static class ScenarioA1FireCalculator
             string consequence;
             if (original == 12 && !unit.Broken)
             {
-                // A10.31: a Casualty MC, after any ELR Replacement.
-                if (!WithinElr(unit, final - morale.Value))
+                // A10.31: a Casualty MC, after any ELR Replacement (A19.13).
+                if (Elr() is not { } elr)
                 {
                     return;
                 }
 
-                if (!Reduce(unit, "casualty-mc"))
+                if (final - morale.Value > elr ? !ReduceBeyondElr(unit) : !Reduce(unit, "casualty-mc"))
                 {
                     return;
                 }
@@ -502,13 +514,21 @@ public static class ScenarioA1FireCalculator
             }
             else if (!passed && !unit.Broken)
             {
-                if (!WithinElr(unit, final - morale.Value))
+                if (Elr() is not { } elr)
                 {
                     return;
                 }
 
-                unit.Break("broken-" + kind.ToLowerInvariant());
-                consequence = "broken";
+                if (final - morale.Value > elr)
+                {
+                    Replace(unit);
+                    consequence = unit.Disrupted ? "disrupted" : "replaced";
+                }
+                else
+                {
+                    unit.Break("broken-" + kind.ToLowerInvariant());
+                    consequence = "broken";
+                }
             }
             else if (!passed)
             {
@@ -517,7 +537,7 @@ public static class ScenarioA1FireCalculator
                     return;
                 }
 
-                consequence = unit.Eliminated ? "eliminated" : "casualty-reduced";
+                consequence = unit.Eliminated ? "eliminated" : unit.Definition.IsLeader ? "wounded" : "casualty-reduced";
             }
             else if (!unit.Broken && final == morale)
             {
@@ -533,22 +553,58 @@ public static class ScenarioA1FireCalculator
             unit.Checks.Add(new FireCheck(kind, dice.ToArray(), original, drm, final, morale.Value, passed, consequence));
         }
 
-        private bool WithinElr(TargetState unit, int margin)
+        private int? Elr()
         {
-            // A19.13: an unbroken unit failing by more than its ELR is Replaced; Replacement is not reviewed.
-            if (attack.TargetSideElr is not { } elr)
+            // A19.1: the ELR of the target side is a declared fact.
+            if (attack.TargetSideElr is { } elr)
             {
-                undecided.Add("asl.a1.fire.elr-undecided:elr-undeclared");
-                return false;
+                return elr;
             }
 
-            if (margin > elr)
+            undecided.Add("asl.a1.fire.elr-undecided:elr-undeclared");
+            return null;
+        }
+
+        private void Replace(TargetState unit)
+        {
+            // A19.13: Replaced by a broken unit of lesser quality; A19.12: Disrupted when none exists.
+            var replacement = ScenarioA1FireReference.ReplacementOf(unit.Definition.Id);
+            if (replacement is null)
             {
-                undecided.Add("asl.a1.fire.elr-undecided:failure-beyond-elr:" + unit.Id);
-                return false;
+                unit.Disrupt();
+            }
+            else
+            {
+                unit.ReduceTo(reference.Definitions[replacement], "replaced-elr");
             }
 
-            return true;
+            unit.Break(null);
+        }
+
+        private bool ReduceBeyondElr(TargetState unit)
+        {
+            // A19.13: a squad whose Casualty MC also exceeds its ELR is Reduced to a broken HS of lesser quality; a
+            // Conscript squad, which has none, becomes its own Conscript HS, Disrupted (user ruling, 2026-09-26). A HS is
+            // eliminated by Casualty Reduction anyway. A leader is Replaced, then wounded.
+            if (unit.Definition.Kind == "asl:squad")
+            {
+                var half = ScenarioA1FireReference.HalfSquadOf(unit.Definition.Id)!;
+                var lesser = ScenarioA1FireReference.ReplacementOf(half);
+                unit.ReduceTo(reference.Definitions[lesser ?? half], "casualty-reduced-beyond-elr");
+                if (lesser is null)
+                {
+                    unit.Disrupt();
+                }
+
+                return true;
+            }
+
+            if (unit.Definition.IsLeader)
+            {
+                Replace(unit);
+            }
+
+            return Reduce(unit, "casualty-mc");
         }
 
         private void PinTaskChecks()
@@ -594,11 +650,12 @@ public static class ScenarioA1FireCalculator
             if (useLeadership)
             {
                 // A10.21, A10.22: one unbroken, unpinned leader of the Location other than the checker, and of higher
-                // morale when the checker is a leader.
+                // morale when the checker is a leader; A10.72: a non-zero modifier, a wounded leader's +1 included, cannot
+                // be declined.
                 var leader = state.Values.FirstOrDefault(other => other.Definition.IsLeader && other != unit && !other.Eliminated
                     && !other.Broken && !other.Pinned
-                    && (!unit.Definition.IsLeader || other.Definition.Morale > unit.Definition.Morale));
-                if (leader?.Definition.Leadership is { } leadership and not 0)
+                    && (!unit.Definition.IsLeader || other.MoraleLevel > unit.MoraleLevel));
+                if (leader?.Leadership is { } leadership and not 0)
                 {
                     drm.Add(new FireModifier("leadership:" + leader.Id, leadership, "A10.21"));
                 }
@@ -616,7 +673,7 @@ public static class ScenarioA1FireCalculator
 
             foreach (var leader in state.Values.Where(unit => unit.Definition.IsLeader && (unit.Eliminated || unit.BrokeInThisAttack)).ToArray())
             {
-                var leaderMorale = leader.Eliminated ? leader.MoraleAtLoss : leader.Definition.Morale;
+                var leaderMorale = leader.Eliminated ? leader.MoraleAtLoss : leader.InitialMorale;
                 if (leaderMorale is null)
                 {
                     undecided.Add("asl.a1.fire.leaders-interact:broken-morale-unrecorded:" + leader.Id);
@@ -635,7 +692,7 @@ public static class ScenarioA1FireCalculator
                     }
 
                     var (dice, drm) = check.Value;
-                    if (leader.Definition.Leadership is int negative and < 0)
+                    if (leader.Leadership is int negative and < 0)
                     {
                         drm.Add(new FireModifier("reversed-leadership:" + leader.Id, -negative, "A10.2"));
                     }
@@ -670,8 +727,7 @@ public static class ScenarioA1FireCalculator
             // A7.302: a HS is eliminated, a squad becomes its HS with the same broken status, a leader is wounded.
             if (unit.Definition.IsLeader)
             {
-                undecided.Add("asl.a1.fire.leader-wounded:" + unit.Id);
-                return false;
+                return Wound(unit);
             }
 
             if (unit.Definition.Kind == "asl:half-squad")
@@ -691,12 +747,35 @@ public static class ScenarioA1FireCalculator
             return true;
         }
 
+        private bool Wound(TargetState unit)
+        {
+            // A17.11: a Wound Severity dr, +1 if already wounded; 5 or more is mortal, treated as a KIA.
+            if (attack.Rolls!.WoundSeverity?.TryGetValue(unit.Id, out var dr) != true)
+            {
+                undecided.Add("asl.a1.fire.roll-missing:woundSeverity:" + unit.Id);
+                return false;
+            }
+
+            usedRolls.Add("woundSeverity:" + unit.Id);
+            if (dr + (unit.Wounded ? 1 : 0) >= 5)
+            {
+                unit.Eliminate("eliminated-mortal-wound");
+            }
+            else
+            {
+                unit.Wound();
+            }
+
+            return true;
+        }
+
         private List<string> ExtraRolls()
         {
             var rolls = attack.Rolls!;
             var supplied = (rolls.RandomSelection?.Keys.Select(id => "randomSelection:" + id) ?? [])
                 .Concat(rolls.Checks?.Keys.Select(id => "checks:" + id) ?? [])
-                .Concat(rolls.LeaderLoss?.Keys.Select(id => "leaderLoss:" + id) ?? []);
+                .Concat(rolls.LeaderLoss?.Keys.Select(id => "leaderLoss:" + id) ?? [])
+                .Concat(rolls.WoundSeverity?.Keys.Select(id => "woundSeverity:" + id) ?? []);
             return supplied.Where(key => !usedRolls.Contains(key)).Select(key => "asl.a1.fire.extra-roll:" + key).ToList();
         }
 
@@ -748,7 +827,18 @@ public static class ScenarioA1FireCalculator
 
         public List<FireCheck> Checks { get; } = [];
 
-        public int? MoraleLevel => Broken ? Definition.BrokenMorale : Definition.Morale;
+        public bool Wounded { get; private set; } = target.Wounded == true;
+
+        public bool Disrupted { get; private set; } = target.Disrupted == true;
+
+        /// <summary>The Morale Level before this attack, which an unbroken leader's LLTC compares against (A10.2).</summary>
+        public int? InitialMorale { get; } = (target.Broken == true ? definition.BrokenMorale : definition.Morale) - (target.Wounded == true ? 1 : 0);
+
+        /// <summary>The current Morale Level, one lower when wounded (A17.3).</summary>
+        public int? MoraleLevel => (Broken ? Definition.BrokenMorale : Definition.Morale) - (Wounded ? 1 : 0);
+
+        /// <summary>The leadership modifier, one worse when wounded (A17.3).</summary>
+        public int? Leadership => Definition.Leadership + (Wounded ? 1 : 0);
 
         public void Eliminate(string reason)
         {
@@ -774,6 +864,19 @@ public static class ScenarioA1FireCalculator
             }
         }
 
+        public void Wound()
+        {
+            Wounded = true;
+            ConcealmentLost = Target.Concealed == true;
+            events.Add("wounded");
+        }
+
+        public void Disrupt()
+        {
+            Disrupted = true;
+            events.Add("disrupted");
+        }
+
         public void Pin(string reason)
         {
             Pinned = true;
@@ -788,6 +891,7 @@ public static class ScenarioA1FireCalculator
         }
 
         public FireUnitEffect Effect() => new(Id, Target.DefinitionId!, Definition.Id, RandomSelectionDr, Eliminated, Broken && !Eliminated,
-            Pinned && !Broken && !Eliminated, ConcealmentLost, events.ToArray(), Checks.ToArray());
+            Pinned && !Broken && !Eliminated, Wounded && !Eliminated, Disrupted && !Eliminated, ConcealmentLost, events.ToArray(),
+            Checks.ToArray());
     }
 }
