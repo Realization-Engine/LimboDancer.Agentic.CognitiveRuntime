@@ -10,6 +10,7 @@
 @inject UnitLibrary Library
 @inject NavigationManager Navigation
 @inject GameMaps GameMaps
+@inject StudioLos Los
 
 <PageTitle>Play - ASL Map Studio</PageTitle>
 
@@ -225,6 +226,21 @@ else if (state is not null)
         }
     }
 
+    <details id="play-los" open="@(playLos is not null)">
+        <summary>LOS</summary>
+        <p class="muted">VASL's LOS over the game's map (LOS Design): terrain only, so every viewer may check it.</p>
+        <div class="fields">
+            <label for="play-los-source">From</label><input id="play-los-source" value="@losSource" @onchange="@(args => losSource = args.Value as string ?? string.Empty)" />
+            <label for="play-los-target">To</label><input id="play-los-target" value="@losTarget" @onchange="@(args => losTarget = args.Value as string ?? string.Empty)" />
+        </div>
+        <button id="play-los-check" @onclick="CheckLos">Check LOS</button>
+        <button id="play-los-clear" disabled="@(playLos is null)" @onclick="() => playLos = null">Clear</button>
+        @if (playLos is { } check)
+        {
+            <p id="play-los-result" data-status="@(check.Result?.Status.ToString() ?? "Refused")">@check.Summary</p>
+        }
+    </details>
+
     <h3>Units</h3>
     <p class="muted" id="play-units-view">As @(Viewer.IsAdjudicator ? "the adjudicator sees them: every unit" : $"{Viewer.Name} sees them"), at revision @state.Revision.</p>
     <table class="library" id="play-units">
@@ -298,7 +314,7 @@ else if (state is not null)
 
     /// <summary>The game's map drawn for the viewer at the shown revision (Composed Maps Design, section 8).</summary>
     private GameMapDrawing? Drawing => state is not null && history?.Current is not null
-        ? GameMaps.Draw(gameId, state.Map, Viewer, state.Revision, highlight)
+        ? GameMaps.Draw(gameId, state.Map, Viewer, state.Revision, highlight, playLos is { } check ? board => Los.Layer(board, check) : null)
         : null;
 
     /// <summary>What "View on" opens: the saved map the game copied, or its first board.</summary>
@@ -328,6 +344,19 @@ else if (state is not null)
             reversed,
         };
     })];
+
+    private string losSource = string.Empty;
+    private string losTarget = string.Empty;
+    private LosCheck? playLos;
+
+    /// <summary>Checks LOS between two locations of the game's map (LOS Design, section 6).</summary>
+    private void CheckLos()
+    {
+        if (state is not null && GameMaps.Board(state.Map).Board is { } board)
+        {
+            playLos = Los.Check(board, losSource, losTarget);
+        }
+    }
 
     private void ChooseMap(ChangeEventArgs args)
     {
