@@ -19,6 +19,11 @@ public sealed class LosFixtureTests
         { "bd11.los.json.gz", 5662 },
         { Path.Combine("Scenarios", "bd11-over-bd01.scenario.los.json.gz"), 26718 },
         { Path.Combine("Scenarios", "bd11r-over-bd01.scenario.los.json.gz"), 26682 },
+        { "bd05.los.json.gz", 5811 },
+        { "bd09.los.json.gz", 6124 },
+        { "bd12.los.json.gz", 8059 },
+        { "bd15.los.json.gz", 6051 },
+        { Path.Combine("Scenarios", "bd12-over-bd15.scenario.los.json.gz"), 17588 },
     };
 
     [Theory]
