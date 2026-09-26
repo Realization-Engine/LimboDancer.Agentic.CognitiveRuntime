@@ -1,3 +1,4 @@
+import java.awt.Point;
 import java.awt.geom.Point2D;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
@@ -18,9 +19,12 @@ import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
 import VASL.LOS.Map.Hex;
+import VASL.LOS.Map.LOSResult;
 import VASL.LOS.Map.Location;
 import VASL.LOS.Map.Map;
 import VASL.LOS.Map.Terrain;
+import VASL.LOS.VASLGameInterface;
+import VASL.build.module.ScenInfo;
 import VASL.build.module.map.boardArchive.BoardArchive;
 import VASL.build.module.map.boardArchive.BoardMetadata;
 import VASL.build.module.map.boardArchive.SharedBoardMetadata;
@@ -39,6 +43,11 @@ import VASL.build.module.map.boardPicker.VASLBoard;
  * Usage:
  *   HexFactOracle vaslRoot outputDirectory boardName...                     writes bdNN.hexfacts.json
  *   HexFactOracle vaslRoot outputDirectory --scenarios file [name...]      writes name.scenario.hexfacts.json
+ *   HexFactOracle vaslRoot outputDirectory --los boardName...              writes bdNN.los.json
+ *   HexFactOracle vaslRoot outputDirectory --los --scenarios file [name...] writes name.scenario.los.json
+ *
+ * The LOS mode (LOS Design, section 4) runs VASL's own Map.LOS from sampled observer locations to every location
+ * within LOS_RANGE, with no counters and not at night, and writes the results only.
  *
  * A scenario line is "name: placement placement ...", where a placement is board@column,row, optionally followed by
  * /r for a reversed board and [Rule,Rule] for LOS scenario-specific rules in the order VASL applies them.
@@ -46,6 +55,10 @@ import VASL.build.module.map.boardPicker.VASLBoard;
 public final class HexFactOracle {
     static final String HARNESS_VERSION = "1.1.0";
     static final String GRID_CONFIGURATION = "HalfHexWidthLeftHexFullHeight";
+    static final String LOS_HARNESS_VERSION = "1.0.0";
+    static final int LOS_RANGE = 12;
+    static final int OBSERVER_COLUMN_STRIDE = 5;
+    static final int OBSERVER_ROW_STRIDE = 3;
     static final Pattern PLACEMENT = Pattern.compile("([A-Za-z0-9]+)@(\\d+),(\\d+)(/r)?(?:\\[([A-Za-z0-9_.,]*)\\])?");
 
     private HexFactOracle() {
@@ -68,22 +81,32 @@ public final class HexFactOracle {
         Files.createDirectories(output);
         String commit = headCommit(root);
         int failures = 0;
-        if (args[2].equals("--scenarios")) {
-            List<String> names = List.of(args).subList(4, args.length);
-            for (Scenario scenario : readScenarios(Path.of(args[3]))) {
+        boolean los = args[2].equals("--los");
+        int first = los ? 3 : 2;
+        if (los) {
+            stubGameModule();
+        }
+
+        if (args.length > first && args[first].equals("--scenarios")) {
+            List<String> names = List.of(args).subList(first + 2, args.length);
+            for (Scenario scenario : readScenarios(Path.of(args[first + 1]))) {
                 if (!names.isEmpty() && !names.contains(scenario.name())) {
                     continue;
                 }
 
-                failures += write(output.resolve(scenario.name() + ".scenario.hexfacts.json"), scenario.name(),
-                        out -> writeScenario(out, root, commit, scenario));
+                failures += los
+                        ? write(output.resolve(scenario.name() + ".scenario.los.json"), scenario.name(),
+                                out -> writeLos(out, root, commit, scenario, true))
+                        : write(output.resolve(scenario.name() + ".scenario.hexfacts.json"), scenario.name(),
+                                out -> writeScenario(out, root, commit, scenario));
             }
         } else {
-            for (int index = 2; index < args.length; index++) {
+            for (int index = first; index < args.length; index++) {
                 String board = args[index];
                 Scenario single = new Scenario("bd" + board, List.of(new Placement(board, 0, 0, false, List.of())));
-                failures += write(output.resolve("bd" + board + ".hexfacts.json"), "bd" + board,
-                        out -> writeBoard(out, root, commit, single));
+                failures += los
+                        ? write(output.resolve("bd" + board + ".los.json"), "bd" + board, out -> writeLos(out, root, commit, single, false))
+                        : write(output.resolve("bd" + board + ".hexfacts.json"), "bd" + board, out -> writeBoard(out, root, commit, single));
             }
         }
 
@@ -369,6 +392,7 @@ public final class HexFactOracle {
         return vaslBoard;
     }
 
+    // A null target sets a static field.
     private static void setField(Object target, Class<?> owner, String name, Object value) throws Exception {
         Field field = owner.getDeclaredField(name);
         field.setAccessible(true);
@@ -437,6 +461,138 @@ public final class HexFactOracle {
         out.print(",\"vaslCommit\":\"" + escape(commit) + "\"");
         out.print(",\"widthInHexes\":" + map.getWidth());
         out.print("}\n");
+    }
+
+    /**
+     * Map.LOS asks the game module for the scenario information on every call (checkNVRRule), and ScenInfo opens a
+     * window in its constructor. The stub module holds one ScenInfo made without its constructor, not at night, so
+     * VASL's own night rule runs and never applies.
+     */
+    private static void stubGameModule() throws Exception {
+        Field unsafeField = Class.forName("sun.misc.Unsafe").getDeclaredField("theUnsafe");
+        unsafeField.setAccessible(true);
+        Object unsafe = unsafeField.get(null);
+        java.lang.reflect.Method allocate = unsafe.getClass().getMethod("allocateInstance", Class.class);
+        ScenInfo info = (ScenInfo) allocate.invoke(unsafe, ScenInfo.class);
+        setField(info, ScenInfo.class, "night", "No");
+        VASSAL.build.GameModule module = (VASSAL.build.GameModule) allocate.invoke(unsafe, VASSAL.build.GameModule.class);
+        List<VASSAL.build.Buildable> components = new ArrayList<>();
+        components.add(info);
+        setField(module, VASSAL.build.AbstractBuildable.class, "buildComponents", components);
+        setField(null, VASSAL.build.GameModule.class, "theModule", module);
+    }
+
+    /** A placed board of the LOS map: its board name and the pixel rectangle it covers. */
+    private static String ownerOf(Hex hex, List<PlacedBoard> boards) {
+        String owner = null;
+        Point2D center = hex.getHexCenter();
+        for (PlacedBoard board : boards) {
+            if (center.getX() >= board.x && center.getX() < board.x + board.gridWidth
+                    && center.getY() >= board.y && center.getY() < board.y + board.gridHeight) {
+                owner = "bd" + board.placement.board();
+            }
+        }
+
+        return owner;
+    }
+
+    private static List<Location> chain(Hex hex) {
+        List<Location> locations = new ArrayList<>();
+        Location down = hex.getCenterLocation().getDownLocation();
+        while (down != null && !locations.contains(down)) {
+            locations.add(0, down);
+            down = down.getDownLocation();
+        }
+
+        locations.add(hex.getCenterLocation());
+        Location up = hex.getCenterLocation().getUpLocation();
+        while (up != null && !locations.contains(up)) {
+            locations.add(up);
+            up = up.getUpLocation();
+        }
+
+        return locations;
+    }
+
+    private static String locationId(Location location, List<PlacedBoard> boards) {
+        return ownerOf(location.getHex(), boards) + ":" + location.getHex().getName() + ":" + location.getLevelInHex();
+    }
+
+    /**
+     * The LOS fixture of a board or scenario: VASL's Map.LOS from every location of each observer hex (every
+     * OBSERVER_COLUMN_STRIDE-th column and OBSERVER_ROW_STRIDE-th row of the map) to every location within LOS_RANGE.
+     * Locations are board-relative, named by the board that owns their hex.
+     */
+    private static void writeLos(PrintStream out, Path root, String commit, Scenario scenario, boolean composed) throws Exception {
+        SharedBoardMetadata shared = shared(root);
+        List<PlacedBoard> boards = new ArrayList<>();
+        Map map = derive(root, scenario, shared, boards);
+        VASLGameInterface game = new VASLGameInterface(null, null);
+        out.print("{\"boards\":[");
+        for (int index = 0; index < boards.size(); index++) {
+            PlacedBoard board = boards.get(index);
+            out.print(index == 0 ? "\n" : ",\n");
+            out.print("{\"board\":\"bd" + escape(board.placement.board()) + "\"");
+            out.print(",\"column\":" + board.placement.column());
+            out.print(",\"losDataBlob\":\"" + gitBlob(board.losDataPath) + "\"");
+            out.print(",\"metadataBlob\":\"" + gitBlob(board.metadataPath) + "\"");
+            out.print(",\"reversed\":" + board.placement.reversed());
+            out.print(",\"row\":" + board.placement.row() + "}");
+        }
+
+        out.print("\n]");
+        out.print(",\"gridConfiguration\":\"" + GRID_CONFIGURATION + "\"");
+        out.print(",\"harnessVersion\":\"" + LOS_HARNESS_VERSION + "\"");
+        out.print(",\"losRange\":" + LOS_RANGE);
+        out.print(",\"observerStride\":[" + OBSERVER_COLUMN_STRIDE + "," + OBSERVER_ROW_STRIDE + "]");
+        out.print(",\"pairs\":[\n");
+        Hex[][] grid = map.getHexGrid();
+        boolean firstPair = true;
+        for (int col = 0; col < grid.length; col += OBSERVER_COLUMN_STRIDE) {
+            for (int row = 0; row < grid[col].length; row += OBSERVER_ROW_STRIDE) {
+                Hex observer = grid[col][row];
+                for (Location source : chain(observer)) {
+                    for (Hex[] column : grid) {
+                        for (Hex hex : column) {
+                            if (Map.range(observer, hex, map.getMapConfiguration()) > LOS_RANGE) {
+                                continue;
+                            }
+
+                            for (Location target : chain(hex)) {
+                                if (target == source) {
+                                    continue;
+                                }
+
+                                LOSResult result = new LOSResult();
+                                map.LOS(source, false, target, false, result, game, null);
+                                out.print(firstPair ? "" : ",\n");
+                                firstPair = false;
+                                writePair(out, map, boards, source, target, result);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        out.print("\n]");
+        out.print(",\"scenario\":" + (composed ? "\"" + escape(scenario.name()) + "\"" : "null"));
+        out.print(",\"sharedBoardMetadataBlob\":\"" + gitBlob(root.resolve("dist/boardData/SharedBoardMetadata.xml")) + "\"");
+        out.print(",\"vaslCommit\":\"" + escape(commit) + "\"");
+        out.print("}\n");
+    }
+
+    private static void writePair(PrintStream out, Map map, List<PlacedBoard> boards, Location source, Location target, LOSResult result) {
+        Point at = result.isBlocked() ? result.getBlockedAtPoint() : null;
+        Hex atHex = at == null ? null : map.gridToHex(at.x, at.y);
+        out.print("{\"blocked\":" + result.isBlocked());
+        out.print(",\"blockedAt\":" + (at == null ? "null" : "[" + at.x + "," + at.y + "]"));
+        out.print(",\"blockedHex\":" + (atHex == null ? "null" : "\"" + ownerOf(atHex, boards) + ":" + escape(atHex.getName()) + "\""));
+        out.print(",\"hindrance\":" + result.getHindrance());
+        out.print(",\"range\":" + result.getRange());
+        out.print(",\"reason\":\"" + escape(result.getReason() == null ? "" : result.getReason()) + "\"");
+        out.print(",\"source\":\"" + escape(locationId(source, boards)) + "\"");
+        out.print(",\"target\":\"" + escape(locationId(target, boards)) + "\"}");
     }
 
     private static void writeHexes(PrintStream out, Map map) {

@@ -62,7 +62,7 @@ public sealed class VaslMapTests(ITestOutputHelper output)
         }
 
         var names = scenarios.Select(scenario => VaslMapImporter.FixtureFileName(scenario.Name)).ToHashSet(StringComparer.Ordinal);
-        Assert.All(Directory.GetFiles(ScenarioDirectory, "*.gz"), path => Assert.Contains(Path.GetFileName(path), names));
+        Assert.All(Directory.GetFiles(ScenarioDirectory, "*.hexfacts.json.gz"), path => Assert.Contains(Path.GetFileName(path), names));
     }
 
     [Fact]

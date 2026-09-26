@@ -1,0 +1,6 @@
+# LOS oracle scenarios (LOS Design, section 4), in the format of scenarios.txt.
+# tools/vasl-hexfact-oracle/generate-fixtures.ps1 -Los -Scenarios writes name.scenario.los.json.gz beside this file.
+
+# LOS across a seam: board 11's hills above board 01's village, and the same with board 11 reversed.
+bd11-over-bd01: 11@0,0 01@0,1
+bd11r-over-bd01: 11@0,0/r 01@0,1
