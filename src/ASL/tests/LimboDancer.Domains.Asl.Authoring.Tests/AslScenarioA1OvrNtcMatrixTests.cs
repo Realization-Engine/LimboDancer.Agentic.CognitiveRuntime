@@ -10,7 +10,7 @@ namespace LimboDancer.Domains.Asl.Authoring.Tests;
 public sealed class AslScenarioA1OvrNtcMatrixTests
 {
     private const string SourceCommit = "a3254ff1d492dbdd28483d86f5b42437b48e80d4";
-    private const string MatrixSha256 = "cb6c494ea5972b16cb4191771a5010c525c7fa4b249c48b186e6b585f8041eef";
+    private const string MatrixSha256 = "198f1af760eb1bdaed9f40ed867300ecc826b2633fec711c8096325246c536ce";
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     private static readonly (string Rule, int Page)[] Fragments =
@@ -34,9 +34,11 @@ public sealed class AslScenarioA1OvrNtcMatrixTests
             root.GetProperty("priorConcealedSmcOverrunPackageManifestSha256").GetString());
         Assert.Equal(Hashing.Sha256File(Registry("asl-scenario-a1.post-reveal-package.json")),
             root.GetProperty("priorPostRevealPackageManifestSha256").GetString());
+        Assert.Equal(Hashing.Sha256File(Registry("asl-scenario-a1.second-defender-consequence-package.json")),
+            root.GetProperty("priorSecondDefenderConsequencePackageManifestSha256").GetString());
 
         var rulings = root.GetProperty("rulings");
-        Assert.Equal("second-reveal-on-election-before-any-ntc", rulings.GetProperty("order").GetString());
+        Assert.Equal("ntc-before-second-reveal", rulings.GetProperty("order").GetString());
         Assert.Equal("random-selection-A.9", rulings.GetProperty("secondDefenderSelection").GetString());
         Assert.Equal("forced-back-ordinary-entry-mf-in-previous-location-mph-ended", rulings.GetProperty("failedNtc").GetString());
         var tem = root.GetProperty("ntcResolution").GetProperty("drm").GetProperty("buildingTem");
@@ -88,11 +90,11 @@ public sealed class AslScenarioA1OvrNtcMatrixTests
             .ToArray();
         Assert.Equal(
             [
-                ("A1-ovr-ntc-election-reveals-another-defender", "reviewed-bounded", "forced-back-attempted-entry-mf-in-previous-location"),
-                ("A1-ovr-ntc-lone-smc-mf-insufficient", "reviewed-bounded", "election-unavailable"),
+                ("A1-ovr-ntc-passed-second-defender-revealed", "reviewed-bounded", "forced-back-attempted-entry-mf-in-previous-location"),
+                ("A1-ovr-ntc-mf-insufficient", "reviewed-bounded", "election-unavailable"),
                 ("A1-ovr-ntc-failed", "reviewed-bounded", "forced-back-attempted-entry-mf-in-previous-location"),
                 ("A1-ovr-ntc-passed-against-lone-smc", "reviewed-nondefinitive", "indeterminate"),
-                ("A1-ovr-ntc-other-occupants-unknown", "reviewed-nondefinitive", "indeterminate"),
+                ("A1-ovr-ntc-passed-other-occupants-unknown", "reviewed-nondefinitive", "indeterminate"),
             ],
             cases);
         var ruleIds = matrix.RootElement.GetProperty("sourceFragments").EnumerateArray().Select(item => item.GetProperty("ruleId").GetString()).ToHashSet();

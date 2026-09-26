@@ -17,15 +17,14 @@ public sealed class ScenarioA1OvrNtcPackageTests
 
     public static TheoryData<string, Dictionary<string, string>, ConclusionDisposition> Cases => new()
     {
-        { "election-reveals-another-defender", new() { ["election"] = "elected", ["otherConcealedNonDummy"] = "present",
-            ["secondReveal"] = "randomSelection-revealed-nonDummy", ["ntc"] = "not-taken" }, ConclusionDisposition.Definitive },
-        { "lone-smc-mf-insufficient", new() { ["election"] = "requested", ["otherConcealedNonDummy"] = "none", ["remainingMf"] = "belowFour" },
-            ConclusionDisposition.Abstained },
-        { "failed", new() { ["election"] = "elected", ["otherConcealedNonDummy"] = "none", ["remainingMf"] = "atLeastFour", ["ntc"] = "failed" },
-            ConclusionDisposition.Definitive },
-        { "passed-against-lone-smc", new() { ["election"] = "elected", ["otherConcealedNonDummy"] = "none", ["remainingMf"] = "atLeastFour", ["ntc"] = "passed" },
+        { "passed-second-defender-revealed", new() { ["election"] = "elected", ["remainingMf"] = "atLeastFour", ["ntc"] = "passed",
+            ["otherConcealedNonDummy"] = "present", ["secondReveal"] = "randomSelection-revealed-nonDummy" }, ConclusionDisposition.Definitive },
+        { "mf-insufficient", new() { ["election"] = "requested", ["remainingMf"] = "belowFour" }, ConclusionDisposition.Abstained },
+        { "failed", new() { ["election"] = "elected", ["remainingMf"] = "atLeastFour", ["ntc"] = "failed" }, ConclusionDisposition.Definitive },
+        { "passed-against-lone-smc", new() { ["election"] = "elected", ["remainingMf"] = "atLeastFour", ["ntc"] = "passed", ["otherConcealedNonDummy"] = "none" },
             ConclusionDisposition.Indeterminate },
-        { "other-occupants-unknown", new() { ["election"] = "elected", ["otherConcealedNonDummy"] = "unknown" }, ConclusionDisposition.Indeterminate },
+        { "passed-other-occupants-unknown", new() { ["election"] = "elected", ["remainingMf"] = "atLeastFour", ["ntc"] = "passed",
+            ["otherConcealedNonDummy"] = "unknown" }, ConclusionDisposition.Indeterminate },
     };
 
     [Theory]
@@ -67,7 +66,6 @@ public sealed class ScenarioA1OvrNtcPackageTests
         var facts = Facts(new()
         {
             ["election"] = "elected",
-            ["otherConcealedNonDummy"] = "none",
             ["remainingMf"] = "atLeastFour",
             ["ntc"] = "failed"
         });

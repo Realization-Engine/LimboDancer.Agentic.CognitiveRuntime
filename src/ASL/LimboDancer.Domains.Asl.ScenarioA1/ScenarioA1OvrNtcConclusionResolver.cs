@@ -5,9 +5,9 @@ using LimboDancer.Abstractions.Observations;
 namespace LimboDancer.Domains.Asl.ScenarioA1;
 
 /// <summary>
-/// Read-only conclusions for an elected Infantry OVR after a lone concealed SMC reveal (unit step 10): the OVR denied by
-/// a second reveal and a failed NTC both return the mover with the ordinary attempted-entry MF; fewer than four MF
-/// leave no election; a passed NTC against a lone SMC and unknown occupancy stay Indeterminate.
+/// Read-only conclusions for an elected Infantry OVR after a lone concealed SMC reveal (unit step 10): a failed NTC, and
+/// a passed NTC followed by a second reveal that denies the OVR, both return the mover with the ordinary attempted-entry
+/// MF; fewer than four MF leave no election; a passed NTC against a lone SMC and unknown occupancy stay Indeterminate.
 /// </summary>
 public sealed class ScenarioA1OvrNtcConclusionResolver : IDomainConclusionResolver
 {

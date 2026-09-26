@@ -6,6 +6,7 @@
   "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
   "priorConcealedSmcOverrunPackageManifestSha256": "052579ea6dcfb2da3221b39c524695a74637645ddd853d9a343c3d2db9b8d553",
   "priorPostRevealPackageManifestSha256": "0d721e581a0201d79cd2ab18c06032c2875c2910c848796dad62052db9b52c0b",
+  "priorSecondDefenderConsequencePackageManifestSha256": "7aa168439781bf889a5c05d797e86054f9e8baf0f396d76ba3f52a5e81125834",
   "sourceFragments": [
     {
       "ruleId": "A.9",
@@ -45,7 +46,7 @@
     }
   ],
   "rulings": {
-    "order": "second-reveal-on-election-before-any-ntc",
+    "order": "ntc-before-second-reveal",
     "secondDefenderSelection": "random-selection-A.9",
     "failedNtc": "forced-back-ordinary-entry-mf-in-previous-location-mph-ended",
     "electionAvailability": "only-with-at-least-four-mf-remaining",
@@ -84,24 +85,28 @@
   },
   "cases": [
     {
-      "caseId": "A1-ovr-ntc-election-reveals-another-defender",
+      "caseId": "A1-ovr-ntc-passed-second-defender-revealed",
       "reviewStatus": "reviewed-bounded",
       "expectedDisposition": "forced-back-attempted-entry-mf-in-previous-location",
       "sourceRules": [
+        "A4.15",
+        "A10.1",
+        "NTC-glossary",
+        "B23.3",
         "A12.15",
-        "A.9",
-        "A4.15"
+        "A.9"
       ],
       "facts": {
         "election": "elected",
+        "remainingMf": "atLeastFour",
+        "ntc": "passed",
         "otherConcealedNonDummy": "present",
-        "secondReveal": "randomSelection-revealed-nonDummy",
-        "ntc": "not-taken"
+        "secondReveal": "randomSelection-revealed-nonDummy"
       },
-      "reason": "Electing the OVR makes the DEFENDER reveal another non-Dummy unit at once; Random Selection chooses it. The Location then holds more than one Known enemy unit, so A4.15 denies the OVR without an NTC, and A12.15 returns the mover to its last Location with the ordinary attempted-entry MF expended there and its MPh ended. No doubled OVR cost is inferred."
+      "reason": "The MMC passes its NTC and so becomes capable of OVR; its attempt then makes the DEFENDER reveal another non-Dummy unit, chosen by Random Selection. The Location no longer holds only one Known enemy SMC, so A4.15 denies it to the MMC, and A12.15 returns the mover to its last Location with the ordinary attempted-entry MF expended there and its MPh ended. No doubled OVR cost is inferred. This agrees with the positive cases of the SecondDefenderConsequence package."
     },
     {
-      "caseId": "A1-ovr-ntc-lone-smc-mf-insufficient",
+      "caseId": "A1-ovr-ntc-mf-insufficient",
       "reviewStatus": "reviewed-bounded",
       "expectedDisposition": "election-unavailable",
       "sourceRules": [
@@ -110,7 +115,6 @@
       ],
       "facts": {
         "election": "requested",
-        "otherConcealedNonDummy": "none",
         "remainingMf": "belowFour"
       },
       "reason": "A12.15 offers the OVR only if possible, and A4.15 charges double the MF of entry. With fewer than four MF left the OVR is not possible, and only a decline remains."
@@ -128,11 +132,10 @@
       ],
       "facts": {
         "election": "elected",
-        "otherConcealedNonDummy": "none",
         "remainingMf": "atLeastFour",
         "ntc": "failed"
       },
-      "reason": "A failed Task Check leaves the task undone and the unit may take no other action that phase (A10.1). The OVR does not enter, so A12.15 returns the mover to its last Location with the ordinary attempted-entry MF expended there and its MPh ended; no doubled OVR cost is inferred."
+      "reason": "A failed Task Check leaves the task undone and the unit may take no other action that phase (A10.1). The MMC never becomes capable of OVR, so no further unit is revealed, and A12.15 returns the mover to its last Location with the ordinary attempted-entry MF expended there and its MPh ended; no doubled OVR cost is inferred."
     },
     {
       "caseId": "A1-ovr-ntc-passed-against-lone-smc",
@@ -146,14 +149,14 @@
       ],
       "facts": {
         "election": "elected",
-        "otherConcealedNonDummy": "none",
         "remainingMf": "atLeastFour",
-        "ntc": "passed"
+        "ntc": "passed",
+        "otherConcealedNonDummy": "none"
       },
-      "reason": "After a passed NTC the SMC chooses to attack or withdraw, and CC may follow (A4.151, A4.152). Neither is reviewed, so no conclusion is admitted."
+      "reason": "After a passed NTC with no other defender, the SMC chooses to attack or withdraw, and CC may follow (A4.151, A4.152). Neither is reviewed, so no conclusion is admitted."
     },
     {
-      "caseId": "A1-ovr-ntc-other-occupants-unknown",
+      "caseId": "A1-ovr-ntc-passed-other-occupants-unknown",
       "reviewStatus": "reviewed-nondefinitive",
       "expectedDisposition": "indeterminate",
       "sourceRules": [
@@ -162,9 +165,11 @@
       ],
       "facts": {
         "election": "elected",
+        "remainingMf": "atLeastFour",
+        "ntc": "passed",
         "otherConcealedNonDummy": "unknown"
       },
-      "reason": "Whether another non-Dummy unit is present decides between the reveal and the NTC; without it no conclusion is admitted."
+      "reason": "After a passed NTC, whether another non-Dummy unit is present decides between the second reveal and the SMC's options; without it no conclusion is admitted."
     }
   ],
   "admissionRule": "A case applies only when every common fact and every case fact holds exactly; any other state is Indeterminate or Abstained.",

@@ -3,10 +3,11 @@
   "status": "published-bounded-ovr-ntc-package",
   "domainId": "asl",
   "packageId": "scenario-a1-concealment-ovr-ntc",
-  "declaredUse": "Read-only A12.15 and A4.15 conclusions for an elected Infantry OVR after an entry attempt reveals a lone concealed SMC: the second reveal on election, the OVR NTC and its failure, under the user's rulings of 2026-09-26",
+  "declaredUse": "Read-only A12.15 and A4.15 conclusions for an elected Infantry OVR after an entry attempt reveals a lone concealed SMC: the OVR NTC, its failure, and the second reveal after a passed NTC, under the user's rulings of 2026-09-26",
   "priorConcealedSmcOverrunPackageManifestSha256": "052579ea6dcfb2da3221b39c524695a74637645ddd853d9a343c3d2db9b8d553",
   "priorPostRevealPackageManifestSha256": "0d721e581a0201d79cd2ab18c06032c2875c2910c848796dad62052db9b52c0b",
-  "caseMatrixSha256": "cb6c494ea5972b16cb4191771a5010c525c7fa4b249c48b186e6b585f8041eef",
+  "priorSecondDefenderConsequencePackageManifestSha256": "7aa168439781bf889a5c05d797e86054f9e8baf0f396d76ba3f52a5e81125834",
+  "caseMatrixSha256": "198f1af760eb1bdaed9f40ed867300ecc826b2633fec711c8096325246c536ce",
   "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
   "sourceFragments": [
     {
@@ -47,7 +48,7 @@
     }
   ],
   "rulings": {
-    "order": "second-reveal-on-election-before-any-ntc",
+    "order": "ntc-before-second-reveal",
     "secondDefenderSelection": "random-selection-A.9",
     "failedNtc": "forced-back-ordinary-entry-mf-in-previous-location-mph-ended",
     "electionAvailability": "only-with-at-least-four-mf-remaining",
@@ -74,15 +75,15 @@
     "passWhen": "final DR at or below the Morale Level"
   },
   "exactCaseIds": [
-    "A1-ovr-ntc-election-reveals-another-defender",
-    "A1-ovr-ntc-lone-smc-mf-insufficient",
+    "A1-ovr-ntc-passed-second-defender-revealed",
+    "A1-ovr-ntc-mf-insufficient",
     "A1-ovr-ntc-failed",
     "A1-ovr-ntc-passed-against-lone-smc",
-    "A1-ovr-ntc-other-occupants-unknown"
+    "A1-ovr-ntc-passed-other-occupants-unknown"
   ],
   "positiveCaseIds": [
-    "A1-ovr-ntc-election-reveals-another-defender",
-    "A1-ovr-ntc-lone-smc-mf-insufficient",
+    "A1-ovr-ntc-passed-second-defender-revealed",
+    "A1-ovr-ntc-mf-insufficient",
     "A1-ovr-ntc-failed"
   ],
   "executionAuthority": "none",

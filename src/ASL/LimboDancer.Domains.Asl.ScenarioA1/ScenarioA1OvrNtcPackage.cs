@@ -6,13 +6,13 @@ namespace LimboDancer.Domains.Asl.ScenarioA1;
 
 /// <summary>
 /// Pinned read-only package for an elected Infantry OVR after a lone concealed SMC reveal (unit step 10; Scenario A1 OVR
-/// NTC Review 2026-09-26): the second reveal on election, the OVR NTC, and a failed NTC. It never executes a move,
+/// NTC Review 2026-09-26): the OVR NTC, a failed NTC, and the second reveal after a passed NTC. It never executes a move,
 /// a roll, or an MF charge.
 /// </summary>
 public sealed class ScenarioA1OvrNtcPackage : IDomainPackageResolver
 {
-    public const string ManifestSha256 = "e8a35e01929f4bc44fb082b915200920d46a7d262d04c0b157f55580f47bde13";
-    public const string MatrixSha256 = "cb6c494ea5972b16cb4191771a5010c525c7fa4b249c48b186e6b585f8041eef";
+    public const string ManifestSha256 = "58dad9d7ea719eb9c5cf123a7a2bd109162bc1598d7489545cb72ef7128051dd";
+    public const string MatrixSha256 = "198f1af760eb1bdaed9f40ed867300ecc826b2633fec711c8096325246c536ce";
     public static readonly DomainPackageRef Identity = new(new DomainId("asl"), "scenario-a1-concealment-ovr-ntc", "sha256:" + ManifestSha256);
 
     private static readonly string[] Rules = ["A.9", "A4.15", "A10.1", "A12.15", "B23.3", "NTC-glossary"];
@@ -34,6 +34,8 @@ public sealed class ScenarioA1OvrNtcPackage : IDomainPackageResolver
             || root.GetProperty("priorConcealedSmcOverrunPackageManifestSha256").GetString() != ScenarioA1ConcealedSmcOverrunPackage.ManifestSha256
             || reviewed.GetProperty("priorConcealedSmcOverrunPackageManifestSha256").GetString() != ScenarioA1ConcealedSmcOverrunPackage.ManifestSha256
             || root.GetProperty("priorPostRevealPackageManifestSha256").GetString() != ScenarioA1PostRevealPackage.ManifestSha256
+            || root.GetProperty("priorSecondDefenderConsequencePackageManifestSha256").GetString() != ScenarioA1SecondDefenderConsequencePackage.ManifestSha256
+            || reviewed.GetProperty("priorSecondDefenderConsequencePackageManifestSha256").GetString() != ScenarioA1SecondDefenderConsequencePackage.ManifestSha256
             || reviewed.GetProperty("priorPostRevealPackageManifestSha256").GetString() != ScenarioA1PostRevealPackage.ManifestSha256
             || root.GetProperty("caseMatrixSha256").GetString() != MatrixSha256
             || root.GetProperty("sourcePdfSha256").GetString() != reviewed.GetProperty("sourcePdfSha256").GetString()
