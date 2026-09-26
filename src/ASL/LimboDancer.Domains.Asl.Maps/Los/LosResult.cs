@@ -51,17 +51,25 @@ public sealed record LosResult(LosStatus Status, bool? IsBlocked, int Range, int
 /// </summary>
 public static class LosUnsupportedRule
 {
-    public const string Bridge = "Bridges and tunnels";
+    /// <summary>Tunnel locations and tunnel terrain; bridges are reproduced.</summary>
+    public const string Tunnel = "Tunnels";
 
-    /// <summary>Factories, their rooftops and walls, and roofless or gutted buildings; rooftops of other buildings are reproduced.</summary>
-    public const string Factory = "Factories and roofless buildings (B23.87)";
+    /// <summary>A hex whose center is a bridge, in the depression rule when an end is in a depression.</summary>
+    public const string BridgeInDepression = "Bridge hexes in the depression rule (A6.3)";
 
-    /// <summary>A location below level 0 that is not a cellar; cellars themselves are reproduced.</summary>
-    public const string Cellar = "Cellars (O6.3)";
+    /// <summary>
+    /// The factory cases no fixture reaches: LOS within a factory along a hexside or past its first hex to a rooftop,
+    /// rubble in the rooftop test, and the rooftop test of the terrain height rule. Other factory LOS is reproduced.
+    /// </summary>
+    public const string FactoryRooftop = "Factory rooftop and hexside cases (B23.87)";
+
+    /// <summary>Roofless and gutted buildings and factories: their ends, their terrain, and hexes whose center is one.</summary>
+    public const string Roofless = "Roofless and gutted buildings (B23.87)";
+
+    /// <summary>Interior factory walls and breaches; rowhouse walls are reproduced.</summary>
+    public const string InteriorFactoryWall = "Interior factory walls and breaches (B23.71, O5.31)";
 
     public const string Entrenchment = "Entrenchments (B27.2)";
-
-    public const string RowhouseWall = "Rowhouse and factory walls (B23.71)";
 
     public const string Bocage = "Bocage (B9.52)";
 
@@ -70,8 +78,6 @@ public static class LosUnsupportedRule
     public const string RailroadEmbankment = "Railroad embankments";
 
     public const string Hillock = "Hillocks (F6.4)";
-
-    public const string Rubble = "Rubble";
 
     public const string Deir = "Deir (F4.4)";
 
