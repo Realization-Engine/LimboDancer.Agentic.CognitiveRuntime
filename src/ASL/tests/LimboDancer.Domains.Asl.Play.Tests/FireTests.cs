@@ -217,10 +217,10 @@ public sealed partial class FireTests : IDisposable
         Assert.NotEqual(PlayOutcome.Committed, marked.Outcome);
         Assert.Equal(revision, Revision);
 
-        // Fire in the MPh.
+        // Fire in the MPh answers a moving stack's MF expenditure (A8.1); with none, it is refused.
         await Advance();
         var moving = await Commit(Play(NoRoll()), GameActions.Fire, Fire("fire-4", ["r3"], director: null));
-        Assert.Contains(moving.Reasons, reason => reason.Contains("phase-outside", StringComparison.Ordinal));
+        Assert.Contains(moving.Reasons, reason => reason.Contains("fire-window", StringComparison.Ordinal));
     }
 
     [Fact]

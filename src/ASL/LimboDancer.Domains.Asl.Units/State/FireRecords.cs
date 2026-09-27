@@ -16,7 +16,14 @@ public sealed record FireResolved(
     string TargetLocation,
     IReadOnlyDictionary<string, string> Rolls,
     JsonElement Facts,
-    JsonElement Resolution) : EventPayload;
+    JsonElement Resolution) : EventPayload
+{
+    /// <summary>The movement step a Defensive fire record answers (A8.1, unit step 22); null in the fire phases.</summary>
+    public int? MovementStep
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// <c>fire-reported</c>: the public part of a fire record that only the target side may see, because the attack left a
@@ -27,7 +34,14 @@ public sealed record FireResolved(
 public sealed record FireReported(string Fire, string FirerLocation, string TargetLocation, JsonElement Arithmetic) : EventPayload;
 
 /// <summary>An attack made in the current phase, for the mandatory fire group rule (A7.55, p. 57).</summary>
-public sealed record FireRecord(string EventId, string FirerLocation, string TargetLocation);
+public sealed record FireRecord(string EventId, string FirerLocation, string TargetLocation)
+{
+    /// <summary>The movement step the attack answered; A7.55 binds a Location's units within one MF expenditure (A8.1).</summary>
+    public int? Step
+    {
+        get; init;
+    }
+}
 
 /// <summary>Recomputes a fire record from its facts and rolls; supplied to replay by the project that owns the package.</summary>
 public interface IFireRecordVerifier

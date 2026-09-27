@@ -313,7 +313,46 @@ public static class GameEventReader
                     || !payload.TryGetProperty("resolution", out var resolution) || resolution.ValueKind != JsonValueKind.Object
                     ? Missing(diagnostics, "A fire record names its Locations, facts, and resolution.", path)
                     : new FireResolved(fields.StringList(payload, "firers", path), director, firerLocation, targetLocation, fireRolls,
-                        facts.Clone(), resolution.Clone());
+                        facts.Clone(), resolution.Clone())
+                    {
+                        MovementStep = fields.OptionalInteger(payload, "movementStep", path),
+                    };
+            case "rally-attempted":
+                var rallyUnit = fields.RequiredString(payload, "unit", path);
+                var rallyRolls = RollMap(payload, path, diagnostics);
+                return rallyUnit is null || rallyRolls is null
+                    || !payload.TryGetProperty("facts", out var rallyFacts) || rallyFacts.ValueKind != JsonValueKind.Object
+                    || !payload.TryGetProperty("resolution", out var rallyResolution) || rallyResolution.ValueKind != JsonValueKind.Object
+                    ? Missing(diagnostics, "A Rally record names its unit, rolls, facts, and resolution.", path)
+                    : new RallyAttempted(rallyUnit, fields.OptionalString(payload, "leader", path), rallyRolls, rallyFacts.Clone(), rallyResolution.Clone());
+            case "residual-fp-placed":
+                var residualFire = fields.RequiredString(payload, "fire", path);
+                var residualAt = ReadLocation(payload, "location", path, fields, diagnostics);
+                var residualFp = fields.OptionalInteger(payload, "fp", path);
+                return residualFire is null || residualAt is null || residualFp is null
+                    ? Missing(diagnostics, "Residual FP names its fire record, its Location, and its FP.", path)
+                    : new ResidualFirePlaced(residualFire, residualAt, residualFp.Value);
+            case "repair-attempted":
+                var repairUnit = fields.RequiredString(payload, "unit", path);
+                var repaired = fields.RequiredString(payload, "equipment", path);
+                var repairRoll = fields.RequiredString(payload, "roll", path);
+                var repairNumber = fields.OptionalInteger(payload, "repairNumber", path);
+                var repairResult = fields.RequiredString(payload, "result", path);
+                return repairUnit is null || repaired is null || repairRoll is null || repairNumber is null || repairResult is null
+                    ? Missing(diagnostics, "A Repair record names its unit, SW, roll, Repair Number, and result.", path)
+                    : new RepairAttempted(repairUnit, repaired, repairRoll, repairNumber.Value, repairResult);
+            case "movement-step":
+                var stepTo = ReadLocation(payload, "to", path, fields, diagnostics);
+                var halfMf = fields.OptionalInteger(payload, "halfMf", path);
+                var step = fields.OptionalInteger(payload, "step", path);
+                return stepTo is null || halfMf is null || step is null
+                    ? Missing(diagnostics, "A movement step names its movers, destination, half MF, and step.", path)
+                    : new MovementStepped(fields.StringList(payload, "movers", path), stepTo, halfMf.Value, fields.OptionalBoolean(payload, "assault", path), step.Value);
+            case "movement-window-closed":
+                var closedStep = fields.OptionalInteger(payload, "step", path);
+                return closedStep is null ? Missing(diagnostics, "A closed window names its step.", path) : new MovementWindowClosed(closedStep.Value);
+            case "movement-ended":
+                return new MovementEnded(fields.StringList(payload, "movers", path));
             case "fire-reported":
                 var reported = fields.RequiredString(payload, "fire", path);
                 var reportedFrom = fields.RequiredString(payload, "firerLocation", path);
@@ -330,6 +369,26 @@ public static class GameEventReader
                 diagnostics.Add(UnitDiagnostic.Error(Code, $"'{type}' is not an event type.", path));
                 return null;
         }
+    }
+
+    private static Dictionary<string, string>? RollMap(JsonElement payload, string path, List<UnitDiagnostic> diagnostics)
+    {
+        var map = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (payload.TryGetProperty("rolls", out var rolls) && rolls.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var entry in rolls.EnumerateObject())
+            {
+                if (entry.Value.ValueKind != JsonValueKind.String)
+                {
+                    diagnostics.Add(UnitDiagnostic.Error(Code, "Each roll names its roll id.", path + ".rolls"));
+                    return null;
+                }
+
+                map[entry.Name] = entry.Value.GetString()!;
+            }
+        }
+
+        return map;
     }
 
     private static NewInstance? ReadNew(JsonElement item, string path, JsonFields fields, List<UnitDiagnostic> diagnostics)

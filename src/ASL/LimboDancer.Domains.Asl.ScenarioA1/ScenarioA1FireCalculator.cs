@@ -242,7 +242,8 @@ public static class ScenarioA1FireCalculator
             }
         }
 
-        if (attack.Targets is null || attack.Targets.Count == 0)
+        // An empty target Location is admitted (ruling R21.1): the attack resolves against nothing.
+        if (attack.Targets is null)
         {
             missing.Add("asl.a1.fire.fact-missing:targets");
         }
@@ -537,7 +538,9 @@ public static class ScenarioA1FireCalculator
 
             var known = state.Values.Where(unit => !unit.IsConcealedType).ToArray();
             var concealed = state.Values.Where(unit => unit.IsConcealedType).ToArray();
-            var arithmetic = Arithmetic(known.Length > 0, concealed.Length > 0);
+            // A Location the firing side sees nothing in is attacked as it would be if a hidden unit were there, so the
+            // arithmetic does not tell the firing side which it was (A12.3, A12.13; ruling R21.1).
+            var arithmetic = Arithmetic(known.Length > 0, concealed.Length > 0 || known.Length == 0);
             if (arithmetic is null)
             {
                 return Refused(FireResolution.Indeterminate, undecided);

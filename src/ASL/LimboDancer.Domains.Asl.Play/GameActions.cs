@@ -94,7 +94,7 @@ public static class GameActions
         }));
 
     public static readonly ActionDescriptor Fire = Descriptor("asl.game.fire", "Fire",
-        "Fire a fire group of Good Order squads and half-squads in one Location, optionally directed by a leader there, at another Location in the PFPh (phasing side) or the DFPh (the other side). The attack is resolved by the reviewed Fire package, and only when every outcome the dice can reach is decided; its rolls are drawn as the package asks for them.",
+        "Fire a fire group of Good Order squads and half-squads, with the MGs they possess, in one Location or across ADJACENT Locations, optionally directed by leaders there, at another Location: in the PFPh or AFPh (phasing side), the DFPh (the other side), or the MPh at the moving stack (Defensive First Fire, Subsequent First Fire, or FPF, by the firers' markers). The attack is resolved by the reviewed Fire package, and only when every outcome the dice can reach is decided; its rolls are drawn as the package asks for them.",
         PlayPermission, "asl.game.reviewed-fire-v1", """
         {
           "type": "object", "additionalProperties": false,
@@ -104,6 +104,9 @@ public static class GameActions
             "expectedRevision": { "type": "integer", "minimum": 0 },
             "firers": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
             "director": { "type": "string" },
+            "directors": { "type": "array", "items": { "type": "string" } },
+            "weapons": { "type": "object", "additionalProperties": { "type": "array", "items": { "type": "string" } } },
+            "withoutInherent": { "type": "array", "items": { "type": "string" } },
             "target": { "type": "string" }
           }
         }
@@ -112,7 +115,89 @@ public static class GameActions
             package = ScenarioA1FirePackage.Identity.ToString()
         }));
 
-    public static IReadOnlyList<ActionDescriptor> All { get; } = [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding, DeclareOverrun, Fire];
+    public static readonly ActionDescriptor Rally = Descriptor("asl.game.rally", "Rally",
+        "Attempt to rally a broken unit in the RPh, by a Good Order leader in its Location or by Self-Rally, as the reviewed Rally package resolves it, and only when every outcome the dice can reach is decided.",
+        PlayPermission, "asl.game.reviewed-rally-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "unitId"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "unitId": { "type": "string" }, "leader": { "type": "string" }
+          }
+        }
+        """, JsonSerializer.SerializeToElement(new
+        {
+            package = ScenarioA1RallyPackage.Identity.ToString()
+        }));
+
+    public static readonly ActionDescriptor Repair = Descriptor("asl.game.repair", "Repair a SW",
+        "Attempt in the RPh to repair a malfunctioned MG a Good Order unit possesses: a dr at most its Repair Number repairs it, a 6 eliminates it (A9.72).",
+        PlayPermission, "asl.game.reviewed-fire-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "unitId", "equipmentId"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "unitId": { "type": "string" }, "equipmentId": { "type": "string" }
+          }
+        }
+        """, JsonSerializer.SerializeToElement(new
+        {
+            package = ScenarioA1FirePackage.Identity.ToString()
+        }));
+
+    public static readonly ActionDescriptor Move = Descriptor("asl.game.move", "Move",
+        "Move a Good Order stack of the phasing side into an adjacent Location in its MPh at the terrain's MF cost, optionally by Assault Movement. The DEFENDER may then fire at it before it moves again; Residual FP there attacks it first.",
+        PlayPermission, "asl.game.reviewed-fire-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "unitIds", "to"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "unitIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+            "to": { "type": "string" }, "assault": { "type": "boolean" }
+          }
+        }
+        """, JsonSerializer.SerializeToElement(new
+        {
+            package = ScenarioA1FirePackage.Identity.ToString()
+        }));
+
+    public static readonly ActionDescriptor PassFire = Descriptor("asl.game.pass-fire", "Pass on the moving stack",
+        "The DEFENDER passes on the moving stack's latest MF expenditure, so the ATTACKER may continue or end its move (A8.11).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 }
+          }
+        }
+        """);
+
+    public static readonly ActionDescriptor EndMove = Descriptor("asl.game.end-move", "End the move",
+        "The ATTACKER ends the moving stack's move; its units may not move again this MPh (A8.11).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 }
+          }
+        }
+        """);
+
+    public static IReadOnlyList<ActionDescriptor> All
+    {
+        get;
+    } =
+        [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding, DeclareOverrun, Fire, Rally, Repair, Move, PassFire, EndMove];
 
     public static string VersionKey(Guid tenant, string game) => $"asl.game:{tenant:N}:{game}";
 

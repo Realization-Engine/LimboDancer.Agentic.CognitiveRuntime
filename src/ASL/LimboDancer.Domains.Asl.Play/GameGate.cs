@@ -116,10 +116,19 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
         // A fire attack: the record is kept for the phase, and every firer and the director carry the fire marker.
         ? state.FiresThisPhase.Any(record => record.EventId == fire.EventId)
             && ((FireResolved)fire.Payload).Firers.Concat(((FireResolved)fire.Payload).Director is { } director ? [director] : [])
-                .All(id => state.Unit(id) is { } unit && (GameState.Condition(unit, Conditions.PrepFire) == ConditionState.True
-                    || GameState.Condition(unit, Conditions.FinalFire) == ConditionState.True))
+                .All(id => state.Unit(id) is not { Status: InstanceStatus.Active } unit || GameState.Condition(unit, Conditions.PrepFire) == ConditionState.True
+                    || GameState.Condition(unit, Conditions.FinalFire) == ConditionState.True || GameState.Condition(unit, Conditions.FirstFire) == ConditionState.True)
+        : plan.Events.Select(item => item.Payload).OfType<RallyAttempted>().FirstOrDefault() is { } rally
+        // A Rally attempt: the unit's attempt is kept for the Player Turn.
+        ? state.RallyAttemptsThisPlayerTurn.Contains(rally.Unit)
+        : plan.Events.Select(item => item.Payload).OfType<RepairAttempted>().FirstOrDefault() is { } repair
+        // A Repair attempt: the unit's attempt is kept for the phase.
+        ? state.RepairsThisPhase.Contains(repair.Unit)
         : plan.Events[^1].Payload switch
         {
+            MovementStepped moved => state.Movement is { WindowOpen: true } movement && movement.Step == moved.Step && movement.Location == moved.To,
+            MovementWindowClosed => state.Movement is { WindowOpen: false },
+            MovementEnded => state.Movement is null,
             // A forced back: the mover is where it started, with its movement ended, and every defender the plan revealed is known.
             EntryForcedBack forced => state.Unit(forced.Id) is { MovementEnded: true } unit && state.Location(unit.Id)?.Location == forced.ReturnedTo
                 && Revealed(state, plan),

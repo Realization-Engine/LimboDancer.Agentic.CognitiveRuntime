@@ -440,7 +440,8 @@ public sealed class PlayTests : IDisposable
     [Fact]
     public void TheActionsAreRegisteredWritesThatNeedConfirmation()
     {
-        Assert.Equal(["asl.game.setup", "asl.game.advance-phase", "asl.game.enter-empty-building", "asl.game.enter-building", "asl.game.declare-overrun", "asl.game.fire"],
+        Assert.Equal(["asl.game.setup", "asl.game.advance-phase", "asl.game.enter-empty-building", "asl.game.enter-building", "asl.game.declare-overrun", "asl.game.fire",
+                "asl.game.rally", "asl.game.repair", "asl.game.move", "asl.game.pass-fire", "asl.game.end-move"],
             GameActions.All.Select(action => action.Id.Value));
         Assert.All(GameActions.All, action => Assert.Equal(Abstractions.Actions.ActionReversibility.Irreversible, action.Risk.Reversibility));
         var precondition = Assert.Single(GameActions.EnterEmptyBuilding.Preconditions);
