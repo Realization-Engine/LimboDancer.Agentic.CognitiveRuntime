@@ -58,6 +58,12 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.move-stack: the stack moves from one Location (A4.2)");
         }
 
+        // A3.3 (p. 47): a unit that fired in the PFPh does not move in the MPh.
+        if (movers.FirstOrDefault(unit => GameState.Condition(unit!, Conditions.PrepFire) == ConditionState.True) is { } fired)
+        {
+            return Refused(scope, label, expected, $"play.move-prep-fire: {fired.Id} fired in the PFPh, so it may not move this MPh (A3.3, p. 47)");
+        }
+
         // A4.1, A7.83: broken, pinned, or already-ended units do not move; A12.14: concealed movement is not reviewed.
         if (movers.Any(unit => GameState.Condition(unit!, Conditions.Broken) != ConditionState.False || GameState.Condition(unit!, Conditions.Pinned) == ConditionState.True
             || unit!.MovementEnded || unit.Kind == UnitKinds.Dummy

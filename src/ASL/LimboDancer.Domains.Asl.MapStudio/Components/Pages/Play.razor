@@ -287,7 +287,7 @@ else if (state is not null)
         <div class="toolbar">
             <label>
                 From
-                <select id="fire-from" value="@fireFrom" @onchange="@(args => fireFrom = args.Value as string ?? string.Empty)">
+                <select id="fire-from" value="@fireFrom" @onchange="@(args => { fireFrom = args.Value as string ?? string.Empty; PruneFire(); })">
                     <option value="">choose</option>
                     @foreach (var at in FireLocations(firing))
                     {
@@ -307,7 +307,6 @@ else if (state is not null)
             {
                 <label><input class="fire-alone" type="checkbox" data-unit="@id" checked="@fireAlone.Contains(id)" @onchange="@(args => Toggle(fireAlone, id, args.Value is true))" /> @id's MGs alone</label>
             }
-}
             <label>
                 Director
                 <select id="fire-director" value="@fireDirector" @onchange="@(args => fireDirector = args.Value as string ?? string.Empty)">
@@ -751,9 +750,13 @@ else if (state is not null)
         : state.Phase is "mph" or "dfph" ? state.Sides.First(side => side.Id != state.PhasingSide).Id
         : null;
 
-    /// <summary>The leaders who may direct the chosen fire group: active leaders of the firing side in a firer's Location (A7.53).</summary>
+    /// <summary>
+    /// The leaders who may direct the chosen fire group: Good Order, unpinned leaders of the firing side in a firer's Location
+    /// (A7.53); a broken or pinned leader cannot direct fire.
+    /// </summary>
     private IEnumerable<UnitInstance> FireLeaders(string side) => state is null ? []
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && unit.Kind == "asl:leader"
+            && GameState.GoodOrder(unit, Library.Vocabulary) == ConditionState.True && GameState.Condition(unit, Conditions.Pinned) != ConditionState.True
             && fireFirers.Any(id => state.Location(id)?.Location is { } at && state.Location(unit.Id)?.Location == at))
             .OrderBy(unit => unit.Id, StringComparer.Ordinal);
 
@@ -767,6 +770,7 @@ else if (state is not null)
 
     private void ClearFire()
     {
+        fireFrom = string.Empty;
         fireFirers.Clear();
         fireWeapons.Clear();
         fireAlone.Clear();
@@ -780,11 +784,15 @@ else if (state is not null)
         : state.At(at).OfType<UnitInstance>().Where(item => item.Status == InstanceStatus.Active && item.Id != unit.Id && item.Side == unit.Side
             && item.Kind == "asl:leader").OrderBy(item => item.Id, StringComparer.Ordinal);
 
-    /// <summary>The phasing side's units that may still move this MPh: the moving stack itself while one moves.</summary>
+    /// <summary>
+    /// The phasing side's units that may still move this MPh: the moving stack itself while one moves; otherwise those that did
+    /// not fire in the PFPh (A3.3, p. 47) and are not broken.
+    /// </summary>
     private IEnumerable<UnitInstance> MoveCandidates => state is null ? []
         : state.Movement is { } movement ? movement.Members.Select(state.Unit).OfType<UnitInstance>()
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && !unit.MovementEnded
-            && state.Location(unit.Id) is not null && GameState.Condition(unit, Conditions.Broken) != ConditionState.True).OrderBy(unit => unit.Id, StringComparer.Ordinal);
+            && state.Location(unit.Id) is not null && GameState.Condition(unit, Conditions.Broken) != ConditionState.True
+            && GameState.Condition(unit, Conditions.PrepFire) != ConditionState.True).OrderBy(unit => unit.Id, StringComparer.Ordinal);
 
     private Task ProposeRally()
     {
@@ -1158,12 +1166,44 @@ else if (state is not null)
         Refresh();
     }
 
+    /// <summary>
+    /// Another game: nothing chosen for the last one carries over, since its units, weapons, and Locations are not this game's.
+    /// </summary>
     private void ChangeGame(ChangeEventArgs args)
     {
         gameId = args.Value as string ?? string.Empty;
         pending = null;
         placements.Clear();
+        ClearFire();
+        moveUnits.Clear();
+        moveTo = string.Empty;
+        moveAssault = false;
+        rallyUnit = string.Empty;
+        rallyLeader = string.Empty;
+        repairWeapon = string.Empty;
         Refresh();
+    }
+
+    /// <summary>
+    /// Keeps the fire choices to what the game still offers: firers that are active units of the firing side in the chosen From
+    /// Location, the MGs they possess, and a director among the leaders who may direct them.
+    /// </summary>
+    private void PruneFire()
+    {
+        if (state is null || FiringSide is not { } side)
+        {
+            ClearFire();
+            return;
+        }
+
+        var group = FireGroupAt(side).Select(unit => unit.Id).ToHashSet(StringComparer.Ordinal);
+        fireFirers.IntersectWith(group);
+        fireWeapons.IntersectWith(FireWeapons.Select(item => item.Id));
+        fireAlone.IntersectWith(fireFirers);
+        if (fireDirector.Length > 0 && !FireLeaders(side).Any(unit => unit.Id == fireDirector))
+        {
+            fireDirector = string.Empty;
+        }
     }
 
     private void Refresh()
@@ -1184,6 +1224,7 @@ else if (state is not null)
             moveUnits.RemoveWhere(id => state.Unit(id) is not { MovementEnded: false });
         }
 
+        PruneFire();
         if (state is not null && !state.Units.Any(unit => unit.Id == enterUnit))
         {
             enterUnit = state.Units.FirstOrDefault()?.Id ?? string.Empty;

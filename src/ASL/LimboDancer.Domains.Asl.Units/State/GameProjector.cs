@@ -407,6 +407,12 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-029", "A movement step moves a stack of the phasing side that may still move, in one Location, in the MPh.");
             }
 
+            // A3.3 (p. 47): a unit that fired in the PFPh does not move in the MPh.
+            if (movers.FirstOrDefault(unit => GameState.Condition(unit!, Conditions.PrepFire) == ConditionState.True) is { } fired)
+            {
+                return Fail<GameState>("UNIT-STATE-029", $"'{fired.Id}' fired in the PFPh, so it may not move in the MPh (A3.3, p. 47).");
+            }
+
             // A4.2: the stack's members may move on together or apart, but only they may move until every one has ended.
             var current = state.Movement;
             if (current is not null && (moving.Movers.Any(id => !current.Members.Contains(id, StringComparer.Ordinal))
