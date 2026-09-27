@@ -36,6 +36,14 @@ public static class AslScenarioA1FireSourceReview
     public const string ExtensionsComparisonFile = "asl-scenario-a1.fire-extensions-pdf-comparison.json";
     public const string ExtensionsComparisonSha256 = "b9cb4d0107c23927e7d9e26541087ebb11e3526063fc220a4fc53d85533e45aa";
 
+    /// <summary>
+    /// The unit steps 27 and 28 comparison: heroes (A15.2 to A15.24), Battle Hardening (A15.3), Berserk and Surrender (A15.4,
+    /// A15.5, whose results are recorded as not taken), Fanaticism (A10.8), the Leader Creation Table (A18.2), and NKVD MMC
+    /// (A25.25).
+    /// </summary>
+    public const string HeatOfBattleComparisonFile = "asl-scenario-a1.heat-of-battle-pdf-comparison.json";
+    public const string HeatOfBattleComparisonSha256 = "41cfbe214712c39d540059e6be5e3fb85da03838a0e341c5d6a95c6ca4da092b";
+
     private const string ChapterA = "asl-easlrb-3.10:chapter-a";
     private const string ChapterB = "asl-easlrb-3.10:chapter-b";
 
@@ -173,6 +181,22 @@ public static class AslScenarioA1FireSourceReview
         ("B23.4", "B23.4", ChapterB, 1382, SourceFragmentKind.RuleText, 136),
     ];
 
+    private static readonly (string Rule, string Registered, string Source, int Line, SourceFragmentKind Kind, int Page)[] HeatOfBattleSubjects =
+    [
+        ("A15.2", "A15.2", ChapterA, 1228, SourceFragmentKind.RuleText, 83),
+        ("A15.21", "A15.21", ChapterA, 1234, SourceFragmentKind.RuleText, 83),
+        ("A15.21", "A15.21", ChapterA, 1240, SourceFragmentKind.RuleContinuation, 83),
+        ("A15.23", "A15.23", ChapterA, 1242, SourceFragmentKind.RuleText, 83),
+        ("A15.24", "A15.24", ChapterA, 1244, SourceFragmentKind.RuleText, 83),
+        ("A15.3", "A15.3", ChapterA, 1246, SourceFragmentKind.RuleText, 83),
+        ("A15.4", "A15.4", ChapterA, 1248, SourceFragmentKind.RuleText, 83),
+        ("A15.5", "A15.5", ChapterA, 1276, SourceFragmentKind.RuleText, 84),
+        ("A18.2", "A18.2", ChapterA, 1340, SourceFragmentKind.RuleText, 85),
+        ("A18.2", "A18.2", ChapterA, 1356, SourceFragmentKind.RuleContinuation, 86),
+        ("A10.8", "A10.8", ChapterA, 846, SourceFragmentKind.RuleText, 69),
+        ("A25.25", "A25.25", ChapterA, 1758, SourceFragmentKind.RuleText, 96),
+    ];
+
     // Fragments a column break, a boxed example, or a page break interrupts: each part occurs whole in the page text.
     private static readonly HashSet<(string Rule, int Line)> TwoPartSubjects =
         [("A7.212", 445), ("A8.26", 644), ("A8.31", 658), ("A9.2", 690), ("B3.4", 138), ("A12.11", 992)];
@@ -204,6 +228,12 @@ public static class AslScenarioA1FireSourceReview
         GeneratedManifests manifests, AslScenarioA1SourceAttestation attestation) =>
         Build(repositoryRoot, manifests, attestation, ExtensionsComparisonFile, ExtensionsComparisonSha256, ExtensionSubjects,
             "unit steps 20 to 23 Fire extensions review");
+
+    /// <summary>The unit steps 27 and 28 subjects of Heat of Battle, heroes, Battle Hardening, and Leader Creation.</summary>
+    public static AslScenarioA1VerificationBatch BuildHeatOfBattle(string repositoryRoot,
+        GeneratedManifests manifests, AslScenarioA1SourceAttestation attestation) =>
+        Build(repositoryRoot, manifests, attestation, HeatOfBattleComparisonFile, HeatOfBattleComparisonSha256, HeatOfBattleSubjects,
+            "unit steps 27 and 28 Heat of Battle review");
 
     private static AslScenarioA1VerificationBatch Build(string repositoryRoot, GeneratedManifests manifests,
         AslScenarioA1SourceAttestation attestation, string file, string digest,

@@ -48,7 +48,10 @@ public sealed class Board01TerrainCatalogTests
         Assert.Equal("asl.a1.board.exact-case:A1-known-enemy-mmc-mph",
             Assert.Single(enemyResult.ReasonCodes));
 
-        var otherPhase = snapshot with { IsMovementPhase = false };
+        var otherPhase = snapshot with
+        {
+            IsMovementPhase = false
+        };
         var otherResult = await new ScenarioA1BoardObservationProvider(
             new Board01ValidatedSnapshotSource(new StubSource(otherPhase),
                 new Board01TerrainCatalog())).ObserveAsync(Query());
@@ -97,7 +100,10 @@ public sealed class Board01TerrainCatalogTests
             Assert.Equal(candidate.Cases.Single(item => item.Id == caseId).ExpectedDisposition,
                 candidate.Evaluate(caseId, facts).Disposition);
 
-            var omitted = snapshot with { HasNoSpecialModifier = null };
+            var omitted = snapshot with
+            {
+                HasNoSpecialModifier = null
+            };
             Assert.Empty((await Provider(omitted).ObserveAsync(Query())).Observations);
         }
 
@@ -115,13 +121,26 @@ public sealed class Board01TerrainCatalogTests
 
         var stacking = cases.Single(item =>
             item.CaseId == "A1-stacking-equivalents-needed").Snapshot;
-        Assert.Empty((await Provider(stacking with { Additional = stacking.Additional! with
-            { FriendlySquads = 3 } }).ObserveAsync(Query())).Observations);
+        Assert.Empty((await Provider(stacking with
+        {
+            Additional = stacking.Additional! with
+            {
+                FriendlySquads = 3
+            }
+        }).ObserveAsync(Query())).Observations);
 
         var breach = cases.Single(item => item.CaseId == "A1-fortified-breached-entry").Snapshot;
-        Assert.Empty((await Provider(breach with { Additional = breach.Additional! with
-            { HasValidBreachAtCrossedHexsideAndLevel = false } }).ObserveAsync(Query())).Observations);
-        Assert.Empty((await Provider(breach with { IsMovementPhase = true })
+        Assert.Empty((await Provider(breach with
+        {
+            Additional = breach.Additional! with
+            {
+                HasValidBreachAtCrossedHexsideAndLevel = false
+            }
+        }).ObserveAsync(Query())).Observations);
+        Assert.Empty((await Provider(breach with
+        {
+            IsMovementPhase = true
+        })
             .ObserveAsync(Query())).Observations);
 
         foreach (var occupancy in new[]
@@ -129,7 +148,10 @@ public sealed class Board01TerrainCatalogTests
             ScenarioA1BoardOccupancy.ConcealedOrHidden,
             ScenarioA1BoardOccupancy.Unknown,
         })
-            Assert.Empty((await Provider(Snapshot() with { Occupancy = occupancy })
+            Assert.Empty((await Provider(Snapshot() with
+            {
+                Occupancy = occupancy
+            })
                 .ObserveAsync(Query())).Observations);
     }
 
@@ -206,7 +228,9 @@ public sealed class Board01TerrainCatalogTests
                 ScenarioA1OccupiedConclusionResolver.QuestionKind),
             JsonSerializer.SerializeToElement(new
             {
-                unitId = "squad", locationId = "bd01:E4:0", caseId,
+                unitId = "squad",
+                locationId = "bd01:E4:0",
+                caseId,
                 observationVersion = "state-1",
             }), Time);
         DomainEntityResolution Entity(string id) => new(
@@ -309,7 +333,9 @@ public sealed class Board01TerrainCatalogTests
                 ScenarioA1BoardObservationProvider.QueryKind),
             JsonSerializer.SerializeToElement(new
             {
-                unitId = "squad", locationId = "bd01:E4:0", observationVersion = "state-1",
+                unitId = "squad",
+                locationId = "bd01:E4:0",
+                observationVersion = "state-1",
             }), 1);
 
     private sealed class StubSource(ScenarioA1BoardSnapshot snapshot)

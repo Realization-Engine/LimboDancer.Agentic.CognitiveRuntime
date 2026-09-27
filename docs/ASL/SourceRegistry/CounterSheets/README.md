@@ -5,8 +5,8 @@ This folder registers the published counter sheets as the source of printed coun
 | File | Content |
 |---|---|
 | `asl-counter-sheets.scenario-a1.source-record.json` | The source record. Status: `reviewed`. |
-| `scenario-a1.counter-worksheet.csv` | The worksheet: 187 rows for thirteen counters, with no values. |
-| `scenario-a1.counter-transcription.csv` | The worksheet with its values filled in, by Claude on 2026-09-25 from the registered rulebook's charts, and extended on 2026-09-26 for the Fire package (see below). |
+| `scenario-a1.counter-worksheet.csv` | The worksheet: 526 rows for 42 counters, with no values. |
+| `scenario-a1.counter-transcription.csv` | The worksheet with its values filled in, by Claude on 2026-09-25 from the registered rulebook's charts, and extended on 2026-09-26 for the Fire package and the MGs and on 2026-09-27 for Heat of Battle and Leader Creation (see below). |
 
 ## First transcription
 
@@ -17,6 +17,20 @@ No counter artwork, scans, or photographs belong here. VASL piece definitions ar
 ## Fire additions
 
 On 2026-09-26 nine counters were added for the Fire package: the Russian 1st Line HS and the A19.13 Replacement units and leaders, from the same chart. The leaders' values, including broken morale, which the rulebook shows only in counter artwork, were supplied by Dennis Landi from the printed counters (sheet `USR`). He accepted all 130 added rows. The [Scenario A1 Catalog Design](<../../../../src/ASL/docs/ASL Scenario A1 Catalog Design.md>), section 9.2, gives the details.
+
+## MGs
+
+On 2026-09-26 four MG counters were added under sheet `MFG`. No registered source lists their values, so they are manufactured under the user's ruling R0.3. The [Scenario A1 Catalog Design](<../../../../src/ASL/docs/ASL Scenario A1 Catalog Design.md>), section 9.3, gives the details.
+
+## Heat of Battle and Leader Creation additions
+
+On 2026-09-27, 25 counters were added for unit steps 27 and 28 (299 rows):
+
+- The classes Battle Hardening exchanges units for, from the National Capabilities Chart (sheet `NCC`).
+- Every leader grade of both sides, from the Chapter H leader table (p. 331) and the A18.2 Leader Creation Table (sheet `LGR`).
+- A hero of each side, from A15.2 and the Counter Examples (sheet `CEX`).
+
+Under the Deviations, Ordnance, and Vehicles Plan, a separate agent briefed as an ASL rules referee reviewed every row in place of the user; the reviewer column names it, and the source record lists it under `additionalReviewers`. The [Scenario A1 Catalog Design](<../../../../src/ASL/docs/ASL Scenario A1 Catalog Design.md>), section 9.4, gives the details.
 
 ## Transcription worksheet
 

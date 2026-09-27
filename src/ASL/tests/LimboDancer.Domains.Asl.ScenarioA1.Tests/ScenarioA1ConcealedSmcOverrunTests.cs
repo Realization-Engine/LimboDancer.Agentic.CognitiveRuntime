@@ -118,14 +118,20 @@ public sealed class ScenarioA1ConcealedSmcOverrunTests
     private static Dictionary<string, string> Facts() => new(StringComparer.Ordinal)
     {
         ["board"] = "bd01-ground-level-ordinary-building",
-        ["phase"] = "mph", ["attacker"] = "goodOrderUnconcealedNonDummyInfantryMmc",
-        ["entryMode"] = "ordinaryObstacleEntryNotBypass", ["a414Exception"] = "none",
+        ["phase"] = "mph",
+        ["attacker"] = "goodOrderUnconcealedNonDummyInfantryMmc",
+        ["entryMode"] = "ordinaryObstacleEntryNotBypass",
+        ["a414Exception"] = "none",
         ["initialDefenderState"] = "concealed",
         ["revealProvenance"] = "A12.15-immediate-defender-reveal",
-        ["revealedOccupant"] = "oneEnemySmc", ["otherModifier"] = "none",
-        ["leaderExemption"] = "none", ["entryMfCost"] = "2",
-        ["overrunElection"] = "elected", ["ntc"] = "passed",
-        ["remainingMf"] = "atLeastFour", ["additionalDefenderReveal"] = "none",
+        ["revealedOccupant"] = "oneEnemySmc",
+        ["otherModifier"] = "none",
+        ["leaderExemption"] = "none",
+        ["entryMfCost"] = "2",
+        ["overrunElection"] = "elected",
+        ["ntc"] = "passed",
+        ["remainingMf"] = "atLeastFour",
+        ["additionalDefenderReveal"] = "none",
         ["soleEnemySmcOccupancy"] = "verifiedBySuppliedState",
         ["defenderResponseOrImmediateCc"] = "unresolved",
     };
@@ -147,8 +153,10 @@ public sealed class ScenarioA1ConcealedSmcOverrunTests
                 ScenarioA1ConcealedSmcOverrunConclusionResolver.QuestionKind),
             JsonSerializer.SerializeToElement(new
             {
-                unitId = "squad", locationId = "bd01:E4:0",
-                observationVersion = "snapshot-1", caseId,
+                unitId = "squad",
+                locationId = "bd01:E4:0",
+                observationVersion = "snapshot-1",
+                caseId,
             }), Now);
         DomainEntityResolution Entity(string id) => new(
             new DomainEntityQuery("entity-" + id, Tenant, descriptor.Identity,

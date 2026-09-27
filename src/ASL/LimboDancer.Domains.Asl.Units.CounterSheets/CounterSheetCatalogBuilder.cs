@@ -113,10 +113,10 @@ public static class CounterSheetCatalogBuilder
                 diagnostics.Add(UnitDiagnostic.Error("UNIT-CS-006", $"The row's transcriber '{row.Transcriber}' is not the record's '{record.Transcriber}'.", path));
             }
 
-            if (record.Status == CatalogSourceStatus.Reviewed ? row.Reviewer != record.Reviewer : row.Reviewer.Length > 0)
+            if (record.Status == CatalogSourceStatus.Reviewed ? !record.Names(row.Reviewer) : row.Reviewer.Length > 0)
             {
                 diagnostics.Add(UnitDiagnostic.Error("UNIT-CS-006", record.Status == CatalogSourceStatus.Reviewed
-                    ? $"The row's reviewer '{row.Reviewer}' is not the record's '{record.Reviewer}'."
+                    ? $"The row's reviewer '{row.Reviewer}' is not one the record names."
                     : "The row names a reviewer, but the source record is not reviewed.", path));
             }
         }

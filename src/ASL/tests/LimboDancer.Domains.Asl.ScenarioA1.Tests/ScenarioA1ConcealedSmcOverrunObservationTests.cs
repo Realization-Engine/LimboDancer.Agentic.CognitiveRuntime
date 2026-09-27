@@ -74,20 +74,35 @@ public sealed class ScenarioA1ConcealedSmcOverrunObservationTests
         var snapshot = caseId switch
         {
             "A1-concealed-smc-election-unknown" => BeforeNtc(Snapshot()) with
-                { OverrunElection = ScenarioA1OverrunElection.Unknown, Ntc = null },
+            {
+                OverrunElection = ScenarioA1OverrunElection.Unknown,
+                Ntc = null
+            },
             "A1-concealed-smc-declined" => BeforeNtc(Snapshot()) with
-                { OverrunElection = ScenarioA1OverrunElection.Declined, Ntc = null },
+            {
+                OverrunElection = ScenarioA1OverrunElection.Declined,
+                Ntc = null
+            },
             "A1-concealed-smc-ntc-failed" => BeforeNtc(Snapshot()) with
-                { Ntc = ScenarioA1OverrunNtc.Failed },
+            {
+                Ntc = ScenarioA1OverrunNtc.Failed
+            },
             "A1-concealed-smc-mf-insufficient" => BeforeMf(Snapshot()) with
-                { RemainingMf = ScenarioA1OverrunMf.Insufficient },
+            {
+                RemainingMf = ScenarioA1OverrunMf.Insufficient
+            },
             "A1-concealed-smc-another-defender-revealed" => Snapshot() with
-                { AdditionalDefenderReveal = ScenarioA1AdditionalDefenderReveal.AnotherNonDummy,
-                    AdditionalDefenderType = ScenarioA1AdditionalDefenderType.Mmc,
-                    SoleEnemySmcOccupancyVerified = false, DefenderResponseOrImmediateCc = null },
+            {
+                AdditionalDefenderReveal = ScenarioA1AdditionalDefenderReveal.AnotherNonDummy,
+                AdditionalDefenderType = ScenarioA1AdditionalDefenderType.Mmc,
+                SoleEnemySmcOccupancyVerified = false,
+                DefenderResponseOrImmediateCc = null
+            },
             "A1-concealed-smc-response-resolved" => Snapshot() with
-                { DefenderResponseOrImmediateCc = ScenarioA1OverrunResponse.ResolvedWithOutcome,
-                    ResponseOrCcOutcome = "state-source-recorded-outcome" },
+            {
+                DefenderResponseOrImmediateCc = ScenarioA1OverrunResponse.ResolvedWithOutcome,
+                ResponseOrCcOutcome = "state-source-recorded-outcome"
+            },
             _ => throw new InvalidOperationException("Unexpected case."),
         };
         Assert.Single((await Provider(snapshot).ObserveAsync(Query(caseId))).Observations);
@@ -97,16 +112,21 @@ public sealed class ScenarioA1ConcealedSmcOverrunObservationTests
     private static ScenarioA1ConcealedSmcOverrunSnapshot BeforeNtc(
         ScenarioA1ConcealedSmcOverrunSnapshot snapshot) => snapshot with
         {
-            RemainingMf = null, AdditionalDefenderReveal = null, AdditionalDefenderType = null,
-            SoleEnemySmcOccupancyVerified = null, DefenderResponseOrImmediateCc = null,
+            RemainingMf = null,
+            AdditionalDefenderReveal = null,
+            AdditionalDefenderType = null,
+            SoleEnemySmcOccupancyVerified = null,
+            DefenderResponseOrImmediateCc = null,
             ResponseOrCcOutcome = null,
         };
 
     private static ScenarioA1ConcealedSmcOverrunSnapshot BeforeMf(
         ScenarioA1ConcealedSmcOverrunSnapshot snapshot) => snapshot with
         {
-            AdditionalDefenderReveal = null, AdditionalDefenderType = null,
-            SoleEnemySmcOccupancyVerified = null, DefenderResponseOrImmediateCc = null,
+            AdditionalDefenderReveal = null,
+            AdditionalDefenderType = null,
+            SoleEnemySmcOccupancyVerified = null,
+            DefenderResponseOrImmediateCc = null,
             ResponseOrCcOutcome = null,
         };
 
@@ -121,11 +141,17 @@ public sealed class ScenarioA1ConcealedSmcOverrunObservationTests
             ScenarioA1ConcealedSmcOverrunObservationProvider.QueryKind),
         extra ? JsonSerializer.SerializeToElement(new
         {
-            unitId = "squad", locationId = "bd01:E4:0", observationVersion = "snapshot-1",
-            caseId, unreviewed = "yes",
+            unitId = "squad",
+            locationId = "bd01:E4:0",
+            observationVersion = "snapshot-1",
+            caseId,
+            unreviewed = "yes",
         }) : JsonSerializer.SerializeToElement(new
         {
-            unitId = "squad", locationId = "bd01:E4:0", observationVersion = "snapshot-1", caseId,
+            unitId = "squad",
+            locationId = "bd01:E4:0",
+            observationVersion = "snapshot-1",
+            caseId,
         }), 1);
 
     private static ScenarioA1ConcealedSmcOverrunSnapshot Snapshot() => new(

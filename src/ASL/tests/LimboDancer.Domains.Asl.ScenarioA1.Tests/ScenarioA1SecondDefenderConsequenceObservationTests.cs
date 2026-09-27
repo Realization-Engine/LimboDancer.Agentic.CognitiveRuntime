@@ -38,7 +38,8 @@ public sealed class ScenarioA1SecondDefenderConsequenceObservationTests
                 SecondDefenderState = state,
                 SecondRevealOrdinal = state == ScenarioA1SecondDefenderState.KnownSmcNotRevealed
                     ? null : 5,
-                Ntc = ntc, NtcOrdinal = ntc == ScenarioA1OverrunNtc.Unresolved ? null : 1,
+                Ntc = ntc,
+                NtcOrdinal = ntc == ScenarioA1OverrunNtc.Unresolved ? null : 1,
                 MfAtSecondReveal = mf,
             },
         };
@@ -98,8 +99,11 @@ public sealed class ScenarioA1SecondDefenderConsequenceObservationTests
             ScenarioA1SecondDefenderConsequenceObservationProvider.QueryKind),
         JsonSerializer.SerializeToElement(new
         {
-            unitId = "squad", locationId = "bd01:E4:0", previousLocationId = previous,
-            observationVersion = "snapshot-1", caseId,
+            unitId = "squad",
+            locationId = "bd01:E4:0",
+            previousLocationId = previous,
+            observationVersion = "snapshot-1",
+            caseId,
         }), 1);
 
     private static ScenarioA1SecondDefenderConsequenceSnapshot Snapshot() => new(
@@ -110,17 +114,26 @@ public sealed class ScenarioA1SecondDefenderConsequenceObservationTests
                 Board01TerrainCatalog.MetadataGitBlobSha, "E4", 0, null))
         {
             InitialOccupancy = ScenarioA1InitialConcealedOccupancy.Concealed,
-            A1215FirstRevealOccurred = true, FirstRevealedUnitId = "first-smc",
-            FirstRevealOrdinal = 3, FirstRevealedType = ScenarioA1RevealedOccupant.EnemySmc,
-            OverrunElection = ScenarioA1OverrunElection.Elected, ElectionOrdinal = 4,
-            SecondDefenderUnitId = "second-unit", SecondDefenderLocationId = "bd01:E4:0",
+            A1215FirstRevealOccurred = true,
+            FirstRevealedUnitId = "first-smc",
+            FirstRevealOrdinal = 3,
+            FirstRevealedType = ScenarioA1RevealedOccupant.EnemySmc,
+            OverrunElection = ScenarioA1OverrunElection.Elected,
+            ElectionOrdinal = 4,
+            SecondDefenderUnitId = "second-unit",
+            SecondDefenderLocationId = "bd01:E4:0",
             SecondDefenderState = ScenarioA1SecondDefenderState.RevealedSmc,
-            SecondRevealOrdinal = 5, Ntc = ScenarioA1OverrunNtc.Passed, NtcOrdinal = 1,
+            SecondRevealOrdinal = 5,
+            Ntc = ScenarioA1OverrunNtc.Passed,
+            NtcOrdinal = 1,
             MfAtSecondReveal = ScenarioA1OverrunMf.AtLeastFour,
-            IsMovementPhase = true, IsGoodOrderUnconcealedNonDummyInfantryMmc = true,
+            IsMovementPhase = true,
+            IsGoodOrderUnconcealedNonDummyInfantryMmc = true,
             IsAdjacentGroundLevelOrdinaryBuilding = true,
-            IsOrdinaryObstacleEntryNotBypass = true, HasNoA414Exception = true,
-            IsFirstSmcOutsideAfv = true, HasNoSpecialModifier = true,
+            IsOrdinaryObstacleEntryNotBypass = true,
+            HasNoA414Exception = true,
+            IsFirstSmcOutsideAfv = true,
+            HasNoSpecialModifier = true,
             HasNoLeaderExemption = true,
         }, "bd01:D4:0", true, 2, 2, false);
 

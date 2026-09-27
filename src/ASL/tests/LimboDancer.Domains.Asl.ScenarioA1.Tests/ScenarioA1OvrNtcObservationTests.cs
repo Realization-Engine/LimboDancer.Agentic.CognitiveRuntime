@@ -77,8 +77,19 @@ public sealed class ScenarioA1OvrNtcObservationTests
     private static ObservationQuery Query(bool extra = false) => new("query", Tenant, ScenarioA1OvrNtcPackage.Identity,
         new SemanticIdentifier(new DomainId("asl"), ScenarioA1OvrNtcObservationProvider.QueryKind),
         extra
-            ? JsonSerializer.SerializeToElement(new { unitId = "squad", locationId = "bd01:E4:0", observationVersion = "snapshot-1", unreviewed = "yes" })
-            : JsonSerializer.SerializeToElement(new { unitId = "squad", locationId = "bd01:E4:0", observationVersion = "snapshot-1" }), 1);
+            ? JsonSerializer.SerializeToElement(new
+            {
+                unitId = "squad",
+                locationId = "bd01:E4:0",
+                observationVersion = "snapshot-1",
+                unreviewed = "yes"
+            })
+            : JsonSerializer.SerializeToElement(new
+            {
+                unitId = "squad",
+                locationId = "bd01:E4:0",
+                observationVersion = "snapshot-1"
+            }), 1);
 
     /// <summary>The failed branch: an election with four MF left and a failed NTC.</summary>
     private static ScenarioA1OvrNtcSnapshot Snapshot() => new(

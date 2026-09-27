@@ -363,6 +363,8 @@ asl|unit:asl\:prep-fire  { badge: "PREP" bottom-right; }
 asl|unit:asl\:final-fire { badge: "FINAL" bottom-right; }
 /* Defensive First Fire (A8.1): until the end of the DFPh (A3.4). */
 asl|unit:asl\:first-fire { badge: "FIRST" bottom-right; }
+/* A heroic leader (A15.21): he keeps his counter and leadership, marked with a Hero counter. */
+asl|unit:asl\:heroic { stroke: token(warning); stroke-width: 0.09; badge: "HERO" bottom-left; }
 /* A Dummy (A12.11): a concealment counter with no unit beneath; only its owner is sent it. */
 asl|dummy { face-template: "label"; }
 asl|dummy::slot(label) { content: "DUMMY"; font-weight: bold; font-size: 0.24; }

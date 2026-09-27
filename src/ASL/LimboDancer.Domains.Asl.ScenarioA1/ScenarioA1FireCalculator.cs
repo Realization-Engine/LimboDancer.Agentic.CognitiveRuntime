@@ -99,14 +99,18 @@ public static class ScenarioA1FireCalculator
                 continue;
             }
 
-            if (!reference.Definitions.TryGetValue(id, out var definition) || definition.Morale is null || definition.BrokenMorale is null
+            // A hero never breaks, so his Morale Levels are his two sides' (A15.2); every other unit needs its broken one.
+            if (!reference.Definitions.TryGetValue(id, out var definition) || definition.Morale is null
+                || (definition.IsHero ? definition.WoundedMorale is null : definition.BrokenMorale is null)
                 || (definition.IsLeader && definition.Leadership is null))
             {
                 reasons.Add("asl.a1.fire.definition-incomplete:" + id);
                 continue;
             }
 
-            foreach (var next in new[] { ScenarioA1FireReference.HalfSquadOf(id), ScenarioA1FireReference.ReplacementOf(id) }.OfType<string>())
+            // Every unit the attack can turn this one into: its HS, its Replacement, and its Battle Hardened unit (A15.3).
+            foreach (var next in new[] { ScenarioA1FireReference.HalfSquadOf(id), ScenarioA1FireReference.ReplacementOf(id),
+                ScenarioA1FireReference.HardenedOf(id) }.OfType<string>())
             {
                 pending.Push(next);
             }
@@ -333,7 +337,7 @@ public static class ScenarioA1FireCalculator
         // A7.5: a group may span Locations each ADJACENT to another of them; Residual FP never joins a group (A8.22).
         if (attack.FireGroupComplete != true || !locations.Contains(attack.FirerLocationId) || (multi && attack.FirerLocationsAdjacent != true)
             || firers.Any(item => item.Broken == true || (item.UsesSupportWeapon == true && item.Weapons is not { Count: > 0 }))
-            || firerDefinitions.Any(item => item is null || !item.IsMmc || item.Firepower is null || item.Range is null))
+            || firerDefinitions.Any(item => item is null || !(item.IsMmc || item.IsHero) || item.Firepower is null || item.Range is null))
         {
             outside.Add("asl.a1.fire.firer-outside");
         }
@@ -347,7 +351,8 @@ public static class ScenarioA1FireCalculator
         foreach (var (firer, definition) in firers.Zip(firerDefinitions))
         {
             var weapons = firer.Weapons ?? [];
-            if (definition is not null && (weapons.Count > (definition.Kind == "asl:squad" ? 2 : 1)
+            // A15.23: a hero's use of a SW is not reviewed.
+            if (definition is not null && (weapons.Count > (definition.Kind == "asl:squad" ? 2 : definition.IsHero ? 0 : 1)
                 || weapons.Any(weapon => reference.Definitions.GetValueOrDefault(weapon.DefinitionId!) is not { IsMg: true, Firepower: not null, Range: not null } mg
                     || mg.Nationality != definition.Nationality || weapon.Malfunctioned == true || !WeaponMayFire(attack, weapon))))
             {
@@ -449,7 +454,8 @@ public static class ScenarioA1FireCalculator
         || rolls.LeaderLoss?.Values.Any(dice => !Dice(dice, allowEmpty: false)) == true
         || rolls.WoundSeverity?.Values.Any(dr => dr is < 1 or > 6) == true
         || rolls.WeaponSelection?.Values.Any(dr => dr is < 1 or > 6) == true
-        || rolls.FirerSelection?.Values.Any(dr => dr is < 1 or > 6) == true;
+        || rolls.FirerSelection?.Values.Any(dr => dr is < 1 or > 6) == true
+        || rolls.HeatOfBattle?.Values.Any(dice => !Dice(dice, allowEmpty: false)) == true;
 
     /// <summary>Whether a unit may fire in this attack under the fire-phase and First Fire rules (A7.1, A8.1, A8.3, A8.31, A8.4, A9.2).</summary>
     private static bool FirerMayFire(FireAttack attack, FireFirer firer)
@@ -506,10 +512,34 @@ public static class ScenarioA1FireCalculator
             undecided.Add("asl.a1.fire.leaders-interact");
         }
 
-        // A19.13's exception for an underscored Morale Factor is not reviewed.
-        if (units.Any(item => reference.Definitions[item.DefinitionId!] is { IsMmc: true, UnderscoredMorale: not false }))
+        // A19.13's exception for an underscored Morale Factor is not reviewed, for the targets or for FPF firers, whose NMC
+        // can Replace them too.
+        var checkedFirers = attack.FireKind == FinalProtectiveFire ? attack.Firers ?? [] : [];
+        if (units.Select(item => item.DefinitionId).Concat(checkedFirers.Select(item => item.DefinitionId))
+            .Any(id => id is not null && reference.Definitions.TryGetValue(id, out var definition) && definition is { IsMmc: true, UnderscoredMorale: not false }))
         {
             undecided.Add("asl.a1.fire.elr-undecided:underscored-morale");
+        }
+
+        // A15.1: a Green or Conscript unit's Heat of Battle DRM depends on whether it is Inexperienced (A19.2), which the
+        // caller declares; so does an FPF firer's.
+        foreach (var (target, index) in targets.Select((item, index) => (item, index)).Where(pair => pair.item.Dummy != true))
+        {
+            if (ScenarioA1HeatOfBattle.NeedsInexperience(reference.Definitions[target.DefinitionId!]) && target.Inexperienced is null)
+            {
+                undecided.Add($"asl.a1.fire.fact-missing:targets[{index}].inexperienced");
+            }
+        }
+
+        if (attack.FireKind == FinalProtectiveFire)
+        {
+            foreach (var (firer, index) in attack.Firers!.Select((item, index) => (item, index)))
+            {
+                if (ScenarioA1HeatOfBattle.NeedsInexperience(reference.Definitions[firer.DefinitionId!]) && firer.Inexperienced is null)
+                {
+                    undecided.Add($"asl.a1.fire.fact-missing:firers[{index}].inexperienced");
+                }
+            }
         }
 
         // A7.83: a pinned mover takes no FFNAM or FFMO, so one attack on a stack mixing pinned and unpinned movers would
@@ -655,8 +685,10 @@ public static class ScenarioA1FireCalculator
             var original = dice[0] + dice[1];
             var directed = Directors(attack).Any();
 
-            // A7.9: a doubles DR with no directing leader shifts the column; Residual FP is never subject to Cowering (A8.224).
-            var cowered = !residual && dice[0] == dice[1] && !directed;
+            // A7.9: a doubles DR with no directing leader shifts the column; Residual FP is never subject to Cowering (A8.224);
+            // heroes and Fanatic units are not subject to it, but a group with any other member Cowers (A15.2, A15.24, A10.8).
+            var cowered = !residual && dice[0] == dice[1] && !directed
+                && attack.Firers!.Any(item => !reference.Definitions[item.DefinitionId!].IsHero && item.Fanatic != true);
             var inexperienced = (attack.Firers ?? []).Any(item => reference.Definitions[item.DefinitionId!].Class is "green" or "conscript");
             var shift = cowered ? (inexperienced ? 2 : 1) : 0;
 
@@ -682,6 +714,13 @@ public static class ScenarioA1FireCalculator
             if (leadership.UnitId is not null)
             {
                 drm.Add(new FireModifier("leadership:" + leadership.UnitId, leadership.Value, "A7.531"));
+            }
+
+            // A15.24: each hero firing within its Normal Range lowers the group's DR by one, with any leadership DRM.
+            foreach (var hero in (attack.Firers ?? []).Where(item => reference.Definitions[item.DefinitionId!].IsHero
+                && RangeOf(attack, item) <= NormalRange(reference.Definitions[item.DefinitionId!], item)))
+            {
+                drm.Add(new FireModifier("heroic:" + hero.UnitId, -1m, "A15.24"));
             }
 
             // A4.6, A4.61, A8.13: FFNAM unless Assault Movement, and FFMO in Open Ground with no Hindrance, in Defensive
@@ -755,13 +794,14 @@ public static class ScenarioA1FireCalculator
                     && !(definition.Kind == "asl:half-squad" && weapons.Count >= 1);
                 if (inherent)
                 {
-                    var multipliers = Multipliers(range, definition.Range!.Value, vsConcealed, IsFinalFireAgain(attack, firer), sustained: false);
+                    var multipliers = Multipliers(range, NormalRange(definition, firer), vsConcealed, IsFinalFireAgain(attack, firer), sustained: false);
                     if (firer.Pinned == true)
                     {
                         multipliers.Add(new FireModifier("pinned-firer", 0.5m, "A7.8"));
                     }
 
-                    var fp = multipliers.Aggregate((decimal)definition.Firepower!.Value, (value, item) => value * item.Value);
+                    var printed = firer.Wounded == true && definition.WoundedFirepower is { } woundedFp ? woundedFp : definition.Firepower!.Value;
+                    var fp = multipliers.Aggregate((decimal)printed, (value, item) => value * item.Value);
 
                     // A7.36: Assault Fire adds one FP after every other modification, rounded up, but not at Long Range.
                     if (attack.Phase == "AFPh" && definition.AssaultFire == true && range <= definition.Range)
@@ -770,7 +810,7 @@ public static class ScenarioA1FireCalculator
                         fp = Math.Ceiling(fp + 1);
                     }
 
-                    yield return new FirerFirepower(firer.UnitId!, definition.Firepower.Value, multipliers, fp);
+                    yield return new FirerFirepower(firer.UnitId!, printed, multipliers, fp);
                 }
 
                 foreach (var weapon in weapons)
@@ -782,6 +822,10 @@ public static class ScenarioA1FireCalculator
                 }
             }
         }
+
+        /// <summary>A firer's Normal Range: a wounded hero's is his wounded side's (A15.2).</summary>
+        private static int NormalRange(FireDefinition definition, FireFirer firer) =>
+            firer.Wounded == true && definition.WoundedRange is { } wounded ? wounded : definition.Range!.Value;
 
         private List<FireModifier> Multipliers(int range, int normalRange, bool vsConcealed, bool finalFireAgain, bool sustained)
         {
@@ -886,7 +930,11 @@ public static class ScenarioA1FireCalculator
             }
 
             var firers = attack.Firers!.Select(firer => new TargetState(
-                new FireTarget(firer.UnitId, firer.DefinitionId, firer.LocationId, false, firer.Pinned, firer.Concealed, false, false, false, false),
+                new FireTarget(firer.UnitId, firer.DefinitionId, firer.LocationId, false, firer.Pinned, firer.Concealed, false, false, firer.Wounded == true, false)
+                {
+                    Fanatic = firer.Fanatic,
+                    Inexperienced = firer.Inexperienced,
+                },
                 reference.Definitions[firer.DefinitionId!])).ToArray();
             var dice = arithmetic.Dice;
             var original = arithmetic.OriginalDr;
@@ -949,7 +997,8 @@ public static class ScenarioA1FireCalculator
                     return;
                 }
 
-                // A7.301: the # highest drs are eliminated, ties at the cut included; the rest break.
+                // A7.301: the # highest drs are eliminated, ties at the cut included; the rest break, and a unit that cannot
+                // break (a hero or a heroic leader, A15.2) or is already broken suffers Casualty Reduction instead.
                 var ordered = drs.OrderByDescending(item => item.Value).ToArray();
                 var cut = count >= ordered.Length ? int.MinValue : ordered[count - 1].Value;
                 foreach (var (id, dr) in ordered)
@@ -959,7 +1008,7 @@ public static class ScenarioA1FireCalculator
                     {
                         unit.Eliminate("eliminated-kia");
                     }
-                    else if (!unit.Broken)
+                    else if (!unit.Broken && !unit.IsHeroType)
                     {
                         unit.Break("broken-kia");
                     }
@@ -1053,6 +1102,7 @@ public static class ScenarioA1FireCalculator
         private void MoraleOutcome(TargetState unit, IReadOnlyList<int> dice, List<FireModifier> drm, string kind = "MC", bool firingSide = false,
             bool casualty = true)
         {
+            var brokenBefore = unit.Broken;
             var morale = unit.MoraleLevel;
             if (morale is null)
             {
@@ -1064,6 +1114,34 @@ public static class ScenarioA1FireCalculator
             var final = original + (int)drm.Sum(item => item.Value);
             var passed = final <= morale && original != 12;
             string consequence;
+            if (unit.IsHeroType)
+            {
+                // A15.2, A15.21: a hero, or a heroic leader, who fails a MC is wounded, and eliminated if already wounded; he
+                // never breaks, is never pinned by a check, and takes no Heat of Battle.
+                if (passed)
+                {
+                    consequence = "passed";
+                }
+                else if (unit.Wounded)
+                {
+                    unit.Eliminate("eliminated-wounded-hero");
+                    consequence = "eliminated";
+                }
+                else
+                {
+                    // A10.31 EXC: an Original 12 wounds him with +1 to the Wound Severity dr, as if already wounded.
+                    if (!Wound(unit, casualty && original == 12))
+                    {
+                        return;
+                    }
+
+                    consequence = unit.Eliminated ? "eliminated" : "wounded";
+                }
+
+                unit.Checks.Add(new FireCheck(kind, dice.ToArray(), original, drm, final, morale.Value, passed, consequence));
+                return;
+            }
+
             if (original == 12 && casualty && !unit.Broken)
             {
                 // A10.31: a Casualty MC, after any ELR Replacement (A19.13).
@@ -1127,13 +1205,45 @@ public static class ScenarioA1FireCalculator
                 consequence = "passed";
             }
 
-            // A15.1: an Original MC DR of 2 calls for Heat of Battle, which is not reviewed; the record says so (ruling R0.2).
-            if (original == 2)
+            unit.Checks.Add(new FireCheck(kind, dice.ToArray(), original, drm, final, morale.Value, passed, consequence));
+
+            // A15.1: an Original MC DR of 2 calls for a Heat of Battle DR, with the +1 for a unit broken before it or by it. A
+            // unit takes one Heat of Battle DR per attack; a second Original 2 (its LLMC after its MC) is recorded as not
+            // taken (ruling R28.8).
+            if (original == 2 && !unit.Eliminated && ScenarioA1HeatOfBattle.Subject(unit.Definition, heroic: false))
             {
-                unit.Note("heat-of-battle-not-taken");
+                if (unit.HeatOfBattleOutcome is null)
+                {
+                    HeatOfBattle(unit, brokenBefore || unit.Broken);
+                }
+                else
+                {
+                    unit.Note("second-heat-of-battle-not-taken");
+                }
+            }
+        }
+
+        /// <summary>
+        /// The Heat of Battle DR after an Original MC DR of 2 (A15.1 to A15.3): a hero created or a leader made heroic, the
+        /// unit Battle Hardened or made Fanatic; Berserk and Surrender are recorded as not taken (ruling R28.1).
+        /// </summary>
+        private void HeatOfBattle(TargetState unit, bool broken)
+        {
+            if (attack.Rolls!.HeatOfBattle?.TryGetValue(unit.Id, out var dice) != true)
+            {
+                undecided.Add("asl.a1.fire.roll-missing:heatOfBattle:" + unit.Id);
+                return;
             }
 
-            unit.Checks.Add(new FireCheck(kind, dice.ToArray(), original, drm, final, morale.Value, passed, consequence));
+            usedRolls.Add("heatOfBattle:" + unit.Id);
+            var (outcome, reason) = ScenarioA1HeatOfBattle.Resolve(unit.Definition, broken, unit.Target.Inexperienced, unit.Fanatic, dice!, reference.Definitions);
+            if (outcome is null)
+            {
+                undecided.Add(reason!);
+                return;
+            }
+
+            unit.TakeHeatOfBattle(outcome, outcome.HardenedDefinitionId is { } next ? reference.Definitions[next] : null);
         }
 
         private int? Elr(bool firingSide)
@@ -1153,9 +1263,13 @@ public static class ScenarioA1FireCalculator
         {
             // A19.13: Replaced by a broken unit of lesser quality; A19.12: Disrupted when none exists.
             var replacement = ScenarioA1FireReference.ReplacementOf(unit.Definition.Id);
-            if (replacement is null)
+            if (replacement is null && !unit.Fanatic)
             {
                 unit.Disrupt();
+            }
+            else if (replacement is null)
+            {
+                unit.Note("fanatic-not-disrupted");
             }
             else
             {
@@ -1175,7 +1289,7 @@ public static class ScenarioA1FireCalculator
                 var half = ScenarioA1FireReference.HalfSquadOf(unit.Definition.Id)!;
                 var lesser = ScenarioA1FireReference.ReplacementOf(half);
                 unit.ReduceTo(reference.Definitions[lesser ?? half], "casualty-reduced-beyond-elr");
-                if (lesser is null)
+                if (lesser is null && !unit.Fanatic)
                 {
                     unit.Disrupt();
                 }
@@ -1193,7 +1307,8 @@ public static class ScenarioA1FireCalculator
 
         private void PinTaskChecks(IReadOnlyList<TargetState> units)
         {
-            foreach (var unit in CheckOrder(units).Where(unit => !unit.Eliminated && !unit.Broken && !unit.Pinned))
+            // A15.2: a hero, or a heroic leader, is not subject to enforced Pin results, so takes no PTC.
+            foreach (var unit in CheckOrder(units).Where(unit => !unit.Eliminated && !unit.Broken && !unit.Pinned && !unit.IsHeroType))
             {
                 var check = Check(unit, "NTC", "checks", 0, useLeadership: true);
                 if (check is null)
@@ -1264,10 +1379,11 @@ public static class ScenarioA1FireCalculator
                     return;
                 }
 
-                // A10.2: an eliminated leader causes LLMC; an unbroken leader that broke causes LLTC.
+                // A10.2: an eliminated leader causes LLMC; an unbroken leader that broke causes LLTC, which cannot pin a hero
+                // or a heroic leader (A15.2).
                 var eliminated = leader.Eliminated;
                 foreach (var unit in state.Values.Where(unit => unit != leader && !unit.Eliminated && !unit.IsDummy
-                    && (eliminated || !unit.Broken) && unit.MoraleLevel < leaderMorale).ToArray())
+                    && (eliminated || (!unit.Broken && !unit.IsHeroType)) && unit.MoraleLevel < leaderMorale).ToArray())
                 {
                     var check = Check(unit, eliminated ? "LLMC" : "LLTC", "leaderLoss", 0, useLeadership: false);
                     if (check is null)
@@ -1308,8 +1424,9 @@ public static class ScenarioA1FireCalculator
 
         private bool Reduce(TargetState unit, string reason)
         {
-            // A7.302: a HS is eliminated, a squad becomes its HS with the same broken status, a leader is wounded.
-            if (unit.Definition.IsLeader)
+            // A7.302: a HS is eliminated, a squad becomes its HS with the same broken status, a SMC (a leader or a hero) is
+            // wounded (A15.2).
+            if (unit.Definition.IsLeader || unit.Definition.IsHero)
             {
                 return Wound(unit);
             }
@@ -1331,9 +1448,9 @@ public static class ScenarioA1FireCalculator
             return true;
         }
 
-        private bool Wound(TargetState unit)
+        private bool Wound(TargetState unit, bool asIfWounded = false)
         {
-            // A17.11: a Wound Severity dr, +1 if already wounded; 5 or more is mortal, treated as a KIA.
+            // A17.11: a Wound Severity dr, +1 if already wounded (or a hero's Casualty MC, A10.31); 5 or more is mortal.
             if (attack.Rolls!.WoundSeverity?.TryGetValue(unit.Id, out var dr) != true)
             {
                 undecided.Add("asl.a1.fire.roll-missing:woundSeverity:" + unit.Id);
@@ -1341,7 +1458,7 @@ public static class ScenarioA1FireCalculator
             }
 
             usedRolls.Add("woundSeverity:" + unit.Id);
-            if (dr + (unit.Wounded ? 1 : 0) >= 5)
+            if (dr + (unit.Wounded || asIfWounded ? 1 : 0) >= 5)
             {
                 unit.Eliminate("eliminated-mortal-wound");
             }
@@ -1361,7 +1478,8 @@ public static class ScenarioA1FireCalculator
                 .Concat(rolls.LeaderLoss?.Keys.Select(id => "leaderLoss:" + id) ?? [])
                 .Concat(rolls.WoundSeverity?.Keys.Select(id => "woundSeverity:" + id) ?? [])
                 .Concat(rolls.WeaponSelection?.Keys.Select(id => "weaponSelection:" + id) ?? [])
-                .Concat(rolls.FirerSelection?.Keys.Select(id => "firerSelection:" + id) ?? []);
+                .Concat(rolls.FirerSelection?.Keys.Select(id => "firerSelection:" + id) ?? [])
+                .Concat(rolls.HeatOfBattle?.Keys.Select(id => "heatOfBattle:" + id) ?? []);
             return supplied.Where(key => !usedRolls.Contains(key)).Select(key => "asl.a1.fire.extra-roll:" + key).ToList();
         }
 
@@ -1422,13 +1540,40 @@ public static class ScenarioA1FireCalculator
 
         public bool Disrupted { get; private set; } = target.Disrupted == true;
 
+        public bool Fanatic { get; private set; } = target.Fanatic == true;
+
+        public bool Heroic { get; private set; } = target.Heroic == true;
+
+        /// <summary>A hero, or a heroic leader: wounded rather than broken by a failed MC (A15.2, A15.21).</summary>
+        public bool IsHeroType => Definition.IsHero || (Definition.IsLeader && Heroic);
+
+        public HeatOfBattleOutcome? HeatOfBattleOutcome { get; private set; }
+
         private bool Hidden => Target.Concealed == true || Target.Hidden == true;
 
         /// <summary>The Morale Level before this attack, which an unbroken leader's LLTC compares against (A10.2).</summary>
-        public int? InitialMorale { get; } = (target.Broken == true ? definition.BrokenMorale : definition.Morale) - (target.Wounded == true ? 1 : 0);
+        public int? InitialMorale { get; } = Morale(definition, target.Broken == true, target.Wounded == true, target.Fanatic == true, target.Heroic == true);
 
-        /// <summary>The current Morale Level, one lower when wounded (A17.3).</summary>
-        public int? MoraleLevel => (Broken ? Definition.BrokenMorale : Definition.Morale) - (Wounded ? 1 : 0);
+        /// <summary>
+        /// The current Morale Level: one lower when wounded (A17.3); a hero's is printed on his wounded side and never lowered
+        /// (A15.2); a heroic leader's is at least 9 (A15.21: a 10-2 is a 1-4-10 hero); a Fanatic unit's is one higher (A10.8);
+        /// a hero's or heroic leader's never exceeds 10, or 9 if wounded (A15.2).
+        /// </summary>
+        public int? MoraleLevel => Morale(Definition, Broken, Wounded, Fanatic, Heroic);
+
+        private static int? Morale(FireDefinition definition, bool broken, bool wounded, bool fanatic, bool heroic)
+        {
+            int? level = definition.IsHero ? (wounded ? definition.WoundedMorale : definition.Morale)
+                : definition.IsLeader && heroic ? (definition.Morale is { } leader ? Math.Max(leader, 9) - (wounded ? 1 : 0) : null)
+                : (broken ? definition.BrokenMorale : definition.Morale) - (wounded ? 1 : 0);
+            level += fanatic ? 1 : 0;
+            if (level is { } value && (definition.IsHero || (definition.IsLeader && heroic)))
+            {
+                return Math.Min(value, wounded ? 9 : 10);
+            }
+
+            return level;
+        }
 
         /// <summary>The leadership modifier, one worse when wounded (A17.3).</summary>
         public int? Leadership => Definition.Leadership + (Wounded ? 1 : 0);
@@ -1485,8 +1630,55 @@ public static class ScenarioA1FireCalculator
             events.Add(reason);
         }
 
+        /// <summary>
+        /// A Heat of Battle result (A15.21, A15.3): a heroic leader rallies; a Battle Hardened unit is exchanged for an unbroken,
+        /// unpinned unit of the next higher quality; a unit of the highest quality becomes Fanatic.
+        /// </summary>
+        public void TakeHeatOfBattle(HeatOfBattleOutcome outcome, FireDefinition? hardened)
+        {
+            HeatOfBattleOutcome = outcome;
+            events.Add("heat-of-battle:" + outcome.Result);
+            if (outcome.Heroic == true)
+            {
+                Heroic = true;
+                Broken = false;
+                Pinned = false;
+            }
+
+            if (outcome.HeroDefinitionId is { } hero)
+            {
+                events.Add("hero-created:" + hero);
+            }
+
+            if (outcome.Hardening)
+            {
+                // A15.3: exchanged "(even if broken)" for an unbroken, unpinned unit, so no longer Disrupted either; a unit
+                // with no better class keeps its counter (ruling R28.7).
+                Broken = false;
+                Pinned = false;
+                Disrupted = false;
+            }
+
+            if (hardened is not null)
+            {
+                Definition = hardened;
+                events.Add("battle-hardened");
+            }
+
+            if (outcome.Fanatic == true)
+            {
+                Fanatic = true;
+                events.Add("became-fanatic");
+            }
+        }
+
         public FireUnitEffect Effect() => new(Id, Target.DefinitionId ?? DummyDefinition.Id, Definition.Id, RandomSelectionDr, Eliminated,
             Broken && !Eliminated, Pinned && !Broken && !Eliminated, Wounded && !Eliminated, Disrupted && !Eliminated, ConcealmentLost,
-            events.ToArray(), Checks.ToArray());
+            events.ToArray(), Checks.ToArray())
+        {
+            HeatOfBattle = HeatOfBattleOutcome,
+            Fanatic = Fanatic && !Eliminated ? true : null,
+            Heroic = Heroic && !Eliminated ? true : null,
+        };
     }
 }

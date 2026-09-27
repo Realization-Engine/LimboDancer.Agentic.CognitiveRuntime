@@ -37,7 +37,8 @@ public sealed class ScenarioA1SecondDefenderConformanceTests
             SecondDefenderState = secondState,
             SecondRevealOrdinal = secondState == ScenarioA1SecondDefenderState.KnownSmcNotRevealed
                 ? null : 4,
-            Ntc = ntc, NtcOrdinal = ntc == ScenarioA1OverrunNtc.Unresolved ? null : 1,
+            Ntc = ntc,
+            NtcOrdinal = ntc == ScenarioA1OverrunNtc.Unresolved ? null : 1,
             MfAtSecondReveal = mf,
         };
         var provider = new ScenarioA1SecondDefenderObservationProvider(
@@ -97,8 +98,10 @@ public sealed class ScenarioA1SecondDefenderConformanceTests
                 ScenarioA1SecondDefenderObservationProvider.QueryKind),
             JsonSerializer.SerializeToElement(new
             {
-                unitId = "squad", locationId = "bd01:E4:0",
-                observationVersion = "snapshot-1", caseId,
+                unitId = "squad",
+                locationId = "bd01:E4:0",
+                observationVersion = "snapshot-1",
+                caseId,
             }), 1);
 
     private static ScenarioA1SecondDefenderSnapshot Snapshot() => new(
@@ -108,17 +111,27 @@ public sealed class ScenarioA1SecondDefenderConformanceTests
             Board01TerrainCatalog.MetadataGitBlobSha, "E4", 0, null))
     {
         InitialOccupancy = ScenarioA1InitialConcealedOccupancy.Concealed,
-        A1215FirstRevealOccurred = true, FirstRevealedUnitId = "first-smc",
-        FirstRevealOrdinal = 2, FirstRevealedType = ScenarioA1RevealedOccupant.EnemySmc,
-        OverrunElection = ScenarioA1OverrunElection.Elected, ElectionOrdinal = 3,
-        SecondDefenderUnitId = "second-unit", SecondDefenderLocationId = "bd01:E4:0",
+        A1215FirstRevealOccurred = true,
+        FirstRevealedUnitId = "first-smc",
+        FirstRevealOrdinal = 2,
+        FirstRevealedType = ScenarioA1RevealedOccupant.EnemySmc,
+        OverrunElection = ScenarioA1OverrunElection.Elected,
+        ElectionOrdinal = 3,
+        SecondDefenderUnitId = "second-unit",
+        SecondDefenderLocationId = "bd01:E4:0",
         SecondDefenderState = ScenarioA1SecondDefenderState.RevealedSmc,
-        SecondRevealOrdinal = 4, Ntc = ScenarioA1OverrunNtc.Passed, NtcOrdinal = 1,
+        SecondRevealOrdinal = 4,
+        Ntc = ScenarioA1OverrunNtc.Passed,
+        NtcOrdinal = 1,
         MfAtSecondReveal = ScenarioA1OverrunMf.AtLeastFour,
-        IsMovementPhase = true, IsGoodOrderUnconcealedNonDummyInfantryMmc = true,
+        IsMovementPhase = true,
+        IsGoodOrderUnconcealedNonDummyInfantryMmc = true,
         IsAdjacentGroundLevelOrdinaryBuilding = true,
-        IsOrdinaryObstacleEntryNotBypass = true, HasNoA414Exception = true,
-        IsFirstSmcOutsideAfv = true, HasNoSpecialModifier = true, HasNoLeaderExemption = true,
+        IsOrdinaryObstacleEntryNotBypass = true,
+        HasNoA414Exception = true,
+        IsFirstSmcOutsideAfv = true,
+        HasNoSpecialModifier = true,
+        HasNoLeaderExemption = true,
     };
 
     private static DomainConclusionContext Context(DomainPackageDescriptor descriptor,
@@ -129,8 +142,10 @@ public sealed class ScenarioA1SecondDefenderConformanceTests
                 ScenarioA1SecondDefenderConclusionResolver.QuestionKind),
             JsonSerializer.SerializeToElement(new
             {
-                unitId = "squad", locationId = "bd01:E4:0",
-                observationVersion = "snapshot-1", caseId,
+                unitId = "squad",
+                locationId = "bd01:E4:0",
+                observationVersion = "snapshot-1",
+                caseId,
             }), Now);
         DomainEntityResolution Entity(string id) => new(
             new DomainEntityQuery("entity-" + id, Tenant, descriptor.Identity,

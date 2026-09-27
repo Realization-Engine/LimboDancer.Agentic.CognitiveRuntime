@@ -191,6 +191,26 @@ public sealed class LiveRecordTests
     }
 
     [Fact]
+    public void AReplacedOrCreatedUnitGainsNoFreshMfAndAReplacementKeepsTheSw()
+    {
+        var clear = new Dictionary<string, ConditionState> { [Conditions.Broken] = ConditionState.False };
+
+        // A15.3, A4.2: a Battle Hardened mover is a Replacement: it has spent what g1 spent, and keeps g1's LMG.
+        var hardened = Project(With(9, Step("m1", G1, "bd01:D5:0", 1), ("l1", "lineage", new LineageRecorded(LineageAction.Replaced, G1,
+            [new NewInstance("g1-e", "asl:squad", "attacker-elite-squad", "german", null, null, clear)]))));
+        Assert.False(hardened.HasErrors, string.Join(" ", hardened.Diagnostics));
+        Assert.Equal((1, false), (hardened.Current!.Unit("g1-e")!.MfSpent, hardened.Current.Unit("g1-e")!.MovementEnded));
+        Assert.Equal("g1-e", hardened.Current.Equipment.Single(item => item.Id == "g-lmg").Holding!.Holder);
+        Assert.Equal(["g1-e"], hardened.Current.Movement!.Members);
+
+        // A15.21: a hero created in his side's MPh moves no further that phase.
+        var hero = Project(With(9, Step("m1", G1, "bd01:D5:0", 1), ("h1", "instance-created", new InstanceCreated(
+            new NewInstance("g1-hero", "asl:hero", "attacker-hero", "german", new MapPosition(D5), null, clear)))));
+        Assert.False(hero.HasErrors, string.Join(" ", hero.Diagnostics));
+        Assert.True(hero.Current!.Unit("g1-hero")!.MovementEnded);
+    }
+
+    [Fact]
     public void ResidualFpIsTheFireRecordsValueAndOnlyALargerCounterReplacesIt()
     {
         var placed = Project(With(9, Step("m1", G1, "bd01:D5:0", 1), Roll("x-roll-1", 3, 4), Fire("f1", "x-roll-1", 1, 4),

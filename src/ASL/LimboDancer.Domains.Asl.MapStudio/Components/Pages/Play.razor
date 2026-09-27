@@ -820,7 +820,8 @@ else if (state is not null)
 
     /// <summary>The Locations that hold active units of the firing side.</summary>
     private IEnumerable<string> FireLocations(string side) => state is null ? []
-        : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && Library.Vocabulary.IsA(unit.Kind, "asl:mmc"))
+        : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side
+            && (Library.Vocabulary.IsA(unit.Kind, "asl:mmc") || unit.Kind == "asl:hero"))
             .Select(unit => state.Location(unit.Id)?.Location.ToString())
             .OfType<string>().Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal);
 
@@ -1001,7 +1002,7 @@ else if (state is not null)
         {
             results.Add("eliminated");
         }
-        else if (effect is { } changed && changed.FinalDefinitionId != changed.DefinitionId)
+        else if (effect is { } changed && changed.FinalDefinitionId != changed.DefinitionId && arithmetic.HeatOfBattle?.HardenedDefinitionId != changed.FinalDefinitionId)
         {
             results.Add($"now {changed.FinalDefinitionId}");
         }
@@ -1011,17 +1012,61 @@ else if (state is not null)
             results.Add("wounded");
         }
 
-        if (arithmetic.HeatOfBattleNotTaken)
+        if (arithmetic.HeatOfBattle is { } heat)
         {
-            results.Add("Heat of Battle not taken (R0.2)");
+            results.Add(HeatOfBattleText(heat));
         }
 
-        if (arithmetic.LeaderCreationNotTaken)
+        if (arithmetic.LeaderCreation is { } creation)
         {
-            results.Add("Leader Creation not taken (R19.4)");
+            var created = creation.LeaderDefinitionId is { } leader2 ? $"creates {leader2}" : "creates no leader";
+            results.Add($"Leader Creation dr {creation.Dr}{ModifierText(creation.Drm)} = Final dr {creation.FinalDr}: {created} (A18.2)");
         }
 
         return $"{who}: DR {string.Join(", ", arithmetic.Dice)} = {arithmetic.OriginalDr}{drm} = Final DR {arithmetic.FinalDr} against {arithmetic.MoraleLevel}: {string.Join(", ", results)}";
+    }
+
+    private static string ModifierText(IEnumerable<FireModifier> drm) =>
+        string.Concat(drm.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({item.Name}, {item.Rule})"));
+
+    /// <summary>
+    /// A Heat of Battle DR in words, for example "Heat of Battle DR 2, 3 = 5 + 2 (nationality:russian, A15.1) = Final DR 7: Battle Hardened into
+    /// defender-elite-squad".
+    /// </summary>
+    private static string HeatOfBattleText(HeatOfBattleOutcome heat)
+    {
+        List<string> parts = [];
+        if (heat.HeroDefinitionId is { } hero)
+        {
+            parts.Add($"creates a hero ({hero})");
+        }
+
+        if (heat.Heroic == true)
+        {
+            parts.Add("the leader becomes heroic");
+        }
+
+        if (heat.HardenedDefinitionId is { } hardened)
+        {
+            parts.Add($"Battle Hardened into {hardened}");
+        }
+
+        if (heat.Fanatic == true)
+        {
+            parts.Add("becomes Fanatic");
+        }
+
+        if (heat.Result is HeatOfBattleOutcome.BerserkNotTaken or HeatOfBattleOutcome.SurrenderNotTaken)
+        {
+            parts.Add(heat.Result == HeatOfBattleOutcome.BerserkNotTaken ? "Berserk, not taken until Close Combat is built" : "Surrender, not taken until capture is built");
+        }
+
+        if (parts.Count == 0)
+        {
+            parts.Add("no change");
+        }
+
+        return $"Heat of Battle DR {string.Join(", ", heat.Dice)} = {heat.OriginalDr}{ModifierText(heat.Drm)} = Final DR {heat.FinalDr}: {string.Join(", ", parts)} (A15.1)";
     }
 
     private static string Number(decimal value) => value.ToString("0.##", CultureInfo.InvariantCulture);
@@ -1034,7 +1079,7 @@ else if (state is not null)
         {
             parts.Add("eliminated");
         }
-        else if (effect.FinalDefinitionId != effect.DefinitionId)
+        else if (effect.FinalDefinitionId != effect.DefinitionId && effect.HeatOfBattle?.HardenedDefinitionId != effect.FinalDefinitionId)
         {
             parts.Add($"now {effect.FinalDefinitionId}");
         }
@@ -1046,6 +1091,11 @@ else if (state is not null)
             {
                 parts.Add(name);
             }
+        }
+
+        if (effect.HeatOfBattle is { } heat)
+        {
+            parts.Add(HeatOfBattleText(heat));
         }
 
         return parts.Count == 0 ? "unaffected" : string.Join(", ", parts);

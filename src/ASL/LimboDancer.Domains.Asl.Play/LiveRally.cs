@@ -47,7 +47,10 @@ public static class LiveRally
             unit.Side == state.PhasingSide ? "phasing" : "non-phasing",
             new RallyUnit(unit.Id, unit.Definition.Definition, at.ToString(), Is(unit, Conditions.Broken), Is(unit, Conditions.Disrupted),
                 Is(unit, Conditions.Wounded), Is(unit, Conditions.DesperationMorale), Is(unit, Conditions.Concealed),
-                state.RallyAttemptsThisPlayerTurn.Contains(unit.Id), state.RepairsThisPhase.Contains(unit.Id)),
+                state.RallyAttemptsThisPlayerTurn.Contains(unit.Id), state.RepairsThisPhase.Contains(unit.Id))
+            {
+                Fanatic = Is(unit, Conditions.Fanatic) ? true : null,
+            },
             leader is null ? null : new RallyLeader(leader.Id, leader.Definition!.Definition, state.Location(leader.Id)?.Location.ToString(),
                 Is(leader, Conditions.Broken), Is(leader, Conditions.Wounded), Is(leader, Conditions.Concealed)),
             at.ToString(),
@@ -65,7 +68,9 @@ public static class LiveRally
         ArgumentNullException.ThrowIfNull(rally);
         ArgumentNullException.ThrowIfNull(rolls);
         IReadOnlyList<int>? dice = null;
+        IReadOnlyList<int>? heat = null;
         int? severity = null;
+        int? creation = null;
         foreach (var (key, id) in rally.Rolls)
         {
             if (!rolls.TryGetValue(id, out var roll) || roll.Sides != 6)
@@ -81,12 +86,22 @@ public static class LiveRally
                 case "woundSeverity" when roll.Count == 1:
                     severity = roll.Values[0];
                     break;
+                case "heatOfBattle" when roll.Count == 2:
+                    heat = roll.Values;
+                    break;
+                case "leaderCreation" when roll.Count == 1:
+                    creation = roll.Values[0];
+                    break;
                 default:
                     return null;
             }
         }
 
-        return new RallyRolls(dice, severity);
+        return new RallyRolls(dice, severity)
+        {
+            HeatOfBattle = heat,
+            LeaderCreation = creation,
+        };
     }
 
     private static bool Is(UnitInstance unit, string condition) => GameState.Condition(unit, condition) == ConditionState.True;

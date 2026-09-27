@@ -1,10 +1,10 @@
 # ASL Unit Deviations, Ordnance, and Vehicles Plan
 
-**Status:** Draft of 2026-09-27, for the user's approval. Nothing here is built. It plans the removal of the three recorded deviations of steps 19 to 23, then unit steps 24 (ordnance) and 25 (vehicles).
+**Status:** Approved by the user on 2026-09-27 (order, rulings, and autonomous passes). Pass 1 (steps 26 to 28) is built; passes 2 to 4 are not. It plans the removal of the three recorded deviations of steps 19 to 23, then unit steps 24 (ordnance) and 25 (vehicles).
 
 **Date:** 2026-09-27
 
-**Requirements:** [ASL Unit Requirements](<LimboDancer.Agentic.CognitiveRuntime ASL Unit Requirements.md>), section 13, steps 24 and 25 (acceptance U28, U29); new steps 26 to 30 are proposed here and enter the requirements when this plan is accepted.
+**Requirements:** [ASL Unit Requirements](<LimboDancer.Agentic.CognitiveRuntime ASL Unit Requirements.md>), section 13, steps 24 and 25 (acceptance U28, U29); steps 26 to 30 (acceptance U30 to U34) were added to it when this plan was accepted.
 
 **Related documents:** the [ASL Unit Rally and Fire Extensions Plan](<ASL Unit Rally and Fire Extensions Plan.md>) (sections 9 and 10 outline steps 24 and 25), the [ASL Unit Backlog](<ASL Unit Backlog.md>), and the [ASL Unit Rally and Fire Extensions in Live Play Design](<ASL Unit Rally and Fire Extensions in Live Play Design.md>).
 
@@ -110,6 +110,13 @@ The second-pass reviewer checks each against the rule text before any code; the 
 | R27.1 | Where do created leaders' values come from? | The counter pages and Chapter H; manufactured under R0.3 where no page prints them. |
 | R28.1 | May Heat of Battle be taken in part before Close Combat exists? | Yes: Hero Creation and Battle Hardening are taken; Berserk and Surrender are recorded as not taken until step 30. |
 | R28.2 | Which exemptions of A15.1 apply to the built units? | All that name built units (crews, heroes, already berserk); the rest (Cavalry, boats, Human Wave) name nothing that exists and are recorded as such. |
+| R27.2 | May the owner decline the Leader Creation dr? | Added in pass 1: no; it is always rolled, and declining it is in the backlog. |
+| R28.3 | What does a hero do in the built rules? | Added in pass 1: fires 1-4-9 (wounded 1-3-8) with the -1 heroic DRM at Normal Range (A15.24); is not Cowering alone; a failed MC wounds, then eliminates him (A15.2); SW use (A15.23) waits for review. |
+| R28.4 | What is a heroic leader? | Added in pass 1: he keeps his counter and leadership, rallies, has a Morale Level of at least 9, and is wounded rather than broken by a failed MC (A15.21). |
+| R28.5 | May the owner refuse Battle Hardening? | Added in pass 1: no; it is always taken, and refusing it is in the backlog. |
+| R28.6 | Which unit is "the next higher quality" where several qualify? | Added in pass 1: the same size, no printed number lower, and the least gain: the smallest summed increase of the printed factors, then the fewest added capabilities. A Russian Conscript becomes NKVD 2nd Line (A25.25); an elite or NKVD MMC, or a 10-3, becomes Fanatic (A15.3, A10.8). |
+| R28.7 | What does a Battle Hardening result do to a broken, pinned, or Disrupted unit, and when is a unit "broken" for the Heat of Battle DRM? | Added after the pass 1 review: the unit is exchanged "(even if broken)" for an unbroken, unpinned unit, so it is also no longer Disrupted, and a unit with no better class is unbroken and unpinned too (A15.3); on a rally, a Battle Hardening or heroic result rallies the unit though the Rally DR failed (A15.21). The +1 for a broken unit applies to a unit broken before the MC or by it. |
+| R28.8 | May a unit take two Heat of Battle DRs in one attack (an Original 2 on its MC, then on its LLMC)? | Added after the pass 1 live review: no; the second is recorded as not taken, and taking it is in the backlog. |
 | R29.1 | Close Combat scope? | Infantry against Infantry with Ambush and Melee; vehicles and Hand-to-Hand out, in the backlog. |
 | R30.1 | Capture scope? | Surrender, prisoners with a guard, and No Quarter as Scenario A1's sides need; prisoner movement, escape, and interrogation out, in the backlog. |
 | R24.1 | Which Guns? | One German and one Russian Gun that fire HE at Infantry, chosen from Chapter H in review. |

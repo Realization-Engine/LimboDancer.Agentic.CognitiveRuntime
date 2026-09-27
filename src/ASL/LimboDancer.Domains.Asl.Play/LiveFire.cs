@@ -14,7 +14,7 @@ namespace LimboDancer.Domains.Asl.Play;
 public static class LiveFire
 {
     public const string Catalog = "asl-scenario-a1";
-    public const string CatalogVersion = "1.2.0";
+    public const string CatalogVersion = "1.3.0";
 
     public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
@@ -138,6 +138,8 @@ public static class LiveFire
                 FinalFireMarked = state.Phase == "mph" && Is(unit, Conditions.FinalFire) ? true : null,
                 Weapons = used,
                 UsesInherentFp = withoutInherent?.Contains(unit.Id) == true ? false : null,
+                Fanatic = Is(unit, Conditions.Fanatic) ? true : null,
+                Wounded = Is(unit, Conditions.Wounded) ? true : null,
             });
         }
 
@@ -158,9 +160,7 @@ public static class LiveFire
             null,
             state.ScenarioMonth,
             null,
-            [.. targets.Select(unit => new FireTarget(unit.Id, unit.Definition?.Definition, target.ToString(), Is(unit, Conditions.Broken),
-                Is(unit, Conditions.Pinned), Is(unit, Conditions.Concealed), Is(unit, Conditions.Hidden), unit.Kind == UnitKinds.Dummy,
-                Is(unit, Conditions.Wounded), Is(unit, Conditions.Disrupted)))],
+            [.. targets.Select(unit => Target(unit, target))],
             targetSide is null ? null : state.Side(targetSide)?.Elr,
             null)
         {
@@ -187,9 +187,7 @@ public static class LiveFire
             .Where(unit => unit.Status == InstanceStatus.Active && movement.Movers.Contains(unit.Id)).OrderBy(unit => unit.Id, StringComparer.Ordinal)];
         var targetSide = state.PhasingSide;
         return (new FireAttack("MPh", "non-phasing", null, null, target.ToString(), null, null, null, null, null, state.ScenarioMonth, null,
-            [.. targets.Select(unit => new FireTarget(unit.Id, unit.Definition?.Definition, target.ToString(), Is(unit, Conditions.Broken),
-                Is(unit, Conditions.Pinned), Is(unit, Conditions.Concealed), Is(unit, Conditions.Hidden), unit.Kind == UnitKinds.Dummy,
-                Is(unit, Conditions.Wounded), Is(unit, Conditions.Disrupted)))],
+            [.. targets.Select(unit => Target(unit, target))],
             state.Side(targetSide)?.Elr, null)
         {
             FireKind = ScenarioA1FireCalculator.ResidualFire,
@@ -211,6 +209,7 @@ public static class LiveFire
         Dictionary<string, IReadOnlyList<int>>? checks = null;
         Dictionary<string, IReadOnlyList<int>>? leaderLoss = null;
         Dictionary<string, int>? wounds = null;
+        Dictionary<string, IReadOnlyList<int>>? heat = null;
 
         // A selection roll names the units it selects among, one die each, in order.
         static bool Select(ref Dictionary<string, int>? into, string ids, DiceRolled roll)
@@ -278,6 +277,9 @@ public static class LiveFire
                 case "woundSeverity" when roll.Count == 1:
                     (wounds ??= new(StringComparer.Ordinal))[unit] = roll.Values[0];
                     break;
+                case "heatOfBattle" when roll.Count == 2:
+                    (heat ??= new(StringComparer.Ordinal))[unit] = roll.Values;
+                    break;
                 default:
                     return null;
             }
@@ -287,10 +289,21 @@ public static class LiveFire
         {
             WeaponSelection = weaponSelection,
             FirerSelection = firerSelection,
+            HeatOfBattle = heat,
         };
     }
 
     private static bool Is(IGameObject item, string condition) => GameState.Condition(item, condition) == ConditionState.True;
+
+    /// <summary>A unit in the target Location, with the Fanatic (A10.8) and heroic (A15.21) states the Fire package reads.</summary>
+    private static FireTarget Target(UnitInstance unit, BoardLocation at) =>
+        new(unit.Id, unit.Definition?.Definition, at.ToString(), Is(unit, Conditions.Broken),
+            Is(unit, Conditions.Pinned), Is(unit, Conditions.Concealed), Is(unit, Conditions.Hidden), unit.Kind == UnitKinds.Dummy,
+            Is(unit, Conditions.Wounded), Is(unit, Conditions.Disrupted))
+        {
+            Fanatic = Is(unit, Conditions.Fanatic) ? true : null,
+            Heroic = Is(unit, Conditions.Heroic) ? true : null,
+        };
 
     // A7.1: a unit fires in one fire phase per Player Turn; A7.531: a directing leader is marked too.
     private static bool Fired(IGameObject item) => Is(item, Conditions.PrepFire) || Is(item, Conditions.FinalFire);

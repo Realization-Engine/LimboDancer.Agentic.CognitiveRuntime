@@ -258,6 +258,7 @@ public sealed partial class GamePlanner
                 "firerSelection" => (selected.Length, "fire-firer-selection"),
                 "checks" => (2, "fire-check"),
                 "leaderLoss" => (2, "fire-leader-loss"),
+                "heatOfBattle" => (2, "fire-heat-of-battle"),
                 _ => (1, "fire-wound-severity"),
             };
             var drawn = draw(new RollRequest(count, 6));
@@ -284,6 +285,7 @@ public sealed partial class GamePlanner
                 "firerSelection" => rolls with { FirerSelection = Selection(rolls.FirerSelection) },
                 "checks" => rolls with { Checks = Add(rolls.Checks, unit, drawn.Values) },
                 "leaderLoss" => rolls with { LeaderLoss = Add(rolls.LeaderLoss, unit, drawn.Values) },
+                "heatOfBattle" => rolls with { HeatOfBattle = Add(rolls.HeatOfBattle, unit, drawn.Values) },
                 _ => rolls with { WoundSeverity = Add(rolls.WoundSeverity, unit, drawn.Values[0]) },
             };
         }
@@ -316,7 +318,7 @@ public sealed partial class GamePlanner
         {
             var target = facts.Targets!.First(item => item.UnitId == effect.UnitId);
             var attackedBroken = target.Broken == true && desperate(target.Concealed == true || target.Hidden == true || target.Dummy == true);
-            if (EffectEvent(state, effect, attemptId, attackedBroken) is { } payload)
+            foreach (var payload in EffectEvents(state, effect, attemptId, attackedBroken))
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, payload.Type, payload.Payload, package, null, [fireId]));
             }
@@ -324,7 +326,7 @@ public sealed partial class GamePlanner
 
         foreach (var effect in resolution.FirerEffects ?? [])
         {
-            if (EffectEvent(state, effect, attemptId, false) is { } payload)
+            foreach (var payload in EffectEvents(state, effect, attemptId, false))
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, payload.Type, payload.Payload, package, null, [fireId]));
             }
@@ -438,6 +440,44 @@ public sealed partial class GamePlanner
     /// The event that records one unit's effect: an elimination, a Reduction or Replacement, or new conditions. A unit that
     /// breaks, or that is attacked while broken by enough FP, is under DM (A10.62).
     /// </summary>
+    private static IEnumerable<(string Type, EventPayload Payload)> EffectEvents(GameState state, FireUnitEffect effect, string attemptId,
+        bool attackedWhileBroken)
+    {
+        if (EffectEvent(state, effect, attemptId, attackedWhileBroken) is { } own)
+        {
+            yield return own;
+        }
+
+        // A15.21: a hero created by Heat of Battle, in the unit's Location, sharing its fire status; a hero created from a
+        // Fanatic unit is Fanatic (A10.8).
+        if (effect.HeatOfBattle?.HeroDefinitionId is { } hero && state.Unit(effect.UnitId) is { } creator)
+        {
+            yield return ("instance-created", new InstanceCreated(HeroOf(creator, hero, attemptId)));
+        }
+    }
+
+    /// <summary>A hero a unit creates (A15.21): unbroken and known, with the unit's fire markers and Fanaticism.</summary>
+    private static NewInstance HeroOf(UnitInstance creator, string hero, string attemptId)
+    {
+        var conditions = new Dictionary<string, ConditionState>(StringComparer.Ordinal)
+        {
+            [Conditions.Broken] = ConditionState.False,
+            [Conditions.Pinned] = ConditionState.False,
+            [Conditions.Wounded] = ConditionState.False,
+            [Conditions.Concealed] = ConditionState.False,
+            [Conditions.Hidden] = ConditionState.False,
+        };
+        foreach (var marker in new[] { Conditions.PrepFire, Conditions.FirstFire, Conditions.FinalFire, Conditions.Fanatic })
+        {
+            if (GameState.Condition(creator, marker) == ConditionState.True)
+            {
+                conditions[marker] = ConditionState.True;
+            }
+        }
+
+        return new NewInstance($"{attemptId}-{creator.Id}-hero", "asl:hero", hero, creator.Side, creator.Position, null, conditions);
+    }
+
     private static (string Type, EventPayload Payload)? EffectEvent(GameState state, FireUnitEffect effect, string attemptId, bool attackedWhileBroken)
     {
         var unit = state.Unit(effect.UnitId)!;
@@ -470,9 +510,27 @@ public sealed partial class GamePlanner
             conditions[Conditions.Hidden] = ConditionState.False;
         }
 
+        // A10.8, A15.3: Fanaticism, once gained, lasts; A15.21: a heroic leader.
+        if (effect.Fanatic == true)
+        {
+            Set(Conditions.Fanatic, true);
+        }
+
+        if (effect.Heroic == true)
+        {
+            Set(Conditions.Heroic, true);
+        }
+
+        // A15.3: a Battle Hardened unit is unbroken, so no longer under DM; A15.21: nor is a leader made heroic.
+        if (effect.HeatOfBattle?.Hardening == true || effect.HeatOfBattle?.Heroic == true)
+        {
+            Set(Conditions.DesperationMorale, false);
+        }
+
         if (effect.FinalDefinitionId != effect.DefinitionId)
         {
-            // A7.302: Casualty Reduction makes a HS of the same broken status; A19.13: Replacement by a lesser unit.
+            // A7.302: Casualty Reduction makes a HS of the same broken status; A19.13: Replacement by a lesser unit; A15.3:
+            // Battle Hardening by an unbroken, unpinned unit of the next higher quality.
             var reference = FireReference.Value.Definitions[effect.FinalDefinitionId];
             var reduced = unit.Kind == "asl:squad" && reference.Kind == "asl:half-squad";
             var produced = unit.Conditions.Where(item => item.Key != Conditions.Concealed && item.Key != Conditions.Hidden)
@@ -482,7 +540,10 @@ public sealed partial class GamePlanner
                 produced[name] = value;
             }
 
-            produced[Conditions.Concealed] = ConditionState.False;
+            // A12.14: a unit that passed its MC and was Battle Hardened keeps "?" unless the attack cost it; any other
+            // Reduction or Replacement loses it.
+            var hardened = effect.HeatOfBattle?.HardenedDefinitionId == effect.FinalDefinitionId;
+            produced[Conditions.Concealed] = hardened && !effect.ConcealmentLost ? GameState.Condition(unit, Conditions.Concealed) : ConditionState.False;
             produced[Conditions.Hidden] = ConditionState.False;
             return ("lineage", new LineageRecorded(reduced ? LineageAction.Reduced : LineageAction.Replaced, [unit.Id],
                 [new NewInstance($"{attemptId}-{unit.Id}", reference.Kind, reference.Id, unit.Side, unit.Position, null, produced)]));

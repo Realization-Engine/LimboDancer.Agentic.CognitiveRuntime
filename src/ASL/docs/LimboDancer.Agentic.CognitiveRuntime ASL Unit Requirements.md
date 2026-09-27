@@ -379,6 +379,16 @@ Later candidates, not yet sequenced: revisiting the Java VASL oracle tool, which
 
     Done for steps 19 to 23 together: the review sitting in the [Scenario A1 Rally Review](<Scenario A1 Rally Review 2026-09-26.md>) and the [Scenario A1 Fire Review](<Scenario A1 Fire Review 2026-09-26.md>), section "Revision at unit steps 19 to 23", and the game model, actions, and Play page in the [ASL Unit Rally and Fire Extensions in Live Play Design](<ASL Unit Rally and Fire Extensions in Live Play Design.md>). U21 to U27 pass in the Play tests, and on the Play page for a rally, a MG in a fire group removing a Dummy, and a move under Defensive First Fire with Residual FP. Recorded deviations: Heat of Battle and Leader Creation are not taken (R0.2, R19.4), and a moving stack is not split when a mover breaks or pins.
 
+26. **Stack splitting:** a moving stack may break up and continue separately, and no other unit moves until every member of the stack has ended its MPh (A4.2, p. 49); a member broken or pinned by fire ends its move, and a member Reduced to a HS is followed by the HS. Designed in the [ASL Unit Deviations, Ordnance, and Vehicles Plan](<ASL Unit Deviations, Ordnance, and Vehicles Plan.md>), section 4, ruling R26.1. Acceptance: U30.
+27. **Leader Creation:** the first MMC Self-Rally of a side's own RPh that rolls an Original 2 rallies the unit and calls for a Leader Creation dr (A18.11, A18.2, p. 85), which may create a 6+1 to 8-1 leader of the unit's nationality. Designed in the plan, section 5, rulings R27.1 and R27.2. Acceptance: U31.
+28. **Heat of Battle, heroes, and Battle Hardening:** an Original MC or Rally (not Self-Rally) DR of 2 calls for a Heat of Battle DR with its DRM (A15.1, p. 83): a hero is created or a leader made heroic (A15.2 to A15.24), a unit is Battle Hardened or made Fanatic (A15.3, A10.8, A25.25), and Berserk and Surrender are recorded as not taken until step 30. Catalog 1.3.0 adds the leader grades, heroes, and the classes Battle Hardening needs. Designed in the plan, section 6, rulings R28.1 to R28.6. Acceptance: U32.
+29. **Close Combat:** Infantry against Infantry in one Location in the CCPh, with Ambush, Melee, and leaders (A11, pp. 72 to 76), and Advance into an enemy Location in the APh (A4.7). Designed in the plan, section 7, ruling R29.1. Acceptance: U33.
+30. **Berserk, Surrender, and capture:** Berserk (A15.4 to A15.46, pp. 83 to 84) and Surrender with capture and prisoners (A15.5, p. 84; A20.1 to A20.5, pp. 86 to 87); the Heat of Battle deviation is removed. Designed in the plan, section 8, ruling R30.1. Acceptance: U34.
+
+    Steps 26 to 30, then 24 and 25, are built in four passes under the plan, section 3, with a second-pass reviewer in place of the user's review; each pass merges when the local test run and the Docker check pass.
+
+    Done for steps 26 to 28 together (pass 1): the review in the [Scenario A1 Heat of Battle Review](<Scenario A1 Heat of Battle Review 2026-09-27.md>), with the referee's and the table player's findings, catalog 1.3.0, and the game model, records, and Play page in the [ASL Unit Deviations Pass 1 Design](<ASL Unit Deviations Pass 1 Design.md>). U30 to U32 pass in the Units and Play tests. Step 28 is partial by design: Berserk and Surrender are recorded as not taken until step 30. What the pass leaves out is in the [ASL Unit Backlog](<ASL Unit Backlog.md>), sections 1 and 10.
+
 ## 14. Acceptance scenarios
 
 - **U1, definition lookup.** Given the registered catalog, a lookup for a squad of a given nationality, class, and date returns its printed values with their source, and a lookup outside its applicability returns an explicit miss.
@@ -411,6 +421,11 @@ Later candidates, not yet sequenced: revisiting the Java VASL oracle tool, which
 - **U27, support weapons.** A squad firing its possessed LMG in a fire group adds the MG's FP and keeps its inherent FP; an Original DR at the MG's breakdown number malfunctions it; a multiple ROF result gives the MG a further attack; Repair in the RPh succeeds on a dr at or below the repair number and eliminates the weapon on a 6.
 - **U28, ordnance.** Outlined only: a Gun firing HE at Infantry records its To Hit arithmetic and its IFT effect. Detailed when step 24 is reviewed.
 - **U29, vehicles.** Outlined only: a vehicle's MG fires on the IFT, and Infantry fire at an unarmored vehicle uses the IFT Vehicle line with a collateral attack on a CE crew. Detailed when step 25 is reviewed.
+- **U30, stack splitting.** A two-squad stack loses one squad to Defensive First Fire and the other moves on; the stack's move ends only when both have ended, and another stack is refused until then.
+- **U31, Leader Creation.** A first MMC Self-Rally on 1, 1 rallies the squad and creates the leader the Leader Creation dr gives; replay recreates it without dice.
+- **U32, Heat of Battle.** An Original 2 on a MC or a leader's rally is followed by its Heat of Battle DR; a Final DR of 4 creates a hero, a 7 Battle Hardens the unit, and a 5 or 6 does both; each record shows the DR and its DRM.
+- **U33, Close Combat.** Outlined: a squad advances into a Location holding a Known enemy squad, Close Combat is resolved with its DR and DRM, and a surviving pair is in Melee. Detailed when step 29 is reviewed.
+- **U34, Berserk and Surrender.** Outlined: a Final Heat of Battle DR of 10 makes a squad berserk and it charges the nearest Known enemy in the next MPh; a Final DR of 12 next to a Good Order enemy squad makes it that squad's prisoner. Detailed when step 30 is reviewed.
 
 ## 15. Traceability
 

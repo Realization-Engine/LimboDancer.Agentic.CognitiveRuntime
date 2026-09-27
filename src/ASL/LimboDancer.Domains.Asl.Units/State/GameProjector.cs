@@ -69,7 +69,7 @@ public static class GameProjector
                 _ when previous is null => Fail<GameState>("UNIT-STATE-004", "The first event must be game-started."),
                 GameStarted => Fail<GameState>("UNIT-STATE-004", "A game starts only once."),
                 PhaseChanged phase => ChangePhase(previous, phase),
-                InstanceCreated created => Create(previous, created.Instance, from: []),
+                InstanceCreated created => CreateInPlay(previous, created.Instance),
                 InstanceMoved moved => Move(previous, moved),
                 EquipmentTransferred transferred => Transfer(previous, transferred),
                 ConditionsChanged changed => ChangeConditions(previous, changed),
@@ -1137,7 +1137,13 @@ public static class GameProjector
                 });
             }
 
-            next = DropHeldBy(next, ids);
+            // A Replacement, whether by a lesser unit (A19.13) or by Battle Hardening (A15.3), is a unit substitution: the new
+            // unit keeps the SW; other lineage leaves it unpossessed.
+            if (lineage.Action != LineageAction.Replaced)
+            {
+                next = DropHeldBy(next, ids);
+            }
+
             foreach (var produced in lineage.Produced)
             {
                 var instance = produced with
@@ -1150,10 +1156,54 @@ public static class GameProjector
                     return null;
                 }
 
-                next = created;
+                // The produced unit has spent what the consumed ones spent this phase, and has ended its move if they had
+                // (A4.2), so a Replacement, a HS, or a Battle Hardened unit gains no fresh MF.
+                next = created.Unit(instance.Id) is { } unit
+                    ? Replace(created, unit with
+                    {
+                        MfSpent = consumed.Max(item => item.MfSpent),
+                        HalfMfSpent = consumed.Any(item => item.HalfMfSpent),
+                        MovementEnded = consumed.Any(item => item.MovementEnded)
+                    })
+                    : created;
+            }
+
+            if (lineage.Action == LineageAction.Replaced)
+            {
+                var holder = lineage.Produced[0].Id;
+                foreach (var equipment in next.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { } holding
+                    && ids.Contains(holding.Holder, StringComparer.Ordinal)).ToArray())
+                {
+                    next = Replace(next, equipment with
+                    {
+                        Holding = equipment.Holding! with
+                        {
+                            Holder = holder
+                        }
+                    });
+                }
             }
 
             return next;
+        }
+
+        /// <summary>
+        /// A unit created in play, such as a hero (A15.21). One created in its own side's MPh moves no further that phase: the
+        /// movement status it would share with its creator is not modelled (ASL Unit Backlog, section 10).
+        /// </summary>
+        private GameState? CreateInPlay(GameState state, NewInstance instance)
+        {
+            if (Create(state, instance, from: []) is not { } next)
+            {
+                return null;
+            }
+
+            return next.Phase == "mph" && next.Unit(instance.Id) is { } unit && unit.Side == next.PhasingSide
+                ? Replace(next, unit with
+                {
+                    MovementEnded = true
+                })
+                : next;
         }
 
         private GameState? Eliminate(GameState state, string id)

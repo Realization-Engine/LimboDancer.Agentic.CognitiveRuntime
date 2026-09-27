@@ -137,8 +137,10 @@ public sealed class ScenarioA1ConcealedSmcOverrunConformanceTests
                 ScenarioA1ConcealedSmcOverrunObservationProvider.QueryKind),
             JsonSerializer.SerializeToElement(new
             {
-                unitId = "squad", locationId = "bd01:E4:0",
-                observationVersion = "snapshot-1", caseId,
+                unitId = "squad",
+                locationId = "bd01:E4:0",
+                observationVersion = "snapshot-1",
+                caseId,
             }), 1);
 
     private static ScenarioA1ConcealedSmcOverrunSnapshot Snapshot() => new(
@@ -159,24 +161,34 @@ public sealed class ScenarioA1ConcealedSmcOverrunConformanceTests
         return suffix switch
         {
             "election-unknown" => BeforeNtc(state) with
-                { OverrunElection = ScenarioA1OverrunElection.Unknown, Ntc = null },
+            {
+                OverrunElection = ScenarioA1OverrunElection.Unknown,
+                Ntc = null
+            },
             "declined" => BeforeNtc(state) with
-                { OverrunElection = ScenarioA1OverrunElection.Declined, Ntc = null },
+            {
+                OverrunElection = ScenarioA1OverrunElection.Declined,
+                Ntc = null
+            },
             "ntc-unresolved" => BeforeNtc(state) with { Ntc = ScenarioA1OverrunNtc.Unresolved },
             "ntc-failed" => BeforeNtc(state) with { Ntc = ScenarioA1OverrunNtc.Failed },
             "mf-unknown" => BeforeMf(state) with { RemainingMf = ScenarioA1OverrunMf.Unknown },
             "mf-insufficient" => BeforeMf(state) with
-                { RemainingMf = ScenarioA1OverrunMf.Insufficient },
+            {
+                RemainingMf = ScenarioA1OverrunMf.Insufficient
+            },
             "other-reveal-unresolved" => state with
             {
                 AdditionalDefenderReveal = ScenarioA1AdditionalDefenderReveal.Unresolved,
-                SoleEnemySmcOccupancyVerified = null, DefenderResponseOrImmediateCc = null,
+                SoleEnemySmcOccupancyVerified = null,
+                DefenderResponseOrImmediateCc = null,
             },
             "another-defender-revealed" => state with
             {
                 AdditionalDefenderReveal = ScenarioA1AdditionalDefenderReveal.AnotherNonDummy,
                 AdditionalDefenderType = ScenarioA1AdditionalDefenderType.Mmc,
-                SoleEnemySmcOccupancyVerified = false, DefenderResponseOrImmediateCc = null,
+                SoleEnemySmcOccupancyVerified = false,
+                DefenderResponseOrImmediateCc = null,
             },
             "qualified-response-unresolved" => state,
             "response-resolved" => state with
@@ -190,17 +202,22 @@ public sealed class ScenarioA1ConcealedSmcOverrunConformanceTests
 
     private static ScenarioA1ConcealedSmcOverrunSnapshot BeforeNtc(
         ScenarioA1ConcealedSmcOverrunSnapshot state) => state with
-    {
-        RemainingMf = null, AdditionalDefenderReveal = null, AdditionalDefenderType = null,
-        SoleEnemySmcOccupancyVerified = null, DefenderResponseOrImmediateCc = null,
-    };
+        {
+            RemainingMf = null,
+            AdditionalDefenderReveal = null,
+            AdditionalDefenderType = null,
+            SoleEnemySmcOccupancyVerified = null,
+            DefenderResponseOrImmediateCc = null,
+        };
 
     private static ScenarioA1ConcealedSmcOverrunSnapshot BeforeMf(
         ScenarioA1ConcealedSmcOverrunSnapshot state) => state with
-    {
-        AdditionalDefenderReveal = null, AdditionalDefenderType = null,
-        SoleEnemySmcOccupancyVerified = null, DefenderResponseOrImmediateCc = null,
-    };
+        {
+            AdditionalDefenderReveal = null,
+            AdditionalDefenderType = null,
+            SoleEnemySmcOccupancyVerified = null,
+            DefenderResponseOrImmediateCc = null,
+        };
 
     private static DomainConclusionContext Context(DomainPackageDescriptor descriptor,
         Observation observation, string caseId)
@@ -210,8 +227,10 @@ public sealed class ScenarioA1ConcealedSmcOverrunConformanceTests
                 ScenarioA1ConcealedSmcOverrunConclusionResolver.QuestionKind),
             JsonSerializer.SerializeToElement(new
             {
-                unitId = "squad", locationId = "bd01:E4:0",
-                observationVersion = "snapshot-1", caseId,
+                unitId = "squad",
+                locationId = "bd01:E4:0",
+                observationVersion = "snapshot-1",
+                caseId,
             }), Now);
         DomainEntityResolution Entity(string id) => new(
             new DomainEntityQuery("entity-" + id, Tenant, descriptor.Identity,

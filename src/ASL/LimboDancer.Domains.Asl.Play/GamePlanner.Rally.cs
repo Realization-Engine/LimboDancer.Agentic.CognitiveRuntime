@@ -77,18 +77,29 @@ public sealed partial class GamePlanner
                     throw new InvalidOperationException("The Rally package left an attempt it had accepted undecided: " + string.Join("; ", resolution.Reasons));
                 }
 
-                var wound = missing.Contains("woundSeverity", StringComparison.Ordinal);
-                var drawn = draw(new RollRequest(wound ? 1 : 2, 6));
+                // The Rally DR, a leader's Wound Severity dr (A17.11), the Heat of Battle DR (A15.1), or the Leader Creation dr (A18.2).
+                var key = missing.Contains("woundSeverity", StringComparison.Ordinal) ? "woundSeverity"
+                    : missing.EndsWith(":heatOfBattle", StringComparison.Ordinal) ? "heatOfBattle"
+                    : missing.EndsWith(":leaderCreation", StringComparison.Ordinal) ? "leaderCreation"
+                    : "rally";
+                var (count, purpose) = key switch
+                {
+                    "woundSeverity" => (1, "rally-wound-severity"),
+                    "heatOfBattle" => (2, "rally-heat-of-battle"),
+                    "leaderCreation" => (1, "rally-leader-creation"),
+                    _ => (2, "rally"),
+                };
+                var drawn = draw(new RollRequest(count, 6));
                 var rollId = $"{attemptId}-roll-{(rollIds.Count + 1).ToString(CultureInfo.InvariantCulture)}";
-                rollIds[wound ? "woundSeverity" : "rally"] = rollId;
+                rollIds[key] = rollId;
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled",
-                    new DiceRolled(rollId, wound ? "rally-wound-severity" : "rally", wound ? 1 : 2, 6, drawn.Values, DiceRolled.SystemSource, actor), package, null));
-                rolls = wound ? rolls with
+                    new DiceRolled(rollId, purpose, count, 6, drawn.Values, DiceRolled.SystemSource, actor), package, null));
+                rolls = key switch
                 {
-                    WoundSeverity = drawn.Values[0]
-                } : rolls with
-                {
-                    Rally = drawn.Values
+                    "woundSeverity" => rolls with { WoundSeverity = drawn.Values[0] },
+                    "heatOfBattle" => rolls with { HeatOfBattle = drawn.Values },
+                    "leaderCreation" => rolls with { LeaderCreation = drawn.Values[0] },
+                    _ => rolls with { Rally = drawn.Values },
                 };
             }
 
@@ -112,8 +123,44 @@ public sealed partial class GamePlanner
         };
     }
 
-    /// <summary>The events a Rally attempt's effect records: rallied, Reduced by Fate, wounded, eliminated, and "?" lost.</summary>
+    /// <summary>
+    /// The events a Rally attempt's effect records: rallied, Reduced by Fate, wounded, eliminated, and "?" lost; after an
+    /// Original 2, Battle Hardening, Fanaticism, a heroic leader, a hero, or a created leader (A15.21, A15.3, A18.11).
+    /// </summary>
     private static IEnumerable<(string Type, EventPayload Payload)> RallyEffects(GameState state, UnitInstance unit, RallyEffect effect, string attemptId)
+    {
+        foreach (var item in RallyUnitEffects(state, unit, effect, attemptId))
+        {
+            yield return item;
+        }
+
+        if (effect.HeroDefinitionId is { } hero)
+        {
+            yield return ("instance-created", new InstanceCreated(HeroOf(unit, hero, attemptId)));
+        }
+
+        // A18.11: the created leader, Good Order, in the rallied unit's Location; one from a Fanatic unit is Fanatic (A10.8).
+        if (effect.CreatedLeaderDefinitionId is { } leader)
+        {
+            var conditions = new Dictionary<string, ConditionState>(StringComparer.Ordinal)
+            {
+                [Conditions.Broken] = ConditionState.False,
+                [Conditions.Pinned] = ConditionState.False,
+                [Conditions.Wounded] = ConditionState.False,
+                [Conditions.Concealed] = ConditionState.False,
+                [Conditions.Hidden] = ConditionState.False,
+            };
+            if (GameState.Condition(unit, Conditions.Fanatic) == ConditionState.True)
+            {
+                conditions[Conditions.Fanatic] = ConditionState.True;
+            }
+
+            yield return ("instance-created", new InstanceCreated(new NewInstance($"{attemptId}-{unit.Id}-leader", "asl:leader", leader, unit.Side,
+                unit.Position, null, conditions)));
+        }
+    }
+
+    private static IEnumerable<(string Type, EventPayload Payload)> RallyUnitEffects(GameState state, UnitInstance unit, RallyEffect effect, string attemptId)
     {
         foreach (var id in effect.ConcealmentLost.Where(id => id != unit.Id))
         {
@@ -128,13 +175,34 @@ public sealed partial class GamePlanner
 
         if (effect.FinalDefinitionId != effect.DefinitionId)
         {
-            // A10.64, A7.302: Fate Reduces a squad to its HS, broken like it.
+            // A10.64, A7.302: Fate Reduces a squad to its HS, broken like it; A15.3: Battle Hardening Replaces the rallied unit
+            // with an unbroken unit of the next higher quality.
             var reference = FireReference.Value.Definitions[effect.FinalDefinitionId];
+            var hardened = effect.Events.Contains("battle-hardened");
             var produced = unit.Conditions.Where(item => item.Key != Conditions.Concealed && item.Key != Conditions.Hidden)
                 .ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal);
-            produced[Conditions.Concealed] = ConditionState.False;
+            produced[Conditions.Concealed] = effect.ConcealmentLost.Contains(unit.Id) || !hardened ? ConditionState.False
+                : GameState.Condition(unit, Conditions.Concealed);
             produced[Conditions.Hidden] = ConditionState.False;
-            yield return ("lineage", new LineageRecorded(LineageAction.Reduced, [unit.Id],
+            if (hardened)
+            {
+                produced[Conditions.Broken] = ConditionState.False;
+                produced[Conditions.Pinned] = ConditionState.False;
+                produced[Conditions.Disrupted] = ConditionState.False;
+                produced[Conditions.DesperationMorale] = ConditionState.False;
+                if (effect.Fanatic == true)
+                {
+                    produced[Conditions.Fanatic] = ConditionState.True;
+                }
+
+                // A15.1, A15.21: a Final DR of 5 or 6 makes a leader heroic and Battle Hardens him.
+                if (effect.Heroic == true)
+                {
+                    produced[Conditions.Heroic] = ConditionState.True;
+                }
+            }
+
+            yield return ("lineage", new LineageRecorded(hardened ? LineageAction.Replaced : LineageAction.Reduced, [unit.Id],
                 [new NewInstance($"{attemptId}-{unit.Id}", reference.Kind, reference.Id, unit.Side, unit.Position, null, produced)]));
             yield break;
         }
@@ -142,7 +210,23 @@ public sealed partial class GamePlanner
         var conditions = new Dictionary<string, ConditionState>(StringComparer.Ordinal);
         if (effect.Rallied)
         {
+            // A19.12: a Disrupted unit rallied is no longer Disrupted.
             conditions[Conditions.Broken] = ConditionState.False;
+            if (GameState.Condition(unit, Conditions.Disrupted) == ConditionState.True)
+            {
+                conditions[Conditions.Disrupted] = ConditionState.False;
+            }
+        }
+
+        // A10.8, A15.3: Fanaticism; A15.21: a heroic leader.
+        if (effect.Fanatic == true && GameState.Condition(unit, Conditions.Fanatic) != ConditionState.True)
+        {
+            conditions[Conditions.Fanatic] = ConditionState.True;
+        }
+
+        if (effect.Heroic == true)
+        {
+            conditions[Conditions.Heroic] = ConditionState.True;
         }
 
         if (effect.Wounded && GameState.Condition(unit, Conditions.Wounded) != ConditionState.True)

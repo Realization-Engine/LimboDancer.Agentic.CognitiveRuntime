@@ -124,6 +124,12 @@ public static class Conditions
     /// <summary>Desperation Morale (A10.62, p. 68): +4 to a Rally attempt; removed at the end of every RPh.</summary>
     public const string DesperationMorale = "asl:dm";
 
+    /// <summary>Fanatic (A10.8): both Morale Levels one higher, never Disrupted (asl@1.2.0).</summary>
+    public const string Fanatic = "asl:fanatic";
+
+    /// <summary>A heroic leader (A15.21): wounded rather than broken by a failed MC (asl@1.7.0).</summary>
+    public const string Heroic = "asl:heroic";
+
     /// <summary>A malfunctioned SW (A9.7, p. 65): it cannot fire until repaired (A9.72).</summary>
     public const string Malfunctioned = "asl:malfunctioned";
 

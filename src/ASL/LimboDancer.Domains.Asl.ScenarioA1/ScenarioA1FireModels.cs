@@ -99,6 +99,18 @@ public sealed record FireFirer(
     /// <summary>Whether the firer adds its inherent FP (A7.351); null is true. False for a MG firing again on its Multiple ROF.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? UsesInherentFp { get; init; }
+
+    /// <summary>Whether the firer is Fanatic (A10.8): no Cowering, and a higher Morale Level in an FPF NMC; null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Fanatic { get; init; }
+
+    /// <summary>Whether a hero firer is wounded (A15.2: 1-3-8); null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Wounded { get; init; }
+
+    /// <summary>Whether a Green or Conscript firer is Inexperienced (A19.2), for the Heat of Battle DRM of an FPF NMC; required for those classes.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Inexperienced { get; init; }
 }
 
 /// <summary>The leader directing the fire group (A7.53, A7.531).</summary>
@@ -126,7 +138,20 @@ public sealed record FireTarget(
     bool? Hidden,
     bool? Dummy,
     bool? Wounded,
-    bool? Disrupted);
+    bool? Disrupted)
+{
+    /// <summary>Whether the unit is Fanatic (A10.8): both Morale Levels one higher, never Disrupted; null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Fanatic { get; init; }
+
+    /// <summary>Whether a leader is heroic (A15.21): he is wounded, not broken, by a failed MC; null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Heroic { get; init; }
+
+    /// <summary>Whether a Green or Conscript MMC is Inexperienced (A19.2), for the Heat of Battle DRM; required for those classes.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Inexperienced { get; init; }
+}
 
 /// <summary>
 /// Recorded rolls. <see cref="Attack"/> is the IFT DR; <see cref="RandomSelection"/> holds one dr per target unit;
@@ -147,6 +172,10 @@ public sealed record FireRolls(
     /// <summary>One dr per FPF firer, when a Casualty MC falls on two or more of them (A8.31).</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyDictionary<string, int>? FirerSelection { get; init; }
+
+    /// <summary>The Heat of Battle DR of each unit whose Original MC DR was 2 (A15.1).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyDictionary<string, IReadOnlyList<int>>? HeatOfBattle { get; init; }
 }
 
 /// <summary>One modifier with its value and rule.</summary>
@@ -221,7 +250,20 @@ public sealed record FireUnitEffect(
     bool Disrupted,
     bool ConcealmentLost,
     IReadOnlyList<string> Events,
-    IReadOnlyList<FireCheck> Checks);
+    IReadOnlyList<FireCheck> Checks)
+{
+    /// <summary>The unit's Heat of Battle DR and results (A15.1); null when it rolled none.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public HeatOfBattleOutcome? HeatOfBattle { get; init; }
+
+    /// <summary>Whether the unit is Fanatic after the attack (A10.8); null when it is not.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Fanatic { get; init; }
+
+    /// <summary>Whether a leader is heroic after the attack (A15.21); null when he is not.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Heroic { get; init; }
+}
 
 /// <summary>The Fire package's answer: resolved with its arithmetic and effects, or Abstained or Indeterminate with reasons.</summary>
 public sealed record FireResolution(

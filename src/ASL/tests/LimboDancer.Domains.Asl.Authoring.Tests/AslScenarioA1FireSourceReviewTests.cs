@@ -56,6 +56,17 @@ public sealed class AslScenarioA1FireSourceReviewTests
     }
 
     [Fact]
+    public void TheHeatOfBattleSubjectsAreVerified()
+    {
+        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var review = AslScenarioA1FireSourceReview.BuildHeatOfBattle(RepositoryPaths.Root, manifests, Attestation());
+        Assert.Equal(12, review.Records.Count);
+        Assert.All(review.Records, record => Assert.Equal(TirSourceVerificationDisposition.Verified, record.Disposition));
+        var path = Path.Combine(RepositoryPaths.Root, "docs", "ASL", "SourceRegistry", AslScenarioA1FireSourceReview.HeatOfBattleComparisonFile);
+        Assert.Equal(AslScenarioA1FireSourceReview.HeatOfBattleComparisonSha256, Hashing.Sha256File(path));
+    }
+
+    [Fact]
     public void TheExtensionSubjectsAreVerifiedWithTheirInterruptedParts()
     {
         var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
