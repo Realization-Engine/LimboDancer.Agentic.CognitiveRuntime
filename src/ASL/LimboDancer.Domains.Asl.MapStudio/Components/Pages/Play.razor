@@ -12,6 +12,7 @@
 @inject NavigationManager Navigation
 @inject GameMaps GameMaps
 @inject StudioLos Los
+@inject IServiceProvider Services
 
 <PageTitle>Play - ASL Map Studio</PageTitle>
 
@@ -20,6 +21,22 @@
     Live games are the Studio's chosen game source (D2). Every change is a registered action through the Execution Gate: the Studio proposes it,
     the gate checks it against the current game, boards, and catalog, and it commits only after you confirm. Nothing here edits a game directly.
 </p>
+
+@if (Scripted is { } scripted)
+{
+    <div class="toolbar" id="scripted-dice">
+        <strong>Scripted dice are on (development only).</strong>
+        <span class="muted">Each die comes from this queue until it is empty, then from the system; games played now are test data.</span>
+        <label>Queue <input id="scripted-dice-values" size="24" placeholder="1 1 2 4" @bind="scriptedInput" /></label>
+        <button id="scripted-dice-add" @onclick="QueueDice">Add</button>
+        <button id="scripted-dice-clear" class="link" @onclick="() => scripted.Clear()">clear</button>
+        <span id="scripted-dice-queued">Queued: @(scripted.Queued.Count == 0 ? "none" : string.Join(" ", scripted.Queued))</span>
+        @if (scriptedProblem is { } problem)
+        {
+            <span class="warning">@problem</span>
+        }
+    </div>
+}
 
 <div class="toolbar">
     <label>
@@ -544,6 +561,23 @@ else if (state is not null)
 }
 
 @code {
+    private string? scriptedInput;
+    private string? scriptedProblem;
+
+    /// <summary>The scripted dice of a UI test run, when this run of the Studio has them.</summary>
+    private ScriptedDice? Scripted => Services.GetService<ScriptedDice>();
+
+    private void QueueDice()
+    {
+        var parts = (scriptedInput ?? "").Split([' ', ',', ';'], StringSplitOptions.RemoveEmptyEntries);
+        var values = parts.Select(part => int.TryParse(part, NumberStyles.None, CultureInfo.InvariantCulture, out var value) ? value : 0).ToList();
+        scriptedProblem = values.Count > 0 && Scripted!.Enqueue(values) ? null : "Each die is a number from 1 to 6.";
+        if (scriptedProblem is null)
+        {
+            scriptedInput = null;
+        }
+    }
+
     private sealed record Placement(string Id, string? Definition, string Kind, string Side, string Location, bool Concealed, bool Hidden, string? Holder,
         bool Broken = false);
 

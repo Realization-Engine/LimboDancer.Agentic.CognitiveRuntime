@@ -55,6 +55,7 @@ Both `scenario-a1-fire` and `scenario-a1-rally` are revised and republished; the
 
 - The rally and fire records show the Heat of Battle DR with its DRM parts, the Final DR, and the result, including "Berserk not taken" and "Surrender not taken". A Leader Creation line shows the dr, its DRM, and the leader created.
 - Heroes appear in the fire panel's firers and targets like any other unit.
+- **Scripted dice for UI test runs.** Heat of Battle and Leader Creation need an Original 2, so a UI run rarely meets them. With the Studio in the Development environment and `Play:ScriptedDice` set to true (for example `dotnet run --project src/ASL/LimboDancer.Domains.Asl.MapStudio -- --Play:ScriptedDice=true`), the Play page shows a banner and a queue: each die comes from the queue until it is empty, then from the system (`ScriptedDice`). The rolls are still recorded as system rolls, which replay requires, so a game played with queued dice is test data. Without the flag, or outside Development, the Studio has no queue.
 
 ## 7. Compatibility
 
