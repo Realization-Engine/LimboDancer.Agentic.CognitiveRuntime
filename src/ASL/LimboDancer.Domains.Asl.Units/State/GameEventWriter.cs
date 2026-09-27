@@ -368,6 +368,34 @@ public static class GameEventWriter
                 writer.WritePropertyName("resolution");
                 combat.Resolution.WriteTo(writer);
                 break;
+            case OrdnanceFired ordnance:
+                writer.WriteString("gun", ordnance.Gun);
+                writer.WriteString("crew", ordnance.Crew);
+                writer.WriteString("target", ordnance.Target.ToString());
+                if (ordnance.Facing is { } facing)
+                {
+                    writer.WriteString("facing", Documents.UnitFacings.Name(facing));
+                }
+
+                writer.WriteBoolean("rateOfFireKept", ordnance.RateOfFireKept);
+                writer.WriteNumber("acquisition", ordnance.Acquisition);
+                if (ordnance.Acquired is { } acquiredAt)
+                {
+                    writer.WriteString("acquired", acquiredAt.ToString());
+                }
+
+                writer.WriteStartObject("rolls");
+                foreach (var (key, roll) in ordnance.Rolls.OrderBy(entry => entry.Key, StringComparer.Ordinal))
+                {
+                    writer.WriteString(key, roll);
+                }
+
+                writer.WriteEndObject();
+                writer.WritePropertyName("facts");
+                ordnance.Facts.WriteTo(writer);
+                writer.WritePropertyName("resolution");
+                ordnance.Resolution.WriteTo(writer);
+                break;
             case SurrenderPending surrender:
                 writer.WriteString("unit", surrender.Unit);
                 Strings(writer, "captors", surrender.Captors);

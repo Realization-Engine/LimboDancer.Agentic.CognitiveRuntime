@@ -55,8 +55,17 @@ public static class AslScenarioA1FireSourceReview
     public const string BerserkSurrenderComparisonFile = "asl-scenario-a1.berserk-surrender-pdf-comparison.json";
     public const string BerserkSurrenderComparisonSha256 = "4a247af92b724b281954933a5157b88fb8f06d2b246b25f6e50d67651e55061a";
 
+    /// <summary>
+    /// The unit step 24 comparison: a Gun's HE shot at Infantry: ordnance (C.3 to C.6), Gun counters (C2.1 to C2.6), the To Hit
+    /// process (C3.2 to C3.8), the Basic TH# modifications (C4), the firer- and target-based DRM of the reviewed Cases (C5, C6),
+    /// crews (A1.123), and non-qualified use (A21.13).
+    /// </summary>
+    public const string OrdnanceComparisonFile = "asl-scenario-a1.ordnance-pdf-comparison.json";
+    public const string OrdnanceComparisonSha256 = "cebc0e782dd0a67ec7fa65f04ecc0eab1ee94800a260e5395e95f5a4b107c662";
+
     private const string ChapterA = "asl-easlrb-3.10:chapter-a";
     private const string ChapterB = "asl-easlrb-3.10:chapter-b";
+    private const string ChapterC = "asl-easlrb-3.10:chapter-c";
 
     // Rule, the element id the conversion registered the fragment under, source, line, kind, physical page.
     private static readonly (string Rule, string Registered, string Source, int Line, SourceFragmentKind Kind, int Page)[] Subjects =
@@ -208,6 +217,59 @@ public static class AslScenarioA1FireSourceReview
         ("A25.25", "A25.25", ChapterA, 1758, SourceFragmentKind.RuleText, 96),
     ];
 
+    private static readonly (string Rule, string Registered, string Source, int Line, SourceFragmentKind Kind, int Page)[] OrdnanceSubjects =
+    [
+        ("A1.123", "A1.123", ChapterA, 99, SourceFragmentKind.RuleText, 44),
+        ("A21.13", "A21.13", ChapterA, 1454, SourceFragmentKind.RuleText, 88),
+        ("C.3", "C.3", ChapterC, 22, SourceFragmentKind.RuleText, 162),
+        ("C.4", "C.4", ChapterC, 24, SourceFragmentKind.RuleText, 162),
+        ("C.6", "C.6", ChapterC, 34, SourceFragmentKind.RuleText, 162),
+        ("C2.1", "C2.1", ChapterC, 230, SourceFragmentKind.RuleText, 167),
+        ("C2.21", "C2.21", ChapterC, 246, SourceFragmentKind.RuleText, 167),
+        ("C2.22", "C2.22", ChapterC, 254, SourceFragmentKind.RuleText, 167),
+        ("C2.23", "C2.23", ChapterC, 256, SourceFragmentKind.RuleText, 167),
+        ("C2.24", "C2.24", ChapterC, 258, SourceFragmentKind.RuleText, 167),
+        ("C2.28", "C2.28", ChapterC, 278, SourceFragmentKind.RuleText, 168),
+        ("C2.3", "C2.3", ChapterC, 282, SourceFragmentKind.RuleText, 168),
+        ("C2.5", "C2.5", ChapterC, 286, SourceFragmentKind.RuleText, 168),
+        ("C2.6", "C2.6", ChapterC, 288, SourceFragmentKind.RuleText, 168),
+        ("C3.2", "C3.2", ChapterC, 308, SourceFragmentKind.RuleText, 169),
+        ("C3.21", "C3.21", ChapterC, 314, SourceFragmentKind.RuleText, 169),
+        ("C3.3", "C3.3", ChapterC, 318, SourceFragmentKind.RuleText, 169),
+        ("C3.32", "C3.32", ChapterC, 322, SourceFragmentKind.RuleText, 169),
+        ("C3.4", "C3.4", ChapterC, 338, SourceFragmentKind.RuleText, 170),
+        ("C3.5", "C3.5", ChapterC, 342, SourceFragmentKind.RuleText, 170),
+        ("C3.51", "C3.51", ChapterC, 344, SourceFragmentKind.RuleText, 170),
+        ("C3.52", "C3.52", ChapterC, 346, SourceFragmentKind.RuleText, 170),
+        ("C3.53", "C3.53", ChapterC, 348, SourceFragmentKind.RuleText, 170),
+        ("C3.6", "C3.6", ChapterC, 350, SourceFragmentKind.RuleText, 170),
+        ("C3.7", "C3.7", ChapterC, 352, SourceFragmentKind.RuleText, 170),
+        ("C3.71", "C3.71", ChapterC, 354, SourceFragmentKind.RuleText, 170),
+        ("C3.74", "C3.74", ChapterC, 362, SourceFragmentKind.RuleText, 171),
+        ("C3.8", "C3.8", ChapterC, 370, SourceFragmentKind.RuleText, 171),
+        ("C4.1", "C4.1", ChapterC, 378, SourceFragmentKind.RuleText, 171),
+        ("C4.11", "C4.11", ChapterC, 382, SourceFragmentKind.RuleText, 171),
+        ("C4.12", "C4.12", ChapterC, 386, SourceFragmentKind.RuleText, 171),
+        ("C4.13", "C4.13", ChapterC, 390, SourceFragmentKind.RuleText, 171),
+        ("C4.2", "C4.2", ChapterC, 392, SourceFragmentKind.RuleText, 171),
+        ("C4.5", "C4.5", ChapterC, 400, SourceFragmentKind.RuleText, 171),
+        ("C5.1", "C5.1", ChapterC, 406, SourceFragmentKind.RuleText, 171),
+        ("C5.11", "C5.11", ChapterC, 420, SourceFragmentKind.RuleText, 172),
+        ("C5.12", "C5.12", ChapterC, 424, SourceFragmentKind.RuleText, 172),
+        ("C5.2", "C5.2", ChapterC, 428, SourceFragmentKind.RuleText, 172),
+        ("C5.4", "C5.4", ChapterC, 442, SourceFragmentKind.RuleText, 172),
+        ("C5.5", "C5.5", ChapterC, 446, SourceFragmentKind.RuleText, 172),
+        ("C5.8", "C5.8", ChapterC, 478, SourceFragmentKind.RuleText, 173),
+        ("C6.2", "C6.2", ChapterC, 512, SourceFragmentKind.RuleText, 174),
+        ("C6.3", "C6.3", ChapterC, 514, SourceFragmentKind.RuleText, 174),
+        ("C6.5", "C6.5", ChapterC, 534, SourceFragmentKind.RuleText, 174),
+        ("C6.51", "C6.51", ChapterC, 542, SourceFragmentKind.RuleText, 174),
+        ("C6.53", "C6.53", ChapterC, 560, SourceFragmentKind.RuleText, 175),
+        ("C6.57", "C6.57", ChapterC, 570, SourceFragmentKind.RuleText, 175),
+        ("C6.8", "C6.8", ChapterC, 582, SourceFragmentKind.RuleText, 175),
+        ("C6.9", "C6.9", ChapterC, 584, SourceFragmentKind.RuleText, 175),
+    ];
+
     private static readonly (string Rule, string Registered, string Source, int Line, SourceFragmentKind Kind, int Page)[] CloseCombatSubjects =
     [
         ("A1.6", "A1.6", ChapterA, 133, SourceFragmentKind.RuleText, 45),
@@ -311,6 +373,12 @@ public static class AslScenarioA1FireSourceReview
         GeneratedManifests manifests, AslScenarioA1SourceAttestation attestation) =>
         Build(repositoryRoot, manifests, attestation, BerserkSurrenderComparisonFile, BerserkSurrenderComparisonSha256, BerserkSurrenderSubjects,
             "unit step 30 Berserk and Surrender review");
+
+    /// <summary>The unit step 24 subjects of a Gun's HE shot at Infantry.</summary>
+    public static AslScenarioA1VerificationBatch BuildOrdnance(string repositoryRoot,
+        GeneratedManifests manifests, AslScenarioA1SourceAttestation attestation) =>
+        Build(repositoryRoot, manifests, attestation, OrdnanceComparisonFile, OrdnanceComparisonSha256, OrdnanceSubjects,
+            "unit step 24 Ordnance review");
 
     private static AslScenarioA1VerificationBatch Build(string repositoryRoot, GeneratedManifests manifests,
         AslScenarioA1SourceAttestation attestation, string file, string digest,

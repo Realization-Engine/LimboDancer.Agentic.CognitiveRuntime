@@ -51,6 +51,10 @@ internal static class CounterSheetsTestData
         (_, "class") => "green",
         (_, "leadership") => "0",
         (_, "size") => "light",
+        (_, "gun-type") => "inf",
+        (_, "caliber-suffix") => "star",
+        (_, "target-size") => "small",
+        (_, "designation" or "special-ammo") => "S1",
         (_, var name) when name.Contains(':', StringComparison.Ordinal) => "no",
         _ => "1",
     };

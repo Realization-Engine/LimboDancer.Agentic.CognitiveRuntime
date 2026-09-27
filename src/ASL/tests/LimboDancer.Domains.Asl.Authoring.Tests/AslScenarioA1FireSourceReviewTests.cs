@@ -67,6 +67,16 @@ public sealed class AslScenarioA1FireSourceReviewTests
     }
 
     [Fact]
+    public void TheOrdnanceSubjectsAreVerified()
+    {
+        // Unit step 24: 47 Chapter C subjects, A1.123, and A21.13, each whole on its physical page.
+        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var ordnance = AslScenarioA1FireSourceReview.BuildOrdnance(RepositoryPaths.Root, manifests, Attestation());
+        Assert.Equal(49, ordnance.Records.Count);
+        Assert.All(ordnance.Records, record => Assert.Equal(TirSourceVerificationDisposition.Verified, record.Disposition));
+    }
+
+    [Fact]
     public void TheCloseCombatAndBerserkSubjectsAreVerified()
     {
         var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);

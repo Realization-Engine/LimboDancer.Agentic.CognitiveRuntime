@@ -210,6 +210,12 @@ public static class ScenarioA1FireCalculator
         {
             Need(attack.ResidualFp, "residualFp");
         }
+        else if (attack.OrdnanceHit is { } hit)
+        {
+            Need(hit.GunId, "ordnanceHit.gunId");
+            Need(hit.Firepower, "ordnanceHit.firepower");
+            Need(hit.CriticalHit, "ordnanceHit.criticalHit");
+        }
         else
         {
             Need(attack.FireGroupComplete, "fireGroupComplete");
@@ -352,6 +358,35 @@ public static class ScenarioA1FireCalculator
             return outside;
         }
 
+        // C3.32, C.6: an ordnance hit attacks the enemy units of the target Location on the IFT column of the Gun's HE FP, with no
+        // firers or leader of its own; the Ordnance package decides the hit.
+        if (attack.OrdnanceHit is { } hit)
+        {
+            if (attack.Firers is { Count: > 0 } || attack.Director is not null || attack.OtherDirectors is { Count: > 0 } || attack.FireKind is not null
+                || !ScenarioA1FireReference.ColumnFp.Contains(hit.Firepower!.Value))
+            {
+                outside.Add("asl.a1.fire.ordnance-hit-outside");
+            }
+
+            if (targets.Any(item => item.LocationId != attack.TargetLocationId) || targetDefinitions.Any(item => item is null)
+                || !ScenarioA1FireReference.Tem.ContainsKey(attack.TargetTerrain!))
+            {
+                outside.Add("asl.a1.fire.target-outside");
+            }
+
+            if (targetDefinitions.Any(item => item?.Kind == "asl:crew"))
+            {
+                outside.Add("asl.a1.fire.crew-target-unreviewed");
+            }
+
+            if (attack.Rolls is { } hitRolls && Malformed(hitRolls))
+            {
+                outside.Add("asl.a1.fire.roll-malformed");
+            }
+
+            return outside;
+        }
+
         var firers = attack.Firers!;
         var ids = firers.Select(item => item.UnitId!).Concat(targets.Select(item => item.UnitId!))
             .Concat(Directors(attack).Select(item => item.UnitId!))
@@ -446,6 +481,12 @@ public static class ScenarioA1FireCalculator
             outside.Add("asl.a1.fire.director-outside");
         }
 
+        // C11: crews (and the Guns they man) as targets are not reviewed (ruling R24.3).
+        if (targetDefinitions.Any(item => item?.Kind == "asl:crew"))
+        {
+            outside.Add("asl.a1.fire.crew-target-unreviewed");
+        }
+
         if (locations.Contains(attack.TargetLocationId)
             || targets.Any(item => item.LocationId != attack.TargetLocationId)
             || targetDefinitions.Any(item => item is null || (item != DummyDefinition && item.Nationality == side))
@@ -524,7 +565,7 @@ public static class ScenarioA1FireCalculator
     {
         var undecided = new List<string>();
         var targets = attack.Targets!;
-        if (attack.FireKind != ResidualFire)
+        if (attack.FireKind != ResidualFire && attack.OrdnanceHit is null)
         {
             var firers = attack.Firers!;
             if (firers.Any(item => SameLevelOf(attack, item) != true))
@@ -734,6 +775,7 @@ public static class ScenarioA1FireCalculator
         /// <summary>The fire counter the attack places (A3.2, A3.4, A3.5, A8.1, A8.3, A8.31, A8.4); none for Residual FP.</summary>
         private string? FireCounter() => attack.FireKind switch
         {
+            _ when attack.OrdnanceHit is not null => null,
             ResidualFire => null,
             FirstFire => "first-fire",
             SubsequentFirstFire or FinalProtectiveFire => "final-fire",
@@ -744,12 +786,18 @@ public static class ScenarioA1FireCalculator
         {
             var dice = attack.Rolls!.Attack;
             var residual = attack.FireKind == ResidualFire;
+            var hit = attack.OrdnanceHit;
             var firers = new List<FirerFirepower>();
             decimal known = 0, vsConcealed = 0;
             if (residual)
             {
                 // A8.2, A8.22: Residual FP attacks alone, on its own column, never halved.
                 known = vsConcealed = attack.ResidualFp!.Value;
+            }
+            else if (hit is not null)
+            {
+                // C.6: the Gun's HE FP column; C3.53, C.4: never halved for a concealed target; C3.71: doubled by a Critical Hit.
+                known = vsConcealed = hit.Firepower!.Value * (hit.CriticalHit == true ? 2 : 1);
             }
             else
             {
@@ -778,20 +826,30 @@ public static class ScenarioA1FireCalculator
 
             // A7.9: a doubles DR with no directing leader shifts the column; Residual FP is never subject to Cowering (A8.224);
             // heroes and Fanatic units are not subject to it, but a group with any other member Cowers (A15.2, A15.24, A10.8).
-            var cowered = !residual && dice[0] == dice[1] && !directed
+            var cowered = !residual && hit is null && dice[0] == dice[1] && !directed
                 && attack.Firers!.Any(item => !reference.Definitions[item.DefinitionId!].IsHero && item.Fanatic != true);
             var inexperienced = (attack.Firers ?? []).Any(item => reference.Definitions[item.DefinitionId!].Class is "green" or "conscript");
             var shift = cowered ? (inexperienced ? 2 : 1) : 0;
 
             var drm = new List<FireModifier>();
             var tem = ScenarioA1FireReference.Tem[attack.TargetTerrain!];
-            if (tem != 0)
+            if (hit is not null)
+            {
+                // C.3: the TEM of an Infantry Target Type hit modifies its TH DR, not the Effects DR; C3.71: a Critical Hit reverses a
+                // positive TEM into a negative Effects DRM (a Direct Fire hit has no Air Burst, B13.3).
+                if (hit.CriticalHit == true && tem != 0)
+                {
+                    drm.Add(new FireModifier("critical-hit-tem:" + attack.TargetTerrain, -Math.Abs(tem), "C3.71"));
+                }
+            }
+            else if (tem != 0)
             {
                 drm.Add(new FireModifier("tem:" + attack.TargetTerrain, tem, "A7.6"));
             }
 
-            // A7.52: the worst Hindrance of the group's LOS applies to all of it; Residual FP has none (A8.2).
-            var hindrance = residual ? 0 : attack.Firers!.Max(item => LosOf(attack, item)!.HindranceDrm!.Value);
+            // A7.52: the worst Hindrance of the group's LOS applies to all of it; Residual FP has none (A8.2), and an ordnance hit's
+            // Hindrance modifies its TH DR (C.3, C6.9).
+            var hindrance = residual || hit is not null ? 0 : attack.Firers!.Max(item => LosOf(attack, item)!.HindranceDrm!.Value);
             if (hindrance > 0)
             {
                 drm.Add(new FireModifier("los-hindrance", hindrance, "A6.7"));
@@ -833,7 +891,7 @@ public static class ScenarioA1FireCalculator
             var main = hasKnown ? known : vsConcealed;
             var (column, shifted, result) = Column(main, shift, final);
             FireColumn? second = null;
-            if (hasKnown && hasConcealed && !residual)
+            if (hasKnown && hasConcealed && !residual && hit is null)
             {
                 var (c2, s2, r2) = Column(vsConcealed, shift, final);
                 second = new FireColumn(vsConcealed, c2, s2, r2);

@@ -4,10 +4,10 @@
   "domainId": "asl",
   "packageId": "scenario-a1-close-combat",
   "declaredUse": "Read-only conclusions for the Close Combat of one Location in one round, and for the Ambush drs before it, among Infantry of the reviewed Scenario A1 catalog, under the rulings of the ASL Unit Deviations, Ordnance, and Vehicles Plan (R29.1 to R29.15).",
-  "caseMatrixSha256": "3bfe30e929a8cf58b448460a69a688d1a5bc157cd2ab16f8e94ba5bfac847d0f",
+  "caseMatrixSha256": "7290f1c877bbf11a7a24acf6939134aeca30082aa5406817454d7a4025bb64ee",
   "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
   "cctTranscriptionSha256": "c2af9d03865da14baf7b0ec68989d99e0607079cb3f43f835d145b92bab8abbb",
-  "catalogSha256": "501b5deab10ae852ac7fef03e6e652f34961f69a165ac911a292b3be68b820fa",
+  "catalogSha256": "dae90ca10c7fb9f734e79a75ceb71951f0319e193410c145f14880e613cc77b5",
   "sourceFragments": [
     {
       "ruleId": "A1.6",
@@ -306,5 +306,6 @@
     "TI units in CC (A4.8), and overstacked Locations (A5.12, A5.131)",
     "Advances that would make a unit CX (A4.72), advances into concealed enemy units, and advances changing level"
   ],
-  "executionAuthority": "none"
+  "executionAuthority": "none",
+  "priorCloseCombatPackageManifestSha256": "f729b9a8eda830a589d13e3f2c3cf26fc46e0784fbef86593217ed4169610667"
 }

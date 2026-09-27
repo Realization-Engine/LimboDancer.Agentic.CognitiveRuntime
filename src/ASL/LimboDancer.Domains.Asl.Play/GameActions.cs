@@ -262,11 +262,29 @@ public static class GameActions
         }
         """);
 
+    public static readonly ActionDescriptor FireOrdnance = Descriptor("asl.game.fire-ordnance", "Fire a Gun",
+        "In the PFPh, AFPh, or DFPh, a Gun manned by its crew fires HE at the enemy units of a Location on the Infantry Target Type, turning to bring the target into its Covered Arc if it must, as the reviewed Ordnance package resolves the To Hit DR, the hit's IFT attack, ROF, breakdown, and Acquisition, and only when every outcome the dice can reach is decided (C3.3, C3.32).",
+        PlayPermission, "asl.game.reviewed-ordnance-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "gunId", "target"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "gunId": { "type": "string" }, "target": { "type": "string" }
+          }
+        }
+        """, JsonSerializer.SerializeToElement(new
+        {
+            package = ScenarioA1OrdnancePackage.Identity.ToString()
+        }));
+
     public static IReadOnlyList<ActionDescriptor> All
     {
         get;
     } =
-        [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding, DeclareOverrun, Fire, Rally, Repair, Move, PassFire, EndMove, Advance, Ambush, CloseCombat, TakePrisoner];
+        [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding, DeclareOverrun, Fire, Rally, Repair, Move, PassFire, EndMove, Advance, Ambush, CloseCombat, TakePrisoner,
+            FireOrdnance];
 
     public static string VersionKey(Guid tenant, string game) => $"asl.game:{tenant:N}:{game}";
 

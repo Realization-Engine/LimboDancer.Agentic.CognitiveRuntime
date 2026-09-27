@@ -14,7 +14,7 @@ namespace LimboDancer.Domains.Asl.Play;
 public static class LiveFire
 {
     public const string Catalog = "asl-scenario-a1";
-    public const string CatalogVersion = "1.3.0";
+    public const string CatalogVersion = "1.4.0";
 
     public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
@@ -220,6 +220,7 @@ public static class LiveFire
         Dictionary<string, IReadOnlyList<int>>? leaderLoss = null;
         Dictionary<string, int>? wounds = null;
         Dictionary<string, IReadOnlyList<int>>? heat = null;
+        Dictionary<string, IReadOnlyList<int>>? berserk = null;
 
         // A selection roll names the units it selects among, one die each, in order.
         static bool Select(ref Dictionary<string, int>? into, string ids, DiceRolled roll)
@@ -290,6 +291,9 @@ public static class LiveFire
                 case "heatOfBattle" when roll.Count == 2:
                     (heat ??= new(StringComparer.Ordinal))[unit] = roll.Values;
                     break;
+                case "berserkCheck" when roll.Count == 2:
+                    (berserk ??= new(StringComparer.Ordinal))[unit] = roll.Values;
+                    break;
                 default:
                     return null;
             }
@@ -300,13 +304,14 @@ public static class LiveFire
             WeaponSelection = weaponSelection,
             FirerSelection = firerSelection,
             HeatOfBattle = heat,
+            BerserkChecks = berserk,
         };
     }
 
     private static bool Is(IGameObject item, string condition) => GameState.Condition(item, condition) == ConditionState.True;
 
     /// <summary>A unit in the target Location, with the Fanatic (A10.8) and heroic (A15.21) states the Fire package reads.</summary>
-    private static FireTarget Target(UnitInstance unit, BoardLocation at) =>
+    internal static FireTarget Target(UnitInstance unit, BoardLocation at) =>
         new(unit.Id, unit.Definition?.Definition, at.ToString(), Is(unit, Conditions.Broken),
             Is(unit, Conditions.Pinned), Is(unit, Conditions.Concealed), Is(unit, Conditions.Hidden), unit.Kind == UnitKinds.Dummy,
             Is(unit, Conditions.Wounded), Is(unit, Conditions.Disrupted))
@@ -317,7 +322,7 @@ public static class LiveFire
         };
 
     // A7.1: a unit fires in one fire phase per Player Turn; A7.531: a directing leader is marked too.
-    private static bool Fired(IGameObject item) => Is(item, Conditions.PrepFire) || Is(item, Conditions.FinalFire);
+    internal static bool Fired(IGameObject item) => Is(item, Conditions.PrepFire) || Is(item, Conditions.FinalFire);
 }
 
 /// <summary>

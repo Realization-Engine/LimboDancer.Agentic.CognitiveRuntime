@@ -58,6 +58,12 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.move-stack: the stack moves from one Location (A4.2)");
         }
 
+        // C10: a crew manning a Gun leaves it only by abandoning it, and Gun movement is not reviewed (ruling R24.4).
+        if (movers.FirstOrDefault(unit => Mans(state, unit!)) is { } gunner)
+        {
+            return Refused(scope, label, expected, $"play.move-crew-mans-gun: {gunner.Id} mans a Gun; abandoning or moving a Gun is not reviewed (C10, A21.13)");
+        }
+
         // A3.3 (p. 47): a unit that fired in the PFPh does not move in the MPh.
         if (movers.FirstOrDefault(unit => GameState.Condition(unit!, Conditions.PrepFire) == ConditionState.True) is { } fired)
         {

@@ -61,6 +61,11 @@ public sealed partial class GamePlanner
                 $"play.advance-unit: {barred.Id} is broken, pinned, TI, berserk, in Melee, captured, concealed, or has advanced this APh (A4.7, A15.431, A11.15)");
         }
 
+        if (units.FirstOrDefault(unit => Mans(state, unit!)) is { } gunner)
+        {
+            return Refused(scope, label, expected, $"play.advance-crew-mans-gun: {gunner.Id} mans a Gun; abandoning or moving a Gun is not reviewed (C10, A21.13)");
+        }
+
         var (fromRead, toRead, adjacent, crossed) = Step(state, from, to);
         if (fromRead is null || toRead is null || !adjacent || crossed is null)
         {
@@ -469,6 +474,10 @@ public sealed partial class GamePlanner
         ArgumentNullException.ThrowIfNull(unit);
         return state.Location(unit.Id) is { } at && MustWithdraw(state, unit, at.Location);
     }
+
+    /// <summary>Whether a unit mans an active Gun (A21.13, C2.1).</summary>
+    private static bool Mans(GameState state, UnitInstance unit) =>
+        state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Manned } holding && holding.Holder == unit.Id);
 
     /// <summary>A Guard: a unit with an active prisoner (A20.5).</summary>
     private static bool IsGuard(GameState state, UnitInstance unit) =>

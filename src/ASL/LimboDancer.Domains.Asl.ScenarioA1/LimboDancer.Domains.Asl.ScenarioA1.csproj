@@ -35,5 +35,8 @@
     <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.close-combat-case-matrix.json" LogicalName="ScenarioA1.close-combat-matrix.json" WithCulture="false" />
     <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.close-combat-package.json" LogicalName="ScenarioA1.close-combat-package.json" WithCulture="false" />
     <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/Supplements/a11-close-combat-table.transcription.json" LogicalName="ScenarioA1.close-combat-cct.json" WithCulture="false" />
+    <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.ordnance-case-matrix.json" LogicalName="ScenarioA1.ordnance-matrix.json" WithCulture="false" />
+    <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.ordnance-package.json" LogicalName="ScenarioA1.ordnance-package.json" WithCulture="false" />
+    <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/Supplements/c3-to-hit-table.transcription.json" LogicalName="ScenarioA1.ordnance-to-hit.json" WithCulture="false" />
   </ItemGroup>
 </Project>

@@ -165,7 +165,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
     {
         ArgumentNullException.ThrowIfNull(events);
         return GameProjector.Project(events, vocabulary, catalogs, Chains(events), LiveGames.Sources, FireRecordVerifier.Shared, RallyRecordVerifier.Shared,
-            CloseCombatRecordVerifier.Shared);
+            CloseCombatRecordVerifier.Shared, OrdnanceRecordVerifier.Shared);
     }
 
     public async Task<GamePlan> PlanAsync(ActionDescriptor action, JsonElement arguments, Guid tenant, string? actor = null,
@@ -210,6 +210,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             "asl.game.advance" => PlanAdvanceUnits(scope, arguments, existing, attemptId, expected, label),
             "asl.game.ambush" => PlanAmbush(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.close-combat" => PlanCloseCombat(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
+            "asl.game.fire-ordnance" => PlanFireOrdnance(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.take-prisoner" => PlanTakePrisoner(scope, arguments, existing, attemptId, expected, label),
             _ => Refused(scope, label, expected, "play.unknown-action"),
         };

@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "1.0.0",
+  "chart": "C3 To Hit Table and C4 Gun and Ammo Basic To Hit Number Modifications",
+  "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+  "physicalPdfPage": 700,
+  "boundary": "The range header, the Infantry (Other) row's black and red Basic TH#, and the C4 rows for *, L, and LL weapons and for weapons of 57mm or less and of 40mm or less. The Vehicle and Area rows, the APDS/APCR and SMOKE rows, and the C5 and C6 DRM lines are outside this transcription; the package cites the DRM from their rules.",
+  "reading": "Each range column prints two Basic TH#: black first, red second (C3.3; confirmed on a rendering). The C4 values apply to the Basic TH# (C4.5).",
+  "ranges": [
+    { "label": "0-6", "minimum": 0, "maximum": 6 },
+    { "label": "7-12", "minimum": 7, "maximum": 12 },
+    { "label": "13-18", "minimum": 13, "maximum": 18 },
+    { "label": "19-24", "minimum": 19, "maximum": 24 },
+    { "label": "25-30", "minimum": 25, "maximum": 30 },
+    { "label": "31-36", "minimum": 31, "maximum": 36 },
+    { "label": "37-42", "minimum": 37, "maximum": 42 },
+    { "label": "43-48", "minimum": 43, "maximum": 48 },
+    { "label": "49-54", "minimum": 49, "maximum": 54 },
+    { "label": "> 54", "minimum": 55, "maximum": null }
+  ],
+  "infantry": {
+    "black": [8, 7, 6, 5, 4, 3, 2, 1, 0, -1],
+    "red": [8, 6, 5, 4, 3, 2, 1, 0, -1, -2]
+  },
+  "modifications": {
+    "star": [0, 0, -1, -1, -1, -1, -1, -1, -1, -1],
+    "l": [0, 0, 1, 1, 1, 1, 1, 1, 1, 1],
+    "ll": [0, 0, 1, 1, 2, 2, 2, 2, 2, 2],
+    "atMost57mm": [0, 0, -1, -1, -2, -2, -3, -3, -4, -4],
+    "atMost40mm": [0, 0, -1, -1, -1, -1, -1, -1, -1, -1]
+  }
+}

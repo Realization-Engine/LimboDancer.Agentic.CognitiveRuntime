@@ -4,13 +4,13 @@ using LimboDancer.Domains.Asl.Authoring;
 namespace LimboDancer.Domains.Asl.Authoring.Tests;
 
 /// <summary>
-/// The Rally case matrix (unit step 19): the user's rulings of 2026-09-26, pinned to verified source fragments and to the
-/// reviewed Scenario A1 catalog.
+/// The Ordnance case matrix (unit step 24): the rulings of the plan's section 11 (R24.1 to R24.5), pinned to verified source
+/// fragments, to the To Hit Table and IFT transcriptions, and to the reviewed Scenario A1 catalog.
 /// </summary>
-public sealed class AslScenarioA1RallyMatrixTests
+public sealed class AslScenarioA1OrdnanceMatrixTests
 {
     private const string SourceCommit = "a3254ff1d492dbdd28483d86f5b42437b48e80d4";
-    private const string MatrixSha256 = "568dab9ea0b8de6e4cb6ca77c5472c83374f11962b2440f044714c75ddc60827";
+    private const string MatrixSha256 = "08f1089142cb89b71a6e4998c7222c0675960fe9201c4e0bb0539b649912b88f";
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     private static string Registry(string name) => Path.Combine(RepositoryPaths.Root, "docs", "ASL", "SourceRegistry", name);
@@ -18,19 +18,26 @@ public sealed class AslScenarioA1RallyMatrixTests
     private static JsonDocument Read(string name) => JsonDocument.Parse(File.ReadAllText(Registry(name)));
 
     [Fact]
-    public void TheMatrixPinsTheCatalogAndTheRulings()
+    public void TheMatrixPinsTheToHitTableTheCatalogAndTheRulings()
     {
-        Assert.Equal(MatrixSha256, Hashing.Sha256File(Registry("asl-scenario-a1.rally-case-matrix.json")));
-        using var matrix = Read("asl-scenario-a1.rally-case-matrix.json");
+        Assert.Equal(MatrixSha256, Hashing.Sha256File(Registry("asl-scenario-a1.ordnance-case-matrix.json")));
+        using var matrix = Read("asl-scenario-a1.ordnance-case-matrix.json");
         var root = matrix.RootElement;
-        Assert.Equal("user-directed-affirmative-xunit-review-2026-09-26", root.GetProperty("authority").GetString());
+        Assert.Equal("user-directed-affirmative-xunit-review-2026-09-27", root.GetProperty("authority").GetString());
         Assert.Equal("none", root.GetProperty("executionAuthority").GetString());
         Assert.Equal(AslScenarioA1SourceInventory.PdfDigest, root.GetProperty("sourcePdfSha256").GetString());
+        Assert.Equal(Hashing.Sha256File(Registry(Path.Combine("Supplements", "c3-to-hit-table.transcription.json"))),
+            root.GetProperty("toHitTranscriptionSha256").GetString());
+        Assert.Equal(Hashing.Sha256File(Registry(Path.Combine("Supplements", "a7-infantry-fire-table.transcription.json"))),
+            root.GetProperty("iftTranscriptionSha256").GetString());
         Assert.Equal(Hashing.Sha256File(Path.Combine(RepositoryPaths.Root, "src", "ASL", "units", "catalog", "scenario-a1.catalog.json")),
             root.GetProperty("catalogSha256").GetString());
-        var rulings = root.GetProperty("rulings");
-        Assert.StartsWith("original-2-on-a-leader-rally", rulings.GetProperty("heatOfBattle").GetString(), StringComparison.Ordinal);
-        Assert.StartsWith("first-mmc-self-rally", rulings.GetProperty("fieldPromotion").GetString(), StringComparison.Ordinal);
+
+        // The To Hit Table's Infantry row, as read from p. 700: black first, red second.
+        using var table = Read(Path.Combine("Supplements", "c3-to-hit-table.transcription.json"));
+        Assert.Equal(700, table.RootElement.GetProperty("physicalPdfPage").GetInt32());
+        Assert.Equal([8, 7, 6, 5, 4, 3, 2, 1, 0, -1], table.RootElement.GetProperty("infantry").GetProperty("black").EnumerateArray().Select(item => item.GetInt32()));
+        Assert.Equal([8, 6, 5, 4, 3, 2, 1, 0, -1, -2], table.RootElement.GetProperty("infantry").GetProperty("red").EnumerateArray().Select(item => item.GetInt32()));
     }
 
     [Fact]
@@ -41,16 +48,16 @@ public sealed class AslScenarioA1RallyMatrixTests
         var attestation = JsonSerializer.Deserialize<AslScenarioA1SourceAttestation>(attestationJson.RootElement.GetRawText(), JsonOptions)!;
         var verified = AslScenarioA1FireSourceReview.Build(RepositoryPaths.Root, manifests, attestation).Records
             .Concat(AslScenarioA1FireSourceReview.BuildBranches(RepositoryPaths.Root, manifests, attestation).Records)
-            .Concat(AslScenarioA1FireSourceReview.BuildRally(RepositoryPaths.Root, manifests, attestation).Records)
             .Concat(AslScenarioA1FireSourceReview.BuildHeatOfBattle(RepositoryPaths.Root, manifests, attestation).Records)
+            .Concat(AslScenarioA1FireSourceReview.BuildCloseCombat(RepositoryPaths.Root, manifests, attestation).Records)
             .Concat(AslScenarioA1FireSourceReview.BuildBerserkSurrender(RepositoryPaths.Root, manifests, attestation).Records)
             .Concat(AslScenarioA1FireSourceReview.BuildOrdnance(RepositoryPaths.Root, manifests, attestation).Records)
             .Where(item => item.Disposition == TirSourceVerificationDisposition.Verified)
             .Select(item => item.SourceFragment.FragmentId).ToHashSet(StringComparer.Ordinal);
 
-        using var matrix = Read("asl-scenario-a1.rally-case-matrix.json");
+        using var matrix = Read("asl-scenario-a1.ordnance-case-matrix.json");
         var fragments = matrix.RootElement.GetProperty("sourceFragments").EnumerateArray().ToArray();
-        Assert.Equal(45, fragments.Length);
+        Assert.Equal(49, fragments.Length);
         foreach (var item in fragments)
         {
             var fragment = Assert.Single(manifests.Fragments, candidate => candidate.FragmentId == item.GetProperty("fragmentId").GetString());

@@ -35,7 +35,8 @@ public sealed class CounterSheetCatalogBuilderTests
             "defender-line-half-squad", "defender-guards-squad", "defender-guards-half-squad", "attacker-leader-6-plus-1", "attacker-leader-7-0",
             "attacker-leader-8-0", "attacker-leader-8-1", "attacker-leader-9-1", "attacker-leader-9-2", "attacker-leader-10-2", "attacker-leader-10-3",
             "defender-leader-8-1", "defender-leader-9-1", "defender-leader-9-2", "defender-leader-10-2", "defender-leader-10-3", "attacker-hero",
-            "defender-hero", "defender-nkvd-squad", "defender-nkvd-half-squad",
+            "defender-hero", "defender-nkvd-squad", "defender-nkvd-half-squad", "attacker-crew", "defender-crew", "attacker-inf-gun",
+            "defender-at-gun",
         ],
         catalog.Definitions.Select(definition => definition.Id));
 

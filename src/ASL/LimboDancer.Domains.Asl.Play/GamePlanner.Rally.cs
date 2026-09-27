@@ -85,8 +85,12 @@ public sealed partial class GamePlanner
                     throw new InvalidOperationException("The Rally package left an attempt it had accepted undecided: " + string.Join("; ", resolution.Reasons));
                 }
 
-                // The Rally DR, a leader's Wound Severity dr (A17.11), the Heat of Battle DR (A15.1), or the Leader Creation dr (A18.2).
-                var key = missing.Contains("woundSeverity", StringComparison.Ordinal) ? "woundSeverity"
+                // The Rally DR, a leader's Wound Severity dr (A17.11), the Heat of Battle DR (A15.1), the Leader Creation dr (A18.2), or
+                // the NTC of a companion a berserk leader tries to take with him (A15.41).
+                const string BerserkCheck = "asl.a1.rally.roll-missing:berserkCheck:";
+                var companion = missing.StartsWith(BerserkCheck, StringComparison.Ordinal) ? missing[BerserkCheck.Length..] : null;
+                var key = companion is not null ? "berserkCheck:" + companion
+                    : missing.Contains("woundSeverity", StringComparison.Ordinal) ? "woundSeverity"
                     : missing.EndsWith(":heatOfBattle", StringComparison.Ordinal) ? "heatOfBattle"
                     : missing.EndsWith(":leaderCreation", StringComparison.Ordinal) ? "leaderCreation"
                     : "rally";
@@ -95,6 +99,7 @@ public sealed partial class GamePlanner
                     "woundSeverity" => (1, "rally-wound-severity"),
                     "heatOfBattle" => (2, "rally-heat-of-battle"),
                     "leaderCreation" => (1, "rally-leader-creation"),
+                    _ when companion is not null => (2, "rally-berserk-check"),
                     _ => (2, "rally"),
                 };
                 var drawn = draw(new RollRequest(count, 6));
@@ -107,6 +112,7 @@ public sealed partial class GamePlanner
                     "woundSeverity" => rolls with { WoundSeverity = drawn.Values[0] },
                     "heatOfBattle" => rolls with { HeatOfBattle = drawn.Values },
                     "leaderCreation" => rolls with { LeaderCreation = drawn.Values[0] },
+                    _ when companion is not null => rolls with { BerserkChecks = Add(rolls.BerserkChecks, companion, drawn.Values) },
                     _ => rolls with { Rally = drawn.Values },
                 };
             }

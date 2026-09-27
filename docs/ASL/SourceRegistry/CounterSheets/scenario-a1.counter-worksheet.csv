@@ -525,3 +525,81 @@ sheet,counter,face,attribute,value,transcriber,reviewer,note
 ,defender-nkvd-half-squad,broken,broken-morale,,,,"whole number, or not-printed if the counter has no broken side (A1.4)"
 ,defender-nkvd-half-squad,broken,bpv,,,,"whole number, or not-printed (A1.4)"
 ,defender-nkvd-half-squad,broken,asl:self-rally,,,,yes or no: broken morale in a square (A1.4)
+,attacker-crew,counter,kind,,,,expected asl:crew
+,attacker-crew,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,attacker-crew,front,firepower,,,,whole number (A1.21)
+,attacker-crew,front,range,,,,whole number (A1.22)
+,attacker-crew,front,morale,,,,whole number (A1.23)
+,attacker-crew,front,identity,,,,"identity as printed, or not-printed"
+,attacker-crew,front,class,,,,"elite, 1st-line, 2nd-line, green, or conscript"
+,attacker-crew,front,class-variant,,,,"circle or square, or not-printed"
+,attacker-crew,front,smoke-exponent,,,,"whole number, or not-printed"
+,attacker-crew,front,asl:assault-fire,,,,yes or no
+,attacker-crew,front,asl:spraying-fire,,,,yes or no
+,attacker-crew,front,asl:elr-5,,,,yes or no
+,attacker-crew,front,asl:assault-engineer,,,,yes or no
+,attacker-crew,broken,broken-morale,,,,whole number (A1.23)
+,attacker-crew,broken,bpv,,,,whole number
+,attacker-crew,broken,asl:self-rally,,,,yes or no
+,defender-crew,counter,kind,,,,expected asl:crew
+,defender-crew,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,defender-crew,front,firepower,,,,whole number (A1.21)
+,defender-crew,front,range,,,,whole number (A1.22)
+,defender-crew,front,morale,,,,whole number (A1.23)
+,defender-crew,front,identity,,,,"identity as printed, or not-printed"
+,defender-crew,front,class,,,,"elite, 1st-line, 2nd-line, green, or conscript"
+,defender-crew,front,class-variant,,,,"circle or square, or not-printed"
+,defender-crew,front,smoke-exponent,,,,"whole number, or not-printed"
+,defender-crew,front,asl:assault-fire,,,,yes or no
+,defender-crew,front,asl:spraying-fire,,,,yes or no
+,defender-crew,front,asl:elr-5,,,,yes or no
+,defender-crew,front,asl:assault-engineer,,,,yes or no
+,defender-crew,broken,broken-morale,,,,whole number (A1.23)
+,defender-crew,broken,bpv,,,,whole number
+,defender-crew,broken,asl:self-rally,,,,yes or no
+,attacker-inf-gun,counter,kind,,,,expected asl:gun
+,attacker-inf-gun,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,attacker-inf-gun,front,identity,,,,"identity as printed, or not-printed"
+,attacker-inf-gun,front,designation,,,,designation as printed
+,attacker-inf-gun,front,gun-type,,,,"mtr, at, inf, art, rcl, or aa (C2.22)"
+,attacker-inf-gun,front,caliber,,,,whole number in mm (C2.21)
+,attacker-inf-gun,front,caliber-suffix,,,,"star, l, ll, or not-printed"
+,attacker-inf-gun,front,rate-of-fire,,,,"whole number, or not-printed"
+,attacker-inf-gun,front,ife,,,,"whole number, or not-printed"
+,attacker-inf-gun,front,breakdown,,,,whole number (C2.28)
+,attacker-inf-gun,front,range-minimum,,,,"whole number, or not-printed"
+,attacker-inf-gun,front,range-maximum,,,,"whole number, or not-printed"
+,attacker-inf-gun,front,special-ammo,,,,"codes as printed, space-separated"
+,attacker-inf-gun,front,manhandling,,,,whole number (C2.27)
+,attacker-inf-gun,front,target-size,,,,"very-small, small, large, very-large, or not-printed"
+,attacker-inf-gun,front,asl:no-ap,,,,yes or no
+,attacker-inf-gun,front,asl:no-he,,,,yes or no
+,attacker-inf-gun,front,asl:mount-360,,,,yes or no
+,attacker-inf-gun,front,asl:qsu,,,,yes or no
+,attacker-inf-gun,front,asl:nm,,,,yes or no
+,attacker-inf-gun,front,asl:rfnm,,,,yes or no
+,attacker-inf-gun,malfunctioned,repair,,,,"whole number, or not-printed"
+,attacker-inf-gun,malfunctioned,removal,,,,"whole number, or not-printed"
+,defender-at-gun,counter,kind,,,,expected asl:gun
+,defender-at-gun,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,defender-at-gun,front,identity,,,,"identity as printed, or not-printed"
+,defender-at-gun,front,designation,,,,designation as printed
+,defender-at-gun,front,gun-type,,,,"mtr, at, inf, art, rcl, or aa (C2.22)"
+,defender-at-gun,front,caliber,,,,whole number in mm (C2.21)
+,defender-at-gun,front,caliber-suffix,,,,"star, l, ll, or not-printed"
+,defender-at-gun,front,rate-of-fire,,,,"whole number, or not-printed"
+,defender-at-gun,front,ife,,,,"whole number, or not-printed"
+,defender-at-gun,front,breakdown,,,,whole number (C2.28)
+,defender-at-gun,front,range-minimum,,,,"whole number, or not-printed"
+,defender-at-gun,front,range-maximum,,,,"whole number, or not-printed"
+,defender-at-gun,front,special-ammo,,,,"codes as printed, space-separated"
+,defender-at-gun,front,manhandling,,,,whole number (C2.27)
+,defender-at-gun,front,target-size,,,,"very-small, small, large, very-large, or not-printed"
+,defender-at-gun,front,asl:no-ap,,,,yes or no
+,defender-at-gun,front,asl:no-he,,,,yes or no
+,defender-at-gun,front,asl:mount-360,,,,yes or no
+,defender-at-gun,front,asl:qsu,,,,yes or no
+,defender-at-gun,front,asl:nm,,,,yes or no
+,defender-at-gun,front,asl:rfnm,,,,yes or no
+,defender-at-gun,malfunctioned,repair,,,,"whole number, or not-printed"
+,defender-at-gun,malfunctioned,removal,,,,"whole number, or not-printed"

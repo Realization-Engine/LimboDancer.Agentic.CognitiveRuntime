@@ -83,6 +83,7 @@ public static class LiveRally
         IReadOnlyList<int>? heat = null;
         int? severity = null;
         int? creation = null;
+        Dictionary<string, IReadOnlyList<int>>? berserk = null;
         foreach (var (key, id) in rally.Rolls)
         {
             if (!rolls.TryGetValue(id, out var roll) || roll.Sides != 6)
@@ -104,6 +105,9 @@ public static class LiveRally
                 case "leaderCreation" when roll.Count == 1:
                     creation = roll.Values[0];
                     break;
+                case var check when check.StartsWith("berserkCheck:", StringComparison.Ordinal) && roll.Count == 2:
+                    (berserk ??= new(StringComparer.Ordinal))[check["berserkCheck:".Length..]] = roll.Values;
+                    break;
                 default:
                     return null;
             }
@@ -113,6 +117,7 @@ public static class LiveRally
         {
             HeatOfBattle = heat,
             LeaderCreation = creation,
+            BerserkChecks = berserk,
         };
     }
 
