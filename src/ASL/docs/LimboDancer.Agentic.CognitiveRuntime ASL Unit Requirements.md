@@ -377,6 +377,8 @@ Later candidates, not yet sequenced: revisiting the Java VASL oracle tool, which
 
     Steps 19 to 23 are to be built in one implementation pass after one review sitting, with the Windows and Linux checks run once at its end (the plan, section 11). Steps 24 and 25 are later passes.
 
+    Done for steps 19 to 23 together: the review sitting in the [Scenario A1 Rally Review](<Scenario A1 Rally Review 2026-09-26.md>) and the [Scenario A1 Fire Review](<Scenario A1 Fire Review 2026-09-26.md>), section "Revision at unit steps 19 to 23", and the game model, actions, and Play page in the [ASL Unit Rally and Fire Extensions in Live Play Design](<ASL Unit Rally and Fire Extensions in Live Play Design.md>). U21 to U27 pass in the Play tests, and on the Play page for a rally, a MG in a fire group removing a Dummy, and a move under Defensive First Fire with Residual FP. Recorded deviations: Heat of Battle and Leader Creation are not taken (R0.2, R19.4), and a moving stack is not split when a mover breaks or pins.
+
 ## 14. Acceptance scenarios
 
 - **U1, definition lookup.** Given the registered catalog, a lookup for a squad of a given nationality, class, and date returns its printed values with their source, and a lookup outside its applicability returns an explicit miss.

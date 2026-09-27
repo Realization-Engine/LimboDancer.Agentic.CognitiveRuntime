@@ -115,6 +115,18 @@ public static class Conditions
     /// <summary>Final Fire (A3.4, p. 47): the unit fired, or directed fire, in the DFPh; removed at the end of the DFPh.</summary>
     public const string FinalFire = "asl:final-fire";
 
+    /// <summary>
+    /// First Fire (A8.1, p. 59): the unit or weapon Defensive First Fired this MPh; removed at the end of the DFPh (A3.4). A
+    /// vocabulary state since <c>asl@1.6.0</c>.
+    /// </summary>
+    public const string FirstFire = "asl:first-fire";
+
+    /// <summary>Desperation Morale (A10.62, p. 68): +4 to a Rally attempt; removed at the end of every RPh.</summary>
+    public const string DesperationMorale = "asl:dm";
+
+    /// <summary>A malfunctioned SW (A9.7, p. 65): it cannot fire until repaired (A9.72).</summary>
+    public const string Malfunctioned = "asl:malfunctioned";
+
     /// <summary>Captured (A20.2, p. 86), held by a captor (A20.5, p. 87).</summary>
     public const string Captured = "asl:captured";
 
@@ -258,6 +270,19 @@ public sealed record UnitInstance(
     bool MovementEnded = false) : IGameObject
 {
     string? IGameObject.Side => Side;
+
+    /// <summary>Half an MF spent beyond <see cref="MfSpent"/>, as grain's 1½ MF leaves (B15.4, p. 129).</summary>
+    public bool HalfMfSpent
+    {
+        get; init;
+    }
+}
+
+/// <summary>Unit kinds the state model treats specially.</summary>
+public static class UnitKinds
+{
+    /// <summary>A Dummy (A12.11, p. 76): a concealment counter with no unit beneath, and no catalog definition.</summary>
+    public const string Dummy = "asl:dummy";
 }
 
 /// <summary>
@@ -297,7 +322,14 @@ public sealed record EquipmentInstance(
     Position Position,
     Holding? Holding,
     IReadOnlyDictionary<string, ConditionState> Conditions,
-    InstanceStatus Status) : IGameObject;
+    InstanceStatus Status) : IGameObject
+{
+    /// <summary>The catalog definition of a SW or Gun that has one (catalog 1.2.0 on); null for equipment created by kind alone.</summary>
+    public DefinitionReference? Definition
+    {
+        get; init;
+    }
+}
 
 /// <summary>A Sniper, fortification, or marker (ASL-UNIT-026): its own entity, not a unit with a flag.</summary>
 public sealed record EntityInstance(

@@ -1,0 +1,293 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "reviewed-source-backed-rally-candidate",
+  "authority": "user-directed-affirmative-xunit-review-2026-09-26",
+  "scope": "A Rally attempt in the RPh by a broken MMC or leader of the reviewed Scenario A1 catalog, rallied by an unbroken friendly leader in its Location or by Self-Rally, in the admitted terrain.",
+  "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+  "catalogSha256": "cc0273be55fdfbaee00d9f4284d0913898ea6953b6b9c21585dfb0c6665b2795",
+  "sourceFragments": [
+    {
+      "ruleId": "A3.1",
+      "physicalPdfPage": 47,
+      "startLine": 197,
+      "fragmentId": "asl-fragment:sha256:8f8ab93f18388415b88f6d406ad5e45274cbd53e4348e5d58c9b681ea51c9ca3",
+      "contentSha256": "19f8f7b1f0a27ec0fca914e9e32f7b1b7880dd0c7074a9122e7cf58d9e20f78e"
+    },
+    {
+      "ruleId": "A7.302",
+      "physicalPdfPage": 55,
+      "startLine": 467,
+      "fragmentId": "asl-fragment:sha256:d178a7897f7d831f951d8ead38b72f4947955f9411c8bc3d05c23bc7911e55e2",
+      "contentSha256": "c4e5a15453e8631a71658647f7d2a9e8cea0e9ea2d2ad92d8c147a09077e07fb"
+    },
+    {
+      "ruleId": "A10.4",
+      "physicalPdfPage": 66,
+      "startLine": 778,
+      "fragmentId": "asl-fragment:sha256:f495a625e46fc0c303219fb6c70a3e59936786d4ba233da9da7f68bc81c56e13",
+      "contentSha256": "9526b33883c258554ab921476643bb9f49866995aba2c4470e7fc2ff7b5f712f"
+    },
+    {
+      "ruleId": "A10.6",
+      "physicalPdfPage": 68,
+      "startLine": 820,
+      "fragmentId": "asl-fragment:sha256:28731874d9988c25b0ef7eaf47caffab04b86b73810a5e3edb26faec7e99c6ed",
+      "contentSha256": "aca7f0c2e62ed0d973c20a68b33e504cda16a3f5ca41d6169429e376bf840716"
+    },
+    {
+      "ruleId": "A10.61",
+      "physicalPdfPage": 68,
+      "startLine": 822,
+      "fragmentId": "asl-fragment:sha256:e723b8ef5e2981901b7a0bc58e1bde1ea7532183903f8d9f976dc28ccbe7de5f",
+      "contentSha256": "caa40a19912f05349567e74559d2f3e37331ae76126e8a570f401cd80e50a267"
+    },
+    {
+      "ruleId": "A10.62",
+      "physicalPdfPage": 68,
+      "startLine": 824,
+      "fragmentId": "asl-fragment:sha256:20a25d5c867af605d65eb28b1d4450d9e09ed7d9da75ec676585e38a62a4faae",
+      "contentSha256": "a5a7182ae238042ff3b6ecbedc84b253436f536f4485b7c6e196d1bcd4beaa4f"
+    },
+    {
+      "ruleId": "A10.63",
+      "physicalPdfPage": 68,
+      "startLine": 828,
+      "fragmentId": "asl-fragment:sha256:b5ec1005c997771e2384da2e041b657e545cd5ec73db8bae9e50c6e6abd3d137",
+      "contentSha256": "7e869eb86204ee844b3d3e25d5ebac0d99e47dd3dfdcebca3492295f0cb56a6b"
+    },
+    {
+      "ruleId": "A10.64",
+      "physicalPdfPage": 68,
+      "startLine": 830,
+      "fragmentId": "asl-fragment:sha256:41c6d37bbe321f743f97a5ba23f57e747d90e8369940a3806cb65889ea756a09",
+      "contentSha256": "4b5433797934ecff1650b5ea6942e65ac6d427f514dbaa70ad859eaedd90da92"
+    },
+    {
+      "ruleId": "A10.7",
+      "physicalPdfPage": 68,
+      "startLine": 832,
+      "fragmentId": "asl-fragment:sha256:f1bd2904c88de953e987558e1427d8b0462feef35dd686f9a4abbba1667d7f32",
+      "contentSha256": "b4c78f2c06f3f71adea064784586749e9ea3ae73fa0b4cce5d810fabc554edcd"
+    },
+    {
+      "ruleId": "A10.71",
+      "physicalPdfPage": 69,
+      "startLine": 838,
+      "fragmentId": "asl-fragment:sha256:28153f6b53ae80cc33e875aaf76d90fed7776227703686b5ab8af161ddab4db0",
+      "contentSha256": "82f842a2d671e98b00568020981f2db92680437519377e73363c4ae157231f2c"
+    },
+    {
+      "ruleId": "A10.72",
+      "physicalPdfPage": 69,
+      "startLine": 844,
+      "fragmentId": "asl-fragment:sha256:c3af7bce268721f97e24940dd2df0ab35fb2ba7ed73e83f484454ce6cccbfe40",
+      "contentSha256": "48a99b2f9d5b559da7c463bef939c5a6ff7cf81ecab56c5a16fb3d3d9075f17b"
+    },
+    {
+      "ruleId": "A12.14",
+      "physicalPdfPage": 77,
+      "startLine": 1019,
+      "fragmentId": "asl-fragment:sha256:cda43e7e134c593883fc46a7db4073092a330a96c9f8b3717fb2fd1080ed966e",
+      "contentSha256": "ca12c552e5fb0bfbb8b7662086e2f374b3a69b61dc5cc1fc2a4f7046448ee8e5"
+    },
+    {
+      "ruleId": "A12.141",
+      "physicalPdfPage": 78,
+      "startLine": 1040,
+      "fragmentId": "asl-fragment:sha256:907744d106fd88ec216c7e5c0b86f639b0df763a89ef7a185aaac1e1c6250983",
+      "contentSha256": "c42de6f1679a4240c508f4247113d5eebeef7b6c6373f8c4a20fba6bfe5c81d0"
+    },
+    {
+      "ruleId": "A15.1",
+      "physicalPdfPage": 83,
+      "startLine": 1214,
+      "fragmentId": "asl-fragment:sha256:4d47963659fb7dd5cbe18f8c9c20342e86d82b4de58dcf63e5f1595150f1435b",
+      "contentSha256": "211fa76fd05873eceb92c823cd1a59a4a0d9057624a75a9a73b54a3736478a01"
+    },
+    {
+      "ruleId": "A15.1",
+      "physicalPdfPage": 83,
+      "startLine": 1226,
+      "fragmentId": "asl-fragment:sha256:1e46aa170b675ff85fd24af1cae7807e6b7293d753a6fc72ee52b86a65b7c3f3",
+      "contentSha256": "26d47329cbdc7f52e43f8832dfa9dd88546f159fc399d112390e11c10ac06e1b"
+    },
+    {
+      "ruleId": "A17.11",
+      "physicalPdfPage": 85,
+      "startLine": 1320,
+      "fragmentId": "asl-fragment:sha256:3b9714ea0d0bd3903aef3f0080cc7247e5b32d444311187f5a2c713a2e2954c2",
+      "contentSha256": "4a183fc157b6ddeabea2e473e64330ed40f3cda9109c36e67bb62b78676c25bc"
+    },
+    {
+      "ruleId": "A17.3",
+      "physicalPdfPage": 85,
+      "startLine": 1324,
+      "fragmentId": "asl-fragment:sha256:7ef3fb7d478b3b767c99abf7b60f7ee7315c14757cb09e2f8c91becaf933f739",
+      "contentSha256": "92f5c7278bcfced2396cf36fd0d823c128f8cb2213ef32d196c57062d97528ef"
+    },
+    {
+      "ruleId": "A18.11",
+      "physicalPdfPage": 85,
+      "startLine": 1332,
+      "fragmentId": "asl-fragment:sha256:b90c45815320c85f639701da53f49c3cb0a59760c51357f4f038cd7852c1efb1",
+      "contentSha256": "7b0eb9a48418c442fa3ca40c6258963fcf852455316fa53dbef780559b3ecd1b"
+    },
+    {
+      "ruleId": "A19.12",
+      "physicalPdfPage": 86,
+      "startLine": 1364,
+      "fragmentId": "asl-fragment:sha256:6ba72d47257af162876dd49563dbed54703df7a7b1df92858bd006ea85abfed3",
+      "contentSha256": "5bc78bd5e698057d4592b155dd46623474e2ce32e23ffc1b1761da0ed39fee6a"
+    }
+  ],
+  "rulings": {
+    "dmSources": "broke-this-player-turn; attacked-while-broken-by-fp-that-could-cause-a-nmc; adjacent-and-rtph-sources-deferred-to-backlog (R19.1)",
+    "heatOfBattle": "original-2-on-a-leader-rally-rallies-as-its-dr-gives; heat-of-battle-recorded-not-taken (R0.2, R19.2)",
+    "fate": "admitted-casualty-reduction-and-wounds (R19.3)",
+    "fieldPromotion": "first-mmc-self-rally-of-own-rph-admitted-as-self-rally; original-2-rallies; leader-creation-recorded-not-taken (R19.4)",
+    "terrain": "woods-and-ordinary-buildings-minus-1; open-ground-brush-orchard-grain-0; other-terrain-abstains (R19.5)",
+    "order": "free-except-a-lone-broken-leader-rallies-himself-first (A10.71; R19.6)",
+    "sides": "both-sides-in-every-rph (R19.7)",
+    "concealment": "a12.141-applied-to-the-unit-and-the-rallying-leader; no-public-report (R19.8)",
+    "woundedLeaders": "a17.3-applied-to-morale-and-leadership (R19.9)",
+    "exclusions": "commissars-allied-troops-encirclement-night-extreme-winter-recovery-deploy (R19.10)",
+    "brokenLeaderBar": "a10.71-bars-the-a18.11-self-rally-while-the-only-leader-is-broken (review reading)",
+    "capabilityUnrecorded": "self-rally-relying-on-capability-the-catalog-does-not-record-is-indeterminate"
+  },
+  "resolution": {
+    "eligibility": "A broken unit of the catalog in its Location in the RPh, once per Player Turn and with no other RPh action (A3.1, A10.6); rallied by an unbroken friendly leader in the same Location (A10.6, A10.7), or by Self-Rally when no Good Order friendly leader is there (A10.63): a broken leader (A10.71), a unit with Self-Rally capability, or the first MMC Rally attempt of the side's own RPh (A18.11); never by a Disrupted unit (A19.12).",
+    "drm": "+4 under DM (A10.62); the rallying leader's modifier, one worse when he is wounded (A10.7, A10.72, A17.3), or +1 for Self-Rally (A10.63); -1 in woods or a building (A10.61).",
+    "morale": "The broken Morale Level (A10.4), one lower when the unit is wounded (A17.3).",
+    "result": "Rallied on a Final DR at most the Morale Level (A10.6); an Original 12 is Fate: Casualty Reduction and no rally (A10.64, A7.302), a leader's wound taking a Wound Severity dr (A17.11); an Original 2 on the A18.11 Self-Rally rallies the unit (A18.11).",
+    "deviations": "An Original 2 on a leader rally is recorded as heat-of-battle-not-taken, and one on the A18.11 Self-Rally as leader-creation-not-taken (ruling R0.2).",
+    "concealment": "The unit and a concealed rallying leader lose \"?\" in the LOS of a Good Order enemy within 16 hexes (A12.141); a Reduced or wounded unit loses it regardless (A12.14)."
+  },
+  "cases": [
+    {
+      "caseId": "A1-rally-resolved",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "resolved",
+      "sourceRules": [
+        "A3.1",
+        "A10.4",
+        "A10.6",
+        "A10.61",
+        "A10.62",
+        "A10.63",
+        "A10.64",
+        "A10.7",
+        "A10.71",
+        "A10.72",
+        "A7.302",
+        "A12.14",
+        "A12.141",
+        "A15.1",
+        "A17.11",
+        "A17.3",
+        "A18.11",
+        "A19.12"
+      ],
+      "reason": "A declared attempt inside the reviewed scope, with its roll recorded, resolves to its DRM, Final DR, and the unit's effect."
+    },
+    {
+      "caseId": "A1-rally-phase-outside",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "abstained",
+      "sourceRules": [
+        "A3.1",
+        "A10.6"
+      ],
+      "reason": "Rally occurs only in the RPh."
+    },
+    {
+      "caseId": "A1-rally-unit-outside",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "abstained",
+      "sourceRules": [
+        "A10.6"
+      ],
+      "reason": "The unit is not a broken MMC or leader of the catalog in the declared Location."
+    },
+    {
+      "caseId": "A1-rally-already-attempted",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "abstained",
+      "sourceRules": [
+        "A3.1",
+        "A10.6"
+      ],
+      "reason": "The unit already attempted to rally this Player Turn, or took another RPh action."
+    },
+    {
+      "caseId": "A1-rally-leader-outside",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "abstained",
+      "sourceRules": [
+        "A10.6",
+        "A10.7"
+      ],
+      "reason": "The rallying leader is not an unbroken friendly leader in the Location."
+    },
+    {
+      "caseId": "A1-rally-self-rally-refused",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "abstained",
+      "sourceRules": [
+        "A10.63",
+        "A10.71",
+        "A18.11",
+        "A19.12"
+      ],
+      "reason": "Self-Rally with a Good Order leader present, by a Disrupted unit, or by a unit without the capability."
+    },
+    {
+      "caseId": "A1-rally-terrain-outside",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "abstained",
+      "sourceRules": [
+        "A10.61"
+      ],
+      "reason": "The Location's terrain is outside the reviewed list."
+    },
+    {
+      "caseId": "A1-rally-capability-unrecorded",
+      "reviewStatus": "reviewed-nondefinitive",
+      "expectedDisposition": "indeterminate",
+      "sourceRules": [
+        "A10.63"
+      ],
+      "reason": "A Self-Rally relying on a capability the catalog does not record."
+    },
+    {
+      "caseId": "A1-rally-reduction-counter-missing",
+      "reviewStatus": "reviewed-nondefinitive",
+      "expectedDisposition": "indeterminate",
+      "sourceRules": [
+        "A10.64",
+        "A7.302"
+      ],
+      "reason": "Fate could Reduce a squad the catalog has no HS for."
+    },
+    {
+      "caseId": "A1-rally-roll-missing",
+      "reviewStatus": "reviewed-nondefinitive",
+      "expectedDisposition": "indeterminate",
+      "sourceRules": [
+        "A10.6"
+      ],
+      "reason": "A roll the attempt needs is not recorded."
+    }
+  ],
+  "admissionRule": "A declared attempt is resolved only when every fact is within the reviewed scope and every roll it needs is recorded; otherwise it is Abstained or Indeterminate with its reasons.",
+  "excludedConsequences": [
+    "Heat of Battle, Heroes, Battle Hardening, Berserk, and Surrender",
+    "Leader Creation",
+    "DM from an ADJACENT enemy and at the start of the RtPh, and DM retention",
+    "Rally terrain other than woods and ordinary buildings",
+    "Commissars, Allied Troops, Encirclement, night, and Extreme Winter",
+    "Recovery, Deploy, and Repair",
+    "Self-Rally capability the catalog does not record",
+    "any use by a game action"
+  ],
+  "executionAuthority": "none"
+}

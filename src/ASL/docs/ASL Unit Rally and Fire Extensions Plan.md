@@ -1,6 +1,6 @@
 # ASL Unit Rally and Fire Extensions Plan
 
-**Status:** Rulings accepted by the user on 2026-09-26; nothing is built yet. It sets out unit steps 19 to 25, the rulings for steps 19 to 23, and how to build them in one implementation pass. Everything the rulings leave out, and each recorded deviation, is in the [ASL Unit Backlog](<ASL Unit Backlog.md>).
+**Status:** Rulings accepted by the user on 2026-09-26. Steps 19 to 23 are built as the [ASL Unit Rally and Fire Extensions in Live Play Design](<ASL Unit Rally and Fire Extensions in Live Play Design.md>) records; steps 24 and 25 are later passes. It sets out unit steps 19 to 25, the rulings for steps 19 to 23, and how to build them in one implementation pass. Everything the rulings leave out, and each recorded deviation, is in the [ASL Unit Backlog](<ASL Unit Backlog.md>).
 
 **Date:** 2026-09-26
 

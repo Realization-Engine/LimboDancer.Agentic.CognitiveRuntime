@@ -1,6 +1,6 @@
 {
   "pack": "asl",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "label": "ASL Personnel, support weapons, Guns, vehicles, and entities that are not units",
   "note": "Original LimboDancer vocabulary. Rule references are to the registered rulebook PDF by physical page; no rulebook text or counter artwork.",
   "extends": [],
@@ -253,6 +253,7 @@
     { "name": "asl:hidden", "label": "hidden", "short": "HIP", "rule": "A12.3, p. 80" },
     { "name": "asl:prep-fire", "label": "Prep Fire", "short": "PF", "rule": "A3.2, p. 47; A3.5, p. 47" },
     { "name": "asl:final-fire", "label": "Final Fire", "short": "FF", "rule": "A3.4, p. 47" },
+    { "name": "asl:first-fire", "label": "First Fire", "short": "1F", "rule": "A8.1, p. 59; A3.4, p. 47" },
     { "name": "asl:malfunctioned", "label": "malfunctioned", "short": "MAL", "face": "malfunctioned", "rule": "A9.7, p. 65" },
     { "name": "asl:limbered", "label": "limbered", "short": "LMB", "face": "limbered", "rule": "C2.2, p. 167" },
     { "name": "asl:wrecked", "label": "wrecked", "short": "WRK", "face": "wreck", "rule": "D1.9, p. 195" },
@@ -295,6 +296,7 @@
         "wounded": "{side} wounded {kind} {identity}, {firepower}-{range}-{morale}"
       }
     },
+    { "name": "asl:dummy", "label": "Dummy", "extends": "asl:unit", "rule": "A12.11, p. 76", "accessibleName": { "default": "{side} {kind}" } },
     { "name": "asl:equipment", "label": "equipment", "extends": "asl:unit" },
     {
       "name": "asl:sw", "label": "SW", "extends": "asl:equipment", "faces": ["front", "malfunctioned"],

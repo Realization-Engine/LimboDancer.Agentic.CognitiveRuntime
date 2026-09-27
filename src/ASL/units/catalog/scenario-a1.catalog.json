@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "catalog": "asl-scenario-a1",
-  "version": "1.1.0",
-  "label": "Scenario A1 catalog: Infantry Personnel for the reviewed Scenario A1 cases",
+  "version": "1.2.0",
+  "label": "Scenario A1 catalog: Infantry Personnel and MGs for the reviewed Scenario A1 cases",
   "publication": "published",
   "vocabulary": [
     "asl@1.3.0"
@@ -12,9 +12,9 @@
       "id": "asl-counter-sheets:scenario-a1",
       "status": "reviewed",
       "record": "docs/ASL/SourceRegistry/CounterSheets/asl-counter-sheets.scenario-a1.source-record.json",
-      "recordSha256": "24064b690160c14b1992c74498170591506285f54812f12af055cedff4490ba5",
+      "recordSha256": "27771507dd7fdf37900802ca5c0f3f9bb03089e92e89bff3baf0c8ad49f7987a",
       "transcription": "docs/ASL/SourceRegistry/CounterSheets/scenario-a1.counter-transcription.csv",
-      "transcriptionSha256": "73852539971b48b088f28f6257ec2feaf4d01b4faa28e21be13ebd60577c009d",
+      "transcriptionSha256": "23999ea653bcce7b7f68fe57790fc34810b770bb767b9c7b7db2c311fdf84b9e",
       "transcriber": "Claude (claude-opus-5-5)",
       "reviewer": "Dennis Landi"
     }
@@ -1313,6 +1313,278 @@
           "trait": "asl:self-rally",
           "recorded": false,
           "row": 188
+        }
+      ]
+    },
+    {
+      "id": "attacker-lmg",
+      "kind": "asl:mg",
+      "kindRow": 189,
+      "nationality": "german",
+      "nationalityRow": 190,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "attacker-lmg"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "printed": false,
+          "row": 191
+        },
+        {
+          "face": "front",
+          "attribute": "size",
+          "value": "light",
+          "row": 192
+        },
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 3,
+          "row": 193
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 8,
+          "row": 194
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 11,
+          "row": 195
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 1,
+          "row": 196
+        },
+        {
+          "face": "front",
+          "attribute": "portage",
+          "value": 1,
+          "row": 197
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "repair",
+          "value": 2,
+          "row": 198
+        }
+      ]
+    },
+    {
+      "id": "attacker-mmg",
+      "kind": "asl:mg",
+      "kindRow": 199,
+      "nationality": "german",
+      "nationalityRow": 200,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "attacker-mmg"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "printed": false,
+          "row": 201
+        },
+        {
+          "face": "front",
+          "attribute": "size",
+          "value": "medium",
+          "row": 202
+        },
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 5,
+          "row": 203
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 12,
+          "row": 204
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 12,
+          "row": 205
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 3,
+          "row": 206
+        },
+        {
+          "face": "front",
+          "attribute": "portage",
+          "value": 4,
+          "row": 207
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "repair",
+          "value": 2,
+          "row": 208
+        }
+      ]
+    },
+    {
+      "id": "defender-lmg",
+      "kind": "asl:mg",
+      "kindRow": 209,
+      "nationality": "russian",
+      "nationalityRow": 210,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "defender-lmg"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "printed": false,
+          "row": 211
+        },
+        {
+          "face": "front",
+          "attribute": "size",
+          "value": "light",
+          "row": 212
+        },
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 2,
+          "row": 213
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 6,
+          "row": 214
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 11,
+          "row": 215
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 1,
+          "row": 216
+        },
+        {
+          "face": "front",
+          "attribute": "portage",
+          "value": 1,
+          "row": 217
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "repair",
+          "value": 2,
+          "row": 218
+        }
+      ]
+    },
+    {
+      "id": "defender-mmg",
+      "kind": "asl:mg",
+      "kindRow": 219,
+      "nationality": "russian",
+      "nationalityRow": 220,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "defender-mmg"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "printed": false,
+          "row": 221
+        },
+        {
+          "face": "front",
+          "attribute": "size",
+          "value": "medium",
+          "row": 222
+        },
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 4,
+          "row": 223
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 10,
+          "row": 224
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 11,
+          "row": 225
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 2,
+          "row": 226
+        },
+        {
+          "face": "front",
+          "attribute": "portage",
+          "value": 4,
+          "row": 227
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "repair",
+          "value": 2,
+          "row": 228
         }
       ]
     }

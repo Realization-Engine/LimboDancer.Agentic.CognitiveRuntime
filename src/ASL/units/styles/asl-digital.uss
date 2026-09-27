@@ -361,6 +361,11 @@ asl|unit:asl\:hidden    { stroke: token(conceal); stroke-style: dashed; stroke-w
 /* Fire phase markers (A3.2, A3.4): a unit that fired this Player Turn, until the phase that removes the marker. */
 asl|unit:asl\:prep-fire  { badge: "PREP" bottom-right; }
 asl|unit:asl\:final-fire { badge: "FINAL" bottom-right; }
+/* Defensive First Fire (A8.1): until the end of the DFPh (A3.4). */
+asl|unit:asl\:first-fire { badge: "FIRST" bottom-right; }
+/* A Dummy (A12.11): a concealment counter with no unit beneath; only its owner is sent it. */
+asl|dummy { face-template: "label"; }
+asl|dummy::slot(label) { content: "DUMMY"; font-weight: bold; font-size: 0.24; }
 
 /* Mid tier: the Strength Factor or leader values, class, and state badges. */
 @detail mid {

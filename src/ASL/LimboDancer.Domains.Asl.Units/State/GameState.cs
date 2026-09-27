@@ -47,6 +47,24 @@ public sealed record GameState(
     /// <summary>The fire attacks made in the current phase (A7.55); cleared at every phase change.</summary>
     public IReadOnlyList<FireRecord> FiresThisPhase { get; init; } = [];
 
+    /// <summary>The units that attempted to rally this Player Turn (A10.6, p. 68): each may try once.</summary>
+    public IReadOnlyList<string> RallyAttemptsThisPlayerTurn { get; init; } = [];
+
+    /// <summary>The sides whose first MMC Rally attempt of their own Player Turn is spent (A18.11, p. 85).</summary>
+    public IReadOnlyList<string> FirstMmcRallyTaken { get; init; } = [];
+
+    /// <summary>The units that attempted a Repair this RPh, which may not also rally (A3.1, p. 47).</summary>
+    public IReadOnlyList<string> RepairsThisPhase { get; init; } = [];
+
+    /// <summary>The Residual FP in each Location this MPh (A8.2, p. 60); cleared at the end of the MPh.</summary>
+    public IReadOnlyList<ResidualFire> ResidualFire { get; init; } = [];
+
+    /// <summary>The stack moving now in the MPh, if any (unit step 22).</summary>
+    public MovementState? Movement
+    {
+        get; init;
+    }
+
     /// <summary>The side that had the first Player Turn: a new Game Turn starts when it is phasing again.</summary>
     public string FirstSide { get; init; } = string.Empty;
 

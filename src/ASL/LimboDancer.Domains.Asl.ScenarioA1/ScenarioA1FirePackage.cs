@@ -5,25 +5,29 @@ using LimboDancer.Abstractions.Domain;
 namespace LimboDancer.Domains.Asl.ScenarioA1;
 
 /// <summary>
-/// Pinned read-only package for PFPh and DFPh fire by a single-Location fire group (unit step 17, revised at step 18;
-/// Scenario A1 Fire Review 2026-09-26): the FP column, the DRM, the IFT result, and each target unit's effect. It never rolls, fires, or
-/// changes a game.
+/// Pinned read-only package for Infantry fire (unit step 17, revised at steps 18 and 19 to 23; Scenario A1 Fire Review
+/// 2026-09-26): PFPh, AFPh, DFPh, and MPh fire by fire groups in one Location or across ADJACENT Locations, with MGs, at
+/// known, concealed, hidden, and Dummy targets; the FP columns, the DRM, the IFT results, each target unit's effect, each
+/// MG's malfunction and Multiple ROF, and Residual FP. It never rolls, fires, or changes a game.
 /// </summary>
 public sealed class ScenarioA1FirePackage : IDomainPackageResolver
 {
-    public const string ManifestSha256 = "58485196fc3427626945fa62909f0c9c1851c772c515180a44b2d405b54aa3b3";
-    public const string MatrixSha256 = "81128b0fe8237131970b2970ab026abe086035983bce8b7d6a14aaec605e7c32";
+    public const string ManifestSha256 = "e0c28e88cda17bd71efd63f569c713d4d921e958dc7bc848b3c4c4acead143e1";
+    public const string MatrixSha256 = "afe819360ce7b662a30eab04b43c5e852f12f17385c26642c54db8c79f7804b6";
     public const string ChartSupplementId = "asl-supplement:fire-charts";
 
-    /// <summary>The package as first published at unit step 17, before the step 18 revision.</summary>
-    public const string PriorManifestSha256 = "45011b56946be8a7aba1676e6aea8d5ad0fa82193e4ebac24e06fd36bdff2b69";
+    /// <summary>
+    /// The package as revised at unit step 18, before the steps 19 to 23 revision. The package first published at unit step
+    /// 17 had manifest digest 45011b56946be8a7aba1676e6aea8d5ad0fa82193e4ebac24e06fd36bdff2b69 (Fire Review, "Revision at unit step 18").
+    /// </summary>
+    public const string PriorManifestSha256 = "58485196fc3427626945fa62909f0c9c1851c772c515180a44b2d405b54aa3b3";
     public static readonly DomainPackageRef Identity = new(new DomainId("asl"), "scenario-a1-fire", "sha256:" + ManifestSha256);
 
     private static readonly string[] Cases =
     [
         "A1-fire-resolved", "A1-fire-phase-outside", "A1-fire-firer-outside", "A1-fire-target-outside", "A1-fire-range-or-los-denied",
-        "A1-fire-levels-differ", "A1-fire-hindrance-unattributed", "A1-fire-concealment-unreviewed", "A1-fire-elr-undecided",
-        "A1-fire-leaders-interact", "A1-fire-roll-missing",
+        "A1-fire-weapon-outside", "A1-fire-movement-fire-outside", "A1-fire-movement-drm-differs", "A1-fire-levels-differ",
+        "A1-fire-hindrance-unattributed", "A1-fire-elr-undecided", "A1-fire-leaders-interact", "A1-fire-roll-missing",
     ];
 
     private static readonly string[] PinnedDigests =

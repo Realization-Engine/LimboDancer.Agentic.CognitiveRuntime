@@ -50,6 +50,7 @@ internal static class CounterSheetsTestData
         (_, "identity" or "class-variant") => CounterTranscription.NotPrinted,
         (_, "class") => "green",
         (_, "leadership") => "0",
+        (_, "size") => "light",
         (_, var name) when name.Contains(':', StringComparison.Ordinal) => "no",
         _ => "1",
     };

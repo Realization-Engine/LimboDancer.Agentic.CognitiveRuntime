@@ -107,20 +107,37 @@ public sealed partial class FireTests
     }
 
     [Fact]
+    public async Task AnAttackOnAHiddenUnitCommitsAndNeverNamesItOnNoEffect()
+    {
+        // Unit step 21 (ruling R21.1): a hidden unit is attacked as concealed (A12.3), so the attack no longer refuses.
+        await Setup(hidden: ["g1"]);
+        var before = Revision;
+
+        // 6+6 = 12, +3 stone building: no effect on either column (A12.13), so g1 stays hidden.
+        Assert.Equal(PlayOutcome.Committed, (await Commit(Play(Once(6, 6)), GameActions.Fire, Fire("fire-1", ["r1", "r2"]))).Outcome);
+        var added = Since(before);
+        Assert.Equal(["german"], added.Single(item => item.Payload is FireResolved).Visibility);
+        var (_, seen) = ViewOf("russian");
+        Assert.False(Names(seen, "g1"), "The Russian events name the hidden squad.");
+        Assert.Single(seen.Select(item => item.Payload).OfType<FireReported>());
+        Assert.Equal(ConditionState.True, GameState.Condition(Current.Unit("g1")!, Conditions.Hidden));
+    }
+
+    [Fact]
     public async Task ARefusalOverAHiddenTargetTellsTheFiringSideOnlyThatTheAttackIsUndecided()
     {
-        await Setup(hidden: ["g1"]);
+        await Setup(germanElr: null, hidden: ["g1"]);
         var revision = Revision;
         var result = await Commit(Play(NoRoll()), GameActions.Fire, Fire("fire-1", ["r1", "r2"]));
         Assert.Equal(PlayOutcome.Denied, result.Outcome);
         Assert.Equal(revision, Revision);
 
-        // The known limitation (step 18, part 5): the firing side learns that something there is undecided, not what.
+        // The firing side learns that something there is undecided, not what (step 18, part 5).
         var fire = result.Plan!.Fire!;
         Assert.Equal(("russian", "german"), (fire.FiringSide, fire.TargetSide));
         Assert.Equal([FireProposal.Undisclosed], fire.ReasonsFor(result.Reasons, Current.Perspectives.Single(item => item.Name == "russian")));
-        Assert.Contains(fire.ReasonsFor(result.Reasons, Perspective.Adjudicator), reason => reason.Contains("concealment-unreviewed", StringComparison.Ordinal));
+        Assert.Contains(fire.ReasonsFor(result.Reasons, Perspective.Adjudicator), reason => reason.Contains("elr-undeclared", StringComparison.Ordinal));
         Assert.Contains(fire.ReasonsFor(result.Reasons, Current.Perspectives.Single(item => item.Name == "german")),
-            reason => reason.Contains("concealment-unreviewed", StringComparison.Ordinal));
+            reason => reason.Contains("elr-undeclared", StringComparison.Ordinal));
     }
 }

@@ -164,7 +164,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
     public GameHistory Replay(IReadOnlyList<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(events);
-        return GameProjector.Project(events, vocabulary, catalogs, Chains(events), LiveGames.Sources, FireRecordVerifier.Shared);
+        return GameProjector.Project(events, vocabulary, catalogs, Chains(events), LiveGames.Sources, FireRecordVerifier.Shared, RallyRecordVerifier.Shared);
     }
 
     public async Task<GamePlan> PlanAsync(ActionDescriptor action, JsonElement arguments, Guid tenant, string? actor = null,
@@ -201,6 +201,11 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             "asl.game.declare-overrun" => await PlanDeclareAsync(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown", cancellationToken),
             "asl.game.enter-building" => await PlanEnterBuildingAsync(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown", cancellationToken),
             "asl.game.fire" => PlanFire(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
+            "asl.game.rally" => PlanRally(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
+            "asl.game.repair" => PlanRepair(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
+            "asl.game.move" => PlanMove(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
+            "asl.game.pass-fire" => PlanPassFire(scope, existing, attemptId, expected, label),
+            "asl.game.end-move" => PlanEndMove(scope, existing, attemptId, expected, label),
             _ => Refused(scope, label, expected, "play.unknown-action"),
         };
 

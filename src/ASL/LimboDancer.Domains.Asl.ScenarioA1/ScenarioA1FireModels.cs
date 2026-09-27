@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace LimboDancer.Domains.Asl.ScenarioA1;
 
 /// <summary>
@@ -19,7 +21,45 @@ public sealed record FireAttack(
     string? TargetTerrain,
     IReadOnlyList<FireTarget>? Targets,
     int? TargetSideElr,
-    FireRolls? Rolls);
+    FireRolls? Rolls)
+{
+    /// <summary>
+    /// The kind of Defensive fire in the MPh (unit step 22): <c>first-fire</c> (A8.1), <c>subsequent-first-fire</c> (A8.3),
+    /// <c>final-protective-fire</c> (A8.31), or <c>residual-fp</c> (A8.2); null for the fire phases.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? FireKind { get; init; }
+
+    /// <summary>How the target stack moved, for FFNAM and FFMO (A4.6, A4.61); required in the MPh.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FireMovement? TargetMovement { get; init; }
+
+    /// <summary>The Residual FP counter attacking a moving unit (A8.2); required for <c>residual-fp</c>.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? ResidualFp { get; init; }
+
+    /// <summary>The firing side's ELR, for the NMC FPF inflicts on its firers (A8.31, A19.13).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? FiringSideElr { get; init; }
+
+    /// <summary>Whether no target is farther than the closest armed Known enemy unit (A8.3); required for Subsequent First Fire.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? WithinSubsequentFirstFireRange { get; init; }
+
+    /// <summary>The leaders directing the group from its other Locations (A7.531); null when the group is in one Location.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<FireDirector>? OtherDirectors { get; init; }
+
+    /// <summary>Whether every Location of a group spanning Locations is ADJACENT to another of them (A7.5, A.8).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? FirerLocationsAdjacent { get; init; }
+}
+
+/// <summary>How a moving target stack moved in the MPh: Assault Movement avoids FFNAM but not FFMO (A4.61).</summary>
+public sealed record FireMovement(bool? AssaultMovement);
+
+/// <summary>A MG a firer uses in the attack (A7.35, A9.1), with its reviewed catalog definition.</summary>
+public sealed record FireWeapon(string? EquipmentId, string? DefinitionId, bool? Malfunctioned, bool? FiredThisPlayerTurn, bool? FirstFireMarked);
 
 /// <summary>A unit of the fire group, with its reviewed catalog definition.</summary>
 public sealed record FireFirer(
@@ -30,7 +70,36 @@ public sealed record FireFirer(
     bool? Pinned,
     bool? Concealed,
     bool? FiredThisPlayerTurn,
-    bool? UsesSupportWeapon);
+    bool? UsesSupportWeapon)
+{
+    /// <summary>The range from this firer's Location, when the group spans Locations (A7.52); otherwise the attack's.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? Range { get; init; }
+
+    /// <summary>Whether this firer is at the target's level, when the group spans Locations; otherwise the attack's.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? SameLevel { get; init; }
+
+    /// <summary>The LOS from this firer's Location, when the group spans Locations; otherwise the attack's.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FireLos? Los { get; init; }
+
+    /// <summary>Marked with a First Fire counter this MPh (A8.1); null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? FirstFireMarked { get; init; }
+
+    /// <summary>Marked with a Final Fire counter (A8.3, A8.31); null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? FinalFireMarked { get; init; }
+
+    /// <summary>The MGs the firer uses (A7.35); null is none.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<FireWeapon>? Weapons { get; init; }
+
+    /// <summary>Whether the firer adds its inherent FP (A7.351); null is true. False for a MG firing again on its Multiple ROF.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? UsesInherentFp { get; init; }
+}
 
 /// <summary>The leader directing the fire group (A7.53, A7.531).</summary>
 public sealed record FireDirector(
@@ -69,13 +138,31 @@ public sealed record FireRolls(
     IReadOnlyDictionary<string, int>? RandomSelection,
     IReadOnlyDictionary<string, IReadOnlyList<int>>? Checks,
     IReadOnlyDictionary<string, IReadOnlyList<int>>? LeaderLoss,
-    IReadOnlyDictionary<string, int>? WoundSeverity = null);
+    IReadOnlyDictionary<string, int>? WoundSeverity = null)
+{
+    /// <summary>One dr per MG whose B# the IFT DR reached, when two or more did (A9.71).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyDictionary<string, int>? WeaponSelection { get; init; }
+
+    /// <summary>One dr per FPF firer, when a Casualty MC falls on two or more of them (A8.31).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyDictionary<string, int>? FirerSelection { get; init; }
+}
 
 /// <summary>One modifier with its value and rule.</summary>
 public sealed record FireModifier(string Name, decimal Value, string Rule);
 
 /// <summary>One firer's FP arithmetic.</summary>
-public sealed record FirerFirepower(string UnitId, int Printed, IReadOnlyList<FireModifier> Multipliers, decimal Firepower);
+public sealed record FirerFirepower(string UnitId, int Printed, IReadOnlyList<FireModifier> Multipliers, decimal Firepower)
+{
+    /// <summary>The unit operating this MG (A7.35); null for a unit's inherent FP.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Operator { get; init; }
+
+    /// <summary>Whether this FP attacks the concealed targets of a mixed Location (A12.13); null for all targets.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? VsConcealed { get; init; }
+}
 
 /// <summary>The attack's arithmetic, as A7.3 resolves it.</summary>
 public sealed record FireArithmetic(
@@ -89,7 +176,26 @@ public sealed record FireArithmetic(
     int OriginalDr,
     IReadOnlyList<FireModifier> Drm,
     int FinalDr,
-    string Result);
+    string Result)
+{
+    /// <summary>
+    /// The column and result for the concealed targets of a Location that also holds known ones: the same DR on the
+    /// column their halved FP gives (A12.13). Null when every target is of one kind.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FireColumn? Concealed { get; init; }
+
+    /// <summary>The Residual FP the attack leaves in the target Location (A8.2, A8.26, A7.372); null when it leaves none.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? ResidualFp { get; init; }
+}
+
+/// <summary>A second column of one attack: its total FP, the column before and after Cowering, and the IFT result.</summary>
+public sealed record FireColumn(decimal TotalFirepower, int? UnshiftedColumnFp, int? ColumnFp, string Result);
+
+/// <summary>What the attack did to a MG: malfunction (A9.7, A9.71), Multiple ROF kept (A9.2), Sustained Fire (A9.3), and its fire counter.</summary>
+public sealed record FireWeaponEffect(string EquipmentId, int BreakdownNumber, bool Malfunctioned, bool RateOfFireRetained, bool SustainedFire,
+    string? FireCounter, int? SelectionDr);
 
 /// <summary>A MC, NTC, LLMC, or LLTC taken by a target unit.</summary>
 public sealed record FireCheck(
@@ -127,6 +233,14 @@ public sealed record FireResolution(
     string? FireCounter,
     IReadOnlyList<string> FirerConcealmentLost)
 {
+    /// <summary>What the attack did to each MG used in it; null when none was.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<FireWeaponEffect>? WeaponEffects { get; init; }
+
+    /// <summary>The NMC FPF inflicts on its firers and directing leader (A8.31); null for other fire.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<FireUnitEffect>? FirerEffects { get; init; }
+
     public const string Resolved = "resolved";
     public const string Abstained = "abstained";
     public const string Indeterminate = "indeterminate";

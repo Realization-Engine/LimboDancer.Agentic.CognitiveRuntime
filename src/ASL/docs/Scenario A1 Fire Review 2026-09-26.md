@@ -148,3 +148,31 @@ Rulings 4, 6, and 7 of step 17 are superseded: a failure beyond a declared ELR, 
 
 **Still Indeterminate.** More than one leader in the target Location, an undeclared ELR, an underscored Morale Factor, levels that differ, an unattributed Hindrance, Dummies and hidden units, and a missing roll.
 
+## Revision at unit steps 19 to 23
+
+On 2026-09-26 the user accepted the rulings of the [ASL Unit Rally and Fire Extensions Plan](<ASL Unit Rally and Fire Extensions Plan.md>) (R0.1 to R0.3, R20.1 to R23.5) and delegated the review, waiving the spot-checks. The package is revised and republished; its step 18 manifest digest `58485196...b3` stays in the record as `priorFirePackageManifestSha256`, and the step 17 digest `45011b56...2b69` in the package's code.
+
+**Sources.** Fifty new fragments (`asl-scenario-a1.fire-extensions-pdf-comparison.json`): A3.3 and A3.5 (p. 47), A.8 (p. 43), A4.1, A4.11, A4.13, A4.132 (p. 48), A4.2 (p. 49), A4.4 (p. 50), A4.6 and A4.61 (p. 51), A7.24 (p. 55), A7.35 to A7.36 (p. 56), A7.372 (p. 57), A7.83 (p. 58), A8.1 to A8.14 (p. 59), A8.2 to A8.26 (p. 60), A8.3, A8.31, A8.4 (p. 61), A9.1, A9.11, A9.2 (p. 62), A9.3 (p. 63), A9.7 to A9.72 (p. 65), A12.11 (pp. 76 to 77), A12.13 (p. 77), A12.3 and A12.31 (p. 80), and the MF costs B3.4 (p. 114), B12.4 (p. 127), B13.4 (p. 128), B14.4 and B15.4 (p. 129), and B23.4 (p. 136); and A15.1 (p. 83) from the Rally comparison. Five are interrupted by a column break, a boxed example, or the page break, and occur whole in two parts; a second extractor confirmed every subject. The catalog is 1.2.0, which adds four MGs whose values are manufactured under ruling R0.3 (sheet MFG).
+
+**What changes.**
+
+- **The AFPh.** Small Arms and MG FP is halved (A7.24); Assault Fire adds one FP after every modification, rounded up, except at Long Range (A7.36); the attack is marked Prep Fire (R20.3). No catalog squad has the underlined FP.
+- **Fire groups across Locations.** Every Location ADJACENT to another of them (A7.5, A.8); PBF and Long Range per firer; the worst Hindrance once; a member with blocked LOS refuses the attack (R20.2); every member at the target's level (R20.5); direction only with a directing leader in every Location, the worst modifier applying (A7.531, R20.6).
+- **Hidden units and Dummies.** A hidden unit is attacked as concealed (A12.3) and loses its cover on a PTC or worse (A12.31); a Dummy is removed on a PTC or worse, since the firer is a Good Order enemy in its LOS (A12.11, A12.14); known and concealed targets of one Location take the same DR on their own columns (A12.13). This supersedes ruling 8's "Dummies and hidden units are Indeterminate"; the Concealment Table stays unregistered.
+- **Fire in the MPh.** Defensive First Fire at the moving stack (A8.1), with -1 FFNAM unless it Assault Moved and -1 FFMO in Open Ground with no Hindrance (A4.6, A4.61); Subsequent First Fire (A8.3) and FPF (A8.31) as Area Fire; after FPF, the Original DR as a NMC for each FPF firer, a Casualty MC falling on one of two or more by Random Selection; Residual FP (A8.2, A8.26, A7.372); and Final Fire by First-Fire-marked units at an adjacent target only (A8.4).
+- **MGs.** Their FP joins the group; a squad keeps its inherent FP with one SW and loses it with two, a HS with any (A7.351, A7.352); a pin halves only inherent FP (A7.8); an Original DR at least the B# malfunctions a MG, Random Selection choosing among two or more (A9.7, A9.71); Sustained Fire lowers the B# by 2 (A9.3); the first die of the IFT DR is the colored die, and at most the ROF keeps Multiple ROF (A9.2).
+- **Heat of Battle.** An Original MC DR of 2 is resolved as its MC and the unit's events say `heat-of-battle-not-taken` (R0.2). The step 18 package passed such a check without saying so.
+
+**Readings of the review.**
+
+- **FFMO.** Brush, grain, and orchard are Hindrance terrain in the target Location, which A4.6 says cancels FFMO; only Open Ground takes it.
+- **FPF.** FPF is admitted undirected and unmixed: a directing leader could break in the firers' NMC and cause leader loss among them, and a group mixing FPF firers with others splits the NMC. Both are in the backlog.
+- **A pinned mover.** A7.83 gives a pinned mover no FFNAM or FFMO; one attack on a stack mixing pinned and unpinned movers would need two DRM, and is Indeterminate.
+- **A squad's MG.** The review admits a squad firing its inherent FP together with its MG, not in separate attacks (A7.351), and leaves fire by a SMC out.
+
+**Readings of live play.** Two readings were made while wiring the revised package into live games; neither changes the package.
+
+- **A road hex is Open Ground.** B1.11 (p. 113): a road hex devoid of other terrain is Open Ground except for movement through a road hexside, so the planner gives such a hex the Open Ground TEM, FFMO, and Rally terrain.
+- **Fire at an empty Location** is fire at a Location the firing side cannot see into: the package resolves it on the concealed column with no targets, and on no effect its record is withheld from the firing side with a public report of the arithmetic, as for unseen targets left unaffected (R21.1).
+
+**Cases.** `A1-fire-concealment-unreviewed` is retired (hidden units and Dummies are decided); `A1-fire-weapon-outside`, `A1-fire-movement-fire-outside`, and `A1-fire-movement-drm-differs` are added. The tests walk every roll of twelve accepted attacks, among them one of each new kind.

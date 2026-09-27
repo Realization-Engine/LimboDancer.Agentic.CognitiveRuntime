@@ -269,10 +269,12 @@ public sealed class PlayPageFireTests : IDisposable
         Assert.Contains(Refused(["r3"], hexes.Building), reason => reason.Contains("A7.55", StringComparison.Ordinal));
         Assert.NotEmpty(Refused(["r1"], hexes.Open));
 
-        // Fire is offered only in the PFPh and DFPh; in the MPh the planner refuses it too (FireTests).
+        // In the MPh fire is the DEFENDER's (A8.1), offered from its side's Locations; with no stack moving, the planner
+        // refuses it (FireTests).
         Commit(page, "#propose-advance");
         Assert.Contains("Movement", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
-        Assert.Empty(page.FindAll("#propose-fire"));
+        Assert.Contains("The german side may fire", page.Find("#fire-side").TextContent, StringComparison.Ordinal);
+        Assert.NotNull(page.Find("#propose-move"));
     }
 
     [Fact]

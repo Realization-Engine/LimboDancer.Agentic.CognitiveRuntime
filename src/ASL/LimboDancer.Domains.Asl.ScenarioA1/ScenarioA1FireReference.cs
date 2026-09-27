@@ -2,7 +2,10 @@ using System.Text.Json;
 
 namespace LimboDancer.Domains.Asl.ScenarioA1;
 
-/// <summary>A reviewed catalog definition as the Fire package reads it: printed values only.</summary>
+/// <summary>
+/// A reviewed catalog definition as the Scenario A1 packages read it: printed values only (manufactured ones for the MGs
+/// of catalog 1.2.0, ruling R0.3). Values a definition does not print are null.
+/// </summary>
 public sealed record FireDefinition(
     string Id,
     string Kind,
@@ -15,9 +18,26 @@ public sealed record FireDefinition(
     int? Leadership,
     bool? UnderscoredMorale)
 {
+    /// <summary>Self-Rally capability: the broken Morale Level printed in a square (A10.63).</summary>
+    public bool? SelfRally { get; init; }
+
+    /// <summary>The Assault Fire bonus: an underlined FP (A1.21, A7.36).</summary>
+    public bool? AssaultFire { get; init; }
+
+    /// <summary>A SW's Breakdown Number (A9.7).</summary>
+    public int? Breakdown { get; init; }
+
+    /// <summary>A MG's Multiple ROF (A9.2); null when it has none.</summary>
+    public int? RateOfFire { get; init; }
+
+    /// <summary>A SW's Repair Number (A9.72).</summary>
+    public int? Repair { get; init; }
+
     public bool IsLeader => Kind == "asl:leader";
 
     public bool IsMmc => Kind is "asl:squad" or "asl:half-squad";
+
+    public bool IsMg => Kind == "asl:mg";
 }
 
 /// <summary>
@@ -111,10 +131,12 @@ public sealed class ScenarioA1FireReference
             throw new InvalidOperationException("The Terrain Chart TEM cells changed.");
         }
 
-        var definitions = catalog.RootElement.GetProperty("definitions").EnumerateArray().Select(Definition)
-            .ToDictionary(item => item.Id, StringComparer.Ordinal);
-        return new ScenarioA1FireReference(table, definitions);
+        return new ScenarioA1FireReference(table, ReadDefinitions(catalog.RootElement));
     }
+
+    /// <summary>Every definition of a reviewed catalog, by id.</summary>
+    internal static Dictionary<string, FireDefinition> ReadDefinitions(JsonElement catalog) =>
+        catalog.GetProperty("definitions").EnumerateArray().Select(Definition).ToDictionary(item => item.Id, StringComparer.Ordinal);
 
     private static FireDefinition Definition(JsonElement item)
     {
@@ -155,6 +177,13 @@ public sealed class ScenarioA1FireReference
             Value("front", "morale"),
             Value("broken", "broken-morale"),
             Value("front", "leadership"),
-            Trait("front", "asl:elr-5"));
+            Trait("front", "asl:elr-5"))
+        {
+            SelfRally = Trait("broken", "asl:self-rally"),
+            AssaultFire = Trait("front", "asl:assault-fire"),
+            Breakdown = Value("front", "breakdown"),
+            RateOfFire = Value("front", "rate-of-fire"),
+            Repair = Value("malfunctioned", "repair"),
+        };
     }
 }

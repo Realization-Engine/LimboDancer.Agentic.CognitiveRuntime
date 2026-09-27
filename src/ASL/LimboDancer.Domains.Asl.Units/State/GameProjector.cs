@@ -13,7 +13,8 @@ namespace LimboDancer.Domains.Asl.Units.State;
 public static class GameProjector
 {
     public static GameHistory Project(IReadOnlyList<GameEvent> events, UnitVocabulary vocabulary, IReadOnlyList<UnitCatalog> catalogs,
-        ILocationChains? chains = null, IReadOnlyCollection<string>? liveSources = null, IFireRecordVerifier? fire = null)
+        ILocationChains? chains = null, IReadOnlyCollection<string>? liveSources = null, IFireRecordVerifier? fire = null,
+        IRallyRecordVerifier? rally = null)
     {
         ArgumentNullException.ThrowIfNull(events);
         ArgumentNullException.ThrowIfNull(vocabulary);
@@ -25,7 +26,7 @@ public static class GameProjector
             diagnostics.Add(UnitDiagnostic.Warning("UNIT-STATE-020", "No location chains were given, so map positions are not checked against the boards in play."));
         }
 
-        var replay = new Replay(vocabulary, catalogs, chains, liveSources ?? [], fire, diagnostics);
+        var replay = new Replay(vocabulary, catalogs, chains, liveSources ?? [], fire, rally, diagnostics);
         foreach (var gameEvent in events)
         {
             var errors = Errors(diagnostics);
@@ -45,7 +46,7 @@ public static class GameProjector
         diagnostics.Count(diagnostic => diagnostic.Severity == UnitDiagnosticSeverity.Error);
 
     private sealed class Replay(UnitVocabulary vocabulary, IReadOnlyList<UnitCatalog> catalogs, ILocationChains? chains, IReadOnlyCollection<string> liveSources,
-        IFireRecordVerifier? fireVerifier, List<UnitDiagnostic> diagnostics)
+        IFireRecordVerifier? fireVerifier, IRallyRecordVerifier? rallyVerifier, List<UnitDiagnostic> diagnostics)
     {
         private readonly HashSet<string> eventIds = new(StringComparer.Ordinal);
         private readonly Dictionary<string, DiceRolled> rolls = new(StringComparer.Ordinal);
@@ -83,6 +84,12 @@ public static class GameProjector
                 TaskCheck check => Check(previous, check),
                 FireResolved fire => Fire(previous, fire, gameEvent),
                 FireReported report => Report(previous, report, gameEvent),
+                ResidualFirePlaced residual => PlaceResidual(previous, residual),
+                RallyAttempted rally => Rally(previous, rally, gameEvent),
+                RepairAttempted repair => Repair(previous, repair),
+                MovementStepped moving => StepMovement(previous, moving),
+                MovementWindowClosed closed => CloseWindow(previous, closed),
+                MovementEnded ended => EndMovement(previous, ended),
                 _ => Fail<GameState>("UNIT-STATE-001", $"'{gameEvent.Type}' has no projection."),
             };
 
@@ -205,15 +212,19 @@ public static class GameProjector
             }
 
             // MF are spent within a phase, so a new phase starts every unit at none spent and free to move. The phase that
-            // ends removes its markers: Final Fire at the end of the DFPh (A3.4), Prep Fire at the end of the AFPh (A3.5),
-            // and pins in the CCPh (A3.8), all on p. 47.
-            string? cleared = state.Phase switch
+            // ends removes its markers, from units and weapons alike: First and Final Fire at the end of the DFPh (A3.4), Prep
+            // Fire at the end of the AFPh (A3.5), and pins in the CCPh (A3.8), all on p. 47; DM at the end of every RPh
+            // (A10.62, p. 68). Residual FP is removed at the end of the MPh (A8.2, p. 60), and a new Player Turn gives every
+            // unit a new Rally attempt (A10.6, p. 68).
+            string[] cleared = state.Phase switch
             {
-                "dfph" => Conditions.FinalFire,
-                "afph" => Conditions.PrepFire,
-                "ccph" => Conditions.Pinned,
-                _ => null,
+                "dfph" => [Conditions.FinalFire, Conditions.FirstFire],
+                "afph" => [Conditions.PrepFire],
+                "ccph" => [Conditions.Pinned],
+                "rph" => [Conditions.DesperationMorale],
+                _ => [],
             };
+            var newPlayerTurn = change.PhasingSide != state.PhasingSide;
             return CheckPhase(state, change.Turn, change.Phase, change.PhasingSide)
                 ? state with
                 {
@@ -221,19 +232,29 @@ public static class GameProjector
                     Phase = change.Phase,
                     PhasingSide = change.PhasingSide,
                     FiresThisPhase = [],
-                    Units = [.. state.Units.Select(unit => Clear(unit is { MfSpent: 0, MovementEnded: false } ? unit : unit with { MfSpent = 0, MovementEnded = false },
-                        cleared))],
+                    RepairsThisPhase = [],
+                    ResidualFire = [],
+                    Movement = null,
+                    RallyAttemptsThisPlayerTurn = newPlayerTurn ? [] : state.RallyAttemptsThisPlayerTurn,
+                    FirstMmcRallyTaken = newPlayerTurn ? [] : state.FirstMmcRallyTaken,
+                    Units = [.. state.Units.Select(unit => Clear(unit is { MfSpent: 0, MovementEnded: false, HalfMfSpent: false }
+                        ? unit
+                        : unit with { MfSpent = 0, MovementEnded = false, HalfMfSpent = false }, cleared))],
+                    Equipment = [.. state.Equipment.Select(equipment => equipment.Conditions.Keys.Any(cleared.Contains)
+                        ? equipment with { Conditions = Without(equipment.Conditions, cleared) }
+                        : equipment)],
                 }
                 : null;
         }
 
-        private static UnitInstance Clear(UnitInstance unit, string? condition) =>
-            condition is null || !unit.Conditions.ContainsKey(condition)
-                ? unit
-                : unit with
-                {
-                    Conditions = unit.Conditions.Where(item => item.Key != condition).ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal),
-                };
+        private static UnitInstance Clear(UnitInstance unit, string[] conditions) =>
+            !unit.Conditions.Keys.Any(conditions.Contains) ? unit : unit with
+            {
+                Conditions = Without(unit.Conditions, conditions)
+            };
+
+        private static Dictionary<string, ConditionState> Without(IReadOnlyDictionary<string, ConditionState> conditions, string[] removed) =>
+            conditions.Where(item => !removed.Contains(item.Key)).ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal);
 
         private GameState? Fire(GameState state, FireResolved fire, GameEvent gameEvent)
         {
@@ -250,8 +271,16 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-023", $"The fire record's roll '{missing}' is not recorded before it.");
             }
 
-            // A7.55: a Location's units fire at a target once per phase, as one fire group.
-            if (state.FiresThisPhase.Any(item => item.FirerLocation == fire.FirerLocation && item.TargetLocation == fire.TargetLocation))
+            // A Defensive fire record answers the open window of the moving stack's latest step (A8.1).
+            if (fire.MovementStep is { } answered && (state.Movement is not { WindowOpen: true } open || open.Step != answered))
+            {
+                return Fail<GameState>("UNIT-STATE-024", $"Defensive First Fire answers the open window on the moving stack's step {answered} (A8.1).");
+            }
+
+            // A7.55: a Location's units fire at a target once per phase (in the MPh, once per MF expenditure), as one fire
+            // group; Residual FP has no firers and never forms one (A8.22).
+            if (fire.Firers.Count > 0 && state.FiresThisPhase.Any(item => item.FirerLocation == fire.FirerLocation
+                && item.TargetLocation == fire.TargetLocation && item.Step == fire.MovementStep))
             {
                 return Fail<GameState>("UNIT-STATE-024", $"{fire.FirerLocation} has already fired at {fire.TargetLocation} this phase (A7.55).");
             }
@@ -264,7 +293,183 @@ public static class GameProjector
             fires[eventId] = (fire, gameEvent.Visibility is not null, false);
             return state with
             {
-                FiresThisPhase = [.. state.FiresThisPhase, new FireRecord(eventId, fire.FirerLocation, fire.TargetLocation)],
+                FiresThisPhase = [.. state.FiresThisPhase, new FireRecord(eventId, fire.FirerLocation, fire.TargetLocation) { Step = fire.MovementStep }],
+            };
+        }
+
+        /// <summary>Residual FP a fire record left (A8.2, A8.21): the record's own value, in its target Location, in the MPh.</summary>
+        private GameState? PlaceResidual(GameState state, ResidualFirePlaced residual)
+        {
+            if (state.Phase != "mph" || !fires.TryGetValue(residual.Fire, out var recorded) || recorded.Fire.TargetLocation != residual.Location.ToString()
+                || !recorded.Fire.Resolution.TryGetProperty("arithmetic", out var arithmetic)
+                || !arithmetic.TryGetProperty("residualFp", out var value) || value.GetInt32() != residual.Fp)
+            {
+                return Fail<GameState>("UNIT-STATE-026", $"Residual FP must be the value its fire record '{residual.Fire}' leaves in its target Location (A8.2).");
+            }
+
+            var existing = state.ResidualFire.FirstOrDefault(item => item.Location == residual.Location);
+            if (existing is not null && existing.Fp >= residual.Fp)
+            {
+                return Fail<GameState>("UNIT-STATE-026", "Only a larger Residual FP counter replaces one already in the Location (A8.21).");
+            }
+
+            return state with
+            {
+                ResidualFire = [.. state.ResidualFire.Where(item => item.Location != residual.Location), new ResidualFire(residual.Location, residual.Fp, residual.Fire)],
+            };
+        }
+
+        /// <summary>A Rally record (unit step 19): once per unit per Player Turn, in the RPh, reproduced by the Rally verifier.</summary>
+        private GameState? Rally(GameState state, RallyAttempted rally, GameEvent gameEvent)
+        {
+            if (rallyVerifier is null)
+            {
+                return Fail<GameState>("UNIT-STATE-023", "A Rally record can be replayed only with the Rally verifier.");
+            }
+
+            if (rally.Rolls.Values.FirstOrDefault(roll => !rolls.ContainsKey(roll)) is { } missing)
+            {
+                return Fail<GameState>("UNIT-STATE-023", $"The Rally record's roll '{missing}' is not recorded before it.");
+            }
+
+            if (state.Phase != "rph" || Active(state, rally.Unit) is not UnitInstance unit)
+            {
+                return Fail<GameState>("UNIT-STATE-027", "A Rally attempt is made in the RPh by an active unit (A10.6).");
+            }
+
+            if (state.RallyAttemptsThisPlayerTurn.Contains(unit.Id) || state.RepairsThisPhase.Contains(unit.Id))
+            {
+                return Fail<GameState>("UNIT-STATE-027", $"'{unit.Id}' already attempted to rally this Player Turn, or to repair this RPh (A10.6, A3.1).");
+            }
+
+            if (rallyVerifier.Verify(state, rally, rolls) is { } reason)
+            {
+                return Fail<GameState>("UNIT-STATE-027", reason);
+            }
+
+            var mmc = vocabulary.IsA(unit.Kind, "asl:mmc") && unit.Side == state.PhasingSide && !state.FirstMmcRallyTaken.Contains(unit.Side);
+            return state with
+            {
+                RallyAttemptsThisPlayerTurn = [.. state.RallyAttemptsThisPlayerTurn, unit.Id],
+                FirstMmcRallyTaken = mmc ? [.. state.FirstMmcRallyTaken, unit.Side] : state.FirstMmcRallyTaken,
+            };
+        }
+
+        /// <summary>A Repair record (A9.72): a dr at most the Repair Number repairs, a 6 eliminates, anything else changes nothing.</summary>
+        private GameState? Repair(GameState state, RepairAttempted repair)
+        {
+            if (state.Phase != "rph" || Active(state, repair.Unit) is not UnitInstance unit
+                || Active(state, repair.Equipment) is not EquipmentInstance { Holding: { Role: HoldingRole.Possessed } holding } equipment
+                || holding.Holder != unit.Id || GameState.Condition(equipment, Conditions.Malfunctioned) != ConditionState.True)
+            {
+                return Fail<GameState>("UNIT-STATE-028", "A Repair is attempted in the RPh on a malfunctioned SW its unit possesses (A9.72).");
+            }
+
+            // A3.1: a unit takes one kind of action in the RPh, so one that attempted to rally does not also repair.
+            if (state.RallyAttemptsThisPlayerTurn.Contains(unit.Id))
+            {
+                return Fail<GameState>("UNIT-STATE-028", $"'{unit.Id}' attempted to rally this RPh, so it may not also repair (A3.1).");
+            }
+
+            if (!rolls.TryGetValue(repair.Roll, out var roll) || roll.Count != 1 || roll.Sides != 6)
+            {
+                return Fail<GameState>("UNIT-STATE-028", $"The Repair record's roll '{repair.Roll}' is not one recorded die.");
+            }
+
+            var printed = equipment.Definition is { } reference && catalog?.Definition(reference.Definition) is { } definition
+                ? definition.Printed("malfunctioned", "asl:repair")?.Value?.Number
+                : null;
+            var dr = roll.Values[0];
+            var expected = dr == 6 ? RepairAttempted.Eliminated : dr <= repair.RepairNumber ? RepairAttempted.Repaired : RepairAttempted.NoChange;
+            if (printed != repair.RepairNumber || repair.Result != expected)
+            {
+                return Fail<GameState>("UNIT-STATE-028", "The Repair record disagrees with the SW's Repair Number or its dr (A9.72).");
+            }
+
+            return state with
+            {
+                RepairsThisPhase = state.RepairsThisPhase.Contains(unit.Id) ? state.RepairsThisPhase : [.. state.RepairsThisPhase, unit.Id],
+            };
+        }
+
+        /// <summary>
+        /// A movement step (unit step 22): a stack of the phasing side that may still move enters a Location in the MPh; the
+        /// same stack continues only after the DEFENDER's window on its last step closes, and another stack only after the
+        /// ATTACKER ends this one's move (A8.11).
+        /// </summary>
+        private GameState? StepMovement(GameState state, MovementStepped moving)
+        {
+            var movers = moving.Movers.Select(id => Active(state, id) as UnitInstance).ToArray();
+            if (state.Phase != "mph" || movers.Length == 0 || movers.Any(unit => unit is null || unit.Side != state.PhasingSide || unit.MovementEnded)
+                || movers.Select(unit => state.Location(unit!.Id)?.Location).Distinct().Count() != 1 || moving.HalfMf <= 0)
+            {
+                return Fail<GameState>("UNIT-STATE-029", "A movement step moves a stack of the phasing side that may still move, in one Location, in the MPh.");
+            }
+
+            var current = state.Movement;
+            if (current is not null && (!current.Movers.Order(StringComparer.Ordinal).SequenceEqual(moving.Movers.Order(StringComparer.Ordinal))
+                || current.WindowOpen || current.Assault != moving.Assault))
+            {
+                return Fail<GameState>("UNIT-STATE-029", "The moving stack continues only after the DEFENDER's window closes; another stack moves after it ends (A8.11).");
+            }
+
+            if (moving.Step != (current?.Step ?? 0) + 1)
+            {
+                return Fail<GameState>("UNIT-STATE-029", $"The next movement step is {(current?.Step ?? 0) + 1}.");
+            }
+
+            var next = state;
+            foreach (var unit in movers)
+            {
+                var halves = (unit!.MfSpent * 2) + (unit.HalfMfSpent ? 1 : 0) + moving.HalfMf;
+                next = Replace(next, unit with
+                {
+                    Position = new MapPosition(moving.To),
+                    MfSpent = halves / 2,
+                    HalfMfSpent = halves % 2 == 1
+                })!;
+            }
+
+            return next with
+            {
+                Movement = new MovementState(moving.Movers, moving.To, moving.HalfMf, moving.Step, moving.Assault, WindowOpen: true),
+            };
+        }
+
+        private GameState? CloseWindow(GameState state, MovementWindowClosed closed) =>
+            state.Movement is { WindowOpen: true } movement && movement.Step == closed.Step
+                ? state with
+                {
+                    Movement = movement with
+                    {
+                        WindowOpen = false
+                    }
+                }
+                : Fail<GameState>("UNIT-STATE-029", $"No DEFENDER window is open on step {closed.Step}.");
+
+        private GameState? EndMovement(GameState state, MovementEnded ended)
+        {
+            if (state.Movement is not { WindowOpen: false } movement
+                || !movement.Movers.Order(StringComparer.Ordinal).SequenceEqual(ended.Movers.Order(StringComparer.Ordinal)))
+            {
+                return Fail<GameState>("UNIT-STATE-029", "The ATTACKER ends the moving stack's move once the DEFENDER's window closes (A8.11).");
+            }
+
+            var next = state;
+            foreach (var id in ended.Movers)
+            {
+                if (Active(next, id) is UnitInstance unit)
+                {
+                    next = Replace(next, unit with
+                    {
+                        MovementEnded = true
+                    })!;
+                }
+            }
+
+            return next with
+            {
+                Movement = null
             };
         }
 
@@ -354,8 +559,23 @@ public static class GameProjector
                     return Fail<GameState>("UNIT-STATE-010", "Equipment without a holder, or a manned Gun, needs a position.");
                 }
 
+                // Catalog 1.2.0 gives SW definitions; equipment may still be created by kind alone.
+                DefinitionReference? equipmentDefinition = null;
+                if (instance.Definition is not null)
+                {
+                    if (catalog?.Definition(instance.Definition) is not { } swDefinition || swDefinition.Kind != instance.Kind)
+                    {
+                        return Fail<GameState>("UNIT-STATE-008", $"'{instance.Definition}' is not a {instance.Kind} definition of the game's catalog.");
+                    }
+
+                    equipmentDefinition = catalog.Reference(swDefinition);
+                }
+
                 var equipment = new EquipmentInstance(instance.Id, instance.Kind, instance.Side, position ?? NotEnteredPosition.Instance, instance.Holding,
-                    instance.Conditions, InstanceStatus.Active);
+                    instance.Conditions, InstanceStatus.Active)
+                {
+                    Definition = equipmentDefinition,
+                };
                 return CheckPosition(state, equipment.Kind, equipment.Position) ? state with
                 {
                     Equipment = [.. state.Equipment, equipment]
@@ -384,6 +604,17 @@ public static class GameProjector
             if (instance.Side is null)
             {
                 return Fail<GameState>("UNIT-STATE-005", "A unit has an owning side (ASL-UNIT-021).");
+            }
+
+            // A Dummy is a concealment counter with no unit beneath (A12.11), so it has no definition.
+            if (instance.Kind == UnitKinds.Dummy)
+            {
+                return instance.Definition is not null
+                    ? Fail<GameState>("UNIT-STATE-008", "A Dummy has no definition.")
+                    : state with
+                    {
+                        Units = [.. state.Units, new UnitInstance(instance.Id, instance.Kind, null, instance.Side, position, instance.Conditions, InstanceStatus.Active, from)]
+                    };
             }
 
             if (instance.Definition is null || catalog!.Definition(instance.Definition) is not { } definition)

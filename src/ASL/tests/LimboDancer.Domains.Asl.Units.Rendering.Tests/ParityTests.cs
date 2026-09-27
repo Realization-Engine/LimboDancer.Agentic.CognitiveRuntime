@@ -125,6 +125,7 @@ public sealed class ParityTests
         { "Hidden (HIP), owner's view", Squad, WithStates(Squad, "asl:hidden"), null, "face", "face" },
         { "Prep Fire", Squad, WithStates(Squad, "asl:prep-fire"), null, "badge", "badge" },
         { "Final Fire", Squad, WithStates(Squad, "asl:final-fire"), null, "badge", "badge" },
+        { "First Fire", Squad, WithStates(Squad, "asl:first-fire"), null, "badge", "badge" },
 
         // 4.4 Guns and ordnance values.
         { "Gun Caliber Size", Gun.Replace("\"caliber\": 75, ", "", StringComparison.Ordinal), Gun, null, "slot:cal", "slot:cal" },

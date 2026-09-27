@@ -4,13 +4,13 @@ using LimboDancer.Domains.Asl.Authoring;
 namespace LimboDancer.Domains.Asl.Authoring.Tests;
 
 /// <summary>
-/// The Fire case matrix (unit step 17, revised at step 18): the user's rulings, pinned to verified source fragments, to the reviewed chart
+/// The Fire case matrix (unit step 17, revised at steps 18 and 19 to 23): the user's rulings, pinned to verified source fragments, to the reviewed chart
 /// supplement and its transcriptions, and to the reviewed Scenario A1 catalog.
 /// </summary>
 public sealed class AslScenarioA1FireMatrixTests
 {
     private const string SourceCommit = "a3254ff1d492dbdd28483d86f5b42437b48e80d4";
-    private const string MatrixSha256 = "81128b0fe8237131970b2970ab026abe086035983bce8b7d6a14aaec605e7c32";
+    private const string MatrixSha256 = "afe819360ce7b662a30eab04b43c5e852f12f17385c26642c54db8c79f7804b6";
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     private static string Registry(string name) => Path.Combine(RepositoryPaths.Root, "docs", "ASL", "SourceRegistry", name);
@@ -59,12 +59,14 @@ public sealed class AslScenarioA1FireMatrixTests
         var verified = AslScenarioA1OvrNtcSourceReview.Build(RepositoryPaths.Root, manifests, attestation).Records
             .Concat(AslScenarioA1FireSourceReview.Build(RepositoryPaths.Root, manifests, attestation).Records)
             .Concat(AslScenarioA1FireSourceReview.BuildBranches(RepositoryPaths.Root, manifests, attestation).Records)
+            .Concat(AslScenarioA1FireSourceReview.BuildRally(RepositoryPaths.Root, manifests, attestation).Records)
+            .Concat(AslScenarioA1FireSourceReview.BuildExtensions(RepositoryPaths.Root, manifests, attestation).Records)
             .Where(item => item.Disposition == TirSourceVerificationDisposition.Verified)
             .Select(item => item.SourceFragment.FragmentId).ToHashSet(StringComparer.Ordinal);
 
         using var matrix = Read("asl-scenario-a1.fire-case-matrix.json");
         var fragments = matrix.RootElement.GetProperty("sourceFragments").EnumerateArray().ToArray();
-        Assert.Equal(61, fragments.Length);
+        Assert.Equal(112, fragments.Length);
         foreach (var item in fragments)
         {
             var fragment = Assert.Single(manifests.Fragments, candidate => candidate.FragmentId == item.GetProperty("fragmentId").GetString());

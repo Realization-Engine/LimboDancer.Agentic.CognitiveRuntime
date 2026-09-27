@@ -262,6 +262,59 @@ public static class GameEventWriter
                 fire.Facts.WriteTo(writer);
                 writer.WritePropertyName("resolution");
                 fire.Resolution.WriteTo(writer);
+                if (fire.MovementStep is { } movementStep)
+                {
+                    writer.WriteNumber("movementStep", movementStep);
+                }
+
+                break;
+            case RallyAttempted rally:
+                writer.WriteString("unit", rally.Unit);
+                if (rally.Leader is { } rallyLeader)
+                {
+                    writer.WriteString("leader", rallyLeader);
+                }
+
+                writer.WriteStartObject("rolls");
+                foreach (var (key, roll) in rally.Rolls.OrderBy(entry => entry.Key, StringComparer.Ordinal))
+                {
+                    writer.WriteString(key, roll);
+                }
+
+                writer.WriteEndObject();
+                writer.WritePropertyName("facts");
+                rally.Facts.WriteTo(writer);
+                writer.WritePropertyName("resolution");
+                rally.Resolution.WriteTo(writer);
+                break;
+            case ResidualFirePlaced residual:
+                writer.WriteString("fire", residual.Fire);
+                writer.WriteString("location", residual.Location.ToString());
+                writer.WriteNumber("fp", residual.Fp);
+                break;
+            case RepairAttempted repair:
+                writer.WriteString("unit", repair.Unit);
+                writer.WriteString("equipment", repair.Equipment);
+                writer.WriteString("roll", repair.Roll);
+                writer.WriteNumber("repairNumber", repair.RepairNumber);
+                writer.WriteString("result", repair.Result);
+                break;
+            case MovementStepped moving:
+                Strings(writer, "movers", moving.Movers);
+                writer.WriteString("to", moving.To.ToString());
+                writer.WriteNumber("halfMf", moving.HalfMf);
+                if (moving.Assault)
+                {
+                    writer.WriteBoolean("assault", true);
+                }
+
+                writer.WriteNumber("step", moving.Step);
+                break;
+            case MovementWindowClosed closed:
+                writer.WriteNumber("step", closed.Step);
+                break;
+            case MovementEnded ended:
+                Strings(writer, "movers", ended.Movers);
                 break;
             case FireReported report:
                 writer.WriteString("fire", report.Fire);
