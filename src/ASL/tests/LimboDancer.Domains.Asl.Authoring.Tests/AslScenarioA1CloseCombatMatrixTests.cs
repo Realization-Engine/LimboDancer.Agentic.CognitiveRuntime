@@ -4,13 +4,13 @@ using LimboDancer.Domains.Asl.Authoring;
 namespace LimboDancer.Domains.Asl.Authoring.Tests;
 
 /// <summary>
-/// The Rally case matrix (unit step 19): the user's rulings of 2026-09-26, pinned to verified source fragments and to the
-/// reviewed Scenario A1 catalog.
+/// The Close Combat case matrix (unit step 29): the rulings of the plan's section 11 (R29.1 to R29.15), pinned to verified source
+/// fragments, to the CCT transcription, and to the reviewed Scenario A1 catalog.
 /// </summary>
-public sealed class AslScenarioA1RallyMatrixTests
+public sealed class AslScenarioA1CloseCombatMatrixTests
 {
     private const string SourceCommit = "a3254ff1d492dbdd28483d86f5b42437b48e80d4";
-    private const string MatrixSha256 = "83ff2a8f3511ca571a959a5b7ced0e8323a01ee6df2c08c4923f80743518d501";
+    private const string MatrixSha256 = "8b197fbeb38d116bfa975911749de1985425da02f5976a925e2213e312be36b5";
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     private static string Registry(string name) => Path.Combine(RepositoryPaths.Root, "docs", "ASL", "SourceRegistry", name);
@@ -18,19 +18,25 @@ public sealed class AslScenarioA1RallyMatrixTests
     private static JsonDocument Read(string name) => JsonDocument.Parse(File.ReadAllText(Registry(name)));
 
     [Fact]
-    public void TheMatrixPinsTheCatalogAndTheRulings()
+    public void TheMatrixPinsTheCctTheCatalogAndTheRulings()
     {
-        Assert.Equal(MatrixSha256, Hashing.Sha256File(Registry("asl-scenario-a1.rally-case-matrix.json")));
-        using var matrix = Read("asl-scenario-a1.rally-case-matrix.json");
+        Assert.Equal(MatrixSha256, Hashing.Sha256File(Registry("asl-scenario-a1.close-combat-case-matrix.json")));
+        using var matrix = Read("asl-scenario-a1.close-combat-case-matrix.json");
         var root = matrix.RootElement;
-        Assert.Equal("user-directed-affirmative-xunit-review-2026-09-26", root.GetProperty("authority").GetString());
+        Assert.Equal("user-directed-affirmative-xunit-review-2026-09-27", root.GetProperty("authority").GetString());
         Assert.Equal("none", root.GetProperty("executionAuthority").GetString());
         Assert.Equal(AslScenarioA1SourceInventory.PdfDigest, root.GetProperty("sourcePdfSha256").GetString());
+        Assert.Equal(Hashing.Sha256File(Registry(Path.Combine("Supplements", "a11-close-combat-table.transcription.json"))),
+            root.GetProperty("cctTranscriptionSha256").GetString());
         Assert.Equal(Hashing.Sha256File(Path.Combine(RepositoryPaths.Root, "src", "ASL", "units", "catalog", "scenario-a1.catalog.json")),
             root.GetProperty("catalogSha256").GetString());
-        var rulings = root.GetProperty("rulings");
-        Assert.StartsWith("original-2-on-a-leader-rally", rulings.GetProperty("heatOfBattle").GetString(), StringComparison.Ordinal);
-        Assert.StartsWith("first-mmc-self-rally", rulings.GetProperty("fieldPromotion").GetString(), StringComparison.Ordinal);
+
+        // The CCT transcription: fourteen columns, black Kill Numbers 0 to 13, as read from p. 692.
+        using var cct = Read(Path.Combine("Supplements", "a11-close-combat-table.transcription.json"));
+        var columns = cct.RootElement.GetProperty("columns").EnumerateArray().ToArray();
+        Assert.Equal(692, cct.RootElement.GetProperty("physicalPdfPage").GetInt32());
+        Assert.Equal(Enumerable.Range(0, 14), columns.Select(item => item.GetProperty("blackKill").GetInt32()));
+        Assert.Equal(Enumerable.Range(2, 14), columns.Select(item => item.GetProperty("redKill").GetInt32()));
     }
 
     [Fact]
@@ -41,15 +47,15 @@ public sealed class AslScenarioA1RallyMatrixTests
         var attestation = JsonSerializer.Deserialize<AslScenarioA1SourceAttestation>(attestationJson.RootElement.GetRawText(), JsonOptions)!;
         var verified = AslScenarioA1FireSourceReview.Build(RepositoryPaths.Root, manifests, attestation).Records
             .Concat(AslScenarioA1FireSourceReview.BuildBranches(RepositoryPaths.Root, manifests, attestation).Records)
-            .Concat(AslScenarioA1FireSourceReview.BuildRally(RepositoryPaths.Root, manifests, attestation).Records)
             .Concat(AslScenarioA1FireSourceReview.BuildHeatOfBattle(RepositoryPaths.Root, manifests, attestation).Records)
+            .Concat(AslScenarioA1FireSourceReview.BuildCloseCombat(RepositoryPaths.Root, manifests, attestation).Records)
             .Concat(AslScenarioA1FireSourceReview.BuildBerserkSurrender(RepositoryPaths.Root, manifests, attestation).Records)
             .Where(item => item.Disposition == TirSourceVerificationDisposition.Verified)
             .Select(item => item.SourceFragment.FragmentId).ToHashSet(StringComparer.Ordinal);
 
-        using var matrix = Read("asl-scenario-a1.rally-case-matrix.json");
+        using var matrix = Read("asl-scenario-a1.close-combat-case-matrix.json");
         var fragments = matrix.RootElement.GetProperty("sourceFragments").EnumerateArray().ToArray();
-        Assert.Equal(44, fragments.Length);
+        Assert.Equal(32, fragments.Length);
         foreach (var item in fragments)
         {
             var fragment = Assert.Single(manifests.Fragments, candidate => candidate.FragmentId == item.GetProperty("fragmentId").GetString());

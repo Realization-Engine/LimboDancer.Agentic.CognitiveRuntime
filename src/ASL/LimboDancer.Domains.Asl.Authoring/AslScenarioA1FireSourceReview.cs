@@ -44,6 +44,17 @@ public static class AslScenarioA1FireSourceReview
     public const string HeatOfBattleComparisonFile = "asl-scenario-a1.heat-of-battle-pdf-comparison.json";
     public const string HeatOfBattleComparisonSha256 = "41cfbe214712c39d540059e6be5e3fb85da03838a0e341c5d6a95c6ca4da092b";
 
+    /// <summary>
+    /// The unit step 29 comparison: Advance (A3.7, A4.7, A4.72), stacking (A1.6, A5.1, A5.5), Close Combat (A11.1 to A11.41),
+    /// Field Promotion in CC (A18.12), and Lax (A19.36).
+    /// </summary>
+    public const string CloseCombatComparisonFile = "asl-scenario-a1.close-combat-pdf-comparison.json";
+    public const string CloseCombatComparisonSha256 = "458d815eb7846976b20b90a8b4f36b8af584ebdb14e8d9a206a32515dfbce4b2";
+
+    /// <summary>The unit step 30 comparison: Berserk (A15.41 to A15.46), capture and prisoners (A20.2 to A20.55).</summary>
+    public const string BerserkSurrenderComparisonFile = "asl-scenario-a1.berserk-surrender-pdf-comparison.json";
+    public const string BerserkSurrenderComparisonSha256 = "0410b296213af94e70e1d79b0ca3c5cc087be3d6fbf6b3ac5f7b3a863953b25b";
+
     private const string ChapterA = "asl-easlrb-3.10:chapter-a";
     private const string ChapterB = "asl-easlrb-3.10:chapter-b";
 
@@ -197,9 +208,59 @@ public static class AslScenarioA1FireSourceReview
         ("A25.25", "A25.25", ChapterA, 1758, SourceFragmentKind.RuleText, 96),
     ];
 
+    private static readonly (string Rule, string Registered, string Source, int Line, SourceFragmentKind Kind, int Page)[] CloseCombatSubjects =
+    [
+        ("A1.6", "A1.6", ChapterA, 133, SourceFragmentKind.RuleText, 45),
+        ("A3.7", "A3.7", ChapterA, 209, SourceFragmentKind.RuleText, 47),
+        ("A3.8", "A3.8", ChapterA, 211, SourceFragmentKind.RuleText, 47),
+        ("A4.7", "A4.7", ChapterA, 329, SourceFragmentKind.RuleText, 52),
+        ("A4.72", "A4.72", ChapterA, 333, SourceFragmentKind.RuleText, 52),
+        ("A5.1", "A5.1", ChapterA, 341, SourceFragmentKind.RuleText, 52),
+        ("A5.5", "A5.5", ChapterA, 363, SourceFragmentKind.RuleText, 53),
+        ("A11.1", "A11.1", ChapterA, 876, SourceFragmentKind.RuleText, 72),
+        ("A11.11", "A11.11", ChapterA, 878, SourceFragmentKind.RuleText, 72),
+        ("A11.12", "A11.12", ChapterA, 880, SourceFragmentKind.RuleText, 72),
+        ("A11.13", "A11.13", ChapterA, 884, SourceFragmentKind.RuleText, 72),
+        ("A11.14", "A11.14", ChapterA, 886, SourceFragmentKind.RuleText, 72),
+        ("A11.141", "A11.141", ChapterA, 888, SourceFragmentKind.RuleText, 72),
+        ("A11.15", "A11.15", ChapterA, 890, SourceFragmentKind.RuleText, 72),
+        ("A11.16", "A11.16", ChapterA, 894, SourceFragmentKind.RuleText, 72),
+        ("A11.17", "A11.17", ChapterA, 898, SourceFragmentKind.RuleText, 73),
+        ("A11.18", "A11.18", ChapterA, 900, SourceFragmentKind.RuleText, 73),
+        ("A11.19", "A11.19", ChapterA, 902, SourceFragmentKind.RuleText, 73),
+        ("A11.22", "A11.22", ChapterA, 910, SourceFragmentKind.RuleText, 73),
+        ("A11.3", "A11.3", ChapterA, 912, SourceFragmentKind.RuleText, 73),
+        ("A11.32", "A11.32", ChapterA, 916, SourceFragmentKind.RuleText, 73),
+        ("A11.4", "A11.4", ChapterA, 922, SourceFragmentKind.RuleText, 73),
+        ("A11.41", "A11.41", ChapterA, 940, SourceFragmentKind.RuleText, 73),
+        ("A18.12", "A18.12", ChapterA, 1336, SourceFragmentKind.RuleText, 85),
+        ("A19.36", "A19.36", ChapterA, 1394, SourceFragmentKind.RuleText, 86),
+    ];
+
+    private static readonly (string Rule, string Registered, string Source, int Line, SourceFragmentKind Kind, int Page)[] BerserkSurrenderSubjects =
+    [
+        ("A15.41", "A15.41", ChapterA, 1252, SourceFragmentKind.RuleText, 83),
+        ("A15.42", "A15.42", ChapterA, 1256, SourceFragmentKind.RuleText, 84),
+        ("A15.43", "A15.43", ChapterA, 1258, SourceFragmentKind.RuleText, 84),
+        ("A15.431", "A15.431", ChapterA, 1262, SourceFragmentKind.RuleText, 84),
+        ("A15.432", "A15.432", ChapterA, 1266, SourceFragmentKind.RuleText, 84),
+        ("A15.44", "A15.44", ChapterA, 1270, SourceFragmentKind.RuleText, 84),
+        ("A15.45", "A15.45", ChapterA, 1272, SourceFragmentKind.RuleText, 84),
+        ("A15.46", "A15.46", ChapterA, 1274, SourceFragmentKind.RuleText, 84),
+        ("A20.2", "A20.2", ChapterA, 1400, SourceFragmentKind.RuleText, 86),
+        ("A20.21", "A20.21", ChapterA, 1402, SourceFragmentKind.RuleText, 86),
+        ("A20.24", "A20.24", ChapterA, 1414, SourceFragmentKind.RuleText, 87),
+        ("A20.5", "A20.5", ChapterA, 1420, SourceFragmentKind.RuleText, 87),
+        ("A20.51", "A20.51", ChapterA, 1426, SourceFragmentKind.RuleText, 87),
+        ("A20.52", "A20.52", ChapterA, 1428, SourceFragmentKind.RuleText, 87),
+        ("A20.53", "A20.53", ChapterA, 1430, SourceFragmentKind.RuleText, 87),
+        ("A20.54", "A20.54", ChapterA, 1432, SourceFragmentKind.RuleText, 87),
+        ("A20.55", "A20.55", ChapterA, 1440, SourceFragmentKind.RuleText, 88),
+    ];
+
     // Fragments a column break, a boxed example, or a page break interrupts: each part occurs whole in the page text.
     private static readonly HashSet<(string Rule, int Line)> TwoPartSubjects =
-        [("A7.212", 445), ("A8.26", 644), ("A8.31", 658), ("A9.2", 690), ("B3.4", 138), ("A12.11", 992)];
+        [("A7.212", 445), ("A8.26", 644), ("A8.31", 658), ("A9.2", 690), ("B3.4", 138), ("A12.11", 992), ("A11.41", 940), ("A20.21", 1402)];
 
     /// <summary>The verified fragments, in subject order, keyed by rule id for the Fire package.</summary>
     public static IReadOnlyList<(string Rule, int Page, SourceFragment Fragment)> Fragments(GeneratedManifests manifests)
@@ -234,6 +295,18 @@ public static class AslScenarioA1FireSourceReview
         GeneratedManifests manifests, AslScenarioA1SourceAttestation attestation) =>
         Build(repositoryRoot, manifests, attestation, HeatOfBattleComparisonFile, HeatOfBattleComparisonSha256, HeatOfBattleSubjects,
             "unit steps 27 and 28 Heat of Battle review");
+
+    /// <summary>The unit step 29 subjects of Advance and Close Combat.</summary>
+    public static AslScenarioA1VerificationBatch BuildCloseCombat(string repositoryRoot,
+        GeneratedManifests manifests, AslScenarioA1SourceAttestation attestation) =>
+        Build(repositoryRoot, manifests, attestation, CloseCombatComparisonFile, CloseCombatComparisonSha256, CloseCombatSubjects,
+            "unit step 29 Close Combat review");
+
+    /// <summary>The unit step 30 subjects of Berserk, Surrender, and prisoners.</summary>
+    public static AslScenarioA1VerificationBatch BuildBerserkSurrender(string repositoryRoot,
+        GeneratedManifests manifests, AslScenarioA1SourceAttestation attestation) =>
+        Build(repositoryRoot, manifests, attestation, BerserkSurrenderComparisonFile, BerserkSurrenderComparisonSha256, BerserkSurrenderSubjects,
+            "unit step 30 Berserk and Surrender review");
 
     private static AslScenarioA1VerificationBatch Build(string repositoryRoot, GeneratedManifests manifests,
         AslScenarioA1SourceAttestation attestation, string file, string digest,

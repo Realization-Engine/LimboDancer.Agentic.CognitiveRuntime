@@ -863,6 +863,125 @@
       "startLine": 1758,
       "fragmentId": "asl-fragment:sha256:5850efcfceb4866ca3d2ce0e7eaa3780ef67022fb90fe740955e5c1087adacab",
       "contentSha256": "48980cfe17197567162ed6578ced4cc60cd7164ef883d4d53ec4ba7189daf9a2"
+    },
+    {
+      "ruleId": "A15.41",
+      "physicalPdfPage": 83,
+      "startLine": 1252,
+      "fragmentId": "asl-fragment:sha256:0e5dbc4765fd5c6e26ea8ff08ec45fd59f936dab6fba4adbb156b5ba83e3546c",
+      "contentSha256": "e5ddb34a6cefa635ae98da4bce8056ae6964072a6bbefdf178655cfa01bb36df"
+    },
+    {
+      "ruleId": "A15.42",
+      "physicalPdfPage": 84,
+      "startLine": 1256,
+      "fragmentId": "asl-fragment:sha256:940ab167a6317c6000359c22295a018d258d730b34ad02749b8541579847dad5",
+      "contentSha256": "c9fd438625cc6ffb854e9089615eeebfa9344f4895a876896fde8f80ad432409"
+    },
+    {
+      "ruleId": "A15.43",
+      "physicalPdfPage": 84,
+      "startLine": 1258,
+      "fragmentId": "asl-fragment:sha256:ee7c59ace947faca0d33f257370d3b35430657567cf93da107b865d5c77668c4",
+      "contentSha256": "83155f35b76e184b7002a5f3baa94a3f87954be1b498c62c61f303aa59496965"
+    },
+    {
+      "ruleId": "A15.431",
+      "physicalPdfPage": 84,
+      "startLine": 1262,
+      "fragmentId": "asl-fragment:sha256:34c109ddcc087e74c526284499edeaa1245bf81ae40d9bfb971333078131e4e2",
+      "contentSha256": "f2eca0c2b403de71c6e034e994c9f2ab9642afba640f7924fe7bc14ada6a6d8a"
+    },
+    {
+      "ruleId": "A15.432",
+      "physicalPdfPage": 84,
+      "startLine": 1266,
+      "fragmentId": "asl-fragment:sha256:d47be1b24b1743f81543592184b6fc54cad1823faa84eee0cfeb443ee982bb7d",
+      "contentSha256": "5eb97a05c91deac5ec0c92bb37ade84f4bd2cbbb5009d9d618f91e5b092b96ec"
+    },
+    {
+      "ruleId": "A15.44",
+      "physicalPdfPage": 84,
+      "startLine": 1270,
+      "fragmentId": "asl-fragment:sha256:8eb8b68dbb390e37cb3e8b2c4cd776b4fcd468560a09dad05e2044d026f2d9e2",
+      "contentSha256": "31526aa8813e30e0be6e622f7e851c6b0a67ccac4e74418ef0fd8e734e315d09"
+    },
+    {
+      "ruleId": "A15.45",
+      "physicalPdfPage": 84,
+      "startLine": 1272,
+      "fragmentId": "asl-fragment:sha256:4c63ae9bd058393a893948f5c3823bf9e52654b403e71299e678754c2a44e649",
+      "contentSha256": "50d15f197c28d4851c95efb59ee4fb1e4f9fc1388ab48e7c98c4f7a88d9e2419"
+    },
+    {
+      "ruleId": "A15.46",
+      "physicalPdfPage": 84,
+      "startLine": 1274,
+      "fragmentId": "asl-fragment:sha256:17fe0e508a51e066fd521109c69922f0ad01648432c57f8d78bcebac977edbd9",
+      "contentSha256": "0cad0efbd0756bc10da0d9bb596ec3929237433aaeff602705835dd825aa3414"
+    },
+    {
+      "ruleId": "A20.2",
+      "physicalPdfPage": 86,
+      "startLine": 1400,
+      "fragmentId": "asl-fragment:sha256:2b28bbd016919a5777a256dd7c5fd353276462cc50468a70813fd7ff1b21c978",
+      "contentSha256": "da99c4aa4dcdb503dc6ac8c1468058010e5815f30d62f19669f0fdda5fb7022c"
+    },
+    {
+      "ruleId": "A20.21",
+      "physicalPdfPage": 86,
+      "startLine": 1402,
+      "fragmentId": "asl-fragment:sha256:6be5916f1c102d787602cd89a8f68a1dcfbd21a64c8f3bbd252ef8b5eed8afd0",
+      "contentSha256": "96ed1e81977fe721bbf05abd5c29f137e63f6818af2241e72719bd5dabfe5fcc"
+    },
+    {
+      "ruleId": "A20.24",
+      "physicalPdfPage": 87,
+      "startLine": 1414,
+      "fragmentId": "asl-fragment:sha256:7cc77d2b2627a492b6202e07b11e0678101a4e23a0c3f625b6ba9fbf5fce7e4d",
+      "contentSha256": "d14d3ad38c6891bcc0027b5ab1422dd9ab0f48f724904c81fff1a0c06f6ce5bd"
+    },
+    {
+      "ruleId": "A20.5",
+      "physicalPdfPage": 87,
+      "startLine": 1420,
+      "fragmentId": "asl-fragment:sha256:087bbdf8f9fd340a83f5db81982320de54ec83f19185a7ae5b44954e06543d1a",
+      "contentSha256": "a70b19b2ddb5f1881118bf54b2faa5f466ea91f3861cee7650347c34e7b2fc0c"
+    },
+    {
+      "ruleId": "A20.51",
+      "physicalPdfPage": 87,
+      "startLine": 1426,
+      "fragmentId": "asl-fragment:sha256:d289aa7c94b14e2bea4f2a16ecb832b6d74a1232acdd66632c6f82d4ef95d03e",
+      "contentSha256": "54fa0261eb237b55d3236907df40b767a058da7f8b2047c8b97d81c302935c65"
+    },
+    {
+      "ruleId": "A20.52",
+      "physicalPdfPage": 87,
+      "startLine": 1428,
+      "fragmentId": "asl-fragment:sha256:49f9a4593f93e0ec6f2f27ceeae15ce7a11fada21c0ca95b31c6e45bcb7402f8",
+      "contentSha256": "ff1e9884caf28d2287ed3b36c9d864b588416dd3fba6f9d93db7f5b791af0b9f"
+    },
+    {
+      "ruleId": "A20.53",
+      "physicalPdfPage": 87,
+      "startLine": 1430,
+      "fragmentId": "asl-fragment:sha256:6098510e29ca5eccca07d33562d90d2b765406e53f5d62e87f5ffe7c6f62927e",
+      "contentSha256": "adac5f55a3faabce375292028a011b80b3835662c6d64950e99f05cd2a6879d9"
+    },
+    {
+      "ruleId": "A20.54",
+      "physicalPdfPage": 87,
+      "startLine": 1432,
+      "fragmentId": "asl-fragment:sha256:9b8c3c7504d616bba6ef827d108df71b0b7ed4565055291edd723b2dd7e2c746",
+      "contentSha256": "00d179e38e82f539bb69ca1a7c7d9966a6be14100148e4dd10a9789c1a883a07"
+    },
+    {
+      "ruleId": "A20.55",
+      "physicalPdfPage": 88,
+      "startLine": 1440,
+      "fragmentId": "asl-fragment:sha256:f0853fb906e18dc51d4e1e3adf7b33e75281d9b51688ff03e30b0bfcff3faa0d",
+      "contentSha256": "92000a26fca119e62f6d9a04c61f3940a80d9da99b464c9a6b3d89fd64a766fc"
     }
   ],
   "visualReadings": [
@@ -886,7 +1005,7 @@
     "conscriptCasualtyBeyondElr": "own-conscript-hs-broken-and-disrupted",
     "woundedLeaderTakesKMc": "yes-at-lowered-morale",
     "woundedLeadershipMandatory": "yes-A10.72",
-    "heatOfBattle": "original-mc-dr-2-calls-for-a-heat-of-battle-dr-with-its-drm-A15.1; hero-creation-on-6-or-less-and-battle-hardening-on-5-to-8-A15.21-A15.3; berserk-and-surrender-recorded-not-taken-until-step-30 (R28.1); exemptions-apply-to-heroes-and-heroic-leaders (R28.2); one-heat-of-battle-dr-per-unit-per-attack-a-second-original-2-not-taken (R28.8); a-fanatic-units-12-is-berserk-A15.1",
+    "heatOfBattle": "original-mc-dr-2-calls-for-a-heat-of-battle-dr-with-its-drm-A15.1; hero-creation-on-6-or-less-and-battle-hardening-on-5-to-8-A15.21-A15.3; berserk-on-9-to-11-and-on-12-for-a-fanatic-unit-A15.4-A15.5; battle-hardening-instead-of-berserk-with-no-known-enemy-in-los-A15.44 (R30.2); surrender-on-12-or-more-breaks-and-disrupts-and-surrenders-to-an-adjacent-known-good-order-armed-enemy-infantry-unit-A15.5 (R30.7); exemptions-apply-to-heroes-heroic-leaders-and-berserk-units (R28.2); one-heat-of-battle-dr-per-unit-per-attack-a-second-original-2-not-taken (R28.8)",
     "advancingFire": "afph-halving-A7.24; assault-fire-plus-one-after-modification-rounded-up-not-at-long-range-A7.36; opportunity-fire-out; afph-attack-marked-prep-fire (R20.1, R20.3)",
     "fireGroups": "locations-each-adjacent-to-another-A7.5; any-blocked-member-refuses-the-attack; worst-hindrance-once; tem-once; every-member-at-the-targets-level; direction-only-with-a-directing-leader-in-every-location-the-worst-leadership-applies (R20.2, R20.4 to R20.6)",
     "movementFire": "defensive-first-fire-at-the-moving-stack-A8.1; ffnam-unless-assault-movement-and-ffmo-in-open-ground-without-hindrance-A4.6-A4.61; a-pinned-mover-takes-neither-and-a-stack-mixing-pinned-and-unpinned-movers-is-indeterminate-A7.83; subsequent-first-fire-and-fpf-area-fire-A8.3-A8.31; fpf-undirected-and-unmixed; fpf-firers-nmc-on-the-original-dr-A8.31; final-fire-by-first-fire-marked-units-adjacent-only-A8.4 (R22.1 to R22.8)",
@@ -896,7 +1015,10 @@
     "heroes": "a-hero-fires-1-4-9-or-wounded-1-3-8-with-a-minus-1-heroic-drm-at-normal-range-A15.24; not-subject-to-cowering-but-no-exemption-for-the-group; a-failed-mc-wounds-then-eliminates-A15.2; a-casualty-mc-wounds-as-if-wounded-A10.31; never-broken-or-pinned-no-ptc-or-lltc-A15.2; casualty-reduction-instead-of-breaking-on-kia-A7.301; morale-at-most-10-or-9-wounded-A15.2; sw-use-A15.23-not-reviewed (R28.3)",
     "heroicLeader": "a-leader-made-heroic-keeps-his-counter-and-leadership-rallies-even-on-a-failed-rally-has-morale-at-least-9-and-is-wounded-not-broken-by-a-failed-mc-A15.21 (R28.4)",
     "battleHardening": "next-higher-quality-same-size-no-number-lower-least-gain-by-summed-increase-then-fewest-added-capabilities-A15.3 (R28.6); russian-conscript-to-nkvd-2nd-line-A25.25; always-taken-refusal-not-reviewed (R28.5); always-unbroken-unpinned-and-undisrupted-even-without-a-better-class (R28.7)",
-    "fanatic": "both-morale-levels-plus-1-no-cowering-never-disrupted-A10.8; nkvd-battle-hardened-becomes-fanatic-A25.25"
+    "fanatic": "both-morale-levels-plus-1-no-cowering-never-disrupted-A10.8; nkvd-battle-hardened-becomes-fanatic-A25.25",
+    "berserk": "a-berserk-unit-has-morale-level-10-plus-1-fanatic-never-lowered-A15.42; a-failed-mc-casualty-reduces-it-once-even-on-an-original-12 (R30.3); never-broken-or-pinned-no-ptc-llmc-or-lltc-and-no-leadership-from-a-friendly-leader-A15.42; a-leader-berserk-before-the-attack-forfeits-his-leadership-A15.41; a-leader-who-goes-berserk-takes-each-other-friendly-unit-in-his-location-subject-to-heat-of-battle-by-a-ntc-with-his-leadership-drm-A15.41 (R30.4); a-berserk-unit-does-not-fire (R30.5)",
+    "surrender": "the-captors-are-the-adjacent-known-good-order-armed-enemy-infantry-with-guard-capacity-read-by-the-planner-A15.5-A20.51; the-captors-side-chooses-the-guard; the-surrender-is-always-accepted-no-quarter-not-offered (R30.7)",
+    "mapFacts": "the-known-enemy-in-los-and-the-captors-are-the-planners-map-reads-taken-as-recorded-on-replay; they-are-required-before-any-roll-when-heat-of-battle-can-reach-a-unit"
   },
   "resolution": {
     "firepower": "Each firer's printed FP, doubled for PBF when the target is adjacent at the same level (A7.21), halved beyond Normal Range up to twice it (A7.22), halved when the target Location holds a concealed unit (A7.23), and halved when the firer is pinned (A7.8); fractions are kept and summed (A7.2).",
@@ -926,7 +1048,7 @@
     "residualFp": "Defensive First Fire, Subsequent First Fire, and FPF leave the highest Residual FP counter at most half the highest column used, up to 12 (A8.2, A7.372), one counter lower for each point of Hindrance or positive leadership (A8.26); a Residual FP attack is alone, never halved, and not subject to Cowering (A8.22).",
     "supportWeapons": "Each MG adds its FP, with PBF, Long Range, Area Fire, and AFPh halving but not the pinned firer's halving (A7.8, A9.1); a squad keeps its inherent FP with one SW and loses it with two, a HS loses it with any (A7.351, A7.352); an Original DR at least a MG's B# (lowered by 2 for Sustained Fire, A9.3) malfunctions it, Random Selection choosing among two or more (A9.7, A9.71); a first die at most its ROF keeps its Multiple ROF unless it malfunctioned or used Sustained Fire (A9.2).",
     "concealmentTypes": "Concealed, hidden (A12.3), and Dummy targets are attacked on the halved column of A12.13 with the same DR as known targets; a PTC or worse result removes a Dummy and costs the others their \"?\" (A12.14, A12.31).",
-    "heatOfBattle": "An Original MC DR of 2 (MC, LLMC, or an FPF firer's NMC) calls for a Heat of Battle DR with -1 elite, -1 NKVD, +1 broken (before the MC or by it), +1 Inexperienced, and the nationality DRM (A15.1, A25.25): a Final DR of 6 or less creates a hero of the unit's nationality, or makes a leader heroic, rallying him (A15.21); 5 to 8 Battle Hardens the unit into an unbroken, unpinned, undisrupted unit of the next higher quality, or makes an elite MMC, an NKVD MMC, or a 10-3 leader Fanatic and unbroken (A15.3, A10.8, A25.25; ruling R28.7); 9 or more is recorded as Berserk or Surrender not taken (ruling R28.1).",
+    "heatOfBattle": "An Original MC DR of 2 (MC, LLMC, or an FPF firer's NMC) calls for a Heat of Battle DR with -1 elite, -1 NKVD, +1 broken (before the MC or by it), +1 Inexperienced, and the nationality DRM (A15.1, A25.25): a Final DR of 6 or less creates a hero of the unit's nationality, or makes a leader heroic, rallying him (A15.21); 5 to 8 Battle Hardens the unit (A15.3, A10.8, A25.25; ruling R28.7); 9 to 11, or 12 or more for a Fanatic unit, makes it berserk, rallied, unpinned, and without \"?\", unless no Known enemy unit is in its LOS, when it is Battle Hardened instead (A15.4, A15.42, A15.44); 12 or more breaks and Disrupts it, and it surrenders to one of its ADJACENT captors, if any (A15.5). A leader who goes berserk takes the other friendly units of his Location with him on a passed NTC with his leadership DRM (A15.41). A berserk target has Morale Level 10 (11 if Fanatic), is Casualty Reduced by a failed MC, and is never pinned (A15.42).",
     "heroes": "A hero adds his FP, 1 or wounded 1 at his Normal Range of 4 or wounded 3, and each hero firing within it lowers the DR by one (A15.24); a group Cowers unless every member is a hero or Fanatic (A15.2, A10.8); a hero or heroic leader who fails a MC is wounded with a Wound Severity dr, +1 on a Casualty MC, and eliminated if already wounded (A15.2, A15.21, A17.11, A10.31); he takes no PTC or LLTC, a KIA that would break him Casualty Reduces him instead (A7.301), and his Morale Level never exceeds 10, or 9 if wounded (A15.2)."
   },
   "cases": [
@@ -1186,10 +1308,11 @@
     "snipers, SMOKE, night, and weather",
     "any use by a game action",
     "A19.13's exception for an underscored Morale Factor",
-    "Berserk and Surrender after Heat of Battle (recorded as not taken until unit step 30)",
     "a hero using a SW (A15.23)",
-    "refusing Battle Hardening (A15.3)"
+    "refusing Battle Hardening (A15.3)",
+    "rejecting a surrender (No Quarter, A20.3) and Massacre (A20.4)",
+    "prisoners exchanged for Unarmed counters (A20.5), and prisoner escape (A20.55)"
   ],
   "executionAuthority": "none",
-  "revision": "Unit steps 27 and 28 (2026-09-27): Heat of Battle after an Original MC DR of 2, with heroes, heroic leaders, Battle Hardening, Fanaticism, and NKVD MMC; Berserk and Surrender are recorded as not taken (ruling R28.1). Catalog 1.3.0 adds the leader grades, heroes, and the classes Battle Hardening needs. Revised after the second-pass review (ruling R28.7). Earlier: Unit steps 19 to 23 (2026-09-26): the AFPh and Assault Fire, fire groups across ADJACENT Locations, hidden and Dummy targets, Defensive First Fire, Subsequent First Fire, FPF, Final Fire by First-Fire-marked units, Residual FP, MGs, and the Heat of Battle deviation of ruling R0.2 are decided; catalog 1.2.0 adds the MGs."
+  "revision": "Unit step 30 (2026-09-27): Berserk and Surrender after Heat of Battle are taken (A15.4 to A15.5); berserk targets (A15.42); a berserk leader's NTC (A15.41); A15.44. Earlier: Unit steps 27 and 28 (2026-09-27): Heat of Battle after an Original MC DR of 2, with heroes, heroic leaders, Battle Hardening, Fanaticism, and NKVD MMC; Berserk and Surrender are recorded as not taken (ruling R28.1). Catalog 1.3.0 adds the leader grades, heroes, and the classes Battle Hardening needs. Revised after the second-pass review (ruling R28.7). Earlier: Unit steps 19 to 23 (2026-09-26): the AFPh and Assault Fire, fire groups across ADJACENT Locations, hidden and Dummy targets, Defensive First Fire, Subsequent First Fire, FPF, Final Fire by First-Fire-marked units, Residual FP, MGs, and the Heat of Battle deviation of ruling R0.2 are decided; catalog 1.2.0 adds the MGs."
 }

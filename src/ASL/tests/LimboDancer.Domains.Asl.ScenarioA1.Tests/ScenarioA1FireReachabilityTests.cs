@@ -13,10 +13,19 @@ public sealed class ScenarioA1FireReachabilityTests
 {
     private static readonly ScenarioA1FireReference Reference = new ScenarioA1FirePackage().Reference;
 
-    private static FireFirer Firer(string id, string definition, string location) => new(id, definition, location, false, false, false, false, false);
+    private static FireFirer Firer(string id, string definition, string location) => new(id, definition, location, false, false, false, false, false)
+    {
+        KnownEnemyInLos = true,
+        Captors = [],
+    };
 
+    // Unit step 30: every target has the planner's reads of its LOS to a Known enemy (A15.44) and of its captors (A15.5).
     private static FireTarget Target(string id, string definition, string location, bool broken = false) =>
-        new(id, definition, location, broken, false, false, false, false, false, false);
+        new(id, definition, location, broken, false, false, false, false, false, false)
+        {
+            KnownEnemyInLos = true,
+            Captors = [],
+        };
 
     private static FireAttack Attack(string firer, string firerDefinition, FireDirector? director, FireTarget[] targets, int? elr, string terrain = "open-ground") =>
         new("PFPh", "phasing", true, "bd01:F5:0", "bd01:G5:0", [Firer(firer + "-1", firerDefinition, "bd01:F5:0"), Firer(firer + "-2", firerDefinition, "bd01:F5:0")],
@@ -26,10 +35,10 @@ public sealed class ScenarioA1FireReachabilityTests
     [
         "german-mmc", "russian-squad-and-leader", "broken-russian-squad", "advancing-fire", "two-locations", "first-fire-in-the-open",
         "subsequent-first-fire", "final-protective-fire", "machine-guns", "hidden-and-dummy", "residual-fp", "final-fire-again",
-        "heroes-and-fanatic", "conscript-and-elite",
+        "heroes-and-fanatic", "conscript-and-elite", "berserk-leader-and-companions", "berserk-target", "surrender-to-captors", "no-known-enemy-in-los",
     ];
 
-    private static readonly string[] TwoDiceRolls = ["checks", "leaderLoss", "heatOfBattle"];
+    private static readonly string[] TwoDiceRolls = ["checks", "leaderLoss", "heatOfBattle", "berserkCheck"];
 
     private static readonly FireDirector RussianLeader = new("ru-l", "defender-leader", "bd01:F5:0", false, false, false, false, false);
 
@@ -108,6 +117,26 @@ public sealed class ScenarioA1FireReachabilityTests
         },
         "conscript-and-elite" => Attack("de", "attacker-squad", null,
             [Target("ru-c", "defender-conscript-squad", "bd01:G5:0"), Target("ru-e", "defender-elite-half-squad", "bd01:G5:0")], 2),
+
+        // Unit step 30: Defensive First Fire at a moving leader and squad, with a broken squad left behind in the Location, whom a
+        // leader who goes berserk may take with him (A15.41); a berserk target (A15.42); captors (A15.5); no Known enemy (A15.44).
+        "berserk-leader-and-companions" => Scenario("first-fire-in-the-open") with
+        {
+            Targets = [Target("de-l", "attacker-leader-8-0", "bd01:G5:0"), Target("de-s", "attacker-squad", "bd01:G5:0")],
+            Companions = [Target("de-b", "attacker-squad", "bd01:G5:0", broken: true)],
+        },
+        "berserk-target" => Scenario("german-mmc") with
+        {
+            Targets = [Target("de-s", "attacker-squad", "bd01:G5:0") with { Berserk = true }, Target("de-h", "attacker-half-squad", "bd01:G5:0")],
+        },
+        "surrender-to-captors" => Scenario("russian-squad-and-leader") with
+        {
+            Targets = [.. Scenario("russian-squad-and-leader").Targets!.Select(target => target with { Captors = ["de-1", "de-2"] })],
+        },
+        "no-known-enemy-in-los" => Scenario("russian-squad-and-leader") with
+        {
+            Targets = [.. Scenario("russian-squad-and-leader").Targets!.Select(target => target with { KnownEnemyInLos = false })],
+        },
         _ => throw new ArgumentOutOfRangeException(nameof(name)),
     };
 
@@ -143,6 +172,14 @@ public sealed class ScenarioA1FireReachabilityTests
             Targets = [.. attack.Targets!.Select(target => target with { Broken = true })],
         };
         Assert.Contains("asl.a1.fire.concealment-unreviewed:firer-concealment", ScenarioA1FireCalculator.Precheck(concealed, Reference));
+
+        // Unit step 30: without the planner's reads of LOS and captors, Heat of Battle could reach an undecided result.
+        var unread = attack with
+        {
+            Targets = [attack.Targets![0] with { KnownEnemyInLos = null }, attack.Targets[1] with { Captors = null }],
+        };
+        Assert.Equal(["asl.a1.fire.fact-missing:targets[0].knownEnemyInLos", "asl.a1.fire.fact-missing:targets[1].captors"],
+            ScenarioA1FireCalculator.Precheck(unread, Reference));
     }
 
     // Walks the rolls the package asks for, depth first; returns the number of resolved paths.
@@ -225,6 +262,7 @@ public sealed class ScenarioA1FireReachabilityTests
                 {
                     "checks" => rolls with { Checks = With(rolls.Checks, id, dice) },
                     "leaderLoss" => rolls with { LeaderLoss = With(rolls.LeaderLoss, id, dice) },
+                    "berserkCheck" => rolls with { BerserkChecks = With(rolls.BerserkChecks, id, dice) },
                     _ => rolls with { HeatOfBattle = With(rolls.HeatOfBattle, id, dice) },
                 });
             }

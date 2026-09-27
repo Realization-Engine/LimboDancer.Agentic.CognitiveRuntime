@@ -316,7 +316,7 @@ public sealed class ScenarioA1FireExtensionTests
         ScenarioA1FireCalculator.Resolve(Attack(new FireRolls([3, 4], null, new Dictionary<string, IReadOnlyList<int>> { ["de-s"] = [1, 1] }, null)
         {
             HeatOfBattle = new Dictionary<string, IReadOnlyList<int>> { ["de-s"] = heat },
-        }, terrain: "wooden-building", targets: [target ?? Target("de-s")]), Reference);
+        }, terrain: "wooden-building", targets: [target ?? Target("de-s") with { KnownEnemyInLos = true, Captors = [] }]), Reference);
 
     [Fact]
     public void AnOriginalTwoOnAnMcCallsForHeatOfBattle()
@@ -337,9 +337,12 @@ public sealed class ScenarioA1FireExtensionTests
         var hardened = HeatOfBattle([4, 4]).Effects.Single();
         Assert.Equal((null, "attacker-elite-squad"), (hardened.HeatOfBattle!.HeroDefinitionId, hardened.FinalDefinitionId));
 
-        // 9 to 11 is Berserk and 12 Surrender, recorded as not taken until unit step 30 (ruling R28.1).
-        Assert.Equal(HeatOfBattleOutcome.BerserkNotTaken, HeatOfBattle([5, 5]).Effects.Single().HeatOfBattle!.Result);
-        Assert.Equal(HeatOfBattleOutcome.SurrenderNotTaken, HeatOfBattle([6, 6]).Effects.Single().HeatOfBattle!.Result);
+        // 9 to 11 is Berserk (A15.4): the squad is berserk and unbroken; 12 Surrender (A15.5): broken and Disrupted, with no
+        // ADJACENT captor to surrender to.
+        var berserk = HeatOfBattle([5, 5]).Effects.Single();
+        Assert.Equal((HeatOfBattleOutcome.Berserk, true, false), (berserk.HeatOfBattle!.Result, berserk.Berserk, berserk.Broken));
+        var surrender = HeatOfBattle([6, 6]).Effects.Single();
+        Assert.Equal((HeatOfBattleOutcome.Surrender, true, true), (surrender.HeatOfBattle!.Result, surrender.Broken, surrender.Disrupted));
 
         // An elite squad already of the highest quality becomes Fanatic instead (A15.3, A10.8): 4+4 = 8, -1 elite: 7.
         var fanatic = HeatOfBattle([4, 4], Target("de-s", "attacker-elite-squad")).Effects.Single();
@@ -350,7 +353,8 @@ public sealed class ScenarioA1FireExtensionTests
     public void AConscriptIsAlwaysInexperienced()
     {
         // A15.1: +1 for an Inexperienced unit; a Conscript always is (A19.3), so no fact is needed, and the +1 applies.
-        var attack = Attack(Rolls([3, 4]), terrain: "wooden-building", targets: [Target("de-c", "attacker-conscript-squad")]);
+        var attack = Attack(Rolls([3, 4]), terrain: "wooden-building",
+            targets: [Target("de-c", "attacker-conscript-squad") with { KnownEnemyInLos = true, Captors = [] }]);
         Assert.Empty(ScenarioA1FireCalculator.Precheck(attack, Reference));
         var heat = ScenarioA1HeatOfBattle.Resolve(Reference.Definitions["attacker-conscript-squad"], false, null, false, [3, 3], Reference.Definitions);
         Assert.Contains(("inexperienced", 1m), heat.Outcome!.Drm.Select(item => (item.Name, item.Value)));
@@ -448,8 +452,8 @@ public sealed class ScenarioA1FireExtensionTests
         Assert.True(heat.Outcome.Fanatic);
 
         // The table's note: a Fanatic unit's 12 is Berserk, not Surrender.
-        var fanatic = ScenarioA1HeatOfBattle.Resolve(Reference.Definitions["defender-nkvd-squad"], true, null, true, [6, 6], Reference.Definitions);
-        Assert.Equal(HeatOfBattleOutcome.BerserkNotTaken, fanatic.Outcome!.Result);
+        var fanatic = ScenarioA1HeatOfBattle.Resolve(Reference.Definitions["defender-nkvd-squad"], true, null, true, [6, 6], Reference.Definitions, true, []);
+        Assert.Equal(HeatOfBattleOutcome.Berserk, fanatic.Outcome!.Result);
         var conscript = ScenarioA1HeatOfBattle.Resolve(Reference.Definitions["defender-conscript-squad"], false, false, false, [2, 3], Reference.Definitions);
         Assert.Equal("defender-nkvd-squad", conscript.Outcome!.HardenedDefinitionId);
     }
