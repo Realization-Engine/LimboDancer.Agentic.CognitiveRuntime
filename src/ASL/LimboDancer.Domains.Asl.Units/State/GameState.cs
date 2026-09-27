@@ -59,6 +59,15 @@ public sealed record GameState(
     /// <summary>The Residual FP in each Location this MPh (A8.2, p. 60); cleared at the end of the MPh.</summary>
     public IReadOnlyList<ResidualFire> ResidualFire { get; init; } = [];
 
+    /// <summary>The CC Locations of the CCPh (A11.12; unit step 29); cleared at every phase change.</summary>
+    public IReadOnlyList<CloseCombatLocation> CloseCombats { get; init; } = [];
+
+    /// <summary>The units that advanced this Player Turn and where (A4.7), which an Ambush reads (A11.4).</summary>
+    public IReadOnlyList<AdvanceRecord> Advances { get; init; } = [];
+
+    /// <summary>Surrenders awaiting the captor's choice (A15.5); while one waits the phase may not change.</summary>
+    public IReadOnlyList<PendingSurrender> PendingSurrenders { get; init; } = [];
+
     /// <summary>The stack moving now in the MPh, if any (unit step 22).</summary>
     public MovementState? Movement
     {

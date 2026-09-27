@@ -37,8 +37,10 @@ public sealed partial class GamePlanner
         // A12.141: the attempt costs a concealed unit or rallying leader its "?" in the LOS of a Good Order enemy within 16 hexes.
         var concealed = GameState.Condition(unit, Conditions.Concealed) == ConditionState.True
             || (leaderId is not null && state.Unit(leaderId) is { } leaderUnit && GameState.Condition(leaderUnit, Conditions.Concealed) == ConditionState.True);
+        // A15.44, A15.5: a leader's rally can reach Heat of Battle, so the planner reads the unit's LOS to a Known enemy and its captors.
+        var heat = leaderId is not null;
         var (attempt, reason) = LiveRally.FromState(state, unitId, leaderId, TerrainKey(read) ?? read.Level.Terrain?.Name ?? "unknown",
-            concealed ? EnemyGoodOrderInLosWithin16(state, unit.Side, at) : null);
+            concealed ? EnemyGoodOrderInLosWithin16(state, unit.Side, at) : null, heat ? KnownEnemyInLos(state, unit.Side, at) : null, heat ? Captors(state, unit) : null);
         if (attempt is null)
         {
             return Refused(scope, label, expected, reason!);
@@ -112,6 +114,13 @@ public sealed partial class GamePlanner
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, type, payload, package, withheld, [rallyId]));
             }
 
+            // A15.5: a unit that surrendered to ADJACENT captors waits for the captor's choice, last.
+            if (resolution.Arithmetic!.HeatOfBattle is { Result: HeatOfBattleOutcome.Surrender, Captors.Count: > 0 } surrender && !resolution.Effect!.Eliminated)
+            {
+                var id = resolution.Effect.FinalDefinitionId != resolution.Effect.DefinitionId ? $"{attemptId}-{unit.Id}" : unit.Id;
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "surrender-pending", new SurrenderPending(id, surrender.Captors!), package, null, [rallyId]));
+            }
+
             return events;
         }
 
@@ -137,6 +146,20 @@ public sealed partial class GamePlanner
         if (effect.HeroDefinitionId is { } hero)
         {
             yield return ("instance-created", new InstanceCreated(HeroOf(unit, hero, attemptId)));
+        }
+
+        // A15.41: the companions who went berserk with a berserk leader, rallied if broken.
+        foreach (var id in effect.BerserkCompanions ?? [])
+        {
+            yield return ("conditions-changed", new ConditionsChanged(id, new Dictionary<string, ConditionState>(StringComparer.Ordinal)
+            {
+                [Conditions.Berserk] = ConditionState.True,
+                [Conditions.Broken] = ConditionState.False,
+                [Conditions.Pinned] = ConditionState.False,
+                [Conditions.Disrupted] = ConditionState.False,
+                [Conditions.DesperationMorale] = ConditionState.False,
+                [Conditions.Concealed] = ConditionState.False,
+            }));
         }
 
         // A18.11: the created leader, Good Order, in the rallied unit's Location; one from a Fanatic unit is Fanatic (A10.8).
@@ -227,6 +250,19 @@ public sealed partial class GamePlanner
         if (effect.Heroic == true)
         {
             conditions[Conditions.Heroic] = ConditionState.True;
+        }
+
+        // A15.4, A15.42: a berserk unit, rallied, loses DM and "?"; A15.5: a surrendering one is Disrupted.
+        if (effect.Berserk == true)
+        {
+            conditions[Conditions.Berserk] = ConditionState.True;
+            conditions[Conditions.DesperationMorale] = ConditionState.False;
+            conditions[Conditions.Concealed] = ConditionState.False;
+        }
+
+        if (effect.Disrupted == true)
+        {
+            conditions[Conditions.Disrupted] = ConditionState.True;
         }
 
         if (effect.Wounded && GameState.Condition(unit, Conditions.Wounded) != ConditionState.True)

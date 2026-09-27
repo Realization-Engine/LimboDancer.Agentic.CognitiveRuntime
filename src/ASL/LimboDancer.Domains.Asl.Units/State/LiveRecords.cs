@@ -49,7 +49,17 @@ public sealed record RepairAttempted(string Unit, string Equipment, string Roll,
 /// <paramref name="HalfMf"/> is the cost in half MF, so grain's 1½ (B15.4) is exact. The step opens the DEFENDER's window
 /// to fire at the stack (A8.1); the ATTACKER may not spend more MF until it closes.
 /// </summary>
-public sealed record MovementStepped(IReadOnlyList<string> Movers, BoardLocation To, int HalfMf, bool Assault, int Step) : EventPayload;
+public sealed record MovementStepped(IReadOnlyList<string> Movers, BoardLocation To, int HalfMf, bool Assault, int Step) : EventPayload
+{
+    /// <summary>
+    /// For a berserk stack's charge (A15.43, A15.431): the Location of the Known enemy unit it charges, which it keeps charging
+    /// when that unit leaves its LOS; null for other moves.
+    /// </summary>
+    public BoardLocation? Charge
+    {
+        get; init;
+    }
+}
 
 /// <summary><c>movement-window-closed</c>: the DEFENDER passes on the stack's latest MF expenditure (A8.11).</summary>
 public sealed record MovementWindowClosed(int Step) : EventPayload;
@@ -66,4 +76,10 @@ public sealed record MovementEnded(IReadOnlyList<string> Movers) : EventPayload;
 public sealed record MovementState(IReadOnlyList<string> Movers, BoardLocation Location, int HalfMfInLocation, int Step, bool Assault, bool WindowOpen)
 {
     public IReadOnlyList<string> Members { get; init; } = Movers;
+
+    /// <summary>The Location a berserk stack charges (A15.431), from its latest step; null for other moves.</summary>
+    public BoardLocation? Charge
+    {
+        get; init;
+    }
 }

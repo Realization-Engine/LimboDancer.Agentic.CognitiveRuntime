@@ -113,6 +113,19 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, reason!);
         }
 
+        // A15.432: berserk fire (TPBF in the AFPh, and the DFPh) is not reviewed; A11.15: units held in Melee fire only in CC; A20.52:
+        // a Guard's fire is not reviewed; A20.54, A11.15: fire at a Location holding prisoners or units in Melee is not reviewed.
+        if (firerIds.Concat(directors).Select(state.Unit).FirstOrDefault(unit => unit is not null && (Is(unit, Conditions.Berserk) || Is(unit, Conditions.Melee)
+            || Is(unit, Conditions.Captured) || state.Units.Any(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian == unit.Id))) is { } barred)
+        {
+            return Refused(scope, label, expected, $"play.fire-barred: {barred.Id} is berserk, held in Melee, captured, or a Guard, whose fire is not reviewed (A15.432, A11.15, A20.52)");
+        }
+
+        if (state.At(target).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && (Is(unit, Conditions.Melee) || Is(unit, Conditions.Captured))))
+        {
+            return Refused(scope, label, expected, "play.fire-melee: fire at a Location holding units in Melee or prisoners is not reviewed (A11.15, A20.54)");
+        }
+
         // A8.3, A8.31: Subsequent First Fire and FPF use every usable MG the firer possesses.
         if (attack.FireKind is ScenarioA1FireCalculator.SubsequentFirstFire or ScenarioA1FireCalculator.FinalProtectiveFire
             && attack.Firers!.Any(item => !(item.Weapons?.Select(weapon => weapon.EquipmentId!).Order(StringComparer.Ordinal).ToArray() ?? [])
@@ -171,7 +184,7 @@ public sealed partial class GamePlanner
             };
         }
 
-        attack = map;
+        attack = HeatOfBattleFacts(state, map);
         var precheck = ScenarioA1FireCalculator.Precheck(attack, FireReference.Value);
         if (precheck.Count != 0)
         {
@@ -199,6 +212,30 @@ public sealed partial class GamePlanner
             Roll = new PlannedRoll("fire", Build),
             FirstEventId = EventId(attemptId, 1),
             Fire = Proposal(facts),
+        };
+    }
+
+    /// <summary>
+    /// The map reads Heat of Battle needs before any roll (unit step 30): for each target, and each FPF firer, whether a Known enemy
+    /// unit is in its LOS (A15.44) and the ADJACENT units it may surrender to (A15.5).
+    /// </summary>
+    private FireAttack HeatOfBattleFacts(GameState state, FireAttack attack)
+    {
+        FireTarget Read(FireTarget target) => target.Dummy == true || state.Unit(target.UnitId!) is not { } unit || state.Location(unit.Id) is not { } at
+            ? target
+            : target with
+            {
+                KnownEnemyInLos = KnownEnemyInLos(state, unit.Side, at.Location),
+                Captors = Captors(state, unit)
+            };
+
+        return attack with
+        {
+            Targets = [.. attack.Targets!.Select(Read)],
+            Firers = attack.FireKind != ScenarioA1FireCalculator.FinalProtectiveFire ? attack.Firers
+                : [.. attack.Firers!.Select(firer => state.Unit(firer.UnitId!) is { } unit && state.Location(unit.Id) is { } at
+                    ? firer with { KnownEnemyInLos = KnownEnemyInLos(state, unit.Side, at.Location), Captors = Captors(state, unit) }
+                    : firer)],
         };
     }
 
@@ -332,6 +369,15 @@ public sealed partial class GamePlanner
             }
         }
 
+        // A15.41: the companions a berserk leader took with him.
+        foreach (var effect in resolution.CompanionEffects ?? [])
+        {
+            if (EffectEvent(state, effect, attemptId, false) is { } companion)
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, companion.Type, companion.Payload, package, null, [fireId]));
+            }
+        }
+
         // The MGs: a malfunction (A9.7), and the fire counter of a MG that lost its Multiple ROF (A9.2).
         foreach (var weapon in resolution.WeaponEffects ?? [])
         {
@@ -381,6 +427,16 @@ public sealed partial class GamePlanner
         {
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "residual-fp-placed", new ResidualFirePlaced(fireId, location, residual), package, null,
                 [fireId]));
+        }
+
+        // A15.5: a unit that surrendered to ADJACENT captors waits for the captor's choice, last, since nothing else happens until then.
+        foreach (var effect in resolution.Effects.Concat(resolution.FirerEffects ?? []))
+        {
+            if (!effect.Eliminated && effect.HeatOfBattle is { Result: HeatOfBattleOutcome.Surrender, Captors.Count: > 0 } surrender)
+            {
+                var id = effect.FinalDefinitionId != effect.DefinitionId ? $"{attemptId}-{effect.UnitId}" : effect.UnitId;
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "surrender-pending", new SurrenderPending(id, surrender.Captors!), package, null, [fireId]));
+            }
         }
     }
 
@@ -514,6 +570,13 @@ public sealed partial class GamePlanner
         if (effect.Fanatic == true)
         {
             Set(Conditions.Fanatic, true);
+        }
+
+        // A15.4, A15.42: a unit that goes berserk is rallied and no longer under DM.
+        if (effect.Berserk == true)
+        {
+            Set(Conditions.Berserk, true);
+            Set(Conditions.DesperationMorale, false);
         }
 
         if (effect.Heroic == true)

@@ -345,9 +345,13 @@ public static class GameEventReader
                 var stepTo = ReadLocation(payload, "to", path, fields, diagnostics);
                 var halfMf = fields.OptionalInteger(payload, "halfMf", path);
                 var step = fields.OptionalInteger(payload, "step", path);
+                var charge = payload.TryGetProperty("charge", out _) ? ReadLocation(payload, "charge", path, fields, diagnostics) : null;
                 return stepTo is null || halfMf is null || step is null
                     ? Missing(diagnostics, "A movement step names its movers, destination, half MF, and step.", path)
-                    : new MovementStepped(fields.StringList(payload, "movers", path), stepTo, halfMf.Value, fields.OptionalBoolean(payload, "assault", path), step.Value);
+                    : new MovementStepped(fields.StringList(payload, "movers", path), stepTo, halfMf.Value, fields.OptionalBoolean(payload, "assault", path), step.Value)
+                    {
+                        Charge = charge,
+                    };
             case "movement-window-closed":
                 var closedStep = fields.OptionalInteger(payload, "step", path);
                 return closedStep is null ? Missing(diagnostics, "A closed window names its step.", path) : new MovementWindowClosed(closedStep.Value);
@@ -361,6 +365,34 @@ public static class GameEventReader
                     || !payload.TryGetProperty("arithmetic", out var arithmetic) || arithmetic.ValueKind != JsonValueKind.Object
                     ? Missing(diagnostics, "A fire report names its record, its Locations, and the arithmetic.", path)
                     : new FireReported(reported, reportedFrom, reportedAt, arithmetic.Clone());
+            case "advanced":
+                var advancedTo = ReadLocation(payload, "to", path, fields, diagnostics);
+                return advancedTo is null
+                    ? Missing(diagnostics, "An advance names its units and the Location they enter.", path)
+                    : new AdvanceMoved(fields.StringList(payload, "units", path), advancedTo);
+            case "ambush-rolled":
+                var ambushAt = ReadLocation(payload, "location", path, fields, diagnostics);
+                var ambushRolls = RollMap(payload, path, diagnostics);
+                return ambushAt is null || ambushRolls is null
+                    || !payload.TryGetProperty("facts", out var ambushFacts) || ambushFacts.ValueKind != JsonValueKind.Object
+                    || !payload.TryGetProperty("resolution", out var ambushResolution) || ambushResolution.ValueKind != JsonValueKind.Object
+                    ? Missing(diagnostics, "An Ambush record names its Location, rolls, facts, and resolution.", path)
+                    : new AmbushRolled(ambushAt, ambushRolls, fields.OptionalString(payload, "ambusher", path), ambushFacts.Clone(), ambushResolution.Clone());
+            case "close-combat-resolved":
+                var combatAt = ReadLocation(payload, "location", path, fields, diagnostics);
+                var round = fields.RequiredString(payload, "round", path);
+                var combatRolls = RollMap(payload, path, diagnostics);
+                return combatAt is null || round is null || combatRolls is null
+                    || !payload.TryGetProperty("facts", out var combatFacts) || combatFacts.ValueKind != JsonValueKind.Object
+                    || !payload.TryGetProperty("resolution", out var combatResolution) || combatResolution.ValueKind != JsonValueKind.Object
+                    ? Missing(diagnostics, "A CC record names its Location, round, rolls, facts, and resolution.", path)
+                    : new CloseCombatResolved(combatAt, round, fields.StringList(payload, "attackers", path), fields.StringList(payload, "defenders", path), combatRolls,
+                        combatFacts.Clone(), combatResolution.Clone());
+            case "surrender-pending":
+                var surrendering = fields.RequiredString(payload, "unit", path);
+                return surrendering is null
+                    ? Missing(diagnostics, "A pending surrender names its unit and its captors.", path)
+                    : new SurrenderPending(surrendering, fields.StringList(payload, "captors", path));
             case "instance-captured":
                 var captured = fields.RequiredString(payload, "id", path);
                 var custodian = fields.RequiredString(payload, "custodian", path);

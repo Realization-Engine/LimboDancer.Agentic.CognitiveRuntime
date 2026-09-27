@@ -14,7 +14,7 @@ public static class LiveRally
 {
     /// <summary>The state's part of the attempt, or the reason it cannot be read.</summary>
     public static (RallyAttempt? Attempt, string? Reason) FromState(GameState state, string unitId, string? leaderId, string? terrain,
-        bool? enemyGoodOrderInLosWithin16)
+        bool? enemyGoodOrderInLosWithin16, bool? knownEnemyInLos = null, IReadOnlyList<string>? captors = null)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(unitId);
@@ -42,6 +42,13 @@ public static class LiveRally
         // A10.6, A10.63, A10.71: the other friendly leaders in the unit's Location, Good Order or broken.
         var leaders = state.At(at).OfType<UnitInstance>()
             .Where(item => item.Status == InstanceStatus.Active && item.Id != unit.Id && item.Side == unit.Side && item.Kind == "asl:leader").ToArray();
+
+        // A15.41: the other friendly units in the Location, whom a leader who goes berserk tries to take with him.
+        RallyCompanion[] companions = [.. state.At(at).OfType<UnitInstance>()
+            .Where(item => item.Status == InstanceStatus.Active && item.Id != unit.Id && item.Side == unit.Side && item.Definition is not null && !Is(item, Conditions.Captured))
+            .OrderBy(item => item.Id, StringComparer.Ordinal)
+            .Select(item => new RallyCompanion(item.Id, item.Definition!.Definition, Is(item, Conditions.Broken), Is(item, Conditions.Wounded), Is(item, Conditions.Fanatic),
+                Is(item, Conditions.Heroic), Is(item, Conditions.Berserk)))];
         return (new RallyAttempt(
             state.Phase == "rph" ? "RPh" : state.Phase,
             unit.Side == state.PhasingSide ? "phasing" : "non-phasing",
@@ -59,7 +66,12 @@ public static class LiveRally
             leaders.Any(item => Is(item, Conditions.Broken)),
             unit.Side == state.PhasingSide && !state.FirstMmcRallyTaken.Contains(unit.Side),
             enemyGoodOrderInLosWithin16,
-            null), null);
+            null)
+        {
+            KnownEnemyInLos = knownEnemyInLos,
+            Captors = captors,
+            Companions = companions.Length > 0 ? companions : null,
+        }, null);
     }
 
     /// <summary>The rolls of a record, rebuilt from its roll ids and the recorded dice.</summary>
@@ -137,10 +149,20 @@ public sealed class RallyRecordVerifier(ScenarioA1RallyReference reference) : IR
             return "The Rally record's facts are incomplete.";
         }
 
-        var (expected, reason) = LiveRally.FromState(state, rally.Unit, rally.Leader, recorded.Terrain, recorded.EnemyGoodOrderInLosWithin16);
+        var (expected, reason) = LiveRally.FromState(state, rally.Unit, rally.Leader, recorded.Terrain, recorded.EnemyGoodOrderInLosWithin16, recorded.KnownEnemyInLos,
+            recorded.Captors);
         if (expected is null)
         {
             return reason;
+        }
+
+        // A record made before unit step 30 names no companions, and is compared without them.
+        if (recorded.Companions is null)
+        {
+            expected = expected with
+            {
+                Companions = null
+            };
         }
 
         if (JsonSerializer.Serialize(expected, LiveFire.Json) != JsonSerializer.Serialize(recorded, LiveFire.Json))

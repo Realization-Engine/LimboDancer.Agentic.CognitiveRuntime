@@ -164,7 +164,8 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
     public GameHistory Replay(IReadOnlyList<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(events);
-        return GameProjector.Project(events, vocabulary, catalogs, Chains(events), LiveGames.Sources, FireRecordVerifier.Shared, RallyRecordVerifier.Shared);
+        return GameProjector.Project(events, vocabulary, catalogs, Chains(events), LiveGames.Sources, FireRecordVerifier.Shared, RallyRecordVerifier.Shared,
+            CloseCombatRecordVerifier.Shared);
     }
 
     public async Task<GamePlan> PlanAsync(ActionDescriptor action, JsonElement arguments, Guid tenant, string? actor = null,
@@ -206,8 +207,19 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             "asl.game.move" => PlanMove(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.pass-fire" => PlanPassFire(scope, existing, attemptId, expected, label),
             "asl.game.end-move" => PlanEndMove(scope, arguments, existing, attemptId, expected, label),
+            "asl.game.advance" => PlanAdvanceUnits(scope, arguments, existing, attemptId, expected, label),
+            "asl.game.ambush" => PlanAmbush(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
+            "asl.game.close-combat" => PlanCloseCombat(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
+            "asl.game.take-prisoner" => PlanTakePrisoner(scope, arguments, existing, attemptId, expected, label),
             _ => Refused(scope, label, expected, "play.unknown-action"),
         };
+
+        // A15.5: a surrender waits for its captor before anything else happens in the game.
+        if (plan.Status == GamePlanStatus.Ready && action.Id.Value is not ("asl.game.take-prisoner" or "asl.game.setup")
+            && Replay(existing).Current is { PendingSurrenders: [{ } pending, ..] })
+        {
+            return Refused(scope, label, expected, $"play.surrender-pending: {pending.Unit} has surrendered; its captor's side chooses the Guard first (A15.5)");
+        }
 
         // A plan with a roll has no events until the store draws it; its outcomes are checked when they are built.
         if (plan.Status != GamePlanStatus.Ready || plan.Roll is not null)
@@ -310,10 +322,40 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             turn++;
         }
 
+        // A15.43: the MPh does not end while a berserk unit must still charge.
+        var reasons = new List<string>();
+        var events = new List<GameEvent>();
+        if (state.Phase == "mph" && MustCharge(state) is [{ } charging, ..])
+        {
+            return Refused(scope, label, expected, $"play.berserk-charge: {charging.Id} is berserk and must charge before the MPh ends (A15.43)");
+        }
+
+        // A15.431, A15.46: at the end of its MPh a berserk unit with no Known enemy unit in its LOS returns to normal.
+        if (state.Phase == "mph")
+        {
+            foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && Is(unit, Conditions.Berserk)
+                && !Is(unit, Conditions.Melee) && state.Location(unit.Id) is { } at && KnownEnemyInLos(state, unit.Side, at.Location) == false))
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
+                    new ConditionsChanged(unit.Id, new Dictionary<string, ConditionState> { [Conditions.Berserk] = ConditionState.False }), null, null));
+                reasons.Add($"play.berserk-ends: {unit.Id} sees no Known enemy unit and returns to normal (A15.431, A15.46)");
+            }
+        }
+
+        // A11.16, A19.12: a broken or Disrupted unit held in Melee is eliminated at the end of the CCPh (ruling R29.11).
+        if (state.Phase == "ccph")
+        {
+            foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && Is(unit, Conditions.Melee) && !Is(unit, Conditions.Captured)
+                && (Is(unit, Conditions.Broken) || Is(unit, Conditions.Disrupted))).OrderBy(unit => unit.Id, StringComparer.Ordinal))
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(unit.Id), null, null));
+                reasons.Add($"play.melee-eliminated: {unit.Id} is broken or Disrupted in Melee and cannot withdraw, so it is eliminated (A11.16, A19.12)");
+            }
+        }
+
         var payload = new PhaseChanged(turn, phase, phasing);
-        return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
-            [Event(scope, attemptId, 1, expected, "phase-changed", payload, rulePackage: null, visibility: null)],
-            [$"play.advance: turn {turn}, {phase}, {phasing} phasing"]);
+        events.Add(Event(scope, attemptId, events.Count + 1, expected, "phase-changed", payload, rulePackage: null, visibility: null));
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [$"play.advance: turn {turn}, {phase}, {phasing} phasing", .. reasons]);
     }
 
     private async Task<GamePlan> PlanEntryAsync(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected,

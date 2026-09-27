@@ -94,6 +94,11 @@ public static class LiveFire
         UnitInstance[] targets = [.. state.At(target).OfType<UnitInstance>()
             .Where(unit => unit.Status == InstanceStatus.Active && (movers is null || movers.Contains(unit.Id)))
             .OrderBy(unit => unit.Id, StringComparer.Ordinal)];
+
+        // A15.41: the target side's units the attack does not attack (in the MPh, those not moving) are a berserk leader's companions.
+        UnitInstance[] companions = movers is null || targets.Length == 0 ? [] : [.. state.At(target).OfType<UnitInstance>()
+            .Where(unit => unit.Status == InstanceStatus.Active && !movers.Contains(unit.Id) && unit.Side == targets[0].Side && unit.Definition is not null)
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal)];
         if (targets.Any(unit => unit.Definition is null && unit.Kind != UnitKinds.Dummy))
         {
             return (null, "play.fire-target: the target Location holds a unit outside the catalog");
@@ -168,6 +173,7 @@ public static class LiveFire
             TargetMovement = kind is null ? null : new FireMovement(state.Movement?.Assault ?? false),
             FiringSideElr = kind == ScenarioA1FireCalculator.FinalProtectiveFire ? state.Side(side)?.Elr : null,
             OtherDirectors = directors.Count > 1 ? [.. directors.Skip(1).Select(Director)] : null,
+            Companions = companions.Length > 0 ? [.. companions.Select(unit => Target(unit, target))] : null,
         }, null);
     }
 
@@ -186,6 +192,9 @@ public static class LiveFire
         UnitInstance[] targets = [.. state.At(target).OfType<UnitInstance>()
             .Where(unit => unit.Status == InstanceStatus.Active && movement.Movers.Contains(unit.Id)).OrderBy(unit => unit.Id, StringComparer.Ordinal)];
         var targetSide = state.PhasingSide;
+        UnitInstance[] companions = [.. state.At(target).OfType<UnitInstance>()
+            .Where(unit => unit.Status == InstanceStatus.Active && !movement.Movers.Contains(unit.Id) && unit.Side == targetSide && unit.Definition is not null)
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal)];
         return (new FireAttack("MPh", "non-phasing", null, null, target.ToString(), null, null, null, null, null, state.ScenarioMonth, null,
             [.. targets.Select(unit => Target(unit, target))],
             state.Side(targetSide)?.Elr, null)
@@ -193,6 +202,7 @@ public static class LiveFire
             FireKind = ScenarioA1FireCalculator.ResidualFire,
             TargetMovement = new FireMovement(movement.Assault),
             ResidualFp = fp,
+            Companions = companions.Length > 0 ? [.. companions.Select(unit => Target(unit, target))] : null,
         }, null);
     }
 
@@ -303,6 +313,7 @@ public static class LiveFire
         {
             Fanatic = Is(unit, Conditions.Fanatic) ? true : null,
             Heroic = Is(unit, Conditions.Heroic) ? true : null,
+            Berserk = Is(unit, Conditions.Berserk) ? true : null,
         };
 
     // A7.1: a unit fires in one fire phase per Player Turn; A7.531: a directing leader is marked too.
@@ -363,7 +374,9 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
             return reason;
         }
 
-        // The state's facts must be the recorded ones; the map facts are taken as recorded.
+        // The state's facts must be the recorded ones; the map facts are taken as recorded: range, levels, LOS, terrain, and, since
+        // unit step 30, each unit's LOS to a Known enemy and its ADJACENT captors. A record made before unit step 30 names no
+        // companions, and is compared without them.
         var merged = expected with
         {
             Range = recorded.Range,
@@ -371,9 +384,19 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
             Los = recorded.Los,
             TargetTerrain = recorded.TargetTerrain,
             Firers = recorded.Firers is null || expected.Firers is null ? expected.Firers
-                : [.. expected.Firers.Zip(recorded.Firers, (fact, record) => fact with { Range = record.Range, SameLevel = record.SameLevel, Los = record.Los })],
+                : [.. expected.Firers.Zip(recorded.Firers, (fact, record) => fact with
+                {
+                    Range = record.Range,
+                    SameLevel = record.SameLevel,
+                    Los = record.Los,
+                    KnownEnemyInLos = record.KnownEnemyInLos,
+                    Captors = record.Captors,
+                })],
+            Targets = recorded.Targets is null || expected.Targets is null ? expected.Targets
+                : [.. expected.Targets.Zip(recorded.Targets, (fact, record) => fact with { KnownEnemyInLos = record.KnownEnemyInLos, Captors = record.Captors })],
             FirerLocationsAdjacent = recorded.FirerLocationsAdjacent,
             WithinSubsequentFirstFireRange = recorded.WithinSubsequentFirstFireRange,
+            Companions = recorded.Companions is null ? null : expected.Companions,
         };
         if (JsonSerializer.Serialize(merged, LiveFire.Json) != JsonSerializer.Serialize(recorded, LiveFire.Json))
         {

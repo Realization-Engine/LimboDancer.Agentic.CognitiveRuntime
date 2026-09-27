@@ -78,7 +78,7 @@ public static class Experience
 
     /// <summary>
     /// The MF allotment of a Good Order unit moving hex by hex (unit step 22): a MMC's as <see cref="MfAllowance"/> gives,
-    /// and a SMC's six, three if wounded (A4.11, p. 48; A17.2, p. 85). A SMC is wounded only when its state says so, as
+    /// a SMC's six, three if wounded (A4.11, p. 48; A17.2, p. 85), and a berserk unit's eight (A15.431, p. 84; unit step 30). A SMC is wounded only when its state says so, as
     /// the Fire and Rally facts read it; a wound is always recorded by the event that inflicts it. The building entry of
     /// steps 7 to 11 keeps the MMC allotment its reviewed cases assume.
     /// </summary>
@@ -86,6 +86,13 @@ public static class Experience
     {
         ArgumentNullException.ThrowIfNull(unit);
         ArgumentNullException.ThrowIfNull(vocabulary);
+
+        // A15.431: a berserk unit has eight MF, a wounded one still three (A17.2).
+        if (GameState.Condition(unit, Conditions.Berserk) == ConditionState.True)
+        {
+            return GameState.Condition(unit, Conditions.Wounded) == ConditionState.True ? 3 : 8;
+        }
+
         return !vocabulary.IsA(unit.Kind, "asl:smc") ? MfAllowance(state, unit, catalogs, vocabulary)
             : GameState.Condition(unit, Conditions.Wounded) == ConditionState.True ? 3 : 6;
     }

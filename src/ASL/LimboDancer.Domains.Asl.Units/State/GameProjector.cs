@@ -14,7 +14,7 @@ public static class GameProjector
 {
     public static GameHistory Project(IReadOnlyList<GameEvent> events, UnitVocabulary vocabulary, IReadOnlyList<UnitCatalog> catalogs,
         ILocationChains? chains = null, IReadOnlyCollection<string>? liveSources = null, IFireRecordVerifier? fire = null,
-        IRallyRecordVerifier? rally = null)
+        IRallyRecordVerifier? rally = null, ICloseCombatRecordVerifier? closeCombat = null)
     {
         ArgumentNullException.ThrowIfNull(events);
         ArgumentNullException.ThrowIfNull(vocabulary);
@@ -26,7 +26,7 @@ public static class GameProjector
             diagnostics.Add(UnitDiagnostic.Warning("UNIT-STATE-020", "No location chains were given, so map positions are not checked against the boards in play."));
         }
 
-        var replay = new Replay(vocabulary, catalogs, chains, liveSources ?? [], fire, rally, diagnostics);
+        var replay = new Replay(vocabulary, catalogs, chains, liveSources ?? [], fire, rally, closeCombat, diagnostics);
         foreach (var gameEvent in events)
         {
             var errors = Errors(diagnostics);
@@ -46,7 +46,7 @@ public static class GameProjector
         diagnostics.Count(diagnostic => diagnostic.Severity == UnitDiagnosticSeverity.Error);
 
     private sealed class Replay(UnitVocabulary vocabulary, IReadOnlyList<UnitCatalog> catalogs, ILocationChains? chains, IReadOnlyCollection<string> liveSources,
-        IFireRecordVerifier? fireVerifier, IRallyRecordVerifier? rallyVerifier, List<UnitDiagnostic> diagnostics)
+        IFireRecordVerifier? fireVerifier, IRallyRecordVerifier? rallyVerifier, ICloseCombatRecordVerifier? closeCombatVerifier, List<UnitDiagnostic> diagnostics)
     {
         private readonly HashSet<string> eventIds = new(StringComparer.Ordinal);
         private readonly Dictionary<string, DiceRolled> rolls = new(StringComparer.Ordinal);
@@ -90,6 +90,10 @@ public static class GameProjector
                 MovementStepped moving => StepMovement(previous, moving),
                 MovementWindowClosed closed => CloseWindow(previous, closed),
                 MovementEnded ended => EndMovement(previous, ended),
+                AdvanceMoved advanced => Advance(previous, advanced),
+                AmbushRolled ambush => Ambush(previous, ambush),
+                CloseCombatResolved combat => CloseCombat(previous, combat),
+                SurrenderPending surrender => Surrender(previous, surrender, gameEvent.EventId),
                 _ => Fail<GameState>("UNIT-STATE-001", $"'{gameEvent.Type}' has no projection."),
             };
 
@@ -99,6 +103,7 @@ public static class GameProjector
             }
 
             next = KeepMovingStack(next, gameEvent.Payload);
+            next = KeepMelee(next);
             next = next with
             {
                 Revision = gameEvent.Revision,
@@ -212,6 +217,27 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-018", $"The entry attempt '{state.OpenAttempts[0].EventId}' is open, so the phase may not change.");
             }
 
+            // A15.5: a surrender waits for the captor's choice before anything else happens.
+            if (state.PendingSurrenders.Count > 0)
+            {
+                return Fail<GameState>("UNIT-STATE-031", $"'{state.PendingSurrenders[0].Unit}' surrenders and awaits its captor, so the phase may not change (A15.5).");
+            }
+
+            // A11.12, A11.32: a Location's CC is completely resolved before the phase ends: after the ambusher's round, the other side's.
+            if (state.CloseCombats.FirstOrDefault(item => !item.Closed) is { } open)
+            {
+                return Fail<GameState>("UNIT-STATE-030", $"The CC in {open.Location} awaits the ambushed side's round (A11.32).");
+            }
+
+            // A11.16, A19.12: a broken or Disrupted unit held in Melee is eliminated at the end of the CCPh (Withdrawal from Melee is
+            // not built, ruling R29.11); its elimination is recorded before the phase changes.
+            if (state.Phase == "ccph" && state.Units.FirstOrDefault(unit => unit.Status == InstanceStatus.Active
+                && GameState.Condition(unit, Conditions.Melee) == ConditionState.True && GameState.Condition(unit, Conditions.Captured) != ConditionState.True
+                && (GameState.Condition(unit, Conditions.Broken) == ConditionState.True || GameState.Condition(unit, Conditions.Disrupted) == ConditionState.True)) is { } held)
+            {
+                return Fail<GameState>("UNIT-STATE-030", $"'{held.Id}' is broken or Disrupted in Melee and is eliminated at the end of the CCPh (A11.16, A19.12).");
+            }
+
             // MF are spent within a phase, so a new phase starts every unit at none spent and free to move. The phase that
             // ends removes its markers, from units and weapons alike: First and Final Fire at the end of the DFPh (A3.4), Prep
             // Fire at the end of the AFPh (A3.5), and pins in the CCPh (A3.8), all on p. 47; DM at the end of every RPh
@@ -226,9 +252,12 @@ public static class GameProjector
                 _ => [],
             };
             var newPlayerTurn = change.PhasingSide != state.PhasingSide;
+            var melee = state.Phase == "ccph" ? InMelee(state) : null;
             return CheckPhase(state, change.Turn, change.Phase, change.PhasingSide)
                 ? state with
                 {
+                    CloseCombats = [],
+                    Advances = newPlayerTurn ? [] : state.Advances,
                     Turn = change.Turn,
                     Phase = change.Phase,
                     PhasingSide = change.PhasingSide,
@@ -238,14 +267,210 @@ public static class GameProjector
                     Movement = null,
                     RallyAttemptsThisPlayerTurn = newPlayerTurn ? [] : state.RallyAttemptsThisPlayerTurn,
                     FirstMmcRallyTaken = newPlayerTurn ? [] : state.FirstMmcRallyTaken,
-                    Units = [.. state.Units.Select(unit => Clear(unit is { MfSpent: 0, MovementEnded: false, HalfMfSpent: false }
+                    Units = [.. state.Units.Select(unit => HoldInMelee(Clear(unit is { MfSpent: 0, MovementEnded: false, HalfMfSpent: false }
                         ? unit
-                        : unit with { MfSpent = 0, MovementEnded = false, HalfMfSpent = false }, cleared))],
+                        : unit with { MfSpent = 0, MovementEnded = false, HalfMfSpent = false }, cleared), melee))],
                     Equipment = [.. state.Equipment.Select(equipment => equipment.Conditions.Keys.Any(cleared.Contains)
                         ? equipment with { Conditions = Without(equipment.Conditions, cleared) }
                         : equipment)],
                 }
                 : null;
+        }
+
+        /// <summary>
+        /// A11.15: at the end of the CCPh, Infantry of both sides that remain in one Location are held in Melee; prisoners are
+        /// neither held nor hold (A20.5). The units are those of Locations that still hold units of both sides.
+        /// </summary>
+        private static HashSet<string> InMelee(GameState state)
+        {
+            var units = state.Units.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Captured) != ConditionState.True
+                && state.Location(unit.Id) is not null).ToArray();
+            return units.GroupBy(unit => state.Location(unit.Id)!.Location).Where(group => group.Select(unit => unit.Side).Distinct(StringComparer.Ordinal).Count() > 1)
+                .SelectMany(group => group.Select(unit => unit.Id)).ToHashSet(StringComparer.Ordinal);
+        }
+
+        private static UnitInstance HoldInMelee(UnitInstance unit, HashSet<string>? melee) =>
+            melee is null || (melee.Contains(unit.Id) ? GameState.Condition(unit, Conditions.Melee) == ConditionState.True
+                : GameState.Condition(unit, Conditions.Melee) != ConditionState.True)
+                ? unit
+                : unit with
+                {
+                    Conditions = new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal)
+                    {
+                        [Conditions.Melee] = melee.Contains(unit.Id) ? ConditionState.True : ConditionState.False
+                    }
+                };
+
+        /// <summary>A11.15: a unit is no longer held in Melee once no enemy unit that is not a prisoner shares its Location.</summary>
+        private static GameState KeepMelee(GameState next)
+        {
+            var freed = next.Units.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Melee) == ConditionState.True
+                && next.Location(unit.Id) is { } at && !next.Units.Any(other => other.Status == InstanceStatus.Active && other.Side != unit.Side
+                    && GameState.Condition(other, Conditions.Captured) != ConditionState.True && next.Location(other.Id)?.Location == at.Location)).ToArray();
+            foreach (var unit in freed)
+            {
+                next = Replace(next, unit with
+                {
+                    Conditions = new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal) { [Conditions.Melee] = ConditionState.False }
+                });
+            }
+
+            return next;
+        }
+
+        /// <summary>
+        /// An advance in the APh (A4.7): units of the phasing side in one Location, neither broken, pinned, berserk (A15.431), held
+        /// in Melee (A11.15), nor captured, that have not advanced this APh, enter one Location; a Guard's prisoners go with it
+        /// (A20.53). The planner checks the terrain and ADJACENCY.
+        /// </summary>
+        private GameState? Advance(GameState state, AdvanceMoved advance)
+        {
+            var units = advance.Units.Select(id => Active(state, id) as UnitInstance).ToArray();
+            if (state.Phase != "aph" || units.Length == 0 || units.Any(unit => unit is null || unit.Side != state.PhasingSide || unit.MovementEnded)
+                || units.Select(unit => state.Location(unit!.Id)?.Location).Distinct().Count() != 1
+                || advance.Units.Distinct(StringComparer.Ordinal).Count() != advance.Units.Count)
+            {
+                return Fail<GameState>("UNIT-STATE-032", "An advance moves units of the phasing side from one Location, once each, in the APh (A4.7).");
+            }
+
+            if (units.FirstOrDefault(unit => new[] { Conditions.Broken, Conditions.Pinned, Conditions.Berserk, Conditions.Melee, Conditions.Captured }
+                .Any(condition => GameState.Condition(unit!, condition) == ConditionState.True)) is { } barred)
+            {
+                return Fail<GameState>("UNIT-STATE-032", $"'{barred.Id}' is broken, pinned, berserk, in Melee, or captured, so it may not advance (A4.7, A15.431, A11.15).");
+            }
+
+            var next = state;
+            foreach (var unit in units)
+            {
+                next = Replace(next, unit! with
+                {
+                    Position = new MapPosition(advance.To),
+                    MovementEnded = true
+                })!;
+                next = MovePrisoners(next, unit.Id, new MapPosition(advance.To));
+            }
+
+            return next with
+            {
+                Advances = [.. next.Advances, .. advance.Units.Select(id => new AdvanceRecord(id, advance.To))],
+            };
+        }
+
+        /// <summary>A20.53: a Guard's prisoners move with it.</summary>
+        private static GameState MovePrisoners(GameState state, string guard, Position position)
+        {
+            foreach (var prisoner in state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Custodian == guard).ToArray())
+            {
+                state = Replace(state, prisoner with
+                {
+                    Position = position
+                });
+            }
+
+            return state;
+        }
+
+        /// <summary>
+        /// The Ambush drs of a Location (A11.4): once, in the CCPh, before any CC there, reproduced by the Close Combat verifier,
+        /// which also decides that an Ambush can occur there.
+        /// </summary>
+        private GameState? Ambush(GameState state, AmbushRolled ambush)
+        {
+            if (closeCombatVerifier is null)
+            {
+                return Fail<GameState>("UNIT-STATE-023", "An Ambush record can be replayed only with the Close Combat verifier.");
+            }
+
+            if (ambush.Rolls.Values.FirstOrDefault(roll => !rolls.ContainsKey(roll)) is { } missing)
+            {
+                return Fail<GameState>("UNIT-STATE-023", $"The Ambush record's roll '{missing}' is not recorded before it.");
+            }
+
+            if (state.Phase != "ccph" || state.CloseCombats.Any(item => item.Location == ambush.Location || !item.Closed))
+            {
+                return Fail<GameState>("UNIT-STATE-030", "The Ambush drs are made in the CCPh before any CC in the Location, with no other Location's CC open (A11.4, A11.12).");
+            }
+
+            if (closeCombatVerifier.VerifyAmbush(state, ambush, rolls) is { } reason)
+            {
+                return Fail<GameState>("UNIT-STATE-030", reason);
+            }
+
+            return state with
+            {
+                CloseCombats = [.. state.CloseCombats, new CloseCombatLocation(ambush.Location, true, ambush.Ambusher, [], false)],
+            };
+        }
+
+        /// <summary>
+        /// A round of CC in a Location (A11.12, A11.32): in the CCPh, with no other Location's CC open; with an Ambush the
+        /// ambusher's round first and then the other side's, otherwise one round; no unit attacks or is attacked twice. The
+        /// Close Combat verifier reproduces it and decides that the Location's Ambush drs were made where they had to be.
+        /// </summary>
+        private GameState? CloseCombat(GameState state, CloseCombatResolved combat)
+        {
+            if (closeCombatVerifier is null)
+            {
+                return Fail<GameState>("UNIT-STATE-023", "A CC record can be replayed only with the Close Combat verifier.");
+            }
+
+            if (combat.Rolls.Values.FirstOrDefault(roll => !rolls.ContainsKey(roll)) is { } missing)
+            {
+                return Fail<GameState>("UNIT-STATE-023", $"The CC record's roll '{missing}' is not recorded before it.");
+            }
+
+            var entry = state.CloseCombats.FirstOrDefault(item => item.Location == combat.Location);
+            if (state.Phase != "ccph" || entry is { Closed: true } || state.CloseCombats.Any(item => !item.Closed && item.Location != combat.Location))
+            {
+                return Fail<GameState>("UNIT-STATE-030", "CC is resolved in the CCPh, once per Location, one Location at a time (A11.12).");
+            }
+
+            var expected = entry?.Ambusher is null ? CloseCombatResolved.Simultaneous
+                : entry.Rounds.Count == 0 ? CloseCombatResolved.AmbusherRound
+                : CloseCombatResolved.AmbushedRound;
+            var attacking = entry?.Attacking ?? [];
+            var attacked = entry?.Attacked ?? [];
+            if (combat.Round != expected || combat.Attackers.Any(attacking.Contains) || combat.Defenders.Any(attacked.Contains))
+            {
+                return Fail<GameState>("UNIT-STATE-030", $"The next CC round in {combat.Location} is {expected}, and no unit attacks or is attacked twice (A11.12, A11.32).");
+            }
+
+            if (closeCombatVerifier.Verify(state, combat, rolls) is { } reason)
+            {
+                return Fail<GameState>("UNIT-STATE-030", reason);
+            }
+
+            var updated = (entry ?? new CloseCombatLocation(combat.Location, false, null, [], false)) with
+            {
+                Rounds = [.. entry?.Rounds ?? [], combat.Round],
+                Closed = combat.Round != CloseCombatResolved.AmbusherRound,
+                Attacking = [.. attacking, .. combat.Attackers],
+                Attacked = [.. attacked, .. combat.Defenders],
+            };
+            return state with
+            {
+                CloseCombats = [.. state.CloseCombats.Where(item => item.Location != combat.Location), updated],
+            };
+        }
+
+        /// <summary>
+        /// A surrender awaiting its captor (A15.5): the unit is active, broken, and not yet captured; each captor is an active
+        /// enemy unit. It is resolved by the capture.
+        /// </summary>
+        private GameState? Surrender(GameState state, SurrenderPending surrender, string eventId)
+        {
+            if (Active(state, surrender.Unit) is not UnitInstance unit || GameState.Condition(unit, Conditions.Broken) != ConditionState.True
+                || GameState.Condition(unit, Conditions.Captured) == ConditionState.True || surrender.Captors.Count == 0
+                || surrender.Captors.Any(id => state.Unit(id) is not { Status: InstanceStatus.Active } captor || captor.Side == unit.Side)
+                || state.PendingSurrenders.Any(item => item.Unit == unit.Id))
+            {
+                return Fail<GameState>("UNIT-STATE-031", "A surrender names a broken unit and the enemy units it may surrender to (A15.5).");
+            }
+
+            return state with
+            {
+                PendingSurrenders = [.. state.PendingSurrenders, new PendingSurrender(unit.Id, surrender.Captors, eventId)],
+            };
         }
 
         private static UnitInstance Clear(UnitInstance unit, string[] conditions) =>
@@ -413,6 +638,13 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-029", $"'{fired.Id}' fired in the PFPh, so it may not move in the MPh (A3.3, p. 47).");
             }
 
+            // A11.15: a unit held in Melee does not leave its Location; a prisoner moves only with its Guard (A20.53).
+            if (movers.FirstOrDefault(unit => GameState.Condition(unit!, Conditions.Melee) == ConditionState.True
+                || GameState.Condition(unit!, Conditions.Captured) == ConditionState.True) is { } held)
+            {
+                return Fail<GameState>("UNIT-STATE-029", $"'{held.Id}' is held in Melee or captured, so it does not move (A11.15, A20.53).");
+            }
+
             // A4.2: the stack's members may move on together or apart, but only they may move until every one has ended.
             var current = state.Movement;
             if (current is not null && (moving.Movers.Any(id => !current.Members.Contains(id, StringComparer.Ordinal))
@@ -437,13 +669,15 @@ public static class GameProjector
                     MfSpent = halves / 2,
                     HalfMfSpent = halves % 2 == 1
                 })!;
+                next = MovePrisoners(next, unit.Id, new MapPosition(moving.To));
             }
 
             return next with
             {
                 Movement = new MovementState(moving.Movers, moving.To, moving.HalfMf, moving.Step, moving.Assault, WindowOpen: true)
                 {
-                    Members = current?.Members ?? moving.Movers
+                    Members = current?.Members ?? moving.Movers,
+                    Charge = moving.Charge,
                 },
             };
         }
@@ -1241,8 +1475,17 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-014", "Berserk units cannot be captured (A20.2, p. 86).");
             }
 
+            // A15.5, A20.21: a pending surrender is taken by one of its captors.
+            if (state.PendingSurrenders.FirstOrDefault(item => item.Unit == prisoner.Id) is { } pending && !pending.Captors.Contains(capture.Custodian, StringComparer.Ordinal))
+            {
+                return Fail<GameState>("UNIT-STATE-031", $"'{prisoner.Id}' surrenders to one of {string.Join(", ", pending.Captors)} (A15.5).");
+            }
+
             var captured = new Dictionary<string, ConditionState>(prisoner.Conditions, StringComparer.Ordinal) { [Conditions.Captured] = ConditionState.True };
-            return Replace(state, prisoner with
+            return Replace(state with
+            {
+                PendingSurrenders = [.. state.PendingSurrenders.Where(item => item.Unit != prisoner.Id)],
+            }, prisoner with
             {
                 Conditions = captured,
                 Custodian = capture.Custodian

@@ -64,6 +64,12 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.move-prep-fire: {fired.Id} fired in the PFPh, so it may not move this MPh (A3.3, p. 47)");
         }
 
+        // A11.15: a unit held in Melee does not leave its Location; a prisoner moves only with its Guard (A20.53).
+        if (movers.FirstOrDefault(unit => Is(unit!, Conditions.Melee) || Is(unit!, Conditions.Captured)) is { } held)
+        {
+            return Refused(scope, label, expected, $"play.move-melee: {held.Id} is held in Melee or captured, so it does not move (A11.15, A20.53)");
+        }
+
         // A4.1, A7.83: broken, pinned, or already-ended units do not move; A12.14: concealed movement is not reviewed.
         if (movers.Any(unit => GameState.Condition(unit!, Conditions.Broken) != ConditionState.False || GameState.Condition(unit!, Conditions.Pinned) == ConditionState.True
             || unit!.MovementEnded || unit.Kind == UnitKinds.Dummy
@@ -84,6 +90,25 @@ public sealed partial class GamePlanner
         if (current is { WindowOpen: true })
         {
             return Refused(scope, label, expected, "play.move-window: the DEFENDER may still fire at the stack's last MF expenditure (A8.1, A8.11)");
+        }
+
+        // A15.43: at the start of the MPh every berserk unit charges before any other unit moves.
+        var berserk = movers.Count(unit => Is(unit!, Conditions.Berserk));
+        BoardLocation? charge = null;
+        if (berserk == 0 && current is null && MustCharge(state) is [{ } charging, ..])
+        {
+            return Refused(scope, label, expected, $"play.berserk-first: {charging.Id} is berserk and charges before any other unit moves (A15.43)");
+        }
+
+        if (berserk > 0)
+        {
+            var (allowed, target, reason) = BerserkStep(state, [.. movers.Select(unit => unit!)], from, to, current, assault);
+            if (allowed is null)
+            {
+                return Refused(scope, label, expected, reason!);
+            }
+
+            charge = target;
         }
 
         // A4.61: Assault Movement is declared before the stack moves, and moves it no more than one Location.
@@ -114,7 +139,7 @@ public sealed partial class GamePlanner
             halfMf = 2;
         }
 
-        if (state.At(to).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != state.PhasingSide))
+        if (charge is null && state.At(to).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != state.PhasingSide))
         {
             return Refused(scope, label, expected, $"play.move-occupied: entry into an enemy-occupied Location is the building entry's action, or not reviewed (ruling R22.6)");
         }
@@ -135,7 +160,10 @@ public sealed partial class GamePlanner
         }
 
         var step = (current?.Step ?? 0) + 1;
-        var moved = new MovementStepped(ids, to, halfMf, assault, step);
+        var moved = new MovementStepped(ids, to, halfMf, assault, step)
+        {
+            Charge = charge,
+        };
         var package = ScenarioA1FirePackage.Identity.ToString();
         var summary = $"play.move: {string.Join(", ", ids)} enter {to} ({terrain}) for {halfMf / 2m} MF" + (assault ? ", by Assault Movement" : string.Empty);
         var residual = state.ResidualFire.FirstOrDefault(item => item.Location == to);
@@ -149,10 +177,12 @@ public sealed partial class GamePlanner
         var stepEvent = Event(scope, attemptId, 1, expected, "movement-step", moved, package, null);
         if (Replay([.. existing, stepEvent]).Current is not { } entered
             || LiveFire.ResidualFromState(entered, to, residual.Fp) is not ({ } residualAttack, null)
-            || FireMapFacts(entered, residualAttack, to) is not ({ } facts, null))
+            || FireMapFacts(entered, residualAttack, to) is not ({ } mapFacts, null))
         {
             return Refused(scope, label, expected, "play.move-residual: the Residual FP attack on the entering stack cannot be read");
         }
+
+        var facts = HeatOfBattleFacts(entered, mapFacts);
 
         var precheck = ScenarioA1FireCalculator.Precheck(facts, FireReference.Value);
         if (precheck.Count != 0)
@@ -172,6 +202,61 @@ public sealed partial class GamePlanner
             Roll = new PlannedRoll("residual", Build),
             FirstEventId = EventId(attemptId, 1),
         };
+    }
+
+    /// <summary>
+    /// A berserk stack's step (A15.43, A15.431): every berserk unit of the Location that is not done moving, with the same wounded
+    /// status, moves together and alone, never by Assault Movement, onto a shortest route to the nearest Known enemy unit in its
+    /// LOS; it enters that unit's Location, unless the only Known enemy unit there is a lone SMC (an Infantry OVR, A15.432, not
+    /// reviewed). Once in a Location with a Known enemy unit it moves no farther. Returns the charged Location, or why the step is
+    /// refused.
+    /// </summary>
+    private (bool? Allowed, BoardLocation? Target, string? Reason) BerserkStep(GameState state, UnitInstance[] movers, BoardLocation from, BoardLocation to,
+        MovementState? current, bool assault)
+    {
+        if (movers.Any(unit => !Is(unit, Conditions.Berserk)))
+        {
+            return (null, null, "play.berserk-stack: berserk units charge apart from units that are not berserk (A15.43)");
+        }
+
+        if (assault)
+        {
+            return (null, null, "play.berserk-assault: a berserk unit never uses Assault Movement (A15.431)");
+        }
+
+        var wounded = Is(movers[0], Conditions.Wounded);
+        if (current is null && state.At(from).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side == movers[0].Side
+            && Is(unit, Conditions.Berserk) && !unit.MovementEnded && Is(unit, Conditions.Wounded) == wounded && !movers.Contains(unit)))
+        {
+            return (null, null, "play.berserk-stack: berserk units in one Location charge together unless one is wounded and one is not (A15.43)");
+        }
+
+        var (steps, _, undecided) = ChargeSteps(state, movers[0].Side, from, current?.Charge);
+        if (steps.TryGetValue(to, out var step))
+        {
+            var enemies = state.At(to).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side != movers[0].Side).ToArray();
+            if (enemies.Any(unit => !KnownEnemy(unit)))
+            {
+                return (null, null, "play.berserk-concealed: a charge into concealed enemy units or prisoners is not reviewed (A15.431, A20.4)");
+            }
+
+            if (enemies is [{ } lone] && vocabulary.IsA(lone.Kind, "asl:smc"))
+            {
+                return (null, null, "play.berserk-ovr: a charge onto a lone SMC is an Infantry OVR (A15.432), which is not reviewed");
+            }
+
+            return (true, step.Target, null);
+        }
+
+        if (undecided is not null)
+        {
+            return (null, null, undecided);
+        }
+
+        return (null, null, steps.Count == 0
+            ? $"play.berserk-charge: {string.Join(", ", movers.Select(unit => unit.Id))} has no Known enemy unit to charge, or is already in its Location (A15.43)"
+            : $"play.berserk-charge: {string.Join(", ", movers.Select(unit => unit.Id))} charges the nearest Known enemy unit in its LOS by a shortest route: "
+                + $"{string.Join(", ", steps.Keys.Select(item => item.ToString()).Order(StringComparer.Ordinal))}, not {to} (A15.43, A15.431)");
     }
 
     /// <summary>The DEFENDER passes on the moving stack's latest MF expenditure (A8.11).</summary>
@@ -219,9 +304,32 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.end-move: only the moving stack's members ({string.Join(", ", movement.Members)}) end their move (A4.2)");
         }
 
-        var left = movement.Members.Where(id => !ending.Contains(id, StringComparer.Ordinal)).ToArray();
+        // A15.43, A15.431: a berserk unit keeps charging while it has the MF for a step on its route; when the model cannot decide the
+        // route it may end its move, a recorded deviation (ruling R30.5).
+        var note = string.Empty;
+        foreach (var unit in ending.Select(state.Unit).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && Is(unit, Conditions.Berserk)))
+        {
+            if (state.Location(unit.Id) is not { } at)
+            {
+                continue;
+            }
+
+            var (steps, _, undecided) = ChargeSteps(state, unit.Side, at.Location, movement.Charge);
+            var left = Experience.MoveAllowance(state, unit, catalogs, vocabulary) is { } allowance ? (allowance * 2) - (unit.MfSpent * 2) - (unit.HalfMfSpent ? 1 : 0) : 0;
+            if (steps.Values.Any(step => step.HalfMf <= left))
+            {
+                return Refused(scope, label, expected, $"play.berserk-charge: {unit.Id} still has the MF to charge on (A15.43, A15.431)");
+            }
+
+            if (undecided is not null)
+            {
+                note = $"; {unit.Id}'s charge route is not decided by the model, so it ends in place (ruling R30.5)";
+            }
+        }
+
+        var remaining = movement.Members.Where(id => !ending.Contains(id, StringComparer.Ordinal)).ToArray();
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
             [Event(scope, attemptId, 1, expected, "movement-ended", new MovementEnded(ending), null, null)],
-            [$"play.end-move: {string.Join(", ", ending)} end their move" + (left.Length > 0 ? $"; {string.Join(", ", left)} may move on (A4.2)" : string.Empty)]);
+            [$"play.end-move: {string.Join(", ", ending)} end their move" + (remaining.Length > 0 ? $"; {string.Join(", ", remaining)} may move on (A4.2)" : string.Empty) + note]);
     }
 }
