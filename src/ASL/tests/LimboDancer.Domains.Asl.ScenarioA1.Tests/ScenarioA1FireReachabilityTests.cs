@@ -26,13 +26,19 @@ public sealed class ScenarioA1FireReachabilityTests
     [
         "german-mmc", "russian-squad-and-leader", "broken-russian-squad", "advancing-fire", "two-locations", "first-fire-in-the-open",
         "subsequent-first-fire", "final-protective-fire", "machine-guns", "hidden-and-dummy", "residual-fp", "final-fire-again",
+        "heroes-and-fanatic", "conscript-and-elite",
     ];
+
+    private static readonly string[] TwoDiceRolls = ["checks", "leaderLoss", "heatOfBattle"];
 
     private static readonly FireDirector RussianLeader = new("ru-l", "defender-leader", "bd01:F5:0", false, false, false, false, false);
 
     private static FireAttack Movement(FireAttack attack, string kind) => attack with
     {
-        Phase = "MPh", FiringSide = "non-phasing", FireKind = kind, TargetMovement = new FireMovement(false),
+        Phase = "MPh",
+        FiringSide = "non-phasing",
+        FireKind = kind,
+        TargetMovement = new FireMovement(false),
     };
 
     private static FireAttack Scenario(string name) => name switch
@@ -76,13 +82,32 @@ public sealed class ScenarioA1FireReachabilityTests
         },
         "residual-fp" => Movement(Scenario("german-mmc") with
         {
-            Firers = null, Director = null, FireGroupComplete = null, FirerLocationId = null, Range = null, SameLevel = null, Los = null, ResidualFp = 4,
+            Firers = null,
+            Director = null,
+            FireGroupComplete = null,
+            FirerLocationId = null,
+            Range = null,
+            SameLevel = null,
+            Los = null,
+            ResidualFp = 4,
         }, ScenarioA1FireCalculator.ResidualFire),
         "final-fire-again" => Scenario("german-mmc") with
         {
-            Phase = "DFPh", FiringSide = "non-phasing",
+            Phase = "DFPh",
+            FiringSide = "non-phasing",
             Firers = [.. Scenario("german-mmc").Firers!.Select(firer => firer with { FirstFireMarked = true })],
         },
+
+        // Unit steps 27 and 28: a hero in the fire group, and a hero, a leader, and a Fanatic elite squad among the targets.
+        "heroes-and-fanatic" => Scenario("german-mmc") with
+        {
+            Director = null,
+            Firers = [Firer("ru-1", "defender-squad", "bd01:F5:0"), Firer("ru-h", "defender-hero", "bd01:F5:0")],
+            Targets = [Target("de-e", "attacker-elite-squad", "bd01:G5:0") with { Fanatic = true }, Target("de-h", "attacker-hero", "bd01:G5:0"),
+                Target("de-l", "attacker-leader-8-0", "bd01:G5:0")],
+        },
+        "conscript-and-elite" => Attack("de", "attacker-squad", null,
+            [Target("ru-c", "defender-conscript-squad", "bd01:G5:0"), Target("ru-e", "defender-elite-half-squad", "bd01:G5:0")], 2),
         _ => throw new ArgumentOutOfRangeException(nameof(name)),
     };
 
@@ -168,7 +193,13 @@ public sealed class ScenarioA1FireReachabilityTests
             foreach (var values in Assignments(ids.Length))
             {
                 var drs = ids.Zip(values).ToDictionary(pair => pair.First, pair => pair.Second, StringComparer.Ordinal);
-                paths += Explore(attack, weapon ? rolls with { WeaponSelection = drs } : rolls with { FirerSelection = drs });
+                paths += Explore(attack, weapon ? rolls with
+                {
+                    WeaponSelection = drs
+                } : rolls with
+                {
+                    FirerSelection = drs
+                });
             }
         }
         else if (key.StartsWith("woundSeverity:", StringComparison.Ordinal))
@@ -186,18 +217,16 @@ public sealed class ScenarioA1FireReachabilityTests
         {
             var split = key.IndexOf(':', StringComparison.Ordinal);
             var (kind, id) = (key[..split], key[(split + 1)..]);
+            Assert.Contains(kind, TwoDiceRolls);
             for (var total = 2; total <= 12; total++)
             {
                 IReadOnlyList<int> dice = total <= 7 ? [1, total - 1] : [total - 6, 6];
-                paths += Explore(attack, kind == "checks"
-                    ? rolls with
-                    {
-                        Checks = With(rolls.Checks, id, dice)
-                    }
-                    : rolls with
-                    {
-                        LeaderLoss = With(rolls.LeaderLoss, id, dice)
-                    });
+                paths += Explore(attack, kind switch
+                {
+                    "checks" => rolls with { Checks = With(rolls.Checks, id, dice) },
+                    "leaderLoss" => rolls with { LeaderLoss = With(rolls.LeaderLoss, id, dice) },
+                    _ => rolls with { HeatOfBattle = With(rolls.HeatOfBattle, id, dice) },
+                });
             }
         }
 

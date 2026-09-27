@@ -152,6 +152,65 @@ public sealed class LiveRecordTests
     }
 
     [Fact]
+    public void AMovingStackSplitsAndAMemberThatBreaksLeavesIt()
+    {
+        string[] stack = ["g1", "g2"];
+        (string, string, EventPayload) Broken(string id) =>
+            ("b-" + id, "conditions-changed", new ConditionsChanged(id, new Dictionary<string, ConditionState> { [Conditions.Broken] = ConditionState.True }));
+        (string, string, EventPayload) Close(int step) => ("w" + step, "movement-window-closed", new MovementWindowClosed(step));
+
+        // A4.2, A7.8: g1 breaks under fire and leaves the stack; g2 moves on alone, and nothing else moves until it ends.
+        var split = Project(With(9, Step("m1", stack, "bd01:D5:0", 1), Broken("g1"), Close(1), Step("m2", G2, "bd01:C5:0", 2)));
+        Assert.False(split.HasErrors, string.Join(" ", split.Diagnostics));
+        Assert.Equal(G2, split.Current!.Movement!.Members);
+        Assert.True(split.Current.Unit("g1")!.MovementEnded);
+        Refused(Project(With(9, Step("m1", stack, "bd01:D5:0", 1), Broken("g1"), Close(1), Step("m2", G1, "bd01:C5:0", 2))), "UNIT-STATE-029");
+        Refused(Project(With(9, Step("m1", G1, "bd01:D5:0", 1), Close(1), Step("m2", G2, "bd01:C5:0", 2))), "UNIT-STATE-029");
+
+        // The ATTACKER ends one member; the stack's move is over only when the last one ends.
+        var partly = Project(With(9, Step("m1", stack, "bd01:D5:0", 1), Close(1), ("e1", "movement-ended", new MovementEnded(G1))));
+        Assert.False(partly.HasErrors, string.Join(" ", partly.Diagnostics));
+        Assert.Equal(G2, partly.Current!.Movement!.Members);
+        var over = Project(With(9, Step("m1", stack, "bd01:D5:0", 1), Close(1), ("e1", "movement-ended", new MovementEnded(G1)),
+            ("e2", "movement-ended", new MovementEnded(G2))));
+        Assert.False(over.HasErrors, string.Join(" ", over.Diagnostics));
+        Assert.Null(over.Current!.Movement);
+
+        // A member Reduced to a HS in Good Order is followed in the stack by its HS (A7.302).
+        var reduced = Project(With(9, Step("m1", stack, "bd01:D5:0", 1), ("l1", "lineage", new LineageRecorded(LineageAction.Reduced, G1,
+            [new NewInstance("g1-hs", "asl:half-squad", "attacker-half-squad", "german", null, null,
+                new Dictionary<string, ConditionState> { [Conditions.Broken] = ConditionState.False })]))));
+        Assert.False(reduced.HasErrors, string.Join(" ", reduced.Diagnostics));
+        Assert.Equal(["g2", "g1-hs"], reduced.Current!.Movement!.Members);
+        Assert.Equal(["g2", "g1-hs"], reduced.Current.Movement.Movers);
+
+        // A stack whose only member broke is ended by naming the unit of its latest step.
+        var broken = Project(With(9, Step("m1", G1, "bd01:D5:0", 1), Broken("g1"), Close(1), ("e1", "movement-ended", new MovementEnded(G1))));
+        Assert.False(broken.HasErrors, string.Join(" ", broken.Diagnostics));
+        Assert.Null(broken.Current!.Movement);
+    }
+
+    [Fact]
+    public void AReplacedOrCreatedUnitGainsNoFreshMfAndAReplacementKeepsTheSw()
+    {
+        var clear = new Dictionary<string, ConditionState> { [Conditions.Broken] = ConditionState.False };
+
+        // A15.3, A4.2: a Battle Hardened mover is a Replacement: it has spent what g1 spent, and keeps g1's LMG.
+        var hardened = Project(With(9, Step("m1", G1, "bd01:D5:0", 1), ("l1", "lineage", new LineageRecorded(LineageAction.Replaced, G1,
+            [new NewInstance("g1-e", "asl:squad", "attacker-elite-squad", "german", null, null, clear)]))));
+        Assert.False(hardened.HasErrors, string.Join(" ", hardened.Diagnostics));
+        Assert.Equal((1, false), (hardened.Current!.Unit("g1-e")!.MfSpent, hardened.Current.Unit("g1-e")!.MovementEnded));
+        Assert.Equal("g1-e", hardened.Current.Equipment.Single(item => item.Id == "g-lmg").Holding!.Holder);
+        Assert.Equal(["g1-e"], hardened.Current.Movement!.Members);
+
+        // A15.21: a hero created in his side's MPh moves no further that phase.
+        var hero = Project(With(9, Step("m1", G1, "bd01:D5:0", 1), ("h1", "instance-created", new InstanceCreated(
+            new NewInstance("g1-hero", "asl:hero", "attacker-hero", "german", new MapPosition(D5), null, clear)))));
+        Assert.False(hero.HasErrors, string.Join(" ", hero.Diagnostics));
+        Assert.True(hero.Current!.Unit("g1-hero")!.MovementEnded);
+    }
+
+    [Fact]
     public void ResidualFpIsTheFireRecordsValueAndOnlyALargerCounterReplacesIt()
     {
         var placed = Project(With(9, Step("m1", G1, "bd01:D5:0", 1), Roll("x-roll-1", 3, 4), Fire("f1", "x-roll-1", 1, 4),

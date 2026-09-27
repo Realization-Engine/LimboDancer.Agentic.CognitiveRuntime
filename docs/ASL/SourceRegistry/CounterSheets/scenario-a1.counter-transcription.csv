@@ -226,3 +226,302 @@ MFG,defender-mmg,front,breakdown,11,Claude (claude-opus-5-5),Dennis Landi,"Manuf
 MFG,defender-mmg,front,rate-of-fire,2,Claude (claude-opus-5-5),Dennis Landi,"Manufactured under ruling R0.3 (2026-09-26): follows the MMG of the Counter Examples (p. 676: 4-10, B11, ROF 2, R2), whose nationality the page does not state; not source-backed"
 MFG,defender-mmg,front,portage,4,Claude (claude-opus-5-5),Dennis Landi,"Manufactured under ruling R0.3 (2026-09-26): follows the MMG of the Counter Examples (p. 676: 4-10, B11, ROF 2, R2), whose nationality the page does not state; not source-backed"
 MFG,defender-mmg,malfunctioned,repair,2,Claude (claude-opus-5-5),Dennis Landi,"Manufactured under ruling R0.3 (2026-09-26): follows the MMG of the Counter Examples (p. 676: 4-10, B11, ROF 2, R2), whose nationality the page does not state; not source-backed"
+NCC,attacker-elite-squad,counter,kind,asl:squad,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC SQUAD column
+NCC,attacker-elite-squad,counter,nationality,german,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC GERMAN, class squared-E row: 4^2-6-8^8 (6 underlined), BPV 13"
+NCC,attacker-elite-squad,front,firepower,4,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC GERMAN, class squared-E row: 4^2-6-8^8 (6 underlined), BPV 13"
+NCC,attacker-elite-squad,front,range,6,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC GERMAN, class squared-E row: 4^2-6-8^8 (6 underlined), BPV 13"
+NCC,attacker-elite-squad,front,morale,8,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC GERMAN, class squared-E row: 4^2-6-8^8 (6 underlined), BPV 13"
+NCC,attacker-elite-squad,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A1.24: each counter has its own letter; the chart shows none
+NCC,attacker-elite-squad,front,class,elite,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC GERMAN, class squared-E row: 4^2-6-8^8 (6 underlined), BPV 13"
+NCC,attacker-elite-squad,front,class-variant,square,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC GERMAN, class squared-E row: 4^2-6-8^8 (6 underlined), BPV 13"
+NCC,attacker-elite-squad,front,smoke-exponent,2,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC GERMAN, class squared-E row: 4^2-6-8^8 (6 underlined), BPV 13"
+NCC,attacker-elite-squad,front,asl:assault-fire,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC GERMAN, class squared-E row: 4^2-6-8^8 (6 underlined), BPV 13"
+NCC,attacker-elite-squad,front,asl:spraying-fire,yes,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC GERMAN, class squared-E row: 4^2-6-8^8 (6 underlined), BPV 13"
+NCC,attacker-elite-squad,front,asl:elr-5,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC GERMAN, class squared-E row: 4^2-6-8^8 (6 underlined), BPV 13"
+NCC,attacker-elite-squad,front,asl:assault-engineer,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC: no AE superscript on the class
+NCC,attacker-elite-squad,broken,broken-morale,8,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC: superscript 8 after morale 8 (chart legend)
+NCC,attacker-elite-squad,broken,bpv,13,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC GERMAN, class squared-E row: 4^2-6-8^8 (6 underlined), BPV 13"
+NCC,attacker-elite-squad,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The chart shows no broken side (A10.63)
+NCC,attacker-elite-half-squad,counter,kind,asl:half-squad,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC HS column
+NCC,attacker-elite-half-squad,counter,nationality,german,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC GERMAN, class squared-E row, HS column: 2-4-8^7 (8 underlined), BPV 5"
+NCC,attacker-elite-half-squad,front,firepower,2,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC GERMAN, class squared-E row, HS column: 2-4-8^7 (8 underlined), BPV 5"
+NCC,attacker-elite-half-squad,front,range,4,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC GERMAN, class squared-E row, HS column: 2-4-8^7 (8 underlined), BPV 5"
+NCC,attacker-elite-half-squad,front,morale,8,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC GERMAN, class squared-E row, HS column: 2-4-8^7 (8 underlined), BPV 5"
+NCC,attacker-elite-half-squad,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A1.24: each counter has its own letter; the chart shows none
+NCC,attacker-elite-half-squad,front,class,elite,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC GERMAN, class squared-E row, HS column: 2-4-8^7 (8 underlined), BPV 5"
+NCC,attacker-elite-half-squad,front,class-variant,square,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC GERMAN, class squared-E row, HS column: 2-4-8^7 (8 underlined), BPV 5"
+NCC,attacker-elite-half-squad,front,smoke-exponent,not-printed,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC HS column: no superscript after the FP
+NCC,attacker-elite-half-squad,front,asl:assault-fire,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC GERMAN, class squared-E row, HS column: 2-4-8^7 (8 underlined), BPV 5"
+NCC,attacker-elite-half-squad,front,asl:spraying-fire,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC GERMAN, class squared-E row, HS column: 2-4-8^7 (8 underlined), BPV 5"
+NCC,attacker-elite-half-squad,front,asl:elr-5,yes,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC GERMAN, class squared-E row, HS column: 2-4-8^7 (8 underlined), BPV 5"
+NCC,attacker-elite-half-squad,front,asl:assault-engineer,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC: no AE superscript on the class
+NCC,attacker-elite-half-squad,broken,broken-morale,7,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC HS column: superscript 7 after morale 8
+NCC,attacker-elite-half-squad,broken,bpv,5,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC GERMAN, class squared-E row, HS column: 2-4-8^7 (8 underlined), BPV 5"
+NCC,attacker-elite-half-squad,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The chart shows no broken side (A10.63)
+NCC,defender-elite-squad,counter,kind,asl:squad,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC SQUAD column
+NCC,defender-elite-squad,counter,nationality,russian,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class squared-E row: 4-5-8^8, BPV 11"
+NCC,defender-elite-squad,front,firepower,4,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class squared-E row: 4-5-8^8, BPV 11"
+NCC,defender-elite-squad,front,range,5,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class squared-E row: 4-5-8^8, BPV 11"
+NCC,defender-elite-squad,front,morale,8,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class squared-E row: 4-5-8^8, BPV 11"
+NCC,defender-elite-squad,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A1.24: each counter has its own letter; the chart shows none
+NCC,defender-elite-squad,front,class,elite,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class squared-E row: 4-5-8^8, BPV 11"
+NCC,defender-elite-squad,front,class-variant,square,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class squared-E row: 4-5-8^8, BPV 11"
+NCC,defender-elite-squad,front,smoke-exponent,not-printed,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class squared-E row: 4-5-8^8, BPV 11"
+NCC,defender-elite-squad,front,asl:assault-fire,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class squared-E row: 4-5-8^8, BPV 11"
+NCC,defender-elite-squad,front,asl:spraying-fire,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class squared-E row: 4-5-8^8, BPV 11"
+NCC,defender-elite-squad,front,asl:elr-5,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class squared-E row: 4-5-8^8, BPV 11"
+NCC,defender-elite-squad,front,asl:assault-engineer,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC: no AE superscript on the class
+NCC,defender-elite-squad,broken,broken-morale,8,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC: superscript 8 after morale 8 (chart legend)
+NCC,defender-elite-squad,broken,bpv,11,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class squared-E row: 4-5-8^8, BPV 11"
+NCC,defender-elite-squad,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The chart shows no broken side (A10.63)
+NCC,defender-elite-half-squad,counter,kind,asl:half-squad,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC HS column
+NCC,defender-elite-half-squad,counter,nationality,russian,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class squared-E row, HS column: 2-4-8^7, BPV 5"
+NCC,defender-elite-half-squad,front,firepower,2,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class squared-E row, HS column: 2-4-8^7, BPV 5"
+NCC,defender-elite-half-squad,front,range,4,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class squared-E row, HS column: 2-4-8^7, BPV 5"
+NCC,defender-elite-half-squad,front,morale,8,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class squared-E row, HS column: 2-4-8^7, BPV 5"
+NCC,defender-elite-half-squad,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A1.24: each counter has its own letter; the chart shows none
+NCC,defender-elite-half-squad,front,class,elite,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class squared-E row, HS column: 2-4-8^7, BPV 5"
+NCC,defender-elite-half-squad,front,class-variant,square,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class squared-E row, HS column: 2-4-8^7, BPV 5"
+NCC,defender-elite-half-squad,front,smoke-exponent,not-printed,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC HS column: no superscript after the FP
+NCC,defender-elite-half-squad,front,asl:assault-fire,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class squared-E row, HS column: 2-4-8^7, BPV 5"
+NCC,defender-elite-half-squad,front,asl:spraying-fire,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class squared-E row, HS column: 2-4-8^7, BPV 5"
+NCC,defender-elite-half-squad,front,asl:elr-5,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class squared-E row, HS column: 2-4-8^7, BPV 5"
+NCC,defender-elite-half-squad,front,asl:assault-engineer,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC: no AE superscript on the class
+NCC,defender-elite-half-squad,broken,broken-morale,7,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC HS column: superscript 7 after morale 8
+NCC,defender-elite-half-squad,broken,bpv,5,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class squared-E row, HS column: 2-4-8^7, BPV 5"
+NCC,defender-elite-half-squad,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The chart shows no broken side (A10.63)
+NCC,defender-line-squad,counter,kind,asl:squad,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC SQUAD column
+NCC,defender-line-squad,counter,nationality,russian,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class 1 row: 5-2-7^7 (5 and 2 underlined), BPV 7"
+NCC,defender-line-squad,front,firepower,5,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class 1 row: 5-2-7^7 (5 and 2 underlined), BPV 7"
+NCC,defender-line-squad,front,range,2,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class 1 row: 5-2-7^7 (5 and 2 underlined), BPV 7"
+NCC,defender-line-squad,front,morale,7,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class 1 row: 5-2-7^7 (5 and 2 underlined), BPV 7"
+NCC,defender-line-squad,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A1.24: each counter has its own letter; the chart shows none
+NCC,defender-line-squad,front,class,1st-line,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class 1 row: 5-2-7^7 (5 and 2 underlined), BPV 7"
+NCC,defender-line-squad,front,class-variant,not-printed,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class 1 row: 5-2-7^7 (5 and 2 underlined), BPV 7"
+NCC,defender-line-squad,front,smoke-exponent,not-printed,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class 1 row: 5-2-7^7 (5 and 2 underlined), BPV 7"
+NCC,defender-line-squad,front,asl:assault-fire,yes,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class 1 row: 5-2-7^7 (5 and 2 underlined), BPV 7"
+NCC,defender-line-squad,front,asl:spraying-fire,yes,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class 1 row: 5-2-7^7 (5 and 2 underlined), BPV 7"
+NCC,defender-line-squad,front,asl:elr-5,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class 1 row: 5-2-7^7 (5 and 2 underlined), BPV 7"
+NCC,defender-line-squad,front,asl:assault-engineer,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC: no AE superscript on the class
+NCC,defender-line-squad,broken,broken-morale,7,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC: superscript 7 after morale 7 (chart legend)
+NCC,defender-line-squad,broken,bpv,7,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class 1 row: 5-2-7^7 (5 and 2 underlined), BPV 7"
+NCC,defender-line-squad,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The chart shows no broken side (A10.63)
+NCC,defender-line-half-squad,counter,kind,asl:half-squad,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC HS column
+NCC,defender-line-half-squad,counter,nationality,russian,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class 1 row, HS column: 2-2-7^6, BPV 3"
+NCC,defender-line-half-squad,front,firepower,2,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class 1 row, HS column: 2-2-7^6, BPV 3"
+NCC,defender-line-half-squad,front,range,2,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class 1 row, HS column: 2-2-7^6, BPV 3"
+NCC,defender-line-half-squad,front,morale,7,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class 1 row, HS column: 2-2-7^6, BPV 3"
+NCC,defender-line-half-squad,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A1.24: each counter has its own letter; the chart shows none
+NCC,defender-line-half-squad,front,class,1st-line,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class 1 row, HS column: 2-2-7^6, BPV 3"
+NCC,defender-line-half-squad,front,class-variant,not-printed,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class 1 row, HS column: 2-2-7^6, BPV 3"
+NCC,defender-line-half-squad,front,smoke-exponent,not-printed,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC HS column: no superscript after the FP
+NCC,defender-line-half-squad,front,asl:assault-fire,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class 1 row, HS column: 2-2-7^6, BPV 3"
+NCC,defender-line-half-squad,front,asl:spraying-fire,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class 1 row, HS column: 2-2-7^6, BPV 3"
+NCC,defender-line-half-squad,front,asl:elr-5,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class 1 row, HS column: 2-2-7^6, BPV 3"
+NCC,defender-line-half-squad,front,asl:assault-engineer,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC: no AE superscript on the class
+NCC,defender-line-half-squad,broken,broken-morale,6,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC HS column: superscript 6 after morale 7
+NCC,defender-line-half-squad,broken,bpv,3,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class 1 row, HS column: 2-2-7^6, BPV 3"
+NCC,defender-line-half-squad,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The chart shows no broken side (A10.63)
+NCC,defender-guards-squad,counter,kind,asl:squad,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC SQUAD column
+NCC,defender-guards-squad,counter,nationality,russian,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class E row: 6-2-8^8 (6 and 2 underlined), BPV 12"
+NCC,defender-guards-squad,front,firepower,6,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class E row: 6-2-8^8 (6 and 2 underlined), BPV 12"
+NCC,defender-guards-squad,front,range,2,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class E row: 6-2-8^8 (6 and 2 underlined), BPV 12"
+NCC,defender-guards-squad,front,morale,8,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class E row: 6-2-8^8 (6 and 2 underlined), BPV 12"
+NCC,defender-guards-squad,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A1.24: each counter has its own letter; the chart shows none
+NCC,defender-guards-squad,front,class,elite,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class E row: 6-2-8^8 (6 and 2 underlined), BPV 12"
+NCC,defender-guards-squad,front,class-variant,not-printed,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class E row: 6-2-8^8 (6 and 2 underlined), BPV 12"
+NCC,defender-guards-squad,front,smoke-exponent,not-printed,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class E row: 6-2-8^8 (6 and 2 underlined), BPV 12"
+NCC,defender-guards-squad,front,asl:assault-fire,yes,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class E row: 6-2-8^8 (6 and 2 underlined), BPV 12"
+NCC,defender-guards-squad,front,asl:spraying-fire,yes,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class E row: 6-2-8^8 (6 and 2 underlined), BPV 12"
+NCC,defender-guards-squad,front,asl:elr-5,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class E row: 6-2-8^8 (6 and 2 underlined), BPV 12"
+NCC,defender-guards-squad,front,asl:assault-engineer,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC: no AE superscript on the class
+NCC,defender-guards-squad,broken,broken-morale,8,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC: superscript 8 after morale 8 (chart legend)
+NCC,defender-guards-squad,broken,bpv,12,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class E row: 6-2-8^8 (6 and 2 underlined), BPV 12"
+NCC,defender-guards-squad,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The chart shows no broken side (A10.63)
+NCC,defender-guards-half-squad,counter,kind,asl:half-squad,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC HS column
+NCC,defender-guards-half-squad,counter,nationality,russian,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class E row, HS column: 3-2-8^7, BPV 5"
+NCC,defender-guards-half-squad,front,firepower,3,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class E row, HS column: 3-2-8^7, BPV 5"
+NCC,defender-guards-half-squad,front,range,2,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class E row, HS column: 3-2-8^7, BPV 5"
+NCC,defender-guards-half-squad,front,morale,8,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class E row, HS column: 3-2-8^7, BPV 5"
+NCC,defender-guards-half-squad,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A1.24: each counter has its own letter; the chart shows none
+NCC,defender-guards-half-squad,front,class,elite,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class E row, HS column: 3-2-8^7, BPV 5"
+NCC,defender-guards-half-squad,front,class-variant,not-printed,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class E row, HS column: 3-2-8^7, BPV 5"
+NCC,defender-guards-half-squad,front,smoke-exponent,not-printed,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC HS column: no superscript after the FP
+NCC,defender-guards-half-squad,front,asl:assault-fire,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class E row, HS column: 3-2-8^7, BPV 5"
+NCC,defender-guards-half-squad,front,asl:spraying-fire,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class E row, HS column: 3-2-8^7, BPV 5"
+NCC,defender-guards-half-squad,front,asl:elr-5,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class E row, HS column: 3-2-8^7, BPV 5"
+NCC,defender-guards-half-squad,front,asl:assault-engineer,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC: no AE superscript on the class
+NCC,defender-guards-half-squad,broken,broken-morale,7,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC HS column: superscript 7 after morale 8
+NCC,defender-guards-half-squad,broken,bpv,5,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class E row, HS column: 3-2-8^7, BPV 5"
+NCC,defender-guards-half-squad,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The chart shows no broken side (A10.63)
+LGR,attacker-leader-6-plus-1,counter,kind,asl:leader,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Chapter H leader table, p. 331: the grades of every nationality but the Finns and Japanese"
+LGR,attacker-leader-6-plus-1,counter,nationality,german,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",Assigned by the scenario; the grades are common to the German and Russian OBs
+LGR,attacker-leader-6-plus-1,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no leader name
+LGR,attacker-leader-6-plus-1,front,leadership,+1,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 6+1 (Chapter H leader table, p. 331; A10.7): morale 6, leadership DRM +1"
+LGR,attacker-leader-6-plus-1,front,morale,6,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 6+1 (Chapter H leader table, p. 331; A10.7): morale 6, leadership DRM +1"
+LGR,attacker-leader-6-plus-1,front,asl:elr-5,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table shows no underline
+LGR,attacker-leader-6-plus-1,broken,broken-morale,6,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Counter Examples (p. 676): the 9-1 leader's broken side prints morale 9, its front morale; so 6"
+LGR,attacker-leader-6-plus-1,broken,bpv,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no BPV
+LGR,attacker-leader-6-plus-1,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A10.71 lets any broken leader attempt Self-Rally
+LGR,attacker-leader-7-0,counter,kind,asl:leader,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Chapter H leader table, p. 331: the grades of every nationality but the Finns and Japanese"
+LGR,attacker-leader-7-0,counter,nationality,german,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",Assigned by the scenario; the grades are common to the German and Russian OBs
+LGR,attacker-leader-7-0,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no leader name
+LGR,attacker-leader-7-0,front,leadership,0,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 7-0 (Chapter H leader table, p. 331; A10.7): morale 7, leadership DRM 0"
+LGR,attacker-leader-7-0,front,morale,7,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 7-0 (Chapter H leader table, p. 331; A10.7): morale 7, leadership DRM 0"
+LGR,attacker-leader-7-0,front,asl:elr-5,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table shows no underline
+LGR,attacker-leader-7-0,broken,broken-morale,7,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Counter Examples (p. 676): the 9-1 leader's broken side prints morale 9, its front morale; so 7"
+LGR,attacker-leader-7-0,broken,bpv,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no BPV
+LGR,attacker-leader-7-0,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A10.71 lets any broken leader attempt Self-Rally
+LGR,attacker-leader-8-0,counter,kind,asl:leader,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Chapter H leader table, p. 331: the grades of every nationality but the Finns and Japanese"
+LGR,attacker-leader-8-0,counter,nationality,german,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",Assigned by the scenario; the grades are common to the German and Russian OBs
+LGR,attacker-leader-8-0,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no leader name
+LGR,attacker-leader-8-0,front,leadership,0,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 8-0 (Chapter H leader table, p. 331; A10.7): morale 8, leadership DRM 0"
+LGR,attacker-leader-8-0,front,morale,8,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 8-0 (Chapter H leader table, p. 331; A10.7): morale 8, leadership DRM 0"
+LGR,attacker-leader-8-0,front,asl:elr-5,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table shows no underline
+LGR,attacker-leader-8-0,broken,broken-morale,8,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Counter Examples (p. 676): the 9-1 leader's broken side prints morale 9, its front morale; so 8"
+LGR,attacker-leader-8-0,broken,bpv,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no BPV
+LGR,attacker-leader-8-0,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A10.71 lets any broken leader attempt Self-Rally
+LGR,attacker-leader-8-1,counter,kind,asl:leader,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Chapter H leader table, p. 331: the grades of every nationality but the Finns and Japanese"
+LGR,attacker-leader-8-1,counter,nationality,german,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",Assigned by the scenario; the grades are common to the German and Russian OBs
+LGR,attacker-leader-8-1,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no leader name
+LGR,attacker-leader-8-1,front,leadership,-1,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 8-1 (Chapter H leader table, p. 331; A10.7): morale 8, leadership DRM -1"
+LGR,attacker-leader-8-1,front,morale,8,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 8-1 (Chapter H leader table, p. 331; A10.7): morale 8, leadership DRM -1"
+LGR,attacker-leader-8-1,front,asl:elr-5,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table shows no underline
+LGR,attacker-leader-8-1,broken,broken-morale,8,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Counter Examples (p. 676): the 9-1 leader's broken side prints morale 9, its front morale; so 8"
+LGR,attacker-leader-8-1,broken,bpv,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no BPV
+LGR,attacker-leader-8-1,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A10.71 lets any broken leader attempt Self-Rally
+LGR,attacker-leader-9-1,counter,kind,asl:leader,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Chapter H leader table, p. 331: the grades of every nationality but the Finns and Japanese"
+LGR,attacker-leader-9-1,counter,nationality,german,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",Assigned by the scenario; the grades are common to the German and Russian OBs
+LGR,attacker-leader-9-1,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no leader name
+LGR,attacker-leader-9-1,front,leadership,-1,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 9-1 (Chapter H leader table, p. 331; A10.7): morale 9, leadership DRM -1"
+LGR,attacker-leader-9-1,front,morale,9,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 9-1 (Chapter H leader table, p. 331; A10.7): morale 9, leadership DRM -1"
+LGR,attacker-leader-9-1,front,asl:elr-5,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table shows no underline
+LGR,attacker-leader-9-1,broken,broken-morale,9,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Counter Examples (p. 676): the 9-1 leader's broken side prints morale 9, its front morale; so 9"
+LGR,attacker-leader-9-1,broken,bpv,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no BPV
+LGR,attacker-leader-9-1,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A10.71 lets any broken leader attempt Self-Rally
+LGR,attacker-leader-9-2,counter,kind,asl:leader,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Chapter H leader table, p. 331: the grades of every nationality but the Finns and Japanese"
+LGR,attacker-leader-9-2,counter,nationality,german,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",Assigned by the scenario; the grades are common to the German and Russian OBs
+LGR,attacker-leader-9-2,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no leader name
+LGR,attacker-leader-9-2,front,leadership,-2,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 9-2 (Chapter H leader table, p. 331; A10.7): morale 9, leadership DRM -2"
+LGR,attacker-leader-9-2,front,morale,9,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 9-2 (Chapter H leader table, p. 331; A10.7): morale 9, leadership DRM -2"
+LGR,attacker-leader-9-2,front,asl:elr-5,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table shows no underline
+LGR,attacker-leader-9-2,broken,broken-morale,9,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Counter Examples (p. 676): the 9-1 leader's broken side prints morale 9, its front morale; so 9"
+LGR,attacker-leader-9-2,broken,bpv,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no BPV
+LGR,attacker-leader-9-2,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A10.71 lets any broken leader attempt Self-Rally
+LGR,attacker-leader-10-2,counter,kind,asl:leader,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Chapter H leader table, p. 331: the grades of every nationality but the Finns and Japanese"
+LGR,attacker-leader-10-2,counter,nationality,german,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",Assigned by the scenario; the grades are common to the German and Russian OBs
+LGR,attacker-leader-10-2,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no leader name
+LGR,attacker-leader-10-2,front,leadership,-2,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 10-2 (Chapter H leader table, p. 331; A10.7): morale 10, leadership DRM -2"
+LGR,attacker-leader-10-2,front,morale,10,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 10-2 (Chapter H leader table, p. 331; A10.7): morale 10, leadership DRM -2"
+LGR,attacker-leader-10-2,front,asl:elr-5,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table shows no underline
+LGR,attacker-leader-10-2,broken,broken-morale,10,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Counter Examples (p. 676): the 9-1 leader's broken side prints morale 9, its front morale; so 10"
+LGR,attacker-leader-10-2,broken,bpv,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no BPV
+LGR,attacker-leader-10-2,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A10.71 lets any broken leader attempt Self-Rally
+LGR,attacker-leader-10-3,counter,kind,asl:leader,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Chapter H leader table, p. 331: the grades of every nationality but the Finns and Japanese"
+LGR,attacker-leader-10-3,counter,nationality,german,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",Assigned by the scenario; the grades are common to the German and Russian OBs
+LGR,attacker-leader-10-3,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no leader name
+LGR,attacker-leader-10-3,front,leadership,-3,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 10-3 (Chapter H leader table, p. 331; A10.7): morale 10, leadership DRM -3"
+LGR,attacker-leader-10-3,front,morale,10,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 10-3 (Chapter H leader table, p. 331; A10.7): morale 10, leadership DRM -3"
+LGR,attacker-leader-10-3,front,asl:elr-5,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table shows no underline
+LGR,attacker-leader-10-3,broken,broken-morale,10,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Counter Examples (p. 676): the 9-1 leader's broken side prints morale 9, its front morale; so 10"
+LGR,attacker-leader-10-3,broken,bpv,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no BPV
+LGR,attacker-leader-10-3,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A10.71 lets any broken leader attempt Self-Rally
+LGR,defender-leader-8-1,counter,kind,asl:leader,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Chapter H leader table, p. 331: the grades of every nationality but the Finns and Japanese"
+LGR,defender-leader-8-1,counter,nationality,russian,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",Assigned by the scenario; the grades are common to the German and Russian OBs
+LGR,defender-leader-8-1,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no leader name
+LGR,defender-leader-8-1,front,leadership,-1,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 8-1 (Chapter H leader table, p. 331; A10.7): morale 8, leadership DRM -1"
+LGR,defender-leader-8-1,front,morale,8,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 8-1 (Chapter H leader table, p. 331; A10.7): morale 8, leadership DRM -1"
+LGR,defender-leader-8-1,front,asl:elr-5,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table shows no underline
+LGR,defender-leader-8-1,broken,broken-morale,8,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Counter Examples (p. 676): the 9-1 leader's broken side prints morale 9, its front morale; so 8"
+LGR,defender-leader-8-1,broken,bpv,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no BPV
+LGR,defender-leader-8-1,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A10.71 lets any broken leader attempt Self-Rally
+LGR,defender-leader-9-1,counter,kind,asl:leader,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Chapter H leader table, p. 331: the grades of every nationality but the Finns and Japanese"
+LGR,defender-leader-9-1,counter,nationality,russian,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",Assigned by the scenario; the grades are common to the German and Russian OBs
+LGR,defender-leader-9-1,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no leader name
+LGR,defender-leader-9-1,front,leadership,-1,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 9-1 (Chapter H leader table, p. 331; A10.7): morale 9, leadership DRM -1"
+LGR,defender-leader-9-1,front,morale,9,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 9-1 (Chapter H leader table, p. 331; A10.7): morale 9, leadership DRM -1"
+LGR,defender-leader-9-1,front,asl:elr-5,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table shows no underline
+LGR,defender-leader-9-1,broken,broken-morale,9,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Counter Examples (p. 676): the 9-1 leader's broken side prints morale 9, its front morale; so 9"
+LGR,defender-leader-9-1,broken,bpv,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no BPV
+LGR,defender-leader-9-1,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A10.71 lets any broken leader attempt Self-Rally
+LGR,defender-leader-9-2,counter,kind,asl:leader,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Chapter H leader table, p. 331: the grades of every nationality but the Finns and Japanese"
+LGR,defender-leader-9-2,counter,nationality,russian,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",Assigned by the scenario; the grades are common to the German and Russian OBs
+LGR,defender-leader-9-2,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no leader name
+LGR,defender-leader-9-2,front,leadership,-2,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 9-2 (Chapter H leader table, p. 331; A10.7): morale 9, leadership DRM -2"
+LGR,defender-leader-9-2,front,morale,9,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 9-2 (Chapter H leader table, p. 331; A10.7): morale 9, leadership DRM -2"
+LGR,defender-leader-9-2,front,asl:elr-5,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table shows no underline
+LGR,defender-leader-9-2,broken,broken-morale,9,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Counter Examples (p. 676): the 9-1 leader's broken side prints morale 9, its front morale; so 9"
+LGR,defender-leader-9-2,broken,bpv,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no BPV
+LGR,defender-leader-9-2,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A10.71 lets any broken leader attempt Self-Rally
+LGR,defender-leader-10-2,counter,kind,asl:leader,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Chapter H leader table, p. 331: the grades of every nationality but the Finns and Japanese"
+LGR,defender-leader-10-2,counter,nationality,russian,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",Assigned by the scenario; the grades are common to the German and Russian OBs
+LGR,defender-leader-10-2,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no leader name
+LGR,defender-leader-10-2,front,leadership,-2,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 10-2 (Chapter H leader table, p. 331; A10.7): morale 10, leadership DRM -2"
+LGR,defender-leader-10-2,front,morale,10,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 10-2 (Chapter H leader table, p. 331; A10.7): morale 10, leadership DRM -2"
+LGR,defender-leader-10-2,front,asl:elr-5,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table shows no underline
+LGR,defender-leader-10-2,broken,broken-morale,10,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Counter Examples (p. 676): the 9-1 leader's broken side prints morale 9, its front morale; so 10"
+LGR,defender-leader-10-2,broken,bpv,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no BPV
+LGR,defender-leader-10-2,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A10.71 lets any broken leader attempt Self-Rally
+LGR,defender-leader-10-3,counter,kind,asl:leader,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Chapter H leader table, p. 331: the grades of every nationality but the Finns and Japanese"
+LGR,defender-leader-10-3,counter,nationality,russian,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",Assigned by the scenario; the grades are common to the German and Russian OBs
+LGR,defender-leader-10-3,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no leader name
+LGR,defender-leader-10-3,front,leadership,-3,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 10-3 (Chapter H leader table, p. 331; A10.7): morale 10, leadership DRM -3"
+LGR,defender-leader-10-3,front,morale,10,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 10-3 (Chapter H leader table, p. 331; A10.7): morale 10, leadership DRM -3"
+LGR,defender-leader-10-3,front,asl:elr-5,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table shows no underline
+LGR,defender-leader-10-3,broken,broken-morale,10,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Counter Examples (p. 676): the 9-1 leader's broken side prints morale 9, its front morale; so 10"
+LGR,defender-leader-10-3,broken,bpv,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no BPV
+LGR,defender-leader-10-3,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A10.71 lets any broken leader attempt Self-Rally
+CEX,attacker-hero,counter,kind,asl:hero,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","A15.2 (p. 83): 1-4-9, wounded 1-3-8; the Counter Examples (p. 676) show the same hero counter"
+CEX,attacker-hero,counter,nationality,german,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",Assigned by the scenario: a hero takes the nationality of the unit that creates it
+CEX,attacker-hero,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The sources give no hero name
+CEX,attacker-hero,front,firepower,1,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","A15.2 (p. 83): 1-4-9, wounded 1-3-8; the Counter Examples (p. 676) show the same hero counter"
+CEX,attacker-hero,front,range,4,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","A15.2 (p. 83): 1-4-9, wounded 1-3-8; the Counter Examples (p. 676) show the same hero counter"
+CEX,attacker-hero,front,morale,9,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","A15.2 (p. 83): 1-4-9, wounded 1-3-8; the Counter Examples (p. 676) show the same hero counter"
+CEX,attacker-hero,wounded,firepower,1,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","A15.2 (p. 83): 1-4-9, wounded 1-3-8; the Counter Examples (p. 676) show the same hero counter"
+CEX,attacker-hero,wounded,range,3,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","A15.2 (p. 83): 1-4-9, wounded 1-3-8; the Counter Examples (p. 676) show the same hero counter"
+CEX,attacker-hero,wounded,morale,8,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","A15.2 (p. 83): 1-4-9, wounded 1-3-8; the Counter Examples (p. 676) show the same hero counter"
+CEX,attacker-hero,broken,broken-morale,not-printed,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","A15.2 (p. 83): a hero never breaks, so the counter has no broken morale"
+CEX,attacker-hero,broken,bpv,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The sources give no hero BPV
+CEX,defender-hero,counter,kind,asl:hero,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","A15.2 (p. 83): 1-4-9, wounded 1-3-8; the Counter Examples (p. 676) show the same hero counter"
+CEX,defender-hero,counter,nationality,russian,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",Assigned by the scenario: a hero takes the nationality of the unit that creates it
+CEX,defender-hero,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The sources give no hero name
+CEX,defender-hero,front,firepower,1,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","A15.2 (p. 83): 1-4-9, wounded 1-3-8; the Counter Examples (p. 676) show the same hero counter"
+CEX,defender-hero,front,range,4,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","A15.2 (p. 83): 1-4-9, wounded 1-3-8; the Counter Examples (p. 676) show the same hero counter"
+CEX,defender-hero,front,morale,9,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","A15.2 (p. 83): 1-4-9, wounded 1-3-8; the Counter Examples (p. 676) show the same hero counter"
+CEX,defender-hero,wounded,firepower,1,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","A15.2 (p. 83): 1-4-9, wounded 1-3-8; the Counter Examples (p. 676) show the same hero counter"
+CEX,defender-hero,wounded,range,3,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","A15.2 (p. 83): 1-4-9, wounded 1-3-8; the Counter Examples (p. 676) show the same hero counter"
+CEX,defender-hero,wounded,morale,8,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","A15.2 (p. 83): 1-4-9, wounded 1-3-8; the Counter Examples (p. 676) show the same hero counter"
+CEX,defender-hero,broken,broken-morale,not-printed,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","A15.2 (p. 83): a hero never breaks, so the counter has no broken morale"
+CEX,defender-hero,broken,bpv,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The sources give no hero BPV
+NCC,defender-nkvd-squad,counter,kind,asl:squad,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC SQUAD column
+NCC,defender-nkvd-squad,counter,nationality,russian,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC RUSSIAN section
+NCC,defender-nkvd-squad,front,firepower,6,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class (2) NKVD row: 6-2-8^9 (2 and 8 underlined), BPV 13"
+NCC,defender-nkvd-squad,front,range,2,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class (2) NKVD row: 6-2-8^9 (2 and 8 underlined), BPV 13"
+NCC,defender-nkvd-squad,front,morale,8,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class (2) NKVD row: 6-2-8^9 (2 and 8 underlined), BPV 13"
+NCC,defender-nkvd-squad,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A1.24: each counter has its own letter; the chart shows none
+NCC,defender-nkvd-squad,front,class,2nd-line,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC CLASS column: (2) with the hammer and sickle; A25.25 (p. 96): NKVD MMC are 2nd Line troops
+NCC,defender-nkvd-squad,front,class-variant,not-printed,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC CLASS column: the 2 is in parentheses, not a circle or square; the vocabulary has no NKVD variant, so the packages know the NKVD counters by id"
+NCC,defender-nkvd-squad,front,smoke-exponent,not-printed,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class (2) NKVD row: 6-2-8^9 (2 and 8 underlined), BPV 13"
+NCC,defender-nkvd-squad,front,asl:assault-fire,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class (2) NKVD row: 6-2-8^9 (2 and 8 underlined), BPV 13"
+NCC,defender-nkvd-squad,front,asl:spraying-fire,yes,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class (2) NKVD row: 6-2-8^9 (2 and 8 underlined), BPV 13"
+NCC,defender-nkvd-squad,front,asl:elr-5,yes,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class (2) NKVD row: 6-2-8^9 (2 and 8 underlined), BPV 13"
+NCC,defender-nkvd-squad,front,asl:assault-engineer,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC: no AE superscript on the class
+NCC,defender-nkvd-squad,broken,broken-morale,9,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC: superscript 9 after morale 8 (chart legend; A25.25: an increased broken Morale Level)
+NCC,defender-nkvd-squad,broken,bpv,13,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class (2) NKVD row: 6-2-8^9 (2 and 8 underlined), BPV 13"
+NCC,defender-nkvd-squad,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The chart shows no broken side (A10.63)
+NCC,defender-nkvd-half-squad,counter,kind,asl:half-squad,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC HS column
+NCC,defender-nkvd-half-squad,counter,nationality,russian,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC RUSSIAN section
+NCC,defender-nkvd-half-squad,front,firepower,3,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class (2) NKVD row, HS column: 3-2-8^8 (8 underlined), BPV 6"
+NCC,defender-nkvd-half-squad,front,range,2,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class (2) NKVD row, HS column: 3-2-8^8 (8 underlined), BPV 6"
+NCC,defender-nkvd-half-squad,front,morale,8,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class (2) NKVD row, HS column: 3-2-8^8 (8 underlined), BPV 6"
+NCC,defender-nkvd-half-squad,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A1.24: each counter has its own letter; the chart shows none
+NCC,defender-nkvd-half-squad,front,class,2nd-line,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC CLASS column: (2) with the hammer and sickle; A25.25 (p. 96): NKVD MMC are 2nd Line troops
+NCC,defender-nkvd-half-squad,front,class-variant,not-printed,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC CLASS column: the 2 is in parentheses, not a circle or square; the vocabulary has no NKVD variant, so the packages know the NKVD counters by id"
+NCC,defender-nkvd-half-squad,front,smoke-exponent,not-printed,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC HS column: no superscript after the FP
+NCC,defender-nkvd-half-squad,front,asl:assault-fire,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class (2) NKVD row, HS column: 3-2-8^8 (8 underlined), BPV 6"
+NCC,defender-nkvd-half-squad,front,asl:spraying-fire,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class (2) NKVD row, HS column: 3-2-8^8 (8 underlined), BPV 6"
+NCC,defender-nkvd-half-squad,front,asl:elr-5,yes,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class (2) NKVD row, HS column: 3-2-8^8 (8 underlined), BPV 6"
+NCC,defender-nkvd-half-squad,front,asl:assault-engineer,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC: no AE superscript on the class
+NCC,defender-nkvd-half-squad,broken,broken-morale,8,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC HS column: superscript 8 after morale 8
+NCC,defender-nkvd-half-squad,broken,bpv,6,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC RUSSIAN, class (2) NKVD row, HS column: 3-2-8^8 (8 underlined), BPV 6"
+NCC,defender-nkvd-half-squad,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The chart shows no broken side (A10.63)

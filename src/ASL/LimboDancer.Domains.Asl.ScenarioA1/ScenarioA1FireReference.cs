@@ -33,7 +33,16 @@ public sealed record FireDefinition(
     /// <summary>A SW's Repair Number (A9.72).</summary>
     public int? Repair { get; init; }
 
+    /// <summary>A hero's wounded side (A15.2): FP, range, and Morale Level; null for other units.</summary>
+    public int? WoundedFirepower { get; init; }
+
+    public int? WoundedRange { get; init; }
+
+    public int? WoundedMorale { get; init; }
+
     public bool IsLeader => Kind == "asl:leader";
+
+    public bool IsHero => Kind == "asl:hero";
 
     public bool IsMmc => Kind is "asl:squad" or "asl:half-squad";
 
@@ -60,15 +69,59 @@ public sealed class ScenarioA1FireReference
         ["stone-building"] = 3,
     };
 
-    // The Casualty Reduction a squad suffers (A7.302): its half-squad of the same class (catalog 1.1.0).
+    // The Casualty Reduction a squad suffers (A7.302): its half-squad of the same class (catalogs 1.1.0 and 1.3.0).
     private static readonly IReadOnlyDictionary<string, string> HalfSquads = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         ["attacker-squad"] = "attacker-half-squad",
         ["attacker-2nd-line-squad"] = "attacker-2nd-line-half-squad",
         ["attacker-conscript-squad"] = "attacker-conscript-half-squad",
+        ["attacker-elite-squad"] = "attacker-elite-half-squad",
         ["defender-squad"] = "defender-half-squad",
         ["defender-conscript-squad"] = "defender-conscript-half-squad",
+        ["defender-elite-squad"] = "defender-elite-half-squad",
+        ["defender-line-squad"] = "defender-line-half-squad",
+        ["defender-guards-squad"] = "defender-guards-half-squad",
     };
+
+    // The leader grades from worst to best (Chapter H leader table, p. 331; A15.3): 6+1, 7-0, 8-0, 8-1, 9-1, 9-2, 10-2, 10-3.
+    private static readonly string[] GermanLeaders =
+        [.. new[] { "6-plus-1", "7-0", "8-0", "8-1", "9-1", "9-2", "10-2", "10-3" }.Select(grade => "attacker-leader-" + grade)];
+
+    private static readonly string[] RussianLeaders =
+    [
+        "defender-leader-6-plus-1", "defender-leader-7-0", "defender-leader", "defender-leader-8-1", "defender-leader-9-1", "defender-leader-9-2",
+        "defender-leader-10-2", "defender-leader-10-3",
+    ];
+
+    // Battle Hardening (A15.3): the unit of the same size and next higher quality, no part of whose Strength Factor falls,
+    // gaining the least (ruling R28.6: the smallest summed increase, then the fewest added capabilities, so a German
+    // Conscript becomes a 4-4-7, not a squared 5-3-7 that adds smoke and Assault Fire). The Russians have no Green or plain
+    // 2nd Line class, so a Russian Conscript becomes NKVD (A25.25: 2nd Line). Elite MMC and the 10-3 are the highest
+    // quality and become Fanatic instead, as does an NKVD MMC (A25.25).
+    private static readonly IReadOnlyDictionary<string, string> Hardened = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["attacker-conscript-squad"] = "attacker-2nd-line-squad",
+        ["attacker-conscript-half-squad"] = "attacker-2nd-line-half-squad",
+        ["attacker-2nd-line-squad"] = "attacker-squad",
+        ["attacker-2nd-line-half-squad"] = "attacker-half-squad",
+        ["attacker-squad"] = "attacker-elite-squad",
+        ["attacker-half-squad"] = "attacker-elite-half-squad",
+        ["defender-conscript-squad"] = "defender-nkvd-squad",
+        ["defender-conscript-half-squad"] = "defender-nkvd-half-squad",
+        ["defender-line-squad"] = "defender-guards-squad",
+        ["defender-line-half-squad"] = "defender-guards-half-squad",
+        ["defender-squad"] = "defender-elite-squad",
+        ["defender-half-squad"] = "defender-elite-half-squad",
+    };
+
+    private static readonly HashSet<string> HighestQuality = new(StringComparer.Ordinal)
+    {
+        "attacker-elite-squad", "attacker-elite-half-squad", "defender-elite-squad", "defender-elite-half-squad", "defender-guards-squad",
+        "defender-guards-half-squad", "attacker-leader-10-3", "defender-leader-10-3", "defender-nkvd-squad", "defender-nkvd-half-squad",
+    };
+
+    // The NKVD MMC (A25.25): 2nd Line, ELR 5, a -1 Heat of Battle DRM, Fanatic when Battle Hardened, Commissars by Field Promotion.
+    private static readonly HashSet<string> Nkvd = new(StringComparer.Ordinal) { "defender-nkvd-squad", "defender-nkvd-half-squad" };
 
     // ELR Replacement (A19.13): a unit of lesser quality and the same size, whose Class drops and no part of whose
     // Strength Factor rises; a leader of the next lower quality. A unit missing here cannot be Replaced (A19.12).
@@ -78,10 +131,18 @@ public sealed class ScenarioA1FireReference
         ["attacker-half-squad"] = "attacker-2nd-line-half-squad",
         ["attacker-2nd-line-squad"] = "attacker-conscript-squad",
         ["attacker-2nd-line-half-squad"] = "attacker-conscript-half-squad",
+        ["attacker-elite-squad"] = "attacker-squad",
+        ["attacker-elite-half-squad"] = "attacker-half-squad",
         ["defender-squad"] = "defender-conscript-squad",
         ["defender-half-squad"] = "defender-conscript-half-squad",
-        ["defender-leader"] = "defender-leader-7-0",
-        ["defender-leader-7-0"] = "defender-leader-6-plus-1",
+        ["defender-elite-squad"] = "defender-squad",
+        ["defender-elite-half-squad"] = "defender-half-squad",
+        ["defender-guards-squad"] = "defender-line-squad",
+        ["defender-guards-half-squad"] = "defender-line-half-squad",
+        ["defender-line-squad"] = "defender-conscript-squad",
+        ["defender-line-half-squad"] = "defender-conscript-half-squad",
+        ["defender-nkvd-squad"] = "defender-conscript-squad",
+        ["defender-nkvd-half-squad"] = "defender-conscript-half-squad",
     };
 
     private readonly string[][] results;
@@ -100,8 +161,33 @@ public sealed class ScenarioA1FireReference
     /// <summary>The half-squad a squad is Reduced to, or null when the catalog has none.</summary>
     public static string? HalfSquadOf(string definitionId) => HalfSquads.GetValueOrDefault(definitionId);
 
-    /// <summary>The unit that Replaces a definition under A19.13, or null when none can (A19.12).</summary>
-    public static string? ReplacementOf(string definitionId) => Replacements.GetValueOrDefault(definitionId);
+    /// <summary>The unit that Replaces a definition under A19.13, or null when none can (A19.12): a leader of the next lower grade.</summary>
+    public static string? ReplacementOf(string definitionId) =>
+        Replacements.GetValueOrDefault(definitionId) ?? Step(definitionId, -1);
+
+    /// <summary>The unit a definition is Battle Hardened into (A15.3), or null for the highest quality or an unreviewed one.</summary>
+    public static string? HardenedOf(string definitionId) => Hardened.GetValueOrDefault(definitionId) ?? Step(definitionId, 1);
+
+    /// <summary>Whether Battle Hardening makes a definition Fanatic rather than exchanging it (A15.3, A25.25).</summary>
+    public static bool IsHighestQuality(string definitionId) => HighestQuality.Contains(definitionId);
+
+    /// <summary>Whether a definition is an NKVD MMC (A25.25).</summary>
+    public static bool IsNkvd(string definitionId) => Nkvd.Contains(definitionId);
+
+    private static string? Step(string definitionId, int by)
+    {
+        foreach (var chain in new[] { GermanLeaders, RussianLeaders })
+        {
+            var index = Array.IndexOf(chain, definitionId);
+            if (index >= 0)
+            {
+                var next = index + by;
+                return next >= 0 && next < chain.Length ? chain[next] : null;
+            }
+        }
+
+        return null;
+    }
 
     internal static ScenarioA1FireReference Load(JsonElement matrix)
     {
@@ -184,6 +270,9 @@ public sealed class ScenarioA1FireReference
             Breakdown = Value("front", "breakdown"),
             RateOfFire = Value("front", "rate-of-fire"),
             Repair = Value("malfunctioned", "repair"),
+            WoundedFirepower = Value("wounded", "firepower"),
+            WoundedRange = Value("wounded", "range"),
+            WoundedMorale = Value("wounded", "morale"),
         };
     }
 }

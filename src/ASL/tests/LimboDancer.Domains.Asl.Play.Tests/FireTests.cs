@@ -106,7 +106,7 @@ public sealed partial class FireTests : IDisposable
             start = new
             {
                 label = "Village fire",
-                catalog = "asl-scenario-a1@1.2.0",
+                catalog = "asl-scenario-a1@1.3.0",
                 boards = Bd01,
                 firstSide = "russian",
                 scenarioMonth = 7,
@@ -230,7 +230,7 @@ public sealed partial class FireTests : IDisposable
 
         // IFT 1+3 = 4 in Open Ground, 16 FP: K/3. The Random Selection dr picks g2, the only target, which becomes a
         // half-squad (A7.302) and then passes its 3MC with 1+1+3 = 5.
-        var result = await Commit(Play(Once(1, 3, 5, 1, 1)), GameActions.Fire, Fire("fire-k", ["r4", "r5"], director: null, target: "bd01:A2:0"));
+        var result = await Commit(Play(Once(1, 3, 5, 1, 1, 6, 6)), GameActions.Fire, Fire("fire-k", ["r4", "r5"], director: null, target: "bd01:A2:0"));
         Assert.True(result.Outcome == PlayOutcome.Committed, string.Join("; ", result.Reasons));
         var lineage = Assert.Single(store.Read(Scope)!.Events.Select(item => item.Payload).OfType<LineageRecorded>());
         Assert.Equal((LineageAction.Reduced, "g2"), (lineage.Action, lineage.Consumed[0]));

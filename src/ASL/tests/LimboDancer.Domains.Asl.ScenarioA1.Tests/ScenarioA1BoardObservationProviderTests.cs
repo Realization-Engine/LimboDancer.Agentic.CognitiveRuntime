@@ -14,7 +14,10 @@ public sealed class ScenarioA1BoardObservationProviderTests
     [Fact]
     public async Task VersionedBoardSnapshotDerivesOnlyItsActualReviewedCase()
     {
-        var empty = Snapshot() with { Occupancy = ScenarioA1BoardOccupancy.KnownEmpty };
+        var empty = Snapshot() with
+        {
+            Occupancy = ScenarioA1BoardOccupancy.KnownEmpty
+        };
         var result = await new ScenarioA1BoardObservationProvider(new StubSource(empty))
             .ObserveAsync(Query());
         var observation = Assert.Single(result.Observations);
@@ -62,7 +65,9 @@ public sealed class ScenarioA1BoardObservationProviderTests
             new SemanticIdentifier(new DomainId("asl"), ScenarioA1BoardObservationProvider.QueryKind),
             JsonSerializer.SerializeToElement(new
             {
-                unitId = "squad", locationId = "building", observationVersion = "state-1",
+                unitId = "squad",
+                locationId = "building",
+                observationVersion = "state-1",
                 caseId = "A1-empty-ordinary-mph",
             }), 1);
         Assert.Empty((await new ScenarioA1BoardObservationProvider(new StubSource(state))
@@ -77,7 +82,9 @@ public sealed class ScenarioA1BoardObservationProviderTests
         new SemanticIdentifier(new DomainId("asl"), ScenarioA1BoardObservationProvider.QueryKind),
         JsonSerializer.SerializeToElement(new
         {
-            unitId = "squad", locationId = "building", observationVersion = "state-1",
+            unitId = "squad",
+            locationId = "building",
+            observationVersion = "state-1",
         }), 1);
 
     private static ScenarioA1BoardSnapshot Snapshot() => new(Tenant, ScenarioA1OccupiedPackage.Identity,

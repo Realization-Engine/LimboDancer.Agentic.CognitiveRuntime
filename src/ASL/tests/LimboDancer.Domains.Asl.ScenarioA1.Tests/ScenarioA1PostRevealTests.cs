@@ -86,8 +86,10 @@ public sealed class ScenarioA1PostRevealTests
                 ScenarioA1PostRevealObservationProvider.QueryKind),
             JsonSerializer.SerializeToElement(new
             {
-                unitId = "squad", locationId = "bd01:E4:0",
-                observationVersion = "snapshot-1", caseId = "forced-back",
+                unitId = "squad",
+                locationId = "bd01:E4:0",
+                observationVersion = "snapshot-1",
+                caseId = "forced-back",
             }), 1))).Observations);
     }
 
@@ -115,10 +117,14 @@ public sealed class ScenarioA1PostRevealTests
         var extra = new Observation("extra", observation.Source, Tenant, Now,
             JsonSerializer.SerializeToElement(new Dictionary<string, string>
             {
-                ["defenderReveal"] = "nonDummy", ["previousLocationId"] = "bd01:D4:0",
-                ["a414Exception"] = "none", ["attacker"] = "unconcealedNonDummyOrdinaryInfantry",
-                ["entryMode"] = "obstacleEntryNotBypass", ["overrunElection"] = "none",
-                ["phase"] = "mph", ["specialModifier"] = "none",
+                ["defenderReveal"] = "nonDummy",
+                ["previousLocationId"] = "bd01:D4:0",
+                ["a414Exception"] = "none",
+                ["attacker"] = "unconcealedNonDummyOrdinaryInfantry",
+                ["entryMode"] = "obstacleEntryNotBypass",
+                ["overrunElection"] = "none",
+                ["phase"] = "mph",
+                ["specialModifier"] = "none",
                 ["unreviewed"] = "yes",
             }), observation.ResourceId, observation.Version, observation.Provenance,
             observation.DomainPackage);
@@ -142,7 +148,8 @@ public sealed class ScenarioA1PostRevealTests
                 ScenarioA1PostRevealObservationProvider.QueryKind),
             JsonSerializer.SerializeToElement(new
             {
-                unitId = "squad", locationId = "bd01:E4:0",
+                unitId = "squad",
+                locationId = "bd01:E4:0",
                 observationVersion = "snapshot-1",
             }), 1);
 
@@ -162,7 +169,8 @@ public sealed class ScenarioA1PostRevealTests
                 ScenarioA1PostRevealConclusionResolver.QuestionKind),
             JsonSerializer.SerializeToElement(new
             {
-                unitId = "squad", locationId = "bd01:E4:0",
+                unitId = "squad",
+                locationId = "bd01:E4:0",
                 observationVersion = "snapshot-1",
             }), Now);
         DomainEntityResolution Entity(string id) => new(

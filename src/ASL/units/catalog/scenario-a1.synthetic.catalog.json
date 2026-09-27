@@ -308,6 +308,463 @@
         { "face": "front", "attribute": "portage", "value": 1, "row": 146 },
         { "face": "malfunctioned", "attribute": "repair", "value": 2, "row": 147 }
       ]
+    },
+    {
+      "id": "attacker-elite-squad",
+      "kind": "asl:squad", "kindRow": 148,
+      "nationality": "british", "nationalityRow": 149,
+      "class": "green",
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "attacker-elite-squad" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "firepower", "value": 1, "row": 150 },
+        { "face": "front", "attribute": "range", "value": 2, "row": 151 },
+        { "face": "front", "attribute": "morale", "value": 3, "row": 152 },
+        { "face": "front", "attribute": "identity", "value": "S", "row": 153 },
+        { "face": "front", "attribute": "class", "value": "green", "row": 154 },
+        { "face": "front", "attribute": "class-variant", "printed": false, "row": 155 },
+        { "face": "front", "attribute": "smoke-exponent", "value": 1, "row": 156 },
+        { "face": "front", "trait": "asl:assault-fire", "present": true, "row": 157 },
+        { "face": "front", "trait": "asl:spraying-fire", "present": false, "row": 158 },
+        { "face": "front", "trait": "asl:elr-5", "present": false, "row": 159 },
+        { "face": "front", "trait": "asl:assault-engineer", "present": false, "row": 160 },
+        { "face": "broken", "attribute": "broken-morale", "value": 4, "row": 161 },
+        { "face": "broken", "attribute": "bpv", "value": 5, "row": 162 },
+        { "face": "broken", "trait": "asl:self-rally", "present": true, "row": 163 }
+      ]
+    },
+    {
+      "id": "defender-elite-squad",
+      "kind": "asl:squad", "kindRow": 164,
+      "nationality": "finnish", "nationalityRow": 165,
+      "class": "green",
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "defender-elite-squad" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "firepower", "value": 1, "row": 166 },
+        { "face": "front", "attribute": "range", "value": 2, "row": 167 },
+        { "face": "front", "attribute": "morale", "value": 3, "row": 168 },
+        { "face": "front", "attribute": "identity", "value": "S", "row": 169 },
+        { "face": "front", "attribute": "class", "value": "green", "row": 170 },
+        { "face": "front", "attribute": "class-variant", "printed": false, "row": 171 },
+        { "face": "front", "attribute": "smoke-exponent", "value": 1, "row": 172 },
+        { "face": "front", "trait": "asl:assault-fire", "present": true, "row": 173 },
+        { "face": "front", "trait": "asl:spraying-fire", "present": false, "row": 174 },
+        { "face": "front", "trait": "asl:elr-5", "present": false, "row": 175 },
+        { "face": "front", "trait": "asl:assault-engineer", "present": false, "row": 176 },
+        { "face": "broken", "attribute": "broken-morale", "value": 4, "row": 177 },
+        { "face": "broken", "attribute": "bpv", "value": 5, "row": 178 },
+        { "face": "broken", "trait": "asl:self-rally", "present": true, "row": 179 }
+      ]
+    },
+    {
+      "id": "defender-line-squad",
+      "kind": "asl:squad", "kindRow": 180,
+      "nationality": "french", "nationalityRow": 181,
+      "class": "green",
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "defender-line-squad" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "firepower", "value": 1, "row": 182 },
+        { "face": "front", "attribute": "range", "value": 2, "row": 183 },
+        { "face": "front", "attribute": "morale", "value": 3, "row": 184 },
+        { "face": "front", "attribute": "identity", "value": "S", "row": 185 },
+        { "face": "front", "attribute": "class", "value": "green", "row": 186 },
+        { "face": "front", "attribute": "class-variant", "printed": false, "row": 187 },
+        { "face": "front", "attribute": "smoke-exponent", "value": 1, "row": 188 },
+        { "face": "front", "trait": "asl:assault-fire", "present": true, "row": 189 },
+        { "face": "front", "trait": "asl:spraying-fire", "present": false, "row": 190 },
+        { "face": "front", "trait": "asl:elr-5", "present": false, "row": 191 },
+        { "face": "front", "trait": "asl:assault-engineer", "present": false, "row": 192 },
+        { "face": "broken", "attribute": "broken-morale", "value": 4, "row": 193 },
+        { "face": "broken", "attribute": "bpv", "value": 5, "row": 194 },
+        { "face": "broken", "trait": "asl:self-rally", "present": true, "row": 195 }
+      ]
+    },
+    {
+      "id": "defender-guards-squad",
+      "kind": "asl:squad", "kindRow": 196,
+      "nationality": "japanese", "nationalityRow": 197,
+      "class": "green",
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "defender-guards-squad" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "firepower", "value": 1, "row": 198 },
+        { "face": "front", "attribute": "range", "value": 2, "row": 199 },
+        { "face": "front", "attribute": "morale", "value": 3, "row": 200 },
+        { "face": "front", "attribute": "identity", "value": "S", "row": 201 },
+        { "face": "front", "attribute": "class", "value": "green", "row": 202 },
+        { "face": "front", "attribute": "class-variant", "printed": false, "row": 203 },
+        { "face": "front", "attribute": "smoke-exponent", "value": 1, "row": 204 },
+        { "face": "front", "trait": "asl:assault-fire", "present": true, "row": 205 },
+        { "face": "front", "trait": "asl:spraying-fire", "present": false, "row": 206 },
+        { "face": "front", "trait": "asl:elr-5", "present": false, "row": 207 },
+        { "face": "front", "trait": "asl:assault-engineer", "present": false, "row": 208 },
+        { "face": "broken", "attribute": "broken-morale", "value": 4, "row": 209 },
+        { "face": "broken", "attribute": "bpv", "value": 5, "row": 210 },
+        { "face": "broken", "trait": "asl:self-rally", "present": true, "row": 211 }
+      ]
+    },
+    {
+      "id": "attacker-elite-half-squad",
+      "kind": "asl:half-squad", "kindRow": 212,
+      "nationality": "british", "nationalityRow": 213,
+      "class": "green",
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "attacker-elite-half-squad" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "firepower", "value": 1, "row": 214 },
+        { "face": "front", "attribute": "range", "value": 1, "row": 215 },
+        { "face": "front", "attribute": "morale", "value": 3, "row": 216 },
+        { "face": "front", "attribute": "identity", "printed": false, "row": 217 },
+        { "face": "front", "attribute": "class", "value": "green", "row": 218 },
+        { "face": "broken", "attribute": "broken-morale", "value": 4, "row": 219 },
+        { "face": "broken", "attribute": "bpv", "value": 2, "row": 220 }
+      ]
+    },
+    {
+      "id": "defender-elite-half-squad",
+      "kind": "asl:half-squad", "kindRow": 221,
+      "nationality": "finnish", "nationalityRow": 222,
+      "class": "green",
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "defender-elite-half-squad" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "firepower", "value": 1, "row": 223 },
+        { "face": "front", "attribute": "range", "value": 1, "row": 224 },
+        { "face": "front", "attribute": "morale", "value": 3, "row": 225 },
+        { "face": "front", "attribute": "identity", "printed": false, "row": 226 },
+        { "face": "front", "attribute": "class", "value": "green", "row": 227 },
+        { "face": "broken", "attribute": "broken-morale", "value": 4, "row": 228 },
+        { "face": "broken", "attribute": "bpv", "value": 2, "row": 229 }
+      ]
+    },
+    {
+      "id": "defender-line-half-squad",
+      "kind": "asl:half-squad", "kindRow": 230,
+      "nationality": "french", "nationalityRow": 231,
+      "class": "green",
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "defender-line-half-squad" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "firepower", "value": 1, "row": 232 },
+        { "face": "front", "attribute": "range", "value": 1, "row": 233 },
+        { "face": "front", "attribute": "morale", "value": 3, "row": 234 },
+        { "face": "front", "attribute": "identity", "printed": false, "row": 235 },
+        { "face": "front", "attribute": "class", "value": "green", "row": 236 },
+        { "face": "broken", "attribute": "broken-morale", "value": 4, "row": 237 },
+        { "face": "broken", "attribute": "bpv", "value": 2, "row": 238 }
+      ]
+    },
+    {
+      "id": "defender-guards-half-squad",
+      "kind": "asl:half-squad", "kindRow": 239,
+      "nationality": "japanese", "nationalityRow": 240,
+      "class": "green",
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "defender-guards-half-squad" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "firepower", "value": 1, "row": 241 },
+        { "face": "front", "attribute": "range", "value": 1, "row": 242 },
+        { "face": "front", "attribute": "morale", "value": 3, "row": 243 },
+        { "face": "front", "attribute": "identity", "printed": false, "row": 244 },
+        { "face": "front", "attribute": "class", "value": "green", "row": 245 },
+        { "face": "broken", "attribute": "broken-morale", "value": 4, "row": 246 },
+        { "face": "broken", "attribute": "bpv", "value": 2, "row": 247 }
+      ]
+    },
+    {
+      "id": "attacker-leader-6-plus-1",
+      "kind": "asl:leader", "kindRow": 248,
+      "nationality": "japanese", "nationalityRow": 249,
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "attacker-leader-6-plus-1" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "identity", "recorded": false, "row": 250 },
+        { "face": "front", "trait": "asl:elr-5", "recorded": false, "row": 251 },
+        { "face": "front", "attribute": "leadership", "value": 0, "row": 252 },
+        { "face": "front", "attribute": "morale", "value": 4, "row": 253 },
+        { "face": "broken", "attribute": "broken-morale", "value": 5, "row": 254 },
+        { "face": "broken", "trait": "asl:self-rally", "present": true, "row": 255 }
+      ]
+    },
+    {
+      "id": "attacker-leader-7-0",
+      "kind": "asl:leader", "kindRow": 256,
+      "nationality": "japanese", "nationalityRow": 257,
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "attacker-leader-7-0" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "identity", "recorded": false, "row": 258 },
+        { "face": "front", "trait": "asl:elr-5", "recorded": false, "row": 259 },
+        { "face": "front", "attribute": "leadership", "value": 0, "row": 260 },
+        { "face": "front", "attribute": "morale", "value": 4, "row": 261 },
+        { "face": "broken", "attribute": "broken-morale", "value": 5, "row": 262 },
+        { "face": "broken", "trait": "asl:self-rally", "present": true, "row": 263 }
+      ]
+    },
+    {
+      "id": "attacker-leader-8-0",
+      "kind": "asl:leader", "kindRow": 264,
+      "nationality": "japanese", "nationalityRow": 265,
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "attacker-leader-8-0" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "identity", "recorded": false, "row": 266 },
+        { "face": "front", "trait": "asl:elr-5", "recorded": false, "row": 267 },
+        { "face": "front", "attribute": "leadership", "value": 0, "row": 268 },
+        { "face": "front", "attribute": "morale", "value": 4, "row": 269 },
+        { "face": "broken", "attribute": "broken-morale", "value": 5, "row": 270 },
+        { "face": "broken", "trait": "asl:self-rally", "present": true, "row": 271 }
+      ]
+    },
+    {
+      "id": "attacker-leader-8-1",
+      "kind": "asl:leader", "kindRow": 272,
+      "nationality": "japanese", "nationalityRow": 273,
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "attacker-leader-8-1" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "identity", "recorded": false, "row": 274 },
+        { "face": "front", "trait": "asl:elr-5", "recorded": false, "row": 275 },
+        { "face": "front", "attribute": "leadership", "value": 0, "row": 276 },
+        { "face": "front", "attribute": "morale", "value": 4, "row": 277 },
+        { "face": "broken", "attribute": "broken-morale", "value": 5, "row": 278 },
+        { "face": "broken", "trait": "asl:self-rally", "present": true, "row": 279 }
+      ]
+    },
+    {
+      "id": "attacker-leader-9-1",
+      "kind": "asl:leader", "kindRow": 280,
+      "nationality": "japanese", "nationalityRow": 281,
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "attacker-leader-9-1" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "identity", "recorded": false, "row": 282 },
+        { "face": "front", "trait": "asl:elr-5", "recorded": false, "row": 283 },
+        { "face": "front", "attribute": "leadership", "value": 0, "row": 284 },
+        { "face": "front", "attribute": "morale", "value": 4, "row": 285 },
+        { "face": "broken", "attribute": "broken-morale", "value": 5, "row": 286 },
+        { "face": "broken", "trait": "asl:self-rally", "present": true, "row": 287 }
+      ]
+    },
+    {
+      "id": "attacker-leader-9-2",
+      "kind": "asl:leader", "kindRow": 288,
+      "nationality": "japanese", "nationalityRow": 289,
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "attacker-leader-9-2" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "identity", "recorded": false, "row": 290 },
+        { "face": "front", "trait": "asl:elr-5", "recorded": false, "row": 291 },
+        { "face": "front", "attribute": "leadership", "value": 0, "row": 292 },
+        { "face": "front", "attribute": "morale", "value": 4, "row": 293 },
+        { "face": "broken", "attribute": "broken-morale", "value": 5, "row": 294 },
+        { "face": "broken", "trait": "asl:self-rally", "present": true, "row": 295 }
+      ]
+    },
+    {
+      "id": "attacker-leader-10-2",
+      "kind": "asl:leader", "kindRow": 296,
+      "nationality": "japanese", "nationalityRow": 297,
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "attacker-leader-10-2" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "identity", "recorded": false, "row": 298 },
+        { "face": "front", "trait": "asl:elr-5", "recorded": false, "row": 299 },
+        { "face": "front", "attribute": "leadership", "value": 0, "row": 300 },
+        { "face": "front", "attribute": "morale", "value": 4, "row": 301 },
+        { "face": "broken", "attribute": "broken-morale", "value": 5, "row": 302 },
+        { "face": "broken", "trait": "asl:self-rally", "present": true, "row": 303 }
+      ]
+    },
+    {
+      "id": "attacker-leader-10-3",
+      "kind": "asl:leader", "kindRow": 304,
+      "nationality": "japanese", "nationalityRow": 305,
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "attacker-leader-10-3" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "identity", "recorded": false, "row": 306 },
+        { "face": "front", "trait": "asl:elr-5", "recorded": false, "row": 307 },
+        { "face": "front", "attribute": "leadership", "value": 0, "row": 308 },
+        { "face": "front", "attribute": "morale", "value": 4, "row": 309 },
+        { "face": "broken", "attribute": "broken-morale", "value": 5, "row": 310 },
+        { "face": "broken", "trait": "asl:self-rally", "present": true, "row": 311 }
+      ]
+    },
+    {
+      "id": "defender-leader-8-1",
+      "kind": "asl:leader", "kindRow": 312,
+      "nationality": "japanese", "nationalityRow": 313,
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "defender-leader-8-1" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "identity", "recorded": false, "row": 314 },
+        { "face": "front", "trait": "asl:elr-5", "recorded": false, "row": 315 },
+        { "face": "front", "attribute": "leadership", "value": 0, "row": 316 },
+        { "face": "front", "attribute": "morale", "value": 4, "row": 317 },
+        { "face": "broken", "attribute": "broken-morale", "value": 5, "row": 318 },
+        { "face": "broken", "trait": "asl:self-rally", "present": true, "row": 319 }
+      ]
+    },
+    {
+      "id": "defender-leader-9-1",
+      "kind": "asl:leader", "kindRow": 320,
+      "nationality": "japanese", "nationalityRow": 321,
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "defender-leader-9-1" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "identity", "recorded": false, "row": 322 },
+        { "face": "front", "trait": "asl:elr-5", "recorded": false, "row": 323 },
+        { "face": "front", "attribute": "leadership", "value": 0, "row": 324 },
+        { "face": "front", "attribute": "morale", "value": 4, "row": 325 },
+        { "face": "broken", "attribute": "broken-morale", "value": 5, "row": 326 },
+        { "face": "broken", "trait": "asl:self-rally", "present": true, "row": 327 }
+      ]
+    },
+    {
+      "id": "defender-leader-9-2",
+      "kind": "asl:leader", "kindRow": 328,
+      "nationality": "japanese", "nationalityRow": 329,
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "defender-leader-9-2" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "identity", "recorded": false, "row": 330 },
+        { "face": "front", "trait": "asl:elr-5", "recorded": false, "row": 331 },
+        { "face": "front", "attribute": "leadership", "value": 0, "row": 332 },
+        { "face": "front", "attribute": "morale", "value": 4, "row": 333 },
+        { "face": "broken", "attribute": "broken-morale", "value": 5, "row": 334 },
+        { "face": "broken", "trait": "asl:self-rally", "present": true, "row": 335 }
+      ]
+    },
+    {
+      "id": "defender-leader-10-2",
+      "kind": "asl:leader", "kindRow": 336,
+      "nationality": "japanese", "nationalityRow": 337,
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "defender-leader-10-2" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "identity", "recorded": false, "row": 338 },
+        { "face": "front", "trait": "asl:elr-5", "recorded": false, "row": 339 },
+        { "face": "front", "attribute": "leadership", "value": 0, "row": 340 },
+        { "face": "front", "attribute": "morale", "value": 4, "row": 341 },
+        { "face": "broken", "attribute": "broken-morale", "value": 5, "row": 342 },
+        { "face": "broken", "trait": "asl:self-rally", "present": true, "row": 343 }
+      ]
+    },
+    {
+      "id": "defender-leader-10-3",
+      "kind": "asl:leader", "kindRow": 344,
+      "nationality": "japanese", "nationalityRow": 345,
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "defender-leader-10-3" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "identity", "recorded": false, "row": 346 },
+        { "face": "front", "trait": "asl:elr-5", "recorded": false, "row": 347 },
+        { "face": "front", "attribute": "leadership", "value": 0, "row": 348 },
+        { "face": "front", "attribute": "morale", "value": 4, "row": 349 },
+        { "face": "broken", "attribute": "broken-morale", "value": 5, "row": 350 },
+        { "face": "broken", "trait": "asl:self-rally", "present": true, "row": 351 }
+      ]
+    },
+    {
+      "id": "attacker-hero",
+      "kind": "asl:hero", "kindRow": 352,
+      "nationality": "italian", "nationalityRow": 353,
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "attacker-hero" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "firepower", "value": 1, "row": 354 },
+        { "face": "front", "attribute": "range", "value": 2, "row": 355 },
+        { "face": "front", "attribute": "morale", "value": 5, "row": 356 },
+        { "face": "front", "attribute": "identity", "recorded": false, "row": 357 },
+        { "face": "wounded", "attribute": "firepower", "value": 1, "row": 358 },
+        { "face": "wounded", "attribute": "range", "value": 1, "row": 359 },
+        { "face": "wounded", "attribute": "morale", "value": 4, "row": 360 }
+      ]
+    },
+    {
+      "id": "defender-hero",
+      "kind": "asl:hero", "kindRow": 361,
+      "nationality": "italian", "nationalityRow": 362,
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "defender-hero" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "firepower", "value": 1, "row": 363 },
+        { "face": "front", "attribute": "range", "value": 2, "row": 364 },
+        { "face": "front", "attribute": "morale", "value": 5, "row": 365 },
+        { "face": "front", "attribute": "identity", "recorded": false, "row": 366 },
+        { "face": "wounded", "attribute": "firepower", "value": 1, "row": 367 },
+        { "face": "wounded", "attribute": "range", "value": 1, "row": 368 },
+        { "face": "wounded", "attribute": "morale", "value": 4, "row": 369 }
+      ]
+    },
+    {
+      "id": "defender-nkvd-squad",
+      "kind": "asl:squad", "kindRow": 370,
+      "nationality": "russian", "nationalityRow": 371,
+      "class": "green",
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "defender-nkvd-squad" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "firepower", "value": 1, "row": 372 },
+        { "face": "front", "attribute": "range", "value": 2, "row": 373 },
+        { "face": "front", "attribute": "morale", "value": 3, "row": 374 },
+        { "face": "front", "attribute": "identity", "value": "S", "row": 375 },
+        { "face": "front", "attribute": "class", "value": "green", "row": 376 },
+        { "face": "front", "attribute": "class-variant", "printed": false, "row": 377 },
+        { "face": "front", "attribute": "smoke-exponent", "value": 1, "row": 378 },
+        { "face": "front", "trait": "asl:assault-fire", "present": true, "row": 379 },
+        { "face": "front", "trait": "asl:spraying-fire", "present": false, "row": 380 },
+        { "face": "front", "trait": "asl:elr-5", "present": false, "row": 381 },
+        { "face": "front", "trait": "asl:assault-engineer", "present": false, "row": 382 },
+        { "face": "broken", "attribute": "broken-morale", "value": 4, "row": 383 },
+        { "face": "broken", "attribute": "bpv", "value": 5, "row": 384 },
+        { "face": "broken", "trait": "asl:self-rally", "present": true, "row": 385 }
+      ]
+    },
+    {
+      "id": "defender-nkvd-half-squad",
+      "kind": "asl:half-squad", "kindRow": 386,
+      "nationality": "russian", "nationalityRow": 387,
+      "class": "green",
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "defender-nkvd-half-squad" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "firepower", "value": 1, "row": 388 },
+        { "face": "front", "attribute": "range", "value": 1, "row": 389 },
+        { "face": "front", "attribute": "morale", "value": 3, "row": 390 },
+        { "face": "front", "attribute": "identity", "printed": false, "row": 391 },
+        { "face": "front", "attribute": "class", "value": "green", "row": 392 },
+        { "face": "broken", "attribute": "broken-morale", "value": 4, "row": 393 },
+        { "face": "broken", "attribute": "bpv", "value": 2, "row": 394 }
+      ]
     }
   ]
 }

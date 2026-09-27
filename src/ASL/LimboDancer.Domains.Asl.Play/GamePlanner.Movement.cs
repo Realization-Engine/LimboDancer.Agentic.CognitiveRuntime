@@ -66,10 +66,13 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.move-unit: every mover is Good Order, unpinned, unconcealed, and not done moving (A4.1, A7.83)");
         }
 
+        // A4.2: once a stack moves, only its members move, together or apart, until the ATTACKER ends them all.
         var current = state.Movement;
-        if (current is not null && !current.Movers.Order(StringComparer.Ordinal).SequenceEqual(ids.Order(StringComparer.Ordinal)))
+        if (current is not null && ids.Any(id => !current.Members.Contains(id, StringComparer.Ordinal)))
         {
-            return Refused(scope, label, expected, $"play.move-order: {string.Join(", ", current.Movers)} are moving; end their move first (A8.11)");
+            return Refused(scope, label, expected, current.Members.Count == 0
+                ? $"play.move-order: {string.Join(", ", current.Movers)} can move no farther; end their move first (A4.2, A8.11)"
+                : $"play.move-order: only {string.Join(", ", current.Members)} of the moving stack may move until its move ends (A4.2)");
         }
 
         if (current is { WindowOpen: true })
@@ -180,8 +183,12 @@ public sealed partial class GamePlanner
             : Refused(scope, label, expected, "play.pass-window: no moving stack awaits the DEFENDER");
     }
 
-    /// <summary>The ATTACKER ends the moving stack's move (A8.11): its units may not move again this MPh.</summary>
-    private GamePlan PlanEndMove(GameScope scope, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label)
+    /// <summary>
+    /// The ATTACKER ends the move of the moving stack's members (A4.2, A8.11): the named ones, or all of them. Those units may
+    /// not move again this MPh; the stack's move is over when none is left. With no member left, because each broke or was
+    /// pinned, the units of its latest step are ended.
+    /// </summary>
+    private GamePlan PlanEndMove(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label)
     {
         if (Replay(existing).Current is not { } state)
         {
@@ -198,8 +205,17 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.end-move: the DEFENDER may still fire at the stack's last MF expenditure (A8.11)");
         }
 
+        var named = Strings(arguments, "unitIds").ToArray();
+        var ending = named.Length > 0 ? named : movement.Members.Count > 0 ? [.. movement.Members] : movement.Movers.ToArray();
+        if (ending.Distinct(StringComparer.Ordinal).Count() != ending.Length
+            || ending.Any(id => !movement.Members.Contains(id, StringComparer.Ordinal) && !movement.Movers.Contains(id, StringComparer.Ordinal)))
+        {
+            return Refused(scope, label, expected, $"play.end-move: only the moving stack's members ({string.Join(", ", movement.Members)}) end their move (A4.2)");
+        }
+
+        var left = movement.Members.Where(id => !ending.Contains(id, StringComparer.Ordinal)).ToArray();
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
-            [Event(scope, attemptId, 1, expected, "movement-ended", new MovementEnded(movement.Movers), null, null)],
-            [$"play.end-move: {string.Join(", ", movement.Movers)} end their move in {movement.Location}"]);
+            [Event(scope, attemptId, 1, expected, "movement-ended", new MovementEnded(ending), null, null)],
+            [$"play.end-move: {string.Join(", ", ending)} end their move" + (left.Length > 0 ? $"; {string.Join(", ", left)} may move on (A4.2)" : string.Empty)]);
     }
 }

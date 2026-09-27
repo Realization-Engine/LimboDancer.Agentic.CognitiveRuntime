@@ -58,7 +58,12 @@ public sealed record MovementWindowClosed(int Step) : EventPayload;
 public sealed record MovementEnded(IReadOnlyList<string> Movers) : EventPayload;
 
 /// <summary>
-/// The stack moving now: its units, its Location, the half MF spent in that Location, the step count, whether it declared
-/// Assault Movement (A4.61), and whether the DEFENDER's window on the latest step is open.
+/// The stack moving now: the units that moved in its latest step (the DEFENDER's targets), their Location, the half MF
+/// spent in that Location, the step count, whether it declared Assault Movement (A4.61), and whether the DEFENDER's window
+/// on the latest step is open. <see cref="Members"/> are the stack's units that may still move: they may move on together
+/// or apart, and no other unit moves until the ATTACKER ends them all (A4.2).
 /// </summary>
-public sealed record MovementState(IReadOnlyList<string> Movers, BoardLocation Location, int HalfMfInLocation, int Step, bool Assault, bool WindowOpen);
+public sealed record MovementState(IReadOnlyList<string> Movers, BoardLocation Location, int HalfMfInLocation, int Step, bool Assault, bool WindowOpen)
+{
+    public IReadOnlyList<string> Members { get; init; } = Movers;
+}

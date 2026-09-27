@@ -23,15 +23,13 @@ public sealed class ScenarioA1RallyReference
 /// </summary>
 public sealed class ScenarioA1RallyPackage : IDomainPackageResolver
 {
-    public const string ManifestSha256 = "612414fa24252f633bfb8cf87ebcd0bbf78db0864fc0d341cbce630f62281c53";
-    public const string MatrixSha256 = "c74e8787b4bf2fd94f742bc8ccd3ca5df22094c8994c7cd67ecd58009c56eb52";
+    public const string ManifestSha256 = "5a1fc655d0f5c76aaaf6177c5e76fcbcc9cf52d593b76e8da88e97892fccb251";
+    public const string MatrixSha256 = "8ef21925302ac1879a05c106e1b0e8ed94a6aa7edd3113d5890113ca4d8564dd";
     public static readonly DomainPackageRef Identity = new(new DomainId("asl"), "scenario-a1-rally", "sha256:" + ManifestSha256);
 
     private static readonly string[] Cases =
     [
-        "A1-rally-resolved", "A1-rally-phase-outside", "A1-rally-unit-outside", "A1-rally-already-attempted", "A1-rally-leader-outside",
-        "A1-rally-self-rally-refused", "A1-rally-terrain-outside", "A1-rally-capability-unrecorded", "A1-rally-reduction-counter-missing",
-        "A1-rally-roll-missing",
+        "A1-rally-resolved", "A1-rally-phase-outside", "A1-rally-unit-outside", "A1-rally-already-attempted", "A1-rally-leader-outside", "A1-rally-self-rally-refused", "A1-rally-terrain-outside", "A1-rally-capability-unrecorded", "A1-rally-reduction-counter-missing", "A1-rally-field-promotion-unreviewed", "A1-rally-roll-missing",
     ];
 
     private static readonly string[] PinnedDigests = ["sourcePdfSha256", "catalogSha256"];

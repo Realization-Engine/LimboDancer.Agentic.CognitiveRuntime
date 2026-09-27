@@ -8,7 +8,8 @@ public sealed record CounterSheet(string Id, string Title, string Publisher, str
 
 /// <summary>
 /// The registration of a counter-sheet source under decision D1 (Scenario A1 Catalog Design, section 6): the sheets
-/// used, the transcription and its hash, who transcribed it, and who reviewed it.
+/// used, the transcription and its hash, who transcribed it, and who reviewed it. <see cref="AdditionalReviewers"/> name
+/// the reviewers of rows added later, each accountable only for the rows that carry their name.
 /// </summary>
 public sealed record CounterSourceRecord(
     string SourceId,
@@ -19,7 +20,13 @@ public sealed record CounterSourceRecord(
     string? Transcriber,
     string? TranscribedOn,
     string? Reviewer,
-    string? ReviewedOn);
+    string? ReviewedOn)
+{
+    public IReadOnlyList<string> AdditionalReviewers { get; init; } = [];
+
+    /// <summary>Whether a row's reviewer is one the record names.</summary>
+    public bool Names(string reviewer) => reviewer == Reviewer || AdditionalReviewers.Contains(reviewer, StringComparer.Ordinal);
+}
 
 public sealed record CounterSourceRecordResult(CounterSourceRecord? Record, IReadOnlyList<UnitDiagnostic> Diagnostics);
 
@@ -90,10 +97,16 @@ public static class CounterSourceRecordReader
                 return new CounterSourceRecordResult(null, diagnostics);
             }
 
+            var additional = review.TryGetProperty("additionalReviewers", out _)
+                ? fields.Strings(review, "additionalReviewers", "$.review").ToArray()
+                : [];
             return new CounterSourceRecordResult(new CounterSourceRecord(sourceId, status.Value, sheets, path,
                 fields.String(transcription, "sha256", "$.transcription"), fields.String(transcription, "transcriber", "$.transcription"),
                 fields.String(transcription, "transcribedOn", "$.transcription"), fields.String(review, "reviewer", "$.review"),
-                fields.String(review, "reviewedOn", "$.review")), diagnostics);
+                fields.String(review, "reviewedOn", "$.review"))
+            {
+                AdditionalReviewers = additional
+            }, diagnostics);
         }
     }
 

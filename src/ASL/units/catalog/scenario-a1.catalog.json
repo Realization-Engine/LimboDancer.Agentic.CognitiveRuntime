@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "catalog": "asl-scenario-a1",
-  "version": "1.2.0",
-  "label": "Scenario A1 catalog: Infantry Personnel and MGs for the reviewed Scenario A1 cases",
+  "version": "1.3.0",
+  "label": "Scenario A1 catalog: Infantry Personnel, heroes, leaders, and MGs for the reviewed Scenario A1 cases",
   "publication": "published",
   "vocabulary": [
     "asl@1.3.0"
@@ -12,9 +12,9 @@
       "id": "asl-counter-sheets:scenario-a1",
       "status": "reviewed",
       "record": "docs/ASL/SourceRegistry/CounterSheets/asl-counter-sheets.scenario-a1.source-record.json",
-      "recordSha256": "27771507dd7fdf37900802ca5c0f3f9bb03089e92e89bff3baf0c8ad49f7987a",
+      "recordSha256": "973beb32336273c5d6e974a1a8d33d472b151ed0c918441b139da6afdb850e46",
       "transcription": "docs/ASL/SourceRegistry/CounterSheets/scenario-a1.counter-transcription.csv",
-      "transcriptionSha256": "23999ea653bcce7b7f68fe57790fc34810b770bb767b9c7b7db2c311fdf84b9e",
+      "transcriptionSha256": "ba26868d2f98082a25a650ab614902a3e0ad318494f357e7e5effb2d5957cfd6",
       "transcriber": "Claude (claude-opus-5-5)",
       "reviewer": "Dennis Landi"
     }
@@ -1585,6 +1585,2010 @@
           "attribute": "repair",
           "value": 2,
           "row": 228
+        }
+      ]
+    },
+    {
+      "id": "attacker-elite-squad",
+      "kind": "asl:squad",
+      "kindRow": 229,
+      "nationality": "german",
+      "nationalityRow": 230,
+      "class": "elite",
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "NCC",
+        "counter": "attacker-elite-squad"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 4,
+          "row": 231
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 6,
+          "row": 232
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 8,
+          "row": 233
+        },
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 234
+        },
+        {
+          "face": "front",
+          "attribute": "class",
+          "value": "elite",
+          "row": 235
+        },
+        {
+          "face": "front",
+          "attribute": "class-variant",
+          "value": "square",
+          "row": 236
+        },
+        {
+          "face": "front",
+          "attribute": "smoke-exponent",
+          "value": 2,
+          "row": 237
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-fire",
+          "present": false,
+          "row": 238
+        },
+        {
+          "face": "front",
+          "trait": "asl:spraying-fire",
+          "present": true,
+          "row": 239
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "present": false,
+          "row": 240
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-engineer",
+          "present": false,
+          "row": 241
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 8,
+          "row": 242
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "value": 13,
+          "row": 243
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "recorded": false,
+          "row": 244
+        }
+      ]
+    },
+    {
+      "id": "attacker-elite-half-squad",
+      "kind": "asl:half-squad",
+      "kindRow": 245,
+      "nationality": "german",
+      "nationalityRow": 246,
+      "class": "elite",
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "NCC",
+        "counter": "attacker-elite-half-squad"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 2,
+          "row": 247
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 4,
+          "row": 248
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 8,
+          "row": 249
+        },
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 250
+        },
+        {
+          "face": "front",
+          "attribute": "class",
+          "value": "elite",
+          "row": 251
+        },
+        {
+          "face": "front",
+          "attribute": "class-variant",
+          "value": "square",
+          "row": 252
+        },
+        {
+          "face": "front",
+          "attribute": "smoke-exponent",
+          "printed": false,
+          "row": 253
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-fire",
+          "present": false,
+          "row": 254
+        },
+        {
+          "face": "front",
+          "trait": "asl:spraying-fire",
+          "present": false,
+          "row": 255
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "present": true,
+          "row": 256
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-engineer",
+          "present": false,
+          "row": 257
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 7,
+          "row": 258
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "value": 5,
+          "row": 259
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "recorded": false,
+          "row": 260
+        }
+      ]
+    },
+    {
+      "id": "defender-elite-squad",
+      "kind": "asl:squad",
+      "kindRow": 261,
+      "nationality": "russian",
+      "nationalityRow": 262,
+      "class": "elite",
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "NCC",
+        "counter": "defender-elite-squad"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 4,
+          "row": 263
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 5,
+          "row": 264
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 8,
+          "row": 265
+        },
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 266
+        },
+        {
+          "face": "front",
+          "attribute": "class",
+          "value": "elite",
+          "row": 267
+        },
+        {
+          "face": "front",
+          "attribute": "class-variant",
+          "value": "square",
+          "row": 268
+        },
+        {
+          "face": "front",
+          "attribute": "smoke-exponent",
+          "printed": false,
+          "row": 269
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-fire",
+          "present": false,
+          "row": 270
+        },
+        {
+          "face": "front",
+          "trait": "asl:spraying-fire",
+          "present": false,
+          "row": 271
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "present": false,
+          "row": 272
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-engineer",
+          "present": false,
+          "row": 273
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 8,
+          "row": 274
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "value": 11,
+          "row": 275
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "recorded": false,
+          "row": 276
+        }
+      ]
+    },
+    {
+      "id": "defender-elite-half-squad",
+      "kind": "asl:half-squad",
+      "kindRow": 277,
+      "nationality": "russian",
+      "nationalityRow": 278,
+      "class": "elite",
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "NCC",
+        "counter": "defender-elite-half-squad"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 2,
+          "row": 279
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 4,
+          "row": 280
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 8,
+          "row": 281
+        },
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 282
+        },
+        {
+          "face": "front",
+          "attribute": "class",
+          "value": "elite",
+          "row": 283
+        },
+        {
+          "face": "front",
+          "attribute": "class-variant",
+          "value": "square",
+          "row": 284
+        },
+        {
+          "face": "front",
+          "attribute": "smoke-exponent",
+          "printed": false,
+          "row": 285
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-fire",
+          "present": false,
+          "row": 286
+        },
+        {
+          "face": "front",
+          "trait": "asl:spraying-fire",
+          "present": false,
+          "row": 287
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "present": false,
+          "row": 288
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-engineer",
+          "present": false,
+          "row": 289
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 7,
+          "row": 290
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "value": 5,
+          "row": 291
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "recorded": false,
+          "row": 292
+        }
+      ]
+    },
+    {
+      "id": "defender-line-squad",
+      "kind": "asl:squad",
+      "kindRow": 293,
+      "nationality": "russian",
+      "nationalityRow": 294,
+      "class": "1st-line",
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "NCC",
+        "counter": "defender-line-squad"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 5,
+          "row": 295
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 2,
+          "row": 296
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 7,
+          "row": 297
+        },
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 298
+        },
+        {
+          "face": "front",
+          "attribute": "class",
+          "value": "1st-line",
+          "row": 299
+        },
+        {
+          "face": "front",
+          "attribute": "class-variant",
+          "printed": false,
+          "row": 300
+        },
+        {
+          "face": "front",
+          "attribute": "smoke-exponent",
+          "printed": false,
+          "row": 301
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-fire",
+          "present": true,
+          "row": 302
+        },
+        {
+          "face": "front",
+          "trait": "asl:spraying-fire",
+          "present": true,
+          "row": 303
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "present": false,
+          "row": 304
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-engineer",
+          "present": false,
+          "row": 305
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 7,
+          "row": 306
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "value": 7,
+          "row": 307
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "recorded": false,
+          "row": 308
+        }
+      ]
+    },
+    {
+      "id": "defender-line-half-squad",
+      "kind": "asl:half-squad",
+      "kindRow": 309,
+      "nationality": "russian",
+      "nationalityRow": 310,
+      "class": "1st-line",
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "NCC",
+        "counter": "defender-line-half-squad"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 2,
+          "row": 311
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 2,
+          "row": 312
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 7,
+          "row": 313
+        },
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 314
+        },
+        {
+          "face": "front",
+          "attribute": "class",
+          "value": "1st-line",
+          "row": 315
+        },
+        {
+          "face": "front",
+          "attribute": "class-variant",
+          "printed": false,
+          "row": 316
+        },
+        {
+          "face": "front",
+          "attribute": "smoke-exponent",
+          "printed": false,
+          "row": 317
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-fire",
+          "present": false,
+          "row": 318
+        },
+        {
+          "face": "front",
+          "trait": "asl:spraying-fire",
+          "present": false,
+          "row": 319
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "present": false,
+          "row": 320
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-engineer",
+          "present": false,
+          "row": 321
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 6,
+          "row": 322
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "value": 3,
+          "row": 323
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "recorded": false,
+          "row": 324
+        }
+      ]
+    },
+    {
+      "id": "defender-guards-squad",
+      "kind": "asl:squad",
+      "kindRow": 325,
+      "nationality": "russian",
+      "nationalityRow": 326,
+      "class": "elite",
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "NCC",
+        "counter": "defender-guards-squad"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 6,
+          "row": 327
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 2,
+          "row": 328
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 8,
+          "row": 329
+        },
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 330
+        },
+        {
+          "face": "front",
+          "attribute": "class",
+          "value": "elite",
+          "row": 331
+        },
+        {
+          "face": "front",
+          "attribute": "class-variant",
+          "printed": false,
+          "row": 332
+        },
+        {
+          "face": "front",
+          "attribute": "smoke-exponent",
+          "printed": false,
+          "row": 333
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-fire",
+          "present": true,
+          "row": 334
+        },
+        {
+          "face": "front",
+          "trait": "asl:spraying-fire",
+          "present": true,
+          "row": 335
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "present": false,
+          "row": 336
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-engineer",
+          "present": false,
+          "row": 337
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 8,
+          "row": 338
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "value": 12,
+          "row": 339
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "recorded": false,
+          "row": 340
+        }
+      ]
+    },
+    {
+      "id": "defender-guards-half-squad",
+      "kind": "asl:half-squad",
+      "kindRow": 341,
+      "nationality": "russian",
+      "nationalityRow": 342,
+      "class": "elite",
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "NCC",
+        "counter": "defender-guards-half-squad"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 3,
+          "row": 343
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 2,
+          "row": 344
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 8,
+          "row": 345
+        },
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 346
+        },
+        {
+          "face": "front",
+          "attribute": "class",
+          "value": "elite",
+          "row": 347
+        },
+        {
+          "face": "front",
+          "attribute": "class-variant",
+          "printed": false,
+          "row": 348
+        },
+        {
+          "face": "front",
+          "attribute": "smoke-exponent",
+          "printed": false,
+          "row": 349
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-fire",
+          "present": false,
+          "row": 350
+        },
+        {
+          "face": "front",
+          "trait": "asl:spraying-fire",
+          "present": false,
+          "row": 351
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "present": false,
+          "row": 352
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-engineer",
+          "present": false,
+          "row": 353
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 7,
+          "row": 354
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "value": 5,
+          "row": 355
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "recorded": false,
+          "row": 356
+        }
+      ]
+    },
+    {
+      "id": "attacker-leader-6-plus-1",
+      "kind": "asl:leader",
+      "kindRow": 357,
+      "nationality": "german",
+      "nationalityRow": 358,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "LGR",
+        "counter": "attacker-leader-6-plus-1"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 359
+        },
+        {
+          "face": "front",
+          "attribute": "leadership",
+          "value": 1,
+          "row": 360
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 6,
+          "row": 361
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "recorded": false,
+          "row": 362
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 6,
+          "row": 363
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "recorded": false,
+          "row": 364
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "recorded": false,
+          "row": 365
+        }
+      ]
+    },
+    {
+      "id": "attacker-leader-7-0",
+      "kind": "asl:leader",
+      "kindRow": 366,
+      "nationality": "german",
+      "nationalityRow": 367,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "LGR",
+        "counter": "attacker-leader-7-0"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 368
+        },
+        {
+          "face": "front",
+          "attribute": "leadership",
+          "value": 0,
+          "row": 369
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 7,
+          "row": 370
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "recorded": false,
+          "row": 371
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 7,
+          "row": 372
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "recorded": false,
+          "row": 373
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "recorded": false,
+          "row": 374
+        }
+      ]
+    },
+    {
+      "id": "attacker-leader-8-0",
+      "kind": "asl:leader",
+      "kindRow": 375,
+      "nationality": "german",
+      "nationalityRow": 376,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "LGR",
+        "counter": "attacker-leader-8-0"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 377
+        },
+        {
+          "face": "front",
+          "attribute": "leadership",
+          "value": 0,
+          "row": 378
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 8,
+          "row": 379
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "recorded": false,
+          "row": 380
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 8,
+          "row": 381
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "recorded": false,
+          "row": 382
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "recorded": false,
+          "row": 383
+        }
+      ]
+    },
+    {
+      "id": "attacker-leader-8-1",
+      "kind": "asl:leader",
+      "kindRow": 384,
+      "nationality": "german",
+      "nationalityRow": 385,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "LGR",
+        "counter": "attacker-leader-8-1"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 386
+        },
+        {
+          "face": "front",
+          "attribute": "leadership",
+          "value": -1,
+          "row": 387
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 8,
+          "row": 388
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "recorded": false,
+          "row": 389
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 8,
+          "row": 390
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "recorded": false,
+          "row": 391
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "recorded": false,
+          "row": 392
+        }
+      ]
+    },
+    {
+      "id": "attacker-leader-9-1",
+      "kind": "asl:leader",
+      "kindRow": 393,
+      "nationality": "german",
+      "nationalityRow": 394,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "LGR",
+        "counter": "attacker-leader-9-1"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 395
+        },
+        {
+          "face": "front",
+          "attribute": "leadership",
+          "value": -1,
+          "row": 396
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 9,
+          "row": 397
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "recorded": false,
+          "row": 398
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 9,
+          "row": 399
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "recorded": false,
+          "row": 400
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "recorded": false,
+          "row": 401
+        }
+      ]
+    },
+    {
+      "id": "attacker-leader-9-2",
+      "kind": "asl:leader",
+      "kindRow": 402,
+      "nationality": "german",
+      "nationalityRow": 403,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "LGR",
+        "counter": "attacker-leader-9-2"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 404
+        },
+        {
+          "face": "front",
+          "attribute": "leadership",
+          "value": -2,
+          "row": 405
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 9,
+          "row": 406
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "recorded": false,
+          "row": 407
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 9,
+          "row": 408
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "recorded": false,
+          "row": 409
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "recorded": false,
+          "row": 410
+        }
+      ]
+    },
+    {
+      "id": "attacker-leader-10-2",
+      "kind": "asl:leader",
+      "kindRow": 411,
+      "nationality": "german",
+      "nationalityRow": 412,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "LGR",
+        "counter": "attacker-leader-10-2"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 413
+        },
+        {
+          "face": "front",
+          "attribute": "leadership",
+          "value": -2,
+          "row": 414
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 10,
+          "row": 415
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "recorded": false,
+          "row": 416
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 10,
+          "row": 417
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "recorded": false,
+          "row": 418
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "recorded": false,
+          "row": 419
+        }
+      ]
+    },
+    {
+      "id": "attacker-leader-10-3",
+      "kind": "asl:leader",
+      "kindRow": 420,
+      "nationality": "german",
+      "nationalityRow": 421,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "LGR",
+        "counter": "attacker-leader-10-3"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 422
+        },
+        {
+          "face": "front",
+          "attribute": "leadership",
+          "value": -3,
+          "row": 423
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 10,
+          "row": 424
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "recorded": false,
+          "row": 425
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 10,
+          "row": 426
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "recorded": false,
+          "row": 427
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "recorded": false,
+          "row": 428
+        }
+      ]
+    },
+    {
+      "id": "defender-leader-8-1",
+      "kind": "asl:leader",
+      "kindRow": 429,
+      "nationality": "russian",
+      "nationalityRow": 430,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "LGR",
+        "counter": "defender-leader-8-1"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 431
+        },
+        {
+          "face": "front",
+          "attribute": "leadership",
+          "value": -1,
+          "row": 432
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 8,
+          "row": 433
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "recorded": false,
+          "row": 434
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 8,
+          "row": 435
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "recorded": false,
+          "row": 436
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "recorded": false,
+          "row": 437
+        }
+      ]
+    },
+    {
+      "id": "defender-leader-9-1",
+      "kind": "asl:leader",
+      "kindRow": 438,
+      "nationality": "russian",
+      "nationalityRow": 439,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "LGR",
+        "counter": "defender-leader-9-1"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 440
+        },
+        {
+          "face": "front",
+          "attribute": "leadership",
+          "value": -1,
+          "row": 441
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 9,
+          "row": 442
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "recorded": false,
+          "row": 443
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 9,
+          "row": 444
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "recorded": false,
+          "row": 445
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "recorded": false,
+          "row": 446
+        }
+      ]
+    },
+    {
+      "id": "defender-leader-9-2",
+      "kind": "asl:leader",
+      "kindRow": 447,
+      "nationality": "russian",
+      "nationalityRow": 448,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "LGR",
+        "counter": "defender-leader-9-2"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 449
+        },
+        {
+          "face": "front",
+          "attribute": "leadership",
+          "value": -2,
+          "row": 450
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 9,
+          "row": 451
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "recorded": false,
+          "row": 452
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 9,
+          "row": 453
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "recorded": false,
+          "row": 454
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "recorded": false,
+          "row": 455
+        }
+      ]
+    },
+    {
+      "id": "defender-leader-10-2",
+      "kind": "asl:leader",
+      "kindRow": 456,
+      "nationality": "russian",
+      "nationalityRow": 457,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "LGR",
+        "counter": "defender-leader-10-2"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 458
+        },
+        {
+          "face": "front",
+          "attribute": "leadership",
+          "value": -2,
+          "row": 459
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 10,
+          "row": 460
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "recorded": false,
+          "row": 461
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 10,
+          "row": 462
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "recorded": false,
+          "row": 463
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "recorded": false,
+          "row": 464
+        }
+      ]
+    },
+    {
+      "id": "defender-leader-10-3",
+      "kind": "asl:leader",
+      "kindRow": 465,
+      "nationality": "russian",
+      "nationalityRow": 466,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "LGR",
+        "counter": "defender-leader-10-3"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 467
+        },
+        {
+          "face": "front",
+          "attribute": "leadership",
+          "value": -3,
+          "row": 468
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 10,
+          "row": 469
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "recorded": false,
+          "row": 470
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 10,
+          "row": 471
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "recorded": false,
+          "row": 472
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "recorded": false,
+          "row": 473
+        }
+      ]
+    },
+    {
+      "id": "attacker-hero",
+      "kind": "asl:hero",
+      "kindRow": 474,
+      "nationality": "german",
+      "nationalityRow": 475,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "CEX",
+        "counter": "attacker-hero"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 476
+        },
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 1,
+          "row": 477
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 4,
+          "row": 478
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 9,
+          "row": 479
+        },
+        {
+          "face": "wounded",
+          "attribute": "firepower",
+          "value": 1,
+          "row": 480
+        },
+        {
+          "face": "wounded",
+          "attribute": "range",
+          "value": 3,
+          "row": 481
+        },
+        {
+          "face": "wounded",
+          "attribute": "morale",
+          "value": 8,
+          "row": 482
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "printed": false,
+          "row": 483
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "recorded": false,
+          "row": 484
+        }
+      ]
+    },
+    {
+      "id": "defender-hero",
+      "kind": "asl:hero",
+      "kindRow": 485,
+      "nationality": "russian",
+      "nationalityRow": 486,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "CEX",
+        "counter": "defender-hero"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 487
+        },
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 1,
+          "row": 488
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 4,
+          "row": 489
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 9,
+          "row": 490
+        },
+        {
+          "face": "wounded",
+          "attribute": "firepower",
+          "value": 1,
+          "row": 491
+        },
+        {
+          "face": "wounded",
+          "attribute": "range",
+          "value": 3,
+          "row": 492
+        },
+        {
+          "face": "wounded",
+          "attribute": "morale",
+          "value": 8,
+          "row": 493
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "printed": false,
+          "row": 494
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "recorded": false,
+          "row": 495
+        }
+      ]
+    },
+    {
+      "id": "defender-nkvd-squad",
+      "kind": "asl:squad",
+      "kindRow": 496,
+      "nationality": "russian",
+      "nationalityRow": 497,
+      "class": "2nd-line",
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "NCC",
+        "counter": "defender-nkvd-squad"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 6,
+          "row": 498
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 2,
+          "row": 499
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 8,
+          "row": 500
+        },
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 501
+        },
+        {
+          "face": "front",
+          "attribute": "class",
+          "value": "2nd-line",
+          "row": 502
+        },
+        {
+          "face": "front",
+          "attribute": "class-variant",
+          "printed": false,
+          "row": 503
+        },
+        {
+          "face": "front",
+          "attribute": "smoke-exponent",
+          "printed": false,
+          "row": 504
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-fire",
+          "present": false,
+          "row": 505
+        },
+        {
+          "face": "front",
+          "trait": "asl:spraying-fire",
+          "present": true,
+          "row": 506
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "present": true,
+          "row": 507
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-engineer",
+          "present": false,
+          "row": 508
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 9,
+          "row": 509
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "value": 13,
+          "row": 510
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "recorded": false,
+          "row": 511
+        }
+      ]
+    },
+    {
+      "id": "defender-nkvd-half-squad",
+      "kind": "asl:half-squad",
+      "kindRow": 512,
+      "nationality": "russian",
+      "nationalityRow": 513,
+      "class": "2nd-line",
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "NCC",
+        "counter": "defender-nkvd-half-squad"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 3,
+          "row": 514
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 2,
+          "row": 515
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 8,
+          "row": 516
+        },
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 517
+        },
+        {
+          "face": "front",
+          "attribute": "class",
+          "value": "2nd-line",
+          "row": 518
+        },
+        {
+          "face": "front",
+          "attribute": "class-variant",
+          "printed": false,
+          "row": 519
+        },
+        {
+          "face": "front",
+          "attribute": "smoke-exponent",
+          "printed": false,
+          "row": 520
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-fire",
+          "present": false,
+          "row": 521
+        },
+        {
+          "face": "front",
+          "trait": "asl:spraying-fire",
+          "present": false,
+          "row": 522
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "present": true,
+          "row": 523
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-engineer",
+          "present": false,
+          "row": 524
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 8,
+          "row": 525
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "value": 6,
+          "row": 526
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "recorded": false,
+          "row": 527
         }
       ]
     }

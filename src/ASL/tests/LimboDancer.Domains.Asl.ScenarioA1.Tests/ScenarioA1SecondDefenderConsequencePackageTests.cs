@@ -111,17 +111,21 @@ public sealed class ScenarioA1SecondDefenderConsequencePackageTests
     private static Dictionary<string, string> Facts(string reveal, string capability) =>
         new(StringComparer.Ordinal)
         {
-            ["board"] = "bd01-ground-level-ordinary-building", ["phase"] = "mph",
+            ["board"] = "bd01-ground-level-ordinary-building",
+            ["phase"] = "mph",
             ["attacker"] = "goodOrderUnconcealedNonDummyInfantryMmc",
             ["entryMode"] = "ordinaryObstacleEntryNotBypass",
-            ["initialDefenderState"] = "concealed", ["firstReveal"] = "enemySmc-under-A12.15",
+            ["initialDefenderState"] = "concealed",
+            ["firstReveal"] = "enemySmc-under-A12.15",
             ["overrunElection"] = "elected-after-first-reveal",
             ["previousLocation"] = "knownLastOccupiedLocation",
             ["previousLocationId"] = "bd01:D4:0",
             ["attemptedEntryMf"] = "ordinaryBuildingTwoMf",
             ["a414ExceptionOtherThanInfantryOvr"] = "none",
-            ["specialModifier"] = "none", ["leaderExemption"] = "none",
-            ["secondReveal"] = reveal, ["attackerCapability"] = capability,
+            ["specialModifier"] = "none",
+            ["leaderExemption"] = "none",
+            ["secondReveal"] = reveal,
+            ["attackerCapability"] = capability,
         };
 
     private static async Task<DomainPackageDescriptor> Descriptor() =>
@@ -142,8 +146,11 @@ public sealed class ScenarioA1SecondDefenderConsequencePackageTests
                 ScenarioA1SecondDefenderConsequenceConclusionResolver.QuestionKind),
             JsonSerializer.SerializeToElement(new
             {
-                unitId = "squad", locationId = "bd01:E4:0", previousLocationId = "bd01:D4:0",
-                observationVersion = version, caseId,
+                unitId = "squad",
+                locationId = "bd01:E4:0",
+                previousLocationId = "bd01:D4:0",
+                observationVersion = version,
+                caseId,
             }), Now);
         DomainEntityResolution Entity(string id) => new(
             new DomainEntityQuery("entity-" + id, Tenant, descriptor.Identity,

@@ -254,6 +254,22 @@ Unit step 23 needs MGs, and no registered source lists their values: the Support
 
 **Review and version.** The user delegated this pass without value-by-value review, which the source record's review method says; the reviewer column names the record's reviewer because the builder requires it. A value is replaced, and the catalog republished, if a source for it is later registered. Added definitions make a minor version: `asl-scenario-a1@1.2.0`. The synthetic catalog gains matching synthetic MGs.
 
+### 9.4 Heat of Battle and Leader Creation (catalog 1.3.0)
+
+Unit steps 27 and 28 ([ASL Unit Deviations, Ordnance, and Vehicles Plan](<ASL Unit Deviations, Ordnance, and Vehicles Plan.md>)) need the units Heat of Battle and Leader Creation can produce. On 2026-09-27, 25 counters (299 rows) were added:
+
+| Counters | Sheet | Source | Needed for |
+|---|---|---|---|
+| `attacker-elite-squad` and `-half-squad` (German squared-E 4-6-8, HS 2-4-8) | NCC | p. 695 | Battle Hardening of the German 1st Line (A15.3) |
+| `defender-elite-squad`, `defender-line-squad`, `defender-guards-squad`, and their HS (Russian squared-E 4-5-8, plain-1 5-2-7, plain-E 6-2-8) | NCC | p. 695 | Battle Hardening of the Russian classes (A15.3) |
+| `defender-nkvd-squad` and `-half-squad` (NKVD 6-2-8) | NCC | p. 695 | A Russian Conscript hardens into NKVD 2nd Line (A25.25) |
+| `attacker-leader-` 6+1, 7-0, 8-0, 8-1, 9-1, 9-2, 10-2, 10-3 and `defender-leader-` 8-1, 9-1, 9-2, 10-2, 10-3 | LGR | pp. 331, 694, 676 | Leader Creation (A18.2), a leader's Battle Hardening, and Replacement down the chain |
+| `attacker-hero`, `defender-hero` (1-4-9, wounded 1-3-8) | CEX | pp. 83, 676 | Hero Creation (A15.2) |
+
+**Readings.** A leader's broken morale equals his morale: the rulebook prints one example, the German 9-1 of p. 676, and the other grades follow it. A hero has no broken side (A15.2) and no printed BPV or name. The least gain of Battle Hardening (A15.3) is the smallest summed increase of the printed factors, then the fewest added capabilities (ruling R28.6).
+
+**Review and version.** Under the plan, a separate agent briefed as an ASL rules referee rendered each chart region and confirmed every value in place of the user's review. It found that the Russian Conscript hardens into NKVD (A25.25), not 1st Line, and the NKVD counters were added and confirmed in turn. The source record lists that reviewer under `review.additionalReviewers`, and the builder accepts a row reviewed by either. Added definitions make a minor version: `asl-scenario-a1@1.3.0`. The synthetic catalog gains matching synthetic definitions, each class under its own nationality so no lookup is ambiguous. Games that name 1.2.0 no longer replay; the committed ones now name 1.3.0.
+
 ## 10. The source adapter
 
 ASL-UNIT-001 keeps source-specific parsing out of `LimboDancer.Domains.Asl.Units`, so the transcription is read by a separate source adapter, `LimboDancer.Domains.Asl.Units.CounterSheets`, which references only `Units`. `CounterSheetCatalogBuilder` takes the catalog manifest (`src/ASL/units/catalog/scenario-a1.catalog-manifest.json`: id, version, slots, and which counter fills which slot), the source record, the transcription, and the worksheet, and:

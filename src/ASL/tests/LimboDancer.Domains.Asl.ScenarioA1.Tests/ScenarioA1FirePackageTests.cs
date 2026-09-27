@@ -83,7 +83,11 @@ public sealed class ScenarioA1FirePackageTests
     [Fact]
     public void KResultReducesTheHighestDrAndEverySurvivorTakesTheMc()
     {
-        var result = ScenarioA1FireCalculator.Resolve(U18(Rolls([1, 1], new() { ["de-squad"] = 5, ["de-hs"] = 2 }, new()
+        var result = ScenarioA1FireCalculator.Resolve(U18(Rolls([1, 1], new()
+        {
+            ["de-squad"] = 5,
+            ["de-hs"] = 2
+        }, new()
         {
             ["de-squad"] = [1, 2],
             ["de-hs"] = [2, 2],
@@ -105,13 +109,21 @@ public sealed class ScenarioA1FirePackageTests
     [Fact]
     public void KiaEliminatesByRandomSelectionAndBreaksTheRest()
     {
-        var result = ScenarioA1FireCalculator.Resolve(U18(Rolls([1, 2], new() { ["de-squad"] = 4, ["de-hs"] = 2 }), "open-ground"), Reference);
+        var result = ScenarioA1FireCalculator.Resolve(U18(Rolls([1, 2], new()
+        {
+            ["de-squad"] = 4,
+            ["de-hs"] = 2
+        }), "open-ground"), Reference);
         Assert.Equal((3, "1KIA"), (result.Arithmetic!.FinalDr, result.Arithmetic.Result));
         Assert.True(result.Effects.Single(item => item.UnitId == "de-squad").Eliminated);
         Assert.True(result.Effects.Single(item => item.UnitId == "de-hs").Broken);
 
         // A tie at the cut eliminates both.
-        var tied = ScenarioA1FireCalculator.Resolve(U18(Rolls([1, 2], new() { ["de-squad"] = 4, ["de-hs"] = 4 }), "open-ground"), Reference);
+        var tied = ScenarioA1FireCalculator.Resolve(U18(Rolls([1, 2], new()
+        {
+            ["de-squad"] = 4,
+            ["de-hs"] = 4
+        }), "open-ground"), Reference);
         Assert.All(tied.Effects, effect => Assert.True(effect.Eliminated));
     }
 
@@ -125,7 +137,14 @@ public sealed class ScenarioA1FirePackageTests
             1, true, new FireLos(false, 0, true, false), null, "open-ground",
             [new FireTarget("ru-squad", "defender-squad", "bd01:F5:0", false, false, false, false, false, false, false),
              new FireTarget("ru-leader", "defender-leader", "bd01:F5:0", false, false, false, false, false, false, false)], 2,
-            Rolls([1, 2], new() { ["ru-squad"] = 1, ["ru-leader"] = 6 }, leaderLoss: new() { ["ru-squad"] = [2, 2] }));
+            Rolls([1, 2], new()
+            {
+                ["ru-squad"] = 1,
+                ["ru-leader"] = 6
+            }, leaderLoss: new()
+            {
+                ["ru-squad"] = [2, 2]
+            }));
         var result = ScenarioA1FireCalculator.Resolve(attack, Reference);
         Assert.Equal(FireResolution.Resolved, result.Disposition);
         Assert.True(result.Effects.Single(item => item.UnitId == "ru-leader").Eliminated);
@@ -143,7 +162,14 @@ public sealed class ScenarioA1FirePackageTests
             1, true, new FireLos(false, 0, true, false), null, "open-ground",
             [new FireTarget("ru-squad", "defender-squad", "bd01:F5:0", false, false, false, false, false, false, false),
              new FireTarget("ru-leader", "defender-leader", "bd01:F5:0", false, false, false, false, false, false, false)], 2,
-            Rolls([2, 3], checks: new() { ["ru-leader"] = [3, 3], ["ru-squad"] = [1, 1] }, leaderLoss: new() { ["ru-squad"] = [4, 4] }));
+            Rolls([2, 3], checks: new()
+            {
+                ["ru-leader"] = [3, 3],
+                ["ru-squad"] = [1, 2]
+            }, leaderLoss: new()
+            {
+                ["ru-squad"] = [4, 4]
+            }));
         var result = ScenarioA1FireCalculator.Resolve(attack, Reference);
         Assert.Equal(FireResolution.Resolved, result.Disposition);
         Assert.Equal("3MC", result.Arithmetic!.Result);
@@ -151,7 +177,7 @@ public sealed class ScenarioA1FirePackageTests
         Assert.Equal((9, "broken"), (leader.Checks[0].FinalDr, leader.Checks[0].Consequence));
         var squad = result.Effects.Single(item => item.UnitId == "ru-squad");
         Assert.Equal(["MC", "LLTC"], squad.Checks.Select(check => check.Kind));
-        Assert.Equal((5, true), (squad.Checks[0].FinalDr, squad.Checks[0].Passed));
+        Assert.Equal((6, true), (squad.Checks[0].FinalDr, squad.Checks[0].Passed));
         Assert.Equal((8, "pinned"), (squad.Checks[1].FinalDr, squad.Checks[1].Consequence));
         Assert.True(squad.Pinned);
     }
@@ -159,7 +185,11 @@ public sealed class ScenarioA1FirePackageTests
     [Fact]
     public void AnOriginalTwelveIsACasualtyMcWithinElr()
     {
-        var result = ScenarioA1FireCalculator.Resolve(U18(Rolls([4, 4], checks: new() { ["de-squad"] = [6, 6], ["de-hs"] = [1, 1] }), elr: 5),
+        var result = ScenarioA1FireCalculator.Resolve(U18(Rolls([4, 4], checks: new()
+        {
+            ["de-squad"] = [6, 6],
+            ["de-hs"] = [1, 2]
+        }), elr: 5),
             Reference);
         Assert.Equal((10, "NMC"), (result.Arithmetic!.FinalDr, result.Arithmetic.Result));
         var squad = result.Effects.Single(item => item.UnitId == "de-squad");
@@ -167,7 +197,11 @@ public sealed class ScenarioA1FirePackageTests
         Assert.Equal("casualty-reduced-and-broken", squad.Checks[0].Consequence);
 
         // Beyond ELR (A19.13): a broken HS of lesser quality.
-        var beyond = ScenarioA1FireCalculator.Resolve(U18(Rolls([4, 4], checks: new() { ["de-squad"] = [6, 6], ["de-hs"] = [1, 1] }), elr: 4),
+        var beyond = ScenarioA1FireCalculator.Resolve(U18(Rolls([4, 4], checks: new()
+        {
+            ["de-squad"] = [6, 6],
+            ["de-hs"] = [1, 2]
+        }), elr: 4),
             Reference);
         var reduced = beyond.Effects.Single(item => item.UnitId == "de-squad");
         Assert.Equal(("attacker-2nd-line-half-squad", true), (reduced.FinalDefinitionId, reduced.Broken));
@@ -176,11 +210,23 @@ public sealed class ScenarioA1FirePackageTests
     [Fact]
     public void DefensiveFireIsByTheNonPhasingSideAndMarksFinalFire()
     {
-        var rolls = Rolls([3, 4], checks: new() { ["de-squad"] = [2, 3], ["de-hs"] = [2, 3] });
-        var result = ScenarioA1FireCalculator.Resolve(U18(rolls) with { Phase = "DFPh", FiringSide = "non-phasing" }, Reference);
+        var rolls = Rolls([3, 4], checks: new()
+        {
+            ["de-squad"] = [2, 3],
+            ["de-hs"] = [2, 3]
+        });
+        var result = ScenarioA1FireCalculator.Resolve(U18(rolls) with
+        {
+            Phase = "DFPh",
+            FiringSide = "non-phasing"
+        }, Reference);
         Assert.Equal((FireResolution.Resolved, "final-fire"), (result.Disposition, result.FireCounter));
         Assert.Equal(FireResolution.Abstained,
-            ScenarioA1FireCalculator.Resolve(U18(rolls) with { Phase = "DFPh", FiringSide = "phasing" }, Reference).Disposition);
+            ScenarioA1FireCalculator.Resolve(U18(rolls) with
+            {
+                Phase = "DFPh",
+                FiringSide = "phasing"
+            }, Reference).Disposition);
     }
 
     private static FireAttack GermansFireOnRussians(FireRolls rolls, params FireTarget[] targets) =>
@@ -195,7 +241,13 @@ public sealed class ScenarioA1FirePackageTests
     [Fact]
     public void TheRussianSquadIsReducedToItsHalfSquad()
     {
-        var attack = GermansFireOnRussians(Rolls([1, 2], new() { ["ru-squad"] = 3 }, new() { ["ru-squad"] = [1, 2] }),
+        var attack = GermansFireOnRussians(Rolls([1, 2], new()
+        {
+            ["ru-squad"] = 3
+        }, new()
+        {
+            ["ru-squad"] = [1, 2]
+        }),
             Russian("ru-squad", "defender-squad")) with
         {
             Firers = [new FireFirer("de-1", "attacker-squad", "bd01:G5:0", false, false, false, false, false)],
@@ -210,7 +262,11 @@ public sealed class ScenarioA1FirePackageTests
     [Fact]
     public void AFailureBeyondElrReplacesTheUnit()
     {
-        var result = ScenarioA1FireCalculator.Resolve(U18(Rolls([3, 4], checks: new() { ["de-squad"] = [2, 3], ["de-hs"] = [5, 6] })), Reference);
+        var result = ScenarioA1FireCalculator.Resolve(U18(Rolls([3, 4], checks: new()
+        {
+            ["de-squad"] = [2, 3],
+            ["de-hs"] = [5, 6]
+        })), Reference);
         var hs = result.Effects.Single(item => item.UnitId == "de-hs");
         Assert.Equal(("attacker-2nd-line-half-squad", true, "replaced"), (hs.FinalDefinitionId, hs.Broken, hs.Checks[0].Consequence));
         Assert.Contains("replaced-elr", hs.Events);
@@ -219,7 +275,13 @@ public sealed class ScenarioA1FirePackageTests
     [Fact]
     public void AUnitThatCannotBeReplacedIsDisrupted()
     {
-        var attack = U18(Rolls([3, 4], checks: new() { ["de-c"] = [6, 5] })) with { Targets = [Target("de-c", "attacker-conscript-squad")] };
+        var attack = U18(Rolls([3, 4], checks: new()
+        {
+            ["de-c"] = [6, 5]
+        })) with
+        {
+            Targets = [Target("de-c", "attacker-conscript-squad") with { Inexperienced = true }]
+        };
         var result = ScenarioA1FireCalculator.Resolve(attack, Reference);
         var conscript = Assert.Single(result.Effects);
         Assert.Equal(("attacker-conscript-squad", true, true), (conscript.FinalDefinitionId, conscript.Broken, conscript.Disrupted));
@@ -230,7 +292,7 @@ public sealed class ScenarioA1FirePackageTests
     {
         var result = ScenarioA1FireCalculator.Resolve(GermansFireOnRussians(
             new FireRolls([1, 3], new Dictionary<string, int> { ["ru-squad"] = 1, ["ru-leader"] = 6 },
-                new Dictionary<string, IReadOnlyList<int>> { ["ru-leader"] = [1, 1], ["ru-squad"] = [1, 2] }, null,
+                new Dictionary<string, IReadOnlyList<int>> { ["ru-leader"] = [1, 2], ["ru-squad"] = [1, 2] }, null,
                 new Dictionary<string, int> { ["ru-leader"] = 3 }),
             Russian("ru-squad", "defender-squad"), Russian("ru-leader", "defender-leader")), Reference);
         Assert.Equal((FireResolution.Resolved, "K/3"), (result.Disposition, result.Arithmetic!.Result));
@@ -262,7 +324,15 @@ public sealed class ScenarioA1FirePackageTests
     public void AWoundNeedsItsSeverityRoll()
     {
         var result = ScenarioA1FireCalculator.Resolve(GermansFireOnRussians(
-            Rolls([1, 3], new() { ["ru-squad"] = 1, ["ru-leader"] = 6 }, new() { ["ru-leader"] = [1, 1], ["ru-squad"] = [1, 2] }),
+            Rolls([1, 3], new()
+            {
+                ["ru-squad"] = 1,
+                ["ru-leader"] = 6
+            }, new()
+            {
+                ["ru-leader"] = [1, 1],
+                ["ru-squad"] = [1, 2]
+            }),
             Russian("ru-squad", "defender-squad"), Russian("ru-leader", "defender-leader")), Reference);
         Assert.Contains("asl.a1.fire.roll-missing:woundSeverity:ru-leader", result.Reasons);
     }
@@ -272,7 +342,11 @@ public sealed class ScenarioA1FirePackageTests
     {
         // A12.13: the known HS is attacked on the 16 column and the concealed squad on the 8 column, with the same DR:
         // 3+4 = 7, +2 wooden building, +0 leadership: Final DR 9, a 1MC and a PTC.
-        var attack = U18(Rolls([3, 4], checks: new() { ["de-squad"] = [2, 3], ["de-hs"] = [2, 3] })) with
+        var attack = U18(Rolls([3, 4], checks: new()
+        {
+            ["de-squad"] = [2, 3],
+            ["de-hs"] = [2, 3]
+        })) with
         {
             Firers = [Firer("ru-1", concealed: true), Firer("ru-2")],
             Targets = [Target("de-squad", "attacker-squad", concealed: true), Target("de-hs", "attacker-half-squad")],
@@ -290,7 +364,10 @@ public sealed class ScenarioA1FirePackageTests
         var concealedOnly = ScenarioA1FireCalculator.Resolve(attack with
         {
             Targets = [Target("de-squad", "attacker-squad", concealed: true)],
-            Rolls = Rolls([3, 4], checks: new() { ["de-squad"] = [2, 3] }),
+            Rolls = Rolls([3, 4], checks: new()
+            {
+                ["de-squad"] = [2, 3]
+            }),
         }, Reference);
         Assert.Equal((8m, "PTC"), (concealedOnly.Arithmetic!.TotalFirepower, concealedOnly.Arithmetic.Result));
         Assert.Null(concealedOnly.Arithmetic.Concealed);
@@ -300,9 +377,15 @@ public sealed class ScenarioA1FirePackageTests
     public void LongRangeHalvesAndBeyondTwiceNormalRangeAbstains()
     {
         var rolls = Rolls([3, 4]);
-        var longRange = ScenarioA1FireCalculator.Resolve(U18(rolls) with { Range = 5 }, Reference);
+        var longRange = ScenarioA1FireCalculator.Resolve(U18(rolls) with
+        {
+            Range = 5
+        }, Reference);
         Assert.Equal(4m, longRange.Arithmetic!.TotalFirepower);
-        Assert.Equal(FireResolution.Abstained, ScenarioA1FireCalculator.Resolve(U18(rolls) with { Range = 9 }, Reference).Disposition);
+        Assert.Equal(FireResolution.Abstained, ScenarioA1FireCalculator.Resolve(U18(rolls) with
+        {
+            Range = 9
+        }, Reference).Disposition);
     }
 
     public static TheoryData<string, string> Refusals => new()
@@ -333,7 +416,10 @@ public sealed class ScenarioA1FirePackageTests
             "grain" => attack with { Los = new FireLos(false, 1, true, true) },
             "mixed-pinned-movers" => attack with
             {
-                Phase = "MPh", FiringSide = "non-phasing", FireKind = ScenarioA1FireCalculator.FirstFire, TargetMovement = new FireMovement(false),
+                Phase = "MPh",
+                FiringSide = "non-phasing",
+                FireKind = ScenarioA1FireCalculator.FirstFire,
+                TargetMovement = new FireMovement(false),
                 Targets = [Target("de-squad", "attacker-squad") with { Pinned = true }, Target("de-hs", "attacker-half-squad")],
             },
             "elr" => attack with { TargetSideElr = null },
@@ -350,8 +436,16 @@ public sealed class ScenarioA1FirePackageTests
     [Fact]
     public void GrainCountsWithADeclaredMonthInSeason()
     {
-        var rolls = Rolls([3, 4], checks: new() { ["de-squad"] = [2, 3], ["de-hs"] = [2, 3] });
-        var result = ScenarioA1FireCalculator.Resolve(U18(rolls) with { Los = new FireLos(false, 1, true, true), ScenarioMonth = 7 }, Reference);
+        var rolls = Rolls([3, 4], checks: new()
+        {
+            ["de-squad"] = [2, 3],
+            ["de-hs"] = [2, 3]
+        });
+        var result = ScenarioA1FireCalculator.Resolve(U18(rolls) with
+        {
+            Los = new FireLos(false, 1, true, true),
+            ScenarioMonth = 7
+        }, Reference);
         Assert.Equal(FireResolution.Resolved, result.Disposition);
         Assert.Contains(result.Arithmetic!.Drm, item => item.Name == "los-hindrance" && item.Value == 1);
         Assert.Equal(10, result.Arithmetic.FinalDr);
@@ -361,7 +455,11 @@ public sealed class ScenarioA1FirePackageTests
     public async Task TheResolverConcludesDefinitiveAndRefusesExtraOrStaleFacts()
     {
         var descriptor = (await new ScenarioA1FirePackage().ResolveAsync(ScenarioA1FirePackage.Identity)).Package!;
-        var attack = U18(Rolls([3, 4], checks: new() { ["de-squad"] = [2, 3], ["de-hs"] = [4, 3] }));
+        var attack = U18(Rolls([3, 4], checks: new()
+        {
+            ["de-squad"] = [2, 3],
+            ["de-hs"] = [4, 3]
+        }));
         var data = JsonSerializer.SerializeToElement(attack, WebJson);
         var resolver = new ScenarioA1FireConclusionResolver();
 
@@ -400,7 +498,12 @@ public sealed class ScenarioA1FirePackageTests
             "test-supplied-state", ScenarioA1FirePackage.Identity);
         var question = new DomainQuestion("fire", Tenant, descriptor.Identity,
             new SemanticIdentifier(descriptor.Identity.DomainId, ScenarioA1FireConclusionResolver.QuestionKind),
-            JsonSerializer.SerializeToElement(new { firerLocationId = "bd01:F5:0", targetLocationId = "bd01:G5:0", observationVersion = version }), Now);
+            JsonSerializer.SerializeToElement(new
+            {
+                firerLocationId = "bd01:F5:0",
+                targetLocationId = "bd01:G5:0",
+                observationVersion = version
+            }), Now);
         DomainEntityResolution Entity(string id) => new(
             new DomainEntityQuery("entity-" + id, Tenant, descriptor.Identity, new SemanticIdentifier(descriptor.Identity.DomainId, "location"), id),
             DomainEntityResolutionOutcome.Resolved,

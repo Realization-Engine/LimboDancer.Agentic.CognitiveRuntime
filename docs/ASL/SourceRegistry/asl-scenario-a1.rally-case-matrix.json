@@ -4,7 +4,7 @@
   "authority": "user-directed-affirmative-xunit-review-2026-09-26",
   "scope": "A Rally attempt in the RPh by a broken MMC or leader of the reviewed Scenario A1 catalog, rallied by an unbroken friendly leader in its Location or by Self-Rally, in the admitted terrain.",
   "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
-  "catalogSha256": "cc0273be55fdfbaee00d9f4284d0913898ea6953b6b9c21585dfb0c6665b2795",
+  "catalogSha256": "501b5deab10ae852ac7fef03e6e652f34961f69a165ac911a292b3be68b820fa",
   "sourceFragments": [
     {
       "ruleId": "A3.1",
@@ -138,13 +138,69 @@
       "startLine": 1364,
       "fragmentId": "asl-fragment:sha256:6ba72d47257af162876dd49563dbed54703df7a7b1df92858bd006ea85abfed3",
       "contentSha256": "5bc78bd5e698057d4592b155dd46623474e2ce32e23ffc1b1761da0ed39fee6a"
+    },
+    {
+      "ruleId": "A15.2",
+      "physicalPdfPage": 83,
+      "startLine": 1228,
+      "fragmentId": "asl-fragment:sha256:04fadfbbf9b6ce257830228da33939b0540c4082192997ad52bcedaa7589443f",
+      "contentSha256": "66a765c07d2a6a0fbfa9f0a51cb1371837605b2b915bf3c347a946ad247394ab"
+    },
+    {
+      "ruleId": "A15.21",
+      "physicalPdfPage": 83,
+      "startLine": 1234,
+      "fragmentId": "asl-fragment:sha256:83865d025ea95a12bb3eec95ee476268eafc004454c4de2ffac24df7c8eab025",
+      "contentSha256": "b3e67cdcf0574fd2a4e2af055c4e4cd8b4382b189419c75e03067718a8d9479d"
+    },
+    {
+      "ruleId": "A15.21",
+      "physicalPdfPage": 83,
+      "startLine": 1240,
+      "fragmentId": "asl-fragment:sha256:22c6f2a0fc823b9ba8aa8ee3d1ba0cf1baa89bac796b77c7f7942cd69a934a7f",
+      "contentSha256": "8e8d316f450c05fdf96b03e6d9beb7695c7f17b4e021e440a7b39e379ed7c40a"
+    },
+    {
+      "ruleId": "A15.3",
+      "physicalPdfPage": 83,
+      "startLine": 1246,
+      "fragmentId": "asl-fragment:sha256:544c899144fdc749a50077fd28e72fd4fa931b9a98bf635fd9f9be4b610ca471",
+      "contentSha256": "47d3db8d7932de1edfa582decc6d3b0b3029b40a8ad1101f84b6e8ae58c4117b"
+    },
+    {
+      "ruleId": "A18.2",
+      "physicalPdfPage": 85,
+      "startLine": 1340,
+      "fragmentId": "asl-fragment:sha256:a11b5e8c794652a6f048f0938acc8695f7b668ab9a5d2bb552290a10ecba16bb",
+      "contentSha256": "cf168de00add2bd425118db896e5b18e2abe5857e15c6430d5522cecf902ddd2"
+    },
+    {
+      "ruleId": "A18.2",
+      "physicalPdfPage": 86,
+      "startLine": 1356,
+      "fragmentId": "asl-fragment:sha256:8cb1e525d98506985c6d7a39a782e80dac456f973add44d074b98fcab275b116",
+      "contentSha256": "6f177d41c91e025a48b96a60efb5d6371b1a870e6fa75b86cc86348174eb09b2"
+    },
+    {
+      "ruleId": "A10.8",
+      "physicalPdfPage": 69,
+      "startLine": 846,
+      "fragmentId": "asl-fragment:sha256:28ba8629f1bb964ad50466e25de3c144be8df7af15cb8de1c091610c2f7568c0",
+      "contentSha256": "32c4c8188dc7e5d53d55394c992be13da61aeab2a8576be52be2b171e05452c1"
+    },
+    {
+      "ruleId": "A25.25",
+      "physicalPdfPage": 96,
+      "startLine": 1758,
+      "fragmentId": "asl-fragment:sha256:5850efcfceb4866ca3d2ce0e7eaa3780ef67022fb90fe740955e5c1087adacab",
+      "contentSha256": "48980cfe17197567162ed6578ced4cc60cd7164ef883d4d53ec4ba7189daf9a2"
     }
   ],
   "rulings": {
     "dmSources": "broke-this-player-turn; attacked-while-broken-by-fp-that-could-cause-a-nmc; adjacent-and-rtph-sources-deferred-to-backlog (R19.1)",
-    "heatOfBattle": "original-2-on-a-leader-rally-rallies-as-its-dr-gives; heat-of-battle-recorded-not-taken (R0.2, R19.2)",
+    "heatOfBattle": "original-2-on-a-leader-rally-rallies-as-its-dr-gives-then-a-heat-of-battle-dr-with-plus-1-broken; original-mc-dr-2-calls-for-a-heat-of-battle-dr-with-its-drm-A15.1; hero-creation-on-6-or-less-and-battle-hardening-on-5-to-8-A15.21-A15.3; berserk-and-surrender-recorded-not-taken-until-step-30 (R28.1); exemptions-apply-to-heroes-and-heroic-leaders (R28.2); a-leader-made-heroic-or-a-unit-battle-hardened-rallies-though-the-rally-dr-failed (R28.4, R28.7); a-fanatic-units-12-is-berserk-A15.1",
     "fate": "admitted-casualty-reduction-and-wounds (R19.3)",
-    "fieldPromotion": "first-mmc-self-rally-of-own-rph-admitted-as-self-rally; original-2-rallies; leader-creation-recorded-not-taken (R19.4)",
+    "fieldPromotion": "first-mmc-self-rally-of-own-rph-admitted-as-self-rally; original-2-rallies-and-calls-for-a-leader-creation-dr-A18.11; always-rolled (R27.2); the-base-units-morale-level-is-its-broken-one; nkvd-field-promotion-creates-commissars-not-reviewed (A25.25)",
     "terrain": "woods-and-ordinary-buildings-minus-1; open-ground-brush-orchard-grain-0; other-terrain-abstains (R19.5)",
     "order": "free-except-a-lone-broken-leader-rallies-himself-first (A10.71; R19.6)",
     "sides": "both-sides-in-every-rph (R19.7)",
@@ -159,8 +215,9 @@
     "drm": "+4 under DM (A10.62); the rallying leader's modifier, one worse when he is wounded (A10.7, A10.72, A17.3), or +1 for Self-Rally (A10.63); -1 in woods or a building (A10.61).",
     "morale": "The broken Morale Level (A10.4), one lower when the unit is wounded (A17.3).",
     "result": "Rallied on a Final DR at most the Morale Level (A10.6); an Original 12 is Fate: Casualty Reduction and no rally (A10.64, A7.302), a leader's wound taking a Wound Severity dr (A17.11); an Original 2 on the A18.11 Self-Rally rallies the unit (A18.11).",
-    "deviations": "An Original 2 on a leader rally is recorded as heat-of-battle-not-taken, and one on the A18.11 Self-Rally as leader-creation-not-taken (ruling R0.2).",
-    "concealment": "The unit and a concealed rallying leader lose \"?\" in the LOS of a Good Order enemy within 16 hexes (A12.141); a Reduced or wounded unit loses it regardless (A12.14)."
+    "deviations": "None: an Original 2 on a leader rally calls for a Heat of Battle DR, and one on the A18.11 Self-Rally for a Leader Creation dr (A18.2: -1 German, +1 Russian, -1 for a Morale Level of 8 or more, +1 for 6 or less, +1 broken; 6 or less creates a 6+1 to an 8-1 of the unit's nationality). Berserk and Surrender results of Heat of Battle are recorded as not taken (R28.1).",
+    "concealment": "The unit and a concealed rallying leader lose \"?\" in the LOS of a Good Order enemy within 16 hexes (A12.141); a Reduced or wounded unit loses it regardless (A12.14).",
+    "heatOfBattle": "An Original MC DR of 2 (MC, LLMC, or an FPF firer's NMC) calls for a Heat of Battle DR with -1 elite, -1 NKVD, +1 broken (before the MC or by it), +1 Inexperienced, and the nationality DRM (A15.1, A25.25): a Final DR of 6 or less creates a hero of the unit's nationality, or makes a leader heroic, rallying him (A15.21); 5 to 8 Battle Hardens the unit into an unbroken, unpinned, undisrupted unit of the next higher quality, or makes an elite MMC, an NKVD MMC, or a 10-3 leader Fanatic and unbroken (A15.3, A10.8, A25.25; ruling R28.7); 9 or more is recorded as Berserk or Surrender not taken (ruling R28.1)."
   },
   "cases": [
     {
@@ -185,7 +242,13 @@
         "A17.11",
         "A17.3",
         "A18.11",
-        "A19.12"
+        "A19.12",
+        "A15.2",
+        "A15.21",
+        "A15.3",
+        "A18.2",
+        "A10.8",
+        "A25.25"
       ],
       "reason": "A declared attempt inside the reviewed scope, with its roll recorded, resolves to its DRM, Final DR, and the unit's effect."
     },
@@ -269,6 +332,16 @@
       "reason": "Fate could Reduce a squad the catalog has no HS for."
     },
     {
+      "caseId": "A1-rally-field-promotion-unreviewed",
+      "reviewStatus": "reviewed-nondefinitive",
+      "expectedDisposition": "indeterminate",
+      "sourceRules": [
+        "A18.11",
+        "A25.25"
+      ],
+      "reason": "An NKVD MMC's Field Promotion would create a Commissar, or a Heat of Battle or Leader Creation roll needs a fact or counter the attempt does not supply."
+    },
+    {
       "caseId": "A1-rally-roll-missing",
       "reviewStatus": "reviewed-nondefinitive",
       "expectedDisposition": "indeterminate",
@@ -280,14 +353,16 @@
   ],
   "admissionRule": "A declared attempt is resolved only when every fact is within the reviewed scope and every roll it needs is recorded; otherwise it is Abstained or Indeterminate with its reasons.",
   "excludedConsequences": [
-    "Heat of Battle, Heroes, Battle Hardening, Berserk, and Surrender",
-    "Leader Creation",
     "DM from an ADJACENT enemy and at the start of the RtPh, and DM retention",
     "Rally terrain other than woods and ordinary buildings",
     "Commissars, Allied Troops, Encirclement, night, and Extreme Winter",
     "Recovery, Deploy, and Repair",
     "Self-Rally capability the catalog does not record",
-    "any use by a game action"
+    "any use by a game action",
+    "Berserk and Surrender after Heat of Battle (recorded as not taken until unit step 30)",
+    "refusing Battle Hardening (A15.3)",
+    "declining the Leader Creation dr (A18.11)",
+    "Commissars created by NKVD Field Promotion (A25.25)"
   ],
   "executionAuthority": "none"
 }

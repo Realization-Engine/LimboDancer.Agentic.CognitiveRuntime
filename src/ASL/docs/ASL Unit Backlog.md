@@ -10,9 +10,7 @@ These are not left out: the game resolves them in a simplified way and records t
 
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
-| Heat of Battle after an Original MC or Rally DR of 2 | R0.2, R19.2, R22.5 | A15.1 to A15.5, pp. 83 to 84; chart p. 108 | Heroes, Battle Hardening, Berserk, and Surrender (below) | The 2 resolves as an ordinary MC or rally; the record says Heat of Battle was not taken. Applies to the merged Fire package too. |
-| Leader Creation on the first MMC Self-Rally's Original 2 (Field Promotion) | R19.4 | A18.11, p. 85; A18.2 chart p. 108 | Leader definitions for created leaders | The unit rallies; the record says Leader Creation was not taken. |
-| Splitting a moving stack when a mover breaks or pins | Steps 19 to 23 design, section 5 | A8.1, p. 59; A4.2, p. 49 | A move that names part of the stack | The broken or pinned unit may not move again, and neither may the rest of its stack; the ATTACKER ends the move. |
+| Berserk and Surrender from Heat of Battle | R0.2, R19.2, R22.5, R28.1 | A15.4 to A15.5, pp. 83 to 84; A20, pp. 86 to 87 | Charge movement, prisoners, and capture (step 30) | A Final Heat of Battle DR of 9 to 11 (Berserk) or 12 (Surrender) resolves as an ordinary MC or rally; the record says which was not taken, even where A15.44 would turn Berserk into Battle Hardening (no Known enemy unit in LOS). Heroes, heroic leaders, Battle Hardening, and Fanaticism are taken (step 28). |
 
 ## 2. Rally (step 19)
 
@@ -110,3 +108,20 @@ Step 17 left these out; steps 19 to 23 do not build them.
 | Movement of concealed units, and the loss of "?" it can bring | Steps 19 to 23 design | A12.14, p. 77 | The concealment loss conditions of movement |
 | Entry into an enemy-occupied non-building Location | R22.6 | A4.14, p. 49 | Close Combat |
 | The building entry of steps 7 to 11 as a case of `asl.game.move` | Steps 19 to 23 design | A4.14, p. 49; A12.15, p. 78 | Moving the entry's reveal and OVR flow into the move |
+
+## 10. Added by the deviations pass 1 (steps 26 to 28)
+
+| Item | Deferred by | Rules | Depends on |
+|---|---|---|---|
+| A hero created during his side's MPh moving on with his creator | Step 28 design | A15.21, p. 83 | The movement status a created unit shares with its creator; for now he moves no further that phase |
+| Support weapon use by a hero | Step 28 design | A15.23, p. 83 | Reviewing the hero's SW rules |
+| Refusing Battle Hardening | Step 28 design | A15.3, p. 83 | An owner's choice in the middle of an attempt |
+| Declining the Leader Creation dr | Step 27 design | A18.11, p. 85 | An owner's choice in the middle of an attempt |
+| NKVD Field Promotion, which creates a Commissar | Step 27 design | A18.11, p. 85; A25.22, p. 94; A25.25, p. 96 | Commissars (A25.22) |
+| Attacks on units with an underscored morale (German elite HS, NKVD), and FPF by them | Step 28 design | A19.13, p. 86 | Reviewing the underscored morale exception to ELR Replacement |
+| Nationalities other than German and Russian in the Heat of Battle and Leader Creation drm | Pass 1 review | A15.1, p. 83; A18.2, p. 85 | Counters of those nationalities; a nationality the table does not name should be refused, not given 0 |
+| A Green MMC stacked with an unbroken leader, exempt from Inexperienced restrictions; the live game supplying the Inexperienced fact | Pass 1 review | A19.3, p. 86 | Green counters, which the catalog does not have; until then a Green unit is refused |
+| A second Heat of Battle DR in one attack (the LLMC after the MC) | R28.8 | A15.1, p. 83 | A roll key per check rather than per unit |
+| A HS of a Casualty Reduced squad keeping its SW | Pass 1 live review | A7.302, p. 55 | Portage for the HS; Replacements and Battle Hardening keep the SW, other lineage drops it |
+| A hero created by a concealed MMC being concealed too | Pass 1 live review | A15.21, p. 83; A12.1, p. 76 | Reviewing concealment of created units |
+| Counter names (for example "7-0") in place of definition ids on the Play page | Pass 1 live review | none | A display name in the catalog |

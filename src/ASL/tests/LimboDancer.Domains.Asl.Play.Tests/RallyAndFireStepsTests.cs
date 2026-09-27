@@ -27,6 +27,7 @@ public sealed class RallyAndFireStepsTests : IDisposable
     private static readonly string[] R6 = ["r6"];
     private static readonly string[] G1 = ["g1"];
     private static readonly string[] G3 = ["g3"];
+    private static readonly string[] G2 = ["g2"];
 
     private static readonly LimboDancer.Abstractions.Execution.RuntimePrincipal Player =
         GamePlay.Principal("player", Tenant, GameActions.SetupPermission, GameActions.PlayPermission);
@@ -136,7 +137,7 @@ public sealed class RallyAndFireStepsTests : IDisposable
             start = new
             {
                 label = "Steps",
-                catalog = "asl-scenario-a1@1.2.0",
+                catalog = "asl-scenario-a1@1.3.0",
                 boards = Bd01,
                 firstSide,
                 scenarioMonth = 7,
@@ -174,6 +175,68 @@ public sealed class RallyAndFireStepsTests : IDisposable
     private static void Committed(PlayResult result) => Assert.True(result.Outcome == PlayOutcome.Committed, string.Join("; ", result.Reasons));
 
     private static bool Is(IGameObject item, string condition) => GameState.Condition(item, condition) == ConditionState.True;
+
+    [Fact]
+    public async Task U32HeatOfBattleInFireCreatesAHeroAndBattleHardens()
+    {
+        await Setup("russian", Unit("r4", "asl:squad", "defender-squad", "bd01:A1:0", "russian"),
+            Unit("r5", "asl:squad", "defender-squad", "bd01:A1:0", "russian"), Unit("g2", "asl:squad", "attacker-squad", "bd01:A2:0", "german"));
+        await Advance();
+
+        // 16 FP, 4+6 = 10: a NMC; g2 rolls an Original 2 and passes, then its Heat of Battle DR, 2+2 = 4 with no DRM for a German
+        // 1st Line squad, creates a German hero in A2 (A15.1, A15.21).
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Once(4, 6, 1, 1, 2, 2), new
+        {
+            firers = R4R5,
+            target = "bd01:A2:0"
+        }));
+        Assert.Contains(Since(before).Select(item => item.Payload).OfType<DiceRolled>(), roll => roll.Purpose == "fire-heat-of-battle");
+        var hero = Current.Units.Single(unit => unit.Kind == "asl:hero");
+        Assert.Equal(("attacker-hero", "german", "bd01:A2:0"), (hero.Definition!.Definition, hero.Side, Current.Location(hero.Id)!.Location.ToString()));
+        Assert.Equal(InstanceStatus.Active, Current.Unit("g2")!.Status);
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
+    public async Task U32AHeatOfBattleSixBothCreatesAHeroAndBattleHardensTheSquad()
+    {
+        await Setup("russian", Unit("r4", "asl:squad", "defender-squad", "bd01:A1:0", "russian"),
+            Unit("r5", "asl:squad", "defender-squad", "bd01:A1:0", "russian"), Unit("g2", "asl:squad", "attacker-squad", "bd01:A2:0", "german"));
+        await Advance();
+
+        // 3+3 = 6: a hero, and g2 is exchanged for the squared-E 4-6-8 (A15.3).
+        Committed(await Do(GameActions.Fire, Once(4, 6, 1, 1, 3, 3), new
+        {
+            firers = R4R5,
+            target = "bd01:A2:0"
+        }));
+        Assert.Equal(InstanceStatus.Consumed, Current.Unit("g2")!.Status);
+        var elite = Current.Units.Single(unit => unit.Status == InstanceStatus.Active && unit.Definition?.Definition == "attacker-elite-squad");
+        Assert.False(Is(elite, Conditions.Broken));
+        Assert.Single(Current.Units, unit => unit.Kind == "asl:hero");
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
+    public async Task U32ALeadersRallyOnAnOriginalTwoTakesHeatOfBattle()
+    {
+        await Setup("russian", Unit("r1", "asl:squad", "defender-squad", "bd01:D4:0", "russian", "asl:broken", "asl:dm"),
+            Unit("rl", "asl:leader", "defender-leader", "bd01:D4:0", "russian"));
+
+        // 1+1 rallies r1; its Heat of Battle DR, 1+2 = 3, +2 Russian, +1 broken: 6 creates a Russian hero and Battle Hardens
+        // r1 into the squared-E 4-5-8 (A15.1, A15.21, A15.3).
+        Committed(await Do(GameActions.Rally, Once(1, 1, 1, 2), new
+        {
+            unitId = "r1",
+            leader = "rl"
+        }));
+        var elite = Current.Units.Single(unit => unit.Status == InstanceStatus.Active && unit.Definition?.Definition == "defender-elite-squad");
+        Assert.Equal((false, false), (Is(elite, Conditions.Broken), Is(elite, Conditions.DesperationMorale)));
+        var hero = Current.Units.Single(unit => unit.Kind == "asl:hero");
+        Assert.Equal(("defender-hero", "bd01:D4:0"), (hero.Definition!.Definition, Current.Location(hero.Id)!.Location.ToString()));
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
 
     [Fact]
     public async Task U21ALeaderRalliesABrokenSquadUnderDm()
@@ -215,20 +278,23 @@ public sealed class RallyAndFireStepsTests : IDisposable
     }
 
     [Fact]
-    public async Task FateReducesTheSquadAndAFirstMmcSelfRallyRecordsLeaderCreationNotTaken()
+    public async Task FateReducesTheSquadAndAFirstMmcSelfRallyCreatesALeader()
     {
         await Setup("russian", Unit("r1", "asl:squad", "defender-squad", "bd01:D4:0", "russian", "asl:broken"),
             Unit("rl", "asl:leader", "defender-leader", "bd01:D4:0", "russian"),
             Unit("r2", "asl:squad", "defender-squad", "bd01:A1:0", "russian", "asl:broken"));
 
-        // A18.11: the first MMC Rally attempt of the side's own RPh, Self-Rally, rolls an Original 2: rallied.
-        Committed(await Do(GameActions.Rally, Once(1, 1), new
+        // A18.11: the first MMC Rally attempt of the side's own RPh, Self-Rally, rolls an Original 2: rallied, and a Leader
+        // Creation dr of 2, +1 Russian, +1 broken (its broken Morale Level of 7 adds nothing): 4 creates a 7-0 (A18.2).
+        Committed(await Do(GameActions.Rally, Once(1, 1, 2), new
         {
             unitId = "r2"
         }));
         Assert.False(Is(Current.Unit("r2")!, Conditions.Broken));
         var record = store.Read(Scope)!.Events.Select(item => item.Payload).OfType<RallyAttempted>().Single();
-        Assert.True(record.Resolution.GetProperty("arithmetic").GetProperty("leaderCreationNotTaken").GetBoolean());
+        Assert.Equal(4, record.Resolution.GetProperty("arithmetic").GetProperty("leaderCreation").GetProperty("finalDr").GetInt32());
+        var created = Current.Units.Single(unit => unit.Definition?.Definition == "defender-leader-7-0");
+        Assert.Equal(("russian", "bd01:A1:0", false), (created.Side, Current.Location(created.Id)!.Location.ToString(), Is(created, Conditions.Broken)));
 
         // Fate: an Original 12 Reduces r1 to a broken HS and does not rally it (A10.64).
         Committed(await Do(GameActions.Rally, Once(6, 6, 2, 2), new
@@ -515,6 +581,100 @@ public sealed class RallyAndFireStepsTests : IDisposable
         Committed(await Step(wounded, "bd01:C1:0"));
         refused = await Step(wounded, "bd01:C2:0");
         Assert.Contains(refused.Reasons, reason => reason.Contains("play.move-mf", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task U30AStackSplitsWhenAMemberBreaksAndTheOtherMovesOn()
+    {
+        await Setup("german", Unit("g1", "asl:squad", "attacker-squad", "bd01:A2:0", "german"),
+            Unit("g2", "asl:squad", "attacker-squad", "bd01:A2:0", "german"), Unit("g3", "asl:squad", "attacker-squad", "bd01:A2:0", "german"),
+            Unit("r4", "asl:squad", "defender-squad", "bd01:A1:0", "russian"), Unit("r5", "asl:squad", "defender-squad", "bd01:A1:0", "russian"));
+        await Advance(2);
+        string[] stack = ["g1", "g2"];
+        string[] g2 = ["g2"];
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = stack,
+            to = "bd01:B1:0"
+        }));
+
+        // Defensive First Fire on the 16 column, 3+4 - 2 = 5, a 3MC: g1 fails by 2, within its ELR, and breaks; g2 passes on 6.
+        Committed(await Do(GameActions.Fire, Once(3, 4, 2, 4, 1, 2), new
+        {
+            firers = R4R5,
+            target = "bd01:B1:0"
+        }));
+        Assert.True(Is(Current.Unit("g1")!, Conditions.Broken));
+        Assert.False(Is(Current.Unit("g2")!, Conditions.Broken));
+        Assert.Equal(g2, Current.Movement!.Members);
+        Committed(await Do(GameActions.PassFire, NoRoll(), new
+        {
+        }));
+
+        // A4.2: g2 moves on alone; g1 may not, and g3, not of the stack, waits until the stack's move ends.
+        Assert.NotEqual(PlayOutcome.Committed, (await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G1,
+            to = "bd01:B2:0"
+        })).Outcome);
+        Assert.NotEqual(PlayOutcome.Committed, (await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G3,
+            to = "bd01:B2:0"
+        })).Outcome);
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = g2,
+            to = "bd01:B2:0"
+        }));
+        Assert.Equal(g2, Current.Movement!.Movers);
+        Committed(await Do(GameActions.PassFire, NoRoll(), new
+        {
+        }));
+        Committed(await Do(GameActions.EndMove, NoRoll(), new
+        {
+        }));
+        Assert.Null(Current.Movement);
+        Assert.True(Current.Unit("g2")!.MovementEnded);
+
+        // The stack's move is over, so g3 moves.
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G3,
+            to = "bd01:B2:0"
+        }));
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
+    public async Task ASplitStackEndsOneMemberAndTheOtherMovesOn()
+    {
+        await Setup("german", Unit("g1", "asl:squad", "attacker-squad", "bd01:A2:0", "german"),
+            Unit("g2", "asl:squad", "attacker-squad", "bd01:A2:0", "german"));
+        await Advance(2);
+        string[] stack = ["g1", "g2"];
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = stack,
+            to = "bd01:B1:0"
+        }));
+        Committed(await Do(GameActions.PassFire, NoRoll(), new
+        {
+        }));
+
+        // The ATTACKER ends g1's move and moves g2 on (A4.2).
+        Committed(await Do(GameActions.EndMove, NoRoll(), new
+        {
+            unitIds = G1
+        }));
+        Assert.True(Current.Unit("g1")!.MovementEnded);
+        Assert.NotNull(Current.Movement);
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G2,
+            to = "bd01:B2:0"
+        }));
+        Assert.Equal(BoardLocation.Parse("bd01:B2:0"), Current.Location("g2")!.Location);
     }
 
     [Fact]

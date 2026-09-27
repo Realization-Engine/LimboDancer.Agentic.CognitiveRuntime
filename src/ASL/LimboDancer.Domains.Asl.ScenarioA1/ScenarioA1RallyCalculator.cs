@@ -175,7 +175,9 @@ public static class ScenarioA1RallyCalculator
         }
 
         if (attempt.Rolls is { Rally: { } dice } && (dice.Count != 2 || dice.Any(die => die is < 1 or > 6))
-            || attempt.Rolls?.WoundSeverity is < 1 or > 6)
+            || attempt.Rolls?.WoundSeverity is < 1 or > 6
+            || attempt.Rolls?.HeatOfBattle is { } heat && (heat.Count != 2 || heat.Any(die => die is < 1 or > 6))
+            || attempt.Rolls?.LeaderCreation is < 1 or > 6)
         {
             outside.Add("asl.a1.rally.roll-malformed");
         }
@@ -200,6 +202,18 @@ public static class ScenarioA1RallyCalculator
         if (attempt.Leader is null && definition.IsMmc && definition.SelfRally is null && !FieldPromotionAttempt(attempt))
         {
             undecided.Add("asl.a1.rally.self-rally-capability-unrecorded:" + definition.Id);
+        }
+
+        // A15.1: a Green or Conscript unit's Heat of Battle DRM depends on whether it is Inexperienced (A19.2).
+        if (ScenarioA1HeatOfBattle.NeedsInexperience(definition) && unit.Inexperienced is null)
+        {
+            undecided.Add("asl.a1.rally.fact-missing:unit.inexperienced");
+        }
+
+        // A25.25: an NKVD MMC's Field Promotion may create a Commissar, which the review does not admit.
+        if (attempt.Leader is null && FieldPromotionAttempt(attempt) && ScenarioA1FireReference.IsNkvd(definition.Id))
+        {
+            undecided.Add("asl.a1.rally.field-promotion-commissar-unreviewed:" + definition.Id);
         }
 
         // Fate must be able to Reduce the unit (A10.64, A7.302).
@@ -249,13 +263,14 @@ public static class ScenarioA1RallyCalculator
 
         var original = dice[0] + dice[1];
         var final = original + (int)drm.Sum(item => item.Value);
-        var morale = definition.BrokenMorale!.Value - (unit.Wounded == true ? 1 : 0);
+        // A17.3: one lower when wounded; A10.8: one higher when Fanatic.
+        var morale = definition.BrokenMorale!.Value - (unit.Wounded == true ? 1 : 0) + (unit.Fanatic == true ? 1 : 0);
         var fate = original == 12;
 
-        // A18.11: an Original 2 on the first MMC Self-Rally rallies the unit; A15.1: an Original 2 on a Rally other than
-        // Self-Rally calls for Heat of Battle. Neither Leader Creation nor Heat of Battle is reviewed (ruling R0.2).
+        // A18.11: an Original 2 on the first MMC Self-Rally rallies the unit and calls for a Leader Creation dr; A15.1: an
+        // Original 2 on a Rally other than Self-Rally calls for a Heat of Battle DR.
         var rallied = !fate && (final <= morale || (fieldPromotion && original == 2));
-        var heatOfBattle = original == 2 && !selfRally;
+        var heatOfBattle = original == 2 && !selfRally && ScenarioA1HeatOfBattle.Subject(definition, heroic: false);
         var leaderCreation = original == 2 && fieldPromotion;
 
         var events = new List<string>();
@@ -305,14 +320,80 @@ public static class ScenarioA1RallyCalculator
             return new RallyResolution(RallyResolution.Abstained, ["asl.a1.rally.extra-roll:woundSeverity"], null, null);
         }
 
-        if (heatOfBattle)
+        if (attempt.Rolls.HeatOfBattle is not null && !heatOfBattle)
         {
-            events.Add("heat-of-battle-not-taken");
+            return new RallyResolution(RallyResolution.Abstained, ["asl.a1.rally.extra-roll:heatOfBattle"], null, null);
         }
 
+        if (attempt.Rolls.LeaderCreation is not null && !leaderCreation)
+        {
+            return new RallyResolution(RallyResolution.Abstained, ["asl.a1.rally.extra-roll:leaderCreation"], null, null);
+        }
+
+        // A15.1 to A15.3: the Heat of Battle DR, with the +1 for a broken unit though the 2 rallied it.
+        HeatOfBattleOutcome? heat = null;
+        var fanatic = unit.Fanatic == true;
+        if (heatOfBattle)
+        {
+            if (attempt.Rolls.HeatOfBattle is not { } heatDice)
+            {
+                return new RallyResolution(RallyResolution.Indeterminate, ["asl.a1.rally.roll-missing:heatOfBattle"], null, null);
+            }
+
+            var (outcome, reason) = ScenarioA1HeatOfBattle.Resolve(definition, true, unit.Inexperienced, fanatic, heatDice, reference.Definitions);
+            if (outcome is null)
+            {
+                return new RallyResolution(RallyResolution.Indeterminate, [reason!], null, null);
+            }
+
+            heat = outcome;
+            events.Add("heat-of-battle:" + outcome.Result);
+
+            // A15.21: a leader made heroic rallies; A15.3: a Battle Hardened unit is unbroken (ruling R28.7), though the Rally
+            // DR failed.
+            if (!rallied && (outcome.Heroic == true || outcome.Hardening))
+            {
+                rallied = true;
+                events.Add("rallied-heat-of-battle");
+            }
+            if (outcome.HeroDefinitionId is { } hero)
+            {
+                events.Add("hero-created:" + hero);
+            }
+
+            if (outcome.HardenedDefinitionId is { } hardened)
+            {
+                finalDefinition = hardened;
+                events.Add("battle-hardened");
+            }
+
+            if (outcome.Fanatic == true)
+            {
+                fanatic = true;
+                events.Add("became-fanatic");
+            }
+        }
+
+        // A18.11, A18.2: the Leader Creation dr and its drm; the broken unit's Morale Level is its broken one.
+        LeaderCreationOutcome? creation = null;
         if (leaderCreation)
         {
-            events.Add("leader-creation-not-taken");
+            if (attempt.Rolls.LeaderCreation is not { } dr)
+            {
+                return new RallyResolution(RallyResolution.Indeterminate, ["asl.a1.rally.roll-missing:leaderCreation"], null, null);
+            }
+
+            var created = LeaderCreation(definition, morale, dr, reference);
+            if (created.Undecided is { } reason)
+            {
+                return new RallyResolution(RallyResolution.Indeterminate, [reason], null, null);
+            }
+
+            creation = created.Outcome;
+            if (creation!.LeaderDefinitionId is { } leaderId)
+            {
+                events.Add("leader-created:" + leaderId);
+            }
         }
 
         // A12.141: the attempt costs "?" to the concealed unit and the concealed rallying leader in the LOS of a Good Order
@@ -328,8 +409,74 @@ public static class ScenarioA1RallyCalculator
             concealmentLost.Add(concealedLeader.UnitId!);
         }
 
-        var arithmetic = new RallyArithmetic(kind, dice.ToArray(), original, drm, final, morale, rallied, fate, heatOfBattle, leaderCreation);
+        var arithmetic = new RallyArithmetic(kind, dice.ToArray(), original, drm, final, morale, rallied, fate)
+        {
+            HeatOfBattle = heat,
+            LeaderCreation = creation,
+        };
         return new RallyResolution(RallyResolution.Resolved, [], arithmetic,
-            new RallyEffect(unit.UnitId!, definition.Id, finalDefinition, rallied, eliminated, wounded && !eliminated, concealmentLost, events));
+            new RallyEffect(unit.UnitId!, definition.Id, finalDefinition, rallied, eliminated, wounded && !eliminated, concealmentLost, events)
+            {
+                Fanatic = fanatic && !eliminated ? true : null,
+                Heroic = heat?.Heroic,
+                HeroDefinitionId = heat?.HeroDefinitionId,
+                CreatedLeaderDefinitionId = creation?.LeaderDefinitionId,
+            });
+    }
+
+    /// <summary>
+    /// The Leader Creation Table (A18.2, p. 85): a dr with cumulative drm for nationality, the base unit's Morale Level,
+    /// and its having been broken; the leader is the unit's nationality's counter of that grade.
+    /// </summary>
+    private static (LeaderCreationOutcome? Outcome, string? Undecided) LeaderCreation(FireDefinition unit, int morale, int dr,
+        ScenarioA1RallyReference reference)
+    {
+        var drm = new List<FireModifier>();
+        var nationality = unit.Nationality switch
+        {
+            "american" or "british" or "german" => -1,
+            "russian" or "italian" => 1,
+            "finnish" or "japanese" => (int?)null,
+            _ => 0,
+        };
+        if (nationality is null)
+        {
+            return (null, "asl.a1.rally.leader-creation-not-applicable:" + unit.Nationality);
+        }
+
+        if (nationality != 0)
+        {
+            drm.Add(new FireModifier("nationality:" + unit.Nationality, nationality.Value, "A18.2"));
+        }
+
+        if (morale >= 8)
+        {
+            drm.Add(new FireModifier("morale-8-or-more", -1m, "A18.2"));
+        }
+        else if (morale <= 6)
+        {
+            drm.Add(new FireModifier("morale-6-or-less", 1m, "A18.2"));
+        }
+
+        drm.Add(new FireModifier("broken", 1m, "A18.11"));
+        var final = dr + (int)drm.Sum(item => item.Value);
+        (int Morale, int Leadership)? grade = final switch
+        {
+            >= 7 => null,
+            6 => (6, 1),
+            4 or 5 => (7, 0),
+            2 or 3 => (8, 0),
+            _ => (8, -1),
+        };
+        if (grade is not { } wanted)
+        {
+            return (new LeaderCreationOutcome(dr, drm, final, null), null);
+        }
+
+        var leader = reference.Definitions.Values.Where(item => item.IsLeader && item.Nationality == unit.Nationality
+            && item.Morale == wanted.Morale && item.Leadership == wanted.Leadership).Select(item => item.Id).Order(StringComparer.Ordinal).FirstOrDefault();
+        return leader is null
+            ? (null, $"asl.a1.rally.leader-counter-missing:{unit.Nationality}:{wanted.Morale}{(wanted.Leadership > 0 ? "+" : "-")}{Math.Abs(wanted.Leadership)}")
+            : (new LeaderCreationOutcome(dr, drm, final, leader), null);
     }
 }

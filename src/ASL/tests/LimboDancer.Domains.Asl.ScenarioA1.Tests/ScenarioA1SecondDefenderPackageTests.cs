@@ -103,9 +103,12 @@ public sealed class ScenarioA1SecondDefenderPackageTests
             ["firstReveal"] = "enemySmc-under-A12.15",
             ["overrunElection"] = "elected-after-first-reveal",
             ["entryMode"] = "ordinaryObstacleEntryNotBypass",
-            ["a414Exception"] = "none", ["smcOutsideAfv"] = "true",
-            ["specialModifier"] = "none", ["leaderExemption"] = "none",
-            ["secondReveal"] = secondReveal, ["attackerCapability"] = capability,
+            ["a414Exception"] = "none",
+            ["smcOutsideAfv"] = "true",
+            ["specialModifier"] = "none",
+            ["leaderExemption"] = "none",
+            ["secondReveal"] = secondReveal,
+            ["attackerCapability"] = capability,
         };
 
     private static async Task<DomainPackageDescriptor> Descriptor() =>
@@ -126,8 +129,10 @@ public sealed class ScenarioA1SecondDefenderPackageTests
                 ScenarioA1SecondDefenderConclusionResolver.QuestionKind),
             JsonSerializer.SerializeToElement(new
             {
-                unitId = "squad", locationId = "bd01:E4:0",
-                observationVersion = "snapshot-1", caseId,
+                unitId = "squad",
+                locationId = "bd01:E4:0",
+                observationVersion = "snapshot-1",
+                caseId,
             }), Now);
         DomainEntityResolution Entity(string id) => new(
             new DomainEntityQuery("entity-" + id, Tenant, descriptor.Identity,

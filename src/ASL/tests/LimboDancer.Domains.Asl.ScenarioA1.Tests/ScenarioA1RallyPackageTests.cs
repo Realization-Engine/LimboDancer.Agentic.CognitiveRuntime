@@ -5,8 +5,9 @@ using Xunit;
 namespace LimboDancer.Domains.Asl.ScenarioA1.Tests;
 
 /// <summary>
-/// The Rally package (unit step 19; Scenario A1 Rally Review 2026-09-26): the DRM, Fate, the recorded deviations of
-/// ruling R0.2, the refusals, and a walk over every roll outcome of the accepted attempts.
+/// The Rally package (unit step 19; Scenario A1 Rally Review 2026-09-26; revised at unit steps 27 and 28): the DRM, Fate,
+/// Heat of Battle and Leader Creation after an Original 2, the refusals, and a walk over every roll outcome of the accepted
+/// attempts.
 /// </summary>
 public sealed class ScenarioA1RallyPackageTests
 {
@@ -14,17 +15,20 @@ public sealed class ScenarioA1RallyPackageTests
     private const string At = "bd01:E4:0";
 
     private static RallyUnit Unit(string id = "ru-1", string definition = "defender-squad", bool dm = true, bool disrupted = false,
-        bool wounded = false, bool attempted = false, bool concealed = false) =>
-        new(id, definition, At, true, disrupted, wounded, dm, concealed, attempted, false);
+        bool wounded = false, bool attempted = false, bool concealed = false, bool? inexperienced = null) =>
+        new(id, definition, At, true, disrupted, wounded, dm, concealed, attempted, false)
+        {
+            Inexperienced = inexperienced ?? (definition.Contains("conscript", StringComparison.Ordinal) ? true : null),
+        };
 
     private static RallyLeader Leader(string definition = "defender-leader", bool wounded = false, string location = At) =>
         new("ru-leader", definition, location, false, wounded, false);
 
     private static RallyAttempt Attempt(int[]? dice, RallyUnit? unit = null, RallyLeader? leader = null, bool selfRally = false,
         string terrain = "stone-building", string side = "phasing", bool firstMmc = false, bool goodOrderLeader = true,
-        bool brokenLeader = false, int? severity = null, string phase = "RPh") =>
+        bool brokenLeader = false, int? severity = null, string phase = "RPh", int[]? heat = null, int? creation = null) =>
         new(phase, side, unit ?? Unit(), selfRally ? null : leader ?? Leader(), At, terrain, !selfRally && goodOrderLeader,
-            brokenLeader, firstMmc, null, new RallyRolls(dice, severity));
+            brokenLeader, firstMmc, null, new RallyRolls(dice, severity) { HeatOfBattle = heat, LeaderCreation = creation });
 
     [Fact]
     public void ALeaderRalliesABrokenSquadUnderDmInABuilding()
@@ -62,20 +66,83 @@ public sealed class ScenarioA1RallyPackageTests
     }
 
     [Fact]
-    public void AnOriginalTwoIsRecordedAsADeviationNotRefused()
+    public void ALeaderRallysOriginalTwoCallsForHeatOfBattle()
     {
-        // R0.2: a leader rally's Original 2 rallies as its DR gives and records that Heat of Battle was not taken.
-        var leaderRally = ScenarioA1RallyCalculator.Resolve(Attempt([1, 1]), Reference);
-        Assert.True(leaderRally.Arithmetic!.HeatOfBattleNotTaken);
-        Assert.Contains("heat-of-battle-not-taken", leaderRally.Effect!.Events);
+        // A15.1: the Original 2 rallies the squad, then asks for the Heat of Battle DR.
+        Assert.Equal(["asl.a1.rally.roll-missing:heatOfBattle"], ScenarioA1RallyCalculator.Resolve(Attempt([1, 1]), Reference).Reasons);
 
-        // A18.11: the first MMC Self-Rally of the side's own RPh rallies on an Original 2, whatever the DRM, and records that
-        // Leader Creation was not taken; Self-Rally never calls for Heat of Battle (A15.1).
-        var fieldPromotion = ScenarioA1RallyCalculator.Resolve(
-            Attempt([1, 1], Unit(definition: "defender-conscript-squad"), selfRally: true, firstMmc: true, goodOrderLeader: false), Reference);
-        Assert.Equal(("field-promotion-self-rally", true, true, false), (fieldPromotion.Arithmetic!.Kind, fieldPromotion.Arithmetic.Rallied,
-            fieldPromotion.Arithmetic.LeaderCreationNotTaken, fieldPromotion.Arithmetic.HeatOfBattleNotTaken));
-        Assert.Contains(("self-rally", 1m), fieldPromotion.Arithmetic.Drm.Select(item => (item.Name, item.Value)));
+        // 1+1 = 2, +2 Russian, +1 broken: 5 creates a Russian hero and Battle Hardens the 4-4-7 into the squared-E 4-5-8.
+        var both = ScenarioA1RallyCalculator.Resolve(Attempt([1, 1], heat: [1, 1]), Reference);
+        var heat = both.Arithmetic!.HeatOfBattle!;
+        Assert.Equal((5, HeatOfBattleOutcome.HeroAndBattleHardening, "defender-hero", "defender-elite-squad"),
+            (heat.FinalDr, heat.Result, heat.HeroDefinitionId, heat.HardenedDefinitionId));
+        Assert.Equal([("nationality:russian", 2m), ("broken", 1m)], heat.Drm.Select(item => (item.Name, item.Value)));
+        Assert.Equal(("defender-elite-squad", true, "defender-hero"), (both.Effect!.FinalDefinitionId, both.Effect.Rallied, both.Effect.HeroDefinitionId));
+
+        // 3+3 = 6, +3: 9 is Berserk, recorded as not taken (ruling R28.1); the squad still rallies.
+        var berserk = ScenarioA1RallyCalculator.Resolve(Attempt([1, 1], heat: [3, 3]), Reference);
+        Assert.Equal((HeatOfBattleOutcome.BerserkNotTaken, "defender-squad", true), (berserk.Arithmetic!.HeatOfBattle!.Result,
+            berserk.Effect!.FinalDefinitionId, berserk.Effect.Rallied));
+
+        // A leader rallied by another takes Heat of Battle too: 5 makes him heroic and Battle Hardens a 7-0 into an 8-0.
+        var leader = ScenarioA1RallyCalculator.Resolve(Attempt([1, 1], Unit("ru-l", "defender-leader-7-0"), heat: [1, 1]), Reference);
+        Assert.Equal((true, "defender-leader"), (leader.Effect!.Heroic, leader.Effect.FinalDefinitionId));
+
+        // An elite squad already of the highest quality becomes Fanatic: 2+2 = 4, -1 elite, +3: 6.
+        var elite = ScenarioA1RallyCalculator.Resolve(Attempt([1, 1], Unit(definition: "defender-elite-squad"), heat: [2, 2]), Reference);
+        Assert.Equal((true, "defender-elite-squad"), (elite.Effect!.Fanatic, elite.Effect.FinalDefinitionId));
+
+        // A15.21: a leader made heroic rallies though the Rally DR failed: a broken German 6+1 (broken morale 6) under DM and
+        // a wounded 8-0 in the open: 1+1 = 2, +4, +1 = 7 fails; the Heat of Battle DR 1+1 = 2, +1 broken: 3 makes him heroic.
+        var heroic = ScenarioA1RallyCalculator.Resolve(Attempt([1, 1], Unit("de-l", "attacker-leader-6-plus-1"), Leader("attacker-leader-8-0", wounded: true),
+            terrain: "open-ground", heat: [1, 1]), Reference);
+        Assert.True(heroic.Arithmetic!.FinalDr > heroic.Arithmetic.MoraleLevel);
+        Assert.Equal((true, true), (heroic.Effect!.Rallied, heroic.Effect.Heroic));
+        Assert.Contains("rallied-heat-of-battle", heroic.Effect.Events);
+
+        // A Heat of Battle DR where none is due is an extra roll.
+        Assert.Equal(["asl.a1.rally.extra-roll:heatOfBattle"], ScenarioA1RallyCalculator.Resolve(Attempt([2, 3], heat: [1, 1]), Reference).Reasons);
+    }
+
+    [Fact]
+    public void FieldPromotionCreatesALeaderFromTheTable()
+    {
+        // A18.11: the first MMC Self-Rally rallies on an Original 2, whatever the DRM, and asks for the Leader Creation dr;
+        // Self-Rally never calls for Heat of Battle (A15.1).
+        var conscript = Unit(definition: "defender-conscript-squad");
+        var attempt = Attempt([1, 1], conscript, selfRally: true, firstMmc: true, goodOrderLeader: false);
+        Assert.Equal(["asl.a1.rally.roll-missing:leaderCreation"], ScenarioA1RallyCalculator.Resolve(attempt, Reference).Reasons);
+
+        // A18.2: dr 1, +1 Russian, +1 for broken Morale Level 5 (6 or less), +1 broken: 4 creates a 7-0.
+        var created = ScenarioA1RallyCalculator.Resolve(attempt with
+        {
+            Rolls = new RallyRolls([1, 1], null) { LeaderCreation = 1 }
+        }, Reference);
+        Assert.Equal(("field-promotion-self-rally", true, "defender-leader-7-0"), (created.Arithmetic!.Kind, created.Arithmetic.Rallied,
+            created.Effect!.CreatedLeaderDefinitionId));
+        Assert.Equal(4, created.Arithmetic.LeaderCreation!.FinalDr);
+        Assert.Null(created.Arithmetic.HeatOfBattle);
+
+        // dr 4, +3: 7 creates none.
+        var none = ScenarioA1RallyCalculator.Resolve(attempt with
+        {
+            Rolls = new RallyRolls([1, 1], null) { LeaderCreation = 4 }
+        }, Reference);
+        Assert.Null(none.Effect!.CreatedLeaderDefinitionId);
+
+        // A German 1st Line squad: -1 German, +1 broken, and its broken Morale Level 7 adds nothing: dr 1 creates an 8-1.
+        var german = ScenarioA1RallyCalculator.Resolve(Attempt([1, 1], Unit(definition: "attacker-squad"), selfRally: true, firstMmc: true,
+            goodOrderLeader: false, creation: 1), Reference);
+        Assert.Equal("attacker-leader-8-1", german.Effect!.CreatedLeaderDefinitionId);
+    }
+
+    [Fact]
+    public void AnNkvdFieldPromotionIsRefused()
+    {
+        // A25.25: an NKVD MMC's Field Promotion creates a Commissar, which the review does not admit.
+        var result = ScenarioA1RallyCalculator.Resolve(Attempt([1, 1], Unit(definition: "defender-nkvd-squad"), selfRally: true, firstMmc: true,
+            goodOrderLeader: false), Reference);
+        Assert.Contains(result.Reasons, reason => reason.StartsWith("asl.a1.rally.field-promotion-commissar-unreviewed", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -119,6 +186,10 @@ public sealed class ScenarioA1RallyPackageTests
         { "A18.11 self-rally", Attempt(null, Unit(definition: "defender-conscript-squad", dm: false), selfRally: true, firstMmc: true,
             goodOrderLeader: false, terrain: "open-ground") },
         { "wounded leader rallies a HS", Attempt(null, Unit(definition: "defender-half-squad"), Leader("defender-leader-6-plus-1", wounded: true)) },
+        { "leader rallies an Inexperienced conscript", Attempt(null, Unit(definition: "defender-conscript-squad")) },
+        { "leader rallies an elite squad", Attempt(null, Unit(definition: "defender-elite-squad")) },
+        { "leader rallies a 10-3", Attempt(null, Unit("ru-l", "defender-leader-10-3"), Leader("defender-leader-9-2")) },
+        { "German A18.11 self-rally", Attempt(null, Unit(definition: "attacker-squad"), selfRally: true, firstMmc: true, goodOrderLeader: false) },
     };
 
     [Theory]
@@ -131,12 +202,48 @@ public sealed class ScenarioA1RallyPackageTests
         {
             for (var second = 1; second <= 6; second++)
             {
-                var result = ScenarioA1RallyCalculator.Resolve(attempt with { Rolls = new RallyRolls([first, second], null) }, Reference);
+                var result = ScenarioA1RallyCalculator.Resolve(attempt with
+                {
+                    Rolls = new RallyRolls([first, second], null)
+                }, Reference);
+                if (result.Reasons is ["asl.a1.rally.roll-missing:heatOfBattle"])
+                {
+                    for (var heat = 0; heat < 36; heat++)
+                    {
+                        var rolled = ScenarioA1RallyCalculator.Resolve(attempt with
+                        {
+                            Rolls = new RallyRolls([first, second], null) { HeatOfBattle = [(heat / 6) + 1, (heat % 6) + 1] }
+                        }, Reference);
+                        Assert.True(rolled.Disposition == RallyResolution.Resolved, $"{name} {first},{second} heat {heat}: {string.Join("; ", rolled.Reasons)}");
+                        paths++;
+                    }
+
+                    continue;
+                }
+
+                if (result.Reasons is ["asl.a1.rally.roll-missing:leaderCreation"])
+                {
+                    for (var dr = 1; dr <= 6; dr++)
+                    {
+                        var rolled = ScenarioA1RallyCalculator.Resolve(attempt with
+                        {
+                            Rolls = new RallyRolls([first, second], null) { LeaderCreation = dr }
+                        }, Reference);
+                        Assert.True(rolled.Disposition == RallyResolution.Resolved, $"{name} {first},{second} creation {dr}: {string.Join("; ", rolled.Reasons)}");
+                        paths++;
+                    }
+
+                    continue;
+                }
+
                 if (result.Reasons is [{ } missing] && missing.StartsWith("asl.a1.rally.roll-missing:woundSeverity:", StringComparison.Ordinal))
                 {
                     for (var severity = 1; severity <= 6; severity++)
                     {
-                        var wound = ScenarioA1RallyCalculator.Resolve(attempt with { Rolls = new RallyRolls([first, second], severity) }, Reference);
+                        var wound = ScenarioA1RallyCalculator.Resolve(attempt with
+                        {
+                            Rolls = new RallyRolls([first, second], severity)
+                        }, Reference);
                         Assert.True(wound.Disposition == RallyResolution.Resolved, $"{name} {first},{second},{severity}: {string.Join("; ", wound.Reasons)}");
                         paths++;
                     }

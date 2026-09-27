@@ -12,22 +12,20 @@ namespace LimboDancer.Domains.Asl.ScenarioA1;
 /// </summary>
 public sealed class ScenarioA1FirePackage : IDomainPackageResolver
 {
-    public const string ManifestSha256 = "e0c28e88cda17bd71efd63f569c713d4d921e958dc7bc848b3c4c4acead143e1";
-    public const string MatrixSha256 = "afe819360ce7b662a30eab04b43c5e852f12f17385c26642c54db8c79f7804b6";
+    public const string ManifestSha256 = "ab868f4c13b2518d399b165f59cc3620f5556d2721e824d406168f8c632eddaf";
+    public const string MatrixSha256 = "50cabc94e5b96f6863360b7725f7f681a21b4fae5349473c06c3af8f22794c0e";
     public const string ChartSupplementId = "asl-supplement:fire-charts";
 
     /// <summary>
     /// The package as revised at unit step 18, before the steps 19 to 23 revision. The package first published at unit step
     /// 17 had manifest digest 45011b56946be8a7aba1676e6aea8d5ad0fa82193e4ebac24e06fd36bdff2b69 (Fire Review, "Revision at unit step 18").
     /// </summary>
-    public const string PriorManifestSha256 = "58485196fc3427626945fa62909f0c9c1851c772c515180a44b2d405b54aa3b3";
+    public const string PriorManifestSha256 = "e0c28e88cda17bd71efd63f569c713d4d921e958dc7bc848b3c4c4acead143e1";
     public static readonly DomainPackageRef Identity = new(new DomainId("asl"), "scenario-a1-fire", "sha256:" + ManifestSha256);
 
     private static readonly string[] Cases =
     [
-        "A1-fire-resolved", "A1-fire-phase-outside", "A1-fire-firer-outside", "A1-fire-target-outside", "A1-fire-range-or-los-denied",
-        "A1-fire-weapon-outside", "A1-fire-movement-fire-outside", "A1-fire-movement-drm-differs", "A1-fire-levels-differ",
-        "A1-fire-hindrance-unattributed", "A1-fire-elr-undecided", "A1-fire-leaders-interact", "A1-fire-roll-missing",
+        "A1-fire-resolved", "A1-fire-phase-outside", "A1-fire-firer-outside", "A1-fire-target-outside", "A1-fire-range-or-los-denied", "A1-fire-weapon-outside", "A1-fire-movement-fire-outside", "A1-fire-movement-drm-differs", "A1-fire-levels-differ", "A1-fire-hindrance-unattributed", "A1-fire-elr-undecided", "A1-fire-leaders-interact", "A1-fire-heat-of-battle-undecided", "A1-fire-roll-missing",
     ];
 
     private static readonly string[] PinnedDigests =

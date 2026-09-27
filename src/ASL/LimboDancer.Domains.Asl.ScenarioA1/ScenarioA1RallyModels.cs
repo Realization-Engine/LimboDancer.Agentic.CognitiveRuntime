@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace LimboDancer.Domains.Asl.ScenarioA1;
 
 /// <summary>
@@ -28,7 +30,16 @@ public sealed record RallyUnit(
     bool? DesperationMorale,
     bool? Concealed,
     bool? AttemptedThisPlayerTurn,
-    bool? OtherActionThisPhase);
+    bool? OtherActionThisPhase)
+{
+    /// <summary>Whether the unit is Fanatic (A10.8): its broken Morale Level is one higher; null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Fanatic { get; init; }
+
+    /// <summary>Whether a Green or Conscript MMC is Inexperienced (A19.2), for the Heat of Battle DRM; required for those classes.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Inexperienced { get; init; }
+}
 
 /// <summary>The Good Order leader attempting to rally the unit (A10.6); none for Self-Rally.</summary>
 public sealed record RallyLeader(
@@ -39,8 +50,21 @@ public sealed record RallyLeader(
     bool? Wounded,
     bool? Concealed);
 
-/// <summary>Recorded rolls: the Rally DR, and a leader's Wound Severity dr after Fate (A10.64, A17.11).</summary>
-public sealed record RallyRolls(IReadOnlyList<int>? Rally, int? WoundSeverity);
+/// <summary>
+/// Recorded rolls: the Rally DR, a leader's Wound Severity dr after Fate (A10.64, A17.11), the Heat of Battle DR after a
+/// leader's rally on an Original 2 (A15.1), and the Leader Creation dr after the first MMC Self-Rally's Original 2 (A18.11).
+/// </summary>
+public sealed record RallyRolls(IReadOnlyList<int>? Rally, int? WoundSeverity)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<int>? HeatOfBattle { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? LeaderCreation { get; init; }
+}
+
+/// <summary>The Leader Creation dr and its drm (A18.2), and the leader it created; null when the Final dr created none.</summary>
+public sealed record LeaderCreationOutcome(int Dr, IReadOnlyList<FireModifier> Drm, int FinalDr, string? LeaderDefinitionId);
 
 /// <summary>The attempt's arithmetic, as A10.6 to A10.64 resolve it.</summary>
 public sealed record RallyArithmetic(
@@ -51,9 +75,16 @@ public sealed record RallyArithmetic(
     int FinalDr,
     int MoraleLevel,
     bool Rallied,
-    bool Fate,
-    bool HeatOfBattleNotTaken,
-    bool LeaderCreationNotTaken);
+    bool Fate)
+{
+    /// <summary>The Heat of Battle DR after a leader's rally on an Original 2 (A15.1); null when none was rolled.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public HeatOfBattleOutcome? HeatOfBattle { get; init; }
+
+    /// <summary>The Leader Creation dr after the first MMC Self-Rally's Original 2 (A18.11, A18.2); null when none was rolled.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public LeaderCreationOutcome? LeaderCreation { get; init; }
+}
 
 /// <summary>What the attempt did to the unit, and which units lost "?" by it (A12.141).</summary>
 public sealed record RallyEffect(
@@ -64,7 +95,24 @@ public sealed record RallyEffect(
     bool Eliminated,
     bool Wounded,
     IReadOnlyList<string> ConcealmentLost,
-    IReadOnlyList<string> Events);
+    IReadOnlyList<string> Events)
+{
+    /// <summary>Whether the unit is Fanatic after the attempt (A10.8); null when it is not.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Fanatic { get; init; }
+
+    /// <summary>Whether a rallied leader became heroic (A15.21); null when he did not.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Heroic { get; init; }
+
+    /// <summary>The hero the attempt created (A15.21); null when none.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? HeroDefinitionId { get; init; }
+
+    /// <summary>The leader Field Promotion created (A18.11); null when none.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? CreatedLeaderDefinitionId { get; init; }
+}
 
 /// <summary>The Rally package's answer: resolved with its arithmetic and effect, or Abstained or Indeterminate with reasons.</summary>
 public sealed record RallyResolution(string Disposition, IReadOnlyList<string> Reasons, RallyArithmetic? Arithmetic, RallyEffect? Effect)

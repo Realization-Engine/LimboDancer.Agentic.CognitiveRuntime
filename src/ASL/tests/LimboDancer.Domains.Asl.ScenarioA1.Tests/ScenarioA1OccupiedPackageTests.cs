@@ -138,7 +138,10 @@ public sealed class ScenarioA1OccupiedPackageTests
             new SemanticIdentifier(package.Identity.DomainId, ScenarioA1OccupiedConclusionResolver.QuestionKind),
             JsonSerializer.SerializeToElement(new
             {
-                unitId = "squad", locationId = "building", caseId, observationVersion = "state-1",
+                unitId = "squad",
+                locationId = "building",
+                caseId,
+                observationVersion = "state-1",
             }), Now);
         DomainEntityResolution Entity(string id) => new(
             new DomainEntityQuery("query-" + id, Tenant, package.Identity,

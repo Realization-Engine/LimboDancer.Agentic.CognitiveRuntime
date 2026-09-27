@@ -36,7 +36,8 @@ public sealed class ScenarioA1SecondDefenderObservationTests
             SecondDefenderState = state,
             SecondRevealOrdinal = state == ScenarioA1SecondDefenderState.KnownSmcNotRevealed
                 ? null : 4,
-            Ntc = ntc, NtcOrdinal = ntc == ScenarioA1OverrunNtc.Unresolved ? null : 1,
+            Ntc = ntc,
+            NtcOrdinal = ntc == ScenarioA1OverrunNtc.Unresolved ? null : 1,
             MfAtSecondReveal = mf,
         };
         var caseId = "A1-second-defender-" + suffix;
@@ -61,7 +62,10 @@ public sealed class ScenarioA1SecondDefenderObservationTests
     {
         var before = Snapshot();
         Assert.Single((await Provider(before).ObserveAsync(Query(SmcCase))).Observations);
-        Assert.Empty((await Provider(before with { NtcOrdinal = 5 })
+        Assert.Empty((await Provider(before with
+        {
+            NtcOrdinal = 5
+        })
             .ObserveAsync(Query(SmcCase))).Observations);
     }
 
@@ -106,11 +110,17 @@ public sealed class ScenarioA1SecondDefenderObservationTests
             ScenarioA1SecondDefenderObservationProvider.QueryKind),
         extra ? JsonSerializer.SerializeToElement(new
         {
-            unitId = "squad", locationId = "bd01:E4:0", observationVersion = "snapshot-1",
-            caseId, unreviewed = "yes",
+            unitId = "squad",
+            locationId = "bd01:E4:0",
+            observationVersion = "snapshot-1",
+            caseId,
+            unreviewed = "yes",
         }) : JsonSerializer.SerializeToElement(new
         {
-            unitId = "squad", locationId = "bd01:E4:0", observationVersion = "snapshot-1", caseId,
+            unitId = "squad",
+            locationId = "bd01:E4:0",
+            observationVersion = "snapshot-1",
+            caseId,
         }), 1);
 
     private static ScenarioA1SecondDefenderSnapshot Snapshot() => new(
@@ -120,17 +130,27 @@ public sealed class ScenarioA1SecondDefenderObservationTests
             Board01TerrainCatalog.MetadataGitBlobSha, "E4", 0, null))
     {
         InitialOccupancy = ScenarioA1InitialConcealedOccupancy.Concealed,
-        A1215FirstRevealOccurred = true, FirstRevealedUnitId = "first-smc",
-        FirstRevealOrdinal = 2, FirstRevealedType = ScenarioA1RevealedOccupant.EnemySmc,
-        OverrunElection = ScenarioA1OverrunElection.Elected, ElectionOrdinal = 3,
-        SecondDefenderUnitId = "second-unit", SecondDefenderLocationId = "bd01:E4:0",
+        A1215FirstRevealOccurred = true,
+        FirstRevealedUnitId = "first-smc",
+        FirstRevealOrdinal = 2,
+        FirstRevealedType = ScenarioA1RevealedOccupant.EnemySmc,
+        OverrunElection = ScenarioA1OverrunElection.Elected,
+        ElectionOrdinal = 3,
+        SecondDefenderUnitId = "second-unit",
+        SecondDefenderLocationId = "bd01:E4:0",
         SecondDefenderState = ScenarioA1SecondDefenderState.RevealedSmc,
-        SecondRevealOrdinal = 4, Ntc = ScenarioA1OverrunNtc.Passed, NtcOrdinal = 1,
+        SecondRevealOrdinal = 4,
+        Ntc = ScenarioA1OverrunNtc.Passed,
+        NtcOrdinal = 1,
         MfAtSecondReveal = ScenarioA1OverrunMf.AtLeastFour,
-        IsMovementPhase = true, IsGoodOrderUnconcealedNonDummyInfantryMmc = true,
+        IsMovementPhase = true,
+        IsGoodOrderUnconcealedNonDummyInfantryMmc = true,
         IsAdjacentGroundLevelOrdinaryBuilding = true,
-        IsOrdinaryObstacleEntryNotBypass = true, HasNoA414Exception = true,
-        IsFirstSmcOutsideAfv = true, HasNoSpecialModifier = true, HasNoLeaderExemption = true,
+        IsOrdinaryObstacleEntryNotBypass = true,
+        HasNoA414Exception = true,
+        IsFirstSmcOutsideAfv = true,
+        HasNoSpecialModifier = true,
+        HasNoLeaderExemption = true,
     };
 
     private sealed class StubSource(ScenarioA1SecondDefenderSnapshot snapshot)
