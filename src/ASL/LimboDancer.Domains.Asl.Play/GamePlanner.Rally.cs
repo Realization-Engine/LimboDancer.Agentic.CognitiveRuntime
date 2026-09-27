@@ -37,8 +37,14 @@ public sealed partial class GamePlanner
         // A12.141: the attempt costs a concealed unit or rallying leader its "?" in the LOS of a Good Order enemy within 16 hexes.
         var concealed = GameState.Condition(unit, Conditions.Concealed) == ConditionState.True
             || (leaderId is not null && state.Unit(leaderId) is { } leaderUnit && GameState.Condition(leaderUnit, Conditions.Concealed) == ConditionState.True);
-        // A15.44, A15.5: a leader's rally can reach Heat of Battle, so the planner reads the unit's LOS to a Known enemy and its captors.
+        // A15.44, A15.5: a leader's rally can reach Heat of Battle, so the planner reads the unit's LOS to a Known enemy and its captors;
+        // A20.4: a unit that goes berserk with prisoners in its Location massacres them, which is not reviewed.
         var heat = leaderId is not null;
+        if (heat && state.At(at).OfType<UnitInstance>().Any(item => item.Status == InstanceStatus.Active && Is(item, Conditions.Captured)))
+        {
+            return Refused(scope, label, expected, "play.rally-massacre: the unit shares its Location with prisoners, whom a berserk unit would massacre (A20.4, not reviewed)");
+        }
+
         var (attempt, reason) = LiveRally.FromState(state, unitId, leaderId, TerrainKey(read) ?? read.Level.Terrain?.Name ?? "unknown",
             concealed ? EnemyGoodOrderInLosWithin16(state, unit.Side, at) : null, heat ? KnownEnemyInLos(state, unit.Side, at) : null, heat ? Captors(state, unit) : null);
         if (attempt is null)

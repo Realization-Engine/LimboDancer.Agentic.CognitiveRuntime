@@ -239,9 +239,28 @@ public sealed partial class GamePlanner
         }
 
         // A11.14: the SMC stacking is declared once, before either side's attacks; the ambushed side's round keeps the first round's.
-        var stacking = FirstRoundStacking(existing, state, location) ?? Stacking(arguments);
+        var stacking = FirstRoundStacking(existing, state, location) ?? Map(arguments, "stacking");
+
+        // A11.2, A11.21: a unit held in Melee may withdraw to an ADJACENT Location it could advance into that holds no Known enemy unit;
+        // A11.16: a broken unit held in Melee that can withdraw must attempt it, unless Disrupted or a Guard.
+        var withdrawals = Map(arguments, "withdrawals") ?? new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var (unitId, destination) in withdrawals)
+        {
+            if (state.Unit(unitId) is not { Status: InstanceStatus.Active } unit || state.Location(unit.Id)?.Location != location || !Is(unit, Conditions.Melee)
+                || !BoardLocation.TryParse(destination, out var to) || !WithdrawalDestinations(state, unit, location).Contains(to))
+            {
+                return Refused(scope, label, expected, $"play.cc-withdrawal: {unitId} withdraws only from Melee, to an ADJACENT Location it could advance into that holds no Known enemy unit (A11.2, A11.21)");
+            }
+        }
+
+        if (state.Units.FirstOrDefault(unit => unit.Status == InstanceStatus.Active && state.Location(unit.Id)?.Location == location && MustWithdraw(state, unit, location)
+            && !withdrawals.ContainsKey(unit.Id)) is { } broken)
+        {
+            return Refused(scope, label, expected, $"play.cc-withdraw-required: {broken.Id} is broken in Melee and must attempt to withdraw (A11.16)");
+        }
+
         var terrain = ReadLocation(state, location) is { } read ? TerrainKey(read) : null;
-        var (facts, reason) = LiveCloseCombat.FromState(state, location, terrain, attacks, stacking);
+        var (facts, reason) = LiveCloseCombat.FromState(state, location, terrain, attacks, stacking, withdrawals);
         if (facts is null)
         {
             return Refused(scope, label, expected, reason!);
@@ -331,9 +350,24 @@ public sealed partial class GamePlanner
         return next;
     }
 
-    /// <summary>The SMC stacking of the arguments: each SMC's MMC.</summary>
-    private static Dictionary<string, string>? Stacking(JsonElement arguments) =>
-        arguments.TryGetProperty("stacking", out var map) && map.ValueKind == JsonValueKind.Object
+    /// <summary>
+    /// The Locations a unit held in Melee may withdraw to (A11.21): ADJACENT, at the same level, reviewed terrain an advance could enter
+    /// without becoming CX (A4.72), holding no enemy unit (a concealed one is not reviewed) and no prisoner.
+    /// </summary>
+    private IReadOnlyList<BoardLocation> WithdrawalDestinations(GameState state, UnitInstance unit, BoardLocation from) =>
+        [.. Neighbors(state, from).Where(to => EntryCost(state, from, to) is { } halfMf
+            && Experience.MoveAllowance(state, unit with { Conditions = new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal) { [Conditions.Berserk] = ConditionState.False } },
+                catalogs, vocabulary) is { } allowance && halfMf < 2 * Math.Min(4, allowance)
+            && !state.At(to).OfType<UnitInstance>().Any(other => other.Status == InstanceStatus.Active && (other.Side != unit.Side || Is(other, Conditions.Captured))))];
+
+    /// <summary>A11.16: a broken unit held in Melee, not Disrupted and not a Guard, must attempt to withdraw when it can.</summary>
+    private bool MustWithdraw(GameState state, UnitInstance unit, BoardLocation at) =>
+        Is(unit, Conditions.Broken) && Is(unit, Conditions.Melee) && !Is(unit, Conditions.Disrupted) && !Is(unit, Conditions.Captured)
+        && !state.Units.Any(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian == unit.Id) && WithdrawalDestinations(state, unit, at).Count > 0;
+
+    /// <summary>A map of unit ids in the arguments, such as each SMC's MMC or each withdrawing unit's destination.</summary>
+    private static Dictionary<string, string>? Map(JsonElement arguments, string name) =>
+        arguments.TryGetProperty(name, out var map) && map.ValueKind == JsonValueKind.Object
             ? map.EnumerateObject().Where(item => item.Value.ValueKind == JsonValueKind.String)
                 .ToDictionary(item => item.Name, item => item.Value.GetString()!, StringComparer.Ordinal)
             : null;
@@ -428,6 +462,12 @@ public sealed partial class GamePlanner
         {
             yield return ("instance-eliminated", new InstanceEliminated(weapon.EquipmentId));
         }
+
+        // A11.2: a withdrawing unit neither eliminated nor Reduced leaves the Melee for the Location it declared.
+        foreach (var effect in resolution.Effects.Where(item => item.WithdrewTo is not null))
+        {
+            yield return ("instance-moved", new InstanceMoved(effect.UnitId, new MapPosition(BoardLocation.Parse(effect.WithdrewTo!))));
+        }
     }
 
     /// <summary>
@@ -521,19 +561,23 @@ public sealed partial class GamePlanner
     /// The units a unit may surrender to (A15.5, A20.21): ADJACENT (A.8) Known, Good Order, armed enemy Infantry that can guard
     /// it, their prisoners' US# with it at most five times their own (A20.51; US#: squad 3, HS 2, SMC 1, A1.6).
     /// </summary>
-    public IReadOnlyList<string> Captors(GameState state, UnitInstance unit)
+    public IReadOnlyList<string>? Captors(GameState state, UnitInstance unit, IReadOnlyCollection<string>? revealed = null)
     {
         if (state.Location(unit.Id)?.Location is not { } at)
         {
             return [];
         }
 
-        return [.. state.Units.Where(other => other.Status == InstanceStatus.Active && other.Side != unit.Side && KnownEnemy(other) && other.Definition is not null
+        var adjacent = state.Units.Where(other => other.Status == InstanceStatus.Active && other.Side != unit.Side && other.Definition is not null
+                && (KnownEnemy(other) || (revealed?.Contains(other.Id) == true && other.Kind != UnitKinds.Dummy && !Is(other, Conditions.Captured)))
                 && !Is(other, Conditions.Broken) && !Is(other, Conditions.Berserk) && !Is(other, Conditions.Melee)
                 && (vocabulary.IsA(other.Kind, "asl:mmc") || vocabulary.IsA(other.Kind, "asl:smc"))
-                && state.Location(other.Id)?.Location is { } there && IsAdjacent(state, there, at)
-                && state.Units.Where(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian == other.Id).Sum(UnitSize) + UnitSize(unit) <= 5 * UnitSize(other))
-            .Select(other => other.Id).Order(StringComparer.Ordinal)];
+                && state.Location(other.Id)?.Location is { } there && IsAdjacent(state, there, at)).ToArray();
+        string[] guards = [.. adjacent.Where(other => state.Units.Where(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian == other.Id).Sum(UnitSize)
+            + UnitSize(unit) <= 5 * UnitSize(other)).Select(other => other.Id).Order(StringComparer.Ordinal)];
+
+        // A20.21, A20.5: a unit surrendering to captors with no Guard capacity left is freed as Unarmed, which is not built: undecided.
+        return adjacent.Length > 0 && guards.Length == 0 ? null : guards;
     }
 
     /// <summary>A unit's US# (A1.6, p. 45): a squad 3, a HS 2, a SMC 1.</summary>
@@ -618,6 +662,14 @@ public sealed partial class GamePlanner
 
         var inLos = enemies.Where(location => Los(state, from, location) is { Status: LosStatus.Clear }).ToArray();
         BoardLocation[] targets;
+
+        // A15.431: a charge keeps to its Location until a closer Known enemy unit comes into its LOS (ruling R30.5).
+        if (previous is not null && HexDistance(state, from, previous) is { } kept)
+        {
+            var closer = inLos.Select(location => (location, Distance: HexDistance(state, from, location))).Where(item => item.Distance < kept).ToArray();
+            inLos = [.. closer.Select(item => item.location)];
+        }
+
         if (inLos.Length > 0)
         {
             var distances = inLos.Select(location => (location, Distance: HexDistance(state, from, location))).ToArray();

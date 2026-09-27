@@ -86,7 +86,8 @@ public static class ScenarioA1CloseCombatCalculator
 
     /// <summary>
     /// A side's Ambush drm (A11.4, A11.17, A11.18): each cause once when any unit of its force has it (ruling R29.9): +1 broken,
-    /// +1 pinned, +1 berserk, +1 Lax (Inexperienced, A19.36, or berserk, A15.432), -1 Stealthy (a Good Order hero, A15.24),
+    /// +1 pinned, +1 berserk, +1 Lax (Inexperienced, A19.36, or berserk, A15.432), -1 Stealthy (a Good Order hero or heroic leader,
+    /// A15.24, A15.21),
     /// and the leadership of its best unpinned Good Order leader unless he is alone or any of the force is berserk.
     /// </summary>
     private static List<FireModifier> AmbushDrm(IReadOnlyList<CloseCombatUnit> force, ScenarioA1CloseCombatReference reference)
@@ -114,7 +115,7 @@ public static class ScenarioA1CloseCombatCalculator
             drm.Add(new FireModifier("lax", 1m, "A11.18"));
         }
 
-        if (Any(unit => reference.Definitions[unit.DefinitionId!].IsHero && GoodOrder(unit)))
+        if (Any(unit => (reference.Definitions[unit.DefinitionId!].IsHero || (reference.Definitions[unit.DefinitionId!].IsLeader && unit.Heroic == true)) && GoodOrder(unit)))
         {
             drm.Add(new FireModifier("stealthy", -1m, "A11.17"));
         }
@@ -168,7 +169,10 @@ public static class ScenarioA1CloseCombatCalculator
     {
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(reference);
-        var first = Resolve(facts with { Rolls = new CloseCombatRolls(null) }, reference);
+        var first = Resolve(facts with
+        {
+            Rolls = new CloseCombatRolls(null)
+        }, reference);
         return first.Disposition == CloseCombatResolution.Resolved || first.Reasons is ["asl.a1.cc.roll-missing:attack:0"] ? [] : first.Reasons;
     }
 
@@ -345,6 +349,19 @@ public static class ScenarioA1CloseCombatCalculator
             attacking.AddRange(attackers);
             attacked.AddRange(defenders);
 
+            // A11.14: a SMC combines with MMC only by attacking with the MMC it is stacked with; a SMC that attacks alone defends alone.
+            if (attackers.Any(id => byId[id] is { StackedWith: null } smc && !reference.Definitions[smc.DefinitionId!].IsMmc)
+                && attackers.Any(id => reference.Definitions[byId[id].DefinitionId!].IsMmc))
+            {
+                outside.Add($"asl.a1.cc.stacking-outside:{index}");
+            }
+
+            // A11.2: a withdrawing unit makes no CC attack.
+            if (attackers.Any(id => byId[id].WithdrawingTo is not null))
+            {
+                outside.Add($"asl.a1.cc.withdrawing-attacker:{index}");
+            }
+
             // A11.14: a SMC stacked with an MMC attacks with it or not at all, and the MMC and its SMC are attacked together.
             foreach (var smc in stacked)
             {
@@ -367,13 +384,29 @@ public static class ScenarioA1CloseCombatCalculator
             }
         }
 
-        // A15.43: a berserk unit charges to destroy the enemy in CC, so it attacks in its side's round (ruling R29.15).
         var attackingSides = round switch
         {
             CloseCombatFacts.AmbusherRound => [facts.Ambusher!],
             CloseCombatFacts.AmbushedRound => units.Select(unit => unit.Side!).Where(side => side != facts.Ambusher).Distinct(StringComparer.Ordinal).ToArray(),
             _ => units.Select(unit => unit.Side!).Distinct(StringComparer.Ordinal).ToArray(),
         };
+
+        // A11.2: only a unit held in Melee withdraws, never a pinned, berserk, or Disrupted one, and a SMC withdraws with the MMC it is
+        // stacked with or declared alone.
+        if (units.Any(unit => unit.WithdrawingTo is not null && (unit.InMelee != true || unit.Pinned == true || unit.Berserk == true || unit.Disrupted == true
+            || (unit.StackedWith is { } mmc && byId.TryGetValue(mmc, out var under) && under.WithdrawingTo is null))))
+        {
+            outside.Add("asl.a1.cc.withdrawal-outside");
+        }
+
+        // A11.15: a unit that advanced this APh into a Location already in Melee engages in CC: it attacks in its side's round.
+        var reinforcing = units.Any(unit => unit.InMelee == true);
+        if (reinforcing && units.Any(unit => unit.Advanced == true && unit.Broken != true && attackingSides.Contains(unit.Side) && !attacking.Contains(unit.UnitId!)))
+        {
+            outside.Add("asl.a1.cc.reinforcement-must-attack");
+        }
+
+        // A15.43: a berserk unit charges to destroy the enemy in CC, so it attacks in its side's round (ruling R29.15).
         if (units.Any(unit => unit.Berserk == true && attackingSides.Contains(unit.Side) && !attacking.Contains(unit.UnitId!)))
         {
             outside.Add("asl.a1.cc.berserk-must-attack");
@@ -444,7 +477,24 @@ public static class ScenarioA1CloseCombatCalculator
             }
         }
 
-        return undecided;
+        // A11.11: odds above 10 to 1 but below 11 to 1 may round down to 10-1 or fall in "> 10-1"; the review leaves them undecided, with
+        // or without the FP a created leader could add (ruling R29.16).
+        foreach (var (attack, index) in facts.Attacks!.Select((item, index) => (item, index)))
+        {
+            decimal Fp(string id) => reference.Definitions[byId[id].DefinitionId!] is { IsMmc: true } mmc ? mmc.Firepower!.Value : 1m;
+            var attackFp = attack.Attackers!.Sum(id => byId[id].Pinned == true ? Fp(id) / 2 : Fp(id));
+            var defenseFp = attack.Defenders!.Sum(Fp);
+            foreach (var (a, d) in new[] { (attackFp, defenseFp), (attackFp + 1, defenseFp), (attackFp, defenseFp + 1) })
+            {
+                if (a > 10 * d && a < 11 * d)
+                {
+                    undecided.Add($"asl.a1.cc.odds-above-10-to-1-undecided:{index}");
+                    break;
+                }
+            }
+        }
+
+        return undecided.Distinct(StringComparer.Ordinal).ToList();
     }
 
     /// <summary>The Morale Level of a MMC as Leader Creation reads it (A18.2): berserk 10 (A15.42), one higher when Fanatic (A10.8).</summary>
@@ -530,8 +580,20 @@ public static class ScenarioA1CloseCombatCalculator
                 var candidates = new List<UnitState>();
                 foreach (var defender in Defenders(index, attacks, extraAttackers))
                 {
-                    // A11.16: the -2 against a broken unit applies to it alone (as A4.8 EX reads a status DRM in CC).
+                    // A11.16: the -2 against a broken unit applies to it alone (as A4.8 EX reads a status DRM in CC); A11.2: -2 against a
+                    // withdrawing unit, +1 for each friendly unit in the Melee not withdrawing.
                     List<FireModifier> own = defender.Facts.Broken == true ? [new FireModifier("vs-broken", -2m, "A11.16")] : [];
+                    if (defender.Facts.WithdrawingTo is not null)
+                    {
+                        own.Add(new FireModifier("vs-withdrawing", -2m, "A11.2"));
+                        var covering = units.Values.Count(other => other.Facts.Side == defender.Facts.Side && other.Facts.WithdrawingTo is null && other.Facts.Captured != true
+                            && !other.Id.StartsWith(CloseCombatCreatedLeader.PlaceholderPrefix, StringComparison.Ordinal));
+                        if (covering > 0)
+                        {
+                            own.Add(new FireModifier("covering", covering, "A11.2"));
+                        }
+                    }
+
                     var final = original + (int)drm.Concat(own).Sum(item => item.Value);
                     var result = final < odds.Kill ? CloseCombatDefenderResult.Eliminated
                         : final == odds.Kill ? CloseCombatDefenderResult.PartialKill
@@ -616,13 +678,15 @@ public static class ScenarioA1CloseCombatCalculator
                 }
             }
 
-            // A15.46: a berserk unit returns to normal when its group's attack eliminated at least one enemy unit and no Known
-            // enemy unit is left in its Location (ruling R29.15).
+            // A15.46: a berserk unit returns to normal when its group's attack eliminated every enemy unit in its Location that was
+            // eliminated, at least one, and none is left (ruling R29.15).
             foreach (var attack in arithmetic)
             {
                 var berserk = attack.Attackers.Select(id => units[id]).Where(unit => unit.Facts.Berserk == true && !unit.Eliminated).ToArray();
-                var enemiesLeft = units.Values.Any(unit => unit.Facts.Side != attack.Side && !unit.Eliminated);
-                if (berserk.Length > 0 && !enemiesLeft && attack.Defending.Any(item => units[item.UnitId].Eliminated))
+                var enemies = units.Values.Where(unit => unit.Facts.Side != attack.Side).ToArray();
+                var enemiesLeft = enemies.Any(unit => !unit.Eliminated);
+                var byThisGroup = enemies.Where(unit => unit.Eliminated).All(unit => attack.Defenders.Contains(unit.Id));
+                if (berserk.Length > 0 && !enemiesLeft && byThisGroup && attack.Defending.Any(item => units[item.UnitId].Eliminated))
                 {
                     foreach (var unit in berserk)
                     {
@@ -711,7 +775,11 @@ public static class ScenarioA1CloseCombatCalculator
 
             var attackers = attack.Attackers!.Select(id => units[id]).ToArray();
             var berserk = attackers.Any(unit => unit.Facts.Berserk == true);
-            if (attack.Director is { } director && attackers.Length > 1 && !berserk)
+
+            // A10.7: leadership modifiers are not cumulative, so a leader created by the attack's Original 2, whose modifier A18.12 makes
+            // mandatory, takes the director's place (ruling R29.12); A11.141, A15.42: no leadership DRM with a berserk attacker.
+            var promoted = extra.ContainsKey(index);
+            if (attack.Director is { } director && attackers.Length > 1 && !berserk && !promoted)
             {
                 drm.Add(new FireModifier("leadership:" + director, Leadership(units[director].Facts, reference), "A11.141"));
             }
@@ -721,7 +789,7 @@ public static class ScenarioA1CloseCombatCalculator
                 drm.Add(new FireModifier("heroic:" + unit.Id, -1m, "A15.24"));
             }
 
-            if (extra.TryGetValue(index, out var leader))
+            if (extra.TryGetValue(index, out var leader) && !berserk)
             {
                 drm.Add(new FireModifier("created-leader:" + leader.Definition.Id, leader.Definition.Leadership!.Value, "A18.12"));
             }
@@ -793,11 +861,17 @@ public static class ScenarioA1CloseCombatCalculator
 
         public bool IsHeroType => Definition.IsHero || (Definition.IsLeader && Facts.Heroic == true);
 
-        public bool Eliminated { get; private set; }
+        public bool Eliminated
+        {
+            get; private set;
+        }
 
         public bool Wounded { get; private set; } = facts.Wounded == true;
 
-        public bool BerserkEnded { get; private set; }
+        public bool BerserkEnded
+        {
+            get; private set;
+        }
 
         public void Eliminate(string reason)
         {
@@ -823,9 +897,13 @@ public static class ScenarioA1CloseCombatCalculator
             events.Add("berserk-ended");
         }
 
+        /// <summary>A11.2: a withdrawing unit not eliminated, Reduced, or wounded (a SMC's Casualty Reduction) withdraws.</summary>
+        public string? WithdrewTo => Facts.WithdrawingTo is { } to && !Eliminated && Definition == Printed && Wounded == (Facts.Wounded == true) ? to : null;
+
         public CloseCombatUnitEffect Effect() => new(Id, Printed.Id, Definition.Id, Eliminated, Wounded && !Eliminated, events.ToArray())
         {
             BerserkEnded = BerserkEnded && !Eliminated ? true : null,
+            WithdrewTo = WithdrewTo,
         };
     }
 }

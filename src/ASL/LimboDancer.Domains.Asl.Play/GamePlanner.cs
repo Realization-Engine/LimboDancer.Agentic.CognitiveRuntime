@@ -342,7 +342,14 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             }
         }
 
-        // A11.16, A19.12: a broken or Disrupted unit held in Melee is eliminated at the end of the CCPh (ruling R29.11).
+        // A11.16, A19.12: a broken or Disrupted unit held in Melee is eliminated at the end of the CCPh unless it withdrew (ruling R29.11);
+        // one that could withdraw attempts it in its Location's CC first.
+        if (state.Phase == "ccph" && state.Units.FirstOrDefault(unit => unit.Status == InstanceStatus.Active && state.Location(unit.Id) is { } held
+            && !state.CloseCombats.Any(item => item.Location == held.Location) && MustWithdraw(state, unit, held.Location)) is { } withdrawing)
+        {
+            return Refused(scope, label, expected, $"play.cc-withdraw-required: {withdrawing.Id} is broken in Melee and must attempt to withdraw in its Location's CC first (A11.16)");
+        }
+
         if (state.Phase == "ccph")
         {
             foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && Is(unit, Conditions.Melee) && !Is(unit, Conditions.Captured)

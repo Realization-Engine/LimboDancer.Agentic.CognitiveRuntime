@@ -100,6 +100,7 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.berserk-first: {charging.Id} is berserk and charges before any other unit moves (A15.43)");
         }
 
+        var abandoned = new List<EquipmentInstance>();
         if (berserk > 0)
         {
             var (allowed, target, reason) = BerserkStep(state, [.. movers.Select(unit => unit!)], from, to, current, assault);
@@ -109,6 +110,26 @@ public sealed partial class GamePlanner
             }
 
             charge = target;
+
+            // A15.431: before its charge a berserk unit abandons every SW of more than one PP; its 1PP SW beyond its IPC (A4.42: three for
+            // a MMC, one for a SMC) are its own choice, which is not reviewed.
+            foreach (var unit in movers.Where(unit => unit!.MfSpent == 0 && !unit.HalfMfSpent))
+            {
+                var carried = state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding?.Holder == unit!.Id).ToArray();
+                var portage = carried.ToDictionary(item => item, item => item.Definition is { } reference
+                    ? catalogs.FirstOrDefault(catalog => catalog.Identity == reference.Catalog)?.Definition(reference.Definition)?.Printed("front", "asl:portage")?.Value?.Number
+                    : null);
+                if (portage.Values.Any(value => value is null))
+                {
+                    return Refused(scope, label, expected, $"play.berserk-sw: the portage of a SW {unit!.Id} holds is not recorded (A15.431)");
+                }
+
+                abandoned.AddRange(carried.Where(item => portage[item] > 1));
+                if (carried.Count(item => portage[item] == 1) > (vocabulary.IsA(unit!.Kind, "asl:smc") ? 1 : 3))
+                {
+                    return Refused(scope, label, expected, $"play.berserk-sw: {unit.Id}'s 1PP SW exceed its IPC, and which it abandons is not reviewed (A15.431)");
+                }
+            }
         }
 
         // A4.61: Assault Movement is declared before the stack moves, and moves it no more than one Location.
@@ -165,17 +186,20 @@ public sealed partial class GamePlanner
             Charge = charge,
         };
         var package = ScenarioA1FirePackage.Identity.ToString();
-        var summary = $"play.move: {string.Join(", ", ids)} enter {to} ({terrain}) for {halfMf / 2m} MF" + (assault ? ", by Assault Movement" : string.Empty);
+        var summary = $"play.move: {string.Join(", ", ids)} enter {to} ({terrain}) for {halfMf / 2m} MF" + (assault ? ", by Assault Movement" : string.Empty)
+            + (charge is not null ? $", charging {charge} (A15.43)" : string.Empty)
+            + (abandoned.Count > 0 ? $"; {string.Join(", ", abandoned.Select(item => item.Id))} abandoned before the charge (A15.431)" : string.Empty);
+        List<GameEvent> prefix = [.. abandoned.Select((item, index) => Event(scope, attemptId, index + 1, expected, "equipment-transferred",
+            new EquipmentTransferred(item.Id, null, new MapPosition(from)), package, null))];
         var residual = state.ResidualFire.FirstOrDefault(item => item.Location == to);
+        var stepEvent = Event(scope, attemptId, prefix.Count + 1, expected, "movement-step", moved, package, null);
         if (residual is null)
         {
-            return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
-                [Event(scope, attemptId, 1, expected, "movement-step", moved, package, null)], [summary]);
+            return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [.. prefix, stepEvent], [summary]);
         }
 
         // A8.22: Residual FP attacks a unit entering its Location first, alone, with any FFNAM and FFMO.
-        var stepEvent = Event(scope, attemptId, 1, expected, "movement-step", moved, package, null);
-        if (Replay([.. existing, stepEvent]).Current is not { } entered
+        if (Replay([.. existing, .. prefix, stepEvent]).Current is not { } entered
             || LiveFire.ResidualFromState(entered, to, residual.Fp) is not ({ } residualAttack, null)
             || FireMapFacts(entered, residualAttack, to) is not ({ } mapFacts, null))
         {
@@ -192,7 +216,7 @@ public sealed partial class GamePlanner
 
         IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
         {
-            var events = new List<GameEvent> { stepEvent };
+            var events = new List<GameEvent>([.. prefix, stepEvent]);
             AddFireEvents(scope, attemptId, expected, actor, entered, facts, state.PhasingSide, step, events, draw);
             return events;
         }
@@ -235,7 +259,7 @@ public sealed partial class GamePlanner
         if (steps.TryGetValue(to, out var step))
         {
             var enemies = state.At(to).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side != movers[0].Side).ToArray();
-            if (enemies.Any(unit => !KnownEnemy(unit)))
+            if (enemies.Any(unit => !KnownEnemy(unit)) || state.At(to).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && Is(unit, Conditions.Captured)))
             {
                 return (null, null, "play.berserk-concealed: a charge into concealed enemy units or prisoners is not reviewed (A15.431, A20.4)");
             }

@@ -126,6 +126,14 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.fire-melee: fire at a Location holding units in Melee or prisoners is not reviewed (A11.15, A20.54)");
         }
 
+        // A20.4: a unit that goes berserk with prisoners in its Location massacres them, which is not reviewed: FPF firers, whose NMC can
+        // reach Heat of Battle, may not share a Location with prisoners.
+        if (state.Phase == "mph" && firerIds.Any(id => state.Location(id)?.Location is { } at
+            && state.At(at).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && Is(unit, Conditions.Captured))))
+        {
+            return Refused(scope, label, expected, "play.fire-massacre: a firer shares its Location with prisoners, whom a berserk unit would massacre (A20.4, not reviewed)");
+        }
+
         // A8.3, A8.31: Subsequent First Fire and FPF use every usable MG the firer possesses.
         if (attack.FireKind is ScenarioA1FireCalculator.SubsequentFirstFire or ScenarioA1FireCalculator.FinalProtectiveFire
             && attack.Firers!.Any(item => !(item.Weapons?.Select(weapon => weapon.EquipmentId!).Order(StringComparer.Ordinal).ToArray() ?? [])
@@ -221,13 +229,27 @@ public sealed partial class GamePlanner
     /// </summary>
     private FireAttack HeatOfBattleFacts(GameState state, FireAttack attack)
     {
-        FireTarget Read(FireTarget target) => target.Dummy == true || state.Unit(target.UnitId!) is not { } unit || state.Location(unit.Id) is not { } at
-            ? target
-            : target with
+        // A12.14: a concealed firer or director loses "?" by this attack when every firer is within 16 hexes and a target is Good Order,
+        // as the Fire package decides it; one that does is Known when a target's Heat of Battle result is read (A15.44, A15.5).
+        var firers = attack.Firers ?? [];
+        string[] revealed = firers.Count > 0 && firers.All(item => (item.Range ?? attack.Range) <= 16)
+            && attack.Targets!.Any(item => item.Broken == false && item.Dummy != true)
+            ? [.. firers.Select(item => item.UnitId).Concat(new[] { attack.Director?.UnitId }).Concat((attack.OtherDirectors ?? []).Select(item => item.UnitId))
+                .OfType<string>().Where(id => state.Unit(id) is { } unit && Is(unit, Conditions.Concealed))]
+            : [];
+        FireTarget Read(FireTarget target)
+        {
+            if (target.Dummy == true || state.Unit(target.UnitId!) is not { } unit || state.Location(unit.Id) is not { } at)
             {
-                KnownEnemyInLos = KnownEnemyInLos(state, unit.Side, at.Location),
-                Captors = Captors(state, unit)
+                return target;
+            }
+
+            return target with
+            {
+                KnownEnemyInLos = revealed.Length > 0 ? true : KnownEnemyInLos(state, unit.Side, at.Location),
+                Captors = Captors(state, unit, revealed),
             };
+        }
 
         return attack with
         {

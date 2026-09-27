@@ -4,7 +4,7 @@
   "domainId": "asl",
   "packageId": "scenario-a1-rally",
   "declaredUse": "Read-only conclusions for a declared Rally attempt by a broken unit of the reviewed Scenario A1 catalog: the DRM, the Final DR against the broken Morale Level, and the effect, including Fate, under the user's rulings of 2026-09-26 (ASL Unit Rally and Fire Extensions Plan, R19.1 to R19.10 and R0.2); with Heat of Battle and Leader Creation after an Original 2 (Deviations, Ordnance, and Vehicles Plan, R27.1 to R28.8 and R30.1 to R30.7).",
-  "caseMatrixSha256": "83ff2a8f3511ca571a959a5b7ced0e8323a01ee6df2c08c4923f80743518d501",
+  "caseMatrixSha256": "8f0c1d5b72fd7221f6112f4654b70294aa424852d6e7430d8038c19c2f29e800",
   "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
   "catalogSha256": "501b5deab10ae852ac7fef03e6e652f34961f69a165ac911a292b3be68b820fa",
   "sourceFragments": [
@@ -310,6 +310,13 @@
       "contentSha256": "00d179e38e82f539bb69ca1a7c7d9966a6be14100148e4dd10a9789c1a883a07"
     },
     {
+      "ruleId": "A20.54",
+      "physicalPdfPage": 88,
+      "startLine": 1438,
+      "fragmentId": "asl-fragment:sha256:2d1183c3bf5103e0743fa960d38204258b418f649cc7c0c05e57823ddf8d4d39",
+      "contentSha256": "9939e46e305d7ed2a697819daadec7b3c2d8c22e569e164a85ebda17ea229a29"
+    },
+    {
       "ruleId": "A20.55",
       "physicalPdfPage": 88,
       "startLine": 1440,
@@ -330,7 +337,7 @@
     "exclusions": "commissars-allied-troops-encirclement-night-extreme-winter-recovery-deploy (R19.10)",
     "brokenLeaderBar": "a10.71-bars-the-a18.11-self-rally-while-the-only-leader-is-broken (review reading)",
     "capabilityUnrecorded": "self-rally-relying-on-capability-the-catalog-does-not-record-is-indeterminate",
-    "berserk": "a-berserk-unit-has-morale-level-10-plus-1-fanatic-never-lowered-A15.42; a-failed-mc-casualty-reduces-it-once-even-on-an-original-12 (R30.3); never-broken-or-pinned-no-ptc-llmc-or-lltc-and-no-leadership-from-a-friendly-leader-A15.42; a-leader-berserk-before-the-attack-forfeits-his-leadership-A15.41; a-leader-who-goes-berserk-takes-each-other-friendly-unit-in-his-location-subject-to-heat-of-battle-by-a-ntc-with-his-leadership-drm-A15.41 (R30.4); a-berserk-unit-does-not-fire (R30.5)",
+    "berserk": "a-berserk-unit-has-morale-level-10-plus-1-fanatic-never-lowered-A15.42; a-failed-mc-casualty-reduces-it; an-original-12-eliminates-a-berserk-mmc-and-wounds-a-berserk-leader-as-if-wounded-A10.31 (R30.3); never-broken-or-pinned-no-ptc-llmc-or-lltc-and-no-leadership-from-a-friendly-leader-A15.42; a-leader-berserk-before-the-attack-forfeits-his-leadership-A15.41; a-leader-who-goes-berserk-takes-each-other-friendly-unit-in-his-location-subject-to-heat-of-battle-by-a-ntc-with-his-leadership-drm-A15.41 (R30.4); a-berserk-unit-does-not-fire (R30.5)",
     "surrender": "the-captors-are-the-adjacent-known-good-order-armed-enemy-infantry-with-guard-capacity-read-by-the-planner-A15.5-A20.51; the-captors-side-chooses-the-guard; the-surrender-is-always-accepted-no-quarter-not-offered (R30.7)",
     "mapFacts": "the-known-enemy-in-los-and-the-captors-are-the-planners-map-reads-taken-as-recorded-on-replay; they-are-required-before-any-roll-when-heat-of-battle-can-reach-a-unit"
   },

@@ -33,6 +33,13 @@ public sealed record CloseCombatUnit(
     /// <summary>The SW the unit possesses (A11.13); null or empty when none.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyList<string>? Weapons { get; init; }
+
+    /// <summary>
+    /// The ADJACENT Location a unit held in Melee attempts to Withdraw to (A11.2, A11.21), declared before the attacks; null when it
+    /// stands.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? WithdrawingTo { get; init; }
 }
 
 /// <summary>One declared CC attack (A11.12): the units attacking together, the units they attack, and the leader directing it.</summary>
@@ -127,6 +134,10 @@ public sealed record CloseCombatUnitEffect(string UnitId, string DefinitionId, s
 {
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? BerserkEnded { get; init; }
+
+    /// <summary>The Location a withdrawing unit that was neither eliminated nor Reduced withdraws to (A11.2); null otherwise.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? WithdrewTo { get; init; }
 }
 
 /// <summary>

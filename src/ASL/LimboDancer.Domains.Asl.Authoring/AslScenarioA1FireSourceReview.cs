@@ -45,15 +45,15 @@ public static class AslScenarioA1FireSourceReview
     public const string HeatOfBattleComparisonSha256 = "41cfbe214712c39d540059e6be5e3fb85da03838a0e341c5d6a95c6ca4da092b";
 
     /// <summary>
-    /// The unit step 29 comparison: Advance (A3.7, A4.7, A4.72), stacking (A1.6, A5.1, A5.5), Close Combat (A11.1 to A11.41),
-    /// Field Promotion in CC (A18.12), and Lax (A19.36).
+    /// The unit step 29 comparison: Advance (A3.7, A4.7, A4.72), stacking (A1.6, A5.1, A5.5), Close Combat and Withdrawal from Melee
+    /// (A11.1 to A11.41), Field Promotion in CC (A18.12), Lax (A19.36), and a pinned leader (A7.831).
     /// </summary>
     public const string CloseCombatComparisonFile = "asl-scenario-a1.close-combat-pdf-comparison.json";
-    public const string CloseCombatComparisonSha256 = "458d815eb7846976b20b90a8b4f36b8af584ebdb14e8d9a206a32515dfbce4b2";
+    public const string CloseCombatComparisonSha256 = "2cbb74c2a1af7fe74fe217007c3090f19fde4fb3d492f860e7d865ad1ffce920";
 
     /// <summary>The unit step 30 comparison: Berserk (A15.41 to A15.46), capture and prisoners (A20.2 to A20.55).</summary>
     public const string BerserkSurrenderComparisonFile = "asl-scenario-a1.berserk-surrender-pdf-comparison.json";
-    public const string BerserkSurrenderComparisonSha256 = "0410b296213af94e70e1d79b0ca3c5cc087be3d6fbf6b3ac5f7b3a863953b25b";
+    public const string BerserkSurrenderComparisonSha256 = "4a247af92b724b281954933a5157b88fb8f06d2b246b25f6e50d67651e55061a";
 
     private const string ChapterA = "asl-easlrb-3.10:chapter-a";
     private const string ChapterB = "asl-easlrb-3.10:chapter-b";
@@ -228,6 +228,8 @@ public static class AslScenarioA1FireSourceReview
         ("A11.17", "A11.17", ChapterA, 898, SourceFragmentKind.RuleText, 73),
         ("A11.18", "A11.18", ChapterA, 900, SourceFragmentKind.RuleText, 73),
         ("A11.19", "A11.19", ChapterA, 902, SourceFragmentKind.RuleText, 73),
+        ("A11.2", "A11.2", ChapterA, 906, SourceFragmentKind.RuleText, 73),
+        ("A11.21", "A11.21", ChapterA, 908, SourceFragmentKind.RuleText, 73),
         ("A11.22", "A11.22", ChapterA, 910, SourceFragmentKind.RuleText, 73),
         ("A11.3", "A11.3", ChapterA, 912, SourceFragmentKind.RuleText, 73),
         ("A11.32", "A11.32", ChapterA, 916, SourceFragmentKind.RuleText, 73),
@@ -235,6 +237,7 @@ public static class AslScenarioA1FireSourceReview
         ("A11.41", "A11.41", ChapterA, 940, SourceFragmentKind.RuleText, 73),
         ("A18.12", "A18.12", ChapterA, 1336, SourceFragmentKind.RuleText, 85),
         ("A19.36", "A19.36", ChapterA, 1394, SourceFragmentKind.RuleText, 86),
+        ("A7.831", "A7.831", ChapterA, 584, SourceFragmentKind.RuleText, 58),
     ];
 
     private static readonly (string Rule, string Registered, string Source, int Line, SourceFragmentKind Kind, int Page)[] BerserkSurrenderSubjects =
@@ -255,6 +258,7 @@ public static class AslScenarioA1FireSourceReview
         ("A20.52", "A20.52", ChapterA, 1428, SourceFragmentKind.RuleText, 87),
         ("A20.53", "A20.53", ChapterA, 1430, SourceFragmentKind.RuleText, 87),
         ("A20.54", "A20.54", ChapterA, 1432, SourceFragmentKind.RuleText, 87),
+        ("A20.54", "A20.54", ChapterA, 1438, SourceFragmentKind.RuleContinuation, 88),
         ("A20.55", "A20.55", ChapterA, 1440, SourceFragmentKind.RuleText, 88),
     ];
 

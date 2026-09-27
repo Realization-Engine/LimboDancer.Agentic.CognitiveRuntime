@@ -72,7 +72,7 @@ public sealed class AslScenarioA1FireSourceReviewTests
         var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
         var closeCombat = AslScenarioA1FireSourceReview.BuildCloseCombat(RepositoryPaths.Root, manifests, Attestation());
         var berserk = AslScenarioA1FireSourceReview.BuildBerserkSurrender(RepositoryPaths.Root, manifests, Attestation());
-        Assert.Equal((25, 17), (closeCombat.Records.Count, berserk.Records.Count));
+        Assert.Equal((28, 18), (closeCombat.Records.Count, berserk.Records.Count));
         Assert.All(closeCombat.Records.Concat(berserk.Records), record => Assert.Equal(TirSourceVerificationDisposition.Verified, record.Disposition));
 
         // A11.41 and A20.21 run across a page break: 73 to 74 and 86 to 87.

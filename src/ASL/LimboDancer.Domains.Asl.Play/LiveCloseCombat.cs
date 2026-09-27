@@ -15,7 +15,7 @@ public static class LiveCloseCombat
 {
     /// <summary>The units of a CC Location as the package reads them, or the reason they cannot be read.</summary>
     public static (IReadOnlyList<CloseCombatUnit>? Units, string? Reason) Units(GameState state, BoardLocation location,
-        IReadOnlyDictionary<string, string>? stacking)
+        IReadOnlyDictionary<string, string>? stacking, IReadOnlyDictionary<string, string>? withdrawals = null)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(location);
@@ -30,12 +30,19 @@ public static class LiveCloseCombat
             return (null, "play.cc-units: the Location holds a Dummy or a unit outside the catalog (A11.19)");
         }
 
+        // A4.8: a TI unit in CC is not reviewed (ruling R29.14).
+        if (units.Any(unit => Is(unit, "asl:ti")))
+        {
+            return (null, "play.cc-ti: the Location holds a TI unit, whose CC is not reviewed (A4.8)");
+        }
+
         return ([.. units.Select(unit => new CloseCombatUnit(unit.Id, unit.Definition!.Definition, unit.Side, Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned),
             Is(unit, Conditions.Wounded), Is(unit, Conditions.Disrupted), Is(unit, Conditions.Berserk), Is(unit, Conditions.Fanatic), Is(unit, Conditions.Heroic),
             Is(unit, Conditions.Concealed) || Is(unit, Conditions.Hidden), Is(unit, Conditions.Captured),
             state.Advances.Any(item => item.Unit == unit.Id && item.To == location), Is(unit, Conditions.Melee))
         {
             StackedWith = stacking?.GetValueOrDefault(unit.Id),
+            WithdrawingTo = withdrawals?.GetValueOrDefault(unit.Id),
             Weapons = state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unit.Id)
                 .Select(item => item.Id).Order(StringComparer.Ordinal).ToArray() is { Length: > 0 } weapons ? weapons : null,
         })], null);
@@ -54,11 +61,11 @@ public static class LiveCloseCombat
     /// and a Location where an Ambush can occur must have its Ambush drs first (A11.4).
     /// </summary>
     public static (CloseCombatFacts? Facts, string? Reason) FromState(GameState state, BoardLocation location, string? terrain,
-        IReadOnlyList<CloseCombatDeclaration> attacks, IReadOnlyDictionary<string, string>? stacking)
+        IReadOnlyList<CloseCombatDeclaration> attacks, IReadOnlyDictionary<string, string>? stacking, IReadOnlyDictionary<string, string>? withdrawals = null)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(attacks);
-        var (units, reason) = Units(state, location, stacking);
+        var (units, reason) = Units(state, location, stacking, withdrawals);
         if (units is null)
         {
             return (null, reason);
@@ -226,8 +233,10 @@ public sealed class CloseCombatRecordVerifier(ScenarioA1CloseCombatReference ref
             return "The CC record's facts are incomplete.";
         }
 
+        // The stacking and the withdrawals are the players' declarations, taken as recorded.
         var stacking = recorded.Units.Where(unit => unit.StackedWith is not null).ToDictionary(unit => unit.UnitId!, unit => unit.StackedWith!, StringComparer.Ordinal);
-        var (expected, reason) = LiveCloseCombat.FromState(state, combat.Location, recorded.Terrain, recorded.Attacks, stacking);
+        var withdrawals = recorded.Units.Where(unit => unit.WithdrawingTo is not null).ToDictionary(unit => unit.UnitId!, unit => unit.WithdrawingTo!, StringComparer.Ordinal);
+        var (expected, reason) = LiveCloseCombat.FromState(state, combat.Location, recorded.Terrain, recorded.Attacks, stacking, withdrawals);
         if (expected is null)
         {
             return reason;

@@ -268,6 +268,22 @@
       "comparison": "complete-alphanumeric-match"
     },
     {
+      "ruleId": "A20.54",
+      "fragmentId": "asl-fragment:sha256:2d1183c3bf5103e0743fa960d38204258b418f649cc7c0c05e57823ddf8d4d39",
+      "sourceId": "asl-easlrb-3.10:chapter-a",
+      "sourceSha256": "6347534e64f739cacc57dd75c3d604997723fd0b4988565609deeff007a8843d",
+      "startLine": 1438,
+      "endLine": 1438,
+      "contentSha256": "9939e46e305d7ed2a697819daadec7b3c2d8c22e569e164a85ebda17ea229a29",
+      "kind": "ruleContinuation",
+      "conversionPage": 88,
+      "physicalPdfPage": 88,
+      "pdfPageTextSha256": "060b952c937688dd5779fde87a7640bc952ac7579a1f3ef5b3d4c5d32b73b016",
+      "normalizedAlphanumericSha256": "400bcab179d498a55000ee5de11b4301e873918418432cf6d5c5bb5197fa761d",
+      "normalizedAlphanumericLength": 949,
+      "comparison": "complete-alphanumeric-match"
+    },
+    {
       "ruleId": "A20.55",
       "fragmentId": "asl-fragment:sha256:f0853fb906e18dc51d4e1e3adf7b33e75281d9b51688ff03e30b0bfcff3faa0d",
       "sourceId": "asl-easlrb-3.10:chapter-a",

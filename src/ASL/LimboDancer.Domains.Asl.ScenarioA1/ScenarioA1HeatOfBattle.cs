@@ -56,7 +56,8 @@ public sealed record HeatOfBattleOutcome(IReadOnlyList<int> Dice, int OriginalDr
 /// </summary>
 public static class ScenarioA1HeatOfBattle
 {
-    // A15.1: the nationality DRM of the Heat of Battle table.
+    // A15.1: the nationality DRM of the Heat of Battle table. Italians and Axis Minors (Surrender on 10 or more when not elite) and
+    // the Japanese (Surrender treated as Berserk) have exceptions the review does not admit, so they are refused (p. 83).
     private static readonly Dictionary<string, int> NationalityDrm = new(StringComparer.Ordinal)
     {
         ["american"] = 0,
@@ -64,8 +65,6 @@ public static class ScenarioA1HeatOfBattle
         ["finnish"] = -1,
         ["french"] = 1,
         ["german"] = 0,
-        ["italian"] = 3,
-        ["japanese"] = 4,
         ["russian"] = 2,
     };
 

@@ -60,7 +60,10 @@ public static class ScenarioA1FireCalculator
     {
         ArgumentNullException.ThrowIfNull(attack);
         ArgumentNullException.ThrowIfNull(reference);
-        var first = Resolve(attack with { Rolls = new FireRolls(null, null, null, null) }, reference);
+        var first = Resolve(attack with
+        {
+            Rolls = new FireRolls(null, null, null, null)
+        }, reference);
         if (first.Disposition != FireResolution.Indeterminate || first.Reasons is not ["asl.a1.fire.roll-missing:attack"])
         {
             return first.Reasons;
@@ -840,7 +843,10 @@ public static class ScenarioA1FireCalculator
             {
                 Concealed = second,
             };
-            return arithmetic with { ResidualFp = Residual(arithmetic, hindrance, leadership.UnitId is null ? 0 : leadership.Value) };
+            return arithmetic with
+            {
+                ResidualFp = Residual(arithmetic, hindrance, leadership.UnitId is null ? 0 : leadership.Value)
+            };
         }
 
         private (int? Column, int? Shifted, string Result) Column(decimal total, int shift, int final)
@@ -1206,9 +1212,24 @@ public static class ScenarioA1FireCalculator
             string consequence;
             if (unit.Berserk)
             {
-                // A15.42: a berserk unit that fails a MC suffers Casualty Reduction, once, even on an Original 12 (ruling R30.3);
-                // it never breaks and is never pinned, and it takes no Heat of Battle DR (A15.1).
-                if (!passed && !Reduce(unit, "casualty-reduced-berserk"))
+                // A15.42: a berserk unit that fails a MC suffers Casualty Reduction; it never breaks and is never pinned, and it takes
+                // no Heat of Battle DR (A15.1). A10.31: an Original 12 on an unbroken unit not subject to breaking eliminates it, and
+                // wounds a berserk leader with +1 to the Wound Severity dr (ruling R30.3).
+                if (original == 12 && casualty)
+                {
+                    if (unit.Definition.IsLeader)
+                    {
+                        if (!Wound(unit, asIfWounded: true))
+                        {
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        unit.Eliminate("eliminated-casualty-mc-berserk");
+                    }
+                }
+                else if (!passed && !Reduce(unit, "casualty-reduced-berserk"))
                 {
                     return;
                 }
@@ -1340,8 +1361,11 @@ public static class ScenarioA1FireCalculator
             }
 
             usedRolls.Add("heatOfBattle:" + unit.Id);
+            // A15.5: the captors are Good Order when the unit surrenders; one of the attack's own units it broke, pinned, eliminated, or made
+            // berserk is not (the FPF firers' targets, A8.31).
+            var captors = unit.Target.Captors?.Where(id => !state.TryGetValue(id, out var other) || !(other.Eliminated || other.Broken || other.Pinned || other.Berserk)).ToArray();
             var (outcome, reason) = ScenarioA1HeatOfBattle.Resolve(unit.Definition, broken, unit.Target.Inexperienced, unit.Fanatic, dice!, reference.Definitions,
-                unit.Target.KnownEnemyInLos, unit.Target.Captors);
+                unit.Target.KnownEnemyInLos, captors);
             if (outcome is null)
             {
                 undecided.Add(reason!);
@@ -1630,15 +1654,30 @@ public static class ScenarioA1FireCalculator
 
         public bool Pinned { get; private set; } = target.Pinned == true;
 
-        public bool Eliminated { get; private set; }
+        public bool Eliminated
+        {
+            get; private set;
+        }
 
-        public bool BrokeInThisAttack { get; private set; }
+        public bool BrokeInThisAttack
+        {
+            get; private set;
+        }
 
-        public int? MoraleAtLoss { get; private set; }
+        public int? MoraleAtLoss
+        {
+            get; private set;
+        }
 
-        public bool ConcealmentLost { get; set; }
+        public bool ConcealmentLost
+        {
+            get; set;
+        }
 
-        public int? RandomSelectionDr { get; set; }
+        public int? RandomSelectionDr
+        {
+            get; set;
+        }
 
         public List<FireCheck> Checks { get; } = [];
 
@@ -1654,17 +1693,26 @@ public static class ScenarioA1FireCalculator
         public bool Berserk { get; private set; } = target.Berserk == true;
 
         /// <summary>Whether the unit went berserk in this attack.</summary>
-        public bool WentBerserk { get; private set; }
+        public bool WentBerserk
+        {
+            get; private set;
+        }
 
         /// <summary>A hero, or a heroic leader: wounded rather than broken by a failed MC (A15.2, A15.21).</summary>
         public bool IsHeroType => Definition.IsHero || (Definition.IsLeader && Heroic);
 
-        public HeatOfBattleOutcome? HeatOfBattleOutcome { get; private set; }
+        public HeatOfBattleOutcome? HeatOfBattleOutcome
+        {
+            get; private set;
+        }
 
         private bool Hidden => Target.Concealed == true || Target.Hidden == true;
 
         /// <summary>The Morale Level before this attack, which an unbroken leader's LLTC compares against (A10.2).</summary>
-        public int? InitialMorale { get; } = Morale(definition, target.Broken == true, target.Wounded == true, target.Fanatic == true, target.Heroic == true,
+        public int? InitialMorale
+        {
+            get;
+        } = Morale(definition, target.Broken == true, target.Wounded == true, target.Fanatic == true, target.Heroic == true,
             target.Berserk == true);
 
         /// <summary>

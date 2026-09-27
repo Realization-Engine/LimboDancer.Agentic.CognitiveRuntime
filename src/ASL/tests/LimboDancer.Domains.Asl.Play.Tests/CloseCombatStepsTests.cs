@@ -257,10 +257,11 @@ public sealed class CloseCombatStepsTests : IDisposable
     }
 
     [Fact]
-    public async Task ABrokenUnitHeldInMeleeIsEliminatedAtTheEndOfTheNextCcph()
+    public async Task ABrokenUnitHeldInMeleeMustWithdrawAndADisruptedOneIsEliminated()
     {
         await Setup("german", Unit("g1", "asl:squad", "attacker-squad", "bd01:B2:0", "german"),
-            Unit("r1", "asl:squad", "defender-squad", "bd01:B1:0", "russian", "asl:broken"));
+            Unit("r1", "asl:squad", "defender-squad", "bd01:B1:0", "russian", "asl:broken"),
+            Unit("r2", "asl:squad", "defender-squad", "bd01:B1:0", "russian", "asl:broken", "asl:disrupted"));
         await Advance(6);
         Committed(await Do(GameActions.Advance, NoRoll(), new
         {
@@ -269,22 +270,40 @@ public sealed class CloseCombatStepsTests : IDisposable
         }));
         await Advance();
 
-        // A11.16: a broken unit does not attack; the German attack at 1-1 with -2 against it: 6+6-2 = 10, no effect.
+        // A11.16: broken units do not attack; the German attack at 1-2 (4-8) with -2 against each: 6+6-2 = 10, no effect.
         Committed(await Do(GameActions.CloseCombat, Once(6, 6), new
         {
             location = "bd01:B1:0",
-            attacks = new[] { Attack(G1, ["r1"]) },
+            attacks = new[] { Attack(G1, ["r1", "r2"]) },
         }));
         await Advance();
         Assert.True(Is(Current.Unit("r1")!, Conditions.Melee));
 
-        // Through the Russian Player Turn to its CCPh: the broken r1 cannot withdraw (not built), so it is eliminated (A11.16).
+        // Through the Russian Player Turn to its CCPh: the broken r1 must attempt to withdraw (A11.16) before the phase ends.
         await Advance(7);
         Assert.Equal(("ccph", "russian"), (Current.Phase, Current.PhasingSide));
+        Assert.Contains((await Do(GameActions.AdvancePhase, NoRoll(), new
+        {
+        })).Reasons, reason => reason.StartsWith("play.cc-withdraw-required", StringComparison.Ordinal));
+
+        // A11.2: r1 withdraws to A1; the German attack on it takes -2 broken, -2 withdrawing, and +1 for r2, which stays: 6+6-3 = 9 at
+        // 1-1 (4-4) is no effect, so r1 withdraws. The Disrupted r2 may not withdraw (A11.2) and is eliminated at the end (A19.12).
         var before = Revision;
+        Committed(await Do(GameActions.CloseCombat, Once(6, 6), new
+        {
+            location = "bd01:B1:0",
+            attacks = new[] { Attack(G1, ["r1"]) },
+            withdrawals = new Dictionary<string, string> { ["r1"] = "bd01:A1:0" },
+        }));
+        var record = Since(before).Select(item => item.Payload).OfType<CloseCombatResolved>().Single().Resolution.Deserialize<CloseCombatResolution>(LiveFire.Json)!;
+        Assert.Equal([("vs-broken", -2m), ("vs-withdrawing", -2m), ("covering", 1m)], record.Attacks[0].Defending[0].Drm.Select(item => (item.Name, item.Value)));
+        Assert.Equal(BoardLocation.Parse("bd01:A1:0"), Current.Location("r1")!.Location);
+        Assert.False(Is(Current.Unit("r1")!, Conditions.Melee));
+        before = Revision;
         await Advance();
-        Assert.Contains(Since(before), item => item.Payload is InstanceEliminated { Id: "r1" });
+        Assert.Contains(Since(before), item => item.Payload is InstanceEliminated { Id: "r2" });
         Assert.False(Is(Current.Unit("g1")!, Conditions.Melee));
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
     }
 
     [Fact]
@@ -418,6 +437,84 @@ public sealed class CloseCombatStepsTests : IDisposable
         var heat = ScenarioA1HeatOfBattle.Resolve(new ScenarioA1FirePackage().Reference.Definitions["attacker-squad"], false, null, false, [5, 5],
             new ScenarioA1FirePackage().Reference.Definitions, false, []);
         Assert.Equal((HeatOfBattleOutcome.BattleHardening, true), (heat.Outcome!.Result, heat.Outcome.NoKnownEnemyInLos));
+    }
+
+    private static Dictionary<string, object> Weapon(string id, string definition, string holder, string side) => new()
+    {
+        ["id"] = id,
+        ["kind"] = "asl:mg",
+        ["definition"] = definition,
+        ["side"] = side,
+        ["holding"] = new
+        {
+            holder,
+            role = "possessed"
+        },
+        ["conditions"] = new Dictionary<string, bool> { ["asl:malfunctioned"] = false },
+    };
+
+    [Fact]
+    public async Task ABerserkUnitAbandonsItsMmgBeforeChargingAndDoesNotChargeIntoPrisoners()
+    {
+        // A15.431: a berserk squad abandons its 4PP MMG before charging; A20.4: the charge may not end among prisoners (not reviewed).
+        await Setup("german", Unit("g2", "asl:squad", "attacker-squad", "bd01:A3:0", "german", "asl:berserk"), Weapon("gmmg", "attacker-mmg", "g2", "german"),
+            Unit("r4", "asl:squad", "defender-squad", "bd01:A1:0", "russian"), Unit("g9", "asl:half-squad", "attacker-half-squad", "bd01:A1:0", "german", "asl:captured"));
+        await Advance(2);
+        var before = Revision;
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G2,
+            to = "bd01:A2:0"
+        }));
+        Assert.Contains(Since(before), item => item.Payload is EquipmentTransferred { Id: "gmmg", Holding: null });
+        Assert.Equal(BoardLocation.Parse("bd01:A3:0"), Current.Location("gmmg")!.Location);
+        Committed(await Do(GameActions.PassFire, NoRoll(), new
+        {
+        }));
+        Assert.Contains((await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G2,
+            to = "bd01:A1:0"
+        })).Reasons, reason => reason.StartsWith("play.berserk-concealed", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ATiUnitRefusesCcAndPrisonersBarARallyThatCouldGoBerserk()
+    {
+        // A4.8: CC with a TI unit is not reviewed (ruling R29.14).
+        await Setup("german", Unit("g1", "asl:squad", "attacker-squad", "bd01:B1:0", "german"), Unit("r1", "asl:squad", "defender-squad", "bd01:B1:0", "russian", "asl:ti"),
+            Unit("r2", "asl:squad", "defender-squad", "bd01:D4:0", "russian", "asl:broken"), Unit("rl", "asl:leader", "defender-leader", "bd01:D4:0", "russian"),
+            Unit("g9", "asl:half-squad", "attacker-half-squad", "bd01:D4:0", "german", "asl:captured"));
+
+        // A20.4: a leader's rally can reach a Berserk result, and a berserk unit massacres the prisoners in its Location (not reviewed).
+        Assert.Contains((await Do(GameActions.Rally, NoRoll(), new
+        {
+            unitId = "r2",
+            leader = "rl"
+        })).Reasons, reason => reason.StartsWith("play.rally-massacre", StringComparison.Ordinal));
+        await Advance(7);
+        Assert.Equal("ccph", Current.Phase);
+        Assert.Contains((await Do(GameActions.CloseCombat, NoRoll(), new
+        {
+            location = "bd01:B1:0",
+            attacks = new[] { Attack(G1, ["r1"]) },
+        })).Reasons, reason => reason.StartsWith("play.cc-ti", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ASurrenderToAGuardWithNoCapacityLeftIsUndecided()
+    {
+        // A20.51: a leader (US# 1) guards at most five US#; with a squad already his prisoner, another squad (3) would exceed it, and the
+        // excess would be freed as Unarmed (A20.21), which is not built: the captors are unread and a Heat of Battle Surrender refused.
+        await Setup("russian", Unit("rl", "asl:leader", "defender-leader", "bd01:A1:0", "russian"), Unit("g9", "asl:squad", "attacker-squad", "bd01:A1:0", "german"),
+            Unit("g2", "asl:squad", "attacker-squad", "bd01:A2:0", "german"));
+        var state = Current;
+        var held = state with
+        {
+            Units = [.. state.Units.Select(unit => unit.Id == "g9" ? unit with { Custodian = "rl", Conditions = new Dictionary<string, ConditionState>(unit.Conditions) { [Conditions.Captured] = ConditionState.True } } : unit)],
+        };
+        Assert.Null(Planner().Captors(held, held.Unit("g2")!));
+        Assert.Equal(["rl"], Planner().Captors(state, state.Unit("g2")!));
     }
 
     private sealed class NullAudit : IAuditSink

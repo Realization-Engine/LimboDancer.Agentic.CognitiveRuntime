@@ -239,7 +239,7 @@ public sealed class ScenarioA1CloseCombatTests
     private static CloseCombatFacts Scenario(string name) => name switch
     {
         "example" => Facts(Example, ExampleAttacks),
-        "broken-and-hero" => Facts([Unit("g1", "attacker-half-squad", "german"), Unit("gh", "attacker-hero", "german"),
+        "broken-and-hero" => Facts([Unit("g1", "attacker-half-squad", "german"), Unit("gh", "attacker-hero", "german") with { StackedWith = "g1" },
             Unit("r1", "defender-squad", "russian", broken: true), Unit("rl", "defender-leader", "russian") with { StackedWith = "r1", Wounded = true }],
             [Attack(["g1", "gh"], ["r1", "rl"])]),
         "ambusher-round" => Facts([Unit("g1", "attacker-squad", "german", advanced: true), Unit("r1", "defender-squad", "russian"),
