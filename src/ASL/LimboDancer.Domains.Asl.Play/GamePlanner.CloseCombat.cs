@@ -288,7 +288,7 @@ public sealed partial class GamePlanner
         var precheck = ScenarioA1CloseCombatCalculator.Precheck(facts, reference);
         if (precheck.Count != 0)
         {
-            return Refused(scope, label, expected, ["play.cc-refused: the Close Combat package does not decide every outcome of this round", .. precheck]);
+            return Refused(scope, label, expected, RefusalReasons.Refusal("play.cc-refused", "Close Combat", "round", precheck));
         }
 
         var package = ScenarioA1CloseCombatPackage.Identity.ToString();
@@ -433,6 +433,26 @@ public sealed partial class GamePlanner
     {
         ArgumentNullException.ThrowIfNull(state);
         return [.. Neighbors(state, at).Distinct()];
+    }
+
+    /// <summary>
+    /// The sides that may declare CC attacks in a Location now, phasing side first: none before its due Ambush drs (A11.4); after an
+    /// Ambush, the ambusher until its first round is resolved or when it attacks again, and otherwise the ambushed side (A11.3,
+    /// A11.32); both in a simultaneous round (A11.11).
+    /// </summary>
+    public IReadOnlyList<string> DeclaringSides(GameState state, BoardLocation location, bool ambusherAgain)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        if (AmbushDue(state, location))
+        {
+            return [];
+        }
+
+        var sides = state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && !Is(unit, Conditions.Captured)).Select(unit => unit.Side)
+            .Distinct(StringComparer.Ordinal).OrderBy(side => side == state.PhasingSide ? 0 : 1).ThenBy(side => side, StringComparer.Ordinal).ToArray();
+        return state.CloseCombats.FirstOrDefault(item => item.Location == location) is { Ambusher: { } ambusher } entry
+            ? entry.Rounds.Count == 0 || ambusherAgain ? [ambusher] : [.. sides.Where(side => side != ambusher)]
+            : sides;
     }
 
     /// <summary>Whether a Location's Ambush drs are due (A11.4): no CC there yet, and the Close Combat package allows an Ambush.</summary>
@@ -912,6 +932,39 @@ public sealed partial class GamePlanner
         }
 
         return best;
+    }
+
+    /// <summary>
+    /// The phasing side's berserk units that are to charge in this MPh (A15.43): each with the Location it charges and the next
+    /// Locations on a shortest route to it (A15.431), for the page to mark; or, when the model cannot decide its charge, why not, so
+    /// it may end in place (ruling R30.5). Units held in Melee, done moving, or already with a Known enemy unit are not listed.
+    /// </summary>
+    public IReadOnlyList<(UnitInstance Unit, BoardLocation? Target, IReadOnlyList<BoardLocation> Next, string? Undecided)> Charges(GameState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        if (state.Phase != "mph")
+        {
+            return [];
+        }
+
+        var must = MustCharge(state);
+        var charges = new List<(UnitInstance, BoardLocation?, IReadOnlyList<BoardLocation>, string?)>();
+        foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && Is(unit, Conditions.Berserk)
+            && !Is(unit, Conditions.Melee) && !unit.MovementEnded && state.Location(unit.Id) is not null).OrderBy(unit => unit.Id, StringComparer.Ordinal))
+        {
+            var (steps, target, undecided) = ChargeSteps(state, unit.Side, state.Location(unit.Id)!.Location,
+                state.Movement?.Members.Contains(unit.Id) == true ? state.Movement.Charge : null);
+            if (must.Contains(unit))
+            {
+                charges.Add((unit, steps.Values.First().Target, [.. steps.Keys.OrderBy(item => item.ToString(), StringComparer.Ordinal)], null));
+            }
+            else if (undecided is not null)
+            {
+                charges.Add((unit, target, [], undecided));
+            }
+        }
+
+        return charges;
     }
 
     /// <summary>

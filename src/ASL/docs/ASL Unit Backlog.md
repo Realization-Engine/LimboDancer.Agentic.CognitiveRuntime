@@ -193,3 +193,21 @@ Step 17 left these out; steps 19 to 23 do not build them.
 | Changing a Gun's Covered Arc without firing, at the end of a friendly fire phase | Table-player review | C3.22, p. 169 | A turn action for Guns |
 | Play page: marking which target Locations are in a Gun's Covered Arc, in range, or refused, and drawing the Covered Arc | Table-player review | C3.2 | Map overlays for Guns |
 | CC with a Gun's crew, and advances or berserk charges into its Location | R24.3 | A11, C11 | Guns and crews as targets |
+
+## 13. Found in the Studio demo of passes 2 and 3 (2026-09-27)
+
+Found by playing the Play page with scripted dice in the games `pass23-demo`, `pass2-ambush`, and `pass2-hob`. Every refusal was correct; the gaps were in what the page offered and how it explained a refusal. All are fixed on the branch `feature/asl-play-page-fixes` (2026-09-27), each with a test, and were checked on the Studio in the games `fix-hob`, `fix-ambush`, and `fix-charge`. The last two rows were found during that check.
+
+| Item | Rules | Fixed |
+|---|---|---|
+| The Advance panel offered a crew that mans a Gun; the gate refused it only after it was proposed (`play.advance-crew-mans-gun`) | R24.4; C10, A21.13 | The Advance panel leaves such crews off. |
+| The CC panel offered the ambushed side's attacks during the ambusher's round; the refusal showed only the package code `asl.a1.cc.round-outside:0` | A11.3, A11.32 | The planner's `DeclaringSides` gives the sides that may declare: none before a due Ambush dr, then the ambusher, then the ambushed side, or the ambusher again when chosen; the page offers only those, and hides the attack controls until the Ambush drs. |
+| Package refusal codes reached the player raw, each under a headline that said the package "does not decide every outcome" | | `RefusalReasons` keeps each Fire, CC, Ordnance, Rally, and Heat of Battle code and adds a sentence with its rule; the headline says "refuses this ... as proposed" unless every code is an undecided one. |
+| The Fire panel offered firers that had already fired this phase (`asl.a1.fire.firer-already-fired`) | A7.1, A8.4 | `LiveFire.FireSpent` reads it as the package does in the PFPh, AFPh, and DFPh; such units are left off, unless a MG they possess has not fired. |
+| The Fire panel offered units held in Melee, berserk, captured, or a Guard; the refusal named all four causes | A11.15, A15.432, A20.5, A20.52 | `GamePlanner.FireBar` names the one cause; the panel leaves those units, and Locations with none that may fire, off. |
+| The Fire panel kept the previous phase's From and Target when the firing side changed, and a proposal was refused with misleading reasons | | Every panel's choices are cleared at each change of turn, phase, or phasing side, and a From or Target the game no longer offers is dropped. |
+| The Movement panel did not mark a berserk unit, that it must move first, or its charge target and route | A15.43, A15.431 | The planner's `Charges` gives each berserk unit's target and next steps, or why the model cannot decide its charge (ruling R30.5); the page marks it, checks it, and fills in its only next step. |
+| The Units table showed a prisoner as `captured` without its Guard, and the Guard without its prisoners | A20.5 | Conditions show "guarded by" and "guards". |
+| Records credited scripted dice to "the system" | DICE-12 | A roll's source stays `system`, since replay requires it (UNIT-STATE-019); while scripted dice are on, the Rolls list says its dice may have come from the queue and the game is test data. |
+| The Fire panel offered a crew as a firer; its inherent fire is not reviewed (`firer-outside`) | R24.8 | Crews are left off the firer list. |
+| The Movement panel offered a crew that mans a Gun (`play.move-crew-mans-gun`) | R24.4 | Such crews are left off the Movement panel. |

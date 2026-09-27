@@ -65,6 +65,21 @@ public sealed partial class GamePlanner
     private static readonly string[] AtLeastNmc =
         ["NMC", "1MC", "2MC", "3MC", "4MC", "K/1", "K/2", "K/3", "K/4", "1KIA", "2KIA", "3KIA", "4KIA", "5KIA", "6KIA", "7KIA"];
 
+    /// <summary>
+    /// Why a unit may not fire or direct fire at all, or null: berserk fire is not reviewed (A15.432), a unit held in Melee fires
+    /// only in CC (A11.15), a prisoner does not fire (A20.5), and a Guard's fire is not reviewed (A20.52).
+    /// </summary>
+    public static string? FireBar(GameState state, UnitInstance unit)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(unit);
+        return Is(unit, Conditions.Berserk) ? "is berserk, and berserk fire is not reviewed (A15.432)"
+            : Is(unit, Conditions.Melee) ? "is held in Melee and fires only in CC (A11.15)"
+            : Is(unit, Conditions.Captured) ? "is a prisoner and does not fire (A20.5)"
+            : state.Units.Any(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian == unit.Id) ? "guards prisoners, and a Guard's fire is not reviewed (A20.52)"
+            : null;
+    }
+
     private GamePlan PlanFire(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label,
         string actor)
     {
@@ -115,10 +130,10 @@ public sealed partial class GamePlanner
 
         // A15.432: berserk fire (TPBF in the AFPh, and the DFPh) is not reviewed; A11.15: units held in Melee fire only in CC; A20.52:
         // a Guard's fire is not reviewed; A20.54, A11.15: fire at a Location holding prisoners or units in Melee is not reviewed.
-        if (firerIds.Concat(directors).Select(state.Unit).FirstOrDefault(unit => unit is not null && (Is(unit, Conditions.Berserk) || Is(unit, Conditions.Melee)
-            || Is(unit, Conditions.Captured) || state.Units.Any(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian == unit.Id))) is { } barred)
+        if (firerIds.Concat(directors).Select(state.Unit).OfType<UnitInstance>().Select(unit => (unit, Cause: FireBar(state, unit))).FirstOrDefault(item => item.Cause is not null)
+            is ({ } barred, { } cause))
         {
-            return Refused(scope, label, expected, $"play.fire-barred: {barred.Id} is berserk, held in Melee, captured, or a Guard, whose fire is not reviewed (A15.432, A11.15, A20.52)");
+            return Refused(scope, label, expected, $"play.fire-barred: {barred.Id} {cause}");
         }
 
         if (state.At(target).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && (Is(unit, Conditions.Melee) || Is(unit, Conditions.Captured))))
@@ -196,7 +211,7 @@ public sealed partial class GamePlanner
         var precheck = ScenarioA1FireCalculator.Precheck(attack, FireReference.Value);
         if (precheck.Count != 0)
         {
-            return Refused(scope, label, expected, ["play.fire-refused: the Fire package does not decide every outcome of this attack", .. precheck]) with
+            return Refused(scope, label, expected, RefusalReasons.Refusal("play.fire-refused", "Fire", "attack", precheck)) with
             {
                 Fire = Proposal(attack, undecided: true)
             };

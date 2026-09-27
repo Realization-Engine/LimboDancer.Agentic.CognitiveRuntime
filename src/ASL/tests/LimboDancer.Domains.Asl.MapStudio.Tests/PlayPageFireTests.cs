@@ -299,10 +299,11 @@ public sealed class PlayPageFireTests : IDisposable
             return [.. page.FindAll("#play-reasons li").Select(item => item.TextContent)];
         }
 
-        // A second attack from the same Location on the same target (A7.55), and fire by a unit already marked (A7.1);
-        // the dice queue is empty, so any roll would fail the attempt.
+        // A second attack from the same Location on the same target (A7.55); the dice queue is empty, so any roll would fail the
+        // attempt. A unit already marked is not offered at all (A7.1; backlog, section 13).
         Assert.Contains(Refused(["r3"], hexes.Building), reason => reason.Contains("A7.55", StringComparison.Ordinal));
-        Assert.NotEmpty(Refused(["r1"], hexes.Open));
+        page.Find("#fire-from").Change(hexes.From);
+        Assert.Equal(["r3"], page.FindAll(".fire-firer").Select(item => item.GetAttribute("data-unit")));
 
         // In the MPh fire is the DEFENDER's (A8.1), offered from its side's Locations; with no stack moving, the planner
         // refuses it (FireTests).
