@@ -1,0 +1,4 @@
+# Check out every text file with LF, whatever core.autocrlf says: the digest-pinned packages, fixtures, and goldens are
+# hashed as LF, and .editorconfig's end_of_line = lf is enforced by the build (IDE0055). Compressed fixtures stay binary.
+* text=auto eol=lf
+*.gz binary
