@@ -1,6 +1,6 @@
 {
   "pack": "asl",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "label": "ASL Personnel, support weapons, Guns, vehicles, and entities that are not units",
   "note": "Original LimboDancer vocabulary. Rule references are to the registered rulebook PDF by physical page; no rulebook text or counter artwork.",
   "extends": [],
@@ -231,6 +231,7 @@
     { "name": "asl:partially-armored", "label": "Partially armored", "short": "PA", "rule": "D1.22, p. 193" },
     { "name": "asl:rear-turret-unarmored", "label": "Rear turret unarmored", "short": "T", "rule": "D1.22, p. 193" },
     { "name": "asl:open-topped", "label": "Open-topped", "short": "OT", "rule": "D1.23, p. 194" },
+    { "name": "asl:cs-passengers-only", "label": "Crew Survival applies to Passengers only", "short": "cs", "rule": "Chapter H Listings Key, p. 338; D5.6, p. 204" },
     { "name": "asl:fixed-bmg", "label": "Fixed-Mount BMG", "short": "fixed", "rule": "D1.81, p. 195" },
     { "name": "asl:vehicle-ft-range-2", "label": "Vehicular FT Normal Range 2", "short": "FT range 2", "rule": "D1.8, p. 195" },
     { "name": "asl:known-minefield", "label": "Known Minefield", "short": "known", "rule": "B28.45, p. 148" },
@@ -259,6 +260,10 @@
     { "name": "asl:limbered", "label": "limbered", "short": "LMB", "face": "limbered", "rule": "C2.2, p. 167" },
     { "name": "asl:wrecked", "label": "wrecked", "short": "WRK", "face": "wreck", "rule": "D1.9, p. 195" },
     { "name": "asl:motion", "label": "in Motion", "short": "MOT", "rule": "D2.4, p. 198" },
+    { "name": "asl:immobilized", "label": "immobilized", "short": "IMM", "rule": "A7.308, p. 56; D2.7, p. 199" },
+    { "name": "asl:stunned", "label": "Stunned", "short": "STUN", "rule": "D5.34, p. 203" },
+    { "name": "asl:stun-recovery", "label": "Stun +1", "short": "+1", "rule": "D5.34, p. 203" },
+    { "name": "asl:recalled", "label": "Recalled", "short": "RCL", "rule": "D5.341, pp. 203 to 204" },
     { "name": "asl:bu", "label": "buttoned up", "short": "BU", "group": "crew-exposure", "rule": "D5.2, p. 203" },
     { "name": "asl:ce", "label": "crew exposed", "short": "CE", "group": "crew-exposure", "rule": "D5.3, p. 203" },
     { "name": "asl:dispersed", "label": "Dispersed", "short": "DSP", "face": "dispersed", "rule": "A24.5, p. 92; A24.62, p. 93" },
@@ -355,7 +360,7 @@
         "asl:bmg", "asl:cmg", "asl:aamg", "asl:hull-rear-mg", "asl:turret-rear-mg",
         "asl:vehicle-ft-mount", "asl:vehicle-ft-firepower", "asl:vehicle-ft-removal", "asl:crew-survival"],
       "traits": ["asl:mechanically-unreliable", "asl:unarmored", "asl:partially-armored", "asl:rear-turret-unarmored", "asl:open-topped",
-        "asl:no-ap", "asl:no-he", "asl:fixed-bmg", "asl:vehicle-ft-range-2"],
+        "asl:no-ap", "asl:no-he", "asl:fixed-bmg", "asl:vehicle-ft-range-2", "asl:cs-passengers-only"],
       "accessibleName": {
         "default": "{side} {designation} {movement-type} {kind} {identity}, {movement-points} MP, AF {af-front}/{af-side}, MA {caliber}{caliber-suffix?} {ma-weapon} {ma-type}",
         "wreck": "{side} wrecked {designation} {kind} {identity}, crew survival {crew-survival}"

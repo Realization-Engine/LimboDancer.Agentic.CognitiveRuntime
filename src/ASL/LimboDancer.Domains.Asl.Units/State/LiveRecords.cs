@@ -1,5 +1,6 @@
 using System.Text.Json;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
+using LimboDancer.Domains.Asl.Units.Documents;
 
 namespace LimboDancer.Domains.Asl.Units.State;
 
@@ -61,6 +62,20 @@ public sealed record MovementStepped(IReadOnlyList<string> Movers, BoardLocation
     }
 }
 
+/// <summary>
+/// <c>vehicle-step</c>: one MP expenditure of a moving vehicle in its MPh (D2.1, unit step 25): <c>start</c> (D2.12), <c>turn</c> one
+/// hexspine to <paramref name="Facing"/> (D2.11), <c>enter</c> the ADJACENT Location <paramref name="At"/> in its VCA (D2.11), or
+/// <c>stop</c> (D2.13); <paramref name="HalfMp"/> is its cost in half MP, so the ½ MP road rate is exact (D2.16). Like a movement step it
+/// opens the DEFENDER's window (A8.1).
+/// </summary>
+public sealed record VehicleStepped(string Vehicle, string Kind, BoardLocation At, UnitFacing? Facing, int HalfMp, int Step) : EventPayload
+{
+    public const string Start = "start";
+    public const string Turn = "turn";
+    public const string Enter = "enter";
+    public const string Stop = "stop";
+}
+
 /// <summary><c>movement-window-closed</c>: the DEFENDER passes on the stack's latest MF expenditure (A8.11).</summary>
 public sealed record MovementWindowClosed(int Step) : EventPayload;
 
@@ -79,6 +94,23 @@ public sealed record MovementState(IReadOnlyList<string> Movers, BoardLocation L
 
     /// <summary>The Location a berserk stack charges (A15.431), from its latest step; null for other moves.</summary>
     public BoardLocation? Charge
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the mover is a vehicle (D2.1): its steps are its MP expenditures.</summary>
+    public bool Vehicle
+    {
+        get; init;
+    }
+
+    /// <summary>A moving vehicle's state: started (D2.12, or began its MPh in Motion, D2.4) and not stopped since, or stopped (D2.13).</summary>
+    public bool Started
+    {
+        get; init;
+    }
+
+    public bool Stopped
     {
         get; init;
     }

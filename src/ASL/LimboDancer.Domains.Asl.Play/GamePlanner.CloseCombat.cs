@@ -66,6 +66,17 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.advance-crew-mans-gun: {gunner.Id} mans a Gun; abandoning or moving a Gun is not reviewed (C10, A21.13)");
         }
 
+        // A4.7 (ruling R25.3): Infantry advance; a vehicle does not, and CC against an enemy vehicle (A11.5) is not reviewed.
+        if (units.FirstOrDefault(unit => LiveFire.IsVehicle(unit!)) is { } driven)
+        {
+            return Refused(scope, label, expected, $"play.advance-unit: {driven.Id} is a vehicle; only Infantry advance (A4.7)");
+        }
+
+        if (EnemyVehicleAt(state, state.PhasingSide!, to) is { } blocking)
+        {
+            return Refused(scope, label, expected, $"play.advance-enemy-vehicle: the enemy vehicle {blocking.Id} is in {to}; CC against a vehicle is not reviewed (A11.5; ruling R25.3)");
+        }
+
         var (fromRead, toRead, adjacent, crossed) = Step(state, from, to);
         if (fromRead is null || toRead is null || !adjacent || crossed is null)
         {
@@ -242,6 +253,12 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.cc-phase: CC is resolved in the CCPh (A3.8, A11.1)");
         }
 
+        // A11.5, A11.6 (ruling R25.10): CC in a Location with a vehicle is not reviewed.
+        if (state.At(location).OfType<UnitInstance>().FirstOrDefault(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit)) is { } present)
+        {
+            return Refused(scope, label, expected, $"play.cc-vehicle: {present.Id} is in {location}, and CC with a vehicle is not reviewed (A11.5, A11.6; ruling R25.10)");
+        }
+
         var attacks = new List<CloseCombatDeclaration>();
         foreach (var item in attackList.EnumerateArray())
         {
@@ -401,8 +418,8 @@ public sealed partial class GamePlanner
 
             var here = active.Where(unit => state.Location(unit.Id)!.Location == location).ToArray();
 
-            // CC with a crew is not reviewed (ruling R24.3), so it cannot be required.
-            if (here.Any(unit => vocabulary.IsA(unit.Kind, "asl:crew")))
+            // CC with a crew (ruling R24.3) or a vehicle (ruling R25.10) is not reviewed, so it cannot be required.
+            if (here.Any(unit => vocabulary.IsA(unit.Kind, "asl:crew") || LiveFire.IsVehicle(unit)))
             {
                 continue;
             }
@@ -530,6 +547,11 @@ public sealed partial class GamePlanner
             || enemies.Any(unit => vocabulary.IsA(unit.Kind, "asl:crew")))
         {
             return $"play.berserk-concealed: a charge into {to}, which holds concealed enemy units, prisoners, or a Gun's crew, is not reviewed (A15.431, A20.4, R24.3); the charge ends in place (ruling R30.5)";
+        }
+
+        if (enemies.FirstOrDefault(LiveFire.IsVehicle) is { } vehicle)
+        {
+            return $"play.berserk-vehicle: a charge into {to}, which holds the enemy vehicle {vehicle.Id}, is CC or OVR against a vehicle (A11.5, D7), which is not reviewed; the charge ends in place (rulings R25.3, R30.5)";
         }
 
         return enemies is [{ } lone] && vocabulary.IsA(lone.Kind, "asl:smc")

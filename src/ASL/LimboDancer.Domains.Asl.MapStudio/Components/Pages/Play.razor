@@ -161,10 +161,11 @@ else if (state is not null)
         <label>Id <input id="place-id" value="@placeId" @onchange="@(args => placeId = args.Value as string ?? string.Empty)" size="8" /></label>
         <label>Location <input id="place-location" value="@placeLocation" @onchange="@(args => placeLocation = args.Value as string ?? string.Empty)" size="12" /></label>
         <label>Or held by <input id="place-holder" value="@placeHolder" @onchange="@(args => placeHolder = args.Value as string ?? string.Empty)" size="8" /></label>
-        @if (Definitions.FirstOrDefault(definition => definition.Id == placeDefinition)?.Kind == "asl:gun")
+        @if (Definitions.FirstOrDefault(definition => definition.Id == placeDefinition)?.Kind is "asl:gun" or "asl:vehicle")
         {
-            <label title="A Gun's barrel points at a hexspine (C2.23): hexes are flat-topped, so north and south are hexsides.">
-                Gun facing (hexspine)
+            var placingVehicle = Definitions.FirstOrDefault(definition => definition.Id == placeDefinition)?.Kind == "asl:vehicle";
+            <label title="A Gun's barrel (C2.23) or a vehicle's VCA (D2.11) points at a hexspine: hexes are flat-topped, so north and south are hexsides.">
+                @(placingVehicle ? "VCA (hexspine)" : "Gun facing (hexspine)")
                 <select id="place-facing" value="@placeFacing" @onchange="@(args => placeFacing = args.Value as string ?? "east")">
                     @foreach (var spine in Enum.GetValues<UnitFacing>())
                     {
@@ -172,7 +173,7 @@ else if (state is not null)
                     }
                 </select>
             </label>
-            <span class="muted">A Gun stands at its Location, manned by the crew named in "Or held by".</span>
+            <span class="muted">@(placingVehicle ? "A vehicle stands at its Location, its VCA pointing at the two hexes either side of the hexspine." : "A Gun stands at its Location, manned by the crew named in \"Or held by\".")</span>
         }
         <label><input id="place-concealed" type="checkbox" checked="@placeConcealed" @onchange="@(args => placeConcealed = args.Value is true)" /> concealed</label>
         <label><input id="place-hidden" type="checkbox" checked="@placeHidden" @onchange="@(args => placeHidden = args.Value is true)" /> hidden</label>
@@ -184,7 +185,7 @@ else if (state is not null)
         <ul id="place-list">
             @foreach (var placement in placements)
             {
-                <li>@placement.Id: @(placement.Definition ?? "a Dummy") @(placement.Holder is { } holder ? $"held by {holder}" : $"at {placement.Location}")@(placement.Concealed ? ", concealed" : "")@(placement.Hidden ? ", hidden" : "")@(placement.Broken ? ", broken" : "") <button class="link" @onclick="() => placements.Remove(placement)">remove</button></li>
+                <li>@placement.Id: @(placement.Definition ?? "a Dummy") @(placement.Holder is { } holder ? $"held by {holder}" : $"at {placement.Location}")@(placement.Facing is { } spine ? placement.Kind == "asl:vehicle" ? $", VCA {spine}" : $", facing {spine}" : "")@(placement.Concealed ? ", concealed" : "")@(placement.Hidden ? ", hidden" : "")@(placement.Broken ? ", broken" : "") <button class="link" @onclick="() => placements.Remove(placement)">remove</button></li>
             }
         </ul>
     }
@@ -302,6 +303,65 @@ else if (state is not null)
             <button id="propose-move" disabled="@(moveUnits.Count == 0 || moveTo.Trim().Length == 0)" @onclick="ProposeMove">Propose: move</button>
             <button id="propose-pass" disabled="@(state.Movement is not { WindowOpen: true })" @onclick='@(() => ProposeSimple(GameActions.PassFire, "pass"))'>Propose: the DEFENDER passes</button>
             <button id="propose-end-move" disabled="@(state.Movement is not { WindowOpen: false })" @onclick="ProposeEndMove">Propose: end the move@(EndingSome ? " of the checked units" : "")</button>
+        </div>
+        @if (VehicleCandidates.Any())
+        {
+            <h4>Vehicle movement</h4>
+            <p class="muted" id="vehicle-help">
+                A vehicle spends its MP one expenditure at a time, and the DEFENDER may fire or pass after each (D2.1, A8.1): Start for 1 MP, or none
+                when it begins in Motion (D2.12, D2.4); a VCA change of one hexspine for 1 MP (D2.11); entering a hex its VCA points at, at the Terrain
+                Chart cost of Open Ground, Grain, or a road (D2.16); and Stop for 1 MP (D2.13). It ends its move in Motion only when it cannot Stop or
+                move on (D2.4); a vehicle in Motion must spend at least one MP. Reverse movement, ESB, bog, and OVR are not built.
+            </p>
+            <div class="toolbar">
+                <label>
+                    Vehicle
+                    <select id="vehicle-unit" value="@vehicleUnit" @onchange="@(args => vehicleUnit = args.Value as string ?? string.Empty)">
+                        <option value="">choose</option>
+                        @foreach (var vehicle in VehicleCandidates)
+                        {
+                            <option value="@vehicle.Id">@vehicle.Id (@state.Location(vehicle.Id)?.Location)</option>
+                        }
+                    </select>
+                </label>
+                @if (VehicleCandidates.FirstOrDefault(item => item.Id == vehicleUnit) is { Position: MapPosition { Facing: { } vca } } chosen)
+                {
+                    var (spentMp, allotmentMp) = GamePlanner.VehicleHalfMp(chosen);
+                    var movingNow = state.Movement is { Vehicle: true } under ? under.Started && !under.Stopped ? ", moving" : ", stopped: Start costs 1 MP" : GameState.Condition(chosen, Conditions.Motion) == ConditionState.True ? ", in Motion: no Start MP" : ", stopped: Start costs 1 MP";
+                    <span id="vehicle-state" data-vca="@UnitFacings.Name(vca)">VCA @UnitFacings.Name(vca), @HalfMpText(spentMp) of @HalfMpText(allotmentMp) MP spent, @HalfMpText(Math.Max(0, allotmentMp - spentMp)) left@movingNow</span>
+                    var vehicleMoving = state.Movement is { Vehicle: true } driving ? driving.Started && !driving.Stopped
+                        : GameState.Condition(chosen, Conditions.Motion) == ConditionState.True;
+                    @if (!vehicleMoving)
+                    {
+                        <button id="vehicle-start" @onclick='@(() => ProposeVehicleStep("start"))'>Propose: start (1 MP)</button>
+                    }
+                    else
+                    {
+                    <button id="vehicle-turn-left" @onclick='@(() => ProposeVehicleStep("turn", facing: UnitFacings.Name((UnitFacing)(((int)vca + 1) % 6))))'>Propose: VCA to @UnitFacings.Name((UnitFacing)(((int)vca + 1) % 6)) (1 MP)</button>
+                    <button id="vehicle-turn-right" @onclick='@(() => ProposeVehicleStep("turn", facing: UnitFacings.Name((UnitFacing)(((int)vca + 5) % 6))))'>Propose: VCA to @UnitFacings.Name((UnitFacing)(((int)vca + 5) % 6)) (1 MP)</button>
+                    @foreach (var (to, cost, bar) in Live.Planner.VehicleEntries(state, chosen))
+                    {
+                        <button class="vehicle-enter" data-to="@to" disabled="@(cost is null)" title="@(bar ?? "")" @onclick="@(() => ProposeVehicleStep("enter", to: to.ToString()))">Propose: enter @to@(cost is { } half ? $" ({HalfMpText(half)} MP)" : "")</button>
+                    }
+                    <button id="vehicle-stop" @onclick='@(() => ProposeVehicleStep("stop"))'>Propose: stop (1 MP)</button>
+                    }
+                }
+            </div>
+        }
+    }
+    @if (state.Phase is "mph" or "aph" && ButtonUpCandidates.Any())
+    {
+        <h4>Crew exposure</h4>
+        <p class="muted" id="bu-help">
+            The owner of an open-topped AFV places or removes its BU counter in its own MPh or APh, once per phase, not in an MPh after it Prep
+            Fired, and not while its crew is Stunned (D5.33, D5.34). A CE crew may fire the AAMG and is Vulnerable to Collateral Attacks (D5.3, D.8B).
+        </p>
+        <div class="toolbar">
+            @foreach (var afv in ButtonUpCandidates)
+            {
+                var buttoned = GameState.Condition(afv, Conditions.ButtonedUp) == ConditionState.True;
+                <button class="bu-toggle" data-vehicle="@afv.Id" @onclick="@(() => ProposeButtonUp(afv.Id, !buttoned))">Propose: @afv.Id @(buttoned ? "exposes its crew (CE)" : "buttons up (BU)")</button>
+            }
         </div>
     }
     @if (state.Phase == "aph")
@@ -680,7 +740,7 @@ else if (state is not null)
                             Final DR <span class="fire-final-dr">@record.Arithmetic.FinalDr</span>, result <strong class="fire-result">@record.Arithmetic.Result</strong>
                         </li>
                     </ul>
-                    @if (record.Effects is { } effects)
+                    @if (record.Effects is { } effects && (effects.Count > 0 || record.Vehicles is not { Count: > 0 }))
                     {
                         <table class="library fire-effects">
                             <thead><tr><th>Target</th><th>Effect</th><th>Checks</th></tr></thead>
@@ -696,7 +756,23 @@ else if (state is not null)
                             </tbody>
                         </table>
                     }
-                    else
+                    @if (record.Vehicles is { Count: > 0 } vehicles)
+                    {
+                        <table class="library fire-vehicles">
+                            <thead><tr><th>Vehicle</th><th>Vehicle line</th><th>Crew</th></tr></thead>
+                            <tbody>
+                                @foreach (var hit in vehicles)
+                                {
+                                    <tr data-vehicle="@hit.VehicleId">
+                                        <td>@hit.VehicleId (@hit.DefinitionId)</td>
+                                        <td class="fire-vehicle-result">@VehicleLineText(hit)</td>
+                                        <td class="fire-vehicle-crew">@CrewText(hit)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else if (record.Effects is null)
                     {
                         <p class="muted fire-withheld">The target Location's units are not disclosed: the result leaves them concealed (A12.14, p. 77), so only the @(record.TargetSide ?? "target") side sees them.</p>
                     }
@@ -794,8 +870,8 @@ else if (state is not null)
                             @unit.Status.ToString().ToLowerInvariant()
                         }
                     </td>
-                    <td>@unit.MfSpent@(unit.MovementEnded ? ", movement ended" : "")</td>
-                    <td>@string.Join(", ", unit.Conditions.Where(pair => pair.Value == ConditionState.True).Select(pair => pair.Key.Replace("asl:", string.Empty, StringComparison.Ordinal)).Concat(Custody(unit)))</td>
+                    <td>@(LiveFire.IsVehicle(unit) ? $"{HalfMpText(GamePlanner.VehicleHalfMp(unit).Spent)} of {HalfMpText(GamePlanner.VehicleHalfMp(unit).Allotment)} MP" : unit.MfSpent.ToString(CultureInfo.InvariantCulture))@(unit.MovementEnded ? ", movement ended" : "")</td>
+                    <td>@string.Join(", ", unit.Conditions.Where(pair => pair.Value == ConditionState.True).Select(pair => pair.Key.Replace("asl:", string.Empty, StringComparison.Ordinal)).Concat(Custody(unit)).Concat(VehicleNotes(unit)))</td>
                 </tr>
             }
             @foreach (var presence in SealedPresences)
@@ -878,6 +954,95 @@ else if (state is not null)
     private string rallyLeader = string.Empty;
     private string repairWeapon = string.Empty;
     private readonly HashSet<string> moveUnits = new(StringComparer.Ordinal);
+    private string vehicleUnit = string.Empty;
+
+    /// <summary>
+    /// The phasing side's vehicles that may spend MP now (D2.1): the moving vehicle while one moves; otherwise those not done moving, and not
+    /// immobilized, Stunned, Recalled, or after Prep Fire (D.7, D5.34, D5.341, D.3).
+    /// </summary>
+    private IEnumerable<UnitInstance> VehicleCandidates => state is null || state.Phase != "mph" ? []
+        : state.Movement is { } moving ? moving.Vehicle ? moving.Members.Select(state.Unit).OfType<UnitInstance>() : []
+        : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && LiveFire.IsVehicle(unit) && !unit.MovementEnded
+            && new[] { Conditions.Immobilized, Conditions.Stunned, Conditions.Recalled, Conditions.PrepFire }.All(condition => GameState.Condition(unit, condition) != ConditionState.True))
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal);
+
+    /// <summary>The phasing side's AFVs whose crew may button up or expose itself (D5.33): not Stunned or Recalled.</summary>
+    private IEnumerable<UnitInstance> ButtonUpCandidates => state is null ? []
+        : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && GamePlanner.IsArmoredVehicle(unit)
+            && GameState.Condition(unit, Conditions.Stunned) != ConditionState.True && GameState.Condition(unit, Conditions.Recalled) != ConditionState.True
+            && !(state.Phase == "mph" && GameState.Condition(unit, Conditions.PrepFire) == ConditionState.True)
+            && (state.Movement is not { WindowOpen: true } open || !open.Movers.Contains(unit.Id, StringComparer.Ordinal)))
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal);
+
+    private Task ProposeVehicleStep(string kind, string? to = null, string? facing = null)
+    {
+        var arguments = new Dictionary<string, object>
+        {
+            ["gameId"] = gameId,
+            ["attemptId"] = Attempt("vehicle"),
+            ["expectedRevision"] = (long)history!.Events.Count,
+            ["vehicleId"] = vehicleUnit,
+            ["kind"] = kind,
+        };
+        if (to is not null)
+        {
+            arguments["to"] = to;
+        }
+
+        if (facing is not null)
+        {
+            arguments["facing"] = facing;
+        }
+
+        return Propose(GameActions.MoveVehicle, JsonSerializer.SerializeToElement(arguments));
+    }
+
+    private Task ProposeButtonUp(string vehicle, bool buttonedUp) => Propose(GameActions.ButtonUp, JsonSerializer.SerializeToElement(new
+    {
+        gameId,
+        attemptId = Attempt("button-up"),
+        expectedRevision = (long)history!.Events.Count,
+        vehicleId = vehicle,
+        buttonedUp,
+    }));
+
+    /// <summary>Half MP as MP, such as "4½".</summary>
+    private static string HalfMpText(int halfMp) => halfMp % 2 == 0 ? (halfMp / 2).ToString(CultureInfo.InvariantCulture)
+        : halfMp == 1 ? "½" : $"{(halfMp / 2).ToString(CultureInfo.InvariantCulture)}½";
+
+    /// <summary>A vehicle's VCA and, for an AFV, whether its crew is CE (D2.11, D5.3).</summary>
+    private static IEnumerable<string> VehicleNotes(UnitInstance unit)
+    {
+        if (!LiveFire.IsVehicle(unit))
+        {
+            yield break;
+        }
+
+        if (unit.Position is MapPosition { Facing: { } vca })
+        {
+            yield return $"VCA {UnitFacings.Name(vca)}";
+        }
+
+        if (GamePlanner.IsArmoredVehicle(unit) && LiveFire.CrewExposed(unit))
+        {
+            yield return "CE";
+        }
+    }
+
+    /// <summary>A vehicle's Vehicle line result (A7.308, A7.309): the Kill Number, its Final DR, and any Unlikely Kill dr.</summary>
+    private static string VehicleLineText(FireVehicleEffect hit) => hit.KillNumber is not { } kill
+        ? "unharmed by small arms (A7.307)"
+        : $"Kill Number {kill}, Final DR {hit.FinalDr}{string.Concat(hit.Drm.Select(item => $" ({item.Name} {(item.Value < 0 ? "-" : "+")}{Number(Math.Abs(item.Value))})"))}"
+            + (hit.UnlikelyKillDr is { } dr ? $", Unlikely Kill dr {dr}" : "") + $": {hit.Result.Replace('-', ' ')}";
+
+    /// <summary>A vehicle crew's Collateral Attack (D.8B, D5.31): its Final DR with the CE DRM, its MC or NTC, and the result.</summary>
+    private static string CrewText(FireVehicleEffect hit) => hit.CrewResult switch
+    {
+        FireVehicleEffect.NotVulnerable => "not Vulnerable (BU or Stunned, D5.3, D5.34)",
+        _ when hit.KillNumber is not null => "no crew attack (an Inherent Driver, D5.1)",
+        _ => $"Collateral Final DR {hit.FinalDr}{string.Concat(hit.Drm.Select(item => $" ({item.Name} {(item.Value < 0 ? "-" : "+")}{Number(Math.Abs(item.Value))}, {item.Rule})"))}"
+            + $"{(hit.CrewCheck is { } check ? "; " + CheckText(check) : "")}: {hit.CrewResult}",
+    };
     private string moveTo = string.Empty;
     private bool moveAssault;
     private readonly HashSet<string> advanceUnits = new(StringComparer.Ordinal);
@@ -1128,7 +1293,11 @@ else if (state is not null)
 
     /// <summary>A fire attack as the viewer may see it: the record, or the public report of one withheld from the viewer.</summary>
     private sealed record FireView(string EventId, string Group, string Target, string? TargetSide, FireArithmetic Arithmetic,
-        IReadOnlyList<FireUnitEffect>? Effects);
+        IReadOnlyList<FireUnitEffect>? Effects)
+    {
+        /// <summary>The Vehicle line and Collateral Attack results of the target Location's vehicles (A7.308, D.8B).</summary>
+        public IReadOnlyList<FireVehicleEffect>? Vehicles { get; init; }
+    }
 
     /// <summary>The perspective the page shows: a side, or the adjudicator, who sees everything (D3).</summary>
     private Perspective Viewer => state?.Perspectives.FirstOrDefault(perspective => perspective.Name == viewAs) ?? Perspective.Adjudicator;
@@ -1388,8 +1557,8 @@ else if (state is not null)
     /// not fire in the PFPh (A3.3, p. 47), are not broken, and are not a crew manning a Gun (C10, A21.13; ruling R24.4).
     /// </summary>
     private IEnumerable<UnitInstance> MoveCandidates => state is null ? []
-        : state.Movement is { } movement ? movement.Members.Select(state.Unit).OfType<UnitInstance>()
-        : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && !unit.MovementEnded
+        : state.Movement is { } movement ? movement.Vehicle ? [] : movement.Members.Select(state.Unit).OfType<UnitInstance>()
+        : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && !unit.MovementEnded && !LiveFire.IsVehicle(unit)
             && state.Location(unit.Id) is not null && GameState.Condition(unit, Conditions.Broken) != ConditionState.True
             && GameState.Condition(unit, Conditions.PrepFire) != ConditionState.True && GameState.Condition(unit, Conditions.Melee) != ConditionState.True
             && GameState.Condition(unit, Conditions.Captured) != ConditionState.True && !Mans(unit)).OrderBy(unit => unit.Id, StringComparer.Ordinal);
@@ -1470,7 +1639,7 @@ else if (state is not null)
     /// <summary>The Locations that hold active units of the firing side that may fire now.</summary>
     private IEnumerable<string> FireLocations(string side) => state is null ? []
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side
-            && (Library.Vocabulary.IsA(unit.Kind, "asl:mmc") || unit.Kind == "asl:hero") && MayFire(unit))
+            && (Library.Vocabulary.IsA(unit.Kind, "asl:mmc") || unit.Kind == "asl:hero" || GamePlanner.HasVehicleMg(unit)) && MayFire(unit))
             .Select(unit => state.Location(unit.Id)?.Location.ToString())
             .OfType<string>().Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal);
 
@@ -1479,7 +1648,8 @@ else if (state is not null)
     /// in Melee, a prisoner, or a Guard (A15.432, A11.15, A20.5, A20.52); and not spent for this phase (A7.1, A8.4), as the planner and
     /// the Fire package read it.
     /// </summary>
-    private bool MayFire(UnitInstance unit) => state is not null && unit.Kind != "asl:crew" && GamePlanner.FireBar(state, unit) is null && !LiveFire.FireSpent(state, unit);
+    private bool MayFire(UnitInstance unit) => state is not null && unit.Kind != "asl:crew" && GamePlanner.FireBar(state, unit) is null && !LiveFire.FireSpent(state, unit)
+        && (!LiveFire.IsVehicle(unit) || (GamePlanner.HasVehicleMg(unit) && LiveFire.CrewExposed(unit) && state.Phase != "mph"));
 
     private IEnumerable<UnitInstance> FireGroupAt(string side) => state is null || fireFrom.Length == 0 ? []
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && state.Location(unit.Id)?.Location.ToString() == fireFrom)
@@ -1550,7 +1720,7 @@ else if (state is not null)
             {
                 if (item.Payload is FireResolved fire && fire.Resolution.Deserialize<FireResolution>(LiveFire.Json) is { Arithmetic: { } arithmetic } resolution)
                 {
-                    views.Add(new FireView(item.EventId, GroupOf(fire), fire.TargetLocation, null, arithmetic, resolution.Effects));
+                    views.Add(new FireView(item.EventId, GroupOf(fire), fire.TargetLocation, null, arithmetic, resolution.Effects) { Vehicles = resolution.VehicleEffects });
                 }
                 else if (item.Payload is FireReported report && history.Events.FirstOrDefault(other => other.EventId == report.Fire) is { } withheld
                     && !withheld.IsVisibleTo(Viewer) && report.Arithmetic.Deserialize<FireArithmetic>(LiveFire.Json) is { } reported)
@@ -1580,6 +1750,11 @@ else if (state is not null)
     /// </summary>
     private static string FireGroupText(FireAttack attack)
     {
+        if (attack.VehicleFire is { } byVehicle)
+        {
+            return $"{byVehicle.VehicleId}'s AAMG in {byVehicle.LocationId}";
+        }
+
         if (attack.Firers is not { Count: > 0 } firers)
         {
             return attack.FireKind == ScenarioA1FireCalculator.ResidualFire ? $"{attack.ResidualFp} Residual FP" : "no firers";
@@ -1946,7 +2121,7 @@ else if (state is not null)
         // A SW is placed in the possession of a unit (A9.1); anything else at a Location.
         var holder = placeHolder.Trim() is { Length: > 0 } held && Library.Vocabulary.IsA(definition.Kind, "asl:equipment") ? held : null;
         // C2.23, A21.13: a Gun faces a hexspine at its Location and is manned by the crew named as its holder.
-        var gun = definition.Kind == "asl:gun";
+        var gun = definition.Kind is "asl:gun" or "asl:vehicle";
         placements.Add(new Placement(id, definition.Id, definition.Kind, side, placeLocation.Trim(), placeConcealed, placeHidden, holder,
             placeBroken && holder is null, gun ? placeFacing : null));
         placeId = string.Empty;
@@ -1988,6 +2163,14 @@ else if (state is not null)
         if (item.Definition is not null)
         {
             placement["definition"] = item.Definition;
+        }
+
+        // D2.11: a vehicle stands at its Location with its VCA; its crew's state starts CE for an OT AFV (D5.3).
+        if (item.Kind == "asl:vehicle")
+        {
+            placement["position"] = new { at = item.Location, facing = item.Facing ?? "east" };
+            placement["conditions"] = new Dictionary<string, bool> { ["asl:concealed"] = item.Concealed, ["asl:hidden"] = item.Hidden };
+            return placement;
         }
 
         if (item.Facing is { } facing)

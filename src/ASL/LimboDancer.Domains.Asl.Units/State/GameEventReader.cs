@@ -199,6 +199,7 @@ public static class GameEventReader
                 var left = payload.TryGetProperty("position", out _) ? ReadPosition(payload, "position", path, fields, diagnostics) : null;
                 return transferredId is null ? null : new EquipmentTransferred(transferredId, holding, left);
             case "conditions-changed":
+            case "crew-exposure-changed":
                 var changedId = fields.RequiredString(payload, "id", path);
                 var conditions = ReadConditions(payload, path, diagnostics);
                 return changedId is null ? null : new ConditionsChanged(changedId, conditions);
@@ -352,6 +353,26 @@ public static class GameEventReader
                     {
                         Charge = charge,
                     };
+            case "vehicle-step":
+                var vehicleAt = ReadLocation(payload, "at", path, fields, diagnostics);
+                var vehicleId = fields.RequiredString(payload, "vehicle", path);
+                var vehicleKind = fields.RequiredString(payload, "kind", path);
+                var halfMp = fields.OptionalInteger(payload, "halfMp", path);
+                var vehicleStep = fields.OptionalInteger(payload, "step", path);
+                UnitFacing? turned = null;
+                if (payload.TryGetProperty("facing", out var facingValue))
+                {
+                    if (!UnitFacings.TryParse(facingValue.GetString(), out var parsed))
+                    {
+                        return Missing(diagnostics, "A vehicle step's facing is a hexspine name.", path);
+                    }
+
+                    turned = parsed;
+                }
+
+                return vehicleAt is null || vehicleId is null || vehicleKind is null || halfMp is null || vehicleStep is null
+                    ? Missing(diagnostics, "A vehicle step names its vehicle, kind, Location, half MP, and step.", path)
+                    : new VehicleStepped(vehicleId, vehicleKind, vehicleAt, turned, halfMp.Value, vehicleStep.Value);
             case "movement-window-closed":
                 var closedStep = fields.OptionalInteger(payload, "step", path);
                 return closedStep is null ? Missing(diagnostics, "A closed window names its step.", path) : new MovementWindowClosed(closedStep.Value);

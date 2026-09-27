@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "1.0.0",
+  "chart": "A7 Infantry Fire Table, the Vehicle line",
+  "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+  "physicalPdfPage": 692,
+  "boundary": "The Kill Number of the Vehicle line under each FP column of the IFT's DR/FP header. The Personnel results are in a7-infantry-fire-table.transcription.json; the IFT's other marks, charts, and tables are outside this transcription.",
+  "reading": "The Vehicle line (marked with a star, A7.308) prints one Kill Number beneath each FP column, confirmed on a rendering: a Final DR below it eliminates an unarmored vehicle, equal to it immobilizes it, and at most half of it makes a burning wreck (A7.308).",
+  "columns": [1, 2, 4, 6, 8, 12, 16, 20, 24, 30, 36],
+  "killNumbers": [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+}

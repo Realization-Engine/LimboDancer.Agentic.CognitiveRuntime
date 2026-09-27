@@ -89,6 +89,7 @@ public static class GameProjector
                 RallyAttempted rally => Rally(previous, rally, gameEvent),
                 RepairAttempted repair => Repair(previous, repair),
                 MovementStepped moving => StepMovement(previous, moving),
+                VehicleStepped vehicle => StepVehicle(previous, vehicle),
                 MovementWindowClosed closed => CloseWindow(previous, closed),
                 MovementEnded ended => EndMovement(previous, ended),
                 AdvanceMoved advanced => Advance(previous, advanced),
@@ -258,6 +259,13 @@ public static class GameProjector
             };
             var newPlayerTurn = change.PhasingSide != state.PhasingSide;
             var melee = state.Phase == "ccph" ? InMelee(state) : null;
+
+            // D5.34, D5.341: at the end of the Player Turn in which it was placed, a Stun becomes Stun +1, and a Recalled AFV leaves play
+            // (ruling R25.6: its Motion route to a Friendly Board Edge is not played).
+            if (newPlayerTurn)
+            {
+                state = EndStuns(state);
+            }
             return CheckPhase(state, change.Turn, change.Phase, change.PhasingSide)
                 ? state with
                 {
@@ -281,6 +289,40 @@ public static class GameProjector
                         : equipment)],
                 }
                 : null;
+        }
+
+        private static GameState EndStuns(GameState state)
+        {
+            var units = state.Units.Select(unit =>
+            {
+                if (unit.Status != InstanceStatus.Active)
+                {
+                    return unit;
+                }
+
+                if (GameState.Condition(unit, Conditions.Recalled) == ConditionState.True)
+                {
+                    return unit with
+                    {
+                        Status = InstanceStatus.Eliminated
+                    };
+                }
+
+                return GameState.Condition(unit, Conditions.Stunned) == ConditionState.True
+                    ? unit with
+                    {
+                        Conditions = new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal)
+                        {
+                            [Conditions.Stunned] = ConditionState.False,
+                            [Conditions.StunRecovery] = ConditionState.True,
+                        },
+                    }
+                    : unit;
+            }).ToArray();
+            return state with
+            {
+                Units = units
+            };
         }
 
         /// <summary>
@@ -559,8 +601,10 @@ public static class GameProjector
             }
 
             // A7.55: a Location's units fire at a target once per phase (in the MPh, once per MF expenditure), as one fire
-            // group; Residual FP has no firers and never forms one (A8.22).
-            if (fire.Firers.Count > 0 && state.FiresThisPhase.Any(item => item.FirerLocation == fire.FirerLocation
+            // group; Residual FP has no firers and never forms one (A8.22). A vehicle's MG fires alone (D3.4, ruling R25.7), but the Mandatory
+            // Fire Group binds it with its Location's Infantry (D3.5): only its own Multiple ROF fires again.
+            var byVehicle = fire.Facts.TryGetProperty("vehicleFire", out var firing) && firing.ValueKind == JsonValueKind.Object;
+            if (fire.Firers.Count > 0 && state.FiresThisPhase.Any(item => !(byVehicle && item.Vehicle) && item.FirerLocation == fire.FirerLocation
                 && item.TargetLocation == fire.TargetLocation && item.Step == fire.MovementStep))
             {
                 return Fail<GameState>("UNIT-STATE-024", $"{fire.FirerLocation} has already fired at {fire.TargetLocation} this phase (A7.55).");
@@ -572,9 +616,22 @@ public static class GameProjector
             }
 
             fires[eventId] = (fire, gameEvent.Visibility is not null, false);
+
+            // C2.24, D3.5 (unit step 25): a vehicle's MG shot keeps its Multiple ROF for this phase when its record says so, as a Gun's does.
+            var shots = state.OrdnanceShots;
+            if (fire.Facts.TryGetProperty("vehicleFire", out var vehicleFire) && vehicleFire.ValueKind == JsonValueKind.Object
+                && vehicleFire.TryGetProperty("vehicleId", out var vehicleId) && vehicleId.GetString() is { } vehicle)
+            {
+                var kept = fire.Resolution.TryGetProperty("weaponEffects", out var effects) && effects.ValueKind == JsonValueKind.Array
+                    && effects.GetArrayLength() == 1 && effects[0].TryGetProperty("rateOfFireRetained", out var retained) && retained.GetBoolean();
+                var previous = shots.FirstOrDefault(item => item.Gun == vehicle);
+                shots = [.. shots.Where(item => item.Gun != vehicle), new OrdnanceShotRecord(vehicle, (previous?.Shots ?? 0) + 1, kept)];
+            }
+
             return state with
             {
-                FiresThisPhase = [.. state.FiresThisPhase, new FireRecord(eventId, fire.FirerLocation, fire.TargetLocation) { Step = fire.MovementStep }],
+                FiresThisPhase = [.. state.FiresThisPhase, new FireRecord(eventId, fire.FirerLocation, fire.TargetLocation) { Step = fire.MovementStep, Vehicle = byVehicle }],
+                OrdnanceShots = shots,
             };
         }
 
@@ -737,6 +794,83 @@ public static class GameProjector
             };
         }
 
+        /// <summary>
+        /// One MP expenditure of a moving vehicle (D2.1, unit step 25; UNIT-STATE-034): a Mobile vehicle of the phasing side that did not
+        /// Prep Fire (D.3, D.7), is not Stunned or Recalled (D5.34), and has not ended its move starts (D2.12; not when it began its MPh in
+        /// Motion, D2.4), turns one hexspine (D2.11), enters an ADJACENT Location, or stops (D2.13); after stopping it must start again to
+        /// move on. Each expenditure opens the DEFENDER's window (A8.1) and removes any Motion counter (D2.4). The MP costs are the
+        /// planner's reads of the Terrain Chart, as a movement step's MF are.
+        /// </summary>
+        private GameState? StepVehicle(GameState state, VehicleStepped step)
+        {
+            if (state.Phase != "mph" || Active(state, step.Vehicle) is not UnitInstance vehicle || !vocabulary.IsA(vehicle.Kind, "asl:vehicle")
+                || vehicle.Side != state.PhasingSide || vehicle.MovementEnded || step.HalfMp <= 0 || state.Location(vehicle.Id) is not { } at
+                || vehicle.Position is not MapPosition { Facing: { } facing })
+            {
+                return Fail<GameState>("UNIT-STATE-034", "A vehicle step moves a vehicle of the phasing side that has not ended its move, in the MPh (D2.1).");
+            }
+
+            if (new[] { Conditions.PrepFire, Conditions.Immobilized, Conditions.Stunned, Conditions.Recalled }
+                .FirstOrDefault(name => GameState.Condition(vehicle, name) == ConditionState.True) is { } barred)
+            {
+                return Fail<GameState>("UNIT-STATE-034", $"'{vehicle.Id}' is marked {barred.Replace("asl:", "", StringComparison.Ordinal)} and may not move (D.3, D.7, D5.34).");
+            }
+
+            var current = state.Movement;
+            if (current is not null && (!current.Vehicle || current.WindowOpen || !current.Members.SequenceEqual([vehicle.Id], StringComparer.Ordinal)))
+            {
+                return Fail<GameState>("UNIT-STATE-034", "A vehicle moves alone, after the DEFENDER's window on its last MP expenditure closes, and no other unit moves until it ends (A8.11).");
+            }
+
+            if (step.Step != (current?.Step ?? 0) + 1)
+            {
+                return Fail<GameState>("UNIT-STATE-034", $"The next movement step is {(current?.Step ?? 0) + 1}.");
+            }
+
+            var inMotion = GameState.Condition(vehicle, Conditions.Motion) == ConditionState.True;
+            var started = current is not null ? current.Started : inMotion;
+            var moving = started && current?.Stopped != true;
+            var valid = step.Kind switch
+            {
+                VehicleStepped.Start => !moving && step.At == at.Location && step.Facing is null && step.HalfMp == 2,
+                VehicleStepped.Turn => moving && step.At == at.Location && step.Facing is { } turned && Math.Abs(((int)turned - (int)facing + 6) % 6) is 1 or 5
+                    && step.HalfMp == 2,
+                VehicleStepped.Enter => moving && step.At != at.Location && step.Facing is null,
+                VehicleStepped.Stop => moving && step.At == at.Location && step.Facing is null && step.HalfMp == 2,
+                _ => false,
+            };
+            if (!valid)
+            {
+                return Fail<GameState>("UNIT-STATE-034",
+                    "A vehicle starts when not moving; turns one hexspine, enters a Location, or stops only while moving; and turns, starts, and stops for one MP (D2.11 to D2.13).");
+            }
+
+            var halves = (vehicle.MfSpent * 2) + (vehicle.HalfMfSpent ? 1 : 0) + step.HalfMp;
+            var conditions = new Dictionary<string, ConditionState>(vehicle.Conditions, StringComparer.Ordinal);
+            if (inMotion)
+            {
+                conditions[Conditions.Motion] = ConditionState.False;
+            }
+
+            var next = Replace(state, vehicle with
+            {
+                Position = new MapPosition(step.At) { Facing = step.Facing ?? facing },
+                MfSpent = halves / 2,
+                HalfMfSpent = halves % 2 == 1,
+                Conditions = conditions,
+            })!;
+            return next with
+            {
+                Movement = new MovementState([vehicle.Id], step.At, step.Kind == VehicleStepped.Enter ? step.HalfMp : (current?.HalfMfInLocation ?? 0) + step.HalfMp,
+                    step.Step, false, WindowOpen: true)
+                {
+                    Vehicle = true,
+                    Started = step.Kind != VehicleStepped.Stop,
+                    Stopped = step.Kind == VehicleStepped.Stop,
+                },
+            };
+        }
+
         private GameState? CloseWindow(GameState state, MovementWindowClosed closed) =>
             state.Movement is { WindowOpen: true } movement && movement.Step == closed.Step
                 ? state with
@@ -766,9 +900,18 @@ public static class GameProjector
             {
                 if (Active(next, id) is UnitInstance unit)
                 {
+                    // D2.4: a vehicle that ends its move without stopping is in Motion; one that stopped, or was stopped by a Stun or
+                    // immobilization (D5.34), is not.
+                    var conditions = movement.Vehicle
+                        ? new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal)
+                        {
+                            [Conditions.Motion] = movement.Stopped || !movement.Members.Contains(id, StringComparer.Ordinal) ? ConditionState.False : ConditionState.True,
+                        }
+                        : unit.Conditions;
                     next = Replace(next, unit with
                     {
-                        MovementEnded = true
+                        MovementEnded = true,
+                        Conditions = conditions,
                     })!;
                 }
             }
@@ -825,8 +968,12 @@ public static class GameProjector
                 }
             }
 
+            // D5.34, A7.82 (unit step 25): a moving vehicle stops when its crew is Stunned or Recalled or it is immobilized, but a pin
+            // never stops it.
             var leaving = members.Where(id => next.Unit(id) is not { Status: InstanceStatus.Active } unit
-                || GameState.Condition(unit, Conditions.Broken) == ConditionState.True || GameState.Condition(unit, Conditions.Pinned) == ConditionState.True)
+                || (movement.Vehicle
+                    ? new[] { Conditions.Stunned, Conditions.Recalled, Conditions.Immobilized }.Any(name => GameState.Condition(unit, name) == ConditionState.True)
+                    : GameState.Condition(unit, Conditions.Broken) == ConditionState.True || GameState.Condition(unit, Conditions.Pinned) == ConditionState.True))
                 .ToArray();
             if (leaving.Length == 0 && members.Count == movement.Members.Count && movers.SequenceEqual(movement.Movers))
             {

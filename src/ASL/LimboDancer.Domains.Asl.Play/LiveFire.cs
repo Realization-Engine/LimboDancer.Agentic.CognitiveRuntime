@@ -14,7 +14,7 @@ namespace LimboDancer.Domains.Asl.Play;
 public static class LiveFire
 {
     public const string Catalog = "asl-scenario-a1";
-    public const string CatalogVersion = "1.4.0";
+    public const string CatalogVersion = "1.5.0";
 
     public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
@@ -47,6 +47,13 @@ public static class LiveFire
             return (null, $"play.fire-catalog: the Fire package reads {Catalog}@{CatalogVersion}, and this game uses {state.Catalog.Catalog}@{state.Catalog.Version}");
         }
 
+        // D1.83, D3.4 (ruling R25.7): a vehicle's MG fires alone, with no leader and no Infantry in its group.
+        var vehicleFirers = firerIds.Select(state.Unit).OfType<UnitInstance>().Where(IsVehicle).ToArray();
+        if (vehicleFirers.Length > 0 && (firerIds.Count > 1 || directorIds.Count > 0 || weapons is { Count: > 0 }))
+        {
+            return (null, "play.fire-vehicle-group: a vehicle's MG fires alone, with no leader or Infantry in its fire group (D3.4)");
+        }
+
         var firers = new List<(UnitInstance Unit, BoardLocation At)>();
         foreach (var id in firerIds)
         {
@@ -73,6 +80,11 @@ public static class LiveFire
 
         var side = firers[0].Unit.Side;
         var kind = (string?)null;
+        if (state.Phase == "mph" && vehicleFirers.Length > 0)
+        {
+            return (null, "play.fire-vehicle-phase: a vehicle's fire in the MPh (Defensive First Fire, Bounding First Fire) is not reviewed (D3.3; ruling R25.7)");
+        }
+
         if (state.Phase == "mph")
         {
             // A8.1, A8.3, A8.31: the firers' markers decide the kind of Defensive fire.
@@ -91,13 +103,18 @@ public static class LiveFire
         }
 
         var movers = state.Phase == "mph" && state.Movement is { } movement && movement.Location == target ? movement.Movers : null;
-        UnitInstance[] targets = [.. state.At(target).OfType<UnitInstance>()
+        UnitInstance[] attacked = [.. state.At(target).OfType<UnitInstance>()
             .Where(unit => unit.Status == InstanceStatus.Active && (movers is null || movers.Contains(unit.Id)))
             .OrderBy(unit => unit.Id, StringComparer.Ordinal)];
 
+        // A7.308: the target Location's vehicles share the attack's DR; Defensive First Fire attacks only the moving stack or vehicle.
+        UnitInstance[] targets = [.. attacked.Where(unit => !IsVehicle(unit))];
+        UnitInstance[] vehicles = [.. attacked.Where(IsVehicle)];
+
         // A15.41: the target side's units the attack does not attack (in the MPh, those not moving) are a berserk leader's companions.
         UnitInstance[] companions = movers is null || targets.Length == 0 ? [] : [.. state.At(target).OfType<UnitInstance>()
-            .Where(unit => unit.Status == InstanceStatus.Active && !movers.Contains(unit.Id) && unit.Side == targets[0].Side && unit.Definition is not null)
+            .Where(unit => unit.Status == InstanceStatus.Active && !movers.Contains(unit.Id) && unit.Side == targets[0].Side && unit.Definition is not null
+                && !IsVehicle(unit))
             .OrderBy(unit => unit.Id, StringComparer.Ordinal)];
         if (targets.Any(unit => unit.Definition is null && unit.Kind != UnitKinds.Dummy))
         {
@@ -112,7 +129,7 @@ public static class LiveFire
             "mph" => "MPh",
             _ => state.Phase,
         };
-        var targetSide = targets.FirstOrDefault()?.Side ?? state.Sides.FirstOrDefault(item => item.Id != side)?.Id;
+        var targetSide = targets.FirstOrDefault()?.Side ?? vehicles.FirstOrDefault()?.Side ?? state.Sides.FirstOrDefault(item => item.Id != side)?.Id;
         var multi = locations.Length > 1;
 
         FireWeapon Weapon(string id) => state.Find(id) is EquipmentInstance equipment
@@ -121,7 +138,7 @@ public static class LiveFire
             : new FireWeapon(id, null, null, null, null);
 
         var firerFacts = new List<FireFirer>();
-        foreach (var (unit, at) in firers)
+        foreach (var (unit, at) in firers.Where(item => !IsVehicle(item.Unit)))
         {
             IReadOnlyList<FireWeapon>? used = null;
             if (weapons?.TryGetValue(unit.Id, out var named) == true && named.Count > 0)
@@ -174,8 +191,34 @@ public static class LiveFire
             FiringSideElr = kind == ScenarioA1FireCalculator.FinalProtectiveFire ? state.Side(side)?.Elr : null,
             OtherDirectors = directors.Count > 1 ? [.. directors.Skip(1).Select(Director)] : null,
             Companions = companions.Length > 0 ? [.. companions.Select(unit => Target(unit, target))] : null,
+            Vehicles = vehicles.Length > 0 ? [.. vehicles.Select(unit => Vehicle(unit, target))] : null,
+            VehicleFire = vehicleFirers.Length > 0 ? VehicleFire(state, vehicleFirers[0], firers[0].At) : null,
         }, null);
     }
+
+    /// <summary>Whether a unit is a vehicle (D1).</summary>
+    public static bool IsVehicle(UnitInstance unit) => unit.Kind == "asl:vehicle";
+
+    /// <summary>
+    /// Whether an AFV's crew is Crew Exposed: an OT AFV is CE unless under a BU, Stun, or Recall marker (D5.3, D5.34); an unarmored
+    /// vehicle has no crew to expose (D5.1).
+    /// </summary>
+    public static bool CrewExposed(UnitInstance vehicle) =>
+        !Is(vehicle, Conditions.ButtonedUp) && !Is(vehicle, Conditions.Stunned) && !Is(vehicle, Conditions.Recalled);
+
+    /// <summary>A vehicle in the target Location, with its crew's state (A7.307, A7.308, D.8B).</summary>
+    internal static FireVehicle Vehicle(UnitInstance vehicle, BoardLocation at) =>
+        new(vehicle.Id, vehicle.Definition?.Definition, at.ToString(), CrewExposed(vehicle), Is(vehicle, Conditions.Stunned) || Is(vehicle, Conditions.Recalled),
+            Is(vehicle, Conditions.StunRecovery), Is(vehicle, Conditions.Immobilized));
+
+    /// <summary>
+    /// A vehicle's MA MG attack (ruling R25.7): its crew's state, Motion (D2.42), a pin (A7.82), its MG's malfunction (D3.7), whether it
+    /// fired this Player Turn, and whether its last shot this phase kept its Multiple ROF (C2.24), which the state records.
+    /// </summary>
+    private static FireVehicleFire VehicleFire(GameState state, UnitInstance vehicle, BoardLocation at) =>
+        new(vehicle.Id, vehicle.Definition?.Definition, at.ToString(), CrewExposed(vehicle), Is(vehicle, Conditions.Motion), Is(vehicle, Conditions.Pinned),
+            Is(vehicle, Conditions.Stunned) || Is(vehicle, Conditions.Recalled), Is(vehicle, Conditions.StunRecovery), Is(vehicle, Conditions.Malfunctioned),
+            Fired(vehicle), state.OrdnanceShots.Any(item => item.Gun == vehicle.Id && item.RateOfFireKept));
 
     /// <summary>
     /// The state's part of a Residual FP attack on the moving stack as it enters a Location (A8.2, A8.22): no firers, the
@@ -193,7 +236,8 @@ public static class LiveFire
             .Where(unit => unit.Status == InstanceStatus.Active && movement.Movers.Contains(unit.Id)).OrderBy(unit => unit.Id, StringComparer.Ordinal)];
         var targetSide = state.PhasingSide;
         UnitInstance[] companions = [.. state.At(target).OfType<UnitInstance>()
-            .Where(unit => unit.Status == InstanceStatus.Active && !movement.Movers.Contains(unit.Id) && unit.Side == targetSide && unit.Definition is not null)
+            .Where(unit => unit.Status == InstanceStatus.Active && !movement.Movers.Contains(unit.Id) && unit.Side == targetSide && unit.Definition is not null
+                && !IsVehicle(unit))
             .OrderBy(unit => unit.Id, StringComparer.Ordinal)];
         return (new FireAttack("MPh", "non-phasing", null, null, target.ToString(), null, null, null, null, null, state.ScenarioMonth, null,
             [.. targets.Select(unit => Target(unit, target))],
@@ -221,6 +265,8 @@ public static class LiveFire
         Dictionary<string, int>? wounds = null;
         Dictionary<string, IReadOnlyList<int>>? heat = null;
         Dictionary<string, IReadOnlyList<int>>? berserk = null;
+        Dictionary<string, IReadOnlyList<int>>? crewChecks = null;
+        Dictionary<string, int>? unlikelyKill = null;
 
         // A selection roll names the units it selects among, one die each, in order.
         static bool Select(ref Dictionary<string, int>? into, string ids, DiceRolled roll)
@@ -294,6 +340,12 @@ public static class LiveFire
                 case "berserkCheck" when roll.Count == 2:
                     (berserk ??= new(StringComparer.Ordinal))[unit] = roll.Values;
                     break;
+                case "crewCheck" when roll.Count == 2:
+                    (crewChecks ??= new(StringComparer.Ordinal))[unit] = roll.Values;
+                    break;
+                case "unlikelyKill" when roll.Count == 1:
+                    (unlikelyKill ??= new(StringComparer.Ordinal))[unit] = roll.Values[0];
+                    break;
                 default:
                     return null;
             }
@@ -305,6 +357,8 @@ public static class LiveFire
             FirerSelection = firerSelection,
             HeatOfBattle = heat,
             BerserkChecks = berserk,
+            CrewChecks = crewChecks,
+            UnlikelyKill = unlikelyKill,
         };
     }
 
@@ -336,6 +390,12 @@ public static class LiveFire
         if (state.Phase is not ("pfph" or "afph" or "dfph") || !Fired(unit) || (state.Phase == "dfph" && Is(unit, Conditions.FirstFire)))
         {
             return false;
+        }
+
+        // C2.24, D3.5: a vehicle's MG fires again this phase only on the Multiple ROF its last shot kept.
+        if (IsVehicle(unit))
+        {
+            return !state.OrdnanceShots.Any(item => item.Gun == unit.Id && item.RateOfFireKept);
         }
 
         return !state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding

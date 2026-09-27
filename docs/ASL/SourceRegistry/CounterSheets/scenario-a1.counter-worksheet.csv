@@ -603,3 +603,132 @@ sheet,counter,face,attribute,value,transcriber,reviewer,note
 ,defender-at-gun,front,asl:rfnm,,,,yes or no
 ,defender-at-gun,malfunctioned,repair,,,,"whole number, or not-printed"
 ,defender-at-gun,malfunctioned,removal,,,,"whole number, or not-printed"
+,attacker-truck,counter,kind,,,,expected asl:vehicle
+,attacker-truck,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,attacker-truck,front,identity,,,,"identity as printed, or not-printed"
+,attacker-truck,front,designation,,,,"as printed, or not-printed"
+,attacker-truck,front,ground-pressure,,,,"low or high, or not-printed (D1.4)"
+,attacker-truck,front,movement-type,,,,"motorcycle, armored-car, fully-tracked, half-tracked, or truck (D1.1)"
+,attacker-truck,front,movement-points,,,,"whole number, or not-printed"
+,attacker-truck,front,amphibious-mp,,,,"whole number, or not-printed"
+,attacker-truck,front,af-front,,,,"whole number, or not-printed"
+,attacker-truck,front,af-side,,,,"whole number, or not-printed"
+,attacker-truck,front,turret-af-front,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,attacker-truck,front,turret-af-side,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,attacker-truck,front,target-size,,,,"very-small, small, large, very-large, or not-printed (D1.7)"
+,attacker-truck,front,ma-type,,,,"t, st, rst, 1mt, or nt, or not-printed (D1.3)"
+,attacker-truck,front,ma-weapon,,,,"mg, ft, atr, or aamg, or not-printed (D1.3)"
+,attacker-truck,front,caliber,,,,"whole number, or not-printed"
+,attacker-truck,front,caliber-suffix,,,,"star, l, or ll, or not-printed"
+,attacker-truck,front,rate-of-fire,,,,"whole number, or not-printed"
+,attacker-truck,front,breakdown,,,,"whole number, or not-printed"
+,attacker-truck,front,special-ammo,,,,"codes as printed, space-separated, or not-printed"
+,attacker-truck,front,sa-mount,,,,"turret or bow, or not-printed"
+,attacker-truck,front,sa-caliber,,,,"whole number, or not-printed"
+,attacker-truck,front,towing,,,,"whole number, or not-printed"
+,attacker-truck,front,passenger-capacity,,,,"whole number, or not-printed"
+,attacker-truck,front,bmg,,,,"whole number, or not-printed"
+,attacker-truck,front,cmg,,,,"whole number, or not-printed"
+,attacker-truck,front,aamg,,,,"whole number, or not-printed"
+,attacker-truck,front,hull-rear-mg,,,,"whole number, or not-printed"
+,attacker-truck,front,turret-rear-mg,,,,"whole number, or not-printed"
+,attacker-truck,front,vehicle-ft-mount,,,,"bow, turret, or side, or not-printed"
+,attacker-truck,front,vehicle-ft-firepower,,,,"whole number, or not-printed"
+,attacker-truck,front,vehicle-ft-removal,,,,"whole number, or not-printed"
+,attacker-truck,wreck,crew-survival,,,,"whole number, or not-printed"
+,attacker-truck,front,asl:mechanically-unreliable,,,,yes or no
+,attacker-truck,front,asl:unarmored,,,,yes or no
+,attacker-truck,front,asl:partially-armored,,,,yes or no
+,attacker-truck,front,asl:rear-turret-unarmored,,,,yes or no
+,attacker-truck,front,asl:open-topped,,,,yes or no
+,attacker-truck,front,asl:no-ap,,,,yes or no
+,attacker-truck,front,asl:no-he,,,,yes or no
+,attacker-truck,front,asl:fixed-bmg,,,,yes or no
+,attacker-truck,front,asl:vehicle-ft-range-2,,,,yes or no
+,defender-truck,counter,kind,,,,expected asl:vehicle
+,defender-truck,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,defender-truck,front,identity,,,,"identity as printed, or not-printed"
+,defender-truck,front,designation,,,,"as printed, or not-printed"
+,defender-truck,front,ground-pressure,,,,"low or high, or not-printed (D1.4)"
+,defender-truck,front,movement-type,,,,"motorcycle, armored-car, fully-tracked, half-tracked, or truck (D1.1)"
+,defender-truck,front,movement-points,,,,"whole number, or not-printed"
+,defender-truck,front,amphibious-mp,,,,"whole number, or not-printed"
+,defender-truck,front,af-front,,,,"whole number, or not-printed"
+,defender-truck,front,af-side,,,,"whole number, or not-printed"
+,defender-truck,front,turret-af-front,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,defender-truck,front,turret-af-side,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,defender-truck,front,target-size,,,,"very-small, small, large, very-large, or not-printed (D1.7)"
+,defender-truck,front,ma-type,,,,"t, st, rst, 1mt, or nt, or not-printed (D1.3)"
+,defender-truck,front,ma-weapon,,,,"mg, ft, atr, or aamg, or not-printed (D1.3)"
+,defender-truck,front,caliber,,,,"whole number, or not-printed"
+,defender-truck,front,caliber-suffix,,,,"star, l, or ll, or not-printed"
+,defender-truck,front,rate-of-fire,,,,"whole number, or not-printed"
+,defender-truck,front,breakdown,,,,"whole number, or not-printed"
+,defender-truck,front,special-ammo,,,,"codes as printed, space-separated, or not-printed"
+,defender-truck,front,sa-mount,,,,"turret or bow, or not-printed"
+,defender-truck,front,sa-caliber,,,,"whole number, or not-printed"
+,defender-truck,front,towing,,,,"whole number, or not-printed"
+,defender-truck,front,passenger-capacity,,,,"whole number, or not-printed"
+,defender-truck,front,bmg,,,,"whole number, or not-printed"
+,defender-truck,front,cmg,,,,"whole number, or not-printed"
+,defender-truck,front,aamg,,,,"whole number, or not-printed"
+,defender-truck,front,hull-rear-mg,,,,"whole number, or not-printed"
+,defender-truck,front,turret-rear-mg,,,,"whole number, or not-printed"
+,defender-truck,front,vehicle-ft-mount,,,,"bow, turret, or side, or not-printed"
+,defender-truck,front,vehicle-ft-firepower,,,,"whole number, or not-printed"
+,defender-truck,front,vehicle-ft-removal,,,,"whole number, or not-printed"
+,defender-truck,wreck,crew-survival,,,,"whole number, or not-printed"
+,defender-truck,front,asl:mechanically-unreliable,,,,yes or no
+,defender-truck,front,asl:unarmored,,,,yes or no
+,defender-truck,front,asl:partially-armored,,,,yes or no
+,defender-truck,front,asl:rear-turret-unarmored,,,,yes or no
+,defender-truck,front,asl:open-topped,,,,yes or no
+,defender-truck,front,asl:no-ap,,,,yes or no
+,defender-truck,front,asl:no-he,,,,yes or no
+,defender-truck,front,asl:fixed-bmg,,,,yes or no
+,defender-truck,front,asl:vehicle-ft-range-2,,,,yes or no
+,attacker-halftrack,counter,kind,,,,expected asl:vehicle
+,attacker-halftrack,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,attacker-halftrack,front,identity,,,,"identity as printed, or not-printed"
+,attacker-halftrack,front,designation,,,,"as printed, or not-printed"
+,attacker-halftrack,front,ground-pressure,,,,"low or high, or not-printed (D1.4)"
+,attacker-halftrack,front,movement-type,,,,"motorcycle, armored-car, fully-tracked, half-tracked, or truck (D1.1)"
+,attacker-halftrack,front,movement-points,,,,"whole number, or not-printed"
+,attacker-halftrack,front,amphibious-mp,,,,"whole number, or not-printed"
+,attacker-halftrack,front,af-front,,,,"whole number, or not-printed"
+,attacker-halftrack,front,af-side,,,,"whole number, or not-printed"
+,attacker-halftrack,front,turret-af-front,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,attacker-halftrack,front,turret-af-side,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,attacker-halftrack,front,target-size,,,,"very-small, small, large, very-large, or not-printed (D1.7)"
+,attacker-halftrack,front,ma-type,,,,"t, st, rst, 1mt, or nt, or not-printed (D1.3)"
+,attacker-halftrack,front,ma-weapon,,,,"mg, ft, atr, or aamg, or not-printed (D1.3)"
+,attacker-halftrack,front,caliber,,,,"whole number, or not-printed"
+,attacker-halftrack,front,caliber-suffix,,,,"star, l, or ll, or not-printed"
+,attacker-halftrack,front,rate-of-fire,,,,"whole number, or not-printed"
+,attacker-halftrack,front,breakdown,,,,"whole number, or not-printed"
+,attacker-halftrack,front,special-ammo,,,,"codes as printed, space-separated, or not-printed"
+,attacker-halftrack,front,sa-mount,,,,"turret or bow, or not-printed"
+,attacker-halftrack,front,sa-caliber,,,,"whole number, or not-printed"
+,attacker-halftrack,front,towing,,,,"whole number, or not-printed"
+,attacker-halftrack,front,passenger-capacity,,,,"whole number, or not-printed"
+,attacker-halftrack,front,bmg,,,,"whole number, or not-printed"
+,attacker-halftrack,front,cmg,,,,"whole number, or not-printed"
+,attacker-halftrack,front,aamg,,,,"whole number, or not-printed"
+,attacker-halftrack,front,hull-rear-mg,,,,"whole number, or not-printed"
+,attacker-halftrack,front,turret-rear-mg,,,,"whole number, or not-printed"
+,attacker-halftrack,front,vehicle-ft-mount,,,,"bow, turret, or side, or not-printed"
+,attacker-halftrack,front,vehicle-ft-firepower,,,,"whole number, or not-printed"
+,attacker-halftrack,front,vehicle-ft-removal,,,,"whole number, or not-printed"
+,attacker-halftrack,wreck,crew-survival,,,,"whole number, or not-printed"
+,attacker-halftrack,front,asl:mechanically-unreliable,,,,yes or no
+,attacker-halftrack,front,asl:unarmored,,,,yes or no
+,attacker-halftrack,front,asl:partially-armored,,,,yes or no
+,attacker-halftrack,front,asl:rear-turret-unarmored,,,,yes or no
+,attacker-halftrack,front,asl:open-topped,,,,yes or no
+,attacker-halftrack,front,asl:no-ap,,,,yes or no
+,attacker-halftrack,front,asl:no-he,,,,yes or no
+,attacker-halftrack,front,asl:fixed-bmg,,,,yes or no
+,attacker-halftrack,front,asl:vehicle-ft-range-2,,,,yes or no
+,attacker-truck,front,asl:cs-passengers-only,,,,yes or no
+,defender-truck,front,asl:cs-passengers-only,,,,yes or no
+,attacker-halftrack,front,asl:cs-passengers-only,,,,yes or no

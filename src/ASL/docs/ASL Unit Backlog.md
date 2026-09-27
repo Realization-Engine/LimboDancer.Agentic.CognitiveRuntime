@@ -194,6 +194,28 @@ Step 17 left these out; steps 19 to 23 do not build them.
 | Play page: marking which target Locations are in a Gun's Covered Arc, in range, or refused, and drawing the Covered Arc | Table-player review | C3.2 | Map overlays for Guns |
 | CC with a Gun's crew, and advances or berserk charges into its Location | R24.3 | A11, C11 | Guns and crews as targets |
 
+## 14. Added by the deviations pass 4 (step 25)
+
+| Item | Deferred by | Rules | Depends on |
+|---|---|---|---|
+| Reverse movement, VBM, ESB, Minimum Move, bog, OVR, vehicle stacking, and vehicle movement over terrain other than Open Ground, Grain, and roads, across hexside terrain, or between levels | R25.3 | D2.2, D2.3, D2.5, D2.15, D8, D7, D2.14, B terrain entries | More vehicle terrain transcriptions |
+| Residual FP against a truck or a Vulnerable crew (a vehicle on the Vehicle line, a crew Collaterally); until then they may not enter or spend MP in its Location | R25.3; table player, item 2 | A8.2, A8.222, A7.308, D.8B | The Vehicle line in Residual FP attacks |
+| D2.4's Motion test by "the next hex it wishes to enter" (declared by the player) in place of every ADJACENT hex it may reach | R25.3; table player, item 5 | D2.4 | A declared intended hex |
+| MP left unspent at the end of the MPh counted as spent in the final hex, with the DEFENDER's further fire (D2.1, A8.14) | Table player, item 12 | D2.1, A8.14 | |
+| Wrecks and burning wrecks, and their effects on LOS and movement | R25.5 | D10, A7.308 | Wreck counters |
+| The firer's option to roll the Unlikely Kill dr after a result that already harmed the vehicle | R25.5 | A7.309 | |
+| Recall's Motion route to a friendly board edge, the exited status (a Recalled vehicle is now recorded as eliminated), and Abandonment of an immobilized Recalled AFV | R25.6; table player, item 8 | D5.341, D5.5 | Board edges; exit victory conditions |
+| An AFV's +1 TEM for friendly Infantry, its +1 LOS Hindrance, and its cancelling of FFMO; the LOS-trace test through its hex; no TEM or Hindrance from a moving AFV. Until then fire at Infantry with an AFV, and fire whose hexes may pass an AFV, is refused, so Infantry stacked with their AFV cannot be fired on | R25.9; table player, item 3 | D9.3, D9.4, A4.6, D2.41 | The Fire package's TEM for Infantry with an AFV |
+| Vehicle fire in the MPh (Defensive First Fire and Bounding First Fire), BMG and CMG, MG repair, and Passengers' and Riders' fire | R25.7 | D3.3, D3.7, D6.64 | Vehicles in the movement windows |
+| Closed-topped AFVs, main armament, To Kill, and AP | R25.2 | C7, D3.1 | Step 24's successors |
+| Vehicle concealment and HIP | R25.10 | A12.2 | |
+| Vehicles in CC (and Infantry entering or advancing into an enemy vehicle's Location), Rally, and Rout; a berserk charge at a vehicle ends in place | R25.10; table player, item 1 | A11.5, A11.6, A15.43, D7 | CC against vehicles |
+| A Gun's shot at a Location with a vehicle (the Vehicle Target Type) | R25.10 | C3.31 | Step 24's successors |
+| A vehicle's entry into a Location holding enemy units the moving side cannot see (refused without disclosing them) | Table player, item 7 | A12.15, D2 | Concealment loss on vehicle entry |
+| Grain as Open Ground outside its season for Infantry MF: the Infantry path still charges Grain 1½ MF in every month (the vehicle path follows B15.6) | Referee, D7 | B15.6 | |
+| The wreck face's accessible name reads "crew survival" for a truck's passenger-only cs#; the trait `asl:cs-passengers-only` records it | Referee, D8 | D5.6, Listings Key p. 338 | A conditional name template |
+| The Play page shows Stun +1 as the raw condition `stun-recovery`, and offers a BU toggle already used this phase (the gate refuses it) | Table player, items 10 and 11 | D5.33, D5.34 | |
+
 ## 13. Found in the Studio demo of passes 2 and 3 (2026-09-27)
 
 Found by playing the Play page with scripted dice in the games `pass23-demo`, `pass2-ambush`, and `pass2-hob`. Every refusal was correct; the gaps were in what the page offered and how it explained a refusal. All are fixed on the branch `feature/asl-play-page-fixes` (2026-09-27), each with a test, and were checked on the Studio in the games `fix-hob`, `fix-ambush`, and `fix-charge`. The last two rows were found during that check.

@@ -315,6 +315,18 @@ public static class GameEventWriter
                 }
 
                 break;
+            case VehicleStepped vehicle:
+                writer.WriteString("vehicle", vehicle.Vehicle);
+                writer.WriteString("kind", vehicle.Kind);
+                writer.WriteString("at", vehicle.At.ToString());
+                if (vehicle.Facing is { } vehicleFacing)
+                {
+                    writer.WriteString("facing", Documents.UnitFacings.Name(vehicleFacing));
+                }
+
+                writer.WriteNumber("halfMp", vehicle.HalfMp);
+                writer.WriteNumber("step", vehicle.Step);
+                break;
             case MovementWindowClosed closed:
                 writer.WriteNumber("step", closed.Step);
                 break;

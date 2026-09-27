@@ -216,6 +216,24 @@ public static class ScenarioA1FireCalculator
             Need(hit.Firepower, "ordnanceHit.firepower");
             Need(hit.CriticalHit, "ordnanceHit.criticalHit");
         }
+        else if (attack.VehicleFire is { } vehicle)
+        {
+            Need(vehicle.VehicleId, "vehicleFire.vehicleId");
+            Need(vehicle.DefinitionId, "vehicleFire.definitionId");
+            Need(vehicle.LocationId, "vehicleFire.locationId");
+            Need(vehicle.CrewExposed, "vehicleFire.crewExposed");
+            Need(vehicle.InMotion, "vehicleFire.inMotion");
+            Need(vehicle.Pinned, "vehicleFire.pinned");
+            Need(vehicle.Stunned, "vehicleFire.stunned");
+            Need(vehicle.StunRecovery, "vehicleFire.stunRecovery");
+            Need(vehicle.Malfunctioned, "vehicleFire.malfunctioned");
+            Need(vehicle.FiredThisPlayerTurn, "vehicleFire.firedThisPlayerTurn");
+            Need(vehicle.RateOfFireShot, "vehicleFire.rateOfFireShot");
+            Need(attack.FirerLocationId, "firerLocationId");
+            Need(attack.Range, "range");
+            Need(attack.SameLevel, "sameLevel");
+            NeedLos(attack.Los, string.Empty);
+        }
         else
         {
             Need(attack.FireGroupComplete, "fireGroupComplete");
@@ -284,6 +302,18 @@ public static class ScenarioA1FireCalculator
             }
         }
 
+        foreach (var (vehicle, index) in (attack.Vehicles ?? []).Select((item, index) => (item, index)))
+        {
+            var at = $"vehicles[{index}].";
+            Need(vehicle.VehicleId, at + "vehicleId");
+            Need(vehicle.DefinitionId, at + "definitionId");
+            Need(vehicle.LocationId, at + "locationId");
+            Need(vehicle.CrewExposed, at + "crewExposed");
+            Need(vehicle.Stunned, at + "stunned");
+            Need(vehicle.StunRecovery, at + "stunRecovery");
+            Need(vehicle.Immobilized, at + "immobilized");
+        }
+
         // An empty target Location is admitted (ruling R21.1): the attack resolves against nothing.
         if (attack.Targets is null)
         {
@@ -335,6 +365,29 @@ public static class ScenarioA1FireCalculator
         var targets = attack.Targets!;
         var targetDefinitions = targets.Select(item => item.Dummy == true ? DummyDefinition : reference.Definitions.GetValueOrDefault(item.DefinitionId!))
             .ToArray();
+
+        // A7.307, A7.308, D.8B: the vehicles in the target Location are attacked with the attack's IFT DR (unit step 25): one at a time
+        // (ruling R25.3 keeps a Location to one vehicle, so the A7.308 limit on vehicles affected never binds), never by Residual FP or an
+        // ordnance hit here (the Vehicle Target Type is not reviewed, R24.2; a vehicle never enters Residual FP, R25.3), and only an
+        // unarmored vehicle or an open-topped AFV (R25.1). Infantry sharing a Location with an AFV (its +1 TEM, D9.3) and an AFV in terrain
+        // with a positive TEM (not cumulative with its crew's CE DRM, D5.31) are not reviewed (rulings R25.6, R25.9).
+        var vehicles = attack.Vehicles ?? [];
+        if (vehicles.Count > 1 || (vehicles.Count > 0 && (kind == ResidualFire || attack.OrdnanceHit is not null))
+            || ((targets.Count > 0 || (attack.TargetTerrain is { } vehicleTerrain && ScenarioA1FireReference.Tem.TryGetValue(vehicleTerrain, out var vehicleTem) && vehicleTem > 0))
+                && vehicles.Any(item => reference.Definitions.GetValueOrDefault(item.DefinitionId!) is { IsVehicle: true, Unarmored: not true }))
+            || vehicles.Any(item => item.LocationId != attack.TargetLocationId
+                || reference.Definitions.GetValueOrDefault(item.DefinitionId!) is not { IsVehicle: true } definition
+                || (definition.Unarmored != true && definition.OpenTopped != true)))
+        {
+            outside.Add("asl.a1.fire.vehicle-outside");
+        }
+
+        if (attack.VehicleFire is { } vehicleFire)
+        {
+            VehicleFireOutside(attack, vehicleFire, reference, targetDefinitions, outside);
+            return outside.Distinct(StringComparer.Ordinal).ToList();
+        }
+
         if (kind == ResidualFire)
         {
             // A8.22: Residual FP always attacks alone.
@@ -520,6 +573,57 @@ public static class ScenarioA1FireCalculator
         return outside.Distinct(StringComparer.Ordinal).ToList();
     }
 
+    /// <summary>
+    /// A vehicle's MA MG attack (ruling R25.7): the MA AAMG, fired in its side's PFPh, AFPh, or DFPh by a CE crew that is not Stunned
+    /// (D1.83, D5.3, D5.34), once per Player Turn unless it kept its Multiple ROF (D3.5, C2.24), not malfunctioned (D3.7), within twice
+    /// its Normal Range of eight hexes (D1.83, A7.22), with a clear LOS, at an enemy Location other than its own; no Infantry fire group
+    /// or leader joins it (D3.4; D6.64 is not reviewed); never in the PFPh by a vehicle in Motion (D2.4).
+    /// </summary>
+    private static void VehicleFireOutside(FireAttack attack, FireVehicleFire vehicle, ScenarioA1FireReference reference,
+        IReadOnlyList<FireDefinition?> targetDefinitions, List<string> outside)
+    {
+        var definition = reference.Definitions.GetValueOrDefault(vehicle.DefinitionId!);
+        if (definition is not { IsVehicle: true, MainArmament: "aamg", AntiAircraftMg: not null } || attack.Firers is { Count: > 0 } || Directors(attack).Any()
+            || vehicle.LocationId != attack.FirerLocationId || vehicle.CrewExposed != true || vehicle.Stunned == true || vehicle.Malfunctioned == true
+            || (attack.Phase == "PFPh" && vehicle.InMotion == true))
+        {
+            outside.Add("asl.a1.fire.vehicle-fire-outside");
+        }
+
+        if (attack.FireKind is not null)
+        {
+            outside.Add("asl.a1.fire.phase-outside");
+        }
+
+        if (vehicle.FiredThisPlayerTurn == true && vehicle.RateOfFireShot != true)
+        {
+            outside.Add("asl.a1.fire.firer-already-fired");
+        }
+
+        if (attack.TargetLocationId == attack.FirerLocationId || attack.Targets!.Any(item => item.LocationId != attack.TargetLocationId)
+            || targetDefinitions.Any(item => item is null || (item.Id != "dummy" && definition is not null && item.Nationality == definition.Nationality))
+            || (attack.Vehicles ?? []).Any(item => definition is not null && reference.Definitions.GetValueOrDefault(item.DefinitionId!)?.Nationality == definition.Nationality)
+            || !ScenarioA1FireReference.Tem.ContainsKey(attack.TargetTerrain!))
+        {
+            outside.Add("asl.a1.fire.target-outside");
+        }
+
+        if (attack.Range is < 1 or > 16)
+        {
+            outside.Add("asl.a1.fire.out-of-range");
+        }
+
+        if (attack.Los!.Blocked == true)
+        {
+            outside.Add("asl.a1.fire.los-blocked");
+        }
+
+        if (attack.Rolls is { } rolls && Malformed(rolls))
+        {
+            outside.Add("asl.a1.fire.roll-malformed");
+        }
+    }
+
     private static bool Malformed(FireRolls rolls) =>
         !Dice(rolls.Attack, allowEmpty: true)
         || rolls.RandomSelection?.Values.Any(dr => dr is < 1 or > 6) == true
@@ -529,7 +633,9 @@ public static class ScenarioA1FireCalculator
         || rolls.WeaponSelection?.Values.Any(dr => dr is < 1 or > 6) == true
         || rolls.FirerSelection?.Values.Any(dr => dr is < 1 or > 6) == true
         || rolls.HeatOfBattle?.Values.Any(dice => !Dice(dice, allowEmpty: false)) == true
-        || rolls.BerserkChecks?.Values.Any(dice => !Dice(dice, allowEmpty: false)) == true;
+        || rolls.BerserkChecks?.Values.Any(dice => !Dice(dice, allowEmpty: false)) == true
+        || rolls.CrewChecks?.Values.Any(dice => !Dice(dice, allowEmpty: false)) == true
+        || rolls.UnlikelyKill?.Values.Any(dr => dr is < 1 or > 6) == true;
 
     /// <summary>Whether a unit may fire in this attack under the fire-phase and First Fire rules (A7.1, A8.1, A8.3, A8.31, A8.4, A9.2).</summary>
     private static bool FirerMayFire(FireAttack attack, FireFirer firer)
@@ -565,7 +671,30 @@ public static class ScenarioA1FireCalculator
     {
         var undecided = new List<string>();
         var targets = attack.Targets!;
-        if (attack.FireKind != ResidualFire && attack.OrdnanceHit is null)
+        if (attack.VehicleFire is not null)
+        {
+            if (attack.SameLevel != true)
+            {
+                undecided.Add("asl.a1.fire.levels-differ");
+            }
+
+            if (attack.Los is { } los && (los.HindranceAttributed != true || los.HindranceDrm < 0
+                || (los.GrainInLos == true && attack.ScenarioMonth is not (>= 6 and <= 9))))
+            {
+                undecided.Add("asl.a1.fire.hindrance-unattributed");
+            }
+        }
+
+        // D5.1: an AFV crew checks morale at its nationality's best elite Infantry MMC Morale Level, read from the catalog.
+        foreach (var vehicle in attack.Vehicles ?? [])
+        {
+            if (reference.Definitions[vehicle.DefinitionId!] is { Unarmored: false } afv && reference.AfvCrewMorale(afv.Nationality) is null)
+            {
+                undecided.Add("asl.a1.fire.definition-incomplete:crew-morale:" + afv.Nationality);
+            }
+        }
+
+        if (attack.FireKind != ResidualFire && attack.OrdnanceHit is null && attack.VehicleFire is null)
         {
             var firers = attack.Firers!;
             if (firers.Any(item => SameLevelOf(attack, item) != true))
@@ -642,9 +771,11 @@ public static class ScenarioA1FireCalculator
 
             var known = state.Values.Where(unit => !unit.IsConcealedType).ToArray();
             var concealed = state.Values.Where(unit => unit.IsConcealedType).ToArray();
+            var vehicles = attack.Vehicles ?? [];
+
             // A Location the firing side sees nothing in is attacked as it would be if a hidden unit were there, so the
-            // arithmetic does not tell the firing side which it was (A12.3, A12.13; ruling R21.1).
-            var arithmetic = Arithmetic(known.Length > 0, concealed.Length > 0 || known.Length == 0);
+            // arithmetic does not tell the firing side which it was (A12.3, A12.13; ruling R21.1). A vehicle is a Known target.
+            var arithmetic = Arithmetic(known.Length > 0 || vehicles.Count > 0, concealed.Length > 0 || (known.Length == 0 && vehicles.Count == 0));
             if (arithmetic is null)
             {
                 return Refused(FireResolution.Indeterminate, undecided);
@@ -686,8 +817,9 @@ public static class ScenarioA1FireCalculator
                 }
             }
 
-            var weapons = WeaponEffects(arithmetic);
+            var weapons = attack.VehicleFire is { } vehicleFire ? [VehicleWeaponEffect(vehicleFire, arithmetic)] : WeaponEffects(arithmetic);
             var firerEffects = attack.FireKind == FinalProtectiveFire ? FinalProtectiveFireChecks(arithmetic) : null;
+            var vehicleEffects = vehicles.Count == 0 ? null : VehicleEffects(arithmetic);
             if (undecided.Count != 0)
             {
                 return Refused(FireResolution.Indeterminate, undecided.Distinct().ToArray());
@@ -706,14 +838,149 @@ public static class ScenarioA1FireCalculator
             }
 
             var firers = attack.Firers ?? [];
-            var marked = firers.Select(item => item.UnitId!).Concat(Directors(attack).Select(item => item.UnitId!)).ToArray();
+            var marked = firers.Select(item => item.UnitId!).Concat(Directors(attack).Select(item => item.UnitId!))
+                .Concat(attack.VehicleFire is { } firing ? [firing.VehicleId!] : []).ToArray();
             return new FireResolution(FireResolution.Resolved, [], arithmetic,
                 attack.Targets!.Select(item => state[item.UnitId!].Effect()).ToArray(), marked, FireCounter(), firerConcealment)
             {
                 WeaponEffects = weapons,
                 FirerEffects = firerEffects,
                 CompanionEffects = companions,
+                VehicleEffects = vehicleEffects,
             };
+        }
+
+        // The DRM of an attack that belong to its Personnel targets rather than to the attack: TEM and the First Fire movement DRM.
+        private static bool TargetOwn(FireModifier modifier) =>
+            modifier.Name.StartsWith("tem:", StringComparison.Ordinal) || modifier.Name.StartsWith("critical-hit-tem:", StringComparison.Ordinal)
+            || modifier.Name is "ffnam" or "ffmo";
+
+        /// <summary>
+        /// A7.307 to A7.309, D.8B (rulings R25.4 to R25.6): each vehicle in the target Location takes the attack's Original IFT DR with the
+        /// attack's own DRM (Hindrance, a vehicle firer's Stun +1), never the Personnel targets' TEM or FFMO/FFNAM (A7.308 EX, A4.6, D.6). An
+        /// unarmored vehicle is resolved on the Vehicle line of the attack's column: a Final DR at most half the Kill Number makes a burning
+        /// wreck, below it eliminates, and equal to it immobilizes; an Original 2 that does neither rolls the Unlikely Kill dr (A7.309). An
+        /// armored vehicle is unharmed (A7.307), but a Vulnerable crew (CE and not Stunned, D5.3, D5.34) takes a General Collateral Attack on
+        /// the same column with the +2 CE DRM (D.8B, D5.31): a KIA or K result Recalls it (D5.341), a failed MC Stuns it (D5.34; Recalls a
+        /// crew already under Stun +1, D5.342), and a failed PTC pins it (A7.82). Crews are not subject to Heat of Battle (A15.1).
+        /// </summary>
+        private List<FireVehicleEffect>? VehicleEffects(FireArithmetic arithmetic)
+        {
+            if (undecided.Count != 0)
+            {
+                return null;
+            }
+
+            var column = arithmetic.ColumnFp is { } fp ? Array.IndexOf(ScenarioA1FireReference.ColumnFp, fp) : -1;
+            var drm = arithmetic.Drm.Where(item => !TargetOwn(item)).ToList();
+            var final = arithmetic.OriginalDr + (int)drm.Sum(item => item.Value);
+            var effects = new List<FireVehicleEffect>();
+            foreach (var vehicle in attack.Vehicles!)
+            {
+                var id = vehicle.VehicleId!;
+                var definition = reference.Definitions[vehicle.DefinitionId!];
+                if (definition.Unarmored == true)
+                {
+                    var kill = column < 0 ? (int?)null : reference.KillNumber(column);
+                    var result = kill is not { } number ? FireVehicleEffect.None
+                        : final * 2 <= number ? FireVehicleEffect.BurningWreck
+                        : final < number ? FireVehicleEffect.Eliminated
+                        : final == number ? FireVehicleEffect.Immobilized
+                        : FireVehicleEffect.None;
+                    int? unlikely = null;
+                    if (arithmetic.OriginalDr == 2 && result == FireVehicleEffect.None && kill is not null)
+                    {
+                        if (attack.Rolls!.UnlikelyKill?.TryGetValue(id, out var dr) != true)
+                        {
+                            undecided.Add("asl.a1.fire.roll-missing:unlikelyKill:" + id);
+                            return null;
+                        }
+
+                        usedRolls.Add("unlikelyKill:" + id);
+                        unlikely = dr;
+                        result = dr switch
+                        {
+                            1 => FireVehicleEffect.BurningWreck,
+                            2 => FireVehicleEffect.Eliminated,
+                            3 => FireVehicleEffect.Immobilized,
+                            _ => FireVehicleEffect.None,
+                        };
+                    }
+
+                    effects.Add(new FireVehicleEffect(id, definition.Id, result, kill, drm, final, unlikely, null, FireVehicleEffect.None));
+                    continue;
+                }
+
+                if (vehicle.CrewExposed != true || vehicle.Stunned == true)
+                {
+                    effects.Add(new FireVehicleEffect(id, definition.Id, FireVehicleEffect.None, null, drm, final, null, null, FireVehicleEffect.NotVulnerable));
+                    continue;
+                }
+
+                List<FireModifier> crewDrm = [.. drm, new FireModifier("crew-exposed", 2m, "D5.31")];
+                var crewFinal = arithmetic.OriginalDr + (int)crewDrm.Sum(item => item.Value);
+                var outcome = column < 0 ? "none" : reference.Result(crewFinal, column);
+                var morale = reference.AfvCrewMorale(definition.Nationality)!.Value;
+                var kia = Regex.IsMatch(outcome, "^([1-7])KIA$") || Regex.IsMatch(outcome, "^K/([1-4])$");
+                var mc = Regex.Match(outcome, "^([1-4])MC$");
+                FireCheck? check = null;
+                var crewResult = FireVehicleEffect.None;
+                if (kia)
+                {
+                    crewResult = FireVehicleEffect.Recalled;
+                }
+                else if (mc.Success || outcome == "NMC" || outcome == "PTC")
+                {
+                    if (attack.Rolls!.CrewChecks?.TryGetValue(id, out var dice) != true)
+                    {
+                        undecided.Add("asl.a1.fire.roll-missing:crewCheck:" + id);
+                        return null;
+                    }
+
+                    usedRolls.Add("crewCheck:" + id);
+                    var pin = outcome == "PTC";
+                    var modifier = mc.Success ? int.Parse(mc.Groups[1].Value, CultureInfo.InvariantCulture) : 0;
+                    var checkDrm = new List<FireModifier>();
+                    if (modifier > 0)
+                    {
+                        checkDrm.Add(new FireModifier("ift-mc", modifier, "A7.304"));
+                    }
+
+                    if (vehicle.StunRecovery == true)
+                    {
+                        checkDrm.Add(new FireModifier("stun-recovery", 1m, "D5.34"));
+                    }
+
+                    var original = dice![0] + dice[1];
+                    var checkFinal = original + (int)checkDrm.Sum(item => item.Value);
+                    var passed = checkFinal <= morale;
+                    // A10.31, D5.341: an Original 12 on a MC is a Casualty MC, which Recalls an Inherent crew.
+                    crewResult = !pin && original == 12 ? FireVehicleEffect.Recalled
+                        : passed ? FireVehicleEffect.None
+                        : pin ? FireVehicleEffect.Pinned
+                        : vehicle.StunRecovery == true ? FireVehicleEffect.Recalled
+                        : FireVehicleEffect.Stunned;
+                    check = new FireCheck(pin ? "NTC" : mc.Success ? outcome : "NMC", dice.ToArray(), original, checkDrm, checkFinal, morale, passed, crewResult);
+                }
+
+                effects.Add(new FireVehicleEffect(id, definition.Id, FireVehicleEffect.None, null, crewDrm, crewFinal, null, check, crewResult));
+            }
+
+            return effects;
+        }
+
+        /// <summary>
+        /// A vehicle's MA MG after its attack (D3.7, C2.24, A9.2): it malfunctions on an Original IFT DR of 12 (its B# of 12), and keeps its
+        /// Multiple ROF on an Original colored dr at most its ROF, unless its crew is pinned (A7.82) or it fired in the AFPh (A7.25: only
+        /// Opportunity Fire uses Multiple ROF in the AFPh).
+        /// </summary>
+        private FireWeaponEffect VehicleWeaponEffect(FireVehicleFire vehicle, FireArithmetic arithmetic)
+        {
+            var definition = reference.Definitions[vehicle.DefinitionId!];
+            var breakdown = definition.Breakdown ?? 12;
+            var malfunctioned = arithmetic.OriginalDr >= breakdown;
+            var retained = !malfunctioned && vehicle.Pinned != true && attack.Phase != "AFPh" && definition.RateOfFire is { } rof && arithmetic.Dice[0] <= rof;
+            return new FireWeaponEffect(vehicle.VehicleId!, breakdown, malfunctioned, retained, false, FireCounter(), null);
         }
 
         /// <summary>
@@ -799,6 +1066,24 @@ public static class ScenarioA1FireCalculator
                 // C.6: the Gun's HE FP column; C3.53, C.4: never halved for a concealed target; C3.71: doubled by a Critical Hit.
                 known = vsConcealed = hit.Firepower!.Value * (hit.CriticalHit == true ? 2 : 1);
             }
+            else if (attack.VehicleFire is { } vehicle)
+            {
+                if (hasKnown)
+                {
+                    firers.Add(VehicleFirepower(vehicle, false));
+                    known = firers[^1].Firepower;
+                }
+
+                if (hasConcealed)
+                {
+                    var concealedFp = VehicleFirepower(vehicle, true);
+                    firers.Add(hasKnown ? concealedFp with
+                    {
+                        VsConcealed = true
+                    } : concealedFp);
+                    vsConcealed = concealedFp.Firepower;
+                }
+            }
             else
             {
                 if (hasKnown)
@@ -826,7 +1111,8 @@ public static class ScenarioA1FireCalculator
 
             // A7.9: a doubles DR with no directing leader shifts the column; Residual FP is never subject to Cowering (A8.224);
             // heroes and Fanatic units are not subject to it, but a group with any other member Cowers (A15.2, A15.24, A10.8).
-            var cowered = !residual && hit is null && dice[0] == dice[1] && !directed
+            // A7.9: no form of vehicular fire Cowers.
+            var cowered = !residual && hit is null && attack.VehicleFire is null && dice[0] == dice[1] && !directed
                 && attack.Firers!.Any(item => !reference.Definitions[item.DefinitionId!].IsHero && item.Fanatic != true);
             var inexperienced = (attack.Firers ?? []).Any(item => reference.Definitions[item.DefinitionId!].Class is "green" or "conscript");
             var shift = cowered ? (inexperienced ? 2 : 1) : 0;
@@ -849,10 +1135,18 @@ public static class ScenarioA1FireCalculator
 
             // A7.52: the worst Hindrance of the group's LOS applies to all of it; Residual FP has none (A8.2), and an ordnance hit's
             // Hindrance modifies its TH DR (C.3, C6.9).
-            var hindrance = residual || hit is not null ? 0 : attack.Firers!.Max(item => LosOf(attack, item)!.HindranceDrm!.Value);
+            var hindrance = residual || hit is not null ? 0
+                : attack.VehicleFire is not null ? attack.Los!.HindranceDrm!.Value
+                : attack.Firers!.Max(item => LosOf(attack, item)!.HindranceDrm!.Value);
             if (hindrance > 0)
             {
                 drm.Add(new FireModifier("los-hindrance", hindrance, "A6.7"));
+            }
+
+            // D5.34: a vehicle under Stun +1 adds one to its MG IFT DR.
+            if (attack.VehicleFire is { StunRecovery: true } recovering)
+            {
+                drm.Add(new FireModifier("stun-recovery:" + recovering.VehicleId, 1m, "D5.34"));
             }
 
             // A7.531: the leadership of the directing leader, the worst of them for a group spanning Locations; A17.3: one
@@ -931,6 +1225,49 @@ public static class ScenarioA1FireCalculator
             var index = Array.FindLastIndex(ResidualCounters, fp => fp <= highest / 2m);
             index -= hindrance + Math.Max(leadership, 0);
             return index < 0 ? null : ResidualCounters[index];
+        }
+
+        /// <summary>
+        /// A vehicle's MA AAMG FP (D1.83: Normal Range eight hexes): doubled at Point Blank Range (A7.21), halved beyond its Normal Range
+        /// (A7.22), against concealed targets (A7.23), in the AFPh (D3.53), in Motion (D2.42), and when its crew is pinned (A7.82).
+        /// </summary>
+        private FirerFirepower VehicleFirepower(FireVehicleFire vehicle, bool vsConcealed)
+        {
+            var definition = reference.Definitions[vehicle.DefinitionId!];
+            var range = attack.Range!.Value;
+            var multipliers = new List<FireModifier>();
+            if (range == 1)
+            {
+                multipliers.Add(new FireModifier("point-blank-fire", 2m, "A7.21"));
+            }
+
+            if (range > 8)
+            {
+                multipliers.Add(new FireModifier("long-range-fire", 0.5m, "A7.22"));
+            }
+
+            if (vsConcealed)
+            {
+                multipliers.Add(new FireModifier("area-fire-concealed-target", 0.5m, "A7.23"));
+            }
+
+            if (attack.Phase == "AFPh")
+            {
+                multipliers.Add(new FireModifier("advancing-fire", 0.5m, "D3.53"));
+            }
+
+            if (vehicle.InMotion == true)
+            {
+                multipliers.Add(new FireModifier("motion-fire", 0.5m, "D2.42"));
+            }
+
+            if (vehicle.Pinned == true)
+            {
+                multipliers.Add(new FireModifier("pinned-crew", 0.5m, "A7.82"));
+            }
+
+            var printed = definition.AntiAircraftMg!.Value;
+            return new FirerFirepower(vehicle.VehicleId!, printed, multipliers, multipliers.Aggregate((decimal)printed, (value, item) => value * item.Value));
         }
 
         private IEnumerable<FirerFirepower> Firepower(bool vsConcealed)
@@ -1667,7 +2004,9 @@ public static class ScenarioA1FireCalculator
                 .Concat(rolls.WeaponSelection?.Keys.Select(id => "weaponSelection:" + id) ?? [])
                 .Concat(rolls.FirerSelection?.Keys.Select(id => "firerSelection:" + id) ?? [])
                 .Concat(rolls.HeatOfBattle?.Keys.Select(id => "heatOfBattle:" + id) ?? [])
-                .Concat(rolls.BerserkChecks?.Keys.Select(id => "berserkCheck:" + id) ?? []);
+                .Concat(rolls.BerserkChecks?.Keys.Select(id => "berserkCheck:" + id) ?? [])
+                .Concat(rolls.CrewChecks?.Keys.Select(id => "crewCheck:" + id) ?? [])
+                .Concat(rolls.UnlikelyKill?.Keys.Select(id => "unlikelyKill:" + id) ?? []);
             return supplied.Where(key => !usedRolls.Contains(key)).Select(key => "asl.a1.fire.extra-roll:" + key).ToList();
         }
 

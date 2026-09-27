@@ -4,11 +4,11 @@
   "domainId": "asl",
   "packageId": "scenario-a1-ordnance",
   "declaredUse": "Read-only conclusions for one HE shot by a reviewed Gun at the Infantry of one Location on the Infantry Target Type, under the rulings of the ASL Unit Deviations, Ordnance, and Vehicles Plan (R24.1 to R24.8).",
-  "caseMatrixSha256": "644dfe5fbd1ff3657a5c7b6c295c820cddc2901b44a60143e27063f64b946b62",
+  "caseMatrixSha256": "6229eed11456da18632c8b8d30d5b10117745a225c0d10c43fd0e4f140940186",
   "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
   "toHitTranscriptionSha256": "936b62d57e03761542b88e3b28752eae83208ef619ef30ebc99c70070fa833fd",
   "iftTranscriptionSha256": "42440dd6facf7aa23cfc8c884ed8c7266f6621b25cb889b679c850098d3a4cec",
-  "catalogSha256": "dae90ca10c7fb9f734e79a75ceb71951f0319e193410c145f14880e613cc77b5",
+  "catalogSha256": "a1c7fd2ca904a9e4832d1c6cd30c8e69c9a528e322b69cfa914ea4f16c0c63cb",
   "sourceFragments": [
     {
       "ruleId": "A1.123",
@@ -391,5 +391,6 @@
     "Guns and crews as targets (C11), Gun movement, (un)limbering, and manhandling (C10), and Gun repair (A9.72)",
     "Multiple Hits (C3.8: neither reviewed Gun is 40mm or less) and targets at another level"
   ],
-  "executionAuthority": "none"
+  "executionAuthority": "none",
+  "priorOrdnancePackageManifestSha256": "1bf0bb7734400e1e8b2f16093bee5eb64c481ffd79544cdfddd00ce069e6819d"
 }
