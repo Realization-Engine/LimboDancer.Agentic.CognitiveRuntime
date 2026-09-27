@@ -113,7 +113,7 @@ public sealed partial class GamePlanner
         // A4.11: the MF each mover has left; A4.61: Assault Movement may not use all of it.
         foreach (var unit in movers)
         {
-            if (Experience.MfAllowance(state, unit!, catalogs, vocabulary) is not { } allowance)
+            if (Experience.MoveAllowance(state, unit!, catalogs, vocabulary) is not { } allowance)
             {
                 return Refused(scope, label, expected, $"play.move-mf: {unit!.Id} has no MF allowance the catalog decides");
             }

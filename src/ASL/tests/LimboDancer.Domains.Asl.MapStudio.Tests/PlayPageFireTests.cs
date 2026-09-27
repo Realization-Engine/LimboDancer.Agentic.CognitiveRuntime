@@ -174,7 +174,7 @@ public sealed class PlayPageFireTests : IDisposable
         page.WaitForAssertion(() => Assert.Contains("Confirm to commit", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
         string Fact(string name) => page.Find($"#fire-facts tr[data-fact='{name}'] td:last-child").TextContent;
         Assert.Equal(("1", "yes", "clear, Hindrance DRM 0", "stone-building", "7"), (Fact("range"), Fact("level"), Fact("los"), Fact("terrain"), Fact("month")));
-        Assert.Contains("r1, r2, directed by rl", Fact("firers"), StringComparison.Ordinal);
+        Assert.Equal($"r1, r2 in {hexes.From}, directed by rl", Fact("firers"));
         Assert.Equal(before, Revision);
 
         // IFT 3+4 = 7, +3 stone building, +0 leadership: Final DR 10 on the 16 column, a NMC. g1 rolls 3+4 = 7, its
