@@ -194,11 +194,79 @@ public static class GameActions
         }
         """);
 
+    public static readonly ActionDescriptor Advance = Descriptor("asl.game.advance", "Advance",
+        "In the APh, Infantry of the phasing side in one Location that are not broken, pinned, berserk, or held in Melee advance into one ADJACENT Location at the same level, even one holding Known enemy units, where CC follows (A3.7, A4.7).",
+        PlayPermission, "asl.game.reviewed-close-combat-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "unitIds", "to"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "unitIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+            "to": { "type": "string" }
+          }
+        }
+        """, JsonSerializer.SerializeToElement(new
+        {
+            package = ScenarioA1CloseCombatPackage.Identity.ToString()
+        }));
+
+    public static readonly ActionDescriptor Ambush = Descriptor("asl.game.ambush", "Roll for Ambush",
+        "In the CCPh, before any CC in a Location where Infantry advanced into a woods or building Location, each side makes its Ambush dr, as the reviewed Close Combat package resolves it (A11.4).",
+        PlayPermission, "asl.game.reviewed-close-combat-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "location"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "location": { "type": "string" }
+          }
+        }
+        """, JsonSerializer.SerializeToElement(new
+        {
+            package = ScenarioA1CloseCombatPackage.Identity.ToString()
+        }));
+
+    public static readonly ActionDescriptor CloseCombat = Descriptor("asl.game.close-combat", "Close Combat",
+        "In the CCPh, resolve a round of CC in one Location: the attacks both sides declare, or with an Ambush the ambusher's and then the other side's, with the SMC stacking declared first, as the reviewed Close Combat package resolves them, and only when every outcome the dice can reach is decided (A11.11 to A11.14).",
+        PlayPermission, "asl.game.reviewed-close-combat-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "location", "attacks"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "location": { "type": "string" },
+            "attacks": { "type": "array", "items": { "type": "object" } },
+            "stacking": { "type": "object", "additionalProperties": { "type": "string" } }
+          }
+        }
+        """, JsonSerializer.SerializeToElement(new
+        {
+            package = ScenarioA1CloseCombatPackage.Identity.ToString()
+        }));
+
+    public static readonly ActionDescriptor TakePrisoner = Descriptor("asl.game.take-prisoner", "Take a prisoner",
+        "After a Heat of Battle Surrender, the captor's side chooses which ADJACENT Known Good Order enemy unit takes the surrendering unit as its prisoner (A15.5, A20.5).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "unitId", "captorId"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "unitId": { "type": "string" }, "captorId": { "type": "string" }
+          }
+        }
+        """);
+
     public static IReadOnlyList<ActionDescriptor> All
     {
         get;
     } =
-        [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding, DeclareOverrun, Fire, Rally, Repair, Move, PassFire, EndMove];
+        [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding, DeclareOverrun, Fire, Rally, Repair, Move, PassFire, EndMove, Advance, Ambush, CloseCombat, TakePrisoner];
 
     public static string VersionKey(Guid tenant, string game) => $"asl.game:{tenant:N}:{game}";
 

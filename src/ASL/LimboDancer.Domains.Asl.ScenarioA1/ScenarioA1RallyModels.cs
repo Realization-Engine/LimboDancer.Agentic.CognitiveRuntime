@@ -17,7 +17,26 @@ public sealed record RallyAttempt(
     bool? BrokenLeaderInLocation,
     bool? FirstMmcRallyOfOwnPlayerTurn,
     bool? EnemyGoodOrderInLosWithin16,
-    RallyRolls? Rolls);
+    RallyRolls? Rolls)
+{
+    /// <summary>Whether a Known enemy unit is in the unit's LOS (A15.44), the planner's read; needed when a leader's rally can reach Heat of Battle.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? KnownEnemyInLos { get; init; }
+
+    /// <summary>The ADJACENT Known Good Order armed enemy Infantry the unit may surrender to (A15.5), the planner's read; needed as above.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<string>? Captors { get; init; }
+
+    /// <summary>The other friendly units in the Location, which a leader who goes berserk tries to take with him (A15.41); null when none.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<RallyCompanion>? Companions { get; init; }
+}
+
+/// <summary>Another friendly unit in the rallying unit's Location.</summary>
+public sealed record RallyCompanion(string? UnitId, string? DefinitionId, bool? Broken, bool? Wounded, bool? Fanatic, bool? Heroic, bool? Berserk);
+
+/// <summary>A companion's NTC to go berserk with a berserk leader (A15.41).</summary>
+public sealed record RallyBerserkCheck(string UnitId, IReadOnlyList<int> Dice, int OriginalDr, IReadOnlyList<FireModifier> Drm, int FinalDr, int MoraleLevel, bool Passed);
 
 /// <summary>The broken unit attempting to rally, with its reviewed catalog definition.</summary>
 public sealed record RallyUnit(
@@ -61,6 +80,10 @@ public sealed record RallyRolls(IReadOnlyList<int>? Rally, int? WoundSeverity)
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? LeaderCreation { get; init; }
+
+    /// <summary>The NTC DR of each companion a berserk leader tries to take with him (A15.41).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyDictionary<string, IReadOnlyList<int>>? BerserkChecks { get; init; }
 }
 
 /// <summary>The Leader Creation dr and its drm (A18.2), and the leader it created; null when the Final dr created none.</summary>
@@ -84,6 +107,10 @@ public sealed record RallyArithmetic(
     /// <summary>The Leader Creation dr after the first MMC Self-Rally's Original 2 (A18.11, A18.2); null when none was rolled.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public LeaderCreationOutcome? LeaderCreation { get; init; }
+
+    /// <summary>The companions' NTC after a leader went berserk (A15.41); null when none was taken.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<RallyBerserkCheck>? BerserkChecks { get; init; }
 }
 
 /// <summary>What the attempt did to the unit, and which units lost "?" by it (A12.141).</summary>
@@ -112,6 +139,18 @@ public sealed record RallyEffect(
     /// <summary>The leader Field Promotion created (A18.11); null when none.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? CreatedLeaderDefinitionId { get; init; }
+
+    /// <summary>Whether the unit went berserk (A15.4); null when it did not.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Berserk { get; init; }
+
+    /// <summary>Whether a Surrender result Disrupted the unit (A15.5); null when it did not.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Disrupted { get; init; }
+
+    /// <summary>The companions that went berserk with a berserk leader (A15.41); null when none did.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<string>? BerserkCompanions { get; init; }
 }
 
 /// <summary>The Rally package's answer: resolved with its arithmetic and effect, or Abstained or Indeterminate with reasons.</summary>

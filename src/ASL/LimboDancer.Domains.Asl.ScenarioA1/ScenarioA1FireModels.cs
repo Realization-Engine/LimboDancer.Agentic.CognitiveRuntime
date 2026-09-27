@@ -53,6 +53,13 @@ public sealed record FireAttack(
     /// <summary>Whether every Location of a group spanning Locations is ADJACENT to another of them (A7.5, A.8).</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? FirerLocationsAdjacent { get; init; }
+
+    /// <summary>
+    /// The target side's units in the target Location that the attack does not attack, such as those not moving with the stack
+    /// in the MPh: a leader who goes berserk takes them with him on a passed NTC (A15.41). Null when there are none.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<FireTarget>? Companions { get; init; }
 }
 
 /// <summary>How a moving target stack moved in the MPh: Assault Movement avoids FFNAM but not FFMO (A4.61).</summary>
@@ -111,6 +118,14 @@ public sealed record FireFirer(
     /// <summary>Whether a Green or Conscript firer is Inexperienced (A19.2), for the Heat of Battle DRM of an FPF NMC; required for those classes.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Inexperienced { get; init; }
+
+    /// <summary>Whether a Known enemy unit is in the firer's LOS (A15.44), the planner's read; needed when an FPF NMC can reach Heat of Battle.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? KnownEnemyInLos { get; init; }
+
+    /// <summary>The ADJACENT Known Good Order armed enemy Infantry the firer may surrender to (A15.5), the planner's read; needed as above.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<string>? Captors { get; init; }
 }
 
 /// <summary>The leader directing the fire group (A7.53, A7.531).</summary>
@@ -151,6 +166,21 @@ public sealed record FireTarget(
     /// <summary>Whether a Green or Conscript MMC is Inexperienced (A19.2), for the Heat of Battle DRM; required for those classes.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Inexperienced { get; init; }
+
+    /// <summary>
+    /// Whether the unit is berserk (A15.42): Morale Level 10, Casualty Reduction instead of breaking, never pinned, no leader
+    /// loss checks, and no leadership from a friendly leader; null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Berserk { get; init; }
+
+    /// <summary>Whether a Known enemy unit is in the unit's LOS (A15.44), the planner's read; needed before the attack when Heat of Battle can reach it.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? KnownEnemyInLos { get; init; }
+
+    /// <summary>The ADJACENT Known Good Order armed enemy Infantry the unit may surrender to (A15.5), the planner's read; needed as above.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<string>? Captors { get; init; }
 }
 
 /// <summary>
@@ -176,6 +206,10 @@ public sealed record FireRolls(
     /// <summary>The Heat of Battle DR of each unit whose Original MC DR was 2 (A15.1).</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyDictionary<string, IReadOnlyList<int>>? HeatOfBattle { get; init; }
+
+    /// <summary>The NTC DR of each friendly unit a berserk leader tries to take berserk with him (A15.41).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyDictionary<string, IReadOnlyList<int>>? BerserkChecks { get; init; }
 }
 
 /// <summary>One modifier with its value and rule.</summary>
@@ -263,6 +297,10 @@ public sealed record FireUnitEffect(
     /// <summary>Whether a leader is heroic after the attack (A15.21); null when he is not.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Heroic { get; init; }
+
+    /// <summary>Whether the unit is berserk after the attack (A15.4, A15.41); null when it is not.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Berserk { get; init; }
 }
 
 /// <summary>The Fire package's answer: resolved with its arithmetic and effects, or Abstained or Indeterminate with reasons.</summary>
@@ -282,6 +320,10 @@ public sealed record FireResolution(
     /// <summary>The NMC FPF inflicts on its firers and directing leader (A8.31); null for other fire.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyList<FireUnitEffect>? FirerEffects { get; init; }
+
+    /// <summary>The companions a berserk leader took berserk with him (A15.41); null when he took none.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<FireUnitEffect>? CompanionEffects { get; init; }
 
     public const string Resolved = "resolved";
     public const string Abstained = "abstained";

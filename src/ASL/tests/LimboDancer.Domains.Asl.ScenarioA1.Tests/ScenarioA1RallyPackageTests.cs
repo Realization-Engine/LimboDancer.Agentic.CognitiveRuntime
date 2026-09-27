@@ -28,7 +28,12 @@ public sealed class ScenarioA1RallyPackageTests
         string terrain = "stone-building", string side = "phasing", bool firstMmc = false, bool goodOrderLeader = true,
         bool brokenLeader = false, int? severity = null, string phase = "RPh", int[]? heat = null, int? creation = null) =>
         new(phase, side, unit ?? Unit(), selfRally ? null : leader ?? Leader(), At, terrain, !selfRally && goodOrderLeader,
-            brokenLeader, firstMmc, null, new RallyRolls(dice, severity) { HeatOfBattle = heat, LeaderCreation = creation });
+            brokenLeader, firstMmc, null, new RallyRolls(dice, severity) { HeatOfBattle = heat, LeaderCreation = creation })
+        {
+            // Unit step 30: the planner's reads of the unit's LOS to a Known enemy (A15.44) and of its captors (A15.5).
+            KnownEnemyInLos = true,
+            Captors = [],
+        };
 
     [Fact]
     public void ALeaderRalliesABrokenSquadUnderDmInABuilding()
@@ -79,10 +84,10 @@ public sealed class ScenarioA1RallyPackageTests
         Assert.Equal([("nationality:russian", 2m), ("broken", 1m)], heat.Drm.Select(item => (item.Name, item.Value)));
         Assert.Equal(("defender-elite-squad", true, "defender-hero"), (both.Effect!.FinalDefinitionId, both.Effect.Rallied, both.Effect.HeroDefinitionId));
 
-        // 3+3 = 6, +3: 9 is Berserk, recorded as not taken (ruling R28.1); the squad still rallies.
+        // 3+3 = 6, +3: 9 is Berserk (A15.4): the squad is rallied and berserk.
         var berserk = ScenarioA1RallyCalculator.Resolve(Attempt([1, 1], heat: [3, 3]), Reference);
-        Assert.Equal((HeatOfBattleOutcome.BerserkNotTaken, "defender-squad", true), (berserk.Arithmetic!.HeatOfBattle!.Result,
-            berserk.Effect!.FinalDefinitionId, berserk.Effect.Rallied));
+        Assert.Equal((HeatOfBattleOutcome.Berserk, "defender-squad", true, true), (berserk.Arithmetic!.HeatOfBattle!.Result,
+            berserk.Effect!.FinalDefinitionId, berserk.Effect.Rallied, berserk.Effect.Berserk));
 
         // A leader rallied by another takes Heat of Battle too: 5 makes him heroic and Battle Hardens a 7-0 into an 8-0.
         var leader = ScenarioA1RallyCalculator.Resolve(Attempt([1, 1], Unit("ru-l", "defender-leader-7-0"), heat: [1, 1]), Reference);
@@ -190,6 +195,17 @@ public sealed class ScenarioA1RallyPackageTests
         { "leader rallies an elite squad", Attempt(null, Unit(definition: "defender-elite-squad")) },
         { "leader rallies a 10-3", Attempt(null, Unit("ru-l", "defender-leader-10-3"), Leader("defender-leader-9-2")) },
         { "German A18.11 self-rally", Attempt(null, Unit(definition: "attacker-squad"), selfRally: true, firstMmc: true, goodOrderLeader: false) },
+
+        // Unit step 30: a leader rallied by another may go berserk and take his companions with him (A15.41); a squad with
+        // ADJACENT captors (A15.5); a squad with no Known enemy in its LOS (A15.44).
+        { "berserk leader and companions", Attempt(null, Unit("ru-l", "defender-leader-7-0"), Leader("defender-leader-9-1")) with
+            {
+                Companions = [new RallyCompanion("ru-leader", "defender-leader-9-1", false, false, false, false, false),
+                    new RallyCompanion("ru-b", "defender-squad", true, false, false, false, false)],
+            }
+        },
+        { "surrender to captors", Attempt(null) with { Captors = ["g1", "g2"] } },
+        { "no known enemy in LOS", Attempt(null) with { KnownEnemyInLos = false } },
     };
 
     [Theory]
@@ -197,66 +213,53 @@ public sealed class ScenarioA1RallyPackageTests
     public void EveryRollOutcomeOfAnAcceptedAttemptIsDecided(string name, RallyAttempt attempt)
     {
         Assert.Empty(ScenarioA1RallyCalculator.Precheck(attempt, Reference));
-        var paths = 0;
-        for (var first = 1; first <= 6; first++)
+        var paths = Explore(name, attempt, new RallyRolls(null, null));
+        Assert.True(paths >= 36, $"{name}: only {paths} paths");
+    }
+
+    // Walks every roll the package asks for, depth first, over every outcome of each: the Rally DR, the Heat of Battle DR,
+    // the Leader Creation dr, a Wound Severity dr, and each companion's Berserk TC (unit step 30).
+    private static int Explore(string name, RallyAttempt attempt, RallyRolls rolls)
+    {
+        var result = ScenarioA1RallyCalculator.Resolve(attempt with { Rolls = rolls }, Reference);
+        if (result.Disposition == RallyResolution.Resolved)
         {
-            for (var second = 1; second <= 6; second++)
+            return 1;
+        }
+
+        var reason = Assert.Single(result.Reasons);
+        Assert.True(reason.StartsWith("asl.a1.rally.roll-missing:", StringComparison.Ordinal), $"{name}: {reason}");
+        var key = reason["asl.a1.rally.roll-missing:".Length..];
+        var paths = 0;
+        if (key is "rally" or "heatOfBattle" || key.StartsWith("berserkCheck:", StringComparison.Ordinal))
+        {
+            for (var first = 1; first <= 6; first++)
             {
-                var result = ScenarioA1RallyCalculator.Resolve(attempt with
+                for (var second = 1; second <= 6; second++)
                 {
-                    Rolls = new RallyRolls([first, second], null)
-                }, Reference);
-                if (result.Reasons is ["asl.a1.rally.roll-missing:heatOfBattle"])
-                {
-                    for (var heat = 0; heat < 36; heat++)
+                    IReadOnlyList<int> dice = [first, second];
+                    paths += Explore(name, attempt, key switch
                     {
-                        var rolled = ScenarioA1RallyCalculator.Resolve(attempt with
+                        "rally" => rolls with { Rally = dice },
+                        "heatOfBattle" => rolls with { HeatOfBattle = dice },
+                        _ => rolls with
                         {
-                            Rolls = new RallyRolls([first, second], null) { HeatOfBattle = [(heat / 6) + 1, (heat % 6) + 1] }
-                        }, Reference);
-                        Assert.True(rolled.Disposition == RallyResolution.Resolved, $"{name} {first},{second} heat {heat}: {string.Join("; ", rolled.Reasons)}");
-                        paths++;
-                    }
-
-                    continue;
+                            BerserkChecks = new Dictionary<string, IReadOnlyList<int>>(rolls.BerserkChecks ?? new Dictionary<string, IReadOnlyList<int>>(),
+                                StringComparer.Ordinal) { [key["berserkCheck:".Length..]] = dice },
+                        },
+                    });
                 }
-
-                if (result.Reasons is ["asl.a1.rally.roll-missing:leaderCreation"])
-                {
-                    for (var dr = 1; dr <= 6; dr++)
-                    {
-                        var rolled = ScenarioA1RallyCalculator.Resolve(attempt with
-                        {
-                            Rolls = new RallyRolls([first, second], null) { LeaderCreation = dr }
-                        }, Reference);
-                        Assert.True(rolled.Disposition == RallyResolution.Resolved, $"{name} {first},{second} creation {dr}: {string.Join("; ", rolled.Reasons)}");
-                        paths++;
-                    }
-
-                    continue;
-                }
-
-                if (result.Reasons is [{ } missing] && missing.StartsWith("asl.a1.rally.roll-missing:woundSeverity:", StringComparison.Ordinal))
-                {
-                    for (var severity = 1; severity <= 6; severity++)
-                    {
-                        var wound = ScenarioA1RallyCalculator.Resolve(attempt with
-                        {
-                            Rolls = new RallyRolls([first, second], severity)
-                        }, Reference);
-                        Assert.True(wound.Disposition == RallyResolution.Resolved, $"{name} {first},{second},{severity}: {string.Join("; ", wound.Reasons)}");
-                        paths++;
-                    }
-
-                    continue;
-                }
-
-                Assert.True(result.Disposition == RallyResolution.Resolved, $"{name} {first},{second}: {string.Join("; ", result.Reasons)}");
-                paths++;
+            }
+        }
+        else
+        {
+            for (var dr = 1; dr <= 6; dr++)
+            {
+                paths += Explore(name, attempt, key == "leaderCreation" ? rolls with { LeaderCreation = dr } : rolls with { WoundSeverity = dr });
             }
         }
 
-        Assert.True(paths >= 36);
+        return paths;
     }
 
     [Fact]

@@ -28,6 +28,7 @@ public sealed class RallyAndFireStepsTests : IDisposable
     private static readonly string[] G1 = ["g1"];
     private static readonly string[] G3 = ["g3"];
     private static readonly string[] G2 = ["g2"];
+    private static readonly string[] G1G3 = ["g1", "g3"];
 
     private static readonly LimboDancer.Abstractions.Execution.RuntimePrincipal Player =
         GamePlay.Principal("player", Tenant, GameActions.SetupPermission, GameActions.PlayPermission);
@@ -644,6 +645,43 @@ public sealed class RallyAndFireStepsTests : IDisposable
             to = "bd01:B2:0"
         }));
         Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
+    public async Task AUnitThatPrepFiredMayNotMoveInTheMph()
+    {
+        await Setup("german", Unit("g1", "asl:squad", "attacker-squad", "bd01:A2:0", "german"),
+            Unit("g3", "asl:squad", "attacker-squad", "bd01:A2:0", "german"), Unit("r4", "asl:squad", "defender-squad", "bd01:A1:0", "russian"));
+        await Advance();
+        Committed(await Do(GameActions.Fire, Once(6, 5), new
+        {
+            firers = G1,
+            target = "bd01:A1:0"
+        }));
+        await Advance();
+        Assert.Equal("mph", Current.Phase);
+
+        // A3.3 (p. 47): g1 fired in the PFPh, so it may not move; g3 did not fire and moves, alone or with nothing that fired.
+        var refused = await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G1G3,
+            to = "bd01:B1:0"
+        });
+        Assert.Contains(refused.Reasons, reason => reason.StartsWith("play.move-prep-fire: g1", StringComparison.Ordinal));
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G3,
+            to = "bd01:B1:0"
+        }));
+
+        // Replay refuses a movement step of a unit marked Prep Fire, whoever wrote it (UNIT-STATE-029).
+        var events = store.Read(Scope)!.Events;
+        var step = events[^1] with
+        {
+            Payload = new MovementStepped(G1, BoardLocation.Parse("bd01:B1:0"), 2, false, 1)
+        };
+        var history = Planner().Replay([.. events.Take(events.Count - 1), step]);
+        Assert.Contains(history.Diagnostics, item => item.Code == "UNIT-STATE-029" && item.Message.Contains("A3.3", StringComparison.Ordinal));
     }
 
     [Fact]

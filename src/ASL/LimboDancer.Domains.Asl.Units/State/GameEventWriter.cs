@@ -309,6 +309,11 @@ public static class GameEventWriter
                 }
 
                 writer.WriteNumber("step", moving.Step);
+                if (moving.Charge is { } charge)
+                {
+                    writer.WriteString("charge", charge.ToString());
+                }
+
                 break;
             case MovementWindowClosed closed:
                 writer.WriteNumber("step", closed.Step);
@@ -322,6 +327,50 @@ public static class GameEventWriter
                 writer.WriteString("targetLocation", report.TargetLocation);
                 writer.WritePropertyName("arithmetic");
                 report.Arithmetic.WriteTo(writer);
+                break;
+            case AdvanceMoved advanced:
+                Strings(writer, "units", advanced.Units);
+                writer.WriteString("to", advanced.To.ToString());
+                break;
+            case AmbushRolled ambush:
+                writer.WriteString("location", ambush.Location.ToString());
+                writer.WriteStartObject("rolls");
+                foreach (var (key, roll) in ambush.Rolls.OrderBy(entry => entry.Key, StringComparer.Ordinal))
+                {
+                    writer.WriteString(key, roll);
+                }
+
+                writer.WriteEndObject();
+                if (ambush.Ambusher is { } ambusher)
+                {
+                    writer.WriteString("ambusher", ambusher);
+                }
+
+                writer.WritePropertyName("facts");
+                ambush.Facts.WriteTo(writer);
+                writer.WritePropertyName("resolution");
+                ambush.Resolution.WriteTo(writer);
+                break;
+            case CloseCombatResolved combat:
+                writer.WriteString("location", combat.Location.ToString());
+                writer.WriteString("round", combat.Round);
+                Strings(writer, "attackers", combat.Attackers);
+                Strings(writer, "defenders", combat.Defenders);
+                writer.WriteStartObject("rolls");
+                foreach (var (key, roll) in combat.Rolls.OrderBy(entry => entry.Key, StringComparer.Ordinal))
+                {
+                    writer.WriteString(key, roll);
+                }
+
+                writer.WriteEndObject();
+                writer.WritePropertyName("facts");
+                combat.Facts.WriteTo(writer);
+                writer.WritePropertyName("resolution");
+                combat.Resolution.WriteTo(writer);
+                break;
+            case SurrenderPending surrender:
+                writer.WriteString("unit", surrender.Unit);
+                Strings(writer, "captors", surrender.Captors);
                 break;
             case InstanceCaptured captured:
                 writer.WriteString("id", captured.Id);

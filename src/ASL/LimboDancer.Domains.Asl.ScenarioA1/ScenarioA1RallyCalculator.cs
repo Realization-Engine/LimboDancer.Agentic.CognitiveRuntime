@@ -49,7 +49,16 @@ public static class ScenarioA1RallyCalculator
         ArgumentNullException.ThrowIfNull(attempt);
         ArgumentNullException.ThrowIfNull(reference);
         var first = Resolve(attempt with { Rolls = new RallyRolls(null, null) }, reference);
-        return first.Disposition == RallyResolution.Indeterminate && first.Reasons is ["asl.a1.rally.roll-missing:rally"] ? [] : first.Reasons;
+        if (!(first.Disposition == RallyResolution.Indeterminate && first.Reasons is ["asl.a1.rally.roll-missing:rally"]))
+        {
+            return first.Reasons;
+        }
+
+        // A15.44, A15.5: a leader's rally can reach Heat of Battle, so its Berserk and Surrender results need the planner's reads.
+        return attempt.Leader is not null && ScenarioA1HeatOfBattle.Subject(reference.Definitions[attempt.Unit!.DefinitionId!], heroic: false)
+            && (attempt.KnownEnemyInLos is null || attempt.Captors is null)
+            ? ["asl.a1.rally.fact-missing:knownEnemyInLos-or-captors"]
+            : [];
     }
 
     private static List<string> Missing(RallyAttempt attempt)
@@ -177,7 +186,8 @@ public static class ScenarioA1RallyCalculator
         if (attempt.Rolls is { Rally: { } dice } && (dice.Count != 2 || dice.Any(die => die is < 1 or > 6))
             || attempt.Rolls?.WoundSeverity is < 1 or > 6
             || attempt.Rolls?.HeatOfBattle is { } heat && (heat.Count != 2 || heat.Any(die => die is < 1 or > 6))
-            || attempt.Rolls?.LeaderCreation is < 1 or > 6)
+            || attempt.Rolls?.LeaderCreation is < 1 or > 6
+            || attempt.Rolls?.BerserkChecks?.Values.Any(dice => dice.Count != 2 || dice.Any(die => die is < 1 or > 6)) == true)
         {
             outside.Add("asl.a1.rally.roll-malformed");
         }
@@ -330,9 +340,11 @@ public static class ScenarioA1RallyCalculator
             return new RallyResolution(RallyResolution.Abstained, ["asl.a1.rally.extra-roll:leaderCreation"], null, null);
         }
 
-        // A15.1 to A15.3: the Heat of Battle DR, with the +1 for a broken unit though the 2 rallied it.
+        // A15.1 to A15.5: the Heat of Battle DR, with the +1 for a broken unit though the 2 rallied it.
         HeatOfBattleOutcome? heat = null;
         var fanatic = unit.Fanatic == true;
+        var berserk = false;
+        var disrupted = false;
         if (heatOfBattle)
         {
             if (attempt.Rolls.HeatOfBattle is not { } heatDice)
@@ -340,7 +352,8 @@ public static class ScenarioA1RallyCalculator
                 return new RallyResolution(RallyResolution.Indeterminate, ["asl.a1.rally.roll-missing:heatOfBattle"], null, null);
             }
 
-            var (outcome, reason) = ScenarioA1HeatOfBattle.Resolve(definition, true, unit.Inexperienced, fanatic, heatDice, reference.Definitions);
+            var (outcome, reason) = ScenarioA1HeatOfBattle.Resolve(definition, true, unit.Inexperienced, fanatic, heatDice, reference.Definitions,
+                attempt.KnownEnemyInLos, attempt.Captors);
             if (outcome is null)
             {
                 return new RallyResolution(RallyResolution.Indeterminate, [reason!], null, null);
@@ -372,6 +385,64 @@ public static class ScenarioA1RallyCalculator
                 fanatic = true;
                 events.Add("became-fanatic");
             }
+
+            // A15.4: a berserk unit is rallied; A15.5: a surrendering one is broken again, though the Rally DR rallied it, and
+            // Disrupted.
+            if (outcome.Result == HeatOfBattleOutcome.Berserk)
+            {
+                berserk = true;
+                events.Add("went-berserk");
+                if (!rallied)
+                {
+                    rallied = true;
+                    events.Add("rallied-heat-of-battle");
+                }
+            }
+            else if (outcome.Result == HeatOfBattleOutcome.Surrender)
+            {
+                rallied = false;
+                disrupted = true;
+                events.Add("disrupted");
+                if (outcome.Captors is { Count: > 0 })
+                {
+                    events.Add("surrendered");
+                }
+            }
+        }
+
+        // A15.41: a leader who went berserk tries to take every other friendly unit in his Location subject to Heat of Battle
+        // with him: a NTC with his leadership DRM, and a pass makes it berserk, rallying it if broken.
+        List<RallyBerserkCheck>? berserkChecks = null;
+        List<string>? berserkCompanions = null;
+        if (berserk && definition.IsLeader)
+        {
+            var leadership = definition.Leadership!.Value + (unit.Wounded == true ? 1 : 0);
+            var companions = (attempt.Companions ?? []).Where(item => reference.Definitions.GetValueOrDefault(item.DefinitionId ?? string.Empty) is { } other
+                && ScenarioA1HeatOfBattle.Subject(other, item.Heroic == true, item.Berserk == true)).ToArray();
+            foreach (var companion in companions.OrderBy(item => reference.Definitions[item.DefinitionId!].IsLeader ? 0 : 1)
+                .ThenByDescending(item => reference.Definitions[item.DefinitionId!].Morale))
+            {
+                if (attempt.Rolls.BerserkChecks?.TryGetValue(companion.UnitId!, out var check) != true)
+                {
+                    return new RallyResolution(RallyResolution.Indeterminate, ["asl.a1.rally.roll-missing:berserkCheck:" + companion.UnitId], null, null);
+                }
+
+                var other = reference.Definitions[companion.DefinitionId!];
+                var level = (companion.Broken == true ? other.BrokenMorale : other.Morale)!.Value - (companion.Wounded == true ? 1 : 0) + (companion.Fanatic == true ? 1 : 0);
+                List<FireModifier> checkDrm = [new FireModifier("berserk-leader:" + unit.UnitId, leadership, "A15.41")];
+                var checkOriginal = check![0] + check[1];
+                var checkFinal = checkOriginal + leadership;
+                (berserkChecks ??= []).Add(new RallyBerserkCheck(companion.UnitId!, check.ToArray(), checkOriginal, checkDrm, checkFinal, level, checkFinal <= level));
+                if (checkFinal <= level)
+                {
+                    (berserkCompanions ??= []).Add(companion.UnitId!);
+                }
+            }
+        }
+
+        if (attempt.Rolls.BerserkChecks?.Keys.Any(id => berserkChecks?.Any(item => item.UnitId == id) != true) == true)
+        {
+            return new RallyResolution(RallyResolution.Abstained, ["asl.a1.rally.extra-roll:berserkCheck"], null, null);
         }
 
         // A18.11, A18.2: the Leader Creation dr and its drm; the broken unit's Morale Level is its broken one.
@@ -383,7 +454,7 @@ public static class ScenarioA1RallyCalculator
                 return new RallyResolution(RallyResolution.Indeterminate, ["asl.a1.rally.roll-missing:leaderCreation"], null, null);
             }
 
-            var created = LeaderCreation(definition, morale, dr, reference);
+            var created = ScenarioA1FieldPromotion.Create(definition, morale, dr, [new FireModifier("broken", 1m, "A18.11")], reference.Definitions, "asl.a1.rally");
             if (created.Undecided is { } reason)
             {
                 return new RallyResolution(RallyResolution.Indeterminate, [reason], null, null);
@@ -413,6 +484,7 @@ public static class ScenarioA1RallyCalculator
         {
             HeatOfBattle = heat,
             LeaderCreation = creation,
+            BerserkChecks = berserkChecks,
         };
         return new RallyResolution(RallyResolution.Resolved, [], arithmetic,
             new RallyEffect(unit.UnitId!, definition.Id, finalDefinition, rallied, eliminated, wounded && !eliminated, concealmentLost, events)
@@ -421,62 +493,9 @@ public static class ScenarioA1RallyCalculator
                 Heroic = heat?.Heroic,
                 HeroDefinitionId = heat?.HeroDefinitionId,
                 CreatedLeaderDefinitionId = creation?.LeaderDefinitionId,
+                Berserk = berserk ? true : null,
+                Disrupted = disrupted ? true : null,
+                BerserkCompanions = berserkCompanions,
             });
-    }
-
-    /// <summary>
-    /// The Leader Creation Table (A18.2, p. 85): a dr with cumulative drm for nationality, the base unit's Morale Level,
-    /// and its having been broken; the leader is the unit's nationality's counter of that grade.
-    /// </summary>
-    private static (LeaderCreationOutcome? Outcome, string? Undecided) LeaderCreation(FireDefinition unit, int morale, int dr,
-        ScenarioA1RallyReference reference)
-    {
-        var drm = new List<FireModifier>();
-        var nationality = unit.Nationality switch
-        {
-            "american" or "british" or "german" => -1,
-            "russian" or "italian" => 1,
-            "finnish" or "japanese" => (int?)null,
-            _ => 0,
-        };
-        if (nationality is null)
-        {
-            return (null, "asl.a1.rally.leader-creation-not-applicable:" + unit.Nationality);
-        }
-
-        if (nationality != 0)
-        {
-            drm.Add(new FireModifier("nationality:" + unit.Nationality, nationality.Value, "A18.2"));
-        }
-
-        if (morale >= 8)
-        {
-            drm.Add(new FireModifier("morale-8-or-more", -1m, "A18.2"));
-        }
-        else if (morale <= 6)
-        {
-            drm.Add(new FireModifier("morale-6-or-less", 1m, "A18.2"));
-        }
-
-        drm.Add(new FireModifier("broken", 1m, "A18.11"));
-        var final = dr + (int)drm.Sum(item => item.Value);
-        (int Morale, int Leadership)? grade = final switch
-        {
-            >= 7 => null,
-            6 => (6, 1),
-            4 or 5 => (7, 0),
-            2 or 3 => (8, 0),
-            _ => (8, -1),
-        };
-        if (grade is not { } wanted)
-        {
-            return (new LeaderCreationOutcome(dr, drm, final, null), null);
-        }
-
-        var leader = reference.Definitions.Values.Where(item => item.IsLeader && item.Nationality == unit.Nationality
-            && item.Morale == wanted.Morale && item.Leadership == wanted.Leadership).Select(item => item.Id).Order(StringComparer.Ordinal).FirstOrDefault();
-        return leader is null
-            ? (null, $"asl.a1.rally.leader-counter-missing:{unit.Nationality}:{wanted.Morale}{(wanted.Leadership > 0 ? "+" : "-")}{Math.Abs(wanted.Leadership)}")
-            : (new LeaderCreationOutcome(dr, drm, final, leader), null);
     }
 }

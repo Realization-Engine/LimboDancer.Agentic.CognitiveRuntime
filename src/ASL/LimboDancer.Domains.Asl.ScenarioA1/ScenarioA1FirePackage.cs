@@ -12,15 +12,16 @@ namespace LimboDancer.Domains.Asl.ScenarioA1;
 /// </summary>
 public sealed class ScenarioA1FirePackage : IDomainPackageResolver
 {
-    public const string ManifestSha256 = "ab868f4c13b2518d399b165f59cc3620f5556d2721e824d406168f8c632eddaf";
-    public const string MatrixSha256 = "50cabc94e5b96f6863360b7725f7f681a21b4fae5349473c06c3af8f22794c0e";
+    public const string ManifestSha256 = "8ac91d104a02c40f5237b4bfd924c1dde1f106aa3e7e1d5aab31725eae6499f9";
+    public const string MatrixSha256 = "b75aceafffdcd565a75eb7bb94e943f3b182793d9864f6608d3e8be1cbd074f7";
     public const string ChartSupplementId = "asl-supplement:fire-charts";
 
     /// <summary>
-    /// The package as revised at unit step 18, before the steps 19 to 23 revision. The package first published at unit step
-    /// 17 had manifest digest 45011b56946be8a7aba1676e6aea8d5ad0fa82193e4ebac24e06fd36bdff2b69 (Fire Review, "Revision at unit step 18").
+    /// The package as revised at unit steps 27 and 28, before the unit step 30 revision. Earlier manifests: unit step 18,
+    /// e0c28e88cda17bd71efd63f569c713d4d921e958dc7bc848b3c4c4acead143e1, and unit step 17,
+    /// 45011b56946be8a7aba1676e6aea8d5ad0fa82193e4ebac24e06fd36bdff2b69 (Fire Review, "Revision at unit step 18").
     /// </summary>
-    public const string PriorManifestSha256 = "e0c28e88cda17bd71efd63f569c713d4d921e958dc7bc848b3c4c4acead143e1";
+    public const string PriorManifestSha256 = "ab868f4c13b2518d399b165f59cc3620f5556d2721e824d406168f8c632eddaf";
     public static readonly DomainPackageRef Identity = new(new DomainId("asl"), "scenario-a1-fire", "sha256:" + ManifestSha256);
 
     private static readonly string[] Cases =

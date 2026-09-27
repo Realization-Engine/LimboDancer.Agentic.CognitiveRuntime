@@ -124,6 +124,12 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
         : plan.Events.Select(item => item.Payload).OfType<RepairAttempted>().FirstOrDefault() is { } repair
         // A Repair attempt: the unit's attempt is kept for the phase.
         ? state.RepairsThisPhase.Contains(repair.Unit)
+        : plan.Events.Select(item => item.Payload).OfType<CloseCombatResolved>().FirstOrDefault() is { } combat
+        // A CC round: the Location's CC records the round and its attackers.
+        ? state.CloseCombats.Any(item => item.Location == combat.Location && item.Rounds.Contains(combat.Round) && combat.Attackers.All(item.Attacking.Contains))
+        : plan.Events.Select(item => item.Payload).OfType<AmbushRolled>().FirstOrDefault() is { } ambush
+        // The Ambush drs: the Location's CC records them and the ambusher.
+        ? state.CloseCombats.Any(item => item.Location == ambush.Location && item.AmbushRolled && item.Ambusher == ambush.Ambusher)
         : plan.Events[^1].Payload switch
         {
             MovementStepped moved => state.Movement is { WindowOpen: true } movement && movement.Step == moved.Step && movement.Location == moved.To,
@@ -139,6 +145,8 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
             InstanceMoved moved => state.Unit(moved.Id) is { } unit && state.Location(unit.Id) is { } at
                 && moved.Position is MapPosition target && at.Location == target.Location,
             PhaseChanged phase => state.Phase == phase.Phase && state.PhasingSide == phase.PhasingSide && state.Turn == phase.Turn,
+            AdvanceMoved advanced => advanced.Units.All(id => state.Location(id)?.Location == advanced.To),
+            InstanceCaptured captured => state.Unit(captured.Id) is { } prisoner && prisoner.Custodian == captured.Custodian,
             _ => plan.Events.Select(item => item.Payload).OfType<InstanceCreated>().All(created => state.Find(created.Instance.Id) is not null),
         };
 

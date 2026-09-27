@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "1.0.0",
+  "chart": "A11.11 Close Combat Table (CCT) and A11.4 Ambush",
+  "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+  "physicalPdfPage": 692,
+  "alsoPrintedOnPhysicalPdfPage": 106,
+  "boundary": "The odds ratio columns and their black and red Kill Numbers, the Infantry-versus-Infantry CC FP and DR modifiers the Close Combat package applies, and the A11.4 Ambush drm the package applies. The CCV rows, the vehicle modifiers (marked * on the chart), Hand-to-Hand, and the other tables on the page are outside this transcription.",
+  "reading": "Rendered at 200 dpi and read against the page: each Kill Number cell prints a black number followed by a red one; the red numbers apply to Hand-to-Hand CC only.",
+  "columns": [
+    { "odds": "<1-8", "attack": 1, "defense": 8, "strictlyBelow": true, "blackKill": 0, "redKill": 2 },
+    { "odds": "1-8", "attack": 1, "defense": 8, "blackKill": 1, "redKill": 3 },
+    { "odds": "1-6", "attack": 1, "defense": 6, "blackKill": 2, "redKill": 4 },
+    { "odds": "1-4", "attack": 1, "defense": 4, "blackKill": 3, "redKill": 5 },
+    { "odds": "1-2", "attack": 1, "defense": 2, "blackKill": 4, "redKill": 6 },
+    { "odds": "1-1", "attack": 1, "defense": 1, "blackKill": 5, "redKill": 7 },
+    { "odds": "3-2", "attack": 3, "defense": 2, "blackKill": 6, "redKill": 8 },
+    { "odds": "2-1", "attack": 2, "defense": 1, "blackKill": 7, "redKill": 9 },
+    { "odds": "3-1", "attack": 3, "defense": 1, "blackKill": 8, "redKill": 10 },
+    { "odds": "4-1", "attack": 4, "defense": 1, "blackKill": 9, "redKill": 11 },
+    { "odds": "6-1", "attack": 6, "defense": 1, "blackKill": 10, "redKill": 12 },
+    { "odds": "8-1", "attack": 8, "defense": 1, "blackKill": 11, "redKill": 13 },
+    { "odds": "10-1", "attack": 10, "defense": 1, "blackKill": 12, "redKill": 14 },
+    { "odds": ">10-1", "attack": 10, "defense": 1, "strictlyAbove": true, "blackKill": 13, "redKill": 15 }
+  ],
+  "modifiers": [
+    { "printed": "by Ambush (NA during Melee)....(vs Ambush +1)....-1", "by": -1, "vs": 1, "rule": "A11.4" },
+    { "printed": "vs Broken Unit (A11.16)....-2", "vs": -2, "rule": "A11.16" },
+    { "printed": "vs Concealed unit (A11.19)....x 1/2", "firepower": "x1/2", "rule": "A11.19" },
+    { "printed": "by Guarding/Motion/Pinned unit (per application)....x 1/2", "firepower": "x1/2", "rule": "A7.8" },
+    { "printed": "Leadership (if not alone) (A11.141)/Heroic (A15.24) DRM..+x/-1", "by": "leadership or -1 per hero", "rule": "A11.141, A15.24" }
+  ],
+  "ambush": {
+    "occurs": "< enemy dr by at least 3 (by at least 2 if non-illuminated ATTACKER at night)",
+    "drm": [
+      { "printed": "+1 CX, Broken, Pinned (each)", "causes": ["CX", "Broken", "Pinned"], "value": 1 },
+      { "printed": "+1 Lax, Berserk (each)", "causes": ["Lax", "Berserk"], "value": 1 },
+      { "printed": "+x Leadership if not alone", "causes": ["Leadership"], "value": "x" },
+      { "printed": "-1 Stealthy", "causes": ["Stealthy"], "value": -1 },
+      { "printed": "-2 Concealed", "causes": ["Concealed"], "value": -2 }
+    ]
+  }
+}

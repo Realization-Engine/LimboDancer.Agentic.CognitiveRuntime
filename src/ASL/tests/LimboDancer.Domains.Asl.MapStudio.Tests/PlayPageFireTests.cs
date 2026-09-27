@@ -246,6 +246,41 @@ public sealed class PlayPageFireTests : IDisposable
     }
 
     [Fact]
+    public void TheFireChoicesDoNotSurviveAGameChangeAndOnlyGoodOrderLeadersDirect()
+    {
+        var hexes = Hexes();
+        var page = context.Render<PlayPage>();
+        page.Find("#new-board").Change(Board);
+        page.Find("#new-first").Change("russian");
+        page.Find("#new-second").Change("german");
+        page.Find("#new-first-elr").Change("2");
+        page.Find("#new-second-elr").Change("3");
+        Place(page, "r1", "defender-squad", hexes.From);
+        Place(page, "rl", "defender-leader", hexes.From);
+        page.Find("#place-broken").Change(true);
+        Place(page, "rb", "defender-leader", hexes.From);
+        page.Find("#place-broken").Change(false);
+        Place(page, "g1", "attacker-squad", hexes.Building);
+        Commit(page, "#propose-setup");
+        Commit(page, "#propose-advance");
+
+        // A broken leader cannot direct fire (A7.53), so the Director list offers only the Good Order one.
+        page.Find("#fire-from").Change(hexes.From);
+        page.Find(".fire-firer[data-unit='r1']").Change(true);
+        string[] offered = [.. page.FindAll("#fire-director option").Select(option => option.GetAttribute("value") ?? string.Empty).Where(value => value.Length > 0)];
+        Assert.Equal(["rl"], offered);
+        page.Find("#fire-director").Change("rl");
+        page.Find("#fire-target").Change(hexes.Building);
+
+        // Another game, then this one again: nothing chosen carries over, so no attack names a unit of another game.
+        page.Find("#play-game").Change(string.Empty);
+        page.Find("#play-game").Change("village");
+        Assert.DoesNotContain(page.FindAll(".fire-firer"), item => item.HasAttribute("checked"));
+        Assert.Equal(string.Empty, page.Find("#fire-from").GetAttribute("value") ?? string.Empty);
+        Assert.True(page.Find("#propose-fire").HasAttribute("disabled"));
+    }
+
+    [Fact]
     public void U20RefusalsOnThePlayPageComeBeforeAnyRollAndChangeNothing()
     {
         var hexes = Hexes();

@@ -3,9 +3,9 @@ using System.Text.Json.Serialization;
 namespace LimboDancer.Domains.Asl.ScenarioA1;
 
 /// <summary>
-/// A Heat of Battle DR and what it did (A15.1 to A15.3, p. 83; unit step 28): the Final DR with its DRM, the hero it
-/// created or the heroic leader it made, the unit's Battle Hardened definition, and Fanaticism. A Berserk or Surrender
-/// result is recorded as not taken until unit step 30 builds Close Combat and capture.
+/// A Heat of Battle DR and what it did (A15.1 to A15.5, pp. 83 and 84; unit steps 28 and 30): the Final DR with its DRM, the
+/// hero it created or the heroic leader it made, the unit's Battle Hardened definition, Fanaticism, Berserk, and Surrender
+/// with the units it may surrender to.
 /// </summary>
 public sealed record HeatOfBattleOutcome(IReadOnlyList<int> Dice, int OriginalDr, IReadOnlyList<FireModifier> Drm, int FinalDr, string Result)
 {
@@ -32,11 +32,22 @@ public sealed record HeatOfBattleOutcome(IReadOnlyList<int> Dice, int OriginalDr
     [JsonIgnore]
     public bool Hardening => Result is BattleHardening or HeroAndBattleHardening;
 
+    /// <summary>Whether a Berserk result became Battle Hardening because no Known enemy unit was in the unit's LOS (A15.44).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? NoKnownEnemyInLos { get; init; }
+
+    /// <summary>
+    /// For a Surrender (A15.5): the ADJACENT Known Good Order armed enemy Infantry units it surrenders to, the captor's choice
+    /// among them; empty when there are none, and the unit is only broken and Disrupted.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<string>? Captors { get; init; }
+
     public const string HeroCreation = "hero-creation";
     public const string HeroAndBattleHardening = "hero-creation-and-battle-hardening";
     public const string BattleHardening = "battle-hardening";
-    public const string BerserkNotTaken = "berserk-not-taken";
-    public const string SurrenderNotTaken = "surrender-not-taken";
+    public const string Berserk = "berserk";
+    public const string Surrender = "surrender";
 }
 
 /// <summary>
@@ -45,7 +56,8 @@ public sealed record HeatOfBattleOutcome(IReadOnlyList<int> Dice, int OriginalDr
 /// </summary>
 public static class ScenarioA1HeatOfBattle
 {
-    // A15.1: the nationality DRM of the Heat of Battle table.
+    // A15.1: the nationality DRM of the Heat of Battle table. Italians and Axis Minors (Surrender on 10 or more when not elite) and
+    // the Japanese (Surrender treated as Berserk) have exceptions the review does not admit, so they are refused (p. 83).
     private static readonly Dictionary<string, int> NationalityDrm = new(StringComparer.Ordinal)
     {
         ["american"] = 0,
@@ -53,8 +65,6 @@ public static class ScenarioA1HeatOfBattle
         ["finnish"] = -1,
         ["french"] = 1,
         ["german"] = 0,
-        ["italian"] = 3,
-        ["japanese"] = 4,
         ["russian"] = 2,
     };
 
@@ -62,8 +72,8 @@ public static class ScenarioA1HeatOfBattle
     /// Whether a unit is subject to Heat of Battle (A15.1): armed Personnel other than heroes, heroic leaders, and units
     /// already berserk. Crews, Cavalry, and the other exempt units are not in the catalog.
     /// </summary>
-    public static bool Subject(FireDefinition definition, bool heroic) =>
-        (definition.IsMmc || definition.IsLeader) && !heroic;
+    public static bool Subject(FireDefinition definition, bool heroic, bool berserk = false) =>
+        (definition.IsMmc || definition.IsLeader) && !heroic && !berserk;
 
     /// <summary>
     /// Whether the unit's class needs the Inexperienced fact for the +1 DRM (A15.1, A19.2): a Green MMC is Inexperienced
@@ -73,10 +83,12 @@ public static class ScenarioA1HeatOfBattle
 
     /// <summary>
     /// The DR's result, or the reason it is undecided. <paramref name="broken"/> is the unit's status when the Original 2
-    /// was rolled (A15.1: the +1 applies even if that 2 rallied it).
+    /// was rolled (A15.1: the +1 applies even if that 2 rallied it). <paramref name="knownEnemyInLos"/> and
+    /// <paramref name="captors"/> are the caller's reads of the map, needed only for a Berserk (A15.44) or Surrender (A15.5)
+    /// result: whether a Known enemy unit is in the unit's LOS, and the ADJACENT Known Good Order armed enemy Infantry.
     /// </summary>
     public static (HeatOfBattleOutcome? Outcome, string? Undecided) Resolve(FireDefinition unit, bool broken, bool? inexperienced, bool fanatic,
-        IReadOnlyList<int> dice, IReadOnlyDictionary<string, FireDefinition> definitions)
+        IReadOnlyList<int> dice, IReadOnlyDictionary<string, FireDefinition> definitions, bool? knownEnemyInLos = null, IReadOnlyList<string>? captors = null)
     {
         ArgumentNullException.ThrowIfNull(unit);
         ArgumentNullException.ThrowIfNull(dice);
@@ -123,15 +135,41 @@ public static class ScenarioA1HeatOfBattle
         var final = original + (int)drm.Sum(item => item.Value);
 
         // A15.1: 6 or less creates a hero, 5 to 8 Battle Hardens, so 5 and 6 do both; 9 to 11 is Berserk, 12 or more Surrender,
-        // which a Fanatic unit treats as Berserk (the table's note).
+        // which a Fanatic unit treats as Berserk (the table's note, A15.5). A Berserk result with no Known enemy unit in the
+        // unit's LOS is Battle Hardening instead (A15.44).
         var hero = final <= 6;
         var hardening = final is >= 5 and <= 8;
+        var berserk = !hero && !hardening && (final <= 11 || fanatic);
+        if (berserk)
+        {
+            if (knownEnemyInLos is null)
+            {
+                return (null, "asl.a1.hob.known-enemy-in-los-undecided:" + unit.Id);
+            }
+
+            hardening = knownEnemyInLos == false;
+        }
+
         var result = hero && hardening ? HeatOfBattleOutcome.HeroAndBattleHardening
             : hero ? HeatOfBattleOutcome.HeroCreation
             : hardening ? HeatOfBattleOutcome.BattleHardening
-            : final <= 11 || fanatic ? HeatOfBattleOutcome.BerserkNotTaken
-            : HeatOfBattleOutcome.SurrenderNotTaken;
+            : berserk ? HeatOfBattleOutcome.Berserk
+            : HeatOfBattleOutcome.Surrender;
         var outcome = new HeatOfBattleOutcome(dice.ToArray(), original, drm, final, result);
+        if (berserk && hardening)
+        {
+            outcome = outcome with { NoKnownEnemyInLos = true };
+        }
+
+        if (result == HeatOfBattleOutcome.Surrender)
+        {
+            if (captors is null)
+            {
+                return (null, "asl.a1.hob.captors-undecided:" + unit.Id);
+            }
+
+            outcome = outcome with { Captors = [.. captors] };
+        }
         if (hero)
         {
             if (unit.IsLeader)

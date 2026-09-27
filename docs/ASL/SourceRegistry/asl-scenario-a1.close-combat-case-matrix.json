@@ -1,0 +1,444 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "reviewed-source-backed-close-combat-candidate",
+  "authority": "user-directed-affirmative-xunit-review-2026-09-27",
+  "scope": "Close Combat in the CCPh between Infantry of the reviewed Scenario A1 catalog in one Location: the Ambush drs, the declared attacks of each round, their odds, black Kill Numbers, DRM, and effects, with Field Promotion.",
+  "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+  "cctTranscriptionSha256": "c2af9d03865da14baf7b0ec68989d99e0607079cb3f43f835d145b92bab8abbb",
+  "catalogSha256": "501b5deab10ae852ac7fef03e6e652f34961f69a165ac911a292b3be68b820fa",
+  "sourceFragments": [
+    {
+      "ruleId": "A1.6",
+      "physicalPdfPage": 45,
+      "startLine": 133,
+      "fragmentId": "asl-fragment:sha256:0fd4a1ca9eec917533a648c37461da792d8d52a7ed5630a33b64abbe7545faf6",
+      "contentSha256": "cc288c6a7b7859b3903245282daca5962286c5b78fb6d50c476dca4b13c2bfdd"
+    },
+    {
+      "ruleId": "A3.7",
+      "physicalPdfPage": 47,
+      "startLine": 209,
+      "fragmentId": "asl-fragment:sha256:cf21a8e792a209c084139aa759458ba221a2a1744b70f6c0217c5c38c11be7e5",
+      "contentSha256": "b385686dfa3af0612cfdc8b6294c6abd920285cede2c55f80f688837df50a45f"
+    },
+    {
+      "ruleId": "A3.8",
+      "physicalPdfPage": 47,
+      "startLine": 211,
+      "fragmentId": "asl-fragment:sha256:9d4edc9ef0c79a03def4470de1d5ac4cebf43bba15e81ec388ae9f8f165724b3",
+      "contentSha256": "24b3c546251b45654d3d139fca875320bd678f99ac0dcaea5068a8ad1ddd1515"
+    },
+    {
+      "ruleId": "A4.7",
+      "physicalPdfPage": 52,
+      "startLine": 329,
+      "fragmentId": "asl-fragment:sha256:87050a0d3e7b34fd1a2cb5e1668063e3baf1434a1eb42c1f4cfa77d074c7fd54",
+      "contentSha256": "86e4d96a037e9e8ceb7fda4f55fd3255e61b30a2fbfc4550e94680c3b16b9abb"
+    },
+    {
+      "ruleId": "A4.72",
+      "physicalPdfPage": 52,
+      "startLine": 333,
+      "fragmentId": "asl-fragment:sha256:a15b41a6a6e1499d3d803717ff45ed7aef356b1b6e0a4c1109e071dfd3021d7e",
+      "contentSha256": "32f2993920e184b54e8387a335b94da4f6ed1c44681695585d0a73283af7f4a9"
+    },
+    {
+      "ruleId": "A5.1",
+      "physicalPdfPage": 52,
+      "startLine": 341,
+      "fragmentId": "asl-fragment:sha256:fd7e022804edcfb64f0e40a5418ec8500a5152ec6db37c19000f8995345ffd71",
+      "contentSha256": "0974c3d9f60e1d9a9e8faa43f69ffd50b733f8ffd1f3b2532220dda209375741"
+    },
+    {
+      "ruleId": "A5.5",
+      "physicalPdfPage": 53,
+      "startLine": 363,
+      "fragmentId": "asl-fragment:sha256:ad792304545fdd938a4de6d5d098137ff73c925dce3447e2d0508b660d015aed",
+      "contentSha256": "2ee1fed53bcb01ac78068be679f949641f923237752716b1537c8be22b332079"
+    },
+    {
+      "ruleId": "A11.1",
+      "physicalPdfPage": 72,
+      "startLine": 876,
+      "fragmentId": "asl-fragment:sha256:71b5c8e3bb435b76ec7efac42291772c5e05d32c8a3ff5a224a733a1668e59a9",
+      "contentSha256": "5414c9bc2a4f150763efa5919405252008597d43e96ef2b76e9914a24634eaf0"
+    },
+    {
+      "ruleId": "A11.11",
+      "physicalPdfPage": 72,
+      "startLine": 878,
+      "fragmentId": "asl-fragment:sha256:693effc117bc3205d725d1940cad0109e1f90cccbe12eb68a190b107fb1d71d8",
+      "contentSha256": "3d2dbae55ae781e4e84d3a40395add892f00fbd42ee8ded0a6c8e3e750f3bb72"
+    },
+    {
+      "ruleId": "A11.12",
+      "physicalPdfPage": 72,
+      "startLine": 880,
+      "fragmentId": "asl-fragment:sha256:1e4e38f7a58adc5a5643719834a01b9f07994186bfb0f63580c4eec2beef6402",
+      "contentSha256": "394f8420098901bb239dc27ee05fa83c3099cea63b7538a86933fe4c0373bc6b"
+    },
+    {
+      "ruleId": "A11.13",
+      "physicalPdfPage": 72,
+      "startLine": 884,
+      "fragmentId": "asl-fragment:sha256:d4280baa759e779a10435344dd2e81cb55538412f5d68729fdbc813f7ad4cefb",
+      "contentSha256": "6eafd4ce045cdc0b0292a7003ad3f609604595d5a976aadc130a6cc0d0ff5c05"
+    },
+    {
+      "ruleId": "A11.14",
+      "physicalPdfPage": 72,
+      "startLine": 886,
+      "fragmentId": "asl-fragment:sha256:01e845fc97ae1a85debd7e74f2948dc276302722e08ad32ac79d973a2db09893",
+      "contentSha256": "7f3279c305717cb422c7ee5e0a78992d55da33a17c92c4990e1c4d56db8e9e59"
+    },
+    {
+      "ruleId": "A11.141",
+      "physicalPdfPage": 72,
+      "startLine": 888,
+      "fragmentId": "asl-fragment:sha256:f43c022abf08d81856cab2570e037b1498b1e016dab0f0c813a99f7adf9986ee",
+      "contentSha256": "44edba8104d48d2f813520a1afc64ad182af4b98f41f76c6c7f6042053bee7c8"
+    },
+    {
+      "ruleId": "A11.15",
+      "physicalPdfPage": 72,
+      "startLine": 890,
+      "fragmentId": "asl-fragment:sha256:b7cdde9336a36d3e1936fe44159c49037289bf2668130dc01609a7e57ac0c6d2",
+      "contentSha256": "f7238f131011c23f751af01d990d181127fc3b88a5f572d864d656d68fd1d216"
+    },
+    {
+      "ruleId": "A11.16",
+      "physicalPdfPage": 72,
+      "startLine": 894,
+      "fragmentId": "asl-fragment:sha256:980e1e3e46377e912cc28a5b84e25acb01a60f414934fc7b602f3ea7410313da",
+      "contentSha256": "0eb841f56d5f0bf2db0e4de41ab8bbd9e3faa5e01f1b11815aeac0f6416e7185"
+    },
+    {
+      "ruleId": "A11.17",
+      "physicalPdfPage": 73,
+      "startLine": 898,
+      "fragmentId": "asl-fragment:sha256:42db4589a9d803181da57135b718118416bc88472666e36274d2f898b4660e64",
+      "contentSha256": "f18f41699db4d08e998f05370456b65b1ad454b214acd8461a7f3544c214d952"
+    },
+    {
+      "ruleId": "A11.18",
+      "physicalPdfPage": 73,
+      "startLine": 900,
+      "fragmentId": "asl-fragment:sha256:8b193c2541e68d7ef252338c855a299a5d1589adb61da9e565e9c578dc4211e3",
+      "contentSha256": "ec9fe639d9f92eb7c89f53a97afa370222fc9b5eaa8cc112f2feb71652c4839e"
+    },
+    {
+      "ruleId": "A11.19",
+      "physicalPdfPage": 73,
+      "startLine": 902,
+      "fragmentId": "asl-fragment:sha256:1260773306b8cbb4663833b085245d6f8ee459f14a33d2ec0304a91820cd4332",
+      "contentSha256": "dde5766edf21fcf9aaaecff122481439e83cc51f94758f2f730faee1225bbdf8"
+    },
+    {
+      "ruleId": "A11.2",
+      "physicalPdfPage": 73,
+      "startLine": 906,
+      "fragmentId": "asl-fragment:sha256:dc019772b573a0acb6fb5726a8c55aba088f82c9ab3f320ea2bbcc8b86c9b8d1",
+      "contentSha256": "44cd90beed8bb73ff601508fb9075647afb6b2489d789533b7781a8554ea4515"
+    },
+    {
+      "ruleId": "A11.21",
+      "physicalPdfPage": 73,
+      "startLine": 908,
+      "fragmentId": "asl-fragment:sha256:214b42207df7970a50cb0a14b51e1f4b69b2f152894a35f2cc40d54898abca55",
+      "contentSha256": "a16c05e6e2771d85b31d67319f9050e1084918d7d4ce057ede821425d18181d4"
+    },
+    {
+      "ruleId": "A11.22",
+      "physicalPdfPage": 73,
+      "startLine": 910,
+      "fragmentId": "asl-fragment:sha256:6f18ab65fdfabe176ad57086a9efbdd682b1295c073e3731e4df02663377ef67",
+      "contentSha256": "9a40c5e5f02929ec18fd83277693503a69733f8d87cad2195a044c223e5673ee"
+    },
+    {
+      "ruleId": "A11.3",
+      "physicalPdfPage": 73,
+      "startLine": 912,
+      "fragmentId": "asl-fragment:sha256:9d0e7afa5910f21032a271a7280d9a98ba46cef668be88c498e6a9fe019126d9",
+      "contentSha256": "22d257132b43f7878b86469a37e7bdf706331023b4f2f024daddfe62585e1072"
+    },
+    {
+      "ruleId": "A11.32",
+      "physicalPdfPage": 73,
+      "startLine": 916,
+      "fragmentId": "asl-fragment:sha256:0a082f4a80562adc4c635ff36fdfabb902091ea2d3c6f29403badf2da34ecf44",
+      "contentSha256": "33850ce75209944fbe579a908cb95b5f1007efa5d2dbe9447e4f59b7431547ed"
+    },
+    {
+      "ruleId": "A11.4",
+      "physicalPdfPage": 73,
+      "startLine": 922,
+      "fragmentId": "asl-fragment:sha256:7485eb735c24e0074bca91a909d9ca9a453ee97c2cf6730ecd3f326c770f6234",
+      "contentSha256": "746ae2c471ef64b796bcc03b302c890a9d0b7480f6af7cde0bc0c78f72b5afea"
+    },
+    {
+      "ruleId": "A11.41",
+      "physicalPdfPage": 73,
+      "startLine": 940,
+      "fragmentId": "asl-fragment:sha256:3908626e35868e4fecdd40172f219b298288f945672d2d2ea677441f4b82aaaa",
+      "contentSha256": "eb7fdfdf07f4bf717d6a23ceeb43a0dfd7764628f8855ef8ac8923d8ffa3e62d"
+    },
+    {
+      "ruleId": "A18.12",
+      "physicalPdfPage": 85,
+      "startLine": 1336,
+      "fragmentId": "asl-fragment:sha256:707a5bbd1caa21bbed1aa3d7b2de28bddcef83b84fac9c6c96525ede95cd384f",
+      "contentSha256": "626de3fe40a9274236b3a03d4b3a04bae4c51f8b350905d4c919adf0ccbba898"
+    },
+    {
+      "ruleId": "A19.36",
+      "physicalPdfPage": 86,
+      "startLine": 1394,
+      "fragmentId": "asl-fragment:sha256:6c347a10b10c1094e1a9a6cb671f81205e29bc05329999316409d6357f9916d7",
+      "contentSha256": "d99e86b7c5de121f0911aa8b59ec337d2114fb2334f41e412e3edb381c73bcd1"
+    },
+    {
+      "ruleId": "A7.831",
+      "physicalPdfPage": 58,
+      "startLine": 584,
+      "fragmentId": "asl-fragment:sha256:4ff0472a53b09e392928d54ec86143322754388f83a3168b9588093c599c0485",
+      "contentSha256": "343ecc15352f1a72242b7778dadd8784a2c4efc884bf09e3024ae64c7abbfd23"
+    },
+    {
+      "ruleId": "A7.302",
+      "physicalPdfPage": 55,
+      "startLine": 467,
+      "fragmentId": "asl-fragment:sha256:d178a7897f7d831f951d8ead38b72f4947955f9411c8bc3d05c23bc7911e55e2",
+      "contentSha256": "c4e5a15453e8631a71658647f7d2a9e8cea0e9ea2d2ad92d8c147a09077e07fb"
+    },
+    {
+      "ruleId": "A17.11",
+      "physicalPdfPage": 85,
+      "startLine": 1320,
+      "fragmentId": "asl-fragment:sha256:3b9714ea0d0bd3903aef3f0080cc7247e5b32d444311187f5a2c713a2e2954c2",
+      "contentSha256": "4a183fc157b6ddeabea2e473e64330ed40f3cda9109c36e67bb62b78676c25bc"
+    },
+    {
+      "ruleId": "A15.24",
+      "physicalPdfPage": 83,
+      "startLine": 1244,
+      "fragmentId": "asl-fragment:sha256:c04a1189a968bd87354ddadaad9520ad6782bb284b87c549556102dd04034dc6",
+      "contentSha256": "d1b834a786f02ca204023e20b1dc4f0a738d4420a978fc692fb18b572b3b3cd0"
+    },
+    {
+      "ruleId": "A15.46",
+      "physicalPdfPage": 84,
+      "startLine": 1274,
+      "fragmentId": "asl-fragment:sha256:17fe0e508a51e066fd521109c69922f0ad01648432c57f8d78bcebac977edbd9",
+      "contentSha256": "0cad0efbd0756bc10da0d9bb596ec3929237433aaeff602705835dd825aa3414"
+    },
+    {
+      "ruleId": "A20.55",
+      "physicalPdfPage": 88,
+      "startLine": 1440,
+      "fragmentId": "asl-fragment:sha256:f0853fb906e18dc51d4e1e3adf7b33e75281d9b51688ff03e30b0bfcff3faa0d",
+      "contentSha256": "92000a26fca119e62f6d9a04c61f3940a80d9da99b464c9a6b3d89fd64a766fc"
+    },
+    {
+      "ruleId": "A15.43",
+      "physicalPdfPage": 84,
+      "startLine": 1258,
+      "fragmentId": "asl-fragment:sha256:ee7c59ace947faca0d33f257370d3b35430657567cf93da107b865d5c77668c4",
+      "contentSha256": "83155f35b76e184b7002a5f3baa94a3f87954be1b498c62c61f303aa59496965"
+    },
+    {
+      "ruleId": "A18.2",
+      "physicalPdfPage": 85,
+      "startLine": 1340,
+      "fragmentId": "asl-fragment:sha256:a11b5e8c794652a6f048f0938acc8695f7b668ab9a5d2bb552290a10ecba16bb",
+      "contentSha256": "cf168de00add2bd425118db896e5b18e2abe5857e15c6430d5522cecf902ddd2"
+    },
+    {
+      "ruleId": "A10.7",
+      "physicalPdfPage": 68,
+      "startLine": 832,
+      "fragmentId": "asl-fragment:sha256:f1bd2904c88de953e987558e1427d8b0462feef35dd686f9a4abbba1667d7f32",
+      "contentSha256": "b4c78f2c06f3f71adea064784586749e9ea3ae73fa0b4cce5d810fabc554edcd"
+    }
+  ],
+  "rulings": {
+    "scope": "Infantry against Infantry in one Location in the CCPh, with Withdrawal from Melee; vehicles in CC, Hand-to-Hand, concealment in CC, prisoners in CC, TI units, capture attempts, Infiltration withdrawal, Ambush Withdrawal, and overstacked Locations are out (R29.1, R29.14).",
+    "advance": "A Good Order Infantry unit of the phasing side that is not pinned, berserk, in Melee, captured, or concealed advances one ADJACENT Location in the APh into reviewed terrain at the same level, even into a Location of Known enemy units; an advance costing at least min(4, its MF allotment) would make it CX, which is not built, and is refused; a unit that fired in the PFPh may advance (A3.7, A4.7, A4.72; R29.2).",
+    "rounds": "Each Location resolves its CC once per CCPh: all declared attacks of both sides together, or with an Ambush the ambusher's attacks and then the other side's by its survivors; no unit attacks or is attacked more than once (A11.12, A11.3, A11.32; R29.3).",
+    "smc": "A SMC is stacked with one MMC of its side or alone, declared before the attacks; a stacked SMC attacks with its MMC or not at all and is attacked with it; an unstacked SMC combines with no MMC; a SMC has one FP (A11.14; R29.4).",
+    "drm": "The Ambush -1 by and +1 against the ambusher, the director's leadership unless he attacks alone or with a berserk unit, and each hero's -1 apply to the attack; the -2 against a broken unit applies to that defender alone, so each defender has its own Final DR; a pinned attacker's FP is halved (A11.4, A11.141, A11.16, A15.24, CCT; R29.5, R29.8).",
+    "results": "A Final DR below the black Kill Number eliminates the defender; equal is a Partial Kill: Casualty Reduction of the defender, or by Random Selection among those at the Kill Number (the highest dr and ties); a squad becomes its HS, a HS is eliminated, a SMC is wounded by a Wound Severity dr (A11.11, A7.302, A17.11; R29.6).",
+    "weapons": "A SW of a unit eliminated in CC is eliminated too on an Original colored dr of 1 and a subsequent dr at most the black Kill Number (A11.13; R29.7).",
+    "ambush": "An Ambush can occur where Infantry advanced this APh into a woods or building Location not in Melee; each side rolls a dr with each cause its force shows once: +1 broken, +1 pinned, +1 berserk, +1 Lax, -1 Stealthy, and the best unpinned Good Order leader's leadership unless alone or with a berserk unit; at least three below the other ambushes (A11.4, A11.17, A11.18, A19.36; R29.9).",
+    "fieldPromotion": "An Original 2 by an attacking MMC calls for a Leader Creation dr with -1 per odds column below 1-1; the leader joins the attack with his FP and defends with its MMC; his mandatory leadership takes the director's place, leadership modifiers not being cumulative (A10.7), and applies to no attack with a berserk unit (A11.141, A15.42); the base MMC's Morale Level must be single and the leader's MMC unambiguous (A18.12, A18.2; R29.12).",
+    "berserk": "A berserk unit attacks in its side's round, never with a leader's DRM, and returns to normal when its group's attack eliminated every enemy unit eliminated in its Location, at least one, and none is left (A11.141, A15.43, A15.46; R29.15).",
+    "withdrawal": "A unit held in Melee, not pinned, berserk, or Disrupted, may withdraw to a declared ADJACENT Location an advance could enter that holds no enemy unit; it makes no attack, attacks on it take -2 and +1 per friendly unit in the Melee not withdrawing, and it withdraws unless eliminated or Reduced; a broken unit that can withdraw must (A11.2, A11.21, A11.16; R29.11).",
+    "reinforcement": "A unit that advanced this APh into a Location already in Melee attacks in its side's round (A11.15; R29.17).",
+    "odds": "Odds above 10 to 1 but below 11 to 1, with or without a created leader's FP, are undecided (A11.11; R29.16)."
+  },
+  "resolution": {
+    "odds": "The attackers' FP against the defenders' FP, rounded down to the printed CCT column; < 1-8 below one to eight, > 10-1 above ten to one (A11.11, p. 692).",
+    "order": "Every attack's DR is rolled before any result; then Leader Creation drs, then Random Selection drs, Wound Severity drs, and SW loss drs, each asked for when the resolution reaches it.",
+    "effects": "Eliminations and Casualty Reductions take effect together at the end of the round; a created leader is a new unit in the Location."
+  },
+  "cases": [
+    {
+      "caseId": "A1-cc-resolved",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "resolved",
+      "sourceRules": [
+        "A11.1",
+        "A11.11",
+        "A11.12",
+        "A11.13",
+        "A11.14",
+        "A11.141",
+        "A11.16",
+        "A11.4",
+        "A18.12",
+        "A15.24",
+        "A15.46",
+        "A17.11",
+        "A7.302"
+      ],
+      "reason": "Declared attacks inside the reviewed scope, with every roll recorded, resolve to their odds, Final DRs, and effects."
+    },
+    {
+      "caseId": "A1-cc-ambush-resolved",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "resolved",
+      "sourceRules": [
+        "A11.4",
+        "A11.17",
+        "A11.18",
+        "A19.36"
+      ],
+      "reason": "Both Ambush drs recorded resolve to each side's drm and the ambusher, if any."
+    },
+    {
+      "caseId": "A1-cc-phase-outside",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "abstained",
+      "sourceRules": [
+        "A3.8",
+        "A11.1"
+      ],
+      "reason": "CC occurs only in the CCPh."
+    },
+    {
+      "caseId": "A1-cc-unit-outside",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "abstained",
+      "sourceRules": [
+        "A11.1"
+      ],
+      "reason": "Only Infantry of the reviewed catalog, of two sides, are admitted."
+    },
+    {
+      "caseId": "A1-cc-concealment-unreviewed",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "abstained",
+      "sourceRules": [
+        "A11.19"
+      ],
+      "reason": "Concealed units in CC are not reviewed."
+    },
+    {
+      "caseId": "A1-cc-prisoners-unreviewed",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "abstained",
+      "sourceRules": [
+        "A20.55"
+      ],
+      "reason": "Prisoners in a CC Location are not reviewed."
+    },
+    {
+      "caseId": "A1-cc-overstacked-unreviewed",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "abstained",
+      "sourceRules": [
+        "A5.1",
+        "A5.5"
+      ],
+      "reason": "An overstacked Location is not reviewed."
+    },
+    {
+      "caseId": "A1-cc-attack-outside",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "abstained",
+      "sourceRules": [
+        "A11.12",
+        "A11.16"
+      ],
+      "reason": "An attack names units of the Location, attackers of one side against the other, no broken attacker, and no unit twice."
+    },
+    {
+      "caseId": "A1-cc-round-outside",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "abstained",
+      "sourceRules": [
+        "A11.3",
+        "A11.32"
+      ],
+      "reason": "With an Ambush the ambusher's round comes first and the other side's second."
+    },
+    {
+      "caseId": "A1-cc-stacking-outside",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "abstained",
+      "sourceRules": [
+        "A11.14"
+      ],
+      "reason": "A stacked SMC attacks with its MMC or not at all and is attacked with it."
+    },
+    {
+      "caseId": "A1-cc-director-outside",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "abstained",
+      "sourceRules": [
+        "A11.141"
+      ],
+      "reason": "The director is an unpinned, non-berserk leader of the attack."
+    },
+    {
+      "caseId": "A1-cc-berserk-must-attack",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "abstained",
+      "sourceRules": [
+        "A15.43",
+        "A11.15",
+        "A11.2"
+      ],
+      "reason": "A berserk unit, and a unit reinforcing a Melee, attacks in its side's round; a withdrawing unit makes no attack."
+    },
+    {
+      "caseId": "A1-cc-field-promotion-undecided",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "indeterminate",
+      "sourceRules": [
+        "A18.12",
+        "A18.2",
+        "A11.11"
+      ],
+      "reason": "A Field Promotion whose base MMC or stacking is ambiguous, or odds just above 10 to 1, are undecided before any roll."
+    },
+    {
+      "caseId": "A1-cc-roll-missing",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "indeterminate",
+      "sourceRules": [
+        "A11.11"
+      ],
+      "reason": "A roll the resolution needs is not recorded."
+    }
+  ],
+  "admissionRule": "A declared round is resolved only when every fact is within the reviewed scope and every roll it needs is recorded; otherwise it is Abstained or Indeterminate with its reasons.",
+  "excludedConsequences": [
+    "CC by or against vehicles, and Hand-to-Hand CC (A11.5 to A11.8, J2.31)",
+    "Concealed and hidden units and Dummies in CC (A11.19)",
+    "Capture attempts in CC and prisoners in a CC Location (A20.22, A20.55)",
+    "Infiltration withdrawal and Ambush Withdrawal (A11.22, A11.41)",
+    "TI units in CC (A4.8), and overstacked Locations (A5.12, A5.131)",
+    "Advances that would make a unit CX (A4.72), advances into concealed enemy units, and advances changing level"
+  ],
+  "executionAuthority": "none"
+}
