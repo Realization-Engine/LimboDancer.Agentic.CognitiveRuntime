@@ -220,6 +220,8 @@ public sealed class CloseCombatStepsTests : IDisposable
             attacks = new[] { Attack(G1, ["r1"]) },
         });
         Assert.Contains(early.Reasons, reason => reason.StartsWith("play.cc-ambush-first", StringComparison.Ordinal));
+        var woods = BoardLocation.Parse("bd01:C2:0");
+        Assert.Empty(Planner().DeclaringSides(Current, woods, ambusherAgain: false));
 
         // The German dr 1 is at least three below the Russian 5: the Germans ambush.
         Committed(await Do(GameActions.Ambush, Once(1, 5), new
@@ -227,6 +229,7 @@ public sealed class CloseCombatStepsTests : IDisposable
             location = "bd01:C2:0"
         }));
         Assert.Equal("german", Current.CloseCombats.Single().Ambusher);
+        Assert.Equal(["german"], Planner().DeclaringSides(Current, woods, ambusherAgain: false));
 
         // The Russians may not attack first (A11.32); the German round has -1: 3+3-1 = 5 at 1-1 is a Partial Kill, reducing r1.
         Assert.NotEqual(PlayOutcome.Committed, (await Do(GameActions.CloseCombat, NoRoll(), new
@@ -240,6 +243,10 @@ public sealed class CloseCombatStepsTests : IDisposable
             attacks = new[] { Attack(G1, ["r1"]) },
         }));
         var half = Current.Units.Single(unit => unit.Status == InstanceStatus.Active && unit.Side == "russian");
+
+        // The page offers only the sides the planner reads: the ambushed side next, or the ambusher again when that is chosen.
+        Assert.Equal(["russian"], Planner().DeclaringSides(Current, woods, ambusherAgain: false));
+        Assert.Equal(["german"], Planner().DeclaringSides(Current, woods, ambusherAgain: true));
         Assert.Equal("defender-half-squad", half.Definition!.Definition);
 
         // The phase waits for the ambushed side's round; its HS attacks back with +1 against the ambusher.
@@ -322,8 +329,15 @@ public sealed class CloseCombatStepsTests : IDisposable
             target = "bd01:A3:0"
         }));
         Assert.True(Is(Current.Unit("g2")!, Conditions.Berserk));
+        Assert.Equal("is berserk, and berserk fire is not reviewed (A15.432)", GamePlanner.FireBar(Current, Current.Unit("g2")!));
         await Advance(9);
         Assert.Equal(("mph", "german"), (Current.Phase, Current.PhasingSide));
+
+        // The page marks the charge from the planner's reading: g2 charges A1, and its only next step is A2 (A15.43, A15.431).
+        var charge = Assert.Single(Planner().Charges(Current));
+        Assert.Equal(("g2", BoardLocation.Parse("bd01:A1:0")), (charge.Unit.Id, charge.Target));
+        Assert.Equal([BoardLocation.Parse("bd01:A2:0")], charge.Next);
+        Assert.Null(charge.Undecided);
 
         // A15.43: g2 charges before any other unit moves, by the shortest route to A1: A2, not B2.
         Assert.Contains((await Do(GameActions.Move, NoRoll(), new
@@ -402,6 +416,9 @@ public sealed class CloseCombatStepsTests : IDisposable
         }));
         var prisoner = Current.Unit("g2")!;
         Assert.Equal(("r4", true, BoardLocation.Parse("bd01:A1:0")), (prisoner.Custodian, Is(prisoner, Conditions.Captured), Current.Location("g2")!.Location));
+        Assert.Equal("is a prisoner and does not fire (A20.5)", GamePlanner.FireBar(Current, prisoner));
+        Assert.Equal("guards prisoners, and a Guard's fire is not reviewed (A20.52)", GamePlanner.FireBar(Current, Current.Unit("r4")!));
+        Assert.Null(GamePlanner.FireBar(Current, Current.Unit("r5")!));
 
         // A20.53: the prisoner advances with its Guard.
         await Advance(5);
@@ -478,6 +495,12 @@ public sealed class CloseCombatStepsTests : IDisposable
             unitIds = G2,
             to = "bd01:A1:0"
         })).Reasons, reason => reason.StartsWith("play.berserk-concealed", StringComparison.Ordinal));
+
+        // The page marks the charge as undecided, with the planner's reason (backlog, section 13).
+        var undecided = Assert.Single(Planner().Charges(Current));
+        Assert.Equal("g2", undecided.Unit.Id);
+        Assert.Empty(undecided.Next);
+        Assert.StartsWith("play.berserk-concealed", undecided.Undecided, StringComparison.Ordinal);
 
         // Table-player review, item 2: the step the model cannot take leaves the charge undecided, so it ends in place (ruling R30.5)
         // and the MPh can end; before, the move could neither go on nor end.

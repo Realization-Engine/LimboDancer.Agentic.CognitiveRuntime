@@ -276,10 +276,26 @@ else if (state is not null)
                 <span id="move-members">@(movement.Members.Count > 0 ? $"May still move: {string.Join(", ", movement.Members)}." : "No member may move farther; end the move.")</span>
             </p>
         }
+        @foreach (var (charging, target, next, undecided) in Charges)
+        {
+            @if (undecided is null)
+            {
+                <p class="fail" data-charge="@charging.Id">
+                    @charging.Id is berserk and charges @(target?.ToString() ?? "the nearest Known enemy unit") before any other unit moves (A15.43),
+                    by a shortest route: next @(next.Count == 1 ? "step" : "steps") @string.Join(" or ", next) (A15.431). It may not stop short while it has the MF.
+                </p>
+            }
+            else
+            {
+                <p class="muted" data-charge="@charging.Id" data-undecided="true">
+                    @charging.Id is berserk, but its charge@(target is { } at ? $" at {at}" : "") is not decided here: @undecided
+                </p>
+            }
+        }
         <div class="toolbar">
             @foreach (var unit in MoveCandidates)
             {
-                <label><input class="move-unit" type="checkbox" data-unit="@unit.Id" checked="@moveUnits.Contains(unit.Id)" @onchange="@(args => Toggle(moveUnits, unit.Id, args.Value is true))" /> @unit.Id (@state.Location(unit.Id)?.Location)</label>
+                <label><input class="move-unit" type="checkbox" data-unit="@unit.Id" checked="@moveUnits.Contains(unit.Id)" @onchange="@(args => Toggle(moveUnits, unit.Id, args.Value is true))" /> @unit.Id (@state.Location(unit.Id)?.Location)@(GameState.Condition(unit, Conditions.Berserk) == ConditionState.True ? ", berserk" : "")</label>
             }
             <label>To <input id="move-to" value="@moveTo" @onchange="@(args => moveTo = args.Value as string ?? string.Empty)" size="12" /></label>
             <label><input id="move-assault" type="checkbox" checked="@moveAssault" @onchange="@(args => moveAssault = args.Value is true)" /> Assault Movement</label>
@@ -354,7 +370,7 @@ else if (state is not null)
                 {
                     <label>
                         Round
-                        <select id="cc-round" value="@ccRound" @onchange="@(args => ccRound = args.Value as string ?? string.Empty)">
+                        <select id="cc-round" value="@ccRound" @onchange="@(args => ChooseRound(args.Value as string))">
                             <option value="">the ambushed side's round</option>
                             <option value="@CloseCombatResolved.AmbusherRound">another attack by the ambusher</option>
                         </select>
@@ -398,7 +414,11 @@ else if (state is not null)
                     }
                 </div>
             }
-            @foreach (var side in CloseCombatUnits.Select(unit => unit.Side).Distinct(StringComparer.Ordinal).OrderBy(side => side == state.PhasingSide ? 0 : 1))
+            @if (AmbushDue)
+            {
+                <p class="muted" id="cc-ambush-first">Infantry advanced into woods or a building here: roll for Ambush before any attack is declared (A11.4).</p>
+            }
+            @foreach (var side in CloseCombatSides)
             {
                 <div class="toolbar cc-side" data-side="@side">
                     <span>@side@(side == state.PhasingSide ? " (ATTACKER)" : "")</span>
@@ -414,26 +434,29 @@ else if (state is not null)
                     }
                 </div>
             }
-            <div class="toolbar" id="cc-attack">
-                <label>
-                    Director
-                    <select id="cc-director" value="@ccDirector" @onchange="@(args => ccDirector = args.Value as string ?? string.Empty)">
-                        <option value="">none</option>
-                        @foreach (var leader in CloseCombatDirectors)
-                        {
-                            <option value="@leader.Id">@leader.Id</option>
-                        }
-                    </select>
-                </label>
-                <button id="cc-add-attack" disabled="@(ccAttackers.Count == 0 || ccDefenders.Count == 0)" @onclick="AddAttack">Add the attack</button>
-            </div>
-            <ul id="cc-attacks">
-                @foreach (var attack in ccAttacks)
-                {
-                    <li>@string.Join(", ", attack.Attackers) attack @string.Join(", ", attack.Defenders)@(attack.Director is { } director ? $", directed by {director}" : "") <button class="link" @onclick="() => ccAttacks.Remove(attack)">remove</button></li>
-                }
-            </ul>
-            <button id="propose-cc" @onclick="ProposeCloseCombat">Propose: resolve CC@(ccAttacks.Count == 0 ? " with no attacks" : "")</button>
+            @if (!AmbushDue)
+            {
+                <div class="toolbar" id="cc-attack">
+                    <label>
+                        Director
+                        <select id="cc-director" value="@ccDirector" @onchange="@(args => ccDirector = args.Value as string ?? string.Empty)">
+                            <option value="">none</option>
+                            @foreach (var leader in CloseCombatDirectors)
+                            {
+                                <option value="@leader.Id">@leader.Id</option>
+                            }
+                        </select>
+                    </label>
+                    <button id="cc-add-attack" disabled="@(ccAttackers.Count == 0 || ccDefenders.Count == 0)" @onclick="AddAttack">Add the attack</button>
+                </div>
+                <ul id="cc-attacks">
+                    @foreach (var attack in ccAttacks)
+                    {
+                        <li>@string.Join(", ", attack.Attackers) attack @string.Join(", ", attack.Defenders)@(attack.Director is { } director ? $", directed by {director}" : "") <button class="link" @onclick="() => ccAttacks.Remove(attack)">remove</button></li>
+                    }
+                </ul>
+                <button id="propose-cc" @onclick="ProposeCloseCombat">Propose: resolve CC@(ccAttacks.Count == 0 ? " with no attacks" : "")</button>
+            }
         }
     }
     @foreach (var surrender in state.PendingSurrenders)
@@ -466,7 +489,7 @@ else if (state is not null)
                     }
                 </select>
             </label>
-            @foreach (var unit in FireGroupAt(firing).Where(unit => unit.Kind != "asl:leader"))
+            @foreach (var unit in FireGroupAt(firing).Where(unit => unit.Kind != "asl:leader" && MayFire(unit)))
             {
                 <label><input class="fire-firer" type="checkbox" data-unit="@unit.Id" checked="@fireFirers.Contains(unit.Id)" @onchange="@(args => Toggle(fireFirers, unit.Id, args.Value is true))" /> @unit.Id</label>
             }
@@ -605,6 +628,13 @@ else if (state is not null)
     @if (Rolls.Count > 0)
     {
         <h3>Rolls</h3>
+        @if (Scripted is not null)
+        {
+            <p class="muted" id="rolls-scripted">
+                Scripted dice are on: each roll is recorded as the system's, as replay requires (DICE-12), but its dice may have come from the queue,
+                so games played now are test data.
+            </p>
+        }
         <ul id="play-rolls">
             @foreach (var (roll, subjects) in Rolls)
             {
@@ -765,7 +795,7 @@ else if (state is not null)
                         }
                     </td>
                     <td>@unit.MfSpent@(unit.MovementEnded ? ", movement ended" : "")</td>
-                    <td>@string.Join(", ", unit.Conditions.Where(pair => pair.Value == ConditionState.True).Select(pair => pair.Key.Replace("asl:", string.Empty, StringComparison.Ordinal)))</td>
+                    <td>@string.Join(", ", unit.Conditions.Where(pair => pair.Value == ConditionState.True).Select(pair => pair.Key.Replace("asl:", string.Empty, StringComparison.Ordinal)).Concat(Custody(unit)))</td>
                 </tr>
             }
             @foreach (var presence in SealedPresences)
@@ -937,11 +967,33 @@ else if (state is not null)
     /// <summary>A CC attack declared on the page, not yet proposed.</summary>
     private sealed record DeclaredAttack(string[] Attackers, string[] Defenders, string? Director);
 
-    /// <summary>The phasing side's units that may advance: not broken, pinned, berserk, in Melee, captured, or already advanced (A4.7).</summary>
+    /// <summary>
+    /// The phasing side's units that may advance: not broken, pinned, berserk, in Melee, captured, or already advanced (A4.7), and
+    /// not a crew manning a Gun, which may not leave it (C10, A21.13; ruling R24.4).
+    /// </summary>
     private IEnumerable<UnitInstance> AdvanceCandidates => state is null ? []
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && !unit.MovementEnded && state.Location(unit.Id) is not null
-            && !new[] { Conditions.Broken, Conditions.Pinned, Conditions.Berserk, Conditions.Melee, Conditions.Captured, Conditions.Concealed, Conditions.Hidden, "asl:ti" }.Any(name => GameState.Condition(unit, name) == ConditionState.True))
+            && !new[] { Conditions.Broken, Conditions.Pinned, Conditions.Berserk, Conditions.Melee, Conditions.Captured, Conditions.Concealed, Conditions.Hidden, "asl:ti" }.Any(name => GameState.Condition(unit, name) == ConditionState.True)
+            && !Mans(unit))
             .OrderBy(unit => unit.Id, StringComparer.Ordinal);
+
+    private bool Mans(UnitInstance unit) => state is not null && state.Equipment.Any(item => item.Status == InstanceStatus.Active
+        && item.Holding is { Role: HoldingRole.Manned } holding && holding.Holder == unit.Id);
+
+    /// <summary>The sides that may declare attacks in the chosen Location now, as the planner reads the Ambush and its rounds (A11.3, A11.32).</summary>
+    private IReadOnlyList<string> CloseCombatSides => state is not null && BoardLocation.TryParse(ccLocation, out var at)
+        ? Live.Planner.DeclaringSides(state, at, ccRound == CloseCombatResolved.AmbusherRound)
+        : [];
+
+    /// <summary>A new round choice starts its declarations over: the attacks declared were for the other side.</summary>
+    private void ChooseRound(string? round)
+    {
+        ccRound = round ?? string.Empty;
+        ccAttackers.Clear();
+        ccDefenders.Clear();
+        ccDirector = string.Empty;
+        ccAttacks.Clear();
+    }
 
     private Task ProposeAdvanceUnits() => Propose(GameActions.Advance, JsonSerializer.SerializeToElement(new
     {
@@ -1150,6 +1202,20 @@ else if (state is not null)
         }
     }
 
+    /// <summary>A prisoner's Guard, and a Guard's prisoners (A20.5), as the units table shows them.</summary>
+    private IEnumerable<string> Custody(UnitInstance unit)
+    {
+        if (unit.Custodian is { } guard)
+        {
+            yield return $"guarded by {guard}";
+        }
+
+        if (state?.Units.Where(item => item.Status == InstanceStatus.Active && item.Custodian == unit.Id).Select(item => item.Id).Order(StringComparer.Ordinal).ToArray() is { Length: > 0 } prisoners)
+        {
+            yield return $"guards {string.Join(", ", prisoners)}";
+        }
+    }
+
     private IEnumerable<UnitInstance> VisibleUnits => Viewer.IsAdjudicator || View is null ? state?.Units ?? [] : View.Units;
 
     /// <summary>
@@ -1289,6 +1355,7 @@ else if (state is not null)
     private IEnumerable<UnitInstance> FireLeaders(string side) => state is null ? []
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && unit.Kind == "asl:leader"
             && GameState.GoodOrder(unit, Library.Vocabulary) == ConditionState.True && GameState.Condition(unit, Conditions.Pinned) != ConditionState.True
+            && GamePlanner.FireBar(state, unit) is null
             && fireFirers.Any(id => state.Location(id)?.Location is { } at && state.Location(unit.Id)?.Location == at))
             .OrderBy(unit => unit.Id, StringComparer.Ordinal);
 
@@ -1318,14 +1385,21 @@ else if (state is not null)
 
     /// <summary>
     /// The phasing side's units that may still move this MPh: the moving stack itself while one moves; otherwise those that did
-    /// not fire in the PFPh (A3.3, p. 47) and are not broken.
+    /// not fire in the PFPh (A3.3, p. 47), are not broken, and are not a crew manning a Gun (C10, A21.13; ruling R24.4).
     /// </summary>
     private IEnumerable<UnitInstance> MoveCandidates => state is null ? []
         : state.Movement is { } movement ? movement.Members.Select(state.Unit).OfType<UnitInstance>()
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && !unit.MovementEnded
             && state.Location(unit.Id) is not null && GameState.Condition(unit, Conditions.Broken) != ConditionState.True
             && GameState.Condition(unit, Conditions.PrepFire) != ConditionState.True && GameState.Condition(unit, Conditions.Melee) != ConditionState.True
-            && GameState.Condition(unit, Conditions.Captured) != ConditionState.True).OrderBy(unit => unit.Id, StringComparer.Ordinal);
+            && GameState.Condition(unit, Conditions.Captured) != ConditionState.True && !Mans(unit)).OrderBy(unit => unit.Id, StringComparer.Ordinal);
+
+    /// <summary>
+    /// The berserk units to charge now, with the Location each charges and its next steps (A15.43, A15.431), or why the model cannot
+    /// decide the charge (ruling R30.5).
+    /// </summary>
+    private IReadOnlyList<(UnitInstance Unit, BoardLocation? Target, IReadOnlyList<BoardLocation> Next, string? Undecided)> Charges =>
+        state is null ? [] : Live.Planner.Charges(state);
 
     private Task ProposeRally()
     {
@@ -1393,12 +1467,19 @@ else if (state is not null)
         }
     }
 
-    /// <summary>The Locations that hold active units of the firing side.</summary>
+    /// <summary>The Locations that hold active units of the firing side that may fire now.</summary>
     private IEnumerable<string> FireLocations(string side) => state is null ? []
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side
-            && (Library.Vocabulary.IsA(unit.Kind, "asl:mmc") || unit.Kind == "asl:hero"))
+            && (Library.Vocabulary.IsA(unit.Kind, "asl:mmc") || unit.Kind == "asl:hero") && MayFire(unit))
             .Select(unit => state.Location(unit.Id)?.Location.ToString())
             .OfType<string>().Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Whether a unit may fire now: not a crew, whose inherent fire the Fire package does not review (ruling R24.8); not berserk, held
+    /// in Melee, a prisoner, or a Guard (A15.432, A11.15, A20.5, A20.52); and not spent for this phase (A7.1, A8.4), as the planner and
+    /// the Fire package read it.
+    /// </summary>
+    private bool MayFire(UnitInstance unit) => state is not null && unit.Kind != "asl:crew" && GamePlanner.FireBar(state, unit) is null && !LiveFire.FireSpent(state, unit);
 
     private IEnumerable<UnitInstance> FireGroupAt(string side) => state is null || fireFrom.Length == 0 ? []
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && state.Location(unit.Id)?.Location.ToString() == fireFrom)
@@ -1721,6 +1802,7 @@ else if (state is not null)
     {
         gameId = args.Value as string ?? string.Empty;
         pending = null;
+        shownPhase = null;
         placements.Clear();
         ClearFire();
         moveUnits.Clear();
@@ -1750,7 +1832,18 @@ else if (state is not null)
             return;
         }
 
-        var group = FireGroupAt(side).Select(unit => unit.Id).ToHashSet(StringComparer.Ordinal);
+        // A selection the game no longer offers is dropped, so the page never shows one choice and proposes another.
+        if (fireFrom.Length > 0 && !FireLocations(side).Contains(fireFrom, StringComparer.Ordinal))
+        {
+            fireFrom = string.Empty;
+        }
+
+        if (fireTarget.Length > 0 && !FireTargets(side).Contains(fireTarget, StringComparer.Ordinal))
+        {
+            fireTarget = string.Empty;
+        }
+
+        var group = FireGroupAt(side).Where(MayFire).Select(unit => unit.Id).ToHashSet(StringComparer.Ordinal);
         fireFirers.IntersectWith(group);
         fireWeapons.IntersectWith(FireWeapons.Select(item => item.Id));
         fireAlone.IntersectWith(fireFirers);
@@ -1760,10 +1853,40 @@ else if (state is not null)
         }
     }
 
+    // The turn, phase, and phasing side the page's choices were made in.
+    private string? shownPhase;
+
+    /// <summary>
+    /// A new phase: nothing chosen in the last one carries over, since the firing side, the Locations, and the units that may act
+    /// have changed with it.
+    /// </summary>
+    private void ResetForPhase()
+    {
+        ClearFire();
+        ordnanceGun = string.Empty;
+        ordnanceTarget = string.Empty;
+        advanceUnits.Clear();
+        advanceTo = string.Empty;
+        ccLocation = string.Empty;
+        ClearCloseCombat();
+        rallyUnit = string.Empty;
+        rallyLeader = string.Empty;
+        repairWeapon = string.Empty;
+        moveTo = string.Empty;
+        moveAssault = false;
+    }
+
     private void Refresh()
     {
         history = gameId.Length > 0 ? Live.History(gameId) : null;
         state = history?.Current ?? (history is { States.Count: > 0 } ? history.States[^1] : null);
+        var phase = state is null ? null : $"{state.Turn}/{state.Phase}/{state.PhasingSide}";
+        if (shownPhase is not null && phase != shownPhase)
+        {
+            ResetForPhase();
+        }
+
+        shownPhase = phase;
         if (state?.Movement is { } movement)
         {
             // The checked units stay checked while they may still move; otherwise those of the latest step that may.
@@ -1772,10 +1895,23 @@ else if (state is not null)
             {
                 moveUnits.UnionWith(movement.Movers.Where(movement.Members.Contains));
             }
+
+            // A15.431: a charging stack's next step, when its route allows only one.
+            if (Charges.FirstOrDefault(item => movement.Members.Contains(item.Unit.Id)) is { Undecided: null, Next: [var only] })
+            {
+                moveTo = only.ToString();
+            }
         }
         else if (state is not null)
         {
             moveUnits.RemoveWhere(id => state.Unit(id) is not { MovementEnded: false });
+
+            // A15.43: a berserk unit charges before any other unit moves, so it is the one checked, with its only next step.
+            if (moveUnits.Count == 0 && Charges.Where(item => item.Undecided is null).ToArray() is [var (charging, _, next, _), ..] decided)
+            {
+                moveUnits.UnionWith(decided.Where(item => state.Location(item.Unit.Id)?.Location == state.Location(charging.Id)?.Location).Select(item => item.Unit.Id));
+                moveTo = next is [var only] ? only.ToString() : moveTo;
+            }
         }
 
         PruneFire();

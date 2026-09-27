@@ -323,6 +323,24 @@ public static class LiveFire
 
     // A7.1: a unit fires in one fire phase per Player Turn; A7.531: a directing leader is marked too.
     internal static bool Fired(IGameObject item) => Is(item, Conditions.PrepFire) || Is(item, Conditions.FinalFire);
+
+    /// <summary>
+    /// Whether a unit has spent its fire for this phase, as the Fire package reads it for the PFPh, AFPh, and DFPh (A7.1, A8.4): marked
+    /// Prep or Final Fire, unless in the DFPh it is marked First Fire, and unless it still possesses a MG that has not fired (A9.2). The
+    /// MPh is not read here: Subsequent First Fire and FPF let marked units fire again (A8.3, A8.31).
+    /// </summary>
+    public static bool FireSpent(GameState state, UnitInstance unit)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(unit);
+        if (state.Phase is not ("pfph" or "afph" or "dfph") || !Fired(unit) || (state.Phase == "dfph" && Is(unit, Conditions.FirstFire)))
+        {
+            return false;
+        }
+
+        return !state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding
+            && holding.Holder == unit.Id && item.Kind == "asl:mg" && !Fired(item) && !Is(item, Conditions.Malfunctioned));
+    }
 }
 
 /// <summary>

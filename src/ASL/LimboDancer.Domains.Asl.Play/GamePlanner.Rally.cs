@@ -56,7 +56,7 @@ public sealed partial class GamePlanner
         var precheck = ScenarioA1RallyCalculator.Precheck(attempt, reference);
         if (precheck.Count != 0)
         {
-            return Refused(scope, label, expected, ["play.rally-refused: the Rally package does not decide every outcome of this attempt", .. precheck]);
+            return Refused(scope, label, expected, RefusalReasons.Refusal("play.rally-refused", "Rally", "attempt", precheck));
         }
 
         var package = ScenarioA1RallyPackage.Identity.ToString();

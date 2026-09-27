@@ -60,7 +60,7 @@ public sealed partial class GamePlanner
         var precheck = ScenarioA1OrdnanceCalculator.Precheck(shot, reference);
         if (precheck.Count != 0)
         {
-            return Refused(scope, label, expected, ["play.ordnance-refused: the shot is not allowed, or not decided here, for these reasons", .. precheck]);
+            return Refused(scope, label, expected, RefusalReasons.Refusal("play.ordnance-refused", "Ordnance", "shot", precheck));
         }
 
         var facts = shot;
