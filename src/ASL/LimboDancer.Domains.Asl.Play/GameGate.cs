@@ -127,6 +127,9 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
         : plan.Events.Select(item => item.Payload).OfType<CloseCombatResolved>().FirstOrDefault() is { } combat
         // A CC round: the Location's CC records the round and its attackers.
         ? state.CloseCombats.Any(item => item.Location == combat.Location && item.Rounds.Contains(combat.Round) && combat.Attackers.All(item.Attacking.Contains))
+        : plan.Events.Select(item => item.Payload).OfType<OrdnanceFired>().FirstOrDefault() is { } ordnance
+        // A Gun's shot: the phase's shots count it, with the ROF the record kept.
+        ? state.OrdnanceShots.Any(item => item.Gun == ordnance.Gun && item.RateOfFireKept == ordnance.RateOfFireKept)
         : plan.Events.Select(item => item.Payload).OfType<AmbushRolled>().FirstOrDefault() is { } ambush
         // The Ambush drs: the Location's CC records them and the ambusher.
         ? state.CloseCombats.Any(item => item.Location == ambush.Location && item.AmbushRolled && item.Ambusher == ambush.Ambusher)

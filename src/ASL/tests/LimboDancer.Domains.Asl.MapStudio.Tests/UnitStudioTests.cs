@@ -159,7 +159,7 @@ public sealed class UnitStudioTests : IDisposable
                 "defender-line-half-squad", "defender-guards-squad", "defender-guards-half-squad", "attacker-leader-6-plus-1", "attacker-leader-7-0",
                 "attacker-leader-8-0", "attacker-leader-8-1", "attacker-leader-9-1", "attacker-leader-9-2", "attacker-leader-10-2", "attacker-leader-10-3",
                 "defender-leader-8-1", "defender-leader-9-1", "defender-leader-9-2", "defender-leader-10-2", "defender-leader-10-3", "attacker-hero",
-                "defender-hero", "defender-nkvd-squad", "defender-nkvd-half-squad",
+                "defender-hero", "defender-nkvd-squad", "defender-nkvd-half-squad", "attacker-crew", "defender-crew", "attacker-inf-gun", "defender-at-gun",
             ],
             choices.Select(choice => choice.Definition.Definition));
         Assert.All(choices, choice =>
@@ -182,8 +182,8 @@ public sealed class UnitStudioTests : IDisposable
         Assert.Contains("Russian", lab.Find("#lab-name").TextContent, StringComparison.Ordinal);
         Assert.Contains("4-4-7", lab.Find("#lab-name").TextContent, StringComparison.Ordinal);
         var source = lab.Find("#lab-catalog-source");
-        Assert.Contains("asl-scenario-a1@1.3.0, definition defender-squad", source.TextContent, StringComparison.Ordinal);
-        Assert.StartsWith("asl-scenario-a1@1.3.0+sha256:", source.GetAttribute("title"), StringComparison.Ordinal);
+        Assert.Contains("asl-scenario-a1@1.4.0, definition defender-squad", source.TextContent, StringComparison.Ordinal);
+        Assert.StartsWith("asl-scenario-a1@1.4.0+sha256:", source.GetAttribute("title"), StringComparison.Ordinal);
         Assert.EndsWith("#defender-squad", source.GetAttribute("title"), StringComparison.Ordinal);
         Assert.DoesNotContain("The document is refused", lab.Markup, StringComparison.Ordinal);
         Assert.DoesNotContain("class=\"fail\"", lab.Find("#lab-findings").OuterHtml, StringComparison.Ordinal);

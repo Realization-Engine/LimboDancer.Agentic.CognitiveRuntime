@@ -60,7 +60,18 @@ public sealed record FireAttack(
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyList<FireTarget>? Companions { get; init; }
+
+    /// <summary>
+    /// An ordnance hit on the Infantry Target Type resolved on the IFT (C3.3, C3.32, unit step 24): no firers, the Gun's HE FP
+    /// column (C.6), and no TEM or Hindrance on the Effects DR (C.3) unless a Critical Hit reverses the TEM (C3.71). Null for
+    /// Infantry fire.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FireOrdnanceHit? OrdnanceHit { get; init; }
 }
+
+/// <summary>An ordnance hit's IFT attack (C.6, C3.71): the Gun, its HE FP column, and whether the hit is Critical.</summary>
+public sealed record FireOrdnanceHit(string? GunId, int? Firepower, bool? CriticalHit);
 
 /// <summary>How a moving target stack moved in the MPh: Assault Movement avoids FFNAM but not FFMO (A4.61).</summary>
 public sealed record FireMovement(bool? AssaultMovement);

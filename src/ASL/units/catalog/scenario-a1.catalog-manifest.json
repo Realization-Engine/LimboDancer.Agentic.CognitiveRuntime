@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "catalog": "asl-scenario-a1",
-  "version": "1.3.0",
-  "label": "Scenario A1 catalog: Infantry Personnel, heroes, leaders, and MGs for the reviewed Scenario A1 cases",
+  "version": "1.4.0",
+  "label": "Scenario A1 catalog: Infantry Personnel, heroes, leaders, crews, MGs, and Guns for the reviewed Scenario A1 cases",
   "vocabulary": ["asl@1.3.0"],
   "source": {
     "id": "asl-counter-sheets:scenario-a1",
@@ -63,6 +63,10 @@
     { "id": "attacker-hero", "counter": "attacker-hero", "slots": [] },
     { "id": "defender-hero", "counter": "defender-hero", "slots": [] },
     { "id": "defender-nkvd-squad", "counter": "defender-nkvd-squad", "slots": [] },
-    { "id": "defender-nkvd-half-squad", "counter": "defender-nkvd-half-squad", "slots": [] }
+    { "id": "defender-nkvd-half-squad", "counter": "defender-nkvd-half-squad", "slots": [] },
+    { "id": "attacker-crew", "counter": "attacker-crew", "slots": [] },
+    { "id": "defender-crew", "counter": "defender-crew", "slots": [] },
+    { "id": "attacker-inf-gun", "counter": "attacker-inf-gun", "slots": [] },
+    { "id": "defender-at-gun", "counter": "defender-at-gun", "slots": [] }
   ]
 }

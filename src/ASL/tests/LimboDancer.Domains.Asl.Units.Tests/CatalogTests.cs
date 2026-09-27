@@ -89,6 +89,10 @@ public sealed class CatalogTests
                 "attacker-leader-9-2", "attacker-leader-10-2", "attacker-leader-10-3", "defender-leader-8-1", "defender-leader-9-1",
                 "defender-leader-9-2", "defender-leader-10-2", "defender-leader-10-3", "attacker-hero", "defender-hero", "defender-nkvd-squad",
                 "defender-nkvd-half-squad",
+                "attacker-crew",
+                "defender-crew",
+                "attacker-inf-gun",
+                "defender-at-gun",
             ],
             catalog.Definitions.Select(definition => definition.Id));
         Assert.All(catalog.Slots, slot => Assert.NotEmpty(catalog.Filling(slot.Id)));

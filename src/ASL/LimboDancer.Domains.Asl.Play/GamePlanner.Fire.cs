@@ -318,6 +318,7 @@ public sealed partial class GamePlanner
                 "checks" => (2, "fire-check"),
                 "leaderLoss" => (2, "fire-leader-loss"),
                 "heatOfBattle" => (2, "fire-heat-of-battle"),
+                "berserkCheck" => (2, "fire-berserk-check"),
                 _ => (1, "fire-wound-severity"),
             };
             var drawn = draw(new RollRequest(count, 6));
@@ -345,6 +346,7 @@ public sealed partial class GamePlanner
                 "checks" => rolls with { Checks = Add(rolls.Checks, unit, drawn.Values) },
                 "leaderLoss" => rolls with { LeaderLoss = Add(rolls.LeaderLoss, unit, drawn.Values) },
                 "heatOfBattle" => rolls with { HeatOfBattle = Add(rolls.HeatOfBattle, unit, drawn.Values) },
+                "berserkCheck" => rolls with { BerserkChecks = Add(rolls.BerserkChecks, unit, drawn.Values) },
                 _ => rolls with { WoundSeverity = Add(rolls.WoundSeverity, unit, drawn.Values[0]) },
             };
         }
@@ -478,7 +480,8 @@ public sealed partial class GamePlanner
         var reference = FireReference.Value;
         var drm = (int)arithmetic.Drm.Sum(item => item.Value);
         var directed = facts.Director is not null;
-        var residual = facts.FireKind == ScenarioA1FireCalculator.ResidualFire;
+        // Residual FP and an ordnance hit are never subject to Cowering (A8.224, C.2).
+        var residual = facts.FireKind == ScenarioA1FireCalculator.ResidualFire || facts.OrdnanceHit is not null;
         bool Could(int? columnFp)
         {
             var column = columnFp is { } fp ? Array.IndexOf(ScenarioA1FireReference.ColumnFp, fp) : -1;

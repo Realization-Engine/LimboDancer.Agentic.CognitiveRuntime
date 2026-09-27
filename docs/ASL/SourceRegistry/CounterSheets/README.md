@@ -32,6 +32,10 @@ On 2026-09-27, 25 counters were added for unit steps 27 and 28 (299 rows):
 
 Under the Deviations, Ordnance, and Vehicles Plan, a separate agent briefed as an ASL rules referee reviewed every row in place of the user; the reviewer column names it, and the source record lists it under `additionalReviewers`. The [Scenario A1 Catalog Design](<../../../../src/ASL/docs/ASL Scenario A1 Catalog Design.md>), section 9.4, gives the details.
 
+## Ordnance additions
+
+On 2026-09-27, four counters were added for unit step 24 (78 rows): the German 7.5cm leIG 18 from the German Ordnance Listing (sheet `OLG`, p. 351), the Russian 45mm PTP obr. 32 from the Russian Ordnance Listing (sheet `OLR`, p. 363), and a 2-2-8 Infantry crew of each side from the National Capabilities Chart (sheet `NCC`). A separate agent briefed as an ASL rules referee reviewed every row in place of the user. The [Scenario A1 Catalog Design](<../../../../src/ASL/docs/ASL Scenario A1 Catalog Design.md>), section 9.5, gives the details.
+
 ## Transcription worksheet
 
 The Scenario A1 cases read the kind of each unit (squad, half-squad, MMC, SMC), never a printed value, so any counter of the right kind serves. Choose one attacking nationality and one defending nationality, then one counter for each row below, from sheets you have to hand.

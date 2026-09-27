@@ -165,3 +165,31 @@ Step 17 left these out; steps 19 to 23 do not build them.
 | Play page: each side declares only its own SMC stacking and attacks, and only the captor's side chooses the Guard | Table-player review | A11.14, A15.5 | Player identity on the Play page (hot seat today) | Any viewer sets both sides' declarations. |
 | Play page: counters by printed values (4-6-7, 8-1) in the CC panel and records | Table-player review | | Printed values from the catalog on the page | Units show their id, definition id, and CC state. |
 | Play page: SW left unpossessed by a surrender or a charge, and a berserk leader's companions' TCs, in the CC record | Table-player review | A20.24, A15.431, A15.41 | | Shown in the fire and rally records and the move's reasons, not in the CC record. |
+
+## 12. Added by the deviations pass 3 (step 24)
+
+| Item | Deferred by | Rules | Depends on |
+|---|---|---|---|
+| The Area and Vehicle Target Types, mortars, and SMOKE | R24.2 | C3.31, C3.33, C9, pp. 169, 170, 179 | Vehicles (step 25) for the Vehicle Target Type; mortar spotting |
+| AP, HEAT, APCR, Canister, and other Special Ammunition, and To Kill | R24.2 | C7, C8, pp. 175 to 179 | Armored targets (step 25) |
+| Defensive First Fire by Guns, Cases J1 to J4, Gun Duels, and a kept ROF in Final Fire after First Fire | R24.2 | C2.2401, C2.241, C6.1 to C6.17, pp. 167, 168, 173 | Ordnance in the movement windows |
+| Intensive Fire, OVR Prevention, and C2.5's Intensive Fire counter for a Gun without a Multiple ROF | R24.2 | C5.6 to C5.641, C2.5, pp. 168, 172, 173 | A Gun with no Multiple ROF; vehicles |
+| Bore Sighting | R24.2 | C6.4, p. 174 | Scenario Defender setup |
+| Fire within the Gun's own hex (Case E) | R24.2 | C5.5, p. 172 | Fire into one's own Location |
+| Captured and non-qualified use of a Gun (Case H) | R24.4 | C5.8, A21.13, pp. 173, 88 | Captured equipment |
+| Concealed crews and Guns, and a firing crew's loss of concealment | R24.4 | A12.14, C6.57 | Concealment of firing ordnance |
+| Crews' inherent fire, and A7.352's loss of it after the crew fires its Gun | R24.8 | A7.352, p. 56 | Crews as firers in the Fire package |
+| Crews and Guns as targets, and Gun destruction | R24.3 | C11, p. 181; C11.6 chart, p. 701 | Guns as targets |
+| Gun movement, manhandling, (un)limbering, towing, and abandoning a Gun; a crew leaving its Gun | R24.4 | C10, pp. 180 and 181; C2.8, A4.41 | Gun movement |
+| Gun repair and removal | R24.4 | A9.72, C2.28 | The Guns' malfunctioned sides (no registered source gives them) |
+| Overstacked firer or target Locations for ordnance | R24.8 | A5.12, A5.131 | Overstacking penalties |
+| Encirclement and Opportunity Fire | Referee D7 | A7.7, A7.25 | Neither is built anywhere |
+| A Covered Arc across boards or on a reversed board | Pass 3 design | C3.2, p. 168 | Composed-map geometry for bearings |
+| Targets at another level, and C2.6's depression and elevation limits | R24.2 | C2.6, p. 168 | Levels in fire |
+| Multiple Hits | R24.2 | C3.8, p. 171 | A reviewed Gun of 40mm or less |
+| A Gun's BPV, dates, and Animal-Pack capability (note O) in the catalog | Referee (catalog rows) | Chapter H key, p. 351; G10 | Vocabulary attributes for them |
+| Choosing a facing other than the fewest-hexspine turn | Pass 3 design | C3.21, C5.1 | A facing argument on the shot |
+| Acquisition that follows its target unit to a new Location within LOS | R24.6 | C6.5, C6.51, p. 174 | Unit-tracked Acquired counters; until then it stays on the Location, so a target that moves keeps none and a new unit there takes it |
+| Changing a Gun's Covered Arc without firing, at the end of a friendly fire phase | Table-player review | C3.22, p. 169 | A turn action for Guns |
+| Play page: marking which target Locations are in a Gun's Covered Arc, in range, or refused, and drawing the Covered Arc | Table-player review | C3.2 | Map overlays for Guns |
+| CC with a Gun's crew, and advances or berserk charges into its Location | R24.3 | A11, C11 | Guns and crews as targets |

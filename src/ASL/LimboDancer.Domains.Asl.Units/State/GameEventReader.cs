@@ -388,6 +388,40 @@ public static class GameEventReader
                     ? Missing(diagnostics, "A CC record names its Location, round, rolls, facts, and resolution.", path)
                     : new CloseCombatResolved(combatAt, round, fields.StringList(payload, "attackers", path), fields.StringList(payload, "defenders", path), combatRolls,
                         combatFacts.Clone(), combatResolution.Clone());
+            case "ordnance-fired":
+                var ordnanceGun = fields.RequiredString(payload, "gun", path);
+                var ordnanceCrew = fields.RequiredString(payload, "crew", path);
+                var ordnanceTarget = ReadLocation(payload, "target", path, fields, diagnostics);
+                var ordnanceRolls = RollMap(payload, path, diagnostics);
+                UnitFacing? ordnanceFacing = null;
+                if (fields.OptionalString(payload, "facing", path) is { } facingName)
+                {
+                    if (!UnitFacings.TryParse(facingName, out var parsedFacing))
+                    {
+                        return Missing(diagnostics, $"'{facingName}' is not a hexspine.", path);
+                    }
+
+                    ordnanceFacing = parsedFacing;
+                }
+
+                BoardLocation? acquired = null;
+                if (fields.OptionalString(payload, "acquired", path) is not null)
+                {
+                    acquired = ReadLocation(payload, "acquired", path, fields, diagnostics);
+                    if (acquired is null)
+                    {
+                        return null;
+                    }
+                }
+
+                return ordnanceGun is null || ordnanceCrew is null || ordnanceTarget is null || ordnanceRolls is null
+                    || !payload.TryGetProperty("rateOfFireKept", out var kept) || kept.ValueKind is not (JsonValueKind.True or JsonValueKind.False)
+                    || !payload.TryGetProperty("acquisition", out var level) || !level.TryGetInt32(out var acquisition)
+                    || !payload.TryGetProperty("facts", out var ordnanceFacts) || ordnanceFacts.ValueKind != JsonValueKind.Object
+                    || !payload.TryGetProperty("resolution", out var ordnanceResolution) || ordnanceResolution.ValueKind != JsonValueKind.Object
+                    ? Missing(diagnostics, "An ordnance record names its Gun, crew, target, ROF, Acquisition, rolls, facts, and resolution.", path)
+                    : new OrdnanceFired(ordnanceGun, ordnanceCrew, ordnanceTarget, ordnanceFacing, kept.GetBoolean(), acquisition, acquired, ordnanceRolls,
+                        ordnanceFacts.Clone(), ordnanceResolution.Clone());
             case "surrender-pending":
                 var surrendering = fields.RequiredString(payload, "unit", path);
                 return surrendering is null

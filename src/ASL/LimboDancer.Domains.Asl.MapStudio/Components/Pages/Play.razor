@@ -161,6 +161,19 @@ else if (state is not null)
         <label>Id <input id="place-id" value="@placeId" @onchange="@(args => placeId = args.Value as string ?? string.Empty)" size="8" /></label>
         <label>Location <input id="place-location" value="@placeLocation" @onchange="@(args => placeLocation = args.Value as string ?? string.Empty)" size="12" /></label>
         <label>Or held by <input id="place-holder" value="@placeHolder" @onchange="@(args => placeHolder = args.Value as string ?? string.Empty)" size="8" /></label>
+        @if (Definitions.FirstOrDefault(definition => definition.Id == placeDefinition)?.Kind == "asl:gun")
+        {
+            <label title="A Gun's barrel points at a hexspine (C2.23): hexes are flat-topped, so north and south are hexsides.">
+                Gun facing (hexspine)
+                <select id="place-facing" value="@placeFacing" @onchange="@(args => placeFacing = args.Value as string ?? "east")">
+                    @foreach (var spine in Enum.GetValues<UnitFacing>())
+                    {
+                        <option value="@UnitFacings.Name(spine)">@UnitFacings.Name(spine)</option>
+                    }
+                </select>
+            </label>
+            <span class="muted">A Gun stands at its Location, manned by the crew named in "Or held by".</span>
+        }
         <label><input id="place-concealed" type="checkbox" checked="@placeConcealed" @onchange="@(args => placeConcealed = args.Value is true)" /> concealed</label>
         <label><input id="place-hidden" type="checkbox" checked="@placeHidden" @onchange="@(args => placeHidden = args.Value is true)" /> hidden</label>
         <label><input id="place-broken" type="checkbox" checked="@placeBroken" @onchange="@(args => placeBroken = args.Value is true)" /> broken</label>
@@ -489,6 +502,39 @@ else if (state is not null)
             <button id="propose-fire" disabled="@(fireFirers.Count == 0 || FireTarget.Length == 0)" @onclick="ProposeFire">Propose: fire</button>
             <button id="fire-clear" class="link" @onclick="ClearFire">clear</button>
         </div>
+        @if (state.Phase is "pfph" or "afph" or "dfph" && OrdnanceGuns(firing).Any())
+        {
+            <h4>Ordnance</h4>
+            <p class="muted" id="ordnance-help">
+                A Gun manned by its crew fires HE at the enemy units of a Location on the Infantry Target Type (C3.3, C3.32). It turns to bring the
+                target into its Covered Arc if it must, with the Case A DRM (C5.1). An Original colored dr at most its ROF lets it fire again this
+                phase (C2.24), and each shot acquires the Location for the next (C6.5). A hit attacks every enemy unit there on the IFT column of the
+                Gun's HE FP (C.6).
+            </p>
+            <div class="toolbar">
+                <label>
+                    Gun
+                    <select id="ordnance-gun" value="@ordnanceGun" @onchange="@(args => ordnanceGun = args.Value as string ?? string.Empty)">
+                        <option value="">choose</option>
+                        @foreach (var gun in OrdnanceGuns(firing))
+                        {
+                            <option value="@gun.Id">@GunLabel(gun)</option>
+                        }
+                    </select>
+                </label>
+                <label>
+                    Target
+                    <select id="ordnance-target" value="@ordnanceTarget" @onchange="@(args => ordnanceTarget = args.Value as string ?? string.Empty)">
+                        <option value="">choose</option>
+                        @foreach (var at in FireTargets(firing))
+                        {
+                            <option value="@at">@at</option>
+                        }
+                    </select>
+                </label>
+                <button id="propose-ordnance" disabled="@(ordnanceGun.Length == 0 || ordnanceTarget.Length == 0)" @onclick="ProposeOrdnance">Propose: fire the Gun</button>
+            </div>
+        }
     }
 }
 
@@ -566,6 +612,17 @@ else if (state is not null)
                     @RollText(roll)@(subjects is null ? "" : $" for {string.Join(", ", subjects)}")
                     <span class="muted">(@roll.Count d@(roll.Sides), drawn by the @roll.Source for @roll.Actor)</span>
                 </li>
+            }
+        </ul>
+    }
+
+    @if (OrdnanceRecords.Count > 0)
+    {
+        <h3>Ordnance</h3>
+        <ul id="play-ordnance">
+            @foreach (var (eventId, text) in OrdnanceRecords)
+            {
+                <li class="ordnance-record" data-event="@eventId">@text</li>
             }
         </ul>
     }
@@ -747,7 +804,9 @@ else if (state is not null)
     }
 
     private sealed record Placement(string Id, string? Definition, string Kind, string Side, string Location, bool Concealed, bool Hidden, string? Holder,
-        bool Broken = false);
+        bool Broken = false, string? Facing = null);
+
+    private string placeFacing = "east";
 
     private const string DummyPrefix = "dummy:";
 
@@ -1137,6 +1196,87 @@ else if (state is not null)
     /// The side that may fire now: the phasing side in its PFPh and AFPh, the other side in the MPh and DFPh (A3.2, A3.3,
     /// A3.4, A3.5); none otherwise.
     /// </summary>
+    private string ordnanceGun = string.Empty;
+    private string ordnanceTarget = string.Empty;
+
+    /// <summary>The firing side's Guns that its crews man (A21.13), a malfunctioned one shown as such (C2.28; Gun repair is not built).</summary>
+    private IEnumerable<EquipmentInstance> OrdnanceGuns(string side) => state is null ? []
+        : state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Kind == "asl:gun" && item.Holding is { Role: HoldingRole.Manned } holding
+                && state.Unit(holding.Holder)?.Side == side)
+            .OrderBy(item => item.Id, StringComparer.Ordinal);
+
+    /// <summary>A Gun as a player reads it: its facing, its fire this phase and Player Turn, its Acquisition, and its crew's state.</summary>
+    private string GunLabel(EquipmentInstance gun)
+    {
+        bool Marked(IGameObject item, string condition) => GameState.Condition(item, condition) == ConditionState.True;
+        var facing = gun.Position is MapPosition { Facing: { } spine } ? UnitFacings.Name(spine) : "no facing";
+        var shots = state?.OrdnanceShots.FirstOrDefault(item => item.Gun == gun.Id);
+        var acquired = state?.Acquisitions.FirstOrDefault(item => item.Gun == gun.Id);
+        var crew = gun.Holding is { } holding ? state?.Unit(holding.Holder) : null;
+        var crewState = crew is null ? "" : string.Concat(new[] { Conditions.Pinned, Conditions.Concealed, Conditions.Melee, Conditions.Broken }
+            .Where(name => Marked(crew, name)).Select(name => ", crew " + name.Replace("asl:", "", StringComparison.Ordinal)));
+        return $"{gun.Id} ({gun.Definition?.Definition}, facing {facing}"
+            + (Marked(gun, Conditions.Malfunctioned) ? ", malfunctioned: Gun repair is not built" : "")
+            + (shots is null ? Marked(gun, Conditions.PrepFire) || Marked(gun, Conditions.FinalFire) ? ", fired this Player Turn" : ""
+                : shots.RateOfFireKept ? $", {shots.Shots} shot(s), may fire again" : ", fired")
+            + (acquired is null ? "" : $", Acquisition {acquired.Level} on {acquired.Location}") + crewState + ")";
+    }
+
+    private Task ProposeOrdnance() => Propose(GameActions.FireOrdnance, JsonSerializer.SerializeToElement(new
+    {
+        gameId, attemptId = Attempt("gun"), expectedRevision = (long)history!.Events.Count, gunId = ordnanceGun, target = ordnanceTarget,
+    }));
+
+    /// <summary>
+    /// The ordnance records the viewer may see, latest first, in words: the Basic and Modified TH# (C3.3, C4), the To Hit DR with its colored die
+    /// and DRM (C5, C6), whether it hit or made a Critical Hit (C3.7), the Gun's ROF, malfunction, and Acquisition, and the IFT result of each hit.
+    /// </summary>
+    private IReadOnlyList<(string EventId, string Text)> OrdnanceRecords
+    {
+        get
+        {
+            if (history is null)
+            {
+                return [];
+            }
+
+            var records = new List<(string, string)>();
+            foreach (var item in history.Events.Where(item => item.IsVisibleTo(Viewer)))
+            {
+                if (item.Payload is not OrdnanceFired fired || fired.Resolution.Deserialize<OrdnanceResolution>(LiveFire.Json) is not { ToHit: { } hit, Gun: { } gun } resolution)
+                {
+                    continue;
+                }
+
+                var dice = string.Join(", ", hit.Dice.Select((die, index) => index == 0 ? $"{die} (colored)" : $"{die}"));
+                var modifications = string.Concat(hit.Modifications.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({item.Name}, {item.Rule})"));
+                var outcome = hit.CriticalHit ? "Critical Hit" : hit.Hit ? "hit" : "miss";
+                var parts = new List<string>
+                {
+                    $"{fired.Gun} fires HE at {fired.Target}"
+                        + (fired.Facing is { } facing ? $", turning to {UnitFacings.Name(facing)}" : "")
+                        + $": Basic TH# {hit.BasicToHit} ({hit.Color}){modifications} = {hit.ModifiedToHit}; DR {dice} = {hit.OriginalDr}{ModifierText(hit.Drm)} = Final DR {hit.FinalDr}"
+                        + (hit.SubsequentDr is { } dr ? $", subsequent dr {dr}" : "") + (hit.Improbable ? " (Improbable Hit, C3.6)" : "") + $": {outcome}",
+                };
+                foreach (var (label, attack) in new[] { ("Critical Hit", resolution.CriticalHit), ("hit", resolution.Hit) })
+                {
+                    if (attack?.Arithmetic is { } arithmetic)
+                    {
+                        parts.Add($"{label} on {string.Join(", ", attack.Effects.Select(effect => effect.UnitId))}: {arithmetic.ColumnFp} FP, IFT DR {string.Join(", ", arithmetic.Dice)} = {arithmetic.OriginalDr}"
+                            + $"{ModifierText(arithmetic.Drm)} = {arithmetic.FinalDr}: {arithmetic.Result}");
+                    }
+                }
+
+                parts.Add((gun.Malfunctioned ? "the Gun malfunctions (C2.28)" : gun.RateOfFireKept ? "it may fire again this phase (C2.24)" : "no more fire this phase")
+                    + (gun.Acquisition < 0 ? $"; Acquisition {gun.Acquisition} on {gun.AcquiredLocationId} (C6.5)" : ""));
+                records.Add((item.EventId, string.Join("; ", parts)));
+            }
+
+            records.Reverse();
+            return records;
+        }
+    }
+
     private string? FiringSide => state is null || state.Sides.Count != 2 ? null
         : state.Phase is "pfph" or "afph" ? state.PhasingSide
         : state.Phase is "mph" or "dfph" ? state.Sides.First(side => side.Id != state.PhasingSide).Id
@@ -1593,6 +1733,8 @@ else if (state is not null)
         advanceTo = string.Empty;
         ccLocation = string.Empty;
         ClearCloseCombat();
+        ordnanceGun = string.Empty;
+        ordnanceTarget = string.Empty;
         Refresh();
     }
 
@@ -1667,9 +1809,12 @@ else if (state is not null)
 
         // A SW is placed in the possession of a unit (A9.1); anything else at a Location.
         var holder = placeHolder.Trim() is { Length: > 0 } held && Library.Vocabulary.IsA(definition.Kind, "asl:equipment") ? held : null;
+        // C2.23, A21.13: a Gun faces a hexspine at its Location and is manned by the crew named as its holder.
+        var gun = definition.Kind == "asl:gun";
         placements.Add(new Placement(id, definition.Id, definition.Kind, side, placeLocation.Trim(), placeConcealed, placeHidden, holder,
-            placeBroken && holder is null));
+            placeBroken && holder is null, gun ? placeFacing : null));
         placeId = string.Empty;
+        placeHolder = string.Empty;
     }
 
     /// <summary>A Dummy (A12.1): a "?" with no unit beneath it, so it has no definition and is always concealed.</summary>
@@ -1707,6 +1852,18 @@ else if (state is not null)
         if (item.Definition is not null)
         {
             placement["definition"] = item.Definition;
+        }
+
+        if (item.Facing is { } facing)
+        {
+            placement["position"] = new { at = item.Location, facing };
+            if (item.Holder is { } crew)
+            {
+                placement["holding"] = new { holder = crew, role = "manned" };
+            }
+
+            placement["conditions"] = new Dictionary<string, bool> { ["asl:malfunctioned"] = false };
+            return placement;
         }
 
         if (item.Holder is { } holder)

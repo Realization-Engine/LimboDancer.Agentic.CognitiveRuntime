@@ -12,8 +12,8 @@ namespace LimboDancer.Domains.Asl.ScenarioA1;
 /// </summary>
 public sealed class ScenarioA1FirePackage : IDomainPackageResolver
 {
-    public const string ManifestSha256 = "8ac91d104a02c40f5237b4bfd924c1dde1f106aa3e7e1d5aab31725eae6499f9";
-    public const string MatrixSha256 = "b75aceafffdcd565a75eb7bb94e943f3b182793d9864f6608d3e8be1cbd074f7";
+    public const string ManifestSha256 = "b944ed3449d757aadfd2778fd8efaf77f700a952366c558353e8fc9a47a61a2a";
+    public const string MatrixSha256 = "8a6e7164e4725a54a946a725c91f2def14d7bf349f4bd227098e56a5a37eed53";
     public const string ChartSupplementId = "asl-supplement:fire-charts";
 
     /// <summary>
@@ -21,7 +21,7 @@ public sealed class ScenarioA1FirePackage : IDomainPackageResolver
     /// e0c28e88cda17bd71efd63f569c713d4d921e958dc7bc848b3c4c4acead143e1, and unit step 17,
     /// 45011b56946be8a7aba1676e6aea8d5ad0fa82193e4ebac24e06fd36bdff2b69 (Fire Review, "Revision at unit step 18").
     /// </summary>
-    public const string PriorManifestSha256 = "ab868f4c13b2518d399b165f59cc3620f5556d2721e824d406168f8c632eddaf";
+    public const string PriorManifestSha256 = "8ac91d104a02c40f5237b4bfd924c1dde1f106aa3e7e1d5aab31725eae6499f9";
     public static readonly DomainPackageRef Identity = new(new DomainId("asl"), "scenario-a1-fire", "sha256:" + ManifestSha256);
 
     private static readonly string[] Cases =

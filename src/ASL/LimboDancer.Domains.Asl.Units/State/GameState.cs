@@ -68,6 +68,12 @@ public sealed record GameState(
     /// <summary>Surrenders awaiting the captor's choice (A15.5); while one waits the phase may not change.</summary>
     public IReadOnlyList<PendingSurrender> PendingSurrenders { get; init; } = [];
 
+    /// <summary>Each Gun's shots this fire phase and its Multiple ROF (C2.24; unit step 24); cleared at every phase change.</summary>
+    public IReadOnlyList<OrdnanceShotRecord> OrdnanceShots { get; init; } = [];
+
+    /// <summary>The Location each Gun has acquired and its Acquisition DRM (C6.5).</summary>
+    public IReadOnlyList<GunAcquisition> Acquisitions { get; init; } = [];
+
     /// <summary>The stack moving now in the MPh, if any (unit step 22).</summary>
     public MovementState? Movement
     {

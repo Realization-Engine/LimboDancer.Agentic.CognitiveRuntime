@@ -1,0 +1,395 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "published-bounded-ordnance-package",
+  "domainId": "asl",
+  "packageId": "scenario-a1-ordnance",
+  "declaredUse": "Read-only conclusions for one HE shot by a reviewed Gun at the Infantry of one Location on the Infantry Target Type, under the rulings of the ASL Unit Deviations, Ordnance, and Vehicles Plan (R24.1 to R24.8).",
+  "caseMatrixSha256": "644dfe5fbd1ff3657a5c7b6c295c820cddc2901b44a60143e27063f64b946b62",
+  "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+  "toHitTranscriptionSha256": "936b62d57e03761542b88e3b28752eae83208ef619ef30ebc99c70070fa833fd",
+  "iftTranscriptionSha256": "42440dd6facf7aa23cfc8c884ed8c7266f6621b25cb889b679c850098d3a4cec",
+  "catalogSha256": "dae90ca10c7fb9f734e79a75ceb71951f0319e193410c145f14880e613cc77b5",
+  "sourceFragments": [
+    {
+      "ruleId": "A1.123",
+      "physicalPdfPage": 44,
+      "startLine": 99,
+      "fragmentId": "asl-fragment:sha256:c161d4f2654cd25193df5f7d6410ef6e424b595ce1ebc6c2312250ab909ba354",
+      "contentSha256": "900a0a3ed1c4ffcdf1b672176166ddf6e54ba3e6fb993df83ae3510a18a0225d"
+    },
+    {
+      "ruleId": "A21.13",
+      "physicalPdfPage": 88,
+      "startLine": 1454,
+      "fragmentId": "asl-fragment:sha256:6b462281439364c0602339d83af796246764b2fa7833e90e99a65946da137a1e",
+      "contentSha256": "75d8811d0e1f3a83312b68374b733951f27bf776da20a2bb1710154c32564931"
+    },
+    {
+      "ruleId": "C.3",
+      "physicalPdfPage": 162,
+      "startLine": 22,
+      "fragmentId": "asl-fragment:sha256:6cacb7384331db0e2dbaf2801dd25f590a1c627904d2adefd627e08825e091f0",
+      "contentSha256": "f6720183637b776fc9960d96e70ac5d497107b795304eb04448afe64c12fe64c"
+    },
+    {
+      "ruleId": "C.4",
+      "physicalPdfPage": 162,
+      "startLine": 24,
+      "fragmentId": "asl-fragment:sha256:e4b5fbeb2d92d56ea58e8af65a00461f49bc968d06f26aef1697f62ac945e5f6",
+      "contentSha256": "3936367b6701a7a9e50061acc7057297ddcef7f094b4cd86c98cc14340ecf5ba"
+    },
+    {
+      "ruleId": "C.6",
+      "physicalPdfPage": 162,
+      "startLine": 34,
+      "fragmentId": "asl-fragment:sha256:d98500af63c2ab18d88f588143a4201a459c174963b62022019206c4079d1cb1",
+      "contentSha256": "59e8de121fb33a7b6cacbe7a284fbb1b3485c0ab64b5958ab13871ac398505bf"
+    },
+    {
+      "ruleId": "C2.1",
+      "physicalPdfPage": 167,
+      "startLine": 230,
+      "fragmentId": "asl-fragment:sha256:110115b6d3670718ee1471589ef6f3d27e3861a367e0f467f6b392983143c6a1",
+      "contentSha256": "34993f0926ed9568fa98a48cf72de77c57aafdf59c253a040ed181b5a7cadec8"
+    },
+    {
+      "ruleId": "C2.21",
+      "physicalPdfPage": 167,
+      "startLine": 246,
+      "fragmentId": "asl-fragment:sha256:e1ea41f3ae3fc1a90e22767c944e2eefca8cc449a27820bb87c8824260adbe83",
+      "contentSha256": "2db935832f4da58666e7f42ea053cb66309ed425c30478a7d8c6109f37bfb8c2"
+    },
+    {
+      "ruleId": "C2.22",
+      "physicalPdfPage": 167,
+      "startLine": 254,
+      "fragmentId": "asl-fragment:sha256:fe6a51d728dd23c5c5677370ddaf6abf079ad52e4fc0715cafd8d1285251b11b",
+      "contentSha256": "eaa709a0141d5a99f57b0e18ffc156d87661d85c9511189bf7171ec4649004e2"
+    },
+    {
+      "ruleId": "C2.23",
+      "physicalPdfPage": 167,
+      "startLine": 256,
+      "fragmentId": "asl-fragment:sha256:830b637e87f154623da32e41261009c241e73b2a3465299e6c461f8f8cd8eb63",
+      "contentSha256": "bbb5810fe8db47e7c16016b31b03d1676d06d9dffb24a927cc3c312e40ad09d9"
+    },
+    {
+      "ruleId": "C2.24",
+      "physicalPdfPage": 167,
+      "startLine": 258,
+      "fragmentId": "asl-fragment:sha256:ff956fb39c8273e34284328e3ee77ece7857ba2601b2624afed35aaa6d30d10a",
+      "contentSha256": "227dfa4a54032f7b410ef58757a2f61bd4cf2f176f7499ecb43e00f90f48970a"
+    },
+    {
+      "ruleId": "C2.28",
+      "physicalPdfPage": 168,
+      "startLine": 278,
+      "fragmentId": "asl-fragment:sha256:cc4d786a80a62073f3ad5d3691fa8f29378eecf61b6f744466c7415fc35b0309",
+      "contentSha256": "4f5373d052a0ae19d1d43f2f023e8700ffe9fff23b47c625bf628ffc76e1bc2d"
+    },
+    {
+      "ruleId": "C2.3",
+      "physicalPdfPage": 168,
+      "startLine": 282,
+      "fragmentId": "asl-fragment:sha256:44e016848487d9e6d321f1a2bb1e6557ef2a9d0a6e044514a398dcd77db3621f",
+      "contentSha256": "d77a319a4111cad6967798534c5b62fff6cc036a94f2d622ad9fe4d7ee34a8eb"
+    },
+    {
+      "ruleId": "C2.5",
+      "physicalPdfPage": 168,
+      "startLine": 286,
+      "fragmentId": "asl-fragment:sha256:ddd8741873328942aa5d4b646de654c67b501904f9f5d9cbb8bfd6a7b11e51b0",
+      "contentSha256": "8e368f927f5f4dbf429cbc34031def2ba9b8fd5acadb6bd8cd8b59f1542b32cb"
+    },
+    {
+      "ruleId": "C2.6",
+      "physicalPdfPage": 168,
+      "startLine": 288,
+      "fragmentId": "asl-fragment:sha256:0838786bf464ea2d3194110d490bab8c18305b954a6f0bd669a5314a6d07f9d3",
+      "contentSha256": "739c05e597324787526385a7ac9791e1fd4a8650ec7c4d839e75477e152b258e"
+    },
+    {
+      "ruleId": "C3.2",
+      "physicalPdfPage": 169,
+      "startLine": 308,
+      "fragmentId": "asl-fragment:sha256:ade2d9f77884dc0dbf3194e4cd39da305c71bf7ddcd8cdf8d81c43b331eb0f99",
+      "contentSha256": "419b97b1d8a3932f2d8bf9c0a540e5ff093c108070f84408f296f01f44e03610"
+    },
+    {
+      "ruleId": "C3.21",
+      "physicalPdfPage": 169,
+      "startLine": 314,
+      "fragmentId": "asl-fragment:sha256:c937a9286110d239f45471adec9d827e5283c8844f5fa55f406751e615a93682",
+      "contentSha256": "3a50dcde66eac826fc2ab63582bf3c6eb662de180d9c59d8003f6bd30e1e57d8"
+    },
+    {
+      "ruleId": "C3.3",
+      "physicalPdfPage": 169,
+      "startLine": 318,
+      "fragmentId": "asl-fragment:sha256:061cae2c67d217091de16193fee20ad4e75db6caeac123087800dc3e5774f528",
+      "contentSha256": "952c381298273fa35a9af6b554e30a6400fcfff906331be1ff7946247b1845ae"
+    },
+    {
+      "ruleId": "C3.32",
+      "physicalPdfPage": 169,
+      "startLine": 322,
+      "fragmentId": "asl-fragment:sha256:1db49716134c59b5615d1b7777b4185c18f7d2440af1c7bce4fc6ca6b7ddfc45",
+      "contentSha256": "d8617673ac354392641ded959ad02c5f1a09ebe2bab0d5c327a8f1632e8263b6"
+    },
+    {
+      "ruleId": "C3.4",
+      "physicalPdfPage": 170,
+      "startLine": 338,
+      "fragmentId": "asl-fragment:sha256:ec106a279ceae1513d5ef1e876c669766f0d86972dae88ebc0c022ae7d418ee2",
+      "contentSha256": "74f158e34bc4ef1f7f5e88321b1093846761306993a47473e713cb1fb7b5fbe1"
+    },
+    {
+      "ruleId": "C3.5",
+      "physicalPdfPage": 170,
+      "startLine": 342,
+      "fragmentId": "asl-fragment:sha256:0e6657e8b2d66eec23f2521d6ee4e07fcf278cfb42114c5d81bc7a224f536a86",
+      "contentSha256": "bfe2e0305be0dccd82819073c1bfb188f6d9322893ec95662a0507af14f44e08"
+    },
+    {
+      "ruleId": "C3.51",
+      "physicalPdfPage": 170,
+      "startLine": 344,
+      "fragmentId": "asl-fragment:sha256:df663f0b54de03c5e548cf754c5421d546f49f4e83967bac0c3f3ee18fede4f6",
+      "contentSha256": "1e951074449c5ab942624f8d3ba60cdfd5f9b22150b2cdc78ac052aaf4badccb"
+    },
+    {
+      "ruleId": "C3.52",
+      "physicalPdfPage": 170,
+      "startLine": 346,
+      "fragmentId": "asl-fragment:sha256:7742022f58f148eea1a199e1ed900194015bef2a9b256bb3d4b920748b7eec47",
+      "contentSha256": "6216c8cb397b91c63966cd907a12b20158f12f940303495ae71b12211b468d7e"
+    },
+    {
+      "ruleId": "C3.53",
+      "physicalPdfPage": 170,
+      "startLine": 348,
+      "fragmentId": "asl-fragment:sha256:c7760194936a271fa587aa0338e9bb0e66afa4fc76e4466dca95241fd6025404",
+      "contentSha256": "1c1fde96710573334f78619375e8a07ebaec25402ff7446f9a0a11acb3d7ddba"
+    },
+    {
+      "ruleId": "C3.6",
+      "physicalPdfPage": 170,
+      "startLine": 350,
+      "fragmentId": "asl-fragment:sha256:c0105d319d96e9c71731fae0574980fd6694c0453e0fb99291b9c1472072c3cb",
+      "contentSha256": "4f8ba9aa185b7bed4ddfbd1a18e96077e122f231817cc2611d4849b8d5fc168b"
+    },
+    {
+      "ruleId": "C3.7",
+      "physicalPdfPage": 170,
+      "startLine": 352,
+      "fragmentId": "asl-fragment:sha256:88198eb5864686eb992f1eb7e0f775b7240805e2ce26533d869c946366cfe5d3",
+      "contentSha256": "7b7a10812350de6153b587008690185c95450409828edd63fe9403c763ad64df"
+    },
+    {
+      "ruleId": "C3.71",
+      "physicalPdfPage": 170,
+      "startLine": 354,
+      "fragmentId": "asl-fragment:sha256:40259c39cd306680d5f23354941eb343f646d328583dd610eb871f7805b9e999",
+      "contentSha256": "5e43cf84e24f77b3f8f672c6dc3780987af185d7cd7d7534b43c3d852318db50"
+    },
+    {
+      "ruleId": "C3.74",
+      "physicalPdfPage": 171,
+      "startLine": 362,
+      "fragmentId": "asl-fragment:sha256:13a8aee612772f486fa72398d2a6fcd910b92a0996021273396ed7796528fe35",
+      "contentSha256": "4660acf6b246dc7128e585f2a4c90d57c5da917c7b084ce5a0a0f2c9c4a7012f"
+    },
+    {
+      "ruleId": "C3.8",
+      "physicalPdfPage": 171,
+      "startLine": 370,
+      "fragmentId": "asl-fragment:sha256:ad954ceb69062e099cce43f1f8deca8a61de256c54761e74c599c22df9d89359",
+      "contentSha256": "ae4b84afdfb50e2484974a6ba522b08fd99a2251e927d08a5a270afa35aa92c4"
+    },
+    {
+      "ruleId": "C4.1",
+      "physicalPdfPage": 171,
+      "startLine": 378,
+      "fragmentId": "asl-fragment:sha256:05e39f54755e07419f23c9bb6f967420cc588beafb54c59d8d842d996c0dca8b",
+      "contentSha256": "3317207acd1ddd9e871bc7cc25605d5fd13fe982647864cd29904c7a51d15a52"
+    },
+    {
+      "ruleId": "C4.11",
+      "physicalPdfPage": 171,
+      "startLine": 382,
+      "fragmentId": "asl-fragment:sha256:860773291f3a61be9d67388a303f29a2d896e2aec3f3f502fa45473202d7394e",
+      "contentSha256": "0f539164f85f8b6964cb7f5d278eddef15fa9f0b2702e62e8caa84c5a056438a"
+    },
+    {
+      "ruleId": "C4.12",
+      "physicalPdfPage": 171,
+      "startLine": 386,
+      "fragmentId": "asl-fragment:sha256:1ff38c83afabf42e3a5ecc19a796390e651ad60cf804f3aec9bc2b0391a3d74d",
+      "contentSha256": "9ae376f06dc9a52eb7f3c2951da82309c14fcb98d333ece78f08377a87cbd0b8"
+    },
+    {
+      "ruleId": "C4.13",
+      "physicalPdfPage": 171,
+      "startLine": 390,
+      "fragmentId": "asl-fragment:sha256:b59759a043a938666643b6e1025b4f4dc1c32c5278c6bb5c9f8e750683e59710",
+      "contentSha256": "94d943df7650ee3ebbf4c509b891745495a261c503b81f10fe8063878e326918"
+    },
+    {
+      "ruleId": "C4.2",
+      "physicalPdfPage": 171,
+      "startLine": 392,
+      "fragmentId": "asl-fragment:sha256:9d143a6b0c8778769906890afb4fcf42d2e43620a33e1fa967b0ba330fd1b977",
+      "contentSha256": "8355eedb26ffcf9ca39ceb67af1cc0ea4870170dd18c44c5b0debe3987e0e363"
+    },
+    {
+      "ruleId": "C4.5",
+      "physicalPdfPage": 171,
+      "startLine": 400,
+      "fragmentId": "asl-fragment:sha256:414dbfc6f3de0b26857f613f41ea6f8db891ced43675b5997390f68c9aa72841",
+      "contentSha256": "c3af5a6a0d624479a0feee9aa04f9d8dce3a580c5161a68d5b579ca3b3ca367b"
+    },
+    {
+      "ruleId": "C5.1",
+      "physicalPdfPage": 171,
+      "startLine": 406,
+      "fragmentId": "asl-fragment:sha256:4092737beb867e4d89905950162a796e1092988f27f1b61b8b0abc8f7e3cfa15",
+      "contentSha256": "f7769aa535b981055fa99b485ef5bcb3d5e81ca316d7b6ea0250067b02602fbc"
+    },
+    {
+      "ruleId": "C5.11",
+      "physicalPdfPage": 172,
+      "startLine": 420,
+      "fragmentId": "asl-fragment:sha256:1aabbc5b6f2c7dbfe96b31649fc44876f1383a4981cfd7e8f93350d06b072282",
+      "contentSha256": "812493a8b53f1c39b4fb420a6092758a5daa0159f6ec9fb330e09f433ae1020f"
+    },
+    {
+      "ruleId": "C5.12",
+      "physicalPdfPage": 172,
+      "startLine": 424,
+      "fragmentId": "asl-fragment:sha256:b37bd0cb0f537d0822d3243ac1cef568c5bdc6e69a07296957c7866a92cb986d",
+      "contentSha256": "20eea95dd034b32ce6a52e61e2cea1920abb71d7e1f3b6785d17203fcb3a8926"
+    },
+    {
+      "ruleId": "C5.2",
+      "physicalPdfPage": 172,
+      "startLine": 428,
+      "fragmentId": "asl-fragment:sha256:46f17b1189e7f71dbe60f8205e21e4635ec14f20872141252a27b398f643993d",
+      "contentSha256": "6a63e659b2dbc587c61dbe0273c7bb26b052686021bea7b2d12127b30f11df15"
+    },
+    {
+      "ruleId": "C5.4",
+      "physicalPdfPage": 172,
+      "startLine": 442,
+      "fragmentId": "asl-fragment:sha256:b958db6b690e75970e89fc4866b5ae5a9676ed556f22fd67e0a38ce26fdcd55c",
+      "contentSha256": "574aa9139daf72eeee0d6eb90671c60c804426885ce23508b420f9d7bb64ed63"
+    },
+    {
+      "ruleId": "C5.5",
+      "physicalPdfPage": 172,
+      "startLine": 446,
+      "fragmentId": "asl-fragment:sha256:db8aa2b9620ec21b4962b0648d4efba7896c03b5f8b57cce39ce9394acf549fa",
+      "contentSha256": "41915583ee539405e19ab430a7b8d6b85cc27ada47410d907da1ebc14e273c47"
+    },
+    {
+      "ruleId": "C5.8",
+      "physicalPdfPage": 173,
+      "startLine": 478,
+      "fragmentId": "asl-fragment:sha256:ab00bc20e03a7073274501ddf1654257b36b9ef5a2d7837a3da60e885f644c7e",
+      "contentSha256": "a704d96191102faecd212156fa3f9e3d80f7dc309e6948d77eaaf06cf2ba2736"
+    },
+    {
+      "ruleId": "C6.2",
+      "physicalPdfPage": 174,
+      "startLine": 512,
+      "fragmentId": "asl-fragment:sha256:a1c043a5161072b213cc2cb8632a2bb6e8c00813cc2c25859b0ffb1e69f3319b",
+      "contentSha256": "9504dec43756d49fa8473b0649e7db83ff5d693f6840f8566c98f10e5f8159b7"
+    },
+    {
+      "ruleId": "C6.3",
+      "physicalPdfPage": 174,
+      "startLine": 514,
+      "fragmentId": "asl-fragment:sha256:4cc90ab46f2624e443ecfc9f79e38a54ecbc2c8a284f9a67a1f5e57a2365a00d",
+      "contentSha256": "8e705cacb28421704ed3ff608c0c075c2109115a84d536aa885a5a9fa0a1c6ec"
+    },
+    {
+      "ruleId": "C6.5",
+      "physicalPdfPage": 174,
+      "startLine": 534,
+      "fragmentId": "asl-fragment:sha256:316e8c8bc3c82217f8c08b4f097c739ba1c2cff6dfd70e1910981943b1f349f1",
+      "contentSha256": "71472f961cb1c7098e1842fd7f331424608673bf48ad92b6d8422805ab08548a"
+    },
+    {
+      "ruleId": "C6.51",
+      "physicalPdfPage": 174,
+      "startLine": 542,
+      "fragmentId": "asl-fragment:sha256:6bf5ece6a2791d2ccaf55a2f17969d2e676702466281ffb4ae94b4656819a35a",
+      "contentSha256": "c3020518bafd13fff625b874f64c818070d26a3cba00a80c2fae92dd04f4f496"
+    },
+    {
+      "ruleId": "C6.53",
+      "physicalPdfPage": 175,
+      "startLine": 560,
+      "fragmentId": "asl-fragment:sha256:d671c1282a863734c30ca4fce715fa357489de05983225bf93feef6663c3db30",
+      "contentSha256": "6d9cfd4748757a17b705516a29fddb8f0df2ddce61ecee82713f8f67dab86d2a"
+    },
+    {
+      "ruleId": "C6.57",
+      "physicalPdfPage": 175,
+      "startLine": 570,
+      "fragmentId": "asl-fragment:sha256:d984db8f9ef60c01a944dcada037ff17421248b42174be944ab3a35350e56e2f",
+      "contentSha256": "d6a90ede5f0ae5e73c7e65552518d6bb40ef524032d00c8d1271e1e35e9d9990"
+    },
+    {
+      "ruleId": "C6.8",
+      "physicalPdfPage": 175,
+      "startLine": 582,
+      "fragmentId": "asl-fragment:sha256:efd8b974e74d46f29b5f81714607f3017af1cfc6f06e6e0e2dd4f4a7e417d290",
+      "contentSha256": "54a62e74974f0483650b45807e81636b1b1b2f208ce8d3e924e837cdad3b00a4"
+    },
+    {
+      "ruleId": "C6.9",
+      "physicalPdfPage": 175,
+      "startLine": 584,
+      "fragmentId": "asl-fragment:sha256:5f7abb61e58749c53f7f7cbe3b9f06d78bf1e3681dc031bf7b21a991a70c93a2",
+      "contentSha256": "d52ee970e497280185a36dd05a0e6ebc94fa6c8c325eeccdb108e2dc195730e9"
+    }
+  ],
+  "rulings": {
+    "scope": "A Gun of the reviewed catalog manned by its own nationality's Infantry crew fires HE on the Infantry Target Type at the enemy units of one Location in the PFPh, AFPh, or DFPh; mortars (the Area Target Type), RCL, 360-degree mounts, AP and Special Ammunition, Defensive First Fire, Intensive Fire, Bore Sighting, fire within the Gun's hex, Guns and crews as targets, and Gun movement are out (R24.1, R24.2, R24.3).",
+    "guns": "The German 7.5cm leIG 18 (INF 75*, ROF 2, p. 351) and the Russian 45mm PTP obr. 32 (AT 45L, ROF 3, p. 363), each with its inherent B# 12 (C2.28), manned by an Infantry crew (2-2-8, A1.123) of its nationality; a non-qualified crew, or one that fired its inherent FP, is not admitted (A21.13, C5.8; R24.1, R24.4); a concealed crew loses its \"?\" by firing (A12.14), and is undecided unless a Good Order target is within 16 hexes.",
+    "toHit": "The Basic TH# of the Infantry Target Type by range, black for the Germans and red for the Russians (C3.3, A25), plus the C4 modifications beyond 12 hexes (C4.1 to C4.2): the Modified TH#; the Final TH DR hits at or below it (C3.3).",
+    "drm": "Case A: +3 for the first hexspine a non-turreted Gun turns and +1 for each other, doubled in woods or a building (C5.1, C5.11); Case B: +2 in the AFPh, +3 in woods or a building (C5.2); Case D: +2 for a pinned crew (C5.4); Case K: +2 when every target is concealed (C6.2); Case L: -2 at one hex and -1 at two (C6.3); Case N: the Acquisition, -1 or -2, against Known units only (C6.5, C6.51); Case Q: the target Location's TEM (C6.8); Case R: the LOS Hindrance (C6.9). A Location mixing concealed and Known targets is undecided (R24.5). A pinned crew cannot turn its Gun (A7.81, C5.11), and a Gun that has fired from woods or a building fires again that phase only inside its current Covered Arc (C5.11; R24.8). Only enemy units are targets (C3.32).",
+    "criticalHits": "A Final TH DR below half the Modified TH# is a Critical Hit; an Original 2 that hits is one on a subsequent dr of 1 or at most half the Modified TH# (C3.7; the bracketed exception for the lowest Final DR belongs to the Area and Vehicle Target Types, R24.7); when no Final DR can hit, an Original 2 hits on a subsequent dr of 1 (a Critical Hit) to 3 (C3.6).",
+    "effects": "A hit attacks every enemy unit in the Location on the IFT column of the Gun's HE FP (C.6: 12 for 75mm, 4 for 45mm) with one Effects DR and no TEM or Hindrance (C.3, C3.32); a Critical Hit doubles that FP and reverses the target's positive TEM into a negative DRM for the unit or units Random Selection picks (the highest dr, every tied unit alike, A.9), the others taking the same Effects DR as a normal hit (C3.71, C3.74; R24.5). The Fire package resolves each IFT attack.",
+    "rateOfFire": "An Original colored dr at most the Gun's ROF lets it fire again in that fire phase (C2.24); a non-turreted Gun's ROF is one lower for a shot that turns it (C2.5); a pinned crew and the AFPh forfeit it (C5.4, C5.2).",
+    "breakdown": "An Original To Hit DR at or above the B# malfunctions the Gun (C2.28); Gun repair is not built (R24.4).",
+    "acquisition": "Each shot acquires the target Location for the Gun: -1, or -2 if it already held -1 there, unless the Gun malfunctions; firing at another Location moves the Acquisition there (C6.5). The Acquisition DRM applies only to Known units (C6.51): a shot at a Location whose every target is concealed takes no Case N, loses the Acquisition, and acquires the Location afresh at -1 only if it costs one its concealment (C6.57; R24.6).",
+    "mapFacts": "The range, the hexspines the Gun turns to bring the target into its Covered Arc (C3.2, C3.21), whether the Gun is in woods or a building, the C2.6 elevation limit, the LOS and its Hindrance, and the target Location's terrain are the planner's reads, taken as recorded on replay."
+  },
+  "resolution": {
+    "order": "The To Hit DR first (colored die first), then a subsequent dr on an Original 2 when the result needs it, then a Random Selection dr per target for a Critical Hit among several, then the IFT rolls of the Critical Hit and of the normal hit, each asked for when reached.",
+    "gun": "The resolution reports the malfunction, the ROF kept, the fire counter, and the Acquisition the Gun holds after the shot."
+  },
+  "exactCaseIds": [
+    "A1-ordnance-hit-resolved",
+    "A1-ordnance-miss-resolved",
+    "A1-ordnance-phase-outside",
+    "A1-ordnance-gun-outside",
+    "A1-ordnance-crew-outside",
+    "A1-ordnance-already-fired",
+    "A1-ordnance-range-outside",
+    "A1-ordnance-target-outside",
+    "A1-ordnance-undecided",
+    "A1-ordnance-roll-missing"
+  ],
+  "excludedOutcomes": [
+    "the Area and Vehicle Target Types, mortars, and SMOKE (C3.31, C3.33, C9)",
+    "AP, HEAT, APCR, Canister, and other Special Ammunition (C8), and To Kill (C7)",
+    "Defensive First Fire by ordnance, Cases J1 to J4, and Gun Duels (C2.2401, C6.1)",
+    "Intensive Fire and OVR Prevention (C5.6 to C5.641), Bore Sighting (C6.4), and Deliberate Immobilization (C5.7)",
+    "fire within the Gun's own hex (C5.5), captured or non-qualified use (C5.8, A21.13), and concealed crews",
+    "Guns and crews as targets (C11), Gun movement, (un)limbering, and manhandling (C10), and Gun repair (A9.72)",
+    "Multiple Hits (C3.8: neither reviewed Gun is 40mm or less) and targets at another level"
+  ],
+  "executionAuthority": "none"
+}

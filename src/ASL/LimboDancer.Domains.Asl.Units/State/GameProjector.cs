@@ -14,7 +14,7 @@ public static class GameProjector
 {
     public static GameHistory Project(IReadOnlyList<GameEvent> events, UnitVocabulary vocabulary, IReadOnlyList<UnitCatalog> catalogs,
         ILocationChains? chains = null, IReadOnlyCollection<string>? liveSources = null, IFireRecordVerifier? fire = null,
-        IRallyRecordVerifier? rally = null, ICloseCombatRecordVerifier? closeCombat = null)
+        IRallyRecordVerifier? rally = null, ICloseCombatRecordVerifier? closeCombat = null, IOrdnanceRecordVerifier? ordnance = null)
     {
         ArgumentNullException.ThrowIfNull(events);
         ArgumentNullException.ThrowIfNull(vocabulary);
@@ -26,7 +26,7 @@ public static class GameProjector
             diagnostics.Add(UnitDiagnostic.Warning("UNIT-STATE-020", "No location chains were given, so map positions are not checked against the boards in play."));
         }
 
-        var replay = new Replay(vocabulary, catalogs, chains, liveSources ?? [], fire, rally, closeCombat, diagnostics);
+        var replay = new Replay(vocabulary, catalogs, chains, liveSources ?? [], fire, rally, closeCombat, ordnance, diagnostics);
         foreach (var gameEvent in events)
         {
             var errors = Errors(diagnostics);
@@ -46,7 +46,8 @@ public static class GameProjector
         diagnostics.Count(diagnostic => diagnostic.Severity == UnitDiagnosticSeverity.Error);
 
     private sealed class Replay(UnitVocabulary vocabulary, IReadOnlyList<UnitCatalog> catalogs, ILocationChains? chains, IReadOnlyCollection<string> liveSources,
-        IFireRecordVerifier? fireVerifier, IRallyRecordVerifier? rallyVerifier, ICloseCombatRecordVerifier? closeCombatVerifier, List<UnitDiagnostic> diagnostics)
+        IFireRecordVerifier? fireVerifier, IRallyRecordVerifier? rallyVerifier, ICloseCombatRecordVerifier? closeCombatVerifier,
+        IOrdnanceRecordVerifier? ordnanceVerifier, List<UnitDiagnostic> diagnostics)
     {
         private readonly HashSet<string> eventIds = new(StringComparer.Ordinal);
         private readonly Dictionary<string, DiceRolled> rolls = new(StringComparer.Ordinal);
@@ -93,6 +94,7 @@ public static class GameProjector
                 AdvanceMoved advanced => Advance(previous, advanced),
                 AmbushRolled ambush => Ambush(previous, ambush),
                 CloseCombatResolved combat => CloseCombat(previous, combat),
+                OrdnanceFired fired => Ordnance(previous, fired),
                 SurrenderPending surrender => Surrender(previous, surrender, gameEvent.EventId),
                 _ => Fail<GameState>("UNIT-STATE-001", $"'{gameEvent.Type}' has no projection."),
             };
@@ -260,6 +262,7 @@ public static class GameProjector
                 ? state with
                 {
                     CloseCombats = [],
+                    OrdnanceShots = [],
                     Advances = newPlayerTurn ? [] : state.Advances,
                     Turn = change.Turn,
                     Phase = change.Phase,
@@ -454,6 +457,54 @@ public static class GameProjector
             return state with
             {
                 CloseCombats = [.. state.CloseCombats.Where(item => item.Location != combat.Location), updated],
+            };
+        }
+
+        /// <summary>
+        /// A Gun's shot (C3.3; unit step 24): in a fire phase, by an active Gun manned by an active crew in its Location, that has not
+        /// used up its fire this phase; the Ordnance verifier reproduces it. The shot turns the Gun when it names a facing, counts
+        /// against its Multiple ROF, and sets its Acquisition.
+        /// </summary>
+        private GameState? Ordnance(GameState state, OrdnanceFired fired)
+        {
+            if (ordnanceVerifier is null)
+            {
+                return Fail<GameState>("UNIT-STATE-023", "An ordnance record can be replayed only with the Ordnance verifier.");
+            }
+
+            if (fired.Rolls.Values.FirstOrDefault(roll => !rolls.ContainsKey(roll)) is { } missing)
+            {
+                return Fail<GameState>("UNIT-STATE-023", $"The ordnance record's roll '{missing}' is not recorded before it.");
+            }
+
+            var shots = state.OrdnanceShots.FirstOrDefault(item => item.Gun == fired.Gun);
+            if (state.Phase is not ("pfph" or "afph" or "dfph") || state.Find(fired.Gun) is not EquipmentInstance { Status: InstanceStatus.Active } gun
+                || gun.Holding is not { Role: HoldingRole.Manned } manning || manning.Holder != fired.Crew
+                || Active(state, fired.Crew) is not UnitInstance || (shots is not null && !shots.RateOfFireKept))
+            {
+                return Fail<GameState>("UNIT-STATE-033", "A Gun fires in a fire phase, manned by its crew, and again only on a kept Multiple ROF (C2.24).");
+            }
+
+            if (ordnanceVerifier.Verify(state, fired, rolls) is { } reason)
+            {
+                return Fail<GameState>("UNIT-STATE-033", reason);
+            }
+
+            var turned = fired.Facing is { } facing && gun.Position is MapPosition map
+                ? gun with
+                {
+                    Position = map with
+                    {
+                        Facing = facing
+                    }
+                }
+                : gun;
+            return state with
+            {
+                Equipment = [.. state.Equipment.Select(item => item.Id == gun.Id ? turned : item)],
+                OrdnanceShots = [.. state.OrdnanceShots.Where(item => item.Gun != fired.Gun), new OrdnanceShotRecord(fired.Gun, (shots?.Shots ?? 0) + 1, fired.RateOfFireKept)],
+                Acquisitions = [.. state.Acquisitions.Where(item => item.Gun != fired.Gun),
+                    .. fired.Acquired is { } acquired && fired.Acquisition < 0 ? new[] { new GunAcquisition(fired.Gun, acquired, fired.Acquisition) } : []],
             };
         }
 
