@@ -40,6 +40,12 @@ public static class LiveOrdnance
             return (null, $"play.ordnance-gun: '{gunId}' is not an active Gun from the catalog on the map, manned by an active unit (A21.13, C2.1)");
         }
 
+        // A11.15: a unit held in Melee fires only in CC; a prisoner does not fire.
+        if (Is(crew, Conditions.Melee) || Is(crew, Conditions.Captured))
+        {
+            return (null, $"play.ordnance-crew: '{crew.Id}' is held in Melee or captured, so it does not fire its Gun (A11.15, A20.5)");
+        }
+
         var side = crew.Side;
         UnitInstance[] targets = [.. state.At(target).OfType<UnitInstance>()
             .Where(unit => unit.Status == InstanceStatus.Active && unit.Side != side && !Is(unit, Conditions.Captured)).OrderBy(unit => unit.Id, StringComparer.Ordinal)];
@@ -177,9 +183,12 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
             return "The ordnance record's facts do not match the game state.";
         }
 
-        if ((recorded.HexspinesToTurn > 0) != fired.Facing.HasValue)
+        // C3.21, C5.1: the recorded facing lies exactly the recorded number of hexspines from the Gun's facing now.
+        var current = state.Find(fired.Gun) is EquipmentInstance { Position: MapPosition { Facing: { } facing } } ? facing : (Units.Documents.UnitFacing?)null;
+        var steps = fired.Facing is { } turned && current is { } from ? Math.Min(Math.Abs((int)turned - (int)from), 6 - Math.Abs((int)turned - (int)from)) : 0;
+        if ((recorded.HexspinesToTurn > 0) != fired.Facing.HasValue || steps != (recorded.HexspinesToTurn ?? 0))
         {
-            return "The ordnance record turns the Gun exactly when its facts say the shot changes its Covered Arc.";
+            return "The ordnance record turns the Gun exactly the hexspines its facts say the shot changes its Covered Arc by.";
         }
 
         if (LiveOrdnance.Rolls(fired, recorded, rolls) is not { } dice)

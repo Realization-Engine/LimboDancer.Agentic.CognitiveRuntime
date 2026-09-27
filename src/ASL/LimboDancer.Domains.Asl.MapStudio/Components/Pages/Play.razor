@@ -161,15 +161,19 @@ else if (state is not null)
         <label>Id <input id="place-id" value="@placeId" @onchange="@(args => placeId = args.Value as string ?? string.Empty)" size="8" /></label>
         <label>Location <input id="place-location" value="@placeLocation" @onchange="@(args => placeLocation = args.Value as string ?? string.Empty)" size="12" /></label>
         <label>Or held by <input id="place-holder" value="@placeHolder" @onchange="@(args => placeHolder = args.Value as string ?? string.Empty)" size="8" /></label>
-        <label>
-            Gun facing
-            <select id="place-facing" value="@placeFacing" @onchange="@(args => placeFacing = args.Value as string ?? "east")">
-                @foreach (var spine in Enum.GetValues<UnitFacing>())
-                {
-                    <option value="@UnitFacings.Name(spine)">@UnitFacings.Name(spine)</option>
-                }
-            </select>
-        </label>
+        @if (Definitions.FirstOrDefault(definition => definition.Id == placeDefinition)?.Kind == "asl:gun")
+        {
+            <label title="A Gun's barrel points at a hexspine (C2.23): hexes are flat-topped, so north and south are hexsides.">
+                Gun facing (hexspine)
+                <select id="place-facing" value="@placeFacing" @onchange="@(args => placeFacing = args.Value as string ?? "east")">
+                    @foreach (var spine in Enum.GetValues<UnitFacing>())
+                    {
+                        <option value="@UnitFacings.Name(spine)">@UnitFacings.Name(spine)</option>
+                    }
+                </select>
+            </label>
+            <span class="muted">A Gun stands at its Location, manned by the crew named in "Or held by".</span>
+        }
         <label><input id="place-concealed" type="checkbox" checked="@placeConcealed" @onchange="@(args => placeConcealed = args.Value is true)" /> concealed</label>
         <label><input id="place-hidden" type="checkbox" checked="@placeHidden" @onchange="@(args => placeHidden = args.Value is true)" /> hidden</label>
         <label><input id="place-broken" type="checkbox" checked="@placeBroken" @onchange="@(args => placeBroken = args.Value is true)" /> broken</label>
@@ -1195,20 +1199,27 @@ else if (state is not null)
     private string ordnanceGun = string.Empty;
     private string ordnanceTarget = string.Empty;
 
-    /// <summary>The firing side's Guns that its crews man and that are not malfunctioned (A21.13, C2.28).</summary>
+    /// <summary>The firing side's Guns that its crews man (A21.13), a malfunctioned one shown as such (C2.28; Gun repair is not built).</summary>
     private IEnumerable<EquipmentInstance> OrdnanceGuns(string side) => state is null ? []
         : state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Kind == "asl:gun" && item.Holding is { Role: HoldingRole.Manned } holding
-                && state.Unit(holding.Holder)?.Side == side && GameState.Condition(item, Conditions.Malfunctioned) != ConditionState.True)
+                && state.Unit(holding.Holder)?.Side == side)
             .OrderBy(item => item.Id, StringComparer.Ordinal);
 
+    /// <summary>A Gun as a player reads it: its facing, its fire this phase and Player Turn, its Acquisition, and its crew's state.</summary>
     private string GunLabel(EquipmentInstance gun)
     {
+        bool Marked(IGameObject item, string condition) => GameState.Condition(item, condition) == ConditionState.True;
         var facing = gun.Position is MapPosition { Facing: { } spine } ? UnitFacings.Name(spine) : "no facing";
         var shots = state?.OrdnanceShots.FirstOrDefault(item => item.Gun == gun.Id);
         var acquired = state?.Acquisitions.FirstOrDefault(item => item.Gun == gun.Id);
+        var crew = gun.Holding is { } holding ? state?.Unit(holding.Holder) : null;
+        var crewState = crew is null ? "" : string.Concat(new[] { Conditions.Pinned, Conditions.Concealed, Conditions.Melee, Conditions.Broken }
+            .Where(name => Marked(crew, name)).Select(name => ", crew " + name.Replace("asl:", "", StringComparison.Ordinal)));
         return $"{gun.Id} ({gun.Definition?.Definition}, facing {facing}"
-            + (shots is null ? "" : shots.RateOfFireKept ? $", {shots.Shots} shot(s), ROF kept" : ", fired")
-            + (acquired is null ? "" : $", Acquisition {acquired.Level} on {acquired.Location}") + ")";
+            + (Marked(gun, Conditions.Malfunctioned) ? ", malfunctioned: Gun repair is not built" : "")
+            + (shots is null ? Marked(gun, Conditions.PrepFire) || Marked(gun, Conditions.FinalFire) ? ", fired this Player Turn" : ""
+                : shots.RateOfFireKept ? $", {shots.Shots} shot(s), may fire again" : ", fired")
+            + (acquired is null ? "" : $", Acquisition {acquired.Level} on {acquired.Location}") + crewState + ")";
     }
 
     private Task ProposeOrdnance() => Propose(GameActions.FireOrdnance, JsonSerializer.SerializeToElement(new
@@ -1256,7 +1267,7 @@ else if (state is not null)
                     }
                 }
 
-                parts.Add((gun.Malfunctioned ? "the Gun malfunctions (C2.28)" : gun.RateOfFireKept ? $"ROF {gun.RateOfFire} kept (C2.24)" : "no more fire this phase")
+                parts.Add((gun.Malfunctioned ? "the Gun malfunctions (C2.28)" : gun.RateOfFireKept ? "it may fire again this phase (C2.24)" : "no more fire this phase")
                     + (gun.Acquisition < 0 ? $"; Acquisition {gun.Acquisition} on {gun.AcquiredLocationId} (C6.5)" : ""));
                 records.Add((item.EventId, string.Join("; ", parts)));
             }
@@ -1803,6 +1814,7 @@ else if (state is not null)
         placements.Add(new Placement(id, definition.Id, definition.Kind, side, placeLocation.Trim(), placeConcealed, placeHidden, holder,
             placeBroken && holder is null, gun ? placeFacing : null));
         placeId = string.Empty;
+        placeHolder = string.Empty;
     }
 
     /// <summary>A Dummy (A12.1): a "?" with no unit beneath it, so it has no definition and is always concealed.</summary>

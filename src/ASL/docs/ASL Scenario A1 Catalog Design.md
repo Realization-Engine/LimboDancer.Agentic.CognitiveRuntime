@@ -270,6 +270,20 @@ Unit steps 27 and 28 ([ASL Unit Deviations, Ordnance, and Vehicles Plan](<ASL Un
 
 **Review and version.** Under the plan, a separate agent briefed as an ASL rules referee rendered each chart region and confirmed every value in place of the user's review. It found that the Russian Conscript hardens into NKVD (A25.25), not 1st Line, and the NKVD counters were added and confirmed in turn. The source record lists that reviewer under `review.additionalReviewers`, and the builder accepts a row reviewed by either. Added definitions make a minor version: `asl-scenario-a1@1.3.0`. The synthetic catalog gains matching synthetic definitions, each class under its own nationality so no lookup is ambiguous. Games that name 1.2.0 no longer replay; the committed ones now name 1.3.0.
 
+### 9.5 Guns and crews (catalog 1.4.0)
+
+Unit step 24 ([ASL Unit Deviations, Ordnance, and Vehicles Plan](<ASL Unit Deviations, Ordnance, and Vehicles Plan.md>), section 9) needs a Gun of each side and the crews that man them. On 2026-09-27, four counters (78 rows) were added:
+
+| Counters | Sheet | Source | Needed for |
+|---|---|---|---|
+| `attacker-inf-gun` (German 7.5cm leIG 18: INF 75*, ROF 2, range 115, M# 10, Small Target, NT, QSU, H7) | OLG | p. 351 | A German Gun firing HE (C3.3) |
+| `defender-at-gun` (Russian 45mm PTP obr. 32: AT 45L, ROF 3, range 110, M# 11, Small Target, NT, QSU, A4 to A7 by year) | OLR | p. 363 | A Russian Gun firing HE |
+| `attacker-crew`, `defender-crew` (2-2-8, broken Morale 8, BPV 8 and 6) | NCC | pp. 695, 44 | Manning the Guns (A21.13, A1.123) |
+
+**Readings.** The blank B# column is the inherent B# 12 (C2.28). The overscored 75* cannot fire AP (C2.21). A TSize of +1 is a Small Target (C2.271). The crews are elite and Self-Rally (A1.123). The Guns' malfunctioned sides (repair and removal numbers) are not in any registered source and stay not-in-source.
+
+**Review and version.** A separate agent briefed as an ASL rules referee rendered the listing rows and the chart and confirmed all 78 rows. Added definitions make a minor version: `asl-scenario-a1@1.4.0`. Games that name 1.3.0 no longer replay; the committed ones now name 1.4.0.
+
 ## 10. The source adapter
 
 ASL-UNIT-001 keeps source-specific parsing out of `LimboDancer.Domains.Asl.Units`, so the transcription is read by a separate source adapter, `LimboDancer.Domains.Asl.Units.CounterSheets`, which references only `Units`. `CounterSheetCatalogBuilder` takes the catalog manifest (`src/ASL/units/catalog/scenario-a1.catalog-manifest.json`: id, version, slots, and which counter fills which slot), the source record, the transcription, and the worksheet, and:

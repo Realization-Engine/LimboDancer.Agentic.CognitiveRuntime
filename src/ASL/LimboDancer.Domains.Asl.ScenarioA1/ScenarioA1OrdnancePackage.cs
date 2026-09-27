@@ -147,8 +147,8 @@ public sealed class ScenarioA1OrdnanceReference
 /// </summary>
 public sealed class ScenarioA1OrdnancePackage : IDomainPackageResolver
 {
-    public const string ManifestSha256 = "7338eb642304b2d5475d6a43c517c70a7b4aca4e0714f94312e22454da6575d0";
-    public const string MatrixSha256 = "08f1089142cb89b71a6e4998c7222c0675960fe9201c4e0bb0539b649912b88f";
+    public const string ManifestSha256 = "1bf0bb7734400e1e8b2f16093bee5eb64c481ffd79544cdfddd00ce069e6819d";
+    public const string MatrixSha256 = "644dfe5fbd1ff3657a5c7b6c295c820cddc2901b44a60143e27063f64b946b62";
     public static readonly DomainPackageRef Identity = new(new DomainId("asl"), "scenario-a1-ordnance", "sha256:" + ManifestSha256);
 
     private static readonly string[] Cases =

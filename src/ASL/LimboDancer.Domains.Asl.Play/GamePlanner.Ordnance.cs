@@ -43,7 +43,7 @@ public sealed partial class GamePlanner
         }
 
         // A5.12, A5.131: the To Hit DRM of an overstacked firer or target are not reviewed; a crew counts as a HS (A5.1).
-        if (new[] { ((MapPosition)((EquipmentInstance)state.Find(gunId)!).Position).Location, target }.Any(location => state.Sides.Any(side => OverstackedWithCrews(
+        if (new[] { ((MapPosition)((EquipmentInstance)state.Find(gunId)!).Position).Location, target }.Any(location => state.Sides.Any(side => Overstacked(
             state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side.Id && !Is(unit, Conditions.Captured))))))
         {
             return Refused(scope, label, expected, "play.ordnance-overstacked: the Gun's or the target's Location is overstacked, whose To Hit DRM are not reviewed (A5.12, A5.131)");
@@ -60,11 +60,19 @@ public sealed partial class GamePlanner
         var precheck = ScenarioA1OrdnanceCalculator.Precheck(shot, reference);
         if (precheck.Count != 0)
         {
-            return Refused(scope, label, expected, ["play.ordnance-refused: the Ordnance package does not decide every outcome of this shot", .. precheck]);
+            return Refused(scope, label, expected, ["play.ordnance-refused: the shot is not allowed, or not decided here, for these reasons", .. precheck]);
         }
 
         var facts = shot;
         var facing = map.Value.Facing;
+
+        // The To Hit number and DRM before any roll, read from the package with dice that decide nothing else (a miss).
+        var preview = ScenarioA1OrdnanceCalculator.Resolve(facts with
+        {
+            Rolls = new OrdnanceRolls([6, 6], null, null, null, null)
+        }, reference).ToHit;
+        var toHit = preview is null ? string.Empty
+            : $"; Modified TH# {preview.ModifiedToHit} ({preview.Color}), DRM {(preview.Drm.Count == 0 ? "none" : string.Join(", ", preview.Drm.Select(item => $"{item.Name} {item.Value:+0;-0}")))}";
         IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
         {
             var events = new List<GameEvent>();
@@ -75,7 +83,7 @@ public sealed partial class GamePlanner
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
             [$"play.ordnance: {facts.Gun!.GunId} fires HE at {facts.TargetLocationId} in the {facts.Phase}; range {facts.Range}, {facts.Hit!.TargetTerrain}"
                 + (facts.HexspinesToTurn > 0 ? $", turning {facts.HexspinesToTurn} hexspine(s) to {facing!.Value.Name()}" : string.Empty)
-                + (facts.Acquisition < 0 ? $", Acquisition {facts.Acquisition}" : string.Empty)])
+                + toHit])
         {
             Roll = new PlannedRoll("ordnance", Build),
             FirstEventId = EventId(attemptId, 1),
@@ -122,12 +130,15 @@ public sealed partial class GamePlanner
         static double Off(double one, double two) => Math.Abs(((one - two) % 360 + 540) % 360 - 180);
         var turns = Enumerable.Range(0, 6).Select(step => (Facing: (UnitFacing)(((int)facing + step) % 6), Steps: Math.Min(step, 6 - step)))
             .Where(item => Off(bearing, (int)item.Facing * 60) <= 30 + 1e-6).OrderBy(item => item.Steps).First();
+        // A12.14, A15.44: a concealed crew that firing reveals is Known when a target's Heat of Battle result is read.
+        var revealing = HeatOfBattleFacts(state, read);
         var hit = shot.Hit! with
         {
             Range = null,
             SameLevel = read.SameLevel,
             Los = read.Los,
             TargetTerrain = read.TargetTerrain,
+            Targets = revealing.Targets,
         };
         var withMap = shot with
         {
@@ -136,18 +147,9 @@ public sealed partial class GamePlanner
             FirerInWoodsOrBuilding = WoodsOrBuilding.Contains(gunTerrain),
             // C2.6: at the same level the limit never applies; other levels are undecided in the package.
             ElevationAllowed = true,
-            Hit = HeatOfBattleFacts(state, hit),
+            Hit = hit,
         };
         return ((withMap, turns.Steps > 0 ? turns.Facing : null), null);
-    }
-
-    /// <summary>A5.1: more than three squad-equivalents (a HS or crew each half) or more than four SMC of one side.</summary>
-    private bool OverstackedWithCrews(IEnumerable<UnitInstance> units)
-    {
-        var list = units.ToArray();
-        var squads = list.Count(unit => vocabulary.IsA(unit.Kind, "asl:squad"))
-            + (list.Count(unit => vocabulary.IsA(unit.Kind, "asl:half-squad") || vocabulary.IsA(unit.Kind, "asl:crew")) / 2m);
-        return squads > 3 || list.Count(unit => vocabulary.IsA(unit.Kind, "asl:smc")) > 4;
     }
 
     /// <summary>The bearing from one Location to another in degrees counterclockwise from east, on one unreversed board; null otherwise.</summary>
@@ -275,10 +277,24 @@ public sealed partial class GamePlanner
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(facts.Gun.GunId!, gunConditions), package, null, [recordId]));
         }
 
-        if (state.Unit(facts.Crew.UnitId!) is { } crew && GameState.Condition(crew, marker) != ConditionState.True)
+        // A12.14: a concealed crew that fires loses its "?".
+        if (state.Unit(facts.Crew.UnitId!) is { } crew)
         {
-            events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
-                new ConditionsChanged(crew.Id, new Dictionary<string, ConditionState> { [marker] = ConditionState.True }), package, null, [recordId]));
+            var crewConditions = new Dictionary<string, ConditionState>(StringComparer.Ordinal);
+            if (GameState.Condition(crew, marker) != ConditionState.True)
+            {
+                crewConditions[marker] = ConditionState.True;
+            }
+
+            if (resolution.CrewConcealmentLost == true)
+            {
+                crewConditions[Conditions.Concealed] = ConditionState.False;
+            }
+
+            if (crewConditions.Count > 0)
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(crew.Id, crewConditions), package, null, [recordId]));
+            }
         }
 
         // A15.5: a unit that surrendered waits for the captor's choice, last.

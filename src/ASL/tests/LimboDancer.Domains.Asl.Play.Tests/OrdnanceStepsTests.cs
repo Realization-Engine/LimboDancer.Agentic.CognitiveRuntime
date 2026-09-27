@@ -27,6 +27,8 @@ public sealed class OrdnanceStepsTests : IDisposable
     private static readonly string[] Bd01 = ["bd01"];
     private static readonly string[] R4R5 = ["r4", "r5"];
     private static readonly string[] Crew = ["de-crew"];
+    private static readonly string[] R1 = ["r1"];
+    private static readonly string[] R2 = ["r2"];
 
     private static readonly LimboDancer.Abstractions.Execution.RuntimePrincipal Player =
         GamePlay.Principal("player", Tenant, GameActions.SetupPermission, GameActions.PlayPermission);
@@ -265,6 +267,82 @@ public sealed class OrdnanceStepsTests : IDisposable
     }
 
     [Fact]
+    public async Task TableFindingsACrewNeitherStrandsTheGameNorFiresFromMelee()
+    {
+        // A concealed crew fires its Gun and loses its "?" (A12.14); a crew in Melee does not fire (A11.15).
+        await Setup("german", Unit("de-crew", "asl:crew", "attacker-crew", "bd01:A2:0", "german", "asl:concealed"),
+            Gun("de-gun", "attacker-inf-gun", "bd01:A2:0", "south-east", "de-crew", "german"), Unit("r1", "asl:squad", "defender-squad", "bd01:A5:0", "russian"),
+            Unit("r2", "asl:squad", "defender-squad", "bd01:B2:0", "russian"));
+        await Advance();
+        Committed(await Do(GameActions.FireOrdnance, Once(3, 5, 6, 6), new
+        {
+            gunId = "de-gun",
+            target = "bd01:A5:0"
+        }));
+        Assert.False(Is(Current.Unit("de-crew")!, Conditions.Concealed));
+
+        // The record turns the Gun exactly as many hexspines as its facts say; a record naming another facing does not replay.
+        var events = store.Read(Scope)!.Events.ToList();
+        var index = events.FindLastIndex(item => item.Payload is OrdnanceFired);
+        events[index] = events[index] with
+        {
+            Payload = ((OrdnanceFired)events[index].Payload) with
+            {
+                Facing = UnitFacing.West
+            }
+        };
+        Assert.True(Planner().Replay(events).HasErrors);
+
+        // The Russians may not advance into the crew's Location, whose CC is not reviewed (R24.3).
+        await Advance(13);
+        Assert.Equal(("aph", "russian"), (Current.Phase, Current.PhasingSide));
+        Assert.Contains((await Do(GameActions.Advance, NoRoll(), new
+        {
+            unitIds = R2,
+            to = "bd01:A2:0"
+        })).Reasons, reason => reason.StartsWith("play.advance-crew", StringComparison.Ordinal));
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
+    public async Task ACrewHeldInMeleeDoesNotFireItsGun()
+    {
+        // A11.15: a unit held in Melee fires only in CC, so its Gun does not fire.
+        await Setup("german", Unit("de-crew", "asl:crew", "attacker-crew", "bd01:A2:0", "german"),
+            Gun("de-gun", "attacker-inf-gun", "bd01:A2:0", "south-east", "de-crew", "german"), Unit("r1", "asl:squad", "defender-squad", "bd01:A5:0", "russian"));
+        await Advance();
+        var state = Current;
+        var held = state with
+        {
+            Units = [.. state.Units.Select(unit => unit.Id == "de-crew"
+                ? unit with { Conditions = new Dictionary<string, ConditionState>(unit.Conditions) { [Conditions.Melee] = ConditionState.True } }
+                : unit)],
+        };
+        Assert.StartsWith("play.ordnance-crew", LiveOrdnance.FromState(held, "de-gun", BoardLocation.Parse("bd01:A5:0")).Reason, StringComparison.Ordinal);
+        Assert.NotNull(LiveOrdnance.FromState(state, "de-gun", BoardLocation.Parse("bd01:A5:0")).Shot);
+    }
+
+    [Fact]
+    public async Task ABerserkChargeIntoACrewsLocationEndsInPlace()
+    {
+        // A berserk Russian squad next to the German crew and Gun may not charge in (CC with a crew is not reviewed, R24.3), so its charge
+        // ends in place (R30.5) and no CC is required; the game moves on.
+        await Setup("russian", Unit("r1", "asl:squad", "defender-squad", "bd01:A3:0", "russian", "asl:berserk"),
+            Unit("de-crew", "asl:crew", "attacker-crew", "bd01:A2:0", "german"), Gun("de-gun", "attacker-inf-gun", "bd01:A2:0", "south-east", "de-crew", "german"));
+        await Advance(2);
+        Assert.Equal("mph", Current.Phase);
+        Assert.Contains((await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = R1,
+            to = "bd01:A2:0"
+        })).Reasons, reason => reason.StartsWith("play.berserk", StringComparison.Ordinal));
+        await Advance(5);
+        Assert.Equal("ccph", Current.Phase);
+        await Advance();
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
     public async Task ABerserkLeaderTakesHisCompanionsWithHimInLiveFire()
     {
         // Pass 2 defect found in pass 3: the Fire planner did not draw the NTC of a berserk leader's companions (A15.41), and asked forever.
@@ -289,7 +367,9 @@ public sealed class OrdnanceStepsTests : IDisposable
     {
         // The same pass 2 defect in the Rally planner and its record reader: the NTC of a berserk leader's companions (A15.41) is kept
         // under "berserkCheck:<unit>".
-        var facts = JsonSerializer.SerializeToElement(new { });
+        var facts = JsonSerializer.SerializeToElement(new
+        {
+        });
         var rally = new RallyAttempted("gl", "gl2", new Dictionary<string, string> { ["rally"] = "d1", ["berserkCheck:g1"] = "d2" }, facts, facts);
         var dice = new Dictionary<string, DiceRolled>
         {

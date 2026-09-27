@@ -138,7 +138,7 @@ public static class ScenarioA1OrdnanceCalculator
         // A21.13, C2.1: its own nationality's Good Order crew mans it; C5.8's non-qualified use is not reviewed, nor a concealed crew.
         var crew = shot.Crew!;
         if (reference.Fire.Definitions.GetValueOrDefault(crew.DefinitionId!) is not { Kind: "asl:crew" } crewDefinition || crewDefinition.Nationality != gun.Nationality
-            || crew.Broken == true || crew.Berserk == true || crew.Concealed == true)
+            || crew.Broken == true || crew.Berserk == true)
         {
             outside.Add(Prefix + "crew-outside");
         }
@@ -223,10 +223,19 @@ public static class ScenarioA1OrdnanceCalculator
             undecided.Add(Prefix + "concealment-mixed");
         }
 
+        // A12.14: a concealed crew that fires its Gun loses "?" in the LOS of a Good Order enemy ground unit within 16 hexes; the package
+        // sees only the target Location, so it decides only when one of its units is Good Order within that range, as for Infantry fire.
+        if (shot.Crew!.Concealed == true && !CrewRevealed(shot))
+        {
+            undecided.Add(Prefix + "concealment-unreviewed:crew");
+        }
+
         return undecided;
     }
 
     private static bool Concealed(FireTarget target) => target.Concealed == true || target.Hidden == true || target.Dummy == true;
+
+    private static bool CrewRevealed(OrdnanceShot shot) => shot.Range <= 16 && shot.Hit!.Targets!.Any(item => item.Broken == false && item.Dummy != true);
 
     /// <summary>
     /// The IFT attack of a hit: the Gun's HE FP column (C.6), doubled by a Critical Hit (C3.71), on the given targets; the Location's
@@ -414,7 +423,10 @@ public static class ScenarioA1OrdnanceCalculator
             var others = targets.Where(item => !criticalTargets.Contains(item)).ToArray();
             if (others.Length > 0)
             {
-                var hitRolls = criticalHit?.Arithmetic?.Dice is { } shared ? (rolls.Hit ?? new FireRolls(null, null, null, null)) with { Attack = shared } : rolls.Hit;
+                var hitRolls = criticalHit?.Arithmetic?.Dice is { } shared ? (rolls.Hit ?? new FireRolls(null, null, null, null)) with
+                {
+                    Attack = shared
+                } : rolls.Hit;
                 normal = ScenarioA1FireCalculator.Resolve(HitAttack(shot, gun, reference, false, others, hitRolls), reference.Fire);
                 if (Pending(normal, "hit:") is { } pending)
                 {
@@ -431,6 +443,7 @@ public static class ScenarioA1OrdnanceCalculator
         var gunEffect = new OrdnanceGunEffect(gun.Breakdown, malfunctioned, Math.Max(rof, 0), kept, counter, acquisition, acquires ? shot.TargetLocationId : null);
         return new OrdnanceResolution(OrdnanceResolution.Resolved, [], toHit, gunEffect)
         {
+            CrewConcealmentLost = shot.Crew.Concealed == true ? true : null,
             Hit = normal,
             CriticalHit = criticalHit,
             CriticalTarget = criticalTarget,

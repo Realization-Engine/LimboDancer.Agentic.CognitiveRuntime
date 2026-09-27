@@ -109,6 +109,12 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.advance-prisoners: a Location holding prisoners is not reviewed for CC (A20.55)");
         }
 
+        // A crew in CC, and the Gun it mans, are not reviewed (ruling R24.3).
+        if (enemies.Any(unit => vocabulary.IsA(unit.Kind, "asl:crew")))
+        {
+            return Refused(scope, label, expected, "play.advance-crew: CC with a Gun's crew is not reviewed (C11, ruling R24.3)");
+        }
+
         // A20.53, A20.55: a Guard's prisoners advance with it, and CC in a Location holding prisoners is not reviewed.
         if (enemies.Length > 0 && units.FirstOrDefault(unit => IsGuard(state, unit!)) is { } guard)
         {
@@ -128,11 +134,12 @@ public sealed partial class GamePlanner
             [Event(scope, attemptId, 1, expected, "advanced", new AdvanceMoved(ids, to), ScenarioA1CloseCombatPackage.Identity.ToString(), null)], [summary]);
     }
 
-    /// <summary>A5.1, A5.5: more than three squad-equivalents (two HS each) or more than four SMC of one side.</summary>
+    /// <summary>A5.1, A5.5: more than three squad-equivalents (two HS or crews each) or more than four SMC of one side.</summary>
     private bool Overstacked(IEnumerable<UnitInstance> units)
     {
         var list = units.ToArray();
-        var squads = list.Count(unit => vocabulary.IsA(unit.Kind, "asl:squad")) + (list.Count(unit => vocabulary.IsA(unit.Kind, "asl:half-squad")) / 2m);
+        var squads = list.Count(unit => vocabulary.IsA(unit.Kind, "asl:squad"))
+            + (list.Count(unit => vocabulary.IsA(unit.Kind, "asl:half-squad") || vocabulary.IsA(unit.Kind, "asl:crew")) / 2m);
         return squads > 3 || list.Count(unit => vocabulary.IsA(unit.Kind, "asl:smc")) > 4;
     }
 
@@ -393,6 +400,13 @@ public sealed partial class GamePlanner
             }
 
             var here = active.Where(unit => state.Location(unit.Id)!.Location == location).ToArray();
+
+            // CC with a crew is not reviewed (ruling R24.3), so it cannot be required.
+            if (here.Any(unit => vocabulary.IsA(unit.Kind, "asl:crew")))
+            {
+                continue;
+            }
+
             var berserk = here.FirstOrDefault(unit => Is(unit, Conditions.Berserk) && here.Any(other => other.Side != unit.Side && KnownEnemy(other)));
             var reinforcing = here.Any(unit => Is(unit, Conditions.Melee))
                 ? here.FirstOrDefault(unit => state.Advances.Any(item => item.Unit == unit.Id && item.To == location) && !Is(unit, Conditions.Broken))
@@ -492,9 +506,10 @@ public sealed partial class GamePlanner
     {
         var there = state.At(to).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active).ToArray();
         var enemies = there.Where(unit => unit.Side != side).ToArray();
-        if (enemies.Any(unit => !KnownEnemy(unit) && !Is(unit, Conditions.Captured)) || there.Any(unit => Is(unit, Conditions.Captured)))
+        if (enemies.Any(unit => !KnownEnemy(unit) && !Is(unit, Conditions.Captured)) || there.Any(unit => Is(unit, Conditions.Captured))
+            || enemies.Any(unit => vocabulary.IsA(unit.Kind, "asl:crew")))
         {
-            return $"play.berserk-concealed: a charge into {to}, which holds concealed enemy units or prisoners, is not reviewed (A15.431, A20.4); the charge ends in place (ruling R30.5)";
+            return $"play.berserk-concealed: a charge into {to}, which holds concealed enemy units, prisoners, or a Gun's crew, is not reviewed (A15.431, A20.4, R24.3); the charge ends in place (ruling R30.5)";
         }
 
         return enemies is [{ } lone] && vocabulary.IsA(lone.Kind, "asl:smc")

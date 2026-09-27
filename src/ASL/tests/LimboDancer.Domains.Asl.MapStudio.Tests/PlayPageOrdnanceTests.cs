@@ -91,10 +91,11 @@ public sealed class PlayPageOrdnanceTests : IDisposable
         page.Find("#new-first-elr").Change("3");
         page.Find("#new-second-elr").Change("2");
         Place(page, "de-crew", "attacker-crew", hexes.One);
+        page.Find("#place-definition").Change("attacker-inf-gun");
         page.Find("#place-facing").Change("east");
         page.Find("#place-holder").Change("de-crew");
         Place(page, "de-gun", "attacker-inf-gun", hexes.One);
-        page.Find("#place-holder").Change(string.Empty);
+        Assert.Equal(string.Empty, page.Find("#place-holder").GetAttribute("value"));
         Place(page, "r1", "defender-squad", hexes.Two);
         Commit(page, "#propose-setup");
         Commit(page, "#propose-advance");

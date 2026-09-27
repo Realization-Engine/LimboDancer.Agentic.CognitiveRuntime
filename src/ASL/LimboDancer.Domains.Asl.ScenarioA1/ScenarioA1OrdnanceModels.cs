@@ -29,8 +29,8 @@ public sealed record OrdnanceShot(
 public sealed record OrdnanceGun(string? GunId, string? DefinitionId, bool? Malfunctioned, int? ShotsThisPhase, bool? RateOfFireKept, bool? FiredThisPlayerTurn);
 
 /// <summary>
-/// The Infantry manning the Gun (A21.13): its crew, which must be Good Order to fire it. Crews' inherent fire is not built, so
-/// <see cref="OrdnanceCrew.FiredInherentFp"/> is false in live play (A7.352; ruling R24.4).
+/// The Infantry manning the Gun (A21.13): its crew, which must be Good Order to fire it; a concealed crew loses its "?" by firing
+/// (A12.14). Crews' inherent fire is not built, so <see cref="OrdnanceCrew.FiredInherentFp"/> is false in live play (A7.352; ruling R24.4).
 /// </summary>
 public sealed record OrdnanceCrew(string? UnitId, string? DefinitionId, bool? Broken, bool? Pinned, bool? Berserk, bool? Concealed, bool? FiredInherentFp);
 
@@ -77,6 +77,13 @@ public sealed record OrdnanceResolution(
     /// <summary>The IFT resolution of a Critical Hit on the unit it selected (C3.71, C3.74); null when none.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public FireResolution? CriticalHit
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the concealed crew lost its "?" by firing (A12.14); null when it was not concealed.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? CrewConcealmentLost
     {
         get; init;
     }
