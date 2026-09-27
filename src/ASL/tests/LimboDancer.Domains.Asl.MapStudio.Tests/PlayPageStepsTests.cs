@@ -131,6 +131,10 @@ public sealed class PlayPageStepsTests : IDisposable
         Assert.Empty(dice);
         Assert.DoesNotContain("broken", Row(page, "r1"), StringComparison.Ordinal);
         Assert.Contains(page.FindAll("#play-rolls li"), item => item.TextContent.StartsWith("rally: 1, 2", StringComparison.Ordinal));
+        var rallied = page.Find("#play-rallies .rally-record").TextContent;
+        Assert.StartsWith("rl rallies r1: DR 1, 2 = 3", rallied, StringComparison.Ordinal);
+        Assert.Contains("against", rallied, StringComparison.Ordinal);
+        Assert.EndsWith(": rallied", rallied, StringComparison.Ordinal);
 
         // U24 and U27 on the page: r2 fires with its LMG at the Dummy; the colored 1 keeps the LMG's ROF (A9.2), and an
         // effect removes the Dummy (A12.14).
@@ -139,10 +143,14 @@ public sealed class PlayPageStepsTests : IDisposable
         page.Find(".fire-firer[data-unit='r2']").Change(true);
         page.Find(".fire-weapon[data-weapon='mg1']").Change(true);
         page.Find("#fire-target").Change(hexes.Open);
+        page.Find("#propose-fire").Click();
+        page.WaitForAssertion(() => Assert.Contains("Confirm to commit", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+        Assert.Equal($"r2 with mg1 in {hexes.From}", page.Find("#fire-facts tr[data-fact='firers'] td:last-child").TextContent);
         Roll(1, 2);
-        Commit(page, "#propose-fire");
+        page.Find("#play-confirm").Click();
+        page.WaitForAssertion(() => Assert.Contains("Committed", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
         Assert.Empty(dice);
-        Assert.Contains("mg1", page.Find("#play-fires").TextContent, StringComparison.Ordinal);
+        Assert.Equal($"r2 with mg1 in {hexes.From} fire at {hexes.Open}", page.Find("#play-fires .fire-group").TextContent);
         page.Find("#play-perspective").Change(Perspective.AdjudicatorName);
         Assert.Contains("eliminated", Row(page, "gd"), StringComparison.Ordinal);
         Assert.Contains("prep-fire", Row(page, "r2"), StringComparison.Ordinal);
@@ -155,6 +163,7 @@ public sealed class PlayPageStepsTests : IDisposable
         var hexes = Hexes();
         var page = NewGame("german", "russian");
         Place(page, "g1", "attacker-squad", hexes.From);
+        Place(page, "g2", "attacker-squad", hexes.From);
         Place(page, "r1", "defender-squad", hexes.Open);
         Place(page, "r2", "defender-squad", hexes.Open);
         Commit(page, "#propose-setup");
@@ -194,9 +203,53 @@ public sealed class PlayPageStepsTests : IDisposable
         Assert.Empty(page.FindAll("#move-state"));
         Assert.Contains("movement ended", Row(page, "g1"), StringComparison.Ordinal);
 
+        // U26 on the page: g2 entering the building is attacked by the Residual FP first, alone (A8.22).
+        page.Find(".move-unit[data-unit='g2']").Change(true);
+        page.Find("#move-to").Change(hexes.Building);
+        Roll(6, 5);
+        Commit(page, "#propose-move");
+        Assert.Empty(dice);
+        Assert.Matches(@"^\d+ Residual FP fire at ", page.Find("#play-fires .fire-group").TextContent);
+        Commit(page, "#propose-pass");
+        Commit(page, "#propose-end-move");
+
         // Residual FP is gone when the MPh ends (A8.2).
         Commit(page, "#propose-advance");
         Assert.Empty(page.FindAll("#play-residual"));
         Assert.Empty(page.FindAll("#play-map .play-residual"));
+    }
+
+    [Fact]
+    public void ALocationHoldingOnlyADummyOrALeaderIsNotOfferedAsAFireGroup()
+    {
+        var hexes = Hexes();
+        var page = NewGame("russian", "german");
+        Place(page, "r1", "defender-squad", hexes.From);
+        Place(page, "gd", "dummy:german", hexes.Building);
+        Place(page, "g1", "attacker-squad", hexes.Open);
+        Commit(page, "#propose-setup");
+        Commit(page, "#propose-advance");
+        Commit(page, "#propose-advance");
+
+        // In the Russian MPh the Germans are the DEFENDER: g1's Location is offered, the Dummy's is not (A12.1).
+        Assert.Equal(["", hexes.Open], page.FindAll("#fire-from option").Select(option => option.GetAttribute("value") ?? string.Empty));
+    }
+
+    [Fact]
+    public void AGameThatDoesNotReplaySaysWhy()
+    {
+        var hexes = Hexes();
+        var page = NewGame("russian", "german");
+        Place(page, "r1", "defender-squad", hexes.From);
+        Commit(page, "#propose-setup");
+
+        // The game is rewritten to name a catalog the Studio no longer carries, as a game set up before catalog 1.2.0 does.
+        var file = Directory.GetFiles(live.Root, "village.game.json", SearchOption.AllDirectories).Single();
+        File.WriteAllText(file, File.ReadAllText(file).Replace("asl-scenario-a1@1.2.0", "asl-scenario-a1@1.1.0", StringComparison.Ordinal));
+        var reopened = context.Render<PlayPage>();
+        reopened.Find("#play-game").Change("village");
+        Assert.Contains("does not replay", reopened.Find("#play-replay-failed").TextContent, StringComparison.Ordinal);
+        Assert.NotEmpty(reopened.FindAll("#play-replay-failed li"));
+        Assert.Contains("asl-scenario-a1@1.1.0", reopened.Find("#play-replay-catalog").TextContent, StringComparison.Ordinal);
     }
 }

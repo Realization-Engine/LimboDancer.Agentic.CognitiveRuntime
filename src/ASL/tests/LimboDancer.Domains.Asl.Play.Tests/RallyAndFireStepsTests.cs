@@ -471,6 +471,53 @@ public sealed class RallyAndFireStepsTests : IDisposable
     }
 
     [Fact]
+    public async Task ALeaderMovesWithSixMfAndAWoundedLeaderWithThree()
+    {
+        await Setup("russian", Unit("rl", "asl:leader", "defender-leader", "bd01:A1:0", "russian"),
+            Unit("rw", "asl:leader", "defender-leader", "bd01:A1:0", "russian", "asl:wounded"));
+        await Advance(2);
+        Assert.Equal("mph", Current.Phase);
+        string[] leader = ["rl"];
+        string[] wounded = ["rw"];
+
+        async Task<PlayResult> Step(string[] movers, string to)
+        {
+            var moved = await Do(GameActions.Move, NoRoll(), new
+            {
+                unitIds = movers,
+                to
+            });
+            if (moved.Outcome == PlayOutcome.Committed)
+            {
+                Committed(await Do(GameActions.PassFire, NoRoll(), new
+                {
+                }));
+            }
+
+            return moved;
+        }
+
+        // A4.11: six MF: B1 Open Ground 1, C1 and C2 woods 2 each, B2 Open Ground 1; a seventh is refused.
+        foreach (var to in new[] { "bd01:B1:0", "bd01:C1:0", "bd01:C2:0", "bd01:B2:0" })
+        {
+            Committed(await Step(leader, to));
+        }
+
+        Assert.Equal(6, Current.Unit("rl")!.MfSpent);
+        var refused = await Step(leader, "bd01:A2:0");
+        Assert.Contains(refused.Reasons, reason => reason.Contains("play.move-mf", StringComparison.Ordinal));
+        Committed(await Do(GameActions.EndMove, NoRoll(), new
+        {
+        }));
+
+        // A17.2: a wounded leader has three.
+        Committed(await Step(wounded, "bd01:B1:0"));
+        Committed(await Step(wounded, "bd01:C1:0"));
+        refused = await Step(wounded, "bd01:C2:0");
+        Assert.Contains(refused.Reasons, reason => reason.Contains("play.move-mf", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task SubsequentFirstFireMarksTheFirersWithFinalFire()
     {
         await Setup("german", Unit("g1", "asl:squad", "attacker-squad", "bd01:A2:0", "german"),
