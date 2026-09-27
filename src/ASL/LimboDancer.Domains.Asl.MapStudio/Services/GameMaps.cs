@@ -47,10 +47,10 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, RenderCache
 
     /// <summary>
     /// Draws a live game at a revision for a viewer, with a location highlighted when given, and any extra layer (such
-    /// as an LOS line) on top.
+    /// as an LOS line) on top, then the Residual FP counters in play (unit step 22).
     /// </summary>
     public GameMapDrawing Draw(string gameId, MapInPlay map, Perspective viewer, long revision, BoardLocation? highlight = null,
-        Func<StudioBoard, string>? extraLayer = null)
+        Func<StudioBoard, string>? extraLayer = null, IReadOnlyList<ResidualFire>? residualFire = null)
     {
         ArgumentNullException.ThrowIfNull(map);
         ArgumentNullException.ThrowIfNull(viewer);
@@ -82,6 +82,20 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, RenderCache
         if (extraLayer is not null)
         {
             layers.Add(extraLayer(board));
+        }
+
+        // Residual FP is public (A8.2): every viewer sees each counter's value at the centre of its hex.
+        foreach (var residual in residualFire ?? [])
+        {
+            if (UnitLibrary.TargetFor(board).Locate(residual.Location) is { } at)
+            {
+                var vertices = board.Render.Grid.Geometry.Vertices(at).ToArray();
+                var x = vertices.Average(point => point.X);
+                var y = vertices.Average(point => point.Y);
+                layers.Add(string.Create(CultureInfo.InvariantCulture,
+                    $"<g class=\"play-residual\" data-location=\"{residual.Location}\" data-fp=\"{residual.Fp}\"><circle cx=\"{x:0.##}\" cy=\"{y:0.##}\" r=\"14\" fill=\"#fff3c4\" stroke=\"#a40\" stroke-width=\"2\"/>"
+                    + $"<text x=\"{x:0.##}\" y=\"{y + 5:0.##}\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"#a40\">{residual.Fp}</text></g>"));
+            }
         }
 
         var svg = rendered.Svg;

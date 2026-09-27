@@ -337,6 +337,29 @@ public sealed class RallyAndFireStepsTests : IDisposable
     }
 
     [Fact]
+    public async Task U23ASquadMarkedPrepFireMayNotFireInTheAfph()
+    {
+        await Setup("russian", Unit("r4", "asl:squad", "defender-squad", "bd01:A1:0", "russian"),
+            Unit("g2", "asl:squad", "attacker-squad", "bd01:A2:0", "german"), Unit("g4", "asl:squad", "attacker-squad", "bd01:B1:0", "german"));
+        await Advance();
+        Committed(await Do(GameActions.Fire, Once(6, 5), new
+        {
+            firers = R4,
+            target = "bd01:A2:0"
+        }));
+        await Advance(3);
+        Assert.Equal("afph", Current.Phase);
+        var revision = Revision;
+        var refused = await Do(GameActions.Fire, NoRoll(), new
+        {
+            firers = R4,
+            target = "bd01:B1:0"
+        });
+        Assert.NotEqual(PlayOutcome.Committed, refused.Outcome);
+        Assert.Equal(revision, Revision);
+    }
+
+    [Fact]
     public async Task U24ADummyIsRemovedAndFireAtAnEmptyLocationCommits()
     {
         await Setup("russian", Unit("r4", "asl:squad", "defender-squad", "bd01:A1:0", "russian"),

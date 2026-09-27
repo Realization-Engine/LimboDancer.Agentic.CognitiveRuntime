@@ -49,7 +49,7 @@ public sealed partial class GamePlanner
     private static readonly Lazy<ScenarioA1FireReference> FireReference = new(() => new ScenarioA1FirePackage().Reference);
 
     // The VASL terrain names the Fire package's TEM admits (Terrain Chart p. 698; B1.1, B12, B13, B14, B15, B23). A road hex is
-    // Open Ground apart from its road (B1.1; review reading of steps 19 to 23).
+    // Open Ground apart from its road (B1.11, p. 113).
     private static readonly IReadOnlyDictionary<string, string> FireTerrain = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         ["Open Ground"] = "open-ground",

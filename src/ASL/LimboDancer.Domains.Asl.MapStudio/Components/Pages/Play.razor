@@ -119,12 +119,18 @@ else if (state is not null)
                 {
                     <option value="@definition.Id">@definition.Id (@definition.Nationality @definition.Kind.Replace("asl:", string.Empty, StringComparison.Ordinal))</option>
                 }
+                @foreach (var side in new[] { firstSide, secondSide }.Distinct(StringComparer.Ordinal))
+                {
+                    <option value="@(DummyPrefix + side)">a Dummy (@side)</option>
+                }
             </select>
         </label>
         <label>Id <input id="place-id" value="@placeId" @onchange="@(args => placeId = args.Value as string ?? string.Empty)" size="8" /></label>
         <label>Location <input id="place-location" value="@placeLocation" @onchange="@(args => placeLocation = args.Value as string ?? string.Empty)" size="12" /></label>
+        <label>Or held by <input id="place-holder" value="@placeHolder" @onchange="@(args => placeHolder = args.Value as string ?? string.Empty)" size="8" /></label>
         <label><input id="place-concealed" type="checkbox" checked="@placeConcealed" @onchange="@(args => placeConcealed = args.Value is true)" /> concealed</label>
         <label><input id="place-hidden" type="checkbox" checked="@placeHidden" @onchange="@(args => placeHidden = args.Value is true)" /> hidden</label>
+        <label><input id="place-broken" type="checkbox" checked="@placeBroken" @onchange="@(args => placeBroken = args.Value is true)" /> broken</label>
         <button id="place-add" @onclick="AddPlacement">Add</button>
     </div>
     @if (placements.Count > 0)
@@ -132,7 +138,7 @@ else if (state is not null)
         <ul id="place-list">
             @foreach (var placement in placements)
             {
-                <li>@placement.Id: @placement.Definition at @placement.Location@(placement.Concealed ? ", concealed" : "")@(placement.Hidden ? ", hidden" : "") <button class="link" @onclick="() => placements.Remove(placement)">remove</button></li>
+                <li>@placement.Id: @(placement.Definition ?? "a Dummy") @(placement.Holder is { } holder ? $"held by {holder}" : $"at {placement.Location}")@(placement.Concealed ? ", concealed" : "")@(placement.Hidden ? ", hidden" : "")@(placement.Broken ? ", broken" : "") <button class="link" @onclick="() => placements.Remove(placement)">remove</button></li>
             }
         </ul>
     }
@@ -162,18 +168,91 @@ else if (state is not null)
         The adjudicator decides an entry from the whole game. An entry into a building the moving side cannot see into is only declared when proposed;
         what it finds there is disclosed when it is confirmed.
     </p>
+    @if (state.Phase == "rph")
+    {
+        <h4>Rally and Repair</h4>
+        <p class="muted" id="rally-help">
+            In the RPh a broken unit may attempt to rally once per Player Turn, rallied by a Good Order leader in its Location or by Self-Rally
+            (A10.6), and a Good Order unit that did not attempt to rally may repair a malfunctioned SW it possesses (A9.72).
+            The reviewed Rally package resolves the attempt only when every outcome the dice can reach is decided.
+        </p>
+        <div class="toolbar">
+            <label>
+                Broken unit
+                <select id="rally-unit" value="@rallyUnit" @onchange="@(args => { rallyUnit = args.Value as string ?? string.Empty; rallyLeader = string.Empty; })">
+                    <option value="">choose</option>
+                    @foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Broken) == ConditionState.True))
+                    {
+                        <option value="@unit.Id">@unit.Id (@unit.Side)</option>
+                    }
+                </select>
+            </label>
+            <label>
+                Rallied by
+                <select id="rally-leader" value="@rallyLeader" @onchange="@(args => rallyLeader = args.Value as string ?? string.Empty)">
+                    <option value="">Self-Rally</option>
+                    @foreach (var leader in RallyLeaders)
+                    {
+                        <option value="@leader.Id">@leader.Id</option>
+                    }
+                </select>
+            </label>
+            <button id="propose-rally" disabled="@(rallyUnit.Length == 0)" @onclick="ProposeRally">Propose: rally</button>
+        </div>
+        <div class="toolbar">
+            <label>
+                Malfunctioned SW
+                <select id="repair-weapon" value="@repairWeapon" @onchange="@(args => repairWeapon = args.Value as string ?? string.Empty)">
+                    <option value="">choose</option>
+                    @foreach (var weapon in state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed }
+                        && GameState.Condition(item, Conditions.Malfunctioned) == ConditionState.True))
+                    {
+                        <option value="@weapon.Id">@weapon.Id (held by @weapon.Holding!.Holder)</option>
+                    }
+                </select>
+            </label>
+            <button id="propose-repair" disabled="@(repairWeapon.Length == 0)" @onclick="ProposeRepair">Propose: repair</button>
+        </div>
+    }
+    @if (state.Phase == "mph")
+    {
+        <h4>Movement</h4>
+        <p class="muted" id="move-help">
+            The @state.PhasingSide side moves one stack at a time, one Location per step (A4.1). After each step the DEFENDER may fire at the stack
+            or pass (A8.1, A8.11); the stack then moves on or ends its move. A Location holding Residual FP attacks a stack as it enters (A8.22).
+        </p>
+        @if (state.Movement is { } movement)
+        {
+            <p id="move-state" data-step="@movement.Step" data-window="@(movement.WindowOpen ? "open" : "closed")">
+                <strong>@string.Join(", ", movement.Movers)</strong> in @movement.Location, step @movement.Step@(movement.Assault ? ", by Assault Movement" : ""):
+                @(movement.WindowOpen ? "the DEFENDER may fire, or pass." : "the DEFENDER has passed; move on or end the move.")
+            </p>
+        }
+        <div class="toolbar">
+            @foreach (var unit in MoveCandidates)
+            {
+                <label><input class="move-unit" type="checkbox" data-unit="@unit.Id" checked="@moveUnits.Contains(unit.Id)" @onchange="@(args => Toggle(moveUnits, unit.Id, args.Value is true))" /> @unit.Id (@state.Location(unit.Id)?.Location)</label>
+            }
+            <label>To <input id="move-to" value="@moveTo" @onchange="@(args => moveTo = args.Value as string ?? string.Empty)" size="12" /></label>
+            <label><input id="move-assault" type="checkbox" checked="@moveAssault" @onchange="@(args => moveAssault = args.Value is true)" /> Assault Movement</label>
+            <button id="propose-move" disabled="@(moveUnits.Count == 0 || moveTo.Trim().Length == 0)" @onclick="ProposeMove">Propose: move</button>
+            <button id="propose-pass" disabled="@(state.Movement is not { WindowOpen: true })" @onclick='@(() => ProposeSimple(GameActions.PassFire, "pass"))'>Propose: the DEFENDER passes</button>
+            <button id="propose-end-move" disabled="@(state.Movement is not { WindowOpen: false })" @onclick='@(() => ProposeSimple(GameActions.EndMove, "end"))'>Propose: end the move</button>
+        </div>
+    }
     @if (FiringSide is { } firing)
     {
         <h4>Fire</h4>
         <p class="muted" id="fire-side">
-            The @firing side may fire in the @Games.PhaseLabel(state.Phase) (A3.2, A3.4): Good Order squads and half-squads in one Location as one fire group,
-            optionally directed by a leader there, at a Location the @firing side can see into. The reviewed Fire package resolves the attack, and only when
-            every outcome the dice can reach is decided.
+            The @firing side may fire in the @Games.PhaseLabel(state.Phase) (A3.2, A3.3, A3.4, A3.5): Good Order squads and half-squads, in one Location
+            or in Locations each ADJACENT to another (A7.5), as one fire group, with the MGs they possess, optionally directed by a leader, at a Location
+            the @firing side can see into or at any Location. The reviewed Fire package resolves the attack, and only when every outcome the dice can reach
+            is decided.
         </p>
         <div class="toolbar">
             <label>
                 From
-                <select id="fire-from" value="@fireFrom" @onchange="ChooseFireFrom">
+                <select id="fire-from" value="@fireFrom" @onchange="@(args => fireFrom = args.Value as string ?? string.Empty)">
                     <option value="">choose</option>
                     @foreach (var at in FireLocations(firing))
                     {
@@ -183,13 +262,22 @@ else if (state is not null)
             </label>
             @foreach (var unit in FireGroupAt(firing).Where(unit => unit.Kind != "asl:leader"))
             {
-                <label><input class="fire-firer" type="checkbox" data-unit="@unit.Id" checked="@fireFirers.Contains(unit.Id)" @onchange="@(args => ToggleFirer(unit.Id, args.Value is true))" /> @unit.Id</label>
+                <label><input class="fire-firer" type="checkbox" data-unit="@unit.Id" checked="@fireFirers.Contains(unit.Id)" @onchange="@(args => Toggle(fireFirers, unit.Id, args.Value is true))" /> @unit.Id</label>
             }
+            @foreach (var weapon in FireWeapons)
+            {
+                <label><input class="fire-weapon" type="checkbox" data-weapon="@weapon.Id" checked="@fireWeapons.Contains(weapon.Id)" @onchange="@(args => Toggle(fireWeapons, weapon.Id, args.Value is true))" /> @weapon.Id (@weapon.Holding!.Holder)</label>
+            }
+            @foreach (var id in fireFirers.Where(id => FireWeapons.Any(weapon => weapon.Holding!.Holder == id && fireWeapons.Contains(weapon.Id))).Order(StringComparer.Ordinal))
+            {
+                <label><input class="fire-alone" type="checkbox" data-unit="@id" checked="@fireAlone.Contains(id)" @onchange="@(args => Toggle(fireAlone, id, args.Value is true))" /> @id's MGs alone</label>
+            }
+}
             <label>
                 Director
                 <select id="fire-director" value="@fireDirector" @onchange="@(args => fireDirector = args.Value as string ?? string.Empty)">
                     <option value="">none</option>
-                    @foreach (var leader in FireGroupAt(firing).Where(unit => unit.Kind == "asl:leader"))
+                    @foreach (var leader in FireLeaders(firing))
                     {
                         <option value="@leader.Id">@leader.Id</option>
                     }
@@ -205,7 +293,9 @@ else if (state is not null)
                     }
                 </select>
             </label>
-            <button id="propose-fire" disabled="@(fireFirers.Count == 0 || fireTarget.Length == 0)" @onclick="ProposeFire">Propose: fire</button>
+            <label>Or any Location <input id="fire-free-target" value="@fireFreeTarget" @onchange="@(args => fireFreeTarget = args.Value as string ?? string.Empty)" size="12" /></label>
+            <button id="propose-fire" disabled="@(fireFirers.Count == 0 || FireTarget.Length == 0)" @onclick="ProposeFire">Propose: fire</button>
+            <button id="fire-clear" class="link" @onclick="ClearFire">clear</button>
         </div>
     }
 }
@@ -337,6 +427,13 @@ else if (state is not null)
     }
 
     <h3>Map</h3>
+    @if (state.ResidualFire.Count > 0)
+    {
+        <p id="play-residual">
+            Residual FP this MPh (A8.2):
+            @string.Join("; ", state.ResidualFire.Select(item => $"{item.Fp} in {item.Location}"))
+        </p>
+    }
     @if (Drawing is { } drawing)
     {
         @if (drawing.Svg is { } svg)
@@ -387,7 +484,7 @@ else if (state is not null)
                 <tr data-unit="@unit.Id">
                     <td>@unit.Id</td><td>@unit.Side</td><td>@unit.Kind.Replace("asl:", string.Empty, StringComparison.Ordinal)</td>
                     <td>
-                        @if (state.Location(unit.Id)?.Location is { } at)
+                        @if (unit.Status == InstanceStatus.Active && state.Location(unit.Id)?.Location is { } at)
                         {
                             <button class="play-locate" @onclick="() => highlight = at">@at</button>
                         }
@@ -418,7 +515,10 @@ else if (state is not null)
 }
 
 @code {
-    private sealed record Placement(string Id, string Definition, string Kind, string Side, string Location, bool Concealed, bool Hidden);
+    private sealed record Placement(string Id, string? Definition, string Kind, string Side, string Location, bool Concealed, bool Hidden, string? Holder,
+        bool Broken = false);
+
+    private const string DummyPrefix = "dummy:";
 
     private sealed record Proposal(ActionDescriptor Action, JsonElement Arguments, PlayResult Result);
 
@@ -438,6 +538,8 @@ else if (state is not null)
     private string placeLocation = "bd01:D4:0";
     private bool placeConcealed;
     private bool placeHidden;
+    private string placeHolder = string.Empty;
+    private bool placeBroken;
     private string enterUnit = string.Empty;
     private string enterLocation = "bd01:E4:0";
     private Proposal? pending;
@@ -449,6 +551,15 @@ else if (state is not null)
     private readonly HashSet<string> fireFirers = new(StringComparer.Ordinal);
     private string fireDirector = string.Empty;
     private string fireTarget = string.Empty;
+    private string fireFreeTarget = string.Empty;
+    private readonly HashSet<string> fireWeapons = new(StringComparer.Ordinal);
+    private readonly HashSet<string> fireAlone = new(StringComparer.Ordinal);
+    private string rallyUnit = string.Empty;
+    private string rallyLeader = string.Empty;
+    private string repairWeapon = string.Empty;
+    private readonly HashSet<string> moveUnits = new(StringComparer.Ordinal);
+    private string moveTo = string.Empty;
+    private bool moveAssault;
 
     /// <summary>A fire attack as the viewer may see it: the record, or the public report of one withheld from the viewer.</summary>
     private sealed record FireView(string EventId, string From, string Target, string? Director, string? TargetSide, FireArithmetic Arithmetic,
@@ -461,7 +572,7 @@ else if (state is not null)
 
     /// <summary>The game's map drawn for the viewer at the shown revision (Composed Maps Design, section 8).</summary>
     private GameMapDrawing? Drawing => state is not null && history?.Current is not null
-        ? GameMaps.Draw(gameId, state.Map, Viewer, state.Revision, highlight, playLos is { } check ? board => Los.Layer(board, check) : null)
+        ? GameMaps.Draw(gameId, state.Map, Viewer, state.Revision, highlight, playLos is { } check ? board => Los.Layer(board, check) : null, state.ResidualFire)
         : null;
 
     /// <summary>What "View on" opens: the saved map the game copied, or its first board.</summary>
@@ -568,11 +679,95 @@ else if (state is not null)
             ? disclosure.ReasonsForMover(plan, confirmed: proposal.Result.Outcome != PlayOutcome.NeedsConfirmation)
             : proposal.Result.Plan?.Fire is { } fire ? fire.ReasonsFor(proposal.Result.Reasons, Viewer) : proposal.Result.Reasons;
 
-    /// <summary>The side that may fire now: the phasing side in its PFPh, the other side in the DFPh (A3.2, A3.4); none otherwise.</summary>
+    /// <summary>
+    /// The side that may fire now: the phasing side in its PFPh and AFPh, the other side in the MPh and DFPh (A3.2, A3.3,
+    /// A3.4, A3.5); none otherwise.
+    /// </summary>
     private string? FiringSide => state is null || state.Sides.Count != 2 ? null
-        : state.Phase == "pfph" ? state.PhasingSide
-        : state.Phase == "dfph" ? state.Sides.First(side => side.Id != state.PhasingSide).Id
+        : state.Phase is "pfph" or "afph" ? state.PhasingSide
+        : state.Phase is "mph" or "dfph" ? state.Sides.First(side => side.Id != state.PhasingSide).Id
         : null;
+
+    /// <summary>The leaders who may direct the chosen fire group: active leaders of the firing side in a firer's Location (A7.53).</summary>
+    private IEnumerable<UnitInstance> FireLeaders(string side) => state is null ? []
+        : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && unit.Kind == "asl:leader"
+            && fireFirers.Any(id => state.Location(id)?.Location is { } at && state.Location(unit.Id)?.Location == at))
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal);
+
+    /// <summary>The MGs the chosen firers possess (A9.1): each may add its FP to the attack or, with its holder's choice, fire alone.</summary>
+    private IReadOnlyList<EquipmentInstance> FireWeapons => state is null ? []
+        : [.. state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding
+            && fireFirers.Contains(holding.Holder) && Library.Vocabulary.IsA(item.Kind, "asl:mg")).OrderBy(item => item.Id, StringComparer.Ordinal)];
+
+    /// <summary>The target: any Location typed in, or else the one chosen from the Locations the firing side knows to hold an enemy.</summary>
+    private string FireTarget => fireFreeTarget.Trim() is { Length: > 0 } typed ? typed : fireTarget;
+
+    private void ClearFire()
+    {
+        fireFirers.Clear();
+        fireWeapons.Clear();
+        fireAlone.Clear();
+        fireDirector = string.Empty;
+        fireTarget = string.Empty;
+        fireFreeTarget = string.Empty;
+    }
+
+    /// <summary>The leaders who may rally the chosen unit: the Good Order or broken leaders of its side in its Location (A10.6, A10.71).</summary>
+    private IEnumerable<UnitInstance> RallyLeaders => state?.Unit(rallyUnit) is not { } unit || state.Location(unit.Id)?.Location is not { } at ? []
+        : state.At(at).OfType<UnitInstance>().Where(item => item.Status == InstanceStatus.Active && item.Id != unit.Id && item.Side == unit.Side
+            && item.Kind == "asl:leader").OrderBy(item => item.Id, StringComparer.Ordinal);
+
+    /// <summary>The phasing side's units that may still move this MPh: the moving stack itself while one moves.</summary>
+    private IEnumerable<UnitInstance> MoveCandidates => state is null ? []
+        : state.Movement is { } movement ? movement.Movers.Select(state.Unit).OfType<UnitInstance>()
+        : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && !unit.MovementEnded
+            && state.Location(unit.Id) is not null && GameState.Condition(unit, Conditions.Broken) != ConditionState.True).OrderBy(unit => unit.Id, StringComparer.Ordinal);
+
+    private Task ProposeRally()
+    {
+        var arguments = new Dictionary<string, object>
+        {
+            ["gameId"] = gameId,
+            ["attemptId"] = Attempt("rally"),
+            ["expectedRevision"] = (long)history!.Events.Count,
+            ["unitId"] = rallyUnit,
+        };
+        if (rallyLeader.Length > 0)
+        {
+            arguments["leader"] = rallyLeader;
+        }
+
+        return Propose(GameActions.Rally, JsonSerializer.SerializeToElement(arguments));
+    }
+
+    private Task ProposeRepair() => state?.Find(repairWeapon) is EquipmentInstance { Holding: { } holding }
+        ? Propose(GameActions.Repair, JsonSerializer.SerializeToElement(new
+        {
+            gameId, attemptId = Attempt("repair"), expectedRevision = (long)history!.Events.Count, unitId = holding.Holder, equipmentId = repairWeapon,
+        }))
+        : Task.CompletedTask;
+
+    private Task ProposeMove() => Propose(GameActions.Move, JsonSerializer.SerializeToElement(new
+    {
+        gameId, attemptId = Attempt("move"), expectedRevision = (long)history!.Events.Count, unitIds = moveUnits.Order(StringComparer.Ordinal).ToArray(),
+        to = moveTo.Trim(), assault = moveAssault,
+    }));
+
+    /// <summary>An action that names only the game: the DEFENDER's pass, or the end of the moving stack's move.</summary>
+    private Task ProposeSimple(ActionDescriptor action, string kind) => Propose(action,
+        JsonSerializer.SerializeToElement(new { gameId, attemptId = Attempt(kind), expectedRevision = (long)history!.Events.Count }));
+
+    private static void Toggle(HashSet<string> set, string id, bool chosen)
+    {
+        if (chosen)
+        {
+            set.Add(id);
+        }
+        else
+        {
+            set.Remove(id);
+        }
+    }
 
     /// <summary>The Locations that hold active units of the firing side.</summary>
     private IEnumerable<string> FireLocations(string side) => state is null ? []
@@ -600,25 +795,6 @@ else if (state is not null)
             .OfType<string>().Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal);
     }
 
-    private void ChooseFireFrom(ChangeEventArgs args)
-    {
-        fireFrom = args.Value as string ?? string.Empty;
-        fireFirers.Clear();
-        fireDirector = string.Empty;
-    }
-
-    private void ToggleFirer(string id, bool chosen)
-    {
-        if (chosen)
-        {
-            fireFirers.Add(id);
-        }
-        else
-        {
-            fireFirers.Remove(id);
-        }
-    }
-
     private Task ProposeFire()
     {
         var arguments = new Dictionary<string, object>
@@ -627,11 +803,23 @@ else if (state is not null)
             ["attemptId"] = Attempt("fire"),
             ["expectedRevision"] = (long)history!.Events.Count,
             ["firers"] = fireFirers.Order(StringComparer.Ordinal).ToArray(),
-            ["target"] = fireTarget,
+            ["target"] = FireTarget.Trim(),
         };
         if (fireDirector.Length > 0)
         {
             arguments["director"] = fireDirector;
+        }
+
+        // A9.2: the MGs each firer uses, and the firers whose MGs fire without their inherent FP.
+        var weapons = FireWeapons.Where(item => fireWeapons.Contains(item.Id)).GroupBy(item => item.Holding!.Holder)
+            .ToDictionary(group => group.Key, group => group.Select(item => item.Id).ToArray(), StringComparer.Ordinal);
+        if (weapons.Count > 0)
+        {
+            arguments["weapons"] = weapons;
+            if (fireAlone.Where(weapons.ContainsKey).Order(StringComparer.Ordinal).ToArray() is { Length: > 0 } alone)
+            {
+                arguments["withoutInherent"] = alone;
+            }
         }
 
         return Propose(GameActions.Fire, JsonSerializer.SerializeToElement(arguments));
@@ -731,6 +919,12 @@ else if (state is not null)
     {
         history = gameId.Length > 0 ? Live.History(gameId) : null;
         state = history?.Current ?? (history is { States.Count: > 0 } ? history.States[^1] : null);
+        if (state?.Movement is { } movement)
+        {
+            moveUnits.Clear();
+            moveUnits.UnionWith(movement.Movers);
+        }
+
         if (state is not null && !state.Units.Any(unit => unit.Id == enterUnit))
         {
             enterUnit = state.Units.FirstOrDefault()?.Id ?? string.Empty;
@@ -744,6 +938,12 @@ else if (state is not null)
 
     private void AddPlacement()
     {
+        if (placeDefinition.StartsWith(DummyPrefix, StringComparison.Ordinal))
+        {
+            AddDummy(placeDefinition[DummyPrefix.Length..]);
+            return;
+        }
+
         if (Definitions.FirstOrDefault(definition => definition.Id == placeDefinition) is not { } definition)
         {
             return;
@@ -752,22 +952,26 @@ else if (state is not null)
         var id = placeId.Trim().Length > 0 ? placeId.Trim() : $"{definition.Id}-{placements.Count + 1}";
         var side = new[] { firstSide, secondSide }.Contains(definition.Nationality) ? definition.Nationality
             : state?.Sides.FirstOrDefault(item => item.Nationality == definition.Nationality)?.Id ?? definition.Nationality;
-        placements.Add(new Placement(id, definition.Id, definition.Kind, side, placeLocation.Trim(), placeConcealed, placeHidden));
+
+        // A SW is placed in the possession of a unit (A9.1); anything else at a Location.
+        var holder = placeHolder.Trim() is { Length: > 0 } held && Library.Vocabulary.IsA(definition.Kind, "asl:equipment") ? held : null;
+        placements.Add(new Placement(id, definition.Id, definition.Kind, side, placeLocation.Trim(), placeConcealed, placeHidden, holder,
+            placeBroken && holder is null));
+        placeId = string.Empty;
+    }
+
+    /// <summary>A Dummy (A12.1): a "?" with no unit beneath it, so it has no definition and is always concealed.</summary>
+    private void AddDummy(string side)
+    {
+        var id = placeId.Trim().Length > 0 ? placeId.Trim() : $"dummy-{side}-{placements.Count + 1}";
+        placements.Add(new Placement(id, null, UnitKinds.Dummy, side, placeLocation.Trim(), true, placeHidden, null));
         placeId = string.Empty;
     }
 
     private async Task ProposeSetup()
     {
         var game = history is null ? newId.Trim() : gameId;
-        object[] units = [.. placements.Select(item => (object)new
-        {
-            id = item.Id, kind = item.Kind, definition = item.Definition, side = item.Side, position = new { at = item.Location },
-            conditions = new Dictionary<string, bool>
-            {
-                ["asl:broken"] = false, ["asl:berserk"] = false, ["asl:captured"] = false, ["asl:melee"] = false, ["asl:ti"] = false,
-                ["asl:disrupted"] = false, ["asl:concealed"] = item.Concealed, ["asl:hidden"] = item.Hidden,
-            },
-        })];
+        object[] units = [.. placements.Select(PlacementArguments)];
         var catalog = PublishedCatalog is { } published ? $"{published.Identity.Catalog}@{published.Identity.Version}" : string.Empty;
         var arguments = history is null
             ? JsonSerializer.SerializeToElement(new
@@ -779,6 +983,36 @@ else if (state is not null)
             : JsonSerializer.SerializeToElement(new { gameId = game, attemptId = Attempt("setup"), expectedRevision = (long)history.Events.Count, placements = units });
         gameId = game;
         await Propose(GameActions.Setup, arguments);
+    }
+
+    /// <summary>
+    /// A placement as the setup action reads it: a SW in its holder's possession with its malfunction state (A9.1), a Dummy
+    /// with only its concealment (A12.1), and any other unit at its Location with its full set of conditions.
+    /// </summary>
+    private static Dictionary<string, object?> PlacementArguments(Placement item)
+    {
+        var placement = new Dictionary<string, object?> { ["id"] = item.Id, ["kind"] = item.Kind, ["side"] = item.Side };
+        if (item.Definition is not null)
+        {
+            placement["definition"] = item.Definition;
+        }
+
+        if (item.Holder is { } holder)
+        {
+            placement["holding"] = new { holder, role = "possessed" };
+            placement["conditions"] = new Dictionary<string, bool> { ["asl:malfunctioned"] = false };
+            return placement;
+        }
+
+        placement["position"] = new { at = item.Location };
+        placement["conditions"] = item.Kind == UnitKinds.Dummy
+            ? new Dictionary<string, bool> { ["asl:concealed"] = true, ["asl:hidden"] = item.Hidden }
+            : new Dictionary<string, bool>
+            {
+                ["asl:broken"] = item.Broken, ["asl:berserk"] = false, ["asl:captured"] = false, ["asl:melee"] = false, ["asl:ti"] = false,
+                ["asl:disrupted"] = false, ["asl:concealed"] = item.Concealed, ["asl:hidden"] = item.Hidden,
+            };
+        return placement;
     }
 
     /// <summary>A new game's start: its sides with their ELRs, and the scenario month when one is chosen.</summary>
@@ -851,9 +1085,32 @@ else if (state is not null)
 
         var result = await Run(() => Live.Play.ConfirmAsync(proposal.Action, proposal.Arguments, Live.Principal, proposal.Result.Correlation));
         pending = proposal with { Result = result };
-        if (result.Outcome is PlayOutcome.Committed or PlayOutcome.Replay && proposal.Action == GameActions.Setup)
+        if (result.Outcome is PlayOutcome.Committed or PlayOutcome.Replay)
         {
-            placements.Clear();
+            // A committed action's choices are spent: the next one starts from nothing.
+            if (proposal.Action == GameActions.Setup)
+            {
+                placements.Clear();
+            }
+            else if (proposal.Action == GameActions.Fire)
+            {
+                ClearFire();
+            }
+            else if (proposal.Action == GameActions.EndMove)
+            {
+                moveUnits.Clear();
+                moveTo = string.Empty;
+                moveAssault = false;
+            }
+            else if (proposal.Action == GameActions.Rally)
+            {
+                rallyUnit = string.Empty;
+                rallyLeader = string.Empty;
+            }
+            else if (proposal.Action == GameActions.Repair)
+            {
+                repairWeapon = string.Empty;
+            }
         }
 
         Refresh();
