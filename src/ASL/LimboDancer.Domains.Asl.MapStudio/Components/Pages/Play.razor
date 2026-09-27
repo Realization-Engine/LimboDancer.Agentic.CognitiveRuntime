@@ -275,6 +275,110 @@ else if (state is not null)
             <button id="propose-end-move" disabled="@(state.Movement is not { WindowOpen: false })" @onclick="ProposeEndMove">Propose: end the move@(EndingSome ? " of the checked units" : "")</button>
         </div>
     }
+    @if (state.Phase == "aph")
+    {
+        <h4>Advance</h4>
+        <p class="muted" id="advance-help">
+            The @state.PhasingSide side's Infantry that are not broken, pinned, berserk, or held in Melee may advance one Location (A3.7, A4.7),
+            even into a Location of Known enemy units, where Close Combat follows. A unit that fired in the PFPh may advance.
+        </p>
+        <div class="toolbar">
+            @foreach (var unit in AdvanceCandidates)
+            {
+                <label><input class="advance-unit" type="checkbox" data-unit="@unit.Id" checked="@advanceUnits.Contains(unit.Id)" @onchange="@(args => Toggle(advanceUnits, unit.Id, args.Value is true))" /> @unit.Id (@state.Location(unit.Id)?.Location)</label>
+            }
+            <label>To <input id="advance-to" value="@advanceTo" @onchange="@(args => advanceTo = args.Value as string ?? string.Empty)" size="12" /></label>
+            <button id="propose-advance-units" disabled="@(advanceUnits.Count == 0 || advanceTo.Trim().Length == 0)" @onclick="ProposeAdvanceUnits">Propose: advance</button>
+        </div>
+    }
+    @if (state.Phase == "ccph")
+    {
+        <h4>Close Combat</h4>
+        <p class="muted" id="cc-help">
+            Units of both sides in one Location attack each other (A11.11): one Location at a time, each unit attacking and attacked at most once
+            (A11.12). Where Infantry advanced into woods or a building, roll for Ambush first (A11.4); the ambusher's round comes before the other
+            side's. Declare which MMC each SMC is stacked with before the attacks (A11.14). Units of both sides left in a Location are held in Melee
+            at the end of the phase (A11.15).
+        </p>
+        <div class="toolbar">
+            <label>
+                Location
+                <select id="cc-location" value="@ccLocation" @onchange="@(args => { ccLocation = args.Value as string ?? string.Empty; ClearCloseCombat(); })">
+                    <option value="">choose</option>
+                    @foreach (var at in CloseCombatLocations)
+                    {
+                        <option value="@at">@at</option>
+                    }
+                </select>
+            </label>
+            @if (CloseCombatEntry is { } entry)
+            {
+                <span id="cc-status">
+                    @(entry.AmbushRolled ? entry.Ambusher is { } ambusher ? $"The {ambusher} side ambushes." : "No Ambush." : "")
+                    @(entry.Closed ? "Resolved this CCPh." : entry.Rounds.Count > 0 ? "The ambushed side's round is next." : "")
+                </span>
+            }
+            <button id="propose-ambush" disabled="@(ccLocation.Length == 0)" @onclick="ProposeAmbush">Propose: roll for Ambush</button>
+        </div>
+        @if (ccLocation.Length > 0)
+        {
+            <div class="toolbar" id="cc-stacking">
+                @foreach (var smc in CloseCombatUnits.Where(unit => Library.Vocabulary.IsA(unit.Kind, "asl:smc")))
+                {
+                    <label>
+                        @smc.Id stacked with
+                        <select class="cc-stack" data-unit="@smc.Id" value="@(ccStacking.GetValueOrDefault(smc.Id) ?? string.Empty)" @onchange="@(args => SetStacking(smc.Id, args.Value as string))">
+                            <option value="">alone</option>
+                            @foreach (var mmc in CloseCombatUnits.Where(unit => unit.Side == smc.Side && Library.Vocabulary.IsA(unit.Kind, "asl:mmc")))
+                            {
+                                <option value="@mmc.Id">@mmc.Id</option>
+                            }
+                        </select>
+                    </label>
+                }
+            </div>
+            <div class="toolbar" id="cc-attack">
+                <span>Attackers</span>
+                @foreach (var unit in CloseCombatUnits)
+                {
+                    <label><input class="cc-attacker" type="checkbox" data-unit="@unit.Id" checked="@ccAttackers.Contains(unit.Id)" @onchange="@(args => Toggle(ccAttackers, unit.Id, args.Value is true))" /> @unit.Id (@unit.Side)</label>
+                }
+                <span>Defenders</span>
+                @foreach (var unit in CloseCombatUnits)
+                {
+                    <label><input class="cc-defender" type="checkbox" data-unit="@unit.Id" checked="@ccDefenders.Contains(unit.Id)" @onchange="@(args => Toggle(ccDefenders, unit.Id, args.Value is true))" /> @unit.Id</label>
+                }
+                <label>
+                    Director
+                    <select id="cc-director" value="@ccDirector" @onchange="@(args => ccDirector = args.Value as string ?? string.Empty)">
+                        <option value="">none</option>
+                        @foreach (var leader in CloseCombatUnits.Where(unit => unit.Kind == "asl:leader" && ccAttackers.Contains(unit.Id)))
+                        {
+                            <option value="@leader.Id">@leader.Id</option>
+                        }
+                    </select>
+                </label>
+                <button id="cc-add-attack" disabled="@(ccAttackers.Count == 0 || ccDefenders.Count == 0)" @onclick="AddAttack">Add the attack</button>
+            </div>
+            <ul id="cc-attacks">
+                @foreach (var attack in ccAttacks)
+                {
+                    <li>@string.Join(", ", attack.Attackers) attack @string.Join(", ", attack.Defenders)@(attack.Director is { } director ? $", directed by {director}" : "") <button class="link" @onclick="() => ccAttacks.Remove(attack)">remove</button></li>
+                }
+            </ul>
+            <button id="propose-cc" @onclick="ProposeCloseCombat">Propose: resolve CC@(ccAttacks.Count == 0 ? " with no attacks" : "")</button>
+        }
+    }
+    @foreach (var surrender in state.PendingSurrenders)
+    {
+        <p class="fail" data-surrender="@surrender.Unit">
+            @surrender.Unit has surrendered (A15.5); the captor's side chooses the Guard before anything else happens.
+            @foreach (var captor in surrender.Captors)
+            {
+                <button class="take-prisoner" data-captor="@captor" @onclick="@(() => ProposeTakePrisoner(surrender.Unit, captor))">Propose: @captor takes @surrender.Unit</button>
+            }
+        </p>
+    }
     @if (FiringSide is { } firing)
     {
         <h4>Fire</h4>
@@ -460,6 +564,17 @@ else if (state is not null)
         </div>
     }
 
+    @if (CloseCombatRecords.Count > 0)
+    {
+        <h3>Close Combat</h3>
+        <ul id="play-close-combats">
+            @foreach (var (eventId, text) in CloseCombatRecords)
+            {
+                <li class="cc-record" data-event="@eventId">@text</li>
+            }
+        </ul>
+    }
+
     @if (RallyAndRepairRecords.Count > 0)
     {
         <h3>Rally and Repair</h3>
@@ -622,6 +737,146 @@ else if (state is not null)
     private readonly HashSet<string> moveUnits = new(StringComparer.Ordinal);
     private string moveTo = string.Empty;
     private bool moveAssault;
+    private readonly HashSet<string> advanceUnits = new(StringComparer.Ordinal);
+    private string advanceTo = string.Empty;
+    private string ccLocation = string.Empty;
+    private readonly HashSet<string> ccAttackers = new(StringComparer.Ordinal);
+    private readonly HashSet<string> ccDefenders = new(StringComparer.Ordinal);
+    private string ccDirector = string.Empty;
+    private readonly Dictionary<string, string> ccStacking = new(StringComparer.Ordinal);
+    private readonly List<DeclaredAttack> ccAttacks = [];
+
+    /// <summary>A CC attack declared on the page, not yet proposed.</summary>
+    private sealed record DeclaredAttack(string[] Attackers, string[] Defenders, string? Director);
+
+    /// <summary>The phasing side's units that may advance: not broken, pinned, berserk, in Melee, captured, or already advanced (A4.7).</summary>
+    private IEnumerable<UnitInstance> AdvanceCandidates => state is null ? []
+        : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && !unit.MovementEnded && state.Location(unit.Id) is not null
+            && !new[] { Conditions.Broken, Conditions.Pinned, Conditions.Berserk, Conditions.Melee, Conditions.Captured }.Any(name => GameState.Condition(unit, name) == ConditionState.True))
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal);
+
+    private Task ProposeAdvanceUnits() => Propose(GameActions.Advance, JsonSerializer.SerializeToElement(new
+    {
+        gameId, attemptId = Attempt("adv"), expectedRevision = (long)history!.Events.Count, unitIds = advanceUnits.Order(StringComparer.Ordinal).ToArray(), to = advanceTo.Trim(),
+    }));
+
+    /// <summary>The Locations holding units of both sides, none of them a prisoner: where CC can occur (A11.1).</summary>
+    private IEnumerable<string> CloseCombatLocations => state is null ? []
+        : state.Units.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Captured) != ConditionState.True && state.Location(unit.Id) is not null)
+            .GroupBy(unit => state.Location(unit.Id)!.Location.ToString()).Where(group => group.Select(unit => unit.Side).Distinct(StringComparer.Ordinal).Count() > 1)
+            .Select(group => group.Key).Order(StringComparer.Ordinal);
+
+    private CloseCombatLocation? CloseCombatEntry => state?.CloseCombats.FirstOrDefault(item => item.Location.ToString() == ccLocation);
+
+    private IEnumerable<UnitInstance> CloseCombatUnits => state is null || ccLocation.Length == 0 ? []
+        : state.Units.Where(unit => unit.Status == InstanceStatus.Active && state.Location(unit.Id)?.Location.ToString() == ccLocation)
+            .OrderBy(unit => unit.Side, StringComparer.Ordinal).ThenBy(unit => unit.Id, StringComparer.Ordinal);
+
+    private void SetStacking(string smc, string? mmc)
+    {
+        if (string.IsNullOrEmpty(mmc))
+        {
+            ccStacking.Remove(smc);
+        }
+        else
+        {
+            ccStacking[smc] = mmc;
+        }
+    }
+
+    private void AddAttack()
+    {
+        ccAttacks.Add(new DeclaredAttack([.. ccAttackers.Order(StringComparer.Ordinal)], [.. ccDefenders.Order(StringComparer.Ordinal)],
+            ccDirector.Length > 0 && ccAttackers.Contains(ccDirector) ? ccDirector : null));
+        ccAttackers.Clear();
+        ccDefenders.Clear();
+        ccDirector = string.Empty;
+    }
+
+    private void ClearCloseCombat()
+    {
+        ccAttackers.Clear();
+        ccDefenders.Clear();
+        ccDirector = string.Empty;
+        ccStacking.Clear();
+        ccAttacks.Clear();
+    }
+
+    private Task ProposeAmbush() => Propose(GameActions.Ambush, JsonSerializer.SerializeToElement(new
+    {
+        gameId, attemptId = Attempt("amb"), expectedRevision = (long)history!.Events.Count, location = ccLocation,
+    }));
+
+    private Task ProposeCloseCombat() => Propose(GameActions.CloseCombat, JsonSerializer.SerializeToElement(new Dictionary<string, object>
+    {
+        ["gameId"] = gameId,
+        ["attemptId"] = Attempt("cc"),
+        ["expectedRevision"] = (long)history!.Events.Count,
+        ["location"] = ccLocation,
+        ["attacks"] = ccAttacks.Select(attack => attack.Director is { } director
+            ? (object)new { attackers = attack.Attackers, defenders = attack.Defenders, director }
+            : new { attackers = attack.Attackers, defenders = attack.Defenders }).ToArray(),
+        ["stacking"] = ccStacking,
+    }));
+
+    private Task ProposeTakePrisoner(string unit, string captor) => Propose(GameActions.TakePrisoner, JsonSerializer.SerializeToElement(new
+    {
+        gameId, attemptId = Attempt("cap"), expectedRevision = (long)history!.Events.Count, unitId = unit, captorId = captor,
+    }));
+
+    /// <summary>
+    /// The CC and Ambush records the viewer may see, latest first, in words: each attack's FP, odds, Kill Number, DR with its DRM,
+    /// and each defender's result (A11.11), the leaders an Original 2 created (A18.12), and the SW lost (A11.13).
+    /// </summary>
+    private IReadOnlyList<(string EventId, string Text)> CloseCombatRecords
+    {
+        get
+        {
+            if (history is null)
+            {
+                return [];
+            }
+
+            var records = new List<(string, string)>();
+            foreach (var item in history.Events.Where(item => item.IsVisibleTo(Viewer)))
+            {
+                if (item.Payload is AmbushRolled ambush && ambush.Resolution.Deserialize<AmbushResolution>(LiveFire.Json) is { } rolled)
+                {
+                    var sides = string.Join("; ", rolled.Sides.Select(side => $"{side.Side} dr {side.Dr}{ModifierText(side.Drm)} = {side.FinalDr}"));
+                    records.Add((item.EventId, $"Ambush in {ambush.Location}: {sides}: {(rolled.Ambusher is { } side ? $"the {side} side ambushes" : "no Ambush")} (A11.4)"));
+                }
+                else if (item.Payload is CloseCombatResolved combat && combat.Resolution.Deserialize<CloseCombatResolution>(LiveFire.Json) is { } resolution)
+                {
+                    var attacks = resolution.Attacks.Select(attack =>
+                    {
+                        var defenders = string.Join(", ", attack.Defending.Select(defender =>
+                            $"{defender.UnitId} Final DR {defender.FinalDr}{ModifierText(defender.Drm)}: {DefenderText(defender)}"));
+                        var creation = attack.LeaderCreation is { } created
+                            ? $"; Leader Creation dr {created.Dr}{ModifierText(created.Drm)} = {created.FinalDr}: {(created.LeaderDefinitionId is { } leader ? $"creates {leader}" : "no leader")} (A18.12)"
+                            : "";
+                        return $"{string.Join(", ", attack.Attackers)} ({Number(attack.AttackFirepower)} FP) attack {string.Join(", ", attack.Defenders)} ({Number(attack.DefenseFirepower)} FP) "
+                            + $"at {attack.Odds}, Kill Number {attack.KillNumber}: DR {string.Join(", ", attack.Dice)} = {attack.OriginalDr}{ModifierText(attack.Drm)}; {defenders}{creation}";
+                    });
+                    var lost = resolution.WeaponEffects.Where(weapon => weapon.Eliminated).Select(weapon => $"{weapon.EquipmentId} lost (dr {weapon.Dr}, A11.13)");
+                    var ended = resolution.Effects.Where(effect => effect.BerserkEnded == true).Select(effect => $"{effect.UnitId} is no longer berserk (A15.46)");
+                    var text = resolution.Attacks.Count == 0 ? "no attacks" : string.Join(" | ", attacks);
+                    records.Add((item.EventId, $"CC in {combat.Location}, {combat.Round} round: {string.Join("; ", new[] { text }.Concat(lost).Concat(ended))}"));
+                }
+            }
+
+            records.Reverse();
+            return records;
+        }
+    }
+
+    private static string DefenderText(CloseCombatDefenderResult defender) => defender.Result switch
+    {
+        CloseCombatDefenderResult.Eliminated => "eliminated",
+        CloseCombatDefenderResult.PartialKill => defender.CasualtyReduced == true
+            ? "Casualty Reduction" + (defender.RandomSelectionDr is { } dr ? $" (Random Selection dr {dr})" : "")
+            : $"spared (Random Selection dr {defender.RandomSelectionDr})",
+        _ => "no effect",
+    };
 
     /// <summary>A fire attack as the viewer may see it: the record, or the public report of one withheld from the viewer.</summary>
     private sealed record FireView(string EventId, string Group, string Target, string? TargetSide, FireArithmetic Arithmetic,
@@ -792,7 +1047,8 @@ else if (state is not null)
         : state.Movement is { } movement ? movement.Members.Select(state.Unit).OfType<UnitInstance>()
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && !unit.MovementEnded
             && state.Location(unit.Id) is not null && GameState.Condition(unit, Conditions.Broken) != ConditionState.True
-            && GameState.Condition(unit, Conditions.PrepFire) != ConditionState.True).OrderBy(unit => unit.Id, StringComparer.Ordinal);
+            && GameState.Condition(unit, Conditions.PrepFire) != ConditionState.True && GameState.Condition(unit, Conditions.Melee) != ConditionState.True
+            && GameState.Condition(unit, Conditions.Captured) != ConditionState.True).OrderBy(unit => unit.Id, StringComparer.Ordinal);
 
     private Task ProposeRally()
     {
@@ -1059,6 +1315,12 @@ else if (state is not null)
             results.Add(HeatOfBattleText(heat));
         }
 
+        foreach (var check in arithmetic.BerserkChecks ?? [])
+        {
+            results.Add($"{check.UnitId} Berserk TC {string.Join(", ", check.Dice)}{ModifierText(check.Drm)} = {check.FinalDr} against {check.MoraleLevel}: "
+                + $"{(check.Passed ? "goes berserk" : "no change")} (A15.41)");
+        }
+
         if (arithmetic.LeaderCreation is { } creation)
         {
             var created = creation.LeaderDefinitionId is { } leader2 ? $"creates {leader2}" : "creates no leader";
@@ -1098,9 +1360,18 @@ else if (state is not null)
             parts.Add("becomes Fanatic");
         }
 
-        if (heat.Result is HeatOfBattleOutcome.BerserkNotTaken or HeatOfBattleOutcome.SurrenderNotTaken)
+        if (heat.NoKnownEnemyInLos == true)
         {
-            parts.Add(heat.Result == HeatOfBattleOutcome.BerserkNotTaken ? "Berserk, not taken until Close Combat is built" : "Surrender, not taken until capture is built");
+            parts.Add("Berserk with no Known enemy unit in its LOS, so Battle Hardening instead (A15.44)");
+        }
+
+        if (heat.Result == HeatOfBattleOutcome.Berserk)
+        {
+            parts.Add("goes berserk (A15.4)");
+        }
+        else if (heat.Result == HeatOfBattleOutcome.Surrender)
+        {
+            parts.Add(heat.Captors is { Count: > 0 } captors ? $"surrenders to {string.Join(" or ", captors)}, the captor's choice (A15.5)" : "is broken and Disrupted, with no captor next to it (A15.5)");
         }
 
         if (parts.Count == 0)
@@ -1127,7 +1398,7 @@ else if (state is not null)
         }
 
         foreach (var (applies, name) in new[] { (effect.Broken, "broken"), (effect.Pinned, "pinned"), (effect.Wounded, "wounded"), (effect.Disrupted, "Disrupted"),
-            (effect.ConcealmentLost, "concealment lost") })
+            (effect.Berserk == true, "berserk"), (effect.ConcealmentLost, "concealment lost") })
         {
             if (applies)
             {
@@ -1181,6 +1452,10 @@ else if (state is not null)
         rallyUnit = string.Empty;
         rallyLeader = string.Empty;
         repairWeapon = string.Empty;
+        advanceUnits.Clear();
+        advanceTo = string.Empty;
+        ccLocation = string.Empty;
+        ClearCloseCombat();
         Refresh();
     }
 
@@ -1409,6 +1684,15 @@ else if (state is not null)
             else if (proposal.Action == GameActions.Repair)
             {
                 repairWeapon = string.Empty;
+            }
+            else if (proposal.Action == GameActions.Advance)
+            {
+                advanceUnits.Clear();
+                advanceTo = string.Empty;
+            }
+            else if (proposal.Action == GameActions.CloseCombat)
+            {
+                ClearCloseCombat();
             }
         }
 
