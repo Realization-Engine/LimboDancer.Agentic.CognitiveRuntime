@@ -28,6 +28,8 @@ public sealed class CloseCombatStepsTests : IDisposable
     private static readonly string[] G3 = ["g3"];
     private static readonly string[] R4 = ["r4"];
     private static readonly string[] R4R5 = ["r4", "r5"];
+    private static readonly string[] R5 = ["r5"];
+    private static readonly string[] G1G2 = ["g1", "g2"];
 
     private static readonly LimboDancer.Abstractions.Execution.RuntimePrincipal Player =
         GamePlay.Principal("player", Tenant, GameActions.SetupPermission, GameActions.PlayPermission);
@@ -476,6 +478,138 @@ public sealed class CloseCombatStepsTests : IDisposable
             unitIds = G2,
             to = "bd01:A1:0"
         })).Reasons, reason => reason.StartsWith("play.berserk-concealed", StringComparison.Ordinal));
+
+        // Table-player review, item 2: the step the model cannot take leaves the charge undecided, so it ends in place (ruling R30.5)
+        // and the MPh can end; before, the move could neither go on nor end.
+        var ended = await Do(GameActions.EndMove, NoRoll(), new
+        {
+        });
+        Committed(ended);
+        Assert.Contains(ended.Reasons, reason => reason.Contains("ends in place", StringComparison.Ordinal));
+        Committed(await Do(GameActions.AdvancePhase, NoRoll(), new
+        {
+        }));
+        Assert.Equal("dfph", Current.Phase);
+    }
+
+    [Fact]
+    public async Task AGuardMayNotAdvanceIntoCcWithItsPrisoners()
+    {
+        // Table-player review, item 3: A20.53, A20.55: the prisoners would enter CC with their Guard, which is not reviewed; a Guard
+        // may still advance where no enemy unit is.
+        await Setup("russian", Unit("r4", "asl:squad", "defender-squad", "bd01:A1:0", "russian"), Unit("r5", "asl:squad", "defender-squad", "bd01:A1:0", "russian"),
+            Unit("g2", "asl:squad", "attacker-squad", "bd01:A2:0", "german"), Unit("g3", "asl:squad", "attacker-squad", "bd01:B1:0", "german"));
+        await Advance();
+        Committed(await Do(GameActions.Fire, Once(4, 6, 1, 1, 6, 6), new
+        {
+            firers = R4R5,
+            target = "bd01:A2:0"
+        }));
+        Committed(await Do(GameActions.TakePrisoner, NoRoll(), new
+        {
+            unitId = "g2",
+            captorId = "r4"
+        }));
+        await Advance(5);
+        Assert.Equal("aph", Current.Phase);
+        Assert.Contains((await Do(GameActions.Advance, NoRoll(), new
+        {
+            unitIds = R4,
+            to = "bd01:B1:0"
+        })).Reasons, reason => reason.StartsWith("play.advance-guard", StringComparison.Ordinal));
+        Committed(await Do(GameActions.Advance, NoRoll(), new
+        {
+            unitIds = R5,
+            to = "bd01:B1:0"
+        }));
+    }
+
+    [Fact]
+    public async Task AWithdrawalMayEnterALocationHeldByAFriendlyGuard()
+    {
+        // Table-player review, items 5 and 11: A11.21 allows any ADJACENT Location the unit could advance into with no enemy unit; a
+        // Location holding a friendly Guard and its prisoner qualifies.
+        await Setup("german", Unit("g1", "asl:squad", "attacker-squad", "bd01:B1:0", "german"),
+            Unit("r1", "asl:squad", "defender-squad", "bd01:B1:0", "russian", "asl:broken", "asl:melee"),
+            Unit("rl", "asl:leader", "defender-leader", "bd01:A1:0", "russian"), Unit("g9", "asl:half-squad", "attacker-half-squad", "bd01:A1:0", "german", "asl:captured"));
+        var state = Current;
+        var destinations = Planner().WithdrawalDestinations(state, state.Unit("r1")!, BoardLocation.Parse("bd01:B1:0"));
+        Assert.Contains(BoardLocation.Parse("bd01:A1:0"), destinations);
+        Assert.DoesNotContain(BoardLocation.Parse("bd01:B1:0"), destinations);
+    }
+
+    [Fact]
+    public async Task TheAmbushersAttacksAreSequentialAndTheAmbushedSideCloses()
+    {
+        // Table-player review, item 6: A11.3: the ambusher's attacks need not be predesignated; each is resolved before the next.
+        await Setup("german", Unit("g1", "asl:squad", "attacker-squad", "bd01:B2:0", "german"), Unit("g2", "asl:squad", "attacker-squad", "bd01:B2:0", "german"),
+            Unit("r1", "asl:squad", "defender-squad", "bd01:C2:0", "russian"), Unit("r2", "asl:squad", "defender-squad", "bd01:C2:0", "russian"));
+        await Advance(6);
+        Committed(await Do(GameActions.Advance, NoRoll(), new
+        {
+            unitIds = G1G2,
+            to = "bd01:C2:0"
+        }));
+        await Advance();
+        Committed(await Do(GameActions.Ambush, Once(1, 5), new
+        {
+            location = "bd01:C2:0"
+        }));
+
+        // g1 attacks r1 (6+6-1 = 11 at 1-1: no effect), then g2 attacks r2 in a second record of the same round.
+        Committed(await Do(GameActions.CloseCombat, Once(6, 6), new
+        {
+            location = "bd01:C2:0",
+            attacks = new[] { Attack(G1, ["r1"]) },
+        }));
+        Committed(await Do(GameActions.CloseCombat, Once(6, 6), new
+        {
+            location = "bd01:C2:0",
+            round = CloseCombatResolved.AmbusherRound,
+            attacks = new[] { Attack(G2, ["r2"]) },
+        }));
+
+        // g1 may not attack twice (A11.12).
+        Assert.NotEqual(PlayOutcome.Committed, (await Do(GameActions.CloseCombat, NoRoll(), new
+        {
+            location = "bd01:C2:0",
+            round = CloseCombatResolved.AmbusherRound,
+            attacks = new[] { Attack(G1, ["r2"]) },
+        })).Outcome);
+        Committed(await Do(GameActions.CloseCombat, Once(6, 6), new
+        {
+            location = "bd01:C2:0",
+            attacks = new[] { Attack(["r1", "r2"], G1) },
+        }));
+        Assert.Equal([CloseCombatResolved.AmbusherRound, CloseCombatResolved.AmbusherRound, CloseCombatResolved.AmbushedRound], Current.CloseCombats.Single().Rounds);
+        Assert.True(Current.CloseCombats.Single().Closed);
+        await Advance();
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
+    public async Task ABerserkUnitWithAKnownEnemyMustHaveItsCcBeforeTheCcphEnds()
+    {
+        // Table-player review, item 7: A15.43: the berserk unit attacks in CC; the CCPh may not end with no round in its Location.
+        await Setup("german", Unit("g2", "asl:squad", "attacker-squad", "bd01:B1:0", "german", "asl:berserk"), Unit("r1", "asl:squad", "defender-squad", "bd01:B1:0", "russian"));
+        await Advance(7);
+        Assert.Equal("ccph", Current.Phase);
+        Assert.Contains((await Do(GameActions.AdvancePhase, NoRoll(), new
+        {
+        })).Reasons, reason => reason.StartsWith("play.cc-required", StringComparison.Ordinal));
+        Assert.NotEqual(PlayOutcome.Committed, (await Do(GameActions.CloseCombat, NoRoll(), new
+        {
+            location = "bd01:B1:0",
+            attacks = Array.Empty<object>(),
+        })).Outcome);
+        Committed(await Do(GameActions.CloseCombat, Once(6, 6), new
+        {
+            location = "bd01:B1:0",
+            attacks = new[] { Attack(G2, ["r1"]) },
+        }));
+        Committed(await Do(GameActions.AdvancePhase, NoRoll(), new
+        {
+        }));
     }
 
     [Fact]

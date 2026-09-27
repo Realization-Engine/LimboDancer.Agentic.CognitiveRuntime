@@ -143,6 +143,37 @@ public sealed class CloseCombatRecordTests
     }
 
     [Fact]
+    public void ABrokenGuardInMeleeIsNotEliminatedAtTheEndOfTheCcph()
+    {
+        // Table-player review, item 4: A11.16 eliminates only a non-guard broken unit that cannot withdraw. r1 guards g2 and is
+        // broken in Melee with g1 in E4.
+        (string, string, EventPayload)[] melee = [("m2", "instance-moved", new InstanceMoved("g1", new MapPosition(E4))), Phase("p1", "aph"), Phase("p2", "ccph"),
+            Changed("c1", "r1", Conditions.Melee, ConditionState.True), Changed("c2", "g1", Conditions.Melee, ConditionState.True),
+            Changed("c3", "r1", Conditions.Broken, ConditionState.True), Phase("p3", "rph", "russian")];
+        var guarded = Project(With(8, [Changed("b1", "g2", Conditions.Broken, ConditionState.True), ("s1", "surrender-pending", new SurrenderPending("g2", R1)),
+            ("m1", "instance-moved", new InstanceMoved("g2", new MapPosition(E4))), ("k1", "instance-captured", new InstanceCaptured("g2", "r1")), .. melee]));
+        Assert.False(guarded.HasErrors, string.Join(" ", guarded.Diagnostics));
+
+        // Without its prisoner the broken unit in Melee is eliminated first.
+        Refused(Project(With(8, melee)), "UNIT-STATE-030");
+    }
+
+    [Fact]
+    public void AnAmbushWithNoAmbusherAwaitsItsRound()
+    {
+        // Table-player review, item 8: the refusal names the round still due, not an ambushed side's round.
+        var history = Project(With(8, Phase("p1", "aph"), Advance("a1", G1, E4), Phase("p2", "ccph"), Ambush("m1", null), Phase("p3", "rph", "russian")));
+        Assert.Contains(history.Diagnostics, item => item.Code == "UNIT-STATE-030" && item.Message.Contains("after the Ambush drs", StringComparison.Ordinal));
+
+        // A11.3: after an Ambush the ambusher may make a second record before the ambushed side's round.
+        var sequential = Project(With(8, Phase("p1", "aph"), Advance("a1", G1, E4), Phase("p2", "ccph"), Ambush("m1", "german"),
+            Combat("c1", CloseCombatResolved.AmbusherRound, G1, R1), Combat("c2", CloseCombatResolved.AmbusherRound, ["g2"], ["r9"]),
+            Combat("c3", CloseCombatResolved.AmbushedRound, R1, G1)));
+        Assert.False(sequential.HasErrors, string.Join(" ", sequential.Diagnostics));
+        Assert.True(sequential.Current!.CloseCombats.Single().Closed);
+    }
+
+    [Fact]
     public void TheCloseCombatRecordsRoundTrip()
     {
         var events = Next(With(8, Phase("p1", "aph"), Advance("a1", G1, E4), Phase("p2", "ccph"), Ambush("m1", "german"),

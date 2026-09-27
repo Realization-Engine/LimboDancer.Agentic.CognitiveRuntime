@@ -58,10 +58,12 @@ public static class LiveCloseCombat
 
     /// <summary>
     /// The facts of the next CC round in a Location, before the rolls: its round follows from the Location's CC so far (A11.32),
-    /// and a Location where an Ambush can occur must have its Ambush drs first (A11.4).
+    /// and a Location where an Ambush can occur must have its Ambush drs first (A11.4). After an Ambush the ambusher's attacks are
+    /// sequential (A11.3): each is resolved before the next is declared, until the ambushed side's round is <paramref name="requested"/>.
     /// </summary>
     public static (CloseCombatFacts? Facts, string? Reason) FromState(GameState state, BoardLocation location, string? terrain,
-        IReadOnlyList<CloseCombatDeclaration> attacks, IReadOnlyDictionary<string, string>? stacking, IReadOnlyDictionary<string, string>? withdrawals = null)
+        IReadOnlyList<CloseCombatDeclaration> attacks, IReadOnlyDictionary<string, string>? stacking, IReadOnlyDictionary<string, string>? withdrawals = null,
+        string? requested = null)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(attacks);
@@ -78,7 +80,7 @@ public static class LiveCloseCombat
         }
 
         var round = entry?.Ambusher is null ? CloseCombatFacts.Simultaneous
-            : entry.Rounds.Count == 0 ? CloseCombatFacts.AmbusherRound
+            : entry.Rounds.Count == 0 || requested == CloseCombatFacts.AmbusherRound ? CloseCombatFacts.AmbusherRound
             : CloseCombatFacts.AmbushedRound;
         return (new CloseCombatFacts(state.Phase == "ccph" ? "CCPh" : state.Phase, location.ToString(), terrain, state.PhasingSide, round, entry?.Ambusher, units,
             entry?.Attacked ?? [], entry?.Attacking ?? [], attacks, null), null);
@@ -236,7 +238,7 @@ public sealed class CloseCombatRecordVerifier(ScenarioA1CloseCombatReference ref
         // The stacking and the withdrawals are the players' declarations, taken as recorded.
         var stacking = recorded.Units.Where(unit => unit.StackedWith is not null).ToDictionary(unit => unit.UnitId!, unit => unit.StackedWith!, StringComparer.Ordinal);
         var withdrawals = recorded.Units.Where(unit => unit.WithdrawingTo is not null).ToDictionary(unit => unit.UnitId!, unit => unit.WithdrawingTo!, StringComparer.Ordinal);
-        var (expected, reason) = LiveCloseCombat.FromState(state, combat.Location, recorded.Terrain, recorded.Attacks, stacking, withdrawals);
+        var (expected, reason) = LiveCloseCombat.FromState(state, combat.Location, recorded.Terrain, recorded.Attacks, stacking, withdrawals, recorded.Round);
         if (expected is null)
         {
             return reason;

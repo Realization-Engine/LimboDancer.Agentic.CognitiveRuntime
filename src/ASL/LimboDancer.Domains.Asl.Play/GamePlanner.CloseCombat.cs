@@ -104,6 +104,12 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.advance-prisoners: a Location holding prisoners is not reviewed for CC (A20.55)");
         }
 
+        // A20.53, A20.55: a Guard's prisoners advance with it, and CC in a Location holding prisoners is not reviewed.
+        if (enemies.Length > 0 && units.FirstOrDefault(unit => IsGuard(state, unit!)) is { } guard)
+        {
+            return Refused(scope, label, expected, $"play.advance-guard: {guard.Id} guards prisoners, who would enter CC with it, which is not reviewed (A20.53, A20.55)");
+        }
+
         // A5.1: three squad-equivalents and four SMC per side; overstacking is not reviewed.
         var side = state.At(to).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && !Is(unit, Conditions.Captured))
             .Concat(units.Select(unit => unit!)).Distinct().ToArray();
@@ -260,7 +266,7 @@ public sealed partial class GamePlanner
         }
 
         var terrain = ReadLocation(state, location) is { } read ? TerrainKey(read) : null;
-        var (facts, reason) = LiveCloseCombat.FromState(state, location, terrain, attacks, stacking, withdrawals);
+        var (facts, reason) = LiveCloseCombat.FromState(state, location, terrain, attacks, stacking, withdrawals, Text(arguments, "round", out var round) ? round : null);
         if (facts is null)
         {
             return Refused(scope, label, expected, reason!);
@@ -351,19 +357,141 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>
-    /// The Locations a unit held in Melee may withdraw to (A11.21): ADJACENT, at the same level, reviewed terrain an advance could enter
-    /// without becoming CX (A4.72), holding no enemy unit (a concealed one is not reviewed) and no prisoner.
+    /// The Locations a unit held in Melee may withdraw to (A11.21): ADJACENT Locations at ground level an advance could enter, in terrain
+    /// the movement review admits, across any hexside but a cliff and at any level, holding no enemy unit other than a prisoner (a
+    /// concealed one is not reviewed). A11.21 allows the withdrawal even where it makes the unit CX, which is not built, so no CX
+    /// counter is placed (ruling R29.11).
     /// </summary>
-    private IReadOnlyList<BoardLocation> WithdrawalDestinations(GameState state, UnitInstance unit, BoardLocation from) =>
-        [.. Neighbors(state, from).Where(to => EntryCost(state, from, to) is { } halfMf
-            && Experience.MoveAllowance(state, unit with { Conditions = new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal) { [Conditions.Berserk] = ConditionState.False } },
-                catalogs, vocabulary) is { } allowance && halfMf < 2 * Math.Min(4, allowance)
-            && !state.At(to).OfType<UnitInstance>().Any(other => other.Status == InstanceStatus.Active && (other.Side != unit.Side || Is(other, Conditions.Captured))))];
+    public IReadOnlyList<BoardLocation> WithdrawalDestinations(GameState state, UnitInstance unit, BoardLocation from) =>
+        [.. Neighbors(state, from).Where(to => Step(state, from, to) is ({ } _, { } toRead, true, { Cliff: false }) && TerrainKey(toRead) is { } terrain
+            && EntryHalfMf.ContainsKey(terrain)
+            && !state.At(to).OfType<UnitInstance>().Any(other => other.Status == InstanceStatus.Active && other.Side != unit.Side && !Is(other, Conditions.Captured)))];
 
     /// <summary>A11.16: a broken unit held in Melee, not Disrupted and not a Guard, must attempt to withdraw when it can.</summary>
     private bool MustWithdraw(GameState state, UnitInstance unit, BoardLocation at) =>
         Is(unit, Conditions.Broken) && Is(unit, Conditions.Melee) && !Is(unit, Conditions.Disrupted) && !Is(unit, Conditions.Captured)
-        && !state.Units.Any(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian == unit.Id) && WithdrawalDestinations(state, unit, at).Count > 0;
+        && !IsGuard(state, unit) && WithdrawalDestinations(state, unit, at).Count > 0;
+
+    /// <summary>
+    /// The first Location whose CC must still be resolved this CCPh (A15.43, A11.15): it holds a berserk unit with a Known enemy unit, or
+    /// a unit that advanced this APh into a Melee, has had no CC, and its units are ones the package reviews. Null when there is none.
+    /// </summary>
+    private string? CloseCombatRequired(GameState state)
+    {
+        var active = state.Units.Where(unit => unit.Status == InstanceStatus.Active && !Is(unit, Conditions.Captured)
+            && state.Location(unit.Id) is not null).ToArray();
+        foreach (var location in active.Select(unit => state.Location(unit.Id)!.Location).Distinct().OrderBy(item => item.ToString(), StringComparer.Ordinal))
+        {
+            if (state.CloseCombats.Any(item => item.Location == location))
+            {
+                continue;
+            }
+
+            var here = active.Where(unit => state.Location(unit.Id)!.Location == location).ToArray();
+            var berserk = here.FirstOrDefault(unit => Is(unit, Conditions.Berserk) && here.Any(other => other.Side != unit.Side && KnownEnemy(other)));
+            var reinforcing = here.Any(unit => Is(unit, Conditions.Melee))
+                ? here.FirstOrDefault(unit => state.Advances.Any(item => item.Unit == unit.Id && item.To == location) && !Is(unit, Conditions.Broken))
+                : null;
+            if ((berserk ?? reinforcing) is not { } unit)
+            {
+                continue;
+            }
+
+            var terrain = ReadLocation(state, location) is { } read ? TerrainKey(read) : null;
+            if (LiveCloseCombat.AmbushFromState(state, location, terrain).Facts is not null)
+            {
+                return berserk is not null
+                    ? $"play.cc-required: {unit.Id} is berserk with a Known enemy unit in {location}, so it attacks in CC before the CCPh ends (A15.43)"
+                    : $"play.cc-required: {unit.Id} advanced into the Melee in {location}, so it attacks in CC before the CCPh ends (A11.15)";
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>The ADJACENT ground-level Locations of a Location, such as an advance may enter (A4.7).</summary>
+    public IReadOnlyList<BoardLocation> AdjacentLocations(GameState state, BoardLocation at)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return [.. Neighbors(state, at).Distinct()];
+    }
+
+    /// <summary>Whether a Location's Ambush drs are due (A11.4): no CC there yet, and the Close Combat package allows an Ambush.</summary>
+    public bool AmbushDue(GameState state, BoardLocation location)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        if (state.Phase != "ccph" || state.CloseCombats.Any(item => item.Location == location))
+        {
+            return false;
+        }
+
+        var terrain = ReadLocation(state, location) is { } read ? TerrainKey(read) : null;
+        return LiveCloseCombat.AmbushFromState(state, location, terrain).Facts is { Units: { } units } && ScenarioA1CloseCombatCalculator.AmbushPossible(terrain, units);
+    }
+
+    /// <summary>
+    /// What CC is still due before the CCPh ends, in words: open Locations, Ambush drs, rounds a berserk or reinforcing unit requires
+    /// (A15.43, A11.15), and broken units in Melee that must attempt to withdraw (A11.16).
+    /// </summary>
+    public IReadOnlyList<string> CloseCombatDue(GameState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        if (state.Phase != "ccph")
+        {
+            return [];
+        }
+
+        var due = new List<string>();
+        foreach (var open in state.CloseCombats.Where(item => !item.Closed))
+        {
+            due.Add(open.Ambusher is null ? $"{open.Location}: its round after the Ambush drs (A11.12)"
+                : $"{open.Location}: more attacks by the {open.Ambusher} side, then the ambushed side's round (A11.3, A11.32)");
+        }
+
+        var locations = state.Units.Where(unit => unit.Status == InstanceStatus.Active && state.Location(unit.Id) is not null)
+            .Select(unit => state.Location(unit.Id)!.Location).Distinct().OrderBy(item => item.ToString(), StringComparer.Ordinal).ToArray();
+        due.AddRange(locations.Where(location => AmbushDue(state, location)).Select(location => $"{location}: the Ambush drs (A11.4)"));
+        if (CloseCombatRequired(state) is { } required)
+        {
+            due.Add(required);
+        }
+
+        due.AddRange(state.Units.Where(unit => unit.Status == InstanceStatus.Active && state.Location(unit.Id) is { } held
+                && !state.CloseCombats.Any(item => item.Location == held.Location) && MustWithdraw(state, unit, held.Location))
+            .Select(unit => $"{state.Location(unit.Id)!.Location}: {unit.Id} is broken in Melee and must attempt to withdraw (A11.16)"));
+        return due;
+    }
+
+    /// <summary>Whether a unit is broken in Melee and must attempt to withdraw this CCPh (A11.16).</summary>
+    public bool MustWithdraw(GameState state, UnitInstance unit)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(unit);
+        return state.Location(unit.Id) is { } at && MustWithdraw(state, unit, at.Location);
+    }
+
+    /// <summary>A Guard: a unit with an active prisoner (A20.5).</summary>
+    private static bool IsGuard(GameState state, UnitInstance unit) =>
+        state.Units.Any(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian == unit.Id);
+
+    /// <summary>
+    /// Why a berserk unit may not step into a Location (A15.431, A15.432, A20.4): it holds prisoners (Massacre is not built), a concealed
+    /// or hidden enemy unit or a Dummy (concealment in CC is not reviewed), or, as the charge's target, only a lone enemy SMC (an
+    /// Infantry OVR, not reviewed). Null when the step is allowed.
+    /// </summary>
+    private string? ChargeBarred(GameState state, string side, BoardLocation to)
+    {
+        var there = state.At(to).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active).ToArray();
+        var enemies = there.Where(unit => unit.Side != side).ToArray();
+        if (enemies.Any(unit => !KnownEnemy(unit) && !Is(unit, Conditions.Captured)) || there.Any(unit => Is(unit, Conditions.Captured)))
+        {
+            return $"play.berserk-concealed: a charge into {to}, which holds concealed enemy units or prisoners, is not reviewed (A15.431, A20.4); the charge ends in place (ruling R30.5)";
+        }
+
+        return enemies is [{ } lone] && vocabulary.IsA(lone.Kind, "asl:smc")
+            ? $"play.berserk-ovr: a charge onto the lone SMC in {to} is an Infantry OVR (A15.432), which is not reviewed; the charge ends in place (ruling R30.5)"
+            : null;
+    }
 
     /// <summary>A map of unit ids in the arguments, such as each SMC's MMC or each withdrawing unit's destination.</summary>
     private static Dictionary<string, string>? Map(JsonElement arguments, string name) =>
@@ -707,6 +835,13 @@ public sealed partial class GamePlanner
             {
                 if (EntryCost(state, from, next) is { } cost && exact.TryGetValue(next, out var rest) && cost + rest == best && !steps.ContainsKey(next))
                 {
+                    // A step the model cannot take leaves the charge undecided, so it may end in place (ruling R30.5).
+                    if (ChargeBarred(state, side, next) is { } barred)
+                    {
+                        undecided.Add(barred);
+                        continue;
+                    }
+
                     steps[next] = (target, cost);
                 }
             }

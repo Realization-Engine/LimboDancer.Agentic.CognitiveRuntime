@@ -135,12 +135,69 @@ public sealed class PlayPageCloseCombatTests : IDisposable
         Commit(page, "#propose-cc");
         Assert.Empty(dice);
         var record = page.Find("#play-close-combats .cc-record").TextContent;
-        Assert.Contains("at 1-1, Kill Number 5: DR 6, 6 = 12 - 1 (leadership:gl, A11.141)", record, StringComparison.Ordinal);
+        Assert.Contains("at 1-1, Kill Number 5: DR 6 (colored), 6 = 12 - 1 (leadership:gl, A11.141); r1: 11 = Final DR 11: no effect", record, StringComparison.Ordinal);
         Assert.Contains("at 1-2, Kill Number 4", record, StringComparison.Ordinal);
 
         // A11.15: at the end of the CCPh the units are held in Melee.
         Commit(page, "#propose-advance");
         Assert.All(Held, id => Assert.Contains("melee", Row(page, id), StringComparison.Ordinal));
+        Assert.False(live.History("village")!.HasErrors);
+    }
+
+    [Fact]
+    public void AUnitHeldInMeleeWithdrawsFromThePage()
+    {
+        // Table-player review, item 1 and the page findings: the advance destinations are a list of ADJACENT Locations, no Ambush is
+        // offered in Open Ground, and a unit held in Melee chooses its withdrawal on the CC panel (A11.2).
+        var hexes = Hexes();
+        var page = context.Render<PlayPage>();
+        page.Find("#new-board").Change(Board);
+        page.Find("#new-first").Change("german");
+        page.Find("#new-second").Change("russian");
+        page.Find("#new-first-elr").Change("3");
+        page.Find("#new-second-elr").Change("2");
+        Place(page, "g1", "attacker-squad", hexes.One);
+        Place(page, "r1", "defender-squad", hexes.Two);
+        Commit(page, "#propose-setup");
+        for (var phase = 0; phase < 6; phase++)
+        {
+            Commit(page, "#propose-advance");
+        }
+
+        page.Find(".advance-unit[data-unit='g1']").Change(true);
+        Assert.Contains(page.FindAll("#advance-to option"), option => option.GetAttribute("value") == hexes.Two);
+        page.Find("#advance-to").Change(hexes.Two);
+        Commit(page, "#propose-advance-units");
+        Commit(page, "#propose-advance");
+
+        page.Find("#cc-location").Change(hexes.Two);
+        Assert.True(page.Find("#propose-ambush").HasAttribute("disabled"));
+        Assert.True(page.FindAll(".cc-withdraw").Count == 0);
+        page.Find(".cc-attacker[data-unit='g1']").Change(true);
+        page.Find(".cc-defender[data-unit='r1']").Change(true);
+        page.Find("#cc-add-attack").Click();
+        dice.Enqueue(6);
+        dice.Enqueue(6);
+        Commit(page, "#propose-cc");
+
+        // Through the Russian Player Turn to its CCPh: both are held in Melee, and each may withdraw.
+        for (var phase = 0; phase < 8; phase++)
+        {
+            Commit(page, "#propose-advance");
+        }
+
+        Assert.Contains("Close Combat", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
+        page.Find("#cc-location").Change(hexes.Two);
+        Assert.Equal(2, page.FindAll(".cc-withdraw").Count);
+        page.Find(".cc-withdraw[data-unit='r1']").Change(hexes.One);
+        page.Find(".cc-attacker[data-unit='g1']").Change(true);
+        page.Find(".cc-defender[data-unit='r1']").Change(true);
+        page.Find("#cc-add-attack").Click();
+        dice.Enqueue(6);
+        dice.Enqueue(6);
+        Commit(page, "#propose-cc");
+        Assert.Contains($"r1 withdraws to {hexes.One} (A11.2)", page.Find("#play-close-combats .cc-record").TextContent, StringComparison.Ordinal);
+        Assert.Contains("vs-withdrawing", page.Find("#play-close-combats .cc-record").TextContent, StringComparison.Ordinal);
         Assert.False(live.History("village")!.HasErrors);
     }
 }

@@ -10,7 +10,11 @@ These are not left out: the game resolves them in a simplified way and records t
 
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
-| Berserk and Surrender from Heat of Battle | R0.2, R19.2, R22.5, R28.1 | A15.4 to A15.5, pp. 83 to 84; A20, pp. 86 to 87 | Charge movement, prisoners, and capture (step 30) | A Final Heat of Battle DR of 9 to 11 (Berserk) or 12 (Surrender) resolves as an ordinary MC or rally; the record says which was not taken, even where A15.44 would turn Berserk into Battle Hardening (no Known enemy unit in LOS). Heroes, heroic leaders, Battle Hardening, and Fanaticism are taken (step 28). |
+| A berserk charge whose route the model cannot decide | R30.5 | A15.43, A15.431, p. 84 | Movement over every terrain type and level change, so every shortest route is decided; Massacre, concealment in CC, and Infantry OVR outcomes | The ATTACKER may end the charge in place when its route crosses unreviewed terrain or its next step enters a Location with prisoners, concealed enemy units, or a lone enemy SMC; the move's reason records it, and the unit stays berserk. |
+| A withdrawal from Melee that makes the unit CX | R29.11 | A11.21, p. 73; A4.72, p. 52 | CX status | The unit withdraws with no CX counter. A unit whose only ADJACENT Locations are in terrain the movement review does not admit cannot withdraw, and a broken one is eliminated at the end of the CCPh. |
+| A surrender is always accepted | R30.7 | A20.3, A20.4, p. 87 | An option for the captor at the capture | The captor's side chooses the Guard but may not reject the surrender (No Quarter) or massacre. |
+
+Berserk and Surrender from Heat of Battle (R0.2, R19.2, R22.5, R28.1) left this list with unit step 30, 2026-09-27.
 
 ## 2. Rally (step 19)
 
@@ -106,7 +110,7 @@ Step 17 left these out; steps 19 to 23 do not build them.
 | A leader's MF bonus to Infantry it moves with | Steps 19 to 23 design | A4.12, p. 48 | Tracking that the MMC began and ended the phase with the leader |
 | Minimum Move | Steps 19 to 23 design | A4.134, p. 48 | none |
 | Movement of concealed units, and the loss of "?" it can bring | Steps 19 to 23 design | A12.14, p. 77 | The concealment loss conditions of movement |
-| Entry into an enemy-occupied non-building Location | R22.6 | A4.14, p. 49 | Close Combat |
+| Entry into an enemy-occupied non-building Location in the MPh | R22.6 | A4.14, p. 49 | Only a berserk charge enters one (step 30); Infantry OVR and the other A4.14 exceptions remain |
 | The building entry of steps 7 to 11 as a case of `asl.game.move` | Steps 19 to 23 design | A4.14, p. 49; A12.15, p. 78 | Moving the entry's reveal and OVR flow into the move |
 
 ## 10. Added by the deviations pass 1 (steps 26 to 28)
@@ -125,3 +129,39 @@ Step 17 left these out; steps 19 to 23 do not build them.
 | A HS of a Casualty Reduced squad keeping its SW | Pass 1 live review | A7.302, p. 55 | Portage for the HS; Replacements and Battle Hardening keep the SW, other lineage drops it |
 | A hero created by a concealed MMC being concealed too | Pass 1 live review | A15.21, p. 83; A12.1, p. 76 | Reviewing concealment of created units |
 | Counter names (for example "7-0") in place of definition ids on the Play page | Pass 1 live review | none | A display name in the catalog |
+
+## 11. Added by the deviations pass 2 (steps 29 and 30)
+
+| Item | Deferred by | Rules | Depends on |
+|---|---|---|---|
+| CC by or against vehicles, sequential CC with a vehicle, Street Fighting | R29.1 | A11.31, A11.5 to A11.8, pp. 73 to 76 | Vehicles (step 25) |
+| Hand-to-Hand CC and the red Kill Numbers | R29.1 | A11.11, p. 72; J2.31 | A scenario that calls for it |
+| Concealed and hidden units and Dummies in CC, and an advance into concealed enemy units | R29.14 | A11.19, p. 73; A12.15, p. 78 | Concealment in CC |
+| Capture attempts in CC (+1, or -1 against Inexperienced Personnel) | R30.1 | A20.22, p. 86; A19.35, p. 86 | Unarmed counters |
+| Prisoners in a CC Location, prisoner escape, recapture | R30.8 | A20.55, p. 88; A20.54, pp. 87 and 88 | Unarmed counters and the prisoners' CC |
+| Infiltration withdrawal on an Original 2 or 12 | R29.13 | A11.22, p. 73 | Withdrawal in the middle of a round |
+| Ambush Withdrawal | R29.1 | A11.41, pp. 73 and 74 | Withdrawal before and after the ambusher's round |
+| TI units in CC | R29.14 | A4.8, p. 52; the CCT, p. 692 | TI tasks |
+| Overstacked CC and overstacking advances | R29.14, R29.2 | A5.12, A5.131, p. 52 | Overstacking penalties |
+| An advance that makes the unit CX, or changes level in a hex | R29.2 | A4.72, A4.7, p. 52 | CX status; building levels |
+| A leader's MF bonus and portage in the A4.72 reading | R29.2 | A4.12, A4.42, p. 50 | Portage |
+| Fire into a Melee Location, TPBF, and fire by units held in Melee | R29.10 | A11.15, p. 72; A7.212, p. 55 | Fire into one's own Location |
+| Fire at a Location holding prisoners, and fire by a Guard | R30.8 | A20.52, A20.54, p. 87 | The prisoners' share of an attack |
+| Unarmed counters, the excess surrendering units freed as Unarmed, and a Guard without capacity | R30.7 | A20.5, A20.21, A20.51, p. 87 | Unarmed definitions in the catalog; until then a surrender to Guards with no capacity is refused |
+| Surrender in the RtPh, and a Disrupted unit's surrender next to or among Good Order enemy units | R30.1 | A20.21, pp. 86 and 87; A19.12, p. 86 | Routing |
+| Moving, transferring, or abandoning prisoners by choice; a prisoner's owner moving it once freed | R30.8 | A20.5, A20.53, p. 87 | Guard actions in the RPh and APh |
+| Massacre, including a berserk unit with prisoners | R30.8 | A20.4, p. 87 | Until then a Heat of Battle subject sharing a Location with prisoners is refused |
+| Fire by berserk units (TPBF in the AFPh, and the DFPh) | R30.5 | A15.432, p. 84 | Fire into one's own Location |
+| A berserk charge onto a lone SMC (an Infantry OVR without the NTC) | R30.5 | A15.432, p. 84 | Infantry OVR outcomes after a pass |
+| A berserk unit's choice of which 1PP SW to abandon beyond its IPC | R30.5 | A15.431, p. 84; A4.42, p. 50 | An owner's choice before the charge |
+| Italian, Axis Minor, and Japanese Heat of Battle exceptions | Pass 2 review | Heat of Battle table notes, p. 83 | Counters of those nationalities; until then they are refused |
+| Field Promotion in CC by MMC of different BPV, or whose defending MMC is decided by Random Selection | R29.12 | A18.2, p. 85 | BPV in the catalog; a Random Selection for the leader's stacking |
+| Odds above 10 to 1 but below 11 to 1 | R29.16 | A11.11, p. 72 | A user ruling on the rounding |
+| The Ambush drm when a force is berserk (Berserk and Lax both counted) | R29.9 | A11.4, p. 73; A15.432, p. 84 | A user ruling on "(each)" |
+| Ambush at night (by at least 2) | R29.9 | A11.4 chart, p. 692 | Night rules (E1) |
+| A Guard advancing into CC | R29.19 | A20.53, A20.55, pp. 87 and 88 | The prisoners' CC | Refused. |
+| Mandatory CC that the package refuses | R29.17 | A15.43, A11.15 | The CC exclusions above | A berserk or reinforcing unit's Location must have its round only when the package reviews its units; if every declaration is then refused (undecided odds or Field Promotion), the CCPh cannot end, and the players split the attack. |
+| Field Promotion ambiguity in everyday combined attacks (the table player's most frequent refusal) | R29.12 | A18.12, p. 85 | A declaration of the base MMC and the MMC the created leader defends with | Two MMC of different Morale Level combining, or an enemy attack on some but not all of an attack's MMC, is refused before any roll. |
+| Play page: each side declares only its own SMC stacking and attacks, and only the captor's side chooses the Guard | Table-player review | A11.14, A15.5 | Player identity on the Play page (hot seat today) | Any viewer sets both sides' declarations. |
+| Play page: counters by printed values (4-6-7, 8-1) in the CC panel and records | Table-player review | | Printed values from the catalog on the page | Units show their id, definition id, and CC state. |
+| Play page: SW left unpossessed by a surrender or a charge, and a berserk leader's companions' TCs, in the CC record | Table-player review | A20.24, A15.431, A15.41 | | Shown in the fire and rally records and the move's reasons, not in the CC record. |

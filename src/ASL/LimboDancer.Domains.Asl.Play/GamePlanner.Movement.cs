@@ -258,17 +258,6 @@ public sealed partial class GamePlanner
         var (steps, _, undecided) = ChargeSteps(state, movers[0].Side, from, current?.Charge);
         if (steps.TryGetValue(to, out var step))
         {
-            var enemies = state.At(to).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side != movers[0].Side).ToArray();
-            if (enemies.Any(unit => !KnownEnemy(unit)) || state.At(to).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && Is(unit, Conditions.Captured)))
-            {
-                return (null, null, "play.berserk-concealed: a charge into concealed enemy units or prisoners is not reviewed (A15.431, A20.4)");
-            }
-
-            if (enemies is [{ } lone] && vocabulary.IsA(lone.Kind, "asl:smc"))
-            {
-                return (null, null, "play.berserk-ovr: a charge onto a lone SMC is an Infantry OVR (A15.432), which is not reviewed");
-            }
-
             return (true, step.Target, null);
         }
 
@@ -347,7 +336,7 @@ public sealed partial class GamePlanner
 
             if (undecided is not null)
             {
-                note = $"; {unit.Id}'s charge route is not decided by the model, so it ends in place (ruling R30.5)";
+                note = $"; {unit.Id}'s charge is not decided by the model, so it ends in place (ruling R30.5: {undecided})";
             }
         }
 

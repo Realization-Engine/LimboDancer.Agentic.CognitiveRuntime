@@ -226,13 +226,16 @@ public static class GameProjector
             // A11.12, A11.32: a Location's CC is completely resolved before the phase ends: after the ambusher's round, the other side's.
             if (state.CloseCombats.FirstOrDefault(item => !item.Closed) is { } open)
             {
-                return Fail<GameState>("UNIT-STATE-030", $"The CC in {open.Location} awaits the ambushed side's round (A11.32).");
+                return Fail<GameState>("UNIT-STATE-030", open.Ambusher is null
+                    ? $"The CC in {open.Location} awaits its round after the Ambush drs, even one with no attacks (A11.12)."
+                    : $"The CC in {open.Location} awaits the ambushed side's round (A11.32).");
             }
 
-            // A11.16, A19.12: a broken or Disrupted unit held in Melee is eliminated at the end of the CCPh (Withdrawal from Melee is
-            // not built, ruling R29.11); its elimination is recorded before the phase changes.
+            // A11.16, A19.12: a broken or Disrupted unit held in Melee, other than a Guard, is eliminated at the end of the CCPh unless it
+            // withdrew (ruling R29.11); its elimination is recorded before the phase changes.
             if (state.Phase == "ccph" && state.Units.FirstOrDefault(unit => unit.Status == InstanceStatus.Active
                 && GameState.Condition(unit, Conditions.Melee) == ConditionState.True && GameState.Condition(unit, Conditions.Captured) != ConditionState.True
+                && !state.Units.Any(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian == unit.Id)
                 && (GameState.Condition(unit, Conditions.Broken) == ConditionState.True || GameState.Condition(unit, Conditions.Disrupted) == ConditionState.True)) is { } held)
             {
                 return Fail<GameState>("UNIT-STATE-030", $"'{held.Id}' is broken or Disrupted in Melee and is eliminated at the end of the CCPh (A11.16, A19.12).");
@@ -425,14 +428,15 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-030", "CC is resolved in the CCPh, once per Location, one Location at a time (A11.12).");
             }
 
-            var expected = entry?.Ambusher is null ? CloseCombatResolved.Simultaneous
-                : entry.Rounds.Count == 0 ? CloseCombatResolved.AmbusherRound
-                : CloseCombatResolved.AmbushedRound;
+            // A11.3: the ambusher's attacks are sequential, one record each, until the ambushed side's round closes the Location.
+            string[] allowed = entry?.Ambusher is null ? [CloseCombatResolved.Simultaneous]
+                : entry.Rounds.Count == 0 ? [CloseCombatResolved.AmbusherRound]
+                : [CloseCombatResolved.AmbusherRound, CloseCombatResolved.AmbushedRound];
             var attacking = entry?.Attacking ?? [];
             var attacked = entry?.Attacked ?? [];
-            if (combat.Round != expected || combat.Attackers.Any(attacking.Contains) || combat.Defenders.Any(attacked.Contains))
+            if (!allowed.Contains(combat.Round) || combat.Attackers.Any(attacking.Contains) || combat.Defenders.Any(attacked.Contains))
             {
-                return Fail<GameState>("UNIT-STATE-030", $"The next CC round in {combat.Location} is {expected}, and no unit attacks or is attacked twice (A11.12, A11.32).");
+                return Fail<GameState>("UNIT-STATE-030", $"The next CC round in {combat.Location} is {string.Join(" or ", allowed)}, and no unit attacks or is attacked twice (A11.3, A11.12, A11.32).");
             }
 
             if (closeCombatVerifier.Verify(state, combat, rolls) is { } reason)

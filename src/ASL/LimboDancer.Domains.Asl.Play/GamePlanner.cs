@@ -350,9 +350,17 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             return Refused(scope, label, expected, $"play.cc-withdraw-required: {withdrawing.Id} is broken in Melee and must attempt to withdraw in its Location's CC first (A11.16)");
         }
 
+        // A15.43, A11.15: a berserk unit with a Known enemy unit in its Location, or a unit that advanced into a Melee, must attack, so a
+        // Location that holds one and whose CC the package can resolve has its round before the CCPh ends.
+        if (state.Phase == "ccph" && CloseCombatRequired(state) is { } required)
+        {
+            return Refused(scope, label, expected, required);
+        }
+
+        // A11.16: a broken Guard is not eliminated in Melee.
         if (state.Phase == "ccph")
         {
-            foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && Is(unit, Conditions.Melee) && !Is(unit, Conditions.Captured)
+            foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && Is(unit, Conditions.Melee) && !Is(unit, Conditions.Captured) && !IsGuard(state, unit)
                 && (Is(unit, Conditions.Broken) || Is(unit, Conditions.Disrupted))).OrderBy(unit => unit.Id, StringComparer.Ordinal))
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(unit.Id), null, null));

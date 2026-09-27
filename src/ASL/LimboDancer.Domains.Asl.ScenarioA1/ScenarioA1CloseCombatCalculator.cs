@@ -399,15 +399,18 @@ public static class ScenarioA1CloseCombatCalculator
             outside.Add("asl.a1.cc.withdrawal-outside");
         }
 
+        // The ambusher's attacks are sequential (A11.3), so its units that must attack are checked when the ambushed side's round begins.
+        string[] mustSides = round == CloseCombatFacts.AmbusherRound ? [] : [.. units.Select(unit => unit.Side!).Distinct(StringComparer.Ordinal)];
+
         // A11.15: a unit that advanced this APh into a Location already in Melee engages in CC: it attacks in its side's round.
         var reinforcing = units.Any(unit => unit.InMelee == true);
-        if (reinforcing && units.Any(unit => unit.Advanced == true && unit.Broken != true && attackingSides.Contains(unit.Side) && !attacking.Contains(unit.UnitId!)))
+        if (reinforcing && units.Any(unit => unit.Advanced == true && unit.Broken != true && mustSides.Contains(unit.Side) && !attacking.Contains(unit.UnitId!)))
         {
             outside.Add("asl.a1.cc.reinforcement-must-attack");
         }
 
         // A15.43: a berserk unit charges to destroy the enemy in CC, so it attacks in its side's round (ruling R29.15).
-        if (units.Any(unit => unit.Berserk == true && attackingSides.Contains(unit.Side) && !attacking.Contains(unit.UnitId!)))
+        if (units.Any(unit => unit.Berserk == true && mustSides.Contains(unit.Side) && !attacking.Contains(unit.UnitId!)))
         {
             outside.Add("asl.a1.cc.berserk-must-attack");
         }
