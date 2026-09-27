@@ -270,6 +270,6 @@ The Windows LF clone and Docker checks take about ten minutes run in parallel, a
 
 | Id | Question | Answer |
 |---|---|---|
-| R0.1 | Transcribe new charts from the registered copies (pp. 106 to 111, 160, 189 to 191, 220 to 221) rather than registering back-matter pages? | Yes. The step 17 supplement for pp. 692 and 698 stays as recorded. |
+| R0.1 | Transcribe new charts from the registered copies (pp. 106 to 111, 160, 189 to 191, 220 to 221) rather than registering back-matter pages? | Yes. The step 17 supplement for pp. 692 and 698 stays as recorded. Superseded on 2026-09-27: the user put the whole rulebook in scope, so any page may be used, and a chart may be transcribed from whichever copy is clearer. |
 | R0.2 | An Original MC or rally DR of 2 and Heat of Battle (section 3.4) | Record a deviation for this pass: resolve the 2 as its MC or rally result, say in the record that Heat of Battle was not taken, and review A15 first in the next pass. |
 | R0.3 | Counter sources (section 3.3) | **Ruled by the user, 2026-09-26:** where no source gives a printed value a scenario needs, the value is manufactured. Chapter H's listings and the Counter Examples are registered as a bounded supplement for the values they do give. |

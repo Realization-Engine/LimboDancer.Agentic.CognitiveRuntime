@@ -5,6 +5,8 @@
 **Edition statement:** delivery ZIP identified by the source provider as 3.01; PDF credits say 3.0
 **Current registered boundary:** TOC, Index/Glossary, Chapters A–E and their images, physical pages 6–253
 
+**Ruling of 2026-09-27: the whole rulebook is in scope.** The user lifted the page boundary: every page of the supplied PDF, `eASLRB_v3_01.pdf`, may be used as a source whenever a rule, chart, or listing is needed, including Chapter H's vehicle, ordnance, and support weapon listings and the back-matter charts and aids (physical pages 676 to 716). No boundary decision or separate registration is needed before a page is used. Provenance is unchanged: a package still cites physical pages and the PDF's SHA-256, and checks each transcription against its page. The source registry still describes the Markdown conversion of pages 6 to 253, which remains the verified text of Chapters A to E; its page checks cover that conversion only. This review's boundary rule and its per-page approvals are superseded; they stay here as the record of how the first back-matter pages were admitted.
+
 ## Finding
 
 The current page boundary is **insufficient as a general definition of A–E source material**. A4.13 cites the Terrain Chart for movement cost; the supplied PDF has the **B. Terrain Chart on physical page 698**. This page is outside the seven registered Markdown files and the currently registered page range. It may be controlling for an A–E scenario even though it is located among the rulebook's later player aids. The existing registry must not silently import it or claim it was covered by the 11 source-provider attestations.
