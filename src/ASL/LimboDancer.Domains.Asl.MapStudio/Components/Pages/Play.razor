@@ -235,13 +235,15 @@ else if (state is not null)
         <h4>Movement</h4>
         <p class="muted" id="move-help">
             The @state.PhasingSide side moves one stack at a time, one Location per step (A4.1). After each step the DEFENDER may fire at the stack
-            or pass (A8.1, A8.11); the stack then moves on or ends its move. A Location holding Residual FP attacks a stack as it enters (A8.22).
+            or pass (A8.1, A8.11); the stack then moves on, whole or split, or ends its move. No other unit moves until every member of the stack has
+            ended (A4.2); a member that breaks or is pinned ends its move. A Location holding Residual FP attacks a stack as it enters (A8.22).
         </p>
         @if (state.Movement is { } movement)
         {
             <p id="move-state" data-step="@movement.Step" data-window="@(movement.WindowOpen ? "open" : "closed")">
                 <strong>@string.Join(", ", movement.Movers)</strong> in @movement.Location, step @movement.Step@(movement.Assault ? ", by Assault Movement" : ""):
                 @(movement.WindowOpen ? "the DEFENDER may fire, or pass." : "the DEFENDER has passed; move on or end the move.")
+                <span id="move-members">@(movement.Members.Count > 0 ? $"May still move: {string.Join(", ", movement.Members)}." : "No member may move farther; end the move.")</span>
             </p>
         }
         <div class="toolbar">
@@ -253,7 +255,7 @@ else if (state is not null)
             <label><input id="move-assault" type="checkbox" checked="@moveAssault" @onchange="@(args => moveAssault = args.Value is true)" /> Assault Movement</label>
             <button id="propose-move" disabled="@(moveUnits.Count == 0 || moveTo.Trim().Length == 0)" @onclick="ProposeMove">Propose: move</button>
             <button id="propose-pass" disabled="@(state.Movement is not { WindowOpen: true })" @onclick='@(() => ProposeSimple(GameActions.PassFire, "pass"))'>Propose: the DEFENDER passes</button>
-            <button id="propose-end-move" disabled="@(state.Movement is not { WindowOpen: false })" @onclick='@(() => ProposeSimple(GameActions.EndMove, "end"))'>Propose: end the move</button>
+            <button id="propose-end-move" disabled="@(state.Movement is not { WindowOpen: false })" @onclick="ProposeEndMove">Propose: end the move@(EndingSome ? " of the checked units" : "")</button>
         </div>
     }
     @if (FiringSide is { } firing)
@@ -746,7 +748,7 @@ else if (state is not null)
 
     /// <summary>The phasing side's units that may still move this MPh: the moving stack itself while one moves.</summary>
     private IEnumerable<UnitInstance> MoveCandidates => state is null ? []
-        : state.Movement is { } movement ? movement.Movers.Select(state.Unit).OfType<UnitInstance>()
+        : state.Movement is { } movement ? movement.Members.Select(state.Unit).OfType<UnitInstance>()
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && !unit.MovementEnded
             && state.Location(unit.Id) is not null && GameState.Condition(unit, Conditions.Broken) != ConditionState.True).OrderBy(unit => unit.Id, StringComparer.Ordinal);
 
@@ -773,6 +775,26 @@ else if (state is not null)
             gameId, attemptId = Attempt("repair"), expectedRevision = (long)history!.Events.Count, unitId = holding.Holder, equipmentId = repairWeapon,
         }))
         : Task.CompletedTask;
+
+    /// <summary>Whether the checked units are some, not all, of the moving stack's members, so ending the move ends only theirs (A4.2).</summary>
+    private bool EndingSome => state?.Movement is { Members.Count: > 0 } movement && moveUnits.Count > 0
+        && moveUnits.All(movement.Members.Contains) && moveUnits.Count < movement.Members.Count;
+
+    private Task ProposeEndMove()
+    {
+        var arguments = new Dictionary<string, object>
+        {
+            ["gameId"] = gameId,
+            ["attemptId"] = Attempt("end"),
+            ["expectedRevision"] = (long)history!.Events.Count,
+        };
+        if (EndingSome)
+        {
+            arguments["unitIds"] = moveUnits.Order(StringComparer.Ordinal).ToArray();
+        }
+
+        return Propose(GameActions.EndMove, JsonSerializer.SerializeToElement(arguments));
+    }
 
     private Task ProposeMove() => Propose(GameActions.Move, JsonSerializer.SerializeToElement(new
     {
@@ -1066,8 +1088,16 @@ else if (state is not null)
         state = history?.Current ?? (history is { States.Count: > 0 } ? history.States[^1] : null);
         if (state?.Movement is { } movement)
         {
-            moveUnits.Clear();
-            moveUnits.UnionWith(movement.Movers);
+            // The checked units stay checked while they may still move; otherwise those of the latest step that may.
+            moveUnits.IntersectWith(movement.Members);
+            if (moveUnits.Count == 0)
+            {
+                moveUnits.UnionWith(movement.Movers.Where(movement.Members.Contains));
+            }
+        }
+        else if (state is not null)
+        {
+            moveUnits.RemoveWhere(id => state.Unit(id) is not { MovementEnded: false });
         }
 
         if (state is not null && !state.Units.Any(unit => unit.Id == enterUnit))
@@ -1243,7 +1273,6 @@ else if (state is not null)
             }
             else if (proposal.Action == GameActions.EndMove)
             {
-                moveUnits.Clear();
                 moveTo = string.Empty;
                 moveAssault = false;
             }

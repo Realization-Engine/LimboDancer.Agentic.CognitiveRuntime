@@ -98,6 +98,7 @@ public static class GameProjector
                 return null;
             }
 
+            next = KeepMovingStack(next, gameEvent.Payload);
             next = next with
             {
                 Revision = gameEvent.Revision,
@@ -406,11 +407,13 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-029", "A movement step moves a stack of the phasing side that may still move, in one Location, in the MPh.");
             }
 
+            // A4.2: the stack's members may move on together or apart, but only they may move until every one has ended.
             var current = state.Movement;
-            if (current is not null && (!current.Movers.Order(StringComparer.Ordinal).SequenceEqual(moving.Movers.Order(StringComparer.Ordinal))
+            if (current is not null && (moving.Movers.Any(id => !current.Members.Contains(id, StringComparer.Ordinal))
                 || current.WindowOpen || current.Assault != moving.Assault))
             {
-                return Fail<GameState>("UNIT-STATE-029", "The moving stack continues only after the DEFENDER's window closes; another stack moves after it ends (A8.11).");
+                return Fail<GameState>("UNIT-STATE-029",
+                    "The moving stack's members continue, together or apart, only after the DEFENDER's window closes; another stack moves after every member ends (A4.2, A8.11).");
             }
 
             if (moving.Step != (current?.Step ?? 0) + 1)
@@ -432,7 +435,10 @@ public static class GameProjector
 
             return next with
             {
-                Movement = new MovementState(moving.Movers, moving.To, moving.HalfMf, moving.Step, moving.Assault, WindowOpen: true),
+                Movement = new MovementState(moving.Movers, moving.To, moving.HalfMf, moving.Step, moving.Assault, WindowOpen: true)
+                {
+                    Members = current?.Members ?? moving.Movers
+                },
             };
         }
 
@@ -447,12 +453,17 @@ public static class GameProjector
                 }
                 : Fail<GameState>("UNIT-STATE-029", $"No DEFENDER window is open on step {closed.Step}.");
 
+        /// <summary>
+        /// The ATTACKER ends the move of some or all of the stack's members (A4.2, A8.11). A unit that already left the stack
+        /// by breaking or pinning may be named too, as a record made before stacks could split names every mover.
+        /// </summary>
         private GameState? EndMovement(GameState state, MovementEnded ended)
         {
-            if (state.Movement is not { WindowOpen: false } movement
-                || !movement.Movers.Order(StringComparer.Ordinal).SequenceEqual(ended.Movers.Order(StringComparer.Ordinal)))
+            if (state.Movement is not { WindowOpen: false } movement || ended.Movers.Count == 0
+                || ended.Movers.Distinct(StringComparer.Ordinal).Count() != ended.Movers.Count
+                || ended.Movers.Any(id => !movement.Members.Contains(id, StringComparer.Ordinal) && !movement.Movers.Contains(id, StringComparer.Ordinal)))
             {
-                return Fail<GameState>("UNIT-STATE-029", "The ATTACKER ends the moving stack's move once the DEFENDER's window closes (A8.11).");
+                return Fail<GameState>("UNIT-STATE-029", "The ATTACKER ends the move of the moving stack's members once the DEFENDER's window closes (A4.2, A8.11).");
             }
 
             var next = state;
@@ -467,9 +478,84 @@ public static class GameProjector
                 }
             }
 
+            return Settle(next, movement with
+            {
+                Members = [.. movement.Members.Where(id => !ended.Movers.Contains(id, StringComparer.Ordinal))],
+                Movers = [.. movement.Movers.Where(id => !ended.Movers.Contains(id, StringComparer.Ordinal))],
+            });
+        }
+
+        /// <summary>
+        /// The moving stack after the ATTACKER ends some of its members: while a member may still move it goes on; when none
+        /// may, its move is over (A4.2), and the step-keyed fire records of A7.55, which concern only its own MF expenditures,
+        /// go with it.
+        /// </summary>
+        private static GameState Settle(GameState state, MovementState movement) =>
+            movement.Members.Count > 0
+                ? state with
+                {
+                    Movement = movement
+                }
+                : state with
+                {
+                    Movement = null,
+                    FiresThisPhase = [.. state.FiresThisPhase.Where(record => record.Step is null)],
+                };
+
+        /// <summary>
+        /// A4.2, A7.8: a member of the moving stack that is broken, pinned, or no longer active leaves the stack and ends its
+        /// MPh, and the others may move on; a member Reduced to a HS is followed by the HS (A7.302). The member stays a target
+        /// in the open window (A8.14), and the stack's move ends only when the ATTACKER ends it, even with no member left.
+        /// </summary>
+        private static GameState KeepMovingStack(GameState next, EventPayload payload)
+        {
+            if (next.Movement is not { } movement || next.Phase != "mph")
+            {
+                return next;
+            }
+
+            var members = movement.Members.ToList();
+            var movers = movement.Movers.ToList();
+            if (payload is LineageRecorded lineage && lineage.Consumed.Any(id => members.Contains(id, StringComparer.Ordinal) || movers.Contains(id, StringComparer.Ordinal)))
+            {
+                var produced = lineage.Produced.Select(item => item.Id).ToArray();
+                if (lineage.Consumed.Any(id => members.Contains(id, StringComparer.Ordinal)))
+                {
+                    members = [.. members.Where(id => !lineage.Consumed.Contains(id, StringComparer.Ordinal)), .. produced];
+                }
+
+                if (lineage.Consumed.Any(id => movers.Contains(id, StringComparer.Ordinal)))
+                {
+                    movers = [.. movers.Where(id => !lineage.Consumed.Contains(id, StringComparer.Ordinal)), .. produced];
+                }
+            }
+
+            var leaving = members.Where(id => next.Unit(id) is not { Status: InstanceStatus.Active } unit
+                || GameState.Condition(unit, Conditions.Broken) == ConditionState.True || GameState.Condition(unit, Conditions.Pinned) == ConditionState.True)
+                .ToArray();
+            if (leaving.Length == 0 && members.Count == movement.Members.Count && movers.SequenceEqual(movement.Movers))
+            {
+                return next;
+            }
+
+            foreach (var id in leaving)
+            {
+                if (next.Unit(id) is { Status: InstanceStatus.Active, MovementEnded: false } unit)
+                {
+                    next = Replace(next, unit with
+                    {
+                        MovementEnded = true
+                    })!;
+                }
+            }
+
             return next with
             {
-                Movement = null
+                Movement = movement with
+                {
+                    Members = [.. members.Where(id => !leaving.Contains(id, StringComparer.Ordinal))],
+                    Movers = movers,
+                }
             };
         }
 

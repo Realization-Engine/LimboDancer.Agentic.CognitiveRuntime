@@ -181,14 +181,15 @@ public static class GameActions
         """);
 
     public static readonly ActionDescriptor EndMove = Descriptor("asl.game.end-move", "End the move",
-        "The ATTACKER ends the moving stack's move; its units may not move again this MPh (A8.11).",
+        "The ATTACKER ends the move of the moving stack's members, all of them unless some are named; those units may not move again this MPh (A4.2, A8.11).",
         PlayPermission, "asl.game.sequence-v1", """
         {
           "type": "object", "additionalProperties": false,
           "required": ["gameId", "attemptId", "expectedRevision"],
           "properties": {
             "gameId": { "type": "string" }, "attemptId": { "type": "string" },
-            "expectedRevision": { "type": "integer", "minimum": 0 }
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "unitIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 }
           }
         }
         """);

@@ -27,6 +27,7 @@ public sealed class RallyAndFireStepsTests : IDisposable
     private static readonly string[] R6 = ["r6"];
     private static readonly string[] G1 = ["g1"];
     private static readonly string[] G3 = ["g3"];
+    private static readonly string[] G2 = ["g2"];
 
     private static readonly LimboDancer.Abstractions.Execution.RuntimePrincipal Player =
         GamePlay.Principal("player", Tenant, GameActions.SetupPermission, GameActions.PlayPermission);
@@ -515,6 +516,100 @@ public sealed class RallyAndFireStepsTests : IDisposable
         Committed(await Step(wounded, "bd01:C1:0"));
         refused = await Step(wounded, "bd01:C2:0");
         Assert.Contains(refused.Reasons, reason => reason.Contains("play.move-mf", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task U30AStackSplitsWhenAMemberBreaksAndTheOtherMovesOn()
+    {
+        await Setup("german", Unit("g1", "asl:squad", "attacker-squad", "bd01:A2:0", "german"),
+            Unit("g2", "asl:squad", "attacker-squad", "bd01:A2:0", "german"), Unit("g3", "asl:squad", "attacker-squad", "bd01:A2:0", "german"),
+            Unit("r4", "asl:squad", "defender-squad", "bd01:A1:0", "russian"), Unit("r5", "asl:squad", "defender-squad", "bd01:A1:0", "russian"));
+        await Advance(2);
+        string[] stack = ["g1", "g2"];
+        string[] g2 = ["g2"];
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = stack,
+            to = "bd01:B1:0"
+        }));
+
+        // Defensive First Fire on the 16 column, 3+4 - 2 = 5, a 3MC: g1 fails by 2, within its ELR, and breaks; g2 passes on 6.
+        Committed(await Do(GameActions.Fire, Once(3, 4, 2, 4, 1, 2), new
+        {
+            firers = R4R5,
+            target = "bd01:B1:0"
+        }));
+        Assert.True(Is(Current.Unit("g1")!, Conditions.Broken));
+        Assert.False(Is(Current.Unit("g2")!, Conditions.Broken));
+        Assert.Equal(g2, Current.Movement!.Members);
+        Committed(await Do(GameActions.PassFire, NoRoll(), new
+        {
+        }));
+
+        // A4.2: g2 moves on alone; g1 may not, and g3, not of the stack, waits until the stack's move ends.
+        Assert.NotEqual(PlayOutcome.Committed, (await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G1,
+            to = "bd01:B2:0"
+        })).Outcome);
+        Assert.NotEqual(PlayOutcome.Committed, (await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G3,
+            to = "bd01:B2:0"
+        })).Outcome);
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = g2,
+            to = "bd01:B2:0"
+        }));
+        Assert.Equal(g2, Current.Movement!.Movers);
+        Committed(await Do(GameActions.PassFire, NoRoll(), new
+        {
+        }));
+        Committed(await Do(GameActions.EndMove, NoRoll(), new
+        {
+        }));
+        Assert.Null(Current.Movement);
+        Assert.True(Current.Unit("g2")!.MovementEnded);
+
+        // The stack's move is over, so g3 moves.
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G3,
+            to = "bd01:B2:0"
+        }));
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
+    public async Task ASplitStackEndsOneMemberAndTheOtherMovesOn()
+    {
+        await Setup("german", Unit("g1", "asl:squad", "attacker-squad", "bd01:A2:0", "german"),
+            Unit("g2", "asl:squad", "attacker-squad", "bd01:A2:0", "german"));
+        await Advance(2);
+        string[] stack = ["g1", "g2"];
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = stack,
+            to = "bd01:B1:0"
+        }));
+        Committed(await Do(GameActions.PassFire, NoRoll(), new
+        {
+        }));
+
+        // The ATTACKER ends g1's move and moves g2 on (A4.2).
+        Committed(await Do(GameActions.EndMove, NoRoll(), new
+        {
+            unitIds = G1
+        }));
+        Assert.True(Current.Unit("g1")!.MovementEnded);
+        Assert.NotNull(Current.Movement);
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G2,
+            to = "bd01:B2:0"
+        }));
+        Assert.Equal(BoardLocation.Parse("bd01:B2:0"), Current.Location("g2")!.Location);
     }
 
     [Fact]

@@ -128,7 +128,7 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
         {
             MovementStepped moved => state.Movement is { WindowOpen: true } movement && movement.Step == moved.Step && movement.Location == moved.To,
             MovementWindowClosed => state.Movement is { WindowOpen: false },
-            MovementEnded => state.Movement is null,
+            MovementEnded ended => ended.Movers.All(id => state.Unit(id) is not { Status: InstanceStatus.Active } unit || unit.MovementEnded),
             // A forced back: the mover is where it started, with its movement ended, and every defender the plan revealed is known.
             EntryForcedBack forced => state.Unit(forced.Id) is { MovementEnded: true } unit && state.Location(unit.Id)?.Location == forced.ReturnedTo
                 && Revealed(state, plan),
