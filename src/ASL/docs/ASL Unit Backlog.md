@@ -12,6 +12,7 @@ These are not left out: the game resolves them in a simplified way and records t
 |---|---|---|---|---|
 | Heat of Battle after an Original MC or Rally DR of 2 | R0.2, R19.2, R22.5 | A15.1 to A15.5, pp. 83 to 84; chart p. 108 | Heroes, Battle Hardening, Berserk, and Surrender (below) | The 2 resolves as an ordinary MC or rally; the record says Heat of Battle was not taken. Applies to the merged Fire package too. |
 | Leader Creation on the first MMC Self-Rally's Original 2 (Field Promotion) | R19.4 | A18.11, p. 85; A18.2 chart p. 108 | Leader definitions for created leaders | The unit rallies; the record says Leader Creation was not taken. |
+| Splitting a moving stack when a mover breaks or pins | Steps 19 to 23 design, section 5 | A8.1, p. 59; A4.2, p. 49 | A move that names part of the stack | The broken or pinned unit may not move again, and neither may the rest of its stack; the ATTACKER ends the move. |
 
 ## 2. Rally (step 19)
 
@@ -98,3 +99,15 @@ Step 17 left these out; steps 19 to 23 do not build them.
 | A squad firing its inherent FP apart from its MG | Fire review, steps 19 to 23 | A7.351, p. 56 | Separate attacks in one phase |
 | Fire by a SMC, and a leader firing a MG | Fire review, steps 19 to 23 | A9.12, p. 62 | SMC FP |
 | The Concealment Table | Fire review, steps 17 and 19 to 23 | Registered p. 107 | Its transcription |
+
+## 9. Added by the steps 19 to 23 implementation
+
+| Item | Deferred by | Rules | Depends on |
+|---|---|---|---|
+| The Road Bonus of one extra MF for a move entirely along a road | Steps 19 to 23 design | A4.132, p. 48 | Tracking a whole move's hexsides |
+| A leader's MF bonus to Infantry it moves with | Steps 19 to 23 design | A4.12, p. 48 | Leaders moving in a stack |
+| Minimum Move | Steps 19 to 23 design | A4.134, p. 48 | none |
+| Movement of concealed units, and the loss of "?" it can bring | Steps 19 to 23 design | A12.14, p. 77 | The concealment loss conditions of movement |
+| Entry into an enemy-occupied non-building Location | R22.6 | A4.14, p. 49 | Close Combat |
+| The building entry of steps 7 to 11 as a case of `asl.game.move` | Steps 19 to 23 design | A4.14, p. 49; A12.15, p. 78 | Moving the entry's reveal and OVR flow into the move |
+| A live run of Rally, movement, and MGs in the Studio with real dice | Steps 19 to 23 design, section 7 | none | A game the user chooses to play |

@@ -170,4 +170,9 @@ On 2026-09-26 the user accepted the rulings of the [ASL Unit Rally and Fire Exte
 - **A pinned mover.** A7.83 gives a pinned mover no FFNAM or FFMO; one attack on a stack mixing pinned and unpinned movers would need two DRM, and is Indeterminate.
 - **A squad's MG.** The review admits a squad firing its inherent FP together with its MG, not in separate attacks (A7.351), and leaves fire by a SMC out.
 
+**Readings of live play.** Two readings were made while wiring the revised package into live games; neither changes the package.
+
+- **A road hex is Open Ground.** B1.11 (p. 113): a road hex devoid of other terrain is Open Ground except for movement through a road hexside, so the planner gives such a hex the Open Ground TEM, FFMO, and Rally terrain.
+- **Fire at an empty Location** is fire at a Location the firing side cannot see into: the package resolves it on the concealed column with no targets, and on no effect its record is withheld from the firing side with a public report of the arithmetic, as for unseen targets left unaffected (R21.1).
+
 **Cases.** `A1-fire-concealment-unreviewed` is retired (hidden units and Dummies are decided); `A1-fire-weapon-outside`, `A1-fire-movement-fire-outside`, and `A1-fire-movement-drm-differs` are added. The tests walk every roll of twelve accepted attacks, among them one of each new kind.
