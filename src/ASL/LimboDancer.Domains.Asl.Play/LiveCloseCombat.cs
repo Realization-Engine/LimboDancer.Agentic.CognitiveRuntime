@@ -149,6 +149,97 @@ public static class LiveCloseCombat
         };
     }
 
+    /// <summary>
+    /// The facts of one CC attack with a vehicle (rulings R11.13 to R11.15), before the rolls: the Infantry of the Location, the vehicle's states, the
+    /// attackers or defenders, and whether it is CC Reaction Fire, whose attackers marked First or Final Fire are named (D7.213). A vehicle moving in
+    /// the MPh is Non-Stopped (A11.51).
+    /// </summary>
+    public static (VehicleCloseCombatFacts? Facts, string? Reason) VehicleFromState(GameState state, BoardLocation location, string vehicleId,
+        IReadOnlyList<string> attackers, IReadOnlyList<string> defenders, bool byVehicle, bool reaction)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        if (state.Unit(vehicleId) is not { Status: InstanceStatus.Active } vehicle || !LiveFire.IsVehicle(vehicle) || state.Location(vehicleId)?.Location != location
+            || vehicle.Definition is not { } definition)
+        {
+            return (null, $"play.cc-vehicle: {vehicleId} is not an active vehicle in {location}");
+        }
+
+        var (units, reason) = Units(state, location, null);
+        if (units is null)
+        {
+            return (null, reason);
+        }
+
+        var moving = reaction && state.Movement is { Vehicle: true, Started: true, Stopped: false } movement && movement.Members.Contains(vehicle.Id, StringComparer.Ordinal);
+        var facts = new VehicleCloseCombatFacts(state.Phase == "ccph" ? "CCPh" : state.Phase == "mph" ? "MPh" : state.Phase, location.ToString(),
+            new VehicleCloseCombatVehicle(vehicle.Id, definition.Definition, vehicle.Side, LiveFire.CrewExposed(vehicle), Is(vehicle, Conditions.Motion) || moving,
+                Is(vehicle, Conditions.Immobilized) || Is(vehicle, Conditions.Bogged), Is(vehicle, Conditions.Stunned) || Is(vehicle, Conditions.Recalled),
+                Is(vehicle, Conditions.Shocked) || Is(vehicle, Conditions.UnconfirmedKill), Is(vehicle, Conditions.Abandoned),
+                Is(vehicle, Conditions.Malfunctioned) || Is(vehicle, Conditions.Disabled), Is(vehicle, Conditions.BmgMalfunctioned), Is(vehicle, Conditions.CmgMalfunctioned)),
+            [.. units.Where(unit => state.Unit(unit.UnitId!) is { } found && !LiveFire.IsVehicle(found))],
+            byVehicle ? [] : attackers, byVehicle ? defenders : [], byVehicle, reaction, null)
+        {
+            FireMarked = reaction && attackers.Where(id => state.Unit(id) is { } unit && (Is(unit, Conditions.FirstFire) || Is(unit, Conditions.FinalFire))).ToArray() is { Length: > 0 } marked
+                ? marked : null,
+        };
+        return (facts, null);
+    }
+
+    /// <summary>The rolls of a CC record with a vehicle, rebuilt from its roll ids and the recorded dice.</summary>
+    public static VehicleCloseCombatRolls? VehicleRolls(VehicleCloseCombatResolved combat, IReadOnlyDictionary<string, DiceRolled> rolls)
+    {
+        ArgumentNullException.ThrowIfNull(combat);
+        ArgumentNullException.ThrowIfNull(rolls);
+        IReadOnlyList<int>? attack = null;
+        int? unlikely = null;
+        var selection = new Dictionary<string, int>(StringComparer.Ordinal);
+        var wounds = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var (key, id) in combat.Rolls)
+        {
+            if (!rolls.TryGetValue(id, out var roll) || roll.Sides != 6)
+            {
+                return null;
+            }
+
+            var split = key.IndexOf(':', StringComparison.Ordinal);
+            var (kind, rest) = split < 0 ? (key, string.Empty) : (key[..split], key[(split + 1)..]);
+            switch (kind)
+            {
+                case "attack" when roll.Count == 2:
+                    attack = roll.Values;
+                    break;
+                case "unlikelyKill" when roll.Count == 1:
+                    unlikely = roll.Values[0];
+                    break;
+                case "randomSelection":
+                    var ids = rest.Split(',');
+                    if (roll.Count != ids.Length)
+                    {
+                        return null;
+                    }
+
+                    foreach (var (unit, index) in ids.Select((unit, index) => (unit, index)))
+                    {
+                        selection[unit] = roll.Values[index];
+                    }
+
+                    break;
+                case "woundSeverity" when roll.Count == 1:
+                    wounds[rest] = roll.Values[0];
+                    break;
+                default:
+                    return null;
+            }
+        }
+
+        return new VehicleCloseCombatRolls(attack)
+        {
+            UnlikelyKill = unlikely,
+            RandomSelection = selection.Count > 0 ? selection : null,
+            WoundSeverity = wounds.Count > 0 ? wounds : null,
+        };
+    }
+
     private static bool Is(IGameObject item, string condition) => GameState.Condition(item, condition) == ConditionState.True;
 }
 
@@ -213,6 +304,62 @@ public sealed class CloseCombatRecordVerifier(ScenarioA1CloseCombatReference ref
             ? "The Ambush record's facts and rolls do not resolve: " + string.Join("; ", resolution.Reasons)
             : resolution.Ambusher != ambush.Ambusher || !JsonElement.DeepEquals(JsonSerializer.SerializeToElement(resolution, LiveFire.Json), ambush.Resolution)
                 ? "The Ambush record's resolution differs from what its facts and rolls give."
+                : null;
+    }
+
+    /// <summary>
+    /// A CC attack with a vehicle (rulings R11.13 to R11.15): its facts must be the state's, each unit's Inexperience taken as recorded (the planner's
+    /// read of A19.2), and the package must reproduce its resolution.
+    /// </summary>
+    public string? VerifyVehicle(GameState state, VehicleCloseCombatResolved combat, IReadOnlyDictionary<string, DiceRolled> rolls)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(combat);
+        ArgumentNullException.ThrowIfNull(rolls);
+        VehicleCloseCombatFacts? recorded;
+        try
+        {
+            recorded = combat.Facts.Deserialize<VehicleCloseCombatFacts>(LiveFire.StrictJson);
+        }
+        catch (JsonException exception)
+        {
+            return "The CC record's facts cannot be read: " + exception.Message;
+        }
+
+        if (recorded?.Units is null || recorded.Rolls is not null)
+        {
+            return "The CC record's facts are incomplete.";
+        }
+
+        var (expected, reason) = LiveCloseCombat.VehicleFromState(state, combat.Location, combat.Vehicle, combat.Attackers, combat.Defenders, combat.ByVehicle, combat.Reaction);
+        if (expected is null)
+        {
+            return reason;
+        }
+
+        var inexperienced = recorded.Units.ToDictionary(unit => unit.UnitId!, unit => unit.Inexperienced, StringComparer.Ordinal);
+        expected = expected with
+        {
+            Units = [.. expected.Units!.Select(unit => unit with { Inexperienced = inexperienced.GetValueOrDefault(unit.UnitId!) })],
+        };
+        if (JsonSerializer.Serialize(expected, LiveFire.Json) != JsonSerializer.Serialize(recorded, LiveFire.Json))
+        {
+            return "The CC record's facts do not match the game state.";
+        }
+
+        if (LiveCloseCombat.VehicleRolls(combat, rolls) is not { } dice)
+        {
+            return "The CC record names a roll of the wrong shape.";
+        }
+
+        var resolution = ScenarioA1VehicleCloseCombat.Resolve(recorded with
+        {
+            Rolls = dice
+        }, reference);
+        return resolution.Disposition != CloseCombatResolution.Resolved
+            ? "The CC record's facts and rolls do not resolve: " + string.Join("; ", resolution.Reasons)
+            : !JsonElement.DeepEquals(JsonSerializer.SerializeToElement(resolution, LiveFire.Json), combat.Resolution)
+                ? "The CC record's resolution differs from what its facts and rolls give."
                 : null;
     }
 

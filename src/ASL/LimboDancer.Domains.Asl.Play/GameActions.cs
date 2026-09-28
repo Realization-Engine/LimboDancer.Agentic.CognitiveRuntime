@@ -332,7 +332,7 @@ public static class GameActions
         """);
 
     public static readonly ActionDescriptor MoveVehicle = Descriptor("asl.game.move-vehicle", "Move a vehicle",
-        "In its MPh, a vehicle of the phasing side spends one MP expenditure: start (1 MP unless in Motion), a VCA change of one hexspine (1 MP), entering the hex its VCA points at over Open Ground, Grain, or a road, or stop (1 MP); the DEFENDER may fire after each (D2.1, D2.11 to D2.13, D2.16; ruling R25.3).",
+        "In its MPh, a vehicle of the phasing side spends one MP expenditure: start (1 MP unless in Motion; forward or in Reverse; a bogged vehicle's Bog Removal), a VCA change of one hexspine, entering a hex forward, in Reverse, or in VBM at the Terrain Chart's cost with any Bog DR, as a Minimum Move, or with an OVR, stop (1 MP), or exit; or an ESB DR for more MP, or an OVR declared where it is after the concealed units there chose; the DEFENDER may fire after each (D2.1 to D2.7, D7.1, D8.2, D8.3; rulings R11.1 to R11.12).",
         PlayPermission, "asl.game.reviewed-fire-v1", """
         {
           "type": "object", "additionalProperties": false,
@@ -341,12 +341,53 @@ public static class GameActions
             "gameId": { "type": "string" }, "attemptId": { "type": "string" },
             "expectedRevision": { "type": "integer", "minimum": 0 },
             "vehicleId": { "type": "string" },
-            "kind": { "type": "string", "enum": ["start", "turn", "enter", "stop", "exit"] },
+            "kind": { "type": "string", "enum": ["start", "turn", "enter", "stop", "exit", "esb", "overrun"] },
             "facing": { "type": "string" }, "to": { "type": "string" },
-            "edge": { "type": "string", "enum": ["top", "bottom", "left", "right"] }
+            "edge": { "type": "string", "enum": ["top", "bottom", "left", "right"] },
+            "reverse": { "type": "boolean" }, "bypass": { "type": "boolean" }, "allMp": { "type": "boolean" },
+            "overrun": { "type": "boolean" }, "minimumMove": { "type": "boolean" },
+            "mp": { "type": "integer", "minimum": 1 }
           }
         }
         """);
+
+    public static readonly ActionDescriptor Overrun = Descriptor("asl.game.overrun", "Resolve an OVR",
+        "Once the DEFENDER passes on the MP expenditure of a declared OVR, the ATTACKER resolves it: the vehicle attacks every enemy unit in its Location on the IFT with its OVR FP, as the reviewed Fire package decides; the DEFENDER's Reaction Fire window follows (D7.1 to D7.2; ruling R11.11).",
+        PlayPermission, "asl.game.reviewed-fire-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "vehicleId": { "type": "string" }
+          }
+        }
+        """, JsonSerializer.SerializeToElement(new
+        {
+            package = ScenarioA1FirePackage.Identity.ToString()
+        }));
+
+    public static readonly ActionDescriptor VehicleCloseCombat = Descriptor("asl.game.vehicle-close-combat", "Close Combat with a vehicle",
+        "One CC attack in a Location holding a vehicle: Infantry attack the vehicle (one unit, or one with a SMC), or the vehicle attacks Infantry with its CC armament, one attack at a time, the non-vehicular side first (A11.31, A11.5, A11.62; CC between Infantry there is not built); or a side passes; or, in the MPh, a DEFENDER unit's CC Reaction Fire at a vehicle in its Location, after any PAATC (D7.21; rulings R11.13 to R11.16).",
+        PlayPermission, "asl.game.reviewed-close-combat-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "location"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "location": { "type": "string" },
+            "attackers": { "type": "array", "items": { "type": "string" } },
+            "defenders": { "type": "array", "items": { "type": "string" } },
+            "vehicleId": { "type": "string" },
+            "pass": { "type": "boolean" }
+          }
+        }
+        """, JsonSerializer.SerializeToElement(new
+        {
+            package = ScenarioA1CloseCombatPackage.Identity.ToString()
+        }));
 
     public static readonly ActionDescriptor ButtonUp = Descriptor("asl.game.button-up", "Button up or expose a crew",
         "In its owner's MPh or APh, an AFV's crew buttons up or becomes Crew Exposed, once per phase, not while Stunned and not in an MPh after it Prep Fired (D5.33; ruling R25.8).",
@@ -395,7 +436,7 @@ public static class GameActions
         get;
     } =
         [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding, DeclareOverrun, Fire, Rally, Repair, Move, PassFire, EndMove, Advance, Ambush, CloseCombat, TakePrisoner,
-            FireOrdnance, RecoverShock, TurnGun, HookGun, MoveVehicle, ButtonUp, Choose, Massacre];
+            FireOrdnance, RecoverShock, TurnGun, HookGun, MoveVehicle, Overrun, VehicleCloseCombat, ButtonUp, Choose, Massacre];
 
     public static string VersionKey(Guid tenant, string game) => $"asl.game:{tenant:N}:{game}";
 

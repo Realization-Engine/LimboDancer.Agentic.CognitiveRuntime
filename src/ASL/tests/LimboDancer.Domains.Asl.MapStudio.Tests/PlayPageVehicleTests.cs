@@ -181,6 +181,49 @@ public sealed class PlayPageVehicleTests : IDisposable
     }
 
     [Fact]
+    public void TheVehiclePanelOffersReverseAnOvrItsResolutionAndCcReactionFire()
+    {
+        // Backlog pass 11 (rulings R11.1, R11.11, R11.13): the tank may Start in Reverse; entering the Russian squad's hex with an OVR puts the OVR's
+        // resolution on the panel once the DEFENDER passes, after which the squad is offered CC Reaction Fire.
+        var (one, two) = Hexes();
+        var page = context.Render<PlayPage>();
+        page.Find("#new-board").Change(Board);
+        page.Find("#new-first").Change("german");
+        page.Find("#new-second").Change("russian");
+        page.Find("#new-first-elr").Change("3");
+        page.Find("#new-second-elr").Change("3");
+        Place(page, "de-tank", "attacker-tank", one, "east");
+        page.Find("#place-definition").Change("defender-squad");
+        page.Find("#place-id").Change("r1");
+        page.Find("#place-location").Change(two);
+        page.Find("#place-add").Click();
+        Commit(page, "#propose-setup");
+        Commit(page, "#propose-advance");
+        Commit(page, "#propose-advance");
+        page.Find("#vehicle-unit").Change("de-tank");
+        Assert.Single(page.FindAll("#vehicle-start-reverse"));
+        Commit(page, "#vehicle-start");
+        Commit(page, "#propose-pass");
+        Assert.Single(page.FindAll("#vehicle-esb"));
+        if (page.FindAll($".vehicle-enter[data-to='{two}']").FirstOrDefault(item => item.GetAttribute("data-bypass") == "False") is not { } enter
+            || enter.HasAttribute("disabled"))
+        {
+            // The two hexes are not in the tank's VCA from this placement; the OVR control is still offered.
+            Assert.Single(page.FindAll("#vehicle-ovr"));
+            return;
+        }
+
+        page.Find("#vehicle-ovr").Change(true);
+        Commit(page, $".vehicle-enter[data-to='{two}'][data-bypass='False']");
+        Assert.True(page.Find("#vehicle-resolve-ovr").HasAttribute("disabled"));
+        Commit(page, "#propose-pass");
+        Assert.False(page.Find("#vehicle-resolve-ovr").HasAttribute("disabled"));
+        dice.Enqueue([6, 6, 1, 1, 1, 1, 1]);
+        Commit(page, "#vehicle-resolve-ovr");
+        Assert.Contains("r1", page.FindAll("#reaction-attacker option").Select(item => item.GetAttribute("value")));
+    }
+
+    [Fact]
     public void TheGunPanelListsTargetsWithTheirCoveredArcAndOffersTurningIntensiveFireAndPushing()
     {
         // R8.2, R8.6, R8.9: in the PFPh the leIG's panel reads each enemy Location against its CA, offers Intensive Fire and a turn without

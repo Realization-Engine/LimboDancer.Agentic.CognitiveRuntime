@@ -463,9 +463,46 @@ public static class GameEventReader
                     turned = parsed;
                 }
 
+                var straddling = payload.TryGetProperty("straddling", out _) ? ReadLocation(payload, "straddling", path, fields, diagnostics) : null;
                 return vehicleAt is null || vehicleId is null || vehicleKind is null || halfMp is null || vehicleStep is null
                     ? Missing(diagnostics, "A vehicle step names its vehicle, kind, Location, half MP, and step.", path)
-                    : new VehicleStepped(vehicleId, vehicleKind, vehicleAt, turned, halfMp.Value, vehicleStep.Value);
+                    : new VehicleStepped(vehicleId, vehicleKind, vehicleAt, turned, halfMp.Value, vehicleStep.Value)
+                    {
+                        Reverse = fields.OptionalBoolean(payload, "reverse", path),
+                        Straddling = straddling,
+                        Overrunning = fields.OptionalBoolean(payload, "overrun", path),
+                        MinimumMove = fields.OptionalBoolean(payload, "minimumMove", path),
+                        BogRemoval = fields.OptionalBoolean(payload, "bogRemoval", path),
+                        All = fields.OptionalBoolean(payload, "all", path),
+                    };
+            case "vehicle-check-rolled":
+                var checkedVehicle = fields.RequiredString(payload, "vehicle", path);
+                var checkKind = fields.RequiredString(payload, "check", path);
+                var vehicleCheckRoll = fields.RequiredString(payload, "roll", path);
+                var checkDrm = fields.OptionalInteger(payload, "drm", path);
+                var checkResult = fields.RequiredString(payload, "result", path);
+                return checkedVehicle is null || checkKind is null || vehicleCheckRoll is null || checkDrm is null || checkResult is null
+                    ? Missing(diagnostics, "A vehicle check names its vehicle, check, roll, DRM, and result.", path)
+                    : new VehicleCheckRolled(checkedVehicle, checkKind, vehicleCheckRoll, checkDrm.Value, checkResult)
+                    {
+                        Mp = fields.OptionalInteger(payload, "mp", path) ?? 0,
+                    };
+            case "overrun-resolved":
+                var overrunVehicle = fields.RequiredString(payload, "vehicle", path);
+                var overrunAt = ReadLocation(payload, "at", path, fields, diagnostics);
+                var overrunFire = fields.RequiredString(payload, "fire", path);
+                return overrunVehicle is null || overrunAt is null || overrunFire is null
+                    ? Missing(diagnostics, "An OVR record names its vehicle, Location, and fire record.", path)
+                    : new OverrunResolved(overrunVehicle, overrunAt, overrunFire);
+            case "paatc-taken":
+                var paatcVehicle = fields.RequiredString(payload, "vehicle", path);
+                var paatcRoll = fields.RequiredString(payload, "roll", path);
+                var paatcMorale = fields.OptionalInteger(payload, "morale", path);
+                var paatcDrm = fields.OptionalInteger(payload, "drm", path);
+                return paatcVehicle is null || paatcRoll is null || paatcMorale is null || paatcDrm is null
+                    ? Missing(diagnostics, "A PAATC names its units, vehicle, roll, Morale Level, and DRM.", path)
+                    : new PaatcTaken(fields.StringList(payload, "units", path), paatcVehicle, paatcRoll, paatcMorale.Value, paatcDrm.Value,
+                        fields.OptionalBoolean(payload, "passed", path));
             case "movement-window-closed":
                 var closedStep = fields.OptionalInteger(payload, "step", path);
                 return closedStep is null ? Missing(diagnostics, "A closed window names its step.", path) : new MovementWindowClosed(closedStep.Value);
@@ -502,6 +539,27 @@ public static class GameEventReader
                     ? Missing(diagnostics, "A CC record names its Location, round, rolls, facts, and resolution.", path)
                     : new CloseCombatResolved(combatAt, round, fields.StringList(payload, "attackers", path), fields.StringList(payload, "defenders", path), combatRolls,
                         combatFacts.Clone(), combatResolution.Clone());
+            case "vehicle-close-combat-resolved":
+                var vehicleCombatAt = ReadLocation(payload, "location", path, fields, diagnostics);
+                var vehicleCombatVehicle = fields.RequiredString(payload, "vehicle", path);
+                var vehicleCombatRolls = RollMap(payload, path, diagnostics);
+                return vehicleCombatAt is null || vehicleCombatVehicle is null || vehicleCombatRolls is null
+                    || !payload.TryGetProperty("facts", out var vehicleCombatFacts) || vehicleCombatFacts.ValueKind != JsonValueKind.Object
+                    || !payload.TryGetProperty("resolution", out var vehicleCombatResolution) || vehicleCombatResolution.ValueKind != JsonValueKind.Object
+                    ? Missing(diagnostics, "A CC record with a vehicle names its Location, vehicle, rolls, facts, and resolution.", path)
+                    : new VehicleCloseCombatResolved(vehicleCombatAt, vehicleCombatVehicle, fields.StringList(payload, "attackers", path), fields.StringList(payload, "defenders", path),
+                        fields.OptionalBoolean(payload, "byVehicle", path), fields.OptionalBoolean(payload, "reaction", path), vehicleCombatRolls, vehicleCombatFacts.Clone(),
+                        vehicleCombatResolution.Clone())
+                    {
+                        Next = fields.OptionalString(payload, "next", path),
+                        Closed = fields.OptionalBoolean(payload, "closed", path),
+                    };
+            case "vehicle-close-combat-passed":
+                var passedAt = ReadLocation(payload, "location", path, fields, diagnostics);
+                var passedSide = fields.RequiredString(payload, "side", path);
+                return passedAt is null || passedSide is null
+                    ? Missing(diagnostics, "A pass in CC names its Location and side.", path)
+                    : new VehicleCloseCombatPassed(passedAt, passedSide, fields.OptionalString(payload, "next", path), fields.OptionalBoolean(payload, "closed", path));
             case "ordnance-fired":
                 var ordnanceGun = fields.RequiredString(payload, "gun", path);
                 var ordnanceCrew = fields.RequiredString(payload, "crew", path);

@@ -7,7 +7,8 @@ namespace LimboDancer.Domains.Asl.Play;
 /// Vehicle concealment (backlog pass 6, rulings R6.7 and R6.8): a vehicle sets up concealed or hidden only in Concealment Terrain,
 /// here grain in season (A12.2, A12.12, B15.6); it loses its "?" when it moves within 16 hexes and in the LOS of a Good Order enemy
 /// ground unit, or is in the LOS of one while not in Concealment Terrain (Case H), when it fires, and when an attack gives it at least a
-/// PTC; and a vehicle entering a Location holding enemy units it cannot see reveals them (A12.41; the PAATC is not built).
+/// PTC. A vehicle entering a Location holding enemy units it cannot see makes their owner reveal them or take a combined PAATC (A12.41;
+/// backlog pass 11, ruling R11.12), in the vehicle movement planner.
 /// </summary>
 public sealed partial class GamePlanner
 {
@@ -76,25 +77,4 @@ public sealed partial class GamePlanner
         ids.Select((id, index) => Event(scope, attemptId, first + index, expected, "concealment-lost",
             new ConditionsChanged(id, new Dictionary<string, ConditionState> { [Conditions.Concealed] = ConditionState.False, [Conditions.Hidden] = ConditionState.False }),
             null, null));
-
-    /// <summary>
-    /// A12.41 (ruling R6.8): a vehicle entering a Location of enemy units its side cannot see reveals their concealed and hidden Personnel,
-    /// the owner's reveal in place of a PAATC, and removes their Dummies; the events follow the vehicle's step.
-    /// </summary>
-    private static IEnumerable<(string Type, EventPayload Payload)> EntryReveals(GameState state, UnitInstance vehicle, BoardLocation to)
-    {
-        foreach (var unit in state.At(to).OfType<UnitInstance>().Where(unit => unit.Side != vehicle.Side && !LiveFire.IsVehicle(unit))
-            .OrderBy(unit => unit.Id, StringComparer.Ordinal))
-        {
-            if (unit.Kind == UnitKinds.Dummy)
-            {
-                yield return ("instance-eliminated", new InstanceEliminated(unit.Id));
-            }
-            else if (Is(unit, Conditions.Concealed) || Is(unit, Conditions.Hidden))
-            {
-                yield return ("concealment-lost", new ConditionsChanged(unit.Id,
-                    new Dictionary<string, ConditionState> { [Conditions.Concealed] = ConditionState.False, [Conditions.Hidden] = ConditionState.False }));
-            }
-        }
-    }
 }

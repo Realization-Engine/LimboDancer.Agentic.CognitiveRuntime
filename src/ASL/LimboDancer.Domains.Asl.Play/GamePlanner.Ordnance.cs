@@ -217,10 +217,12 @@ public sealed partial class GamePlanner
 
             static string Facing(double off) => off <= 60 + 1e-6 ? "front" : off <= 120 + 1e-6 ? "side" : "rear";
             var targetTurreted = OrdnanceReference.Value.Armor.Vehicles.GetValueOrDefault(vehicleTarget.DefinitionId!)?.Turreted == true;
+            // D2.32 (ruling R11.2): a vehicle in Bypass has its Target Facing read from the firer's hex, for its turret too.
+            var bypassFacing = BypassTargetFacing(state, targetVehicle, from);
             aimed = vehicleTarget with
             {
-                HullFacing = Facing(Off(back, (int)hull * 60)),
-                TurretFacing = targetTurreted && LiveOrdnance.TurretFacing(state, targetVehicle) is { } tca ? Facing(Off(back, (int)tca * 60)) : null,
+                HullFacing = bypassFacing ?? Facing(Off(back, (int)hull * 60)),
+                TurretFacing = targetTurreted ? bypassFacing ?? (LiveOrdnance.TurretFacing(state, targetVehicle) is { } tca ? Facing(Off(back, (int)tca * 60)) : null) : null,
             };
         }
 
@@ -320,10 +322,12 @@ public sealed partial class GamePlanner
             static double Off(double one, double two) => Math.Abs(((one - two) % 360 + 540) % 360 - 180);
             static string Facing(double off) => off <= 60 + 1e-6 ? "front" : off <= 120 + 1e-6 ? "side" : "rear";
             var targetTurreted = OrdnanceReference.Value.Armor.Vehicles.GetValueOrDefault(vehicleTarget.DefinitionId!)?.Turreted == true;
+            // D2.32 (ruling R11.2): a vehicle in Bypass has its Target Facing read from the firer's hex, for its turret too.
+            var bypassFacing = BypassTargetFacing(state, targetVehicle, from);
             aimed = vehicleTarget with
             {
-                HullFacing = Facing(Off(back, (int)hull * 60)),
-                TurretFacing = targetTurreted && LiveOrdnance.TurretFacing(state, targetVehicle) is { } tca ? Facing(Off(back, (int)tca * 60)) : null,
+                HullFacing = bypassFacing ?? Facing(Off(back, (int)hull * 60)),
+                TurretFacing = targetTurreted ? bypassFacing ?? (LiveOrdnance.TurretFacing(state, targetVehicle) is { } tca ? Facing(Off(back, (int)tca * 60)) : null) : null,
             };
         }
 

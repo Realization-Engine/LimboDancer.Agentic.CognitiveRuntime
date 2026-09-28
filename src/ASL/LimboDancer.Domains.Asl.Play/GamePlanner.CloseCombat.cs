@@ -72,10 +72,10 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.advance-unit: {driven.Id} is a vehicle; only Infantry advance (A4.7)");
         }
 
-        if (EnemyVehicleAt(state, state.PhasingSide!, to) is { } blocking)
-        {
-            return Refused(scope, label, expected, $"play.advance-enemy-vehicle: the enemy vehicle {blocking.Id} is in {to}; CC against a vehicle is not reviewed (A11.5; ruling R25.3)");
-        }
+        // A11.6 (ruling R11.17): a MMC advancing into the Location of a manned, unconcealed enemy AFV passes a PAATC first, aided by a leader in its
+        // Location; SMC, Fanatic, and berserk units are exempt. Concealed vehicles are refused below with other concealed units.
+        var afv = state.At(to).OfType<UnitInstance>().FirstOrDefault(unit => unit.Status == InstanceStatus.Active && unit.Side != state.PhasingSide && IsAfv(unit)
+            && !Is(unit, Conditions.Abandoned) && !Is(unit, Conditions.Concealed) && !Is(unit, Conditions.Hidden));
 
         // A4.7 (rulings R10.1 to R10.3): one hex, or one level up or down in a stairwell hex, at the MF cost the move would pay; B16.4: never into marsh.
         var (entry, stepReason) = InfantryStep(state, from, to);
@@ -157,6 +157,45 @@ public sealed partial class GamePlanner
         var summary = $"play.advance: {string.Join(", ", ids)} advance into {to} ({terrain})" + (enemies.Length > 0 ? $", with {string.Join(", ", enemies.Select(item => item.Id))}: CC follows (A3.7)" : string.Empty)
             + (tiring.Count > 0 ? $"; {string.Join(", ", tiring)} become CX advancing into Difficult Terrain (A4.72)" : string.Empty);
         var package = ScenarioA1CloseCombatPackage.Identity.ToString();
+        var testing = afv is null ? [] : unitList.Where(unit => NeedsPaatc(state, unit, afv)).ToArray();
+        if (afv is not null && testing.Length > 0)
+        {
+            // A11.6: each testing unit passes its own PAATC before it advances, and does not wait on another's; a failure pins it and it stays.
+            IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
+            {
+                var built = new List<GameEvent>();
+                var going = unitList.Where(unit => !testing.Contains(unit)).Select(unit => unit.Id).ToList();
+                foreach (var unit in testing)
+                {
+                    AddPaatc(scope, attemptId, expected, "system", state, [unit], afv, from, built, draw, out var passed);
+                    if (passed)
+                    {
+                        going.Add(unit.Id);
+                    }
+                }
+
+                if (going.Count > 0)
+                {
+                    var advanced = EventId(attemptId, built.Count + 1);
+                    built.Add(Event(scope, attemptId, built.Count + 1, expected, "advanced", new AdvanceMoved([.. ids.Where(going.Contains)], to), package, null));
+                    foreach (var id in tiring.Where(going.Contains))
+                    {
+                        built.Add(Event(scope, attemptId, built.Count + 1, expected, "conditions-changed",
+                            new ConditionsChanged(id, new Dictionary<string, ConditionState> { [Conditions.Cx] = ConditionState.True }), package, null, [advanced]));
+                    }
+                }
+
+                return built;
+            }
+
+            return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
+                [summary, $"play.advance-paatc: {string.Join(", ", testing.Select(unit => unit.Id))} each pass a PAATC before advancing on {afv.Id}; a unit that fails is pinned and stays (A11.6)"])
+            {
+                Roll = new PlannedRoll("paatc", Build),
+                FirstEventId = EventId(attemptId, 1),
+            };
+        }
+
         List<GameEvent> events = [Event(scope, attemptId, 1, expected, "advanced", new AdvanceMoved(ids, to), package, null)];
         foreach (var id in tiring)
         {
@@ -282,10 +321,10 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.cc-phase: CC is resolved in the CCPh (A3.8, A11.1)");
         }
 
-        // A11.5, A11.6 (ruling R25.10): CC in a Location with a vehicle is not reviewed.
+        // A11.31 (ruling R11.16): CC in a Location holding a vehicle is sequential, one attack at a time, with the vehicle CC action.
         if (state.At(location).OfType<UnitInstance>().FirstOrDefault(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit)) is { } present)
         {
-            return Refused(scope, label, expected, $"play.cc-vehicle: {present.Id} is in {location}, and CC with a vehicle is not reviewed (A11.5, A11.6; ruling R25.10)");
+            return Refused(scope, label, expected, $"play.cc-vehicle: {present.Id} is in {location}, so its CC is sequential, one attack at a time (asl.game.vehicle-close-combat; A11.31)");
         }
 
         var attacks = new List<CloseCombatDeclaration>();
@@ -530,6 +569,12 @@ public sealed partial class GamePlanner
             return false;
         }
 
+        // Ruling R11.16: no Ambush dr is made in a Location holding a vehicle.
+        if (state.At(location).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit)))
+        {
+            return false;
+        }
+
         var terrain = ReadLocation(state, location) is { } read ? TerrainKey(read) : null;
         return LiveCloseCombat.AmbushFromState(state, location, terrain).Facts is { Units: { } units } && ScenarioA1CloseCombatCalculator.AmbushPossible(terrain, units);
     }
@@ -549,7 +594,9 @@ public sealed partial class GamePlanner
         var due = new List<string>();
         foreach (var open in state.CloseCombats.Where(item => !item.Closed))
         {
-            due.Add(open.Ambusher is null ? $"{open.Location}: its round after the Ambush drs (A11.12)"
+            // Ruling R11.16 (table-player finding): a Location holding a vehicle has no Ambush; its sides attack in turn.
+            due.Add(open.Next is { } next ? $"{open.Location}: the {next} side attacks or passes (A11.31)"
+                : open.Ambusher is null ? $"{open.Location}: its round after the Ambush drs (A11.12)"
                 : $"{open.Location}: more attacks by the {open.Ambusher} side, then the ambushed side's round (A11.3, A11.32)");
         }
 

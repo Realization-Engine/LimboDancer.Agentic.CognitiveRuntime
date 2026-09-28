@@ -114,6 +114,36 @@ public sealed record FireDefinition(
         get; init;
     }
 
+    /// <summary>A vehicle's BMG FP (D1.8); null when it has none (backlog pass 11, ruling R11.11).</summary>
+    public int? BowMg
+    {
+        get; init;
+    }
+
+    /// <summary>A vehicle's CMG FP (D1.8); null when it has none (ruling R11.11).</summary>
+    public int? CoaxialMg
+    {
+        get; init;
+    }
+
+    /// <summary>A vehicle's MA caliber in mm (D1.3); null when its MA is not a Gun (ruling R11.11).</summary>
+    public int? Caliber
+    {
+        get; init;
+    }
+
+    /// <summary>A vehicle's ground pressure (D8.21): <c>low</c> or <c>high</c> as printed; null when none is printed, which is Normal (ruling R11.9).</summary>
+    public string? GroundPressure
+    {
+        get; init;
+    }
+
+    /// <summary>Whether a vehicle's MP are printed red: mechanically unreliable (D2.51; ruling R11.4).</summary>
+    public bool? MechanicallyUnreliable
+    {
+        get; init;
+    }
+
     public bool IsVehicle => Kind == "asl:vehicle";
 
     /// <summary>A LATW's type (C13.1); null otherwise.</summary>
@@ -419,6 +449,11 @@ public sealed class ScenarioA1FireReference
             OpenTopped = Trait("front", "asl:open-topped"),
             MainArmament = Text("front", "ma-weapon"),
             AntiAircraftMg = Value("front", "aamg"),
+            BowMg = Value("front", "bmg"),
+            CoaxialMg = Value("front", "cmg"),
+            Caliber = Value("front", "caliber"),
+            GroundPressure = Text("front", "ground-pressure"),
+            MechanicallyUnreliable = Trait("front", "asl:mechanically-unreliable"),
             LatwType = Text("front", "latw-type"),
         };
     }

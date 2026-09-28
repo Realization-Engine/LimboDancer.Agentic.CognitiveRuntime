@@ -31,6 +31,32 @@ public sealed record CloseCombatResolved(BoardLocation Location, string Round, I
 }
 
 /// <summary>
+/// <c>vehicle-close-combat-resolved</c>: one CC attack with a vehicle (A11.5, A11.62, D7.21; backlog pass 11, rulings R11.13 to R11.16): Infantry
+/// attacking the vehicle, or the vehicle attacking Infantry, in the CCPh, or CC Reaction Fire in the MPh; the rolls by key, the facts, and the
+/// resolution. In the CCPh it names the side that attacks next (A11.31) and whether the Location's CC is over, as the planner read them. Replay
+/// hands it to an <see cref="ICloseCombatRecordVerifier"/>.
+/// </summary>
+public sealed record VehicleCloseCombatResolved(BoardLocation Location, string Vehicle, IReadOnlyList<string> Attackers, IReadOnlyList<string> Defenders, bool ByVehicle,
+    bool Reaction, IReadOnlyDictionary<string, string> Rolls, JsonElement Facts, JsonElement Resolution) : EventPayload
+{
+    public string? Next
+    {
+        get; init;
+    }
+
+    public bool Closed
+    {
+        get; init;
+    }
+}
+
+/// <summary>
+/// <c>vehicle-close-combat-passed</c>: a side passes its attack in a CC Location holding a vehicle (A11.31; ruling R11.16), and makes no more there this
+/// CCPh; the side that attacks next and whether the Location's CC is over, as the planner read them.
+/// </summary>
+public sealed record VehicleCloseCombatPassed(BoardLocation Location, string Side, string? Next, bool Closed) : EventPayload;
+
+/// <summary>
 /// <c>surrender-pending</c>: a unit surrenders after a Heat of Battle DR of 12 to one of these ADJACENT Known Good Order armed
 /// enemy Infantry units, the captor's choice (A15.5, A20.21). Until the captor's side chooses, the game waits.
 /// </summary>
@@ -44,6 +70,10 @@ public interface ICloseCombatRecordVerifier
 
     /// <summary>Null when the CC record reproduces and its facts agree with the state; otherwise why not.</summary>
     public string? Verify(GameState state, CloseCombatResolved combat, IReadOnlyDictionary<string, DiceRolled> rolls);
+
+    /// <summary>Null when the record of a CC attack with a vehicle reproduces and its facts agree with the state; otherwise why not (ruling R11.14).</summary>
+    public string? VerifyVehicle(GameState state, VehicleCloseCombatResolved combat, IReadOnlyDictionary<string, DiceRolled> rolls) =>
+        "A CC record with a vehicle needs a verifier that reads it.";
 }
 
 /// <summary>
@@ -55,6 +85,15 @@ public sealed record CloseCombatLocation(BoardLocation Location, bool AmbushRoll
     public IReadOnlyList<string> Attacking { get; init; } = [];
 
     public IReadOnlyList<string> Attacked { get; init; } = [];
+
+    /// <summary>The side whose attack is next in a Location holding a vehicle (A11.31; ruling R11.16); null in other Locations.</summary>
+    public string? Next
+    {
+        get; init;
+    }
+
+    /// <summary>The sides that passed in a Location holding a vehicle, and attack no more there this CCPh (ruling R11.16).</summary>
+    public IReadOnlyList<string> Passed { get; init; } = [];
 }
 
 /// <summary>A unit's advance this Player Turn and the Location it entered, which decides whether an Ambush can occur (A11.4).</summary>

@@ -59,6 +59,7 @@ public sealed partial class GamePlanner
             ChoicePending.BattleHardening => $"{subject.Split(':')[0]} may be Battle Hardened; its owner takes it or refuses it (A15.3)",
             ChoicePending.LeaderCreation => $"{subject} rolled an Original 2 on its Self-Rally; its side may make the Leader Creation dr or decline it (A18.11)",
             ChoicePending.UnlikelyKill => $"an Original 2 on the Vehicle line: the firer may make the Unlikely Kill dr against {subject} or decline it (A7.309)",
+            ChoicePending.Paatc => $"a vehicle entered concealed units' Location ({subject}): their owner reveals them or takes one combined PAATC (A12.41)",
             _ => $"the acquired units are in {string.Join(" and ", choice.Options)}; the Gun's side chooses which Location keeps the Acquisition (C6.51)",
         };
     }
@@ -94,6 +95,16 @@ public sealed partial class GamePlanner
         if (pending.Kind == ChoicePending.Acquisition)
         {
             return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [made], [summary]);
+        }
+
+        // A12.41 (ruling R11.12): the concealed units a vehicle entered are revealed or take their combined PAATC.
+        if (pending.Kind == ChoicePending.Paatc)
+        {
+            var answer = PlanPaatcAnswer(scope, existing, attemptId, expected, label, actor, state, pending, made, option);
+            return answer with
+            {
+                Reasons = [summary, .. answer.Reasons]
+            };
         }
 
         var resume = pending.Resume;
@@ -133,6 +144,7 @@ public sealed partial class GamePlanner
                         Choices = With(fire.Choices)
                     }, resume.GetProperty("targetSide").GetString()!, step,
                         events, draw, resumed);
+                    AddOverrunResolved(scope, attemptId, expected, answered, fire, events);
                     break;
                 case "rally":
                     var rally = resume.GetProperty("facts").Deserialize<RallyAttempt>(LiveFire.Json)!;

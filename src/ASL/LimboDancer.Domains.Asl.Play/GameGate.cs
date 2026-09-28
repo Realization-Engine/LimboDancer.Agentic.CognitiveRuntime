@@ -155,9 +155,23 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
         : plan.Events.Select(item => item.Payload).OfType<PrisonersMassacred>().FirstOrDefault() is { } massacre
         // A Massacre (A20.4): its prisoners are eliminated.
         ? massacre.Prisoners.All(id => state.Unit(id) is { Status: InstanceStatus.Eliminated })
+        : plan.Events.Select(item => item.Payload).OfType<VehicleCloseCombatResolved>().FirstOrDefault() is { } vehicleCombat
+        // A CC attack with a vehicle (ruling R11.16): in the CCPh the Location's CC records its attackers.
+        ? vehicleCombat.Reaction || state.CloseCombats.Any(item => item.Location == vehicleCombat.Location && vehicleCombat.Attackers.All(item.Attacking.Contains))
+        : plan.Events.Select(item => item.Payload).OfType<VehicleCloseCombatPassed>().FirstOrDefault() is { } passed
+        // A pass in CC with a vehicle (ruling R11.16): the Location's CC records it.
+        ? state.CloseCombats.Any(item => item.Location == passed.Location && item.Passed.Contains(passed.Side))
+        : plan.Events.Select(item => item.Payload).OfType<PaatcTaken>().FirstOrDefault() is { } paatc && !plan.Events.Any(item => item.Payload is AdvanceMoved or ChoiceMade)
+        // A PAATC that stopped the action (A11.6): its units are still in play, pinned on a failure.
+        ? paatc.Units.All(id => state.Unit(id) is { } unit && (paatc.Passed || GameState.Condition(unit, Conditions.Pinned) == ConditionState.True))
         : plan.Events.LastOrDefault(item => item.Payload is not (AcquisitionChanged or ChoicePending) && item.Type != "concealment-lost"
-            && !(item.Payload is InstanceEliminated && plan.Events.Any(step => step.Payload is VehicleStepped)))?.Payload switch
+            && !(item.Payload is InstanceEliminated && plan.Events.Any(step => step.Payload is VehicleStepped))
+            && !(item.Payload is VehicleCheckRolled or DiceRolled && plan.Events.Any(step => step.Payload is VehicleStepped))
+            && !(item.Payload is ConditionsChanged && plan.Events.Any(step => step.Payload is PhaseChanged)))?.Payload switch
         {
+            // A vehicle's check with no MP expenditure (D2.5; ruling R11.3): an ESB DR, its effect on the vehicle.
+            VehicleCheckRolled check => state.Unit(check.Vehicle) is { } checkedVehicle
+                && (check.Result != VehicleCheckRolled.Immobilized || GameState.Condition(checkedVehicle, Conditions.Immobilized) == ConditionState.True),
             MovementStepped moved => state.Movement is { WindowOpen: true } movement && movement.Step == moved.Step && movement.Location == moved.To,
             // A vehicle's MP expenditure: its window is open at this step, and the vehicle is where the step put it.
             VehicleStepped { Kind: VehicleStepped.Exit } exit => state.Unit(exit.Vehicle) is { Status: InstanceStatus.Exited },

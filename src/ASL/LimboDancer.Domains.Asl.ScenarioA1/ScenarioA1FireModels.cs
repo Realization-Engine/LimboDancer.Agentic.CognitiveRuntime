@@ -215,6 +215,41 @@ public sealed record FireAttack(
     {
         get; init;
     }
+
+    /// <summary>
+    /// A vehicle's OVR of the Location it entered (D7.1 to D7.17; backlog pass 11, ruling R11.11): no Infantry firers or leader; the package
+    /// computes its FP from the vehicle's definition. Null for other fire.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FireOverrun? Overrun
+    {
+        get; init;
+    }
+}
+
+/// <summary>
+/// An OVR (D7.1, D7.11, D7.17; ruling R11.11): the vehicle, its definition, its Location, whether its crew is CE (for an AAMG, D5.3), whether it
+/// became Immobile before the OVR resolves (a Bog: the FP is halved, D7.11), and which of its weapons are malfunctioned or disabled.
+/// </summary>
+public sealed record FireOverrun(
+    string? VehicleId,
+    string? DefinitionId,
+    string? LocationId,
+    bool? CrewExposed,
+    bool? Immobile,
+    bool? MainArmamentMalfunctioned,
+    bool? BmgMalfunctioned,
+    bool? CmgMalfunctioned);
+
+/// <summary>
+/// What an OVR's Original IFT DR of 12 did (D7.17; ruling R11.11): the weapon it malfunctioned (<c>ma</c>, <c>bmg</c>, or <c>cmg</c>; the halftrack's MA
+/// is its AAMG), chosen by Random Selection when several added FP, or the vehicle immobilized when none that added FP can malfunction.
+/// </summary>
+public sealed record FireOverrunEffect(string VehicleId, IReadOnlyList<string> MalfunctionedWeapons, bool Immobilized)
+{
+    public const string MainArmament = "ma";
+    public const string BowMg = "bmg";
+    public const string CoaxialMg = "cmg";
 }
 
 /// <summary>The wall (+2) or hedge (+1) TEM a target claims (B9.3), after any reduction for a higher firer (B9.33).</summary>
@@ -690,6 +725,13 @@ public sealed record FireResolution(
     /// <summary>What the attack did to each vehicle in the target Location and its crew (A7.307 to A7.309, D.8B); null when there were none.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyList<FireVehicleEffect>? VehicleEffects
+    {
+        get; init;
+    }
+
+    /// <summary>What an OVR's Original DR of 12 did to the OVRing vehicle (D7.17; ruling R11.11); null when it rolled no 12 or was no OVR.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FireOverrunEffect? OverrunEffect
     {
         get; init;
     }

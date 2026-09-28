@@ -220,6 +220,8 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             "asl.game.fire-ordnance" => PlanFireOrdnance(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.take-prisoner" => PlanTakePrisoner(scope, arguments, existing, attemptId, expected, label),
             "asl.game.move-vehicle" => PlanMoveVehicle(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
+            "asl.game.overrun" => PlanOverrun(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
+            "asl.game.vehicle-close-combat" => PlanVehicleCloseCombat(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.button-up" => PlanButtonUp(scope, arguments, existing, attemptId, expected, label),
             "asl.game.choose" => PlanChoose(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.massacre" => PlanMassacre(scope, arguments, existing, attemptId, expected, label),
@@ -454,6 +456,17 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         var payload = new PhaseChanged(turn, phase, phasing);
         var changed = EventId(attemptId, events.Count + 1);
         events.Add(Event(scope, attemptId, events.Count + 1, expected, "phase-changed", payload, rulePackage: null, visibility: null));
+
+        // A11.52 (ruling R11.16): an unarmed vehicle alone with enemy Infantry is captured as the CCPh begins.
+        if (phase == "ccph")
+        {
+            foreach (var vehicle in CapturedVehicles(state))
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(vehicle.Id,
+                    new Dictionary<string, ConditionState> { [Conditions.Captured] = ConditionState.True, [Conditions.Abandoned] = ConditionState.True }), null, null, [changed]));
+                reasons.Add($"play.cc-vehicle-capture: {vehicle.Id} is unarmed and alone with enemy Infantry, so it is captured; the use of captured vehicles is not built (A11.52, A21.2)");
+            }
+        }
 
         // A20.4 (ruling R5.7): at the start of their side's fire phase, berserk units massacre the enemy prisoners in their Location.
         foreach (var (massacre, why) in BerserkMassacres(state, phase, phasing))

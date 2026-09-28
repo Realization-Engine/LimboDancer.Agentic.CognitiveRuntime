@@ -173,6 +173,12 @@ public sealed record GameState(
     /// </summary>
     public IReadOnlyList<SupportWeaponDirector> SupportWeaponDirectors { get; init; } = [];
 
+    /// <summary>
+    /// The units that passed a PAATC against a vehicle this phase, as "unit|vehicle" (A11.6, D7.21; ruling R11.13): they need no other against it in
+    /// the phase. Cleared at every phase change.
+    /// </summary>
+    public IReadOnlyList<string> PaatcPassed { get; init; } = [];
+
     /// <summary>The vehicles whose Shock or Unconfirmed Kill dr was made this RPh (C7.42; ruling R7.8); cleared at every phase change.</summary>
     public IReadOnlyList<string> ShockRollsThisPhase { get; init; } = [];
 
