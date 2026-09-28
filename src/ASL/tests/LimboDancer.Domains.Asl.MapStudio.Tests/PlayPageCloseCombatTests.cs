@@ -122,6 +122,11 @@ public sealed class PlayPageCloseCombatTests : IDisposable
         page.Find(".cc-defender[data-unit='r1']").Change(true);
         page.Find("#cc-director").Change("gl");
         page.Find("#cc-add-attack").Click();
+
+        // Each side declares only its own attacks (ruling R5.20): the Russian player declares r1's.
+        Assert.Empty(page.FindAll(".cc-attacker[data-unit='r1']"));
+        page.Find("#play-perspective").Change("russian");
+        Assert.Empty(page.FindAll(".cc-stack[data-unit='gl']"));
         page.Find(".cc-attacker[data-unit='r1']").Change(true);
         page.Find(".cc-defender[data-unit='g1']").Change(true);
         page.Find(".cc-defender[data-unit='gl']").Change(true);

@@ -636,19 +636,20 @@ public sealed class CloseCombatStepsTests : IDisposable
     }
 
     [Fact]
-    public async Task ATiUnitRefusesCcAndPrisonersBarARallyThatCouldGoBerserk()
+    public async Task ATiUnitRefusesCcAndPrisonersNoLongerBarARallyThatCouldGoBerserk()
     {
         // A4.8: CC with a TI unit is not reviewed (ruling R29.14).
         await Setup("german", Unit("g1", "asl:squad", "attacker-squad", "bd01:B1:0", "german"), Unit("r1", "asl:squad", "defender-squad", "bd01:B1:0", "russian", "asl:ti"),
             Unit("r2", "asl:squad", "defender-squad", "bd01:D4:0", "russian", "asl:broken"), Unit("rl", "asl:leader", "defender-leader", "bd01:D4:0", "russian"),
             Unit("g9", "asl:half-squad", "attacker-half-squad", "bd01:D4:0", "german", "asl:captured"));
 
-        // A20.4: a leader's rally can reach a Berserk result, and a berserk unit massacres the prisoners in its Location (not reviewed).
-        Assert.Contains((await Do(GameActions.Rally, NoRoll(), new
+        // A20.4 (ruling R5.7): a leader's rally can reach a Berserk result, and a berserk unit massacres the prisoners in its Location at the start
+        // of its next fire phase, so prisoners no longer bar the rally.
+        Committed(await Do(GameActions.Rally, Once(3, 3), new
         {
             unitId = "r2",
             leader = "rl"
-        })).Reasons, reason => reason.StartsWith("play.rally-massacre", StringComparison.Ordinal));
+        }));
         await Advance(7);
         Assert.Equal("ccph", Current.Phase);
         Assert.Contains((await Do(GameActions.CloseCombat, NoRoll(), new

@@ -150,7 +150,7 @@ public static class GameActions
         }));
 
     public static readonly ActionDescriptor Move = Descriptor("asl.game.move", "Move",
-        "Move a Good Order stack of the phasing side into an adjacent Location in its MPh at the terrain's MF cost, optionally by Assault Movement. The DEFENDER may then fire at it before it moves again; Residual FP there attacks it first.",
+        "Move a Good Order stack of the phasing side into an adjacent Location in its MPh at the terrain's MF cost, optionally by Assault Movement or with Double Time, which adds MF and makes the movers CX (A4.5). The DEFENDER may then fire at it before it moves again; Residual FP there attacks it first.",
         PlayPermission, "asl.game.reviewed-fire-v1", """
         {
           "type": "object", "additionalProperties": false,
@@ -159,7 +159,7 @@ public static class GameActions
             "gameId": { "type": "string" }, "attemptId": { "type": "string" },
             "expectedRevision": { "type": "integer", "minimum": 0 },
             "unitIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
-            "to": { "type": "string" }, "assault": { "type": "boolean" }
+            "to": { "type": "string" }, "assault": { "type": "boolean" }, "doubleTime": { "type": "boolean" }
           }
         }
         """, JsonSerializer.SerializeToElement(new
@@ -181,7 +181,7 @@ public static class GameActions
         """);
 
     public static readonly ActionDescriptor EndMove = Descriptor("asl.game.end-move", "End the move",
-        "The ATTACKER ends the move of the moving stack's members, all of them unless some are named; those units may not move again this MPh (A4.2, A8.11).",
+        "The ATTACKER ends the move of the moving stack's members, all of them unless some are named; those units may not move again this MPh (A4.2, A8.11). A vehicle names the hex it wished to enter next when it ends in Motion with MP left (D2.4), and spends the MP it has left in its hex first, which the DEFENDER may fire at (D2.1).",
         PlayPermission, "asl.game.sequence-v1", """
         {
           "type": "object", "additionalProperties": false,
@@ -189,7 +189,8 @@ public static class GameActions
           "properties": {
             "gameId": { "type": "string" }, "attemptId": { "type": "string" },
             "expectedRevision": { "type": "integer", "minimum": 0 },
-            "unitIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+            "unitIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+            "intended": { "type": "string" }
           }
         }
         """);
@@ -249,15 +250,15 @@ public static class GameActions
         }));
 
     public static readonly ActionDescriptor TakePrisoner = Descriptor("asl.game.take-prisoner", "Take a prisoner",
-        "After a Heat of Battle Surrender, the captor's side chooses which ADJACENT Known Good Order enemy unit takes the surrendering unit as its prisoner (A15.5, A20.5).",
+        "After a Heat of Battle Surrender, the captor's side chooses which ADJACENT Known Good Order enemy unit takes the surrendering unit as its prisoner (A15.5, A20.5), or rejects the surrender, eliminating the unit and facing its side with No Quarter (A20.3).",
         PlayPermission, "asl.game.sequence-v1", """
         {
           "type": "object", "additionalProperties": false,
-          "required": ["gameId", "attemptId", "expectedRevision", "unitId", "captorId"],
+          "required": ["gameId", "attemptId", "expectedRevision", "unitId"],
           "properties": {
             "gameId": { "type": "string" }, "attemptId": { "type": "string" },
             "expectedRevision": { "type": "integer", "minimum": 0 },
-            "unitId": { "type": "string" }, "captorId": { "type": "string" }
+            "unitId": { "type": "string" }, "captorId": { "type": "string" }, "reject": { "type": "boolean" }
           }
         }
         """);
@@ -289,8 +290,9 @@ public static class GameActions
             "gameId": { "type": "string" }, "attemptId": { "type": "string" },
             "expectedRevision": { "type": "integer", "minimum": 0 },
             "vehicleId": { "type": "string" },
-            "kind": { "type": "string", "enum": ["start", "turn", "enter", "stop"] },
-            "facing": { "type": "string" }, "to": { "type": "string" }
+            "kind": { "type": "string", "enum": ["start", "turn", "enter", "stop", "exit"] },
+            "facing": { "type": "string" }, "to": { "type": "string" },
+            "edge": { "type": "string", "enum": ["top", "bottom", "left", "right"] }
           }
         }
         """);
@@ -309,12 +311,40 @@ public static class GameActions
         }
         """);
 
+    public static readonly ActionDescriptor Choose = Descriptor("asl.game.choose", "Answer a choice",
+        "The side a resolution waits for answers its option (ruling R5.8): the Leader Creation dr after a Self-Rally Original 2 (A18.11), Battle Hardening (A15.3), the Unlikely Kill dr (A7.309), or which Location keeps a Gun's Acquisition (C6.51); the resolution then continues.",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "key", "option"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "key": { "type": "string" }, "option": { "type": "string" }
+          }
+        }
+        """);
+
+    public static readonly ActionDescriptor Massacre = Descriptor("asl.game.massacre", "Massacre a prisoner",
+        "In its own fire phase, a Russian or berserk Infantry unit not in Melee eliminates a prisoner in its Location as its attack for the phase; the victim side's ELR rises by one, once, and it is faced with No Quarter (A20.4).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "unitId", "prisonerId"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "unitId": { "type": "string" }, "prisonerId": { "type": "string" }
+          }
+        }
+        """);
+
     public static IReadOnlyList<ActionDescriptor> All
     {
         get;
     } =
         [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding, DeclareOverrun, Fire, Rally, Repair, Move, PassFire, EndMove, Advance, Ambush, CloseCombat, TakePrisoner,
-            FireOrdnance, MoveVehicle, ButtonUp];
+            FireOrdnance, MoveVehicle, ButtonUp, Choose, Massacre];
 
     public static string VersionKey(Guid tenant, string game) => $"asl.game:{tenant:N}:{game}";
 

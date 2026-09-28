@@ -26,6 +26,55 @@ public sealed partial class GamePlanner
         ["stone-building"] = 4,
     };
 
+    /// <summary>
+    /// The MF a unit may spend this phase (A4.11, A4.42, A4.5, A4.52; rulings R5.1 and R5.4): its allotment (a MMC's four or three, a SMC's
+    /// six or three, a berserk unit's eight), plus the MF Double Time adds, at most eight (seven for Conscripts), less one MF for each PP it
+    /// carries beyond its IPC (three for a MMC, one for a SMC, none for a wounded SMC; one less while CX). A berserk unit counts only its 1PP SW,
+    /// since it abandons the others before it charges (A15.431). Null when the catalog does not decide it.
+    /// </summary>
+    private int? MfAllotment(GameState state, UnitInstance unit, int doubleTimeMf, bool cx)
+    {
+        if (Experience.MoveAllowance(state, unit, catalogs, vocabulary) is not { } allotment || Portage(state, unit) is not { } carried)
+        {
+            return null;
+        }
+
+        if (doubleTimeMf > 0)
+        {
+            var conscript = unit.Definition is { } reference && FireReference.Value.Definitions.GetValueOrDefault(reference.Definition)?.Class == "conscript";
+            allotment = Math.Min(allotment + doubleTimeMf, conscript ? 7 : 8);
+        }
+
+        var smc = vocabulary.IsA(unit.Kind, "asl:smc");
+        var ipc = (smc ? (Is(unit, Conditions.Wounded) ? 0 : 1) : 3) - (cx ? 1 : 0);
+        var pp = Is(unit, Conditions.Berserk) ? carried.Where(item => item == 1).Sum() : carried.Sum();
+        return allotment - Math.Max(0, pp - Math.Max(ipc, 0));
+    }
+
+    /// <summary>The PP of each SW a unit possesses (A4.4), from the catalog; null when one is not recorded.</summary>
+    private int[]? Portage(GameState state, UnitInstance unit)
+    {
+        var values = state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unit.Id)
+            .Select(item => item.Definition is { } reference
+                ? catalogs.FirstOrDefault(catalog => catalog.Identity == reference.Catalog)?.Definition(reference.Definition)?.Printed("front", "asl:portage")?.Value?.Number
+                : null).ToArray();
+        return values.Any(value => value is null) ? null : [.. values.Select(value => value!.Value)];
+    }
+
+    /// <summary>
+    /// The half MF Infantry spend to enter a terrain (B15.4, B15.6; ruling R5.19): grain costs 1½ MF from April to September and is Open Ground
+    /// otherwise, and a game with no scenario month does not decide it; null when the terrain is not a reviewed entry.
+    /// </summary>
+    private static int? InfantryEntryHalfMf(GameState state, string terrain)
+    {
+        if (terrain == "grain")
+        {
+            return state.ScenarioMonth is not { } month ? null : month is >= 4 and <= 9 ? EntryHalfMf["grain"] : EntryHalfMf["open-ground"];
+        }
+
+        return EntryHalfMf.TryGetValue(terrain, out var halfMf) ? halfMf : null;
+    }
+
     private GamePlan PlanMove(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label,
         string actor)
     {
@@ -42,6 +91,7 @@ public sealed partial class GamePlanner
         }
 
         var assault = arguments.TryGetProperty("assault", out var flag) && flag.ValueKind == JsonValueKind.True;
+        var doubleTime = arguments.TryGetProperty("doubleTime", out var timed) && timed.ValueKind == JsonValueKind.True;
         if (state.Phase != "mph")
         {
             return Refused(scope, label, expected, "play.move-phase: units move in their side's MPh (A3.3, p. 47)");
@@ -80,6 +130,18 @@ public sealed partial class GamePlanner
         if (movers.FirstOrDefault(unit => GameState.Condition(unit!, Conditions.PrepFire) == ConditionState.True) is { } fired)
         {
             return Refused(scope, label, expected, $"play.move-prep-fire: {fired.Id} fired in the PFPh, so it may not move this MPh (A3.3, p. 47)");
+        }
+
+        // A20.4, A7.351 (ruling R5.7): a Massacre in the PFPh is made as if using a SW, so the unit has Prep Fired.
+        if (movers.FirstOrDefault(unit => MassacredInPrepFire(existing, unit!.Id)) is { } massacring)
+        {
+            return Refused(scope, label, expected, $"play.move-prep-fire: {massacring.Id} massacred a prisoner in the PFPh, as if using a SW, so it may not move this MPh (A20.4, A3.3)");
+        }
+
+        // A4.61: Assault Movement is not used where the move requires CX status.
+        if (assault && doubleTime)
+        {
+            return Refused(scope, label, expected, "play.move-assault: Assault Movement may not be combined with Double Time (A4.61, A4.5)");
         }
 
         // A11.15: a unit held in Melee does not leave its Location; a prisoner moves only with its Guard (A20.53).
@@ -156,6 +218,21 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.move-assault: Assault Movement is declared at the start of the move and enters one Location (A4.61)");
         }
 
+        // A4.5 (ruling R5.1): Double Time by Infantry neither broken, wounded, berserk, nor already CX, nor whose CX counter left at this MPh's start.
+        if (doubleTime && movers.FirstOrDefault(unit => Is(unit!, Conditions.Wounded) || Is(unit!, Conditions.Berserk) || Is(unit!, Conditions.Cx)
+            || state.NoDoubleTime.Contains(unit!.Id)) is { } tired)
+        {
+            return Refused(scope, label, expected, Is(tired, Conditions.Cx) || state.NoDoubleTime.Contains(tired.Id)
+                ? $"play.move-double-time: {tired.Id} is CX, or its CX counter left at the start of this MPh, so it may not Double Time (A4.5, A4.51)"
+                : $"play.move-double-time: {tired.Id} is wounded or berserk and may not Double Time (A4.5, A17.2, A15.431)");
+        }
+
+        // A4.42: a SMC never portages more than two PP.
+        if (movers.FirstOrDefault(unit => vocabulary.IsA(unit!.Kind, "asl:smc") && Portage(state, unit) is { } carried && carried.Sum() > 2) is { } laden)
+        {
+            return Refused(scope, label, expected, $"play.move-portage: {laden.Id} carries more than two PP, which a SMC never portages (A4.42)");
+        }
+
         var (fromRead, toRead, adjacent, crossed) = Step(state, from, to);
         if (fromRead is null || toRead is null || !adjacent || crossed is null)
         {
@@ -168,9 +245,14 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.move-terrain: level changes and hexside terrain are not reviewed (ruling R22.3)");
         }
 
-        if (TerrainKey(toRead) is not { } terrain || !EntryHalfMf.TryGetValue(terrain, out var halfMf))
+        if (TerrainKey(toRead) is not { } terrain || !EntryHalfMf.ContainsKey(terrain))
         {
             return Refused(scope, label, expected, $"play.move-terrain: {toRead.Level.Terrain?.Name ?? "the terrain"} is not a reviewed entry (ruling R22.3)");
+        }
+
+        if (InfantryEntryHalfMf(state, terrain) is not { } halfMf)
+        {
+            return Refused(scope, label, expected, "play.move-grain: grain's MF cost depends on the season, and the game names no scenario month (B15.6)");
         }
 
         if (crossed.Terrain?.IsRoad == true)
@@ -183,18 +265,22 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.move-occupied: entry into an enemy-occupied Location is the building entry's action, or not reviewed (ruling R22.6)");
         }
 
-        // A4.11: the MF each mover has left; A4.61: Assault Movement may not use all of it.
+        // A4.11, A4.42, A4.5: the MF each mover has left, with Double Time and portage; A4.61: Assault Movement may not use all of the
+        // allotment without Double Time.
         foreach (var unit in movers)
         {
-            if (Experience.MoveAllowance(state, unit!, catalogs, vocabulary) is not { } allowance)
+            var extra = doubleTime ? (unit!.MfSpent == 0 && !unit.HalfMfSpent ? 2 : 1) : unit!.DoubleTimeMf;
+            var exhausted = doubleTime || Is(unit, Conditions.Cx);
+            if (MfAllotment(state, unit, extra, exhausted) is not { } allowance || MfAllotment(state, unit, 0, exhausted) is not { } plain)
             {
-                return Refused(scope, label, expected, $"play.move-mf: {unit!.Id} has no MF allowance the catalog decides");
+                return Refused(scope, label, expected, $"play.move-mf: {unit.Id} has no MF allowance the catalog decides");
             }
 
-            var left = (allowance * 2) - (unit!.MfSpent * 2) - (unit.HalfMfSpent ? 1 : 0);
-            if (left < halfMf || (assault && left <= halfMf))
+            var spent = (unit.MfSpent * 2) + (unit.HalfMfSpent ? 1 : 0);
+            var left = (allowance * 2) - spent;
+            if (left < halfMf || (assault && (plain * 2) - spent <= halfMf))
             {
-                return Refused(scope, label, expected, $"play.move-mf: {unit.Id} has {left / 2m} MF left, and the entry costs {halfMf / 2m} (A4.11, A4.61)");
+                return Refused(scope, label, expected, $"play.move-mf: {unit.Id} has {left / 2m} MF left, and the entry costs {halfMf / 2m} (A4.11, A4.42, A4.61)");
             }
         }
 
@@ -202,9 +288,11 @@ public sealed partial class GamePlanner
         var moved = new MovementStepped(ids, to, halfMf, assault, step)
         {
             Charge = charge,
+            DoubleTime = doubleTime,
         };
         var package = ScenarioA1FirePackage.Identity.ToString();
         var summary = $"play.move: {string.Join(", ", ids)} enter {to} ({terrain}) for {halfMf / 2m} MF" + (assault ? ", by Assault Movement" : string.Empty)
+            + (doubleTime ? ", Double Timing and now CX (A4.5)" : string.Empty)
             + (charge is not null ? $", charging {charge} (A15.43)" : string.Empty)
             + (abandoned.Count > 0 ? $"; {string.Join(", ", abandoned.Select(item => item.Id))} abandoned before the charge (A15.431)" : string.Empty);
         List<GameEvent> prefix = [.. abandoned.Select((item, index) => Event(scope, attemptId, index + 1, expected, "equipment-transferred",
@@ -301,7 +389,8 @@ public sealed partial class GamePlanner
         return state.Movement is { WindowOpen: true } movement
             ? new GamePlan(GamePlanStatus.Ready, scope, label, expected,
                 [Event(scope, attemptId, 1, expected, "movement-window-closed", new MovementWindowClosed(movement.Step), null, null)],
-                [$"play.pass: the DEFENDER does not fire at {string.Join(", ", movement.Movers)} in {movement.Location}"])
+                [$"play.pass: the DEFENDER does not fire at {string.Join(", ", movement.Movers)} in {movement.Location}"
+                    + (movement.Ending ? $"; {string.Join(", ", movement.Movers)} ends its move (D2.1)" : string.Empty)])
             : Refused(scope, label, expected, "play.pass-window: no moving stack awaits the DEFENDER");
     }
 
@@ -335,11 +424,10 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.end-move: only the moving stack's members ({string.Join(", ", movement.Members)}) end their move (A4.2)");
         }
 
-        // D2.4: a moving vehicle ends its MPh in Motion only when it has no MP left to Stop or to enter a hex its VCA points at.
-        if (movement.Vehicle && movement.Started && !movement.Stopped && state.Unit(movement.Members.Count > 0 ? movement.Members[0] : movement.Movers[0]) is { } vehicle
-            && MotionBar(state, vehicle) is { } motion)
+        // D2.1, D2.4: a vehicle ends its move in Motion or stopped, spending its MP left in its hex first (rulings R5.14, R5.15).
+        if (movement.Vehicle && state.Unit(movement.Members.Count > 0 ? movement.Members[0] : movement.Movers[0]) is { } vehicle)
         {
-            return Refused(scope, label, expected, motion);
+            return PlanEndVehicle(scope, arguments, existing, attemptId, expected, label, state, movement, vehicle);
         }
 
         // A15.43, A15.431: a berserk unit keeps charging while it has the MF for a step on its route; when the model cannot decide the
@@ -353,7 +441,7 @@ public sealed partial class GamePlanner
             }
 
             var (steps, _, undecided) = ChargeSteps(state, unit.Side, at.Location, movement.Charge);
-            var left = Experience.MoveAllowance(state, unit, catalogs, vocabulary) is { } allowance ? (allowance * 2) - (unit.MfSpent * 2) - (unit.HalfMfSpent ? 1 : 0) : 0;
+            var left = MfAllotment(state, unit, unit.DoubleTimeMf, Is(unit, Conditions.Cx)) is { } allowance ? (allowance * 2) - (unit.MfSpent * 2) - (unit.HalfMfSpent ? 1 : 0) : 0;
             if (steps.Values.Any(step => step.HalfMf <= left))
             {
                 return Refused(scope, label, expected, $"play.berserk-charge: {unit.Id} still has the MF to charge on (A15.43, A15.431)");

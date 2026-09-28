@@ -350,6 +350,20 @@
       "startLine": 584,
       "fragmentId": "asl-fragment:sha256:5f7abb61e58749c53f7f7cbe3b9f06d78bf1e3681dc031bf7b21a991a70c93a2",
       "contentSha256": "d52ee970e497280185a36dd05a0e6ebc94fa6c8c325eeccdb108e2dc195730e9"
+    },
+    {
+      "ruleId": "A15.3",
+      "physicalPdfPage": 83,
+      "startLine": 1246,
+      "fragmentId": "asl-fragment:sha256:544c899144fdc749a50077fd28e72fd4fa931b9a98bf635fd9f9be4b610ca471",
+      "contentSha256": "47d3db8d7932de1edfa582decc6d3b0b3029b40a8ad1101f84b6e8ae58c4117b"
+    },
+    {
+      "ruleId": "A4.51",
+      "physicalPdfPage": 51,
+      "startLine": 305,
+      "fragmentId": "asl-fragment:sha256:f49373d52a53a41fde917dc0a5e2ea7aa94a269361f348db39e91eb29ca4e369",
+      "contentSha256": "eb151224e0987cb136ed6b50b1a05a8ca2bc5fe45a4578d07f84b1500f47570e"
     }
   ],
   "rulings": {
@@ -362,7 +376,9 @@
     "rateOfFire": "An Original colored dr at most the Gun's ROF lets it fire again in that fire phase (C2.24); a non-turreted Gun's ROF is one lower for a shot that turns it (C2.5); a pinned crew and the AFPh forfeit it (C5.4, C5.2).",
     "breakdown": "An Original To Hit DR at or above the B# malfunctions the Gun (C2.28); Gun repair is not built (R24.4).",
     "acquisition": "Each shot acquires the target Location for the Gun: -1, or -2 if it already held -1 there, unless the Gun malfunctions; firing at another Location moves the Acquisition there (C6.5). The Acquisition DRM applies only to Known units (C6.51): a shot at a Location whose every target is concealed takes no Case N, loses the Acquisition, and acquires the Location afresh at -1 only if it costs one its concealment (C6.57; R24.6).",
-    "mapFacts": "The range, the hexspines the Gun turns to bring the target into its Covered Arc (C3.2, C3.21), whether the Gun is in woods or a building, the C2.6 elevation limit, the LOS and its Hindrance, and the target Location's terrain are the planner's reads, taken as recorded on replay."
+    "mapFacts": "The range, the hexspines the Gun turns to bring the target into its Covered Arc (C3.2, C3.21), whether the Gun is in woods or a building, the C2.6 elevation limit, the LOS and its Hindrance, and the target Location's terrain are the planner's reads, taken as recorded on replay.",
+    "ownerOptions": "the-hits-ift-attack-asks-for-its-owners-options-as-the-fire-package-does-each-under-the-key-of-its-unit-A15.3 (R5.8)",
+    "cx": "plus-one-to-the-to-hit-dr-when-the-gun-crew-is-cx-A4.51 (R5.2)"
   },
   "resolution": {
     "order": "The To Hit DR first (colored die first), then a subsequent dr on an Original 2 when the result needs it, then a Random Selection dr per target for a Critical Hit among several, then the IFT rolls of the Critical Hit and of the normal hit, each asked for when reached.",
@@ -479,6 +495,24 @@
         "C3.3"
       ],
       "reason": "A roll the resolution needs is not recorded."
+    },
+    {
+      "caseId": "A1-ordnance-owner-options",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "indeterminate",
+      "sourceRules": [
+        "A15.3"
+      ],
+      "reason": "With the owners' answers declared, a Battle Hardening in the hit's IFT attack that would change a unit waits for its owner's answer, as in the Fire package (ruling R5.8)."
+    },
+    {
+      "caseId": "A1-ordnance-cx",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "resolved",
+      "sourceRules": [
+        "A4.51"
+      ],
+      "reason": "A CX crew adds one to its Gun's To Hit DR (ruling R5.2)."
     }
   ],
   "admissionRule": "A shot is resolved only when every fact is within the reviewed scope and every roll it needs is recorded; otherwise it is Abstained or Indeterminate with its reasons.",

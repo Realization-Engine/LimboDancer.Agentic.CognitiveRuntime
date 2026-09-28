@@ -57,13 +57,21 @@ public static class LiveOrdnance
         var firingSide = side == state.PhasingSide ? "phasing" : "non-phasing";
         var targetSide = targets.FirstOrDefault()?.Side ?? state.Sides.FirstOrDefault(item => item.Id != side)?.Id;
         var shots = state.OrdnanceShots.FirstOrDefault(item => item.Gun == gun.Id);
-        var acquisition = state.Acquisitions.FirstOrDefault(item => item.Gun == gun.Id && item.Location == target)?.Level ?? 0;
+        // C6.5, C6.51 (ruling R5.13): the Acquisition applies at its Location, or, while its units are apart, at any Location holding one of them.
+        var acquisition = state.Acquisitions.FirstOrDefault(item => item.Gun == gun.Id
+            && (item.Location == target || item.Units.Any(id => state.Location(id)?.Location == target)))?.Level ?? 0;
         var hit = new FireAttack(phase, firingSide, null, null, target.ToString(), [], null, null, null, null, state.ScenarioMonth, null,
-            [.. targets.Select(unit => LiveFire.Target(unit, target))], targetSide is null ? null : state.Side(targetSide)?.Elr, null);
+            [.. targets.Select(unit => LiveFire.Target(unit, target))], targetSide is null ? null : state.Side(targetSide)?.Elr, null)
+        {
+            TargetSideNoQuarter = targetSide is not null && state.NoQuarter.Contains(targetSide, StringComparer.Ordinal) ? true : null,
+        };
         return (new OrdnanceShot(phase, firingSide, state.Side(side)?.Nationality,
             new OrdnanceGun(gun.Id, gun.Definition.Definition, Is(gun, Conditions.Malfunctioned), shots?.Shots ?? 0, shots?.RateOfFireKept ?? false, LiveFire.Fired(gun)),
             new OrdnanceCrew(crew.Id, crew.Definition.Definition, Is(crew, Conditions.Broken), Is(crew, Conditions.Pinned), Is(crew, Conditions.Berserk),
-                Is(crew, Conditions.Concealed) || Is(crew, Conditions.Hidden), false),
+                Is(crew, Conditions.Concealed) || Is(crew, Conditions.Hidden), false)
+            {
+                Cx = Is(crew, Conditions.Cx) ? true : null,
+            },
             target.ToString(), null, null, null, null, acquisition, hit, null), null);
     }
 
@@ -175,6 +183,9 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
                 TargetTerrain = recorded.Hit.TargetTerrain,
                 Targets = recorded.Hit.Targets is null ? expected.Hit.Targets
                     : [.. expected.Hit.Targets!.Zip(recorded.Hit.Targets, (fact, record) => fact with { KnownEnemyInLos = record.KnownEnemyInLos, Captors = record.Captors })],
+
+                // The owners' answers are declared, and the projector checks them against the choices made (ruling R5.8).
+                Choices = recorded.Hit.Choices,
             },
         };
         if (JsonSerializer.Serialize(merged, LiveFire.Json) != JsonSerializer.Serialize(recorded, LiveFire.Json)

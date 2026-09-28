@@ -43,6 +43,7 @@ public static class LiveCloseCombat
         {
             StackedWith = stacking?.GetValueOrDefault(unit.Id),
             WithdrawingTo = withdrawals?.GetValueOrDefault(unit.Id),
+            Cx = Is(unit, Conditions.Cx) ? true : null,
             Weapons = state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unit.Id)
                 .Select(item => item.Id).Order(StringComparer.Ordinal).ToArray() is { Length: > 0 } weapons ? weapons : null,
         })], null);

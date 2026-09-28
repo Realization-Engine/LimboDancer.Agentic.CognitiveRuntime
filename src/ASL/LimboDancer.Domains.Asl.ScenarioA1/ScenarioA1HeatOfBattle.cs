@@ -11,37 +11,77 @@ public sealed record HeatOfBattleOutcome(IReadOnlyList<int> Dice, int OriginalDr
 {
     /// <summary>The hero an MMC created (A15.21); null when none was.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? HeroDefinitionId { get; init; }
+    public string? HeroDefinitionId
+    {
+        get; init;
+    }
 
     /// <summary>Whether a leader became heroic, rallying if broken (A15.21).</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public bool? Heroic { get; init; }
+    public bool? Heroic
+    {
+        get; init;
+    }
 
     /// <summary>The unit of next higher quality the unit is exchanged for (A15.3); null when none was.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? HardenedDefinitionId { get; init; }
+    public string? HardenedDefinitionId
+    {
+        get; init;
+    }
 
     /// <summary>Whether an already elite MMC or best possible leader became Fanatic (A15.3, A10.8).</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public bool? Fanatic { get; init; }
+    public bool? Fanatic
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Whether the result Battle Hardens the unit (A15.3): it is exchanged for an unbroken, unpinned unit, even when it has no
     /// better class and only becomes Fanatic, or already is (ruling R28.7).
     /// </summary>
     [JsonIgnore]
-    public bool Hardening => Result is BattleHardening or HeroAndBattleHardening;
+    public bool Hardening => Result is (BattleHardening or HeroAndBattleHardening) && HardeningRefused != true;
+
+    /// <summary>Whether the owner refused the Battle Hardening this result gave (A15.3, ruling R5.9); null when he took it or none was given.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? HardeningRefused
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether the Battle Hardening would change the unit (A15.3, ruling R28.7), so its owner is asked whether to take it (ruling R5.8): it
+    /// gives a better unit or Fanaticism, or it rallies, unpins, or undisrupts the unit.
+    /// </summary>
+    public bool HardeningMatters(bool broken, bool pinned, bool disrupted) =>
+        Hardening && (HardenedDefinitionId is not null || Fanatic == true || broken || pinned || disrupted);
+
+    /// <summary>The result with its Battle Hardening refused (A15.3, ruling R5.9): no better unit and no Fanaticism; the rest stands.</summary>
+    public HeatOfBattleOutcome WithHardeningRefused() => this with
+    {
+        HardeningRefused = true,
+        HardenedDefinitionId = null,
+        Fanatic = null,
+    };
 
     /// <summary>Whether a Berserk result became Battle Hardening because no Known enemy unit was in the unit's LOS (A15.44).</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public bool? NoKnownEnemyInLos { get; init; }
+    public bool? NoKnownEnemyInLos
+    {
+        get; init;
+    }
 
     /// <summary>
     /// For a Surrender (A15.5): the ADJACENT Known Good Order armed enemy Infantry units it surrenders to, the captor's choice
     /// among them; empty when there are none, and the unit is only broken and Disrupted.
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public IReadOnlyList<string>? Captors { get; init; }
+    public IReadOnlyList<string>? Captors
+    {
+        get; init;
+    }
 
     public const string HeroCreation = "hero-creation";
     public const string HeroAndBattleHardening = "hero-creation-and-battle-hardening";
@@ -86,9 +126,12 @@ public static class ScenarioA1HeatOfBattle
     /// was rolled (A15.1: the +1 applies even if that 2 rallied it). <paramref name="knownEnemyInLos"/> and
     /// <paramref name="captors"/> are the caller's reads of the map, needed only for a Berserk (A15.44) or Surrender (A15.5)
     /// result: whether a Known enemy unit is in the unit's LOS, and the ADJACENT Known Good Order armed enemy Infantry.
+    /// <paramref name="noQuarter"/> is whether the unit's side is faced with No Quarter (A20.3, ruling R5.6): a Surrender result is then
+    /// treated as Berserk, as a Fanatic unit's is (the table's note, A15.5 EXC).
     /// </summary>
     public static (HeatOfBattleOutcome? Outcome, string? Undecided) Resolve(FireDefinition unit, bool broken, bool? inexperienced, bool fanatic,
-        IReadOnlyList<int> dice, IReadOnlyDictionary<string, FireDefinition> definitions, bool? knownEnemyInLos = null, IReadOnlyList<string>? captors = null)
+        IReadOnlyList<int> dice, IReadOnlyDictionary<string, FireDefinition> definitions, bool? knownEnemyInLos = null, IReadOnlyList<string>? captors = null,
+        bool noQuarter = false)
     {
         ArgumentNullException.ThrowIfNull(unit);
         ArgumentNullException.ThrowIfNull(dice);
@@ -139,7 +182,7 @@ public static class ScenarioA1HeatOfBattle
         // unit's LOS is Battle Hardening instead (A15.44).
         var hero = final <= 6;
         var hardening = final is >= 5 and <= 8;
-        var berserk = !hero && !hardening && (final <= 11 || fanatic);
+        var berserk = !hero && !hardening && (final <= 11 || fanatic || noQuarter);
         if (berserk)
         {
             if (knownEnemyInLos is null)
@@ -158,7 +201,10 @@ public static class ScenarioA1HeatOfBattle
         var outcome = new HeatOfBattleOutcome(dice.ToArray(), original, drm, final, result);
         if (berserk && hardening)
         {
-            outcome = outcome with { NoKnownEnemyInLos = true };
+            outcome = outcome with
+            {
+                NoKnownEnemyInLos = true
+            };
         }
 
         if (result == HeatOfBattleOutcome.Surrender)
@@ -168,18 +214,27 @@ public static class ScenarioA1HeatOfBattle
                 return (null, "asl.a1.hob.captors-undecided:" + unit.Id);
             }
 
-            outcome = outcome with { Captors = [.. captors] };
+            outcome = outcome with
+            {
+                Captors = [.. captors]
+            };
         }
         if (hero)
         {
             if (unit.IsLeader)
             {
                 // A15.21: a leader who becomes heroic keeps his definition and leadership and rallies.
-                outcome = outcome with { Heroic = true };
+                outcome = outcome with
+                {
+                    Heroic = true
+                };
             }
             else if (HeroOf(unit, definitions) is { } heroId)
             {
-                outcome = outcome with { HeroDefinitionId = heroId };
+                outcome = outcome with
+                {
+                    HeroDefinitionId = heroId
+                };
             }
             else
             {
@@ -197,13 +252,19 @@ public static class ScenarioA1HeatOfBattle
                     return (null, "asl.a1.hob.hardening-counter-missing:" + next);
                 }
 
-                outcome = outcome with { HardenedDefinitionId = next };
+                outcome = outcome with
+                {
+                    HardenedDefinitionId = next
+                };
             }
             else if (ScenarioA1FireReference.IsHighestQuality(unit.Id))
             {
                 if (!fanatic)
                 {
-                    outcome = outcome with { Fanatic = true };
+                    outcome = outcome with
+                    {
+                        Fanatic = true
+                    };
                 }
             }
             else

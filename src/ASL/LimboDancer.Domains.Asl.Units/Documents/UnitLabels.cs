@@ -204,6 +204,9 @@ public static class UnitLabels
         "side" => document.Side is null ? null : vocabulary.SideLabel(document.Side),
         "kind" => vocabulary.Kind(document.Kind).Label,
         "id" => document.Id,
+
+        // D5.6, Listings Key p. 338 (pass 5): a vehicle whose cs# applies to its Passengers only has no crew survival.
+        "survival-label" => document.Faces.Any(item => item.HasTrait("asl:cs-passengers-only")) ? "Passenger survival" : "crew survival",
         // A name read from another face falls back to the front face, so a broken squad keeps its class and identity.
         _ => vocabulary.TryResolveAttribute(document.Kind, name, out var attribute, out _) &&
              (document.Value(face, attribute.Name) ?? document.Value("front", attribute.Name)) is { } value

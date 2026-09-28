@@ -1311,6 +1311,20 @@
       "startLine": 770,
       "fragmentId": "asl-fragment:sha256:c6a41c43cb369e6c93f7185fdd9fe97f9b96ea5d54d24e93e816231ece709ef9",
       "contentSha256": "52598e35e662839b65aeb25b39d637b4d1911d8e3c11f2791cd7fb4e914d6c99"
+    },
+    {
+      "ruleId": "A4.51",
+      "physicalPdfPage": 51,
+      "startLine": 305,
+      "fragmentId": "asl-fragment:sha256:f49373d52a53a41fde917dc0a5e2ea7aa94a269361f348db39e91eb29ca4e369",
+      "contentSha256": "eb151224e0987cb136ed6b50b1a05a8ca2bc5fe45a4578d07f84b1500f47570e"
+    },
+    {
+      "ruleId": "A20.3",
+      "physicalPdfPage": 87,
+      "startLine": 1416,
+      "fragmentId": "asl-fragment:sha256:c4251e0eb8cec3b1fc2490c9813cc26f5783b477577afb35e05c85cdbe45ff97",
+      "contentSha256": "51b548532f91004f11b20c181da4e3fa6a4ea441ed1bf9b63d236df153a32bdb"
     }
   ],
   "visualReadings": [
@@ -1351,7 +1365,11 @@
     "ordnanceHits": "an-ordnance-hit-on-the-infantry-target-type-attacks-the-enemy-units-of-its-location-on-the-ift-column-of-the-guns-he-fp-C.6; no-firers-no-cowering-no-leadership-and-no-fp-halving-C3.53-C.4; no-tem-or-hindrance-on-the-effects-dr-C.3; a-critical-hit-doubles-the-fp-and-reverses-positive-tem-into-a-negative-drm-C3.71 (R24.2)",
     "crews": "a-crew-is-not-admitted-as-a-target-until-guns-and-crews-as-targets-are-built-C11 (R24.3)",
     "vehicles": "one-vehicle-per-location-an-unarmored-truck-or-an-open-topped-afv-R25.1-R25.3; an-unarmored-vehicle-takes-the-original-ift-dr-with-the-attacks-own-drm-hindrance-and-a-vehicle-firers-stun-plus-one-never-tem-ffmo-or-ffnam-on-the-vehicle-line-of-the-attacks-column-A7.308-A4.6-D.6 (R25.4); final-dr-at-most-half-the-kill-number-burning-wreck-below-it-eliminated-equal-immobilized-A7.308; an-original-2-that-does-neither-rolls-the-unlikely-kill-dr-1-burning-2-eliminated-3-immobilized-A7.309 (R25.5); an-afv-is-unharmed-by-small-arms-A7.307-and-its-ce-not-stunned-crew-takes-a-general-collateral-attack-with-plus-2-ce-drm-D.8B-D5.31; kia-or-k-or-a-casualty-mc-original-12-recalls-D5.341-A10.31-a-failed-mc-stuns-D5.34-or-recalls-under-stun-plus-one-D5.342-a-failed-ptc-pins-A7.82-no-heat-of-battle-A15.1 (R25.6); the-afv-crew-morale-level-is-its-nationalitys-best-elite-mmc-in-the-catalog-D5.1; infantry-sharing-a-location-with-an-afv-D9.3-and-an-afv-in-terrain-with-a-positive-tem-D5.31-are-outside (R25.6, R25.9)",
-    "vehicleFire": "a-vehicles-ma-aamg-fires-in-its-sides-pfph-afph-or-dfph-with-a-ce-crew-not-stunned-D1.83-D5.3-D5.34; normal-range-8-pbf-long-range-concealed-afph-motion-and-pinned-crew-halvings-A7.21-A7.22-A7.23-D3.53-D2.42-A7.82; no-cowering-A7.9-no-leader-D3.4-no-infantry-fire-group; b-12-malfunction-D3.7; multiple-rof-on-the-colored-die-unless-pinned-or-afph-C2.24-A7.25 (R25.7); a-vehicle-in-motion-may-not-prep-fire-D2.4 (R25.3)"
+    "vehicleFire": "a-vehicles-ma-aamg-fires-in-its-sides-pfph-afph-or-dfph-with-a-ce-crew-not-stunned-D1.83-D5.3-D5.34; normal-range-8-pbf-long-range-concealed-afph-motion-and-pinned-crew-halvings-A7.21-A7.22-A7.23-D3.53-D2.42-A7.82; no-cowering-A7.9-no-leader-D3.4-no-infantry-fire-group; b-12-malfunction-D3.7; multiple-rof-on-the-colored-die-unless-pinned-or-afph-C2.24-A7.25 (R25.7); a-vehicle-in-motion-may-not-prep-fire-D2.4 (R25.3)",
+    "cx": "plus-one-to-the-ift-dr-once-per-attack-when-a-cx-unit-fires-or-directs-A4.51 (R5.2)",
+    "secondHeatOfBattle": "a-second-original-mc-dr-2-in-one-attack-calls-for-a-second-heat-of-battle-dr-under-its-own-roll-key-unless-the-unit-is-eliminated-berserk-heroic-or-surrendered-A15.1 (R5.10)",
+    "ownerOptions": "with-the-owners-answers-declared-battle-hardening-that-would-change-a-unit-and-the-unlikely-kill-dr-after-any-original-2-wait-for-them; a-declined-option-is-not-taken-A15.3-A7.309 (R5.8, R5.9)",
+    "noQuarter": "a-side-faced-with-no-quarter-treats-a-heat-of-battle-surrender-as-berserk-and-is-not-disrupted-A20.3-A15.5 (R5.6)"
   },
   "resolution": {
     "firepower": "Each firer's printed FP, doubled for PBF when the target is adjacent at the same level (A7.21), halved beyond Normal Range up to twice it (A7.22), halved when the target Location holds a concealed unit (A7.23), and halved when the firer is pinned (A7.8); fractions are kept and summed (A7.2).",
@@ -1688,11 +1706,49 @@
         "D9.3"
       ],
       "reason": "More than one vehicle, a vehicle hit by Residual FP or an ordnance hit, an AFV in terrain with a positive TEM, Infantry sharing a Location with an AFV, or a vehicle that may not fire (in Motion in the PFPh) is outside the reviewed cases."
+    },
+    {
+      "caseId": "A1-fire-cx",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "resolved",
+      "sourceRules": [
+        "A4.51"
+      ],
+      "reason": "A CX firer or directing leader adds one to the attack's IFT DR, once however many CX units take part (ruling R5.2)."
+    },
+    {
+      "caseId": "A1-fire-second-heat-of-battle",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "resolved",
+      "sourceRules": [
+        "A15.1"
+      ],
+      "reason": "A second Original MC DR of 2 in one attack, the LLMC after the MC, calls for a second Heat of Battle DR under its own roll key while the unit is still subject to it (ruling R5.10)."
+    },
+    {
+      "caseId": "A1-fire-owner-options",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "indeterminate",
+      "sourceRules": [
+        "A15.3",
+        "A7.309"
+      ],
+      "reason": "With the owners' answers declared, a Battle Hardening that would change the unit and the Unlikely Kill dr after an Original 2 wait for them; a refused Battle Hardening leaves the unit's counter and Fanaticism as they were, and a declined dr leaves the Original 2's own result (rulings R5.8, R5.9)."
+    },
+    {
+      "caseId": "A1-fire-no-quarter",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "resolved",
+      "sourceRules": [
+        "A20.3",
+        "A15.5"
+      ],
+      "reason": "A unit whose side is faced with No Quarter treats a Heat of Battle Surrender as Berserk and is not Disrupted (ruling R5.6)."
     }
   ],
   "admissionRule": "A declared attack is resolved only when every fact is within the reviewed scope and every roll it needs is recorded; otherwise it is Abstained or Indeterminate with its reasons.",
   "excludedConsequences": [
-    "Snap Shots, Bypass, Hazardous Movement, CX, TPBF, and fire across levels",
+    "Snap Shots, Bypass, Hazardous Movement, TPBF, and fire across levels",
     "Opportunity Fire, Spraying Fire, and Fire Lanes",
     "FPF directed by a leader or mixed with other fire",
     "ordnance, light mortars, LATW, FT, DC, and MOL",
@@ -1705,8 +1761,6 @@
     "any use by a game action",
     "A19.13's exception for an underscored Morale Factor",
     "a hero using a SW (A15.23)",
-    "refusing Battle Hardening (A15.3)",
-    "rejecting a surrender (No Quarter, A20.3) and Massacre (A20.4)",
     "prisoners exchanged for Unarmed counters (A20.5), and prisoner escape (A20.55)",
     "crews as targets, and Guns hit by fire (C11)",
     "vehicles as targets of Residual FP and ordnance, more than one vehicle in a Location, and vehicles in terrain with a TEM (R25.3)",
@@ -1714,6 +1768,6 @@
     "vehicle MG fire in the MPh (Defensive First Fire, Bounding First Fire), BMG and CMG, and vehicle MG repair (D3.3, D3.7)"
   ],
   "executionAuthority": "none",
-  "revision": "Unit step 25 (2026-09-27): vehicles in the target Location (the Vehicle line, A7.308, A7.309; Collateral Attacks on a CE crew, D.8B, D5.34) and a vehicle's MA AAMG firing on the IFT (D1.83, D3.5); catalog 1.5.0. Earlier: Unit step 24 (2026-09-27): ordnance hits resolved on the IFT (C.3, C.6, C3.71); crews refused as targets; catalog 1.4.0. Earlier: Unit step 30 (2026-09-27): Berserk and Surrender after Heat of Battle are taken (A15.4 to A15.5); berserk targets (A15.42); a berserk leader's NTC (A15.41); A15.44. Earlier: Unit steps 27 and 28 (2026-09-27): Heat of Battle after an Original MC DR of 2, with heroes, heroic leaders, Battle Hardening, Fanaticism, and NKVD MMC; Berserk and Surrender are recorded as not taken (ruling R28.1). Catalog 1.3.0 adds the leader grades, heroes, and the classes Battle Hardening needs. Revised after the second-pass review (ruling R28.7). Earlier: Unit steps 19 to 23 (2026-09-26): the AFPh and Assault Fire, fire groups across ADJACENT Locations, hidden and Dummy targets, Defensive First Fire, Subsequent First Fire, FPF, Final Fire by First-Fire-marked units, Residual FP, MGs, and the Heat of Battle deviation of ruling R0.2 are decided; catalog 1.2.0 adds the MGs.",
+  "revision": "Backlog pass 5 (2026-09-27): a CX firer or director adds one to the IFT DR (A4.51); a second Heat of Battle DR in one attack (A15.1); Battle Hardening and the Unlikely Kill dr as the owners' options (A15.3, A7.309); No Quarter (A20.3, A15.5). Earlier: Unit step 25 (2026-09-27): vehicles in the target Location (the Vehicle line, A7.308, A7.309; Collateral Attacks on a CE crew, D.8B, D5.34) and a vehicle's MA AAMG firing on the IFT (D1.83, D3.5); catalog 1.5.0. Earlier: Unit step 24 (2026-09-27): ordnance hits resolved on the IFT (C.3, C.6, C3.71); crews refused as targets; catalog 1.4.0. Earlier: Unit step 30 (2026-09-27): Berserk and Surrender after Heat of Battle are taken (A15.4 to A15.5); berserk targets (A15.42); a berserk leader's NTC (A15.41); A15.44. Earlier: Unit steps 27 and 28 (2026-09-27): Heat of Battle after an Original MC DR of 2, with heroes, heroic leaders, Battle Hardening, Fanaticism, and NKVD MMC; Berserk and Surrender are recorded as not taken (ruling R28.1). Catalog 1.3.0 adds the leader grades, heroes, and the classes Battle Hardening needs. Revised after the second-pass review (ruling R28.7). Earlier: Unit steps 19 to 23 (2026-09-26): the AFPh and Assault Fire, fire groups across ADJACENT Locations, hidden and Dummy targets, Defensive First Fire, Subsequent First Fire, FPF, Final Fire by First-Fire-marked units, Residual FP, MGs, and the Heat of Battle deviation of ruling R0.2 are decided; catalog 1.2.0 adds the MGs.",
   "vehicleLineTranscriptionSha256": "c9a2d785126584d18af851757a8028b975c0866fadcfc5e3fe137ca66e191fb2"
 }

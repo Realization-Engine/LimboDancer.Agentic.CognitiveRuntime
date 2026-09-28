@@ -24,22 +24,41 @@ public sealed record CloseCombatUnit(
 {
     /// <summary>Whether a Green or Conscript MMC is Inexperienced (A19.2), so Lax for Ambush (A11.18, A19.36); optional otherwise.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public bool? Inexperienced { get; init; }
+    public bool? Inexperienced
+    {
+        get; init;
+    }
 
     /// <summary>The MMC a SMC is stacked with, declared before either side designates its attacks (A11.14); null when it is alone.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? StackedWith { get; init; }
+    public string? StackedWith
+    {
+        get; init;
+    }
 
     /// <summary>The SW the unit possesses (A11.13); null or empty when none.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public IReadOnlyList<string>? Weapons { get; init; }
+    public IReadOnlyList<string>? Weapons
+    {
+        get; init;
+    }
 
     /// <summary>
     /// The ADJACENT Location a unit held in Melee attempts to Withdraw to (A11.2, A11.21), declared before the attacks; null when it
     /// stands.
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? WithdrawingTo { get; init; }
+    public string? WithdrawingTo
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the unit is CX (A4.51): +1 to its CC attacks and its Ambush dr, -1 to CC attacks against it; null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Cx
+    {
+        get; init;
+    }
 }
 
 /// <summary>One declared CC attack (A11.12): the units attacking together, the units they attack, and the leader directing it.</summary>
@@ -47,7 +66,10 @@ public sealed record CloseCombatDeclaration(IReadOnlyList<string>? Attackers, IR
 {
     /// <summary>The attacking leader who applies his leadership DRM (A11.141); null when none directs.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? Director { get; init; }
+    public string? Director
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -57,16 +79,28 @@ public sealed record CloseCombatDeclaration(IReadOnlyList<string>? Attackers, IR
 public sealed record CloseCombatRolls(IReadOnlyDictionary<string, IReadOnlyList<int>>? Attacks)
 {
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public IReadOnlyDictionary<string, int>? RandomSelection { get; init; }
+    public IReadOnlyDictionary<string, int>? RandomSelection
+    {
+        get; init;
+    }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public IReadOnlyDictionary<string, int>? WoundSeverity { get; init; }
+    public IReadOnlyDictionary<string, int>? WoundSeverity
+    {
+        get; init;
+    }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public IReadOnlyDictionary<string, int>? LeaderCreation { get; init; }
+    public IReadOnlyDictionary<string, int>? LeaderCreation
+    {
+        get; init;
+    }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public IReadOnlyDictionary<string, int>? WeaponLoss { get; init; }
+    public IReadOnlyDictionary<string, int>? WeaponLoss
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -101,11 +135,17 @@ public sealed record CloseCombatDefenderResult(string UnitId, IReadOnlyList<Fire
 
     /// <summary>The Random Selection dr of a Partial Kill among several defenders (A11.11); null when none was rolled.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public int? RandomSelectionDr { get; init; }
+    public int? RandomSelectionDr
+    {
+        get; init;
+    }
 
     /// <summary>Whether the Partial Kill Casualty Reduces this unit.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public bool? CasualtyReduced { get; init; }
+    public bool? CasualtyReduced
+    {
+        get; init;
+    }
 }
 
 /// <summary>One CC attack's arithmetic (A11.11): the FP of each side, the odds column, its black Kill Number, and the DR.</summary>
@@ -126,18 +166,27 @@ public sealed record CloseCombatAttackArithmetic(
 {
     /// <summary>The Leader Creation dr after an Original 2 by an attacking MMC (A18.12); null when none was rolled.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public LeaderCreationOutcome? LeaderCreation { get; init; }
+    public LeaderCreationOutcome? LeaderCreation
+    {
+        get; init;
+    }
 }
 
 /// <summary>What the round did to one unit: eliminated, Reduced to its HS, wounded, or returned from berserk (A15.46).</summary>
 public sealed record CloseCombatUnitEffect(string UnitId, string DefinitionId, string FinalDefinitionId, bool Eliminated, bool Wounded, IReadOnlyList<string> Events)
 {
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public bool? BerserkEnded { get; init; }
+    public bool? BerserkEnded
+    {
+        get; init;
+    }
 
     /// <summary>The Location a withdrawing unit that was neither eliminated nor Reduced withdraws to (A11.2); null otherwise.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? WithdrewTo { get; init; }
+    public string? WithdrewTo
+    {
+        get; init;
+    }
 }
 
 /// <summary>

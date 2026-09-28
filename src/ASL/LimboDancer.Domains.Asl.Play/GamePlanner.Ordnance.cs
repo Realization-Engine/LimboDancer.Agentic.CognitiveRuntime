@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using LimboDancer.Dice;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.ScenarioA1;
@@ -185,18 +186,50 @@ public sealed partial class GamePlanner
     /// on the target units, the Gun's malfunction, the fire markers of the Gun and its crew, and any surrender that follows.
     /// </summary>
     private void AddOrdnanceEvents(GameScope scope, string attemptId, long expected, string actor, GameState state, OrdnanceShot facts, UnitFacing? facing,
-        List<GameEvent> events, Func<RollRequest, RollResult> draw)
+        List<GameEvent> events, Func<RollRequest, RollResult> draw, ResumedRolls? resumed = null)
     {
         var reference = OrdnanceReference.Value;
         var package = ScenarioA1OrdnancePackage.Identity.ToString();
-        var rollIds = new Dictionary<string, string>(StringComparer.Ordinal);
+
+        // Ruling R5.8: the owners' options in the hit's IFT attack are asked for as it reaches them; a resumed shot starts from its rolls.
+        facts = facts with
+        {
+            Hit = facts.Hit! with
+            {
+                Choices = facts.Hit.Choices ?? new Dictionary<string, string>(StringComparer.Ordinal)
+            }
+        };
+        var rollIds = new Dictionary<string, string>(resumed?.RollIds ?? new Dictionary<string, string>(), StringComparer.Ordinal);
         var rolls = new OrdnanceRolls(null, null, null, null, null);
+        foreach (var (key, values) in resumed?.Values ?? [])
+        {
+            rolls = ApplyOrdnanceRoll(rolls, key, values);
+        }
+
         OrdnanceResolution resolution;
         while ((resolution = ScenarioA1OrdnanceCalculator.Resolve(facts with
         {
             Rolls = rolls
         }, reference)).Disposition != OrdnanceResolution.Resolved)
         {
+            if (resolution.Reasons is [{ } option] && option.StartsWith("asl.a1.ordnance.choice-missing:", StringComparison.Ordinal))
+            {
+                var resume = new JsonObject
+                {
+                    ["record"] = "ordnance",
+                    ["facts"] = JsonNode.Parse(JsonSerializer.Serialize(facts, LiveFire.Json)),
+                    ["rolls"] = RollNode(rollIds),
+                };
+                if (facing is { } turned)
+                {
+                    resume["facing"] = UnitFacings.Name(turned);
+                }
+
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "choice-pending", Pending(state, option["asl.a1.ordnance.choice-missing:".Length..], resume),
+                    package, null));
+                return;
+            }
+
             if (resolution.Reasons is not [{ } missing] || !missing.StartsWith("asl.a1.ordnance.roll-missing:", StringComparison.Ordinal))
             {
                 throw new InvalidOperationException("The Ordnance package left a shot it had accepted undecided: " + string.Join("; ", resolution.Reasons));
@@ -214,21 +247,11 @@ public sealed partial class GamePlanner
                 _ => FireRollShape(inner!),
             };
             var drawn = draw(new RollRequest(count, 6));
-            var rollId = $"{attemptId}-roll-{(rollIds.Count + 1).ToString(CultureInfo.InvariantCulture)}";
+            var rollId = $"{attemptId}-roll-{(events.Count(item => item.Payload is DiceRolled) + 1).ToString(CultureInfo.InvariantCulture)}";
             rollIds[key] = rollId;
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled",
                 new DiceRolled(rollId, purpose, count, 6, drawn.Values, DiceRolled.SystemSource, actor), package, null));
-            rolls = key switch
-            {
-                "toHit" => rolls with { ToHit = drawn.Values },
-                "subsequent" => rolls with { Subsequent = drawn.Values[0] },
-                _ when selected.Length > 0 => rolls with
-                {
-                    CriticalSelection = selected.Select((id, index) => (id, index)).ToDictionary(item => item.id, item => drawn.Values[item.index], StringComparer.Ordinal)
-                },
-                _ when nested == "hit:" => rolls with { Hit = ApplyFireRoll(rolls.Hit ?? new FireRolls(null, null, null, null), inner!, drawn.Values) },
-                _ => rolls with { CriticalHit = ApplyFireRoll(rolls.CriticalHit ?? new FireRolls(null, null, null, null), inner!, drawn.Values) },
-            };
+            rolls = ApplyOrdnanceRoll(rolls, key, drawn.Values);
         }
 
         var gunResult = resolution.Gun!;
@@ -308,15 +331,39 @@ public sealed partial class GamePlanner
             }
         }
 
+        // C6.5, C6.51 (ruling R5.13): the Acquisition is on the Known units the shot leaves in its target Location.
+        if (acquired is { } acquiredLocation && AcquiredUnits(facts, effects, attemptId) is { Count: > 0 } units)
+        {
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "acquisition-changed", new AcquisitionChanged(facts.Gun.GunId!, acquiredLocation, units), package, null,
+                [recordId]));
+        }
+
         // A15.5: a unit that surrendered waits for the captor's choice, last.
         foreach (var effect in effects)
         {
-            if (!effect.Eliminated && effect.HeatOfBattle is { Result: HeatOfBattleOutcome.Surrender, Captors.Count: > 0 } surrender)
+            if (!effect.Eliminated && (effect.SecondHeatOfBattle ?? effect.HeatOfBattle) is { Result: HeatOfBattleOutcome.Surrender, Captors.Count: > 0 } surrender)
             {
                 var id = effect.FinalDefinitionId != effect.DefinitionId ? $"{attemptId}-{effect.UnitId}" : effect.UnitId;
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "surrender-pending", new SurrenderPending(id, surrender.Captors!), package, null, [recordId]));
             }
         }
+    }
+
+    /// <summary>An Ordnance package roll added to its rolls under its key.</summary>
+    private static OrdnanceRolls ApplyOrdnanceRoll(OrdnanceRolls rolls, string key, IReadOnlyList<int> values)
+    {
+        string[] selected = key.StartsWith("criticalSelection:", StringComparison.Ordinal) ? key["criticalSelection:".Length..].Split(',') : [];
+        return key switch
+        {
+            "toHit" => rolls with { ToHit = values },
+            "subsequent" => rolls with { Subsequent = values[0] },
+            _ when selected.Length > 0 => rolls with
+            {
+                CriticalSelection = selected.Select((id, index) => (id, index)).ToDictionary(item => item.id, item => values[item.index], StringComparer.Ordinal)
+            },
+            _ when key.StartsWith("hit:", StringComparison.Ordinal) => rolls with { Hit = ApplyFireRoll(rolls.Hit ?? new FireRolls(null, null, null, null), key["hit:".Length..], values) },
+            _ => rolls with { CriticalHit = ApplyFireRoll(rolls.CriticalHit ?? new FireRolls(null, null, null, null), key["critical-hit:".Length..], values) },
+        };
     }
 
     /// <summary>The dice count and purpose of a Fire package roll key (as the Fire planner draws them).</summary>
@@ -364,6 +411,8 @@ public sealed partial class GamePlanner
             "leaderLoss" => rolls with { LeaderLoss = Add(rolls.LeaderLoss, unit, values) },
             "heatOfBattle" => rolls with { HeatOfBattle = Add(rolls.HeatOfBattle, unit, values) },
             "berserkCheck" => rolls with { BerserkChecks = Add(rolls.BerserkChecks, unit, values) },
+            "crewCheck" => rolls with { CrewChecks = Add(rolls.CrewChecks, unit, values) },
+            "unlikelyKill" => rolls with { UnlikelyKill = Add(rolls.UnlikelyKill, unit, values[0]) },
             _ => rolls with { WoundSeverity = Add(rolls.WoundSeverity, unit, values[0]) },
         };
     }

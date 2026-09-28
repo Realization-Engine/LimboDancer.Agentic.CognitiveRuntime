@@ -71,6 +71,7 @@ public static class LiveRally
             KnownEnemyInLos = knownEnemyInLos,
             Captors = captors,
             Companions = companions.Length > 0 ? companions : null,
+            NoQuarter = state.NoQuarter.Contains(unit.Side, StringComparer.Ordinal) ? true : null,
         }, null);
     }
 
@@ -169,6 +170,12 @@ public sealed class RallyRecordVerifier(ScenarioA1RallyReference reference) : IR
                 Companions = null
             };
         }
+
+        // The owner's answers are declared, and the projector checks them against the choices made (ruling R5.8).
+        expected = expected with
+        {
+            Choices = recorded.Choices
+        };
 
         if (JsonSerializer.Serialize(expected, LiveFire.Json) != JsonSerializer.Serialize(recorded, LiveFire.Json))
         {

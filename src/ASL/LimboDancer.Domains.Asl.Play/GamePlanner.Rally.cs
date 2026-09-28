@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using LimboDancer.Dice;
 using LimboDancer.Domains.Asl.ScenarioA1;
 using LimboDancer.Domains.Asl.Units.State;
@@ -37,13 +38,9 @@ public sealed partial class GamePlanner
         // A12.141: the attempt costs a concealed unit or rallying leader its "?" in the LOS of a Good Order enemy within 16 hexes.
         var concealed = GameState.Condition(unit, Conditions.Concealed) == ConditionState.True
             || (leaderId is not null && state.Unit(leaderId) is { } leaderUnit && GameState.Condition(leaderUnit, Conditions.Concealed) == ConditionState.True);
-        // A15.44, A15.5: a leader's rally can reach Heat of Battle, so the planner reads the unit's LOS to a Known enemy and its captors;
-        // A20.4: a unit that goes berserk with prisoners in its Location massacres them, which is not reviewed.
+        // A15.44, A15.5: a leader's rally can reach Heat of Battle, so the planner reads the unit's LOS to a Known enemy and its captors. A
+        // unit that goes berserk with prisoners in its Location massacres them at the start of its next fire phase (A20.4, ruling R5.7).
         var heat = leaderId is not null;
-        if (heat && state.At(at).OfType<UnitInstance>().Any(item => item.Status == InstanceStatus.Active && Is(item, Conditions.Captured)))
-        {
-            return Refused(scope, label, expected, "play.rally-massacre: the unit shares its Location with prisoners, whom a berserk unit would massacre (A20.4, not reviewed)");
-        }
 
         var (attempt, reason) = LiveRally.FromState(state, unitId, leaderId, TerrainKey(read) ?? read.Level.Terrain?.Name ?? "unknown",
             concealed ? EnemyGoodOrderInLosWithin16(state, unit.Side, at) : null, heat ? KnownEnemyInLos(state, unit.Side, at) : null, heat ? Captors(state, unit) : null);
@@ -62,77 +59,11 @@ public sealed partial class GamePlanner
         var package = ScenarioA1RallyPackage.Identity.ToString();
 
         // A rally by a concealed unit that stays concealed is its side's own business (ruling R19.8).
-        var withheld = concealed && attempt.EnemyGoodOrderInLosWithin16 != true ? new[] { unit.Side } : null;
+        var withheld = concealed && attempt.EnemyGoodOrderInLosWithin16 != true;
         IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
         {
             var events = new List<GameEvent>();
-            var rollIds = new Dictionary<string, string>(StringComparer.Ordinal);
-            var rolls = new RallyRolls(null, null);
-            RallyResolution resolution;
-            while (true)
-            {
-                resolution = ScenarioA1RallyCalculator.Resolve(attempt with
-                {
-                    Rolls = rolls
-                }, reference);
-                if (resolution.Disposition == RallyResolution.Resolved)
-                {
-                    break;
-                }
-
-                if (resolution.Reasons is not [{ } missing] || !missing.StartsWith("asl.a1.rally.roll-missing:", StringComparison.Ordinal))
-                {
-                    throw new InvalidOperationException("The Rally package left an attempt it had accepted undecided: " + string.Join("; ", resolution.Reasons));
-                }
-
-                // The Rally DR, a leader's Wound Severity dr (A17.11), the Heat of Battle DR (A15.1), the Leader Creation dr (A18.2), or
-                // the NTC of a companion a berserk leader tries to take with him (A15.41).
-                const string BerserkCheck = "asl.a1.rally.roll-missing:berserkCheck:";
-                var companion = missing.StartsWith(BerserkCheck, StringComparison.Ordinal) ? missing[BerserkCheck.Length..] : null;
-                var key = companion is not null ? "berserkCheck:" + companion
-                    : missing.Contains("woundSeverity", StringComparison.Ordinal) ? "woundSeverity"
-                    : missing.EndsWith(":heatOfBattle", StringComparison.Ordinal) ? "heatOfBattle"
-                    : missing.EndsWith(":leaderCreation", StringComparison.Ordinal) ? "leaderCreation"
-                    : "rally";
-                var (count, purpose) = key switch
-                {
-                    "woundSeverity" => (1, "rally-wound-severity"),
-                    "heatOfBattle" => (2, "rally-heat-of-battle"),
-                    "leaderCreation" => (1, "rally-leader-creation"),
-                    _ when companion is not null => (2, "rally-berserk-check"),
-                    _ => (2, "rally"),
-                };
-                var drawn = draw(new RollRequest(count, 6));
-                var rollId = $"{attemptId}-roll-{(rollIds.Count + 1).ToString(CultureInfo.InvariantCulture)}";
-                rollIds[key] = rollId;
-                events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled",
-                    new DiceRolled(rollId, purpose, count, 6, drawn.Values, DiceRolled.SystemSource, actor), package, null));
-                rolls = key switch
-                {
-                    "woundSeverity" => rolls with { WoundSeverity = drawn.Values[0] },
-                    "heatOfBattle" => rolls with { HeatOfBattle = drawn.Values },
-                    "leaderCreation" => rolls with { LeaderCreation = drawn.Values[0] },
-                    _ when companion is not null => rolls with { BerserkChecks = Add(rolls.BerserkChecks, companion, drawn.Values) },
-                    _ => rolls with { Rally = drawn.Values },
-                };
-            }
-
-            var rallyId = EventId(attemptId, events.Count + 1);
-            events.Add(Event(scope, attemptId, events.Count + 1, expected, "rally-attempted",
-                new RallyAttempted(unit.Id, leaderId, rollIds, JsonSerializer.SerializeToElement(attempt, LiveFire.Json),
-                    JsonSerializer.SerializeToElement(resolution, LiveFire.Json)), package, withheld));
-            foreach (var (type, payload) in RallyEffects(state, unit, resolution.Effect!, attemptId))
-            {
-                events.Add(Event(scope, attemptId, events.Count + 1, expected, type, payload, package, withheld, [rallyId]));
-            }
-
-            // A15.5: a unit that surrendered to ADJACENT captors waits for the captor's choice, last.
-            if (resolution.Arithmetic!.HeatOfBattle is { Result: HeatOfBattleOutcome.Surrender, Captors.Count: > 0 } surrender && !resolution.Effect!.Eliminated)
-            {
-                var id = resolution.Effect.FinalDefinitionId != resolution.Effect.DefinitionId ? $"{attemptId}-{unit.Id}" : unit.Id;
-                events.Add(Event(scope, attemptId, events.Count + 1, expected, "surrender-pending", new SurrenderPending(id, surrender.Captors!), package, null, [rallyId]));
-            }
-
+            AddRallyEvents(scope, attemptId, expected, actor, state, unit, leaderId, attempt, withheld, events, draw);
             return events;
         }
 
@@ -143,6 +74,118 @@ public sealed partial class GamePlanner
             FirstEventId = EventId(attemptId, 1),
         };
     }
+
+    /// <summary>
+    /// Draws the rolls the Rally package asks for, one at a time, and adds the attempt's events: the dice, the record (withheld from the enemy
+    /// when a concealed unit stays concealed), its effects, and a pending surrender. An option the attempt reaches, the Leader Creation dr or
+    /// Battle Hardening, stops it with a pending choice for the rallying side (ruling R5.8); its answer resumes it from the rolls it drew.
+    /// </summary>
+    private void AddRallyEvents(GameScope scope, string attemptId, long expected, string actor, GameState state, UnitInstance unit, string? leaderId,
+        RallyAttempt attempt, bool withheld, List<GameEvent> events, Func<RollRequest, RollResult> draw, ResumedRolls? resumed = null)
+    {
+        var reference = RallyReference.Value;
+        var package = ScenarioA1RallyPackage.Identity.ToString();
+        attempt = attempt with
+        {
+            Choices = attempt.Choices ?? new Dictionary<string, string>(StringComparer.Ordinal)
+        };
+        var visibility = withheld ? new[] { unit.Side } : null;
+        var rollIds = new Dictionary<string, string>(resumed?.RollIds ?? new Dictionary<string, string>(), StringComparer.Ordinal);
+        var rolls = new RallyRolls(null, null);
+        foreach (var (key, values) in resumed?.Values ?? [])
+        {
+            rolls = ApplyRallyRoll(rolls, key, values);
+        }
+
+        RallyResolution resolution;
+        while (true)
+        {
+            resolution = ScenarioA1RallyCalculator.Resolve(attempt with
+            {
+                Rolls = rolls
+            }, reference);
+            if (resolution.Disposition == RallyResolution.Resolved)
+            {
+                break;
+            }
+
+            // An option the attempt reaches stops it until its owner answers (ruling R5.8).
+            if (resolution.Reasons is [{ } option] && option.StartsWith("asl.a1.rally.choice-missing:", StringComparison.Ordinal))
+            {
+                var resume = new JsonObject
+                {
+                    ["record"] = "rally",
+                    ["unit"] = unit.Id,
+                    ["facts"] = JsonNode.Parse(JsonSerializer.Serialize(attempt, LiveFire.Json)),
+                    ["rolls"] = RollNode(rollIds),
+                    ["withheld"] = withheld,
+                };
+                if (leaderId is not null)
+                {
+                    resume["leader"] = leaderId;
+                }
+
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "choice-pending",
+                    Pending(state, option["asl.a1.rally.choice-missing:".Length..], resume), package, visibility));
+                return;
+            }
+
+            if (resolution.Reasons is not [{ } missing] || !missing.StartsWith("asl.a1.rally.roll-missing:", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("The Rally package left an attempt it had accepted undecided: " + string.Join("; ", resolution.Reasons));
+            }
+
+            // The Rally DR, a leader's Wound Severity dr (A17.11), the Heat of Battle DR (A15.1), the Leader Creation dr (A18.2), or
+            // the NTC of a companion a berserk leader tries to take with him (A15.41).
+            const string BerserkCheck = "asl.a1.rally.roll-missing:berserkCheck:";
+            var companion = missing.StartsWith(BerserkCheck, StringComparison.Ordinal) ? missing[BerserkCheck.Length..] : null;
+            var rollKey = companion is not null ? "berserkCheck:" + companion
+                : missing.Contains("woundSeverity", StringComparison.Ordinal) ? "woundSeverity"
+                : missing.EndsWith(":heatOfBattle", StringComparison.Ordinal) ? "heatOfBattle"
+                : missing.EndsWith(":leaderCreation", StringComparison.Ordinal) ? "leaderCreation"
+                : "rally";
+            var (count, purpose) = rollKey switch
+            {
+                "woundSeverity" => (1, "rally-wound-severity"),
+                "heatOfBattle" => (2, "rally-heat-of-battle"),
+                "leaderCreation" => (1, "rally-leader-creation"),
+                _ when companion is not null => (2, "rally-berserk-check"),
+                _ => (2, "rally"),
+            };
+            var drawn = draw(new RollRequest(count, 6));
+            var rollId = $"{attemptId}-roll-{(events.Count(item => item.Payload is DiceRolled) + 1).ToString(CultureInfo.InvariantCulture)}";
+            rollIds[rollKey] = rollId;
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled",
+                new DiceRolled(rollId, purpose, count, 6, drawn.Values, DiceRolled.SystemSource, actor), package, null));
+            rolls = ApplyRallyRoll(rolls, rollKey, drawn.Values);
+        }
+
+        var rallyId = EventId(attemptId, events.Count + 1);
+        events.Add(Event(scope, attemptId, events.Count + 1, expected, "rally-attempted",
+            new RallyAttempted(unit.Id, leaderId, rollIds, JsonSerializer.SerializeToElement(attempt, LiveFire.Json),
+                JsonSerializer.SerializeToElement(resolution, LiveFire.Json)), package, visibility));
+        foreach (var (type, payload) in RallyEffects(state, unit, resolution.Effect!, attemptId))
+        {
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, type, payload, package, visibility, [rallyId]));
+        }
+
+        // A15.5: a unit that surrendered to ADJACENT captors waits for the captor's choice, last.
+        if (resolution.Arithmetic!.HeatOfBattle is { Result: HeatOfBattleOutcome.Surrender, Captors.Count: > 0 } surrender && !resolution.Effect!.Eliminated)
+        {
+            var id = resolution.Effect.FinalDefinitionId != resolution.Effect.DefinitionId ? $"{attemptId}-{unit.Id}" : unit.Id;
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "surrender-pending", new SurrenderPending(id, surrender.Captors!), package, null, [rallyId]));
+        }
+    }
+
+    /// <summary>A Rally package roll added to its rolls under its key.</summary>
+    private static RallyRolls ApplyRallyRoll(RallyRolls rolls, string key, IReadOnlyList<int> values) => key switch
+    {
+        "woundSeverity" => rolls with { WoundSeverity = values[0] },
+        "heatOfBattle" => rolls with { HeatOfBattle = values },
+        "leaderCreation" => rolls with { LeaderCreation = values[0] },
+        _ when key.StartsWith("berserkCheck:", StringComparison.Ordinal) => rolls with { BerserkChecks = Add(rolls.BerserkChecks, key["berserkCheck:".Length..], values) },
+        _ => rolls with { Rally = values },
+    };
 
     /// <summary>
     /// The events a Rally attempt's effect records: rallied, Reduced by Fate, wounded, eliminated, and "?" lost; after an

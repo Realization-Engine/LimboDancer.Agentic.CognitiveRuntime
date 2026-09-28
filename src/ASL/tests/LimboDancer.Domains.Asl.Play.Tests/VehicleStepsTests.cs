@@ -259,9 +259,14 @@ public sealed class VehicleStepsTests : IDisposable
         }), "play.vehicle-motion");
         Committed(await Step("de-t", "stop"));
         await Pass();
+
+        // D2.1 (ruling R5.15): its MP left are spent in its hex, which the DEFENDER may fire at; its move ends when he passes.
         Committed(await Do(GameActions.EndMove, NoRoll(), new
         {
         }));
+        Assert.True(Current.Movement is { Ending: true, WindowOpen: true });
+        await Pass();
+        Assert.Null(Current.Movement);
         Assert.False(Is(Current.Unit("de-t")!, Conditions.Motion));
 
         // The truck in Motion needs no Start (D2.4); it turns one hexspine for 1 MP (D2.11), but not two.
@@ -275,6 +280,7 @@ public sealed class VehicleStepsTests : IDisposable
         Committed(await Do(GameActions.EndMove, NoRoll(), new
         {
         }));
+        await Pass();
         await Advance();
         Assert.Equal("dfph", Current.Phase);
     }
@@ -504,6 +510,7 @@ public sealed class VehicleStepsTests : IDisposable
         Committed(await Do(GameActions.EndMove, NoRoll(), new
         {
         }));
+        await Pass();
 
         // A12: the hidden squad in B2 is not disclosed by a refused entry.
         Committed(await Step("de-t2", "start"));

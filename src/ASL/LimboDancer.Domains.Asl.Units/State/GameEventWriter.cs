@@ -98,6 +98,11 @@ public static class GameEventWriter
                         writer.WriteNumber("san", san);
                     }
 
+                    if (side.FriendlyEdge is { } edge)
+                    {
+                        writer.WriteString("friendlyEdge", edge);
+                    }
+
                     writer.WriteEndObject();
                 }
 
@@ -150,6 +155,11 @@ public static class GameEventWriter
             case InstanceCreated created:
                 writer.WritePropertyName("instance");
                 WriteNew(writer, created.Instance);
+                if (created.Creator is { } creator)
+                {
+                    writer.WriteString("creator", creator);
+                }
+
                 break;
             case InstanceMoved moved:
                 writer.WriteString("id", moved.Id);
@@ -314,6 +324,11 @@ public static class GameEventWriter
                     writer.WriteString("charge", charge.ToString());
                 }
 
+                if (moving.DoubleTime)
+                {
+                    writer.WriteBoolean("doubleTime", true);
+                }
+
                 break;
             case VehicleStepped vehicle:
                 writer.WriteString("vehicle", vehicle.Vehicle);
@@ -415,6 +430,35 @@ public static class GameEventWriter
             case InstanceCaptured captured:
                 writer.WriteString("id", captured.Id);
                 writer.WriteString("custodian", captured.Custodian);
+                break;
+            case ChoicePending pending:
+                writer.WriteString("key", pending.Key);
+                writer.WriteString("kind", pending.Kind);
+                writer.WriteString("side", pending.Side);
+                Strings(writer, "options", pending.Options);
+                writer.WritePropertyName("resume");
+                pending.Resume.WriteTo(writer);
+                break;
+            case ChoiceMade made:
+                writer.WriteString("key", made.Key);
+                writer.WriteString("option", made.Option);
+                break;
+            case SurrenderRejected rejected:
+                writer.WriteString("unit", rejected.Unit);
+                break;
+            case PrisonersMassacred massacre:
+                Strings(writer, "units", massacre.Units);
+                Strings(writer, "prisoners", massacre.Prisoners);
+                if (massacre.Berserk)
+                {
+                    writer.WriteBoolean("berserk", true);
+                }
+
+                break;
+            case AcquisitionChanged acquisition:
+                writer.WriteString("gun", acquisition.Gun);
+                writer.WriteString("location", acquisition.Location.ToString());
+                Strings(writer, "units", acquisition.Units);
                 break;
             default:
                 throw new ArgumentException($"There is no writer for {payload.GetType().Name}.", nameof(payload));

@@ -206,11 +206,18 @@ public sealed class RallyAndFireStepsTests : IDisposable
             Unit("r5", "asl:squad", "defender-squad", "bd01:A1:0", "russian"), Unit("g2", "asl:squad", "attacker-squad", "bd01:A2:0", "german"));
         await Advance();
 
-        // 3+3 = 6: a hero, and g2 is exchanged for the squared-E 4-6-8 (A15.3).
+        // 3+3 = 6: a hero, and g2 may be exchanged for the squared-E 4-6-8 (A15.3): the attack waits for the German side's answer (ruling R5.8).
         Committed(await Do(GameActions.Fire, Once(4, 6, 1, 1, 3, 3), new
         {
             firers = R4R5,
             target = "bd01:A2:0"
+        }));
+        Assert.Equal(("battleHardening:g2", "german"), (Current.Choice!.Key, Current.Choice.Side));
+        Assert.Equal(InstanceStatus.Active, Current.Unit("g2")!.Status);
+        Committed(await Do(GameActions.Choose, NoRoll(), new
+        {
+            key = "battleHardening:g2",
+            option = "take"
         }));
         Assert.Equal(InstanceStatus.Consumed, Current.Unit("g2")!.Status);
         var elite = Current.Units.Single(unit => unit.Status == InstanceStatus.Active && unit.Definition?.Definition == "attacker-elite-squad");
@@ -231,6 +238,11 @@ public sealed class RallyAndFireStepsTests : IDisposable
         {
             unitId = "r1",
             leader = "rl"
+        }));
+        Committed(await Do(GameActions.Choose, NoRoll(), new
+        {
+            key = "battleHardening:r1",
+            option = "take"
         }));
         var elite = Current.Units.Single(unit => unit.Status == InstanceStatus.Active && unit.Definition?.Definition == "defender-elite-squad");
         Assert.Equal((false, false), (Is(elite, Conditions.Broken), Is(elite, Conditions.DesperationMorale)));
@@ -287,9 +299,15 @@ public sealed class RallyAndFireStepsTests : IDisposable
 
         // A18.11: the first MMC Rally attempt of the side's own RPh, Self-Rally, rolls an Original 2: rallied, and a Leader
         // Creation dr of 2, +1 Russian, +1 broken (its broken Morale Level of 7 adds nothing): 4 creates a 7-0 (A18.2).
-        Committed(await Do(GameActions.Rally, Once(1, 1, 2), new
+        Committed(await Do(GameActions.Rally, Once(1, 1), new
         {
             unitId = "r2"
+        }));
+        Assert.Equal(("leaderCreation:r2", "russian"), (Current.Choice!.Key, Current.Choice.Side));
+        Committed(await Do(GameActions.Choose, Once(2), new
+        {
+            key = "leaderCreation:r2",
+            option = "take"
         }));
         Assert.False(Is(Current.Unit("r2")!, Conditions.Broken));
         var record = store.Read(Scope)!.Events.Select(item => item.Payload).OfType<RallyAttempted>().Single();

@@ -116,6 +116,31 @@ public sealed record FireAttack(
     {
         get; init;
     }
+
+    /// <summary>Whether the target side is faced with No Quarter (A20.3): its units treat a Heat of Battle Surrender as Berserk; null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? TargetSideNoQuarter
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the firing side is faced with No Quarter, for the Heat of Battle of an FPF NMC (A8.31, A20.3); null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? FiringSideNoQuarter
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The owners' answers to the attack's options (ruling R5.8), <c>take</c> or <c>decline</c> by key: <c>battleHardening:&lt;unit&gt;</c>
+    /// (A15.3; <c>&lt;unit&gt;:2</c> for a second Heat of Battle DR) and <c>unlikelyKill:&lt;vehicle&gt;</c> (A7.309). Null means every option is
+    /// taken as before pass 5; otherwise an option the attack reaches with no answer leaves it undecided.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyDictionary<string, string>? Choices
+    {
+        get; init;
+    }
 }
 
 /// <summary>A vehicle in the target Location, with its reviewed catalog definition and its crew's state (D5.2, D5.3, D5.34).</summary>
@@ -248,6 +273,13 @@ public sealed record FireFirer(
     {
         get; init;
     }
+
+    /// <summary>Whether the firer is CX (A4.51): +1 to the attack's IFT DR; null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Cx
+    {
+        get; init;
+    }
 }
 
 /// <summary>The leader directing the fire group (A7.53, A7.531).</summary>
@@ -259,7 +291,15 @@ public sealed record FireDirector(
     bool? Pinned,
     bool? Concealed,
     bool? DirectedThisPlayerTurn,
-    bool? Wounded);
+    bool? Wounded)
+{
+    /// <summary>Whether the directing leader is CX (A4.51): +1 to the attack's IFT DR; null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Cx
+    {
+        get; init;
+    }
+}
 
 /// <summary>The LOS of unit step 16 from the firers' Location to the target Location.</summary>
 public sealed record FireLos(bool? Blocked, int? HindranceDrm, bool? HindranceAttributed, bool? GrainInLos);
@@ -471,6 +511,13 @@ public sealed record FireUnitEffect(
         get; init;
     }
 
+    /// <summary>The unit's second Heat of Battle DR in the attack, after a second Original MC DR of 2 (A15.1, ruling R5.10); null when none.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public HeatOfBattleOutcome? SecondHeatOfBattle
+    {
+        get; init;
+    }
+
     /// <summary>Whether the unit is Fanatic after the attack (A10.8); null when it is not.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Fanatic
@@ -551,6 +598,13 @@ public sealed record FireVehicleEffect(
     FireCheck? CrewCheck,
     string CrewResult)
 {
+    /// <summary>Whether the firer declined the Unlikely Kill dr it could make (A7.309, ruling R5.8); null when it made it or could not.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? UnlikelyKillDeclined
+    {
+        get; init;
+    }
+
     public const string None = "none";
     public const string Immobilized = "immobilized";
     public const string Eliminated = "eliminated";

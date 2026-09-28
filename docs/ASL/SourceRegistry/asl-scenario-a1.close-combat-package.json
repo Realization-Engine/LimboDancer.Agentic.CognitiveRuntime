@@ -4,7 +4,7 @@
   "domainId": "asl",
   "packageId": "scenario-a1-close-combat",
   "declaredUse": "Read-only conclusions for the Close Combat of one Location in one round, and for the Ambush drs before it, among Infantry of the reviewed Scenario A1 catalog, under the rulings of the ASL Unit Deviations, Ordnance, and Vehicles Plan (R29.1 to R29.15).",
-  "caseMatrixSha256": "afde3459410a916c82603a3c1958770ab41d79a52ca2e410877946d00f68544a",
+  "caseMatrixSha256": "065300051e452cc9b9d8cf834cb47ff7d63496be6db12ea453603c0ba3fdfbf5",
   "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
   "cctTranscriptionSha256": "c2af9d03865da14baf7b0ec68989d99e0607079cb3f43f835d145b92bab8abbb",
   "catalogSha256": "a1c7fd2ca904a9e4832d1c6cd30c8e69c9a528e322b69cfa914ea4f16c0c63cb",
@@ -260,6 +260,13 @@
       "startLine": 832,
       "fragmentId": "asl-fragment:sha256:f1bd2904c88de953e987558e1427d8b0462feef35dd686f9a4abbba1667d7f32",
       "contentSha256": "b4c78f2c06f3f71adea064784586749e9ea3ae73fa0b4cce5d810fabc554edcd"
+    },
+    {
+      "ruleId": "A4.51",
+      "physicalPdfPage": 51,
+      "startLine": 305,
+      "fragmentId": "asl-fragment:sha256:f49373d52a53a41fde917dc0a5e2ea7aa94a269361f348db39e91eb29ca4e369",
+      "contentSha256": "eb151224e0987cb136ed6b50b1a05a8ca2bc5fe45a4578d07f84b1500f47570e"
     }
   ],
   "rulings": {
@@ -275,7 +282,8 @@
     "berserk": "A berserk unit attacks in its side's round, never with a leader's DRM, and returns to normal when its group's attack eliminated every enemy unit eliminated in its Location, at least one, and none is left (A11.141, A15.43, A15.46; R29.15).",
     "withdrawal": "A unit held in Melee, not pinned, berserk, or Disrupted, may withdraw to a declared ADJACENT Location an advance could enter that holds no enemy unit; it makes no attack, attacks on it take -2 and +1 per friendly unit in the Melee not withdrawing, and it withdraws unless eliminated or Reduced; a broken unit that can withdraw must (A11.2, A11.21, A11.16; R29.11).",
     "reinforcement": "A unit that advanced this APh into a Location already in Melee attacks in its side's round (A11.15; R29.17).",
-    "odds": "Odds above 10 to 1 but below 11 to 1, with or without a created leader's FP, are undecided (A11.11; R29.16)."
+    "odds": "Odds above 10 to 1 but below 11 to 1, with or without a created leader's FP, are undecided (A11.11; R29.16).",
+    "cx": "plus-one-to-a-cc-attack-a-cx-unit-makes-once-minus-one-to-a-cc-attack-against-a-cx-unit-and-plus-one-to-its-sides-ambush-dr-A4.51 (R5.2)"
   },
   "resolution": {
     "odds": "The attackers' FP against the defenders' FP, rounded down to the printed CCT column; < 1-8 below one to eight, > 10-1 above ten to one (A11.11, p. 692).",
@@ -296,7 +304,8 @@
     "A1-cc-director-outside",
     "A1-cc-berserk-must-attack",
     "A1-cc-field-promotion-undecided",
-    "A1-cc-roll-missing"
+    "A1-cc-roll-missing",
+    "A1-cc-cx"
   ],
   "excludedOutcomes": [
     "CC by or against vehicles, and Hand-to-Hand CC (A11.5 to A11.8, J2.31)",
@@ -304,8 +313,8 @@
     "Capture attempts in CC and prisoners in a CC Location (A20.22, A20.55)",
     "Infiltration withdrawal and Ambush Withdrawal (A11.22, A11.41)",
     "TI units in CC (A4.8), and overstacked Locations (A5.12, A5.131)",
-    "Advances that would make a unit CX (A4.72), advances into concealed enemy units, and advances changing level"
+    "Advances into concealed enemy units, and advances changing level"
   ],
   "executionAuthority": "none",
-  "priorCloseCombatPackageManifestSha256": "02e3147989e54fd9b3e30e73a030d449827ed3e2b6e7733077e2fa8a54cef212"
+  "priorCloseCombatPackageManifestSha256": "9f5d613b5fb6d11a5853f60473cb355452eb241dfcc1c63856be77a8fdb22b98"
 }
