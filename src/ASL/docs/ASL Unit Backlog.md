@@ -13,8 +13,19 @@ These are not left out: the game resolves them in a simplified way and records t
 | A berserk charge whose route the model cannot decide | R30.5 | A15.43, A15.431, p. 84 | Movement over every terrain type and level change, so every shortest route is decided; Massacre, concealment in CC, and Infantry OVR outcomes | The ATTACKER may end the charge in place when its route crosses unreviewed terrain or its next step enters a Location with prisoners, concealed enemy units, or a lone enemy SMC; the move's reason records it, and the unit stays berserk. |
 | A withdrawal from Melee that makes the unit CX | R29.11 | A11.21, p. 73; A4.72, p. 52 | CX status | The unit withdraws with no CX counter. A unit whose only ADJACENT Locations are in terrain the movement review does not admit cannot withdraw, and a broken one is eliminated at the end of the CCPh. |
 | A surrender is always accepted | R30.7 | A20.3, A20.4, p. 87 | An option for the captor at the capture | The captor's side chooses the Guard but may not reject the surrender (No Quarter) or massacre. |
+| Acquisition kept on the Location, not on the target unit | R24.6 | C6.5, C6.51, p. 174 | Unit-tracked Acquired counters | The Acquisition stays on the Location, so a target that moves keeps none and a unit that enters the Location inherits it. |
+| A vehicle may end its MPh in Motion only when it cannot reach any ADJACENT hex, counting VCA changes | R25.3; table player, item 5 | D2.4, p. 198 | A declared intended next hex | Stricter than D2.4, which tests only "the next hex it wishes to enter": a vehicle with MP for any hex must Stop or move on. |
+| MP left unspent at the end of the MPh | Table player, item 12 | D2.1, p. 195; A8.14, p. 59 | | They are not counted as spent in the final hex, so the DEFENDER gets no further fire there. |
+| A destroyed vehicle leaves no wreck | R25.5 | D10, A7.308 | Wreck counters and their LOS and movement effects | An eliminated or burning vehicle is removed from play. |
+| The Unlikely Kill dr after a result that already harmed the vehicle | R25.5 | A7.309, p. 56 | A firer's option at resolution | The dr is rolled only when an Original 2 did nothing; the firer is never offered it after an elimination or immobilization. |
+| A Recalled vehicle leaves play as eliminated | R25.6; table player, item 8 | D5.341, D5.5, pp. 203 to 204 | Board edges, the exited status, exit victory conditions | It is removed at the end of the Player Turn and recorded as eliminated; the Motion route to a friendly board edge and Abandonment of an immobilized Recalled AFV are not played. |
+| A hero created in his side's MPh moving on with his creator | Step 28 design | A15.21, p. 83 | The movement status a created unit shares with its creator | He moves no further that phase. |
+| Refusing Battle Hardening | R28.5 | A15.3, p. 83 | An owner's choice in the middle of an attempt | Battle Hardening is always taken. |
+| Declining the Leader Creation dr | R27.2 | A18.11, p. 85 | An owner's choice in the middle of an attempt | The dr is always rolled. |
+| A second Heat of Battle DR in one attack (the LLMC after the MC) | R28.8 | A15.1, p. 83 | A roll key per check rather than per unit | The second is recorded as not taken. |
+| A HS of a Casualty Reduced squad keeping its SW | Pass 1 live review | A7.302, p. 55 | Portage for the HS | Replacements and Battle Hardening keep the SW; other lineage drops it. |
 
-Berserk and Surrender from Heat of Battle (R0.2, R19.2, R22.5, R28.1) left this list with unit step 30, 2026-09-27.
+Berserk and Surrender from Heat of Battle (R0.2, R19.2, R22.5, R28.1) left this list with unit step 30, 2026-09-27. The simplified resolutions recorded by passes 1, 3, and 4 moved here from sections 10, 12, and 14 on 2026-09-27.
 
 ## 2. Rally (step 19)
 
@@ -75,7 +86,6 @@ Step 17 left these out; steps 19 to 23 do not build them.
 
 | Item | Rules | Depends on |
 |---|---|---|
-| Heroes, Battle Hardening, Berserk, Surrender | A15.2 to A15.5, pp. 83 to 84 | Heat of Battle (section 1) |
 | Snipers (SAN) | A14, p. 82 | Random events |
 | Smoke and WP | A24, p. 91 | Smoke placement |
 | Night | E1, p. 222 onward | Night visibility |
@@ -86,9 +96,7 @@ Step 17 left these out; steps 19 to 23 do not build them.
 
 | Item | Step | Notes |
 |---|---|---|
-| Ordnance | 24 | Chapter C, pp. 162 to 191; charts on registered pp. 189 to 191; Gun values from Chapter H's Ordnance Listings. |
-| Vehicles | 25 | Chapter D, pp. 192 to 221; Vehicle Listings in Chapter H; vehicular movement, Motion, facing, and ordnance first. |
-| Light mortars and LATW (PSK, BAZ, PIAT, PF, ATR) | 24 | To Hit weapons, with ordnance. |
+| Light mortars and LATW (PSK, BAZ, PIAT, PF, ATR) | 24 | To Hit weapons, with ordnance. Steps 24 (ordnance) and 25 (vehicles) were built by the deviations passes 3 and 4; what they left out is in sections 12 and 14. |
 
 ## 8. Added by the steps 19 to 23 review
 
@@ -117,16 +125,11 @@ Step 17 left these out; steps 19 to 23 do not build them.
 
 | Item | Deferred by | Rules | Depends on |
 |---|---|---|---|
-| A hero created during his side's MPh moving on with his creator | Step 28 design | A15.21, p. 83 | The movement status a created unit shares with its creator; for now he moves no further that phase |
 | Support weapon use by a hero | Step 28 design | A15.23, p. 83 | Reviewing the hero's SW rules |
-| Refusing Battle Hardening | Step 28 design | A15.3, p. 83 | An owner's choice in the middle of an attempt |
-| Declining the Leader Creation dr | Step 27 design | A18.11, p. 85 | An owner's choice in the middle of an attempt |
 | NKVD Field Promotion, which creates a Commissar | Step 27 design | A18.11, p. 85; A25.22, p. 94; A25.25, p. 96 | Commissars (A25.22) |
 | Attacks on units with an underscored morale (German elite HS, NKVD), and FPF by them | Step 28 design | A19.13, p. 86 | Reviewing the underscored morale exception to ELR Replacement |
 | Nationalities other than German and Russian in the Heat of Battle and Leader Creation drm | Pass 1 review | A15.1, p. 83; A18.2, p. 85 | Counters of those nationalities; a nationality the table does not name should be refused, not given 0 |
 | A Green MMC stacked with an unbroken leader, exempt from Inexperienced restrictions; the live game supplying the Inexperienced fact | Pass 1 review | A19.3, p. 86 | Green counters, which the catalog does not have; until then a Green unit is refused |
-| A second Heat of Battle DR in one attack (the LLMC after the MC) | R28.8 | A15.1, p. 83 | A roll key per check rather than per unit |
-| A HS of a Casualty Reduced squad keeping its SW | Pass 1 live review | A7.302, p. 55 | Portage for the HS; Replacements and Battle Hardening keep the SW, other lineage drops it |
 | A hero created by a concealed MMC being concealed too | Pass 1 live review | A15.21, p. 83; A12.1, p. 76 | Reviewing concealment of created units |
 | Counter names (for example "7-0") in place of definition ids on the Play page | Pass 1 live review | none | A display name in the catalog |
 
@@ -189,32 +192,9 @@ Step 17 left these out; steps 19 to 23 do not build them.
 | Multiple Hits | R24.2 | C3.8, p. 171 | A reviewed Gun of 40mm or less |
 | A Gun's BPV, dates, and Animal-Pack capability (note O) in the catalog | Referee (catalog rows) | Chapter H key, p. 351; G10 | Vocabulary attributes for them |
 | Choosing a facing other than the fewest-hexspine turn | Pass 3 design | C3.21, C5.1 | A facing argument on the shot |
-| Acquisition that follows its target unit to a new Location within LOS | R24.6 | C6.5, C6.51, p. 174 | Unit-tracked Acquired counters; until then it stays on the Location, so a target that moves keeps none and a new unit there takes it |
 | Changing a Gun's Covered Arc without firing, at the end of a friendly fire phase | Table-player review | C3.22, p. 169 | A turn action for Guns |
 | Play page: marking which target Locations are in a Gun's Covered Arc, in range, or refused, and drawing the Covered Arc | Table-player review | C3.2 | Map overlays for Guns |
 | CC with a Gun's crew, and advances or berserk charges into its Location | R24.3 | A11, C11 | Guns and crews as targets |
-
-## 14. Added by the deviations pass 4 (step 25)
-
-| Item | Deferred by | Rules | Depends on |
-|---|---|---|---|
-| Reverse movement, VBM, ESB, Minimum Move, bog, OVR, vehicle stacking, and vehicle movement over terrain other than Open Ground, Grain, and roads, across hexside terrain, or between levels | R25.3 | D2.2, D2.3, D2.5, D2.15, D8, D7, D2.14, B terrain entries | More vehicle terrain transcriptions |
-| Residual FP against a truck or a Vulnerable crew (a vehicle on the Vehicle line, a crew Collaterally); until then they may not enter or spend MP in its Location | R25.3; table player, item 2 | A8.2, A8.222, A7.308, D.8B | The Vehicle line in Residual FP attacks |
-| D2.4's Motion test by "the next hex it wishes to enter" (declared by the player) in place of every ADJACENT hex it may reach | R25.3; table player, item 5 | D2.4 | A declared intended hex |
-| MP left unspent at the end of the MPh counted as spent in the final hex, with the DEFENDER's further fire (D2.1, A8.14) | Table player, item 12 | D2.1, A8.14 | |
-| Wrecks and burning wrecks, and their effects on LOS and movement | R25.5 | D10, A7.308 | Wreck counters |
-| The firer's option to roll the Unlikely Kill dr after a result that already harmed the vehicle | R25.5 | A7.309 | |
-| Recall's Motion route to a friendly board edge, the exited status (a Recalled vehicle is now recorded as eliminated), and Abandonment of an immobilized Recalled AFV | R25.6; table player, item 8 | D5.341, D5.5 | Board edges; exit victory conditions |
-| An AFV's +1 TEM for friendly Infantry, its +1 LOS Hindrance, and its cancelling of FFMO; the LOS-trace test through its hex; no TEM or Hindrance from a moving AFV. Until then fire at Infantry with an AFV, and fire whose hexes may pass an AFV, is refused, so Infantry stacked with their AFV cannot be fired on | R25.9; table player, item 3 | D9.3, D9.4, A4.6, D2.41 | The Fire package's TEM for Infantry with an AFV |
-| Vehicle fire in the MPh (Defensive First Fire and Bounding First Fire), BMG and CMG, MG repair, and Passengers' and Riders' fire | R25.7 | D3.3, D3.7, D6.64 | Vehicles in the movement windows |
-| Closed-topped AFVs, main armament, To Kill, and AP | R25.2 | C7, D3.1 | Step 24's successors |
-| Vehicle concealment and HIP | R25.10 | A12.2 | |
-| Vehicles in CC (and Infantry entering or advancing into an enemy vehicle's Location), Rally, and Rout; a berserk charge at a vehicle ends in place | R25.10; table player, item 1 | A11.5, A11.6, A15.43, D7 | CC against vehicles |
-| A Gun's shot at a Location with a vehicle (the Vehicle Target Type) | R25.10 | C3.31 | Step 24's successors |
-| A vehicle's entry into a Location holding enemy units the moving side cannot see (refused without disclosing them) | Table player, item 7 | A12.15, D2 | Concealment loss on vehicle entry |
-| Grain as Open Ground outside its season for Infantry MF: the Infantry path still charges Grain 1½ MF in every month (the vehicle path follows B15.6) | Referee, D7 | B15.6 | |
-| The wreck face's accessible name reads "crew survival" for a truck's passenger-only cs#; the trait `asl:cs-passengers-only` records it | Referee, D8 | D5.6, Listings Key p. 338 | A conditional name template |
-| The Play page shows Stun +1 as the raw condition `stun-recovery`, and offers a BU toggle already used this phase (the gate refuses it) | Table player, items 10 and 11 | D5.33, D5.34 | |
 
 ## 13. Found in the Studio demo of passes 2 and 3 (2026-09-27)
 
@@ -233,3 +213,20 @@ Found by playing the Play page with scripted dice in the games `pass23-demo`, `p
 | Records credited scripted dice to "the system" | DICE-12 | A roll's source stays `system`, since replay requires it (UNIT-STATE-019); while scripted dice are on, the Rolls list says its dice may have come from the queue and the game is test data. |
 | The Fire panel offered a crew as a firer; its inherent fire is not reviewed (`firer-outside`) | R24.8 | Crews are left off the firer list. |
 | The Movement panel offered a crew that mans a Gun (`play.move-crew-mans-gun`) | R24.4 | Such crews are left off the Movement panel. |
+
+## 14. Added by the deviations pass 4 (step 25)
+
+| Item | Deferred by | Rules | Depends on |
+|---|---|---|---|
+| Reverse movement, VBM, ESB, Minimum Move, bog, OVR, vehicle stacking, and vehicle movement over terrain other than Open Ground, Grain, and roads, across hexside terrain, or between levels | R25.3 | D2.2, D2.3, D2.5, D2.15, D8, D7, D2.14, B terrain entries | More vehicle terrain transcriptions |
+| Residual FP against a truck or a Vulnerable crew (a vehicle on the Vehicle line, a crew Collaterally); until then they may not enter or spend MP in its Location | R25.3; table player, item 2 | A8.2, A8.222, A7.308, D.8B | The Vehicle line in Residual FP attacks |
+| An AFV's +1 TEM for friendly Infantry, its +1 LOS Hindrance, and its cancelling of FFMO; the LOS-trace test through its hex; no TEM or Hindrance from a moving AFV. Until then fire at Infantry with an AFV, and fire whose hexes may pass an AFV, is refused, so Infantry stacked with their AFV cannot be fired on | R25.9; table player, item 3 | D9.3, D9.4, A4.6, D2.41 | The Fire package's TEM for Infantry with an AFV |
+| Vehicle fire in the MPh (Defensive First Fire and Bounding First Fire), BMG and CMG, MG repair, and Passengers' and Riders' fire | R25.7 | D3.3, D3.7, D6.64 | Vehicles in the movement windows |
+| Closed-topped AFVs, main armament, To Kill, and AP | R25.2 | C7, D3.1 | Step 24's successors |
+| Vehicle concealment and HIP | R25.10 | A12.2 | |
+| Vehicles in CC (and Infantry entering or advancing into an enemy vehicle's Location), Rally, and Rout; a berserk charge at a vehicle ends in place | R25.10; table player, item 1 | A11.5, A11.6, A15.43, D7 | CC against vehicles |
+| A Gun's shot at a Location with a vehicle (the Vehicle Target Type) | R25.10 | C3.31 | Step 24's successors |
+| A vehicle's entry into a Location holding enemy units the moving side cannot see (refused without disclosing them) | Table player, item 7 | A12.15, D2 | Concealment loss on vehicle entry |
+| Grain as Open Ground outside its season for Infantry MF: the Infantry path still charges Grain 1½ MF in every month (the vehicle path follows B15.6) | Referee, D7 | B15.6 | |
+| The wreck face's accessible name reads "crew survival" for a truck's passenger-only cs#; the trait `asl:cs-passengers-only` records it | Referee, D8 | D5.6, Listings Key p. 338 | A conditional name template |
+| The Play page shows Stun +1 as the raw condition `stun-recovery`, and offers a BU toggle already used this phase (the gate refuses it) | Table player, items 10 and 11 | D5.33, D5.34 | |

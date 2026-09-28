@@ -82,3 +82,13 @@ Estimate: 6 to 9 h in the plan; 3 to 4 h from the recent actuals (given to the u
 | Merge and push | 21:10 | 21:12 | 0:02 | |
 
 Pass 4 total: 17:36 to 21:12, 3:36 against the 3 to 4 h estimate (6 to 9 h in the plan). The build itself (reading to documents) took 2:18; the merge gate took 1:15, of which 0:48 went to failures in projects not run during the pass (Authoring, Units, Rendering), so later passes should run the full local suite before their first commit.
+
+## Backlog housekeeping and the backlog passes plan
+
+Asked by the user after the pass 4 merge. Branch `docs/asl-backlog-housekeeping`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Housekeeping: fourteen simplified resolutions gathered in section 1 (from sections 10, 12, and 14), finished rows of sections 6 and 7 removed, section 14 after section 13 | 21:20 | 21:21 | 0:01 | 138 open rows |
+| Draft of the [ASL Unit Backlog Passes Plan](<ASL Unit Backlog Passes Plan.md>): every open row in twelve passes, 75 tasks, each estimated | 21:21 | 21:25 | 0:04 | 63:25 of working time estimated, 44:24 to 82:26 |
+
