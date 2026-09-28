@@ -23,5 +23,16 @@ public interface IOrdnanceRecordVerifier
 /// <summary>A Gun's shots this fire phase and whether its last one kept its Multiple ROF (C2.24); cleared at every phase change.</summary>
 public sealed record OrdnanceShotRecord(string Gun, int Shots, bool RateOfFireKept);
 
-/// <summary>The Location a Gun has acquired and its Acquisition DRM, -1 or -2 (C6.5, C6.51).</summary>
-public sealed record GunAcquisition(string Gun, BoardLocation Location, int Level);
+/// <summary>
+/// The Location a Gun has acquired and its Acquisition DRM, -1 or -2 (C6.5, C6.51), and the Known units it is on (ruling R5.13): the counter
+/// follows them while they are in the Gun's LOS. With no units it stays on its Location.
+/// </summary>
+public sealed record GunAcquisition(string Gun, BoardLocation Location, int Level)
+{
+    public IReadOnlyList<string> Units { get; init; } = [];
+
+    public bool Equals(GunAcquisition? other) =>
+        other is not null && Gun == other.Gun && Location == other.Location && Level == other.Level && Units.SequenceEqual(other.Units, StringComparer.Ordinal);
+
+    public override int GetHashCode() => HashCode.Combine(Gun, Location, Level, Units.Count);
+}

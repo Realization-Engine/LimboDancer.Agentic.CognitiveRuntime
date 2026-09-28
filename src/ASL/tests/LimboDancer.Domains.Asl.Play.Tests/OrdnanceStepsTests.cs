@@ -189,7 +189,7 @@ public sealed class OrdnanceStepsTests : IDisposable
         var first = LastShot(before);
         Assert.Equal((8, 5, true, true), (first.ToHit!.ModifiedToHit, first.ToHit.FinalDr, first.ToHit.Hit, first.Gun!.RateOfFireKept));
         Assert.Equal(12, first.Hit!.Arithmetic!.ColumnFp);
-        Assert.Equal(new GunAcquisition("de-gun", BoardLocation.Parse("bd01:A5:0"), -1), Current.Acquisitions.Single());
+        Assert.Equal(new GunAcquisition("de-gun", BoardLocation.Parse("bd01:A5:0"), -1) { Units = ["r1"] }, Current.Acquisitions.Single());
         Assert.True(Is(Current.Find("de-gun")!, Conditions.PrepFire) && Is(Current.Unit("de-crew")!, Conditions.PrepFire));
 
         // The second shot has -1 Acquisition (C6.5): 3 and 4 = 6; the colored 3 loses the ROF.

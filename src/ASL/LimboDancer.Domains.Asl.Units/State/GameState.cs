@@ -74,6 +74,27 @@ public sealed record GameState(
     /// <summary>The Location each Gun has acquired and its Acquisition DRM (C6.5).</summary>
     public IReadOnlyList<GunAcquisition> Acquisitions { get; init; } = [];
 
+    /// <summary>The choice the game waits for (ruling R5.8); while one waits nothing else may happen.</summary>
+    public PendingChoice? Choice
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The answers given to the pending choices of a resolution not yet recorded (ruling R5.8), by key; the resolution's record must
+    /// declare exactly these, and clears them.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> ChoicesMade { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);
+
+    /// <summary>The sides faced with No Quarter (A20.3, A20.4; rulings R5.6 and R5.7): their units never surrender.</summary>
+    public IReadOnlyList<string> NoQuarter { get; init; } = [];
+
+    /// <summary>The sides whose ELR a Massacre has raised (A20.4): it is raised once only.</summary>
+    public IReadOnlyList<string> MassacreElrRaised { get; init; } = [];
+
+    /// <summary>The units whose CX counter was removed at the start of this MPh, which may not Double Time in it (A4.51, ruling R5.3).</summary>
+    public IReadOnlyList<string> NoDoubleTime { get; init; } = [];
+
     /// <summary>The stack moving now in the MPh, if any (unit step 22).</summary>
     public MovementState? Movement
     {

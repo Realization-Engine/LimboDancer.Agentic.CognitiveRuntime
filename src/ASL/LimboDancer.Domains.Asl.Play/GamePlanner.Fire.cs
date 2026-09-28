@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using LimboDancer.Dice;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Maps.Los;
@@ -154,14 +155,6 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.fire-melee: fire at a Location holding units in Melee or prisoners is not reviewed (A11.15, A20.54)");
         }
 
-        // A20.4: a unit that goes berserk with prisoners in its Location massacres them, which is not reviewed: FPF firers, whose NMC can
-        // reach Heat of Battle, may not share a Location with prisoners.
-        if (state.Phase == "mph" && firerIds.Any(id => state.Location(id)?.Location is { } at
-            && state.At(at).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && Is(unit, Conditions.Captured))))
-        {
-            return Refused(scope, label, expected, "play.fire-massacre: a firer shares its Location with prisoners, whom a berserk unit would massacre (A20.4, not reviewed)");
-        }
-
         // A8.3, A8.31: Subsequent First Fire and FPF use every usable MG the firer possesses.
         if (attack.FireKind is ScenarioA1FireCalculator.SubsequentFirstFire or ScenarioA1FireCalculator.FinalProtectiveFire
             && attack.Firers!.Any(item => !(item.Weapons?.Select(weapon => weapon.EquipmentId!).Order(StringComparer.Ordinal).ToArray() ?? [])
@@ -311,12 +304,23 @@ public sealed partial class GamePlanner
     /// it leaves.
     /// </summary>
     private void AddFireEvents(GameScope scope, string attemptId, long expected, string actor, GameState state, FireAttack facts, string targetSide,
-        int? step, List<GameEvent> events, Func<RollRequest, RollResult> draw)
+        int? step, List<GameEvent> events, Func<RollRequest, RollResult> draw, ResumedRolls? resumed = null)
     {
         var reference = FireReference.Value;
         var package = ScenarioA1FirePackage.Identity.ToString();
-        var rollIds = new Dictionary<string, string>(StringComparer.Ordinal);
+
+        // Ruling R5.8: the owners' options are asked for as the attack reaches them; a resumed attack starts from the rolls it drew.
+        facts = facts with
+        {
+            Choices = facts.Choices ?? new Dictionary<string, string>(StringComparer.Ordinal)
+        };
+        var rollIds = new Dictionary<string, string>(resumed?.RollIds ?? new Dictionary<string, string>(), StringComparer.Ordinal);
         var rolls = new FireRolls(null, null, null, null, null);
+        foreach (var (key, values) in resumed?.Values ?? [])
+        {
+            rolls = ApplyFireRoll(rolls, key, values);
+        }
+
         FireResolution resolution;
         while (true)
         {
@@ -327,6 +331,26 @@ public sealed partial class GamePlanner
             if (resolution.Disposition == FireResolution.Resolved)
             {
                 break;
+            }
+
+            // An option the attack reaches stops it until its owner answers (ruling R5.8).
+            if (resolution.Reasons is [{ } option] && option.StartsWith("asl.a1.fire.choice-missing:", StringComparison.Ordinal))
+            {
+                var choiceKey = option["asl.a1.fire.choice-missing:".Length..];
+                var resume = new JsonObject
+                {
+                    ["record"] = "fire",
+                    ["facts"] = JsonNode.Parse(JsonSerializer.Serialize(facts, LiveFire.Json)),
+                    ["rolls"] = RollNode(rollIds),
+                    ["targetSide"] = targetSide,
+                };
+                if (step is { } movementStep)
+                {
+                    resume["step"] = movementStep;
+                }
+
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "choice-pending", Pending(state, choiceKey, resume), package, null));
+                return;
             }
 
             // The pre-check leaves only missing rolls, asked for one at a time.
@@ -360,31 +384,7 @@ public sealed partial class GamePlanner
             rollIds[key] = rollId;
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled",
                 new DiceRolled(rollId, purpose, count, 6, drawn.Values, DiceRolled.SystemSource, actor), package, null));
-            Dictionary<string, int> Selection(IReadOnlyDictionary<string, int>? existing)
-            {
-                var next = existing?.ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal) ?? new(StringComparer.Ordinal);
-                foreach (var (id, index) in selected.Select((id, index) => (id, index)))
-                {
-                    next[id] = drawn.Values[index];
-                }
-
-                return next;
-            }
-
-            rolls = kind switch
-            {
-                "attack" => rolls with { Attack = drawn.Values },
-                "randomSelection" => rolls with { RandomSelection = Selection(rolls.RandomSelection) },
-                "weaponSelection" => rolls with { WeaponSelection = Selection(rolls.WeaponSelection) },
-                "firerSelection" => rolls with { FirerSelection = Selection(rolls.FirerSelection) },
-                "checks" => rolls with { Checks = Add(rolls.Checks, unit, drawn.Values) },
-                "leaderLoss" => rolls with { LeaderLoss = Add(rolls.LeaderLoss, unit, drawn.Values) },
-                "heatOfBattle" => rolls with { HeatOfBattle = Add(rolls.HeatOfBattle, unit, drawn.Values) },
-                "berserkCheck" => rolls with { BerserkChecks = Add(rolls.BerserkChecks, unit, drawn.Values) },
-                "crewCheck" => rolls with { CrewChecks = Add(rolls.CrewChecks, unit, drawn.Values) },
-                "unlikelyKill" => rolls with { UnlikelyKill = Add(rolls.UnlikelyKill, unit, drawn.Values[0]) },
-                _ => rolls with { WoundSeverity = Add(rolls.WoundSeverity, unit, drawn.Values[0]) },
-            };
+            rolls = ApplyFireRoll(rolls, key, drawn.Values);
         }
 
         // A12.13: concealed, hidden, and Dummy targets have their own column when known targets share the Location. A
@@ -428,6 +428,15 @@ public sealed partial class GamePlanner
             if (VehicleEffectEvent(vehicle) is { } payload)
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, payload.Type, payload.Payload, package, null, [fireId]));
+            }
+
+            // D5.341, D5.41 (ruling R5.18): a Recalled AFV on its way off the map that is immobilized is Abandoned by its crew.
+            if (vehicle.Result == FireVehicleEffect.Immobilized && state.Unit(vehicle.VehicleId) is { } stuck && MustLeave(stuck))
+            {
+                foreach (var (type, abandon) in AbandonEvents(stuck, attemptId))
+                {
+                    events.Add(Event(scope, attemptId, events.Count + 1, expected, type, abandon, package, null, [fireId]));
+                }
             }
         }
 
@@ -502,7 +511,7 @@ public sealed partial class GamePlanner
         // A15.5: a unit that surrendered to ADJACENT captors waits for the captor's choice, last, since nothing else happens until then.
         foreach (var effect in resolution.Effects.Concat(resolution.FirerEffects ?? []))
         {
-            if (!effect.Eliminated && effect.HeatOfBattle is { Result: HeatOfBattleOutcome.Surrender, Captors.Count: > 0 } surrender)
+            if (!effect.Eliminated && (effect.SecondHeatOfBattle ?? effect.HeatOfBattle) is { Result: HeatOfBattleOutcome.Surrender, Captors.Count: > 0 } surrender)
             {
                 var id = effect.FinalDefinitionId != effect.DefinitionId ? $"{attemptId}-{effect.UnitId}" : effect.UnitId;
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "surrender-pending", new SurrenderPending(id, surrender.Captors!), package, null, [fireId]));
@@ -617,16 +626,26 @@ public sealed partial class GamePlanner
             yield return own;
         }
 
-        // A15.21: a hero created by Heat of Battle, in the unit's Location, sharing its fire status; a hero created from a
-        // Fanatic unit is Fanatic (A10.8).
-        if (effect.HeatOfBattle?.HeroDefinitionId is { } hero && state.Unit(effect.UnitId) is { } creator)
+        // A15.21: a hero created by Heat of Battle, in the unit's Location, sharing its fire and movement status (ruling R5.11); a hero created
+        // from a Fanatic unit is Fanatic (A10.8). A second Heat of Battle DR may create a second hero (ruling R5.10).
+        if (state.Unit(effect.UnitId) is { } creator)
         {
-            yield return ("instance-created", new InstanceCreated(HeroOf(creator, hero, attemptId)));
+            var creatorId = effect.FinalDefinitionId != effect.DefinitionId && !effect.Eliminated ? $"{attemptId}-{effect.UnitId}" : effect.UnitId;
+            var alive = !effect.Eliminated;
+            if (effect.HeatOfBattle?.HeroDefinitionId is { } hero)
+            {
+                yield return ("instance-created", new InstanceCreated(HeroOf(creator, hero, attemptId)) { Creator = alive ? creatorId : null });
+            }
+
+            if (effect.SecondHeatOfBattle?.HeroDefinitionId is { } second)
+            {
+                yield return ("instance-created", new InstanceCreated(HeroOf(creator, second, attemptId, "hero-2")) { Creator = alive ? creatorId : null });
+            }
         }
     }
 
     /// <summary>A hero a unit creates (A15.21): unbroken and known, with the unit's fire markers and Fanaticism.</summary>
-    private static NewInstance HeroOf(UnitInstance creator, string hero, string attemptId)
+    private static NewInstance HeroOf(UnitInstance creator, string hero, string attemptId, string suffix = "hero")
     {
         var conditions = new Dictionary<string, ConditionState>(StringComparer.Ordinal)
         {
@@ -636,7 +655,7 @@ public sealed partial class GamePlanner
             [Conditions.Concealed] = ConditionState.False,
             [Conditions.Hidden] = ConditionState.False,
         };
-        foreach (var marker in new[] { Conditions.PrepFire, Conditions.FirstFire, Conditions.FinalFire, Conditions.Fanatic })
+        foreach (var marker in new[] { Conditions.PrepFire, Conditions.FirstFire, Conditions.FinalFire, Conditions.Fanatic, Conditions.Cx })
         {
             if (GameState.Condition(creator, marker) == ConditionState.True)
             {
@@ -644,7 +663,7 @@ public sealed partial class GamePlanner
             }
         }
 
-        return new NewInstance($"{attemptId}-{creator.Id}-hero", "asl:hero", hero, creator.Side, creator.Position, null, conditions);
+        return new NewInstance($"{attemptId}-{creator.Id}-{suffix}", "asl:hero", hero, creator.Side, creator.Position, null, conditions);
     }
 
     private static (string Type, EventPayload Payload)? EffectEvent(GameState state, FireUnitEffect effect, string attemptId, bool attackedWhileBroken)
@@ -749,6 +768,23 @@ public sealed partial class GamePlanner
         if (targetRead.Hex.Hexsides.Any(side => side.HexsideTerrain is not null || side.Cliff))
         {
             return (null, "play.fire-terrain: hexside terrain at the target is not reviewed");
+        }
+
+        // B15.6 (ruling R5.19): grain is Open Ground outside June to September, where FFMO applies to a unit moving in it; with no scenario
+        // month, fire at a moving unit in grain is not decided.
+        if (terrain == "grain")
+        {
+            if (state.ScenarioMonth is not { } month)
+            {
+                if (state.Phase == "mph")
+                {
+                    return (null, "play.fire-grain: grain is Open Ground outside its season, which the game does not name, so FFMO there is not decided (B15.6)");
+                }
+            }
+            else if (month is < 6 or > 9)
+            {
+                terrain = "open-ground";
+            }
         }
 
         if (attack.FireKind == ScenarioA1FireCalculator.ResidualFire)

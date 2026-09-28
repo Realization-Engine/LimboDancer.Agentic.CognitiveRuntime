@@ -110,6 +110,12 @@ public static class ScenarioA1CloseCombatCalculator
             drm.Add(new FireModifier("berserk", 1m, "A11.4"));
         }
 
+        // A4.51, A11.4 (ruling R5.2): +1 when any of the force is CX.
+        if (Any(unit => unit.Cx == true))
+        {
+            drm.Add(new FireModifier("cx", 1m, "A4.51"));
+        }
+
         if (berserk || Any(unit => Inexperienced(unit, reference)))
         {
             drm.Add(new FireModifier("lax", 1m, "A11.18"));
@@ -586,6 +592,13 @@ public static class ScenarioA1CloseCombatCalculator
                     // A11.16: the -2 against a broken unit applies to it alone (as A4.8 EX reads a status DRM in CC); A11.2: -2 against a
                     // withdrawing unit, +1 for each friendly unit in the Melee not withdrawing.
                     List<FireModifier> own = defender.Facts.Broken == true ? [new FireModifier("vs-broken", -2m, "A11.16")] : [];
+
+                    // A4.51 (ruling R5.2): -1 to a CC attack against a CX unit, for that unit alone.
+                    if (defender.Facts.Cx == true)
+                    {
+                        own.Add(new FireModifier("vs-cx", -1m, "A4.51"));
+                    }
+
                     if (defender.Facts.WithdrawingTo is not null)
                     {
                         own.Add(new FireModifier("vs-withdrawing", -2m, "A11.2"));
@@ -790,6 +803,12 @@ public static class ScenarioA1CloseCombatCalculator
             foreach (var unit in attackers.Where(unit => unit.IsHeroType && unit.Id != attack.Director))
             {
                 drm.Add(new FireModifier("heroic:" + unit.Id, -1m, "A15.24"));
+            }
+
+            // A4.51 (ruling R5.2): +1 to a CC attack a CX unit makes, once however many do.
+            if (attackers.FirstOrDefault(unit => unit.Facts.Cx == true) is { } exhausted)
+            {
+                drm.Add(new FireModifier("cx:" + exhausted.Id, 1m, "A4.51"));
             }
 
             if (extra.TryGetValue(index, out var leader) && !berserk)

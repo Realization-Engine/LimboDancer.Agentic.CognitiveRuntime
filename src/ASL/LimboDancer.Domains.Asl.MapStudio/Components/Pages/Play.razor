@@ -103,6 +103,24 @@
             <input id="new-second-elr" value="@secondElr" @onchange="@(args => secondElr = args.Value as string ?? string.Empty)" size="2" /> second side
             <span class="muted">the scenario's Experience Level Rating (A19.1), 0 to 5; fire needs the target side's</span>
         </span>
+        <label for="new-first-edge">Friendly Board Edge</label>
+        <span>
+            <select id="new-first-edge" value="@firstEdge" @onchange="@(args => firstEdge = args.Value as string ?? string.Empty)">
+                <option value="">not named</option>
+                @foreach (var edge in Edges)
+                {
+                    <option value="@edge">@edge</option>
+                }
+            </select> @firstSide,
+            <select id="new-second-edge" value="@secondEdge" @onchange="@(args => secondEdge = args.Value as string ?? string.Empty)">
+                <option value="">not named</option>
+                @foreach (var edge in Edges)
+                {
+                    <option value="@edge">@edge</option>
+                }
+            </select> @secondSide
+            <span class="muted">the map edge each side's Recalled vehicles leave by (A20.53, D5.341)</span>
+        </span>
         <label for="new-month">Month</label>
         <span>
             <select id="new-month" value="@newMonth" @onchange="@(args => newMonth = args.Value as string ?? string.Empty)">
@@ -112,7 +130,7 @@
                     <option value="@month">@CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(month)</option>
                 }
             </select>
-            <span class="muted">grain is a Hindrance only from June to September (B15.2)</span>
+            <span class="muted">grain is a Hindrance only from June to September (B15.2), and costs Infantry 1½ MF only from April to September (B15.6)</span>
         </span>
     </div>
 }
@@ -300,6 +318,7 @@ else if (state is not null)
             }
             <label>To <input id="move-to" value="@moveTo" @onchange="@(args => moveTo = args.Value as string ?? string.Empty)" size="12" /></label>
             <label><input id="move-assault" type="checkbox" checked="@moveAssault" @onchange="@(args => moveAssault = args.Value is true)" /> Assault Movement</label>
+            <label title="Double Time adds 2 MF (1 after the unit has spent MF) and makes the unit CX (A4.5); not for a unit that is CX, or whose CX counter came off at the start of this MPh (A4.51), nor with Assault Movement (A4.61)."><input id="move-double-time" type="checkbox" checked="@moveDoubleTime" @onchange="@(args => moveDoubleTime = args.Value is true)" /> Double Time</label>
             <button id="propose-move" disabled="@(moveUnits.Count == 0 || moveTo.Trim().Length == 0)" @onclick="ProposeMove">Propose: move</button>
             <button id="propose-pass" disabled="@(state.Movement is not { WindowOpen: true })" @onclick='@(() => ProposeSimple(GameActions.PassFire, "pass"))'>Propose: the DEFENDER passes</button>
             <button id="propose-end-move" disabled="@(state.Movement is not { WindowOpen: false })" @onclick="ProposeEndMove">Propose: end the move@(EndingSome ? " of the checked units" : "")</button>
@@ -344,6 +363,16 @@ else if (state is not null)
                         <button class="vehicle-enter" data-to="@to" disabled="@(cost is null)" title="@(bar ?? "")" @onclick="@(() => ProposeVehicleStep("enter", to: to.ToString()))">Propose: enter @to@(cost is { } half ? $" ({HalfMpText(half)} MP)" : "")</button>
                     }
                     <button id="vehicle-stop" @onclick='@(() => ProposeVehicleStep("stop"))'>Propose: stop (1 MP)</button>
+                    @foreach (var exit in Live.Planner.VehicleExits(state, chosen))
+                    {
+                        var exitEdge = Live.Planner.ExitEdge(state, chosen, exit);
+                        <button class="vehicle-exit" data-direction="@exit.Direction" data-edge="@exitEdge" @onclick='@(() => ProposeVehicleStep("exit", edge: exitEdge))'>Propose: exit the map by the @exitEdge edge (@HalfMpText(exit.HalfMp) MP)</button>
+                    }
+                    <label title="When the vehicle ends its move in Motion with MP left, the hex it wished to enter next decides whether it could (D2.4).">Wished to enter next <input id="vehicle-intended" value="@vehicleIntended" @onchange="@(args => vehicleIntended = args.Value as string ?? string.Empty)" size="12" /></label>
+                    }
+                    @if (GameState.Condition(chosen, Conditions.Recalled) == ConditionState.True)
+                    {
+                        <span id="vehicle-recall" class="fail">Recalled: it leaves by the @(state.Side(chosen.Side)?.FriendlyEdge ?? "(not named)") edge by a shortest route, in Motion (D5.341).</span>
                     }
                 }
             </div>
@@ -442,7 +471,7 @@ else if (state is not null)
         @if (ccLocation.Length > 0)
         {
             <div class="toolbar" id="cc-stacking">
-                @foreach (var smc in CloseCombatUnits.Where(unit => Library.Vocabulary.IsA(unit.Kind, "asl:smc")))
+                @foreach (var smc in CloseCombatUnits.Where(unit => Library.Vocabulary.IsA(unit.Kind, "asl:smc") && (Viewer.IsAdjudicator || viewAs == unit.Side)))
                 {
                     <label>
                         @smc.Id stacked with
@@ -478,7 +507,7 @@ else if (state is not null)
             {
                 <p class="muted" id="cc-ambush-first">Infantry advanced into woods or a building here: roll for Ambush before any attack is declared (A11.4).</p>
             }
-            @foreach (var side in CloseCombatSides)
+            @foreach (var side in CloseCombatSides.Where(side => Viewer.IsAdjudicator || viewAs == side))
             {
                 <div class="toolbar cc-side" data-side="@side">
                     <span>@side@(side == state.PhasingSide ? " (ATTACKER)" : "")</span>
@@ -519,15 +548,47 @@ else if (state is not null)
             }
         }
     }
+    @if (state.Choice is { } choice)
+    {
+        <div id="play-choice" class="fail" data-key="@choice.Key">
+            <p>The @choice.Side side answers before play goes on: @GamePlanner.DescribeChoice(choice) (ruling R5.8).</p>
+            @if (Viewer.IsAdjudicator || viewAs == choice.Side)
+            {
+                @foreach (var option in choice.Options)
+                {
+                    <button class="choose" data-option="@option" @onclick="@(() => ProposeChoose(choice.Key, option))">Propose: @ChoiceOptionText(choice, option)</button>
+                }
+            }
+            else
+            {
+                <p class="muted">Waiting for the @choice.Side side to answer.</p>
+            }
+        </div>
+    }
     @foreach (var surrender in state.PendingSurrenders)
     {
+        var captorSide = surrender.Captors.Select(state.Unit).OfType<UnitInstance>().Select(unit => unit.Side).FirstOrDefault();
         <p class="fail" data-surrender="@surrender.Unit">
-            @surrender.Unit has surrendered (A15.5); the captor's side chooses the Guard before anything else happens.
-            @foreach (var captor in surrender.Captors)
+            @surrender.Unit has surrendered (A15.5); the captor's side chooses the Guard, or rejects the surrender (A20.3), before anything else happens.
+            @if (Viewer.IsAdjudicator || viewAs == captorSide)
             {
-                <button class="take-prisoner" data-captor="@captor" @onclick="@(() => ProposeTakePrisoner(surrender.Unit, captor))">Propose: @captor takes @surrender.Unit</button>
+                @foreach (var captor in surrender.Captors)
+                {
+                    <button class="take-prisoner" data-captor="@captor" @onclick="@(() => ProposeTakePrisoner(surrender.Unit, captor))">Propose: @captor takes @surrender.Unit</button>
+                }
+                <button class="reject-surrender" data-unit="@surrender.Unit" @onclick="@(() => ProposeRejectSurrender(surrender.Unit))">Propose: reject the surrender (No Quarter)</button>
             }
         </p>
+    }
+    @if (MassacringSide is { } massacring && (Viewer.IsAdjudicator || viewAs == massacring) && Massacres(massacring).ToList() is { Count: > 0 } massacres)
+    {
+        <div class="toolbar" id="play-massacres">
+            <span class="muted">Massacre (A20.4): a Russian or berserk unit eliminates a prisoner in its Location, as if using a SW; the prisoner's side is faced with No Quarter.</span>
+            @foreach (var (unit, prisoner) in massacres)
+            {
+                <button class="massacre" data-unit="@unit.Id" data-prisoner="@prisoner.Id" @onclick="@(() => ProposeMassacre(unit.Id, prisoner.Id))">Propose: @unit.Id massacres @prisoner.Id</button>
+            }
+        </div>
     }
     @if (FiringSide is { } firing)
     {
@@ -871,7 +932,7 @@ else if (state is not null)
                         }
                     </td>
                     <td>@(LiveFire.IsVehicle(unit) ? $"{HalfMpText(GamePlanner.VehicleHalfMp(unit).Spent)} of {HalfMpText(GamePlanner.VehicleHalfMp(unit).Allotment)} MP" : unit.MfSpent.ToString(CultureInfo.InvariantCulture))@(unit.MovementEnded ? ", movement ended" : "")</td>
-                    <td>@string.Join(", ", unit.Conditions.Where(pair => pair.Value == ConditionState.True).Select(pair => pair.Key.Replace("asl:", string.Empty, StringComparison.Ordinal)).Concat(Custody(unit)).Concat(VehicleNotes(unit)))</td>
+                    <td>@string.Join(", ", unit.Conditions.Where(pair => pair.Value == ConditionState.True).Select(pair => ConditionText(pair.Key)).Concat(Custody(unit)).Concat(VehicleNotes(unit)))</td>
                 </tr>
             }
             @foreach (var presence in SealedPresences)
@@ -941,6 +1002,11 @@ else if (state is not null)
     private Proposal? pending;
     private string viewAs = string.Empty;
     private string firstElr = string.Empty;
+    private string firstEdge = string.Empty;
+    private string secondEdge = string.Empty;
+    private static readonly string[] Edges = ["top", "bottom", "left", "right"];
+    private bool moveDoubleTime;
+    private string vehicleIntended = string.Empty;
     private string secondElr = string.Empty;
     private string newMonth = string.Empty;
     private string fireFrom = string.Empty;
@@ -963,18 +1029,30 @@ else if (state is not null)
     private IEnumerable<UnitInstance> VehicleCandidates => state is null || state.Phase != "mph" ? []
         : state.Movement is { } moving ? moving.Vehicle ? moving.Members.Select(state.Unit).OfType<UnitInstance>() : []
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && LiveFire.IsVehicle(unit) && !unit.MovementEnded
-            && new[] { Conditions.Immobilized, Conditions.Stunned, Conditions.Recalled, Conditions.PrepFire }.All(condition => GameState.Condition(unit, condition) != ConditionState.True))
+            && GamePlanner.MayStartVehicleMove(unit))
             .OrderBy(unit => unit.Id, StringComparer.Ordinal);
 
     /// <summary>The phasing side's AFVs whose crew may button up or expose itself (D5.33): not Stunned or Recalled.</summary>
     private IEnumerable<UnitInstance> ButtonUpCandidates => state is null ? []
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && GamePlanner.IsArmoredVehicle(unit)
-            && GameState.Condition(unit, Conditions.Stunned) != ConditionState.True && GameState.Condition(unit, Conditions.Recalled) != ConditionState.True
+            && GamePlanner.MayChangeExposure(unit)
             && !(state.Phase == "mph" && GameState.Condition(unit, Conditions.PrepFire) == ConditionState.True)
-            && (state.Movement is not { WindowOpen: true } open || !open.Movers.Contains(unit.Id, StringComparer.Ordinal)))
+            && (state.Movement is not { WindowOpen: true } open || !open.Movers.Contains(unit.Id, StringComparer.Ordinal))
+            && !ExposureChanged.Contains(unit.Id))
             .OrderBy(unit => unit.Id, StringComparer.Ordinal);
 
-    private Task ProposeVehicleStep(string kind, string? to = null, string? facing = null)
+    /// <summary>The AFVs whose BU counter was placed or removed since the phase began, once per phase (D5.33).</summary>
+    private HashSet<string> ExposureChanged
+    {
+        get
+        {
+            var events = history?.Events ?? [];
+            var since = events.Select((item, index) => (item, index)).LastOrDefault(pair => pair.item.Payload is PhaseChanged or GameStarted).index;
+            return [.. events.Skip(since).Where(item => item.Type == "crew-exposure-changed").Select(item => item.Payload).OfType<ConditionsChanged>().Select(item => item.Id)];
+        }
+    }
+
+    private Task ProposeVehicleStep(string kind, string? to = null, string? facing = null, string? edge = null)
     {
         var arguments = new Dictionary<string, object>
         {
@@ -992,6 +1070,11 @@ else if (state is not null)
         if (facing is not null)
         {
             arguments["facing"] = facing;
+        }
+
+        if (edge is not null)
+        {
+            arguments["edge"] = edge;
         }
 
         return Propose(GameActions.MoveVehicle, JsonSerializer.SerializeToElement(arguments));
@@ -1067,9 +1150,34 @@ else if (state is not null)
     private static bool IsBroken(UnitInstance unit) => GameState.Condition(unit, Conditions.Broken) == ConditionState.True;
 
     /// <summary>A unit as a player reads it: its id, its definition, and its state in CC.</summary>
-    private static string UnitLabel(UnitInstance unit) => $"{unit.Id} ({unit.Definition?.Definition}"
+    private string UnitLabel(UnitInstance unit) => $"{unit.Id} ({PrintedValues(unit) ?? unit.Definition?.Definition}"
         + string.Concat(new[] { Conditions.Broken, Conditions.Pinned, Conditions.Berserk, Conditions.Melee }
             .Where(name => GameState.Condition(unit, name) == ConditionState.True).Select(name => ", " + name.Replace("asl:", "", StringComparison.Ordinal))) + ")";
+
+    /// <summary>A condition as the Units table names it: the flipped STUN counter is "Stun +1" (D5.34).</summary>
+    private static string ConditionText(string condition) => condition == Conditions.StunRecovery ? "Stun +1" : condition.Replace("asl:", string.Empty, StringComparison.Ordinal);
+
+    /// <summary>
+    /// A personnel counter's printed values, as players name it: a MMC or hero by FP, range, and morale ("4-6-7"), a leader by morale and
+    /// leadership ("8-1", "7-0", "9+1"). Null when the catalog does not print them.
+    /// </summary>
+    private string? PrintedValues(UnitInstance unit)
+    {
+        if (unit.Definition is not { } reference || Definitions.FirstOrDefault(definition => definition.Id == reference.Definition) is not { } definition)
+        {
+            return null;
+        }
+
+        int? Value(string name) => definition.Printed("front", name)?.Value?.Number;
+        if (Library.Vocabulary.IsA(unit.Kind, "asl:leader"))
+        {
+            return Value("asl:morale") is { } morale && Value("asl:leadership") is { } leadership
+                ? $"{morale}{(leadership > 0 ? "+" : "-")}{Math.Abs(leadership)}"
+                : null;
+        }
+
+        return Value("asl:firepower") is { } firepower && Value("asl:range") is { } range && Value("asl:morale") is { } level ? $"{firepower}-{range}-{level}" : null;
+    }
 
     /// <summary>The units held in Melee in the CC Location that may withdraw (A11.2: not pinned, berserk, Disrupted, or a prisoner), with their destinations.</summary>
     private IEnumerable<(UnitInstance Unit, IReadOnlyList<BoardLocation> Destinations)> WithdrawalUnits => state is null || ccLocation.Length == 0
@@ -1233,6 +1341,51 @@ else if (state is not null)
         gameId, attemptId = Attempt("cap"), expectedRevision = (long)history!.Events.Count, unitId = unit, captorId = captor,
     }));
 
+    private Task ProposeRejectSurrender(string unit) => Propose(GameActions.TakePrisoner, JsonSerializer.SerializeToElement(new
+    {
+        gameId, attemptId = Attempt("reject"), expectedRevision = (long)history!.Events.Count, unitId = unit, reject = true,
+    }));
+
+    private Task ProposeChoose(string key, string option) => Propose(GameActions.Choose, JsonSerializer.SerializeToElement(new
+    {
+        gameId, attemptId = Attempt("choose"), expectedRevision = (long)history!.Events.Count, key, option,
+    }));
+
+    private Task ProposeMassacre(string unit, string prisoner) => Propose(GameActions.Massacre, JsonSerializer.SerializeToElement(new
+    {
+        gameId, attemptId = Attempt("massacre"), expectedRevision = (long)history!.Events.Count, unitId = unit, prisonerId = prisoner,
+    }));
+
+    /// <summary>The side whose own fire phase it is, which may massacre (A20.4): the phasing side in the PFPh and AFPh, the other in the DFPh.</summary>
+    private string? MassacringSide => state is null ? null
+        : state.Phase is "pfph" or "afph" ? state.PhasingSide
+        : state.Phase == "dfph" ? state.Sides.FirstOrDefault(side => side.Id != state.PhasingSide)?.Id : null;
+
+    /// <summary>An option of a pending choice in words: take or decline, or the Location that keeps an Acquisition.</summary>
+    private static string ChoiceOptionText(PendingChoice choice, string option) => (choice.Kind, option) switch
+    {
+        (_, ChoicePending.Take) => "take it",
+        (_, ChoicePending.Decline) => "decline it",
+        (ChoicePending.Acquisition, _) => $"keep it on {option}",
+        _ => option,
+    };
+
+    /// <summary>
+    /// The firing side's units that may offer a Massacre (A20.4): Russian or berserk personnel not in Melee sharing a Location with an enemy
+    /// prisoner. The planner decides the rest.
+    /// </summary>
+    private IEnumerable<(UnitInstance Unit, UnitInstance Prisoner)> Massacres(string side) => state is null ? []
+        : from unit in state.Units
+          where unit.Status == InstanceStatus.Active && unit.Side == side && Library.Vocabulary.IsA(unit.Kind, "asl:personnel")
+              && GameState.Condition(unit, Conditions.Captured) != ConditionState.True && GameState.Condition(unit, Conditions.Melee) != ConditionState.True
+              && (GameState.Condition(unit, Conditions.Berserk) == ConditionState.True || (unit.Definition is { } reference && Definitions.FirstOrDefault(definition => definition.Id == reference.Definition)?.Nationality == "russian"))
+          let at = state.Location(unit.Id)?.Location
+          where at is not null
+          from prisoner in state.At(at).OfType<UnitInstance>()
+          where prisoner.Status == InstanceStatus.Active && prisoner.Side != side && GameState.Condition(prisoner, Conditions.Captured) == ConditionState.True
+          orderby unit.Id, prisoner.Id
+          select (unit, prisoner);
+
     /// <summary>
     /// The CC and Ambush records the viewer may see, latest first, in words: each attack's FP, odds, Kill Number, DR with its DRM,
     /// and each defender's result (A11.11), the leaders an Original 2 created (A18.12), and the SW lost (A11.13).
@@ -1272,14 +1425,31 @@ else if (state is not null)
                     var lost = resolution.WeaponEffects.Where(weapon => weapon.Eliminated).Select(weapon => $"{weapon.EquipmentId} lost (dr {weapon.Dr}, A11.13)");
                     var ended = resolution.Effects.Where(effect => effect.BerserkEnded == true).Select(effect => $"{effect.UnitId} is no longer berserk (A15.46)");
                     var withdrew = resolution.Effects.Where(effect => effect.WithdrewTo is not null).Select(effect => $"{effect.UnitId} withdraws to {effect.WithdrewTo} (A11.2)");
+                    var left = UnpossessedAfter(item, resolution).Select(weapon => $"{weapon} is left unpossessed in {combat.Location} (A11.13)");
                     var text = resolution.Attacks.Count == 0 ? "no attacks" : string.Join(" | ", attacks);
-                    records.Add((item.EventId, $"CC in {combat.Location}, {combat.Round} round: {string.Join("; ", new[] { text }.Concat(lost).Concat(ended).Concat(withdrew))}"));
+                    records.Add((item.EventId, $"CC in {combat.Location}, {combat.Round} round: {string.Join("; ", new[] { text }.Concat(lost).Concat(ended).Concat(withdrew).Concat(left))}"));
                 }
             }
 
             records.Reverse();
             return records;
         }
+    }
+
+    /// <summary>The SW the units a CC round eliminated possessed before it, less those it eliminated: they stay in the Location unpossessed.</summary>
+    private IEnumerable<string> UnpossessedAfter(GameEvent combat, CloseCombatResolution resolution)
+    {
+        var eliminated = resolution.Effects.Where(effect => effect.Eliminated).Select(effect => effect.UnitId).ToHashSet(StringComparer.Ordinal);
+        if (eliminated.Count == 0 || history is null)
+        {
+            return [];
+        }
+
+        var before = Live.Planner.Replay([.. history.Events.TakeWhile(item => item.EventId != combat.EventId)]).Current;
+        var lost = resolution.WeaponEffects.Where(weapon => weapon.Eliminated).Select(weapon => weapon.EquipmentId).ToHashSet(StringComparer.Ordinal);
+        return before is null ? []
+            : before.Equipment.Where(weapon => weapon.Status == InstanceStatus.Active && weapon.Holding is { Role: HoldingRole.Possessed } holding
+                && eliminated.Contains(holding.Holder) && !lost.Contains(weapon.Id)).Select(weapon => weapon.Id).Order(StringComparer.Ordinal);
     }
 
     private static string DefenderText(CloseCombatDefenderResult defender) => defender.Result switch
@@ -1611,13 +1781,18 @@ else if (state is not null)
             arguments["unitIds"] = moveUnits.Order(StringComparer.Ordinal).ToArray();
         }
 
+        if (state?.Movement is { Vehicle: true } && vehicleIntended.Trim().Length > 0)
+        {
+            arguments["intended"] = vehicleIntended.Trim();
+        }
+
         return Propose(GameActions.EndMove, JsonSerializer.SerializeToElement(arguments));
     }
 
     private Task ProposeMove() => Propose(GameActions.Move, JsonSerializer.SerializeToElement(new
     {
         gameId, attemptId = Attempt("move"), expectedRevision = (long)history!.Events.Count, unitIds = moveUnits.Order(StringComparer.Ordinal).ToArray(),
-        to = moveTo.Trim(), assault = moveAssault,
+        to = moveTo.Trim(), assault = moveAssault, doubleTime = moveDoubleTime,
     }));
 
     /// <summary>An action that names only the game: the DEFENDER's pass, or the end of the moving stack's move.</summary>
@@ -1983,6 +2158,7 @@ else if (state is not null)
         moveUnits.Clear();
         moveTo = string.Empty;
         moveAssault = false;
+        moveDoubleTime = false;
         rallyUnit = string.Empty;
         rallyLeader = string.Empty;
         repairWeapon = string.Empty;
@@ -2049,6 +2225,8 @@ else if (state is not null)
         repairWeapon = string.Empty;
         moveTo = string.Empty;
         moveAssault = false;
+        moveDoubleTime = false;
+        vehicleIntended = string.Empty;
     }
 
     private void Refresh()
@@ -2209,7 +2387,7 @@ else if (state is not null)
         var start = new Dictionary<string, object?>
         {
             ["label"] = newLabel, ["catalog"] = catalog, ["boards"] = SetupBoards(), ["map"] = newMap, ["firstSide"] = firstSide,
-            ["sides"] = new[] { Side(firstSide, firstElr), Side(secondSide, secondElr) },
+            ["sides"] = new[] { Side(firstSide, firstElr, firstEdge), Side(secondSide, secondElr, secondEdge) },
         };
         if (int.TryParse(newMonth, CultureInfo.InvariantCulture, out var month))
         {
@@ -2220,12 +2398,17 @@ else if (state is not null)
     }
 
     /// <summary>A side of a new game, with its ELR when one is given (A19.1).</summary>
-    private static Dictionary<string, object> Side(string id, string elr)
+    private static Dictionary<string, object> Side(string id, string elr, string edge)
     {
         var side = new Dictionary<string, object> { ["id"] = id, ["nationality"] = id };
         if (int.TryParse(elr, CultureInfo.InvariantCulture, out var value))
         {
             side["elr"] = value;
+        }
+
+        if (edge.Length > 0)
+        {
+            side["friendlyEdge"] = edge;
         }
 
         return side;
@@ -2288,6 +2471,12 @@ else if (state is not null)
             {
                 moveTo = string.Empty;
                 moveAssault = false;
+                moveDoubleTime = false;
+            }
+            else if (proposal.Action == GameActions.Move)
+            {
+                // A4.5: Double Time is declared for one step, not kept for the next.
+                moveDoubleTime = false;
             }
             else if (proposal.Action == GameActions.Rally)
             {

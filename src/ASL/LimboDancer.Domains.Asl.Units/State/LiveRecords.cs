@@ -60,13 +60,20 @@ public sealed record MovementStepped(IReadOnlyList<string> Movers, BoardLocation
     {
         get; init;
     }
+
+    /// <summary>Whether the movers Double Time with this step (A4.5, ruling R5.1): each becomes CX.</summary>
+    public bool DoubleTime
+    {
+        get; init;
+    }
 }
 
 /// <summary>
 /// <c>vehicle-step</c>: one MP expenditure of a moving vehicle in its MPh (D2.1, unit step 25): <c>start</c> (D2.12), <c>turn</c> one
-/// hexspine to <paramref name="Facing"/> (D2.11), <c>enter</c> the ADJACENT Location <paramref name="At"/> in its VCA (D2.11), or
-/// <c>stop</c> (D2.13); <paramref name="HalfMp"/> is its cost in half MP, so the ½ MP road rate is exact (D2.16). Like a movement step it
-/// opens the DEFENDER's window (A8.1).
+/// hexspine to <paramref name="Facing"/> (D2.11), <c>enter</c> the ADJACENT Location <paramref name="At"/> in its VCA (D2.11),
+/// <c>stop</c> (D2.13), <c>remain</c> to spend the MP left at the end of its move in its hex (D2.1, ruling R5.15), or <c>exit</c> the
+/// playing area from its edge hex <paramref name="At"/> (A2.6, D5.341); <paramref name="HalfMp"/> is its cost in half MP, so the ½ MP road
+/// rate is exact (D2.16). Like a movement step it opens the DEFENDER's window (A8.1), except an exit, after which the vehicle is gone.
 /// </summary>
 public sealed record VehicleStepped(string Vehicle, string Kind, BoardLocation At, UnitFacing? Facing, int HalfMp, int Step) : EventPayload
 {
@@ -74,6 +81,8 @@ public sealed record VehicleStepped(string Vehicle, string Kind, BoardLocation A
     public const string Turn = "turn";
     public const string Enter = "enter";
     public const string Stop = "stop";
+    public const string Remain = "remain";
+    public const string Exit = "exit";
 }
 
 /// <summary><c>movement-window-closed</c>: the DEFENDER passes on the stack's latest MF expenditure (A8.11).</summary>
@@ -111,6 +120,12 @@ public sealed record MovementState(IReadOnlyList<string> Movers, BoardLocation L
     }
 
     public bool Stopped
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the vehicle spent its MP left in its final hex (ruling R5.15): its move ends when the DEFENDER's window closes.</summary>
+    public bool Ending
     {
         get; init;
     }

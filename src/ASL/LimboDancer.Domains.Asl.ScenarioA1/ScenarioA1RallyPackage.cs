@@ -8,7 +8,10 @@ public sealed class ScenarioA1RallyReference
 {
     private ScenarioA1RallyReference(IReadOnlyDictionary<string, FireDefinition> definitions) => Definitions = definitions;
 
-    public IReadOnlyDictionary<string, FireDefinition> Definitions { get; }
+    public IReadOnlyDictionary<string, FireDefinition> Definitions
+    {
+        get;
+    }
 
     internal static ScenarioA1RallyReference Load(JsonElement matrix)
     {
@@ -23,13 +26,13 @@ public sealed class ScenarioA1RallyReference
 /// </summary>
 public sealed class ScenarioA1RallyPackage : IDomainPackageResolver
 {
-    public const string ManifestSha256 = "9a1f5173c10c54ca75eb187d9426acf7ba33f179c371e8bd5e28ca90e1e5e7a7";
-    public const string MatrixSha256 = "63931938cd9a1dc5c342be82b921c4d9d6059508cec294b0418928504a079467";
+    public const string ManifestSha256 = "f8e874292f13730edb200a2f8ac0413df194e22052c5cc570e2abee2ecdd55fa";
+    public const string MatrixSha256 = "23a495567b198769e126d2dd0293294ceafae189f4854ca3fad76de5085a7e0a";
     public static readonly DomainPackageRef Identity = new(new DomainId("asl"), "scenario-a1-rally", "sha256:" + ManifestSha256);
 
     private static readonly string[] Cases =
     [
-        "A1-rally-resolved", "A1-rally-phase-outside", "A1-rally-unit-outside", "A1-rally-already-attempted", "A1-rally-leader-outside", "A1-rally-self-rally-refused", "A1-rally-terrain-outside", "A1-rally-capability-unrecorded", "A1-rally-reduction-counter-missing", "A1-rally-field-promotion-unreviewed", "A1-rally-roll-missing",
+        "A1-rally-resolved", "A1-rally-phase-outside", "A1-rally-unit-outside", "A1-rally-already-attempted", "A1-rally-leader-outside", "A1-rally-self-rally-refused", "A1-rally-terrain-outside", "A1-rally-capability-unrecorded", "A1-rally-reduction-counter-missing", "A1-rally-field-promotion-unreviewed", "A1-rally-roll-missing", "A1-rally-owner-options", "A1-rally-no-quarter",
     ];
 
     private static readonly string[] PinnedDigests = ["sourcePdfSha256", "catalogSha256"];
@@ -70,7 +73,10 @@ public sealed class ScenarioA1RallyPackage : IDomainPackageResolver
     }
 
     /// <summary>The pinned catalog values.</summary>
-    public ScenarioA1RallyReference Reference { get; }
+    public ScenarioA1RallyReference Reference
+    {
+        get;
+    }
 
     public ValueTask<DomainPackageResolution> ResolveAsync(DomainPackageRef requested, CancellationToken cancellationToken = default)
     {

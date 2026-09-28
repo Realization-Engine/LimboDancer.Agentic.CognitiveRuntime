@@ -320,6 +320,20 @@
       "startLine": 1440,
       "fragmentId": "asl-fragment:sha256:f0853fb906e18dc51d4e1e3adf7b33e75281d9b51688ff03e30b0bfcff3faa0d",
       "contentSha256": "92000a26fca119e62f6d9a04c61f3940a80d9da99b464c9a6b3d89fd64a766fc"
+    },
+    {
+      "ruleId": "A20.3",
+      "physicalPdfPage": 87,
+      "startLine": 1416,
+      "fragmentId": "asl-fragment:sha256:c4251e0eb8cec3b1fc2490c9813cc26f5783b477577afb35e05c85cdbe45ff97",
+      "contentSha256": "51b548532f91004f11b20c181da4e3fa6a4ea441ed1bf9b63d236df153a32bdb"
+    },
+    {
+      "ruleId": "A15.5",
+      "physicalPdfPage": 84,
+      "startLine": 1276,
+      "fragmentId": "asl-fragment:sha256:06b9316b192bfd6f4fb7539c26dea9801dc22a3361291bbc321c46aca9ee089b",
+      "contentSha256": "146f69690ccca4cd94f2521a5759af2cbf79458171ef686d5261b09611ce8f85"
     }
   ],
   "rulings": {
@@ -337,7 +351,9 @@
     "capabilityUnrecorded": "self-rally-relying-on-capability-the-catalog-does-not-record-is-indeterminate",
     "berserk": "a-berserk-unit-has-morale-level-10-plus-1-fanatic-never-lowered-A15.42; a-failed-mc-casualty-reduces-it; an-original-12-eliminates-a-berserk-mmc-and-wounds-a-berserk-leader-as-if-wounded-A10.31 (R30.3); never-broken-or-pinned-no-ptc-llmc-or-lltc-and-no-leadership-from-a-friendly-leader-A15.42; a-leader-berserk-before-the-attack-forfeits-his-leadership-A15.41; a-leader-who-goes-berserk-takes-each-other-friendly-unit-in-his-location-subject-to-heat-of-battle-by-a-ntc-with-his-leadership-drm-A15.41 (R30.4); a-berserk-unit-does-not-fire (R30.5)",
     "surrender": "the-captors-are-the-adjacent-known-good-order-armed-enemy-infantry-with-guard-capacity-read-by-the-planner-A15.5-A20.51; the-captors-side-chooses-the-guard; the-surrender-is-always-accepted-no-quarter-not-offered (R30.7)",
-    "mapFacts": "the-known-enemy-in-los-and-the-captors-are-the-planners-map-reads-taken-as-recorded-on-replay; they-are-required-before-any-roll-when-heat-of-battle-can-reach-a-unit"
+    "mapFacts": "the-known-enemy-in-los-and-the-captors-are-the-planners-map-reads-taken-as-recorded-on-replay; they-are-required-before-any-roll-when-heat-of-battle-can-reach-a-unit",
+    "ownerOptions": "with-the-rallying-sides-answers-declared-the-leader-creation-dr-after-a-self-rally-original-2-and-a-battle-hardening-that-would-change-the-unit-wait-for-them; a-declined-option-is-not-taken-A18.11-A15.3 (R5.8, R5.9)",
+    "noQuarter": "a-side-faced-with-no-quarter-treats-a-heat-of-battle-surrender-as-berserk-and-is-not-disrupted-A20.3-A15.5 (R5.6)"
   },
   "resolution": {
     "eligibility": "A broken unit of the catalog in its Location in the RPh, once per Player Turn and with no other RPh action (A3.1, A10.6); rallied by an unbroken friendly leader in the same Location (A10.6, A10.7), or by Self-Rally when no Good Order friendly leader is there (A10.63): a broken leader (A10.71), a unit with Self-Rally capability, or the first MMC Rally attempt of the side's own RPh (A18.11); never by a Disrupted unit (A19.12).",
@@ -478,6 +494,26 @@
         "A10.6"
       ],
       "reason": "A roll the attempt needs is not recorded."
+    },
+    {
+      "caseId": "A1-rally-owner-options",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "indeterminate",
+      "sourceRules": [
+        "A18.11",
+        "A15.3"
+      ],
+      "reason": "With the rallying side's answers declared, the Leader Creation dr after a Self-Rally Original 2 and a Battle Hardening that would change the unit wait for them; a declined option is not taken (rulings R5.8, R5.9)."
+    },
+    {
+      "caseId": "A1-rally-no-quarter",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "resolved",
+      "sourceRules": [
+        "A20.3",
+        "A15.5"
+      ],
+      "reason": "A unit whose side is faced with No Quarter treats a Heat of Battle Surrender as Berserk and is not Disrupted (ruling R5.6)."
     }
   ],
   "admissionRule": "A declared attempt is resolved only when every fact is within the reviewed scope and every roll it needs is recorded; otherwise it is Abstained or Indeterminate with its reasons.",
@@ -488,10 +524,7 @@
     "Recovery, Deploy, and Repair",
     "Self-Rally capability the catalog does not record",
     "any use by a game action",
-    "refusing Battle Hardening (A15.3)",
-    "declining the Leader Creation dr (A18.11)",
     "Commissars created by NKVD Field Promotion (A25.25)",
-    "rejecting a surrender (No Quarter, A20.3) and Massacre (A20.4)",
     "prisoners exchanged for Unarmed counters (A20.5), and prisoner escape (A20.55)"
   ],
   "executionAuthority": "none"

@@ -32,7 +32,15 @@ public sealed record OrdnanceGun(string? GunId, string? DefinitionId, bool? Malf
 /// The Infantry manning the Gun (A21.13): its crew, which must be Good Order to fire it; a concealed crew loses its "?" by firing
 /// (A12.14). Crews' inherent fire is not built, so <see cref="OrdnanceCrew.FiredInherentFp"/> is false in live play (A7.352; ruling R24.4).
 /// </summary>
-public sealed record OrdnanceCrew(string? UnitId, string? DefinitionId, bool? Broken, bool? Pinned, bool? Berserk, bool? Concealed, bool? FiredInherentFp);
+public sealed record OrdnanceCrew(string? UnitId, string? DefinitionId, bool? Broken, bool? Pinned, bool? Berserk, bool? Concealed, bool? FiredInherentFp)
+{
+    /// <summary>Whether the crew is CX (A4.51): +1 to the Gun's To Hit DR; null is false.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Cx
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// Recorded rolls: the To Hit DR (colored die first, C2.24), the subsequent dr of an Original 2 (C3.6, C3.7), a Random Selection

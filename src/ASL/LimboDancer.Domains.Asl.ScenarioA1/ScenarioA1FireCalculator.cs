@@ -760,13 +760,17 @@ public static class ScenarioA1FireCalculator
     {
         private readonly List<string> undecided = [];
         private readonly HashSet<string> usedRolls = new(StringComparer.Ordinal);
+        private readonly HashSet<string> usedChoices = new(StringComparer.Ordinal);
         private readonly Dictionary<string, TargetState> state = new(StringComparer.Ordinal);
 
         public FireResolution Run()
         {
             foreach (var target in attack.Targets!)
             {
-                state[target.UnitId!] = new TargetState(target, target.Dummy == true ? DummyDefinition : reference.Definitions[target.DefinitionId!]);
+                state[target.UnitId!] = new TargetState(target, target.Dummy == true ? DummyDefinition : reference.Definitions[target.DefinitionId!])
+                {
+                    NoQuarter = attack.TargetSideNoQuarter == true,
+                };
             }
 
             var known = state.Values.Where(unit => !unit.IsConcealedType).ToArray();
@@ -831,6 +835,11 @@ public static class ScenarioA1FireCalculator
                 return Refused(FireResolution.Abstained, extra);
             }
 
+            if (attack.Choices?.Keys.FirstOrDefault(key => !usedChoices.Contains(key)) is { } unasked)
+            {
+                return Refused(FireResolution.Abstained, ["asl.a1.fire.extra-choice:" + unasked]);
+            }
+
             var firerConcealment = FirerConcealment();
             if (undecided.Count != 0)
             {
@@ -888,26 +897,49 @@ public static class ScenarioA1FireCalculator
                         : final == number ? FireVehicleEffect.Immobilized
                         : FireVehicleEffect.None;
                     int? unlikely = null;
-                    if (arithmetic.OriginalDr == 2 && result == FireVehicleEffect.None && kill is not null)
+                    bool? declined = null;
+
+                    // A7.309: after any Original 2 the firer may make the Unlikely Kill dr; a dr worse than the Original 2's own result does not
+                    // cancel it (ruling R5.8). A burning wreck cannot be bettered.
+                    if (arithmetic.OriginalDr == 2 && result != FireVehicleEffect.BurningWreck && kill is not null)
                     {
-                        if (attack.Rolls!.UnlikelyKill?.TryGetValue(id, out var dr) != true)
+                        var key = "unlikelyKill:" + id;
+                        var take = true;
+                        if (attack.Choices is { } answers)
                         {
-                            undecided.Add("asl.a1.fire.roll-missing:unlikelyKill:" + id);
-                            return null;
+                            if (!answers.TryGetValue(key, out var answer))
+                            {
+                                undecided.Add("asl.a1.fire.choice-missing:" + key);
+                                return null;
+                            }
+
+                            usedChoices.Add(key);
+                            take = answer == "take";
+                            declined = take ? null : true;
                         }
 
-                        usedRolls.Add("unlikelyKill:" + id);
-                        unlikely = dr;
-                        result = dr switch
+                        if (take)
                         {
-                            1 => FireVehicleEffect.BurningWreck,
-                            2 => FireVehicleEffect.Eliminated,
-                            3 => FireVehicleEffect.Immobilized,
-                            _ => FireVehicleEffect.None,
-                        };
+                            if (attack.Rolls!.UnlikelyKill?.TryGetValue(id, out var dr) != true)
+                            {
+                                undecided.Add("asl.a1.fire.roll-missing:unlikelyKill:" + id);
+                                return null;
+                            }
+
+                            usedRolls.Add("unlikelyKill:" + id);
+                            unlikely = dr;
+                            var subsequent = dr switch
+                            {
+                                1 => FireVehicleEffect.BurningWreck,
+                                2 => FireVehicleEffect.Eliminated,
+                                3 => FireVehicleEffect.Immobilized,
+                                _ => FireVehicleEffect.None,
+                            };
+                            result = Severity(subsequent) > Severity(result) ? subsequent : result;
+                        }
                     }
 
-                    effects.Add(new FireVehicleEffect(id, definition.Id, result, kill, drm, final, unlikely, null, FireVehicleEffect.None));
+                    effects.Add(new FireVehicleEffect(id, definition.Id, result, kill, drm, final, unlikely, null, FireVehicleEffect.None) { UnlikelyKillDeclined = declined });
                     continue;
                 }
 
@@ -969,6 +1001,14 @@ public static class ScenarioA1FireCalculator
             return effects;
         }
 
+        private static int Severity(string result) => result switch
+        {
+            FireVehicleEffect.BurningWreck => 3,
+            FireVehicleEffect.Eliminated => 2,
+            FireVehicleEffect.Immobilized => 1,
+            _ => 0,
+        };
+
         /// <summary>
         /// A vehicle's MA MG after its attack (D3.7, C2.24, A9.2): it malfunctions on an Original IFT DR of 12 (its B# of 12), and keeps its
         /// Multiple ROF on an Original colored dr at most its ROF, unless its crew is pinned (A7.82) or it fired in the AFPh (A7.25: only
@@ -1001,7 +1041,10 @@ public static class ScenarioA1FireCalculator
                 return null;
             }
 
-            var companions = (attack.Companions ?? []).Select(item => new TargetState(item, reference.Definitions[item.DefinitionId!])).ToArray();
+            var companions = (attack.Companions ?? []).Select(item => new TargetState(item, reference.Definitions[item.DefinitionId!])
+            {
+                NoQuarter = attack.TargetSideNoQuarter == true,
+            }).ToArray();
             var checkedCompanions = new List<TargetState>();
             foreach (var leader in leaders)
             {
@@ -1141,6 +1184,12 @@ public static class ScenarioA1FireCalculator
             if (hindrance > 0)
             {
                 drm.Add(new FireModifier("los-hindrance", hindrance, "A6.7"));
+            }
+
+            // A4.51 (ruling R5.2): +1 when a CX unit makes or directs the attack, once however many do.
+            if (((attack.Firers ?? []).FirstOrDefault(item => item.Cx == true)?.UnitId ?? Directors(attack).FirstOrDefault(item => item.Cx == true)?.UnitId) is { } exhausted)
+            {
+                drm.Add(new FireModifier("cx:" + exhausted, 1m, "A4.51"));
             }
 
             // D5.34: a vehicle under Stun +1 adds one to its MG IFT DR.
@@ -1426,7 +1475,10 @@ public static class ScenarioA1FireCalculator
                     KnownEnemyInLos = firer.KnownEnemyInLos,
                     Captors = firer.Captors,
                 },
-                reference.Definitions[firer.DefinitionId!])).ToArray();
+                reference.Definitions[firer.DefinitionId!])
+            {
+                NoQuarter = attack.FiringSideNoQuarter == true,
+            }).ToArray();
             var dice = arithmetic.Dice;
             var original = arithmetic.OriginalDr;
             TargetState? casualty = null;
@@ -1727,18 +1779,19 @@ public static class ScenarioA1FireCalculator
 
             unit.Checks.Add(new FireCheck(kind, dice.ToArray(), original, drm, final, morale.Value, passed, consequence));
 
-            // A15.1: an Original MC DR of 2 calls for a Heat of Battle DR, with the +1 for a unit broken before it or by it. A
-            // unit takes one Heat of Battle DR per attack; a second Original 2 (its LLMC after its MC) is recorded as not
-            // taken (ruling R28.8).
-            if (original == 2 && !unit.Eliminated && ScenarioA1HeatOfBattle.Subject(unit.Definition, heroic: false, unit.Berserk))
+            // A15.1: an Original MC DR of 2 calls for a Heat of Battle DR, with the +1 for a unit broken before it or by it; a second Original
+            // 2 in the attack (its LLMC after its MC) calls for a second, under its own roll key, unless the first left the unit surrendered to
+            // a captor; one only Disrupted by a Surrender result with no captor is still subject (A15.5; ruling R5.10). A unit made berserk or
+            // heroic by the first is no longer subject to it.
+            if (original == 2 && !unit.Eliminated && ScenarioA1HeatOfBattle.Subject(unit.Definition, unit.IsHeroType, unit.Berserk))
             {
                 if (unit.HeatOfBattleOutcome is null)
                 {
-                    HeatOfBattle(unit, brokenBefore || unit.Broken);
+                    HeatOfBattle(unit, brokenBefore || unit.Broken, second: false);
                 }
-                else
+                else if (unit.SecondHeatOfBattleOutcome is null && !(unit.HeatOfBattleOutcome.Result == HeatOfBattleOutcome.Surrender && unit.HeatOfBattleOutcome.Captors is { Count: > 0 }))
                 {
-                    unit.Note("second-heat-of-battle-not-taken");
+                    HeatOfBattle(unit, brokenBefore || unit.Broken, second: true);
                 }
             }
         }
@@ -1747,27 +1800,45 @@ public static class ScenarioA1FireCalculator
         /// The Heat of Battle DR after an Original MC DR of 2 (A15.1 to A15.5): a hero created or a leader made heroic, the unit
         /// Battle Hardened or made Fanatic, berserk (or Battle Hardened with no Known enemy in its LOS, A15.44), or surrendering.
         /// </summary>
-        private void HeatOfBattle(TargetState unit, bool broken)
+        private void HeatOfBattle(TargetState unit, bool broken, bool second)
         {
-            if (attack.Rolls!.HeatOfBattle?.TryGetValue(unit.Id, out var dice) != true)
+            var key = second ? unit.Id + ":2" : unit.Id;
+            if (attack.Rolls!.HeatOfBattle?.TryGetValue(key, out var dice) != true)
             {
-                undecided.Add("asl.a1.fire.roll-missing:heatOfBattle:" + unit.Id);
+                undecided.Add("asl.a1.fire.roll-missing:heatOfBattle:" + key);
                 return;
             }
 
-            usedRolls.Add("heatOfBattle:" + unit.Id);
+            usedRolls.Add("heatOfBattle:" + key);
             // A15.5: the captors are Good Order when the unit surrenders; one of the attack's own units it broke, pinned, eliminated, or made
             // berserk is not (the FPF firers' targets, A8.31).
             var captors = unit.Target.Captors?.Where(id => !state.TryGetValue(id, out var other) || !(other.Eliminated || other.Broken || other.Pinned || other.Berserk)).ToArray();
             var (outcome, reason) = ScenarioA1HeatOfBattle.Resolve(unit.Definition, broken, unit.Target.Inexperienced, unit.Fanatic, dice!, reference.Definitions,
-                unit.Target.KnownEnemyInLos, captors);
+                unit.Target.KnownEnemyInLos, captors, unit.NoQuarter);
             if (outcome is null)
             {
                 undecided.Add(reason!);
                 return;
             }
 
-            unit.TakeHeatOfBattle(outcome, outcome.HardenedDefinitionId is { } next ? reference.Definitions[next] : null);
+            // A15.3, ruling R5.8: the owner may refuse a Battle Hardening that would change the unit.
+            if (attack.Choices is { } answers && outcome.HardeningMatters(unit.Broken, unit.Pinned, unit.Disrupted))
+            {
+                var choice = "battleHardening:" + key;
+                if (!answers.TryGetValue(choice, out var answer))
+                {
+                    undecided.Add("asl.a1.fire.choice-missing:" + choice);
+                    return;
+                }
+
+                usedChoices.Add(choice);
+                if (answer != "take")
+                {
+                    outcome = outcome.WithHardeningRefused();
+                }
+            }
+
+            unit.TakeHeatOfBattle(outcome, outcome.HardenedDefinitionId is { } next ? reference.Definitions[next] : null, second);
         }
 
         private int? Elr(bool firingSide)
@@ -2103,6 +2174,18 @@ public static class ScenarioA1FireCalculator
             get; private set;
         }
 
+        /// <summary>The second Heat of Battle DR of the attack (ruling R5.10).</summary>
+        public HeatOfBattleOutcome? SecondHeatOfBattleOutcome
+        {
+            get; private set;
+        }
+
+        /// <summary>Whether the unit's side is faced with No Quarter (A20.3): a Surrender is Berserk.</summary>
+        public bool NoQuarter
+        {
+            get; init;
+        }
+
         private bool Hidden => Target.Concealed == true || Target.Hidden == true;
 
         /// <summary>The Morale Level before this attack, which an unbroken leader's LLTC compares against (A10.2).</summary>
@@ -2198,10 +2281,22 @@ public static class ScenarioA1FireCalculator
         /// A Heat of Battle result (A15.21, A15.3): a heroic leader rallies; a Battle Hardened unit is exchanged for an unbroken,
         /// unpinned unit of the next higher quality; a unit of the highest quality becomes Fanatic.
         /// </summary>
-        public void TakeHeatOfBattle(HeatOfBattleOutcome outcome, FireDefinition? hardened)
+        public void TakeHeatOfBattle(HeatOfBattleOutcome outcome, FireDefinition? hardened, bool second = false)
         {
-            HeatOfBattleOutcome = outcome;
+            if (second)
+            {
+                SecondHeatOfBattleOutcome = outcome;
+            }
+            else
+            {
+                HeatOfBattleOutcome = outcome;
+            }
+
             events.Add("heat-of-battle:" + outcome.Result);
+            if (outcome.HardeningRefused == true)
+            {
+                events.Add("battle-hardening-refused");
+            }
             if (outcome.Heroic == true)
             {
                 Heroic = true;
@@ -2268,6 +2363,7 @@ public static class ScenarioA1FireCalculator
             events.ToArray(), Checks.ToArray())
         {
             HeatOfBattle = HeatOfBattleOutcome,
+            SecondHeatOfBattle = SecondHeatOfBattleOutcome,
             Fanatic = Fanatic && !Eliminated ? true : null,
             Heroic = Heroic && !Eliminated ? true : null,
             Berserk = Berserk && !Eliminated ? true : null,

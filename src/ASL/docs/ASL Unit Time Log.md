@@ -92,3 +92,34 @@ Asked by the user after the pass 4 merge. Branch `docs/asl-backlog-housekeeping`
 | Housekeeping: fourteen simplified resolutions gathered in section 1 (from sections 10, 12, and 14), finished rows of sections 6 and 7 removed, section 14 after section 13 | 21:20 | 21:21 | 0:01 | 138 open rows |
 | Draft of the [ASL Unit Backlog Passes Plan](<ASL Unit Backlog Passes Plan.md>): every open row in twelve passes, 75 tasks, each estimated | 21:21 | 21:25 | 0:04 | 63:25 of working time estimated, 44:24 to 82:26 |
 | The plan rewritten as the plan to follow: each task in play terms with its rules, the way a pass is run, and the Docker check script (appendix A) | 21:44 | 21:46 | 0:02 | Approved by the user as the plan to follow |
+
+## Pass 5: deviations and small items
+
+Estimate: 4:55 (build 3:40) in the [ASL Unit Backlog Passes Plan](<ASL Unit Backlog Passes Plan.md>). Kickoff 2026-09-27 21:57. Branch `feature/asl-backlog-pass-5`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Reading (plan, backlog, code, rules) and rulings R5.1 to R5.20 | 21:57 | 22:12 | 0:15 | A4.4 to A4.72, A7.302 to A7.309, A8.14, A11, A15, A18, A20, C6.5, D2.1, D2.4, D5.33 to D5.41, A2.6, B15.6 |
+| Build of tasks 5.1 to 5.10: state, projector, packages (fire, rally, CC, ordnance), pass 5 source comparison, planner, gate, tests | 22:12 | 23:01 | 0:49 | One block: the split by task was not recorded. 31 source subjects verified; 9 package tests, 14 play tests |
+| Referee review and fixes | 23:01 | 23:18 | 0:17 | 6 defects fixed with tests (berserk clears CX, withdrawal IPC, second HoB with no captor, ordnance CX To Hit with a new case, leader bonus refused, R5.13 phases); 5 disputed readings adopted (Massacre as SW use, berserk massacre AFPh/DFPh only, R5.14, R5.16, Rally BH) |
+| Live stage: Play page (edges, Double Time, choice panel, reject surrender, Massacre, vehicle exit and intended hex, Recall note, Stun +1, used BU hidden, printed values, per-side CC declarations, SW left unpossessed) and 4 page tests | 23:18 | 23:25 | 0:07 | 34 page tests pass |
+| Documents: design, requirements note, backlog (20 rows built, 2 rows trimmed, section 15 with 4 deferrals) | 23:25 | 23:27 | 0:02 | Review document written after the table player |
+| Visual check in the Studio | 23:27 | 23:29 | 0:02 | New game with edges, Double Time step into woods: CX shown, box cleared. The pane did not draw, so the check read the page text rather than screenshots |
+| Table-player review (agent ran 23:25 to 23:31, beside the documents and visual check) and fixes | 23:29 | 23:35 | 0:06 | 5 defects fixed with tests, 3 notes done, 1 gap already handled, 1 gap to the backlog, 1 refusal added |
+| Full local suite (solution and ScenarioA1) | 23:35 | 23:45 | 0:10 | 1,960 passed, 30 skipped, 0 failed |
+| Commit f6c727d and Docker Linux check (appendix A) | 23:45 | 23:54 | 0:09 | restore, build (warnings as errors), solution tests, and ScenarioA1 tests all exit 0 |
+| Merge into main and push | 23:54 | 23:56 | 0:02 | |
+
+Pass 5 actual: 1:59 (21:57 to 23:56) against the estimate of 4:55.
+
+| Plan task | Estimate | Actual |
+|---|---|---|
+| 5.1 to 5.10 build (one block; split not recorded) | 3:40 | 0:49 |
+| Overhead: reading and rulings | | 0:15 |
+| Overhead: referee review and fixes | | 0:17 |
+| Overhead: live stage (Play page) | | 0:07 |
+| Overhead: table player and fixes | | 0:06 |
+| Overhead: documents and visual check | | 0:04 |
+| Overhead: full suite, Docker check, merge | | 0:21 |
+| Overhead total | 1:15 | 1:10 |
+| **Total** | **4:55** | **1:59** |

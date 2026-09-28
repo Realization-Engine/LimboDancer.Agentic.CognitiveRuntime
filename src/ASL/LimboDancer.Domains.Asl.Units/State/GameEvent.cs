@@ -66,7 +66,17 @@ public sealed record GameStarted(
 public sealed record PhaseChanged(int Turn, string Phase, string PhasingSide) : EventPayload;
 
 /// <summary><c>instance-created</c>: a unit, piece of equipment, or entity enters the game.</summary>
-public sealed record InstanceCreated(NewInstance Instance) : EventPayload;
+public sealed record InstanceCreated(NewInstance Instance) : EventPayload
+{
+    /// <summary>
+    /// The unit that created this one, such as the MMC a hero is created from (A15.21): the new unit shares its movement status (ruling
+    /// R5.11). Null for a unit created on its own.
+    /// </summary>
+    public string? Creator
+    {
+        get; init;
+    }
+}
 
 /// <summary><c>instance-moved</c>: a unit or entity takes a new position, spending <paramref name="Mf"/> MF when given.</summary>
 public sealed record InstanceMoved(string Id, Position Position, int? Mf = null) : EventPayload;

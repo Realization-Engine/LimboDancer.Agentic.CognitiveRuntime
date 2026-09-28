@@ -87,6 +87,17 @@ public sealed class AslScenarioA1FireSourceReviewTests
     }
 
     [Fact]
+    public void ThePass5SubjectsAreVerified()
+    {
+        // Backlog pass 5: 25 Chapter A subjects, two Chapter C, four Chapter D, and one Chapter B, with the continuations of A2.6, A4.43,
+        // A15.1, A15.21, and D5.341; A15.1 to A15.3 are on physical page 83 though the conversion marks 81.
+        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var pass5 = AslScenarioA1FireSourceReview.BuildPass5(RepositoryPaths.Root, manifests, Attestation());
+        Assert.Equal(31, pass5.Records.Count);
+        Assert.All(pass5.Records, record => Assert.Equal(TirSourceVerificationDisposition.Verified, record.Disposition));
+    }
+
+    [Fact]
     public void TheCloseCombatAndBerserkSubjectsAreVerified()
     {
         var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);

@@ -1,6 +1,6 @@
 {
   "pack": "asl",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "label": "ASL Personnel, support weapons, Guns, vehicles, and entities that are not units",
   "note": "Original LimboDancer vocabulary. Rule references are to the registered rulebook PDF by physical page; no rulebook text or counter artwork.",
   "extends": [],
@@ -363,7 +363,7 @@
         "asl:no-ap", "asl:no-he", "asl:fixed-bmg", "asl:vehicle-ft-range-2", "asl:cs-passengers-only"],
       "accessibleName": {
         "default": "{side} {designation} {movement-type} {kind} {identity}, {movement-points} MP, AF {af-front}/{af-side}, MA {caliber}{caliber-suffix?} {ma-weapon} {ma-type}",
-        "wreck": "{side} wrecked {designation} {kind} {identity}, crew survival {crew-survival}"
+        "wreck": "{side} wrecked {designation} {kind} {identity}, {survival-label} {crew-survival}"
       }
     },
     {

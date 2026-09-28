@@ -133,13 +133,22 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
         : plan.Events.Select(item => item.Payload).OfType<AmbushRolled>().FirstOrDefault() is { } ambush
         // The Ambush drs: the Location's CC records them and the ambusher.
         ? state.CloseCombats.Any(item => item.Location == ambush.Location && item.AmbushRolled && item.Ambusher == ambush.Ambusher)
-        : plan.Events[^1].Payload switch
+        : plan.Events.Select(item => item.Payload).OfType<AdvanceMoved>().FirstOrDefault() is { } advanced
+        // An advance: its units are in the Location they entered, CX where the advance made them so (A4.72).
+        ? advanced.Units.All(id => state.Location(id)?.Location == advanced.To)
+        : plan.Events.Select(item => item.Payload).OfType<PrisonersMassacred>().FirstOrDefault() is { } massacre
+        // A Massacre (A20.4): its prisoners are eliminated.
+        ? massacre.Prisoners.All(id => state.Unit(id) is { Status: InstanceStatus.Eliminated })
+        : plan.Events.Select(item => item.Payload).LastOrDefault(item => item is not (AcquisitionChanged or ChoicePending)) switch
         {
             MovementStepped moved => state.Movement is { WindowOpen: true } movement && movement.Step == moved.Step && movement.Location == moved.To,
             // A vehicle's MP expenditure: its window is open at this step, and the vehicle is where the step put it.
+            VehicleStepped { Kind: VehicleStepped.Exit } exit => state.Unit(exit.Vehicle) is { Status: InstanceStatus.Exited },
             VehicleStepped stepped => state.Movement is { WindowOpen: true, Vehicle: true } movement && movement.Step == stepped.Step
                 && state.Location(stepped.Vehicle)?.Location == stepped.At,
-            MovementWindowClosed => state.Movement is { WindowOpen: false },
+
+            // The window closed; a vehicle that spent its MP left in its hex has ended its move with it (ruling R5.15).
+            MovementWindowClosed => state.Movement is null or { WindowOpen: false },
             MovementEnded ended => ended.Movers.All(id => state.Unit(id) is not { Status: InstanceStatus.Active } unit || unit.MovementEnded),
             // A forced back: the mover is where it started, with its movement ended, and every defender the plan revealed is known.
             EntryForcedBack forced => state.Unit(forced.Id) is { MovementEnded: true } unit && state.Location(unit.Id)?.Location == forced.ReturnedTo
@@ -155,7 +164,12 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
             InstanceMoved moved => state.Unit(moved.Id) is { } unit && state.Location(unit.Id) is { } at
                 && moved.Position is MapPosition target && at.Location == target.Location,
             PhaseChanged phase => state.Phase == phase.Phase && state.PhasingSide == phase.PhasingSide && state.Turn == phase.Turn,
-            AdvanceMoved advanced => advanced.Units.All(id => state.Location(id)?.Location == advanced.To),
+
+            // A rejected surrender (A20.3): the unit is eliminated and its side faced with No Quarter.
+            SurrenderRejected rejected => state.Unit(rejected.Unit) is { Status: InstanceStatus.Eliminated } unit && state.NoQuarter.Contains(unit.Side),
+
+            // An answered choice: nothing waits for it any more (ruling R5.8).
+            ChoiceMade => state.Choice is null || plan.Events.Any(item => item.Payload is ChoicePending),
             InstanceCaptured captured => state.Unit(captured.Id) is { } prisoner && prisoner.Custodian == captured.Custodian,
             _ => plan.Events.Select(item => item.Payload).OfType<InstanceCreated>().All(created => state.Find(created.Instance.Id) is not null),
         };

@@ -198,10 +198,17 @@ public sealed partial class GamePlanner
         }
 
         if (new[] { (Conditions.PrepFire, "it Prep Fired (D.3)"), (Conditions.Immobilized, "it is immobilized (D.7)"),
-            (Conditions.Stunned, "its crew is Stunned (D5.34)"), (Conditions.Recalled, "it is Recalled (D5.341)") }
+            (Conditions.Stunned, "its crew is Stunned (D5.34)"), (Conditions.Abandoned, "it is Abandoned (D5.41)") }
             .FirstOrDefault(item => Is(vehicle, item.Item1)) is { Item2: { } why })
         {
             return Refused(scope, label, expected, $"play.move-vehicle: {id} may not move: {why}");
+        }
+
+        // D5.341: a Recall stops the AFV like a Stun for the rest of that Player Turn; once its counter shows Recall; +1 it must leave.
+        var leaving = MustLeave(vehicle);
+        if (Is(vehicle, Conditions.Recalled) && !leaving)
+        {
+            return Refused(scope, label, expected, $"play.move-vehicle: {id} may not move: it is Recalled and stopped for the rest of this Player Turn (D5.341)");
         }
 
         var current = state.Movement;
@@ -278,11 +285,48 @@ public sealed partial class GamePlanner
                 summary = $"{id} enters {to} for {Mp(entry)} MP (D2.11)";
                 break;
             case VehicleStepped.Stop:
+                if (leaving)
+                {
+                    return Refused(scope, label, expected, $"play.recall-motion: {id} is Recalled and leaves in Motion, so it does not Stop (D5.341)");
+                }
+
                 cost = 2;
                 summary = $"{id} stops in {at.Location} for 1 MP (D2.13)";
                 break;
+            case VehicleStepped.Exit:
+                // A2.6: an exit from an edge hex into the mirror image of that hex, within its VCA; a Recalled AFV leaves by its Friendly Board Edge.
+                var edge = leaving ? state.Side(vehicle.Side)?.FriendlyEdge : Text(arguments, "edge", out var named) ? named : null;
+                if (VehicleExits(state, vehicle, edge).OrderBy(item => item.HalfMp).FirstOrDefault() is not { } exit)
+                {
+                    return Refused(scope, label, expected, $"play.move-vehicle-exit: {id} is not in a map edge hex{(edge is null ? string.Empty : $" of the {edge} edge")} with that edge in its VCA, over reviewed terrain (A2.6, D2.11)");
+                }
+
+                cost = exit.HalfMp;
+                summary = $"{id} exits the map from {at.Location} for {Mp(cost)} MP (A2.6)" + (leaving ? " by its Friendly Board Edge (D5.341)" : string.Empty);
+                break;
             default:
-                return Refused(scope, label, expected, "play.invalid-arguments: a vehicle's MP expenditure is start, turn, enter, or stop");
+                return Refused(scope, label, expected, "play.invalid-arguments: a vehicle's MP expenditure is start, turn, enter, stop, or exit");
+        }
+
+        // D5.341 (ruling R5.17): a leaving AFV keeps to a shortest route in MP to its Friendly Board Edge.
+        if (leaving && kind != VehicleStepped.Start)
+        {
+            var (moves, _, undecided) = RecallRoute(state, vehicle);
+            if (undecided is not null)
+            {
+                return Refused(scope, label, expected, undecided);
+            }
+
+            if (!moves.Any(move => move.Kind == kind && (kind != VehicleStepped.Enter || move.To == to) && (kind != VehicleStepped.Turn || move.Facing == turned)))
+            {
+                return Refused(scope, label, expected, $"play.recall-route: {id} leaves by a shortest route in MP to its Friendly Board Edge: "
+                    + string.Join(", ", moves.Select(move => move.Kind switch
+                    {
+                        VehicleStepped.Enter => $"enter {move.To}",
+                        VehicleStepped.Turn => $"turn to {UnitFacings.Name(move.Facing!.Value)}",
+                        _ => "exit",
+                    })) + " (D5.341)");
+            }
         }
 
         // A8.2 (ruling R25.3): Residual FP attacks a unit expending MP in its Location, which the Vehicle line does not build; the vehicle
@@ -327,34 +371,103 @@ public sealed partial class GamePlanner
     private static string Mp(int halfMp) => halfMp % 2 == 0 ? (halfMp / 2).ToString(CultureInfo.InvariantCulture)
         : halfMp == 1 ? "½" : $"{(halfMp / 2).ToString(CultureInfo.InvariantCulture)}½";
 
+    /// <summary>Whether a vehicle may spend no more MP this Player Turn: immobilized, Stunned, or Recalled and not yet leaving (D.7, D5.34, D5.341).</summary>
+    private static bool Halted(UnitInstance vehicle) =>
+        vehicle.Status != InstanceStatus.Active || Is(vehicle, Conditions.Immobilized) || Is(vehicle, Conditions.Stunned) || Is(vehicle, Conditions.Abandoned)
+        || (Is(vehicle, Conditions.Recalled) && !Is(vehicle, Conditions.StunRecovery));
+
     /// <summary>
-    /// Whether a moving vehicle may end its MPh in Motion (D2.4): when it may not Stop (no MP left for it), or when it cannot pay the entry
-    /// of any hex its VCA points at that it may enter; otherwise it must Stop first. Null when it may; otherwise why not.
+    /// The half MP to enter an ADJACENT hex from a vehicle's Location, with one MP for each hexspine its VCA must turn to point at it (D2.11), or
+    /// null when the hex is not ADJACENT or its entry is not reviewed or allowed.
     /// </summary>
-    private string? MotionBar(GameState state, UnitInstance vehicle)
+    private int? IntendedEntryCost(GameState state, UnitInstance vehicle, BoardLocation to)
     {
-        // A vehicle the DEFENDER's fire immobilized, Stunned, or Recalled has stopped (D.7, D5.34).
-        if (state.Location(vehicle.Id) is not { } at || vehicle.Position is not MapPosition { Facing: { } facing } || vehicle.Status != InstanceStatus.Active
-            || Is(vehicle, Conditions.Immobilized) || Is(vehicle, Conditions.Stunned) || Is(vehicle, Conditions.Recalled))
+        if (state.Location(vehicle.Id) is not { } at || vehicle.Position is not MapPosition { Facing: { } facing } || !Neighbors(state, at.Location).Contains(to)
+            || VehicleEntryBar(state, vehicle, to) is not null)
+        {
+            return null;
+        }
+
+        return VehicleEntryCost(state, vehicle, at.Location, to) is { } entry && Bearing(state, at.Location, to) is { } bearing ? entry + (2 * VcaTurns(facing, bearing)) : null;
+    }
+
+    /// <summary>
+    /// Whether a moving vehicle may end its MPh in Motion (D2.4, ruling R5.14): when it has no MP left to Stop, or when the hex it wished to
+    /// enter next, named by the ATTACKER, costs more than its MP left; a Recalled AFV when no step of its route is affordable or its route is
+    /// undecided (ruling R5.17). Null when it may; otherwise why not.
+    /// </summary>
+    private string? MotionBar(GameState state, UnitInstance vehicle, BoardLocation? intended)
+    {
+        if (Halted(vehicle))
         {
             return null;
         }
 
         var (spent, allotment) = HalfMp(vehicle);
         var left = allotment - spent;
+        if (MustLeave(vehicle))
+        {
+            var (moves, _, undecided) = RecallRoute(state, vehicle);
+            return undecided is null && moves.Any(move => move.HalfMp <= left)
+                ? $"play.recall-route: {vehicle.Id} is Recalled and has the MP to go on along its route to its Friendly Board Edge (D5.341)"
+                : null;
+        }
+
         if (left < 2)
         {
             return null;
         }
 
-        // Each ADJACENT hex it may enter costs its entry plus 1 MP for each hexspine its VCA must turn to point at it (D2.11).
-        var entries = Neighbors(state, at.Location).Where(to => VehicleEntryBar(state, vehicle, to) is null)
-            .Select(to => VehicleEntryCost(state, vehicle, at.Location, to) is { } entry && Bearing(state, at.Location, to) is { } bearing
-                ? entry + (2 * VcaTurns(facing, bearing)) : (int?)null)
-            .OfType<int>().ToArray();
-        return entries.Any(cost => cost <= left)
-            ? $"play.vehicle-motion: {vehicle.Id} has {Mp(left)} MP left, enough to enter an ADJACENT hex, turning its VCA if need be, so it Stops (1 MP) or moves on before ending its move (D2.4)"
-            : null;
+        if (intended is null)
+        {
+            return $"play.vehicle-motion: {vehicle.Id} has {Mp(left)} MP left, so it Stops (1 MP), moves on, or names the hex it wished to enter next to end in Motion (D2.4)";
+        }
+
+        return IntendedEntryCost(state, vehicle, intended) is not { } cost
+            ? $"play.vehicle-motion: {intended} is not an ADJACENT hex {vehicle.Id} could enter over reviewed terrain, so it cannot be the next hex it wished to enter (D2.4)"
+            : cost <= left
+                ? $"play.vehicle-motion: {vehicle.Id} has {Mp(left)} MP left, enough to enter {intended} for {Mp(cost)}, so it Stops or moves on (D2.4)"
+                : null;
+    }
+
+    /// <summary>
+    /// The end of a vehicle's move (D2.1, D2.4; rulings R5.14 and R5.15): Motion needs the next hex it wished to enter to cost more than its MP
+    /// left; MP left are then spent in its hex as one expenditure the DEFENDER may fire at, and the move ends when the DEFENDER passes. A vehicle
+    /// that may spend no more MP ends at once.
+    /// </summary>
+    private GamePlan PlanEndVehicle(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label,
+        GameState state, MovementState movement, UnitInstance vehicle)
+    {
+        if (movement.Ending)
+        {
+            return Refused(scope, label, expected, "play.end-move: the vehicle has spent its MP left, and its move ends when the DEFENDER passes (D2.1)");
+        }
+
+        BoardLocation? intended = Text(arguments, "intended", out var named) && BoardLocation.TryParse(named, out var parsed) ? parsed : null;
+        if (movement.Started && !movement.Stopped && MotionBar(state, vehicle, intended) is { } motion)
+        {
+            return Refused(scope, label, expected, motion);
+        }
+
+        var (spent, allotment) = HalfMp(vehicle);
+        var left = allotment - spent;
+        var inMotion = movement.Started && !movement.Stopped && !Halted(vehicle);
+        if (left > 0 && !Halted(vehicle) && state.Location(vehicle.Id) is { } at)
+        {
+            if (state.ResidualFire.Any(item => item.Location == at.Location) && ResidualReaches(vehicle))
+            {
+                return Refused(scope, label, expected, $"play.move-vehicle-residual: Residual FP in {at.Location} would attack {vehicle.Id} as it spends its MP left there, which is not reviewed (A8.2; ruling R25.3)");
+            }
+
+            return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
+                [Event(scope, attemptId, 1, expected, "vehicle-step", new VehicleStepped(vehicle.Id, VehicleStepped.Remain, at.Location, null, left, movement.Step + 1), null, null)],
+                [$"play.end-move: {vehicle.Id} spends its {Mp(left)} MP left in {at.Location} (D2.1); the DEFENDER may fire, and its move ends when he passes"
+                    + (inMotion ? ", in Motion (D2.4)" : string.Empty)]);
+        }
+
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
+            [Event(scope, attemptId, 1, expected, "movement-ended", new MovementEnded([vehicle.Id]), null, null)],
+            [$"play.end-move: {vehicle.Id} ends its move" + (inMotion ? " in Motion (D2.4)" : string.Empty)]);
     }
 
     /// <summary>

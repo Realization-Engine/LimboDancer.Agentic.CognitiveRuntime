@@ -129,9 +129,18 @@ public static class GameEventReader
                 {
                     var sideId = fields.RequiredString(side, "id", sidePath);
                     var nationality = fields.RequiredString(side, "nationality", sidePath);
+                    var edge = fields.OptionalString(side, "friendlyEdge", sidePath);
+                    if (edge is not null && !SideState.Edges.Contains(edge, StringComparer.Ordinal))
+                    {
+                        diagnostics.Add(UnitDiagnostic.Error(Code, $"'{edge}' is not a map edge ({string.Join(", ", SideState.Edges)}).", sidePath));
+                    }
+
                     if (sideId is not null && nationality is not null)
                     {
-                        sides.Add(new SideState(sideId, nationality, fields.OptionalInteger(side, "elr", sidePath), fields.OptionalInteger(side, "san", sidePath)));
+                        sides.Add(new SideState(sideId, nationality, fields.OptionalInteger(side, "elr", sidePath), fields.OptionalInteger(side, "san", sidePath))
+                        {
+                            FriendlyEdge = edge,
+                        });
                     }
                 }
 
@@ -185,7 +194,7 @@ public static class GameEventReader
                 return nextTurn is null || nextPhase is null || nextPhasing is null ? null : new PhaseChanged(nextTurn.Value, nextPhase, nextPhasing);
             case "instance-created":
                 return payload.TryGetProperty("instance", out var created) && ReadNew(created, path + ".instance", fields, diagnostics) is { } instance
-                    ? new InstanceCreated(instance)
+                    ? new InstanceCreated(instance) { Creator = fields.OptionalString(payload, "creator", path) }
                     : Missing(diagnostics, "'instance' must be an object.", path);
             case "instance-moved":
                 var movedId = fields.RequiredString(payload, "id", path);
@@ -352,6 +361,7 @@ public static class GameEventReader
                     : new MovementStepped(fields.StringList(payload, "movers", path), stepTo, halfMf.Value, fields.OptionalBoolean(payload, "assault", path), step.Value)
                     {
                         Charge = charge,
+                        DoubleTime = fields.OptionalBoolean(payload, "doubleTime", path),
                     };
             case "vehicle-step":
                 var vehicleAt = ReadLocation(payload, "at", path, fields, diagnostics);
@@ -452,6 +462,30 @@ public static class GameEventReader
                 var captured = fields.RequiredString(payload, "id", path);
                 var custodian = fields.RequiredString(payload, "custodian", path);
                 return captured is null || custodian is null ? null : new InstanceCaptured(captured, custodian);
+            case "choice-pending":
+                var pendingKey = fields.RequiredString(payload, "key", path);
+                var pendingKind = fields.RequiredString(payload, "kind", path);
+                var choosing = fields.RequiredString(payload, "side", path);
+                var options = fields.StringList(payload, "options", path);
+                return pendingKey is null || pendingKind is null || choosing is null || options.Count == 0
+                    || !payload.TryGetProperty("resume", out var resume) || resume.ValueKind != JsonValueKind.Object
+                    ? Missing(diagnostics, "A pending choice names its key, kind, side, options, and what the resolution resumes from.", path)
+                    : new ChoicePending(pendingKey, pendingKind, choosing, options, resume.Clone());
+            case "choice-made":
+                var madeKey = fields.RequiredString(payload, "key", path);
+                var option = fields.RequiredString(payload, "option", path);
+                return madeKey is null || option is null ? Missing(diagnostics, "A choice names its key and the option chosen.", path) : new ChoiceMade(madeKey, option);
+            case "surrender-rejected":
+                return fields.RequiredString(payload, "unit", path) is { } rejected ? new SurrenderRejected(rejected) : null;
+            case "prisoners-massacred":
+                return new PrisonersMassacred(fields.StringList(payload, "units", path), fields.StringList(payload, "prisoners", path),
+                    fields.OptionalBoolean(payload, "berserk", path));
+            case "acquisition-changed":
+                var acquiringGun = fields.RequiredString(payload, "gun", path);
+                var acquiredAt = ReadLocation(payload, "location", path, fields, diagnostics);
+                return acquiringGun is null || acquiredAt is null
+                    ? Missing(diagnostics, "An Acquisition names its Gun and its Location.", path)
+                    : new AcquisitionChanged(acquiringGun, acquiredAt, fields.StringList(payload, "units", path));
             default:
                 diagnostics.Add(UnitDiagnostic.Error(Code, $"'{type}' is not an event type.", path));
                 return null;

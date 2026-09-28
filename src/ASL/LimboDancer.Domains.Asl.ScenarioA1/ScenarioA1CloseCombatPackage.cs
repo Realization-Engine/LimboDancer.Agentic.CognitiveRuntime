@@ -18,10 +18,16 @@ public sealed class ScenarioA1CloseCombatReference
         OneToOneColumn = Array.FindIndex(columns, column => column.Item1 == "1-1");
     }
 
-    public IReadOnlyDictionary<string, FireDefinition> Definitions { get; }
+    public IReadOnlyDictionary<string, FireDefinition> Definitions
+    {
+        get;
+    }
 
     /// <summary>The index of the 1-1 column, from which Leader Creation counts the columns below (A18.2).</summary>
-    public int OneToOneColumn { get; }
+    public int OneToOneColumn
+    {
+        get;
+    }
 
     /// <summary>
     /// The CCT column of an attack (A11.11): the ratio of the attacking to the defending FP rounded down to the nearest printed
@@ -72,15 +78,15 @@ public sealed class ScenarioA1CloseCombatReference
 /// </summary>
 public sealed class ScenarioA1CloseCombatPackage : IDomainPackageResolver
 {
-    public const string ManifestSha256 = "9f5d613b5fb6d11a5853f60473cb355452eb241dfcc1c63856be77a8fdb22b98";
-    public const string MatrixSha256 = "afde3459410a916c82603a3c1958770ab41d79a52ca2e410877946d00f68544a";
+    public const string ManifestSha256 = "d976896cab183d1f2498a12aea44aa9574c2421fd31fc97aa1fb78dab07c491c";
+    public const string MatrixSha256 = "065300051e452cc9b9d8cf834cb47ff7d63496be6db12ea453603c0ba3fdfbf5";
     public static readonly DomainPackageRef Identity = new(new DomainId("asl"), "scenario-a1-close-combat", "sha256:" + ManifestSha256);
 
     private static readonly string[] Cases =
     [
         "A1-cc-resolved", "A1-cc-ambush-resolved", "A1-cc-phase-outside", "A1-cc-unit-outside", "A1-cc-concealment-unreviewed", "A1-cc-prisoners-unreviewed",
         "A1-cc-overstacked-unreviewed", "A1-cc-attack-outside", "A1-cc-round-outside", "A1-cc-stacking-outside", "A1-cc-director-outside",
-        "A1-cc-berserk-must-attack", "A1-cc-field-promotion-undecided", "A1-cc-roll-missing",
+        "A1-cc-berserk-must-attack", "A1-cc-field-promotion-undecided", "A1-cc-roll-missing", "A1-cc-cx",
     ];
 
     private static readonly string[] PinnedDigests = ["sourcePdfSha256", "cctTranscriptionSha256", "catalogSha256"];
@@ -122,7 +128,10 @@ public sealed class ScenarioA1CloseCombatPackage : IDomainPackageResolver
     }
 
     /// <summary>The pinned CCT and catalog values.</summary>
-    public ScenarioA1CloseCombatReference Reference { get; }
+    public ScenarioA1CloseCombatReference Reference
+    {
+        get;
+    }
 
     public ValueTask<DomainPackageResolution> ResolveAsync(DomainPackageRef requested, CancellationToken cancellationToken = default)
     {

@@ -162,12 +162,16 @@ public static class LiveFire
                 UsesInherentFp = withoutInherent?.Contains(unit.Id) == true ? false : null,
                 Fanatic = Is(unit, Conditions.Fanatic) ? true : null,
                 Wounded = Is(unit, Conditions.Wounded) ? true : null,
+                Cx = Is(unit, Conditions.Cx) ? true : null,
             });
         }
 
         FireDirector Director((UnitInstance Unit, BoardLocation At) item) =>
             new(item.Unit.Id, item.Unit.Definition!.Definition, item.At.ToString(), Is(item.Unit, Conditions.Broken), Is(item.Unit, Conditions.Pinned),
-                Is(item.Unit, Conditions.Concealed), Fired(item.Unit) || Is(item.Unit, Conditions.FirstFire), Is(item.Unit, Conditions.Wounded));
+                Is(item.Unit, Conditions.Concealed), Fired(item.Unit) || Is(item.Unit, Conditions.FirstFire), Is(item.Unit, Conditions.Wounded))
+            {
+                Cx = Is(item.Unit, Conditions.Cx) ? true : null,
+            };
 
         return (new FireAttack(
             phase,
@@ -193,6 +197,8 @@ public static class LiveFire
             Companions = companions.Length > 0 ? [.. companions.Select(unit => Target(unit, target))] : null,
             Vehicles = vehicles.Length > 0 ? [.. vehicles.Select(unit => Vehicle(unit, target))] : null,
             VehicleFire = vehicleFirers.Length > 0 ? VehicleFire(state, vehicleFirers[0], firers[0].At) : null,
+            TargetSideNoQuarter = targetSide is not null && state.NoQuarter.Contains(targetSide, StringComparer.Ordinal) ? true : null,
+            FiringSideNoQuarter = kind == ScenarioA1FireCalculator.FinalProtectiveFire && state.NoQuarter.Contains(side, StringComparer.Ordinal) ? true : null,
         }, null);
     }
 
@@ -247,6 +253,7 @@ public static class LiveFire
             TargetMovement = new FireMovement(movement.Assault),
             ResidualFp = fp,
             Companions = companions.Length > 0 ? [.. companions.Select(unit => Target(unit, target))] : null,
+            TargetSideNoQuarter = state.NoQuarter.Contains(targetSide, StringComparer.Ordinal) ? true : null,
         }, null);
     }
 
@@ -480,6 +487,9 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
             FirerLocationsAdjacent = recorded.FirerLocationsAdjacent,
             WithinSubsequentFirstFireRange = recorded.WithinSubsequentFirstFireRange,
             Companions = recorded.Companions is null ? null : expected.Companions,
+
+            // The owners' answers are declared, and the projector checks them against the choices made (ruling R5.8).
+            Choices = recorded.Choices,
         };
         if (JsonSerializer.Serialize(merged, LiveFire.Json) != JsonSerializer.Serialize(recorded, LiveFire.Json))
         {

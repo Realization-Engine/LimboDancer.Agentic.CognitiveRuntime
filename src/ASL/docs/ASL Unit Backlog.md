@@ -11,21 +11,9 @@ These are not left out: the game resolves them in a simplified way and records t
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
 | A berserk charge whose route the model cannot decide | R30.5 | A15.43, A15.431, p. 84 | Movement over every terrain type and level change, so every shortest route is decided; Massacre, concealment in CC, and Infantry OVR outcomes | The ATTACKER may end the charge in place when its route crosses unreviewed terrain or its next step enters a Location with prisoners, concealed enemy units, or a lone enemy SMC; the move's reason records it, and the unit stays berserk. |
-| A withdrawal from Melee that makes the unit CX | R29.11 | A11.21, p. 73; A4.72, p. 52 | CX status | The unit withdraws with no CX counter. A unit whose only ADJACENT Locations are in terrain the movement review does not admit cannot withdraw, and a broken one is eliminated at the end of the CCPh. |
-| A surrender is always accepted | R30.7 | A20.3, A20.4, p. 87 | An option for the captor at the capture | The captor's side chooses the Guard but may not reject the surrender (No Quarter) or massacre. |
-| Acquisition kept on the Location, not on the target unit | R24.6 | C6.5, C6.51, p. 174 | Unit-tracked Acquired counters | The Acquisition stays on the Location, so a target that moves keeps none and a unit that enters the Location inherits it. |
-| A vehicle may end its MPh in Motion only when it cannot reach any ADJACENT hex, counting VCA changes | R25.3; table player, item 5 | D2.4, p. 198 | A declared intended next hex | Stricter than D2.4, which tests only "the next hex it wishes to enter": a vehicle with MP for any hex must Stop or move on. |
-| MP left unspent at the end of the MPh | Table player, item 12 | D2.1, p. 195; A8.14, p. 59 | | They are not counted as spent in the final hex, so the DEFENDER gets no further fire there. |
 | A destroyed vehicle leaves no wreck | R25.5 | D10, A7.308 | Wreck counters and their LOS and movement effects | An eliminated or burning vehicle is removed from play. |
-| The Unlikely Kill dr after a result that already harmed the vehicle | R25.5 | A7.309, p. 56 | A firer's option at resolution | The dr is rolled only when an Original 2 did nothing; the firer is never offered it after an elimination or immobilization. |
-| A Recalled vehicle leaves play as eliminated | R25.6; table player, item 8 | D5.341, D5.5, pp. 203 to 204 | Board edges, the exited status, exit victory conditions | It is removed at the end of the Player Turn and recorded as eliminated; the Motion route to a friendly board edge and Abandonment of an immobilized Recalled AFV are not played. |
-| A hero created in his side's MPh moving on with his creator | Step 28 design | A15.21, p. 83 | The movement status a created unit shares with its creator | He moves no further that phase. |
-| Refusing Battle Hardening | R28.5 | A15.3, p. 83 | An owner's choice in the middle of an attempt | Battle Hardening is always taken. |
-| Declining the Leader Creation dr | R27.2 | A18.11, p. 85 | An owner's choice in the middle of an attempt | The dr is always rolled. |
-| A second Heat of Battle DR in one attack (the LLMC after the MC) | R28.8 | A15.1, p. 83 | A roll key per check rather than per unit | The second is recorded as not taken. |
-| A HS of a Casualty Reduced squad keeping its SW | Pass 1 live review | A7.302, p. 55 | Portage for the HS | Replacements and Battle Hardening keep the SW; other lineage drops it. |
 
-Berserk and Surrender from Heat of Battle (R0.2, R19.2, R22.5, R28.1) left this list with unit step 30, 2026-09-27. The simplified resolutions recorded by passes 1, 3, and 4 moved here from sections 10, 12, and 14 on 2026-09-27.
+Berserk and Surrender from Heat of Battle (R0.2, R19.2, R22.5, R28.1) left this list with unit step 30, 2026-09-27. The backlog pass 5 (2026-09-27) built the rest but the berserk route and the wreck: CX on a withdrawal, the captor's choice at a surrender, Acquisition on units, vehicle Motion and MP left, the Unlikely Kill option, Recall as its own status, the hero moving on, Battle Hardening and Leader Creation as options, the second Heat of Battle DR, and the HS keeping its SW. It also built, from the sections below, Double Time and CX, counter names by printed values, Massacre, per-side CC declarations, grain by season for Infantry, the passenger-only survival label, and the Stun +1 and used BU toggle page fixes. The simplified resolutions recorded by passes 1, 3, and 4 moved here from sections 10, 12, and 14 on 2026-09-27.
 
 ## 2. Rally (step 19)
 
@@ -64,7 +52,6 @@ Berserk and Surrender from Heat of Battle (R0.2, R19.2, R22.5, R28.1) left this 
 | Hexside terrain at a target or on entry (walls, hedges, bocage) | R22.3; step 18 | B9, p. 118 and after | Hexside TEM |
 | TPBF and entry into an enemy Location | R22.6 | A8.312, p. 61; A4.14, p. 49 | Close Combat |
 | Snap Shots | R22.8 | A8.15, p. 59 | Hexside targeting |
-| CX (Double Time) | R22.8 | A4.5, p. 51 | none |
 
 ## 5. Support weapons (step 23)
 
@@ -131,7 +118,6 @@ Step 17 left these out; steps 19 to 23 do not build them.
 | Nationalities other than German and Russian in the Heat of Battle and Leader Creation drm | Pass 1 review | A15.1, p. 83; A18.2, p. 85 | Counters of those nationalities; a nationality the table does not name should be refused, not given 0 |
 | A Green MMC stacked with an unbroken leader, exempt from Inexperienced restrictions; the live game supplying the Inexperienced fact | Pass 1 review | A19.3, p. 86 | Green counters, which the catalog does not have; until then a Green unit is refused |
 | A hero created by a concealed MMC being concealed too | Pass 1 live review | A15.21, p. 83; A12.1, p. 76 | Reviewing concealment of created units |
-| Counter names (for example "7-0") in place of definition ids on the Play page | Pass 1 live review | none | A display name in the catalog |
 
 ## 11. Added by the deviations pass 2 (steps 29 and 30)
 
@@ -146,14 +132,13 @@ Step 17 left these out; steps 19 to 23 do not build them.
 | Ambush Withdrawal | R29.1 | A11.41, pp. 73 and 74 | Withdrawal before and after the ambusher's round |
 | TI units in CC | R29.14 | A4.8, p. 52; the CCT, p. 692 | TI tasks |
 | Overstacked CC and overstacking advances | R29.14, R29.2 | A5.12, A5.131, p. 52 | Overstacking penalties |
-| An advance that makes the unit CX, or changes level in a hex | R29.2 | A4.72, A4.7, p. 52 | CX status; building levels |
+| An advance that changes level in a hex | R29.2 | A4.72, A4.7, p. 52 | building levels |
 | A leader's MF bonus and portage in the A4.72 reading | R29.2 | A4.12, A4.42, p. 50 | Portage |
 | Fire into a Melee Location, TPBF, and fire by units held in Melee | R29.10 | A11.15, p. 72; A7.212, p. 55 | Fire into one's own Location |
 | Fire at a Location holding prisoners, and fire by a Guard | R30.8 | A20.52, A20.54, p. 87 | The prisoners' share of an attack |
 | Unarmed counters, the excess surrendering units freed as Unarmed, and a Guard without capacity | R30.7 | A20.5, A20.21, A20.51, p. 87 | Unarmed definitions in the catalog; until then a surrender to Guards with no capacity is refused |
 | Surrender in the RtPh, and a Disrupted unit's surrender next to or among Good Order enemy units | R30.1 | A20.21, pp. 86 and 87; A19.12, p. 86 | Routing |
 | Moving, transferring, or abandoning prisoners by choice; a prisoner's owner moving it once freed | R30.8 | A20.5, A20.53, p. 87 | Guard actions in the RPh and APh |
-| Massacre, including a berserk unit with prisoners | R30.8 | A20.4, p. 87 | Until then a Heat of Battle subject sharing a Location with prisoners is refused |
 | Fire by berserk units (TPBF in the AFPh, and the DFPh) | R30.5 | A15.432, p. 84 | Fire into one's own Location |
 | A berserk charge onto a lone SMC (an Infantry OVR without the NTC) | R30.5 | A15.432, p. 84 | Infantry OVR outcomes after a pass |
 | A berserk unit's choice of which 1PP SW to abandon beyond its IPC | R30.5 | A15.431, p. 84; A4.42, p. 50 | An owner's choice before the charge |
@@ -165,9 +150,7 @@ Step 17 left these out; steps 19 to 23 do not build them.
 | A Guard advancing into CC | R29.19 | A20.53, A20.55, pp. 87 and 88 | The prisoners' CC | Refused. |
 | Mandatory CC that the package refuses | R29.17 | A15.43, A11.15 | The CC exclusions above | A berserk or reinforcing unit's Location must have its round only when the package reviews its units; if every declaration is then refused (undecided odds or Field Promotion), the CCPh cannot end, and the players split the attack. |
 | Field Promotion ambiguity in everyday combined attacks (the table player's most frequent refusal) | R29.12 | A18.12, p. 85 | A declaration of the base MMC and the MMC the created leader defends with | Two MMC of different Morale Level combining, or an enemy attack on some but not all of an attack's MMC, is refused before any roll. |
-| Play page: each side declares only its own SMC stacking and attacks, and only the captor's side chooses the Guard | Table-player review | A11.14, A15.5 | Player identity on the Play page (hot seat today) | Any viewer sets both sides' declarations. |
-| Play page: counters by printed values (4-6-7, 8-1) in the CC panel and records | Table-player review | | Printed values from the catalog on the page | Units show their id, definition id, and CC state. |
-| Play page: SW left unpossessed by a surrender or a charge, and a berserk leader's companions' TCs, in the CC record | Table-player review | A20.24, A15.431, A15.41 | | Shown in the fire and rally records and the move's reasons, not in the CC record. |
+| Play page: a berserk leader's companions' TCs in the CC record (SW left unpossessed by eliminated units are listed since pass 5) | Table-player review | A20.24, A15.431, A15.41 | | Shown in the fire and rally records and the move's reasons, not in the CC record. |
 
 ## 12. Added by the deviations pass 3 (step 24)
 
@@ -227,6 +210,13 @@ Found by playing the Play page with scripted dice in the games `pass23-demo`, `p
 | Vehicles in CC (and Infantry entering or advancing into an enemy vehicle's Location), Rally, and Rout; a berserk charge at a vehicle ends in place | R25.10; table player, item 1 | A11.5, A11.6, A15.43, D7 | CC against vehicles |
 | A Gun's shot at a Location with a vehicle (the Vehicle Target Type) | R25.10 | C3.31 | Step 24's successors |
 | A vehicle's entry into a Location holding enemy units the moving side cannot see (refused without disclosing them) | Table player, item 7 | A12.15, D2 | Concealment loss on vehicle entry |
-| Grain as Open Ground outside its season for Infantry MF: the Infantry path still charges Grain 1½ MF in every month (the vehicle path follows B15.6) | Referee, D7 | B15.6 | |
-| The wreck face's accessible name reads "crew survival" for a truck's passenger-only cs#; the trait `asl:cs-passengers-only` records it | Referee, D8 | D5.6, Listings Key p. 338 | A conditional name template |
-| The Play page shows Stun +1 as the raw condition `stun-recovery`, and offers a BU toggle already used this phase (the gate refuses it) | Table player, items 10 and 11 | D5.33, D5.34 | |
+
+## 15. Added by the backlog pass 5
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| Dropping the SW beyond a withdrawing unit's IPC | R5.5 | A11.21, p. 73; A4.43, p. 50 | SW handling (pass 13) | A unit in Melee carrying more than its IPC may not withdraw; the refusal says so. |
+| A leader's two MF and one IPC for a unit advancing with him | R5.5 | A4.72 EX, p. 52; A4.12, p. 49 | The leader MF bonus (pass 10, task 10.5) | An advance by a Good Order leader with a MMC carrying more than its IPC is refused. |
+| The Friendly Board Edge from the scenario card | R5.16 | A20.53, p. 87 | Scenario cards (pass 16) | The players name one edge per side at a new game; a side with none named cannot Recall off the map. |
+| A Recalled AFV's Stop to unload its Passengers | Table player, item 9 | D5.341, pp. 203 to 204 | Passengers (pass 6) | A leaving Recalled AFV may not Stop. |
+| A Recall route to a Friendly Board Edge of more than one edge | R5.16, R5.17 | D5.341, pp. 203 to 204; A20.53 | Scenario cards (pass 16) | Only the one named edge counts. |

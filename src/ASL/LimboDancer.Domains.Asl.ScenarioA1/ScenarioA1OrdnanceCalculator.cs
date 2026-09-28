@@ -245,8 +245,14 @@ public static class ScenarioA1OrdnanceCalculator
         IReadOnlyList<FireTarget> targets, FireRolls? rolls)
     {
         var others = shot.Hit!.Targets!.Where(item => !targets.Contains(item)).ToArray();
+
+        // Ruling R5.8: each attack of a split hit answers the options of its own targets.
+        var ids = targets.Select(item => item.UnitId).ToHashSet(StringComparer.Ordinal);
         return shot.Hit with
         {
+            Choices = shot.Hit.Choices is { } choices
+                ? choices.Where(item => item.Key.Split(':') is [_, var unit, ..] && ids.Contains(unit)).ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal)
+                : null,
             Targets = targets,
             Firers = [],
             Director = null,
@@ -286,6 +292,12 @@ public static class ScenarioA1OrdnanceCalculator
         if (shot.Crew!.Pinned == true)
         {
             drm.Add(new FireModifier("case-d", 2, "C5.4"));
+        }
+
+        // A4.51 (ruling R5.2): a CX crew adds one to its Gun's To Hit DR.
+        if (shot.Crew.Cx == true)
+        {
+            drm.Add(new FireModifier("cx", 1, "A4.51"));
         }
 
         var concealedTarget = hit.Targets!.All(Concealed);
@@ -456,6 +468,12 @@ public static class ScenarioA1OrdnanceCalculator
         if (resolution.Disposition == FireResolution.Resolved)
         {
             return null;
+        }
+
+        // Ruling R5.8: an option the hit reaches is asked for under its own key, which names its unit.
+        if (resolution.Reasons is [{ } choice] && choice.StartsWith("asl.a1.fire.choice-missing:", StringComparison.Ordinal))
+        {
+            return Refused(OrdnanceResolution.Indeterminate, [Prefix + "choice-missing:" + choice["asl.a1.fire.choice-missing:".Length..]]);
         }
 
         return resolution.Reasons is [{ } reason] && reason.StartsWith("asl.a1.fire.roll-missing:", StringComparison.Ordinal)

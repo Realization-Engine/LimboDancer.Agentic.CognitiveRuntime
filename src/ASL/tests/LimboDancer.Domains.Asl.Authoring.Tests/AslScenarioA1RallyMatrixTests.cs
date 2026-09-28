@@ -10,7 +10,7 @@ namespace LimboDancer.Domains.Asl.Authoring.Tests;
 public sealed class AslScenarioA1RallyMatrixTests
 {
     private const string SourceCommit = "a3254ff1d492dbdd28483d86f5b42437b48e80d4";
-    private const string MatrixSha256 = "63931938cd9a1dc5c342be82b921c4d9d6059508cec294b0418928504a079467";
+    private const string MatrixSha256 = "23a495567b198769e126d2dd0293294ceafae189f4854ca3fad76de5085a7e0a";
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     private static string Registry(string name) => Path.Combine(RepositoryPaths.Root, "docs", "ASL", "SourceRegistry", name);
@@ -46,12 +46,13 @@ public sealed class AslScenarioA1RallyMatrixTests
             .Concat(AslScenarioA1FireSourceReview.BuildBerserkSurrender(RepositoryPaths.Root, manifests, attestation).Records)
             .Concat(AslScenarioA1FireSourceReview.BuildOrdnance(RepositoryPaths.Root, manifests, attestation).Records)
             .Concat(AslScenarioA1FireSourceReview.BuildVehicles(RepositoryPaths.Root, manifests, attestation).Records)
+            .Concat(AslScenarioA1FireSourceReview.BuildPass5(RepositoryPaths.Root, manifests, attestation).Records)
             .Where(item => item.Disposition == TirSourceVerificationDisposition.Verified)
             .Select(item => item.SourceFragment.FragmentId).ToHashSet(StringComparer.Ordinal);
 
         using var matrix = Read("asl-scenario-a1.rally-case-matrix.json");
         var fragments = matrix.RootElement.GetProperty("sourceFragments").EnumerateArray().ToArray();
-        Assert.Equal(45, fragments.Length);
+        Assert.Equal(47, fragments.Length);
         foreach (var item in fragments)
         {
             var fragment = Assert.Single(manifests.Fragments, candidate => candidate.FragmentId == item.GetProperty("fragmentId").GetString());

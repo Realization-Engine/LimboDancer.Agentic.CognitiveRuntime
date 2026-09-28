@@ -258,6 +258,13 @@
       "startLine": 832,
       "fragmentId": "asl-fragment:sha256:f1bd2904c88de953e987558e1427d8b0462feef35dd686f9a4abbba1667d7f32",
       "contentSha256": "b4c78f2c06f3f71adea064784586749e9ea3ae73fa0b4cce5d810fabc554edcd"
+    },
+    {
+      "ruleId": "A4.51",
+      "physicalPdfPage": 51,
+      "startLine": 305,
+      "fragmentId": "asl-fragment:sha256:f49373d52a53a41fde917dc0a5e2ea7aa94a269361f348db39e91eb29ca4e369",
+      "contentSha256": "eb151224e0987cb136ed6b50b1a05a8ca2bc5fe45a4578d07f84b1500f47570e"
     }
   ],
   "rulings": {
@@ -273,7 +280,8 @@
     "berserk": "A berserk unit attacks in its side's round, never with a leader's DRM, and returns to normal when its group's attack eliminated every enemy unit eliminated in its Location, at least one, and none is left (A11.141, A15.43, A15.46; R29.15).",
     "withdrawal": "A unit held in Melee, not pinned, berserk, or Disrupted, may withdraw to a declared ADJACENT Location an advance could enter that holds no enemy unit; it makes no attack, attacks on it take -2 and +1 per friendly unit in the Melee not withdrawing, and it withdraws unless eliminated or Reduced; a broken unit that can withdraw must (A11.2, A11.21, A11.16; R29.11).",
     "reinforcement": "A unit that advanced this APh into a Location already in Melee attacks in its side's round (A11.15; R29.17).",
-    "odds": "Odds above 10 to 1 but below 11 to 1, with or without a created leader's FP, are undecided (A11.11; R29.16)."
+    "odds": "Odds above 10 to 1 but below 11 to 1, with or without a created leader's FP, are undecided (A11.11; R29.16).",
+    "cx": "plus-one-to-a-cc-attack-a-cx-unit-makes-once-minus-one-to-a-cc-attack-against-a-cx-unit-and-plus-one-to-its-sides-ambush-dr-A4.51 (R5.2)"
   },
   "resolution": {
     "odds": "The attackers' FP against the defenders' FP, rounded down to the printed CCT column; < 1-8 below one to eight, > 10-1 above ten to one (A11.11, p. 692).",
@@ -429,6 +437,15 @@
         "A11.11"
       ],
       "reason": "A roll the resolution needs is not recorded."
+    },
+    {
+      "caseId": "A1-cc-cx",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "resolved",
+      "sourceRules": [
+        "A4.51"
+      ],
+      "reason": "A CX unit adds one to a CC attack it makes, once however many take part, and to its side's Ambush dr; a CC attack against a CX unit subtracts one for that unit (ruling R5.2)."
     }
   ],
   "admissionRule": "A declared round is resolved only when every fact is within the reviewed scope and every roll it needs is recorded; otherwise it is Abstained or Indeterminate with its reasons.",
@@ -438,7 +455,7 @@
     "Capture attempts in CC and prisoners in a CC Location (A20.22, A20.55)",
     "Infiltration withdrawal and Ambush Withdrawal (A11.22, A11.41)",
     "TI units in CC (A4.8), and overstacked Locations (A5.12, A5.131)",
-    "Advances that would make a unit CX (A4.72), advances into concealed enemy units, and advances changing level"
+    "Advances into concealed enemy units, and advances changing level"
   ],
   "executionAuthority": "none"
 }

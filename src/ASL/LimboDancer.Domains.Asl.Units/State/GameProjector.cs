@@ -1,5 +1,6 @@
 using System.Text.Json;
 using LimboDancer.Domains.Asl.Maps.Composition;
+using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Units.Catalog;
 using LimboDancer.Domains.Asl.Units.Vocabulary;
 
@@ -70,7 +71,7 @@ public static class GameProjector
                 _ when previous is null => Fail<GameState>("UNIT-STATE-004", "The first event must be game-started."),
                 GameStarted => Fail<GameState>("UNIT-STATE-004", "A game starts only once."),
                 PhaseChanged phase => ChangePhase(previous, phase),
-                InstanceCreated created => CreateInPlay(previous, created.Instance),
+                InstanceCreated created => CreateInPlay(previous, created),
                 InstanceMoved moved => Move(previous, moved),
                 EquipmentTransferred transferred => Transfer(previous, transferred),
                 ConditionsChanged changed => ChangeConditions(previous, changed),
@@ -97,6 +98,11 @@ public static class GameProjector
                 CloseCombatResolved combat => CloseCombat(previous, combat),
                 OrdnanceFired fired => Ordnance(previous, fired),
                 SurrenderPending surrender => Surrender(previous, surrender, gameEvent.EventId),
+                SurrenderRejected rejected => RejectSurrender(previous, rejected),
+                PrisonersMassacred massacre => Massacre(previous, massacre),
+                ChoicePending pending => PendChoice(previous, pending, gameEvent.EventId),
+                ChoiceMade made => MakeChoice(previous, made),
+                AcquisitionChanged acquisition => ChangeAcquisition(previous, acquisition),
                 _ => Fail<GameState>("UNIT-STATE-001", $"'{gameEvent.Type}' has no projection."),
             };
 
@@ -107,6 +113,8 @@ public static class GameProjector
 
             next = KeepMovingStack(next, gameEvent.Payload);
             next = KeepMelee(next);
+            next = KeepCx(next);
+            next = KeepAcquisitions(next, gameEvent.Payload);
             next = next with
             {
                 Revision = gameEvent.Revision,
@@ -220,6 +228,12 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-018", $"The entry attempt '{state.OpenAttempts[0].EventId}' is open, so the phase may not change.");
             }
 
+            // Ruling R5.8: a pending choice is answered before anything else happens.
+            if (state.Choice is { } choice)
+            {
+                return Fail<GameState>("UNIT-STATE-035", $"The {choice.Side} side's choice '{choice.Key}' is pending, so the phase may not change.");
+            }
+
             // A15.5: a surrender waits for the captor's choice before anything else happens.
             if (state.PendingSurrenders.Count > 0)
             {
@@ -260,12 +274,27 @@ public static class GameProjector
             var newPlayerTurn = change.PhasingSide != state.PhasingSide;
             var melee = state.Phase == "ccph" ? InMelee(state) : null;
 
-            // D5.34, D5.341: at the end of the Player Turn in which it was placed, a Stun becomes Stun +1, and a Recalled AFV leaves play
-            // (ruling R25.6: its Motion route to a Friendly Board Edge is not played).
+            // D5.34, D5.341: at the end of the Player Turn in which it was placed, a Stun becomes Stun +1, and a Recall becomes Recall; +1,
+            // after which the AFV must leave by its Friendly Board Edge (ruling R5.17).
             if (newPlayerTurn)
             {
                 state = EndStuns(state);
             }
+
+            // A4.51 (ruling R5.3): a side's CX counters leave at the start of its next MPh, and those units may not Double Time in it.
+            string[] rested = change.Phase == "mph"
+                ? [.. state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == change.PhasingSide
+                    && GameState.Condition(unit, Conditions.Cx) == ConditionState.True).Select(unit => unit.Id)]
+                : [];
+            foreach (var id in rested)
+            {
+                var unit = state.Unit(id)!;
+                state = Replace(state, unit with
+                {
+                    Conditions = new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal) { [Conditions.Cx] = ConditionState.False }
+                });
+            }
+
             return CheckPhase(state, change.Turn, change.Phase, change.PhasingSide)
                 ? state with
                 {
@@ -279,11 +308,12 @@ public static class GameProjector
                     RepairsThisPhase = [],
                     ResidualFire = [],
                     Movement = null,
+                    NoDoubleTime = rested,
                     RallyAttemptsThisPlayerTurn = newPlayerTurn ? [] : state.RallyAttemptsThisPlayerTurn,
                     FirstMmcRallyTaken = newPlayerTurn ? [] : state.FirstMmcRallyTaken,
-                    Units = [.. state.Units.Select(unit => HoldInMelee(Clear(unit is { MfSpent: 0, MovementEnded: false, HalfMfSpent: false }
+                    Units = [.. state.Units.Select(unit => HoldInMelee(Clear(unit is { MfSpent: 0, MovementEnded: false, HalfMfSpent: false, DoubleTimeMf: 0 }
                         ? unit
-                        : unit with { MfSpent = 0, MovementEnded = false, HalfMfSpent = false }, cleared), melee))],
+                        : unit with { MfSpent = 0, MovementEnded = false, HalfMfSpent = false, DoubleTimeMf = 0 }, cleared), melee))],
                     Equipment = [.. state.Equipment.Select(equipment => equipment.Conditions.Keys.Any(cleared.Contains)
                         ? equipment with { Conditions = Without(equipment.Conditions, cleared) }
                         : equipment)],
@@ -300,12 +330,15 @@ public static class GameProjector
                     return unit;
                 }
 
+                // D5.341: a Recall's counter is flipped to its "Recall; +1" side: the AFV adds one as under Stun +1 and must now leave.
                 if (GameState.Condition(unit, Conditions.Recalled) == ConditionState.True)
                 {
-                    return unit with
-                    {
-                        Status = InstanceStatus.Eliminated
-                    };
+                    return GameState.Condition(unit, Conditions.StunRecovery) == ConditionState.True
+                        ? unit
+                        : unit with
+                        {
+                            Conditions = new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal) { [Conditions.StunRecovery] = ConditionState.True },
+                        };
                 }
 
                 return GameState.Condition(unit, Conditions.Stunned) == ConditionState.True
@@ -532,6 +565,16 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-033", reason);
             }
 
+            if (Choices(state, fired.Facts.TryGetProperty("hit", out var hitFacts) && hitFacts.ValueKind == JsonValueKind.Object ? hitFacts : fired.Facts) is { } choiceReason)
+            {
+                return Fail<GameState>("UNIT-STATE-035", choiceReason);
+            }
+
+            state = state with
+            {
+                ChoicesMade = new Dictionary<string, string>(StringComparer.Ordinal)
+            };
+
             var turned = fired.Facing is { } facing && gun.Position is MapPosition map
                 ? gun with
                 {
@@ -567,6 +610,246 @@ public static class GameProjector
             return state with
             {
                 PendingSurrenders = [.. state.PendingSurrenders, new PendingSurrender(unit.Id, surrender.Captors, eventId)],
+            };
+        }
+
+        /// <summary>
+        /// Ruling R5.8: a record that resolves after pending choices declares exactly the answers given to them, in its facts' <c>choices</c>;
+        /// one with no choices declares none. No choice may be pending when a record is made. Null when the record agrees.
+        /// </summary>
+        private static string? Choices(GameState state, JsonElement facts)
+        {
+            if (state.Choice is { } pending)
+            {
+                return $"The {pending.Side} side's choice '{pending.Key}' is pending, so no record resolves before it is answered.";
+            }
+
+            var declared = new Dictionary<string, string>(StringComparer.Ordinal);
+            if (facts.TryGetProperty("choices", out var choices) && choices.ValueKind == JsonValueKind.Object)
+            {
+                foreach (var item in choices.EnumerateObject())
+                {
+                    declared[item.Name] = item.Value.ValueKind == JsonValueKind.String ? item.Value.GetString()! : item.Value.ToString();
+                }
+            }
+
+            return declared.Count == state.ChoicesMade.Count && declared.All(item => state.ChoicesMade.TryGetValue(item.Key, out var made) && made == item.Value)
+                ? null
+                : $"The record declares the choices {Describe(declared)}, but the choosing sides answered {Describe(state.ChoicesMade)} (ruling R5.8).";
+
+            static string Describe(IReadOnlyDictionary<string, string> map) =>
+                map.Count == 0 ? "none" : string.Join(", ", map.OrderBy(item => item.Key, StringComparer.Ordinal).Select(item => $"{item.Key}={item.Value}"));
+        }
+
+        /// <summary>A pending choice (ruling R5.8): one at a time, by a side of the game, with the options it may answer.</summary>
+        private GameState? PendChoice(GameState state, ChoicePending pending, string eventId)
+        {
+            if (state.Choice is not null || state.Side(pending.Side) is null || pending.Options.Count == 0
+                || pending.Kind is not (ChoicePending.LeaderCreation or ChoicePending.BattleHardening or ChoicePending.UnlikelyKill or ChoicePending.Acquisition)
+                || state.ChoicesMade.ContainsKey(pending.Key))
+            {
+                return Fail<GameState>("UNIT-STATE-035", "A choice is pending one at a time, for a side of the game, with its options, and once per key (ruling R5.8).");
+            }
+
+            return state with
+            {
+                Choice = new PendingChoice(pending.Key, pending.Kind, pending.Side, pending.Options, eventId, pending.Resume),
+            };
+        }
+
+        /// <summary>
+        /// The choosing side's answer (ruling R5.8): one of the pending choice's options. An Acquisition choice keeps the counter on the
+        /// acquired units in the chosen Location (C6.51); every other answer waits for the record that resolves with it.
+        /// </summary>
+        private GameState? MakeChoice(GameState state, ChoiceMade made)
+        {
+            if (state.Choice is not { } pending || pending.Key != made.Key || !pending.Options.Contains(made.Option, StringComparer.Ordinal))
+            {
+                return Fail<GameState>("UNIT-STATE-035", $"'{made.Key}' is not the pending choice, or '{made.Option}' is not one of its options (ruling R5.8).");
+            }
+
+            var next = state with
+            {
+                Choice = null
+            };
+            if (pending.Kind != ChoicePending.Acquisition)
+            {
+                return next with
+                {
+                    ChoicesMade = new Dictionary<string, string>(state.ChoicesMade, StringComparer.Ordinal) { [made.Key] = made.Option },
+                };
+            }
+
+            var gun = pending.Resume.TryGetProperty("gun", out var gunElement) ? gunElement.GetString() : null;
+            var acquisition = state.Acquisitions.FirstOrDefault(item => item.Gun == gun);
+            if (acquisition is null || !BoardLocation.TryParse(made.Option, out var kept))
+            {
+                return Fail<GameState>("UNIT-STATE-035", "An Acquisition choice names a Gun with an Acquisition and one of its Locations (C6.51).");
+            }
+
+            return next with
+            {
+                Acquisitions = [.. state.Acquisitions.Select(item => item.Gun != gun ? item : item with
+                {
+                    Location = kept,
+                    Units = [.. acquisition.Units.Where(id => state.Location(id)?.Location == kept)],
+                })],
+            };
+        }
+
+        /// <summary>A20.3 (ruling R5.6): the captor's side rejects a pending surrender; the unit is eliminated and its side faced with No Quarter.</summary>
+        private GameState? RejectSurrender(GameState state, SurrenderRejected rejected)
+        {
+            if (state.PendingSurrenders.FirstOrDefault(item => item.Unit == rejected.Unit) is not { } pending || Active(state, pending.Unit) is not UnitInstance unit)
+            {
+                return Fail<GameState>("UNIT-STATE-031", $"'{rejected.Unit}' has no pending surrender to reject (A20.3).");
+            }
+
+            var next = Eliminate(state with
+            {
+                PendingSurrenders = [.. state.PendingSurrenders.Where(item => item.Unit != unit.Id)],
+            }, unit.Id);
+            return next is null ? null : next with
+            {
+                NoQuarter = next.NoQuarter.Contains(unit.Side, StringComparer.Ordinal) ? next.NoQuarter : [.. next.NoQuarter, unit.Side],
+            };
+        }
+
+        /// <summary>
+        /// A20.4 (ruling R5.7): prisoners eliminated by units of their Guard's side that may massacre (Russian or berserk Infantry, not in
+        /// Melee), in the same Location, in a fire phase of that side. The victims' side is faced with No Quarter, and its ELR is raised by one,
+        /// once, to at most 6. A berserk massacre returns its units to normal.
+        /// </summary>
+        private GameState? Massacre(GameState state, PrisonersMassacred massacre)
+        {
+            var units = massacre.Units.Select(state.Unit).ToArray();
+            var prisoners = massacre.Prisoners.Select(state.Unit).ToArray();
+            if (units.Length == 0 || prisoners.Length == 0 || units.Any(unit => unit is not { Status: InstanceStatus.Active })
+                || prisoners.Any(unit => unit is not { Status: InstanceStatus.Active }))
+            {
+                return Fail<GameState>("UNIT-STATE-036", "A Massacre names active units and the active prisoners they eliminate (A20.4).");
+            }
+
+            var side = units[0]!.Side;
+            var at = state.Location(units[0]!.Id)?.Location;
+            var firePhase = state.Phase is "pfph" or "afph" ? state.PhasingSide == side : state.Phase == "dfph" && state.PhasingSide != side;
+            string Nationality(UnitInstance unit) => unit.Definition is { } reference ? catalog?.Definition(reference.Definition)?.Nationality ?? string.Empty : string.Empty;
+            if (!firePhase || at is null
+                || units.Any(unit => unit!.Side != side || state.Location(unit.Id)?.Location != at || !vocabulary.IsA(unit.Kind, "asl:personnel")
+                    || GameState.Condition(unit, Conditions.Melee) == ConditionState.True || GameState.Condition(unit, Conditions.Captured) == ConditionState.True
+                    || (massacre.Berserk ? GameState.Condition(unit, Conditions.Berserk) != ConditionState.True
+                        : GameState.Condition(unit, Conditions.Berserk) != ConditionState.True && Nationality(unit) != "russian"))
+                || prisoners.Any(unit => unit!.Side == side || GameState.Condition(unit, Conditions.Captured) != ConditionState.True || state.Location(unit.Id)?.Location != at))
+            {
+                return Fail<GameState>("UNIT-STATE-036",
+                    "Only Russian or berserk Infantry not in Melee massacre the prisoners in their Location, in a fire phase of their own side (A20.4).");
+            }
+
+            GameState? next = state;
+            foreach (var prisoner in prisoners)
+            {
+                next = Eliminate(next!, prisoner!.Id);
+                if (next is null)
+                {
+                    return null;
+                }
+            }
+
+            if (massacre.Berserk)
+            {
+                foreach (var unit in units)
+                {
+                    var current = next!.Unit(unit!.Id)!;
+                    next = Replace(next, current with
+                    {
+                        Conditions = new Dictionary<string, ConditionState>(current.Conditions, StringComparer.Ordinal) { [Conditions.Berserk] = ConditionState.False }
+                    });
+                }
+            }
+
+            var victims = prisoners[0]!.Side;
+            var raise = !next!.MassacreElrRaised.Contains(victims, StringComparer.Ordinal);
+            return next with
+            {
+                NoQuarter = next.NoQuarter.Contains(victims, StringComparer.Ordinal) ? next.NoQuarter : [.. next.NoQuarter, victims],
+                MassacreElrRaised = raise ? [.. next.MassacreElrRaised, victims] : next.MassacreElrRaised,
+                Sides = raise ? [.. next.Sides.Select(item => item.Id == victims && item.Elr is { } elr ? item with { Elr = Math.Min(elr + 1, 6) } : item)] : next.Sides,
+            };
+        }
+
+        /// <summary>
+        /// Where a Gun's Acquisition is now (C6.5, C6.51, ruling R5.13), as the planner read it: on Known enemy units in its Location, or on the
+        /// Location alone when its target left the Gun's LOS. The DRM is unchanged.
+        /// </summary>
+        private GameState? ChangeAcquisition(GameState state, AcquisitionChanged change)
+        {
+            if (state.Acquisitions.FirstOrDefault(item => item.Gun == change.Gun) is not { } acquisition || state.Find(change.Gun)?.Side is not { } side
+                || change.Units.Any(id => state.Unit(id) is not { Status: InstanceStatus.Active } unit || unit.Side == side
+                    || state.Location(id)?.Location != change.Location || GameState.Condition(unit, Conditions.Concealed) == ConditionState.True))
+            {
+                return Fail<GameState>("UNIT-STATE-033", "An Acquisition changes for a Gun that has one, onto Known enemy units in its Location (C6.5, C6.51).");
+            }
+
+            return state with
+            {
+                Acquisitions = [.. state.Acquisitions.Select(item => item.Gun != change.Gun ? item : acquisition with { Location = change.Location, Units = change.Units })],
+            };
+        }
+
+        /// <summary>A4.51 (ruling R5.3): a unit's CX counter is removed when it breaks; A15.42: and when it goes berserk.</summary>
+        private static GameState KeepCx(GameState next)
+        {
+            foreach (var unit in next.Units.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Cx) == ConditionState.True
+                && (GameState.Condition(unit, Conditions.Broken) == ConditionState.True || GameState.Condition(unit, Conditions.Berserk) == ConditionState.True)).ToArray())
+            {
+                next = Replace(next, unit with
+                {
+                    Conditions = new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal) { [Conditions.Cx] = ConditionState.False }
+                });
+            }
+
+            return next;
+        }
+
+        /// <summary>
+        /// C6.5, C6.51 (ruling R5.13): an Acquisition is lost when its Gun is no longer manned by an active Good Order crew; it follows its units
+        /// into their successors (A7.302, A19.13), drops those no longer active or taken prisoner, and follows them while they share one
+        /// Location. The planner moves it back to the last Location in the Gun's LOS when they leave it.
+        /// </summary>
+        private GameState KeepAcquisitions(GameState next, EventPayload payload)
+        {
+            if (next.Acquisitions.Count == 0)
+            {
+                return next;
+            }
+
+            var kept = new List<GunAcquisition>();
+            foreach (var acquisition in next.Acquisitions)
+            {
+                if (next.Find(acquisition.Gun) is not EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Manned } manning }
+                    || next.Unit(manning.Holder) is not { Status: InstanceStatus.Active } crew || GameState.GoodOrder(crew, vocabulary) == ConditionState.False)
+                {
+                    continue;
+                }
+
+                var units = acquisition.Units.ToList();
+                if (payload is LineageRecorded lineage && units.Any(lineage.Consumed.Contains))
+                {
+                    units = [.. units.Where(id => !lineage.Consumed.Contains(id)), .. lineage.Produced.Select(item => item.Id)];
+                }
+
+                units = [.. units.Where(id => next.Unit(id) is { Status: InstanceStatus.Active } unit && GameState.Condition(unit, Conditions.Captured) != ConditionState.True)];
+                var locations = units.Select(id => next.Location(id)?.Location).Distinct().ToArray();
+                kept.Add(acquisition with
+                {
+                    Units = units,
+                    Location = locations is [{ } only] ? only : acquisition.Location,
+                });
+            }
+
+            return next with
+            {
+                Acquisitions = kept
             };
         }
 
@@ -615,6 +898,15 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-024", reason);
             }
 
+            if (Choices(state, fire.Facts) is { } choiceReason)
+            {
+                return Fail<GameState>("UNIT-STATE-035", choiceReason);
+            }
+
+            state = state with
+            {
+                ChoicesMade = new Dictionary<string, string>(StringComparer.Ordinal)
+            };
             fires[eventId] = (fire, gameEvent.Visibility is not null, false);
 
             // C2.24, D3.5 (unit step 25): a vehicle's MG shot keeps its Multiple ROF for this phase when its record says so, as a Gun's does.
@@ -684,6 +976,16 @@ public static class GameProjector
             {
                 return Fail<GameState>("UNIT-STATE-027", reason);
             }
+
+            if (Choices(state, rally.Facts) is { } choiceReason)
+            {
+                return Fail<GameState>("UNIT-STATE-035", choiceReason);
+            }
+
+            state = state with
+            {
+                ChoicesMade = new Dictionary<string, string>(StringComparer.Ordinal)
+            };
 
             var mmc = vocabulary.IsA(unit.Kind, "asl:mmc") && unit.Side == state.PhasingSide && !state.FirstMmcRallyTaken.Contains(unit.Side);
             return state with
@@ -771,15 +1073,27 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-029", $"The next movement step is {(current?.Step ?? 0) + 1}.");
             }
 
+            // A4.5 (ruling R5.1): Double Time by Infantry neither broken, wounded, berserk, nor CX, nor rested from CX at this MPh's start.
+            if (moving.DoubleTime && movers.FirstOrDefault(unit => !vocabulary.IsA(unit!.Kind, "asl:personnel") || state.NoDoubleTime.Contains(unit.Id)
+                || new[] { Conditions.Broken, Conditions.Wounded, Conditions.Berserk, Conditions.Cx }.Any(name => GameState.Condition(unit, name) == ConditionState.True)) is { } tired)
+            {
+                return Fail<GameState>("UNIT-STATE-029", $"'{tired.Id}' may not Double Time: it is broken, wounded, berserk, or CX, or its CX counter left at this MPh's start (A4.5, A4.51).");
+            }
+
             var next = state;
             foreach (var unit in movers)
             {
                 var halves = (unit!.MfSpent * 2) + (unit.HalfMfSpent ? 1 : 0) + moving.HalfMf;
+                var conditions = moving.DoubleTime
+                    ? new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal) { [Conditions.Cx] = ConditionState.True }
+                    : unit.Conditions;
                 next = Replace(next, unit with
                 {
                     Position = new MapPosition(moving.To),
                     MfSpent = halves / 2,
-                    HalfMfSpent = halves % 2 == 1
+                    HalfMfSpent = halves % 2 == 1,
+                    Conditions = conditions,
+                    DoubleTimeMf = moving.DoubleTime ? (unit.MfSpent == 0 && !unit.HalfMfSpent ? 2 : 1) : unit.DoubleTimeMf,
                 })!;
                 next = MovePrisoners(next, unit.Id, new MapPosition(moving.To));
             }
@@ -810,10 +1124,17 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-034", "A vehicle step moves a vehicle of the phasing side that has not ended its move, in the MPh (D2.1).");
             }
 
-            if (new[] { Conditions.PrepFire, Conditions.Immobilized, Conditions.Stunned, Conditions.Recalled }
+            // D5.341: a Recall stops the AFV like a Stun for the rest of that Player Turn; once its counter shows Recall; +1 it must move.
+            var recalling = GameState.Condition(vehicle, Conditions.Recalled) == ConditionState.True && GameState.Condition(vehicle, Conditions.StunRecovery) != ConditionState.True;
+            if (new[] { Conditions.PrepFire, Conditions.Immobilized, Conditions.Stunned, Conditions.Abandoned }
                 .FirstOrDefault(name => GameState.Condition(vehicle, name) == ConditionState.True) is { } barred)
             {
-                return Fail<GameState>("UNIT-STATE-034", $"'{vehicle.Id}' is marked {barred.Replace("asl:", "", StringComparison.Ordinal)} and may not move (D.3, D.7, D5.34).");
+                return Fail<GameState>("UNIT-STATE-034", $"'{vehicle.Id}' is marked {barred.Replace("asl:", "", StringComparison.Ordinal)} and may not move (D.3, D.7, D5.34, D5.41).");
+            }
+
+            if (recalling)
+            {
+                return Fail<GameState>("UNIT-STATE-034", $"'{vehicle.Id}' is Recalled and may not move for the rest of this Player Turn (D5.341).");
             }
 
             var current = state.Movement;
@@ -830,19 +1151,36 @@ public static class GameProjector
             var inMotion = GameState.Condition(vehicle, Conditions.Motion) == ConditionState.True;
             var started = current is not null ? current.Started : inMotion;
             var moving = started && current?.Stopped != true;
-            var valid = step.Kind switch
+            var valid = current?.Ending != true && step.Kind switch
             {
                 VehicleStepped.Start => !moving && step.At == at.Location && step.Facing is null && step.HalfMp == 2,
                 VehicleStepped.Turn => moving && step.At == at.Location && step.Facing is { } turned && Math.Abs(((int)turned - (int)facing + 6) % 6) is 1 or 5
                     && step.HalfMp == 2,
                 VehicleStepped.Enter => moving && step.At != at.Location && step.Facing is null,
                 VehicleStepped.Stop => moving && step.At == at.Location && step.Facing is null && step.HalfMp == 2,
+
+                // D2.1 (ruling R5.15): the MP left at the end of its move, spent in its hex, moving or stopped; A2.6: an exit from its edge hex.
+                VehicleStepped.Remain => current is not null && step.At == at.Location && step.Facing is null,
+                VehicleStepped.Exit => moving && step.At == at.Location && step.Facing is null,
                 _ => false,
             };
             if (!valid)
             {
                 return Fail<GameState>("UNIT-STATE-034",
-                    "A vehicle starts when not moving; turns one hexspine, enters a Location, or stops only while moving; and turns, starts, and stops for one MP (D2.11 to D2.13).");
+                    "A vehicle starts when not moving; turns one hexspine, enters a Location, stops, or exits only while moving; turns, starts, and stops for one MP; and spends its MP left in its hex only to end its move (D2.1, D2.11 to D2.13).");
+            }
+
+            if (step.Kind == VehicleStepped.Exit)
+            {
+                // A2.6, D5.341: the vehicle leaves the playing area, not to return; it is recorded as exited, not eliminated.
+                var gone = Replace(state, vehicle with
+                {
+                    Position = OffMapPosition.Instance,
+                    Status = InstanceStatus.Exited,
+                    MovementEnded = true,
+                    Conditions = new Dictionary<string, ConditionState>(vehicle.Conditions, StringComparer.Ordinal) { [Conditions.Motion] = ConditionState.False },
+                })!;
+                return Settle(DropHeldBy(gone, [vehicle.Id]), new MovementState([vehicle.Id], at.Location, 0, step.Step, false, WindowOpen: false) { Vehicle = true, Members = [] });
             }
 
             var halves = (vehicle.MfSpent * 2) + (vehicle.HalfMfSpent ? 1 : 0) + step.HalfMp;
@@ -865,22 +1203,31 @@ public static class GameProjector
                     step.Step, false, WindowOpen: true)
                 {
                     Vehicle = true,
-                    Started = step.Kind != VehicleStepped.Stop,
-                    Stopped = step.Kind == VehicleStepped.Stop,
+                    Started = step.Kind == VehicleStepped.Remain ? current!.Started : step.Kind != VehicleStepped.Stop,
+                    Stopped = step.Kind == VehicleStepped.Remain ? current!.Stopped : step.Kind == VehicleStepped.Stop,
+                    Ending = step.Kind == VehicleStepped.Remain,
                 },
             };
         }
 
-        private GameState? CloseWindow(GameState state, MovementWindowClosed closed) =>
-            state.Movement is { WindowOpen: true } movement && movement.Step == closed.Step
-                ? state with
+        private GameState? CloseWindow(GameState state, MovementWindowClosed closed)
+        {
+            if (state.Movement is not { WindowOpen: true } movement || movement.Step != closed.Step)
+            {
+                return Fail<GameState>("UNIT-STATE-029", $"No DEFENDER window is open on step {closed.Step}.");
+            }
+
+            var next = state with
+            {
+                Movement = movement with
                 {
-                    Movement = movement with
-                    {
-                        WindowOpen = false
-                    }
+                    WindowOpen = false
                 }
-                : Fail<GameState>("UNIT-STATE-029", $"No DEFENDER window is open on step {closed.Step}.");
+            };
+
+            // Ruling R5.15: a vehicle that spent its MP left in its final hex ends its move when the DEFENDER passes.
+            return movement.Ending ? EndMovement(next, new MovementEnded([.. movement.Members.Count > 0 ? movement.Members : movement.Movers])) : next;
+        }
 
         /// <summary>
         /// The ATTACKER ends the move of some or all of the stack's members (A4.2, A8.11). A unit that already left the stack
@@ -972,7 +1319,8 @@ public static class GameProjector
             // never stops it.
             var leaving = members.Where(id => next.Unit(id) is not { Status: InstanceStatus.Active } unit
                 || (movement.Vehicle
-                    ? new[] { Conditions.Stunned, Conditions.Recalled, Conditions.Immobilized }.Any(name => GameState.Condition(unit, name) == ConditionState.True)
+                    ? new[] { Conditions.Stunned, Conditions.Immobilized, Conditions.Abandoned }.Any(name => GameState.Condition(unit, name) == ConditionState.True)
+                        || (GameState.Condition(unit, Conditions.Recalled) == ConditionState.True && GameState.Condition(unit, Conditions.StunRecovery) != ConditionState.True)
                     : GameState.Condition(unit, Conditions.Broken) == ConditionState.True || GameState.Condition(unit, Conditions.Pinned) == ConditionState.True))
                 .ToArray();
             if (leaving.Length == 0 && members.Count == movement.Members.Count && movers.SequenceEqual(movement.Movers))
@@ -1579,9 +1927,11 @@ public static class GameProjector
                 });
             }
 
-            // A Replacement, whether by a lesser unit (A19.13) or by Battle Hardening (A15.3), is a unit substitution: the new
-            // unit keeps the SW; other lineage leaves it unpossessed.
-            if (lineage.Action != LineageAction.Replaced)
+            // A Replacement, whether by a lesser unit (A19.13) or by Battle Hardening (A15.3), is a unit substitution, and a squad Reduced
+            // to a HS (A7.302) leaves the HS in its place as a sub-unit (A4.431; ruling R5.12): the new unit keeps the SW. Deployment and
+            // recombination leave it unpossessed.
+            var keeps = lineage.Action is LineageAction.Replaced or LineageAction.Reduced;
+            if (!keeps)
             {
                 next = DropHeldBy(next, ids);
             }
@@ -1605,12 +1955,13 @@ public static class GameProjector
                     {
                         MfSpent = consumed.Max(item => item.MfSpent),
                         HalfMfSpent = consumed.Any(item => item.HalfMfSpent),
-                        MovementEnded = consumed.Any(item => item.MovementEnded)
+                        MovementEnded = consumed.Any(item => item.MovementEnded),
+                        DoubleTimeMf = consumed.Max(item => item.DoubleTimeMf),
                     })
                     : created;
             }
 
-            if (lineage.Action == LineageAction.Replaced)
+            if (keeps)
             {
                 var holder = lineage.Produced[0].Id;
                 foreach (var equipment in next.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { } holding
@@ -1630,17 +1981,50 @@ public static class GameProjector
         }
 
         /// <summary>
-        /// A unit created in play, such as a hero (A15.21). One created in its own side's MPh moves no further that phase: the
-        /// movement status it would share with its creator is not modelled (ASL Unit Backlog, section 10).
+        /// A unit created in play, such as a hero (A15.21). One with a creator shares its movement status (ruling R5.11): its MF spent, whether
+        /// it has ended its move, and its place among the moving stack's members, so a hero created mid-move may move on with his creator. One
+        /// created in its own side's MPh with no creator named, as records made before pass 5 are, moves no further that phase.
         /// </summary>
-        private GameState? CreateInPlay(GameState state, NewInstance instance)
+        private GameState? CreateInPlay(GameState state, InstanceCreated created)
         {
-            if (Create(state, instance, from: []) is not { } next)
+            var instance = created.Instance;
+            UnitInstance? creator = null;
+            if (created.Creator is { } creatorId && (Active(state, creatorId) is not UnitInstance found || found.Side != instance.Side))
             {
-                return null;
+                return Fail<GameState>("UNIT-STATE-006", $"The creator '{creatorId}' is not an active unit of the created unit's side.");
+            }
+            else if (created.Creator is { } named)
+            {
+                creator = state.Unit(named);
             }
 
-            return next.Phase == "mph" && next.Unit(instance.Id) is { } unit && unit.Side == next.PhasingSide
+            if (Create(state, instance, from: []) is not { } next || next.Unit(instance.Id) is not { } unit)
+            {
+                return Create(state, instance, from: []) is { } other ? other : null;
+            }
+
+            if (creator is not null)
+            {
+                next = Replace(next, unit with
+                {
+                    MfSpent = creator.MfSpent,
+                    HalfMfSpent = creator.HalfMfSpent,
+                    MovementEnded = creator.MovementEnded,
+                    DoubleTimeMf = creator.DoubleTimeMf,
+                });
+                return next.Movement is { } movement && movement.Members.Contains(creator.Id, StringComparer.Ordinal)
+                    ? next with
+                    {
+                        Movement = movement with
+                        {
+                            Members = [.. movement.Members, unit.Id],
+                            Movers = movement.Movers.Contains(creator.Id, StringComparer.Ordinal) ? [.. movement.Movers, unit.Id] : movement.Movers,
+                        }
+                    }
+                    : next;
+            }
+
+            return next.Phase == "mph" && unit.Side == next.PhasingSide
                 ? Replace(next, unit with
                 {
                     MovementEnded = true

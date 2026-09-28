@@ -48,7 +48,10 @@ public static class ScenarioA1RallyCalculator
     {
         ArgumentNullException.ThrowIfNull(attempt);
         ArgumentNullException.ThrowIfNull(reference);
-        var first = Resolve(attempt with { Rolls = new RallyRolls(null, null) }, reference);
+        var first = Resolve(attempt with
+        {
+            Rolls = new RallyRolls(null, null)
+        }, reference);
         if (!(first.Disposition == RallyResolution.Indeterminate && first.Reasons is ["asl.a1.rally.roll-missing:rally"]))
         {
             return first.Reasons;
@@ -282,6 +285,20 @@ public static class ScenarioA1RallyCalculator
         var rallied = !fate && (final <= morale || (fieldPromotion && original == 2));
         var heatOfBattle = original == 2 && !selfRally && ScenarioA1HeatOfBattle.Subject(definition, heroic: false);
         var leaderCreation = original == 2 && fieldPromotion;
+        var usedChoices = new HashSet<string>(StringComparer.Ordinal);
+
+        // A18.11, ruling R5.8: the rallying side may decline the Leader Creation dr.
+        if (leaderCreation && attempt.Choices is { } answers)
+        {
+            var key = "leaderCreation:" + unit.UnitId;
+            if (!answers.TryGetValue(key, out var answer))
+            {
+                return new RallyResolution(RallyResolution.Indeterminate, ["asl.a1.rally.choice-missing:" + key], null, null);
+            }
+
+            usedChoices.Add(key);
+            leaderCreation = answer == "take";
+        }
 
         var events = new List<string>();
         var finalDefinition = definition.Id;
@@ -353,10 +370,26 @@ public static class ScenarioA1RallyCalculator
             }
 
             var (outcome, reason) = ScenarioA1HeatOfBattle.Resolve(definition, true, unit.Inexperienced, fanatic, heatDice, reference.Definitions,
-                attempt.KnownEnemyInLos, attempt.Captors);
+                attempt.KnownEnemyInLos, attempt.Captors, attempt.NoQuarter == true);
             if (outcome is null)
             {
                 return new RallyResolution(RallyResolution.Indeterminate, [reason!], null, null);
+            }
+
+            // A15.3, ruling R5.8: the owner may refuse a Battle Hardening that would change the unit.
+            if (attempt.Choices is { } hardeningAnswers && outcome.HardeningMatters(broken: !rallied, pinned: false, disrupted: unit.Disrupted == true && !rallied))
+            {
+                var hardeningKey = "battleHardening:" + unit.UnitId;
+                if (!hardeningAnswers.TryGetValue(hardeningKey, out var hardeningAnswer))
+                {
+                    return new RallyResolution(RallyResolution.Indeterminate, ["asl.a1.rally.choice-missing:" + hardeningKey], null, null);
+                }
+
+                usedChoices.Add(hardeningKey);
+                if (hardeningAnswer != "take")
+                {
+                    outcome = outcome.WithHardeningRefused();
+                }
             }
 
             heat = outcome;
@@ -378,6 +411,11 @@ public static class ScenarioA1RallyCalculator
             {
                 finalDefinition = hardened;
                 events.Add("battle-hardened");
+            }
+
+            if (outcome.HardeningRefused == true)
+            {
+                events.Add("battle-hardening-refused");
             }
 
             if (outcome.Fanatic == true)
@@ -465,6 +503,15 @@ public static class ScenarioA1RallyCalculator
             {
                 events.Add("leader-created:" + leaderId);
             }
+        }
+        else if (original == 2 && fieldPromotion)
+        {
+            events.Add("leader-creation-declined");
+        }
+
+        if (attempt.Choices?.Keys.FirstOrDefault(key => !usedChoices.Contains(key)) is { } unasked)
+        {
+            return new RallyResolution(RallyResolution.Abstained, ["asl.a1.rally.extra-choice:" + unasked], null, null);
         }
 
         // A12.141: the attempt costs "?" to the concealed unit and the concealed rallying leader in the LOS of a Good Order

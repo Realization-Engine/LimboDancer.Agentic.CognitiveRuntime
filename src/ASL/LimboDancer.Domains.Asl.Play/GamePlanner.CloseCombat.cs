@@ -89,9 +89,14 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.advance-terrain: level changes and hexside terrain are not reviewed (ruling R22.3)");
         }
 
-        if (TerrainKey(toRead) is not { } terrain || !EntryHalfMf.TryGetValue(terrain, out var halfMf))
+        if (TerrainKey(toRead) is not { } terrain || !EntryHalfMf.ContainsKey(terrain))
         {
             return Refused(scope, label, expected, $"play.advance-terrain: {toRead.Level.Terrain?.Name ?? "the terrain"} is not a reviewed entry (ruling R22.3)");
+        }
+
+        if (InfantryEntryHalfMf(state, terrain) is not { } halfMf)
+        {
+            return Refused(scope, label, expected, "play.advance-grain: grain's MF cost depends on the season, and the game names no scenario month (B15.6)");
         }
 
         if (crossed.Terrain?.IsRoad == true)
@@ -99,12 +104,32 @@ public sealed partial class GamePlanner
             halfMf = 2;
         }
 
-        // A4.72: an advance costing at least four MF, or all of the unit's MF, makes it CX, which is not built (ruling R29.2).
+        // A4.72 EX, A4.12 (ruling R5.5): a Good Order leader advancing with a unit that carries more than its IPC would lend it two MF and one
+        // IPC, which is pass 10. The bonus matters only where the advance is Difficult for the unit alone; that advance is refused.
+        if (units.Any(unit => vocabulary.IsA(unit!.Kind, "asl:leader") && !Is(unit, Conditions.Broken))
+            && units.FirstOrDefault(unit => !vocabulary.IsA(unit!.Kind, "asl:smc") && Laden(state, unit!) && DifficultAdvance(state, unit!, halfMf) != false) is { } laden)
+        {
+            return Refused(scope, label, expected, $"play.advance-leader-bonus: {laden.Id} carries more than its IPC with a leader advancing alongside; the leader's MF and IPC bonus is not built (A4.72, A4.12)");
+        }
+
+        // A4.72 (ruling R5.5): an advance into a Location costing at least four MF, or all of the unit's non-Double Time allotment after
+        // portage, makes it CX, and an already CX unit may not make it; a unit left with no MF after portage does not advance.
+        var tiring = new List<string>();
         foreach (var unit in units)
         {
-            if (Experience.MoveAllowance(state, unit!, catalogs, vocabulary) is not { } allowance || halfMf >= 2 * Math.Min(4, allowance))
+            if (DifficultAdvance(state, unit!, halfMf) is not { } difficult)
             {
-                return Refused(scope, label, expected, $"play.advance-difficult-terrain: the advance would make {unit!.Id} CX, which is not reviewed (A4.72)");
+                return Refused(scope, label, expected, $"play.advance-mf: {unit!.Id} has no MF allotment the catalog decides, or none left after portage (A4.7, A4.72)");
+            }
+
+            if (difficult && Is(unit!, Conditions.Cx))
+            {
+                return Refused(scope, label, expected, $"play.advance-difficult-terrain: {unit!.Id} is CX and may not advance into Difficult Terrain (A4.72)");
+            }
+
+            if (difficult)
+            {
+                tiring.Add(unit!.Id);
             }
         }
 
@@ -140,10 +165,25 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.advance-overstacked: the advance would overstack the Location, which is not reviewed (A5.1, A5.12)");
         }
 
-        var summary = $"play.advance: {string.Join(", ", ids)} advance into {to} ({terrain})" + (enemies.Length > 0 ? $", with {string.Join(", ", enemies.Select(item => item.Id))}: CC follows (A3.7)" : string.Empty);
-        return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
-            [Event(scope, attemptId, 1, expected, "advanced", new AdvanceMoved(ids, to), ScenarioA1CloseCombatPackage.Identity.ToString(), null)], [summary]);
+        var summary = $"play.advance: {string.Join(", ", ids)} advance into {to} ({terrain})" + (enemies.Length > 0 ? $", with {string.Join(", ", enemies.Select(item => item.Id))}: CC follows (A3.7)" : string.Empty)
+            + (tiring.Count > 0 ? $"; {string.Join(", ", tiring)} become CX advancing into Difficult Terrain (A4.72)" : string.Empty);
+        var package = ScenarioA1CloseCombatPackage.Identity.ToString();
+        List<GameEvent> events = [Event(scope, attemptId, 1, expected, "advanced", new AdvanceMoved(ids, to), package, null)];
+        foreach (var id in tiring)
+        {
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
+                new ConditionsChanged(id, new Dictionary<string, ConditionState> { [Conditions.Cx] = ConditionState.True }), package, null, [EventId(attemptId, 1)]));
+        }
+
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [summary]);
     }
+
+    /// <summary>
+    /// Whether an advance into a Location of this half MF cost is into Difficult Terrain for the unit (A4.72): at least four MF, or all of its
+    /// non-Double Time allotment after portage, whichever is less. Null when the allotment is not decided or none is left after portage.
+    /// </summary>
+    private bool? DifficultAdvance(GameState state, UnitInstance unit, int halfMf) =>
+        MfAllotment(state, unit, 0, Is(unit, Conditions.Cx)) is { } allotment && allotment > 0 ? halfMf >= 2 * Math.Min(4, allotment) : null;
 
     /// <summary>A5.1, A5.5: more than three squad-equivalents (two HS or crews each) or more than four SMC of one side.</summary>
     private bool Overstacked(IEnumerable<UnitInstance> units)
@@ -281,6 +321,12 @@ public sealed partial class GamePlanner
         var withdrawals = Map(arguments, "withdrawals") ?? new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var (unitId, destination) in withdrawals)
         {
+            // A11.21, A4.43 (ruling R5.5): a withdrawing unit carries no more than its IPC; dropping the SW beyond it is not built.
+            if (state.Unit(unitId) is { Status: InstanceStatus.Active } laden && Laden(state, laden))
+            {
+                return Refused(scope, label, expected, $"play.cc-withdrawal-portage: {unitId} carries more than its IPC and may not withdraw with it; dropping a SW is not built (A11.21, A4.43)");
+            }
+
             if (state.Unit(unitId) is not { Status: InstanceStatus.Active } unit || state.Location(unit.Id)?.Location != location || !Is(unit, Conditions.Melee)
                 || !BoardLocation.TryParse(destination, out var to) || !WithdrawalDestinations(state, unit, location).Contains(to))
             {
@@ -294,6 +340,9 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.cc-withdraw-required: {broken.Id} is broken in Melee and must attempt to withdraw (A11.16)");
         }
 
+        // A11.21, A4.72 (ruling R5.5): a withdrawal an advance could make only by becoming CX makes the unit CX.
+        var tiring = withdrawals.Where(item => state.Unit(item.Key) is { } unit && WithdrawalTires(state, unit, location, BoardLocation.Parse(item.Value)))
+            .Select(item => item.Key).ToHashSet(StringComparer.Ordinal);
         var terrain = ReadLocation(state, location) is { } read ? TerrainKey(read) : null;
         var (facts, reason) = LiveCloseCombat.FromState(state, location, terrain, attacks, stacking, withdrawals, Text(arguments, "round", out var round) ? round : null);
         if (facts is null)
@@ -360,7 +409,7 @@ public sealed partial class GamePlanner
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "close-combat-resolved",
                 new CloseCombatResolved(location, facts.Round!, [.. attacks.SelectMany(item => item.Attackers!)], [.. attacks.SelectMany(item => item.Defenders!)], rollIds,
                     JsonSerializer.SerializeToElement(facts, LiveFire.Json), JsonSerializer.SerializeToElement(resolution, LiveFire.Json)), package, null));
-            foreach (var (type, payload) in CloseCombatEffects(state, location, resolution, attemptId))
+            foreach (var (type, payload) in CloseCombatEffects(state, location, resolution, attemptId, tiring))
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, type, payload, package, null, [recordId]));
             }
@@ -388,13 +437,26 @@ public sealed partial class GamePlanner
     /// <summary>
     /// The Locations a unit held in Melee may withdraw to (A11.21): ADJACENT Locations at ground level an advance could enter, in terrain
     /// the movement review admits, across any hexside but a cliff and at any level, holding no enemy unit other than a prisoner (a
-    /// concealed one is not reviewed). A11.21 allows the withdrawal even where it makes the unit CX, which is not built, so no CX
-    /// counter is placed (ruling R29.11).
+    /// concealed one is not reviewed). A withdrawal an advance could make only by becoming CX makes the unit CX, and an already CX unit may
+    /// not make it (A4.72; ruling R5.5).
     /// </summary>
-    public IReadOnlyList<BoardLocation> WithdrawalDestinations(GameState state, UnitInstance unit, BoardLocation from) =>
-        [.. Neighbors(state, from).Where(to => Step(state, from, to) is ({ } _, { } toRead, true, { Cliff: false }) && TerrainKey(toRead) is { } terrain
-            && EntryHalfMf.ContainsKey(terrain)
+    public IReadOnlyList<BoardLocation> WithdrawalDestinations(GameState state, UnitInstance unit, BoardLocation from) => Laden(state, unit) ? []
+        : [.. Neighbors(state, from).Where(to => Step(state, from, to) is ({ } _, { } toRead, true, { Cliff: false } crossed) && TerrainKey(toRead) is { } terrain
+            && InfantryEntryHalfMf(state, terrain) is { } halfMf
+            && DifficultAdvance(state, unit, crossed.Terrain?.IsRoad == true ? 2 : halfMf) is { } difficult && !(difficult && Is(unit, Conditions.Cx))
             && !state.At(to).OfType<UnitInstance>().Any(other => other.Status == InstanceStatus.Active && other.Side != unit.Side && !Is(other, Conditions.Captured)))];
+
+    /// <summary>Whether a unit carries more PP than its IPC (A4.42): three for a MMC, one for a SMC, none for a wounded SMC, one less while CX.</summary>
+    private bool Laden(GameState state, UnitInstance unit)
+    {
+        var ipc = (vocabulary.IsA(unit.Kind, "asl:smc") ? (Is(unit, Conditions.Wounded) ? 0 : 1) : 3) - (Is(unit, Conditions.Cx) ? 1 : 0);
+        return Portage(state, unit) is { } carried && carried.Sum() > Math.Max(ipc, 0);
+    }
+
+    /// <summary>Whether a withdrawal to a Location makes the unit CX (A11.21, A4.72; ruling R5.5).</summary>
+    private bool WithdrawalTires(GameState state, UnitInstance unit, BoardLocation from, BoardLocation to) =>
+        Step(state, from, to) is ({ } _, { } toRead, true, { } crossed) && TerrainKey(toRead) is { } terrain && InfantryEntryHalfMf(state, terrain) is { } halfMf
+        && DifficultAdvance(state, unit, crossed.Terrain?.IsRoad == true ? 2 : halfMf) == true;
 
     /// <summary>A11.16: a broken unit held in Melee, not Disrupted and not a Guard, must attempt to withdraw when it can.</summary>
     private bool MustWithdraw(GameState state, UnitInstance unit, BoardLocation at) =>
@@ -535,7 +597,7 @@ public sealed partial class GamePlanner
         state.Units.Any(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian == unit.Id);
 
     /// <summary>
-    /// Why a berserk unit may not step into a Location (A15.431, A15.432, A20.4): it holds prisoners (Massacre is not built), a concealed
+    /// Why a berserk unit may not step into a Location (A15.431, A15.432, A20.55): it holds prisoners (CC with prisoners present is pass 14), a concealed
     /// or hidden enemy unit or a Dummy (concealment in CC is not reviewed), or, as the charge's target, only a lone enemy SMC (an
     /// Infantry OVR, not reviewed). Null when the step is allowed.
     /// </summary>
@@ -546,7 +608,7 @@ public sealed partial class GamePlanner
         if (enemies.Any(unit => !KnownEnemy(unit) && !Is(unit, Conditions.Captured)) || there.Any(unit => Is(unit, Conditions.Captured))
             || enemies.Any(unit => vocabulary.IsA(unit.Kind, "asl:crew")))
         {
-            return $"play.berserk-concealed: a charge into {to}, which holds concealed enemy units, prisoners, or a Gun's crew, is not reviewed (A15.431, A20.4, R24.3); the charge ends in place (ruling R30.5)";
+            return $"play.berserk-concealed: a charge into {to}, which holds concealed enemy units, prisoners, or a Gun's crew, is not reviewed (A15.431, A20.55, R24.3); the charge ends in place (ruling R30.5)";
         }
 
         if (enemies.FirstOrDefault(LiveFire.IsVehicle) is { } vehicle)
@@ -584,7 +646,7 @@ public sealed partial class GamePlanner
     /// Reductions to HS, the wounds, the end of berserk status, and each SW lost.
     /// </summary>
     private static IEnumerable<(string Type, EventPayload Payload)> CloseCombatEffects(GameState state, BoardLocation location, CloseCombatResolution resolution,
-        string attemptId)
+        string attemptId, HashSet<string> tiring)
     {
         foreach (var leader in resolution.CreatedLeaders)
         {
@@ -657,10 +719,15 @@ public sealed partial class GamePlanner
             yield return ("instance-eliminated", new InstanceEliminated(weapon.EquipmentId));
         }
 
-        // A11.2: a withdrawing unit neither eliminated nor Reduced leaves the Melee for the Location it declared.
+        // A11.2: a withdrawing unit neither eliminated nor Reduced leaves the Melee for the Location it declared, CX when the withdrawal needs it
+        // (A11.21, A4.72; ruling R5.5).
         foreach (var effect in resolution.Effects.Where(item => item.WithdrewTo is not null))
         {
             yield return ("instance-moved", new InstanceMoved(effect.UnitId, new MapPosition(BoardLocation.Parse(effect.WithdrewTo!))));
+            if (tiring.Contains(effect.UnitId))
+            {
+                yield return ("conditions-changed", new ConditionsChanged(effect.UnitId, new Dictionary<string, ConditionState> { [Conditions.Cx] = ConditionState.True }));
+            }
         }
     }
 
@@ -675,14 +742,25 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.no-game: the game has no state yet");
         }
 
-        if (!Text(arguments, "unitId", out var unitId) || !Text(arguments, "captorId", out var captorId))
+        var reject = arguments.TryGetProperty("reject", out var rejecting) && rejecting.ValueKind == JsonValueKind.True;
+        if (!Text(arguments, "unitId", out var unitId) || (!reject && !Text(arguments, "captorId", out _)))
         {
-            return Refused(scope, label, expected, "play.invalid-arguments: a capture names the surrendering unit and its captor");
+            return Refused(scope, label, expected, "play.invalid-arguments: a capture names the surrendering unit and its captor, or rejects the surrender");
         }
 
+        var captorId = Text(arguments, "captorId", out var named) ? named : string.Empty;
         if (state.PendingSurrenders.FirstOrDefault(item => item.Unit == unitId) is not { } pending)
         {
             return Refused(scope, label, expected, $"play.no-surrender: {unitId} has not surrendered");
+        }
+
+        // A20.3 (ruling R5.6): the captor's side may reject the surrender, eliminating the unit and facing its side with No Quarter.
+        if (reject)
+        {
+            var side = state.Unit(unitId)?.Side;
+            return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
+                [Event(scope, attemptId, 1, expected, "surrender-rejected", new SurrenderRejected(unitId), ScenarioA1FirePackage.Identity.ToString(), null, [pending.Event])],
+                [$"play.no-quarter: the surrender of {unitId} is rejected and it is eliminated; the {side} side is faced with No Quarter from now on: its units never surrender (A20.3, A15.5)"]);
         }
 
         if (!pending.Captors.Contains(captorId, StringComparer.Ordinal) || state.Unit(captorId) is not { Status: InstanceStatus.Active } captor
@@ -829,7 +907,7 @@ public sealed partial class GamePlanner
         var (fromRead, toRead, adjacent, crossed) = Step(state, from, to);
         if (fromRead is null || toRead is null || !adjacent || crossed is null
             || fromRead.Hex.BaseLevel + fromRead.Level.Level != toRead.Hex.BaseLevel + toRead.Level.Level || crossed.HexsideTerrain is not null || crossed.Cliff
-            || crossed.Slope || TerrainKey(toRead) is not { } terrain || !EntryHalfMf.TryGetValue(terrain, out var halfMf))
+            || crossed.Slope || TerrainKey(toRead) is not { } terrain || InfantryEntryHalfMf(state, terrain) is not { } halfMf)
         {
             return null;
         }
@@ -997,6 +1075,6 @@ public sealed partial class GamePlanner
         [.. state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && Is(unit, Conditions.Berserk) && !Is(unit, Conditions.Melee)
             && !unit.MovementEnded && state.Location(unit.Id) is { } at
             && ChargeSteps(state, unit.Side, at.Location, state.Movement?.Members.Contains(unit.Id) == true ? state.Movement.Charge : null) is { Steps.Count: > 0 } charge
-            && Experience.MoveAllowance(state, unit, catalogs, vocabulary) is { } allowance
+            && MfAllotment(state, unit, unit.DoubleTimeMf, Is(unit, Conditions.Cx)) is { } allowance
             && charge.Steps.Values.Any(step => (allowance * 2) - (unit.MfSpent * 2) - (unit.HalfMfSpent ? 1 : 0) >= step.HalfMf))];
 }

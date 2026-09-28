@@ -32,7 +32,20 @@ public sealed record GameScope(Guid Tenant, string Game)
 /// A side (ASL-UNIT-020): its id, which is also its perspective name, its nationality, and the ELR (A19.1, p. 86) and SAN
 /// (A14.1, p. 82) its scenario OB gives it. ELR and SAN are the side's, not a unit's.
 /// </summary>
-public sealed record SideState(string Id, string Nationality, int? Elr, int? San);
+public sealed record SideState(string Id, string Nationality, int? Elr, int? San)
+{
+    /// <summary>
+    /// The side's Friendly Board Edge (A20.53): <c>top</c>, <c>bottom</c>, <c>left</c>, or <c>right</c> of the map in play, named at the
+    /// start of the game, since no registered source gives a scenario's (ruling R5.16); null when none is named.
+    /// </summary>
+    public string? FriendlyEdge
+    {
+        get; init;
+    }
+
+    /// <summary>The map edges a side's Friendly Board Edge may be.</summary>
+    public static IReadOnlyList<string> Edges { get; } = ["top", "bottom", "left", "right"];
+}
 
 /// <summary>Where a board sits in a composed map: its slot, as in <see cref="BoardPlacement"/>, and whether it is reversed.</summary>
 public sealed record BoardSlot(int Column, int Row, bool Reversed);
@@ -157,8 +170,17 @@ public static class Conditions
     /// <summary>A Recalled AFV (D5.341, pp. 203 to 204): Stunned, then leaving play at the end of that Player Turn (asl@1.8.0).</summary>
     public const string Recalled = "asl:recalled";
 
+    /// <summary>
+    /// Counter Exhaustion (A4.51, p. 51): placed by Double Time (A4.5), an advance into Difficult Terrain (A4.72), or a withdrawal from
+    /// Melee that needs it (A11.21); removed when the unit breaks and at the start of its side's next MPh (ruling R5.3).
+    /// </summary>
+    public const string Cx = "asl:cx";
+
+    /// <summary>An Abandoned vehicle (D5.41, p. 204): its crew has left it, and it may not move or fire (ruling R5.18).</summary>
+    public const string Abandoned = "asl:abandoned";
+
     /// <summary>Conditions the state model adds to the vocabulary's states; they have no drawn form.</summary>
-    public static IReadOnlyList<string> Undrawn { get; } = [Captured, Melee];
+    public static IReadOnlyList<string> Undrawn { get; } = [Captured, Melee, Abandoned];
 
     public static bool IsDeclared(string name, Vocabulary.UnitVocabulary vocabulary) =>
         Undrawn.Contains(name, StringComparer.Ordinal) || vocabulary.TryGetState(name, out _);
@@ -238,6 +260,9 @@ public enum InstanceStatus
 
     /// <summary>Consumed by reduction, deployment, recombination, or replacement; its successors carry on.</summary>
     Consumed,
+
+    /// <summary>Exited the playing area (A2.6, D5.341): it cannot act or return, and it is not eliminated.</summary>
+    Exited,
 }
 
 /// <summary>What the state model knows about any object in play: units, equipment, and entities alike.</summary>
@@ -297,6 +322,15 @@ public sealed record UnitInstance(
 
     /// <summary>Half an MF spent beyond <see cref="MfSpent"/>, as grain's 1½ MF leaves (B15.4, p. 129).</summary>
     public bool HalfMfSpent
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The MF Double Time adds to the unit's allotment this MPh (A4.5, ruling R5.1): two when declared before it spent any MF, one after;
+    /// zero when it does not Double Time. Cleared at every phase change.
+    /// </summary>
+    public int DoubleTimeMf
     {
         get; init;
     }

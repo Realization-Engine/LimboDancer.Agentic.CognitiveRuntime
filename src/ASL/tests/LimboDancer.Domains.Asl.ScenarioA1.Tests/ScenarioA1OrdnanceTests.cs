@@ -362,4 +362,16 @@ public sealed class ScenarioA1OrdnanceTests
 
         Assert.Equal(36 * 6 * 11, ends);
     }
+
+    [Fact]
+    public void ACxCrewAddsOneToTheToHitDr()
+    {
+        // A4.51 (ruling R5.2): a CX crew adds one to its Gun's To Hit DR.
+        var shot = German();
+        var plain = ScenarioA1OrdnanceCalculator.Resolve(With(shot, [6, 5]), Reference).ToHit!;
+        var tired = ScenarioA1OrdnanceCalculator.Resolve(With(shot with { Crew = shot.Crew! with { Cx = true } }, [6, 5]), Reference).ToHit!;
+        Assert.DoesNotContain(plain.Drm, item => item.Name == "cx");
+        Assert.Contains(tired.Drm, item => item.Name == "cx" && item.Value == 1 && item.Rule == "A4.51");
+        Assert.Equal(plain.FinalDr + 1, tired.FinalDr);
+    }
 }

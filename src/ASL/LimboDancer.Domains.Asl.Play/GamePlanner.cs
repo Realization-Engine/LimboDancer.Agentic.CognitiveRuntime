@@ -214,15 +214,27 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             "asl.game.take-prisoner" => PlanTakePrisoner(scope, arguments, existing, attemptId, expected, label),
             "asl.game.move-vehicle" => PlanMoveVehicle(scope, arguments, existing, attemptId, expected, label),
             "asl.game.button-up" => PlanButtonUp(scope, arguments, existing, attemptId, expected, label),
+            "asl.game.choose" => PlanChoose(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
+            "asl.game.massacre" => PlanMassacre(scope, arguments, existing, attemptId, expected, label),
             _ => Refused(scope, label, expected, "play.unknown-action"),
         };
+
+        // Ruling R5.8: a pending choice is answered before anything else happens in the game.
+        if (plan.Status == GamePlanStatus.Ready && action.Id.Value is not ("asl.game.choose" or "asl.game.setup")
+            && Replay(existing).Current is { Choice: { } choice })
+        {
+            return Refused(scope, label, expected, $"play.choice-pending: the {choice.Side} side answers first: {DescribeChoice(choice)}");
+        }
 
         // A15.5: a surrender waits for its captor before anything else happens in the game.
         if (plan.Status == GamePlanStatus.Ready && action.Id.Value is not ("asl.game.take-prisoner" or "asl.game.setup")
             && Replay(existing).Current is { PendingSurrenders: [{ } pending, ..] })
         {
-            return Refused(scope, label, expected, $"play.surrender-pending: {pending.Unit} has surrendered; its captor's side chooses the Guard first (A15.5)");
+            return Refused(scope, label, expected, $"play.surrender-pending: {pending.Unit} has surrendered; its captor's side chooses the Guard or rejects it first (A15.5, A20.3)");
         }
+
+        // C6.5, C6.51 (ruling R5.13): an Acquisition follows the units it is on.
+        plan = WithAcquisitions(plan, scope, existing, attemptId, expected);
 
         // A plan with a roll has no events until the store draws it; its outcomes are checked when they are built.
         if (plan.Status != GamePlanStatus.Ready || plan.Roll is not null)
@@ -345,6 +357,13 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             return Refused(scope, label, expected, $"play.vehicle-motion: {idle.Id} is in Motion and must expend at least one MP this MPh (D2.4)");
         }
 
+        // D5.341 (ruling R5.17): a Recalled AFV must move toward its Friendly Board Edge in its MPh, when its route is decided.
+        if (state.Phase == "mph" && state.Units.FirstOrDefault(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && MustLeave(unit)
+            && !unit.MovementEnded && RecallRoute(state, unit) is { Undecided: null, Moves.Count: > 0 }) is { } recalled)
+        {
+            return Refused(scope, label, expected, $"play.recall-move: {recalled.Id} is Recalled and must move off by its side's Friendly Board Edge this MPh (D5.341)");
+        }
+
         // A15.431, A15.46: at the end of its MPh a berserk unit with no Known enemy unit in its LOS returns to normal.
         if (state.Phase == "mph")
         {
@@ -384,7 +403,31 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         }
 
         var payload = new PhaseChanged(turn, phase, phasing);
+        var changed = EventId(attemptId, events.Count + 1);
         events.Add(Event(scope, attemptId, events.Count + 1, expected, "phase-changed", payload, rulePackage: null, visibility: null));
+
+        // A20.4 (ruling R5.7): at the start of their side's fire phase, berserk units massacre the enemy prisoners in their Location.
+        foreach (var (massacre, why) in BerserkMassacres(state, phase, phasing))
+        {
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "prisoners-massacred", massacre, null, null, [changed]));
+            reasons.Add(why);
+        }
+
+        // D5.341, D5.41 (ruling R5.18): at the end of the Player Turn of its Recall, an immobilized Recalled AFV is Abandoned.
+        if (phasing != state.PhasingSide)
+        {
+            foreach (var vehicle in state.Units.Where(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit) && Is(unit, Conditions.Recalled)
+                && Is(unit, Conditions.Immobilized) && !Is(unit, Conditions.Abandoned)).OrderBy(unit => unit.Id, StringComparer.Ordinal))
+            {
+                foreach (var (type, abandon) in AbandonEvents(vehicle, attemptId))
+                {
+                    events.Add(Event(scope, attemptId, events.Count + 1, expected, type, abandon, null, null, [changed]));
+                }
+
+                reasons.Add($"play.recall-abandoned: {vehicle.Id} is Recalled and immobilized, so its crew Abandons it (D5.341, D5.41)");
+            }
+        }
+
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [$"play.advance: turn {turn}, {phase}, {phasing} phasing", .. reasons]);
     }
 

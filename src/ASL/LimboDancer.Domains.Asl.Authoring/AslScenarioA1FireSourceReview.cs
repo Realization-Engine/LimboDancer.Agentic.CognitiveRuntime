@@ -71,6 +71,15 @@ public static class AslScenarioA1FireSourceReview
     public const string VehicleComparisonFile = "asl-scenario-a1.vehicle-pdf-comparison.json";
     public const string VehicleComparisonSha256 = "c9f59e1ca5009c2fc8fd0be8583016d1c9059afcd20e73cfaf1d4aacd0021559";
 
+    /// <summary>
+    /// The backlog pass 5 comparison: exit (A2.6), portage and possession (A4.42 to A4.431), Double Time and CX (A4.5 to A4.72), a HS's SW
+    /// (A7.302), the Unlikely Kill (A7.309), follow-up fire (A8.14), withdrawal (A11.21), Heat of Battle and Battle Hardening (A15.1 to A15.5),
+    /// Leader Creation (A18.11), No Quarter and Massacre (A20.3, A20.4), Acquisition (C6.5, C6.51), MP left and Motion (D2.1, D2.4), the Recall
+    /// and Abandonment (D5.341, D5.41), and grain out of season (B15.6).
+    /// </summary>
+    public const string Pass5ComparisonFile = "asl-scenario-a1.pass5-pdf-comparison.json";
+    public const string Pass5ComparisonSha256 = "10c5936cfb3c2d0f3d01c0b342322eb77c1a65e82e559b197817f611fb74640b";
+
     private const string ChapterA = "asl-easlrb-3.10:chapter-a";
     private const string ChapterB = "asl-easlrb-3.10:chapter-b";
     private const string ChapterC = "asl-easlrb-3.10:chapter-c";
@@ -275,6 +284,41 @@ public static class AslScenarioA1FireSourceReview
         ("D9.4", "D9.4", ChapterD, 770, SourceFragmentKind.RuleText, 210),
     ];
 
+    private static readonly (string Rule, string Registered, string Source, int Line, SourceFragmentKind Kind, int Page)[] Pass5Subjects =
+    [
+        ("A2.6", "A2.6", ChapterA, 161, SourceFragmentKind.RuleText, 46),
+        ("A2.6", "A2.6", ChapterA, 165, SourceFragmentKind.RuleContinuation, 46),
+        ("A4.42", "A4.42", ChapterA, 289, SourceFragmentKind.RuleText, 50),
+        ("A4.43", "A4.43", ChapterA, 291, SourceFragmentKind.RuleText, 50),
+        ("A4.43", "A4.43", ChapterA, 295, SourceFragmentKind.RuleContinuation, 50),
+        ("A4.431", "A4.431", ChapterA, 297, SourceFragmentKind.RuleText, 50),
+        ("A4.5", "A4.5", ChapterA, 303, SourceFragmentKind.RuleText, 51),
+        ("A4.51", "A4.51", ChapterA, 305, SourceFragmentKind.RuleText, 51),
+        ("A4.52", "A4.52", ChapterA, 309, SourceFragmentKind.RuleText, 51),
+        ("A4.72", "A4.72", ChapterA, 333, SourceFragmentKind.RuleText, 52),
+        ("A7.302", "A7.302", ChapterA, 467, SourceFragmentKind.RuleText, 55),
+        ("A7.309", "A7.309", ChapterA, 487, SourceFragmentKind.RuleText, 56),
+        ("A8.14", "A8.14", ChapterA, 600, SourceFragmentKind.RuleText, 59),
+        ("A11.21", "A11.21", ChapterA, 908, SourceFragmentKind.RuleText, 73),
+        ("A15.1", "A15.1", ChapterA, 1214, SourceFragmentKind.RuleText, 83),
+        ("A15.1", "A15.1", ChapterA, 1226, SourceFragmentKind.RuleContinuation, 83),
+        ("A15.21", "A15.21", ChapterA, 1234, SourceFragmentKind.RuleText, 83),
+        ("A15.21", "A15.21", ChapterA, 1240, SourceFragmentKind.RuleContinuation, 83),
+        ("A15.3", "A15.3", ChapterA, 1246, SourceFragmentKind.RuleText, 83),
+        ("A15.5", "A15.5", ChapterA, 1276, SourceFragmentKind.RuleText, 84),
+        ("A18.11", "A18.11", ChapterA, 1332, SourceFragmentKind.RuleText, 85),
+        ("A20.3", "A20.3", ChapterA, 1416, SourceFragmentKind.RuleText, 87),
+        ("A20.4", "A20.4", ChapterA, 1418, SourceFragmentKind.RuleText, 87),
+        ("C6.5", "C6.5", ChapterC, 534, SourceFragmentKind.RuleText, 174),
+        ("C6.51", "C6.51", ChapterC, 542, SourceFragmentKind.RuleText, 174),
+        ("D2.1", "D2.1", ChapterD, 211, SourceFragmentKind.RuleText, 195),
+        ("D2.4", "D2.4", ChapterD, 295, SourceFragmentKind.RuleText, 198),
+        ("D5.341", "D5.341", ChapterD, 518, SourceFragmentKind.RuleText, 203),
+        ("D5.341", "D5.341", ChapterD, 526, SourceFragmentKind.RuleContinuation, 204),
+        ("D5.41", "D5.41", ChapterD, 538, SourceFragmentKind.RuleText, 204),
+        ("B15.6", "B15.6", ChapterB, 968, SourceFragmentKind.RuleText, 129),
+    ];
+
     private static readonly (string Rule, string Registered, string Source, int Line, SourceFragmentKind Kind, int Page)[] OrdnanceSubjects =
     [
         ("A1.123", "A1.123", ChapterA, 99, SourceFragmentKind.RuleText, 44),
@@ -438,6 +482,12 @@ public static class AslScenarioA1FireSourceReview
         GeneratedManifests manifests, AslScenarioA1SourceAttestation attestation) =>
         Build(repositoryRoot, manifests, attestation, VehicleComparisonFile, VehicleComparisonSha256, VehicleSubjects,
             "unit step 25 Vehicle review");
+
+    /// <summary>The backlog pass 5 subjects: CX, No Quarter and Massacre, the owners' options, Acquisition, Motion, the Recall, and grain.</summary>
+    public static AslScenarioA1VerificationBatch BuildPass5(string repositoryRoot,
+        GeneratedManifests manifests, AslScenarioA1SourceAttestation attestation) =>
+        Build(repositoryRoot, manifests, attestation, Pass5ComparisonFile, Pass5ComparisonSha256, Pass5Subjects,
+            "backlog pass 5 review");
 
     /// <summary>The unit step 24 subjects of a Gun's HE shot at Infantry.</summary>
     public static AslScenarioA1VerificationBatch BuildOrdnance(string repositoryRoot,
