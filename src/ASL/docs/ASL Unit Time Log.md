@@ -194,3 +194,14 @@ Estimate: 6:10 (build 4:55) in the [ASL Unit Backlog Passes Plan](<ASL Unit Back
 | Full suite (test updates for the new rules, goldens for IF), table player agent (14 findings) and fixes, verifier recomputing state facts, rulings and design | 04:34 | 04:51 | 0:17 | The table player ran from 04:36 |
 | Documents (review, backlog section 18, requirements, catalog design 9.8) and visual check in the Studio | 04:51 | 04:53 | 0:02 | The pane did not draw; the check read the page text and markup |
 | Full local suite before the commit (1,807 tests pass, 30 skipped) | 04:53 | 05:01 | 0:08 | |
+| Commit, Docker Linux check (every project exits 0), merge, push | 05:01 | 05:08 | 0:07 | |
+
+Pass 8 total: 03:12 to 05:08, 1:56 against the estimate of 6:10 (build 4:55).
+
+| Task (plan estimate) | Actual | Where it was logged |
+|---|---|---|
+| 8.10 Catalog details (part of 0:20) | 0:05 | Catalog 1.7.0 |
+| 8.1 to 8.9 and 8.10 overstacking, package side (about 2:30) | 0:13 | Package stage |
+| 8.1 to 8.9, live side (about 2:05) | 0:38 | Live stage (0:21) and the live code begun with the source comparison (about 0:17) |
+| Overhead (1:15) | 1:00 | Reading and rulings, source comparison, referee and table player with their fixes, suites, documents, visual check, merge gate |
+
