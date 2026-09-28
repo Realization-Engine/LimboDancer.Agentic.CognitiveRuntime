@@ -362,6 +362,32 @@ public static class GameEventWriter
                     writer.WriteString("pushedGun", pushedGun);
                 }
 
+                if (moving.Road)
+                {
+                    writer.WriteBoolean("road", true);
+                }
+
+                if (moving.MinimumMove)
+                {
+                    writer.WriteBoolean("minimumMove", true);
+                }
+
+                if (moving.Attempted is { } attemptedAt)
+                {
+                    writer.WriteString("attempted", attemptedAt.ToString());
+                }
+
+                if (moving.Bypass is { } bypass)
+                {
+                    writer.WriteStartArray("bypass");
+                    foreach (var side in bypass)
+                    {
+                        writer.WriteNumberValue((int)side);
+                    }
+
+                    writer.WriteEndArray();
+                }
+
                 break;
             case BoreSighted sighted:
                 writer.WriteString("gun", sighted.Gun);

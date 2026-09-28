@@ -77,50 +77,36 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.advance-enemy-vehicle: the enemy vehicle {blocking.Id} is in {to}; CC against a vehicle is not reviewed (A11.5; ruling R25.3)");
         }
 
-        var (fromRead, toRead, adjacent, crossed) = Step(state, from, to);
-        if (fromRead is null || toRead is null || !adjacent || crossed is null)
+        // A4.7 (rulings R10.1 to R10.3): one hex, or one level up or down in a stairwell hex, at the MF cost the move would pay; B16.4: never into marsh.
+        var (entry, stepReason) = InfantryStep(state, from, to);
+        if (entry is null)
         {
-            return Refused(scope, label, expected, $"play.advance-step: {to} is not an ADJACENT Location the map reads");
+            return Refused(scope, label, expected, stepReason!.Replace("play.move-", "play.advance-", StringComparison.Ordinal));
         }
 
-        if (fromRead.Hex.BaseLevel + fromRead.Level.Level != toRead.Hex.BaseLevel + toRead.Level.Level || to.Level != 0
-            || crossed.HexsideTerrain is not null || crossed.Cliff || crossed.Slope)
+        if (entry.AllMf)
         {
-            return Refused(scope, label, expected, "play.advance-terrain: level changes and hexside terrain are not reviewed (ruling R22.3)");
+            return Refused(scope, label, expected, "play.advance-marsh: a marsh hex cannot be entered in the APh (B16.4)");
         }
 
-        if (TerrainKey(toRead) is not { } terrain || !EntryHalfMf.ContainsKey(terrain))
-        {
-            return Refused(scope, label, expected, $"play.advance-terrain: {toRead.Level.Terrain?.Name ?? "the terrain"} is not a reviewed entry (ruling R22.3)");
-        }
+        var terrain = entry.Terrain;
+        var halfMf = entry.HalfMf;
 
-        if (InfantryEntryHalfMf(state, terrain) is not { } halfMf)
-        {
-            return Refused(scope, label, expected, "play.advance-grain: grain's MF cost depends on the season, and the game names no scenario month (B15.6)");
-        }
-
-        if (crossed.Terrain?.IsRoad == true)
-        {
-            halfMf = 2;
-        }
-
-        // B25.141 (ruling R6.3): a burning wreck's smoke costs one more MF to enter its Location.
-        halfMf += BlazeEntryHalfMf(state, to);
-
-        // A4.72 EX, A4.12 (ruling R5.5): a Good Order leader advancing with a unit that carries more than its IPC would lend it two MF and one
-        // IPC, which is pass 10. The bonus matters only where the advance is Difficult for the unit alone; that advance is refused.
-        if (units.Any(unit => vocabulary.IsA(unit!.Kind, "asl:leader") && !Is(unit, Conditions.Broken))
-            && units.FirstOrDefault(unit => !vocabulary.IsA(unit!.Kind, "asl:smc") && Laden(state, unit!) && DifficultAdvance(state, unit!, halfMf) != false) is { } laden)
-        {
-            return Refused(scope, label, expected, $"play.advance-leader-bonus: {laden.Id} carries more than its IPC with a leader advancing alongside; the leader's MF and IPC bonus is not built (A4.72, A4.12)");
-        }
+        // A4.72 EX, A4.12, A4.42 (ruling R10.8): a Good Order leader of its nationality advancing with a MMC adds two MF and one IPC to it.
+        var unitList = units.Select(unit => unit!).ToArray();
+        // Table player, pass 10: as in the MPh, the leader's IPC goes to the one laden MMC, and his two MF to every MMC of his nationality.
+        bool Aided(UnitInstance unit) => vocabulary.IsA(unit.Kind, "asl:mmc") && Nationality(unit) is { } nationality && unitList.Any(leader => leader.Id != unit.Id
+            && vocabulary.IsA(leader.Kind, "asl:leader") && !Is(leader, Conditions.Broken) && Nationality(leader) == nationality);
+        var ipcTo = unitList.Where(unit => Aided(unit) && Laden(state, unit)).ToArray() is [{ } onlyLaden]
+            && unitList.Any(leader => vocabulary.IsA(leader.Kind, "asl:leader") && !Is(leader, Conditions.Broken) && !Is(leader, Conditions.Wounded)
+                && Nationality(leader) == Nationality(onlyLaden)) ? onlyLaden.Id : null;
 
         // A4.72 (ruling R5.5): an advance into a Location costing at least four MF, or all of the unit's non-Double Time allotment after
         // portage, makes it CX, and an already CX unit may not make it; a unit left with no MF after portage does not advance.
         var tiring = new List<string>();
         foreach (var unit in units)
         {
-            if (DifficultAdvance(state, unit!, halfMf) is not { } difficult)
+            if (DifficultAdvance(state, unit!, halfMf, Aided(unit!), unit!.Id == ipcTo) is not { } difficult)
             {
                 return Refused(scope, label, expected, $"play.advance-mf: {unit!.Id} has no MF allotment the catalog decides, or none left after portage (A4.7, A4.72)");
             }
@@ -185,8 +171,8 @@ public sealed partial class GamePlanner
     /// Whether an advance into a Location of this half MF cost is into Difficult Terrain for the unit (A4.72): at least four MF, or all of its
     /// non-Double Time allotment after portage, whichever is less. Null when the allotment is not decided or none is left after portage.
     /// </summary>
-    private bool? DifficultAdvance(GameState state, UnitInstance unit, int halfMf) =>
-        MfAllotment(state, unit, 0, Is(unit, Conditions.Cx)) is { } allotment && allotment > 0 ? halfMf >= 2 * Math.Min(4, allotment) : null;
+    private bool? DifficultAdvance(GameState state, UnitInstance unit, int halfMf, bool aided = false, bool lent = false) =>
+        MfAllotment(state, unit, 0, Is(unit, Conditions.Cx), aided ? 2 : 0, lent ? 1 : 0) is { } allotment && allotment > 0 ? halfMf >= 2 * Math.Min(4, allotment) : null;
 
     /// <summary>A5.1, A5.5: more than three squad-equivalents (two HS or crews each) or more than four SMC of one side.</summary>
     private bool Overstacked(IEnumerable<UnitInstance> units)
@@ -444,9 +430,8 @@ public sealed partial class GamePlanner
     /// not make it (A4.72; ruling R5.5).
     /// </summary>
     public IReadOnlyList<BoardLocation> WithdrawalDestinations(GameState state, UnitInstance unit, BoardLocation from) => Laden(state, unit) ? []
-        : [.. Neighbors(state, from).Where(to => Step(state, from, to) is ({ } _, { } toRead, true, { Cliff: false } crossed) && TerrainKey(toRead) is { } terrain
-            && InfantryEntryHalfMf(state, terrain) is { } halfMf
-            && DifficultAdvance(state, unit, (crossed.Terrain?.IsRoad == true ? 2 : halfMf) + BlazeEntryHalfMf(state, to)) is { } difficult && !(difficult && Is(unit, Conditions.Cx))
+        : [.. Neighbors(state, from).Where(to => InfantryStep(state, from, to).Entry is { AllMf: false } entry
+            && DifficultAdvance(state, unit, entry.HalfMf) is { } difficult && !(difficult && Is(unit, Conditions.Cx))
             && !state.At(to).OfType<UnitInstance>().Any(other => other.Status == InstanceStatus.Active && other.Side != unit.Side && !Is(other, Conditions.Captured)))];
 
     /// <summary>Whether a unit carries more PP than its IPC (A4.42): three for a MMC, one for a SMC, none for a wounded SMC, one less while CX.</summary>
@@ -458,8 +443,7 @@ public sealed partial class GamePlanner
 
     /// <summary>Whether a withdrawal to a Location makes the unit CX (A11.21, A4.72; ruling R5.5).</summary>
     private bool WithdrawalTires(GameState state, UnitInstance unit, BoardLocation from, BoardLocation to) =>
-        Step(state, from, to) is ({ } _, { } toRead, true, { } crossed) && TerrainKey(toRead) is { } terrain && InfantryEntryHalfMf(state, terrain) is { } halfMf
-        && DifficultAdvance(state, unit, (crossed.Terrain?.IsRoad == true ? 2 : halfMf) + BlazeEntryHalfMf(state, to)) == true;
+        InfantryStep(state, from, to).Entry is { AllMf: false } entry && DifficultAdvance(state, unit, entry.HalfMf) == true;
 
     /// <summary>A11.16: a broken unit held in Melee, not Disrupted and not a Guard, must attempt to withdraw when it can.</summary>
     private bool MustWithdraw(GameState state, UnitInstance unit, BoardLocation at) =>
@@ -608,10 +592,12 @@ public sealed partial class GamePlanner
     {
         var there = state.At(to).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active).ToArray();
         var enemies = there.Where(unit => unit.Side != side).ToArray();
-        if (enemies.Any(unit => !KnownEnemy(unit) && !Is(unit, Conditions.Captured)) || there.Any(unit => Is(unit, Conditions.Captured))
-            || enemies.Any(unit => vocabulary.IsA(unit.Kind, "asl:crew")))
+
+        // Ruling R10.15: a charge into concealed units reveals them, one into prisoners enters, and one onto a lone SMC is an Infantry OVR; a Gun's
+        // crew in CC stays unreviewed (ruling R24.3).
+        if (enemies.Any(unit => vocabulary.IsA(unit.Kind, "asl:crew")))
         {
-            return $"play.berserk-concealed: a charge into {to}, which holds concealed enemy units, prisoners, or a Gun's crew, is not reviewed (A15.431, A20.55, R24.3); the charge ends in place (ruling R30.5)";
+            return $"play.berserk-crew: a charge into {to}, which holds a Gun's crew, is CC with a crew, which is not reviewed (C11, R24.3); the charge ends in place (ruling R30.5)";
         }
 
         if (enemies.FirstOrDefault(LiveFire.IsVehicle) is { } vehicle)
@@ -619,9 +605,7 @@ public sealed partial class GamePlanner
             return $"play.berserk-vehicle: a charge into {to}, which holds the enemy vehicle {vehicle.Id}, is CC or OVR against a vehicle (A11.5, D7), which is not reviewed; the charge ends in place (rulings R25.3, R30.5)";
         }
 
-        return enemies is [{ } lone] && vocabulary.IsA(lone.Kind, "asl:smc")
-            ? $"play.berserk-ovr: a charge onto the lone SMC in {to} is an Infantry OVR (A15.432), which is not reviewed; the charge ends in place (ruling R30.5)"
-            : null;
+        return null;
     }
 
     /// <summary>A map of unit ids in the arguments, such as each SMC's MMC or each withdrawing unit's destination.</summary>
@@ -905,25 +889,22 @@ public sealed partial class GamePlanner
     /// The half MF to enter a Location from an ADJACENT one as the movement rules of step 22 decide it, or null when the entry is not
     /// reviewed (a level change, hexside terrain, or terrain the review does not admit).
     /// </summary>
-    private int? EntryCost(GameState state, BoardLocation from, BoardLocation to)
+    private int? EntryCost(GameState state, BoardLocation from, BoardLocation to) => InfantryStep(state, from, to).Entry switch
     {
-        var (fromRead, toRead, adjacent, crossed) = Step(state, from, to);
-        if (fromRead is null || toRead is null || !adjacent || crossed is null
-            || fromRead.Hex.BaseLevel + fromRead.Level.Level != toRead.Hex.BaseLevel + toRead.Level.Level || crossed.HexsideTerrain is not null || crossed.Cliff
-            || crossed.Slope || TerrainKey(toRead) is not { } terrain || InfantryEntryHalfMf(state, terrain) is not { } halfMf)
-        {
-            return null;
-        }
+        null => null,
 
-        return (crossed.Terrain?.IsRoad == true ? 2 : halfMf) + BlazeEntryHalfMf(state, to);
-    }
+        // B16.4 (ruling R10.15): marsh takes a berserk unit's whole eight MF; from below only by Minimum Move, which a berserk unit does not make.
+        { MinimumMoveOnly: true } => null,
+        { AllMf: true } => 16,
+        { } entry => entry.HalfMf,
+    };
 
     /// <summary>
     /// The steps a berserk stack may take toward the nearest Known enemy unit in its LOS (A15.43, A15.431): the first step of each
     /// shortest route in MF to that unit's Location, over reviewed terrain, around other Locations holding enemy units. Equidistant
     /// targets are the ATTACKER's choice, so their steps are all allowed. With no Known enemy unit in LOS, the charge keeps to the
-    /// Location it charged (<paramref name="previous"/>). A route that unreviewed terrain could shorten (at one MF an entry, the
-    /// least any terrain costs) leaves the step undecided.
+    /// Location it charged (<paramref name="previous"/>). Terrain the game refuses to enter is on no route (ruling R10.15); a route never
+    /// counts Bypass, a recorded deviation.
     /// </summary>
     private (IReadOnlyDictionary<BoardLocation, (BoardLocation Target, int HalfMf)> Steps, BoardLocation? Target, string? Undecided) ChargeSteps(GameState state,
         string side, BoardLocation from, BoardLocation? previous)
@@ -970,11 +951,11 @@ public sealed partial class GamePlanner
         foreach (var target in targets)
         {
             var blocked = enemies.Where(location => location != target).ToHashSet();
+            // Ruling R10.15: every entry the game allows is costed, so the shortest route is decided; terrain it refuses is on no route.
             var exact = RouteCosts(state, target, blocked, lowerBound: false);
-            var lower = RouteCosts(state, target, blocked, lowerBound: true);
-            if (!exact.TryGetValue(from, out var best) || lower.GetValueOrDefault(from, int.MaxValue) < best)
+            if (!exact.TryGetValue(from, out var best))
             {
-                undecided.Add($"play.charge-undecided: the shortest route from {from} to {target} may cross terrain the review does not admit (ruling R30.5)");
+                undecided.Add($"play.charge-no-route: no route the game allows leads from {from} to {target}; the charge ends in place (A15.431)");
                 continue;
             }
 

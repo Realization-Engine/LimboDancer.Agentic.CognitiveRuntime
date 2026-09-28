@@ -397,9 +397,9 @@ public static class GameProjector
                     NoDoubleTime = rested,
                     RallyAttemptsThisPlayerTurn = newPlayerTurn ? [] : state.RallyAttemptsThisPlayerTurn,
                     FirstMmcRallyTaken = newPlayerTurn ? [] : state.FirstMmcRallyTaken,
-                    Units = [.. state.Units.Select(unit => HoldInMelee(Clear(unit is { MfSpent: 0, MovementEnded: false, HalfMfSpent: false, DoubleTimeMf: 0 }
+                    Units = [.. state.Units.Select(unit => HoldInMelee(Clear(unit is { MfSpent: 0, MovementEnded: false, HalfMfSpent: false, DoubleTimeMf: 0, OffRoad: false, MovedWith: null }
                         ? unit
-                        : unit with { MfSpent = 0, MovementEnded = false, HalfMfSpent = false, DoubleTimeMf = 0 }, cleared), melee))],
+                        : unit with { MfSpent = 0, MovementEnded = false, HalfMfSpent = false, DoubleTimeMf = 0, OffRoad = false, MovedWith = null }, cleared), melee))],
                     Equipment = [.. state.Equipment.Select(equipment => equipment.Conditions.Keys.Any(cleared.Contains)
                         ? equipment with { Conditions = Without(equipment.Conditions, cleared) }
                         : equipment)],
@@ -1498,6 +1498,15 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-029", "A SMOKE placement is one attempt per MPh by a squad of the moving stack, in its Location, with its dr (A24.1).");
             }
 
+            // A4.134 (ruling R10.9): a Minimum Move is a stack's first and only step; A12.15 (ruling R10.11): a forced-back stack stays in its Location.
+            if ((moving.MinimumMove && (current is not null || movers.Any(unit => unit!.MfSpent != 0 || unit.HalfMfSpent)))
+                || (moving.Attempted is { } attempted && (attempted == moving.To || movers.Any(unit => state.Location(unit!.Id)?.Location != moving.To)))
+                || (moving.Bypass is { Count: < 1 or > 2 }))
+            {
+                return Fail<GameState>("UNIT-STATE-029", "A Minimum Move is a stack's only step, a forced back leaves the stack in its Location, and a Bypass follows one or two hexsides (A4.134, A12.15, A4.31).");
+            }
+
+            string[] leaders = [.. movers.Where(unit => vocabulary.IsA(unit!.Kind, "asl:leader")).Select(unit => unit!.Id)];
             var next = state;
             foreach (var unit in movers)
             {
@@ -1512,6 +1521,10 @@ public static class GameProjector
                     HalfMfSpent = halves % 2 == 1,
                     Conditions = conditions,
                     DoubleTimeMf = moving.DoubleTime ? (unit.MfSpent == 0 && !unit.HalfMfSpent ? 2 : 1) : unit.DoubleTimeMf,
+
+                    // B3.4, A4.12 (ruling R10.8): the Road Bonus needs every step at the road rate; the leader bonus a leader at every step.
+                    OffRoad = unit.OffRoad || !moving.Road,
+                    MovedWith = [.. (unit.MovedWith ?? (unit.MfSpent == 0 && !unit.HalfMfSpent ? leaders : [])).Where(id => id != unit.Id && leaders.Contains(id, StringComparer.Ordinal))],
                 })!;
                 next = MovePrisoners(next, unit.Id, new MapPosition(moving.To));
             }
@@ -1535,7 +1548,11 @@ public static class GameProjector
                 {
                     Members = current?.Members ?? moving.Movers,
                     Charge = moving.Charge,
-                    EndingMembers = moving.Smoke is { Dr: 6 } sixed ? [sixed.Unit] : [],
+                    EndingMembers = moving.MinimumMove || moving.Attempted is not null ? moving.Movers : moving.Smoke is { Dr: 6 } sixed ? [sixed.Unit] : [],
+                    MinimumMove = moving.MinimumMove,
+                    Bypass = moving.Bypass,
+                    From = movers[0]!.Position is MapPosition left && left.Location != moving.To ? left.Location : null,
+                    PushedGun = moving.PushedGun,
                 },
                 SmokeAttempts = moving.Smoke is { } attempt ? [.. next.SmokeAttempts, attempt.Unit] : next.SmokeAttempts,
                 SmokePending = moving.Smoke is { Placed: true } placing ? placing.Target : null,
@@ -1675,8 +1692,29 @@ public static class GameProjector
             // Ruling R5.15: a vehicle that spent its MP left in its final hex ends its move when the DEFENDER passes; A24.1 (ruling R9.5): so does a squad
             // whose SMOKE dr was a 6.
             var ending = movement.EndingMembers.Where(id => movement.Members.Contains(id, StringComparer.Ordinal) && Active(next, id) is UnitInstance { MovementEnded: false }).ToArray();
-            return movement.Ending ? EndMovement(next, new MovementEnded([.. movement.Members.Count > 0 ? movement.Members : movement.Movers]))
+            var ended = movement.Ending ? EndMovement(next, new MovementEnded([.. movement.Members.Count > 0 ? movement.Members : movement.Movers]))
                 : ending.Length > 0 ? EndMovement(next, new MovementEnded(ending)) : next;
+
+            // A4.134 (ruling R10.9): once all First Fire at a Minimum Move is done, its unbroken survivors are pinned and CX.
+            if (ended is not null && movement.MinimumMove)
+            {
+                foreach (var id in movement.Movers)
+                {
+                    if (Active(ended, id) is UnitInstance { } mover && GameState.Condition(mover, Conditions.Broken) != ConditionState.True)
+                    {
+                        ended = Replace(ended, mover with
+                        {
+                            Conditions = new Dictionary<string, ConditionState>(mover.Conditions, StringComparer.Ordinal)
+                            {
+                                [Conditions.Pinned] = ConditionState.True,
+                                [Conditions.Cx] = ConditionState.True,
+                            },
+                        });
+                    }
+                }
+            }
+
+            return ended;
         }
 
         /// <summary>
@@ -2407,6 +2445,8 @@ public static class GameProjector
                         HalfMfSpent = consumed.Any(item => item.HalfMfSpent),
                         MovementEnded = consumed.Any(item => item.MovementEnded),
                         DoubleTimeMf = consumed.Max(item => item.DoubleTimeMf),
+                        OffRoad = consumed.Any(item => item.OffRoad),
+                        MovedWith = consumed.Select(item => item.MovedWith).FirstOrDefault(item => item is not null),
                     })
                     : created;
             }
@@ -2476,6 +2516,8 @@ public static class GameProjector
                     HalfMfSpent = creator.HalfMfSpent,
                     MovementEnded = creator.MovementEnded,
                     DoubleTimeMf = creator.DoubleTimeMf,
+                    OffRoad = creator.OffRoad,
+                    MovedWith = creator.MovedWith,
                 });
                 return next.Movement is { } movement && movement.Members.Contains(creator.Id, StringComparer.Ordinal)
                     ? next with

@@ -358,6 +358,24 @@ public sealed record UnitInstance(
     {
         get; init;
     }
+
+    /// <summary>
+    /// Whether the unit crossed a hexside other than at the road rate this MPh, or into SMOKE, a burning wreck, or rubble (B3.4; ruling R10.8), which
+    /// denies it the Road Bonus. Cleared at every phase change.
+    /// </summary>
+    public bool OffRoad
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The leaders the unit has moved with at every step of this MPh, for the leader bonus (A4.12; ruling R10.8): null until its first step. Cleared
+    /// at every phase change.
+    /// </summary>
+    public IReadOnlyList<string>? MovedWith
+    {
+        get; init;
+    }
 }
 
 /// <summary>Unit kinds the state model treats specially.</summary>

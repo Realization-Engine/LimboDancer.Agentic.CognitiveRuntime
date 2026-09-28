@@ -17,6 +17,12 @@ public interface IFireLosReader
 {
     /// <summary>The LOS result from one Location to another on the game's map, or null when it cannot be read.</summary>
     public LosResult? Read(GameState state, BoardLocation from, BoardLocation target);
+
+    /// <summary>
+    /// The LOS to a hexside Location's auxiliary vertex (the second end of the hexside, for a Snap Shot, A8.15); by default the reader's LOS to the
+    /// hexside Location itself.
+    /// </summary>
+    public LosResult? ReadAuxiliary(GameState state, BoardLocation from, BoardLocation hexside) => Read(state, from, hexside);
 }
 
 /// <summary>
@@ -60,6 +66,11 @@ public sealed partial class GamePlanner
         ["Woods"] = "woods",
         ["Orchard"] = "orchard",
         ["Grain"] = "grain",
+
+        // Backlog pass 10 (ruling R10.1): marsh (B16) and rubble (B24).
+        ["Marsh"] = "marsh",
+        ["Wooden Rubble"] = "wooden-rubble",
+        ["Stone Rubble"] = "stone-rubble",
     };
 
     // The IFT results that are at least a NMC (A10.62).
@@ -204,7 +215,16 @@ public sealed partial class GamePlanner
             }
         }
 
-        var (map, mapReason) = FireMapFacts(state, attack, target);
+        // A8.15 (ruling R10.13): a Snap Shot at the hexside the moving stack crossed.
+        if (arguments.TryGetProperty("snapShot", out var snap) && snap.ValueKind == JsonValueKind.True)
+        {
+            attack = attack with
+            {
+                SnapShot = true
+            };
+        }
+
+        var (map, mapReason) = FireMapFacts(state, attack, target, existing);
         if (map is null)
         {
             return Refused(scope, label, expected, mapReason!) with
@@ -792,9 +812,11 @@ public sealed partial class GamePlanner
     /// <summary>
     /// The map's facts of an attack: for each firer's Location, its range, level, and LOS and its attributed Hindrance; the
     /// target's terrain; for a group across Locations, whether each Location is ADJACENT to another (A7.5); and for
-    /// Subsequent First Fire, whether no target is farther than the closest Known enemy unit (A8.3).
+    /// Subsequent First Fire, whether no target is farther than the closest Known enemy unit (A8.3). Backlog pass 10 adds the
+    /// levels between firers and target, the wall or hedge TEM, Height Advantage, a Bypassing target's terrain, Snap Shots,
+    /// TPBF, and Hazardous Movement (rulings R10.4 to R10.8, R10.13, R10.14).
     /// </summary>
-    private (FireAttack? Facts, string? Reason) FireMapFacts(GameState state, FireAttack attack, BoardLocation target)
+    private (FireAttack? Facts, string? Reason) FireMapFacts(GameState state, FireAttack attack, BoardLocation target, IReadOnlyList<GameEvent>? history = null)
     {
         if (ReadLocation(state, target) is not { } targetRead)
         {
@@ -807,9 +829,12 @@ public sealed partial class GamePlanner
             return (null, $"play.fire-terrain: the target's terrain ({name ?? "unknown"}) has no TEM in the Fire package");
         }
 
-        if (targetRead.Hex.Hexsides.Any(side => side.HexsideTerrain is not null || side.Cliff))
+        // Rulings R10.5, R10.6: walls and hedges are reviewed for Infantry fire; ordnance, a vehicle's fire, and Residual FP keep refusing them.
+        // Table player, pass 10: Residual FP crosses no hexside, so it takes no wall TEM and needs no refusal.
+        var direct = attack.FireKind != ScenarioA1FireCalculator.ResidualFire && attack.OrdnanceHit is null && attack.VehicleFire is null;
+        if (!direct && attack.FireKind != ScenarioA1FireCalculator.ResidualFire && targetRead.Hex.Hexsides.Any(side => side.HexsideTerrain is not null || side.Cliff))
         {
-            return (null, "play.fire-terrain: hexside terrain at the target is not reviewed");
+            return (null, "play.fire-terrain: hexside terrain at the target is not reviewed for ordnance or a vehicle's fire (ruling R10.5)");
         }
 
         // B15.6 (ruling R5.19): grain is Open Ground outside June to September, where FFMO applies to a unit moving in it; with no scenario
@@ -826,6 +851,34 @@ public sealed partial class GamePlanner
             else if (month is < 6 or > 9)
             {
                 terrain = "open-ground";
+            }
+        }
+
+        // A4.3, A4.34, B23.31 (ruling R10.7): a stack in Bypass is in the other terrain of the hexsides it moves along, not in the obstacle.
+        var lane = (direct || attack.FireKind == ScenarioA1FireCalculator.ResidualFire) && state.Phase == "mph" && state.Movement is { Bypass: { Count: > 0 } bypassed } bypassing
+            && bypassing.Location == target ? bypassed : null;
+        if (lane is not null)
+        {
+            string?[] laneTerrain = [.. lane.Select(side => HexsideAt(state, target, side))
+                .Select(side => side?.Terrain?.Name is { } name ? FireTerrain.GetValueOrDefault(name) ?? (side.Terrain.IsRoad ? "open-ground" : null) : null)];
+            if (laneTerrain.Length == 0 || laneTerrain.Any(key => key is null))
+            {
+                return (null, "play.fire-bypass: the terrain the Bypassing stack moves through is not reviewed (ruling R10.7)");
+            }
+
+            terrain = laneTerrain.OrderByDescending(key => ScenarioA1FireReference.Tem[key!]).First()!;
+
+            // Table player, pass 10: whether units in the obstacle and a stack Bypassing it share a Location for TPBF is not built, nor a Snap Shot at
+            // a Bypass step.
+            if (direct && ((attack.Firers ?? []).Any(item => item.LocationId == target.ToString()) || attack.SnapShot == true))
+            {
+                return (null, "play.fire-bypass: fire from within the Bypassed hex, and a Snap Shot at a Bypass step, are not built (A4.34, A8.15; ruling R10.7)");
+            }
+
+            // A4.34 (referee, pass 10): a wall or hedge of the hex applies when the LOS crosses it, which the center LOS cannot tell.
+            if (targetRead.Hex.Hexsides.Any(side => WallOn(side) is not null))
+            {
+                return (null, "play.fire-bypass: fire at a Bypassing stack in a hex with a wall or hedge needs the vertex LOS, which is not built (A4.34; ruling R10.7)");
             }
         }
 
@@ -847,8 +900,32 @@ public sealed partial class GamePlanner
             }, null);
         }
 
-        var perLocation = new Dictionary<string, (int Range, bool SameLevel, FireLos Los)>(StringComparer.Ordinal);
-        foreach (var location in attack.Firers!.Select(item => item.LocationId!).Append(attack.FirerLocationId!).Distinct(StringComparer.Ordinal))
+        var firingSide = attack.VehicleFire is { } vehicleFire ? state.Unit(vehicleFire.VehicleId!)?.Side : state.Unit(attack.Firers![0].UnitId!)?.Side;
+        var targetHeight = targetRead.Hex.BaseLevel + target.Level;
+
+        // A8.15 (ruling R10.13): a Snap Shot is traced to both ends of the hexside the stack crossed into the target hex.
+        BoardLocation? snapHexside = null;
+        BoardLocation? left = null;
+        if (attack.SnapShot == true)
+        {
+            if (!direct || state.Phase != "mph" || state.Movement is not { From: { } came } snapped || snapped.Location != target || SideToward(state, target, came) is not { } crossedSide)
+            {
+                return (null, "play.fire-snap-shot: a Snap Shot is Infantry Defensive First Fire at the hexside the moving stack just crossed (A8.15)");
+            }
+
+            // A8.15, B9.42 (referee, pass 10): a wall, hedge, SMOKE, or rubble of either hex can modify a Snap Shot; that is not built.
+            if (new[] { target, came }.Any(hex => ReadLocation(state, hex) is not { } hexRead || hexRead.Hex.Hexsides.Any(side => WallOn(side) is not null)
+                || IsRubbleTerrain(TerrainKey(hexRead)) || HasSmoke(state, hex)))
+            {
+                return (null, "play.fire-snap-shot: a Snap Shot at a hexside of a hex with a wall, hedge, SMOKE, or rubble is not built (A8.15; ruling R10.13)");
+            }
+
+            snapHexside = new BoardLocation(target.Board, target.Hex, 0, crossedSide);
+            left = came;
+        }
+
+        var perLocation = new Dictionary<string, (int Range, bool SameLevel, FireLos Los, int Height)>(StringComparer.Ordinal);
+        foreach (var location in (attack.Firers ?? []).Select(item => item.LocationId!).Append(attack.FirerLocationId!).Distinct(StringComparer.Ordinal))
         {
             var from = BoardLocation.Parse(location);
             if (ReadLocation(state, from) is not { } firerRead)
@@ -856,39 +933,104 @@ public sealed partial class GamePlanner
                 return (null, "play.fire-map: a firer's Location cannot be read");
             }
 
-            if (Los(state, from, target) is not { } los)
+            var height = firerRead.Hex.BaseLevel + from.Level;
+            if (direct)
             {
-                return (null, "play.fire-los: the board has no LOS data to read");
+                // B16.32: fire from a marsh hex is limited and Area Fire, which is not built.
+                if (TerrainKey(firerRead) == "marsh")
+                {
+                    return (null, "play.fire-marsh: fire from a marsh hex is limited to some weapons and resolved as Area Fire, which is not built (B16.32; ruling R10.1)");
+                }
+
+                // A7.212 (ruling R10.14): a unit whose Location holds a Known enemy unit fires at nothing else.
+                if (from != target && state.At(from).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != firingSide && KnownEnemy(unit)
+                    && !(LiveFire.IsVehicle(unit) && !HasVehicleMg(unit) && unit.Definition is { } vehicleDefinition
+                        && FireReference.Value.Definitions.GetValueOrDefault(vehicleDefinition.Definition)?.Unarmored == true)))
+                {
+                    return (null, $"play.fire-target-limit: {from} holds a Known enemy unit, so its units fire only at their own Location (A7.212)");
+                }
             }
 
-            if (los.Status is not (LosStatus.Clear or LosStatus.Blocked))
+            // A7.21 (ruling R10.14): TPBF at the enemy units of the firer's own Location.
+            if (from == target)
             {
-                return (null, $"play.fire-los: the LOS read gives no definitive answer ({los.Status}: {los.Reason})");
+                if (!direct || attack.SnapShot == true)
+                {
+                    return (null, "play.fire-own-location: only Infantry fire as TPBF at units in their own Location (A7.21)");
+                }
+
+                perLocation[location] = (0, true, new FireLos(false, 0, true, false), height);
+                continue;
             }
 
-            // A6.7: the largest Hindrance at each range counts; brush always, grain June to September (B15.2); and an AFV or wreck
-            // where the map has none at that range, and a burning wreck's smoke (D9.4, B25.2; rulings R6.2, R6.3).
+            LosResult? los;
+            int range;
+            if (snapHexside is { } hexside)
+            {
+                var (first, second) = LosToHexside(state, from, hexside);
+                if (first is not { Status: LosStatus.Clear or LosStatus.Blocked } || second is not { Status: LosStatus.Clear or LosStatus.Blocked })
+                {
+                    return (null, "play.fire-los: the LOS read to the crossed hexside gives no definitive answer");
+                }
+
+                if (first.IsBlocked == true || second.IsBlocked == true)
+                {
+                    return (null, "play.fire-snap-shot: the firer has no LOS to the whole hexside crossed (A8.15)");
+                }
+
+                los = first.Hindrances.Sum(item => item.Value) >= second.Hindrances.Sum(item => item.Value) ? first : second;
+                range = Math.Min(HexDistance(state, from, target) ?? int.MaxValue, HexDistance(state, from, left!) ?? int.MaxValue);
+                if (range == int.MaxValue || HexDistance(state, from, target) == 0)
+                {
+                    return (null, "play.fire-snap-shot: a Snap Shot is not taken at a unit entering the firer's hex, and its range must be read (A8.15)");
+                }
+            }
+            else
+            {
+                los = Los(state, from, target);
+                if (los is null)
+                {
+                    return (null, "play.fire-los: the board has no LOS data to read");
+                }
+
+                if (los.Status is not (LosStatus.Clear or LosStatus.Blocked))
+                {
+                    return (null, $"play.fire-los: the LOS read gives no definitive answer ({los.Status}: {los.Reason})");
+                }
+
+                range = los.Range;
+            }
+
+            // A4.34 (ruling R10.7): LOS to a Bypassing stack's hex center must cross a hexside it Bypasses; the vertex LOS is not built.
+            if (lane is not null && (LosEntrySides(state, target, from) is not { } entering || !entering.Any(lane.Contains)))
+            {
+                return (null, "play.fire-bypass-los: the LOS to the Bypassing stack does not cross a hexside it Bypasses; LOS to its vertices is not built (A4.34; ruling R10.7)");
+            }
+
+            // A6.7: the largest Hindrance at each range counts; brush always, grain June to September (B15.2), marsh at the same level (B16.2); and an
+            // AFV or wreck where the map has none at that range, and a burning wreck's smoke (D9.4, B25.2; rulings R6.2, R6.3).
             var inSeason = state.ScenarioMonth is >= 6 and <= 9;
-            var attributed = los.Hindrances.All(entry => entry.Terrains.Count > 0 && entry.Terrains.All(item => item is "Brush" or "Grain"));
-            var mapRanges = los.Hindrances.Where(entry => entry.Terrains.Contains("Brush") || (inSeason && entry.Terrains.Contains("Grain")))
+            var sameLevel = height == targetHeight;
+            var attributed = los.Hindrances.All(entry => entry.Terrains.Count > 0 && entry.Terrains.All(item => item is "Brush" or "Grain" or "Marsh"));
+            var mapRanges = los.Hindrances.Where(entry => entry.Terrains.Contains("Brush") || (sameLevel && entry.Terrains.Contains("Marsh")) || (inSeason && entry.Terrains.Contains("Grain")))
                 .Select(entry => entry.Range).ToHashSet();
             var grain = los.Hindrances.Any(entry => entry.Terrains.Contains("Grain"));
-            var sameLevel = firerRead.Hex.BaseLevel + firerRead.Level.Level == targetRead.Hex.BaseLevel + targetRead.Level.Level;
             var (vehicleDrm, vehicleReason) = VehicleHindrance(state, from, target, los, sameLevel, mapRanges);
             if (vehicleReason is not null)
             {
                 return (null, vehicleReason);
             }
 
-            perLocation[location] = (los.Range, sameLevel, new FireLos(los.IsBlocked == true, mapRanges.Count + vehicleDrm, attributed, grain));
+            perLocation[location] = (range, sameLevel, new FireLos(los.IsBlocked == true, mapRanges.Count + vehicleDrm, attributed, grain), height);
         }
 
-        var first = perLocation[attack.FirerLocationId!];
+        var firstLocation = perLocation[attack.FirerLocationId!];
         var facts = attack with
         {
-            Range = first.Range,
-            SameLevel = first.SameLevel,
-            Los = first.Los,
+            Range = firstLocation.Range,
+            SameLevel = firstLocation.SameLevel,
+            TargetLevelAbove = firstLocation.SameLevel ? null : targetHeight - firstLocation.Height,
+            Los = firstLocation.Los,
             TargetTerrain = terrain,
         };
         if (perLocation.Count > 1)
@@ -901,9 +1043,42 @@ public sealed partial class GamePlanner
                 {
                     Range = perLocation[firer.LocationId!].Range,
                     SameLevel = perLocation[firer.LocationId!].SameLevel,
+                    TargetLevelAbove = perLocation[firer.LocationId!].SameLevel ? null : targetHeight - perLocation[firer.LocationId!].Height,
                     Los = perLocation[firer.LocationId!].Los,
                 })],
                 FirerLocationsAdjacent = locations.All(one => locations.Any(two => two != one && IsAdjacent(state, one, two))),
+            };
+        }
+
+        if (direct)
+        {
+            var sources = perLocation.Where(pair => pair.Value.Range > 0).Select(pair => (From: BoardLocation.Parse(pair.Key), pair.Value.Range, pair.Value.Height)).ToArray();
+
+            // B9.3 to B9.41 (rulings R10.5, R10.6): the wall or hedge TEM; a Snap Shot, TPBF, and a Bypassing stack take none.
+            if (attack.SnapShot != true && lane is null && sources.Length == perLocation.Count && sources.Length > 0)
+            {
+                var (wall, wallReason) = HexsideTemAt(state, target, [.. sources.Select(item => (item.From, item.Range))], firingSide!, history);
+                if (wallReason is not null)
+                {
+                    return (null, wallReason);
+                }
+
+                facts = facts with
+                {
+                    HexsideTem = wall
+                };
+            }
+
+            // B10.31 (ruling R10.4): Height Advantage over every firer; A4.62 (ruling R10.8): a crew pushing its Gun is under Hazardous Movement.
+            facts = facts with
+            {
+                HeightAdvantage = sources.Length == perLocation.Count
+                    && HeightAdvantageAt(state, target, targetRead, [.. sources.Select(item => (item.From, item.Height))], attack.SnapShot == true) ? true : null,
+
+                // A4.62 (referee, pass 10): only the pushing crew is under Hazardous Movement.
+                HazardousMovement = state.Phase == "mph" && state.Movement is { PushedGun: { } pushedGun } pushing && pushing.Location == target
+                    && state.Find(pushedGun) is EquipmentInstance { Holding: { } manning } && attack.Targets!.Count > 0
+                    && attack.Targets.All(item => item.UnitId == manning.Holder) ? true : null,
             };
         }
 
@@ -918,7 +1093,7 @@ public sealed partial class GamePlanner
             facts = facts with
             {
                 WithinSubsequentFirstFireRange = perLocation.All(pair => enemies
-                    .Select(enemy => Los(state, BoardLocation.Parse(pair.Key), enemy)?.Range ?? int.MaxValue).DefaultIfEmpty(int.MaxValue).Min() >= pair.Value.Range),
+                    .Select(enemy => pair.Value.Range == 0 ? 0 : Los(state, BoardLocation.Parse(pair.Key), enemy)?.Range ?? int.MaxValue).DefaultIfEmpty(int.MaxValue).Min() >= pair.Value.Range),
             };
         }
 

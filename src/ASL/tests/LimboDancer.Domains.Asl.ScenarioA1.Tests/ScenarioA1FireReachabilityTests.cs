@@ -162,7 +162,8 @@ public sealed class ScenarioA1FireReachabilityTests
         {
             Phase = "MPh"
         }, Reference));
-        Assert.Contains("asl.a1.fire.levels-differ", ScenarioA1FireCalculator.Precheck(attack with
+        // Ruling R10.4 (backlog pass 10): Infantry fire at another level is decided once the level difference is named.
+        Assert.Contains("asl.a1.fire.fact-missing:targetLevelAbove", ScenarioA1FireCalculator.Precheck(attack with
         {
             SameLevel = false
         }, Reference));

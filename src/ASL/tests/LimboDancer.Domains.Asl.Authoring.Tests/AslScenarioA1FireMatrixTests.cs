@@ -10,7 +10,7 @@ namespace LimboDancer.Domains.Asl.Authoring.Tests;
 public sealed class AslScenarioA1FireMatrixTests
 {
     private const string SourceCommit = "a3254ff1d492dbdd28483d86f5b42437b48e80d4";
-    private const string MatrixSha256 = "7dbef0c930d711663563d051ac354b4d6ecd873a13350a48f5a82d25b23027e6";
+    private const string MatrixSha256 = "9cfec29c8b19c63fb2cdeff5cd177427579d56b0e87c872506817fbf0acfe395";
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     private static string Registry(string name) => Path.Combine(RepositoryPaths.Root, "docs", "ASL", "SourceRegistry", name);
@@ -34,6 +34,8 @@ public sealed class AslScenarioA1FireMatrixTests
             root.GetProperty("iftTranscriptionSha256").GetString());
         Assert.Equal(Hashing.Sha256File(Registry(Path.Combine("Supplements", "b-terrain-chart-tem.transcription.json"))),
             root.GetProperty("terrainChartTranscriptionSha256").GetString());
+        Assert.Equal(Hashing.Sha256File(Registry(Path.Combine("Supplements", "b-terrain-chart-pass10.transcription.json"))),
+            root.GetProperty("terrainChartPass10TranscriptionSha256").GetString());
         Assert.Equal(Hashing.Sha256File(Path.Combine(RepositoryPaths.Root, "src", "ASL", "units", "catalog", "scenario-a1.catalog.json")),
             root.GetProperty("catalogSha256").GetString());
 
@@ -71,12 +73,13 @@ public sealed class AslScenarioA1FireMatrixTests
             .Concat(AslScenarioA1FireSourceReview.BuildPass8(RepositoryPaths.Root, manifests, attestation).Records)
             .Concat(AslScenarioA1FireSourceReview.BuildPass9(RepositoryPaths.Root, manifests, attestation).Records)
             .Concat(AslScenarioA1FireSourceReview.BuildPass9b(RepositoryPaths.Root, manifests, attestation).Records)
+            .Concat(AslScenarioA1FireSourceReview.BuildPass10(RepositoryPaths.Root, manifests, attestation).Records)
             .Where(item => item.Disposition == TirSourceVerificationDisposition.Verified)
             .Select(item => item.SourceFragment.FragmentId).ToHashSet(StringComparer.Ordinal);
 
         using var matrix = Read("asl-scenario-a1.fire-case-matrix.json");
         var fragments = matrix.RootElement.GetProperty("sourceFragments").EnumerateArray().ToArray();
-        Assert.Equal(208, fragments.Length);
+        Assert.Equal(248, fragments.Length);
         foreach (var item in fragments)
         {
             var fragment = Assert.Single(manifests.Fragments, candidate => candidate.FragmentId == item.GetProperty("fragmentId").GetString());

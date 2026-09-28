@@ -112,6 +112,13 @@ public static class AslScenarioA1FireSourceReview
     public const string Pass9bComparisonFile = "asl-scenario-a1.pass9b-pdf-comparison.json";
     public const string Pass9bComparisonSha256 = "b2f0e154e792ca6f85cf9bbd1ad6adc580e67e9540daa83116277c4de6377995";
 
+    /// <summary>
+    /// The backlog pass 10 comparison: Infantry movement costs, levels, walls and hedges, Bypass, Hazardous Movement, the leader bonus, Minimum
+    /// Move, Snap Shots, marsh, and rubble (A4, A6.21, A8.15, A12.151, B9, B10, B16, B23, B24).
+    /// </summary>
+    public const string Pass10ComparisonFile = "asl-scenario-a1.pass10-pdf-comparison.json";
+    public const string Pass10ComparisonSha256 = "71b543b019c984e1ce900b893bab6e98c287752f05d22c15686491ff5885bc54";
+
     private const string ChapterA = "asl-easlrb-3.10:chapter-a";
     private const string ChapterB = "asl-easlrb-3.10:chapter-b";
     private const string ChapterC = "asl-easlrb-3.10:chapter-c";
@@ -635,10 +642,55 @@ public static class AslScenarioA1FireSourceReview
         ("B23.423", "B23.423", ChapterB, 1406, SourceFragmentKind.RuleText, 137),
     ];
 
+    private static readonly (string Rule, string Registered, string Source, int Line, SourceFragmentKind Kind, int Page)[] Pass10Subjects =
+    [
+        ("A4.12", "A4.12", ChapterA, 235, SourceFragmentKind.RuleText, 48),
+        ("A4.133", "A4.133", ChapterA, 243, SourceFragmentKind.RuleText, 48),
+        ("A4.134", "A4.134", ChapterA, 253, SourceFragmentKind.RuleText, 48),
+        ("A4.3", "A4.3", ChapterA, 267, SourceFragmentKind.RuleText, 49),
+        ("A4.31", "A4.31", ChapterA, 271, SourceFragmentKind.RuleText, 49),
+        ("A4.32", "A4.32", ChapterA, 279, SourceFragmentKind.RuleText, 50),
+        ("A4.34", "A4.34", ChapterA, 283, SourceFragmentKind.RuleText, 50),
+        ("A4.62", "A4.62", ChapterA, 317, SourceFragmentKind.RuleText, 51),
+        ("A8.15", "A8.15", ChapterA, 602, SourceFragmentKind.RuleText, 59),
+        ("A12.151", "A12.151", ChapterA, 1044, SourceFragmentKind.RuleText, 78),
+        ("A12.151", "A12.151", ChapterA, 1050, SourceFragmentKind.RuleContinuation, 79),
+        ("A6.21", "A6.21", ChapterA, 377, SourceFragmentKind.RuleText, 53),
+        ("B9.1", "B9.1", ChapterB, 430, SourceFragmentKind.RuleText, 118),
+        ("B9.2", "B9.2", ChapterB, 438, SourceFragmentKind.RuleText, 118),
+        ("B9.3", "B9.3", ChapterB, 448, SourceFragmentKind.RuleText, 119),
+        ("B9.31", "B9.31", ChapterB, 452, SourceFragmentKind.RuleText, 119),
+        ("B9.32", "B9.32", ChapterB, 454, SourceFragmentKind.RuleText, 119),
+        ("B9.32", "B9.32", ChapterB, 458, SourceFragmentKind.RuleContinuation, 119),
+        ("B9.323", "B9.323", ChapterB, 472, SourceFragmentKind.RuleText, 120),
+        ("B9.33", "B9.33", ChapterB, 476, SourceFragmentKind.RuleText, 120),
+        ("B9.35", "B9.35", ChapterB, 486, SourceFragmentKind.RuleText, 120),
+        ("B9.4", "B9.4", ChapterB, 500, SourceFragmentKind.RuleText, 121),
+        ("B9.41", "B9.41", ChapterB, 506, SourceFragmentKind.RuleText, 121),
+        ("B9.41", "B9.41", ChapterB, 510, SourceFragmentKind.RuleContinuation, 121),
+        ("B10.4", "B10.4", ChapterB, 693, SourceFragmentKind.RuleText, 126),
+        ("B10.51", "B10.51", ChapterB, 699, SourceFragmentKind.RuleText, 126),
+        ("B16.2", "B16.2", ChapterB, 984, SourceFragmentKind.RuleText, 130),
+        ("B16.3", "B16.3", ChapterB, 988, SourceFragmentKind.RuleText, 130),
+        ("B16.32", "B16.32", ChapterB, 994, SourceFragmentKind.RuleText, 130),
+        ("B16.4", "B16.4", ChapterB, 998, SourceFragmentKind.RuleText, 130),
+        ("B23.22", "B23.22", ChapterB, 1350, SourceFragmentKind.RuleText, 136),
+        ("B23.22", "B23.22", ChapterB, 1356, SourceFragmentKind.RuleContinuation, 136),
+        ("B23.25", "B23.25", ChapterB, 1362, SourceFragmentKind.RuleText, 136),
+        ("B23.26", "B23.26", ChapterB, 1368, SourceFragmentKind.RuleText, 136),
+        ("B23.421", "B23.421", ChapterB, 1390, SourceFragmentKind.RuleText, 136),
+        ("B23.421", "B23.421", ChapterB, 1400, SourceFragmentKind.RuleContinuation, 137),
+        ("B23.422", "B23.422", ChapterB, 1404, SourceFragmentKind.RuleText, 137),
+        ("B24.2", "B24.2", ChapterB, 1594, SourceFragmentKind.RuleText, 141),
+        ("B24.3", "B24.3", ChapterB, 1602, SourceFragmentKind.RuleText, 142),
+        ("B24.4", "B24.4", ChapterB, 1606, SourceFragmentKind.RuleText, 142),
+    ];
+
     // Fragments a column break, a boxed example, or a page break interrupts: each part occurs whole in the page text.
     private static readonly HashSet<(string Rule, int Line)> TwoPartSubjects =
         [("A7.212", 445), ("A8.26", 644), ("A8.31", 658), ("A9.2", 690), ("B3.4", 138), ("A12.11", 992), ("A11.41", 940), ("A20.21", 1402),
-            ("A7.308", 485), ("D3.5", 383), ("A12.2", 1082), ("C6.17", 506), ("C13.32", 1008)];
+            ("A7.308", 485), ("D3.5", 383), ("A12.2", 1082), ("C6.17", 506), ("C13.32", 1008),
+            ("A4.134", 253), ("A4.31", 271), ("A8.15", 602), ("B9.35", 486), ("B9.41", 506), ("B24.2", 1594)];
 
     /// <summary>The verified fragments, in subject order, keyed by rule id for the Fire package.</summary>
     public static IReadOnlyList<(string Rule, int Page, SourceFragment Fragment)> Fragments(GeneratedManifests manifests)
@@ -728,6 +780,12 @@ public static class AslScenarioA1FireSourceReview
         Build(repositoryRoot, manifests, attestation, Pass9bComparisonFile, Pass9bComparisonSha256, Pass9bSubjects,
             "backlog pass 9b review");
 
+    /// <summary>The backlog pass 10 subjects: movement and terrain.</summary>
+    public static AslScenarioA1VerificationBatch BuildPass10(string repositoryRoot,
+        GeneratedManifests manifests, AslScenarioA1SourceAttestation attestation) =>
+        Build(repositoryRoot, manifests, attestation, Pass10ComparisonFile, Pass10ComparisonSha256, Pass10Subjects,
+            "backlog pass 10 review");
+
     /// <summary>The unit step 24 subjects of a Gun's HE shot at Infantry.</summary>
     public static AslScenarioA1VerificationBatch BuildOrdnance(string repositoryRoot,
         GeneratedManifests manifests, AslScenarioA1SourceAttestation attestation) =>
@@ -774,7 +832,7 @@ public static class AslScenarioA1FireSourceReview
                 && evidence.GetProperty("kind").GetString() == (subject.Kind == SourceFragmentKind.RuleText ? "ruleText" : "ruleContinuation"),
                 "Comparison no longer names the exact registered fragment.");
 
-            var normalized = Normalize(fragment.Content, file is Pass7ComparisonFile or Pass8ComparisonFile or Pass9ComparisonFile or Pass9bComparisonFile);
+            var normalized = Normalize(fragment.Content, file is Pass7ComparisonFile or Pass8ComparisonFile or Pass9ComparisonFile or Pass9bComparisonFile or Pass10ComparisonFile);
             var comparison = evidence.GetProperty("comparison").GetString();
             Require(evidence.GetProperty("normalizedAlphanumericSha256").GetString() == Hashing.Sha256Text(normalized)
                 && evidence.GetProperty("normalizedAlphanumericLength").GetInt32() == normalized.Length

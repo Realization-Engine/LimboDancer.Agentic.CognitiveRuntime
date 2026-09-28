@@ -126,7 +126,7 @@ public sealed class LiveRecordTests
     {
         var stepped = Project(With(9, Step("m1", G1, "bd01:D5:0", 1)));
         Assert.False(stepped.HasErrors, string.Join(" ", stepped.Diagnostics));
-        Assert.Equal(new MovementState(G1, D5, 2, 1, false, true), stepped.Current!.Movement! with
+        Assert.Equal(new MovementState(G1, D5, 2, 1, false, true) { From = BoardLocation.Parse("bd01:D4:0") }, stepped.Current!.Movement! with
         {
             Movers = G1
         });

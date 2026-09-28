@@ -89,6 +89,24 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>
+    /// The LOS from a Location to both ends of a hexside (A8.15; ruling R10.13): to its first vertex and to its second; nulls when the map has no
+    /// LOS data to read.
+    /// </summary>
+    private (LosResult? First, LosResult? Second) LosToHexside(GameState state, BoardLocation from, BoardLocation hexside)
+    {
+        if (fireLos is not null)
+        {
+            return (fireLos.Read(state, from, hexside), fireLos.ReadAuxiliary(state, from, hexside));
+        }
+
+        LosMap? map = state.Map.IsPlaced
+            ? Composed(state) is { } composed ? LosMap.ForPlacedMap(composed).Map : null
+            : state.Map.Boards is [{ } placed] && boards.TryGetBoard(placed.Board, placed.Version).Board is { } handle ? LosMap.ForBoard(handle).Map : null;
+        return map is null ? (null, null)
+            : (LosCalculator.Check(map, from, LosAim.LosPoint, hexside, LosAim.LosPoint), LosCalculator.Check(map, from, LosAim.LosPoint, hexside, LosAim.AuxiliaryPoint));
+    }
+
+    /// <summary>
     /// ADJACENT (A.8, p. 43): the Locations share a hexside at the same level, with a clear LOS and no hexside terrain or
     /// cliff between them, so Infantry could advance from one to the other. The review reads it this way for the
     /// terrain it admits.

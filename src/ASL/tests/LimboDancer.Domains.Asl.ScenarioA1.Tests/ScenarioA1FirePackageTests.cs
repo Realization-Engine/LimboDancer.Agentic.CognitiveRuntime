@@ -393,7 +393,7 @@ public sealed class ScenarioA1FirePackageTests
         { "mph-without-kind", "asl.a1.fire.phase-outside" },
         { "support-weapon", "asl.a1.fire.firer-outside" },
         { "los-blocked", "asl.a1.fire.los-blocked" },
-        { "levels", "asl.a1.fire.levels-differ" },
+        { "levels", "asl.a1.fire.fact-missing:targetLevelAbove" },
         { "grain", "asl.a1.fire.hindrance-unattributed" },
         { "mixed-pinned-movers", "asl.a1.fire.movement-drm-differs" },
         { "elr", "asl.a1.fire.elr-undecided:elr-undeclared" },

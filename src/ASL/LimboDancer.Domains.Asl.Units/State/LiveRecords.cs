@@ -1,5 +1,6 @@
 using System.Text.Json;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
+using LimboDancer.Domains.Asl.Maps.Geometry;
 using LimboDancer.Domains.Asl.Units.Documents;
 
 namespace LimboDancer.Domains.Asl.Units.State;
@@ -84,6 +85,42 @@ public sealed record MovementStepped(IReadOnlyList<string> Movers, BoardLocation
     /// dr's roll and value, and the squad's Smoke Placement Exponent; null for a move.
     /// </summary>
     public SmokeAttempt? Smoke
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether the step crossed a road hexside at the road rate into a hex with no SMOKE, burning wreck, or rubble (B3.4, A4.132; ruling R10.8): a
+    /// unit whose every step this MPh was one gets one more MF.
+    /// </summary>
+    public bool Road
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether the step is a Minimum Move (A4.134; ruling R10.9): the movers' only hex this MPh; when the DEFENDER's window closes their move ends and
+    /// the unbroken ones become pinned and CX.
+    /// </summary>
+    public bool MinimumMove
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The Location the stack attempted when a concealed enemy unit there was revealed and forced it back (A12.15; ruling R10.11): the stack stays in
+    /// <see cref="To"/>, its Location, with the MF spent there, and its move ends when the DEFENDER's window closes. Null for other steps.
+    /// </summary>
+    public BoardLocation? Attempted
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The hexsides of the entered woods or building hex the stack moves along in Bypass (A4.3; ruling R10.7), in order; null when it does not
+    /// Bypass. The stack must then leave from the last one's far vertex or occupy the obstacle.
+    /// </summary>
+    public IReadOnlyList<HexsideDirection>? Bypass
     {
         get; init;
     }
@@ -174,6 +211,30 @@ public sealed record MovementState(IReadOnlyList<string> Movers, BoardLocation L
 
     /// <summary>Whether the vehicle spent its MP left in its final hex (ruling R5.15): its move ends when the DEFENDER's window closes.</summary>
     public bool Ending
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the latest step was a Minimum Move (A4.134; ruling R10.9).</summary>
+    public bool MinimumMove
+    {
+        get; init;
+    }
+
+    /// <summary>The Location the latest step left (null when it stayed): for Snap Shots and Height Advantage (A8.15, B10.31; rulings R10.4, R10.13).</summary>
+    public BoardLocation? From
+    {
+        get; init;
+    }
+
+    /// <summary>The Gun its crew pushed with the latest step: Hazardous Movement (A4.62; ruling R10.8); null when none.</summary>
+    public string? PushedGun
+    {
+        get; init;
+    }
+
+    /// <summary>The hexsides the stack moves along in Bypass in its Location (A4.3; ruling R10.7); null when it is not in Bypass.</summary>
+    public IReadOnlyList<HexsideDirection>? Bypass
     {
         get; init;
     }

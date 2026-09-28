@@ -346,14 +346,15 @@ public sealed class BacklogPass5Tests : IDisposable
             to = "bd01:B4:0"
         }), "play.advance-mf");
 
-        // g4 carries the MMG and the LMG, 5PP, with the leader gld advancing alongside: the woods are all of g4's 2 MF, where the leader's
-        // MF and IPC bonus, not built, would matter (A4.72 EX, A4.12; R5.5). g7 carries the MMG, 3 MF, and advances with gld2 into Open
+        // g4 carries the MMG and the LMG, 5PP, with the leader gld advancing alongside: his two MF and one IPC (A4.72 EX, A4.12; ruling R10.8,
+        // backlog pass 10) leave it five MF, so the woods are not Difficult Terrain. g7 carries the MMG, 3 MF, and advances with gld2 into Open
         // Ground, which is not Difficult either way.
-        Refused(await Do(GameActions.Advance, NoRoll(), new
+        Committed(await Do(GameActions.Advance, NoRoll(), new
         {
             unitIds = G4Gl,
             to = "bd01:A4:0"
-        }), "play.advance-leader-bonus");
+        }));
+        Assert.False(Is(Current.Unit("g4")!, Conditions.Cx));
         Committed(await Do(GameActions.Advance, NoRoll(), new
         {
             unitIds = G7Gl,
