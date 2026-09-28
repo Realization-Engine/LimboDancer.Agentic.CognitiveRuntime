@@ -288,3 +288,7 @@ Estimate: 4:25 (build 3:10) in the [ASL Unit Backlog Passes Plan](<ASL Unit Back
 | Visual check in the Studio (three games), and the fire summary's OVR firer fixed | 13:36 | 13:41 | 0:05 | |
 | Review, design, backlog section 21, requirements, and ruling wording | 13:41 | 13:47 | 0:06 | |
 | Full local suite: build with warnings as errors, every solution test project, and the ScenarioA1 tests (2,138 passed, 30 skipped) | 13:47 | 13:57 | 0:10 | |
+| Commit c282c46; merge gate: the Docker Linux check (restore, build, test, a1: every step exit 0) | 13:57 | 14:07 | 0:10 | |
+| Merge and push | 14:07 | 14:09 | 0:02 | |
+
+Total 2:59 of working time (11:10 to 14:09, less the 11:35 to 11:37 gap) against the 4:25 estimate; the build, 11:53 to 13:36 with its fixes, took 1:43 against 3:10.
