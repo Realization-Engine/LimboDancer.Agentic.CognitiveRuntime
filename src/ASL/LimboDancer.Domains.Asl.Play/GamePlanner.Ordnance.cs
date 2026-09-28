@@ -134,7 +134,8 @@ public sealed partial class GamePlanner
     private ((OrdnanceShot Shot, UnitFacing? Facing)? Facts, string? Reason) OrdnanceMapFacts(GameState state, OrdnanceShot shot, BoardLocation target)
     {
         var from = FirerLocation(state, shot.Gun!.GunId!);
-        if (shot.TargetType == OrdnanceTargetTypes.Area || shot.Gun.DefinitionId == OrdnanceTargetTypes.Panzerfaust)
+        if (shot.TargetType == OrdnanceTargetTypes.Area || shot.Gun.DefinitionId == OrdnanceTargetTypes.Panzerfaust
+            || OrdnanceReference.Value.Guns.GetValueOrDefault(shot.Gun.DefinitionId ?? string.Empty)?.GunType == "latw")
         {
             return SupportWeaponMapFacts(state, shot, from, target);
         }
@@ -294,17 +295,18 @@ public sealed partial class GamePlanner
             return (null, reason);
         }
 
-        var panzerfaust = shot.Gun!.DefinitionId == OrdnanceTargetTypes.Panzerfaust;
+        var latwType = OrdnanceReference.Value.Guns.GetValueOrDefault(shot.Gun!.DefinitionId ?? string.Empty)?.LatwType;
+        var panzerfaust = latwType is "pf" or "psk";
         var building = firerTerrain is "wooden-building" or "stone-building";
 
         // B23.423 (referee, pass 9): no mortar fires from a non-rooftop building Location.
-        if (!panzerfaust && building)
+        if (latwType is null && building)
         {
             return (null, "play.ordnance-mortar-building: a mortar does not fire from a building Location (B23.423)");
         }
         if (panzerfaust && building && firerRead.Level.Level > 0)
         {
-            return (null, "play.panzerfaust-backblast: a PF is not fired from above a building's ground level; Desperation fire is not built (C13.8, C13.81; ruling R9.8)");
+            return (null, "play.panzerfaust-backblast: a PF or PSK is not fired from above a building's ground level; Desperation fire is not built (C13.8, C13.81; rulings R9.8, R9.11)");
         }
 
         OrdnanceVehicleTarget? aimed = null;
@@ -686,7 +688,14 @@ public sealed partial class GamePlanner
             _ => Conditions.PrepFire,
         };
         var gunConditions = new Dictionary<string, ConditionState>(StringComparer.Ordinal);
-        if (gunResult.Malfunctioned)
+
+        // C13.47 (ruling R9.11): a PSK is removed on its X#.
+        var removed = gunResult.Malfunctioned && OrdnanceReference.Value.Guns.GetValueOrDefault(facts.Gun.DefinitionId ?? string.Empty)?.LatwType == "psk";
+        if (removed)
+        {
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(facts.Gun.GunId!), package, null, [recordId]));
+        }
+        else if (gunResult.Malfunctioned)
         {
             gunConditions[Conditions.Malfunctioned] = ConditionState.True;
         }
@@ -716,7 +725,7 @@ public sealed partial class GamePlanner
             gunConditions[Conditions.Hidden] = ConditionState.False;
         }
 
-        if (gunConditions.Count > 0)
+        if (gunConditions.Count > 0 && !removed)
         {
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(facts.Gun.GunId!, gunConditions), package, null, [recordId]));
         }

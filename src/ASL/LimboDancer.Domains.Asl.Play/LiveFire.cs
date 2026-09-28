@@ -14,7 +14,7 @@ namespace LimboDancer.Domains.Asl.Play;
 public static class LiveFire
 {
     public const string Catalog = "asl-scenario-a1";
-    public const string CatalogVersion = "1.8.0";
+    public const string CatalogVersion = "1.9.0";
 
     public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
@@ -460,8 +460,11 @@ public static class LiveFire
             return !state.OrdnanceShots.Any(item => item.Gun == unit.Id && item.RateOfFireKept);
         }
 
-        return !state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding
-            && holding.Holder == unit.Id && item.Kind == "asl:mg" && !Fired(item) && !Is(item, Conditions.Malfunctioned));
+        // A7.351 (table player, pass 9b): a squad whose only fire is one SW still fires its inherent FP, and an unfired ATR fires like a MG.
+        return !state.SupportWeaponUses.Any(item => item.Unit == unit.Id)
+            && !state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding
+                && holding.Holder == unit.Id && (item.Kind == "asl:mg" || (item.Definition is { } weapon && LiveOrdnance.LatwType(weapon.Definition) == "atr"))
+                && !Fired(item) && !Is(item, Conditions.Malfunctioned));
     }
 }
 

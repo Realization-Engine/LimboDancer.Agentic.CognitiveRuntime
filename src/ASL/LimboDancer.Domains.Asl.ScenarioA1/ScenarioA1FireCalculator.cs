@@ -175,8 +175,11 @@ public static class ScenarioA1FireCalculator
     private static bool IsFinalFireAgain(FireAttack attack, FireFirer firer) => attack.Phase == "DFPh" && firer.FirstFireMarked == true;
 
     // A9.3: a MG firing as Subsequent First Fire or FPF, or in the DFPh while marked First Fire, uses Sustained Fire.
-    private static bool IsSustained(FireAttack attack, FireWeapon weapon) =>
-        attack.FireKind is SubsequentFirstFire or FinalProtectiveFire || (attack.Phase == "DFPh" && weapon.FirstFireMarked == true);
+    private static bool IsSustained(FireAttack attack, FireWeapon weapon, ScenarioA1FireReference reference) =>
+        (attack.FireKind is SubsequentFirstFire or FinalProtectiveFire || (attack.Phase == "DFPh" && weapon.FirstFireMarked == true))
+
+        // A9.3 (referee, pass 9b): only a MG uses Sustained Fire.
+        && reference.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty)?.IsMg != false;
 
     private static List<string> Missing(FireAttack attack)
     {
@@ -480,7 +483,7 @@ public static class ScenarioA1FireCalculator
             var weapons = firer.Weapons ?? [];
             // A15.23: a hero's use of a SW is not reviewed.
             if (definition is not null && (weapons.Count > (definition.Kind == "asl:squad" ? 2 : definition.IsHero ? 0 : 1)
-                || weapons.Any(weapon => reference.Definitions.GetValueOrDefault(weapon.DefinitionId!) is not { IsMg: true, Firepower: not null, Range: not null } mg
+                || weapons.Any(weapon => reference.Definitions.GetValueOrDefault(weapon.DefinitionId!) is not { Firepower: not null, Range: not null } mg || !(mg.IsMg || mg.IsAtr)
                     || mg.Nationality != definition.Nationality || weapon.Malfunctioned == true || !WeaponMayFire(attack, weapon))))
             {
                 outside.Add("asl.a1.fire.weapon-outside");
@@ -559,8 +562,9 @@ public static class ScenarioA1FireCalculator
         {
             var range = RangeOf(attack, firer);
             var inherentOut = firer.UsesInherentFp != false && definition?.Range is { } normal && range > 2 * normal;
-            var weaponOut = (firer.Weapons ?? []).Any(weapon => reference.Definitions.GetValueOrDefault(weapon.DefinitionId!)?.Range is { } mgRange
-                && range > 2 * mgRange);
+            // C13.24 (pass 9b): an ATR has no Long Range.
+            var weaponOut = (firer.Weapons ?? []).Any(weapon => reference.Definitions.GetValueOrDefault(weapon.DefinitionId!) is { Range: { } mgRange } weaponDefinition
+                && range > (weaponDefinition.IsAtr ? 1 : 2) * mgRange);
             if (range < 1 || inherentOut || weaponOut)
             {
                 outside.Add("asl.a1.fire.out-of-range");
@@ -1365,7 +1369,12 @@ public static class ScenarioA1FireCalculator
                 return null;
             }
 
-            var highest = Math.Max(arithmetic.ColumnFp ?? 0, arithmetic.Concealed?.ColumnFp ?? 0);
+            // C13.24 (pass 9b): an ATR leaves no Residual FP, even in a fire group.
+            // Referee, pass 9b: only the known targets' entry, not the halved one against concealed targets.
+            var atr = arithmetic.Firers.Where(item => item.VsConcealed != true && (attack.Firers ?? []).SelectMany(firer => firer.Weapons ?? [])
+                .Any(weapon => weapon.EquipmentId == item.UnitId && reference.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty)?.IsAtr == true)).Sum(item => item.Firepower);
+            var highest = atr == 0 ? Math.Max(arithmetic.ColumnFp ?? 0, arithmetic.Concealed?.ColumnFp ?? 0)
+                : ScenarioA1FireReference.ColumnFp.Where(fp => fp <= arithmetic.TotalFirepower - atr).DefaultIfEmpty(0).Max();
             var index = Array.FindLastIndex(ResidualCounters, fp => fp <= highest / 2m);
             index -= hindrance + Math.Max(leadership, 0);
             return index < 0 ? null : ResidualCounters[index];
@@ -1455,7 +1464,7 @@ public static class ScenarioA1FireCalculator
                 foreach (var weapon in weapons)
                 {
                     var mg = reference.Definitions[weapon.DefinitionId!];
-                    var multipliers = Multipliers(range, mg.Range!.Value, vsConcealed, IsFinalFireAgain(attack, firer), IsSustained(attack, weapon));
+                    var multipliers = Multipliers(range, mg.Range!.Value, vsConcealed, IsFinalFireAgain(attack, firer), IsSustained(attack, weapon, reference));
                     var fp = multipliers.Aggregate((decimal)mg.Firepower!.Value, (value, item) => value * item.Value);
                     yield return new FirerFirepower(weapon.EquipmentId!, mg.Firepower.Value, multipliers, fp) { Operator = firer.UnitId };
                 }
@@ -1505,6 +1514,12 @@ public static class ScenarioA1FireCalculator
         }
 
         /// <summary>What the attack did to each MG: malfunction on the Original DR (A9.7, A9.71) and Multiple ROF on the colored die (A9.2).</summary>
+        /// <summary>A19.32 (referee, pass 9b): an ATR's B# is one lower in Inexperienced hands; the MG's is in backlog section 19.</summary>
+        private int AtrInexperience(FireWeapon weapon) =>
+            reference.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty)?.IsAtr == true
+            && (attack.Firers ?? []).FirstOrDefault(firer => firer.Weapons?.Contains(weapon) == true) is { } operatorUnit
+            && reference.Definitions.GetValueOrDefault(operatorUnit.DefinitionId ?? string.Empty)?.Class is "green" or "conscript" ? 1 : 0;
+
         private List<FireWeaponEffect>? WeaponEffects(FireArithmetic arithmetic)
         {
             var weapons = (attack.Firers ?? []).SelectMany(item => item.Weapons ?? []).ToArray();
@@ -1515,7 +1530,7 @@ public static class ScenarioA1FireCalculator
 
             var original = arithmetic.OriginalDr;
             var breakdown = weapons.ToDictionary(weapon => weapon.EquipmentId!,
-                weapon => (reference.Definitions[weapon.DefinitionId!].Breakdown ?? 12) - (IsSustained(attack, weapon) ? 2 : 0), StringComparer.Ordinal);
+                weapon => (reference.Definitions[weapon.DefinitionId!].Breakdown ?? 12) - (IsSustained(attack, weapon, reference) ? 2 : 0) - AtrInexperience(weapon), StringComparer.Ordinal);
             var reached = weapons.Where(weapon => original >= breakdown[weapon.EquipmentId!]).Select(weapon => weapon.EquipmentId!).ToArray();
             var malfunctioned = new HashSet<string>(StringComparer.Ordinal);
             var selection = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -1549,7 +1564,7 @@ public static class ScenarioA1FireCalculator
             return weapons.Select(weapon =>
             {
                 var id = weapon.EquipmentId!;
-                var sustained = IsSustained(attack, weapon);
+                var sustained = IsSustained(attack, weapon, reference);
                 var retained = !malfunctioned.Contains(id) && !sustained && attack.FireKind != FinalProtectiveFire
                     && reference.Definitions[weapon.DefinitionId!].RateOfFire is { } rof && colored <= rof;
                 return new FireWeaponEffect(id, breakdown[id], malfunctioned.Contains(id), retained, sustained,

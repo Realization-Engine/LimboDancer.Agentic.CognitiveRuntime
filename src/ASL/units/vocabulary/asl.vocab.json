@@ -1,6 +1,6 @@
 {
   "pack": "asl",
-  "version": "1.13.0",
+  "version": "1.14.0",
   "label": "ASL Personnel, support weapons, Guns, vehicles, and entities that are not units",
   "note": "Original LimboDancer vocabulary. Rule references are to the registered rulebook PDF by physical page; no rulebook text or counter artwork.",
   "extends": [],
@@ -67,6 +67,7 @@
     { "name": "asl:repair", "label": "Repair Number", "type": "integer", "scope": "face", "faces": ["malfunctioned"], "rule": "A9.7 to A9.72, p. 65" },
     { "name": "asl:contact", "label": "Radio Contact value", "type": "list", "items": "integer", "scope": "face", "rule": "C1.2 to C1.23, p. 163" },
     { "name": "asl:contact-dates", "label": "Contact value dates", "type": "list", "items": "text", "scope": "face", "faces": ["reverse"], "rule": "C1.2 to C1.23, p. 163" },
+    { "name": "asl:to-hit-table", "label": "To Hit Table", "type": "list", "items": "text", "separator": " ", "scope": "face", "rule": "C13.42, p. 184" },
     {
       "name": "asl:latw-type", "label": "LATW type", "type": "enumeration", "scope": "face", "rule": "C13.1, p. 183",
       "members": [
@@ -333,7 +334,7 @@
     { "name": "asl:dc", "label": "demolition charge", "extends": "asl:sw", "rule": "A23.1, p. 90",
       "attachedName": { "default": "{kind} {firepower}" } },
     {
-      "name": "asl:latw", "label": "LATW", "extends": "asl:sw", "attributes": ["asl:latw-type", "asl:caliber", "asl:range-maximum", "asl:special-ammo"], "rule": "C13.1, p. 183",
+      "name": "asl:latw", "label": "LATW", "extends": "asl:sw", "attributes": ["asl:latw-type", "asl:caliber", "asl:range-maximum", "asl:special-ammo", "asl:to-hit-table", "asl:dates"], "rule": "C13.1, p. 183",
       "accessibleName": { "default": "{side} {latw-type} {kind} {identity}, breakdown {breakdown}" },
       "attachedName": { "default": "{latw-type}" }
     },

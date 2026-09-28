@@ -115,6 +115,15 @@ public sealed record FireDefinition(
     }
 
     public bool IsVehicle => Kind == "asl:vehicle";
+
+    /// <summary>A LATW's type (C13.1); null otherwise.</summary>
+    public string? LatwType
+    {
+        get; init;
+    }
+
+    /// <summary>An ATR, which attacks Personnel as 1 FP Small Arms Fire (C13.24; pass 9b).</summary>
+    public bool IsAtr => Kind == "asl:latw" && LatwType == "atr";
 }
 
 /// <summary>
@@ -387,6 +396,7 @@ public sealed class ScenarioA1FireReference
             OpenTopped = Trait("front", "asl:open-topped"),
             MainArmament = Text("front", "ma-weapon"),
             AntiAircraftMg = Value("front", "aamg"),
+            LatwType = Text("front", "latw-type"),
         };
     }
 }

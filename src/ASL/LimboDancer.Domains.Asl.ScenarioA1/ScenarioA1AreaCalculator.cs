@@ -136,7 +136,7 @@ internal static class ScenarioA1AreaCalculator
             hitUnits.Length > 0, critical);
 
         // C2.28: an Original To Hit DR at or above the B# malfunctions the mortar.
-        var malfunctioned = original >= gun.Breakdown;
+        var malfunctioned = original >= ScenarioA1OrdnanceCalculator.Breakdown(shot, gun, reference);
 
         // C2.24, C9.31, C9.2: the Multiple ROF, one lower for Spotted fire, none for a lone SMC; C5.4: none when pinned; C5.2: none in the AFPh.
         var rof = gun.RateOfFire ?? 0;
@@ -204,7 +204,7 @@ internal static class ScenarioA1AreaCalculator
         // if already acquired.
         var acquires = !malfunctioned;
         var acquisition = !acquires ? 0 : Math.Max(shot.Acquisition!.Value - 1, -2);
-        var gunEffect = new OrdnanceGunEffect(gun.Breakdown, malfunctioned, Math.Max(rof, 0), kept, counter, acquisition, acquires ? shot.TargetLocationId : null);
+        var gunEffect = new OrdnanceGunEffect(ScenarioA1OrdnanceCalculator.Breakdown(shot, gun, reference), malfunctioned, Math.Max(rof, 0), kept, counter, acquisition, acquires ? shot.TargetLocationId : null);
         return new OrdnanceResolution(OrdnanceResolution.Resolved, [], toHit, gunEffect)
         {
             CrewConcealmentLost = crew.Concealed == true && shot.CrewSeen != false ? true : null,

@@ -17,9 +17,41 @@ Rule citations give physical pages of the registered rulebook PDF, `eASLRB_v3_01
 
 Light mortars and spotting (C9.1 to C9.5), the Area Target Type (C3.33, C3.331), Indirect Fire TEM and Air Bursts (C1.52, B13.3), SMOKE grenades (A24.1 to A24.8), the Panzerfaust (C13.1 to C13.36, C13.8), the To Hit Table's Area row (p. 700), and the two light mortar listing rows (pp. 351, 363).
 
-## Question for the user
+## Pass 9b
 
-The Panzerschreck and the ATR are not built. The PSK's To Hit Table is printed only on its counter (C13.48), and no registered source prints the ATR counter's B#, ROF, or PP (C13.2). As with the manufactured MG values of ruling R0.3, they need the user's ruling or a source.
+The user answered the pass 9 question on 2026-09-28: missing counter values are manufactured under ruling R0.3, as for the MGs. Pass 9b (rulings R9.10 and R9.11) adds a manufactured Russian ATR and German Panzerschreck on sheet MFG, catalog 1.9.0 and vocabulary 1.14.0. `asl-scenario-a1.pass9b-pdf-comparison.json` compares 16 subjects (C13.2, C13.21, C13.22, C13.24 to C13.26, C13.41 to C13.45, C13.47, C13.48 with its continuation, A4.41, and B23.423), verified by `AslScenarioA1FireSourceReview.BuildPass9b`. The Fire matrix holds 208 fragments and 31 cases, the Ordnance matrix 173 and 31.
+
+**Referee findings (pass 9b).**
+
+| Finding | Rule | Resolution |
+|---|---|---|
+| 1. Inexperienced Personnel lower a SW's B# or X# by one. | A19.32, p. 86 | Fixed for mortars, the ATR, and the PSK, with a test; the MG's is in backlog section 19. |
+| 2. Only a MG uses Sustained Fire. | A9.3 | Fixed: an ATR in a fire group never does. |
+| 3. The ATR's Residual FP exclusion counted its halved FP against concealed targets too. | C13.24 | Fixed. |
+| 4. A lone hero may fire a PSK adding 1. | SW Chart note D, C13.45 | Named a deviation in R9.11 and backlog section 19. |
+| 5. A SMC fires an ATR at Personnel. | SW Chart | Named a deviation in R9.10 and the backlog. |
+| 6. An ATR at range 0. | C3 | Named: not reached (R25.3). |
+| 7. The C13.8 bar on targets two levels higher. | C13.8, p. 185 | Backlog section 19, with levels in fire. |
+| 8. The PSK table's wording against the PF. | C13.33 | R9.11 reworded: 10 at 1 hex, losing 1 a hex. |
+| 9. The ATR's Infantry Target Type is NA to a 14mm ATR. | C13.24 | R9.10 says so. |
+| 10. Recollections of the real counters (a longer PSK table, a 2 PP ATR). | Outside the source | Noted; the manufactured values stand as plausible. |
+
+It confirmed the green-L DRM of both weapons, the ATR's black Vehicle row, AP at the Russian ATR entry (TK# 6), malfunction and repair, the PSK's own table, HEAT at TK# 26 and against unarmored vehicles, its X#, Backblast, and date, and a HS firing a PSK.
+
+**Table player findings (pass 9b).**
+
+| Finding | Rule | Resolution |
+|---|---|---|
+| 1. The page hid a squad that fired a SW, or holds an unfired ATR, from the fire panel. | A7.351 | Fixed in `LiveFire.FireSpent`, with a test. |
+| 2. Subsequent First Fire and FPF demanded every SW, a PSK or mortar included. | A8.3, A8.31 | Fixed: MGs and the ATR only. |
+| 3. A Passenger could fire its ATR or PSK. | C13.8 | Fixed: the possessor must be on the map. |
+| 4. The labels called a LATW's holder a crew and its repair unbuilt. | A9.72 | Fixed: "with" its holder; an ATR is repaired in the RPh. |
+| 5. The page did not describe the ATR and PSK. | C13 | Fixed in the Ordnance help. |
+| 6. A second ATR shot was refused as a SW-count limit. | C13.2 | Fixed: a LATW that fired is refused for having no ROF, with a test. |
+| 7. The PSK table's wording. | | As referee finding 8. |
+| 8. A leader holding an ATR is not offered in the fire panel. | C13.21 | Backlog section 19. |
+
+**Visual check (pass 9b).** In the Studio, a game of July 1944 with a German squad holding the PSK in B9 and a T-34 in B7: the Ordnance panel listed "de-psk (attacker-psk, with g1)" and "HEAT (C13.34, C13.43)"; the shot with scripted dice 3, 2 and 6, 6 read "Basic TH# 9 (black) = 9; DR 3 (colored), 2 = 5 = Final DR 5: hit; hull hit, side Target Facing, HEAT: Basic TK# 26 - AF 6 = Final TK# 20; TK DR 6, 6 = 12: a dud (Original 12)".
 
 ## Sources
 

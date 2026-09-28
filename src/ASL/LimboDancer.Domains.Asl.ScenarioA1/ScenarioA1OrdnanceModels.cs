@@ -414,6 +414,18 @@ public sealed record GunDefinition(
         get; init;
     }
 
+    /// <summary>A LATW's type (C13.1): <c>pf</c>, <c>psk</c>, or <c>atr</c>; null for other ordnance.</summary>
+    public string? LatwType
+    {
+        get; init;
+    }
+
+    /// <summary>A LATW's own To Hit Table, the Basic TH# at ranges 1, 2, ... (C13.42); empty when it has none.</summary>
+    public IReadOnlyList<int> ToHitTable
+    {
+        get; init;
+    } = [];
+
     /// <summary>The weapon's row of the C7.33 HEAT To Kill Table when it is not its caliber, such as <c>PF (Oct43)</c> (C13.34).</summary>
     public string? HeatRow
     {

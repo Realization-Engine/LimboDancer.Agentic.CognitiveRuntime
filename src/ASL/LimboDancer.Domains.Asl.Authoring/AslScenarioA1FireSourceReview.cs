@@ -105,6 +105,13 @@ public static class AslScenarioA1FireSourceReview
     public const string Pass9ComparisonFile = "asl-scenario-a1.pass9-pdf-comparison.json";
     public const string Pass9ComparisonSha256 = "0f9e72fb90d65aa8f5d5f73f4b2b0f1436b83521a9fe184c72d6ba08699b7e2c";
 
+    /// <summary>
+    /// The backlog pass 9b comparison: the ATR (C13.2 to C13.26), the Bazooka rules the Panzerschreck follows (C13.41 to C13.48), the AFPh limits
+    /// of SW (A4.41), and mortars in buildings (B23.423).
+    /// </summary>
+    public const string Pass9bComparisonFile = "asl-scenario-a1.pass9b-pdf-comparison.json";
+    public const string Pass9bComparisonSha256 = "b2f0e154e792ca6f85cf9bbd1ad6adc580e67e9540daa83116277c4de6377995";
+
     private const string ChapterA = "asl-easlrb-3.10:chapter-a";
     private const string ChapterB = "asl-easlrb-3.10:chapter-b";
     private const string ChapterC = "asl-easlrb-3.10:chapter-c";
@@ -608,6 +615,26 @@ public static class AslScenarioA1FireSourceReview
         ("A24.7", "A24.7", ChapterA, 1606, SourceFragmentKind.RuleText, 93),
     ];
 
+    private static readonly (string Rule, string Registered, string Source, int Line, SourceFragmentKind Kind, int Page)[] Pass9bSubjects =
+    [
+        ("C13.2", "C13.2", ChapterC, 988, SourceFragmentKind.RuleText, 183),
+        ("C13.21", "C13.21", ChapterC, 992, SourceFragmentKind.RuleText, 183),
+        ("C13.22", "C13.22", ChapterC, 994, SourceFragmentKind.RuleText, 183),
+        ("C13.24", "C13.24", ChapterC, 998, SourceFragmentKind.RuleText, 183),
+        ("C13.25", "C13.25", ChapterC, 1000, SourceFragmentKind.RuleText, 183),
+        ("C13.26", "C13.26", ChapterC, 1002, SourceFragmentKind.RuleText, 183),
+        ("C13.41", "C13.41", ChapterC, 1030, SourceFragmentKind.RuleText, 184),
+        ("C13.42", "C13.42", ChapterC, 1032, SourceFragmentKind.RuleText, 184),
+        ("C13.43", "C13.43", ChapterC, 1034, SourceFragmentKind.RuleText, 184),
+        ("C13.44", "C13.44", ChapterC, 1036, SourceFragmentKind.RuleText, 184),
+        ("C13.45", "C13.45", ChapterC, 1038, SourceFragmentKind.RuleText, 184),
+        ("C13.47", "C13.47", ChapterC, 1044, SourceFragmentKind.RuleText, 184),
+        ("C13.48", "C13.48", ChapterC, 1046, SourceFragmentKind.RuleText, 184),
+        ("C13.48", "C13.48", ChapterC, 1052, SourceFragmentKind.RuleContinuation, 184),
+        ("A4.41", "A4.41", ChapterA, 287, SourceFragmentKind.RuleText, 50),
+        ("B23.423", "B23.423", ChapterB, 1406, SourceFragmentKind.RuleText, 137),
+    ];
+
     // Fragments a column break, a boxed example, or a page break interrupts: each part occurs whole in the page text.
     private static readonly HashSet<(string Rule, int Line)> TwoPartSubjects =
         [("A7.212", 445), ("A8.26", 644), ("A8.31", 658), ("A9.2", 690), ("B3.4", 138), ("A12.11", 992), ("A11.41", 940), ("A20.21", 1402),
@@ -695,6 +722,12 @@ public static class AslScenarioA1FireSourceReview
         Build(repositoryRoot, manifests, attestation, Pass9ComparisonFile, Pass9ComparisonSha256, Pass9Subjects,
             "backlog pass 9 review");
 
+    /// <summary>The backlog pass 9b subjects: the ATR and the Panzerschreck.</summary>
+    public static AslScenarioA1VerificationBatch BuildPass9b(string repositoryRoot,
+        GeneratedManifests manifests, AslScenarioA1SourceAttestation attestation) =>
+        Build(repositoryRoot, manifests, attestation, Pass9bComparisonFile, Pass9bComparisonSha256, Pass9bSubjects,
+            "backlog pass 9b review");
+
     /// <summary>The unit step 24 subjects of a Gun's HE shot at Infantry.</summary>
     public static AslScenarioA1VerificationBatch BuildOrdnance(string repositoryRoot,
         GeneratedManifests manifests, AslScenarioA1SourceAttestation attestation) =>
@@ -741,7 +774,7 @@ public static class AslScenarioA1FireSourceReview
                 && evidence.GetProperty("kind").GetString() == (subject.Kind == SourceFragmentKind.RuleText ? "ruleText" : "ruleContinuation"),
                 "Comparison no longer names the exact registered fragment.");
 
-            var normalized = Normalize(fragment.Content, file is Pass7ComparisonFile or Pass8ComparisonFile or Pass9ComparisonFile);
+            var normalized = Normalize(fragment.Content, file is Pass7ComparisonFile or Pass8ComparisonFile or Pass9ComparisonFile or Pass9bComparisonFile);
             var comparison = evidence.GetProperty("comparison").GetString();
             Require(evidence.GetProperty("normalizedAlphanumericSha256").GetString() == Hashing.Sha256Text(normalized)
                 && evidence.GetProperty("normalizedAlphanumericLength").GetInt32() == normalized.Length

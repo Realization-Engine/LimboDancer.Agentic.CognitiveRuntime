@@ -70,6 +70,12 @@ public sealed class ScenarioA1ArmorReference
     public static string GunSize(GunDefinition gun)
     {
         ArgumentNullException.ThrowIfNull(gun);
+        // C13.2 (pass 9b): an ATR has its own entries on the AP To Kill Table.
+        if (gun.LatwType == "atr")
+        {
+            return "ATR";
+        }
+
         return gun.Caliber.ToString(CultureInfo.InvariantCulture) + gun.Suffix switch
         {
             "star" => "*",

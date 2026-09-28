@@ -32,6 +32,9 @@ public static class LiveOrdnance
         return [.. new[] { ("ap", !gun.NoAp), ("apcr", Lists('A')), ("heat", Lists('H')), ("he", !gun.NoHe) }.Where(item => item.Item2).Select(item => item.Item1)];
     }
 
+    /// <summary>A LATW definition's type (C13.1): <c>pf</c>, <c>psk</c>, or <c>atr</c>; null for any other.</summary>
+    public static string? LatwType(string definition) => Reference.Value.Guns.GetValueOrDefault(definition)?.LatwType;
+
     /// <summary>Whether a vehicle has a MA the Ordnance package reviews (D1.3; ruling R7.1): a tank of the catalog.</summary>
     public static bool IsTank(UnitInstance vehicle)
     {
@@ -123,6 +126,30 @@ public static class LiveOrdnance
             gun = lightMortar;
             crew = possessor;
         }
+        else if (state.Find(gunId) is EquipmentInstance { Status: InstanceStatus.Active, Kind: "asl:latw", Definition: not null } counterLatw
+            && counterLatw.Holding is { Role: HoldingRole.Possessed } carried && state.Unit(carried.Holder) is { Status: InstanceStatus.Active, Definition: not null } carrier)
+        {
+            // C13.8 (table player, pass 9b): not fired from inside a vehicle; its possessor stands on the map.
+            if (carrier.Position is not MapPosition)
+            {
+                return (null, $"play.latw-passenger: {carrier.Id} is not on the map, and a LATW is not fired from inside a vehicle (C13.8)");
+            }
+
+            // Table player, pass 9b: an ATR or PSK that has fired this phase has no ROF.
+            if (LiveFire.Fired(counterLatw) || Is(counterLatw, Conditions.FirstFire))
+            {
+                return (null, $"play.latw-fired: {counterLatw.Id} has fired and has no Multiple ROF (C13.2, C13.4)");
+            }
+
+            // C13.2, C13.41 (rulings R9.10, R9.11): an ATR or PSK is fired by the unit possessing it.
+            if (SquadSupportRefusal(state, carrier, phase, false) is { } refusal)
+            {
+                return (null, refusal);
+            }
+
+            gun = counterLatw;
+            crew = carrier;
+        }
         else
         {
             return (null, $"play.ordnance-gun: '{gunId}' is not an active Gun from the catalog on the map, manned by an active unit, nor a tank (A21.13, C2.1, D1.3)");
@@ -165,6 +192,7 @@ public static class LiveOrdnance
         // C3.31: a Vehicle Target Type shot attacks only the named vehicle. C3.33 (ruling R9.3): a mortar's Area Target Type shot attacks every unit
         // there, friendly ones too; C3.4: in the MPh only the moving units.
         var mortar = gun.Kind == "asl:light-mortar";
+        var sw = mortar || gun.Kind == "asl:latw";
         UnitInstance[] targets = vehicleTarget is not null ? [] : [.. state.At(target).OfType<UnitInstance>()
             .Where(unit => unit.Status == InstanceStatus.Active && (unit.Side != side || mortar) && !LiveFire.IsVehicle(unit) && !Is(unit, Conditions.Captured)
                 && (movers is null || movers.Contains(unit.Id)))
@@ -201,7 +229,7 @@ public static class LiveOrdnance
                 Is(crew, Conditions.Concealed) || Is(crew, Conditions.Hidden),
                 // A7.351 (ruling R9.2): a squad fires a light mortar after its inherent FP; a HS, crew, or SMC does not.
                 gun is EquipmentInstance && (LiveFire.Fired(crew) || Is(crew, Conditions.FirstFire)) && !state.GunCrewsFired.Contains(crew.Id, StringComparer.Ordinal)
-                    && !(mortar && crew.Kind == "asl:squad"))
+                    && !(sw && crew.Kind == "asl:squad"))
             {
                 Cx = Is(crew, Conditions.Cx) ? true : null,
             },
@@ -211,7 +239,7 @@ public static class LiveOrdnance
             ScenarioYear = vehicleTarget is not null || ammunition is not null ? state.ScenarioYear : null,
             IntensiveFire = intensive ? true : null,
             // C5.8 (ruling R8.8): a squad or HS manning a Gun is non-qualified.
-            NonQualified = gun is EquipmentInstance && crew.Kind is not "asl:crew" && !mortar ? true : null,
+            NonQualified = gun is EquipmentInstance && crew.Kind is not "asl:crew" && !sw ? true : null,
             TargetType = mortar ? OrdnanceTargetTypes.Area : null,
         };
         if (mortar)
@@ -228,9 +256,26 @@ public static class LiveOrdnance
                 Director = supported.Value.Director,
             };
         }
+        else if (gun.Kind == "asl:latw" && spotter is null)
+        {
+            // Rulings R9.10, R9.11: an ATR or PSK fires its own ammunition, may be directed by a leader, and a PSK takes the Backblast.
+            var (supported, supportReason) = MortarSupport(state, gun.Id, crew, null, director, phase);
+            if (supported is null)
+            {
+                return (null, supportReason);
+            }
+
+            var psk = LatwType(((EquipmentInstance)gun).Definition!.Definition) == "psk";
+            shot = shot with
+            {
+                Director = supported.Value.Director,
+                Ammunition = psk ? "heat" : "ap",
+                Panzerfaust = psk ? new OrdnancePanzerfaust(null, null, null, null) : null,
+            };
+        }
         else if (spotter is not null || director is not null)
         {
-            return (null, "play.ordnance-support: only a light mortar has a Spotter or a directing leader (C9.3, A7.531)");
+            return (null, "play.ordnance-support: only a light mortar has a Spotter, and only a SW a directing leader (C9.3, A7.531)");
         }
         if (phase == "MPh")
         {

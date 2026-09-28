@@ -51,6 +51,7 @@ internal static class CounterSheetsTestData
         (_, "class") => "green",
         (_, "leadership") => "0",
         (_, "size") => "light",
+        (_, "latw-type") => "psk",
         (_, "gun-type") => "inf",
         (_, "caliber-suffix") => "star",
         (_, "target-size") => "small",

@@ -6,7 +6,7 @@
   "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
   "toHitTranscriptionSha256": "936b62d57e03761542b88e3b28752eae83208ef619ef30ebc99c70070fa833fd",
   "iftTranscriptionSha256": "42440dd6facf7aa23cfc8c884ed8c7266f6621b25cb889b679c850098d3a4cec",
-  "catalogSha256": "5ae459fdb07e2fe4bcd872de3f919dc11be23dad2e5c8cd9494d8b20cd3ef3b4",
+  "catalogSha256": "0d67c9a63fdad49a8de3d96ad5fd1e5302e321f9850bc241e198d93656e3943d",
   "sourceFragments": [
     {
       "ruleId": "A1.123",
@@ -1113,6 +1113,111 @@
       "startLine": 1112,
       "fragmentId": "asl-fragment:sha256:d1ac5c0c1f850e61b028457172f0c433f139c3d147534c4459ff9107506ca1b2",
       "contentSha256": "a2d1cd3281f0bbd4b1fcb46a541d2254c4f0a2fd3e3324a3b69f2ff07944b801"
+    },
+    {
+      "ruleId": "C13.2",
+      "physicalPdfPage": 183,
+      "startLine": 988,
+      "fragmentId": "asl-fragment:sha256:9287d6eceae49b971d6e89478cb08e789c2a76e327bdca37444ec8ee5e083e8a",
+      "contentSha256": "457e45ee5ac7a6d26741d3b2ecf1cebb996d22aa49f781439e60b09f617a5378"
+    },
+    {
+      "ruleId": "C13.21",
+      "physicalPdfPage": 183,
+      "startLine": 992,
+      "fragmentId": "asl-fragment:sha256:b9068dd76049eaf56daf52e13c1139f432cf06ecb960c94c10044319ee229241",
+      "contentSha256": "14275a6ceff9dd345e7226bf2882a4729f532ab640b633fe0765033c3105f701"
+    },
+    {
+      "ruleId": "C13.22",
+      "physicalPdfPage": 183,
+      "startLine": 994,
+      "fragmentId": "asl-fragment:sha256:12b0630166c8160f3548c9a157e2d54856dc2f50f0ea72287303970fe11e841f",
+      "contentSha256": "6e895dac731e832a15d88b7687fc156a0df6bfdfd3642dfa2f5c6e30712e9dac"
+    },
+    {
+      "ruleId": "C13.25",
+      "physicalPdfPage": 183,
+      "startLine": 1000,
+      "fragmentId": "asl-fragment:sha256:e388b5ccfa73d1850a5566a2242b3c8bf6808a2e280ea7b30696ae1001955046",
+      "contentSha256": "0ee29d53fde4c9bee09b9850ef28199af85a8ede0f53a8ec85d2c5d9b8bfbb8b"
+    },
+    {
+      "ruleId": "C13.26",
+      "physicalPdfPage": 183,
+      "startLine": 1002,
+      "fragmentId": "asl-fragment:sha256:1c7e98da5bdcde66fd5409c20d0da16481a03cfdb7130de54744ab8d933f1655",
+      "contentSha256": "5e67427c9ee65b8f038f4ab7c6aed37da3b9bfb722df79ea16edac039c96920c"
+    },
+    {
+      "ruleId": "C13.41",
+      "physicalPdfPage": 184,
+      "startLine": 1030,
+      "fragmentId": "asl-fragment:sha256:3867d3b75671a6f6e42efda3b3044aa192679043d55d65396fa86cb21d99474a",
+      "contentSha256": "c97b23bc49e7cf1accc46e82dddcce547e3c95693da3298d0410b96962ff1f73"
+    },
+    {
+      "ruleId": "C13.42",
+      "physicalPdfPage": 184,
+      "startLine": 1032,
+      "fragmentId": "asl-fragment:sha256:ffe57b0176184cce4cf6a45b9adca604248c66e0e0a0eb8fedb63dfa98515dcf",
+      "contentSha256": "8131e4b186f99e85855f4922c7e94d7fe33ba625ade7cd2e95b5da92c6e68614"
+    },
+    {
+      "ruleId": "C13.43",
+      "physicalPdfPage": 184,
+      "startLine": 1034,
+      "fragmentId": "asl-fragment:sha256:300383fa52f0d4397f1e12fb0981c60f6b45ca78932171a3d02dc8290e58facd",
+      "contentSha256": "d96a2b4bbf91e332f52a16cf9ee8237f1f608f2d8a651af683fcd4745541c81b"
+    },
+    {
+      "ruleId": "C13.44",
+      "physicalPdfPage": 184,
+      "startLine": 1036,
+      "fragmentId": "asl-fragment:sha256:03744e510b2359ae645f7088b9893f6b98324c9357afb6ec4b719757c3d80d0b",
+      "contentSha256": "6d28bedf837a9604caf585a2debd67ecab487378e801da3488e08be10bec5646"
+    },
+    {
+      "ruleId": "C13.45",
+      "physicalPdfPage": 184,
+      "startLine": 1038,
+      "fragmentId": "asl-fragment:sha256:f1faf914805dfbf0a4d34130356f45cb08e48257aa015316da5dd6ec1045b59a",
+      "contentSha256": "dfdc6db203088ee0d65f25c821524a3cbee93199261d876d8a69db62ce79530e"
+    },
+    {
+      "ruleId": "C13.47",
+      "physicalPdfPage": 184,
+      "startLine": 1044,
+      "fragmentId": "asl-fragment:sha256:0ad7d1eab43e15de7c5bf82220a55b5e35c68428b15e340329ee673faa9ed730",
+      "contentSha256": "aeb58ff8443b344ab933ab099a93f4d3c136fe409c8ad03f491b19a69384ab24"
+    },
+    {
+      "ruleId": "C13.48",
+      "physicalPdfPage": 184,
+      "startLine": 1046,
+      "fragmentId": "asl-fragment:sha256:4a5463be43ed6b8ab20363f70be36de8524661be41c52bfa0b50f970dc65b987",
+      "contentSha256": "7a9afbe4cc50938c5a75ee76b14a7dfac002b9a618ee2a10bc65bdfe2b4c3ba8"
+    },
+    {
+      "ruleId": "C13.48",
+      "physicalPdfPage": 184,
+      "startLine": 1052,
+      "fragmentId": "asl-fragment:sha256:bc405c16787d34f14e1aa19031436944b1b992f6a6aca0ffdfee039f12969821",
+      "contentSha256": "667981076bf364ec55cdc891d334fd4b43d0bbbce90019e4762d323d18ce008e"
+    },
+    {
+      "ruleId": "A4.41",
+      "physicalPdfPage": 50,
+      "startLine": 287,
+      "fragmentId": "asl-fragment:sha256:a1d2c675d954ca7c1a038d17758b588cf01401b836918116a34534c6c99b6245",
+      "contentSha256": "a5e35a743183b468ea032cd4be4c3a24552ecdca8f33dcf04b0fd72dbe38de0f"
+    },
+    {
+      "ruleId": "B23.423",
+      "physicalPdfPage": 137,
+      "startLine": 1406,
+      "fragmentId": "asl-fragment:sha256:54a5973aea2d02b8e780483828bd0188fd9ec22a60caaa294a1f7b6d501e8c38",
+      "contentSha256": "6476316621998da389026d77f90fc024125783744089e1017228652431bb8d72"
     }
   ],
   "rulings": {
@@ -1149,7 +1254,10 @@
     "lightMortars": "a-light-mortar-is-a-sw-fired-by-any-good-order-personnel-of-its-nationality-always-he-on-the-area-target-type-red-area-row-with-c4-modifications-within-its-minimum-and-maximum-range-no-ca-no-intensive-fire-a-lone-smc-without-multiple-rof-one-leader-may-direct-it-C9.1-C9.2-C9.4-C3.33-A7.531 (R9.1, R9.2)",
     "areaTargetType": "every-unit-in-the-target-hex-is-judged-with-the-shots-drm-and-its-own-case-k-case-n-and-overstacking-cases-c1-to-c4-e-g-l-and-q-do-not-apply-a-critical-hit-only-on-an-original-2-a-hex-with-friendly-units-or-a-manned-gun-is-refused-C3.33-C3.331-C9.5-C3.7 (R9.3)",
     "spotting": "a-good-order-personnel-spotter-in-or-adjacent-to-the-mortars-hex-lets-it-fire-at-a-hex-in-the-spotters-los-plus-two-to-hit-and-the-multiple-rof-one-lower-a-pinned-spotter-adds-case-d-C9.3-C9.31 (R9.4)",
-    "panzerfaust": "after-september-1943-german-infantry-makes-a-pf-check-dr-1-to-3-a-shot-original-6-pinned-or-broken-then-th-10-minus-2-per-hex-at-an-afv-range-by-date-latw-drm-case-c3-for-the-afph-and-backblast-ch-on-original-2-original-12-casualty-reduction-heat-tk-31-shots-limited-by-squad-equivalents-C13.1-C13.3-C13.31-C13.32-C13.33-C13.34-C13.36-C13.8 (R9.7, R9.8)"
+    "panzerfaust": "after-september-1943-german-infantry-makes-a-pf-check-dr-1-to-3-a-shot-original-6-pinned-or-broken-then-th-10-minus-2-per-hex-at-an-afv-range-by-date-latw-drm-case-c3-for-the-afph-and-backblast-ch-on-original-2-original-12-casualty-reduction-heat-tk-31-shots-limited-by-squad-equivalents-C13.1-C13.3-C13.31-C13.32-C13.33-C13.34-C13.36-C13.8 (R9.7, R9.8)",
+    "atr": "a-manufactured-atr-fires-on-the-black-vehicle-row-up-to-12-hexes-with-the-latw-drm-and-ap-tk-of-the-russian-atr-entry-b11-malfunctions-C13.2-C13.21-C13.22-C13.25-C13.26 (R9.10)",
+    "panzerschreck": "a-manufactured-psk-from-september-1943-fires-heat-on-its-own-to-hit-table-with-the-latw-drm-and-backblast-tk-26-an-original-11-or-12-removes-it-a-lone-smc-does-not-fire-it-C13.41-C13.42-C13.43-C13.44-C13.45-C13.47-C13.48 (R9.11)",
+    "mortarLimits": "a-mortar-does-not-fire-from-a-building-location-nor-in-the-afph-after-it-moved-B23.423-A4.41 (R9.2)"
   },
   "resolution": {
     "order": "The To Hit DR first (colored die first), then a subsequent dr on an Original 2 when the result needs it, then a Random Selection dr per target for a Critical Hit among several, then the IFT rolls of the Critical Hit and of the normal hit, each asked for when reached.",
@@ -1476,6 +1584,28 @@
         "C13.32"
       ],
       "reason": "A PF before October 1943, beyond its range by date, at a non-AFV target, or past the usage limit is outside (rulings R9.7, R9.8)."
+    },
+    {
+      "caseId": "A1-ordnance-atr",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "resolved",
+      "sourceRules": [
+        "C13.2",
+        "C13.22",
+        "C13.26"
+      ],
+      "reason": "An ATR hits a vehicle on the black Vehicle row and resolves it with AP at the Russian ATR TK# (ruling R9.10)."
+    },
+    {
+      "caseId": "A1-ordnance-panzerschreck",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "resolved",
+      "sourceRules": [
+        "C13.42",
+        "C13.47",
+        "C13.48"
+      ],
+      "reason": "A PSK hits on its own To Hit Table and resolves HEAT at TK# 26; an Original 11 or 12 removes it (ruling R9.11)."
     }
   ],
   "admissionRule": "A shot is resolved only when every fact is within the reviewed scope and every roll it needs is recorded; otherwise it is Abstained or Indeterminate with its reasons.",
@@ -1484,7 +1614,7 @@
     "Canister, WP, and other Special Ammunition beyond APCR and HEAT (C8), HD and aerial hits, and a red CS# (C7.12, D4, D5.7)",
     "Bounding First Fire by ordnance, Cases C, G, and O, and Gun Duels (C2.2401; R7.3, R8.1)",
     "OVR Prevention (C5.64, C5.641), a vehicle's Intensive Fire, and Deliberate Immobilization (C5.7)",
-    "captured use (C5.8, A21.13), Recovery of an unmanned Gun, the ATR and the PSK (no registered source prints their counters), PF against non-AFV targets (C8.31), PFk, and Desperation fire (C13.81)",
+    "captured use (C5.8, A21.13), Recovery of an unmanned Gun, the Infantry Target Type of the ATR and fire at Guns, the PSK against Personnel, PF against non-AFV targets (C8.31), PFk, and Desperation fire (C13.81)",
     "the Area Target Type against a Gun, AP and HEAT at Guns, a crew sharing its Location with other units, an unmanned Gun as a target, and Gun repair (C11, A9.72)",
     "Multiple Hits (C3.8: neither reviewed Gun is 40mm or less) and targets at another level (levels in fire, pass 10.2)",
     "a tank's BMG and CMG, its MA in CC and OVR and in the MPh, and setting its TCA with MP or at the end of a fire phase (D3.12, C3.22; R7.10, R7.12)"
@@ -1492,6 +1622,6 @@
   "executionAuthority": "none",
   "toHitVehicleTranscriptionSha256": "4a9dfeafe03680b19cba0c8ddaf48f2d9ca55bbec48c679e0a6f03f558083f4c",
   "toKillTranscriptionSha256": "eec85c33a913abfa7b783f1afd452924201d187bf0cab8595bacb90d1b1be41a",
-  "revision": "Backlog pass 9 (2026-09-28): light mortars, the Area Target Type, and spotting (C9, C3.33; R9.1 to R9.4), and the Panzerfaust (C13.3; R9.7, R9.8); catalog 1.8.0. Earlier: Backlog pass 8 (2026-09-28): Defensive First Fire and Intensive Fire, Guns as targets, Cases E, H, and M, and overstacking (C2.241, C5.5 to C6.17, C11; R8.1 to R8.10); catalog 1.7.0. Earlier: Backlog pass 7 (2026-09-28): the Vehicle Target Type, To Kill, Special Ammunition, Shock, and crews (C3.31, C7, C8, D5.5, D5.6), and tanks firing their MA (D1.3; R7.1 to R7.10); catalog 1.6.0.",
+  "revision": "Backlog pass 9b (2026-09-28): the manufactured ATR and Panzerschreck (C13.2, C13.4 to C13.48; R9.10, R9.11) and the mortar limits (A4.41, B23.423); catalog 1.9.0. Earlier: Backlog pass 9 (2026-09-28): light mortars, the Area Target Type, and spotting (C9, C3.33; R9.1 to R9.4), and the Panzerfaust (C13.3; R9.7, R9.8); catalog 1.8.0. Earlier: Backlog pass 8 (2026-09-28): Defensive First Fire and Intensive Fire, Guns as targets, Cases E, H, and M, and overstacking (C2.241, C5.5 to C6.17, C11; R8.1 to R8.10); catalog 1.7.0. Earlier: Backlog pass 7 (2026-09-28): the Vehicle Target Type, To Kill, Special Ammunition, Shock, and crews (C3.31, C7, C8, D5.5, D5.6), and tanks firing their MA (D1.3; R7.1 to R7.10); catalog 1.6.0.",
   "toHitAreaTranscriptionSha256": "337184329d8d52686a3cb8c8726e13f527c5e39097f3a93bb8f646d7f59af5ea"
 }
