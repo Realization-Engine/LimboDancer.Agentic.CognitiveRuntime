@@ -2735,7 +2735,7 @@ else if (state is not null)
     /// A record's fire group in words. The firers, their Locations, their MGs, and the directors are the firing side's own
     /// and public at the table, so a record withheld for its targets still names them; the targets never appear here.
     /// </summary>
-    private static string GroupOf(FireResolved fire) => fire.Facts.Deserialize<FireAttack>(LiveFire.Json) is { } attack
+    private string GroupOf(FireResolved fire) => fire.Facts.Deserialize<FireAttack>(LiveFire.Json) is { } attack
         ? FireGroupText(attack)
         : $"The fire group in {fire.FirerLocation}";
 
@@ -2744,7 +2744,7 @@ else if (state is not null)
     /// is named alone), then every directing leader (A7.5, A7.531, A9.2), for example "r1 with mg1, r2 in bd01:D4:0, directed
     /// by rl". Residual FP has no firers (A8.22).
     /// </summary>
-    private static string FireGroupText(FireAttack attack)
+    private string FireGroupText(FireAttack attack)
     {
         if (attack.VehicleFire is { } byVehicle)
         {
@@ -2759,6 +2759,15 @@ else if (state is not null)
 
         if (attack.Firers is not { Count: > 0 } firers)
         {
+            // A9.22 (backlog pass 12): a Fire Lane's attack names the lane's MG and its manning Infantry.
+            if (attack.FireLane == true)
+            {
+                var laid = history?.Events.Select(item => item.Payload).OfType<FireLanePlaced>()
+                    .LastOrDefault(lane => lane.Entries.Any(entry => entry.Location.ToString() == attack.TargetLocationId && entry.Fp == attack.ResidualFp));
+                return laid is null ? $"{attack.ResidualFp} Fire Lane Residual FP (A9.22)"
+                    : $"{attack.ResidualFp} Fire Lane Residual FP of {laid.Weapon} ({laid.Operator}) (A9.22)";
+            }
+
             return attack.FireKind == ScenarioA1FireCalculator.ResidualFire ? $"{attack.ResidualFp} Residual FP" : "no firers";
         }
 
