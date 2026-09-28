@@ -138,3 +138,16 @@ Estimate: 4:35 (build 3:20) in the [ASL Unit Backlog Passes Plan](<ASL Unit Back
 | Visual check in the Studio | 00:51 | 00:53 | 0:02 | New game, Russians' fire with scripted dice 2 4 wrecks the truck: the Units table shows it wrecked at B8, and the map draws its wreck face. Page text read, since the pane does not draw |
 | Table-player review (agent ran 00:49 to 00:56) and fixes, rendering goldens for the two new states, 3 play tests | 00:56 | 01:03 | 0:07 | 6 defects fixed with tests, 2 gaps fixed, 1 gap and 2 notes recorded |
 | Full local suite (solution and ScenarioA1) | 01:03 | 01:10 | 0:07 | 1,990 passed, 30 skipped, 0 failed |
+| Commit 8afdcd5 and Docker Linux check (appendix A) | 01:10 | 01:16 | 0:06 | restore, build (warnings as errors), solution tests, and ScenarioA1 tests all exit 0 |
+| Merge into main and push | 01:16 | 01:17 | 0:01 | |
+
+Pass 6 actual: 1:08 (00:09 to 01:17) against the estimate of 4:35.
+
+| Plan task | Estimate | Actual |
+|---|---|---|
+| 6.1 to 6.5 build: review stage, referee fixes, live stage, table-player fixes (one block; split not recorded) | 3:20 | 0:36 |
+| Overhead: reading and rulings | | 0:06 |
+| Overhead: documents and visual check | | 0:04 |
+| Overhead: full suite, Docker check, merge | | 0:14 |
+| Overhead total (the two reviews ran beside the build) | 1:15 | 0:24 |
+| **Total** | **4:35** | **1:08** |
