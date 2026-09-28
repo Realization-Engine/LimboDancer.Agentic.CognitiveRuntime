@@ -260,3 +260,12 @@ Estimate: 7:10 (build 5:55) in the [ASL Unit Backlog Passes Plan](<ASL Unit Back
 | Table player fixes (18 findings: 14 fixed, 4 recorded) with tests, page status line, documents | 09:55 | 10:03 | 0:08 | The table player ran from 09:45 to 09:59; the first full suite ran from 09:48 to 10:03 |
 | Three older tests updated for the new rules, visual check in the Studio | 10:03 | 10:15 | 0:12 | The pane was driven through DOM events and read as text |
 | Full local suite before the commit (2,126 tests pass, 30 skipped) | 10:15 | 10:25 | 0:10 | |
+| Commit, Docker Linux check (every project exits 0), merge, push | 10:26 | 10:36 | 0:10 | |
+
+Pass 10 total: 08:36 to 10:36, 2:00 against the plan estimate of 7:10 (build 5:55) and the user's estimate of 2:45.
+
+| Task (plan estimate) | Actual | Where it was logged |
+|---|---|---|
+| 10.1 to 10.9, package side (about 2:00) | 0:25 | Package stage, with the first live code |
+| 10.1 to 10.9, live side (about 3:55) | 0:38 | Referee fixes (0:09), live tests and page (0:09), table player fixes (0:08), older tests and visual check (0:12) |
+| Overhead (1:15) | 0:57 | Reading and rulings, referee and table player, documents, suites, merge gate |
