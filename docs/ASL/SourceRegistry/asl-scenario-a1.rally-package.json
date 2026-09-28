@@ -3,8 +3,8 @@
   "status": "published-bounded-rally-package",
   "domainId": "asl",
   "packageId": "scenario-a1-rally",
-  "declaredUse": "Read-only conclusions for a declared Rally attempt by a broken unit of the reviewed Scenario A1 catalog: the DRM, the Final DR against the broken Morale Level, and the effect, including Fate, under the user's rulings of 2026-09-26 (ASL Unit Rally and Fire Extensions Plan, R19.1 to R19.10 and R0.2); with Heat of Battle and Leader Creation after an Original 2 (Deviations, Ordnance, and Vehicles Plan, R27.1 to R28.8 and R30.1 to R30.7).",
-  "caseMatrixSha256": "8b5f6cd7ca6edbe2c994f8b10b653d932a32d3adb10579df8c6a4870bdeae773",
+  "declaredUse": "Read-only conclusions for a declared Rally attempt by a broken unit of the reviewed Scenario A1 catalog: the DRM, the Final DR against the broken Morale Level, and the effect, including Fate, under the user's rulings of 2026-09-26 (ASL Unit Rally and Fire Extensions Plan, R19.1 to R19.10 and R0.2); with Heat of Battle and Leader Creation after an Original 2 (Deviations, Ordnance, and Vehicles Plan, R27.1 to R28.8 and R30.1 to R30.7); with the DM sources, terrain, and Self-Rally of Backlog Passes Plan R13.1, R13.2, and R13.8.",
+  "caseMatrixSha256": "043b6ccb6f60d3e4ac149cd3e7d02359466c3cd33c73fa2939dd66af304bf335",
   "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
   "catalogSha256": "0d67c9a63fdad49a8de3d96ad5fd1e5302e321f9850bc241e198d93656e3943d",
   "sourceFragments": [
@@ -339,18 +339,18 @@
     }
   ],
   "rulings": {
-    "dmSources": "broke-this-player-turn; attacked-while-broken-by-fp-that-could-cause-a-nmc; adjacent-and-rtph-sources-deferred-to-backlog (R19.1)",
+    "dmSources": "broke-this-player-turn; attacked-while-broken-by-fp-that-could-cause-a-nmc; a-known-armed-enemy-adjacent-or-in-its-location; at-the-start-of-the-rtph-in-a-blaze-or-in-open-ground-in-the-los-and-normal-range-of-a-known-enemy; kept-through-the-rph-end-when-its-owner-retains-it-outside-woods-and-buildings (R19.1, R13.1)",
     "heatOfBattle": "original-2-on-a-leader-rally-rallies-as-its-dr-gives-then-a-heat-of-battle-dr-with-plus-1-broken; original-mc-dr-2-calls-for-a-heat-of-battle-dr-with-its-drm-A15.1; hero-creation-on-6-or-less-and-battle-hardening-on-5-to-8-A15.21-A15.3; berserk-on-9-to-11-and-on-12-for-a-fanatic-unit-A15.4-A15.5; battle-hardening-instead-of-berserk-with-no-known-enemy-in-los-A15.44 (R30.2); surrender-on-12-or-more-breaks-and-disrupts-and-surrenders-to-an-adjacent-known-good-order-armed-enemy-infantry-unit-A15.5 (R30.7); exemptions-apply-to-heroes-heroic-leaders-and-berserk-units (R28.2); one-heat-of-battle-dr-per-unit-per-attack-a-second-original-2-not-taken (R28.8); a-leader-made-heroic-a-unit-battle-hardened-or-a-berserk-unit-rallies-though-the-rally-dr-failed (R28.4, R28.7, R30.2); a-surrendering-unit-is-broken-again-and-disrupted (R30.7)",
     "fate": "admitted-casualty-reduction-and-wounds (R19.3)",
     "fieldPromotion": "first-mmc-self-rally-of-own-rph-admitted-as-self-rally; original-2-rallies-and-calls-for-a-leader-creation-dr-A18.11; always-rolled (R27.2); the-base-units-morale-level-is-its-broken-one; nkvd-field-promotion-creates-commissars-not-reviewed (A25.25)",
-    "terrain": "woods-and-ordinary-buildings-minus-1; open-ground-brush-orchard-grain-0; other-terrain-abstains (R19.5)",
+    "terrain": "woods-and-buildings-any-level-minus-1; open-ground-brush-orchard-grain-marsh-and-rubble-0; other-terrain-abstains (R19.5, R13.2)",
     "order": "free-except-a-lone-broken-leader-rallies-himself-first (A10.71; R19.6)",
     "sides": "both-sides-in-every-rph (R19.7)",
     "concealment": "a12.141-applied-to-the-unit-and-the-rallying-leader; no-public-report (R19.8)",
     "woundedLeaders": "a17.3-applied-to-morale-and-leadership (R19.9)",
     "exclusions": "commissars-allied-troops-encirclement-night-extreme-winter-recovery-deploy (R19.10)",
     "brokenLeaderBar": "a10.71-bars-the-a18.11-self-rally-while-the-only-leader-is-broken (review reading)",
-    "capabilityUnrecorded": "self-rally-relying-on-capability-the-catalog-does-not-record-is-indeterminate",
+    "capabilityUnrecorded": "a-german-or-russian-mmc-whose-catalog-definition-leaves-self-rally-unrecorded-has-none-A10.6 (R13.8); any-other-self-rally-relying-on-capability-the-catalog-does-not-record-is-indeterminate",
     "berserk": "a-berserk-unit-has-morale-level-10-plus-1-fanatic-never-lowered-A15.42; a-failed-mc-casualty-reduces-it; an-original-12-eliminates-a-berserk-mmc-and-wounds-a-berserk-leader-as-if-wounded-A10.31 (R30.3); never-broken-or-pinned-no-ptc-llmc-or-lltc-and-no-leadership-from-a-friendly-leader-A15.42; a-leader-berserk-before-the-attack-forfeits-his-leadership-A15.41; a-leader-who-goes-berserk-takes-each-other-friendly-unit-in-his-location-subject-to-heat-of-battle-by-a-ntc-with-his-leadership-drm-A15.41 (R30.4); a-berserk-unit-does-not-fire (R30.5)",
     "surrender": "the-captors-are-the-adjacent-known-good-order-armed-enemy-infantry-with-guard-capacity-read-by-the-planner-A15.5-A20.51; the-captors-side-chooses-the-guard; the-surrender-is-always-accepted-no-quarter-not-offered (R30.7)",
     "mapFacts": "the-known-enemy-in-los-and-the-captors-are-the-planners-map-reads-taken-as-recorded-on-replay; they-are-required-before-any-roll-when-heat-of-battle-can-reach-a-unit",
@@ -379,18 +379,20 @@
     "A1-rally-field-promotion-unreviewed",
     "A1-rally-roll-missing",
     "A1-rally-owner-options",
-    "A1-rally-no-quarter"
+    "A1-rally-no-quarter",
+    "A1-rally-marsh-rubble",
+    "A1-rally-mmc-self-rally-none"
   ],
   "executionAuthority": "none",
   "excludedOutcomes": [
-    "DM from an ADJACENT enemy and at the start of the RtPh, and DM retention",
-    "Rally terrain other than woods and ordinary buildings",
+    "DM from overstacking, and DM in pillboxes and trenches (A10.62)",
+    "Rally terrain in pillboxes, trenches, and on rooftops",
     "Commissars, Allied Troops, Encirclement, night, and Extreme Winter",
-    "Recovery, Deploy, and Repair",
-    "Self-Rally capability the catalog does not record",
+    "Recovery, Deploy, and Repair, which the game plans outside this package (A1.31, A4.44, A9.72)",
+    "Self-Rally capability the catalog does not record, for a unit other than a German or Russian MMC",
     "any use by a game action",
     "Commissars created by NKVD Field Promotion (A25.25)",
     "prisoners exchanged for Unarmed counters (A20.5), and prisoner escape (A20.55)"
   ],
-  "priorRallyPackageManifestSha256": "f18137cb4193e08c59c85c8015585bcca7d0cd5407e8b0a377a6190734e9fedb"
+  "priorRallyPackageManifestSha256": "f3017213f8cb7ee157bedde88dadf9ac77be594bbcafa4e3d49bd6c0fb21daf9"
 }

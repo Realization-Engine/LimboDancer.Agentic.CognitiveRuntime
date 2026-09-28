@@ -37,7 +37,110 @@ public static class GameActions
           "required": ["gameId", "attemptId", "expectedRevision"],
           "properties": {
             "gameId": { "type": "string" }, "attemptId": { "type": "string" },
-            "expectedRevision": { "type": "integer", "minimum": 0 }
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "retainDm": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+        """);
+
+    public static readonly ActionDescriptor Rout = Descriptor("asl.game.rout", "Rout",
+        "In the RtPh, rout a broken unit that must or may rout along a route of ADJACENT Locations to the nearest woods or building Location, within six MF (three for a wounded SMC), or by Low Crawl one Location; entering Open Ground in the LOS and Normal Range of an unbroken enemy unit is Interdicted by a NMC (A10.5 to A10.533; ruling R13.3).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "unitId", "route"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "unitId": { "type": "string" },
+            "route": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+            "lowCrawl": { "type": "boolean" }
+          }
+        }
+        """);
+
+    public static readonly ActionDescriptor Deploy = Descriptor("asl.game.deploy", "Deploy a squad",
+        "In the RPh, a Good Order squad with a Good Order leader of its nationality in its Location takes a NTC modified by his leadership (Guards need neither) to become two HS; the first keeps its SW unless some are named for the second (A1.31; ruling R13.4).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "squadId"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "squadId": { "type": "string" }, "leader": { "type": "string" },
+            "secondWeapons": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+        """);
+
+    public static readonly ActionDescriptor Recombine = Descriptor("asl.game.recombine", "Recombine two HS",
+        "In the RPh, two Good Order HS of one definition in a Location with a Good Order leader of their nationality (Guards need none) Recombine into their squad, keeping their SW (A1.32; ruling R13.4).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "halfSquads"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "halfSquads": { "type": "array", "items": { "type": "string" }, "minItems": 2, "maxItems": 2 },
+            "leader": { "type": "string" }
+          }
+        }
+        """);
+
+    public static readonly ActionDescriptor Transfer = Descriptor("asl.game.transfer", "Transfer a SW",
+        "Pass a SW between Good Order unpinned units of one side in one Location in their RPh, or in their APh before either advances (A4.431; ruling R13.5).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "unitId", "equipmentId", "toUnitId"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "unitId": { "type": "string" }, "equipmentId": { "type": "string" }, "toUnitId": { "type": "string" }
+          }
+        }
+        """);
+
+    public static readonly ActionDescriptor Drop = Descriptor("asl.game.drop", "Drop a SW",
+        "Leave a SW in the unit's Location: an unbroken unit in its MPh before it moves, its APh before it advances, or at the start of the CCPh; a broken unit in the RtPh before it routs (A4.43; ruling R13.5).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "unitId", "equipmentId"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "unitId": { "type": "string" }, "equipmentId": { "type": "string" }
+          }
+        }
+        """);
+
+    public static readonly ActionDescriptor Recover = Descriptor("asl.game.recover", "Recover a SW",
+        "An unpinned Good Order unit tries to Recover an unpossessed SW in its Location on a Final dr below 6 (+1 CX), as its RPh action or in its MPh for one MF before it moves; a SMC may Recover one from its friendly broken unit (A4.44; ruling R13.5).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "unitId", "equipmentId"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "unitId": { "type": "string" }, "equipmentId": { "type": "string" }
+          }
+        }
+        """);
+
+    public static readonly ActionDescriptor Dismantle = Descriptor("asl.game.dismantle", "Dismantle or assemble a MG",
+        "Its possessor dismantles or assembles the German MMG in its side's PFPh or DFPh, if the MG has not fired in it; this counts as the MG's use. A dismantled MG is not fired and portages at half its PP (A9.8; ruling R13.6).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "unitId", "equipmentId"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "unitId": { "type": "string" }, "equipmentId": { "type": "string" }
           }
         }
         """);
@@ -455,7 +558,8 @@ public static class GameActions
         get;
     } =
         [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding, DeclareOverrun, Fire, Rally, Repair, Move, PassFire, EndMove, Advance, Ambush, CloseCombat, TakePrisoner,
-            FireOrdnance, RecoverShock, TurnGun, HookGun, MoveVehicle, Overrun, VehicleCloseCombat, ButtonUp, Choose, Massacre, OpportunityFire];
+            FireOrdnance, RecoverShock, TurnGun, HookGun, MoveVehicle, Overrun, VehicleCloseCombat, ButtonUp, Choose, Massacre, OpportunityFire,
+            Rout, Deploy, Recombine, Transfer, Drop, Recover, Dismantle];
 
     public static string VersionKey(Guid tenant, string game) => $"asl.game:{tenant:N}:{game}";
 

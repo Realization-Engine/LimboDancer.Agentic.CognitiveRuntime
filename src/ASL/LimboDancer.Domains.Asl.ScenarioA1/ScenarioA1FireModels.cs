@@ -332,7 +332,15 @@ public sealed record FireOrdnanceHit(string? GunId, int? Firepower, bool? Critic
 public sealed record FireMovement(bool? AssaultMovement);
 
 /// <summary>A MG a firer uses in the attack (A7.35, A9.1), with its reviewed catalog definition.</summary>
-public sealed record FireWeapon(string? EquipmentId, string? DefinitionId, bool? Malfunctioned, bool? FiredThisPlayerTurn, bool? FirstFireMarked);
+public sealed record FireWeapon(string? EquipmentId, string? DefinitionId, bool? Malfunctioned, bool? FiredThisPlayerTurn, bool? FirstFireMarked)
+{
+    /// <summary>Whether the MG is an enemy nationality's, Recovered by its firer (A21.1, A21.11, A21.12; ruling R13.7): B# two lower, Multiple ROF one lower; null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Captured
+    {
+        get; init;
+    }
+}
 
 /// <summary>A unit of the fire group, with its reviewed catalog definition.</summary>
 /// <summary>

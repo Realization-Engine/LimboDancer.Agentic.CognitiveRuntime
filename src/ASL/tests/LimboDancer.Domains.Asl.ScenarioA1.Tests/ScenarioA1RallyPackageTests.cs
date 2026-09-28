@@ -169,8 +169,9 @@ public sealed class ScenarioA1RallyPackageTests
         { "A18.11 with a broken leader", Attempt([2, 2], selfRally: true, firstMmc: true, goodOrderLeader: false, brokenLeader: true),
             "asl.a1.rally.self-rally-not-capable" },
         { "A18.11 in the other side's RPh", Attempt([2, 2], selfRally: true, firstMmc: true, goodOrderLeader: false, side: "non-phasing"),
-            "asl.a1.rally.self-rally-capability-unrecorded" },
-        { "capability unrecorded", Attempt([2, 2], selfRally: true, goodOrderLeader: false), "asl.a1.rally.self-rally-capability-unrecorded" },
+            "asl.a1.rally.self-rally-not-capable" },
+        { "a German or Russian MMC with no recorded capability (R13.8)", Attempt([2, 2], selfRally: true, goodOrderLeader: false),
+            "asl.a1.rally.self-rally-not-capable" },
         { "terrain outside", Attempt([2, 2], terrain: "rubble"), "asl.a1.rally.terrain-outside" },
         { "a missing roll", Attempt(null), "asl.a1.rally.roll-missing:rally" },
     };

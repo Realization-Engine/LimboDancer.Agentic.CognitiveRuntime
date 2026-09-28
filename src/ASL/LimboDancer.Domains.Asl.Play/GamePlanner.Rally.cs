@@ -374,6 +374,11 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.repair-unit: '{unitId}' attempted to rally this RPh (A3.1, p. 47)");
         }
 
+        if (state.RallyPhaseActions.Contains(unit.Id))
+        {
+            return Refused(scope, label, expected, $"play.rph-action: {unitId} has taken its RPh action (a Deployment, Recombination, Recovery, or Transfer) (A1.31; ruling R13.4)");
+        }
+
         if (state.Find(equipmentId) is not EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Possessed } holding } equipment
             || holding.Holder != unit.Id || GameState.Condition(equipment, Conditions.Malfunctioned) != ConditionState.True)
         {

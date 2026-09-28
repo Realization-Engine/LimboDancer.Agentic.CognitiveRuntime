@@ -17,7 +17,18 @@ public static class ScenarioA1RallyCalculator
         ["grain"] = 0,
         ["wooden-building"] = -1,
         ["stone-building"] = -1,
+
+        // Backlog pass 13 (ruling R13.2): marsh and rubble give no terrain bonus (A10.61).
+        ["marsh"] = 0,
+        ["wooden-rubble"] = 0,
+        ["stone-rubble"] = 0,
     };
+
+    /// <summary>
+    /// A MMC's Self-Rally capability (A10.63; ruling R13.8): as its definition records it, and none for a German or Russian MMC whose definition leaves
+    /// it unrecorded, since A10.6 grants MMC Self-Rally to Finns only.
+    /// </summary>
+    private static bool? SelfRally(FireDefinition definition) => definition.SelfRally ?? (definition.IsMmc && definition.Nationality is "german" or "russian" ? false : null);
 
     public static RallyResolution Resolve(RallyAttempt attempt, ScenarioA1RallyReference reference)
     {
@@ -179,8 +190,8 @@ public static class ScenarioA1RallyCalculator
             // Self-Rally regardless of capability. A10.71 bars units without Self-Rally capability while their only
             // leader is broken; the review reads that bar as covering the A18.11 attempt too. An MMC whose capability
             // the catalog does not record is left undecided.
-            if (definition.IsMmc && definition.SelfRally != true
-                && (FieldPromotionAttempt(attempt) ? attempt.BrokenLeaderInLocation == true : definition.SelfRally == false))
+            if (definition.IsMmc && SelfRally(definition) != true
+                && (FieldPromotionAttempt(attempt) ? attempt.BrokenLeaderInLocation == true : SelfRally(definition) == false))
             {
                 outside.Add("asl.a1.rally.self-rally-not-capable");
             }
@@ -212,7 +223,7 @@ public static class ScenarioA1RallyCalculator
         }
 
         // The catalog records no Self-Rally capability it cannot read from its sources.
-        if (attempt.Leader is null && definition.IsMmc && definition.SelfRally is null && !FieldPromotionAttempt(attempt))
+        if (attempt.Leader is null && definition.IsMmc && SelfRally(definition) is null && !FieldPromotionAttempt(attempt))
         {
             undecided.Add("asl.a1.rally.self-rally-capability-unrecorded:" + definition.Id);
         }
@@ -250,7 +261,7 @@ public static class ScenarioA1RallyCalculator
 
         var selfRally = attempt.Leader is null;
         var fieldPromotion = selfRally && definition.IsMmc && FieldPromotionAttempt(attempt);
-        var kind = !selfRally ? "leader-rally" : fieldPromotion && definition.SelfRally != true ? "field-promotion-self-rally" : "self-rally";
+        var kind = !selfRally ? "leader-rally" : fieldPromotion && SelfRally(definition) != true ? "field-promotion-self-rally" : "self-rally";
         var drm = new List<FireModifier>();
         if (unit.DesperationMorale == true)
         {

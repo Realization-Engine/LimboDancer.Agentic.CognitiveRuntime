@@ -307,7 +307,21 @@ Estimate: 2:30, the user's revision of 2026-09-28 (the plan's 5:30, build 4:15, 
 | Play page: Opportunity Fire panel, Spraying Fire, Fire Lane, and partner controls, Encircled units; Studio test; MapStudio (127) pass; table-player agent started | 15:04 | 15:08 | 0:04 | |
 | Visual check in the Studio (Opportunity Fire, Spraying Fire, the AFPh), the proposal text fixed; review, design, backlog section 22, and requirements | 15:08 | 15:11 | 0:03 | |
 | Table player's 11 findings: 8 fixed with 3 new tests, 3 recorded (and the follow-ons after an owner's choice); Play (278), MapStudio (127) pass | 15:11 | 15:22 | 0:11 | Authoring (162) passed at 15:17 |
-| Full local suite: build with warnings as errors, every solution test project, and the ScenarioA1 tests (2,188 passed, 30 skipped) | 15:22 | 15:33 | 0:11 | || Commit 5ea5923; merge gate: the Docker Linux check (restore, build, test, a1: every step exit 0) | 15:33 | 15:43 | 0:10 | |
+| Full local suite: build with warnings as errors, every solution test project, and the ScenarioA1 tests (2,188 passed, 30 skipped) | 15:22 | 15:33 | 0:11 | |
+| Commit 5ea5923; merge gate: the Docker Linux check (restore, build, test, a1: every step exit 0) | 15:33 | 15:43 | 0:10 | |
 | Merge and push | 15:43 | 15:45 | 0:02 | |
 
 Total 1:33 of working time (14:12 to 15:45) against the user's 2:30 estimate (the plan's 5:30); the build with both reviews' fixes, 14:18 to 15:22, took 1:04.
+
+## Pass 13: Rally, Rout, and support weapons
+
+Estimate: 4:40 (build 3:25) in the [ASL Unit Backlog Passes Plan](<ASL Unit Backlog Passes Plan.md>). Kickoff 2026-09-28 17:53. Branch `feature/asl-backlog-pass-13` (its first commit, the Fire Lane label fix, merged as 53985f2).
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Reading (A1.31, A1.32, A4.43, A4.431, A4.44, A9.8, A10.5 to A10.533, A10.61 to A10.63, A20.21, A21.1 to A21.12) and rulings R13.1 to R13.8 | 17:53 | 17:58 | 0:05 | |
+| Units records and projector (rout steps, Interdiction, Deployment, RPh actions, Recovery), the Rally package's terrain and Self-Rally, the Fire package's captured MG | 17:58 | 18:05 | 0:07 | |
+| PDF comparison (21 fragments: A1.31, A1.32, A4.43 to A4.44, A9.8, A10.5 to A10.533, A21.1 to A21.12) and its registration; the Fire and Rally package revisions and pins; Authoring matrices and source review (42) pass | 18:05 | 18:33 | 0:28 | |
+| Planner: the rout, Interdiction, DM (ADJACENT, RtPh start, retention), Failure to Rout and surrender; Deploy, Recombine, SW transfer, drop, Recovery, dismantling; captured MG facts; three older tests follow the new rules; Play (278) pass; referee agent started | 18:33 | 18:47 | 0:14 | |
+| Tests: ScenarioA1 (5) and Play (12) pass 13 tests, the gate's readback of the new records; referee's 25 findings: 22 fixed (tests where they show), 3 recorded or reworded; Play (290) pass | 18:47 | 19:07 | 0:20 | |
+| Play page: the Rout panel, the SW panel (transfer, drop, recover, dismantle), Deploy, Recombine, DM retention, and their records; a Studio test; an older Studio test's broken HS now surrenders; MapStudio (128) pass; table-player agent started | 19:07 | 19:17 | 0:10 | |

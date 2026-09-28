@@ -213,6 +213,7 @@ public static class GameEventReader
             case "crew-exposure-changed":
             case "concealment-lost":
             case "concealment-gained":
+            case "desperation-morale":
                 var changedId = fields.RequiredString(payload, "id", path);
                 var conditions = ReadConditions(payload, path, diagnostics);
                 return changedId is null ? null : new ConditionsChanged(changedId, conditions);
@@ -495,6 +496,44 @@ public static class GameEventReader
                 return overrunVehicle is null || overrunAt is null || overrunFire is null
                     ? Missing(diagnostics, "An OVR record names its vehicle, Location, and fire record.", path)
                     : new OverrunResolved(overrunVehicle, overrunAt, overrunFire);
+            case "rout-stepped":
+                var routUnit = fields.RequiredString(payload, "unit", path);
+                var routTo = ReadLocation(payload, "to", path, fields, diagnostics);
+                var routMf = fields.OptionalInteger(payload, "halfMf", path);
+                return routUnit is null || routTo is null || routMf is null
+                    ? Missing(diagnostics, "A rout step names its unit, Location, and MF.", path)
+                    : new RoutStepped(routUnit, routTo, routMf.Value, fields.OptionalBoolean(payload, "lowCrawl", path));
+            case "rout-interdicted":
+                var interdictedUnit = fields.RequiredString(payload, "unit", path);
+                var interdictedAt = ReadLocation(payload, "at", path, fields, diagnostics);
+                var interdictedRoll = fields.RequiredString(payload, "roll", path);
+                var interdictedMorale = fields.OptionalInteger(payload, "morale", path);
+                var interdictedDrm = fields.OptionalInteger(payload, "drm", path);
+                var interdictedResult = fields.RequiredString(payload, "result", path);
+                return interdictedUnit is null || interdictedAt is null || interdictedRoll is null || interdictedMorale is null || interdictedDrm is null || interdictedResult is null
+                    ? Missing(diagnostics, "An Interdiction names its unit, Location, roll, Morale Level, DRM, and result.", path)
+                    : new RoutInterdicted(interdictedUnit, interdictedAt, interdictedRoll, interdictedMorale.Value, interdictedDrm.Value, interdictedResult);
+            case "deployment-attempted":
+                var deploySquad = fields.RequiredString(payload, "squad", path);
+                var deployRoll = fields.RequiredString(payload, "roll", path);
+                var deployMorale = fields.OptionalInteger(payload, "morale", path);
+                var deployDrm = fields.OptionalInteger(payload, "drm", path);
+                return deploySquad is null || deployRoll is null || deployMorale is null || deployDrm is null
+                    ? Missing(diagnostics, "A Deployment attempt names its squad, roll, Morale Level, and DRM.", path)
+                    : new DeploymentAttempted(deploySquad, fields.OptionalString(payload, "leader", path), deployRoll, deployMorale.Value, deployDrm.Value,
+                        fields.OptionalBoolean(payload, "passed", path));
+            case "rph-action-taken":
+                var actionName = fields.RequiredString(payload, "action", path);
+                return actionName is null ? Missing(diagnostics, "An RPh action names its kind.", path)
+                    : new RallyPhaseActionTaken(fields.StringList(payload, "units", path), actionName);
+            case "recovery-attempted":
+                var recoveryUnit = fields.RequiredString(payload, "unit", path);
+                var recoveryWeapon = fields.RequiredString(payload, "weapon", path);
+                var recoveryRoll = fields.RequiredString(payload, "roll", path);
+                var recoveryDrm = fields.OptionalInteger(payload, "drm", path);
+                return recoveryUnit is null || recoveryWeapon is null || recoveryRoll is null || recoveryDrm is null
+                    ? Missing(diagnostics, "A Recovery attempt names its unit, SW, roll, and DRM.", path)
+                    : new RecoveryAttempted(recoveryUnit, recoveryWeapon, recoveryRoll, recoveryDrm.Value, fields.OptionalBoolean(payload, "recovered", path));
             case "opportunity-fire-declared":
                 return new OpportunityFireDeclared(fields.StringList(payload, "units", path));
             case "encirclement-placed":

@@ -128,6 +128,19 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
         : plan.Events.Select(item => item.Payload).OfType<OpportunityFireDeclared>().FirstOrDefault() is { } opportunity
         // Opportunity Fire (A7.25): its units carry the Bounding Fire counter.
         ? opportunity.Units.All(id => state.Unit(id) is { } unit && GameState.Condition(unit, Conditions.BoundingFire) == ConditionState.True)
+        : plan.Events.Select(item => item.Payload).OfType<RoutStepped>().ToArray() is { Length: > 0 } routed
+        // A rout (A10.5; ruling R13.3): every unit that stepped is listed as routed this RtPh.
+        ? routed.All(step => state.RoutedThisPhase.Contains(step.Unit))
+        : plan.Events.Select(item => item.Payload).OfType<DeploymentAttempted>().FirstOrDefault() is { } deployment
+        // A Deployment attempt (A1.31; ruling R13.4): the squad has spent its RPh action.
+        ? state.RallyPhaseActions.Contains(deployment.Squad)
+        : plan.Events.Select(item => item.Payload).OfType<RecoveryAttempted>().FirstOrDefault() is { } recovery
+        // A Recovery attempt (A4.44; ruling R13.5): it is kept for the phase, and a Recovered SW is the unit's.
+        ? state.RecoveryAttempts.Contains(recovery.Unit + "|" + recovery.Weapon)
+            && (!recovery.Recovered || state.Find(recovery.Weapon) is EquipmentInstance { Holding: { } recoveredBy } && recoveredBy.Holder == recovery.Unit)
+        : plan.Events.Select(item => item.Payload).OfType<RallyPhaseActionTaken>().FirstOrDefault() is { } action && state.Phase == "rph"
+        // A Recombination or a transfer in the RPh (A1.32, A4.431; rulings R13.4, R13.5): its units have spent their RPh action.
+        ? action.Units.All(state.RallyPhaseActions.Contains)
         : plan.Events.Select(item => item.Payload).OfType<RallyAttempted>().FirstOrDefault() is { } rally
         // A Rally attempt: the unit's attempt is kept for the Player Turn.
         ? state.RallyAttemptsThisPlayerTurn.Contains(rally.Unit)
@@ -176,8 +189,14 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
         : plan.Events.LastOrDefault(item => item.Payload is not (AcquisitionChanged or ChoicePending) && item.Type != "concealment-lost"
             && !(item.Payload is InstanceEliminated && plan.Events.Any(step => step.Payload is VehicleStepped))
             && !(item.Payload is VehicleCheckRolled or DiceRolled && plan.Events.Any(step => step.Payload is VehicleStepped))
-            && !(item.Payload is ConditionsChanged && plan.Events.Any(step => step.Payload is PhaseChanged)))?.Payload switch
+            && !(item.Payload is ConditionsChanged && plan.Events.Any(step => step.Payload is PhaseChanged))
+            // A10.62 (ruling R13.1): the DM an action gives broken units follows its own effect.
+            && !(item.Payload is ConditionsChanged dm && dm.Conditions.Keys.All(key => key == Conditions.DesperationMorale)))?.Payload switch
         {
+            // Dismantling or assembling a MG (A9.8; ruling R13.6): the MG carries the state and its use.
+            ConditionsChanged dismantled when dismantled.Conditions.ContainsKey(Conditions.Dismantled) => state.Find(dismantled.Id) is EquipmentInstance weapon
+                && dismantled.Conditions.All(item => GameState.Condition(weapon, item.Key) == item.Value),
+
             // A vehicle's check with no MP expenditure (D2.5; ruling R11.3): an ESB DR, its effect on the vehicle.
             VehicleCheckRolled check => state.Unit(check.Vehicle) is { } checkedVehicle
                 && (check.Result != VehicleCheckRolled.Immobilized || GameState.Condition(checkedVehicle, Conditions.Immobilized) == ConditionState.True),

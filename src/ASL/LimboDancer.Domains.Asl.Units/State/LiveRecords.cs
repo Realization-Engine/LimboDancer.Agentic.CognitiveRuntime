@@ -257,6 +257,45 @@ public sealed record OverrunResolved(string Vehicle, BoardLocation At, string Fi
 public sealed record PaatcTaken(IReadOnlyList<string> Units, string Vehicle, string Roll, int Morale, int Drm, bool Passed) : EventPayload;
 
 /// <summary>
+/// <c>rout-stepped</c>: one Location of a broken unit's rout in the RtPh (A10.5; backlog pass 13, ruling R13.3): the Location entered, its cost in
+/// half MF, and whether it is Low Crawl (A10.52), which uses all the unit's MF.
+/// </summary>
+public sealed record RoutStepped(string Unit, BoardLocation To, int HalfMf, bool LowCrawl) : EventPayload;
+
+/// <summary>
+/// <c>rout-interdicted</c>: the NMC of Interdiction as a routing unit enters Open Ground (A10.53; ruling R13.3): the roll, the unit's Morale Level, the
+/// DRM, and its result: <c>passed</c>, <c>pinned</c>, <c>reduced</c>, or <c>eliminated</c>, which the events after it apply.
+/// </summary>
+public sealed record RoutInterdicted(string Unit, BoardLocation At, string Roll, int Morale, int Drm, string Result) : EventPayload
+{
+    public const string Passed = "passed";
+    public const string Pinned = "pinned";
+    public const string Reduced = "reduced";
+    public const string Eliminated = "eliminated";
+
+    /// <summary>The result of an Interdiction NMC (A10.53, A10.31): an Original 12 eliminates, a Final DR above the Morale Level reduces, equal pins.</summary>
+    public static string For(int original, int final, int morale) =>
+        original == 12 ? Eliminated : final > morale ? Reduced : final == morale ? Pinned : Passed;
+}
+
+/// <summary>
+/// <c>deployment-attempted</c>: a squad's attempt to Deploy in its RPh (A1.31; ruling R13.4): the directing leader (none for Guards), the NTC roll,
+/// the squad's Morale Level, the leadership DRM, and whether it passed; a passed attempt's lineage follows.
+/// </summary>
+public sealed record DeploymentAttempted(string Squad, string? Leader, string Roll, int Morale, int Drm, bool Passed) : EventPayload;
+
+/// <summary>
+/// <c>rph-action-taken</c>: units whose RPh action is spent by a Recombination or a Transfer (A1.32, A4.431; rulings R13.4, R13.5), with the action.
+/// </summary>
+public sealed record RallyPhaseActionTaken(IReadOnlyList<string> Units, string Action) : EventPayload;
+
+/// <summary>
+/// <c>recovery-attempted</c>: a unit's attempt to Recover a SW (A4.44; ruling R13.5): the dr, its DRM, and whether it succeeded; in the MPh it costs one
+/// MF. A successful Recovery's transfer of the SW follows.
+/// </summary>
+public sealed record RecoveryAttempted(string Unit, string Weapon, string Roll, int Drm, bool Recovered) : EventPayload;
+
+/// <summary>
 /// <c>opportunity-fire-declared</c>: Infantry marked with a Bounding Fire counter in their PFPh as Opportunity Firers (A7.25; backlog pass 12, ruling
 /// R12.1): they neither fire in the PFPh nor move in the MPh, and fire in the AFPh without its halving.
 /// </summary>

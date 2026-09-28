@@ -362,11 +362,11 @@ public sealed class RallyAndFireStepsTests : IDisposable
             leader = "rl"
         }, "leader-outside");
 
-        // r1's attempt spent the first MMC attempt of the RPh, so r2 would Self-Rally on a capability the catalog does not record.
+        // r1's attempt spent the first MMC attempt of the RPh, and a Russian MMC has no Self-Rally capability (A10.6; ruling R13.8).
         await Refused(new
         {
             unitId = "r2"
-        }, "self-rally-capability-unrecorded");
+        }, "self-rally-not-capable");
         await Advance();
         revision = Revision;
         await Refused(new

@@ -158,6 +158,16 @@ public sealed class AslScenarioA1FireSourceReviewTests
     }
 
     [Fact]
+    public void ThePass13SubjectsAreVerified()
+    {
+        // Backlog pass 13: Rally, Rout, and support weapons, 21 Chapter A fragments.
+        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var pass13 = AslScenarioA1FireSourceReview.BuildPass13(RepositoryPaths.Root, manifests, Attestation());
+        Assert.Equal(21, pass13.Records.Count);
+        Assert.All(pass13.Records, record => Assert.Equal(TirSourceVerificationDisposition.Verified, record.Disposition));
+    }
+
+    [Fact]
     public void ThePass12SubjectsAreVerified()
     {
         // Backlog pass 12: the fire extensions, 16 Chapter A fragments (A9.222 is cited from the PDF).

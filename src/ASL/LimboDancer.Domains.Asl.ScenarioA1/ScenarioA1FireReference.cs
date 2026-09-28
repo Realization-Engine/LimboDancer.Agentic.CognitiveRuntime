@@ -296,6 +296,9 @@ public sealed class ScenarioA1FireReference
     /// <summary>The half-squad a squad is Reduced to, or null when the catalog has none.</summary>
     public static string? HalfSquadOf(string definitionId) => HalfSquads.GetValueOrDefault(definitionId);
 
+    /// <summary>The squad two HS of a definition Recombine into (A1.32), or null when the catalog has none.</summary>
+    public static string? SquadOf(string halfSquadId) => HalfSquads.FirstOrDefault(pair => pair.Value == halfSquadId).Key;
+
     /// <summary>The unit that Replaces a definition under A19.13, or null when none can (A19.12): a leader of the next lower grade.</summary>
     public static string? ReplacementOf(string definitionId) =>
         Replacements.GetValueOrDefault(definitionId) ?? Step(definitionId, -1);
