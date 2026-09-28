@@ -219,3 +219,13 @@ Estimate: 4:45 (build 3:30) in the [ASL Unit Backlog Passes Plan](<ASL Unit Back
 | Full suite (one Studio test updated), documents drafted, visual check in the Studio | 06:40 | 06:51 | 0:11 | The pane did not draw; the check read the page text |
 | Table player fixes with tests, documents (review, design, backlog sections 1 and 19, requirements, catalog design 9.9) | 06:51 | 06:59 | 0:08 | The table player ran from 06:40 to 06:52 |
 | Full local suite before the commit (2,088 tests pass, 30 skipped) | 06:59 | 07:08 | 0:09 | |
+| Commit, Docker Linux check (every project exits 0), merge, push | 07:08 | 07:15 | 0:07 | |
+
+Pass 9 total: 05:10 to 07:15, 2:05 against the estimate of 4:45 (build 3:30).
+
+| Task (plan estimate) | Actual | Where it was logged |
+|---|---|---|
+| 9.1 Counters (0:40) | 0:05 | Catalog 1.8.0; the PSK and ATR are blocked by their source |
+| 9.2 to 9.4, package side (about 1:25) | 0:20 | Package stage |
+| 9.2 to 9.4, live side (about 1:25) | 0:37 | Live stage (0:19, with the referee's fixes), live tests and page (0:10), table player fixes (0:08) |
+| Overhead (1:15) | 1:03 | Reading and rulings, suites, documents, visual check, merge gate |
