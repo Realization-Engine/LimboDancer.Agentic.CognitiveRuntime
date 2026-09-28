@@ -824,3 +824,39 @@ sheet,counter,face,attribute,value,transcriber,reviewer,note
 ,defender-tank,front,asl:fixed-bmg,,,,yes or no
 ,defender-tank,front,asl:vehicle-ft-range-2,,,,yes or no
 ,defender-tank,front,asl:cs-passengers-only,,,,yes or no
+,attacker-light-mortar,counter,kind,,,,expected asl:light-mortar
+,attacker-light-mortar,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,attacker-light-mortar,front,identity,,,,"identity as printed, or not-printed"
+,attacker-light-mortar,front,firepower,,,,"whole number, or not-printed"
+,attacker-light-mortar,front,range,,,,"whole number, or not-printed"
+,attacker-light-mortar,front,breakdown,,,,whole number (C2.28)
+,attacker-light-mortar,front,rate-of-fire,,,,"whole number, or not-printed"
+,attacker-light-mortar,front,portage,,,,whole number of PP (A4.4)
+,attacker-light-mortar,front,caliber,,,,whole number in mm (C2.21)
+,attacker-light-mortar,front,caliber-suffix,,,,"star, l, ll, or not-printed"
+,attacker-light-mortar,front,range-minimum,,,,"whole number, or not-printed"
+,attacker-light-mortar,front,range-maximum,,,,"whole number, or not-printed"
+,attacker-light-mortar,front,special-ammo,,,,"codes as printed, space-separated, or not-printed"
+,attacker-light-mortar,front,dates,,,,"years as printed, yy-yy"
+,attacker-light-mortar,front,asl:no-ap,,,,yes or no
+,attacker-light-mortar,front,asl:no-he,,,,yes or no
+,attacker-light-mortar,front,asl:breakdown-removes,,,,yes or no
+,attacker-light-mortar,malfunctioned,repair,,,,"whole number, or not-printed"
+,defender-light-mortar,counter,kind,,,,expected asl:light-mortar
+,defender-light-mortar,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,defender-light-mortar,front,identity,,,,"identity as printed, or not-printed"
+,defender-light-mortar,front,firepower,,,,"whole number, or not-printed"
+,defender-light-mortar,front,range,,,,"whole number, or not-printed"
+,defender-light-mortar,front,breakdown,,,,whole number (C2.28)
+,defender-light-mortar,front,rate-of-fire,,,,"whole number, or not-printed"
+,defender-light-mortar,front,portage,,,,whole number of PP (A4.4)
+,defender-light-mortar,front,caliber,,,,whole number in mm (C2.21)
+,defender-light-mortar,front,caliber-suffix,,,,"star, l, ll, or not-printed"
+,defender-light-mortar,front,range-minimum,,,,"whole number, or not-printed"
+,defender-light-mortar,front,range-maximum,,,,"whole number, or not-printed"
+,defender-light-mortar,front,special-ammo,,,,"codes as printed, space-separated, or not-printed"
+,defender-light-mortar,front,dates,,,,"years as printed, yy-yy"
+,defender-light-mortar,front,asl:no-ap,,,,yes or no
+,defender-light-mortar,front,asl:no-he,,,,yes or no
+,defender-light-mortar,front,asl:breakdown-removes,,,,yes or no
+,defender-light-mortar,malfunctioned,repair,,,,"whole number, or not-printed"

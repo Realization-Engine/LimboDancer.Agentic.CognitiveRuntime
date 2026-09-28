@@ -1201,7 +1201,17 @@ public static class ScenarioA1FireCalculator
 
             var drm = new List<FireModifier>();
             var tem = ScenarioA1FireReference.Tem[attack.TargetTerrain!];
-            if (hit is not null)
+            if (hit is { Area: true } && attack.TargetTerrain == "woods")
+            {
+                // B13.3, C3.71 (ruling R9.3): a mortar's hit in woods takes the -1 of Air Bursts instead of the +1, never reversed.
+                drm.Add(new FireModifier("air-burst", -1m, "B13.3"));
+            }
+            else if (hit is { Area: true } && hit.CriticalHit != true && tem != 0)
+            {
+                // C3.331 (ruling R9.3): an Area Target Type hit takes its TEM on the Effects DR.
+                drm.Add(new FireModifier("tem:" + attack.TargetTerrain, tem, "C3.331"));
+            }
+            else if (hit is not null)
             {
                 // C.3: the TEM of an Infantry Target Type hit modifies its TH DR, not the Effects DR; C3.71: a Critical Hit reverses a
                 // positive TEM into a negative Effects DRM (a Direct Fire hit has no Air Burst, B13.3).
@@ -1226,7 +1236,7 @@ public static class ScenarioA1FireCalculator
             // positive TEM and not against an attack from within the Location; a Critical Hit reverses it (C3.71).
             if (Cover(attack) is { } cover)
             {
-                if (hit is null)
+                if (hit is null || hit is { Area: true, CriticalHit: not true })
                 {
                     drm.Add(new FireModifier("afv-cover:" + cover, 1m, "D9.3"));
                 }

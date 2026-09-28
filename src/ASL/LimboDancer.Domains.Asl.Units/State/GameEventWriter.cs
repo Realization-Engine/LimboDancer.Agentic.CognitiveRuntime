@@ -344,6 +344,19 @@ public static class GameEventWriter
                     writer.WriteBoolean("doubleTime", true);
                 }
 
+                if (moving.Smoke is { } smoke)
+                {
+                    writer.WriteString("smokeBy", smoke.Unit);
+                    writer.WriteString("smokeAt", smoke.Target.ToString());
+                    writer.WriteString("smokeRoll", smoke.Roll);
+                    writer.WriteNumber("smokeDr", smoke.Dr);
+                    writer.WriteNumber("smokeExponent", smoke.Exponent);
+                    if (smoke.Cx)
+                    {
+                        writer.WriteBoolean("smokeCx", true);
+                    }
+                }
+
                 if (moving.PushedGun is { } pushedGun)
                 {
                     writer.WriteString("pushedGun", pushedGun);

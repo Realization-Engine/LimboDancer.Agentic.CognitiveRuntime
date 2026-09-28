@@ -12,14 +12,13 @@ using LimboDancer.Domains.Asl.Units.Vocabulary;
 namespace LimboDancer.Domains.Asl.Play.Tests;
 
 /// <summary>
-/// The backlog pass 7 in live play: a tank's MA fire at an enemy tank on the Vehicle Target Type, its turret and TCA, the To Kill results,
-/// Shock and the Unconfirmed Kill in the RPh, Special Ammunition and its depletion, and the crews' fates (rulings R7.1 to R7.11). Board 01's
-/// hex facts, fixed dice, and a stub LOS reader.
+/// The backlog pass 9 in live play: a light mortar on the Area Target Type with a Spotter (R9.2 to R9.4), SMOKE grenades (R9.5, R9.6), and
+/// the Panzerfaust (R9.7, R9.8). Board 01's hex facts, fixed dice, and a stub LOS reader.
 /// </summary>
-public sealed class BacklogPass7Tests : IDisposable
+public sealed class BacklogPass9Tests : IDisposable
 {
-    private static readonly Guid Tenant = Guid.Parse("7b1d2c3e-0000-4000-8000-00000000f507");
-    private static readonly GameScope Scope = new(Tenant, "pass7");
+    private static readonly Guid Tenant = Guid.Parse("7b1d2c3e-0000-4000-8000-00000000f509");
+    private static readonly GameScope Scope = new(Tenant, "pass9");
     private static readonly UnitVocabulary Vocabulary = UnitVocabulary.Asl();
     private static readonly UnitCatalog Catalog = UnitCatalogs.Read(UnitCatalogs.ScenarioA1, Vocabulary)!.Catalog!;
     private static readonly string[] Bd01 = ["bd01"];
@@ -37,12 +36,12 @@ public sealed class BacklogPass7Tests : IDisposable
     private static readonly LimboDancer.Abstractions.Execution.RuntimePrincipal Player =
         GamePlay.Principal("player", Tenant, GameActions.SetupPermission, GameActions.PlayPermission);
 
-    private readonly string root = Path.Combine(Path.GetTempPath(), "asl-pass7-" + Guid.NewGuid().ToString("N"));
+    private readonly string root = Path.Combine(Path.GetTempPath(), "asl-pass9-" + Guid.NewGuid().ToString("N"));
     private readonly FileGameStore store;
     private readonly StubLos los = new();
     private IBoardCatalog boards = new InMemoryBoardCatalog([Board01Fixture.Handle()]);
 
-    public BacklogPass7Tests() => store = new FileGameStore(root);
+    public BacklogPass9Tests() => store = new FileGameStore(root);
 
     public void Dispose()
     {
@@ -173,7 +172,7 @@ public sealed class BacklogPass7Tests : IDisposable
     {
         var start = new Dictionary<string, object>
         {
-            ["label"] = "Pass 7",
+            ["label"] = "Pass 9",
             ["catalog"] = "asl-scenario-a1@1.8.0",
             ["boards"] = Bd01,
             ["firstSide"] = firstSide,
@@ -297,7 +296,7 @@ public sealed class BacklogPass7Tests : IDisposable
             expectedRevision = 0,
             start = new Dictionary<string, object>
             {
-                ["label"] = "Pass 7",
+                ["label"] = "Pass 9",
                 ["catalog"] = "asl-scenario-a1@1.8.0",
                 ["boards"] = Bd01,
                 ["firstSide"] = "german",
@@ -338,9 +337,17 @@ public sealed class BacklogPass7Tests : IDisposable
 
     private FireResolved LastFire(long before) => Since(before).Select(item => item.Payload).OfType<FireResolved>().Single();
 
-    private Task<PlayResult> FireAt(string gun, string target, string? vehicle, string? ammunition, params int[] dice)
+    private Task<PlayResult> FireAt(string gun, string target, string? vehicle, string? ammunition, params int[] dice) =>
+        FireAt(gun, target, vehicle, ammunition, false, dice);
+
+    private Task<PlayResult> FireAt(string gun, string target, string? vehicle, string? ammunition, bool intensive, params int[] dice)
     {
-        var arguments = new Dictionary<string, string> { ["gunId"] = gun, ["target"] = target };
+        var arguments = new Dictionary<string, object> { ["gunId"] = gun, ["target"] = target };
+        if (intensive)
+        {
+            arguments["intensive"] = true;
+        }
+
         if (vehicle is not null)
         {
             arguments["targetVehicle"] = vehicle;
@@ -357,197 +364,252 @@ public sealed class BacklogPass7Tests : IDisposable
     private OrdnanceResolution LastShot(long before) =>
         Since(before).Select(item => item.Payload).OfType<OrdnanceFired>().Single().Resolution.Deserialize<OrdnanceResolution>(LiveFire.Json)!;
 
-    // The German PzKpfw IIIH in B10 faces north-east, so the T-34 in B8 lies in its TCA; the T-34 faces east, showing the Germans its side.
-    private Task Tanks(int? year = 1942, string germanFacing = "north-east", string russianFacing = "east", params Dictionary<string, object>[] others) =>
-        Setup("german", 7, year, [Vehicle("de-tank", "attacker-tank", "bd01:B10:0", "german", germanFacing),
-            Vehicle("ru-tank", "defender-tank", "bd01:B8:0", "russian", russianFacing), .. others]);
+    private static Dictionary<string, object> Crew(string id, string at, string side) => Unit(id, "asl:crew", side == "german" ? "attacker-crew" : "defender-crew", at, side);
 
-    [Fact]
-    public async Task ATankFiresApAtAnEnemyTanksSideAndBurnsIt()
+    private OrdnanceShot LastFacts(long before) =>
+        Since(before).Select(item => item.Payload).OfType<OrdnanceFired>().Single().Facts.Deserialize<OrdnanceShot>(LiveFire.Json)!;
+
+    private static Dictionary<string, object> Mortar(string id, string definition, string holder, string side) => new()
     {
-        // C3.31: the black Vehicle row at 2 hexes is 10; Case I +1 for the BU PzKpfw IIIH, Case L -1: 4+2 = 6 hits the hull (colored 4 not
-        // below white 2). D3.2: the LOS from B10 crosses the T-34's side. AP 50 is 11, Case D +1 at 2 hexes, less the side AF 6: 6; a TK
-        // DR of 2 is at most half of it: a burning wreck with its Blaze (C7.7, D10.1).
-        await Tanks();
-        await Advance();
-        var before = Revision;
-        Committed(await FireAt("de-tank", "bd01:B8:0", "ru-tank", "ap", 4, 2, 1, 1));
-        var shot = LastShot(before);
-        Assert.Equal((10, 6, true), (shot.ToHit!.ModifiedToHit, shot.ToHit.FinalDr, shot.ToHit.Hit));
-        Assert.Equal(("hull", "side", 6, OrdnanceKill.Burn), (shot.Kill!.HitLocation, shot.Kill.TargetFacing, shot.Kill.FinalTk, shot.Kill.Result));
-        Assert.Equal(InstanceStatus.Wrecked, Current.Unit("ru-tank")!.Status);
-        Assert.Contains(Current.Entities, entity => entity.Id == GamePlanner.BlazeId("ru-tank") && entity.Status == InstanceStatus.Active);
-        Assert.True(Is(Current.Unit("de-tank")!, Conditions.PrepFire));
-        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+        ["id"] = id,
+        ["kind"] = "asl:light-mortar",
+        ["definition"] = definition,
+        ["side"] = side,
+        ["holding"] = new
+        {
+            holder,
+            role = "possessed"
+        },
+        ["conditions"] = new Dictionary<string, bool> { ["asl:malfunctioned"] = false },
+    };
+
+    private Task<PlayResult> Shoot(string gun, string target, string? spotter, string? director, params int[] dice)
+    {
+        var arguments = new Dictionary<string, object> { ["gunId"] = gun, ["target"] = target };
+        if (spotter is not null)
+        {
+            arguments["spotter"] = spotter;
+        }
+
+        if (director is not null)
+        {
+            arguments["director"] = director;
+        }
+
+        return Do(GameActions.FireOrdnance, dice.Length == 0 ? NoRoll() : Once(dice), arguments);
     }
 
-    [Fact]
-    public async Task ATurretTurnsForItsShotKeepsItsTcaAndAShockedAfvRollsInTheRph()
+    private Task<PlayResult> Smoke(string[] units, string at, string by, string target, params int[] dice) => Do(GameActions.Move, Once(dice), new
     {
-        // C5.1, D3.12: facing south-east, the PzKpfw IIIH turns its turret two hexspines to north-east (T: +2), its hull unmoved; colored 1
-        // below white 3 strikes the T-34's turret, facing the firer with its side (AF 6): TK 6, and a TK DR of 6 Shocks it (C7.7). Its colored
-        // 1 is within ROF 2, the turn not lowering a vehicle's ROF.
-        await Tanks(germanFacing: "south-east");
+        unitIds = units,
+        to = at,
+        smoke = target,
+        smokeBy = by
+    });
+
+    [Fact]
+    public async Task ALightMortarHitsTheAreaAndItsSquadStillFiresItsInherentFp()
+    {
+        // C3.33, C3.331, B13.3 (R9.2, R9.3): the German squad's 5cm mortar in B10 fires at the Russian squad in woods B6, 4 hexes: TH# 7 (red
+        // Area row), no TEM on the To Hit DR; the hit attacks on the 2 column with -1 for Air Bursts. The colored 2 keeps ROF 3; the squad is
+        // marked Prep Fire but, its mortar being its one SW, still fires its inherent FP (A7.351).
+        await Setup("german", 7, 1942, Squad("g1", "bd01:B10:0", "german"), Mortar("de-mtr", "attacker-light-mortar", "g1", "german"), Squad("r1", "bd01:B6:0", "russian"));
         await Advance();
         var before = Revision;
-        Committed(await FireAt("de-tank", "bd01:B8:0", "ru-tank", "ap", 1, 3, 3, 3));
+        Committed(await Shoot("de-mtr", "bd01:B6:0", null, null, 2, 3, 5, 6));
+        var facts = LastFacts(before);
         var shot = LastShot(before);
-        Assert.Contains(shot.ToHit!.Drm, item => item.Name == "case-a:2" && item.Value == 2);
-        Assert.Equal(("turret", OrdnanceKill.Shock), (shot.Kill!.HitLocation, shot.Kill.Result));
+        Assert.Equal((OrdnanceTargetTypes.Area, 4, 7), (facts.TargetType, facts.Range, shot.ToHit!.ModifiedToHit));
+        Assert.True(shot.AreaTargets!.Single().Hit);
+        Assert.Contains(shot.Hit!.Arithmetic!.Drm, item => item.Name == "air-burst" && item.Value == -1);
+        Assert.Equal(2, shot.Hit.Arithmetic.ColumnFp);
         Assert.True(shot.Gun!.RateOfFireKept);
-
-        // C6.5: the tank keeps its Acquisition of the target for its next shot (table player, item 4).
-        Assert.Contains(Current.Acquisitions, item => item.Gun == "de-tank" && item.Level == -1);
-        Assert.Equal(Units.Documents.UnitFacing.NorthEast, LiveOrdnance.TurretFacing(Current, Current.Unit("de-tank")!));
-        Assert.Equal(Units.Documents.UnitFacing.SouthEast, ((MapPosition)Current.Unit("de-tank")!.Position).Facing);
-        var shocked = Current.Unit("ru-tank")!;
-        Assert.True(Is(shocked, Conditions.Shocked) && Is(shocked, Conditions.ButtonedUp));
-
-        // The Russian RPh: the Shocked T-34 rolls before the phase ends; a 3 makes it an Unconfirmed Kill (C7.42).
-        await Advance(7);
-        Assert.Equal(("rph", "russian"), (Current.Phase, Current.PhasingSide));
-        Refused(await Do(GameActions.AdvancePhase, NoRoll(), new
-        {
-        }), "play.shock-recovery-pending");
-        Committed(await Do(GameActions.RecoverShock, Once(3), new
-        {
-            vehicleId = "ru-tank"
-        }));
-        Assert.True(Is(Current.Unit("ru-tank")!, Conditions.UnconfirmedKill) && !Is(Current.Unit("ru-tank")!, Conditions.Shocked));
-        Refused(await Do(GameActions.RecoverShock, Once(1), new
-        {
-            vehicleId = "ru-tank"
-        }), "play.shock-vehicle");
-
-        // An Unconfirmed Kill is still Shocked (C7.42): it does not fire or move (table player, item 1); in the next RPh a 5 wrecks it, with
-        // no crew.
-        await Advance();
-        Refused(await FireAt("ru-tank", "bd01:B10:0", "de-tank", "ap"), "vehicle-fire-outside");
-        await Advance();
-        Assert.Equal("mph", Current.Phase);
-        Refused(await Step("ru-tank", "start"), "Unconfirmed Kill");
-        await Advance(6);
-        Committed(await Do(GameActions.RecoverShock, Once(5), new
-        {
-            vehicleId = "ru-tank"
-        }));
-        Assert.Equal(InstanceStatus.Wrecked, Current.Unit("ru-tank")!.Status);
-        Assert.DoesNotContain(Current.Units, unit => unit.Kind == "asl:crew" && unit.Side == "russian");
+        Assert.True(Is(Current.Unit("g1")!, Conditions.PrepFire));
+        Assert.Contains(Current.SupportWeaponUses, item => item.Unit == "g1" && item.Weapon == "de-mtr");
+        Committed(await Fire(G1, "bd01:B6:0", 6, 6));
+        Assert.Empty(Current.SupportWeaponUses);
         Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
     }
 
     [Fact]
-    public async Task ApcrAboveItsDepletionNumberIsNotFiredAndRunsOut()
+    public async Task ASpottedMortarFiresBeyondItsOwnLosAndKeepsItsSpotter()
     {
-        // C8.9 (R7.6): the PzKpfw IIIH's APCR is A5 in 1942; an Original 6 finds none: nothing fired, no marker, and none for the rest of
-        // the scenario; AP may still fire.
-        await Tanks();
+        // C9.3, C9.31 (R9.4): from B10, with no LOS of its own, the mortar fires at B6 along the LOS of the HS in adjacent B9: +2 and ROF 2. The HS
+        // loses its fire for the phase; another unit may not spot for the mortar while the HS is Good Order.
+        await Setup("german", 7, 1942, Squad("g1", "bd01:B10:0", "german"), Mortar("de-mtr", "attacker-light-mortar", "g1", "german"),
+            Unit("g2", "asl:half-squad", "attacker-half-squad", "bd01:B9:0", "german"), Squad("g3", "bd01:B9:0", "german"), Squad("r1", "bd01:B6:0", "russian"));
+        los.Blocked.Add(At("bd01:B10:0"));
         await Advance();
+        Refused(await Shoot("de-mtr", "bd01:B6:0", null, null, 5, 6), "play.");
         var before = Revision;
-        Committed(await FireAt("de-tank", "bd01:B8:0", "ru-tank", "apcr", 4, 2));
-        Assert.Equal("none", LastShot(before).AmmunitionUse);
-        Assert.Contains(Current.DepletedAmmunition, item => item.Gun == "de-tank" && item.Ammunition == "apcr");
-        Assert.False(Is(Current.Unit("de-tank")!, Conditions.PrepFire));
-        Refused(await FireAt("de-tank", "bd01:B8:0", "ru-tank", "apcr"), "ammunition-depleted");
-        Committed(await FireAt("de-tank", "bd01:B8:0", "ru-tank", "ap", 6, 5));
-        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
-    }
-
-    [Fact]
-    public async Task SpecialAmmunitionNeedsAScenarioYear()
-    {
-        // R7.6: with no scenario year, APCR is refused.
-        await Tanks(year: null);
-        await Advance();
-        Refused(await FireAt("de-tank", "bd01:B8:0", "ru-tank", "apcr"), "ammunition-unavailable");
-    }
-
-    [Fact]
-    public async Task AnEliminatedTanksCrewMaySurvive()
-    {
-        // D5.6: a TK DR of 5 below the TK 6 eliminates the T-34 (CS# 5); a Crew Survival DR of 4 places a Russian crew beneath the wreck.
-        await Tanks();
-        await Advance();
-        Committed(await FireAt("de-tank", "bd01:B8:0", "ru-tank", "ap", 4, 2, 2, 3, 2, 2));
-        Assert.Equal(InstanceStatus.Wrecked, Current.Unit("ru-tank")!.Status);
-        var crew = Assert.Single(Current.Units, unit => unit.Kind == "asl:crew" && unit.Side == "russian");
-        Assert.Equal(At("bd01:B8:0"), Current.Location(crew.Id)!.Location);
-        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
-    }
-
-    [Fact]
-    public async Task AnImmobilizedTanksCrewMayAbandonIt()
-    {
-        // D5.5: a TK DR equal to the TK immobilizes the hull; the crew's TC (Elite morale 8) fails on 11 and the crew Abandons it.
-        await Tanks();
-        await Advance();
-        Committed(await FireAt("de-tank", "bd01:B8:0", "ru-tank", "ap", 4, 2, 3, 3, 5, 6));
-        var abandoned = Current.Unit("ru-tank")!;
-        Assert.True(Is(abandoned, Conditions.Immobilized) && Is(abandoned, Conditions.Abandoned));
-        Assert.Single(Current.Units, unit => unit.Kind == "asl:crew" && unit.Side == "russian" && unit.Status == InstanceStatus.Active);
-        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
-    }
-
-    [Fact]
-    public async Task AVehicleInTheTargetLocationMustBeNamedAndMustBeAnEnemy()
-    {
-        // C3.31 (R7.2): a Location holding a vehicle is fired at on the Vehicle Target Type, naming it; a friendly vehicle is no target.
-        await Tanks(others: [Vehicle("de-t", "attacker-truck", "bd01:A8:0", "german", "east")]);
-        await Advance();
-        Refused(await FireAt("de-tank", "bd01:B8:0", null, null), "play.ordnance-vehicle");
-        Refused(await FireAt("de-tank", "bd01:A8:0", "de-t", "ap"), "play.ordnance-vehicle-target");
-    }
-
-    [Fact]
-    public async Task AClosedToppedTanksCrewIsButtonedUpUnlessExposed()
-    {
-        // D5.2 (R7.11): a CT AFV is BU by default: Case I +1; exposed, its RST MA may not fire (D1.321).
-        await Tanks();
-        Assert.False(LiveFire.CrewExposed(Current.Unit("ru-tank")!));
-        await Advance();
-        var before = Revision;
-        Committed(await FireAt("de-tank", "bd01:B8:0", "ru-tank", "ap", 6, 5));
-        Assert.Contains(LastShot(before).ToHit!.Drm, item => item.Name == "case-i" && item.Value == 1);
-    }
-
-    [Fact]
-    public async Task AnAbandonedTankDoesNotFire()
-    {
-        // D5.41 (table player, item 2): an Abandoned AFV has no crew to fire its MA.
-        await Setup("german", 7, 1942, Vehicle("de-tank", "attacker-tank", "bd01:B10:0", "german", "north-east", Conditions.Abandoned),
-            Vehicle("ru-tank", "defender-tank", "bd01:B8:0", "russian", "east"));
-        await Advance();
-        Refused(await FireAt("de-tank", "bd01:B8:0", "ru-tank", "ap"), "play.ordnance-abandoned");
-    }
-
-    [Fact]
-    public async Task AConcealedTankThatFiresLosesItsQuestionMark()
-    {
-        // A12.14 (table player, item 3): the tank in grain in July fires and loses its "?".
-        boards = new InMemoryBoardCatalog([Board01Fixture.Handle(changed: ("B10", "Grain"))]);
-        await Setup("german", 7, 1942, Vehicle("de-tank", "attacker-tank", "bd01:B10:0", "german", "north-east", Conditions.Concealed),
-            Vehicle("ru-tank", "defender-tank", "bd01:B8:0", "russian", "east"));
-        Assert.True(Is(Current.Unit("de-tank")!, Conditions.Concealed));
-        await Advance();
-        Committed(await FireAt("de-tank", "bd01:B8:0", "ru-tank", "ap", 6, 5));
-        Assert.False(Is(Current.Unit("de-tank")!, Conditions.Concealed));
-        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
-    }
-
-    [Fact]
-    public async Task AMalfunctionOnMissingApcrCountsAsFire()
-    {
-        // C8.9 (table player, item 6): an Original 12 finds no APCR above its Depletion Number, but the MA malfunctions (B# 12), and the tank
-        // has fired.
-        await Tanks();
-        await Advance();
-        var before = Revision;
-        Committed(await FireAt("de-tank", "bd01:B8:0", "ru-tank", "apcr", 6, 6));
+        Committed(await Shoot("de-mtr", "bd01:B6:0", "g2", null, 2, 6));
         var shot = LastShot(before);
-        Assert.Equal(("none", true), (shot.AmmunitionUse, shot.Gun!.Malfunctioned));
-        var tank = Current.Unit("de-tank")!;
-        Assert.True(Is(tank, Conditions.Malfunctioned) && Is(tank, Conditions.PrepFire));
-        Assert.Contains(Current.DepletedAmmunition, item => item.Gun == "de-tank" && item.Ammunition == "apcr");
+        Assert.Contains(shot.ToHit!.Drm, item => item.Name == "spotted" && item.Value == 2);
+        Assert.Equal(2, shot.Gun!.RateOfFire);
+        Assert.Contains(Current.MortarSpotters, item => item.Gun == "de-mtr" && item.Spotter == "g2");
+        Assert.True(Is(Current.Unit("g2")!, Conditions.PrepFire));
+        Refused(await Shoot("de-mtr", "bd01:B6:0", "g3", null, 2, 6), "play.ordnance-spotter-kept");
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
+    public async Task AMortarKeepsItsMinimumRangeAndDoesNotFireFromABuildingOrAfterMoving()
+    {
+        // C9.4: not at 1 hex (minimum 2); B23.423: not from the wooden building C7; A4.41: not in the AFPh after it moved.
+        await Setup("german", 7, 1942, Squad("g1", "bd01:B10:0", "german"), Mortar("de-mtr", "attacker-light-mortar", "g1", "german"),
+            Squad("g2", "bd01:C7:0", "german"), Mortar("de-mtr2", "attacker-light-mortar", "g2", "german"), Squad("r1", "bd01:B9:0", "russian"), Squad("r2", "bd01:B4:0", "russian"));
+        await Advance();
+        Refused(await Shoot("de-mtr", "bd01:B9:0", null, null, 5, 6), "out-of-range");
+        Refused(await Shoot("de-mtr2", "bd01:B4:0", null, null, 5, 6), "play.ordnance-mortar-building");
+        await Advance();
+        Committed(await Move(G1, "bd01:C10:0"));
+        await Pass();
+        await EndMove();
+        await Advance(2);
+        Assert.Equal("afph", Current.Phase);
+        Refused(await Shoot("de-mtr", "bd01:B4:0", null, null, 5, 6), "play.ordnance-mortar-moved");
+    }
+
+    [Fact]
+    public async Task SmokeGrenadesHinderDefensiveFireAndLeaveAtTheEndOfTheMph()
+    {
+        // A24.1, A24.2, A24.8 (R9.5, R9.6): the German 4-6-7 in B8 places SMOKE there on a dr of 1 for 1 MF; the Russian squad in B10 fires at it
+        // with +2 Hindrance and no FFMO. A squad entering B8 pays one more MF. The counter leaves at the end of the MPh.
+        await Setup("german", 7, 1942, Squad("g1", "bd01:A8:0", "german"), Squad("g2", "bd01:A9:0", "german"), Squad("r1", "bd01:B10:0", "russian"));
+        await Advance(2);
+        Committed(await Move(G1, "bd01:B8:0"));
+        await Pass();
+        Committed(await Smoke(G1, "bd01:B8:0", "g1", "bd01:B8:0", 1));
+        Assert.Single(Current.Entities, item => item.Kind == "asl:smoke" && item.Status == InstanceStatus.Active);
+        Assert.Equal(G1, Current.SmokeAttempts);
+        var before = Revision;
+        Committed(await Fire(R1, "bd01:B8:0", 6, 6));
+        var record = LastFire(before);
+        Assert.True(HasDrm(record, "los-hindrance", 2));
+        Assert.False(HasDrm(record, "ffmo", -1));
+        await Pass();
+        Refused(await Smoke(G1, "bd01:B8:0", "g1", "bd01:B8:0", 1), "play.smoke-once");
+        await EndMove();
+        var entering = Revision;
+        Committed(await Move(G2, "bd01:B8:0"));
+        Assert.Equal(4, Since(entering).Select(item => item.Payload).OfType<MovementStepped>().Single().HalfMf);
+        await Pass();
+        await EndMove();
+        await Advance();
+        Assert.DoesNotContain(Current.Entities, item => item.Kind == "asl:smoke" && item.Status == InstanceStatus.Active);
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
+    public async Task ASmokeDrOf6EndsThePlacingSquadsMph()
+    {
+        // A24.1 (R9.5): a 6 places nothing, costs 2 MF for the ADJACENT Location, and ends the squad's MPh once the DEFENDER passes.
+        await Setup("german", 7, 1942, Squad("g1", "bd01:A8:0", "german"), Squad("r1", "bd01:B4:0", "russian"));
+        await Advance(2);
+        var before = Revision;
+        Committed(await Smoke(G1, "bd01:A8:0", "g1", "bd01:B8:0", 6));
+        Assert.DoesNotContain(Current.Entities, item => item.Kind == "asl:smoke");
+        Assert.Equal(4, Since(before).Select(item => item.Payload).OfType<MovementStepped>().Single().HalfMf);
+        await Pass();
+        Assert.True(Current.Unit("g1")!.MovementEnded);
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
+    public async Task APanzerfaustCheckGivesAShotThatBurnsAT34AndCountsAgainstTheUsageLimit()
+    {
+        // C13.31 to C13.34 (R9.7, R9.8): July 1944, the German squad in B9 checks 2, then hits the T-34 in B7 at TH# 6 (10 less 2 per hex) with a
+        // hull hit (colored 3, white 2); TK# 31 less AF 11 or 6 is at least 20, and a 7 burns it. One squad set up allows one shot in 1944.
+        await Setup("german", 7, 1944, Squad("g1", "bd01:B9:0", "german"), Vehicle("ru-tank", "defender-tank", "bd01:B7:0", "russian", "east"));
+        await Advance();
+        var before = Revision;
+        Committed(await FireAt("g1:pf", "bd01:B7:0", "ru-tank", null, 2, 3, 2, 3, 4));
+        var shot = LastShot(before);
+        Assert.Equal((OrdnancePanzerfaustCheck.Shot, 10, 6), (shot.PanzerfaustCheck!.Outcome, shot.ToHit!.BasicToHit, shot.ToHit.ModifiedToHit));
+        Assert.Equal(OrdnanceKill.Burn, shot.Kill!.Result);
+        Assert.Equal(InstanceStatus.Wrecked, Current.Unit("ru-tank")!.Status);
+        Assert.Equal((1, 2), (Current.PanzerfaustShots["german"], Current.SetupHalfSquads["german"]));
+        Assert.Equal(1, LiveOrdnance.PanzerfaustAllowance(Current, "german"));
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
+    public async Task APanzerfaustCheckOf6PinsTheUnit()
+    {
+        // C13.31 (R9.7): an Original 6 pins the squad and gives no shot.
+        await Setup("german", 7, 1944, Squad("g1", "bd01:B9:0", "german"), Vehicle("ru-tank", "defender-tank", "bd01:B7:0", "russian", "east"));
+        await Advance();
+        var before = Revision;
+        Committed(await FireAt("g1:pf", "bd01:B7:0", "ru-tank", null, 6));
+        var shot = LastShot(before);
+        Assert.Equal(OrdnancePanzerfaustCheck.Pinned, shot.PanzerfaustCheck!.Outcome);
+        Assert.Null(shot.ToHit);
+        Assert.True(Is(Current.Unit("g1")!, Conditions.Pinned));
+        Assert.False(Current.PanzerfaustShots.ContainsKey("german"));
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
+    public async Task NoPanzerfaustBeforeOctober1943()
+    {
+        // C13.3 (R9.7): PF are not available before October 1943.
+        await Setup("german", 9, 1943, Squad("g1", "bd01:B9:0", "german"), Vehicle("ru-tank", "defender-tank", "bd01:B8:0", "russian", "east"));
+        await Advance();
+        Refused(await FireAt("g1:pf", "bd01:B8:0", "ru-tank", null, 2, 3, 2, 3, 4), "panzerfaust-date-outside");
+    }
+
+    [Fact]
+    public async Task AMortarKeepsItsAreaAcquisitionForItsNextShot()
+    {
+        // C6.521, C9.2 (table player, pass 9): the first shot acquires B6; the ROF shot takes Case N -1 for the unit there.
+        await Setup("german", 7, 1942, Squad("g1", "bd01:B10:0", "german"), Mortar("de-mtr", "attacker-light-mortar", "g1", "german"), Squad("r1", "bd01:B6:0", "russian"));
+        await Advance();
+        Committed(await Shoot("de-mtr", "bd01:B6:0", null, null, 2, 6));
+        Assert.Contains(Current.Acquisitions, item => item.Gun == "de-mtr" && item.Location == At("bd01:B6:0") && item.Level == -1);
+        var before = Revision;
+        Committed(await Shoot("de-mtr", "bd01:B6:0", null, null, 2, 6, 6, 6));
+        Assert.Contains(LastShot(before).AreaTargets!.Single().Drm, item => item.Name == "case-n" && item.Value == -1);
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
+    public async Task ASquadThatFiredEarlierOrWithAMgUsesNoSecondSw()
+    {
+        // A7.351 (table player, pass 9): a squad that fired its inherent FP with its LMG fires no mortar; one that fired its mortar fires its inherent
+        // FP without its LMG; a squad that Prep Fired does not fire its mortar in the AFPh.
+        await Setup("german", 7, 1942, Squad("g1", "bd01:B10:0", "german"), Mortar("de-mtr", "attacker-light-mortar", "g1", "german"), Weapon("de-lmg", "attacker-lmg", "g1", "german"),
+            Squad("g2", "bd01:B9:0", "german"), Mortar("de-mtr2", "attacker-light-mortar", "g2", "german"), Weapon("de-lmg2", "attacker-lmg", "g2", "german"), Squad("r1", "bd01:B6:0", "russian"));
+        await Advance();
+        Committed(await Do(GameActions.Fire, Once(6, 6), new
+        {
+            firers = G1,
+            target = "bd01:B6:0",
+            weapons = new Dictionary<string, string[]> { ["g1"] = ["de-lmg"] }
+        }));
+        Refused(await Shoot("de-mtr", "bd01:B6:0", null, null, 5, 6), "play.sw-limit");
+        Committed(await Shoot("de-mtr2", "bd01:B6:0", null, null, 5, 6));
+        Refused(await Do(GameActions.Fire, Once(6, 6), new
+        {
+            firers = G2,
+            target = "bd01:B6:0",
+            weapons = new Dictionary<string, string[]> { ["g2"] = ["de-lmg2"] }
+        }), "play.fire-sw-limit");
+        await Advance();
+        await Advance(2);
+        Assert.Equal("afph", Current.Phase);
+        Refused(await Shoot("de-mtr", "bd01:B6:0", null, null, 5, 6), "play.sw-fired");
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
+    public async Task APanzerfaustOriginal12ReducesTheSquadToAHsThatHasFired()
+    {
+        // C13.36 (table player, pass 9): the HS the squad becomes carries its Prep Fire counter.
+        await Setup("german", 7, 1944, Squad("g1", "bd01:B9:0", "german"), Vehicle("ru-tank", "defender-tank", "bd01:B7:0", "russian", "east"));
+        await Advance();
+        Committed(await FireAt("g1:pf", "bd01:B7:0", "ru-tank", null, 1, 6, 6));
+        var half = Current.Units.Single(unit => unit.Status == InstanceStatus.Active && unit.Kind == "asl:half-squad");
+        Assert.True(Is(half, Conditions.PrepFire));
         Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
     }
 }

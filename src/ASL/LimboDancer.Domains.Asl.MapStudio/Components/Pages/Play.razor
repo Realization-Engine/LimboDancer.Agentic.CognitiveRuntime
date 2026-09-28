@@ -374,6 +374,21 @@ else if (state is not null)
                 <label title="C10.3: the crew pushes its Gun at double the MF, with a Manhandling DR against its M#; uncheck to walk away and abandon the Gun."><input id="move-push" type="checkbox" checked="@movePush" @onchange="@(args => movePush = args.Value is true)" /> push @pushable.Id (unchecked: abandon it)</label>
             }
             <button id="propose-move" disabled="@(moveUnits.Count == 0 || moveTo.Trim().Length == 0)" @onclick="ProposeMove">Propose: move</button>
+            @if (SmokePlacers.Any())
+            {
+                <label title="A24.1: a squad with a Smoke Placement Exponent, once per MPh, places SMOKE grenades in its Location (1 MF) or an ADJACENT one (2 MF) on a dr at most its exponent; a 6 ends its MPh. The counter (+2 Hindrance, +1 more out of it) leaves at the end of the MPh.">
+                    SMOKE by
+                    <select id="smoke-by" value="@smokeBy" @onchange="@(args => smokeBy = args.Value as string ?? string.Empty)">
+                        <option value="">choose</option>
+                        @foreach (var placer in SmokePlacers)
+                        {
+                            <option value="@placer.Id">@placer.Id</option>
+                        }
+                    </select>
+                </label>
+                <label>in <input id="smoke-at" value="@smokeAt" @onchange="@(args => smokeAt = args.Value as string ?? string.Empty)" size="12" /></label>
+                <button id="propose-smoke" disabled="@(moveUnits.Count == 0 || smokeBy.Length == 0 || smokeAt.Trim().Length == 0)" @onclick="ProposeSmoke">Propose: SMOKE grenades</button>
+            }
             <button id="propose-pass" disabled="@(state.Movement is not { WindowOpen: true })" @onclick='@(() => ProposeSimple(GameActions.PassFire, "pass"))'>Propose: the DEFENDER passes</button>
             <button id="propose-end-move" disabled="@(state.Movement is not { WindowOpen: false })" @onclick="ProposeEndMove">Propose: end the move@(EndingSome ? " of the checked units" : "")</button>
         </div>
@@ -733,7 +748,7 @@ else if (state is not null)
             <button id="propose-fire" disabled="@(fireFirers.Count == 0 || FireTarget.Length == 0)" @onclick="ProposeFire">Propose: fire</button>
             <button id="fire-clear" class="link" @onclick="ClearFire">clear</button>
         </div>
-        @if ((state.Phase is "pfph" or "afph" or "dfph" || (state.Phase == "mph" && state.Movement is { WindowOpen: true })) && (OrdnanceGuns(firing).Any() || OrdnanceTanks(firing).Any()))
+        @if ((state.Phase is "pfph" or "afph" or "dfph" || (state.Phase == "mph" && state.Movement is { WindowOpen: true })) && (OrdnanceGuns(firing).Any() || OrdnanceTanks(firing).Any() || PanzerfaustFirers(firing).Any()))
         {
             <h4>Ordnance</h4>
             <p class="muted" id="ordnance-help">
@@ -741,12 +756,14 @@ else if (state is not null)
                 one enemy vehicle there on the Vehicle Target Type with AP, APCR, HEAT, or HE (C3.31, C8.1). It turns its barrel or turret to bring the
                 target into its Covered Arc if it must, with the Case A DRM (C5.1). An Original colored dr at most its ROF lets it fire again this
                 phase (C2.24), and each shot acquires the Location for the next (C6.5). A hit on Infantry attacks every enemy unit there on the IFT
-                column of the HE FP (C.6); a hit on a vehicle strikes its turret or hull, and the To Kill DR decides its fate (C3.9, C7).
+                column of the HE FP (C.6); a hit on a vehicle strikes its turret or hull, and the To Kill DR decides its fate (C3.9, C7). A light
+                mortar fires on the Area Target Type at every unit of the hex, at half its HE FP, and may fire at a hex its Spotter in or next to its hex
+                sees (C3.33, C9.3). From October 1943 a German unit may make a PF Check to fire a Panzerfaust at an enemy AFV (C13.31).
             </p>
             <div class="toolbar">
                 <label>
                     Gun
-                    <select id="ordnance-gun" value="@ordnanceGun" @onchange="@(args => { ordnanceGun = args.Value as string ?? string.Empty; ordnanceAmmunition = OrdnanceAmmunitions.FirstOrDefault() ?? "ap"; })">
+                    <select id="ordnance-gun" value="@ordnanceGun" @onchange="@(args => { ordnanceGun = args.Value as string ?? string.Empty; ordnanceAmmunition = OrdnanceAmmunitions.FirstOrDefault() ?? "ap"; ordnanceSpotter = string.Empty; ordnanceDirector = string.Empty; })">
                         <option value="">choose</option>
                         @foreach (var gun in OrdnanceGuns(firing))
                         {
@@ -756,8 +773,38 @@ else if (state is not null)
                         {
                             <option value="@tank.Id">@TankLabel(tank)</option>
                         }
+                        @foreach (var faust in PanzerfaustFirers(firing))
+                        {
+                            <option value="@(faust.Id + ":pf")">@faust.Id: Panzerfaust (PF Check first; C13.31)</option>
+                        }
                     </select>
                 </label>
+                @if (state.Find(ordnanceGun) is EquipmentInstance { Kind: "asl:light-mortar" } || ordnanceGun.EndsWith(":pf", StringComparison.Ordinal))
+                {
+                    @if (!ordnanceGun.EndsWith(":pf", StringComparison.Ordinal))
+                    {
+                        <label title="C9.3: a Good Order unit in the mortar's hex or an adjacent one spots for it (+2, ROF one less), in the PFPh or DFPh; it keeps spotting while Good Order.">
+                            Spotter
+                            <select id="ordnance-spotter" value="@ordnanceSpotter" @onchange="@(args => ordnanceSpotter = args.Value as string ?? string.Empty)">
+                                <option value="">none</option>
+                                @foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == firing && !LiveFire.IsVehicle(unit)).OrderBy(unit => unit.Id, StringComparer.Ordinal))
+                                {
+                                    <option value="@unit.Id">@unit.Id (@state.Location(unit.Id)?.Location)</option>
+                                }
+                            </select>
+                        </label>
+                    }
+                    <label title="A7.531: a leader in the firer's Location adds his leadership modifier to the To Hit DR, as his direction for the phase.">
+                        Leader
+                        <select id="ordnance-director" value="@ordnanceDirector" @onchange="@(args => ordnanceDirector = args.Value as string ?? string.Empty)">
+                            <option value="">none</option>
+                            @foreach (var leader in state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == firing && unit.Kind == "asl:leader").OrderBy(unit => unit.Id, StringComparer.Ordinal))
+                            {
+                                <option value="@leader.Id">@leader.Id (@state.Location(leader.Id)?.Location)</option>
+                            }
+                        </select>
+                    </label>
+                }
                 <label>
                     Target
                     <select id="ordnance-target" value="@ordnanceTarget" @onchange="@(args => { ordnanceTarget = args.Value as string ?? string.Empty; ordnanceVehicle = string.Empty; })">
@@ -768,7 +815,21 @@ else if (state is not null)
                         }
                     </select>
                 </label>
-                @if (OrdnanceVehicleTargets(firing).Any())
+                @if (OrdnanceVehicleTargets(firing).Any() && ordnanceGun.EndsWith(":pf", StringComparison.Ordinal))
+                {
+                    <label>
+                        Vehicle
+                        <select id="ordnance-vehicle" value="@ordnanceVehicle" @onchange="@(args => ordnanceVehicle = args.Value as string ?? string.Empty)">
+                            <option value="">choose</option>
+                            @foreach (var vehicle in OrdnanceVehicleTargets(firing))
+                            {
+                                <option value="@vehicle.Id">@vehicle.Id (@vehicle.Definition?.Definition)</option>
+                            }
+                        </select>
+                    </label>
+                    <span class="muted" id="ordnance-pf-heat">HEAT (C13.34)</span>
+                }
+                else if (OrdnanceVehicleTargets(firing).Any() && state.Find(ordnanceGun) is not EquipmentInstance { Kind: "asl:light-mortar" })
                 {
                     <label>
                         Vehicle
@@ -790,10 +851,17 @@ else if (state is not null)
                         </select>
                     </label>
                 }
-                <label title="C5.6: once its normal ROF is used, a Gun may fire once more with +2 (Case F) and its B# two lower; never in the AFPh."><input id="ordnance-intensive" type="checkbox" checked="@ordnanceIntensive" @onchange="@(args => ordnanceIntensive = args.Value is true)" /> Intensive Fire</label>
+                @if (state.Find(ordnanceGun) is not EquipmentInstance { Kind: "asl:light-mortar" } && !ordnanceGun.EndsWith(":pf", StringComparison.Ordinal))
+                {
+                    <label title="C5.6: once its normal ROF is used, a Gun may fire once more with +2 (Case F) and its B# two lower; never in the AFPh."><input id="ordnance-intensive" type="checkbox" checked="@ordnanceIntensive" @onchange="@(args => ordnanceIntensive = args.Value is true)" /> Intensive Fire</label>
+                }
+                @if (PanzerfaustFirers(firing).Any())
+                {
+                    <span class="muted" id="ordnance-pf-usage">PF shots taken @(state.PanzerfaustShots.GetValueOrDefault(firing)) of @LiveOrdnance.PanzerfaustAllowance(state, firing) (C13.31)</span>
+                }
                 <button id="propose-ordnance" disabled="@(ordnanceGun.Length == 0 || ordnanceTarget.Length == 0)" @onclick="ProposeOrdnance">Propose: fire</button>
             </div>
-            @if (state.Phase != "mph" && state.Find(ordnanceGun) is EquipmentInstance chosenGun)
+            @if (state.Phase != "mph" && state.Find(ordnanceGun) is EquipmentInstance { Kind: "asl:gun" } chosenGun)
             {
                 <div class="toolbar">
                     <label title="C3.22: the Gun changes its CA without firing, and fires no more this phase; in the PFPh neither it nor its crew moves this Player Turn.">
@@ -1809,9 +1877,20 @@ else if (state is not null)
 
     /// <summary>The firing side's Guns that its crews man (A21.13), a malfunctioned one shown as such (C2.28; Gun repair is not built).</summary>
     private IEnumerable<EquipmentInstance> OrdnanceGuns(string side) => state is null ? []
-        : state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Kind == "asl:gun" && item.Holding is { Role: HoldingRole.Manned } holding
-                && state.Unit(holding.Holder)?.Side == side)
+        : state.Equipment.Where(item => item.Status == InstanceStatus.Active
+                && ((item.Kind == "asl:gun" && item.Holding is { Role: HoldingRole.Manned }) || (item.Kind == "asl:light-mortar" && item.Holding is { Role: HoldingRole.Possessed }))
+                && state.Unit(item.Holding!.Holder)?.Side == side)
             .OrderBy(item => item.Id, StringComparer.Ordinal);
+
+    private string ordnanceSpotter = string.Empty;
+    private string ordnanceDirector = string.Empty;
+
+    /// <summary>The German Infantry that may make a PF Check from October 1943 (C13.3, C13.31); the Ordnance package decides the rest.</summary>
+    private IEnumerable<UnitInstance> PanzerfaustFirers(string side) => state is null || state.Side(side)?.Nationality != "german"
+        || state.ScenarioYear is not { } year || year < 1943 || (year == 1943 && state.ScenarioMonth < 10) ? []
+        : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && unit.Position is MapPosition
+                && unit.Kind is "asl:squad" or "asl:half-squad" or "asl:crew" or "asl:leader" or "asl:hero")
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal);
 
     /// <summary>A Gun as a player reads it: its facing, its fire this phase and Player Turn, its Acquisition, and its crew's state.</summary>
     private string GunLabel(EquipmentInstance gun)
@@ -1823,7 +1902,8 @@ else if (state is not null)
         var crew = gun.Holding is { } holding ? state?.Unit(holding.Holder) : null;
         var crewState = crew is null ? "" : string.Concat(new[] { Conditions.Pinned, Conditions.Concealed, Conditions.Melee, Conditions.Broken }
             .Where(name => Marked(crew, name)).Select(name => ", crew " + name.Replace("asl:", "", StringComparison.Ordinal)));
-        return $"{gun.Id} ({gun.Definition?.Definition}, facing {facing}"
+        var spotter = state?.MortarSpotters.FirstOrDefault(item => item.Gun == gun.Id)?.Spotter;
+        return $"{gun.Id} ({gun.Definition?.Definition}" + (gun.Kind == "asl:light-mortar" ? $", with {crew?.Id}" + (spotter is null ? "" : $", Spotter {spotter}") : $", facing {facing}")
             + (Marked(gun, Conditions.Malfunctioned) ? ", malfunctioned: Gun repair is not built" : "")
             + (shots is null ? Marked(gun, Conditions.PrepFire) || Marked(gun, Conditions.FinalFire) ? ", fired this Player Turn" : ""
                 : shots.RateOfFireKept ? $", {shots.Shots} shot(s), may fire again" : ", fired")
@@ -1875,14 +1955,22 @@ else if (state is not null)
         {
             ["gameId"] = gameId, ["attemptId"] = Attempt("gun"), ["expectedRevision"] = (long)history!.Events.Count, ["gunId"] = ordnanceGun, ["target"] = ordnanceTarget,
         };
-        if (ordnanceIntensive)
+        if (ordnanceIntensive && state?.Find(ordnanceGun) is not EquipmentInstance { Kind: "asl:light-mortar" } && !ordnanceGun.EndsWith(":pf", StringComparison.Ordinal))
         {
             arguments["intensive"] = true;
+        }
+        if (ordnanceSpotter.Length > 0 && !ordnanceGun.EndsWith(":pf", StringComparison.Ordinal))
+        {
+            arguments["spotter"] = ordnanceSpotter;
+        }
+        if (ordnanceDirector.Length > 0)
+        {
+            arguments["director"] = ordnanceDirector;
         }
         if (ordnanceVehicle.Length > 0)
         {
             arguments["targetVehicle"] = ordnanceVehicle;
-            arguments["ammunition"] = ordnanceAmmunition;
+            arguments["ammunition"] = ordnanceGun.EndsWith(":pf", StringComparison.Ordinal) ? "heat" : ordnanceAmmunition;
         }
 
         return Propose(GameActions.FireOrdnance, JsonSerializer.SerializeToElement(arguments));
@@ -1904,6 +1992,14 @@ else if (state is not null)
             var records = new List<(string, string)>();
             foreach (var item in history.Events.Where(item => item.IsVisibleTo(Viewer)))
             {
+                if (item.Payload is OrdnanceFired { } checking && checking.Resolution.Deserialize<OrdnanceResolution>(LiveFire.Json) is { ToHit: null, PanzerfaustCheck: { } failed })
+                {
+                    // C13.31 (ruling R9.7): a PF Check that gave no shot.
+                    records.Add((item.EventId, $"{checking.Crew} makes a PF Check: dr {failed.Dr}{ModifierText(failed.Drm)} = {failed.FinalDr}: "
+                        + (failed.Outcome == OrdnancePanzerfaustCheck.NoShot ? "no shot (C13.31)" : $"no PF in position, and {failed.Outcome} (C13.31)")));
+                    continue;
+                }
+
                 if (item.Payload is not OrdnanceFired fired || fired.Resolution.Deserialize<OrdnanceResolution>(LiveFire.Json) is not { ToHit: { } hit, Gun: { } gun } resolution)
                 {
                     continue;
@@ -1914,14 +2010,27 @@ else if (state is not null)
                 var outcome = hit.CriticalHit ? "Critical Hit" : hit.Hit ? "hit" : "miss";
                 var shot = fired.Facts.Deserialize<OrdnanceShot>(LiveFire.Json);
                 var aim = shot?.VehicleTarget is { } aimed ? $"{(shot.Ammunition ?? "ap").ToUpperInvariant()} at {aimed.VehicleId} in {fired.Target} (hull {aimed.HullFacing}"
-                    + (aimed.TurretFacing is { } turretFacing ? $", turret {turretFacing}" : "") + " toward the firer)" : $"HE at {fired.Target}";
+                    + (aimed.TurretFacing is { } turretFacing ? $", turret {turretFacing}" : "") + " toward the firer)"
+                    : shot?.TargetType == OrdnanceTargetTypes.Area ? $"HE at {fired.Target} on the Area Target Type" + (shot.Spotter is { } spotter ? $", spotted by {spotter.UnitId}" : "")
+                    : $"HE at {fired.Target}";
+                var check = resolution.PanzerfaustCheck is { } pf ? $"PF Check dr {pf.Dr}{ModifierText(pf.Drm)} = {pf.FinalDr}: a shot; " : "";
                 var parts = new List<string>
                 {
-                    $"{fired.Gun} fires {aim}"
+                    check + $"{fired.Gun} fires {aim}"
                         + (fired.Facing is { } facing ? $", turning to {UnitFacings.Name(facing)}" : "")
                         + $": Basic TH# {hit.BasicToHit} ({hit.Color}){modifications} = {hit.ModifiedToHit}; DR {dice} = {hit.OriginalDr}{ModifierText(hit.Drm)} = Final DR {hit.FinalDr}"
                         + (hit.SubsequentDr is { } dr ? $", subsequent dr {dr}" : "") + (hit.Improbable ? " (Improbable Hit, C3.6)" : "") + $": {outcome}",
                 };
+                if (resolution.AreaTargets is { } judged)
+                {
+                    parts.Add("each unit: " + string.Join(", ", judged.Select(unit => $"{unit.UnitId} Final DR {unit.FinalDr}{ModifierText(unit.Drm)} {(unit.Hit ? "hit" : "missed")}")));
+                }
+
+                if (resolution.FirerEffect is { } firerEffect)
+                {
+                    parts.Add($"{fired.Crew}: {firerEffect} (C13.36)");
+                }
+
                 foreach (var (label, attack) in new[] { ("Critical Hit", resolution.CriticalHit), ("hit", resolution.Hit) })
                 {
                     if (attack?.Arithmetic is { } arithmetic)
@@ -2087,6 +2196,25 @@ else if (state is not null)
     /// <summary>The Gun the one checked mover mans, which it may push (C10.3).</summary>
     private EquipmentInstance? MovingGun => state is null || moveUnits.Count != 1 ? null
         : state.Equipment.FirstOrDefault(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Manned } holding && moveUnits.Contains(holding.Holder));
+
+    private string smokeBy = string.Empty;
+    private string smokeAt = string.Empty;
+
+    /// <summary>The checked movers that may attempt SMOKE grenades this MPh (A24.1): squads not yet tried; the planner reads their exponent.</summary>
+    private IEnumerable<UnitInstance> SmokePlacers => state is null ? []
+        : moveUnits.Select(id => state.Unit(id)).OfType<UnitInstance>().Where(unit => unit.Kind == "asl:squad" && !state.SmokeAttempts.Contains(unit.Id, StringComparer.Ordinal))
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal);
+
+    private Task ProposeSmoke()
+    {
+        var units = moveUnits.Order(StringComparer.Ordinal).ToArray();
+        var at = state?.Location(units[0])?.Location.ToString() ?? string.Empty;
+        return Propose(GameActions.Move, JsonSerializer.SerializeToElement(new Dictionary<string, object>
+        {
+            ["gameId"] = gameId, ["attemptId"] = Attempt("smoke"), ["expectedRevision"] = (long)history!.Events.Count, ["unitIds"] = units,
+            ["to"] = at, ["assault"] = moveAssault, ["doubleTime"] = moveDoubleTime, ["smoke"] = smokeAt.Trim(), ["smokeBy"] = smokeBy,
+        }));
+    }
 
     private Task ProposeMove()
     {

@@ -39,12 +39,36 @@ public static class LiveOrdnance
         return LiveFire.IsVehicle(vehicle) && vehicle.Definition is { } definition && Reference.Value.Guns.TryGetValue(definition.Definition, out var gun) && gun.GunType == "vehicle";
     }
 
+    /// <summary>The id a PF shot is recorded under (C13.3; ruling R9.7): its firer's, with <c>:pf</c>.</summary>
+    public static string PanzerfaustId(string unit) => unit + ":pf";
+
+    /// <summary>
+    /// The PF shots a side may take in a scenario (C13.31; ruling R9.7): its squad equivalents at setup before 1944, one and a half times as many
+    /// (FRD) in 1944, and twice as many in 1945.
+    /// </summary>
+    public static int PanzerfaustAllowance(GameState state, string side)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        var halves = state.SetupHalfSquads.GetValueOrDefault(side);
+        return state.ScenarioYear switch
+        {
+            >= 1945 => halves,
+            1944 => halves * 3 / 4,
+            _ => halves / 2,
+        };
+    }
+
     /// <summary>The state's part of a shot, or the reason the Gun cannot fire from this state.</summary>
     public static (OrdnanceShot? Shot, string? Reason) FromState(GameState state, string gunId, BoardLocation target, string? targetVehicle = null,
-        string? ammunition = null, bool intensive = false)
+        string? ammunition = null, bool intensive = false, string? spotter = null, string? director = null)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(target);
+        if (gunId.EndsWith(":pf", StringComparison.Ordinal))
+        {
+            return Panzerfaust(state, gunId, target, targetVehicle, director);
+        }
+
         if (state.Catalog.Catalog != LiveFire.Catalog || state.Catalog.Version != LiveFire.CatalogVersion)
         {
             return (null, $"play.ordnance-catalog: the Ordnance package reads {LiveFire.Catalog}@{LiveFire.CatalogVersion}, and this game uses {state.Catalog.Catalog}@{state.Catalog.Version}");
@@ -81,6 +105,23 @@ public static class LiveOrdnance
         {
             gun = piece;
             crew = holder;
+        }
+        else if (state.Find(gunId) is EquipmentInstance { Status: InstanceStatus.Active, Kind: "asl:light-mortar", Definition: not null } lightMortar
+            && lightMortar.Holding is { Role: HoldingRole.Possessed } possession && state.Unit(possession.Holder) is { Status: InstanceStatus.Active, Definition: not null } possessor)
+        {
+            // C9.2 (ruling R9.2): a light mortar is fired by the unit possessing it; A4.41 (referee, pass 9): not in the AFPh after it moved.
+            if (phase == "AFPh" && state.MovedWeapons.Contains(lightMortar.Id, StringComparer.Ordinal))
+            {
+                return (null, $"play.ordnance-mortar-moved: {lightMortar.Id} moved in the MPh, so it does not fire in the AFPh (A4.41)");
+            }
+
+            if (SquadSupportRefusal(state, possessor, phase, false) is { } refusal)
+            {
+                return (null, refusal);
+            }
+
+            gun = lightMortar;
+            crew = possessor;
         }
         else
         {
@@ -121,9 +162,12 @@ public static class LiveOrdnance
             return (null, $"play.ordnance-vehicle-target: '{targetVehicle}' is not an active enemy vehicle in {target} (C3.31)");
         }
 
-        // C3.31: a Vehicle Target Type shot attacks only the named vehicle.
+        // C3.31: a Vehicle Target Type shot attacks only the named vehicle. C3.33 (ruling R9.3): a mortar's Area Target Type shot attacks every unit
+        // there, friendly ones too; C3.4: in the MPh only the moving units.
+        var mortar = gun.Kind == "asl:light-mortar";
         UnitInstance[] targets = vehicleTarget is not null ? [] : [.. state.At(target).OfType<UnitInstance>()
-            .Where(unit => unit.Status == InstanceStatus.Active && unit.Side != side && !Is(unit, Conditions.Captured) && (movers is null || movers.Contains(unit.Id)))
+            .Where(unit => unit.Status == InstanceStatus.Active && (unit.Side != side || mortar) && !LiveFire.IsVehicle(unit) && !Is(unit, Conditions.Captured)
+                && (movers is null || movers.Contains(unit.Id)))
             .OrderBy(unit => unit.Id, StringComparer.Ordinal)];
         if (targets.Any(unit => unit.Definition is null && unit.Kind != UnitKinds.Dummy))
         {
@@ -155,7 +199,9 @@ public static class LiveOrdnance
             // A7.352 (ruling R8.4): a crew that fired its inherent FP (a fire counter it did not get from its Gun) does not fire the Gun.
             new OrdnanceCrew(crew.Id, crew.Definition!.Definition, Is(crew, Conditions.Broken), Is(crew, Conditions.Pinned), Is(crew, Conditions.Berserk),
                 Is(crew, Conditions.Concealed) || Is(crew, Conditions.Hidden),
-                gun is EquipmentInstance && (LiveFire.Fired(crew) || Is(crew, Conditions.FirstFire)) && !state.GunCrewsFired.Contains(crew.Id, StringComparer.Ordinal))
+                // A7.351 (ruling R9.2): a squad fires a light mortar after its inherent FP; a HS, crew, or SMC does not.
+                gun is EquipmentInstance && (LiveFire.Fired(crew) || Is(crew, Conditions.FirstFire)) && !state.GunCrewsFired.Contains(crew.Id, StringComparer.Ordinal)
+                    && !(mortar && crew.Kind == "asl:squad"))
             {
                 Cx = Is(crew, Conditions.Cx) ? true : null,
             },
@@ -165,8 +211,27 @@ public static class LiveOrdnance
             ScenarioYear = vehicleTarget is not null || ammunition is not null ? state.ScenarioYear : null,
             IntensiveFire = intensive ? true : null,
             // C5.8 (ruling R8.8): a squad or HS manning a Gun is non-qualified.
-            NonQualified = gun is EquipmentInstance && crew.Kind is not "asl:crew" ? true : null,
+            NonQualified = gun is EquipmentInstance && crew.Kind is not "asl:crew" && !mortar ? true : null,
+            TargetType = mortar ? OrdnanceTargetTypes.Area : null,
         };
+        if (mortar)
+        {
+            var (supported, supportReason) = MortarSupport(state, gun.Id, crew, spotter, director, phase);
+            if (supported is null)
+            {
+                return (null, supportReason);
+            }
+
+            shot = shot with
+            {
+                Spotter = supported.Value.Spotter,
+                Director = supported.Value.Director,
+            };
+        }
+        else if (spotter is not null || director is not null)
+        {
+            return (null, "play.ordnance-support: only a light mortar has a Spotter or a directing leader (C9.3, A7.531)");
+        }
         if (phase == "MPh")
         {
             // C6.13, C6.16, C6.17: non-Assault Movement and the MF or MP spent in the Location (FRD); the Gun's shots there so far; the MP in the
@@ -203,22 +268,205 @@ public static class LiveOrdnance
 
         if (vehicleTarget is not null)
         {
-            // C6.1 Case J, C.8: a vehicle that entered a new hex or moved in Motion this Player Turn, or is in Motion, is moving; D5.6: a
-            // Stunned, Shocked, or Recalled crew adds one to Crew Survival. The Target Facings are the planner's map reads.
-            var inMotion = Is(vehicleTarget, Conditions.Motion);
             shot = shot with
             {
-                VehicleTarget = new OrdnanceVehicleTarget(vehicleTarget.Id, vehicleTarget.Definition?.Definition, null, null,
-                    inMotion || state.MovedVehicles.Contains(vehicleTarget.Id, StringComparer.Ordinal), inMotion,
-                    Is(vehicleTarget, Conditions.Concealed) || Is(vehicleTarget, Conditions.Hidden),
-                    Is(vehicleTarget, Conditions.Stunned) || Is(vehicleTarget, Conditions.Shocked) || Is(vehicleTarget, Conditions.UnconfirmedKill)
-                        || Is(vehicleTarget, Conditions.Recalled),
-                    // D5.5: a Stunned or Shocked crew takes no Immobilization TC, nor does an absent crew or one already immobilized.
-                    !Is(vehicleTarget, Conditions.Stunned) && !Is(vehicleTarget, Conditions.Shocked) && !Is(vehicleTarget, Conditions.UnconfirmedKill)
-                        && !Is(vehicleTarget, Conditions.Abandoned) && !Is(vehicleTarget, Conditions.Immobilized))
+                VehicleTarget = VehicleTargetFacts(state, vehicleTarget)
+            };
+        }
+
+        return (shot, null);
+    }
+
+    /// <summary>
+    /// A vehicle target's state facts (C6.1 Case J, C.8, D5.5, D5.6): a vehicle that entered a new hex or moved in Motion this Player Turn, or is in
+    /// Motion, is moving; a Stunned, Shocked, or Recalled crew adds one to Crew Survival. The Target Facings are the planner's map reads.
+    /// </summary>
+    private static OrdnanceVehicleTarget VehicleTargetFacts(GameState state, UnitInstance vehicleTarget)
+    {
+        var inMotion = Is(vehicleTarget, Conditions.Motion);
+        return new OrdnanceVehicleTarget(vehicleTarget.Id, vehicleTarget.Definition?.Definition, null, null,
+            inMotion || state.MovedVehicles.Contains(vehicleTarget.Id, StringComparer.Ordinal), inMotion,
+            Is(vehicleTarget, Conditions.Concealed) || Is(vehicleTarget, Conditions.Hidden),
+            Is(vehicleTarget, Conditions.Stunned) || Is(vehicleTarget, Conditions.Shocked) || Is(vehicleTarget, Conditions.UnconfirmedKill)
+                || Is(vehicleTarget, Conditions.Recalled),
+            // D5.5: a Stunned or Shocked crew takes no Immobilization TC, nor does an absent crew or one already immobilized.
+            !Is(vehicleTarget, Conditions.Stunned) && !Is(vehicleTarget, Conditions.Shocked) && !Is(vehicleTarget, Conditions.UnconfirmedKill)
+                && !Is(vehicleTarget, Conditions.Abandoned) && !Is(vehicleTarget, Conditions.Immobilized))
+        {
+            Abandoned = Is(vehicleTarget, Conditions.Abandoned) ? true : null,
+            StunRecovery = Is(vehicleTarget, Conditions.StunRecovery) ? true : null,
+        };
+    }
+
+    /// <summary>
+    /// A light mortar's Spotter and directing leader (C9.3, A7.531; rulings R9.2, R9.4): the Spotter is an active unit of the firer's side, the one
+    /// already spotting for the mortar while it is Good Order, unless it is the firer; the leader is an active leader in the firer's Location.
+    /// Adjacency and LOS are the planner's map reads.
+    /// </summary>
+    private static ((OrdnanceSpotter? Spotter, FireDirector? Director)? Support, string? Reason) MortarSupport(GameState state, string gun, UnitInstance firer, string? spotter,
+        string? director, string phase)
+    {
+        OrdnanceSpotter? spotting = null;
+        var kept = state.MortarSpotters.FirstOrDefault(item => item.Gun == gun)?.Spotter is { } recorded && state.Unit(recorded) is { Status: InstanceStatus.Active } still
+            && !Is(still, Conditions.Broken) && !Is(still, Conditions.Captured) && still.Side == firer.Side ? still : null;
+        if (spotter is not null)
+        {
+            if (state.Unit(spotter) is not { Status: InstanceStatus.Active, Definition: not null } unit || unit.Side != firer.Side || Is(unit, Conditions.Captured) || Is(unit, Conditions.Melee))
+            {
+                return (null, $"play.ordnance-spotter: '{spotter}' is not an active unit of the firer's side (C9.3)");
+            }
+
+            // C9.3 (ruling R9.4): a new Spotter is named only when the original is broken, eliminated, or captured.
+            if (kept is not null && kept.Id != unit.Id)
+            {
+                return (null, $"play.ordnance-spotter-kept: {kept.Id} spots for {gun} while it is Good Order (C9.3)");
+            }
+
+            // C9.31 EX, A7.352 (table player, pass 9): a unit spots for one mortar a phase; a HS, crew, or SMC that has fired does not spot.
+            if (state.SpottedThisPhase.Any(item => item.Spotter == unit.Id && item.Gun != gun)
+                || (unit.Kind != "asl:squad" && (LiveFire.Fired(unit) || Is(unit, Conditions.FirstFire)) && !state.SpottedThisPhase.Any(item => item.Spotter == unit.Id)))
+            {
+                return (null, $"play.ordnance-spotter-used: {unit.Id} has spotted for another mortar or fired this phase (C9.31, A7.352)");
+            }
+
+            if (unit.Kind == "asl:squad" && !state.SpottedThisPhase.Any(item => item.Spotter == unit.Id) && SquadSupportRefusal(state, unit, phase, false) is { } spotterRefusal)
+            {
+                return (null, spotterRefusal);
+            }
+
+            spotting = new OrdnanceSpotter(unit.Id, unit.Definition.Definition, Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned));
+        }
+
+        FireDirector? directing = null;
+        if (director is not null)
+        {
+            if (state.Unit(director) is not { Status: InstanceStatus.Active, Definition: not null } leader || leader.Side != firer.Side
+                || state.Location(leader.Id)?.Location is not { } leaderAt || leaderAt != state.Location(firer.Id)?.Location)
+            {
+                return (null, $"play.ordnance-director: '{director}' is not an active unit of the firer's side in its Location (A7.531)");
+            }
+
+            // A7.53 (referee, pass 9): the leader directing a SW this phase goes on directing its further ROF shots.
+            var continuing = state.SupportWeaponDirectors.Any(item => item.Gun == gun && item.Leader == leader.Id);
+            directing = new FireDirector(leader.Id, leader.Definition.Definition, leaderAt.ToString(), Is(leader, Conditions.Broken), Is(leader, Conditions.Pinned),
+                Is(leader, Conditions.Concealed), (LiveFire.Fired(leader) || Is(leader, Conditions.FirstFire)) && !continuing, Is(leader, Conditions.Wounded));
+        }
+
+        return ((spotting, directing), null);
+    }
+
+    /// <summary>
+    /// Why a squad may not use a SW now (A7.351, C13.31; table player, pass 9): it fired in an earlier phase (a Prep or Final Fire counter it did
+    /// not get this phase), it fired its inherent FP with a SW this phase, or, for a PF, it is marked First Fire in the MPh (no PF Check in
+    /// Subsequent First Fire). Null when it may.
+    /// </summary>
+    private static string? SquadSupportRefusal(GameState state, UnitInstance squad, string phase, bool panzerfaust)
+    {
+        if (squad.Kind != "asl:squad")
+        {
+            return null;
+        }
+
+        var firedHere = state.PhaseFirers.FirstOrDefault(item => item.Unit == squad.Id);
+        var usedHere = state.SupportWeaponUses.Any(item => item.Unit == squad.Id);
+        if (phase == "MPh" ? Is(squad, Conditions.FirstFire) && (panzerfaust || (firedHere is null && !usedHere))
+            : LiveFire.Fired(squad) && firedHere is null && !usedHere)
+        {
+            return $"play.sw-fired: {squad.Id} fired earlier{(phase == "MPh" ? " this MPh" : string.Empty)} and may not use a SW now (A7.351, C13.31)";
+        }
+
+        return firedHere is { Weapon: not "0" }
+            ? $"play.sw-limit: {squad.Id} fired its inherent FP with a SW this phase and uses no other (A7.351)"
+            : null;
+    }
+
+    /// <summary>
+    /// The state's part of a PF shot (C13.3 to C13.36; rulings R9.7, R9.8): the firing unit, its PF Checks this phase, whether it may still fire
+    /// (not marked, or a squad whose only fire is one PF Check), the side's shots taken and allowed, and the AFV it fires at. Whether it fires
+    /// from a ground-level building is the planner's map read.
+    /// </summary>
+    private static (OrdnanceShot? Shot, string? Reason) Panzerfaust(GameState state, string gunId, BoardLocation target, string? targetVehicle, string? director)
+    {
+        var phase = state.Phase switch
+        {
+            "pfph" => "PFPh",
+            "dfph" => "DFPh",
+            "afph" => "AFPh",
+            "mph" => "MPh",
+            _ => null,
+        };
+        var unitId = gunId[..^":pf".Length];
+        if (phase is null || state.Unit(unitId) is not { Status: InstanceStatus.Active, Definition: not null, Position: MapPosition } unit)
+        {
+            return (null, "play.panzerfaust-firer: a PF is fired by an active unit on the map in a fire phase or the MPh (C13.31)");
+        }
+
+        if (Is(unit, Conditions.Melee) || Is(unit, Conditions.Captured) || Is(unit, "asl:ti"))
+        {
+            return (null, $"play.panzerfaust-firer: '{unit.Id}' is held in Melee, captured, or TI, and does not fire (A11.15, A4.8)");
+        }
+
+        if (targetVehicle is null || state.Unit(targetVehicle) is not { Status: InstanceStatus.Active } vehicle || !LiveFire.IsVehicle(vehicle) || vehicle.Side == unit.Side
+            || state.Location(vehicle.Id)?.Location != target)
+        {
+            return (null, $"play.panzerfaust-target: a PF fires at an enemy AFV named in {target} (C13.3; ruling R9.8)");
+        }
+
+        if (phase == "MPh" && (unit.Side == state.PhasingSide || state.Movement is not { WindowOpen: true } window || window.Location != target || !window.Movers.Contains(vehicle.Id)))
+        {
+            return (null, "play.ordnance-window: in the MPh a PF of the DEFENDER fires at the moving vehicle in its Location, while the window on its MP expenditure is open (A8.1, C13.31)");
+        }
+
+        var firingSide = unit.Side == state.PhasingSide ? "phasing" : "non-phasing";
+        var checks = state.OrdnanceShots.FirstOrDefault(item => item.Gun == gunId)?.Shots ?? 0;
+        // C13.31, A7.351 (referee, pass 9): a squad makes one PF Check whatever it fired, and a second only while its PF Check is its only fire this
+        // phase; any other unit only while it has not fired (in the MPh, not in Subsequent First Fire).
+        var onlyPanzerfaust = state.SupportWeaponUses.Any(item => item.Unit == unit.Id && item.Weapon == "panzerfaust");
+        var fired = unit.Kind == "asl:squad" ? checks > 0 && !onlyPanzerfaust : LiveFire.Fired(unit) || (phase == "MPh" && Is(unit, Conditions.FirstFire));
+        if (unit.Kind == "asl:squad" && checks == 0 && SquadSupportRefusal(state, unit, phase, true) is { } refusal)
+        {
+            return (null, refusal);
+        }
+        var hit = new FireAttack(phase, firingSide, null, null, target.ToString(), [], null, null, null, null, state.ScenarioMonth, null, [],
+            state.Side(vehicle.Side!)?.Elr, null);
+        var shot = new OrdnanceShot(phase, firingSide, state.Side(unit.Side!)?.Nationality,
+            new OrdnanceGun(gunId, OrdnanceTargetTypes.Panzerfaust, false, checks, false, fired),
+            new OrdnanceCrew(unit.Id, unit.Definition.Definition, Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned), Is(unit, Conditions.Berserk),
+                Is(unit, Conditions.Concealed) || Is(unit, Conditions.Hidden), false)
+            {
+                Cx = Is(unit, Conditions.Cx) ? true : null,
+            },
+            target.ToString(), null, 0, null, null, 0, hit, null)
+        {
+            Ammunition = "heat",
+            ScenarioYear = state.ScenarioYear,
+            VehicleTarget = VehicleTargetFacts(state, vehicle),
+            Panzerfaust = new OrdnancePanzerfaust(state.PanzerfaustShots.GetValueOrDefault(unit.Side!), PanzerfaustAllowance(state, unit.Side!), null, Is(unit, Conditions.Heroic)),
+        };
+        if (director is not null)
+        {
+            var (support, reason) = MortarSupport(state, gunId, unit, null, director, phase);
+            if (support is null)
+            {
+                return (null, reason);
+            }
+
+            shot = shot with
+            {
+                Director = support.Value.Director
+            };
+        }
+
+        if (phase == "MPh")
+        {
+            var moving = state.Movement!;
+            var here = state.OrdnanceShotsHere.FirstOrDefault(item => item.Gun == gunId);
+            shot = shot with
+            {
+                FireKind = "first-fire",
+                Movement = new OrdnanceMovement(null, null, null, moving.HalfMfInLocation / 2, here?.Shots ?? 0)
                 {
-                    Abandoned = Is(vehicleTarget, Conditions.Abandoned) ? true : null,
-                    StunRecovery = Is(vehicleTarget, Conditions.StunRecovery) ? true : null,
+                    MpClaimed = here is { Mp: > 0 } ? here.Mp : null,
                 },
             };
         }
@@ -265,7 +513,7 @@ public static class LiveOrdnance
         ArgumentNullException.ThrowIfNull(shot);
         ArgumentNullException.ThrowIfNull(rolls);
         IReadOnlyList<int>? toHit = null;
-        int? subsequent = null;
+        int? subsequent = null, panzerfaustCheck = null;
         Dictionary<string, int>? selection = null;
         var hit = new Dictionary<string, string>(StringComparer.Ordinal);
         var critical = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -284,6 +532,10 @@ public static class LiveOrdnance
             else if (key == "subsequent" && roll.Count == 1)
             {
                 subsequent = roll.Values[0];
+            }
+            else if (key == "panzerfaustCheck" && roll.Count == 1)
+            {
+                panzerfaustCheck = roll.Values[0];
             }
             else if (key.StartsWith("criticalSelection:", StringComparison.Ordinal) && key["criticalSelection:".Length..].Split(',') is var ids && ids.Length == roll.Count)
             {
@@ -319,6 +571,7 @@ public static class LiveOrdnance
                 ShockCheck = extra.GetValueOrDefault("shockCheck"),
                 CrewCheck = extra.GetValueOrDefault("crewCheck"),
                 CrewSurvival = extra.GetValueOrDefault("crewSurvival"),
+                PanzerfaustCheck = panzerfaustCheck,
             };
     }
 
@@ -356,7 +609,8 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
             return "The ordnance record's facts are incomplete.";
         }
 
-        var (expected, reason) = LiveOrdnance.FromState(state, fired.Gun, fired.Target, recorded.VehicleTarget?.VehicleId, recorded.Ammunition, recorded.IntensiveFire == true);
+        var (expected, reason) = LiveOrdnance.FromState(state, fired.Gun, fired.Target, recorded.VehicleTarget?.VehicleId, recorded.Ammunition, recorded.IntensiveFire == true,
+            recorded.Spotter?.UnitId, recorded.Director?.UnitId);
         if (expected is null)
         {
             return reason;
@@ -396,15 +650,17 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
             },
             SameHex = recorded.SameHex,
             CrewSeen = recorded.CrewSeen,
+
+            // The map read of pass 9: a PF fired from a ground-level building (C13.8).
+            Panzerfaust = expected.Panzerfaust is null ? null : expected.Panzerfaust with
+            {
+                FromBuilding = recorded.Panzerfaust?.FromBuilding
+            },
         };
 
         // The state reads of pass 8 are recomputed (table player, pass 8): Bore Sighting (C6.43), overstacking (A5.12, A5.131), and Emplacement.
-        var gunAt = state.Find(fired.Gun) switch
-        {
-            EquipmentInstance { Position: MapPosition placed } => placed.Location,
-            UnitInstance { Position: MapPosition driven } => driven.Location,
-            _ => fired.Target,
-        };
+        // A SW is where its possessor is; a PF where its firer is.
+        var gunAt = state.Location(fired.Gun)?.Location ?? state.Location(fired.Crew)?.Location ?? fired.Target;
         var firingSide = state.Unit(fired.Crew)?.Side ?? string.Empty;
         var enemy = state.Sides.FirstOrDefault(item => item.Id != firingSide)?.Id ?? string.Empty;
         merged = merged with
@@ -460,7 +716,8 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
             return "The ordnance record's resolution differs from what its facts and rolls give.";
         }
 
-        var gun = resolution.Gun!;
+        // C13.31 (ruling R9.7): a PF Check that gave no shot keeps no ROF and acquires nothing.
+        var gun = resolution.Gun ?? new OrdnanceGunEffect(0, false, 0, false, null, 0, null);
         return gun.RateOfFireKept != fired.RateOfFireKept || gun.Acquisition != fired.Acquisition || gun.AcquiredLocationId != fired.Acquired?.ToString()
             ? "The ordnance record's ROF or Acquisition differs from its resolution."
             : null;

@@ -38,15 +38,33 @@ public sealed partial class GamePlanner
         string? targetVehicle = Text(arguments, "targetVehicle", out var named) ? named : null;
         string? ammunition = Text(arguments, "ammunition", out var declared) ? declared : null;
         var intensive = arguments.TryGetProperty("intensive", out var intensiveArgument) && intensiveArgument.ValueKind == JsonValueKind.True;
-        var (shot, reason) = LiveOrdnance.FromState(state, gunId, target, targetVehicle, ammunition, intensive);
+        string? spotter = Text(arguments, "spotter", out var spotterId) ? spotterId : null;
+        string? director = Text(arguments, "director", out var directorId) ? directorId : null;
+        var (shot, reason) = LiveOrdnance.FromState(state, gunId, target, targetVehicle, ammunition, intensive, spotter, director);
         if (shot is null)
         {
             return Refused(scope, label, expected, reason!);
         }
 
+        // C3.33, C3.332 (ruling R9.3): a mortar's Area Target Type shot at a hex holding a vehicle, or units in another Location of the hex, is not built.
+        if (shot.TargetType == OrdnanceTargetTypes.Area)
+        {
+            if (state.Units.FirstOrDefault(unit => unit.Status is InstanceStatus.Active && LiveFire.IsVehicle(unit) && state.Location(unit.Id)?.Location is { } at
+                && at.Board == target.Board && at.Hex == target.Hex) is { } inHex)
+            {
+                return Refused(scope, label, expected, $"play.ordnance-area-vehicle: {inHex.Id} is in the target hex; a mortar's hit on a vehicle is not built (C3.332, C1.55; ruling R9.3)");
+            }
+
+            if (state.Units.Any(unit => unit.Status == InstanceStatus.Active && state.Location(unit.Id)?.Location is { } other && other.Board == target.Board
+                && other.Hex == target.Hex && other != target))
+            {
+                return Refused(scope, label, expected, "play.ordnance-area-levels: the target hex holds units in more than one Location, which the Area Target Type is not built for (C3.33; ruling R9.3)");
+            }
+        }
+
         // Ruling R25.10: the hit's IFT attack on a vehicle in the target Location is not reviewed; C3.31 (ruling R7.2): name the vehicle to
         // fire at it on the Vehicle Target Type.
-        if (targetVehicle is null
+        if (targetVehicle is null && shot.TargetType is null
             && state.At(target).OfType<UnitInstance>().FirstOrDefault(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit)
                 && (state.Phase != "mph" || state.Movement?.Movers.Contains(unit.Id) == true)) is { } vehicle)
         {
@@ -79,7 +97,7 @@ public sealed partial class GamePlanner
         // The To Hit number and DRM before any roll, read from the package with dice that decide nothing else (a miss).
         var preview = ScenarioA1OrdnanceCalculator.Resolve(facts with
         {
-            Rolls = new OrdnanceRolls([6, 6], null, null, null, null)
+            Rolls = new OrdnanceRolls([6, 6], null, null, null, null) { PanzerfaustCheck = 1 }
         }, reference).ToHit;
         var toHit = preview is null ? string.Empty
             : $"; Modified TH# {preview.ModifiedToHit} ({preview.Color}), DRM {(preview.Drm.Count == 0 ? "none" : string.Join(", ", preview.Drm.Select(item => $"{item.Name} {item.Value:+0;-0}")))}";
@@ -90,7 +108,11 @@ public sealed partial class GamePlanner
             return events;
         }
 
-        var aim = facts.VehicleTarget is { } aimed
+        var aim = facts.Gun!.DefinitionId == OrdnanceTargetTypes.Panzerfaust && facts.VehicleTarget is { } faust
+            ? $"a PF (after a PF Check) at {faust.VehicleId} in {facts.TargetLocationId} (hull {faust.HullFacing} facing the firer)"
+            : facts.TargetType == OrdnanceTargetTypes.Area
+            ? $"HE at {facts.TargetLocationId} (Area Target Type" + (facts.Spotter is { } spotted ? $", spotted by {spotted.UnitId}" : string.Empty) + ")"
+            : facts.VehicleTarget is { } aimed
             ? $"{(facts.Ammunition ?? "ap").ToUpperInvariant()} at {aimed.VehicleId} in {facts.TargetLocationId} (Vehicle Target Type; hull {aimed.HullFacing}"
                 + (aimed.TurretFacing is { } turretFacing ? $", turret {turretFacing}" : string.Empty) + " facing the firer)"
             : $"HE at {facts.TargetLocationId}";
@@ -111,9 +133,14 @@ public sealed partial class GamePlanner
     /// </summary>
     private ((OrdnanceShot Shot, UnitFacing? Facing)? Facts, string? Reason) OrdnanceMapFacts(GameState state, OrdnanceShot shot, BoardLocation target)
     {
+        var from = FirerLocation(state, shot.Gun!.GunId!);
+        if (shot.TargetType == OrdnanceTargetTypes.Area || shot.Gun.DefinitionId == OrdnanceTargetTypes.Panzerfaust)
+        {
+            return SupportWeaponMapFacts(state, shot, from, target);
+        }
+
         // C3.2, D3.12: a Gun's barrel, or a turreted AFV's TCA (ruling R7.10); a non-turreted MA would pivot the vehicle, which is not built.
         var firer = state.Find(shot.Gun!.GunId!)!;
-        var from = FirerLocation(state, firer.Id);
 
         // C5.5 (ruling R8.8): a shot at enemy Infantry in the Gun's own Location, at range 0, without a CA change, the LOS clear.
         if (target == from)
@@ -222,6 +249,106 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>
+    /// The map reads of a SW's shot (rulings R9.2 to R9.4, R9.8): range from the firer; LOS, Hindrance, levels, and terrain from the firer or, for a
+    /// Spotted mortar shot, from its Spotter in the mortar's hex or an adjacent one (C9.3); no CA; the firer's terrain for Case B, and for a PF
+    /// whether it fires from a ground-level building (Case C3) or above it (refused: Desperation is not built, C13.8). A PF's Target Facing is
+    /// read as a Gun's.
+    /// </summary>
+    private ((OrdnanceShot Shot, UnitFacing? Facing)? Facts, string? Reason) SupportWeaponMapFacts(GameState state, OrdnanceShot shot, BoardLocation from, BoardLocation target)
+    {
+        if (target == from)
+        {
+            return (null, "play.ordnance-own-hex: a SW does not fire within its own Location (C3.33, C13.3)");
+        }
+
+        if (ReadLocation(state, from) is not { } firerRead || TerrainKey(firerRead) is not { } firerTerrain)
+        {
+            return (null, "play.ordnance-map: the firer's Location cannot be read");
+        }
+
+        var sees = from;
+        if (shot.Spotter is { UnitId: { } spotterId } && state.Location(spotterId)?.Location is { } spotterAt)
+        {
+            // C9.3: a Spotter in the mortar's hex or an adjacent one, whatever its level and LOS to the mortar.
+            if (!(spotterAt.Board == from.Board && spotterAt.Hex == from.Hex) && !Step(state, from, spotterAt).Adjacent && Los(state, from, spotterAt)?.Range != 1)
+            {
+                return (null, $"play.ordnance-spotter: {spotterId} spots only from the mortar's hex or an adjacent one (C9.3)");
+            }
+
+            sees = spotterAt;
+        }
+
+        if (Los(state, from, target) is not { } ranged)
+        {
+            return (null, "play.ordnance-map: the range cannot be read");
+        }
+
+        var probe = shot.Hit! with
+        {
+            Firers = [new FireFirer(shot.Spotter?.UnitId ?? shot.Crew!.UnitId, shot.Spotter?.DefinitionId ?? shot.Crew!.DefinitionId, sees.ToString(), false, false, false, false, false)],
+            FirerLocationId = sees.ToString(),
+        };
+        var (read, reason) = FireMapFacts(state, probe, target);
+        if (read is null)
+        {
+            return (null, reason);
+        }
+
+        var panzerfaust = shot.Gun!.DefinitionId == OrdnanceTargetTypes.Panzerfaust;
+        var building = firerTerrain is "wooden-building" or "stone-building";
+
+        // B23.423 (referee, pass 9): no mortar fires from a non-rooftop building Location.
+        if (!panzerfaust && building)
+        {
+            return (null, "play.ordnance-mortar-building: a mortar does not fire from a building Location (B23.423)");
+        }
+        if (panzerfaust && building && firerRead.Level.Level > 0)
+        {
+            return (null, "play.panzerfaust-backblast: a PF is not fired from above a building's ground level; Desperation fire is not built (C13.8, C13.81; ruling R9.8)");
+        }
+
+        OrdnanceVehicleTarget? aimed = null;
+        if (shot.VehicleTarget is { } vehicleTarget && state.Unit(vehicleTarget.VehicleId!) is { } targetVehicle)
+        {
+            if (Bearing(state, target, from) is not { } back || (targetVehicle.Position as MapPosition)?.Facing is not { } hull)
+            {
+                return (null, $"play.ordnance-facing: {targetVehicle.Id}'s Target Facing is read only on one board not reversed, from a vehicle with a VCA (D3.2)");
+            }
+
+            static double Off(double one, double two) => Math.Abs(((one - two) % 360 + 540) % 360 - 180);
+            static string Facing(double off) => off <= 60 + 1e-6 ? "front" : off <= 120 + 1e-6 ? "side" : "rear";
+            var targetTurreted = OrdnanceReference.Value.Armor.Vehicles.GetValueOrDefault(vehicleTarget.DefinitionId!)?.Turreted == true;
+            aimed = vehicleTarget with
+            {
+                HullFacing = Facing(Off(back, (int)hull * 60)),
+                TurretFacing = targetTurreted && LiveOrdnance.TurretFacing(state, targetVehicle) is { } tca ? Facing(Off(back, (int)tca * 60)) : null,
+            };
+        }
+
+        var revealing = HeatOfBattleFacts(state, read);
+        return ((shot with
+        {
+            Range = ranged.Range,
+            HexspinesToTurn = 0,
+            FirerInWoodsOrBuilding = WoodsOrBuilding.Contains(firerTerrain),
+            ElevationAllowed = true,
+            Hit = shot.Hit! with
+            {
+                Range = null,
+                SameLevel = read.SameLevel,
+                Los = read.Los,
+                TargetTerrain = read.TargetTerrain,
+                Targets = revealing.Targets,
+            },
+            VehicleTarget = aimed ?? shot.VehicleTarget,
+            Panzerfaust = shot.Panzerfaust is null ? null : shot.Panzerfaust with
+            {
+                FromBuilding = building
+            },
+        }, null), null);
+    }
+
+    /// <summary>
     /// The map and state reads of the backlog pass 8 (rulings R8.1, R8.3, R8.5, R8.8, R8.10): the moving vehicle's MP in the firer's continuous
     /// LOS and a move into Open Ground (C6.11, C6.14), the Gun and its crew in the target Location with its Emplacement and gunshield (C11.2,
     /// C11.5), whether a Good Order enemy sees a concealed crew fire (A12.14), and the overstacking of both Locations (A5.12, A5.131).
@@ -246,7 +373,7 @@ public sealed partial class GamePlanner
             };
         }
 
-        if (shot.VehicleTarget is null && GunAt(state, target, side, [from]) is { } gunTarget)
+        if (shot.VehicleTarget is null && shot.TargetType is null && GunAt(state, target, side, [from]) is { } gunTarget)
         {
             shot = shot with
             {
@@ -362,13 +489,10 @@ public sealed partial class GamePlanner
         return steps == 0 ? $"range {los.Range}, in its CA" : $"range {los.Range}, turn {steps} hexspine(s) (Case A)";
     }
 
-    /// <summary>Where a Gun or a tank is.</summary>
-    private static BoardLocation FirerLocation(GameState state, string id) => state.Find(id) switch
-    {
-        EquipmentInstance { Position: MapPosition gunAt } => gunAt.Location,
-        UnitInstance { Position: MapPosition tankAt } => tankAt.Location,
-        _ => throw new InvalidOperationException($"'{id}' is not on the map."),
-    };
+    /// <summary>Where a Gun, a tank, a SW's possessor, or a PF's firer is.</summary>
+    private static BoardLocation FirerLocation(GameState state, string id) =>
+        state.Location(id)?.Location ?? (id.EndsWith(":pf", StringComparison.Ordinal) ? state.Location(id[..^":pf".Length])?.Location : null)
+            ?? throw new InvalidOperationException($"'{id}' is not on the map.");
 
     /// <summary>The bearing from one Location to another in degrees counterclockwise from east, on one board or across the composed map; null when unread.</summary>
     private double? Bearing(GameState state, BoardLocation from, BoardLocation to)
@@ -458,6 +582,7 @@ public sealed partial class GamePlanner
             var (count, purpose) = key switch
             {
                 "toHit" => (2, "ordnance-to-hit"),
+                "panzerfaustCheck" => (1, "panzerfaust-check"),
                 "subsequent" => (1, "ordnance-subsequent"),
                 "toKill" => (2, "ordnance-to-kill"),
                 "shockCheck" => (2, "ordnance-shock-check"),
@@ -474,13 +599,29 @@ public sealed partial class GamePlanner
             rolls = ApplyOrdnanceRoll(rolls, key, drawn.Values);
         }
 
-        var gunResult = resolution.Gun!;
+        // C13.31 (ruling R9.7): a PF Check that gave no shot is recorded with no To Hit DR; the check is the unit's SW use.
+        var gunResult = resolution.Gun ?? new OrdnanceGunEffect(0, false, 0, false, facts.Phase == "MPh" ? "first-fire" : null, 0, null);
         var recordId = EventId(attemptId, events.Count + 1);
         BoardLocation? acquired = gunResult.AcquiredLocationId is { } acquiredAt ? BoardLocation.Parse(acquiredAt) : null;
         events.Add(Event(scope, attemptId, events.Count + 1, expected, "ordnance-fired",
             new OrdnanceFired(facts.Gun!.GunId!, facts.Crew!.UnitId!, BoardLocation.Parse(facts.TargetLocationId!), facing, gunResult.RateOfFireKept,
                 gunResult.Acquisition, acquired, rollIds, JsonSerializer.SerializeToElement(facts, LiveFire.Json), JsonSerializer.SerializeToElement(resolution, LiveFire.Json)),
             package, null));
+
+        // C13.31, C13.36 (ruling R9.7): a PF Check's Original 6 pins or breaks its firer, or gives Casualty Reduction; so does an Original 12 To Hit DR.
+        if (resolution.FirerEffect is { } firerEffect && state.Unit(facts.Crew.UnitId!) is { } shooter)
+        {
+            var phaseMarker = facts.Phase switch
+            {
+                "DFPh" => Conditions.FinalFire,
+                "MPh" => Conditions.FirstFire,
+                _ => Conditions.PrepFire,
+            };
+            foreach (var (type, payload) in FirerEffectEvents(shooter, firerEffect, attemptId, phaseMarker))
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, type, payload, package, null, [recordId]));
+            }
+        }
 
         // C8.9: Special Ammunition the Gun turned out not to have was never fired, unless the Gun malfunctioned: no marker, no Acquisition.
         if (resolution.AmmunitionUse == "none" && !gunResult.Malfunctioned)
@@ -594,14 +735,25 @@ public sealed partial class GamePlanner
                 crewConditions[Conditions.Concealed] = ConditionState.False;
             }
 
-            if (crewConditions.Count > 0)
+            if (crewConditions.Count > 0 && resolution.FirerEffect is not (OrdnancePanzerfaustCheck.CasualtyReduction or OrdnancePanzerfaustCheck.Broken))
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(crew.Id, crewConditions), package, null, [recordId]));
             }
         }
 
-        // C6.5, C6.51 (ruling R5.13): the Acquisition is on the Known units the shot leaves in its target Location.
-        if (acquired is { } acquiredLocation && AcquiredUnits(facts, effects, attemptId) is { Count: > 0 } units)
+        // C9.3, A7.531 (rulings R9.2, R9.4): the Spotter has used a SW and the directing leader has directed: both carry the phase's marker.
+        foreach (var supporter in new[] { facts.Spotter?.UnitId, facts.Director?.UnitId }.OfType<string>())
+        {
+            if (marker is not null && state.Unit(supporter) is { } supporting && GameState.Condition(supporting, marker) != ConditionState.True)
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
+                    new ConditionsChanged(supporting.Id, new Dictionary<string, ConditionState>(StringComparer.Ordinal) { [marker] = ConditionState.True }), package, null, [recordId]));
+            }
+        }
+
+        // C6.5, C6.51 (ruling R5.13): the Acquisition is on the Known units the shot leaves in its target Location; C9.2: a mortar's Area Target
+        // Acquisition stays on its hex.
+        if (acquired is { } acquiredLocation && facts.TargetType is null && AcquiredUnits(facts, effects, attemptId) is { Count: > 0 } units)
         {
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "acquisition-changed", new AcquisitionChanged(facts.Gun.GunId!, acquiredLocation, units), package, null,
                 [recordId]));
@@ -683,6 +835,50 @@ public sealed partial class GamePlanner
         }
     }
 
+    /// <summary>
+    /// What a PF does to its own firer (C13.31, C13.36; ruling R9.7): pinned; broken; or Casualty Reduction: a squad becomes its HS, a HS or crew
+    /// is eliminated, a SMC is wounded, or eliminated if already wounded (A7.302, A17.2).
+    /// </summary>
+    private static IEnumerable<(string Type, EventPayload Payload)> FirerEffectEvents(UnitInstance unit, string effect, string attemptId, string marker)
+    {
+        if (effect == OrdnancePanzerfaustCheck.Pinned)
+        {
+            yield return ("conditions-changed", new ConditionsChanged(unit.Id, new Dictionary<string, ConditionState>(StringComparer.Ordinal) { [Conditions.Pinned] = ConditionState.True }));
+            yield break;
+        }
+
+        if (effect == OrdnancePanzerfaustCheck.Broken)
+        {
+            yield return ("conditions-changed", new ConditionsChanged(unit.Id, new Dictionary<string, ConditionState>(StringComparer.Ordinal)
+            {
+                [Conditions.Broken] = ConditionState.True,
+                [Conditions.Pinned] = ConditionState.False,
+                [marker] = ConditionState.True,
+            }));
+            yield break;
+        }
+
+        if (unit.Kind == "asl:squad" && unit.Definition is { } squad && ScenarioA1FireReference.HalfSquadOf(squad.Definition) is { } half)
+        {
+            // Table player, pass 9: the HS has fired, as its squad had.
+            yield return ("lineage", new LineageRecorded(LineageAction.Reduced, [unit.Id],
+                [new NewInstance($"{attemptId}-{unit.Id}", "asl:half-squad", half, unit.Side, unit.Position, null,
+                    new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal) { [marker] = ConditionState.True })]));
+        }
+        else if (unit.Kind is "asl:leader" or "asl:hero" && GameState.Condition(unit, Conditions.Wounded) != ConditionState.True)
+        {
+            yield return ("conditions-changed", new ConditionsChanged(unit.Id, new Dictionary<string, ConditionState>(StringComparer.Ordinal)
+            {
+                [Conditions.Wounded] = ConditionState.True,
+                [marker] = ConditionState.True,
+            }));
+        }
+        else
+        {
+            yield return ("instance-eliminated", new InstanceEliminated(unit.Id));
+        }
+    }
+
     /// <summary>A vehicle's crew placed beneath it as a crew counter of its nationality (D5.5, D5.6; ruling R7.9).</summary>
     private static InstanceCreated? CrewCounter(UnitInstance vehicle, string attemptId)
     {
@@ -707,6 +903,7 @@ public sealed partial class GamePlanner
         return key switch
         {
             "toHit" => rolls with { ToHit = values },
+            "panzerfaustCheck" => rolls with { PanzerfaustCheck = values[0] },
             "subsequent" => rolls with { Subsequent = values[0] },
             "toKill" => rolls with { ToKill = values },
             "shockCheck" => rolls with { ShockCheck = values },

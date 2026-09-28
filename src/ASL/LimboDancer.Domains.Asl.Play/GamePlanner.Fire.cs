@@ -836,8 +836,9 @@ public sealed partial class GamePlanner
         };
         if (attack.FireKind == ScenarioA1FireCalculator.ResidualFire)
         {
-            // A8.2 (ruling R6.6): Residual FP has no LOS Hindrance, but a burning wreck's smoke in its Location applies (B25.2).
-            var smoke = WrecksAt(state, target).Any(wreck => IsBurning(state, wreck)) ? 2 : 0;
+            // A8.2 (rulings R6.6, R9.6): Residual FP has no LOS Hindrance, but the SMOKE of its Location applies: a burning wreck's and each grenade
+            // counter's +2, at most +3, never the outgoing +1 (B25.2, A24.8).
+            var smoke = Math.Min(3, 2 * SmokeSources(state).Count(place => place == target));
             return (attack with
             {
                 TargetTerrain = terrain,

@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "catalog": "asl-scenario-a1",
-  "version": "1.7.0",
-  "label": "Scenario A1 catalog: Infantry Personnel, heroes, leaders, crews, MGs, Guns, vehicles, and tanks for the reviewed Scenario A1 cases",
+  "version": "1.8.0",
+  "label": "Scenario A1 catalog: Infantry Personnel, heroes, leaders, crews, MGs, light mortars, Guns, vehicles, and tanks for the reviewed Scenario A1 cases",
   "publication": "published",
   "vocabulary": [
     "asl@1.3.0"
@@ -12,9 +12,9 @@
       "id": "asl-counter-sheets:scenario-a1",
       "status": "reviewed",
       "record": "docs/ASL/SourceRegistry/CounterSheets/asl-counter-sheets.scenario-a1.source-record.json",
-      "recordSha256": "990c606b35ab79d48d5f331e3ec73e0acbb0f1fb7dd51f103cc5b89ae1843862",
+      "recordSha256": "4618f8b9dece4531ab22d59684bd6037af95318653b557a31d16e33acddb78ae",
       "transcription": "docs/ASL/SourceRegistry/CounterSheets/scenario-a1.counter-transcription.csv",
-      "transcriptionSha256": "b4ff64112f00d623924cbedffa206407ab30449afc9bd7eb9899011fe123158f",
+      "transcriptionSha256": "f83feee83ed8ea7b3e4a51fb9b84df7138e81ba07076b512ea0e7435c1491550",
       "transcriber": "Claude (claude-opus-5-5)",
       "reviewer": "Dennis Landi"
     }
@@ -5465,6 +5465,238 @@
           "trait": "asl:cs-passengers-only",
           "present": false,
           "row": 826
+        }
+      ]
+    },
+    {
+      "id": "attacker-light-mortar",
+      "kind": "asl:light-mortar",
+      "kindRow": 827,
+      "nationality": "german",
+      "nationalityRow": 828,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "OLG",
+        "counter": "attacker-light-mortar"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 829
+        },
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "printed": false,
+          "row": 830
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "printed": false,
+          "row": 831
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 12,
+          "row": 832
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 3,
+          "row": 833
+        },
+        {
+          "face": "front",
+          "attribute": "portage",
+          "value": 5,
+          "row": 834
+        },
+        {
+          "face": "front",
+          "attribute": "caliber",
+          "value": 50,
+          "row": 835
+        },
+        {
+          "face": "front",
+          "attribute": "caliber-suffix",
+          "value": "star",
+          "row": 836
+        },
+        {
+          "face": "front",
+          "attribute": "range-minimum",
+          "value": 2,
+          "row": 837
+        },
+        {
+          "face": "front",
+          "attribute": "range-maximum",
+          "value": 13,
+          "row": 838
+        },
+        {
+          "face": "front",
+          "attribute": "special-ammo",
+          "printed": false,
+          "row": 839
+        },
+        {
+          "face": "front",
+          "attribute": "dates",
+          "value": "36-45",
+          "row": 840
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-ap",
+          "present": true,
+          "row": 841
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-he",
+          "present": false,
+          "row": 842
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-removes",
+          "present": false,
+          "row": 843
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "repair",
+          "recorded": false,
+          "row": 844
+        }
+      ]
+    },
+    {
+      "id": "defender-light-mortar",
+      "kind": "asl:light-mortar",
+      "kindRow": 845,
+      "nationality": "russian",
+      "nationalityRow": 846,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "OLR",
+        "counter": "defender-light-mortar"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 847
+        },
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "printed": false,
+          "row": 848
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "printed": false,
+          "row": 849
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 12,
+          "row": 850
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 3,
+          "row": 851
+        },
+        {
+          "face": "front",
+          "attribute": "portage",
+          "value": 4,
+          "row": 852
+        },
+        {
+          "face": "front",
+          "attribute": "caliber",
+          "value": 50,
+          "row": 853
+        },
+        {
+          "face": "front",
+          "attribute": "caliber-suffix",
+          "value": "star",
+          "row": 854
+        },
+        {
+          "face": "front",
+          "attribute": "range-minimum",
+          "value": 3,
+          "row": 855
+        },
+        {
+          "face": "front",
+          "attribute": "range-maximum",
+          "value": 20,
+          "row": 856
+        },
+        {
+          "face": "front",
+          "attribute": "special-ammo",
+          "printed": false,
+          "row": 857
+        },
+        {
+          "face": "front",
+          "attribute": "dates",
+          "value": "39-45",
+          "row": 858
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-ap",
+          "present": true,
+          "row": 859
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-he",
+          "present": false,
+          "row": 860
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-removes",
+          "present": false,
+          "row": 861
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "repair",
+          "recorded": false,
+          "row": 862
         }
       ]
     }

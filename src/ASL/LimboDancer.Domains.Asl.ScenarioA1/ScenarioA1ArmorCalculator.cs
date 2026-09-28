@@ -88,13 +88,22 @@ internal static class ScenarioA1ArmorCalculator
 
         var ammunition = shot.Ammunition!;
         var armored = !armor.Unarmored && armor.FrontAf is not null;
+        var latw = gun.GunType == "latw";
+
+        // C13.3, C13.34, C8.31 (ruling R9.8): a PF fires HEAT only at an AFV; its other targets need HE Equivalency, not built.
+        if (latw && (ammunition != "heat" || !armored))
+        {
+            outside.Add(Prefix + "ammunition-outside");
+            return;
+        }
+
         var tk = armored ? reference.Armor.BasicTk(ammunition, gun) : reference.Armor.UnarmoredTk(ammunition, gun);
         if (ammunition is not ("ap" or "apcr" or "heat" or "he") || (ammunition == "ap" && gun.NoAp) || (ammunition == "he" && gun.NoHe) || tk is null)
         {
             outside.Add(Prefix + "ammunition-outside");
         }
 
-        if (ammunition is "apcr" or "heat" && Depletion(gun, ammunition, shot.ScenarioYear, shot.Hit!.ScenarioMonth) is null)
+        if (!latw && ammunition is "apcr" or "heat" && Depletion(gun, ammunition, shot.ScenarioYear, shot.Hit!.ScenarioMonth) is null)
         {
             outside.Add(Prefix + "ammunition-unavailable");
         }
@@ -122,9 +131,11 @@ internal static class ScenarioA1ArmorCalculator
         var column = reference.Column(range);
         var color = ScenarioA1OrdnanceReference.Color(shot.FiringNationality!);
 
-        // C3.31, C4: the Vehicle row's Basic TH#, the Gun's modifications, and APCR's (C4.3).
-        var basic = reference.Armor.BasicToHit(color, column);
-        var modifications = reference.Modifications(gun, range).ToList();
+        // C3.31, C4: the Vehicle row's Basic TH#, the Gun's modifications, and APCR's (C4.3). C13.33 (ruling R9.8): a PF's Basic TH# is 10, less
+        // two for each hex of range, with no C4 modification.
+        var latw = gun.GunType == "latw";
+        var basic = latw ? 10 : reference.Armor.BasicToHit(color, column);
+        var modifications = latw ? [new FireModifier("pf-range", -2 * range, "C13.33")] : reference.Modifications(gun, range).ToList();
         if (ammunition == "apcr" && reference.Armor.ApcrToHit(column) is var apcr && apcr != 0)
         {
             modifications.Add(new FireModifier("apcr", apcr, "C4.3"));
@@ -138,7 +149,20 @@ internal static class ScenarioA1ArmorCalculator
             drm.Add(new FireModifier("case-a:" + turned.ToString(CultureInfo.InvariantCulture), CaseA(gun.MaType, turned) * (woods ? 2 : 1), "C5.1"));
         }
 
-        if (shot.Phase == "AFPh")
+        if (latw)
+        {
+            // C13.1, C13.8 (ruling R9.8): Case C3 instead of Case B, for the AFPh and for the Backblast of a shot from a ground-level building.
+            if (shot.Phase == "AFPh")
+            {
+                drm.Add(new FireModifier("case-c3:afph", 2, "C13.1"));
+            }
+
+            if (shot.Panzerfaust?.FromBuilding == true)
+            {
+                drm.Add(new FireModifier("case-c3:backblast", 2, "C13.8"));
+            }
+        }
+        else if (shot.Phase == "AFPh")
         {
             drm.Add(new FireModifier("case-b", woods ? 3 : 2, "C5.2"));
         }
@@ -165,6 +189,7 @@ internal static class ScenarioA1ArmorCalculator
         }
 
         drm.AddRange(ScenarioA1OrdnanceCalculator.PassEightFirerDrm(shot));
+        drm.AddRange(ScenarioA1OrdnanceCalculator.Leadership(shot, reference));
 
         // C6.11, C6.12 (ruling R8.1): Defensive First Fire at a vehicle that has spent at most one MP in the firer's continuous LOS takes Case J2,
         // at most three Case J1, else Case J; a moving target in a fire phase takes Case J.
@@ -183,17 +208,17 @@ internal static class ScenarioA1ArmorCalculator
             drm.Add(new FireModifier("case-k", 2, "C6.2"));
         }
 
-        // C6.3: no Point Blank Range against a Non-Stopped or Motion target, nor by a Motion firer.
-        if (range <= 2 && target.NonStopped != true && shot.Vehicle?.InMotion != true)
+        // C6.3: no Point Blank Range against a Non-Stopped or Motion target, nor by a Motion firer. Cases L, M, and N are not LATW DRM.
+        if (!latw && range <= 2 && target.NonStopped != true && shot.Vehicle?.InMotion != true)
         {
             drm.Add(new FireModifier("case-l", range == 1 ? -2 : -1, "C6.3"));
         }
 
-        if (shot.BoreSighted == true)
+        if (!latw && shot.BoreSighted == true)
         {
             drm.Add(new FireModifier("case-m", -2, "C6.4"));
         }
-        else if (shot.Acquisition is int acquired && acquired < 0 && target.Concealed != true)
+        else if (!latw && shot.Acquisition is int acquired && acquired < 0 && target.Concealed != true)
         {
             drm.Add(new FireModifier("case-n", acquired, "C6.5"));
         }
@@ -279,10 +304,20 @@ internal static class ScenarioA1ArmorCalculator
         var toHit = new OrdnanceToHit(color, basic, modifications, modified, [.. dice], original, drm, final, improbable, subsequent, isHit, critical);
         var malfunctioned = original >= ScenarioA1OrdnanceCalculator.Breakdown(shot, gun);
 
+        // C13.36 (ruling R9.8): a PF never malfunctions, but an Original 12 misses and gives its firer Casualty Reduction; an 11 or 12 for
+        // Inexperienced Infantry (A19.32; referee, pass 9).
+        var inexperienced = reference.Fire.Definitions.GetValueOrDefault(shot.Crew!.DefinitionId ?? string.Empty)?.Class is "green" or "conscript";
+        var casualty = latw && original >= (inexperienced ? 11 : 12);
+        if (casualty)
+        {
+            isHit = critical = false;
+            toHit = toHit with { Hit = false, CriticalHit = false };
+        }
+
         // C8.9: special ammunition is used below its Depletion Number, used and run out at it, and was never there above it, when the Gun
         // did not fire at all unless it malfunctioned.
         string? use = null;
-        if (ammunition is "apcr" or "heat")
+        if (!latw && ammunition is "apcr" or "heat")
         {
             var depletion = Depletion(gun, ammunition, shot.ScenarioYear, hit.ScenarioMonth)!.Value;
             use = original < depletion ? "used" : original == depletion ? "depleted" : "none";
@@ -299,7 +334,7 @@ internal static class ScenarioA1ArmorCalculator
             rof--;
         }
 
-        if (shot.Crew.Pinned == true || shot.Phase == "AFPh")
+        if (shot.Crew.Pinned == true || shot.Phase == "AFPh" || latw)
         {
             rof = 0;
         }
@@ -319,7 +354,8 @@ internal static class ScenarioA1ArmorCalculator
 
         // C6.5: the shot acquires the target's Location, one step more if already acquired, unless the Gun malfunctions; a concealed vehicle
         // is acquired only when the shot costs it its "?" (the game decides that, R6.7).
-        var acquires = !malfunctioned && target.Concealed != true;
+        // C6.5 (the chart's G): a non-mortar SW acquires nothing.
+        var acquires = !malfunctioned && target.Concealed != true && !latw;
         var acquisition = !acquires ? 0 : Math.Max(shot.Acquisition!.Value - 1, -2);
         var gunEffect = new OrdnanceGunEffect(gun.Breakdown, malfunctioned, Math.Max(rof, 0), kept, counter, acquisition, acquires ? shot.TargetLocationId : null);
         return new OrdnanceResolution(OrdnanceResolution.Resolved, [], toHit, gunEffect)
@@ -327,6 +363,7 @@ internal static class ScenarioA1ArmorCalculator
             CrewConcealmentLost = shot.Crew.Concealed == true && shot.CrewSeen != false ? true : null,
             Kill = kill,
             AmmunitionUse = use,
+            FirerEffect = casualty ? OrdnancePanzerfaustCheck.CasualtyReduction : null,
         };
     }
 

@@ -119,6 +119,60 @@ public sealed record GameState(
     /// <summary>The Guns whose Emplacement is lost: they moved, were hooked up, or set up otherwise (C11.3; ruling R8.3).</summary>
     public IReadOnlyList<string> UnemplacedGuns { get; init; } = [];
 
+    /// <summary>The id suffix of a SMOKE grenade counter, which leaves at the end of its MPh (A24.11; ruling R9.5).</summary>
+    public const string SmokeGrenadeSuffix = "-smoke-grenade";
+
+    /// <summary>The units that attempted to place SMOKE grenades this MPh (A24.1; ruling R9.5); cleared at every phase change.</summary>
+    public IReadOnlyList<string> SmokeAttempts { get; init; } = [];
+
+    /// <summary>Each light mortar's Spotter (C9.3; ruling R9.4): the unit that spots for it until it is broken, eliminated, or captured.</summary>
+    public IReadOnlyList<MortarSpotter> MortarSpotters { get; init; } = [];
+
+    /// <summary>The PF shots each side has taken this scenario (C13.31; ruling R9.7), by side id.</summary>
+    public IReadOnlyDictionary<string, int> PanzerfaustShots { get; init; } = new Dictionary<string, int>(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Each side's Personnel at the end of setup in half-squad equivalents, a squad two and a HS or crew one, for the PF usage limit (C13.31;
+    /// ruling R9.7), by side id.
+    /// </summary>
+    public IReadOnlyDictionary<string, int> SetupHalfSquads { get; init; } = new Dictionary<string, int>(StringComparer.Ordinal);
+
+    /// <summary>Whether setup is over: an event other than game-started, instance-created, or bore-sighted has been recorded.</summary>
+    public bool SetupClosed
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The squads whose only fire this phase is one SW's use, with that SW (A7.351; rulings R9.2, R9.4, R9.7): a light mortar's shot, a Spotter's
+    /// spotting, or a PF Check. Such a squad may still fire its inherent FP; a second SW costs it. Cleared at every phase change.
+    /// </summary>
+    public IReadOnlyList<SupportWeaponUse> SupportWeaponUses { get; init; } = [];
+
+    /// <summary>
+    /// The units that fired in a fire record this phase, with the number of SW each used (A7.351; table player, pass 9); cleared at every phase
+    /// change.
+    /// </summary>
+    public IReadOnlyList<SupportWeaponUse> PhaseFirers { get; init; } = [];
+
+    /// <summary>The Spotters that spotted this phase, each for one mortar (C9.31 EX; table player, pass 9); cleared at every phase change.</summary>
+    public IReadOnlyList<MortarSpotter> SpottedThisPhase { get; init; } = [];
+
+    /// <summary>The Location a SMOKE attempt just placed its counter in, until the counter is created (A24.1; table player, pass 9).</summary>
+    public Maps.Coordinates.BoardLocation? SmokePending
+    {
+        get; init;
+    }
+
+    /// <summary>The light mortars carried to a new Location in this Player Turn's MPh, which do not fire in its AFPh (A4.41; referee, pass 9).</summary>
+    public IReadOnlyList<string> MovedWeapons { get; init; } = [];
+
+    /// <summary>
+    /// The leader directing each SW's To Hit DR this phase (A7.53; referee, pass 9), who may go on directing its further ROF shots; cleared at every
+    /// phase change.
+    /// </summary>
+    public IReadOnlyList<SupportWeaponDirector> SupportWeaponDirectors { get; init; } = [];
+
     /// <summary>The vehicles whose Shock or Unconfirmed Kill dr was made this RPh (C7.42; ruling R7.8); cleared at every phase change.</summary>
     public IReadOnlyList<string> ShockRollsThisPhase { get; init; } = [];
 

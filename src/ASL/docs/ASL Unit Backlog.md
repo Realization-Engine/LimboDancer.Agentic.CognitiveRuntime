@@ -15,7 +15,11 @@ These are not left out: the game resolves them in a simplified way and records t
 | A Recalled AFV's fire after its Stun period | R7.10 | D5.341, p. 203 | Recall as a Stun only for its Player Turn | A Recalled AFV never fires its MA; it may still exit. |
 | The Shock and Unconfirmed Kill dr at the end of the RPh | R7.8 | C7.42, p. 177 | A phase-end roll | Each Shocked AFV or UK rolls during the RPh, before it ends; the RPh cannot end until each has. |
 | One fire marker for a tank's MA and its other weapons | R7.10 | D3.1, A7.1 | Per-weapon fire records | A tank's Prep or Final Fire marker from its MA also bars its AAMG, and the reverse. |
+| The verifier takes a SW shot's map reads as recorded: the firer's terrain (a mortar in a building, a PF's Backblast) and the Spotter's reach | R9.2, R9.4 | B23.423, C9.3, C13.8 | The map reads in the verifier, from the boards | They are planner reads recorded with the shot, as range and LOS are; a moved mortar in the AFPh is recomputed from state. |
 | The verifier takes a vehicle target's Target Facing as recorded | R7.4 | D3.2, p. 199 | The Target Facing read in the verifier, from the boards | The facing is a map read recorded with the shot, as range and LOS are; the events after a kill or a Shock dr are checked by the gate's readback only. |
+| A mortar's Area Target Type shot at a hex holding friendly units | R9.3 | C3.33, p. 169 | The friendly units' MC against their own side's ELR | Refused; C3.33 would hit them too. |
+| Residual FP from ordnance Defensive First Fire, a light mortar's included | R9.3 | A8.2, p. 58 | Residual FP from an ordnance hit's IFT column (A8.26, with Air Bursts) | An ordnance hit leaves no Residual FP. |
+| SMOKE grenades placed at another level: down a stairwell, to the ground level of a non-Interior building hex, or up across a Crest Line on a subsequent dr | R9.5 | A24.1, p. 91 | Levels in movement and fire (pass 10.2) | Refused; SMOKE goes in the squad's Location or an ADJACENT Location at its level. |
 
 Berserk and Surrender from Heat of Battle (R0.2, R19.2, R22.5, R28.1) left this list with unit step 30, 2026-09-27. The backlog pass 5 (2026-09-27) built the rest but the berserk route and the wreck: CX on a withdrawal, the captor's choice at a surrender, Acquisition on units, vehicle Motion and MP left, the Unlikely Kill option, Recall as its own status, the hero moving on, Battle Hardening and Leader Creation as options, the second Heat of Battle DR, and the HS keeping its SW. It also built, from the sections below, Double Time and CX, counter names by printed values, Massacre, per-side CC declarations, grain by season for Infantry, the passenger-only survival label, and the Stun +1 and used BU toggle page fixes. The simplified resolutions recorded by passes 1, 3, and 4 moved here from sections 10, 12, and 14 on 2026-09-27. The backlog pass 6 (2026-09-28) built wrecks.
 
@@ -274,3 +278,19 @@ Found by playing the Play page with scripted dice in the games `pass23-demo`, `p
 | Fire at another level for ordnance | R8.7 | C2.6 | Levels in fire (pass 10.2) | The C2.6 limit refuses; otherwise undecided. |
 | Multiple Hits | R8.12 | C3.8 | A Gun of 40mm or less | Not reached. |
 
+## 19. Added by the backlog pass 9
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| The Panzerschreck and the ATR | R9.1 | C13.48, C13.2, pp. 183 to 184 | A registered source for their counters (the PSK's To Hit Table is printed only on its counter; no source prints the ATR's B#, ROF, or PP), or the user's ruling | Not in the catalog. |
+| Light mortar repair, and dismantled 76-82mm mortars | R9.1 | A9.72, C9.2 | A registered source for a SW mortar's malfunctioned side | A malfunctioned light mortar stays malfunctioned. |
+| The Area Target Type by Guns, mortars against vehicles and Guns, target hexes with units in several Locations, and units out of the firer's LOS in the target hex | R9.3, R9.9 | C3.33, C3.332, C1.55, p. 170 | IFT attacks on vehicles by HE; levels in fire | Refused. |
+| A mortar Spotter's wait until the next MPh after its loss, the Acquisition a spotting squad loses by firing, and spotting in the AFPh | R9.4 | C9.3, C9.31, p. 179 | Opportunity Fire (pass 12) | A new Spotter may be named at once; the Acquisition is kept; spotted fire is in the PFPh and DFPh only. |
+| Bore Sighting by a light mortar | R9.9 | C6.41, p. 174 | Hidden setup records | Not offered. |
+| SMOKE and WP by ordnance, WP grenades, Dispersed SMOKE, drift, Gusts, and weather | R9.9 | C8.5, A24.3 to A24.62 | A Gun with an s# or WP#; wind and weather (pass 16) | Not reached: no catalog Gun lists SMOKE, no nationality in the game has WP grenades. |
+| The PF against Infantry, unarmored vehicles, and Guns (HE Equivalency), the PFk, the optional usage of C13.311, Desperation fire, a PF at range 0, and a PF Check in Subsequent First Fire | R9.8 | C8.31, C13.3, C13.311, C13.81 | HE Equivalency; Subsequent First Fire of SW | Refused. Range 0 is not reached, since Infantry and an enemy vehicle never share a Location in the review (R25.3). |
+| A squad firing a light mortar and a MG in one phase, forfeiting its inherent FP | R9.2 | A7.351 | One record of each unit's SW use | The Fire package's limit of two MG per squad does not count the mortar. |
+| The PF usage limit with reinforcements | R9.7 | C13.31 | Reinforcements (pass 16) | The limit counts the German squad equivalents at the end of setup. |
+| A kept Spotter that moved out of reach, and the HS of a Reduced Spotting squad keeping its Spotting ability | R9.4 | C9.3, p. 179 | Spotter records that follow lineage | A kept Spotter blocks a new one while it is Good Order, wherever it is; the HS of a Reduced Spotter is a new unit, so a new Spotter may be named. |
+| A SMOKE attempt in a Residual FP Location | R9.5 | A24.1, A8.2 | The Residual FP attack on an MF expenditure without entry | Refused. |
+| The SMOKE panel offering only squads with an exponent, and the own and ADJACENT Locations as choices | R9.5 | A24.1 | The page reading catalog attributes | The page lists every checked squad and takes a typed Location; the planner refuses the others. |

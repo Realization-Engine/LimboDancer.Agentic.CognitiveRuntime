@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "1.0.0",
+  "chart": "C3 To Hit Table: the Area row",
+  "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+  "physicalPdfPage": 700,
+  "boundary": "The Area (Mortar, SMOKE) row's Basic TH# at each range. The Infantry row and the C4 rows are in c3-to-hit-table.transcription.json, the Vehicle row and the APDS/APCR row in c3-to-hit-vehicle-row.transcription.json; the SMOKE row is outside all three.",
+  "reading": "The Area row prints one Basic TH# per range column, in red only, for every nationality (C3.33; confirmed on a rendering). The C4 modifications apply to it as to the other rows (C4.5).",
+  "ranges": ["0-6", "7-12", "13-18", "19-24", "25-30", "31-36", "37-42", "43-48", "49-54", "> 54"],
+  "area": [7, 7, 8, 8, 7, 7, 6, 6, 5, 5]
+}

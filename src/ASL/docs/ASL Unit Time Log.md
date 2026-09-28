@@ -205,3 +205,17 @@ Pass 8 total: 03:12 to 05:08, 1:56 against the estimate of 6:10 (build 4:55).
 | 8.1 to 8.9, live side (about 2:05) | 0:38 | Live stage (0:21) and the live code begun with the source comparison (about 0:17) |
 | Overhead (1:15) | 1:00 | Reading and rulings, source comparison, referee and table player with their fixes, suites, documents, visual check, merge gate |
 
+## Pass 9: Mortars, SMOKE, and anti-tank weapons
+
+Estimate: 4:45 (build 3:30) in the [ASL Unit Backlog Passes Plan](<ASL Unit Backlog Passes Plan.md>). Kickoff 2026-09-28 05:10. Branch `feature/asl-backlog-pass-9`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Reading (plan, backlog sections 6, 7, 12, A24, C1.52 to C1.55, C3.33 to C3.74, C4, C9, C13, the SW Chart, the two listing rows, the To Hit Table) and rulings R9.1 to R9.9 | 05:10 | 05:46 | 0:36 | |
+| Catalog 1.8.0: two light mortars (36 rows), vocabulary 1.13.0, version references, synthetic catalog | 05:46 | 05:51 | 0:05 | |
+| Package stage: Area Target Type, spotting, leadership, and Panzerfaust code, the Area row, source comparison (23 subjects), package revision, package tests | 05:51 | 06:11 | 0:20 | |
+| Live stage: state and records, projector, SMOKE grenades and Hindrance, mortar and PF live facts and planner, referee agent (15 findings) and its fixes | 06:11 | 06:30 | 0:19 | The referee ran from 06:11 to 06:24 |
+| Live tests, Play page, table player agent (14 findings) started | 06:30 | 06:40 | 0:10 | |
+| Full suite (one Studio test updated), documents drafted, visual check in the Studio | 06:40 | 06:51 | 0:11 | The pane did not draw; the check read the page text |
+| Table player fixes with tests, documents (review, design, backlog sections 1 and 19, requirements, catalog design 9.9) | 06:51 | 06:59 | 0:08 | The table player ran from 06:40 to 06:52 |
+| Full local suite before the commit (2,088 tests pass, 30 skipped) | 06:59 | 07:08 | 0:09 | |
