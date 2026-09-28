@@ -84,6 +84,12 @@ public sealed record FireDefinition(
         get; init;
     }
 
+    /// <summary>A vehicle's Towing Number (C10.1); null when it cannot tow.</summary>
+    public int? Towing
+    {
+        get; init;
+    }
+
     /// <summary>Whether a vehicle is unarmored (D1.21).</summary>
     public bool? Unarmored
     {
@@ -376,6 +382,7 @@ public sealed class ScenarioA1FireReference
             WoundedMorale = Value("wounded", "morale"),
             MovementType = Text("front", "movement-type"),
             MovementPoints = Value("front", "movement-points"),
+            Towing = Value("front", "towing"),
             Unarmored = Trait("front", "asl:unarmored"),
             OpenTopped = Trait("front", "asl:open-topped"),
             MainArmament = Text("front", "ma-weapon"),

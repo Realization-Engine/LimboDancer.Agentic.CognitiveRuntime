@@ -358,6 +358,8 @@ public static class ScenarioA1FireCalculator
             ("AFPh", "phasing", null) => true,
             ("DFPh", "non-phasing", null) => true,
             ("MPh", "non-phasing", { } movement) => MovementKinds.Contains(movement),
+            // Ruling R8.1: an ordnance hit of Defensive First Fire attacks the moving units, its FFMO and FFNAM already To Hit Cases J3 and J4.
+            ("MPh", "non-phasing", null) => attack.OrdnanceHit is not null,
             ("MPh", "phasing", BoundingFirstFire) => attack.VehicleFire is not null,
             _ => false,
         };
@@ -430,7 +432,7 @@ public static class ScenarioA1FireCalculator
                 outside.Add("asl.a1.fire.target-outside");
             }
 
-            if (targetDefinitions.Any(item => item?.Kind == "asl:crew"))
+            if (targetDefinitions.Any(item => item?.Kind == "asl:crew") && !GunCrewAlone(attack))
             {
                 outside.Add("asl.a1.fire.crew-target-unreviewed");
             }
@@ -460,7 +462,9 @@ public static class ScenarioA1FireCalculator
         // A7.5: a group may span Locations each ADJACENT to another of them; Residual FP never joins a group (A8.22).
         if (attack.FireGroupComplete != true || !locations.Contains(attack.FirerLocationId) || (multi && attack.FirerLocationsAdjacent != true)
             || firers.Any(item => item.Broken == true || (item.UsesSupportWeapon == true && item.Weapons is not { Count: > 0 }))
-            || firerDefinitions.Any(item => item is null || !(item.IsMmc || item.IsHero) || item.Firepower is null || item.Range is null))
+            || firerDefinitions.Any(item => item is null || !(item.IsMmc || item.IsHero || item.Kind == "asl:crew") || item.Firepower is null || item.Range is null)
+            // A7.352 (ruling R8.4): a crew that fired its Gun this Player Turn has no inherent FP.
+            || firers.Any(item => item.GunFired == true && item.UsesInherentFp != false))
         {
             outside.Add("asl.a1.fire.firer-outside");
         }
@@ -537,8 +541,8 @@ public static class ScenarioA1FireCalculator
             outside.Add("asl.a1.fire.director-outside");
         }
 
-        // C11: crews (and the Guns they man) as targets are not reviewed (ruling R24.3).
-        if (targetDefinitions.Any(item => item?.Kind == "asl:crew"))
+        // C11 (ruling R8.3): a Gun's crew is a target alone in its Location; a crew with other units, or with no Gun named, is not reviewed.
+        if (targetDefinitions.Any(item => item?.Kind == "asl:crew") && !GunCrewAlone(attack))
         {
             outside.Add("asl.a1.fire.crew-target-unreviewed");
         }
@@ -668,6 +672,12 @@ public static class ScenarioA1FireCalculator
         _ when attack.Phase == "DFPh" => weapon.FiredThisPlayerTurn != true,
         _ => weapon.FiredThisPlayerTurn != true && weapon.FirstFireMarked != true,
     };
+
+    /// <summary>Whether the attack's targets are exactly the crew of the Gun it names (ruling R8.3).</summary>
+    internal static bool GunCrewAlone(FireAttack attack) => attack.GunTarget is { CrewUnitId: { } crew } && attack.Targets is [{ } only] && only.UnitId == crew;
+
+    /// <summary>Whether a Good Order crew's gunshield faces the attack (C11.5).</summary>
+    private static bool GunshieldFaces(FireAttack attack, FireGunTarget gun) => gun.Gunshield == true && attack.Targets is [{ Broken: not true }];
 
     private static bool Dice(IReadOnlyList<int>? dice, bool allowEmpty) =>
         dice is null ? allowEmpty : dice.Count == 2 && dice.All(die => die is >= 1 and <= 6);
@@ -1200,6 +1210,13 @@ public static class ScenarioA1FireCalculator
                     drm.Add(new FireModifier("critical-hit-tem:" + attack.TargetTerrain, -Math.Abs(tem), "C3.71"));
                 }
             }
+            else if (GunCrewAlone(attack) && attack.GunTarget is { } gunTarget && Math.Max(gunTarget.Emplaced == true ? 2 : 0, GunshieldFaces(attack, gunTarget) ? 2 : 0) > tem)
+            {
+                // C11.2, C11.5 (ruling R8.3): the crew takes the Emplacement TEM or its gunshield instead of a lower positive TEM, never both.
+                drm.Add(gunTarget.Emplaced == true
+                    ? new FireModifier("emplacement:" + gunTarget.GunId, 2m, "C11.2")
+                    : new FireModifier("gunshield:" + gunTarget.GunId, 2m, "C11.5"));
+            }
             else if (tem != 0)
             {
                 drm.Add(new FireModifier("tem:" + attack.TargetTerrain, tem, "A7.6"));
@@ -1216,6 +1233,20 @@ public static class ScenarioA1FireCalculator
                 else if (hit.CriticalHit == true)
                 {
                     drm.Add(new FireModifier("critical-hit-tem:afv-cover:" + cover, -1m, "C3.71"));
+                }
+            }
+
+            // C3.71 (referee, pass 8): a Critical Hit of Defensive First Fire keeps FFNAM and FFMO on its Effects DR.
+            if (hit is { CriticalHit: true } && attack.Phase == "MPh" && attack.TargetMovement is { } movedBy)
+            {
+                if (movedBy.AssaultMovement != true)
+                {
+                    drm.Add(new FireModifier("ffnam", -1m, "C3.71"));
+                }
+
+                if (attack.TargetTerrain == "open-ground" && (attack.Los?.HindranceDrm ?? 0) == 0 && Cover(attack) is null)
+                {
+                    drm.Add(new FireModifier("ffmo", -1m, "C3.71"));
                 }
             }
 
@@ -1278,6 +1309,15 @@ public static class ScenarioA1FireCalculator
             var final = original + (int)drm.Sum(item => item.Value);
             var main = hasKnown ? known : vsConcealed;
             var (column, shifted, result) = Column(main, shift, final);
+
+            // C11.4 (ruling R8.3): an HE hit whose DR gives no KIA or K on the Gun is a Near Miss, and the crew's gunshield adds +2 to it.
+            if (hit is { CriticalHit: false } && GunCrewAlone(attack) && attack.GunTarget is { } shielded && GunshieldFaces(attack, shielded)
+                && !Regex.IsMatch(result, "^([1-7])?KIA$") && !Regex.IsMatch(result, "^K/([1-4])$"))
+            {
+                drm.Add(new FireModifier("gunshield:" + shielded.GunId, 2m, "C11.4"));
+                final += 2;
+                (column, shifted, result) = Column(main, shift, final);
+            }
             FireColumn? second = null;
             if (hasKnown && hasConcealed && !residual && hit is null)
             {

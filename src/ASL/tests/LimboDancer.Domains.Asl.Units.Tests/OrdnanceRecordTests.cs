@@ -74,7 +74,7 @@ public sealed class OrdnanceRecordTests
         Assert.Empty(Project(Next(events, Phase("p2", "mph")), new Verifier()).Current!.OrdnanceShots);
 
         // Outside a fire phase, or without the verifier, the record is refused.
-        Assert.Contains(Project(With(8, Gun(), Phase("p1", "mph"), Fired("f1", true)), new Verifier()).Diagnostics, item => item.Code == "UNIT-STATE-033");
+        Assert.Contains(Project(With(8, Gun(), Phase("p1", "rph"), Fired("f1", true)), new Verifier()).Diagnostics, item => item.Code == "UNIT-STATE-033");
         Assert.Contains(Project(events, null).Diagnostics, item => item.Code == "UNIT-STATE-023");
     }
 

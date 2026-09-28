@@ -66,6 +66,12 @@ public sealed record GameStarted(
     {
         get; init;
     }
+
+    /// <summary>The Scenario Defender's side, when setup names it; only it may Bore Sight (C6.41; ruling R8.8).</summary>
+    public string? ScenarioDefender
+    {
+        get; init;
+    }
 }
 
 /// <summary><c>phase-changed</c>.</summary>

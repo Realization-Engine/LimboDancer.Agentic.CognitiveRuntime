@@ -164,7 +164,16 @@ internal static class ScenarioA1ArmorCalculator
             drm.Add(new FireModifier("stun", 1, "D5.34"));
         }
 
-        if (target.Moving == true)
+        drm.AddRange(ScenarioA1OrdnanceCalculator.PassEightFirerDrm(shot));
+
+        // C6.11, C6.12 (ruling R8.1): Defensive First Fire at a vehicle that has spent at most one MP in the firer's continuous LOS takes Case J2,
+        // at most three Case J1, else Case J; a moving target in a fire phase takes Case J.
+        if (shot.FireKind is not null && shot.Movement?.MpInLos is { } seen)
+        {
+            var mpInLos = seen - (shot.Movement.MpClaimed ?? 0);
+            drm.Add(mpInLos <= 1 ? new FireModifier("case-j2", 4, "C6.12") : mpInLos <= 3 ? new FireModifier("case-j1", 3, "C6.11") : new FireModifier("case-j", 2, "C6.1"));
+        }
+        else if (target.Moving == true)
         {
             drm.Add(new FireModifier("case-j", 2, "C6.1"));
         }
@@ -180,7 +189,11 @@ internal static class ScenarioA1ArmorCalculator
             drm.Add(new FireModifier("case-l", range == 1 ? -2 : -1, "C6.3"));
         }
 
-        if (shot.Acquisition is int acquired && acquired < 0 && target.Concealed != true)
+        if (shot.BoreSighted == true)
+        {
+            drm.Add(new FireModifier("case-m", -2, "C6.4"));
+        }
+        else if (shot.Acquisition is int acquired && acquired < 0 && target.Concealed != true)
         {
             drm.Add(new FireModifier("case-n", acquired, "C6.5"));
         }
@@ -264,7 +277,7 @@ internal static class ScenarioA1ArmorCalculator
         }
 
         var toHit = new OrdnanceToHit(color, basic, modifications, modified, [.. dice], original, drm, final, improbable, subsequent, isHit, critical);
-        var malfunctioned = original >= gun.Breakdown;
+        var malfunctioned = original >= ScenarioA1OrdnanceCalculator.Breakdown(shot, gun);
 
         // C8.9: special ammunition is used below its Depletion Number, used and run out at it, and was never there above it, when the Gun
         // did not fire at all unless it malfunctioned.
@@ -291,8 +304,7 @@ internal static class ScenarioA1ArmorCalculator
             rof = 0;
         }
 
-        var kept = !malfunctioned && rof > 0 && dice[0] <= rof;
-        var counter = kept ? null : shot.Phase is "PFPh" or "AFPh" ? "prep-fire" : "final-fire";
+        var (kept, counter) = ScenarioA1OrdnanceCalculator.Counter(shot, malfunctioned, rof, dice[0]);
         OrdnanceKill? kill = null;
         if (isHit && use != "none")
         {
@@ -312,7 +324,7 @@ internal static class ScenarioA1ArmorCalculator
         var gunEffect = new OrdnanceGunEffect(gun.Breakdown, malfunctioned, Math.Max(rof, 0), kept, counter, acquisition, acquires ? shot.TargetLocationId : null);
         return new OrdnanceResolution(OrdnanceResolution.Resolved, [], toHit, gunEffect)
         {
-            CrewConcealmentLost = shot.Crew.Concealed == true ? true : null,
+            CrewConcealmentLost = shot.Crew.Concealed == true && shot.CrewSeen != false ? true : null,
             Kill = kill,
             AmmunitionUse = use,
         };

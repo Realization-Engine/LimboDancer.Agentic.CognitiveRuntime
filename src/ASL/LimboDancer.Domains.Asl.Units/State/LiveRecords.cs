@@ -72,6 +72,12 @@ public sealed record MovementStepped(IReadOnlyList<string> Movers, BoardLocation
     {
         get; init;
     }
+
+    /// <summary>The Gun its crew pushes along with this step (C10.3; ruling R8.6); null when none. Any other Gun a mover mans is abandoned.</summary>
+    public string? PushedGun
+    {
+        get; init;
+    }
 }
 
 /// <summary>

@@ -90,6 +90,10 @@ public static class GameProjector
                 RallyAttempted rally => Rally(previous, rally, gameEvent),
                 RepairAttempted repair => Repair(previous, repair),
                 ShockRecoveryRolled shock => ShockRecovery(previous, shock),
+                BoreSighted sighted => BoreSight(previous, sighted),
+                GunTurned turned => TurnGun(previous, turned),
+                ManhandlingRolled manhandling => Manhandle(previous, manhandling),
+                GunHooked hooked => HookGun(previous, hooked),
                 MovementStepped moving => StepMovement(previous, moving),
                 VehicleStepped vehicle => StepVehicle(previous, vehicle),
                 MovementWindowClosed closed => CloseWindow(previous, closed),
@@ -121,6 +125,15 @@ public static class GameProjector
                 next = next with
                 {
                     MovedVehicles = [.. next.MovedVehicles, stepped.Vehicle]
+                };
+            }
+
+            // C6.17 (ruling R8.1): Defensive First Fire shots count per Location the moving stack enters.
+            if (gameEvent.Payload is MovementStepped or VehicleStepped { Kind: VehicleStepped.Enter } && next.OrdnanceShotsHere.Count > 0)
+            {
+                next = next with
+                {
+                    OrdnanceShotsHere = []
                 };
             }
 
@@ -223,6 +236,7 @@ public static class GameProjector
                 SpecialRules = started.SpecialRules,
                 ScenarioMonth = started.ScenarioMonth,
                 ScenarioYear = started.ScenarioYear,
+                ScenarioDefender = started.ScenarioDefender,
                 FirstSide = started.PhasingSide,
                 Source = gameEvent.Source,
             };
@@ -279,9 +293,9 @@ public static class GameProjector
             // unit a new Rally attempt (A10.6, p. 68).
             string[] cleared = state.Phase switch
             {
-                "dfph" => [Conditions.FinalFire, Conditions.FirstFire],
-                "afph" => [Conditions.PrepFire, Conditions.BoundingFire],
-                "ccph" => [Conditions.Pinned],
+                "dfph" => [Conditions.FinalFire, Conditions.FirstFire, Conditions.IntensiveFire],
+                "afph" => [Conditions.PrepFire, Conditions.BoundingFire, Conditions.IntensiveFire],
+                "ccph" => [Conditions.Pinned, "asl:ti"],
                 "rph" => [Conditions.DesperationMorale],
                 _ => [],
             };
@@ -316,6 +330,10 @@ public static class GameProjector
                     OrdnanceShots = [],
                     Advances = newPlayerTurn ? [] : state.Advances,
                     MovedVehicles = newPlayerTurn ? [] : state.MovedVehicles,
+                    GunCrewsFired = newPlayerTurn ? [] : state.GunCrewsFired,
+                    NoMoveThisPlayerTurn = newPlayerTurn ? [] : state.NoMoveThisPlayerTurn,
+                    OrdnanceShotsHere = [],
+                    GunsTurnedThisPhase = [],
                     Turn = change.Turn,
                     Phase = change.Phase,
                     PhasingSide = change.PhasingSide,
@@ -572,9 +590,10 @@ public static class GameProjector
             // D1.3 (ruling R7.10): an AFV's MA is fired by the AFV itself, its crew inherent.
             var firer = state.Find(fired.Gun);
             var tank = firer is UnitInstance { Status: InstanceStatus.Active } vehicle && vocabulary.IsA(vehicle.Kind, "asl:vehicle") && fired.Crew == vehicle.Id;
-            if (state.Phase is not ("pfph" or "afph" or "dfph")
+            if (state.Phase is not ("pfph" or "afph" or "dfph" or "mph")
                 || !(tank || (firer is EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Manned } manning } && manning.Holder == fired.Crew))
-                || Active(state, fired.Crew) is not UnitInstance || (shots is not null && !shots.RateOfFireKept))
+                || Active(state, fired.Crew) is not UnitInstance
+                || (shots is not null && !shots.RateOfFireKept && !(fired.Facts.TryGetProperty("intensiveFire", out var intensive) && intensive.ValueKind == JsonValueKind.True)))
             {
                 return Fail<GameState>("UNIT-STATE-033", "A Gun fires in a fire phase, manned by its crew, and again only on a kept Multiple ROF (C2.24).");
             }
@@ -640,6 +659,19 @@ public static class GameProjector
                 };
             }
 
+            // C6.17: a Defensive First Fire shot counts against the moving stack's Location; A7.352: a crew that fires its Gun loses its inherent FP.
+            var here = state.OrdnanceShotsHere.FirstOrDefault(item => item.Gun == fired.Gun);
+            state = state with
+            {
+                OrdnanceShotsHere = state.Phase == "mph"
+                    ? [.. state.OrdnanceShotsHere.Where(item => item.Gun != fired.Gun), new OrdnanceShotRecord(fired.Gun, (here?.Shots ?? 0) + 1, fired.RateOfFireKept)
+                    {
+                        Mp = fired.Facts.TryGetProperty("movement", out var moved) && moved.TryGetProperty("spentHere", out var spent) && spent.ValueKind == JsonValueKind.Number
+                            ? spent.GetInt32() : 0,
+                    }]
+                    : state.OrdnanceShotsHere,
+                GunCrewsFired = tank || state.GunCrewsFired.Contains(fired.Crew) ? state.GunCrewsFired : [.. state.GunCrewsFired, fired.Crew],
+            };
             return state with
             {
                 OrdnanceShots = [.. state.OrdnanceShots.Where(item => item.Gun != fired.Gun), new OrdnanceShotRecord(fired.Gun, (shots?.Shots ?? 0) + 1, fired.RateOfFireKept)],
@@ -769,11 +801,19 @@ public static class GameProjector
                 [Conditions.Concealed] = ConditionState.False,
                 [Conditions.Hidden] = ConditionState.False,
             };
-            return DropHeldBy(Replace(state, vehicle with
+            // C10.1 (ruling R8.6): a Gun in tow is destroyed with its vehicle.
+            var wrecked = Replace(state, vehicle with
             {
                 Status = InstanceStatus.Wrecked,
                 Conditions = conditions
-            }), [vehicle.Id]);
+            })!;
+            wrecked = wrecked with
+            {
+                Equipment = [.. wrecked.Equipment.Select(item => item.Holding is { Role: HoldingRole.Towed } tow && tow.Holder == vehicle.Id
+                    ? item with { Status = InstanceStatus.Eliminated, Holding = null }
+                    : item)],
+            };
+            return DropHeldBy(wrecked, [vehicle.Id]);
         }
 
         /// <summary>A20.3 (ruling R5.6): the captor's side rejects a pending surrender; the unit is eliminated and its side faced with No Quarter.</summary>
@@ -1083,6 +1123,94 @@ public static class GameProjector
         }
 
         /// <summary>A Repair record (A9.72): a dr at most the Repair Number repairs, a 6 eliminates, anything else changes nothing.</summary>
+        private GameState? BoreSight(GameState state, BoreSighted sighted)
+        {
+            // C6.41, C6.42 (ruling R8.8): one Location per Gun of the Scenario Defender, recorded at setup with the Gun's crew and setup Location.
+            if (Active(state, sighted.Gun) is not EquipmentInstance { Holding: { Role: HoldingRole.Manned } manning, Position: MapPosition at }
+                || manning.Holder != sighted.Crew || at.Location != sighted.SetupLocation || sighted.Location == at.Location
+                || state.Unit(sighted.Crew)?.Side is not { } side || side != state.ScenarioDefender || state.BoreSights.Any(item => item.Gun == sighted.Gun))
+            {
+                return Fail<GameState>("UNIT-STATE-039", "A Bore Sighting is one Location outside the hex of a Gun the Scenario Defender set up manned (C6.41, C6.42).");
+            }
+
+            return state with
+            {
+                BoreSights = [.. state.BoreSights, sighted]
+            };
+        }
+
+        private GameState? TurnGun(GameState state, GunTurned turned)
+        {
+            // C3.22 (ruling R8.9): in a friendly fire phase, a Gun its Good Order, unpinned crew could still fire changes its CA and fires no
+            // more that phase; in the PFPh neither it nor its crew moves that Player Turn.
+            var shots = state.OrdnanceShots.FirstOrDefault(item => item.Gun == turned.Gun);
+            if (Active(state, turned.Gun) is not EquipmentInstance { Holding: { Role: HoldingRole.Manned } manning, Position: MapPosition at } gun
+                || Active(state, manning.Holder) is not UnitInstance crew
+                || state.Phase is not ("pfph" or "afph" or "dfph") || (crew.Side == state.PhasingSide) != (state.Phase != "dfph")
+                || new[] { Conditions.Broken, Conditions.Pinned }.Any(name => GameState.Condition(crew, name) == ConditionState.True)
+                || new[] { Conditions.Malfunctioned, Conditions.PrepFire, Conditions.FinalFire, Conditions.FirstFire, Conditions.IntensiveFire }.Any(name => GameState.Condition(gun, name) == ConditionState.True)
+                    && !(shots?.RateOfFireKept ?? false)
+                || (shots is not null && !shots.RateOfFireKept))
+            {
+                return Fail<GameState>("UNIT-STATE-039", "A Gun changes its CA without firing in a friendly fire phase while its Good Order, unpinned crew could still fire it (C3.22).");
+            }
+
+            return state with
+            {
+                Equipment = [.. state.Equipment.Select(item => item.Id == gun.Id ? gun with { Position = at with { Facing = turned.Facing } } : item)],
+                OrdnanceShots = [.. state.OrdnanceShots.Where(item => item.Gun != gun.Id), new OrdnanceShotRecord(gun.Id, shots?.Shots ?? 0, false)],
+                NoMoveThisPlayerTurn = state.Phase == "pfph" ? [.. state.NoMoveThisPlayerTurn, gun.Id, crew.Id] : state.NoMoveThisPlayerTurn,
+                GunsTurnedThisPhase = [.. state.GunsTurnedThisPhase, gun.Id],
+            };
+        }
+
+        private GameState? Manhandle(GameState state, ManhandlingRolled manhandling)
+        {
+            // C10.3 (ruling R8.6): the Manhandling DR against the Gun's M#.
+            if (state.Phase != "mph" || Active(state, manhandling.Gun) is not EquipmentInstance || !rolls.TryGetValue(manhandling.Roll, out var roll) || roll.Count != 2
+                || manhandling.Result != ManhandlingRolled.For(roll.Values.Sum() + manhandling.Drm, manhandling.Manhandling))
+            {
+                return Fail<GameState>("UNIT-STATE-039", "A Manhandling DR is made in the MPh for an active Gun, and its result follows from its Final DR and the M# (C10.3).");
+            }
+
+            return state;
+        }
+
+        private GameState? HookGun(GameState state, GunHooked hooked)
+        {
+            // C10.11, C10.12 (ruling R8.6): a Stopped vehicle of the phasing side spends half its MP to hook up, or unhook, a Gun in its hex with the
+            // Gun's crew on foot there.
+            if (state.Phase != "mph" || Active(state, hooked.Vehicle) is not UnitInstance vehicle || vehicle.Side != state.PhasingSide
+                || !vocabulary.IsA(vehicle.Kind, "asl:vehicle") || state.Location(vehicle.Id) is not { } at || Active(state, hooked.Gun) is not EquipmentInstance gun
+                || Active(state, hooked.Crew) is not UnitInstance crew || state.Location(crew.Id)?.Location != at.Location || hooked.Mp <= 0
+                || GameState.Condition(vehicle, Conditions.Motion) == ConditionState.True
+                || (hooked.Hooked
+                    ? (gun.Holding is { Role: HoldingRole.Manned } manning && manning.Holder != crew.Id) || gun.Holding is { Role: not HoldingRole.Manned }
+                        || (gun.Position as MapPosition)?.Location != at.Location
+                    : gun.Holding is not { Role: HoldingRole.Towed } tow || tow.Holder != vehicle.Id || hooked.Facing is null))
+            {
+                return Fail<GameState>("UNIT-STATE-039", "A Stopped vehicle hooks up a Gun its crew mans in its hex, or unhooks its towed Gun there for a crew on foot (C10.11, C10.12).");
+            }
+
+            var halves = (vehicle.MfSpent * 2) + (vehicle.HalfMfSpent ? 1 : 0) + (hooked.Mp * 2);
+            var next = Replace(state, vehicle with
+            {
+                MfSpent = halves / 2,
+                HalfMfSpent = halves % 2 == 1
+            })!;
+            var facing = hooked.Facing ?? (gun.Position as MapPosition)?.Facing;
+            return next with
+            {
+                Equipment = [.. next.Equipment.Select(item => item.Id != gun.Id ? item : gun with
+                {
+                    Holding = hooked.Hooked ? new Holding(vehicle.Id, HoldingRole.Towed) : new Holding(crew.Id, HoldingRole.Manned),
+                    Position = new MapPosition(at.Location) { Facing = facing },
+                })],
+                UnemplacedGuns = next.UnemplacedGuns.Contains(gun.Id) ? next.UnemplacedGuns : [.. next.UnemplacedGuns, gun.Id],
+                BoreSights = [.. next.BoreSights.Where(item => item.Gun != gun.Id)],
+            };
+        }
+
         private GameState? ShockRecovery(GameState state, ShockRecoveryRolled shock)
         {
             // C7.42 (ruling R7.8): one dr per RPh for a Shocked AFV or an Unconfirmed Kill.
@@ -1243,6 +1371,19 @@ public static class GameProjector
                 next = MovePrisoners(next, unit.Id, new MapPosition(moving.To));
             }
 
+            // C10.3 (ruling R8.6): the pushed Gun goes with its crew and loses its Emplacement; any other Gun a mover mans is abandoned.
+            foreach (var manned in next.Equipment.Where(item => item.Holding is { Role: HoldingRole.Manned } holding && moving.Movers.Contains(holding.Holder)).ToArray())
+            {
+                next = next with
+                {
+                    Equipment = [.. next.Equipment.Select(item => item.Id != manned.Id ? item
+                        : manned.Id == moving.PushedGun && manned.Position is MapPosition gunAt ? manned with { Position = gunAt with { Location = moving.To } }
+                        : manned with { Holding = null })],
+                    UnemplacedGuns = manned.Id == moving.PushedGun && !next.UnemplacedGuns.Contains(manned.Id) ? [.. next.UnemplacedGuns, manned.Id] : next.UnemplacedGuns,
+                    BoreSights = manned.Id == moving.PushedGun ? [.. next.BoreSights.Where(item => item.Gun != manned.Id)] : next.BoreSights,
+                };
+            }
+
             return next with
             {
                 Movement = new MovementState(moving.Movers, moving.To, moving.HalfMf, moving.Step, moving.Assault, WindowOpen: true)
@@ -1342,6 +1483,14 @@ public static class GameProjector
                 HalfMfSpent = halves % 2 == 1,
                 Conditions = conditions,
             })!;
+
+            // C10.1 (ruling R8.6): a Gun in tow goes with its vehicle.
+            next = next with
+            {
+                Equipment = [.. next.Equipment.Select(item => item.Holding is { Role: HoldingRole.Towed } tow && tow.Holder == vehicle.Id && item.Position is MapPosition towedAt
+                    ? item with { Position = towedAt with { Location = step.At } }
+                    : item)],
+            };
             return next with
             {
                 Movement = new MovementState([vehicle.Id], step.At, step.Kind == VehicleStepped.Enter ? step.HalfMp : (current?.HalfMfInLocation ?? 0) + step.HalfMp,

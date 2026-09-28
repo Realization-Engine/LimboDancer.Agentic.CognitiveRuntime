@@ -185,6 +185,9 @@ public static class Conditions
     /// <summary>Bounding Fire (D3.3, p. 199): the vehicle fired in its MPh; it may not fire in the AFPh, and the counter leaves at its end (asl@1.10.0).</summary>
     public const string BoundingFire = "asl:bounding-fire";
 
+    /// <summary>Intensive Fire (C5.6, p. 173): the Gun fired once beyond its ROF and fires no more this Player Turn; it is kept beside its fire counter (asl@1.12.0).</summary>
+    public const string IntensiveFire = "asl:intensive-fire";
+
     /// <summary>A Shocked AFV (C7.41, C7.42, p. 177): it may not move, fire, or change its CA until it recovers (asl@1.11.0).</summary>
     public const string Shocked = "asl:shocked";
 

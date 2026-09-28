@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "catalog": "asl-scenario-a1",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "label": "Scenario A1 catalog: Infantry Personnel, heroes, leaders, crews, MGs, Guns, vehicles, and tanks for the reviewed Scenario A1 cases",
   "vocabulary": ["asl@1.3.0"],
   "source": {

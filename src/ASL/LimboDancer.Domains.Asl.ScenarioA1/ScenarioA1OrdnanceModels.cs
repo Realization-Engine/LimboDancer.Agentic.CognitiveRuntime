@@ -49,6 +49,90 @@ public sealed record OrdnanceShot(
     {
         get; init;
     }
+
+    /// <summary><c>first-fire</c> for Defensive First Fire in the MPh (C6.1, A8.1; ruling R8.1); null in a fire phase.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? FireKind
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the shot is Intensive Fire (C5.6; ruling R8.2).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? IntensiveFire
+    {
+        get; init;
+    }
+
+    /// <summary>The moving target's facts for Defensive First Fire (C6.11 to C6.17); required when <see cref="FireKind"/> is set.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public OrdnanceMovement? Movement
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the target is in the Gun's own Location (C5.5 Case E; ruling R8.8); the range is then 0.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? SameHex
+    {
+        get; init;
+    }
+
+    /// <summary>Whether a squad or HS of the Gun's nationality mans it (C5.8 Case H, A21.13; ruling R8.8).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? NonQualified
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the target Location is the Gun's Bore Sighted Location, fired by its original crew from its setup Location (C6.4).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? BoreSighted
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether a Good Order enemy ground unit within 16 hexes sees the firing Gun's Location, so a concealed crew and Gun lose their "?" by
+    /// firing (A12.14; ruling R8.5); null leaves it to the target Location, as before.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? CrewSeen
+    {
+        get; init;
+    }
+
+    /// <summary>The squad equivalents and vehicles by which the firer's side overstacks its Location (A5.12; ruling R8.10).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? FirerOverstack
+    {
+        get; init;
+    }
+
+    /// <summary>The squad equivalents by which the target side's Personnel overstack the target Location (A5.131; ruling R8.10).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? TargetOverstack
+    {
+        get; init;
+    }
+}
+
+/// <summary>
+/// A moving target of Defensive First Fire (C6.1 to C6.17; ruling R8.1): a vehicle's MP spent in the firer's continuous LOS; Infantry's
+/// non-Assault Movement (Case J3) and a move into Open Ground (Case J4); the MF or MP the target spent in its Location; and the Gun's shots
+/// at it there already.
+/// </summary>
+public sealed record OrdnanceMovement(int? MpInLos, bool? NonAssault, bool? OpenGround, int? SpentHere, int? ShotsHere)
+{
+    /// <summary>
+    /// The MP of the moving vehicle the Gun's earlier shots at it in this Location already claimed (C6.17 and its EX): they count neither
+    /// toward this shot's Case J1 or J2 nor toward its limit. Null is none.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? MpClaimed
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -60,6 +144,27 @@ public sealed record OrdnanceGun(string? GunId, string? DefinitionId, bool? Malf
     /// <summary>The special ammunition the Gun has run out of this scenario (C8.9): <c>apcr</c> or <c>heat</c>; null is none.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyList<string>? Depleted
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the Gun carries a First Fire counter this Player Turn (C2.241); null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? FirstFire
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the Gun carries a Final Fire counter this Player Turn, which bars Intensive Fire (C5.6); null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? FinalFire
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the Gun carries an Intensive Fire counter this Player Turn (C5.6); null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? IntensiveFired
     {
         get; init;
     }
@@ -179,6 +284,16 @@ public sealed record OrdnanceResolution(
         get; init;
     }
 
+    /// <summary>
+    /// What a hit did to the Gun in the target Location (C11.4, C11.6; ruling R8.3): <c>destroyed</c> by a KIA before its gunshield or a
+    /// Critical Hit, <c>malfunctioned</c> by a K; null when it was untouched or there is none.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? GunTargetFate
+    {
+        get; init;
+    }
+
     /// <summary>The unit a Critical Hit among several targets fell on by Random Selection (C3.74); null otherwise.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? CriticalTarget
@@ -218,6 +333,18 @@ public sealed record GunDefinition(
 
     /// <summary>The MA type of a tank's gun (D1.3); null for a Gun.</summary>
     public string? MaType
+    {
+        get; init;
+    }
+
+    /// <summary>A Gun's Target Size (C2.271): <c>small</c>, <c>average</c>, or <c>large</c>; null for a tank.</summary>
+    public string? TargetSize
+    {
+        get; init;
+    }
+
+    /// <summary>A Gun's Manhandling Number (C2.27, C10.3); null for a tank.</summary>
+    public int? Manhandling
     {
         get; init;
     }

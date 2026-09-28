@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using LimboDancer.Dice;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
+using LimboDancer.Domains.Asl.Maps.Los;
 using LimboDancer.Domains.Asl.ScenarioA1;
 using LimboDancer.Domains.Asl.Units.Documents;
 using LimboDancer.Domains.Asl.Units.State;
@@ -36,7 +37,8 @@ public sealed partial class GamePlanner
 
         string? targetVehicle = Text(arguments, "targetVehicle", out var named) ? named : null;
         string? ammunition = Text(arguments, "ammunition", out var declared) ? declared : null;
-        var (shot, reason) = LiveOrdnance.FromState(state, gunId, target, targetVehicle, ammunition);
+        var intensive = arguments.TryGetProperty("intensive", out var intensiveArgument) && intensiveArgument.ValueKind == JsonValueKind.True;
+        var (shot, reason) = LiveOrdnance.FromState(state, gunId, target, targetVehicle, ammunition, intensive);
         if (shot is null)
         {
             return Refused(scope, label, expected, reason!);
@@ -45,7 +47,8 @@ public sealed partial class GamePlanner
         // Ruling R25.10: the hit's IFT attack on a vehicle in the target Location is not reviewed; C3.31 (ruling R7.2): name the vehicle to
         // fire at it on the Vehicle Target Type.
         if (targetVehicle is null
-            && state.At(target).OfType<UnitInstance>().FirstOrDefault(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit)) is { } vehicle)
+            && state.At(target).OfType<UnitInstance>().FirstOrDefault(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit)
+                && (state.Phase != "mph" || state.Movement?.Movers.Contains(unit.Id) == true)) is { } vehicle)
         {
             return Refused(scope, label, expected, $"play.ordnance-vehicle: {vehicle.Id} is in {target}; fire at it on the Vehicle Target Type by naming it, "
                 + "since a hit's attack on the Location's Infantry and vehicles together is not reviewed (C3.31; rulings R25.10, R7.2)");
@@ -56,20 +59,13 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.fire-melee: fire at a Location holding units in Melee or prisoners is not reviewed (A11.15, A20.54)");
         }
 
-        // A5.12, A5.131: the To Hit DRM of an overstacked firer or target are not reviewed; a crew counts as a HS (A5.1).
-        if (new[] { FirerLocation(state, gunId), target }.Any(location => state.Sides.Any(side => Overstacked(
-            state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side.Id && !Is(unit, Conditions.Captured))))))
-        {
-            return Refused(scope, label, expected, "play.ordnance-overstacked: the Gun's or the target's Location is overstacked, whose To Hit DRM are not reviewed (A5.12, A5.131)");
-        }
-
         var (map, mapReason) = OrdnanceMapFacts(state, shot, target);
         if (map is null)
         {
             return Refused(scope, label, expected, mapReason!);
         }
 
-        shot = map.Value.Shot;
+        shot = PassEightFacts(state, map.Value.Shot, target);
         var reference = OrdnanceReference.Value;
         var precheck = ScenarioA1OrdnanceCalculator.Precheck(shot, reference);
         if (precheck.Count != 0)
@@ -118,6 +114,32 @@ public sealed partial class GamePlanner
         // C3.2, D3.12: a Gun's barrel, or a turreted AFV's TCA (ruling R7.10); a non-turreted MA would pivot the vehicle, which is not built.
         var firer = state.Find(shot.Gun!.GunId!)!;
         var from = FirerLocation(state, firer.Id);
+
+        // C5.5 (ruling R8.8): a shot at enemy Infantry in the Gun's own Location, at range 0, without a CA change, the LOS clear.
+        if (target == from)
+        {
+            if (firer is not EquipmentInstance || shot.VehicleTarget is not null || ReadLocation(state, target) is not { } ownRead || TerrainKey(ownRead) is not { } ownTerrain)
+            {
+                return (null, "play.ordnance-own-hex: only a Gun fires within its own Location, at Infantry (C5.5)");
+            }
+
+            return ((shot with
+            {
+                Range = 0,
+                HexspinesToTurn = 0,
+                FirerInWoodsOrBuilding = WoodsOrBuilding.Contains(ownTerrain),
+                ElevationAllowed = true,
+                SameHex = true,
+                Hit = shot.Hit! with
+                {
+                    SameLevel = true,
+                    Los = new FireLos(false, 0, true, false),
+                    TargetTerrain = ownTerrain,
+                    Targets = [.. shot.Hit.Targets!.Select(item => item with { KnownEnemyInLos = true, Captors = item.Captors ?? [] })],
+                },
+            }, null), null);
+        }
+
         var tank = firer as UnitInstance;
         var turreted = tank is not null && OrdnanceReference.Value.Guns.GetValueOrDefault(shot.Gun.DefinitionId!)?.MaType is "t" or "st" or "rst" or "1mt";
         if ((tank is null ? ((MapPosition)((EquipmentInstance)firer).Position).Facing : LiveOrdnance.TurretFacing(state, tank)) is not { } facing)
@@ -143,7 +165,7 @@ public sealed partial class GamePlanner
 
         if (Bearing(state, from, target) is not { } bearing)
         {
-            return (null, "play.ordnance-arc: the Covered Arc is read only on one board not reversed (C3.2)");
+            return (null, "play.ordnance-arc: the Covered Arc cannot be read between these Locations on this map (C3.2)");
         }
 
         // C3.2: the Covered Arc is the 60-degree wedge on the barrel's hexspine; C5.1: the fewest hexspines turned brings the target in.
@@ -189,12 +211,155 @@ public sealed partial class GamePlanner
             Range = read.Range,
             HexspinesToTurn = turns.Steps,
             FirerInWoodsOrBuilding = WoodsOrBuilding.Contains(gunTerrain),
-            // C2.6: at the same level the limit never applies; other levels are undecided in the package.
-            ElevationAllowed = true,
+            // C2.6 (ruling R8.7): a Gun fires at another level only if the range is at least the elevation difference; other levels are then
+            // undecided in the package until levels come to fire.
+            ElevationAllowed = ReadLocation(state, target) is not { } targetRead
+                || Math.Abs(gunRead.Hex.BaseLevel + gunRead.Level.Level - (targetRead.Hex.BaseLevel + targetRead.Level.Level)) is var rise && (rise == 0 || read.Range >= rise),
             Hit = hit,
             VehicleTarget = aimed ?? shot.VehicleTarget,
         };
         return ((withMap, turns.Steps > 0 ? turns.Facing : null), null);
+    }
+
+    /// <summary>
+    /// The map and state reads of the backlog pass 8 (rulings R8.1, R8.3, R8.5, R8.8, R8.10): the moving vehicle's MP in the firer's continuous
+    /// LOS and a move into Open Ground (C6.11, C6.14), the Gun and its crew in the target Location with its Emplacement and gunshield (C11.2,
+    /// C11.5), whether a Good Order enemy sees a concealed crew fire (A12.14), and the overstacking of both Locations (A5.12, A5.131).
+    /// </summary>
+    private OrdnanceShot PassEightFacts(GameState state, OrdnanceShot shot, BoardLocation target)
+    {
+        var from = FirerLocation(state, shot.Gun!.GunId!);
+        var side = (state.Find(shot.Gun.GunId!) as UnitInstance)?.Side ?? state.Unit(shot.Crew!.UnitId!)!.Side;
+        if (shot.Movement is { } movement)
+        {
+            shot = shot with
+            {
+                Movement = shot.VehicleTarget is { VehicleId: { } moving }
+                    ? movement with
+                    {
+                        MpInLos = MpInLos(state, from, moving)
+                    }
+                    : movement with
+                    {
+                        OpenGround = shot.Hit!.TargetTerrain == "open-ground" && shot.Hit.Los?.HindranceDrm == 0
+                    },
+            };
+        }
+
+        if (shot.VehicleTarget is null && GunAt(state, target, side, [from]) is { } gunTarget)
+        {
+            shot = shot with
+            {
+                Hit = shot.Hit! with
+                {
+                    GunTarget = gunTarget
+                }
+            };
+        }
+
+        // C6.43 (ruling R8.8): the Bore Sighting counts while its original crew fires the Gun from its setup Location.
+        var boreSighted = LiveOrdnance.BoreSighted(state, shot.Gun.GunId!, shot.Crew!.UnitId!, from, target);
+        return shot with
+        {
+            BoreSighted = boreSighted ? true : null,
+            CrewSeen = shot.Crew!.Concealed == true && shot.Vehicle is null ? EnemyGoodOrderInLosWithin16(state, side, from) : null,
+            FirerOverstack = LiveOrdnance.Excess(state, from, side) is var over and > 0 ? over : (int?)null,
+            TargetOverstack = shot.VehicleTarget is null && state.Sides.FirstOrDefault(item => item.Id != side)?.Id is { } enemy && LiveOrdnance.Excess(state, target, enemy) is var crowded and > 0
+                ? crowded : (int?)null,
+        };
+    }
+
+    /// <summary>
+    /// The MP a moving vehicle has spent in a firer's continuous LOS this MPh (C6.11, C6.12, C6.15), counted back from its latest expenditure
+    /// to the last Location the firer could not see; a vehicle seen since its MPh began takes Case J alone, read as 99.
+    /// </summary>
+    private int MpInLos(GameState state, BoardLocation firer, string vehicle)
+    {
+        var history = store.Read(state.Scope)?.Events ?? [];
+        var start = history.Select((item, index) => (item, index)).LastOrDefault(pair => pair.item.Payload is PhaseChanged).index;
+        var steps = history.Skip(start).Select(item => item.Payload).OfType<VehicleStepped>().Where(step => step.Vehicle == vehicle).ToArray();
+        var halfMp = 0;
+        for (var index = steps.Length - 1; index >= 0; index--)
+        {
+            if (Los(state, firer, steps[index].At) is not { Status: LosStatus.Clear })
+            {
+                return (halfMp + 1) / 2;
+            }
+
+            halfMp += steps[index].HalfMp;
+        }
+
+        // C6.15 (table player, pass 8): a vehicle that began its MPh out of the firer's LOS has spent all its MP since in that LOS.
+        var begun = Replay([.. history.Take(start + 1)]).Current?.Location(vehicle)?.Location;
+        return begun is { } origin && Los(state, firer, origin) is not { Status: LosStatus.Clear } ? (halfMp + 1) / 2 : 99;
+    }
+
+    /// <summary>
+    /// The enemy Gun whose crew is alone in the target Location (C11.2, C11.3, C11.5): Emplaced when manned by a crew and never moved or hooked
+    /// up; its gunshield faces a firer within its CA and outside its hex when it is an AT or INF Gun.
+    /// </summary>
+    internal FireGunTarget? GunAt(GameState state, BoardLocation target, string firingSide, IReadOnlyList<BoardLocation> firers)
+    {
+        var gun = state.Equipment.FirstOrDefault(item => item.Status == InstanceStatus.Active && item.Kind == "asl:gun" && item.Position is MapPosition at && at.Location == target
+            && item.Holding is { Role: HoldingRole.Manned } && state.Unit(item.Holding.Holder)?.Side != firingSide);
+        if (gun?.Holding is not { } manning || state.Unit(manning.Holder) is not { } crew)
+        {
+            return null;
+        }
+
+        var definition = OrdnanceReference.Value.Guns.GetValueOrDefault(gun.Definition?.Definition ?? string.Empty);
+        var facing = (gun.Position as MapPosition)?.Facing;
+        var withinCa = firers.Count > 0 && facing is { } barrel && firers.Any(from => from != target && Bearing(state, target, from) is { } bearing
+            && Math.Abs(((bearing - ((int)barrel * 60)) % 360 + 540) % 360 - 180) <= 30 + 1e-6);
+        // C11.5 (referee, pass 8): the gunshield protects only a Good Order crew, never one moving or pushing the Gun under Defensive First Fire.
+        var crewKind = crew.Kind == "asl:crew";
+        var emplaced = LiveOrdnance.Emplaced(state, gun);
+        var moving = state.Phase == "mph" && state.Movement?.Movers.Contains(crew.Id) == true;
+        return new FireGunTarget(gun.Id, gun.Definition?.Definition, crew.Id, emplaced, definition?.GunType is "at" or "inf" && withinCa && crewKind && !moving);
+    }
+
+    /// <summary>
+    /// A target Location as a Gun's crew reads it (C3.2, C2.25; ruling R8.9): its own Location (Case E), no LOS, beyond the Gun's range, within its
+    /// CA, or the hexspines it must turn; null when the Gun or the map cannot be read.
+    /// </summary>
+    public string? GunTargetStatus(GameState state, string gunId, BoardLocation target)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        if (state.Find(gunId) is not EquipmentInstance { Position: MapPosition { Facing: { } facing } at } gun
+            || OrdnanceReference.Value.Guns.GetValueOrDefault(gun.Definition?.Definition ?? string.Empty) is not { } definition)
+        {
+            return null;
+        }
+
+        if (target == at.Location)
+        {
+            return "its own Location (Case E, C5.5)";
+        }
+
+        if (Los(state, at.Location, target) is not { Status: LosStatus.Clear } los)
+        {
+            return "no LOS";
+        }
+
+        if (definition.RangeMaximum is { } maximum && los.Range > maximum)
+        {
+            return $"beyond its range of {maximum} hexes";
+        }
+
+        if (ReadLocation(state, at.Location) is { } gunRead && ReadLocation(state, target) is { } targetRead
+            && Math.Abs(gunRead.Hex.BaseLevel + gunRead.Level.Level - (targetRead.Hex.BaseLevel + targetRead.Level.Level)) is var rise && rise > los.Range)
+        {
+            return $"refused: {rise} levels apart at range {los.Range} (C2.6)";
+        }
+
+        if (Bearing(state, at.Location, target) is not { } bearing)
+        {
+            return $"range {los.Range}; its CA cannot be read here";
+        }
+
+        static double Off(double one, double two) => Math.Abs(((one - two) % 360 + 540) % 360 - 180);
+        var steps = Enumerable.Range(0, 6).Where(step => Off(bearing, (int)facing * 60 + step * 60) <= 30 + 1e-6).Select(step => Math.Min(step, 6 - step)).DefaultIfEmpty(0).Min();
+        return steps == 0 ? $"range {los.Range}, in its CA" : $"range {los.Range}, turn {steps} hexspine(s) (Case A)";
     }
 
     /// <summary>Where a Gun or a tank is.</summary>
@@ -205,12 +370,22 @@ public sealed partial class GamePlanner
         _ => throw new InvalidOperationException($"'{id}' is not on the map."),
     };
 
-    /// <summary>The bearing from one Location to another in degrees counterclockwise from east, on one unreversed board; null otherwise.</summary>
+    /// <summary>The bearing from one Location to another in degrees counterclockwise from east, on one board or across the composed map; null when unread.</summary>
     private double? Bearing(GameState state, BoardLocation from, BoardLocation to)
     {
-        if (from.Board != to.Board || state.Map.Board(from.Board) is not { } placed || placed.Slot is { Reversed: true }
-            || boards.TryGetBoard(from.Board, placed.Version).Board is not { } handle
-            || !handle.Geometry.TryGetIndex(from.Hex, out var one) || !handle.Geometry.TryGetIndex(to.Hex, out var two))
+        Maps.Geometry.HexIndex one, two;
+        if (from.Board == to.Board && state.Map.Board(from.Board) is { } placed && placed.Slot is not { Reversed: true }
+            && boards.TryGetBoard(from.Board, placed.Version).Board is { } handle
+            && handle.Geometry.TryGetIndex(from.Hex, out var first) && handle.Geometry.TryGetIndex(to.Hex, out var second))
+        {
+            (one, two) = (first, second);
+        }
+        else if (state.Map.IsPlaced && Composed(state)?.Layout is { } layout && layout.Locate(from.Board, from.Hex) is { } a && layout.Locate(to.Board, to.Hex) is { } b)
+        {
+            // C3.2 (ruling R8.7): across boards and on a reversed board, the composed map's hex grid gives the bearing.
+            (one, two) = (a, b);
+        }
+        else
         {
             return null;
         }
@@ -322,6 +497,14 @@ public sealed partial class GamePlanner
             }
         }
 
+        // C11.4, C11.6 (ruling R8.3): a Direct Hit destroys the Gun in the target Location, a K malfunctions it.
+        if (resolution.GunTargetFate is { } fate && facts.Hit!.GunTarget?.GunId is { } struckGun)
+        {
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, fate == "destroyed" ? "instance-eliminated" : "conditions-changed",
+                fate == "destroyed" ? new InstanceEliminated(struckGun) : new ConditionsChanged(struckGun,
+                    new Dictionary<string, ConditionState>(StringComparer.Ordinal) { [Conditions.Malfunctioned] = ConditionState.True }), package, null, [recordId]));
+        }
+
         // The hit's effects: the Critical Hit's and the normal hit's units, with DM for a broken unit an attack could have given a NMC (A10.62).
         var effects = new List<FireUnitEffect>();
         foreach (var attack in new[] { resolution.CriticalHit, resolution.Hit }.OfType<FireResolution>())
@@ -353,17 +536,36 @@ public sealed partial class GamePlanner
             effects.AddRange(attack.Effects);
         }
 
-        // C2.28: the malfunction; A7.1, C2.24: the Gun and its crew carry the fire phase's marker from their first shot.
-        var marker = facts.Phase == "DFPh" ? Conditions.FinalFire : Conditions.PrepFire;
+        // C2.28: the malfunction; A7.1, C2.24: the Gun and its crew carry the fire phase's marker from their first shot; A8.1, C2.241 (ruling R8.1):
+        // in the MPh a First Fire counter only once its ROF is spent; C5.6 (ruling R8.2): an Intensive Fire counter beside it.
+        string? marker = facts.Phase switch
+        {
+            "DFPh" => Conditions.FinalFire,
+            "MPh" => gunResult.FireCounter is "first-fire" or "intensive-fire" ? Conditions.FirstFire : null,
+            _ => Conditions.PrepFire,
+        };
         var gunConditions = new Dictionary<string, ConditionState>(StringComparer.Ordinal);
         if (gunResult.Malfunctioned)
         {
             gunConditions[Conditions.Malfunctioned] = ConditionState.True;
         }
 
-        if (state.Find(facts.Gun.GunId!) is { } gun && GameState.Condition(gun, marker) != ConditionState.True)
+        if (state.Find(facts.Gun.GunId!) is { } gun && marker is not null && GameState.Condition(gun, marker) != ConditionState.True)
         {
             gunConditions[marker] = ConditionState.True;
+        }
+
+        if (gunResult.FireCounter == "intensive-fire")
+        {
+            gunConditions[Conditions.IntensiveFire] = ConditionState.True;
+        }
+
+        // A12.14 (ruling R8.5): a concealed Gun loses its "?" with its crew.
+        if (resolution.CrewConcealmentLost == true && state.Find(facts.Gun.GunId!) is EquipmentInstance concealedGun
+            && (GameState.Condition(concealedGun, Conditions.Concealed) == ConditionState.True || GameState.Condition(concealedGun, Conditions.Hidden) == ConditionState.True))
+        {
+            gunConditions[Conditions.Concealed] = ConditionState.False;
+            gunConditions[Conditions.Hidden] = ConditionState.False;
         }
 
         // A12.14: a concealed tank that fires loses its "?"; it is its own crew.
@@ -382,7 +584,7 @@ public sealed partial class GamePlanner
         if (facts.Crew.UnitId != facts.Gun.GunId && state.Unit(facts.Crew.UnitId!) is { } crew)
         {
             var crewConditions = new Dictionary<string, ConditionState>(StringComparer.Ordinal);
-            if (GameState.Condition(crew, marker) != ConditionState.True)
+            if (marker is not null && GameState.Condition(crew, marker) != ConditionState.True)
             {
                 crewConditions[marker] = ConditionState.True;
             }

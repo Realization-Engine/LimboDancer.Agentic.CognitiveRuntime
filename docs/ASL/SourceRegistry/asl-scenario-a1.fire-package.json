@@ -3,15 +3,15 @@
   "status": "published-bounded-fire-package",
   "domainId": "asl",
   "packageId": "scenario-a1-fire",
-  "priorFirePackageManifestSha256": "a30379390feaf8e54e02892936a2a9dfd11db1ade315344036781ae4bf12ad4e",
+  "priorFirePackageManifestSha256": "e00107a7f92c118f4432d4248b4c20ee1c4ad252d142fa90f54911884c17ba07",
   "declaredUse": "Read-only conclusions for a declared fire attack by reviewed Scenario A1 MMC and heroes, with their MGs, in the PFPh, AFPh, DFPh, or the MPh (Defensive First Fire, Subsequent First Fire, FPF, and Residual FP), in one Location or across ADJACENT Locations, optionally directed: the FP columns, the DRM, the IFT results, each target unit's effect, each MG's malfunction and Multiple ROF, and the Residual FP left, under the user's rulings of 2026-09-26 (Fire Review; ASL Unit Rally and Fire Extensions Plan, R20.1 to R23.5 and R0.2); and Heat of Battle after an Original MC DR of 2 (Deviations, Ordnance, and Vehicles Plan, R26.1 to R28.8).",
-  "caseMatrixSha256": "c34229b7b10ac61133bc5f5dd0686d4fb4e99f9c41cd0792504aaed5729bb392",
+  "caseMatrixSha256": "708356eb1324d00e124000e950dac68c6ffcaa4ad2ca39cf4e5fe213c2769587",
   "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
   "chartSupplementSha256": "8499a4ec75da057920fbc05dde60b975f39560803d26ce1433f9c6567a052985",
   "chartReviewDecisionSha256": "a19bf80dedc36fbf36d9356552f28a538faeea9469c8d22daddfabed546fd1e2",
   "iftTranscriptionSha256": "42440dd6facf7aa23cfc8c884ed8c7266f6621b25cb889b679c850098d3a4cec",
   "terrainChartTranscriptionSha256": "afc61e1db4871050d91ab6c58f022ddca86651f8f0104e39408c156e44ffdafa",
-  "catalogSha256": "5cec641bf995f44e0720c381efe9be0a7118a5b9af7fd5cd51ebc204e9b4a6be",
+  "catalogSha256": "4657c44055931225f9f7d4fba92cc5096f18e7727ef826384c8ddde811c42542",
   "sourceFragments": [
     {
       "ruleId": "A.5",
@@ -1391,6 +1391,34 @@
       "startLine": 347,
       "fragmentId": "asl-fragment:sha256:3a9aec4a66e3ed6c32ed95b8956195d5f2204aedfe1d60bc94b44a0c397f8944",
       "contentSha256": "1820d7ca7e502537e725585ce43b09c529b2ad42e6afb7db3a49821f7918cd89"
+    },
+    {
+      "ruleId": "C11.2",
+      "physicalPdfPage": 181,
+      "startLine": 908,
+      "fragmentId": "asl-fragment:sha256:63669ce895530a203f61207ecf75cbe4e2570a85e4d28b6c286bc448093df760",
+      "contentSha256": "886d42b3ea1a064ef292e0e51ff958c5b84d8aeb8803120cd5b2de50860589b9"
+    },
+    {
+      "ruleId": "C11.2",
+      "physicalPdfPage": 182,
+      "startLine": 912,
+      "fragmentId": "asl-fragment:sha256:70293bcd835790badbfa87d8cf248480b23b05e5126b211de2cc13845645cee2",
+      "contentSha256": "8122c09816009aaeb1ff903ab1f7ce5e267e564b72c91b9c89af3db2098c68cb"
+    },
+    {
+      "ruleId": "C11.4",
+      "physicalPdfPage": 182,
+      "startLine": 918,
+      "fragmentId": "asl-fragment:sha256:df17d21b0aeb97039596d6e2b933ff889e196bbe0f2acf2e2fca669ed446997d",
+      "contentSha256": "afc2ae5ac7b096edd05c4370001155b35dae2f5448c7269002fa1f9a70d92ee4"
+    },
+    {
+      "ruleId": "C11.5",
+      "physicalPdfPage": 182,
+      "startLine": 920,
+      "fragmentId": "asl-fragment:sha256:639b9c64d56e8434e7fb12cc499eba47b41d470e99cfcd69b00aa03e5fd39c77",
+      "contentSha256": "c3b345cb1683d81c7c038f5c1ed01b679a1afeca40b810e0364682dacf382ef6"
     }
   ],
   "visualReadings": [
@@ -1429,7 +1457,7 @@
     "surrender": "the-captors-are-the-adjacent-known-good-order-armed-enemy-infantry-with-guard-capacity-read-by-the-planner-A15.5-A20.51; the-captors-side-chooses-the-guard; the-surrender-is-always-accepted-no-quarter-not-offered (R30.7)",
     "mapFacts": "the-known-enemy-in-los-and-the-captors-are-the-planners-map-reads-taken-as-recorded-on-replay; they-are-required-before-any-roll-when-heat-of-battle-can-reach-a-unit",
     "ordnanceHits": "an-ordnance-hit-on-the-infantry-target-type-attacks-the-enemy-units-of-its-location-on-the-ift-column-of-the-guns-he-fp-C.6; no-firers-no-cowering-no-leadership-and-no-fp-halving-C3.53-C.4; no-tem-or-hindrance-on-the-effects-dr-C.3; a-critical-hit-doubles-the-fp-and-reverses-positive-tem-into-a-negative-drm-C3.71 (R24.2)",
-    "crews": "a-crew-is-not-admitted-as-a-target-until-guns-and-crews-as-targets-are-built-C11 (R24.3)",
+    "crews": "a-crew-is-a-target-only-alone-in-its-location-with-its-gun-named-see-gunCrews-a-crew-with-other-units-is-not-admitted-C11 (R24.3, R8.3)",
     "vehicles": "one-vehicle-per-location-an-unarmored-truck-or-an-open-topped-or-closed-topped-afv-whose-ce-crew-alone-is-vulnerable-R25.1-R25.3-D5.2 (R7.11); an-unarmored-vehicle-takes-the-original-ift-dr-with-the-attacks-own-drm-hindrance-and-a-vehicle-firers-stun-plus-one-never-tem-ffmo-or-ffnam-on-the-vehicle-line-of-the-attacks-column-A7.308-A4.6-D.6 (R25.4); final-dr-at-most-half-the-kill-number-burning-wreck-below-it-eliminated-equal-immobilized-A7.308; an-original-2-that-does-neither-rolls-the-unlikely-kill-dr-1-burning-2-eliminated-3-immobilized-A7.309 (R25.5); an-afv-is-unharmed-by-small-arms-A7.307-and-its-ce-not-stunned-crew-takes-a-general-collateral-attack-with-plus-2-ce-drm-D.8B-D5.31; kia-or-k-or-a-casualty-mc-original-12-recalls-D5.341-A10.31-a-failed-mc-stuns-D5.34-or-recalls-under-stun-plus-one-D5.342-a-failed-ptc-pins-A7.82-no-heat-of-battle-A15.1 (R25.6); the-afv-crew-morale-level-is-its-nationalitys-best-elite-mmc-in-the-catalog-D5.1; infantry-sharing-a-location-with-an-afv-D9.3-and-an-afv-in-terrain-with-a-positive-tem-D5.31-are-outside (R25.6, R25.9)",
     "vehicleFire": "a-vehicles-ma-aamg-fires-in-its-sides-pfph-afph-or-dfph-with-a-ce-crew-not-stunned-D1.83-D5.3-D5.34; normal-range-8-pbf-long-range-concealed-afph-motion-and-pinned-crew-halvings-A7.21-A7.22-A7.23-D3.53-D2.42-A7.82; no-cowering-A7.9-no-leader-D3.4-no-infantry-fire-group; b-12-malfunction-D3.7; multiple-rof-on-the-colored-die-unless-pinned-or-afph-C2.24-A7.25 (R25.7); a-vehicle-in-motion-may-not-prep-fire-D2.4 (R25.3)",
     "cx": "plus-one-to-the-ift-dr-once-per-attack-when-a-cx-unit-fires-or-directs-A4.51 (R5.2)",
@@ -1440,7 +1468,10 @@
     "afvHindrance": "the-game-adds-the-plus-one-afv-or-wreck-hindrance-and-a-burning-wrecks-plus-two-smoke-to-the-los-hindrance-drm-D9.4-B25.2-A24.2-A24.8 (R6.2, R6.3)",
     "residualVehicles": "residual-fp-attacks-an-unarmored-vehicle-on-the-vehicle-line-and-an-afvs-vulnerable-crew-collaterally-with-no-los-hindrance-but-the-smoke-of-the-target-location-which-also-cancels-ffmo-A8.2-A8.222-A7.308-D.8B-A24.2 (R6.6)",
     "concealedVehicles": "a-concealed-vehicle-is-attacked-on-the-halved-fps-column-A12.2-A12.13 (R6.7)",
-    "vehicleMovementFire": "a-vehicles-aamg-fires-in-the-mph-as-defensive-first-fire-or-moving-as-bounding-first-fire-halved-for-bounding-fire-and-again-while-non-stopped-which-leaves-a-bounding-fire-counter-D3.3-D3.31-D2.42-A8.1 (R6.9)"
+    "vehicleMovementFire": "a-vehicles-aamg-fires-in-the-mph-as-defensive-first-fire-or-moving-as-bounding-first-fire-halved-for-bounding-fire-and-again-while-non-stopped-which-leaves-a-bounding-fire-counter-D3.3-D3.31-D2.42-A8.1 (R6.9)",
+    "gunCrews": "a-guns-crew-alone-in-its-location-takes-its-gunshield-plus-two-against-fire-from-within-its-ca-or-the-plus-two-emplacement-tem-instead-of-a-lower-positive-tem-never-both-an-ordnance-hit-adds-the-gunshield-only-to-a-near-miss-C11.2-C11.4-C11.5 (R8.3)",
+    "crewFire": "a-crew-fires-its-inherent-fp-unless-it-fired-its-gun-this-player-turn-A7.352 (R8.4)",
+    "mphOrdnanceHits": "an-ordnance-hit-of-defensive-first-fire-attacks-the-moving-units-without-ffmo-or-ffnam-which-are-to-hit-cases-j3-and-j4-C6.13-C6.14 (R8.1)"
   },
   "resolution": {
     "firepower": "Each firer's printed FP, doubled for PBF when the target is adjacent at the same level (A7.21), halved beyond Normal Range up to twice it (A7.22), halved when the target Location holds a concealed unit (A7.23), and halved when the firer is pinned (A7.8); fractions are kept and summed (A7.2).",
@@ -1503,7 +1534,9 @@
     "A1-fire-residual-vehicle",
     "A1-fire-concealed-vehicle",
     "A1-fire-bounding-first-fire",
-    "A1-fire-closed-topped-afv"
+    "A1-fire-closed-topped-afv",
+    "A1-fire-gun-crew-target",
+    "A1-fire-crew-inherent-fp"
   ],
   "executionAuthority": "none",
   "excludedOutcomes": [
@@ -1511,7 +1544,7 @@
     "Opportunity Fire, Spraying Fire, and Fire Lanes",
     "FPF directed by a leader or mixed with other fire",
     "ordnance, light mortars, LATW, FT, DC, and MOL",
-    "fire by a SMC, and a squad firing its inherent FP apart from its MG",
+    "fire by a SMC, a squad firing its inherent FP apart from its MG, and A7.353's halved inherent FP of a crew",
     "captured, dismantled, and transferred SW",
     "vehicles and PRC",
     "Encirclement",
@@ -1521,7 +1554,7 @@
     "A19.13's exception for an underscored Morale Factor",
     "a hero using a SW (A15.23)",
     "prisoners exchanged for Unarmed counters (A20.5), and prisoner escape (A20.55)",
-    "crews as targets, and Guns hit by fire (C11)",
+    "a crew sharing its Location with other units as a target, and Random SW Destruction of Guns by fire (C11.51, A9.74)",
     "vehicles as targets of ordnance, more than one vehicle in a Location, and vehicles in terrain with a TEM (R25.3)",
     "Passengers and Riders (D6), Armored Assault (D9.31), and Spreading Fire from a burning wreck (B25)",
     "BMG and CMG, Passengers' and Riders' fire (D6.64), and a vehicle's Final Fire after its First Fire (A8.4)"

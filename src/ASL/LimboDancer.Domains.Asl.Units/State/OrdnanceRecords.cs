@@ -44,8 +44,48 @@ public sealed record ShockRecoveryRolled(string Vehicle, string Roll, string Res
     public static string For(bool unconfirmedKill, int dr) => unconfirmedKill ? dr <= 3 ? Recovered : Wrecked : dr <= 2 ? Recovered : UnconfirmedKill;
 }
 
+/// <summary>
+/// <c>bore-sighted</c>: at setup, the Scenario Defender's Gun Bore Sights one Location outside its hex, in its LOS, within 16 hexes (C6.41,
+/// C6.42; ruling R8.8): its original crew firing it from its setup Location adds Case M's -2 there (C6.43).
+/// </summary>
+public sealed record BoreSighted(string Gun, BoardLocation Location, string Crew, BoardLocation SetupLocation) : EventPayload;
+
+/// <summary>
+/// <c>gun-turned</c>: a Gun changes its CA without firing in a friendly fire phase (C3.22; ruling R8.9): it fires no more that phase, and a
+/// change in the PFPh keeps the Gun and its crew from moving that Player Turn.
+/// </summary>
+public sealed record GunTurned(string Gun, UnitFacing Facing) : EventPayload;
+
+/// <summary>
+/// <c>manhandling-rolled</c>: a crew's Manhandling DR to push its Gun into an adjacent hex (C10.3; ruling R8.6): the Gun, the recorded roll,
+/// the DRM, the Gun's M#, and the result: <c>enter</c> below the M#, <c>enter-stop</c> at it, <c>stay</c> above it. Replay recomputes it.
+/// </summary>
+public sealed record ManhandlingRolled(string Gun, string Roll, int Drm, int Manhandling, string Result) : EventPayload
+{
+    public const string Enter = "enter";
+    public const string EnterStop = "enter-stop";
+    public const string Stay = "stay";
+
+    /// <summary>The result of a Final Manhandling DR against the M# (C10.3).</summary>
+    public static string For(int final, int manhandling) => final < manhandling ? Enter : final == manhandling ? EnterStop : Stay;
+}
+
+/// <summary>
+/// <c>gun-hooked</c>: a Stopped truck or halftrack hooks up a Gun in its hex, or unhooks it there, spending half its MP (FRU) with the Gun's crew
+/// on foot in the hex (C10.11, C10.12; ruling R8.6). Hooked, the Gun is towed and its crew is on foot; unhooked, the crew mans it again with
+/// the facing given.
+/// </summary>
+public sealed record GunHooked(string Vehicle, string Gun, string Crew, bool Hooked, int Mp, UnitFacing? Facing) : EventPayload;
+
 /// <summary>A Gun's shots this fire phase and whether its last one kept its Multiple ROF (C2.24); cleared at every phase change.</summary>
-public sealed record OrdnanceShotRecord(string Gun, int Shots, bool RateOfFireKept);
+public sealed record OrdnanceShotRecord(string Gun, int Shots, bool RateOfFireKept)
+{
+    /// <summary>The moving vehicle's MP in its Location its Defensive First Fire shots have claimed (C6.17 and its EX); zero otherwise.</summary>
+    public int Mp
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// The Location a Gun has acquired and its Acquisition DRM, -1 or -2 (C6.5, C6.51), and the Known units it is on (ruling R5.13): the counter

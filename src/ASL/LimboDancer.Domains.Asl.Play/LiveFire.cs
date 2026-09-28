@@ -14,7 +14,7 @@ namespace LimboDancer.Domains.Asl.Play;
 public static class LiveFire
 {
     public const string Catalog = "asl-scenario-a1";
-    public const string CatalogVersion = "1.6.0";
+    public const string CatalogVersion = "1.7.0";
 
     public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
@@ -60,6 +60,12 @@ public static class LiveFire
             if (state.Unit(id) is not { Status: InstanceStatus.Active, Definition: not null } unit || state.Location(unit.Id)?.Location is not { } at)
             {
                 return (null, $"play.fire-firers: '{id}' is not an active unit from the catalog on the map");
+            }
+
+            // A4.8, C10.3 (table player, pass 8): a TI unit does not fire.
+            if (Is(unit, "asl:ti"))
+            {
+                return (null, $"play.fire-ti: '{id}' is TI and does not fire this Player Turn (A4.8, C10.3)");
             }
 
             firers.Add((unit, at));
@@ -170,6 +176,8 @@ public static class LiveFire
             {
                 FirstFireMarked = Is(unit, Conditions.FirstFire) ? true : null,
                 FinalFireMarked = state.Phase == "mph" && Is(unit, Conditions.FinalFire) ? true : null,
+                // A7.351, A7.352: a crew, HS, or SMC that fired a Gun loses its inherent FP; a squad does not.
+                GunFired = state.GunCrewsFired.Contains(unit.Id, StringComparer.Ordinal) && unit.Kind != "asl:squad" ? true : null,
                 Weapons = used,
                 UsesInherentFp = withoutInherent?.Contains(unit.Id) == true ? false : null,
                 Fanatic = Is(unit, Conditions.Fanatic) ? true : null,
@@ -529,6 +537,9 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
             // The owners' answers are declared, and the projector checks them against the choices made (ruling R5.8).
             Choices = recorded.Choices,
             AfvCover = GamePlanner.CoverAt(state, target, expected.Targets?.Select(item => state.Unit(item.UnitId!)?.Side).FirstOrDefault(side => side is not null)),
+
+            // C11 (ruling R8.3): the Gun in the target Location, its Emplacement and gunshield, is a map read recorded with the attack.
+            GunTarget = recorded.GunTarget,
         };
         if (JsonSerializer.Serialize(merged, LiveFire.Json) != JsonSerializer.Serialize(recorded, LiveFire.Json))
         {

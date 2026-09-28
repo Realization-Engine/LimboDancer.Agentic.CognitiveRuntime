@@ -1,6 +1,6 @@
 {
   "pack": "asl",
-  "version": "1.11.0",
+  "version": "1.12.0",
   "label": "ASL Personnel, support weapons, Guns, vehicles, and entities that are not units",
   "note": "Original LimboDancer vocabulary. Rule references are to the registered rulebook PDF by physical page; no rulebook text or counter artwork.",
   "extends": [],
@@ -102,6 +102,7 @@
     { "name": "asl:range-maximum", "label": "Maximum range", "type": "integer", "scope": "face", "rule": "C2.25, p. 168" },
     { "name": "asl:special-ammo", "label": "Special ammunition", "type": "list", "items": "text", "separator": " ", "scope": "face", "rule": "C2.26, p. 168" },
     { "name": "asl:manhandling", "label": "Manhandling Number", "type": "integer", "scope": "face", "rule": "C2.27, p. 168" },
+    { "name": "asl:dates", "label": "Dates of use", "type": "text", "scope": "face", "rule": "Chapter H Ordnance Listings Key, p. 351" },
     {
       "name": "asl:target-size", "label": "Gun Target Size", "type": "enumeration", "scope": "face", "rule": "C2.271, p. 168",
       "members": [
@@ -226,6 +227,7 @@
     { "name": "asl:qsu", "label": "Quick Set-Up", "short": "QSU", "rule": "C2.4, p. 168" },
     { "name": "asl:nm", "label": "No Movement", "short": "NM", "rule": "C2.4, p. 168" },
     { "name": "asl:rfnm", "label": "Restricted Fire, No Movement", "short": "RFNM", "rule": "C2.4, p. 168" },
+    { "name": "asl:animal-pack", "label": "May be Animal-Packed", "short": "O", "rule": "German Ordnance Note O, p. 354; G10" },
     { "name": "asl:mechanically-unreliable", "label": "Mechanical Reliability (red MP)", "short": "MR", "rule": "D1.1, p. 193; D2.51, p. 198" },
     { "name": "asl:unarmored", "label": "Unarmored", "short": "UA", "rule": "D1.21, p. 193" },
     { "name": "asl:partially-armored", "label": "Partially armored", "short": "PA", "rule": "D1.22, p. 193" },
@@ -266,6 +268,7 @@
     { "name": "asl:bounding-fire", "label": "Bounding Fire", "short": "BF", "rule": "D3.3, p. 199" },
     { "name": "asl:disabled", "label": "MG disabled", "short": "DSBL", "rule": "D3.7, p. 201" },
     { "name": "asl:shocked", "label": "Shocked", "short": "SHK", "rule": "C7.42, p. 177" },
+    { "name": "asl:intensive-fire", "label": "Intensive Fire", "short": "IF", "rule": "C5.6, p. 173" },
     { "name": "asl:unconfirmed-kill", "label": "Unconfirmed Kill", "short": "UK", "rule": "C7.42, p. 177" },
     { "name": "asl:recalled", "label": "Recalled", "short": "RCL", "rule": "D5.341, pp. 203 to 204" },
     { "name": "asl:bu", "label": "buttoned up", "short": "BU", "group": "crew-exposure", "rule": "D5.2, p. 203" },
@@ -347,8 +350,8 @@
     {
       "name": "asl:gun", "label": "Gun", "extends": "asl:equipment", "faces": ["front", "malfunctioned", "limbered"], "facing": true, "rule": "C2.2 to C2.29, pp. 167 to 168",
       "attributes": ["asl:designation", "asl:gun-type", "asl:caliber", "asl:caliber-suffix", "asl:rate-of-fire", "asl:ife", "asl:range-minimum", "asl:range-maximum",
-        "asl:special-ammo", "asl:manhandling", "asl:target-size", "asl:breakdown", "asl:repair", "asl:removal", "asl:identity"],
-      "traits": ["asl:no-ap", "asl:no-he", "asl:mount-360", "asl:qsu", "asl:nm", "asl:rfnm"],
+        "asl:special-ammo", "asl:manhandling", "asl:target-size", "asl:breakdown", "asl:repair", "asl:removal", "asl:identity", "asl:bpv", "asl:dates"],
+      "traits": ["asl:no-ap", "asl:no-he", "asl:mount-360", "asl:qsu", "asl:nm", "asl:rfnm", "asl:animal-pack"],
       "accessibleName": {
         "default": "{side} {caliber}{caliber-suffix?} {gun-type} {designation} {identity}, ROF {rate-of-fire}, M{manhandling}",
         "limbered": "{side} limbered {caliber}{caliber-suffix?} {gun-type} {designation} {identity}, M{manhandling}",

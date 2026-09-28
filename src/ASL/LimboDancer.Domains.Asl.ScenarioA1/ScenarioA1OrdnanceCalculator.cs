@@ -120,6 +120,22 @@ public static class ScenarioA1OrdnanceCalculator
             ScenarioA1ArmorCalculator.Missing(shot, Need);
         }
 
+        if (shot.FireKind is not null)
+        {
+            Need(shot.Movement, "movement");
+            Need(shot.Movement?.SpentHere, "movement.spentHere");
+            Need(shot.Movement?.ShotsHere, "movement.shotsHere");
+            if (shot.VehicleTarget is not null)
+            {
+                Need(shot.Movement?.MpInLos, "movement.mpInLos");
+            }
+            else
+            {
+                Need(shot.Movement?.NonAssault, "movement.nonAssault");
+                Need(shot.Movement?.OpenGround, "movement.openGround");
+            }
+        }
+
         if (shot.Vehicle is { } vehicle)
         {
             Need(vehicle.ButtonedUp, "vehicle.buttonedUp");
@@ -136,7 +152,10 @@ public static class ScenarioA1OrdnanceCalculator
     {
         var outside = new List<string>();
         var phase = shot.Phase!;
-        if ((phase, shot.FiringSide) is not (("PFPh", "phasing") or ("AFPh", "phasing") or ("DFPh", "non-phasing")))
+        // Ruling R8.1: Defensive First Fire in the MPh by the non-phasing side.
+        if (shot.FireKind is null
+            ? (phase, shot.FiringSide) is not (("PFPh", "phasing") or ("AFPh", "phasing") or ("DFPh", "non-phasing"))
+            : shot.FireKind != "first-fire" || (phase, shot.FiringSide) is not ("MPh", "non-phasing"))
         {
             outside.Add(Prefix + "phase-outside");
         }
@@ -168,8 +187,10 @@ public static class ScenarioA1OrdnanceCalculator
 
         // A21.13, C2.1: its own nationality's Good Order crew mans it; C5.8's non-qualified use is not reviewed, nor a concealed crew.
         var crew = shot.Crew!;
-        if ((shot.Vehicle is null ? reference.Fire.Definitions.GetValueOrDefault(crew.DefinitionId!) is not { Kind: "asl:crew" } crewDefinition
-                || crewDefinition.Nationality != gun.Nationality : crew.DefinitionId != gun.Id)
+        // C5.8, A21.13 (ruling R8.8): a squad or HS of the Gun's nationality mans it as non-qualified Infantry, with Case H.
+        if ((shot.Vehicle is null ? reference.Fire.Definitions.GetValueOrDefault(crew.DefinitionId!) is not { } crewDefinition
+                || crewDefinition.Nationality != gun.Nationality || (shot.NonQualified == true ? !crewDefinition.IsMmc : crewDefinition.Kind != "asl:crew")
+                : crew.DefinitionId != gun.Id || shot.NonQualified == true)
             || crew.Broken == true || crew.Berserk == true)
         {
             outside.Add(Prefix + "crew-outside");
@@ -177,18 +198,40 @@ public static class ScenarioA1OrdnanceCalculator
 
         // C2.24, C5.2, A7.1: in the PFPh and DFPh the Gun fires again only on a kept Multiple ROF; in the AFPh it fires once, and
         // not after firing earlier in the Player Turn; its crew fires the Gun or its inherent FP, not both.
-        var mayFire = phase == "AFPh"
-            ? gunShot.FiredThisPlayerTurn != true && gunShot.ShotsThisPhase == 0
-            : gunShot.ShotsThisPhase == 0 ? gunShot.FiredThisPlayerTurn != true : gunShot.RateOfFireKept == true;
+        // C2.241, C5.6 (ruling R8.2): a Gun that has used its normal ROF (a Prep, First, or Final Fire counter) may Intensive Fire once, never
+        // in the AFPh and never a vehicle's; a Gun marked First Fire fires once more only so.
+        var mayFire = shot.IntensiveFire == true
+            ? shot.Vehicle is null && phase != "AFPh" && gunShot.IntensiveFired != true && gunShot.FinalFire != true && crew.Pinned != true
+                && (gunShot.FiredThisPlayerTurn == true || gunShot.FirstFire == true) && gunShot.RateOfFireKept != true
+            : gunShot.IntensiveFired != true && gunShot.FirstFire != true && (phase == "AFPh"
+                ? gunShot.FiredThisPlayerTurn != true && gunShot.ShotsThisPhase == 0
+                : gunShot.ShotsThisPhase == 0 ? gunShot.FiredThisPlayerTurn != true : gunShot.RateOfFireKept == true);
         if (!mayFire || crew.FiredInherentFp == true)
         {
             outside.Add(Prefix + "gun-already-fired");
         }
 
+        // C6.17 (ruling R8.1): no more Defensive First Fire shots at a target in a Location than the MF or MP it spent there, a minimum of one;
+        // against a vehicle the MP earlier shots claimed are spent (the C6.17 EX).
+        if (shot.Movement is { ShotsHere: { } shots, SpentHere: { } spent } movementFacts
+            && (shots >= Math.Max(spent, 1) || (shots > 0 && shot.VehicleTarget is not null && (movementFacts.MpClaimed ?? 0) >= spent)))
+        {
+            outside.Add(Prefix + "first-fire-limit");
+        }
+
         // C5.5: a shot within the Gun's own hex is not reviewed; C2.25, C3.52: never beyond its range; C2.6: depression and elevation.
-        if (shot.Range < 1 || (gun.RangeMaximum is { } maximum && shot.Range > maximum) || shot.ElevationAllowed != true)
+        // C5.5 (ruling R8.8): a shot within the Gun's own Location, at Infantry, without changing its CA.
+        var sameHex = shot.SameHex == true;
+        // C5.51's Defensive First Fire in the Gun's own hex, turning its CA with Case A, is not built (ruling R8.8).
+        if ((sameHex ? shot.Range != 0 || shot.VehicleTarget is not null || shot.HexspinesToTurn != 0 || shot.FireKind is not null : shot.Range < 1)
+            || (gun.RangeMaximum is { } maximum && shot.Range > maximum) || shot.ElevationAllowed != true)
         {
             outside.Add(Prefix + "out-of-range");
+        }
+
+        if (shot.FirerOverstack is < 0 || shot.TargetOverstack is < 0)
+        {
+            outside.Add(Prefix + "fact-outside");
         }
 
         if (shot.HexspinesToTurn is < 0 or > 3 || shot.Acquisition is not (0 or -1 or -2))
@@ -280,7 +323,7 @@ public static class ScenarioA1OrdnanceCalculator
 
         // A12.14: a concealed crew that fires its Gun loses "?" in the LOS of a Good Order enemy ground unit within 16 hexes; the package
         // sees only the target Location, so it decides only when one of its units is Good Order within that range, as for Infantry fire.
-        if (shot.Crew!.Concealed == true && shot.Vehicle is null && !CrewRevealed(shot))
+        if (shot.Crew!.Concealed == true && shot.Vehicle is null && shot.CrewSeen is null && !CrewRevealed(shot))
         {
             undecided.Add(Prefix + "concealment-unreviewed:crew");
         }
@@ -362,25 +405,63 @@ public static class ScenarioA1OrdnanceCalculator
             drm.Add(new FireModifier("case-i", 1, "C5.9"));
         }
 
+        drm.AddRange(PassEightFirerDrm(shot));
+        var sameHex = shot.SameHex == true;
+        if (sameHex)
+        {
+            // C5.5: Case E, doubled in woods or a building; Cases J3, J4, L, and M do not apply.
+            drm.Add(new FireModifier("case-e", woods ? 4 : 2, "C5.5"));
+        }
+        else if (shot.FireKind is not null && shot.Movement is { } movement)
+        {
+            // C6.13, C6.14 (ruling R8.1): FFNAM and FFMO as To Hit DRM of Defensive First Fire.
+            if (movement.NonAssault == true)
+            {
+                drm.Add(new FireModifier("case-j3", -1, "C6.13"));
+            }
+
+            if (movement.OpenGround == true)
+            {
+                drm.Add(new FireModifier("case-j4", -1, "C6.14"));
+            }
+        }
+
         var concealedTarget = hit.Targets!.All(Concealed);
         if (concealedTarget)
         {
             drm.Add(new FireModifier("case-k", 2, "C6.2"));
         }
 
-        if (range <= 2)
+        if (range is >= 1 and <= 2 && !sameHex)
         {
             drm.Add(new FireModifier("case-l", range == 1 ? -2 : -1, "C6.3"));
         }
 
-        // C6.51, C6.57: the Acquisition applies only to Known units, and a shot at a concealed target loses it.
-        if (shot.Acquisition is int acquired && acquired < 0 && !concealedTarget)
+        // C6.4 (ruling R8.8): the Bore Sighted Location's -2, the firer choosing it or the Acquisition, never in its own hex.
+        if (shot.BoreSighted == true && !sameHex)
         {
+            drm.Add(new FireModifier("case-m", -2, "C6.4"));
+        }
+        else if (shot.Acquisition is int acquired && acquired < 0 && !concealedTarget)
+        {
+            // C6.51, C6.57: the Acquisition applies only to Known units, and a shot at a concealed target loses it.
             drm.Add(new FireModifier("case-n", acquired, "C6.5"));
         }
 
         var tem = ScenarioA1FireReference.Tem.GetValueOrDefault(hit.TargetTerrain!);
-        if (tem != 0)
+        var gunTarget = ScenarioA1FireCalculator.GunCrewAlone(hit) ? hit.GunTarget : null;
+        if (gunTarget is not null && reference.Guns.GetValueOrDefault(gunTarget.DefinitionId ?? string.Empty)?.TargetSize is { } size && size != "average")
+        {
+            // C11.2, C2.271 (ruling R8.3): the Gun's Target Size.
+            drm.Add(new FireModifier("case-p:" + size, size == "small" ? 1 : -1, "C11.2"));
+        }
+
+        if (gunTarget?.Emplaced == true && tem < 2)
+        {
+            // C11.2: the Emplacement TEM instead of a lower positive TEM.
+            drm.Add(new FireModifier("case-q:emplacement", 2, "C11.2"));
+        }
+        else if (tem != 0)
         {
             drm.Add(new FireModifier("case-q:" + hit.TargetTerrain, tem, "C6.8"));
         }
@@ -447,8 +528,8 @@ public static class ScenarioA1OrdnanceCalculator
 
         var toHit = new OrdnanceToHit(color, basic, modifications, modified, [.. dice], original, drm, final, improbable, subsequent, isHit, critical);
 
-        // C2.28: an Original To Hit DR at or above the B# malfunctions the Gun.
-        var malfunctioned = original >= gun.Breakdown;
+        // C2.28: an Original To Hit DR at or above the B# malfunctions the Gun; C5.62: two lower while Intensive Firing.
+        var malfunctioned = original >= Breakdown(shot, gun);
 
         // C2.24: an Original colored dr at most the ROF keeps the Multiple ROF; C2.5: a non-vehicular NT Gun's ROF is one lower after a
         // CA change; C5.4: a pinned crew forfeits it; C5.2: none in the AFPh.
@@ -463,8 +544,7 @@ public static class ScenarioA1OrdnanceCalculator
             rof = 0;
         }
 
-        var kept = !malfunctioned && rof > 0 && dice[0] <= rof;
-        var counter = kept ? null : shot.Phase is "PFPh" or "AFPh" ? "prep-fire" : "final-fire";
+        var (kept, counter) = Counter(shot, malfunctioned, rof, dice[0]);
 
         FireResolution? normal = null, criticalHit = null;
         string? criticalTarget = null;
@@ -520,14 +600,80 @@ public static class ScenarioA1OrdnanceCalculator
         var effects = (normal?.Effects ?? []).Concat(criticalHit?.Effects ?? []).ToArray();
         var acquires = !malfunctioned && (!concealedTarget || effects.Any(item => item.ConcealmentLost));
         var acquisition = !acquires ? 0 : concealedTarget ? -1 : Math.Max(shot.Acquisition!.Value - 1, -2);
-        var gunEffect = new OrdnanceGunEffect(gun.Breakdown, malfunctioned, Math.Max(rof, 0), kept, counter, acquisition, acquires ? shot.TargetLocationId : null);
+        var gunEffect = new OrdnanceGunEffect(Breakdown(shot, gun), malfunctioned, kept ? Math.Max(rof, 0) : shot.IntensiveFire == true ? 0 : Math.Max(rof, 0), kept, counter,
+            acquisition, acquires ? shot.TargetLocationId : null);
+
+        // C11.4, C11.6 (ruling R8.3): a Critical Hit destroys the Gun; a KIA before the gunshield destroys it, a K malfunctions it.
+        string? fate = null;
+        if (gunTarget is not null && isHit)
+        {
+            var result = (normal ?? criticalHit)?.Arithmetic?.Result ?? string.Empty;
+            fate = criticalHit is not null ? "destroyed"
+                : (normal?.Arithmetic?.Drm.Any(item => item.Name.StartsWith("gunshield:", StringComparison.Ordinal)) ?? false) ? null
+                : System.Text.RegularExpressions.Regex.IsMatch(result, "^([1-7])?KIA$") ? "destroyed"
+                : System.Text.RegularExpressions.Regex.IsMatch(result, "^K/([1-4])$") ? "malfunctioned"
+                : null;
+        }
+
         return new OrdnanceResolution(OrdnanceResolution.Resolved, [], toHit, gunEffect)
         {
-            CrewConcealmentLost = shot.Crew.Concealed == true ? true : null,
+            // A12.14 (ruling R8.5): the "?" is lost only in the view of a Good Order enemy ground unit within 16 hexes.
+            CrewConcealmentLost = shot.Crew.Concealed == true && shot.CrewSeen != false ? true : null,
             Hit = normal,
             CriticalHit = criticalHit,
             CriticalTarget = criticalTarget,
+            GunTargetFate = fate,
         };
+    }
+
+    /// <summary>The Gun's B#, two lower while Intensive Firing (C5.62).</summary>
+    internal static int Breakdown(OrdnanceShot shot, GunDefinition gun) => gun.Breakdown - (shot.IntensiveFire == true ? 2 : 0);
+
+    /// <summary>
+    /// Whether the shot keeps the Multiple ROF, and the fire counter it leaves otherwise (C2.24, A8.1, C5.6): Prep Fire in the PFPh and
+    /// AFPh, First Fire in the MPh, Final Fire in the DFPh, and Intensive Fire after an Intensive Fire shot, which never keeps it.
+    /// </summary>
+    internal static (bool Kept, string? Counter) Counter(OrdnanceShot shot, bool malfunctioned, int rof, int colored)
+    {
+        if (shot.IntensiveFire == true)
+        {
+            return (false, "intensive-fire");
+        }
+
+        var kept = !malfunctioned && rof > 0 && colored <= rof;
+        return (kept, kept ? null : shot.Phase switch
+        {
+            "PFPh" or "AFPh" => "prep-fire",
+            "MPh" => "first-fire",
+            _ => "final-fire",
+        });
+    }
+
+    /// <summary>
+    /// The firer-based DRM of the backlog pass 8 (rulings R8.2, R8.8, R8.10): Case F for Intensive Fire (C5.61), Case H for a non-qualified
+    /// crew (C5.8), and the overstacking of the firer's and the target's Locations (A5.12, A5.131).
+    /// </summary>
+    internal static IEnumerable<FireModifier> PassEightFirerDrm(OrdnanceShot shot)
+    {
+        if (shot.IntensiveFire == true)
+        {
+            yield return new FireModifier("case-f", 2, "C5.61");
+        }
+
+        if (shot.NonQualified == true)
+        {
+            yield return new FireModifier("case-h", 2, "C5.8");
+        }
+
+        if (shot.FirerOverstack is { } over && over > 0)
+        {
+            yield return new FireModifier("overstack-firer", over, "A5.12");
+        }
+
+        if (shot.TargetOverstack is { } crowded && crowded > 0 && shot.VehicleTarget is null)
+        {
+            yield return new FireModifier("overstack-target", -crowded, "A5.131");
+        }
     }
 
     /// <summary>A nested IFT resolution that stopped: its missing roll asked for under the prefix, or its reasons.</summary>

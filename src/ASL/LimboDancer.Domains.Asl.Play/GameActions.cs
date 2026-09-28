@@ -159,7 +159,7 @@ public static class GameActions
             "gameId": { "type": "string" }, "attemptId": { "type": "string" },
             "expectedRevision": { "type": "integer", "minimum": 0 },
             "unitIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
-            "to": { "type": "string" }, "assault": { "type": "boolean" }, "doubleTime": { "type": "boolean" }
+            "to": { "type": "string" }, "assault": { "type": "boolean" }, "doubleTime": { "type": "boolean" }, "pushGun": { "type": "string" }
           }
         }
         """, JsonSerializer.SerializeToElement(new
@@ -274,7 +274,8 @@ public static class GameActions
             "expectedRevision": { "type": "integer", "minimum": 0 },
             "gunId": { "type": "string" }, "target": { "type": "string" },
             "targetVehicle": { "type": "string" },
-            "ammunition": { "type": "string", "enum": ["ap", "apcr", "heat", "he"] }
+            "ammunition": { "type": "string", "enum": ["ap", "apcr", "heat", "he"] },
+            "intensive": { "type": "boolean" }
           }
         }
         """, JsonSerializer.SerializeToElement(new
@@ -298,6 +299,34 @@ public static class GameActions
         {
             package = ScenarioA1OrdnancePackage.Identity.ToString()
         }));
+
+    public static readonly ActionDescriptor TurnGun = Descriptor("asl.game.turn-gun", "Turn a Gun",
+        "In its side's fire phase, a Gun its Good Order, unpinned crew could still fire changes its CA without firing, and fires no more that phase; in the PFPh neither it nor its crew moves that Player Turn (C3.22).",
+        PlayPermission, "asl.game.reviewed-ordnance-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "gunId", "facing"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "gunId": { "type": "string" }, "facing": { "type": "string" }
+          }
+        }
+        """);
+
+    public static readonly ActionDescriptor HookGun = Descriptor("asl.game.hook-gun", "Hook up or unhook a Gun",
+        "In its MPh, a Stopped truck or halftrack whose T# is at most a Gun's M# spends half its MP to hook up the Gun in its hex, whose crew then walks, or to unhook it there for a crew on foot, facing a hexspine (C10.11, C10.12).",
+        PlayPermission, "asl.game.reviewed-ordnance-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "vehicleId", "gunId", "hooked"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "vehicleId": { "type": "string" }, "gunId": { "type": "string" }, "hooked": { "type": "boolean" }, "facing": { "type": "string" }
+          }
+        }
+        """);
 
     public static readonly ActionDescriptor MoveVehicle = Descriptor("asl.game.move-vehicle", "Move a vehicle",
         "In its MPh, a vehicle of the phasing side spends one MP expenditure: start (1 MP unless in Motion), a VCA change of one hexspine (1 MP), entering the hex its VCA points at over Open Ground, Grain, or a road, or stop (1 MP); the DEFENDER may fire after each (D2.1, D2.11 to D2.13, D2.16; ruling R25.3).",
@@ -363,7 +392,7 @@ public static class GameActions
         get;
     } =
         [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding, DeclareOverrun, Fire, Rally, Repair, Move, PassFire, EndMove, Advance, Ambush, CloseCombat, TakePrisoner,
-            FireOrdnance, RecoverShock, MoveVehicle, ButtonUp, Choose, Massacre];
+            FireOrdnance, RecoverShock, TurnGun, HookGun, MoveVehicle, ButtonUp, Choose, Massacre];
 
     public static string VersionKey(Guid tenant, string game) => $"asl.game:{tenant:N}:{game}";
 

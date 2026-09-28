@@ -130,7 +130,7 @@ public sealed class VehicleStepsTests : IDisposable
             start = new
             {
                 label = "Convoy",
-                catalog = "asl-scenario-a1@1.6.0",
+                catalog = "asl-scenario-a1@1.7.0",
                 boards = Bd01,
                 firstSide,
                 scenarioMonth = 7,

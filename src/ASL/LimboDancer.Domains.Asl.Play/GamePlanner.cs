@@ -7,6 +7,7 @@ using LimboDancer.Abstractions.Observations;
 using LimboDancer.Dice;
 using LimboDancer.Domains.Asl.Maps.Composition;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
+using LimboDancer.Domains.Asl.Maps.Los;
 using LimboDancer.Domains.Asl.Maps.Derivation;
 using LimboDancer.Domains.Asl.Maps.Geometry;
 using LimboDancer.Domains.Asl.Maps.Read;
@@ -205,6 +206,8 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             "asl.game.rally" => PlanRally(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.repair" => PlanRepair(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.recover-shock" => PlanRecoverShock(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
+            "asl.game.turn-gun" => PlanTurnGun(scope, arguments, existing, attemptId, expected, label),
+            "asl.game.hook-gun" => PlanHookGun(scope, arguments, existing, attemptId, expected, label),
             "asl.game.move" => PlanMove(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.pass-fire" => PlanPassFire(scope, existing, attemptId, expected, label),
             "asl.game.end-move" => PlanEndMove(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
@@ -257,13 +260,14 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
     private GamePlan PlanSetup(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, ref string label)
     {
-        if (existing.Any(item => item.Payload is not (GameStarted or InstanceCreated)))
+        if (existing.Any(item => item.Payload is not (GameStarted or InstanceCreated or BoreSighted)))
         {
             return Refused(scope, label, expected, "play.setup-closed: play has started, so no more units can be set up");
         }
 
         var events = new JsonArray();
         var sides = new Dictionary<string, string>(StringComparer.Ordinal);
+        var boreSights = new List<(string Gun, BoardLocation At)>();
         if (existing.Count == 0)
         {
             if (!arguments.TryGetProperty("start", out var start) || start.ValueKind != JsonValueKind.Object)
@@ -293,6 +297,19 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             }
 
             var node = JsonNode.Parse(placement.GetRawText())!.AsObject();
+
+            // C6.42 (ruling R8.8): a Gun's Bore Sighted Location is recorded after the setup's placements.
+            if (node["boreSighted"] is JsonValue boreNode && boreNode.TryGetValue<string>(out var boreText))
+            {
+                if (!BoardLocation.TryParse(boreText, out var boreAt) || node["id"]?.GetValue<string>() is not { } boreGun)
+                {
+                    return Refused(scope, label, expected, "play.bore-sight: a Bore Sighted Location is a Location of the map");
+                }
+
+                boreSights.Add((boreGun, boreAt));
+                node.Remove("boreSighted");
+            }
+
             var hidden = IsTrue(placement, Conditions.Hidden) || IsTrue(placement, Conditions.Concealed);
             var side = placement.TryGetProperty("side", out var sideElement) && sideElement.ValueKind == JsonValueKind.String ? sideElement.GetString() : null;
             events.Add(EventNode(events.Count + 1, "instance-created", new JsonObject { ["instance"] = node }, hidden && side is not null ? [side] : null));
@@ -309,7 +326,29 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             return Refused(scope, label, expected, vehicleBar);
         }
 
-        return parsed.Events is { } list
+        IReadOnlyList<GameEvent>? withSights = null;
+        if (boreSights.Count > 0 && parsed.Events is { } setUp && Replay([.. existing, .. setUp]).Current is { } sightState)
+        {
+            // C6.41, C6.42: the Scenario Defender's manned Gun, a Location outside its hex, in its LOS, within 16 hexes.
+            var sightEvents = new List<GameEvent>();
+            foreach (var (boreGun, boreAt) in boreSights)
+            {
+                if (sightState.Find(boreGun) is not EquipmentInstance { Holding: { Role: HoldingRole.Manned } manning, Position: MapPosition gunAt }
+                    || sightState.Unit(manning.Holder)?.Side != sightState.ScenarioDefender || boreAt == gunAt.Location
+                    || Los(sightState, gunAt.Location, boreAt) is not { Status: LosStatus.Clear, Range: <= 16 })
+                {
+                    return Refused(scope, label, expected,
+                        $"play.bore-sight: {boreGun} may Bore Sight only as the Scenario Defender's manned Gun, a Location outside its hex, in its LOS, within 16 hexes (C6.41, C6.42)");
+                }
+
+                sightEvents.Add(Event(scope, attemptId, setUp.Count + sightEvents.Count + 1, expected, "bore-sighted",
+                    new BoreSighted(boreGun, boreAt, manning.Holder, gunAt.Location), ScenarioA1OrdnancePackage.Identity.ToString(), [sightState.ScenarioDefender!]));
+            }
+
+            withSights = [.. setUp, .. sightEvents];
+        }
+
+        return (withSights ?? parsed.Events) is { } list
             ? new GamePlan(GamePlanStatus.Ready, scope, label, expected, list, [$"play.setup: {list.Count} event(s)"])
             : Refused(scope, label, expected, [.. parsed.Reasons]);
     }
@@ -1367,6 +1406,12 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         {
             // B15: grain is a Hindrance June to September, so fire through grain needs the month.
             payload["scenarioMonth"] = JsonNode.Parse(month.GetRawText());
+        }
+
+        if (start.TryGetProperty("scenarioDefender", out var defender) && defender.ValueKind == JsonValueKind.String)
+        {
+            // C6.41 (ruling R8.8): the Scenario Defender may Bore Sight.
+            payload["scenarioDefender"] = defender.GetString();
         }
 
         if (start.TryGetProperty("scenarioYear", out var year))
