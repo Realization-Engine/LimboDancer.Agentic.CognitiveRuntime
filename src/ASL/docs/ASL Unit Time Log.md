@@ -307,4 +307,7 @@ Estimate: 2:30, the user's revision of 2026-09-28 (the plan's 5:30, build 4:15, 
 | Play page: Opportunity Fire panel, Spraying Fire, Fire Lane, and partner controls, Encircled units; Studio test; MapStudio (127) pass; table-player agent started | 15:04 | 15:08 | 0:04 | |
 | Visual check in the Studio (Opportunity Fire, Spraying Fire, the AFPh), the proposal text fixed; review, design, backlog section 22, and requirements | 15:08 | 15:11 | 0:03 | |
 | Table player's 11 findings: 8 fixed with 3 new tests, 3 recorded (and the follow-ons after an owner's choice); Play (278), MapStudio (127) pass | 15:11 | 15:22 | 0:11 | Authoring (162) passed at 15:17 |
-| Full local suite: build with warnings as errors, every solution test project, and the ScenarioA1 tests (2,188 passed, 30 skipped) | 15:22 | 15:33 | 0:11 | |
+| Full local suite: build with warnings as errors, every solution test project, and the ScenarioA1 tests (2,188 passed, 30 skipped) | 15:22 | 15:33 | 0:11 | || Commit 5ea5923; merge gate: the Docker Linux check (restore, build, test, a1: every step exit 0) | 15:33 | 15:43 | 0:10 | |
+| Merge and push | 15:43 | 15:45 | 0:02 | |
+
+Total 1:33 of working time (14:12 to 15:45) against the user's 2:30 estimate (the plan's 5:30); the build with both reviews' fixes, 14:18 to 15:22, took 1:04.
