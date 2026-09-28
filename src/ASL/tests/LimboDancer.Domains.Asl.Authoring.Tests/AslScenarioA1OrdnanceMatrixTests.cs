@@ -10,7 +10,7 @@ namespace LimboDancer.Domains.Asl.Authoring.Tests;
 public sealed class AslScenarioA1OrdnanceMatrixTests
 {
     private const string SourceCommit = "a3254ff1d492dbdd28483d86f5b42437b48e80d4";
-    private const string MatrixSha256 = "fd72783c5129afd2587f35698f85f2872bb871798e1b90f0259e6d650116ba24";
+    private const string MatrixSha256 = "b680f858de14e57b5862bafac49338ad0b215e27c0d2442ec911331de6ad8b63";
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     private static string Registry(string name) => Path.Combine(RepositoryPaths.Root, "docs", "ASL", "SourceRegistry", name);
@@ -38,6 +38,23 @@ public sealed class AslScenarioA1OrdnanceMatrixTests
         Assert.Equal(700, table.RootElement.GetProperty("physicalPdfPage").GetInt32());
         Assert.Equal([8, 7, 6, 5, 4, 3, 2, 1, 0, -1], table.RootElement.GetProperty("infantry").GetProperty("black").EnumerateArray().Select(item => item.GetInt32()));
         Assert.Equal([8, 6, 5, 4, 3, 2, 1, 0, -1, -2], table.RootElement.GetProperty("infantry").GetProperty("red").EnumerateArray().Select(item => item.GetInt32()));
+
+        // Backlog pass 7: the Vehicle row of the To Hit Table (p. 700) and the To Kill tables (p. 701).
+        Assert.Equal(Hashing.Sha256File(Registry(Path.Combine("Supplements", "c3-to-hit-vehicle-row.transcription.json"))),
+            root.GetProperty("toHitVehicleTranscriptionSha256").GetString());
+        Assert.Equal(Hashing.Sha256File(Registry(Path.Combine("Supplements", "c7-to-kill-tables.transcription.json"))),
+            root.GetProperty("toKillTranscriptionSha256").GetString());
+        using var vehicleRow = Read(Path.Combine("Supplements", "c3-to-hit-vehicle-row.transcription.json"));
+        Assert.Equal([10, 9, 8, 7, 6, 6, 5, 4, 3, 2], vehicleRow.RootElement.GetProperty("vehicle").GetProperty("black").EnumerateArray().Select(item => item.GetInt32()));
+        Assert.Equal([10, 8, 7, 6, 5, 4, 3, 2, 1, 0], vehicleRow.RootElement.GetProperty("vehicle").GetProperty("red").EnumerateArray().Select(item => item.GetInt32()));
+        using var toKill = Read(Path.Combine("Supplements", "c7-to-kill-tables.transcription.json"));
+        Assert.Equal(701, toKill.RootElement.GetProperty("physicalPdfPage").GetInt32());
+        int Basic(string table, string gun) => toKill.RootElement.GetProperty(table).GetProperty("basic").EnumerateArray()
+            .Single(item => item.GetProperty("guns").EnumerateArray().Any(entry => entry.GetString() == gun)).GetProperty("tk").GetInt32();
+        Assert.Equal(11, Basic("ap", "50"));
+        Assert.Equal(13, Basic("ap", "76L:russian-japanese"));
+        Assert.Equal(14, Basic("apcr", "50"));
+        Assert.Equal(14, Basic("apcr", "76L:russian"));
     }
 
     [Fact]
@@ -55,12 +72,13 @@ public sealed class AslScenarioA1OrdnanceMatrixTests
             .Concat(AslScenarioA1FireSourceReview.BuildVehicles(RepositoryPaths.Root, manifests, attestation).Records)
             .Concat(AslScenarioA1FireSourceReview.BuildPass5(RepositoryPaths.Root, manifests, attestation).Records)
             .Concat(AslScenarioA1FireSourceReview.BuildPass6(RepositoryPaths.Root, manifests, attestation).Records)
+            .Concat(AslScenarioA1FireSourceReview.BuildPass7(RepositoryPaths.Root, manifests, attestation).Records)
             .Where(item => item.Disposition == TirSourceVerificationDisposition.Verified)
             .Select(item => item.SourceFragment.FragmentId).ToHashSet(StringComparer.Ordinal);
 
         using var matrix = Read("asl-scenario-a1.ordnance-case-matrix.json");
         var fragments = matrix.RootElement.GetProperty("sourceFragments").EnumerateArray().ToArray();
-        Assert.Equal(53, fragments.Length);
+        Assert.Equal(103, fragments.Length);
         foreach (var item in fragments)
         {
             var fragment = Assert.Single(manifests.Fragments, candidate => candidate.FragmentId == item.GetProperty("fragmentId").GetString());

@@ -132,6 +132,17 @@
             </select>
             <span class="muted">grain is a Hindrance only from June to September (B15.2), and costs Infantry 1½ MF only from April to September (B15.6)</span>
         </span>
+        <label for="new-year">Year</label>
+        <span>
+            <select id="new-year" value="@newYear" @onchange="@(args => newYear = args.Value as string ?? string.Empty)">
+                <option value="">not recorded</option>
+                @for (var year = 1939; year <= 1945; year++)
+                {
+                    <option value="@year">@year</option>
+                }
+            </select>
+            <span class="muted">APCR and HEAT are fired only in the years a counter lists them (C8.1, C8.3)</span>
+        </span>
     </div>
 }
 else if (history.Current is null && state is null)
@@ -284,6 +295,26 @@ else if (state is not null)
             </label>
             <button id="propose-repair" disabled="@(repairWeapon.Length == 0)" @onclick="ProposeRepair">Propose: repair</button>
         </div>
+        @if (ShockedVehicles.Any())
+        {
+            <p class="muted" id="shock-help">
+                A Shocked AFV makes a dr in this RPh: 1 or 2 removes the Shock, 3 to 6 makes it an Unconfirmed Kill; an Unconfirmed Kill's dr of 1 to 3
+                removes it and 4 to 6 wrecks the AFV (C7.42). The RPh does not end until each has rolled.
+            </p>
+            <div class="toolbar">
+                <label>
+                    Shocked AFV
+                    <select id="shock-vehicle" value="@shockVehicle" @onchange="@(args => shockVehicle = args.Value as string ?? string.Empty)">
+                        <option value="">choose</option>
+                        @foreach (var vehicle in ShockedVehicles)
+                        {
+                            <option value="@vehicle.Id">@vehicle.Id (@(GameState.Condition(vehicle, Conditions.UnconfirmedKill) == ConditionState.True ? "Unconfirmed Kill" : "Shocked"))</option>
+                        }
+                    </select>
+                </label>
+                <button id="propose-shock" disabled="@(shockVehicle.Length == 0)" @onclick="ProposeShockRecovery">Propose: roll for it</button>
+            </div>
+        }
     }
     @if (state.Phase == "mph")
     {
@@ -667,29 +698,34 @@ else if (state is not null)
             <button id="propose-fire" disabled="@(fireFirers.Count == 0 || FireTarget.Length == 0)" @onclick="ProposeFire">Propose: fire</button>
             <button id="fire-clear" class="link" @onclick="ClearFire">clear</button>
         </div>
-        @if (state.Phase is "pfph" or "afph" or "dfph" && OrdnanceGuns(firing).Any())
+        @if (state.Phase is "pfph" or "afph" or "dfph" && (OrdnanceGuns(firing).Any() || OrdnanceTanks(firing).Any()))
         {
             <h4>Ordnance</h4>
             <p class="muted" id="ordnance-help">
-                A Gun manned by its crew fires HE at the enemy units of a Location on the Infantry Target Type (C3.3, C3.32). It turns to bring the
+                A Gun manned by its crew, or a tank's MA, fires HE at the enemy units of a Location on the Infantry Target Type (C3.3, C3.32), or at
+                one enemy vehicle there on the Vehicle Target Type with AP, APCR, HEAT, or HE (C3.31, C8.1). It turns its barrel or turret to bring the
                 target into its Covered Arc if it must, with the Case A DRM (C5.1). An Original colored dr at most its ROF lets it fire again this
-                phase (C2.24), and each shot acquires the Location for the next (C6.5). A hit attacks every enemy unit there on the IFT column of the
-                Gun's HE FP (C.6).
+                phase (C2.24), and each shot acquires the Location for the next (C6.5). A hit on Infantry attacks every enemy unit there on the IFT
+                column of the HE FP (C.6); a hit on a vehicle strikes its turret or hull, and the To Kill DR decides its fate (C3.9, C7).
             </p>
             <div class="toolbar">
                 <label>
                     Gun
-                    <select id="ordnance-gun" value="@ordnanceGun" @onchange="@(args => ordnanceGun = args.Value as string ?? string.Empty)">
+                    <select id="ordnance-gun" value="@ordnanceGun" @onchange="@(args => { ordnanceGun = args.Value as string ?? string.Empty; ordnanceAmmunition = OrdnanceAmmunitions.FirstOrDefault() ?? "ap"; })">
                         <option value="">choose</option>
                         @foreach (var gun in OrdnanceGuns(firing))
                         {
                             <option value="@gun.Id">@GunLabel(gun)</option>
                         }
+                        @foreach (var tank in OrdnanceTanks(firing))
+                        {
+                            <option value="@tank.Id">@TankLabel(tank)</option>
+                        }
                     </select>
                 </label>
                 <label>
                     Target
-                    <select id="ordnance-target" value="@ordnanceTarget" @onchange="@(args => ordnanceTarget = args.Value as string ?? string.Empty)">
+                    <select id="ordnance-target" value="@ordnanceTarget" @onchange="@(args => { ordnanceTarget = args.Value as string ?? string.Empty; ordnanceVehicle = string.Empty; })">
                         <option value="">choose</option>
                         @foreach (var at in FireTargets(firing))
                         {
@@ -697,7 +733,29 @@ else if (state is not null)
                         }
                     </select>
                 </label>
-                <button id="propose-ordnance" disabled="@(ordnanceGun.Length == 0 || ordnanceTarget.Length == 0)" @onclick="ProposeOrdnance">Propose: fire the Gun</button>
+                @if (OrdnanceVehicleTargets(firing).Any())
+                {
+                    <label>
+                        Vehicle
+                        <select id="ordnance-vehicle" value="@ordnanceVehicle" @onchange="@(args => ordnanceVehicle = args.Value as string ?? string.Empty)">
+                            <option value="">choose</option>
+                            @foreach (var vehicle in OrdnanceVehicleTargets(firing))
+                            {
+                                <option value="@vehicle.Id">@vehicle.Id (@vehicle.Definition?.Definition)</option>
+                            }
+                        </select>
+                    </label>
+                    <label>
+                        Ammunition
+                        <select id="ordnance-ammunition" value="@ordnanceAmmunition" @onchange="@(args => ordnanceAmmunition = args.Value as string ?? "ap")">
+                            @foreach (var ammunition in OrdnanceAmmunitions)
+                            {
+                                <option value="@ammunition">@ammunition.ToUpperInvariant()</option>
+                            }
+                        </select>
+                    </label>
+                }
+                <button id="propose-ordnance" disabled="@(ordnanceGun.Length == 0 || ordnanceTarget.Length == 0)" @onclick="ProposeOrdnance">Propose: fire</button>
             </div>
         }
     }
@@ -1032,6 +1090,7 @@ else if (state is not null)
     private string vehicleIntended = string.Empty;
     private string secondElr = string.Empty;
     private string newMonth = string.Empty;
+    private string newYear = string.Empty;
     private string fireFrom = string.Empty;
     private readonly HashSet<string> fireFirers = new(StringComparer.Ordinal);
     private string fireDirector = string.Empty;
@@ -1631,6 +1690,56 @@ else if (state is not null)
     /// </summary>
     private string ordnanceGun = string.Empty;
     private string ordnanceTarget = string.Empty;
+    private string ordnanceVehicle = string.Empty;
+    private string ordnanceAmmunition = "ap";
+    private string shockVehicle = string.Empty;
+
+    /// <summary>The firing side's tanks, whose MA fires as a Gun (D1.3; ruling R7.10).</summary>
+    private IEnumerable<UnitInstance> OrdnanceTanks(string side) => state is null ? []
+        : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && LiveOrdnance.IsTank(unit)).OrderBy(unit => unit.Id, StringComparer.Ordinal);
+
+    /// <summary>The enemy vehicles in the chosen target Location, each a Vehicle Target Type target (C3.31).</summary>
+    private IEnumerable<UnitInstance> OrdnanceVehicleTargets(string side) => state is null || !BoardLocation.TryParse(ordnanceTarget, out var at) ? []
+        : state.At(at).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side != side && LiveFire.IsVehicle(unit))
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal);
+
+    /// <summary>The ammunition the chosen Gun or tank may carry (C8.1); the scenario year and depletion decide the shot.</summary>
+    private IReadOnlyList<string> OrdnanceAmmunitions => state?.Find(ordnanceGun) switch
+    {
+        UnitInstance { Definition: { } tank } => LiveOrdnance.Ammunitions(tank.Definition),
+        EquipmentInstance { Definition: { } gun } => LiveOrdnance.Ammunitions(gun.Definition),
+        _ => ["ap", "apcr", "heat", "he"],
+    };
+
+    /// <summary>The Shocked AFVs and Unconfirmed Kills that owe their RPh dr (C7.42).</summary>
+    private IEnumerable<UnitInstance> ShockedVehicles => state is null ? []
+        : state.Units.Where(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit) && !state.ShockRollsThisPhase.Contains(unit.Id)
+            && (GameState.Condition(unit, Conditions.Shocked) == ConditionState.True || GameState.Condition(unit, Conditions.UnconfirmedKill) == ConditionState.True))
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal);
+
+    /// <summary>A tank as a player reads it: its VCA and TCA, BU or CE, its fire this phase, its Acquisition, and what stops it firing.</summary>
+    private string TankLabel(UnitInstance tank)
+    {
+        bool Marked(string condition) => GameState.Condition(tank, condition) == ConditionState.True;
+        var hull = tank.Position is MapPosition { Facing: { } spine } ? UnitFacings.Name(spine) : "no facing";
+        var turret = state is not null && LiveOrdnance.TurretFacing(state, tank) is { } tca ? UnitFacings.Name(tca) : "no facing";
+        var shots = state?.OrdnanceShots.FirstOrDefault(item => item.Gun == tank.Id);
+        var acquired = state?.Acquisitions.FirstOrDefault(item => item.Gun == tank.Id);
+        var depleted = state?.DepletedAmmunition.Where(item => item.Gun == tank.Id).Select(item => item.Ammunition.ToUpperInvariant()).ToArray() ?? [];
+        var flags = string.Concat(new[] { (Conditions.Shocked, "Shocked"), (Conditions.UnconfirmedKill, "Unconfirmed Kill"), (Conditions.Stunned, "Stunned"),
+            (Conditions.Recalled, "Recalled"), (Conditions.Motion, "in Motion"), (Conditions.Immobilized, "immobilized"), (Conditions.Malfunctioned, "MA malfunctioned") }
+            .Where(item => Marked(item.Item1)).Select(item => ", " + item.Item2));
+        return $"{tank.Id} ({tank.Definition?.Definition} MA, VCA {hull}, TCA {turret}, {(LiveFire.CrewExposed(tank) ? "CE" : "BU")}"
+            + (shots is null ? Marked(Conditions.PrepFire) || Marked(Conditions.FinalFire) ? ", fired this Player Turn" : ""
+                : shots.RateOfFireKept ? $", {shots.Shots} shot(s), may fire again" : ", fired")
+            + (acquired is null ? "" : $", Acquisition {acquired.Level} on {acquired.Location}")
+            + (depleted.Length == 0 ? "" : $", out of {string.Join(", ", depleted)}") + flags + ")";
+    }
+
+    private Task ProposeShockRecovery() => Propose(GameActions.RecoverShock, JsonSerializer.SerializeToElement(new
+    {
+        gameId, attemptId = Attempt("shock"), expectedRevision = (long)history!.Events.Count, vehicleId = shockVehicle,
+    }));
 
     /// <summary>The firing side's Guns that its crews man (A21.13), a malfunctioned one shown as such (C2.28; Gun repair is not built).</summary>
     private IEnumerable<EquipmentInstance> OrdnanceGuns(string side) => state is null ? []
@@ -1655,10 +1764,20 @@ else if (state is not null)
             + (acquired is null ? "" : $", Acquisition {acquired.Level} on {acquired.Location}") + crewState + ")";
     }
 
-    private Task ProposeOrdnance() => Propose(GameActions.FireOrdnance, JsonSerializer.SerializeToElement(new
+    private Task ProposeOrdnance()
     {
-        gameId, attemptId = Attempt("gun"), expectedRevision = (long)history!.Events.Count, gunId = ordnanceGun, target = ordnanceTarget,
-    }));
+        var arguments = new Dictionary<string, object>
+        {
+            ["gameId"] = gameId, ["attemptId"] = Attempt("gun"), ["expectedRevision"] = (long)history!.Events.Count, ["gunId"] = ordnanceGun, ["target"] = ordnanceTarget,
+        };
+        if (ordnanceVehicle.Length > 0)
+        {
+            arguments["targetVehicle"] = ordnanceVehicle;
+            arguments["ammunition"] = ordnanceAmmunition;
+        }
+
+        return Propose(GameActions.FireOrdnance, JsonSerializer.SerializeToElement(arguments));
+    }
 
     /// <summary>
     /// The ordnance records the viewer may see, latest first, in words: the Basic and Modified TH# (C3.3, C4), the To Hit DR with its colored die
@@ -1684,9 +1803,12 @@ else if (state is not null)
                 var dice = string.Join(", ", hit.Dice.Select((die, index) => index == 0 ? $"{die} (colored)" : $"{die}"));
                 var modifications = string.Concat(hit.Modifications.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({item.Name}, {item.Rule})"));
                 var outcome = hit.CriticalHit ? "Critical Hit" : hit.Hit ? "hit" : "miss";
+                var shot = fired.Facts.Deserialize<OrdnanceShot>(LiveFire.Json);
+                var aim = shot?.VehicleTarget is { } aimed ? $"{(shot.Ammunition ?? "ap").ToUpperInvariant()} at {aimed.VehicleId} in {fired.Target} (hull {aimed.HullFacing}"
+                    + (aimed.TurretFacing is { } turretFacing ? $", turret {turretFacing}" : "") + " toward the firer)" : $"HE at {fired.Target}";
                 var parts = new List<string>
                 {
-                    $"{fired.Gun} fires HE at {fired.Target}"
+                    $"{fired.Gun} fires {aim}"
                         + (fired.Facing is { } facing ? $", turning to {UnitFacings.Name(facing)}" : "")
                         + $": Basic TH# {hit.BasicToHit} ({hit.Color}){modifications} = {hit.ModifiedToHit}; DR {dice} = {hit.OriginalDr}{ModifierText(hit.Drm)} = Final DR {hit.FinalDr}"
                         + (hit.SubsequentDr is { } dr ? $", subsequent dr {dr}" : "") + (hit.Improbable ? " (Improbable Hit, C3.6)" : "") + $": {outcome}",
@@ -1698,6 +1820,36 @@ else if (state is not null)
                         parts.Add($"{label} on {string.Join(", ", attack.Effects.Select(effect => effect.UnitId))}: {arithmetic.ColumnFp} FP, IFT DR {string.Join(", ", arithmetic.Dice)} = {arithmetic.OriginalDr}"
                             + $"{ModifierText(arithmetic.Drm)} = {arithmetic.FinalDr}: {arithmetic.Result}");
                     }
+                }
+
+                if (resolution.AmmunitionUse == "none")
+                {
+                    parts.Add($"the Original DR is above the Depletion Number: it had no {shot?.Ammunition?.ToUpperInvariant()}, has not fired, and has none for the rest of the scenario (C8.9)");
+                }
+                else if (resolution.AmmunitionUse == "depleted")
+                {
+                    parts.Add($"the Original DR equals the Depletion Number: its last {shot?.Ammunition?.ToUpperInvariant()} (C8.9)");
+                }
+
+                if (resolution.Kill is { } kill)
+                {
+                    var tk = kill.BasicTk is { } basic
+                        ? $"Basic TK# {basic}{string.Concat(kill.Modifications.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({item.Name}, {item.Rule})"))} - AF {kill.ArmorFactor} = Final TK# {kill.FinalTk}"
+                        : $"unarmored Final TK# {kill.FinalTk}";
+                    var fate = kill.Result switch
+                    {
+                        OrdnanceKill.Burn => "burns (a burning wreck)",
+                        OrdnanceKill.Eliminated => "eliminated (a wreck)",
+                        OrdnanceKill.Immobilized => "immobilized",
+                        OrdnanceKill.Shock => "Shocked",
+                        OrdnanceKill.PossibleShock => "possible Shock",
+                        OrdnanceKill.Dud => "a dud (Original 12)",
+                        _ => "no effect",
+                    };
+                    var checks = (kill.ShockCheck is { } ntc ? $"; NTC DR {ntc.FinalDr} against {ntc.MoraleLevel}: {(ntc.Passed ? "passed" : "Shocked")}" : "")
+                        + (kill.CrewCheck is { } tc ? $"; crew TC DR {tc.FinalDr} against {tc.MoraleLevel}: {(tc.Passed ? "passed" : "Abandoned")}" : "")
+                        + (kill.CrewSurvival is { } cs ? $"; Crew Survival DR {cs.FinalDr} against CS# {cs.CrewSurvival}: {(cs.Survived ? "the crew survives" : "no survivors")}" : "");
+                    parts.Add($"{kill.HitLocation} hit, {kill.TargetFacing} Target Facing, {kill.Ammunition.ToUpperInvariant()}: {tk}; TK DR {string.Join(", ", kill.Dice)} = {kill.OriginalDr}: {fate}{checks}");
                 }
 
                 parts.Add((gun.Malfunctioned ? "the Gun malfunctions (C2.28)" : gun.RateOfFireKept ? "it may fire again this phase (C2.24)" : "no more fire this phase")
@@ -2020,6 +2172,17 @@ else if (state is not null)
                     };
                     records.Add((item.EventId, "repair", $"{repair.Unit} repairs {repair.Equipment}: dr {dr} against R{repair.RepairNumber}: {result}"));
                 }
+                else if (item.Payload is ShockRecoveryRolled shock)
+                {
+                    var dr = rolls.TryGetValue(shock.Roll, out var roll) ? roll.Values[0].ToString(CultureInfo.InvariantCulture) : "?";
+                    var result = shock.Result switch
+                    {
+                        ShockRecoveryRolled.Recovered => "recovers",
+                        ShockRecoveryRolled.UnconfirmedKill => "becomes an Unconfirmed Kill",
+                        _ => "is wrecked",
+                    };
+                    records.Add((item.EventId, "shock", $"{shock.Vehicle}'s Shock or Unconfirmed Kill dr {dr}: it {result} (C7.42)"));
+                }
             }
 
             records.Reverse();
@@ -2202,6 +2365,8 @@ else if (state is not null)
         ClearCloseCombat();
         ordnanceGun = string.Empty;
         ordnanceTarget = string.Empty;
+        ordnanceVehicle = string.Empty;
+        shockVehicle = string.Empty;
         Refresh();
     }
 
@@ -2250,6 +2415,8 @@ else if (state is not null)
         ClearFire();
         ordnanceGun = string.Empty;
         ordnanceTarget = string.Empty;
+        ordnanceVehicle = string.Empty;
+        shockVehicle = string.Empty;
         advanceUnits.Clear();
         advanceTo = string.Empty;
         ccLocation = string.Empty;
@@ -2426,6 +2593,11 @@ else if (state is not null)
         if (int.TryParse(newMonth, CultureInfo.InvariantCulture, out var month))
         {
             start["scenarioMonth"] = month;
+        }
+
+        if (int.TryParse(newYear, CultureInfo.InvariantCulture, out var year))
+        {
+            start["scenarioYear"] = year;
         }
 
         return start;

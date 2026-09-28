@@ -79,7 +79,7 @@ public sealed class SeamEntryTests : IDisposable
         start = new
         {
             label = "Seam test",
-            catalog = "asl-scenario-a1@1.5.0",
+            catalog = "asl-scenario-a1@1.6.0",
             boards = boardList,
             firstSide = "german",
             sides = new[] { new { id = "german", nationality = "german" }, new { id = "russian", nationality = "russian" } },

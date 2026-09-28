@@ -146,6 +146,11 @@ public static class GameEventWriter
                     writer.WriteNumber("scenarioMonth", month);
                 }
 
+                if (started.ScenarioYear is { } year)
+                {
+                    writer.WriteNumber("scenarioYear", year);
+                }
+
                 break;
             case PhaseChanged phase:
                 writer.WriteNumber("turn", phase.Turn);
@@ -308,6 +313,11 @@ public static class GameEventWriter
                 writer.WriteString("roll", repair.Roll);
                 writer.WriteNumber("repairNumber", repair.RepairNumber);
                 writer.WriteString("result", repair.Result);
+                break;
+            case ShockRecoveryRolled shock:
+                writer.WriteString("vehicle", shock.Vehicle);
+                writer.WriteString("roll", shock.Roll);
+                writer.WriteString("result", shock.Result);
                 break;
             case MovementStepped moving:
                 Strings(writer, "movers", moving.Movers);

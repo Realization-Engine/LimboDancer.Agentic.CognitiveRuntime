@@ -298,6 +298,19 @@ Unit step 25 ([ASL Unit Deviations, Ordnance, and Vehicles Plan](<ASL Unit Devia
 
 **Review and version.** A separate agent briefed as an ASL rules referee rendered the listing rows and the span colors and fonts of the page and confirmed all 126 value rows; the three trait rows followed its finding D8. Added definitions make a minor version: `asl-scenario-a1@1.5.0`. Games that name 1.4.0 no longer replay, including the Studio's demo games of earlier passes; the committed ones now name 1.5.0.
 
+### 9.7 Tanks (catalog 1.6.0)
+
+Backlog pass 7 ([ASL Unit Backlog Passes Plan](<ASL Unit Backlog Passes Plan.md>), section 3, task 7.1; ruling R7.1) needs a closed-topped tank of each side. On 2026-09-28, two counters (86 rows, 43 attributes each) were added from the Chapter H Vehicle Listings:
+
+| Counters | Sheet | Source | Needed for |
+|---|---|---|---|
+| `attacker-tank` (German PzKpfw IIIH: fully tracked, 13 MP, AF 6/3, turret front inferior and side superior, MA 50 T, ROF 2, B# 12, APCR A4 from 1941 and A5 from 1942, BMG 3, CMG 5, CS 6) | VLG | p. 337 | A tank's MA fire (D1.3), a Vehicle Target Type target (C3.31), and To Kill against armor (C7) |
+| `defender-tank` (Russian T-34 M41: fully tracked, ground pressure low, 17 MP printed bold, AF 11/6, turret front inferior, MA 76L RST, no ROF, B# 12, APCR A4 from 1942, A5 from 1943, A6 from 1944, BMG 2, CMG 4, CS 5, radioless) | VLR | p. 355 | The same, for the Russian side |
+
+**Readings.** This edition prints the counters' red values in bold, so the T-34's bold MP 17 is red: mechanically unreliable (D2.51), with the trait `asl:mechanically-unreliable`. A superscript after a Depletion Number is the first year it applies (Listings Key, p. 338; C8.91): `A4^1 A5^2` is A4 in 1941 and A5 from 1942. Special Ammunition is stored as the listing prints it, one entry per counter. A turret AF not printed as superior or inferior is the hull's. Both CS# are black. Vocabulary 1.11.0 adds the states `asl:shocked` and `asl:unconfirmed-kill`.
+
+**Review and version.** The referee agent of the pass 7 review rendered the listing rows and confirmed the values against pp. 337 and 355. Added definitions make a minor version: `asl-scenario-a1@1.6.0`. Games that name 1.5.0 no longer replay; the committed test games now name 1.6.0.
+
 ## 10. The source adapter
 
 ASL-UNIT-001 keeps source-specific parsing out of `LimboDancer.Domains.Asl.Units`, so the transcription is read by a separate source adapter, `LimboDancer.Domains.Asl.Units.CounterSheets`, which references only `Units`. `CounterSheetCatalogBuilder` takes the catalog manifest (`src/ASL/units/catalog/scenario-a1.catalog-manifest.json`: id, version, slots, and which counter fills which slot), the source record, the transcription, and the worksheet, and:

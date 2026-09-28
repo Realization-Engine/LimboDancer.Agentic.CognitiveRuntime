@@ -60,6 +60,12 @@ public sealed record GameStarted(
     {
         get; init;
     }
+
+    /// <summary>The scenario's year (1939 to 1945) when setup records it; Special Ammunition depends on it (C8.1, C8.3; ruling R7.6).</summary>
+    public int? ScenarioYear
+    {
+        get; init;
+    }
 }
 
 /// <summary><c>phase-changed</c>.</summary>

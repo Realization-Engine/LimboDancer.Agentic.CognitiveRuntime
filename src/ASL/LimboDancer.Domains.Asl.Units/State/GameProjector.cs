@@ -89,6 +89,7 @@ public static class GameProjector
                 ResidualFirePlaced residual => PlaceResidual(previous, residual),
                 RallyAttempted rally => Rally(previous, rally, gameEvent),
                 RepairAttempted repair => Repair(previous, repair),
+                ShockRecoveryRolled shock => ShockRecovery(previous, shock),
                 MovementStepped moving => StepMovement(previous, moving),
                 VehicleStepped vehicle => StepVehicle(previous, vehicle),
                 MovementWindowClosed closed => CloseWindow(previous, closed),
@@ -221,6 +222,7 @@ public static class GameProjector
             {
                 SpecialRules = started.SpecialRules,
                 ScenarioMonth = started.ScenarioMonth,
+                ScenarioYear = started.ScenarioYear,
                 FirstSide = started.PhasingSide,
                 Source = gameEvent.Source,
             };
@@ -319,6 +321,7 @@ public static class GameProjector
                     PhasingSide = change.PhasingSide,
                     FiresThisPhase = [],
                     RepairsThisPhase = [],
+                    ShockRollsThisPhase = [],
                     ResidualFire = [],
                     Movement = null,
                     NoDoubleTime = rested,
@@ -566,8 +569,11 @@ public static class GameProjector
             }
 
             var shots = state.OrdnanceShots.FirstOrDefault(item => item.Gun == fired.Gun);
-            if (state.Phase is not ("pfph" or "afph" or "dfph") || state.Find(fired.Gun) is not EquipmentInstance { Status: InstanceStatus.Active } gun
-                || gun.Holding is not { Role: HoldingRole.Manned } manning || manning.Holder != fired.Crew
+            // D1.3 (ruling R7.10): an AFV's MA is fired by the AFV itself, its crew inherent.
+            var firer = state.Find(fired.Gun);
+            var tank = firer is UnitInstance { Status: InstanceStatus.Active } vehicle && vocabulary.IsA(vehicle.Kind, "asl:vehicle") && fired.Crew == vehicle.Id;
+            if (state.Phase is not ("pfph" or "afph" or "dfph")
+                || !(tank || (firer is EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Manned } manning } && manning.Holder == fired.Crew))
                 || Active(state, fired.Crew) is not UnitInstance || (shots is not null && !shots.RateOfFireKept))
             {
                 return Fail<GameState>("UNIT-STATE-033", "A Gun fires in a fire phase, manned by its crew, and again only on a kept Multiple ROF (C2.24).");
@@ -588,18 +594,54 @@ public static class GameProjector
                 ChoicesMade = new Dictionary<string, string>(StringComparer.Ordinal)
             };
 
-            var turned = fired.Facing is { } facing && gun.Position is MapPosition map
-                ? gun with
+            // C8.9 (ruling R7.6): Special Ammunition used at its Depletion Number runs out; above it the Gun had none, may not use it again,
+            // and was never fired: nothing else about the Gun changes.
+            var use = fired.Resolution.TryGetProperty("ammunitionUse", out var used) && used.ValueKind == JsonValueKind.String ? used.GetString() : null;
+            var malfunctioned = fired.Resolution.TryGetProperty("gun", out var gunResult) && gunResult.TryGetProperty("malfunctioned", out var broke) && broke.ValueKind == JsonValueKind.True;
+            if (use is "depleted" or "none" && fired.Facts.TryGetProperty("ammunition", out var ammunition) && ammunition.GetString() is { } depleted)
+            {
+                state = state with
                 {
-                    Position = map with
+                    DepletedAmmunition = [.. state.DepletedAmmunition, new DepletedAmmunition(fired.Gun, depleted)]
+                };
+            }
+
+            // C8.9: unless the Gun malfunctioned, when the shot counts as fired.
+            if (use == "none" && !malfunctioned)
+            {
+                return state;
+            }
+
+            // C3.21, D3.12: a Gun turns its barrel; an AFV turns its turret, whose TCA keeps its direction apart from the hull's VCA.
+            if (tank)
+            {
+                state = fired.Facing is { } turret
+                    ? state with
                     {
-                        Facing = facing
+                        TurretFacings = [.. state.TurretFacings.Where(item => item.Vehicle != fired.Gun), new TurretFacing(fired.Gun, turret)]
                     }
-                }
-                : gun;
+                    : state;
+            }
+            else
+            {
+                var gun = (EquipmentInstance)firer!;
+                var turned = fired.Facing is { } facing && gun.Position is MapPosition map
+                    ? gun with
+                    {
+                        Position = map with
+                        {
+                            Facing = facing
+                        }
+                    }
+                    : gun;
+                state = state with
+                {
+                    Equipment = [.. state.Equipment.Select(item => item.Id == gun.Id ? turned : item)]
+                };
+            }
+
             return state with
             {
-                Equipment = [.. state.Equipment.Select(item => item.Id == gun.Id ? turned : item)],
                 OrdnanceShots = [.. state.OrdnanceShots.Where(item => item.Gun != fired.Gun), new OrdnanceShotRecord(fired.Gun, (shots?.Shots ?? 0) + 1, fired.RateOfFireKept)],
                 Acquisitions = [.. state.Acquisitions.Where(item => item.Gun != fired.Gun),
                     .. fired.Acquired is { } acquired && fired.Acquisition < 0 ? new[] { new GunAcquisition(fired.Gun, acquired, fired.Acquisition) } : []],
@@ -863,8 +905,16 @@ public static class GameProjector
             var kept = new List<GunAcquisition>();
             foreach (var acquisition in next.Acquisitions)
             {
-                if (next.Find(acquisition.Gun) is not EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Manned } manning }
-                    || next.Unit(manning.Holder) is not { Status: InstanceStatus.Active } crew || GameState.GoodOrder(crew, vocabulary) == ConditionState.False)
+                // A Gun keeps it while its Good Order crew mans it; a tank while it is active and not Abandoned (C6.5, D1.3).
+                var holds = next.Find(acquisition.Gun) switch
+                {
+                    EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Manned } manning } =>
+                        next.Unit(manning.Holder) is { Status: InstanceStatus.Active } crew && GameState.GoodOrder(crew, vocabulary) != ConditionState.False,
+                    UnitInstance { Status: InstanceStatus.Active } tank => vocabulary.IsA(tank.Kind, "asl:vehicle")
+                        && GameState.Condition(tank, Conditions.Abandoned) != ConditionState.True,
+                    _ => false,
+                };
+                if (!holds)
                 {
                     continue;
                 }
@@ -1033,6 +1083,33 @@ public static class GameProjector
         }
 
         /// <summary>A Repair record (A9.72): a dr at most the Repair Number repairs, a 6 eliminates, anything else changes nothing.</summary>
+        private GameState? ShockRecovery(GameState state, ShockRecoveryRolled shock)
+        {
+            // C7.42 (ruling R7.8): one dr per RPh for a Shocked AFV or an Unconfirmed Kill.
+            if (state.Phase != "rph" || Active(state, shock.Vehicle) is not UnitInstance vehicle || !vocabulary.IsA(vehicle.Kind, "asl:vehicle")
+                || state.ShockRollsThisPhase.Contains(vehicle.Id)
+                || (GameState.Condition(vehicle, Conditions.Shocked) != ConditionState.True && GameState.Condition(vehicle, Conditions.UnconfirmedKill) != ConditionState.True))
+            {
+                return Fail<GameState>("UNIT-STATE-038", "A Shocked AFV or an Unconfirmed Kill makes one dr in the RPh (C7.42).");
+            }
+
+            if (!rolls.TryGetValue(shock.Roll, out var roll) || roll.Count != 1 || roll.Sides != 6)
+            {
+                return Fail<GameState>("UNIT-STATE-038", $"The Shock recovery record's roll '{shock.Roll}' is not one recorded die.");
+            }
+
+            var unconfirmed = GameState.Condition(vehicle, Conditions.UnconfirmedKill) == ConditionState.True;
+            if (shock.Result != ShockRecoveryRolled.For(unconfirmed, roll.Values[0]))
+            {
+                return Fail<GameState>("UNIT-STATE-038", "The Shock recovery record disagrees with its dr (C7.42).");
+            }
+
+            return state with
+            {
+                ShockRollsThisPhase = [.. state.ShockRollsThisPhase, vehicle.Id]
+            };
+        }
+
         private GameState? Repair(GameState state, RepairAttempted repair)
         {
             // D3.7 (ruling R6.10): a vehicle's malfunctioned MG, repaired by its CE crew that is not Stunned or Recalled, on a dr of 1; a 6
@@ -1042,6 +1119,7 @@ public static class GameProjector
                 if (state.Phase != "rph" || GameState.Condition(vehicle, Conditions.Malfunctioned) != ConditionState.True
                     || GameState.Condition(vehicle, Conditions.Disabled) == ConditionState.True || GameState.Condition(vehicle, Conditions.ButtonedUp) == ConditionState.True
                     || GameState.Condition(vehicle, Conditions.Stunned) == ConditionState.True || GameState.Condition(vehicle, Conditions.Recalled) == ConditionState.True
+                    || GameState.Condition(vehicle, Conditions.Shocked) == ConditionState.True || GameState.Condition(vehicle, Conditions.UnconfirmedKill) == ConditionState.True
                     || state.RepairsThisPhase.Contains(vehicle.Id))
                 {
                     return Fail<GameState>("UNIT-STATE-028", "A vehicle's malfunctioned MG is repaired once per RPh by its CE crew that is not Stunned or Recalled (D3.7).");
@@ -1193,7 +1271,7 @@ public static class GameProjector
 
             // D5.341: a Recall stops the AFV like a Stun for the rest of that Player Turn; once its counter shows Recall; +1 it must move.
             var recalling = GameState.Condition(vehicle, Conditions.Recalled) == ConditionState.True && GameState.Condition(vehicle, Conditions.StunRecovery) != ConditionState.True;
-            if (new[] { Conditions.PrepFire, Conditions.Immobilized, Conditions.Stunned, Conditions.Abandoned }
+            if (new[] { Conditions.PrepFire, Conditions.Immobilized, Conditions.Stunned, Conditions.Shocked, Conditions.UnconfirmedKill, Conditions.Abandoned }
                 .FirstOrDefault(name => GameState.Condition(vehicle, name) == ConditionState.True) is { } barred)
             {
                 return Fail<GameState>("UNIT-STATE-034", $"'{vehicle.Id}' is marked {barred.Replace("asl:", "", StringComparison.Ordinal)} and may not move (D.3, D.7, D5.34, D5.41).");
@@ -1386,7 +1464,7 @@ public static class GameProjector
             // never stops it.
             var leaving = members.Where(id => next.Unit(id) is not { Status: InstanceStatus.Active } unit
                 || (movement.Vehicle
-                    ? new[] { Conditions.Stunned, Conditions.Immobilized, Conditions.Abandoned }.Any(name => GameState.Condition(unit, name) == ConditionState.True)
+                    ? new[] { Conditions.Stunned, Conditions.Shocked, Conditions.UnconfirmedKill, Conditions.Immobilized, Conditions.Abandoned }.Any(name => GameState.Condition(unit, name) == ConditionState.True)
                         || (GameState.Condition(unit, Conditions.Recalled) == ConditionState.True && GameState.Condition(unit, Conditions.StunRecovery) != ConditionState.True)
                     : GameState.Condition(unit, Conditions.Broken) == ConditionState.True || GameState.Condition(unit, Conditions.Pinned) == ConditionState.True))
                 .ToArray();

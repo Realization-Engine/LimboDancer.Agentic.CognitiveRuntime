@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "1.0.0",
+  "chart": "C3 To Hit Table: the Vehicle row and the C4 APDS/APCR row",
+  "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+  "physicalPdfPage": 700,
+  "boundary": "The Vehicle row's black and red Basic TH# at each range, and the C4 APDS/APCR modification row. The Infantry row and the other C4 rows are in c3-to-hit-table.transcription.json; the Area row and the SMOKE row are outside both.",
+  "reading": "Each range column prints two Basic TH#: black first, red second (C3.3; confirmed on a rendering). The red dot after \"Vehicle\" refers to the chart's note that ATR and MG counters use the black TH# unless captured. The APDS/APCR values modify the Basic TH# (C4.5).",
+  "ranges": ["0-6", "7-12", "13-18", "19-24", "25-30", "31-36", "37-42", "43-48", "49-54", "> 54"],
+  "vehicle": { "black": [10, 9, 8, 7, 6, 6, 5, 4, 3, 2], "red": [10, 8, 7, 6, 5, 4, 3, 2, 1, 0] },
+  "apdsApcr": [0, 0, -1, -1, -2, -2, -3, -3, -4, -4]
+}

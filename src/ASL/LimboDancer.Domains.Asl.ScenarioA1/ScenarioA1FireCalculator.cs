@@ -372,16 +372,15 @@ public static class ScenarioA1FireCalculator
 
         // A7.307, A7.308, D.8B: the vehicles in the target Location are attacked with the attack's IFT DR (unit step 25): one at a time
         // (ruling R25.3 keeps a Location to one vehicle, so the A7.308 limit on vehicles affected never binds), by Residual FP too (A8.2,
-        // A8.222; ruling R6.6), never by an ordnance hit here (the Vehicle Target Type is not reviewed, R24.2), and only an unarmored vehicle
-        // or an open-topped AFV (R25.1). An AFV in terrain with a positive TEM (not cumulative with its crew's CE DRM, D5.31) is not
-        // reviewed (ruling R25.6).
+        // A8.222; ruling R6.6), never by an ordnance hit here (the Vehicle Target Type is its own shot, R7.2): an unarmored vehicle, or an
+        // AFV open-topped or closed-topped, whose CE crew alone is Vulnerable (R25.1, R7.11). An AFV in terrain with a positive TEM (not
+        // cumulative with its crew's CE DRM, D5.31) is not reviewed (ruling R25.6).
         var vehicles = attack.Vehicles ?? [];
         if (vehicles.Count > 1 || (vehicles.Count > 0 && attack.OrdnanceHit is not null)
             || ((attack.TargetTerrain is { } vehicleTerrain && ScenarioA1FireReference.Tem.TryGetValue(vehicleTerrain, out var vehicleTem) && vehicleTem > 0)
                 && vehicles.Any(item => reference.Definitions.GetValueOrDefault(item.DefinitionId!) is { IsVehicle: true, Unarmored: not true }))
             || vehicles.Any(item => item.LocationId != attack.TargetLocationId
-                || reference.Definitions.GetValueOrDefault(item.DefinitionId!) is not { IsVehicle: true } definition
-                || (definition.Unarmored != true && definition.OpenTopped != true)))
+                || reference.Definitions.GetValueOrDefault(item.DefinitionId!) is not { IsVehicle: true }))
         {
             outside.Add("asl.a1.fire.vehicle-outside");
         }

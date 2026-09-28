@@ -106,7 +106,7 @@ public sealed partial class FireTests : IDisposable
             start = new
             {
                 label = "Village fire",
-                catalog = "asl-scenario-a1@1.5.0",
+                catalog = "asl-scenario-a1@1.6.0",
                 boards = Bd01,
                 firstSide = "russian",
                 scenarioMonth = 7,

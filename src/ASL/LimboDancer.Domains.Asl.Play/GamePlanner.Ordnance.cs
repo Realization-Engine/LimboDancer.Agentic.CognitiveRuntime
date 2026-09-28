@@ -12,6 +12,8 @@ namespace LimboDancer.Domains.Asl.Play;
 /// <summary>
 /// A Gun's HE shot at Infantry (unit step 24): the state's facts, the planner's map reads (range, LOS, terrain, and the hexspines
 /// the Gun must turn to bring the target into its Covered Arc, C3.2), the Ordnance package's pre-check, and the rolls it asks for.
+/// Backlog pass 7: a tank's MA shot, turning its turret (D3.12), and a shot at one named vehicle on the Vehicle Target Type with its
+/// Target Facings (D3.2), its To Kill DR, and the vehicle's fate (C7, D5.5, D5.6; rulings R7.2 to R7.10).
 /// </summary>
 public sealed partial class GamePlanner
 {
@@ -32,16 +34,21 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.invalid-arguments: a Gun's shot names the Gun and a target Location");
         }
 
-        var (shot, reason) = LiveOrdnance.FromState(state, gunId, target);
+        string? targetVehicle = Text(arguments, "targetVehicle", out var named) ? named : null;
+        string? ammunition = Text(arguments, "ammunition", out var declared) ? declared : null;
+        var (shot, reason) = LiveOrdnance.FromState(state, gunId, target, targetVehicle, ammunition);
         if (shot is null)
         {
             return Refused(scope, label, expected, reason!);
         }
 
-        // R24.2, ruling R25.10: the Vehicle Target Type, and the hit's IFT attack on a vehicle in the target Location, are not reviewed.
-        if (state.At(target).OfType<UnitInstance>().FirstOrDefault(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit)) is { } vehicle)
+        // Ruling R25.10: the hit's IFT attack on a vehicle in the target Location is not reviewed; C3.31 (ruling R7.2): name the vehicle to
+        // fire at it on the Vehicle Target Type.
+        if (targetVehicle is null
+            && state.At(target).OfType<UnitInstance>().FirstOrDefault(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit)) is { } vehicle)
         {
-            return Refused(scope, label, expected, $"play.ordnance-vehicle: {vehicle.Id} is in {target}, and the Vehicle Target Type is not reviewed (C3.3; ruling R24.2)");
+            return Refused(scope, label, expected, $"play.ordnance-vehicle: {vehicle.Id} is in {target}; fire at it on the Vehicle Target Type by naming it, "
+                + "since a hit's attack on the Location's Infantry and vehicles together is not reviewed (C3.31; rulings R25.10, R7.2)");
         }
 
         if (state.At(target).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && (Is(unit, Conditions.Melee) || Is(unit, Conditions.Captured))))
@@ -50,7 +57,7 @@ public sealed partial class GamePlanner
         }
 
         // A5.12, A5.131: the To Hit DRM of an overstacked firer or target are not reviewed; a crew counts as a HS (A5.1).
-        if (new[] { ((MapPosition)((EquipmentInstance)state.Find(gunId)!).Position).Location, target }.Any(location => state.Sides.Any(side => Overstacked(
+        if (new[] { FirerLocation(state, gunId), target }.Any(location => state.Sides.Any(side => Overstacked(
             state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side.Id && !Is(unit, Conditions.Captured))))))
         {
             return Refused(scope, label, expected, "play.ordnance-overstacked: the Gun's or the target's Location is overstacked, whose To Hit DRM are not reviewed (A5.12, A5.131)");
@@ -87,9 +94,13 @@ public sealed partial class GamePlanner
             return events;
         }
 
+        var aim = facts.VehicleTarget is { } aimed
+            ? $"{(facts.Ammunition ?? "ap").ToUpperInvariant()} at {aimed.VehicleId} in {facts.TargetLocationId} (Vehicle Target Type; hull {aimed.HullFacing}"
+                + (aimed.TurretFacing is { } turretFacing ? $", turret {turretFacing}" : string.Empty) + " facing the firer)"
+            : $"HE at {facts.TargetLocationId}";
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
-            [$"play.ordnance: {facts.Gun!.GunId} fires HE at {facts.TargetLocationId} in the {facts.Phase}; range {facts.Range}, {facts.Hit!.TargetTerrain}"
-                + (facts.HexspinesToTurn > 0 ? $", turning {facts.HexspinesToTurn} hexspine(s) to {facing!.Value.Name()}" : string.Empty)
+            [$"play.ordnance: {facts.Gun!.GunId} fires {aim} in the {facts.Phase}; range {facts.Range}, {facts.Hit!.TargetTerrain}"
+                + (facts.HexspinesToTurn > 0 ? $", turning {(facts.Vehicle is null ? string.Empty : "its turret ")}{facts.HexspinesToTurn} hexspine(s) to {facing!.Value.Name()}" : string.Empty)
                 + toHit])
         {
             Roll = new PlannedRoll("ordnance", Build),
@@ -104,14 +115,16 @@ public sealed partial class GamePlanner
     /// </summary>
     private ((OrdnanceShot Shot, UnitFacing? Facing)? Facts, string? Reason) OrdnanceMapFacts(GameState state, OrdnanceShot shot, BoardLocation target)
     {
-        var gun = (EquipmentInstance)state.Find(shot.Gun!.GunId!)!;
-        var position = (MapPosition)gun.Position;
-        if (position.Facing is not { } facing)
+        // C3.2, D3.12: a Gun's barrel, or a turreted AFV's TCA (ruling R7.10); a non-turreted MA would pivot the vehicle, which is not built.
+        var firer = state.Find(shot.Gun!.GunId!)!;
+        var from = FirerLocation(state, firer.Id);
+        var tank = firer as UnitInstance;
+        var turreted = tank is not null && OrdnanceReference.Value.Guns.GetValueOrDefault(shot.Gun.DefinitionId!)?.MaType is "t" or "st" or "rst" or "1mt";
+        if ((tank is null ? ((MapPosition)((EquipmentInstance)firer).Position).Facing : LiveOrdnance.TurretFacing(state, tank)) is not { } facing)
         {
-            return (null, $"play.ordnance-facing: '{gun.Id}' has no facing, so its Covered Arc is unknown (C3.2)");
+            return (null, $"play.ordnance-facing: '{firer.Id}' has no facing, so its Covered Arc is unknown (C3.2)");
         }
 
-        var from = position.Location;
         var probe = shot.Hit! with
         {
             Firers = [new FireFirer(shot.Crew!.UnitId, shot.Crew.DefinitionId, from.ToString(), false, false, false, false, false)],
@@ -137,6 +150,30 @@ public sealed partial class GamePlanner
         static double Off(double one, double two) => Math.Abs(((one - two) % 360 + 540) % 360 - 180);
         var turns = Enumerable.Range(0, 6).Select(step => (Facing: (UnitFacing)(((int)facing + step) % 6), Steps: Math.Min(step, 6 - step)))
             .Where(item => Off(bearing, (int)item.Facing * 60) <= 30 + 1e-6).OrderBy(item => item.Steps).First();
+        if (tank is not null && !turreted && turns.Steps > 0)
+        {
+            return (null, $"play.ordnance-vca: {tank.Id}'s MA is not in a turret, and pivoting the vehicle to fire is not reviewed (C5.11)");
+        }
+
+        // D3.2 (ruling R7.4): the Target Facing is read from the hexside of the target hex the firer's LOS crosses: within 60 degrees of the
+        // VCA (or TCA) the front, beyond 120 degrees the rear, otherwise the side; along a hexspine the facing less favorable to the firer.
+        OrdnanceVehicleTarget? aimed = null;
+        if (shot.VehicleTarget is { } vehicleTarget && state.Unit(vehicleTarget.VehicleId!) is { } targetVehicle)
+        {
+            if (Bearing(state, target, from) is not { } back || (targetVehicle.Position as MapPosition)?.Facing is not { } hull)
+            {
+                return (null, $"play.ordnance-facing: {targetVehicle.Id}'s Target Facing is read only on one board not reversed, from a vehicle with a VCA (D3.2)");
+            }
+
+            static string Facing(double off) => off <= 60 + 1e-6 ? "front" : off <= 120 + 1e-6 ? "side" : "rear";
+            var targetTurreted = OrdnanceReference.Value.Armor.Vehicles.GetValueOrDefault(vehicleTarget.DefinitionId!)?.Turreted == true;
+            aimed = vehicleTarget with
+            {
+                HullFacing = Facing(Off(back, (int)hull * 60)),
+                TurretFacing = targetTurreted && LiveOrdnance.TurretFacing(state, targetVehicle) is { } tca ? Facing(Off(back, (int)tca * 60)) : null,
+            };
+        }
+
         // A12.14, A15.44: a concealed crew that firing reveals is Known when a target's Heat of Battle result is read.
         var revealing = HeatOfBattleFacts(state, read);
         var hit = shot.Hit! with
@@ -155,9 +192,18 @@ public sealed partial class GamePlanner
             // C2.6: at the same level the limit never applies; other levels are undecided in the package.
             ElevationAllowed = true,
             Hit = hit,
+            VehicleTarget = aimed ?? shot.VehicleTarget,
         };
         return ((withMap, turns.Steps > 0 ? turns.Facing : null), null);
     }
+
+    /// <summary>Where a Gun or a tank is.</summary>
+    private static BoardLocation FirerLocation(GameState state, string id) => state.Find(id) switch
+    {
+        EquipmentInstance { Position: MapPosition gunAt } => gunAt.Location,
+        UnitInstance { Position: MapPosition tankAt } => tankAt.Location,
+        _ => throw new InvalidOperationException($"'{id}' is not on the map."),
+    };
 
     /// <summary>The bearing from one Location to another in degrees counterclockwise from east, on one unreversed board; null otherwise.</summary>
     private double? Bearing(GameState state, BoardLocation from, BoardLocation to)
@@ -238,6 +284,10 @@ public sealed partial class GamePlanner
             {
                 "toHit" => (2, "ordnance-to-hit"),
                 "subsequent" => (1, "ordnance-subsequent"),
+                "toKill" => (2, "ordnance-to-kill"),
+                "shockCheck" => (2, "ordnance-shock-check"),
+                "crewCheck" => (2, "ordnance-crew-check"),
+                "crewSurvival" => (2, "ordnance-crew-survival"),
                 _ when selected.Length > 0 => (selected.Length, "ordnance-random-selection"),
                 _ => FireRollShape(inner!),
             };
@@ -256,6 +306,21 @@ public sealed partial class GamePlanner
             new OrdnanceFired(facts.Gun!.GunId!, facts.Crew!.UnitId!, BoardLocation.Parse(facts.TargetLocationId!), facing, gunResult.RateOfFireKept,
                 gunResult.Acquisition, acquired, rollIds, JsonSerializer.SerializeToElement(facts, LiveFire.Json), JsonSerializer.SerializeToElement(resolution, LiveFire.Json)),
             package, null));
+
+        // C8.9: Special Ammunition the Gun turned out not to have was never fired, unless the Gun malfunctioned: no marker, no Acquisition.
+        if (resolution.AmmunitionUse == "none" && !gunResult.Malfunctioned)
+        {
+            return;
+        }
+
+        // C7.7, D5.5, D5.6: a vehicle target's fate.
+        if (resolution.Kill is { } kill && state.Unit(facts.VehicleTarget!.VehicleId!) is { } struck)
+        {
+            foreach (var (type, payload) in KillEvents(state, struck, kill, attemptId))
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, type, payload, package, null, [recordId]));
+            }
+        }
 
         // The hit's effects: the Critical Hit's and the normal hit's units, with DM for a broken unit an attack could have given a NMC (A10.62).
         var effects = new List<FireUnitEffect>();
@@ -301,13 +366,20 @@ public sealed partial class GamePlanner
             gunConditions[marker] = ConditionState.True;
         }
 
+        // A12.14: a concealed tank that fires loses its "?"; it is its own crew.
+        if (facts.Crew.UnitId == facts.Gun.GunId && resolution.CrewConcealmentLost == true)
+        {
+            gunConditions[Conditions.Concealed] = ConditionState.False;
+            gunConditions[Conditions.Hidden] = ConditionState.False;
+        }
+
         if (gunConditions.Count > 0)
         {
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(facts.Gun.GunId!, gunConditions), package, null, [recordId]));
         }
 
-        // A12.14: a concealed crew that fires loses its "?".
-        if (state.Unit(facts.Crew.UnitId!) is { } crew)
+        // A12.14: a concealed crew that fires loses its "?"; a tank is its own crew and carries the marker once.
+        if (facts.Crew.UnitId != facts.Gun.GunId && state.Unit(facts.Crew.UnitId!) is { } crew)
         {
             var crewConditions = new Dictionary<string, ConditionState>(StringComparer.Ordinal);
             if (GameState.Condition(crew, marker) != ConditionState.True)
@@ -344,6 +416,88 @@ public sealed partial class GamePlanner
         }
     }
 
+    /// <summary>
+    /// The events of a To Kill result (rulings R7.7 to R7.9): a burning wreck with its Blaze (D10.1, B25.14), or a wreck whose crew may survive
+    /// beneath it (D5.6); an immobilized vehicle, Abandoned by a crew that fails its TC (D5.5); a Shocked AFV, BU and stopped (C7.42), which
+    /// a second Shock returns from an Unconfirmed Kill. A concealed vehicle hit loses its "?" (A12.2).
+    /// </summary>
+    private static IEnumerable<(string Type, EventPayload Payload)> KillEvents(GameState state, UnitInstance vehicle, OrdnanceKill kill, string attemptId)
+    {
+        var at = state.Location(vehicle.Id)?.Location;
+        if (kill.Result is OrdnanceKill.Burn or OrdnanceKill.Eliminated)
+        {
+            var burning = kill.Result == OrdnanceKill.Burn;
+            yield return ("vehicle-wrecked", new VehicleWrecked(vehicle.Id, burning));
+            if (burning && at is { } burningAt)
+            {
+                yield return ("instance-created", new InstanceCreated(new NewInstance(BlazeId(vehicle.Id), "asl:fire", null, null, new MapPosition(burningAt), null,
+                    new Dictionary<string, ConditionState>())));
+            }
+            else if (kill.CrewSurvival is { Survived: true } && CrewCounter(vehicle, attemptId) is { } survivors)
+            {
+                yield return ("instance-created", survivors);
+            }
+
+            yield break;
+        }
+
+        var changed = new Dictionary<string, ConditionState>(StringComparer.Ordinal);
+        if (Is(vehicle, Conditions.Concealed) || Is(vehicle, Conditions.Hidden))
+        {
+            changed[Conditions.Concealed] = ConditionState.False;
+            changed[Conditions.Hidden] = ConditionState.False;
+        }
+
+        if (kill.Result == OrdnanceKill.Immobilized)
+        {
+            changed[Conditions.Immobilized] = ConditionState.True;
+            changed[Conditions.Motion] = ConditionState.False;
+        }
+
+        if (kill.Shocked == true)
+        {
+            changed[Conditions.Shocked] = ConditionState.True;
+            changed[Conditions.UnconfirmedKill] = ConditionState.False;
+            changed[Conditions.ButtonedUp] = ConditionState.True;
+            changed[Conditions.Motion] = ConditionState.False;
+        }
+
+        if (changed.Count > 0)
+        {
+            yield return ("conditions-changed", new ConditionsChanged(vehicle.Id, changed));
+        }
+
+        if (kill.Abandoned == true)
+        {
+            yield return ("conditions-changed", new ConditionsChanged(vehicle.Id, new Dictionary<string, ConditionState>(StringComparer.Ordinal)
+            {
+                [Conditions.Abandoned] = ConditionState.True,
+                [Conditions.Motion] = ConditionState.False,
+            }));
+            if (CrewCounter(vehicle, attemptId) is { } crew)
+            {
+                yield return ("instance-created", crew);
+            }
+        }
+    }
+
+    /// <summary>A vehicle's crew placed beneath it as a crew counter of its nationality (D5.5, D5.6; ruling R7.9).</summary>
+    private static InstanceCreated? CrewCounter(UnitInstance vehicle, string attemptId)
+    {
+        var nationality = VehicleDefinition(vehicle)?.Nationality;
+        return FireReference.Value.Definitions.Values.Where(item => item.Kind == "asl:crew" && item.Nationality == nationality).Select(item => item.Id)
+            .Order(StringComparer.Ordinal).FirstOrDefault() is { } crew && vehicle.Position is MapPosition position
+            ? new InstanceCreated(new NewInstance($"{attemptId}-{vehicle.Id}-crew", "asl:crew", crew, vehicle.Side, new MapPosition(position.Location), null,
+                new Dictionary<string, ConditionState>(StringComparer.Ordinal)
+                {
+                    [Conditions.Broken] = ConditionState.False,
+                    [Conditions.Pinned] = ConditionState.False,
+                    [Conditions.Concealed] = ConditionState.False,
+                    [Conditions.Hidden] = ConditionState.False,
+                }))
+            : null;
+    }
+
     /// <summary>An Ordnance package roll added to its rolls under its key.</summary>
     private static OrdnanceRolls ApplyOrdnanceRoll(OrdnanceRolls rolls, string key, IReadOnlyList<int> values)
     {
@@ -352,6 +506,10 @@ public sealed partial class GamePlanner
         {
             "toHit" => rolls with { ToHit = values },
             "subsequent" => rolls with { Subsequent = values[0] },
+            "toKill" => rolls with { ToKill = values },
+            "shockCheck" => rolls with { ShockCheck = values },
+            "crewCheck" => rolls with { CrewCheck = values },
+            "crewSurvival" => rolls with { CrewSurvival = values },
             _ when selected.Length > 0 => rolls with
             {
                 CriticalSelection = selected.Select((id, index) => (id, index)).ToDictionary(item => item.id, item => values[item.index], StringComparer.Ordinal)

@@ -12,6 +12,10 @@ These are not left out: the game resolves them in a simplified way and records t
 |---|---|---|---|---|
 | A vehicle entering a Location of concealed enemy Personnel | R6.8 | A12.41, p. 80 | The PAATC (pass 11) | The concealed and hidden Personnel there are revealed, as if their owner chose to reveal them rather than take the combined PAATC; a Dummy is removed. |
 | A berserk charge whose route the model cannot decide | R30.5 | A15.43, A15.431, p. 84 | Movement over every terrain type and level change, so every shortest route is decided; Massacre, concealment in CC, and Infantry OVR outcomes | The ATTACKER may end the charge in place when its route crosses unreviewed terrain or its next step enters a Location with prisoners, concealed enemy units, or a lone enemy SMC; the move's reason records it, and the unit stays berserk. |
+| A Recalled AFV's fire after its Stun period | R7.10 | D5.341, p. 203 | Recall as a Stun only for its Player Turn | A Recalled AFV never fires its MA; it may still exit. |
+| The Shock and Unconfirmed Kill dr at the end of the RPh | R7.8 | C7.42, p. 177 | A phase-end roll | Each Shocked AFV or UK rolls during the RPh, before it ends; the RPh cannot end until each has. |
+| One fire marker for a tank's MA and its other weapons | R7.10 | D3.1, A7.1 | Per-weapon fire records | A tank's Prep or Final Fire marker from its MA also bars its AAMG, and the reverse. |
+| The verifier takes a vehicle target's Target Facing as recorded | R7.4 | D3.2, p. 199 | The Target Facing read in the verifier, from the boards | The facing is a map read recorded with the shot, as range and LOS are; the events after a kill or a Shock dr are checked by the gate's readback only. |
 
 Berserk and Surrender from Heat of Battle (R0.2, R19.2, R22.5, R28.1) left this list with unit step 30, 2026-09-27. The backlog pass 5 (2026-09-27) built the rest but the berserk route and the wreck: CX on a withdrawal, the captor's choice at a surrender, Acquisition on units, vehicle Motion and MP left, the Unlikely Kill option, Recall as its own status, the hero moving on, Battle Hardening and Leader Creation as options, the second Heat of Battle DR, and the HS keeping its SW. It also built, from the sections below, Double Time and CX, counter names by printed values, Massacre, per-side CC declarations, grain by season for Infantry, the passenger-only survival label, and the Stun +1 and used BU toggle page fixes. The simplified resolutions recorded by passes 1, 3, and 4 moved here from sections 10, 12, and 14 on 2026-09-27. The backlog pass 6 (2026-09-28) built wrecks.
 
@@ -229,4 +233,22 @@ Found by playing the Play page with scripted dice in the games `pass23-demo`, `p
 | The A12.2 road clause for a concealed vehicle | R6.7 | A12.2, p. 79 | Road-hex LOS tracing | A vehicle in a grain-road hex counts as in Concealment Terrain. |
 | Case H after a Rally, a pin's removal, or another change that gives an enemy unit LOS without a MF or MP expenditure | R6.7 | A12.2, p. 79 | A check after every event | Case H is checked after each MF or MP expenditure only. |
 | A vehicle's Final Fire after its First Fire | R6.9 | A8.4 | Vehicles in the Final Fire rules | A vehicle fires once per Player Turn unless it keeps a Multiple ROF. |
-| Repair of a vehicle MG by a Hero Rider, and the Shocked crew | R6.10 | D3.7, p. 201 | Riders; Shock (pass 7) | Only the CE crew repairs, and Shock does not exist. |
+| Repair of a vehicle MG by a Hero Rider, and the Shocked crew | R6.10 | D3.7, p. 201 | Riders | Only the CE crew repairs; a Stunned, Shocked, or Recalled crew does not (pass 7 built Shock). |
+
+## 17. Added by the backlog pass 7
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| A tank's BMG and CMG | R7.12 | D1.8, D3.4, pp. 196, 200 | Vehicle MG covered arcs; pass 9 (fire extensions) | The tanks fire only their MA. |
+| A tank's MA in CC and OVR, and in the MPh (Bounding First Fire and Defensive First Fire by ordnance) | R7.10, R7.12 | D3.3, C2.2401, C6.1 | Ordnance in the movement windows (pass 8) | A tank fires its MA in the PFPh, AFPh, and DFPh only. |
+| Case C (a vehicle that moved) and Case C4 (a Motion or Non-Stopped firer) | R7.10 | C5.3, C5.35, D2.42, p. 172 | The To Hit Cases for moving firers | A tank that entered a new hex before its AFPh shot, or is in Motion, may not fire its MA. |
+| Setting the TCA with MP or at the end of a fire phase, and pivoting a non-turreted MA | R7.10 | D3.12, C3.22, C5.11 | TCA changes outside fire | The TCA turns only for a shot; it starts along the VCA. |
+| HD, Smoke, Intensive Fire, and Deliberate Immobilization | R7.12 | D4, C8.5, C5.6, C5.7 | Terrain and Smoke rules | Not offered. |
+| Elite Depletion Numbers | R7.6 | C8.2, p. 179 | Force quality in the scenario setup | Depletion Numbers are the printed ones, also for Guards. |
+| A red CS#'s -1 for burning | R7.7 | C7.7 note A, D5.7 | A catalog AFV with a red CS# | No catalog vehicle has one. |
+| D5.5's second trigger: an Original 5 against an already immobilized vehicle | R7.9 | D5.5, p. 203 | | Not applied. |
+| An NT AFV's upper superstructure hit and its AF | R7.4 | C3.9, p. 171 | A catalog NT AFV | Every non-turreted vehicle is hit on the hull. |
+| A Gun's Acquisition of a vehicle following it | R5.13 | C6.51 | Acquisition on vehicles | It stays on the vehicle's hex. |
+| Radioless AFVs | R7.1 | D14 | Platoon movement | The T-34's radioless status has no effect. |
+| Hazardous Movement for a crew that bails out or survives | R7.9 | D5.5, D5.6, A4.62 | | The crew is placed Good Order beneath its vehicle or wreck. |
+| HE at Infantry in a Location that also holds an enemy vehicle | R25.10 | C3.32, C.3 | The hit's IFT attack on vehicles and Infantry together | Refused; the vehicle may be fired at by name. |

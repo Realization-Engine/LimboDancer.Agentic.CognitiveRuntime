@@ -20,6 +20,30 @@ public interface IOrdnanceRecordVerifier
     public string? Verify(GameState state, OrdnanceFired fired, IReadOnlyDictionary<string, DiceRolled> rolls);
 }
 
+/// <summary>
+/// The Turret Covered Arc of a turreted AFV once its MA fired outside its VCA (D3.12; ruling R7.10): the TCA keeps its direction while the
+/// hull moves or turns. A vehicle with no record has its TCA along its VCA.
+/// </summary>
+public sealed record TurretFacing(string Vehicle, UnitFacing Facing);
+
+/// <summary>A Special Ammunition a Gun or an AFV has run out of for the rest of the scenario (C8.9; ruling R7.6).</summary>
+public sealed record DepletedAmmunition(string Gun, string Ammunition);
+
+/// <summary>
+/// <c>shock-recovery-rolled</c>: a Shocked AFV's or an Unconfirmed Kill's dr in the RPh after it was placed (C7.42; ruling R7.8): the
+/// vehicle, the recorded dr, and the result. Replay recomputes it: a Shock is removed on 1 or 2 and becomes an Unconfirmed Kill on 3 to 6;
+/// an Unconfirmed Kill is removed on 1 to 3 and wrecks the AFV on 4 to 6.
+/// </summary>
+public sealed record ShockRecoveryRolled(string Vehicle, string Roll, string Result) : EventPayload
+{
+    public const string Recovered = "recovered";
+    public const string UnconfirmedKill = "unconfirmed-kill";
+    public const string Wrecked = "wrecked";
+
+    /// <summary>The result of a dr for a Shocked AFV, or for an Unconfirmed Kill.</summary>
+    public static string For(bool unconfirmedKill, int dr) => unconfirmedKill ? dr <= 3 ? Recovered : Wrecked : dr <= 2 ? Recovered : UnconfirmedKill;
+}
+
 /// <summary>A Gun's shots this fire phase and whether its last one kept its Multiple ROF (C2.24); cleared at every phase change.</summary>
 public sealed record OrdnanceShotRecord(string Gun, int Shots, bool RateOfFireKept);
 

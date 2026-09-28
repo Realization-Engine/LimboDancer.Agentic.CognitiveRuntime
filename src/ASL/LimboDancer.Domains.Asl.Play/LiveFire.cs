@@ -14,7 +14,7 @@ namespace LimboDancer.Domains.Asl.Play;
 public static class LiveFire
 {
     public const string Catalog = "asl-scenario-a1";
-    public const string CatalogVersion = "1.5.0";
+    public const string CatalogVersion = "1.6.0";
 
     public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
@@ -229,11 +229,14 @@ public static class LiveFire
     public static bool IsVehicle(UnitInstance unit) => unit.Kind == "asl:vehicle";
 
     /// <summary>
-    /// Whether an AFV's crew is Crew Exposed: an OT AFV is CE unless under a BU, Stun, or Recall marker (D5.3, D5.34); an unarmored
+    /// Whether an AFV's crew is Crew Exposed: an OT AFV is CE unless under a BU, Stun, Shock, or Recall marker (D5.3, D5.34, C7.42); a CT AFV
+    /// only when its owner has removed its BU counter (D5.2; ruling R7.11); an unarmored
     /// vehicle has no crew to expose (D5.1).
     /// </summary>
     public static bool CrewExposed(UnitInstance vehicle) =>
-        !Is(vehicle, Conditions.ButtonedUp) && !Is(vehicle, Conditions.Stunned) && !Is(vehicle, Conditions.Recalled);
+        !Is(vehicle, Conditions.ButtonedUp) && !Is(vehicle, Conditions.Stunned) && !Is(vehicle, Conditions.Recalled) && !Is(vehicle, Conditions.Shocked)
+        && !Is(vehicle, Conditions.UnconfirmedKill)
+        && (!GamePlanner.IsClosedTopped(vehicle) || GameState.Condition(vehicle, Conditions.ButtonedUp) == ConditionState.False);
 
     /// <summary>A vehicle in the target Location, with its crew's state (A7.307, A7.308, D.8B).</summary>
     internal static FireVehicle Vehicle(UnitInstance vehicle, BoardLocation at) =>
@@ -251,7 +254,8 @@ public static class LiveFire
         new(vehicle.Id, vehicle.Definition?.Definition, at.ToString(), CrewExposed(vehicle),
             Is(vehicle, Conditions.Motion) || (state.Movement is { Vehicle: true, Started: true, Stopped: false } moving && moving.Movers.Contains(vehicle.Id)),
             Is(vehicle, Conditions.Pinned),
-            Is(vehicle, Conditions.Stunned) || Is(vehicle, Conditions.Recalled), Is(vehicle, Conditions.StunRecovery), Is(vehicle, Conditions.Malfunctioned),
+            Is(vehicle, Conditions.Stunned) || Is(vehicle, Conditions.Recalled) || Is(vehicle, Conditions.Shocked) || Is(vehicle, Conditions.UnconfirmedKill),
+            Is(vehicle, Conditions.StunRecovery), Is(vehicle, Conditions.Malfunctioned),
             Fired(vehicle) || Is(vehicle, Conditions.FirstFire) || Is(vehicle, Conditions.BoundingFire),
             state.OrdnanceShots.Any(item => item.Gun == vehicle.Id && item.RateOfFireKept));
 

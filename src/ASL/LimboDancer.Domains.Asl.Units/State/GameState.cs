@@ -44,6 +44,12 @@ public sealed record GameState(
         get; init;
     }
 
+    /// <summary>The scenario's year when setup recorded it (C8.1, C8.3: Special Ammunition by year; ruling R7.6).</summary>
+    public int? ScenarioYear
+    {
+        get; init;
+    }
+
     /// <summary>
     /// The vehicles that entered a new hex, or moved under a Motion counter, in the current Player Turn's MPh (C6.1 Case J, D9.3, D9.4;
     /// ruling R6.1): until the AFPh ends they, and their wrecks, give Infantry no TEM and form no Hindrance. Cleared at each new Player Turn.
@@ -79,6 +85,15 @@ public sealed record GameState(
 
     /// <summary>The Location each Gun has acquired and its Acquisition DRM (C6.5).</summary>
     public IReadOnlyList<GunAcquisition> Acquisitions { get; init; } = [];
+
+    /// <summary>The Turret Covered Arcs that differ from their VCA (D3.12; ruling R7.10).</summary>
+    public IReadOnlyList<TurretFacing> TurretFacings { get; init; } = [];
+
+    /// <summary>The Special Ammunition each Gun or AFV has run out of (C8.9; ruling R7.6).</summary>
+    public IReadOnlyList<DepletedAmmunition> DepletedAmmunition { get; init; } = [];
+
+    /// <summary>The vehicles whose Shock or Unconfirmed Kill dr was made this RPh (C7.42; ruling R7.8); cleared at every phase change.</summary>
+    public IReadOnlyList<string> ShockRollsThisPhase { get; init; } = [];
 
     /// <summary>The choice the game waits for (ruling R5.8); while one waits nothing else may happen.</summary>
     public PendingChoice? Choice

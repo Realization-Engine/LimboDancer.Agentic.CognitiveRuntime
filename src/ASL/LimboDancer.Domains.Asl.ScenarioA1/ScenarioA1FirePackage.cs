@@ -12,22 +12,22 @@ namespace LimboDancer.Domains.Asl.ScenarioA1;
 /// </summary>
 public sealed class ScenarioA1FirePackage : IDomainPackageResolver
 {
-    public const string ManifestSha256 = "a30379390feaf8e54e02892936a2a9dfd11db1ade315344036781ae4bf12ad4e";
-    public const string MatrixSha256 = "80f5f16196c37c5d93237d4245d52f8eef2e063b6fa598067b69178232084d38";
+    public const string ManifestSha256 = "e00107a7f92c118f4432d4248b4c20ee1c4ad252d142fa90f54911884c17ba07";
+    public const string MatrixSha256 = "c34229b7b10ac61133bc5f5dd0686d4fb4e99f9c41cd0792504aaed5729bb392";
     public const string ChartSupplementId = "asl-supplement:fire-charts";
 
     /// <summary>
-    /// The package as revised at unit step 24 (catalog 1.4.0), before the unit step 25 revision (vehicles, catalog 1.5.0); each revision's
-    /// manifest records its predecessor. Earlier manifests: unit steps 27 and 28, 8ac91d104a02c40f5237b4bfd924c1dde1f106aa3e7e1d5aab31725eae6499f9;
+    /// The package as revised at backlog pass 6 (catalog 1.5.0), before the backlog pass 7 revision (closed-topped AFVs, catalog 1.6.0); each
+    /// revision's manifest records its predecessor. Earlier manifests: unit steps 27 and 28, 8ac91d104a02c40f5237b4bfd924c1dde1f106aa3e7e1d5aab31725eae6499f9;
     /// unit step 18, e0c28e88cda17bd71efd63f569c713d4d921e958dc7bc848b3c4c4acead143e1; and unit step 17,
     /// 45011b56946be8a7aba1676e6aea8d5ad0fa82193e4ebac24e06fd36bdff2b69 (Fire Review, "Revision at unit step 18").
     /// </summary>
-    public const string PriorManifestSha256 = "f36022ca5a1c3cb915a4c38b1378d0ef70b6b609be31efc3491a966b05197a47";
+    public const string PriorManifestSha256 = "a30379390feaf8e54e02892936a2a9dfd11db1ade315344036781ae4bf12ad4e";
     public static readonly DomainPackageRef Identity = new(new DomainId("asl"), "scenario-a1-fire", "sha256:" + ManifestSha256);
 
     private static readonly string[] Cases =
     [
-        "A1-fire-resolved", "A1-fire-phase-outside", "A1-fire-firer-outside", "A1-fire-target-outside", "A1-fire-range-or-los-denied", "A1-fire-weapon-outside", "A1-fire-movement-fire-outside", "A1-fire-movement-drm-differs", "A1-fire-levels-differ", "A1-fire-hindrance-unattributed", "A1-fire-elr-undecided", "A1-fire-leaders-interact", "A1-fire-heat-of-battle-undecided", "A1-fire-roll-missing", "A1-fire-vehicle-line-resolved", "A1-fire-vehicle-collateral-resolved", "A1-fire-vehicle-fire-resolved", "A1-fire-vehicle-outside", "A1-fire-cx", "A1-fire-second-heat-of-battle", "A1-fire-owner-options", "A1-fire-no-quarter", "A1-fire-afv-cover", "A1-fire-residual-vehicle", "A1-fire-concealed-vehicle", "A1-fire-bounding-first-fire",
+        "A1-fire-resolved", "A1-fire-phase-outside", "A1-fire-firer-outside", "A1-fire-target-outside", "A1-fire-range-or-los-denied", "A1-fire-weapon-outside", "A1-fire-movement-fire-outside", "A1-fire-movement-drm-differs", "A1-fire-levels-differ", "A1-fire-hindrance-unattributed", "A1-fire-elr-undecided", "A1-fire-leaders-interact", "A1-fire-heat-of-battle-undecided", "A1-fire-roll-missing", "A1-fire-vehicle-line-resolved", "A1-fire-vehicle-collateral-resolved", "A1-fire-vehicle-fire-resolved", "A1-fire-vehicle-outside", "A1-fire-cx", "A1-fire-second-heat-of-battle", "A1-fire-owner-options", "A1-fire-no-quarter", "A1-fire-afv-cover", "A1-fire-residual-vehicle", "A1-fire-concealed-vehicle", "A1-fire-bounding-first-fire", "A1-fire-closed-topped-afv",
     ];
 
     private static readonly string[] PinnedDigests =
