@@ -345,15 +345,15 @@ else if (state is not null)
                 <span id="move-members">@(movement.Members.Count > 0 ? $"May still move: {string.Join(", ", movement.Members)}." : "No member may move farther; end the move.")</span>
                 @if (movement.Bypass is { Count: > 0 } lane)
                 {
-                    <span id="move-bypass-state"> In Bypass along @string.Join(", ", lane.Select(side => side.ToString().ToLowerInvariant())): leave through the far vertex, or move To @movement.Location to occupy the obstacle; the move may not end here (A4.32).</span>
+                    <span id="move-bypass-state">@(" ")In Bypass along @string.Join(", ", lane.Select(side => side.ToString().ToLowerInvariant())): leave through the far vertex, or move To @movement.Location to occupy the obstacle; the move may not end here (A4.32).</span>
                 }
                 @if (movement.MinimumMove)
                 {
-                    <span id="move-minimum-state"> A Minimum Move: once the DEFENDER's fire is done the stack is pinned and CX, and its move ends (A4.134).</span>
+                    <span id="move-minimum-state">@(" ")A Minimum Move: once the DEFENDER's fire is done the stack is pinned and CX, and its move ends (A4.134).</span>
                 }
                 @if (movement.EndingMembers.Count > 0 && !movement.MinimumMove)
                 {
-                    <span id="move-ending-state"> @string.Join(", ", movement.EndingMembers) end their move when the DEFENDER's window closes (a forced back, A12.15, or a SMOKE dr of 6, A24.1).</span>
+                    <span id="move-ending-state">@(" ")@string.Join(", ", movement.EndingMembers) end their move when the DEFENDER's window closes (a forced back, A12.15, or a SMOKE dr of 6, A24.1).</span>
                 }
             </p>
         }
@@ -947,9 +947,26 @@ else if (state is not null)
                     <tr data-fact="firers"><td>Fire group</td><td>@FireGroupText(attack)</td></tr>
                     <tr data-fact="target"><td>Target Location</td><td>@attack.TargetLocationId</td></tr>
                     <tr data-fact="range"><td>Range</td><td>@RangeText(attack)</td></tr>
-                    <tr data-fact="level"><td>Same level</td><td>@(attack.SameLevel is { } same ? same ? "yes" : "no" : "not read")</td></tr>
+                    <tr data-fact="level"><td>Same level</td><td>@(attack.SameLevel is { } same ? same ? "yes" : attack.TargetLevelAbove is { } above ? $"no: the target is {Math.Abs(above)} level{(Math.Abs(above) == 1 ? "" : "s")} {(above > 0 ? "above" : "below")} the firer" : "no" : "not read")</td></tr>
                     <tr data-fact="los"><td>LOS</td><td>@(attack.Los is { } los ? $"{(los.Blocked == true ? "blocked" : "clear")}, Hindrance DRM {los.HindranceDrm}{(los.HindranceAttributed == true ? "" : " (not attributed)")}" : "not read")</td></tr>
                     <tr data-fact="terrain"><td>Target terrain</td><td>@(attack.TargetTerrain ?? "not read")</td></tr>
+                    @* Backlog pass 10 (rulings R10.4 to R10.8, R10.13): the terrain facts the attack also reads. *@
+                    @if (attack.HexsideTem is { Terrain: { } wall, Tem: { } wallTem })
+                    {
+                        <tr data-fact="hexside-tem"><td>Wall or hedge</td><td>the @wall's +@wallTem TEM, instead of a lower in-hex TEM (B9.3)</td></tr>
+                    }
+                    @if (attack.HeightAdvantage == true)
+                    {
+                        <tr data-fact="height-advantage"><td>Height Advantage</td><td>+1 TEM when the target has no other positive TEM (B10.31)</td></tr>
+                    }
+                    @if (attack.SnapShot == true)
+                    {
+                        <tr data-fact="snap-shot"><td>Snap Shot</td><td>at the hexside the stack crossed: Area Fire, no TEM, FFMO, or FFNAM (A8.15)</td></tr>
+                    }
+                    @if (attack.HazardousMovement == true)
+                    {
+                        <tr data-fact="hazardous"><td>Hazardous Movement</td><td>-2, with no FFMO or FFNAM (A4.62)</td></tr>
+                    }
                     <tr data-fact="month"><td>Month</td><td>@(attack.ScenarioMonth?.ToString(CultureInfo.InvariantCulture) ?? "not recorded")</td></tr>
                 </tbody>
             </table>
