@@ -245,3 +245,18 @@ No plan estimate: the user asked for it after pass 9 (2026-09-28), with manufact
 
 Pass 9b total: 07:38 to 08:34, 0:56, with no plan estimate.
 
+## Pass 10: Movement and terrain
+
+Estimate: 7:10 (build 5:55) in the [ASL Unit Backlog Passes Plan](<ASL Unit Backlog Passes Plan.md>); the user's latest estimate was about 2:45. Kickoff 2026-09-28 08:36. Branch `feature/asl-backlog-pass-10`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Reading (plan, backlog sections 1, 3, 4, 9, 11, A4, A6, A7.21, A8.15, A12.1, A15.43, B9, B10, B16, B23, B24, the Terrain Chart) and rulings R10.1 to R10.15 | 08:36 | 08:52 | 0:16 | |
+| Package stage: Fire package code (levels, walls, Height Advantage, Snap Shots, TPBF, Hazardous Movement), the pass 10 Terrain Chart transcription, source comparison (40 subjects), package revision; Units records and the planner's terrain, movement, and fire code | 08:52 | 09:17 | 0:25 | The comparison ran as an agent from 08:48 to 09:00 |
+| Referee agent (18 findings), Authoring and package tests, re-pinning | 09:17 | 09:30 | 0:13 | The referee ran from 09:17 to 09:43 |
+| Referee fixes and rulings revised | 09:30 | 09:39 | 0:09 | |
+| Live tests (15), older tests updated, Play page, table player agent started | 09:39 | 09:48 | 0:09 | |
+| Documents (design, review, backlog sections 1 and 20, requirements) while the full suite ran | 09:48 | 09:55 | 0:07 | |
+| Table player fixes (18 findings: 14 fixed, 4 recorded) with tests, page status line, documents | 09:55 | 10:03 | 0:08 | The table player ran from 09:45 to 09:59; the first full suite ran from 09:48 to 10:03 |
+| Three older tests updated for the new rules, visual check in the Studio | 10:03 | 10:15 | 0:12 | The pane was driven through DOM events and read as text |
+| Full local suite before the commit (2,126 tests pass, 30 skipped) | 10:15 | 10:25 | 0:10 | |

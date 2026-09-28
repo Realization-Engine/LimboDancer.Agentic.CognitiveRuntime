@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "1.0.0",
+  "chart": "B. Terrain Chart",
+  "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+  "physicalPdfPage": 698,
+  "boundary": "The Terrain, Example, LOS Obstacle/Hindrance, TEM/Indirect, and Infantry MF Entrance Cost cells and the Notes cell of five rows (backlog pass 10), and seven legend entries. Other movement columns, other rows, and color and underline marks are outside this transcription.",
+  "noEntry": "none stands for the printed dash.",
+  "rows": [
+    {
+      "terrain": "9. Wall",
+      "example": "2H1/2I1",
+      "losObstacleHindrance": "Half-Level",
+      "temIndirect": "+2/+1 ©",
+      "infantry": "1 + COT",
+      "notes": "none"
+    },
+    {
+      "terrain": "9. Hedge",
+      "example": "2T1/2U2",
+      "losObstacleHindrance": "Half-Level",
+      "temIndirect": "+1/0 ©",
+      "infantry": "1 + COT",
+      "notes": "none"
+    },
+    {
+      "terrain": "10. Hill",
+      "example": "2E8",
+      "losObstacleHindrance": "1-4 Levels",
+      "temIndirect": "DOT*",
+      "infantry": "DOT h",
+      "notes": "+1 HA TEM if no other TEM"
+    },
+    {
+      "terrain": "16. Marsh [Mudflat]",
+      "example": "7G2",
+      "losObstacleHindrance": "Hindrance",
+      "temIndirect": "0*",
+      "infantry": "ALL@ [2]",
+      "notes": "HE FP halved; [Mudflat only]"
+    },
+    {
+      "terrain": "24. Rubble",
+      "example": "Counter",
+      "losObstacleHindrance": "■ Half-Level",
+      "temIndirect": "+2 or +3*",
+      "infantry": "3",
+      "notes": "Same as Wood or Stone Building"
+    }
+  ],
+  "legend": [
+    "†: Indirect Fire TEM is listed following a “/” only if different from Direct Fire TEM.",
+    "*, **, ***: See Notes Column.",
+    "■: Whole hex affects LOS; not the terrain depiction (Inherent Terrain; B.6).",
+    "©: Not cumulative with terrain in same hex [EXC: LOS Hindrance DRM].",
+    "@: May not enter during APh.",
+    "h: MF cost of each full level higher elevation entered is doubled [EXC: changing levels within a building costs 1 MF].",
+    "COT: Cost of Terrain."
+  ]
+}

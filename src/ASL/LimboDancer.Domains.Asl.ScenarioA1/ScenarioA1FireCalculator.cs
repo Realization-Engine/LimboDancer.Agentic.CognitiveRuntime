@@ -166,6 +166,10 @@ public static class ScenarioA1FireCalculator
 
     private static bool? SameLevelOf(FireAttack attack, FireFirer firer) => firer.SameLevel ?? attack.SameLevel;
 
+    /// <summary>How many levels the target is above a firer: none at the same level (ruling R10.4).</summary>
+    private static int LevelAboveOf(FireAttack attack, FireFirer firer) =>
+        SameLevelOf(attack, firer) == true ? 0 : firer.TargetLevelAbove ?? attack.TargetLevelAbove ?? 0;
+
     private static FireLos? LosOf(FireAttack attack, FireFirer firer) => firer.Los ?? attack.Los;
 
     private static IEnumerable<FireDirector> Directors(FireAttack attack) =>
@@ -320,6 +324,26 @@ public static class ScenarioA1FireCalculator
             Need(vehicle.Immobilized, at + "immobilized");
         }
 
+        // Ruling R10.4: a target at another level names how many levels above the firer it is, for PBF (A7.21).
+        if (attack.VehicleFire is null && attack.OrdnanceHit is null && !residual)
+        {
+            if (attack.SameLevel == false)
+            {
+                Need(attack.TargetLevelAbove, "targetLevelAbove");
+            }
+
+            foreach (var (firer, index) in (attack.Firers ?? []).Select((item, index) => (item, index)).Where(pair => pair.item.SameLevel == false))
+            {
+                Need(firer.TargetLevelAbove ?? attack.TargetLevelAbove, $"firers[{index}].targetLevelAbove");
+            }
+        }
+
+        if (attack.HexsideTem is { } hexside)
+        {
+            Need(hexside.Terrain, "hexsideTem.terrain");
+            Need(hexside.Tem, "hexsideTem.tem");
+        }
+
         // An empty target Location is admitted (ruling R21.1): the attack resolves against nothing.
         if (attack.Targets is null)
         {
@@ -369,6 +393,18 @@ public static class ScenarioA1FireCalculator
         if (!phaseAdmitted)
         {
             outside.Add("asl.a1.fire.phase-outside");
+        }
+
+        // Backlog pass 10 (rulings R10.4, R10.5, R10.8, R10.13): a wall or hedge TEM of at most its printed value and Height Advantage for
+        // Direct Fire by Infantry, not Residual FP or an ordnance hit; a Snap Shot as Infantry Defensive First Fire with no wall crossed;
+        // Hazardous Movement in the MPh.
+        var direct = kind != ResidualFire && attack.OrdnanceHit is null && attack.VehicleFire is null;
+        if ((attack.HexsideTem is { } wall && (!direct || wall.Terrain is not ("wall" or "hedge") || wall.Tem < 0 || wall.Tem > (wall.Terrain == "wall" ? 2 : 1)))
+            || (attack.HeightAdvantage == true && !direct)
+            || (attack.SnapShot == true && (!direct || phase != "MPh" || kind is not (FirstFire or SubsequentFirstFire) || attack.HexsideTem is not null))
+            || (attack.HazardousMovement == true && phase != "MPh"))
+        {
+            outside.Add("asl.a1.fire.terrain-fact-outside");
         }
 
         var targets = attack.Targets!;
@@ -550,7 +586,9 @@ public static class ScenarioA1FireCalculator
             outside.Add("asl.a1.fire.crew-target-unreviewed");
         }
 
-        if (locations.Contains(attack.TargetLocationId)
+        // A7.21 (ruling R10.14): TPBF, by a group in one Location at the enemy units in that Location, never a Snap Shot (A8.15).
+        var tpbf = !multi && locations is [{ } only] && only == attack.TargetLocationId && attack.SnapShot != true;
+        if ((locations.Contains(attack.TargetLocationId) && !tpbf)
             || targets.Any(item => item.LocationId != attack.TargetLocationId)
             || targetDefinitions.Any(item => item is null || (item != DummyDefinition && item.Nationality == side))
             || !ScenarioA1FireReference.Tem.ContainsKey(attack.TargetTerrain!))
@@ -565,7 +603,7 @@ public static class ScenarioA1FireCalculator
             // C13.24 (pass 9b): an ATR has no Long Range.
             var weaponOut = (firer.Weapons ?? []).Any(weapon => reference.Definitions.GetValueOrDefault(weapon.DefinitionId!) is { Range: { } mgRange } weaponDefinition
                 && range > (weaponDefinition.IsAtr ? 1 : 2) * mgRange);
-            if (range < 1 || inherentOut || weaponOut)
+            if (range < (tpbf ? 0 : 1) || (tpbf && range != 0) || inherentOut || weaponOut)
             {
                 outside.Add("asl.a1.fire.out-of-range");
             }
@@ -715,12 +753,8 @@ public static class ScenarioA1FireCalculator
 
         if (attack.FireKind != ResidualFire && attack.OrdnanceHit is null && attack.VehicleFire is null)
         {
+            // Ruling R10.4 (backlog pass 10): Infantry fire at another level is decided with the map read's LOS and Hindrance.
             var firers = attack.Firers!;
-            if (firers.Any(item => SameLevelOf(attack, item) != true))
-            {
-                undecided.Add("asl.a1.fire.levels-differ");
-            }
-
             if (firers.Select(item => LosOf(attack, item)!).Any(los => los.HindranceAttributed != true || los.HindranceDrm < 0
                 || (los.GrainInLos == true && attack.ScenarioMonth is not (>= 6 and <= 9))))
             {
@@ -781,7 +815,9 @@ public static class ScenarioA1FireCalculator
     public static string? Cover(FireAttack attack)
     {
         ArgumentNullException.ThrowIfNull(attack);
-        if (attack.AfvCover is not { } cover || !ScenarioA1FireReference.Tem.TryGetValue(attack.TargetTerrain ?? string.Empty, out var tem) || tem > 0)
+        // Rulings R10.5, R10.13: a positive wall or hedge TEM is the target's positive TEM, and a Snap Shot takes no TEM.
+        if (attack.AfvCover is not { } cover || !ScenarioA1FireReference.Tem.TryGetValue(attack.TargetTerrain ?? string.Empty, out var tem) || tem > 0
+            || attack.HexsideTem is { Tem: > 0 } || attack.SnapShot == true)
         {
             return null;
         }
@@ -1231,10 +1267,30 @@ public static class ScenarioA1FireCalculator
                     ? new FireModifier("emplacement:" + gunTarget.GunId, 2m, "C11.2")
                     : new FireModifier("gunshield:" + gunTarget.GunId, 2m, "C11.5"));
             }
+            else if (attack.SnapShot == true)
+            {
+                // A8.15 (ruling R10.13): a Snap Shot takes no TEM of the target hex.
+            }
+            else if (attack.HexsideTem is { Tem: > 0 } hexside && hexside.Tem > tem)
+            {
+                // B9.3, B9.31 (ruling R10.5): the wall or hedge TEM instead of a lower in-hex TEM, never both.
+                drm.Add(new FireModifier(hexside.Terrain!, hexside.Tem!.Value, "B9.3"));
+            }
             else if (tem != 0)
             {
                 drm.Add(new FireModifier("tem:" + attack.TargetTerrain, tem, "A7.6"));
             }
+
+            // B10.31 (ruling R10.4): Height Advantage, +1 TEM for a target with no other positive TEM.
+            var heightAdvantage = hit is null && attack.HeightAdvantage == true && drm.All(item => item.Value <= 0) && Cover(attack) is null
+                && !(GunCrewAlone(attack) && attack.GunTarget is { } shieldedCrew && (shieldedCrew.Emplaced == true || GunshieldFaces(attack, shieldedCrew)));
+            if (heightAdvantage)
+            {
+                drm.Add(new FireModifier("height-advantage", 1m, "B10.31"));
+            }
+
+            // B9.3, B10.31, A8.15: a positive wall or hedge TEM, Height Advantage, or a Snap Shot leaves no FFMO.
+            var noFfmo = heightAdvantage || attack.SnapShot == true || drm.Any(item => item.Name is "wall" or "hedge");
 
             // D9.3, D10.3 (ruling R6.1): the +1 TEM of a wreck, a friendly AFV, or an abandoned enemy AFV, only where the terrain gives no
             // positive TEM and not against an attack from within the Location; a Critical Hit reverses it (C3.71).
@@ -1258,7 +1314,7 @@ public static class ScenarioA1FireCalculator
                     drm.Add(new FireModifier("ffnam", -1m, "C3.71"));
                 }
 
-                if (attack.TargetTerrain == "open-ground" && (attack.Los?.HindranceDrm ?? 0) == 0 && Cover(attack) is null)
+                if (attack.TargetTerrain == "open-ground" && (attack.Los?.HindranceDrm ?? 0) == 0 && Cover(attack) is null && !noFfmo)
                 {
                     drm.Add(new FireModifier("ffmo", -1m, "C3.71"));
                 }
@@ -1307,14 +1363,20 @@ public static class ScenarioA1FireCalculator
 
             // A4.6, A4.61, A8.13: FFNAM unless Assault Movement, and FFMO in Open Ground with no Hindrance, in Defensive
             // First Fire only; A7.83: a pinned mover takes neither.
-            if (IsMovementFire(attack) && state.Values.Any(unit => !unit.IsDummy && !unit.Pinned))
+            // A4.62 (ruling R10.8): Hazardous Movement is -2 to any attack on the unpinned movers, with no FFMO or FFNAM; A8.15 (ruling R10.13):
+            // a Snap Shot has neither.
+            if (attack.HazardousMovement == true && state.Values.Any(unit => !unit.IsDummy && !unit.Pinned))
+            {
+                drm.Add(new FireModifier("hazardous-movement", -2m, "A4.62"));
+            }
+            else if (IsMovementFire(attack) && attack.SnapShot != true && state.Values.Any(unit => !unit.IsDummy && !unit.Pinned))
             {
                 if (attack.TargetMovement!.AssaultMovement != true)
                 {
                     drm.Add(new FireModifier("ffnam", -1m, "A4.6"));
                 }
 
-                if (attack.TargetTerrain == "open-ground" && hindrance == 0 && Cover(attack) is null)
+                if (attack.TargetTerrain == "open-ground" && hindrance == 0 && Cover(attack) is null && !noFfmo)
                 {
                     drm.Add(new FireModifier("ffmo", -1m, "A4.6"));
                 }
@@ -1364,7 +1426,8 @@ public static class ScenarioA1FireCalculator
         /// </summary>
         private int? Residual(FireArithmetic arithmetic, int hindrance, int leadership)
         {
-            if (attack.FireKind is not (FirstFire or SubsequentFirstFire or FinalProtectiveFire))
+            // A8.223 (referee, pass 10): a Snap Shot leaves no Residual FP.
+            if (attack.FireKind is not (FirstFire or SubsequentFirstFire or FinalProtectiveFire) || attack.SnapShot == true)
             {
                 return null;
             }
@@ -1376,7 +1439,8 @@ public static class ScenarioA1FireCalculator
             var highest = atr == 0 ? Math.Max(arithmetic.ColumnFp ?? 0, arithmetic.Concealed?.ColumnFp ?? 0)
                 : ScenarioA1FireReference.ColumnFp.Where(fp => fp <= arithmetic.TotalFirepower - atr).DefaultIfEmpty(0).Max();
             var index = Array.FindLastIndex(ResidualCounters, fp => fp <= highest / 2m);
-            index -= hindrance + Math.Max(leadership, 0);
+            // B9.31 (ruling R10.5): a wall or hedge TEM claimed against the attack lowers the Residual FP left as a Hindrance does.
+            index -= hindrance + Math.Max(leadership, 0) + (attack.HexsideTem?.Tem ?? 0);
             return index < 0 ? null : ResidualCounters[index];
         }
 
@@ -1442,7 +1506,7 @@ public static class ScenarioA1FireCalculator
                     && !(definition.Kind == "asl:half-squad" && weapons.Count >= 1);
                 if (inherent)
                 {
-                    var multipliers = Multipliers(range, NormalRange(definition, firer), vsConcealed, IsFinalFireAgain(attack, firer), sustained: false);
+                    var multipliers = Multipliers(range, NormalRange(definition, firer), vsConcealed, IsFinalFireAgain(attack, firer), sustained: false, LevelAboveOf(attack, firer));
                     if (firer.Pinned == true)
                     {
                         multipliers.Add(new FireModifier("pinned-firer", 0.5m, "A7.8"));
@@ -1464,7 +1528,7 @@ public static class ScenarioA1FireCalculator
                 foreach (var weapon in weapons)
                 {
                     var mg = reference.Definitions[weapon.DefinitionId!];
-                    var multipliers = Multipliers(range, mg.Range!.Value, vsConcealed, IsFinalFireAgain(attack, firer), IsSustained(attack, weapon, reference));
+                    var multipliers = Multipliers(range, mg.Range!.Value, vsConcealed, IsFinalFireAgain(attack, firer), IsSustained(attack, weapon, reference), LevelAboveOf(attack, firer));
                     var fp = multipliers.Aggregate((decimal)mg.Firepower!.Value, (value, item) => value * item.Value);
                     yield return new FirerFirepower(weapon.EquipmentId!, mg.Firepower.Value, multipliers, fp) { Operator = firer.UnitId };
                 }
@@ -1475,12 +1539,24 @@ public static class ScenarioA1FireCalculator
         private static int NormalRange(FireDefinition definition, FireFirer firer) =>
             firer.Wounded == true && definition.WoundedRange is { } wounded ? wounded : definition.Range!.Value;
 
-        private List<FireModifier> Multipliers(int range, int normalRange, bool vsConcealed, bool finalFireAgain, bool sustained)
+        private List<FireModifier> Multipliers(int range, int normalRange, bool vsConcealed, bool finalFireAgain, bool sustained, int levelAbove)
         {
             var multipliers = new List<FireModifier>();
-            if (range == 1)
+
+            // A7.21 (rulings R10.4, R10.14): PBF at an adjacent target at most one level above the firer; TPBF in the firer's own Location.
+            if (range == 1 && levelAbove <= 1)
             {
                 multipliers.Add(new FireModifier("point-blank-fire", 2m, "A7.21"));
+            }
+            else if (range == 0)
+            {
+                multipliers.Add(new FireModifier("triple-point-blank-fire", 3m, "A7.21"));
+            }
+
+            // A8.15 (ruling R10.13): a Snap Shot is Area Fire.
+            if (attack.SnapShot == true)
+            {
+                multipliers.Add(new FireModifier("snap-shot", 0.5m, "A8.15"));
             }
 
             if (range > normalRange)

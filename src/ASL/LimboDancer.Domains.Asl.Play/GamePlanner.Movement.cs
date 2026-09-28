@@ -1,6 +1,7 @@
 using System.Text.Json;
 using LimboDancer.Dice;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
+using LimboDancer.Domains.Asl.Maps.Geometry;
 using LimboDancer.Domains.Asl.ScenarioA1;
 using LimboDancer.Domains.Asl.Units.State;
 
@@ -24,6 +25,10 @@ public sealed partial class GamePlanner
         ["grain"] = 3,
         ["wooden-building"] = 4,
         ["stone-building"] = 4,
+
+        // B24.4 (ruling R10.1): rubble costs three MF.
+        ["wooden-rubble"] = 6,
+        ["stone-rubble"] = 6,
     };
 
     /// <summary>
@@ -32,9 +37,10 @@ public sealed partial class GamePlanner
     /// carries beyond its IPC (three for a MMC, one for a SMC, none for a wounded SMC; one less while CX). A berserk unit counts only its 1PP SW,
     /// since it abandons the others before it charges (A15.431). Null when the catalog does not decide it.
     /// </summary>
-    private int? MfAllotment(GameState state, UnitInstance unit, int doubleTimeMf, bool cx)
+    private int? MfAllotment(GameState state, UnitInstance unit, int doubleTimeMf, bool cx, int bonusMf = 0, int ipcBonus = 0)
     {
-        if (Experience.MoveAllowance(state, unit, catalogs, vocabulary) is not { } allotment || Portage(state, unit) is not { } carried)
+        // A12.11 (ruling R10.10): a Dummy stack moves as if it holds a real unit, with four MF.
+        if ((unit.Kind == UnitKinds.Dummy ? 4 : Experience.MoveAllowance(state, unit, catalogs, vocabulary)) is not { } allotment || Portage(state, unit) is not { } carried)
         {
             return null;
         }
@@ -46,9 +52,11 @@ public sealed partial class GamePlanner
         }
 
         var smc = vocabulary.IsA(unit.Kind, "asl:smc");
-        var ipc = (smc ? (Is(unit, Conditions.Wounded) ? 0 : 1) : 3) - (cx ? 1 : 0);
+        var ipc = (smc ? (Is(unit, Conditions.Wounded) ? 0 : 1) : 3) - (cx ? 1 : 0) + ipcBonus;
         var pp = Is(unit, Conditions.Berserk) ? carried.Where(item => item == 1).Sum() : carried.Sum();
-        return allotment - Math.Max(0, pp - Math.Max(ipc, 0));
+
+        // B3.4, A4.12 (ruling R10.8): the Road Bonus and a leader's bonus add to the allotment.
+        return allotment + bonusMf - Math.Max(0, pp - Math.Max(ipc, 0));
     }
 
     /// <summary>The PP of each SW a unit possesses (A4.4), from the catalog; null when one is not recorded.</summary>
@@ -172,12 +180,13 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.move-melee: {held.Id} is held in Melee or captured, so it does not move (A11.15, A20.53)");
         }
 
-        // A4.1, A7.83: broken, pinned, or already-ended units do not move; A12.14: concealed movement is not reviewed.
-        if (movers.Any(unit => GameState.Condition(unit!, Conditions.Broken) != ConditionState.False || GameState.Condition(unit!, Conditions.Pinned) == ConditionState.True
-            || unit!.MovementEnded || unit.Kind == UnitKinds.Dummy
-            || GameState.Condition(unit, Conditions.Concealed) == ConditionState.True || GameState.Condition(unit, Conditions.Hidden) == ConditionState.True))
+        // A4.1, A7.83: broken, pinned, or already-ended units do not move; A12.11, A12.14 (ruling R10.10): concealed units and Dummies move, a
+        // hidden unit does not.
+        if (movers.Any(unit => (unit!.Kind != UnitKinds.Dummy && GameState.Condition(unit, Conditions.Broken) != ConditionState.False)
+            || GameState.Condition(unit, Conditions.Pinned) == ConditionState.True || unit.MovementEnded
+            || GameState.Condition(unit, Conditions.Hidden) == ConditionState.True))
         {
-            return Refused(scope, label, expected, "play.move-unit: every mover is Good Order, unpinned, unconcealed, and not done moving (A4.1, A7.83)");
+            return Refused(scope, label, expected, "play.move-unit: every mover is Good Order, unpinned, not hidden, and not done moving (A4.1, A7.83, A12.3)");
         }
 
         // A4.2: once a stack moves, only its members move, together or apart, until the ATTACKER ends them all.
@@ -258,63 +267,128 @@ public sealed partial class GamePlanner
         // A24.1 (ruling R9.5): a SMOKE grenade attempt spends the stack's MF in its own Location.
         if (Text(arguments, "smoke", out var smokeAt))
         {
+            // Table player, pass 10: a SMOKE attempt in Bypass is not built.
+            if (current is { Bypass.Count: > 0 })
+            {
+                return Refused(scope, label, expected, "play.smoke-bypass: a SMOKE attempt by a stack in Bypass is not built (A24.1, A4.3; ruling R10.7)");
+            }
+
             return berserk > 0 || !Text(arguments, "smokeBy", out var placerId) || to != from
                 ? Refused(scope, label, expected, "play.smoke-arguments: a SMOKE attempt names its squad and Location, and the stack stays where it is; a berserk stack charges (A24.1, A15.43)")
                 : PlanSmoke(scope, attemptId, expected, label, actor, state, [.. movers.Select(unit => unit!)], ids, from, placerId, smokeAt, assault, doubleTime);
         }
 
-        var (fromRead, toRead, adjacent, crossed) = Step(state, from, to);
-        if (fromRead is null || toRead is null || !adjacent || crossed is null)
+        var minimumMove = arguments.TryGetProperty("minimumMove", out var minimal) && minimal.ValueKind == JsonValueKind.True;
+        List<HexsideDirection>? bypass = null;
+        if (arguments.TryGetProperty("bypass", out var bypassList))
         {
-            return Refused(scope, label, expected, $"play.move-step: {to} is not an adjacent Location the map reads");
+            bypass = [];
+            foreach (var item in bypassList.ValueKind == JsonValueKind.Array ? bypassList.EnumerateArray() : Enumerable.Empty<JsonElement>())
+            {
+                if (item.ValueKind != JsonValueKind.String || !Enum.TryParse<HexsideDirection>(item.GetString(), ignoreCase: true, out var side))
+                {
+                    return Refused(scope, label, expected, "play.invalid-arguments: a Bypass names the hexsides moved along: north, northeast, southeast, south, southwest, northwest");
+                }
+
+                bypass.Add(side);
+            }
         }
 
-        if (fromRead.Hex.BaseLevel + fromRead.Level.Level != toRead.Hex.BaseLevel + toRead.Level.Level || to.Level != 0
-            || crossed.HexsideTerrain is not null || crossed.Cliff || crossed.Slope)
+        var (entry, stepReason, bypassing, occupy) = MoveEntry(state, [.. movers.Select(unit => unit!)], from, to, current, bypass);
+        if (entry is null)
         {
-            return Refused(scope, label, expected, "play.move-terrain: level changes and hexside terrain are not reviewed (ruling R22.3)");
+            return Refused(scope, label, expected, stepReason!);
         }
 
-        if (TerrainKey(toRead) is not { } terrain || !EntryHalfMf.ContainsKey(terrain))
+        var terrain = entry.Terrain;
+        var halfMf = entry.HalfMf;
+
+        // C10.3 (ruling R8.6): a Gun is pushed only into Open Ground or grain (a road hex counted as its terrain), at double the MF, never up a
+        // level, into Bypass, or by Minimum Move (A4.134).
+        if (pushed is not null && (terrain is not ("open-ground" or "grain") || entry.LevelChange || bypassing is not null || occupy || minimumMove))
         {
-            return Refused(scope, label, expected, $"play.move-terrain: {toRead.Level.Terrain?.Name ?? "the terrain"} is not a reviewed entry (ruling R22.3)");
+            return Refused(scope, label, expected, $"play.move-push-terrain: a Gun is pushed only into Open Ground or grain at its own level in the review, not {terrain} (C10.3, A4.134; ruling R8.6)");
         }
 
-        if (InfantryEntryHalfMf(state, terrain) is not { } halfMf)
-        {
-            return Refused(scope, label, expected, "play.move-grain: grain's MF cost depends on the season, and the game names no scenario month (B15.6)");
-        }
-
-        // C10.3 (ruling R8.6): a Gun is pushed only into Open Ground or grain (a road hex counted as its terrain), at double the MF.
-        if (pushed is not null && terrain is not ("open-ground" or "grain"))
-        {
-            return Refused(scope, label, expected, $"play.move-push-terrain: a Gun is pushed only into Open Ground or grain in the review, not {terrain} (C10.3; ruling R8.6)");
-        }
-
-        if (crossed.Terrain?.IsRoad == true)
-        {
-            halfMf = 2;
-        }
-
-        // B25.141 (ruling R6.3): a burning wreck's smoke costs one more MF to enter its Location.
-        halfMf += BlazeEntryHalfMf(state, to);
         if (pushed is not null)
         {
             halfMf *= 2;
         }
 
-        if (charge is null && state.At(to).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != state.PhasingSide))
+        // A4.134 (ruling R10.9): a Minimum Move is the stack's first and only step, by units with at least one MF after portage.
+        if (minimumMove && (current is not null || assault || berserk > 0 || occupy || bypassing is not null
+            || movers.Any(unit => unit!.MfSpent != 0 || unit.HalfMfSpent || MfAllotment(state, unit, 0, Is(unit, Conditions.Cx)) is not >= 1)))
         {
-            return Refused(scope, label, expected, $"play.move-occupied: entry into an enemy-occupied Location is the building entry's action, or not reviewed (ruling R22.6)");
+            return Refused(scope, label, expected, "play.move-minimum: a Minimum Move is the stack's only step this MPh, by units left with at least one MF after portage, not by Assault Movement, Bypass, or a berserk charge (A4.134; ruling R10.9)");
         }
 
-        // A4.11, A4.42, A4.5: the MF each mover has left, with Double Time and portage; A4.61: Assault Movement may not use all of the
-        // allotment without Double Time.
+        if (entry.MinimumMoveOnly && !minimumMove)
+        {
+            return Refused(scope, label, expected, "play.move-marsh: marsh is entered from a lower elevation only by Minimum Move (B16.4)");
+        }
+
+        // B16.4 (ruling R10.1): marsh costs each mover its whole allotment, so only units that have spent no MF this MPh enter it.
+        if (entry.AllMf)
+        {
+            // A4.61 (table player, pass 10): marsh takes all the MF, so it is never Assault Movement.
+            if (assault)
+            {
+                return Refused(scope, label, expected, "play.move-assault: entering marsh uses all of a unit's MF, which Assault Movement may not (A4.61, B16.4)");
+            }
+
+            if (!minimumMove && movers.Any(unit => unit!.MfSpent != 0 || unit.HalfMfSpent))
+            {
+                return Refused(scope, label, expected, "play.move-marsh: entering marsh costs a unit's whole MF allotment, so only units that have spent no MF this MPh enter it (B16.4)");
+            }
+
+            // A4.134 EX (referee, pass 10): from a lower level it costs twice the allotment.
+            halfMf = movers.Select(unit => MfAllotment(state, unit!, doubleTime ? 2 : unit!.DoubleTimeMf, doubleTime || Is(unit!, Conditions.Cx)) ?? 0).Max() * (entry.MinimumMoveOnly ? 4 : 2);
+            if (halfMf <= 0)
+            {
+                return Refused(scope, label, expected, "play.move-mf: no mover has an MF allotment the catalog decides");
+            }
+        }
+
+        // A4.14, A12.15 (rulings R10.11, R10.15): a Location with a Known enemy unit is not entered in the MPh, but by a berserk charge; one with only
+        // concealed or hidden enemy units or Dummies reveals one, forcing the stack back unless it charges or they were all Dummies.
+        UnitInstance[] enemiesThere = charge is not null || occupy || bypassing is not null ? []
+            : [.. state.At(to).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side != state.PhasingSide && !Is(unit, Conditions.Captured))];
+        UnitInstance[] hiddenEnemies = charge is null || occupy ? []
+            : [.. state.At(to).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side != state.PhasingSide && !Is(unit, Conditions.Captured) && !KnownEnemy(unit))];
+        if (enemiesThere.Any(KnownEnemy))
+        {
+            return Refused(scope, label, expected, "play.move-occupied: Infantry may not enter a Location holding a Known enemy unit in the MPh; Infantry OVR outside the reviewed building case is not built (A4.14, A4.15; ruling R10.11)");
+        }
+
+        // A12.15 (referee, pass 10): a moving stack of Dummies that tries to enter concealed enemy units is asked to show a real unit, and is removed.
+        if (enemiesThere.Length > 0 && movers.All(unit => unit!.Kind == UnitKinds.Dummy))
+        {
+            List<GameEvent> removed = [.. movers.Select((unit, index) => Event(scope, attemptId, index + 1, expected, "instance-eliminated", new InstanceEliminated(unit!.Id),
+                ScenarioA1FirePackage.Identity.ToString(), null))];
+            return new GamePlan(GamePlanStatus.Ready, scope, label, expected, removed,
+                [$"play.move: {string.Join(", ", ids)} attempt {to}, holding concealed enemy units; the moving stack shows no real unit, so its Dummies are removed (A12.15)"]);
+        }
+
+        if (enemiesThere.Length > 0 && minimumMove)
+        {
+            return Refused(scope, label, expected, "play.move-occupied: a Minimum Move into concealed enemy units is not reviewed (A4.134, A12.15)");
+        }
+
+        // A4.11, A4.42, A4.5, A4.12, B3.4: the MF each mover has left, with Double Time, portage, and the leader and Road bonuses; A4.61: Assault Movement
+        // may not use all of the allotment without Double Time. A Minimum Move needs none (A4.134), and marsh takes it all (B16.4).
+        var leaderIpcTo = LeaderIpcRecipient(state, [.. movers.Select(unit => unit!)]);
         foreach (var unit in movers)
         {
+            if (minimumMove || entry.AllMf)
+            {
+                continue;
+            }
+
             var extra = doubleTime ? (unit!.MfSpent == 0 && !unit.HalfMfSpent ? 2 : 1) : unit!.DoubleTimeMf;
             var exhausted = doubleTime || Is(unit, Conditions.Cx);
-            if (MfAllotment(state, unit, extra, exhausted) is not { } allowance || MfAllotment(state, unit, 0, exhausted) is not { } plain)
+            var bonus = (entry.RoadRate && !unit.OffRoad && pushed is null ? 1 : 0) + (LeaderBonus(state, unit, [.. movers.Select(item => item!)]) ? 2 : 0);
+            var ipc = unit.Id == leaderIpcTo.Recipient ? 1 : unit.Id == leaderIpcTo.Leader ? -1 : 0;
+            if (MfAllotment(state, unit, extra, exhausted, bonus, ipc) is not { } allowance || MfAllotment(state, unit, 0, exhausted, bonus, ipc) is not { } plain)
             {
                 return Refused(scope, label, expected, $"play.move-mf: {unit.Id} has no MF allowance the catalog decides");
             }
@@ -323,73 +397,160 @@ public sealed partial class GamePlanner
             var left = (allowance * 2) - spent;
             if (left < halfMf || (assault && (plain * 2) - spent <= halfMf))
             {
-                return Refused(scope, label, expected, $"play.move-mf: {unit.Id} has {left / 2m} MF left, and the entry costs {halfMf / 2m} (A4.11, A4.42, A4.61)");
+                return Refused(scope, label, expected, $"play.move-mf: {unit.Id} has {left / 2m} MF left, and the entry costs {halfMf / 2m} (A4.11, A4.42, A4.61; Minimum Move, A4.134)");
             }
         }
 
         var step = (current?.Step ?? 0) + 1;
-        var moved = new MovementStepped(ids, to, halfMf, assault, step)
+        var package = ScenarioA1FirePackage.Identity.ToString();
+        var revealing = enemiesThere.Length > 0 ? enemiesThere : hiddenEnemies;
+        var realOnes = revealing.Where(unit => unit.Kind != UnitKinds.Dummy).OrderBy(unit => unit.Id, StringComparer.Ordinal).ToArray();
+        var forcedBack = enemiesThere.Length > 0 && realOnes.Length > 0;
+        var moved = new MovementStepped(ids, forcedBack ? from : to, halfMf, assault, step)
         {
             Charge = charge,
             DoubleTime = doubleTime,
+            Road = entry.RoadRate && pushed is null && !forcedBack,
+            MinimumMove = minimumMove,
+            Attempted = forcedBack ? to : null,
+            Bypass = bypassing,
         };
-        var package = ScenarioA1FirePackage.Identity.ToString();
-        var summary = $"play.move: {string.Join(", ", ids)} enter {to} ({terrain}) for {halfMf / 2m} MF" + (assault ? ", by Assault Movement" : string.Empty)
+        var summary = $"play.move: {string.Join(", ", ids)} " + (forcedBack ? $"attempt {to}" : occupy ? $"occupy the obstacle of {to}" : $"enter {to}")
+            + $" ({terrain}{(bypassing is not null ? " in Bypass along " + string.Join(", ", bypassing.Select(side => side.ToString().ToLowerInvariant())) : string.Empty)}) for {halfMf / 2m} MF"
+            + (assault ? ", by Assault Movement" : string.Empty)
             + (doubleTime ? ", Double Timing and now CX (A4.5)" : string.Empty)
+            + (minimumMove ? ", a Minimum Move: pinned and CX once the DEFENDER's fire is done (A4.134)" : string.Empty)
             + (charge is not null ? $", charging {charge} (A15.43)" : string.Empty)
             + (abandoned.Count > 0 ? $"; {string.Join(", ", abandoned.Select(item => item.Id))} abandoned before the charge (A15.431)" : string.Empty);
         List<GameEvent> prefix = [.. abandoned.Select((item, index) => Event(scope, attemptId, index + 1, expected, "equipment-transferred",
             new EquipmentTransferred(item.Id, null, new MapPosition(from)), package, null))];
-        var residual = state.ResidualFire.FirstOrDefault(item => item.Location == to);
+        var landed = forcedBack ? from : to;
+        var residual = state.ResidualFire.FirstOrDefault(item => item.Location == landed);
         if (pushed is not null)
         {
             return residual is not null
                 ? Refused(scope, label, expected, "play.move-push-residual: pushing a Gun into Residual FP is not reviewed (C10.3, A8.2)")
-                : PushPlan(scope, attemptId, expected, label, actor, state, pushed, moved, halfMf / 2 - (crossed.Terrain?.IsRoad == true ? 2 : 0), summary);
+                : PushPlan(scope, attemptId, expected, label, actor, state, pushed, moved, halfMf / 2 - (entry.RoadRate ? 2 : 0), summary);
         }
 
-        var stepEvent = Event(scope, attemptId, prefix.Count + 1, expected, "movement-step", moved, package, null);
-
-        // A12.2 Case H (ruling R6.7): the step may bring a concealed vehicle out of Concealment Terrain into the movers' LOS.
-        if (Replay([.. existing, .. prefix, stepEvent]).Current is { } stepped && VehicleConcealmentLost(stepped, null, false) is { Count: > 0 } lost)
+        // A12.15 (rulings R10.11, R10.15): the reveal. Hidden units first go beneath a "?"; a Random Selection among several real units reveals the
+        // highest dr (ties all); Dummies alone are removed and the stack enters.
+        var needsSelection = revealing.Length > 0 && realOnes.Length > 1;
+        void Reveal(List<GameEvent> events, IReadOnlyList<int>? dice)
         {
-            prefix = [.. prefix, stepEvent, .. RevealEvents(scope, attemptId, expected, prefix.Count + 2, lost)];
-            stepEvent = prefix[^1];
-            prefix.RemoveAt(prefix.Count - 1);
-            summary += $"; {string.Join(", ", lost)} loses its \"?\" (A12.2)";
+            foreach (var hidden in revealing.Where(unit => Is(unit, Conditions.Hidden)))
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(hidden.Id,
+                    new Dictionary<string, ConditionState> { [Conditions.Hidden] = ConditionState.False, [Conditions.Concealed] = ConditionState.True }), package, null));
+            }
+
+            string[] shown = realOnes.Length == 0 ? [] : dice is null ? [realOnes[0].Id]
+                : [.. realOnes.Where((_, index) => dice[index] == dice.Max()).Select(unit => unit.Id)];
+            events.AddRange(RevealEvents(scope, attemptId, expected, events.Count + 1, shown));
+            if (realOnes.Length == 0 || charge is not null)
+            {
+                foreach (var dummy in revealing.Where(unit => unit.Kind == UnitKinds.Dummy))
+                {
+                    events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(dummy.Id), package, null));
+                }
+            }
         }
 
-        if (residual is null)
+        // A12.14 (ruling R10.10): a concealed mover or Dummy loses "?" when it moves without Assault Movement, or into Open Ground, in the LOS of a
+        // Good Order enemy ground unit within 16 hexes; a forced back reveals the whole stack (A12.15).
+        void Unmask(List<GameEvent> events)
         {
-            return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [.. prefix, stepEvent], [summary]);
+            var seen = forcedBack || (EnemyGoodOrderInLosWithin16(state, state.PhasingSide!, landed) && (!assault || terrain == "open-ground"));
+            foreach (var unit in movers.Where(unit => seen && (unit!.Kind == UnitKinds.Dummy || Is(unit, Conditions.Concealed))))
+            {
+                events.Add(unit!.Kind == UnitKinds.Dummy
+                    ? Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(unit.Id), package, null)
+                    : RevealEvents(scope, attemptId, expected, events.Count + 1, [unit.Id]).Single());
+            }
         }
 
-        // A8.22: Residual FP attacks a unit entering its Location first, alone, with any FFNAM and FFMO.
-        if (Replay([.. existing, .. prefix, stepEvent]).Current is not { } entered
-            || LiveFire.ResidualFromState(entered, to, residual.Fp) is not ({ } residualAttack, null)
-            || FireMapFacts(entered, residualAttack, to) is not ({ } mapFacts, null))
+        List<GameEvent> Stepped(IReadOnlyList<int>? dice, Func<RollRequest, RollResult>? draw)
         {
-            return Refused(scope, label, expected, "play.move-residual: the Residual FP attack on the entering stack cannot be read");
+            var events = new List<GameEvent>(prefix);
+            if (needsSelection && draw is not null)
+            {
+                var roll = draw(new RollRequest(realOnes.Length, 6));
+                dice = roll.Values;
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled",
+                    new DiceRolled($"{attemptId}-reveal", "random-selection", roll.Request.Count, roll.Request.Sides, roll.Values, DiceRolled.SystemSource, actor), package, null));
+            }
+
+            if (revealing.Length > 0 && enemiesThere.Length > 0)
+            {
+                Reveal(events, dice);
+            }
+
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "movement-step", moved, package, null));
+            if (revealing.Length > 0 && enemiesThere.Length == 0)
+            {
+                Reveal(events, dice);
+            }
+
+            Unmask(events);
+            return events;
         }
 
-        var facts = HeatOfBattleFacts(entered, mapFacts);
-
-        var precheck = ScenarioA1FireCalculator.Precheck(facts, FireReference.Value);
-        if (precheck.Count != 0)
+        if (revealing.Length > 0)
         {
-            return Refused(scope, label, expected, ["play.move-residual: the Fire package does not decide the Residual FP attack this entry would suffer", .. precheck]);
+            summary += forcedBack
+                ? $"; a concealed unit at {to} is revealed and the stack stays in {from} with the MF spent, its move ending (A12.15)"
+                : charge is not null ? $"; the concealed units at {to} are revealed as the charge enters (A15.431, A12.15)"
+                : $"; only Dummies were at {to}, and they are removed (A12.15)";
+        }
+
+        if (!needsSelection && residual is null)
+        {
+            var events = Stepped(null, null);
+
+            // A12.2 Case H (ruling R6.7): the step may bring a concealed vehicle out of Concealment Terrain into the movers' LOS.
+            if (Replay([.. existing, .. events]).Current is { } stepped && VehicleConcealmentLost(stepped, null, false) is { Count: > 0 } lost)
+            {
+                events = [.. events, .. RevealEvents(scope, attemptId, expected, events.Count + 1, lost)];
+                summary += $"; {string.Join(", ", lost)} loses its \"?\" (A12.2)";
+            }
+
+            return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [summary]);
+        }
+
+        // A8.22, A12.15: Residual FP attacks a unit entering its Location, or returned to it, first, alone, with any FFNAM and FFMO.
+        FireAttack? residualFacts = null;
+        if (residual is not null)
+        {
+            if (Replay([.. existing, .. Stepped([.. realOnes.Select(_ => 6)], null)]).Current is not { } entered
+                || LiveFire.ResidualFromState(entered, landed, residual.Fp) is not ({ } residualAttack, null)
+                || FireMapFacts(entered, residualAttack, landed) is not ({ } mapFacts, null))
+            {
+                return Refused(scope, label, expected, "play.move-residual: the Residual FP attack on the entering stack cannot be read");
+            }
+
+            residualFacts = HeatOfBattleFacts(entered, mapFacts);
+            var precheck = ScenarioA1FireCalculator.Precheck(residualFacts, FireReference.Value);
+            if (precheck.Count != 0)
+            {
+                return Refused(scope, label, expected, ["play.move-residual: the Fire package does not decide the Residual FP attack this entry would suffer", .. precheck]);
+            }
         }
 
         IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
         {
-            var events = new List<GameEvent>([.. prefix, stepEvent]);
-            AddFireEvents(scope, attemptId, expected, actor, entered, facts, state.PhasingSide, step, events, draw);
+            var events = Stepped(null, draw);
+            if (residualFacts is not null && Replay([.. existing, .. events]).Current is { } after)
+            {
+                AddFireEvents(scope, attemptId, expected, actor, after, residualFacts, state.PhasingSide, step, events, draw);
+            }
+
             return events;
         }
 
-        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], [summary, $"play.move: {residual.Fp} Residual FP in {to} attacks the stack first (A8.22)"])
+        string[] reasons = residual is not null ? [summary, $"play.move: {residual.Fp} Residual FP in {landed} attacks the stack first (A8.22)"] : [summary];
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], reasons)
         {
-            Roll = new PlannedRoll("residual", Build),
+            Roll = new PlannedRoll(needsSelection ? "random-selection" : "residual", Build),
             FirstEventId = EventId(attemptId, 1),
         };
     }
@@ -489,6 +650,13 @@ public sealed partial class GamePlanner
         if (movement.Vehicle && state.Unit(movement.Members.Count > 0 ? movement.Members[0] : movement.Movers[0]) is { } vehicle)
         {
             return PlanEndVehicle(scope, arguments, existing, attemptId, expected, label, state, movement, vehicle, actor);
+        }
+
+        // A4.32 (ruling R10.7): no unit ends its move in Bypass; it leaves or occupies the obstacle first (a unit that broke or was pinned there has left
+        // the stack).
+        if (movement.Bypass is { Count: > 0 } && ending.Any(id => movement.Members.Contains(id, StringComparer.Ordinal) && movement.Movers.Contains(id, StringComparer.Ordinal)))
+        {
+            return Refused(scope, label, expected, "play.end-move-bypass: Infantry may not end its move in Bypass; it leaves the hex or pays to occupy the obstacle (A4.32)");
         }
 
         // A15.43, A15.431: a berserk unit keeps charging while it has the MF for a step on its route; when the model cannot decide the

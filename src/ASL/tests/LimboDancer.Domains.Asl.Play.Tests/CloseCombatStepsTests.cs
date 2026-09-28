@@ -473,9 +473,10 @@ public sealed class CloseCombatStepsTests : IDisposable
     };
 
     [Fact]
-    public async Task ABerserkUnitAbandonsItsMmgBeforeChargingAndDoesNotChargeIntoPrisoners()
+    public async Task ABerserkUnitAbandonsItsMmgBeforeChargingAndChargesIntoPrisoners()
     {
-        // A15.431: a berserk squad abandons its 4PP MMG before charging; A20.4: the charge may not end among prisoners (not reviewed).
+        // A15.431: a berserk squad abandons its 4PP MMG before charging; ruling R10.15 (backlog pass 10): the charge enters the Location that
+        // holds the prisoners.
         await Setup("german", Unit("g2", "asl:squad", "attacker-squad", "bd01:A3:0", "german", "asl:berserk"), Weapon("gmmg", "attacker-mmg", "g2", "german"),
             Unit("r4", "asl:squad", "defender-squad", "bd01:A1:0", "russian"), Unit("g9", "asl:half-squad", "attacker-half-squad", "bd01:A1:0", "german", "asl:captured"));
         await Advance(2);
@@ -490,29 +491,13 @@ public sealed class CloseCombatStepsTests : IDisposable
         Committed(await Do(GameActions.PassFire, NoRoll(), new
         {
         }));
-        Assert.Contains((await Do(GameActions.Move, NoRoll(), new
+        Committed(await Do(GameActions.Move, NoRoll(), new
         {
             unitIds = G2,
             to = "bd01:A1:0"
-        })).Reasons, reason => reason.StartsWith("play.berserk-concealed", StringComparison.Ordinal));
-
-        // The page marks the charge as undecided, with the planner's reason (backlog, section 13).
-        var undecided = Assert.Single(Planner().Charges(Current));
-        Assert.Equal("g2", undecided.Unit.Id);
-        Assert.Empty(undecided.Next);
-        Assert.StartsWith("play.berserk-concealed", undecided.Undecided, StringComparison.Ordinal);
-
-        // Table-player review, item 2: the step the model cannot take leaves the charge undecided, so it ends in place (ruling R30.5)
-        // and the MPh can end; before, the move could neither go on nor end.
-        var ended = await Do(GameActions.EndMove, NoRoll(), new
-        {
-        });
-        Committed(ended);
-        Assert.Contains(ended.Reasons, reason => reason.Contains("ends in place", StringComparison.Ordinal));
-        Committed(await Do(GameActions.AdvancePhase, NoRoll(), new
-        {
         }));
-        Assert.Equal("dfph", Current.Phase);
+        Assert.Equal(BoardLocation.Parse("bd01:A1:0"), Current.Location("g2")!.Location);
+        Assert.Empty(Planner().Charges(Current));
     }
 
     [Fact]

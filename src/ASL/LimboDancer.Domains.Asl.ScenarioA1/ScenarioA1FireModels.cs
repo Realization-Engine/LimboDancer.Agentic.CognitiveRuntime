@@ -162,7 +162,63 @@ public sealed record FireAttack(
     {
         get; init;
     }
+
+    /// <summary>
+    /// How many levels the target is above the firer (its base level plus building level, less the firer's; negative below), when
+    /// <see cref="SameLevel"/> is false (backlog pass 10, ruling R10.4): PBF doubles the FP at an adjacent target at most one level above
+    /// (A7.21). Null at the same level.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? TargetLevelAbove
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The wall or hedge TEM the targets claim (B9.3, B9.31, B9.33; rulings R10.5 and R10.6): the game decides that the LOS crosses the
+    /// hexside into the target hex, that the targets are at the wall's level, that no firer holds Wall Advantage over it, and any
+    /// reduction for a higher firer. The package takes it instead of a lower in-hex TEM. Null when none applies.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FireHexsideTem? HexsideTem
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether the targets are at a higher elevation than every firer and may claim Height Advantage (B10.31; ruling R10.4): +1 TEM
+    /// when they have no other positive TEM, which also negates FFMO. The game excludes a mover that crossed a Crest Line through the
+    /// hexside the LOS crosses. Null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? HeightAdvantage
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether the Defensive First Fire is a Snap Shot at the hexside the moving stack crossed (A8.15; ruling R10.13): Area Fire, with no
+    /// TEM, FFMO, or FFNAM, but with Height Advantage. Null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? SnapShot
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether the moving targets are engaged in Hazardous Movement (A4.62; ruling R10.8): -2 to the attack, with no FFMO or FFNAM, unless
+    /// pinned. Null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? HazardousMovement
+    {
+        get; init;
+    }
 }
+
+/// <summary>The wall (+2) or hedge (+1) TEM a target claims (B9.3), after any reduction for a higher firer (B9.33).</summary>
+public sealed record FireHexsideTem(string? Terrain, int? Tem);
 
 /// <summary>A vehicle in the target Location, with its reviewed catalog definition and its crew's state (D5.2, D5.3, D5.34).</summary>
 public sealed record FireVehicle(
@@ -253,6 +309,13 @@ public sealed record FireFirer(
     /// <summary>Whether this firer is at the target's level, when the group spans Locations; otherwise the attack's.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? SameLevel
+    {
+        get; init;
+    }
+
+    /// <summary>How many levels the target is above this firer, when the group spans Locations and this firer is at another level (ruling R10.4).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? TargetLevelAbove
     {
         get; init;
     }

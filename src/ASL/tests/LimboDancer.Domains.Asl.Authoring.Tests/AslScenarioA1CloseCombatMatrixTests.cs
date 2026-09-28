@@ -58,6 +58,7 @@ public sealed class AslScenarioA1CloseCombatMatrixTests
             .Concat(AslScenarioA1FireSourceReview.BuildPass8(RepositoryPaths.Root, manifests, attestation).Records)
             .Concat(AslScenarioA1FireSourceReview.BuildPass9(RepositoryPaths.Root, manifests, attestation).Records)
             .Concat(AslScenarioA1FireSourceReview.BuildPass9b(RepositoryPaths.Root, manifests, attestation).Records)
+            .Concat(AslScenarioA1FireSourceReview.BuildPass10(RepositoryPaths.Root, manifests, attestation).Records)
             .Where(item => item.Disposition == TirSourceVerificationDisposition.Verified)
             .Select(item => item.SourceFragment.FragmentId).ToHashSet(StringComparer.Ordinal);
 

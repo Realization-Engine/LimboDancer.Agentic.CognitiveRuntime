@@ -376,6 +376,19 @@ public static class GameEventReader
                     return Missing(diagnostics, "A SMOKE placement names its squad, Location, roll, dr, and exponent.", path);
                 }
 
+                var attempted = payload.TryGetProperty("attempted", out _) ? ReadLocation(payload, "attempted", path, fields, diagnostics) : null;
+                List<Maps.Geometry.HexsideDirection>? bypass = null;
+                if (payload.TryGetProperty("bypass", out var bypassSides))
+                {
+                    if (bypassSides.ValueKind != JsonValueKind.Array || bypassSides.EnumerateArray().Any(item => item.ValueKind != JsonValueKind.Number
+                        || !item.TryGetInt32(out var side) || side is < 0 or > 5))
+                    {
+                        return Missing(diagnostics, "A Bypass names the hexsides moved along, 0 to 5.", path);
+                    }
+
+                    bypass = [.. bypassSides.EnumerateArray().Select(item => (Maps.Geometry.HexsideDirection)item.GetInt32())];
+                }
+
                 return stepTo is null || halfMf is null || step is null
                     ? Missing(diagnostics, "A movement step names its movers, destination, half MF, and step.", path)
                     : new MovementStepped(fields.StringList(payload, "movers", path), stepTo, halfMf.Value, fields.OptionalBoolean(payload, "assault", path), step.Value)
@@ -383,6 +396,10 @@ public static class GameEventReader
                         Charge = charge,
                         DoubleTime = fields.OptionalBoolean(payload, "doubleTime", path),
                         PushedGun = fields.OptionalString(payload, "pushedGun", path),
+                        Road = fields.OptionalBoolean(payload, "road", path),
+                        MinimumMove = fields.OptionalBoolean(payload, "minimumMove", path),
+                        Attempted = attempted,
+                        Bypass = bypass,
                         Smoke = smokeBy is null ? null : new SmokeAttempt(smokeBy, smokeAt!, smokeRoll!, smokeDr!.Value, smokeExponent!.Value)
                         {
                             Cx = fields.OptionalBoolean(payload, "smokeCx", path),

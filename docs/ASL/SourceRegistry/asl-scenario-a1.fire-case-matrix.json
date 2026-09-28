@@ -1465,6 +1465,286 @@
       "startLine": 998,
       "fragmentId": "asl-fragment:sha256:669756f5f579241509ca859eb2753d8c0b512089f3d35e71d81d8a976674fe51",
       "contentSha256": "ba63982ca3f225e368f61c30606b4b425c129f8adc7773f2d43d8f67de212033"
+    },
+    {
+      "ruleId": "A4.12",
+      "physicalPdfPage": 48,
+      "startLine": 235,
+      "fragmentId": "asl-fragment:sha256:550342310698b714f0b5457a5289eec0b2ea20e7aad03275c31bc40de226c6ec",
+      "contentSha256": "b8a7e509e5818f0ba008f9511924d2365e781b5ed59b3382d943ea734784aa8e"
+    },
+    {
+      "ruleId": "A4.133",
+      "physicalPdfPage": 48,
+      "startLine": 243,
+      "fragmentId": "asl-fragment:sha256:6c3ab705d87a4ebd8ad6bed5e7f52c34b06f798b9181fc25270d0e275b22d9df",
+      "contentSha256": "ffa5505cf0ef284700a0d6f99461f7120a1233fe30135c3f5ad22dbd764b2ed5"
+    },
+    {
+      "ruleId": "A4.134",
+      "physicalPdfPage": 48,
+      "startLine": 253,
+      "fragmentId": "asl-fragment:sha256:bf6eec6fbc3609f363fc6a31e44c0542008bc64872e70e08e63730648c48c13f",
+      "contentSha256": "7dcdc406ae92298157151e55520d43f40e0015916c1f89874da0e0c33eba41db"
+    },
+    {
+      "ruleId": "A4.3",
+      "physicalPdfPage": 49,
+      "startLine": 267,
+      "fragmentId": "asl-fragment:sha256:55724ecdabb258174c99a27082af013f99287144e61838f3ae6de55b43fc2bbb",
+      "contentSha256": "4b2a7afca5235f547f9b03b6339b260ad06b46b4aca62a496f610b38637e0406"
+    },
+    {
+      "ruleId": "A4.31",
+      "physicalPdfPage": 49,
+      "startLine": 271,
+      "fragmentId": "asl-fragment:sha256:f8540ab8a806346d1181e446e4443518187b0f6a86b1f522fdb9ed222dd60d80",
+      "contentSha256": "b5d70f777a1f6cbabe3e705203ffbfaf2a28bc070820bb9b6f8d256522e2bbc0"
+    },
+    {
+      "ruleId": "A4.32",
+      "physicalPdfPage": 50,
+      "startLine": 279,
+      "fragmentId": "asl-fragment:sha256:8db590f0fa0ed98c664e3fe0d871ecbf04037874a6dcb53f9176831875ae1b00",
+      "contentSha256": "4f224ba46ed40191b68f7b8968fc7a79e57831f5c309bbb2efc0c0f9e6838c37"
+    },
+    {
+      "ruleId": "A4.34",
+      "physicalPdfPage": 50,
+      "startLine": 283,
+      "fragmentId": "asl-fragment:sha256:0acc139b62da9bbb14d257231392ae326e819bc056e72697acb6c10cda89cdcd",
+      "contentSha256": "ba3c9e3330a4ed6cf64d2d8cc5ab921cb8b161d3d246ad876c0ef1db89af7fa3"
+    },
+    {
+      "ruleId": "A4.62",
+      "physicalPdfPage": 51,
+      "startLine": 317,
+      "fragmentId": "asl-fragment:sha256:34730a3eea12c84f506b30494424a791760abdc03765e5e0977b85c32b464d71",
+      "contentSha256": "bca72e238841aa438b8343be3cd1c3f855ff958570906fcfbd8ea81688b3d6ab"
+    },
+    {
+      "ruleId": "A8.15",
+      "physicalPdfPage": 59,
+      "startLine": 602,
+      "fragmentId": "asl-fragment:sha256:04882f334d75efb3650198b9522af897611de80bc7137f5526e53ee0d021c596",
+      "contentSha256": "5f0f5676902abc09a4b4e93f99bb9f9037472ab264d0e6ca5fc446e2b1b00a3f"
+    },
+    {
+      "ruleId": "A12.151",
+      "physicalPdfPage": 78,
+      "startLine": 1044,
+      "fragmentId": "asl-fragment:sha256:462af190e18cfa6d585e970f0a48b5f793e2127b51a577c2d466887825b83da8",
+      "contentSha256": "e5d9dc54db8e28acbdf2f4cfd9437ddadf2a27144656b050dd7e980a790a32df"
+    },
+    {
+      "ruleId": "A12.151",
+      "physicalPdfPage": 79,
+      "startLine": 1050,
+      "fragmentId": "asl-fragment:sha256:607448ecbf6254c08160ae98df076fa2ec1358ff8bfdbf982bec9e52dac551d0",
+      "contentSha256": "532845a7a7e4916a358ddc7e05f62da56f9f401a1f83e3f81831d267e0f216bd"
+    },
+    {
+      "ruleId": "A6.21",
+      "physicalPdfPage": 53,
+      "startLine": 377,
+      "fragmentId": "asl-fragment:sha256:af6eaf56f4a5787cf9c6b31eb677fe23eb24e02d2184cf79f8b8e797d45b72f3",
+      "contentSha256": "1775a3843ea79333476225e5583b1e87d2d5fb3b5c122afe7c351c4d36c0ef89"
+    },
+    {
+      "ruleId": "B9.1",
+      "physicalPdfPage": 118,
+      "startLine": 430,
+      "fragmentId": "asl-fragment:sha256:13ce63506bd959f63876d507b8ff42c1a72e4547a15b2e992f5d0061029b8252",
+      "contentSha256": "b6f2fe25dd239de25037293bcb8ef56e7ee037b7543cac80ea8297e04f069a7d"
+    },
+    {
+      "ruleId": "B9.2",
+      "physicalPdfPage": 118,
+      "startLine": 438,
+      "fragmentId": "asl-fragment:sha256:079301fa1fb131ff9e119f6f158eea99133a1839737c8f91fafeb8ec0db36039",
+      "contentSha256": "d171fa79ff9055ffe02cf6bf85f2c71554eb6d6145d684f8f8be76e40efbc742"
+    },
+    {
+      "ruleId": "B9.3",
+      "physicalPdfPage": 119,
+      "startLine": 448,
+      "fragmentId": "asl-fragment:sha256:e83433143d292c662523e505570fd33f147390026c2d9595bb6c4106e6bc6386",
+      "contentSha256": "948a7a5d705db441b4419fd5f073f199fd9751f4c06a931fc96681c1daa08259"
+    },
+    {
+      "ruleId": "B9.31",
+      "physicalPdfPage": 119,
+      "startLine": 452,
+      "fragmentId": "asl-fragment:sha256:cbac5d51e864343348b7539277946bbc09d17c87137f1e7462d0dfa1c065afaf",
+      "contentSha256": "5de452c6d96ec3201656a5141907c4a5ceed797b7eedb37ae636a613faf3b6ff"
+    },
+    {
+      "ruleId": "B9.32",
+      "physicalPdfPage": 119,
+      "startLine": 454,
+      "fragmentId": "asl-fragment:sha256:0f8a4cc4d6704c64f6a928b813389b7fb54e91f55614b4fd2114a8a8e03706af",
+      "contentSha256": "61aaae5e3e870722c6c619d0387bb2d03bfda2f704952ce9b51c1682e1f153c5"
+    },
+    {
+      "ruleId": "B9.32",
+      "physicalPdfPage": 119,
+      "startLine": 458,
+      "fragmentId": "asl-fragment:sha256:14237d3e059652b259a82ea1f9fe7f618e3fad7254d380fcac5309740d44ed53",
+      "contentSha256": "58786e35230344e6644716eb009d0df673715fd3af043dfae477d626e3bdec3a"
+    },
+    {
+      "ruleId": "B9.323",
+      "physicalPdfPage": 120,
+      "startLine": 472,
+      "fragmentId": "asl-fragment:sha256:6d689a18b7867d7b428b76617f92f899e1a157212213b8e50b4d7a669e1bfe92",
+      "contentSha256": "ba6ad82401d0ea8a47c2db5d1b1790f5a0ab1dae27a54e080fe076aeafa8be78"
+    },
+    {
+      "ruleId": "B9.33",
+      "physicalPdfPage": 120,
+      "startLine": 476,
+      "fragmentId": "asl-fragment:sha256:73657b28c10165e23d3eab8c12bcb2c1d7911d99dfe91ed025b0efafc721493e",
+      "contentSha256": "da587c04050e9d4897961fa90f29d07eb4d6ff0c9ff7f417c1b7bbcf1dd51365"
+    },
+    {
+      "ruleId": "B9.35",
+      "physicalPdfPage": 120,
+      "startLine": 486,
+      "fragmentId": "asl-fragment:sha256:0052b548c96eca52ca389512f7bc50fe194162bf3ead192aa5f47beb9a9695dd",
+      "contentSha256": "0737ea5e8a118f4ac7c78a5f03fdc2157c33055506c2c34fb7b9359460836689"
+    },
+    {
+      "ruleId": "B9.4",
+      "physicalPdfPage": 121,
+      "startLine": 500,
+      "fragmentId": "asl-fragment:sha256:b09592c2f8c9fd98f2bce843507f588a1673d6fa4110d7abb84a7e7ea0e24d85",
+      "contentSha256": "2930e5d88347e22ac831f7ab8c06feeb49a9fa11fe6e3cbf5a6da441686a11dc"
+    },
+    {
+      "ruleId": "B9.41",
+      "physicalPdfPage": 121,
+      "startLine": 506,
+      "fragmentId": "asl-fragment:sha256:ec6bb87b9de0f371e58192f7160810bd86f06f1415eb3738f170244e229694c9",
+      "contentSha256": "3c5e311849a4f26a0b758d4b1aeac4fe7106ba78c64252ad664a7eceb197c95a"
+    },
+    {
+      "ruleId": "B9.41",
+      "physicalPdfPage": 121,
+      "startLine": 510,
+      "fragmentId": "asl-fragment:sha256:2bddd0b27b2636745c0ccc6036f5663ff5fb50bfdcaef5b4227b6f79ec77dfac",
+      "contentSha256": "bcb6282df9bf57494e12d6b3cd063616ceac9ff2530d85f265dea8e654ce5cd1"
+    },
+    {
+      "ruleId": "B10.4",
+      "physicalPdfPage": 126,
+      "startLine": 693,
+      "fragmentId": "asl-fragment:sha256:5a4d015adc62943317e5f7f065e3aaad1a592231565f2b80fffd6eb68ce44b56",
+      "contentSha256": "33d01b6ff509cfce533de97074a40c72a804ddd11f6c3fb98b4ccc9032a8fe4d"
+    },
+    {
+      "ruleId": "B10.51",
+      "physicalPdfPage": 126,
+      "startLine": 699,
+      "fragmentId": "asl-fragment:sha256:066b6ad6e4da84cc4a9e6f0752094fb79bfc15c88390c2939c5327e8f9d0fd55",
+      "contentSha256": "0cd5c2a6003b1e003e60a9470b2fbfe046e239e70f93fd03ff987c389ce0eefe"
+    },
+    {
+      "ruleId": "B16.2",
+      "physicalPdfPage": 130,
+      "startLine": 984,
+      "fragmentId": "asl-fragment:sha256:d9183432b6569434ddfbc06d0ac1ab3edaf246a8313e42816afa9d02856e9dc1",
+      "contentSha256": "9fb817ea886f1e4cf9e3016d09d8eec32c31ea02ffaaf99158b40a8b8edfafa6"
+    },
+    {
+      "ruleId": "B16.3",
+      "physicalPdfPage": 130,
+      "startLine": 988,
+      "fragmentId": "asl-fragment:sha256:f599fd7b96998ab18aceff057b1b70e65031a62a5108e74fc39d225a4c13ef39",
+      "contentSha256": "27147339dc47c14832b3b8d4d4aa52796be1ce6b6715a9c17bb4eca8e236204b"
+    },
+    {
+      "ruleId": "B16.32",
+      "physicalPdfPage": 130,
+      "startLine": 994,
+      "fragmentId": "asl-fragment:sha256:0647d5b6b30c86167238b6ecad787092ea40fb1fcf6b74105a161e35cb512c17",
+      "contentSha256": "5e24ac0ef80702bb29cec1c22b1748cba62409bdf169f6f68bc19be2c55ae7d0"
+    },
+    {
+      "ruleId": "B16.4",
+      "physicalPdfPage": 130,
+      "startLine": 998,
+      "fragmentId": "asl-fragment:sha256:0dee8ffe9ab473abd919db12b6c580d180de032cda3d2e93085f5ab76ace4b0c",
+      "contentSha256": "5607dae2013d3500932c4fcc5fa5dfa9d8f52e5c3555c57dab3e922a3cc9dadd"
+    },
+    {
+      "ruleId": "B23.22",
+      "physicalPdfPage": 136,
+      "startLine": 1350,
+      "fragmentId": "asl-fragment:sha256:3305457c77d51d279d8bf8f0757b6b559dccfb34412f7d48831504ebaf285a18",
+      "contentSha256": "4c7e491a356d2b2c0c77f8ce8758a62e2a9fa6e62256fabd4cf5442e5ac635f2"
+    },
+    {
+      "ruleId": "B23.22",
+      "physicalPdfPage": 136,
+      "startLine": 1356,
+      "fragmentId": "asl-fragment:sha256:715ba7ac54f3a4efa1277ffb8c5fda86b9e28d5996035733d6476c3e3d650a68",
+      "contentSha256": "c5bc633c94d7867d15790605a67b2b87b03632bb5a97ac9e26314239cf671d27"
+    },
+    {
+      "ruleId": "B23.25",
+      "physicalPdfPage": 136,
+      "startLine": 1362,
+      "fragmentId": "asl-fragment:sha256:c13c9f07f849c0e9f7a2828d82ed9ca2a11a25544f1746d0fb4d84c2632d7cb6",
+      "contentSha256": "a786a578a60e006e326985abcc41a055c91c9ea51b9c3089281a407c94a6a613"
+    },
+    {
+      "ruleId": "B23.26",
+      "physicalPdfPage": 136,
+      "startLine": 1368,
+      "fragmentId": "asl-fragment:sha256:03b347338ac34e381579a61ac48e433b5e98557965353703f85c729f14bcd3b1",
+      "contentSha256": "b747f02bed8f8f7d6a5d3ff70797f66f90167d68d81667b754fcacce2deff69f"
+    },
+    {
+      "ruleId": "B23.421",
+      "physicalPdfPage": 136,
+      "startLine": 1390,
+      "fragmentId": "asl-fragment:sha256:e02ff598ebae1063358b7f756a15d45e520df7f122b2d89dd86845f4c38ba297",
+      "contentSha256": "80f56449f8718bbdfa2efbb2a5e6541bb16a67addfbca48328e8d19a79e70711"
+    },
+    {
+      "ruleId": "B23.421",
+      "physicalPdfPage": 137,
+      "startLine": 1400,
+      "fragmentId": "asl-fragment:sha256:37e39f998be6c6bdace978d1b898f1eb61edb502afc8c2115aada77baec40a80",
+      "contentSha256": "4a76aa6b338750d69cc6955937bfc83f9fd5c2c577b1ed1c47d097fae54c970b"
+    },
+    {
+      "ruleId": "B23.422",
+      "physicalPdfPage": 137,
+      "startLine": 1404,
+      "fragmentId": "asl-fragment:sha256:f05a293845aa183c1217a194bf223152dffb05bce89fb89c1330bc9aad41b206",
+      "contentSha256": "9b03fa4bed9a82c6103cc30a9a01110f6e8d6a7b9e0f21bb7aabab52d9cf2adf"
+    },
+    {
+      "ruleId": "B24.2",
+      "physicalPdfPage": 141,
+      "startLine": 1594,
+      "fragmentId": "asl-fragment:sha256:fc8aab225a3c380f7c79ba1a74b2690a37c0f1b34fddf780aa89c7000d4eb13e",
+      "contentSha256": "ab83fb0e0be8401cd1ff27c78f96ad558bf0bd2882a6e4be31e97a223131d3f4"
+    },
+    {
+      "ruleId": "B24.3",
+      "physicalPdfPage": 142,
+      "startLine": 1602,
+      "fragmentId": "asl-fragment:sha256:812e0d97f8c74f80c12c5416335f2252662ed28b96df0600c5aec4bb6b9578a0",
+      "contentSha256": "429dd362d7364865ea8fc48c33523a654bb590e9de197e5c04a22600ccb43d6f"
+    },
+    {
+      "ruleId": "B24.4",
+      "physicalPdfPage": 142,
+      "startLine": 1606,
+      "fragmentId": "asl-fragment:sha256:33c6cbe1260539552e823390fe579c6207b504acfc451bfe8554799781977847",
+      "contentSha256": "07e59e182c475255b9d055c5b3531a8620526312c009f9d81415b6b750a3a5c3"
     }
   ],
   "visualReadings": [
@@ -1520,7 +1800,15 @@
     "mphOrdnanceHits": "an-ordnance-hit-of-defensive-first-fire-attacks-the-moving-units-without-ffmo-or-ffnam-which-are-to-hit-cases-j3-and-j4-C6.13-C6.14 (R8.1)",
     "areaHits": "an-area-target-type-hit-attacks-at-half-the-he-fp-with-its-tem-on-the-effects-dr-woods-giving-the-minus-one-of-air-bursts-a-critical-hit-at-the-full-fp-doubled-reversing-only-positive-tem-C3.331-C1.52-B13.3-C3.71 (R9.3)",
     "smoke": "smoke-grenades-add-plus-two-hindrance-into-through-within-or-out-of-their-location-plus-one-more-out-of-or-within-at-most-plus-three-per-location-ffmo-does-not-apply-to-a-target-in-smoke-the-game-supplies-it-as-los-hindrance-A24.1-A24.11-A24.2-A24.5-A24.7-A24.8 (R9.5, R9.6)",
-    "atrSmallArms": "an-atr-joins-a-fire-group-as-one-fp-small-arms-fire-never-beyond-its-range-of-12-and-leaving-no-residual-fp-C13.24 (R9.10)"
+    "atrSmallArms": "an-atr-joins-a-fire-group-as-one-fp-small-arms-fire-never-beyond-its-range-of-12-and-leaving-no-residual-fp-C13.24 (R9.10)",
+    "wallTem": "a-target-at-the-wall-level-takes-the-wall-plus-two-or-hedge-plus-one-tem-crossed-by-the-los-into-its-hex-instead-of-a-lower-in-hex-tem-reduced-for-a-higher-firer-negating-ffmo-and-lowering-the-residual-fp-left-B9.3-B9.31-B9.33-B9.35 (R10.5)",
+    "wallAdvantage": "the-game-decides-wall-advantage-no-wall-tem-against-a-firer-holding-it-over-the-hexside-B9.31-B9.32-B9.323-B9.41 (R10.6)",
+    "levels": "infantry-fire-at-another-level-is-decided-with-the-map-read-los-and-hindrance-pbf-at-an-adjacent-target-at-most-one-level-above-A6.7-A7.21 (R10.4)",
+    "heightAdvantage": "a-target-above-every-firer-with-no-other-positive-tem-takes-plus-one-height-advantage-negating-ffmo-B10.31 (R10.4)",
+    "snapShot": "a-snap-shot-is-area-fire-with-no-tem-ffmo-or-ffnam-A8.15 (R10.13)",
+    "tpbf": "fire-at-enemy-units-in-the-firer-location-triples-its-fp-A7.21 (R10.14)",
+    "hazardousMovement": "hazardous-movement-is-minus-two-to-any-attack-on-the-unpinned-movers-with-no-ffmo-or-ffnam-A4.62 (R10.8)",
+    "marshRubble": "marsh-has-no-tem-but-is-not-open-ground-rubble-has-its-building-tem-B16.3-B24.3 (R10.1)"
   },
   "resolution": {
     "firepower": "Each firer's printed FP, doubled for PBF when the target is adjacent at the same level (A7.21), halved beyond Normal Range up to twice it (A7.22), halved when the target Location holds a concealed unit (A7.23), and halved when the firer is pinned (A7.8); fractions are kept and summed (A7.2).",
@@ -1741,7 +2029,7 @@
       "sourceRules": [
         "A6.7"
       ],
-      "reason": "The Hindrance DRM is admitted only for same-level firer and target, as ruled; other level relationships are not reviewed."
+      "reason": "A vehicle’s MG at another level is not reviewed; Infantry fire at another level is decided with the map read’s LOS and Hindrance (ruling R10.4)."
     },
     {
       "caseId": "A1-fire-hindrance-unattributed",
@@ -1984,11 +2272,80 @@
         "C13.24"
       ],
       "reason": "An ATR adds 1 FP to the fire of its unit at Personnel within 12 hexes and leaves no Residual FP (ruling R9.10)."
+    },
+    {
+      "caseId": "A1-fire-walls-and-hedges",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "resolved",
+      "sourceRules": [
+        "B9.3",
+        "B9.31",
+        "B9.33",
+        "B9.35"
+      ],
+      "reason": "A wall or hedge TEM the game decides replaces a lower in-hex TEM, negates FFMO, and lowers the Residual FP left (rulings R10.5, R10.6)."
+    },
+    {
+      "caseId": "A1-fire-levels",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "resolved",
+      "sourceRules": [
+        "A6.7",
+        "A7.21"
+      ],
+      "reason": "Infantry fire at another level is resolved with the LOS and Hindrance the map read gives, and PBF at an adjacent target at most one level above (ruling R10.4)."
+    },
+    {
+      "caseId": "A1-fire-height-advantage",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "resolved",
+      "sourceRules": [
+        "A4.6",
+        "B10.4"
+      ],
+      "reason": "A target above every firer with no other positive TEM takes +1 for Height Advantage and no FFMO (B10.31, p. 125, read from the rendered page; ruling R10.4)."
+    },
+    {
+      "caseId": "A1-fire-snap-shot",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "resolved",
+      "sourceRules": [
+        "A8.15"
+      ],
+      "reason": "A Snap Shot is Area Fire with no TEM, FFMO, or FFNAM (ruling R10.13)."
+    },
+    {
+      "caseId": "A1-fire-tpbf",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "resolved",
+      "sourceRules": [
+        "A7.21"
+      ],
+      "reason": "Fire at the enemy units of the firer’s own Location is tripled as TPBF (ruling R10.14)."
+    },
+    {
+      "caseId": "A1-fire-hazardous-movement",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "resolved",
+      "sourceRules": [
+        "A4.62"
+      ],
+      "reason": "Hazardous Movement is -2 to an attack on the unpinned movers, with no FFMO or FFNAM (ruling R10.8)."
+    },
+    {
+      "caseId": "A1-fire-marsh-rubble",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "resolved",
+      "sourceRules": [
+        "B16.3",
+        "B24.3"
+      ],
+      "reason": "Marsh has no TEM but no FFMO; rubble has its building’s TEM (ruling R10.1)."
     }
   ],
   "admissionRule": "A declared attack is resolved only when every fact is within the reviewed scope and every roll it needs is recorded; otherwise it is Abstained or Indeterminate with its reasons.",
   "excludedConsequences": [
-    "Snap Shots, Bypass, Hazardous Movement, TPBF, and fire across levels",
+    "Bypass LOS to vertices (A4.34), fire between levels of one hex (B23.26), a Snap Shot across a wall or hedge hexside, bocage and Hillside walls, fire from a marsh hex (B16.32), and a vehicle’s MG fire at another level",
     "Opportunity Fire, Spraying Fire, and Fire Lanes",
     "FPF directed by a leader or mixed with other fire",
     "ordnance fire of its own (ordnance hits come from the Ordnance package), the PSK against Personnel, FT, DC, and MOL",
@@ -2008,6 +2365,7 @@
     "BMG and CMG, Passengers' and Riders' fire (D6.64), and a vehicle's Final Fire after its First Fire (A8.4)"
   ],
   "executionAuthority": "none",
-  "revision": "Backlog pass 9b (2026-09-28): the ATR as Small Arms Fire (C13.24; R9.10); catalog 1.9.0. Earlier: Backlog pass 9 (2026-09-28): Area Target Type hits (C3.331, B13.3) and SMOKE grenades as LOS Hindrance (A24); catalog 1.8.0. Earlier: Backlog pass 8 (2026-09-28): Guns' crews as targets (C11.2, C11.5), a crew's inherent fire (A7.352), and ordnance hits in the MPh; catalog 1.7.0. Earlier: Backlog pass 7 (2026-09-28): closed-topped AFVs and their CE crews (D5.2; R7.11); catalog 1.6.0. Earlier: Backlog pass 6 (2026-09-28): an AFV's or wreck's cover for Infantry (D9.3, D10.3); Residual FP against vehicles (A8.222); concealed vehicles (A12.2); vehicle fire in the MPh (D3.3). Earlier: Backlog pass 5 (2026-09-27): a CX firer or director adds one to the IFT DR (A4.51); a second Heat of Battle DR in one attack (A15.1); Battle Hardening and the Unlikely Kill dr as the owners' options (A15.3, A7.309); No Quarter (A20.3, A15.5). Earlier: Unit step 25 (2026-09-27): vehicles in the target Location (the Vehicle line, A7.308, A7.309; Collateral Attacks on a CE crew, D.8B, D5.34) and a vehicle's MA AAMG firing on the IFT (D1.83, D3.5); catalog 1.5.0. Earlier: Unit step 24 (2026-09-27): ordnance hits resolved on the IFT (C.3, C.6, C3.71); crews refused as targets; catalog 1.4.0. Earlier: Unit step 30 (2026-09-27): Berserk and Surrender after Heat of Battle are taken (A15.4 to A15.5); berserk targets (A15.42); a berserk leader's NTC (A15.41); A15.44. Earlier: Unit steps 27 and 28 (2026-09-27): Heat of Battle after an Original MC DR of 2, with heroes, heroic leaders, Battle Hardening, Fanaticism, and NKVD MMC; Berserk and Surrender are recorded as not taken (ruling R28.1). Catalog 1.3.0 adds the leader grades, heroes, and the classes Battle Hardening needs. Revised after the second-pass review (ruling R28.7). Earlier: Unit steps 19 to 23 (2026-09-26): the AFPh and Assault Fire, fire groups across ADJACENT Locations, hidden and Dummy targets, Defensive First Fire, Subsequent First Fire, FPF, Final Fire by First-Fire-marked units, Residual FP, MGs, and the Heat of Battle deviation of ruling R0.2 are decided; catalog 1.2.0 adds the MGs.",
-  "vehicleLineTranscriptionSha256": "c9a2d785126584d18af851757a8028b975c0866fadcfc5e3fe137ca66e191fb2"
+  "revision": "Backlog pass 10 (2026-09-28): walls and hedges with Wall Advantage, Height Advantage, Infantry fire across levels, Snap Shots, TPBF, Hazardous Movement, and marsh and rubble TEM (rulings R10.1 to R10.14); the pass 10 Terrain Chart rows. Earlier: Backlog pass 9b (2026-09-28): the ATR as Small Arms Fire (C13.24; R9.10); catalog 1.9.0. Earlier: Backlog pass 9 (2026-09-28): Area Target Type hits (C3.331, B13.3) and SMOKE grenades as LOS Hindrance (A24); catalog 1.8.0. Earlier: Backlog pass 8 (2026-09-28): Guns' crews as targets (C11.2, C11.5), a crew's inherent fire (A7.352), and ordnance hits in the MPh; catalog 1.7.0. Earlier: Backlog pass 7 (2026-09-28): closed-topped AFVs and their CE crews (D5.2; R7.11); catalog 1.6.0. Earlier: Backlog pass 6 (2026-09-28): an AFV's or wreck's cover for Infantry (D9.3, D10.3); Residual FP against vehicles (A8.222); concealed vehicles (A12.2); vehicle fire in the MPh (D3.3). Earlier: Backlog pass 5 (2026-09-27): a CX firer or director adds one to the IFT DR (A4.51); a second Heat of Battle DR in one attack (A15.1); Battle Hardening and the Unlikely Kill dr as the owners' options (A15.3, A7.309); No Quarter (A20.3, A15.5). Earlier: Unit step 25 (2026-09-27): vehicles in the target Location (the Vehicle line, A7.308, A7.309; Collateral Attacks on a CE crew, D.8B, D5.34) and a vehicle's MA AAMG firing on the IFT (D1.83, D3.5); catalog 1.5.0. Earlier: Unit step 24 (2026-09-27): ordnance hits resolved on the IFT (C.3, C.6, C3.71); crews refused as targets; catalog 1.4.0. Earlier: Unit step 30 (2026-09-27): Berserk and Surrender after Heat of Battle are taken (A15.4 to A15.5); berserk targets (A15.42); a berserk leader's NTC (A15.41); A15.44. Earlier: Unit steps 27 and 28 (2026-09-27): Heat of Battle after an Original MC DR of 2, with heroes, heroic leaders, Battle Hardening, Fanaticism, and NKVD MMC; Berserk and Surrender are recorded as not taken (ruling R28.1). Catalog 1.3.0 adds the leader grades, heroes, and the classes Battle Hardening needs. Revised after the second-pass review (ruling R28.7). Earlier: Unit steps 19 to 23 (2026-09-26): the AFPh and Assault Fire, fire groups across ADJACENT Locations, hidden and Dummy targets, Defensive First Fire, Subsequent First Fire, FPF, Final Fire by First-Fire-marked units, Residual FP, MGs, and the Heat of Battle deviation of ruling R0.2 are decided; catalog 1.2.0 adds the MGs.",
+  "vehicleLineTranscriptionSha256": "c9a2d785126584d18af851757a8028b975c0866fadcfc5e3fe137ca66e191fb2",
+  "terrainChartPass10TranscriptionSha256": "5169bfc212780a12942bcd78a4aa6790e4e0338e4aa5d89e1344dc61d30fd5a6"
 }

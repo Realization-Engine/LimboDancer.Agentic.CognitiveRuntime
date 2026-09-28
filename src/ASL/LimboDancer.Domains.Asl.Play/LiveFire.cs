@@ -552,6 +552,19 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
 
             // C11 (ruling R8.3): the Gun in the target Location, its Emplacement and gunshield, is a map read recorded with the attack.
             GunTarget = recorded.GunTarget,
+
+            // Backlog pass 10 (rulings R10.4 to R10.8, R10.13): the levels, the wall or hedge TEM with Wall Advantage, Height Advantage, and
+            // Hazardous Movement are map reads recorded with the attack; a Snap Shot is the DEFENDER's declaration.
+            TargetLevelAbove = recorded.TargetLevelAbove,
+            HexsideTem = recorded.HexsideTem,
+            HeightAdvantage = recorded.HeightAdvantage,
+            HazardousMovement = recorded.HazardousMovement,
+            SnapShot = recorded.SnapShot,
+        };
+        merged = merged with
+        {
+            Firers = merged.Firers is null || recorded.Firers is null ? merged.Firers
+                : [.. merged.Firers.Zip(recorded.Firers, (fact, record) => fact with { TargetLevelAbove = record.TargetLevelAbove })],
         };
         if (JsonSerializer.Serialize(merged, LiveFire.Json) != JsonSerializer.Serialize(recorded, LiveFire.Json))
         {

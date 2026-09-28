@@ -343,6 +343,18 @@ else if (state is not null)
                 <strong>@string.Join(", ", movement.Movers)</strong> in @movement.Location, step @movement.Step@(movement.Assault ? ", by Assault Movement" : ""):
                 @(movement.WindowOpen ? "the DEFENDER may fire, or pass." : "the DEFENDER has passed; move on or end the move.")
                 <span id="move-members">@(movement.Members.Count > 0 ? $"May still move: {string.Join(", ", movement.Members)}." : "No member may move farther; end the move.")</span>
+                @if (movement.Bypass is { Count: > 0 } lane)
+                {
+                    <span id="move-bypass-state"> In Bypass along @string.Join(", ", lane.Select(side => side.ToString().ToLowerInvariant())): leave through the far vertex, or move To @movement.Location to occupy the obstacle; the move may not end here (A4.32).</span>
+                }
+                @if (movement.MinimumMove)
+                {
+                    <span id="move-minimum-state"> A Minimum Move: once the DEFENDER's fire is done the stack is pinned and CX, and its move ends (A4.134).</span>
+                }
+                @if (movement.EndingMembers.Count > 0 && !movement.MinimumMove)
+                {
+                    <span id="move-ending-state"> @string.Join(", ", movement.EndingMembers) end their move when the DEFENDER's window closes (a forced back, A12.15, or a SMOKE dr of 6, A24.1).</span>
+                }
             </p>
         }
         @foreach (var (charging, target, next, undecided) in Charges)
@@ -366,7 +378,9 @@ else if (state is not null)
             {
                 <label><input class="move-unit" type="checkbox" data-unit="@unit.Id" checked="@moveUnits.Contains(unit.Id)" @onchange="@(args => Toggle(moveUnits, unit.Id, args.Value is true))" /> @unit.Id (@state.Location(unit.Id)?.Location)@(GameState.Condition(unit, Conditions.Berserk) == ConditionState.True ? ", berserk" : "")</label>
             }
-            <label>To <input id="move-to" value="@moveTo" @onchange="@(args => moveTo = args.Value as string ?? string.Empty)" size="12" /></label>
+            <label title="A Location such as bd01:D5:0; the level after the hex moves up or down a stairwell or along an upper level of a building (B23.4, B23.421)">To <input id="move-to" value="@moveTo" @onchange="@(args => moveTo = args.Value as string ?? string.Empty)" size="12" /></label>
+            <label title="A4.134: the unit's only hex this MPh, whatever it costs, even if CX; once the DEFENDER's fire is done it is pinned and CX."><input id="move-minimum" type="checkbox" checked="@moveMinimum" @onchange="@(args => moveMinimum = args.Value is true)" /> Minimum Move</label>
+            <label title="A4.3, A4.31: enter the woods or building hex along one or two of its hexsides the obstacle does not touch, in order, such as southeast, northeast; the stack then leaves through the far vertex or pays to occupy the obstacle (move To its own Location).">Bypass <input id="move-bypass" value="@moveBypass" @onchange="@(args => moveBypass = args.Value as string ?? string.Empty)" size="18" placeholder="southeast, northeast" /></label>
             <label><input id="move-assault" type="checkbox" checked="@moveAssault" @onchange="@(args => moveAssault = args.Value is true)" /> Assault Movement</label>
             <label title="Double Time adds 2 MF (1 after the unit has spent MF) and makes the unit CX (A4.5); not for a unit that is CX, or whose CX counter came off at the start of this MPh (A4.51), nor with Assault Movement (A4.61)."><input id="move-double-time" type="checkbox" checked="@moveDoubleTime" @onchange="@(args => moveDoubleTime = args.Value is true)" /> Double Time</label>
             @if (MovingGun is { } pushable)
@@ -745,6 +759,10 @@ else if (state is not null)
                 </select>
             </label>
             <label>Or any Location <input id="fire-free-target" value="@fireFreeTarget" @onchange="@(args => fireFreeTarget = args.Value as string ?? string.Empty)" size="12" /></label>
+            @if (state.Phase == "mph")
+            {
+                <label title="A8.15: at the hexside the moving stack crossed, with LOS to both its ends; Area Fire with no TEM, FFMO, or FFNAM, and no Residual FP."><input id="fire-snap-shot" type="checkbox" checked="@fireSnapShot" @onchange="@(args => fireSnapShot = args.Value is true)" /> Snap Shot</label>
+            }
             <button id="propose-fire" disabled="@(fireFirers.Count == 0 || FireTarget.Length == 0)" @onclick="ProposeFire">Propose: fire</button>
             <button id="fire-clear" class="link" @onclick="ClearFire">clear</button>
         </div>
@@ -1216,6 +1234,10 @@ else if (state is not null)
     private string secondEdge = string.Empty;
     private static readonly string[] Edges = ["top", "bottom", "left", "right"];
     private bool moveDoubleTime;
+
+    private bool moveMinimum;
+
+    private string moveBypass = string.Empty;
     private string boundingTarget = string.Empty;
     private string vehicleIntended = string.Empty;
     private string secondElr = string.Empty;
@@ -2117,7 +2139,10 @@ else if (state is not null)
         fireDirector = string.Empty;
         fireTarget = string.Empty;
         fireFreeTarget = string.Empty;
+        fireSnapShot = false;
     }
+
+    private bool fireSnapShot;
 
     /// <summary>The leaders who may rally the chosen unit: the Good Order or broken leaders of its side in its Location (A10.6, A10.71).</summary>
     private IEnumerable<UnitInstance> RallyLeaders => state?.Unit(rallyUnit) is not { } unit || state.Location(unit.Id)?.Location is not { } at ? []
@@ -2227,6 +2252,18 @@ else if (state is not null)
             ["gameId"] = gameId, ["attemptId"] = Attempt("move"), ["expectedRevision"] = (long)history!.Events.Count, ["unitIds"] = moveUnits.Order(StringComparer.Ordinal).ToArray(),
             ["to"] = moveTo.Trim(), ["assault"] = moveAssault, ["doubleTime"] = moveDoubleTime,
         };
+
+        // A4.134, A4.3 (rulings R10.7, R10.9): a Minimum Move, or the hexsides of a Bypass.
+        if (moveMinimum)
+        {
+            arguments["minimumMove"] = true;
+        }
+
+        if (moveBypass.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) is { Length: > 0 } sides)
+        {
+            arguments["bypass"] = sides.Select(side => side.ToLowerInvariant()).ToArray();
+        }
+
         if (movePush && MovingGun is { } gun)
         {
             arguments["pushGun"] = gun.Id;
@@ -2297,6 +2334,11 @@ else if (state is not null)
             ["firers"] = fireFirers.Order(StringComparer.Ordinal).ToArray(),
             ["target"] = FireTarget.Trim(),
         };
+        if (fireSnapShot)
+        {
+            arguments["snapShot"] = true;
+        }
+
         if (fireDirector.Length > 0)
         {
             arguments["director"] = fireDirector;
@@ -2623,6 +2665,8 @@ else if (state is not null)
         moveTo = string.Empty;
         moveAssault = false;
         moveDoubleTime = false;
+        moveMinimum = false;
+        moveBypass = string.Empty;
         rallyUnit = string.Empty;
         rallyLeader = string.Empty;
         repairWeapon = string.Empty;
@@ -2694,6 +2738,8 @@ else if (state is not null)
         moveTo = string.Empty;
         moveAssault = false;
         moveDoubleTime = false;
+        moveMinimum = false;
+        moveBypass = string.Empty;
         vehicleIntended = string.Empty;
     }
 
@@ -2957,11 +3003,15 @@ else if (state is not null)
                 moveTo = string.Empty;
                 moveAssault = false;
                 moveDoubleTime = false;
+                moveMinimum = false;
+                moveBypass = string.Empty;
             }
             else if (proposal.Action == GameActions.Move)
             {
-                // A4.5: Double Time is declared for one step, not kept for the next.
+                // A4.5: Double Time is declared for one step, not kept for the next; so are a Minimum Move and a Bypass.
                 moveDoubleTime = false;
+                moveMinimum = false;
+                moveBypass = string.Empty;
             }
             else if (proposal.Action == GameActions.Rally)
             {

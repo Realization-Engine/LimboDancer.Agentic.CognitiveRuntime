@@ -148,6 +148,16 @@ public sealed class AslScenarioA1FireSourceReviewTests
     }
 
     [Fact]
+    public void ThePass10SubjectsAreVerified()
+    {
+        // Backlog pass 10: movement and terrain, 12 Chapter A subjects and 28 Chapter B.
+        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var pass10 = AslScenarioA1FireSourceReview.BuildPass10(RepositoryPaths.Root, manifests, Attestation());
+        Assert.Equal(40, pass10.Records.Count);
+        Assert.All(pass10.Records, record => Assert.Equal(TirSourceVerificationDisposition.Verified, record.Disposition));
+    }
+
+    [Fact]
     public void TheCloseCombatAndBerserkSubjectsAreVerified()
     {
         var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);

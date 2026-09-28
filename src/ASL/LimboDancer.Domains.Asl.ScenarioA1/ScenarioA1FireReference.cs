@@ -144,6 +144,18 @@ public sealed class ScenarioA1FireReference
         ["grain"] = 0,
         ["wooden-building"] = 2,
         ["stone-building"] = 3,
+
+        // Backlog pass 10 (ruling R10.1): marsh has no TEM (B16.3); rubble has its building's (B24.3).
+        ["marsh"] = 0,
+        ["wooden-rubble"] = 2,
+        ["stone-rubble"] = 3,
+    };
+
+    /// <summary>The Direct Fire TEM of a wall and a hedge hexside (B9.3; the pass 10 Terrain Chart rows).</summary>
+    public static readonly IReadOnlyDictionary<string, int> HexsideTem = new Dictionary<string, int>(StringComparer.Ordinal)
+    {
+        ["wall"] = 2,
+        ["hedge"] = 1,
     };
 
     // The Casualty Reduction a squad suffers (A7.302): its half-squad of the same class (catalogs 1.1.0 and 1.3.0).
@@ -308,6 +320,17 @@ public sealed class ScenarioA1FireReference
             || printed.GetValueOrDefault("23. Stone Building") != "+3(+1*)")
         {
             throw new InvalidOperationException("The Terrain Chart TEM cells changed.");
+        }
+
+        // Backlog pass 10 (ruling R10.1): the wall, hedge, marsh, and rubble TEM cells of the pass 10 rows.
+        using var pass10 = ScenarioA1FirePackage.Read("ScenarioA1.fire-terrain-chart-pass10.json",
+            matrix.GetProperty("terrainChartPass10TranscriptionSha256").GetString()!);
+        var pass10Cells = pass10.RootElement.GetProperty("rows").EnumerateArray()
+            .ToDictionary(row => row.GetProperty("terrain").GetString()!, row => row.GetProperty("temIndirect").GetString()!, StringComparer.Ordinal);
+        if (pass10Cells.GetValueOrDefault("9. Wall") != "+2/+1 ©" || pass10Cells.GetValueOrDefault("9. Hedge") != "+1/0 ©"
+            || pass10Cells.GetValueOrDefault("16. Marsh [Mudflat]") != "0*" || pass10Cells.GetValueOrDefault("24. Rubble") != "+2 or +3*")
+        {
+            throw new InvalidOperationException("The pass 10 Terrain Chart TEM cells changed.");
         }
 
         // A7.308: the Vehicle line's Kill Number beneath each FP column (IFT, p. 692).

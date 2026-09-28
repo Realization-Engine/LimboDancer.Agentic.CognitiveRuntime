@@ -107,7 +107,7 @@ public static class GameActions
             "directors": { "type": "array", "items": { "type": "string" } },
             "weapons": { "type": "object", "additionalProperties": { "type": "array", "items": { "type": "string" } } },
             "withoutInherent": { "type": "array", "items": { "type": "string" } },
-            "target": { "type": "string" }
+            "target": { "type": "string" }, "snapShot": { "type": "boolean" }
           }
         }
         """, JsonSerializer.SerializeToElement(new
@@ -160,7 +160,8 @@ public static class GameActions
             "expectedRevision": { "type": "integer", "minimum": 0 },
             "unitIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
             "to": { "type": "string" }, "assault": { "type": "boolean" }, "doubleTime": { "type": "boolean" }, "pushGun": { "type": "string" },
-            "smoke": { "type": "string" }, "smokeBy": { "type": "string" }
+            "smoke": { "type": "string" }, "smokeBy": { "type": "string" }, "minimumMove": { "type": "boolean" },
+            "bypass": { "type": "array", "items": { "type": "string", "enum": ["north", "northeast", "southeast", "south", "southwest", "northwest"] }, "minItems": 1, "maxItems": 2 }
           }
         }
         """, JsonSerializer.SerializeToElement(new

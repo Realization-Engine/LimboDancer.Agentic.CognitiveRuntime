@@ -159,6 +159,9 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         select $"{material} Building{suffix}",
         StringComparer.Ordinal);
 
+    // Ruling R10.12 (table player, pass 10): move options the reviewed entry cases do not take.
+    private static readonly string[] MoveOptions = ["assault", "doubleTime", "minimumMove"];
+
     private readonly TimeProvider clock = time ?? TimeProvider.System;
 
     /// <summary>Replays a live game's events against the exact boards in play; refuses when a board cannot be read.</summary>
@@ -208,7 +211,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             "asl.game.recover-shock" => PlanRecoverShock(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.turn-gun" => PlanTurnGun(scope, arguments, existing, attemptId, expected, label),
             "asl.game.hook-gun" => PlanHookGun(scope, arguments, existing, attemptId, expected, label),
-            "asl.game.move" => PlanMove(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
+            "asl.game.move" => await PlanMoveOrEntryAsync(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown", cancellationToken),
             "asl.game.pass-fire" => PlanPassFire(scope, existing, attemptId, expected, label),
             "asl.game.end-move" => PlanEndMove(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.advance" => PlanAdvanceUnits(scope, arguments, existing, attemptId, expected, label),
@@ -503,6 +506,36 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
             [Event(scope, attemptId, 1, expected, "instance-moved", move, ScenarioA1Package.Identity.ToString(), visibility: null)],
             [$"play.enter: {unit.Id} into {target} for 2 MF ({conclusion.ConclusionId})"], review);
+    }
+
+    /// <summary>
+    /// The move action (ruling R10.12): a move of one squad, as a stack's first step, into a ground-level building override Location of board 01 that
+    /// holds enemy units goes to the reviewed entry cases of unit steps 7 to 11, with their records; every other move is planned as a movement step.
+    /// </summary>
+    private async Task<GamePlan> PlanMoveOrEntryAsync(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected,
+        string label, string actor, CancellationToken cancellationToken)
+    {
+        if (Strings(arguments, "unitIds").ToArray() is [{ } unitId] && Text(arguments, "to", out var toText) && BoardLocation.TryParse(toText, out var to)
+            && !arguments.TryGetProperty("smoke", out _) && !arguments.TryGetProperty("bypass", out _)
+            && !MoveOptions.Any(name => arguments.TryGetProperty(name, out var option) && option.ValueKind == JsonValueKind.True)
+            && Replay(existing).Current is { Phase: "mph", Movement: null } state && state.Unit(unitId) is { Status: InstanceStatus.Active } unit
+            && vocabulary.IsA(unit.Kind, "asl:squad") && !Is(unit, Conditions.Berserk)
+            && state.At(to).OfType<UnitInstance>().Any(other => other.Status == InstanceStatus.Active && other.Side != unit.Side && !Is(other, Conditions.Captured))
+            && state.Map.Board(to.Board) is { } placed && boards.TryGetBoard(to.Board, placed.Version).Board is { } handle
+            && new BoardCatalogTerrainEvidence(boards).Bind(handle, to) is not null)
+        {
+            var entry = JsonSerializer.SerializeToElement(new Dictionary<string, object>
+            {
+                ["gameId"] = scope.Game,
+                ["attemptId"] = attemptId,
+                ["expectedRevision"] = expected,
+                ["unitId"] = unitId,
+                ["location"] = to.ToString(),
+            });
+            return await PlanEnterBuildingAsync(scope, entry, existing, attemptId, expected, label, actor, cancellationToken);
+        }
+
+        return PlanMove(scope, arguments, existing, attemptId, expected, label, actor);
     }
 
     /// <summary>
