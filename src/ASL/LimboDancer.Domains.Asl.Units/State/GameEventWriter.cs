@@ -319,6 +319,41 @@ public static class GameEventWriter
                 writer.WriteNumber("repairNumber", repair.RepairNumber);
                 writer.WriteString("result", repair.Result);
                 break;
+            case VehicleCloseCombatResolved vehicleCombat:
+                writer.WriteString("location", vehicleCombat.Location.ToString());
+                writer.WriteString("vehicle", vehicleCombat.Vehicle);
+                Strings(writer, "attackers", vehicleCombat.Attackers);
+                Strings(writer, "defenders", vehicleCombat.Defenders);
+                writer.WriteBoolean("byVehicle", vehicleCombat.ByVehicle);
+                writer.WriteBoolean("reaction", vehicleCombat.Reaction);
+                writer.WriteStartObject("rolls");
+                foreach (var (key, roll) in vehicleCombat.Rolls.OrderBy(item => item.Key, StringComparer.Ordinal))
+                {
+                    writer.WriteString(key, roll);
+                }
+
+                writer.WriteEndObject();
+                writer.WritePropertyName("facts");
+                vehicleCombat.Facts.WriteTo(writer);
+                writer.WritePropertyName("resolution");
+                vehicleCombat.Resolution.WriteTo(writer);
+                if (vehicleCombat.Next is { } nextSide)
+                {
+                    writer.WriteString("next", nextSide);
+                }
+
+                writer.WriteBoolean("closed", vehicleCombat.Closed);
+                break;
+            case VehicleCloseCombatPassed passed:
+                writer.WriteString("location", passed.Location.ToString());
+                writer.WriteString("side", passed.Side);
+                if (passed.Next is { } passedNext)
+                {
+                    writer.WriteString("next", passedNext);
+                }
+
+                writer.WriteBoolean("closed", passed.Closed);
+                break;
             case ShockRecoveryRolled shock:
                 writer.WriteString("vehicle", shock.Vehicle);
                 writer.WriteString("roll", shock.Roll);
@@ -429,6 +464,61 @@ public static class GameEventWriter
 
                 writer.WriteNumber("halfMp", vehicle.HalfMp);
                 writer.WriteNumber("step", vehicle.Step);
+                if (vehicle.Reverse)
+                {
+                    writer.WriteBoolean("reverse", true);
+                }
+
+                if (vehicle.Straddling is { } straddling)
+                {
+                    writer.WriteString("straddling", straddling.ToString());
+                }
+
+                if (vehicle.Overrunning)
+                {
+                    writer.WriteBoolean("overrun", true);
+                }
+
+                if (vehicle.MinimumMove)
+                {
+                    writer.WriteBoolean("minimumMove", true);
+                }
+
+                if (vehicle.BogRemoval)
+                {
+                    writer.WriteBoolean("bogRemoval", true);
+                }
+
+                if (vehicle.All)
+                {
+                    writer.WriteBoolean("all", true);
+                }
+
+                break;
+            case VehicleCheckRolled check:
+                writer.WriteString("vehicle", check.Vehicle);
+                writer.WriteString("check", check.Check);
+                writer.WriteString("roll", check.Roll);
+                writer.WriteNumber("drm", check.Drm);
+                writer.WriteString("result", check.Result);
+                if (check.Mp != 0)
+                {
+                    writer.WriteNumber("mp", check.Mp);
+                }
+
+                break;
+            case OverrunResolved overrun:
+                writer.WriteString("vehicle", overrun.Vehicle);
+                writer.WriteString("at", overrun.At.ToString());
+                writer.WriteString("fire", overrun.Fire);
+                break;
+            case PaatcTaken paatc:
+                Strings(writer, "units", paatc.Units);
+                writer.WriteString("vehicle", paatc.Vehicle);
+                writer.WriteString("roll", paatc.Roll);
+                writer.WriteNumber("morale", paatc.Morale);
+                writer.WriteNumber("drm", paatc.Drm);
+                writer.WriteBoolean("passed", paatc.Passed);
                 break;
             case MovementWindowClosed closed:
                 writer.WriteNumber("step", closed.Step);

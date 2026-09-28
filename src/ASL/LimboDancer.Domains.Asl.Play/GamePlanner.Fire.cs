@@ -424,7 +424,8 @@ public sealed partial class GamePlanner
         var fireId = EventId(attemptId, events.Count + 1);
         var firerLocation = facts.FirerLocationId ?? facts.TargetLocationId!;
         events.Add(Event(scope, attemptId, events.Count + 1, expected, "fire-resolved",
-            new FireResolved(facts.VehicleFire is { } byVehicle ? [byVehicle.VehicleId!] : [.. (facts.Firers ?? []).Select(item => item.UnitId!)],
+            new FireResolved(facts.VehicleFire is { } byVehicle ? [byVehicle.VehicleId!] : facts.Overrun is { } overrunning ? [overrunning.VehicleId!]
+                    : [.. (facts.Firers ?? []).Select(item => item.UnitId!)],
                 facts.Director?.UnitId, firerLocation, facts.TargetLocationId!, rollIds,
                 JsonSerializer.SerializeToElement(facts, LiveFire.Json), JsonSerializer.SerializeToElement(resolution, LiveFire.Json))
             {
@@ -510,9 +511,33 @@ public sealed partial class GamePlanner
             }
         }
 
+        // D7.17 (ruling R11.11): an OVR's Original 12 malfunctions a weapon that added FP, or immobilizes a vehicle with none; a wreck keeps no weapons.
+        if (resolution.OverrunEffect is { } overrunEffect && state.Unit(overrunEffect.VehicleId) is { Status: InstanceStatus.Active })
+        {
+            var conditions = new Dictionary<string, ConditionState>(StringComparer.Ordinal);
+            foreach (var weapon in overrunEffect.MalfunctionedWeapons)
+            {
+                conditions[weapon switch
+                {
+                    FireOverrunEffect.BowMg => Conditions.BmgMalfunctioned,
+                    FireOverrunEffect.CoaxialMg => Conditions.CmgMalfunctioned,
+                    _ => Conditions.Malfunctioned,
+                }] = ConditionState.True;
+            }
+
+            if (overrunEffect.Immobilized)
+            {
+                conditions[Conditions.Immobilized] = ConditionState.True;
+                conditions[Conditions.Motion] = ConditionState.False;
+            }
+
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(overrunEffect.VehicleId, conditions), package, null,
+                [fireId]));
+        }
+
         // The fire markers (A3.2, A3.4, A3.5, A8.1, A8.3, A8.4); a MG firing again alone on its Multiple ROF leaves its unit as it was.
         var alone = (facts.Firers ?? []).Where(item => item.UsesInherentFp == false).Select(item => item.UnitId!).ToHashSet(StringComparer.Ordinal);
-        foreach (var id in resolution.FireCounterUnitIds.Where(id => !alone.Contains(id)))
+        foreach (var id in resolution.FireCounterUnitIds.Where(id => !alone.Contains(id) && state.Unit(id) is not { Status: not InstanceStatus.Active }))
         {
             var conditions = new Dictionary<string, ConditionState> { [Marker(resolution.FireCounter!)] = ConditionState.True };
             if (resolution.FireCounter == "final-fire" && state.Unit(id) is { } marked && GameState.Condition(marked, Conditions.FirstFire) == ConditionState.True)
@@ -957,6 +982,14 @@ public sealed partial class GamePlanner
                 if (!direct || attack.SnapShot == true)
                 {
                     return (null, "play.fire-own-location: only Infantry fire as TPBF at units in their own Location (A7.21)");
+                }
+
+                // D7.22 (table-player finding, pass 11): in the MPh, fire at a moving vehicle in the firer's own Location is Non-CC Reaction Fire, made
+                // only after its OVR there; CC Reaction Fire is the vehicle CC action (D7.21).
+                if (state.Phase == "mph" && state.Movement is { Vehicle: true, Reaction: false } moving
+                    && moving.Movers.Any(id => state.Location(id)?.Location == from))
+                {
+                    return (null, "play.fire-reaction: a DEFENDER unit fires at a moving vehicle in its own Location only as Reaction Fire after the vehicle's OVR there (D7.22); CC Reaction Fire is the vehicle CC action (D7.21)");
                 }
 
                 perLocation[location] = (0, true, new FireLos(false, 0, true, false), height);

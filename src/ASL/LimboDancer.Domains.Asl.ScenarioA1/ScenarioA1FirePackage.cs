@@ -12,23 +12,24 @@ namespace LimboDancer.Domains.Asl.ScenarioA1;
 /// </summary>
 public sealed class ScenarioA1FirePackage : IDomainPackageResolver
 {
-    public const string ManifestSha256 = "079c03e69d56a017b7582279df442c9abb74ad9a87e824377e9e0e61c420264a";
-    public const string MatrixSha256 = "9cfec29c8b19c63fb2cdeff5cd177427579d56b0e87c872506817fbf0acfe395";
+    public const string ManifestSha256 = "14feea97ec5db3565972f4ff285e0d09a502c7b92a7dabef4cf3242abe1076da";
+    public const string MatrixSha256 = "2d478e060be61fa840f48abc7f8a0ef09896b5ff058d15bc59ce4a0b5888a5de";
     public const string ChartSupplementId = "asl-supplement:fire-charts";
 
     /// <summary>
-    /// The package as revised at backlog pass 9b (the ATR, catalog 1.9.0), before the backlog pass 10 revision (movement and terrain); each
-    /// revision's manifest records its predecessor. Earlier manifests: backlog pass 9, 67cac064; backlog pass 8, 5ed50cc5; backlog pass 7, e00107a7; unit steps 27 and 28, 8ac91d104a02c40f5237b4bfd924c1dde1f106aa3e7e1d5aab31725eae6499f9;
+    /// The package as revised at backlog pass 10 (movement and terrain), before the backlog pass 11 revision (the OVR); each revision's
+    /// manifest records its predecessor. Earlier manifests: backlog pass 9b, f10455b9; backlog pass 9, 67cac064; backlog pass 8, 5ed50cc5; backlog pass 7, e00107a7; unit steps 27 and 28, 8ac91d104a02c40f5237b4bfd924c1dde1f106aa3e7e1d5aab31725eae6499f9;
     /// unit step 18, e0c28e88cda17bd71efd63f569c713d4d921e958dc7bc848b3c4c4acead143e1; and unit step 17,
     /// 45011b56946be8a7aba1676e6aea8d5ad0fa82193e4ebac24e06fd36bdff2b69 (Fire Review, "Revision at unit step 18").
     /// </summary>
-    public const string PriorManifestSha256 = "f10455b969ca5c20f664821773522cbcf977a8ed181769c1ae6fa9e6cd69e4ba";
+    public const string PriorManifestSha256 = "079c03e69d56a017b7582279df442c9abb74ad9a87e824377e9e0e61c420264a";
     public static readonly DomainPackageRef Identity = new(new DomainId("asl"), "scenario-a1-fire", "sha256:" + ManifestSha256);
 
     private static readonly string[] Cases =
     [
         "A1-fire-resolved", "A1-fire-phase-outside", "A1-fire-firer-outside", "A1-fire-target-outside", "A1-fire-range-or-los-denied", "A1-fire-weapon-outside", "A1-fire-movement-fire-outside", "A1-fire-movement-drm-differs", "A1-fire-levels-differ", "A1-fire-hindrance-unattributed", "A1-fire-elr-undecided", "A1-fire-leaders-interact", "A1-fire-heat-of-battle-undecided", "A1-fire-roll-missing", "A1-fire-vehicle-line-resolved", "A1-fire-vehicle-collateral-resolved", "A1-fire-vehicle-fire-resolved", "A1-fire-vehicle-outside", "A1-fire-cx", "A1-fire-second-heat-of-battle", "A1-fire-owner-options", "A1-fire-no-quarter", "A1-fire-afv-cover", "A1-fire-residual-vehicle", "A1-fire-concealed-vehicle", "A1-fire-bounding-first-fire", "A1-fire-closed-topped-afv", "A1-fire-gun-crew-target", "A1-fire-crew-inherent-fp", "A1-fire-area-hit", "A1-fire-atr",
         "A1-fire-walls-and-hedges", "A1-fire-levels", "A1-fire-height-advantage", "A1-fire-snap-shot", "A1-fire-tpbf", "A1-fire-hazardous-movement", "A1-fire-marsh-rubble",
+        "A1-fire-overrun", "A1-fire-overrun-outside",
     ];
 
     private static readonly string[] PinnedDigests =

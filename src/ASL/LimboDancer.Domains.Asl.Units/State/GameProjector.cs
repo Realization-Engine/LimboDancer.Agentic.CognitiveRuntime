@@ -96,11 +96,16 @@ public static class GameProjector
                 GunHooked hooked => HookGun(previous, hooked),
                 MovementStepped moving => StepMovement(previous, moving),
                 VehicleStepped vehicle => StepVehicle(previous, vehicle),
+                VehicleCheckRolled check => CheckVehicle(previous, check),
+                OverrunResolved overrun => ResolveOverrun(previous, overrun),
+                PaatcTaken paatc => TakePaatc(previous, paatc),
                 MovementWindowClosed closed => CloseWindow(previous, closed),
                 MovementEnded ended => EndMovement(previous, ended),
                 AdvanceMoved advanced => Advance(previous, advanced),
                 AmbushRolled ambush => Ambush(previous, ambush),
                 CloseCombatResolved combat => CloseCombat(previous, combat),
+                VehicleCloseCombatResolved vehicleCombat => VehicleCloseCombat(previous, vehicleCombat),
+                VehicleCloseCombatPassed passed => PassVehicleCloseCombat(previous, passed),
                 OrdnanceFired fired => Ordnance(previous, fired),
                 SurrenderPending surrender => Surrender(previous, surrender, gameEvent.EventId),
                 SurrenderRejected rejected => RejectSurrender(previous, rejected),
@@ -341,6 +346,9 @@ public static class GameProjector
                 "dfph" => [Conditions.FinalFire, Conditions.FirstFire, Conditions.IntensiveFire],
                 "afph" => [Conditions.PrepFire, Conditions.BoundingFire, Conditions.IntensiveFire],
                 "ccph" => [Conditions.Pinned, "asl:ti"],
+
+                // D7.21 (ruling R11.13): the CC counter of a CC Reaction Fire attack leaves with the MPh.
+                "mph" => [Conditions.CcReaction],
                 "rph" => [Conditions.DesperationMorale],
                 _ => [],
             };
@@ -392,14 +400,15 @@ public static class GameProjector
                     FiresThisPhase = [],
                     RepairsThisPhase = [],
                     ShockRollsThisPhase = [],
+                    PaatcPassed = [],
                     ResidualFire = [],
                     Movement = null,
                     NoDoubleTime = rested,
                     RallyAttemptsThisPlayerTurn = newPlayerTurn ? [] : state.RallyAttemptsThisPlayerTurn,
                     FirstMmcRallyTaken = newPlayerTurn ? [] : state.FirstMmcRallyTaken,
-                    Units = [.. state.Units.Select(unit => HoldInMelee(Clear(unit is { MfSpent: 0, MovementEnded: false, HalfMfSpent: false, DoubleTimeMf: 0, OffRoad: false, MovedWith: null }
+                    Units = [.. state.Units.Select(unit => HoldInMelee(Clear(unit is { MfSpent: 0, MovementEnded: false, HalfMfSpent: false, DoubleTimeMf: 0, OffRoad: false, MovedWith: null, EsbMp: 0 }
                         ? unit
-                        : unit with { MfSpent = 0, MovementEnded = false, HalfMfSpent = false, DoubleTimeMf = 0, OffRoad = false, MovedWith = null }, cleared), melee))],
+                        : unit with { MfSpent = 0, MovementEnded = false, HalfMfSpent = false, DoubleTimeMf = 0, OffRoad = false, MovedWith = null, EsbMp = 0 }, cleared), melee))],
                     Equipment = [.. state.Equipment.Select(equipment => equipment.Conditions.Keys.Any(cleared.Contains)
                         ? equipment with { Conditions = Without(equipment.Conditions, cleared) }
                         : equipment)],
@@ -458,13 +467,22 @@ public static class GameProjector
         /// A11.15: at the end of the CCPh, Infantry of both sides that remain in one Location are held in Melee; prisoners are
         /// neither held nor hold (A20.5). The units are those of Locations that still hold units of both sides.
         /// </summary>
-        private static HashSet<string> InMelee(GameState state)
+        private HashSet<string> InMelee(GameState state)
         {
+            // A11.7 (ruling R11.16): a vehicle is never held in Melee, and holds the enemy Infantry in its Location unless it is Abandoned or in Motion.
             var units = state.Units.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Captured) != ConditionState.True
                 && state.Location(unit.Id) is not null).ToArray();
-            return units.GroupBy(unit => state.Location(unit.Id)!.Location).Where(group => group.Select(unit => unit.Side).Distinct(StringComparer.Ordinal).Count() > 1)
-                .SelectMany(group => group.Select(unit => unit.Id)).ToHashSet(StringComparer.Ordinal);
+            return units.GroupBy(unit => state.Location(unit.Id)!.Location)
+                .SelectMany(group => group.Where(unit => !vocabulary.IsA(unit.Kind, "asl:vehicle") && group.Any(other => other.Side != unit.Side && HoldsInMelee(other)
+                    && (!vocabulary.IsA(other.Kind, "asl:vehicle") || (GameState.Condition(unit, Conditions.Concealed) != ConditionState.True
+                        && GameState.Condition(unit, Conditions.Hidden) != ConditionState.True)))))
+                .Select(unit => unit.Id).ToHashSet(StringComparer.Ordinal);
         }
+
+        /// <summary>Whether a unit holds the enemy Infantry in its Location in Melee (A11.15, A11.7): any Infantry, or a vehicle not Abandoned and not in Motion.</summary>
+        private bool HoldsInMelee(UnitInstance unit) =>
+            !vocabulary.IsA(unit.Kind, "asl:vehicle")
+            || (GameState.Condition(unit, Conditions.Abandoned) != ConditionState.True && GameState.Condition(unit, Conditions.Motion) != ConditionState.True);
 
         private static UnitInstance HoldInMelee(UnitInstance unit, HashSet<string>? melee) =>
             melee is null || (melee.Contains(unit.Id) ? GameState.Condition(unit, Conditions.Melee) == ConditionState.True
@@ -584,6 +602,87 @@ public static class GameProjector
         /// ambusher's round first and then the other side's, otherwise one round; no unit attacks or is attacked twice. The
         /// Close Combat verifier reproduces it and decides that the Location's Ambush drs were made where they had to be.
         /// </summary>
+        /// <summary>
+        /// One CC attack with a vehicle (rulings R11.13 to R11.16): CC Reaction Fire answers the open window on a vehicle's MP expenditure in the MPh
+        /// (D7.21); in the CCPh the attacks in a Location holding a vehicle are sequential, the side named next attacking (A11.31), no Infantry unit
+        /// attacking twice; the record's next side and closure are the planner's reads.
+        /// </summary>
+        private GameState? VehicleCloseCombat(GameState state, VehicleCloseCombatResolved combat)
+        {
+            if (closeCombatVerifier is null)
+            {
+                return Fail<GameState>("UNIT-STATE-023", "A CC record can be replayed only with the Close Combat verifier.");
+            }
+
+            if (combat.Rolls.Values.FirstOrDefault(roll => !rolls.ContainsKey(roll)) is { } missing)
+            {
+                return Fail<GameState>("UNIT-STATE-023", $"The CC record's roll '{missing}' is not recorded before it.");
+            }
+
+            if (combat.Reaction)
+            {
+                if (state.Phase != "mph" || state.Movement is not { WindowOpen: true, Vehicle: true } window || !window.Members.Contains(combat.Vehicle, StringComparer.Ordinal))
+                {
+                    return Fail<GameState>("UNIT-STATE-030", "CC Reaction Fire answers the open window on the moving vehicle's MP expenditure (D7.21).");
+                }
+            }
+            else
+            {
+                var entry = state.CloseCombats.FirstOrDefault(item => item.Location == combat.Location);
+                var attacker = combat.ByVehicle ? Active(state, combat.Vehicle) as UnitInstance : combat.Attackers.Select(id => Active(state, id) as UnitInstance).FirstOrDefault();
+                if (state.Phase != "ccph" || entry is { Closed: true } || attacker is null || (entry?.Next is { } next && next != attacker.Side)
+                    || combat.Attackers.Any(id => entry?.Attacking.Contains(id) == true) || state.CloseCombats.Any(item => !item.Closed && item.Location != combat.Location))
+                {
+                    return Fail<GameState>("UNIT-STATE-030", "CC with a vehicle is sequential in the CCPh: the side named attacks next, and no unit attacks twice (A11.31).");
+                }
+            }
+
+            if (closeCombatVerifier.VerifyVehicle(state, combat, rolls) is { } reason)
+            {
+                return Fail<GameState>("UNIT-STATE-030", reason);
+            }
+
+            if (combat.Reaction)
+            {
+                return state;
+            }
+
+            var current = state.CloseCombats.FirstOrDefault(item => item.Location == combat.Location);
+            var updated = (current ?? new CloseCombatLocation(combat.Location, false, null, [], false)) with
+            {
+                Rounds = [.. current?.Rounds ?? [], CloseCombatResolved.Simultaneous],
+                Attacking = [.. current?.Attacking ?? [], .. combat.Attackers],
+                Attacked = [.. current?.Attacked ?? [], .. combat.Defenders],
+                Next = combat.Next,
+                Closed = combat.Closed,
+            };
+            return state with
+            {
+                CloseCombats = [.. state.CloseCombats.Where(item => item.Location != combat.Location), updated],
+            };
+        }
+
+        private GameState? PassVehicleCloseCombat(GameState state, VehicleCloseCombatPassed passed)
+        {
+            var entry = state.CloseCombats.FirstOrDefault(item => item.Location == passed.Location);
+            if (state.Phase != "ccph" || entry is { Closed: true } || (entry?.Next is { } next && next != passed.Side) || entry?.Passed.Contains(passed.Side) == true
+                || state.Side(passed.Side) is null)
+            {
+                return Fail<GameState>("UNIT-STATE-030", "A side passes in a CC Location holding a vehicle when its attack is next (A11.31).");
+            }
+
+            var updated = (entry ?? new CloseCombatLocation(passed.Location, false, null, [], false)) with
+            {
+                Passed = [.. entry?.Passed ?? [], passed.Side],
+                Next = passed.Next,
+                Closed = passed.Closed,
+            };
+            return state with
+            {
+                CloseCombats = [.. state.CloseCombats.Where(item => item.Location != passed.Location), updated],
+            };
+        }
+
         private GameState? CloseCombat(GameState state, CloseCombatResolved combat)
         {
             if (closeCombatVerifier is null)
@@ -860,7 +959,7 @@ public static class GameProjector
         private GameState? PendChoice(GameState state, ChoicePending pending, string eventId)
         {
             if (state.Choice is not null || state.Side(pending.Side) is null || pending.Options.Count == 0
-                || pending.Kind is not (ChoicePending.LeaderCreation or ChoicePending.BattleHardening or ChoicePending.UnlikelyKill or ChoicePending.Acquisition)
+                || pending.Kind is not (ChoicePending.LeaderCreation or ChoicePending.BattleHardening or ChoicePending.UnlikelyKill or ChoicePending.Acquisition or ChoicePending.Paatc)
                 || state.ChoicesMade.ContainsKey(pending.Key))
             {
                 return Fail<GameState>("UNIT-STATE-035", "A choice is pending one at a time, for a side of the game, with its options, and once per key (ruling R5.8).");
@@ -887,6 +986,12 @@ public static class GameProjector
             {
                 Choice = null
             };
+            // A12.41 (ruling R11.12): the reveal or the PAATC follows the answer at once, as its own events.
+            if (pending.Kind == ChoicePending.Paatc)
+            {
+                return next;
+            }
+
             if (pending.Kind != ChoicePending.Acquisition)
             {
                 return next with
@@ -1145,7 +1250,9 @@ public static class GameProjector
             // A7.55: a Location's units fire at a target once per phase (in the MPh, once per MF expenditure), as one fire
             // group; Residual FP has no firers and never forms one (A8.22). A vehicle's MG fires alone (D3.4, ruling R25.7), but the Mandatory
             // Fire Group binds it with its Location's Infantry (D3.5): only its own Multiple ROF fires again.
-            var byVehicle = fire.Facts.TryGetProperty("vehicleFire", out var firing) && firing.ValueKind == JsonValueKind.Object;
+            // D7.14 (ruling R11.11): each OVR is its vehicle's own attack, as a vehicle's MG shot is.
+            var byVehicle = (fire.Facts.TryGetProperty("vehicleFire", out var firing) && firing.ValueKind == JsonValueKind.Object)
+                || (fire.Facts.TryGetProperty("overrun", out var overrunning) && overrunning.ValueKind == JsonValueKind.Object);
             if (fire.Firers.Count > 0 && state.FiresThisPhase.Any(item => !(byVehicle && item.Vehicle) && item.FirerLocation == fire.FirerLocation
                 && item.TargetLocation == fire.TargetLocation && item.Step == fire.MovementStep))
             {
@@ -1582,6 +1689,8 @@ public static class GameProjector
 
             // D5.341: a Recall stops the AFV like a Stun for the rest of that Player Turn; once its counter shows Recall; +1 it must move.
             var recalling = GameState.Condition(vehicle, Conditions.Recalled) == ConditionState.True && GameState.Condition(vehicle, Conditions.StunRecovery) != ConditionState.True;
+            // D8.3 (ruling R11.10): a bogged vehicle's only expenditure is its Bog Removal Start MP.
+            var bogged = GameState.Condition(vehicle, Conditions.Bogged) == ConditionState.True;
             if (new[] { Conditions.PrepFire, Conditions.Immobilized, Conditions.Stunned, Conditions.Shocked, Conditions.UnconfirmedKill, Conditions.Abandoned }
                 .FirstOrDefault(name => GameState.Condition(vehicle, name) == ConditionState.True) is { } barred)
             {
@@ -1604,20 +1713,37 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-034", $"The next movement step is {(current?.Step ?? 0) + 1}.");
             }
 
+            if (current?.Overrun is not null)
+            {
+                return Fail<GameState>("UNIT-STATE-034", "A vehicle resolves its declared OVR before it spends any more MP (D7.1).");
+            }
+
+            if (bogged && !(step.Kind == VehicleStepped.Start && step.BogRemoval) && step.Kind != VehicleStepped.Remain)
+            {
+                return Fail<GameState>("UNIT-STATE-034", $"'{vehicle.Id}' is bogged: it spends MP only on its Bog Removal (D8.2, D8.3).");
+            }
+
             var inMotion = GameState.Condition(vehicle, Conditions.Motion) == ConditionState.True;
             var started = current is not null ? current.Started : inMotion;
             var moving = started && current?.Stopped != true;
+
+            // D2.23 (ruling R11.1): Reverse is declared with the Start MP, and every entry until the vehicle stops keeps that direction.
+            var reverse = current?.Reverse == true && moving;
             var valid = current?.Ending != true && step.Kind switch
             {
-                VehicleStepped.Start => !moving && step.At == at.Location && step.Facing is null && step.HalfMp == 2,
+                VehicleStepped.Start => !moving && step.At == at.Location && step.Facing is null && (step.BogRemoval ? bogged : step.HalfMp == 2),
                 VehicleStepped.Turn => moving && step.At == at.Location && step.Facing is { } turned && Math.Abs(((int)turned - (int)facing + 6) % 6) is 1 or 5
-                    && step.HalfMp == 2,
-                VehicleStepped.Enter => moving && step.At != at.Location && step.Facing is null,
+                    && step.HalfMp is 2 or 4,
+                VehicleStepped.Enter => moving && (step.At != at.Location || (step.Straddling is { } lane && lane != vehicle.Straddling)) && step.Facing is null
+                    && step.Reverse == reverse,
                 VehicleStepped.Stop => moving && step.At == at.Location && step.Facing is null && step.HalfMp == 2,
 
                 // D2.1 (ruling R5.15): the MP left at the end of its move, spent in its hex, moving or stopped; A2.6: an exit from its edge hex.
                 VehicleStepped.Remain => current is not null && step.At == at.Location && step.Facing is null,
-                VehicleStepped.Exit => moving && step.At == at.Location && step.Facing is null,
+                VehicleStepped.Exit => moving && step.At == at.Location && step.Facing is null && !reverse,
+
+                // D7.1, A12.41 (ruling R11.12): an OVR declared in the vehicle's own Location once the concealed units there have chosen.
+                VehicleStepped.Overrun => moving && step.At == at.Location && step.Facing is null && step.Overrunning,
                 _ => false,
             };
             if (!valid)
@@ -1646,12 +1772,15 @@ public static class GameProjector
                 conditions[Conditions.Motion] = ConditionState.False;
             }
 
+            // D2.3, D2.34 (ruling R11.2): an entry says where the vehicle straddles a hexside in Bypass, or that it is at its hex center; any other
+            // expenditure leaves it where it is.
             var next = Replace(state, vehicle with
             {
                 Position = new MapPosition(step.At) { Facing = step.Facing ?? facing },
                 MfSpent = halves / 2,
                 HalfMfSpent = halves % 2 == 1,
                 Conditions = conditions,
+                Straddling = step.Kind == VehicleStepped.Enter ? step.Straddling : vehicle.Straddling,
             })!;
 
             // C10.1 (ruling R8.6): a Gun in tow goes with its vehicle.
@@ -1669,9 +1798,125 @@ public static class GameProjector
                     Vehicle = true,
                     Started = step.Kind == VehicleStepped.Remain ? current!.Started : step.Kind != VehicleStepped.Stop,
                     Stopped = step.Kind == VehicleStepped.Remain ? current!.Stopped : step.Kind == VehicleStepped.Stop,
-                    Ending = step.Kind == VehicleStepped.Remain,
+
+                    // D2.15 (ruling R11.5): a Minimum Move ends the vehicle's move in Motion once the DEFENDER passes.
+                    Ending = step.Kind == VehicleStepped.Remain || step.MinimumMove,
+                    Reverse = step.Kind == VehicleStepped.Start ? step.Reverse : step.Kind != VehicleStepped.Stop && current?.Reverse == true,
+                    Overrun = step.Overrunning ? step.At : null,
+                    MinimumMove = step.MinimumMove,
+                    EnteredFrom = step.Kind == VehicleStepped.Enter && (step.At.Board != at.Location.Board || step.At.Hex != at.Location.Hex) ? at.Location : current?.EnteredFrom,
                 },
             };
+        }
+
+        /// <summary>
+        /// A vehicle's check outside combat (rulings R11.3, R11.4, R11.9, R11.10): its dice agree with its result; a Bog bogs it (D8.21), and an ESB or
+        /// Mechanical Reliability failure or a Bog Removal dr of 6 or more immobilizes it (D2.5, D2.51, D8.3), each ending its move once the DEFENDER
+        /// passes; a passed ESB adds its MP (D2.5); a Bog Removal frees or Mires it (D8.3, D8.31).
+        /// </summary>
+        private GameState? CheckVehicle(GameState state, VehicleCheckRolled check)
+        {
+            if (state.Phase != "mph" || Active(state, check.Vehicle) is not UnitInstance vehicle || !vocabulary.IsA(vehicle.Kind, "asl:vehicle")
+                || vehicle.Side != state.PhasingSide)
+            {
+                return Fail<GameState>("UNIT-STATE-039", "A vehicle check is made in its own MPh (D2.5, D2.51, D8.2, D8.3).");
+            }
+
+            if (!rolls.TryGetValue(check.Roll, out var roll) || roll.Count != 2 || roll.Sides != 6)
+            {
+                return Fail<GameState>("UNIT-STATE-039", $"The vehicle check's roll '{check.Roll}' is not a recorded DR.");
+            }
+
+            // D8.3: a Bog Removal is decided by its colored dr, the first die.
+            var final = (check.Check == VehicleCheckRolled.BogRemoval ? roll.Values[0] : roll.Values[0] + roll.Values[1]) + check.Drm;
+            if (check.Result != VehicleCheckRolled.For(check.Check, final) || (check.Check == VehicleCheckRolled.Esb) != (check.Mp > 0))
+            {
+                return Fail<GameState>("UNIT-STATE-039", "The vehicle check's result disagrees with its DR.");
+            }
+
+            var conditions = new Dictionary<string, ConditionState>(vehicle.Conditions, StringComparer.Ordinal);
+            var esb = vehicle.EsbMp;
+            switch (check.Result)
+            {
+                // D2.4: a Motion counter leaves a vehicle that becomes Immobile.
+                case VehicleCheckRolled.Bogged:
+                    conditions[Conditions.Bogged] = ConditionState.True;
+                    conditions[Conditions.Motion] = ConditionState.False;
+                    break;
+                case VehicleCheckRolled.Immobilized:
+                    conditions[Conditions.Immobilized] = ConditionState.True;
+                    conditions[Conditions.Motion] = ConditionState.False;
+                    break;
+                case VehicleCheckRolled.Freed:
+                    conditions[Conditions.Bogged] = ConditionState.False;
+                    conditions[Conditions.Mired] = ConditionState.False;
+                    break;
+                case VehicleCheckRolled.Mired:
+                    conditions[Conditions.Mired] = ConditionState.True;
+                    break;
+                case VehicleCheckRolled.Passed when check.Check == VehicleCheckRolled.Esb:
+                    esb += check.Mp;
+                    break;
+            }
+
+            var next = Replace(state, vehicle with
+            {
+                Conditions = conditions,
+                EsbMp = esb
+            })!;
+            var stuck = check.Result is VehicleCheckRolled.Bogged or VehicleCheckRolled.Immobilized
+                || (check.Check == VehicleCheckRolled.BogRemoval && check.Result != VehicleCheckRolled.Freed);
+            return stuck && next.Movement is { Vehicle: true } movement && movement.Members.Contains(vehicle.Id, StringComparer.Ordinal)
+                ? next with
+                {
+                    Movement = movement with
+                    {
+                        Ending = true
+                    }
+                }
+                : next;
+        }
+
+        /// <summary>An OVR's resolution (D7.1, D7.2; ruling R11.11): the declared OVR is done, and the DEFENDER's Reaction Fire window opens.</summary>
+        private GameState? ResolveOverrun(GameState state, OverrunResolved overrun)
+        {
+            if (state.Movement is not { Vehicle: true, WindowOpen: false } movement || movement.Overrun != overrun.At
+                || !movement.Movers.Contains(overrun.Vehicle, StringComparer.Ordinal) || !fires.ContainsKey(overrun.Fire))
+            {
+                return Fail<GameState>("UNIT-STATE-039", "An OVR is resolved by its vehicle's fire record after the DEFENDER's window on its declaration closes (D7.1).");
+            }
+
+            return state with
+            {
+                Movement = movement with
+                {
+                    Overrun = null,
+                    WindowOpen = true,
+                    Reaction = true
+                },
+            };
+        }
+
+        /// <summary>A PAATC (A11.6, A12.41): its DR agrees with its result; the units that pass need no other PAATC against that vehicle this phase.</summary>
+        private GameState? TakePaatc(GameState state, PaatcTaken paatc)
+        {
+            if (paatc.Units.Count == 0 || paatc.Units.Any(id => Active(state, id) is not UnitInstance) || Active(state, paatc.Vehicle) is not UnitInstance)
+            {
+                return Fail<GameState>("UNIT-STATE-039", "A PAATC names active units and an active vehicle (A11.6).");
+            }
+
+            if (!rolls.TryGetValue(paatc.Roll, out var roll) || roll.Count != 2 || roll.Sides != 6
+                || (roll.Values[0] + roll.Values[1] + paatc.Drm <= paatc.Morale) != paatc.Passed)
+            {
+                return Fail<GameState>("UNIT-STATE-039", "The PAATC's result disagrees with its DR (A11.6).");
+            }
+
+            return paatc.Passed
+                ? state with
+                {
+                    PaatcPassed = [.. state.PaatcPassed, .. paatc.Units.Select(id => id + "|" + paatc.Vehicle)]
+                }
+                : state;
         }
 
         private GameState? CloseWindow(GameState state, MovementWindowClosed closed)
@@ -1691,12 +1936,16 @@ public static class GameProjector
 
             // Ruling R5.15: a vehicle that spent its MP left in its final hex ends its move when the DEFENDER passes; A24.1 (ruling R9.5): so does a squad
             // whose SMOKE dr was a 6.
+            // D7.1 (ruling R11.11): a vehicle that bogs or is immobilized entering the Location it OVRs still resolves the OVR, and its move ends only
+            // after the Reaction window that follows (table-player finding).
             var ending = movement.EndingMembers.Where(id => movement.Members.Contains(id, StringComparer.Ordinal) && Active(next, id) is UnitInstance { MovementEnded: false }).ToArray();
-            var ended = movement.Ending ? EndMovement(next, new MovementEnded([.. movement.Members.Count > 0 ? movement.Members : movement.Movers]))
+            var ended = movement.Overrun is not null ? next
+                : movement.Ending ? EndMovement(next, new MovementEnded([.. movement.Members.Count > 0 ? movement.Members : movement.Movers]))
                 : ending.Length > 0 ? EndMovement(next, new MovementEnded(ending)) : next;
 
-            // A4.134 (ruling R10.9): once all First Fire at a Minimum Move is done, its unbroken survivors are pinned and CX.
-            if (ended is not null && movement.MinimumMove)
+            // A4.134 (ruling R10.9): once all First Fire at a Minimum Move is done, its unbroken survivors are pinned and CX; a vehicle's Minimum Move
+            // (D2.15) is not Infantry's and leaves it in Motion only (table-player finding).
+            if (ended is not null && movement.MinimumMove && !movement.Vehicle)
             {
                 foreach (var id in movement.Movers)
                 {
@@ -1808,6 +2057,9 @@ public static class GameProjector
             var leaving = members.Where(id => next.Unit(id) is not { Status: InstanceStatus.Active } unit
                 || (movement.Vehicle
                     ? new[] { Conditions.Stunned, Conditions.Shocked, Conditions.UnconfirmedKill, Conditions.Immobilized, Conditions.Abandoned }.Any(name => GameState.Condition(unit, name) == ConditionState.True)
+
+                        // D8.2 (ruling R11.9): a Bog, or a Bog Removal that does not free it, stops it too.
+                        || (GameState.Condition(unit, Conditions.Bogged) == ConditionState.True && payload is VehicleCheckRolled)
                         || (GameState.Condition(unit, Conditions.Recalled) == ConditionState.True && GameState.Condition(unit, Conditions.StunRecovery) != ConditionState.True)
                     : GameState.Condition(unit, Conditions.Broken) == ConditionState.True || GameState.Condition(unit, Conditions.Pinned) == ConditionState.True))
                 .ToArray();
@@ -2465,6 +2717,19 @@ public static class GameProjector
                         }
                     });
                 }
+            }
+
+            // A11.31 (table-player finding, pass 11): a HS a CC attacker is Reduced to has made its attack in the sequential CC of that Location.
+            if (next.CloseCombats.Any(item => item.Attacking.Any(ids.Contains)))
+            {
+                var produced = lineage.Produced.Select(item => item.Id).ToArray();
+                next = next with
+                {
+                    CloseCombats = [.. next.CloseCombats.Select(item => item.Attacking.Any(ids.Contains) ? item with
+                    {
+                        Attacking = [.. item.Attacking, .. produced]
+                    } : item)],
+                };
             }
 
             return next;

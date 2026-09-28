@@ -312,6 +312,37 @@ public static class LiveFire
         }, null);
     }
 
+    /// <summary>
+    /// A vehicle's OVR of its Location (D7.1, D7.11; ruling R11.11), read from the state: every non-captured enemy unit there is attacked, Infantry as
+    /// targets and vehicles on the Vehicle line or through their Vulnerable crews; the map facts (terrain, SMOKE, a wall crossed) are the planner's.
+    /// </summary>
+    public static (FireAttack? Attack, string? Reason) OverrunFromState(GameState state, string vehicleId)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        // D7.11 (referee, pass 11): a vehicle destroyed before its declared OVR resolves still makes it, at half FP.
+        if (state.Unit(vehicleId) is not { Status: InstanceStatus.Active or InstanceStatus.Wrecked } vehicle || !IsVehicle(vehicle) || state.Location(vehicleId)?.Location is not { } at
+            || vehicle.Definition is not { } definition)
+        {
+            return (null, "play.overrun: an OVR is made by a vehicle on the map (D7.1)");
+        }
+
+        UnitInstance[] enemies = [.. state.At(at).OfType<UnitInstance>()
+            .Where(unit => unit.Status == InstanceStatus.Active && unit.Side != vehicle.Side && !Is(unit, Conditions.Captured)).OrderBy(unit => unit.Id, StringComparer.Ordinal)];
+        var targetSide = state.Sides.FirstOrDefault(side => side.Id != vehicle.Side)?.Id;
+        var immobile = Is(vehicle, Conditions.Immobilized) || Is(vehicle, Conditions.Bogged) || vehicle.Status == InstanceStatus.Wrecked;
+        var vehicles = enemies.Where(IsVehicle).ToArray();
+        return (new FireAttack("MPh", "phasing", null, at.ToString(), at.ToString(), null, null, 0, true, null, state.ScenarioMonth, null,
+            [.. enemies.Where(unit => !IsVehicle(unit)).Select(unit => Target(unit, at))],
+            targetSide is null ? null : state.Side(targetSide)?.Elr, null)
+        {
+            FireKind = ScenarioA1FireCalculator.OverrunFire,
+            Overrun = new FireOverrun(vehicle.Id, definition.Definition, at.ToString(), CrewExposed(vehicle), immobile,
+                Is(vehicle, Conditions.Malfunctioned) || Is(vehicle, Conditions.Disabled), Is(vehicle, Conditions.BmgMalfunctioned), Is(vehicle, Conditions.CmgMalfunctioned)),
+            Vehicles = vehicles.Length > 0 ? [.. vehicles.Select(unit => Vehicle(unit, at))] : null,
+            TargetSideNoQuarter = targetSide is not null && state.NoQuarter.Contains(targetSide, StringComparer.Ordinal) ? true : null,
+        }, null);
+    }
+
     /// <summary>The rolls of a record, rebuilt from its roll ids and the recorded dice, in the calculator's shape.</summary>
     public static FireRolls? Rolls(FireResolved fire, FireAttack attack, IReadOnlyDictionary<string, DiceRolled> rolls)
     {
@@ -504,6 +535,11 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
         if (recorded.FireKind == ScenarioA1FireCalculator.ResidualFire)
         {
             (expected, reason) = LiveFire.ResidualFromState(state, target, recorded.ResidualFp ?? 0);
+        }
+        else if (recorded.FireKind == ScenarioA1FireCalculator.OverrunFire)
+        {
+            // D7.1 (ruling R11.11): an OVR is read from its vehicle's state; its crew's CE status is recorded as the OVR saw it.
+            (expected, reason) = LiveFire.OverrunFromState(state, recorded.Overrun?.VehicleId ?? string.Empty);
         }
         else
         {

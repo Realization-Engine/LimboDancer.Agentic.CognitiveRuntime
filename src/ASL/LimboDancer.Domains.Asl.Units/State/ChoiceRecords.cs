@@ -17,6 +17,14 @@ public sealed record ChoicePending(string Key, string Kind, string Side, IReadOn
     public const string UnlikelyKill = "unlikely-kill";
     public const string Acquisition = "acquisition";
 
+    /// <summary>
+    /// A12.41 (backlog pass 11, ruling R11.12): concealed Personnel entered by an enemy vehicle are revealed or take one combined PAATC, their owner's
+    /// choice; the options are <see cref="Reveal"/> and <see cref="Check"/>.
+    /// </summary>
+    public const string Paatc = "paatc";
+    public const string Reveal = "reveal";
+    public const string Check = "paatc";
+
     /// <summary>The answers to a yes-or-no choice: take the option, or decline it.</summary>
     public const string Take = "take";
     public const string Decline = "decline";

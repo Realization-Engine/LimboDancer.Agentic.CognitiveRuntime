@@ -504,7 +504,7 @@ public sealed class BacklogPass6Tests : IDisposable
     [Fact]
     public async Task AVehicleEnteringConcealedEnemyUnitsRevealsThemAndRemovesADummy()
     {
-        // A12.41 (R6.8): the Russian squad under "?" in B8 is revealed, and the Dummy there removed.
+        // A12.41 (R11.12, replacing R6.8): the Russian owner chooses to reveal the squad under "?" in B8, and the Dummy there is removed.
         await Setup("german", 7, Vehicle("de-t", "attacker-truck", "bd01:A8:0", "german"), Squad("r1", "bd01:B8:0", "russian", Conditions.Concealed),
             Dummy("rd", "bd01:B8:0", "russian"), Squad("r2", "bd01:J9:0", "russian"));
         await Advance(2);
@@ -512,6 +512,8 @@ public sealed class BacklogPass6Tests : IDisposable
         await Pass();
         Assert.Null(Planner().VehicleEntries(Current, Current.Unit("de-t")!).Single(item => item.To == At("bd01:B8:0")).Bar);
         Committed(await Step("de-t", "enter", to: "bd01:B8:0"));
+        Assert.Equal(ChoicePending.Paatc, Current.Choice!.Kind);
+        Committed(await Choose("paatc:de-t:bd01:B8:0", ChoicePending.Reveal));
         Assert.False(Is(Current.Unit("r1")!, Conditions.Concealed));
         Assert.Equal(InstanceStatus.Eliminated, Current.Unit("rd")!.Status);
         Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);

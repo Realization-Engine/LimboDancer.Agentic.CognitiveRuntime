@@ -406,14 +406,51 @@ else if (state is not null)
             <button id="propose-pass" disabled="@(state.Movement is not { WindowOpen: true })" @onclick='@(() => ProposeSimple(GameActions.PassFire, "pass"))'>Propose: the DEFENDER passes</button>
             <button id="propose-end-move" disabled="@(state.Movement is not { WindowOpen: false })" @onclick="ProposeEndMove">Propose: end the move@(EndingSome ? " of the checked units" : "")</button>
         </div>
+        @if (state.Movement is { Vehicle: true, WindowOpen: true, Members: [{ } reacting] } && state.Location(reacting)?.Location is { } reactionAt
+            && ReactionUnits(reactionAt, reacting).Any())
+        {
+            <h4>CC Reaction Fire</h4>
+            <p class="muted" id="reaction-help">
+                In the DEFENDER's window on the moving vehicle's MP expenditure in their Location, one unbroken, unpinned DEFENDER unit, alone or with a
+                SMC, may attack it in CC as its Defensive First Fire, after a PAATC against an AFV unless exempt or already passed this phase; after an
+                OVR, only once the OVR is resolved (D7.2, D7.21, A11.6). The vehicle does not attack back.
+            </p>
+            <div class="toolbar">
+                <label>
+                    Attacker
+                    <select id="reaction-attacker" value="@reactionAttacker" @onchange="@(args => reactionAttacker = args.Value as string ?? string.Empty)">
+                        <option value="">choose</option>
+                        @foreach (var unit in ReactionUnits(reactionAt, reacting))
+                        {
+                            <option value="@unit.Id">@unit.Id</option>
+                        }
+                    </select>
+                </label>
+                <label>
+                    With SMC
+                    <select id="reaction-leader" value="@reactionLeader" @onchange="@(args => reactionLeader = args.Value as string ?? string.Empty)">
+                        <option value="">none</option>
+                        @foreach (var unit in ReactionUnits(reactionAt, reacting).Where(unit => unit.Kind is "asl:leader" or "asl:hero"))
+                        {
+                            <option value="@unit.Id">@unit.Id</option>
+                        }
+                    </select>
+                </label>
+                <button id="propose-reaction" disabled="@(reactionAttacker.Length == 0)" @onclick="@(() => ProposeVehicleCc(reactionAt.ToString(), [reactionAttacker, .. (reactionLeader.Length > 0 ? new[] { reactionLeader } : [])], null, [], false))">Propose: CC Reaction Fire at @reacting</button>
+            </div>
+        }
         @if (VehicleCandidates.Any())
         {
             <h4>Vehicle movement</h4>
             <p class="muted" id="vehicle-help">
-                A vehicle spends its MP one expenditure at a time, and the DEFENDER may fire or pass after each (D2.1, A8.1): Start for 1 MP, or none
-                when it begins in Motion (D2.12, D2.4); a VCA change of one hexspine for 1 MP (D2.11); entering a hex its VCA points at, at the Terrain
-                Chart cost of Open Ground, Grain, or a road (D2.16); and Stop for 1 MP (D2.13). It ends its move in Motion only when it cannot Stop or
-                move on (D2.4); a vehicle in Motion must spend at least one MP. Reverse movement, ESB, bog, and OVR are not built.
+                A vehicle spends its MP one expenditure at a time, and the DEFENDER may fire or pass after each (D2.1, A8.1): Start for 1 MP, forward
+                or in Reverse, or none when it begins in Motion (D2.12, D2.23, D2.4); a VCA change of one hexspine for 1 MP, 2 in woods, buildings,
+                or rubble (D2.11); entering a hex its VCA points at, or in Reverse a rear hex at four or three times the cost, at the Terrain Chart
+                cost of its movement type, woods for ALL its MP or, fully-tracked, half its MP, with a Bog DR (D2.2, B13.41, D8.2); VBM around a
+                woods or building obstacle along a clear hexside for twice Open Ground (D2.3); a Minimum Move into a hex costing more than its
+                allotment (D2.15); ESB for up to a quarter more MP at the risk of immobilization (D2.5); an OVR of an enemy-occupied Location for a
+                quarter of its MP more (D7.1); and Stop for 1 MP (D2.13). It ends its move in Motion only when it cannot Stop or move on (D2.4); a
+                bogged vehicle's first expenditure is its Bog Removal (D8.3).
             </p>
             <div class="toolbar">
                 <label>
@@ -430,21 +467,42 @@ else if (state is not null)
                 {
                     var (spentMp, allotmentMp) = GamePlanner.VehicleHalfMp(chosen);
                     var movingNow = state.Movement is { Vehicle: true } under ? under.Started && !under.Stopped ? ", moving" : ", stopped: Start costs 1 MP" : GameState.Condition(chosen, Conditions.Motion) == ConditionState.True ? ", in Motion: no Start MP" : ", stopped: Start costs 1 MP";
-                    <span id="vehicle-state" data-vca="@UnitFacings.Name(vca)">VCA @UnitFacings.Name(vca), @HalfMpText(spentMp) of @HalfMpText(allotmentMp) MP spent, @HalfMpText(Math.Max(0, allotmentMp - spentMp)) left@(movingNow)</span>
+                    var reversing = state.Movement is { Vehicle: true, Reverse: true };
+                    var bogged = GameState.Condition(chosen, Conditions.Bogged) == ConditionState.True;
+                    <span id="vehicle-state" data-vca="@UnitFacings.Name(vca)">VCA @UnitFacings.Name(vca), @HalfMpText(spentMp) of @HalfMpText(allotmentMp) MP spent, @HalfMpText(Math.Max(0, allotmentMp - spentMp)) left@(movingNow)@(reversing ? ", in Reverse" : "")@(chosen.Straddling is { } lane ? $", in Bypass along the hexside with {lane}" : "")@(chosen.EsbMp > 0 ? $", ESB +{chosen.EsbMp} MP" : "")@(bogged ? ", bogged" : "")@(GameState.Condition(chosen, Conditions.Mired) == ConditionState.True ? ", Mired" : "")</span>
                     var vehicleMoving = state.Movement is { Vehicle: true } driving ? driving.Started && !driving.Stopped
                         : GameState.Condition(chosen, Conditions.Motion) == ConditionState.True;
-                    @if (!vehicleMoving)
+                    @if (state.Movement is { Vehicle: true, Overrun: { } overrunAt } overrunning)
+                    {
+                        <button id="vehicle-resolve-ovr" disabled="@overrunning.WindowOpen" title="@(overrunning.WindowOpen ? "The DEFENDER fires or passes first (D7.1)" : "")" @onclick='@(() => ProposeOverrun())'>Propose: resolve the OVR of @overrunAt (D7.1)</button>
+                    }
+                    else if (bogged)
+                    {
+                        <button id="vehicle-unbog" @onclick='@(() => ProposeVehicleStep("start"))'>Propose: Bog Removal (colored dr x white dr MP; D8.3)</button>
+                    }
+                    else if (!vehicleMoving)
                     {
                         <button id="vehicle-start" @onclick='@(() => ProposeVehicleStep("start"))'>Propose: start (1 MP)</button>
+                        <button id="vehicle-start-reverse" @onclick='@(() => ProposeVehicleStep("start", reverse: true))'>Propose: start in Reverse (1 MP; D2.23)</button>
                     }
                     else
                     {
                     <button id="vehicle-turn-left" @onclick='@(() => ProposeVehicleStep("turn", facing: UnitFacings.Name((UnitFacing)(((int)vca + 1) % 6))))'>Propose: VCA to @UnitFacings.Name((UnitFacing)(((int)vca + 1) % 6)) (1 MP)</button>
                     <button id="vehicle-turn-right" @onclick='@(() => ProposeVehicleStep("turn", facing: UnitFacings.Name((UnitFacing)(((int)vca + 5) % 6))))'>Propose: VCA to @UnitFacings.Name((UnitFacing)(((int)vca + 5) % 6)) (1 MP)</button>
-                    @foreach (var (to, cost, bar) in Live.Planner.VehicleEntries(state, chosen))
+                    @foreach (var (to, straddling, cost, bar, all, bog) in Live.Planner.VehicleEntries(state, chosen, vehicleAllMp))
                     {
-                        <button class="vehicle-enter" data-to="@to" disabled="@(cost is null)" title="@(bar ?? "")" @onclick="@(() => ProposeVehicleStep("enter", to: to.ToString()))">Propose: enter @to@(cost is { } half ? $" ({HalfMpText(half)} MP)" : "")</button>
+                        var inBypass = straddling is not null;
+                        <button class="vehicle-enter" data-to="@to" data-bypass="@inBypass" disabled="@(cost is null)" title="@(bar ?? "")" @onclick="@(() => ProposeVehicleStep("enter", to: to.ToString(), bypass: inBypass))">Propose: enter @to@(inBypass ? $" in VBM beside {straddling}" : "")@(reversing ? " in Reverse" : "")@(cost is { } half ? all ? " (ALL its MP)" : $" ({HalfMpText(half)} MP)" : "")@(bog is { } drm ? $", Bog DR {drm:+0;-0;+0}" : "")</button>
                     }
+                    <label title="An OVR of the enemy-occupied Location entered: a quarter of the printed MP more, resolved after the DEFENDER passes (D7.1)."><input type="checkbox" id="vehicle-ovr" checked="@vehicleOverrun" @onchange="@(args => vehicleOverrun = args.Value is true)" /> with an OVR</label>
+                    <label title="A fully-tracked vehicle enters woods for half its MP with a Bog DR at +3, or for ALL its MP (B13.41, B13.42)."><input type="checkbox" id="vehicle-all-mp" checked="@vehicleAllMp" @onchange="@(args => vehicleAllMp = args.Value is true)" /> woods for ALL MP</label>
+                    <label title="Only when the hex costs more than the printed allotment, as its only entry of the MPh; it ends in Motion (D2.15)."><input type="checkbox" id="vehicle-minimum" checked="@vehicleMinimum" @onchange="@(args => vehicleMinimum = args.Value is true)" /> Minimum Move</label>
+                    @if (GamePlanner.IsTracked(chosen))
+                    {
+                        <label title="A tracked vehicle, once per MPh: +1 per MP sought and its manufacturer's DRM; 12 or more immobilizes it (D2.5).">ESB MP <input id="vehicle-esb-mp" value="@vehicleEsb" @onchange="@(args => vehicleEsb = args.Value as string ?? string.Empty)" size="2" /></label>
+                        <button id="vehicle-esb" disabled="@(!int.TryParse(vehicleEsb, out _))" @onclick='@(() => ProposeVehicleStep("esb"))'>Propose: ESB</button>
+                    }
+                    <button id="vehicle-declare-ovr" title="After the concealed units of the Location it entered were revealed or tested (A12.41)" @onclick='@(() => ProposeVehicleStep("overrun"))'>Propose: OVR here (A12.41)</button>
                     <button id="vehicle-stop" @onclick='@(() => ProposeVehicleStep("stop"))'>Propose: stop (1 MP)</button>
                     @foreach (var towable in state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Kind == "asl:gun" && item.Position is MapPosition gunAt
                         && gunAt.Location == state.Location(chosen.Id)?.Location))
@@ -533,6 +591,62 @@ else if (state is not null)
             </label>
             <button id="propose-advance-units" disabled="@(advanceUnits.Count == 0 || advanceTo.Trim().Length == 0)" @onclick="ProposeAdvanceUnits">Propose: advance</button>
         </div>
+    }
+    @if (state.Phase == "ccph" && VehicleCcLocations.Any())
+    {
+        <h4>Close Combat with vehicles</h4>
+        <p class="muted" id="vehicle-cc-help">
+            In a Location holding a vehicle CC is sequential: the non-vehicular side attacks first, one attack at a time, then the sides alternate
+            until every unit has attacked or its side passes (A11.31). Infantry attack a vehicle with their CCV as the Kill Number, one unit or one
+            with a SMC (A11.5); a vehicle attacks Infantry with its CMG and CE AAMG on the CCT (A11.62). CC between Infantry there is not built.
+        </p>
+        @foreach (var location in VehicleCcLocations)
+        {
+            var (nextSide, _) = Live.Planner.VehicleCloseCombatTurn(state, location);
+            var here = state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active).ToArray();
+            var attacked = state.CloseCombats.FirstOrDefault(item => item.Location == location && !item.Closed)?.Attacking ?? [];
+            <div class="toolbar vehicle-cc" data-location="@location">
+                <span>@location: the @nextSide side attacks next.</span>
+                <label>
+                    Attacker
+                    <select class="vehicle-cc-attacker" value="@vehicleCcAttacker" @onchange="@(args => vehicleCcAttacker = args.Value as string ?? string.Empty)">
+                        <option value="">choose</option>
+                        @foreach (var unit in here.Where(unit => unit.Side == nextSide && !LiveFire.IsVehicle(unit) && unit.Kind != UnitKinds.Dummy && !attacked.Contains(unit.Id)
+                            && GameState.Condition(unit, Conditions.Broken) != ConditionState.True && GameState.Condition(unit, Conditions.Captured) != ConditionState.True))
+                        {
+                            <option value="@unit.Id">@unit.Id</option>
+                        }
+                    </select>
+                </label>
+                <label>
+                    With SMC
+                    <select class="vehicle-cc-leader" value="@vehicleCcLeader" @onchange="@(args => vehicleCcLeader = args.Value as string ?? string.Empty)">
+                        <option value="">none</option>
+                        @foreach (var unit in here.Where(unit => unit.Side == nextSide && unit.Kind is "asl:leader" or "asl:hero"))
+                        {
+                            <option value="@unit.Id">@unit.Id</option>
+                        }
+                    </select>
+                </label>
+                <label>
+                    Vehicle
+                    <select class="vehicle-cc-vehicle" value="@vehicleCcVehicle" @onchange="@(args => vehicleCcVehicle = args.Value as string ?? string.Empty)">
+                        <option value="">choose</option>
+                        @foreach (var unit in here.Where(LiveFire.IsVehicle))
+                        {
+                            <option value="@unit.Id">@unit.Id (@unit.Side)</option>
+                        }
+                    </select>
+                </label>
+                @foreach (var unit in here.Where(unit => !LiveFire.IsVehicle(unit) && unit.Side != nextSide))
+                {
+                    <label><input type="checkbox" class="vehicle-cc-defender" checked="@vehicleCcDefenders.Contains(unit.Id)" @onchange="@(args => { if (args.Value is true) { vehicleCcDefenders.Add(unit.Id); } else { vehicleCcDefenders.Remove(unit.Id); } })" /> @unit.Id</label>
+                }
+                <button class="propose-vehicle-cc-attack" disabled="@(vehicleCcAttacker.Length == 0 || vehicleCcVehicle.Length == 0)" @onclick="@(() => ProposeVehicleCc(location.ToString(), [vehicleCcAttacker, .. (vehicleCcLeader.Length > 0 ? new[] { vehicleCcLeader } : [])], vehicleCcVehicle, [], false))">Propose: Infantry attack the vehicle</button>
+                <button class="propose-vehicle-cc-vehicle" disabled="@(vehicleCcVehicle.Length == 0 || vehicleCcDefenders.Count == 0)" @onclick="@(() => ProposeVehicleCc(location.ToString(), [], vehicleCcVehicle, [.. vehicleCcDefenders], false))">Propose: the vehicle attacks the checked Infantry</button>
+                <button class="propose-vehicle-cc-pass" @onclick="@(() => ProposeVehicleCc(location.ToString(), [], null, [], true))">Propose: the @nextSide side passes</button>
+            </div>
+        }
     }
     @if (state.Phase == "ccph")
     {
@@ -1278,6 +1392,16 @@ else if (state is not null)
     private string repairWeapon = string.Empty;
     private readonly HashSet<string> moveUnits = new(StringComparer.Ordinal);
     private string vehicleUnit = string.Empty;
+    private bool vehicleOverrun;
+    private bool vehicleAllMp;
+    private bool vehicleMinimum;
+    private string vehicleEsb = string.Empty;
+    private string reactionAttacker = string.Empty;
+    private string reactionLeader = string.Empty;
+    private string vehicleCcAttacker = string.Empty;
+    private string vehicleCcLeader = string.Empty;
+    private string vehicleCcVehicle = string.Empty;
+    private readonly HashSet<string> vehicleCcDefenders = new(StringComparer.Ordinal);
 
     /// <summary>
     /// The phasing side's vehicles that may spend MP now (D2.1): the moving vehicle while one moves; otherwise those not done moving, and not
@@ -1309,7 +1433,58 @@ else if (state is not null)
         }
     }
 
-    private Task ProposeVehicleStep(string kind, string? to = null, string? facing = null, string? edge = null)
+    /// <summary>The DEFENDER units that may make CC Reaction Fire at the moving vehicle in their Location (D7.21): unbroken, unpinned Infantry not in Melee.</summary>
+    private IEnumerable<UnitInstance> ReactionUnits(BoardLocation at, string vehicle) => state is null || state.Unit(vehicle) is not { } moving ? []
+        : state.At(at).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side != moving.Side && !LiveFire.IsVehicle(unit)
+            && unit.Kind != UnitKinds.Dummy && GameState.Condition(unit, Conditions.Broken) != ConditionState.True && GameState.Condition(unit, Conditions.Pinned) != ConditionState.True
+            && GameState.Condition(unit, Conditions.Melee) != ConditionState.True && GameState.Condition(unit, Conditions.Captured) != ConditionState.True)
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal);
+
+    /// <summary>The Locations whose sequential CC with a vehicle is open this CCPh (A11.31).</summary>
+    private IEnumerable<BoardLocation> VehicleCcLocations => state is null || state.Phase != "ccph" ? []
+        : state.Units.Where(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit)).Select(unit => state.Location(unit.Id)?.Location).OfType<BoardLocation>()
+            .Distinct().Where(location => Live.Planner.VehicleCloseCombatTurn(state, location).Open).OrderBy(location => location.ToString(), StringComparer.Ordinal);
+
+    private Task ProposeVehicleCc(string location, IReadOnlyList<string> attackers, string? vehicle, IReadOnlyList<string> defenders, bool pass)
+    {
+        var arguments = new Dictionary<string, object>
+        {
+            ["gameId"] = gameId,
+            ["attemptId"] = Attempt("vehicle-cc"),
+            ["expectedRevision"] = (long)history!.Events.Count,
+            ["location"] = location,
+        };
+        if (attackers.Count > 0)
+        {
+            arguments["attackers"] = attackers;
+        }
+
+        if (vehicle is not null)
+        {
+            arguments["vehicleId"] = vehicle;
+        }
+
+        if (defenders.Count > 0)
+        {
+            arguments["defenders"] = defenders;
+        }
+
+        if (pass)
+        {
+            arguments["pass"] = true;
+        }
+
+        return Propose(GameActions.VehicleCloseCombat, JsonSerializer.SerializeToElement(arguments));
+    }
+
+    private Task ProposeOverrun() => Propose(GameActions.Overrun, JsonSerializer.SerializeToElement(new
+    {
+        gameId,
+        attemptId = Attempt("overrun"),
+        expectedRevision = (long)history!.Events.Count,
+    }));
+
+    private Task ProposeVehicleStep(string kind, string? to = null, string? facing = null, string? edge = null, bool reverse = false, bool bypass = false)
     {
         var arguments = new Dictionary<string, object>
         {
@@ -1319,6 +1494,38 @@ else if (state is not null)
             ["vehicleId"] = vehicleUnit,
             ["kind"] = kind,
         };
+        if (reverse)
+        {
+            arguments["reverse"] = true;
+        }
+
+        if (kind == "enter")
+        {
+            if (bypass)
+            {
+                arguments["bypass"] = true;
+            }
+
+            if (vehicleOverrun)
+            {
+                arguments["overrun"] = true;
+            }
+
+            if (vehicleAllMp)
+            {
+                arguments["allMp"] = true;
+            }
+
+            if (vehicleMinimum)
+            {
+                arguments["minimumMove"] = true;
+            }
+        }
+
+        if (kind == "esb" && int.TryParse(vehicleEsb, out var esb))
+        {
+            arguments["mp"] = esb;
+        }
         if (to is not null)
         {
             arguments["to"] = to;
@@ -1366,6 +1573,11 @@ else if (state is not null)
         if (GamePlanner.IsArmoredVehicle(unit) && LiveFire.CrewExposed(unit))
         {
             yield return "CE";
+        }
+
+        if (unit.Straddling is { } lane)
+        {
+            yield return $"in Bypass beside {lane}";
         }
     }
 
@@ -1629,6 +1841,8 @@ else if (state is not null)
         (_, ChoicePending.Take) => "take it",
         (_, ChoicePending.Decline) => "decline it",
         (ChoicePending.Acquisition, _) => $"keep it on {option}",
+        (ChoicePending.Paatc, ChoicePending.Reveal) => "reveal them",
+        (ChoicePending.Paatc, _) => "take one combined PAATC",
         _ => option,
     };
 
@@ -2429,6 +2643,12 @@ else if (state is not null)
             return $"{byVehicle.VehicleId}'s AAMG in {byVehicle.LocationId}";
         }
 
+        // D7.1 (visual check, pass 11): an OVR's firer is its vehicle.
+        if (attack.Overrun is { } overrun)
+        {
+            return $"{overrun.VehicleId}'s OVR in {overrun.LocationId}";
+        }
+
         if (attack.Firers is not { Count: > 0 } firers)
         {
             return attack.FireKind == ScenarioA1FireCalculator.ResidualFire ? $"{attack.ResidualFp} Residual FP" : "no firers";
@@ -2758,6 +2978,10 @@ else if (state is not null)
         moveMinimum = false;
         moveBypass = string.Empty;
         vehicleIntended = string.Empty;
+        vehicleOverrun = false;
+        vehicleAllMp = false;
+        vehicleMinimum = false;
+        vehicleEsb = string.Empty;
     }
 
     private void Refresh()
@@ -3029,6 +3253,14 @@ else if (state is not null)
                 moveDoubleTime = false;
                 moveMinimum = false;
                 moveBypass = string.Empty;
+            }
+            else if (proposal.Action == GameActions.MoveVehicle)
+            {
+                // D7.1, B13.41, D2.15, D2.5 (table-player finding, pass 11): an OVR, an ALL entry, a Minimum Move, and ESB are declared for one expenditure.
+                vehicleOverrun = false;
+                vehicleAllMp = false;
+                vehicleMinimum = false;
+                vehicleEsb = string.Empty;
             }
             else if (proposal.Action == GameActions.Rally)
             {

@@ -105,7 +105,7 @@ public sealed partial class GamePlanner
             terrain = month is >= 4 and <= 9 ? "grain" : "open-ground";
         }
 
-        if (!VehicleEntryHalfMp.TryGetValue((type, terrain), out var halfMp))
+        if (!VehicleTerrainHalfMp.TryGetValue((type, terrain), out var halfMp))
         {
             return null;
         }

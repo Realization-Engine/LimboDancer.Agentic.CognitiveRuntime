@@ -165,7 +165,96 @@ public sealed record VehicleStepped(string Vehicle, string Kind, BoardLocation A
     public const string Stop = "stop";
     public const string Remain = "remain";
     public const string Exit = "exit";
+
+    /// <summary>An OVR declared in the vehicle's own Location after the A12.41 choice there (D7.1; ruling R11.12): a quarter of its allotment.</summary>
+    public const string Overrun = "overrun";
+
+    /// <summary>A Start declaring Reverse movement, and an entry made in Reverse (D2.2, D2.23; ruling R11.1).</summary>
+    public bool Reverse
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// For an entry or a VCA change in Bypass (D2.3; ruling R11.2): the ground-level Location across the hexside the vehicle straddles afterwards;
+    /// null for an entry to the hex center.
+    /// </summary>
+    public BoardLocation? Straddling
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the entry declares an OVR of the Location entered, its cost included (D7.1; ruling R11.11).</summary>
+    public bool Overrunning
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the entry is a Minimum Move, after which the vehicle ends its MPh in Motion (D2.15; ruling R11.5).</summary>
+    public bool MinimumMove
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the Start MP is a Bog Removal attempt, whose cost is its dr product (D8.3; ruling R11.10).</summary>
+    public bool BogRemoval
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the entry took the vehicle's whole printed allotment, after which it only Stops or ends in Motion (D2.7, B13.41; ruling R11.5).</summary>
+    public bool All
+    {
+        get; init;
+    }
 }
+
+/// <summary>
+/// <c>vehicle-check-rolled</c>: a vehicle's DR or dr outside combat (rulings R11.3, R11.4, R11.9, R11.10): a Bog Check (<c>bog</c>), a Bog Removal
+/// (<c>bog-removal</c>), an ESB DR (<c>esb</c>, for <see cref="Mp"/> extra MP), or a Mechanical Reliability DR (<c>mechanical</c>), with its roll,
+/// its total DRM, and its result: <c>passed</c>, <c>bogged</c>, <c>freed</c>, <c>mired</c>, or <c>immobilized</c>.
+/// </summary>
+public sealed record VehicleCheckRolled(string Vehicle, string Check, string Roll, int Drm, string Result) : EventPayload
+{
+    public const string Bog = "bog";
+    public const string BogRemoval = "bog-removal";
+    public const string Esb = "esb";
+    public const string Mechanical = "mechanical";
+
+    public const string Passed = "passed";
+    public const string Bogged = "bogged";
+    public const string Freed = "freed";
+    public const string Mired = "mired";
+    public const string Immobilized = "immobilized";
+
+    /// <summary>The MP an ESB DR sought (D2.5); zero for other checks.</summary>
+    public int Mp
+    {
+        get; init;
+    }
+
+    /// <summary>The result a check's Final DR or dr gives (D2.5, D2.51, D8.21, D8.3).</summary>
+    public static string For(string check, int final) => check switch
+    {
+        Bog => final >= 12 ? Bogged : Passed,
+        Esb => final >= 12 ? Immobilized : Passed,
+        Mechanical => final >= 12 ? Immobilized : Passed,
+        BogRemoval => final <= 4 ? Freed : final == 5 ? Mired : Immobilized,
+        _ => Passed,
+    };
+}
+
+/// <summary>
+/// <c>overrun-resolved</c>: a vehicle's OVR of its Location was resolved by the fire record named (D7.1; ruling R11.11); the DEFENDER's Reaction Fire
+/// window follows (D7.2).
+/// </summary>
+public sealed record OverrunResolved(string Vehicle, BoardLocation At, string Fire) : EventPayload;
+
+/// <summary>
+/// <c>paatc-taken</c>: a PAATC (A11.6, A12.41; rulings R11.12, R11.13, R11.17): the units that took it against the vehicle, the roll, the Morale Level
+/// used, the DRM, and whether it passed; a failure pins them (and reveals concealed ones), as the events after it record.
+/// </summary>
+public sealed record PaatcTaken(IReadOnlyList<string> Units, string Vehicle, string Roll, int Morale, int Drm, bool Passed) : EventPayload;
 
 /// <summary><c>movement-window-closed</c>: the DEFENDER passes on the stack's latest MF expenditure (A8.11).</summary>
 public sealed record MovementWindowClosed(int Step) : EventPayload;
@@ -235,6 +324,30 @@ public sealed record MovementState(IReadOnlyList<string> Movers, BoardLocation L
 
     /// <summary>The hexsides the stack moves along in Bypass in its Location (A4.3; ruling R10.7); null when it is not in Bypass.</summary>
     public IReadOnlyList<HexsideDirection>? Bypass
+    {
+        get; init;
+    }
+
+    /// <summary>Whether a moving vehicle Started in Reverse (D2.23; ruling R11.1).</summary>
+    public bool Reverse
+    {
+        get; init;
+    }
+
+    /// <summary>The Location of an OVR declared and not yet resolved (D7.1; ruling R11.11): the vehicle spends nothing more until it is.</summary>
+    public BoardLocation? Overrun
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the open window is the Reaction Fire window after an OVR's resolution (D7.2; ruling R11.13).</summary>
+    public bool Reaction
+    {
+        get; init;
+    }
+
+    /// <summary>The hex a moving vehicle left to enter its present one (D7.15; ruling R11.11): an OVR takes the wall TEM of the hexside it crossed.</summary>
+    public BoardLocation? EnteredFrom
     {
         get; init;
     }

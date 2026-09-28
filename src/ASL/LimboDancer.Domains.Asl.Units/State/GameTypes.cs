@@ -197,8 +197,26 @@ public static class Conditions
     /// <summary>A vehicle MG disabled for good by a repair dr of 6 (D3.7, p. 201; asl@1.10.0).</summary>
     public const string Disabled = "asl:disabled";
 
+    /// <summary>A bogged vehicle (D8.2, p. 208): Immobile until freed by a Bog Removal dr (D8.3; ruling R11.10).</summary>
+    public const string Bogged = "asl:bogged";
+
+    /// <summary>A Mired vehicle (D8.31): still bogged, with +1 to its Bog Removal colored dr (ruling R11.10).</summary>
+    public const string Mired = "asl:mired";
+
+    /// <summary>A malfunctioned BMG (D1.8; ruling R11.11): it adds no FP to an OVR.</summary>
+    public const string BmgMalfunctioned = "asl:bmg-malfunctioned";
+
+    /// <summary>A malfunctioned CMG (D1.8; ruling R11.11): it adds no FP to an OVR and makes no CC attack.</summary>
+    public const string CmgMalfunctioned = "asl:cmg-malfunctioned";
+
+    /// <summary>
+    /// The CC counter of a unit that made a CC Reaction Fire attack on a vehicle that survived (D7.21; ruling R11.13): no Non-CC Reaction Fire
+    /// at it; removed at the end of the phase.
+    /// </summary>
+    public const string CcReaction = "asl:cc-reaction";
+
     /// <summary>Conditions the state model adds to the vocabulary's states; they have no drawn form.</summary>
-    public static IReadOnlyList<string> Undrawn { get; } = [Captured, Melee, Abandoned];
+    public static IReadOnlyList<string> Undrawn { get; } = [Captured, Melee, Abandoned, Bogged, Mired, BmgMalfunctioned, CmgMalfunctioned, CcReaction];
 
     public static bool IsDeclared(string name, Vocabulary.UnitVocabulary vocabulary) =>
         Undrawn.Contains(name, StringComparer.Ordinal) || vocabulary.TryGetState(name, out _);
@@ -373,6 +391,21 @@ public sealed record UnitInstance(
     /// at every phase change.
     /// </summary>
     public IReadOnlyList<string>? MovedWith
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// A vehicle in Bypass (D2.3, D2.34; ruling R11.2): the ground-level Location across the hexside it straddles, beside the obstacle hex it
+    /// occupies; its CAFP is the vertex of that hexside its VCA faces. Null when it is at its hex center. Kept across phases (Stationary Bypass).
+    /// </summary>
+    public Maps.Coordinates.BoardLocation? Straddling
+    {
+        get; init;
+    }
+
+    /// <summary>The MP a successful ESB DR added to the vehicle's allotment this MPh (D2.5; ruling R11.3). Cleared at every phase change.</summary>
+    public int EsbMp
     {
         get; init;
     }

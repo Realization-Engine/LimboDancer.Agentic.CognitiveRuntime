@@ -74,12 +74,13 @@ public sealed class ScenarioA1CloseCombatReference
 /// <summary>
 /// Pinned read-only package for Close Combat in the CCPh (unit step 29; Scenario A1 Close Combat Review 2026-09-27): the
 /// Ambush drs, and for each declared Infantry attack the odds, the black Kill Number, the DRM, and the effects, with Field
-/// Promotion on an Original 2 (A18.12). It never rolls, attacks, or changes a game.
+/// Promotion on an Original 2 (A18.12); since backlog pass 11, CC by and against vehicles (R11.12 to R11.17). The manifest records its
+/// predecessor, fb0e0bf7 (unit step 29, revised). It never rolls, attacks, or changes a game.
 /// </summary>
 public sealed class ScenarioA1CloseCombatPackage : IDomainPackageResolver
 {
-    public const string ManifestSha256 = "fb0e0bf77f66684f95c351406e6929672b79940331e10832d9e273b8e6d651ee";
-    public const string MatrixSha256 = "e38e8d12a6ab1580c91734374a08268d7e4fd382f2fcea4a07462e203429cfd0";
+    public const string ManifestSha256 = "2dde0d2bd7f8a08dab8e808984ffee8b0a008e5a1c92b050c5c37163a0c0e5bf";
+    public const string MatrixSha256 = "ee109ae560382e0dd1edd368d986c20440603a89f99ec76fed2e3e7c44eb988a";
     public static readonly DomainPackageRef Identity = new(new DomainId("asl"), "scenario-a1-close-combat", "sha256:" + ManifestSha256);
 
     private static readonly string[] Cases =
@@ -87,6 +88,8 @@ public sealed class ScenarioA1CloseCombatPackage : IDomainPackageResolver
         "A1-cc-resolved", "A1-cc-ambush-resolved", "A1-cc-phase-outside", "A1-cc-unit-outside", "A1-cc-concealment-unreviewed", "A1-cc-prisoners-unreviewed",
         "A1-cc-overstacked-unreviewed", "A1-cc-attack-outside", "A1-cc-round-outside", "A1-cc-stacking-outside", "A1-cc-director-outside",
         "A1-cc-berserk-must-attack", "A1-cc-field-promotion-undecided", "A1-cc-roll-missing", "A1-cc-cx",
+        "A1-cc-vehicle-attacked", "A1-cc-vehicle-attacks", "A1-cc-vehicle-sequential", "A1-cc-vehicle-paatc", "A1-cc-vehicle-capture",
+        "A1-cc-vehicle-roll-missing",
     ];
 
     private static readonly string[] PinnedDigests = ["sourcePdfSha256", "cctTranscriptionSha256", "catalogSha256"];

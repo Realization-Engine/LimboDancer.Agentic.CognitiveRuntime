@@ -19,6 +19,9 @@ public static class ScenarioA1FireCalculator
     /// <summary>A vehicle's fire during its own MPh (D3.3; ruling R6.9).</summary>
     public const string BoundingFirstFire = "bounding-first-fire";
 
+    /// <summary>A vehicle's OVR of the Location it entered, a form of Bounding First Fire (D7.1; backlog pass 11, ruling R11.11).</summary>
+    public const string OverrunFire = "overrun";
+
     /// <summary>The Residual FP counters (A8.2: at most 12; A7.372: the highest counter at most half the FP used).</summary>
     public static readonly int[] ResidualCounters = [1, 2, 4, 6, 8, 12];
 
@@ -157,7 +160,7 @@ public static class ScenarioA1FireCalculator
     private static FireResolution Refused(string disposition, IReadOnlyList<string> reasons) =>
         new(disposition, reasons, null, [], [], null, []);
 
-    private static bool IsMovementFire(FireAttack attack) => attack.FireKind is not (null or BoundingFirstFire);
+    private static bool IsMovementFire(FireAttack attack) => attack.FireKind is not (null or BoundingFirstFire or OverrunFire);
 
     private static bool IsMultiLocation(FireAttack attack) =>
         attack.Firers is { Count: > 0 } firers && firers.Select(item => item.LocationId).Distinct(StringComparer.Ordinal).Count() > 1;
@@ -225,6 +228,21 @@ public static class ScenarioA1FireCalculator
             Need(hit.GunId, "ordnanceHit.gunId");
             Need(hit.Firepower, "ordnanceHit.firepower");
             Need(hit.CriticalHit, "ordnanceHit.criticalHit");
+        }
+        else if (attack.Overrun is { } overrun)
+        {
+            Need(overrun.VehicleId, "overrun.vehicleId");
+            Need(overrun.DefinitionId, "overrun.definitionId");
+            Need(overrun.LocationId, "overrun.locationId");
+            Need(overrun.CrewExposed, "overrun.crewExposed");
+            Need(overrun.Immobile, "overrun.immobile");
+            Need(overrun.MainArmamentMalfunctioned, "overrun.mainArmamentMalfunctioned");
+            Need(overrun.BmgMalfunctioned, "overrun.bmgMalfunctioned");
+            Need(overrun.CmgMalfunctioned, "overrun.cmgMalfunctioned");
+            Need(attack.FirerLocationId, "firerLocationId");
+            Need(attack.Range, "range");
+            Need(attack.SameLevel, "sameLevel");
+            NeedLos(attack.Los, string.Empty);
         }
         else if (attack.VehicleFire is { } vehicle)
         {
@@ -325,7 +343,7 @@ public static class ScenarioA1FireCalculator
         }
 
         // Ruling R10.4: a target at another level names how many levels above the firer it is, for PBF (A7.21).
-        if (attack.VehicleFire is null && attack.OrdnanceHit is null && !residual)
+        if (attack.VehicleFire is null && attack.OrdnanceHit is null && attack.Overrun is null && !residual)
         {
             if (attack.SameLevel == false)
             {
@@ -388,6 +406,7 @@ public static class ScenarioA1FireCalculator
             // Ruling R8.1: an ordnance hit of Defensive First Fire attacks the moving units, its FFMO and FFNAM already To Hit Cases J3 and J4.
             ("MPh", "non-phasing", null) => attack.OrdnanceHit is not null,
             ("MPh", "phasing", BoundingFirstFire) => attack.VehicleFire is not null,
+            ("MPh", "phasing", OverrunFire) => attack.Overrun is not null,
             _ => false,
         };
         if (!phaseAdmitted)
@@ -398,10 +417,11 @@ public static class ScenarioA1FireCalculator
         // Backlog pass 10 (rulings R10.4, R10.5, R10.8, R10.13): a wall or hedge TEM of at most its printed value and Height Advantage for
         // Direct Fire by Infantry, not Residual FP or an ordnance hit; a Snap Shot as Infantry Defensive First Fire with no wall crossed;
         // Hazardous Movement in the MPh.
+        // D7.15 (ruling R11.11): an OVR takes the wall or hedge TEM of the hexside its vehicle entered across, never Height Advantage or a Snap Shot.
         var direct = kind != ResidualFire && attack.OrdnanceHit is null && attack.VehicleFire is null;
         if ((attack.HexsideTem is { } wall && (!direct || wall.Terrain is not ("wall" or "hedge") || wall.Tem < 0 || wall.Tem > (wall.Terrain == "wall" ? 2 : 1)))
-            || (attack.HeightAdvantage == true && !direct)
-            || (attack.SnapShot == true && (!direct || phase != "MPh" || kind is not (FirstFire or SubsequentFirstFire) || attack.HexsideTem is not null))
+            || (attack.HeightAdvantage == true && (!direct || attack.Overrun is not null))
+            || (attack.SnapShot == true && (!direct || attack.Overrun is not null || phase != "MPh" || kind is not (FirstFire or SubsequentFirstFire) || attack.HexsideTem is not null))
             || (attack.HazardousMovement == true && phase != "MPh"))
         {
             outside.Add("asl.a1.fire.terrain-fact-outside");
@@ -429,6 +449,12 @@ public static class ScenarioA1FireCalculator
         if (attack.VehicleFire is { } vehicleFire)
         {
             VehicleFireOutside(attack, vehicleFire, reference, targetDefinitions, outside);
+            return outside.Distinct(StringComparer.Ordinal).ToList();
+        }
+
+        if (attack.Overrun is { } overrun)
+        {
+            OverrunOutside(attack, overrun, reference, targetDefinitions, outside);
             return outside.Distinct(StringComparer.Ordinal).ToList();
         }
 
@@ -675,6 +701,82 @@ public static class ScenarioA1FireCalculator
         }
     }
 
+    /// <summary>
+    /// A vehicle's OVR (D7.1, D7.12, D7.13; ruling R11.11): as Bounding First Fire in its own MPh, alone (D7.14), by a vehicle of the catalog at the
+    /// enemy units of its own Location, never an AFV (D7.12; its Vulnerable crew is attacked through <see cref="FireAttack.Vehicles"/>), at range 0
+    /// with a clear LOS.
+    /// </summary>
+    private static void OverrunOutside(FireAttack attack, FireOverrun overrun, ScenarioA1FireReference reference,
+        IReadOnlyList<FireDefinition?> targetDefinitions, List<string> outside)
+    {
+        var definition = reference.Definitions.GetValueOrDefault(overrun.DefinitionId!);
+        if (definition is not { IsVehicle: true } || attack.Firers is { Count: > 0 } || Directors(attack).Any() || attack.VehicleFire is not null
+            || attack.OrdnanceHit is not null || overrun.LocationId != attack.FirerLocationId || overrun.LocationId != attack.TargetLocationId)
+        {
+            outside.Add("asl.a1.fire.overrun-outside");
+        }
+
+        if (attack.Targets!.Any(item => item.LocationId != attack.TargetLocationId)
+            || targetDefinitions.Any(item => item is null || (item.Id != "dummy" && definition is not null && item.Nationality == definition.Nationality))
+            || (attack.Vehicles ?? []).Any(item => definition is not null && reference.Definitions.GetValueOrDefault(item.DefinitionId!)?.Nationality == definition.Nationality)
+            || !ScenarioA1FireReference.Tem.ContainsKey(attack.TargetTerrain!))
+        {
+            outside.Add("asl.a1.fire.target-outside");
+        }
+
+        if (attack.Range != 0 || attack.SameLevel != true)
+        {
+            outside.Add("asl.a1.fire.out-of-range");
+        }
+
+        if (attack.Los!.Blocked == true)
+        {
+            outside.Add("asl.a1.fire.los-blocked");
+        }
+
+        if (attack.Rolls is { } rolls && Malformed(rolls))
+        {
+            outside.Add("asl.a1.fire.roll-malformed");
+        }
+    }
+
+    /// <summary>
+    /// The weapons that add FP to an OVR (D7.11; ruling R11.11): the MA when it is a Gun, manned and functioning (the base of 4 FP), or, for the
+    /// halftrack, its MA AAMG while its crew is CE; each BMG and CMG not malfunctioned. The RMG and AAMG of tanks are not in the catalog.
+    /// </summary>
+    public static IReadOnlyList<(string Weapon, int Firepower)> OverrunWeapons(FireOverrun overrun, FireDefinition definition)
+    {
+        var weapons = new List<(string, int)>();
+        if (definition.Unarmored == true)
+        {
+            return weapons;
+        }
+
+        if (definition.MainArmament == "aamg")
+        {
+            if (overrun.CrewExposed == true && overrun.MainArmamentMalfunctioned != true && definition.AntiAircraftMg is { } aamg)
+            {
+                weapons.Add((FireOverrunEffect.MainArmament, aamg));
+            }
+        }
+        else if (definition.Caliber is not null && overrun.MainArmamentMalfunctioned != true)
+        {
+            weapons.Add((FireOverrunEffect.MainArmament, 0));
+        }
+
+        if (definition.BowMg is { } bmg && overrun.BmgMalfunctioned != true)
+        {
+            weapons.Add((FireOverrunEffect.BowMg, bmg));
+        }
+
+        if (definition.CoaxialMg is { } cmg && overrun.CmgMalfunctioned != true)
+        {
+            weapons.Add((FireOverrunEffect.CoaxialMg, cmg));
+        }
+
+        return weapons;
+    }
+
     private static bool Malformed(FireRolls rolls) =>
         !Dice(rolls.Attack, allowEmpty: true)
         || rolls.RandomSelection?.Values.Any(dr => dr is < 1 or > 6) == true
@@ -751,7 +853,7 @@ public static class ScenarioA1FireCalculator
             }
         }
 
-        if (attack.FireKind != ResidualFire && attack.OrdnanceHit is null && attack.VehicleFire is null)
+        if (attack.FireKind != ResidualFire && attack.OrdnanceHit is null && attack.VehicleFire is null && attack.Overrun is null)
         {
             // Ruling R10.4 (backlog pass 10): Infantry fire at another level is decided with the map read's LOS and Hindrance.
             var firers = attack.Firers!;
@@ -824,7 +926,8 @@ public static class ScenarioA1FireCalculator
 
         // Residual FP is not fired from anywhere; any other attack from within the Location gets no cover.
         var within = attack.FireKind != ResidualFire && (attack.FirerLocationId == attack.TargetLocationId
-            || (attack.Firers ?? []).Any(item => item.LocationId == attack.TargetLocationId) || attack.VehicleFire?.LocationId == attack.TargetLocationId);
+            || (attack.Firers ?? []).Any(item => item.LocationId == attack.TargetLocationId) || attack.VehicleFire?.LocationId == attack.TargetLocationId
+            || attack.Overrun?.LocationId == attack.TargetLocationId);
         return within ? null : cover;
     }
 
@@ -897,6 +1000,7 @@ public static class ScenarioA1FireCalculator
             }
 
             var weapons = attack.VehicleFire is { } vehicleFire ? [VehicleWeaponEffect(vehicleFire, arithmetic)] : WeaponEffects(arithmetic);
+            var overrunEffect = attack.Overrun is { } overrunning ? OverrunEffect(overrunning, arithmetic) : null;
             var firerEffects = attack.FireKind == FinalProtectiveFire ? FinalProtectiveFireChecks(arithmetic) : null;
             var vehicleEffects = vehicles.Count == 0 ? null : VehicleEffects(arithmetic);
             if (undecided.Count != 0)
@@ -923,7 +1027,7 @@ public static class ScenarioA1FireCalculator
 
             var firers = attack.Firers ?? [];
             var marked = firers.Select(item => item.UnitId!).Concat(Directors(attack).Select(item => item.UnitId!))
-                .Concat(attack.VehicleFire is { } firing ? [firing.VehicleId!] : []).ToArray();
+                .Concat(attack.VehicleFire is { } firing ? [firing.VehicleId!] : attack.Overrun is { } ovr ? [ovr.VehicleId!] : []).ToArray();
             return new FireResolution(FireResolution.Resolved, [], arithmetic,
                 attack.Targets!.Select(item => state[item.UnitId!].Effect()).ToArray(), marked, FireCounter(), firerConcealment)
             {
@@ -931,7 +1035,49 @@ public static class ScenarioA1FireCalculator
                 FirerEffects = firerEffects,
                 CompanionEffects = companions,
                 VehicleEffects = vehicleEffects,
+                OverrunEffect = overrunEffect,
             };
+        }
+
+        /// <summary>
+        /// D7.17 (ruling R11.11): an OVR's Original IFT DR of 12 malfunctions one weapon that added FP, chosen among several by Random Selection
+        /// (A9.71; the highest dr, ties included), or immobilizes a vehicle none of whose weapons added FP. The OVR itself is resolved normally.
+        /// </summary>
+        private FireOverrunEffect? OverrunEffect(FireOverrun overrun, FireArithmetic arithmetic)
+        {
+            if (arithmetic.OriginalDr != 12 || undecided.Count != 0)
+            {
+                return null;
+            }
+
+            var id = overrun.VehicleId!;
+            var weapons = OverrunWeapons(overrun, reference.Definitions[overrun.DefinitionId!]).Select(item => item.Weapon).ToArray();
+            if (weapons.Length == 0)
+            {
+                return new FireOverrunEffect(id, [], true);
+            }
+
+            if (weapons.Length == 1)
+            {
+                return new FireOverrunEffect(id, weapons, false);
+            }
+
+            var keys = weapons.Select(weapon => id + ":" + weapon).ToArray();
+            var selection = new Dictionary<string, int>(StringComparer.Ordinal);
+            foreach (var key in keys)
+            {
+                if (attack.Rolls!.WeaponSelection?.TryGetValue(key, out var dr) != true)
+                {
+                    undecided.Add("asl.a1.fire.roll-missing:weaponSelection:" + string.Join(",", keys));
+                    return null;
+                }
+
+                selection[key] = dr;
+                usedRolls.Add("weaponSelection:" + key);
+            }
+
+            var highest = selection.Values.Max();
+            return new FireOverrunEffect(id, [.. weapons.Where(weapon => selection[id + ":" + weapon] == highest)], false);
         }
 
         // The DRM of an attack that belong to its Personnel targets rather than to the attack: TEM, an AFV's or wreck's cover, and the First
@@ -1166,7 +1312,7 @@ public static class ScenarioA1FireCalculator
             _ when attack.OrdnanceHit is not null => null,
             ResidualFire => null,
             FirstFire => "first-fire",
-            BoundingFirstFire => "bounding-fire",
+            BoundingFirstFire or OverrunFire => "bounding-fire",
             SubsequentFirstFire or FinalProtectiveFire => "final-fire",
             _ => attack.Phase is "PFPh" or "AFPh" ? "prep-fire" : "final-fire",
         };
@@ -1187,6 +1333,22 @@ public static class ScenarioA1FireCalculator
             {
                 // C.6: the Gun's HE FP column; C3.53, C.4: never halved for a concealed target; C3.71: doubled by a Critical Hit.
                 known = vsConcealed = hit.Firepower!.Value * (hit.CriticalHit == true ? 2 : 1);
+            }
+            else if (attack.Overrun is { } overrun)
+            {
+                if (hasKnown)
+                {
+                    var fp = OverrunFirepower(overrun, false);
+                    firers.AddRange(fp);
+                    known = fp.Sum(item => item.Firepower);
+                }
+
+                if (hasConcealed)
+                {
+                    var fp = OverrunFirepower(overrun, true).Select(item => hasKnown ? item with { VsConcealed = true } : item).ToArray();
+                    firers.AddRange(fp);
+                    vsConcealed = fp.Sum(item => item.Firepower);
+                }
             }
             else if (attack.VehicleFire is { } vehicle)
             {
@@ -1234,7 +1396,7 @@ public static class ScenarioA1FireCalculator
             // A7.9: a doubles DR with no directing leader shifts the column; Residual FP is never subject to Cowering (A8.224);
             // heroes and Fanatic units are not subject to it, but a group with any other member Cowers (A15.2, A15.24, A10.8).
             // A7.9: no form of vehicular fire Cowers.
-            var cowered = !residual && hit is null && attack.VehicleFire is null && dice[0] == dice[1] && !directed
+            var cowered = !residual && hit is null && attack.VehicleFire is null && attack.Overrun is null && dice[0] == dice[1] && !directed
                 && attack.Firers!.Any(item => !reference.Definitions[item.DefinitionId!].IsHero && item.Fanatic != true);
             var inexperienced = (attack.Firers ?? []).Any(item => reference.Definitions[item.DefinitionId!].Class is "green" or "conscript");
             var shift = cowered ? (inexperienced ? 2 : 1) : 0;
@@ -1325,7 +1487,7 @@ public static class ScenarioA1FireCalculator
             // TH DR (C.3, C6.9).
             var hindrance = residual ? attack.Los?.HindranceDrm ?? 0
                 : hit is not null ? 0
-                : attack.VehicleFire is not null ? attack.Los!.HindranceDrm!.Value
+                : attack.VehicleFire is not null || attack.Overrun is not null ? attack.Los!.HindranceDrm!.Value
                 : attack.Firers!.Max(item => LosOf(attack, item)!.HindranceDrm!.Value);
             if (hindrance > 0)
             {
@@ -1368,6 +1530,11 @@ public static class ScenarioA1FireCalculator
             if (attack.HazardousMovement == true && state.Values.Any(unit => !unit.IsDummy && !unit.Pinned))
             {
                 drm.Add(new FireModifier("hazardous-movement", -2m, "A4.62"));
+            }
+            else if (attack.Overrun is not null && attack.TargetTerrain == "open-ground" && state.Values.Any(unit => !unit.IsDummy))
+            {
+                // D7.15 (ruling R11.11): an OVR against Infantry in Open Ground takes FFMO, cumulative with its TEM and SMOKE, moving or not.
+                drm.Add(new FireModifier("ffmo", -1m, "D7.15"));
             }
             else if (IsMovementFire(attack) && attack.SnapShot != true && state.Values.Any(unit => !unit.IsDummy && !unit.Pinned))
             {
@@ -1442,6 +1609,37 @@ public static class ScenarioA1FireCalculator
             // B9.31 (ruling R10.5): a wall or hedge TEM claimed against the attack lowers the Residual FP left as a Hindrance does.
             index -= hindrance + Math.Max(leadership, 0) + (attack.HexsideTem?.Tem ?? 0);
             return index < 0 ? null : ResidualCounters[index];
+        }
+
+        /// <summary>
+        /// An OVR's FP (D7.11; ruling R11.11): a base of 1 for an unarmored vehicle, 2 for an AFV, or 4 for an AFV whose MA is a manned, functioning
+        /// Gun; plus each MG that adds FP, tripled for TPBF and halved as Bounding First Fire; the whole halved when the vehicle became Immobile
+        /// before the OVR resolved, and against concealed targets (A12.13); never for Motion.
+        /// </summary>
+        private IEnumerable<FirerFirepower> OverrunFirepower(FireOverrun overrun, bool vsConcealed)
+        {
+            var definition = reference.Definitions[overrun.DefinitionId!];
+            var weapons = OverrunWeapons(overrun, definition);
+            var common = new List<FireModifier>();
+            if (overrun.Immobile == true)
+            {
+                common.Add(new FireModifier("immobile-before-ovr", 0.5m, "D7.11"));
+            }
+
+            if (vsConcealed)
+            {
+                common.Add(new FireModifier("area-fire-concealed-target", 0.5m, "A12.13"));
+            }
+
+            decimal Apply(decimal value, IEnumerable<FireModifier> multipliers) => multipliers.Aggregate(value, (total, item) => total * item.Value);
+            var gun = weapons.Any(item => item.Weapon == FireOverrunEffect.MainArmament && item.Firepower == 0);
+            var basis = definition.Unarmored == true ? 1 : gun ? 4 : 2;
+            yield return new FirerFirepower(overrun.VehicleId! + ":base", basis, common, Apply(basis, common));
+            foreach (var (weapon, printed) in weapons.Where(item => item.Firepower > 0))
+            {
+                List<FireModifier> multipliers = [new FireModifier("tpbf", 3m, "D7.11"), new FireModifier("bounding-fire", 0.5m, "D7.11"), .. common];
+                yield return new FirerFirepower(overrun.VehicleId! + ":" + weapon, printed, multipliers, Apply(printed, multipliers));
+            }
         }
 
         /// <summary>

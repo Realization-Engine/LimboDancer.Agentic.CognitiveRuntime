@@ -269,3 +269,22 @@ Pass 10 total: 08:36 to 10:36, 2:00 against the plan estimate of 7:10 (build 5:5
 | 10.1 to 10.9, package side (about 2:00) | 0:25 | Package stage, with the first live code |
 | 10.1 to 10.9, live side (about 3:55) | 0:38 | Referee fixes (0:09), live tests and page (0:09), table player fixes (0:08), older tests and visual check (0:12) |
 | Overhead (1:15) | 0:57 | Reading and rulings, referee and table player, documents, suites, merge gate |
+
+## Pass 11: Vehicle movement and OVR
+
+Estimate: 4:25 (build 3:10) in the [ASL Unit Backlog Passes Plan](<ASL Unit Backlog Passes Plan.md>). Kickoff 2026-09-28 11:10. Branch `feature/asl-backlog-pass-11`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| First reading of D2.1 to D2.7, D7, and D8.1 to D8.5 (earlier session) | 11:10 | 11:35 | 0:25 | The session ended before rulings |
+| State check, MapStudio tests (125 pass), commit of the pass 10 Play page fixes (9f82c7d) | 11:37 | 11:39 | 0:02 | |
+| Reading (D2.8 to D2.38, D2.5, D2.51, D7, D8, A5.2, A11.3 to A11.7, A12.41, B9.4, B13.41, B23.41, B24.4, the Terrain Chart's vehicle columns) and rulings R11.1 to R11.18 | 11:39 | 11:53 | 0:14 | |
+| Units model (Bypass, ESB, checks, PAATC, OVR, vehicle CC records), the Fire package's OVR, the Close Combat package's CC with vehicles | 11:53 | 12:07 | 0:14 | |
+| Planner: vehicle terrain, Reverse, VBM, ESB, Minimum Move, Bog, D2.6, OVR, A12.41 choice, PAATC, CC Reaction Fire, sequential CC | 12:07 | 12:28 | 0:21 | |
+| Play tests: 21 new, 4 older updated; Bypass Target Facing in ordnance fire; referee agent started | 12:28 | 12:40 | 0:12 | |
+| Referee's 16 findings (13 fixed with tests, 3 recorded), ScenarioA1 tests, Play page panels, table-player agent started, the pass 11 PDF comparison (59 subjects) | 12:40 | 13:12 | 0:32 | |
+| Source review registration, Fire and Close Combat package revisions; Authoring (161) and ScenarioA1 (414) tests pass | 13:12 | 13:22 | 0:10 | Test run in the background to 13:30 |
+| Table player's 13 findings: 11 fixed with 6 new tests and one extended, 2 recorded; Play tests (268) pass | 13:22 | 13:36 | 0:14 | |
+| Visual check in the Studio (three games), and the fire summary's OVR firer fixed | 13:36 | 13:41 | 0:05 | |
+| Review, design, backlog section 21, requirements, and ruling wording | 13:41 | 13:47 | 0:06 | |
+| Full local suite: build with warnings as errors, every solution test project, and the ScenarioA1 tests (2,138 passed, 30 skipped) | 13:47 | 13:57 | 0:10 | |

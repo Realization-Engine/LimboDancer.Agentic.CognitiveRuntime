@@ -418,14 +418,14 @@ public sealed class VehicleStepsTests : IDisposable
     [Fact]
     public async Task AVehicleSetsUpWithAVcaInReviewedTerrainAloneAmongVehicles()
     {
-        Refused(await TrySetup("german", Vehicle("de-t", "attacker-truck", "bd01:A7:0", "german")), "play.setup-vehicle");
+        Refused(await TrySetup("german", Vehicle("de-t", "attacker-truck", "bd01:D2:0", "german")), "play.setup-vehicle");
         Refused(await TrySetup("german", Vehicle("de-t", "attacker-truck", "bd01:A8:0", "german", facing: null)), "play.setup-vehicle");
         Refused(await TrySetup("german", Vehicle("de-t", "attacker-truck", "bd01:A8:0", "german", "east", Conditions.Concealed)), "play.setup-vehicle");
-        Refused(await TrySetup("german", Vehicle("de-t", "attacker-truck", "bd01:A8:0", "german"), Vehicle("de-ht", "attacker-halftrack", "bd01:A8:0", "german")),
-            "play.setup-vehicle");
         Refused(await TrySetup("german", Vehicle("de-t", "attacker-truck", "bd01:A8:0", "german"), Squad("r1", "defender-squad", "bd01:A8:0", "russian")),
             "play.setup-vehicle");
-        Committed(await TrySetup("german", Vehicle("de-t", "attacker-truck", "bd01:A8:0", "german")));
+
+        // A5.2, D2.14 (ruling R11.6): vehicles may share a Location.
+        Committed(await TrySetup("german", Vehicle("de-t", "attacker-truck", "bd01:A8:0", "german"), Vehicle("de-ht", "attacker-halftrack", "bd01:A8:0", "german")));
     }
 
     [Fact]
@@ -510,10 +510,15 @@ public sealed class VehicleStepsTests : IDisposable
         }));
         await Pass();
 
-        // A12.41 (ruling R6.8, since the backlog pass 6): the truck's entry into B2 stands and reveals the hidden squad there.
+        // A12.41 (ruling R11.12): the truck's entry into B2 stands, and the owner of the hidden squad there reveals it rather than take a PAATC.
         Committed(await Step("de-t2", "start"));
         await Pass();
         Committed(await Step("de-t2", "enter", to: "bd01:B2:0"));
+        Committed(await Do(GameActions.Choose, NoRoll(), new
+        {
+            key = "paatc:de-t2:bd01:B2:0",
+            option = ChoicePending.Reveal,
+        }));
         Assert.False(Is(Current.Unit("r1")!, Conditions.Hidden));
     }
 

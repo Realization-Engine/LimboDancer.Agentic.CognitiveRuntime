@@ -10,7 +10,6 @@ These are not left out: the game resolves them in a simplified way and records t
 
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
-| A vehicle entering a Location of concealed enemy Personnel | R6.8 | A12.41, p. 80 | The PAATC (pass 11) | The concealed and hidden Personnel there are revealed, as if their owner chose to reveal them rather than take the combined PAATC; a Dummy is removed. |
 | A Recalled AFV's fire after its Stun period | R7.10 | D5.341, p. 203 | Recall as a Stun only for its Player Turn | A Recalled AFV never fires its MA; it may still exit. |
 | The Shock and Unconfirmed Kill dr at the end of the RPh | R7.8 | C7.42, p. 177 | A phase-end roll | Each Shocked AFV or UK rolls during the RPh, before it ends; the RPh cannot end until each has. |
 | One fire marker for a tank's MA and its other weapons | R7.10 | D3.1, A7.1 | Per-weapon fire records | A tank's Prep or Final Fire marker from its MA also bars its AAMG, and the reverse. |
@@ -27,9 +26,12 @@ These are not left out: the game resolves them in a simplified way and records t
 | A unit pinned or broken in Bypass is treated as in the obstacle once the stack's move ends | R10.7 | A4.32, A4.33, p. 50 | Bypass kept per unit | It takes the obstacle's TEM in the DFPh rather than staying in the open portion for the rest of the MPh. |
 | The verifier takes the reveal of a move into concealed units, a Bypass exit, the Road Bonus flag, the leader bonus, and a Minimum Move's allowance as recorded | R10.8 to R10.11 | A12.15, A4.3, B3.4, A4.12, A4.134 | Map reads and the Random Selection record in the projector | They are planner reads recorded with the step, as range and LOS are; the projector checks a Minimum Move is a stack's only step and a forced back stays in its Location. |
 | A lone revealed SMC gives the mover no OVR option outside the reviewed building case | R10.11 | A4.15, A12.15, pp. 49, 78 | Infantry OVR (A4.15) | The stack is forced back, as if it declined the OVR. |
+| A vehicle that cannot move on may Stop or end its move beside an enemy AFV it could not kill, or after a VCA change at its CAFP | Table player, pass 11 | D2.6, D2.33, p. 199 | Refusing the entry that leaves no way on | After an ALL entry, a Minimum Move, its last MP, or beside a hidden AFV, it Stops or ends its move there. |
+| A side's pass in sequential CC covers all its units left in the Location | R11.16 | A11.31, p. 73 | A pass per unit | The side attacks no more there this CCPh. |
+| No Ambush dr in a Location holding a vehicle | R11.16 | A11.34, p. 73 | Ambush in sequential CC | The non-vehicular side attacks first, as A11.31 says, even where an Ambush would let the other side attack first. |
 | SMOKE grenades placed at another level: down a stairwell, to the ground level of a non-Interior building hex, or up across a Crest Line on a subsequent dr | R9.5 | A24.1, p. 91 | Levels in movement and fire (pass 10.2) | Refused; SMOKE goes in the squad's Location or an ADJACENT Location at its level. |
 
-Berserk and Surrender from Heat of Battle (R0.2, R19.2, R22.5, R28.1) left this list with unit step 30, 2026-09-27. The backlog pass 5 (2026-09-27) built the rest but the berserk route and the wreck: CX on a withdrawal, the captor's choice at a surrender, Acquisition on units, vehicle Motion and MP left, the Unlikely Kill option, Recall as its own status, the hero moving on, Battle Hardening and Leader Creation as options, the second Heat of Battle DR, and the HS keeping its SW. It also built, from the sections below, Double Time and CX, counter names by printed values, Massacre, per-side CC declarations, grain by season for Infantry, the passenger-only survival label, and the Stun +1 and used BU toggle page fixes. The simplified resolutions recorded by passes 1, 3, and 4 moved here from sections 10, 12, and 14 on 2026-09-27. The backlog pass 6 (2026-09-28) built wrecks. The backlog pass 10 (2026-09-28) decided every berserk charge route (ruling R10.15), removing its deviation; a charge into a vehicle's or a Gun crew's Location stays in sections 12 and 14.
+Berserk and Surrender from Heat of Battle (R0.2, R19.2, R22.5, R28.1) left this list with unit step 30, 2026-09-27. The backlog pass 5 (2026-09-27) built the rest but the berserk route and the wreck: CX on a withdrawal, the captor's choice at a surrender, Acquisition on units, vehicle Motion and MP left, the Unlikely Kill option, Recall as its own status, the hero moving on, Battle Hardening and Leader Creation as options, the second Heat of Battle DR, and the HS keeping its SW. It also built, from the sections below, Double Time and CX, counter names by printed values, Massacre, per-side CC declarations, grain by season for Infantry, the passenger-only survival label, and the Stun +1 and used BU toggle page fixes. The simplified resolutions recorded by passes 1, 3, and 4 moved here from sections 10, 12, and 14 on 2026-09-27. The backlog pass 6 (2026-09-28) built wrecks. The backlog pass 10 (2026-09-28) decided every berserk charge route (ruling R10.15), removing its deviation; a charge into a vehicle's or a Gun crew's Location stays in sections 12 and 14. The backlog pass 11 (2026-09-28) built the A12.41 choice of concealed units a vehicle enters, removing the R6.8 deviation, and added its own three.
 
 ## 2. Rally (step 19)
 
@@ -203,11 +205,11 @@ Found by playing the Play page with scripted dice in the games `pass23-demo`, `p
 
 | Item | Deferred by | Rules | Depends on |
 |---|---|---|---|
-| Reverse movement, VBM, ESB, Minimum Move, bog, OVR, vehicle stacking, and vehicle movement over terrain other than Open Ground, Grain, and roads, across hexside terrain, or between levels | R25.3 | D2.2, D2.3, D2.5, D2.15, D8, D7, D2.14, B terrain entries | More vehicle terrain transcriptions |
 | BMG and CMG, and Passengers' and Riders' fire (vehicle fire in the MPh and AAMG repair since pass 6) | R25.7 | D3.3, D3.7, D6.64 | Vehicles in the movement windows |
 | Closed-topped AFVs, main armament, To Kill, and AP | R25.2 | C7, D3.1 | Step 24's successors |
-| Vehicles in CC (and Infantry entering or advancing into an enemy vehicle's Location), Rally, and Rout; a berserk charge at a vehicle ends in place | R25.10; table player, item 1 | A11.5, A11.6, A15.43, D7 | CC against vehicles |
 | A Gun's shot at a Location with a vehicle (the Vehicle Target Type) | R25.10 | C3.31 | Step 24's successors |
+
+Vehicle movement (Reverse, VBM, ESB, Minimum Move, Bog, OVR, stacking, and terrain) and vehicles in CC left this list with the backlog pass 11 (2026-09-28); what that pass leaves out is in section 21.
 
 ## 15. Added by the backlog pass 5
 
@@ -313,3 +315,27 @@ Found by playing the Play page with scripted dice in the games `pass23-demo`, `p
 | Wall Advantage between units adjacent across a wall since setup with no Scenario Defender named | R10.6 | B9.32, p. 119 | WA declared at setup | Fire between them is refused. |
 | A stack in Bypass splitting, making a SMOKE attempt, or occupying an obstacle that holds enemy units; fire at it from within the hex; a Snap Shot at a Bypass step; Bypass of a hex with a wall, hedge, or friendly units | R10.7 | A4.3 to A4.34, pp. 49 to 50 | Bypass kept per unit; vertex LOS | Refused. |
 | The player choosing which leader lends IPC to which unit | R10.8 | A4.42, p. 50 | A move argument naming them | A deviation in section 1. |
+
+## 21. Added by the backlog pass 11
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| A fully-tracked AFV entering a building hex (not by VBM), with its Bog DR and the building's collapse | R11.7 | B23.41, p. 135 | Building entry by vehicles | Refused; a vehicle enters a building hex only by VBM. |
+| Reverse Motion (the WEST OF ALAMEIN counters) | R11.1 | D2.24, p. 197 | Reverse Motion counters | A vehicle in Reverse keeps one MP to Stop; an entry or VCA change leaving it less is refused. |
+| Motion Attempts, and a vehicle firing in Motion by its own choice | R11.18 | D2.401, D2.42 | Motion Attempts in the DFPh | Not offered; Motion comes only from ending a move without stopping. |
+| Trail Breaks, and a Bog Check on leaving a woods-road hex off the road | R11.7; referee, pass 11 | B13.421, B13.422, p. 132 | The road portion of a hex kept per vehicle | No Trail Break is placed; a vehicle leaving by a non-road hexside takes no Bog Check. |
+| The CAFP's LOS and fire from a vehicle in Bypass | R11.2 | D2.37, p. 197 | LOS to and from the CAFP | Fire takes the hex center, as before. |
+| Armor Leaders, in OVR and CC | R11.11, R11.14 | D7.16, A11.5, D3.44 | Armor Leader counters | Not in the catalog; no OVR leadership. |
+| Help freeing a bogged vehicle (towing, Infantry assist) and a Bog Removal's bearing on other vehicles | R11.10 | D8.32 to D8.35 | Towing between vehicles | Only the vehicle's own Bog Removal. |
+| Mud, snow, and wire for vehicles | R11.7 | D8.21, B26, E3 | Weather and wire | Not reached; the scenario month gives neither. |
+| FPF Reaction Fire, Street Fighting, and Gun crews' Reaction Fire | R11.13 | D7.211, D7.212, D7.221, D7.23, A11.8 | FPF by leaders; Street Fighting; Gun crews in CC | Not offered. |
+| Infantry against Infantry in a Location holding a vehicle | Table player, pass 11 | A11.31, p. 73 | Sequential Infantry CC | Refused; such Infantry stay in Melee and may withdraw. |
+| Ambush in a Location holding a vehicle | R11.16 | A11.34, p. 73 | Ambush in sequential CC | A deviation in section 1. |
+| A pass by one unit in sequential CC | R11.16; referee, pass 11 | A11.31, p. 73 | A per-unit pass | A deviation in section 1. |
+| Captured vehicles used by their captors | R11.16 | A21.2 | Captured vehicle rules | A captured truck is Abandoned and neither moves nor fires. |
+| Passengers and Riders: in OVR, in CC, and their A11.611 survival | R11.11, R11.14 | D6, D7.11, A11.611 | Passengers and Riders | No vehicle carries any. |
+| Overstacking penalties of vehicles (A5.11 MP), and A5.132 | R11.6 | A5.11, A5.132, p. 52 | Vehicle overstacking | Any number of vehicles share a Location; each adds to the entry cost. |
+| A berserk charge at a vehicle | R11.17 | A15.43 | Charges at vehicles | The charge stays undecided and ends in place, as since pass 4. |
+| A Bypassing AFV in woods whose Target Facing the TEM rule of the IFT would change, and a turret's facing in Bypass | R11.2 | D2.34, D3.2 | Bypass facing for ordnance | Bypass Target Facing is read from the straddled hexside for both hull and turret. |
+| The current Morale Level of a combined PAATC | Referee, pass 11 | A12.41, p. 83 | Morale changes in play (DM, ELR replacement) | The printed ML, with Fanatic and wounds, is used (a reading). |
+| The "wished to enter next" field for Motion | Table player, pass 11 | D2.4 | Buttons for the VCA hexes | A free-text Location on the Play page. |
