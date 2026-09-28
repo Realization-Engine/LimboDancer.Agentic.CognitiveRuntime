@@ -92,6 +92,33 @@ public sealed record GameState(
     /// <summary>The Special Ammunition each Gun or AFV has run out of (C8.9; ruling R7.6).</summary>
     public IReadOnlyList<DepletedAmmunition> DepletedAmmunition { get; init; } = [];
 
+    /// <summary>The crews that fired their Gun this Player Turn, which costs them their inherent FP (A7.352; ruling R8.4).</summary>
+    public IReadOnlyList<string> GunCrewsFired { get; init; } = [];
+
+    /// <summary>
+    /// Each Gun's Defensive First Fire shots at the moving stack in its present Location (C6.17; ruling R8.1); cleared whenever the stack
+    /// enters a new Location and at every phase change.
+    /// </summary>
+    public IReadOnlyList<OrdnanceShotRecord> OrdnanceShotsHere { get; init; } = [];
+
+    /// <summary>The Scenario Defender's side, when setup names it (C6.41).</summary>
+    public string? ScenarioDefender
+    {
+        get; init;
+    }
+
+    /// <summary>The Bore Sighted Locations recorded at setup (C6.42; ruling R8.8).</summary>
+    public IReadOnlyList<BoreSighted> BoreSights { get; init; } = [];
+
+    /// <summary>The Guns that changed their CA without firing this phase, and fire no more in it (C3.22); cleared at every phase change.</summary>
+    public IReadOnlyList<string> GunsTurnedThisPhase { get; init; } = [];
+
+    /// <summary>The Guns and crews that may not move this Player Turn after a CA change in the PFPh (C3.22; ruling R8.9).</summary>
+    public IReadOnlyList<string> NoMoveThisPlayerTurn { get; init; } = [];
+
+    /// <summary>The Guns whose Emplacement is lost: they moved, were hooked up, or set up otherwise (C11.3; ruling R8.3).</summary>
+    public IReadOnlyList<string> UnemplacedGuns { get; init; } = [];
+
     /// <summary>The vehicles whose Shock or Unconfirmed Kill dr was made this RPh (C7.42; ruling R7.8); cleared at every phase change.</summary>
     public IReadOnlyList<string> ShockRollsThisPhase { get; init; } = [];
 

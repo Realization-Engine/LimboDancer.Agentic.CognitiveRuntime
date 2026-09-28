@@ -311,6 +311,10 @@ Backlog pass 7 ([ASL Unit Backlog Passes Plan](<ASL Unit Backlog Passes Plan.md>
 
 **Review and version.** The referee agent of the pass 7 review rendered the listing rows and confirmed the values against pp. 337 and 355. Added definitions make a minor version: `asl-scenario-a1@1.6.0`. Games that name 1.5.0 no longer replay; the committed test games now name 1.6.0.
 
+### 9.8 Gun listing details (catalog 1.7.0)
+
+Backlog pass 8 (task 8.10; ruling R8.11) adds three listing values of each Gun (6 rows): its BPV, its dates of use, and the Animal-Pack trait of German Ordnance Note O (p. 354). The 7.5cm leIG 18 (p. 351): BPV 34, dates 32-45, Notes 15, N, O, so it may be Animal-Packed. The 45mm PTP obr. 32 (p. 363): BPV 29, dates 33-45, Note 7, so it may not. Vocabulary 1.12.0 adds the attribute `asl:dates` and the trait `asl:animal-pack`, and gives Guns `asl:bpv`. The referee agent of the pass 8 review compared the rows with renderings of the listing rows and the Ordnance Notes. Gun repair stays blocked: no registered source prints a Gun's malfunctioned side.
+
 ## 10. The source adapter
 
 ASL-UNIT-001 keeps source-specific parsing out of `LimboDancer.Domains.Asl.Units`, so the transcription is read by a separate source adapter, `LimboDancer.Domains.Asl.Units.CounterSheets`, which references only `Units`. `CounterSheetCatalogBuilder` takes the catalog manifest (`src/ASL/units/catalog/scenario-a1.catalog-manifest.json`: id, version, slots, and which counter fills which slot), the source record, the transcription, and the worksheet, and:

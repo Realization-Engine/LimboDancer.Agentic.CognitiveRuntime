@@ -179,4 +179,44 @@ public sealed class PlayPageVehicleTests : IDisposable
         // C8.1: the PzKpfw IIIH lists APCR and no HEAT.
         Assert.Equal(["ap", "apcr", "he"], page.FindAll("#ordnance-ammunition option").Select(item => item.GetAttribute("value")));
     }
+
+    [Fact]
+    public void TheGunPanelListsTargetsWithTheirCoveredArcAndOffersTurningIntensiveFireAndPushing()
+    {
+        // R8.2, R8.6, R8.9: in the PFPh the leIG's panel reads each enemy Location against its CA, offers Intensive Fire and a turn without
+        // firing, and draws its CA; in the MPh its crew may push it.
+        var (one, two) = Hexes();
+        var page = context.Render<PlayPage>();
+        page.Find("#new-board").Change(Board);
+        page.Find("#new-first").Change("german");
+        page.Find("#new-second").Change("russian");
+        page.Find("#new-first-elr").Change("3");
+        page.Find("#new-second-elr").Change("3");
+        page.Find("#new-defender").Change("russian");
+        page.Find("#place-definition").Change("attacker-crew");
+        page.Find("#place-id").Change("de-crew");
+        page.Find("#place-location").Change(one);
+        page.Find("#place-add").Click();
+        page.Find("#place-definition").Change("attacker-inf-gun");
+        Assert.Single(page.FindAll("#place-bore"));
+        page.Find("#place-id").Change("de-gun");
+        page.Find("#place-location").Change(one);
+        page.Find("#place-holder").Change("de-crew");
+        page.Find("#place-facing").Change("east");
+        page.Find("#place-add").Click();
+        page.Find("#place-definition").Change("defender-squad");
+        page.Find("#place-id").Change("r1");
+        page.Find("#place-location").Change(two);
+        page.Find("#place-add").Click();
+        Commit(page, "#propose-setup");
+        Commit(page, "#propose-advance");
+        page.Find("#ordnance-gun").Change("de-gun");
+        Assert.Contains("range 1", page.Find($"#ordnance-arc li[data-at='{two}']").TextContent, StringComparison.Ordinal);
+        Assert.Single(page.FindAll("#ordnance-intensive"));
+        Assert.Single(page.FindAll("#propose-turn-gun"));
+        Assert.Contains("layer-covered-arc", page.Markup, StringComparison.Ordinal);
+        Commit(page, "#propose-advance");
+        page.Find(".move-unit[data-unit='de-crew']").Change(true);
+        Assert.Single(page.FindAll("#move-push"));
+    }
 }

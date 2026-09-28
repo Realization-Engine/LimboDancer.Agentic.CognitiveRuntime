@@ -187,6 +187,7 @@ public static class GameEventReader
                         SpecialRules = fields.StringList(payload, "specialRules", path),
                         ScenarioMonth = Month(fields.OptionalInteger(payload, "scenarioMonth", path), path, diagnostics),
                         ScenarioYear = Year(fields.OptionalInteger(payload, "scenarioYear", path), path, diagnostics),
+                        ScenarioDefender = fields.OptionalString(payload, "scenarioDefender", path),
                     };
             case "phase-changed":
                 var nextTurn = fields.OptionalInteger(payload, "turn", path);
@@ -371,7 +372,49 @@ public static class GameEventReader
                     {
                         Charge = charge,
                         DoubleTime = fields.OptionalBoolean(payload, "doubleTime", path),
+                        PushedGun = fields.OptionalString(payload, "pushedGun", path),
                     };
+            case "bore-sighted":
+                var sighter = fields.RequiredString(payload, "gun", path);
+                var sighted = ReadLocation(payload, "location", path, fields, diagnostics);
+                var sighterCrew = fields.RequiredString(payload, "crew", path);
+                var sighterAt = ReadLocation(payload, "setupLocation", path, fields, diagnostics);
+                return sighter is null || sighted is null || sighterCrew is null || sighterAt is null
+                    ? Missing(diagnostics, "A Bore Sighting names its Gun, Location, crew, and setup Location.", path)
+                    : new BoreSighted(sighter, sighted, sighterCrew, sighterAt);
+            case "gun-turned":
+                var turnedGun = fields.RequiredString(payload, "gun", path);
+                return turnedGun is null || !UnitFacings.TryParse(fields.RequiredString(payload, "facing", path), out var gunFacing)
+                    ? Missing(diagnostics, "A Gun's CA change names the Gun and its facing.", path)
+                    : new GunTurned(turnedGun, gunFacing);
+            case "manhandling-rolled":
+                var pushed = fields.RequiredString(payload, "gun", path);
+                var pushRoll = fields.RequiredString(payload, "roll", path);
+                var pushDrm = fields.OptionalInteger(payload, "drm", path);
+                var pushNumber = fields.OptionalInteger(payload, "manhandling", path);
+                var pushResult = fields.RequiredString(payload, "result", path);
+                return pushed is null || pushRoll is null || pushDrm is null || pushNumber is null || pushResult is null
+                    ? Missing(diagnostics, "A Manhandling record names its Gun, roll, DRM, M#, and result.", path)
+                    : new ManhandlingRolled(pushed, pushRoll, pushDrm.Value, pushNumber.Value, pushResult);
+            case "gun-hooked":
+                var tower = fields.RequiredString(payload, "vehicle", path);
+                var towed = fields.RequiredString(payload, "gun", path);
+                var towCrew = fields.RequiredString(payload, "crew", path);
+                var towMp = fields.OptionalInteger(payload, "mp", path);
+                UnitFacing? unhookedFacing = null;
+                if (payload.TryGetProperty("facing", out var towFacing))
+                {
+                    if (!UnitFacings.TryParse(towFacing.GetString(), out var parsedTow))
+                    {
+                        return Missing(diagnostics, "A Gun's unhooked facing is a hexspine name.", path);
+                    }
+
+                    unhookedFacing = parsedTow;
+                }
+
+                return tower is null || towed is null || towCrew is null || towMp is null
+                    ? Missing(diagnostics, "A hook-up record names its vehicle, Gun, crew, and MP.", path)
+                    : new GunHooked(tower, towed, towCrew, fields.OptionalBoolean(payload, "hooked", path), towMp.Value, unhookedFacing);
             case "vehicle-step":
                 var vehicleAt = ReadLocation(payload, "at", path, fields, diagnostics);
                 var vehicleId = fields.RequiredString(payload, "vehicle", path);

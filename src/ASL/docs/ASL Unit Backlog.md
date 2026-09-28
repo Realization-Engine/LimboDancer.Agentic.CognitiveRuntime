@@ -252,3 +252,25 @@ Found by playing the Play page with scripted dice in the games `pass23-demo`, `p
 | Radioless AFVs | R7.1 | D14 | Platoon movement | The T-34's radioless status has no effect. |
 | Hazardous Movement for a crew that bails out or survives | R7.9 | D5.5, D5.6, A4.62 | | The crew is placed Good Order beneath its vehicle or wreck. |
 | HE at Infantry in a Location that also holds an enemy vehicle | R25.10 | C3.32, C.3 | The hit's IFT attack on vehicles and Infantry together | Refused; the vehicle may be fired at by name. |
+
+## 18. Added by the backlog pass 8
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| Gun Duels | R8.1 | C2.2401, p. 167 | Bounding First Fire by ordnance | The DEFENDER's shot is resolved first, alone. |
+| OVR Prevention | R8.2 | C5.64, C5.641, p. 173 | Vehicle OVR (pass 11) | Not reached: vehicles do not OVR. |
+| A vehicle's Intensive Fire | R8.2 | C5.6, D3 | Vehicle MA fire rules | A tank's MA never Intensive Fires. |
+| C5.51's Case E in the MPh, turning with Case A | R8.8 | C5.51, p. 172 | Defensive First Fire into the Gun's own hex | Refused; Case E is fired in the fire phases. Entry into an enemy Location is refused in the MPh, so Case E is rare. |
+| The Area Target Type against a Gun, AP and HEAT at Guns (HE Equivalency), an unmanned Gun as a target, and a crew sharing its Location with other units | R8.3 | C11.2, C11.51, C11.52, C8.31 | The Area Target Type (pass 9); HE Equivalency | Refused, or outside the package. |
+| Random SW Destruction of Guns by fire | R8.3 | C11.51, A9.74 | Random SW Destruction | Infantry fire never destroys a Gun. |
+| A7.353's halved inherent FP of a crew that fired its Gun | R8.4 | A7.353, p. 56 | Subsequent First Fire and Final Fire of crews | The crew has no inherent FP for the rest of the Player Turn. |
+| Hazardous Movement for a pushing crew (-2, no FFMO or FFNAM), Case O, and fire at a pushing crew | R8.6 | A4.62, C10.3 | Hazardous Movement (pass 10.5) | The gunshield is denied; the attack is otherwise an ordinary Defensive First Fire. |
+| The Labor counter after a failed push, more than one unit pushing, a CA change while pushing, carried PP, and the DEFENDER's fire at a failed push | R8.6 | C10.3, B24.8 | Labor, portage checks | One crew or HS pushes; a failed push ends its move. |
+| A vehicle's hook-up opening the DEFENDER's window, Passengers loading with a hook-up, en portee, and limbering | R8.6 | C10.11, C10.13, C10.2, C10.5 | Passengers (pass 11) | The hook-up is resolved at once; both catalog Guns are QSU. |
+| Recovery of an unmanned Gun and captured Guns | R8.6, R8.8 | A4.44, A21.11, C5.8 | Recovery (pass 13) | An abandoned Gun can only be hooked up and unhooked for a crew. |
+| A Target Facing change restarting the C6.17 count, and Case J1 or J2 after an AFV turns in view | R8.1 | C6.17 | Vehicle Target Facing history | The count runs per Location. |
+| A tank's MA Bore Sighting, a Bore Sighted Location kept secret until used, and a SW's Bore Sighting | R8.8 | C6.41, C6.44 | Hidden setup records | The Bore Sighting record is visible to the Scenario Defender only; tanks do not Bore Sight. |
+| Vehicles over the stacking limit, and A5.132's accidental hits | R8.10 | A5.12, A5.132 | Vehicle stacking (pass 11) | Only Personnel count. |
+| Fire at another level for ordnance | R8.7 | C2.6 | Levels in fire (pass 10.2) | The C2.6 limit refuses; otherwise undecided. |
+| Multiple Hits | R8.12 | C3.8 | A Gun of 40mm or less | Not reached. |
+

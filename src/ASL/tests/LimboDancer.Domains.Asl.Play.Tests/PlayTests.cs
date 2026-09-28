@@ -83,7 +83,7 @@ public sealed class PlayTests : IDisposable
         },
     };
 
-    private static JsonElement SetupArgs(string attempt, long expected, object[] placements, string catalog = "asl-scenario-a1@1.6.0", bool start = true) =>
+    private static JsonElement SetupArgs(string attempt, long expected, object[] placements, string catalog = "asl-scenario-a1@1.7.0", bool start = true) =>
         Args(start
             ? new
             {
@@ -442,7 +442,7 @@ public sealed class PlayTests : IDisposable
     {
         Assert.Equal(["asl.game.setup", "asl.game.advance-phase", "asl.game.enter-empty-building", "asl.game.enter-building", "asl.game.declare-overrun", "asl.game.fire",
                 "asl.game.rally", "asl.game.repair", "asl.game.move", "asl.game.pass-fire", "asl.game.end-move",
-                "asl.game.advance", "asl.game.ambush", "asl.game.close-combat", "asl.game.take-prisoner", "asl.game.fire-ordnance", "asl.game.recover-shock",
+                "asl.game.advance", "asl.game.ambush", "asl.game.close-combat", "asl.game.take-prisoner", "asl.game.fire-ordnance", "asl.game.recover-shock", "asl.game.turn-gun", "asl.game.hook-gun",
                 "asl.game.move-vehicle",
                 "asl.game.button-up", "asl.game.choose", "asl.game.massacre"],
             GameActions.All.Select(action => action.Id.Value));

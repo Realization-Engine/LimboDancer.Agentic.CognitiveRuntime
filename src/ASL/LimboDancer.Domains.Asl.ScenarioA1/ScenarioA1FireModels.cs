@@ -135,6 +135,16 @@ public sealed record FireAttack(
         get; init;
     }
 
+    /// <summary>
+    /// The manned Gun whose crew is the attack's target (C11; backlog pass 8, ruling R8.3): whether it is Emplaced, and whether its gunshield
+    /// faces the attack. Null when the target Location holds no Gun.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FireGunTarget? GunTarget
+    {
+        get; init;
+    }
+
     /// <summary>Whether the firing side is faced with No Quarter, for the Heat of Battle of an FPF NMC (A8.31, A20.3); null is false.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? FiringSideNoQuarter
@@ -199,6 +209,12 @@ public sealed record FireMovement(bool? AssaultMovement);
 public sealed record FireWeapon(string? EquipmentId, string? DefinitionId, bool? Malfunctioned, bool? FiredThisPlayerTurn, bool? FirstFireMarked);
 
 /// <summary>A unit of the fire group, with its reviewed catalog definition.</summary>
+/// <summary>
+/// A manned Gun in the target Location (C11.2, C11.5; ruling R8.3): its crew, whether it is Emplaced (set up manned and never moved), and
+/// whether its gunshield protects the crew from this attack (an AT or INF Gun, the attack from within its CA and not from its own hex).
+/// </summary>
+public sealed record FireGunTarget(string? GunId, string? DefinitionId, string? CrewUnitId, bool? Emplaced, bool? Gunshield);
+
 public sealed record FireFirer(
     string? UnitId,
     string? DefinitionId,
@@ -209,6 +225,13 @@ public sealed record FireFirer(
     bool? FiredThisPlayerTurn,
     bool? UsesSupportWeapon)
 {
+    /// <summary>Whether this crew fired its Gun this Player Turn, which costs it its inherent FP (A7.352; ruling R8.4); null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? GunFired
+    {
+        get; init;
+    }
+
     /// <summary>The range from this firer's Location, when the group spans Locations (A7.52); otherwise the attack's.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? Range

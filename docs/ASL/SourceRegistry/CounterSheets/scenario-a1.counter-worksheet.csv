@@ -578,6 +578,9 @@ sheet,counter,face,attribute,value,transcriber,reviewer,note
 ,attacker-inf-gun,front,asl:qsu,,,,yes or no
 ,attacker-inf-gun,front,asl:nm,,,,yes or no
 ,attacker-inf-gun,front,asl:rfnm,,,,yes or no
+,attacker-inf-gun,front,bpv,,,,whole number (Listings Key)
+,attacker-inf-gun,front,dates,,,,"years as printed, yy-yy"
+,attacker-inf-gun,front,asl:animal-pack,,,,yes or no
 ,attacker-inf-gun,malfunctioned,repair,,,,"whole number, or not-printed"
 ,attacker-inf-gun,malfunctioned,removal,,,,"whole number, or not-printed"
 ,defender-at-gun,counter,kind,,,,expected asl:gun
@@ -601,6 +604,9 @@ sheet,counter,face,attribute,value,transcriber,reviewer,note
 ,defender-at-gun,front,asl:qsu,,,,yes or no
 ,defender-at-gun,front,asl:nm,,,,yes or no
 ,defender-at-gun,front,asl:rfnm,,,,yes or no
+,defender-at-gun,front,bpv,,,,whole number (Listings Key)
+,defender-at-gun,front,dates,,,,"years as printed, yy-yy"
+,defender-at-gun,front,asl:animal-pack,,,,yes or no
 ,defender-at-gun,malfunctioned,repair,,,,"whole number, or not-printed"
 ,defender-at-gun,malfunctioned,removal,,,,"whole number, or not-printed"
 ,attacker-truck,counter,kind,,,,expected asl:vehicle

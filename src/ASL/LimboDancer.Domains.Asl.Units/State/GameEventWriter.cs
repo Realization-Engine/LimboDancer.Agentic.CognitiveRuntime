@@ -151,6 +151,11 @@ public static class GameEventWriter
                     writer.WriteNumber("scenarioYear", year);
                 }
 
+                if (started.ScenarioDefender is { } defender)
+                {
+                    writer.WriteString("scenarioDefender", defender);
+                }
+
                 break;
             case PhaseChanged phase:
                 writer.WriteNumber("turn", phase.Turn);
@@ -337,6 +342,40 @@ public static class GameEventWriter
                 if (moving.DoubleTime)
                 {
                     writer.WriteBoolean("doubleTime", true);
+                }
+
+                if (moving.PushedGun is { } pushedGun)
+                {
+                    writer.WriteString("pushedGun", pushedGun);
+                }
+
+                break;
+            case BoreSighted sighted:
+                writer.WriteString("gun", sighted.Gun);
+                writer.WriteString("location", sighted.Location.ToString());
+                writer.WriteString("crew", sighted.Crew);
+                writer.WriteString("setupLocation", sighted.SetupLocation.ToString());
+                break;
+            case GunTurned turned:
+                writer.WriteString("gun", turned.Gun);
+                writer.WriteString("facing", Documents.UnitFacings.Name(turned.Facing));
+                break;
+            case ManhandlingRolled manhandling:
+                writer.WriteString("gun", manhandling.Gun);
+                writer.WriteString("roll", manhandling.Roll);
+                writer.WriteNumber("drm", manhandling.Drm);
+                writer.WriteNumber("manhandling", manhandling.Manhandling);
+                writer.WriteString("result", manhandling.Result);
+                break;
+            case GunHooked hooked:
+                writer.WriteString("vehicle", hooked.Vehicle);
+                writer.WriteString("gun", hooked.Gun);
+                writer.WriteString("crew", hooked.Crew);
+                writer.WriteBoolean("hooked", hooked.Hooked);
+                writer.WriteNumber("mp", hooked.Mp);
+                if (hooked.Facing is { } unhooked)
+                {
+                    writer.WriteString("facing", Documents.UnitFacings.Name(unhooked));
                 }
 
                 break;

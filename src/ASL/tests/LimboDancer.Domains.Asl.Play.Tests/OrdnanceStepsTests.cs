@@ -132,7 +132,7 @@ public sealed class OrdnanceStepsTests : IDisposable
             start = new
             {
                 label = "Ordnance",
-                catalog = "asl-scenario-a1@1.6.0",
+                catalog = "asl-scenario-a1@1.7.0",
                 boards = Bd01,
                 firstSide,
                 scenarioMonth = 7,
@@ -255,14 +255,14 @@ public sealed class OrdnanceStepsTests : IDisposable
         }));
         Assert.True(Is(Current.Unit("r1")!, Conditions.Broken));
 
-        // C10: a crew manning a Gun does not move away from it (ruling R24.4).
+        // A3.3: the crew that fired its Gun in the PFPh does not move in the MPh (it may otherwise push or abandon it since ruling R8.6).
         await Advance();
         Assert.Equal("mph", Current.Phase);
         Assert.Contains((await Do(GameActions.Move, NoRoll(), new
         {
             unitIds = Crew,
             to = "bd01:A3:0"
-        })).Reasons, reason => reason.StartsWith("play.move-crew-mans-gun", StringComparison.Ordinal));
+        })).Reasons, reason => reason.StartsWith("play.move-prep-fire", StringComparison.Ordinal));
         Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
     }
 

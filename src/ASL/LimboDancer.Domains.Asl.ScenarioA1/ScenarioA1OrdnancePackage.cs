@@ -156,6 +156,8 @@ public sealed class ScenarioA1OrdnanceReference
                 NoAp = Trait("asl:no-ap"),
                 SpecialAmmo = Ammo(),
                 MaType = vehicle ? Text("ma-type") : null,
+                TargetSize = vehicle ? null : Text("target-size"),
+                Manhandling = vehicle ? null : Number("manhandling"),
             }
             : null;
     }
@@ -168,16 +170,16 @@ public sealed class ScenarioA1OrdnanceReference
 /// </summary>
 public sealed class ScenarioA1OrdnancePackage : IDomainPackageResolver
 {
-    public const string ManifestSha256 = "d10ce3465b8d2f8c1d969ec9b85a9a0441c64828de48dd787e14d97f06ad5963";
-    public const string MatrixSha256 = "b680f858de14e57b5862bafac49338ad0b215e27c0d2442ec911331de6ad8b63";
-    /// <summary>The package as revised at backlog pass 6, before its backlog pass 7 revision (vehicle targets, tanks, catalog 1.6.0).</summary>
-    public const string PriorManifestSha256 = "68fdc54585af86625fd3eca4355ffaf60ccfd591e10521f7f2af646ec42914b2";
+    public const string ManifestSha256 = "09ceeb08b08a55ae91b0c3e332cd160e32cd7b355bb5221fa768c5e6533eb995";
+    public const string MatrixSha256 = "15ddd033f5b1752be49a7b85c93c5dfafd6dc4d63c42e20b1d2102cd49632c64";
+    /// <summary>The package as revised at backlog pass 7, before its backlog pass 8 revision (Guns, part 2; catalog 1.7.0).</summary>
+    public const string PriorManifestSha256 = "d10ce3465b8d2f8c1d969ec9b85a9a0441c64828de48dd787e14d97f06ad5963";
     public static readonly DomainPackageRef Identity = new(new DomainId("asl"), "scenario-a1-ordnance", "sha256:" + ManifestSha256);
 
     private static readonly string[] Cases =
     [
         "A1-ordnance-hit-resolved", "A1-ordnance-miss-resolved", "A1-ordnance-phase-outside", "A1-ordnance-gun-outside", "A1-ordnance-crew-outside",
-        "A1-ordnance-already-fired", "A1-ordnance-range-outside", "A1-ordnance-target-outside", "A1-ordnance-undecided", "A1-ordnance-roll-missing", "A1-ordnance-owner-options", "A1-ordnance-cx", "A1-ordnance-afv-cover", "A1-ordnance-vehicle-hit", "A1-ordnance-vehicle-outside", "A1-ordnance-special-ammunition", "A1-ordnance-tank-fire", "A1-ordnance-shock-and-crews", "A1-ordnance-unarmored-vehicle",
+        "A1-ordnance-already-fired", "A1-ordnance-range-outside", "A1-ordnance-target-outside", "A1-ordnance-undecided", "A1-ordnance-roll-missing", "A1-ordnance-owner-options", "A1-ordnance-cx", "A1-ordnance-afv-cover", "A1-ordnance-vehicle-hit", "A1-ordnance-vehicle-outside", "A1-ordnance-special-ammunition", "A1-ordnance-tank-fire", "A1-ordnance-shock-and-crews", "A1-ordnance-unarmored-vehicle", "A1-ordnance-defensive-first-fire", "A1-ordnance-intensive-fire", "A1-ordnance-gun-target", "A1-ordnance-special-shots", "A1-ordnance-overstacking",
     ];
 
     private static readonly string[] PinnedDigests = ["sourcePdfSha256", "toHitTranscriptionSha256", "iftTranscriptionSha256", "catalogSha256",

@@ -108,10 +108,32 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.move-stack: the stack moves from one Location (A4.2)");
         }
 
-        // C10: a crew manning a Gun leaves it only by abandoning it, and Gun movement is not reviewed (ruling R24.4).
-        if (movers.FirstOrDefault(unit => Mans(state, unit!)) is { } gunner)
+        // C10.3, C10.111 (ruling R8.6): a crew pushes the Gun it mans, alone, Good Order and unpinned, a QSU Gun; a crew that moves otherwise
+        // abandons its Gun. C3.22 (ruling R8.9): a Gun that changed its CA in the PFPh, and its crew, do not move; A4.8: nor a TI unit.
+        EquipmentInstance? pushed = null;
+        if (Text(arguments, "pushGun", out var pushGunId))
         {
-            return Refused(scope, label, expected, $"play.move-crew-mans-gun: {gunner.Id} mans a Gun; abandoning or moving a Gun is not reviewed (C10, A21.13)");
+            if (movers is not [{ } pusher] || state.Find(pushGunId) is not EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Manned } manning } gunToPush
+                || manning.Holder != pusher.Id || !vocabulary.IsA(pusher.Kind, "asl:crew") && !vocabulary.IsA(pusher.Kind, "asl:half-squad")
+                || Is(pusher, Conditions.Pinned) || Is(pusher, Conditions.Broken)
+                || OrdnanceReference.Value.Guns.GetValueOrDefault(gunToPush.Definition?.Definition ?? string.Empty) is not { Manhandling: not null })
+            {
+                return Refused(scope, label, expected, "play.move-push: a Good Order, unpinned crew or HS alone pushes the Gun it mans (C10.3, C10.111)");
+            }
+
+            pushed = gunToPush;
+        }
+
+        // C10.3: a crew pushing its Gun in the moving stack may push on though its last push made it TI; A4.61: pushing is never Assault Movement.
+        if (pushed is not null && assault)
+        {
+            return Refused(scope, label, expected, "play.move-push: pushing a Gun prevents Assault Movement (C10.3)");
+        }
+
+        var pushingOn = pushed is not null && state.Movement?.Members.Contains(movers[0]!.Id) == true;
+        if (movers.FirstOrDefault(unit => state.NoMoveThisPlayerTurn.Contains(unit!.Id) || (Is(unit, "asl:ti") && !pushingOn)) is { } halted)
+        {
+            return Refused(scope, label, expected, $"play.move-halted: {halted.Id} is TI, or changed its Gun's CA in the PFPh, and does not move this Player Turn (A4.8, C3.22)");
         }
 
         // D2.1 (ruling R25.3): a vehicle spends its MP one expenditure at a time, by its own action; Infantry may not enter an enemy vehicle's
@@ -255,6 +277,12 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.move-grain: grain's MF cost depends on the season, and the game names no scenario month (B15.6)");
         }
 
+        // C10.3 (ruling R8.6): a Gun is pushed only into Open Ground or grain (a road hex counted as its terrain), at double the MF.
+        if (pushed is not null && terrain is not ("open-ground" or "grain"))
+        {
+            return Refused(scope, label, expected, $"play.move-push-terrain: a Gun is pushed only into Open Ground or grain in the review, not {terrain} (C10.3; ruling R8.6)");
+        }
+
         if (crossed.Terrain?.IsRoad == true)
         {
             halfMf = 2;
@@ -262,6 +290,10 @@ public sealed partial class GamePlanner
 
         // B25.141 (ruling R6.3): a burning wreck's smoke costs one more MF to enter its Location.
         halfMf += BlazeEntryHalfMf(state, to);
+        if (pushed is not null)
+        {
+            halfMf *= 2;
+        }
 
         if (charge is null && state.At(to).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != state.PhasingSide))
         {
@@ -301,6 +333,13 @@ public sealed partial class GamePlanner
         List<GameEvent> prefix = [.. abandoned.Select((item, index) => Event(scope, attemptId, index + 1, expected, "equipment-transferred",
             new EquipmentTransferred(item.Id, null, new MapPosition(from)), package, null))];
         var residual = state.ResidualFire.FirstOrDefault(item => item.Location == to);
+        if (pushed is not null)
+        {
+            return residual is not null
+                ? Refused(scope, label, expected, "play.move-push-residual: pushing a Gun into Residual FP is not reviewed (C10.3, A8.2)")
+                : PushPlan(scope, attemptId, expected, label, actor, state, pushed, moved, halfMf / 2 - (crossed.Terrain?.IsRoad == true ? 2 : 0), summary);
+        }
+
         var stepEvent = Event(scope, attemptId, prefix.Count + 1, expected, "movement-step", moved, package, null);
 
         // A12.2 Case H (ruling R6.7): the step may bring a concealed vehicle out of Concealment Terrain into the movers' LOS.

@@ -86,7 +86,10 @@ public sealed partial class GamePlanner
         // D2.14, B25.141 (ruling R6.4): one more MP per wreck or vehicle in the hex, two by a road hexside at the road rate, and one more
         // for a burning wreck's smoke.
         var road = crossed.Terrain?.IsRoad == true;
-        return (road ? (IsAfv(vehicle) && Is(vehicle, Conditions.ButtonedUp) ? 2 : 1) : halfMp) + WreckEntryHalfMp(state, to, road);
+
+        // C10.1 (ruling R8.6): a vehicle towing a Gun pays one more MP per hex entered.
+        var towing = state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Towed } tow && tow.Holder == vehicle.Id) ? 2 : 0;
+        return (road ? (IsAfv(vehicle) && Is(vehicle, Conditions.ButtonedUp) ? 2 : 1) : halfMp) + WreckEntryHalfMp(state, to, road) + towing;
     }
 
     /// <summary>
@@ -247,7 +250,8 @@ public sealed partial class GamePlanner
 
         if (new[] { (Conditions.PrepFire, "it Prep Fired (D.3)"), (Conditions.Immobilized, "it is immobilized (D.7)"),
             (Conditions.Stunned, "its crew is Stunned (D5.34)"), (Conditions.Shocked, "it is Shocked (C7.42)"),
-            (Conditions.UnconfirmedKill, "it is an Unconfirmed Kill, still Shocked (C7.42)"), (Conditions.Abandoned, "it is Abandoned (D5.41)") }
+            (Conditions.UnconfirmedKill, "it is an Unconfirmed Kill, still Shocked (C7.42)"), (Conditions.Abandoned, "it is Abandoned (D5.41)"),
+            ("asl:ti", "it is TI after hooking up a Gun (C10.11)") }
             .FirstOrDefault(item => Is(vehicle, item.Item1)) is { Item2: { } why })
         {
             return Refused(scope, label, expected, $"play.move-vehicle: {id} may not move: {why}");

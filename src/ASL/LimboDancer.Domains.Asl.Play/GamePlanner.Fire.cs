@@ -214,6 +214,17 @@ public sealed partial class GamePlanner
         }
 
         attack = HeatOfBattleFacts(state, map);
+
+        // C11 (ruling R8.3): a Gun's crew alone in the target Location takes its gunshield, facing every firer's Location, or its Emplacement.
+        if (attack.VehicleFire is null && attack.FireKind != ScenarioA1FireCalculator.ResidualFire && attack.Firers is { Count: > 0 } firing
+            && GunAt(state, target, state.Unit(firing[0].UnitId!)!.Side, [.. firing.Select(item => BoardLocation.Parse(item.LocationId!)).Distinct()]) is { } gunTarget)
+        {
+            attack = attack with
+            {
+                GunTarget = gunTarget
+            };
+        }
+
         var precheck = ScenarioA1FireCalculator.Precheck(attack, FireReference.Value);
         if (precheck.Count != 0)
         {

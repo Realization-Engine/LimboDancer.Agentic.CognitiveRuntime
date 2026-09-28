@@ -132,6 +132,15 @@
             </select>
             <span class="muted">grain is a Hindrance only from June to September (B15.2), and costs Infantry 1½ MF only from April to September (B15.6)</span>
         </span>
+        <label for="new-defender">Scenario Defender</label>
+        <span>
+            <select id="new-defender" value="@newDefender" @onchange="@(args => newDefender = args.Value as string ?? string.Empty)">
+                <option value="">not named</option>
+                <option value="@firstSide">@firstSide</option>
+                <option value="@secondSide">@secondSide</option>
+            </select>
+            <span class="muted">only the Scenario Defender's Guns may Bore Sight a Location at setup (C6.41)</span>
+        </span>
         <label for="new-year">Year</label>
         <span>
             <select id="new-year" value="@newYear" @onchange="@(args => newYear = args.Value as string ?? string.Empty)">
@@ -203,6 +212,10 @@ else if (state is not null)
                 </select>
             </label>
             <span class="muted">@(placingVehicle ? "A vehicle stands at its Location, its VCA pointing at the two hexes either side of the hexspine." : "A Gun stands at its Location, manned by the crew named in \"Or held by\".")</span>
+            @if (!placingVehicle)
+            {
+                <label title="C6.42: the Scenario Defender's Gun may Bore Sight one Location outside its hex, in its LOS, within 16 hexes.">Bore Sighted <input id="place-bore" value="@placeBore" @onchange="@(args => placeBore = args.Value as string ?? string.Empty)" size="12" /></label>
+            }
         }
         <label><input id="place-concealed" type="checkbox" checked="@placeConcealed" @onchange="@(args => placeConcealed = args.Value is true)" /> concealed</label>
         <label><input id="place-hidden" type="checkbox" checked="@placeHidden" @onchange="@(args => placeHidden = args.Value is true)" /> hidden</label>
@@ -356,6 +369,10 @@ else if (state is not null)
             <label>To <input id="move-to" value="@moveTo" @onchange="@(args => moveTo = args.Value as string ?? string.Empty)" size="12" /></label>
             <label><input id="move-assault" type="checkbox" checked="@moveAssault" @onchange="@(args => moveAssault = args.Value is true)" /> Assault Movement</label>
             <label title="Double Time adds 2 MF (1 after the unit has spent MF) and makes the unit CX (A4.5); not for a unit that is CX, or whose CX counter came off at the start of this MPh (A4.51), nor with Assault Movement (A4.61)."><input id="move-double-time" type="checkbox" checked="@moveDoubleTime" @onchange="@(args => moveDoubleTime = args.Value is true)" /> Double Time</label>
+            @if (MovingGun is { } pushable)
+            {
+                <label title="C10.3: the crew pushes its Gun at double the MF, with a Manhandling DR against its M#; uncheck to walk away and abandon the Gun."><input id="move-push" type="checkbox" checked="@movePush" @onchange="@(args => movePush = args.Value is true)" /> push @pushable.Id (unchecked: abandon it)</label>
+            }
             <button id="propose-move" disabled="@(moveUnits.Count == 0 || moveTo.Trim().Length == 0)" @onclick="ProposeMove">Propose: move</button>
             <button id="propose-pass" disabled="@(state.Movement is not { WindowOpen: true })" @onclick='@(() => ProposeSimple(GameActions.PassFire, "pass"))'>Propose: the DEFENDER passes</button>
             <button id="propose-end-move" disabled="@(state.Movement is not { WindowOpen: false })" @onclick="ProposeEndMove">Propose: end the move@(EndingSome ? " of the checked units" : "")</button>
@@ -400,6 +417,24 @@ else if (state is not null)
                         <button class="vehicle-enter" data-to="@to" disabled="@(cost is null)" title="@(bar ?? "")" @onclick="@(() => ProposeVehicleStep("enter", to: to.ToString()))">Propose: enter @to@(cost is { } half ? $" ({HalfMpText(half)} MP)" : "")</button>
                     }
                     <button id="vehicle-stop" @onclick='@(() => ProposeVehicleStep("stop"))'>Propose: stop (1 MP)</button>
+                    @foreach (var towable in state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Kind == "asl:gun" && item.Position is MapPosition gunAt
+                        && gunAt.Location == state.Location(chosen.Id)?.Location))
+                    {
+                        @if (towable.Holding is { Role: HoldingRole.Towed })
+                        {
+                            <select id="vehicle-unhook-facing" value="@unhookFacing" @onchange="@(args => unhookFacing = args.Value as string ?? "east")">
+                                @foreach (var spine in Enum.GetValues<UnitFacing>())
+                                {
+                                    <option value="@UnitFacings.Name(spine)">@UnitFacings.Name(spine)</option>
+                                }
+                            </select>
+                            <button class="vehicle-unhook" data-gun="@towable.Id" @onclick="@(() => ProposeHook(chosen.Id, towable.Id, false))">Propose: unhook @towable.Id (half its MP)</button>
+                        }
+                        else if (towable.Holding is { Role: HoldingRole.Manned })
+                        {
+                            <button class="vehicle-hook" data-gun="@towable.Id" @onclick="@(() => ProposeHook(chosen.Id, towable.Id, true))">Propose: hook up @towable.Id (half its MP; C10.11)</button>
+                        }
+                    }
                     @foreach (var exit in Live.Planner.VehicleExits(state, chosen))
                     {
                         var exitEdge = Live.Planner.ExitEdge(state, chosen, exit);
@@ -698,7 +733,7 @@ else if (state is not null)
             <button id="propose-fire" disabled="@(fireFirers.Count == 0 || FireTarget.Length == 0)" @onclick="ProposeFire">Propose: fire</button>
             <button id="fire-clear" class="link" @onclick="ClearFire">clear</button>
         </div>
-        @if (state.Phase is "pfph" or "afph" or "dfph" && (OrdnanceGuns(firing).Any() || OrdnanceTanks(firing).Any()))
+        @if ((state.Phase is "pfph" or "afph" or "dfph" || (state.Phase == "mph" && state.Movement is { WindowOpen: true })) && (OrdnanceGuns(firing).Any() || OrdnanceTanks(firing).Any()))
         {
             <h4>Ordnance</h4>
             <p class="muted" id="ordnance-help">
@@ -755,7 +790,31 @@ else if (state is not null)
                         </select>
                     </label>
                 }
+                <label title="C5.6: once its normal ROF is used, a Gun may fire once more with +2 (Case F) and its B# two lower; never in the AFPh."><input id="ordnance-intensive" type="checkbox" checked="@ordnanceIntensive" @onchange="@(args => ordnanceIntensive = args.Value is true)" /> Intensive Fire</label>
                 <button id="propose-ordnance" disabled="@(ordnanceGun.Length == 0 || ordnanceTarget.Length == 0)" @onclick="ProposeOrdnance">Propose: fire</button>
+            </div>
+            @if (state.Phase != "mph" && state.Find(ordnanceGun) is EquipmentInstance chosenGun)
+            {
+                <div class="toolbar">
+                    <label title="C3.22: the Gun changes its CA without firing, and fires no more this phase; in the PFPh neither it nor its crew moves this Player Turn.">
+                        Turn to
+                        <select id="ordnance-turn" value="@ordnanceTurn" @onchange="@(args => ordnanceTurn = args.Value as string ?? "east")">
+                            @foreach (var spine in Enum.GetValues<UnitFacing>())
+                            {
+                                <option value="@UnitFacings.Name(spine)">@UnitFacings.Name(spine)</option>
+                            }
+                        </select>
+                    </label>
+                    <button id="propose-turn-gun" @onclick="ProposeTurnGun">Propose: turn without firing</button>
+                </div>
+                <ul id="ordnance-arc">
+                    @foreach (var at in FireTargets(firing))
+                    {
+                        <li data-at="@at">@at: @(LimboDancer.Domains.Asl.Maps.Coordinates.BoardLocation.TryParse(at, out var reading) ? Live.Planner.GunTargetStatus(state, chosenGun.Id, reading) ?? "not read" : "not read")</li>
+                    }
+                </ul>
+            }
+            <div class="toolbar">
             </div>
         }
     }
@@ -1051,7 +1110,7 @@ else if (state is not null)
     }
 
     private sealed record Placement(string Id, string? Definition, string Kind, string Side, string Location, bool Concealed, bool Hidden, string? Holder,
-        bool Broken = false, string? Facing = null);
+        bool Broken = false, string? Facing = null, string? BoreSighted = null);
 
     private string placeFacing = "east";
 
@@ -1091,6 +1150,12 @@ else if (state is not null)
     private string secondElr = string.Empty;
     private string newMonth = string.Empty;
     private string newYear = string.Empty;
+    private string newDefender = string.Empty;
+    private string placeBore = string.Empty;
+    private bool ordnanceIntensive;
+    private string ordnanceTurn = "east";
+    private bool movePush = true;
+    private string unhookFacing = "east";
     private string fireFrom = string.Empty;
     private readonly HashSet<string> fireFirers = new(StringComparer.Ordinal);
     private string fireDirector = string.Empty;
@@ -1563,7 +1628,8 @@ else if (state is not null)
 
     /// <summary>The game's map drawn for the viewer at the shown revision (Composed Maps Design, section 8).</summary>
     private GameMapDrawing? Drawing => state is not null && history?.Current is not null
-        ? GameMaps.Draw(gameId, state.Map, Viewer, state.Revision, highlight, playLos is { } check ? board => Los.Layer(board, check) : null, state.ResidualFire)
+        ? GameMaps.Draw(gameId, state.Map, Viewer, state.Revision, highlight,
+            board => (playLos is { } check ? Los.Layer(board, check) : string.Empty) + CoveredArcLayer(board), state.ResidualFire)
         : null;
 
     /// <summary>What "View on" opens: the saved map the game copied, or its first board.</summary>
@@ -1764,12 +1830,55 @@ else if (state is not null)
             + (acquired is null ? "" : $", Acquisition {acquired.Level} on {acquired.Location}") + crewState + ")";
     }
 
+    private Task ProposeTurnGun() => Propose(GameActions.TurnGun, JsonSerializer.SerializeToElement(new
+    {
+        gameId, attemptId = Attempt("turn"), expectedRevision = (long)history!.Events.Count, gunId = ordnanceGun, facing = ordnanceTurn,
+    }));
+
+    private Task ProposeHook(string vehicle, string gun, bool hooked)
+    {
+        var arguments = new Dictionary<string, object>
+        {
+            ["gameId"] = gameId, ["attemptId"] = Attempt("hook"), ["expectedRevision"] = (long)history!.Events.Count, ["vehicleId"] = vehicle, ["gunId"] = gun, ["hooked"] = hooked,
+        };
+        if (!hooked)
+        {
+            arguments["facing"] = unhookFacing;
+        }
+
+        return Propose(GameActions.HookGun, JsonSerializer.SerializeToElement(arguments));
+    }
+
+    /// <summary>
+    /// The chosen Gun's CA drawn as two rays from its hex (C3.2; ruling R8.9): the hexspines 30 degrees either side of its barrel.
+    /// </summary>
+    private string CoveredArcLayer(StudioBoard board)
+    {
+        if (state?.Find(ordnanceGun) is not EquipmentInstance { Position: MapPosition { Facing: { } facing } at } || UnitLibrary.TargetFor(board).Locate(at.Location) is not { } hex)
+        {
+            return string.Empty;
+        }
+
+        var center = board.Render.Grid.Geometry.CenterDot(hex);
+        var rays = new[] { -30, 30 }.Select(offset =>
+        {
+            var angle = ((int)facing * 60 + offset) * Math.PI / 180;
+            return string.Create(CultureInfo.InvariantCulture,
+                $"<line class=\"ca-ray\" x1=\"{center.X:0.##}\" y1=\"{center.Y:0.##}\" x2=\"{center.X + (900 * Math.Cos(angle)):0.##}\" y2=\"{center.Y - (900 * Math.Sin(angle)):0.##}\" stroke=\"#06c\" stroke-width=\"3\" stroke-dasharray=\"10 6\"/>");
+        });
+        return $"<g id=\"layer-covered-arc\">{string.Concat(rays)}</g>";
+    }
+
     private Task ProposeOrdnance()
     {
         var arguments = new Dictionary<string, object>
         {
             ["gameId"] = gameId, ["attemptId"] = Attempt("gun"), ["expectedRevision"] = (long)history!.Events.Count, ["gunId"] = ordnanceGun, ["target"] = ordnanceTarget,
         };
+        if (ordnanceIntensive)
+        {
+            arguments["intensive"] = true;
+        }
         if (ordnanceVehicle.Length > 0)
         {
             arguments["targetVehicle"] = ordnanceVehicle;
@@ -1911,7 +2020,7 @@ else if (state is not null)
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && !unit.MovementEnded && !LiveFire.IsVehicle(unit)
             && state.Location(unit.Id) is not null && GameState.Condition(unit, Conditions.Broken) != ConditionState.True
             && GameState.Condition(unit, Conditions.PrepFire) != ConditionState.True && GameState.Condition(unit, Conditions.Melee) != ConditionState.True
-            && GameState.Condition(unit, Conditions.Captured) != ConditionState.True && !Mans(unit)).OrderBy(unit => unit.Id, StringComparer.Ordinal);
+            && GameState.Condition(unit, Conditions.Captured) != ConditionState.True && !state.NoMoveThisPlayerTurn.Contains(unit.Id)).OrderBy(unit => unit.Id, StringComparer.Ordinal);
 
     /// <summary>
     /// The berserk units to charge now, with the Location each charges and its next steps (A15.43, A15.431), or why the model cannot
@@ -1975,11 +2084,24 @@ else if (state is not null)
         return Propose(GameActions.EndMove, JsonSerializer.SerializeToElement(arguments));
     }
 
-    private Task ProposeMove() => Propose(GameActions.Move, JsonSerializer.SerializeToElement(new
+    /// <summary>The Gun the one checked mover mans, which it may push (C10.3).</summary>
+    private EquipmentInstance? MovingGun => state is null || moveUnits.Count != 1 ? null
+        : state.Equipment.FirstOrDefault(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Manned } holding && moveUnits.Contains(holding.Holder));
+
+    private Task ProposeMove()
     {
-        gameId, attemptId = Attempt("move"), expectedRevision = (long)history!.Events.Count, unitIds = moveUnits.Order(StringComparer.Ordinal).ToArray(),
-        to = moveTo.Trim(), assault = moveAssault, doubleTime = moveDoubleTime,
-    }));
+        var arguments = new Dictionary<string, object>
+        {
+            ["gameId"] = gameId, ["attemptId"] = Attempt("move"), ["expectedRevision"] = (long)history!.Events.Count, ["unitIds"] = moveUnits.Order(StringComparer.Ordinal).ToArray(),
+            ["to"] = moveTo.Trim(), ["assault"] = moveAssault, ["doubleTime"] = moveDoubleTime,
+        };
+        if (movePush && MovingGun is { } gun)
+        {
+            arguments["pushGun"] = gun.Id;
+        }
+
+        return Propose(GameActions.Move, JsonSerializer.SerializeToElement(arguments));
+    }
 
     /// <summary>An action that names only the game: the DEFENDER's pass, or the end of the moving stack's move.</summary>
     private Task ProposeSimple(ActionDescriptor action, string kind) => Propose(action,
@@ -2171,6 +2293,19 @@ else if (state is not null)
                         _ => "still malfunctioned",
                     };
                     records.Add((item.EventId, "repair", $"{repair.Unit} repairs {repair.Equipment}: dr {dr} against R{repair.RepairNumber}: {result}"));
+                }
+                else if (item.Payload is ManhandlingRolled push)
+                {
+                    var dr = rolls.TryGetValue(push.Roll, out var roll) ? roll.Values.Sum().ToString(CultureInfo.InvariantCulture) : "?";
+                    records.Add((item.EventId, "manhandling", $"Manhandling DR for {push.Gun}: {dr} {push.Drm:+0;-0;+0} against M{push.Manhandling}: {push.Result} (C10.3)"));
+                }
+                else if (item.Payload is GunTurned turned)
+                {
+                    records.Add((item.EventId, "turn", $"{turned.Gun} turns to {UnitFacings.Name(turned.Facing)} without firing (C3.22)"));
+                }
+                else if (item.Payload is GunHooked hooked)
+                {
+                    records.Add((item.EventId, "hook", $"{hooked.Vehicle} {(hooked.Hooked ? "hooks up" : "unhooks")} {hooked.Gun} for {hooked.Mp} MP (C10.11, C10.12)"));
                 }
                 else if (item.Payload is ShockRecoveryRolled shock)
                 {
@@ -2502,9 +2637,10 @@ else if (state is not null)
         // C2.23, A21.13: a Gun faces a hexspine at its Location and is manned by the crew named as its holder.
         var gun = definition.Kind is "asl:gun" or "asl:vehicle";
         placements.Add(new Placement(id, definition.Id, definition.Kind, side, placeLocation.Trim(), placeConcealed, placeHidden, holder,
-            placeBroken && holder is null, gun ? placeFacing : null));
+            placeBroken && holder is null, gun ? placeFacing : null, definition.Kind == "asl:gun" && placeBore.Trim().Length > 0 ? placeBore.Trim() : null));
         placeId = string.Empty;
         placeHolder = string.Empty;
+        placeBore = string.Empty;
     }
 
     /// <summary>A Dummy (A12.1): a "?" with no unit beneath it, so it has no definition and is always concealed.</summary>
@@ -2560,7 +2696,13 @@ else if (state is not null)
                 placement["holding"] = new { holder = crew, role = "manned" };
             }
 
-            placement["conditions"] = new Dictionary<string, bool> { ["asl:malfunctioned"] = false };
+            // A12.14 (ruling R8.5): a Gun is concealed or hidden with its crew.
+            placement["conditions"] = new Dictionary<string, bool> { ["asl:malfunctioned"] = false, ["asl:concealed"] = item.Concealed, ["asl:hidden"] = item.Hidden };
+            if (item.BoreSighted is { } sighted)
+            {
+                placement["boreSighted"] = sighted;
+            }
+
             return placement;
         }
 
@@ -2598,6 +2740,11 @@ else if (state is not null)
         if (int.TryParse(newYear, CultureInfo.InvariantCulture, out var year))
         {
             start["scenarioYear"] = year;
+        }
+
+        if (newDefender.Length > 0)
+        {
+            start["scenarioDefender"] = newDefender;
         }
 
         return start;

@@ -26,8 +26,8 @@ public sealed class ScenarioA1RallyReference
 /// </summary>
 public sealed class ScenarioA1RallyPackage : IDomainPackageResolver
 {
-    public const string ManifestSha256 = "fdae11e5da387ac59016f73062422fd20f484fbb6befcd3d259eff8dfaf34ce7";
-    public const string MatrixSha256 = "943d38433cfd0cc6e00a60f38f834aab712854686ca324fa2de88b8203334d4f";
+    public const string ManifestSha256 = "197c68e4b0e43b08ac869573b7c3431f808521246cb2d741002805208499e7fa";
+    public const string MatrixSha256 = "f80101e1daf0c3679735d0b118da6cd0095545d4cc52790bc15dd4d9c87bb181";
     public static readonly DomainPackageRef Identity = new(new DomainId("asl"), "scenario-a1-rally", "sha256:" + ManifestSha256);
 
     private static readonly string[] Cases =

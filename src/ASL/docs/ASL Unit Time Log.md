@@ -179,3 +179,29 @@ Pass 7 total: 01:26 to 03:12, 1:46 against the estimate of 5:15 (build 4:00).
 | 7.2 Vehicle Target Type and 7.3 To Kill (2:10) | 0:44 | Review stage code (0:10) and source comparison, package revision, package tests (0:34) |
 | 7.4 Main armament fire and 7.5 Crew survival (1:10) | 0:08 | Live stage |
 | Overhead (1:15) | 0:48 | Reading, referee and table player with their fixes, suite, visual check, documents, merge gate |
+
+## Pass 8: Guns, part 2
+
+Estimate: 6:10 (build 4:55) in the [ASL Unit Backlog Passes Plan](<ASL Unit Backlog Passes Plan.md>). Kickoff 2026-09-28 03:12. Branch `feature/asl-backlog-pass-8`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Reading (plan, backlog section 12, C2.24 to C2.8, C3.21, C3.22, C5.5 to C5.9, C6.1 to C6.57, C10, C11, A4.41, A5.12, A7.352, A12.14) and rulings R8.1 to R8.12 | 03:12 | 03:38 | 0:26 | |
+| Catalog 1.7.0: BPV, dates, and Animal-Pack of the two Guns (6 rows), vocabulary 1.12.0, version references | 03:38 | 03:43 | 0:05 | |
+| Package stage: Fire and Ordnance package code (First Fire, Intensive Fire, Cases E, F, H, J1 to J4, M, overstacking, Guns and crews as targets, crews firing), package revision for catalog 1.7.0, package tests | 03:43 | 03:56 | 0:13 | |
+| Source comparison (54 fragments), package revision (fragments, rulings, cases), referee agent (9 findings) and its fixes, first live-stage code (Defensive First Fire, Intensive Fire, Gun targets, crews' fire, markers) | 03:56 | 04:13 | 0:17 | The referee ran in parallel |
+| Live stage: live tests for Defensive First Fire, Intensive Fire, Gun targets, crews' fire; CA change action, pushing and abandoning, hooking and towing, Bore Sighting, Case E and H, C2.6, bearings across boards, Play page and Studio test | 04:13 | 04:34 | 0:21 | |
+| Full suite (test updates for the new rules, goldens for IF), table player agent (14 findings) and fixes, verifier recomputing state facts, rulings and design | 04:34 | 04:51 | 0:17 | The table player ran from 04:36 |
+| Documents (review, backlog section 18, requirements, catalog design 9.8) and visual check in the Studio | 04:51 | 04:53 | 0:02 | The pane did not draw; the check read the page text and markup |
+| Full local suite before the commit (1,807 tests pass, 30 skipped) | 04:53 | 05:01 | 0:08 | |
+| Commit, Docker Linux check (every project exits 0), merge, push | 05:01 | 05:08 | 0:07 | |
+
+Pass 8 total: 03:12 to 05:08, 1:56 against the estimate of 6:10 (build 4:55).
+
+| Task (plan estimate) | Actual | Where it was logged |
+|---|---|---|
+| 8.10 Catalog details (part of 0:20) | 0:05 | Catalog 1.7.0 |
+| 8.1 to 8.9 and 8.10 overstacking, package side (about 2:30) | 0:13 | Package stage |
+| 8.1 to 8.9, live side (about 2:05) | 0:38 | Live stage (0:21) and the live code begun with the source comparison (about 0:17) |
+| Overhead (1:15) | 1:00 | Reading and rulings, source comparison, referee and table player with their fixes, suites, documents, visual check, merge gate |
+

@@ -41,7 +41,7 @@ public static class LiveOrdnance
 
     /// <summary>The state's part of a shot, or the reason the Gun cannot fire from this state.</summary>
     public static (OrdnanceShot? Shot, string? Reason) FromState(GameState state, string gunId, BoardLocation target, string? targetVehicle = null,
-        string? ammunition = null)
+        string? ammunition = null, bool intensive = false)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(target);
@@ -55,6 +55,7 @@ public static class LiveOrdnance
             "pfph" => "PFPh",
             "dfph" => "DFPh",
             "afph" => "AFPh",
+            "mph" => "MPh",
             _ => null,
         };
         if (phase is null)
@@ -86,6 +87,12 @@ public static class LiveOrdnance
             return (null, $"play.ordnance-gun: '{gunId}' is not an active Gun from the catalog on the map, manned by an active unit, nor a tank (A21.13, C2.1, D1.3)");
         }
 
+        // A4.8, C10.3, C10.12 (table player, pass 8): a TI Gun or crew does not fire; C3.22: a Gun turned without firing fires no more that phase.
+        if (Is(gun, "asl:ti") || Is(crew, "asl:ti") || state.GunsTurnedThisPhase.Contains(gun.Id, StringComparer.Ordinal))
+        {
+            return (null, $"play.ordnance-halted: '{gun.Id}' is TI, or changed its CA without firing this phase, and does not fire (A4.8, C3.22, C10.3)");
+        }
+
         // A11.15: a unit held in Melee fires only in CC; a prisoner does not fire.
         if (Is(crew, Conditions.Melee) || Is(crew, Conditions.Captured))
         {
@@ -93,16 +100,31 @@ public static class LiveOrdnance
         }
 
         var side = crew.Side;
+
+        // A8.1, C6.1 (ruling R8.1): in the MPh, Defensive First Fire by the non-phasing side at the moving stack in its Location, while the
+        // DEFENDER's window on its MF or MP expenditure is open; only the moving units are its targets.
+        IReadOnlyList<string>? movers = null;
+        if (phase == "MPh")
+        {
+            if (side == state.PhasingSide || state.Movement is not { WindowOpen: true } window || window.Location != target)
+            {
+                return (null, "play.ordnance-window: in the MPh a Gun or tank of the DEFENDER fires at the moving stack in its Location, while the window on its MF or MP expenditure is open (A8.1, C6.1)");
+            }
+
+            movers = window.Movers;
+        }
+
         UnitInstance? vehicleTarget = null;
         if (targetVehicle is not null && (state.Unit(targetVehicle) is not { Status: InstanceStatus.Active } named || !LiveFire.IsVehicle(named)
-            || state.Location(named.Id)?.Location != target || (vehicleTarget = named).Side == side))
+            || state.Location(named.Id)?.Location != target || (vehicleTarget = named).Side == side || (movers is not null && !movers.Contains(named.Id))))
         {
             return (null, $"play.ordnance-vehicle-target: '{targetVehicle}' is not an active enemy vehicle in {target} (C3.31)");
         }
 
         // C3.31: a Vehicle Target Type shot attacks only the named vehicle.
         UnitInstance[] targets = vehicleTarget is not null ? [] : [.. state.At(target).OfType<UnitInstance>()
-            .Where(unit => unit.Status == InstanceStatus.Active && unit.Side != side && !Is(unit, Conditions.Captured)).OrderBy(unit => unit.Id, StringComparer.Ordinal)];
+            .Where(unit => unit.Status == InstanceStatus.Active && unit.Side != side && !Is(unit, Conditions.Captured) && (movers is null || movers.Contains(unit.Id)))
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal)];
         if (targets.Any(unit => unit.Definition is null && unit.Kind != UnitKinds.Dummy))
         {
             return (null, "play.ordnance-target: the target Location holds a unit outside the catalog");
@@ -126,9 +148,14 @@ public static class LiveOrdnance
             new OrdnanceGun(gun.Id, definition, Is(gun, Conditions.Malfunctioned), shots?.Shots ?? 0, shots?.RateOfFireKept ?? false, fired)
             {
                 Depleted = depleted.Length == 0 ? null : depleted,
+                FirstFire = Is(gun, Conditions.FirstFire) ? true : null,
+                FinalFire = Is(gun, Conditions.FinalFire) ? true : null,
+                IntensiveFired = Is(gun, Conditions.IntensiveFire) ? true : null,
             },
+            // A7.352 (ruling R8.4): a crew that fired its inherent FP (a fire counter it did not get from its Gun) does not fire the Gun.
             new OrdnanceCrew(crew.Id, crew.Definition!.Definition, Is(crew, Conditions.Broken), Is(crew, Conditions.Pinned), Is(crew, Conditions.Berserk),
-                Is(crew, Conditions.Concealed) || Is(crew, Conditions.Hidden), false)
+                Is(crew, Conditions.Concealed) || Is(crew, Conditions.Hidden),
+                gun is EquipmentInstance && (LiveFire.Fired(crew) || Is(crew, Conditions.FirstFire)) && !state.GunCrewsFired.Contains(crew.Id, StringComparer.Ordinal))
             {
                 Cx = Is(crew, Conditions.Cx) ? true : null,
             },
@@ -136,7 +163,30 @@ public static class LiveOrdnance
         {
             Ammunition = ammunition ?? (vehicleTarget is not null ? "ap" : null),
             ScenarioYear = vehicleTarget is not null || ammunition is not null ? state.ScenarioYear : null,
+            IntensiveFire = intensive ? true : null,
+            // C5.8 (ruling R8.8): a squad or HS manning a Gun is non-qualified.
+            NonQualified = gun is EquipmentInstance && crew.Kind is not "asl:crew" ? true : null,
         };
+        if (phase == "MPh")
+        {
+            // C6.13, C6.16, C6.17: non-Assault Movement and the MF or MP spent in the Location (FRD); the Gun's shots there so far; the MP in the
+            // firer's continuous LOS and a move into Open Ground are the planner's map reads.
+            var window = state.Movement!;
+            var here = state.OrdnanceShotsHere.FirstOrDefault(item => item.Gun == gun.Id);
+            shot = shot with
+            {
+                FireKind = "first-fire",
+                Movement = new OrdnanceMovement(null, vehicleTarget is null ? !window.Assault : null, null, window.HalfMfInLocation / 2, here?.Shots ?? 0)
+                {
+                    MpClaimed = vehicleTarget is not null && here is { Mp: > 0 } ? here.Mp : null,
+                },
+                // C3.71: a Critical Hit keeps FFNAM and FFMO, so the hit carries the stack's movement.
+                Hit = shot.Hit! with
+                {
+                    TargetMovement = vehicleTarget is null ? new FireMovement(window.Assault) : null
+                },
+            };
+        }
         if (gun is UnitInstance firer)
         {
             // D5.2, D5.34, C7.42, D5.341, D2.4 (rulings R7.10, R7.11): a CT AFV is BU unless its crew is exposed.
@@ -174,6 +224,30 @@ public static class LiveOrdnance
         }
 
         return (shot, null);
+    }
+
+    /// <summary>The squad equivalents (FRU) by which a side's Personnel overstack a Location, a crew or HS counting half (A5.1, A5.12).</summary>
+    public static int Excess(GameState state, BoardLocation at, string side)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        var units = state.At(at).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && !Is(unit, Conditions.Captured)).ToArray();
+        var squads = units.Count(unit => unit.Kind == "asl:squad") + (units.Count(unit => unit.Kind is "asl:half-squad" or "asl:crew") / 2m);
+        return squads > 3 ? (int)Math.Ceiling(squads - 3) : 0;
+    }
+
+    /// <summary>Whether a Gun fires at its Bore Sighted Location with its original crew from its setup Location (C6.43).</summary>
+    public static bool BoreSighted(GameState state, string gun, string crew, BoardLocation from, BoardLocation target)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return state.BoreSights.Any(item => item.Gun == gun && item.Location == target && item.Crew == crew && item.SetupLocation == from);
+    }
+
+    /// <summary>Whether a Gun is Emplaced: manned by a crew, never moved or hooked up (C11.2, C11.3).</summary>
+    public static bool Emplaced(GameState state, EquipmentInstance gun)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(gun);
+        return gun.Holding is { Role: HoldingRole.Manned } manning && state.Unit(manning.Holder)?.Kind == "asl:crew" && !state.UnemplacedGuns.Contains(gun.Id, StringComparer.Ordinal);
     }
 
     /// <summary>A turreted AFV's TCA: its recorded turret facing, or its VCA (D3.12; ruling R7.10).</summary>
@@ -282,7 +356,7 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
             return "The ordnance record's facts are incomplete.";
         }
 
-        var (expected, reason) = LiveOrdnance.FromState(state, fired.Gun, fired.Target, recorded.VehicleTarget?.VehicleId, recorded.Ammunition);
+        var (expected, reason) = LiveOrdnance.FromState(state, fired.Gun, fired.Target, recorded.VehicleTarget?.VehicleId, recorded.Ammunition, recorded.IntensiveFire == true);
         if (expected is null)
         {
             return reason;
@@ -311,6 +385,41 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
             {
                 HullFacing = recorded.VehicleTarget?.HullFacing,
                 TurretFacing = recorded.VehicleTarget?.TurretFacing,
+            },
+
+            // The map reads of pass 8: the MP in the firer's LOS and Open Ground (C6.11, C6.14), the own-hex shot (C5.5), Bore Sighting (C6.4),
+            // overstacking (A5.12, A5.131), and the Gun in the target Location with its Emplacement and gunshield (C11).
+            Movement = expected.Movement is null ? null : expected.Movement with
+            {
+                MpInLos = recorded.Movement?.MpInLos,
+                OpenGround = recorded.Movement?.OpenGround,
+            },
+            SameHex = recorded.SameHex,
+            CrewSeen = recorded.CrewSeen,
+        };
+
+        // The state reads of pass 8 are recomputed (table player, pass 8): Bore Sighting (C6.43), overstacking (A5.12, A5.131), and Emplacement.
+        var gunAt = state.Find(fired.Gun) switch
+        {
+            EquipmentInstance { Position: MapPosition placed } => placed.Location,
+            UnitInstance { Position: MapPosition driven } => driven.Location,
+            _ => fired.Target,
+        };
+        var firingSide = state.Unit(fired.Crew)?.Side ?? string.Empty;
+        var enemy = state.Sides.FirstOrDefault(item => item.Id != firingSide)?.Id ?? string.Empty;
+        merged = merged with
+        {
+            BoreSighted = LiveOrdnance.BoreSighted(state, fired.Gun, fired.Crew, gunAt, fired.Target) ? true : null,
+            FirerOverstack = LiveOrdnance.Excess(state, gunAt, firingSide) is var over and > 0 ? over : null,
+            TargetOverstack = merged.VehicleTarget is null && LiveOrdnance.Excess(state, fired.Target, enemy) is var crowded and > 0 ? crowded : null,
+            Hit = merged.Hit! with
+            {
+                GunTarget = recorded.Hit.GunTarget is { } gunTarget && state.Find(gunTarget.GunId ?? string.Empty) is EquipmentInstance targetGun
+                    ? gunTarget with
+                    {
+                        Emplaced = LiveOrdnance.Emplaced(state, targetGun)
+                    }
+                    : recorded.Hit.GunTarget,
             },
         };
         if (JsonSerializer.Serialize(merged, LiveFire.Json) != JsonSerializer.Serialize(recorded, LiveFire.Json)

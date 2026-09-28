@@ -133,9 +133,9 @@ public sealed class PlayPageDemoFixesTests : IDisposable
         page.Find("#fire-from").Change(hexes.One);
         Assert.Equal(["g1"], Checked(page, ".fire-firer"));
 
-        // Nor the Movement panel (ruling R24.4).
+        // The Movement panel offers the crew since the backlog pass 8: it may push its Gun or abandon it (ruling R8.6).
         Advance(page, 1);
-        Assert.Equal(["g1"], Checked(page, ".move-unit"));
+        Assert.Equal(["de-crew", "g1"], Checked(page, ".move-unit"));
         Advance(page, 4);
 
         Assert.Equal(["g1"], Checked(page, ".advance-unit"));
