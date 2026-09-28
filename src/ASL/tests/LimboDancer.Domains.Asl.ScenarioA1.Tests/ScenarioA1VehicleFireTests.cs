@@ -247,10 +247,11 @@ public sealed class ScenarioA1VehicleFireTests
     }
 
     [Fact]
-    public void InfantryWithAnAfvAndAnAfvInTerrainWithATemAreOutside()
+    public void AnAfvInTerrainWithATemIsOutsideButInfantryWithAnAfvAreNot()
     {
-        // D9.3 (referee D4): Infantry sharing a Location with an AFV; D5.31 (referee D9): the CE DRM is not cumulative with a positive TEM.
-        Assert.Contains("asl.a1.fire.vehicle-outside",
+        // D5.31 (referee D9): the CE DRM is not cumulative with a positive TEM. Infantry sharing a Location with an AFV are admitted since the
+        // backlog pass 6 (D9.3; ruling R6.1).
+        Assert.DoesNotContain("asl.a1.fire.vehicle-outside",
             ScenarioA1FireCalculator.Resolve(Attack([3, 4], [Vehicle("de-ht", "attacker-halftrack")], [Target("de-s", "attacker-squad")]), Reference).Reasons);
         Assert.Contains("asl.a1.fire.vehicle-outside",
             ScenarioA1FireCalculator.Resolve(Attack([3, 4], [Vehicle("de-ht", "attacker-halftrack")], terrain: "woods"), Reference).Reasons);

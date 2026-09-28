@@ -3,9 +3,9 @@
   "status": "published-bounded-fire-package",
   "domainId": "asl",
   "packageId": "scenario-a1-fire",
-  "priorFirePackageManifestSha256": "ef97d62a0d26e865b737109421f94cc909a331b4489918c49143e28e4c0c71d0",
+  "priorFirePackageManifestSha256": "f36022ca5a1c3cb915a4c38b1378d0ef70b6b609be31efc3491a966b05197a47",
   "declaredUse": "Read-only conclusions for a declared fire attack by reviewed Scenario A1 MMC and heroes, with their MGs, in the PFPh, AFPh, DFPh, or the MPh (Defensive First Fire, Subsequent First Fire, FPF, and Residual FP), in one Location or across ADJACENT Locations, optionally directed: the FP columns, the DRM, the IFT results, each target unit's effect, each MG's malfunction and Multiple ROF, and the Residual FP left, under the user's rulings of 2026-09-26 (Fire Review; ASL Unit Rally and Fire Extensions Plan, R20.1 to R23.5 and R0.2); and Heat of Battle after an Original MC DR of 2 (Deviations, Ordnance, and Vehicles Plan, R26.1 to R28.8).",
-  "caseMatrixSha256": "439fb9add06ac0734216254d79f4a0391fc5439fa02701defe6ad098209c14b3",
+  "caseMatrixSha256": "80f5f16196c37c5d93237d4245d52f8eef2e063b6fa598067b69178232084d38",
   "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
   "chartSupplementSha256": "8499a4ec75da057920fbc05dde60b975f39560803d26ce1433f9c6567a052985",
   "chartReviewDecisionSha256": "a19bf80dedc36fbf36d9356552f28a538faeea9469c8d22daddfabed546fd1e2",
@@ -1328,6 +1328,69 @@
       "startLine": 1416,
       "fragmentId": "asl-fragment:sha256:c4251e0eb8cec3b1fc2490c9813cc26f5783b477577afb35e05c85cdbe45ff97",
       "contentSha256": "51b548532f91004f11b20c181da4e3fa6a4ea441ed1bf9b63d236df153a32bdb"
+    },
+    {
+      "ruleId": "A8.222",
+      "physicalPdfPage": 60,
+      "startLine": 630,
+      "fragmentId": "asl-fragment:sha256:2e3e379d3136b0b58454c055ff530e2ccfc21b01a4d6bd3b2457b585021fa7d5",
+      "contentSha256": "70dfdef3aa59f422b39ad815de7974c96e86562797e40b152704553aff80012b"
+    },
+    {
+      "ruleId": "D10.1",
+      "physicalPdfPage": 210,
+      "startLine": 790,
+      "fragmentId": "asl-fragment:sha256:b9e92e34dbde27d78a55373f6008034b123ce7ff3977491807988fb5d8fe9ed5",
+      "contentSha256": "725d24ca63488e969df27a59d9f91456dcce890b0f2e38240bf541f795679bc0"
+    },
+    {
+      "ruleId": "D10.3",
+      "physicalPdfPage": 210,
+      "startLine": 796,
+      "fragmentId": "asl-fragment:sha256:46f277ab4f7c76e6bbd7c294426ab5fb4bca6cb6f1c94c852b3ff7c2c90f6855",
+      "contentSha256": "d39a9f4b78fafb86bf92772edd89fa4042d9f1f2b011f6bb9111fd83e044fdbb"
+    },
+    {
+      "ruleId": "B25.14",
+      "physicalPdfPage": 143,
+      "startLine": 1683,
+      "fragmentId": "asl-fragment:sha256:19032ec977a07c9bd21c79468809ffbfa3c11a2182d540b8605c3a403654c20d",
+      "contentSha256": "b753e5ca298fbbc52b0d4703e5113f45eb9bab44af0fa4b28fe32622733163b4"
+    },
+    {
+      "ruleId": "B25.2",
+      "physicalPdfPage": 143,
+      "startLine": 1691,
+      "fragmentId": "asl-fragment:sha256:8b8dcfded99ceff775f728dccc4954de9c54b968b887da4aeeae19b81f0a151a",
+      "contentSha256": "e884a987205e759de6549ad6964ab58ddbbaabe6eb5018c5dc36a8dc45edd0cc"
+    },
+    {
+      "ruleId": "A24.2",
+      "physicalPdfPage": 91,
+      "startLine": 1568,
+      "fragmentId": "asl-fragment:sha256:afdf1468baa5093efd61d07592093e85e1a7be240d4acf4f3cf4dd4346f090b1",
+      "contentSha256": "307d840d9b594504fb3661cda58ceff4feae6910daf105f8884016af06db9931"
+    },
+    {
+      "ruleId": "A24.8",
+      "physicalPdfPage": 93,
+      "startLine": 1608,
+      "fragmentId": "asl-fragment:sha256:1ff88aa04c043182adbacc71799b3d9cadd331c015c6962c1995c64bbc694d34",
+      "contentSha256": "3100092869407f348e1412acaede8dc933d6149d6311566747aeb451e28a1e5f"
+    },
+    {
+      "ruleId": "A12.2",
+      "physicalPdfPage": 79,
+      "startLine": 1082,
+      "fragmentId": "asl-fragment:sha256:39995654df30e8a7ae83306aedc29e87f3a57a3ce3ed9e34818613448f211b28",
+      "contentSha256": "7fce9fa0ada5fc99fcca0864f1ca151a980611406859a501cd290b9b102bf15d"
+    },
+    {
+      "ruleId": "D3.3",
+      "physicalPdfPage": 199,
+      "startLine": 347,
+      "fragmentId": "asl-fragment:sha256:3a9aec4a66e3ed6c32ed95b8956195d5f2204aedfe1d60bc94b44a0c397f8944",
+      "contentSha256": "1820d7ca7e502537e725585ce43b09c529b2ad42e6afb7db3a49821f7918cd89"
     }
   ],
   "visualReadings": [
@@ -1372,7 +1435,12 @@
     "cx": "plus-one-to-the-ift-dr-once-per-attack-when-a-cx-unit-fires-or-directs-A4.51 (R5.2)",
     "secondHeatOfBattle": "a-second-original-mc-dr-2-in-one-attack-calls-for-a-second-heat-of-battle-dr-under-its-own-roll-key-unless-the-unit-is-eliminated-berserk-heroic-or-surrendered-A15.1 (R5.10)",
     "ownerOptions": "with-the-owners-answers-declared-battle-hardening-that-would-change-a-unit-and-the-unlikely-kill-dr-after-any-original-2-wait-for-them; a-declined-option-is-not-taken-A15.3-A7.309 (R5.8, R5.9)",
-    "noQuarter": "a-side-faced-with-no-quarter-treats-a-heat-of-battle-surrender-as-berserk-and-is-not-disrupted-A20.3-A15.5 (R5.6)"
+    "noQuarter": "a-side-faced-with-no-quarter-treats-a-heat-of-battle-surrender-as-berserk-and-is-not-disrupted-A20.3-A15.5 (R5.6)",
+    "afvCover": "plus-one-tem-for-infantry-with-a-non-burning-wreck-a-friendly-afv-or-an-abandoned-enemy-afv-when-their-terrain-gives-no-positive-tem-not-vs-fire-from-within-the-location-and-no-ffmo-D9.3-D10.3-A4.6 (R6.1)",
+    "afvHindrance": "the-game-adds-the-plus-one-afv-or-wreck-hindrance-and-a-burning-wrecks-plus-two-smoke-to-the-los-hindrance-drm-D9.4-B25.2-A24.2-A24.8 (R6.2, R6.3)",
+    "residualVehicles": "residual-fp-attacks-an-unarmored-vehicle-on-the-vehicle-line-and-an-afvs-vulnerable-crew-collaterally-with-no-los-hindrance-but-the-smoke-of-the-target-location-which-also-cancels-ffmo-A8.2-A8.222-A7.308-D.8B-A24.2 (R6.6)",
+    "concealedVehicles": "a-concealed-vehicle-is-attacked-on-the-halved-fps-column-A12.2-A12.13 (R6.7)",
+    "vehicleMovementFire": "a-vehicles-aamg-fires-in-the-mph-as-defensive-first-fire-or-moving-as-bounding-first-fire-halved-for-bounding-fire-and-again-while-non-stopped-which-leaves-a-bounding-fire-counter-D3.3-D3.31-D2.42-A8.1 (R6.9)"
   },
   "resolution": {
     "firepower": "Each firer's printed FP, doubled for PBF when the target is adjacent at the same level (A7.21), halved beyond Normal Range up to twice it (A7.22), halved when the target Location holds a concealed unit (A7.23), and halved when the firer is pinned (A7.8); fractions are kept and summed (A7.2).",
@@ -1430,7 +1498,11 @@
     "A1-fire-cx",
     "A1-fire-second-heat-of-battle",
     "A1-fire-owner-options",
-    "A1-fire-no-quarter"
+    "A1-fire-no-quarter",
+    "A1-fire-afv-cover",
+    "A1-fire-residual-vehicle",
+    "A1-fire-concealed-vehicle",
+    "A1-fire-bounding-first-fire"
   ],
   "executionAuthority": "none",
   "excludedOutcomes": [
@@ -1449,9 +1521,9 @@
     "a hero using a SW (A15.23)",
     "prisoners exchanged for Unarmed counters (A20.5), and prisoner escape (A20.55)",
     "crews as targets, and Guns hit by fire (C11)",
-    "vehicles as targets of Residual FP and ordnance, more than one vehicle in a Location, and vehicles in terrain with a TEM (R25.3)",
-    "closed-topped AFV, Passengers and Riders (D6), wrecks and their effects (D10), and an AFV's TEM and LOS Hindrance for Infantry (D9.3, D9.4)",
-    "vehicle MG fire in the MPh (Defensive First Fire, Bounding First Fire), BMG and CMG, and vehicle MG repair (D3.3, D3.7)"
+    "vehicles as targets of ordnance, more than one vehicle in a Location, and vehicles in terrain with a TEM (R25.3)",
+    "closed-topped AFV, Passengers and Riders (D6), Armored Assault (D9.31), and Spreading Fire from a burning wreck (B25)",
+    "BMG and CMG, Passengers' and Riders' fire (D6.64), and a vehicle's Final Fire after its First Fire (A8.4)"
   ],
   "vehicleLineTranscriptionSha256": "c9a2d785126584d18af851757a8028b975c0866fadcfc5e3fe137ca66e191fb2"
 }

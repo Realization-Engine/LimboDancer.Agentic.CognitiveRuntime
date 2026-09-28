@@ -117,8 +117,11 @@ public sealed partial class GamePlanner
         var alone = Strings(arguments, "withoutInherent").ToArray();
         string[] firerIds = [.. firerList.EnumerateArray().Select(item => item.GetString()!)];
 
+        // D3.3 (ruling R6.9): the moving vehicle's Bounding First Fire comes once the DEFENDER has passed on its MP expenditure.
+        var bounding = state.Phase == "mph" && firerIds.Length == 1 && LiveFire.MayBoundingFire(state, firerIds[0]);
+
         // A8.1, A8.11: in the MPh, Defensive fire answers the moving stack's MF expenditure, in its Location.
-        if (state.Phase == "mph" && (state.Movement is not { WindowOpen: true } window || window.Location != target))
+        if (state.Phase == "mph" && !bounding && (state.Movement is not { WindowOpen: true } window || window.Location != target))
         {
             return Refused(scope, label, expected, "play.fire-window: Defensive First Fire attacks the moving stack in its Location, while the DEFENDER's window on its MF expenditure is open (A8.1, A8.11)");
         }
@@ -133,13 +136,6 @@ public sealed partial class GamePlanner
         if (attack.VehicleFire is { InMotion: true } inMotion && state.Phase == "pfph")
         {
             return Refused(scope, label, expected, $"play.fire-vehicle-motion: {inMotion.VehicleId} is in Motion and may not Prep Fire (D2.4)");
-        }
-
-        // D9.3, D9.4 (ruling R25.9): an AFV's TEM and Hindrance for Infantry are not reviewed.
-        if (AfvCover(state, [BoardLocation.Parse(attack.FirerLocationId!), .. attack.Firers!.Select(item => BoardLocation.Parse(item.LocationId!))], target,
-            attack.Targets!.Count > 0) is { } cover)
-        {
-            return Refused(scope, label, expected, cover);
         }
 
         // A15.432: berserk fire (TPBF in the AFPh, and the DFPh) is not reviewed; A11.15: units held in Melee fire only in CC; A20.52:
@@ -168,16 +164,16 @@ public sealed partial class GamePlanner
             : attack.Vehicles is [{ } vehicleTarget, ..] ? state.Unit(vehicleTarget.VehicleId!)!.Side
             : state.Sides.First(item => item.Id != firingSide).Id;
 
-        // The firing side sees nothing, or not everything, at the target: its refusals say only that the attack is undecided. Vehicles
-        // are never concealed (ruling R25.10).
+        // The firing side sees nothing, or not everything, at the target: its refusals say only that the attack is undecided. A concealed
+        // vehicle is unseen too (ruling R6.7).
         var seen = attack.Targets.Count(item => VisibleTo(state.Unit(item.UnitId!)!, firingSide));
-        var unseen = seen < attack.Targets.Count || (seen == 0 && attack.Vehicles is not { Count: > 0 });
+        var unseen = seen < attack.Targets.Count || (seen == 0 && attack.Vehicles is not { Count: > 0 }) || (attack.Vehicles ?? []).Any(item => item.Concealed == true);
         FireProposal Proposal(FireAttack facts, bool undecided = false) =>
             new(firingSide, targetSide, facts, undecided && unseen ? [FireProposal.Undisclosed] : []);
 
         // A7.55: the units of a Location that fire at a target in a phase (in the MPh, at one MF expenditure) form one fire
         // group, so it fires once; a MG firing again alone on its Multiple ROF is not a new group.
-        var step = state.Phase == "mph" ? state.Movement!.Step : (int?)null;
+        var step = state.Phase == "mph" && !bounding ? state.Movement!.Step : (int?)null;
         var fromLocations = attack.Firers!.Select(item => item.LocationId!).Distinct(StringComparer.Ordinal).ToArray();
         if (alone.Length == 0 && state.FiresThisPhase.Any(record => !(attack.VehicleFire is not null && record.Vehicle)
             && (fromLocations.Contains(record.FirerLocation) || record.FirerLocation == attack.FirerLocationId)
@@ -425,7 +421,7 @@ public sealed partial class GamePlanner
         // A7.308, A7.309, D.8B: the Vehicle line's result and the crew's (ruling R25.5, R25.6).
         foreach (var vehicle in resolution.VehicleEffects ?? [])
         {
-            if (VehicleEffectEvent(vehicle) is { } payload)
+            foreach (var payload in VehicleEffectEvents(state, vehicle, facts))
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, payload.Type, payload.Payload, package, null, [fireId]));
             }
@@ -492,7 +488,9 @@ public sealed partial class GamePlanner
                 conditions[Conditions.FirstFire] = ConditionState.False;
             }
 
-            if (resolution.FirerConcealmentLost.Contains(id))
+            // A12.2 (ruling R6.7): a concealed vehicle that fires loses its "?".
+            if (resolution.FirerConcealmentLost.Contains(id) || (facts.VehicleFire?.VehicleId == id && state.Unit(id) is { } firing
+                && (Is(firing, Conditions.Concealed) || Is(firing, Conditions.Hidden))))
             {
                 conditions[Conditions.Concealed] = ConditionState.False;
             }
@@ -520,17 +518,48 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>
-    /// The event that records a vehicle's effect (ruling R25.5, R25.6): a destroyed vehicle leaves play (its wreck is not placed); an
-    /// immobilized one loses Motion (D.7); a Stunned crew buttons up and the vehicle Stops (D5.34); a Recalled crew is treated as Stunned but
-    /// marked Recalled alone (D5.341); a pinned crew is pinned (A7.82).
+    /// The events that record a vehicle's effect (rulings R25.5, R25.6, R6.5, R6.7): a destroyed vehicle becomes a wreck, with a Blaze when it
+    /// burns (D10.1, B25.14); an immobilized one loses Motion (D.7); a Stunned crew buttons up and the vehicle Stops (D5.34); a Recalled crew
+    /// is treated as Stunned but marked Recalled alone (D5.341); a pinned crew is pinned (A7.82). A concealed vehicle given a Vehicle line
+    /// result, or whose crew took at least a PTC, loses its "?" to the firer in its LOS (A12.2); Residual FP has no firer.
     /// </summary>
-    private static (string Type, EventPayload Payload)? VehicleEffectEvent(FireVehicleEffect effect)
+    private static IEnumerable<(string Type, EventPayload Payload)> VehicleEffectEvents(GameState state, FireVehicleEffect effect, FireAttack facts)
     {
+        var vehicle = state.Unit(effect.VehicleId);
         if (effect.Result is FireVehicleEffect.Eliminated or FireVehicleEffect.BurningWreck)
         {
-            return ("instance-eliminated", new InstanceEliminated(effect.VehicleId));
+            var burning = effect.Result == FireVehicleEffect.BurningWreck;
+            yield return ("vehicle-wrecked", new VehicleWrecked(effect.VehicleId, burning));
+            if (burning && vehicle is not null && state.Location(vehicle.Id) is { } at)
+            {
+                yield return ("instance-created", new InstanceCreated(new NewInstance(BlazeId(vehicle.Id), "asl:fire", null, null, new MapPosition(at.Location), null,
+                    new Dictionary<string, ConditionState>())));
+            }
+
+            yield break;
         }
 
+        if (VehicleConditions(effect) is { } changed)
+        {
+            if (vehicle is not null && (Is(vehicle, Conditions.Concealed) || Is(vehicle, Conditions.Hidden)) && facts.FireKind != ScenarioA1FireCalculator.ResidualFire
+                && (effect.Result != FireVehicleEffect.None || effect.CrewCheck is not null || effect.CrewResult == FireVehicleEffect.Recalled))
+            {
+                changed[Conditions.Concealed] = ConditionState.False;
+                changed[Conditions.Hidden] = ConditionState.False;
+            }
+
+            yield return ("conditions-changed", new ConditionsChanged(effect.VehicleId, changed));
+        }
+        else if (vehicle is not null && (Is(vehicle, Conditions.Concealed) || Is(vehicle, Conditions.Hidden)) && facts.FireKind != ScenarioA1FireCalculator.ResidualFire
+            && effect.CrewCheck is not null)
+        {
+            yield return ("conditions-changed", new ConditionsChanged(effect.VehicleId,
+                new Dictionary<string, ConditionState> { [Conditions.Concealed] = ConditionState.False, [Conditions.Hidden] = ConditionState.False }));
+        }
+    }
+
+    private static Dictionary<string, ConditionState>? VehicleConditions(FireVehicleEffect effect)
+    {
         var conditions = new Dictionary<string, ConditionState>(StringComparer.Ordinal);
         if (effect.Result == FireVehicleEffect.Immobilized)
         {
@@ -558,13 +587,14 @@ public sealed partial class GamePlanner
                 break;
         }
 
-        return conditions.Count == 0 ? null : ("conditions-changed", new ConditionsChanged(effect.VehicleId, conditions));
+        return conditions.Count == 0 ? null : conditions;
     }
 
     private static string Marker(string counter) => counter switch
     {
         "prep-fire" => Conditions.PrepFire,
         "first-fire" => Conditions.FirstFire,
+        "bounding-fire" => Conditions.BoundingFire,
         _ => Conditions.FinalFire,
     };
 
@@ -787,11 +817,20 @@ public sealed partial class GamePlanner
             }
         }
 
+        // D9.3, D10.3 (ruling R6.1): the wreck or AFV whose +1 TEM the target Location's Infantry may claim.
+        var infantrySide = attack.Targets!.Select(item => state.Unit(item.UnitId!)?.Side).FirstOrDefault(side => side is not null);
+        attack = attack with
+        {
+            AfvCover = CoverAt(state, target, infantrySide)
+        };
         if (attack.FireKind == ScenarioA1FireCalculator.ResidualFire)
         {
+            // A8.2 (ruling R6.6): Residual FP has no LOS Hindrance, but a burning wreck's smoke in its Location applies (B25.2).
+            var smoke = WrecksAt(state, target).Any(wreck => IsBurning(state, wreck)) ? 2 : 0;
             return (attack with
             {
-                TargetTerrain = terrain
+                TargetTerrain = terrain,
+                Los = smoke > 0 ? new FireLos(false, smoke, true, false) : null,
             }, null);
         }
 
@@ -814,13 +853,21 @@ public sealed partial class GamePlanner
                 return (null, $"play.fire-los: the LOS read gives no definitive answer ({los.Status}: {los.Reason})");
             }
 
-            // A6.7: the largest Hindrance at each range counts; brush always, grain June to September (B15.2).
+            // A6.7: the largest Hindrance at each range counts; brush always, grain June to September (B15.2); and an AFV or wreck
+            // where the map has none at that range, and a burning wreck's smoke (D9.4, B25.2; rulings R6.2, R6.3).
             var inSeason = state.ScenarioMonth is >= 6 and <= 9;
             var attributed = los.Hindrances.All(entry => entry.Terrains.Count > 0 && entry.Terrains.All(item => item is "Brush" or "Grain"));
-            var drm = los.Hindrances.Count(entry => entry.Terrains.Contains("Brush") || (inSeason && entry.Terrains.Contains("Grain")));
+            var mapRanges = los.Hindrances.Where(entry => entry.Terrains.Contains("Brush") || (inSeason && entry.Terrains.Contains("Grain")))
+                .Select(entry => entry.Range).ToHashSet();
             var grain = los.Hindrances.Any(entry => entry.Terrains.Contains("Grain"));
             var sameLevel = firerRead.Hex.BaseLevel + firerRead.Level.Level == targetRead.Hex.BaseLevel + targetRead.Level.Level;
-            perLocation[location] = (los.Range, sameLevel, new FireLos(los.IsBlocked == true, drm, attributed, grain));
+            var (vehicleDrm, vehicleReason) = VehicleHindrance(state, from, target, los, sameLevel, mapRanges);
+            if (vehicleReason is not null)
+            {
+                return (null, vehicleReason);
+            }
+
+            perLocation[location] = (los.Range, sameLevel, new FireLos(los.IsBlocked == true, mapRanges.Count + vehicleDrm, attributed, grain));
         }
 
         var first = perLocation[attack.FirerLocationId!];

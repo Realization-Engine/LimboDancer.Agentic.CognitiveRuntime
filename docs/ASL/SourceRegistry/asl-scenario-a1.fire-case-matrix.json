@@ -1325,6 +1325,69 @@
       "startLine": 1416,
       "fragmentId": "asl-fragment:sha256:c4251e0eb8cec3b1fc2490c9813cc26f5783b477577afb35e05c85cdbe45ff97",
       "contentSha256": "51b548532f91004f11b20c181da4e3fa6a4ea441ed1bf9b63d236df153a32bdb"
+    },
+    {
+      "ruleId": "A8.222",
+      "physicalPdfPage": 60,
+      "startLine": 630,
+      "fragmentId": "asl-fragment:sha256:2e3e379d3136b0b58454c055ff530e2ccfc21b01a4d6bd3b2457b585021fa7d5",
+      "contentSha256": "70dfdef3aa59f422b39ad815de7974c96e86562797e40b152704553aff80012b"
+    },
+    {
+      "ruleId": "D10.1",
+      "physicalPdfPage": 210,
+      "startLine": 790,
+      "fragmentId": "asl-fragment:sha256:b9e92e34dbde27d78a55373f6008034b123ce7ff3977491807988fb5d8fe9ed5",
+      "contentSha256": "725d24ca63488e969df27a59d9f91456dcce890b0f2e38240bf541f795679bc0"
+    },
+    {
+      "ruleId": "D10.3",
+      "physicalPdfPage": 210,
+      "startLine": 796,
+      "fragmentId": "asl-fragment:sha256:46f277ab4f7c76e6bbd7c294426ab5fb4bca6cb6f1c94c852b3ff7c2c90f6855",
+      "contentSha256": "d39a9f4b78fafb86bf92772edd89fa4042d9f1f2b011f6bb9111fd83e044fdbb"
+    },
+    {
+      "ruleId": "B25.14",
+      "physicalPdfPage": 143,
+      "startLine": 1683,
+      "fragmentId": "asl-fragment:sha256:19032ec977a07c9bd21c79468809ffbfa3c11a2182d540b8605c3a403654c20d",
+      "contentSha256": "b753e5ca298fbbc52b0d4703e5113f45eb9bab44af0fa4b28fe32622733163b4"
+    },
+    {
+      "ruleId": "B25.2",
+      "physicalPdfPage": 143,
+      "startLine": 1691,
+      "fragmentId": "asl-fragment:sha256:8b8dcfded99ceff775f728dccc4954de9c54b968b887da4aeeae19b81f0a151a",
+      "contentSha256": "e884a987205e759de6549ad6964ab58ddbbaabe6eb5018c5dc36a8dc45edd0cc"
+    },
+    {
+      "ruleId": "A24.2",
+      "physicalPdfPage": 91,
+      "startLine": 1568,
+      "fragmentId": "asl-fragment:sha256:afdf1468baa5093efd61d07592093e85e1a7be240d4acf4f3cf4dd4346f090b1",
+      "contentSha256": "307d840d9b594504fb3661cda58ceff4feae6910daf105f8884016af06db9931"
+    },
+    {
+      "ruleId": "A24.8",
+      "physicalPdfPage": 93,
+      "startLine": 1608,
+      "fragmentId": "asl-fragment:sha256:1ff88aa04c043182adbacc71799b3d9cadd331c015c6962c1995c64bbc694d34",
+      "contentSha256": "3100092869407f348e1412acaede8dc933d6149d6311566747aeb451e28a1e5f"
+    },
+    {
+      "ruleId": "A12.2",
+      "physicalPdfPage": 79,
+      "startLine": 1082,
+      "fragmentId": "asl-fragment:sha256:39995654df30e8a7ae83306aedc29e87f3a57a3ce3ed9e34818613448f211b28",
+      "contentSha256": "7fce9fa0ada5fc99fcca0864f1ca151a980611406859a501cd290b9b102bf15d"
+    },
+    {
+      "ruleId": "D3.3",
+      "physicalPdfPage": 199,
+      "startLine": 347,
+      "fragmentId": "asl-fragment:sha256:3a9aec4a66e3ed6c32ed95b8956195d5f2204aedfe1d60bc94b44a0c397f8944",
+      "contentSha256": "1820d7ca7e502537e725585ce43b09c529b2ad42e6afb7db3a49821f7918cd89"
     }
   ],
   "visualReadings": [
@@ -1369,7 +1432,12 @@
     "cx": "plus-one-to-the-ift-dr-once-per-attack-when-a-cx-unit-fires-or-directs-A4.51 (R5.2)",
     "secondHeatOfBattle": "a-second-original-mc-dr-2-in-one-attack-calls-for-a-second-heat-of-battle-dr-under-its-own-roll-key-unless-the-unit-is-eliminated-berserk-heroic-or-surrendered-A15.1 (R5.10)",
     "ownerOptions": "with-the-owners-answers-declared-battle-hardening-that-would-change-a-unit-and-the-unlikely-kill-dr-after-any-original-2-wait-for-them; a-declined-option-is-not-taken-A15.3-A7.309 (R5.8, R5.9)",
-    "noQuarter": "a-side-faced-with-no-quarter-treats-a-heat-of-battle-surrender-as-berserk-and-is-not-disrupted-A20.3-A15.5 (R5.6)"
+    "noQuarter": "a-side-faced-with-no-quarter-treats-a-heat-of-battle-surrender-as-berserk-and-is-not-disrupted-A20.3-A15.5 (R5.6)",
+    "afvCover": "plus-one-tem-for-infantry-with-a-non-burning-wreck-a-friendly-afv-or-an-abandoned-enemy-afv-when-their-terrain-gives-no-positive-tem-not-vs-fire-from-within-the-location-and-no-ffmo-D9.3-D10.3-A4.6 (R6.1)",
+    "afvHindrance": "the-game-adds-the-plus-one-afv-or-wreck-hindrance-and-a-burning-wrecks-plus-two-smoke-to-the-los-hindrance-drm-D9.4-B25.2-A24.2-A24.8 (R6.2, R6.3)",
+    "residualVehicles": "residual-fp-attacks-an-unarmored-vehicle-on-the-vehicle-line-and-an-afvs-vulnerable-crew-collaterally-with-no-los-hindrance-but-the-smoke-of-the-target-location-which-also-cancels-ffmo-A8.2-A8.222-A7.308-D.8B-A24.2 (R6.6)",
+    "concealedVehicles": "a-concealed-vehicle-is-attacked-on-the-halved-fps-column-A12.2-A12.13 (R6.7)",
+    "vehicleMovementFire": "a-vehicles-aamg-fires-in-the-mph-as-defensive-first-fire-or-moving-as-bounding-first-fire-halved-for-bounding-fire-and-again-while-non-stopped-which-leaves-a-bounding-fire-counter-D3.3-D3.31-D2.42-A8.1 (R6.9)"
   },
   "resolution": {
     "firepower": "Each firer's printed FP, doubled for PBF when the target is adjacent at the same level (A7.21), halved beyond Normal Range up to twice it (A7.22), halved when the target Location holds a concealed unit (A7.23), and halved when the firer is pinned (A7.8); fractions are kept and summed (A7.2).",
@@ -1744,6 +1812,47 @@
         "A15.5"
       ],
       "reason": "A unit whose side is faced with No Quarter treats a Heat of Battle Surrender as Berserk and is not Disrupted (ruling R5.6)."
+    },
+    {
+      "caseId": "A1-fire-afv-cover",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "resolved",
+      "sourceRules": [
+        "D9.3",
+        "D10.3",
+        "A4.6"
+      ],
+      "reason": "Infantry in a Location with a wreck or a friendly AFV take its +1 TEM where their terrain gives none, and no FFMO; an attack from within the Location takes none (ruling R6.1)."
+    },
+    {
+      "caseId": "A1-fire-residual-vehicle",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "resolved",
+      "sourceRules": [
+        "A8.2",
+        "A8.222",
+        "A7.308"
+      ],
+      "reason": "Residual FP attacks a truck on the Vehicle line of its column, and an AFV's Vulnerable crew Collaterally; the target Location's SMOKE applies to it (ruling R6.6)."
+    },
+    {
+      "caseId": "A1-fire-concealed-vehicle",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "resolved",
+      "sourceRules": [
+        "A12.2",
+        "A12.13"
+      ],
+      "reason": "A concealed vehicle is attacked on the column of the halved FP (ruling R6.7)."
+    },
+    {
+      "caseId": "A1-fire-bounding-first-fire",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "resolved",
+      "sourceRules": [
+        "D3.3"
+      ],
+      "reason": "A vehicle's AAMG fires in the MPh as Defensive First Fire, or during its own MPh as Bounding First Fire, halved for Bounding Fire and again while Non-Stopped, which leaves a Bounding Fire counter (ruling R6.9)."
     }
   ],
   "admissionRule": "A declared attack is resolved only when every fact is within the reviewed scope and every roll it needs is recorded; otherwise it is Abstained or Indeterminate with its reasons.",
@@ -1763,11 +1872,11 @@
     "a hero using a SW (A15.23)",
     "prisoners exchanged for Unarmed counters (A20.5), and prisoner escape (A20.55)",
     "crews as targets, and Guns hit by fire (C11)",
-    "vehicles as targets of Residual FP and ordnance, more than one vehicle in a Location, and vehicles in terrain with a TEM (R25.3)",
-    "closed-topped AFV, Passengers and Riders (D6), wrecks and their effects (D10), and an AFV's TEM and LOS Hindrance for Infantry (D9.3, D9.4)",
-    "vehicle MG fire in the MPh (Defensive First Fire, Bounding First Fire), BMG and CMG, and vehicle MG repair (D3.3, D3.7)"
+    "vehicles as targets of ordnance, more than one vehicle in a Location, and vehicles in terrain with a TEM (R25.3)",
+    "closed-topped AFV, Passengers and Riders (D6), Armored Assault (D9.31), and Spreading Fire from a burning wreck (B25)",
+    "BMG and CMG, Passengers' and Riders' fire (D6.64), and a vehicle's Final Fire after its First Fire (A8.4)"
   ],
   "executionAuthority": "none",
-  "revision": "Backlog pass 5 (2026-09-27): a CX firer or director adds one to the IFT DR (A4.51); a second Heat of Battle DR in one attack (A15.1); Battle Hardening and the Unlikely Kill dr as the owners' options (A15.3, A7.309); No Quarter (A20.3, A15.5). Earlier: Unit step 25 (2026-09-27): vehicles in the target Location (the Vehicle line, A7.308, A7.309; Collateral Attacks on a CE crew, D.8B, D5.34) and a vehicle's MA AAMG firing on the IFT (D1.83, D3.5); catalog 1.5.0. Earlier: Unit step 24 (2026-09-27): ordnance hits resolved on the IFT (C.3, C.6, C3.71); crews refused as targets; catalog 1.4.0. Earlier: Unit step 30 (2026-09-27): Berserk and Surrender after Heat of Battle are taken (A15.4 to A15.5); berserk targets (A15.42); a berserk leader's NTC (A15.41); A15.44. Earlier: Unit steps 27 and 28 (2026-09-27): Heat of Battle after an Original MC DR of 2, with heroes, heroic leaders, Battle Hardening, Fanaticism, and NKVD MMC; Berserk and Surrender are recorded as not taken (ruling R28.1). Catalog 1.3.0 adds the leader grades, heroes, and the classes Battle Hardening needs. Revised after the second-pass review (ruling R28.7). Earlier: Unit steps 19 to 23 (2026-09-26): the AFPh and Assault Fire, fire groups across ADJACENT Locations, hidden and Dummy targets, Defensive First Fire, Subsequent First Fire, FPF, Final Fire by First-Fire-marked units, Residual FP, MGs, and the Heat of Battle deviation of ruling R0.2 are decided; catalog 1.2.0 adds the MGs.",
+  "revision": "Backlog pass 6 (2026-09-28): an AFV's or wreck's cover for Infantry (D9.3, D10.3); Residual FP against vehicles (A8.222); concealed vehicles (A12.2); vehicle fire in the MPh (D3.3). Earlier: Backlog pass 5 (2026-09-27): a CX firer or director adds one to the IFT DR (A4.51); a second Heat of Battle DR in one attack (A15.1); Battle Hardening and the Unlikely Kill dr as the owners' options (A15.3, A7.309); No Quarter (A20.3, A15.5). Earlier: Unit step 25 (2026-09-27): vehicles in the target Location (the Vehicle line, A7.308, A7.309; Collateral Attacks on a CE crew, D.8B, D5.34) and a vehicle's MA AAMG firing on the IFT (D1.83, D3.5); catalog 1.5.0. Earlier: Unit step 24 (2026-09-27): ordnance hits resolved on the IFT (C.3, C.6, C3.71); crews refused as targets; catalog 1.4.0. Earlier: Unit step 30 (2026-09-27): Berserk and Surrender after Heat of Battle are taken (A15.4 to A15.5); berserk targets (A15.42); a berserk leader's NTC (A15.41); A15.44. Earlier: Unit steps 27 and 28 (2026-09-27): Heat of Battle after an Original MC DR of 2, with heroes, heroic leaders, Battle Hardening, Fanaticism, and NKVD MMC; Berserk and Surrender are recorded as not taken (ruling R28.1). Catalog 1.3.0 adds the leader grades, heroes, and the classes Battle Hardening needs. Revised after the second-pass review (ruling R28.7). Earlier: Unit steps 19 to 23 (2026-09-26): the AFPh and Assault Fire, fire groups across ADJACENT Locations, hidden and Dummy targets, Defensive First Fire, Subsequent First Fire, FPF, Final Fire by First-Fire-marked units, Residual FP, MGs, and the Heat of Battle deviation of ruling R0.2 are decided; catalog 1.2.0 adds the MGs.",
   "vehicleLineTranscriptionSha256": "c9a2d785126584d18af851757a8028b975c0866fadcfc5e3fe137ca66e191fb2"
 }

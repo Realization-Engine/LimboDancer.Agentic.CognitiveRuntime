@@ -147,16 +147,16 @@ public sealed class ScenarioA1OrdnanceReference
 /// </summary>
 public sealed class ScenarioA1OrdnancePackage : IDomainPackageResolver
 {
-    public const string ManifestSha256 = "2e3621f2c07bc94f875697dfc9f9b7cd00c04e12fbb0b8b3e570a398abd246c5";
-    public const string MatrixSha256 = "6924b0fe2213c58a411553a8c6b71e6ce4ea1977f6a37cfc59dc9b9b5885082c";
+    public const string ManifestSha256 = "68fdc54585af86625fd3eca4355ffaf60ccfd591e10521f7f2af646ec42914b2";
+    public const string MatrixSha256 = "fd72783c5129afd2587f35698f85f2872bb871798e1b90f0259e6d650116ba24";
     /// <summary>The package as published at unit step 24, before its unit step 25 revision for catalog 1.5.0.</summary>
-    public const string PriorManifestSha256 = "e02e8e4b5302872c0fe54eb31d98b8308c37acaf16341feb231e22f5efa9df0b";
+    public const string PriorManifestSha256 = "2e3621f2c07bc94f875697dfc9f9b7cd00c04e12fbb0b8b3e570a398abd246c5";
     public static readonly DomainPackageRef Identity = new(new DomainId("asl"), "scenario-a1-ordnance", "sha256:" + ManifestSha256);
 
     private static readonly string[] Cases =
     [
         "A1-ordnance-hit-resolved", "A1-ordnance-miss-resolved", "A1-ordnance-phase-outside", "A1-ordnance-gun-outside", "A1-ordnance-crew-outside",
-        "A1-ordnance-already-fired", "A1-ordnance-range-outside", "A1-ordnance-target-outside", "A1-ordnance-undecided", "A1-ordnance-roll-missing", "A1-ordnance-owner-options", "A1-ordnance-cx",
+        "A1-ordnance-already-fired", "A1-ordnance-range-outside", "A1-ordnance-target-outside", "A1-ordnance-undecided", "A1-ordnance-roll-missing", "A1-ordnance-owner-options", "A1-ordnance-cx", "A1-ordnance-afv-cover",
     ];
 
     private static readonly string[] PinnedDigests = ["sourcePdfSha256", "toHitTranscriptionSha256", "iftTranscriptionSha256", "catalogSha256"];

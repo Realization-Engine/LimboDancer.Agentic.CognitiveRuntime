@@ -104,6 +104,9 @@ public sealed partial class GamePlanner
             halfMf = 2;
         }
 
+        // B25.141 (ruling R6.3): a burning wreck's smoke costs one more MF to enter its Location.
+        halfMf += BlazeEntryHalfMf(state, to);
+
         // A4.72 EX, A4.12 (ruling R5.5): a Good Order leader advancing with a unit that carries more than its IPC would lend it two MF and one
         // IPC, which is pass 10. The bonus matters only where the advance is Difficult for the unit alone; that advance is refused.
         if (units.Any(unit => vocabulary.IsA(unit!.Kind, "asl:leader") && !Is(unit, Conditions.Broken))
@@ -443,7 +446,7 @@ public sealed partial class GamePlanner
     public IReadOnlyList<BoardLocation> WithdrawalDestinations(GameState state, UnitInstance unit, BoardLocation from) => Laden(state, unit) ? []
         : [.. Neighbors(state, from).Where(to => Step(state, from, to) is ({ } _, { } toRead, true, { Cliff: false } crossed) && TerrainKey(toRead) is { } terrain
             && InfantryEntryHalfMf(state, terrain) is { } halfMf
-            && DifficultAdvance(state, unit, crossed.Terrain?.IsRoad == true ? 2 : halfMf) is { } difficult && !(difficult && Is(unit, Conditions.Cx))
+            && DifficultAdvance(state, unit, (crossed.Terrain?.IsRoad == true ? 2 : halfMf) + BlazeEntryHalfMf(state, to)) is { } difficult && !(difficult && Is(unit, Conditions.Cx))
             && !state.At(to).OfType<UnitInstance>().Any(other => other.Status == InstanceStatus.Active && other.Side != unit.Side && !Is(other, Conditions.Captured)))];
 
     /// <summary>Whether a unit carries more PP than its IPC (A4.42): three for a MMC, one for a SMC, none for a wounded SMC, one less while CX.</summary>
@@ -456,7 +459,7 @@ public sealed partial class GamePlanner
     /// <summary>Whether a withdrawal to a Location makes the unit CX (A11.21, A4.72; ruling R5.5).</summary>
     private bool WithdrawalTires(GameState state, UnitInstance unit, BoardLocation from, BoardLocation to) =>
         Step(state, from, to) is ({ } _, { } toRead, true, { } crossed) && TerrainKey(toRead) is { } terrain && InfantryEntryHalfMf(state, terrain) is { } halfMf
-        && DifficultAdvance(state, unit, crossed.Terrain?.IsRoad == true ? 2 : halfMf) == true;
+        && DifficultAdvance(state, unit, (crossed.Terrain?.IsRoad == true ? 2 : halfMf) + BlazeEntryHalfMf(state, to)) == true;
 
     /// <summary>A11.16: a broken unit held in Melee, not Disrupted and not a Guard, must attempt to withdraw when it can.</summary>
     private bool MustWithdraw(GameState state, UnitInstance unit, BoardLocation at) =>
@@ -912,7 +915,7 @@ public sealed partial class GamePlanner
             return null;
         }
 
-        return crossed.Terrain?.IsRoad == true ? 2 : halfMf;
+        return (crossed.Terrain?.IsRoad == true ? 2 : halfMf) + BlazeEntryHalfMf(state, to);
     }
 
     /// <summary>

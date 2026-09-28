@@ -179,6 +179,15 @@ public static class Conditions
     /// <summary>An Abandoned vehicle (D5.41, p. 204): its crew has left it, and it may not move or fire (ruling R5.18).</summary>
     public const string Abandoned = "asl:abandoned";
 
+    /// <summary>A wreck (D10.1): the vehicle counter on its wreck face (asl@1.1.0).</summary>
+    public const string Wrecked = "asl:wrecked";
+
+    /// <summary>Bounding Fire (D3.3, p. 199): the vehicle fired in its MPh; it may not fire in the AFPh, and the counter leaves at its end (asl@1.10.0).</summary>
+    public const string BoundingFire = "asl:bounding-fire";
+
+    /// <summary>A vehicle MG disabled for good by a repair dr of 6 (D3.7, p. 201; asl@1.10.0).</summary>
+    public const string Disabled = "asl:disabled";
+
     /// <summary>Conditions the state model adds to the vocabulary's states; they have no drawn form.</summary>
     public static IReadOnlyList<string> Undrawn { get; } = [Captured, Melee, Abandoned];
 
@@ -263,6 +272,12 @@ public enum InstanceStatus
 
     /// <summary>Exited the playing area (A2.6, D5.341): it cannot act or return, and it is not eliminated.</summary>
     Exited,
+
+    /// <summary>
+    /// A destroyed vehicle's wreck (D10.1; ruling R6.5): it stays at its Location on its wreck face, keeps its VCA, and no longer acts as a
+    /// unit; it gives cover and Hindrance (D9.3, D9.4) and raises vehicle entry costs (D2.14).
+    /// </summary>
+    Wrecked,
 }
 
 /// <summary>What the state model knows about any object in play: units, equipment, and entities alike.</summary>

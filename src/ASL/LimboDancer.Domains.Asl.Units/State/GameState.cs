@@ -44,6 +44,12 @@ public sealed record GameState(
         get; init;
     }
 
+    /// <summary>
+    /// The vehicles that entered a new hex, or moved under a Motion counter, in the current Player Turn's MPh (C6.1 Case J, D9.3, D9.4;
+    /// ruling R6.1): until the AFPh ends they, and their wrecks, give Infantry no TEM and form no Hindrance. Cleared at each new Player Turn.
+    /// </summary>
+    public IReadOnlyList<string> MovedVehicles { get; init; } = [];
+
     /// <summary>The fire attacks made in the current phase (A7.55); cleared at every phase change.</summary>
     public IReadOnlyList<FireRecord> FiresThisPhase { get; init; } = [];
 

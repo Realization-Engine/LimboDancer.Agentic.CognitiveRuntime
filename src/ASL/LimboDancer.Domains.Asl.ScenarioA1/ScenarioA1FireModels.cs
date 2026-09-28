@@ -124,6 +124,17 @@ public sealed record FireAttack(
         get; init;
     }
 
+    /// <summary>
+    /// The AFV or wreck whose +1 TEM the target Location's Infantry may claim (D9.3, D10.3; ruling R6.1): the game decides that it is a
+    /// non-burning wreck, a friendly AFV, or an abandoned enemy AFV, not in Motion and not under the Case J clause; the package adds it
+    /// when the terrain gives no positive TEM and the attack does not come from within the Location. Null when there is none.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? AfvCover
+    {
+        get; init;
+    }
+
     /// <summary>Whether the firing side is faced with No Quarter, for the Heat of Battle of an FPF NMC (A8.31, A20.3); null is false.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? FiringSideNoQuarter
@@ -151,7 +162,15 @@ public sealed record FireVehicle(
     bool? CrewExposed,
     bool? Stunned,
     bool? StunRecovery,
-    bool? Immobilized);
+    bool? Immobilized)
+{
+    /// <summary>Whether the vehicle is concealed (A12.2; ruling R6.7): it is attacked on the column of the halved FP (A12.13); null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Concealed
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// A vehicle's MA MG attack (D1.83, D3.5): the vehicle, its definition, and the facts that modify its FP and DR: Motion (D2.42), a

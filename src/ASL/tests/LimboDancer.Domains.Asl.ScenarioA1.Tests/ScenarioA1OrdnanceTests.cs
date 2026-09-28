@@ -374,4 +374,15 @@ public sealed class ScenarioA1OrdnanceTests
         Assert.Contains(tired.Drm, item => item.Name == "cx" && item.Value == 1 && item.Rule == "A4.51");
         Assert.Equal(plain.FinalDr + 1, tired.FinalDr);
     }
+
+    [Fact]
+    public void AWreckInTheTargetLocationAddsOneToTheToHitDr()
+    {
+        // D9.3, D10.3 (ruling R6.1): Infantry in Open Ground with a wreck take its +1 TEM as Case Q.
+        var shot = German();
+        var plain = ScenarioA1OrdnanceCalculator.Resolve(With(shot, [6, 5]), Reference).ToHit!;
+        var covered = ScenarioA1OrdnanceCalculator.Resolve(With(shot with { Hit = shot.Hit! with { AfvCover = "de-wreck" } }, [6, 5]), Reference).ToHit!;
+        Assert.Contains(covered.Drm, item => item.Name == "case-q:afv-cover:de-wreck" && item.Value == 1 && item.Rule == "D9.3");
+        Assert.Equal(plain.FinalDr + 1, covered.FinalDr);
+    }
 }

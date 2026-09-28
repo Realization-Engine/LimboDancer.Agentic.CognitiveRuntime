@@ -123,3 +123,31 @@ Pass 5 actual: 1:59 (21:57 to 23:56) against the estimate of 4:55.
 | Overhead: full suite, Docker check, merge | | 0:21 |
 | Overhead total | 1:15 | 1:10 |
 | **Total** | **4:55** | **1:59** |
+
+## Pass 6: vehicles, part 2
+
+Estimate: 4:35 (build 3:20) in the [ASL Unit Backlog Passes Plan](<ASL Unit Backlog Passes Plan.md>). Kickoff 2026-09-28 00:09. Branch `feature/asl-backlog-pass-6`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Reading (plan, backlog, code, rules) and rulings R6.1 to R6.10 | 00:09 | 00:15 | 0:06 | D9.3, D9.4, D10, B25.14, B25.2, A24.2, A24.8, A8.2, A8.222, D.8B, A12.2, A12.12, A12.4, D2.14, D2.41, D3.3, D3.7, A4.6, A6.1 |
+| Review stage: rulings text, Fire and Ordnance package revision (AFV/wreck cover, Residual FP vs vehicles, concealed vehicles, vehicle First and Bounding First Fire), vocabulary 1.10.0, 14-subject comparison, package tests | 00:15 | 00:26 | 0:11 | Fire matrix 197 fragments, 26 cases; Ordnance 53, 13 |
+| Referee review (agent ran 00:26 to 00:31) and fixes: rulings R6.1 to R6.10 rewritten, D3.31 halving, Residual FP smoke, Case J by hex entry or Motion, Case H after each step, package texts re-digested | 00:31 | 00:34 | 0:03 | 4 defects and 2 disputed readings fixed with tests; notes to the rulings and backlog |
+| Live stage: LOS crossed hexes, wrecks (status, event, Blaze), AFV and wreck cover and Hindrance, smoke, entry costs, Residual FP vs vehicles, vehicle concealment and entry reveals, vehicle First and Bounding First Fire, vehicle MG repair, gate readback, Play page, 11 play tests and 1 page test | 00:34 | 00:49 | 0:15 | 176 play tests and 35 page tests pass |
+| Documents: rulings text, design, requirements note, backlog (6 rows built or trimmed, section 16 with 9 deferrals, 1 deviation) | 00:49 | 00:51 | 0:02 | Review document after the table player |
+| Visual check in the Studio | 00:51 | 00:53 | 0:02 | New game, Russians' fire with scripted dice 2 4 wrecks the truck: the Units table shows it wrecked at B8, and the map draws its wreck face. Page text read, since the pane does not draw |
+| Table-player review (agent ran 00:49 to 00:56) and fixes, rendering goldens for the two new states, 3 play tests | 00:56 | 01:03 | 0:07 | 6 defects fixed with tests, 2 gaps fixed, 1 gap and 2 notes recorded |
+| Full local suite (solution and ScenarioA1) | 01:03 | 01:10 | 0:07 | 1,990 passed, 30 skipped, 0 failed |
+| Commit 8afdcd5 and Docker Linux check (appendix A) | 01:10 | 01:16 | 0:06 | restore, build (warnings as errors), solution tests, and ScenarioA1 tests all exit 0 |
+| Merge into main and push | 01:16 | 01:17 | 0:01 | |
+
+Pass 6 actual: 1:08 (00:09 to 01:17) against the estimate of 4:35.
+
+| Plan task | Estimate | Actual |
+|---|---|---|
+| 6.1 to 6.5 build: review stage, referee fixes, live stage, table-player fixes (one block; split not recorded) | 3:20 | 0:36 |
+| Overhead: reading and rulings | | 0:06 |
+| Overhead: documents and visual check | | 0:04 |
+| Overhead: full suite, Docker check, merge | | 0:14 |
+| Overhead total (the two reviews ran beside the build) | 1:15 | 0:24 |
+| **Total** | **4:35** | **1:08** |

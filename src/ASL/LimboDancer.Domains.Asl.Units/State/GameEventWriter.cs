@@ -443,6 +443,14 @@ public static class GameEventWriter
                 writer.WriteString("key", made.Key);
                 writer.WriteString("option", made.Option);
                 break;
+            case VehicleWrecked wreck:
+                writer.WriteString("id", wreck.Id);
+                if (wreck.Burning)
+                {
+                    writer.WriteBoolean("burning", true);
+                }
+
+                break;
             case SurrenderRejected rejected:
                 writer.WriteString("unit", rejected.Unit);
                 break;

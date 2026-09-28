@@ -1,3 +1,4 @@
+using LimboDancer.Dice;
 using System.Globalization;
 using System.Text.Json;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
@@ -79,7 +80,10 @@ public sealed partial class GamePlanner
             return null;
         }
 
-        return crossed.Terrain?.IsRoad == true ? (IsAfv(vehicle) && Is(vehicle, Conditions.ButtonedUp) ? 2 : 1) : halfMp;
+        // D2.14, B25.141 (ruling R6.4): one more MP per wreck or vehicle in the hex, two by a road hexside at the road rate, and one more
+        // for a burning wreck's smoke.
+        var road = crossed.Terrain?.IsRoad == true;
+        return (road ? (IsAfv(vehicle) && Is(vehicle, Conditions.ButtonedUp) ? 2 : 1) : halfMp) + WreckEntryHalfMp(state, to, road);
     }
 
     /// <summary>
@@ -96,9 +100,9 @@ public sealed partial class GamePlanner
                 return $"play.setup-vehicle: {vehicle.Id} is set up on the map with its VCA facing a hexspine (D2.11)";
             }
 
-            if (Is(vehicle, Conditions.Concealed) || Is(vehicle, Conditions.Hidden))
+            if ((Is(vehicle, Conditions.Concealed) || Is(vehicle, Conditions.Hidden)) && !VehicleConcealmentTerrain(state, at.Location))
             {
-                return $"play.setup-vehicle: {vehicle.Id} may not set up concealed or hidden; A12.2 for vehicles is not reviewed (ruling R25.10)";
+                return $"play.setup-vehicle: {vehicle.Id} sets up concealed or hidden only in Concealment Terrain, which for a vehicle here is grain in season (A12.2, A12.12, B15.6; ruling R6.7)";
             }
 
             if (at.Location.Level != 0 || ReadLocation(state, at.Location) is not { } read || TerrainKey(read) is not ("open-ground" or "grain"))
@@ -156,24 +160,65 @@ public sealed partial class GamePlanner
         state.At(at).OfType<UnitInstance>().FirstOrDefault(unit => unit.Status == InstanceStatus.Active && unit.Side != side && LiveFire.IsVehicle(unit));
 
     /// <summary>
-    /// Whether Residual FP could attack a vehicle (A8.2, A8.222): an unarmored vehicle on the Vehicle line, or an AFV whose crew is
-    /// Vulnerable; a BU or Stunned AFV is not attacked.
+    /// A vehicle's MP expenditure in a Location, and the Residual FP attack on it there (A8.2, A8.222; ruling R6.6): an unarmored vehicle
+    /// on the Vehicle line, an AFV's Vulnerable crew Collaterally, and a BU AFV not at all; the attack comes first, alone.
     /// </summary>
-    private static bool ResidualReaches(UnitInstance vehicle) => !IsAfv(vehicle) || LiveFire.CrewExposed(vehicle);
+    private GamePlan WithResidual(GameScope scope, string label, string attemptId, long expected, string actor, IReadOnlyList<GameEvent> existing,
+        IReadOnlyList<GameEvent> steps, BoardLocation at, int step, string summary)
+    {
+        var state = Replay(existing).Current!;
+        if (state.ResidualFire.FirstOrDefault(item => item.Location == at) is not { } residual)
+        {
+            return new GamePlan(GamePlanStatus.Ready, scope, label, expected, steps, [summary]);
+        }
+
+        if (Replay([.. existing, .. steps]).Current is not { } entered
+            || LiveFire.ResidualFromState(entered, at, residual.Fp) is not ({ } residualAttack, null)
+            || FireMapFacts(entered, residualAttack, at) is not ({ } mapFacts, null))
+        {
+            return Refused(scope, label, expected, "play.move-vehicle-residual: the Residual FP attack on the vehicle cannot be read");
+        }
+
+        // A8.222: an AFV with no Vulnerable crew, and no Infantry with it, is not attacked at all.
+        if (residualAttack.Targets is not { Count: > 0 } && (residualAttack.Vehicles ?? []).All(item => item.CrewExposed != true
+            && FireReference.Value.Definitions.GetValueOrDefault(item.DefinitionId!) is { Unarmored: not true }))
+        {
+            return new GamePlan(GamePlanStatus.Ready, scope, label, expected, steps, [summary]);
+        }
+
+        var facts = HeatOfBattleFacts(entered, mapFacts);
+        var precheck = ScenarioA1FireCalculator.Precheck(facts, FireReference.Value);
+        if (precheck.Count != 0)
+        {
+            return Refused(scope, label, expected, ["play.move-vehicle-residual: the Fire package does not decide the Residual FP attack this MP expenditure would suffer", .. precheck]);
+        }
+
+        IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
+        {
+            var events = new List<GameEvent>(steps);
+            AddFireEvents(scope, attemptId, expected, actor, entered, facts, state.PhasingSide, step, events, draw);
+            return events;
+        }
+
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], [summary, $"play.move-vehicle: {residual.Fp} Residual FP in {at} attacks the vehicle first (A8.2)"])
+        {
+            Roll = new PlannedRoll("residual", Build),
+            FirstEventId = EventId(attemptId, 1),
+        };
+    }
 
     /// <summary>Why a vehicle may not enter a Location it could otherwise enter (R25.3), or null.</summary>
     private static string? VehicleEntryBar(GameState state, UnitInstance vehicle, BoardLocation to) =>
-        state.At(to).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit))
+        state.At(to).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit) && (unit.Side == vehicle.Side || VisibleTo(unit, vehicle.Side)))
             ? "another vehicle is there (at most one vehicle per Location; D2.14 is not reviewed)"
+            : state.At(to).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit))
+            ? "the entry is not decided here"
             : state.At(to).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != vehicle.Side && VisibleTo(unit, vehicle.Side))
                 ? "an enemy unit is there (OVR, D7, and CC with vehicles, A11.5, are not reviewed)"
-                : state.At(to).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != vehicle.Side)
-                ? "the entry is not decided here (a vehicle's entry into a Location the moving side cannot see into is not reviewed)"
-                : state.ResidualFire.Any(item => item.Location == to) && ResidualReaches(vehicle)
-                    ? "Residual FP is there (Residual FP against a vehicle or its crew is not built; ruling R25.3)"
-                    : null;
+                : null;
 
-    private GamePlan PlanMoveVehicle(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label)
+    private GamePlan PlanMoveVehicle(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label,
+        string actor)
     {
         if (Replay(existing).Current is not { } state)
         {
@@ -329,13 +374,6 @@ public sealed partial class GamePlanner
             }
         }
 
-        // A8.2 (ruling R25.3): Residual FP attacks a unit expending MP in its Location, which the Vehicle line does not build; the vehicle
-        // may leave the Location, but not spend MP in it.
-        if (kind != VehicleStepped.Enter && state.ResidualFire.Any(item => item.Location == at.Location) && ResidualReaches(vehicle))
-        {
-            return Refused(scope, label, expected, $"play.move-vehicle-residual: Residual FP in {at.Location} would attack {id} for this MP, which is not reviewed (A8.2; ruling R25.3)");
-        }
-
         if (kind != VehicleStepped.Start && !moving)
         {
             return Refused(scope, label, expected, $"play.move-vehicle: {id} is not moving; it must start first (D2.12)");
@@ -347,9 +385,35 @@ public sealed partial class GamePlanner
         }
 
         var step = (current?.Step ?? 0) + 1;
-        return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
-            [Event(scope, attemptId, 1, expected, "vehicle-step", new VehicleStepped(id, kind, to, turned, cost, step), null, null)],
-            [$"play.move-vehicle: {summary}; {Mp(allotment - spent - cost)} MP left"]);
+        var stepEvent = Event(scope, attemptId, 1, expected, "vehicle-step", new VehicleStepped(id, kind, to, turned, cost, step), null, null);
+        var text = $"play.move-vehicle: {summary}; {Mp(allotment - spent - cost)} MP left";
+        if (kind == VehicleStepped.Exit)
+        {
+            return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [stepEvent], [text]);
+        }
+
+        // A12.41 (ruling R6.8): entering a Location of enemy units it cannot see reveals them; A12.2 (ruling R6.7): the move may cost "?".
+        List<GameEvent> steps = [stepEvent];
+        if (kind == VehicleStepped.Enter)
+        {
+            foreach (var (type, payload) in EntryReveals(state, vehicle, to))
+            {
+                steps.Add(Event(scope, attemptId, steps.Count + 1, expected, type, payload, null, null));
+                text += type == "instance-eliminated" ? $"; the Dummy {((InstanceEliminated)payload).Id} is removed (A12.41)" : $"; {((ConditionsChanged)payload).Id} is revealed (A12.41)";
+            }
+        }
+
+        if (Replay([.. existing, .. steps]).Current is { } moved)
+        {
+            var lost = VehicleConcealmentLost(moved, id, kind is VehicleStepped.Enter or VehicleStepped.Turn || Is(vehicle, Conditions.Motion));
+            steps.AddRange(RevealEvents(scope, attemptId, expected, steps.Count + 1, lost));
+            if (lost.Count > 0)
+            {
+                text += $"; {string.Join(", ", lost)} loses its \"?\" (A12.2)";
+            }
+        }
+
+        return WithResidual(scope, label, attemptId, expected, actor, existing, steps, to, step, text);
     }
 
     /// <summary>The fewest hexspines a VCA turns to point at a neighbor at a bearing: its VCA holds the two hexes 30 degrees either side.</summary>
@@ -436,7 +500,7 @@ public sealed partial class GamePlanner
     /// that may spend no more MP ends at once.
     /// </summary>
     private GamePlan PlanEndVehicle(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label,
-        GameState state, MovementState movement, UnitInstance vehicle)
+        GameState state, MovementState movement, UnitInstance vehicle, string actor)
     {
         if (movement.Ending)
         {
@@ -454,15 +518,11 @@ public sealed partial class GamePlanner
         var inMotion = movement.Started && !movement.Stopped && !Halted(vehicle);
         if (left > 0 && !Halted(vehicle) && state.Location(vehicle.Id) is { } at)
         {
-            if (state.ResidualFire.Any(item => item.Location == at.Location) && ResidualReaches(vehicle))
-            {
-                return Refused(scope, label, expected, $"play.move-vehicle-residual: Residual FP in {at.Location} would attack {vehicle.Id} as it spends its MP left there, which is not reviewed (A8.2; ruling R25.3)");
-            }
-
-            return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
-                [Event(scope, attemptId, 1, expected, "vehicle-step", new VehicleStepped(vehicle.Id, VehicleStepped.Remain, at.Location, null, left, movement.Step + 1), null, null)],
-                [$"play.end-move: {vehicle.Id} spends its {Mp(left)} MP left in {at.Location} (D2.1); the DEFENDER may fire, and its move ends when he passes"
-                    + (inMotion ? ", in Motion (D2.4)" : string.Empty)]);
+            var remain = Event(scope, attemptId, 1, expected, "vehicle-step", new VehicleStepped(vehicle.Id, VehicleStepped.Remain, at.Location, null, left, movement.Step + 1),
+                null, null);
+            return WithResidual(scope, label, attemptId, expected, actor, existing, [remain], at.Location, movement.Step + 1,
+                $"play.end-move: {vehicle.Id} spends its {Mp(left)} MP left in {at.Location} (D2.1); the DEFENDER may fire, and its move ends when he passes"
+                    + (inMotion ? ", in Motion (D2.4)" : string.Empty));
         }
 
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
@@ -528,34 +588,5 @@ public sealed partial class GamePlanner
                 new ConditionsChanged(id, new Dictionary<string, ConditionState> { [Conditions.ButtonedUp] = buttonedUp ? ConditionState.True : ConditionState.False }),
                 null, null)],
             [$"play.button-up: {id}'s crew {(buttonedUp ? "buttons up (D5.2)" : "is exposed (D5.3)")}"]);
-    }
-
-    /// <summary>
-    /// Why fire from a Location at a target Location is refused for an AFV's effect on Infantry (ruling R25.9), or null: the target
-    /// Location's Infantry share it with an AFV, whose +1 TEM is not reviewed (D9.3); or an AFV hex may lie between them, whose +1 LOS
-    /// Hindrance is not reviewed (D9.4): a hex whose distances from the firer and the target sum to the range.
-    /// </summary>
-    private string? AfvCover(GameState state, IEnumerable<BoardLocation> firers, BoardLocation target, bool infantryTargets)
-    {
-        var afvs = state.Units.Where(unit => unit.Status == InstanceStatus.Active && IsAfv(unit)).Select(unit => (unit.Id, At: state.Location(unit.Id)?.Location))
-            .Where(item => item.At is not null).ToArray();
-        if (infantryTargets && afvs.FirstOrDefault(item => item.At == target) is { Id: { } shared })
-        {
-            return $"play.fire-afv-cover: the target Location's Infantry share it with the AFV {shared}, whose +1 TEM (D9.3) is not reviewed (ruling R25.9)";
-        }
-
-        foreach (var from in firers.Distinct())
-        {
-            var range = HexDistance(state, from, target);
-            foreach (var (afv, at) in afvs.Where(item => item.At != from && item.At != target))
-            {
-                if (range is null || (HexDistance(state, from, at!) is { } one && HexDistance(state, at!, target) is { } two && one + two == range))
-                {
-                    return $"play.fire-afv-hindrance: the AFV {afv} in {at} may lie in the LOS, and its +1 Hindrance (D9.4) is not reviewed (ruling R25.9)";
-                }
-            }
-        }
-
-        return null;
     }
 }
