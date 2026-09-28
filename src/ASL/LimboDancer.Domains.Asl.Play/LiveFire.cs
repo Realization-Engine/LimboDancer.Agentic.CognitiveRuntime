@@ -14,7 +14,7 @@ namespace LimboDancer.Domains.Asl.Play;
 public static class LiveFire
 {
     public const string Catalog = "asl-scenario-a1";
-    public const string CatalogVersion = "1.7.0";
+    public const string CatalogVersion = "1.8.0";
 
     public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
@@ -169,12 +169,20 @@ public static class LiveFire
                 }
 
                 used = [.. named.Select(Weapon)];
+
+                // A7.351 (table player, pass 9): a squad that used one SW (a mortar, a PF Check, or spotting) fires its inherent FP with no second SW.
+                if (state.SupportWeaponUses.Any(item => item.Unit == unit.Id))
+                {
+                    return (null, $"play.fire-sw-limit: {unit.Id} has used a SW this phase; with its inherent FP it fires no other (A7.351)");
+                }
             }
 
+            // A7.351 (rulings R9.2, R9.7): a squad whose only fire this phase is one SW use still fires its inherent FP.
+            var swOnly = state.SupportWeaponUses.Any(item => item.Unit == unit.Id);
             firerFacts.Add(new FireFirer(unit.Id, unit.Definition!.Definition, at.ToString(), Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned),
-                Is(unit, Conditions.Concealed), Fired(unit), used is not null)
+                Is(unit, Conditions.Concealed), Fired(unit) && !swOnly, used is not null)
             {
-                FirstFireMarked = Is(unit, Conditions.FirstFire) ? true : null,
+                FirstFireMarked = Is(unit, Conditions.FirstFire) && !swOnly ? true : null,
                 FinalFireMarked = state.Phase == "mph" && Is(unit, Conditions.FinalFire) ? true : null,
                 // A7.351, A7.352: a crew, HS, or SMC that fired a Gun loses its inherent FP; a squad does not.
                 GunFired = state.GunCrewsFired.Contains(unit.Id, StringComparer.Ordinal) && unit.Kind != "asl:squad" ? true : null,
@@ -188,7 +196,8 @@ public static class LiveFire
 
         FireDirector Director((UnitInstance Unit, BoardLocation At) item) =>
             new(item.Unit.Id, item.Unit.Definition!.Definition, item.At.ToString(), Is(item.Unit, Conditions.Broken), Is(item.Unit, Conditions.Pinned),
-                Is(item.Unit, Conditions.Concealed), Fired(item.Unit) || Is(item.Unit, Conditions.FirstFire), Is(item.Unit, Conditions.Wounded))
+                Is(item.Unit, Conditions.Concealed), Fired(item.Unit) || Is(item.Unit, Conditions.FirstFire)
+                    || state.SupportWeaponDirectors.Any(directed => directed.Leader == item.Unit.Id), Is(item.Unit, Conditions.Wounded))
             {
                 Cx = Is(item.Unit, Conditions.Cx) ? true : null,
             };

@@ -366,6 +366,16 @@ public static class GameEventReader
                 var halfMf = fields.OptionalInteger(payload, "halfMf", path);
                 var step = fields.OptionalInteger(payload, "step", path);
                 var charge = payload.TryGetProperty("charge", out _) ? ReadLocation(payload, "charge", path, fields, diagnostics) : null;
+                var smokeBy = fields.OptionalString(payload, "smokeBy", path);
+                var smokeAt = smokeBy is null ? null : ReadLocation(payload, "smokeAt", path, fields, diagnostics);
+                var smokeRoll = fields.OptionalString(payload, "smokeRoll", path);
+                var smokeDr = fields.OptionalInteger(payload, "smokeDr", path);
+                var smokeExponent = fields.OptionalInteger(payload, "smokeExponent", path);
+                if (smokeBy is not null && (smokeAt is null || smokeRoll is null || smokeDr is null || smokeExponent is null))
+                {
+                    return Missing(diagnostics, "A SMOKE placement names its squad, Location, roll, dr, and exponent.", path);
+                }
+
                 return stepTo is null || halfMf is null || step is null
                     ? Missing(diagnostics, "A movement step names its movers, destination, half MF, and step.", path)
                     : new MovementStepped(fields.StringList(payload, "movers", path), stepTo, halfMf.Value, fields.OptionalBoolean(payload, "assault", path), step.Value)
@@ -373,6 +383,10 @@ public static class GameEventReader
                         Charge = charge,
                         DoubleTime = fields.OptionalBoolean(payload, "doubleTime", path),
                         PushedGun = fields.OptionalString(payload, "pushedGun", path),
+                        Smoke = smokeBy is null ? null : new SmokeAttempt(smokeBy, smokeAt!, smokeRoll!, smokeDr!.Value, smokeExponent!.Value)
+                        {
+                            Cx = fields.OptionalBoolean(payload, "smokeCx", path),
+                        },
                     };
             case "bore-sighted":
                 var sighter = fields.RequiredString(payload, "gun", path);

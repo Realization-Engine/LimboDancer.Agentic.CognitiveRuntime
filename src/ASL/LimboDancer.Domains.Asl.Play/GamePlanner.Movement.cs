@@ -255,6 +255,14 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.move-portage: {laden.Id} carries more than two PP, which a SMC never portages (A4.42)");
         }
 
+        // A24.1 (ruling R9.5): a SMOKE grenade attempt spends the stack's MF in its own Location.
+        if (Text(arguments, "smoke", out var smokeAt))
+        {
+            return berserk > 0 || !Text(arguments, "smokeBy", out var placerId) || to != from
+                ? Refused(scope, label, expected, "play.smoke-arguments: a SMOKE attempt names its squad and Location, and the stack stays where it is; a berserk stack charges (A24.1, A15.43)")
+                : PlanSmoke(scope, attemptId, expected, label, actor, state, [.. movers.Select(unit => unit!)], ids, from, placerId, smokeAt, assault, doubleTime);
+        }
+
         var (fromRead, toRead, adjacent, crossed) = Step(state, from, to);
         if (fromRead is null || toRead is null || !adjacent || crossed is null)
         {

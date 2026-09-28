@@ -200,7 +200,18 @@ public sealed record FireVehicleFire(
     bool? RateOfFireShot);
 
 /// <summary>An ordnance hit's IFT attack (C.6, C3.71): the Gun, its HE FP column, and whether the hit is Critical.</summary>
-public sealed record FireOrdnanceHit(string? GunId, int? Firepower, bool? CriticalHit);
+public sealed record FireOrdnanceHit(string? GunId, int? Firepower, bool? CriticalHit)
+{
+    /// <summary>
+    /// Whether the hit is on the Area Target Type (C3.33, C3.331; ruling R9.3): its TEM applies to the Effects DR, woods giving the -1 of Air
+    /// Bursts instead of +1 (B13.3) and a Critical Hit reversing only positive TEM; null is the Infantry Target Type.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Area
+    {
+        get; init;
+    }
+}
 
 /// <summary>How a moving target stack moved in the MPh: Assault Movement avoids FFNAM but not FFMO (A4.61).</summary>
 public sealed record FireMovement(bool? AssaultMovement);

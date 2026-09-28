@@ -102,28 +102,39 @@ public sealed partial class GamePlanner
             }
         }
 
+        // A24.2, A24.5, A24.8 (ruling R9.6): each SMOKE source of a Location, a burning wreck's or a grenade's, is +2, a Location's SMOKE at most +3,
+        // and +1 more for fire traced out of or within it.
         var smoke = 0;
-        foreach (var burning in state.Units.Where(unit => unit.Status == InstanceStatus.Wrecked && IsBurning(state, unit))
-            .Select(unit => state.Location(unit.Id)!.Location).Distinct())
+        foreach (var hex in SmokeSources(state).GroupBy(place => (place.Board, place.Hex)))
         {
-            var sameHex = (BoardLocation place) => place.Board == burning.Board && place.Hex == burning.Hex;
-            smoke += sameHex(from) ? 3
-                : sameHex(target) ? 2
-                : los.Crossed.Any(item => item.Board == burning.Board && item.Hex == burning.Hex) ? 2
+            var sameHex = (BoardLocation place) => place.Board == hex.Key.Board && place.Hex == hex.Key.Hex;
+            var drm = Math.Min(3, 2 * hex.Count());
+            smoke += sameHex(from) ? drm + 1
+                : sameHex(target) ? drm
+                : los.Crossed.Any(item => item.Board == hex.Key.Board && item.Hex == hex.Key.Hex) ? drm
                 : 0;
         }
 
         return (ranges.Count + smoke, null);
     }
 
+    /// <summary>The Locations of every SMOKE source (A24.2; rulings R6.3, R9.5): a burning wreck's Blaze and each SMOKE grenade counter.</summary>
+    private static IEnumerable<BoardLocation> SmokeSources(GameState state) =>
+        state.Units.Where(unit => unit.Status == InstanceStatus.Wrecked && IsBurning(state, unit)).Select(unit => state.Location(unit.Id)!.Location)
+            .Concat(state.Entities.Where(entity => entity.Status == InstanceStatus.Active && entity.Kind == "asl:smoke" && entity.Position is MapPosition)
+                .Select(entity => ((MapPosition)entity.Position).Location));
+
+    /// <summary>Whether a Location holds SMOKE (A24.7; rulings R6.3, R9.6).</summary>
+    private static bool HasSmoke(GameState state, BoardLocation at) => SmokeSources(state).Contains(at);
+
     /// <summary>The extra MP a vehicle pays to enter a hex for its wrecks and vehicles, doubled by a road entry, and a Blaze's smoke (D2.14, B25.141).</summary>
     private static int WreckEntryHalfMp(GameState state, BoardLocation to, bool road)
     {
         var wrecks = WrecksAt(state, to);
         var vehicles = state.At(to).OfType<UnitInstance>().Count(LiveFire.IsVehicle);
-        return ((wrecks.Count + vehicles) * (road ? 2 : 1) + (wrecks.Any(wreck => IsBurning(state, wreck)) ? 1 : 0)) * 2;
+        return ((wrecks.Count + vehicles) * (road ? 2 : 1) + (HasSmoke(state, to) ? 1 : 0)) * 2;
     }
 
-    /// <summary>The extra half MF Infantry pay to enter a Location with a burning wreck (B25.141).</summary>
-    private static int BlazeEntryHalfMf(GameState state, BoardLocation to) => WrecksAt(state, to).Any(wreck => IsBurning(state, wreck)) ? 2 : 0;
+    /// <summary>The extra half MF Infantry pay to enter a SMOKE Location: a burning wreck's or a grenade's (B25.141, A24.7; ruling R9.6).</summary>
+    private static int BlazeEntryHalfMf(GameState state, BoardLocation to) => HasSmoke(state, to) ? 2 : 0;
 }

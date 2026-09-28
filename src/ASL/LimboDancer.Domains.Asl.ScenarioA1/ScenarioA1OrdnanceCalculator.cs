@@ -10,7 +10,9 @@ public static class ScenarioA1OrdnanceCalculator
 {
     private const string Prefix = "asl.a1.ordnance.";
 
-    private static readonly string[] AdmittedGunTypes = ["at", "inf", "art"];
+    private static readonly string[] AdmittedGunTypes = ["at", "inf", "art", "mortar", "latw"];
+
+    private static readonly string[] Personnel = ["asl:squad", "asl:half-squad", "asl:crew", "asl:leader", "asl:hero"];
 
     public static OrdnanceResolution Resolve(OrdnanceShot shot, ScenarioA1OrdnanceReference reference)
     {
@@ -29,8 +31,93 @@ public static class ScenarioA1OrdnanceCalculator
         }
 
         var undecided = Undecided(shot);
-        return undecided.Count != 0 ? Refused(OrdnanceResolution.Indeterminate, undecided)
-            : shot.VehicleTarget is not null ? ScenarioA1ArmorCalculator.Run(shot, reference.Guns[shot.Gun!.DefinitionId!], reference) : Run(shot, reference);
+        if (undecided.Count != 0)
+        {
+            return Refused(OrdnanceResolution.Indeterminate, undecided);
+        }
+
+        var gun = reference.Guns[shot.Gun!.DefinitionId!];
+        if (gun.GunType == "latw")
+        {
+            // C13.31 (ruling R9.7): the PF Check dr comes first; only a final 1 to 3 gives a shot.
+            if (PanzerfaustCheck(shot, reference) is not { } check)
+            {
+                return Refused(OrdnanceResolution.Indeterminate, [Prefix + "roll-missing:panzerfaustCheck"]);
+            }
+
+            if (check.Outcome != OrdnancePanzerfaustCheck.Shot)
+            {
+                return new OrdnanceResolution(OrdnanceResolution.Resolved, [], null, null)
+                {
+                    PanzerfaustCheck = check,
+                    FirerEffect = check.Outcome == OrdnancePanzerfaustCheck.NoShot ? null : check.Outcome,
+                };
+            }
+
+            var fired = ScenarioA1ArmorCalculator.Run(shot, gun, reference);
+            return fired.Disposition == OrdnanceResolution.Resolved ? fired with { PanzerfaustCheck = check } : fired;
+        }
+
+        return shot.TargetType == OrdnanceTargetTypes.Area ? ScenarioA1AreaCalculator.Run(shot, gun, reference)
+            : shot.VehicleTarget is not null ? ScenarioA1ArmorCalculator.Run(shot, gun, reference) : Run(shot, reference);
+    }
+
+    /// <summary>
+    /// The PF Check (C13.31, the SW Chart's note F; ruling R9.7): -1 in 1945, +1 for a HS or crew, +2 for a SMC, +1 if CX; 1 to 3 gives a
+    /// shot, 4 or more none, and an Original 6 pins the unit, or breaks it if already pinned (Casualty Reduction if berserk or heroic). Null
+    /// while the dr is missing.
+    /// </summary>
+    private static OrdnancePanzerfaustCheck? PanzerfaustCheck(OrdnanceShot shot, ScenarioA1OrdnanceReference reference)
+    {
+        if (shot.Rolls!.PanzerfaustCheck is not { } dr)
+        {
+            return null;
+        }
+
+        var crew = shot.Crew!;
+        var kind = reference.Fire.Definitions[crew.DefinitionId!].Kind;
+        var drm = new List<FireModifier>();
+        if (shot.ScenarioYear == 1945)
+        {
+            drm.Add(new FireModifier("1945", -1, "C13.31"));
+        }
+
+        if (kind is "asl:half-squad" or "asl:crew")
+        {
+            drm.Add(new FireModifier("hs-or-crew", 1, "C13.31"));
+        }
+        else if (kind is "asl:leader" or "asl:hero")
+        {
+            drm.Add(new FireModifier("smc", 2, "C13.31"));
+        }
+
+        if (crew.Cx == true)
+        {
+            drm.Add(new FireModifier("cx", 1, "C13.31"));
+        }
+
+        var final = dr + (int)drm.Sum(item => item.Value);
+        var outcome = dr == 6
+            ? crew.Pinned != true ? OrdnancePanzerfaustCheck.Pinned
+                : crew.Berserk == true || kind == "asl:hero" || shot.Panzerfaust!.Heroic == true ? OrdnancePanzerfaustCheck.CasualtyReduction : OrdnancePanzerfaustCheck.Broken
+            : final <= 3 ? OrdnancePanzerfaustCheck.Shot : OrdnancePanzerfaustCheck.NoShot;
+        return new OrdnancePanzerfaustCheck(dr, drm, final, outcome);
+    }
+
+    /// <summary>
+    /// The leadership DRM of a leader directing a SW's To Hit DR (A7.531, C9.2, C13.35; ruling R9.2): his leadership modifier, one worse if
+    /// wounded (A17.3).
+    /// </summary>
+    internal static IEnumerable<FireModifier> Leadership(OrdnanceShot shot, ScenarioA1OrdnanceReference reference)
+    {
+        if (shot.Director is { } director && reference.Fire.Definitions.GetValueOrDefault(director.DefinitionId ?? string.Empty)?.Leadership is { } leadership)
+        {
+            var value = leadership + (director.Wounded == true ? 1 : 0);
+            if (value != 0)
+            {
+                yield return new FireModifier("leadership:" + director.UnitId, value, "A7.531");
+            }
+        }
     }
 
     /// <summary>
@@ -46,7 +133,7 @@ public static class ScenarioA1OrdnanceCalculator
         {
             Rolls = new OrdnanceRolls(null, null, null, null, null)
         }, reference);
-        if (first.Disposition != OrdnanceResolution.Indeterminate || first.Reasons is not [Prefix + "roll-missing:toHit"])
+        if (first.Disposition != OrdnanceResolution.Indeterminate || first.Reasons is not ([Prefix + "roll-missing:toHit"] or [Prefix + "roll-missing:panzerfaustCheck"]))
         {
             return first.Reasons;
         }
@@ -136,6 +223,36 @@ public static class ScenarioA1OrdnanceCalculator
             }
         }
 
+        // Rulings R9.2, R9.4, R9.7: a Spotter, a directing leader, and the Panzerfaust's own facts.
+        if (shot.Spotter is { } spotter)
+        {
+            Need(spotter.UnitId, "spotter.unitId");
+            Need(spotter.DefinitionId, "spotter.definitionId");
+            Need(spotter.Broken, "spotter.broken");
+            Need(spotter.Pinned, "spotter.pinned");
+        }
+
+        if (shot.Director is { } director)
+        {
+            Need(director.UnitId, "director.unitId");
+            Need(director.DefinitionId, "director.definitionId");
+            Need(director.Broken, "director.broken");
+            Need(director.Pinned, "director.pinned");
+            Need(director.DirectedThisPlayerTurn, "director.directedThisPlayerTurn");
+            Need(director.Wounded, "director.wounded");
+        }
+
+        if (shot.Gun?.DefinitionId == OrdnanceTargetTypes.Panzerfaust)
+        {
+            Need(shot.Panzerfaust, "panzerfaust");
+            Need(shot.Panzerfaust?.ShotsTaken, "panzerfaust.shotsTaken");
+            Need(shot.Panzerfaust?.ShotsAllowed, "panzerfaust.shotsAllowed");
+            Need(shot.Panzerfaust?.FromBuilding, "panzerfaust.fromBuilding");
+            Need(shot.Panzerfaust?.Heroic, "panzerfaust.heroic");
+            Need(shot.ScenarioYear, "scenarioYear");
+            Need(shot.Hit?.ScenarioMonth, "hit.scenarioMonth");
+        }
+
         if (shot.Vehicle is { } vehicle)
         {
             Need(vehicle.ButtonedUp, "vehicle.buttonedUp");
@@ -171,6 +288,19 @@ public static class ScenarioA1OrdnanceCalculator
             return outside;
         }
 
+        // C9.1, C3.33 (rulings R9.2, R9.3): a mortar always fires on the Area Target Type; other Guns' Area Target Type fire is not built. C13.1,
+        // C13.3 (ruling R9.8): a PF fires only on the Vehicle Target Type. A SW has no CA, and neither Intensive Fires (Case F is NA to SW).
+        var mortar = gun.GunType == "mortar";
+        var latw = gun.GunType == "latw";
+        if ((shot.TargetType == OrdnanceTargetTypes.Area) != mortar || (latw && shot.VehicleTarget is null)
+            || ((mortar || latw) && (shot.HexspinesToTurn != 0 || shot.IntensiveFire == true || shot.BoreSighted == true || shot.NonQualified == true))
+            // C9.3 (referee, pass 9): a Spotter is designated in the PFPh or DFPh; Opportunity Fire, which would let it spot in the AFPh, is not built.
+            || (shot.Spotter is not null && (!mortar || shot.Phase is not ("PFPh" or "DFPh"))) || (shot.Director is not null && !mortar && !latw))
+        {
+            outside.Add(Prefix + "target-type-outside");
+            return outside;
+        }
+
         // D5.34, C7.42, D5.341 (ruling R7.10): a Stunned, Shocked, or Recalled AFV does not fire; D2.42, C5.35: a firer in Motion needs Case C4,
         // and C5.3: one that entered a new hex in its MPh needs Case C in the AFPh, neither built; D1.321, D1.322: an RST or 1MT MA fires only BU.
         if (shot.Vehicle is { } firing && (firing.Stunned == true || firing.Shocked == true || firing.Recalled == true || firing.InMotion == true
@@ -188,19 +318,26 @@ public static class ScenarioA1OrdnanceCalculator
         // A21.13, C2.1: its own nationality's Good Order crew mans it; C5.8's non-qualified use is not reviewed, nor a concealed crew.
         var crew = shot.Crew!;
         // C5.8, A21.13 (ruling R8.8): a squad or HS of the Gun's nationality mans it as non-qualified Infantry, with Case H.
+        // C9.2, C13.31 (rulings R9.2, R9.7): any Personnel unit of its nationality fires a light mortar or a PF; a berserk unit may fire a PF.
         if ((shot.Vehicle is null ? reference.Fire.Definitions.GetValueOrDefault(crew.DefinitionId!) is not { } crewDefinition
-                || crewDefinition.Nationality != gun.Nationality || (shot.NonQualified == true ? !crewDefinition.IsMmc : crewDefinition.Kind != "asl:crew")
+                || crewDefinition.Nationality != gun.Nationality
+                || (mortar || latw ? !Personnel.Contains(crewDefinition.Kind) : shot.NonQualified == true ? !crewDefinition.IsMmc : crewDefinition.Kind != "asl:crew")
                 : crew.DefinitionId != gun.Id || shot.NonQualified == true)
-            || crew.Broken == true || crew.Berserk == true)
+            || crew.Broken == true || (crew.Berserk == true && !latw))
         {
             outside.Add(Prefix + "crew-outside");
         }
+
+        SupportWeaponOutside(shot, gun, reference, outside);
 
         // C2.24, C5.2, A7.1: in the PFPh and DFPh the Gun fires again only on a kept Multiple ROF; in the AFPh it fires once, and
         // not after firing earlier in the Player Turn; its crew fires the Gun or its inherent FP, not both.
         // C2.241, C5.6 (ruling R8.2): a Gun that has used its normal ROF (a Prep, First, or Final Fire counter) may Intensive Fire once, never
         // in the AFPh and never a vehicle's; a Gun marked First Fire fires once more only so.
-        var mayFire = shot.IntensiveFire == true
+        // C13.31, A7.351 (ruling R9.7): a unit not yet marked as having fired makes a PF Check, a squad twice in a phase, any other once.
+        var mayFire = latw
+            ? gunShot.FiredThisPlayerTurn != true && gunShot.ShotsThisPhase < (reference.Fire.Definitions.GetValueOrDefault(crew.DefinitionId!)?.Kind == "asl:squad" ? 2 : 1)
+            : shot.IntensiveFire == true
             ? shot.Vehicle is null && phase != "AFPh" && gunShot.IntensiveFired != true && gunShot.FinalFire != true && crew.Pinned != true
                 && (gunShot.FiredThisPlayerTurn == true || gunShot.FirstFire == true) && gunShot.RateOfFireKept != true
             : gunShot.IntensiveFired != true && gunShot.FirstFire != true && (phase == "AFPh"
@@ -223,8 +360,10 @@ public static class ScenarioA1OrdnanceCalculator
         // C5.5 (ruling R8.8): a shot within the Gun's own Location, at Infantry, without changing its CA.
         var sameHex = shot.SameHex == true;
         // C5.51's Defensive First Fire in the Gun's own hex, turning its CA with Case A, is not built (ruling R8.8).
-        if ((sameHex ? shot.Range != 0 || shot.VehicleTarget is not null || shot.HexspinesToTurn != 0 || shot.FireKind is not null : shot.Range < 1)
-            || (gun.RangeMaximum is { } maximum && shot.Range > maximum) || shot.ElevationAllowed != true)
+        if ((sameHex ? shot.Range != 0 || shot.VehicleTarget is not null || shot.HexspinesToTurn != 0 || shot.FireKind is not null || mortar || latw : shot.Range < 1)
+            || (gun.RangeMaximum is { } maximum && shot.Range > maximum) || shot.ElevationAllowed != true
+            // C9.4: never nearer than a mortar's minimum range; C13.32: a PF's range by the scenario date.
+            || (gun.RangeMinimum is { } minimum && shot.Range < minimum) || (latw && shot.Range > PanzerfaustRange(shot.ScenarioYear, shot.Hit!.ScenarioMonth)))
         {
             outside.Add(Prefix + "out-of-range");
         }
@@ -272,6 +411,13 @@ public static class ScenarioA1OrdnanceCalculator
         // C3.32: the Infantry Target Type attacks the in-LOS enemy units of the target Location; one with no unit is not reviewed.
         if (hit.Targets!.Any(item => item.Dummy != true && reference.Fire.Definitions.GetValueOrDefault(item.DefinitionId ?? string.Empty)?.Nationality == gun.Nationality))
         {
+            // C3.33 (ruling R9.3): the Area Target Type would hit friendly units too, on their own side's ELR, which is not built.
+            outside.Add(Prefix + (mortar ? "area-friendly-units" : "target-outside"));
+        }
+
+        // Ruling R9.3: an Area Target Type shot at a Gun and its crew is not built.
+        if (mortar && hit.GunTarget is not null)
+        {
             outside.Add(Prefix + "target-outside");
         }
 
@@ -289,11 +435,51 @@ public static class ScenarioA1OrdnanceCalculator
         return outside.Distinct(StringComparer.Ordinal).ToList();
     }
 
+    /// <summary>
+    /// The reasons a SW's shot is outside (rulings R9.2, R9.4, R9.7): a Spotter must be Good Order Personnel of the firer's side; a directing
+    /// leader must be a Good Order leader of that side who has not directed or fired this phase; a PF needs a scenario after September 1943 and
+    /// a shot left on the usage track.
+    /// </summary>
+    private static void SupportWeaponOutside(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference, List<string> outside)
+    {
+        if (shot.Spotter is { } spotter && (reference.Fire.Definitions.GetValueOrDefault(spotter.DefinitionId!) is not { } spotting
+            || spotting.Nationality != gun.Nationality || !Personnel.Contains(spotting.Kind) || spotter.Broken == true || spotter.UnitId == shot.Crew!.UnitId))
+        {
+            outside.Add(Prefix + "spotter-outside");
+        }
+
+        if (shot.Director is { } director && (reference.Fire.Definitions.GetValueOrDefault(director.DefinitionId!) is not { IsLeader: true, Leadership: not null } leader
+            || leader.Nationality != gun.Nationality || director.Broken == true || director.Pinned == true || director.DirectedThisPlayerTurn == true
+            || director.UnitId == shot.Crew!.UnitId))
+        {
+            outside.Add(Prefix + "director-outside");
+        }
+
+        if (gun.GunType == "latw" && (shot.ScenarioYear is not { } year || shot.Hit!.ScenarioMonth is not { } month || year < 1943 || (year == 1943 && month < 10)))
+        {
+            outside.Add(Prefix + "panzerfaust-date-outside");
+        }
+
+        if (gun.GunType == "latw" && shot.Panzerfaust is { ShotsTaken: { } taken, ShotsAllowed: { } allowed } && taken >= allowed)
+        {
+            outside.Add(Prefix + "panzerfaust-exhausted");
+        }
+
+        // C13.8 (referee, pass 9): from a ground-level building only an unpinned unit fires a PF without Desperation, which is not built.
+        if (gun.GunType == "latw" && shot.Panzerfaust?.FromBuilding == true && shot.Crew!.Pinned == true)
+        {
+            outside.Add(Prefix + "panzerfaust-backblast");
+        }
+    }
+
+    /// <summary>A PF's range (C13.32): one hex before June 1944, two from June to December 1944, three from 1945.</summary>
+    public static int PanzerfaustRange(int? year, int? month) => year >= 1945 ? 3 : year == 1944 && month >= 6 ? 2 : 1;
+
     private static bool Malformed(OrdnanceRolls rolls)
     {
         static bool Dice(IReadOnlyList<int>? dice) => dice is not null && (dice.Count != 2 || dice.Any(die => die is < 1 or > 6));
         return Dice(rolls.ToHit) || rolls.Subsequent is < 1 or > 6 || rolls.CriticalSelection?.Values.Any(dr => dr is < 1 or > 6) == true
-            || Dice(rolls.ToKill) || Dice(rolls.ShockCheck) || Dice(rolls.CrewCheck) || Dice(rolls.CrewSurvival);
+            || Dice(rolls.ToKill) || Dice(rolls.ShockCheck) || Dice(rolls.CrewCheck) || Dice(rolls.CrewSurvival) || rolls.PanzerfaustCheck is < 1 or > 6;
     }
 
     private static List<string> Undecided(OrdnanceShot shot)
@@ -316,7 +502,7 @@ public static class ScenarioA1OrdnanceCalculator
         // C6.2: Case K applies to each concealed target alone, so a Location mixing concealed and Known units would need two To
         // Hit results; the review leaves that out.
         var concealed = hit.Targets!.Select(Concealed).Distinct().ToArray();
-        if (shot.VehicleTarget is null && concealed.Length > 1)
+        if (shot.VehicleTarget is null && shot.TargetType is null && concealed.Length > 1)
         {
             undecided.Add(Prefix + "concealment-mixed");
         }
@@ -339,9 +525,18 @@ public static class ScenarioA1OrdnanceCalculator
     /// The IFT attack of a hit: the Gun's HE FP column (C.6), doubled by a Critical Hit (C3.71), on the given targets; the Location's
     /// other units, which the other attack of a split hit attacks, are its companions for a berserk leader's NTC (A15.41).
     /// </summary>
-    private static FireAttack HitAttack(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference, bool critical,
+    internal static FireAttack HitAttack(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference, bool critical,
         IReadOnlyList<FireTarget> targets, FireRolls? rolls)
     {
+        // C3.33, C9.5 (ruling R9.3): an Area Target Type hit attacks at half the HE FP (the IFT column at or below it), a Critical Hit at the
+        // full HE FP doubled.
+        var area = shot.TargetType == OrdnanceTargetTypes.Area;
+        var firepower = reference.HeFirepower(gun.Caliber);
+        if (area && !critical)
+        {
+            firepower = ScenarioA1FireReference.ColumnFp.Where(column => column * 2 <= firepower).DefaultIfEmpty(0).Max();
+        }
+
         var others = shot.Hit!.Targets!.Where(item => !targets.Contains(item)).ToArray();
 
         // Ruling R5.8: each attack of a split hit answers the options of its own targets.
@@ -355,7 +550,10 @@ public static class ScenarioA1OrdnanceCalculator
             Firers = [],
             Director = null,
             Companions = others.Length > 0 ? [.. others, .. shot.Hit.Companions ?? []] : shot.Hit.Companions,
-            OrdnanceHit = new FireOrdnanceHit(shot.Gun!.GunId, reference.HeFirepower(gun.Caliber), critical),
+            OrdnanceHit = new FireOrdnanceHit(shot.Gun!.GunId, firepower, critical)
+            {
+                Area = area ? true : null
+            },
             Rolls = rolls ?? new FireRolls(null, null, null, null),
         };
     }

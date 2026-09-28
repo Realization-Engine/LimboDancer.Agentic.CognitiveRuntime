@@ -95,7 +95,7 @@ public sealed class ScenarioA1ArmorReference
         {
             "ap" => Lookup(ap, gun),
             "apcr" => Lookup(apcr, gun),
-            "heat" => heat.Where(item => item.Gun == gun.Caliber.ToString(CultureInfo.InvariantCulture)).Select(item => (int?)item.Tk).FirstOrDefault(),
+            "heat" => heat.Where(item => item.Gun == (gun.HeatRow ?? gun.Caliber.ToString(CultureInfo.InvariantCulture))).Select(item => (int?)item.Tk).FirstOrDefault(),
             "he" => he.Where(item => gun.Caliber >= item.Minimum).Select(item => (int?)item.Armored).LastOrDefault(),
             _ => null,
         };

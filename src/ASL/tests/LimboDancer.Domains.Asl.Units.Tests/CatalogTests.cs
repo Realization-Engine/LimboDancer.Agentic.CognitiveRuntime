@@ -97,7 +97,7 @@ public sealed class CatalogTests
                 "defender-truck",
                 "attacker-halftrack",
                 "attacker-tank",
-                "defender-tank",
+                "defender-tank", "attacker-light-mortar", "defender-light-mortar",
             ],
             catalog.Definitions.Select(definition => definition.Id));
         Assert.All(catalog.Slots, slot => Assert.NotEmpty(catalog.Filling(slot.Id)));

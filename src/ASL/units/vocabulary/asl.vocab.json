@@ -1,6 +1,6 @@
 {
   "pack": "asl",
-  "version": "1.12.0",
+  "version": "1.13.0",
   "label": "ASL Personnel, support weapons, Guns, vehicles, and entities that are not units",
   "note": "Original LimboDancer vocabulary. Rule references are to the registered rulebook PDF by physical page; no rulebook text or counter artwork.",
   "extends": [],
@@ -338,7 +338,7 @@
       "attachedName": { "default": "{latw-type}" }
     },
     { "name": "asl:light-mortar", "label": "light mortar", "extends": "asl:sw", "rule": "C2.21, p. 167; C13.1, p. 183",
-      "attributes": ["asl:caliber", "asl:range-minimum", "asl:range-maximum", "asl:special-ammo"], "traits": ["asl:no-ap", "asl:no-he"],
+      "attributes": ["asl:caliber", "asl:caliber-suffix", "asl:range-minimum", "asl:range-maximum", "asl:special-ammo", "asl:dates"], "traits": ["asl:no-ap", "asl:no-he"],
       "accessibleName": { "default": "{side} {caliber}mm {kind} {identity}, breakdown {breakdown}" },
       "attachedName": { "default": "{kind}" } },
     {

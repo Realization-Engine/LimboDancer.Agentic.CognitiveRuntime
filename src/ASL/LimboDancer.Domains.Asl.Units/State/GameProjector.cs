@@ -117,6 +117,28 @@ public static class GameProjector
                 return null;
             }
 
+            // A24.1 (table player, pass 9): a placed SMOKE counter is created by the event right after its attempt, or not at all.
+            if (next.SmokePending is not null && gameEvent.Payload is not (MovementStepped or InstanceCreated))
+            {
+                next = next with
+                {
+                    SmokePending = null
+                };
+            }
+
+            // C13.31 (ruling R9.7): setup ends with the first event of play; each side's Personnel then are its OB for the PF usage limit.
+            if (previous is not null && !previous.SetupClosed && gameEvent.Payload is not (GameStarted or InstanceCreated or BoreSighted))
+            {
+                next = next with
+                {
+                    SetupClosed = true,
+                    SetupHalfSquads = previous.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side is not null)
+                        .GroupBy(unit => unit.Side!, StringComparer.Ordinal)
+                        .ToDictionary(group => group.Key, group => group.Sum(unit => unit.Kind == "asl:squad" ? 2 : unit.Kind is "asl:half-squad" or "asl:crew" ? 1 : 0),
+                            StringComparer.Ordinal),
+                };
+            }
+
             // C6.1 Case J (ruling R6.1): a vehicle that enters a new hex, or moves while under a Motion counter, this Player Turn.
             if (gameEvent.Payload is VehicleStepped stepped && !next.MovedVehicles.Contains(stepped.Vehicle, StringComparer.Ordinal)
                 && (stepped.Kind is VehicleStepped.Enter or VehicleStepped.Exit
@@ -134,6 +156,29 @@ public static class GameProjector
                 next = next with
                 {
                     OrdnanceShotsHere = []
+                };
+            }
+
+            // A7.351 (table player, pass 9): the units of a fire record have fired this phase, with the SW each used.
+            if (gameEvent.Payload is FireResolved firing && firing.Firers.Count > 0)
+            {
+                var used = firing.Facts.TryGetProperty("firers", out var firerFacts) && firerFacts.ValueKind == JsonValueKind.Array
+                    ? firerFacts.EnumerateArray().ToDictionary(item => item.GetProperty("unitId").GetString() ?? string.Empty,
+                        item => item.TryGetProperty("weapons", out var weapons) && weapons.ValueKind == JsonValueKind.Array ? weapons.GetArrayLength() : 0, StringComparer.Ordinal)
+                    : [];
+                next = next with
+                {
+                    PhaseFirers = [.. next.PhaseFirers.Where(item => !firing.Firers.Contains(item.Unit, StringComparer.Ordinal)),
+                        .. firing.Firers.Select(unit => new SupportWeaponUse(unit, used.GetValueOrDefault(unit).ToString(System.Globalization.CultureInfo.InvariantCulture)))],
+                };
+            }
+
+            // A7.351 (ruling R9.2): a squad that fires its inherent FP after its one SW use has fired.
+            if (gameEvent.Payload is FireResolved resolved && next.SupportWeaponUses.Any(item => resolved.Firers.Contains(item.Unit, StringComparer.Ordinal)))
+            {
+                next = next with
+                {
+                    SupportWeaponUses = [.. next.SupportWeaponUses.Where(item => !resolved.Firers.Contains(item.Unit, StringComparer.Ordinal))]
                 };
             }
 
@@ -334,6 +379,13 @@ public static class GameProjector
                     NoMoveThisPlayerTurn = newPlayerTurn ? [] : state.NoMoveThisPlayerTurn,
                     OrdnanceShotsHere = [],
                     GunsTurnedThisPhase = [],
+                    SmokeAttempts = [],
+                    SupportWeaponUses = [],
+                    SupportWeaponDirectors = [],
+                    PhaseFirers = [],
+                    SpottedThisPhase = [],
+                    MovedWeapons = newPlayerTurn ? [] : state.MovedWeapons,
+                    Entities = state.Phase == "mph" ? RemoveSmokeGrenades(state.Entities) : state.Entities,
                     Turn = change.Turn,
                     Phase = change.Phase,
                     PhasingSide = change.PhasingSide,
@@ -354,6 +406,16 @@ public static class GameProjector
                 }
                 : null;
         }
+
+        /// <summary>A Smoke Placement Exponent as the unit's catalog definition prints it (A1.21); null when none is printed.</summary>
+        private int? SmokeExponent(UnitInstance unit) => unit.Definition is { } reference
+            ? catalogs.FirstOrDefault(catalog => catalog.Identity == reference.Catalog)?.Definition(reference.Definition)?.Printed("front", "asl:smoke-exponent")?.Value?.Number
+            : null;
+
+        /// <summary>A24.11 (ruling R9.5): the 1/2" SMOKE counters of grenades leave at the end of the MPh they were placed in.</summary>
+        private static IReadOnlyList<EntityInstance> RemoveSmokeGrenades(IReadOnlyList<EntityInstance> entities) =>
+            [.. entities.Select(entity => entity.Status == InstanceStatus.Active && entity.Kind == "asl:smoke" && entity.Id.EndsWith(GameState.SmokeGrenadeSuffix, StringComparison.Ordinal)
+                ? entity with { Status = InstanceStatus.Eliminated } : entity)];
 
         private static GameState EndStuns(GameState state)
         {
@@ -590,10 +652,15 @@ public static class GameProjector
             // D1.3 (ruling R7.10): an AFV's MA is fired by the AFV itself, its crew inherent.
             var firer = state.Find(fired.Gun);
             var tank = firer is UnitInstance { Status: InstanceStatus.Active } vehicle && vocabulary.IsA(vehicle.Kind, "asl:vehicle") && fired.Crew == vehicle.Id;
+
+            // C9.2, C13.3 (rulings R9.2, R9.7): a light mortar is fired by the unit possessing it; a PF, named "<unit>:pf", by the unit making the check.
+            var mortar = firer is EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Possessed } possession } weapon
+                && vocabulary.IsA(weapon.Kind, "asl:light-mortar") && possession.Holder == fired.Crew;
+            var panzerfaust = fired.Gun == fired.Crew + ":pf";
             if (state.Phase is not ("pfph" or "afph" or "dfph" or "mph")
-                || !(tank || (firer is EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Manned } manning } && manning.Holder == fired.Crew))
-                || Active(state, fired.Crew) is not UnitInstance
-                || (shots is not null && !shots.RateOfFireKept && !(fired.Facts.TryGetProperty("intensiveFire", out var intensive) && intensive.ValueKind == JsonValueKind.True)))
+                || !(tank || mortar || panzerfaust || (firer is EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Manned } manning } && manning.Holder == fired.Crew))
+                || Active(state, fired.Crew) is not UnitInstance shooter
+                || (shots is not null && !shots.RateOfFireKept && !panzerfaust && !(fired.Facts.TryGetProperty("intensiveFire", out var intensive) && intensive.ValueKind == JsonValueKind.True)))
             {
                 return Fail<GameState>("UNIT-STATE-033", "A Gun fires in a fire phase, manned by its crew, and again only on a kept Multiple ROF (C2.24).");
             }
@@ -616,7 +683,7 @@ public static class GameProjector
             // C8.9 (ruling R7.6): Special Ammunition used at its Depletion Number runs out; above it the Gun had none, may not use it again,
             // and was never fired: nothing else about the Gun changes.
             var use = fired.Resolution.TryGetProperty("ammunitionUse", out var used) && used.ValueKind == JsonValueKind.String ? used.GetString() : null;
-            var malfunctioned = fired.Resolution.TryGetProperty("gun", out var gunResult) && gunResult.TryGetProperty("malfunctioned", out var broke) && broke.ValueKind == JsonValueKind.True;
+            var malfunctioned = fired.Resolution.TryGetProperty("gun", out var gunResult) && gunResult.ValueKind == JsonValueKind.Object && gunResult.TryGetProperty("malfunctioned", out var broke) && broke.ValueKind == JsonValueKind.True;
             if (use is "depleted" or "none" && fired.Facts.TryGetProperty("ammunition", out var ammunition) && ammunition.GetString() is { } depleted)
             {
                 state = state with
@@ -631,7 +698,7 @@ public static class GameProjector
                 return state;
             }
 
-            // C3.21, D3.12: a Gun turns its barrel; an AFV turns its turret, whose TCA keeps its direction apart from the hull's VCA.
+            // C3.21, D3.12: a Gun turns its barrel; an AFV turns its turret, whose TCA keeps its direction apart from the hull's VCA. A SW has no CA.
             if (tank)
             {
                 state = fired.Facing is { } turret
@@ -641,7 +708,7 @@ public static class GameProjector
                     }
                     : state;
             }
-            else
+            else if (!panzerfaust && !mortar)
             {
                 var gun = (EquipmentInstance)firer!;
                 var turned = fired.Facing is { } facing && gun.Position is MapPosition map
@@ -670,13 +737,73 @@ public static class GameProjector
                             ? spent.GetInt32() : 0,
                     }]
                     : state.OrdnanceShotsHere,
-                GunCrewsFired = tank || state.GunCrewsFired.Contains(fired.Crew) ? state.GunCrewsFired : [.. state.GunCrewsFired, fired.Crew],
+                GunCrewsFired = tank || panzerfaust || state.GunCrewsFired.Contains(fired.Crew) ? state.GunCrewsFired : [.. state.GunCrewsFired, fired.Crew],
             };
+            state = SupportWeapons(state, fired, shooter, mortar, panzerfaust);
             return state with
             {
                 OrdnanceShots = [.. state.OrdnanceShots.Where(item => item.Gun != fired.Gun), new OrdnanceShotRecord(fired.Gun, (shots?.Shots ?? 0) + 1, fired.RateOfFireKept)],
                 Acquisitions = [.. state.Acquisitions.Where(item => item.Gun != fired.Gun),
                     .. fired.Acquired is { } acquired && fired.Acquisition < 0 ? new[] { new GunAcquisition(fired.Gun, acquired, fired.Acquisition) } : []],
+            };
+        }
+
+        /// <summary>
+        /// The backlog pass 9 bookkeeping of a SW's shot (rulings R9.2, R9.4, R9.7): a mortar's Spotter, the PF shots of the firer's side, and the
+        /// squads whose only fire this phase is one SW use (A7.351): the firer of a mortar or a PF, and a squad Spotter.
+        /// </summary>
+        private static GameState SupportWeapons(GameState state, OrdnanceFired fired, UnitInstance shooter, bool mortar, bool panzerfaust)
+        {
+            if (!mortar && !panzerfaust)
+            {
+                return state;
+            }
+
+            static bool Marked(UnitInstance unit) => new[] { Conditions.PrepFire, Conditions.FinalFire, Conditions.FirstFire }
+                .Any(name => GameState.Condition(unit, name) == ConditionState.True);
+            IReadOnlyList<SupportWeaponUse> Use(IReadOnlyList<SupportWeaponUse> uses, UnitInstance unit, string weapon)
+            {
+                var existing = uses.FirstOrDefault(item => item.Unit == unit.Id);
+                return unit.Kind != "asl:squad" ? uses
+                    : existing is null ? (Marked(unit) ? uses : [.. uses, new SupportWeaponUse(unit.Id, weapon)])
+                    : existing.Weapon != weapon || weapon == "panzerfaust" ? [.. uses.Where(item => item.Unit != unit.Id)]
+                    : uses;
+            }
+
+            var uses = Use(state.SupportWeaponUses, shooter, panzerfaust ? "panzerfaust" : fired.Gun);
+            var spotters = state.MortarSpotters;
+            if (fired.Facts.TryGetProperty("spotter", out var spotter) && spotter.TryGetProperty("unitId", out var spotterId) && spotterId.GetString() is { } id)
+            {
+                spotters = [.. spotters.Where(item => item.Gun != fired.Gun), new MortarSpotter(fired.Gun, id)];
+                state = state with
+                {
+                    SpottedThisPhase = [.. state.SpottedThisPhase.Where(item => item.Spotter != id), new MortarSpotter(fired.Gun, id)]
+                };
+                if (state.Unit(id) is { } spotting)
+                {
+                    uses = Use(uses, spotting, fired.Gun);
+                }
+            }
+
+            var shots = state.PanzerfaustShots;
+            if (panzerfaust && fired.Resolution.TryGetProperty("panzerfaustCheck", out var check) && check.TryGetProperty("outcome", out var outcome)
+                && outcome.GetString() == "shot" && shooter.Side is { } side)
+            {
+                shots = new Dictionary<string, int>(shots, StringComparer.Ordinal) { [side] = shots.GetValueOrDefault(side) + 1 };
+            }
+
+            var directors = state.SupportWeaponDirectors;
+            if (fired.Facts.TryGetProperty("director", out var director) && director.TryGetProperty("unitId", out var directorId) && directorId.GetString() is { } leader)
+            {
+                directors = [.. directors.Where(item => item.Gun != fired.Gun), new SupportWeaponDirector(fired.Gun, leader)];
+            }
+
+            return state with
+            {
+                SupportWeaponUses = uses,
+                MortarSpotters = spotters,
+                PanzerfaustShots = shots,
+                SupportWeaponDirectors = directors,
             };
         }
 
@@ -950,6 +1077,10 @@ public static class GameProjector
                 {
                     EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Manned } manning } =>
                         next.Unit(manning.Holder) is { Status: InstanceStatus.Active } crew && GameState.GoodOrder(crew, vocabulary) != ConditionState.False,
+
+                    // C9.2 (table player, pass 9): a light mortar keeps its Area Target Acquisition while its Good Order possessor holds it.
+                    EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Possessed } possession } mortar when vocabulary.IsA(mortar.Kind, "asl:light-mortar") =>
+                        next.Unit(possession.Holder) is { Status: InstanceStatus.Active } possessor && GameState.GoodOrder(possessor, vocabulary) != ConditionState.False,
                     UnitInstance { Status: InstanceStatus.Active } tank => vocabulary.IsA(tank.Kind, "asl:vehicle")
                         && GameState.Condition(tank, Conditions.Abandoned) != ConditionState.True,
                     _ => false,
@@ -1353,6 +1484,19 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-029", $"'{tired.Id}' may not Double Time: it is broken, wounded, berserk, or CX, or its CX counter left at this MPh's start (A4.5, A4.51).");
             }
 
+            // A24.1 (ruling R9.5): a SMOKE attempt is made once per MPh by a moving squad, in its Location, with its recorded dr.
+            // Table player, pass 9: the exponent is the catalog's, CX (or Double Time with this step) adds one, and the cost is 1 MF in the own
+            // Location and 2 in another.
+            if (moving.Smoke is { } smoke && (!moving.Movers.Contains(smoke.Unit, StringComparer.Ordinal) || state.SmokeAttempts.Contains(smoke.Unit, StringComparer.Ordinal)
+                || moving.To != state.Location(smoke.Unit)?.Location || !rolls.TryGetValue(smoke.Roll, out var smokeRoll) || smokeRoll.Count != 1
+                || smokeRoll.Values[0] != smoke.Dr || smoke.Exponent < 1 || Active(state, smoke.Unit) is not UnitInstance placer
+                || SmokeExponent(placer) != smoke.Exponent
+                || smoke.Cx != (moving.DoubleTime || GameState.Condition(placer, Conditions.Cx) == ConditionState.True)
+                || moving.HalfMf != (smoke.Target == moving.To ? 2 : 4)))
+            {
+                return Fail<GameState>("UNIT-STATE-029", "A SMOKE placement is one attempt per MPh by a squad of the moving stack, in its Location, with its dr (A24.1).");
+            }
+
             var next = state;
             foreach (var unit in movers)
             {
@@ -1390,7 +1534,15 @@ public static class GameProjector
                 {
                     Members = current?.Members ?? moving.Movers,
                     Charge = moving.Charge,
+                    EndingMembers = moving.Smoke is { Dr: 6 } sixed ? [sixed.Unit] : [],
                 },
+                SmokeAttempts = moving.Smoke is { } attempt ? [.. next.SmokeAttempts, attempt.Unit] : next.SmokeAttempts,
+                SmokePending = moving.Smoke is { Placed: true } placing ? placing.Target : null,
+
+                // A4.41 (referee, pass 9): a light mortar carried into a new Location does not fire in the AFPh.
+                MovedWeapons = [.. next.MovedWeapons, .. next.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding
+                    && moving.Movers.Contains(holding.Holder, StringComparer.Ordinal) && vocabulary.IsA(item.Kind, "asl:light-mortar")
+                    && movers[0]!.Position is MapPosition before && before.Location != moving.To && !next.MovedWeapons.Contains(item.Id, StringComparer.Ordinal)).Select(item => item.Id)],
             };
         }
 
@@ -1519,8 +1671,11 @@ public static class GameProjector
                 }
             };
 
-            // Ruling R5.15: a vehicle that spent its MP left in its final hex ends its move when the DEFENDER passes.
-            return movement.Ending ? EndMovement(next, new MovementEnded([.. movement.Members.Count > 0 ? movement.Members : movement.Movers])) : next;
+            // Ruling R5.15: a vehicle that spent its MP left in its final hex ends its move when the DEFENDER passes; A24.1 (ruling R9.5): so does a squad
+            // whose SMOKE dr was a 6.
+            var ending = movement.EndingMembers.Where(id => movement.Members.Contains(id, StringComparer.Ordinal) && Active(next, id) is UnitInstance { MovementEnded: false }).ToArray();
+            return movement.Ending ? EndMovement(next, new MovementEnded([.. movement.Members.Count > 0 ? movement.Members : movement.Movers]))
+                : ending.Length > 0 ? EndMovement(next, new MovementEnded(ending)) : next;
         }
 
         /// <summary>
@@ -2282,6 +2437,21 @@ public static class GameProjector
         private GameState? CreateInPlay(GameState state, InstanceCreated created)
         {
             var instance = created.Instance;
+
+            // A24.1 (table player, pass 9): a SMOKE grenade counter is created only by the attempt that placed it, where it placed it.
+            if (instance.Kind == "asl:smoke")
+            {
+                if (state.SmokePending is not { } pending || !instance.Id.EndsWith(GameState.SmokeGrenadeSuffix, StringComparison.Ordinal)
+                    || (instance.Position as MapPosition)?.Location != pending)
+                {
+                    return Fail<GameState>("UNIT-STATE-006", "A SMOKE counter is created only by a SMOKE attempt that placed it, in the Location it named (A24.1).");
+                }
+
+                state = state with
+                {
+                    SmokePending = null
+                };
+            }
             UnitInstance? creator = null;
             if (created.Creator is { } creatorId && (Active(state, creatorId) is not UnitInstance found || found.Side != instance.Side))
             {

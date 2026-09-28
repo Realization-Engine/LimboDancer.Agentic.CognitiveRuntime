@@ -1132,6 +1132,58 @@
         { "face": "front", "trait": "asl:vehicle-ft-range-2", "present": false, "row": 686 },
         { "face": "front", "trait": "asl:cs-passengers-only", "present": false, "row": 687 }
       ]
+    },
+    {
+      "id": "attacker-light-mortar",
+      "kind": "asl:light-mortar", "kindRow": 688,
+      "nationality": "british", "nationalityRow": 689,
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "attacker-light-mortar" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "identity", "value": "S", "row": 690 },
+        { "face": "front", "attribute": "firepower", "printed": false, "row": 691 },
+        { "face": "front", "attribute": "range", "printed": false, "row": 692 },
+        { "face": "front", "attribute": "breakdown", "value": 11, "row": 693 },
+        { "face": "front", "attribute": "rate-of-fire", "value": 2, "row": 694 },
+        { "face": "front", "attribute": "portage", "value": 3, "row": 695 },
+        { "face": "front", "attribute": "caliber", "value": 51, "row": 696 },
+        { "face": "front", "attribute": "caliber-suffix", "value": "star", "row": 697 },
+        { "face": "front", "attribute": "range-minimum", "value": 1, "row": 698 },
+        { "face": "front", "attribute": "range-maximum", "value": 12, "row": 699 },
+        { "face": "front", "attribute": "special-ammo", "printed": false, "row": 700 },
+        { "face": "front", "attribute": "dates", "value": "38-45", "row": 701 },
+        { "face": "front", "trait": "asl:no-ap", "present": true, "row": 702 },
+        { "face": "front", "trait": "asl:no-he", "present": false, "row": 703 },
+        { "face": "front", "trait": "asl:breakdown-removes", "present": false, "row": 704 },
+        { "face": "malfunctioned", "attribute": "repair", "value": 2, "row": 705 }
+      ]
+    },
+    {
+      "id": "defender-light-mortar",
+      "kind": "asl:light-mortar", "kindRow": 706,
+      "nationality": "french", "nationalityRow": 707,
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "defender-light-mortar" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "identity", "value": "S", "row": 708 },
+        { "face": "front", "attribute": "firepower", "printed": false, "row": 709 },
+        { "face": "front", "attribute": "range", "printed": false, "row": 710 },
+        { "face": "front", "attribute": "breakdown", "value": 11, "row": 711 },
+        { "face": "front", "attribute": "rate-of-fire", "value": 3, "row": 712 },
+        { "face": "front", "attribute": "portage", "value": 4, "row": 713 },
+        { "face": "front", "attribute": "caliber", "value": 60, "row": 714 },
+        { "face": "front", "attribute": "caliber-suffix", "value": "l", "row": 715 },
+        { "face": "front", "attribute": "range-minimum", "value": 2, "row": 716 },
+        { "face": "front", "attribute": "range-maximum", "value": 18, "row": 717 },
+        { "face": "front", "attribute": "special-ammo", "printed": false, "row": 718 },
+        { "face": "front", "attribute": "dates", "value": "38-45", "row": 719 },
+        { "face": "front", "trait": "asl:no-ap", "present": true, "row": 720 },
+        { "face": "front", "trait": "asl:no-he", "present": false, "row": 721 },
+        { "face": "front", "trait": "asl:breakdown-removes", "present": false, "row": 722 },
+        { "face": "malfunctioned", "attribute": "repair", "value": 2, "row": 723 }
+      ]
     }
   ]
 }

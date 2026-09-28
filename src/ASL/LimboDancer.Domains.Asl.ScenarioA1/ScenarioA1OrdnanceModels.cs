@@ -115,6 +115,34 @@ public sealed record OrdnanceShot(
     {
         get; init;
     }
+
+    /// <summary><c>area</c> for the Area Target Type, which a mortar always uses (C3.33, C9.1; ruling R9.3); null for the Infantry or Vehicle Target Type.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? TargetType
+    {
+        get; init;
+    }
+
+    /// <summary>The Spotter along whose LOS a mortar fires (C9.3; ruling R9.4); null when the firer sees the target itself.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public OrdnanceSpotter? Spotter
+    {
+        get; init;
+    }
+
+    /// <summary>The leader who directs a SW's To Hit DR with his leadership modifier (A7.531, C9.2, C13.35; ruling R9.2); null for none.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FireDirector? Director
+    {
+        get; init;
+    }
+
+    /// <summary>The Panzerfaust's facts (C13.3; rulings R9.7, R9.8); required when the Gun is the Panzerfaust.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public OrdnancePanzerfaust? Panzerfaust
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -212,6 +240,13 @@ public sealed record OrdnanceRolls(IReadOnlyList<int>? ToHit, int? Subsequent, I
         get; init;
     }
 
+    /// <summary>The PF Check dr (C13.31; ruling R9.7).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? PanzerfaustCheck
+    {
+        get; init;
+    }
+
     /// <summary>The Crew Survival DR (D5.6).</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyList<int>? CrewSurvival
@@ -301,6 +336,30 @@ public sealed record OrdnanceResolution(
         get; init;
     }
 
+    /// <summary>The To Hit DR as judged for each unit of an Area Target Type shot's hex (C3.331; ruling R9.3); null otherwise.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<OrdnanceAreaTarget>? AreaTargets
+    {
+        get; init;
+    }
+
+    /// <summary>The PF Check of a Panzerfaust shot (C13.31; ruling R9.7); null otherwise.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public OrdnancePanzerfaustCheck? PanzerfaustCheck
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// What the shot did to its own firer (C13.31, C13.36; ruling R9.7): <c>pinned</c>, <c>broken</c>, or <c>casualty-reduction</c>; null for
+    /// nothing.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? FirerEffect
+    {
+        get; init;
+    }
+
     public const string Resolved = "resolved";
     public const string Abstained = "abstained";
     public const string Indeterminate = "indeterminate";
@@ -345,6 +404,18 @@ public sealed record GunDefinition(
 
     /// <summary>A Gun's Manhandling Number (C2.27, C10.3); null for a tank.</summary>
     public int? Manhandling
+    {
+        get; init;
+    }
+
+    /// <summary>A mortar's minimum range (C9.4); null for none.</summary>
+    public int? RangeMinimum
+    {
+        get; init;
+    }
+
+    /// <summary>The weapon's row of the C7.33 HEAT To Kill Table when it is not its caliber, such as <c>PF (Oct43)</c> (C13.34).</summary>
+    public string? HeatRow
     {
         get; init;
     }

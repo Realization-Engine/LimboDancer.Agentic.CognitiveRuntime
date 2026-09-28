@@ -10,7 +10,7 @@ namespace LimboDancer.Domains.Asl.Authoring.Tests;
 public sealed class AslScenarioA1OrdnanceMatrixTests
 {
     private const string SourceCommit = "a3254ff1d492dbdd28483d86f5b42437b48e80d4";
-    private const string MatrixSha256 = "15ddd033f5b1752be49a7b85c93c5dfafd6dc4d63c42e20b1d2102cd49632c64";
+    private const string MatrixSha256 = "607ace3cef1d0941724238ce7738022974041ba38caedba03d59643b5608dc66";
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     private static string Registry(string name) => Path.Combine(RepositoryPaths.Root, "docs", "ASL", "SourceRegistry", name);
@@ -47,6 +47,11 @@ public sealed class AslScenarioA1OrdnanceMatrixTests
         using var vehicleRow = Read(Path.Combine("Supplements", "c3-to-hit-vehicle-row.transcription.json"));
         Assert.Equal([10, 9, 8, 7, 6, 6, 5, 4, 3, 2], vehicleRow.RootElement.GetProperty("vehicle").GetProperty("black").EnumerateArray().Select(item => item.GetInt32()));
         Assert.Equal([10, 8, 7, 6, 5, 4, 3, 2, 1, 0], vehicleRow.RootElement.GetProperty("vehicle").GetProperty("red").EnumerateArray().Select(item => item.GetInt32()));
+        // Backlog pass 9: the Area row of the To Hit Table (p. 700), red for every nationality.
+        Assert.Equal(Hashing.Sha256File(Registry(Path.Combine("Supplements", "c3-to-hit-area-row.transcription.json"))),
+            root.GetProperty("toHitAreaTranscriptionSha256").GetString());
+        using var areaRow = Read(Path.Combine("Supplements", "c3-to-hit-area-row.transcription.json"));
+        Assert.Equal([7, 7, 8, 8, 7, 7, 6, 6, 5, 5], areaRow.RootElement.GetProperty("area").EnumerateArray().Select(item => item.GetInt32()));
         using var toKill = Read(Path.Combine("Supplements", "c7-to-kill-tables.transcription.json"));
         Assert.Equal(701, toKill.RootElement.GetProperty("physicalPdfPage").GetInt32());
         int Basic(string table, string gun) => toKill.RootElement.GetProperty(table).GetProperty("basic").EnumerateArray()
@@ -74,12 +79,13 @@ public sealed class AslScenarioA1OrdnanceMatrixTests
             .Concat(AslScenarioA1FireSourceReview.BuildPass6(RepositoryPaths.Root, manifests, attestation).Records)
             .Concat(AslScenarioA1FireSourceReview.BuildPass7(RepositoryPaths.Root, manifests, attestation).Records)
             .Concat(AslScenarioA1FireSourceReview.BuildPass8(RepositoryPaths.Root, manifests, attestation).Records)
+            .Concat(AslScenarioA1FireSourceReview.BuildPass9(RepositoryPaths.Root, manifests, attestation).Records)
             .Where(item => item.Disposition == TirSourceVerificationDisposition.Verified)
             .Select(item => item.SourceFragment.FragmentId).ToHashSet(StringComparer.Ordinal);
 
         using var matrix = Read("asl-scenario-a1.ordnance-case-matrix.json");
         var fragments = matrix.RootElement.GetProperty("sourceFragments").EnumerateArray().ToArray();
-        Assert.Equal(140, fragments.Length);
+        Assert.Equal(158, fragments.Length);
         foreach (var item in fragments)
         {
             var fragment = Assert.Single(manifests.Fragments, candidate => candidate.FragmentId == item.GetProperty("fragmentId").GetString());

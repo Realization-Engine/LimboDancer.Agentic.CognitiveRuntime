@@ -150,7 +150,7 @@ public static class GameActions
         }));
 
     public static readonly ActionDescriptor Move = Descriptor("asl.game.move", "Move",
-        "Move a Good Order stack of the phasing side into an adjacent Location in its MPh at the terrain's MF cost, optionally by Assault Movement or with Double Time, which adds MF and makes the movers CX (A4.5). The DEFENDER may then fire at it before it moves again; Residual FP there attacks it first.",
+        "Move a Good Order stack of the phasing side into an adjacent Location in its MPh at the terrain's MF cost, optionally by Assault Movement or with Double Time, which adds MF and makes the movers CX (A4.5); or, staying in its Location, have one of its squads attempt to place SMOKE grenades there or in an ADJACENT Location (A24.1). The DEFENDER may then fire at it before it moves again; Residual FP there attacks it first.",
         PlayPermission, "asl.game.reviewed-fire-v1", """
         {
           "type": "object", "additionalProperties": false,
@@ -159,7 +159,8 @@ public static class GameActions
             "gameId": { "type": "string" }, "attemptId": { "type": "string" },
             "expectedRevision": { "type": "integer", "minimum": 0 },
             "unitIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
-            "to": { "type": "string" }, "assault": { "type": "boolean" }, "doubleTime": { "type": "boolean" }, "pushGun": { "type": "string" }
+            "to": { "type": "string" }, "assault": { "type": "boolean" }, "doubleTime": { "type": "boolean" }, "pushGun": { "type": "string" },
+            "smoke": { "type": "string" }, "smokeBy": { "type": "string" }
           }
         }
         """, JsonSerializer.SerializeToElement(new
@@ -264,7 +265,7 @@ public static class GameActions
         """);
 
     public static readonly ActionDescriptor FireOrdnance = Descriptor("asl.game.fire-ordnance", "Fire a Gun",
-        "In the PFPh, AFPh, or DFPh, a Gun manned by its crew, or a tank's MA, fires HE at the enemy units of a Location on the Infantry Target Type, or AP, APCR, HEAT, or HE at one named enemy vehicle on the Vehicle Target Type, turning its barrel or turret to bring the target into its Covered Arc if it must, as the reviewed Ordnance package resolves the To Hit DR, the hit's IFT attack or To Kill DR, ROF, breakdown, and Acquisition, and only when every outcome the dice can reach is decided (C3.3, C3.31, C3.32, C7, D1.3).",
+        "In the PFPh, AFPh, or DFPh, a Gun manned by its crew, or a tank's MA, fires HE at the enemy units of a Location on the Infantry Target Type, or AP, APCR, HEAT, or HE at one named enemy vehicle on the Vehicle Target Type, turning its barrel or turret to bring the target into its Covered Arc if it must; a light mortar fires HE on the Area Target Type, optionally spotted or directed by a leader; and a unit names '<unit>:pf' to make a PF Check and fire a Panzerfaust at an enemy AFV. The reviewed Ordnance package resolves the To Hit DR, the hit's IFT attack or To Kill DR, ROF, breakdown, and Acquisition, only when every outcome the dice can reach is decided (C3.3, C3.31, C3.32, C3.33, C7, C9, C13.3, D1.3).",
         PlayPermission, "asl.game.reviewed-ordnance-v1", """
         {
           "type": "object", "additionalProperties": false,
@@ -275,7 +276,8 @@ public static class GameActions
             "gunId": { "type": "string" }, "target": { "type": "string" },
             "targetVehicle": { "type": "string" },
             "ammunition": { "type": "string", "enum": ["ap", "apcr", "heat", "he"] },
-            "intensive": { "type": "boolean" }
+            "intensive": { "type": "boolean" },
+            "spotter": { "type": "string" }, "director": { "type": "string" }
           }
         }
         """, JsonSerializer.SerializeToElement(new

@@ -78,7 +78,40 @@ public sealed record MovementStepped(IReadOnlyList<string> Movers, BoardLocation
     {
         get; init;
     }
+
+    /// <summary>
+    /// A SMOKE grenade placement attempt made with this step's MF in the movers' Location (A24.1; ruling R9.5): the squad, the Location named, the
+    /// dr's roll and value, and the squad's Smoke Placement Exponent; null for a move.
+    /// </summary>
+    public SmokeAttempt? Smoke
+    {
+        get; init;
+    }
 }
+
+/// <summary>
+/// A SMOKE grenade placement attempt (A24.1; ruling R9.5): a dr at most the exponent places a SMOKE counter in the Location named; a dr of 6 ends
+/// the squad's MPh.
+/// </summary>
+public sealed record SmokeAttempt(string Unit, BoardLocation Target, string Roll, int Dr, int Exponent)
+{
+    /// <summary>Whether the squad is CX, which adds one to the dr (A4.51; table player, pass 9).</summary>
+    public bool Cx
+    {
+        get; init;
+    }
+
+    public bool Placed => Dr + (Cx ? 1 : 0) <= Exponent;
+}
+
+/// <summary>The leader directing a SW's To Hit DR this phase (A7.53).</summary>
+public sealed record SupportWeaponDirector(string Gun, string Leader);
+
+/// <summary>A light mortar's Spotter (C9.3; ruling R9.4).</summary>
+public sealed record MortarSpotter(string Gun, string Spotter);
+
+/// <summary>A squad's one SW use this phase (A7.351): the SW, a Spotter's mortar, or <c>panzerfaust</c>.</summary>
+public sealed record SupportWeaponUse(string Unit, string Weapon);
 
 /// <summary>
 /// <c>vehicle-step</c>: one MP expenditure of a moving vehicle in its MPh (D2.1, unit step 25): <c>start</c> (D2.12), <c>turn</c> one
@@ -135,6 +168,9 @@ public sealed record MovementState(IReadOnlyList<string> Movers, BoardLocation L
     {
         get; init;
     }
+
+    /// <summary>The members whose move ends when the DEFENDER's window on this step closes, such as a squad whose SMOKE dr was a 6 (A24.1).</summary>
+    public IReadOnlyList<string> EndingMembers { get; init; } = [];
 
     /// <summary>Whether the vehicle spent its MP left in its final hex (ruling R5.15): its move ends when the DEFENDER's window closes.</summary>
     public bool Ending
