@@ -323,6 +323,12 @@ public static class ScenarioA1OrdnanceCalculator
             drm.Add(new FireModifier("case-q:" + hit.TargetTerrain, tem, "C6.8"));
         }
 
+        // D9.3, D10.3 (ruling R6.1): the +1 TEM of a wreck, a friendly AFV, or an abandoned enemy AFV, where the terrain gives none.
+        if (ScenarioA1FireCalculator.Cover(hit) is { } cover)
+        {
+            drm.Add(new FireModifier("case-q:afv-cover:" + cover, 1, "D9.3"));
+        }
+
         if (hit.Los!.HindranceDrm is int hindrance && hindrance > 0)
         {
             drm.Add(new FireModifier("case-r", hindrance, "C6.9"));

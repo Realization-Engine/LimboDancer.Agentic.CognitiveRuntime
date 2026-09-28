@@ -389,24 +389,22 @@ public sealed class VehicleStepsTests : IDisposable
     }
 
     [Fact]
-    public async Task AnAfvsCoverAnEnemyVehiclesLocationAndResidualFpAreRefused()
+    public async Task InfantryWithTheirAfvTakeItsCoverAndAnEnemyVehiclesLocationIsRefused()
     {
-        // The halftrack in B9 lies between the Russian squad in B10 and the German squad in B8; a second German squad shares B9 with it.
+        // The halftrack in B9 shares its Location with the German squad g2; a second German squad is in B8.
         await Setup("russian", Vehicle("de-ht", "attacker-halftrack", "bd01:B9:0", "german"), Squad("g1", "attacker-squad", "bd01:B8:0", "german"),
             Squad("g2", "attacker-squad", "bd01:B9:0", "german"), Squad("r1", "defender-squad", "bd01:B10:0", "russian"));
         await Advance();
 
-        // D9.4, D9.3 (ruling R25.9): the AFV's Hindrance and TEM for Infantry are not reviewed.
-        Refused(await Do(GameActions.Fire, Once(2, 3), new
-        {
-            firers = R1,
-            target = "bd01:B8:0"
-        }), "play.fire-afv-hindrance");
-        Refused(await Do(GameActions.Fire, Once(2, 3), new
+        // D9.3 (ruling R6.1, since the backlog pass 6): g2 in Open Ground takes the friendly AFV's +1 TEM.
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Once(6, 5), new
         {
             firers = R1,
             target = "bd01:B9:0"
-        }), "play.fire-afv-cover");
+        }));
+        var record = Since(before).Select(item => item.Payload).OfType<FireResolved>().Single();
+        Assert.Contains(record.Resolution.GetProperty("arithmetic").GetProperty("drm").EnumerateArray(), item => item.GetProperty("name").GetString() == "afv-cover:de-ht");
 
         // Infantry may not enter an enemy vehicle's Location (OVR and CC against a vehicle are not reviewed).
         await Advance();
@@ -494,7 +492,7 @@ public sealed class VehicleStepsTests : IDisposable
     }
 
     [Fact]
-    public async Task MotionCountsTheVcaChangesAndAnUnseenEnemyIsNotDisclosed()
+    public async Task MotionCountsTheVcaChangesAndAnUnseenEnemyIsRevealedByTheEntry()
     {
         // The truck in A8 faces west, off the board's edge: after Start it can still turn and enter a hex, so it may not end in Motion (D2.4).
         await Setup("german", Vehicle("de-t", "attacker-truck", "bd01:A8:0", "german", "west"),
@@ -512,12 +510,11 @@ public sealed class VehicleStepsTests : IDisposable
         }));
         await Pass();
 
-        // A12: the hidden squad in B2 is not disclosed by a refused entry.
+        // A12.41 (ruling R6.8, since the backlog pass 6): the truck's entry into B2 stands and reveals the hidden squad there.
         Committed(await Step("de-t2", "start"));
         await Pass();
-        var refused = await Step("de-t2", "enter", to: "bd01:B2:0");
-        Refused(refused, "not decided here");
-        Assert.DoesNotContain(refused.Reasons, reason => reason.Contains("an enemy unit is there", StringComparison.Ordinal));
+        Committed(await Step("de-t2", "enter", to: "bd01:B2:0"));
+        Assert.False(Is(Current.Unit("r1")!, Conditions.Hidden));
     }
 
     private sealed class NullAudit : IAuditSink

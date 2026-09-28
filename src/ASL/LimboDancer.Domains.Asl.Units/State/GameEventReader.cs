@@ -209,6 +209,7 @@ public static class GameEventReader
                 return transferredId is null ? null : new EquipmentTransferred(transferredId, holding, left);
             case "conditions-changed":
             case "crew-exposure-changed":
+            case "concealment-lost":
                 var changedId = fields.RequiredString(payload, "id", path);
                 var conditions = ReadConditions(payload, path, diagnostics);
                 return changedId is null ? null : new ConditionsChanged(changedId, conditions);
@@ -475,6 +476,8 @@ public static class GameEventReader
                 var madeKey = fields.RequiredString(payload, "key", path);
                 var option = fields.RequiredString(payload, "option", path);
                 return madeKey is null || option is null ? Missing(diagnostics, "A choice names its key and the option chosen.", path) : new ChoiceMade(madeKey, option);
+            case "vehicle-wrecked":
+                return fields.RequiredString(payload, "id", path) is { } wreck ? new VehicleWrecked(wreck, fields.OptionalBoolean(payload, "burning", path)) : null;
             case "surrender-rejected":
                 return fields.RequiredString(payload, "unit", path) is { } rejected ? new SurrenderRejected(rejected) : null;
             case "prisoners-massacred":

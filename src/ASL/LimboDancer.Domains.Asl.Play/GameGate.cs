@@ -117,7 +117,8 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
         ? state.FiresThisPhase.Any(record => record.EventId == fire.EventId)
             && ((FireResolved)fire.Payload).Firers.Concat(((FireResolved)fire.Payload).Director is { } director ? [director] : [])
                 .All(id => state.Unit(id) is not { Status: InstanceStatus.Active } unit || GameState.Condition(unit, Conditions.PrepFire) == ConditionState.True
-                    || GameState.Condition(unit, Conditions.FinalFire) == ConditionState.True || GameState.Condition(unit, Conditions.FirstFire) == ConditionState.True)
+                    || GameState.Condition(unit, Conditions.FinalFire) == ConditionState.True || GameState.Condition(unit, Conditions.FirstFire) == ConditionState.True
+                    || GameState.Condition(unit, Conditions.BoundingFire) == ConditionState.True)
         : plan.Events.Select(item => item.Payload).OfType<RallyAttempted>().FirstOrDefault() is { } rally
         // A Rally attempt: the unit's attempt is kept for the Player Turn.
         ? state.RallyAttemptsThisPlayerTurn.Contains(rally.Unit)
@@ -139,7 +140,8 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
         : plan.Events.Select(item => item.Payload).OfType<PrisonersMassacred>().FirstOrDefault() is { } massacre
         // A Massacre (A20.4): its prisoners are eliminated.
         ? massacre.Prisoners.All(id => state.Unit(id) is { Status: InstanceStatus.Eliminated })
-        : plan.Events.Select(item => item.Payload).LastOrDefault(item => item is not (AcquisitionChanged or ChoicePending)) switch
+        : plan.Events.LastOrDefault(item => item.Payload is not (AcquisitionChanged or ChoicePending) && item.Type != "concealment-lost"
+            && !(item.Payload is InstanceEliminated && plan.Events.Any(step => step.Payload is VehicleStepped)))?.Payload switch
         {
             MovementStepped moved => state.Movement is { WindowOpen: true } movement && movement.Step == moved.Step && movement.Location == moved.To,
             // A vehicle's MP expenditure: its window is open at this step, and the vehicle is where the step put it.

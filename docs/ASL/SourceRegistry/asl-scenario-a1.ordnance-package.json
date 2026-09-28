@@ -4,7 +4,7 @@
   "domainId": "asl",
   "packageId": "scenario-a1-ordnance",
   "declaredUse": "Read-only conclusions for one HE shot by a reviewed Gun at the Infantry of one Location on the Infantry Target Type, under the rulings of the ASL Unit Deviations, Ordnance, and Vehicles Plan (R24.1 to R24.8).",
-  "caseMatrixSha256": "6924b0fe2213c58a411553a8c6b71e6ce4ea1977f6a37cfc59dc9b9b5885082c",
+  "caseMatrixSha256": "fd72783c5129afd2587f35698f85f2872bb871798e1b90f0259e6d650116ba24",
   "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
   "toHitTranscriptionSha256": "936b62d57e03761542b88e3b28752eae83208ef619ef30ebc99c70070fa833fd",
   "iftTranscriptionSha256": "42440dd6facf7aa23cfc8c884ed8c7266f6621b25cb889b679c850098d3a4cec",
@@ -366,6 +366,20 @@
       "startLine": 305,
       "fragmentId": "asl-fragment:sha256:f49373d52a53a41fde917dc0a5e2ea7aa94a269361f348db39e91eb29ca4e369",
       "contentSha256": "eb151224e0987cb136ed6b50b1a05a8ca2bc5fe45a4578d07f84b1500f47570e"
+    },
+    {
+      "ruleId": "D9.3",
+      "physicalPdfPage": 209,
+      "startLine": 766,
+      "fragmentId": "asl-fragment:sha256:cadb9c9dedd4522c8970bf45606bbf298719b94aacd46862fb060b3c643cc07f",
+      "contentSha256": "db8a621d1a3d17ac58c89e5a0e6ff2e58f742779614b9df8214294cb6a60500b"
+    },
+    {
+      "ruleId": "D10.3",
+      "physicalPdfPage": 210,
+      "startLine": 796,
+      "fragmentId": "asl-fragment:sha256:46f277ab4f7c76e6bbd7c294426ab5fb4bca6cb6f1c94c852b3ff7c2c90f6855",
+      "contentSha256": "d39a9f4b78fafb86bf92772edd89fa4042d9f1f2b011f6bb9111fd83e044fdbb"
     }
   ],
   "rulings": {
@@ -380,7 +394,8 @@
     "acquisition": "Each shot acquires the target Location for the Gun: -1, or -2 if it already held -1 there, unless the Gun malfunctions; firing at another Location moves the Acquisition there (C6.5). The Acquisition DRM applies only to Known units (C6.51): a shot at a Location whose every target is concealed takes no Case N, loses the Acquisition, and acquires the Location afresh at -1 only if it costs one its concealment (C6.57; R24.6).",
     "mapFacts": "The range, the hexspines the Gun turns to bring the target into its Covered Arc (C3.2, C3.21), whether the Gun is in woods or a building, the C2.6 elevation limit, the LOS and its Hindrance, and the target Location's terrain are the planner's reads, taken as recorded on replay.",
     "ownerOptions": "the-hits-ift-attack-asks-for-its-owners-options-as-the-fire-package-does-each-under-the-key-of-its-unit-A15.3 (R5.8)",
-    "cx": "plus-one-to-the-to-hit-dr-when-the-gun-crew-is-cx-A4.51 (R5.2)"
+    "cx": "plus-one-to-the-to-hit-dr-when-the-gun-crew-is-cx-A4.51 (R5.2)",
+    "afvCover": "plus-one-to-the-to-hit-dr-for-infantry-with-a-non-burning-wreck-when-their-terrain-gives-no-positive-tem-a-friendly-or-abandoned-enemy-afv-in-the-target-location-makes-the-shot-a-vehicle-target-type-case-which-is-refused-D9.3-D10.3-C6.8 (R6.1)"
   },
   "resolution": {
     "order": "The To Hit DR first (colored die first), then a subsequent dr on an Original 2 when the result needs it, then a Random Selection dr per target for a Critical Hit among several, then the IFT rolls of the Critical Hit and of the normal hit, each asked for when reached.",
@@ -398,7 +413,8 @@
     "A1-ordnance-undecided",
     "A1-ordnance-roll-missing",
     "A1-ordnance-owner-options",
-    "A1-ordnance-cx"
+    "A1-ordnance-cx",
+    "A1-ordnance-afv-cover"
   ],
   "excludedOutcomes": [
     "the Area and Vehicle Target Types, mortars, and SMOKE (C3.31, C3.33, C9)",
@@ -410,5 +426,5 @@
     "Multiple Hits (C3.8: neither reviewed Gun is 40mm or less) and targets at another level"
   ],
   "executionAuthority": "none",
-  "priorOrdnancePackageManifestSha256": "e02e8e4b5302872c0fe54eb31d98b8308c37acaf16341feb231e22f5efa9df0b"
+  "priorOrdnancePackageManifestSha256": "2e3621f2c07bc94f875697dfc9f9b7cd00c04e12fbb0b8b3e570a398abd246c5"
 }

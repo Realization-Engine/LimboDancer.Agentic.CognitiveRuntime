@@ -51,6 +51,9 @@ public sealed record LosHindrance(int Range, double Value)
     public override int GetHashCode() => HashCode.Combine(Range, Value, Terrains.Count);
 }
 
+/// <summary>A hex an LOS passes through: its board and hex name, and its range from the LOS's source hex.</summary>
+public sealed record LosCrossedHex(BoardRef? Board, HexName? Hex, int Range);
+
 /// <summary>
 /// Where LOS first meets a map hindrance (<c>LOSResult.firstHindranceAt</c>): the point on the map's grid and the hex
 /// VASL's <c>Map.gridToHex</c> gives that point, named board-relative by the board that owns it. The hex is null where
@@ -88,6 +91,17 @@ public sealed record LosResult(LosStatus Status, bool? IsBlocked, int Range, int
         get;
         init;
     }
+
+    /// <summary>
+    /// The hexes the LOS passes through between its ends, in the order it enters them, each with its range from the source hex: both
+    /// hexes where it runs along their shared hexside (A6.1). The source and target hexes are not listed; a blocked LOS lists the hexes
+    /// up to where the walk stopped. Not part of VASL's result, so it takes no part in equality.
+    /// </summary>
+    public IReadOnlyList<LosCrossedHex> Crossed
+    {
+        get;
+        init;
+    } = [];
 
     public bool Equals(LosResult? other) =>
         other is not null && Status == other.Status && IsBlocked == other.IsBlocked && Range == other.Range && Hindrance == other.Hindrance

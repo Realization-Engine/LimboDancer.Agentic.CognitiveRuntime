@@ -1,6 +1,6 @@
 {
   "pack": "asl",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "label": "ASL Personnel, support weapons, Guns, vehicles, and entities that are not units",
   "note": "Original LimboDancer vocabulary. Rule references are to the registered rulebook PDF by physical page; no rulebook text or counter artwork.",
   "extends": [],
@@ -263,6 +263,8 @@
     { "name": "asl:immobilized", "label": "immobilized", "short": "IMM", "rule": "A7.308, p. 56; D2.7, p. 199" },
     { "name": "asl:stunned", "label": "Stunned", "short": "STUN", "rule": "D5.34, p. 203" },
     { "name": "asl:stun-recovery", "label": "Stun +1", "short": "+1", "rule": "D5.34, p. 203" },
+    { "name": "asl:bounding-fire", "label": "Bounding Fire", "short": "BF", "rule": "D3.3, p. 199" },
+    { "name": "asl:disabled", "label": "MG disabled", "short": "DSBL", "rule": "D3.7, p. 201" },
     { "name": "asl:recalled", "label": "Recalled", "short": "RCL", "rule": "D5.341, pp. 203 to 204" },
     { "name": "asl:bu", "label": "buttoned up", "short": "BU", "group": "crew-exposure", "rule": "D5.2, p. 203" },
     { "name": "asl:ce", "label": "crew exposed", "short": "CE", "group": "crew-exposure", "rule": "D5.3, p. 203" },

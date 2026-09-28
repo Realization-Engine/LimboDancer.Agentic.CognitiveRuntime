@@ -5,6 +5,12 @@ using LimboDancer.Domains.Asl.Units.Documents;
 namespace LimboDancer.Domains.Asl.Units.State;
 
 /// <summary>
+/// <c>vehicle-wrecked</c>: a vehicle destroyed by an attack becomes a wreck in its Location (D10.1; ruling R6.5), burning when the attack
+/// burned it (B25.14); the Blaze of a burning wreck is its own entity.
+/// </summary>
+public sealed record VehicleWrecked(string Id, bool Burning) : EventPayload;
+
+/// <summary>
 /// <c>rally-attempted</c>: a Rally attempt resolved by the Rally package (unit step 19). It records the unit, the rallying
 /// leader or none for Self-Rally, the rolls by purpose, the declared facts, and the package's resolution; the effects
 /// follow as ordinary condition, elimination, and lineage events. Replay hands it to an <see cref="IRallyRecordVerifier"/>.

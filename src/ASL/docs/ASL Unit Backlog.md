@@ -10,10 +10,10 @@ These are not left out: the game resolves them in a simplified way and records t
 
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
+| A vehicle entering a Location of concealed enemy Personnel | R6.8 | A12.41, p. 80 | The PAATC (pass 11) | The concealed and hidden Personnel there are revealed, as if their owner chose to reveal them rather than take the combined PAATC; a Dummy is removed. |
 | A berserk charge whose route the model cannot decide | R30.5 | A15.43, A15.431, p. 84 | Movement over every terrain type and level change, so every shortest route is decided; Massacre, concealment in CC, and Infantry OVR outcomes | The ATTACKER may end the charge in place when its route crosses unreviewed terrain or its next step enters a Location with prisoners, concealed enemy units, or a lone enemy SMC; the move's reason records it, and the unit stays berserk. |
-| A destroyed vehicle leaves no wreck | R25.5 | D10, A7.308 | Wreck counters and their LOS and movement effects | An eliminated or burning vehicle is removed from play. |
 
-Berserk and Surrender from Heat of Battle (R0.2, R19.2, R22.5, R28.1) left this list with unit step 30, 2026-09-27. The backlog pass 5 (2026-09-27) built the rest but the berserk route and the wreck: CX on a withdrawal, the captor's choice at a surrender, Acquisition on units, vehicle Motion and MP left, the Unlikely Kill option, Recall as its own status, the hero moving on, Battle Hardening and Leader Creation as options, the second Heat of Battle DR, and the HS keeping its SW. It also built, from the sections below, Double Time and CX, counter names by printed values, Massacre, per-side CC declarations, grain by season for Infantry, the passenger-only survival label, and the Stun +1 and used BU toggle page fixes. The simplified resolutions recorded by passes 1, 3, and 4 moved here from sections 10, 12, and 14 on 2026-09-27.
+Berserk and Surrender from Heat of Battle (R0.2, R19.2, R22.5, R28.1) left this list with unit step 30, 2026-09-27. The backlog pass 5 (2026-09-27) built the rest but the berserk route and the wreck: CX on a withdrawal, the captor's choice at a surrender, Acquisition on units, vehicle Motion and MP left, the Unlikely Kill option, Recall as its own status, the hero moving on, Battle Hardening and Leader Creation as options, the second Heat of Battle DR, and the HS keeping its SW. It also built, from the sections below, Double Time and CX, counter names by printed values, Massacre, per-side CC declarations, grain by season for Infantry, the passenger-only survival label, and the Stun +1 and used BU toggle page fixes. The simplified resolutions recorded by passes 1, 3, and 4 moved here from sections 10, 12, and 14 on 2026-09-27. The backlog pass 6 (2026-09-28) built wrecks.
 
 ## 2. Rally (step 19)
 
@@ -202,14 +202,10 @@ Found by playing the Play page with scripted dice in the games `pass23-demo`, `p
 | Item | Deferred by | Rules | Depends on |
 |---|---|---|---|
 | Reverse movement, VBM, ESB, Minimum Move, bog, OVR, vehicle stacking, and vehicle movement over terrain other than Open Ground, Grain, and roads, across hexside terrain, or between levels | R25.3 | D2.2, D2.3, D2.5, D2.15, D8, D7, D2.14, B terrain entries | More vehicle terrain transcriptions |
-| Residual FP against a truck or a Vulnerable crew (a vehicle on the Vehicle line, a crew Collaterally); until then they may not enter or spend MP in its Location | R25.3; table player, item 2 | A8.2, A8.222, A7.308, D.8B | The Vehicle line in Residual FP attacks |
-| An AFV's +1 TEM for friendly Infantry, its +1 LOS Hindrance, and its cancelling of FFMO; the LOS-trace test through its hex; no TEM or Hindrance from a moving AFV. Until then fire at Infantry with an AFV, and fire whose hexes may pass an AFV, is refused, so Infantry stacked with their AFV cannot be fired on | R25.9; table player, item 3 | D9.3, D9.4, A4.6, D2.41 | The Fire package's TEM for Infantry with an AFV |
-| Vehicle fire in the MPh (Defensive First Fire and Bounding First Fire), BMG and CMG, MG repair, and Passengers' and Riders' fire | R25.7 | D3.3, D3.7, D6.64 | Vehicles in the movement windows |
+| BMG and CMG, and Passengers' and Riders' fire (vehicle fire in the MPh and AAMG repair since pass 6) | R25.7 | D3.3, D3.7, D6.64 | Vehicles in the movement windows |
 | Closed-topped AFVs, main armament, To Kill, and AP | R25.2 | C7, D3.1 | Step 24's successors |
-| Vehicle concealment and HIP | R25.10 | A12.2 | |
 | Vehicles in CC (and Infantry entering or advancing into an enemy vehicle's Location), Rally, and Rout; a berserk charge at a vehicle ends in place | R25.10; table player, item 1 | A11.5, A11.6, A15.43, D7 | CC against vehicles |
 | A Gun's shot at a Location with a vehicle (the Vehicle Target Type) | R25.10 | C3.31 | Step 24's successors |
-| A vehicle's entry into a Location holding enemy units the moving side cannot see (refused without disclosing them) | Table player, item 7 | A12.15, D2 | Concealment loss on vehicle entry |
 
 ## 15. Added by the backlog pass 5
 
@@ -220,3 +216,17 @@ Found by playing the Play page with scripted dice in the games `pass23-demo`, `p
 | The Friendly Board Edge from the scenario card | R5.16 | A20.53, p. 87 | Scenario cards (pass 16) | The players name one edge per side at a new game; a side with none named cannot Recall off the map. |
 | A Recalled AFV's Stop to unload its Passengers | Table player, item 9 | D5.341, pp. 203 to 204 | Passengers (pass 6) | A leaving Recalled AFV may not Stop. |
 | A Recall route to a Friendly Board Edge of more than one edge | R5.16, R5.17 | D5.341, pp. 203 to 204; A20.53 | Scenario cards (pass 16) | Only the one named edge counts. |
+
+## 16. Added by the backlog pass 6
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| Armored Assault: Infantry moving with their AFV | R6.1 | D9.31, p. 209 | Combined vehicle and Infantry movement | Infantry and an AFV move apart; the AFV's cover applies once both stand in a Location. |
+| An AFV or wreck that is entrenched, Dug-In, or in a Depression, and the Case J exception for units Abandoning, Bailing Out, or unloading | R6.1 | D9.3, p. 209; D9.54 | Entrenchments, Depressions, Passengers | Not reached: none of these exist in the reviewed terrain. |
+| A Bypassing AFV's or wreck's Hindrance | R6.2 | D9.4, p. 210 | Bypass movement | Not reached: vehicles do not Bypass. |
+| Spreading Fire from a burning wreck, terrain Blazes, and the other B25.14 causes of a burning wreck (FT, MOL, To Kill, CC) | R6.3 | B25.1 to B25.6, B25.14, p. 143 | Fire rules; FT, MOL, To Kill, CC against vehicles | A Blaze stays on its wreck and never spreads. |
+| Pushing a wreck, Scrounging its MG, and attacking a wreck as a vehicle | R6.4, R6.5 | D10.1, D10.42, D10.5, pp. 210 to 211 | Tracked AFV weights, Scrounging, CC against vehicles | A wreck stays where it is and cannot be attacked. |
+| The A12.2 road clause for a concealed vehicle | R6.7 | A12.2, p. 79 | Road-hex LOS tracing | A vehicle in a grain-road hex counts as in Concealment Terrain. |
+| Case H after a Rally, a pin's removal, or another change that gives an enemy unit LOS without a MF or MP expenditure | R6.7 | A12.2, p. 79 | A check after every event | Case H is checked after each MF or MP expenditure only. |
+| A vehicle's Final Fire after its First Fire | R6.9 | A8.4 | Vehicles in the Final Fire rules | A vehicle fires once per Player Turn unless it keeps a Multiple ROF. |
+| Repair of a vehicle MG by a Hero Rider, and the Shocked crew | R6.10 | D3.7, p. 201 | Riders; Shock (pass 7) | Only the CE crew repairs, and Shock does not exist. |

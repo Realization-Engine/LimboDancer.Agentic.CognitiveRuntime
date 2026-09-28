@@ -354,6 +354,11 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.invalid-arguments: a Repair names the unit and the SW");
         }
 
+        if (unitId == equipmentId && state.Unit(unitId) is { } named && LiveFire.IsVehicle(named))
+        {
+            return PlanVehicleRepair(scope, attemptId, expected, label, actor, state, named);
+        }
+
         if (state.Phase != "rph")
         {
             return Refused(scope, label, expected, "play.repair-phase: a SW is repaired in the RPh (A9.72, p. 65)");
@@ -411,6 +416,58 @@ public sealed partial class GamePlanner
 
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
             [$"play.repair: {unit.Id} attempts to repair {equipment.Id} (R{repairNumber}; a 6 eliminates it)"])
+        {
+            Roll = new PlannedRoll("repair", Build),
+            FirstEventId = EventId(attemptId, 1),
+        };
+    }
+
+    /// <summary>
+    /// D3.7 (ruling R6.10): in the RPh the CE crew of a vehicle that is not Stunned or Recalled may try once to repair its malfunctioned MG:
+    /// a dr of 1 repairs it, a 6 disables it for good. The SPW 251/1 can carry Passengers, so a disabled MG does not Recall it.
+    /// </summary>
+    private GamePlan PlanVehicleRepair(GameScope scope, string attemptId, long expected, string label, string actor, GameState state, UnitInstance vehicle)
+    {
+        if (state.Phase != "rph" || vehicle.Status != InstanceStatus.Active)
+        {
+            return Refused(scope, label, expected, "play.repair-phase: a vehicle's MG is repaired in the RPh (D3.7)");
+        }
+
+        if (!Is(vehicle, Conditions.Malfunctioned) || Is(vehicle, Conditions.Disabled))
+        {
+            return Refused(scope, label, expected, $"play.repair-weapon: {vehicle.Id}'s MG is not malfunctioned, or is disabled (D3.7)");
+        }
+
+        if (!LiveFire.CrewExposed(vehicle) || state.RepairsThisPhase.Contains(vehicle.Id))
+        {
+            return Refused(scope, label, expected, $"play.repair-unit: {vehicle.Id}'s AAMG is repaired once per RPh by a CE crew that is not Stunned or Recalled (D3.7)");
+        }
+
+        var package = ScenarioA1FirePackage.Identity.ToString();
+        IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
+        {
+            var drawn = draw(new RollRequest(1, 6));
+            var rollId = $"{attemptId}-roll-1";
+            var dr = drawn.Values[0];
+            var result = dr == 6 ? RepairAttempted.Eliminated : dr == 1 ? RepairAttempted.Repaired : RepairAttempted.NoChange;
+            var events = new List<GameEvent>
+            {
+                Event(scope, attemptId, 1, expected, "dice-rolled", new DiceRolled(rollId, "repair", 1, 6, drawn.Values, DiceRolled.SystemSource, actor), package, null),
+                Event(scope, attemptId, 2, expected, "repair-attempted", new RepairAttempted(vehicle.Id, vehicle.Id, rollId, 1, result), package, null),
+            };
+            if (result != RepairAttempted.NoChange)
+            {
+                var changed = result == RepairAttempted.Repaired
+                    ? new Dictionary<string, ConditionState> { [Conditions.Malfunctioned] = ConditionState.False }
+                    : new Dictionary<string, ConditionState> { [Conditions.Disabled] = ConditionState.True };
+                events.Add(Event(scope, attemptId, 3, expected, "conditions-changed", new ConditionsChanged(vehicle.Id, changed), package, null, [EventId(attemptId, 2)]));
+            }
+
+            return events;
+        }
+
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
+            [$"play.repair: {vehicle.Id}'s crew attempts to repair its AAMG (a dr of 1 repairs it, a 6 disables it; D3.7)"])
         {
             Roll = new PlannedRoll("repair", Build),
             FirstEventId = EventId(attemptId, 1),

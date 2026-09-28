@@ -16,6 +16,9 @@ public static class ScenarioA1FireCalculator
     public const string FinalProtectiveFire = "final-protective-fire";
     public const string ResidualFire = "residual-fp";
 
+    /// <summary>A vehicle's fire during its own MPh (D3.3; ruling R6.9).</summary>
+    public const string BoundingFirstFire = "bounding-first-fire";
+
     /// <summary>The Residual FP counters (A8.2: at most 12; A7.372: the highest counter at most half the FP used).</summary>
     public static readonly int[] ResidualCounters = [1, 2, 4, 6, 8, 12];
 
@@ -154,7 +157,7 @@ public static class ScenarioA1FireCalculator
     private static FireResolution Refused(string disposition, IReadOnlyList<string> reasons) =>
         new(disposition, reasons, null, [], [], null, []);
 
-    private static bool IsMovementFire(FireAttack attack) => attack.FireKind is not null;
+    private static bool IsMovementFire(FireAttack attack) => attack.FireKind is not (null or BoundingFirstFire);
 
     private static bool IsMultiLocation(FireAttack attack) =>
         attack.Firers is { Count: > 0 } firers && firers.Select(item => item.LocationId).Distinct(StringComparer.Ordinal).Count() > 1;
@@ -355,6 +358,7 @@ public static class ScenarioA1FireCalculator
             ("AFPh", "phasing", null) => true,
             ("DFPh", "non-phasing", null) => true,
             ("MPh", "non-phasing", { } movement) => MovementKinds.Contains(movement),
+            ("MPh", "phasing", BoundingFirstFire) => attack.VehicleFire is not null,
             _ => false,
         };
         if (!phaseAdmitted)
@@ -367,13 +371,13 @@ public static class ScenarioA1FireCalculator
             .ToArray();
 
         // A7.307, A7.308, D.8B: the vehicles in the target Location are attacked with the attack's IFT DR (unit step 25): one at a time
-        // (ruling R25.3 keeps a Location to one vehicle, so the A7.308 limit on vehicles affected never binds), never by Residual FP or an
-        // ordnance hit here (the Vehicle Target Type is not reviewed, R24.2; a vehicle never enters Residual FP, R25.3), and only an
-        // unarmored vehicle or an open-topped AFV (R25.1). Infantry sharing a Location with an AFV (its +1 TEM, D9.3) and an AFV in terrain
-        // with a positive TEM (not cumulative with its crew's CE DRM, D5.31) are not reviewed (rulings R25.6, R25.9).
+        // (ruling R25.3 keeps a Location to one vehicle, so the A7.308 limit on vehicles affected never binds), by Residual FP too (A8.2,
+        // A8.222; ruling R6.6), never by an ordnance hit here (the Vehicle Target Type is not reviewed, R24.2), and only an unarmored vehicle
+        // or an open-topped AFV (R25.1). An AFV in terrain with a positive TEM (not cumulative with its crew's CE DRM, D5.31) is not
+        // reviewed (ruling R25.6).
         var vehicles = attack.Vehicles ?? [];
-        if (vehicles.Count > 1 || (vehicles.Count > 0 && (kind == ResidualFire || attack.OrdnanceHit is not null))
-            || ((targets.Count > 0 || (attack.TargetTerrain is { } vehicleTerrain && ScenarioA1FireReference.Tem.TryGetValue(vehicleTerrain, out var vehicleTem) && vehicleTem > 0))
+        if (vehicles.Count > 1 || (vehicles.Count > 0 && attack.OrdnanceHit is not null)
+            || ((attack.TargetTerrain is { } vehicleTerrain && ScenarioA1FireReference.Tem.TryGetValue(vehicleTerrain, out var vehicleTem) && vehicleTem > 0)
                 && vehicles.Any(item => reference.Definitions.GetValueOrDefault(item.DefinitionId!) is { IsVehicle: true, Unarmored: not true }))
             || vehicles.Any(item => item.LocationId != attack.TargetLocationId
                 || reference.Definitions.GetValueOrDefault(item.DefinitionId!) is not { IsVehicle: true } definition
@@ -590,7 +594,9 @@ public static class ScenarioA1FireCalculator
             outside.Add("asl.a1.fire.vehicle-fire-outside");
         }
 
-        if (attack.FireKind is not null)
+        // D3.3, A8.1 (ruling R6.9): in the MPh a vehicle fires as Defensive First Fire or, moving, as Bounding First Fire; never as
+        // Subsequent First Fire or FPF, which are Infantry's.
+        if (attack.FireKind is not (null or FirstFire or BoundingFirstFire))
         {
             outside.Add("asl.a1.fire.phase-outside");
         }
@@ -755,6 +761,24 @@ public static class ScenarioA1FireCalculator
         return undecided;
     }
 
+    /// <summary>
+    /// The AFV or wreck whose +1 TEM the targets claim (D9.3, D10.3; ruling R6.1), or null: none named, a positive terrain TEM, or an
+    /// attack from within the Location.
+    /// </summary>
+    public static string? Cover(FireAttack attack)
+    {
+        ArgumentNullException.ThrowIfNull(attack);
+        if (attack.AfvCover is not { } cover || !ScenarioA1FireReference.Tem.TryGetValue(attack.TargetTerrain ?? string.Empty, out var tem) || tem > 0)
+        {
+            return null;
+        }
+
+        // Residual FP is not fired from anywhere; any other attack from within the Location gets no cover.
+        var within = attack.FireKind != ResidualFire && (attack.FirerLocationId == attack.TargetLocationId
+            || (attack.Firers ?? []).Any(item => item.LocationId == attack.TargetLocationId) || attack.VehicleFire?.LocationId == attack.TargetLocationId);
+        return within ? null : cover;
+    }
+
     /// <summary>One resolution, with the target units' changing state.</summary>
     private sealed class Resolution(FireAttack attack, ScenarioA1FireReference reference)
     {
@@ -779,7 +803,9 @@ public static class ScenarioA1FireCalculator
 
             // A Location the firing side sees nothing in is attacked as it would be if a hidden unit were there, so the
             // arithmetic does not tell the firing side which it was (A12.3, A12.13; ruling R21.1). A vehicle is a Known target.
-            var arithmetic = Arithmetic(known.Length > 0 || vehicles.Count > 0, concealed.Length > 0 || (known.Length == 0 && vehicles.Count == 0));
+            // A12.13 (ruling R6.7): a concealed vehicle is attacked on the halved FP's column, as a concealed unit is.
+            var knownVehicles = vehicles.Count(item => item.Concealed != true);
+            var arithmetic = Arithmetic(known.Length > 0 || knownVehicles > 0, concealed.Length > 0 || knownVehicles < vehicles.Count || (known.Length == 0 && vehicles.Count == 0));
             if (arithmetic is null)
             {
                 return Refused(FireResolution.Indeterminate, undecided);
@@ -859,10 +885,11 @@ public static class ScenarioA1FireCalculator
             };
         }
 
-        // The DRM of an attack that belong to its Personnel targets rather than to the attack: TEM and the First Fire movement DRM.
+        // The DRM of an attack that belong to its Personnel targets rather than to the attack: TEM, an AFV's or wreck's cover, and the First
+        // Fire movement DRM.
         private static bool TargetOwn(FireModifier modifier) =>
             modifier.Name.StartsWith("tem:", StringComparison.Ordinal) || modifier.Name.StartsWith("critical-hit-tem:", StringComparison.Ordinal)
-            || modifier.Name is "ffnam" or "ffmo";
+            || modifier.Name.StartsWith("afv-cover:", StringComparison.Ordinal) || modifier.Name is "ffnam" or "ffmo";
 
         /// <summary>
         /// A7.307 to A7.309, D.8B (rulings R25.4 to R25.6): each vehicle in the target Location takes the attack's Original IFT DR with the
@@ -880,12 +907,14 @@ public static class ScenarioA1FireCalculator
                 return null;
             }
 
-            var column = arithmetic.ColumnFp is { } fp ? Array.IndexOf(ScenarioA1FireReference.ColumnFp, fp) : -1;
             var drm = arithmetic.Drm.Where(item => !TargetOwn(item)).ToList();
             var final = arithmetic.OriginalDr + (int)drm.Sum(item => item.Value);
             var effects = new List<FireVehicleEffect>();
             foreach (var vehicle in attack.Vehicles!)
             {
+                // A12.13 (ruling R6.7): a concealed vehicle in a Location with known targets takes the halved FP's column.
+                var columnFp = vehicle.Concealed == true && arithmetic.Concealed is { } halved ? halved.ColumnFp : arithmetic.ColumnFp;
+                var column = columnFp is { } fp ? Array.IndexOf(ScenarioA1FireReference.ColumnFp, fp) : -1;
                 var id = vehicle.VehicleId!;
                 var definition = reference.Definitions[vehicle.DefinitionId!];
                 if (definition.Unarmored == true)
@@ -1088,6 +1117,7 @@ public static class ScenarioA1FireCalculator
             _ when attack.OrdnanceHit is not null => null,
             ResidualFire => null,
             FirstFire => "first-fire",
+            BoundingFirstFire => "bounding-fire",
             SubsequentFirstFire or FinalProtectiveFire => "final-fire",
             _ => attack.Phase is "PFPh" or "AFPh" ? "prep-fire" : "final-fire",
         };
@@ -1176,9 +1206,25 @@ public static class ScenarioA1FireCalculator
                 drm.Add(new FireModifier("tem:" + attack.TargetTerrain, tem, "A7.6"));
             }
 
-            // A7.52: the worst Hindrance of the group's LOS applies to all of it; Residual FP has none (A8.2), and an ordnance hit's
-            // Hindrance modifies its TH DR (C.3, C6.9).
-            var hindrance = residual || hit is not null ? 0
+            // D9.3, D10.3 (ruling R6.1): the +1 TEM of a wreck, a friendly AFV, or an abandoned enemy AFV, only where the terrain gives no
+            // positive TEM and not against an attack from within the Location; a Critical Hit reverses it (C3.71).
+            if (Cover(attack) is { } cover)
+            {
+                if (hit is null)
+                {
+                    drm.Add(new FireModifier("afv-cover:" + cover, 1m, "D9.3"));
+                }
+                else if (hit.CriticalHit == true)
+                {
+                    drm.Add(new FireModifier("critical-hit-tem:afv-cover:" + cover, -1m, "C3.71"));
+                }
+            }
+
+            // A7.52: the worst Hindrance of the group's LOS applies to all of it; Residual FP has no LOS Hindrance but takes the SMOKE of
+            // the target Location, which the game supplies as its LOS Hindrance (A8.2; ruling R6.6); an ordnance hit's Hindrance modifies its
+            // TH DR (C.3, C6.9).
+            var hindrance = residual ? attack.Los?.HindranceDrm ?? 0
+                : hit is not null ? 0
                 : attack.VehicleFire is not null ? attack.Los!.HindranceDrm!.Value
                 : attack.Firers!.Max(item => LosOf(attack, item)!.HindranceDrm!.Value);
             if (hindrance > 0)
@@ -1224,7 +1270,7 @@ public static class ScenarioA1FireCalculator
                     drm.Add(new FireModifier("ffnam", -1m, "A4.6"));
                 }
 
-                if (attack.TargetTerrain == "open-ground" && hindrance == 0)
+                if (attack.TargetTerrain == "open-ground" && hindrance == 0 && Cover(attack) is null)
                 {
                     drm.Add(new FireModifier("ffmo", -1m, "A4.6"));
                 }
@@ -1303,6 +1349,12 @@ public static class ScenarioA1FireCalculator
             if (attack.Phase == "AFPh")
             {
                 multipliers.Add(new FireModifier("advancing-fire", 0.5m, "D3.53"));
+            }
+
+            // D3.31 (ruling R6.9): Bounding (First) Fire halves a vehicle's MG, and D2.42 halves it again while it is Non-Stopped.
+            if (attack.FireKind == BoundingFirstFire)
+            {
+                multipliers.Add(new FireModifier("bounding-fire", 0.5m, "D3.31"));
             }
 
             if (vehicle.InMotion == true)

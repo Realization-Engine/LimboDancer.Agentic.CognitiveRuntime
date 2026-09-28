@@ -82,10 +82,22 @@ public static class LiveFire
         var kind = (string?)null;
         if (state.Phase == "mph" && vehicleFirers.Length > 0)
         {
-            return (null, "play.fire-vehicle-phase: a vehicle's fire in the MPh (Defensive First Fire, Bounding First Fire) is not reviewed (D3.3; ruling R25.7)");
+            // D3.3, A8.1 (ruling R6.9): the DEFENDER's vehicle fires as Defensive First Fire; the moving vehicle, once the DEFENDER has
+            // passed on its last MP expenditure, as Bounding First Fire.
+            if (vehicleFirers[0].Side != state.PhasingSide)
+            {
+                kind = ScenarioA1FireCalculator.FirstFire;
+            }
+            else if (MayBoundingFire(state, vehicleFirers[0].Id))
+            {
+                kind = ScenarioA1FireCalculator.BoundingFirstFire;
+            }
+            else
+            {
+                return (null, "play.fire-vehicle-phase: in its own MPh a vehicle fires only while it moves, as Bounding First Fire, after the DEFENDER has passed on its last MP expenditure (D3.3)");
+            }
         }
-
-        if (state.Phase == "mph")
+        else if (state.Phase == "mph")
         {
             // A8.1, A8.3, A8.31: the firers' markers decide the kind of Defensive fire.
             var marks = firers.Select(item => Is(item.Unit, Conditions.FinalFire) ? 2 : Is(item.Unit, Conditions.FirstFire) ? 1 : 0).Distinct().ToArray();
@@ -191,7 +203,7 @@ public static class LiveFire
             null)
         {
             FireKind = kind,
-            TargetMovement = kind is null ? null : new FireMovement(state.Movement?.Assault ?? false),
+            TargetMovement = kind is null or ScenarioA1FireCalculator.BoundingFirstFire ? null : new FireMovement(state.Movement?.Assault ?? false),
             FiringSideElr = kind == ScenarioA1FireCalculator.FinalProtectiveFire ? state.Side(side)?.Elr : null,
             OtherDirectors = directors.Count > 1 ? [.. directors.Skip(1).Select(Director)] : null,
             Companions = companions.Length > 0 ? [.. companions.Select(unit => Target(unit, target))] : null,
@@ -200,6 +212,17 @@ public static class LiveFire
             TargetSideNoQuarter = targetSide is not null && state.NoQuarter.Contains(targetSide, StringComparer.Ordinal) ? true : null,
             FiringSideNoQuarter = kind == ScenarioA1FireCalculator.FinalProtectiveFire && state.NoQuarter.Contains(side, StringComparer.Ordinal) ? true : null,
         }, null);
+    }
+
+    /// <summary>
+    /// Whether a phasing vehicle may fire as Bounding First Fire now (D3.3; ruling R6.9): while it moves, once the DEFENDER has passed on
+    /// its last MP expenditure, or at the outset of its MPh while no other move is under way and it has not ended its move.
+    /// </summary>
+    public static bool MayBoundingFire(GameState state, string vehicleId)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return state.Phase == "mph" && state.Unit(vehicleId) is { Status: InstanceStatus.Active } vehicle && IsVehicle(vehicle) && vehicle.Side == state.PhasingSide
+            && (state.Movement is { Vehicle: true, WindowOpen: false } moving ? moving.Movers.Contains(vehicleId) : state.Movement is null && !vehicle.MovementEnded);
     }
 
     /// <summary>Whether a unit is a vehicle (D1).</summary>
@@ -215,16 +238,22 @@ public static class LiveFire
     /// <summary>A vehicle in the target Location, with its crew's state (A7.307, A7.308, D.8B).</summary>
     internal static FireVehicle Vehicle(UnitInstance vehicle, BoardLocation at) =>
         new(vehicle.Id, vehicle.Definition?.Definition, at.ToString(), CrewExposed(vehicle), Is(vehicle, Conditions.Stunned) || Is(vehicle, Conditions.Recalled),
-            Is(vehicle, Conditions.StunRecovery), Is(vehicle, Conditions.Immobilized));
+            Is(vehicle, Conditions.StunRecovery), Is(vehicle, Conditions.Immobilized))
+        {
+            Concealed = Is(vehicle, Conditions.Concealed) || Is(vehicle, Conditions.Hidden) ? true : null,
+        };
 
     /// <summary>
     /// A vehicle's MA MG attack (ruling R25.7): its crew's state, Motion (D2.42), a pin (A7.82), its MG's malfunction (D3.7), whether it
     /// fired this Player Turn, and whether its last shot this phase kept its Multiple ROF (C2.24), which the state records.
     /// </summary>
     private static FireVehicleFire VehicleFire(GameState state, UnitInstance vehicle, BoardLocation at) =>
-        new(vehicle.Id, vehicle.Definition?.Definition, at.ToString(), CrewExposed(vehicle), Is(vehicle, Conditions.Motion), Is(vehicle, Conditions.Pinned),
+        new(vehicle.Id, vehicle.Definition?.Definition, at.ToString(), CrewExposed(vehicle),
+            Is(vehicle, Conditions.Motion) || (state.Movement is { Vehicle: true, Started: true, Stopped: false } moving && moving.Movers.Contains(vehicle.Id)),
+            Is(vehicle, Conditions.Pinned),
             Is(vehicle, Conditions.Stunned) || Is(vehicle, Conditions.Recalled), Is(vehicle, Conditions.StunRecovery), Is(vehicle, Conditions.Malfunctioned),
-            Fired(vehicle), state.OrdnanceShots.Any(item => item.Gun == vehicle.Id && item.RateOfFireKept));
+            Fired(vehicle) || Is(vehicle, Conditions.FirstFire) || Is(vehicle, Conditions.BoundingFire),
+            state.OrdnanceShots.Any(item => item.Gun == vehicle.Id && item.RateOfFireKept));
 
     /// <summary>
     /// The state's part of a Residual FP attack on the moving stack as it enters a Location (A8.2, A8.22): no firers, the
@@ -239,7 +268,11 @@ public static class LiveFire
         }
 
         UnitInstance[] targets = [.. state.At(target).OfType<UnitInstance>()
-            .Where(unit => unit.Status == InstanceStatus.Active && movement.Movers.Contains(unit.Id)).OrderBy(unit => unit.Id, StringComparer.Ordinal)];
+            .Where(unit => unit.Status == InstanceStatus.Active && movement.Movers.Contains(unit.Id) && !IsVehicle(unit)).OrderBy(unit => unit.Id, StringComparer.Ordinal)];
+
+        // A8.2, A8.222 (ruling R6.6): a moving vehicle is attacked on the Vehicle line, or its Vulnerable crew Collaterally.
+        UnitInstance[] vehicles = [.. state.At(target).OfType<UnitInstance>()
+            .Where(unit => unit.Status == InstanceStatus.Active && movement.Movers.Contains(unit.Id) && IsVehicle(unit))];
         var targetSide = state.PhasingSide;
         UnitInstance[] companions = [.. state.At(target).OfType<UnitInstance>()
             .Where(unit => unit.Status == InstanceStatus.Active && !movement.Movers.Contains(unit.Id) && unit.Side == targetSide && unit.Definition is not null
@@ -252,6 +285,7 @@ public static class LiveFire
             FireKind = ScenarioA1FireCalculator.ResidualFire,
             TargetMovement = new FireMovement(movement.Assault),
             ResidualFp = fp,
+            Vehicles = vehicles.Length > 0 ? [.. vehicles.Select(unit => Vehicle(unit, target))] : null,
             Companions = companions.Length > 0 ? [.. companions.Select(unit => Target(unit, target))] : null,
             TargetSideNoQuarter = state.NoQuarter.Contains(targetSide, StringComparer.Ordinal) ? true : null,
         }, null);
@@ -490,6 +524,7 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
 
             // The owners' answers are declared, and the projector checks them against the choices made (ruling R5.8).
             Choices = recorded.Choices,
+            AfvCover = GamePlanner.CoverAt(state, target, expected.Targets?.Select(item => state.Unit(item.UnitId!)?.Side).FirstOrDefault(side => side is not null)),
         };
         if (JsonSerializer.Serialize(merged, LiveFire.Json) != JsonSerializer.Serialize(recorded, LiveFire.Json))
         {

@@ -238,7 +238,8 @@ else if (state is not null)
         <h4>Rally and Repair</h4>
         <p class="muted" id="rally-help">
             In the RPh a broken unit may attempt to rally once per Player Turn, rallied by a Good Order leader in its Location or by Self-Rally
-            (A10.6), and a Good Order unit that did not attempt to rally may repair a malfunctioned SW it possesses (A9.72).
+            (A10.6), and a Good Order unit that did not attempt to rally may repair a malfunctioned SW it possesses (A9.72). A vehicle's CE crew,
+            not Stunned or Recalled, may repair its AAMG: a dr of 1 repairs it, a 6 disables it (D3.7).
             The reviewed Rally package resolves the attempt only when every outcome the dice can reach is decided.
         </p>
         <div class="toolbar">
@@ -266,13 +267,18 @@ else if (state is not null)
         </div>
         <div class="toolbar">
             <label>
-                Malfunctioned SW
+                Malfunctioned SW or AAMG
                 <select id="repair-weapon" value="@repairWeapon" @onchange="@(args => repairWeapon = args.Value as string ?? string.Empty)">
                     <option value="">choose</option>
                     @foreach (var weapon in state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed }
                         && GameState.Condition(item, Conditions.Malfunctioned) == ConditionState.True))
                     {
                         <option value="@weapon.Id">@weapon.Id (held by @weapon.Holding!.Holder)</option>
+                    }
+                    @foreach (var vehicle in state.Units.Where(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit) && LiveFire.CrewExposed(unit)
+                        && GameState.Condition(unit, Conditions.Malfunctioned) == ConditionState.True && GameState.Condition(unit, Conditions.Disabled) != ConditionState.True))
+                    {
+                        <option value="@vehicle.Id">@vehicle.Id's AAMG (a dr of 1 repairs it, a 6 disables it; D3.7)</option>
                     }
                 </select>
             </label>
@@ -369,6 +375,21 @@ else if (state is not null)
                         <button class="vehicle-exit" data-direction="@exit.Direction" data-edge="@exitEdge" @onclick='@(() => ProposeVehicleStep("exit", edge: exitEdge))'>Propose: exit the map by the @exitEdge edge (@HalfMpText(exit.HalfMp) MP)</button>
                     }
                     <label title="When the vehicle ends its move in Motion with MP left, the hex it wished to enter next decides whether it could (D2.4).">Wished to enter next <input id="vehicle-intended" value="@vehicleIntended" @onchange="@(args => vehicleIntended = args.Value as string ?? string.Empty)" size="12" /></label>
+                    }
+                    @if (LiveFire.MayBoundingFire(state, chosen.Id) && GamePlanner.HasVehicleMg(chosen) && LiveFire.CrewExposed(chosen)
+                        && GameState.Condition(chosen, Conditions.BoundingFire) != ConditionState.True)
+                    {
+                        <label title="The vehicle's MG fires at the outset of its MPh or once the DEFENDER has passed on its last MP, at half FP, halved again while Non-Stopped (D3.3, D3.31, D2.42).">
+                            Bounding First Fire at
+                            <select id="vehicle-bff-target" value="@boundingTarget" @onchange="@(args => boundingTarget = args.Value as string ?? string.Empty)">
+                                <option value="">choose</option>
+                                @foreach (var at in FireTargets(state.PhasingSide))
+                                {
+                                    <option value="@at">@at</option>
+                                }
+                            </select>
+                        </label>
+                        <button id="vehicle-bff" disabled="@(boundingTarget.Length == 0)" @onclick="ProposeBoundingFire">Propose: Bounding First Fire</button>
                     }
                     @if (GameState.Condition(chosen, Conditions.Recalled) == ConditionState.True)
                     {
@@ -922,7 +943,7 @@ else if (state is not null)
                 <tr data-unit="@unit.Id">
                     <td>@unit.Id</td><td>@unit.Side</td><td>@unit.Kind.Replace("asl:", string.Empty, StringComparison.Ordinal)</td>
                     <td>
-                        @if (unit.Status == InstanceStatus.Active && state.Location(unit.Id)?.Location is { } at)
+                        @if (unit.Status is InstanceStatus.Active or InstanceStatus.Wrecked && state.Location(unit.Id)?.Location is { } at)
                         {
                             <button class="play-locate" @onclick="() => highlight = at">@at</button>
                         }
@@ -931,8 +952,9 @@ else if (state is not null)
                             @unit.Status.ToString().ToLowerInvariant()
                         }
                     </td>
-                    <td>@(LiveFire.IsVehicle(unit) ? $"{HalfMpText(GamePlanner.VehicleHalfMp(unit).Spent)} of {HalfMpText(GamePlanner.VehicleHalfMp(unit).Allotment)} MP" : unit.MfSpent.ToString(CultureInfo.InvariantCulture))@(unit.MovementEnded ? ", movement ended" : "")</td>
-                    <td>@string.Join(", ", unit.Conditions.Where(pair => pair.Value == ConditionState.True).Select(pair => ConditionText(pair.Key)).Concat(Custody(unit)).Concat(VehicleNotes(unit)))</td>
+                    <td>@(unit.Status == InstanceStatus.Wrecked ? "wreck" : LiveFire.IsVehicle(unit) ? $"{HalfMpText(GamePlanner.VehicleHalfMp(unit).Spent)} of {HalfMpText(GamePlanner.VehicleHalfMp(unit).Allotment)} MP" : unit.MfSpent.ToString(CultureInfo.InvariantCulture))@(unit.MovementEnded ? ", movement ended" : "")</td>
+                    <td>@string.Join(", ", unit.Conditions.Where(pair => pair.Value == ConditionState.True).Select(pair => ConditionText(pair.Key)).Concat(Custody(unit)).Concat(VehicleNotes(unit))
+                        .Concat(unit.Status == InstanceStatus.Wrecked && GamePlanner.IsBurning(state, unit) ? ["burning (Blaze)"] : []))</td>
                 </tr>
             }
             @foreach (var presence in SealedPresences)
@@ -1006,6 +1028,7 @@ else if (state is not null)
     private string secondEdge = string.Empty;
     private static readonly string[] Edges = ["top", "bottom", "left", "right"];
     private bool moveDoubleTime;
+    private string boundingTarget = string.Empty;
     private string vehicleIntended = string.Empty;
     private string secondElr = string.Empty;
     private string newMonth = string.Empty;
@@ -1339,6 +1362,11 @@ else if (state is not null)
     private Task ProposeTakePrisoner(string unit, string captor) => Propose(GameActions.TakePrisoner, JsonSerializer.SerializeToElement(new
     {
         gameId, attemptId = Attempt("cap"), expectedRevision = (long)history!.Events.Count, unitId = unit, captorId = captor,
+    }));
+
+    private Task ProposeBoundingFire() => Propose(GameActions.Fire, JsonSerializer.SerializeToElement(new
+    {
+        gameId, attemptId = Attempt("bff"), expectedRevision = (long)history!.Events.Count, firers = new[] { vehicleUnit }, target = boundingTarget,
     }));
 
     private Task ProposeRejectSurrender(string unit) => Propose(GameActions.TakePrisoner, JsonSerializer.SerializeToElement(new
@@ -1757,12 +1785,18 @@ else if (state is not null)
         return Propose(GameActions.Rally, JsonSerializer.SerializeToElement(arguments));
     }
 
-    private Task ProposeRepair() => state?.Find(repairWeapon) is EquipmentInstance { Holding: { } holding }
-        ? Propose(GameActions.Repair, JsonSerializer.SerializeToElement(new
+    private Task ProposeRepair() => state?.Find(repairWeapon) switch
+    {
+        EquipmentInstance { Holding: { } holding } => Propose(GameActions.Repair, JsonSerializer.SerializeToElement(new
         {
             gameId, attemptId = Attempt("repair"), expectedRevision = (long)history!.Events.Count, unitId = holding.Holder, equipmentId = repairWeapon,
-        }))
-        : Task.CompletedTask;
+        })),
+        UnitInstance vehicle when LiveFire.IsVehicle(vehicle) => Propose(GameActions.Repair, JsonSerializer.SerializeToElement(new
+        {
+            gameId, attemptId = Attempt("repair"), expectedRevision = (long)history!.Events.Count, unitId = vehicle.Id, equipmentId = vehicle.Id,
+        })),
+        _ => Task.CompletedTask,
+    };
 
     /// <summary>Whether the checked units are some, not all, of the moving stack's members, so ending the move ends only theirs (A4.2).</summary>
     private bool EndingSome => state?.Movement is { Members.Count: > 0 } movement && moveUnits.Count > 0
@@ -1824,7 +1858,7 @@ else if (state is not null)
     /// the Fire package read it.
     /// </summary>
     private bool MayFire(UnitInstance unit) => state is not null && unit.Kind != "asl:crew" && GamePlanner.FireBar(state, unit) is null && !LiveFire.FireSpent(state, unit)
-        && (!LiveFire.IsVehicle(unit) || (GamePlanner.HasVehicleMg(unit) && LiveFire.CrewExposed(unit) && state.Phase != "mph"));
+        && (!LiveFire.IsVehicle(unit) || (GamePlanner.HasVehicleMg(unit) && LiveFire.CrewExposed(unit)));
 
     private IEnumerable<UnitInstance> FireGroupAt(string side) => state is null || fireFrom.Length == 0 ? []
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && state.Location(unit.Id)?.Location.ToString() == fireFrom)

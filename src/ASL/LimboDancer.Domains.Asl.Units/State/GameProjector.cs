@@ -99,6 +99,7 @@ public static class GameProjector
                 OrdnanceFired fired => Ordnance(previous, fired),
                 SurrenderPending surrender => Surrender(previous, surrender, gameEvent.EventId),
                 SurrenderRejected rejected => RejectSurrender(previous, rejected),
+                VehicleWrecked wreck => Wreck(previous, wreck),
                 PrisonersMassacred massacre => Massacre(previous, massacre),
                 ChoicePending pending => PendChoice(previous, pending, gameEvent.EventId),
                 ChoiceMade made => MakeChoice(previous, made),
@@ -109,6 +110,17 @@ public static class GameProjector
             if (next is null)
             {
                 return null;
+            }
+
+            // C6.1 Case J (ruling R6.1): a vehicle that enters a new hex, or moves while under a Motion counter, this Player Turn.
+            if (gameEvent.Payload is VehicleStepped stepped && !next.MovedVehicles.Contains(stepped.Vehicle, StringComparer.Ordinal)
+                && (stepped.Kind is VehicleStepped.Enter or VehicleStepped.Exit
+                    || (previous?.Unit(stepped.Vehicle) is { } before && GameState.Condition(before, Conditions.Motion) == ConditionState.True)))
+            {
+                next = next with
+                {
+                    MovedVehicles = [.. next.MovedVehicles, stepped.Vehicle]
+                };
             }
 
             next = KeepMovingStack(next, gameEvent.Payload);
@@ -266,7 +278,7 @@ public static class GameProjector
             string[] cleared = state.Phase switch
             {
                 "dfph" => [Conditions.FinalFire, Conditions.FirstFire],
-                "afph" => [Conditions.PrepFire],
+                "afph" => [Conditions.PrepFire, Conditions.BoundingFire],
                 "ccph" => [Conditions.Pinned],
                 "rph" => [Conditions.DesperationMorale],
                 _ => [],
@@ -301,6 +313,7 @@ public static class GameProjector
                     CloseCombats = [],
                     OrdnanceShots = [],
                     Advances = newPlayerTurn ? [] : state.Advances,
+                    MovedVehicles = newPlayerTurn ? [] : state.MovedVehicles,
                     Turn = change.Turn,
                     Phase = change.Phase,
                     PhasingSide = change.PhasingSide,
@@ -697,6 +710,30 @@ public static class GameProjector
             };
         }
 
+        /// <summary>
+        /// D10.1 (ruling R6.5): a destroyed vehicle becomes a wreck at its Location, on its wreck face and out of Motion; it no longer acts.
+        /// </summary>
+        private GameState? Wreck(GameState state, VehicleWrecked wreck)
+        {
+            if (Active(state, wreck.Id) is not UnitInstance vehicle || !vocabulary.IsA(vehicle.Kind, "asl:vehicle") || state.Location(vehicle.Id) is null)
+            {
+                return Fail<GameState>("UNIT-STATE-037", $"'{wreck.Id}' is not an active vehicle on the map, so it cannot become a wreck (D10.1).");
+            }
+
+            var conditions = new Dictionary<string, ConditionState>(vehicle.Conditions, StringComparer.Ordinal)
+            {
+                [Conditions.Wrecked] = ConditionState.True,
+                [Conditions.Motion] = ConditionState.False,
+                [Conditions.Concealed] = ConditionState.False,
+                [Conditions.Hidden] = ConditionState.False,
+            };
+            return DropHeldBy(Replace(state, vehicle with
+            {
+                Status = InstanceStatus.Wrecked,
+                Conditions = conditions
+            }), [vehicle.Id]);
+        }
+
         /// <summary>A20.3 (ruling R5.6): the captor's side rejects a pending surrender; the unit is eliminated and its side faced with No Quarter.</summary>
         private GameState? RejectSurrender(GameState state, SurrenderRejected rejected)
         {
@@ -998,6 +1035,36 @@ public static class GameProjector
         /// <summary>A Repair record (A9.72): a dr at most the Repair Number repairs, a 6 eliminates, anything else changes nothing.</summary>
         private GameState? Repair(GameState state, RepairAttempted repair)
         {
+            // D3.7 (ruling R6.10): a vehicle's malfunctioned MG, repaired by its CE crew that is not Stunned or Recalled, on a dr of 1; a 6
+            // disables it.
+            if (repair.Unit == repair.Equipment && Active(state, repair.Unit) is UnitInstance vehicle && vocabulary.IsA(vehicle.Kind, "asl:vehicle"))
+            {
+                if (state.Phase != "rph" || GameState.Condition(vehicle, Conditions.Malfunctioned) != ConditionState.True
+                    || GameState.Condition(vehicle, Conditions.Disabled) == ConditionState.True || GameState.Condition(vehicle, Conditions.ButtonedUp) == ConditionState.True
+                    || GameState.Condition(vehicle, Conditions.Stunned) == ConditionState.True || GameState.Condition(vehicle, Conditions.Recalled) == ConditionState.True
+                    || state.RepairsThisPhase.Contains(vehicle.Id))
+                {
+                    return Fail<GameState>("UNIT-STATE-028", "A vehicle's malfunctioned MG is repaired once per RPh by its CE crew that is not Stunned or Recalled (D3.7).");
+                }
+
+                if (!rolls.TryGetValue(repair.Roll, out var vehicleRoll) || vehicleRoll.Count != 1 || vehicleRoll.Sides != 6)
+                {
+                    return Fail<GameState>("UNIT-STATE-028", $"The Repair record's roll '{repair.Roll}' is not one recorded die.");
+                }
+
+                var vehicleDr = vehicleRoll.Values[0];
+                var vehicleResult = vehicleDr == 6 ? RepairAttempted.Eliminated : vehicleDr == 1 ? RepairAttempted.Repaired : RepairAttempted.NoChange;
+                if (repair.RepairNumber != 1 || repair.Result != vehicleResult)
+                {
+                    return Fail<GameState>("UNIT-STATE-028", "The Repair record disagrees with the vehicle MG's dr (D3.7).");
+                }
+
+                return state with
+                {
+                    RepairsThisPhase = [.. state.RepairsThisPhase, vehicle.Id]
+                };
+            }
+
             if (state.Phase != "rph" || Active(state, repair.Unit) is not UnitInstance unit
                 || Active(state, repair.Equipment) is not EquipmentInstance { Holding: { Role: HoldingRole.Possessed } holding } equipment
                 || holding.Holder != unit.Id || GameState.Condition(equipment, Conditions.Malfunctioned) != ConditionState.True)

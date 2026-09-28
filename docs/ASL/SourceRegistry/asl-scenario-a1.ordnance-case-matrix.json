@@ -364,6 +364,20 @@
       "startLine": 305,
       "fragmentId": "asl-fragment:sha256:f49373d52a53a41fde917dc0a5e2ea7aa94a269361f348db39e91eb29ca4e369",
       "contentSha256": "eb151224e0987cb136ed6b50b1a05a8ca2bc5fe45a4578d07f84b1500f47570e"
+    },
+    {
+      "ruleId": "D9.3",
+      "physicalPdfPage": 209,
+      "startLine": 766,
+      "fragmentId": "asl-fragment:sha256:cadb9c9dedd4522c8970bf45606bbf298719b94aacd46862fb060b3c643cc07f",
+      "contentSha256": "db8a621d1a3d17ac58c89e5a0e6ff2e58f742779614b9df8214294cb6a60500b"
+    },
+    {
+      "ruleId": "D10.3",
+      "physicalPdfPage": 210,
+      "startLine": 796,
+      "fragmentId": "asl-fragment:sha256:46f277ab4f7c76e6bbd7c294426ab5fb4bca6cb6f1c94c852b3ff7c2c90f6855",
+      "contentSha256": "d39a9f4b78fafb86bf92772edd89fa4042d9f1f2b011f6bb9111fd83e044fdbb"
     }
   ],
   "rulings": {
@@ -378,7 +392,8 @@
     "acquisition": "Each shot acquires the target Location for the Gun: -1, or -2 if it already held -1 there, unless the Gun malfunctions; firing at another Location moves the Acquisition there (C6.5). The Acquisition DRM applies only to Known units (C6.51): a shot at a Location whose every target is concealed takes no Case N, loses the Acquisition, and acquires the Location afresh at -1 only if it costs one its concealment (C6.57; R24.6).",
     "mapFacts": "The range, the hexspines the Gun turns to bring the target into its Covered Arc (C3.2, C3.21), whether the Gun is in woods or a building, the C2.6 elevation limit, the LOS and its Hindrance, and the target Location's terrain are the planner's reads, taken as recorded on replay.",
     "ownerOptions": "the-hits-ift-attack-asks-for-its-owners-options-as-the-fire-package-does-each-under-the-key-of-its-unit-A15.3 (R5.8)",
-    "cx": "plus-one-to-the-to-hit-dr-when-the-gun-crew-is-cx-A4.51 (R5.2)"
+    "cx": "plus-one-to-the-to-hit-dr-when-the-gun-crew-is-cx-A4.51 (R5.2)",
+    "afvCover": "plus-one-to-the-to-hit-dr-for-infantry-with-a-non-burning-wreck-when-their-terrain-gives-no-positive-tem-a-friendly-or-abandoned-enemy-afv-in-the-target-location-makes-the-shot-a-vehicle-target-type-case-which-is-refused-D9.3-D10.3-C6.8 (R6.1)"
   },
   "resolution": {
     "order": "The To Hit DR first (colored die first), then a subsequent dr on an Original 2 when the result needs it, then a Random Selection dr per target for a Critical Hit among several, then the IFT rolls of the Critical Hit and of the normal hit, each asked for when reached.",
@@ -513,6 +528,16 @@
         "A4.51"
       ],
       "reason": "A CX crew adds one to its Gun's To Hit DR (ruling R5.2)."
+    },
+    {
+      "caseId": "A1-ordnance-afv-cover",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "resolved",
+      "sourceRules": [
+        "D9.3",
+        "D10.3"
+      ],
+      "reason": "A wreck in the target Location gives its Infantry +1 TEM on the To Hit DR where their terrain gives none; a shot at a Location holding a friendly or abandoned enemy AFV is refused, as the Vehicle Target Type is not reviewed (ruling R6.1)."
     }
   ],
   "admissionRule": "A shot is resolved only when every fact is within the reviewed scope and every roll it needs is recorded; otherwise it is Abstained or Indeterminate with its reasons.",

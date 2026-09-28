@@ -54,7 +54,8 @@ public sealed record GameView(
             throw new ArgumentException($"The events include some '{perspective}' is not entitled to.", nameof(events));
         }
 
-        var active = state.Objects.Where(item => item.Status == InstanceStatus.Active).ToArray();
+        // A wreck stays on the map for every perspective (D10.1; ruling R6.5).
+        var active = state.Objects.Where(item => item.Status is InstanceStatus.Active or InstanceStatus.Wrecked).ToArray();
         if (perspective.IsAdjudicator)
         {
             return new GameView(perspective, state.Stamp, state.Synthetic, state.Sides, state.Map, state.Turn, state.Phase, state.PhasingSide,

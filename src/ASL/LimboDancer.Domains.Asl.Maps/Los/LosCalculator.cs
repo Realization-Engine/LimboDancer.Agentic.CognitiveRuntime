@@ -211,6 +211,9 @@ public static class LosCalculator
 
         private string? unsupported;
 
+        // The hexes the walk entered between its ends, in order (not VASL's; ruling R6.2).
+        private readonly List<HexIndex> crossed = [];
+
         // LOSStatus constructor
         public Walk(LosMap map, LosEnd sourceEnd, LosEnd targetEnd)
         {
@@ -373,9 +376,12 @@ public static class LosCalculator
                 first = new LosHindranceAt(firstPoint, firstOwner?.Board, firstOwner?.Hex);
             }
 
+            LosCrossedHex[] hexes = [.. crossed.Select(hex => map.OwnerOf(hex) is { } owner
+                ? new LosCrossedHex(owner.Board, owner.Hex, map.Geometry.Distance(sourceHex, hex))
+                : new LosCrossedHex(null, null, map.Geometry.Distance(sourceHex, hex)))];
             if (!resultBlocked)
             {
-                return new LosResult(LosStatus.Clear, false, resultRange, hindrance, null, string.Empty) { Hindrances = breakdown, FirstHindranceAt = first };
+                return new LosResult(LosStatus.Clear, false, resultRange, hindrance, null, string.Empty) { Hindrances = breakdown, FirstHindranceAt = first, Crossed = hexes };
             }
 
             var point = blockedAtPoint!.Value;
@@ -385,6 +391,7 @@ public static class LosCalculator
             {
                 Hindrances = breakdown,
                 FirstHindranceAt = first,
+                Crossed = hexes,
             };
         }
 
@@ -680,6 +687,11 @@ public static class LosCalculator
                 }
 
                 currentHex = tempHex;
+                if (currentHex != sourceHex && currentHex != targetHex && !crossed.Contains(currentHex))
+                {
+                    crossed.Add(currentHex);
+                }
+
                 rangeToSource = map.Geometry.Distance(currentHex, sourceHex);
                 rangeToTarget = map.Geometry.Distance(currentHex, targetHex);
                 if (LosFollowsDepression(newEqualsPreviousHex))

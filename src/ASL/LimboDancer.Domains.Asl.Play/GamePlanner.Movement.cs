@@ -260,6 +260,9 @@ public sealed partial class GamePlanner
             halfMf = 2;
         }
 
+        // B25.141 (ruling R6.3): a burning wreck's smoke costs one more MF to enter its Location.
+        halfMf += BlazeEntryHalfMf(state, to);
+
         if (charge is null && state.At(to).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != state.PhasingSide))
         {
             return Refused(scope, label, expected, $"play.move-occupied: entry into an enemy-occupied Location is the building entry's action, or not reviewed (ruling R22.6)");
@@ -299,6 +302,16 @@ public sealed partial class GamePlanner
             new EquipmentTransferred(item.Id, null, new MapPosition(from)), package, null))];
         var residual = state.ResidualFire.FirstOrDefault(item => item.Location == to);
         var stepEvent = Event(scope, attemptId, prefix.Count + 1, expected, "movement-step", moved, package, null);
+
+        // A12.2 Case H (ruling R6.7): the step may bring a concealed vehicle out of Concealment Terrain into the movers' LOS.
+        if (Replay([.. existing, .. prefix, stepEvent]).Current is { } stepped && VehicleConcealmentLost(stepped, null, false) is { Count: > 0 } lost)
+        {
+            prefix = [.. prefix, stepEvent, .. RevealEvents(scope, attemptId, expected, prefix.Count + 2, lost)];
+            stepEvent = prefix[^1];
+            prefix.RemoveAt(prefix.Count - 1);
+            summary += $"; {string.Join(", ", lost)} loses its \"?\" (A12.2)";
+        }
+
         if (residual is null)
         {
             return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [.. prefix, stepEvent], [summary]);
@@ -399,7 +412,8 @@ public sealed partial class GamePlanner
     /// not move again this MPh; the stack's move is over when none is left. With no member left, because each broke or was
     /// pinned, the units of its latest step are ended.
     /// </summary>
-    private GamePlan PlanEndMove(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label)
+    private GamePlan PlanEndMove(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label,
+        string actor)
     {
         if (Replay(existing).Current is not { } state)
         {
@@ -427,7 +441,7 @@ public sealed partial class GamePlanner
         // D2.1, D2.4: a vehicle ends its move in Motion or stopped, spending its MP left in its hex first (rulings R5.14, R5.15).
         if (movement.Vehicle && state.Unit(movement.Members.Count > 0 ? movement.Members[0] : movement.Movers[0]) is { } vehicle)
         {
-            return PlanEndVehicle(scope, arguments, existing, attemptId, expected, label, state, movement, vehicle);
+            return PlanEndVehicle(scope, arguments, existing, attemptId, expected, label, state, movement, vehicle, actor);
         }
 
         // A15.43, A15.431: a berserk unit keeps charging while it has the MF for a step on its route; when the model cannot decide the

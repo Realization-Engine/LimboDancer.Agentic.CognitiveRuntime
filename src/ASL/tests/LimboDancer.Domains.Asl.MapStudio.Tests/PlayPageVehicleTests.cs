@@ -124,4 +124,31 @@ public sealed class PlayPageVehicleTests : IDisposable
         Assert.Contains("1 of 28 MP spent, 27 left, moving", page.Find("#vehicle-state").TextContent, StringComparison.Ordinal);
         Assert.NotEmpty(page.FindAll(".vehicle-enter"));
     }
+
+    [Fact]
+    public void TheMovingHalftrackOffersBoundingFirstFireOnceTheDefenderPasses()
+    {
+        // D3.3 (ruling R6.9): after the DEFENDER passes on its Start, the halftrack's panel offers Bounding First Fire at a Location the
+        // Germans can see.
+        var (one, two) = Hexes();
+        var page = context.Render<PlayPage>();
+        page.Find("#new-board").Change(Board);
+        page.Find("#new-first").Change("german");
+        page.Find("#new-second").Change("russian");
+        page.Find("#new-first-elr").Change("3");
+        page.Find("#new-second-elr").Change("3");
+        Place(page, "de-ht", "attacker-halftrack", one, "east");
+        page.Find("#place-definition").Change("defender-squad");
+        page.Find("#place-id").Change("r1");
+        page.Find("#place-location").Change(two);
+        page.Find("#place-add").Click();
+        Commit(page, "#propose-setup");
+        Commit(page, "#propose-advance");
+        Commit(page, "#propose-advance");
+        page.Find("#vehicle-unit").Change("de-ht");
+        Commit(page, "#vehicle-start");
+        Assert.Empty(page.FindAll("#vehicle-bff"));
+        Commit(page, "#propose-pass");
+        Assert.Contains(two, page.FindAll("#vehicle-bff-target option").Select(item => item.GetAttribute("value")));
+    }
 }

@@ -502,7 +502,7 @@ public sealed class BacklogPass5Tests : IDisposable
         }));
         Assert.Equal((ChoicePending.UnlikelyKill, "german"), (Current.Choice!.Kind, Current.Choice.Side));
         Committed(await Choose("unlikelyKill:rt", "take", Once(1)));
-        Assert.Equal(InstanceStatus.Eliminated, Current.Unit("rt")!.Status);
+        Assert.Equal(InstanceStatus.Wrecked, Current.Unit("rt")!.Status);
         Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
     }
 

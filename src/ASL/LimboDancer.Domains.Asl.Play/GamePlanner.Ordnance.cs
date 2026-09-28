@@ -38,15 +38,10 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, reason!);
         }
 
-        // R24.2, ruling R25.10: the Vehicle Target Type is not reviewed; D9.3, D9.4 (ruling R25.9): nor an AFV's TEM and Hindrance.
+        // R24.2, ruling R25.10: the Vehicle Target Type, and the hit's IFT attack on a vehicle in the target Location, are not reviewed.
         if (state.At(target).OfType<UnitInstance>().FirstOrDefault(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit)) is { } vehicle)
         {
             return Refused(scope, label, expected, $"play.ordnance-vehicle: {vehicle.Id} is in {target}, and the Vehicle Target Type is not reviewed (C3.3; ruling R24.2)");
-        }
-
-        if (AfvCover(state, [((MapPosition)((EquipmentInstance)state.Find(gunId)!).Position).Location], target, true) is { } cover)
-        {
-            return Refused(scope, label, expected, cover);
         }
 
         if (state.At(target).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && (Is(unit, Conditions.Melee) || Is(unit, Conditions.Captured))))
