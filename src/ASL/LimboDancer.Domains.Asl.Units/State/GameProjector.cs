@@ -99,6 +99,9 @@ public static class GameProjector
                 VehicleCheckRolled check => CheckVehicle(previous, check),
                 OverrunResolved overrun => ResolveOverrun(previous, overrun),
                 PaatcTaken paatc => TakePaatc(previous, paatc),
+                OpportunityFireDeclared opportunity => DeclareOpportunityFire(previous, opportunity),
+                EncirclementPlaced encirclement => Encircle(previous, encirclement),
+                FireLanePlaced lane => PlaceFireLane(previous, lane),
                 MovementWindowClosed closed => CloseWindow(previous, closed),
                 MovementEnded ended => EndMovement(previous, ended),
                 AdvanceMoved advanced => Advance(previous, advanced),
@@ -188,6 +191,8 @@ public static class GameProjector
             }
 
             next = KeepMovingStack(next, gameEvent.Payload);
+            next = KeepEncirclements(next);
+            next = KeepFireLanes(next);
             next = KeepMelee(next);
             next = KeepCx(next);
             next = KeepAcquisitions(next, gameEvent.Payload);
@@ -384,7 +389,11 @@ public static class GameProjector
                     Advances = newPlayerTurn ? [] : state.Advances,
                     MovedVehicles = newPlayerTurn ? [] : state.MovedVehicles,
                     GunCrewsFired = newPlayerTurn ? [] : state.GunCrewsFired,
-                    NoMoveThisPlayerTurn = newPlayerTurn ? [] : state.NoMoveThisPlayerTurn,
+                    // A3.3 (table player, pass 12): a unit that fired only a SW in the PFPh has Prep Fired and does not move.
+                    NoMoveThisPlayerTurn = newPlayerTurn ? [] : state.Phase == "pfph"
+                        ? [.. state.NoMoveThisPlayerTurn, .. state.PhaseFirers.Select(item => item.Unit).Concat(state.SupportWeaponUses.Select(item => item.Unit)).Distinct().Where(id => !state.NoMoveThisPlayerTurn.Contains(id)
+                            && state.Unit(id) is { } fired && GameState.Condition(fired, Conditions.PrepFire) != ConditionState.True)]
+                        : state.NoMoveThisPlayerTurn,
                     OrdnanceShotsHere = [],
                     GunsTurnedThisPhase = [],
                     SmokeAttempts = [],
@@ -401,6 +410,7 @@ public static class GameProjector
                     RepairsThisPhase = [],
                     ShockRollsThisPhase = [],
                     PaatcPassed = [],
+                    FireLanes = [],
                     ResidualFire = [],
                     Movement = null,
                     NoDoubleTime = rested,
@@ -1896,6 +1906,86 @@ public static class GameProjector
                 },
             };
         }
+
+        /// <summary>
+        /// Opportunity Fire (A7.25; ruling R12.1): in their PFPh, Good Order Infantry of the phasing side that have not fired or directed fire this Player
+        /// Turn, not berserk, in Melee, or prisoners, are marked with a Bounding Fire counter and may not move in the MPh.
+        /// </summary>
+        private GameState? DeclareOpportunityFire(GameState state, OpportunityFireDeclared declared)
+        {
+            var units = declared.Units.Select(id => Active(state, id)).ToArray();
+            if (state.Phase != "pfph" || units.Length == 0 || declared.Units.Distinct(StringComparer.Ordinal).Count() != units.Length
+                || units.Any(unit => unit is not UnitInstance { } infantry || infantry.Side != state.PhasingSide || !vocabulary.IsA(infantry.Kind, "asl:personnel")
+                    || new[] { Conditions.Broken, Conditions.Berserk, Conditions.Melee, Conditions.Captured, Conditions.PrepFire, Conditions.BoundingFire }
+                        .Any(name => GameState.Condition(infantry, name) == ConditionState.True)))
+            {
+                return Fail<GameState>("UNIT-STATE-040", "Opportunity Fire is declared in the PFPh for Good Order Infantry of the phasing side that have not fired (A7.25).");
+            }
+
+            var next = state;
+            foreach (var unit in units.OfType<UnitInstance>())
+            {
+                next = Replace(next, unit with
+                {
+                    Conditions = new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal) { [Conditions.BoundingFire] = ConditionState.True },
+                })!;
+            }
+
+            return next with
+            {
+                NoMoveThisPlayerTurn = [.. next.NoMoveThisPlayerTurn, .. declared.Units],
+            };
+        }
+
+        /// <summary>An Encirclement (A7.7; ruling R12.11): placed by a fire record of a fire phase at the Location, on a side with units there.</summary>
+        private GameState? Encircle(GameState state, EncirclementPlaced encirclement)
+        {
+            if (state.Phase is not ("pfph" or "dfph" or "afph") || !fires.TryGetValue(encirclement.Fire, out var recorded)
+                || recorded.Fire.TargetLocation != encirclement.Location.ToString()
+                || !state.At(encirclement.Location).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side == encirclement.Side))
+            {
+                return Fail<GameState>("UNIT-STATE-040", "An Encirclement is placed by a fire record of a fire phase at a Location holding units of the Encircled side (A7.7).");
+            }
+
+            return state.Encirclements.Any(item => item.Location == encirclement.Location && item.Side == encirclement.Side) ? state : state with
+            {
+                Encirclements = [.. state.Encirclements, new Encirclement(encirclement.Location, encirclement.Side)],
+            };
+        }
+
+        /// <summary>A7.7 (ruling R12.11): an Encirclement ends when no unit it Encircles is left in its Location.</summary>
+        private static GameState KeepEncirclements(GameState next) =>
+            next.Encirclements.Count == 0 ? next : next with
+            {
+                Encirclements = [.. next.Encirclements.Where(item => next.At(item.Location).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active
+                    && unit.Kind != UnitKinds.Dummy && GameState.Condition(unit, Conditions.Captured) != ConditionState.True && next.Encircled(unit)))],
+            };
+
+        /// <summary>A Fire Lane (A9.22; ruling R12.7): placed in the MPh by its MG's fire record, with at least one Location.</summary>
+        private GameState? PlaceFireLane(GameState state, FireLanePlaced lane)
+        {
+            if (state.Phase != "mph" || !fires.ContainsKey(lane.Fire) || state.Find(lane.Weapon) is not EquipmentInstance { Status: InstanceStatus.Active }
+                || Active(state, lane.Operator) is not UnitInstance || lane.Entries.Any(entry => entry.Fp <= 0)
+                || state.FireLanes.Any(item => item.Weapon == lane.Weapon))
+            {
+                return Fail<GameState>("UNIT-STATE-040", "A Fire Lane is placed in the MPh by its MG's fire record (A9.22).");
+            }
+
+            return state with
+            {
+                FireLanes = [.. state.FireLanes, new FireLane(lane.Fire, lane.Weapon, lane.Operator, lane.Entries)],
+            };
+        }
+
+        /// <summary>A9.223 (ruling R12.7): a Fire Lane ends when its MG malfunctions or its manning Infantry breaks, is pinned, or is eliminated.</summary>
+        private static GameState KeepFireLanes(GameState next) =>
+            next.FireLanes.Count == 0 ? next : next with
+            {
+                FireLanes = [.. next.FireLanes.Where(lane => next.Find(lane.Weapon) is EquipmentInstance { Status: InstanceStatus.Active } mg
+                    && GameState.Condition(mg, Conditions.Malfunctioned) != ConditionState.True
+                    && next.Unit(lane.Operator) is { Status: InstanceStatus.Active } manning
+                    && GameState.Condition(manning, Conditions.Broken) != ConditionState.True && GameState.Condition(manning, Conditions.Pinned) != ConditionState.True)],
+            };
 
         /// <summary>A PAATC (A11.6, A12.41): its DR agrees with its result; the units that pass need no other PAATC against that vehicle this phase.</summary>
         private GameState? TakePaatc(GameState state, PaatcTaken paatc)

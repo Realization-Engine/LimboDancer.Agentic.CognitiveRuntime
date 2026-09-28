@@ -43,7 +43,6 @@ Berserk and Surrender from Heat of Battle (R0.2, R19.2, R22.5, R28.1) left this 
 | Rally terrain other than woods and ordinary buildings (pillbox, trench, rooftop and chart exclusions) | R19.5 | A10.61, p. 68; B23.83, p. 140; B30.5, p. 151; B Terrain Chart, p. 160 | Those terrains on the map read |
 | Commissars | R19.10 | A25.22 to A25.223, p. 94 | Commissar definitions |
 | Allied Troops' leadership penalty | R19.10 | A10.7, p. 68 | Allied nationalities in a scenario |
-| Encirclement, including its Morale Level drop | R19.10 | A7.7, p. 57 | Encirclement detection |
 | Night (DM kept until a rally DR at most the printed morale) | R19.10 | E1.54, p. 224 | Night rules |
 | Extreme Winter Fate | R19.10 | E3.742, p. 231 | Weather |
 | Recovery of an unpossessed SW | R19.10, R23.4 | A4.44, p. 50 | SW transfer and possession (below) |
@@ -52,10 +51,10 @@ Berserk and Surrender from Heat of Battle (R0.2, R19.2, R22.5, R28.1) left this 
 
 ## 3. Fire phases and fire groups (step 20)
 
+The backlog pass 12 (2026-09-28) built this section; what it leaves out is in section 22.
+
 | Item | Deferred by | Rules | Depends on |
 |---|---|---|---|
-| Opportunity Fire and the Bounding Fire marker | R20.1 | A7.25, p. 55 | A PFPh designation action |
-| A6.11's declared fire with a blocked LOS (the firer counts as having fired) | R20.2 | A6.11, p. 53; A7.52, p. 57 | none; the game refuses such a group instead |
 
 ## 4. Movement and fire during it (step 22)
 
@@ -68,8 +67,6 @@ The backlog pass 10 (2026-09-28) built this section; what it leaves out is in se
 
 | Item | Deferred by | Rules | Depends on |
 |---|---|---|---|
-| Spraying Fire | R23.3 | A9.5 to A9.52, p. 64 | none |
-| Fire Lanes | R23.3 | A9.22 to A9.223, p. 63; chart p. 110 | Residual FP (step 22) and a lane marker |
 | SW transfer and possession changes | R23.4 | A4.43, A4.431, p. 50 | none |
 | Recovery | R23.4 | A4.44, p. 50 | SW transfer |
 | Dismantling and assembly | R23.4 | A9.8, p. 65 | A dismantled state in the vocabulary |
@@ -101,12 +98,6 @@ Step 17 left these out; steps 19 to 23 do not build them.
 | Item | Deferred by | Rules | Depends on |
 |---|---|---|---|
 | Self-Rally capability of the catalog counters | Rally review | A10.63, p. 68 | The broken sides of the counters, which the charts do not show |
-| FPF directed by a leader | Fire review, steps 19 to 23 | A8.31, p. 61; A10.2, p. 65 | Leader loss among FPF firers |
-| A group mixing FPF firers with others | Fire review, steps 19 to 23 | A8.31, p. 61 | Splitting the FPF NMC |
-| One attack on a moving stack mixing pinned and unpinned units | Fire review, steps 19 to 23 | A7.83, p. 58 | Two DRM in one attack |
-| A squad firing its inherent FP apart from its MG | Fire review, steps 19 to 23 | A7.351, p. 56 | Separate attacks in one phase |
-| Fire by a SMC, and a leader firing a MG | Fire review, steps 19 to 23 | A9.12, p. 62 | SMC FP |
-| The Concealment Table | Fire review, steps 17 and 19 to 23 | Registered p. 107 | Its transcription |
 
 ## 9. Added by the steps 19 to 23 implementation
 
@@ -139,12 +130,9 @@ The backlog pass 10 (2026-09-28) built this section.
 | Ambush Withdrawal | R29.1 | A11.41, pp. 73 and 74 | Withdrawal before and after the ambusher's round |
 | TI units in CC | R29.14 | A4.8, p. 52; the CCT, p. 692 | TI tasks |
 | Overstacked CC and overstacking advances | R29.14, R29.2 | A5.12, A5.131, p. 52 | Overstacking penalties |
-| Fire into a Melee Location, TPBF, and fire by units held in Melee | R29.10 | A11.15, p. 72; A7.212, p. 55 | Fire into one's own Location |
-| Fire at a Location holding prisoners, and fire by a Guard | R30.8 | A20.52, A20.54, p. 87 | The prisoners' share of an attack |
 | Unarmed counters, the excess surrendering units freed as Unarmed, and a Guard without capacity | R30.7 | A20.5, A20.21, A20.51, p. 87 | Unarmed definitions in the catalog; until then a surrender to Guards with no capacity is refused |
 | Surrender in the RtPh, and a Disrupted unit's surrender next to or among Good Order enemy units | R30.1 | A20.21, pp. 86 and 87; A19.12, p. 86 | Routing |
 | Moving, transferring, or abandoning prisoners by choice; a prisoner's owner moving it once freed | R30.8 | A20.5, A20.53, p. 87 | Guard actions in the RPh and APh |
-| Fire by berserk units (TPBF in the AFPh, and the DFPh) | R30.5 | A15.432, p. 84 | Fire into one's own Location |
 | A berserk unit's choice of which 1PP SW to abandon beyond its IPC | R30.5 | A15.431, p. 84; A4.42, p. 50 | An owner's choice before the charge |
 | Italian, Axis Minor, and Japanese Heat of Battle exceptions | Pass 2 review | Heat of Battle table notes, p. 83 | Counters of those nationalities; until then they are refused |
 | Field Promotion in CC by MMC of different BPV, or whose defending MMC is decided by Random Selection | R29.12 | A18.2, p. 85 | BPV in the catalog; a Random Selection for the leader's stacking |
@@ -173,7 +161,6 @@ The backlog pass 10 (2026-09-28) built this section.
 | Gun movement, manhandling, (un)limbering, towing, and abandoning a Gun; a crew leaving its Gun | R24.4 | C10, pp. 180 and 181; C2.8, A4.41 | Gun movement |
 | Gun repair and removal | R24.4 | A9.72, C2.28 | The Guns' malfunctioned sides (no registered source gives them) |
 | Overstacked firer or target Locations for ordnance | R24.8 | A5.12, A5.131 | Overstacking penalties |
-| Encirclement and Opportunity Fire | Referee D7 | A7.7, A7.25 | Neither is built anywhere |
 | A Covered Arc across boards or on a reversed board | Pass 3 design | C3.2, p. 168 | Composed-map geometry for bearings |
 | Targets at another level, and C2.6's depression and elevation limits | R24.2 | C2.6, p. 168 | Levels in fire |
 | Multiple Hits | R24.2 | C3.8, p. 171 | A reviewed Gun of 40mm or less |
@@ -339,3 +326,27 @@ Vehicle movement (Reverse, VBM, ESB, Minimum Move, Bog, OVR, stacking, and terra
 | A Bypassing AFV in woods whose Target Facing the TEM rule of the IFT would change, and a turret's facing in Bypass | R11.2 | D2.34, D3.2 | Bypass facing for ordnance | Bypass Target Facing is read from the straddled hexside for both hull and turret. |
 | The current Morale Level of a combined PAATC | Referee, pass 11 | A12.41, p. 83 | Morale changes in play (DM, ELR replacement) | The printed ML, with Fanatic and wounds, is used (a reading). |
 | The "wished to enter next" field for Motion | Table player, pass 11 | D2.4 | Buttons for the VCA hexes | A free-text Location on the Play page. |
+
+## 22. Added by the backlog pass 12
+
+The backlog pass 12 (2026-09-28) built, and removed from sections 2, 3, 5, 8, 11, and 12: Encirclement, Opportunity Fire, fire at a blocked LOS, Spraying Fire, Fire Lanes, directed and mixed FPF, one attack on pinned and unpinned movers, a squad's MG apart from its inherent FP, a leader firing a MG, the Concealment Table's gains, fire into a Melee and at prisoners, a Guard's fire, and berserk fire. What it leaves out follows.
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| Opportunity Fire by ordnance, mortars, and LATW, and a mortar Spotter's wait after it | R12.1 | A7.25, C9.3 | Ordnance in the AFPh | Only Infantry small arms and MGs use Opportunity Fire. |
+| Random Events on the DR of fire at a blocked LOS | R12.2, R12.12 | A6.11 | Random Events | The DR decides Multiple ROF only. |
+| An unmarked unit's First Fire joining FPF | R12.3; referee, pass 12 | A8.31 | Per-firer fire markers | Refused; FPF groups with Subsequent First Fire only. |
+| A hero's own SW use | R12.4 | A15.23 | Hero SW rules | Refused, as before. |
+| Concealment gain by vehicles, Guns, and Dummy stacks, Lax units, and night | R12.5 | A12.12, the Concealment Table, E1 | Their Cases | Only Infantry not manning a Gun gain "?". |
+| Spraying Fire in the MPh, at upper-level Locations of one hex, and counted toward an Encirclement | R12.6; referee, pass 12 | A9.5, A9.52, A7.7 | Spraying in the movement windows | Refused in the MPh; a spray does not count toward an Encirclement. |
+| Fire Lanes along an Alternate Hex Grain, their Snap Shots, intersecting lanes, the TPBF and CC Reaction Fire cancellation, Impulse movement, a lane's wall or hedge TEM, attacks on each MF expenditure after the first, and lanes against vehicles | R12.7; referee, pass 12 | A9.22 to A9.223 | Lane geometry and hexside TEM for Residual FP | A lane runs along a straight Hex Grain and attacks Infantry as they enter its Locations; its MG does not fire again until the DFPh. |
+| Other Hindrances on a Fire Lane (orchard, wrecks) as DRM | Referee, pass 12 | A9.222 | Hindrance types in the LOS read | No lane Hindrance applies as a DRM; any cancels FFMO. |
+| A concealed unit's TPBF into its own Melee Location | R12.8 | A11.15 | Concealment in CC (pass 14) | Refused. |
+| Encirclement at upper levels, from the Locations above and below, by ordnance, of Vulnerable PRC of an Immobile vehicle, by vehicular armament, and its capture effects | R12.11 | A7.7, A7.72, A20.21 | Those attacks and levels | Only Infantry fire at Normal Range counts; ground-level Personnel are Encircled. |
+| Encirclement's doubled MF in the RtPh | R12.11 | A7.7 | Routing (pass 13) | Applied to moves, advances, and withdrawals. |
+| The ordnance To Hit +1 for an Encircled Gun crew | R12.11 | A7.7 | The Ordnance package | Not applied. |
+| Spraying Fire's second Location, an Encirclement, or a Fire Lane after the first attack stops for an owner's choice (Battle Hardening, an Unlikely Kill dr) | Table player, pass 12 | A9.5, A7.7, A9.22 | Carrying the follow-on work in the choice's resume | They are not made; the choice resumes the first attack only. |
+| Fire Lane attacks on vehicles, and on units spending MF in a lane Location other than by entering it (SMOKE placement) | Table player, pass 12 | A9.222, A8.22, A8.222 | Lane attacks in the vehicle and in-Location planners | Only Infantry entering a lane Location are attacked. |
+| A Fire Lane's hard Hindrance (orchard) as a DRM, and SMOKE placed on the lane after it is laid | Table player, pass 12 | A9.222 | Hindrance types and SMOKE read at attack time | The Hindrance is read when the lane is placed, and any of it only cancels FFMO. |
+| The Fire Lanes and Encircled Locations drawn on the map | Table player, pass 12 | A9.22, A7.7 | Map overlays in the Play page | Listed above the Play page's panels. |
+

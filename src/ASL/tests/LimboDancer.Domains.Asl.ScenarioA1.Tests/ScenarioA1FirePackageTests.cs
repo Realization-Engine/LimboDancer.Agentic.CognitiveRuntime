@@ -392,10 +392,8 @@ public sealed class ScenarioA1FirePackageTests
     {
         { "mph-without-kind", "asl.a1.fire.phase-outside" },
         { "support-weapon", "asl.a1.fire.firer-outside" },
-        { "los-blocked", "asl.a1.fire.los-blocked" },
         { "levels", "asl.a1.fire.fact-missing:targetLevelAbove" },
         { "grain", "asl.a1.fire.hindrance-unattributed" },
-        { "mixed-pinned-movers", "asl.a1.fire.movement-drm-differs" },
         { "elr", "asl.a1.fire.elr-undecided:elr-undeclared" },
         { "roll", "asl.a1.fire.roll-missing:checks:de-hs" },
         { "extra-roll", "asl.a1.fire.extra-roll:leaderLoss:de-hs" },
@@ -411,17 +409,8 @@ public sealed class ScenarioA1FirePackageTests
         {
             "mph-without-kind" => attack with { Phase = "MPh", FiringSide = "non-phasing" },
             "support-weapon" => attack with { Firers = [Firer("ru-1"), Firer("ru-2") with { UsesSupportWeapon = true }] },
-            "los-blocked" => attack with { Los = new FireLos(true, 0, true, false) },
             "levels" => attack with { SameLevel = false },
             "grain" => attack with { Los = new FireLos(false, 1, true, true) },
-            "mixed-pinned-movers" => attack with
-            {
-                Phase = "MPh",
-                FiringSide = "non-phasing",
-                FireKind = ScenarioA1FireCalculator.FirstFire,
-                TargetMovement = new FireMovement(false),
-                Targets = [Target("de-squad", "attacker-squad") with { Pinned = true }, Target("de-hs", "attacker-half-squad")],
-            },
             "elr" => attack with { TargetSideElr = null },
             "roll" => attack with { Rolls = Rolls([3, 4], checks: new() { ["de-squad"] = [2, 3] }) },
             "extra-roll" => attack with { Rolls = Rolls([3, 4], checks: checks, leaderLoss: new() { ["de-hs"] = [1, 1] }) },

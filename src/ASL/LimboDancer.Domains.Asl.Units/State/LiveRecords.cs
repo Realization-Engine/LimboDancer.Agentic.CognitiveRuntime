@@ -256,6 +256,33 @@ public sealed record OverrunResolved(string Vehicle, BoardLocation At, string Fi
 /// </summary>
 public sealed record PaatcTaken(IReadOnlyList<string> Units, string Vehicle, string Roll, int Morale, int Drm, bool Passed) : EventPayload;
 
+/// <summary>
+/// <c>opportunity-fire-declared</c>: Infantry marked with a Bounding Fire counter in their PFPh as Opportunity Firers (A7.25; backlog pass 12, ruling
+/// R12.1): they neither fire in the PFPh nor move in the MPh, and fire in the AFPh without its halving.
+/// </summary>
+public sealed record OpportunityFireDeclared(IReadOnlyList<string> Units) : EventPayload;
+
+/// <summary>
+/// <c>encirclement-placed</c>: a Location Encircled by the fire record named (A7.7; ruling R12.11): the side's non-berserk, non-heroic Personnel there, and
+/// every Melee unit there, have their Morale Level one lower against attacks on it, +1 on their own fire, and double MF for the first Location they enter.
+/// </summary>
+public sealed record EncirclementPlaced(BoardLocation Location, string Side, string Fire) : EventPayload;
+
+/// <summary>An Encircled Location and the side whose units there are Encircled (A7.7; ruling R12.11).</summary>
+public sealed record Encirclement(BoardLocation Location, string Side);
+
+/// <summary>
+/// <c>fire-lane-placed</c>: a Fire Lane declared with a MG's Defensive First Fire (A9.22; ruling R12.7): its MG, the manning Infantry, and each
+/// Location of the lane with its Fire Lane Residual FP and the Hindrance DRM of the LOS from the MG.
+/// </summary>
+public sealed record FireLanePlaced(string Fire, string Weapon, string Operator, IReadOnlyList<FireLaneEntry> Entries) : EventPayload;
+
+/// <summary>One Location of a Fire Lane (A9.22, A9.222).</summary>
+public sealed record FireLaneEntry(BoardLocation Location, int Fp, int HindranceDrm);
+
+/// <summary>A Fire Lane in place (A9.22, A9.223; ruling R12.7).</summary>
+public sealed record FireLane(string Fire, string Weapon, string Operator, IReadOnlyList<FireLaneEntry> Entries);
+
 /// <summary><c>movement-window-closed</c>: the DEFENDER passes on the stack's latest MF expenditure (A8.11).</summary>
 public sealed record MovementWindowClosed(int Step) : EventPayload;
 

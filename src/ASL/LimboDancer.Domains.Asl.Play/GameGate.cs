@@ -112,13 +112,22 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
         return Succeeded("play.committed", committed, state.Revision);
     }
 
+    /// <summary>The units a fire record marks (A7.351, A9.12; ruling R12.4): its resolution's, or its firers and director in an older record.</summary>
+    private static IEnumerable<string> Marked(FireResolved fire) =>
+        fire.Resolution.TryGetProperty("fireCounterUnitIds", out var ids) && ids.ValueKind == JsonValueKind.Array
+            ? ids.EnumerateArray().Select(item => item.GetString()).OfType<string>()
+            : fire.Firers.Concat(fire.Director is { } director ? [director] : []);
+
     private static bool EffectHolds(GameState state, GamePlan plan) => plan.Events.FirstOrDefault(item => item.Payload is FireResolved) is { } fire
         // A fire attack: the record is kept for the phase, and every firer and the director carry the fire marker.
         ? state.FiresThisPhase.Any(record => record.EventId == fire.EventId)
-            && ((FireResolved)fire.Payload).Firers.Concat(((FireResolved)fire.Payload).Director is { } director ? [director] : [])
+            && Marked((FireResolved)fire.Payload)
                 .All(id => state.Unit(id) is not { Status: InstanceStatus.Active } unit || GameState.Condition(unit, Conditions.PrepFire) == ConditionState.True
                     || GameState.Condition(unit, Conditions.FinalFire) == ConditionState.True || GameState.Condition(unit, Conditions.FirstFire) == ConditionState.True
                     || GameState.Condition(unit, Conditions.BoundingFire) == ConditionState.True)
+        : plan.Events.Select(item => item.Payload).OfType<OpportunityFireDeclared>().FirstOrDefault() is { } opportunity
+        // Opportunity Fire (A7.25): its units carry the Bounding Fire counter.
+        ? opportunity.Units.All(id => state.Unit(id) is { } unit && GameState.Condition(unit, Conditions.BoundingFire) == ConditionState.True)
         : plan.Events.Select(item => item.Payload).OfType<RallyAttempted>().FirstOrDefault() is { } rally
         // A Rally attempt: the unit's attempt is kept for the Player Turn.
         ? state.RallyAttemptsThisPlayerTurn.Contains(rally.Unit)

@@ -201,7 +201,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         var plan = action.Id.Value switch
         {
             "asl.game.setup" => PlanSetup(scope, arguments, existing, attemptId, expected, ref label),
-            "asl.game.advance-phase" => PlanAdvance(scope, existing, attemptId, expected, label),
+            "asl.game.advance-phase" => PlanAdvance(scope, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.enter-empty-building" => await PlanEntryAsync(scope, arguments, existing, attemptId, expected, label, cancellationToken),
             "asl.game.declare-overrun" => await PlanDeclareAsync(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown", cancellationToken),
             "asl.game.enter-building" => await PlanEnterBuildingAsync(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown", cancellationToken),
@@ -225,6 +225,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             "asl.game.button-up" => PlanButtonUp(scope, arguments, existing, attemptId, expected, label),
             "asl.game.choose" => PlanChoose(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.massacre" => PlanMassacre(scope, arguments, existing, attemptId, expected, label),
+            "asl.game.opportunity-fire" => PlanOpportunityFire(scope, arguments, existing, attemptId, expected, label),
             _ => Refused(scope, label, expected, "play.unknown-action"),
         };
 
@@ -358,7 +359,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             : Refused(scope, label, expected, [.. parsed.Reasons]);
     }
 
-    private GamePlan PlanAdvance(GameScope scope, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label)
+    private GamePlan PlanAdvance(GameScope scope, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label, string actor)
     {
         if (Replay(existing).Current is not { } state)
         {
@@ -453,44 +454,71 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             }
         }
 
-        var payload = new PhaseChanged(turn, phase, phasing);
-        var changed = EventId(attemptId, events.Count + 1);
-        events.Add(Event(scope, attemptId, events.Count + 1, expected, "phase-changed", payload, rulePackage: null, visibility: null));
-
-        // A11.52 (ruling R11.16): an unarmed vehicle alone with enemy Infantry is captured as the CCPh begins.
-        if (phase == "ccph")
+        // A12.12, A12.122 (ruling R12.5): as a Player Turn ends, the phasing side's Good Order Infantry may gain "?", some on a Final Concealment dr.
+        var gains = state.Phase == "ccph" && phasing != state.PhasingSide ? ConcealmentGains(state) : [];
+        if (gains.Any(item => item.Drm is not null))
         {
-            foreach (var vehicle in CapturedVehicles(state))
+            var prefix = events.ToList();
+            IReadOnlyList<GameEvent> Rolled(Func<RollRequest, RollResult> draw)
             {
-                events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(vehicle.Id,
-                    new Dictionary<string, ConditionState> { [Conditions.Captured] = ConditionState.True, [Conditions.Abandoned] = ConditionState.True }), null, null, [changed]));
-                reasons.Add($"play.cc-vehicle-capture: {vehicle.Id} is unarmed and alone with enemy Infantry, so it is captured; the use of captured vehicles is not built (A11.52, A21.2)");
+                var built = new List<GameEvent>(prefix);
+                AddConcealmentGains(scope, attemptId, expected, actor, gains, built, draw, []);
+                Finish(built, []);
+                return built;
             }
-        }
 
-        // A20.4 (ruling R5.7): at the start of their side's fire phase, berserk units massacre the enemy prisoners in their Location.
-        foreach (var (massacre, why) in BerserkMassacres(state, phase, phasing))
-        {
-            events.Add(Event(scope, attemptId, events.Count + 1, expected, "prisoners-massacred", massacre, null, null, [changed]));
-            reasons.Add(why);
-        }
-
-        // D5.341, D5.41 (ruling R5.18): at the end of the Player Turn of its Recall, an immobilized Recalled AFV is Abandoned.
-        if (phasing != state.PhasingSide)
-        {
-            foreach (var vehicle in state.Units.Where(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit) && Is(unit, Conditions.Recalled)
-                && Is(unit, Conditions.Immobilized) && !Is(unit, Conditions.Abandoned)).OrderBy(unit => unit.Id, StringComparer.Ordinal))
+            return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
+                [$"play.advance: turn {turn}, {phase}, {phasing} phasing", .. reasons,
+                    $"play.concealment: {string.Join(", ", gains.Where(item => item.Drm is not null).Select(item => item.Unit.Id))} make a Final Concealment dr (A12.122)"])
             {
-                foreach (var (type, abandon) in AbandonEvents(vehicle, attemptId))
-                {
-                    events.Add(Event(scope, attemptId, events.Count + 1, expected, type, abandon, null, null, [changed]));
-                }
-
-                reasons.Add($"play.recall-abandoned: {vehicle.Id} is Recalled and immobilized, so its crew Abandons it (D5.341, D5.41)");
-            }
+                Roll = new PlannedRoll("concealment", Rolled),
+                FirstEventId = EventId(attemptId, 1),
+            };
         }
 
+        AddConcealmentGains(scope, attemptId, expected, actor, gains, events, null, reasons);
+        Finish(events, reasons);
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [$"play.advance: turn {turn}, {phase}, {phasing} phasing", .. reasons]);
+
+        void Finish(List<GameEvent> events, List<string> reasons)
+        {
+            var payload = new PhaseChanged(turn, phase, phasing);
+            var changed = EventId(attemptId, events.Count + 1);
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "phase-changed", payload, rulePackage: null, visibility: null));
+
+            // A11.52 (ruling R11.16): an unarmed vehicle alone with enemy Infantry is captured as the CCPh begins.
+            if (phase == "ccph")
+            {
+                foreach (var vehicle in CapturedVehicles(state))
+                {
+                    events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(vehicle.Id,
+                        new Dictionary<string, ConditionState> { [Conditions.Captured] = ConditionState.True, [Conditions.Abandoned] = ConditionState.True }), null, null, [changed]));
+                    reasons.Add($"play.cc-vehicle-capture: {vehicle.Id} is unarmed and alone with enemy Infantry, so it is captured; the use of captured vehicles is not built (A11.52, A21.2)");
+                }
+            }
+
+            // A20.4 (ruling R5.7): at the start of their side's fire phase, berserk units massacre the enemy prisoners in their Location.
+            foreach (var (massacre, why) in BerserkMassacres(state, phase, phasing))
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "prisoners-massacred", massacre, null, null, [changed]));
+                reasons.Add(why);
+            }
+
+            // D5.341, D5.41 (ruling R5.18): at the end of the Player Turn of its Recall, an immobilized Recalled AFV is Abandoned.
+            if (phasing != state.PhasingSide)
+            {
+                foreach (var vehicle in state.Units.Where(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit) && Is(unit, Conditions.Recalled)
+                    && Is(unit, Conditions.Immobilized) && !Is(unit, Conditions.Abandoned)).OrderBy(unit => unit.Id, StringComparer.Ordinal))
+                {
+                    foreach (var (type, abandon) in AbandonEvents(vehicle, attemptId))
+                    {
+                        events.Add(Event(scope, attemptId, events.Count + 1, expected, type, abandon, null, null, [changed]));
+                    }
+
+                    reasons.Add($"play.recall-abandoned: {vehicle.Id} is Recalled and immobilized, so its crew Abandons it (D5.341, D5.41)");
+                }
+            }
+        }
     }
 
     private async Task<GamePlan> PlanEntryAsync(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected,

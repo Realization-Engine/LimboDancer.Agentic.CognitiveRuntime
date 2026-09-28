@@ -512,6 +512,30 @@ public static class GameEventWriter
                 writer.WriteString("at", overrun.At.ToString());
                 writer.WriteString("fire", overrun.Fire);
                 break;
+            case OpportunityFireDeclared opportunity:
+                Strings(writer, "units", opportunity.Units);
+                break;
+            case EncirclementPlaced encirclement:
+                writer.WriteString("location", encirclement.Location.ToString());
+                writer.WriteString("side", encirclement.Side);
+                writer.WriteString("fire", encirclement.Fire);
+                break;
+            case FireLanePlaced lane:
+                writer.WriteString("fire", lane.Fire);
+                writer.WriteString("weapon", lane.Weapon);
+                writer.WriteString("operator", lane.Operator);
+                writer.WriteStartArray("entries");
+                foreach (var entry in lane.Entries)
+                {
+                    writer.WriteStartObject();
+                    writer.WriteString("location", entry.Location.ToString());
+                    writer.WriteNumber("fp", entry.Fp);
+                    writer.WriteNumber("hindrance", entry.HindranceDrm);
+                    writer.WriteEndObject();
+                }
+
+                writer.WriteEndArray();
+                break;
             case PaatcTaken paatc:
                 Strings(writer, "units", paatc.Units);
                 writer.WriteString("vehicle", paatc.Vehicle);

@@ -329,7 +329,8 @@ public sealed class CloseCombatStepsTests : IDisposable
             target = "bd01:A3:0"
         }));
         Assert.True(Is(Current.Unit("g2")!, Conditions.Berserk));
-        Assert.Equal("is berserk, and berserk fire is not reviewed (A15.432)", GamePlanner.FireBar(Current, Current.Unit("g2")!));
+        // A15.432 (ruling R12.10): a berserk unit fires, but never in its own PFPh.
+        Assert.Null(GamePlanner.FireBar(Current, Current.Unit("g2")!));
         await Advance(9);
         Assert.Equal(("mph", "german"), (Current.Phase, Current.PhasingSide));
 
@@ -417,7 +418,8 @@ public sealed class CloseCombatStepsTests : IDisposable
         var prisoner = Current.Unit("g2")!;
         Assert.Equal(("r4", true, BoardLocation.Parse("bd01:A1:0")), (prisoner.Custodian, Is(prisoner, Conditions.Captured), Current.Location("g2")!.Location));
         Assert.Equal("is a prisoner and does not fire (A20.5)", GamePlanner.FireBar(Current, prisoner));
-        Assert.Equal("guards prisoners, and a Guard's fire is not reviewed (A20.52)", GamePlanner.FireBar(Current, Current.Unit("r4")!));
+        // A20.52 (ruling R12.9): a Guard whose US# is at least its prisoners' fires normally.
+        Assert.Null(GamePlanner.FireBar(Current, Current.Unit("r4")!));
         Assert.Null(GamePlanner.FireBar(Current, Current.Unit("r5")!));
 
         // A20.53: the prisoner advances with its Guard.
@@ -439,15 +441,16 @@ public sealed class CloseCombatStepsTests : IDisposable
             Unit("g2", "asl:squad", "attacker-squad", "bd01:A3:0", "german"));
         await Advance();
 
-        // The stub reads every LOS blocked: the fire still resolves (the package takes the LOS as the planner read it), but the
-        // Berserk result finds no Known enemy in g2's LOS, so g2 is Battle Hardened instead (A15.44).
+        // The stub reads every LOS blocked: A6.11 (ruling R12.2), the group still fires, affecting nothing; the Berserk result finds no Known
+        // enemy in g2's LOS, so g2 is Battle Hardened instead (A15.44).
         los.Blocked = true;
-        var refused = await Do(GameActions.Fire, NoRoll(), new
+        Committed(await Do(GameActions.Fire, Once(4, 6), new
         {
             firers = R4R5,
             target = "bd01:A3:0"
-        });
-        Assert.NotEqual(PlayOutcome.Committed, refused.Outcome);
+        }));
+        Assert.True(Is(Current.Unit("r4")!, Conditions.PrepFire));
+        Assert.False(Is(Current.Unit("g2")!, Conditions.Pinned) || Is(Current.Unit("g2")!, Conditions.Broken));
         los.Blocked = false;
         var planner = Planner();
         Assert.True(planner.KnownEnemyInLos(Current, "german", BoardLocation.Parse("bd01:A3:0")));

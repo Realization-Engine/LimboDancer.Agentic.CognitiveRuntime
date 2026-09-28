@@ -212,6 +212,7 @@ public static class GameEventReader
             case "conditions-changed":
             case "crew-exposure-changed":
             case "concealment-lost":
+            case "concealment-gained":
                 var changedId = fields.RequiredString(payload, "id", path);
                 var conditions = ReadConditions(payload, path, diagnostics);
                 return changedId is null ? null : new ConditionsChanged(changedId, conditions);
@@ -494,6 +495,39 @@ public static class GameEventReader
                 return overrunVehicle is null || overrunAt is null || overrunFire is null
                     ? Missing(diagnostics, "An OVR record names its vehicle, Location, and fire record.", path)
                     : new OverrunResolved(overrunVehicle, overrunAt, overrunFire);
+            case "opportunity-fire-declared":
+                return new OpportunityFireDeclared(fields.StringList(payload, "units", path));
+            case "encirclement-placed":
+                var encircledAt = ReadLocation(payload, "location", path, fields, diagnostics);
+                var encircledSide = fields.RequiredString(payload, "side", path);
+                var encircledBy = fields.RequiredString(payload, "fire", path);
+                return encircledAt is null || encircledSide is null || encircledBy is null
+                    ? Missing(diagnostics, "An Encirclement names its Location, side, and fire record.", path)
+                    : new EncirclementPlaced(encircledAt, encircledSide, encircledBy);
+            case "fire-lane-placed":
+                var laneFire = fields.RequiredString(payload, "fire", path);
+                var laneWeapon = fields.RequiredString(payload, "weapon", path);
+                var laneOperator = fields.RequiredString(payload, "operator", path);
+                var laneEntries = new List<FireLaneEntry>();
+                if (payload.TryGetProperty("entries", out var entryList) && entryList.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var entry in entryList.EnumerateArray())
+                    {
+                        var entryAt = ReadLocation(entry, "location", path + ".entries", fields, diagnostics);
+                        var entryFp = fields.OptionalInteger(entry, "fp", path + ".entries");
+                        var entryHindrance = fields.OptionalInteger(entry, "hindrance", path + ".entries");
+                        if (entryAt is null || entryFp is null || entryHindrance is null)
+                        {
+                            return Missing(diagnostics, "Each Location of a Fire Lane names its Location, FP, and Hindrance DRM.", path);
+                        }
+
+                        laneEntries.Add(new FireLaneEntry(entryAt, entryFp.Value, entryHindrance.Value));
+                    }
+                }
+
+                return laneFire is null || laneWeapon is null || laneOperator is null || laneEntries.Count == 0
+                    ? Missing(diagnostics, "A Fire Lane names its fire record, MG, manning Infantry, and Locations.", path)
+                    : new FireLanePlaced(laneFire, laneWeapon, laneOperator, laneEntries);
             case "paatc-taken":
                 var paatcVehicle = fields.RequiredString(payload, "vehicle", path);
                 var paatcRoll = fields.RequiredString(payload, "roll", path);

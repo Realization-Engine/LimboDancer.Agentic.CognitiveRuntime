@@ -90,7 +90,9 @@ public sealed partial class GamePlanner
         }
 
         var terrain = entry.Terrain;
-        var halfMf = entry.HalfMf;
+
+        // A7.7 (ruling R12.11): the first Location an Encircled unit enters costs twice its MF.
+        var halfMf = entry.HalfMf * (units.Any(unit => state.Encircled(unit!)) ? 2 : 1);
 
         // A4.72 EX, A4.12, A4.42 (ruling R10.8): a Good Order leader of its nationality advancing with a MMC adds two MF and one IPC to it.
         var unitList = units.Select(unit => unit!).ToArray();

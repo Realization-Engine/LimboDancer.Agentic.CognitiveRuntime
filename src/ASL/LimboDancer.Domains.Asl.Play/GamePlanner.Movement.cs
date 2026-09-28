@@ -141,7 +141,9 @@ public sealed partial class GamePlanner
         var pushingOn = pushed is not null && state.Movement?.Members.Contains(movers[0]!.Id) == true;
         if (movers.FirstOrDefault(unit => state.NoMoveThisPlayerTurn.Contains(unit!.Id) || (Is(unit, "asl:ti") && !pushingOn)) is { } halted)
         {
-            return Refused(scope, label, expected, $"play.move-halted: {halted.Id} is TI, or changed its Gun's CA in the PFPh, and does not move this Player Turn (A4.8, C3.22)");
+            return Refused(scope, label, expected, Is(halted, Conditions.BoundingFire)
+                ? $"play.move-halted: {halted.Id} is an Opportunity Firer and does not move this MPh (A7.25)"
+                : $"play.move-halted: {halted.Id} is TI, fired a SW in the PFPh, or changed its Gun's CA there, and does not move this Player Turn (A4.8, A3.3, C3.22)");
         }
 
         // D2.1 (ruling R25.3): a vehicle spends its MP one expenditure at a time, by its own action; Infantry may not enter an enemy vehicle's
@@ -301,7 +303,9 @@ public sealed partial class GamePlanner
         }
 
         var terrain = entry.Terrain;
-        var halfMf = entry.HalfMf;
+
+        // A7.7 (ruling R12.11): the first Location an Encircled unit enters costs twice its MF.
+        var halfMf = entry.HalfMf * (movers.Any(unit => state.Encircled(unit!)) ? 2 : 1);
 
         // C10.3 (ruling R8.6): a Gun is pushed only into Open Ground or grain (a road hex counted as its terrain), at double the MF, never up a
         // level, into Bypass, or by Minimum Move (A4.134).
@@ -426,9 +430,12 @@ public sealed partial class GamePlanner
             new EquipmentTransferred(item.Id, null, new MapPosition(from)), package, null))];
         var landed = forcedBack ? from : to;
         var residual = state.ResidualFire.FirstOrDefault(item => item.Location == landed);
+
+        // A9.22 (ruling R12.7): each Fire Lane with Residual FP in the Location attacks the stack after any other Residual FP.
+        var lanes = state.FireLanes.SelectMany(lane => lane.Entries.Where(item => item.Location == landed).Select(item => (Lane: lane, Entry: item))).ToArray();
         if (pushed is not null)
         {
-            return residual is not null
+            return residual is not null || lanes.Length > 0
                 ? Refused(scope, label, expected, "play.move-push-residual: pushing a Gun into Residual FP is not reviewed (C10.3, A8.2)")
                 : PushPlan(scope, attemptId, expected, label, actor, state, pushed, moved, halfMf / 2 - (entry.RoadRate ? 2 : 0), summary);
         }
@@ -503,7 +510,7 @@ public sealed partial class GamePlanner
                 : $"; only Dummies were at {to}, and they are removed (A12.15)";
         }
 
-        if (!needsSelection && residual is null)
+        if (!needsSelection && residual is null && lanes.Length == 0)
         {
             var events = Stepped(null, null);
 
@@ -536,6 +543,15 @@ public sealed partial class GamePlanner
             }
         }
 
+        if (lanes.Length > 0)
+        {
+            if (Replay([.. existing, .. Stepped([.. realOnes.Select(_ => 6)], null)]).Current is not { } laneState
+                || lanes.Any(item => FireLaneFacts(laneState, landed, item.Entry) is not { } laneFacts || ScenarioA1FireCalculator.Precheck(laneFacts, FireReference.Value).Count != 0))
+            {
+                return Refused(scope, label, expected, "play.move-fire-lane: the Fire package does not decide the Fire Lane attack this entry would suffer (A9.22)");
+            }
+        }
+
         IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
         {
             var events = Stepped(null, draw);
@@ -544,10 +560,16 @@ public sealed partial class GamePlanner
                 AddFireEvents(scope, attemptId, expected, actor, after, residualFacts, state.PhasingSide, step, events, draw);
             }
 
+            foreach (var (lane, entry) in lanes)
+            {
+                AddFireLaneAttack(scope, attemptId, expected, actor, existing, events, lane, entry, landed, step, draw);
+            }
+
             return events;
         }
 
-        string[] reasons = residual is not null ? [summary, $"play.move: {residual.Fp} Residual FP in {landed} attacks the stack first (A8.22)"] : [summary];
+        string[] reasons = [summary, .. residual is not null ? [$"play.move: {residual.Fp} Residual FP in {landed} attacks the stack first (A8.22)"] : Array.Empty<string>(),
+            .. lanes.Select(item => $"play.move: the Fire Lane of {item.Lane.Weapon} attacks the stack in {landed} with {item.Entry.Fp} Residual FP (A9.22)")];
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], reasons)
         {
             Roll = new PlannedRoll(needsSelection ? "random-selection" : "residual", Build),

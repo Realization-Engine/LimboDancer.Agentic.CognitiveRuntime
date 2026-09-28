@@ -292,3 +292,19 @@ Estimate: 4:25 (build 3:10) in the [ASL Unit Backlog Passes Plan](<ASL Unit Back
 | Merge and push | 14:07 | 14:09 | 0:02 | |
 
 Total 2:59 of working time (11:10 to 14:09, less the 11:35 to 11:37 gap) against the 4:25 estimate; the build, 11:53 to 13:36 with its fixes, took 1:43 against 3:10.
+
+## Pass 12: Fire extensions
+
+Estimate: 2:30, the user's revision of 2026-09-28 (the plan's 5:30, build 4:15, scaled by the passes 5 to 11 actuals). Kickoff 2026-09-28 14:12. Branch `feature/asl-backlog-pass-12`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Reading (A6.11, A7.24, A7.25, A7.35 to A7.353, A7.52, A7.53, A7.7, A7.83, A8.31, A9.12, A9.22 to A9.223, A9.5 to A9.52, A11.15, A12.12 to A12.122, the Concealment Table, A15.432, A20.52, A20.54; the Terrain Chart's red Concealment Terrain) and rulings R12.1 to R12.12 | 14:12 | 14:18 | 0:06 | |
+| Fire package (Opportunity Fire, blocked LOS, FPF variants, pinned movers, a leader's MG, Spraying Fire, Fire Lane Residual FP, Melee and prisoner targets, Encirclement), Units records, and the planner | 14:18 | 14:40 | 0:22 | |
+| Regressions from the new rules fixed (berserk and Guard fire, blocked LOS, turn-end concealment); Play (268) and MapStudio (126) tests pass; referee agent started | 14:40 | 14:48 | 0:08 | |
+| Tests: ScenarioA1 (10) and Play (7) pass 12 tests; the PDF comparison (16 fragments; A9.222 cited from the PDF) and its registration; the Fire package revision | 14:48 | 14:53 | 0:05 | |
+| Referee's 12 findings: 11 fixed (tests where the catalog allows), 1 recorded; three older package tests follow the new rules; Play (275), ScenarioA1 (422) pass | 14:53 | 15:04 | 0:11 | |
+| Play page: Opportunity Fire panel, Spraying Fire, Fire Lane, and partner controls, Encircled units; Studio test; MapStudio (127) pass; table-player agent started | 15:04 | 15:08 | 0:04 | |
+| Visual check in the Studio (Opportunity Fire, Spraying Fire, the AFPh), the proposal text fixed; review, design, backlog section 22, and requirements | 15:08 | 15:11 | 0:03 | |
+| Table player's 11 findings: 8 fixed with 3 new tests, 3 recorded (and the follow-ons after an owner's choice); Play (278), MapStudio (127) pass | 15:11 | 15:22 | 0:11 | Authoring (162) passed at 15:17 |
+| Full local suite: build with warnings as errors, every solution test project, and the ScenarioA1 tests (2,188 passed, 30 skipped) | 15:22 | 15:33 | 0:11 | |

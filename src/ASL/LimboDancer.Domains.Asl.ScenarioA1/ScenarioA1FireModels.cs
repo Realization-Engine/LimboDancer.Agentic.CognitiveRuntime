@@ -225,6 +225,30 @@ public sealed record FireAttack(
     {
         get; init;
     }
+
+    /// <summary>Spraying Fire at this Location and one other sharing a hexside, on one Original DR (A9.5; backlog pass 12, ruling R12.6): Area Fire; null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? SprayingFire
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The second Location of Spraying Fire (A9.5; ruling R12.6): its record shares the first's Original DR, and the first alone decides the MGs'
+    /// Multiple ROF and malfunction and marks the firers; null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? SprayShare
+    {
+        get; init;
+    }
+
+    /// <summary>A Fire Lane's Residual FP (A9.22, A9.222; ruling R12.7): never reduced by DRM, no CX, leader, or hero DRM, and no Cowering; null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? FireLane
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -431,6 +455,27 @@ public sealed record FireFirer(
     {
         get; init;
     }
+
+    /// <summary>An Opportunity Firer in its AFPh (A7.25; ruling R12.1): no AFPh halving, and its MG keeps Multiple ROF; null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? OpportunityFire
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the firer is Encircled (A7.7; ruling R12.11): +1 to the attack's IFT DR; null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Encircled
+    {
+        get; init;
+    }
+
+    /// <summary>The other SMC stacked with this leader who fire his one MG together at full FP (A9.12; ruling R12.4); null when he fires it alone, as Area Fire.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Partner
+    {
+        get; init;
+    }
 }
 
 /// <summary>The leader directing the fire group (A7.53, A7.531).</summary>
@@ -509,6 +554,27 @@ public sealed record FireTarget(
     /// <summary>The ADJACENT Known Good Order armed enemy Infantry the unit may surrender to (A15.5), the planner's read; needed as above.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyList<string>? Captors
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the unit is Encircled (A7.7; ruling R12.11): its Morale Level is one lower against this attack; null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Encircled
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the unit is of the firing side, attacked in a Melee Location or as a prisoner (A11.15, A20.54; rulings R12.8, R12.9); null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Friendly
+    {
+        get; init;
+    }
+
+    /// <summary>The Guard of this prisoner (A20.54; ruling R12.9): never broken, Casualty Reduced on a failed MC, pinned only with its Guard, and no LLMC or LLTC; null when it is no prisoner.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? GuardId
     {
         get; init;
     }
@@ -617,6 +683,27 @@ public sealed record FireArithmetic(
     /// <summary>The Residual FP the attack leaves in the target Location (A8.2, A8.26, A7.372); null when it leaves none.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? ResidualFp
+    {
+        get; init;
+    }
+
+    /// <summary>The Final DR of the pinned movers of a stack that also holds unpinned ones: the same DR without FFNAM, FFMO, or Hazardous Movement (A7.83; ruling R12.3); null otherwise.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? PinnedFinalDr
+    {
+        get; init;
+    }
+
+    /// <summary>The result for the pinned known movers on that Final DR; null otherwise.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? PinnedResult
+    {
+        get; init;
+    }
+
+    /// <summary>The result for the pinned concealed movers on that Final DR; null otherwise.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? PinnedConcealedResult
     {
         get; init;
     }
@@ -732,6 +819,13 @@ public sealed record FireResolution(
     /// <summary>What an OVR's Original DR of 12 did to the OVRing vehicle (D7.17; ruling R11.11); null when it rolled no 12 or was no OVR.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public FireOverrunEffect? OverrunEffect
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the firers' LOS was blocked (A6.11; ruling R12.2): they fired, and nothing in the target Location was affected; null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? LosBlocked
     {
         get; init;
     }

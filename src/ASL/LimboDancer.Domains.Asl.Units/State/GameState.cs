@@ -179,6 +179,22 @@ public sealed record GameState(
     /// </summary>
     public IReadOnlyList<string> PaatcPassed { get; init; } = [];
 
+    /// <summary>The Encircled Locations (A7.7; ruling R12.11); one ends when no unit it Encircles is left there.</summary>
+    public IReadOnlyList<Encirclement> Encirclements { get; init; } = [];
+
+    /// <summary>The Fire Lanes in place (A9.22, A9.223; ruling R12.7); cleared at every phase change.</summary>
+    public IReadOnlyList<FireLane> FireLanes { get; init; } = [];
+
+    /// <summary>Whether a unit in a Location is Encircled (A7.7; ruling R12.11): of the Encircled side there, or in Melee there; never berserk or heroic.</summary>
+    public bool Encircled(UnitInstance unit)
+    {
+        ArgumentNullException.ThrowIfNull(unit);
+        return Location(unit.Id)?.Location is { } at && Encirclements.Any(item => item.Location == at
+            && (item.Side == unit.Side || Condition(unit, Conditions.Melee) == ConditionState.True))
+            && Condition(unit, Conditions.Berserk) != ConditionState.True && Condition(unit, Conditions.Heroic) != ConditionState.True && unit.Kind != "asl:hero"
+            && unit.Kind != "asl:vehicle";
+    }
+
     /// <summary>The vehicles whose Shock or Unconfirmed Kill dr was made this RPh (C7.42; ruling R7.8); cleared at every phase change.</summary>
     public IReadOnlyList<string> ShockRollsThisPhase { get; init; } = [];
 
