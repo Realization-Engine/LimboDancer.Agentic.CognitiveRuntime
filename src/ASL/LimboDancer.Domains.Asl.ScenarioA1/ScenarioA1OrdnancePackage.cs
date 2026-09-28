@@ -147,8 +147,10 @@ public sealed class ScenarioA1OrdnanceReference
 /// </summary>
 public sealed class ScenarioA1OrdnancePackage : IDomainPackageResolver
 {
-    public const string ManifestSha256 = "1bf0bb7734400e1e8b2f16093bee5eb64c481ffd79544cdfddd00ce069e6819d";
-    public const string MatrixSha256 = "644dfe5fbd1ff3657a5c7b6c295c820cddc2901b44a60143e27063f64b946b62";
+    public const string ManifestSha256 = "e02e8e4b5302872c0fe54eb31d98b8308c37acaf16341feb231e22f5efa9df0b";
+    public const string MatrixSha256 = "6229eed11456da18632c8b8d30d5b10117745a225c0d10c43fd0e4f140940186";
+    /// <summary>The package as published at unit step 24, before its unit step 25 revision for catalog 1.5.0.</summary>
+    public const string PriorManifestSha256 = "1bf0bb7734400e1e8b2f16093bee5eb64c481ffd79544cdfddd00ce069e6819d";
     public static readonly DomainPackageRef Identity = new(new DomainId("asl"), "scenario-a1-ordnance", "sha256:" + ManifestSha256);
 
     private static readonly string[] Cases =
@@ -175,6 +177,7 @@ public sealed class ScenarioA1OrdnancePackage : IDomainPackageResolver
             || root.GetProperty("executionAuthority").GetString() != "none"
             || reviewed.GetProperty("executionAuthority").GetString() != "none"
             || root.GetProperty("caseMatrixSha256").GetString() != MatrixSha256
+            || root.GetProperty("priorOrdnancePackageManifestSha256").GetString() != PriorManifestSha256
             || !PinnedDigests.All(name => root.GetProperty(name).GetString() == reviewed.GetProperty(name).GetString())
             || !JsonElement.DeepEquals(root.GetProperty("sourceFragments"), reviewed.GetProperty("sourceFragments"))
             || !JsonElement.DeepEquals(root.GetProperty("rulings"), reviewed.GetProperty("rulings"))

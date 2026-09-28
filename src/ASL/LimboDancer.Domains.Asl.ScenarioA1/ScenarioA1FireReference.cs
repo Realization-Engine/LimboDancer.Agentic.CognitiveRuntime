@@ -19,26 +19,50 @@ public sealed record FireDefinition(
     bool? UnderscoredMorale)
 {
     /// <summary>Self-Rally capability: the broken Morale Level printed in a square (A10.63).</summary>
-    public bool? SelfRally { get; init; }
+    public bool? SelfRally
+    {
+        get; init;
+    }
 
     /// <summary>The Assault Fire bonus: an underlined FP (A1.21, A7.36).</summary>
-    public bool? AssaultFire { get; init; }
+    public bool? AssaultFire
+    {
+        get; init;
+    }
 
     /// <summary>A SW's Breakdown Number (A9.7).</summary>
-    public int? Breakdown { get; init; }
+    public int? Breakdown
+    {
+        get; init;
+    }
 
     /// <summary>A MG's Multiple ROF (A9.2); null when it has none.</summary>
-    public int? RateOfFire { get; init; }
+    public int? RateOfFire
+    {
+        get; init;
+    }
 
     /// <summary>A SW's Repair Number (A9.72).</summary>
-    public int? Repair { get; init; }
+    public int? Repair
+    {
+        get; init;
+    }
 
     /// <summary>A hero's wounded side (A15.2): FP, range, and Morale Level; null for other units.</summary>
-    public int? WoundedFirepower { get; init; }
+    public int? WoundedFirepower
+    {
+        get; init;
+    }
 
-    public int? WoundedRange { get; init; }
+    public int? WoundedRange
+    {
+        get; init;
+    }
 
-    public int? WoundedMorale { get; init; }
+    public int? WoundedMorale
+    {
+        get; init;
+    }
 
     public bool IsLeader => Kind == "asl:leader";
 
@@ -47,6 +71,44 @@ public sealed record FireDefinition(
     public bool IsMmc => Kind is "asl:squad" or "asl:half-squad";
 
     public bool IsMg => Kind == "asl:mg";
+
+    /// <summary>A vehicle's movement type (D1.1): truck, half-tracked, and so on.</summary>
+    public string? MovementType
+    {
+        get; init;
+    }
+
+    /// <summary>A vehicle's printed MP allotment (D1.1).</summary>
+    public int? MovementPoints
+    {
+        get; init;
+    }
+
+    /// <summary>Whether a vehicle is unarmored (D1.21).</summary>
+    public bool? Unarmored
+    {
+        get; init;
+    }
+
+    /// <summary>Whether an AFV is open-topped (D1.23).</summary>
+    public bool? OpenTopped
+    {
+        get; init;
+    }
+
+    /// <summary>A vehicle's MA weapon (D1.3): <c>aamg</c> for an MA AAMG.</summary>
+    public string? MainArmament
+    {
+        get; init;
+    }
+
+    /// <summary>A vehicle's AAMG FP (D1.8, D1.83).</summary>
+    public int? AntiAircraftMg
+    {
+        get; init;
+    }
+
+    public bool IsVehicle => Kind == "asl:vehicle";
 }
 
 /// <summary>
@@ -147,13 +209,29 @@ public sealed class ScenarioA1FireReference
 
     private readonly string[][] results;
 
-    private ScenarioA1FireReference(string[][] results, IReadOnlyDictionary<string, FireDefinition> definitions)
+    private readonly int[] killNumbers;
+
+    private ScenarioA1FireReference(string[][] results, int[] killNumbers, IReadOnlyDictionary<string, FireDefinition> definitions)
     {
         this.results = results;
+        this.killNumbers = killNumbers;
         Definitions = definitions;
     }
 
-    public IReadOnlyDictionary<string, FireDefinition> Definitions { get; }
+    /// <summary>The Vehicle line's Kill Number for a column index (A7.308).</summary>
+    public int KillNumber(int column) => killNumbers[column];
+
+    /// <summary>
+    /// The Morale Level of an AFV's Inherent crew (D5.1): that of its nationality's best unbroken elite Infantry MMC, read from the
+    /// reviewed catalog's elite squads and half-squads; null when the catalog has none.
+    /// </summary>
+    public int? AfvCrewMorale(string nationality) =>
+        Definitions.Values.Where(item => item.IsMmc && item.Nationality == nationality && item.Class == "elite").Max(item => item.Morale);
+
+    public IReadOnlyDictionary<string, FireDefinition> Definitions
+    {
+        get;
+    }
 
     /// <summary>The IFT result for a Final DR and a column index; <c>none</c> is the printed dash.</summary>
     public string Result(int finalDr, int column) => results[Math.Clamp(finalDr, 0, 15)][column];
@@ -217,7 +295,16 @@ public sealed class ScenarioA1FireReference
             throw new InvalidOperationException("The Terrain Chart TEM cells changed.");
         }
 
-        return new ScenarioA1FireReference(table, ReadDefinitions(catalog.RootElement));
+        // A7.308: the Vehicle line's Kill Number beneath each FP column (IFT, p. 692).
+        using var vehicleLine = ScenarioA1FirePackage.Read("ScenarioA1.fire-ift-vehicle-line.json", matrix.GetProperty("vehicleLineTranscriptionSha256").GetString()!);
+        var kills = vehicleLine.RootElement.GetProperty("killNumbers").EnumerateArray().Select(item => item.GetInt32()).ToArray();
+        if (!vehicleLine.RootElement.GetProperty("columns").EnumerateArray().Select(item => item.GetInt32()).SequenceEqual(ColumnFp)
+            || !kills.SequenceEqual([3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]))
+        {
+            throw new InvalidOperationException("The IFT Vehicle line transcription changed.");
+        }
+
+        return new ScenarioA1FireReference(table, kills, ReadDefinitions(catalog.RootElement));
     }
 
     /// <summary>Every definition of a reviewed catalog, by id.</summary>
@@ -226,6 +313,20 @@ public sealed class ScenarioA1FireReference
 
     private static FireDefinition Definition(JsonElement item)
     {
+        string? Text(string face, string attribute)
+        {
+            foreach (var value in item.GetProperty("values").EnumerateArray())
+            {
+                if (value.GetProperty("face").GetString() == face && value.TryGetProperty("attribute", out var name)
+                    && name.GetString() == attribute && value.TryGetProperty("value", out var text) && text.ValueKind == JsonValueKind.String)
+                {
+                    return text.GetString();
+                }
+            }
+
+            return null;
+        }
+
         int? Value(string face, string attribute)
         {
             foreach (var value in item.GetProperty("values").EnumerateArray())
@@ -273,6 +374,12 @@ public sealed class ScenarioA1FireReference
             WoundedFirepower = Value("wounded", "firepower"),
             WoundedRange = Value("wounded", "range"),
             WoundedMorale = Value("wounded", "morale"),
+            MovementType = Text("front", "movement-type"),
+            MovementPoints = Value("front", "movement-points"),
+            Unarmored = Trait("front", "asl:unarmored"),
+            OpenTopped = Trait("front", "asl:open-topped"),
+            MainArmament = Text("front", "ma-weapon"),
+            AntiAircraftMg = Value("front", "aamg"),
         };
     }
 }

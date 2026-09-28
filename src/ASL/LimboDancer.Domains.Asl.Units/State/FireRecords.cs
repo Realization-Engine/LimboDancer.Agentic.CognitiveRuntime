@@ -41,6 +41,12 @@ public sealed record FireRecord(string EventId, string FirerLocation, string Tar
     {
         get; init;
     }
+
+    /// <summary>Whether a vehicle's MG made the attack (D3.4): it never joins its Location's fire group (ruling R25.7).</summary>
+    public bool Vehicle
+    {
+        get; init;
+    }
 }
 
 /// <summary>Recomputes a fire record from its facts and rolls; supplied to replay by the project that owns the package.</summary>

@@ -4,9 +4,9 @@
   "domainId": "asl",
   "packageId": "scenario-a1-rally",
   "declaredUse": "Read-only conclusions for a declared Rally attempt by a broken unit of the reviewed Scenario A1 catalog: the DRM, the Final DR against the broken Morale Level, and the effect, including Fate, under the user's rulings of 2026-09-26 (ASL Unit Rally and Fire Extensions Plan, R19.1 to R19.10 and R0.2); with Heat of Battle and Leader Creation after an Original 2 (Deviations, Ordnance, and Vehicles Plan, R27.1 to R28.8 and R30.1 to R30.7).",
-  "caseMatrixSha256": "568dab9ea0b8de6e4cb6ca77c5472c83374f11962b2440f044714c75ddc60827",
+  "caseMatrixSha256": "63931938cd9a1dc5c342be82b921c4d9d6059508cec294b0418928504a079467",
   "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
-  "catalogSha256": "dae90ca10c7fb9f734e79a75ceb71951f0319e193410c145f14880e613cc77b5",
+  "catalogSha256": "a1c7fd2ca904a9e4832d1c6cd30c8e69c9a528e322b69cfa914ea4f16c0c63cb",
   "sourceFragments": [
     {
       "ruleId": "A3.1",
@@ -377,5 +377,5 @@
     "rejecting a surrender (No Quarter, A20.3) and Massacre (A20.4)",
     "prisoners exchanged for Unarmed counters (A20.5), and prisoner escape (A20.55)"
   ],
-  "priorRallyPackageManifestSha256": "aa60fdde60e82268c4a4c6974535474abe0f702f03757bf285d92517601ba76d"
+  "priorRallyPackageManifestSha256": "7784925f2eac8143ea02460109cb9f10e64e91d4ff9acc4d70c09b4a3c136959"
 }

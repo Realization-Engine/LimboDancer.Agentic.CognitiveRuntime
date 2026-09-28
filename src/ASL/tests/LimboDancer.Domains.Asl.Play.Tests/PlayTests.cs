@@ -83,7 +83,7 @@ public sealed class PlayTests : IDisposable
         },
     };
 
-    private static JsonElement SetupArgs(string attempt, long expected, object[] placements, string catalog = "asl-scenario-a1@1.4.0", bool start = true) =>
+    private static JsonElement SetupArgs(string attempt, long expected, object[] placements, string catalog = "asl-scenario-a1@1.5.0", bool start = true) =>
         Args(start
             ? new
             {
@@ -442,7 +442,8 @@ public sealed class PlayTests : IDisposable
     {
         Assert.Equal(["asl.game.setup", "asl.game.advance-phase", "asl.game.enter-empty-building", "asl.game.enter-building", "asl.game.declare-overrun", "asl.game.fire",
                 "asl.game.rally", "asl.game.repair", "asl.game.move", "asl.game.pass-fire", "asl.game.end-move",
-                "asl.game.advance", "asl.game.ambush", "asl.game.close-combat", "asl.game.take-prisoner", "asl.game.fire-ordnance"],
+                "asl.game.advance", "asl.game.ambush", "asl.game.close-combat", "asl.game.take-prisoner", "asl.game.fire-ordnance", "asl.game.move-vehicle",
+                "asl.game.button-up"],
             GameActions.All.Select(action => action.Id.Value));
         Assert.All(GameActions.All, action => Assert.Equal(Abstractions.Actions.ActionReversibility.Irreversible, action.Risk.Reversibility));
         var precondition = Assert.Single(GameActions.EnterEmptyBuilding.Preconditions);

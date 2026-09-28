@@ -284,6 +284,20 @@ Unit step 24 ([ASL Unit Deviations, Ordnance, and Vehicles Plan](<ASL Unit Devia
 
 **Review and version.** A separate agent briefed as an ASL rules referee rendered the listing rows and the chart and confirmed all 78 rows. Added definitions make a minor version: `asl-scenario-a1@1.4.0`. Games that name 1.3.0 no longer replay; the committed ones now name 1.4.0.
 
+### 9.6 Vehicles (catalog 1.5.0)
+
+Unit step 25 ([ASL Unit Deviations, Ordnance, and Vehicles Plan](<ASL Unit Deviations, Ordnance, and Vehicles Plan.md>), section 10) needs a truck of each side and an armored halftrack with MGs. On 2026-09-27, three counters (129 rows) were added from the Chapter H Vehicle Listings:
+
+| Counters | Sheet | Source | Needed for |
+|---|---|---|---|
+| `attacker-truck` (German Opel 6700 (Blitz): truck, 28 MP, towing T7, 21 PP, cs 6 italic) | VLG | p. 339 | Infantry fire at an unarmored vehicle (A7.308) |
+| `defender-truck` (Russian GAZ-MM: truck, 25 MP, Small Target, T8, 21 PP, cs 6 italic) | VLR | p. 356 | The same, for the Russian side |
+| `attacker-halftrack` (German SPW 251/1: half-tracked, 16 MP, AF 1, open-topped, Small Target, MA AAMG 3 FP, ROF 1, B# 12, 15 PP/T7, CS 5) | VLG | p. 339 | A vehicle's MG on the IFT (D1.83) and a Collateral Attack on its CE crew (D.8B) |
+
+**Readings.** The ★ AF is unarmored (D1.21); the single printed AF is both the front and side AF (D1.6). A blank B# is B# 12 (D3.7). An italic lower-case cs# applies to Passengers only (Listings Key, p. 338; D5.6), recorded with the trait `asl:cs-passengers-only` (added after the referee's review, D8). The MP are printed black, so D2.51 does not apply. Vocabulary 1.8.0 adds the states `asl:immobilized`, `asl:stunned`, `asl:stun-recovery`, and `asl:recalled`.
+
+**Review and version.** A separate agent briefed as an ASL rules referee rendered the listing rows and the span colors and fonts of the page and confirmed all 126 value rows; the three trait rows followed its finding D8. Added definitions make a minor version: `asl-scenario-a1@1.5.0`. Games that name 1.4.0 no longer replay, including the Studio's demo games of earlier passes; the committed ones now name 1.5.0.
+
 ## 10. The source adapter
 
 ASL-UNIT-001 keeps source-specific parsing out of `LimboDancer.Domains.Asl.Units`, so the transcription is read by a separate source adapter, `LimboDancer.Domains.Asl.Units.CounterSheets`, which references only `Units`. `CounterSheetCatalogBuilder` takes the catalog manifest (`src/ASL/units/catalog/scenario-a1.catalog-manifest.json`: id, version, slots, and which counter fills which slot), the source record, the transcription, and the worksheet, and:

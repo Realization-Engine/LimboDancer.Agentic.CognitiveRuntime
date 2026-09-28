@@ -138,7 +138,7 @@ public sealed class RallyAndFireStepsTests : IDisposable
             start = new
             {
                 label = "Steps",
-                catalog = "asl-scenario-a1@1.4.0",
+                catalog = "asl-scenario-a1@1.5.0",
                 boards = Bd01,
                 firstSide,
                 scenarioMonth = 7,

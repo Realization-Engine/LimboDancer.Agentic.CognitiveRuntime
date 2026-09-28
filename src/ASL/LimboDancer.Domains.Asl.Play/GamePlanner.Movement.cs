@@ -64,6 +64,18 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.move-crew-mans-gun: {gunner.Id} mans a Gun; abandoning or moving a Gun is not reviewed (C10, A21.13)");
         }
 
+        // D2.1 (ruling R25.3): a vehicle spends its MP one expenditure at a time, by its own action; Infantry may not enter an enemy vehicle's
+        // Location, since OVR (D7) and CC against a vehicle (A11.5) are not reviewed.
+        if (movers.FirstOrDefault(unit => LiveFire.IsVehicle(unit!)) is { } driven)
+        {
+            return Refused(scope, label, expected, $"play.move-vehicle-kind: {driven.Id} is a vehicle and moves by its MP expenditures (D2.1)");
+        }
+
+        if (EnemyVehicleAt(state, state.PhasingSide!, to) is { } blocking)
+        {
+            return Refused(scope, label, expected, $"play.move-enemy-vehicle: the enemy vehicle {blocking.Id} is in {to}; OVR and CC against a vehicle are not reviewed (D7, A11.5; ruling R25.3)");
+        }
+
         // A3.3 (p. 47): a unit that fired in the PFPh does not move in the MPh.
         if (movers.FirstOrDefault(unit => GameState.Condition(unit!, Conditions.PrepFire) == ConditionState.True) is { } fired)
         {
@@ -321,6 +333,13 @@ public sealed partial class GamePlanner
             || ending.Any(id => !movement.Members.Contains(id, StringComparer.Ordinal) && !movement.Movers.Contains(id, StringComparer.Ordinal)))
         {
             return Refused(scope, label, expected, $"play.end-move: only the moving stack's members ({string.Join(", ", movement.Members)}) end their move (A4.2)");
+        }
+
+        // D2.4: a moving vehicle ends its MPh in Motion only when it has no MP left to Stop or to enter a hex its VCA points at.
+        if (movement.Vehicle && movement.Started && !movement.Stopped && state.Unit(movement.Members.Count > 0 ? movement.Members[0] : movement.Movers[0]) is { } vehicle
+            && MotionBar(state, vehicle) is { } motion)
+        {
+            return Refused(scope, label, expected, motion);
         }
 
         // A15.43, A15.431: a berserk unit keeps charging while it has the MF for a step on its route; when the model cannot decide the

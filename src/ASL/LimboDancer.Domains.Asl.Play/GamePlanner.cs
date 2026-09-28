@@ -212,6 +212,8 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             "asl.game.close-combat" => PlanCloseCombat(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.fire-ordnance" => PlanFireOrdnance(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.take-prisoner" => PlanTakePrisoner(scope, arguments, existing, attemptId, expected, label),
+            "asl.game.move-vehicle" => PlanMoveVehicle(scope, arguments, existing, attemptId, expected, label),
+            "asl.game.button-up" => PlanButtonUp(scope, arguments, existing, attemptId, expected, label),
             _ => Refused(scope, label, expected, "play.unknown-action"),
         };
 
@@ -289,6 +291,11 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         }
 
         var parsed = Parse(scope, events, attemptId, expected);
+        if (parsed.Events is { } placed && Replay([.. existing, .. placed]).Current is { } after && VehicleSetupBar(after) is { } vehicleBar)
+        {
+            return Refused(scope, label, expected, vehicleBar);
+        }
+
         return parsed.Events is { } list
             ? new GamePlan(GamePlanStatus.Ready, scope, label, expected, list, [$"play.setup: {list.Count} event(s)"])
             : Refused(scope, label, expected, [.. parsed.Reasons]);
@@ -329,6 +336,13 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         if (state.Phase == "mph" && MustCharge(state) is [{ } charging, ..])
         {
             return Refused(scope, label, expected, $"play.berserk-charge: {charging.Id} is berserk and must charge before the MPh ends (A15.43)");
+        }
+
+        // D2.4: a vehicle under a Motion counter must expend at least one MP in its MPh.
+        if (state.Phase == "mph" && state.Units.FirstOrDefault(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && LiveFire.IsVehicle(unit)
+            && Is(unit, Conditions.Motion) && unit is { MfSpent: 0, HalfMfSpent: false, MovementEnded: false }) is { } idle)
+        {
+            return Refused(scope, label, expected, $"play.vehicle-motion: {idle.Id} is in Motion and must expend at least one MP this MPh (D2.4)");
         }
 
         // A15.431, A15.46: at the end of its MPh a berserk unit with no Known enemy unit in its LOS returns to normal.

@@ -77,6 +77,16 @@ public sealed class AslScenarioA1FireSourceReviewTests
     }
 
     [Fact]
+    public void TheVehicleSubjectsAreVerified()
+    {
+        // Unit step 25: nine Chapter A subjects and 36 Chapter D subjects, D.8 and D5.341 with their continuations.
+        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var vehicles = AslScenarioA1FireSourceReview.BuildVehicles(RepositoryPaths.Root, manifests, Attestation());
+        Assert.Equal(45, vehicles.Records.Count);
+        Assert.All(vehicles.Records, record => Assert.Equal(TirSourceVerificationDisposition.Verified, record.Disposition));
+    }
+
+    [Fact]
     public void TheCloseCombatAndBerserkSubjectsAreVerified()
     {
         var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);

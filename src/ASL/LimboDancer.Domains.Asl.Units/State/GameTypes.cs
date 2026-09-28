@@ -139,6 +139,24 @@ public static class Conditions
     /// <summary>Held in Melee (A11.15, p. 72).</summary>
     public const string Melee = "asl:melee";
 
+    /// <summary>A vehicle in Motion (D2.4, p. 198): it ended its MPh without stopping; removed when it next starts to move.</summary>
+    public const string Motion = "asl:motion";
+
+    /// <summary>An AFV crew Buttoned Up (D5.2, p. 203): not Vulnerable to Collateral Attacks; an OT AFV is CE unless BU (D5.3).</summary>
+    public const string ButtonedUp = "asl:bu";
+
+    /// <summary>An immobilized vehicle (A7.308, p. 56): it may not move (asl@1.8.0).</summary>
+    public const string Immobilized = "asl:immobilized";
+
+    /// <summary>A Stunned AFV crew (D5.34, p. 203): BU, and the vehicle may not fire or move for the rest of that Player Turn (asl@1.8.0).</summary>
+    public const string Stunned = "asl:stunned";
+
+    /// <summary>Stun +1 (D5.34): after its Stun, the vehicle adds one to its IFT, MC, and TC DR (asl@1.8.0).</summary>
+    public const string StunRecovery = "asl:stun-recovery";
+
+    /// <summary>A Recalled AFV (D5.341, pp. 203 to 204): Stunned, then leaving play at the end of that Player Turn (asl@1.8.0).</summary>
+    public const string Recalled = "asl:recalled";
+
     /// <summary>Conditions the state model adds to the vocabulary's states; they have no drawn form.</summary>
     public static IReadOnlyList<string> Undrawn { get; } = [Captured, Melee];
 

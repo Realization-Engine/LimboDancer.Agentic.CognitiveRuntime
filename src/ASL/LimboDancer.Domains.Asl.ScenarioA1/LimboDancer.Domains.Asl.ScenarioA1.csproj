@@ -31,6 +31,7 @@
     <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.rally-package.json" LogicalName="ScenarioA1.rally-package.json" WithCulture="false" />
     <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/Supplements/a7-infantry-fire-table.transcription.json" LogicalName="ScenarioA1.fire-ift.json" WithCulture="false" />
     <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/Supplements/b-terrain-chart-tem.transcription.json" LogicalName="ScenarioA1.fire-terrain-chart.json" WithCulture="false" />
+    <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/Supplements/a7-ift-vehicle-line.transcription.json" LogicalName="ScenarioA1.fire-ift-vehicle-line.json" WithCulture="false" />
     <EmbeddedResource Include="../units/catalog/scenario-a1.catalog.json" LogicalName="ScenarioA1.fire-catalog.json" WithCulture="false" />
     <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.close-combat-case-matrix.json" LogicalName="ScenarioA1.close-combat-matrix.json" WithCulture="false" />
     <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.close-combat-package.json" LogicalName="ScenarioA1.close-combat-package.json" WithCulture="false" />

@@ -136,11 +136,18 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
         : plan.Events[^1].Payload switch
         {
             MovementStepped moved => state.Movement is { WindowOpen: true } movement && movement.Step == moved.Step && movement.Location == moved.To,
+            // A vehicle's MP expenditure: its window is open at this step, and the vehicle is where the step put it.
+            VehicleStepped stepped => state.Movement is { WindowOpen: true, Vehicle: true } movement && movement.Step == stepped.Step
+                && state.Location(stepped.Vehicle)?.Location == stepped.At,
             MovementWindowClosed => state.Movement is { WindowOpen: false },
             MovementEnded ended => ended.Movers.All(id => state.Unit(id) is not { Status: InstanceStatus.Active } unit || unit.MovementEnded),
             // A forced back: the mover is where it started, with its movement ended, and every defender the plan revealed is known.
             EntryForcedBack forced => state.Unit(forced.Id) is { MovementEnded: true } unit && state.Location(unit.Id)?.Location == forced.ReturnedTo
                 && Revealed(state, plan),
+
+            // A crew's BU counter placed or removed (D5.33): the vehicle carries the condition.
+            ConditionsChanged exposure when plan.Events[^1].Type == "crew-exposure-changed" => state.Unit(exposure.Id) is { } vehicle
+                && exposure.Conditions.All(item => GameState.Condition(vehicle, item.Key) == item.Value),
 
             // A pending declaration: every unit the plan revealed is known, and its attempt is still open.
             ConditionsChanged => plan.Events.Select(item => item.Payload).OfType<EntryAttempted>().Any()

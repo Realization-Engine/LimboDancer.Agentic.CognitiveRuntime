@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1.0.0",
+  "chart": "B Terrain Chart, MP Entrance Cost of the Halftrack and Truck columns",
+  "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+  "physicalPdfPage": 698,
+  "boundary": "The Halftrack and Truck MP Entrance Cost cells of the Open Ground, Road, and Grain rows, read from a rendering. Every other row and column, and the notes the cells cite, are outside this transcription; a vehicle's entry of any other terrain is refused (ruling R25.3).",
+  "reading": "A road hex entered through a road hexside costs 1/2 MP, 1 MP for a BU AFV (\"1/2 [BU:1]\"; D2.16); a road hex entered otherwise is Open Ground apart from its road (B1.11).",
+  "rows": [
+    { "terrain": "1. Open Ground", "halftrack": "1", "truck": "4" },
+    { "terrain": "3. Road", "halftrack": "1/2 [BU:1]", "truck": "1/2 [BU:1]" },
+    { "terrain": "15. Grain", "halftrack": "1", "truck": "5" }
+  ]
+}

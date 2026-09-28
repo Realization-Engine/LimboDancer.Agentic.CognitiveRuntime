@@ -1,0 +1,127 @@
+using Bunit;
+using LimboDancer.Domains.Asl.Maps.Coordinates;
+using LimboDancer.Domains.Asl.Maps.Geometry;
+using LimboDancer.Domains.Asl.MapStudio.Services;
+using LimboDancer.Domains.Asl.Play;
+using Microsoft.Extensions.DependencyInjection;
+using PlayPage = LimboDancer.Domains.Asl.MapStudio.Components.Pages.Play;
+
+namespace LimboDancer.Domains.Asl.MapStudio.Tests;
+
+/// <summary>
+/// The Play page for unit step 25 (U29): a vehicle is placed with its VCA, the Infantry move list leaves vehicles out, the vehicle
+/// movement panel spends one MP expenditure at a time, the crew exposure panel offers the AFV's BU counter, and the units table shows
+/// a vehicle's VCA, MP, and CE state. The verified synthetic board and the Studio's scripted dice.
+/// </summary>
+public sealed class PlayPageVehicleTests : IDisposable
+{
+    private readonly string root = Path.Combine(Path.GetTempPath(), "asl-play-vehicles-" + Guid.NewGuid().ToString("N"));
+    private readonly ScriptedDice dice = new();
+    private readonly LivePlay live;
+    private readonly BuildingBoards boards;
+    private readonly BunitContext context = new();
+
+    public PlayPageVehicleTests()
+    {
+        var options = new StudioOptions { CacheRoot = Path.Combine(root, "cache"), BoardsRoot = Path.Combine(root, "boards") };
+        var library = new UnitLibrary(options);
+        var maps = new MapService(options, new FakeVaslMapSource());
+        boards = new BuildingBoards(maps);
+        live = new LivePlay(library, boards, dice.Roller);
+        var games = new GameLibrary(library, boards, live);
+        context.Services.AddSingleton(library);
+        context.Services.AddSingleton(live);
+        context.Services.AddSingleton(games);
+        context.Services.AddSingleton(new GameMaps(boards, maps, new RenderCache(), library, games));
+        context.Services.AddSingleton(new StudioLos(boards, maps, options));
+        context.Services.AddSingleton(dice);
+    }
+
+    public void Dispose()
+    {
+        context.Dispose();
+        if (Directory.Exists(root))
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    private static string Board => FakeBoardProvider.Board.Ref.Value;
+
+    /// <summary>Two ADJACENT Open Ground hexes at one level, with no hexside terrain.</summary>
+    private (string One, string Two) Hexes()
+    {
+        var handle = new StudioBoardCatalog(boards).TryGetBoard(FakeBoardProvider.Board.Ref).Board!;
+        bool Terrain(HexName? hex, string name, int level) => hex is { } at && handle.HexFacts(at) is { Center.Terrain.Name: { } terrain } facts && terrain == name && facts.BaseLevel == level;
+        return (from index in handle.Geometry.Hexes()
+                let one = handle.Geometry.NameOf(index)
+                let level = handle.HexFacts(one)!.BaseLevel
+                where Terrain(one, "Open Ground", level)
+                from side in Enum.GetValues<HexsideDirection>()
+                let two = handle.Neighbor(one, side)
+                where Terrain(two, "Open Ground", level) && handle.HexFacts(one)!.Hexsides.All(item => item.HexsideTerrain is null && !item.Cliff)
+                select ($"{Board}:{one}:0", $"{Board}:{two}:0")).First();
+    }
+
+    private static void Commit(IRenderedComponent<PlayPage> page, string propose)
+    {
+        page.Find(propose).Click();
+        page.WaitForAssertion(() => Assert.Contains("Confirm to commit", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+        page.Find("#play-confirm").Click();
+        page.WaitForAssertion(() => Assert.Contains("Committed", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+    }
+
+    private static void Place(IRenderedComponent<PlayPage> page, string id, string definition, string at, string facing)
+    {
+        page.Find("#place-definition").Change(definition);
+        page.Find("#place-id").Change(id);
+        page.Find("#place-location").Change(at);
+        page.Find("#place-facing").Change(facing);
+        page.Find("#place-add").Click();
+    }
+
+    [Fact]
+    public void AVehicleIsPlacedWithItsVcaAndMovesByItsOwnPanel()
+    {
+        var (one, two) = Hexes();
+        var page = context.Render<PlayPage>();
+        page.Find("#new-board").Change(Board);
+        page.Find("#new-first").Change("german");
+        page.Find("#new-second").Change("russian");
+        page.Find("#new-first-elr").Change("3");
+        page.Find("#new-second-elr").Change("3");
+
+        // D2.11: the setup offers a VCA for a vehicle.
+        page.Find("#place-definition").Change("attacker-truck");
+        Assert.Contains("VCA", page.Find("#place-facing").ParentElement!.TextContent, StringComparison.Ordinal);
+        Place(page, "de-t", "attacker-truck", one, "east");
+        Place(page, "de-ht", "attacker-halftrack", two, "west");
+        Assert.Contains("VCA west", page.Find("#place-list").TextContent, StringComparison.Ordinal);
+        Commit(page, "#propose-setup");
+
+        // The units table shows each vehicle's VCA, and the OT halftrack's crew as CE (D5.3).
+        Assert.Contains("VCA east", page.Find("tr[data-unit='de-t']").TextContent, StringComparison.Ordinal);
+        Assert.Contains("CE", page.Find("tr[data-unit='de-ht']").TextContent, StringComparison.Ordinal);
+
+        // In the PFPh the halftrack's AAMG may fire; the unarmed truck may not (D5.1).
+        Commit(page, "#propose-advance");
+        var firing = page.FindAll("#fire-from option").Select(item => item.GetAttribute("value")).ToArray();
+        Assert.Contains(two, firing);
+        Assert.DoesNotContain(one, firing);
+        Commit(page, "#propose-advance");
+        Assert.Empty(page.FindAll(".move-unit"));
+        Assert.Equal(["", "de-ht", "de-t"], page.FindAll("#vehicle-unit option").Select(item => item.GetAttribute("value")).Order(StringComparer.Ordinal));
+        Assert.Single(page.FindAll(".bu-toggle[data-vehicle='de-ht']"));
+
+        // D2.12: Start costs 1 MP; the DEFENDER's window opens.
+        page.Find("#vehicle-unit").Change("de-t");
+        Assert.Contains("0 of 28 MP spent, 28 left", page.Find("#vehicle-state").TextContent, StringComparison.Ordinal);
+        Assert.Empty(page.FindAll("#vehicle-stop"));
+        Commit(page, "#vehicle-start");
+        Assert.Empty(page.FindAll("#vehicle-start"));
+        Assert.Single(page.FindAll("#vehicle-stop"));
+        Assert.Equal("open", page.Find("#move-state").GetAttribute("data-window"));
+        Assert.Contains("1 of 28 MP spent, 27 left, moving", page.Find("#vehicle-state").TextContent, StringComparison.Ordinal);
+        Assert.NotEmpty(page.FindAll(".vehicle-enter"));
+    }
+}

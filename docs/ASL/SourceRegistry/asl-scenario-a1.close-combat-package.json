@@ -4,10 +4,10 @@
   "domainId": "asl",
   "packageId": "scenario-a1-close-combat",
   "declaredUse": "Read-only conclusions for the Close Combat of one Location in one round, and for the Ambush drs before it, among Infantry of the reviewed Scenario A1 catalog, under the rulings of the ASL Unit Deviations, Ordnance, and Vehicles Plan (R29.1 to R29.15).",
-  "caseMatrixSha256": "7290f1c877bbf11a7a24acf6939134aeca30082aa5406817454d7a4025bb64ee",
+  "caseMatrixSha256": "afde3459410a916c82603a3c1958770ab41d79a52ca2e410877946d00f68544a",
   "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
   "cctTranscriptionSha256": "c2af9d03865da14baf7b0ec68989d99e0607079cb3f43f835d145b92bab8abbb",
-  "catalogSha256": "dae90ca10c7fb9f734e79a75ceb71951f0319e193410c145f14880e613cc77b5",
+  "catalogSha256": "a1c7fd2ca904a9e4832d1c6cd30c8e69c9a528e322b69cfa914ea4f16c0c63cb",
   "sourceFragments": [
     {
       "ruleId": "A1.6",
@@ -307,5 +307,5 @@
     "Advances that would make a unit CX (A4.72), advances into concealed enemy units, and advances changing level"
   ],
   "executionAuthority": "none",
-  "priorCloseCombatPackageManifestSha256": "f729b9a8eda830a589d13e3f2c3cf26fc46e0784fbef86593217ed4169610667"
+  "priorCloseCombatPackageManifestSha256": "02e3147989e54fd9b3e30e73a030d449827ed3e2b6e7733077e2fa8a54cef212"
 }

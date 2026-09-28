@@ -12,27 +12,28 @@ namespace LimboDancer.Domains.Asl.ScenarioA1;
 /// </summary>
 public sealed class ScenarioA1FirePackage : IDomainPackageResolver
 {
-    public const string ManifestSha256 = "b944ed3449d757aadfd2778fd8efaf77f700a952366c558353e8fc9a47a61a2a";
-    public const string MatrixSha256 = "8a6e7164e4725a54a946a725c91f2def14d7bf349f4bd227098e56a5a37eed53";
+    public const string ManifestSha256 = "ef97d62a0d26e865b737109421f94cc909a331b4489918c49143e28e4c0c71d0";
+    public const string MatrixSha256 = "49d899e23d733fe2facf26ce06c66989aeb20dc23cec55fa1ba90adbeb1e14d5";
     public const string ChartSupplementId = "asl-supplement:fire-charts";
 
     /// <summary>
-    /// The package as revised at unit steps 27 and 28, before the unit step 30 revision. Earlier manifests: unit step 18,
-    /// e0c28e88cda17bd71efd63f569c713d4d921e958dc7bc848b3c4c4acead143e1, and unit step 17,
+    /// The package as revised at unit step 24 (catalog 1.4.0), before the unit step 25 revision (vehicles, catalog 1.5.0); each revision's
+    /// manifest records its predecessor. Earlier manifests: unit steps 27 and 28, 8ac91d104a02c40f5237b4bfd924c1dde1f106aa3e7e1d5aab31725eae6499f9;
+    /// unit step 18, e0c28e88cda17bd71efd63f569c713d4d921e958dc7bc848b3c4c4acead143e1; and unit step 17,
     /// 45011b56946be8a7aba1676e6aea8d5ad0fa82193e4ebac24e06fd36bdff2b69 (Fire Review, "Revision at unit step 18").
     /// </summary>
-    public const string PriorManifestSha256 = "8ac91d104a02c40f5237b4bfd924c1dde1f106aa3e7e1d5aab31725eae6499f9";
+    public const string PriorManifestSha256 = "b944ed3449d757aadfd2778fd8efaf77f700a952366c558353e8fc9a47a61a2a";
     public static readonly DomainPackageRef Identity = new(new DomainId("asl"), "scenario-a1-fire", "sha256:" + ManifestSha256);
 
     private static readonly string[] Cases =
     [
-        "A1-fire-resolved", "A1-fire-phase-outside", "A1-fire-firer-outside", "A1-fire-target-outside", "A1-fire-range-or-los-denied", "A1-fire-weapon-outside", "A1-fire-movement-fire-outside", "A1-fire-movement-drm-differs", "A1-fire-levels-differ", "A1-fire-hindrance-unattributed", "A1-fire-elr-undecided", "A1-fire-leaders-interact", "A1-fire-heat-of-battle-undecided", "A1-fire-roll-missing",
+        "A1-fire-resolved", "A1-fire-phase-outside", "A1-fire-firer-outside", "A1-fire-target-outside", "A1-fire-range-or-los-denied", "A1-fire-weapon-outside", "A1-fire-movement-fire-outside", "A1-fire-movement-drm-differs", "A1-fire-levels-differ", "A1-fire-hindrance-unattributed", "A1-fire-elr-undecided", "A1-fire-leaders-interact", "A1-fire-heat-of-battle-undecided", "A1-fire-roll-missing", "A1-fire-vehicle-line-resolved", "A1-fire-vehicle-collateral-resolved", "A1-fire-vehicle-fire-resolved", "A1-fire-vehicle-outside",
     ];
 
     private static readonly string[] PinnedDigests =
     [
         "sourcePdfSha256", "chartSupplementSha256", "chartReviewDecisionSha256", "iftTranscriptionSha256",
-        "terrainChartTranscriptionSha256", "catalogSha256",
+        "terrainChartTranscriptionSha256", "catalogSha256", "vehicleLineTranscriptionSha256",
     ];
 
     private readonly DomainPackageDescriptor descriptor;
@@ -68,9 +69,9 @@ public sealed class ScenarioA1FirePackage : IDomainPackageResolver
         var rules = reviewed.GetProperty("sourceFragments").EnumerateArray()
             .Select(item => item.GetProperty("ruleId").GetString()!).Distinct(StringComparer.Ordinal);
         descriptor = new DomainPackageDescriptor(Identity, rules
-            .Select(rule => new CanonicalReference(Identity,
-                rule.StartsWith('B') ? "asl-easlrb-3.10:chapter-b" : "asl-easlrb-3.10:chapter-a", rule, "3.01"))
+            .Select(rule => new CanonicalReference(Identity, "asl-easlrb-3.10:chapter-" + char.ToLowerInvariant(rule[0]), rule, "3.01"))
             .Append(new CanonicalReference(Identity, ChartSupplementId, "A7-IFT", "3.01"))
+            .Append(new CanonicalReference(Identity, ChartSupplementId, "A7-IFT-VEHICLE-LINE", "3.01"))
             .Append(new CanonicalReference(Identity, ChartSupplementId, "B-Terrain-Chart-TEM", "3.01"))
             .ToArray());
     }

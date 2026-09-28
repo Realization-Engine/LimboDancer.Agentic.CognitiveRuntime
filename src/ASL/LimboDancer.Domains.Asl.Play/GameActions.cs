@@ -279,12 +279,42 @@ public static class GameActions
             package = ScenarioA1OrdnancePackage.Identity.ToString()
         }));
 
+    public static readonly ActionDescriptor MoveVehicle = Descriptor("asl.game.move-vehicle", "Move a vehicle",
+        "In its MPh, a vehicle of the phasing side spends one MP expenditure: start (1 MP unless in Motion), a VCA change of one hexspine (1 MP), entering the hex its VCA points at over Open Ground, Grain, or a road, or stop (1 MP); the DEFENDER may fire after each (D2.1, D2.11 to D2.13, D2.16; ruling R25.3).",
+        PlayPermission, "asl.game.reviewed-fire-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "vehicleId", "kind"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "vehicleId": { "type": "string" },
+            "kind": { "type": "string", "enum": ["start", "turn", "enter", "stop"] },
+            "facing": { "type": "string" }, "to": { "type": "string" }
+          }
+        }
+        """);
+
+    public static readonly ActionDescriptor ButtonUp = Descriptor("asl.game.button-up", "Button up or expose a crew",
+        "In its owner's MPh or APh, an AFV's crew buttons up or becomes Crew Exposed, once per phase, not while Stunned and not in an MPh after it Prep Fired (D5.33; ruling R25.8).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "vehicleId", "buttonedUp"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "vehicleId": { "type": "string" }, "buttonedUp": { "type": "boolean" }
+          }
+        }
+        """);
+
     public static IReadOnlyList<ActionDescriptor> All
     {
         get;
     } =
         [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding, DeclareOverrun, Fire, Rally, Repair, Move, PassFire, EndMove, Advance, Ambush, CloseCombat, TakePrisoner,
-            FireOrdnance];
+            FireOrdnance, MoveVehicle, ButtonUp];
 
     public static string VersionKey(Guid tenant, string game) => $"asl.game:{tenant:N}:{game}";
 

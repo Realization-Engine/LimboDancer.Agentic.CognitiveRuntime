@@ -128,6 +128,19 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, reason!);
         }
 
+        // D2.4: a vehicle under a Motion counter may not Prep Fire.
+        if (attack.VehicleFire is { InMotion: true } inMotion && state.Phase == "pfph")
+        {
+            return Refused(scope, label, expected, $"play.fire-vehicle-motion: {inMotion.VehicleId} is in Motion and may not Prep Fire (D2.4)");
+        }
+
+        // D9.3, D9.4 (ruling R25.9): an AFV's TEM and Hindrance for Infantry are not reviewed.
+        if (AfvCover(state, [BoardLocation.Parse(attack.FirerLocationId!), .. attack.Firers!.Select(item => BoardLocation.Parse(item.LocationId!))], target,
+            attack.Targets!.Count > 0) is { } cover)
+        {
+            return Refused(scope, label, expected, cover);
+        }
+
         // A15.432: berserk fire (TPBF in the AFPh, and the DFPh) is not reviewed; A11.15: units held in Melee fire only in CC; A20.52:
         // a Guard's fire is not reviewed; A20.54, A11.15: fire at a Location holding prisoners or units in Melee is not reviewed.
         if (firerIds.Concat(directors).Select(state.Unit).OfType<UnitInstance>().Select(unit => (unit, Cause: FireBar(state, unit))).FirstOrDefault(item => item.Cause is not null)
@@ -157,20 +170,24 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.fire-weapons: Subsequent First Fire and FPF use every MG the firer possesses (A8.3, A8.31)");
         }
 
-        var firingSide = state.Unit(attack.Firers![0].UnitId!)!.Side;
-        var targetSide = attack.Targets!.Count > 0 ? state.Unit(attack.Targets[0].UnitId!)!.Side : state.Sides.First(item => item.Id != firingSide).Id;
+        var firingSide = state.Unit(attack.VehicleFire?.VehicleId ?? attack.Firers![0].UnitId!)!.Side;
+        var targetSide = attack.Targets!.Count > 0 ? state.Unit(attack.Targets[0].UnitId!)!.Side
+            : attack.Vehicles is [{ } vehicleTarget, ..] ? state.Unit(vehicleTarget.VehicleId!)!.Side
+            : state.Sides.First(item => item.Id != firingSide).Id;
 
-        // The firing side sees nothing, or not everything, at the target: its refusals say only that the attack is undecided.
+        // The firing side sees nothing, or not everything, at the target: its refusals say only that the attack is undecided. Vehicles
+        // are never concealed (ruling R25.10).
         var seen = attack.Targets.Count(item => VisibleTo(state.Unit(item.UnitId!)!, firingSide));
-        var unseen = seen < attack.Targets.Count || seen == 0;
+        var unseen = seen < attack.Targets.Count || (seen == 0 && attack.Vehicles is not { Count: > 0 });
         FireProposal Proposal(FireAttack facts, bool undecided = false) =>
             new(firingSide, targetSide, facts, undecided && unseen ? [FireProposal.Undisclosed] : []);
 
         // A7.55: the units of a Location that fire at a target in a phase (in the MPh, at one MF expenditure) form one fire
         // group, so it fires once; a MG firing again alone on its Multiple ROF is not a new group.
         var step = state.Phase == "mph" ? state.Movement!.Step : (int?)null;
-        var fromLocations = attack.Firers.Select(item => item.LocationId!).Distinct(StringComparer.Ordinal).ToArray();
-        if (alone.Length == 0 && state.FiresThisPhase.Any(record => fromLocations.Contains(record.FirerLocation)
+        var fromLocations = attack.Firers!.Select(item => item.LocationId!).Distinct(StringComparer.Ordinal).ToArray();
+        if (alone.Length == 0 && state.FiresThisPhase.Any(record => !(attack.VehicleFire is not null && record.Vehicle)
+            && (fromLocations.Contains(record.FirerLocation) || record.FirerLocation == attack.FirerLocationId)
             && record.TargetLocation == attack.TargetLocationId && record.Step == step))
         {
             return Refused(scope, label, expected,
@@ -187,7 +204,7 @@ public sealed partial class GamePlanner
         {
             var limit = Math.Max(1, moving.HalfMfInLocation / 2);
             var here = existing.Select(item => item.Payload).OfType<FireResolved>().Where(record => record.MovementStep == moving.Step).ToArray();
-            if (attack.Firers.Any(firer => here.Count(record => record.Firers.Contains(firer.UnitId!)) >= limit))
+            if (attack.Firers!.Any(firer => here.Count(record => record.Firers.Contains(firer.UnitId!)) >= limit))
             {
                 return Refused(scope, label, expected,
                     $"play.fire-mf-limit: a firer attacks a moving stack in a Location no more often than the MF it spent there, {limit} here (A8.3, A9.2)")
@@ -227,7 +244,7 @@ public sealed partial class GamePlanner
 
         var directing = new[] { facts.Director?.UnitId }.Concat(facts.OtherDirectors?.Select(item => item.UnitId) ?? []).OfType<string>().ToArray();
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
-            [$"play.fire: {string.Join(", ", facts.Firers!.Select(item => item.UnitId))} fire at {facts.TargetLocationId} in the {facts.Phase}"
+            [$"play.fire: {string.Join(", ", facts.VehicleFire is { } byVehicle ? [byVehicle.VehicleId] : facts.Firers!.Select(item => item.UnitId))} fire at {facts.TargetLocationId} in the {facts.Phase}"
                 + (facts.FireKind is { } kind ? $" ({kind})" : string.Empty)
                 + (directing.Length > 0 ? $", directed by {string.Join(", ", directing)}" : string.Empty)
                 + $"; range {facts.Range}, {facts.TargetTerrain}, Hindrance {facts.Los!.HindranceDrm}"])
@@ -334,6 +351,8 @@ public sealed partial class GamePlanner
                 "leaderLoss" => (2, "fire-leader-loss"),
                 "heatOfBattle" => (2, "fire-heat-of-battle"),
                 "berserkCheck" => (2, "fire-berserk-check"),
+                "crewCheck" => (2, "fire-crew-check"),
+                "unlikelyKill" => (1, "fire-unlikely-kill"),
                 _ => (1, "fire-wound-severity"),
             };
             var drawn = draw(new RollRequest(count, 6));
@@ -362,6 +381,8 @@ public sealed partial class GamePlanner
                 "leaderLoss" => rolls with { LeaderLoss = Add(rolls.LeaderLoss, unit, drawn.Values) },
                 "heatOfBattle" => rolls with { HeatOfBattle = Add(rolls.HeatOfBattle, unit, drawn.Values) },
                 "berserkCheck" => rolls with { BerserkChecks = Add(rolls.BerserkChecks, unit, drawn.Values) },
+                "crewCheck" => rolls with { CrewChecks = Add(rolls.CrewChecks, unit, drawn.Values) },
+                "unlikelyKill" => rolls with { UnlikelyKill = Add(rolls.UnlikelyKill, unit, drawn.Values[0]) },
                 _ => rolls with { WoundSeverity = Add(rolls.WoundSeverity, unit, drawn.Values[0]) },
             };
         }
@@ -375,7 +396,8 @@ public sealed partial class GamePlanner
         var fireId = EventId(attemptId, events.Count + 1);
         var firerLocation = facts.FirerLocationId ?? facts.TargetLocationId!;
         events.Add(Event(scope, attemptId, events.Count + 1, expected, "fire-resolved",
-            new FireResolved([.. (facts.Firers ?? []).Select(item => item.UnitId!)], facts.Director?.UnitId, firerLocation, facts.TargetLocationId!, rollIds,
+            new FireResolved(facts.VehicleFire is { } byVehicle ? [byVehicle.VehicleId!] : [.. (facts.Firers ?? []).Select(item => item.UnitId!)],
+                facts.Director?.UnitId, firerLocation, facts.TargetLocationId!, rollIds,
                 JsonSerializer.SerializeToElement(facts, LiveFire.Json), JsonSerializer.SerializeToElement(resolution, LiveFire.Json))
             {
                 MovementStep = step,
@@ -395,6 +417,15 @@ public sealed partial class GamePlanner
             var target = facts.Targets!.First(item => item.UnitId == effect.UnitId);
             var attackedBroken = target.Broken == true && desperate(target.Concealed == true || target.Hidden == true || target.Dummy == true);
             foreach (var payload in EffectEvents(state, effect, attemptId, attackedBroken))
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, payload.Type, payload.Payload, package, null, [fireId]));
+            }
+        }
+
+        // A7.308, A7.309, D.8B: the Vehicle line's result and the crew's (ruling R25.5, R25.6).
+        foreach (var vehicle in resolution.VehicleEffects ?? [])
+        {
+            if (VehicleEffectEvent(vehicle) is { } payload)
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, payload.Type, payload.Payload, package, null, [fireId]));
             }
@@ -477,6 +508,48 @@ public sealed partial class GamePlanner
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "surrender-pending", new SurrenderPending(id, surrender.Captors!), package, null, [fireId]));
             }
         }
+    }
+
+    /// <summary>
+    /// The event that records a vehicle's effect (ruling R25.5, R25.6): a destroyed vehicle leaves play (its wreck is not placed); an
+    /// immobilized one loses Motion (D.7); a Stunned crew buttons up and the vehicle Stops (D5.34); a Recalled crew is treated as Stunned but
+    /// marked Recalled alone (D5.341); a pinned crew is pinned (A7.82).
+    /// </summary>
+    private static (string Type, EventPayload Payload)? VehicleEffectEvent(FireVehicleEffect effect)
+    {
+        if (effect.Result is FireVehicleEffect.Eliminated or FireVehicleEffect.BurningWreck)
+        {
+            return ("instance-eliminated", new InstanceEliminated(effect.VehicleId));
+        }
+
+        var conditions = new Dictionary<string, ConditionState>(StringComparer.Ordinal);
+        if (effect.Result == FireVehicleEffect.Immobilized)
+        {
+            conditions[Conditions.Immobilized] = ConditionState.True;
+            conditions[Conditions.Motion] = ConditionState.False;
+        }
+
+        switch (effect.CrewResult)
+        {
+            case FireVehicleEffect.Stunned:
+                conditions[Conditions.Stunned] = ConditionState.True;
+                conditions[Conditions.ButtonedUp] = ConditionState.True;
+                conditions[Conditions.Motion] = ConditionState.False;
+                break;
+            case FireVehicleEffect.Recalled:
+                // A Recall is a Stun that removes the vehicle at the end of the Player Turn (D5.341); every check reads either.
+                conditions[Conditions.Recalled] = ConditionState.True;
+                conditions[Conditions.Stunned] = ConditionState.False;
+                conditions[Conditions.StunRecovery] = ConditionState.False;
+                conditions[Conditions.ButtonedUp] = ConditionState.True;
+                conditions[Conditions.Motion] = ConditionState.False;
+                break;
+            case FireVehicleEffect.Pinned:
+                conditions[Conditions.Pinned] = ConditionState.True;
+                break;
+        }
+
+        return conditions.Count == 0 ? null : ("conditions-changed", new ConditionsChanged(effect.VehicleId, conditions));
     }
 
     private static string Marker(string counter) => counter switch
@@ -687,7 +760,7 @@ public sealed partial class GamePlanner
         }
 
         var perLocation = new Dictionary<string, (int Range, bool SameLevel, FireLos Los)>(StringComparer.Ordinal);
-        foreach (var location in attack.Firers!.Select(item => item.LocationId!).Distinct(StringComparer.Ordinal))
+        foreach (var location in attack.Firers!.Select(item => item.LocationId!).Append(attack.FirerLocationId!).Distinct(StringComparer.Ordinal))
         {
             var from = BoardLocation.Parse(location);
             if (ReadLocation(state, from) is not { } firerRead)
@@ -743,7 +816,8 @@ public sealed partial class GamePlanner
             // A8.3: no farther than the closest armed, Known enemy unit, from each firer's Location.
             var side = state.Unit(attack.Firers![0].UnitId!)!.Side;
             var enemies = state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side != side && unit.Kind != UnitKinds.Dummy
-                    && VisibleTo(unit, side) && GameState.Condition(unit, Conditions.Captured) != ConditionState.True)
+                    && VisibleTo(unit, side) && GameState.Condition(unit, Conditions.Captured) != ConditionState.True
+                    && (!LiveFire.IsVehicle(unit) || HasVehicleMg(unit)))
                 .Select(unit => state.Location(unit.Id)?.Location).OfType<BoardLocation>().Distinct().ToArray();
             facts = facts with
             {
