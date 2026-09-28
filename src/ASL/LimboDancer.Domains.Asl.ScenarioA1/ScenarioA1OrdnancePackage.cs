@@ -23,7 +23,7 @@ public sealed class ScenarioA1OrdnanceReference
     private readonly (int Firepower, int Caliber)[] heColumns;
 
     private ScenarioA1OrdnanceReference((int, int?)[] ranges, IReadOnlyDictionary<string, int[]> infantry, IReadOnlyDictionary<string, int[]> modifications,
-        (int, int)[] heColumns, IReadOnlyDictionary<string, GunDefinition> guns, ScenarioA1FireReference fire)
+        (int, int)[] heColumns, IReadOnlyDictionary<string, GunDefinition> guns, ScenarioA1FireReference fire, ScenarioA1ArmorReference armor)
     {
         this.ranges = ranges;
         this.infantry = infantry;
@@ -31,7 +31,17 @@ public sealed class ScenarioA1OrdnanceReference
         this.heColumns = heColumns;
         Guns = guns;
         Fire = fire;
+        Armor = armor;
     }
+
+    /// <summary>The Vehicle Target Type and To Kill charts and the catalog's vehicle armor (backlog pass 7).</summary>
+    public ScenarioA1ArmorReference Armor
+    {
+        get;
+    }
+
+    /// <summary>The To Hit Table range column of a range (C3.3).</summary>
+    public int Column(int range) => RangeColumn(range);
 
     /// <summary>The reviewed Guns, by definition id.</summary>
     public IReadOnlyDictionary<string, GunDefinition> Guns
@@ -117,9 +127,10 @@ public sealed class ScenarioA1OrdnanceReference
             return (item.GetProperty("fp").GetInt32(), int.Parse(header[1].TrimEnd('+'), System.Globalization.CultureInfo.InvariantCulture));
         }).ToArray();
 
-        var guns = catalog.RootElement.GetProperty("definitions").EnumerateArray().Where(item => item.GetProperty("kind").GetString() == "asl:gun")
+        // A tank's MA is a Gun of the vehicle's caliber (D1.3; ruling R7.10).
+        var guns = catalog.RootElement.GetProperty("definitions").EnumerateArray().Where(item => item.GetProperty("kind").GetString() is "asl:gun" or "asl:vehicle")
             .Select(Gun).OfType<GunDefinition>().ToDictionary(item => item.Id, StringComparer.Ordinal);
-        return new ScenarioA1OrdnanceReference(ranges, infantry, modifications, heColumns, guns, fire);
+        return new ScenarioA1OrdnanceReference(ranges, infantry, modifications, heColumns, guns, fire, ScenarioA1ArmorReference.Load(matrix, catalog));
     }
 
     private static GunDefinition? Gun(JsonElement item)
@@ -133,9 +144,19 @@ public sealed class ScenarioA1OrdnanceReference
             ? text.GetString() : null;
         bool Trait(string name) => Find("trait", name) is { } value && value.TryGetProperty("present", out var present) && present.GetBoolean();
 
-        return Text("gun-type") is { } type && Number("caliber") is { } caliber && Number("breakdown") is { } breakdown
+        IReadOnlyList<string> Ammo() => Find("attribute", "special-ammo") is { } value && value.TryGetProperty("value", out var list) && list.ValueKind == JsonValueKind.Array
+            ? [.. list.EnumerateArray().SelectMany(entry => entry.GetString()!.Split(' ', StringSplitOptions.RemoveEmptyEntries))]
+            : [];
+        var vehicle = item.GetProperty("kind").GetString() == "asl:vehicle";
+        var type = vehicle ? "vehicle" : Text("gun-type");
+        return type is not null && Number("caliber") is { } caliber && Number("breakdown") is { } breakdown
             ? new GunDefinition(item.GetProperty("id").GetString()!, item.GetProperty("nationality").GetString()!, type, caliber, Text("caliber-suffix"),
                 Number("rate-of-fire"), breakdown, Number("range-maximum"), Trait("asl:no-he"), Trait("asl:mount-360"))
+            {
+                NoAp = Trait("asl:no-ap"),
+                SpecialAmmo = Ammo(),
+                MaType = vehicle ? Text("ma-type") : null,
+            }
             : null;
     }
 }
@@ -147,19 +168,20 @@ public sealed class ScenarioA1OrdnanceReference
 /// </summary>
 public sealed class ScenarioA1OrdnancePackage : IDomainPackageResolver
 {
-    public const string ManifestSha256 = "68fdc54585af86625fd3eca4355ffaf60ccfd591e10521f7f2af646ec42914b2";
-    public const string MatrixSha256 = "fd72783c5129afd2587f35698f85f2872bb871798e1b90f0259e6d650116ba24";
-    /// <summary>The package as published at unit step 24, before its unit step 25 revision for catalog 1.5.0.</summary>
-    public const string PriorManifestSha256 = "2e3621f2c07bc94f875697dfc9f9b7cd00c04e12fbb0b8b3e570a398abd246c5";
+    public const string ManifestSha256 = "d10ce3465b8d2f8c1d969ec9b85a9a0441c64828de48dd787e14d97f06ad5963";
+    public const string MatrixSha256 = "b680f858de14e57b5862bafac49338ad0b215e27c0d2442ec911331de6ad8b63";
+    /// <summary>The package as revised at backlog pass 6, before its backlog pass 7 revision (vehicle targets, tanks, catalog 1.6.0).</summary>
+    public const string PriorManifestSha256 = "68fdc54585af86625fd3eca4355ffaf60ccfd591e10521f7f2af646ec42914b2";
     public static readonly DomainPackageRef Identity = new(new DomainId("asl"), "scenario-a1-ordnance", "sha256:" + ManifestSha256);
 
     private static readonly string[] Cases =
     [
         "A1-ordnance-hit-resolved", "A1-ordnance-miss-resolved", "A1-ordnance-phase-outside", "A1-ordnance-gun-outside", "A1-ordnance-crew-outside",
-        "A1-ordnance-already-fired", "A1-ordnance-range-outside", "A1-ordnance-target-outside", "A1-ordnance-undecided", "A1-ordnance-roll-missing", "A1-ordnance-owner-options", "A1-ordnance-cx", "A1-ordnance-afv-cover",
+        "A1-ordnance-already-fired", "A1-ordnance-range-outside", "A1-ordnance-target-outside", "A1-ordnance-undecided", "A1-ordnance-roll-missing", "A1-ordnance-owner-options", "A1-ordnance-cx", "A1-ordnance-afv-cover", "A1-ordnance-vehicle-hit", "A1-ordnance-vehicle-outside", "A1-ordnance-special-ammunition", "A1-ordnance-tank-fire", "A1-ordnance-shock-and-crews", "A1-ordnance-unarmored-vehicle",
     ];
 
-    private static readonly string[] PinnedDigests = ["sourcePdfSha256", "toHitTranscriptionSha256", "iftTranscriptionSha256", "catalogSha256"];
+    private static readonly string[] PinnedDigests = ["sourcePdfSha256", "toHitTranscriptionSha256", "iftTranscriptionSha256", "catalogSha256",
+        "toHitVehicleTranscriptionSha256", "toKillTranscriptionSha256"];
 
     private readonly DomainPackageDescriptor descriptor;
 
@@ -192,7 +214,7 @@ public sealed class ScenarioA1OrdnancePackage : IDomainPackageResolver
         Reference = ScenarioA1OrdnanceReference.Load(reviewed, new ScenarioA1FirePackage().Reference);
         var rules = reviewed.GetProperty("sourceFragments").EnumerateArray().Select(item => item.GetProperty("ruleId").GetString()!).Distinct(StringComparer.Ordinal);
         descriptor = new DomainPackageDescriptor(Identity, rules
-            .Select(rule => new CanonicalReference(Identity, rule.StartsWith('C') ? "asl-easlrb-3.10:chapter-c" : "asl-easlrb-3.10:chapter-a", rule, "3.01"))
+            .Select(rule => new CanonicalReference(Identity, "asl-easlrb-3.10:chapter-" + char.ToLowerInvariant(rule[0]), rule, "3.01"))
             .Append(new CanonicalReference(Identity, ScenarioA1FirePackage.ChartSupplementId, "C3-TO-HIT-TABLE", "3.01"))
             .ToArray());
     }

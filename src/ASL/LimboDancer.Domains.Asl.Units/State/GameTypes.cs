@@ -185,6 +185,12 @@ public static class Conditions
     /// <summary>Bounding Fire (D3.3, p. 199): the vehicle fired in its MPh; it may not fire in the AFPh, and the counter leaves at its end (asl@1.10.0).</summary>
     public const string BoundingFire = "asl:bounding-fire";
 
+    /// <summary>A Shocked AFV (C7.41, C7.42, p. 177): it may not move, fire, or change its CA until it recovers (asl@1.11.0).</summary>
+    public const string Shocked = "asl:shocked";
+
+    /// <summary>An Unconfirmed Kill (C7.42): still Shocked; a recovery dr of 4 to 6 at the end of the next RPh wrecks it (asl@1.11.0).</summary>
+    public const string UnconfirmedKill = "asl:unconfirmed-kill";
+
     /// <summary>A vehicle MG disabled for good by a repair dr of 6 (D3.7, p. 201; asl@1.10.0).</summary>
     public const string Disabled = "asl:disabled";
 

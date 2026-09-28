@@ -151,4 +151,32 @@ public sealed class PlayPageVehicleTests : IDisposable
         Commit(page, "#propose-pass");
         Assert.Contains(two, page.FindAll("#vehicle-bff-target option").Select(item => item.GetAttribute("value")));
     }
+
+    [Fact]
+    public void ATankIsOfferedInTheGunPanelWithTheEnemyVehicleAndItsAmmunition()
+    {
+        // D1.3, C3.31 (rulings R7.2, R7.10): in the PFPh the German tank is offered as a Gun, labeled with its VCA, TCA, and BU crew; a target
+        // Location holding the T-34 offers it on the Vehicle Target Type with a choice of ammunition. The year setting is offered at setup.
+        var (one, two) = Hexes();
+        var page = context.Render<PlayPage>();
+        page.Find("#new-board").Change(Board);
+        page.Find("#new-first").Change("german");
+        page.Find("#new-second").Change("russian");
+        page.Find("#new-first-elr").Change("3");
+        page.Find("#new-second-elr").Change("3");
+        page.Find("#new-year").Change("1942");
+        Place(page, "de-tank", "attacker-tank", one, "east");
+        Place(page, "ru-tank", "defender-tank", two, "west");
+        Commit(page, "#propose-setup");
+        Commit(page, "#propose-advance");
+        var gun = page.FindAll("#ordnance-gun option").Single(item => item.GetAttribute("value") == "de-tank");
+        Assert.Contains("VCA east, TCA east, BU", gun.TextContent, StringComparison.Ordinal);
+        Assert.Empty(page.FindAll("#ordnance-vehicle"));
+        page.Find("#ordnance-gun").Change("de-tank");
+        page.Find("#ordnance-target").Change(two);
+        Assert.Contains("ru-tank", page.FindAll("#ordnance-vehicle option").Select(item => item.GetAttribute("value")));
+
+        // C8.1: the PzKpfw IIIH lists APCR and no HEAT.
+        Assert.Equal(["ap", "apcr", "he"], page.FindAll("#ordnance-ammunition option").Select(item => item.GetAttribute("value")));
+    }
 }

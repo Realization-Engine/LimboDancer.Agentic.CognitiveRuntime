@@ -39,5 +39,7 @@
     <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.ordnance-case-matrix.json" LogicalName="ScenarioA1.ordnance-matrix.json" WithCulture="false" />
     <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/asl-scenario-a1.ordnance-package.json" LogicalName="ScenarioA1.ordnance-package.json" WithCulture="false" />
     <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/Supplements/c3-to-hit-table.transcription.json" LogicalName="ScenarioA1.ordnance-to-hit.json" WithCulture="false" />
+    <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/Supplements/c3-to-hit-vehicle-row.transcription.json" LogicalName="ScenarioA1.ordnance-to-hit-vehicle.json" WithCulture="false" />
+    <EmbeddedResource Include="../../../docs/ASL/SourceRegistry/Supplements/c7-to-kill-tables.transcription.json" LogicalName="ScenarioA1.ordnance-to-kill.json" WithCulture="false" />
   </ItemGroup>
 </Project>

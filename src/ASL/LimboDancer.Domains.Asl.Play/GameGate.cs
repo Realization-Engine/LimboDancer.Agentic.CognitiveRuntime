@@ -125,12 +125,17 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
         : plan.Events.Select(item => item.Payload).OfType<RepairAttempted>().FirstOrDefault() is { } repair
         // A Repair attempt: the unit's attempt is kept for the phase.
         ? state.RepairsThisPhase.Contains(repair.Unit)
+        : plan.Events.Select(item => item.Payload).OfType<ShockRecoveryRolled>().FirstOrDefault() is { } shock
+        // A Shock or Unconfirmed Kill dr: the vehicle's dr is kept for the RPh.
+        ? state.ShockRollsThisPhase.Contains(shock.Vehicle)
         : plan.Events.Select(item => item.Payload).OfType<CloseCombatResolved>().FirstOrDefault() is { } combat
         // A CC round: the Location's CC records the round and its attackers.
         ? state.CloseCombats.Any(item => item.Location == combat.Location && item.Rounds.Contains(combat.Round) && combat.Attackers.All(item.Attacking.Contains))
         : plan.Events.Select(item => item.Payload).OfType<OrdnanceFired>().FirstOrDefault() is { } ordnance
-        // A Gun's shot: the phase's shots count it, with the ROF the record kept.
-        ? state.OrdnanceShots.Any(item => item.Gun == ordnance.Gun && item.RateOfFireKept == ordnance.RateOfFireKept)
+        // A Gun's shot: the phase's shots count it, with the ROF the record kept; Special Ammunition it did not have ran out instead (C8.9).
+        ? (ordnance.Resolution.TryGetProperty("ammunitionUse", out var use) && use.ValueKind == JsonValueKind.String && use.GetString() == "none"
+            ? state.DepletedAmmunition.Any(item => item.Gun == ordnance.Gun)
+            : state.OrdnanceShots.Any(item => item.Gun == ordnance.Gun && item.RateOfFireKept == ordnance.RateOfFireKept))
         : plan.Events.Select(item => item.Payload).OfType<AmbushRolled>().FirstOrDefault() is { } ambush
         // The Ambush drs: the Location's CC records them and the ambusher.
         ? state.CloseCombats.Any(item => item.Location == ambush.Location && item.AmbushRolled && item.Ambusher == ambush.Ambusher)

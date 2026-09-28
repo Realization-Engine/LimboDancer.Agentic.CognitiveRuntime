@@ -82,6 +82,14 @@ public static class AslScenarioA1FireSourceReview
     public const string Pass6ComparisonFile = "asl-scenario-a1.pass6-pdf-comparison.json";
     public const string Pass6ComparisonSha256 = "adb5ff41193f76d9a3e7ec4bfda47788a4d64ece2cb24d9811d10ec168b2a081";
 
+    /// <summary>
+    /// The backlog pass 7 comparison: the Vehicle Target Type (C3.31), Target Facing and hit location (C3.9, C5.9), To Kill and its
+    /// modifications (C7.1 to C7.35), To Kill results and Shock (C7.4 to C7.7), Special Ammunition and Depletion Numbers (C8.1 to C8.91),
+    /// and tank main armament, armor, and crews (D1.3 to D1.74, D3.12, D3.2, D5.2 to D5.7).
+    /// </summary>
+    public const string Pass7ComparisonFile = "asl-scenario-a1.pass7-pdf-comparison.json";
+    public const string Pass7ComparisonSha256 = "c778b4f77726489c421b56a76d8dbad2270a70a18844f02e80381fef43a298e7";
+
     private const string ChapterA = "asl-easlrb-3.10:chapter-a";
     private const string ChapterB = "asl-easlrb-3.10:chapter-b";
     private const string ChapterC = "asl-easlrb-3.10:chapter-c";
@@ -446,6 +454,60 @@ public static class AslScenarioA1FireSourceReview
         ("A20.55", "A20.55", ChapterA, 1440, SourceFragmentKind.RuleText, 88),
     ];
 
+    private static readonly (string Rule, string Registered, string Source, int Line, SourceFragmentKind Kind, int Page)[] Pass7Subjects =
+    [
+        ("C.8", "C.8", ChapterC, 38, SourceFragmentKind.RuleText, 162),
+        ("C3.31", "C3.31", ChapterC, 320, SourceFragmentKind.RuleText, 169),
+        ("C3.9", "C3.9", ChapterC, 372, SourceFragmentKind.RuleText, 171),
+        ("C5.9", "C5.9", ChapterC, 480, SourceFragmentKind.RuleText, 173),
+        ("C6.1", "C6.1", ChapterC, 486, SourceFragmentKind.RuleText, 173),
+        ("C6.7", "C6.7", ChapterC, 580, SourceFragmentKind.RuleText, 175),
+        ("C7.1", "C7.1", ChapterC, 590, SourceFragmentKind.RuleText, 175),
+        ("C7.11", "C7.11", ChapterC, 592, SourceFragmentKind.RuleText, 175),
+        ("C7.11", "C7.11", ChapterC, 598, SourceFragmentKind.RuleContinuation, 176),
+        ("C7.2", "C7.2", ChapterC, 602, SourceFragmentKind.RuleText, 176),
+        ("C7.21", "C7.21", ChapterC, 604, SourceFragmentKind.RuleText, 176),
+        ("C7.23", "C7.23", ChapterC, 608, SourceFragmentKind.RuleText, 176),
+        ("C7.24", "C7.24", ChapterC, 610, SourceFragmentKind.RuleText, 176),
+        ("C7.24", "C7.24", ChapterC, 612, SourceFragmentKind.RuleContinuation, 176),
+        ("C7.31", "C7.31", ChapterC, 616, SourceFragmentKind.RuleText, 176),
+        ("C7.311", "C7.311", ChapterC, 618, SourceFragmentKind.RuleText, 176),
+        ("C7.32", "C7.32", ChapterC, 620, SourceFragmentKind.RuleText, 176),
+        ("C7.33", "C7.33", ChapterC, 624, SourceFragmentKind.RuleText, 176),
+        ("C7.331", "C7.331", ChapterC, 626, SourceFragmentKind.RuleText, 176),
+        ("C7.34", "C7.34", ChapterC, 630, SourceFragmentKind.RuleText, 176),
+        ("C7.342", "C7.342", ChapterC, 638, SourceFragmentKind.RuleText, 176),
+        ("C7.35", "C7.35", ChapterC, 682, SourceFragmentKind.RuleText, 177),
+        ("C7.4", "C7.4", ChapterC, 684, SourceFragmentKind.RuleText, 177),
+        ("C7.41", "C7.41", ChapterC, 686, SourceFragmentKind.RuleText, 177),
+        ("C7.42", "C7.42", ChapterC, 688, SourceFragmentKind.RuleText, 177),
+        ("C7.5", "C7.5", ChapterC, 694, SourceFragmentKind.RuleText, 177),
+        ("C7.6", "C7.6", ChapterC, 698, SourceFragmentKind.RuleText, 177),
+        ("C7.7", "C7.7", ChapterC, 700, SourceFragmentKind.RuleText, 177),
+        ("C8.1", "C8.1", ChapterC, 706, SourceFragmentKind.RuleText, 177),
+        ("C8.3", "C8.3", ChapterC, 735, SourceFragmentKind.RuleText, 178),
+        ("C8.9", "C8.9", ChapterC, 792, SourceFragmentKind.RuleText, 179),
+        ("C8.91", "C8.91", ChapterC, 796, SourceFragmentKind.RuleText, 179),
+        ("D1.3", "D1.3", ChapterD, 119, SourceFragmentKind.RuleText, 194),
+        ("D1.31", "D1.31", ChapterD, 121, SourceFragmentKind.RuleText, 194),
+        ("D1.32", "D1.32", ChapterD, 125, SourceFragmentKind.RuleText, 194),
+        ("D1.321", "D1.321", ChapterD, 129, SourceFragmentKind.RuleText, 194),
+        ("D1.6", "D1.6", ChapterD, 155, SourceFragmentKind.RuleText, 194),
+        ("D1.61", "D1.61", ChapterD, 157, SourceFragmentKind.RuleText, 194),
+        ("D1.62", "D1.62", ChapterD, 159, SourceFragmentKind.RuleText, 194),
+        ("D1.63", "D1.63", ChapterD, 161, SourceFragmentKind.RuleText, 194),
+        ("D1.64", "D1.64", ChapterD, 165, SourceFragmentKind.RuleText, 194),
+        ("D1.7", "D1.7", ChapterD, 169, SourceFragmentKind.RuleText, 194),
+        ("D1.73", "D1.73", ChapterD, 179, SourceFragmentKind.RuleText, 194),
+        ("D1.74", "D1.74", ChapterD, 183, SourceFragmentKind.RuleText, 194),
+        ("D3.12", "D3.12", ChapterD, 341, SourceFragmentKind.RuleText, 199),
+        ("D3.2", "D3.2", ChapterD, 343, SourceFragmentKind.RuleText, 199),
+        ("D5.2", "D5.2", ChapterD, 490, SourceFragmentKind.RuleText, 203),
+        ("D5.5", "D5.5", ChapterD, 552, SourceFragmentKind.RuleText, 204),
+        ("D5.6", "D5.6", ChapterD, 556, SourceFragmentKind.RuleText, 204),
+        ("D5.7", "D5.7", ChapterD, 560, SourceFragmentKind.RuleText, 204),
+    ];
+
     // Fragments a column break, a boxed example, or a page break interrupts: each part occurs whole in the page text.
     private static readonly HashSet<(string Rule, int Line)> TwoPartSubjects =
         [("A7.212", 445), ("A8.26", 644), ("A8.31", 658), ("A9.2", 690), ("B3.4", 138), ("A12.11", 992), ("A11.41", 940), ("A20.21", 1402),
@@ -515,6 +577,12 @@ public static class AslScenarioA1FireSourceReview
         Build(repositoryRoot, manifests, attestation, Pass6ComparisonFile, Pass6ComparisonSha256, Pass6Subjects,
             "backlog pass 6 review");
 
+    /// <summary>The backlog pass 7 subjects: the Vehicle Target Type, To Kill, Shock, Special Ammunition, and tanks.</summary>
+    public static AslScenarioA1VerificationBatch BuildPass7(string repositoryRoot,
+        GeneratedManifests manifests, AslScenarioA1SourceAttestation attestation) =>
+        Build(repositoryRoot, manifests, attestation, Pass7ComparisonFile, Pass7ComparisonSha256, Pass7Subjects,
+            "backlog pass 7 review");
+
     /// <summary>The unit step 24 subjects of a Gun's HE shot at Infantry.</summary>
     public static AslScenarioA1VerificationBatch BuildOrdnance(string repositoryRoot,
         GeneratedManifests manifests, AslScenarioA1SourceAttestation attestation) =>
@@ -561,7 +629,7 @@ public static class AslScenarioA1FireSourceReview
                 && evidence.GetProperty("kind").GetString() == (subject.Kind == SourceFragmentKind.RuleText ? "ruleText" : "ruleContinuation"),
                 "Comparison no longer names the exact registered fragment.");
 
-            var normalized = Normalize(fragment.Content);
+            var normalized = Normalize(fragment.Content, file == Pass7ComparisonFile);
             var comparison = evidence.GetProperty("comparison").GetString();
             Require(evidence.GetProperty("normalizedAlphanumericSha256").GetString() == Hashing.Sha256Text(normalized)
                 && evidence.GetProperty("normalizedAlphanumericLength").GetInt32() == normalized.Length
@@ -593,9 +661,11 @@ public static class AslScenarioA1FireSourceReview
             && candidate.Kind == subject.Kind && candidate.Locator.NormalizedElementId == subject.Registered)
         ?? throw new InvalidOperationException($"The exact source fragment for {subject.Rule} is missing.");
 
-    private static string Normalize(string value)
+    private static string Normalize(string value, bool tagsOnly)
     {
-        var withoutMarkup = Regex.Replace(value, "<[^>]+>", string.Empty)
+        // From the backlog pass 7 comparison on, only markup tags go: an escaped "\<" or "\>" is the rulebook's dice sign. The earlier
+        // comparisons were recorded with every bracketed span removed, on the fragment and the page alike, and keep that method.
+        var withoutMarkup = Regex.Replace(value, tagsOnly ? @"(?<!\\)<[A-Za-z/!][^>]*>" : "<[^>]+>", string.Empty)
             .Replace("ﬂ", "fl", StringComparison.Ordinal)
             .Replace("ﬁ", "fi", StringComparison.Ordinal)
             .Normalize(NormalizationForm.FormKD);

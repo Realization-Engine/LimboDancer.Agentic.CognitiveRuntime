@@ -35,6 +35,9 @@ public sealed partial class GamePlanner
 
     private static bool IsAfv(UnitInstance vehicle) => LiveFire.IsVehicle(vehicle) && VehicleDefinition(vehicle) is { Unarmored: false };
 
+    /// <summary>Whether a vehicle is a closed-topped AFV (D1.23; ruling R7.11): armored and not open-topped.</summary>
+    public static bool IsClosedTopped(UnitInstance vehicle) => IsAfv(vehicle) && VehicleDefinition(vehicle) is { OpenTopped: not true };
+
     /// <summary>The half MP a vehicle has spent this MPh and its allotment (D1.1).</summary>
     private static (int Spent, int Allotment) HalfMp(UnitInstance vehicle) =>
         ((vehicle.MfSpent * 2) + (vehicle.HalfMfSpent ? 1 : 0), (VehicleDefinition(vehicle)?.MovementPoints ?? 0) * 2);
@@ -243,7 +246,8 @@ public sealed partial class GamePlanner
         }
 
         if (new[] { (Conditions.PrepFire, "it Prep Fired (D.3)"), (Conditions.Immobilized, "it is immobilized (D.7)"),
-            (Conditions.Stunned, "its crew is Stunned (D5.34)"), (Conditions.Abandoned, "it is Abandoned (D5.41)") }
+            (Conditions.Stunned, "its crew is Stunned (D5.34)"), (Conditions.Shocked, "it is Shocked (C7.42)"),
+            (Conditions.UnconfirmedKill, "it is an Unconfirmed Kill, still Shocked (C7.42)"), (Conditions.Abandoned, "it is Abandoned (D5.41)") }
             .FirstOrDefault(item => Is(vehicle, item.Item1)) is { Item2: { } why })
         {
             return Refused(scope, label, expected, $"play.move-vehicle: {id} may not move: {why}");
@@ -437,7 +441,8 @@ public sealed partial class GamePlanner
 
     /// <summary>Whether a vehicle may spend no more MP this Player Turn: immobilized, Stunned, or Recalled and not yet leaving (D.7, D5.34, D5.341).</summary>
     private static bool Halted(UnitInstance vehicle) =>
-        vehicle.Status != InstanceStatus.Active || Is(vehicle, Conditions.Immobilized) || Is(vehicle, Conditions.Stunned) || Is(vehicle, Conditions.Abandoned)
+        vehicle.Status != InstanceStatus.Active || Is(vehicle, Conditions.Immobilized) || Is(vehicle, Conditions.Stunned) || Is(vehicle, Conditions.Shocked)
+        || Is(vehicle, Conditions.UnconfirmedKill) || Is(vehicle, Conditions.Abandoned)
         || (Is(vehicle, Conditions.Recalled) && !Is(vehicle, Conditions.StunRecovery));
 
     /// <summary>
@@ -557,7 +562,7 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.button-up: a BU counter is placed or removed only in its owner's MPh or APh (D5.33)");
         }
 
-        if (Is(vehicle, Conditions.Stunned) || Is(vehicle, Conditions.Recalled))
+        if (Is(vehicle, Conditions.Stunned) || Is(vehicle, Conditions.Recalled) || Is(vehicle, Conditions.Shocked) || Is(vehicle, Conditions.UnconfirmedKill))
         {
             return Refused(scope, label, expected, $"play.button-up: {id}'s crew is Stunned and stays BU this Player Turn (D5.34)");
         }

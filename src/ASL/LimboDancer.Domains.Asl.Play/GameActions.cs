@@ -264,7 +264,7 @@ public static class GameActions
         """);
 
     public static readonly ActionDescriptor FireOrdnance = Descriptor("asl.game.fire-ordnance", "Fire a Gun",
-        "In the PFPh, AFPh, or DFPh, a Gun manned by its crew fires HE at the enemy units of a Location on the Infantry Target Type, turning to bring the target into its Covered Arc if it must, as the reviewed Ordnance package resolves the To Hit DR, the hit's IFT attack, ROF, breakdown, and Acquisition, and only when every outcome the dice can reach is decided (C3.3, C3.32).",
+        "In the PFPh, AFPh, or DFPh, a Gun manned by its crew, or a tank's MA, fires HE at the enemy units of a Location on the Infantry Target Type, or AP, APCR, HEAT, or HE at one named enemy vehicle on the Vehicle Target Type, turning its barrel or turret to bring the target into its Covered Arc if it must, as the reviewed Ordnance package resolves the To Hit DR, the hit's IFT attack or To Kill DR, ROF, breakdown, and Acquisition, and only when every outcome the dice can reach is decided (C3.3, C3.31, C3.32, C7, D1.3).",
         PlayPermission, "asl.game.reviewed-ordnance-v1", """
         {
           "type": "object", "additionalProperties": false,
@@ -272,7 +272,26 @@ public static class GameActions
           "properties": {
             "gameId": { "type": "string" }, "attemptId": { "type": "string" },
             "expectedRevision": { "type": "integer", "minimum": 0 },
-            "gunId": { "type": "string" }, "target": { "type": "string" }
+            "gunId": { "type": "string" }, "target": { "type": "string" },
+            "targetVehicle": { "type": "string" },
+            "ammunition": { "type": "string", "enum": ["ap", "apcr", "heat", "he"] }
+          }
+        }
+        """, JsonSerializer.SerializeToElement(new
+        {
+            package = ScenarioA1OrdnancePackage.Identity.ToString()
+        }));
+
+    public static readonly ActionDescriptor RecoverShock = Descriptor("asl.game.recover-shock", "Roll for a Shocked AFV",
+        "In the RPh after it was placed, a Shocked AFV makes a dr (1 or 2 removes the Shock, 3 to 6 makes it an Unconfirmed Kill), and an Unconfirmed Kill makes one (1 to 3 removes it, 4 to 6 wrecks the AFV); the RPh does not end until each has (C7.42).",
+        PlayPermission, "asl.game.reviewed-ordnance-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "vehicleId"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "vehicleId": { "type": "string" }
           }
         }
         """, JsonSerializer.SerializeToElement(new
@@ -344,7 +363,7 @@ public static class GameActions
         get;
     } =
         [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding, DeclareOverrun, Fire, Rally, Repair, Move, PassFire, EndMove, Advance, Ambush, CloseCombat, TakePrisoner,
-            FireOrdnance, MoveVehicle, ButtonUp, Choose, Massacre];
+            FireOrdnance, RecoverShock, MoveVehicle, ButtonUp, Choose, Massacre];
 
     public static string VersionKey(Guid tenant, string game) => $"asl.game:{tenant:N}:{game}";
 

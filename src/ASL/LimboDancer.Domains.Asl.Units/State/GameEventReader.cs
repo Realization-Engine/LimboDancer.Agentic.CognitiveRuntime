@@ -186,6 +186,7 @@ public static class GameEventReader
                     {
                         SpecialRules = fields.StringList(payload, "specialRules", path),
                         ScenarioMonth = Month(fields.OptionalInteger(payload, "scenarioMonth", path), path, diagnostics),
+                        ScenarioYear = Year(fields.OptionalInteger(payload, "scenarioYear", path), path, diagnostics),
                     };
             case "phase-changed":
                 var nextTurn = fields.OptionalInteger(payload, "turn", path);
@@ -352,6 +353,13 @@ public static class GameEventReader
                 return repairUnit is null || repaired is null || repairRoll is null || repairNumber is null || repairResult is null
                     ? Missing(diagnostics, "A Repair record names its unit, SW, roll, Repair Number, and result.", path)
                     : new RepairAttempted(repairUnit, repaired, repairRoll, repairNumber.Value, repairResult);
+            case "shock-recovery-rolled":
+                var shocked = fields.RequiredString(payload, "vehicle", path);
+                var shockRoll = fields.RequiredString(payload, "roll", path);
+                var shockResult = fields.RequiredString(payload, "result", path);
+                return shocked is null || shockRoll is null || shockResult is null
+                    ? Missing(diagnostics, "A Shock recovery record names its vehicle, roll, and result.", path)
+                    : new ShockRecoveryRolled(shocked, shockRoll, shockResult);
             case "movement-step":
                 var stepTo = ReadLocation(payload, "to", path, fields, diagnostics);
                 var halfMf = fields.OptionalInteger(payload, "halfMf", path);
@@ -694,6 +702,17 @@ public static class GameEventReader
     {
         diagnostics.Add(UnitDiagnostic.Error(Code, message, path));
         return null;
+    }
+
+    private static int? Year(int? year, string path, List<UnitDiagnostic> diagnostics)
+    {
+        if (year is < 1939 or > 1945)
+        {
+            diagnostics.Add(UnitDiagnostic.Error(Code, $"'scenarioYear' {year} is not a war year from 1939 to 1945.", path));
+            return null;
+        }
+
+        return year;
     }
 
     private static int? Month(int? month, string path, List<UnitDiagnostic> diagnostics)

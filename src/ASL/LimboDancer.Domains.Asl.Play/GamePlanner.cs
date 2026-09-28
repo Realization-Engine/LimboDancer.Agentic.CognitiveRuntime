@@ -204,6 +204,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             "asl.game.fire" => PlanFire(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.rally" => PlanRally(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.repair" => PlanRepair(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
+            "asl.game.recover-shock" => PlanRecoverShock(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.move" => PlanMove(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.pass-fire" => PlanPassFire(scope, existing, attemptId, expected, label),
             "asl.game.end-move" => PlanEndMove(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
@@ -329,6 +330,12 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         {
             return Refused(scope, label, expected, $"play.declaration-pending: the entry attempt '{state.OpenAttempts[0].EventId}' by "
                 + $"{state.OpenAttempts[0].Unit} awaits the attacker's OVR declaration (A12.15, p. 78), so the phase cannot advance");
+        }
+
+        // C7.42 (ruling R7.8): the RPh does not end while a Shocked AFV or an Unconfirmed Kill owes its dr.
+        if (ShockRollsOwed(state).FirstOrDefault() is { } shocked)
+        {
+            return Refused(scope, label, expected, $"play.shock-recovery-pending: {shocked.Id} makes its Shock or Unconfirmed Kill dr before the RPh ends (C7.42)");
         }
 
         // A3.1 to A3.8 (p. 47): the eight phases in order; after the CCPh the other side's Player Turn begins, and a new
@@ -1360,6 +1367,12 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         {
             // B15: grain is a Hindrance June to September, so fire through grain needs the month.
             payload["scenarioMonth"] = JsonNode.Parse(month.GetRawText());
+        }
+
+        if (start.TryGetProperty("scenarioYear", out var year))
+        {
+            // C8.1, C8.3 (ruling R7.6): Special Ammunition is available by year.
+            payload["scenarioYear"] = JsonNode.Parse(year.GetRawText());
         }
         return true;
     }

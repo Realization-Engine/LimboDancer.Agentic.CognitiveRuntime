@@ -1,0 +1,102 @@
+{
+  "schemaVersion": "1.0.0",
+  "chart": "C7.31 AP To Kill Table, C7.32 APCR/APDS To Kill Table, C7.33 HEAT To Kill Table, C7.34 HE and Flame To Kill Table, C7.11 Armor Factor, C7.7 AFV Destruction Table, and the Unarmored Vehicle Destruction Table",
+  "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+  "physicalPdfPage": 701,
+  "boundary": "Every Basic TK# column of the AP, APCR/APDS, and HEAT tables with its gun sizes; the AP and APCR/APDS Case D range rows; the unarmored Final TK# lines; the HE table's gun-size bands for armored and unarmored targets (not FT, MOL, or DC); the AF scale; the Bomb/Ordnance Direct Fire column of the AFV Destruction Table and of the Unarmored Vehicle Destruction Table. The Aerial AF row, the FT, MOL, DC, MG, Indirect Fire, mine, and CC columns, and the Gun Destruction Table are outside this transcription.",
+  "reading": "Gun sizes are printed in columns above their Basic TK#; an entry in color applies to the nationalities its legend names (C7.31 notes): gold is Russian/Japanese, olive is the U.S. Grant gun on the AP table and U.S. on the APCR table, grey Italian, blue the British 88, yellow the Australian 88, green the Japanese Year-38 75*, pink the .50 cal MG, orange fighter MGs, red the ATR of the Russians, Finns, Japanese, and Allied and Axis Minors. Colors were read from the page's text layer (PyMuPDF span colors) and confirmed on a rendering. A Case D value of NA means the table gives none at that range.",
+  "ap": {
+    "basic": [
+      { "tk": 4, "guns": ["39F:fighter", "@MG"] },
+      { "tk": 5, "guns": ["42F:fighter", "12.7:.50-cal", "15", "ATR"] },
+      { "tk": 6, "guns": ["44F:fighter", "ATR:russian-finnish-japanese-minor", "20L"] },
+      { "tk": 7, "guns": ["20LL", "25LL", "37*"] },
+      { "tk": 8, "guns": ["37", "47*", "57*", "70*"] },
+      { "tk": 9, "guns": ["37L", "40", "57", "65*", "76*"] },
+      { "tk": 10, "guns": ["40L", "45L", "47", "75*"] },
+      { "tk": 11, "guns": ["37LL", "45LL", "47L", "50", "88*:australian"] },
+      { "tk": 12, "guns": ["75*:japanese-year-38", "76", "84*"] },
+      { "tk": 13, "guns": ["50L", "75:us-grant", "76L:russian-japanese", "88:british", "120*"] },
+      { "tk": 14, "guns": ["75", "105"] },
+      { "tk": 15, "guns": ["57L", "57LL"] },
+      { "tk": 16, "guns": ["76LL:russian-japanese"] },
+      { "tk": 17, "guns": ["75L", "76L", "80L", "83L", "85L", "150*", "152*"] },
+      { "tk": 19, "guns": ["77L", "200L"] },
+      { "tk": 20, "guns": ["90L:italian", "88L"] },
+      { "tk": 21, "guns": ["90L", "105L", "150", "152", "155"] },
+      { "tk": 23, "guns": ["75LL", "76LL"] },
+      { "tk": 25, "guns": ["122L"] },
+      { "tk": 27, "guns": ["88LL", "100L", "120L"] },
+      { "tk": 28, "guns": ["150L", "155L"] },
+      { "tk": 32, "guns": ["140L"] },
+      { "tk": 33, "guns": ["128L", "170L"] }
+    ],
+    "caseDRanges": ["0-1", "2", "3-6", "7-12", "13-18", "19-24", "25-30", "31-36", "37-42", "43-48", "49-54", "55-60", "61-66", "67-72", "73-78", "79+"],
+    "caseD": {
+      "atMost25mm": [2, 1, 1, 0, 0, -1, -2, -3, -4, -5, "NA", "NA", "NA", "NA", "NA", "NA"],
+      "37to57mm": [1, 1, 0, 0, 0, -1, -2, -2, -3, -4, -4, -5, "NA", "NA", "NA", "NA"],
+      "atLeast65mm": [1, 0, 0, 0, 0, -1, -1, -2, -2, -3, -3, -4, -4, -5, -5, "NA"]
+    },
+    "unarmoredFinal": { "note": "Double if Critical Hit; IFE/MG to 15mm use the Vehicle line on the IFT", "ATR-28mm": 7, "37-57mm": 8, "65-84mm": 9, "85-95mm": 10, "100+mm": 11 }
+  },
+  "apcr": {
+    "basic": [
+      { "tk": 10, "guns": ["37L"] },
+      { "tk": 12, "guns": ["28LL", "45L"] },
+      { "tk": 13, "guns": ["45LL", "47L"] },
+      { "tk": 14, "guns": ["40LL", "50", "76L:russian"] },
+      { "tk": 17, "guns": ["50L"] },
+      { "tk": 18, "guns": ["57LL", "D57L", "76LL:russian"] },
+      { "tk": 19, "guns": ["85L"] },
+      { "tk": 20, "guns": ["75L", "76L"] },
+      { "tk": 22, "guns": ["76L:us"] },
+      { "tk": 23, "guns": ["88L"] },
+      { "tk": 25, "guns": ["D76LL"] },
+      { "tk": 27, "guns": ["90L"] }
+    ],
+    "unarmored": "Use AP To Kill Table",
+    "caseDRanges": ["0-1", "2", "3-6", "7-12", "13-18", "19-24", "25-30", "31-36", "37-42", "43-48", "49+"],
+    "caseD": {
+      "apcrAtMost57mm": [3, 2, 1, 0, -2, -4, -6, "NA", "NA", "NA", "NA"],
+      "apcrAtLeast75mm": [3, 2, 1, 0, -1, -3, -4, -5, -6, -7, "NA"],
+      "apds": [1, 0, 0, 0, 0, 0, -1, -2, -3, -4, "NA"]
+    }
+  },
+  "heat": {
+    "basic": [
+      { "tk": 11, "guns": ["57", "65", "94"] },
+      { "tk": 12, "guns": ["70"] },
+      { "tk": 13, "guns": ["BAZ43", "75", "76"] },
+      { "tk": 14, "guns": ["100"] },
+      { "tk": 15, "guns": ["PIAT", "105", "114"] },
+      { "tk": 16, "guns": ["BAZ44+", "95"] },
+      { "tk": 17, "guns": ["122"] },
+      { "tk": 21, "guns": ["150"] },
+      { "tk": 22, "guns": ["PFk (Aug43)"] },
+      { "tk": 26, "guns": ["PSK (Sept43)", "37", "40", "47"] },
+      { "tk": 31, "guns": ["PF (Oct43)"] }
+    ],
+    "unarmoredFinal": 11,
+    "unarmoredFinalCriticalHit": 22,
+    "caseD": "NA"
+  },
+  "he": {
+    "bands": ["20+", "30+", "40+", "50+", "70+", "80+", "100+", "120+", "150+"],
+    "armoredBasic": [3, 4, 5, 6, 7, 8, 10, 12, 16],
+    "unarmoredFinal": [6, 8, 9, 10, 12, 14, 16, 18, 20],
+    "notes": "Case D NA; the unarmored value is doubled on a Critical Hit"
+  },
+  "armorFactors": ["0*", 1, 2, 3, 4, 6, 8, 11, 14, 18, 26],
+  "afvDestructionDirectFire": [
+    { "finalDr": "<= half TK#", "result": "burn", "note": "A: -1 DRM to the Final To Kill DR for Burning Wreck determination only if the AFV has a red CS#" },
+    { "finalDr": "< TK#", "result": "eliminated" },
+    { "finalDr": "= TK#", "result": "immobilized on a hull hit, Shock on a turret hit" },
+    { "finalDr": "HE 1 > Final TK#", "result": "immobilized on a hull hit, Shock on a turret hit" },
+    { "finalDr": "non-HE (HEAT included) 1 > Final TK#", "result": "possible Shock" }
+  ],
+  "unarmoredDestructionDirectFire": [
+    { "finalDr": "<= half TK#", "result": "burn" },
+    { "finalDr": "< TK#", "result": "eliminated" },
+    { "finalDr": "= TK#", "result": "immobilized" }
+  ]
+}

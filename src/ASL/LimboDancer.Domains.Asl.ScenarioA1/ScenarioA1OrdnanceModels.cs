@@ -20,13 +20,50 @@ public sealed record OrdnanceShot(
     bool? ElevationAllowed,
     int? Acquisition,
     FireAttack? Hit,
-    OrdnanceRolls? Rolls);
+    OrdnanceRolls? Rolls)
+{
+    /// <summary>The tank whose MA fires (ruling R7.10); null for a Gun manned by its crew.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public OrdnanceVehicleFirer? Vehicle
+    {
+        get; init;
+    }
+
+    /// <summary>The vehicle a Vehicle Target Type shot fires at (C3.31; ruling R7.2); null for the Infantry Target Type.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public OrdnanceVehicleTarget? VehicleTarget
+    {
+        get; init;
+    }
+
+    /// <summary>The ammunition declared (C8.1; ruling R7.6): <c>ap</c>, <c>apcr</c>, <c>heat</c>, or <c>he</c>; null is HE.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Ammunition
+    {
+        get; init;
+    }
+
+    /// <summary>The scenario year, which decides the special ammunition's Depletion Number (C8.9, C8.91); null when the game names none.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? ScenarioYear
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// The firing Gun (C2.1): its reviewed catalog definition, whether it is malfunctioned, its shots so far this fire phase, whether
 /// it still may fire (its Multiple ROF kept, C2.24), and whether it carries a Prep or Final Fire counter from this Player Turn (A3.5, C5.2).
 /// </summary>
-public sealed record OrdnanceGun(string? GunId, string? DefinitionId, bool? Malfunctioned, int? ShotsThisPhase, bool? RateOfFireKept, bool? FiredThisPlayerTurn);
+public sealed record OrdnanceGun(string? GunId, string? DefinitionId, bool? Malfunctioned, int? ShotsThisPhase, bool? RateOfFireKept, bool? FiredThisPlayerTurn)
+{
+    /// <summary>The special ammunition the Gun has run out of this scenario (C8.9): <c>apcr</c> or <c>heat</c>; null is none.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<string>? Depleted
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// The Infantry manning the Gun (A21.13): its crew, which must be Good Order to fire it; a concealed crew loses its "?" by firing
@@ -47,7 +84,36 @@ public sealed record OrdnanceCrew(string? UnitId, string? DefinitionId, bool? Br
 /// dr per target unit when a Critical Hit falls among several (C3.74), and the IFT rolls of the normal hit and of the Critical Hit.
 /// </summary>
 public sealed record OrdnanceRolls(IReadOnlyList<int>? ToHit, int? Subsequent, IReadOnlyDictionary<string, int>? CriticalSelection, FireRolls? Hit,
-    FireRolls? CriticalHit);
+    FireRolls? CriticalHit)
+{
+    /// <summary>The To Kill DR (C7.1).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<int>? ToKill
+    {
+        get; init;
+    }
+
+    /// <summary>The crew's NTC of a possible Shock (C7.41).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<int>? ShockCheck
+    {
+        get; init;
+    }
+
+    /// <summary>The crew's Immobilization TC (D5.5).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<int>? CrewCheck
+    {
+        get; init;
+    }
+
+    /// <summary>The Crew Survival DR (D5.6).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<int>? CrewSurvival
+    {
+        get; init;
+    }
+}
 
 /// <summary>The To Hit arithmetic (C3.3, C4, C5, C6): Basic and Modified TH#, the DRM, the Final DR, and what it achieved.</summary>
 public sealed record OrdnanceToHit(
@@ -96,6 +162,23 @@ public sealed record OrdnanceResolution(
         get; init;
     }
 
+    /// <summary>The To Kill resolution of a Vehicle Target Type hit (C7; ruling R7.5); null otherwise.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public OrdnanceKill? Kill
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The special ammunition's use (C8.9): <c>used</c>, <c>depleted</c> (used and run out), or <c>none</c> (there was none, so the Gun did
+    /// not fire); null for AP and HE.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? AmmunitionUse
+    {
+        get; init;
+    }
+
     /// <summary>The unit a Critical Hit among several targets fell on by Random Selection (C3.74); null otherwise.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? CriticalTarget
@@ -119,4 +202,23 @@ public sealed record GunDefinition(
     int Breakdown,
     int? RangeMaximum,
     bool NoHe,
-    bool Mount360);
+    bool Mount360)
+{
+    /// <summary>Whether it may not fire AP (C2.21); false for a Gun whose listing does not say so.</summary>
+    public bool NoAp
+    {
+        get; init;
+    }
+
+    /// <summary>Its special ammunition as the counter lists it (C8.9): items such as <c>H7</c> or <c>A4/1941</c>.</summary>
+    public IReadOnlyList<string> SpecialAmmo
+    {
+        get; init;
+    } = [];
+
+    /// <summary>The MA type of a tank's gun (D1.3); null for a Gun.</summary>
+    public string? MaType
+    {
+        get; init;
+    }
+}

@@ -17,7 +17,7 @@ public sealed partial class GamePlanner
 
     /// <summary>Whether a unit is a Good Order enemy ground unit that can see (A12.2): Good Order Personnel, or a vehicle whose crew is not Stunned or Recalled.</summary>
     private bool Watching(UnitInstance unit) => unit.Status == InstanceStatus.Active
-        && (LiveFire.IsVehicle(unit) ? !Is(unit, Conditions.Stunned) && !Is(unit, Conditions.Recalled) && !Is(unit, Conditions.Abandoned)
+        && (LiveFire.IsVehicle(unit) ? !Is(unit, Conditions.Stunned) && !Is(unit, Conditions.Shocked) && !Is(unit, Conditions.UnconfirmedKill) && !Is(unit, Conditions.Recalled) && !Is(unit, Conditions.Abandoned)
             : vocabulary.IsA(unit.Kind, "asl:personnel") && !Is(unit, Conditions.Broken) && !Is(unit, Conditions.Berserk) && !Is(unit, Conditions.Captured)
                 && !Is(unit, Conditions.Melee));
 

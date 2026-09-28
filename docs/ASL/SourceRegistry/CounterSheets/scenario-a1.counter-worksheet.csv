@@ -732,3 +732,89 @@ sheet,counter,face,attribute,value,transcriber,reviewer,note
 ,attacker-truck,front,asl:cs-passengers-only,,,,yes or no
 ,defender-truck,front,asl:cs-passengers-only,,,,yes or no
 ,attacker-halftrack,front,asl:cs-passengers-only,,,,yes or no
+,attacker-tank,counter,kind,,,,expected asl:vehicle
+,attacker-tank,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,attacker-tank,front,identity,,,,"identity as printed, or not-printed"
+,attacker-tank,front,designation,,,,"as printed, or not-printed"
+,attacker-tank,front,ground-pressure,,,,"low or high, or not-printed (D1.4)"
+,attacker-tank,front,movement-type,,,,"motorcycle, armored-car, fully-tracked, half-tracked, or truck (D1.1)"
+,attacker-tank,front,movement-points,,,,"whole number, or not-printed"
+,attacker-tank,front,amphibious-mp,,,,"whole number, or not-printed"
+,attacker-tank,front,af-front,,,,"whole number, or not-printed"
+,attacker-tank,front,af-side,,,,"whole number, or not-printed"
+,attacker-tank,front,turret-af-front,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,attacker-tank,front,turret-af-side,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,attacker-tank,front,target-size,,,,"very-small, small, large, very-large, or not-printed (D1.7)"
+,attacker-tank,front,ma-type,,,,"t, st, rst, 1mt, or nt, or not-printed (D1.3)"
+,attacker-tank,front,ma-weapon,,,,"mg, ft, atr, or aamg, or not-printed (D1.3)"
+,attacker-tank,front,caliber,,,,"whole number, or not-printed"
+,attacker-tank,front,caliber-suffix,,,,"star, l, or ll, or not-printed"
+,attacker-tank,front,rate-of-fire,,,,"whole number, or not-printed"
+,attacker-tank,front,breakdown,,,,"whole number, or not-printed"
+,attacker-tank,front,special-ammo,,,,"codes as printed, space-separated, or not-printed"
+,attacker-tank,front,sa-mount,,,,"turret or bow, or not-printed"
+,attacker-tank,front,sa-caliber,,,,"whole number, or not-printed"
+,attacker-tank,front,towing,,,,"whole number, or not-printed"
+,attacker-tank,front,passenger-capacity,,,,"whole number, or not-printed"
+,attacker-tank,front,bmg,,,,"whole number, or not-printed"
+,attacker-tank,front,cmg,,,,"whole number, or not-printed"
+,attacker-tank,front,aamg,,,,"whole number, or not-printed"
+,attacker-tank,front,hull-rear-mg,,,,"whole number, or not-printed"
+,attacker-tank,front,turret-rear-mg,,,,"whole number, or not-printed"
+,attacker-tank,front,vehicle-ft-mount,,,,"bow, turret, or side, or not-printed"
+,attacker-tank,front,vehicle-ft-firepower,,,,"whole number, or not-printed"
+,attacker-tank,front,vehicle-ft-removal,,,,"whole number, or not-printed"
+,attacker-tank,wreck,crew-survival,,,,"whole number, or not-printed"
+,attacker-tank,front,asl:mechanically-unreliable,,,,yes or no
+,attacker-tank,front,asl:unarmored,,,,yes or no
+,attacker-tank,front,asl:partially-armored,,,,yes or no
+,attacker-tank,front,asl:rear-turret-unarmored,,,,yes or no
+,attacker-tank,front,asl:open-topped,,,,yes or no
+,attacker-tank,front,asl:no-ap,,,,yes or no
+,attacker-tank,front,asl:no-he,,,,yes or no
+,attacker-tank,front,asl:fixed-bmg,,,,yes or no
+,attacker-tank,front,asl:vehicle-ft-range-2,,,,yes or no
+,attacker-tank,front,asl:cs-passengers-only,,,,yes or no
+,defender-tank,counter,kind,,,,expected asl:vehicle
+,defender-tank,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,defender-tank,front,identity,,,,"identity as printed, or not-printed"
+,defender-tank,front,designation,,,,"as printed, or not-printed"
+,defender-tank,front,ground-pressure,,,,"low or high, or not-printed (D1.4)"
+,defender-tank,front,movement-type,,,,"motorcycle, armored-car, fully-tracked, half-tracked, or truck (D1.1)"
+,defender-tank,front,movement-points,,,,"whole number, or not-printed"
+,defender-tank,front,amphibious-mp,,,,"whole number, or not-printed"
+,defender-tank,front,af-front,,,,"whole number, or not-printed"
+,defender-tank,front,af-side,,,,"whole number, or not-printed"
+,defender-tank,front,turret-af-front,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,defender-tank,front,turret-af-side,,,,"superior or inferior, or not-printed (D1.63-.64)"
+,defender-tank,front,target-size,,,,"very-small, small, large, very-large, or not-printed (D1.7)"
+,defender-tank,front,ma-type,,,,"t, st, rst, 1mt, or nt, or not-printed (D1.3)"
+,defender-tank,front,ma-weapon,,,,"mg, ft, atr, or aamg, or not-printed (D1.3)"
+,defender-tank,front,caliber,,,,"whole number, or not-printed"
+,defender-tank,front,caliber-suffix,,,,"star, l, or ll, or not-printed"
+,defender-tank,front,rate-of-fire,,,,"whole number, or not-printed"
+,defender-tank,front,breakdown,,,,"whole number, or not-printed"
+,defender-tank,front,special-ammo,,,,"codes as printed, space-separated, or not-printed"
+,defender-tank,front,sa-mount,,,,"turret or bow, or not-printed"
+,defender-tank,front,sa-caliber,,,,"whole number, or not-printed"
+,defender-tank,front,towing,,,,"whole number, or not-printed"
+,defender-tank,front,passenger-capacity,,,,"whole number, or not-printed"
+,defender-tank,front,bmg,,,,"whole number, or not-printed"
+,defender-tank,front,cmg,,,,"whole number, or not-printed"
+,defender-tank,front,aamg,,,,"whole number, or not-printed"
+,defender-tank,front,hull-rear-mg,,,,"whole number, or not-printed"
+,defender-tank,front,turret-rear-mg,,,,"whole number, or not-printed"
+,defender-tank,front,vehicle-ft-mount,,,,"bow, turret, or side, or not-printed"
+,defender-tank,front,vehicle-ft-firepower,,,,"whole number, or not-printed"
+,defender-tank,front,vehicle-ft-removal,,,,"whole number, or not-printed"
+,defender-tank,wreck,crew-survival,,,,"whole number, or not-printed"
+,defender-tank,front,asl:mechanically-unreliable,,,,yes or no
+,defender-tank,front,asl:unarmored,,,,yes or no
+,defender-tank,front,asl:partially-armored,,,,yes or no
+,defender-tank,front,asl:rear-turret-unarmored,,,,yes or no
+,defender-tank,front,asl:open-topped,,,,yes or no
+,defender-tank,front,asl:no-ap,,,,yes or no
+,defender-tank,front,asl:no-he,,,,yes or no
+,defender-tank,front,asl:fixed-bmg,,,,yes or no
+,defender-tank,front,asl:vehicle-ft-range-2,,,,yes or no
+,defender-tank,front,asl:cs-passengers-only,,,,yes or no

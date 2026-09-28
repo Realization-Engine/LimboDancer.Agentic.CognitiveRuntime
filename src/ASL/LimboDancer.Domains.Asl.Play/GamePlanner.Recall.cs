@@ -122,14 +122,14 @@ public sealed partial class GamePlanner
     public static bool MayStartVehicleMove(UnitInstance vehicle)
     {
         ArgumentNullException.ThrowIfNull(vehicle);
-        return MustLeave(vehicle) || new[] { Conditions.Immobilized, Conditions.Stunned, Conditions.Recalled, Conditions.PrepFire }.All(condition => !Is(vehicle, condition));
+        return MustLeave(vehicle) || new[] { Conditions.Immobilized, Conditions.Stunned, Conditions.Shocked, Conditions.UnconfirmedKill, Conditions.Recalled, Conditions.PrepFire }.All(condition => !Is(vehicle, condition));
     }
 
     /// <summary>Whether an AFV's crew may place or remove its BU counter by its state (D5.33, D5.34): not Stunned, and not Recalled until Recall; +1.</summary>
     public static bool MayChangeExposure(UnitInstance vehicle)
     {
         ArgumentNullException.ThrowIfNull(vehicle);
-        return !Is(vehicle, Conditions.Stunned) && (!Is(vehicle, Conditions.Recalled) || Is(vehicle, Conditions.StunRecovery));
+        return !Is(vehicle, Conditions.Stunned) && !Is(vehicle, Conditions.Shocked) && !Is(vehicle, Conditions.UnconfirmedKill) && (!Is(vehicle, Conditions.Recalled) || Is(vehicle, Conditions.StunRecovery));
     }
 
     /// <summary>The map edge an exit leaves by: top, bottom, left, or right; null when the Location is not an edge hex that way.</summary>

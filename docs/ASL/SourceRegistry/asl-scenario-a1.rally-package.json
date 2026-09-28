@@ -4,9 +4,9 @@
   "domainId": "asl",
   "packageId": "scenario-a1-rally",
   "declaredUse": "Read-only conclusions for a declared Rally attempt by a broken unit of the reviewed Scenario A1 catalog: the DRM, the Final DR against the broken Morale Level, and the effect, including Fate, under the user's rulings of 2026-09-26 (ASL Unit Rally and Fire Extensions Plan, R19.1 to R19.10 and R0.2); with Heat of Battle and Leader Creation after an Original 2 (Deviations, Ordnance, and Vehicles Plan, R27.1 to R28.8 and R30.1 to R30.7).",
-  "caseMatrixSha256": "23a495567b198769e126d2dd0293294ceafae189f4854ca3fad76de5085a7e0a",
+  "caseMatrixSha256": "943d38433cfd0cc6e00a60f38f834aab712854686ca324fa2de88b8203334d4f",
   "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
-  "catalogSha256": "a1c7fd2ca904a9e4832d1c6cd30c8e69c9a528e322b69cfa914ea4f16c0c63cb",
+  "catalogSha256": "5cec641bf995f44e0720c381efe9be0a7118a5b9af7fd5cd51ebc204e9b4a6be",
   "sourceFragments": [
     {
       "ruleId": "A3.1",
@@ -392,5 +392,5 @@
     "Commissars created by NKVD Field Promotion (A25.25)",
     "prisoners exchanged for Unarmed counters (A20.5), and prisoner escape (A20.55)"
   ],
-  "priorRallyPackageManifestSha256": "9a1f5173c10c54ca75eb187d9426acf7ba33f179c371e8bd5e28ca90e1e5e7a7"
+  "priorRallyPackageManifestSha256": "f8e874292f13730edb200a2f8ac0413df194e22052c5cc570e2abee2ecdd55fa"
 }

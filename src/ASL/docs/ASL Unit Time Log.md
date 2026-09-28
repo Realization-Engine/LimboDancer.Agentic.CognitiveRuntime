@@ -151,3 +151,31 @@ Pass 6 actual: 1:08 (00:09 to 01:17) against the estimate of 4:35.
 | Overhead: full suite, Docker check, merge | | 0:14 |
 | Overhead total (the two reviews ran beside the build) | 1:15 | 0:24 |
 | **Total** | **4:35** | **1:08** |
+
+## Pass 7: armor
+
+Estimate: 5:15 (build 4:00) in the [ASL Unit Backlog Passes Plan](<ASL Unit Backlog Passes Plan.md>). Kickoff 2026-09-28 01:26. Branch `feature/asl-backlog-pass-7`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Reading (plan, Chapter H listings and Key, C3.3 to C3.9, C4 to C8, D1.3 to D1.7, D3.1 to D3.2, D5.2 to D5.7, the C3 and C7 charts) | 01:26 | 01:31 | 0:05 | Listings, To Hit and To Kill charts rendered; the end time is an estimate between two clock reads |
+| Catalog 1.6.0: PzKpfw IIIH and T-34 M41 (86 rows), source record, manifest, synthetic tanks, version references | 01:31 | 01:37 | 0:06 | |
+| Review stage: C3 Vehicle row and C7 To Kill transcriptions, rulings R7.1 to R7.12, armor reference and calculator, vocabulary 1.11.0 (Shock, UK) | 01:37 | 01:47 | 0:10 | The end time is an estimate between two clock reads |
+| Source comparison (50 fragments; the tool's markup stripping fixed for escaped dice signs), package revision of all four packages for catalog 1.6.0, package tests | 01:47 | 02:21 | 0:34 | |
+| Referee agent (13 findings) and fixes: improbable hit location, "+1" counter, Motion and moved firers, depletion above the number, unarmored crew TC, crew morale refusal, rulings and matrix | 02:22 | 02:35 | 0:13 | The agent ran while the live stage began |
+| Live stage: scenario year, turret facings, depleted ammunition, Shock recovery action and record, tank MA and vehicle-target shots, To Kill effects, gate readback, Play page, live tests | 02:35 | 02:43 | 0:08 | |
+| Full local suite (catalog and action lists, rendering goldens for SHK and UK), Studio page test, visual check in the Studio | 02:43 | 02:49 | 0:06 | The pane did not draw; the check read the page text and the map's accessible names |
+| Documents: design, requirements (review and backlog wait for the table player) | 02:49 | 02:52 | 0:03 | |
+| Table player agent (11 findings) and fixes: Shocked and UK stop a vehicle everywhere, Abandoned tanks, a tank's "?" and Acquisition, malfunction on missing ammunition, crew check exemptions, ammunition list, Shock records | 02:52 | 02:56 | 0:04 | The agent ran from 02:44 during the suite and the visual check |
+| Documents: review, backlog section 17 and four deviations, rulings R7.8 to R7.10, catalog design 9.7 | 02:56 | 02:58 | 0:02 | |
+| Full local suite before the commit (1,782 tests pass, 30 skipped) | 02:58 | 03:05 | 0:07 | |
+| Commit, Docker Linux check (every project exits 0), merge, push | 03:05 | 03:12 | 0:07 | |
+
+Pass 7 total: 01:26 to 03:12, 1:46 against the estimate of 5:15 (build 4:00).
+
+| Task (plan estimate) | Actual | Where it was logged |
+|---|---|---|
+| 7.1 Tank counters (0:40) | 0:06 | Catalog 1.6.0 |
+| 7.2 Vehicle Target Type and 7.3 To Kill (2:10) | 0:44 | Review stage code (0:10) and source comparison, package revision, package tests (0:34) |
+| 7.4 Main armament fire and 7.5 Crew survival (1:10) | 0:08 | Live stage |
+| Overhead (1:15) | 0:48 | Reading, referee and table player with their fixes, suite, visual check, documents, merge gate |

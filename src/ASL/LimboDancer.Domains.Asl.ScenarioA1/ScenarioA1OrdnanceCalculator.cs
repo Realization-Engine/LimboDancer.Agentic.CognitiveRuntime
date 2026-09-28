@@ -29,7 +29,8 @@ public static class ScenarioA1OrdnanceCalculator
         }
 
         var undecided = Undecided(shot);
-        return undecided.Count != 0 ? Refused(OrdnanceResolution.Indeterminate, undecided) : Run(shot, reference);
+        return undecided.Count != 0 ? Refused(OrdnanceResolution.Indeterminate, undecided)
+            : shot.VehicleTarget is not null ? ScenarioA1ArmorCalculator.Run(shot, reference.Guns[shot.Gun!.DefinitionId!], reference) : Run(shot, reference);
     }
 
     /// <summary>
@@ -48,6 +49,12 @@ public static class ScenarioA1OrdnanceCalculator
         if (first.Disposition != OrdnanceResolution.Indeterminate || first.Reasons is not [Prefix + "roll-missing:toHit"])
         {
             return first.Reasons;
+        }
+
+        // A Vehicle Target Type shot has no IFT attack to precheck (C3.31).
+        if (shot.VehicleTarget is not null)
+        {
+            return [];
         }
 
         var gun = reference.Guns[shot.Gun!.DefinitionId!];
@@ -108,6 +115,20 @@ public static class ScenarioA1OrdnanceCalculator
         Need(shot.Hit?.Los?.HindranceAttributed, "hit.los.hindranceAttributed");
         Need(shot.Hit?.Los?.GrainInLos, "hit.los.grainInLos");
         Need(shot.Hit?.SameLevel, "hit.sameLevel");
+        if (shot.VehicleTarget is not null)
+        {
+            ScenarioA1ArmorCalculator.Missing(shot, Need);
+        }
+
+        if (shot.Vehicle is { } vehicle)
+        {
+            Need(vehicle.ButtonedUp, "vehicle.buttonedUp");
+            Need(vehicle.InMotion, "vehicle.inMotion");
+            Need(vehicle.Stunned, "vehicle.stunned");
+            Need(vehicle.Shocked, "vehicle.shocked");
+            Need(vehicle.Recalled, "vehicle.recalled");
+        }
+
         return missing;
     }
 
@@ -123,11 +144,21 @@ public static class ScenarioA1OrdnanceCalculator
         // C2.21, C2.22, C2.3, C3.33: a Gun of the firing side that can fire HE; mortars (the Area Target Type), RCL, and 360-degree
         // mounts are not reviewed.
         var gunShot = shot.Gun!;
-        if (!reference.Guns.TryGetValue(gunShot.DefinitionId!, out var gun) || gun.Nationality != shot.FiringNationality || gun.NoHe || gun.Mount360
-            || !AdmittedGunTypes.Contains(gun.GunType))
+        if (!reference.Guns.TryGetValue(gunShot.DefinitionId!, out var gun) || gun.Nationality != shot.FiringNationality || gun.Mount360
+            || !(shot.Vehicle is null ? AdmittedGunTypes.Contains(gun.GunType) : gun.GunType == "vehicle")
+            || (shot.VehicleTarget is null && (gun.NoHe || shot.Ammunition is not (null or "he"))))
         {
             outside.Add(Prefix + "gun-outside");
             return outside;
+        }
+
+        // D5.34, C7.42, D5.341 (ruling R7.10): a Stunned, Shocked, or Recalled AFV does not fire; D2.42, C5.35: a firer in Motion needs Case C4,
+        // and C5.3: one that entered a new hex in its MPh needs Case C in the AFPh, neither built; D1.321, D1.322: an RST or 1MT MA fires only BU.
+        if (shot.Vehicle is { } firing && (firing.Stunned == true || firing.Shocked == true || firing.Recalled == true || firing.InMotion == true
+            || (phase == "AFPh" && firing.Moved == true)
+            || (gun.MaType is "rst" or "1mt" && firing.ButtonedUp != true)))
+        {
+            outside.Add(Prefix + "vehicle-fire-outside");
         }
 
         if (gunShot.Malfunctioned == true)
@@ -137,7 +168,8 @@ public static class ScenarioA1OrdnanceCalculator
 
         // A21.13, C2.1: its own nationality's Good Order crew mans it; C5.8's non-qualified use is not reviewed, nor a concealed crew.
         var crew = shot.Crew!;
-        if (reference.Fire.Definitions.GetValueOrDefault(crew.DefinitionId!) is not { Kind: "asl:crew" } crewDefinition || crewDefinition.Nationality != gun.Nationality
+        if ((shot.Vehicle is null ? reference.Fire.Definitions.GetValueOrDefault(crew.DefinitionId!) is not { Kind: "asl:crew" } crewDefinition
+                || crewDefinition.Nationality != gun.Nationality : crew.DefinitionId != gun.Id)
             || crew.Broken == true || crew.Berserk == true)
         {
             outside.Add(Prefix + "crew-outside");
@@ -177,6 +209,23 @@ public static class ScenarioA1OrdnanceCalculator
             outside.Add(Prefix + "los-blocked");
         }
 
+        if (shot.VehicleTarget is not null)
+        {
+            ScenarioA1ArmorCalculator.Outside(shot, gun, reference, outside);
+            if (hit.TargetLocationId != shot.TargetLocationId || hit.Phase != shot.Phase || hit.FiringSide != shot.FiringSide || hit.Firers is { Count: > 0 }
+                || hit.Director is not null || hit.FireKind is not null || hit.OrdnanceHit is not null)
+            {
+                outside.Add(Prefix + "target-outside");
+            }
+
+            if (shot.Rolls is { } vehicleRolls && Malformed(vehicleRolls))
+            {
+                outside.Add(Prefix + "roll-malformed");
+            }
+
+            return outside.Distinct(StringComparer.Ordinal).ToList();
+        }
+
         // C3.32: the Infantry Target Type attacks the in-LOS enemy units of the target Location; one with no unit is not reviewed.
         if (hit.Targets!.Any(item => item.Dummy != true && reference.Fire.Definitions.GetValueOrDefault(item.DefinitionId ?? string.Empty)?.Nationality == gun.Nationality))
         {
@@ -189,13 +238,19 @@ public static class ScenarioA1OrdnanceCalculator
             outside.Add(Prefix + "target-outside");
         }
 
-        if (shot.Rolls is { } rolls && (rolls.ToHit is { } dice && (dice.Count != 2 || dice.Any(die => die is < 1 or > 6))
-            || rolls.Subsequent is < 1 or > 6 || rolls.CriticalSelection?.Values.Any(dr => dr is < 1 or > 6) == true))
+        if (shot.Rolls is { } rolls && Malformed(rolls))
         {
             outside.Add(Prefix + "roll-malformed");
         }
 
         return outside.Distinct(StringComparer.Ordinal).ToList();
+    }
+
+    private static bool Malformed(OrdnanceRolls rolls)
+    {
+        static bool Dice(IReadOnlyList<int>? dice) => dice is not null && (dice.Count != 2 || dice.Any(die => die is < 1 or > 6));
+        return Dice(rolls.ToHit) || rolls.Subsequent is < 1 or > 6 || rolls.CriticalSelection?.Values.Any(dr => dr is < 1 or > 6) == true
+            || Dice(rolls.ToKill) || Dice(rolls.ShockCheck) || Dice(rolls.CrewCheck) || Dice(rolls.CrewSurvival);
     }
 
     private static List<string> Undecided(OrdnanceShot shot)
@@ -218,14 +273,14 @@ public static class ScenarioA1OrdnanceCalculator
         // C6.2: Case K applies to each concealed target alone, so a Location mixing concealed and Known units would need two To
         // Hit results; the review leaves that out.
         var concealed = hit.Targets!.Select(Concealed).Distinct().ToArray();
-        if (concealed.Length > 1)
+        if (shot.VehicleTarget is null && concealed.Length > 1)
         {
             undecided.Add(Prefix + "concealment-mixed");
         }
 
         // A12.14: a concealed crew that fires its Gun loses "?" in the LOS of a Good Order enemy ground unit within 16 hexes; the package
         // sees only the target Location, so it decides only when one of its units is Good Order within that range, as for Infantry fire.
-        if (shot.Crew!.Concealed == true && !CrewRevealed(shot))
+        if (shot.Crew!.Concealed == true && shot.Vehicle is null && !CrewRevealed(shot))
         {
             undecided.Add(Prefix + "concealment-unreviewed:crew");
         }
@@ -279,8 +334,9 @@ public static class ScenarioA1OrdnanceCalculator
         var woods = shot.FirerInWoodsOrBuilding == true;
         if (shot.HexspinesToTurn is int turned && turned > 0)
         {
-            // C5.1, C5.11: a non-turreted Gun adds +3 for the first hexspine and +1 for each other, doubled in woods or a building.
-            var caseA = (3 + turned - 1) * (woods ? 2 : 1);
+            // C5.1, C5.11: a non-turreted Gun adds +3 for the first hexspine and +1 for each other, a turret less (ruling R7.10), doubled in
+            // woods or a building.
+            var caseA = ScenarioA1ArmorCalculator.CaseA(gun.MaType, turned) * (woods ? 2 : 1);
             drm.Add(new FireModifier("case-a:" + turned.ToString(System.Globalization.CultureInfo.InvariantCulture), caseA, "C5.1"));
         }
 
@@ -298,6 +354,12 @@ public static class ScenarioA1OrdnanceCalculator
         if (shot.Crew.Cx == true)
         {
             drm.Add(new FireModifier("cx", 1, "A4.51"));
+        }
+
+        // C5.9 (ruling R7.10): a BU AFV firing its MA.
+        if (shot.Vehicle?.ButtonedUp == true)
+        {
+            drm.Add(new FireModifier("case-i", 1, "C5.9"));
         }
 
         var concealedTarget = hit.Targets!.All(Concealed);
@@ -391,7 +453,7 @@ public static class ScenarioA1OrdnanceCalculator
         // C2.24: an Original colored dr at most the ROF keeps the Multiple ROF; C2.5: a non-vehicular NT Gun's ROF is one lower after a
         // CA change; C5.4: a pinned crew forfeits it; C5.2: none in the AFPh.
         var rof = gun.RateOfFire ?? 0;
-        if (shot.HexspinesToTurn > 0)
+        if (shot.HexspinesToTurn > 0 && shot.Vehicle is null)
         {
             rof--;
         }
