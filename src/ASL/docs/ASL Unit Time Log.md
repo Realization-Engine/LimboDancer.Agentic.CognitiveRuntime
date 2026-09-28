@@ -241,4 +241,7 @@ No plan estimate: the user asked for it after pass 9 (2026-09-28), with manufact
 | Live stage: live facts, planner, X# removal, projector, Play page, live tests; referee and table player agents started | 07:55 | 07:58 | 0:03 | |
 | Documents; referee (10 findings) and table player (8 findings) fixes with tests; visual check in the Studio | 07:58 | 08:10 | 0:12 | The agents ran from 07:55 and 07:58 |
 | Full local suite before the commit (2,100 tests pass, 30 skipped) | 08:10 | 08:22 | 0:12 | Answered the user's estimate and scenario card questions meanwhile |
+| Commit, Docker Linux check (every project exits 0), merge, push | 08:22 | 08:34 | 0:12 | |
+
+Pass 9b total: 07:38 to 08:34, 0:56, with no plan estimate.
 

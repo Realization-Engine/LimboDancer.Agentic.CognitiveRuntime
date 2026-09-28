@@ -223,13 +223,13 @@ The estimates are point values. Pass 4, the one pass estimated from actuals, cam
 
 ### Pass 16: Night, weather, and scenario cards
 
-**Purpose:** Night, weather, and scenario cards as a registered source. **After:** All other passes; it touches every area. **From:** Backlog sections 2, 6, and 11.
+**Purpose:** Night, weather, and scenario cards. The registered rulebook has no scenario cards (only the A26 Victory Conditions rules and Chapter H), so on 2026-09-28 the user chose to build them with Chapter H Design Your Own procedures and fill what those leave open with values manufactured under R0.3, labeled as manufactured. **After:** All other passes; it touches every area. **From:** Backlog sections 2, 6, and 11.
 
 | Task | What it changes in play | Rules | Estimate |
 |---|---|---|---|
 | 16.1 Night | Visibility (NVR), illumination, Night Ambush, and night DM and rally. | E1 | 1:30 |
 | 16.2 Weather | Weather effects and Extreme Winter Fate. | E3 | 1:00 |
-| 16.3 Scenario cards | Scenario cards as a registered source, so ELR and setup come from the card. | A19.1 | 0:40 |
+| 16.3 Scenario cards | A scenario-card format, and cards built with the Chapter H Design Your Own procedures and manufactured values (R0.3), registered as a source, so ELR, setup, Friendly Board Edges, reinforcements, and Victory Conditions come from the card. | A19.1, A26, Chapter H | 0:40 |
 | | Overhead | | 1:15 |
 | | **Pass 16 total** (build 3:10) | | **4:25** |
 
