@@ -3,9 +3,9 @@
   "status": "published-bounded-fire-package",
   "domainId": "asl",
   "packageId": "scenario-a1-fire",
-  "priorFirePackageManifestSha256": "079c03e69d56a017b7582279df442c9abb74ad9a87e824377e9e0e61c420264a",
-  "declaredUse": "Read-only conclusions for a declared fire attack by reviewed Scenario A1 MMC and heroes, with their MGs, in the PFPh, AFPh, DFPh, or the MPh (Defensive First Fire, Subsequent First Fire, FPF, and Residual FP), in one Location or across ADJACENT Locations, optionally directed: the FP columns, the DRM, the IFT results, each target unit's effect, each MG's malfunction and Multiple ROF, and the Residual FP left, under the user's rulings of 2026-09-26 (Fire Review; ASL Unit Rally and Fire Extensions Plan, R20.1 to R23.5 and R0.2); and Heat of Battle after an Original MC DR of 2 (Deviations, Ordnance, and Vehicles Plan, R26.1 to R28.8); and a vehicle's OVR of an enemy-occupied Location (Backlog Passes Plan, R11.11).",
-  "caseMatrixSha256": "2d478e060be61fa840f48abc7f8a0ef09896b5ff058d15bc59ce4a0b5888a5de",
+  "priorFirePackageManifestSha256": "14feea97ec5db3565972f4ff285e0d09a502c7b92a7dabef4cf3242abe1076da",
+  "declaredUse": "Read-only conclusions for a declared fire attack by reviewed Scenario A1 MMC and heroes, with their MGs, in the PFPh, AFPh, DFPh, or the MPh (Defensive First Fire, Subsequent First Fire, FPF, and Residual FP), in one Location or across ADJACENT Locations, optionally directed: the FP columns, the DRM, the IFT results, each target unit's effect, each MG's malfunction and Multiple ROF, and the Residual FP left, under the user's rulings of 2026-09-26 (Fire Review; ASL Unit Rally and Fire Extensions Plan, R20.1 to R23.5 and R0.2); and Heat of Battle after an Original MC DR of 2 (Deviations, Ordnance, and Vehicles Plan, R26.1 to R28.8); and a vehicle's OVR of an enemy-occupied Location (Backlog Passes Plan, R11.11); and the fire extensions of Backlog Passes Plan R12.1 to R12.11.",
+  "caseMatrixSha256": "d9497647d9d52a79dade82a45285f80d1bb26179058382404844372707f67c03",
   "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
   "chartSupplementSha256": "8499a4ec75da057920fbc05dde60b975f39560803d26ce1433f9c6567a052985",
   "chartReviewDecisionSha256": "a19bf80dedc36fbf36d9356552f28a538faeea9469c8d22daddfabed546fd1e2",
@@ -2063,6 +2063,118 @@
       "startLine": 1384,
       "fragmentId": "asl-fragment:sha256:f70af1ec6f0fb22cf23c39d6fd6be8ad4983ba5f075f3715a76f19cf2e7ac696",
       "contentSha256": "c5efa8337f1d2fa023b09dd187f3db827a99ec0d573138a32df83f60ec6c89c7"
+    },
+    {
+      "ruleId": "A6.11",
+      "physicalPdfPage": 53,
+      "startLine": 371,
+      "fragmentId": "asl-fragment:sha256:77f6b7e833cc0fac9dd242a5a67ac13f5610cd49413e24be52b4f4170e67f0a3",
+      "contentSha256": "a36757b37d52364f144bf5a659fd6b424b1a587f8eb4d8de10a63f482e6b579b"
+    },
+    {
+      "ruleId": "A7.25",
+      "physicalPdfPage": 55,
+      "startLine": 455,
+      "fragmentId": "asl-fragment:sha256:5e64b1c31d640ca33b6638eca510eacc389bdc27c766035b58bc35fe5cd19243",
+      "contentSha256": "002afe1884c3f5b08054b0783d9610feff7e8d80ebb6926ae6693c5c486ef6f3"
+    },
+    {
+      "ruleId": "A7.7",
+      "physicalPdfPage": 57,
+      "startLine": 545,
+      "fragmentId": "asl-fragment:sha256:9b1960d9da6dcd6b412e8a9359af8e51cce6a5a82e3580ec09eff6dc31b8c354",
+      "contentSha256": "5da1ee8d7068873a837ef63d5cee0d17f7d4f86113d4aa96ef99857d14783f41"
+    },
+    {
+      "ruleId": "A7.7",
+      "physicalPdfPage": 58,
+      "startLine": 547,
+      "fragmentId": "asl-fragment:sha256:1a88548f6b064a8195409159dc3365ad81e76014c4ab431868c284f0f2970385",
+      "contentSha256": "50b055647b79833da564be09720a81ff06d5020ec0f7f5bc01d5b28ce910f6e2"
+    },
+    {
+      "ruleId": "A7.71",
+      "physicalPdfPage": 58,
+      "startLine": 557,
+      "fragmentId": "asl-fragment:sha256:c79c33e9a3d4c8afaa6589e9726d23794024c2657a036018f84310fa633691b4",
+      "contentSha256": "c87665d72fa810ec733b2d4184189128a003dbd5dabc6d5ba4bab7703f1c615a"
+    },
+    {
+      "ruleId": "A9.12",
+      "physicalPdfPage": 62,
+      "startLine": 688,
+      "fragmentId": "asl-fragment:sha256:760ed28c53b7dd9ea61231ca286888fc7e455040c46487b235e79edabc7a65cd",
+      "contentSha256": "b997ae02747134e490d18dff97a148a98cc56262177891282944e8ed3917bfd1"
+    },
+    {
+      "ruleId": "A9.22",
+      "physicalPdfPage": 63,
+      "startLine": 702,
+      "fragmentId": "asl-fragment:sha256:e4688e206f615c8652eb678655511fc8119f8dc9e2b73d841ed8c65b32539071",
+      "contentSha256": "0a537874303ab4ee909c2baf8dad5ea437e2cbd9c4b7be273419245ce45fbb30"
+    },
+    {
+      "ruleId": "A9.223",
+      "physicalPdfPage": 63,
+      "startLine": 714,
+      "fragmentId": "asl-fragment:sha256:80fa9105bfc94d8aad854dacc44786f162af95c4a5fcf4be354df8b803011ae1",
+      "contentSha256": "99671343f0b36f26f839babeb79e9f52f0f50924311668579f5bbd2cf03fb7f1"
+    },
+    {
+      "ruleId": "A9.5",
+      "physicalPdfPage": 64,
+      "startLine": 726,
+      "fragmentId": "asl-fragment:sha256:1fa2fdb40f055b63601773f2ddc9206e7d73c5cfe1ef3f2a3348dc512dc0ec34",
+      "contentSha256": "5b3be169abe9ccb7d173f7b243aff3374f8bf0f0222a5379172a8fa988b5f321"
+    },
+    {
+      "ruleId": "A9.51",
+      "physicalPdfPage": 64,
+      "startLine": 730,
+      "fragmentId": "asl-fragment:sha256:e52182a54e2172753fb6a67dc803f57e3b2d80500507b0be91978cf185903e08",
+      "contentSha256": "4184472767ea7d20734562a99950d66f6e335636c5179c715038ac1ce4f5e39f"
+    },
+    {
+      "ruleId": "A9.52",
+      "physicalPdfPage": 64,
+      "startLine": 732,
+      "fragmentId": "asl-fragment:sha256:ce09c5053763972afb1f6b50a8a67627b59d5f176a3ed1da58a402452a288bfb",
+      "contentSha256": "ce7b8070be0290530b5ce5e9ad1a706865d6eca0b325dd3699bf852373a43323"
+    },
+    {
+      "ruleId": "A12.121",
+      "physicalPdfPage": 77,
+      "startLine": 996,
+      "fragmentId": "asl-fragment:sha256:2b0f0e9aa93e488fe998e18f287ac664e70cd056770968b2a9656c4cae2b8367",
+      "contentSha256": "48f1903460b973e33d7992d2d21bde00fdee4391aeb83917e7e38a170e8c7a61"
+    },
+    {
+      "ruleId": "A12.122",
+      "physicalPdfPage": 77,
+      "startLine": 998,
+      "fragmentId": "asl-fragment:sha256:dd506b5c7ec36743cecec22441c9dcc1e726de2813e4e76286c02b66d8e9139c",
+      "contentSha256": "cb2c16726b41e07c6e8d257a840f6e8290670ab4c4b2e3dfb379a50b4a92bed5"
+    },
+    {
+      "ruleId": "A12.122",
+      "physicalPdfPage": 77,
+      "startLine": 1000,
+      "fragmentId": "asl-fragment:sha256:7a184db46f3f2a3bfc874c52086d8df0e754bf8facab51a43f6217dfec92538f",
+      "contentSha256": "b96e18e22c8f30ee5925872e1a477658d801a452925751358117d2acbf18dbd4"
+    },
+    {
+      "ruleId": "A12.122",
+      "physicalPdfPage": 77,
+      "startLine": 1003,
+      "fragmentId": "asl-fragment:sha256:2ae35e1909fe3bd6404aa01175145d18d960ab7cdbd4d85f87475306f40e3103",
+      "contentSha256": "1b67dae230194bd1d82859b2874b66e255a797de19a8621fb9df68955c8882b5"
+    },
+    {
+      "ruleId": "A12.122",
+      "physicalPdfPage": 77,
+      "startLine": 1015,
+      "fragmentId": "asl-fragment:sha256:692be85dac8813ead04073463407df9c05813311d9a321bf8f66feb4e321f739",
+      "contentSha256": "787a8577a055fb114ee49feb5f36dd395c285ca28f61617830c45d2f234a37fb"
     }
   ],
   "visualReadings": [
@@ -2129,7 +2241,16 @@
     "marshRubble": "marsh-has-no-tem-but-is-not-open-ground-rubble-has-its-building-tem-B16.3-B24.3 (R10.1)",
     "overrun": "an-ovr-is-bounding-first-fire-at-the-known-and-concealed-infantry-of-the-location-the-vehicle-entered-on-the-ift-at-a-base-of-one-fp-unarmored-two-afv-or-four-afv-with-a-gun-ma-each-manned-mg-adding-three-times-its-fp-the-total-halved-halved-again-when-immobile-or-destroyed-or-against-concealed-units-ffmo-in-open-ground-and-the-location-tem-afvs-not-attacked-but-a-ce-crew-is-D7.1-D7.11-D7.12-D7.13-D7.15 (R11.11)",
     "overrunMalfunction": "an-ovr-original-ift-dr-of-twelve-malfunctions-one-weapon-chosen-at-random-among-those-that-fired-D7.17 (R11.11)",
-    "reactionFire": "cc-reaction-fire-at-a-vehicle-waits-until-its-ovr-is-resolved-and-is-resolved-by-the-close-combat-package-D7.2-D7.21-D7.213 (R11.13)"
+    "reactionFire": "cc-reaction-fire-at-a-vehicle-waits-until-its-ovr-is-resolved-and-is-resolved-by-the-close-combat-package-D7.2-D7.21-D7.213 (R11.13)",
+    "opportunityFire": "infantry-marked-with-a-bounding-fire-counter-in-their-pfph-fire-in-the-afph-without-its-halving-and-their-mgs-keep-multiple-rof-no-other-afph-mg-does-A7.24-A7.25 (R12.1)",
+    "blockedLos": "an-attack-whose-every-firers-los-is-blocked-makes-its-dr-for-multiple-rof-only-marks-its-firers-and-affects-nothing-A6.11-A7.52 (R12.2)",
+    "fpfVariants": "fpf-may-be-directed-the-leader-taking-its-nmc-and-modifying-the-others-and-may-group-with-first-fire-each-firers-own-kind-deciding-its-area-fire-A8.31 (R12.3)",
+    "pinnedMovers": "the-pinned-movers-of-a-mixed-stack-take-the-same-dr-without-ffnam-ffmo-or-hazardous-movement-A7.83 (R12.3)",
+    "smcFire": "a-leader-fires-one-mg-as-area-fire-alone-or-at-full-fp-with-a-stacked-smc-both-marked-and-a-squad-firing-its-mg-alone-keeps-its-inherent-fp-A7.351-A9.12 (R12.4)",
+    "sprayingFire": "spraying-fire-by-a-group-of-mg-firers-at-two-locations-sharing-a-hexside-is-area-fire-on-one-original-dr-the-second-record-marking-nothing-A9.5-A9.51-A9.52 (R12.6)",
+    "fireLanes": "a-fire-lanes-residual-fp-is-the-column-left-of-its-mgs-fp-doubled-adjacent-never-reduced-with-no-cx-leader-or-hero-drm-and-no-cowering-A9.22-A9.223 (R12.7)",
+    "meleeAndPrisoners": "fire-into-a-melee-or-at-prisoners-attacks-every-unit-there-each-against-its-own-sides-elr-a-prisoner-reduced-instead-of-broken-A11.15-A20.54 (R12.8-R12.9)",
+    "encirclement": "an-encircled-unit-has-one-lower-morale-level-against-attacks-on-its-location-and-plus-one-to-its-own-fire-A7.7-A7.71 (R12.11)"
   },
   "resolution": {
     "firepower": "Each firer's printed FP, doubled for PBF when the target is adjacent at the same level (A7.21), halved beyond Normal Range up to twice it (A7.22), halved when the target Location holds a concealed unit (A7.23), and halved when the firer is pinned (A7.8); fractions are kept and summed (A7.2).",
@@ -2205,19 +2326,27 @@
     "A1-fire-hazardous-movement",
     "A1-fire-marsh-rubble",
     "A1-fire-overrun",
-    "A1-fire-overrun-outside"
+    "A1-fire-overrun-outside",
+    "A1-fire-opportunity-fire",
+    "A1-fire-blocked-los",
+    "A1-fire-fpf-variants",
+    "A1-fire-smc-mg",
+    "A1-fire-spraying-fire",
+    "A1-fire-fire-lane",
+    "A1-fire-melee-and-prisoners",
+    "A1-fire-encirclement"
   ],
   "executionAuthority": "none",
   "excludedOutcomes": [
     "Bypass LOS to vertices (A4.34), fire between levels of one hex (B23.26), a Snap Shot across a wall or hedge hexside, bocage and Hillside walls, fire from a marsh hex (B16.32), and a vehicle’s MG fire at another level",
-    "Opportunity Fire, Spraying Fire, and Fire Lanes",
-    "FPF directed by a leader or mixed with other fire",
+    "Opportunity Fire by ordnance, mortars, and LATW, Spraying Fire in the MPh or at upper levels, and Fire Lanes along an Alternate Hex Grain, their Snap Shots, and their TPBF cancellation (A7.25, A9.5, A9.221, A9.223)",
+    "FPF by a SMC with a MG already marked First Fire (A8.312)",
     "ordnance fire of its own (ordnance hits come from the Ordnance package), the PSK against Personnel, FT, DC, and MOL",
-    "fire by a SMC, a squad firing its inherent FP apart from its MG, and A7.353's halved inherent FP of a crew",
+    "a hero's own SW use and A7.353's halved inherent FP of a crew",
     "captured, dismantled, and transferred SW",
     "vehicles and PRC",
-    "Encirclement",
-    "the Concealment Table",
+    "Encirclement at upper levels (A7.72), by ordnance, and of Vulnerable PRC, and its capture effects (A20.21)",
+    "the Concealment Table for vehicles, Guns, and Dummy stacks",
     "snipers, ordnance SMOKE and WP, Dispersed SMOKE and drift, night, and weather",
     "any use by a game action",
     "A19.13's exception for an underscored Morale Factor",

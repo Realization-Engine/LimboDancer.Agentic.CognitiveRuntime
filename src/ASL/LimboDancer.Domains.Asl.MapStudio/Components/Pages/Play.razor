@@ -820,6 +820,35 @@ else if (state is not null)
             }
         </div>
     }
+    @if (state.FireLanes.Count > 0 || state.Encirclements.Count > 0)
+    {
+        <ul class="muted" id="fire-markers">
+            @foreach (var lane in state.FireLanes)
+            {
+                <li class="fire-lane">Fire Lane of @lane.Weapon (@lane.Operator): @string.Join(", ", lane.Entries.Select(entry => $"{entry.Location} {entry.Fp} FP")) (A9.22)</li>
+            }
+            @foreach (var encircled in state.Encirclements)
+            {
+                <li class="encirclement">@encircled.Location: the @encircled.Side units there are Encircled (A7.7)</li>
+            }
+        </ul>
+    }
+    @if (state.Phase == "pfph" && OpportunityCandidates.Any())
+    {
+        <h4>Opportunity Fire</h4>
+        <p class="muted" id="opportunity-help">
+            Good Order Infantry that have not fired this Player Turn may hold their fire under a Bounding Fire counter: they do not fire in the PFPh
+            or move in the MPh, and fire in the AFPh without its halving, their MGs keeping Multiple ROF (A7.25). A concealed one in the LOS of a
+            Good Order enemy ground unit within 16 hexes loses its "?".
+        </p>
+        <div class="toolbar">
+            @foreach (var unit in OpportunityCandidates)
+            {
+                <label><input class="opportunity-unit" type="checkbox" data-unit="@unit.Id" checked="@opportunityUnits.Contains(unit.Id)" @onchange="@(args => Toggle(opportunityUnits, unit.Id, args.Value is true))" /> @unit.Id</label>
+            }
+            <button id="propose-opportunity" disabled="@(opportunityUnits.Count == 0)" @onclick="ProposeOpportunity">Propose: Opportunity Fire</button>
+        </div>
+    }
     @if (FiringSide is { } firing)
     {
         <h4>Fire</h4>
@@ -840,7 +869,7 @@ else if (state is not null)
                     }
                 </select>
             </label>
-            @foreach (var unit in FireGroupAt(firing).Where(unit => unit.Kind != "asl:leader" && MayFire(unit)))
+            @foreach (var unit in FireGroupAt(firing).Where(unit => (unit.Kind != "asl:leader" || PossessesMg(unit)) && MayFire(unit)))
             {
                 <label><input class="fire-firer" type="checkbox" data-unit="@unit.Id" checked="@fireFirers.Contains(unit.Id)" @onchange="@(args => Toggle(fireFirers, unit.Id, args.Value is true))" /> @unit.Id</label>
             }
@@ -876,6 +905,35 @@ else if (state is not null)
             @if (state.Phase == "mph")
             {
                 <label title="A8.15: at the hexside the moving stack crossed, with LOS to both its ends; Area Fire with no TEM, FFMO, or FFNAM, and no Residual FP."><input id="fire-snap-shot" type="checkbox" checked="@fireSnapShot" @onchange="@(args => fireSnapShot = args.Value is true)" /> Snap Shot</label>
+            }
+            @if (state.Phase is "pfph" or "afph" or "dfph")
+            {
+                <label title="A9.5: a group whose every firer fires a MG attacks a second Location sharing a hexside with the target, as Area Fire on the same DR.">Spray also <input id="fire-spray" value="@fireSpray" @onchange="@(args => fireSpray = args.Value as string ?? string.Empty)" size="12" /></label>
+            }
+            @if (state.Phase == "mph")
+            {
+                <label title="A9.22: with Defensive First Fire by an unpinned squad's MG at a same-level target within Normal Range, a Fire Lane along the Hex Grain to this Location.">Fire Lane of
+                    <select id="fire-lane-weapon" value="@fireLaneWeapon" @onchange="@(args => fireLaneWeapon = args.Value as string ?? string.Empty)">
+                        <option value="">none</option>
+                        @foreach (var weapon in FireWeapons.Where(item => fireWeapons.Contains(item.Id)))
+                        {
+                            <option value="@weapon.Id">@weapon.Id</option>
+                        }
+                    </select>
+                    to <input id="fire-lane-to" value="@fireLaneTo" @onchange="@(args => fireLaneTo = args.Value as string ?? string.Empty)" size="12" />
+                </label>
+            }
+            @if (fireFirers.Any(id => state.Unit(id)?.Kind == "asl:leader"))
+            {
+                <label title="A9.12: a leader fires a MG alone as Area Fire; with another SMC stacked with him, at full FP.">Partner SMC
+                    <select id="fire-partner" value="@firePartner" @onchange="@(args => firePartner = args.Value as string ?? string.Empty)">
+                        <option value="">none</option>
+                        @foreach (var smc in FireGroupAt(firing).Where(unit => unit.Kind is "asl:leader" or "asl:hero" && !fireFirers.Contains(unit.Id)))
+                        {
+                            <option value="@smc.Id">@smc.Id</option>
+                        }
+                    </select>
+                </label>
             }
             <button id="propose-fire" disabled="@(fireFirers.Count == 0 || FireTarget.Length == 0)" @onclick="ProposeFire">Propose: fire</button>
             <button id="fire-clear" class="link" @onclick="ClearFire">clear</button>
@@ -1291,6 +1349,7 @@ else if (state is not null)
                     </td>
                     <td>@(unit.Status == InstanceStatus.Wrecked ? "wreck" : LiveFire.IsVehicle(unit) ? $"{HalfMpText(GamePlanner.VehicleHalfMp(unit).Spent)} of {HalfMpText(GamePlanner.VehicleHalfMp(unit).Allotment)} MP" : unit.MfSpent.ToString(CultureInfo.InvariantCulture))@(unit.MovementEnded ? ", movement ended" : "")</td>
                     <td>@string.Join(", ", unit.Conditions.Where(pair => pair.Value == ConditionState.True).Select(pair => ConditionText(pair.Key)).Concat(Custody(unit)).Concat(VehicleNotes(unit))
+                        .Concat(state.Encircled(unit) ? ["Encircled (A7.7)"] : [])
                         .Concat(unit.Status == InstanceStatus.Wrecked && GamePlanner.IsBurning(state, unit) ? ["burning (Blaze)"] : []))</td>
                 </tr>
             }
@@ -2371,9 +2430,42 @@ else if (state is not null)
         fireTarget = string.Empty;
         fireFreeTarget = string.Empty;
         fireSnapShot = false;
+        fireSpray = string.Empty;
+        fireLaneWeapon = string.Empty;
+        fireLaneTo = string.Empty;
+        firePartner = string.Empty;
     }
 
     private bool fireSnapShot;
+    private string fireSpray = string.Empty;
+    private string fireLaneWeapon = string.Empty;
+    private string fireLaneTo = string.Empty;
+    private string firePartner = string.Empty;
+    private readonly HashSet<string> opportunityUnits = new(StringComparer.Ordinal);
+
+    /// <summary>Whether a unit possesses a MG it could fire (A9.12).</summary>
+    private bool PossessesMg(UnitInstance unit) => state is not null && state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Kind == "asl:mg"
+        && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unit.Id);
+
+    /// <summary>The phasing side's Infantry that may hold their fire as Opportunity Fire (A7.25).</summary>
+    private IEnumerable<UnitInstance> OpportunityCandidates => state is null || state.Phase != "pfph" ? []
+        : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && !LiveFire.IsVehicle(unit) && unit.Kind != UnitKinds.Dummy
+            && state.Location(unit.Id) is not null && GameState.Condition(unit, Conditions.PrepFire) != ConditionState.True
+            && new[] { Conditions.Broken, Conditions.Berserk, Conditions.Melee, Conditions.Captured, Conditions.BoundingFire }.All(name => GameState.Condition(unit, name) != ConditionState.True))
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal);
+
+    private Task ProposeOpportunity()
+    {
+        var arguments = new Dictionary<string, object>
+        {
+            ["gameId"] = gameId,
+            ["attemptId"] = Attempt("opportunity"),
+            ["expectedRevision"] = (long)history!.Events.Count,
+            ["unitIds"] = opportunityUnits.Order(StringComparer.Ordinal).ToArray(),
+        };
+        opportunityUnits.Clear();
+        return Propose(GameActions.OpportunityFire, JsonSerializer.SerializeToElement(arguments));
+    }
 
     /// <summary>The leaders who may rally the chosen unit: the Good Order or broken leaders of its side in its Location (A10.6, A10.71).</summary>
     private IEnumerable<UnitInstance> RallyLeaders => state?.Unit(rallyUnit) is not { } unit || state.Location(unit.Id)?.Location is not { } at ? []
@@ -2568,6 +2660,22 @@ else if (state is not null)
         if (fireSnapShot)
         {
             arguments["snapShot"] = true;
+        }
+
+        // A9.5, A9.22, A9.12 (backlog pass 12): Spraying Fire's second Location, a Fire Lane, and a leader's partner.
+        if (fireSpray.Trim() is { Length: > 0 } sprayed)
+        {
+            arguments["sprayTarget"] = sprayed;
+        }
+
+        if (fireLaneWeapon.Length > 0 && fireWeapons.Contains(fireLaneWeapon) && fireLaneTo.Trim() is { Length: > 0 } laneTo)
+        {
+            arguments["fireLane"] = new Dictionary<string, string> { ["weapon"] = fireLaneWeapon, ["to"] = laneTo };
+        }
+
+        if (firePartner.Trim() is { Length: > 0 } partner && fireFirers.FirstOrDefault(id => state?.Unit(id)?.Kind == "asl:leader") is { } leaderFirer)
+        {
+            arguments["partners"] = new Dictionary<string, string> { [leaderFirer] = partner };
         }
 
         if (fireDirector.Length > 0)
@@ -2961,6 +3069,7 @@ else if (state is not null)
     private void ResetForPhase()
     {
         ClearFire();
+        opportunityUnits.Clear();
         ordnanceGun = string.Empty;
         ordnanceTarget = string.Empty;
         ordnanceVehicle = string.Empty;

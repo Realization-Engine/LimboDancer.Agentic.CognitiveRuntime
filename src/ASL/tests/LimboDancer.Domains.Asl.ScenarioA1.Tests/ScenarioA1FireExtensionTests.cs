@@ -253,11 +253,11 @@ public sealed class ScenarioA1FireExtensionTests
         }, key => key.StartsWith("firerSelection:", StringComparison.Ordinal));
         Assert.Equal(["asl.a1.fire.roll-missing:firerSelection:ru-1,ru-2"], twelve.Reasons);
 
-        // Undirected only, and an ELR for the firing side before any roll.
-        Assert.Contains("asl.a1.fire.fpf-outside", Complete(attack with
+        // Backlog pass 12 (ruling R12.3): FPF may be directed, the leader taking the NMC; an ELR for the firing side is needed before any roll.
+        Assert.Contains(Complete(attack with
         {
             Director = Leader
-        }).Reasons);
+        }).FirerEffects!, effect => effect.UnitId == Leader.UnitId);
         Assert.Contains("asl.a1.fire.elr-undecided:firing-side-elr-undeclared",
             ScenarioA1FireCalculator.Precheck(attack with
             {

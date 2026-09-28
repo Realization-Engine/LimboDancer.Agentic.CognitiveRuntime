@@ -78,17 +78,21 @@ public sealed partial class GamePlanner
         ["NMC", "1MC", "2MC", "3MC", "4MC", "K/1", "K/2", "K/3", "K/4", "1KIA", "2KIA", "3KIA", "4KIA", "5KIA", "6KIA", "7KIA"];
 
     /// <summary>
-    /// Why a unit may not fire or direct fire at all, or null: berserk fire is not reviewed (A15.432), a unit held in Melee fires
-    /// only in CC (A11.15), a prisoner does not fire (A20.5), and a Guard's fire is not reviewed (A20.52).
+    /// Why a unit may not fire or direct fire now, or null: a berserk unit never fires in its PFPh and directs no fire (A15.432, A15.42; ruling
+    /// R12.10); an Opportunity Firer fires in the AFPh (A7.25; ruling R12.1); a unit held in Melee fires only in CC (A11.15); a prisoner does not
+    /// fire (A20.5); and a Guard whose US# is less than its prisoners' fires only at them (A20.52; ruling R12.9).
     /// </summary>
     public static string? FireBar(GameState state, UnitInstance unit)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(unit);
-        return Is(unit, Conditions.Berserk) ? "is berserk, and berserk fire is not reviewed (A15.432)"
+        static int Size(UnitInstance item) => item.Kind == "asl:squad" ? 3 : item.Kind is "asl:half-squad" or "asl:crew" ? 2 : 1;
+        var prisoners = state.Units.Where(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian == unit.Id).Sum(Size);
+        return Is(unit, Conditions.Berserk) && state.Phase == "pfph" && unit.Side == state.PhasingSide ? "is berserk and never fires in its PFPh (A15.432)"
+            : Is(unit, Conditions.BoundingFire) && state.Phase == "pfph" && !LiveFire.IsVehicle(unit) ? "is an Opportunity Firer and fires in the AFPh (A7.25)"
             : Is(unit, Conditions.Melee) ? "is held in Melee and fires only in CC (A11.15)"
             : Is(unit, Conditions.Captured) ? "is a prisoner and does not fire (A20.5)"
-            : state.Units.Any(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian == unit.Id) ? "guards prisoners, and a Guard's fire is not reviewed (A20.52)"
+            : prisoners > Size(unit) ? "guards prisoners whose US# exceeds its own, so it attacks only them (A20.52)"
             : null;
     }
 
@@ -128,6 +132,16 @@ public sealed partial class GamePlanner
         var alone = Strings(arguments, "withoutInherent").ToArray();
         string[] firerIds = [.. firerList.EnumerateArray().Select(item => item.GetString()!)];
 
+        // A9.12 (ruling R12.4): the SMC who fires a leader's MG with him, by leader.
+        var partners = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (arguments.TryGetProperty("partners", out var partnerMap) && partnerMap.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var entry in partnerMap.EnumerateObject().Where(item => item.Value.ValueKind == JsonValueKind.String))
+            {
+                partners[entry.Name] = entry.Value.GetString()!;
+            }
+        }
+
         // D3.3 (ruling R6.9): the moving vehicle's Bounding First Fire comes once the DEFENDER has passed on its MP expenditure.
         var bounding = state.Phase == "mph" && firerIds.Length == 1 && LiveFire.MayBoundingFire(state, firerIds[0]);
 
@@ -137,10 +151,40 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.fire-window: Defensive First Fire attacks the moving stack in its Location, while the DEFENDER's window on its MF expenditure is open (A8.1, A8.11)");
         }
 
-        var (attack, reason) = LiveFire.FromState(state, firerIds, directors, target, weapons.Count > 0 ? weapons : null, alone.Length > 0 ? alone : null);
+        var (attack, reason) = LiveFire.FromState(state, firerIds, directors, target, weapons.Count > 0 ? weapons : null, alone.Length > 0 ? alone : null,
+            partners.Count > 0 ? partners : null);
         if (attack is null)
         {
             return Refused(scope, label, expected, reason!);
+        }
+
+        // A9.22, A9.223 (referee, pass 12): a MG with a Fire Lane does not fire again this MPh, nor does its manning Infantry use Subsequent First Fire
+        // or FPF; the TPBF and CC Reaction Fire cancellation is not built.
+        if (state.FireLanes.FirstOrDefault(lane => attack.Firers!.Any(item => item.Weapons?.Any(weapon => weapon.EquipmentId == lane.Weapon) == true
+            || (item.UnitId == lane.Operator && attack.FireKind is ScenarioA1FireCalculator.SubsequentFirstFire or ScenarioA1FireCalculator.FinalProtectiveFire))) is { } laneInUse)
+        {
+            return Refused(scope, label, expected, $"play.fire-lane-mg: {laneInUse.Weapon} has a Fire Lane and fires again only in the DFPh (A9.22, A9.223)");
+        }
+
+        // A9.12 (referee, pass 12): a leader who directed fire this phase gives up leadership by firing a MG, so fires none; he fires one MG a phase.
+        foreach (var leader in attack.Firers!.Where(item => state.Unit(item.UnitId!)?.Kind == "asl:leader"))
+        {
+            var leaderWeapons = leader.Weapons?.Select(weapon => weapon.EquipmentId).ToArray() ?? [];
+            if (ThisPhase(existing).Select(item => item.Payload).OfType<FireResolved>().Any(record => record.Director == leader.UnitId
+                    || record.Facts.TryGetProperty("otherDirectors", out var others) && others.ValueKind == JsonValueKind.Array
+                        && others.EnumerateArray().Any(item => item.TryGetProperty("unitId", out var id) && id.GetString() == leader.UnitId))
+                || state.SupportWeaponDirectors.Any(item => item.Leader == leader.UnitId)
+                || state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == leader.UnitId
+                    && !leaderWeapons.Contains(item.Id) && (LiveFire.Fired(item) || Is(item, Conditions.FirstFire))))
+            {
+                return Refused(scope, label, expected, $"play.fire-smc: {leader.UnitId} directed fire or fired another MG this phase, and fires one MG only without leading (A9.12)");
+            }
+        }
+
+        // A15.42 (ruling R12.10): a berserk leader gives no leadership, so directs no fire.
+        if (directors.Select(state.Unit).OfType<UnitInstance>().FirstOrDefault(unit => Is(unit, Conditions.Berserk)) is { } berserkLeader)
+        {
+            return Refused(scope, label, expected, $"play.fire-barred: {berserkLeader.Id} is berserk and gives no leadership (A15.42)");
         }
 
         // D2.4: a vehicle under a Motion counter may not Prep Fire.
@@ -157,9 +201,11 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.fire-barred: {barred.Id} {cause}");
         }
 
-        if (state.At(target).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && (Is(unit, Conditions.Melee) || Is(unit, Conditions.Captured))))
+        // A11.15, A20.54 (rulings R12.8, R12.9): a Location holding units in Melee or prisoners is fired at from outside it, and every unit there is attacked.
+        if (state.At(target).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && (Is(unit, Conditions.Melee) || Is(unit, Conditions.Captured)))
+            && attack.Firers!.Any(item => item.LocationId == target.ToString()))
         {
-            return Refused(scope, label, expected, "play.fire-melee: fire at a Location holding units in Melee or prisoners is not reviewed (A11.15, A20.54)");
+            return Refused(scope, label, expected, "play.fire-melee: units fire into a Melee or prisoners' Location only from outside it (A11.15, A20.54)");
         }
 
         // A8.3, A8.31: Subsequent First Fire and FPF use every usable MG the firer possesses.
@@ -245,20 +291,206 @@ public sealed partial class GamePlanner
             };
         }
 
-        var precheck = ScenarioA1FireCalculator.Precheck(attack, FireReference.Value);
-        if (precheck.Count != 0)
+        // A6.11, A7.52 (ruling R12.2): in a group spanning Locations, the firers whose LOS is blocked make their DR first and drop out; the others
+        // attack as a smaller group.
+        FireAttack? blockedFirst = null;
+        if (attack.Firers is { Count: > 1 } everyFirer && everyFirer.Select(item => item.LocationId).Distinct().Count() > 1
+            && everyFirer.Count(item => (item.Los ?? attack.Los)?.Blocked == true) is var blockedCount && blockedCount > 0 && blockedCount < everyFirer.Count)
         {
-            return Refused(scope, label, expected, RefusalReasons.Refusal("play.fire-refused", "Fire", "attack", precheck)) with
+            var blockedLocations = everyFirer.Where(item => (item.Los ?? attack.Los)?.Blocked == true).Select(item => item.LocationId!).ToHashSet(StringComparer.Ordinal);
+            (FireAttack? Part, string? Why) Subgroup(bool blockedPart)
             {
-                Fire = Proposal(attack, undecided: true)
+                string[] ids = [.. everyFirer.Where(item => blockedLocations.Contains(item.LocationId!) == blockedPart).Select(item => item.UnitId!)];
+                string[] leaders = [.. directors.Where(id => state.Location(id)?.Location.ToString() is { } at && blockedLocations.Contains(at) == blockedPart)];
+                var (part, why) = LiveFire.FromState(state, ids, leaders, target, weapons.Where(item => ids.Contains(item.Key)).ToDictionary(item => item.Key, item => item.Value),
+                    alone.Where(ids.Contains).ToArray(), partners.Where(item => ids.Contains(item.Key)).ToDictionary(item => item.Key, item => item.Value));
+                if (part is null)
+                {
+                    return (null, why);
+                }
+
+                var (read, readWhy) = FireMapFacts(state, part with
+                {
+                    SnapShot = attack.SnapShot
+                }, target, existing);
+                return read is null ? (null, readWhy) : (HeatOfBattleFacts(state, read), null);
+            }
+
+            var (blockedPart, blockedWhy) = Subgroup(true);
+            var (openPart, openWhy) = Subgroup(false);
+            if (blockedPart is null || openPart is null)
+            {
+                return Refused(scope, label, expected, blockedWhy ?? openWhy!);
+            }
+
+            blockedFirst = blockedPart;
+            attack = openPart with
+            {
+                GunTarget = attack.GunTarget
             };
+        }
+
+        // A9.5 (ruling R12.6): Spraying Fire at a second Location sharing a hexside with the first.
+        FireAttack? spray = null;
+        if (Text(arguments, "sprayTarget", out var sprayText))
+        {
+            if (!BoardLocation.TryParse(sprayText, out var second) || second == target || second.Level != target.Level || SideToward(state, target, second) is null)
+            {
+                return Refused(scope, label, expected, "play.fire-spray: Spraying Fire attacks two Locations that share a hexside (A9.5)");
+            }
+
+            if (state.Phase is not ("pfph" or "afph" or "dfph") || blockedFirst is not null)
+            {
+                return Refused(scope, label, expected, "play.fire-spray: Spraying Fire is made in the PFPh, AFPh, or DFPh, by a group that can see both Locations (A9.5; ruling R12.6)");
+            }
+
+            var (sprayAttack, sprayReason) = LiveFire.FromState(state, firerIds, directors, second, weapons.Count > 0 ? weapons : null, alone.Length > 0 ? alone : null,
+                partners.Count > 0 ? partners : null);
+            if (sprayAttack is null)
+            {
+                return Refused(scope, label, expected, sprayReason!);
+            }
+
+            var (sprayMap, sprayMapReason) = FireMapFacts(state, sprayAttack, second, existing);
+            if (sprayMap is null)
+            {
+                return Refused(scope, label, expected, sprayMapReason!);
+            }
+
+            if (state.FiresThisPhase.Any(record => fromLocations.Contains(record.FirerLocation) && record.TargetLocation == second.ToString() && record.Step is null))
+            {
+                return Refused(scope, label, expected, $"play.fire-group: a Location of the group has already fired at {second} this phase (A7.55, A9.52)");
+            }
+
+            spray = HeatOfBattleFacts(state, sprayMap) with
+            {
+                SprayingFire = true,
+                SprayShare = true
+            };
+            attack = attack with
+            {
+                SprayingFire = true
+            };
+
+            // A9.52: a First-Fire-marked unit sprays in Final Fire only at two ADJACENT Locations.
+            if (state.Phase == "dfph" && attack.Firers!.Any(item => item.FirstFireMarked == true)
+                && new[] { attack, spray }.Any(one => one.Firers!.Any(item => (item.Range ?? one.Range) > 1)))
+            {
+                return Refused(scope, label, expected, "play.fire-spray: a First-Fire-marked unit sprays in Final Fire only at two ADJACENT Locations (A9.52)");
+            }
+        }
+
+        // A7.7 (ruling R12.11): an attack that completes an Encirclement lowers the Encircled units' Morale Level against it.
+        var firingSideId = state.Unit(attack.VehicleFire?.VehicleId ?? attack.Firers![0].UnitId!)!.Side;
+        var encircles = blockedFirst is null ? EncirclementSeal(state, existing, attack, firingSideId) : null;
+        if (encircles is not null)
+        {
+            attack = attack with
+            {
+                Targets = [.. attack.Targets!.Select(item => state.Unit(item.UnitId!) is { } unit && item.Dummy != true && item.Berserk != true && item.Heroic != true
+                    && unit.Kind != "asl:hero" && item.GuardId is null && (unit.Side == encircles || Is(unit, Conditions.Melee)) ? item with { Encircled = true } : item)],
+            };
+        }
+
+        // A9.22 (ruling R12.7): a Fire Lane declared with a MG's Defensive First Fire.
+        (string Weapon, string Operator, IReadOnlyList<FireLaneEntry> Entries)? lane = null;
+        if (arguments.TryGetProperty("fireLane", out var laneArguments) && laneArguments.ValueKind == JsonValueKind.Object)
+        {
+            if (!Text(laneArguments, "weapon", out var laneWeapon) || !Text(laneArguments, "to", out var laneText) || !BoardLocation.TryParse(laneText, out var laneTo))
+            {
+                return Refused(scope, label, expected, "play.invalid-arguments: a Fire Lane names its MG and the Location of its counter");
+            }
+
+            var manning = attack.Firers?.FirstOrDefault(item => item.Weapons?.Any(weapon => weapon.EquipmentId == laneWeapon) == true);
+            var mg = manning?.Weapons!.First(weapon => weapon.EquipmentId == laneWeapon);
+            var mgDefinition = mg is null ? null : FireReference.Value.Definitions.GetValueOrDefault(mg.DefinitionId ?? string.Empty);
+            var range = manning?.Range ?? attack.Range;
+            if (state.Phase != "mph" || attack.FireKind != ScenarioA1FireCalculator.FirstFire || manning is null || mgDefinition is not { IsMg: true, Range: { } mgRange, Firepower: { } mgFp }
+                || manning.Pinned == true || mg!.Malfunctioned == true || range is not { } distance || distance < 1 || distance > mgRange
+                || (manning.SameLevel ?? attack.SameLevel) != true || attack.SnapShot == true || !BoardLocation.TryParse(manning.LocationId, out var mgAt))
+            {
+                return Refused(scope, label, expected,
+                    "play.fire-lane: a Fire Lane goes with Defensive First Fire by an unpinned Infantry unit's Good Order MG, within its Normal Range at a same-level target, not TPBF or a Snap Shot (A9.22)");
+            }
+
+            var (entries, laneReason) = FireLaneEntries(state, mgAt, target, laneTo, mgRange, mgFp);
+            if (entries is null)
+            {
+                return Refused(scope, label, expected, laneReason!);
+            }
+
+            lane = (laneWeapon, manning.UnitId!, entries);
+        }
+
+        foreach (var part in new[] { blockedFirst, attack, spray }.OfType<FireAttack>())
+        {
+            var partCheck = ScenarioA1FireCalculator.Precheck(part, FireReference.Value);
+            if (partCheck.Count != 0)
+            {
+                return Refused(scope, label, expected, RefusalReasons.Refusal("play.fire-refused", "Fire", "attack", partCheck)) with
+                {
+                    Fire = Proposal(part, undecided: true)
+                };
+            }
         }
 
         var facts = attack;
         IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
         {
             var events = new List<GameEvent>();
+            if (blockedFirst is not null)
+            {
+                AddFireEvents(scope, attemptId, expected, actor, state, blockedFirst, targetSide, step, events, draw);
+                var after = Replay([.. existing, .. events]).Current!;
+                var reread = LiveFire.FromState(after, [.. facts.Firers!.Select(item => item.UnitId!)], [.. new[] { facts.Director?.UnitId }.Concat(facts.OtherDirectors?.Select(item => item.UnitId) ?? []).OfType<string>()],
+                    target, facts.Firers!.Where(item => item.Weapons is { Count: > 0 }).ToDictionary(item => item.UnitId!, item => (IReadOnlyList<string>)[.. item.Weapons!.Select(weapon => weapon.EquipmentId!)]),
+                    [.. facts.Firers!.Where(item => item.UsesInherentFp == false).Select(item => item.UnitId!)],
+                    facts.Firers!.Where(item => item.Partner is not null).ToDictionary(item => item.UnitId!, item => item.Partner!)).Attack;
+                if (reread is not null && FireMapFacts(after, reread, target, [.. existing, .. events]).Facts is { } rereadMap)
+                {
+                    AddFireEvents(scope, attemptId, expected, actor, after, HeatOfBattleFacts(after, rereadMap) with
+                    {
+                        GunTarget = facts.GunTarget
+                    }, targetSide, step, events, draw);
+                }
+
+                return events;
+            }
+
             AddFireEvents(scope, attemptId, expected, actor, state, facts, targetSide, step, events, draw);
+            var record = events.LastOrDefault(item => item.Payload is FireResolved);
+            if (spray is not null && !events.Any(item => item.Payload is ChoicePending) && record?.Payload is FireResolved first && first.Rolls.TryGetValue("attack", out var attackRoll)
+                && events.Select(item => item.Payload).OfType<DiceRolled>().FirstOrDefault(item => item.Roll == attackRoll) is { } dice)
+            {
+                // A9.5: the second Location takes the same Original DR.
+                var sprayState = Replay([.. existing, .. events]).Current!;
+                var sprayTargetSide = spray.Targets!.FirstOrDefault(item => item.Friendly != true) is { } sprayed ? state.Unit(sprayed.UnitId!)!.Side : targetSide;
+                AddFireEvents(scope, attemptId, expected, actor, sprayState, spray, sprayTargetSide, step, events, draw,
+                    new ResumedRolls(new Dictionary<string, string>(StringComparer.Ordinal) { ["attack"] = attackRoll }, [("attack", dice.Values)]));
+            }
+
+            if (encircles is not null && record is not null && !events.Any(item => item.Payload is ChoicePending)
+                && Replay([.. existing, .. events]).Current is { } sealedState
+                && sealedState.At(target).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side == encircles))
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "encirclement-placed", new EncirclementPlaced(target, encircles, record.EventId), null, null,
+                    [record.EventId]));
+            }
+
+            // A9.22: no Fire Lane when the manning Infantry Cowered or the MG malfunctioned; the MG is marked First Fire.
+            if (lane is { } placed && !events.Any(item => item.Payload is ChoicePending) && record?.Payload is FireResolved laneRecord
+                && !(laneRecord.Resolution.TryGetProperty("arithmetic", out var laneArithmetic) && laneArithmetic.TryGetProperty("cowered", out var cowered) && cowered.GetBoolean())
+                && Replay([.. existing, .. events]).Current is { } laned && laned.Find(placed.Weapon) is EquipmentInstance weapon && !Is(weapon, Conditions.Malfunctioned))
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "fire-lane-placed", new FireLanePlaced(record.EventId, placed.Weapon, placed.Operator, placed.Entries),
+                    null, null, [record.EventId]));
+                if (!Is(weapon, Conditions.FirstFire))
+                {
+                    events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
+                        new ConditionsChanged(placed.Weapon, new Dictionary<string, ConditionState> { [Conditions.FirstFire] = ConditionState.True }), null, null, [record.EventId]));
+                }
+            }
+
             return events;
         }
 
@@ -267,7 +499,11 @@ public sealed partial class GamePlanner
             [$"play.fire: {string.Join(", ", facts.VehicleFire is { } byVehicle ? [byVehicle.VehicleId] : facts.Firers!.Select(item => item.UnitId))} fire at {facts.TargetLocationId} in the {facts.Phase}"
                 + (facts.FireKind is { } kind ? $" ({kind})" : string.Empty)
                 + (directing.Length > 0 ? $", directed by {string.Join(", ", directing)}" : string.Empty)
-                + $"; range {facts.Range}, {facts.TargetTerrain}, Hindrance {facts.Los!.HindranceDrm}"])
+                + $"; range {facts.Range}, {facts.TargetTerrain}, Hindrance {facts.Los!.HindranceDrm}"
+                + (spray is not null ? $"; Spraying Fire at {spray.TargetLocationId} too, on the same DR (A9.5)" : string.Empty)
+                + (lane is { } declared ? $"; a Fire Lane of {declared.Weapon} to {declared.Entries[^1].Location} (A9.22)" : string.Empty)
+                + (blockedFirst is not null ? "; the firers whose LOS is blocked fire first and drop out (A6.11, A7.52)" : string.Empty)
+                + (encircles is not null ? $"; this attack Encircles the {encircles} units at {facts.TargetLocationId} (A7.7)" : string.Empty)])
         {
             Roll = new PlannedRoll("fire", Build),
             FirstEventId = EventId(attemptId, 1),
@@ -536,7 +772,8 @@ public sealed partial class GamePlanner
         }
 
         // The fire markers (A3.2, A3.4, A3.5, A8.1, A8.3, A8.4); a MG firing again alone on its Multiple ROF leaves its unit as it was.
-        var alone = (facts.Firers ?? []).Where(item => item.UsesInherentFp == false).Select(item => item.UnitId!).ToHashSet(StringComparer.Ordinal);
+        var alone = (facts.Firers ?? []).Where(item => item.UsesInherentFp == false && !resolution.FireCounterUnitIds.Contains(item.UnitId!))
+            .Select(item => item.UnitId!).ToHashSet(StringComparer.Ordinal);
         foreach (var id in resolution.FireCounterUnitIds.Where(id => !alone.Contains(id) && state.Unit(id) is not { Status: not InstanceStatus.Active }))
         {
             var conditions = new Dictionary<string, ConditionState> { [Marker(resolution.FireCounter!)] = ConditionState.True };
@@ -1115,7 +1352,8 @@ public sealed partial class GamePlanner
             };
         }
 
-        if (attack.FireKind == ScenarioA1FireCalculator.SubsequentFirstFire)
+        if (attack.FireKind == ScenarioA1FireCalculator.SubsequentFirstFire
+            || (attack.FireKind == ScenarioA1FireCalculator.FinalProtectiveFire && attack.Firers!.Any(item => item.FinalFireMarked != true)))
         {
             // A8.3: no farther than the closest armed, Known enemy unit, from each firer's Location.
             var side = state.Unit(attack.Firers![0].UnitId!)!.Side;

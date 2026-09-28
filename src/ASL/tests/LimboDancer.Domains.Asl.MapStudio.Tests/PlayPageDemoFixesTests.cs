@@ -168,7 +168,7 @@ public sealed class PlayPageDemoFixesTests : IDisposable
     }
 
     [Fact]
-    public void ABerserkUnitIsNotOfferedAsAFirerAndIsMarkedAndPreselectedToCharge()
+    public void ABerserkUnitIsOfferedAsAFirerInTheDfphAndIsMarkedAndPreselectedToCharge()
     {
         var hexes = Hexes();
         var page = Start("russian", "german", ("r4", "defender-squad", hexes.One), ("r5", "defender-squad", hexes.One),
@@ -185,10 +185,10 @@ public sealed class PlayPageDemoFixesTests : IDisposable
         Assert.Contains("berserk", page.Find("#play-units tr[data-unit='g2']").TextContent, StringComparison.Ordinal);
         Assert.NotNull(page.Find("#rolls-scripted"));
 
-        // In the DFPh the berserk g2, the Germans' only unit, is not offered as a firer, so its Location is not offered either (A15.432).
+        // A15.432 (ruling R12.10): in the DFPh the berserk g2 fires, so its Location is offered.
         Advance(page, 2);
         Assert.Equal("dfph", live.History("village")!.Current!.Phase);
-        Assert.DoesNotContain(page.FindAll("#fire-from option"), option => option.GetAttribute("value") == hexes.Two);
+        Assert.Contains(page.FindAll("#fire-from option"), option => option.GetAttribute("value") == hexes.Two);
 
         // The German MPh: g2 charges first, marked with its target and next step, and it is the unit checked.
         Advance(page, 7);
@@ -218,5 +218,21 @@ public sealed class PlayPageDemoFixesTests : IDisposable
 
         Assert.Contains("guarded by r4", page.Find("#play-units tr[data-unit='g2']").TextContent, StringComparison.Ordinal);
         Assert.Contains("guards g2", page.Find("#play-units tr[data-unit='r4']").TextContent, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TheOpportunityFirePanelMarksTheUnitsAndTheFirePanelOffersSprayingFire()
+    {
+        // A7.25 (ruling R12.1): in the German PFPh, g1 holds its fire under a Bounding Fire counter; A9.5 (ruling R12.6): the fire panel offers a
+        // second Location for Spraying Fire.
+        var hexes = Hexes();
+        var page = Start("german", "russian", ("g1", "attacker-squad", hexes.One), ("r1", "defender-squad", hexes.Two));
+        Advance(page, 1);
+        Assert.Equal("pfph", live.History("village")!.Current!.Phase);
+        Assert.NotNull(page.Find("#fire-spray"));
+        page.Find(".opportunity-unit[data-unit='g1']").Change(true);
+        Commit(page, "#propose-opportunity");
+        Assert.Equal(Units.State.ConditionState.True, Units.State.GameState.Condition(live.History("village")!.Current!.Unit("g1")!, Units.State.Conditions.BoundingFire));
+        Assert.Empty(page.FindAll(".opportunity-unit[data-unit='g1']"));
     }
 }

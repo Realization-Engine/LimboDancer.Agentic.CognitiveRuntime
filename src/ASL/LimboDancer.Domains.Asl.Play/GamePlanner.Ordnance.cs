@@ -46,6 +46,14 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, reason!);
         }
 
+        // A7.25, A15.432 (table player, pass 12): an Opportunity Firer or a berserk unit fires no ordnance or LATW in its PFPh.
+        var shooter = gunId.EndsWith(":pf", StringComparison.Ordinal) ? state.Unit(gunId[..^":pf".Length])
+            : state.Find(gunId) is EquipmentInstance { Holding: { } holding } ? state.Unit(holding.Holder) : null;
+        if (state.Phase == "pfph" && shooter is not null && !LiveFire.IsVehicle(shooter) && (Is(shooter, Conditions.BoundingFire) || Is(shooter, Conditions.Berserk)))
+        {
+            return Refused(scope, label, expected, $"play.fire-barred: {shooter.Id} {GamePlanner.FireBar(state, shooter)}");
+        }
+
         // C3.33, C3.332 (ruling R9.3): a mortar's Area Target Type shot at a hex holding a vehicle, or units in another Location of the hex, is not built.
         if (shot.TargetType == OrdnanceTargetTypes.Area)
         {

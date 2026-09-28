@@ -221,12 +221,13 @@ public sealed class PlayTests : IDisposable
         var seen = new List<(int, string, string)>();
         for (var step = 0; step < 17; step++)
         {
+            // A12.12 (ruling R12.5): the lone g1 gains "?" as its Player Turn ends, one event more.
             Assert.Equal(PlayOutcome.Committed, (await Commit(play, GameActions.AdvancePhase,
                 Args(new
                 {
                     gameId = "village",
                     attemptId = $"a{step}",
-                    expectedRevision = 2 + step
+                    expectedRevision = Current().Revision
                 }))).Outcome);
             var state = Current();
             seen.Add((state.Turn, state.Phase, state.PhasingSide));
@@ -444,7 +445,7 @@ public sealed class PlayTests : IDisposable
                 "asl.game.rally", "asl.game.repair", "asl.game.move", "asl.game.pass-fire", "asl.game.end-move",
                 "asl.game.advance", "asl.game.ambush", "asl.game.close-combat", "asl.game.take-prisoner", "asl.game.fire-ordnance", "asl.game.recover-shock", "asl.game.turn-gun", "asl.game.hook-gun",
                 "asl.game.move-vehicle", "asl.game.overrun", "asl.game.vehicle-close-combat",
-                "asl.game.button-up", "asl.game.choose", "asl.game.massacre"],
+                "asl.game.button-up", "asl.game.choose", "asl.game.massacre", "asl.game.opportunity-fire"],
             GameActions.All.Select(action => action.Id.Value));
         Assert.All(GameActions.All, action => Assert.Equal(Abstractions.Actions.ActionReversibility.Irreversible, action.Risk.Reversibility));
         var precondition = Assert.Single(GameActions.EnterEmptyBuilding.Preconditions);

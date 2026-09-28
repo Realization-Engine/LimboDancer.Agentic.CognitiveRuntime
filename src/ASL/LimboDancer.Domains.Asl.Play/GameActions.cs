@@ -107,13 +107,32 @@ public static class GameActions
             "directors": { "type": "array", "items": { "type": "string" } },
             "weapons": { "type": "object", "additionalProperties": { "type": "array", "items": { "type": "string" } } },
             "withoutInherent": { "type": "array", "items": { "type": "string" } },
-            "target": { "type": "string" }, "snapShot": { "type": "boolean" }
+            "partners": { "type": "object", "additionalProperties": { "type": "string" } },
+            "target": { "type": "string" }, "snapShot": { "type": "boolean" }, "sprayTarget": { "type": "string" },
+            "fireLane": {
+              "type": "object", "additionalProperties": false, "required": ["weapon", "to"],
+              "properties": { "weapon": { "type": "string" }, "to": { "type": "string" } }
+            }
           }
         }
         """, JsonSerializer.SerializeToElement(new
         {
             package = ScenarioA1FirePackage.Identity.ToString()
         }));
+
+    public static readonly ActionDescriptor OpportunityFire = Descriptor("asl.game.opportunity-fire", "Declare Opportunity Fire",
+        "In its PFPh, mark Good Order Infantry of the phasing side that have not fired with a Bounding Fire counter: they neither fire in the PFPh nor move in the MPh, and fire in the AFPh without its halving, their MGs keeping Multiple ROF; a concealed one in the LOS of a Good Order enemy ground unit within 16 hexes loses its \"?\" (A7.25; ruling R12.1).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "unitIds"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "unitIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+          }
+        }
+        """);
 
     public static readonly ActionDescriptor Rally = Descriptor("asl.game.rally", "Rally",
         "Attempt to rally a broken unit in the RPh, by a Good Order leader in its Location or by Self-Rally, as the reviewed Rally package resolves it, and only when every outcome the dice can reach is decided.",
@@ -436,7 +455,7 @@ public static class GameActions
         get;
     } =
         [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding, DeclareOverrun, Fire, Rally, Repair, Move, PassFire, EndMove, Advance, Ambush, CloseCombat, TakePrisoner,
-            FireOrdnance, RecoverShock, TurnGun, HookGun, MoveVehicle, Overrun, VehicleCloseCombat, ButtonUp, Choose, Massacre];
+            FireOrdnance, RecoverShock, TurnGun, HookGun, MoveVehicle, Overrun, VehicleCloseCombat, ButtonUp, Choose, Massacre, OpportunityFire];
 
     public static string VersionKey(Guid tenant, string game) => $"asl.game:{tenant:N}:{game}";
 
