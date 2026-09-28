@@ -328,7 +328,7 @@ else if (state is not null)
                 {
                     var (spentMp, allotmentMp) = GamePlanner.VehicleHalfMp(chosen);
                     var movingNow = state.Movement is { Vehicle: true } under ? under.Started && !under.Stopped ? ", moving" : ", stopped: Start costs 1 MP" : GameState.Condition(chosen, Conditions.Motion) == ConditionState.True ? ", in Motion: no Start MP" : ", stopped: Start costs 1 MP";
-                    <span id="vehicle-state" data-vca="@UnitFacings.Name(vca)">VCA @UnitFacings.Name(vca), @HalfMpText(spentMp) of @HalfMpText(allotmentMp) MP spent, @HalfMpText(Math.Max(0, allotmentMp - spentMp)) left@movingNow</span>
+                    <span id="vehicle-state" data-vca="@UnitFacings.Name(vca)">VCA @UnitFacings.Name(vca), @HalfMpText(spentMp) of @HalfMpText(allotmentMp) MP spent, @HalfMpText(Math.Max(0, allotmentMp - spentMp)) left@(movingNow)</span>
                     var vehicleMoving = state.Movement is { Vehicle: true } driving ? driving.Started && !driving.Stopped
                         : GameState.Condition(chosen, Conditions.Motion) == ConditionState.True;
                     @if (!vehicleMoving)

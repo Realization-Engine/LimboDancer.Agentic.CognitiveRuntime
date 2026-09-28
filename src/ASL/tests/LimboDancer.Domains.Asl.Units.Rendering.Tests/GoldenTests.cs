@@ -171,7 +171,7 @@ public sealed class GoldenTests
                 "asl:wounded" => catalog["example-hero"],
                 "asl:limbered" => catalog["example-aa-gun"],
                 "asl:wrecked" or "asl:bu" or "asl:ce" => catalog["example-tank"],
-                "asl:motion" => catalog["example-halftrack"],
+                "asl:motion" or "asl:immobilized" or "asl:stunned" or "asl:stun-recovery" or "asl:recalled" => catalog["example-halftrack"],
                 "asl:dispersed" => catalog["example-smoke"],
                 "asl:flame" => catalog["example-fire"],
                 _ => catalog["example-squad"],

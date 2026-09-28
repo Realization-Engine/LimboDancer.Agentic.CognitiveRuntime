@@ -512,8 +512,8 @@ public sealed partial class GamePlanner
 
     /// <summary>
     /// The event that records a vehicle's effect (ruling R25.5, R25.6): a destroyed vehicle leaves play (its wreck is not placed); an
-    /// immobilized one loses Motion (D.7); a Stunned crew buttons up and the vehicle Stops (D5.34); a Recalled one is also Stunned
-    /// (D5.341); a pinned crew is pinned (A7.82).
+    /// immobilized one loses Motion (D.7); a Stunned crew buttons up and the vehicle Stops (D5.34); a Recalled crew is treated as Stunned but
+    /// marked Recalled alone (D5.341); a pinned crew is pinned (A7.82).
     /// </summary>
     private static (string Type, EventPayload Payload)? VehicleEffectEvent(FireVehicleEffect effect)
     {
@@ -537,8 +537,9 @@ public sealed partial class GamePlanner
                 conditions[Conditions.Motion] = ConditionState.False;
                 break;
             case FireVehicleEffect.Recalled:
+                // A Recall is a Stun that removes the vehicle at the end of the Player Turn (D5.341); every check reads either.
                 conditions[Conditions.Recalled] = ConditionState.True;
-                conditions[Conditions.Stunned] = ConditionState.True;
+                conditions[Conditions.Stunned] = ConditionState.False;
                 conditions[Conditions.StunRecovery] = ConditionState.False;
                 conditions[Conditions.ButtonedUp] = ConditionState.True;
                 conditions[Conditions.Motion] = ConditionState.False;

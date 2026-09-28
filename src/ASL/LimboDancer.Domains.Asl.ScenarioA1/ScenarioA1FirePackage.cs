@@ -12,8 +12,8 @@ namespace LimboDancer.Domains.Asl.ScenarioA1;
 /// </summary>
 public sealed class ScenarioA1FirePackage : IDomainPackageResolver
 {
-    public const string ManifestSha256 = "e69b4bfb67d9ead191852765513b65f3f693f6a66fd839b234de22cc6d009599";
-    public const string MatrixSha256 = "596674d8bc85fdffb319d332e71e85741b05e8545893cfd5d0cf85e57fb2ff00";
+    public const string ManifestSha256 = "ef97d62a0d26e865b737109421f94cc909a331b4489918c49143e28e4c0c71d0";
+    public const string MatrixSha256 = "49d899e23d733fe2facf26ce06c66989aeb20dc23cec55fa1ba90adbeb1e14d5";
     public const string ChartSupplementId = "asl-supplement:fire-charts";
 
     /// <summary>

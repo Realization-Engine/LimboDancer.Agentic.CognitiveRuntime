@@ -279,6 +279,10 @@ asl|vehicle:face(wreck)::slot(cs) { font-size: 0.16; }
 asl|unit:asl\:bu     { badge: "BU" top-left; }
 asl|unit:asl\:ce     { badge: "CE" top-left; }
 asl|unit:asl\:motion { badge: "MOT" top-right; }
+asl|unit:asl\:immobilized { badge: "IMM" top-right; }
+asl|unit:asl\:stunned { badge: "STUN" bottom-left; }
+asl|unit:asl\:stun-recovery { badge: "+1" bottom-left; }
+asl|unit:asl\:recalled { badge: "RCL" bottom-left; }
 
 /* Entities that are not units (ASL-UNIT-026): a Sniper, Fortifications, and informational markers. No asl|unit rule
    applies to them. Snipers and Fortifications take their side's colors; markers are neutral. */

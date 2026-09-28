@@ -45,6 +45,7 @@ Setup refuses vehicles without a VCA, concealed or hidden, above ground level, o
 - In the MPh and APh, a crew exposure panel offers the halftrack's BU counter.
 - The Fire panel offers the halftrack's Location in the fire phases while its crew is CE; the fire record shows each vehicle's Vehicle line result and its crew's Collateral Attack with its DRM and check.
 - The units table shows a vehicle's VCA, MP of its allotment, and CE.
+- On the map, a vehicle's counter carries a badge for each vehicle state, in both style sheets: Imm (IMM), Stun (STUN), Stun+1 (+1), and Recall (RCL), beside the existing BU, CE, and Motion badges. A Recalled crew is marked Recalled alone; every check reads Stunned or Recalled.
 
 ## 7. Tests
 
@@ -52,6 +53,8 @@ Setup refuses vehicles without a VCA, concealed or hidden, above ground level, o
 - Play: `VehicleStepsTests` (11): U29's truck and halftrack, Motion, the Stun lifecycle, the refusals, setup, and the table player's fixes; the action list.
 - Studio: `PlayPageVehicleTests`: placement with a VCA, the panels, and the Start and Stop buttons.
 - CounterSheets, Units, and Studio catalog lists updated for catalog 1.5.0 and vocabulary 1.8.0.
+- Authoring: `BuildVehicles` verifies the 45 comparison subjects, and the four matrix tests pin the new digests (the Fire matrix's 186 fragments).
+- Rendering: goldens for the four new states on the example halftrack, in both style sheets.
 
 ## 8. Not in this pass
 

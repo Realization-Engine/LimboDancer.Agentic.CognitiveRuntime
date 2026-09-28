@@ -1679,7 +1679,6 @@
       "reviewStatus": "reviewed-bounded",
       "expectedDisposition": "abstained",
       "sourceRules": [
-        "D1.2",
         "D1.21",
         "D1.23",
         "D.3",

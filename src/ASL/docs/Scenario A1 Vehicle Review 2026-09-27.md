@@ -101,8 +101,8 @@ A visual check on the Studio (games `pass4-vehicles-2` and `pass4-vehicles-3`, s
 | Vehicle PDF comparison | `c9f59e1c...` |
 | Vehicle line transcription | `c9a2d785...` |
 | Vehicle MP transcription | `20ae5a74...` |
-| Fire case matrix | `596674d8...` |
-| Fire package manifest | `e69b4bfb...` (prior `b944ed34...`) |
+| Fire case matrix | `49d899e2...` |
+| Fire package manifest | `ef97d62a...` (prior `b944ed34...`) |
 | Rally case matrix | `63931938...` |
 | Rally package manifest | `9a1f5173...` (prior `7784925f...`) |
 | Close Combat case matrix | `afde3459...` |

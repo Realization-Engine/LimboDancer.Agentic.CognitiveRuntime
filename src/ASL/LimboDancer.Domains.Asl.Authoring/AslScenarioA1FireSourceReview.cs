@@ -63,9 +63,18 @@ public static class AslScenarioA1FireSourceReview
     public const string OrdnanceComparisonFile = "asl-scenario-a1.ordnance-pdf-comparison.json";
     public const string OrdnanceComparisonSha256 = "cebc0e782dd0a67ec7fa65f04ecc0eab1ee94800a260e5395e95f5a4b107c662";
 
+    /// <summary>
+    /// The unit step 25 comparison: vehicles in the target Location (A7.307 to A7.309), Collateral Attacks on a CE crew (D.8, D5.3 to
+    /// D5.341, A10.31, A7.82, A15.1), a vehicle's MG (D1.83, D3.5 to D3.7), vehicle movement (D2.1 to D2.6), Residual FP (A8.2), and an
+    /// AFV's cover for Infantry (D9.3, D9.4).
+    /// </summary>
+    public const string VehicleComparisonFile = "asl-scenario-a1.vehicle-pdf-comparison.json";
+    public const string VehicleComparisonSha256 = "c9f59e1ca5009c2fc8fd0be8583016d1c9059afcd20e73cfaf1d4aacd0021559";
+
     private const string ChapterA = "asl-easlrb-3.10:chapter-a";
     private const string ChapterB = "asl-easlrb-3.10:chapter-b";
     private const string ChapterC = "asl-easlrb-3.10:chapter-c";
+    private const string ChapterD = "asl-easlrb-3.10:chapter-d";
 
     // Rule, the element id the conversion registered the fragment under, source, line, kind, physical page.
     private static readonly (string Rule, string Registered, string Source, int Line, SourceFragmentKind Kind, int Page)[] Subjects =
@@ -217,6 +226,55 @@ public static class AslScenarioA1FireSourceReview
         ("A25.25", "A25.25", ChapterA, 1758, SourceFragmentKind.RuleText, 96),
     ];
 
+    private static readonly (string Rule, string Registered, string Source, int Line, SourceFragmentKind Kind, int Page)[] VehicleSubjects =
+    [
+        ("A4.6", "A4.6", ChapterA, 311, SourceFragmentKind.RuleText, 51),
+        ("A7.307", "A7.307", ChapterA, 483, SourceFragmentKind.RuleText, 55),
+        ("A7.308", "A7.308", ChapterA, 485, SourceFragmentKind.RuleText, 55),
+        ("A7.309", "A7.309", ChapterA, 487, SourceFragmentKind.RuleText, 56),
+        ("A7.82", "A7.82", ChapterA, 578, SourceFragmentKind.RuleText, 58),
+        ("A7.9", "A7.9", ChapterA, 586, SourceFragmentKind.RuleText, 58),
+        ("A8.2", "A8.2", ChapterA, 608, SourceFragmentKind.RuleText, 60),
+        ("A10.31", "A10.31", ChapterA, 776, SourceFragmentKind.RuleText, 66),
+        ("A15.1", "A15.1", ChapterA, 1214, SourceFragmentKind.RuleText, 83),
+        ("D.3", "D.3", ChapterD, 22, SourceFragmentKind.RuleText, 192),
+        ("D.6", "D.6", ChapterD, 34, SourceFragmentKind.RuleText, 192),
+        ("D.7", "D.7", ChapterD, 36, SourceFragmentKind.RuleText, 192),
+        ("D.8", "D.8", ChapterD, 38, SourceFragmentKind.RuleText, 192),
+        ("D.8", "D.8", ChapterD, 40, SourceFragmentKind.RuleContinuation, 192),
+        ("D.8", "D.8", ChapterD, 42, SourceFragmentKind.RuleContinuation, 192),
+        ("D1.21", "D1.21", ChapterD, 99, SourceFragmentKind.RuleText, 193),
+        ("D1.23", "D1.23", ChapterD, 111, SourceFragmentKind.RuleText, 194),
+        ("D1.8", "D1.8", ChapterD, 195, SourceFragmentKind.RuleText, 195),
+        ("D1.83", "D1.83", ChapterD, 201, SourceFragmentKind.RuleText, 195),
+        ("D2.1", "D2.1", ChapterD, 211, SourceFragmentKind.RuleText, 195),
+        ("D2.11", "D2.11", ChapterD, 213, SourceFragmentKind.RuleText, 195),
+        ("D2.12", "D2.12", ChapterD, 219, SourceFragmentKind.RuleText, 195),
+        ("D2.13", "D2.13", ChapterD, 225, SourceFragmentKind.RuleText, 196),
+        ("D2.14", "D2.14", ChapterD, 227, SourceFragmentKind.RuleText, 196),
+        ("D2.16", "D2.16", ChapterD, 231, SourceFragmentKind.RuleText, 196),
+        ("D2.2", "D2.2", ChapterD, 239, SourceFragmentKind.RuleText, 196),
+        ("D2.4", "D2.4", ChapterD, 295, SourceFragmentKind.RuleText, 198),
+        ("D2.41", "D2.41", ChapterD, 301, SourceFragmentKind.RuleText, 198),
+        ("D2.42", "D2.42", ChapterD, 303, SourceFragmentKind.RuleText, 198),
+        ("D2.6", "D2.6", ChapterD, 325, SourceFragmentKind.RuleText, 199),
+        ("D3.11", "D3.11", ChapterD, 335, SourceFragmentKind.RuleText, 199),
+        ("D3.5", "D3.5", ChapterD, 383, SourceFragmentKind.RuleText, 200),
+        ("D3.53", "D3.53", ChapterD, 397, SourceFragmentKind.RuleText, 201),
+        ("D3.7", "D3.7", ChapterD, 407, SourceFragmentKind.RuleText, 201),
+        ("D5.1", "D5.1", ChapterD, 486, SourceFragmentKind.RuleText, 203),
+        ("D5.2", "D5.2", ChapterD, 490, SourceFragmentKind.RuleText, 203),
+        ("D5.3", "D5.3", ChapterD, 496, SourceFragmentKind.RuleText, 203),
+        ("D5.31", "D5.31", ChapterD, 504, SourceFragmentKind.RuleText, 203),
+        ("D5.311", "D5.311", ChapterD, 506, SourceFragmentKind.RuleText, 203),
+        ("D5.33", "D5.33", ChapterD, 510, SourceFragmentKind.RuleText, 203),
+        ("D5.34", "D5.34", ChapterD, 512, SourceFragmentKind.RuleText, 203),
+        ("D5.341", "D5.341", ChapterD, 518, SourceFragmentKind.RuleText, 203),
+        ("D5.341", "D5.341", ChapterD, 526, SourceFragmentKind.RuleContinuation, 204),
+        ("D9.3", "D9.3", ChapterD, 766, SourceFragmentKind.RuleText, 209),
+        ("D9.4", "D9.4", ChapterD, 770, SourceFragmentKind.RuleText, 210),
+    ];
+
     private static readonly (string Rule, string Registered, string Source, int Line, SourceFragmentKind Kind, int Page)[] OrdnanceSubjects =
     [
         ("A1.123", "A1.123", ChapterA, 99, SourceFragmentKind.RuleText, 44),
@@ -326,7 +384,8 @@ public static class AslScenarioA1FireSourceReview
 
     // Fragments a column break, a boxed example, or a page break interrupts: each part occurs whole in the page text.
     private static readonly HashSet<(string Rule, int Line)> TwoPartSubjects =
-        [("A7.212", 445), ("A8.26", 644), ("A8.31", 658), ("A9.2", 690), ("B3.4", 138), ("A12.11", 992), ("A11.41", 940), ("A20.21", 1402)];
+        [("A7.212", 445), ("A8.26", 644), ("A8.31", 658), ("A9.2", 690), ("B3.4", 138), ("A12.11", 992), ("A11.41", 940), ("A20.21", 1402),
+            ("A7.308", 485), ("D3.5", 383)];
 
     /// <summary>The verified fragments, in subject order, keyed by rule id for the Fire package.</summary>
     public static IReadOnlyList<(string Rule, int Page, SourceFragment Fragment)> Fragments(GeneratedManifests manifests)
@@ -373,6 +432,12 @@ public static class AslScenarioA1FireSourceReview
         GeneratedManifests manifests, AslScenarioA1SourceAttestation attestation) =>
         Build(repositoryRoot, manifests, attestation, BerserkSurrenderComparisonFile, BerserkSurrenderComparisonSha256, BerserkSurrenderSubjects,
             "unit step 30 Berserk and Surrender review");
+
+    /// <summary>The unit step 25 subjects of vehicles in the target Location, their crews, their MG, and their movement.</summary>
+    public static AslScenarioA1VerificationBatch BuildVehicles(string repositoryRoot,
+        GeneratedManifests manifests, AslScenarioA1SourceAttestation attestation) =>
+        Build(repositoryRoot, manifests, attestation, VehicleComparisonFile, VehicleComparisonSha256, VehicleSubjects,
+            "unit step 25 Vehicle review");
 
     /// <summary>The unit step 24 subjects of a Gun's HE shot at Infantry.</summary>
     public static AslScenarioA1VerificationBatch BuildOrdnance(string repositoryRoot,
