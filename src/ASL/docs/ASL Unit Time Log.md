@@ -169,3 +169,13 @@ Estimate: 5:15 (build 4:00) in the [ASL Unit Backlog Passes Plan](<ASL Unit Back
 | Table player agent (11 findings) and fixes: Shocked and UK stop a vehicle everywhere, Abandoned tanks, a tank's "?" and Acquisition, malfunction on missing ammunition, crew check exemptions, ammunition list, Shock records | 02:52 | 02:56 | 0:04 | The agent ran from 02:44 during the suite and the visual check |
 | Documents: review, backlog section 17 and four deviations, rulings R7.8 to R7.10, catalog design 9.7 | 02:56 | 02:58 | 0:02 | |
 | Full local suite before the commit (1,782 tests pass, 30 skipped) | 02:58 | 03:05 | 0:07 | |
+| Commit, Docker Linux check (every project exits 0), merge, push | 03:05 | 03:12 | 0:07 | |
+
+Pass 7 total: 01:26 to 03:12, 1:46 against the estimate of 5:15 (build 4:00).
+
+| Task (plan estimate) | Actual | Where it was logged |
+|---|---|---|
+| 7.1 Tank counters (0:40) | 0:06 | Catalog 1.6.0 |
+| 7.2 Vehicle Target Type and 7.3 To Kill (2:10) | 0:44 | Review stage code (0:10) and source comparison, package revision, package tests (0:34) |
+| 7.4 Main armament fire and 7.5 Crew survival (1:10) | 0:08 | Live stage |
+| Overhead (1:15) | 0:48 | Reading, referee and table player with their fixes, suite, visual check, documents, merge gate |
