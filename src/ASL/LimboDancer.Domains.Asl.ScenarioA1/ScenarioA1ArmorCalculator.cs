@@ -90,8 +90,9 @@ internal static class ScenarioA1ArmorCalculator
         var armored = !armor.Unarmored && armor.FrontAf is not null;
         var latw = gun.GunType == "latw";
 
-        // C13.3, C13.34, C8.31 (ruling R9.8): a PF fires HEAT only at an AFV; its other targets need HE Equivalency, not built.
-        if (latw && (ammunition != "heat" || !armored))
+        // C13.3, C13.34, C8.31 (ruling R9.8): a PF fires HEAT only at an AFV; its other targets need HE Equivalency, not built. Pass 9b: a PSK fires
+        // HEAT and an ATR AP at any vehicle (C13.43, C13.2).
+        if (latw && (gun.LatwType switch { "pf" => ammunition != "heat" || !armored, "psk" => ammunition != "heat", _ => ammunition != "ap" }))
         {
             outside.Add(Prefix + "ammunition-outside");
             return;
@@ -134,8 +135,16 @@ internal static class ScenarioA1ArmorCalculator
         // C3.31, C4: the Vehicle row's Basic TH#, the Gun's modifications, and APCR's (C4.3). C13.33 (ruling R9.8): a PF's Basic TH# is 10, less
         // two for each hex of range, with no C4 modification.
         var latw = gun.GunType == "latw";
-        var basic = latw ? 10 : reference.Armor.BasicToHit(color, column);
-        var modifications = latw ? [new FireModifier("pf-range", -2 * range, "C13.33")] : reference.Modifications(gun, range).ToList();
+        var pf = gun.LatwType == "pf";
+
+        // Pass 9b: a PSK reads its own To Hit Table (C13.48); an ATR the black Vehicle row whatever its nationality (C13.2).
+        if (gun.LatwType == "atr")
+        {
+            color = "black";
+        }
+
+        var basic = pf ? 10 : gun.ToHitTable.Count > 0 ? gun.ToHitTable[range - 1] : reference.Armor.BasicToHit(color, column);
+        var modifications = pf ? [new FireModifier("pf-range", -2 * range, "C13.33")] : gun.ToHitTable.Count > 0 ? [] : reference.Modifications(gun, range).ToList();
         if (ammunition == "apcr" && reference.Armor.ApcrToHit(column) is var apcr && apcr != 0)
         {
             modifications.Add(new FireModifier("apcr", apcr, "C4.3"));
@@ -157,7 +166,7 @@ internal static class ScenarioA1ArmorCalculator
                 drm.Add(new FireModifier("case-c3:afph", 2, "C13.1"));
             }
 
-            if (shot.Panzerfaust?.FromBuilding == true)
+            if (shot.Panzerfaust?.FromBuilding == true && gun.LatwType is "pf" or "psk")
             {
                 drm.Add(new FireModifier("case-c3:backblast", 2, "C13.8"));
             }
@@ -302,12 +311,12 @@ internal static class ScenarioA1ArmorCalculator
         }
 
         var toHit = new OrdnanceToHit(color, basic, modifications, modified, [.. dice], original, drm, final, improbable, subsequent, isHit, critical);
-        var malfunctioned = original >= ScenarioA1OrdnanceCalculator.Breakdown(shot, gun);
+        var malfunctioned = original >= ScenarioA1OrdnanceCalculator.Breakdown(shot, gun, reference);
 
         // C13.36 (ruling R9.8): a PF never malfunctions, but an Original 12 misses and gives its firer Casualty Reduction; an 11 or 12 for
         // Inexperienced Infantry (A19.32; referee, pass 9).
         var inexperienced = reference.Fire.Definitions.GetValueOrDefault(shot.Crew!.DefinitionId ?? string.Empty)?.Class is "green" or "conscript";
-        var casualty = latw && original >= (inexperienced ? 11 : 12);
+        var casualty = pf && original >= (inexperienced ? 11 : 12);
         if (casualty)
         {
             isHit = critical = false;
@@ -357,7 +366,8 @@ internal static class ScenarioA1ArmorCalculator
         // C6.5 (the chart's G): a non-mortar SW acquires nothing.
         var acquires = !malfunctioned && target.Concealed != true && !latw;
         var acquisition = !acquires ? 0 : Math.Max(shot.Acquisition!.Value - 1, -2);
-        var gunEffect = new OrdnanceGunEffect(gun.Breakdown, malfunctioned, Math.Max(rof, 0), kept, counter, acquisition, acquires ? shot.TargetLocationId : null);
+        var gunEffect = new OrdnanceGunEffect(ScenarioA1OrdnanceCalculator.Breakdown(shot, gun, reference), malfunctioned, Math.Max(rof, 0), kept, counter, acquisition,
+            acquires ? shot.TargetLocationId : null);
         return new OrdnanceResolution(OrdnanceResolution.Resolved, [], toHit, gunEffect)
         {
             CrewConcealmentLost = shot.Crew.Concealed == true && shot.CrewSeen != false ? true : null,

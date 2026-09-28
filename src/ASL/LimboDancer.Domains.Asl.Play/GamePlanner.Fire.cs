@@ -298,10 +298,11 @@ public sealed partial class GamePlanner
             ? list.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString()!)
             : [];
 
-    /// <summary>The usable MGs a unit possesses, in id order.</summary>
+    /// <summary>The usable MGs and ATR a unit possesses, in id order (table player, pass 9b: a mortar or PSK takes no part in its fire groups).</summary>
     private static string[] Possessed(GameState state, string unitId) =>
         [.. state.Equipment.Where(equipment => equipment.Status == InstanceStatus.Active && equipment.Holding is { Role: HoldingRole.Possessed } holding
-                && holding.Holder == unitId && GameState.Condition(equipment, Conditions.Malfunctioned) != ConditionState.True)
+                && holding.Holder == unitId && GameState.Condition(equipment, Conditions.Malfunctioned) != ConditionState.True
+                && (equipment.Kind == "asl:mg" || (equipment.Definition is { } weapon && LiveOrdnance.LatwType(weapon.Definition) == "atr")))
             .Select(equipment => equipment.Id).Order(StringComparer.Ordinal)];
 
     /// <summary>

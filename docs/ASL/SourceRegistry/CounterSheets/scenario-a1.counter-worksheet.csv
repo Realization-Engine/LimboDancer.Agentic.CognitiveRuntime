@@ -860,3 +860,35 @@ sheet,counter,face,attribute,value,transcriber,reviewer,note
 ,defender-light-mortar,front,asl:no-he,,,,yes or no
 ,defender-light-mortar,front,asl:breakdown-removes,,,,yes or no
 ,defender-light-mortar,malfunctioned,repair,,,,"whole number, or not-printed"
+,attacker-psk,counter,kind,,,,expected asl:latw
+,attacker-psk,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,attacker-psk,front,identity,,,,"identity as printed, or not-printed"
+,attacker-psk,front,firepower,,,,"whole number, or not-printed"
+,attacker-psk,front,range,,,,"whole number, or not-printed"
+,attacker-psk,front,breakdown,,,,whole number (A9.7)
+,attacker-psk,front,rate-of-fire,,,,"whole number, or not-printed"
+,attacker-psk,front,portage,,,,whole number of PP (A4.4)
+,attacker-psk,front,latw-type,,,,"atr, psk, baz, piat, or pf"
+,attacker-psk,front,caliber,,,,whole number in mm
+,attacker-psk,front,range-maximum,,,,"whole number, or not-printed"
+,attacker-psk,front,special-ammo,,,,"codes as printed, space-separated, or not-printed"
+,attacker-psk,front,to-hit-table,,,,"Basic TH# at ranges 1, 2, ..., space-separated, or not-printed"
+,attacker-psk,front,dates,,,,"years as printed, yy-yy"
+,attacker-psk,front,asl:breakdown-removes,,,,yes or no
+,attacker-psk,malfunctioned,repair,,,,"whole number, or not-printed"
+,defender-atr,counter,kind,,,,expected asl:latw
+,defender-atr,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,defender-atr,front,identity,,,,"identity as printed, or not-printed"
+,defender-atr,front,firepower,,,,"whole number, or not-printed"
+,defender-atr,front,range,,,,"whole number, or not-printed"
+,defender-atr,front,breakdown,,,,whole number (A9.7)
+,defender-atr,front,rate-of-fire,,,,"whole number, or not-printed"
+,defender-atr,front,portage,,,,whole number of PP (A4.4)
+,defender-atr,front,latw-type,,,,"atr, psk, baz, piat, or pf"
+,defender-atr,front,caliber,,,,whole number in mm
+,defender-atr,front,range-maximum,,,,"whole number, or not-printed"
+,defender-atr,front,special-ammo,,,,"codes as printed, space-separated, or not-printed"
+,defender-atr,front,to-hit-table,,,,"Basic TH# at ranges 1, 2, ..., space-separated, or not-printed"
+,defender-atr,front,dates,,,,"years as printed, yy-yy"
+,defender-atr,front,asl:breakdown-removes,,,,yes or no
+,defender-atr,malfunctioned,repair,,,,"whole number, or not-printed"

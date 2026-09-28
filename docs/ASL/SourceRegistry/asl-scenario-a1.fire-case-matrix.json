@@ -8,7 +8,7 @@
   "chartReviewDecisionSha256": "a19bf80dedc36fbf36d9356552f28a538faeea9469c8d22daddfabed546fd1e2",
   "iftTranscriptionSha256": "42440dd6facf7aa23cfc8c884ed8c7266f6621b25cb889b679c850098d3a4cec",
   "terrainChartTranscriptionSha256": "afc61e1db4871050d91ab6c58f022ddca86651f8f0104e39408c156e44ffdafa",
-  "catalogSha256": "5ae459fdb07e2fe4bcd872de3f919dc11be23dad2e5c8cd9494d8b20cd3ef3b4",
+  "catalogSha256": "0d67c9a63fdad49a8de3d96ad5fd1e5302e321f9850bc241e198d93656e3943d",
   "sourceFragments": [
     {
       "ruleId": "A.5",
@@ -1458,6 +1458,13 @@
       "startLine": 1606,
       "fragmentId": "asl-fragment:sha256:2f4b0632e8fb800afac8f5b3fc1321dd7be5c73b94b0b7563e3be696a8afcc20",
       "contentSha256": "70e6d12f447ff6228535f2689b08863bd6322759f0b26108a16075a5875f9fba"
+    },
+    {
+      "ruleId": "C13.24",
+      "physicalPdfPage": 183,
+      "startLine": 998,
+      "fragmentId": "asl-fragment:sha256:669756f5f579241509ca859eb2753d8c0b512089f3d35e71d81d8a976674fe51",
+      "contentSha256": "ba63982ca3f225e368f61c30606b4b425c129f8adc7773f2d43d8f67de212033"
     }
   ],
   "visualReadings": [
@@ -1512,7 +1519,8 @@
     "crewFire": "a-crew-fires-its-inherent-fp-unless-it-fired-its-gun-this-player-turn-A7.352 (R8.4)",
     "mphOrdnanceHits": "an-ordnance-hit-of-defensive-first-fire-attacks-the-moving-units-without-ffmo-or-ffnam-which-are-to-hit-cases-j3-and-j4-C6.13-C6.14 (R8.1)",
     "areaHits": "an-area-target-type-hit-attacks-at-half-the-he-fp-with-its-tem-on-the-effects-dr-woods-giving-the-minus-one-of-air-bursts-a-critical-hit-at-the-full-fp-doubled-reversing-only-positive-tem-C3.331-C1.52-B13.3-C3.71 (R9.3)",
-    "smoke": "smoke-grenades-add-plus-two-hindrance-into-through-within-or-out-of-their-location-plus-one-more-out-of-or-within-at-most-plus-three-per-location-ffmo-does-not-apply-to-a-target-in-smoke-the-game-supplies-it-as-los-hindrance-A24.1-A24.11-A24.2-A24.5-A24.7-A24.8 (R9.5, R9.6)"
+    "smoke": "smoke-grenades-add-plus-two-hindrance-into-through-within-or-out-of-their-location-plus-one-more-out-of-or-within-at-most-plus-three-per-location-ffmo-does-not-apply-to-a-target-in-smoke-the-game-supplies-it-as-los-hindrance-A24.1-A24.11-A24.2-A24.5-A24.7-A24.8 (R9.5, R9.6)",
+    "atrSmallArms": "an-atr-joins-a-fire-group-as-one-fp-small-arms-fire-never-beyond-its-range-of-12-and-leaving-no-residual-fp-C13.24 (R9.10)"
   },
   "resolution": {
     "firepower": "Each firer's printed FP, doubled for PBF when the target is adjacent at the same level (A7.21), halved beyond Normal Range up to twice it (A7.22), halved when the target Location holds a concealed unit (A7.23), and halved when the firer is pinned (A7.8); fractions are kept and summed (A7.2).",
@@ -1967,6 +1975,15 @@
         "B13.3"
       ],
       "reason": "A mortar's Area Target Type hit attacks at half the HE FP with the TEM on the Effects DR, woods -1 for Air Bursts (ruling R9.3)."
+    },
+    {
+      "caseId": "A1-fire-atr",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "resolved",
+      "sourceRules": [
+        "C13.24"
+      ],
+      "reason": "An ATR adds 1 FP to the fire of its unit at Personnel within 12 hexes and leaves no Residual FP (ruling R9.10)."
     }
   ],
   "admissionRule": "A declared attack is resolved only when every fact is within the reviewed scope and every roll it needs is recorded; otherwise it is Abstained or Indeterminate with its reasons.",
@@ -1974,7 +1991,7 @@
     "Snap Shots, Bypass, Hazardous Movement, TPBF, and fire across levels",
     "Opportunity Fire, Spraying Fire, and Fire Lanes",
     "FPF directed by a leader or mixed with other fire",
-    "ordnance fire of its own (ordnance hits come from the Ordnance package), ATR, PSK, FT, DC, and MOL",
+    "ordnance fire of its own (ordnance hits come from the Ordnance package), the PSK against Personnel, FT, DC, and MOL",
     "fire by a SMC, a squad firing its inherent FP apart from its MG, and A7.353's halved inherent FP of a crew",
     "captured, dismantled, and transferred SW",
     "vehicles and PRC",
@@ -1991,6 +2008,6 @@
     "BMG and CMG, Passengers' and Riders' fire (D6.64), and a vehicle's Final Fire after its First Fire (A8.4)"
   ],
   "executionAuthority": "none",
-  "revision": "Backlog pass 9 (2026-09-28): Area Target Type hits (C3.331, B13.3) and SMOKE grenades as LOS Hindrance (A24); catalog 1.8.0. Earlier: Backlog pass 8 (2026-09-28): Guns' crews as targets (C11.2, C11.5), a crew's inherent fire (A7.352), and ordnance hits in the MPh; catalog 1.7.0. Earlier: Backlog pass 7 (2026-09-28): closed-topped AFVs and their CE crews (D5.2; R7.11); catalog 1.6.0. Earlier: Backlog pass 6 (2026-09-28): an AFV's or wreck's cover for Infantry (D9.3, D10.3); Residual FP against vehicles (A8.222); concealed vehicles (A12.2); vehicle fire in the MPh (D3.3). Earlier: Backlog pass 5 (2026-09-27): a CX firer or director adds one to the IFT DR (A4.51); a second Heat of Battle DR in one attack (A15.1); Battle Hardening and the Unlikely Kill dr as the owners' options (A15.3, A7.309); No Quarter (A20.3, A15.5). Earlier: Unit step 25 (2026-09-27): vehicles in the target Location (the Vehicle line, A7.308, A7.309; Collateral Attacks on a CE crew, D.8B, D5.34) and a vehicle's MA AAMG firing on the IFT (D1.83, D3.5); catalog 1.5.0. Earlier: Unit step 24 (2026-09-27): ordnance hits resolved on the IFT (C.3, C.6, C3.71); crews refused as targets; catalog 1.4.0. Earlier: Unit step 30 (2026-09-27): Berserk and Surrender after Heat of Battle are taken (A15.4 to A15.5); berserk targets (A15.42); a berserk leader's NTC (A15.41); A15.44. Earlier: Unit steps 27 and 28 (2026-09-27): Heat of Battle after an Original MC DR of 2, with heroes, heroic leaders, Battle Hardening, Fanaticism, and NKVD MMC; Berserk and Surrender are recorded as not taken (ruling R28.1). Catalog 1.3.0 adds the leader grades, heroes, and the classes Battle Hardening needs. Revised after the second-pass review (ruling R28.7). Earlier: Unit steps 19 to 23 (2026-09-26): the AFPh and Assault Fire, fire groups across ADJACENT Locations, hidden and Dummy targets, Defensive First Fire, Subsequent First Fire, FPF, Final Fire by First-Fire-marked units, Residual FP, MGs, and the Heat of Battle deviation of ruling R0.2 are decided; catalog 1.2.0 adds the MGs.",
+  "revision": "Backlog pass 9b (2026-09-28): the ATR as Small Arms Fire (C13.24; R9.10); catalog 1.9.0. Earlier: Backlog pass 9 (2026-09-28): Area Target Type hits (C3.331, B13.3) and SMOKE grenades as LOS Hindrance (A24); catalog 1.8.0. Earlier: Backlog pass 8 (2026-09-28): Guns' crews as targets (C11.2, C11.5), a crew's inherent fire (A7.352), and ordnance hits in the MPh; catalog 1.7.0. Earlier: Backlog pass 7 (2026-09-28): closed-topped AFVs and their CE crews (D5.2; R7.11); catalog 1.6.0. Earlier: Backlog pass 6 (2026-09-28): an AFV's or wreck's cover for Infantry (D9.3, D10.3); Residual FP against vehicles (A8.222); concealed vehicles (A12.2); vehicle fire in the MPh (D3.3). Earlier: Backlog pass 5 (2026-09-27): a CX firer or director adds one to the IFT DR (A4.51); a second Heat of Battle DR in one attack (A15.1); Battle Hardening and the Unlikely Kill dr as the owners' options (A15.3, A7.309); No Quarter (A20.3, A15.5). Earlier: Unit step 25 (2026-09-27): vehicles in the target Location (the Vehicle line, A7.308, A7.309; Collateral Attacks on a CE crew, D.8B, D5.34) and a vehicle's MA AAMG firing on the IFT (D1.83, D3.5); catalog 1.5.0. Earlier: Unit step 24 (2026-09-27): ordnance hits resolved on the IFT (C.3, C.6, C3.71); crews refused as targets; catalog 1.4.0. Earlier: Unit step 30 (2026-09-27): Berserk and Surrender after Heat of Battle are taken (A15.4 to A15.5); berserk targets (A15.42); a berserk leader's NTC (A15.41); A15.44. Earlier: Unit steps 27 and 28 (2026-09-27): Heat of Battle after an Original MC DR of 2, with heroes, heroic leaders, Battle Hardening, Fanaticism, and NKVD MMC; Berserk and Surrender are recorded as not taken (ruling R28.1). Catalog 1.3.0 adds the leader grades, heroes, and the classes Battle Hardening needs. Revised after the second-pass review (ruling R28.7). Earlier: Unit steps 19 to 23 (2026-09-26): the AFPh and Assault Fire, fire groups across ADJACENT Locations, hidden and Dummy targets, Defensive First Fire, Subsequent First Fire, FPF, Final Fire by First-Fire-marked units, Residual FP, MGs, and the Heat of Battle deviation of ruling R0.2 are decided; catalog 1.2.0 adds the MGs.",
   "vehicleLineTranscriptionSha256": "c9a2d785126584d18af851757a8028b975c0866fadcfc5e3fe137ca66e191fb2"
 }

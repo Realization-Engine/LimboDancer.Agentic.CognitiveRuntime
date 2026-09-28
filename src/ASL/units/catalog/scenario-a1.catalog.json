@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "catalog": "asl-scenario-a1",
-  "version": "1.8.0",
-  "label": "Scenario A1 catalog: Infantry Personnel, heroes, leaders, crews, MGs, light mortars, Guns, vehicles, and tanks for the reviewed Scenario A1 cases",
+  "version": "1.9.0",
+  "label": "Scenario A1 catalog: Infantry Personnel, heroes, leaders, crews, MGs, light mortars, LATW, Guns, vehicles, and tanks for the reviewed Scenario A1 cases",
   "publication": "published",
   "vocabulary": [
     "asl@1.3.0"
@@ -12,9 +12,9 @@
       "id": "asl-counter-sheets:scenario-a1",
       "status": "reviewed",
       "record": "docs/ASL/SourceRegistry/CounterSheets/asl-counter-sheets.scenario-a1.source-record.json",
-      "recordSha256": "4618f8b9dece4531ab22d59684bd6037af95318653b557a31d16e33acddb78ae",
+      "recordSha256": "2c4a7d9351ca9edff39729808c4980ff737e1a463884a6eb8ad5ee9d9808410d",
       "transcription": "docs/ASL/SourceRegistry/CounterSheets/scenario-a1.counter-transcription.csv",
-      "transcriptionSha256": "f83feee83ed8ea7b3e4a51fb9b84df7138e81ba07076b512ea0e7435c1491550",
+      "transcriptionSha256": "714a3bc0b4222f1a9c1777ffe33cb6b444fdb3be50147614618ac9915f589aae",
       "transcriber": "Claude (claude-opus-5-5)",
       "reviewer": "Dennis Landi"
     }
@@ -5697,6 +5697,216 @@
           "attribute": "repair",
           "recorded": false,
           "row": 862
+        }
+      ]
+    },
+    {
+      "id": "attacker-psk",
+      "kind": "asl:latw",
+      "kindRow": 863,
+      "nationality": "german",
+      "nationalityRow": 864,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "attacker-psk"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "printed": false,
+          "row": 865
+        },
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "printed": false,
+          "row": 866
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "printed": false,
+          "row": 867
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 11,
+          "row": 868
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "printed": false,
+          "row": 869
+        },
+        {
+          "face": "front",
+          "attribute": "portage",
+          "value": 2,
+          "row": 870
+        },
+        {
+          "face": "front",
+          "attribute": "latw-type",
+          "value": "psk",
+          "row": 871
+        },
+        {
+          "face": "front",
+          "attribute": "caliber",
+          "value": 88,
+          "row": 872
+        },
+        {
+          "face": "front",
+          "attribute": "range-maximum",
+          "value": 4,
+          "row": 873
+        },
+        {
+          "face": "front",
+          "attribute": "special-ammo",
+          "printed": false,
+          "row": 874
+        },
+        {
+          "face": "front",
+          "attribute": "to-hit-table",
+          "value": [
+            "10 9 8 7"
+          ],
+          "row": 875
+        },
+        {
+          "face": "front",
+          "attribute": "dates",
+          "value": "43-45",
+          "row": 876
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-removes",
+          "present": true,
+          "row": 877
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "repair",
+          "printed": false,
+          "row": 878
+        }
+      ]
+    },
+    {
+      "id": "defender-atr",
+      "kind": "asl:latw",
+      "kindRow": 879,
+      "nationality": "russian",
+      "nationalityRow": 880,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "defender-atr"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "printed": false,
+          "row": 881
+        },
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 1,
+          "row": 882
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 12,
+          "row": 883
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 11,
+          "row": 884
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "printed": false,
+          "row": 885
+        },
+        {
+          "face": "front",
+          "attribute": "portage",
+          "value": 1,
+          "row": 886
+        },
+        {
+          "face": "front",
+          "attribute": "latw-type",
+          "value": "atr",
+          "row": 887
+        },
+        {
+          "face": "front",
+          "attribute": "caliber",
+          "value": 14,
+          "row": 888
+        },
+        {
+          "face": "front",
+          "attribute": "range-maximum",
+          "value": 12,
+          "row": 889
+        },
+        {
+          "face": "front",
+          "attribute": "special-ammo",
+          "printed": false,
+          "row": 890
+        },
+        {
+          "face": "front",
+          "attribute": "to-hit-table",
+          "printed": false,
+          "row": 891
+        },
+        {
+          "face": "front",
+          "attribute": "dates",
+          "printed": false,
+          "row": 892
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-removes",
+          "present": false,
+          "row": 893
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "repair",
+          "value": 2,
+          "row": 894
         }
       ]
     }

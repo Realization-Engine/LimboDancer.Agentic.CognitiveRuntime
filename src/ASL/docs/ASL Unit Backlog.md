@@ -282,7 +282,11 @@ Found by playing the Play page with scripted dice in the games `pass23-demo`, `p
 
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
-| The Panzerschreck and the ATR | R9.1 | C13.48, C13.2, pp. 183 to 184 | A registered source for their counters (the PSK's To Hit Table is printed only on its counter; no source prints the ATR's B#, ROF, or PP), or the user's ruling | Not in the catalog. |
+| A registered source for the manufactured Panzerschreck and ATR counters | R9.10, R9.11 | C13.48, C13.2, pp. 183 to 184 | A source that prints the counters | Built in pass 9b with manufactured values (sheet MFG, ruling R0.3); a source would replace them. |
+| The ATR's fire at Guns, the Panzerschreck's 12 FP attack on Infantry, a lone hero or two SMC firing a PSK, and a SMC firing an ATR at Personnel | R9.10, R9.11 | C13.23, C13.24, C13.45, C13.48, C8.31 | HE Equivalency; SMC fire with a SW | Refused. |
+| A leader firing an ATR from the fire panel, which lists no leader as a firer | R9.10 | C13.21 | SMC fire with a SW | The panel leaves leaders out; the ATR's vehicle shots take a SMC. |
+| A MG's B# one lower in Inexperienced hands | R9.10 | A19.32, p. 86 | none | The MG keeps its printed B#; the ATR, mortars, and PSK take the -1. |
+| The C13.8 bar on a PF or PSK firing at a target two or more levels higher in an adjacent hex, or directly above | R9.8, R9.11 | C13.8, p. 185 | Levels in fire (pass 10.2) | Not reached while fire at another level is undecided. |
 | Light mortar repair, and dismantled 76-82mm mortars | R9.1 | A9.72, C9.2 | A registered source for a SW mortar's malfunctioned side | A malfunctioned light mortar stays malfunctioned. |
 | The Area Target Type by Guns, mortars against vehicles and Guns, target hexes with units in several Locations, and units out of the firer's LOS in the target hex | R9.3, R9.9 | C3.33, C3.332, C1.55, p. 170 | IFT attacks on vehicles by HE; levels in fire | Refused. |
 | A mortar Spotter's wait until the next MPh after its loss, the Acquisition a spotting squad loses by firing, and spotting in the AFPh | R9.4 | C9.3, C9.31, p. 179 | Opportunity Fire (pass 12) | A new Spotter may be named at once; the Acquisition is kept; spotted fire is in the PFPh and DFPh only. |

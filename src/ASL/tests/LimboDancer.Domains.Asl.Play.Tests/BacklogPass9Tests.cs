@@ -173,7 +173,7 @@ public sealed class BacklogPass9Tests : IDisposable
         var start = new Dictionary<string, object>
         {
             ["label"] = "Pass 9",
-            ["catalog"] = "asl-scenario-a1@1.8.0",
+            ["catalog"] = "asl-scenario-a1@1.9.0",
             ["boards"] = Bd01,
             ["firstSide"] = firstSide,
             ["sides"] = new object[]
@@ -297,7 +297,7 @@ public sealed class BacklogPass9Tests : IDisposable
             start = new Dictionary<string, object>
             {
                 ["label"] = "Pass 9",
-                ["catalog"] = "asl-scenario-a1@1.8.0",
+                ["catalog"] = "asl-scenario-a1@1.9.0",
                 ["boards"] = Bd01,
                 ["firstSide"] = "german",
                 ["sides"] = new object[]
@@ -610,6 +610,100 @@ public sealed class BacklogPass9Tests : IDisposable
         Committed(await FireAt("g1:pf", "bd01:B7:0", "ru-tank", null, 1, 6, 6));
         var half = Current.Units.Single(unit => unit.Status == InstanceStatus.Active && unit.Kind == "asl:half-squad");
         Assert.True(Is(half, Conditions.PrepFire));
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    private static Dictionary<string, object> Latw(string id, string definition, string holder, string side) => new()
+    {
+        ["id"] = id,
+        ["kind"] = "asl:latw",
+        ["definition"] = definition,
+        ["side"] = side,
+        ["holding"] = new
+        {
+            holder,
+            role = "possessed"
+        },
+        ["conditions"] = new Dictionary<string, bool> { ["asl:malfunctioned"] = false },
+    };
+
+    [Fact]
+    public void TheAtrAndPanzerschreckAreInTheCatalog()
+    {
+        // Rulings R9.10, R9.11 (pass 9b): manufactured values, sheet MFG.
+        Assert.Equal(("atr", "psk"), (LiveOrdnance.LatwType("defender-atr"), LiveOrdnance.LatwType("attacker-psk")));
+    }
+
+    [Fact]
+    public async Task AnAtrHitsATankOnTheBlackVehicleRowWithAp()
+    {
+        // C13.2 (R9.10): in the DFPh the Russian squad's ATR in B9 hits the PzKpfw IIIH in B7 (black 10) with AP at the Russian ATR TK# 6.
+        await Setup("german", 7, 1942, Squad("r1", "bd01:B9:0", "russian"), Latw("ru-atr", "defender-atr", "r1", "russian"),
+            Vehicle("de-tank", "attacker-tank", "bd01:B7:0", "german", "east"), Squad("g1", "bd01:B6:0", "german"));
+        await Advance(3);
+        Assert.Equal("dfph", Current.Phase);
+        var before = Revision;
+        Committed(await FireAt("ru-atr", "bd01:B7:0", "de-tank", null, 3, 2, 6, 6));
+        var shot = LastShot(before);
+        Assert.Equal(("black", 10, 6), (shot.ToHit!.Color, shot.ToHit.BasicToHit, shot.Kill!.BasicTk));
+        Assert.Equal("ap", LastFacts(before).Ammunition);
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
+    public async Task AnAtrAddsOneFpToItsSquadsFireGroup()
+    {
+        // C13.24 (R9.10): the Russian squad fires its inherent FP with its ATR at the German squad 3 hexes away: 4 + 1 FP.
+        await Setup("russian", 7, 1942, Squad("r1", "bd01:B9:0", "russian"), Latw("ru-atr", "defender-atr", "r1", "russian"), Squad("g1", "bd01:B6:0", "german"));
+        await Advance();
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Once(6, 6), new
+        {
+            firers = R1,
+            target = "bd01:B6:0",
+            weapons = new Dictionary<string, string[]> { ["r1"] = ["ru-atr"] }
+        }));
+        var firers = LastFire(before).Resolution.GetProperty("arithmetic").GetProperty("firers").EnumerateArray().ToArray();
+        Assert.Contains(firers, item => item.GetProperty("unitId").GetString() == "ru-atr" && item.GetProperty("firepower").GetDecimal() == 1);
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
+    public async Task APanzerschreckHitsOnItsOwnTableAndIsRemovedOnItsXNumber()
+    {
+        // C13.42, C13.47, C13.48 (R9.11): the German HS's PSK in B9 fires at the T-34 in B7 on its table (9 at 2 hexes), HEAT TK# 26; a second PSK's
+        // Original 11 removes it. Before September 1943 there is none.
+        await Setup("german", 7, 1944, Unit("gh", "asl:half-squad", "attacker-half-squad", "bd01:B9:0", "german"), Latw("de-psk", "attacker-psk", "gh", "german"),
+            Squad("g2", "bd01:B9:0", "german"), Latw("de-psk2", "attacker-psk", "g2", "german"), Vehicle("ru-tank", "defender-tank", "bd01:B7:0", "russian", "east"));
+        await Advance();
+        var before = Revision;
+        Committed(await FireAt("de-psk", "bd01:B7:0", "ru-tank", null, 3, 2, 6, 6));
+        var shot = LastShot(before);
+        Assert.Equal((9, 26), (shot.ToHit!.BasicToHit, shot.Kill!.BasicTk));
+        Committed(await FireAt("de-psk2", "bd01:B7:0", "ru-tank", null, 5, 6));
+        Assert.Equal(InstanceStatus.Eliminated, Current.Find("de-psk2")!.Status);
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
+    public async Task NoPanzerschreckBeforeSeptember1943()
+    {
+        await Setup("german", 8, 1943, Squad("g1", "bd01:B9:0", "german"), Latw("de-psk", "attacker-psk", "g1", "german"), Vehicle("ru-tank", "defender-tank", "bd01:B7:0", "russian", "east"));
+        await Advance();
+        Refused(await FireAt("de-psk", "bd01:B7:0", "ru-tank", null, 3, 2, 3, 4), "latw-date-outside");
+    }
+
+    [Fact]
+    public async Task AnAtrFiresOnceAPhaseAndItsSquadStillFiresItsInherentFp()
+    {
+        // A7.351, C13.2 (table player, pass 9b): after its ATR's shot the squad's fire is not spent, and the ATR, with no ROF, fires no more.
+        await Setup("russian", 7, 1942, Squad("r1", "bd01:B9:0", "russian"), Latw("ru-atr", "defender-atr", "r1", "russian"),
+            Vehicle("de-tank", "attacker-tank", "bd01:B7:0", "german", "east"), Squad("g1", "bd01:B6:0", "german"));
+        await Advance();
+        Committed(await FireAt("ru-atr", "bd01:B7:0", "de-tank", null, 6, 5));
+        Assert.False(LiveFire.FireSpent(Current, Current.Unit("r1")!));
+        Refused(await FireAt("ru-atr", "bd01:B7:0", "de-tank", null, 6, 5), "play.latw-fired");
+        Committed(await Fire(R1, "bd01:B6:0", 6, 6));
         Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
     }
 }

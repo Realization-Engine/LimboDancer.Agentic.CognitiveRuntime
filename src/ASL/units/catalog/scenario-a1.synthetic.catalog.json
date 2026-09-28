@@ -1184,6 +1184,54 @@
         { "face": "front", "trait": "asl:breakdown-removes", "present": false, "row": 722 },
         { "face": "malfunctioned", "attribute": "repair", "value": 2, "row": 723 }
       ]
+    },
+    {
+      "id": "attacker-psk",
+      "kind": "asl:latw", "kindRow": 724,
+      "nationality": "british", "nationalityRow": 725,
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "attacker-psk" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "identity", "value": "S", "row": 726 },
+        { "face": "front", "attribute": "firepower", "printed": false, "row": 727 },
+        { "face": "front", "attribute": "range", "printed": false, "row": 728 },
+        { "face": "front", "attribute": "breakdown", "value": 10, "row": 729 },
+        { "face": "front", "attribute": "rate-of-fire", "printed": false, "row": 730 },
+        { "face": "front", "attribute": "portage", "value": 3, "row": 731 },
+        { "face": "front", "attribute": "latw-type", "value": "piat", "row": 732 },
+        { "face": "front", "attribute": "caliber", "value": 70, "row": 733 },
+        { "face": "front", "attribute": "range-maximum", "value": 3, "row": 734 },
+        { "face": "front", "attribute": "special-ammo", "printed": false, "row": 735 },
+        { "face": "front", "attribute": "to-hit-table", "value": ["9", "8", "7"], "row": 736 },
+        { "face": "front", "attribute": "dates", "printed": false, "row": 737 },
+        { "face": "front", "trait": "asl:breakdown-removes", "present": true, "row": 738 },
+        { "face": "malfunctioned", "attribute": "repair", "printed": false, "row": 739 }
+      ]
+    },
+    {
+      "id": "defender-atr",
+      "kind": "asl:latw", "kindRow": 740,
+      "nationality": "french", "nationalityRow": 741,
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "defender-atr" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "identity", "value": "S", "row": 742 },
+        { "face": "front", "attribute": "firepower", "value": 1, "row": 743 },
+        { "face": "front", "attribute": "range", "value": 10, "row": 744 },
+        { "face": "front", "attribute": "breakdown", "value": 12, "row": 745 },
+        { "face": "front", "attribute": "rate-of-fire", "printed": false, "row": 746 },
+        { "face": "front", "attribute": "portage", "value": 2, "row": 747 },
+        { "face": "front", "attribute": "latw-type", "value": "atr", "row": 748 },
+        { "face": "front", "attribute": "caliber", "value": 20, "row": 749 },
+        { "face": "front", "attribute": "range-maximum", "value": 10, "row": 750 },
+        { "face": "front", "attribute": "special-ammo", "printed": false, "row": 751 },
+        { "face": "front", "attribute": "to-hit-table", "printed": false, "row": 752 },
+        { "face": "front", "attribute": "dates", "printed": false, "row": 753 },
+        { "face": "front", "trait": "asl:breakdown-removes", "present": false, "row": 754 },
+        { "face": "malfunctioned", "attribute": "repair", "value": 1, "row": 755 }
+      ]
     }
   ]
 }

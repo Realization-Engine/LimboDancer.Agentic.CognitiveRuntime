@@ -758,7 +758,10 @@ else if (state is not null)
                 phase (C2.24), and each shot acquires the Location for the next (C6.5). A hit on Infantry attacks every enemy unit there on the IFT
                 column of the HE FP (C.6); a hit on a vehicle strikes its turret or hull, and the To Kill DR decides its fate (C3.9, C7). A light
                 mortar fires on the Area Target Type at every unit of the hex, at half its HE FP, and may fire at a hex its Spotter in or next to its hex
-                sees (C3.33, C9.3). From October 1943 a German unit may make a PF Check to fire a Panzerfaust at an enemy AFV (C13.31).
+                sees (C3.33, C9.3). From October 1943 a German unit may make a PF Check to fire a Panzerfaust at an enemy AFV (C13.31). An ATR fires
+                AP at a vehicle here on the black Vehicle row up to 12 hexes, and at Infantry from the fire panel as 1 FP with no Long Range or Residual
+                FP (C13.2, C13.24). A Panzerschreck, from September 1943, fires HEAT at a vehicle on its own table (10, 9, 8, 7 at 1 to 4 hexes), +2 from a
+                ground-level building (not above it, nor pinned there), and is removed on 11 or 12 (C13.47, C13.8). Both are manufactured counters.
             </p>
             <div class="toolbar">
                 <label>
@@ -779,9 +782,9 @@ else if (state is not null)
                         }
                     </select>
                 </label>
-                @if (state.Find(ordnanceGun) is EquipmentInstance { Kind: "asl:light-mortar" } || ordnanceGun.EndsWith(":pf", StringComparison.Ordinal))
+                @if (state.Find(ordnanceGun) is EquipmentInstance { Kind: "asl:light-mortar" or "asl:latw" } || ordnanceGun.EndsWith(":pf", StringComparison.Ordinal))
                 {
-                    @if (!ordnanceGun.EndsWith(":pf", StringComparison.Ordinal))
+                    @if (state.Find(ordnanceGun) is EquipmentInstance { Kind: "asl:light-mortar" })
                     {
                         <label title="C9.3: a Good Order unit in the mortar's hex or an adjacent one spots for it (+2, ROF one less), in the PFPh or DFPh; it keeps spotting while Good Order.">
                             Spotter
@@ -815,7 +818,7 @@ else if (state is not null)
                         }
                     </select>
                 </label>
-                @if (OrdnanceVehicleTargets(firing).Any() && ordnanceGun.EndsWith(":pf", StringComparison.Ordinal))
+                @if (OrdnanceVehicleTargets(firing).Any() && (ordnanceGun.EndsWith(":pf", StringComparison.Ordinal) || state.Find(ordnanceGun) is EquipmentInstance { Kind: "asl:latw" }))
                 {
                     <label>
                         Vehicle
@@ -827,7 +830,7 @@ else if (state is not null)
                             }
                         </select>
                     </label>
-                    <span class="muted" id="ordnance-pf-heat">HEAT (C13.34)</span>
+                    <span class="muted" id="ordnance-pf-heat">@(state.Find(ordnanceGun) is EquipmentInstance { Definition: { } latwDefinition } && LiveOrdnance.LatwType(latwDefinition.Definition) == "atr" ? "AP (C13.2)" : "HEAT (C13.34, C13.43)")</span>
                 }
                 else if (OrdnanceVehicleTargets(firing).Any() && state.Find(ordnanceGun) is not EquipmentInstance { Kind: "asl:light-mortar" })
                 {
@@ -851,7 +854,7 @@ else if (state is not null)
                         </select>
                     </label>
                 }
-                @if (state.Find(ordnanceGun) is not EquipmentInstance { Kind: "asl:light-mortar" } && !ordnanceGun.EndsWith(":pf", StringComparison.Ordinal))
+                @if (state.Find(ordnanceGun) is not EquipmentInstance { Kind: "asl:light-mortar" or "asl:latw" } && !ordnanceGun.EndsWith(":pf", StringComparison.Ordinal))
                 {
                     <label title="C5.6: once its normal ROF is used, a Gun may fire once more with +2 (Case F) and its B# two lower; never in the AFPh."><input id="ordnance-intensive" type="checkbox" checked="@ordnanceIntensive" @onchange="@(args => ordnanceIntensive = args.Value is true)" /> Intensive Fire</label>
                 }
@@ -1878,7 +1881,7 @@ else if (state is not null)
     /// <summary>The firing side's Guns that its crews man (A21.13), a malfunctioned one shown as such (C2.28; Gun repair is not built).</summary>
     private IEnumerable<EquipmentInstance> OrdnanceGuns(string side) => state is null ? []
         : state.Equipment.Where(item => item.Status == InstanceStatus.Active
-                && ((item.Kind == "asl:gun" && item.Holding is { Role: HoldingRole.Manned }) || (item.Kind == "asl:light-mortar" && item.Holding is { Role: HoldingRole.Possessed }))
+                && ((item.Kind == "asl:gun" && item.Holding is { Role: HoldingRole.Manned }) || (item.Kind is "asl:light-mortar" or "asl:latw" && item.Holding is { Role: HoldingRole.Possessed }))
                 && state.Unit(item.Holding!.Holder)?.Side == side)
             .OrderBy(item => item.Id, StringComparer.Ordinal);
 
@@ -1903,8 +1906,8 @@ else if (state is not null)
         var crewState = crew is null ? "" : string.Concat(new[] { Conditions.Pinned, Conditions.Concealed, Conditions.Melee, Conditions.Broken }
             .Where(name => Marked(crew, name)).Select(name => ", crew " + name.Replace("asl:", "", StringComparison.Ordinal)));
         var spotter = state?.MortarSpotters.FirstOrDefault(item => item.Gun == gun.Id)?.Spotter;
-        return $"{gun.Id} ({gun.Definition?.Definition}" + (gun.Kind == "asl:light-mortar" ? $", with {crew?.Id}" + (spotter is null ? "" : $", Spotter {spotter}") : $", facing {facing}")
-            + (Marked(gun, Conditions.Malfunctioned) ? ", malfunctioned: Gun repair is not built" : "")
+        return $"{gun.Id} ({gun.Definition?.Definition}" + (gun.Kind is "asl:light-mortar" or "asl:latw" ? $", with {crew?.Id}" + (spotter is null ? "" : $", Spotter {spotter}") : $", facing {facing}")
+            + (Marked(gun, Conditions.Malfunctioned) ? gun.Kind == "asl:latw" ? ", malfunctioned: repair it in the RPh (A9.72)" : ", malfunctioned: Gun repair is not built" : "")
             + (shots is null ? Marked(gun, Conditions.PrepFire) || Marked(gun, Conditions.FinalFire) ? ", fired this Player Turn" : ""
                 : shots.RateOfFireKept ? $", {shots.Shots} shot(s), may fire again" : ", fired")
             + (acquired is null ? "" : $", Acquisition {acquired.Level} on {acquired.Location}") + crewState + ")";
@@ -2099,7 +2102,8 @@ else if (state is not null)
     /// <summary>The MGs the chosen firers possess (A9.1): each may add its FP to the attack or, with its holder's choice, fire alone.</summary>
     private IReadOnlyList<EquipmentInstance> FireWeapons => state is null ? []
         : [.. state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding
-            && fireFirers.Contains(holding.Holder) && Library.Vocabulary.IsA(item.Kind, "asl:mg")).OrderBy(item => item.Id, StringComparer.Ordinal)];
+            && fireFirers.Contains(holding.Holder) && (Library.Vocabulary.IsA(item.Kind, "asl:mg") || (item.Definition is { } weaponDefinition && LiveOrdnance.LatwType(weaponDefinition.Definition) == "atr")))
+            .OrderBy(item => item.Id, StringComparer.Ordinal)];
 
     /// <summary>The target: any Location typed in, or else the one chosen from the Locations the firing side knows to hold an enemy.</summary>
     private string FireTarget => fireFreeTarget.Trim() is { Length: > 0 } typed ? typed : fireTarget;

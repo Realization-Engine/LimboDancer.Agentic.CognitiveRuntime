@@ -654,8 +654,9 @@ public static class GameProjector
             var tank = firer is UnitInstance { Status: InstanceStatus.Active } vehicle && vocabulary.IsA(vehicle.Kind, "asl:vehicle") && fired.Crew == vehicle.Id;
 
             // C9.2, C13.3 (rulings R9.2, R9.7): a light mortar is fired by the unit possessing it; a PF, named "<unit>:pf", by the unit making the check.
+            // Rulings R9.10, R9.11: an ATR or PSK is fired by its possessor too.
             var mortar = firer is EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Possessed } possession } weapon
-                && vocabulary.IsA(weapon.Kind, "asl:light-mortar") && possession.Holder == fired.Crew;
+                && (vocabulary.IsA(weapon.Kind, "asl:light-mortar") || vocabulary.IsA(weapon.Kind, "asl:latw")) && possession.Holder == fired.Crew;
             var panzerfaust = fired.Gun == fired.Crew + ":pf";
             if (state.Phase is not ("pfph" or "afph" or "dfph" or "mph")
                 || !(tank || mortar || panzerfaust || (firer is EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Manned } manning } && manning.Holder == fired.Crew))

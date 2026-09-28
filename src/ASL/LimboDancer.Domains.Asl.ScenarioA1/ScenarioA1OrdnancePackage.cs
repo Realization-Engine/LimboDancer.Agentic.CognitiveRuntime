@@ -76,6 +76,7 @@ public sealed class ScenarioA1OrdnanceReference
     {
         NoAp = true,
         HeatRow = "PF (Oct43)",
+        LatwType = "pf",
     };
 
     /// <summary>The Gun and Ammo modifications of the Basic TH# at a range (C4.1 to C4.2, C4.5), each with its rule.</summary>
@@ -143,7 +144,7 @@ public sealed class ScenarioA1OrdnanceReference
         }).ToArray();
 
         // A tank's MA is a Gun of the vehicle's caliber (D1.3; ruling R7.10).
-        var guns = catalog.RootElement.GetProperty("definitions").EnumerateArray().Where(item => item.GetProperty("kind").GetString() is "asl:gun" or "asl:vehicle" or "asl:light-mortar")
+        var guns = catalog.RootElement.GetProperty("definitions").EnumerateArray().Where(item => item.GetProperty("kind").GetString() is "asl:gun" or "asl:vehicle" or "asl:light-mortar" or "asl:latw")
             .Select(Gun).OfType<GunDefinition>().ToDictionary(item => item.Id, StringComparer.Ordinal);
 
         using var areaRow = ScenarioA1FirePackage.Read("ScenarioA1.ordnance-to-hit-area.json", matrix.GetProperty("toHitAreaTranscriptionSha256").GetString()!);
@@ -174,17 +175,27 @@ public sealed class ScenarioA1OrdnanceReference
             : [];
         var vehicle = item.GetProperty("kind").GetString() == "asl:vehicle";
         var mortar = item.GetProperty("kind").GetString() == "asl:light-mortar";
-        var type = vehicle ? "vehicle" : mortar ? "mortar" : Text("gun-type");
+        var latw = item.GetProperty("kind").GetString() == "asl:latw";
+        var type = vehicle ? "vehicle" : mortar ? "mortar" : latw ? "latw" : Text("gun-type");
+        var latwType = latw ? Text("latw-type") : null;
         return type is not null && Number("caliber") is { } caliber && Number("breakdown") is { } breakdown
             ? new GunDefinition(item.GetProperty("id").GetString()!, item.GetProperty("nationality").GetString()!, type, caliber, Text("caliber-suffix"),
-                Number("rate-of-fire"), breakdown, Number("range-maximum"), Trait("asl:no-he"), Trait("asl:mount-360"))
+                Number("rate-of-fire"), breakdown, Number("range-maximum"), Trait("asl:no-he") || latw, Trait("asl:mount-360"))
             {
-                NoAp = Trait("asl:no-ap"),
+                NoAp = Trait("asl:no-ap") || latwType == "psk",
                 SpecialAmmo = Ammo(),
                 MaType = vehicle ? Text("ma-type") : null,
                 TargetSize = vehicle ? null : Text("target-size"),
                 Manhandling = vehicle ? null : Number("manhandling"),
                 RangeMinimum = Number("range-minimum"),
+
+                // C13.2, C13.48 (pass 9b): a LATW counter; the PSK fires HEAT on its own To Hit Table, the ATR AP.
+                LatwType = latwType,
+                ToHitTable = latw && Find("attribute", "to-hit-table") is { } table && table.TryGetProperty("value", out var entries) && entries.ValueKind == JsonValueKind.Array
+                    ? [.. entries.EnumerateArray().SelectMany(entry => entry.GetString()!.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+                        .Select(entry => int.Parse(entry, System.Globalization.CultureInfo.InvariantCulture))]
+                    : [],
+                HeatRow = latwType == "psk" ? "PSK (Sept43)" : null,
             }
             : null;
     }
@@ -197,16 +208,16 @@ public sealed class ScenarioA1OrdnanceReference
 /// </summary>
 public sealed class ScenarioA1OrdnancePackage : IDomainPackageResolver
 {
-    public const string ManifestSha256 = "580305465c13872d27e57a987075f0fe0f3917c00bdc569918e388f8e65a6390";
-    public const string MatrixSha256 = "607ace3cef1d0941724238ce7738022974041ba38caedba03d59643b5608dc66";
-    /// <summary>The package as revised at backlog pass 8, before its backlog pass 9 revision (mortars and the Panzerfaust; catalog 1.8.0).</summary>
-    public const string PriorManifestSha256 = "09ceeb08b08a55ae91b0c3e332cd160e32cd7b355bb5221fa768c5e6533eb995";
+    public const string ManifestSha256 = "120b1df9714537883f198ac2876dbd7f084517e1041f400cf5f13895f3ccb699";
+    public const string MatrixSha256 = "dbfd38bf90f619c87f53654713b03e98d6ad6c6c89b4a478d17e3af76abd2428";
+    /// <summary>The package as revised at backlog pass 9, before its backlog pass 9b revision (the ATR and the Panzerschreck; catalog 1.9.0).</summary>
+    public const string PriorManifestSha256 = "580305465c13872d27e57a987075f0fe0f3917c00bdc569918e388f8e65a6390";
     public static readonly DomainPackageRef Identity = new(new DomainId("asl"), "scenario-a1-ordnance", "sha256:" + ManifestSha256);
 
     private static readonly string[] Cases =
     [
         "A1-ordnance-hit-resolved", "A1-ordnance-miss-resolved", "A1-ordnance-phase-outside", "A1-ordnance-gun-outside", "A1-ordnance-crew-outside",
-        "A1-ordnance-already-fired", "A1-ordnance-range-outside", "A1-ordnance-target-outside", "A1-ordnance-undecided", "A1-ordnance-roll-missing", "A1-ordnance-owner-options", "A1-ordnance-cx", "A1-ordnance-afv-cover", "A1-ordnance-vehicle-hit", "A1-ordnance-vehicle-outside", "A1-ordnance-special-ammunition", "A1-ordnance-tank-fire", "A1-ordnance-shock-and-crews", "A1-ordnance-unarmored-vehicle", "A1-ordnance-defensive-first-fire", "A1-ordnance-intensive-fire", "A1-ordnance-gun-target", "A1-ordnance-special-shots", "A1-ordnance-overstacking", "A1-ordnance-light-mortar", "A1-ordnance-area-target", "A1-ordnance-spotting", "A1-ordnance-panzerfaust", "A1-ordnance-panzerfaust-outside",
+        "A1-ordnance-already-fired", "A1-ordnance-range-outside", "A1-ordnance-target-outside", "A1-ordnance-undecided", "A1-ordnance-roll-missing", "A1-ordnance-owner-options", "A1-ordnance-cx", "A1-ordnance-afv-cover", "A1-ordnance-vehicle-hit", "A1-ordnance-vehicle-outside", "A1-ordnance-special-ammunition", "A1-ordnance-tank-fire", "A1-ordnance-shock-and-crews", "A1-ordnance-unarmored-vehicle", "A1-ordnance-defensive-first-fire", "A1-ordnance-intensive-fire", "A1-ordnance-gun-target", "A1-ordnance-special-shots", "A1-ordnance-overstacking", "A1-ordnance-light-mortar", "A1-ordnance-area-target", "A1-ordnance-spotting", "A1-ordnance-panzerfaust", "A1-ordnance-panzerfaust-outside", "A1-ordnance-atr", "A1-ordnance-panzerschreck",
     ];
 
     private static readonly string[] PinnedDigests = ["sourcePdfSha256", "toHitTranscriptionSha256", "iftTranscriptionSha256", "catalogSha256",

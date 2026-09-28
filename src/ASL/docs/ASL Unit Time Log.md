@@ -229,3 +229,16 @@ Pass 9 total: 05:10 to 07:15, 2:05 against the estimate of 4:45 (build 3:30).
 | 9.2 to 9.4, package side (about 1:25) | 0:20 | Package stage |
 | 9.2 to 9.4, live side (about 1:25) | 0:37 | Live stage (0:19, with the referee's fixes), live tests and page (0:10), table player fixes (0:08) |
 | Overhead (1:15) | 1:03 | Reading and rulings, suites, documents, visual check, merge gate |
+
+## Pass 9b: the Panzerschreck and the ATR
+
+No plan estimate: the user asked for it after pass 9 (2026-09-28), with manufactured counter values under ruling R0.3, and to await instructions after it. Kickoff 2026-09-28 07:38. Branch `feature/asl-backlog-pass-9b`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Memory, catalog 1.9.0 (32 manufactured rows), vocabulary 1.14.0, version references | 07:38 | 07:48 | 0:10 | Two shell permission checks gave no verdict at the start |
+| Package stage: ATR and PSK in the Ordnance and Fire packages, source comparison (16 subjects), rulings R9.10 and R9.11, package revision, package tests | 07:48 | 07:55 | 0:07 | |
+| Live stage: live facts, planner, X# removal, projector, Play page, live tests; referee and table player agents started | 07:55 | 07:58 | 0:03 | |
+| Documents; referee (10 findings) and table player (8 findings) fixes with tests; visual check in the Studio | 07:58 | 08:10 | 0:12 | The agents ran from 07:55 and 07:58 |
+| Full local suite before the commit (2,100 tests pass, 30 skipped) | 08:10 | 08:22 | 0:12 | Answered the user's estimate and scenario card questions meanwhile |
+
