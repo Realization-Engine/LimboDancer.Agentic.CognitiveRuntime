@@ -512,6 +512,47 @@ public static class GameEventWriter
                 writer.WriteString("at", overrun.At.ToString());
                 writer.WriteString("fire", overrun.Fire);
                 break;
+            case RoutStepped routed:
+                writer.WriteString("unit", routed.Unit);
+                writer.WriteString("to", routed.To.ToString());
+                writer.WriteNumber("halfMf", routed.HalfMf);
+                writer.WriteBoolean("lowCrawl", routed.LowCrawl);
+                break;
+            case RoutInterdicted interdicted:
+                writer.WriteString("unit", interdicted.Unit);
+                writer.WriteString("at", interdicted.At.ToString());
+                writer.WriteString("roll", interdicted.Roll);
+                writer.WriteNumber("morale", interdicted.Morale);
+                writer.WriteNumber("drm", interdicted.Drm);
+                writer.WriteString("result", interdicted.Result);
+                if (interdicted.Interdictor is { } interdictor)
+                {
+                    writer.WriteString("interdictor", interdictor);
+                }
+                break;
+            case DeploymentAttempted deployment:
+                writer.WriteString("squad", deployment.Squad);
+                if (deployment.Leader is { } deployLeader)
+                {
+                    writer.WriteString("leader", deployLeader);
+                }
+
+                writer.WriteString("roll", deployment.Roll);
+                writer.WriteNumber("morale", deployment.Morale);
+                writer.WriteNumber("drm", deployment.Drm);
+                writer.WriteBoolean("passed", deployment.Passed);
+                break;
+            case RallyPhaseActionTaken rphAction:
+                Strings(writer, "units", rphAction.Units);
+                writer.WriteString("action", rphAction.Action);
+                break;
+            case RecoveryAttempted recovery:
+                writer.WriteString("unit", recovery.Unit);
+                writer.WriteString("weapon", recovery.Weapon);
+                writer.WriteString("roll", recovery.Roll);
+                writer.WriteNumber("drm", recovery.Drm);
+                writer.WriteBoolean("recovered", recovery.Recovered);
+                break;
             case OpportunityFireDeclared opportunity:
                 Strings(writer, "units", opportunity.Units);
                 break;

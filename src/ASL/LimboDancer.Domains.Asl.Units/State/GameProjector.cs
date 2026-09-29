@@ -100,6 +100,11 @@ public static class GameProjector
                 OverrunResolved overrun => ResolveOverrun(previous, overrun),
                 PaatcTaken paatc => TakePaatc(previous, paatc),
                 OpportunityFireDeclared opportunity => DeclareOpportunityFire(previous, opportunity),
+                RoutStepped routed => Rout(previous, routed),
+                RoutInterdicted interdicted => Interdict(previous, interdicted),
+                DeploymentAttempted deployment => AttemptDeployment(previous, deployment),
+                RallyPhaseActionTaken rphAction => TakeRallyPhaseAction(previous, rphAction),
+                RecoveryAttempted recovery => AttemptRecovery(previous, recovery),
                 EncirclementPlaced encirclement => Encircle(previous, encirclement),
                 FireLanePlaced lane => PlaceFireLane(previous, lane),
                 MovementWindowClosed closed => CloseWindow(previous, closed),
@@ -411,6 +416,10 @@ public static class GameProjector
                     ShockRollsThisPhase = [],
                     PaatcPassed = [],
                     FireLanes = [],
+                    RoutedThisPhase = [],
+                    RallyPhaseActions = [],
+                    RecoveryAttempts = [],
+                    RecoveredThisPhase = [],
                     ResidualFire = [],
                     Movement = null,
                     NoDoubleTime = rested,
@@ -1937,6 +1946,106 @@ public static class GameProjector
             };
         }
 
+        /// <summary>
+        /// A rout step (A10.5; ruling R13.3): in the RtPh, a broken unit not in Melee enters a Location for its MF, at most six (twelve half MF) in the phase
+        /// unless by Low Crawl, which is its only step.
+        /// </summary>
+        private GameState? Rout(GameState state, RoutStepped routed)
+        {
+            if (state.Phase != "rtph" || Active(state, routed.Unit) is not UnitInstance unit || GameState.Condition(unit, Conditions.Broken) != ConditionState.True
+                || GameState.Condition(unit, Conditions.Melee) == ConditionState.True || GameState.Condition(unit, Conditions.Pinned) == ConditionState.True
+                || routed.HalfMf < 0 || (!routed.LowCrawl && (unit.MfSpent * 2) + (unit.HalfMfSpent ? 1 : 0) + routed.HalfMf > RoutHalfMf(unit))
+                || (routed.LowCrawl && state.RoutedThisPhase.Contains(unit.Id, StringComparer.Ordinal)))
+            {
+                return Fail<GameState>("UNIT-STATE-041", "A rout step moves a broken unit not in Melee or pinned in the RtPh, within its MF (A10.5, A10.52).");
+            }
+
+            var spent = unit.MfSpent * 2 + (unit.HalfMfSpent ? 1 : 0) + routed.HalfMf;
+            return Replace(state, unit with
+            {
+                Position = new MapPosition(routed.To),
+                MfSpent = spent / 2,
+                HalfMfSpent = spent % 2 == 1,
+            }) is { } moved ? moved with
+            {
+                RoutedThisPhase = moved.RoutedThisPhase.Contains(unit.Id, StringComparer.Ordinal) ? moved.RoutedThisPhase : [.. moved.RoutedThisPhase, unit.Id],
+            } : null;
+        }
+
+        /// <summary>A10.5: a broken unit has six MF in the RtPh, a wounded SMC three.</summary>
+        private static int RoutHalfMf(UnitInstance unit) =>
+            unit.Kind is "asl:leader" or "asl:hero" && GameState.Condition(unit, Conditions.Wounded) == ConditionState.True ? 6 : 12;
+
+        /// <summary>An Interdiction NMC (A10.53; ruling R13.3): in the RtPh, on a routing unit, its DR agreeing with its result.</summary>
+        private GameState? Interdict(GameState state, RoutInterdicted interdicted)
+        {
+            if (state.Phase != "rtph" || Active(state, interdicted.Unit) is not UnitInstance || !state.RoutedThisPhase.Contains(interdicted.Unit, StringComparer.Ordinal)
+                || !rolls.TryGetValue(interdicted.Roll, out var roll) || roll.Count != 2 || roll.Sides != 6
+                || RoutInterdicted.For(roll.Values[0] + roll.Values[1], roll.Values[0] + roll.Values[1] + interdicted.Drm, interdicted.Morale) != interdicted.Result)
+            {
+                return Fail<GameState>("UNIT-STATE-041", "An Interdiction NMC is taken by a routing unit, and its result agrees with its DR (A10.53).");
+            }
+
+            return state;
+        }
+
+        /// <summary>A Deployment attempt (A1.31; ruling R13.4): in the RPh, its NTC agreeing with its result; the squad and leader spend their RPh action.</summary>
+        private GameState? AttemptDeployment(GameState state, DeploymentAttempted deployment)
+        {
+            if (state.Phase != "rph" || Active(state, deployment.Squad) is not UnitInstance squad || GameState.Condition(squad, Conditions.Broken) == ConditionState.True
+                || !rolls.TryGetValue(deployment.Roll, out var roll) || roll.Count != 2 || roll.Sides != 6
+                || (roll.Values[0] + roll.Values[1] + deployment.Drm <= deployment.Morale) != deployment.Passed
+                || state.RallyPhaseActions.Contains(squad.Id, StringComparer.Ordinal)
+                || (deployment.Leader is { } leader && state.RallyPhaseActions.Contains(leader, StringComparer.Ordinal)))
+            {
+                return Fail<GameState>("UNIT-STATE-041", "A Deployment attempt is a Good Order squad's RPh action, and its NTC agrees with its DR (A1.31).");
+            }
+
+            return state with
+            {
+                RallyPhaseActions = [.. state.RallyPhaseActions, squad.Id, .. deployment.Leader is { } directing ? [directing] : Array.Empty<string>()],
+            };
+        }
+
+        /// <summary>A Recombination's or a Transfer's RPh action (A1.32, A4.431; rulings R13.4, R13.5): each unit's first this RPh.</summary>
+        private GameState? TakeRallyPhaseAction(GameState state, RallyPhaseActionTaken action)
+        {
+            if (state.Phase is not ("rph" or "aph") || action.Units.Count == 0 || action.Units.Any(id => state.Unit(id) is null)
+                || (state.Phase == "rph" && action.Units.Any(id => state.RallyPhaseActions.Contains(id, StringComparer.Ordinal))))
+            {
+                return Fail<GameState>("UNIT-STATE-041", "A Recombination or Transfer is its units' RPh action, or a Transfer at the start of their APh (A1.32, A4.431).");
+            }
+
+            return state with
+            {
+                RallyPhaseActions = [.. state.RallyPhaseActions, .. action.Units],
+            };
+        }
+
+        /// <summary>A Recovery attempt (A4.44; ruling R13.5): in the RPh as the unit's action, or in its MPh for one MF, once per SW per phase, its dr agreeing.</summary>
+        private GameState? AttemptRecovery(GameState state, RecoveryAttempted recovery)
+        {
+            var key = recovery.Unit + "|" + recovery.Weapon;
+            if (state.Phase is not ("rph" or "mph") || Active(state, recovery.Unit) is not UnitInstance unit || state.Find(recovery.Weapon) is not EquipmentInstance
+                || !rolls.TryGetValue(recovery.Roll, out var roll) || roll.Count != 1 || roll.Sides != 6 || (roll.Values[0] + recovery.Drm < 6) != recovery.Recovered
+                || state.RecoveryAttempts.Contains(key, StringComparer.Ordinal)
+                || (state.Phase == "rph" && state.RallyPhaseActions.Contains(unit.Id, StringComparer.Ordinal)))
+            {
+                return Fail<GameState>("UNIT-STATE-041", "A Recovery attempt is made once per SW in the RPh or MPh, and its dr agrees with its result (A4.44).");
+            }
+
+            var next = state.Phase == "mph" && state.Find(recovery.Weapon) is EquipmentInstance { Holding: null } ? Replace(state, unit with
+            {
+                MfSpent = unit.MfSpent + 1
+            })! : state;
+            return next with
+            {
+                RecoveryAttempts = [.. next.RecoveryAttempts, key],
+                RecoveredThisPhase = recovery.Recovered ? [.. next.RecoveredThisPhase, recovery.Weapon] : next.RecoveredThisPhase,
+                RallyPhaseActions = state.Phase == "rph" ? [.. next.RallyPhaseActions, unit.Id] : next.RallyPhaseActions,
+            };
+        }
+
         /// <summary>An Encirclement (A7.7; ruling R12.11): placed by a fire record of a fire phase at the Location, on a side with units there.</summary>
         private GameState? Encircle(GameState state, EncirclementPlaced encirclement)
         {
@@ -2689,6 +2798,15 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-020", $"'{item.Id}' was not selected for the reveal of the attempt '{selected.EventId}'.");
             }
 
+            // A9.8 (table player, pass 13): dismantling or assembling a MG in the PFPh is its possessor's use of a SW, so it does not move in the MPh.
+            if (item is EquipmentInstance { Holding: { Role: HoldingRole.Possessed } dismantler } && state.Phase == "pfph" && change.Conditions.ContainsKey(Conditions.Dismantled))
+            {
+                state = state with
+                {
+                    SupportWeaponUses = [.. state.SupportWeaponUses, new SupportWeaponUse(dismantler.Holder, item.Id)]
+                };
+            }
+
             return item switch
             {
                 UnitInstance unit => Replace(state, unit with { Conditions = merged }),
@@ -2749,6 +2867,15 @@ public static class GameProjector
 
             var ids = consumed.Select(unit => unit.Id).ToArray();
             var next = state;
+
+            // A10.53 (referee, pass 13): a HS Reduced from a routing squad has routed this RtPh.
+            if (state.Phase == "rtph" && ids.Any(id => state.RoutedThisPhase.Contains(id, StringComparer.Ordinal)))
+            {
+                next = next with
+                {
+                    RoutedThisPhase = [.. next.RoutedThisPhase, .. lineage.Produced.Select(item => item.Id)]
+                };
+            }
             foreach (var unit in consumed)
             {
                 next = Replace(next, unit with

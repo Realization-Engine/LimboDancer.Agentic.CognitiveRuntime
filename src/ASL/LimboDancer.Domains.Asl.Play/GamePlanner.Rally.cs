@@ -30,6 +30,10 @@ public sealed partial class GamePlanner
         }
 
         string? leaderId = Text(arguments, "leader", out var named) ? named : null;
+        if (leaderId is not null && state.RallyPhaseActions.Contains(leaderId))
+        {
+            return Refused(scope, label, expected, $"play.rph-action: {leaderId} directed a Deployment or permitted a Recombination this RPh, his sole RPh action (A1.31, A1.32)");
+        }
         if (state.Unit(unitId) is not { } unit || state.Location(unit.Id)?.Location is not { } at || ReadLocation(state, at) is not { } read)
         {
             return Refused(scope, label, expected, $"play.rally-unit: '{unitId}' is not a unit on a Location the map reads");
@@ -372,6 +376,11 @@ public sealed partial class GamePlanner
         if (state.RallyAttemptsThisPlayerTurn.Contains(unit.Id))
         {
             return Refused(scope, label, expected, $"play.repair-unit: '{unitId}' attempted to rally this RPh (A3.1, p. 47)");
+        }
+
+        if (state.RallyPhaseActions.Contains(unit.Id))
+        {
+            return Refused(scope, label, expected, $"play.rph-action: {unitId} has taken its RPh action (a Deployment, Recombination, Recovery, or Transfer) (A1.31; ruling R13.4)");
         }
 
         if (state.Find(equipmentId) is not EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Possessed } holding } equipment

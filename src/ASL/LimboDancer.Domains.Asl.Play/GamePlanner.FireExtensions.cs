@@ -298,7 +298,8 @@ public sealed partial class GamePlanner
         AddFireEvents(scope, attemptId, expected, actor, state, facts, state.PhasingSide, step, events, draw);
         if (events.Skip(start).FirstOrDefault(item => item.Payload is FireResolved)?.Payload is FireResolved record && record.Resolution.TryGetProperty("arithmetic", out var arithmetic)
             && arithmetic.TryGetProperty("originalDr", out var original) && state.Find(lane.Weapon) is EquipmentInstance { Definition: { } weapon }
-            && original.GetInt32() >= (FireReference.Value.Definitions.GetValueOrDefault(weapon.Definition)?.Breakdown ?? 12))
+            && original.GetInt32() >= (FireReference.Value.Definitions.GetValueOrDefault(weapon.Definition)?.Breakdown ?? 12)
+                - (state.Unit(lane.Operator) is { } manning && LiveFire.CapturedBy(weapon.Definition, manning) == true ? 2 : 0))
         {
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
                 new ConditionsChanged(lane.Weapon, new Dictionary<string, ConditionState> { [Conditions.Malfunctioned] = ConditionState.True }), null, null));

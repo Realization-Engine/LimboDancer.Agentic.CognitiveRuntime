@@ -13,6 +13,15 @@ namespace LimboDancer.Domains.Asl.Play;
 /// </summary>
 public static class LiveFire
 {
+    private static readonly Lazy<ScenarioA1FireReference> CatalogReference = new(() => new ScenarioA1FirePackage().Reference);
+
+    /// <summary>A21.1 (ruling R13.7): a weapon of another nationality than its possessor's is captured.</summary>
+    public static bool? CapturedBy(string? weaponDefinition, UnitInstance unit) =>
+        weaponDefinition is not null && unit.Definition is { } holder
+            && CatalogReference.Value.Definitions.GetValueOrDefault(weaponDefinition) is { } weapon
+            && CatalogReference.Value.Definitions.GetValueOrDefault(holder.Definition) is { } firer
+            && weapon.Nationality != firer.Nationality ? true : null;
+
     public const string Catalog = "asl-scenario-a1";
     public const string CatalogVersion = "1.9.0";
 
@@ -171,7 +180,13 @@ public static class LiveFire
                     return (null, $"play.fire-weapon: every weapon '{unit.Id}' fires must be one it possesses (A7.35)");
                 }
 
-                used = [.. named.Select(Weapon)];
+                // A9.8 (ruling R13.6): a dismantled weapon is not fired.
+                if (named.FirstOrDefault(id => state.Find(id) is EquipmentInstance held && Is(held, Conditions.Dismantled)) is { } dismantled)
+                {
+                    return (null, $"play.fire-weapon: {dismantled} is dismantled and is not fired until it is assembled (A9.8)");
+                }
+
+                used = [.. named.Select(id => Weapon(id) is var weapon && CapturedBy(weapon.DefinitionId, unit) is { } captured ? weapon with { Captured = captured } : weapon)];
 
                 // A7.351 (ruling R12.4): a squad that fired one MG apart from its inherent FP fires no second one with that FP.
                 if (withoutInherent?.Contains(unit.Id) != true && state.Equipment.Any(item => item.Status == InstanceStatus.Active

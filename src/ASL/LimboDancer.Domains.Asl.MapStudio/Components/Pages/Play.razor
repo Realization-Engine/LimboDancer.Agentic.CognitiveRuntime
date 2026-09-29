@@ -257,6 +257,83 @@ else if (state is not null)
         The adjudicator decides an entry from the whole game. An entry into a building the moving side cannot see into is only declared when proposed;
         what it finds there is disclosed when it is confirmed.
     </p>
+    @if (state.Phase == "rtph")
+    {
+        <h4>Rout</h4>
+        <p class="muted" id="rout-help">
+            In the RtPh the ATTACKER's broken units rout first, one at a time, then the DEFENDER's (A10.5). A broken unit must rout when a Known unbroken
+            armed enemy unit is ADJACENT or in its Location, or it is in Open Ground in the LOS and Normal Range of a Known enemy unit; it may rout under DM.
+            It has six MF (a wounded SMC three) and must reach the nearest woods or building Location it can this RtPh, never moving closer to a Known armed
+            enemy unit that has seen it, nor ADJACENT to one. Entering Open Ground in the LOS of an unbroken enemy unit is Interdicted by a NMC; Low Crawl
+            is one Location using all its MF and is never Interdicted (A10.52, A10.53). As the RtPh ends a broken unit ADJACENT to its enemy, or one that did
+            not rout from the open, is eliminated, or surrenders to an ADJACENT Good Order enemy (A20.21).
+        </p>
+        <ul id="rout-obligations">
+            @foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Broken) == ConditionState.True
+                && Live.Planner.MayRout(state, unit)).OrderBy(unit => unit.Id, StringComparer.Ordinal))
+            {
+                <li class="rout-obligation" data-unit="@unit.Id">
+                    @unit.Id (@unit.Side): @(Live.Planner.MustRout(state, unit) is { } why ? $"must rout: {why}" : "may rout: it is under DM")@(state.RoutedThisPhase.Contains(unit.Id) ? "; has routed" : RoutAdviceText(unit))
+                </li>
+            }
+        </ul>
+        <div class="toolbar">
+            <label>
+                Broken unit
+                <select id="rout-unit" value="@routUnit" @onchange="@(args => routUnit = args.Value as string ?? string.Empty)">
+                    <option value="">choose</option>
+                    @foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Broken) == ConditionState.True
+                        && !state.RoutedThisPhase.Contains(unit.Id) && Live.Planner.MayRout(state, unit)))
+                    {
+                        <option value="@unit.Id">@unit.Id (@unit.Side)</option>
+                    }
+                </select>
+            </label>
+            <label>
+                Route (hexes in order)
+                <input id="rout-route" placeholder="E6, E7" value="@routRoute" @onchange="@(args => routRoute = args.Value as string ?? string.Empty)" />
+            </label>
+            <label><input id="rout-low-crawl" type="checkbox" checked="@routLowCrawl" @onchange="@(args => routLowCrawl = args.Value is true)" /> Low Crawl</label>
+            <button id="propose-rout" disabled="@(routUnit.Length == 0 || routRoute.Trim().Length == 0)" @onclick="ProposeRout">Propose: rout</button>
+        </div>
+    }
+    @if (state.Phase is "rph" or "pfph" or "mph" or "dfph" or "aph" or "ccph" or "rtph" && SupportWeapons.Any())
+    {
+        <h4>Support weapons</h4>
+        <p class="muted" id="sw-help">
+            A SW passes between Good Order unpinned units in one Location in the RPh, or in the ATTACKER's APh before either advances (A4.431). A unit
+            drops one in its MPh before it moves, its APh before it advances, or at the start of the CCPh; a broken unit, before it routs, drops what it
+            cannot carry (A4.43, A10.4). A Good Order unit Recovers an unpossessed SW in its Location on a dr below 6 (+1 CX), as its sole RPh action or
+            for one MF in its MPh (A4.44). The German MMG is dismantled or assembled in its side's PFPh or DFPh instead of firing; dismantled, it is not
+            fired and weighs half (A9.8). A MG of the enemy's nationality fires with its B# two lower and its ROF one lower (A21.11, A21.12).
+        </p>
+        <div class="toolbar">
+            <label>
+                SW
+                <select id="sw-weapon" value="@swWeapon" @onchange="@(args => { swWeapon = args.Value as string ?? string.Empty; swUnit = string.Empty; })">
+                    <option value="">choose</option>
+                    @foreach (var weapon in SupportWeapons)
+                    {
+                        <option value="@weapon.Id">@SupportWeaponText(weapon)</option>
+                    }
+                </select>
+            </label>
+            <label>
+                Recovering or receiving unit
+                <select id="sw-unit" value="@swUnit" @onchange="@(args => swUnit = args.Value as string ?? string.Empty)">
+                    <option value="">choose</option>
+                    @foreach (var unit in SupportWeaponUnits)
+                    {
+                        <option value="@unit.Id">@unit.Id (@unit.Side)</option>
+                    }
+                </select>
+            </label>
+            <button id="propose-transfer" disabled="@(SupportWeaponHolder is null || swUnit.Length == 0)" @onclick="@(() => ProposeSupportWeapon(GameActions.Transfer))">Propose: transfer</button>
+            <button id="propose-drop" disabled="@(SupportWeaponHolder is null)" @onclick="@(() => ProposeSupportWeapon(GameActions.Drop))">Propose: drop</button>
+            <button id="propose-recover" disabled="@(swWeapon.Length == 0 || swUnit.Length == 0)" @onclick="@(() => ProposeSupportWeapon(GameActions.Recover))">Propose: recover</button>
+            <button id="propose-dismantle" disabled="@(SupportWeaponHolder is null)" @onclick="@(() => ProposeSupportWeapon(GameActions.Dismantle))">Propose: dismantle or assemble</button>
+        </div>
+    }
     @if (state.Phase == "rph")
     {
         <h4>Rally and Repair</h4>
@@ -308,6 +385,89 @@ else if (state is not null)
             </label>
             <button id="propose-repair" disabled="@(repairWeapon.Length == 0)" @onclick="ProposeRepair">Propose: repair</button>
         </div>
+        <p class="muted" id="deploy-help">
+            A Good Order squad with a Good Order leader of its nationality in its Location Deploys into two HS on a NTC modified by his leadership (Guards
+            need no leader and take it unmodified); two Good Order HS of one kind Recombine with such a leader. Either is the units' and the leader's sole RPh action (A1.31, A1.32).
+        </p>
+        <div class="toolbar">
+            <label>
+                Squad
+                <select id="deploy-squad" value="@deploySquad" @onchange="@(args => { deploySquad = args.Value as string ?? string.Empty; deployLeader = string.Empty; deployWeapon = string.Empty; })">
+                    <option value="">choose</option>
+                    @foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Kind == "asl:squad" && state.Location(unit.Id) is not null
+                        && GameState.Condition(unit, Conditions.Broken) != ConditionState.True))
+                    {
+                        <option value="@unit.Id">@unit.Id (@unit.Side)</option>
+                    }
+                </select>
+            </label>
+            <label>
+                Leader
+                <select id="deploy-leader" value="@deployLeader" @onchange="@(args => deployLeader = args.Value as string ?? string.Empty)">
+                    <option value="">none (Guards)</option>
+                    @foreach (var leader in LeadersWith(deploySquad))
+                    {
+                        <option value="@leader.Id">@leader.Id</option>
+                    }
+                </select>
+            </label>
+            <label>
+                Second HS takes
+                <select id="deploy-weapon" value="@deployWeapon" @onchange="@(args => deployWeapon = args.Value as string ?? string.Empty)">
+                    <option value="">no SW</option>
+                    @foreach (var weapon in state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == deploySquad))
+                    {
+                        <option value="@weapon.Id">@weapon.Id</option>
+                    }
+                </select>
+            </label>
+            <button id="propose-deploy" disabled="@(deploySquad.Length == 0)" @onclick="ProposeDeploy">Propose: deploy</button>
+        </div>
+        <div class="toolbar">
+            <label>
+                HS
+                <select id="recombine-one" value="@recombineOne" @onchange="@(args => { recombineOne = args.Value as string ?? string.Empty; recombineTwo = string.Empty; recombineLeader = string.Empty; })">
+                    <option value="">choose</option>
+                    @foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Kind == "asl:half-squad" && state.Location(unit.Id) is not null))
+                    {
+                        <option value="@unit.Id">@unit.Id (@unit.Side)</option>
+                    }
+                </select>
+            </label>
+            <label>
+                with
+                <select id="recombine-two" value="@recombineTwo" @onchange="@(args => recombineTwo = args.Value as string ?? string.Empty)">
+                    <option value="">choose</option>
+                    @foreach (var unit in RecombinePartners)
+                    {
+                        <option value="@unit.Id">@unit.Id</option>
+                    }
+                </select>
+            </label>
+            <label>
+                Leader
+                <select id="recombine-leader" value="@recombineLeader" @onchange="@(args => recombineLeader = args.Value as string ?? string.Empty)">
+                    <option value="">none (Guards)</option>
+                    @foreach (var leader in LeadersWith(recombineOne))
+                    {
+                        <option value="@leader.Id">@leader.Id</option>
+                    }
+                </select>
+            </label>
+            <button id="propose-recombine" disabled="@(recombineOne.Length == 0 || recombineTwo.Length == 0)" @onclick="ProposeRecombine">Propose: recombine</button>
+        </div>
+        @if (state.Units.Any(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.DesperationMorale) == ConditionState.True
+            && Live.Planner.MayRetainDm(state, unit.Id)))
+        {
+            <div class="toolbar" id="retain-dm">
+                <span>Keep DM as the RPh ends, outside woods and buildings (A10.62):</span>
+                @foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.DesperationMorale) == ConditionState.True
+                    && Live.Planner.MayRetainDm(state, unit.Id)))
+                {
+                    <label><input class="retain-dm" type="checkbox" data-unit="@unit.Id" checked="@retainDm.Contains(unit.Id)" @onchange="@(args => Toggle(retainDm, unit.Id, args.Value is true))" /> @unit.Id</label>
+                }
+            </div>
+        }
         @if (ShockedVehicles.Any())
         {
             <p class="muted" id="shock-help">
@@ -1271,7 +1431,7 @@ else if (state is not null)
 
     @if (RallyAndRepairRecords.Count > 0)
     {
-        <h3>Rally and Repair</h3>
+        <h3>Rally, Rout, and support weapons</h3>
         <ul id="play-rallies">
             @foreach (var (eventId, kind, text) in RallyAndRepairRecords)
             {
@@ -1449,6 +1609,18 @@ else if (state is not null)
     private string rallyUnit = string.Empty;
     private string rallyLeader = string.Empty;
     private string repairWeapon = string.Empty;
+    private string routUnit = string.Empty;
+    private string routRoute = string.Empty;
+    private bool routLowCrawl;
+    private string swWeapon = string.Empty;
+    private string swUnit = string.Empty;
+    private string deploySquad = string.Empty;
+    private string deployLeader = string.Empty;
+    private string deployWeapon = string.Empty;
+    private string recombineOne = string.Empty;
+    private string recombineTwo = string.Empty;
+    private string recombineLeader = string.Empty;
+    private readonly HashSet<string> retainDm = new(StringComparer.Ordinal);
     private readonly HashSet<string> moveUnits = new(StringComparer.Ordinal);
     private string vehicleUnit = string.Empty;
     private bool vehicleOverrun;
@@ -2811,6 +2983,43 @@ else if (state is not null)
                 {
                     records.Add((item.EventId, "rally", RallyText(rally, arithmetic, resolution.Effect)));
                 }
+                else if (item.Payload is RoutStepped routed)
+                {
+                    var mf = (routed.HalfMf / 2.0).ToString("0.#", CultureInfo.InvariantCulture);
+                    records.Add((item.EventId, "rout", $"{routed.Unit} routs to {routed.To} for {mf} MF{(routed.LowCrawl ? " by Low Crawl (A10.52)" : " (A10.5)")}"));
+                }
+                else if (item.Payload is RoutInterdicted interdicted)
+                {
+                    var dr = rolls.TryGetValue(interdicted.Roll, out var roll) ? roll.Values.Sum().ToString(CultureInfo.InvariantCulture) : "?";
+                    records.Add((item.EventId, "interdiction",
+                        $"Interdiction of {interdicted.Unit} entering {interdicted.At}{(interdicted.Interdictor is { } by ? $" by {by}" : "")}: NMC DR {dr} against broken morale {interdicted.Morale}: {interdicted.Result} (A10.53)"));
+                }
+                else if (item.Payload is LineageRecorded { Action: LineageAction.Deployed or LineageAction.Recombined } lineage)
+                {
+                    records.Add((item.EventId, "lineage", lineage.Action == LineageAction.Deployed
+                        ? $"{lineage.Consumed[0]} becomes the HS {string.Join(" and ", lineage.Produced.Select(unit => unit.Id))} (A1.31)"
+                        : $"{string.Join(" and ", lineage.Consumed)} Recombine into {lineage.Produced[0].Id} (A1.32)"));
+                }
+                else if (item.Payload is ConditionsChanged dismantled && dismantled.Conditions.TryGetValue(Conditions.Dismantled, out var taken))
+                {
+                    records.Add((item.EventId, "dismantle", $"{dismantled.Id} is {(taken == ConditionState.True ? "dismantled" : "assembled")} (A9.8)"));
+                }
+                else if (item.Payload is EquipmentTransferred { Holding: null, Position: MapPosition left } dropped)
+                {
+                    records.Add((item.EventId, "drop", $"{dropped.Id} is left in {left.Location} (A4.43)"));
+                }
+                else if (item.Payload is DeploymentAttempted deployment)
+                {
+                    var dr = rolls.TryGetValue(deployment.Roll, out var roll) ? roll.Values.Sum().ToString(CultureInfo.InvariantCulture) : "?";
+                    records.Add((item.EventId, "deployment", $"{deployment.Squad} tries to Deploy{(deployment.Leader is { } leader ? $" with {leader}" : "")}: NTC DR {dr} "
+                        + $"{deployment.Drm:+0;-0;+0} against morale {deployment.Morale}: {(deployment.Passed ? "two HS" : "stays a squad")} (A1.31)"));
+                }
+                else if (item.Payload is RecoveryAttempted recovery)
+                {
+                    var dr = rolls.TryGetValue(recovery.Roll, out var roll) ? roll.Values[0].ToString(CultureInfo.InvariantCulture) : "?";
+                    records.Add((item.EventId, "recovery", $"{recovery.Unit} tries to Recover {recovery.Weapon}: dr {dr} {recovery.Drm:+0;-0;+0}, needing below 6: "
+                        + $"{(recovery.Recovered ? "recovered" : "not recovered")} (A4.44)"));
+                }
                 else if (item.Payload is RepairAttempted repair)
                 {
                     var dr = rolls.TryGetValue(repair.Roll, out var roll) ? roll.Values[0].ToString(CultureInfo.InvariantCulture) : "?";
@@ -3304,8 +3513,117 @@ else if (state is not null)
         return side;
     }
 
-    private Task ProposeAdvance() => Propose(GameActions.AdvancePhase,
-        JsonSerializer.SerializeToElement(new { gameId, attemptId = Attempt("advance"), expectedRevision = (long)history!.Events.Count }));
+    private Task ProposeAdvance()
+    {
+        var arguments = new Dictionary<string, object> { ["gameId"] = gameId, ["attemptId"] = Attempt("advance"), ["expectedRevision"] = (long)history!.Events.Count };
+        string[] kept = [.. retainDm.Where(id => state?.Unit(id) is { } unit && GameState.Condition(unit, Conditions.DesperationMorale) == ConditionState.True)];
+        if (state?.Phase == "rph" && kept.Length > 0)
+        {
+            arguments["retainDm"] = kept;
+        }
+
+        return Propose(GameActions.AdvancePhase, JsonSerializer.SerializeToElement(arguments));
+    }
+
+    /// <summary>
+    /// The destination a broken unit must reach, or that it has no legal step and so fails to rout or surrenders as the RtPh ends (A10.5, A10.51,
+    /// A20.21; table player, pass 13).
+    /// </summary>
+    private string RoutAdviceText(UnitInstance unit)
+    {
+        var (targets, canRout) = Live.Planner.RoutAdvice(state!, unit);
+        return !canRout ? "; no legal rout step: it is eliminated for Failure to Rout, or surrenders, as the RtPh ends if it must rout"
+            : targets.Count > 0 ? $"; must reach {string.Join(" or ", targets)}"
+            : "; no woods or building within reach: any legal route";
+    }
+
+    /// <summary>A route typed as hexes, each on the routing unit's board (A10.5).</summary>
+    private string[] RouteLocations(string text) => state?.Location(routUnit)?.Location is { } at
+        ? [.. text.Replace(',', ' ').Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(hex => hex.Contains(':', StringComparison.Ordinal) ? hex : $"{at.Board}:{hex}:0")]
+        : [];
+
+    private Task ProposeRout() => Propose(GameActions.Rout, JsonSerializer.SerializeToElement(new
+    {
+        gameId, attemptId = Attempt("rout"), expectedRevision = (long)history!.Events.Count, unitId = routUnit, route = RouteLocations(routRoute), lowCrawl = routLowCrawl,
+    }));
+
+    /// <summary>The SW on the map, possessed or not, other than Guns.</summary>
+    private IEnumerable<EquipmentInstance> SupportWeapons => state is null ? [] : state.Equipment.Where(item => item.Status == InstanceStatus.Active
+        && item.Holding?.Role != HoldingRole.Manned && item.Holding?.Role != HoldingRole.Towed && item.Kind != "asl:gun" && state.Location(item.Id) is not null)
+        .OrderBy(item => item.Id, StringComparer.Ordinal);
+
+    private string SupportWeaponText(EquipmentInstance weapon) =>
+        $"{weapon.Id} ({(weapon.Holding is { } holding ? $"held by {holding.Holder}" : $"left in {state!.Location(weapon.Id)!.Location}")}"
+        + $"{(GameState.Condition(weapon, Conditions.Dismantled) == ConditionState.True ? ", dismantled" : "")})";
+
+    /// <summary>The unit possessing the chosen SW, or null.</summary>
+    private string? SupportWeaponHolder => state?.Find(swWeapon) is EquipmentInstance { Holding: { Role: HoldingRole.Possessed } holding } ? holding.Holder : null;
+
+    /// <summary>The units in the chosen SW's Location that could Recover or receive it.</summary>
+    private IEnumerable<UnitInstance> SupportWeaponUnits => state?.Location(swWeapon)?.Location is { } at
+        ? state.At(at).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Id != SupportWeaponHolder && !LiveFire.IsVehicle(unit))
+        : [];
+
+    private Task ProposeSupportWeapon(ActionDescriptor action)
+    {
+        var arguments = new Dictionary<string, object>
+        {
+            ["gameId"] = gameId,
+            ["attemptId"] = Attempt(action.Id.Value["asl.game.".Length..]),
+            ["expectedRevision"] = (long)history!.Events.Count,
+            ["equipmentId"] = swWeapon,
+            ["unitId"] = action == GameActions.Recover ? swUnit : SupportWeaponHolder ?? string.Empty,
+        };
+        if (action == GameActions.Transfer)
+        {
+            arguments["toUnitId"] = swUnit;
+        }
+
+        return Propose(action, JsonSerializer.SerializeToElement(arguments));
+    }
+
+    /// <summary>The Good Order leaders in a unit's Location who could direct its Deployment or Recombination (A1.31, A1.32).</summary>
+    private IEnumerable<UnitInstance> LeadersWith(string unitId) => state?.Unit(unitId) is { } unit && state.Location(unit.Id)?.Location is { } at
+        ? state.At(at).OfType<UnitInstance>().Where(other => other.Status == InstanceStatus.Active && other.Kind == "asl:leader" && other.Side == unit.Side
+            && GameState.Condition(other, Conditions.Broken) != ConditionState.True)
+        : [];
+
+    /// <summary>The HS that could Recombine with the chosen one: of its definition, in its Location.</summary>
+    private IEnumerable<UnitInstance> RecombinePartners => state?.Unit(recombineOne) is { } one && state.Location(one.Id)?.Location is { } at
+        ? state.At(at).OfType<UnitInstance>().Where(other => other.Status == InstanceStatus.Active && other.Id != one.Id && other.Kind == "asl:half-squad"
+            && other.Definition?.Definition == one.Definition?.Definition)
+        : [];
+
+    private Task ProposeDeploy()
+    {
+        var arguments = new Dictionary<string, object> { ["gameId"] = gameId, ["attemptId"] = Attempt("deploy"), ["expectedRevision"] = (long)history!.Events.Count, ["squadId"] = deploySquad };
+        if (deployLeader.Length > 0)
+        {
+            arguments["leader"] = deployLeader;
+        }
+
+        if (deployWeapon.Length > 0)
+        {
+            arguments["secondWeapons"] = new[] { deployWeapon };
+        }
+
+        return Propose(GameActions.Deploy, JsonSerializer.SerializeToElement(arguments));
+    }
+
+    private Task ProposeRecombine()
+    {
+        var arguments = new Dictionary<string, object>
+        {
+            ["gameId"] = gameId, ["attemptId"] = Attempt("recombine"), ["expectedRevision"] = (long)history!.Events.Count, ["halfSquads"] = new[] { recombineOne, recombineTwo },
+        };
+        if (recombineLeader.Length > 0)
+        {
+            arguments["leader"] = recombineLeader;
+        }
+
+        return Propose(GameActions.Recombine, JsonSerializer.SerializeToElement(arguments));
+    }
 
     private Task ProposeEntry() => Propose(GameActions.EnterBuilding, JsonSerializer.SerializeToElement(new
     {
@@ -3388,6 +3706,25 @@ else if (state is not null)
             else if (proposal.Action == GameActions.Repair)
             {
                 repairWeapon = string.Empty;
+            }
+            else if (proposal.Action == GameActions.Rout)
+            {
+                routUnit = string.Empty;
+                routRoute = string.Empty;
+                routLowCrawl = false;
+            }
+            else if (proposal.Action == GameActions.Deploy || proposal.Action == GameActions.Recombine)
+            {
+                deploySquad = deployLeader = deployWeapon = string.Empty;
+                recombineOne = recombineTwo = recombineLeader = string.Empty;
+            }
+            else if (proposal.Action == GameActions.Transfer || proposal.Action == GameActions.Drop || proposal.Action == GameActions.Recover || proposal.Action == GameActions.Dismantle)
+            {
+                swWeapon = swUnit = string.Empty;
+            }
+            else if (proposal.Action == GameActions.AdvancePhase)
+            {
+                retainDm.Clear();
             }
             else if (proposal.Action == GameActions.Advance)
             {

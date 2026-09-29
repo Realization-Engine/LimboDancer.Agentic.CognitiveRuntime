@@ -179,6 +179,18 @@ public sealed record GameState(
     /// </summary>
     public IReadOnlyList<string> PaatcPassed { get; init; } = [];
 
+    /// <summary>The units that have routed this RtPh (A10.5; ruling R13.3); a HS a routing squad is Reduced to is listed too. Cleared at every phase change.</summary>
+    public IReadOnlyList<string> RoutedThisPhase { get; init; } = [];
+
+    /// <summary>The units whose RPh action is spent this RPh (A1.31, A1.32, A4.44; rulings R13.4, R13.5). Cleared at every phase change.</summary>
+    public IReadOnlyList<string> RallyPhaseActions { get; init; } = [];
+
+    /// <summary>The Recovery attempts of this phase as "unit|weapon", and the SW Recovered in it (A4.44, A4.431; ruling R13.5). Cleared at every phase change.</summary>
+    public IReadOnlyList<string> RecoveryAttempts { get; init; } = [];
+
+    /// <summary>The SW Recovered this phase, which are not Transferred in it (A4.44). Cleared at every phase change.</summary>
+    public IReadOnlyList<string> RecoveredThisPhase { get; init; } = [];
+
     /// <summary>The Encircled Locations (A7.7; ruling R12.11); one ends when no unit it Encircles is left there.</summary>
     public IReadOnlyList<Encirclement> Encirclements { get; init; } = [];
 

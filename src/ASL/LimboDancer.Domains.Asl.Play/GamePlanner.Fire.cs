@@ -558,6 +558,7 @@ public sealed partial class GamePlanner
     private static string[] Possessed(GameState state, string unitId) =>
         [.. state.Equipment.Where(equipment => equipment.Status == InstanceStatus.Active && equipment.Holding is { Role: HoldingRole.Possessed } holding
                 && holding.Holder == unitId && GameState.Condition(equipment, Conditions.Malfunctioned) != ConditionState.True
+                && GameState.Condition(equipment, Conditions.Dismantled) != ConditionState.True
                 && (equipment.Kind == "asl:mg" || (equipment.Definition is { } weapon && LiveOrdnance.LatwType(weapon.Definition) == "atr")))
             .Select(equipment => equipment.Id).Order(StringComparer.Ordinal)];
 

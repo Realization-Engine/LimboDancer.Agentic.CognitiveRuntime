@@ -26,13 +26,14 @@ public sealed class ScenarioA1RallyReference
 /// </summary>
 public sealed class ScenarioA1RallyPackage : IDomainPackageResolver
 {
-    public const string ManifestSha256 = "f3017213f8cb7ee157bedde88dadf9ac77be594bbcafa4e3d49bd6c0fb21daf9";
-    public const string MatrixSha256 = "8b5f6cd7ca6edbe2c994f8b10b653d932a32d3adb10579df8c6a4870bdeae773";
+    public const string ManifestSha256 = "ba0278e017520034864045a6cbcfc3fcca00628c59b96e60c7e1058bc546f223";
+    public const string MatrixSha256 = "043b6ccb6f60d3e4ac149cd3e7d02359466c3cd33c73fa2939dd66af304bf335";
     public static readonly DomainPackageRef Identity = new(new DomainId("asl"), "scenario-a1-rally", "sha256:" + ManifestSha256);
 
     private static readonly string[] Cases =
     [
         "A1-rally-resolved", "A1-rally-phase-outside", "A1-rally-unit-outside", "A1-rally-already-attempted", "A1-rally-leader-outside", "A1-rally-self-rally-refused", "A1-rally-terrain-outside", "A1-rally-capability-unrecorded", "A1-rally-reduction-counter-missing", "A1-rally-field-promotion-unreviewed", "A1-rally-roll-missing", "A1-rally-owner-options", "A1-rally-no-quarter",
+        "A1-rally-marsh-rubble", "A1-rally-mmc-self-rally-none",
     ];
 
     private static readonly string[] PinnedDigests = ["sourcePdfSha256", "catalogSha256"];

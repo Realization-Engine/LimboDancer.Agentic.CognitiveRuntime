@@ -54,7 +54,7 @@ public static class LiveRally
             unit.Side == state.PhasingSide ? "phasing" : "non-phasing",
             new RallyUnit(unit.Id, unit.Definition.Definition, at.ToString(), Is(unit, Conditions.Broken), Is(unit, Conditions.Disrupted),
                 Is(unit, Conditions.Wounded), Is(unit, Conditions.DesperationMorale), Is(unit, Conditions.Concealed),
-                state.RallyAttemptsThisPlayerTurn.Contains(unit.Id), state.RepairsThisPhase.Contains(unit.Id))
+                state.RallyAttemptsThisPlayerTurn.Contains(unit.Id), state.RepairsThisPhase.Contains(unit.Id) || state.RallyPhaseActions.Contains(unit.Id))
             {
                 Fanatic = Is(unit, Conditions.Fanatic) ? true : null,
             },

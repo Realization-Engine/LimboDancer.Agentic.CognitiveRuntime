@@ -268,29 +268,15 @@ public sealed class CloseCombatStepsTests : IDisposable
     [Fact]
     public async Task ABrokenUnitHeldInMeleeMustWithdrawAndADisruptedOneIsEliminated()
     {
-        await Setup("german", Unit("g1", "asl:squad", "attacker-squad", "bd01:B2:0", "german"),
-            Unit("r1", "asl:squad", "defender-squad", "bd01:B1:0", "russian", "asl:broken"),
-            Unit("r2", "asl:squad", "defender-squad", "bd01:B1:0", "russian", "asl:broken", "asl:disrupted"));
-        await Advance(6);
-        Committed(await Do(GameActions.Advance, NoRoll(), new
-        {
-            unitIds = G1,
-            to = "bd01:B1:0"
-        }));
-        await Advance();
-
-        // A11.16: broken units do not attack; the German attack at 1-2 (4-8) with -2 against each: 6+6-2 = 10, no effect.
-        Committed(await Do(GameActions.CloseCombat, Once(6, 6), new
-        {
-            location = "bd01:B1:0",
-            attacks = new[] { Attack(G1, ["r1", "r2"]) },
-        }));
-        await Advance();
-        Assert.True(Is(Current.Unit("r1")!, Conditions.Melee));
-
-        // Through the Russian Player Turn to its CCPh: the broken r1 must attempt to withdraw (A11.16) before the phase ends.
+        // Backlog pass 13 (ruling R13.3): broken units ADJACENT to a Known enemy unit rout or are eliminated as the RtPh ends, so the three units
+        // begin in Melee in B1, which the RtPh leaves alone (A10.5).
+        await Setup("german", Unit("g1", "asl:squad", "attacker-squad", "bd01:B1:0", "german", "asl:melee"),
+            Unit("r1", "asl:squad", "defender-squad", "bd01:B1:0", "russian", "asl:broken", "asl:melee"),
+            Unit("r2", "asl:squad", "defender-squad", "bd01:B1:0", "russian", "asl:broken", "asl:disrupted", "asl:melee"));
         await Advance(7);
-        Assert.Equal(("ccph", "russian"), (Current.Phase, Current.PhasingSide));
+
+        // In the CCPh the broken r1 must attempt to withdraw (A11.16) before the phase ends.
+        Assert.Equal(("ccph", "german"), (Current.Phase, Current.PhasingSide));
         Assert.Contains((await Do(GameActions.AdvancePhase, NoRoll(), new
         {
         })).Reasons, reason => reason.StartsWith("play.cc-withdraw-required", StringComparison.Ordinal));

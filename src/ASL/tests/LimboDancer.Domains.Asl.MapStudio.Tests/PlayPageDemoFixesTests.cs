@@ -235,4 +235,33 @@ public sealed class PlayPageDemoFixesTests : IDisposable
         Assert.Equal(Units.State.ConditionState.True, Units.State.GameState.Condition(live.History("village")!.Current!.Unit("g1")!, Units.State.Conditions.BoundingFire));
         Assert.Empty(page.FindAll(".opportunity-unit[data-unit='g1']"));
     }
+
+    [Fact]
+    public void TheSupportWeaponPanelTransfersAWeaponAndTheRoutPanelNamesWhoMustRout()
+    {
+        // A4.431 (ruling R13.5): in the RPh g1 passes its LMG to g2 in its Location.
+        var hexes = Hexes();
+        var page = context.Render<PlayPage>();
+        page.Find("#new-board").Change(Board);
+        page.Find("#new-first").Change("german");
+        page.Find("#new-second").Change("russian");
+        page.Find("#new-first-elr").Change("3");
+        page.Find("#new-second-elr").Change("3");
+        Place(page, "g1", "attacker-squad", hexes.One);
+        Place(page, "g2", "attacker-squad", hexes.One);
+        Place(page, "gm", "attacker-lmg", hexes.One, holder: "g1");
+        page.Find("#place-broken").Change(true);
+        Place(page, "r1", "defender-squad", hexes.Two);
+        Commit(page, "#propose-setup");
+        Assert.Equal("rph", live.History("village")!.Current!.Phase);
+        page.Find("#sw-weapon").Change("gm");
+        page.Find("#sw-unit").Change("g2");
+        Commit(page, "#propose-transfer");
+        Assert.Equal("g2", ((Units.State.EquipmentInstance)live.History("village")!.Current!.Find("gm")!).Holding!.Holder);
+
+        // A10.5 (ruling R13.3): in the RtPh the broken r1, ADJACENT to g1 and g2, must rout.
+        Advance(page, 5);
+        Assert.Equal("rtph", live.History("village")!.Current!.Phase);
+        Assert.Contains("must rout", page.Find(".rout-obligation[data-unit='r1']").TextContent, StringComparison.Ordinal);
+    }
 }

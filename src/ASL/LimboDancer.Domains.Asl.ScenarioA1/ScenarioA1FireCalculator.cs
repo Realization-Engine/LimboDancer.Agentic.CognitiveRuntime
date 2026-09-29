@@ -548,7 +548,7 @@ public static class ScenarioA1FireCalculator
             // A15.23: a hero's use of a SW is not reviewed.
             if (definition is not null && (weapons.Count > (definition.Kind == "asl:squad" ? 2 : definition.IsHero ? 0 : 1)
                 || weapons.Any(weapon => reference.Definitions.GetValueOrDefault(weapon.DefinitionId!) is not { Firepower: not null, Range: not null } mg || !(mg.IsMg || mg.IsAtr)
-                    || mg.Nationality != definition.Nationality || weapon.Malfunctioned == true || !WeaponMayFire(attack, weapon))))
+                    || (mg.Nationality != definition.Nationality) != (weapon.Captured == true) || weapon.Malfunctioned == true || !WeaponMayFire(attack, weapon))))
             {
                 outside.Add("asl.a1.fire.weapon-outside");
             }
@@ -1968,7 +1968,8 @@ public static class ScenarioA1FireCalculator
 
             var original = arithmetic.OriginalDr;
             var breakdown = weapons.ToDictionary(weapon => weapon.EquipmentId!,
-                weapon => (reference.Definitions[weapon.DefinitionId!].Breakdown ?? 12) - (IsSustained(attack, weapon, reference) ? 2 : 0) - AtrInexperience(weapon), StringComparer.Ordinal);
+                weapon => (reference.Definitions[weapon.DefinitionId!].Breakdown ?? 12) - (IsSustained(attack, weapon, reference) ? 2 : 0) - AtrInexperience(weapon)
+                    - (weapon.Captured == true ? 2 : 0), StringComparer.Ordinal);
             var reached = malfunction ? weapons.Where(weapon => original >= breakdown[weapon.EquipmentId!]).Select(weapon => weapon.EquipmentId!).ToArray() : [];
             var malfunctioned = new HashSet<string>(StringComparer.Ordinal);
             var selection = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -2008,7 +2009,7 @@ public static class ScenarioA1FireCalculator
                 var retained = !malfunctioned.Contains(id) && !sustained
                     && !(attack.FireKind == FinalProtectiveFire && operatorUnit?.FinalFireMarked == true)
                     && (attack.Phase != "AFPh" || operatorUnit?.OpportunityFire == true)
-                    && reference.Definitions[weapon.DefinitionId!].RateOfFire is { } rof && colored <= rof;
+                    && reference.Definitions[weapon.DefinitionId!].RateOfFire is { } rof && colored <= rof - (weapon.Captured == true ? 1 : 0);
                 return new FireWeaponEffect(id, breakdown[id], malfunctioned.Contains(id), retained, sustained,
                     retained ? null : sustained ? "final-fire" : counter, selection.TryGetValue(id, out var dr) ? dr : null);
             }).ToList();

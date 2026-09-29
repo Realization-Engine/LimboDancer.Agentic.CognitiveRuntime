@@ -201,7 +201,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         var plan = action.Id.Value switch
         {
             "asl.game.setup" => PlanSetup(scope, arguments, existing, attemptId, expected, ref label),
-            "asl.game.advance-phase" => PlanAdvance(scope, existing, attemptId, expected, label, actor ?? "unknown"),
+            "asl.game.advance-phase" => PlanAdvance(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.enter-empty-building" => await PlanEntryAsync(scope, arguments, existing, attemptId, expected, label, cancellationToken),
             "asl.game.declare-overrun" => await PlanDeclareAsync(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown", cancellationToken),
             "asl.game.enter-building" => await PlanEnterBuildingAsync(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown", cancellationToken),
@@ -226,6 +226,13 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             "asl.game.choose" => PlanChoose(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.massacre" => PlanMassacre(scope, arguments, existing, attemptId, expected, label),
             "asl.game.opportunity-fire" => PlanOpportunityFire(scope, arguments, existing, attemptId, expected, label),
+            "asl.game.rout" => PlanRout(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
+            "asl.game.deploy" => PlanDeploy(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
+            "asl.game.recombine" => PlanRecombine(scope, arguments, existing, attemptId, expected, label),
+            "asl.game.transfer" => PlanTransfer(scope, arguments, existing, attemptId, expected, label),
+            "asl.game.drop" => PlanDrop(scope, arguments, existing, attemptId, expected, label),
+            "asl.game.recover" => PlanRecover(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
+            "asl.game.dismantle" => PlanDismantle(scope, arguments, existing, attemptId, expected, label),
             _ => Refused(scope, label, expected, "play.unknown-action"),
         };
 
@@ -245,6 +252,12 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
         // C6.5, C6.51 (ruling R5.13): an Acquisition follows the units it is on.
         plan = WithAcquisitions(plan, scope, existing, attemptId, expected);
+
+        // A10.62 (ruling R13.1): a broken unit comes under DM when a Known armed enemy unit is ADJACENT to it.
+        if (action.Id.Value != "asl.game.setup")
+        {
+            plan = WithAdjacentDm(plan, scope, existing, attemptId, expected);
+        }
 
         // A plan with a roll has no events until the store draws it; its outcomes are checked when they are built.
         if (plan.Status != GamePlanStatus.Ready || plan.Roll is not null)
@@ -359,7 +372,8 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             : Refused(scope, label, expected, [.. parsed.Reasons]);
     }
 
-    private GamePlan PlanAdvance(GameScope scope, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label, string actor)
+    private GamePlan PlanAdvance(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label,
+        string actor)
     {
         if (Replay(existing).Current is not { } state)
         {
@@ -397,6 +411,41 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         // A15.43: the MPh does not end while a berserk unit must still charge.
         var reasons = new List<string>();
         var events = new List<GameEvent>();
+
+        // A10.62 (ruling R13.1): as the RPh ends, a broken unit under DM outside woods and buildings may keep it.
+        string[] retained = [.. Strings(arguments, "retainDm")];
+        if (retained.Length > 0 && state.Phase != "rph")
+        {
+            return Refused(scope, label, expected, "play.retain-dm: DM is retained as the RPh ends (A10.62)");
+        }
+
+        if (retained.Select(id => RetainDmBar(state, id)).FirstOrDefault(bar => bar is not null) is { } retainBar)
+        {
+            return Refused(scope, label, expected, retainBar);
+        }
+
+        // A10.5, A20.21 (ruling R13.3): as the RtPh ends, a broken unit that failed to rout is eliminated, or surrenders to its captors first.
+        if (state.Phase == "rtph")
+        {
+            var failed = FailureToRout(state, existing);
+            var surrendering = failed.Where(item => item.Captors is not null).ToArray();
+            if (surrendering.Length > 0)
+            {
+                foreach (var (unit, why, captors) in surrendering)
+                {
+                    events.Add(Event(scope, attemptId, events.Count + 1, expected, "surrender-pending", new SurrenderPending(unit.Id, captors!), null, null));
+                    reasons.Add($"play.failure-to-rout-surrender: {unit.Id} would be eliminated for Failure to Rout ({why}), so it surrenders to {string.Join(" or ", captors!)} (A20.21); advance the phase again once its captor's side has chosen");
+                }
+
+                return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [.. reasons]);
+            }
+
+            foreach (var (unit, why, _) in failed)
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(unit.Id), null, null));
+                reasons.Add($"play.failure-to-rout: {unit.Id} is eliminated for Failure to Rout: {why} (A10.5)");
+            }
+        }
         if (state.Phase == "mph" && MustCharge(state) is [{ } charging, ..])
         {
             return Refused(scope, label, expected, $"play.berserk-charge: {charging.Id} is berserk and must charge before the MPh ends (A15.43)");
@@ -485,6 +534,24 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             var payload = new PhaseChanged(turn, phase, phasing);
             var changed = EventId(attemptId, events.Count + 1);
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "phase-changed", payload, rulePackage: null, visibility: null));
+
+            // A10.62 (ruling R13.1): the DM its owner keeps as the RPh ends, and the DM of the start of the RtPh.
+            foreach (var id in retained)
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
+                    new ConditionsChanged(id, new Dictionary<string, ConditionState> { [Conditions.DesperationMorale] = ConditionState.True }), null, null, [changed]));
+                reasons.Add($"play.retain-dm: {id} keeps its DM (A10.62)");
+            }
+
+            if (phase == "rtph")
+            {
+                foreach (var (unit, why) in RoutPhaseDm(state))
+                {
+                    events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
+                        new ConditionsChanged(unit.Id, new Dictionary<string, ConditionState> { [Conditions.DesperationMorale] = ConditionState.True }), null, null, [changed]));
+                    reasons.Add($"play.dm: {unit.Id} comes under DM {why} as the RtPh begins (A10.62)");
+                }
+            }
 
             // A11.52 (ruling R11.16): an unarmed vehicle alone with enemy Infantry is captured as the CCPh begins.
             if (phase == "ccph")

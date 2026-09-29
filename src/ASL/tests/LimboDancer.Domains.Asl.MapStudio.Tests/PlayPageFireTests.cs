@@ -237,6 +237,12 @@ public sealed class PlayPageFireTests : IDisposable
         Commit(page, "#propose-advance");
         Assert.DoesNotContain("prep-fire", Row(page, "r1"), StringComparison.Ordinal);
         Assert.DoesNotContain("Prep Fire", Counter(page, "r1"), StringComparison.Ordinal);
+
+        // Backlog pass 13 (ruling R13.3): the broken gh, ADJACENT to the Russians, did not rout, so it surrenders as the RtPh ends (A20.21); its
+        // captor's side takes it before the phase advances.
+        Commit(page, "#propose-advance");
+        Assert.Equal("rtph", live.History("village")!.Current!.Phase);
+        Commit(page, ".take-prisoner");
         Commit(page, "#propose-advance");
         Commit(page, "#propose-advance");
         Assert.Contains("pinned", Row(page, "g1"), StringComparison.Ordinal);
