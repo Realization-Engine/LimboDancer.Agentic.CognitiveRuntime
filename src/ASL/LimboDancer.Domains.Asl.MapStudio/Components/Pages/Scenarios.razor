@@ -1,0 +1,213 @@
+@page "/units/scenarios"
+@using LimboDancer.Domains.Asl.Play
+@using LimboDancer.Domains.Asl.Units.Catalog
+@inject UnitLibrary Library
+
+<PageTitle>Scenario cards - ASL Map Studio</PageTitle>
+
+<h2 class="page">Scenario cards</h2>
+
+<p class="hint">
+    Cards adapted from legacy scenario cards to the registered rulebook (backlog pass 17, rulings R17.1 to R17.11). A card is read and shown here;
+    it is not played: setting up a game from a card, reinforcements entering, and the Victory Conditions are still to come.
+</p>
+
+@if (catalog is null)
+{
+    <p id="card-no-catalog" class="diagnostic error">The published catalog cannot be read, so no card can be checked.</p>
+}
+else
+{
+    <label>
+        Card
+        <select id="card-choice" value="@selected" @onchange="Choose">
+            @foreach (var name in ScenarioCards.Names)
+            {
+                <option value="@name">@(Title(name))</option>
+            }
+        </select>
+    </label>
+
+    @if (read is { } shown)
+    {
+        @if (shown.Diagnostics.Count > 0)
+        {
+            <ul id="card-diagnostics" class="diagnostic error">
+                @foreach (var diagnostic in shown.Diagnostics)
+                {
+                    <li>@diagnostic</li>
+                }
+            </ul>
+        }
+
+        @if (shown.Card is { } card)
+        {
+            <article id="card" class="scenario-card">
+                <h3 id="card-title">@card.Title</h3>
+                <p id="card-place">@card.Place, @ScenarioCards.DateText(card.Date)</p>
+                <p id="card-introduction">@card.Introduction</p>
+
+                <dl class="report">
+                    <dt>Source</dt>
+                    <dd id="card-source">@card.Source.Basis Legacy card: @card.Source.Legacy.</dd>
+                    <dt>Boards (A2.1)</dt>
+                    <dd id="card-boards">
+                        @BoardsText(card).
+                        North is the map's @card.North.
+                        @if (card.PlayableArea is { } playable)
+                        {
+                            <span id="card-playable"> @playable.Text @(playable.Enforced ? string.Empty : "(shown, not enforced)")</span>
+                        }
+                    </dd>
+                    <dt>Turn Record Chart (A3.9)</dt>
+                    <dd id="card-turns">
+                        @card.Turns.Count Game Turns@(card.Turns.HalfTurn ? ", the last with one Player Turn" : string.Empty).
+                        @Side(card.Turns.SetsUpFirst) sets up first; @Side(card.Turns.MovesFirst) moves first.
+                    </dd>
+                    <dt>Scenario Defender</dt>
+                    <dd id="card-defender">
+                        @(card.ScenarioDefender is { } defender
+                            ? Side(defender)
+                            : "None: neither side enters wholly from offboard (Index, Scenario Attacker/Defender; ruling R17.6).")
+                    </dd>
+                </dl>
+
+                @foreach (var side in card.Sides)
+                {
+                    <section id="card-side-@side.Side" class="card-side">
+                        <h4>@Side(side.Side)</h4>
+                        <dl class="report">
+                            <dt>SAN (A14.1)</dt>
+                            <dd class="card-san">@side.San</dd>
+                            <dt>Battlefield Integrity (A16.1)</dt>
+                            <dd class="card-integrity">@(side.IntegrityBpv is { } bpv ? $"[{bpv}] (A16 is optional and not built yet)" : "none printed")</dd>
+                            <dt>Friendly Board Edge (A20.53)</dt>
+                            <dd class="card-edge">
+                                The @side.FriendlyEdge.Edge edge (@ScenarioCards.Compass(card, side.FriendlyEdge.Edge)), from its @side.FriendlyEdge.Basis.
+                                @side.FriendlyEdge.Note
+                            </dd>
+                            <dt>Balance (A26.4)</dt>
+                            <dd class="card-balance">@side.Balance</dd>
+                        </dl>
+                        @foreach (var group in side.Groups)
+                        {
+                            <table class="card-group">
+                                <caption>@group.Name, ELR @group.Elr</caption>
+                                <thead><tr><th>Count</th><th>Counter</th><th>Setup or entry</th><th>Source</th></tr></thead>
+                                <tbody>
+                                    @foreach (var unit in group.Units)
+                                    {
+                                        var definition = catalog.Definition(unit.Definition);
+                                        <tr>
+                                            <td>@unit.Count</td>
+                                            <td title="@unit.Definition">@(definition is null ? unit.Definition : ScenarioCards.Describe(definition))</td>
+                                            <td>@Area(card, group, unit)</td>
+                                            <td class="@(definition is not null && ScenarioCards.Manufactured(definition) ? "card-manufactured" : "card-sourced")">
+                                                @(definition is null ? "not in the catalog" : ScenarioCards.Manufactured(definition) ? "manufactured (R0.3, sheet MFG)" : $"sheet {definition.Counter.Sheet}")
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                            @foreach (var area in group.Areas.Where(area => area.Limit is not null))
+                            {
+                                <p class="card-limit">@AreaText(card, area): @area.Limit</p>
+                            }
+                        }
+                    </section>
+                }
+
+                <h4>Special rules</h4>
+                <ol id="card-ssr">
+                    @foreach (var rule in card.SpecialRules)
+                    {
+                        <li class="card-ssr-@rule.Status">
+                            @rule.Text
+                            <span class="card-ssr-status">
+                                @(rule.Status switch
+                                {
+                                    "token" => $"Read by the game: {string.Join(" ", rule.Tokens)}.",
+                                    "game-default" => "The game plays this by default.",
+                                    _ => $"Shown, not enforced. {rule.Note}",
+                                })
+                            </span>
+                            @if (rule.Rules.Count > 0)
+                            {
+                                <span class="card-rules">(@Cites(rule.Rules))</span>
+                            }
+                        </li>
+                    }
+                </ol>
+
+                <h4>Victory Conditions</h4>
+                <p id="card-victory">@card.VictoryConditions.Text <span class="card-rules">(@Cites(card.VictoryConditions.Rules); not evaluated yet)</span></p>
+
+                @if (card.Aftermath is { } aftermath)
+                {
+                    <h4>Aftermath</h4>
+                    <p id="card-aftermath">@aftermath</p>
+                }
+
+                <h4>Adapted to the registered rulebook</h4>
+                <ul id="card-adaptation">
+                    @foreach (var note in card.Source.Adaptation)
+                    {
+                        <li>@note</li>
+                    }
+                </ul>
+            </article>
+        }
+    }
+}
+
+@code {
+    private UnitCatalog? catalog;
+    private string? selected;
+    private ScenarioCardRead? read;
+
+    protected override void OnInitialized()
+    {
+        catalog = UnitCatalogs.Read(UnitCatalogs.ScenarioA1, Library.Vocabulary)?.Catalog;
+        Show(ScenarioCards.Names.FirstOrDefault());
+    }
+
+    private void Choose(ChangeEventArgs change) => Show(change.Value?.ToString());
+
+    private void Show(string? name)
+    {
+        selected = name;
+        read = name is null || catalog is null ? null : ScenarioCards.Read(name, catalog);
+    }
+
+    private string Title(string name) => catalog is not null && ScenarioCards.Read(name, catalog)?.Card is { } card ? card.Title : name;
+
+    private static readonly string[] Ordinals = ["first", "second", "third", "fourth", "fifth", "sixth"];
+
+    /// <summary>The boards as a player lays them out (A2.1): by row from the map's top, and by column when a row holds more than one.</summary>
+    private static string BoardsText(ScenarioCard card)
+    {
+        var wide = card.Boards.Select(board => board.Column).Distinct().Count() > 1;
+        string Slot(int index) => index < Ordinals.Length ? Ordinals[index] : $"{index + 1}th";
+        return string.Join("; ", card.Boards.OrderBy(board => board.Row).ThenBy(board => board.Column).Select(board =>
+            $"{board.Board}{(card.Boards.Count == 1 ? string.Empty : $" in the {Slot(board.Row)} row from the top")}"
+            + $"{(wide ? $", {Slot(board.Column)} from the left" : string.Empty)}{(board.Reversed ? ", turned 180 degrees" : string.Empty)}"));
+    }
+
+    /// <summary>The rules a card cites, the project's rulings marked as such.</summary>
+    private static string Cites(IEnumerable<string> rules) =>
+        string.Join(", ", rules.Select(rule => rule.StartsWith('R') ? $"ruling {rule}" : rule));
+
+    private static string Side(string side) => side.Length == 0 ? side : char.ToUpperInvariant(side[0]) + side[1..];
+
+    private static string AreaText(ScenarioCard card, ScenarioCardSetup area) => area.Kind switch
+    {
+        "building" => $"building {area.Id}{(area.Hexes is { Count: > 1 } hexes ? $" ({string.Join(", ", hexes)})" : string.Empty)}{(area.Board is { } board ? $" on {board}" : string.Empty)}",
+        "hex-numbers" => $"hexes numbered {area.From} to {area.To} on {area.Board}",
+        "entry" => $"enters on Turn {area.Turn} along the {area.Edge} edge ({ScenarioCards.Compass(card, area.Edge ?? string.Empty)})",
+        _ => area.Id,
+    };
+
+    private static string Area(ScenarioCard card, ScenarioCardGroup group, ScenarioCardUnit unit) =>
+        unit.Area is { } id && group.Areas.FirstOrDefault(area => area.Id == id) is { } area ? AreaText(card, area)
+            : string.Join(", or ", group.Areas.Select(area => AreaText(card, area)));
+}

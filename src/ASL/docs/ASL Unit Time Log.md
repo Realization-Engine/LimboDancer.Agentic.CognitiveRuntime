@@ -400,3 +400,25 @@ Estimate: 1:50, scaled from the plan's 3:45 (build 2:30) by the passes 12 to 15 
 | Merge and push | 11:01 | 11:03 | 0:02 | |
 
 Total 1:50 of working time (09:13 to 11:03) against the 1:50 estimate (the plan's 3:45, build 2:30); the build with both reviews' fixes, 09:24 to 10:26, took 1:02.
+
+## Pass 17: Scenario cards
+
+Estimate: about 1:00, scaled from the plan's 1:40 (build 0:25; the plan's 1:55 before the 2026-09-29 ruling cut the pass to the card presentation) by the pass 16 actual (1:50 against a plan of 3:45). Kickoff 2026-09-29 11:57. Branch `feature/asl-backlog-pass-17`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| 17.0 Legacy card analysis: The General, Vol 22 to Vol 32 scanned (about 60 card pages), screened against the boards and the catalog; The Guards Counterattack (Vol 22.6, p. 51) and Gambit (Vol 28.6, p. 64) chosen, The Tractor Works the alternate | 11:57 | 12:06 | 0:09 | The legacy card paths were asked for at kickoff |
+| Plan pass 17 revised to the presentation-only scope, the legacy source cards and their adaptation to the registered rulebook added, the duration report updated | 12:12 | 12:16 | 0:04 | |
+| Reading (A2.1, A3.9, A16, A19.1, A20.53, A26, the Index's Scenario Defender, H1.28, H1.29, H1.8) and rulings R17.1 to R17.11 drafted; a code survey agent mapped the hooks | 12:16 | 12:30 | 0:14 | |
+| PDF comparison (17 fragments) and its registration in the Fire source review | 12:30 | 12:35 | 0:05 | |
+| Catalog 1.11.0: six counters (NCC 5-4-8 and HS, OLG 2-in. mortar, MFG HMG, LMG, ATR), the manifest, source record, synthetic catalog, the version pins, and the matrix and package re-pins; Units (406) and ScenarioA1 (470) pass | 12:35 | 13:06 | 0:31 | The ScenarioA1 run took 7:41; repo writes had no classifier verdict for a while |
+| The card format, reader, and validation (`ScenarioCards`), the two cards, and 19 Play tests | 13:06 | 13:14 | 0:08 | |
+| The Studio's Scenario cards page and 2 page tests; rulings into the plan; the referee agent started | 13:14 | 13:18 | 0:04 | The referee ran 13:18 to about 13:27 |
+| Visual check in the Studio (map-studio-scripted: Gambit, then The Guards Counterattack by a DOM change event); Studio stopped; table-player clone (core.longpaths) and agent started; Play (478) and MapStudio (133) pass | 13:18 | 13:24 | 0:06 | The table player ran 13:23 to about 13:31 |
+| Referee's 15 and table player's 11 findings: the second 8-0, whole-building setup areas, EC kept apart from weather, the HS Exit VP, the 9-0 Commissar (A25.22), ANZAC Stealth noted, the Defender's own setup, a missing BPV, the SSR 2 wording, five more fragments compared (22), the page's wording; 2 recorded; rulings revised | 13:24 | 13:34 | 0:10 | |
+| Review, design, backlog section 27 (2 rows removed from sections 6 and 15, 5 rows re-pointed), requirements, registry README; clone removed | 13:34 | 13:37 | 0:03 | |
+| Full local suite: build with warnings as errors, every solution test project, and the ScenarioA1 tests (470); the four Authoring matrix tests pinned the old matrix digests in test code (re-pinned, 21 pass) and the architecture test hit the held `.git/worktrees`; Play (478), MapStudio (133), Units (406), CounterSheets (19) pass | 13:37 | 14:04 | 0:27 | The ScenarioA1 and Authoring runs took 6:55 and 9:47 |
+| Commit 55d522a; merge gate: the chart supplement regeneration run locally (identical with sorted keys) and the Docker Linux check (restore, build, test, a1, and the source verification and pending comparison regenerations: every step exit 0; Authoring 167 of 167, ScenarioA1 470) | 14:04 | 14:20 | 0:16 | |
+| Merge and push | 14:20 | 14:22 | 0:02 | |
+
+Total 2:25 of working time (11:57 to 14:22) against the 1:00 estimate (the plan's 1:40, build 0:25); the catalog additions, 12:35 to 13:06, took 0:31, and the referee's and table player's fixes, 13:24 to 13:34, took 0:10.

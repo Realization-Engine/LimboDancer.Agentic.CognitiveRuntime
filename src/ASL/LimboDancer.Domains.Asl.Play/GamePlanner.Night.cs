@@ -25,7 +25,7 @@ public sealed partial class GamePlanner
     private static readonly string[] Axis = ["german", "italian", "finnish", "japanese"];
 
     /// <summary>Why the SSRs of a new game are refused (rulings R16.1, R16.9), or null.</summary>
-    private static string? NightAndWeatherRulesBar(JsonElement start)
+    internal static string? NightAndWeatherRulesBar(JsonElement start)
     {
         string[] rules = start.TryGetProperty("specialRules", out var list) && list.ValueKind == JsonValueKind.Array
             ? [.. list.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString()!)]

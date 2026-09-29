@@ -2028,3 +2028,89 @@ sheet,counter,face,attribute,value,transcriber,reviewer,note
 ,defender-dc,front,portage,,,,whole number of PP (A4.4)
 ,defender-dc,front,asl:breakdown-removes,,,,yes or no: an X# (A.11)
 ,defender-dc,malfunctioned,repair,,,,"whole number, or not-printed"
+,attacker-elite-squad-5-4-8,counter,kind,,,,expected asl:squad
+,attacker-elite-squad-5-4-8,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,attacker-elite-squad-5-4-8,front,firepower,,,,whole number (A1.21)
+,attacker-elite-squad-5-4-8,front,range,,,,whole number (A1.22)
+,attacker-elite-squad-5-4-8,front,morale,,,,whole number (A1.23)
+,attacker-elite-squad-5-4-8,front,identity,,,,"identity letter or crew numeral as printed, or not-printed (A1.24)"
+,attacker-elite-squad-5-4-8,front,class,,,,"elite, 1st-line, 2nd-line, green, conscript, or not-printed (A1.25)"
+,attacker-elite-squad-5-4-8,front,class-variant,,,,"circle, square, or not-printed (A1.25)"
+,attacker-elite-squad-5-4-8,front,smoke-exponent,,,,"whole number, or not-printed (A1.21)"
+,attacker-elite-squad-5-4-8,front,asl:assault-fire,,,,yes or no: firepower underlined (A1.21)
+,attacker-elite-squad-5-4-8,front,asl:spraying-fire,,,,yes or no: range underlined (A1.22)
+,attacker-elite-squad-5-4-8,front,asl:elr-5,,,,yes or no: morale underlined (A1.23)
+,attacker-elite-squad-5-4-8,front,asl:assault-engineer,,,,yes or no: DC symbol printed (A25.01)
+,attacker-elite-squad-5-4-8,broken,broken-morale,,,,"whole number, or not-printed if the counter has no broken side (A1.4)"
+,attacker-elite-squad-5-4-8,broken,bpv,,,,"whole number, or not-printed (A1.4)"
+,attacker-elite-squad-5-4-8,broken,asl:self-rally,,,,yes or no: broken morale in a square (A1.4)
+,attacker-elite-half-squad-2-3-8,counter,kind,,,,expected asl:half-squad
+,attacker-elite-half-squad-2-3-8,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,attacker-elite-half-squad-2-3-8,front,firepower,,,,whole number (A1.21)
+,attacker-elite-half-squad-2-3-8,front,range,,,,whole number (A1.22)
+,attacker-elite-half-squad-2-3-8,front,morale,,,,whole number (A1.23)
+,attacker-elite-half-squad-2-3-8,front,identity,,,,"identity letter or crew numeral as printed, or not-printed (A1.24)"
+,attacker-elite-half-squad-2-3-8,front,class,,,,"elite, 1st-line, 2nd-line, green, conscript, or not-printed (A1.25)"
+,attacker-elite-half-squad-2-3-8,front,class-variant,,,,"circle, square, or not-printed (A1.25)"
+,attacker-elite-half-squad-2-3-8,front,smoke-exponent,,,,"whole number, or not-printed (A1.21)"
+,attacker-elite-half-squad-2-3-8,front,asl:assault-fire,,,,yes or no: firepower underlined (A1.21)
+,attacker-elite-half-squad-2-3-8,front,asl:spraying-fire,,,,yes or no: range underlined (A1.22)
+,attacker-elite-half-squad-2-3-8,front,asl:elr-5,,,,yes or no: morale underlined (A1.23)
+,attacker-elite-half-squad-2-3-8,front,asl:assault-engineer,,,,yes or no: DC symbol printed (A25.01)
+,attacker-elite-half-squad-2-3-8,broken,broken-morale,,,,"whole number, or not-printed if the counter has no broken side (A1.4)"
+,attacker-elite-half-squad-2-3-8,broken,bpv,,,,"whole number, or not-printed (A1.4)"
+,attacker-elite-half-squad-2-3-8,broken,asl:self-rally,,,,yes or no: broken morale in a square (A1.4)
+,attacker-hmg,counter,kind,,,,expected asl:mg
+,attacker-hmg,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,attacker-hmg,front,identity,,,,"identity as printed, or not-printed"
+,attacker-hmg,front,size,,,,"light, medium, or heavy (A9.1)"
+,attacker-hmg,front,firepower,,,,whole number (A9.1)
+,attacker-hmg,front,range,,,,whole number (A9.1)
+,attacker-hmg,front,breakdown,,,,whole number (A9.7)
+,attacker-hmg,front,rate-of-fire,,,,"whole number, or not-printed if the MG has no Multiple ROF (A9.2)"
+,attacker-hmg,front,portage,,,,whole number of PP (A4.4)
+,attacker-hmg,malfunctioned,repair,,,,whole number (A9.72)
+,british-lmg,counter,kind,,,,expected asl:mg
+,british-lmg,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,british-lmg,front,identity,,,,"identity as printed, or not-printed"
+,british-lmg,front,size,,,,"light, medium, or heavy (A9.1)"
+,british-lmg,front,firepower,,,,whole number (A9.1)
+,british-lmg,front,range,,,,whole number (A9.1)
+,british-lmg,front,breakdown,,,,whole number (A9.7)
+,british-lmg,front,rate-of-fire,,,,"whole number, or not-printed if the MG has no Multiple ROF (A9.2)"
+,british-lmg,front,portage,,,,whole number of PP (A4.4)
+,british-lmg,malfunctioned,repair,,,,whole number (A9.72)
+,british-light-mortar,counter,kind,,,,expected asl:light-mortar
+,british-light-mortar,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,british-light-mortar,front,identity,,,,"identity as printed, or not-printed"
+,british-light-mortar,front,firepower,,,,"whole number, or not-printed"
+,british-light-mortar,front,range,,,,"whole number, or not-printed"
+,british-light-mortar,front,breakdown,,,,whole number (C2.28)
+,british-light-mortar,front,rate-of-fire,,,,"whole number, or not-printed"
+,british-light-mortar,front,portage,,,,whole number of PP (A4.4)
+,british-light-mortar,front,caliber,,,,whole number in mm (C2.21)
+,british-light-mortar,front,caliber-suffix,,,,"star, l, ll, or not-printed"
+,british-light-mortar,front,range-minimum,,,,"whole number, or not-printed"
+,british-light-mortar,front,range-maximum,,,,"whole number, or not-printed"
+,british-light-mortar,front,special-ammo,,,,"codes as printed, space-separated, or not-printed"
+,british-light-mortar,front,dates,,,,"years as printed, yy-yy"
+,british-light-mortar,front,asl:no-ap,,,,yes or no
+,british-light-mortar,front,asl:no-he,,,,yes or no
+,british-light-mortar,front,asl:breakdown-removes,,,,yes or no
+,british-light-mortar,malfunctioned,repair,,,,"whole number, or not-printed"
+,british-atr,counter,kind,,,,expected asl:latw
+,british-atr,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,british-atr,front,identity,,,,"identity as printed, or not-printed"
+,british-atr,front,firepower,,,,"whole number, or not-printed"
+,british-atr,front,range,,,,"whole number, or not-printed"
+,british-atr,front,breakdown,,,,whole number (A9.7)
+,british-atr,front,rate-of-fire,,,,"whole number, or not-printed"
+,british-atr,front,portage,,,,whole number of PP (A4.4)
+,british-atr,front,latw-type,,,,"atr, psk, baz, piat, or pf"
+,british-atr,front,caliber,,,,whole number in mm
+,british-atr,front,range-maximum,,,,"whole number, or not-printed"
+,british-atr,front,special-ammo,,,,"codes as printed, space-separated, or not-printed"
+,british-atr,front,to-hit-table,,,,"Basic TH# at ranges 1, 2, ..., space-separated, or not-printed"
+,british-atr,front,dates,,,,"years as printed, yy-yy"
+,british-atr,front,asl:breakdown-removes,,,,yes or no
+,british-atr,malfunctioned,repair,,,,"whole number, or not-printed"

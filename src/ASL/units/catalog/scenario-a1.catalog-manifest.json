@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "catalog": "asl-scenario-a1",
-  "version": "1.10.0",
-  "label": "Scenario A1 catalog: Infantry Personnel, heroes, leaders, crews, MGs, light mortars, LATW, FT, DC, Guns, vehicles, and tanks, with Commissars and five more nationalities, for the reviewed Scenario A1 cases",
+  "version": "1.11.0",
+  "label": "Scenario A1 catalog: Infantry Personnel, heroes, leaders, crews, MGs, light mortars, LATW, FT, DC, Guns, vehicles, and tanks, with Commissars and five more nationalities, for the reviewed Scenario A1 cases and the scenario cards",
   "vocabulary": ["asl@1.3.0"],
   "source": {
     "id": "asl-counter-sheets:scenario-a1",
@@ -168,6 +168,12 @@
     { "id": "attacker-ft", "counter": "attacker-ft", "slots": [] },
     { "id": "defender-ft", "counter": "defender-ft", "slots": [] },
     { "id": "attacker-dc", "counter": "attacker-dc", "slots": [] },
-    { "id": "defender-dc", "counter": "defender-dc", "slots": [] }
+    { "id": "defender-dc", "counter": "defender-dc", "slots": [] },
+    { "id": "attacker-elite-squad-5-4-8", "counter": "attacker-elite-squad-5-4-8", "slots": [] },
+    { "id": "attacker-elite-half-squad-2-3-8", "counter": "attacker-elite-half-squad-2-3-8", "slots": [] },
+    { "id": "attacker-hmg", "counter": "attacker-hmg", "slots": [] },
+    { "id": "british-lmg", "counter": "british-lmg", "slots": [] },
+    { "id": "british-light-mortar", "counter": "british-light-mortar", "slots": [] },
+    { "id": "british-atr", "counter": "british-atr", "slots": [] }
   ]
 }
