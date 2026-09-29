@@ -211,7 +211,7 @@ public static class GameActions
             "weapons": { "type": "object", "additionalProperties": { "type": "array", "items": { "type": "string" } } },
             "withoutInherent": { "type": "array", "items": { "type": "string" } },
             "partners": { "type": "object", "additionalProperties": { "type": "string" } },
-            "target": { "type": "string" }, "snapShot": { "type": "boolean" }, "sprayTarget": { "type": "string" },
+            "target": { "type": "string" }, "snapShot": { "type": "boolean" }, "sprayTarget": { "type": "string" }, "mol": { "type": "string" },
             "fireLane": {
               "type": "object", "additionalProperties": false, "required": ["weapon", "to"],
               "properties": { "weapon": { "type": "string" }, "to": { "type": "string" } }
@@ -272,7 +272,7 @@ public static class GameActions
         }));
 
     public static readonly ActionDescriptor Move = Descriptor("asl.game.move", "Move",
-        "Move a Good Order stack of the phasing side into an adjacent Location in its MPh at the terrain's MF cost, optionally by Assault Movement or with Double Time, which adds MF and makes the movers CX (A4.5); or, staying in its Location, have one of its squads attempt to place SMOKE grenades there or in an ADJACENT Location (A24.1). The DEFENDER may then fire at it before it moves again; Residual FP there attacks it first.",
+        "Move a Good Order stack of the phasing side into an adjacent Location in its MPh at the terrain's MF cost, optionally by Assault Movement or with Double Time, which adds MF and makes the movers CX (A4.5); or, staying in its Location, have one of its squads attempt to place SMOKE grenades there or in an ADJACENT Location (A24.1), or have one of its units Place a DC in an ADJACENT Location for the MF entering it would cost (A23.3). A berserk unit names the 1PP SW it keeps within its IPC (A15.431). The DEFENDER may then fire at it before it moves again; Residual FP there attacks it first.",
         PlayPermission, "asl.game.reviewed-fire-v1", """
         {
           "type": "object", "additionalProperties": false,
@@ -283,6 +283,8 @@ public static class GameActions
             "unitIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
             "to": { "type": "string" }, "assault": { "type": "boolean" }, "doubleTime": { "type": "boolean" }, "pushGun": { "type": "string" },
             "smoke": { "type": "string" }, "smokeBy": { "type": "string" }, "minimumMove": { "type": "boolean" },
+            "placeDc": { "type": "string" }, "placeDcAt": { "type": "string" },
+            "keep": { "type": "array", "items": { "type": "string" } },
             "bypass": { "type": "array", "items": { "type": "string", "enum": ["north", "northeast", "southeast", "south", "southwest", "northwest"] }, "minItems": 1, "maxItems": 2 }
           }
         }
@@ -584,13 +586,47 @@ public static class GameActions
         }
         """);
 
+    public static readonly ActionDescriptor ThrowDc = Descriptor("asl.game.throw-dc", "Throw a DC",
+        "A Good Order (or berserk) unpinned unit Throws the DC it possesses into an ADJACENT Location in its LOS at its level, in a friendly fire phase or as Defensive First Fire at the moving stack: 30 FP there with +2, then its own Location with +3, each on its own DR (+1 more in the AFPh unless an Opportunity Firer); a unit marked First Fire throws none. The DC is removed (A23.6 to A23.63; ruling R15.3).",
+        PlayPermission, "asl.game.reviewed-fire-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "unitId", "equipmentId", "target"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "unitId": { "type": "string" }, "equipmentId": { "type": "string" }, "target": { "type": "string" }
+          }
+        }
+        """, JsonSerializer.SerializeToElement(new
+        {
+            package = ScenarioA1FirePackage.Identity.ToString()
+        }));
+
+    public static readonly ActionDescriptor DetonateDc = Descriptor("asl.game.detonate-dc", "Detonate a Placed DC",
+        "In its side's AFPh, a DC operably Placed this MPh detonates on its target Location with 30 FP, halved when every unit there was concealed at its Placement, with the Location's TEM and +1 when its placer was CX; an Original DR of 12 (10 for a non-elite owner, 8 for a captured DC) removes it with no effect. The AFPh does not end before every Placed DC detonates (A23.1, A23.3, A23.4; ruling R15.2).",
+        PlayPermission, "asl.game.reviewed-fire-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "equipmentId"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "equipmentId": { "type": "string" }
+          }
+        }
+        """, JsonSerializer.SerializeToElement(new
+        {
+            package = ScenarioA1FirePackage.Identity.ToString()
+        }));
+
     public static IReadOnlyList<ActionDescriptor> All
     {
         get;
     } =
         [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding, DeclareOverrun, Fire, Rally, Repair, Move, PassFire, EndMove, Advance, Ambush, CloseCombat, TakePrisoner,
             FireOrdnance, RecoverShock, TurnGun, HookGun, MoveVehicle, Overrun, VehicleCloseCombat, ButtonUp, Choose, Massacre, OpportunityFire,
-            Rout, Deploy, Recombine, Transfer, Drop, Recover, Dismantle, AmbushWithdraw, GuardPrisoners];
+            Rout, Deploy, Recombine, Transfer, Drop, Recover, Dismantle, AmbushWithdraw, GuardPrisoners, ThrowDc, DetonateDc];
 
     public static string VersionKey(Guid tenant, string game) => $"asl.game:{tenant:N}:{game}";
 

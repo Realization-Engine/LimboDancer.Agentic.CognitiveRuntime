@@ -235,6 +235,8 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             "asl.game.dismantle" => PlanDismantle(scope, arguments, existing, attemptId, expected, label),
             "asl.game.ambush-withdraw" => PlanAmbushWithdrawal(scope, arguments, existing, attemptId, expected, label),
             "asl.game.guard-prisoners" => PlanGuardPrisoners(scope, arguments, existing, attemptId, expected, label),
+            "asl.game.throw-dc" => PlanThrowDc(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
+            "asl.game.detonate-dc" => PlanDetonateDc(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             _ => Refused(scope, label, expected, "play.unknown-action"),
         };
 
@@ -399,6 +401,26 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             return Refused(scope, label, expected, $"play.shock-recovery-pending: {shocked.Id} makes its Shock or Unconfirmed Kill dr before the RPh ends (C7.42)");
         }
 
+        // A25.222 (backlog pass 15, ruling R15.6): a Commissar must attempt to rally every broken unit of his Location; the RPh does not end while one has made
+        // no attempt that the Rally package would decide.
+        if (state.Phase == "rph")
+        {
+            foreach (var broken in state.Units.Where(unit => unit.Status == InstanceStatus.Active && Is(unit, Conditions.Broken) && !Is(unit, Conditions.Captured)
+                && !state.RallyAttemptsThisPlayerTurn.Contains(unit.Id) && !state.RallyPhaseActions.Contains(unit.Id)).OrderBy(unit => unit.Id, StringComparer.Ordinal))
+            {
+                if (LiveRally.Commissar(state, broken) is { } commissar && !state.RallyPhaseActions.Contains(commissar.Id)
+                    && PlanRally(scope, JsonSerializer.SerializeToElement(new
+                    {
+                        unitId = broken.Id,
+                        leader = commissar.Id
+                    }), existing, attemptId + "-commissar", expected, label,
+                        actor).Status == GamePlanStatus.Ready)
+                {
+                    return Refused(scope, label, expected, $"play.commissar-rally: {commissar.Id} must attempt to rally {broken.Id} before the RPh ends (A25.222)");
+                }
+            }
+        }
+
         // A3.1 to A3.8 (p. 47): the eight phases in order; after the CCPh the other side's Player Turn begins, and a new
         // Game Turn begins when the side that moved first is phasing again.
         var index = Phases.All.ToList().IndexOf(state.Phase);
@@ -408,6 +430,17 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         if (index == Phases.All.Count - 1 && phasing == state.FirstSide)
         {
             turn++;
+        }
+
+        // A23.4 (backlog pass 15, ruling R15.2): a DC operably Placed detonates before the AFPh ends, unless the Fire package refuses its attack; it then stays
+        // in its Location.
+        if (state.Phase == "afph" && state.PlacedCharges.Where(item => item.Operable).FirstOrDefault(item => PlanDetonateDc(scope,
+            JsonSerializer.SerializeToElement(new
+            {
+                equipmentId = item.Charge
+            }), existing, attemptId + "-dc", expected, label, actor).Status == GamePlanStatus.Ready) is { } unexploded)
+        {
+            return Refused(scope, label, expected, $"play.dc-detonate-pending: {unexploded.Charge} was Placed in {unexploded.Target} and detonates before the AFPh ends (A23.4)");
         }
 
         // A15.43: the MPh does not end while a berserk unit must still charge.

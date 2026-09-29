@@ -142,12 +142,12 @@ public sealed class ScenarioA1RallyPackageTests
     }
 
     [Fact]
-    public void AnNkvdFieldPromotionIsRefused()
+    public void AnNkvdFieldPromotionCreatesACommissar()
     {
-        // A25.25: an NKVD MMC's Field Promotion creates a Commissar, which the review does not admit.
-        var result = ScenarioA1RallyCalculator.Resolve(Attempt([1, 1], Unit(definition: "defender-nkvd-squad"), selfRally: true, firstMmc: true,
-            goodOrderLeader: false), Reference);
-        Assert.Contains(result.Reasons, reason => reason.StartsWith("asl.a1.rally.field-promotion-commissar-unreviewed", StringComparison.Ordinal));
+        // A25.25 (backlog pass 15, ruling R15.7): an NKVD MMC's Field Promotion uses the Commissar table: a dr of 1, +1 broken, is a 9-0 Commissar.
+        var attempt = Attempt([1, 1], Unit(definition: "defender-nkvd-squad"), selfRally: true, firstMmc: true, goodOrderLeader: false);
+        var result = ScenarioA1RallyCalculator.Resolve(attempt with { Rolls = attempt.Rolls! with { LeaderCreation = 1 } }, Reference);
+        Assert.Equal("defender-commissar-9-0", result.Effect!.CreatedLeaderDefinitionId);
     }
 
     [Fact]

@@ -209,7 +209,7 @@ public static class LiveOrdnance
         var acquisition = state.Acquisitions.FirstOrDefault(item => item.Gun == gun.Id
             && (item.Location == target || item.Units.Any(id => state.Location(id)?.Location == target)))?.Level ?? 0;
         var hit = new FireAttack(phase, firingSide, null, null, target.ToString(), [], null, null, null, null, state.ScenarioMonth, null,
-            [.. targets.Select(unit => LiveFire.Target(unit, target))], targetSide is null ? null : state.Side(targetSide)?.Elr, null)
+            [.. targets.Select(unit => LiveFire.Target(state, unit, target))], targetSide is null ? null : state.Side(targetSide)?.Elr, null)
         {
             TargetSideNoQuarter = targetSide is not null && state.NoQuarter.Contains(targetSide, StringComparer.Ordinal) ? true : null,
         };

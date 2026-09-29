@@ -208,10 +208,13 @@ public sealed class ScenarioA1OrdnanceReference
 /// </summary>
 public sealed class ScenarioA1OrdnancePackage : IDomainPackageResolver
 {
-    public const string ManifestSha256 = "120b1df9714537883f198ac2876dbd7f084517e1041f400cf5f13895f3ccb699";
-    public const string MatrixSha256 = "dbfd38bf90f619c87f53654713b03e98d6ad6c6c89b4a478d17e3af76abd2428";
-    /// <summary>The package as revised at backlog pass 9, before its backlog pass 9b revision (the ATR and the Panzerschreck; catalog 1.9.0).</summary>
-    public const string PriorManifestSha256 = "580305465c13872d27e57a987075f0fe0f3917c00bdc569918e388f8e65a6390";
+    public const string ManifestSha256 = "b10deb34d69d49b5f7fe0ab1dbc2c5261b1b2736231411e8cd779ec1ddd301b6";
+    public const string MatrixSha256 = "81542d82bccce0cd67e01c21bb5268c55c838bc4f894839dfa98b5b3c7a1d7ab";
+    /// <summary>
+    /// The package as revised at backlog pass 9b (the ATR and the Panzerschreck; catalog 1.9.0), before its backlog pass 15 revision (catalog 1.10.0).
+    /// Earlier: backlog pass 9, 58030546.
+    /// </summary>
+    public const string PriorManifestSha256 = "120b1df9714537883f198ac2876dbd7f084517e1041f400cf5f13895f3ccb699";
     public static readonly DomainPackageRef Identity = new(new DomainId("asl"), "scenario-a1-ordnance", "sha256:" + ManifestSha256);
 
     private static readonly string[] Cases =

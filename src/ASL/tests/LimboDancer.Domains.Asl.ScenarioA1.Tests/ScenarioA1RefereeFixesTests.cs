@@ -161,13 +161,14 @@ public sealed class ScenarioA1RefereeFixesTests
     }
 
     [Fact]
-    public void D12ItaliansAndJapaneseAreRefused()
+    public void D12TheJapaneseAreRefused()
     {
-        var italian = Fire.Definitions["attacker-squad"] with
+        // Backlog pass 15 (ruling R15.13) admits the Italians; the Japanese stay refused.
+        var japanese = Fire.Definitions["attacker-squad"] with
         {
-            Nationality = "italian"
+            Nationality = "japanese"
         };
         Assert.Equal("asl.a1.hob.nationality-unreviewed:attacker-squad",
-            ScenarioA1HeatOfBattle.Resolve(italian, false, null, false, [3, 3], Fire.Definitions, true, []).Undecided);
+            ScenarioA1HeatOfBattle.Resolve(japanese, false, null, false, [3, 3], Fire.Definitions, true, []).Undecided);
     }
 }

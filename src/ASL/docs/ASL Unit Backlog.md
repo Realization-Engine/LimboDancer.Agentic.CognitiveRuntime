@@ -38,8 +38,6 @@ Berserk and Surrender from Heat of Battle (R0.2, R19.2, R22.5, R28.1) left this 
 | Item | Deferred by | Rules | Depends on |
 |---|---|---|---|
 | Rally terrain in pillboxes, trenches, and on rooftops (marsh and rubble were built in pass 13) | R19.5 | A10.61, p. 68; B23.83, p. 140; B30.5, p. 151; B Terrain Chart, p. 160 | Those terrains on the map read |
-| Commissars | R19.10 | A25.22 to A25.223, p. 94 | Commissar definitions |
-| Allied Troops' leadership penalty | R19.10 | A10.7, p. 68 | Allied nationalities in a scenario |
 | Night (DM kept until a rally DR at most the printed morale) | R19.10 | E1.54, p. 224 | Night rules |
 | Extreme Winter Fate | R19.10 | E3.742, p. 231 | Weather |
 
@@ -59,11 +57,7 @@ The backlog pass 10 (2026-09-28) built this section; what it leaves out is in se
 
 ## 5. Support weapons (step 23)
 
-| Item | Deferred by | Rules | Depends on |
-|---|---|---|---|
-| FT | R23.5 | A22.1 to A22.5, p. 89 | none |
-| DC | R23.5 | A23.1 to A23.7, p. 90 | MPh Placement and AFPh detonation |
-| MOL | R23.5 | A22.6, p. 89 | Russian MOL capability by date |
+The FT, DC, and MOL were built by the backlog pass 15; what they leave out is in section 25.
 
 ## 6. Carried from step 17's exclusions
 
@@ -71,7 +65,6 @@ Step 17 left these out; steps 19 to 23 do not build them.
 
 | Item | Rules | Depends on |
 |---|---|---|
-| Snipers (SAN) | A14, p. 82 | Random events |
 | Smoke and WP | A24, p. 91 | Smoke placement |
 | Night | E1, p. 222 onward | Night visibility |
 | Weather | E3, p. 228 onward | Weather state |
@@ -97,22 +90,14 @@ The backlog pass 10 (2026-09-28) built this section.
 
 ## 10. Added by the deviations pass 1 (steps 26 to 28)
 
-| Item | Deferred by | Rules | Depends on |
-|---|---|---|---|
-| Support weapon use by a hero | Step 28 design | A15.23, p. 83 | Reviewing the hero's SW rules |
-| NKVD Field Promotion, which creates a Commissar | Step 27 design | A18.11, p. 85; A25.22, p. 94; A25.25, p. 96 | Commissars (A25.22) |
-| Attacks on units with an underscored morale (German elite HS, NKVD), and FPF by them | Step 28 design | A19.13, p. 86 | Reviewing the underscored morale exception to ELR Replacement |
-| Nationalities other than German and Russian in the Heat of Battle and Leader Creation drm | Pass 1 review | A15.1, p. 83; A18.2, p. 85 | Counters of those nationalities; a nationality the table does not name should be refused, not given 0 |
-| A Green MMC stacked with an unbroken leader, exempt from Inexperienced restrictions; the live game supplying the Inexperienced fact | Pass 1 review | A19.3, p. 86 | Green counters, which the catalog does not have; until then a Green unit is refused |
-| A hero created by a concealed MMC being concealed too | Pass 1 live review | A15.21, p. 83; A12.1, p. 76 | Reviewing concealment of created units |
+Every item here was built by the backlog pass 15; what they leave out is in section 25.
 
 ## 11. Added by the deviations pass 2 (steps 29 and 30)
 
 | Item | Deferred by | Rules | Depends on |
 |---|---|---|---|
 | CC by or against vehicles, sequential CC with a vehicle, Street Fighting | R29.1 | A11.31, A11.5 to A11.8, pp. 73 to 76 | Vehicles (step 25) |
-| A berserk unit's choice of which 1PP SW to abandon beyond its IPC | R30.5 | A15.431, p. 84; A4.42, p. 50 | An owner's choice before the charge |
-| Italian, Axis Minor, and Japanese Heat of Battle exceptions | Pass 2 review | Heat of Battle table notes, p. 83 | Counters of those nationalities; until then they are refused |
+| Axis Minor and Japanese Heat of Battle exceptions (the Italian one was built in pass 15) | Pass 2 review | Heat of Battle table notes, p. 83 | Counters of those nationalities; until then they are refused |
 | Ambush at night (by at least 2) | R29.9 | A11.4 chart, p. 692 | Night rules (E1) |
 | Play page: a berserk leader's companions' TCs in the CC record (SW left unpossessed by eliminated units are listed since pass 5) | Table-player review | A20.24, A15.431, A15.41 | | Shown in the fire and rally records and the move's reasons, not in the CC record. |
 
@@ -307,7 +292,6 @@ The backlog pass 12 (2026-09-28) built, and removed from sections 2, 3, 5, 8, 11
 | Opportunity Fire by ordnance, mortars, and LATW, and a mortar Spotter's wait after it | R12.1 | A7.25, C9.3 | Ordnance in the AFPh | Only Infantry small arms and MGs use Opportunity Fire. |
 | Random Events on the DR of fire at a blocked LOS | R12.2, R12.12 | A6.11 | Random Events | The DR decides Multiple ROF only. |
 | An unmarked unit's First Fire joining FPF | R12.3; referee, pass 12 | A8.31 | Per-firer fire markers | Refused; FPF groups with Subsequent First Fire only. |
-| A hero's own SW use | R12.4 | A15.23 | Hero SW rules | Refused, as before. |
 | Concealment gain by vehicles, Guns, and Dummy stacks, Lax units, and night | R12.5 | A12.12, the Concealment Table, E1 | Their Cases | Only Infantry not manning a Gun gain "?". |
 | Spraying Fire in the MPh, at upper-level Locations of one hex, and counted toward an Encirclement | R12.6; referee, pass 12 | A9.5, A9.52, A7.7 | Spraying in the movement windows | Refused in the MPh; a spray does not count toward an Encirclement. |
 | Fire Lanes along an Alternate Hex Grain, their Snap Shots, intersecting lanes, the TPBF and CC Reaction Fire cancellation, Impulse movement, a lane's wall or hedge TEM, attacks on each MF expenditure after the first, and lanes against vehicles | R12.7; referee, pass 12 | A9.22 to A9.223 | Lane geometry and hexside TEM for Residual FP | A lane runs along a straight Hex Grain and attacks Infantry as they enter its Locations; its MG does not fire again until the DFPh. |
@@ -360,3 +344,34 @@ The backlog pass 14 (2026-09-28) built, and removed from sections 11 and 20: Han
 | Tasks that place TI | R14.3 | A4.8 | Entrenching, clearing rubble, and the other labor tasks | TI is read in CC, but nothing places it. |
 | Fire at the firer's own Location holding an Unarmed enemy unit is refused with the text for a unit named twice | Table player, pass 14 | A7.212, A20.54 | A same-Location fire text in the Fire package | Refused. |
 | A concealed Guard keeping its "?" after abandoning its prisoners in its Location | Table player, pass 14 | A12.14 | Concealment loss when an enemy unit shares the Location | It stays concealed. |
+
+## 25. Added by the backlog pass 15
+
+The backlog pass 15 (2026-09-29) built, and removed from sections 2, 5, 6, 10, 11, and 22: FT, DC, and MOL; Snipers; Commissars; Allied Troops' leadership penalty; NKVD Field Promotion; attacks on units with an underscored Morale Factor and FPF by them; Green MMC; a hero's MG; a hero created by a concealed MMC; the nationalities other than German and Russian in the Heat of Battle and Leader Creation drm; the Italian Heat of Battle exception; British and Finnish Cowering immunity, Finnish Self-Rally, and the Finnish leader ranks; the ELR of 5 of an underscored Morale Factor; one FT or DC per unit per Player Turn; and a berserk unit's choice of the 1PP SW it keeps. What it leaves out follows.
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| A FT, DC, or MOL against an AFV, and a DC's Position DR | R15.1 to R15.4 | A22.34, A22.612, A23.5, C7.34, C7.346 | The HE and Flame To Kill Table | Refused: a vehicle in the target Location is outside the attack. |
+| Flame and Blaze from a FT, DC, or MOL; a DC's Rubble and Breach | R15.1 to R15.4 | A22.35, A22.6111, A23.41, B24.11, B25.12, B25.13, B23.9221 | Kindling and Flame in the game | No Flame, Rubble, or Breach is placed. |
+| A Set DC, and a DC Placed or Thrown to another level (down a stairwell, from a building's upper level, across a cliff) or across a hexside TEM | R15.2, R15.3; referee, pass 15 | A23.3, A23.6, A23.7 to A23.72 | Levels and hexsides in the DC's Location read | Only same-level ADJACENT Locations, with the target Location's in-hex TEM. |
+| Placing a DC where any vehicle is (its attack on the vehicle, and the PAATC for an enemy AFV) | R15.2; referee and table player, pass 15 | A23.3, A23.5, A11.6 | The DC against vehicles; the PAATC before a Placement | Refused. |
+| A vehicle entering a Location after a DC is operably Placed there | Table player, pass 15 | A23.4, A23.5 | The DC against vehicles | The detonation is refused, the AFPh still ends, and the Placement lapses without effect. |
+| A MOL across a road hexside at a unit on the road, a MOL Kindling Attempt, and leadership over more than four MOL FP | R15.4 | A22.611, A22.613, A22.62 | Road hexsides and Kindling | The woods and orchard hexside bar applies without the road exception. |
+| Sniper attacks from DRs outside fire records: To Hit, PAATC, Rally-phase and Rout-phase checks in the MPh, Entrenching | R15.5 | A14.1 | A roll hook in every package | Only the IFT, MC, and TC DRs of fire records call a Sniper. |
+| Sniper repositioning by forfeiting an attack, Sniper Checks, and attacks on vehicles, PRC, Snipers, and Interior Building Locations | R15.5 | A14.2, A14.22, A14.31, A14.33, A14.4 | The Sniper player's choices; vehicles as Sniper targets | The Sniper never forfeits; only Personnel and Dummies are targets, an enemy Sniper counter is not (table player, pass 15), and Interior Building Locations are not excluded. |
+| The Sniper counter's setup placement requirement (six hexes of six enemy-occupied hexes) and changes to a SAN | R15.5 | A14.1, A14.2 | A setup check of the counter's hex | The counter is placed where setup puts it. |
+| The Sniper player's choices of Location in a hex and of equidistant hexes | R15.5 | A14.2, A14.21 | An owner's choice before the attack | The most occupied Location, then the lowest TEM, then the first hex by name. |
+| The Commissar substitution limits and the 8+1's availability | R15.6 | A25.22, A25.224 | Scenario OB | Setup places Commissars freely. |
+| Human Wave | R15.6 | A25.23 to A25.234 | A multi-hex movement declaration | Not built. |
+| Allied Troops' leadership in CC, in Deployment and Recombination, and an ally's SW used without captured penalties | R15.8 | A10.7, A21.1 | Nationality in those packages | CC and Deployment keep their nationality rules; an ally's SW counts as captured. |
+| An SSR assigning an ELR of 4 or less to underscored units | R15.9 | A19.132 | Scenario cards | The underscored exception always applies. |
+| A hero firing a LATW, a light mortar, or a Gun | R15.11 | A15.23 | Those weapons' packages reading a hero | Refused. |
+| Japanese, Axis Minor, Allied Minor, Chinese, and Partisan units, and the other national rules of A25 for the new nationalities (American broken Morale Level, Italian Lax, PAATC, capture, and escape, Finnish Ski and Cold rules, French rules) | R15.13 | A25, Chapter G | Their counters and rules | Not built; the new nationalities follow the general rules but for their Heat of Battle, Leader Creation, Replacement and Battle Hardening, and the British and Finnish exceptions above. |
+| The leaders' broken Morale Levels of the new nationalities and the Commissars | R15.13 | A1.4 | Printed counters | Their front morale, as every leader of the catalog (R0.3). |
+| A DC's attack asks no owner's option | Pass 15 build | A15.3, A7.309 | Resuming a DC's two records after a choice | A DC's attack takes every Battle Hardening and Unlikely Kill option. |
+| LLMC after a Sniper eliminates, wounds, or breaks a leader | Referee, pass 15 | A14.3, A10.2 | A LLMC hook after a Sniper attack | No LLMC follows a Sniper attack. |
+| A Placed DC halved when only some of its targets were concealed at Placement | Referee, pass 15 | A23.3 | Per-target concealment in the DC's attack | Halved only when every target was concealed at Placement. |
+| A broken Commissar's duty to Self-Rally before the other units of his Location | Referee, pass 15 | A25.222 | A rally order in the RPh | The RPh waits for every broken unit of his Location, in any order. |
+| The Encircled DRM of a DC's attack by an Encircled user | Referee, pass 15 | A7.7, A23.2 | Encirclement in the DC's attack | No Encircled DRM is added to a DC's attack. |
+| Clearer answers once Defensive First Fire has eliminated every mover | Table player, pass 15 | A8.1, A4.1 | The movement window closing with its last mover | pass-fire is accepted with no mover left and end-move answers with the state error UNIT-STATE-007; advancing the phase works. |
+| The end-move refusal's wording once the placer of a DC was Replaced and broken | Table player, pass 15 | A23.3 | The DEFENDER's window text reading the placer | end-move says the DEFENDER may still fire; advancing the phase works. |

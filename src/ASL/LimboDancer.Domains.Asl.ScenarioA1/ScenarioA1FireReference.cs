@@ -154,6 +154,18 @@ public sealed record FireDefinition(
 
     /// <summary>An ATR, which attacks Personnel as 1 FP Small Arms Fire (C13.24; pass 9b).</summary>
     public bool IsAtr => Kind == "asl:latw" && LatwType == "atr";
+
+    /// <summary>A FT (A22; backlog pass 15, ruling R15.1).</summary>
+    public bool IsFt => Kind == "asl:ft";
+
+    /// <summary>A DC (A23; rulings R15.2, R15.3).</summary>
+    public bool IsDc => Kind == "asl:dc";
+
+    /// <summary>Whether the SW's Breakdown Number is an X#: reaching it removes the SW (A.11).</summary>
+    public bool? BreakdownRemoves
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -200,6 +212,32 @@ public sealed class ScenarioA1FireReference
         ["defender-elite-squad"] = "defender-elite-half-squad",
         ["defender-line-squad"] = "defender-line-half-squad",
         ["defender-guards-squad"] = "defender-guards-half-squad",
+
+        // Backlog pass 15 (ruling R15.9): the NKVD squad's own HS, which its Casualty Reduction and its underscored Replacement make.
+        ["defender-nkvd-squad"] = "defender-nkvd-half-squad",
+
+        // Backlog pass 15 (ruling R15.13): the MMC of five more nationalities (catalog 1.10.0).
+        ["american-elite-squad"] = "american-elite-half-squad",
+        ["american-squad"] = "american-half-squad",
+        ["american-2nd-line-squad"] = "american-2nd-line-half-squad",
+        ["american-green-squad"] = "american-green-half-squad",
+        ["british-elite-squad"] = "british-elite-half-squad",
+        ["british-squad"] = "british-half-squad",
+        ["british-2nd-line-squad"] = "british-2nd-line-half-squad",
+        ["british-green-squad"] = "british-green-half-squad",
+        ["italian-elite-squad"] = "italian-elite-half-squad",
+        ["italian-squad"] = "italian-half-squad",
+        ["italian-line-squad"] = "italian-line-half-squad",
+        ["italian-conscript-squad"] = "italian-conscript-half-squad",
+        ["finnish-elite-squad"] = "finnish-elite-half-squad",
+        ["finnish-squad"] = "finnish-half-squad",
+        ["finnish-square-squad"] = "finnish-square-half-squad",
+        ["finnish-2nd-line-squad"] = "finnish-2nd-line-half-squad",
+        ["finnish-green-squad"] = "finnish-green-half-squad",
+        ["finnish-conscript-squad"] = "finnish-conscript-half-squad",
+        ["french-elite-squad"] = "french-elite-half-squad",
+        ["french-squad"] = "french-half-squad",
+        ["french-green-squad"] = "french-green-half-squad",
     };
 
     // The leader grades from worst to best (Chapter H leader table, p. 331; A15.3): 6+1, 7-0, 8-0, 8-1, 9-1, 9-2, 10-2, 10-3.
@@ -211,6 +249,18 @@ public sealed class ScenarioA1FireReference
         "defender-leader-6-plus-1", "defender-leader-7-0", "defender-leader", "defender-leader-8-1", "defender-leader-9-1", "defender-leader-9-2",
         "defender-leader-10-2", "defender-leader-10-3",
     ];
+
+    // Backlog pass 15 (ruling R15.13): every grade of the five nationalities added by catalog 1.10.0.
+    // The Finns have their own ranks (A25.71, A25.72; referee, pass 15): 8+1, 8-0, 9-0, 9-1, 10-0, 10-1.
+    private static readonly string[][] OtherLeaders = [.. new[] { "american", "british", "italian", "french" }
+        .Select(nationality => new[] { "6-plus-1", "7-0", "8-0", "8-1", "9-1", "9-2", "10-2", "10-3" }.Select(grade => $"{nationality}-leader-{grade}").ToArray()),
+        [.. new[] { "8-plus-1", "8-0", "9-0", "9-1", "10-0", "10-1" }.Select(grade => $"finnish-leader-{grade}")]];
+
+    // The Commissars (A25.22, A25.224; ruling R15.6): leaders outside the grades, never Replaced or Battle Hardened (A25.221).
+    private static readonly HashSet<string> Commissars = new(StringComparer.Ordinal)
+    {
+        "defender-commissar-9-0", "defender-commissar-10-0", "defender-commissar-8-plus-1",
+    };
 
     // Battle Hardening (A15.3): the unit of the same size and next higher quality, no part of whose Strength Factor falls,
     // gaining the least (ruling R28.6: the smallest summed increase, then the fewest added capabilities, so a German
@@ -231,12 +281,59 @@ public sealed class ScenarioA1FireReference
         ["defender-line-half-squad"] = "defender-guards-half-squad",
         ["defender-squad"] = "defender-elite-squad",
         ["defender-half-squad"] = "defender-elite-half-squad",
+
+        // Backlog pass 15 (ruling R15.13; referee, pass 15): each nationality's next class; the Italians and Finns by their own progressions (A25.62, A25.72).
+        ["american-green-squad"] = "american-2nd-line-squad",
+        ["american-2nd-line-squad"] = "american-squad",
+        ["american-squad"] = "american-elite-squad",
+        ["american-green-half-squad"] = "american-2nd-line-half-squad",
+        ["american-2nd-line-half-squad"] = "american-half-squad",
+        ["american-half-squad"] = "american-elite-half-squad",
+        ["british-green-squad"] = "british-2nd-line-squad",
+        ["british-2nd-line-squad"] = "british-squad",
+        ["british-squad"] = "british-elite-squad",
+        ["british-green-half-squad"] = "british-2nd-line-half-squad",
+        ["british-2nd-line-half-squad"] = "british-half-squad",
+        ["british-half-squad"] = "british-elite-half-squad",
+        ["italian-conscript-squad"] = "italian-line-squad",
+        ["italian-line-squad"] = "italian-elite-squad",
+        ["italian-squad"] = "italian-elite-squad",
+        ["italian-conscript-half-squad"] = "italian-line-half-squad",
+        ["italian-line-half-squad"] = "italian-elite-half-squad",
+        ["italian-half-squad"] = "italian-elite-half-squad",
+        ["finnish-green-squad"] = "finnish-squad",
+        ["finnish-conscript-squad"] = "finnish-2nd-line-squad",
+        ["finnish-2nd-line-squad"] = "finnish-square-squad",
+        ["finnish-green-half-squad"] = "finnish-half-squad",
+        ["finnish-conscript-half-squad"] = "finnish-2nd-line-half-squad",
+        ["finnish-2nd-line-half-squad"] = "finnish-square-half-squad",
+        ["french-green-squad"] = "french-squad",
+        ["french-squad"] = "french-elite-squad",
+        ["french-green-half-squad"] = "french-half-squad",
+        ["french-half-squad"] = "french-elite-half-squad",
     };
 
     private static readonly HashSet<string> HighestQuality = new(StringComparer.Ordinal)
     {
         "attacker-elite-squad", "attacker-elite-half-squad", "defender-elite-squad", "defender-elite-half-squad", "defender-guards-squad",
         "defender-guards-half-squad", "attacker-leader-10-3", "defender-leader-10-3", "defender-nkvd-squad", "defender-nkvd-half-squad",
+
+        // Backlog pass 15 (ruling R15.13).
+        "american-elite-squad",
+        "american-elite-half-squad",
+        "british-elite-squad",
+        "british-elite-half-squad",
+        "italian-elite-squad",
+        "italian-elite-half-squad",
+        "finnish-elite-squad",
+        "finnish-elite-half-squad",
+        "finnish-squad",
+        "finnish-half-squad",
+        "finnish-square-squad",
+        "finnish-square-half-squad",
+        "french-elite-squad",
+        "french-elite-half-squad",
+        "american-leader-10-3", "british-leader-10-3", "italian-leader-10-3", "finnish-leader-10-1", "french-leader-10-3",
     };
 
     // The NKVD MMC (A25.25): 2nd Line, ELR 5, a -1 Heat of Battle DRM, Fanatic when Battle Hardened, Commissars by Field Promotion.
@@ -262,6 +359,37 @@ public sealed class ScenarioA1FireReference
         ["defender-line-half-squad"] = "defender-conscript-half-squad",
         ["defender-nkvd-squad"] = "defender-conscript-squad",
         ["defender-nkvd-half-squad"] = "defender-conscript-half-squad",
+
+        // Backlog pass 15 (ruling R15.13; referee, pass 15): each nationality's next lower class; the Italians and Finns by their own progressions (A25.61,
+        // A25.62, A25.72). A Finnish elite MMC is in neither progression, so it is not Replaced.
+        ["american-elite-squad"] = "american-squad",
+        ["american-squad"] = "american-2nd-line-squad",
+        ["american-2nd-line-squad"] = "american-green-squad",
+        ["american-elite-half-squad"] = "american-half-squad",
+        ["american-half-squad"] = "american-2nd-line-half-squad",
+        ["american-2nd-line-half-squad"] = "american-green-half-squad",
+        ["british-elite-squad"] = "british-squad",
+        ["british-squad"] = "british-2nd-line-squad",
+        ["british-2nd-line-squad"] = "british-green-squad",
+        ["british-elite-half-squad"] = "british-half-squad",
+        ["british-half-squad"] = "british-2nd-line-half-squad",
+        ["british-2nd-line-half-squad"] = "british-green-half-squad",
+        ["italian-elite-squad"] = "italian-line-squad",
+        ["italian-squad"] = "italian-conscript-squad",
+        ["italian-line-squad"] = "italian-conscript-squad",
+        ["italian-elite-half-squad"] = "italian-line-half-squad",
+        ["italian-half-squad"] = "italian-conscript-half-squad",
+        ["italian-line-half-squad"] = "italian-conscript-half-squad",
+        ["finnish-squad"] = "finnish-green-squad",
+        ["finnish-square-squad"] = "finnish-2nd-line-squad",
+        ["finnish-2nd-line-squad"] = "finnish-conscript-squad",
+        ["finnish-half-squad"] = "finnish-green-half-squad",
+        ["finnish-square-half-squad"] = "finnish-2nd-line-half-squad",
+        ["finnish-2nd-line-half-squad"] = "finnish-conscript-half-squad",
+        ["french-elite-squad"] = "french-squad",
+        ["french-squad"] = "french-green-squad",
+        ["french-elite-half-squad"] = "french-half-squad",
+        ["french-half-squad"] = "french-green-half-squad",
     };
 
     private readonly string[][] results;
@@ -312,9 +440,12 @@ public sealed class ScenarioA1FireReference
     /// <summary>Whether a definition is an NKVD MMC (A25.25).</summary>
     public static bool IsNkvd(string definitionId) => Nkvd.Contains(definitionId);
 
+    /// <summary>Whether a definition is a Commissar (A25.22; ruling R15.6).</summary>
+    public static bool IsCommissar(string definitionId) => Commissars.Contains(definitionId);
+
     private static string? Step(string definitionId, int by)
     {
-        foreach (var chain in new[] { GermanLeaders, RussianLeaders })
+        foreach (var chain in new[] { GermanLeaders, RussianLeaders }.Concat(OtherLeaders))
         {
             var index = Array.IndexOf(chain, definitionId);
             if (index >= 0)
@@ -458,6 +589,7 @@ public sealed class ScenarioA1FireReference
             GroundPressure = Text("front", "ground-pressure"),
             MechanicallyUnreliable = Trait("front", "asl:mechanically-unreliable"),
             LatwType = Text("front", "latw-type"),
+            BreakdownRemoves = Trait("front", "asl:breakdown-removes"),
         };
     }
 }

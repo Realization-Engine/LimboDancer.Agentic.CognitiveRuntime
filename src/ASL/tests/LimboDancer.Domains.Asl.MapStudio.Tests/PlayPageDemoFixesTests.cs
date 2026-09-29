@@ -264,4 +264,31 @@ public sealed class PlayPageDemoFixesTests : IDisposable
         Assert.Equal("rtph", live.History("village")!.Current!.Phase);
         Assert.Contains("must rout", page.Find(".rout-obligation[data-unit='r1']").TextContent, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void ADcIsThrownFromThePageAndAttacksTwoLocations()
+    {
+        // Backlog pass 15 (ruling R15.3): in the PFPh g1 Throws its DC into r1's Location; the target and then g1's own Location are attacked, and the DC is
+        // removed (A23.6).
+        var hexes = Hexes();
+        var page = context.Render<PlayPage>();
+        page.Find("#new-board").Change(Board);
+        page.Find("#new-first").Change("german");
+        page.Find("#new-second").Change("russian");
+        page.Find("#new-first-elr").Change("3");
+        page.Find("#new-second-elr").Change("3");
+        Place(page, "g1", "attacker-squad", hexes.One);
+        Place(page, "gd", "attacker-dc", hexes.One, holder: "g1");
+        Place(page, "r1", "defender-squad", hexes.Two);
+        Commit(page, "#propose-setup");
+        Advance(page, 1);
+        page.Find("#throw-dc").Change("g1|gd");
+        page.Find("#throw-dc-at").Change(hexes.Two);
+        dice.Enqueue(Enumerable.Repeat(3, 20));
+        Commit(page, "#propose-throw-dc");
+        var state = live.History("village")!.Current!;
+        Assert.Equal(Units.State.InstanceStatus.Eliminated, state.Find("gd")!.Status);
+        Assert.Equal(2, live.History("village")!.Events.Count(item => item.Payload is Units.State.FireResolved));
+        Assert.False(live.History("village")!.HasErrors);
+    }
 }

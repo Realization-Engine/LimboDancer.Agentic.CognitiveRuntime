@@ -195,7 +195,7 @@ public sealed class BacklogPass11Tests : IDisposable
             start = new Dictionary<string, object>
             {
                 ["label"] = "Pass 11",
-                ["catalog"] = "asl-scenario-a1@1.9.0",
+                ["catalog"] = "asl-scenario-a1@1.10.0",
                 ["boards"] = Bd01,
                 ["firstSide"] = firstSide,
                 ["sides"] = new object[]

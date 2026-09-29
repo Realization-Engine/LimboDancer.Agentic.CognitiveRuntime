@@ -200,6 +200,17 @@ public sealed record GameState(
     /// </summary>
     public IReadOnlyList<string> HiddenPlaced { get; init; } = [];
 
+    /// <summary>
+    /// The DCs Placed this Player Turn (A23.3; backlog pass 15, ruling R15.2): pending until their placer leaves its Location or ends its move neither
+    /// broken nor pinned, then operably Placed in their target Location until they detonate in the AFPh.
+    /// </summary>
+    public IReadOnlyList<PlacedCharge> PlacedCharges { get; init; } = [];
+
+    /// <summary>
+    /// The units that fired a FT or Threw or Placed a DC this Player Turn (A22.3; table player, pass 15): each uses one FT or DC in a Player Turn.
+    /// </summary>
+    public IReadOnlyList<string> AssaultWeaponUsers { get; init; } = [];
+
     /// <summary>The Fire Lanes in place (A9.22, A9.223; ruling R12.7); cleared at every phase change.</summary>
     public IReadOnlyList<FireLane> FireLanes { get; init; } = [];
 
@@ -338,6 +349,12 @@ public sealed record GameState(
             : StampStatus.Stale;
     }
 }
+
+/// <summary>
+/// A DC Placed (A23.3; ruling R15.2): the DC, its placer and the Location it Placed it from, its target Location, whether the placer was CX, whether
+/// every unit there was concealed at the Placement, and whether it is operably Placed yet.
+/// </summary>
+public sealed record PlacedCharge(string Charge, string Unit, BoardLocation From, BoardLocation Target, bool Cx, bool TargetsConcealed, bool Operable);
 
 /// <summary>
 /// A game's events and its state after each one. <see cref="States"/>[n] is the state at revision n + 1. When the

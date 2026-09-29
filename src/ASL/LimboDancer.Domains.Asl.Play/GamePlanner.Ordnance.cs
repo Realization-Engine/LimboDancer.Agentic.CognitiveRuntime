@@ -986,6 +986,7 @@ public sealed partial class GamePlanner
             "berserkCheck" => rolls with { BerserkChecks = Add(rolls.BerserkChecks, unit, values) },
             "crewCheck" => rolls with { CrewChecks = Add(rolls.CrewChecks, unit, values) },
             "unlikelyKill" => rolls with { UnlikelyKill = Add(rolls.UnlikelyKill, unit, values[0]) },
+            "molCheck" => rolls with { MolCheck = values[0] },
             _ => rolls with { WoundSeverity = Add(rolls.WoundSeverity, unit, values[0]) },
         };
     }

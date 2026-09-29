@@ -69,6 +69,10 @@ public static class ScenarioA1FireCalculator
         var first = Resolve(attack with
         {
             Rolls = new FireRolls(null, null, null, null)
+            {
+                // A22.611 (ruling R15.4): the MOL Check dr is made before the IFT DR; any value reaches the same missing IFT DR.
+                MolCheck = attack.Firers?.Any(item => item.Mol == true) == true ? 1 : null,
+            }
         }, reference);
         if (first.Disposition != FireResolution.Indeterminate || first.Reasons is not ["asl.a1.fire.roll-missing:attack"])
         {
@@ -244,6 +248,24 @@ public static class ScenarioA1FireCalculator
             Need(attack.SameLevel, "sameLevel");
             NeedLos(attack.Los, string.Empty);
         }
+        else if (attack.DemolitionCharge is { } charge)
+        {
+            Need(charge.EquipmentId, "demolitionCharge.equipmentId");
+            Need(charge.DefinitionId, "demolitionCharge.definitionId");
+            Need(charge.Mode, "demolitionCharge.mode");
+            Need(charge.UserId, "demolitionCharge.userId");
+            Need(charge.UserDefinitionId, "demolitionCharge.userDefinitionId");
+            Need(charge.Cx, "demolitionCharge.cx");
+            Need(charge.Captured, "demolitionCharge.captured");
+            if (charge.Mode == FireDemolitionCharge.Placed)
+            {
+                Need(charge.ConcealedWhenPlaced, "demolitionCharge.concealedWhenPlaced");
+            }
+
+            Need(attack.FirerLocationId, "firerLocationId");
+            Need(attack.Range, "range");
+            Need(attack.SameLevel, "sameLevel");
+        }
         else if (attack.VehicleFire is { } vehicle)
         {
             Need(vehicle.VehicleId, "vehicleFire.vehicleId");
@@ -343,7 +365,7 @@ public static class ScenarioA1FireCalculator
         }
 
         // Ruling R10.4: a target at another level names how many levels above the firer it is, for PBF (A7.21).
-        if (attack.VehicleFire is null && attack.OrdnanceHit is null && attack.Overrun is null && !residual)
+        if (attack.VehicleFire is null && attack.OrdnanceHit is null && attack.Overrun is null && attack.DemolitionCharge is null && !residual)
         {
             if (attack.SameLevel == false)
             {
@@ -404,7 +426,8 @@ public static class ScenarioA1FireCalculator
             ("DFPh", "non-phasing", null) => true,
             ("MPh", "non-phasing", { } movement) => MovementKinds.Contains(movement),
             // Ruling R8.1: an ordnance hit of Defensive First Fire attacks the moving units, its FFMO and FFNAM already To Hit Cases J3 and J4.
-            ("MPh", "non-phasing", null) => attack.OrdnanceHit is not null,
+            // Table player, pass 15 (ruling R15.3): a DC Thrown as Defensive First Fire also attacks its thrower's Location, whose units are not moving.
+            ("MPh", "non-phasing", null) => attack.OrdnanceHit is not null || attack.DemolitionCharge is { Mode: FireDemolitionCharge.Thrower },
             ("MPh", "phasing", BoundingFirstFire) => attack.VehicleFire is not null,
             ("MPh", "phasing", OverrunFire) => attack.Overrun is not null,
             _ => false,
@@ -455,6 +478,12 @@ public static class ScenarioA1FireCalculator
         if (attack.Overrun is { } overrun)
         {
             OverrunOutside(attack, overrun, reference, targetDefinitions, outside);
+            return outside.Distinct(StringComparer.Ordinal).ToList();
+        }
+
+        if (attack.DemolitionCharge is { } charge)
+        {
+            DemolitionChargeOutside(attack, charge, reference, targetDefinitions, outside);
             return outside.Distinct(StringComparer.Ordinal).ToList();
         }
 
@@ -520,7 +549,7 @@ public static class ScenarioA1FireCalculator
         }
 
         var firerDefinitions = firers.Select(item => reference.Definitions.GetValueOrDefault(item.DefinitionId!)).ToArray();
-        var side = firerDefinitions.FirstOrDefault()?.Nationality;
+        var sides = FiringNationalities(attack, reference);
         var locations = firers.Select(item => item.LocationId!).Distinct(StringComparer.Ordinal).ToArray();
         var multi = locations.Length > 1;
 
@@ -536,7 +565,7 @@ public static class ScenarioA1FireCalculator
             outside.Add("asl.a1.fire.firer-outside");
         }
 
-        if (firerDefinitions.Any(item => item is not null && item.Nationality != side))
+        if (firerDefinitions.Any(item => item is not null && !sides.Contains(item.Nationality)))
         {
             outside.Add("asl.a1.fire.firers-of-two-sides");
         }
@@ -545,9 +574,10 @@ public static class ScenarioA1FireCalculator
         foreach (var (firer, definition) in firers.Zip(firerDefinitions))
         {
             var weapons = firer.Weapons ?? [];
-            // A15.23: a hero's use of a SW is not reviewed.
-            if (definition is not null && (weapons.Count > (definition.Kind == "asl:squad" ? 2 : definition.IsHero ? 0 : 1)
-                || weapons.Any(weapon => reference.Definitions.GetValueOrDefault(weapon.DefinitionId!) is not { Firepower: not null, Range: not null } mg || !(mg.IsMg || mg.IsAtr)
+            // A15.23 (ruling R15.11): a hero fires one MG or FT.
+            if (definition is not null && (weapons.Count > (definition.Kind == "asl:squad" ? 2 : 1)
+                || weapons.Any(weapon => reference.Definitions.GetValueOrDefault(weapon.DefinitionId!) is not { Firepower: not null, Range: not null } mg || !(mg.IsMg || mg.IsAtr || mg.IsFt)
+                    || (definition.IsHero && mg.IsAtr)
                     || (mg.Nationality != definition.Nationality) != (weapon.Captured == true) || weapon.Malfunctioned == true || !WeaponMayFire(attack, weapon))))
             {
                 outside.Add("asl.a1.fire.weapon-outside");
@@ -562,6 +592,26 @@ public static class ScenarioA1FireCalculator
         if (firers.Any(item => !FirerMayFire(attack, item)))
         {
             outside.Add("asl.a1.fire.firer-already-fired");
+        }
+
+        // A22.1, A22.31 to A22.33 (ruling R15.1): a FT attacks alone, with no other firer, weapon, inherent FP, or leader, from an unpinned unit;
+        // at Long Range only through a LOS with no Hindrance, and never at a target more than two levels above or below.
+        var flamethrower = firers.Any(item => (item.Weapons ?? []).Any(weapon => reference.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty)?.IsFt == true));
+        if (flamethrower && (firers.Count != 1 || firers[0].Weapons is not [_] || firers[0].UsesInherentFp != false || Directors(attack).Any()
+            || firers[0].Pinned == true || attack.SprayingFire == true || Math.Abs(LevelAboveOf(attack, firers[0])) > 2
+            || (RangeOf(attack, firers[0]) == 2 && LosOf(attack, firers[0])!.HindranceDrm != 0)))
+        {
+            outside.Add("asl.a1.fire.flamethrower-outside");
+        }
+
+        // A22.611 (ruling R15.4): one MOL Check per attack, by an unpinned unit in a PBF or TPBF attack, not Subsequent First Fire or FPF, with no
+        // vehicle in the target Location; a squad adds its inherent FP and fires no SW, a HS, crew, or hero no SW.
+        var mol = firers.Where(item => item.Mol == true).ToArray();
+        if (mol.Length > 1 || mol.Any(item => item.Pinned == true || RangeOf(attack, item) > 1 || item.UsesInherentFp == false || item.Weapons is { Count: > 0 }
+            || kind is SubsequentFirstFire or FinalProtectiveFire || flamethrower || (attack.Vehicles ?? []).Count > 0
+            || reference.Definitions.GetValueOrDefault(item.DefinitionId ?? string.Empty) is not { } molUser || !(molUser.IsMmc || molUser.IsHero || molUser.Kind == "asl:crew")))
+        {
+            outside.Add("asl.a1.fire.mol-outside");
         }
 
         // A8.31 (ruling R12.3): FPF by units already marked Final Fire, at an ADJACENT or same-hex moving unit, directed or not, and with other
@@ -594,7 +644,7 @@ public static class ScenarioA1FireCalculator
             // A7.53, A7.531: an unbroken, unpinned leader of the group's side in one of its Locations; A10.7: he may direct
             // Subsequent First Fire and Final Fire again.
             var definition = reference.Definitions.GetValueOrDefault(director.DefinitionId!);
-            if (definition is null || !definition.IsLeader || definition.Leadership is null || definition.Nationality != side
+            if (definition is null || !definition.IsLeader || definition.Leadership is null || !sides.Contains(definition.Nationality)
                 || !locations.Contains(director.LocationId) || director.Broken == true || director.Pinned == true
                 || (director.DirectedThisPlayerTurn == true && !redirect))
             {
@@ -622,7 +672,7 @@ public static class ScenarioA1FireCalculator
         if ((locations.Contains(attack.TargetLocationId) && !tpbf)
             || targets.Any(item => item.LocationId != attack.TargetLocationId)
             || targets.Zip(targetDefinitions).Any(pair => pair.Second is null
-                || (pair.Second != DummyDefinition && (pair.Second.Nationality == side) != (pair.First.Friendly == true)))
+                || (pair.Second != DummyDefinition && sides.Contains(pair.Second.Nationality) != (pair.First.Friendly == true)))
             || !ScenarioA1FireReference.Tem.ContainsKey(attack.TargetTerrain!))
         {
             outside.Add("asl.a1.fire.target-outside");
@@ -668,6 +718,64 @@ public static class ScenarioA1FireCalculator
         }
 
         return outside.Distinct(StringComparer.Ordinal).ToList();
+    }
+
+    /// <summary>
+    /// The firing side's nationalities (A10.7; ruling R15.8): those the attack declares, or the first firer's (or a DC's user's) alone.
+    /// </summary>
+    private static HashSet<string> FiringNationalities(FireAttack attack, ScenarioA1FireReference reference)
+    {
+        if (attack.FiringNationalities is { Count: > 0 } declared)
+        {
+            return declared.ToHashSet(StringComparer.Ordinal);
+        }
+
+        var first = attack.DemolitionCharge is { } charge ? charge.UserDefinitionId : (attack.Firers is { Count: > 0 } listed ? listed[0].DefinitionId : null);
+        return first is not null && reference.Definitions.GetValueOrDefault(first) is { } definition
+            ? new HashSet<string>(StringComparer.Ordinal) { definition.Nationality }
+            : new HashSet<string>(StringComparer.Ordinal);
+    }
+
+    /// <summary>
+    /// A DC's attack (A23.1 to A23.63; rulings R15.2, R15.3): a DC of the catalog and its Personnel user; no firer or leader joins it; a Placed DC
+    /// detonates in its side's AFPh, a Thrown one in a friendly fire phase or as Defensive First Fire, at an ADJACENT Location (the target) or its
+    /// thrower's own (the thrower's); every unit there is attacked, of either side, and a Location holding a vehicle is not reviewed (backlog).
+    /// </summary>
+    private static void DemolitionChargeOutside(FireAttack attack, FireDemolitionCharge charge, ScenarioA1FireReference reference,
+        IReadOnlyList<FireDefinition?> targetDefinitions, List<string> outside)
+    {
+        var definition = reference.Definitions.GetValueOrDefault(charge.DefinitionId!);
+        var user = reference.Definitions.GetValueOrDefault(charge.UserDefinitionId!);
+        var phaseAdmitted = (charge.Mode, attack.Phase, attack.FiringSide, attack.FireKind) switch
+        {
+            (FireDemolitionCharge.Placed, "AFPh", "phasing", null) => true,
+            (FireDemolitionCharge.Thrown or FireDemolitionCharge.Thrower, "PFPh" or "AFPh", "phasing", null) => true,
+            (FireDemolitionCharge.Thrown or FireDemolitionCharge.Thrower, "DFPh", "non-phasing", null) => true,
+            (FireDemolitionCharge.Thrown, "MPh", "non-phasing", FirstFire) => true,
+            (FireDemolitionCharge.Thrower, "MPh", "non-phasing", null) => true,
+            _ => false,
+        };
+        if (definition is not { IsDc: true, Firepower: not null } || user is null || !(user.IsMmc || user.IsHero || user.IsLeader || user.Kind == "asl:crew")
+            || attack.Firers is { Count: > 0 } || Directors(attack).Any() || !phaseAdmitted
+            || (charge.Mode == FireDemolitionCharge.Thrower ? attack.Range != 0 || attack.FirerLocationId != attack.TargetLocationId : attack.Range != 1)
+            || (charge.OpportunityFire == true && attack.Phase != "AFPh"))
+        {
+            outside.Add("asl.a1.fire.demolition-charge-outside");
+        }
+
+        var sides = FiringNationalities(attack, reference);
+        if (attack.Targets!.Any(item => item.LocationId != attack.TargetLocationId)
+            || attack.Targets!.Zip(targetDefinitions).Any(pair => pair.Second is null
+                || (pair.Second != DummyDefinition && sides.Contains(pair.Second.Nationality) != (pair.First.Friendly == true)))
+            || (attack.Vehicles ?? []).Count > 0 || !ScenarioA1FireReference.Tem.ContainsKey(attack.TargetTerrain!))
+        {
+            outside.Add("asl.a1.fire.target-outside");
+        }
+
+        if (attack.Rolls is { } rolls && Malformed(rolls))
+        {
+            outside.Add("asl.a1.fire.roll-malformed");
+        }
     }
 
     /// <summary>
@@ -810,7 +918,8 @@ public static class ScenarioA1FireCalculator
         || rolls.HeatOfBattle?.Values.Any(dice => !Dice(dice, allowEmpty: false)) == true
         || rolls.BerserkChecks?.Values.Any(dice => !Dice(dice, allowEmpty: false)) == true
         || rolls.CrewChecks?.Values.Any(dice => !Dice(dice, allowEmpty: false)) == true
-        || rolls.UnlikelyKill?.Values.Any(dr => dr is < 1 or > 6) == true;
+        || rolls.UnlikelyKill?.Values.Any(dr => dr is < 1 or > 6) == true
+        || rolls.MolCheck is < 1 or > 6;
 
     /// <summary>Whether a unit may fire in this attack under the fire-phase and First Fire rules (A7.1, A8.1, A8.3, A8.31, A8.4, A9.2).</summary>
     /// <summary>A leader firing one MG, alone or with a stacked SMC as his partner (A9.12; ruling R12.4); he has no inherent FP.</summary>
@@ -900,7 +1009,7 @@ public static class ScenarioA1FireCalculator
             }
         }
 
-        if (attack.FireKind != ResidualFire && attack.OrdnanceHit is null && attack.VehicleFire is null && attack.Overrun is null)
+        if (attack.FireKind != ResidualFire && attack.OrdnanceHit is null && attack.VehicleFire is null && attack.Overrun is null && attack.DemolitionCharge is null)
         {
             // Ruling R10.4 (backlog pass 10): Infantry fire at another level is decided with the map read's LOS and Hindrance.
             var firers = attack.Firers!;
@@ -917,11 +1026,10 @@ public static class ScenarioA1FireCalculator
             undecided.Add("asl.a1.fire.leaders-interact");
         }
 
-        // A19.13's exception for an underscored Morale Factor is not reviewed, for the targets or for FPF firers, whose NMC
-        // can Replace them too.
+        // A19.13 (ruling R15.9): an underscored Morale Factor is decided; a MMC whose underline is not recorded is not.
         var checkedFirers = attack.FireKind == FinalProtectiveFire ? attack.Firers ?? [] : [];
         if (units.Select(item => item.DefinitionId).Concat(checkedFirers.Select(item => item.DefinitionId))
-            .Any(id => id is not null && reference.Definitions.TryGetValue(id, out var definition) && definition is { IsMmc: true, UnderscoredMorale: not false }))
+            .Any(id => id is not null && reference.Definitions.TryGetValue(id, out var definition) && definition is { IsMmc: true, UnderscoredMorale: null }))
         {
             undecided.Add("asl.a1.fire.elr-undecided:underscored-morale");
         }
@@ -978,6 +1086,39 @@ public static class ScenarioA1FireCalculator
         private readonly HashSet<string> usedRolls = new(StringComparer.Ordinal);
         private readonly HashSet<string> usedChoices = new(StringComparer.Ordinal);
         private readonly Dictionary<string, TargetState> state = new(StringComparer.Ordinal);
+
+        // A22.611 (ruling R15.4): the attack's MOL Check, and whether a colored dr of 6 broke its user.
+        private FireMolCheck? molCheck;
+
+        // A23.4 (ruling R15.2): whether the DC's Original DR reached its malfunction number.
+        private bool dcMalfunctioned;
+
+        /// <summary>A FT attack (A22; ruling R15.1): its one firer's one weapon is a FT.</summary>
+        private bool Flamethrower => (attack.Firers ?? []).SelectMany(item => item.Weapons ?? [])
+            .Any(weapon => reference.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty)?.IsFt == true);
+
+        /// <summary>
+        /// The removal number of a FT or DC (A22.3, A22.5, A23.2, A23.4; rulings R15.1, R15.2): its printed one, two lower in the hands of non-elite
+        /// Personnel (a MMC not of the elite class), and two lower again when captured.
+        /// </summary>
+        private static int AssaultWeaponRemoval(FireDefinition weapon, FireDefinition? user, bool captured, bool inexperienced) =>
+            (weapon.Breakdown ?? 12) - (user?.Class is { } cls && cls != "elite" && !(user.Nationality == "finnish" && cls == "1st-line") ? 2 : 0)
+            - (captured ? 2 : 0) - (inexperienced || user?.Class == "conscript" ? 1 : 0);
+
+        /// <summary>A Commissar of the unit's side in its Location who is unpinned, unbroken, and not berserk (A25.221; ruling R15.6).</summary>
+        private static bool ActiveCommissar(TargetState other, TargetState unit) => other != unit && !other.IsDummy && ScenarioA1FireReference.IsCommissar(other.Definition.Id)
+            && !other.Eliminated && !other.Broken && !other.Pinned && !other.Berserk && (other.Target.Friendly == true) == (unit.Target.Friendly == true)
+            && other.Target.LocationId == unit.Target.LocationId && other.Target.GuardId is null;
+
+        /// <summary>
+        /// A25.221 (ruling R15.6): +1 to the Morale Level of every other friendly Infantry unit in an active Commissar's Location, but not a
+        /// Commissar or a unit of Morale Level 10.
+        /// </summary>
+        private int CommissarBonus(TargetState unit) => !unit.IsDummy && !ScenarioA1FireReference.IsCommissar(unit.Definition.Id) && !unit.Berserk
+            && unit.MoraleLevel < 10 && state.Values.Any(other => ActiveCommissar(other, unit)) ? 1 : 0;
+
+        /// <summary>A10.7 (ruling R15.8): a leader influencing Allied Troops of another nationality does so one worse.</summary>
+        private static int AlliedPenalty(FireDefinition leader, FireDefinition unit) => leader.Nationality != unit.Nationality ? 1 : 0;
 
         /// <summary>The arithmetic alone, for <see cref="Preview"/>.</summary>
         public FireArithmetic? ArithmeticOnly()
@@ -1036,22 +1177,22 @@ public static class ScenarioA1FireCalculator
             TargetState[] PinnedOf(TargetState[] group) => split ? [.. group.Where(unit => unit.Target.Pinned == true)] : [];
             if (Unpinned(known) is { Length: > 0 } knownUnpinned)
             {
-                Apply(arithmetic.Result, knownUnpinned);
+                ApplyGroup(arithmetic.Result, knownUnpinned, arithmetic, concealedGroup: false, pinnedGroup: false);
             }
 
             if (PinnedOf(known) is { Length: > 0 } knownPinned && undecided.Count == 0)
             {
-                Apply(arithmetic.PinnedResult!, knownPinned);
+                ApplyGroup(arithmetic.PinnedResult!, knownPinned, arithmetic, concealedGroup: false, pinnedGroup: true);
             }
 
             if (Unpinned(concealed) is { Length: > 0 } concealedUnpinned && undecided.Count == 0)
             {
-                Apply(concealedResult, concealedUnpinned);
+                ApplyGroup(concealedResult, concealedUnpinned, arithmetic, concealedGroup: true, pinnedGroup: false);
             }
 
             if (PinnedOf(concealed) is { Length: > 0 } concealedPinned && undecided.Count == 0)
             {
-                Apply(arithmetic.PinnedConcealedResult ?? arithmetic.PinnedResult!, concealedPinned);
+                ApplyGroup(arithmetic.PinnedConcealedResult ?? arithmetic.PinnedResult!, concealedPinned, arithmetic, concealedGroup: true, pinnedGroup: true);
             }
 
             // A20.54 (ruling R12.9): a prisoner is pinned when its Guard is.
@@ -1119,7 +1260,41 @@ public static class ScenarioA1FireCalculator
                 CompanionEffects = companions,
                 VehicleEffects = vehicleEffects,
                 OverrunEffect = overrunEffect,
+                MolCheck = molCheck,
+                DemolitionChargeMalfunctioned = dcMalfunctioned ? true : null,
+                FlamethrowerRemoved = weapons?.FirstOrDefault(item => item.Malfunctioned
+                    && (attack.Firers ?? []).SelectMany(firer => firer.Weapons ?? []).Any(weapon => weapon.EquipmentId == item.EquipmentId
+                        && reference.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty)?.IsFt == true))?.EquipmentId,
             };
+        }
+
+        /// <summary>
+        /// A group of targets takes its result; a unit possessing a FT takes the attack's DR one lower per FT, on its group's column (A22.4; ruling
+        /// R15.1).
+        /// </summary>
+        private void ApplyGroup(string result, TargetState[] group, FireArithmetic arithmetic, bool concealedGroup, bool pinnedGroup)
+        {
+            foreach (var byFt in group.GroupBy(unit => unit.IsDummy ? 0 : unit.Target.Flamethrowers ?? 0).OrderBy(item => item.Key))
+            {
+                if (undecided.Count != 0)
+                {
+                    return;
+                }
+
+                var own = result;
+                if (byFt.Key > 0 && !dcMalfunctioned && arithmetic.OriginalDr > 0)
+                {
+                    var final = (pinnedGroup ? arithmetic.PinnedFinalDr ?? arithmetic.FinalDr : arithmetic.FinalDr) - byFt.Key;
+                    var fp = concealedGroup && arithmetic.Concealed is { } halved ? halved.TotalFirepower : arithmetic.TotalFirepower;
+                    own = Column(fp, arithmetic.ColumnShift, final).Result;
+                    foreach (var unit in byFt)
+                    {
+                        unit.Note($"flamethrower-possessed:{-byFt.Key}");
+                    }
+                }
+
+                Apply(own, [.. byFt]);
+            }
         }
 
         /// <summary>
@@ -1131,7 +1306,8 @@ public static class ScenarioA1FireCalculator
             .Select(item => item.UnitId!)
             .Concat((attack.Firers ?? []).Select(item => item.Partner).OfType<string>())
             .Concat(Directors(attack).Select(item => item.UnitId!))
-            .Concat(attack.VehicleFire is { } firing ? [firing.VehicleId!] : attack.Overrun is { } ovr ? [ovr.VehicleId!] : [])];
+            .Concat(attack.VehicleFire is { } firing ? [firing.VehicleId!] : attack.Overrun is { } ovr ? [ovr.VehicleId!] : [])
+            .Concat(attack.DemolitionCharge is { Mode: FireDemolitionCharge.Thrown } thrown ? [thrown.UserId!] : [])];
 
         /// <summary>
         /// A6.11 (ruling R12.2): fire at a Location whose LOS is blocked for every firer. Its DR is made: each MG keeps Multiple ROF on its colored dr, none
@@ -1405,6 +1581,23 @@ public static class ScenarioA1FireCalculator
                     .Where(unit => !unit.IsDummy && !unit.Eliminated && unit.Target.LocationId == leader.Target.LocationId
                         && ScenarioA1HeatOfBattle.Subject(unit.Definition, unit.IsHeroType, unit.Berserk))
                     .ToArray();
+
+                // A25.223 (ruling R15.6): every friendly Infantry unit of a berserk Commissar's Location subject to Heat of Battle goes berserk, with no NTC.
+                if (ScenarioA1FireReference.IsCommissar(leader.Definition.Id))
+                {
+                    foreach (var unit in others)
+                    {
+                        unit.GoBerserk();
+                        unit.Note("berserk-with-commissar:" + leader.Id);
+                        if (companions.Contains(unit))
+                        {
+                            checkedCompanions.Add(unit);
+                        }
+                    }
+
+                    continue;
+                }
+
                 foreach (var unit in CheckOrder(others))
                 {
                     if (attack.Rolls!.BerserkChecks?.TryGetValue(unit.Id, out var dice) != true)
@@ -1446,6 +1639,10 @@ public static class ScenarioA1FireCalculator
             _ => attack.Phase is "PFPh" or "AFPh" ? "prep-fire" : "final-fire",
         };
 
+        /// <summary>A25.45, A25.7 (referee, pass 15): British elite and 1st Line units, and Finns but their Conscripts, are immune to Cowering.</summary>
+        private static bool NeverCowers(FireDefinition definition) =>
+            (definition.Nationality == "british" && definition.Class is "elite" or "1st-line") || (definition.Nationality == "finnish" && definition.Class != "conscript");
+
         private FireArithmetic? Arithmetic(bool hasKnown, bool hasConcealed)
         {
             var dice = attack.Rolls!.Attack;
@@ -1453,6 +1650,40 @@ public static class ScenarioA1FireCalculator
             var hit = attack.OrdnanceHit;
             var firers = new List<FirerFirepower>();
             decimal known = 0, vsConcealed = 0;
+
+            // A22.611 (ruling R15.4): the MOL Check dr, made before the IFT DR: 1 to 3 passes, +1 for a HS or crew, +2 for a SMC, +1 when CX, and +1
+            // against a non-AFV (always, here: an AFV target is not reviewed).
+            if ((attack.Firers ?? []).FirstOrDefault(item => item.Mol == true) is { } molFirer && molCheck is null)
+            {
+                if (attack.Rolls!.MolCheck is not { } molDr)
+                {
+                    undecided.Add("asl.a1.fire.roll-missing:molCheck");
+                    return null;
+                }
+
+                usedRolls.Add("molCheck");
+                var user = reference.Definitions[molFirer.DefinitionId!];
+                var molDrm = new List<FireModifier>();
+                if (user.Kind is "asl:half-squad" or "asl:crew")
+                {
+                    molDrm.Add(new FireModifier("hs-or-crew", 1m, "A22.611"));
+                }
+                else if (user.IsHero || user.IsLeader)
+                {
+                    molDrm.Add(new FireModifier("smc", 2m, "A22.611"));
+                }
+
+                if (molFirer.Cx == true)
+                {
+                    molDrm.Add(new FireModifier("cx", 1m, "A22.611"));
+                }
+
+                molDrm.Add(new FireModifier("non-afv", 1m, "A22.611"));
+                var molFinal = molDr + (int)molDrm.Sum(item => item.Value);
+                // A22.6111: an Original colored dr of 6 on the IFT DR breaks the MOL's user and voids its FP and the MOL's.
+                molCheck = new FireMolCheck(molFirer.UnitId!, molDr, molDrm, molFinal, molFinal <= 3, molFinal <= 3 && dice is [6, _]);
+            }
+
             if (residual)
             {
                 // A8.2, A8.22: Residual FP attacks alone, on its own column, never halved.
@@ -1477,6 +1708,35 @@ public static class ScenarioA1FireCalculator
                     var fp = OverrunFirepower(overrun, true).Select(item => hasKnown ? item with { VsConcealed = true } : item).ToArray();
                     firers.AddRange(fp);
                     vsConcealed = fp.Sum(item => item.Firepower);
+                }
+            }
+            else if (attack.DemolitionCharge is { } charge)
+            {
+                // A23.1 (rulings R15.2, R15.3): 30 FP, never modified for PBF, TPBF, or the AFPh; halved only as Area Fire for concealment when a
+                // Thrown DC is thrown, or every target was concealed when a Placed one was operably Placed.
+                var printed = reference.Definitions[charge.DefinitionId!].Firepower!.Value;
+                var placedConcealed = charge.Mode == FireDemolitionCharge.Placed && charge.ConcealedWhenPlaced == true;
+                FirerFirepower Charge(bool concealedTargets)
+                {
+                    List<FireModifier> multipliers = placedConcealed || (charge.Mode != FireDemolitionCharge.Placed && concealedTargets)
+                        ? [new FireModifier("area-fire-concealed-target", 0.5m, "A23.1")] : [];
+                    return new FirerFirepower(charge.EquipmentId!, printed, multipliers, multipliers.Aggregate((decimal)printed, (value, item) => value * item.Value));
+                }
+
+                if (hasKnown)
+                {
+                    firers.Add(Charge(false));
+                    known = firers[^1].Firepower;
+                }
+
+                if (hasConcealed)
+                {
+                    var concealedFp = Charge(true);
+                    firers.Add(hasKnown ? concealedFp with
+                    {
+                        VsConcealed = true
+                    } : concealedFp);
+                    vsConcealed = concealedFp.Firepower;
                 }
             }
             else if (attack.VehicleFire is { } vehicle)
@@ -1511,6 +1771,22 @@ public static class ScenarioA1FireCalculator
                     firers.AddRange(concealedFp);
                     vsConcealed = concealedFp.Sum(item => item.Firepower);
                 }
+
+                // A22.611 (ruling R15.4): a passed MOL adds four FP after every other modification, unless its user broke on the colored dr.
+                if (molCheck is { Passed: true, UserBroken: false } bonus)
+                {
+                    if (hasKnown)
+                    {
+                        firers.Add(new FirerFirepower("mol:" + bonus.UnitId, 4, [], 4m) { Operator = bonus.UnitId });
+                        known += 4;
+                    }
+
+                    if (hasConcealed)
+                    {
+                        firers.Add(new FirerFirepower("mol:" + bonus.UnitId, 4, [], 4m) { Operator = bonus.UnitId, VsConcealed = hasKnown ? true : null });
+                        vsConcealed += 4;
+                    }
+                }
             }
 
             if (dice is null)
@@ -1525,15 +1801,23 @@ public static class ScenarioA1FireCalculator
             // A7.9: a doubles DR with no directing leader shifts the column; Residual FP is never subject to Cowering (A8.224);
             // heroes and Fanatic units are not subject to it, but a group with any other member Cowers (A15.2, A15.24, A10.8).
             // A7.9: no form of vehicular fire Cowers.
-            var cowered = !residual && hit is null && attack.VehicleFire is null && attack.Overrun is null && dice[0] == dice[1] && !directed
-                && attack.Firers!.Any(item => !reference.Definitions[item.DefinitionId!].IsHero && !reference.Definitions[item.DefinitionId!].IsLeader && item.Fanatic != true)
+            // A7.9: Cowering never affects a DC (ruling R15.2).
+            var cowered = !residual && hit is null && attack.VehicleFire is null && attack.Overrun is null && attack.DemolitionCharge is null && dice[0] == dice[1] && !directed
+                && attack.Firers!.Any(item => !reference.Definitions[item.DefinitionId!].IsHero && !reference.Definitions[item.DefinitionId!].IsLeader && item.Fanatic != true
+                    && !NeverCowers(reference.Definitions[item.DefinitionId!]))
                 && attack.FireLane != true;
             var inexperienced = (attack.Firers ?? []).Any(item => reference.Definitions[item.DefinitionId!].Class is "green" or "conscript");
             var shift = cowered ? (inexperienced ? 2 : 1) : 0;
 
             var drm = new List<FireModifier>();
             var tem = ScenarioA1FireReference.Tem[attack.TargetTerrain!];
-            if (hit is { Area: true } && attack.TargetTerrain == "woods")
+            var flamethrower = Flamethrower;
+            var dcPlaced = attack.DemolitionCharge?.Mode == FireDemolitionCharge.Placed;
+            if (flamethrower)
+            {
+                // A22.2 (ruling R15.1): a FT attack takes no TEM of any kind.
+            }
+            else if (hit is { Area: true } && attack.TargetTerrain == "woods")
             {
                 // B13.3, C3.71 (ruling R9.3): a mortar's hit in woods takes the -1 of Air Bursts instead of the +1, never reversed.
                 drm.Add(new FireModifier("air-burst", -1m, "B13.3"));
@@ -1563,7 +1847,7 @@ public static class ScenarioA1FireCalculator
             {
                 // A8.15 (ruling R10.13): a Snap Shot takes no TEM of the target hex.
             }
-            else if (attack.HexsideTem is { Tem: > 0 } hexside && hexside.Tem > tem)
+            else if (attack.HexsideTem is { Tem: > 0 } hexside && hexside.Tem > tem && !dcPlaced)
             {
                 // B9.3, B9.31 (ruling R10.5): the wall or hedge TEM instead of a lower in-hex TEM, never both.
                 drm.Add(new FireModifier(hexside.Terrain!, hexside.Tem!.Value, "B9.3"));
@@ -1574,7 +1858,7 @@ public static class ScenarioA1FireCalculator
             }
 
             // B10.31 (ruling R10.4): Height Advantage, +1 TEM for a target with no other positive TEM.
-            var heightAdvantage = hit is null && attack.HeightAdvantage == true && drm.All(item => item.Value <= 0) && Cover(attack) is null
+            var heightAdvantage = hit is null && !flamethrower && attack.HeightAdvantage == true && drm.All(item => item.Value <= 0) && Cover(attack) is null
                 && !(GunCrewAlone(attack) && attack.GunTarget is { } shieldedCrew && (shieldedCrew.Emplaced == true || GunshieldFaces(attack, shieldedCrew)));
             if (heightAdvantage)
             {
@@ -1586,7 +1870,7 @@ public static class ScenarioA1FireCalculator
 
             // D9.3, D10.3 (ruling R6.1): the +1 TEM of a wreck, a friendly AFV, or an abandoned enemy AFV, only where the terrain gives no
             // positive TEM and not against an attack from within the Location; a Critical Hit reverses it (C3.71).
-            if (Cover(attack) is { } cover)
+            if (!flamethrower && Cover(attack) is { } cover)
             {
                 if (hit is null || hit is { Area: true, CriticalHit: not true })
                 {
@@ -1618,6 +1902,8 @@ public static class ScenarioA1FireCalculator
             var hindrance = residual ? attack.Los?.HindranceDrm ?? 0
                 : hit is not null ? 0
                 : attack.VehicleFire is not null || attack.Overrun is not null ? attack.Los!.HindranceDrm!.Value
+                // A23.1 (ruling R15.2): a DC takes no LOS Hindrance.
+                : attack.DemolitionCharge is not null ? 0
                 : attack.Firers!.Max(item => LosOf(attack, item)!.HindranceDrm!.Value);
             // A9.222 (referee, pass 12): the SMOKE, grain, brush, and marsh a Fire Lane's LOS crosses cancel FFMO but apply no DRM.
             if (hindrance > 0 && attack.FireLane != true)
@@ -1632,9 +1918,28 @@ public static class ScenarioA1FireCalculator
             }
 
             // A4.51 (ruling R5.2): +1 when a CX unit makes or directs the attack, once however many do.
-            if (((attack.Firers ?? []).FirstOrDefault(item => item.Cx == true)?.UnitId ?? Directors(attack).FirstOrDefault(item => item.Cx == true)?.UnitId) is { } exhausted)
+            if (((attack.Firers ?? []).FirstOrDefault(item => item.Cx == true)?.UnitId ?? Directors(attack).FirstOrDefault(item => item.Cx == true)?.UnitId
+                ?? (attack.DemolitionCharge is { Cx: true } cxCharge ? cxCharge.UserId : null)) is { } exhausted)
             {
-                drm.Add(new FireModifier("cx:" + exhausted, 1m, "A4.51"));
+                drm.Add(new FireModifier("cx:" + exhausted, 1m, attack.DemolitionCharge is null ? "A4.51" : "A23.4"));
+            }
+
+            // A23.6, A23.62 (ruling R15.3): a Thrown DC is +2 at its target and +3 at its thrower's Location, each +1 more in the AFPh unless its
+            // thrower is an Opportunity Firer.
+            if (attack.DemolitionCharge is { Mode: not FireDemolitionCharge.Placed } thrown)
+            {
+                drm.Add(thrown.Mode == FireDemolitionCharge.Thrown ? new FireModifier("thrown-dc", 2m, "A23.6") : new FireModifier("thrower-location", 3m, "A23.6"));
+                if (attack.Phase == "AFPh" && thrown.OpportunityFire != true)
+                {
+                    drm.Add(new FireModifier("thrown-dc-afph", 1m, "A23.62"));
+                }
+            }
+
+            // A15.23 (ruling R15.11): a hero firing a MG adds one, as for a SW that needs two men.
+            foreach (var hero in (attack.Firers ?? []).Where(item => reference.Definitions[item.DefinitionId!].IsHero
+                && (item.Weapons ?? []).Any(weapon => reference.Definitions[weapon.DefinitionId!].IsMg)))
+            {
+                drm.Add(new FireModifier("hero-mg:" + hero.UnitId, 1m, "A15.23"));
             }
 
             // D5.34: a vehicle under Stun +1 adds one to its MG IFT DR.
@@ -1645,17 +1950,21 @@ public static class ScenarioA1FireCalculator
 
             // A7.531: the leadership of the directing leader, the worst of them for a group spanning Locations; A17.3: one
             // worse when wounded.
+            // A10.7 (ruling R15.8): one worse when the group holds Allied Troops of another nationality than his.
             var leadership = Directors(attack)
-                .Select(director => (director.UnitId, Value: reference.Definitions[director.DefinitionId!].Leadership!.Value + (director.Wounded == true ? 1 : 0)))
+                .Select(director => (director.UnitId, Value: reference.Definitions[director.DefinitionId!].Leadership!.Value + (director.Wounded == true ? 1 : 0)
+                    + ((attack.Firers ?? []).Any(firer => AlliedPenalty(reference.Definitions[director.DefinitionId!], reference.Definitions[firer.DefinitionId!]) > 0) ? 1 : 0)))
                 .OrderByDescending(item => item.Value).FirstOrDefault();
             if (leadership.UnitId is not null)
             {
                 drm.Add(new FireModifier("leadership:" + leadership.UnitId, leadership.Value, "A7.531"));
             }
 
-            // A15.24: each hero firing within its Normal Range lowers the group's DR by one, with any leadership DRM.
-            foreach (var hero in (attack.Firers ?? []).Where(item => reference.Definitions[item.DefinitionId!].IsHero
-                && RangeOf(attack, item) <= NormalRange(reference.Definitions[item.DefinitionId!], item)))
+            // A15.24: each hero firing within its Normal Range (of his weapon when he fires one; ruling R15.11) lowers the group's DR by one, with any
+            // leadership DRM; never for a FT (A15.24).
+            foreach (var hero in (attack.Firers ?? []).Where(item => reference.Definitions[item.DefinitionId!].IsHero && !flamethrower
+                && RangeOf(attack, item) <= (item.Weapons is [{ } weapon] ? reference.Definitions[weapon.DefinitionId!].Range!.Value
+                    : NormalRange(reference.Definitions[item.DefinitionId!], item))))
             {
                 drm.Add(new FireModifier("heroic:" + hero.UnitId, -1m, "A15.24"));
             }
@@ -1709,6 +2018,19 @@ public static class ScenarioA1FireCalculator
             {
                 var (c2, s2, r2) = Column(vsConcealed, shift, final);
                 second = new FireColumn(vsConcealed, c2, s2, r2);
+            }
+
+            // A23.4 (ruling R15.2): a DC's Original DR at its malfunction number removes it with no effect.
+            if (attack.DemolitionCharge is { Mode: not FireDemolitionCharge.Thrower } exploded && original >= AssaultWeaponRemoval(reference.Definitions[exploded.DefinitionId!],
+                reference.Definitions.GetValueOrDefault(exploded.UserDefinitionId ?? string.Empty), exploded.Captured == true, exploded.Inexperienced == true))
+            {
+                dcMalfunctioned = true;
+                result = "none";
+                second = second is null ? null : second with
+                {
+                    Result = "none"
+                };
+                pinnedFinal = null;
             }
 
             var arithmetic = new FireArithmetic(firers, main, column, shift, cowered, shifted, dice.ToArray(), original, drm, final, result)
@@ -1845,9 +2167,19 @@ public static class ScenarioA1FireCalculator
                 var range = RangeOf(attack, firer)!.Value;
                 var weapons = firer.Weapons ?? [];
 
-                // A7.351, A7.352: a squad keeps its inherent FP with one SW, not two; a HS loses it with any.
+                // A7.351, A7.352: a squad keeps its inherent FP with one SW, not two; a HS loses it with any; A15.23 (ruling R15.11): so does a hero.
                 var inherent = firer.UsesInherentFp != false && !(definition.Kind == "asl:squad" && weapons.Count >= 2)
-                    && !(definition.Kind == "asl:half-squad" && weapons.Count >= 1);
+                    && !((definition.Kind == "asl:half-squad" || definition.IsHero) && weapons.Count >= 1);
+
+                // A22.611, A22.6111 (ruling R15.4): a HS, crew, or SMC that fails its MOL Check has spent its attack; a MOL user broken by the colored dr
+                // adds nothing.
+                if (firer.Mol == true && molCheck is { } check && (check.UserBroken || (!check.Passed && !(definition.Kind == "asl:squad"))))
+                {
+                    yield return new FirerFirepower(firer.UnitId!, definition.Firepower!.Value,
+                        [new FireModifier(check.UserBroken ? "mol-user-broken" : "mol-check-failed", 0m, check.UserBroken ? "A22.6111" : "A22.611")], 0m);
+                    continue;
+                }
+
                 if (inherent)
                 {
                     var multipliers = Multipliers(range, NormalRange(definition, firer), vsConcealed, IsFinalFireAgain(attack, firer), sustained: false, LevelAboveOf(attack, firer), firer);
@@ -1874,6 +2206,15 @@ public static class ScenarioA1FireCalculator
                 {
                     var mg = reference.Definitions[weapon.DefinitionId!];
                     var multipliers = Multipliers(range, mg.Range!.Value, vsConcealed, IsFinalFireAgain(attack, firer), IsSustained(attack, weapon, reference), LevelAboveOf(attack, firer), firer);
+                    if (mg.IsFt)
+                    {
+                        // A22.1, A22.32 (ruling R15.1): never raised for PBF or TPBF, not halved in the AFPh, and halved at a target two levels away.
+                        multipliers.RemoveAll(item => item.Name is "point-blank-fire" or "triple-point-blank-fire" or "advancing-fire");
+                        if (Math.Abs(LevelAboveOf(attack, firer)) == 2)
+                        {
+                            multipliers.Add(new FireModifier("two-levels", 0.5m, "A22.32"));
+                        }
+                    }
 
                     // A9.12 (ruling R12.4): a leader fires a MG alone as Area Fire; two SMC together fire it at full FP.
                     if (definition.IsLeader && firer.Partner is null)
@@ -1967,8 +2308,13 @@ public static class ScenarioA1FireCalculator
             }
 
             var original = arithmetic.OriginalDr;
+            // A22.3, A22.5 (ruling R15.1): a FT's removal number is ten, two lower for a non-elite user and two lower again when captured.
             var breakdown = weapons.ToDictionary(weapon => weapon.EquipmentId!,
-                weapon => (reference.Definitions[weapon.DefinitionId!].Breakdown ?? 12) - (IsSustained(attack, weapon, reference) ? 2 : 0) - AtrInexperience(weapon)
+                weapon => reference.Definitions[weapon.DefinitionId!] is { IsFt: true } ft
+                    ? AssaultWeaponRemoval(ft, (attack.Firers ?? []).FirstOrDefault(firer => firer.Weapons?.Contains(weapon) == true) is { } user
+                        ? reference.Definitions[user.DefinitionId!] : null, weapon.Captured == true,
+                        (attack.Firers ?? []).FirstOrDefault(firer => firer.Weapons?.Contains(weapon) == true)?.Inexperienced == true)
+                    : (reference.Definitions[weapon.DefinitionId!].Breakdown ?? 12) - (IsSustained(attack, weapon, reference) ? 2 : 0) - AtrInexperience(weapon)
                     - (weapon.Captured == true ? 2 : 0), StringComparer.Ordinal);
             var reached = malfunction ? weapons.Where(weapon => original >= breakdown[weapon.EquipmentId!]).Select(weapon => weapon.EquipmentId!).ToArray() : [];
             var malfunctioned = new HashSet<string>(StringComparer.Ordinal);
@@ -2184,11 +2530,13 @@ public static class ScenarioA1FireCalculator
             return drs;
         }
 
-        // Leaders check first, higher Morale Level first (A10.2), then the other units in the declared order.
+        // Leaders check first, a Commissar before any (A25.221; ruling R15.6), then higher Morale Level first (A10.2), then the other units in the
+        // declared order.
         private static TargetState[] CheckOrder(IEnumerable<TargetState> units)
         {
             var list = units.ToArray();
-            return list.Where(unit => unit.Definition.IsLeader).OrderByDescending(unit => unit.Definition.Morale)
+            return list.Where(unit => unit.Definition.IsLeader).OrderByDescending(unit => ScenarioA1FireReference.IsCommissar(unit.Definition.Id))
+                .ThenByDescending(unit => unit.Definition.Morale)
                 .Concat(list.Where(unit => !unit.Definition.IsLeader)).ToArray();
         }
 
@@ -2216,7 +2564,7 @@ public static class ScenarioA1FireCalculator
             // Rulings R12.8, R12.9: a unit of the firing side in a Melee Location or as a prisoner checks against its own side's ELR.
             firingSide |= unit.Target.Friendly == true;
             var brokenBefore = unit.Broken;
-            var morale = unit.MoraleLevel;
+            var morale = unit.MoraleLevel + CommissarBonus(unit);
             if (morale is null)
             {
                 undecided.Add("asl.a1.fire.leaders-interact:broken-morale-unrecorded:" + unit.Id);
@@ -2301,7 +2649,7 @@ public static class ScenarioA1FireCalculator
             if (original == 12 && casualty && !unit.Broken)
             {
                 // A10.31: a Casualty MC, after any ELR Replacement (A19.13).
-                if (Elr(firingSide) is not { } limit)
+                if (ElrOf(unit, firingSide) is not { } limit)
                 {
                     return;
                 }
@@ -2325,7 +2673,7 @@ public static class ScenarioA1FireCalculator
             }
             else if (!passed && !unit.Broken)
             {
-                if (Elr(firingSide) is not { } limit)
+                if (ElrOf(unit, firingSide) is not { } limit)
                 {
                     return;
                 }
@@ -2425,6 +2773,10 @@ public static class ScenarioA1FireCalculator
             unit.TakeHeatOfBattle(outcome, outcome.HardenedDefinitionId is { } next ? reference.Definitions[next] : null, second);
         }
 
+        /// <summary>A1.23, A19.13 (referee, pass 15): a MMC with an underscored Morale Factor has an ELR of 5; any other unit its side's.</summary>
+        private int? ElrOf(TargetState unit, bool firingSide) =>
+            unit.Definition is { IsMmc: true, UnderscoredMorale: true } && Elr(firingSide) is not null ? 5 : Elr(firingSide);
+
         private int? Elr(bool firingSide)
         {
             // A19.1: the ELR of the checking unit's side is a declared fact: the target side's, or the firing side's for
@@ -2440,6 +2792,36 @@ public static class ScenarioA1FireCalculator
 
         private void Replace(TargetState unit)
         {
+            // A19.11 (ruling R15.6): a Commissar or a crew is never Replaced for an ELR failure; it breaks.
+            if (ScenarioA1FireReference.IsCommissar(unit.Definition.Id) || unit.Definition.Kind == "asl:crew")
+            {
+                unit.Note("not-subject-to-replacement");
+                unit.Break(null);
+                return;
+            }
+
+            // A19.13 (ruling R15.9): a squad with an underscored Morale Factor is Replaced by its two broken HS; such a HS is Disrupted instead,
+            // unless Fanatic (A19.12).
+            if (unit.Definition is { IsMmc: true, UnderscoredMorale: true })
+            {
+                if (unit.Definition.Kind == "asl:squad" && ScenarioA1FireReference.HalfSquadOf(unit.Definition.Id) is { } own)
+                {
+                    unit.ReduceTo(reference.Definitions[own], "replaced-by-two-half-squads");
+                    unit.Split = true;
+                }
+                else if (!unit.Fanatic)
+                {
+                    unit.Disrupt();
+                }
+                else
+                {
+                    unit.Note("fanatic-not-disrupted");
+                }
+
+                unit.Break(null);
+                return;
+            }
+
             // A19.13: Replaced by a broken unit of lesser quality; A19.12: Disrupted when none exists.
             var replacement = ScenarioA1FireReference.ReplacementOf(unit.Definition.Id);
             if (replacement is null && !unit.Fanatic)
@@ -2497,7 +2879,7 @@ public static class ScenarioA1FireCalculator
                 }
 
                 var (dice, drm) = check.Value;
-                var morale = unit.MoraleLevel!.Value;
+                var morale = unit.MoraleLevel!.Value + CommissarBonus(unit);
                 var original = dice[0] + dice[1];
                 var final = original + (int)drm.Sum(item => item.Value);
                 var passed = final <= morale;
@@ -2526,19 +2908,24 @@ public static class ScenarioA1FireCalculator
                 drm.Add(new FireModifier("ift-" + kind.ToLowerInvariant(), modifier, "A7.304"));
             }
 
-            if (useLeadership && !unit.Berserk)
+            // A25.221 (ruling R15.6): a Commissar never takes another leader's DRM.
+            if (useLeadership && !unit.Berserk && !ScenarioA1FireReference.IsCommissar(unit.Definition.Id))
             {
                 // A10.21, A10.22: one unbroken, unpinned leader of the Location other than the checker, and of higher
                 // morale when the checker is a leader; A10.72: a non-zero modifier, a wounded leader's +1 included, cannot
                 // be declined.
                 // Rulings R12.8, R12.9: only a leader of the unit's own side, and not a prisoner.
-                var leader = state.Values.FirstOrDefault(other => other.Definition.IsLeader && other != unit && !other.Eliminated
+                // A25.221 (ruling R15.6): an active Commissar's leadership alone applies in his Location.
+                var leader = state.Values.FirstOrDefault(other => ActiveCommissar(other, unit))
+                    ?? state.Values.FirstOrDefault(other => other.Definition.IsLeader && other != unit && !other.Eliminated
                     && !other.Broken && !other.Pinned && !other.IsDummy && other.Target.Berserk != true
                     && (other.Target.Friendly == true) == (unit.Target.Friendly == true) && other.Target.GuardId is null
                     && (!unit.Definition.IsLeader || other.MoraleLevel > unit.MoraleLevel));
-                if (leader?.Leadership is { } leadership and not 0)
+
+                // A10.7 (ruling R15.8): one worse for Allied Troops of another nationality.
+                if (leader?.Leadership is { } leadership && leadership + AlliedPenalty(leader.Definition, unit.Definition) is var allied and not 0)
                 {
-                    drm.Add(new FireModifier("leadership:" + leader.Id, leadership, "A10.21"));
+                    drm.Add(new FireModifier("leadership:" + leader.Id, allied, AlliedPenalty(leader.Definition, unit.Definition) > 0 ? "A10.7" : "A10.21"));
                 }
             }
 
@@ -2565,9 +2952,12 @@ public static class ScenarioA1FireCalculator
                 // or a heroic leader (A15.2).
                 var eliminated = leader.Eliminated;
                 // Rulings R12.8, R12.9: a leader's loss checks his own side's units only, and never a prisoner (A20.54).
+                // A25.221 (ruling R15.6): a Commissar takes no LLMC or LLTC, and his own loss checks every other unit, whatever its Morale Level.
+                var commissar = ScenarioA1FireReference.IsCommissar(leader.Definition.Id);
                 foreach (var unit in state.Values.Where(unit => unit != leader && !unit.Eliminated && !unit.IsDummy && !unit.Berserk
                     && (unit.Target.Friendly == true) == (leader.Target.Friendly == true) && unit.Target.GuardId is null && leader.Target.GuardId is null
-                    && (eliminated || (!unit.Broken && !unit.IsHeroType)) && unit.MoraleLevel < leaderMorale).ToArray())
+                    && !ScenarioA1FireReference.IsCommissar(unit.Definition.Id)
+                    && (eliminated || (!unit.Broken && !unit.IsHeroType)) && (commissar || unit.MoraleLevel < leaderMorale)).ToArray())
                 {
                     var check = Check(unit, eliminated ? "LLMC" : "LLTC", "leaderLoss", 0, useLeadership: false);
                     if (check is null)
@@ -2575,8 +2965,9 @@ public static class ScenarioA1FireCalculator
                         return;
                     }
 
+                    // A10.7 (ruling R15.8): Allied Troops take it on the leader's reduced modifier.
                     var (dice, drm) = check.Value;
-                    if (leader.Leadership is int negative and < 0)
+                    if (leader.Leadership + AlliedPenalty(leader.Definition, unit.Definition) is int negative and < 0)
                     {
                         drm.Add(new FireModifier("reversed-leadership:" + leader.Id, -negative, "A10.2"));
                     }
@@ -2591,7 +2982,7 @@ public static class ScenarioA1FireCalculator
                     }
                     else
                     {
-                        var morale = unit.MoraleLevel!.Value;
+                        var morale = unit.MoraleLevel!.Value + CommissarBonus(unit);
                         var original = dice[0] + dice[1];
                         var final = original + (int)drm.Sum(item => item.Value);
                         var passed = final <= morale;
@@ -2666,7 +3057,8 @@ public static class ScenarioA1FireCalculator
                 .Concat(rolls.HeatOfBattle?.Keys.Select(id => "heatOfBattle:" + id) ?? [])
                 .Concat(rolls.BerserkChecks?.Keys.Select(id => "berserkCheck:" + id) ?? [])
                 .Concat(rolls.CrewChecks?.Keys.Select(id => "crewCheck:" + id) ?? [])
-                .Concat(rolls.UnlikelyKill?.Keys.Select(id => "unlikelyKill:" + id) ?? []);
+                .Concat(rolls.UnlikelyKill?.Keys.Select(id => "unlikelyKill:" + id) ?? [])
+                .Concat(rolls.MolCheck is null ? [] : ["molCheck"]);
             return supplied.Where(key => !usedRolls.Contains(key)).Select(key => "asl.a1.fire.extra-roll:" + key).ToList();
         }
 
@@ -2737,6 +3129,12 @@ public static class ScenarioA1FireCalculator
         }
 
         public List<FireCheck> Checks { get; } = [];
+
+        /// <summary>Whether an underscored squad was Replaced by two broken HS (A19.13; ruling R15.9).</summary>
+        public bool Split
+        {
+            get; set;
+        }
 
         public bool Wounded { get; private set; } = target.Wounded == true;
 
@@ -2959,6 +3357,7 @@ public static class ScenarioA1FireCalculator
             Fanatic = Fanatic && !Eliminated ? true : null,
             Heroic = Heroic && !Eliminated ? true : null,
             Berserk = Berserk && !Eliminated ? true : null,
+            SplitIntoHalfSquads = Split && !Eliminated && Definition.Kind == "asl:half-squad" ? true : null,
         };
     }
 }

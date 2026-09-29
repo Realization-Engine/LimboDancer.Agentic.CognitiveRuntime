@@ -100,7 +100,9 @@
         <label for="new-first-elr">ELR</label>
         <span>
             <input id="new-first-elr" value="@firstElr" @onchange="@(args => firstElr = args.Value as string ?? string.Empty)" size="2" /> first side,
-            <input id="new-second-elr" value="@secondElr" @onchange="@(args => secondElr = args.Value as string ?? string.Empty)" size="2" /> second side
+            <input id="new-second-elr" value="@secondElr" @onchange="@(args => secondElr = args.Value as string ?? string.Empty)" size="2" /> second side;
+            SAN <input id="new-first-san" value="@firstSan" @onchange="@(args => firstSan = args.Value as string ?? string.Empty)" size="2" /> first side,
+            <input id="new-second-san" value="@secondSan" @onchange="@(args => secondSan = args.Value as string ?? string.Empty)" size="2" /> second side (A14.1: a side with a SAN places its Sniper counter below)
             <span class="muted">the scenario's Experience Level Rating (A19.1), 0 to 5; fire needs the target side's</span>
         </span>
         <label for="new-first-edge">Friendly Board Edge</label>
@@ -193,6 +195,7 @@ else if (state is not null)
                 @foreach (var side in new[] { firstSide, secondSide }.Distinct(StringComparer.Ordinal))
                 {
                     <option value="@(DummyPrefix + side)">a Dummy (@side)</option>
+                    <option value="@(SniperPrefix + side)">the Sniper counter (@side)</option>
                 }
             </select>
         </label>
@@ -562,6 +565,25 @@ else if (state is not null)
                 </label>
                 <label>in <input id="smoke-at" value="@smokeAt" @onchange="@(args => smokeAt = args.Value as string ?? string.Empty)" size="12" /></label>
                 <button id="propose-smoke" disabled="@(moveUnits.Count == 0 || smokeBy.Length == 0 || smokeAt.Trim().Length == 0)" @onclick="ProposeSmoke">Propose: SMOKE grenades</button>
+            }
+            @if (MoverCharges.Any())
+            {
+                <label title="A23.3: a mover Places its DC in an ADJACENT Location in its LOS for the MF entering it would cost; it is operably Placed once the placer leaves or ends its move neither broken nor pinned, and detonates in the AFPh.">
+                    Place DC
+                    <select id="place-dc" value="@placeDc" @onchange="@(args => placeDc = args.Value as string ?? string.Empty)">
+                        <option value="">choose</option>
+                        @foreach (var charge in MoverCharges)
+                        {
+                            <option value="@charge.Id">@charge.Id (@charge.Holding!.Holder)</option>
+                        }
+                    </select>
+                </label>
+                <label>in <input id="place-dc-at" value="@placeDcAt" @onchange="@(args => placeDcAt = args.Value as string ?? string.Empty)" size="12" /></label>
+                <button id="propose-place-dc" disabled="@(moveUnits.Count == 0 || placeDc.Length == 0 || placeDcAt.Trim().Length == 0)" @onclick="ProposePlaceDc">Propose: Place the DC</button>
+            }
+            @if (moveUnits.Any(id => state.Unit(id) is { } mover && GameState.Condition(mover, Conditions.Berserk) == ConditionState.True))
+            {
+                <label title="A15.431: before its charge a berserk unit abandons SW of more than 1 PP and 1PP SW beyond its IPC; name those it keeps, comma-separated.">Keep SW <input id="move-keep" value="@moveKeep" @onchange="@(args => moveKeep = args.Value as string ?? string.Empty)" size="18" /></label>
             }
             <button id="propose-pass" disabled="@(state.Movement is not { WindowOpen: true })" @onclick='@(() => ProposeSimple(GameActions.PassFire, "pass"))'>Propose: the DEFENDER passes</button>
             <button id="propose-end-move" disabled="@(state.Movement is not { WindowOpen: false })" @onclick="ProposeEndMove">Propose: end the move@(EndingSome ? " of the checked units" : "")</button>
@@ -1131,6 +1153,18 @@ else if (state is not null)
                     }
                 </select>
             </label>
+            @if (state.SpecialRules.Contains("mol:" + firing, StringComparer.Ordinal))
+            {
+                <label title="A22.611: with a PBF or TPBF attack, one firer's MOL Check dr of 3 or less after its drm (+1 HS or crew, +2 SMC, +1 CX, +1 against a non-AFV) adds 4 FP; a colored 6 on the IFT DR breaks it.">MOL by
+                    <select id="fire-mol" value="@fireMol" @onchange="@(args => fireMol = args.Value as string ?? string.Empty)">
+                        <option value="">none</option>
+                        @foreach (var id in fireFirers.Order(StringComparer.Ordinal))
+                        {
+                            <option value="@id">@id</option>
+                        }
+                    </select>
+                </label>
+            }
             <label>
                 Target
                 <select id="fire-target" value="@fireTarget" @onchange="@(args => fireTarget = args.Value as string ?? string.Empty)">
@@ -1178,6 +1212,37 @@ else if (state is not null)
             <button id="propose-fire" disabled="@(fireFirers.Count == 0 || FireTarget.Length == 0)" @onclick="ProposeFire">Propose: fire</button>
             <button id="fire-clear" class="link" @onclick="ClearFire">clear</button>
         </div>
+        @if (DcHolders(firing).Any())
+        {
+            <h4>Demolition Charges</h4>
+            <p class="muted" id="dc-help">
+                A DC is Thrown into an ADJACENT Location at its thrower's level: 30 FP with +2 there, then the thrower's own Location with +3, each on its own DR,
+                +1 more in the AFPh unless an Opportunity Firer; a unit marked First Fire throws none, and the DC is removed (A23.6 to A23.63).
+            </p>
+            <div class="toolbar">
+                <label>Throw
+                    <select id="throw-dc" value="@throwDc" @onchange="@(args => throwDc = args.Value as string ?? string.Empty)">
+                        <option value="">choose</option>
+                        @foreach (var (holder, charge) in DcHolders(firing))
+                        {
+                            <option value="@($"{holder}|{charge}")">@charge (@holder)</option>
+                        }
+                    </select>
+                </label>
+                <label>into <input id="throw-dc-at" value="@throwDcAt" @onchange="@(args => throwDcAt = args.Value as string ?? string.Empty)" size="12" /></label>
+                <button id="propose-throw-dc" disabled="@(throwDc.Length == 0 || throwDcAt.Trim().Length == 0)" @onclick="ProposeThrowDc">Propose: Throw the DC</button>
+            </div>
+        }
+        @if (state.Phase == "afph" && state.PlacedCharges.Any(item => item.Operable))
+        {
+            <h4>Placed DCs</h4>
+            <div class="toolbar">
+                @foreach (var placed in state.PlacedCharges.Where(item => item.Operable))
+                {
+                    <button class="detonate-dc" data-dc="@placed.Charge" @onclick="@(() => ProposeDetonateDc(placed.Charge))">Propose: detonate @placed.Charge in @placed.Target (30 FP@(placed.TargetsConcealed ? ", halved" : "")@(placed.Cx ? ", +1 CX" : ""); A23.4)</button>
+                }
+            </div>
+        }
         @if ((state.Phase is "pfph" or "afph" or "dfph" || (state.Phase == "mph" && state.Movement is { WindowOpen: true })) && (OrdnanceGuns(firing).Any() || OrdnanceTanks(firing).Any() || PanzerfaustFirers(firing).Any()))
         {
             <h4>Ordnance</h4>
@@ -1509,6 +1574,17 @@ else if (state is not null)
         </ul>
     }
 
+    @if (SniperRecords.Count > 0)
+    {
+        <h3>Snipers</h3>
+        <ul id="play-snipers">
+            @foreach (var (eventId, text) in SniperRecords)
+            {
+                <li class="sniper-record" data-event="@eventId">@text</li>
+            }
+        </ul>
+    }
+
     @if (RallyAndRepairRecords.Count > 0)
     {
         <h3>Rally, Rout, and support weapons</h3>
@@ -1634,6 +1710,11 @@ else if (state is not null)
     private string placeFacing = "east";
 
     private const string DummyPrefix = "dummy:";
+
+    // A14.2 (backlog pass 15): a side's Sniper counter, placed at setup.
+    private const string SniperPrefix = "sniper:";
+    private string firstSan = string.Empty;
+    private string secondSan = string.Empty;
 
     private sealed record Proposal(ActionDescriptor Action, JsonElement Arguments, PlayResult Result);
 
@@ -2757,7 +2838,8 @@ else if (state is not null)
     /// <summary>The MGs the chosen firers possess (A9.1): each may add its FP to the attack or, with its holder's choice, fire alone.</summary>
     private IReadOnlyList<EquipmentInstance> FireWeapons => state is null ? []
         : [.. state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding
-            && fireFirers.Contains(holding.Holder) && (Library.Vocabulary.IsA(item.Kind, "asl:mg") || (item.Definition is { } weaponDefinition && LiveOrdnance.LatwType(weaponDefinition.Definition) == "atr")))
+            && fireFirers.Contains(holding.Holder) && (Library.Vocabulary.IsA(item.Kind, "asl:mg") || item.Kind == "asl:ft"
+                || (item.Definition is { } weaponDefinition && LiveOrdnance.LatwType(weaponDefinition.Definition) == "atr")))
             .OrderBy(item => item.Id, StringComparer.Ordinal)];
 
     /// <summary>The target: any Location typed in, or else the one chosen from the Locations the firing side knows to hold an enemy.</summary>
@@ -2777,7 +2859,64 @@ else if (state is not null)
         fireLaneWeapon = string.Empty;
         fireLaneTo = string.Empty;
         firePartner = string.Empty;
+        fireMol = string.Empty;
     }
+
+    private string fireMol = string.Empty;
+    private string throwDc = string.Empty;
+    private string throwDcAt = string.Empty;
+    private string placeDc = string.Empty;
+    private string placeDcAt = string.Empty;
+    private string moveKeep = string.Empty;
+
+    /// <summary>The DCs a side's Good Order units possess, as "unit|dc" (A23.6; ruling R15.3).</summary>
+    private IEnumerable<(string Unit, string Charge)> DcHolders(string side) => state is null ? []
+        : state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Kind == "asl:dc" && item.Holding is { Role: HoldingRole.Possessed } holding
+                && state.Unit(holding.Holder) is { Status: InstanceStatus.Active } holder && holder.Side == side)
+            .Select(item => (item.Holding!.Holder, item.Id)).OrderBy(item => item.Id, StringComparer.Ordinal);
+
+    /// <summary>The DCs the checked movers carry, which one of them may Place (A23.3; ruling R15.2).</summary>
+    private IEnumerable<EquipmentInstance> MoverCharges => state is null ? []
+        : state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Kind == "asl:dc" && item.Holding is { Role: HoldingRole.Possessed } holding
+            && moveUnits.Contains(holding.Holder) && !state.PlacedCharges.Any(placed => placed.Charge == item.Id)).OrderBy(item => item.Id, StringComparer.Ordinal);
+
+    private Task ProposeThrowDc()
+    {
+        var parts = throwDc.Split('|');
+        return Propose(GameActions.ThrowDc, JsonSerializer.SerializeToElement(new Dictionary<string, object>
+        {
+            ["gameId"] = gameId, ["attemptId"] = Attempt("throw-dc"), ["expectedRevision"] = (long)history!.Events.Count, ["unitId"] = parts[0],
+            ["equipmentId"] = parts.Length > 1 ? parts[1] : string.Empty, ["target"] = throwDcAt.Trim(),
+        }));
+    }
+
+    private Task ProposeDetonateDc(string charge) => Propose(GameActions.DetonateDc, JsonSerializer.SerializeToElement(new Dictionary<string, object>
+    {
+        ["gameId"] = gameId, ["attemptId"] = Attempt("detonate-dc"), ["expectedRevision"] = (long)history!.Events.Count, ["equipmentId"] = charge,
+    }));
+
+    private Task ProposePlaceDc()
+    {
+        var units = moveUnits.Order(StringComparer.Ordinal).ToArray();
+        var at = state?.Location(units[0])?.Location.ToString() ?? string.Empty;
+        return Propose(GameActions.Move, JsonSerializer.SerializeToElement(new Dictionary<string, object>
+        {
+            ["gameId"] = gameId, ["attemptId"] = Attempt("place-dc"), ["expectedRevision"] = (long)history!.Events.Count, ["unitIds"] = units,
+            ["to"] = at, ["assault"] = moveAssault, ["doubleTime"] = moveDoubleTime, ["placeDc"] = placeDc, ["placeDcAt"] = placeDcAt.Trim(),
+        }));
+    }
+
+    /// <summary>The Sniper attacks the viewer may see (A14; ruling R15.5), latest first.</summary>
+    private IReadOnlyList<(string EventId, string Text)> SniperRecords => history is null ? []
+        : [.. history.Events.Where(item => item.IsVisibleTo(Viewer) && item.Payload is SniperAttacked).Reverse().Select(item =>
+        {
+            var sniper = (SniperAttacked)item.Payload;
+            var side = state?.Find(sniper.Sniper)?.Side ?? "a";
+            var text = $"The {side} Sniper ({sniper.Sniper}) attacks after the SAN roll {sniper.Trigger}: dr {sniper.Dr}"
+                + (sniper.Target is { } at ? $", at {at}" : string.Empty)
+                + (sniper.Unit is { } unit ? $": {unit} is {sniper.Result} (A14.3)" : sniper.Result == "none" ? ", no effect (A14.3)" : $": {sniper.Result} (A14.21, A14.23)");
+            return (item.EventId, text);
+        })];
 
     private bool fireSnapShot;
     private string fireSpray = string.Empty;
@@ -2919,6 +3058,12 @@ else if (state is not null)
             ["to"] = moveTo.Trim(), ["assault"] = moveAssault, ["doubleTime"] = moveDoubleTime,
         };
 
+        // A15.431 (ruling R15.14): the 1PP SW a berserk unit keeps.
+        if (moveKeep.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) is { Length: > 0 } keep)
+        {
+            arguments["keep"] = keep;
+        }
+
         // A4.134, A4.3 (rulings R10.7, R10.9): a Minimum Move, or the hexsides of a Bypass.
         if (moveMinimum)
         {
@@ -3032,10 +3177,19 @@ else if (state is not null)
         if (weapons.Count > 0)
         {
             arguments["weapons"] = weapons;
-            if (fireAlone.Where(weapons.ContainsKey).Order(StringComparer.Ordinal).ToArray() is { Length: > 0 } alone)
+
+            // A22.31 (ruling R15.1): a FT fires without its squad's inherent FP.
+            var flamethrowers = FireWeapons.Where(item => fireWeapons.Contains(item.Id) && item.Kind == "asl:ft").Select(item => item.Holding!.Holder);
+            if (fireAlone.Where(weapons.ContainsKey).Concat(flamethrowers).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray() is { Length: > 0 } alone)
             {
                 arguments["withoutInherent"] = alone;
             }
+        }
+
+        // A22.611 (ruling R15.4): the firer making the MOL Check.
+        if (fireMol.Length > 0 && fireFirers.Contains(fireMol))
+        {
+            arguments["mol"] = fireMol;
         }
 
         return Propose(GameActions.Fire, JsonSerializer.SerializeToElement(arguments));
@@ -3098,6 +3252,17 @@ else if (state is not null)
         if (attack.Overrun is { } overrun)
         {
             return $"{overrun.VehicleId}'s OVR in {overrun.LocationId}";
+        }
+
+        // A23 (visual check, pass 15): a DC's attack names the DC and its user.
+        if (attack.DemolitionCharge is { } charge)
+        {
+            return charge.Mode switch
+            {
+                FireDemolitionCharge.Placed => $"The DC {charge.EquipmentId} (Placed by {charge.UserId})",
+                FireDemolitionCharge.Thrown => $"The DC {charge.EquipmentId} (Thrown by {charge.UserId})",
+                _ => $"The DC {charge.EquipmentId} (Thrown by {charge.UserId}, at its own Location)",
+            };
         }
 
         if (attack.Firers is not { Count: > 0 } firers)
@@ -3540,6 +3705,14 @@ else if (state is not null)
             return;
         }
 
+        if (placeDefinition.StartsWith(SniperPrefix, StringComparison.Ordinal))
+        {
+            var sniperSide = placeDefinition[SniperPrefix.Length..];
+            placements.Add(new Placement(placeId.Trim().Length > 0 ? placeId.Trim() : $"sniper-{sniperSide}", null, "asl:sniper", sniperSide, placeLocation.Trim(), false, false, null));
+            placeId = string.Empty;
+            return;
+        }
+
         if (Definitions.FirstOrDefault(definition => definition.Id == placeDefinition) is not { } definition)
         {
             return;
@@ -3631,6 +3804,12 @@ else if (state is not null)
         }
 
         placement["position"] = new { at = item.Location };
+        if (item.Kind == "asl:sniper")
+        {
+            placement["conditions"] = new Dictionary<string, bool>();
+            return placement;
+        }
+
         placement["conditions"] = item.Kind == UnitKinds.Dummy
             ? new Dictionary<string, bool> { ["asl:concealed"] = true, ["asl:hidden"] = item.Hidden }
             : new Dictionary<string, bool>
@@ -3647,7 +3826,7 @@ else if (state is not null)
         var start = new Dictionary<string, object?>
         {
             ["label"] = newLabel, ["catalog"] = catalog, ["boards"] = SetupBoards(), ["map"] = newMap, ["firstSide"] = firstSide,
-            ["sides"] = new[] { Side(firstSide, firstElr, firstEdge), Side(secondSide, secondElr, secondEdge) },
+            ["sides"] = new[] { Side(firstSide, firstElr, firstEdge, firstSan), Side(secondSide, secondElr, secondEdge, secondSan) },
         };
         if (int.TryParse(newMonth, CultureInfo.InvariantCulture, out var month))
         {
@@ -3668,12 +3847,18 @@ else if (state is not null)
     }
 
     /// <summary>A side of a new game, with its ELR when one is given (A19.1).</summary>
-    private static Dictionary<string, object> Side(string id, string elr, string edge)
+    private static Dictionary<string, object> Side(string id, string elr, string edge, string san = "")
     {
         var side = new Dictionary<string, object> { ["id"] = id, ["nationality"] = id };
         if (int.TryParse(elr, CultureInfo.InvariantCulture, out var value))
         {
             side["elr"] = value;
+        }
+
+        // A14.1 (backlog pass 15): the side's SAN.
+        if (int.TryParse(san, CultureInfo.InvariantCulture, out var activation))
+        {
+            side["san"] = activation;
         }
 
         if (edge.Length > 0)

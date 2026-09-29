@@ -124,7 +124,7 @@ public sealed class BacklogPass14Tests : IDisposable
             start = new
             {
                 label = "Close Combat",
-                catalog = "asl-scenario-a1@1.9.0",
+                catalog = "asl-scenario-a1@1.10.0",
                 boards = Bd01,
                 firstSide,
                 scenarioMonth = 7,
@@ -416,8 +416,9 @@ public sealed class BacklogPass14Tests : IDisposable
     [Fact]
     public async Task MandatoryCcLapsesWhenThePackageRefusesEveryAttack()
     {
-        // A15.43 (ruling R14.14): a berserk NKVD squad's attack is refused (a Commissar's Field Promotion is not built), so the CCPh may end.
-        await Setup("russian", Unit("rn", "asl:squad", "defender-nkvd-squad", "bd01:B1:0", "russian", "asl:berserk"), Unit("g1", "asl:squad", "attacker-squad", "bd01:B1:0", "german"));
+        // A15.43 (ruling R14.14): a berserk crew's attack is refused (a crew in CC is not reviewed), so the CCPh may end. (Backlog pass 15 decides the NKVD
+        // Field Promotion this test used before.)
+        await Setup("russian", Unit("rn", "asl:crew", "defender-crew", "bd01:B1:0", "russian", "asl:berserk"), Unit("g1", "asl:squad", "attacker-squad", "bd01:B1:0", "german"));
         await Advance(7);
         Assert.Equal("ccph", Current.Phase);
         Committed(await Do(GameActions.AdvancePhase, NoRoll(), new

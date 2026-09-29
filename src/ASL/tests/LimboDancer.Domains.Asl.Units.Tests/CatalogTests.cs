@@ -23,6 +23,22 @@ public sealed class CatalogTests
     private static JsonObject SyntheticJson() =>
         JsonNode.Parse(UnitCatalogJson.Write(Synthetic(), UnitsTestData.Asl.Value))!.AsObject();
 
+    /// <summary>
+    /// The synthetic catalog without the nationalities of backlog pass 15 (catalog 1.10.0), whose American green and Italian conscript squads share the
+    /// key facts the lookup tests give the synthetic attacker and defender squads.
+    /// </summary>
+    private static JsonObject LookupJson()
+    {
+        var json = SyntheticJson();
+        var definitions = json["definitions"]!.AsArray();
+        foreach (var definition in definitions.Where(node => ((string?)node!["id"])!.Split('-')[0] is "american" or "british" or "italian" or "finnish" or "french").ToArray())
+        {
+            definitions.Remove(definition);
+        }
+
+        return json;
+    }
+
     private static UnitCatalogResult Read(JsonNode json) => UnitCatalogReader.Read(json.ToJsonString(), UnitsTestData.Asl.Value);
 
     private static void AssertRefused(JsonNode json, string code)
@@ -98,6 +114,23 @@ public sealed class CatalogTests
                 "attacker-halftrack",
                 "attacker-tank",
                 "defender-tank", "attacker-light-mortar", "defender-light-mortar", "attacker-psk", "defender-atr",
+                "american-elite-squad", "american-elite-half-squad", "american-squad", "american-half-squad", "american-2nd-line-squad",
+                "american-2nd-line-half-squad", "american-green-squad", "american-green-half-squad", "british-elite-squad", "british-elite-half-squad",
+                "british-squad", "british-half-squad", "british-2nd-line-squad", "british-2nd-line-half-squad", "british-green-squad",
+                "british-green-half-squad", "italian-elite-squad", "italian-elite-half-squad", "italian-squad", "italian-half-squad", "italian-line-squad",
+                "italian-line-half-squad", "italian-conscript-squad", "italian-conscript-half-squad", "finnish-elite-squad", "finnish-elite-half-squad",
+                "finnish-squad", "finnish-half-squad", "finnish-green-squad", "finnish-green-half-squad", "finnish-square-squad",
+                "finnish-square-half-squad", "finnish-2nd-line-squad", "finnish-2nd-line-half-squad", "finnish-conscript-squad",
+                "finnish-conscript-half-squad", "french-elite-squad", "french-elite-half-squad", "french-squad", "french-half-squad", "french-green-squad",
+                "french-green-half-squad", "american-leader-6-plus-1", "american-leader-7-0", "american-leader-8-0", "american-leader-8-1",
+                "american-leader-9-1", "american-leader-9-2", "american-leader-10-2", "american-leader-10-3", "american-hero", "british-leader-6-plus-1",
+                "british-leader-7-0", "british-leader-8-0", "british-leader-8-1", "british-leader-9-1", "british-leader-9-2", "british-leader-10-2",
+                "british-leader-10-3", "british-hero", "italian-leader-6-plus-1", "italian-leader-7-0", "italian-leader-8-0", "italian-leader-8-1",
+                "italian-leader-9-1", "italian-leader-9-2", "italian-leader-10-2", "italian-leader-10-3", "italian-hero", "finnish-leader-8-plus-1",
+                "finnish-leader-8-0", "finnish-leader-9-0", "finnish-leader-9-1", "finnish-leader-10-0", "finnish-leader-10-1", "finnish-hero",
+                "french-leader-6-plus-1", "french-leader-7-0", "french-leader-8-0", "french-leader-8-1", "french-leader-9-1", "french-leader-9-2",
+                "french-leader-10-2", "french-leader-10-3", "french-hero", "defender-commissar-9-0", "defender-commissar-10-0",
+                "defender-commissar-8-plus-1", "attacker-ft", "defender-ft", "attacker-dc", "defender-dc",
             ],
             catalog.Definitions.Select(definition => definition.Id));
         Assert.All(catalog.Slots, slot => Assert.NotEmpty(catalog.Filling(slot.Id)));
@@ -177,7 +210,7 @@ public sealed class CatalogTests
     [Fact]
     public void ALookupReturnsTheDefinitionOrAnExplicitMiss()
     {
-        var catalog = Synthetic();
+        var catalog = Read(LookupJson()).Catalog!;
         var found = catalog.Find("italian", "asl:squad", "conscript", "1901-06");
         Assert.Equal(DefinitionLookupStatus.Found, found.Status);
         Assert.Equal("defender-squad", found.Definition!.Id);
@@ -204,7 +237,7 @@ public sealed class CatalogTests
     [Fact]
     public void TwoDefinitionsWithTheSameKeyFactsAreAmbiguousNotMerged()
     {
-        var json = SyntheticJson();
+        var json = LookupJson();
         var copy = Definition(json, "attacker-squad").DeepClone().AsObject();
         copy["id"] = "attacker-squad-2";
         copy["counter"]!["counter"] = "attacker-squad-2";

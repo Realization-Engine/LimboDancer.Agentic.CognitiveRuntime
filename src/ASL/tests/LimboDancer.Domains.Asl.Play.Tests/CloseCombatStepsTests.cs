@@ -118,7 +118,7 @@ public sealed class CloseCombatStepsTests : IDisposable
             start = new
             {
                 label = "Close Combat",
-                catalog = "asl-scenario-a1@1.9.0",
+                catalog = "asl-scenario-a1@1.10.0",
                 boards = Bd01,
                 firstSide,
                 scenarioMonth = 7,

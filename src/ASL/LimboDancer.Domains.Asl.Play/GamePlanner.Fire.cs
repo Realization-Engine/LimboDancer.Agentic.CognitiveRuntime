@@ -130,8 +130,36 @@ public sealed partial class GamePlanner
             }
         }
 
-        var alone = Strings(arguments, "withoutInherent").ToArray();
+        // A22.3 (table player, pass 15): a FT fires apart from its user's inherent FP, so a firer naming one fires without it.
+        var alone = Strings(arguments, "withoutInherent")
+            .Concat(weapons.Where(entry => entry.Value.Any(id => state.Find(id) is EquipmentInstance { Kind: "asl:ft" })).Select(entry => entry.Key))
+            .Distinct(StringComparer.Ordinal).ToArray();
         string[] firerIds = [.. firerList.EnumerateArray().Select(item => item.GetString()!)];
+
+        // A22.6, A22.611 (backlog pass 15, ruling R15.4): a MOL Check by one firer, where an SSR gives its side MOL.
+        var mol = Text(arguments, "mol", out var molText) ? molText : null;
+        if (mol is not null)
+        {
+            if (!firerIds.Contains(mol) || state.Unit(mol) is not { } molUser)
+            {
+                return Refused(scope, label, expected, "play.fire-mol: the MOL user is one of the firers (A22.611)");
+            }
+
+            if (!state.SpecialRules.Contains("mol:" + molUser.Side, StringComparer.Ordinal))
+            {
+                return Refused(scope, label, expected, $"play.fire-mol: no SSR gives the {molUser.Side} side MOL (A22.6; an SSR mol:{molUser.Side})");
+            }
+
+            if (state.Phase == "dfph" && MolCheckedInFirstFire(existing, mol))
+            {
+                return Refused(scope, label, expected, $"play.fire-mol: {mol} made a MOL Check in Defensive First Fire and makes none in Final Fire (A22.611)");
+            }
+
+            if (Is(molUser, Conditions.Broken) || Is(molUser, Conditions.Captured) || Is(molUser, Conditions.Melee))
+            {
+                return Refused(scope, label, expected, $"play.fire-mol: {mol} is not Good Order or berserk, and uses no MOL (A22.61)");
+            }
+        }
 
         // A9.12 (ruling R12.4): the SMC who fires a leader's MG with him, by leader.
         var partners = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -153,10 +181,18 @@ public sealed partial class GamePlanner
         }
 
         var (attack, reason) = LiveFire.FromState(state, firerIds, directors, target, weapons.Count > 0 ? weapons : null, alone.Length > 0 ? alone : null,
-            partners.Count > 0 ? partners : null);
+            partners.Count > 0 ? partners : null, mol);
         if (attack is null)
         {
             return Refused(scope, label, expected, reason!);
+        }
+
+        // A22.611 (ruling R15.4): no MOL through a woods or orchard hexside, one both of whose hexes are woods, or both orchard.
+        if (mol is not null && state.Location(mol)?.Location is { } molAt && molAt != target
+            && ReadLocation(state, molAt) is { } molRead && ReadLocation(state, target) is { } targetRead
+            && TerrainKey(molRead) is "woods" or "orchard" && TerrainKey(molRead) == TerrainKey(targetRead))
+        {
+            return Refused(scope, label, expected, $"play.fire-mol: a MOL is not thrown through a {TerrainKey(molRead)} hexside (A22.611)");
         }
 
         // A9.22, A9.223 (referee, pass 12): a MG with a Fire Lane does not fire again this MPh, nor does its manning Infantry use Subsequent First Fire
@@ -304,7 +340,8 @@ public sealed partial class GamePlanner
                 string[] ids = [.. everyFirer.Where(item => blockedLocations.Contains(item.LocationId!) == blockedPart).Select(item => item.UnitId!)];
                 string[] leaders = [.. directors.Where(id => state.Location(id)?.Location.ToString() is { } at && blockedLocations.Contains(at) == blockedPart)];
                 var (part, why) = LiveFire.FromState(state, ids, leaders, target, weapons.Where(item => ids.Contains(item.Key)).ToDictionary(item => item.Key, item => item.Value),
-                    alone.Where(ids.Contains).ToArray(), partners.Where(item => ids.Contains(item.Key)).ToDictionary(item => item.Key, item => item.Value));
+                    alone.Where(ids.Contains).ToArray(), partners.Where(item => ids.Contains(item.Key)).ToDictionary(item => item.Key, item => item.Value),
+                    mol is not null && ids.Contains(mol) ? mol : null);
                 if (part is null)
                 {
                     return (null, why);
@@ -343,6 +380,11 @@ public sealed partial class GamePlanner
             if (state.Phase is not ("pfph" or "afph" or "dfph") || blockedFirst is not null)
             {
                 return Refused(scope, label, expected, "play.fire-spray: Spraying Fire is made in the PFPh, AFPh, or DFPh, by a group that can see both Locations (A9.5; ruling R12.6)");
+            }
+
+            if (mol is not null)
+            {
+                return Refused(scope, label, expected, "play.fire-mol: a MOL goes with a PBF or TPBF attack at one Location (A22.611)");
             }
 
             var (sprayAttack, sprayReason) = LiveFire.FromState(state, firerIds, directors, second, weapons.Count > 0 ? weapons : null, alone.Length > 0 ? alone : null,
@@ -446,7 +488,8 @@ public sealed partial class GamePlanner
                 var reread = LiveFire.FromState(after, [.. facts.Firers!.Select(item => item.UnitId!)], [.. new[] { facts.Director?.UnitId }.Concat(facts.OtherDirectors?.Select(item => item.UnitId) ?? []).OfType<string>()],
                     target, facts.Firers!.Where(item => item.Weapons is { Count: > 0 }).ToDictionary(item => item.UnitId!, item => (IReadOnlyList<string>)[.. item.Weapons!.Select(weapon => weapon.EquipmentId!)]),
                     [.. facts.Firers!.Where(item => item.UsesInherentFp == false).Select(item => item.UnitId!)],
-                    facts.Firers!.Where(item => item.Partner is not null).ToDictionary(item => item.UnitId!, item => item.Partner!)).Attack;
+                    facts.Firers!.Where(item => item.Partner is not null).ToDictionary(item => item.UnitId!, item => item.Partner!),
+                    facts.Firers!.FirstOrDefault(item => item.Mol == true)?.UnitId).Attack;
                 if (reread is not null && FireMapFacts(after, reread, target, [.. existing, .. events]).Facts is { } rereadMap)
                 {
                     AddFireEvents(scope, attemptId, expected, actor, after, HeatOfBattleFacts(after, rereadMap) with
@@ -455,6 +498,7 @@ public sealed partial class GamePlanner
                     }, targetSide, step, events, draw);
                 }
 
+                AddSniperAttacks(scope, attemptId, expected, actor, existing, events, draw);
                 return events;
             }
 
@@ -492,6 +536,7 @@ public sealed partial class GamePlanner
                 }
             }
 
+            AddSniperAttacks(scope, attemptId, expected, actor, existing, events, draw);
             return events;
         }
 
@@ -504,7 +549,8 @@ public sealed partial class GamePlanner
                 + (spray is not null ? $"; Spraying Fire at {spray.TargetLocationId} too, on the same DR (A9.5)" : string.Empty)
                 + (lane is { } declared ? $"; a Fire Lane of {declared.Weapon} to {declared.Entries[^1].Location} (A9.22)" : string.Empty)
                 + (blockedFirst is not null ? "; the firers whose LOS is blocked fire first and drop out (A6.11, A7.52)" : string.Empty)
-                + (encircles is not null ? $"; this attack Encircles the {encircles} units at {facts.TargetLocationId} (A7.7)" : string.Empty)])
+                + (encircles is not null ? $"; this attack Encircles the {encircles} units at {facts.TargetLocationId} (A7.7)" : string.Empty)
+                + (mol is not null ? $"; {mol} makes a MOL Check first: a dr of 3 or less after its drm adds four FP (A22.611)" : string.Empty)])
         {
             Roll = new PlannedRoll("fire", Build),
             FirstEventId = EventId(attemptId, 1),
@@ -550,6 +596,25 @@ public sealed partial class GamePlanner
         };
     }
 
+    /// <summary>Whether a unit made a MOL Check in Defensive First Fire this Player Turn (A22.611; ruling R15.4).</summary>
+    private static bool MolCheckedInFirstFire(IReadOnlyList<GameEvent> existing, string unitId)
+    {
+        for (var index = existing.Count - 1; index >= 0; index--)
+        {
+            switch (existing[index].Payload)
+            {
+                case PhaseChanged { Phase: "rph" }:
+                    return false;
+                case FireResolved fire when fire.MovementStep is not null && fire.Facts.TryGetProperty("firers", out var firers) && firers.ValueKind == JsonValueKind.Array
+                    && firers.EnumerateArray().Any(item => item.TryGetProperty("unitId", out var id) && id.GetString() == unitId
+                        && item.TryGetProperty("mol", out var used) && used.ValueKind == JsonValueKind.True):
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
     private static IEnumerable<string> Strings(JsonElement arguments, string name) =>
         arguments.TryGetProperty(name, out var list) && list.ValueKind == JsonValueKind.Array
             ? list.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString()!)
@@ -576,9 +641,10 @@ public sealed partial class GamePlanner
         var package = ScenarioA1FirePackage.Identity.ToString();
 
         // Ruling R5.8: the owners' options are asked for as the attack reaches them; a resumed attack starts from the rolls it drew.
+        // A DC's attack takes every option (ruling R15.2), so its thrower's Location and its removal follow in the same commit.
         facts = facts with
         {
-            Choices = facts.Choices ?? new Dictionary<string, string>(StringComparer.Ordinal)
+            Choices = facts.Choices ?? (facts.DemolitionCharge is null ? new Dictionary<string, string>(StringComparer.Ordinal) : null)
         };
         var rollIds = new Dictionary<string, string>(resumed?.RollIds ?? new Dictionary<string, string>(), StringComparer.Ordinal);
         var rolls = new FireRolls(null, null, null, null, null);
@@ -643,6 +709,7 @@ public sealed partial class GamePlanner
                 "berserkCheck" => (2, "fire-berserk-check"),
                 "crewCheck" => (2, "fire-crew-check"),
                 "unlikelyKill" => (1, "fire-unlikely-kill"),
+                "molCheck" => (1, "fire-mol-check"),
                 _ => (1, "fire-wound-severity"),
             };
             var drawn = draw(new RollRequest(count, 6));
@@ -724,8 +791,25 @@ public sealed partial class GamePlanner
             }
         }
 
+        // A22.6111 (ruling R15.4): a colored dr of 6 breaks the MOL's user, under DM.
+        if (resolution.MolCheck is { UserBroken: true } molBreak && state.Unit(molBreak.UnitId) is { Status: InstanceStatus.Active } molUser && !Is(molUser, Conditions.Broken))
+        {
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(molUser.Id, new Dictionary<string, ConditionState>
+            {
+                [Conditions.Broken] = ConditionState.True,
+                [Conditions.Pinned] = ConditionState.False,
+                [Conditions.DesperationMorale] = ConditionState.True,
+            }), package, null, [fireId]));
+        }
+
+        // A22.5 (ruling R15.1): a FT run out of fuel is removed after the attack.
+        if (resolution.FlamethrowerRemoved is { } outOfFuel)
+        {
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(outOfFuel), package, null, [fireId]));
+        }
+
         // The MGs: a malfunction (A9.7), and the fire counter of a MG that lost its Multiple ROF (A9.2).
-        foreach (var weapon in resolution.WeaponEffects ?? [])
+        foreach (var weapon in (resolution.WeaponEffects ?? []).Where(item => item.EquipmentId != resolution.FlamethrowerRemoved))
         {
             var conditions = new Dictionary<string, ConditionState>(StringComparer.Ordinal);
             if (weapon.Malfunctioned)
@@ -958,27 +1042,31 @@ public sealed partial class GamePlanner
         {
             var creatorId = effect.FinalDefinitionId != effect.DefinitionId && !effect.Eliminated ? $"{attemptId}-{effect.UnitId}" : effect.UnitId;
             var alive = !effect.Eliminated;
+            var concealed = !effect.ConcealmentLost && !effect.Eliminated;
             if (effect.HeatOfBattle?.HeroDefinitionId is { } hero)
             {
-                yield return ("instance-created", new InstanceCreated(HeroOf(creator, hero, attemptId)) { Creator = alive ? creatorId : null });
+                yield return ("instance-created", new InstanceCreated(HeroOf(creator, hero, attemptId, concealed: concealed)) { Creator = alive ? creatorId : null });
             }
 
             if (effect.SecondHeatOfBattle?.HeroDefinitionId is { } second)
             {
-                yield return ("instance-created", new InstanceCreated(HeroOf(creator, second, attemptId, "hero-2")) { Creator = alive ? creatorId : null });
+                yield return ("instance-created", new InstanceCreated(HeroOf(creator, second, attemptId, "hero-2", concealed)) { Creator = alive ? creatorId : null });
             }
         }
     }
 
-    /// <summary>A hero a unit creates (A15.21): unbroken and known, with the unit's fire markers and Fanaticism.</summary>
-    private static NewInstance HeroOf(UnitInstance creator, string hero, string attemptId, string suffix = "hero")
+    /// <summary>
+    /// A hero a unit creates (A15.21): unbroken, with the unit's fire markers and Fanaticism; concealed when the unit is and keeps its "?" (A12.1; backlog
+    /// pass 15, ruling R15.12).
+    /// </summary>
+    private static NewInstance HeroOf(UnitInstance creator, string hero, string attemptId, string suffix = "hero", bool concealed = false)
     {
         var conditions = new Dictionary<string, ConditionState>(StringComparer.Ordinal)
         {
             [Conditions.Broken] = ConditionState.False,
             [Conditions.Pinned] = ConditionState.False,
             [Conditions.Wounded] = ConditionState.False,
-            [Conditions.Concealed] = ConditionState.False,
+            [Conditions.Concealed] = concealed && Is(creator, Conditions.Concealed) ? ConditionState.True : ConditionState.False,
             [Conditions.Hidden] = ConditionState.False,
         };
         foreach (var marker in new[] { Conditions.PrepFire, Conditions.FirstFire, Conditions.FinalFire, Conditions.Fanatic, Conditions.Cx })
@@ -1046,6 +1134,24 @@ public sealed partial class GamePlanner
         if (effect.HeatOfBattle?.Hardening == true || effect.HeatOfBattle?.Heroic == true)
         {
             Set(Conditions.DesperationMorale, false);
+        }
+
+        if (effect.SplitIntoHalfSquads == true)
+        {
+            // A19.13 (ruling R15.9): a squad with an underscored Morale Factor is Replaced by its two broken HS; the first keeps its SW, as a Deployment's does.
+            var half = FireReference.Value.Definitions[effect.FinalDefinitionId];
+            var produced = unit.Conditions.Where(item => item.Key != Conditions.Concealed && item.Key != Conditions.Hidden)
+                .ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal);
+            foreach (var (name, value) in conditions)
+            {
+                produced[name] = value;
+            }
+
+            produced[Conditions.Concealed] = ConditionState.False;
+            produced[Conditions.Hidden] = ConditionState.False;
+            return ("lineage", new LineageRecorded(LineageAction.Deployed, [unit.Id],
+                [new NewInstance($"{attemptId}-{unit.Id}", half.Kind, half.Id, unit.Side, unit.Position, null, produced),
+                    new NewInstance($"{attemptId}-{unit.Id}-2", half.Kind, half.Id, unit.Side, unit.Position, null, new Dictionary<string, ConditionState>(produced, StringComparer.Ordinal))]));
         }
 
         if (effect.FinalDefinitionId != effect.DefinitionId)

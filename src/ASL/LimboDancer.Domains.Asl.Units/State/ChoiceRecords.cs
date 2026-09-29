@@ -49,6 +49,14 @@ public sealed record SurrenderRejected(string Unit) : EventPayload;
 public sealed record PrisonerFreed(string Unit) : EventPayload;
 
 /// <summary>
+/// <c>sniper-attacked</c>: a side's Sniper attack (A14.1 to A14.3; backlog pass 15, ruling R15.5), after the roll <paramref name="Trigger"/> equal to
+/// its SAN: its dr's roll and value, the hex its Random Location DR found and the Location attacked, the unit attacked, and the result
+/// (<c>none</c>, <c>eliminated</c>, <c>broken</c>, <c>casualty-reduced</c>, <c>wounded</c>, <c>pinned</c>, or <c>no-target</c>). The events that follow
+/// apply it.
+/// </summary>
+public sealed record SniperAttacked(string Sniper, string Trigger, string Roll, int Dr, BoardLocation? Target, string? Unit, string Result) : EventPayload;
+
+/// <summary>
 /// <c>prisoners-massacred</c>: prisoners eliminated in their Location (A20.4, ruling R5.7), by units of the Guard's side that may massacre
 /// (Russian or berserk Infantry, not in Melee) in a fire phase of their own side. The victims' side has its ELR raised by one, once, to at
 /// most 6, and is faced with No Quarter. <paramref name="Berserk"/> marks the massacre a berserk unit makes at the start of its fire phase,

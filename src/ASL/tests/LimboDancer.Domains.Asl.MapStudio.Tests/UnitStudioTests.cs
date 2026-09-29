@@ -161,6 +161,23 @@ public sealed class UnitStudioTests : IDisposable
                 "defender-leader-8-1", "defender-leader-9-1", "defender-leader-9-2", "defender-leader-10-2", "defender-leader-10-3", "attacker-hero",
                 "defender-hero", "defender-nkvd-squad", "defender-nkvd-half-squad", "attacker-crew", "defender-crew", "attacker-inf-gun", "defender-at-gun",
                 "attacker-truck", "defender-truck", "attacker-halftrack", "attacker-tank", "defender-tank", "attacker-light-mortar", "defender-light-mortar", "attacker-psk", "defender-atr",
+                "american-elite-squad", "american-elite-half-squad", "american-squad", "american-half-squad", "american-2nd-line-squad",
+                "american-2nd-line-half-squad", "american-green-squad", "american-green-half-squad", "british-elite-squad", "british-elite-half-squad",
+                "british-squad", "british-half-squad", "british-2nd-line-squad", "british-2nd-line-half-squad", "british-green-squad",
+                "british-green-half-squad", "italian-elite-squad", "italian-elite-half-squad", "italian-squad", "italian-half-squad", "italian-line-squad",
+                "italian-line-half-squad", "italian-conscript-squad", "italian-conscript-half-squad", "finnish-elite-squad", "finnish-elite-half-squad",
+                "finnish-squad", "finnish-half-squad", "finnish-green-squad", "finnish-green-half-squad", "finnish-square-squad",
+                "finnish-square-half-squad", "finnish-2nd-line-squad", "finnish-2nd-line-half-squad", "finnish-conscript-squad",
+                "finnish-conscript-half-squad", "french-elite-squad", "french-elite-half-squad", "french-squad", "french-half-squad", "french-green-squad",
+                "french-green-half-squad", "american-leader-6-plus-1", "american-leader-7-0", "american-leader-8-0", "american-leader-8-1",
+                "american-leader-9-1", "american-leader-9-2", "american-leader-10-2", "american-leader-10-3", "american-hero", "british-leader-6-plus-1",
+                "british-leader-7-0", "british-leader-8-0", "british-leader-8-1", "british-leader-9-1", "british-leader-9-2", "british-leader-10-2",
+                "british-leader-10-3", "british-hero", "italian-leader-6-plus-1", "italian-leader-7-0", "italian-leader-8-0", "italian-leader-8-1",
+                "italian-leader-9-1", "italian-leader-9-2", "italian-leader-10-2", "italian-leader-10-3", "italian-hero", "finnish-leader-8-plus-1",
+                "finnish-leader-8-0", "finnish-leader-9-0", "finnish-leader-9-1", "finnish-leader-10-0", "finnish-leader-10-1", "finnish-hero",
+                "french-leader-6-plus-1", "french-leader-7-0", "french-leader-8-0", "french-leader-8-1", "french-leader-9-1", "french-leader-9-2",
+                "french-leader-10-2", "french-leader-10-3", "french-hero", "defender-commissar-9-0", "defender-commissar-10-0",
+                "defender-commissar-8-plus-1", "attacker-ft", "defender-ft", "attacker-dc", "defender-dc",
             ],
             choices.Select(choice => choice.Definition.Definition));
         Assert.All(choices, choice =>
@@ -183,8 +200,8 @@ public sealed class UnitStudioTests : IDisposable
         Assert.Contains("Russian", lab.Find("#lab-name").TextContent, StringComparison.Ordinal);
         Assert.Contains("4-4-7", lab.Find("#lab-name").TextContent, StringComparison.Ordinal);
         var source = lab.Find("#lab-catalog-source");
-        Assert.Contains("asl-scenario-a1@1.9.0, definition defender-squad", source.TextContent, StringComparison.Ordinal);
-        Assert.StartsWith("asl-scenario-a1@1.9.0+sha256:", source.GetAttribute("title"), StringComparison.Ordinal);
+        Assert.Contains("asl-scenario-a1@1.10.0, definition defender-squad", source.TextContent, StringComparison.Ordinal);
+        Assert.StartsWith("asl-scenario-a1@1.10.0+sha256:", source.GetAttribute("title"), StringComparison.Ordinal);
         Assert.EndsWith("#defender-squad", source.GetAttribute("title"), StringComparison.Ordinal);
         Assert.DoesNotContain("The document is refused", lab.Markup, StringComparison.Ordinal);
         Assert.DoesNotContain("class=\"fail\"", lab.Find("#lab-findings").OuterHtml, StringComparison.Ordinal);

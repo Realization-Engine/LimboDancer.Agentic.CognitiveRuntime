@@ -96,8 +96,8 @@ public sealed record HeatOfBattleOutcome(IReadOnlyList<int> Dice, int OriginalDr
 /// </summary>
 public static class ScenarioA1HeatOfBattle
 {
-    // A15.1: the nationality DRM of the Heat of Battle table. Italians and Axis Minors (Surrender on 10 or more when not elite) and
-    // the Japanese (Surrender treated as Berserk) have exceptions the review does not admit, so they are refused (p. 83).
+    // A15.1: the nationality DRM of the Heat of Battle table; backlog pass 15 (ruling R15.13) admits the Italians, whose non-elite MMC surrender on
+    // 10 or more. Axis Minors and the Japanese (Surrender treated as Berserk) are refused (p. 83; backlog).
     private static readonly Dictionary<string, int> NationalityDrm = new(StringComparer.Ordinal)
     {
         ["american"] = 0,
@@ -105,6 +105,7 @@ public static class ScenarioA1HeatOfBattle
         ["finnish"] = -1,
         ["french"] = 1,
         ["german"] = 0,
+        ["italian"] = 3,
         ["russian"] = 2,
     };
 
@@ -182,7 +183,11 @@ public static class ScenarioA1HeatOfBattle
         // unit's LOS is Battle Hardening instead (A15.44).
         var hero = final <= 6;
         var hardening = final is >= 5 and <= 8;
-        var berserk = !hero && !hardening && (final <= 11 || fanatic || noQuarter);
+
+        // A15.1 (ruling R15.13): a non-elite Italian MMC surrenders on a Final DR of 10 or more; A25.221 (ruling R15.6): a Commissar treats a
+        // Surrender as Berserk, as a Fanatic unit does.
+        var surrenderFrom = unit.Nationality == "italian" && unit.IsMmc && unit.Class != "elite" ? 10 : 12;
+        var berserk = !hero && !hardening && (final < surrenderFrom || fanatic || noQuarter || ScenarioA1FireReference.IsCommissar(unit.Id));
         if (berserk)
         {
             if (knownEnemyInLos is null)
@@ -266,6 +271,10 @@ public static class ScenarioA1HeatOfBattle
                         Fanatic = true
                     };
                 }
+            }
+            else if (ScenarioA1FireReference.IsCommissar(unit.Id))
+            {
+                // A25.221 (ruling R15.6): a Commissar is not subject to Unit Substitution; Battle Hardening leaves him as he is.
             }
             else
             {

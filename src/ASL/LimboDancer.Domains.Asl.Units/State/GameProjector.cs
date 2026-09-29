@@ -118,6 +118,7 @@ public static class GameProjector
                 SurrenderPending surrender => Surrender(previous, surrender, gameEvent.EventId),
                 SurrenderRejected rejected => RejectSurrender(previous, rejected),
                 PrisonerFreed freed => FreePrisoner(previous, freed),
+                SniperAttacked sniper => Snipe(previous, sniper),
                 VehicleWrecked wreck => Wreck(previous, wreck),
                 PrisonersMassacred massacre => Massacre(previous, massacre),
                 ChoicePending pending => PendChoice(previous, pending, gameEvent.EventId),
@@ -196,10 +197,12 @@ public static class GameProjector
                 };
             }
 
+            next = AssaultWeapons(next, gameEvent.Payload);
             next = KeepMovingStack(next, gameEvent.Payload);
             next = KeepEncirclements(next);
             next = KeepFireLanes(next);
             next = KeepGuards(next);
+            next = KeepPlacedCharges(next, gameEvent.Payload);
             next = KeepMelee(next);
             next = KeepCx(next);
             next = KeepAcquisitions(next, gameEvent.Payload);
@@ -418,6 +421,9 @@ public static class GameProjector
                     PhaseFirers = [],
                     SpottedThisPhase = [],
                     MovedWeapons = newPlayerTurn ? [] : state.MovedWeapons,
+                    // A23.3 (ruling R15.2): a DC Placement lasts its Player Turn.
+                    PlacedCharges = newPlayerTurn ? [] : state.PlacedCharges,
+                    AssaultWeaponUsers = newPlayerTurn ? [] : state.AssaultWeaponUsers,
                     Entities = state.Phase == "mph" ? RemoveSmokeGrenades(state.Entities) : state.Entities,
                     Turn = change.Turn,
                     Phase = change.Phase,
@@ -2934,6 +2940,15 @@ public static class GameProjector
             var ids = consumed.Select(unit => unit.Id).ToArray();
             var next = state;
 
+            // A10.6 (backlog pass 15): a unit Replaced or Reduced by its own Rally attempt has attempted to rally this Player Turn.
+            if (ids.Any(id => state.RallyAttemptsThisPlayerTurn.Contains(id, StringComparer.Ordinal)))
+            {
+                next = next with
+                {
+                    RallyAttemptsThisPlayerTurn = [.. next.RallyAttemptsThisPlayerTurn, .. lineage.Produced.Select(item => item.Id)]
+                };
+            }
+
             // A10.53 (referee, pass 13): a HS Reduced from a routing squad has routed this RtPh.
             if (state.Phase == "rtph" && ids.Any(id => state.RoutedThisPhase.Contains(id, StringComparer.Ordinal)))
             {
@@ -3174,6 +3189,125 @@ public static class GameProjector
                     [Conditions.Unarmed] = ConditionState.True,
                 },
             });
+        }
+
+        /// <summary>
+        /// A22.3, A23.2 (table player, pass 15): a unit that fires a FT, Throws or Places a DC, is recorded for its Player Turn, since it uses one FT or DC
+        /// in a Player Turn; and a squad whose only fire this phase is a Thrown DC has used one SW, so it still fires its inherent FP in this phase.
+        /// </summary>
+        private static GameState AssaultWeapons(GameState next, EventPayload payload)
+        {
+            var users = new List<string>();
+            var thrownBy = (string?)null;
+            if (payload is MovementStepped { DcPlacement: { } placed })
+            {
+                users.Add(placed.Unit);
+            }
+            else if (payload is FireResolved fired)
+            {
+                if (fired.Facts.TryGetProperty("firers", out var firers) && firers.ValueKind == JsonValueKind.Array)
+                {
+                    users.AddRange(firers.EnumerateArray()
+                        .Where(firer => firer.TryGetProperty("weapons", out var weapons) && weapons.ValueKind == JsonValueKind.Array
+                            && weapons.EnumerateArray().Any(weapon => weapon.TryGetProperty("equipmentId", out var id)
+                                && next.Find(id.GetString() ?? string.Empty) is EquipmentInstance { Kind: "asl:ft" }))
+                        .Select(firer => firer.GetProperty("unitId").GetString() ?? string.Empty));
+                }
+
+                if (fired.Facts.TryGetProperty("demolitionCharge", out var charge) && charge.ValueKind == JsonValueKind.Object
+                    && charge.TryGetProperty("userId", out var user) && user.GetString() is { } userId)
+                {
+                    users.Add(userId);
+                    thrownBy = charge.TryGetProperty("mode", out var mode) && mode.GetString() == "thrown" ? userId : null;
+                }
+            }
+
+            if (users.Count == 0)
+            {
+                return next;
+            }
+
+            static bool Marked(UnitInstance unit) => new[] { Conditions.PrepFire, Conditions.FinalFire, Conditions.FirstFire }
+                .Any(name => GameState.Condition(unit, name) == ConditionState.True);
+            return next with
+            {
+                AssaultWeaponUsers = [.. next.AssaultWeaponUsers.Union(users.Where(id => id.Length > 0), StringComparer.Ordinal)],
+                SupportWeaponUses = thrownBy is not null && next.Unit(thrownBy) is { Kind: "asl:squad" } squad && !Marked(squad)
+                    && !next.PhaseFirers.Any(item => item.Unit == thrownBy) && !next.SupportWeaponUses.Any(item => item.Unit == thrownBy)
+                    ? [.. next.SupportWeaponUses, new SupportWeaponUse(thrownBy, "dc")]
+                    : next.SupportWeaponUses,
+            };
+        }
+
+        /// <summary>
+        /// A23.3 (backlog pass 15, ruling R15.2): a DC Placement is recorded with its step; it is operably Placed, and its DC left in its target Location,
+        /// once its placer leaves the Placement Location or ends its move neither broken, pinned, captured, nor eliminated; a placer so affected first keeps
+        /// its DC. A DC no longer in play is gone. Every Placement ends with its Player Turn's CCPh.
+        /// </summary>
+        private static GameState KeepPlacedCharges(GameState next, EventPayload payload)
+        {
+            var charges = next.PlacedCharges;
+            if (payload is MovementStepped { DcPlacement: { } placed } step)
+            {
+                charges = [.. charges, new PlacedCharge(placed.Charge, placed.Unit, step.To, placed.Target, placed.Cx, placed.TargetsConcealed, false)];
+            }
+
+            if (charges.Count == 0)
+            {
+                return next;
+            }
+
+            var kept = new List<PlacedCharge>();
+            var equipment = next.Equipment;
+            foreach (var charge in charges)
+            {
+                if (next.Find(charge.Charge) is not EquipmentInstance { Status: InstanceStatus.Active } dc)
+                {
+                    continue;
+                }
+
+                if (charge.Operable)
+                {
+                    kept.Add(charge);
+                    continue;
+                }
+
+                if (next.Unit(charge.Unit) is not { Status: InstanceStatus.Active } placer || GameState.Condition(placer, Conditions.Broken) == ConditionState.True
+                    || GameState.Condition(placer, Conditions.Pinned) == ConditionState.True || GameState.Condition(placer, Conditions.Captured) == ConditionState.True)
+                {
+                    continue;
+                }
+
+                if (next.Movement is { } moving && moving.Movers.Contains(charge.Unit) && moving.Location == charge.From && !placer.MovementEnded)
+                {
+                    kept.Add(charge);
+                    continue;
+                }
+
+                kept.Add(charge with
+                {
+                    Operable = true
+                });
+                equipment = [.. equipment.Select(item => item.Id == dc.Id ? item with { Holding = null, Position = new MapPosition(charge.Target) } : item)];
+            }
+
+            return next with
+            {
+                PlacedCharges = kept,
+                Equipment = equipment,
+            };
+        }
+
+        /// <summary>A Sniper attack (A14; ruling R15.5): its Sniper counter and roll are in play and recorded; the events after it apply it.</summary>
+        private GameState? Snipe(GameState state, SniperAttacked sniper)
+        {
+            if (state.Find(sniper.Sniper) is not EntityInstance { Kind: "asl:sniper", Status: InstanceStatus.Active } || !rolls.ContainsKey(sniper.Roll)
+                || !rolls.ContainsKey(sniper.Trigger) || sniper.Dr is < 1 or > 6)
+            {
+                return Fail<GameState>("UNIT-STATE-042", "A Sniper attack names a Sniper counter in play and recorded rolls (A14.1).");
+            }
+
+            return state;
         }
 
         /// <summary>

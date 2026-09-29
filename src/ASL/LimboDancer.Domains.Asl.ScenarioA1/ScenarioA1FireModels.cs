@@ -249,6 +249,52 @@ public sealed record FireAttack(
     {
         get; init;
     }
+
+    /// <summary>
+    /// The nationalities of the firing side, when it holds Allied Troops (A10.7; backlog pass 15, ruling R15.8): its units of any of them may fire
+    /// together, and a leader directing or aiding one of another nationality does so one worse. Null is the first firer's nationality alone.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<string>? FiringNationalities
+    {
+        get; init;
+    }
+
+    /// <summary>A DC's attack on one Location (A23; rulings R15.2, R15.3): no firers or leader, 30 FP; null for other fire.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FireDemolitionCharge? DemolitionCharge
+    {
+        get; init;
+    }
+}
+
+/// <summary>
+/// A DC's attack (A23.1 to A23.63; rulings R15.2, R15.3): the DC and the unit that Placed or Threw it, the attack's kind (<c>placed</c> in the AFPh,
+/// <c>thrown</c> at the target Location, or <c>thrower</c> at the thrower's own Location), whether its user was CX when it Placed or Threw it,
+/// whether the DC is captured, whether every target was concealed when a Placed DC was operably Placed, and whether a Thrower in the AFPh is an
+/// Opportunity Firer.
+/// </summary>
+public sealed record FireDemolitionCharge(
+    string? EquipmentId,
+    string? DefinitionId,
+    string? Mode,
+    string? UserId,
+    string? UserDefinitionId,
+    bool? Cx,
+    bool? Captured,
+    bool? ConcealedWhenPlaced,
+    bool? OpportunityFire)
+{
+    public const string Placed = "placed";
+    public const string Thrown = "thrown";
+    public const string Thrower = "thrower";
+
+    /// <summary>Whether its Green user is Inexperienced (A19.32; referee, pass 15): its malfunction number is one lower; null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Inexperienced
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -436,7 +482,10 @@ public sealed record FireFirer(
         get; init;
     }
 
-    /// <summary>Whether a Green or Conscript firer is Inexperienced (A19.2), for the Heat of Battle DRM of an FPF NMC; required for those classes.</summary>
+    /// <summary>
+    /// Whether a Green or Conscript firer is Inexperienced (A19.2), for the Heat of Battle DRM of an FPF NMC, and for its FT's removal number, one lower
+    /// (A19.32; referee, pass 15); required for those classes in FPF.
+    /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Inexperienced
     {
@@ -481,6 +530,13 @@ public sealed record FireFirer(
     /// <summary>The other SMC stacked with this leader who fire his one MG together at full FP (A9.12; ruling R12.4); null when he fires it alone, as Area Fire.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Partner
+    {
+        get; init;
+    }
+
+    /// <summary>Whether this firer makes the attack's MOL Check (A22.611; ruling R15.4): at most one per attack; null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Mol
     {
         get; init;
     }
@@ -586,6 +642,13 @@ public sealed record FireTarget(
     {
         get; init;
     }
+
+    /// <summary>The FT the unit possesses (A22.4; ruling R15.1): each is -1 to the attack's DR against it alone; null is none.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? Flamethrowers
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -638,6 +701,13 @@ public sealed record FireRolls(
     /// <summary>The Unlikely Kill dr of each unarmored vehicle whose Original IFT DR of 2 did not otherwise harm it (A7.309).</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyDictionary<string, int>? UnlikelyKill
+    {
+        get; init;
+    }
+
+    /// <summary>The MOL Check dr (A22.611; ruling R15.4), made before the IFT DR.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? MolCheck
     {
         get; init;
     }
@@ -784,7 +854,20 @@ public sealed record FireUnitEffect(
     {
         get; init;
     }
+
+    /// <summary>
+    /// Whether a squad with an underscored Morale Factor was Replaced by two broken HS of <see cref="FinalDefinitionId"/> (A19.13; ruling R15.9); null
+    /// when it was not.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? SplitIntoHalfSquads
+    {
+        get; init;
+    }
 }
+
+/// <summary>The MOL Check of an attack (A22.611, A22.6111; ruling R15.4): its dr, drm, and pass, and whether the MOL user broke on a colored dr of 6.</summary>
+public sealed record FireMolCheck(string UnitId, int Dr, IReadOnlyList<FireModifier> Drm, int Final, bool Passed, bool UserBroken);
 
 /// <summary>The Fire package's answer: resolved with its arithmetic and effects, or Abstained or Indeterminate with reasons.</summary>
 public sealed record FireResolution(
@@ -834,6 +917,27 @@ public sealed record FireResolution(
     /// <summary>Whether the firers' LOS was blocked (A6.11; ruling R12.2): they fired, and nothing in the target Location was affected; null is false.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? LosBlocked
+    {
+        get; init;
+    }
+
+    /// <summary>The attack's MOL Check (A22.611; ruling R15.4); null when none was made.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FireMolCheck? MolCheck
+    {
+        get; init;
+    }
+
+    /// <summary>Whether a DC's Original DR reached its malfunction number (A23.4; ruling R15.2): removed with no effect; null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? DemolitionChargeMalfunctioned
+    {
+        get; init;
+    }
+
+    /// <summary>The FT whose Original DR ran it out of fuel (A22.5; ruling R15.1): removed after the attack; null when none.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? FlamethrowerRemoved
     {
         get; init;
     }

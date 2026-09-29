@@ -162,21 +162,29 @@ public static class ScenarioA1RallyCalculator
             outside.Add("asl.a1.rally.terrain-outside");
         }
 
+        var commissar = definition is not null && ScenarioA1FireReference.IsCommissar(definition.Id);
         if (attempt.Leader is { } leader)
         {
-            // A10.6, A10.7: an unbroken friendly leader in the same Location, at the same level.
+            // A10.6, A10.7: an unbroken friendly leader in the same Location, at the same level; Allied Troops of another nationality are admitted
+            // (ruling R15.8), the planner reading the side.
             var leaderDefinition = reference.Definitions.GetValueOrDefault(leader.DefinitionId!);
             if (leaderDefinition is null || !leaderDefinition.IsLeader || leaderDefinition.Leadership is null
-                || leaderDefinition.Nationality != definition?.Nationality || leader.Broken == true || leader.LocationId != attempt.LocationId
-                || leader.UnitId == unit.UnitId)
+                || leader.Broken == true || leader.LocationId != attempt.LocationId || leader.UnitId == unit.UnitId)
             {
                 outside.Add("asl.a1.rally.leader-outside");
+            }
+
+            // A25.221, A25.222 (ruling R15.6): a Commissar alone directs a Rally in his Location, and a broken Commissar always Self-Rallies.
+            if ((attempt.Commissar is { } present && present != leader.UnitId) || commissar)
+            {
+                outside.Add("asl.a1.rally.commissar-rally");
             }
         }
         else if (definition is not null)
         {
-            // A10.63: never with a Good Order friendly leader present; A19.12: never when Disrupted.
-            if (attempt.GoodOrderLeaderInLocation == true)
+            // A10.63: never with a Good Order friendly leader present, but a broken Commissar always attempts Self-Rally (A25.221; ruling R15.6);
+            // A19.12: never when Disrupted.
+            if (attempt.GoodOrderLeaderInLocation == true && !commissar)
             {
                 outside.Add("asl.a1.rally.self-rally-with-leader-present");
             }
@@ -234,12 +242,6 @@ public static class ScenarioA1RallyCalculator
             undecided.Add("asl.a1.rally.fact-missing:unit.inexperienced");
         }
 
-        // A25.25: an NKVD MMC's Field Promotion may create a Commissar, which the review does not admit.
-        if (attempt.Leader is null && FieldPromotionAttempt(attempt) && ScenarioA1FireReference.IsNkvd(definition.Id))
-        {
-            undecided.Add("asl.a1.rally.field-promotion-commissar-unreviewed:" + definition.Id);
-        }
-
         // Fate must be able to Reduce the unit (A10.64, A7.302).
         if (definition.Kind == "asl:squad"
             && (ScenarioA1FireReference.HalfSquadOf(definition.Id) is not { } half || !reference.Definitions.ContainsKey(half)))
@@ -263,15 +265,19 @@ public static class ScenarioA1RallyCalculator
         var fieldPromotion = selfRally && definition.IsMmc && FieldPromotionAttempt(attempt);
         var kind = !selfRally ? "leader-rally" : fieldPromotion && SelfRally(definition) != true ? "field-promotion-self-rally" : "self-rally";
         var drm = new List<FireModifier>();
-        if (unit.DesperationMorale == true)
+        // A25.222 (ruling R15.6): a unit rallied by a Commissar is immune to DM for the attempt.
+        var byCommissar = attempt.Leader is { } director && director.UnitId == attempt.Commissar;
+        if (unit.DesperationMorale == true && !byCommissar)
         {
             drm.Add(new FireModifier("desperation-morale", 4m, "A10.62"));
         }
 
         if (attempt.Leader is { } leader)
         {
-            // A10.7, A10.72: the rallying leader's modifier, one worse when he is wounded (A17.3).
-            var leadership = reference.Definitions[leader.DefinitionId!].Leadership!.Value + (leader.Wounded == true ? 1 : 0);
+            // A10.7, A10.72: the rallying leader's modifier, one worse when he is wounded (A17.3), and one worse for Allied Troops of another
+            // nationality (A10.7; ruling R15.8).
+            var leaderDefinition = reference.Definitions[leader.DefinitionId!];
+            var leadership = leaderDefinition.Leadership!.Value + (leader.Wounded == true ? 1 : 0) + (leaderDefinition.Nationality != definition.Nationality ? 1 : 0);
             drm.Add(new FireModifier("leadership:" + leader.UnitId, leadership, "A10.7"));
         }
         else
@@ -287,15 +293,20 @@ public static class ScenarioA1RallyCalculator
 
         var original = dice[0] + dice[1];
         var final = original + (int)drm.Sum(item => item.Value);
-        // A17.3: one lower when wounded; A10.8: one higher when Fanatic.
+        // A17.3: one lower when wounded; A10.8: one higher when Fanatic; A25.221 (ruling R15.6): one higher with a Commissar in the Location, below 10.
         var morale = definition.BrokenMorale!.Value - (unit.Wounded == true ? 1 : 0) + (unit.Fanatic == true ? 1 : 0);
+        if (attempt.Commissar is not null && !ScenarioA1FireReference.IsCommissar(definition.Id) && morale < 10)
+        {
+            morale++;
+        }
         var fate = original == 12;
 
         // A18.11: an Original 2 on the first MMC Self-Rally rallies the unit and calls for a Leader Creation dr; A15.1: an
         // Original 2 on a Rally other than Self-Rally calls for a Heat of Battle DR.
         var rallied = !fate && (final <= morale || (fieldPromotion && original == 2));
         var heatOfBattle = original == 2 && !selfRally && ScenarioA1HeatOfBattle.Subject(definition, heroic: false);
-        var leaderCreation = original == 2 && fieldPromotion;
+        // A25.71 (backlog pass 15, ruling R15.13): the Finns create no leader.
+        var leaderCreation = original == 2 && fieldPromotion && ScenarioA1FieldPromotion.Applicable(definition.Nationality);
         var usedChoices = new HashSet<string>(StringComparer.Ordinal);
 
         // A18.11, ruling R5.8: the rallying side may decline the Leader Creation dr.
@@ -494,6 +505,30 @@ public static class ScenarioA1RallyCalculator
             return new RallyResolution(RallyResolution.Abstained, ["asl.a1.rally.extra-roll:berserkCheck"], null, null);
         }
 
+
+        // A25.222 (ruling R15.6): a unit that fails to rally under a Commissar is Replaced by its next lower quality; a squad already the lowest is
+        // Casualty Reduced; a HS, crew, or SMC that cannot be Replaced is eliminated.
+        var replacedByCommissar = false;
+        if (!fate && !rallied && !disrupted && byCommissar)
+        {
+            replacedByCommissar = true;
+            if (ScenarioA1FireReference.ReplacementOf(definition.Id) is { } lesser && reference.Definitions.ContainsKey(lesser))
+            {
+                finalDefinition = lesser;
+                events.Add("replaced-commissar");
+            }
+            else if (definition.Kind == "asl:squad" && ScenarioA1FireReference.HalfSquadOf(definition.Id) is { } reduced)
+            {
+                finalDefinition = reduced;
+                events.Add("casualty-reduced-commissar");
+            }
+            else
+            {
+                eliminated = true;
+                events.Add("eliminated-commissar");
+            }
+        }
+
         // A18.11, A18.2: the Leader Creation dr and its drm; the broken unit's Morale Level is its broken one.
         LeaderCreationOutcome? creation = null;
         if (leaderCreation)
@@ -503,7 +538,8 @@ public static class ScenarioA1RallyCalculator
                 return new RallyResolution(RallyResolution.Indeterminate, ["asl.a1.rally.roll-missing:leaderCreation"], null, null);
             }
 
-            var created = ScenarioA1FieldPromotion.Create(definition, morale, dr, [new FireModifier("broken", 1m, "A18.11")], reference.Definitions, "asl.a1.rally");
+            var created = ScenarioA1FieldPromotion.Create(definition, morale, dr, [new FireModifier("broken", 1m, "A18.11")], reference.Definitions, "asl.a1.rally",
+                unit.Fanatic == true);
             if (created.Undecided is { } reason)
             {
                 return new RallyResolution(RallyResolution.Indeterminate, [reason], null, null);
@@ -554,6 +590,7 @@ public static class ScenarioA1RallyCalculator
                 Berserk = berserk ? true : null,
                 Disrupted = disrupted ? true : null,
                 BerserkCompanions = berserkCompanions,
+                ReplacedByCommissar = replacedByCommissar && !eliminated ? true : null,
             });
     }
 }
