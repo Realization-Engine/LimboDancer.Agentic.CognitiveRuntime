@@ -85,7 +85,7 @@ public sealed partial class GamePlanner
 
     /// <summary>
     /// Deployment (A1.31; ruling R13.4): in its RPh a Good Order squad with a Good Order leader of its nationality in its Location takes a NTC modified
-    /// by his leadership (Guards need no leader and no NTC); passed, it becomes two HS, the first keeping its SW unless some are named for the second.
+    /// by his leadership (Guards need no leader and take it unmodified); passed, it becomes two HS, the first keeping its SW unless some are named for the second.
     /// </summary>
     private GamePlan PlanDeploy(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label, string actor)
     {
@@ -107,6 +107,11 @@ public sealed partial class GamePlanner
         if (state.Unit(squadId) is not { } squad || !vocabulary.IsA(squad.Kind, "asl:squad") || !GoodOrder(squad) || state.Location(squad.Id)?.Location is not { } at)
         {
             return Refused(scope, label, expected, $"play.deploy-unit: '{squadId}' is not a Good Order squad on the map (A1.31)");
+        }
+
+        if (squad.Side != state.PhasingSide)
+        {
+            return Refused(scope, label, expected, $"play.deploy-phase: {squad.Id} Deploys in its own side's RPh (A1.31)");
         }
 
         if (RallyPhaseActionBar(state, squad.Id) is { } squadBar)
@@ -328,11 +333,11 @@ public sealed partial class GamePlanner
         var broken = Is(unit, Conditions.Broken);
         var when = state.Phase switch
         {
-            "mph" when !broken && unit.Side == state.PhasingSide && unit is { MfSpent: 0, HalfMfSpent: false, MovementEnded: false } => null,
+            "mph" when !broken && unit.Side == state.PhasingSide && !unit.MovementEnded => null,
             "aph" when !broken && unit.Side == state.PhasingSide && state.Advances.All(item => item.Unit != unit.Id) => null,
             "ccph" when !broken && state.CloseCombats.Count == 0 => null,
-            "rtph" when broken && !state.RoutedThisPhase.Contains(unit.Id) && Laden(state, unit) => null,
-            _ => "play.drop-phase: an unbroken unit drops a SW in its MPh before it moves, its APh before it advances, or at the start of the CCPh; a broken unit, before it routs, the SW beyond its IPC (A4.43, A10.4; ruling R13.5)",
+            "rtph" when broken && !state.RoutedThisPhase.Contains(unit.Id) && Laden(state, unit) && KeepsBestLoad(state, unit, weapon.Id) => null,
+            _ => "play.drop-phase: an unbroken unit drops a SW in its MPh during its move, its APh before it advances, or at the start of the CCPh; a broken unit, before it routs, the SW beyond its IPC (A4.43, A10.4; ruling R13.5)",
         };
         if (when is not null)
         {
@@ -344,6 +349,25 @@ public sealed partial class GamePlanner
             Event(scope, attemptId, 1, expected, "equipment-transferred", new EquipmentTransferred(weapon.Id, null, new MapPosition(at)), ScenarioA1FirePackage.Identity.ToString(), null),
         };
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [$"play.drop: {unit.Id} drops {weapon.Id} in {at} (A4.43)"]);
+    }
+
+    /// <summary>
+    /// Whether dropping a SW leaves a broken unit on the way to the most PP it can carry within its IPC (A10.4): some best load leaves that SW out.
+    /// </summary>
+    private bool KeepsBestLoad(GameState state, UnitInstance unit, string weaponId)
+    {
+        var held = Held(state, unit.Id);
+        if (Portage(state, unit) is not { } carried || carried.Length != held.Length || held.Length > 10)
+        {
+            return true;
+        }
+
+        var ipc = vocabulary.IsA(unit.Kind, "asl:smc") ? (Is(unit, Conditions.Wounded) ? 0 : 1) : 3;
+        var loads = Enumerable.Range(0, 1 << held.Length).Select(mask => (Mask: mask, Pp: Enumerable.Range(0, held.Length).Where(index => (mask & (1 << index)) != 0).Sum(index => carried[index])))
+            .Where(load => load.Pp <= ipc).ToArray();
+        var best = loads.Max(load => load.Pp);
+        var index = Array.FindIndex(held, item => item.Id == weaponId);
+        return loads.Any(load => load.Pp == best && (load.Mask & (1 << index)) == 0);
     }
 
     /// <summary>
@@ -371,9 +395,10 @@ public sealed partial class GamePlanner
         string? phaseBar = state.Phase switch
         {
             "rph" => RallyPhaseActionBar(state, unit.Id) is { } bar ? $"play.rph-action: {bar} (A4.44)" : null,
-            "mph" => unit.Side != state.PhasingSide || unit.HalfMfSpent || unit.MovementEnded
-                || unit.MfSpent != state.RecoveryAttempts.Count(key => key.StartsWith(unit.Id + "|", StringComparison.Ordinal))
-                ? "play.recover-phase: in the MPh a unit Recovers a SW before it moves (A4.44; ruling R13.5)" : null,
+            "mph" => unit.Side != state.PhasingSide || unit.MovementEnded
+                ? "play.recover-phase: in the MPh a unit Recovers a SW during its own move (A4.44; ruling R13.5)"
+                : MfAllotment(state, unit, unit.DoubleTimeMf, Is(unit, Conditions.Cx)) is { } allotment && 2 * unit.MfSpent + (unit.HalfMfSpent ? 1 : 0) + 2 > 2 * allotment
+                    ? $"play.recover-mf: {unit.Id} has no MF left for a Recovery attempt (A4.44)" : null,
             _ => "play.recover-phase: a SW is Recovered in the RPh or the MPh (A4.44)",
         };
         if (phaseBar is not null)

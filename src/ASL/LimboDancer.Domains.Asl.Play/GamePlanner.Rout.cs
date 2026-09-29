@@ -76,7 +76,7 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>
-    /// A Known enemy unit not in Melee in whose LOS and Normal Range a Location in Open Ground lies, with no Hindrance between (A10.5, A10.531), or null.
+    /// A Known unbroken enemy unit not in Melee in whose LOS and Normal Range a Location in Open Ground lies, with no Hindrance between (A10.5, A10.531), or null.
     /// </summary>
     private string? ExposedInOpenGround(GameState state, string side, BoardLocation at)
     {
@@ -85,7 +85,9 @@ public sealed partial class GamePlanner
             return null;
         }
 
-        foreach (var (enemy, there) in KnownEnemies(state, side).Where(item => !Is(item.Unit, Conditions.Melee)).OrderBy(item => item.Unit.Id, StringComparer.Ordinal))
+        // A10.531 (table player, pass 13): only an enemy unit that could fire applies FFMO, so broken ones do not count.
+        foreach (var (enemy, there) in KnownEnemies(state, side).Where(item => !Is(item.Unit, Conditions.Melee) && !Is(item.Unit, Conditions.Broken))
+            .OrderBy(item => item.Unit.Id, StringComparer.Ordinal))
         {
             if (NormalRange(state, enemy) is > 0 and var range && Los(state, there, at) is { Status: LosStatus.Clear, Hindrance: 0 } los && los.Range <= range)
             {
@@ -187,6 +189,9 @@ public sealed partial class GamePlanner
         string[] Seen(long mask) => [.. enemies.Where((_, index) => index < 63 && (mask & (1L << index)) != 0)];
 
         var encircled = state.Encircled(unit);
+        var bars = new Dictionary<(BoardLocation, BoardLocation, long), bool>();
+        var interdicted = new Dictionary<BoardLocation, bool>();
+        var entries = new Dictionary<(BoardLocation, BoardLocation, bool), (int? HalfMf, bool AllMf, string? Reason)>();
         var best = new Dictionary<(BoardLocation, long), int>();
         var reach = new Dictionary<BoardLocation, int> { [start] = spent };
         var queue = new PriorityQueue<(BoardLocation At, long Mask), int>();
@@ -202,17 +207,29 @@ public sealed partial class GamePlanner
 
             foreach (var next in Neighbors(state, node.At))
             {
-                if (RoutStepBar(state, unit.Side, node.At, next, Seen(node.Mask)) is not null)
+                // Each LOS read is costly on a real board, so the search keeps what it has read.
+                if (!bars.TryGetValue((node.At, next, node.Mask), out var barred))
+                {
+                    bars[(node.At, next, node.Mask)] = barred = RoutStepBar(state, unit.Side, node.At, next, Seen(node.Mask)) is not null;
+                }
+
+                if (barred)
                 {
                     continue;
                 }
 
-                if (avoidInterdiction && Interdictor(state, unit.Side, next) is not null)
+                if (avoidInterdiction && (interdicted.TryGetValue(next, out var open) ? open : interdicted[next] = Interdictor(state, unit.Side, next) is not null))
                 {
                     continue;
                 }
 
-                var (halfMf, allMf, _) = RoutEntry(state, node.At, next, encircled && cost == spent && node.At == start);
+                var firstStep = encircled && cost == spent && node.At == start;
+                if (!entries.TryGetValue((node.At, next, firstStep), out var entry))
+                {
+                    entries[(node.At, next, firstStep)] = entry = RoutEntry(state, node.At, next, firstStep);
+                }
+
+                var (halfMf, allMf, _) = entry;
                 int step;
                 if (allMf)
                 {
@@ -322,9 +339,14 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.rout-unit: '{unitId}' is not a broken unit on the map outside Melee (A10.5)");
         }
 
-        if (state.RoutedThisPhase.Contains(unit.Id) || Is(unit, Conditions.Pinned))
+        if (state.RoutedThisPhase.Contains(unit.Id))
         {
-            return Refused(scope, label, expected, $"play.rout-unit: {unit.Id} has routed this RtPh, or is pinned, and routs no further (A10.5, A10.53)");
+            return Refused(scope, label, expected, $"play.rout-unit: {unit.Id} has routed this RtPh (A10.5)");
+        }
+
+        if (Is(unit, Conditions.Pinned))
+        {
+            return Refused(scope, label, expected, $"play.rout-unit: {unit.Id} is pinned and routs no further this RtPh (A10.53)");
         }
 
         if (!MayRout(state, unit))
@@ -347,10 +369,10 @@ public sealed partial class GamePlanner
 
         // A20.21: a unit ADJACENT to its captors that is Disrupted, Encircled, or can get away only by Interdiction or Low Crawl surrenders instead.
         if (!Is(unit, Conditions.Fanatic) && !state.NoQuarter.Contains(unit.Side, StringComparer.Ordinal) && Captors(state, unit) is { Count: > 0 } captors
-            && (Is(unit, Conditions.Disrupted) || state.Encircled(unit) || TrappedByInterdiction(state, unit, start)))
+            && (Is(unit, Conditions.Disrupted) ? "is Disrupted" : state.Encircled(unit) ? "is Encircled"
+                : TrappedByInterdiction(state, unit, start) ? $"can get away from {string.Join(" or ", captors)} only by Interdiction or Low Crawl" : null) is { } cause)
         {
-            return Refused(scope, label, expected,
-                $"play.rout-surrender: {unit.Id} can get away from {string.Join(" or ", captors)} only by Interdiction or Low Crawl, or is Disrupted or Encircled, so it surrenders as the RtPh ends instead of routing (A20.21)");
+            return Refused(scope, label, expected, $"play.rout-surrender: {unit.Id} {cause}, so it surrenders to {string.Join(" or ", captors)} as the RtPh ends instead of routing (A20.21)");
         }
 
         if (Laden(state, unit))
@@ -475,7 +497,7 @@ public sealed partial class GamePlanner
                 AddAdjacentDm(scope, attemptId, expected, after, events);
 
                 // A10.53: Interdiction as it enters an Open Ground hex without Low Crawl, once per hex.
-                if (lowCrawl || route.IndexOf(to) != index || Interdictor(after, routing.Side, to) is null)
+                if (lowCrawl || route.IndexOf(to) != index || Interdictor(after, routing.Side, to) is not { } interdictor)
                 {
                     continue;
                 }
@@ -490,7 +512,7 @@ public sealed partial class GamePlanner
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled",
                     new DiceRolled(rollId, "interdiction", 2, 6, drawn.Values, DiceRolled.SystemSource, actor), package, null));
                 var record = EventId(attemptId, events.Count + 1);
-                events.Add(Event(scope, attemptId, events.Count + 1, expected, "rout-interdicted", new RoutInterdicted(routing.Id, to, rollId, morale, 0, result), package, null));
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "rout-interdicted", new RoutInterdicted(routing.Id, to, rollId, morale, 0, result) { Interdictor = interdictor }, package, null));
                 if (result == RoutInterdicted.Passed)
                 {
                     continue;
@@ -520,8 +542,12 @@ public sealed partial class GamePlanner
         }
 
         var steps = string.Join(", ", route.Select((step, index) => $"{step} ({(costs[index] / 2.0).ToString("0.#", CultureInfo.InvariantCulture)} MF)"));
-        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
-            [$"play.rout: {unit.Id} routs{(lowCrawl ? " by Low Crawl" : "")} to {steps}; entering Open Ground in the LOS of an unbroken Known enemy unit is Interdicted (A10.5, A10.53)"])
+        string[] threatened = lowCrawl ? [] : [.. route.Distinct().Select(step => (step, By: Interdictor(state, unit.Side, step))).Where(item => item.By is not null)
+            .Select(item => $"{item.step} by {item.By}")];
+        var interdiction = lowCrawl ? "Low Crawl is never Interdicted (A10.52)"
+            : threatened.Length == 0 ? "no step enters Open Ground an enemy unit could Interdict (A10.53)"
+            : $"Interdicted as it enters {string.Join(", ", threatened)}, a NMC each (A10.53)";
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], [$"play.rout: {unit.Id} routs{(lowCrawl ? " by Low Crawl" : "")} to {steps}; {interdiction}"])
         {
             Roll = new PlannedRoll("rout", Build),
             FirstEventId = EventId(attemptId, 1),
@@ -626,6 +652,26 @@ public sealed partial class GamePlanner
 
         return [.. gaining];
     }
+
+    /// <summary>
+    /// What a player needs before routing a broken unit (A10.5, A10.51; table player, pass 13): the woods or building Locations it must reach, and
+    /// whether it has any legal step.
+    /// </summary>
+    public (IReadOnlyList<BoardLocation> Targets, bool CanRout) RoutAdvice(GameState state, UnitInstance unit)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(unit);
+        if (state.Location(unit.Id)?.Location is not { } at)
+        {
+            return ([], false);
+        }
+
+        var reach = RoutReach(state, unit, at, SeenBy(state, unit.Side, at), 0, RoutHalfMf(unit));
+        return (RoutTargets(state, unit, at, reach), reach.Count > 1);
+    }
+
+    /// <summary>Whether a unit may keep its DM as the RPh ends (A10.62; ruling R13.1).</summary>
+    public bool MayRetainDm(GameState state, string id) => RetainDmBar(state, id) is null;
 
     /// <summary>Why a unit may not keep its DM as the RPh ends (A10.62; ruling R13.1), or null: it is a broken unit under DM, not in woods or a building.</summary>
     private string? RetainDmBar(GameState state, string id) =>

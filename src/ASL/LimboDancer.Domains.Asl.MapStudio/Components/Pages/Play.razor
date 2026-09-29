@@ -273,7 +273,7 @@ else if (state is not null)
                 && Live.Planner.MayRout(state, unit)).OrderBy(unit => unit.Id, StringComparer.Ordinal))
             {
                 <li class="rout-obligation" data-unit="@unit.Id">
-                    @unit.Id (@unit.Side): @(Live.Planner.MustRout(state, unit) is { } why ? $"must rout: {why}" : "may rout: it is under DM")@(state.RoutedThisPhase.Contains(unit.Id) ? "; has routed" : "")
+                    @unit.Id (@unit.Side): @(Live.Planner.MustRout(state, unit) is { } why ? $"must rout: {why}" : "may rout: it is under DM")@(state.RoutedThisPhase.Contains(unit.Id) ? "; has routed" : RoutAdviceText(unit))
                 </li>
             }
         </ul>
@@ -387,7 +387,7 @@ else if (state is not null)
         </div>
         <p class="muted" id="deploy-help">
             A Good Order squad with a Good Order leader of its nationality in its Location Deploys into two HS on a NTC modified by his leadership (Guards
-            need no leader); two Good Order HS of one kind Recombine with such a leader. Either is the units' and the leader's sole RPh action (A1.31, A1.32).
+            need no leader and take it unmodified); two Good Order HS of one kind Recombine with such a leader. Either is the units' and the leader's sole RPh action (A1.31, A1.32).
         </p>
         <div class="toolbar">
             <label>
@@ -456,11 +456,13 @@ else if (state is not null)
             </label>
             <button id="propose-recombine" disabled="@(recombineOne.Length == 0 || recombineTwo.Length == 0)" @onclick="ProposeRecombine">Propose: recombine</button>
         </div>
-        @if (state.Units.Any(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.DesperationMorale) == ConditionState.True))
+        @if (state.Units.Any(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.DesperationMorale) == ConditionState.True
+            && Live.Planner.MayRetainDm(state, unit.Id)))
         {
             <div class="toolbar" id="retain-dm">
                 <span>Keep DM as the RPh ends, outside woods and buildings (A10.62):</span>
-                @foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.DesperationMorale) == ConditionState.True))
+                @foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.DesperationMorale) == ConditionState.True
+                    && Live.Planner.MayRetainDm(state, unit.Id)))
                 {
                     <label><input class="retain-dm" type="checkbox" data-unit="@unit.Id" checked="@retainDm.Contains(unit.Id)" @onchange="@(args => Toggle(retainDm, unit.Id, args.Value is true))" /> @unit.Id</label>
                 }
@@ -2990,7 +2992,21 @@ else if (state is not null)
                 {
                     var dr = rolls.TryGetValue(interdicted.Roll, out var roll) ? roll.Values.Sum().ToString(CultureInfo.InvariantCulture) : "?";
                     records.Add((item.EventId, "interdiction",
-                        $"Interdiction of {interdicted.Unit} entering {interdicted.At}: NMC DR {dr} against broken morale {interdicted.Morale}: {interdicted.Result} (A10.53)"));
+                        $"Interdiction of {interdicted.Unit} entering {interdicted.At}{(interdicted.Interdictor is { } by ? $" by {by}" : "")}: NMC DR {dr} against broken morale {interdicted.Morale}: {interdicted.Result} (A10.53)"));
+                }
+                else if (item.Payload is LineageRecorded { Action: LineageAction.Deployed or LineageAction.Recombined } lineage)
+                {
+                    records.Add((item.EventId, "lineage", lineage.Action == LineageAction.Deployed
+                        ? $"{lineage.Consumed[0]} becomes the HS {string.Join(" and ", lineage.Produced.Select(unit => unit.Id))} (A1.31)"
+                        : $"{string.Join(" and ", lineage.Consumed)} Recombine into {lineage.Produced[0].Id} (A1.32)"));
+                }
+                else if (item.Payload is ConditionsChanged dismantled && dismantled.Conditions.TryGetValue(Conditions.Dismantled, out var taken))
+                {
+                    records.Add((item.EventId, "dismantle", $"{dismantled.Id} is {(taken == ConditionState.True ? "dismantled" : "assembled")} (A9.8)"));
+                }
+                else if (item.Payload is EquipmentTransferred { Holding: null, Position: MapPosition left } dropped)
+                {
+                    records.Add((item.EventId, "drop", $"{dropped.Id} is left in {left.Location} (A4.43)"));
                 }
                 else if (item.Payload is DeploymentAttempted deployment)
                 {
@@ -3001,7 +3017,7 @@ else if (state is not null)
                 else if (item.Payload is RecoveryAttempted recovery)
                 {
                     var dr = rolls.TryGetValue(recovery.Roll, out var roll) ? roll.Values[0].ToString(CultureInfo.InvariantCulture) : "?";
-                    records.Add((item.EventId, "recovery", $"{recovery.Unit} tries to Recover {recovery.Weapon}: dr {dr} {recovery.Drm:+0;-0;+0} against 6: "
+                    records.Add((item.EventId, "recovery", $"{recovery.Unit} tries to Recover {recovery.Weapon}: dr {dr} {recovery.Drm:+0;-0;+0}, needing below 6: "
                         + $"{(recovery.Recovered ? "recovered" : "not recovered")} (A4.44)"));
                 }
                 else if (item.Payload is RepairAttempted repair)
@@ -3507,6 +3523,18 @@ else if (state is not null)
         }
 
         return Propose(GameActions.AdvancePhase, JsonSerializer.SerializeToElement(arguments));
+    }
+
+    /// <summary>
+    /// The destination a broken unit must reach, or that it has no legal step and so fails to rout or surrenders as the RtPh ends (A10.5, A10.51,
+    /// A20.21; table player, pass 13).
+    /// </summary>
+    private string RoutAdviceText(UnitInstance unit)
+    {
+        var (targets, canRout) = Live.Planner.RoutAdvice(state!, unit);
+        return !canRout ? "; no legal rout step: it is eliminated for Failure to Rout, or surrenders, as the RtPh ends if it must rout"
+            : targets.Count > 0 ? $"; must reach {string.Join(" or ", targets)}"
+            : "; no woods or building within reach: any legal route";
     }
 
     /// <summary>A route typed as hexes, each on the routing unit's board (A10.5).</summary>

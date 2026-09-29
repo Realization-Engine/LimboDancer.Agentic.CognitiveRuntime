@@ -82,11 +82,19 @@ public sealed partial class GamePlanner
         }
         else
         {
-            map = state.Map.Boards is [{ } placed] && boards.TryGetBoard(placed.Board, placed.Version).Board is { } handle ? LosMap.ForBoard(handle).Map : null;
+            map = state.Map.Boards is [{ } placed] && boards.TryGetBoard(placed.Board, placed.Version).Board is { } handle
+                ? BoardLosMaps.GetValue(handle, board => new LosMapHolder(LosMap.ForBoard(board).Map)).Map : null;
         }
 
-        return map is null ? null : LosCalculator.Check(map, from, to);
+        // Backlog pass 13: a rout's search reads the same LOS many times; the terrain alone decides it, so each map keeps its reads.
+        return map is null ? null : LosReads.GetOrCreateValue(map).GetOrAdd((from, to), key => LosCalculator.Check(map, key.From, key.To));
     }
+
+    private sealed record LosMapHolder(LosMap? Map);
+
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<BoardHandle, LosMapHolder> BoardLosMaps = new();
+
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<LosMap, System.Collections.Concurrent.ConcurrentDictionary<(BoardLocation From, BoardLocation To), LosResult>> LosReads = new();
 
     /// <summary>
     /// The LOS from a Location to both ends of a hexside (A8.15; ruling R10.13): to its first vertex and to its second; nulls when the map has no

@@ -384,7 +384,8 @@ public sealed class BacklogPass13Tests : IDisposable
             leader = "gl2"
         }), "play.rph-action");
 
-        // Guards need no leader, and take the NTC unmodified: 4+4 = 8 against their morale 8 (A1.31).
+        // In the Russian RPh, Guards need no leader, and take the NTC unmodified: 4+4 = 8 against their morale 8 (A1.31).
+        await Advance(8);
         Committed(await Do(GameActions.Deploy, Once(4, 4), new
         {
             squadId = "r1"
@@ -495,5 +496,97 @@ public sealed class BacklogPass13Tests : IDisposable
         }));
         Assert.True(Is(Current.Find("gm")!, Conditions.Malfunctioned));
         Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
+    public async Task ALeaderWhoDirectedADeploymentRalliesNoOneAndTheDefenderDoesNotDeploy()
+    {
+        await SetupAt(0, "german", Unit("g1", "attacker-squad", "C3", "german"), Unit("gl", "attacker-leader-8-1", "C3", "german"),
+            Unit("g3", "attacker-squad", "C3", "german", "asl:broken"), Unit("r1", "defender-squad", "H3", "russian"), Unit("rl", "defender-leader-8-1", "H3", "russian"));
+
+        // A1.31 (table player, pass 13): regardless of the outcome, the directing leader takes no other RPh action; a squad Deploys in its own RPh.
+        Committed(await Do(GameActions.Deploy, Once(6, 6), new
+        {
+            squadId = "g1",
+            leader = "gl"
+        }));
+        Refused(await Do(GameActions.Rally, Once(2, 2), new
+        {
+            unitId = "g3",
+            leader = "gl"
+        }), "play.rph-action");
+        Refused(await Do(GameActions.Deploy, Once(2, 2), new
+        {
+            squadId = "r1",
+            leader = "rl"
+        }), "play.deploy-phase");
+    }
+
+    [Fact]
+    public async Task AUnitDropsAndRecoversASwDuringItsMove()
+    {
+        await SetupAt(2, "german", Unit("g1", "attacker-squad", "C3", "german"), Mg("gm", "attacker-lmg", "g1", "german"), Unit("g2", "attacker-squad", "C4", "german"));
+
+        // A4.4, A4.44 (table player, pass 13): g1 moves, drops its LMG, and g2, having moved in, Recovers it for one more MF.
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G1,
+            to = L("C4")
+        }));
+        Committed(await Do(GameActions.Drop, NoRoll(), new
+        {
+            unitId = "g1",
+            equipmentId = "gm"
+        }));
+        Committed(await Do(GameActions.Recover, Once(2), new
+        {
+            unitId = "g2",
+            equipmentId = "gm"
+        }));
+        Assert.Equal("g2", ((EquipmentInstance)Current.Find("gm")!).Holding!.Holder);
+    }
+
+    [Fact]
+    public async Task ABrokenEnemyDoesNotMakeALocationOpenGround()
+    {
+        // A10.531 (table player, pass 13): only an enemy unit that could fire applies FFMO, so r1, seen only by the broken g1, need not rout.
+        await SetupAt(5, "german", Unit("g1", "attacker-squad", "E2", "german", "asl:broken"), Unit("r1", "defender-squad", "E5", "russian", "asl:broken"));
+        Assert.False(Is(Current.Unit("r1")!, Conditions.DesperationMorale));
+        Refused(await Rout("r1", ["E6"]), "play.rout-not-allowed");
+    }
+
+    [Fact]
+    public async Task DismantlingInThePfphIsAUseOfTheSwSoTheSquadDoesNotMove()
+    {
+        await SetupAt(1, "german", Unit("g1", "attacker-squad", "C3", "german"), Mg("gm", "attacker-mmg", "g1", "german"));
+        Committed(await Do(GameActions.Dismantle, NoRoll(), new
+        {
+            unitId = "g1",
+            equipmentId = "gm"
+        }));
+        await Advance();
+        Refused(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G1,
+            to = L("C4")
+        }), "play.");
+    }
+
+    [Fact]
+    public async Task ABrokenUnitDropsOnlyWhatItCannotCarry()
+    {
+        // A10.4 (table player, pass 13): r1 carries a LMG (1 PP) and a MMG (4 PP) with IPC 3; it keeps the LMG, so only the MMG is dropped.
+        await SetupAt(5, "german", Unit("g1", "attacker-squad", "E2", "german"), Unit("r1", "defender-squad", "E5", "russian", "asl:broken"),
+            Mg("rl", "defender-lmg", "r1", "russian"), Mg("rm", "defender-mmg", "r1", "russian"));
+        Refused(await Do(GameActions.Drop, NoRoll(), new
+        {
+            unitId = "r1",
+            equipmentId = "rl"
+        }), "play.drop-phase");
+        Committed(await Do(GameActions.Drop, NoRoll(), new
+        {
+            unitId = "r1",
+            equipmentId = "rm"
+        }));
     }
 }

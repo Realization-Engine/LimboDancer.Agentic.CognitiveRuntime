@@ -525,6 +525,10 @@ public static class GameEventWriter
                 writer.WriteNumber("morale", interdicted.Morale);
                 writer.WriteNumber("drm", interdicted.Drm);
                 writer.WriteString("result", interdicted.Result);
+                if (interdicted.Interdictor is { } interdictor)
+                {
+                    writer.WriteString("interdictor", interdictor);
+                }
                 break;
             case DeploymentAttempted deployment:
                 writer.WriteString("squad", deployment.Squad);

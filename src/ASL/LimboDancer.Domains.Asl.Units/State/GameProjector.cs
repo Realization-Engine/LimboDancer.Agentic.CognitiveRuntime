@@ -2798,6 +2798,15 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-020", $"'{item.Id}' was not selected for the reveal of the attempt '{selected.EventId}'.");
             }
 
+            // A9.8 (table player, pass 13): dismantling or assembling a MG in the PFPh is its possessor's use of a SW, so it does not move in the MPh.
+            if (item is EquipmentInstance { Holding: { Role: HoldingRole.Possessed } dismantler } && state.Phase == "pfph" && change.Conditions.ContainsKey(Conditions.Dismantled))
+            {
+                state = state with
+                {
+                    SupportWeaponUses = [.. state.SupportWeaponUses, new SupportWeaponUse(dismantler.Holder, item.Id)]
+                };
+            }
+
             return item switch
             {
                 UnitInstance unit => Replace(state, unit with { Conditions = merged }),

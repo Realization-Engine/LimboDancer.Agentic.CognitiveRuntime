@@ -512,7 +512,10 @@ public static class GameEventReader
                 var interdictedResult = fields.RequiredString(payload, "result", path);
                 return interdictedUnit is null || interdictedAt is null || interdictedRoll is null || interdictedMorale is null || interdictedDrm is null || interdictedResult is null
                     ? Missing(diagnostics, "An Interdiction names its unit, Location, roll, Morale Level, DRM, and result.", path)
-                    : new RoutInterdicted(interdictedUnit, interdictedAt, interdictedRoll, interdictedMorale.Value, interdictedDrm.Value, interdictedResult);
+                    : new RoutInterdicted(interdictedUnit, interdictedAt, interdictedRoll, interdictedMorale.Value, interdictedDrm.Value, interdictedResult)
+                    {
+                        Interdictor = fields.OptionalString(payload, "interdictor", path),
+                    };
             case "deployment-attempted":
                 var deploySquad = fields.RequiredString(payload, "squad", path);
                 var deployRoll = fields.RequiredString(payload, "roll", path);

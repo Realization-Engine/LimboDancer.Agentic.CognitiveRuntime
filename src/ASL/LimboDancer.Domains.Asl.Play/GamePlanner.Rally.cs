@@ -30,6 +30,10 @@ public sealed partial class GamePlanner
         }
 
         string? leaderId = Text(arguments, "leader", out var named) ? named : null;
+        if (leaderId is not null && state.RallyPhaseActions.Contains(leaderId))
+        {
+            return Refused(scope, label, expected, $"play.rph-action: {leaderId} directed a Deployment or permitted a Recombination this RPh, his sole RPh action (A1.31, A1.32)");
+        }
         if (state.Unit(unitId) is not { } unit || state.Location(unit.Id)?.Location is not { } at || ReadLocation(state, at) is not { } read)
         {
             return Refused(scope, label, expected, $"play.rally-unit: '{unitId}' is not a unit on a Location the map reads");

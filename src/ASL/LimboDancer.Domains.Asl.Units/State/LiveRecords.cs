@@ -273,6 +273,12 @@ public sealed record RoutInterdicted(string Unit, BoardLocation At, string Roll,
     public const string Reduced = "reduced";
     public const string Eliminated = "eliminated";
 
+    /// <summary>The unit that Interdicts (A10.532); null in a record that does not name it.</summary>
+    public string? Interdictor
+    {
+        get; init;
+    }
+
     /// <summary>The result of an Interdiction NMC (A10.53, A10.31): an Original 12 eliminates, a Final DR above the Morale Level reduces, equal pins.</summary>
     public static string For(int original, int final, int morale) =>
         original == 12 ? Eliminated : final > morale ? Reduced : final == morale ? Pinned : Passed;

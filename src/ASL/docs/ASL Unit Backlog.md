@@ -37,17 +37,11 @@ Berserk and Surrender from Heat of Battle (R0.2, R19.2, R22.5, R28.1) left this 
 
 | Item | Deferred by | Rules | Depends on |
 |---|---|---|---|
-| DM from an ADJACENT armed Known enemy | R19.1 | A10.62, p. 68; A.8, p. 43 | ADJACENT in the map read (step 20) |
-| DM at the start of the RtPh (Blaze, or Open Ground in LOS and Normal Range of a Known enemy) | R19.1 | A10.62, p. 68 | Routing |
-| DM retention when not in woods, a building, a pillbox, or a trench | R19.1 | A10.62, p. 68 | none |
-| Rally terrain other than woods and ordinary buildings (pillbox, trench, rooftop and chart exclusions) | R19.5 | A10.61, p. 68; B23.83, p. 140; B30.5, p. 151; B Terrain Chart, p. 160 | Those terrains on the map read |
+| Rally terrain in pillboxes, trenches, and on rooftops (marsh and rubble were built in pass 13) | R19.5 | A10.61, p. 68; B23.83, p. 140; B30.5, p. 151; B Terrain Chart, p. 160 | Those terrains on the map read |
 | Commissars | R19.10 | A25.22 to A25.223, p. 94 | Commissar definitions |
 | Allied Troops' leadership penalty | R19.10 | A10.7, p. 68 | Allied nationalities in a scenario |
 | Night (DM kept until a rally DR at most the printed morale) | R19.10 | E1.54, p. 224 | Night rules |
 | Extreme Winter Fate | R19.10 | E3.742, p. 231 | Weather |
-| Recovery of an unpossessed SW | R19.10, R23.4 | A4.44, p. 50 | SW transfer and possession (below) |
-| Deploy | R19.10 | A1.31, p. 45; A3.1, p. 47 | none |
-| Routing and the RtPh | R19.1 | A10.5 to A10.53, pp. 66 to 67 | Movement (step 22) |
 
 ## 3. Fire phases and fire groups (step 20)
 
@@ -67,10 +61,6 @@ The backlog pass 10 (2026-09-28) built this section; what it leaves out is in se
 
 | Item | Deferred by | Rules | Depends on |
 |---|---|---|---|
-| SW transfer and possession changes | R23.4 | A4.43, A4.431, p. 50 | none |
-| Recovery | R23.4 | A4.44, p. 50 | SW transfer |
-| Dismantling and assembly | R23.4 | A9.8, p. 65 | A dismantled state in the vocabulary |
-| Captured SW | R23.4 | A21.11, A21.12, p. 88 | Capture of equipment |
 | FT | R23.5 | A22.1 to A22.5, p. 89 | none |
 | DC | R23.5 | A23.1 to A23.7, p. 90 | MPh Placement and AFPh detonation |
 | MOL | R23.5 | A22.6, p. 89 | Russian MOL capability by date |
@@ -97,7 +87,6 @@ Step 17 left these out; steps 19 to 23 do not build them.
 
 | Item | Deferred by | Rules | Depends on |
 |---|---|---|---|
-| Self-Rally capability of the catalog counters | Rally review | A10.63, p. 68 | The broken sides of the counters, which the charts do not show |
 
 ## 9. Added by the steps 19 to 23 implementation
 
@@ -131,7 +120,6 @@ The backlog pass 10 (2026-09-28) built this section.
 | TI units in CC | R29.14 | A4.8, p. 52; the CCT, p. 692 | TI tasks |
 | Overstacked CC and overstacking advances | R29.14, R29.2 | A5.12, A5.131, p. 52 | Overstacking penalties |
 | Unarmed counters, the excess surrendering units freed as Unarmed, and a Guard without capacity | R30.7 | A20.5, A20.21, A20.51, p. 87 | Unarmed definitions in the catalog; until then a surrender to Guards with no capacity is refused |
-| Surrender in the RtPh, and a Disrupted unit's surrender next to or among Good Order enemy units | R30.1 | A20.21, pp. 86 and 87; A19.12, p. 86 | Routing |
 | Moving, transferring, or abandoning prisoners by choice; a prisoner's owner moving it once freed | R30.8 | A20.5, A20.53, p. 87 | Guard actions in the RPh and APh |
 | A berserk unit's choice of which 1PP SW to abandon beyond its IPC | R30.5 | A15.431, p. 84; A4.42, p. 50 | An owner's choice before the charge |
 | Italian, Axis Minor, and Japanese Heat of Battle exceptions | Pass 2 review | Heat of Battle table notes, p. 83 | Counters of those nationalities; until then they are refused |
@@ -253,7 +241,7 @@ Vehicle movement (Reverse, VBM, ESB, Minimum Move, Bog, OVR, stacking, and terra
 | The Labor counter after a failed push, more than one unit pushing, a CA change while pushing, carried PP, and the DEFENDER's fire at a failed push | R8.6 | C10.3, B24.8 | Labor, portage checks | One crew or HS pushes; a failed push ends its move. |
 | A vehicle's hook-up opening the DEFENDER's window, Passengers loading with a hook-up, en portee, and limbering | R8.6 | C10.11, C10.13, C10.2, C10.5 | Passengers (pass 11) | The hook-up is resolved at once; both catalog Guns are QSU. |
 | Case O for ordnance firing at a pushing crew | R8.6 | C10.3 | Ordnance To Hit Cases for Hazardous Movement | The gunshield is denied; Infantry fire takes Hazardous Movement's -2 since the backlog pass 10 (ruling R10.8), ordnance takes no Case O. |
-| Recovery of an unmanned Gun and captured Guns | R8.6, R8.8 | A4.44, A21.11, C5.8 | Recovery (pass 13) | An abandoned Gun can only be hooked up and unhooked for a crew. |
+| Recovery of an unmanned Gun and captured Guns | R8.6, R8.8 | A4.44, A21.11, C5.8 | Gun Recovery (SW Recovery was built in pass 13) | An abandoned Gun can only be hooked up and unhooked for a crew. |
 | A Target Facing change restarting the C6.17 count, and Case J1 or J2 after an AFV turns in view | R8.1 | C6.17 | Vehicle Target Facing history | The count runs per Location. |
 | A tank's MA Bore Sighting, a Bore Sighted Location kept secret until used, and a SW's Bore Sighting | R8.8 | C6.41, C6.44 | Hidden setup records | The Bore Sighting record is visible to the Scenario Defender only; tanks do not Bore Sight. |
 | Vehicles over the stacking limit, and A5.132's accidental hits | R8.10 | A5.12, A5.132 | Vehicle stacking (pass 11) | Only Personnel count. |
@@ -343,10 +331,31 @@ The backlog pass 12 (2026-09-28) built, and removed from sections 2, 3, 5, 8, 11
 | Other Hindrances on a Fire Lane (orchard, wrecks) as DRM | Referee, pass 12 | A9.222 | Hindrance types in the LOS read | No lane Hindrance applies as a DRM; any cancels FFMO. |
 | A concealed unit's TPBF into its own Melee Location | R12.8 | A11.15 | Concealment in CC (pass 14) | Refused. |
 | Encirclement at upper levels, from the Locations above and below, by ordnance, of Vulnerable PRC of an Immobile vehicle, by vehicular armament, and its capture effects | R12.11 | A7.7, A7.72, A20.21 | Those attacks and levels | Only Infantry fire at Normal Range counts; ground-level Personnel are Encircled. |
-| Encirclement's doubled MF in the RtPh | R12.11 | A7.7 | Routing (pass 13) | Applied to moves, advances, and withdrawals. |
 | The ordnance To Hit +1 for an Encircled Gun crew | R12.11 | A7.7 | The Ordnance package | Not applied. |
 | Spraying Fire's second Location, an Encirclement, or a Fire Lane after the first attack stops for an owner's choice (Battle Hardening, an Unlikely Kill dr) | Table player, pass 12 | A9.5, A7.7, A9.22 | Carrying the follow-on work in the choice's resume | They are not made; the choice resumes the first attack only. |
 | Fire Lane attacks on vehicles, and on units spending MF in a lane Location other than by entering it (SMOKE placement) | Table player, pass 12 | A9.222, A8.22, A8.222 | Lane attacks in the vehicle and in-Location planners | Only Infantry entering a lane Location are attacked. |
 | A Fire Lane's hard Hindrance (orchard) as a DRM, and SMOKE placed on the lane after it is laid | Table player, pass 12 | A9.222 | Hindrance types and SMOKE read at attack time | The Hindrance is read when the lane is placed, and any of it only cancels FFMO. |
 | The Fire Lanes and Encircled Locations drawn on the map | Table player, pass 12 | A9.22, A7.7 | Map overlays in the Play page | Listed above the Play page's panels. |
 
+## 23. Added by the backlog pass 13
+
+The backlog pass 13 (2026-09-28) built, and removed from sections 2, 3, 5, 8, 11, and 22: DM from an ADJACENT enemy, at the start of the RtPh, and its retention; the RtPh, Low Crawl, and Interdiction; Failure to Rout and surrender in the RtPh; Deployment and Recombining; SW transfer, drop, and Recovery; dismantling; captured MG and ATR; the rally terrain of marsh and rubble; the Self-Rally of the catalog's MMC; and Encirclement's doubled MF in the RtPh. What it leaves out follows.
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| Terrain Blazes: routing out of a Blaze, DM in one, Failure to Rout in one | R13.3; referee, pass 13 | B25.4, A10.5, A10.62 | Terrain fire (B25) | No Blaze is read; a Wreck Blaze only costs MF. |
+| DM from overstacking, and DM in pillboxes and trenches | R13.1 | A10.62 | Stacking limits, fortifications | Not applied. |
+| The A10.532 EXC for a hex of the building a unit starts in | Referee, pass 13 | A10.532 | Building identity in the map read | Such a hex is a destination like any other. |
+| A concealed unit revealing itself to Interdict or to repulse a routing unit | R13.3 | A10.533 | Concealment choices in the RtPh | Concealed units are ignored. |
+| Interdiction by vehicles, Guns, and ordnance, and their Normal Range for rout and DM | R13.3; referee, pass 13 | A10.532, A10.5 | Vehicle and Gun ranges | Only Infantry Interdict and threaten the open. |
+| The leadership DRM of a leader in the Location entered on an Interdiction NMC, and Interdictors whose FP is halved by other causes (Area Fire in marsh) | Referee, pass 13 | A10.53, A10.532, B16.32 | Per-unit FP state | DRM 0; only CX, pinned, Encircled, and Melee units are barred. |
+| Voluntary Rout and voluntary breaking at the start of the RtPh | R13.3 | A10.41, A10.711 | Player choices at phase start | Not offered. |
+| Night rout, and rout of Passengers and Riders | R13.3 | E1.54, D6.1 | Night and vehicle cargo | Not built. |
+| The DEFENDER's fire window for the MF a Recovery attempt spends in the MPh | Table player, pass 13 | A4.44, A8.1 | A window on non-move MF expenditures | The MF is spent with no window. |
+| The German dm MMG firing as a LMG, dismantled mortars, and weapons that start dismantled | R13.6 | A9.8, C9.2 | Their catalog values | Only the German MMG is dismantled and assembled. |
+| Captured ordnance, mortars, LATW, Guns, and vehicles | R13.7 | A21.13, A21.2 | Captured Gun and vehicle rules | Only captured MG and ATR take the penalties. |
+| The Rout panel's preview of the Failure to Rout eliminations and surrenders, and of the ATTACKER's undecided "may rout" units | Table player, pass 13 | A10.5 | A phase-end preview | Shown only as the phase ends. |
+| Records of DM gained, Failure to Rout eliminations, and SW transfers in the records list | Table player, pass 13 | A10.62, A10.5, A4.431 | Event labels for these | They show in the units table only. |
+| Short readable ids for HS and squads made by Deployment, Recombining, and Casualty Reduction | Table player, pass 13 | A1.31, A1.32 | An id scheme for produced units | Ids join the attempt and the parent id. |
+| The Deploy control splitting several SW between the two HS | Table player, pass 13 | A1.31 | A multi-select on the page | The page names one SW for the second HS; the action takes a list. |
+| A route builder with levels on the Play page | Table player, pass 13 | A10.5 | Map clicks on the Play page | Hexes are typed at level 0, or a full Location is typed. |
