@@ -233,6 +233,8 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             "asl.game.drop" => PlanDrop(scope, arguments, existing, attemptId, expected, label),
             "asl.game.recover" => PlanRecover(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.dismantle" => PlanDismantle(scope, arguments, existing, attemptId, expected, label),
+            "asl.game.ambush-withdraw" => PlanAmbushWithdrawal(scope, arguments, existing, attemptId, expected, label),
+            "asl.game.guard-prisoners" => PlanGuardPrisoners(scope, arguments, existing, attemptId, expected, label),
             _ => Refused(scope, label, expected, "play.unknown-action"),
         };
 

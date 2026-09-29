@@ -490,10 +490,9 @@ public sealed class CloseCombatStepsTests : IDisposable
     }
 
     [Fact]
-    public async Task AGuardMayNotAdvanceIntoCcWithItsPrisoners()
+    public async Task AGuardAdvancesIntoCcWithItsPrisoners()
     {
-        // Table-player review, item 3: A20.53, A20.55: the prisoners would enter CC with their Guard, which is not reviewed; a Guard
-        // may still advance where no enemy unit is.
+        // A20.53 (ruling R14.5, replacing R29.19): a Guard may advance into CC; its prisoners go with it and take no part in the CC.
         await Setup("russian", Unit("r4", "asl:squad", "defender-squad", "bd01:A1:0", "russian"), Unit("r5", "asl:squad", "defender-squad", "bd01:A1:0", "russian"),
             Unit("g2", "asl:squad", "attacker-squad", "bd01:A2:0", "german"), Unit("g3", "asl:squad", "attacker-squad", "bd01:B1:0", "german"));
         await Advance();
@@ -509,16 +508,13 @@ public sealed class CloseCombatStepsTests : IDisposable
         }));
         await Advance(5);
         Assert.Equal("aph", Current.Phase);
-        Assert.Contains((await Do(GameActions.Advance, NoRoll(), new
+        Committed(await Do(GameActions.Advance, NoRoll(), new
         {
             unitIds = R4,
             to = "bd01:B1:0"
-        })).Reasons, reason => reason.StartsWith("play.advance-guard", StringComparison.Ordinal));
-        Committed(await Do(GameActions.Advance, NoRoll(), new
-        {
-            unitIds = R5,
-            to = "bd01:B1:0"
         }));
+        Assert.Equal(BoardLocation.Parse("bd01:B1:0"), Current.Location("g2")!.Location);
+        Assert.Equal("r4", Current.Unit("g2")!.Custodian);
     }
 
     [Fact]
@@ -610,9 +606,9 @@ public sealed class CloseCombatStepsTests : IDisposable
     }
 
     [Fact]
-    public async Task ATiUnitRefusesCcAndPrisonersNoLongerBarARallyThatCouldGoBerserk()
+    public async Task ATiUnitTakesMinusOneInCcAndPrisonersNoLongerBarARallyThatCouldGoBerserk()
     {
-        // A4.8: CC with a TI unit is not reviewed (ruling R29.14).
+        // A4.8 (ruling R14.3, replacing R29.14): a CC attack against a TI unit takes -1.
         await Setup("german", Unit("g1", "asl:squad", "attacker-squad", "bd01:B1:0", "german"), Unit("r1", "asl:squad", "defender-squad", "bd01:B1:0", "russian", "asl:ti"),
             Unit("r2", "asl:squad", "defender-squad", "bd01:D4:0", "russian", "asl:broken"), Unit("rl", "asl:leader", "defender-leader", "bd01:D4:0", "russian"),
             Unit("g9", "asl:half-squad", "attacker-half-squad", "bd01:D4:0", "german", "asl:captured"));
@@ -626,18 +622,20 @@ public sealed class CloseCombatStepsTests : IDisposable
         }));
         await Advance(7);
         Assert.Equal("ccph", Current.Phase);
-        Assert.Contains((await Do(GameActions.CloseCombat, NoRoll(), new
+        Committed(await Do(GameActions.CloseCombat, Once(6, 6), new
         {
             location = "bd01:B1:0",
             attacks = new[] { Attack(G1, ["r1"]) },
-        })).Reasons, reason => reason.StartsWith("play.cc-ti", StringComparison.Ordinal));
+        }));
+        var record = store.Read(Scope)!.Events.Select(item => item.Payload).OfType<CloseCombatResolved>().Single();
+        Assert.Contains("vs-ti", record.Resolution.GetRawText(), StringComparison.Ordinal);
     }
 
     [Fact]
-    public async Task ASurrenderToAGuardWithNoCapacityLeftIsUndecided()
+    public async Task ASurrenderToAGuardWithNoCapacityLeftStillNamesItsCaptors()
     {
-        // A20.51: a leader (US# 1) guards at most five US#; with a squad already his prisoner, another squad (3) would exceed it, and the
-        // excess would be freed as Unarmed (A20.21), which is not built: the captors are unread and a Heat of Battle Surrender refused.
+        // A20.51, A20.21 (ruling R14.5): a leader (US# 1) guards at most five US#; with a squad already his prisoner, another squad (3) would exceed it,
+        // so the captor's side frees the unit as Unarmed; the captors are still read.
         await Setup("russian", Unit("rl", "asl:leader", "defender-leader", "bd01:A1:0", "russian"), Unit("g9", "asl:squad", "attacker-squad", "bd01:A1:0", "german"),
             Unit("g2", "asl:squad", "attacker-squad", "bd01:A2:0", "german"));
         var state = Current;
@@ -645,7 +643,7 @@ public sealed class CloseCombatStepsTests : IDisposable
         {
             Units = [.. state.Units.Select(unit => unit.Id == "g9" ? unit with { Custodian = "rl", Conditions = new Dictionary<string, ConditionState>(unit.Conditions) { [Conditions.Captured] = ConditionState.True } } : unit)],
         };
-        Assert.Null(Planner().Captors(held, held.Unit("g2")!));
+        Assert.Equal(["rl"], Planner().Captors(held, held.Unit("g2")!));
         Assert.Equal(["rl"], Planner().Captors(state, state.Unit("g2")!));
     }
 

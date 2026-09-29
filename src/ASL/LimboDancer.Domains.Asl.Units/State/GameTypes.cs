@@ -218,8 +218,14 @@ public static class Conditions
     /// <summary>A SW in its dismantled state (A9.8; backlog pass 13, ruling R13.6): not fired, and portaged at half its PP.</summary>
     public const string Dismantled = "asl:dismantled";
 
+    /// <summary>
+    /// Unarmed (A20.5; backlog pass 14, ruling R14.5): a captured unit, and one freed from capture, with a CC FP of one; it never fires, uses a SW, or
+    /// enters a Known enemy unit's Location, and is never broken.
+    /// </summary>
+    public const string Unarmed = "asl:unarmed";
+
     /// <summary>Conditions the state model adds to the vocabulary's states; they have no drawn form.</summary>
-    public static IReadOnlyList<string> Undrawn { get; } = [Captured, Melee, Abandoned, Bogged, Mired, BmgMalfunctioned, CmgMalfunctioned, CcReaction, Dismantled];
+    public static IReadOnlyList<string> Undrawn { get; } = [Captured, Melee, Abandoned, Bogged, Mired, BmgMalfunctioned, CmgMalfunctioned, CcReaction, Dismantled, Unarmed];
 
     public static bool IsDeclared(string name, Vocabulary.UnitVocabulary vocabulary) =>
         Undrawn.Contains(name, StringComparer.Ordinal) || vocabulary.TryGetState(name, out _);

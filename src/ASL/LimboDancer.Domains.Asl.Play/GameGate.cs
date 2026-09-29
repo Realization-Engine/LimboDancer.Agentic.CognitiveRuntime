@@ -230,6 +230,9 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
             // An answered choice: nothing waits for it any more (ruling R5.8).
             ChoiceMade => state.Choice is null || plan.Events.Any(item => item.Payload is ChoicePending),
             InstanceCaptured captured => state.Unit(captured.Id) is { } prisoner && prisoner.Custodian == captured.Custodian,
+
+            // A freed prisoner (A20.5; ruling R14.7): it is no longer guarded, and Unarmed.
+            PrisonerFreed freed => state.Unit(freed.Unit) is { Custodian: null } loose && GameState.Condition(loose, Conditions.Unarmed) == ConditionState.True,
             _ => plan.Events.Select(item => item.Payload).OfType<InstanceCreated>().All(created => state.Find(created.Instance.Id) is not null),
         };
 

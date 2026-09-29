@@ -281,6 +281,12 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.transfer-unit: a SW passes between Good Order unpinned Infantry of one side in one Location (A4.431)");
         }
 
+        // A20.5 (ruling R14.5; table player, pass 14): an Unarmed unit uses no SW, so it receives none.
+        if (Is(taker, Conditions.Unarmed))
+        {
+            return Refused(scope, label, expected, $"play.transfer-unarmed: {taker.Id} is Unarmed and uses no SW (A20.5)");
+        }
+
         if (Held(state, giver.Id).FirstOrDefault(item => item.Id == equipmentId) is not { } weapon)
         {
             return Refused(scope, label, expected, $"play.transfer-weapon: {giver.Id} does not possess '{equipmentId}'");
@@ -390,6 +396,12 @@ public sealed partial class GamePlanner
         if (state.Unit(unitId) is not { } unit || !GoodOrder(unit) || Is(unit, Conditions.Pinned) || LiveFire.IsVehicle(unit) || state.Location(unit.Id)?.Location is not { } at)
         {
             return Refused(scope, label, expected, $"play.recover-unit: '{unitId}' is not unpinned Good Order Infantry on the map (A4.44)");
+        }
+
+        // A20.5 (ruling R14.5; table player, pass 14): an Unarmed unit uses no SW, so it Recovers none.
+        if (Is(unit, Conditions.Unarmed))
+        {
+            return Refused(scope, label, expected, $"play.recover-unarmed: {unit.Id} is Unarmed and uses no SW (A20.5)");
         }
 
         string? phaseBar = state.Phase switch

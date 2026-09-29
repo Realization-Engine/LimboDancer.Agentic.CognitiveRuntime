@@ -92,6 +92,7 @@ public sealed partial class GamePlanner
             : Is(unit, Conditions.BoundingFire) && state.Phase == "pfph" && !LiveFire.IsVehicle(unit) ? "is an Opportunity Firer and fires in the AFPh (A7.25)"
             : Is(unit, Conditions.Melee) ? "is held in Melee and fires only in CC (A11.15)"
             : Is(unit, Conditions.Captured) ? "is a prisoner and does not fire (A20.5)"
+            : Is(unit, Conditions.Unarmed) ? "is Unarmed, and its FP is used only in CC (A20.5)"
             : prisoners > Size(unit) ? "guards prisoners whose US# exceeds its own, so it attacks only them (A20.52)"
             : null;
     }

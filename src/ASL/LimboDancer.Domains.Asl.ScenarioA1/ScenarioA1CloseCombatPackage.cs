@@ -9,14 +9,28 @@ namespace LimboDancer.Domains.Asl.ScenarioA1;
 /// </summary>
 public sealed class ScenarioA1CloseCombatReference
 {
-    private readonly (string Label, int Attack, int Defense, bool Below, bool Above, int Kill)[] columns;
+    private readonly (string Label, int Attack, int Defense, bool Below, bool Above, int Kill, int Red)[] columns;
 
-    private ScenarioA1CloseCombatReference((string, int, int, bool, bool, int)[] columns, IReadOnlyDictionary<string, FireDefinition> definitions)
+    private ScenarioA1CloseCombatReference((string, int, int, bool, bool, int, int)[] columns, IReadOnlyDictionary<string, FireDefinition> definitions,
+        IReadOnlyDictionary<string, int> bpv)
     {
         this.columns = columns;
         Definitions = definitions;
+        Bpv = bpv;
         OneToOneColumn = Array.FindIndex(columns, column => column.Item1 == "1-1");
     }
+
+    /// <summary>
+    /// Each catalog MMC's Basic Point Value from the A./G. National Capabilities Chart (p. 109), which picks the MMC a leader created in CC is
+    /// founded on (A18.2; ruling R14.12).
+    /// </summary>
+    public IReadOnlyDictionary<string, int> Bpv
+    {
+        get;
+    }
+
+    /// <summary>The red Kill Number of a CCT column, for Hand-to-Hand CC (A11.11, J2.31; ruling R14.1).</summary>
+    public int RedKill(int column) => columns[column].Red;
 
     public IReadOnlyDictionary<string, FireDefinition> Definitions
     {
@@ -41,8 +55,9 @@ public sealed class ScenarioA1CloseCombatReference
             var column = columns[index];
             var ratio = attack * column.Defense;
             var printed = defense * column.Attack;
-            // "< 1-8" is the floor; "> 10-1" needs more than 10 to 1; every other column is reached at its own ratio.
-            if (column.Below || (column.Above ? ratio > printed : ratio >= printed))
+            // "< 1-8" is the floor; odds are rounded down to a printed ratio, so "> 10-1" is reached at 11 to 1 (ruling R14.13); every other column is
+            // reached at its own ratio.
+            if (column.Below || (column.Above ? ratio >= defense * (column.Attack + 1) : ratio >= printed))
             {
                 chosen = index;
             }
@@ -61,35 +76,41 @@ public sealed class ScenarioA1CloseCombatReference
             item.GetProperty("defense").GetInt32(),
             item.TryGetProperty("strictlyBelow", out var below) && below.GetBoolean(),
             item.TryGetProperty("strictlyAbove", out var above) && above.GetBoolean(),
-            item.GetProperty("blackKill").GetInt32())).ToArray();
-        if (columns.Length != 14 || columns.Select(item => item.Item6).Where((kill, index) => kill != index).Any() || columns[5].Item1 != "1-1")
+            item.GetProperty("blackKill").GetInt32(),
+            item.GetProperty("redKill").GetInt32())).ToArray();
+        if (columns.Length != 14 || columns.Select(item => item.Item6).Where((kill, index) => kill != index).Any() || columns.Any(item => item.Item7 != item.Item6 + 2)
+            || columns[5].Item1 != "1-1")
         {
             throw new InvalidOperationException("The CCT transcription changed shape.");
         }
 
-        return new ScenarioA1CloseCombatReference(columns, ScenarioA1FireReference.ReadDefinitions(catalog.RootElement));
+        var bpv = matrix.TryGetProperty("bpv", out var values)
+            ? values.EnumerateObject().ToDictionary(item => item.Name, item => item.Value.GetInt32(), StringComparer.Ordinal)
+            : new Dictionary<string, int>(StringComparer.Ordinal);
+        return new ScenarioA1CloseCombatReference(columns, ScenarioA1FireReference.ReadDefinitions(catalog.RootElement), bpv);
     }
 }
 
 /// <summary>
 /// Pinned read-only package for Close Combat in the CCPh (unit step 29; Scenario A1 Close Combat Review 2026-09-27): the
 /// Ambush drs, and for each declared Infantry attack the odds, the black Kill Number, the DRM, and the effects, with Field
-/// Promotion on an Original 2 (A18.12); since backlog pass 11, CC by and against vehicles (R11.12 to R11.17). The manifest records its
-/// predecessor, fb0e0bf7 (unit step 29, revised). It never rolls, attacks, or changes a game.
+/// Promotion on an Original 2 (A18.12); since backlog pass 11, CC by and against vehicles (R11.12 to R11.17); since backlog pass 14, Hand-to-Hand,
+/// concealment, TI, capture, prisoners, Infiltration, and overstacking (R14.1 to R14.13). The manifest records its predecessor, 2dde0d2b (backlog
+/// pass 11). It never rolls, attacks, or changes a game.
 /// </summary>
 public sealed class ScenarioA1CloseCombatPackage : IDomainPackageResolver
 {
-    public const string ManifestSha256 = "2dde0d2bd7f8a08dab8e808984ffee8b0a008e5a1c92b050c5c37163a0c0e5bf";
-    public const string MatrixSha256 = "ee109ae560382e0dd1edd368d986c20440603a89f99ec76fed2e3e7c44eb988a";
+    public const string ManifestSha256 = "299e72a878c41e361059ccd3bd91c940670d8a573fa619ffeb29644ef9f332cf";
+    public const string MatrixSha256 = "1a49b85e0dc30210c8181d3425597c3a37f86b98df5ed50c5683e2c5f446de71";
     public static readonly DomainPackageRef Identity = new(new DomainId("asl"), "scenario-a1-close-combat", "sha256:" + ManifestSha256);
 
     private static readonly string[] Cases =
     [
-        "A1-cc-resolved", "A1-cc-ambush-resolved", "A1-cc-phase-outside", "A1-cc-unit-outside", "A1-cc-concealment-unreviewed", "A1-cc-prisoners-unreviewed",
-        "A1-cc-overstacked-unreviewed", "A1-cc-attack-outside", "A1-cc-round-outside", "A1-cc-stacking-outside", "A1-cc-director-outside",
-        "A1-cc-berserk-must-attack", "A1-cc-field-promotion-undecided", "A1-cc-roll-missing", "A1-cc-cx",
+        "A1-cc-resolved", "A1-cc-ambush-resolved", "A1-cc-phase-outside", "A1-cc-unit-outside", "A1-cc-attack-outside", "A1-cc-round-outside",
+        "A1-cc-stacking-outside", "A1-cc-director-outside", "A1-cc-berserk-must-attack", "A1-cc-field-promotion-undecided", "A1-cc-roll-missing", "A1-cc-cx",
         "A1-cc-vehicle-attacked", "A1-cc-vehicle-attacks", "A1-cc-vehicle-sequential", "A1-cc-vehicle-paatc", "A1-cc-vehicle-capture",
-        "A1-cc-vehicle-roll-missing",
+        "A1-cc-vehicle-roll-missing", "A1-cc-hand-to-hand", "A1-cc-concealed", "A1-cc-ti", "A1-cc-capture", "A1-cc-capture-outside",
+        "A1-cc-capture-choice-undecided", "A1-cc-prisoners-escape", "A1-cc-prisoner-outside", "A1-cc-infiltration", "A1-cc-overstacked",
     ];
 
     private static readonly string[] PinnedDigests = ["sourcePdfSha256", "cctTranscriptionSha256", "catalogSha256"];

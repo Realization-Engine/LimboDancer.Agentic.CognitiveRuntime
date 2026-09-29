@@ -333,3 +333,22 @@ Estimate: 4:40 (build 3:25) in the [ASL Unit Backlog Passes Plan](<ASL Unit Back
 | Merge and push | 20:21 | 20:24 | 0:03 | |
 
 Total 2:31 of working time (17:53 to 20:24) against the 4:40 estimate (build 3:25); the build with both reviews' fixes, 17:58 to 19:45, took 1:47.
+
+## Pass 14: Close Combat and capture, part 2
+
+Estimate: 2:45, the user's figure of 2026-09-28 (the plan's 5:05, build 3:50, scaled by the passes 11 to 13 actuals). Kickoff 2026-09-28 20:41. Branch `feature/asl-backlog-pass-14`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Reading (A4.8, A5.1 to A5.131, A11.11 to A11.41, A12.13 to A12.15, A18.12, A18.2, A19.12, A19.35, A20 to A20.552; the CCT's red Kill Numbers and modifiers; G1.64, A25.43, and W.6B on Hand-to-Hand; the A./G. National Capabilities Chart's BPV) and rulings R14.1 to R14.14 | 20:41 | 20:51 | 0:10 | J2.31's text is not in the registered PDF |
+| Close Combat package: models, the ordered round (Infiltration, capture, escape, rearming, concealment), Ambush, BPV, red Kill Numbers; six older tests follow the new rules; 17 package tests (every outcome walked) pass | 20:51 | 21:00 | 0:09 | |
+| PDF comparison (9 fragments: A4.8, A5.11, A11.33, A11.34, A12.15, A19.35, A20.22, A20.221, A20.551) and its registration; the Close Combat package revision (80 fragments, prior 2dde0d2b); ScenarioA1 (173) and Authoring pass | 21:00 | 21:05 | 0:05 | Authoring run in the background to 21:10 |
+| Units records and projector (Unarmed, `prisoner-freed`, the CCPh start, Guard succession, the prisoners' round), planner (advance, round declarations, effects, Ambush reveal, free as Unarmed, mandatory CC), two new actions; four older Play tests follow the new rules; 8 new Play tests; Play (303) pass; referee agent started | 21:05 | 21:23 | 0:18 | |
+| Play page: Hand-to-Hand, capture attempt with Guard and yield order, Infiltration, prisoners' round, Ambush Withdrawal, free as Unarmed, Guard transfer and abandonment, and their records | 21:23 | 21:27 | 0:04 | A Visual Studio Studio session locked the Debug build; built in Release |
+| Referee's 13 findings: 11 fixed with 7 new tests, 2 recorded (the prisoners' round declared at once; the 10-to-1 reading); ScenarioA1 (175), Play (304) pass | 21:28 | 21:35 | 0:07 | |
+| Table-player clone (`git worktree add` failed on the held `.git/worktrees`; a local clone in the scratchpad instead); an unintended whole-project whitespace format of the ScenarioA1 project reverted; table-player agent started | 21:35 | 21:38 | 0:03 | |
+| MapStudio page test (a capture attempt; MapStudio 129 pass); visual check in the Studio (pass14-demo: an Ambush against a concealed squad in Open Ground, a capture attempt and its record, the Units table, the Guard panel and a transfer); the Ambush hint text fixed | 21:38 | 21:44 | 0:06 | |
+| Waiting on the table player: documents drafted, the Docker script given two CI regeneration checks | 21:44 | 21:47 | 0:03 | The table player ran 21:38 to 21:55 |
+| Table player's 8 findings (25 situations, 39 cases, in the scratchpad clone): 5 fixed (a freeze: an escape that eliminates its Guard; Recovery by Unarmed units; concealed advances; two refusal texts) with one new test and the reproductions rerun, and a sixth bug the rerun showed (a rearmed prisoner still captured); 3 recorded; Play (305) pass | 21:55 | 21:58 | 0:03 | |
+| Review, design, backlog section 24 (17 rows removed from sections 11 and 20), requirements, ruling wording | 21:58 | 22:00 | 0:02 | |
+| Full local suite: build with warnings as errors, every solution test project, and the ScenarioA1 tests (2,269 passed, 30 skipped, 3 failed: the architecture test's scan hit the held `.git/worktrees`; a Units fixture whose Russian squad is concealed, so no longer held in Melee (R14.2), made Known; a Guard in another Location, which Guard succession had repaired instead of refusing, is an invariant error again, and a routing Guard now takes its prisoners); Units (405), Play (305) pass | 22:00 | 22:20 | 0:20 | |

@@ -365,13 +365,44 @@ public static class GameActions
             "expectedRevision": { "type": "integer", "minimum": 0 },
             "location": { "type": "string" },
             "attacks": { "type": "array", "items": { "type": "object" } },
-            "stacking": { "type": "object", "additionalProperties": { "type": "string" } }
+            "stacking": { "type": "object", "additionalProperties": { "type": "string" } },
+            "withdrawals": { "type": "object", "additionalProperties": { "type": "string" } },
+            "infiltrations": { "type": "object", "additionalProperties": { "type": "string" } },
+            "round": { "type": "string" }, "handToHand": { "type": "boolean" }
           }
         }
         """, JsonSerializer.SerializeToElement(new
         {
             package = ScenarioA1CloseCombatPackage.Identity.ToString()
         }));
+
+    public static readonly ActionDescriptor AmbushWithdraw = Descriptor("asl.game.ambush-withdraw", "Ambush Withdrawal",
+        "In the CCPh, units of the side that ambushed withdraw from the Location to one a withdrawal could reach, before its first round or once its CC is over (A11.41).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "location", "unitIds", "to"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "location": { "type": "string" }, "unitIds": { "type": "array", "items": { "type": "string" } }, "to": { "type": "string" }
+          }
+        }
+        """);
+
+    public static readonly ActionDescriptor GuardPrisoners = Descriptor("asl.game.guard-prisoners", "Transfer or abandon prisoners",
+        "In its side's RPh or APh, a Guard not in Melee transfers its prisoners to another armed unit of its side in its Location with Guard capacity, or abandons them as Unarmed units of their own side (A20.5).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "guardId"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "guardId": { "type": "string" }, "to": { "type": "string" }, "abandon": { "type": "boolean" }
+          }
+        }
+        """);
 
     public static readonly ActionDescriptor TakePrisoner = Descriptor("asl.game.take-prisoner", "Take a prisoner",
         "After a Heat of Battle Surrender, the captor's side chooses which ADJACENT Known Good Order enemy unit takes the surrendering unit as its prisoner (A15.5, A20.5), or rejects the surrender, eliminating the unit and facing its side with No Quarter (A20.3).",
@@ -382,7 +413,7 @@ public static class GameActions
           "properties": {
             "gameId": { "type": "string" }, "attemptId": { "type": "string" },
             "expectedRevision": { "type": "integer", "minimum": 0 },
-            "unitId": { "type": "string" }, "captorId": { "type": "string" }, "reject": { "type": "boolean" }
+            "unitId": { "type": "string" }, "captorId": { "type": "string" }, "reject": { "type": "boolean" }, "free": { "type": "boolean" }
           }
         }
         """);
@@ -559,7 +590,7 @@ public static class GameActions
     } =
         [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding, DeclareOverrun, Fire, Rally, Repair, Move, PassFire, EndMove, Advance, Ambush, CloseCombat, TakePrisoner,
             FireOrdnance, RecoverShock, TurnGun, HookGun, MoveVehicle, Overrun, VehicleCloseCombat, ButtonUp, Choose, Massacre, OpportunityFire,
-            Rout, Deploy, Recombine, Transfer, Drop, Recover, Dismantle];
+            Rout, Deploy, Recombine, Transfer, Drop, Recover, Dismantle, AmbushWithdraw, GuardPrisoners];
 
     public static string VersionKey(Guid tenant, string game) => $"asl.game:{tenant:N}:{game}";
 

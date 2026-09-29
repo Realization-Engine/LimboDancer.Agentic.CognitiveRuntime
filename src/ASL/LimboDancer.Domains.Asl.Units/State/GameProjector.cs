@@ -117,6 +117,7 @@ public static class GameProjector
                 OrdnanceFired fired => Ordnance(previous, fired),
                 SurrenderPending surrender => Surrender(previous, surrender, gameEvent.EventId),
                 SurrenderRejected rejected => RejectSurrender(previous, rejected),
+                PrisonerFreed freed => FreePrisoner(previous, freed),
                 VehicleWrecked wreck => Wreck(previous, wreck),
                 PrisonersMassacred massacre => Massacre(previous, massacre),
                 ChoicePending pending => PendChoice(previous, pending, gameEvent.EventId),
@@ -198,6 +199,7 @@ public static class GameProjector
             next = KeepMovingStack(next, gameEvent.Payload);
             next = KeepEncirclements(next);
             next = KeepFireLanes(next);
+            next = KeepGuards(next);
             next = KeepMelee(next);
             next = KeepCx(next);
             next = KeepAcquisitions(next, gameEvent.Payload);
@@ -333,7 +335,7 @@ public static class GameProjector
             {
                 return Fail<GameState>("UNIT-STATE-030", open.Ambusher is null
                     ? $"The CC in {open.Location} awaits its round after the Ambush drs, even one with no attacks (A11.12)."
-                    : $"The CC in {open.Location} awaits the ambushed side's round (A11.32).");
+                    : $"The CC in {open.Location} awaits the ambushed side's round, which may declare no attacks (A11.32).");
             }
 
             // A11.16, A19.12: a broken or Disrupted unit held in Melee, other than a Guard, is eliminated at the end of the CCPh unless it
@@ -386,9 +388,18 @@ public static class GameProjector
                 });
             }
 
+            // A11.19 (ruling R14.2): as the CCPh begins, Dummies sharing a Location with an enemy unit are removed, and hidden units there are placed
+            // beneath a "?".
+            var placed = new List<string>();
+            if (change.Phase == "ccph")
+            {
+                (state, placed) = StartCloseCombat(state);
+            }
+
             return CheckPhase(state, change.Turn, change.Phase, change.PhasingSide)
                 ? state with
                 {
+                    HiddenPlaced = placed,
                     CloseCombats = [],
                     OrdnanceShots = [],
                     Advances = newPlayerTurn ? [] : state.Advances,
@@ -483,14 +494,54 @@ public static class GameProjector
         }
 
         /// <summary>
+        /// The start of a CCPh (A11.19; ruling R14.2): in each Location holding units of both sides that are not prisoners, Dummies are removed and hidden
+        /// units are placed beneath a "?"; the placed units are returned.
+        /// </summary>
+        private static (GameState State, List<string> Placed) StartCloseCombat(GameState state)
+        {
+            var placed = new List<string>();
+            var units = state.Units.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Captured) != ConditionState.True
+                && state.Location(unit.Id) is not null).ToArray();
+            foreach (var group in units.GroupBy(unit => state.Location(unit.Id)!.Location).Where(group => group.Select(unit => unit.Side).Distinct(StringComparer.Ordinal).Count() > 1))
+            {
+                foreach (var unit in group.OrderBy(unit => unit.Id, StringComparer.Ordinal))
+                {
+                    if (unit.Kind == "asl:dummy")
+                    {
+                        state = Replace(state, unit with
+                        {
+                            Status = InstanceStatus.Eliminated
+                        });
+                    }
+                    else if (GameState.Condition(unit, Conditions.Hidden) == ConditionState.True)
+                    {
+                        state = Replace(state, unit with
+                        {
+                            Conditions = new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal)
+                            {
+                                [Conditions.Hidden] = ConditionState.False,
+                                [Conditions.Concealed] = ConditionState.True,
+                            },
+                        });
+                        placed.Add(unit.Id);
+                    }
+                }
+            }
+
+            return (state, placed);
+        }
+
+        /// <summary>
         /// A11.15: at the end of the CCPh, Infantry of both sides that remain in one Location are held in Melee; prisoners are
         /// neither held nor hold (A20.5). The units are those of Locations that still hold units of both sides.
         /// </summary>
         private HashSet<string> InMelee(GameState state)
         {
             // A11.7 (ruling R11.16): a vehicle is never held in Melee, and holds the enemy Infantry in its Location unless it is Abandoned or in Motion.
+            // A11.15 EXC (ruling R14.2): a unit that keeps its "?" is neither held in Melee nor holds an enemy unit in Melee.
             var units = state.Units.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Captured) != ConditionState.True
-                && state.Location(unit.Id) is not null).ToArray();
+                && GameState.Condition(unit, Conditions.Concealed) != ConditionState.True && GameState.Condition(unit, Conditions.Hidden) != ConditionState.True
+                && unit.Kind != "asl:dummy" && state.Location(unit.Id) is not null).ToArray();
             return units.GroupBy(unit => state.Location(unit.Id)!.Location)
                 .SelectMany(group => group.Where(unit => !vocabulary.IsA(unit.Kind, "asl:vehicle") && group.Any(other => other.Side != unit.Side && HoldsInMelee(other)
                     && (!vocabulary.IsA(other.Kind, "asl:vehicle") || (GameState.Condition(unit, Conditions.Concealed) != ConditionState.True
@@ -720,10 +771,20 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-030", "CC is resolved in the CCPh, once per Location, one Location at a time (A11.12).");
             }
 
-            // A11.3: the ambusher's attacks are sequential, one record each, until the ambushed side's round closes the Location.
+            // A11.3: the ambusher's attacks are sequential, one record each, until the ambushed side's round closes the Location; A11.33, A11.34
+            // (ruling R14.6): the prisoners' escape round comes before any other.
+            var rounds = entry?.Rounds.Where(item => item != CloseCombatResolved.PrisonersRound).ToArray() ?? [];
+            // A11.41 (referee, pass 14): with every ambusher gone by Ambush Withdrawal, the ambushed side's round closes the Location.
+            var ambushers = entry?.Ambusher is { } ambusher && state.Units.Any(unit => unit.Status == InstanceStatus.Active && unit.Side == ambusher
+                && GameState.Condition(unit, Conditions.Captured) != ConditionState.True && state.Location(unit.Id)?.Location == combat.Location);
             string[] allowed = entry?.Ambusher is null ? [CloseCombatResolved.Simultaneous]
-                : entry.Rounds.Count == 0 ? [CloseCombatResolved.AmbusherRound]
+                : !ambushers ? [CloseCombatResolved.AmbushedRound]
+                : rounds.Length == 0 ? [CloseCombatResolved.AmbusherRound]
                 : [CloseCombatResolved.AmbusherRound, CloseCombatResolved.AmbushedRound];
+            if (entry is null || entry.Rounds.Count == 0)
+            {
+                allowed = [.. allowed, CloseCombatResolved.PrisonersRound];
+            }
             var attacking = entry?.Attacking ?? [];
             var attacked = entry?.Attacked ?? [];
             if (!allowed.Contains(combat.Round) || combat.Attackers.Any(attacking.Contains) || combat.Defenders.Any(attacked.Contains))
@@ -739,9 +800,13 @@ public static class GameProjector
             var updated = (entry ?? new CloseCombatLocation(combat.Location, false, null, [], false)) with
             {
                 Rounds = [.. entry?.Rounds ?? [], combat.Round],
-                Closed = combat.Round != CloseCombatResolved.AmbusherRound,
+                Closed = combat.Round is not (CloseCombatResolved.AmbusherRound or CloseCombatResolved.PrisonersRound),
                 Attacking = [.. attacking, .. combat.Attackers],
                 Attacked = [.. attacked, .. combat.Defenders],
+
+                // J2.31 (ruling R14.1): the first round declares the Location Hand-to-Hand for the CCPh.
+                HandToHand = entry?.HandToHand == true || (combat.Round != CloseCombatResolved.PrisonersRound && combat.Facts.TryGetProperty("handToHand", out var hand)
+                    && hand.ValueKind == JsonValueKind.True),
             };
             return state with
             {
@@ -1966,10 +2031,10 @@ public static class GameProjector
                 Position = new MapPosition(routed.To),
                 MfSpent = spent / 2,
                 HalfMfSpent = spent % 2 == 1,
-            }) is { } moved ? moved with
+            }) is { } routedTo ? MovePrisoners(routedTo, unit.Id, new MapPosition(routed.To)) is var moved ? moved with
             {
                 RoutedThisPhase = moved.RoutedThisPhase.Contains(unit.Id, StringComparer.Ordinal) ? moved.RoutedThisPhase : [.. moved.RoutedThisPhase, unit.Id],
-            } : null;
+            } : null : null;
         }
 
         /// <summary>A10.5: a broken unit has six MF in the RtPh, a wounded SMC three.</summary>
@@ -2486,7 +2551,8 @@ public static class GameProjector
 
             return item switch
             {
-                UnitInstance unit => Replace(state, unit with { Position = move.Position, MfSpent = unit.MfSpent + (move.Mf ?? 0) }),
+                // A20.53 (ruling R14.5): a Guard's prisoners go with it.
+                UnitInstance unit => MovePrisoners(Replace(state, unit with { Position = move.Position, MfSpent = unit.MfSpent + (move.Mf ?? 0) })!, unit.Id, move.Position),
                 EntityInstance entity => Replace(state, entity with { Position = move.Position }),
                 _ => Fail<GameState>("UNIT-STATE-012", "Equipment moves with equipment-transferred."),
             };
@@ -2920,6 +2986,18 @@ public static class GameProjector
                     : created;
             }
 
+            // A20.5 (referee, pass 14): a Guard Reduced or Replaced keeps its prisoners in the unit that takes its place.
+            if (keeps)
+            {
+                foreach (var prisoner in next.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Custodian is { } custodian && ids.Contains(custodian)).ToArray())
+                {
+                    next = Replace(next, prisoner with
+                    {
+                        Custodian = lineage.Produced[0].Id
+                    });
+                }
+            }
+
             if (keeps)
             {
                 var holder = lineage.Produced[0].Id;
@@ -3056,7 +3134,12 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-031", $"'{prisoner.Id}' surrenders to one of {string.Join(", ", pending.Captors)} (A15.5).");
             }
 
-            var captured = new Dictionary<string, ConditionState>(prisoner.Conditions, StringComparer.Ordinal) { [Conditions.Captured] = ConditionState.True };
+            // A20.5 (ruling R14.5): a captured unit is Unarmed.
+            var captured = new Dictionary<string, ConditionState>(prisoner.Conditions, StringComparer.Ordinal)
+            {
+                [Conditions.Captured] = ConditionState.True,
+                [Conditions.Unarmed] = ConditionState.True,
+            };
             return Replace(state with
             {
                 PendingSurrenders = [.. state.PendingSurrenders.Where(item => item.Unit != prisoner.Id)],
@@ -3065,6 +3148,71 @@ public static class GameProjector
                 Conditions = captured,
                 Custodian = capture.Custodian
             });
+        }
+
+        /// <summary>A prisoner freed by its escape or abandoned by its Guard (A20.5, A20.55; rulings R14.6, R14.7): an Unarmed unit of its own side.</summary>
+        private GameState? FreePrisoner(GameState state, PrisonerFreed freed)
+        {
+            // Table player, pass 14: a prisoner whose escape eliminated its Guard was already freed when the Guard left play.
+            if (Active(state, freed.Unit) is UnitInstance { Custodian: null } loose && GameState.Condition(loose, Conditions.Unarmed) == ConditionState.True
+                && GameState.Condition(loose, Conditions.Captured) != ConditionState.True)
+            {
+                return state;
+            }
+
+            if (Active(state, freed.Unit) is not UnitInstance { Custodian: not null } prisoner)
+            {
+                return Fail<GameState>("UNIT-STATE-014", $"'{freed.Unit}' is not a guarded prisoner.");
+            }
+
+            return Replace(state, prisoner with
+            {
+                Custodian = null,
+                Conditions = new Dictionary<string, ConditionState>(prisoner.Conditions, StringComparer.Ordinal)
+                {
+                    [Conditions.Captured] = ConditionState.False,
+                    [Conditions.Unarmed] = ConditionState.True,
+                },
+            });
+        }
+
+        /// <summary>
+        /// A20.5 (ruling R14.5): when a Guard leaves play or is captured, another armed unit of its side in the prisoners' Location with Guard capacity takes
+        /// them, the first by id; with none, they are freed as Unarmed units of their own side. A Guard's moves take its prisoners along; a Guard in another
+        /// Location is an invariant error, not repaired here.
+        /// </summary>
+        private GameState KeepGuards(GameState next)
+        {
+            static int Size(UnitInstance unit) => unit.Kind == "asl:squad" ? 3 : unit.Kind is "asl:half-squad" or "asl:crew" ? 2 : 1;
+            foreach (var prisoner in next.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Custodian is not null).ToArray())
+            {
+                var at = next.Location(prisoner.Id)?.Location;
+                if (next.Unit(prisoner.Custodian!) is { Status: InstanceStatus.Active } guard && GameState.Condition(guard, Conditions.Captured) != ConditionState.True)
+                {
+                    continue;
+                }
+
+                var side = next.Unit(prisoner.Custodian!)?.Side;
+                var heir = next.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && at is not null && next.Location(unit.Id)?.Location == at
+                        && GameState.Condition(unit, Conditions.Captured) != ConditionState.True && GameState.Condition(unit, Conditions.Unarmed) != ConditionState.True
+                        && vocabulary.IsA(unit.Kind, "asl:personnel") && !vocabulary.IsA(unit.Kind, "asl:vehicle")
+                        && next.Units.Where(other => other.Status == InstanceStatus.Active && other.Custodian == unit.Id).Sum(Size) + Size(prisoner) <= 5 * Size(unit))
+                    .OrderBy(unit => unit.Id, StringComparer.Ordinal).FirstOrDefault();
+                next = Replace(next, heir is not null ? prisoner with
+                {
+                    Custodian = heir.Id
+                } : prisoner with
+                {
+                    Custodian = null,
+                    Conditions = new Dictionary<string, ConditionState>(prisoner.Conditions, StringComparer.Ordinal)
+                    {
+                        [Conditions.Captured] = ConditionState.False,
+                        [Conditions.Unarmed] = ConditionState.True,
+                    },
+                });
+            }
+
+            return next;
         }
 
         /// <summary>Equipment held by instances that leave play is left at their last location with no holder.</summary>

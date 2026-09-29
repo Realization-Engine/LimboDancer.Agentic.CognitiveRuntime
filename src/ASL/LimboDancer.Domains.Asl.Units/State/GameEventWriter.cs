@@ -697,6 +697,9 @@ public static class GameEventWriter
             case SurrenderRejected rejected:
                 writer.WriteString("unit", rejected.Unit);
                 break;
+            case PrisonerFreed freed:
+                writer.WriteString("unit", freed.Unit);
+                break;
             case PrisonersMassacred massacre:
                 Strings(writer, "units", massacre.Units);
                 Strings(writer, "prisoners", massacre.Prisoners);

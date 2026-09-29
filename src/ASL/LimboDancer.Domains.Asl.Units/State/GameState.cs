@@ -194,6 +194,12 @@ public sealed record GameState(
     /// <summary>The Encircled Locations (A7.7; ruling R12.11); one ends when no unit it Encircles is left there.</summary>
     public IReadOnlyList<Encirclement> Encirclements { get; init; } = [];
 
+    /// <summary>
+    /// The hidden units placed beneath a "?" as this CCPh began, in a Location with an enemy unit (A11.19; ruling R14.2), which makes an Ambush possible
+    /// there (A11.4); cleared at every phase change.
+    /// </summary>
+    public IReadOnlyList<string> HiddenPlaced { get; init; } = [];
+
     /// <summary>The Fire Lanes in place (A9.22, A9.223; ruling R12.7); cleared at every phase change.</summary>
     public IReadOnlyList<FireLane> FireLanes { get; init; } = [];
 

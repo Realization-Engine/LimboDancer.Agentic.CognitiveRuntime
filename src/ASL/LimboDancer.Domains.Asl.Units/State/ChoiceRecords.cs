@@ -43,6 +43,12 @@ public sealed record PendingChoice(string Key, string Kind, string Side, IReadOn
 public sealed record SurrenderRejected(string Unit) : EventPayload;
 
 /// <summary>
+/// <c>prisoner-freed</c>: a prisoner is no longer guarded (A20.5, A20.55; backlog pass 14, rulings R14.5 to R14.7): it escaped by attacking in CC, or its Guard
+/// abandoned it; it stays an Unarmed unit of its own side.
+/// </summary>
+public sealed record PrisonerFreed(string Unit) : EventPayload;
+
+/// <summary>
 /// <c>prisoners-massacred</c>: prisoners eliminated in their Location (A20.4, ruling R5.7), by units of the Guard's side that may massacre
 /// (Russian or berserk Infantry, not in Melee) in a fire phase of their own side. The victims' side has its ELR raised by one, once, to at
 /// most 6, and is faced with No Quarter. <paramref name="Berserk"/> marks the massacre a berserk unit makes at the start of its fire phase,

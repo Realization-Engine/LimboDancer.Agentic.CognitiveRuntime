@@ -99,14 +99,14 @@ public sealed class ScenarioA1RefereeFixesTests
     }
 
     [Fact]
-    public void OddsAboveTenButBelowElevenToOneAreUndecided()
+    public void OddsAboveTenButBelowElevenToOneAreTenToOne()
     {
-        // A11.11: 10.5 to 1 is above 10-1 and below 11-1: "rounded down to the nearest ... printed" is disputed (ruling R29.16). Two
-        // squads, a HS, and a pinned leader (half his one FP) against a lone leader.
+        // A11.11 (ruling R14.13, replacing R29.16): odds round down to the nearest printed ratio, so 10.5 to 1 is 10-1. Two squads, a HS, and a
+        // pinned leader (half his one FP) against a lone leader.
         CloseCombatUnit[] units = [Unit("g1", "attacker-squad", "german"), Unit("g2", "attacker-squad", "german"), Unit("gh", "attacker-half-squad", "german"),
             Unit("gl", "attacker-leader-8-1", "german") with { Pinned = true, StackedWith = "g1" }, Unit("r1", "defender-leader", "russian")];
-        Assert.Contains("asl.a1.cc.odds-above-10-to-1-undecided:0",
-            ScenarioA1CloseCombatCalculator.Precheck(Facts(units, [Attack(["g1", "g2", "gh", "gl"], ["r1"])]), CloseCombat));
+        Assert.Empty(ScenarioA1CloseCombatCalculator.Precheck(Facts(units, [Attack(["g1", "g2", "gh", "gl"], ["r1"])]), CloseCombat));
+        Assert.Equal(("10-1", 12), (CloseCombat.Column(10.5m, 1m).Label, CloseCombat.Column(10.5m, 1m).Kill));
     }
 
     [Fact]

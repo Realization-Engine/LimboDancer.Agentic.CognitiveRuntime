@@ -696,6 +696,8 @@ public static class GameEventReader
                 return fields.RequiredString(payload, "id", path) is { } wreck ? new VehicleWrecked(wreck, fields.OptionalBoolean(payload, "burning", path)) : null;
             case "surrender-rejected":
                 return fields.RequiredString(payload, "unit", path) is { } rejected ? new SurrenderRejected(rejected) : null;
+            case "prisoner-freed":
+                return fields.RequiredString(payload, "unit", path) is { } freed ? new PrisonerFreed(freed) : null;
             case "prisoners-massacred":
                 return new PrisonersMassacred(fields.StringList(payload, "units", path), fields.StringList(payload, "prisoners", path),
                     fields.OptionalBoolean(payload, "berserk", path));

@@ -28,6 +28,9 @@ public sealed record CloseCombatResolved(BoardLocation Location, string Round, I
     public const string Simultaneous = "simultaneous";
     public const string AmbusherRound = "ambusher";
     public const string AmbushedRound = "ambushed";
+
+    /// <summary>The prisoners' escape round, before any other in the Location (A11.33, A20.55; ruling R14.6).</summary>
+    public const string PrisonersRound = "prisoners";
 }
 
 /// <summary>
@@ -94,6 +97,12 @@ public sealed record CloseCombatLocation(BoardLocation Location, bool AmbushRoll
 
     /// <summary>The sides that passed in a Location holding a vehicle, and attack no more there this CCPh (ruling R11.16).</summary>
     public IReadOnlyList<string> Passed { get; init; } = [];
+
+    /// <summary>Whether the Location's CC is Hand-to-Hand this CCPh, as its first round declared (J2.31; ruling R14.1).</summary>
+    public bool HandToHand
+    {
+        get; init;
+    }
 }
 
 /// <summary>A unit's advance this Player Turn and the Location it entered, which decides whether an Ambush can occur (A11.4).</summary>
