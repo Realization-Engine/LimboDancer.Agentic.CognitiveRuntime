@@ -67,6 +67,22 @@ The table player made 16 checks (situations on both cards: the M9 stack, the Gua
 | 10. The MFG note named only the HMG | Fixed: it names the MGs already manufactured. |
 | 11. The page's wording | Fixed: boards by row from the top, rulings marked "ruling", the Integrity total marked optional and not built, edges as one of the side's edges. |
 
+## Pass 17b: The Tractor Works
+
+Added on 2026-09-29 at the user's request (rulings R17.12 and R17.13; catalog 1.12.0; A10.8, A12.11, A26.13, and B23.74 compared, 26 fragments in all). One referee, briefed as a skeptical referee and table player, reviewed the card: it verified every OB count against the legacy card, the plain-E 8-3-8 over the AE row, the Russian HMG, the totals [266] and [226], the setup order, the "?", the building extents, and the SSRs.
+
+| Finding | Disposition |
+|---|---|
+| 1. Both Friendly Board Edges derive under A20.53 column by column; the manufactured west and east edges had enemy between | Fixed: Russian north, German south, from the setup; tested column by column. |
+| 2. The page read "from its manufactured" | Fixed: the basis reads as a phrase; tested. |
+| 3. The legacy "295th Infantry Division" on a Russian group | Fixed: kept, with an adaptation note that it is probably a misprint. |
+| 4. Start Control of X3 (A26.11) was unstated | Fixed: the Victory Conditions say the Russians Control X3 at the start; A26.11 cited. |
+| 5. SSR 2 dropped "no further penalty", and never applies in the Factory | Fixed in both Stalingrad cards; the note says so. |
+| 6. Usable sewers let the Germans in by a 4TC | Fixed in both Stalingrad cards' Balance. |
+| 7. The Russian HMG's portage note leaned on the MMG's 4 PP; the legacy counter seems to print 5 PP | Fixed: the note cites the legacy counter; the MMG's portage is recorded (backlog section 27). |
+| 8. R17.12 cited A2.9 | Fixed: A12.12. |
+| 9. The field name `dummies` | Kept: the page calls them "?" counters, which may cover real units (R17.12). |
+
 ## Live check
 
 The Studio (`map-studio-scripted`) showed `/units/scenarios` with Gambit and, after a DOM change event on the card choice, The Guards Counterattack: no diagnostics, [130] and [207], the playable area marked not enforced, the manufactured counters marked, and no console errors. The Studio was stopped afterwards.

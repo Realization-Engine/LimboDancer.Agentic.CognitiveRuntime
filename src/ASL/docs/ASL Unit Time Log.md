@@ -422,3 +422,15 @@ Estimate: about 1:00, scaled from the plan's 1:40 (build 0:25; the plan's 1:55 b
 | Merge and push | 14:20 | 14:22 | 0:02 | |
 
 Total 2:25 of working time (11:57 to 14:22) against the 1:00 estimate (the plan's 1:40, build 0:25); the catalog additions, 12:35 to 13:06, took 0:31, and the referee's and table player's fixes, 13:24 to 13:34, took 0:10.
+
+## Pass 17b: The Tractor Works
+
+The user asked on 2026-09-29 for The Tractor Works as a third card, to run without intervention. No estimate was set. Kickoff 15:02. Branch `feature/asl-card-tractor-works`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| The legacy card read at 300 dpi, the NCC rows rendered, the board 1 building extents; catalog 1.12.0 (NCC plain-E 8-3-8 and 3-3-8 HS, a manufactured Russian HMG), the version pins, and the re-pins | 15:02 | 15:09 | 0:07 | |
+| Four fragments compared (26 in all), the format extensions (setup order, "?", a first move by die roll), the card, rulings R17.12 and R17.13, and the tests; the referee agent started | 15:09 | 15:14 | 0:05 | The referee ran 15:14 to about 15:23 |
+| Visual check in the Studio (map-studio-scripted, the card chosen by a DOM change event); the first-move sentence fixed; Studio stopped; design and backlog | 15:14 | 15:17 | 0:03 | |
+| Referee's 9 findings: the edges derived column by column, the edge basis phrase, the 295th label noted, start Control (A26.11), SSR 2 and the sewers in both Stalingrad cards, the HMG portage note, A12.12; 1 recorded; catalog rebuilt and re-pinned; the review updated | 15:23 | 15:26 | 0:03 | |
+| Full local suite: build with warnings as errors, every solution test project, and the ScenarioA1 tests (470); the architecture test hit the held `.git/worktrees`; Play (482), MapStudio (134), Authoring (166 of 167) pass | 15:26 | 15:45 | 0:19 | ScenarioA1 and Authoring ran side by side, 13:56 and 13:10 |

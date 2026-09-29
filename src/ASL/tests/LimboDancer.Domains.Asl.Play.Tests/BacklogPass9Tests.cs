@@ -173,7 +173,7 @@ public sealed class BacklogPass9Tests : IDisposable
         var start = new Dictionary<string, object>
         {
             ["label"] = "Pass 9",
-            ["catalog"] = "asl-scenario-a1@1.11.0",
+            ["catalog"] = "asl-scenario-a1@1.12.0",
             ["boards"] = Bd01,
             ["firstSide"] = firstSide,
             ["sides"] = new object[]
@@ -297,7 +297,7 @@ public sealed class BacklogPass9Tests : IDisposable
             start = new Dictionary<string, object>
             {
                 ["label"] = "Pass 9",
-                ["catalog"] = "asl-scenario-a1@1.11.0",
+                ["catalog"] = "asl-scenario-a1@1.12.0",
                 ["boards"] = Bd01,
                 ["firstSide"] = "german",
                 ["sides"] = new object[]

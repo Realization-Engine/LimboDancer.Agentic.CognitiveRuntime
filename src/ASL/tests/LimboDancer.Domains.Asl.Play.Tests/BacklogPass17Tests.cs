@@ -8,13 +8,13 @@ namespace LimboDancer.Domains.Asl.Play.Tests;
 
 /// <summary>
 /// The backlog pass 17 scenario cards (rulings R17.1 to R17.11): the card format, its reader and validation, the two cards adapted from legacy
-/// cards to the registered rulebook, and the counters they add to catalog 1.11.0. Boards 01, 02, and 04 from their Hex Fact oracle fixtures.
+/// cards to the registered rulebook, and the counters they add to catalog 1.11.0 (with The Tractor Works, pass 17b, and 1.12.0). Boards 01, 02, and 04 from their Hex Fact oracle fixtures.
 /// </summary>
 public sealed class BacklogPass17Tests
 {
     private static readonly UnitVocabulary Vocabulary = UnitVocabulary.Asl();
     private static readonly UnitCatalog Catalog = UnitCatalogs.Read(UnitCatalogs.ScenarioA1, Vocabulary)!.Catalog!;
-    private static readonly string[] Cards = ["gambit", "guards-counterattack"];
+    private static readonly string[] Cards = ["gambit", "guards-counterattack", "tractor-works"];
     private static readonly string[] ExitHexes = ["I1", "Q1", "Y1"];
     private static readonly string[] StoneHexes = ["F5", "K5", "I7", "M7", "M9", "N4", "J2", "M2", "F3"];
 
@@ -105,7 +105,7 @@ public sealed class BacklogPass17Tests
         foreach (var name in Cards)
         {
             var card = Card(name);
-            Assert.Equal("asl-scenario-a1@1.11.0", card.Catalog);
+            Assert.Equal("asl-scenario-a1@1.12.0", card.Catalog);
             Assert.Contains("registered rulebook", card.Source.Basis, StringComparison.Ordinal);
             Assert.Contains("paraphrased", card.Source.Adaptation[0], StringComparison.Ordinal);
         }
@@ -217,7 +217,8 @@ public sealed class BacklogPass17Tests
     public void TheCardsCountersComeFromTheCatalogAndTheManufacturedOnesAreLabeled()
     {
         // The pass 17 HMG, LMG, and ATR, and the MGs manufactured at unit step 23 (sheet MFG, R0.3).
-        string[] mfg = ["attacker-hmg", "british-lmg", "british-atr", "attacker-lmg", "attacker-mmg", "defender-mmg"];
+        string[] mfg = ["attacker-hmg", "british-lmg", "british-atr", "attacker-lmg", "attacker-mmg", "defender-mmg", "defender-hmg", "defender-lmg", "attacker-ft",
+            "attacker-dc"];
         foreach (var name in Cards)
         {
             foreach (var unit in Card(name).Sides.SelectMany(side => side.Groups).SelectMany(group => group.Units))
@@ -245,6 +246,79 @@ public sealed class BacklogPass17Tests
     }
 
     private static int? Number(UnitDefinition definition, string face, string name) => definition.Printed(face, name)?.Value?.Number;
+
+    [Fact]
+    public void TheTractorWorksPresentsItsSequentialSetupDummiesAndDieRoll()
+    {
+        // Pass 17b (rulings R17.12, R17.13): the 308th sets up first in X3, the Germans second, the 295th last; a die roll decides the first move.
+        var card = Card("tractor-works");
+        Assert.Equal(("russian", 8), (card.Turns.SetsUpFirst, card.Turns.Count));
+        Assert.Null(card.Turns.MovesFirst);
+        Assert.Contains("die roll", card.Turns.MovesFirstNote, StringComparison.Ordinal);
+        var russian = card.Sides[0];
+        var german = card.Sides[1];
+        Assert.Equal([1, 3], russian.Groups.Select(group => group.SetupOrder!.Value));
+        Assert.All(german.Groups, group => Assert.Equal(2, group.SetupOrder));
+        Assert.Equal((18, 12), (russian.Groups[0].Dummies!.Value, german.Groups[1].Dummies!.Value));
+        Assert.Equal((266, 226), (ScenarioCards.IntegrityBpv(card, russian, Catalog), ScenarioCards.IntegrityBpv(card, german, Catalog)));
+        Assert.Equal((266, 226), (russian.IntegrityBpv!.Value, german.IntegrityBpv!.Value));
+        Assert.Equal(("top", "setup", "bottom", "setup"), (russian.FriendlyEdge.Edge, russian.FriendlyEdge.Basis, german.FriendlyEdge.Edge, german.FriendlyEdge.Basis));
+        Assert.All(card.SpecialRules, rule => Assert.Equal("not-enforced", rule.Status));
+        Assert.Equal(["A26.1", "A26.11", "A26.13"], card.VictoryConditions.Rules);
+    }
+
+    [Fact]
+    public void TheTractorWorksSetupBuildingsAreWholeBuildingsOfBoard1()
+    {
+        var board = Board("bd01");
+        var card = Card("tractor-works");
+        var areas = card.Sides.SelectMany(side => side.Groups).SelectMany(group => group.Areas).ToArray();
+        Assert.All(areas, area => Assert.Equal(Building(board, area.Id).Order(StringComparer.Ordinal), area.Hexes!.Order(StringComparer.Ordinal)));
+        Assert.Equal(9, areas.Single(area => area.Id == "X3").Hexes!.Count);
+        Assert.All(areas, area => Assert.StartsWith("Stone Building", Terrain(board[area.Id]), StringComparison.Ordinal));
+
+        // A20.53 (ruling R17.13; referee, pass 17b): in every hex column the Russian setup hexes lie north of the German ones, so Russian north and
+        // German south; a west or east edge would have enemy between (the 308th in X3 has Germans west and east of it in its hex rows).
+        var russian = card.Sides[0].Groups.SelectMany(group => group.Areas).SelectMany(area => area.Hexes!).Select(Split).ToArray();
+        var germans = card.Sides[1].Groups.SelectMany(group => group.Areas).SelectMany(area => area.Hexes!).Select(Split).ToArray();
+        Assert.All(russian, hex => Assert.DoesNotContain(germans, other => other.Column == hex.Column && other.Number < hex.Number));
+        var x3 = areas.Single(area => area.Id == "X3").Hexes!.Select(Split).ToArray();
+        Assert.Contains(germans, hex => x3.Any(other => other.Number == hex.Number && other.Column > hex.Column));
+        Assert.Contains(germans, hex => x3.Any(other => other.Number == hex.Number && other.Column < hex.Column));
+    }
+
+    [Fact]
+    public void TheTractorWorksCountersComeFromTheChartAndMfg()
+    {
+        var squad = Catalog.Definition("attacker-elite-squad-8-3-8")!;
+        Assert.Equal(("NCC", 8, 3, 8, 16), (squad.Counter.Sheet, Number(squad, "front", "asl:firepower"), Number(squad, "front", "asl:range"),
+            Number(squad, "front", "asl:morale"), Number(squad, "broken", "asl:bpv")));
+        Assert.Equal(3, Number(squad, "front", "asl:smoke-exponent"));
+        var half = Catalog.Definition("attacker-elite-half-squad-3-3-8")!;
+        Assert.Equal((3, 3, 8, 6), (Number(half, "front", "asl:firepower"), Number(half, "front", "asl:range"), Number(half, "front", "asl:morale"),
+            Number(half, "broken", "asl:bpv")));
+        var hmg = Catalog.Definition("defender-hmg")!;
+        Assert.True(ScenarioCards.Manufactured(hmg));
+        Assert.Equal((6, 12, 3, 12), (Number(hmg, "front", "asl:firepower"), Number(hmg, "front", "asl:range"), Number(hmg, "front", "asl:rate-of-fire"),
+            Number(hmg, "front", "asl:breakdown")));
+    }
+
+    [Fact]
+    public void ASequentialSetupDieRollAndDummiesAreChecked()
+    {
+        var gap = Json("tractor-works");
+        gap["sides"]![0]!["groups"]![1]!["setupOrder"] = 4;
+        Assert.Contains(Diagnostics(gap), item => item.Contains("numbers the groups from 1", StringComparison.Ordinal));
+        var wrongFirst = Json("tractor-works");
+        wrongFirst["turns"]!["setsUpFirst"] = "german";
+        Assert.Contains(Diagnostics(wrongFirst), item => item.Contains("beginning with the side that sets up first", StringComparison.Ordinal));
+        var silent = Json("tractor-works");
+        silent["turns"]!.AsObject().Remove("movesFirstNote");
+        Assert.Contains(Diagnostics(silent), item => item.StartsWith("card.turns:", StringComparison.Ordinal));
+        var negative = Json("tractor-works");
+        negative["sides"]![1]!["groups"]![1]!["dummies"] = -1;
+        Assert.Contains(Diagnostics(negative), item => item.Contains("\"?\"", StringComparison.Ordinal));
+    }
 
     [Fact]
     public void AScenarioDefenderMustFaceASideThatEntersWhollyFromOffboard()

@@ -245,7 +245,7 @@ public sealed class PlayPageStepsTests : IDisposable
 
         // The game is rewritten to name a catalog the Studio no longer carries, as a game set up before catalog 1.2.0 does.
         var file = Directory.GetFiles(live.Root, "village.game.json", SearchOption.AllDirectories).Single();
-        File.WriteAllText(file, File.ReadAllText(file).Replace("asl-scenario-a1@1.11.0", "asl-scenario-a1@1.1.0", StringComparison.Ordinal));
+        File.WriteAllText(file, File.ReadAllText(file).Replace("asl-scenario-a1@1.12.0", "asl-scenario-a1@1.1.0", StringComparison.Ordinal));
         var reopened = context.Render<PlayPage>();
         reopened.Find("#play-game").Change("village");
         Assert.Contains("does not replay", reopened.Find("#play-replay-failed").TextContent, StringComparison.Ordinal);

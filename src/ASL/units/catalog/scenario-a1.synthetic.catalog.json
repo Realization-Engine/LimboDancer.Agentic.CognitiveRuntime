@@ -3273,6 +3273,66 @@
         { "face": "front", "trait": "asl:breakdown-removes", "present": false, "row": 1967 },
         { "face": "malfunctioned", "attribute": "repair", "value": 1, "row": 1968 }
       ]
+    },
+    {
+      "id": "attacker-elite-squad-8-3-8",
+      "kind": "asl:squad", "kindRow": 1969,
+      "nationality": "british", "nationalityRow": 1970,
+      "class": "green",
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "attacker-elite-squad-8-3-8" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "firepower", "value": 2, "row": 1971 },
+        { "face": "front", "attribute": "range", "value": 2, "row": 1972 },
+        { "face": "front", "attribute": "morale", "value": 3, "row": 1973 },
+        { "face": "front", "attribute": "identity", "value": "S", "row": 1974 },
+        { "face": "front", "attribute": "class", "value": "green", "row": 1975 },
+        { "face": "front", "attribute": "class-variant", "printed": false, "row": 1976 },
+        { "face": "front", "attribute": "smoke-exponent", "value": 1, "row": 1977 },
+        { "face": "front", "trait": "asl:assault-fire", "present": true, "row": 1978 },
+        { "face": "front", "trait": "asl:spraying-fire", "present": false, "row": 1979 },
+        { "face": "front", "trait": "asl:elr-5", "present": false, "row": 1980 },
+        { "face": "front", "trait": "asl:assault-engineer", "present": false, "row": 1981 },
+        { "face": "broken", "attribute": "broken-morale", "value": 4, "row": 1982 },
+        { "face": "broken", "attribute": "bpv", "value": 5, "row": 1983 },
+        { "face": "broken", "trait": "asl:self-rally", "present": true, "row": 1984 }
+      ]
+    },
+    {
+      "id": "attacker-elite-half-squad-3-3-8",
+      "kind": "asl:half-squad", "kindRow": 1985,
+      "nationality": "british", "nationalityRow": 1986,
+      "class": "green",
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "attacker-elite-half-squad-3-3-8" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "firepower", "value": 2, "row": 1987 },
+        { "face": "front", "attribute": "range", "value": 1, "row": 1988 },
+        { "face": "front", "attribute": "morale", "value": 3, "row": 1989 },
+        { "face": "front", "attribute": "identity", "printed": false, "row": 1990 },
+        { "face": "front", "attribute": "class", "value": "green", "row": 1991 },
+        { "face": "broken", "attribute": "broken-morale", "value": 4, "row": 1992 },
+        { "face": "broken", "attribute": "bpv", "value": 2, "row": 1993 }
+      ]
+    },
+    {
+      "id": "defender-hmg",
+      "kind": "asl:mg", "kindRow": 1994,
+      "nationality": "french", "nationalityRow": 1995,
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "defender-hmg" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "size", "value": "heavy", "row": 1996 },
+        { "face": "front", "attribute": "firepower", "value": 6, "row": 1997 },
+        { "face": "front", "attribute": "range", "value": 7, "row": 1998 },
+        { "face": "front", "attribute": "breakdown", "value": 11, "row": 1999 },
+        { "face": "front", "attribute": "rate-of-fire", "value": 1, "row": 2000 },
+        { "face": "front", "attribute": "portage", "value": 1, "row": 2001 },
+        { "face": "malfunctioned", "attribute": "repair", "value": 2, "row": 2002 }
+      ]
     }
   ]
 }

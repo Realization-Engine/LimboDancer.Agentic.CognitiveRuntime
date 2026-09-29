@@ -62,7 +62,7 @@ else
                     <dt>Turn Record Chart (A3.9)</dt>
                     <dd id="card-turns">
                         @card.Turns.Count Game Turns@(card.Turns.HalfTurn ? ", the last with one Player Turn" : string.Empty).
-                        @Side(card.Turns.SetsUpFirst) sets up first; @Side(card.Turns.MovesFirst) moves first.
+                        @Side(card.Turns.SetsUpFirst) sets up first@(card.Turns.MovesFirst is { } first ? $"; {Side(first)} moves first." : $". {card.Turns.MovesFirstNote}")
                     </dd>
                     <dt>Scenario Defender</dt>
                     <dd id="card-defender">
@@ -83,7 +83,7 @@ else
                             <dd class="card-integrity">@(side.IntegrityBpv is { } bpv ? $"[{bpv}] (A16 is optional and not built yet)" : "none printed")</dd>
                             <dt>Friendly Board Edge (A20.53)</dt>
                             <dd class="card-edge">
-                                The @side.FriendlyEdge.Edge edge (@ScenarioCards.Compass(card, side.FriendlyEdge.Edge)), from its @side.FriendlyEdge.Basis.
+                                The @side.FriendlyEdge.Edge edge (@ScenarioCards.Compass(card, side.FriendlyEdge.Edge)), @Basis(side.FriendlyEdge.Basis).
                                 @side.FriendlyEdge.Note
                             </dd>
                             <dt>Balance (A26.4)</dt>
@@ -92,7 +92,7 @@ else
                         @foreach (var group in side.Groups)
                         {
                             <table class="card-group">
-                                <caption>@group.Name, ELR @group.Elr</caption>
+                                <caption>@group.Name, ELR @group.Elr@(group.SetupOrder is { } order ? $", sets up {Order(order, card)}" : string.Empty)</caption>
                                 <thead><tr><th>Count</th><th>Counter</th><th>Setup or entry</th><th>Source</th></tr></thead>
                                 <tbody>
                                     @foreach (var unit in group.Units)
@@ -109,6 +109,10 @@ else
                                     }
                                 </tbody>
                             </table>
+                            @if (group.Dummies is > 0)
+                            {
+                                <p class="card-dummies">@group.Dummies "?" counters to set up with the group (A12.11).</p>
+                            }
                             @foreach (var area in group.Areas.Where(area => area.Limit is not null))
                             {
                                 <p class="card-limit">@AreaText(card, area): @area.Limit</p>
@@ -197,6 +201,22 @@ else
     /// <summary>The rules a card cites, the project's rulings marked as such.</summary>
     private static string Cites(IEnumerable<string> rules) =>
         string.Join(", ", rules.Select(rule => rule.StartsWith('R') ? $"ruling {rule}" : rule));
+
+    /// <summary>A group's place in a sequential setup: first, second, ..., or last.</summary>
+    private static string Order(int order, ScenarioCard card)
+    {
+        var last = card.Sides.SelectMany(side => side.Groups).Max(group => group.SetupOrder ?? 0);
+        return order == last ? "last" : order - 1 < Ordinals.Length ? Ordinals[order - 1] : $"{order}th";
+    }
+
+    /// <summary>What a Friendly Board Edge rests on (A20.53; ruling R17.7), as a phrase.</summary>
+    private static string Basis(string basis) => basis switch
+    {
+        "setup" => "from its setup (A20.53)",
+        "entry" => "from its entry (A20.53)",
+        "ssr" => "by SSR",
+        _ => "manufactured under R0.3",
+    };
 
     private static string Side(string side) => side.Length == 0 ? side : char.ToUpperInvariant(side[0]) + side[1..];
 

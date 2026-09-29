@@ -170,10 +170,10 @@ public sealed class AslScenarioA1FireSourceReviewTests
     [Fact]
     public void ThePass17SubjectsAreVerified()
     {
-        // Backlog pass 17: the rules the scenario cards cite, 17 Chapter A fragments, B8.1, B8.4, B25.5, B25.63, and C8.2.
+        // Backlog passes 17 and 17b: the rules the scenario cards cite, 20 Chapter A fragments, B8.1, B8.4, B23.74, B25.5, B25.63, and C8.2.
         var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
         var pass17 = AslScenarioA1FireSourceReview.BuildPass17(RepositoryPaths.Root, manifests, Attestation());
-        Assert.Equal(22, pass17.Records.Count);
+        Assert.Equal(26, pass17.Records.Count);
         Assert.All(pass17.Records, record => Assert.Equal(TirSourceVerificationDisposition.Verified, record.Disposition));
     }
 

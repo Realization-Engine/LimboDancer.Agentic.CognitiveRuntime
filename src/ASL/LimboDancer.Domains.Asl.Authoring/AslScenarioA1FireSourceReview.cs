@@ -161,10 +161,10 @@ public static class AslScenarioA1FireSourceReview
     /// <summary>
     /// The backlog pass 17 comparison: the rules the scenario cards cite (the board configuration, the Turn Record Chart, SAN, Battlefield Integrity,
     /// ELR, the Friendly Board Edge, Victory Conditions, and Balance) and the rules their SSRs, Balance, and adaptation notes name (A7.7, A24.1,
-    /// A25.22, A25.44, B8.1, B8.4, B25.5, B25.63, C8.2).
+    /// A25.22, A25.44, B8.1, B8.4, B25.5, B25.63, C8.2), with The Tractor Works' A10.8, A12.11, A26.13, and B23.74 (pass 17b).
     /// </summary>
     public const string Pass17ComparisonFile = "asl-scenario-a1.pass17-pdf-comparison.json";
-    public const string Pass17ComparisonSha256 = "562824299baa71c73edf9a16b79310891e044ca629387b6346af594bb2d35995";
+    public const string Pass17ComparisonSha256 = "f82965dbe721517396a50590ff8c44b6caeb2555dbb3e83d6ea278c173da87a2";
 
     private const string ChapterA = "asl-easlrb-3.10:chapter-a";
     private const string ChapterB = "asl-easlrb-3.10:chapter-b";
@@ -879,6 +879,10 @@ public static class AslScenarioA1FireSourceReview
         ("B8.1", "B8.1", ChapterB, 354, SourceFragmentKind.RuleText, 117),
         ("B25.5", "B25.5", ChapterB, 1699, SourceFragmentKind.RuleText, 143),
         ("B25.63", "B25.63", ChapterB, 1746, SourceFragmentKind.RuleText, 144),
+        ("A10.8", "A10.8", ChapterA, 846, SourceFragmentKind.RuleText, 69),
+        ("A12.11", "A12.11", ChapterA, 992, SourceFragmentKind.RuleText, 76),
+        ("A26.13", "A26.13", ChapterA, 2019, SourceFragmentKind.RuleText, 99),
+        ("B23.74", "B23.74", ChapterB, 1498, SourceFragmentKind.RuleText, 139),
     ];
 
     private static readonly (string Rule, string Registered, string Source, int Line, SourceFragmentKind Kind, int Page)[] Pass16Subjects =
