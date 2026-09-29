@@ -373,6 +373,14 @@ public static class GameEventReader
                 var smokeRoll = fields.OptionalString(payload, "smokeRoll", path);
                 var smokeDr = fields.OptionalInteger(payload, "smokeDr", path);
                 var smokeExponent = fields.OptionalInteger(payload, "smokeExponent", path);
+                var dcBy = fields.OptionalString(payload, "dcBy", path);
+                var dcCharge = fields.OptionalString(payload, "dc", path);
+                var dcAt = dcBy is null ? null : ReadLocation(payload, "dcAt", path, fields, diagnostics);
+                if (dcBy is not null && (dcCharge is null || dcAt is null))
+                {
+                    return Missing(diagnostics, "A DC Placement names its unit, DC, and Location.", path);
+                }
+
                 if (smokeBy is not null && (smokeAt is null || smokeRoll is null || smokeDr is null || smokeExponent is null))
                 {
                     return Missing(diagnostics, "A SMOKE placement names its squad, Location, roll, dr, and exponent.", path);
@@ -406,6 +414,8 @@ public static class GameEventReader
                         {
                             Cx = fields.OptionalBoolean(payload, "smokeCx", path),
                         },
+                        DcPlacement = dcBy is null ? null : new DcPlacement(dcBy, dcCharge!, dcAt!, fields.OptionalBoolean(payload, "dcCx", path),
+                            fields.OptionalBoolean(payload, "dcConcealed", path)),
                     };
             case "bore-sighted":
                 var sighter = fields.RequiredString(payload, "gun", path);
@@ -698,6 +708,16 @@ public static class GameEventReader
                 return fields.RequiredString(payload, "unit", path) is { } rejected ? new SurrenderRejected(rejected) : null;
             case "prisoner-freed":
                 return fields.RequiredString(payload, "unit", path) is { } freed ? new PrisonerFreed(freed) : null;
+            case "sniper-attacked":
+                var sniperId = fields.RequiredString(payload, "sniper", path);
+                var sniperTrigger = fields.RequiredString(payload, "trigger", path);
+                var sniperRoll = fields.RequiredString(payload, "roll", path);
+                var sniperDr = fields.OptionalInteger(payload, "dr", path);
+                var sniperTarget = payload.TryGetProperty("target", out _) ? ReadLocation(payload, "target", path, fields, diagnostics) : null;
+                var sniperResult = fields.RequiredString(payload, "result", path);
+                return sniperId is null || sniperTrigger is null || sniperRoll is null || sniperDr is null || sniperResult is null
+                    ? Missing(diagnostics, "A Sniper attack names its Sniper, trigger, roll, dr, and result.", path)
+                    : new SniperAttacked(sniperId, sniperTrigger, sniperRoll, sniperDr.Value, sniperTarget, fields.OptionalString(payload, "unit", path), sniperResult);
             case "prisoners-massacred":
                 return new PrisonersMassacred(fields.StringList(payload, "units", path), fields.StringList(payload, "prisoners", path),
                     fields.OptionalBoolean(payload, "berserk", path));

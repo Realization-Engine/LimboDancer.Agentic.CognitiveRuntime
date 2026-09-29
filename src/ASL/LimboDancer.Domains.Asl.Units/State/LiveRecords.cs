@@ -90,6 +90,15 @@ public sealed record MovementStepped(IReadOnlyList<string> Movers, BoardLocation
     }
 
     /// <summary>
+    /// A DC Placed with this step's MF in an ADJACENT Location (A23.3; backlog pass 15, ruling R15.2): the unit, the DC, the Location, whether the unit
+    /// was CX, and whether every unit there was concealed; null for a move.
+    /// </summary>
+    public DcPlacement? DcPlacement
+    {
+        get; init;
+    }
+
+    /// <summary>
     /// Whether the step crossed a road hexside at the road rate into a hex with no SMOKE, burning wreck, or rubble (B3.4, A4.132; ruling R10.8): a
     /// unit whose every step this MPh was one gets one more MF.
     /// </summary>
@@ -130,6 +139,9 @@ public sealed record MovementStepped(IReadOnlyList<string> Movers, BoardLocation
 /// A SMOKE grenade placement attempt (A24.1; ruling R9.5): a dr at most the exponent places a SMOKE counter in the Location named; a dr of 6 ends
 /// the squad's MPh.
 /// </summary>
+/// <summary>A DC Placement (A23.3; ruling R15.2).</summary>
+public sealed record DcPlacement(string Unit, string Charge, BoardLocation Target, bool Cx, bool TargetsConcealed);
+
 public sealed record SmokeAttempt(string Unit, BoardLocation Target, string Roll, int Dr, int Exponent)
 {
     /// <summary>Whether the squad is CX, which adds one to the dr (A4.51; table player, pass 9).</summary>

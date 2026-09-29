@@ -356,3 +356,26 @@ Estimate: 2:45, the user's figure of 2026-09-28 (the plan's 5:05, build 3:50, sc
 | Merge and push | 22:31 | 22:33 | 0:02 | |
 
 Total 1:52 of working time (20:41 to 22:33) against the 2:45 estimate (the plan's 5:05, build 3:50); the build with both reviews' fixes, 20:51 to 21:58, took 1:07.
+
+## Pass 15: Special units and nationalities
+
+Estimate: 2:40, the user's figure of 2026-09-28 (the plan's 6:30, build 5:15, scaled by the passes 12 to 14 actuals). Kickoff 2026-09-28 22:34. Branch `feature/asl-backlog-pass-15`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Reading (A14, A22, A23, A25.22 to A25.25, A10.7, A19.13, A19.2, A19.3, A15.21 to A15.24, A15.431, A15.1, A18.2; the A./G. National Capabilities Chart rendered from physical page 695) and rulings R15.1 to R15.14 | 22:34 | 22:44 | 0:10 | |
+| Catalog 1.10.0: 88 counters from the chart and Chapter A (sheet MFG for the FT and DC portage and the Commissars' broken morale), the catalog rebuilt, the id lists and the catalog version in the tests | 22:44 | 22:54 | 0:10 | |
+| Fire, Rally, Close Combat, and Heat of Battle packages: FT, DC, MOL, Commissars, Allied Troops, underscored Morale Factors, a hero's MG, the NKVD table, the nationalities' tables | 22:54 | 23:07 | 0:13 | |
+| Units records and projector (DC Placement, Sniper attacks), planner (FT, MOL, Throw, Place, detonate, Snipers, Commissar duty, berserk keep), refusal texts | 23:07 | 23:24 | 0:17 | |
+| PDF comparison (36 fragments) and its registration; the four package revisions with their prior digests | 23:24 | 23:30 | 0:06 | |
+| Tests: 12 package tests, 15 Play tests, the older tests the new rules change; ScenarioA1 and Play pass | 23:30 | 23:53 | 0:23 | |
+| Play page: FT, MOL, DC Throw and detonate, DC Placement and berserk keep in the move panel, Snipers list, SAN inputs, Sniper counter placement; page test | 23:53 | 00:13 | 0:20 | The referee ran 23:53 to 00:17 |
+| Visual check in the Studio (pass15-demo: a FT attack and a Thrown DC's two records); Studio stopped; table-player clone and agent started | 00:13 | 00:17 | 0:04 | The table player ran 00:17 to about 00:48 |
+| Referee's 16 findings: the underscored ELR of 5, Finnish ranks and classes, the Italian line class, Italian and Finnish progressions (catalog regenerated, 92 counters), the DC freeze, Cowering immunity, Finnish 1st Line and Inexperienced FT and DC users, the thrower's DR; ten more fragments compared (46); packages re-pinned; four new package tests; 9 recorded | 00:17 | 00:50 | 0:33 | |
+| Table player's 8 findings (34 situations): 6 fixed (a crash on a DFF Throw, the vehicle Placement freeze, one FT or DC per Player Turn, Prep Fire by a FT, a DC thrower's inherent FP, a hero's FT; the Finnish Self-Rally fixed by the catalog), 2 recorded; 33 situations kept as `BacklogPass15TablePlayerTests`; Play (353) pass | 00:50 | 01:10 | 0:20 | |
+| Review, design, backlog section 25 (14 rows removed from sections 2, 5, 6, 10, 11, and 22), requirements, ruling wording | 01:10 | 01:25 | 0:15 | |
+| Full local suite: build with warnings as errors, every solution test project, and the ScenarioA1 tests (464); 4 failed: the architecture test's scan hit the held `.git/worktrees`, and three Units catalog tests whose synthetic American green and Italian conscript squads now share key facts with the new nationalities' counters (they now read the synthetic catalog without those); Units (405) pass; the source verification, pending comparison, and chart supplement regenerations run locally (identical) | 01:25 | 01:36 | 0:11 | |
+| Commit 0af4dde; merge gate: the Docker Linux check (restore, build, test, a1, and the source verification and pending comparison regenerations: every step exit 0; Authoring 165 of 165, ScenarioA1 464) | 01:36 | 01:51 | 0:15 | |
+| Merge and push | 01:51 | 01:53 | 0:02 | |
+
+Total 3:19 of working time (22:34 to 01:53) against the 2:40 estimate (the plan's 6:30, build 5:15); the referee's and table player's fixes, 00:17 to 01:10, took 0:53.

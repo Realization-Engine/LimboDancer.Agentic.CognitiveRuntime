@@ -5,7 +5,7 @@
   "scope": "Close Combat in the CCPh between Infantry of the reviewed Scenario A1 catalog in one Location: the Ambush drs, the declared attacks of each round, their odds, black or red Kill Numbers, DRM, and effects, with Field Promotion. Since backlog pass 11, CC with vehicles: Infantry against a vehicle and a vehicle against Infantry, sequentially, with the PAATC. Since backlog pass 14, Hand-to-Hand, concealed and TI units, capture attempts, prisoners and their escape, Infiltration, and overstacked Locations (R14.1 to R14.13).",
   "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
   "cctTranscriptionSha256": "c2af9d03865da14baf7b0ec68989d99e0607079cb3f43f835d145b92bab8abbb",
-  "catalogSha256": "0d67c9a63fdad49a8de3d96ad5fd1e5302e321f9850bc241e198d93656e3943d",
+  "catalogSha256": "41f8b8272bfda60c83aa8827d0c99c427552b6638f78330ae48ae47d56100f24",
   "sourceFragments": [
     {
       "ruleId": "A1.6",
@@ -566,6 +566,13 @@
       "startLine": 1442,
       "fragmentId": "asl-fragment:sha256:2844e71d4d9b8e1b43057958f97db3445f1fc535ef187c3ef8d8e65a4476ad51",
       "contentSha256": "7b1daaf4fbb6f05908f73d53a4b513bd5144f8656382a85c725df591b23edfcf"
+    },
+    {
+      "ruleId": "A25.25",
+      "physicalPdfPage": 96,
+      "startLine": 1758,
+      "fragmentId": "asl-fragment:sha256:5850efcfceb4866ca3d2ce0e7eaa3780ef67022fb90fe740955e5c1087adacab",
+      "contentSha256": "48980cfe17197567162ed6578ced4cc60cd7164ef883d4d53ec4ba7189daf9a2"
     }
   ],
   "rulings": {
@@ -595,7 +602,8 @@
     "escape": "prisoners-whose-guard-is-broken-or-in-melee-attack-first-in-their-own-round-after-a-ntc-unless-the-guard-is-in-melee-each-attack-taking-in-the-guard; an-attacking-prisoner-is-no-longer-guarded; an-unarmed-mmc-is-rearmed-as-a-conscript-for-each-armed-enemy-unit-of-at-least-its-size-it-eliminates-or-captures-A20.55-A11.33-A11.34-A20.551 (R14.6)",
     "infiltration": "the-attackers-attacks-first-then-the-defenders; after-an-original-2-its-attackers-with-a-declared-destination-not-eliminated-captured-or-pinned-withdraw; after-an-original-12-its-surviving-defenders-with-one-withdraw-forfeiting-their-attacks-not-yet-resolved-A11.22 (R14.8)",
     "overstacking": "plus-one-per-squad-equivalent-a-side-exceeds-three-to-its-cc-attacks-and-minus-one-to-cc-attacks-on-its-units-prisoners-never-counted-A5.12-A5.131-A5.5-A20.51 (R14.10)",
-    "bpv": "the-mmc-of-the-highest-bpv-founds-a-leader-created-in-cc; the-mmc-he-defends-with-by-random-selection-when-an-enemy-attack-takes-some-of-the-attacks-mmc-A18.2 (R14.12)"
+    "bpv": "the-mmc-of-the-highest-bpv-founds-a-leader-created-in-cc; the-mmc-he-defends-with-by-random-selection-when-an-enemy-attack-takes-some-of-the-attacks-mmc-A18.2 (R14.12)",
+    "nkvdFieldPromotion": "an-nkvd-mmcs-field-promotion-in-cc-uses-the-a25.25-table-dr-1-a-10-0-2-3-a-9-0-4-5-an-8-plus-1-commissar-6-none-minus-1-per-odds-column-below-1-1-minus-1-fanatic-A25.25 (R15.7)"
   },
   "resolution": {
     "odds": "The attackers' FP against the defenders' FP, rounded down to the printed CCT column; < 1-8 below one to eight, > 10-1 above ten to one (A11.11, p. 692).",
@@ -714,7 +722,7 @@
         "A18.2",
         "A11.11"
       ],
-      "reason": "Field Promotion by NKVD MMC, which creates a Commissar, is undecided before any roll (A25.25); the base MMC is the one of the highest BPV (ruling R14.12)."
+      "reason": "Field Promotion by an attack mixing MMC definitions whose BPV the matrix lacks is undecided before any roll; the base MMC is the one of the highest BPV (ruling R14.12), and an NKVD MMC's creates a Commissar by the A25.25 table (ruling R15.7)."
     },
     {
       "caseId": "A1-cc-roll-missing",
@@ -930,8 +938,50 @@
     "defender-guards-squad": 12,
     "defender-guards-half-squad": 5,
     "defender-nkvd-squad": 13,
-    "defender-nkvd-half-squad": 6
+    "defender-nkvd-half-squad": 6,
+    "american-elite-squad": 14,
+    "american-elite-half-squad": 6,
+    "american-squad": 11,
+    "american-half-squad": 4,
+    "american-2nd-line-squad": 7,
+    "american-2nd-line-half-squad": 3,
+    "american-green-squad": 6,
+    "american-green-half-squad": 2,
+    "british-elite-squad": 13,
+    "british-elite-half-squad": 5,
+    "british-squad": 10,
+    "british-half-squad": 4,
+    "british-2nd-line-squad": 7,
+    "british-2nd-line-half-squad": 3,
+    "british-green-squad": 5,
+    "british-green-half-squad": 2,
+    "italian-elite-squad": 8,
+    "italian-elite-half-squad": 3,
+    "italian-squad": 6,
+    "italian-half-squad": 2,
+    "italian-conscript-squad": 3,
+    "italian-conscript-half-squad": 1,
+    "finnish-elite-squad": 17,
+    "finnish-elite-half-squad": 8,
+    "finnish-squad": 15,
+    "finnish-half-squad": 7,
+    "finnish-2nd-line-squad": 10,
+    "finnish-2nd-line-half-squad": 5,
+    "finnish-conscript-squad": 6,
+    "finnish-conscript-half-squad": 3,
+    "french-elite-squad": 12,
+    "french-elite-half-squad": 5,
+    "french-squad": 8,
+    "french-half-squad": 3,
+    "french-green-squad": 6,
+    "french-green-half-squad": 2,
+    "italian-line-squad": 5,
+    "italian-line-half-squad": 2,
+    "finnish-green-squad": 13,
+    "finnish-green-half-squad": 6,
+    "finnish-square-squad": 14,
+    "finnish-square-half-squad": 6
   },
-  "bpvSource": "A./G. National Capabilities Chart, physical page 109 of the registered PDF, read from a 150 dpi render: German 4-6-7 10 (HS 4), 4-4-7 7 (3), 4-3-6 5 (2), 4-6-8 13 (5); Russian 4-4-7 7 (3), 5-2-7 7 (3), 4-2-6 4 (1), 4-5-8 11 (5), 6-2-8 12 (5), NKVD 6-2-8 13 (6).",
-  "revision": "Backlog pass 14 (2026-09-28): Hand-to-Hand, concealed and TI units, capture attempts, prisoners and their escape, Infiltration, overstacking, and the BPV of Field Promotion (rulings R14.1 to R14.13)."
+  "bpvSource": "A./G. National Capabilities Chart, physical page 109 of the registered PDF, read from a 150 dpi render: German 4-6-7 10 (HS 4), 4-4-7 7 (3), 4-3-6 5 (2), 4-6-8 13 (5); Russian 4-4-7 7 (3), 5-2-7 7 (3), 4-2-6 4 (1), 4-5-8 11 (5), 6-2-8 12 (5), NKVD 6-2-8 13 (6). Backlog pass 15 adds the American, British, Italian, Finnish, and French MMC of catalog 1.10.0 from the same chart.",
+  "revision": "Backlog pass 15 (2026-09-28): NKVD Field Promotion creates Commissars (ruling R15.7); the BPV of five more nationalities; catalog 1.10.0. Earlier: Backlog pass 14 (2026-09-28): Hand-to-Hand, concealed and TI units, capture attempts, prisoners and their escape, Infiltration, overstacking, and the BPV of Field Promotion (rulings R14.1 to R14.13)."
 }

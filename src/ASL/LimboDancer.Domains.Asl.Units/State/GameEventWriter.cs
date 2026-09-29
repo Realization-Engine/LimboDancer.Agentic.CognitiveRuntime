@@ -392,6 +392,22 @@ public static class GameEventWriter
                     }
                 }
 
+                if (moving.DcPlacement is { } placement)
+                {
+                    writer.WriteString("dcBy", placement.Unit);
+                    writer.WriteString("dc", placement.Charge);
+                    writer.WriteString("dcAt", placement.Target.ToString());
+                    if (placement.Cx)
+                    {
+                        writer.WriteBoolean("dcCx", true);
+                    }
+
+                    if (placement.TargetsConcealed)
+                    {
+                        writer.WriteBoolean("dcConcealed", true);
+                    }
+                }
+
                 if (moving.PushedGun is { } pushedGun)
                 {
                     writer.WriteString("pushedGun", pushedGun);
@@ -699,6 +715,23 @@ public static class GameEventWriter
                 break;
             case PrisonerFreed freed:
                 writer.WriteString("unit", freed.Unit);
+                break;
+            case SniperAttacked sniper:
+                writer.WriteString("sniper", sniper.Sniper);
+                writer.WriteString("trigger", sniper.Trigger);
+                writer.WriteString("roll", sniper.Roll);
+                writer.WriteNumber("dr", sniper.Dr);
+                if (sniper.Target is { } sniped)
+                {
+                    writer.WriteString("target", sniped.ToString());
+                }
+
+                if (sniper.Unit is { } snipedUnit)
+                {
+                    writer.WriteString("unit", snipedUnit);
+                }
+
+                writer.WriteString("result", sniper.Result);
                 break;
             case PrisonersMassacred massacre:
                 Strings(writer, "units", massacre.Units);

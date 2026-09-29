@@ -48,6 +48,16 @@ public sealed record RallyAttempt(
     }
 
     /// <summary>
+    /// The unpinned, unbroken Commissar of the unit's side in its Location, other than the unit (A25.221, A25.222; backlog pass 15, ruling R15.6): he
+    /// alone may direct the attempt, raises the unit's Morale Level by one, makes it immune to DM, and Replaces a MMC that fails. Null when none.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Commissar
+    {
+        get; init;
+    }
+
+    /// <summary>
     /// The owner's answers to the attempt's options (ruling R5.8), <c>take</c> or <c>decline</c> by key: <c>leaderCreation:&lt;unit&gt;</c>
     /// (A18.11) and <c>battleHardening:&lt;unit&gt;</c> (A15.3). Null means every option is taken; otherwise an option the attempt reaches with
     /// no answer leaves it undecided.
@@ -220,6 +230,13 @@ public sealed record RallyEffect(
     /// <summary>The companions that went berserk with a berserk leader (A15.41); null when none did.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyList<string>? BerserkCompanions
+    {
+        get; init;
+    }
+
+    /// <summary>Whether a Commissar's failed rally Replaced the unit with its next lower quality (A25.222; ruling R15.6); null when it did not.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? ReplacedByCommissar
     {
         get; init;
     }

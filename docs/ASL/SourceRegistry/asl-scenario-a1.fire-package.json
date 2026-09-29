@@ -3,15 +3,15 @@
   "status": "published-bounded-fire-package",
   "domainId": "asl",
   "packageId": "scenario-a1-fire",
-  "priorFirePackageManifestSha256": "584d82d94257328a4b8bffd214d7076b4d51b0aec5433a2a8b7bd042c8da4010",
-  "declaredUse": "Read-only conclusions for a declared fire attack by reviewed Scenario A1 MMC and heroes, with their MGs, in the PFPh, AFPh, DFPh, or the MPh (Defensive First Fire, Subsequent First Fire, FPF, and Residual FP), in one Location or across ADJACENT Locations, optionally directed: the FP columns, the DRM, the IFT results, each target unit's effect, each MG's malfunction and Multiple ROF, and the Residual FP left, under the user's rulings of 2026-09-26 (Fire Review; ASL Unit Rally and Fire Extensions Plan, R20.1 to R23.5 and R0.2); and Heat of Battle after an Original MC DR of 2 (Deviations, Ordnance, and Vehicles Plan, R26.1 to R28.8); and a vehicle's OVR of an enemy-occupied Location (Backlog Passes Plan, R11.11); and the fire extensions of Backlog Passes Plan R12.1 to R12.11; and captured MG and ATR (Backlog Passes Plan R13.7).",
-  "caseMatrixSha256": "921bba5488febc0a144665f7db7743fd9238cd69cee98b065685345feb45a48f",
+  "priorFirePackageManifestSha256": "42fa78bb1475b6bff66fac7be1a38cb11852b7d67025ec2a6b80c137220f3ba0",
+  "declaredUse": "Read-only conclusions for a declared fire attack by reviewed Scenario A1 MMC and heroes, with their MGs, in the PFPh, AFPh, DFPh, or the MPh (Defensive First Fire, Subsequent First Fire, FPF, and Residual FP), in one Location or across ADJACENT Locations, optionally directed: the FP columns, the DRM, the IFT results, each target unit's effect, each MG's malfunction and Multiple ROF, and the Residual FP left, under the user's rulings of 2026-09-26 (Fire Review; ASL Unit Rally and Fire Extensions Plan, R20.1 to R23.5 and R0.2); and Heat of Battle after an Original MC DR of 2 (Deviations, Ordnance, and Vehicles Plan, R26.1 to R28.8); and a vehicle's OVR of an enemy-occupied Location (Backlog Passes Plan, R11.11); and the fire extensions of Backlog Passes Plan R12.1 to R12.11; and captured MG and ATR (Backlog Passes Plan R13.7); and FT, DC, MOL, Snipers, Commissars, Allied Troops, underscored Morale Factors, Green MMC, a hero's MG, and five more nationalities (Backlog Passes Plan, R15.1 to R15.13).",
+  "caseMatrixSha256": "3d83adedc26c2edc65d5b0fd3166b47c1a2cf472f4bde97764566d1285a755c1",
   "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
   "chartSupplementSha256": "8499a4ec75da057920fbc05dde60b975f39560803d26ce1433f9c6567a052985",
   "chartReviewDecisionSha256": "a19bf80dedc36fbf36d9356552f28a538faeea9469c8d22daddfabed546fd1e2",
   "iftTranscriptionSha256": "42440dd6facf7aa23cfc8c884ed8c7266f6621b25cb889b679c850098d3a4cec",
   "terrainChartTranscriptionSha256": "afc61e1db4871050d91ab6c58f022ddca86651f8f0104e39408c156e44ffdafa",
-  "catalogSha256": "0d67c9a63fdad49a8de3d96ad5fd1e5302e321f9850bc241e198d93656e3943d",
+  "catalogSha256": "41f8b8272bfda60c83aa8827d0c99c427552b6638f78330ae48ae47d56100f24",
   "sourceFragments": [
     {
       "ruleId": "A.5",
@@ -2322,6 +2322,328 @@
       "startLine": 1452,
       "fragmentId": "asl-fragment:sha256:b8ec98795408f5ac22901360ca2d27b5314b9fc0f65aec3f726f2e9701100833",
       "contentSha256": "43e83a8feace9cbfa6205a91796506fc5dca80fa27321ba098490b4380af0774"
+    },
+    {
+      "ruleId": "A14.1",
+      "physicalPdfPage": 82,
+      "startLine": 1170,
+      "fragmentId": "asl-fragment:sha256:53c2454b72908f4d05a6832011f27c379fc69e7212112021aff40613b74cd18c",
+      "contentSha256": "66a8f368a71df0fbf822634704c99119eaac37de31b1c88a1a85b16ef63c4723"
+    },
+    {
+      "ruleId": "A14.2",
+      "physicalPdfPage": 82,
+      "startLine": 1172,
+      "fragmentId": "asl-fragment:sha256:017a8084ce43e5de5798b09d24a5dd8dd22ebe4a3fc10185d3770c49aa80962f",
+      "contentSha256": "098e429e825977b5d22b36e7eb185d013547b71ca08254242c93e5b33a59835d"
+    },
+    {
+      "ruleId": "A14.21",
+      "physicalPdfPage": 82,
+      "startLine": 1176,
+      "fragmentId": "asl-fragment:sha256:64c671fa336d62f3118cfb6754ee1e741c48cb2108bae4f7ee2f8e822c849939",
+      "contentSha256": "e9734ccc8a7f3ef22fa222d391ca011a1496413206fa61b97cd2b3c8c8817d28"
+    },
+    {
+      "ruleId": "A14.22",
+      "physicalPdfPage": 82,
+      "startLine": 1178,
+      "fragmentId": "asl-fragment:sha256:4d22313af2ee7200bfe58c3cbcc7abef625dabda4bc2759be08e7e65efc42985",
+      "contentSha256": "cd09a9316ff82c81565d0ab479a91677aed65bcb874898828d002c8eda9cf79b"
+    },
+    {
+      "ruleId": "A14.23",
+      "physicalPdfPage": 82,
+      "startLine": 1180,
+      "fragmentId": "asl-fragment:sha256:60d4e255e2741f52989b320ab293fa853b2d4b1ae03468614269dec6c89160aa",
+      "contentSha256": "7c60c98544de749f31ce610f574f79e3009686d3b2cbb0928946c5f76071aa0f"
+    },
+    {
+      "ruleId": "A14.3",
+      "physicalPdfPage": 82,
+      "startLine": 1182,
+      "fragmentId": "asl-fragment:sha256:a84dbf60480a06fc74e87bc831741c1afc322958aff9d2582d8455a2a40f56a5",
+      "contentSha256": "3e5f4c9c3ee702c86adab5944f9f6c5a3e0c50239eda24d06e92e3fc46cc8393"
+    },
+    {
+      "ruleId": "A14.3",
+      "physicalPdfPage": 82,
+      "startLine": 1184,
+      "fragmentId": "asl-fragment:sha256:4c6b3292dcc5cf7fafa5fd916fdbbbaf591b9a15848f1fa2d6d13d06e9c6f2c6",
+      "contentSha256": "3061d366cbb4867b19be95fb8cbdd45cf5968eaa1e15162ce4479f4deac135de"
+    },
+    {
+      "ruleId": "A14.3",
+      "physicalPdfPage": 82,
+      "startLine": 1186,
+      "fragmentId": "asl-fragment:sha256:15b091f719f08eb25dc117b4f02eebe9f26652ac4dc67d6acb47a8380b3d9a13",
+      "contentSha256": "311c1495205d1dddbae2e59e227e40e6f3ebb7f93087e21a3cb38082c6accfd8"
+    },
+    {
+      "ruleId": "A22.1",
+      "physicalPdfPage": 89,
+      "startLine": 1464,
+      "fragmentId": "asl-fragment:sha256:9d982ac0bc0af693e1f41877d7c269dbc02a4daa925afdbb6f54f73f726fcfda",
+      "contentSha256": "c722213aa95efe93585eb04ee2d016e12a5d95521ddebcb869c92c53579fa96b"
+    },
+    {
+      "ruleId": "A22.2",
+      "physicalPdfPage": 89,
+      "startLine": 1472,
+      "fragmentId": "asl-fragment:sha256:f24870d17d602d9521a166f9b95f5b05a6ead12dbf194112c45ec5e23e50c7f3",
+      "contentSha256": "03d40f1ee4ec635997118add38b492c0ca0ad81c03eef5f6383eb01d3161fec6"
+    },
+    {
+      "ruleId": "A22.3",
+      "physicalPdfPage": 89,
+      "startLine": 1474,
+      "fragmentId": "asl-fragment:sha256:73d89d76f769b26d15ea6d80327c7bcfcb8cdeaf4a38b9471afa9c8e46f4a81d",
+      "contentSha256": "5d419da2d9ddd646bf31a7642bb0e99f67da82139bcbfdcc849fcc3adf79eb8a"
+    },
+    {
+      "ruleId": "A22.31",
+      "physicalPdfPage": 89,
+      "startLine": 1478,
+      "fragmentId": "asl-fragment:sha256:ca8d23d60a4d2f3736943cb6df2b18ca745a765f46b19a40639d1b748b3c2fe8",
+      "contentSha256": "c0e761199a9065ca9f8fd73da25686da3abeaf3c477f5e229d8fa8d1756ae737"
+    },
+    {
+      "ruleId": "A22.32",
+      "physicalPdfPage": 89,
+      "startLine": 1480,
+      "fragmentId": "asl-fragment:sha256:6ad33136701cedf4fb3bda08b1bf4bc05cdcf52a6edb5291d8bf0d4c0c2ce4c8",
+      "contentSha256": "c03f3caa98ea50957ce13fe28fb040179d24b8f24e1cc17be5d0d99d98dbb0f5"
+    },
+    {
+      "ruleId": "A22.33",
+      "physicalPdfPage": 89,
+      "startLine": 1482,
+      "fragmentId": "asl-fragment:sha256:ec6fa546419396cf49b70bc4ce44aa9efa6a5df970887a5fea03c774f98364c2",
+      "contentSha256": "2de1dc923ff2b7f671d6414de1ad5acf08109e1bd578a9132d37b747d28f9b2b"
+    },
+    {
+      "ruleId": "A22.4",
+      "physicalPdfPage": 89,
+      "startLine": 1490,
+      "fragmentId": "asl-fragment:sha256:e4d85ed1efeb448be95f89a38bbd0ea3ae1450850a6239f67dc6d28c5cd08610",
+      "contentSha256": "04e781796739642910304cb1e85a9371c73dcf1d0fa34bcdcd4328b7ad07f9b0"
+    },
+    {
+      "ruleId": "A22.5",
+      "physicalPdfPage": 89,
+      "startLine": 1492,
+      "fragmentId": "asl-fragment:sha256:826e354edb3c246deded5d03662fe98523aa9a136f3e54ed89385e04365c0158",
+      "contentSha256": "eaafacc60745a261709ef6ade65ec5a9a256e6c8e73c469c7af43176d2ea9d6f"
+    },
+    {
+      "ruleId": "A22.6",
+      "physicalPdfPage": 89,
+      "startLine": 1494,
+      "fragmentId": "asl-fragment:sha256:643090d1360698b9b7cdbcc51dba141eade1ada5d3ad4588570de018a72830a9",
+      "contentSha256": "7288e8c4fbb920afc17a2115081c73a60a1cf97f7dc22c85d2c6d09754a3023a"
+    },
+    {
+      "ruleId": "A22.61",
+      "physicalPdfPage": 89,
+      "startLine": 1496,
+      "fragmentId": "asl-fragment:sha256:a9aa1b93111ff3267ce352fe8cfe66be672f4137fce24e21cae0a66297abaa16",
+      "contentSha256": "52f71ad1ee5775e2f4db32e59d55d08d6c056b7129a03dad180892d2d69af18c"
+    },
+    {
+      "ruleId": "A22.611",
+      "physicalPdfPage": 89,
+      "startLine": 1498,
+      "fragmentId": "asl-fragment:sha256:6982121020674120404139ef81877f732e63065903d8ab5aa7367f7478c8bdc7",
+      "contentSha256": "f95a12a70b9e4f5cdc319dd936d0e193662cd38077abbc52d8196477b8372a95"
+    },
+    {
+      "ruleId": "A22.6111",
+      "physicalPdfPage": 89,
+      "startLine": 1502,
+      "fragmentId": "asl-fragment:sha256:657272910bbfd72b1e7a8ee63eba241e9833f4ffa11d0c7fcac32d29dd4f0849",
+      "contentSha256": "919cd103264a23104ac544bb68c6c9e482fe220bce262cb72fff3f94022e9cff"
+    },
+    {
+      "ruleId": "A23.1",
+      "physicalPdfPage": 90,
+      "startLine": 1516,
+      "fragmentId": "asl-fragment:sha256:18b75c6e80515b15124b05677271330c01c038b8b39549709ab1482005036d5a",
+      "contentSha256": "172c505012226dc6f1ce0462a8626f033a940fc9aad2f94de968d7d1806c48a8"
+    },
+    {
+      "ruleId": "A23.2",
+      "physicalPdfPage": 90,
+      "startLine": 1522,
+      "fragmentId": "asl-fragment:sha256:759188f0e7adfcf38a379276203724ca589eba40decdeae2b12cc2e89f797b4c",
+      "contentSha256": "15aa27ba2d01c3d2eba5d6c412f3fef22f290b8ee427d770d118050ef4121de2"
+    },
+    {
+      "ruleId": "A23.3",
+      "physicalPdfPage": 90,
+      "startLine": 1524,
+      "fragmentId": "asl-fragment:sha256:48ad06b7d563e04ab5492b4bf2e735238c3a9c5cc30e314af1f7db787d4553ec",
+      "contentSha256": "d4f5119492565bea14c34a1c342a2584a9a3c7e1f625322fb386bd7fcb2da3e6"
+    },
+    {
+      "ruleId": "A23.4",
+      "physicalPdfPage": 90,
+      "startLine": 1528,
+      "fragmentId": "asl-fragment:sha256:0f8bbc25084f656e451363c08be5dc719f53dd2254d28f5f44366f997dea04b1",
+      "contentSha256": "b5da32524fefc8367c6b79ef40d083bd753b7fe0e2598b4a8d957a2723e2b376"
+    },
+    {
+      "ruleId": "A23.6",
+      "physicalPdfPage": 91,
+      "startLine": 1538,
+      "fragmentId": "asl-fragment:sha256:e2a9423926928d0314cc2d55b6b07d82c2e38c87e43287d87e6a8ce5580054b9",
+      "contentSha256": "0833316063ab629dd49005510f5f4427ceb1b732ba0a70b94c89f2bb50b8607d"
+    },
+    {
+      "ruleId": "A23.61",
+      "physicalPdfPage": 91,
+      "startLine": 1542,
+      "fragmentId": "asl-fragment:sha256:6933ce5b756c05adf90a4ae90c42b62f2042bd83577a38f303eff62fe61e64d0",
+      "contentSha256": "fc94d32a19ffb0d3af8f3017058896462bfd34598a8a5c870027f5a2cf0e52cc"
+    },
+    {
+      "ruleId": "A23.62",
+      "physicalPdfPage": 91,
+      "startLine": 1546,
+      "fragmentId": "asl-fragment:sha256:80aa00fd09e1e5c8a0ec9ca5aa12bb4929eae5737d27f9eae38fe215d6fdb05c",
+      "contentSha256": "0a1c78a8e0570ab016e30b28de39ca1012503f50bdf2a67a26b25c360e321c3f"
+    },
+    {
+      "ruleId": "A23.63",
+      "physicalPdfPage": 91,
+      "startLine": 1548,
+      "fragmentId": "asl-fragment:sha256:c96581bed83fa45d0c76323f3913b046fe4d3a351337cda146c69aea0a4396ae",
+      "contentSha256": "c9db327e640f331e5a873b875e5e844d73b5fe362eecad305567c38419d08e7c"
+    },
+    {
+      "ruleId": "A25.22",
+      "physicalPdfPage": 94,
+      "startLine": 1690,
+      "fragmentId": "asl-fragment:sha256:f049283008c457e52a28dbe8d46604055d1042ae4637853fcee40e8d36c8aea5",
+      "contentSha256": "67fc433b0b76a0b22fc49602049c1c92fa4adc6da4364e3ecf42f7daa040abbf"
+    },
+    {
+      "ruleId": "A25.221",
+      "physicalPdfPage": 94,
+      "startLine": 1696,
+      "fragmentId": "asl-fragment:sha256:7af4239a54b23c2ce7fff9e3db75fedcea3cd71da56a2156e2a229e8e3b9102a",
+      "contentSha256": "c08ac3f375e5f902f3928a8f7c36184719f52376dd1b7631b2a021c0809285e5"
+    },
+    {
+      "ruleId": "A25.222",
+      "physicalPdfPage": 94,
+      "startLine": 1698,
+      "fragmentId": "asl-fragment:sha256:dd71c836088dc9357c4c8bb79b2c468f2c0dde6aed1318f3f7ec873246b48aa9",
+      "contentSha256": "d804b21f6cfc8c6d21a58b00fe12894dc39f07c22cb45e87890189bac5a5190a"
+    },
+    {
+      "ruleId": "A25.223",
+      "physicalPdfPage": 94,
+      "startLine": 1700,
+      "fragmentId": "asl-fragment:sha256:61f61260b3da3911c2da1dfcc2d2d29aff6397898876e64048bb03890f0eba8b",
+      "contentSha256": "565d94fa6cd00049a3644147c5e2ce7849ad7b8fcc9ed01b9e23f606a177958d"
+    },
+    {
+      "ruleId": "A25.224",
+      "physicalPdfPage": 94,
+      "startLine": 1702,
+      "fragmentId": "asl-fragment:sha256:94b90dac9910f63d5b4365d0c81afbf3b974636b9283512a9e2c614fe37d1784",
+      "contentSha256": "df7d049d2b48f78be1f163dc322107256239b9e6017e32f3e6e90d08596dd6ed"
+    },
+    {
+      "ruleId": "A19.3",
+      "physicalPdfPage": 86,
+      "startLine": 1378,
+      "fragmentId": "asl-fragment:sha256:f011b668d0a9c48dd369d5995b482bdae2c6ab6aa16d1d28428e47bb7cc1762d",
+      "contentSha256": "5f520fdecb100dcd2982c8daad01df9f32a9a987dee23b93e6a4ae733a00c292"
+    },
+    {
+      "ruleId": "A25.41",
+      "physicalPdfPage": 96,
+      "startLine": 1803,
+      "fragmentId": "asl-fragment:sha256:797687260b3fbe394ee65a4d78a8e01c8e1d0fc3bad4b3029dd19c063f64fe72",
+      "contentSha256": "362f1fd43dbd6a66c677bfb98c5f5e5d9ab01742c902b42e04867468d2827f53"
+    },
+    {
+      "ruleId": "A25.51",
+      "physicalPdfPage": 96,
+      "startLine": 1829,
+      "fragmentId": "asl-fragment:sha256:73bfab9044b25060dbc2008b75d6ede22531d718c46dc21fdeddfaef159f13af",
+      "contentSha256": "9e33f6bbabeeb2259b6f84b9169b3ee1506acefa6a04f09dd028a1a8fcb49aa0"
+    },
+    {
+      "ruleId": "A1.23",
+      "physicalPdfPage": 44,
+      "startLine": 109,
+      "fragmentId": "asl-fragment:sha256:e79b4dbfc631ebacb9d8712036336e6fd2980fdd6b6d8bbd94df1347e23cc0f8",
+      "contentSha256": "038bd543cb329c94306838a3d6d6b88bbb853132921ad9373f6a8a99362d2814"
+    },
+    {
+      "ruleId": "A19.32",
+      "physicalPdfPage": 86,
+      "startLine": 1384,
+      "fragmentId": "asl-fragment:sha256:c038d7b3ea2fd3b0bc4485496b445fa8547f50ae451916304e277ff14254c5ff",
+      "contentSha256": "2a5f27e60ba888187d83115ef1e0501b25c4fbc3d70db122d651b4ebde07e436"
+    },
+    {
+      "ruleId": "A25.45",
+      "physicalPdfPage": 96,
+      "startLine": 1817,
+      "fragmentId": "asl-fragment:sha256:606d918345c59a949f7e37c0dc4da6e4b157e5f1c5d9a7641a0205665227402f",
+      "contentSha256": "a837c237ac1605199d95a56fb71a93b9320c726b022da54dd7075227ef7e3e70"
+    },
+    {
+      "ruleId": "A25.61",
+      "physicalPdfPage": 97,
+      "startLine": 1859,
+      "fragmentId": "asl-fragment:sha256:95b7442a5fa6d2626390feb4fe5684c1474eca33ae630b83fd30576eabe3fbcc",
+      "contentSha256": "6d9041b7e919be788604c590faf547fe13732684e7869742c11198aef713f6c9"
+    },
+    {
+      "ruleId": "A25.62",
+      "physicalPdfPage": 97,
+      "startLine": 1863,
+      "fragmentId": "asl-fragment:sha256:59a143e5fe6a59925758b8cddf46e0384af513c5ee8363177ce984a705b6b160",
+      "contentSha256": "1c28d5d35727c45de503ccf9c8f5f2b9b0d1a48da974229b601fb6e3ce24802c"
+    },
+    {
+      "ruleId": "A25.7",
+      "physicalPdfPage": 97,
+      "startLine": 1877,
+      "fragmentId": "asl-fragment:sha256:ae08b43a3d3e127d1bb6be245831a76b37dcf52e8a6e6e89cb1d50c156538a0e",
+      "contentSha256": "9c4e8783dae0e006e585d39e0cb61915e4963b0a928f4e6fa0b62c76baa3baf0"
+    },
+    {
+      "ruleId": "A25.71",
+      "physicalPdfPage": 97,
+      "startLine": 1883,
+      "fragmentId": "asl-fragment:sha256:49a7182e55ab89fb934618f8708c400bd47213c8770c8199f1a106a665376c40",
+      "contentSha256": "da0693182e6325f1e6760a11d16e132f90557c7ca5c17556638b563e8c1a3cc1"
+    },
+    {
+      "ruleId": "A25.71",
+      "physicalPdfPage": 97,
+      "startLine": 1891,
+      "fragmentId": "asl-fragment:sha256:62537e00f77452659db388e94a348ff152216b21c73e8ed0c9690ac14a58a669",
+      "contentSha256": "580d51653ccd00cfa9406a60d793f20c2b15cb165ba65375301a11e770f99db5"
+    },
+    {
+      "ruleId": "A25.72",
+      "physicalPdfPage": 97,
+      "startLine": 1893,
+      "fragmentId": "asl-fragment:sha256:c52b4d320b225728f47cbe8a5707d8cbf88bc91f91a52d088ad1aa27f0053521",
+      "contentSha256": "33278b18d29cd9ee15fb21f694ade76fa98747fa2c56a7006e8d942818298bdb"
+    },
+    {
+      "ruleId": "A25.74",
+      "physicalPdfPage": 97,
+      "startLine": 1905,
+      "fragmentId": "asl-fragment:sha256:4a235e2d6bced54273301e799b25764960ef51c6d2ac0387f6436f96326fdb68",
+      "contentSha256": "544b1f1d5bd9b4b1a498609448ccff0da1e27b41fb65e73b1b0206e3939a5ba3"
     }
   ],
   "visualReadings": [
@@ -2399,7 +2721,17 @@
     "meleeAndPrisoners": "fire-into-a-melee-or-at-prisoners-attacks-every-unit-there-each-against-its-own-sides-elr-a-prisoner-reduced-instead-of-broken-A11.15-A20.54 (R12.8-R12.9)",
     "encirclement": "an-encircled-unit-has-one-lower-morale-level-against-attacks-on-its-location-and-plus-one-to-its-own-fire-A7.7-A7.71 (R12.11)",
     "capturedWeapons": "a-units-mg-or-atr-of-an-enemy-nationality-recovered-by-it-fires-with-its-b-number-two-lower-and-its-multiple-rof-one-lower-A21.1-A21.11-A21.12 (R13.7)",
-    "dismantledWeapons": "a-dismantled-weapon-is-not-fired-A9.8 (R13.6)"
+    "dismantledWeapons": "a-dismantled-weapon-is-not-fired-A9.8 (R13.6)",
+    "flamethrower": "a-ft-fires-alone-24-fp-at-range-0-or-1-12-at-range-2-through-no-hindrance-never-raised-for-pbf-or-tpbf-not-halved-in-the-afph-halved-two-levels-away; no-tem-leadership-or-heroic-drm; hindrance-cx-ffmo-ffnam-apply; removed-on-an-original-dr-of-10-less-2-non-elite-but-a-finnish-1st-line-less-2-captured-less-1-inexperienced-A19.32-A25.74; minus-one-per-ft-possessed-to-the-dr-against-that-unit-A22.1-A22.2-A22.3-A22.31-A22.32-A22.33-A22.4-A22.5 (R15.1)",
+    "demolitionCharge": "30-fp-no-firers-never-modified-for-pbf-tpbf-or-the-afph; halved-for-concealment-when-thrown-or-when-every-target-was-concealed-at-operable-placement; in-hex-tem-no-hindrance-no-leadership-no-cowering; plus-one-cx; thrown-plus-2-at-the-target-plus-3-at-the-thrower-each-plus-1-in-the-afph-unless-opportunity-fire; removed-without-effect-on-an-original-dr-of-12-less-2-non-elite-but-a-finnish-1st-line-less-2-captured-less-1-inexperienced; never-by-the-dr-at-its-throwers-location-A23.1-A23.2-A23.3-A23.4-A23.6-A23.61-A23.62-A23.63 (R15.2, R15.3)",
+    "mol": "one-mol-check-per-pbf-or-tpbf-attack-before-the-ift-dr-1-to-3-passes-plus-1-hs-or-crew-plus-2-smc-plus-1-cx-plus-1-non-afv; a-pass-adds-4-fp-after-every-modification; a-failed-hs-crew-or-smc-adds-no-fp; a-colored-6-breaks-its-user-and-voids-its-fp-and-the-mols; never-in-subsequent-first-fire-or-fpf-A22.6-A22.61-A22.611-A22.6111 (R15.4)",
+    "sniper": "a-side-making-an-ift-mc-or-tc-original-dr-equal-to-the-enemy-san-in-a-fire-phase-or-the-mph-suffers-a-sniper-attack-dr-1-eliminates-a-smc-and-breaks-a-mmc-casualty-reducing-one-that-cannot-break-dr-2-wounds-a-smc-and-pins-a-mmc; broken-units-there-take-dm-A14.1-A14.2-A14.21-A14.22-A14.23-A14.3 (R15.5)",
+    "commissar": "a-commissar-checks-first-takes-no-llmc-or-lltc-and-causes-them-in-every-other-unit; an-unpinned-unbroken-commissar-raises-other-friendly-infantry-morale-by-one-below-10-and-his-leadership-alone-applies; never-replaced-or-battle-hardened; heat-of-battle-surrender-is-berserk; a-berserk-commissar-takes-every-friendly-unit-of-his-location-berserk-A25.22-A25.221-A25.223 (R15.6)",
+    "alliedTroops": "a-leader-directing-or-aiding-allied-troops-of-another-nationality-is-one-worse-and-they-take-llmc-on-that-modifier; the-firing-sides-nationalities-fire-together-A10.7 (R15.8)",
+    "underscoredMorale": "a-mmc-with-an-underscored-morale-factor-has-an-elr-of-5; a-squad-failing-a-mc-by-more-than-5-is-replaced-by-its-two-broken-hs-a-hs-is-disrupted-unless-fanatic-A1.23-A19.13 (R15.9)",
+    "green": "a-green-mmc-is-inexperienced-unless-stacked-with-an-unbroken-leader-A19.2-A19.3-A25.41-A25.51 (R15.10)",
+    "heroSw": "a-hero-fires-one-mg-at-full-fp-plus-1-negated-by-his-heroic-minus-1-within-its-normal-range-or-a-ft-with-no-heroic-drm-forfeiting-his-inherent-fp-A15.23-A15.24 (R15.11)",
+    "nationalities": "american-british-italian-finnish-and-french-mmc-leaders-and-heroes; finnish-leader-ranks-A25.71; heat-of-battle-drm-british-finnish-minus-1-french-plus-1-italian-plus-3-non-elite-italian-mmc-surrender-on-10-or-more; replacement-and-battle-hardening-by-each-nationalitys-classes-the-italians-and-finns-by-their-own-progressions-A25.61-A25.62-A25.72; a-finnish-1st-line-or-elite-mmc-becomes-fanatic; british-elite-and-1st-line-and-finns-but-conscripts-never-cower-A25.45-A25.7-A15.1-A15.3-A19.13-A25 (R15.13)"
   },
   "resolution": {
     "firepower": "Each firer's printed FP, doubled for PBF when the target is adjacent at the same level (A7.21), halved beyond Normal Range up to twice it (A7.22), halved when the target Location holds a concealed unit (A7.23), and halved when the firer is pinned (A7.8); fractions are kept and summed (A7.2).",
@@ -2484,23 +2816,31 @@
     "A1-fire-fire-lane",
     "A1-fire-melee-and-prisoners",
     "A1-fire-encirclement",
-    "A1-fire-captured-mg"
+    "A1-fire-captured-mg",
+    "A1-fire-flamethrower",
+    "A1-fire-flamethrower-outside",
+    "A1-fire-demolition-charge",
+    "A1-fire-mol",
+    "A1-fire-commissar",
+    "A1-fire-allied-troops",
+    "A1-fire-underscored-morale",
+    "A1-fire-hero-sw"
   ],
   "executionAuthority": "none",
   "excludedOutcomes": [
     "Bypass LOS to vertices (A4.34), fire between levels of one hex (B23.26), a Snap Shot across a wall or hedge hexside, bocage and Hillside walls, fire from a marsh hex (B16.32), and a vehicle’s MG fire at another level",
     "Opportunity Fire by ordnance, mortars, and LATW, Spraying Fire in the MPh or at upper levels, and Fire Lanes along an Alternate Hex Grain, their Snap Shots, and their TPBF cancellation (A7.25, A9.5, A9.221, A9.223)",
     "FPF by a SMC with a MG already marked First Fire (A8.312)",
-    "ordnance fire of its own (ordnance hits come from the Ordnance package), the PSK against Personnel, FT, DC, and MOL",
-    "a hero's own SW use and A7.353's halved inherent FP of a crew",
+    "ordnance fire of its own (ordnance hits come from the Ordnance package), the PSK against Personnel, FT, DC, and MOL against AFVs, Flame creation (B25.12, B25.13), a Set DC (A23.7), and a DC Thrown to another level",
+    "a hero's use of a LATW, mortar, or Gun, and A7.353's halved inherent FP of a crew",
     "captured ordnance, mortars, LATW, Guns, and vehicles (A21.13, A21.2), and the German dm MMG firing as a LMG (A9.8)",
     "vehicles and PRC",
     "Encirclement at upper levels (A7.72), by ordnance, and of Vulnerable PRC, and its capture effects (A20.21)",
     "the Concealment Table for vehicles, Guns, and Dummy stacks",
-    "snipers, ordnance SMOKE and WP, Dispersed SMOKE and drift, night, and weather",
+    "Sniper Checks, a Sniper's repositioning, and Sniper attacks on vehicles, Snipers, and Interior Building Locations (A14.2, A14.31, A14.4), ordnance SMOKE and WP, Dispersed SMOKE and drift, night, and weather",
     "any use by a game action",
-    "A19.13's exception for an underscored Morale Factor",
-    "a hero using a SW (A15.23)",
+    "the SSR case of A19.132",
+    "a hero using a LATW, mortar, or Gun (A15.23)",
     "prisoners exchanged for Unarmed counters (A20.5), and prisoner escape (A20.55)",
     "a crew sharing its Location with other units as a target, and Random SW Destruction of Guns by fire (C11.51, A9.74)",
     "vehicles as targets of ordnance, more than one vehicle in a Location, and vehicles in terrain with a TEM (R25.3)",

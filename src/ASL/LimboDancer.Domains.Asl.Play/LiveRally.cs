@@ -57,6 +57,8 @@ public static class LiveRally
                 state.RallyAttemptsThisPlayerTurn.Contains(unit.Id), state.RepairsThisPhase.Contains(unit.Id) || state.RallyPhaseActions.Contains(unit.Id))
             {
                 Fanatic = Is(unit, Conditions.Fanatic) ? true : null,
+                // A19.3 (ruling R15.10): a Green MMC's Inexperience, for its Heat of Battle DRM.
+                Inexperienced = LiveFire.GreenInexperienced(state, unit),
             },
             leader is null ? null : new RallyLeader(leader.Id, leader.Definition!.Definition, state.Location(leader.Id)?.Location.ToString(),
                 Is(leader, Conditions.Broken), Is(leader, Conditions.Wounded), Is(leader, Conditions.Concealed)),
@@ -72,7 +74,21 @@ public static class LiveRally
             Captors = captors,
             Companions = companions.Length > 0 ? companions : null,
             NoQuarter = state.NoQuarter.Contains(unit.Side, StringComparer.Ordinal) ? true : null,
+            Commissar = Commissar(state, unit)?.Id,
         }, null);
+    }
+
+    /// <summary>
+    /// The unpinned, unbroken, not berserk Commissar of a unit's side in its Location, other than the unit (A25.221, A25.222; backlog pass 15, ruling R15.6);
+    /// null when there is none.
+    /// </summary>
+    public static UnitInstance? Commissar(GameState state, UnitInstance unit)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(unit);
+        return state.Location(unit.Id) is not { } at ? null : state.At(at.Location).OfType<UnitInstance>().FirstOrDefault(item => item.Status == InstanceStatus.Active
+            && item.Id != unit.Id && item.Side == unit.Side && item.Definition is { } reference && ScenarioA1FireReference.IsCommissar(reference.Definition)
+            && !Is(item, Conditions.Broken) && !Is(item, Conditions.Pinned) && !Is(item, Conditions.Berserk) && !Is(item, Conditions.Captured));
     }
 
     /// <summary>The rolls of a record, rebuilt from its roll ids and the recorded dice.</summary>

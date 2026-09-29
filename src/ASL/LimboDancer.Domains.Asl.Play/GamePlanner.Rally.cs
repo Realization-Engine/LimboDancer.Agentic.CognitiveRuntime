@@ -39,6 +39,12 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.rally-unit: '{unitId}' is not a unit on a Location the map reads");
         }
 
+        // A10.6: the rallying leader is of the unit's side; one of another nationality leads it as Allied Troops (A10.7; ruling R15.8).
+        if (leaderId is not null && state.Unit(leaderId) is { } rallying && rallying.Side != unit.Side)
+        {
+            return Refused(scope, label, expected, $"play.rally-leader: {leaderId} is not of {unitId}'s side (A10.6)");
+        }
+
         // A12.141: the attempt costs a concealed unit or rallying leader its "?" in the LOS of a Good Order enemy within 16 hexes.
         var concealed = GameState.Condition(unit, Conditions.Concealed) == ConditionState.True
             || (leaderId is not null && state.Unit(leaderId) is { } leaderUnit && GameState.Condition(leaderUnit, Conditions.Concealed) == ConditionState.True);
@@ -204,7 +210,7 @@ public sealed partial class GamePlanner
 
         if (effect.HeroDefinitionId is { } hero)
         {
-            yield return ("instance-created", new InstanceCreated(HeroOf(unit, hero, attemptId)));
+            yield return ("instance-created", new InstanceCreated(HeroOf(unit, hero, attemptId, concealed: !effect.ConcealmentLost.Contains(unit.Id) && !effect.Eliminated)));
         }
 
         // A15.41: the companions who went berserk with a berserk leader, rallied if broken.
@@ -284,7 +290,9 @@ public sealed partial class GamePlanner
                 }
             }
 
-            yield return ("lineage", new LineageRecorded(hardened ? LineageAction.Replaced : LineageAction.Reduced, [unit.Id],
+            // A25.222 (ruling R15.6): a Commissar's failed rally Replaces the unit by one of its size.
+            var replaced = hardened || (effect.ReplacedByCommissar == true && reference.Kind == unit.Kind);
+            yield return ("lineage", new LineageRecorded(replaced ? LineageAction.Replaced : LineageAction.Reduced, [unit.Id],
                 [new NewInstance($"{attemptId}-{unit.Id}", reference.Kind, reference.Id, unit.Side, unit.Position, null, produced)]));
             yield break;
         }

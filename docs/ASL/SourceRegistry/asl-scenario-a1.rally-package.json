@@ -3,10 +3,10 @@
   "status": "published-bounded-rally-package",
   "domainId": "asl",
   "packageId": "scenario-a1-rally",
-  "declaredUse": "Read-only conclusions for a declared Rally attempt by a broken unit of the reviewed Scenario A1 catalog: the DRM, the Final DR against the broken Morale Level, and the effect, including Fate, under the user's rulings of 2026-09-26 (ASL Unit Rally and Fire Extensions Plan, R19.1 to R19.10 and R0.2); with Heat of Battle and Leader Creation after an Original 2 (Deviations, Ordnance, and Vehicles Plan, R27.1 to R28.8 and R30.1 to R30.7); with the DM sources, terrain, and Self-Rally of Backlog Passes Plan R13.1, R13.2, and R13.8.",
-  "caseMatrixSha256": "043b6ccb6f60d3e4ac149cd3e7d02359466c3cd33c73fa2939dd66af304bf335",
+  "declaredUse": "Read-only conclusions for a declared Rally attempt by a broken unit of the reviewed Scenario A1 catalog: the DRM, the Final DR against the broken Morale Level, and the effect, including Fate, under the user's rulings of 2026-09-26 (ASL Unit Rally and Fire Extensions Plan, R19.1 to R19.10 and R0.2); with Heat of Battle and Leader Creation after an Original 2 (Deviations, Ordnance, and Vehicles Plan, R27.1 to R28.8 and R30.1 to R30.7); with the DM sources, terrain, and Self-Rally of Backlog Passes Plan R13.1, R13.2, and R13.8; and Commissars, NKVD Field Promotion, and Allied Troops (Backlog Passes Plan, R15.6 to R15.8).",
+  "caseMatrixSha256": "a3ee5d6499adc2ea4cdab7c6c4c56fad5082749cf54d549945ec3e18d479aecd",
   "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
-  "catalogSha256": "0d67c9a63fdad49a8de3d96ad5fd1e5302e321f9850bc241e198d93656e3943d",
+  "catalogSha256": "41f8b8272bfda60c83aa8827d0c99c427552b6638f78330ae48ae47d56100f24",
   "sourceFragments": [
     {
       "ruleId": "A3.1",
@@ -336,6 +336,48 @@
       "startLine": 1276,
       "fragmentId": "asl-fragment:sha256:06b9316b192bfd6f4fb7539c26dea9801dc22a3361291bbc321c46aca9ee089b",
       "contentSha256": "146f69690ccca4cd94f2521a5759af2cbf79458171ef686d5261b09611ce8f85"
+    },
+    {
+      "ruleId": "A25.22",
+      "physicalPdfPage": 94,
+      "startLine": 1690,
+      "fragmentId": "asl-fragment:sha256:f049283008c457e52a28dbe8d46604055d1042ae4637853fcee40e8d36c8aea5",
+      "contentSha256": "67fc433b0b76a0b22fc49602049c1c92fa4adc6da4364e3ecf42f7daa040abbf"
+    },
+    {
+      "ruleId": "A25.221",
+      "physicalPdfPage": 94,
+      "startLine": 1696,
+      "fragmentId": "asl-fragment:sha256:7af4239a54b23c2ce7fff9e3db75fedcea3cd71da56a2156e2a229e8e3b9102a",
+      "contentSha256": "c08ac3f375e5f902f3928a8f7c36184719f52376dd1b7631b2a021c0809285e5"
+    },
+    {
+      "ruleId": "A25.222",
+      "physicalPdfPage": 94,
+      "startLine": 1698,
+      "fragmentId": "asl-fragment:sha256:dd71c836088dc9357c4c8bb79b2c468f2c0dde6aed1318f3f7ec873246b48aa9",
+      "contentSha256": "d804b21f6cfc8c6d21a58b00fe12894dc39f07c22cb45e87890189bac5a5190a"
+    },
+    {
+      "ruleId": "A25.223",
+      "physicalPdfPage": 94,
+      "startLine": 1700,
+      "fragmentId": "asl-fragment:sha256:61f61260b3da3911c2da1dfcc2d2d29aff6397898876e64048bb03890f0eba8b",
+      "contentSha256": "565d94fa6cd00049a3644147c5e2ce7849ad7b8fcc9ed01b9e23f606a177958d"
+    },
+    {
+      "ruleId": "A25.224",
+      "physicalPdfPage": 94,
+      "startLine": 1702,
+      "fragmentId": "asl-fragment:sha256:94b90dac9910f63d5b4365d0c81afbf3b974636b9283512a9e2c614fe37d1784",
+      "contentSha256": "df7d049d2b48f78be1f163dc322107256239b9e6017e32f3e6e90d08596dd6ed"
+    },
+    {
+      "ruleId": "A19.3",
+      "physicalPdfPage": 86,
+      "startLine": 1378,
+      "fragmentId": "asl-fragment:sha256:f011b668d0a9c48dd369d5995b482bdae2c6ab6aa16d1d28428e47bb7cc1762d",
+      "contentSha256": "5f520fdecb100dcd2982c8daad01df9f32a9a987dee23b93e6a4ae733a00c292"
     }
   ],
   "rulings": {
@@ -355,7 +397,10 @@
     "surrender": "the-captors-are-the-adjacent-known-good-order-armed-enemy-infantry-with-guard-capacity-read-by-the-planner-A15.5-A20.51; the-captors-side-chooses-the-guard; the-surrender-is-always-accepted-no-quarter-not-offered (R30.7)",
     "mapFacts": "the-known-enemy-in-los-and-the-captors-are-the-planners-map-reads-taken-as-recorded-on-replay; they-are-required-before-any-roll-when-heat-of-battle-can-reach-a-unit",
     "ownerOptions": "with-the-rallying-sides-answers-declared-the-leader-creation-dr-after-a-self-rally-original-2-and-a-battle-hardening-that-would-change-the-unit-wait-for-them; a-declined-option-is-not-taken-A18.11-A15.3 (R5.8, R5.9)",
-    "noQuarter": "a-side-faced-with-no-quarter-treats-a-heat-of-battle-surrender-as-berserk-and-is-not-disrupted-A20.3-A15.5 (R5.6)"
+    "noQuarter": "a-side-faced-with-no-quarter-treats-a-heat-of-battle-surrender-as-berserk-and-is-not-disrupted-A20.3-A15.5 (R5.6)",
+    "commissar": "a-commissar-alone-directs-a-rally-in-his-location-plus-one-morale-below-10-immune-to-dm-a-failed-mmc-is-replaced-by-its-next-lower-quality-a-squad-already-the-lowest-reduced-a-hs-crew-or-smc-that-cannot-be-eliminated; a-broken-commissar-self-rallies-A25.221-A25.222 (R15.6)",
+    "nkvdFieldPromotion": "an-nkvd-mmcs-field-promotion-uses-the-a25.25-table-dr-1-a-10-0-2-3-a-9-0-4-5-an-8-plus-1-commissar-6-none-plus-1-broken-minus-1-fanatic-A25.25 (R15.7)",
+    "alliedTroops": "a-leader-rallying-allied-troops-of-another-nationality-is-one-worse-A10.7 (R15.8)"
   },
   "resolution": {
     "eligibility": "A broken unit of the catalog in its Location in the RPh, once per Player Turn and with no other RPh action (A3.1, A10.6); rallied by an unbroken friendly leader in the same Location (A10.6, A10.7), or by Self-Rally when no Good Order friendly leader is there (A10.63): a broken leader (A10.71), a unit with Self-Rally capability, or the first MMC Rally attempt of the side's own RPh (A18.11); never by a Disrupted unit (A19.12).",
@@ -381,7 +426,9 @@
     "A1-rally-owner-options",
     "A1-rally-no-quarter",
     "A1-rally-marsh-rubble",
-    "A1-rally-mmc-self-rally-none"
+    "A1-rally-mmc-self-rally-none",
+    "A1-rally-commissar",
+    "A1-rally-nkvd-commissar"
   ],
   "executionAuthority": "none",
   "excludedOutcomes": [
@@ -394,5 +441,5 @@
     "Commissars created by NKVD Field Promotion (A25.25)",
     "prisoners exchanged for Unarmed counters (A20.5), and prisoner escape (A20.55)"
   ],
-  "priorRallyPackageManifestSha256": "f3017213f8cb7ee157bedde88dadf9ac77be594bbcafa4e3d49bd6c0fb21daf9"
+  "priorRallyPackageManifestSha256": "ba0278e017520034864045a6cbcfc3fcca00628c59b96e60c7e1058bc546f223"
 }

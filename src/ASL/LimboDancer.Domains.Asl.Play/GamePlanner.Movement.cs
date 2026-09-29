@@ -246,9 +246,20 @@ public sealed partial class GamePlanner
                 }
 
                 abandoned.AddRange(carried.Where(item => portage[item] > 1));
-                if (carried.Count(item => portage[item] == 1) > (vocabulary.IsA(unit!.Kind, "asl:smc") ? 1 : 3))
+
+                // Backlog pass 15 (ruling R15.14): the owner names the 1PP SW it keeps within its IPC; with none named, those first in id order are kept.
+                var light = carried.Where(item => portage[item] == 1).OrderBy(item => item.Id, StringComparer.Ordinal).ToArray();
+                var capacity = vocabulary.IsA(unit!.Kind, "asl:smc") ? 1 : 3;
+                if (light.Length > capacity)
                 {
-                    return Refused(scope, label, expected, $"play.berserk-sw: {unit.Id}'s 1PP SW exceed its IPC, and which it abandons is not reviewed (A15.431)");
+                    string[] keep = [.. Strings(arguments, "keep").Where(id => light.Any(item => item.Id == id))];
+                    if (keep.Length > capacity)
+                    {
+                        return Refused(scope, label, expected, $"play.berserk-sw: {unit.Id} keeps at most {capacity} 1PP SW within its IPC (A15.431, A4.42)");
+                    }
+
+                    var kept = keep.Concat(light.Select(item => item.Id).Where(id => !keep.Contains(id))).Take(capacity).ToHashSet(StringComparer.Ordinal);
+                    abandoned.AddRange(light.Where(item => !kept.Contains(item.Id)));
                 }
             }
         }
@@ -272,6 +283,14 @@ public sealed partial class GamePlanner
         if (movers.FirstOrDefault(unit => vocabulary.IsA(unit!.Kind, "asl:smc") && Portage(state, unit) is { } carried && carried.Sum() > 2) is { } laden)
         {
             return Refused(scope, label, expected, $"play.move-portage: {laden.Id} carries more than two PP, which a SMC never portages (A4.42)");
+        }
+
+        // A23.3 (ruling R15.2): a DC Placement spends the stack's MF in its own Location.
+        if (Text(arguments, "placeDc", out var chargeId))
+        {
+            return berserk > 0 || current is { Bypass.Count: > 0 } || !Text(arguments, "placeDcAt", out var placeAt) || to != from
+                ? Refused(scope, label, expected, "play.dc-arguments: a DC Placement names its DC and Location, the stack stays where it is, not in Bypass; a berserk stack charges (A23.3, A15.431)")
+                : PlanPlaceDc(scope, attemptId, expected, label, state, [.. movers.Select(unit => unit!)], ids, from, chargeId, placeAt, assault, doubleTime);
         }
 
         // A24.1 (ruling R9.5): a SMOKE grenade attempt spends the stack's MF in its own Location.

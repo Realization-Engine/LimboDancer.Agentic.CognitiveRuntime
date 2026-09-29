@@ -158,6 +158,16 @@ public sealed class AslScenarioA1FireSourceReviewTests
     }
 
     [Fact]
+    public void ThePass15SubjectsAreVerified()
+    {
+        // Backlog pass 15: special units and nationalities, 46 Chapter A fragments.
+        var manifests = AslAuthoringManifestGenerator.Generate(RepositoryPaths.Root, SourceCommit);
+        var pass15 = AslScenarioA1FireSourceReview.BuildPass15(RepositoryPaths.Root, manifests, Attestation());
+        Assert.Equal(46, pass15.Records.Count);
+        Assert.All(pass15.Records, record => Assert.Equal(TirSourceVerificationDisposition.Verified, record.Disposition));
+    }
+
+    [Fact]
     public void ThePass14SubjectsAreVerified()
     {
         // Backlog pass 14: Close Combat and capture, part 2, nine Chapter A fragments.

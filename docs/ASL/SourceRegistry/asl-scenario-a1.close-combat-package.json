@@ -3,11 +3,11 @@
   "status": "published-bounded-close-combat-package",
   "domainId": "asl",
   "packageId": "scenario-a1-close-combat",
-  "declaredUse": "Read-only conclusions for the Close Combat of one Location in one round, and for the Ambush drs before it, among Infantry of the reviewed Scenario A1 catalog, under the rulings of the ASL Unit Deviations, Ordnance, and Vehicles Plan (R29.1 to R29.15); and CC in a Location holding a vehicle, by and against it, after the PAATC (Backlog Passes Plan, R11.12 to R11.17); and Hand-to-Hand, concealment, TI, capture, prisoners, Infiltration, and overstacking in CC (Backlog Passes Plan, R14.1 to R14.13).",
-  "caseMatrixSha256": "1a49b85e0dc30210c8181d3425597c3a37f86b98df5ed50c5683e2c5f446de71",
+  "declaredUse": "Read-only conclusions for the Close Combat of one Location in one round, and for the Ambush drs before it, among Infantry of the reviewed Scenario A1 catalog, under the rulings of the ASL Unit Deviations, Ordnance, and Vehicles Plan (R29.1 to R29.15); and CC in a Location holding a vehicle, by and against it, after the PAATC (Backlog Passes Plan, R11.12 to R11.17); and Hand-to-Hand, concealment, TI, capture, prisoners, Infiltration, and overstacking in CC (Backlog Passes Plan, R14.1 to R14.13); and NKVD Field Promotion (Backlog Passes Plan, R15.7).",
+  "caseMatrixSha256": "6aad3831098cccea0bb1934e493c33d4abea951b4b6d44008911da28f98b679b",
   "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
   "cctTranscriptionSha256": "c2af9d03865da14baf7b0ec68989d99e0607079cb3f43f835d145b92bab8abbb",
-  "catalogSha256": "0d67c9a63fdad49a8de3d96ad5fd1e5302e321f9850bc241e198d93656e3943d",
+  "catalogSha256": "41f8b8272bfda60c83aa8827d0c99c427552b6638f78330ae48ae47d56100f24",
   "sourceFragments": [
     {
       "ruleId": "A1.6",
@@ -568,6 +568,13 @@
       "startLine": 1442,
       "fragmentId": "asl-fragment:sha256:2844e71d4d9b8e1b43057958f97db3445f1fc535ef187c3ef8d8e65a4476ad51",
       "contentSha256": "7b1daaf4fbb6f05908f73d53a4b513bd5144f8656382a85c725df591b23edfcf"
+    },
+    {
+      "ruleId": "A25.25",
+      "physicalPdfPage": 96,
+      "startLine": 1758,
+      "fragmentId": "asl-fragment:sha256:5850efcfceb4866ca3d2ce0e7eaa3780ef67022fb90fe740955e5c1087adacab",
+      "contentSha256": "48980cfe17197567162ed6578ced4cc60cd7164ef883d4d53ec4ba7189daf9a2"
     }
   ],
   "rulings": {
@@ -597,7 +604,8 @@
     "escape": "prisoners-whose-guard-is-broken-or-in-melee-attack-first-in-their-own-round-after-a-ntc-unless-the-guard-is-in-melee-each-attack-taking-in-the-guard; an-attacking-prisoner-is-no-longer-guarded; an-unarmed-mmc-is-rearmed-as-a-conscript-for-each-armed-enemy-unit-of-at-least-its-size-it-eliminates-or-captures-A20.55-A11.33-A11.34-A20.551 (R14.6)",
     "infiltration": "the-attackers-attacks-first-then-the-defenders; after-an-original-2-its-attackers-with-a-declared-destination-not-eliminated-captured-or-pinned-withdraw; after-an-original-12-its-surviving-defenders-with-one-withdraw-forfeiting-their-attacks-not-yet-resolved-A11.22 (R14.8)",
     "overstacking": "plus-one-per-squad-equivalent-a-side-exceeds-three-to-its-cc-attacks-and-minus-one-to-cc-attacks-on-its-units-prisoners-never-counted-A5.12-A5.131-A5.5-A20.51 (R14.10)",
-    "bpv": "the-mmc-of-the-highest-bpv-founds-a-leader-created-in-cc; the-mmc-he-defends-with-by-random-selection-when-an-enemy-attack-takes-some-of-the-attacks-mmc-A18.2 (R14.12)"
+    "bpv": "the-mmc-of-the-highest-bpv-founds-a-leader-created-in-cc; the-mmc-he-defends-with-by-random-selection-when-an-enemy-attack-takes-some-of-the-attacks-mmc-A18.2 (R14.12)",
+    "nkvdFieldPromotion": "an-nkvd-mmcs-field-promotion-in-cc-uses-the-a25.25-table-dr-1-a-10-0-2-3-a-9-0-4-5-an-8-plus-1-commissar-6-none-minus-1-per-odds-column-below-1-1-minus-1-fanatic-A25.25 (R15.7)"
   },
   "resolution": {
     "odds": "The attackers' FP against the defenders' FP, rounded down to the printed CCT column; < 1-8 below one to eight, > 10-1 above ten to one (A11.11, p. 692).",
@@ -643,5 +651,5 @@
     "Advances changing level"
   ],
   "executionAuthority": "none",
-  "priorCloseCombatPackageManifestSha256": "2dde0d2bd7f8a08dab8e808984ffee8b0a008e5a1c92b050c5c37163a0c0e5bf"
+  "priorCloseCombatPackageManifestSha256": "299e72a878c41e361059ccd3bd91c940670d8a573fa619ffeb29644ef9f332cf"
 }

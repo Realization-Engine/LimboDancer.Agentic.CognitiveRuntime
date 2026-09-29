@@ -12,17 +12,17 @@ namespace LimboDancer.Domains.Asl.ScenarioA1;
 /// </summary>
 public sealed class ScenarioA1FirePackage : IDomainPackageResolver
 {
-    public const string ManifestSha256 = "42fa78bb1475b6bff66fac7be1a38cb11852b7d67025ec2a6b80c137220f3ba0";
-    public const string MatrixSha256 = "921bba5488febc0a144665f7db7743fd9238cd69cee98b065685345feb45a48f";
+    public const string ManifestSha256 = "f4ce61fa49b28aa57c440a3d4c5b6abd95bfd35cb96deb82a85d100f9e8db209";
+    public const string MatrixSha256 = "3d83adedc26c2edc65d5b0fd3166b47c1a2cf472f4bde97764566d1285a755c1";
     public const string ChartSupplementId = "asl-supplement:fire-charts";
 
     /// <summary>
-    /// The package as revised at backlog pass 12 (the fire extensions), before the backlog pass 13 revision (captured MG); each revision's manifest
-    /// records its predecessor. Earlier manifests: backlog pass 11, 14feea97; backlog pass 10, 079c03e6; backlog pass 9b, f10455b9; backlog pass 9, 67cac064; backlog pass 8, 5ed50cc5; backlog pass 7, e00107a7; unit steps 27 and 28, 8ac91d104a02c40f5237b4bfd924c1dde1f106aa3e7e1d5aab31725eae6499f9;
+    /// The package as revised at backlog pass 13 (captured MG), before the backlog pass 15 revision (FT, DC, MOL, Snipers, Commissars); each revision's
+    /// manifest records its predecessor. Earlier manifests: backlog pass 12, 584d82d9; backlog pass 11, 14feea97; backlog pass 10, 079c03e6; backlog pass 9b, f10455b9; backlog pass 9, 67cac064; backlog pass 8, 5ed50cc5; backlog pass 7, e00107a7; unit steps 27 and 28, 8ac91d104a02c40f5237b4bfd924c1dde1f106aa3e7e1d5aab31725eae6499f9;
     /// unit step 18, e0c28e88cda17bd71efd63f569c713d4d921e958dc7bc848b3c4c4acead143e1; and unit step 17,
     /// 45011b56946be8a7aba1676e6aea8d5ad0fa82193e4ebac24e06fd36bdff2b69 (Fire Review, "Revision at unit step 18").
     /// </summary>
-    public const string PriorManifestSha256 = "584d82d94257328a4b8bffd214d7076b4d51b0aec5433a2a8b7bd042c8da4010";
+    public const string PriorManifestSha256 = "42fa78bb1475b6bff66fac7be1a38cb11852b7d67025ec2a6b80c137220f3ba0";
     public static readonly DomainPackageRef Identity = new(new DomainId("asl"), "scenario-a1-fire", "sha256:" + ManifestSha256);
 
     private static readonly string[] Cases =
@@ -33,6 +33,8 @@ public sealed class ScenarioA1FirePackage : IDomainPackageResolver
         "A1-fire-opportunity-fire", "A1-fire-blocked-los", "A1-fire-fpf-variants", "A1-fire-smc-mg", "A1-fire-spraying-fire", "A1-fire-fire-lane",
         "A1-fire-melee-and-prisoners", "A1-fire-encirclement",
         "A1-fire-captured-mg",
+        "A1-fire-flamethrower", "A1-fire-flamethrower-outside", "A1-fire-demolition-charge", "A1-fire-mol", "A1-fire-commissar", "A1-fire-allied-troops",
+        "A1-fire-underscored-morale", "A1-fire-hero-sw",
     ];
 
     private static readonly string[] PinnedDigests =

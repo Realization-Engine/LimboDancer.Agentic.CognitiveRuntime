@@ -6,7 +6,7 @@
   "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
   "toHitTranscriptionSha256": "936b62d57e03761542b88e3b28752eae83208ef619ef30ebc99c70070fa833fd",
   "iftTranscriptionSha256": "42440dd6facf7aa23cfc8c884ed8c7266f6621b25cb889b679c850098d3a4cec",
-  "catalogSha256": "0d67c9a63fdad49a8de3d96ad5fd1e5302e321f9850bc241e198d93656e3943d",
+  "catalogSha256": "41f8b8272bfda60c83aa8827d0c99c427552b6638f78330ae48ae47d56100f24",
   "sourceFragments": [
     {
       "ruleId": "A1.123",
@@ -1622,6 +1622,6 @@
   "executionAuthority": "none",
   "toHitVehicleTranscriptionSha256": "4a9dfeafe03680b19cba0c8ddaf48f2d9ca55bbec48c679e0a6f03f558083f4c",
   "toKillTranscriptionSha256": "eec85c33a913abfa7b783f1afd452924201d187bf0cab8595bacb90d1b1be41a",
-  "revision": "Backlog pass 9b (2026-09-28): the manufactured ATR and Panzerschreck (C13.2, C13.4 to C13.48; R9.10, R9.11) and the mortar limits (A4.41, B23.423); catalog 1.9.0. Earlier: Backlog pass 9 (2026-09-28): light mortars, the Area Target Type, and spotting (C9, C3.33; R9.1 to R9.4), and the Panzerfaust (C13.3; R9.7, R9.8); catalog 1.8.0. Earlier: Backlog pass 8 (2026-09-28): Defensive First Fire and Intensive Fire, Guns as targets, Cases E, H, and M, and overstacking (C2.241, C5.5 to C6.17, C11; R8.1 to R8.10); catalog 1.7.0. Earlier: Backlog pass 7 (2026-09-28): the Vehicle Target Type, To Kill, Special Ammunition, Shock, and crews (C3.31, C7, C8, D5.5, D5.6), and tanks firing their MA (D1.3; R7.1 to R7.10); catalog 1.6.0.",
+  "revision": "Backlog pass 15 (2026-09-28): catalog 1.10.0, whose FT holders take the A22.4 DRM on an ordnance hit's IFT attack in the Fire package (ruling R15.1). Earlier: Backlog pass 9b (2026-09-28): the manufactured ATR and Panzerschreck (C13.2, C13.4 to C13.48; R9.10, R9.11) and the mortar limits (A4.41, B23.423); catalog 1.9.0. Earlier: Backlog pass 9 (2026-09-28): light mortars, the Area Target Type, and spotting (C9, C3.33; R9.1 to R9.4), and the Panzerfaust (C13.3; R9.7, R9.8); catalog 1.8.0. Earlier: Backlog pass 8 (2026-09-28): Defensive First Fire and Intensive Fire, Guns as targets, Cases E, H, and M, and overstacking (C2.241, C5.5 to C6.17, C11; R8.1 to R8.10); catalog 1.7.0. Earlier: Backlog pass 7 (2026-09-28): the Vehicle Target Type, To Kill, Special Ammunition, Shock, and crews (C3.31, C7, C8, D5.5, D5.6), and tanks firing their MA (D1.3; R7.1 to R7.10); catalog 1.6.0.",
   "toHitAreaTranscriptionSha256": "337184329d8d52686a3cb8c8726e13f527c5e39097f3a93bb8f646d7f59af5ea"
 }

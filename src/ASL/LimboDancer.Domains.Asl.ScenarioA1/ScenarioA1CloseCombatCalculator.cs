@@ -525,17 +525,6 @@ public static class ScenarioA1CloseCombatCalculator
                 undecided.Add("asl.a1.cc.field-promotion-bpv-missing:" + priceless.DefinitionId);
             }
 
-            if (mmcs.Any(unit => ScenarioA1FireReference.IsNkvd(unit.DefinitionId!)))
-            {
-                undecided.Add($"asl.a1.cc.field-promotion-commissar-unreviewed:{index}");
-            }
-
-            var nationality = reference.Definitions[mmcs[0].DefinitionId!].Nationality;
-            if (ScenarioA1FieldPromotion.Applicable(nationality) is false)
-            {
-                undecided.Add("asl.a1.cc.leader-creation-not-applicable:" + nationality);
-            }
-
             // A20.551 (ruling R14.6): an attacking Unarmed MMC may be rearmed as a Conscript MMC of its size and nationality.
             foreach (var unarmed in mmcs.Where(unit => unit.Unarmed == true))
             {
@@ -665,8 +654,9 @@ public static class ScenarioA1CloseCombatCalculator
 
                 usedRolls.Add("attack:" + Key(index));
                 dice[index] = drawn!;
+                // A25.71 (backlog pass 15, ruling R15.13): the Finns create no leader.
                 var mmcs = ActiveAttackers(index).Select(id => units[id]).Where(unit => unit.Definition.IsMmc).ToArray();
-                if (drawn!.Sum() == 2 && mmcs.Length > 0)
+                if (drawn!.Sum() == 2 && mmcs.Length > 0 && ScenarioA1FieldPromotion.Applicable(mmcs[0].Definition.Nationality))
                 {
                     if (rolls.LeaderCreation?.TryGetValue(Key(index), out var dr) != true)
                     {
@@ -682,7 +672,7 @@ public static class ScenarioA1CloseCombatCalculator
                     // when an enemy attack takes some of them and not the others.
                     var founder = mmcs.OrderByDescending(unit => reference.Bpv.GetValueOrDefault(unit.Definition.Id)).First();
                     var (outcome, reason) = ScenarioA1FieldPromotion.Create(founder.Definition, BaseMorale(founder.Facts, reference), dr, oddsDrm, reference.Definitions,
-                        "asl.a1.cc");
+                        "asl.a1.cc", founder.Facts.Fanatic == true);
                     if (outcome is null)
                     {
                         return Refused(CloseCombatResolution.Indeterminate, [reason!]);
