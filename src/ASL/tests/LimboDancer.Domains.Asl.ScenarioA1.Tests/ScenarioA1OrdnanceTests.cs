@@ -160,6 +160,16 @@ public sealed class ScenarioA1OrdnanceTests
     }
 
     [Fact]
+    public void AtNightTheLowVisibilityDrmIsACaseRHindranceOfItsOwnAndMudCushionsHe()
+    {
+        // E1.7, E3.1, E3.62 (backlog pass 16; referee, pass 16): +1 Case R for Low Visibility, apart from the LOS Hindrance, and +1 TEM for Mud in Open Ground.
+        var drm = ScenarioA1OrdnanceCalculator.Resolve(With(German() with { LowVisibilityDrm = 1, CushionedOpenGround = true }, [6, 6]), Reference).ToHit!.Drm;
+        Assert.Contains(drm, item => item.Name == "case-r:lv" && item.Value == 1);
+        Assert.Contains(drm, item => item.Name == "case-q:weather-cushion" && item.Value == 1);
+        Assert.DoesNotContain(drm, item => item.Name == "case-r");
+    }
+
+    [Fact]
     public void AnOriginalTwoThatHitsCallsForASubsequentDrThatDecidesTheCriticalHit()
     {
         // Final 2 + 2 = 4 is not below half of 8, so an Original 2 asks for a subsequent dr: 4 (at most half) is a Critical Hit, 5 is not.

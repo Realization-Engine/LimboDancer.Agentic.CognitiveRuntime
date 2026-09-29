@@ -64,6 +64,33 @@ public sealed record OrdnanceShot(
         get; init;
     }
 
+    /// <summary>
+    /// Whether Mud or Deep Snow cushions the HE shot (E3.62, E3.731; rulings R16.12, R16.13): +1 TEM to the TH DR of an HE shot at an Infantry
+    /// Target Type in Open Ground (never at a vehicle or its PRC). Null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? CushionedOpenGround
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The Low Visibility DRM of night and weather on the TH DR (E1.7, E3.1; referee, pass 16): a Case R Hindrance of its own, which cancels neither FFMO
+    /// nor the Open Ground cases. Null is 0.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? LowVisibilityDrm
+    {
+        get; init;
+    }
+
+    /// <summary>How much lower Extreme Winter makes the Gun's B# (E3.741; ruling R16.14): 1 or 2. Null is 0.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? BreakdownReduction
+    {
+        get; init;
+    }
+
     /// <summary>The moving target's facts for Defensive First Fire (C6.11 to C6.17); required when <see cref="FireKind"/> is set.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public OrdnanceMovement? Movement

@@ -57,6 +57,21 @@ public sealed record PrisonerFreed(string Unit) : EventPayload;
 public sealed record SniperAttacked(string Sniper, string Trigger, string Roll, int Dr, BoardLocation? Target, string? Unit, string Result) : EventPayload;
 
 /// <summary>
+/// <c>wind-changed</c>: the Wind Change DR <paramref name="Roll"/> made at the start of a RPh (B25.65; backlog pass 16, ruling R16.10), and what it
+/// changed: the Base NVR of a night game (E1.12, with the further dr <paramref name="NvrRoll"/> a Scattered sky with a moon calls for), the
+/// precipitation (E3.51, E3.71: <c>rain</c>, <c>heavy-rain</c>, <c>snow</c>, <c>heavy-snow</c>, or none), and whether a Gust blows (E3.4).
+/// </summary>
+public sealed record WindChanged(string Roll, int? Nvr, string? Precipitation, bool Gust, string? NvrRoll) : EventPayload;
+
+/// <summary>
+/// <c>starshell-fired</c>: a Starshell attempt (E1.92 to E1.923; backlog pass 16, ruling R16.8) by <paramref name="Unit"/> from <paramref name="From"/>,
+/// its Usage dr <paramref name="UsageRoll"/>, and, when that passed, the placement method, roll, and the Starshell <paramref name="Starshell"/> in its
+/// final Location <paramref name="At"/> (none when it fell off the map).
+/// </summary>
+public sealed record StarshellFired(string Unit, BoardLocation From, string Method, string UsageRoll, bool Passed, string? PlacementRoll, BoardLocation? At,
+    string? Starshell) : EventPayload;
+
+/// <summary>
 /// <c>prisoners-massacred</c>: prisoners eliminated in their Location (A20.4, ruling R5.7), by units of the Guard's side that may massacre
 /// (Russian or berserk Infantry, not in Melee) in a fire phase of their own side. The victims' side has its ELR raised by one, once, to at
 /// most 6, and is faced with No Quarter. <paramref name="Berserk"/> marks the massacre a berserk unit makes at the start of its fire phase,

@@ -61,7 +61,8 @@ public sealed partial class GamePlanner
 
             return !fromLevel.Hex.Stairway
                 ? (null, $"play.move-stairwell: {from.Hex} has no stairwell, so its levels do not connect (B23.23, B23.4)")
-                : (new InfantryEntry(2 + BlazeEntryHalfMf(state, to), TerrainKey(toLevel)!, false, false, false, true), null);
+                // E1.51 (referee, pass 16): a building Location is Concealment Terrain, one MF more at night.
+                : (new InfantryEntry(2 + BlazeEntryHalfMf(state, to) + (state.Night ? 2 : 0), TerrainKey(toLevel)!, false, false, false, true), null);
         }
 
         var (fromRead, toRead, adjacent, crossed) = Step(state, from, to);
@@ -84,8 +85,9 @@ public sealed partial class GamePlanner
             var connected = from.Level == to.Level && from.Level > 0 && IsBuildingTerrain(TerrainKey(fromRead)) && IsBuildingTerrain(terrain)
                 && fromRead.Hex.BaseLevel == toRead.Hex.BaseLevel && crossed.HexsideTerrain is null && crossed.Terrain is { } shared
                 && OrdinaryBuildings.Contains(shared.Name);
+            // E1.51 (backlog pass 16, ruling R16.5): a building Location is Concealment Terrain, one MF more at night.
             return connected
-                ? (new InfantryEntry(EntryHalfMf[terrain] + BlazeEntryHalfMf(state, to), terrain, false, false, false, false), null)
+                ? (new InfantryEntry(EntryHalfMf[terrain] + BlazeEntryHalfMf(state, to) + (state.Night ? 2 : 0), terrain, false, false, false, false), null)
                 : (null, "play.move-upper-level: from an upper level a unit moves only into the same level of an ADJACENT hex of the same building (B23.421, B23.422)");
         }
 
@@ -146,7 +148,8 @@ public sealed partial class GamePlanner
         }
 
         var smoke = BlazeEntryHalfMf(state, to);
-        return (new InfantryEntry(cost + smoke, terrain, road && smoke == 0, allMf, minimumOnly, rise != 0), null);
+        var (weather, roadRate) = allMf ? (0, road) : InfantryWeatherHalfMf(state, crossed, terrain, road, rise);
+        return (new InfantryEntry(cost + smoke + weather, terrain, roadRate && smoke == 0, allMf, minimumOnly, rise != 0), null);
     }
 
     /// <summary>

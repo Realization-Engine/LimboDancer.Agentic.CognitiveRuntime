@@ -52,6 +52,16 @@ public sealed class ScenarioA1RallyPackageTests
     }
 
     [Fact]
+    public void ExtremeWinterMakesAnOriginalElevenFate()
+    {
+        // E3.742 (backlog pass 16, ruling R16.14): an Original 11 is Fate for the units Extreme Winter names; otherwise it is only a failed rally.
+        var winter = ScenarioA1RallyCalculator.Resolve(Attempt([5, 6]) with { ExtremeWinterFate = true }, Reference).Effect!;
+        Assert.Equal(("defender-half-squad", false), (winter.FinalDefinitionId, winter.Rallied));
+        var plain = ScenarioA1RallyCalculator.Resolve(Attempt([5, 6]), Reference).Effect!;
+        Assert.Equal("defender-squad", plain.FinalDefinitionId);
+    }
+
+    [Fact]
     public void FateReducesTheUnitAndNeverRalliesIt()
     {
         var squad = ScenarioA1RallyCalculator.Resolve(Attempt([6, 6]), Reference).Effect!;

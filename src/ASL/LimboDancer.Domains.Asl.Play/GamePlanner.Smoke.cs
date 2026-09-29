@@ -39,6 +39,13 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.smoke-residual: spending MF in a Residual FP Location to place SMOKE is not reviewed (A8.2)");
         }
 
+        // E3.53, E3.734 (referee, pass 16): in rain, Mud, or Deep Snow the only SMOKE is a Blaze's or SMOKE placed inside a building.
+        if ((state.Precipitation is "rain" or "heavy-rain" || state.Weather("mud") || state.Weather("deep-snow"))
+            && !(ReadLocation(state, target) is { } smokeRead && TerrainKey(smokeRead) is "wooden-building" or "stone-building"))
+        {
+            return Refused(scope, label, expected, "play.smoke-weather: in rain, Mud, or Deep Snow no SMOKE is placed but inside a building (E3.53, E3.734)");
+        }
+
         // A24.1 (ruling R9.5): the own Location for 1 MF, or an ADJACENT Location at its level for 2 MF; no other level, water, or marsh.
         int halfMf;
         if (target == from)

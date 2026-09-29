@@ -379,3 +379,24 @@ Estimate: 2:40, the user's figure of 2026-09-28 (the plan's 6:30, build 5:15, sc
 | Merge and push | 01:51 | 01:53 | 0:02 | |
 
 Total 3:19 of working time (22:34 to 01:53) against the 2:40 estimate (the plan's 6:30, build 5:15); the referee's and table player's fixes, 00:17 to 01:10, took 0:53.
+
+## Pass 16: Night and weather
+
+Estimate: 1:50, scaled from the plan's 3:45 (build 2:30) by the passes 12 to 15 actuals (about 0.43 of plan, 0.5 for the larger passes). Kickoff 2026-09-29 09:13. Branch `feature/asl-backlog-pass-16`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Reading (E1 Night, E3 Weather, B25.65 the Wind Change DR, B.8) and rulings R16.1 to R16.14 drafted; a code survey agent mapped the hooks | 09:13 | 09:24 | 0:11 | |
+| PDF comparison (72 fragments of E1, E3, B25.65, B.8) and its registration; the Fire, Rally, Close Combat, and Ordnance package revisions (the Low Visibility DRM, a Gunflash beyond NVR, the weather cushion, Extreme Winter B# and Fate, the night Ambush) | 09:24 | 09:31 | 0:07 | |
+| Units records and projector (`wind-changed`, `starshell-fired`, the NVR and precipitation, night fire counters, Starshell removal), vocabulary 1.15.0 (the Starshell), planner (SSR checks, NVR, Illumination, Gunflashes, the fire facts, the Wind Change DR, Starshells, night rout, DM, concealment, Ambush, SAN, Recovery, MF and MP, Bog, ordnance), the record verifiers | 09:31 | 09:47 | 0:16 | |
+| Tests: 15 Play tests, 5 package tests, the older tests the action list and vocabulary change; Play (368), Units (406), ScenarioA1 (464) pass; the referee agent started | 09:47 | 09:55 | 0:08 | |
+| Play page: special rules at a new game, the night and weather line, the Starshell panel, the night records; a page test; MapStudio (131) pass | 09:55 | 10:00 | 0:05 | |
+| Table-player clone and agent started; visual check in the Studio (pass16-demo: night:1 with overcast, the status line, fire beyond NVR refused; pass16-demo2: a Starshell three hexes out landing in B3, fire at the Illuminated squad in B4 with the +1 Low Visibility DRM); Studio stopped | 10:00 | 10:05 | 0:05 | The first demo showed the first-Starshell condition refusing correctly where board 01 blocks the LOS |
+| Referee's 20 findings: 14 fixed (the ordnance Low Visibility DRM as its own Case R term, vehicle roads in Mud and snow, rain that has fallen, NVR in the Starshell checks, SMOKE in rain, Mud, and Deep Snow, NVR 0 vehicles, a BU AFV's NVR for its MA and its movement, the stairwell MF, the uncapped LV DRM blocking at 6, the Bog notes, the snow road minimum, the Starshell timing, the Japanese and Extreme Winter with snow), 6 recorded; the packages re-pinned; 7 new tests; Play (374) pass | 10:05 | 10:18 | 0:13 | The referee ran 09:55 to about 10:05 |
+| Table player's 9 findings (58 situations, 86 cases): 5 already fixed by the referee round (the snow road, the Starshell NVR checks and timing, rain that has fallen), 3 fixed (a hidden Starshell firer's readback, moving vehicles beyond NVR, the ATTACKER-only night Ambush margin; the Close Combat package re-pinned), 1 recorded (Known at night for routing); 57 situations kept as `BacklogPass16TablePlayerTests`; Play pass 16 tests (103) pass | 10:18 | 10:26 | 0:08 | The table player ran 10:00 to about 10:21 |
+| Review, design, backlog section 26 (5 rows removed from sections 2, 6, and 11, and 4 rows narrowed in sections 19, 21, 22, and 23), requirements, ruling wording | 10:26 | 10:33 | 0:07 | |
+| Full local suite: build with warnings as errors, every solution test project, and the ScenarioA1 tests (470); 1 failed, the architecture test's scan of the held `.git/worktrees`; Play (459), Units (406), MapStudio (131) pass; the source verification, pending comparison, and chart supplement regenerations run locally (identical) | 10:33 | 10:47 | 0:14 | |
+| Commit eec0739; merge gate: the Docker Linux check (restore, build, test, a1, and the source verification and pending comparison regenerations: every step exit 0; Authoring 166 of 166, ScenarioA1 470) | 10:47 | 11:01 | 0:14 | |
+| Merge and push | 11:01 | 11:03 | 0:02 | |
+
+Total 1:50 of working time (09:13 to 11:03) against the 1:50 estimate (the plan's 3:45, build 2:30); the build with both reviews' fixes, 09:24 to 10:26, took 1:02.

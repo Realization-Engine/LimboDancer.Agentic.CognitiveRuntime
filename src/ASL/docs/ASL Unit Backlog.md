@@ -38,8 +38,6 @@ Berserk and Surrender from Heat of Battle (R0.2, R19.2, R22.5, R28.1) left this 
 | Item | Deferred by | Rules | Depends on |
 |---|---|---|---|
 | Rally terrain in pillboxes, trenches, and on rooftops (marsh and rubble were built in pass 13) | R19.5 | A10.61, p. 68; B23.83, p. 140; B30.5, p. 151; B Terrain Chart, p. 160 | Those terrains on the map read |
-| Night (DM kept until a rally DR at most the printed morale) | R19.10 | E1.54, p. 224 | Night rules |
-| Extreme Winter Fate | R19.10 | E3.742, p. 231 | Weather |
 
 ## 3. Fire phases and fire groups (step 20)
 
@@ -66,8 +64,6 @@ Step 17 left these out; steps 19 to 23 do not build them.
 | Item | Rules | Depends on |
 |---|---|---|
 | Smoke and WP | A24, p. 91 | Smoke placement |
-| Night | E1, p. 222 onward | Night visibility |
-| Weather | E3, p. 228 onward | Weather state |
 | ELR from the scenario card, once scenario cards are a registered source | A19.1, p. 86 | Scenario card registration |
 
 ## 7. Later passes
@@ -98,7 +94,6 @@ Every item here was built by the backlog pass 15; what they leave out is in sect
 |---|---|---|---|
 | CC by or against vehicles, sequential CC with a vehicle, Street Fighting | R29.1 | A11.31, A11.5 to A11.8, pp. 73 to 76 | Vehicles (step 25) |
 | Axis Minor and Japanese Heat of Battle exceptions (the Italian one was built in pass 15) | Pass 2 review | Heat of Battle table notes, p. 83 | Counters of those nationalities; until then they are refused |
-| Ambush at night (by at least 2) | R29.9 | A11.4 chart, p. 692 | Night rules (E1) |
 | Play page: a berserk leader's companions' TCs in the CC record (SW left unpossessed by eliminated units are listed since pass 5) | Table-player review | A20.24, A15.431, A15.41 | | Shown in the fire and rally records and the move's reasons, not in the CC record. |
 
 ## 12. Added by the deviations pass 3 (step 24)
@@ -230,7 +225,7 @@ Vehicle movement (Reverse, VBM, ESB, Minimum Move, Bog, OVR, stacking, and terra
 | The Area Target Type by Guns, mortars against vehicles and Guns, target hexes with units in several Locations, and units out of the firer's LOS in the target hex | R9.3, R9.9 | C3.33, C3.332, C1.55, p. 170 | IFT attacks on vehicles by HE; levels in fire | Refused. |
 | A mortar Spotter's wait until the next MPh after its loss, the Acquisition a spotting squad loses by firing, and spotting in the AFPh | R9.4 | C9.3, C9.31, p. 179 | Opportunity Fire (pass 12) | A new Spotter may be named at once; the Acquisition is kept; spotted fire is in the PFPh and DFPh only. |
 | Bore Sighting by a light mortar | R9.9 | C6.41, p. 174 | Hidden setup records | Not offered. |
-| SMOKE and WP by ordnance, WP grenades, Dispersed SMOKE, drift, Gusts, and weather | R9.9 | C8.5, A24.3 to A24.62 | A Gun with an s# or WP#; wind and weather (pass 16) | Not reached: no catalog Gun lists SMOKE, no nationality in the game has WP grenades. |
+| SMOKE and WP by ordnance, WP grenades, Dispersed SMOKE, drift, Gusts, and weather | R9.9 | C8.5, A24.3 to A24.62 | A Gun with an s# or WP#; Wind Force and Direction (weather built in pass 16) | Not reached: no catalog Gun lists SMOKE, no nationality in the game has WP grenades. |
 | The PF against Infantry, unarmored vehicles, and Guns (HE Equivalency), the PFk, the optional usage of C13.311, Desperation fire, a PF at range 0, and a PF Check in Subsequent First Fire | R9.8 | C8.31, C13.3, C13.311, C13.81 | HE Equivalency; Subsequent First Fire of SW | Refused. Range 0 is not reached, since Infantry and an enemy vehicle never share a Location in the review (R25.3). |
 | A squad firing a light mortar and a MG in one phase, forfeiting its inherent FP | R9.2 | A7.351 | One record of each unit's SW use | The Fire package's limit of two MG per squad does not count the mortar. |
 | The PF usage limit with reinforcements | R9.7 | C13.31 | Reinforcements (pass 17) | The limit counts the German squad equivalents at the end of setup. |
@@ -270,7 +265,7 @@ Vehicle movement (Reverse, VBM, ESB, Minimum Move, Bog, OVR, stacking, and terra
 | The CAFP's LOS and fire from a vehicle in Bypass | R11.2 | D2.37, p. 197 | LOS to and from the CAFP | Fire takes the hex center, as before. |
 | Armor Leaders, in OVR and CC | R11.11, R11.14 | D7.16, A11.5, D3.44 | Armor Leader counters | Not in the catalog; no OVR leadership. |
 | Help freeing a bogged vehicle (towing, Infantry assist) and a Bog Removal's bearing on other vehicles | R11.10 | D8.32 to D8.35 | Towing between vehicles | Only the vehicle's own Bog Removal. |
-| Mud, snow, and wire for vehicles | R11.7 | D8.21, B26, E3 | Weather and wire | Not reached; the scenario month gives neither. |
+| Wire for vehicles, and the Bog DR of a vehicle's whole MPh in Mud or Deep Snow (Mud and snow costs and Bog DRM since pass 16) | R11.7; R16.12 | D8.21, D8.23, B26 | Wire; a secret Bog DR per MPh | Not reached for wire; in Mud and Deep Snow only the Bog DRs the terrain calls for are made. |
 | FPF Reaction Fire, Street Fighting, and Gun crews' Reaction Fire | R11.13 | D7.211, D7.212, D7.221, D7.23, A11.8 | FPF by leaders; Street Fighting; Gun crews in CC | Not offered. |
 | Infantry against Infantry in a Location holding a vehicle | Table player, pass 11 | A11.31, p. 73 | Sequential Infantry CC | Refused; such Infantry stay in Melee and may withdraw. |
 | Ambush in a Location holding a vehicle | R11.16 | A11.34, p. 73 | Ambush in sequential CC | A deviation in section 1. |
@@ -292,7 +287,7 @@ The backlog pass 12 (2026-09-28) built, and removed from sections 2, 3, 5, 8, 11
 | Opportunity Fire by ordnance, mortars, and LATW, and a mortar Spotter's wait after it | R12.1 | A7.25, C9.3 | Ordnance in the AFPh | Only Infantry small arms and MGs use Opportunity Fire. |
 | Random Events on the DR of fire at a blocked LOS | R12.2, R12.12 | A6.11 | Random Events | The DR decides Multiple ROF only. |
 | An unmarked unit's First Fire joining FPF | R12.3; referee, pass 12 | A8.31 | Per-firer fire markers | Refused; FPF groups with Subsequent First Fire only. |
-| Concealment gain by vehicles, Guns, and Dummy stacks, Lax units, and night | R12.5 | A12.12, the Concealment Table, E1 | Their Cases | Only Infantry not manning a Gun gain "?". |
+| Concealment gain by vehicles, Guns, and Dummy stacks, and Lax units (night since pass 16) | R12.5 | A12.12, the Concealment Table, E1 | Their Cases | Only Infantry not manning a Gun gain "?". |
 | Spraying Fire in the MPh, at upper-level Locations of one hex, and counted toward an Encirclement | R12.6; referee, pass 12 | A9.5, A9.52, A7.7 | Spraying in the movement windows | Refused in the MPh; a spray does not count toward an Encirclement. |
 | Fire Lanes along an Alternate Hex Grain, their Snap Shots, intersecting lanes, the TPBF and CC Reaction Fire cancellation, Impulse movement, a lane's wall or hedge TEM, attacks on each MF expenditure after the first, and lanes against vehicles | R12.7; referee, pass 12 | A9.22 to A9.223 | Lane geometry and hexside TEM for Residual FP | A lane runs along a straight Hex Grain and attacks Infantry as they enter its Locations; its MG does not fire again until the DFPh. |
 | Other Hindrances on a Fire Lane (orchard, wrecks) as DRM | Referee, pass 12 | A9.222 | Hindrance types in the LOS read | No lane Hindrance applies as a DRM; any cancels FFMO. |
@@ -317,7 +312,7 @@ The backlog pass 13 (2026-09-28) built, and removed from sections 2, 3, 5, 8, 11
 | Interdiction by vehicles, Guns, and ordnance, and their Normal Range for rout and DM | R13.3; referee, pass 13 | A10.532, A10.5 | Vehicle and Gun ranges | Only Infantry Interdict and threaten the open. |
 | The leadership DRM of a leader in the Location entered on an Interdiction NMC, and Interdictors whose FP is halved by other causes (Area Fire in marsh) | Referee, pass 13 | A10.53, A10.532, B16.32 | Per-unit FP state | DRM 0; only CX, pinned, Encircled, and Melee units are barred. |
 | Voluntary Rout and voluntary breaking at the start of the RtPh | R13.3 | A10.41, A10.711 | Player choices at phase start | Not offered. |
-| Night rout, and rout of Passengers and Riders | R13.3 | E1.54, D6.1 | Night and vehicle cargo | Not built. |
+| Rout of Passengers and Riders (night rout since pass 16) | R13.3 | D6.1 | Vehicle cargo | Not built. |
 | The DEFENDER's fire window for the MF a Recovery attempt spends in the MPh | Table player, pass 13 | A4.44, A8.1 | A window on non-move MF expenditures | The MF is spent with no window. |
 | The German dm MMG firing as a LMG, dismantled mortars, and weapons that start dismantled | R13.6 | A9.8, C9.2 | Their catalog values | Only the German MMG is dismantled and assembled. |
 | Captured ordnance, mortars, LATW, Guns, and vehicles | R13.7 | A21.13, A21.2 | Captured Gun and vehicle rules | Only captured MG and ATR take the penalties. |
@@ -375,3 +370,27 @@ The backlog pass 15 (2026-09-29) built, and removed from sections 2, 5, 6, 10, 1
 | The Encircled DRM of a DC's attack by an Encircled user | Referee, pass 15 | A7.7, A23.2 | Encirclement in the DC's attack | No Encircled DRM is added to a DC's attack. |
 | Clearer answers once Defensive First Fire has eliminated every mover | Table player, pass 15 | A8.1, A4.1 | The movement window closing with its last mover | pass-fire is accepted with no mover left and end-move answers with the state error UNIT-STATE-007; advancing the phase works. |
 | The end-move refusal's wording once the placer of a DC was Replaced and broken | Table player, pass 15 | A23.3 | The DEFENDER's window text reading the placer | end-move says the DEFENDER may still fire; advancing the phase works. |
+
+## 26. Added by the backlog pass 16
+
+The backlog pass 16 (2026-09-29) built, and removed from sections 2, 6, 11, 19, 21, 22, and 23: night (the NVR, Illumination by Starshells and Blazes, Gunflashes, the Low Visibility DRM, rout, DM, concealment, movement, the Ambush, SAN, and Recovery at night), the Wind Change DR, the weather (Overcast, rain, Gusts, Mist, Mud, Falling, Ground, and Deep Snow, and Extreme Winter with its Fate), and their costs for vehicles. The scenario cards are pass 17. What it leaves out follows.
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| Straying, Jitter Fire, Cloaking, and Lax, Normal, and Stealthy units at night | R16.5 | E1.4 to E1.43, E1.53 to E1.55, E1.6 to E1.63 | A Movement DR and the Majority Squad Type | Units move as by day; no Cloaking counters. |
+| A moving ATTACKER with an NVR of 0 entering a concealed DEFENDER's Location | R16.2 | E1.13 | The A12.15 return | The unit is returned as by day. |
+| The Scenario Defender at night: HIP and "?" allotments, Freedom of Movement, the ELR one lower, and Recon | R16.1 | E1.2 to E1.23 | Scenario cards (pass 17) | Setup places units freely; every unit may move. |
+| Fortifications hidden at night, and a Factory's NVR of 1 | R16.2 | E1.16, E1.17 | Fortifications; Factory reads | Not built. |
+| A Fire Lane beyond NVR and Bore-Sighted Fire Lanes at night; To Hit from a Blind Hex at night; the captured MG's Sniper dr | R16.3 | E1.71, E1.73, E1.76 | Those windows | Fire Lanes need the NVR as other fire; no Blind Hex TH case; no Sniper dr. |
+| Target Acquisition only when Illuminated at night | Referee, pass 16 | E1.74, C6.5 | The Illumination read in the Ordnance facts | An Acquisition applies at night as by day. |
+| Ordnance at a Gunflash beyond NVR | R16.2 | E1.81, C6 | Area Fire for ordnance at night | Refused. |
+| Gunflashes of Opportunity and No Fire counters, a FT's attacked Location, a detonated DC, mines, and Searching | Referee, pass 16 | E1.8, E1.83 to E1.86 | Their Gunflash markers | Only units and weapons with Prep, First, Final, Bounding, or Intensive Fire counters, and Melee, are Gunflashes. |
+| "Known" at night outside fire: routing toward a Known enemy, and a berserk unit's charge | Referee, pass 16 | E1.33, E1.533, A10.51 | An NVR read in those checks | They read the LOS as by day. |
+| IR, trip flares, a Blaze's shadows, a Starshell off the map, method 2 along the LOS or at seven or eight hexes, and the motorized vehicle trigger of E1.91 | R16.8 | E1.91, E1.922, E1.93 to E1.953, E1.941 | Offboard placement; Blind Hexes of Illumination | A Starshell stops at the map edge; method 2 only at the target hex within six hexes. |
+| A vehicle changing its VCA without moving, as a moving vehicle for NVR | R16.2 | E1.14 | The VCA change in the sight read | Only a vehicle in Motion. |
+| The Wind Change DR of the opening RPh, Wind Force and Direction, a DR of 2's wind change, Fog density and Heavy Winds | R16.10 | B25.63 to B25.65, E3.312 | Wind state | Not made; the game starts in that RPh. |
+| Fog, Winter Camouflage, Drifts, and Ice | R16.9 | E3.31 to E3.313, E3.712, E3.75, E3.722 | LOS through Fog levels; Ice rules | Refused at setup (Fog, Drifts) or not applied. |
+| Marsh and brush as Open Ground in snow, frozen streams, and minefields in Deep Snow | Referee, pass 16 | E3.722, E3.73, E3.732 | A weather-aware terrain key | Marsh and brush keep their day rules. |
+| The Clear weather between Locations of one building | R16.11 | E3.8 | Building identity in the LOS read | Only the firer's own hex is Clear. |
+| Manhandling, Entrenching, and foxholes in Mud, snow, and Extreme Winter; the Axis vehicles' immobilization in Extreme Winter | R16.12 to R16.14 | E3.61, E3.63, E3.722, E3.7332, E3.743, E3.744 | Manhandling and Entrenching | Not built; E3.744 is the scenario cards'. |
+| Extreme Winter's Fate in a pillbox, and the DYO Weather and NVR Tables | R16.14, R16.1 | E3.742, E3, E1.11 | Pillboxes; scenario cards (pass 17) | Only buildings shelter from Fate; the SSRs name the weather and NVR. |

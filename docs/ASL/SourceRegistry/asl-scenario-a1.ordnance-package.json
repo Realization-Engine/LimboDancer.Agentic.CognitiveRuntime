@@ -3,8 +3,8 @@
   "status": "published-bounded-ordnance-package",
   "domainId": "asl",
   "packageId": "scenario-a1-ordnance",
-  "declaredUse": "Read-only conclusions for one shot by a reviewed Gun or tank MA: HE at the Infantry of one Location on the Infantry Target Type, or AP, APCR, HEAT, or HE at one enemy vehicle on the Vehicle Target Type with its To Kill DR, under the rulings of the ASL Unit Deviations, Ordnance, and Vehicles Plan (R24.1 to R24.8) and of the backlog pass 7 (R7.1 to R7.12).",
-  "caseMatrixSha256": "81542d82bccce0cd67e01c21bb5268c55c838bc4f894839dfa98b5b3c7a1d7ab",
+  "declaredUse": "Read-only conclusions for one shot by a reviewed Gun or tank MA: HE at the Infantry of one Location on the Infantry Target Type, or AP, APCR, HEAT, or HE at one enemy vehicle on the Vehicle Target Type with its To Kill DR, under the rulings of the ASL Unit Deviations, Ordnance, and Vehicles Plan (R24.1 to R24.8) and of the backlog pass 7 (R7.1 to R7.12); and the Mud and Deep Snow cushion and Extreme Winter B# (Backlog Passes Plan, pass 16).",
+  "caseMatrixSha256": "671f0ded004a8e284e8727659e2a88fc30a1a42ef11cf616d2efbb1f95ef472a",
   "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
   "toHitTranscriptionSha256": "936b62d57e03761542b88e3b28752eae83208ef619ef30ebc99c70070fa833fd",
   "iftTranscriptionSha256": "42440dd6facf7aa23cfc8c884ed8c7266f6621b25cb889b679c850098d3a4cec",
@@ -1220,6 +1220,41 @@
       "startLine": 1406,
       "fragmentId": "asl-fragment:sha256:54a5973aea2d02b8e780483828bd0188fd9ec22a60caaa294a1f7b6d501e8c38",
       "contentSha256": "6476316621998da389026d77f90fc024125783744089e1017228652431bb8d72"
+    },
+    {
+      "ruleId": "E3.62",
+      "physicalPdfPage": 230,
+      "startLine": 486,
+      "fragmentId": "asl-fragment:sha256:1efae32c16e4757acfa8a24b277cf06608f56bc29c116e906da734e1672a57fa",
+      "contentSha256": "eb43b61bd7cebc56d097d79bca669a6b57d888b1b9b5195dce4ff8b85a48b80f"
+    },
+    {
+      "ruleId": "E3.731",
+      "physicalPdfPage": 231,
+      "startLine": 524,
+      "fragmentId": "asl-fragment:sha256:4a91c1d009e6c50dfb85f8432a5942799d8659093095e4c0e0f9bea62b9fd13d",
+      "contentSha256": "b1edf48b9bd1f0527f2f7bec6320cf537bba68c778030f8811de76df3483df57"
+    },
+    {
+      "ruleId": "E3.741",
+      "physicalPdfPage": 231,
+      "startLine": 540,
+      "fragmentId": "asl-fragment:sha256:149d2936552b1742aa8f6df1c1bf772fedcfd97c9398a3a9756cb8cbfe2b3d69",
+      "contentSha256": "bb4e6473587fff6d991ea14e02a8c738c6e239f270ee85271f6fd9c674038e1b"
+    },
+    {
+      "ruleId": "E3.741",
+      "physicalPdfPage": 231,
+      "startLine": 542,
+      "fragmentId": "asl-fragment:sha256:4fee04f94703bfa1950b679934167ff80f1394e8af827fb55975d62db0967948",
+      "contentSha256": "e3c32150a8937e4a86f0f23028c4e80cdccd43b5cdd40f606c56eb75a3ea0326"
+    },
+    {
+      "ruleId": "E3.741",
+      "physicalPdfPage": 231,
+      "startLine": 544,
+      "fragmentId": "asl-fragment:sha256:710dab9e571caa469bf1c21ff8627dd6f6b996bcee3462af8ce5e7e54d72c5fc",
+      "contentSha256": "e5565c6002bc981a50ed9fb1e2dd76bfd842945a21c5e5ee06a6341040bc489b"
     }
   ],
   "rulings": {
@@ -1259,7 +1294,10 @@
     "panzerfaust": "after-september-1943-german-infantry-makes-a-pf-check-dr-1-to-3-a-shot-original-6-pinned-or-broken-then-th-10-minus-2-per-hex-at-an-afv-range-by-date-latw-drm-case-c3-for-the-afph-and-backblast-ch-on-original-2-original-12-casualty-reduction-heat-tk-31-shots-limited-by-squad-equivalents-C13.1-C13.3-C13.31-C13.32-C13.33-C13.34-C13.36-C13.8 (R9.7, R9.8)",
     "atr": "a-manufactured-atr-fires-on-the-black-vehicle-row-up-to-12-hexes-with-the-latw-drm-and-ap-tk-of-the-russian-atr-entry-b11-malfunctions-C13.2-C13.21-C13.22-C13.25-C13.26 (R9.10)",
     "panzerschreck": "a-manufactured-psk-from-september-1943-fires-heat-on-its-own-to-hit-table-with-the-latw-drm-and-backblast-tk-26-an-original-11-or-12-removes-it-a-lone-smc-does-not-fire-it-C13.41-C13.42-C13.43-C13.44-C13.45-C13.47-C13.48 (R9.11)",
-    "mortarLimits": "a-mortar-does-not-fire-from-a-building-location-nor-in-the-afph-after-it-moved-B23.423-A4.41 (R9.2)"
+    "mortarLimits": "a-mortar-does-not-fire-from-a-building-location-nor-in-the-afph-after-it-moved-B23.423-A4.41 (R9.2)",
+    "weatherCushion": "in-mud-or-deep-snow-an-he-shot-at-an-infantry-target-type-in-open-ground-takes-plus-1-tem-on-its-th-dr-E3.62-E3.731 (R16.12, R16.13)",
+    "extremeWinterBreakdown": "extreme-winter-lowers-a-guns-b-by-the-given-1-or-2-E3.741 (R16.14)",
+    "lowVisibility": "the-low-visibility-drm-of-night-and-weather-is-a-case-r-hindrance-of-its-own-on-the-th-dr-cancelling-neither-ffmo-nor-the-open-ground-cases-E1.7-E3.1 (R16.3, R16.11)"
   },
   "resolution": {
     "order": "The To Hit DR first (colored die first), then a subsequent dr on an Original 2 when the result needs it, then a Random Selection dr per target for a Critical Hit among several, then the IFT rolls of the Critical Hit and of the normal hit, each asked for when reached.",
@@ -1296,7 +1334,8 @@
     "A1-ordnance-panzerfaust",
     "A1-ordnance-panzerfaust-outside",
     "A1-ordnance-atr",
-    "A1-ordnance-panzerschreck"
+    "A1-ordnance-panzerschreck",
+    "A1-ordnance-weather"
   ],
   "excludedOutcomes": [
     "the Area Target Type by Guns, 76-82mm mortars, mortars against vehicles and Guns and at a hex with friendly units or several Locations, units out of the firer's LOS in the target hex, mortar repair and dismantling, and SMOKE and WP by ordnance (C3.33, C3.332, C9, C8.5)",
@@ -1309,7 +1348,7 @@
     "a tank's BMG and CMG, its MA in CC and OVR and in the MPh, and setting its TCA with MP or at the end of a fire phase (D3.12, C3.22; R7.10, R7.12)"
   ],
   "executionAuthority": "none",
-  "priorOrdnancePackageManifestSha256": "120b1df9714537883f198ac2876dbd7f084517e1041f400cf5f13895f3ccb699",
+  "priorOrdnancePackageManifestSha256": "b10deb34d69d49b5f7fe0ab1dbc2c5261b1b2736231411e8cd779ec1ddd301b6",
   "toHitVehicleTranscriptionSha256": "4a9dfeafe03680b19cba0c8ddaf48f2d9ca55bbec48c679e0a6f03f558083f4c",
   "toKillTranscriptionSha256": "eec85c33a913abfa7b783f1afd452924201d187bf0cab8595bacb90d1b1be41a",
   "toHitAreaTranscriptionSha256": "337184329d8d52686a3cb8c8726e13f527c5e39097f3a93bb8f646d7f59af5ea"

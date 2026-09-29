@@ -26,14 +26,14 @@ public sealed class ScenarioA1RallyReference
 /// </summary>
 public sealed class ScenarioA1RallyPackage : IDomainPackageResolver
 {
-    public const string ManifestSha256 = "3eb6e2144d053f4de8ab9d0bdbb765c93448726a16595f0561ed4e8b9c010715";
-    public const string MatrixSha256 = "a3ee5d6499adc2ea4cdab7c6c4c56fad5082749cf54d549945ec3e18d479aecd";
+    public const string ManifestSha256 = "68c60503c8f635b117b1da82f1754687baf6838781ef732bff9799b4a76142eb";
+    public const string MatrixSha256 = "5b7fd6d472f2ea4f59819e1f3d3af2086304fef01a769b034492ae467e82f4a2";
     public static readonly DomainPackageRef Identity = new(new DomainId("asl"), "scenario-a1-rally", "sha256:" + ManifestSha256);
 
     private static readonly string[] Cases =
     [
         "A1-rally-resolved", "A1-rally-phase-outside", "A1-rally-unit-outside", "A1-rally-already-attempted", "A1-rally-leader-outside", "A1-rally-self-rally-refused", "A1-rally-terrain-outside", "A1-rally-capability-unrecorded", "A1-rally-reduction-counter-missing", "A1-rally-field-promotion-unreviewed", "A1-rally-roll-missing", "A1-rally-owner-options", "A1-rally-no-quarter",
-        "A1-rally-marsh-rubble", "A1-rally-mmc-self-rally-none", "A1-rally-commissar", "A1-rally-nkvd-commissar",
+        "A1-rally-marsh-rubble", "A1-rally-mmc-self-rally-none", "A1-rally-commissar", "A1-rally-nkvd-commissar", "A1-rally-extreme-winter-fate",
     ];
 
     private static readonly string[] PinnedDigests = ["sourcePdfSha256", "catalogSha256"];

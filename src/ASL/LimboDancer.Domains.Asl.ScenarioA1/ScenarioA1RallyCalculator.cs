@@ -299,7 +299,8 @@ public static class ScenarioA1RallyCalculator
         {
             morale++;
         }
-        var fate = original == 12;
+        // A10.64; E3.742 (ruling R16.14): Extreme Winter makes an Original 11 Fate too for the units it names.
+        var fate = original == 12 || (original == 11 && attempt.ExtremeWinterFate == true);
 
         // A18.11: an Original 2 on the first MMC Self-Rally rallies the unit and calls for a Leader Creation dr; A15.1: an
         // Original 2 on a Rally other than Self-Rally calls for a Heat of Battle DR.

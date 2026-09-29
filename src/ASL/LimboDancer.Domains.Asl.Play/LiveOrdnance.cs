@@ -679,7 +679,15 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
 
                 // The owners' answers are declared, and the projector checks them against the choices made (ruling R5.8).
                 Choices = recorded.Hit.Choices,
+
+                // Backlog pass 16 (rulings R16.12, R16.13): the weather cushion of the hit's attack, from the SSRs.
+                CushionedOpenGround = recorded.Hit.CushionedOpenGround,
             },
+
+            // Backlog pass 16 (rulings R16.12 to R16.14): the weather cushion and the Extreme Winter B#, from the SSRs.
+            CushionedOpenGround = recorded.CushionedOpenGround,
+            BreakdownReduction = recorded.BreakdownReduction,
+            LowVisibilityDrm = recorded.LowVisibilityDrm,
             VehicleTarget = expected.VehicleTarget is null ? null : expected.VehicleTarget with
             {
                 HullFacing = recorded.VehicleTarget?.HullFacing,

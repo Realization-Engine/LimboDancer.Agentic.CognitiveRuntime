@@ -716,6 +716,55 @@ public static class GameEventWriter
             case PrisonerFreed freed:
                 writer.WriteString("unit", freed.Unit);
                 break;
+            case WindChanged wind:
+                writer.WriteString("roll", wind.Roll);
+                if (wind.Nvr is { } nvr)
+                {
+                    writer.WriteNumber("nvr", nvr);
+                }
+
+                if (wind.Precipitation is { } precipitation)
+                {
+                    writer.WriteString("precipitation", precipitation);
+                }
+
+                if (wind.Gust)
+                {
+                    writer.WriteBoolean("gust", true);
+                }
+
+                if (wind.NvrRoll is { } nvrRoll)
+                {
+                    writer.WriteString("nvrRoll", nvrRoll);
+                }
+
+                break;
+            case StarshellFired starshell:
+                writer.WriteString("unit", starshell.Unit);
+                writer.WriteString("from", starshell.From.ToString());
+                writer.WriteString("method", starshell.Method);
+                writer.WriteString("usageRoll", starshell.UsageRoll);
+                if (starshell.Passed)
+                {
+                    writer.WriteBoolean("passed", true);
+                }
+
+                if (starshell.PlacementRoll is { } placementRoll)
+                {
+                    writer.WriteString("placementRoll", placementRoll);
+                }
+
+                if (starshell.At is { } at)
+                {
+                    writer.WriteString("at", at.ToString());
+                }
+
+                if (starshell.Starshell is { } starshellId)
+                {
+                    writer.WriteString("starshell", starshellId);
+                }
+
+                break;
             case SniperAttacked sniper:
                 writer.WriteString("sniper", sniper.Sniper);
                 writer.WriteString("trigger", sniper.Trigger);

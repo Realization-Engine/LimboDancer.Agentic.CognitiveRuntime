@@ -373,6 +373,13 @@ public sealed record AmbushFacts(
     {
         get; init;
     }
+
+    /// <summary>Whether it is night and the Location is not Illuminated (E1.77; ruling R16.7): an Ambush needs a Final dr only two lower. Null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? DarkNight
+    {
+        get; init;
+    }
 }
 
 /// <summary>One side's Ambush dr, its drm, and its Final dr.</summary>

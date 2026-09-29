@@ -367,8 +367,14 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.rout-order: the ATTACKER's {first.Id} must rout first (A10.5)");
         }
 
+        // E1.54 (backlog pass 16, ruling R16.6): at night a broken unit always Low Crawls, and surrenders only in CC.
+        if (state.Night && !lowCrawl)
+        {
+            return Refused(scope, label, expected, $"play.night-rout: at night {unit.Id} does not rout normally but Low Crawls (lowCrawl) (E1.54)");
+        }
+
         // A20.21: a unit ADJACENT to its captors that is Disrupted, Encircled, or can get away only by Interdiction or Low Crawl surrenders instead.
-        if (!Is(unit, Conditions.Fanatic) && !state.NoQuarter.Contains(unit.Side, StringComparer.Ordinal) && Captors(state, unit) is { Count: > 0 } captors
+        if (!state.Night && !Is(unit, Conditions.Fanatic) && !state.NoQuarter.Contains(unit.Side, StringComparer.Ordinal) && Captors(state, unit) is { Count: > 0 } captors
             && (Is(unit, Conditions.Disrupted) ? "is Disrupted" : state.Encircled(unit) ? "is Encircled"
                 : TrappedByInterdiction(state, unit, start) ? $"can get away from {string.Join(" or ", captors)} only by Interdiction or Low Crawl" : null) is { } cause)
         {
@@ -385,7 +391,7 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.rout-route: a rout names at least one Location, and Low Crawl exactly one (A10.52)");
         }
 
-        if (lowCrawl && state.At(start).OfType<UnitInstance>().Any(other => other.Status == InstanceStatus.Active && other.Side != unit.Side
+        if (lowCrawl && !state.Night && state.At(start).OfType<UnitInstance>().Any(other => other.Status == InstanceStatus.Active && other.Side != unit.Side
             && other.Kind != UnitKinds.Dummy && !Is(other, Conditions.Captured)))
         {
             return Refused(scope, label, expected, "play.rout-low-crawl: Low Crawl does not leave an enemy-occupied Location (A10.52)");
@@ -410,7 +416,7 @@ public sealed partial class GamePlanner
                 return Refused(scope, label, expected, bar);
             }
 
-            if (lowCrawl && ReadLocation(state, to) is { } crawled && TerrainKey(crawled) == "marsh")
+            if (lowCrawl && !state.Night && ReadLocation(state, to) is { } crawled && TerrainKey(crawled) == "marsh")
             {
                 return Refused(scope, label, expected, "play.rout-low-crawl: Low Crawl does not enter marsh (A10.52)");
             }
@@ -688,6 +694,12 @@ public sealed partial class GamePlanner
     /// </summary>
     private (UnitInstance Unit, string Why, IReadOnlyList<string>? Captors)[] FailureToRout(GameState state, IReadOnlyList<GameEvent> existing)
     {
+        // E1.54 (backlog pass 16, ruling R16.6): no unit is eliminated for Failure to Rout at night.
+        if (state.Night)
+        {
+            return [];
+        }
+
         var start = existing.Select((item, index) => (item, index)).LastOrDefault(pair => pair.item.Payload is PhaseChanged).index;
         var rejected = existing.Skip(start).Select(item => item.Payload).OfType<SurrenderRejected>().Select(item => item.Unit).ToHashSet(StringComparer.Ordinal);
         var failed = new List<(UnitInstance, string, IReadOnlyList<string>?)>();

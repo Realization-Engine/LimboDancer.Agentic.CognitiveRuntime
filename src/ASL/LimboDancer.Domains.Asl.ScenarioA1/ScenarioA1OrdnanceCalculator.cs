@@ -673,11 +673,22 @@ public static class ScenarioA1OrdnanceCalculator
         {
             drm.Add(new FireModifier("case-q:" + hit.TargetTerrain, tem, "C6.8"));
         }
+        else if (shot.CushionedOpenGround == true && hit.TargetTerrain == "open-ground")
+        {
+            // E3.62, E3.731 (rulings R16.12, R16.13): Mud or Deep Snow cushions HE at an Infantry Target Type in Open Ground: +1 TEM on the TH DR.
+            drm.Add(new FireModifier("case-q:weather-cushion", 1, "E3.62"));
+        }
 
         // D9.3, D10.3 (ruling R6.1): the +1 TEM of a wreck, a friendly AFV, or an abandoned enemy AFV, where the terrain gives none.
         if (ScenarioA1FireCalculator.Cover(hit) is { } cover)
         {
             drm.Add(new FireModifier("case-q:afv-cover:" + cover, 1, "D9.3"));
+        }
+
+        // E1.7, E3.1 (referee, pass 16): the Low Visibility DRM is a Hindrance of its own on the TH DR.
+        if (shot.LowVisibilityDrm is > 0 and var lowVisibility)
+        {
+            drm.Add(new FireModifier("case-r:lv", lowVisibility, "E1.7"));
         }
 
         if (hit.Los!.HindranceDrm is int hindrance && hindrance > 0)
@@ -834,9 +845,9 @@ public static class ScenarioA1OrdnanceCalculator
         };
     }
 
-    /// <summary>The Gun's B#, two lower while Intensive Firing (C5.62).</summary>
+    /// <summary>The Gun's B#, two lower while Intensive Firing (C5.62), and lower in Extreme Winter (E3.741; ruling R16.14).</summary>
     internal static int Breakdown(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference) =>
-        gun.Breakdown - (shot.IntensiveFire == true ? 2 : 0)
+        gun.Breakdown - (shot.IntensiveFire == true ? 2 : 0) - (shot.BreakdownReduction ?? 0)
 
         // A19.32 (referee, pass 9b): the B# or X# of a SW Inexperienced Personnel use is one lower.
         - (gun.GunType is "mortar" or "latw" && gun.LatwType != "pf"

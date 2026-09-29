@@ -257,6 +257,12 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.move-vehicle: {id} has ended its move this MPh (A4.2)");
         }
 
+        // E1.52 (referee, pass 16): an AFV whose NVR is 0 spends no MP while BU but to Stop.
+        if (IsAfv(vehicle) && Is(vehicle, Conditions.ButtonedUp) && NvrOf(state, vehicle) == 0 && kind != VehicleStepped.Stop)
+        {
+            return Refused(scope, label, expected, $"play.night-bu: {id} is BU with an NVR of 0 and spends no MP but to Stop (E1.52)");
+        }
+
         if (new[] { (Conditions.PrepFire, "it Prep Fired (D.3)"), (Conditions.Immobilized, "it is immobilized (D.7)"),
             (Conditions.Stunned, "its crew is Stunned (D5.34)"), (Conditions.Shocked, "it is Shocked (C7.42)"),
             (Conditions.UnconfirmedKill, "it is an Unconfirmed Kill, still Shocked (C7.42)"), (Conditions.Abandoned, "it is Abandoned (D5.41)"),

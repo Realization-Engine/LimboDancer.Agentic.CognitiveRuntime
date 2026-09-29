@@ -156,7 +156,8 @@ public sealed partial class GamePlanner
         }
 
         // A19.12 (ruling R14.11): a Disrupted unit there, not in Melee, surrenders to the Good Order armed Known units advancing in, unless No Quarter.
-        var surrendering = enemies.Where(unit => Is(unit, Conditions.Disrupted) && !state.NoQuarter.Contains(unit.Side, StringComparer.Ordinal))
+        // E1.54 (backlog pass 16, ruling R16.6): at night a unit surrenders only in CC.
+        var surrendering = enemies.Where(unit => !state.Night && Is(unit, Conditions.Disrupted) && !state.NoQuarter.Contains(unit.Side, StringComparer.Ordinal))
             .OrderBy(unit => unit.Id, StringComparer.Ordinal).ToArray();
         string[] takers = [.. unitList.Where(unit => !Is(unit, Conditions.Unarmed) && !Is(unit, Conditions.Concealed) && !Is(unit, Conditions.Hidden)
             && (vocabulary.IsA(unit.Kind, "asl:mmc") || vocabulary.IsA(unit.Kind, "asl:smc"))).Select(unit => unit.Id).Order(StringComparer.Ordinal)];
@@ -213,7 +214,8 @@ public sealed partial class GamePlanner
 
         // A12.14 (ruling R14.2; table player, pass 14): a concealed unit keeps its "?" advancing, even into CC, unless it enters Open Ground in the LOS of a
         // Good Order enemy ground unit within 16 hexes.
-        if (terrain == "open-ground" && EnemyGoodOrderInLosWithin16(state, state.PhasingSide, to))
+        // E1.31 (backlog pass 16, ruling R16.4): not at night.
+        if (!state.Night && terrain == "open-ground" && EnemyGoodOrderInLosWithin16(state, state.PhasingSide, to))
         {
             foreach (var seen in unitList.Where(unit => Is(unit, Conditions.Concealed)))
             {
@@ -282,6 +284,12 @@ public sealed partial class GamePlanner
         {
             return Refused(scope, label, expected, reason!);
         }
+
+        // E1.77 (backlog pass 16, ruling R16.7): at night, unless Illuminated, an Ambush needs a Final dr only two lower.
+        facts = facts with
+        {
+            DarkNight = state.Night && !Illuminated(state, location) ? true : null
+        };
 
         var reference = CloseCombatReference.Value;
         var first = ScenarioA1CloseCombatCalculator.ResolveAmbush(facts, reference);

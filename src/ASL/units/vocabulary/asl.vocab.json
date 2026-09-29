@@ -1,6 +1,6 @@
 {
   "pack": "asl",
-  "version": "1.14.0",
+  "version": "1.15.0",
   "label": "ASL Personnel, support weapons, Guns, vehicles, and entities that are not units",
   "note": "Original LimboDancer vocabulary. Rule references are to the registered rulebook PDF by physical page; no rulebook text or counter artwork.",
   "extends": [],
@@ -415,6 +415,10 @@
       "name": "asl:fire", "label": "Blaze", "extends": "asl:marker", "faces": ["front", "flame"], "attributes": ["asl:clearance-number", "asl:hamper-number"],
       "traits": ["asl:wreck-blaze"], "rule": "B25.1 to B25.15, p. 143",
       "accessibleName": { "default": "{kind}", "flame": "Flame, clearance {clearance-number}, hamper {hamper-number}" }
+    },
+    {
+      "name": "asl:starshell", "label": "Starshell", "extends": "asl:marker", "rule": "E1.92 to E1.923, pp. 226 to 227",
+      "accessibleName": { "default": "{kind}" }
     },
     {
       "name": "asl:rubble", "label": "rubble", "extends": "asl:marker", "attributes": ["asl:construction"], "rule": "B24.1, p. 141",

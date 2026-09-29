@@ -75,6 +75,8 @@ public static class LiveRally
             Companions = companions.Length > 0 ? companions : null,
             NoQuarter = state.NoQuarter.Contains(unit.Side, StringComparer.Ordinal) ? true : null,
             Commissar = Commissar(state, unit)?.Id,
+            // E3.742 (backlog pass 16, ruling R16.14): Extreme Winter's Fate outside a building.
+            ExtremeWinterFate = GamePlanner.ExtremeWinterReduction(state, unit.Side) is not null && terrain is not ("wooden-building" or "stone-building") ? true : null,
         }, null);
     }
 

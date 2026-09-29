@@ -336,7 +336,8 @@ public sealed partial class GamePlanner
                 var from = state.Location(enemy.Id)!.Location;
                 var range = HexDistance(state, from, at.Location);
                 within16 |= range <= 16;
-                if (Los(state, from, at.Location) is { IsBlocked: false })
+                // E1.101 (backlog pass 16, ruling R16.4): at night an enemy sees a Location within its NVR or Illuminated.
+                if (Los(state, from, at.Location) is { IsBlocked: false } && (!state.Night || range <= NvrOf(state, enemy) || Illuminated(state, at.Location)))
                 {
                     inLosNear |= range <= 16;
                     inLosFar |= range > 16;
@@ -353,7 +354,8 @@ public sealed partial class GamePlanner
                 continue;
             }
 
-            var needsDr = inLosFar || (!concealmentTerrain && within16);
+            // E1.32 (backlog pass 16, ruling R16.4): at night what would need a Concealment dr gains "?" without one.
+            var needsDr = !state.Night && (inLosFar || (!concealmentTerrain && within16));
             if (!needsDr)
             {
                 gains.Add((unit, null));
