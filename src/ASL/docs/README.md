@@ -35,6 +35,7 @@ Scenario A1 state changes only in live games: the Map Studio's registered game a
 
 ## Documents
 
+- [ASL Map Studio UI Redesign 01 Design](<ASL Map Studio UI Redesign 01 Design.md>): proposed UI redesign covering navigation, visual foundations, collections, workspaces, phase-oriented Play, accessibility, and staged verification. Design only, based on main at `2fa3f56`.
 - `LimboDancer.Agentic.CognitiveRuntime ASL Reference-Domain Requirements.md`: normative ASL reference-domain requirements (ASL-RD-001 through ASL-RD-015), end-to-end acceptance scenarios, and traceability to the runtime planes.
 - `LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md`: current rulebook-to-ontology authoring, validation, publication, and first-slice specification.
 - `LimboDancer.Agentic.CognitiveRuntime ASL-OT-01 Source Registry Review.md`: conformance decision and implementation evidence for source registration and fragment location.
