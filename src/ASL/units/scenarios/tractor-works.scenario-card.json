@@ -1,0 +1,426 @@
+{
+  "format": "asl-scenario-card/1",
+  "id": "tractor-works",
+  "title": "The Tractor Works",
+  "catalog": "asl-scenario-a1@1.12.0",
+  "source": {
+    "basis": "Adapted from a legacy card to the registered rulebook (ruling R17.2); the Chapter H DYO procedures check its numbers, and what they leave open is manufactured under R0.3.",
+    "legacy": "ASL Scenario B, The General, Vol. 22 No. 6 (1986), p. 50",
+    "adaptation": [
+      "The legacy text is paraphrased, not copied.",
+      "The German engineers use the National Capabilities Chart's plain-E 8-3-8 (Smoke exponent 3, BPV 16), as the legacy counter prints it; the AE row (Smoke exponent 5, BPV 17) is not used, so the German total stays the legacy [226] (ruling R17.13).",
+      "The legacy card names the second Russian group 'Remnants of two battalions, 295th Infantry Division'; Soviet divisions were Rifle Divisions and the 295th Infantry Division was German, so the label is probably a misprint. The card keeps it; the group is Russian (red star, Russian counters, ELR 3).",
+      "The Russian HMG is new on sheet MFG; the German HMG, MMG, LMG, FT, and DC and the Russian MMG and LMG were already manufactured there (R0.3; ruling R17.13).",
+      "The Victory Conditions are restated in A26 terms: the legacy 'undisputed control' of a hex is A26.13 hex Control, which only a Good Order armed Infantry MMC at ground level gains; the card keeps the legacy draw.",
+      "The legacy SSR 2, encirclement of an upper-level unit whose exit is blocked, goes beyond A7.7 and is shown, not enforced.",
+      "Each setup area lists every hex of its building on board 1, as the legacy SSR 3 lets units set up anywhere in their designated buildings.",
+      "The legacy diagram prints an arrowed N beside the board; North is the map's top."
+    ]
+  },
+  "place": "Stalingrad, Russia",
+  "date": {
+    "day": 6,
+    "month": 10,
+    "year": 1942
+  },
+  "introduction": "Early October 1942. Pushing into the factory district, the 389th Infantry Division has cut off part of the 308th Rifle Division inside the Dzerzhinsky Tractor Works, and the Germans bring up a crack team of assault engineers to finish the pocket. The Russians have spotted a weak point in the ring and strike to relieve the garrison.",
+  "boards": [
+    {
+      "board": "bd01",
+      "column": 0,
+      "row": 0,
+      "reversed": false
+    }
+  ],
+  "north": "top",
+  "playableArea": {
+    "text": "Only hexrows O to GG are playable.",
+    "enforced": false
+  },
+  "turns": {
+    "count": 8,
+    "halfTurn": false,
+    "setsUpFirst": "russian",
+    "movesFirst": null,
+    "movesFirstNote": "A die roll before play decides which side moves first."
+  },
+  "scenarioDefender": null,
+  "sides": [
+    {
+      "side": "russian",
+      "san": 6,
+      "integrityBpv": 266,
+      "friendlyEdge": {
+        "edge": "top",
+        "basis": "setup",
+        "note": "A20.53: in every hex column of board 1, the hexes of the Russian setup buildings lie north of those of the German ones, so the north edge is one of the Russian Friendly Board Edges; the game names one edge per side (R5.16)."
+      },
+      "balance": "Sewers are usable (B8.1) and Russian units may use Sewer Movement (B8.4); the Germans may then enter them with a leader passing a 4TC (B8.4).",
+      "groups": [
+        {
+          "name": "Elements of the 308th Rifle Division",
+          "elr": 3,
+          "setupOrder": 1,
+          "dummies": 18,
+          "areas": [
+            {
+              "id": "X3",
+              "kind": "building",
+              "hexes": [
+                "W4",
+                "W5",
+                "X2",
+                "X3",
+                "X4",
+                "X5",
+                "Y3",
+                "Y4",
+                "Y5"
+              ]
+            }
+          ],
+          "units": [
+            {
+              "definition": "defender-squad",
+              "count": 12,
+              "area": "X3"
+            },
+            {
+              "definition": "defender-leader-9-2",
+              "count": 1,
+              "area": "X3"
+            },
+            {
+              "definition": "defender-hmg",
+              "count": 1,
+              "area": "X3"
+            },
+            {
+              "definition": "defender-mmg",
+              "count": 2,
+              "area": "X3"
+            },
+            {
+              "definition": "defender-lmg",
+              "count": 3,
+              "area": "X3"
+            }
+          ]
+        },
+        {
+          "name": "Remnants of two battalions, 295th Infantry Division",
+          "elr": 3,
+          "setupOrder": 3,
+          "areas": [
+            {
+              "id": "P8",
+              "kind": "building",
+              "hexes": [
+                "P7",
+                "P8"
+              ]
+            },
+            {
+              "id": "P5",
+              "kind": "building",
+              "hexes": [
+                "P5",
+                "Q6"
+              ]
+            },
+            {
+              "id": "Q4",
+              "kind": "building",
+              "hexes": [
+                "P3",
+                "Q3",
+                "Q4"
+              ]
+            },
+            {
+              "id": "R1",
+              "kind": "building",
+              "hexes": [
+                "R1",
+                "S1"
+              ]
+            }
+          ],
+          "units": [
+            {
+              "definition": "defender-line-squad",
+              "count": 26
+            },
+            {
+              "definition": "defender-leader-9-1",
+              "count": 1
+            },
+            {
+              "definition": "defender-leader",
+              "count": 2
+            },
+            {
+              "definition": "defender-lmg",
+              "count": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "side": "german",
+      "san": 6,
+      "integrityBpv": 226,
+      "friendlyEdge": {
+        "edge": "bottom",
+        "basis": "setup",
+        "note": "A20.53: in every hex column of board 1, the hexes of the German setup buildings lie south of those of the Russian ones, so the south edge is one of the German Friendly Board Edges; the game names one edge per side (R5.16)."
+      },
+      "balance": "Add one Hero to any German group.",
+      "groups": [
+        {
+          "name": "Company A, Assault Engineer Battalion 50",
+          "elr": 4,
+          "setupOrder": 2,
+          "areas": [
+            {
+              "id": "AA4",
+              "kind": "building",
+              "hexes": [
+                "AA4",
+                "AA5",
+                "BB4"
+              ]
+            },
+            {
+              "id": "CC3",
+              "kind": "building",
+              "hexes": [
+                "CC3",
+                "DD3"
+              ]
+            },
+            {
+              "id": "Y8",
+              "kind": "building",
+              "hexes": [
+                "AA7",
+                "Y7",
+                "Y8",
+                "Z6",
+                "Z7"
+              ]
+            }
+          ],
+          "units": [
+            {
+              "definition": "attacker-elite-squad-8-3-8",
+              "count": 6
+            },
+            {
+              "definition": "attacker-leader-10-3",
+              "count": 1
+            },
+            {
+              "definition": "attacker-lmg",
+              "count": 2
+            },
+            {
+              "definition": "attacker-ft",
+              "count": 2
+            },
+            {
+              "definition": "attacker-dc",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "name": "Kampfgruppe Stahler",
+          "elr": 4,
+          "setupOrder": 2,
+          "dummies": 12,
+          "areas": [
+            {
+              "id": "U3",
+              "kind": "building",
+              "hexes": [
+                "T2",
+                "U2",
+                "U3",
+                "V2"
+              ]
+            },
+            {
+              "id": "T4",
+              "kind": "building",
+              "hexes": [
+                "S5",
+                "T4"
+              ]
+            },
+            {
+              "id": "R7",
+              "kind": "building",
+              "hexes": [
+                "R7"
+              ]
+            },
+            {
+              "id": "T7",
+              "kind": "building",
+              "hexes": [
+                "T7",
+                "U8"
+              ]
+            }
+          ],
+          "units": [
+            {
+              "definition": "attacker-squad",
+              "count": 7
+            },
+            {
+              "definition": "attacker-leader-9-2",
+              "count": 1
+            },
+            {
+              "definition": "attacker-leader-8-1",
+              "count": 1
+            },
+            {
+              "definition": "attacker-mmg",
+              "count": 2
+            },
+            {
+              "definition": "attacker-lmg",
+              "count": 2
+            }
+          ]
+        },
+        {
+          "name": "Kampfgruppe Tienham",
+          "elr": 4,
+          "setupOrder": 2,
+          "areas": [
+            {
+              "id": "Y8",
+              "kind": "building",
+              "hexes": [
+                "AA7",
+                "Y7",
+                "Y8",
+                "Z6",
+                "Z7"
+              ]
+            },
+            {
+              "id": "CC7",
+              "kind": "building",
+              "hexes": [
+                "CC7",
+                "DD7"
+              ]
+            },
+            {
+              "id": "AA4",
+              "kind": "building",
+              "hexes": [
+                "AA4",
+                "AA5",
+                "BB4"
+              ]
+            }
+          ],
+          "units": [
+            {
+              "definition": "attacker-squad",
+              "count": 6
+            },
+            {
+              "definition": "attacker-leader-10-2",
+              "count": 1
+            },
+            {
+              "definition": "attacker-leader-9-1",
+              "count": 1
+            },
+            {
+              "definition": "attacker-leader-8-0",
+              "count": 1
+            },
+            {
+              "definition": "attacker-hmg",
+              "count": 1
+            },
+            {
+              "definition": "attacker-mmg",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "specialRules": [
+    {
+      "number": 1,
+      "text": "EC are Moderate, with no wind at start (B25.5, B25.63); the weather is Clear (no weather SSR).",
+      "status": "not-enforced",
+      "tokens": [],
+      "rules": [
+        "B25.5",
+        "B25.63",
+        "R16.9"
+      ],
+      "note": "The Clear weather is the game's default (R16.9); EC and wind, which matter for fire spread, are not modeled yet (backlog)."
+    },
+    {
+      "number": 2,
+      "text": "An upper-level unit whose way out of the building is blocked by Good Order enemy MMC is encircled while it stays blocked, with no further penalty; a unit also encircled by fire loses that only when it has a way out and A7.7 no longer applies.",
+      "status": "not-enforced",
+      "tokens": [],
+      "rules": [
+        "A7.7"
+      ],
+      "note": "It adds an encirclement that A7.7 does not have (backlog); it never applies in X3, a Factory with no upper levels (SSR 5, B23.74)."
+    },
+    {
+      "number": 3,
+      "text": "Units may set up in any hex of their designated buildings.",
+      "status": "not-enforced",
+      "tokens": [],
+      "rules": [],
+      "note": "Setting up a game from a card is backlog."
+    },
+    {
+      "number": 4,
+      "text": "Russian units in building X3 are Fanatic while they are in it (A10.8).",
+      "status": "not-enforced",
+      "tokens": [],
+      "rules": [
+        "A10.8"
+      ],
+      "note": "The game has no SSR token for Fanaticism by building (backlog)."
+    },
+    {
+      "number": 5,
+      "text": "Building X3, the Tractor Works, is a Factory (B23.74).",
+      "status": "not-enforced",
+      "tokens": [],
+      "rules": [
+        "B23.74"
+      ],
+      "note": "The game has no Factory terrain yet (backlog)."
+    }
+  ],
+  "victoryConditions": {
+    "kind": "control",
+    "text": "The Russians Control every hex of building X3 at the start (A26.11), and a hex stays Controlled until the enemy gains it (A26.13). The side that Controls at least six hexes of building X3 at game end wins; a hex holding units of both sides in Close Combat is Controlled by neither. Failing that, a side that alone has an unbroken unit in the building wins. Otherwise the game is a draw.",
+    "rules": [
+      "A26.1",
+      "A26.11",
+      "A26.13"
+    ]
+  }
+}

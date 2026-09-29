@@ -2,7 +2,7 @@
   "format": "asl-scenario-card/1",
   "id": "guards-counterattack",
   "title": "The Guards Counterattack",
-  "catalog": "asl-scenario-a1@1.11.0",
+  "catalog": "asl-scenario-a1@1.12.0",
   "source": {
     "basis": "Adapted from a legacy card to the registered rulebook (ruling R17.2); the Chapter H DYO procedures check its numbers, and what they leave open is manufactured under R0.3.",
     "legacy": "ASL Scenario A, The General, Vol. 22 No. 6 (1986), p. 51",
@@ -197,7 +197,7 @@
         "basis": "setup",
         "note": "A20.53: in every hex column of board 1, the hexes of the Russian setup buildings lie north of those of the German ones, so the north edge is one of the Russian Friendly Board Edges; the game names one edge per side (R5.16)."
       },
-      "balance": "Sewers are usable (B8.1) and Russian units may use Sewer Movement (B8.4).",
+      "balance": "Sewers are usable (B8.1) and Russian units may use Sewer Movement (B8.4); the Germans may then enter them with a leader passing a 4TC (B8.4).",
       "groups": [
         {
           "name": "Elements of the 308th Rifle Division",
@@ -319,7 +319,7 @@
     },
     {
       "number": 2,
-      "text": "An upper-level unit whose way out of the building is blocked by Good Order enemy MMC is encircled while it stays blocked; a unit also encircled by fire loses that only when it has a way out and A7.7 no longer applies.",
+      "text": "An upper-level unit whose way out of the building is blocked by Good Order enemy MMC is encircled while it stays blocked, with no further penalty; a unit also encircled by fire loses that only when it has a way out and A7.7 no longer applies.",
       "status": "not-enforced",
       "tokens": [],
       "rules": [

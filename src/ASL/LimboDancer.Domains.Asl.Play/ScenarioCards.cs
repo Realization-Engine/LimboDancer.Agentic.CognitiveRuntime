@@ -20,8 +20,11 @@ public sealed record ScenarioCardBoard(string Board, int Column, int Row, bool R
 /// <summary>A playable area the card names (ruling R17.3); shown, never enforced.</summary>
 public sealed record ScenarioCardArea(string Text, bool Enforced);
 
-/// <summary>The Turn Record Chart (A3.9; ruling R17.4).</summary>
-public sealed record ScenarioCardTurns(int Count, bool HalfTurn, string SetsUpFirst, string MovesFirst);
+/// <summary>
+/// The Turn Record Chart (A3.9; ruling R17.4). The side that moves first may be left to a die roll, with a note saying so (The Tractor Works;
+/// ruling R17.12).
+/// </summary>
+public sealed record ScenarioCardTurns(int Count, bool HalfTurn, string SetsUpFirst, string? MovesFirst, string? MovesFirstNote = null);
 
 /// <summary>A side's Friendly Board Edge and what it rests on (A20.53; ruling R17.7): an SSR, entry, setup, or R0.3.</summary>
 public sealed record ScenarioCardEdge(string Edge, string Basis, string? Note);
@@ -35,8 +38,12 @@ public sealed record ScenarioCardSetup(string Id, string Kind, IReadOnlyList<str
 /// <summary>A counter line of an OB group: a catalog definition, a count, and the setup area it belongs to.</summary>
 public sealed record ScenarioCardUnit(string Definition, int Count, string? Area);
 
-/// <summary>An OB group with its ELR (A19.1; ruling R17.5).</summary>
-public sealed record ScenarioCardGroup(string Name, int Elr, IReadOnlyList<ScenarioCardSetup> Areas, IReadOnlyList<ScenarioCardUnit> Units);
+/// <summary>
+/// An OB group with its ELR (A19.1; ruling R17.5), its place in a sequential setup (1 sets up first), and the "?" it may set up with
+/// (A12.11, A12.12; ruling R17.12).
+/// </summary>
+public sealed record ScenarioCardGroup(string Name, int Elr, IReadOnlyList<ScenarioCardSetup> Areas, IReadOnlyList<ScenarioCardUnit> Units,
+    int? SetupOrder = null, int? Dummies = null);
 
 /// <summary>A side: its SAN (A14.1), Battlefield Integrity total (A16.1), Friendly Board Edge, Balance (A26.4), and OB groups.</summary>
 public sealed record ScenarioCardSide(string Side, int San, int? IntegrityBpv, ScenarioCardEdge FriendlyEdge, string Balance, IReadOnlyList<ScenarioCardGroup> Groups);
@@ -100,7 +107,7 @@ public static partial class ScenarioCards
         get;
     } =
         ["A2.1", "A3.9", "A7.7", "A14.1", "A16.1", "A19.1", "A20.53", "A24.1", "A26.1", "A26.11", "A26.14", "A26.211", "A26.23", "A26.3", "A26.4", "B8.4", "C8.2",
-        "A25.22", "A25.44", "B8.1", "B25.5", "B25.63"];
+        "A25.22", "A25.44", "B8.1", "B25.5", "B25.63", "A10.8", "A12.11", "A26.13", "B23.74"];
 
     /// <summary>The kinds of setup area (ruling R17.8).</summary>
     public static IReadOnlyList<string> AreaKinds { get; } = ["building", "hex-numbers", "entry"];
@@ -195,8 +202,21 @@ public static partial class ScenarioCards
         var sides = card.Sides.Select(side => side.Side).ToArray();
         Check(card.Sides.Count == 2 && sides.Distinct(StringComparer.Ordinal).Count() == 2, "card.sides: a card has two sides");
         Check(card.Turns.Count is >= 1 and <= 30, "card.turns: a card has 1 to 30 Game Turns (A3.9)");
-        Check(sides.Contains(card.Turns.SetsUpFirst, StringComparer.Ordinal) && sides.Contains(card.Turns.MovesFirst, StringComparer.Ordinal),
-            "card.turns: the side that sets up first and the side that moves first are the card's sides (A3.9)");
+        Check(sides.Contains(card.Turns.SetsUpFirst, StringComparer.Ordinal)
+            && (card.Turns.MovesFirst is null ? !string.IsNullOrWhiteSpace(card.Turns.MovesFirstNote) : sides.Contains(card.Turns.MovesFirst, StringComparer.Ordinal)),
+            "card.turns: the side that sets up first and the side that moves first are the card's sides, or a note says how the first move is decided (A3.9)");
+
+        // Ruling R17.12: a sequential setup numbers every group from 1, the first of them the side that sets up first.
+        var groups = card.Sides.SelectMany(side => side.Groups.Select(group => (side.Side, Group: group))).ToArray();
+        if (groups.Any(item => item.Group.SetupOrder is not null))
+        {
+            var orders = groups.Select(item => item.Group.SetupOrder ?? 0).ToArray();
+            Check(orders.All(order => order >= 1) && orders.Max() == orders.Distinct().Count() && orders.Distinct().Count() <= orders.Length
+                && groups.Where(item => item.Group.SetupOrder == 1).All(item => item.Side == card.Turns.SetsUpFirst),
+                "card.setup: a sequential setup numbers the groups from 1, without gaps, beginning with the side that sets up first (A12.12)");
+        }
+
+        Check(groups.All(item => item.Group.Dummies is null or >= 0), "card.ob: a group's \"?\" are a count of 0 or more (A12.11)");
 
         foreach (var side in card.Sides)
         {

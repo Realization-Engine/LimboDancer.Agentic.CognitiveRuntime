@@ -23,7 +23,7 @@ public static class LiveFire
             && weapon.Nationality != firer.Nationality ? true : null;
 
     public const string Catalog = "asl-scenario-a1";
-    public const string CatalogVersion = "1.11.0";
+    public const string CatalogVersion = "1.12.0";
 
     public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 

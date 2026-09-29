@@ -65,6 +65,24 @@ public sealed class ScenarioCardsPageTests : IDisposable
         Assert.Equal(3, page.FindAll("#card-ssr .card-ssr-not-enforced").Count);
     }
 
+    [Fact]
+    public void TheTractorWorksShowsItsSequentialSetupAndDummies()
+    {
+        var page = context.Render<Scenarios>();
+        page.Find("#card-choice").Change("tractor-works");
+        Assert.Empty(page.FindAll("#card-diagnostics"));
+        Assert.Equal("The Tractor Works", page.Find("#card-title").TextContent);
+        Assert.Contains("Russian sets up first. A die roll before play decides which side moves first.", page.Find("#card-turns").TextContent, StringComparison.Ordinal);
+        var russian = page.Find("#card-side-russian");
+        Assert.Contains("Elements of the 308th Rifle Division, ELR 3, sets up first", russian.TextContent, StringComparison.Ordinal);
+        Assert.Contains("sets up last", russian.TextContent, StringComparison.Ordinal);
+        Assert.Contains("18 \"?\" counters", russian.TextContent, StringComparison.Ordinal);
+        Assert.Contains("heavy MG 6-12", russian.TextContent, StringComparison.Ordinal);
+        Assert.Contains("8-3-8 elite squad", page.Find("#card-side-german").TextContent, StringComparison.Ordinal);
+        Assert.Contains("sets up second", page.Find("#card-side-german").TextContent, StringComparison.Ordinal);
+        Assert.Contains("The bottom edge (south), from its setup (A20.53).", page.Find("#card-side-german .card-edge").TextContent, StringComparison.Ordinal);
+    }
+
     public void Dispose()
     {
         context.Dispose();

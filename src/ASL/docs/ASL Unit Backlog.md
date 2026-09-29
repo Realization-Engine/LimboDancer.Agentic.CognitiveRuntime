@@ -395,7 +395,7 @@ The backlog pass 16 (2026-09-29) built, and removed from sections 2, 6, 11, 19, 
 
 ## 27. Added by the backlog pass 17
 
-The backlog pass 17 (2026-09-29) built the scenario-card presentation: the card format, its reader and validation, two cards adapted from legacy cards to the registered rulebook (The Guards Counterattack and Gambit), catalog 1.11.0, and the Studio's Scenario cards page. It removed from sections 6 and 15 the ELR and the Friendly Board Edge from the scenario card, which a card now presents; a game taking them from the card is the first row below. Card-driven play is out of the pass by the user's ruling of 2026-09-29. What it leaves out follows.
+The backlog pass 17 (2026-09-29) built the scenario-card presentation: the card format, its reader and validation, two cards adapted from legacy cards to the registered rulebook (The Guards Counterattack and Gambit), catalog 1.11.0, and the Studio's Scenario cards page. It removed from sections 6 and 15 the ELR and the Friendly Board Edge from the scenario card, which a card now presents; a game taking them from the card is the first row below. The pass 17b (2026-09-29) added The Tractor Works and its rows. Card-driven play is out of the pass by the user's ruling of 2026-09-29. What it leaves out follows.
 
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
@@ -411,4 +411,9 @@ The backlog pass 17 (2026-09-29) built the scenario-card presentation: the card 
 | The legacy encirclement SSR of The Guards Counterattack, and Gambit's Infantry SMOKE ban | R17.10 | A7.7, A24.1 | SSR tokens for them | Shown, not enforced. |
 | ANZAC Stealth and the British immunity to Cowering by card nationality | R17.11; referee, pass 17 | A25.44, A25.45, p. 96 | A sub-nationality on the card | Shown as an adaptation note. |
 | The Commissar replacement of A25.22 offered at setup | R17.9 | A25.22, p. 94 | Setting up a game from a card | The Guards Counterattack's card fields the legacy 9-0 Commissar. |
-| More cards: The Tractor Works (a Factory, Fanaticism, "?", Assault Engineers, HMG, FT, DC) and the other legacy cards of The General | Pass 17 selection | B23.74, A12, A22, A23 | The counters and terrain they need | Two cards. |
+| More cards: the other legacy cards of The General (The Tractor Works was added by pass 17b) | Pass 17 selection | Varies | The counters and terrain they need | Three cards. |
+| A Factory by SSR (The Tractor Works' X3) | R17.13 | B23.74 to B23.742, p. 139 | Factory terrain in the terrain key | Shown, not enforced; X3 plays as an ordinary stone building. |
+| Fanaticism by SSR for units in a building (The Tractor Works) | R17.13 | A10.8, p. 69 | An SSR token naming Fanatic units by place | Shown, not enforced. |
+| A sequential setup, "?" allotted at setup, and a die roll for the first move, played from a card | R17.12 | A2.9, A12.11, A3.9 | Setting up a game from a card | Shown on the card; the players follow it. |
+| A draw as a Victory Condition outcome | R17.13 | A26 | Evaluating the Victory Conditions | Shown as text. |
+| The Russian MMG's portage: the catalog's 4 PP (manufactured at unit step 23) against the legacy counter's apparent 5 PP | Referee, pass 17b | A4.42, A9.1 | A registered source printing it | 4 PP. |

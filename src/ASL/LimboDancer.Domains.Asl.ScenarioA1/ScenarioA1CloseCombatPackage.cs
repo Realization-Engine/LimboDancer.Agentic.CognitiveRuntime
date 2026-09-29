@@ -100,8 +100,8 @@ public sealed class ScenarioA1CloseCombatReference
 /// </summary>
 public sealed class ScenarioA1CloseCombatPackage : IDomainPackageResolver
 {
-    public const string ManifestSha256 = "7772585957d12d2efad2cc2b4d78142c146b6dc6c092a23a3812c3887c7dabc8";
-    public const string MatrixSha256 = "40360846e4343a2a35f83561f80e75e418e5a5b232ffdcd45c97f0a74a069707";
+    public const string ManifestSha256 = "b7768c333a9d477fd8b2227d3a8b86a0b20f386ca29798806d80d383fce3cad7";
+    public const string MatrixSha256 = "eaeb892a4e05ba8856c4a6abb92a15abc1ef2e205d5c110f977940f61e324384";
     public static readonly DomainPackageRef Identity = new(new DomainId("asl"), "scenario-a1-close-combat", "sha256:" + ManifestSha256);
 
     private static readonly string[] Cases =

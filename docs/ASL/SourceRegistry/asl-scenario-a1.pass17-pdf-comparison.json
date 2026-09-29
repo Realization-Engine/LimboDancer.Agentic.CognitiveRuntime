@@ -2,7 +2,7 @@
   "schemaVersion": "1.0.0",
   "status": "pdf-comparison-complete-delegated-xunit-review",
   "pdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
-  "method": "As the step 17 Fire comparison: whole fragments compared to pdftotext 4.00 -raw -enc UTF-8 output of each physical PDF page, with line endings normalized to LF; the fragment loses its Markdown markup (tags only, never an escaped < or > sign), and both sides lose ligatures, punctuation, case, and whitespace; each normalized fragment occurs whole in its normalized page text, or in two parts where a page break or an example interrupts it. The rules the backlog pass 17 scenario cards cite (the board configuration, the Turn Record Chart, ELR, SAN, Battlefield Integrity, the Friendly Board Edge, Victory Conditions, Balance, and the rules their SSRs, Balance, and adaptation notes name: A7.7, A24.1, A25.22, A25.44, B8.1, B8.4, B25.5, B25.63, and C8.2), 2026-09-29; an independent referee agent reviews the rulings that rest on them. Chapter H (H1.28, H1.29) and the Index entry for the Scenario Attacker and Defender are outside the registered Chapters A to E and are cited by physical page only.",
+  "method": "As the step 17 Fire comparison: whole fragments compared to pdftotext 4.00 -raw -enc UTF-8 output of each physical PDF page, with line endings normalized to LF; the fragment loses its Markdown markup (tags only, never an escaped < or > sign), and both sides lose ligatures, punctuation, case, and whitespace; each normalized fragment occurs whole in its normalized page text, or in two parts where a page break or an example interrupts it. The rules the backlog pass 17 scenario cards cite (the board configuration, the Turn Record Chart, ELR, SAN, Battlefield Integrity, the Friendly Board Edge, Victory Conditions, Balance, and the rules their SSRs, Balance, and adaptation notes name: A7.7, A24.1, A25.22, A25.44, B8.1, B8.4, B25.5, B25.63, and C8.2; and for The Tractor Works, backlog pass 17b, A10.8, A12.11, A26.13, and B23.74), 2026-09-29; an independent referee agent reviews the rulings that rest on them. Chapter H (H1.28, H1.29) and the Index entry for the Scenario Attacker and Defender are outside the registered Chapters A to E and are cited by physical page only.",
   "subjects": [
     {
       "ruleId": "A2.1",
@@ -368,6 +368,77 @@
       "pdfPageTextSha256": "3e91ae8a46ec691b12fe4eeecf730b81c7caa5692f79303ed07f79d504d8f41b",
       "normalizedAlphanumericSha256": "d5d4b2ee6e7223b8dc0dfda13ce44ed370c8ccb68a1b5e141e9ed7a77ece97dc",
       "normalizedAlphanumericLength": 130,
+      "comparison": "complete-alphanumeric-match"
+    },
+    {
+      "ruleId": "A10.8",
+      "fragmentId": "asl-fragment:sha256:28ba8629f1bb964ad50466e25de3c144be8df7af15cb8de1c091610c2f7568c0",
+      "sourceId": "asl-easlrb-3.10:chapter-a",
+      "sourceSha256": "6347534e64f739cacc57dd75c3d604997723fd0b4988565609deeff007a8843d",
+      "startLine": 846,
+      "endLine": 846,
+      "contentSha256": "32c4c8188dc7e5d53d55394c992be13da61aeab2a8576be52be2b171e05452c1",
+      "kind": "ruleText",
+      "conversionPage": 69,
+      "physicalPdfPage": 69,
+      "pdfPageTextSha256": "5d2127c42315a56cc9a3e28db8167c8ebd2e0d2fafcdc094b241e37b600a22a9",
+      "normalizedAlphanumericSha256": "f38dbbdc340218137eea1e5162e58ce463e53e3dbc10ba4d2ed40c59995bc01f",
+      "normalizedAlphanumericLength": 437,
+      "comparison": "complete-alphanumeric-match"
+    },
+    {
+      "ruleId": "A12.11",
+      "fragmentId": "asl-fragment:sha256:d34062a1dfbf19bd7a8a6741c8441a65b5376e6a266091d5b6df0ecebf54b47d",
+      "sourceId": "asl-easlrb-3.10:chapter-a",
+      "sourceSha256": "6347534e64f739cacc57dd75c3d604997723fd0b4988565609deeff007a8843d",
+      "startLine": 992,
+      "endLine": 992,
+      "contentSha256": "fb424aad9db55a9fc6a39868f8b21d5a894ca8372117d9d65d3e862a3e5da95d",
+      "kind": "ruleText",
+      "conversionPage": 76,
+      "physicalPdfPage": 76,
+      "pdfPageTextSha256": "c8dfb5ec2070ba814d99eeeba422ef42cb9fe5307a164c36aa1cabcbf2828963",
+      "secondPhysicalPdfPage": 77,
+      "secondPdfPageTextSha256": "074dc3d0b810909fddde374f89089e0e4443deec5fa4b7b3273483584a21bee0",
+      "normalizedAlphanumericSha256": "73bf1b846dad73f4c93f10da918f3d9d7380a0697a024329b84bf5928de5a942",
+      "normalizedAlphanumericLength": 1390,
+      "comparison": "complete-alphanumeric-match-in-two-parts",
+      "partLengths": [
+        460,
+        930
+      ],
+      "note": "The fragment continues across a page break."
+    },
+    {
+      "ruleId": "A26.13",
+      "fragmentId": "asl-fragment:sha256:f3902b0d37a51c03662e2d544e307427e8977aa02d975befd2f074dc9fd74b19",
+      "sourceId": "asl-easlrb-3.10:chapter-a",
+      "sourceSha256": "6347534e64f739cacc57dd75c3d604997723fd0b4988565609deeff007a8843d",
+      "startLine": 2019,
+      "endLine": 2019,
+      "contentSha256": "d3d38296921478c4b44cc879bd433c4ed50276c938ce666be18b91c99c8a731b",
+      "kind": "ruleText",
+      "conversionPage": 99,
+      "physicalPdfPage": 99,
+      "pdfPageTextSha256": "9aadc1dc5767f6eb99952f1b8252d68daf4244782ee3c63342ff44bcf9033de5",
+      "normalizedAlphanumericSha256": "fde974c85a3aa4dc58fe58675187e92addf8a5c9756a553acfda21b977b066c5",
+      "normalizedAlphanumericLength": 168,
+      "comparison": "complete-alphanumeric-match"
+    },
+    {
+      "ruleId": "B23.74",
+      "fragmentId": "asl-fragment:sha256:a0f876fc1d11629076d635ec3a7647f6a2ab24b3598811a093e44ddcfd395f54",
+      "sourceId": "asl-easlrb-3.10:chapter-b",
+      "sourceSha256": "836b1ce5f845efd1c21250a9e6a39e4054ea9398f370305bc3771b6e7f826982",
+      "startLine": 1498,
+      "endLine": 1498,
+      "contentSha256": "016c696a472890b00a667f0304050f52bc632084d2f39ea1e75436c22175c28a",
+      "kind": "ruleText",
+      "conversionPage": 139,
+      "physicalPdfPage": 139,
+      "pdfPageTextSha256": "7679e460e3591b24d656c522b3655614ffe99b557a56b251c273abc9ef4247cf",
+      "normalizedAlphanumericSha256": "aee90a51a3453629d00d840cfccbbaa6296bf2554a5d8bd3a911e9770667ea68",
+      "normalizedAlphanumericLength": 315,
       "comparison": "complete-alphanumeric-match"
     }
   ]

@@ -2114,3 +2114,45 @@ sheet,counter,face,attribute,value,transcriber,reviewer,note
 ,british-atr,front,dates,,,,"years as printed, yy-yy"
 ,british-atr,front,asl:breakdown-removes,,,,yes or no
 ,british-atr,malfunctioned,repair,,,,"whole number, or not-printed"
+,attacker-elite-squad-8-3-8,counter,kind,,,,expected asl:squad
+,attacker-elite-squad-8-3-8,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,attacker-elite-squad-8-3-8,front,firepower,,,,whole number (A1.21)
+,attacker-elite-squad-8-3-8,front,range,,,,whole number (A1.22)
+,attacker-elite-squad-8-3-8,front,morale,,,,whole number (A1.23)
+,attacker-elite-squad-8-3-8,front,identity,,,,"identity letter or crew numeral as printed, or not-printed (A1.24)"
+,attacker-elite-squad-8-3-8,front,class,,,,"elite, 1st-line, 2nd-line, green, conscript, or not-printed (A1.25)"
+,attacker-elite-squad-8-3-8,front,class-variant,,,,"circle, square, or not-printed (A1.25)"
+,attacker-elite-squad-8-3-8,front,smoke-exponent,,,,"whole number, or not-printed (A1.21)"
+,attacker-elite-squad-8-3-8,front,asl:assault-fire,,,,yes or no: firepower underlined (A1.21)
+,attacker-elite-squad-8-3-8,front,asl:spraying-fire,,,,yes or no: range underlined (A1.22)
+,attacker-elite-squad-8-3-8,front,asl:elr-5,,,,yes or no: morale underlined (A1.23)
+,attacker-elite-squad-8-3-8,front,asl:assault-engineer,,,,yes or no: DC symbol printed (A25.01)
+,attacker-elite-squad-8-3-8,broken,broken-morale,,,,"whole number, or not-printed if the counter has no broken side (A1.4)"
+,attacker-elite-squad-8-3-8,broken,bpv,,,,"whole number, or not-printed (A1.4)"
+,attacker-elite-squad-8-3-8,broken,asl:self-rally,,,,yes or no: broken morale in a square (A1.4)
+,attacker-elite-half-squad-3-3-8,counter,kind,,,,expected asl:half-squad
+,attacker-elite-half-squad-3-3-8,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,attacker-elite-half-squad-3-3-8,front,firepower,,,,whole number (A1.21)
+,attacker-elite-half-squad-3-3-8,front,range,,,,whole number (A1.22)
+,attacker-elite-half-squad-3-3-8,front,morale,,,,whole number (A1.23)
+,attacker-elite-half-squad-3-3-8,front,identity,,,,"identity letter or crew numeral as printed, or not-printed (A1.24)"
+,attacker-elite-half-squad-3-3-8,front,class,,,,"elite, 1st-line, 2nd-line, green, conscript, or not-printed (A1.25)"
+,attacker-elite-half-squad-3-3-8,front,class-variant,,,,"circle, square, or not-printed (A1.25)"
+,attacker-elite-half-squad-3-3-8,front,smoke-exponent,,,,"whole number, or not-printed (A1.21)"
+,attacker-elite-half-squad-3-3-8,front,asl:assault-fire,,,,yes or no: firepower underlined (A1.21)
+,attacker-elite-half-squad-3-3-8,front,asl:spraying-fire,,,,yes or no: range underlined (A1.22)
+,attacker-elite-half-squad-3-3-8,front,asl:elr-5,,,,yes or no: morale underlined (A1.23)
+,attacker-elite-half-squad-3-3-8,front,asl:assault-engineer,,,,yes or no: DC symbol printed (A25.01)
+,attacker-elite-half-squad-3-3-8,broken,broken-morale,,,,"whole number, or not-printed if the counter has no broken side (A1.4)"
+,attacker-elite-half-squad-3-3-8,broken,bpv,,,,"whole number, or not-printed (A1.4)"
+,attacker-elite-half-squad-3-3-8,broken,asl:self-rally,,,,yes or no: broken morale in a square (A1.4)
+,defender-hmg,counter,kind,,,,expected asl:mg
+,defender-hmg,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,defender-hmg,front,identity,,,,"identity as printed, or not-printed"
+,defender-hmg,front,size,,,,"light, medium, or heavy (A9.1)"
+,defender-hmg,front,firepower,,,,whole number (A9.1)
+,defender-hmg,front,range,,,,whole number (A9.1)
+,defender-hmg,front,breakdown,,,,whole number (A9.7)
+,defender-hmg,front,rate-of-fire,,,,"whole number, or not-printed if the MG has no Multiple ROF (A9.2)"
+,defender-hmg,front,portage,,,,whole number of PP (A4.4)
+,defender-hmg,malfunctioned,repair,,,,whole number (A9.72)
