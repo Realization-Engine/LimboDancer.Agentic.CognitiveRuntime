@@ -61,7 +61,13 @@ public sealed class ScenarioCardStartPageTests : IDisposable
         Assert.Contains("russian: Elements of 2nd Battalion, 37th Guards Division, ELR 3", groups);
         Assert.Contains("german: Company H, 389th Infantry Regiment, ELR 4", groups);
 
+        // Pass 19 (ruling R19.2): the setup shows the card's OB group by group, the Germans first.
+        Assert.Contains("setting up now", page.Find("#setup-pools tr[data-group='german-1']").TextContent, StringComparison.Ordinal);
+        Assert.Contains("waits", page.Find("#setup-pools tr[data-group='russian-2']").TextContent, StringComparison.Ordinal);
+        Assert.Contains("12 6-2-8 elite squad in F3", page.Find("#setup-pools tr[data-group='russian-2']").TextContent, StringComparison.Ordinal);
+
         page.Find("#new-card").Change(string.Empty);
+        Assert.Empty(page.FindAll("#setup-pools"));
         Assert.False(page.Find("#new-board").HasAttribute("disabled"));
         Assert.Empty(page.FindAll("#place-group"));
     }

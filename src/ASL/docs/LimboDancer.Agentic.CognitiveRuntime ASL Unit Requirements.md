@@ -423,6 +423,8 @@ Later candidates, not yet sequenced: revisiting the Java VASL oracle tool, which
 
     Done for pass 18 of the [ASL Unit Scenario Card Games Plan](<ASL Unit Scenario Card Games Plan.md>) (start from a card): the review in the [Scenario A1 Backlog Pass 18 Review](<Scenario A1 Backlog Pass 18 Review 2026-09-29.md>) and the [ASL Unit Backlog Pass 18 Design](<ASL Unit Backlog Pass 18 Design.md>): a game starts from a scenario card, records it, shows it during play, and gives each unit its OB group's ELR. What it leaves out is in the [ASL Unit Backlog](<ASL Unit Backlog.md>), section 28.
 
+    Done for pass 19 (setup from the OB): the review in the [Scenario A1 Backlog Pass 19 Review](<Scenario A1 Backlog Pass 19 Review 2026-09-29.md>) and the [ASL Unit Backlog Pass 19 Design](<ASL Unit Backlog Pass 19 Design.md>): a game from a card sets up its OB group by group in the card's order and areas, never overstacked or where it could not enter, with its OB "?" in Concealment Terrain and up to 10% of its squads Deployed, and play starts only when the setup is done. What it leaves out is in the [ASL Unit Backlog](<ASL Unit Backlog.md>), section 29.
+
 ## 14. Acceptance scenarios
 
 - **U1, definition lookup.** Given the registered catalog, a lookup for a squad of a given nationality, class, and date returns its printed values with their source, and a lookup outside its applicability returns an explicit miss.

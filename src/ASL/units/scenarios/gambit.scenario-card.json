@@ -65,7 +65,10 @@
               "board": "bd04",
               "from": 5,
               "to": 7,
-              "limit": "Five counters, none of them a Concealment counter and at least two of them MMC (SSR 2)."
+              "limit": "Five counters, none of them a Concealment counter and at least two of them MMC (SSR 2).",
+              "counters": 5,
+              "minMmc": 2,
+              "concealed": false
             },
             {
               "id": "entry",

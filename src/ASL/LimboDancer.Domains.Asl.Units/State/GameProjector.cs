@@ -2530,10 +2530,16 @@ public static class GameProjector
             {
                 return instance.Definition is not null
                     ? Fail<GameState>("UNIT-STATE-008", "A Dummy has no definition.")
-                    : state with
-                    {
-                        Units = [.. state.Units, new UnitInstance(instance.Id, instance.Kind, null, instance.Side, position, instance.Conditions, InstanceStatus.Active, from)]
-                    };
+                    : instance.Group is { } dummyGroup && state.Side(instance.Side)?.Groups.All(item => item.Id != dummyGroup) != false
+                        ? Fail<GameState>("UNIT-STATE-005", $"'{dummyGroup}' is not an OB group of side '{instance.Side}'.")
+                        : state with
+                        {
+                            // Pass 19 (ruling R19.5): a Dummy keeps its OB group, whose "?" it uses.
+                            Units = [.. state.Units, new UnitInstance(instance.Id, instance.Kind, null, instance.Side, position, instance.Conditions, InstanceStatus.Active, from)
+                            {
+                                Group = instance.Group,
+                            }]
+                        };
             }
 
             if (instance.Definition is null || catalog!.Definition(instance.Definition) is not { } definition)

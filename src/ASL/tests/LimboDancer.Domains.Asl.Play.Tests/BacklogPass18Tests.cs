@@ -161,8 +161,8 @@ public sealed class BacklogPass18Tests : IDisposable
     [Fact]
     public async Task TheGuardsCounterattackStartsAsTheCardSays()
     {
-        Committed(await Setup(CardStart("guards-counterattack"), Unit("g1", "attacker-squad", "F5", "german", "german-1"),
-            Unit("r1", "defender-squad", "N4", "russian", "russian-1")));
+        // Pass 19 (ruling R19.2): the Germans set up first, so this first setup places only German units.
+        Committed(await Setup(CardStart("guards-counterattack"), Unit("g1", "attacker-squad", "F5", "german", "german-1")));
         var state = Current;
         Assert.Equal(("guards-counterattack", ScenarioCards.Sha256("guards-counterattack"), "The Guards Counterattack"),
             (state.Scenario!.Id, state.Scenario.Sha256, state.Scenario.Title));
@@ -188,8 +188,9 @@ public sealed class BacklogPass18Tests : IDisposable
     [Fact]
     public async Task TheTractorWorksTakesTheSideThatWonTheDieRoll()
     {
-        Refused(await Setup(CardStart("tractor-works", firstSide: null), Unit("g1", "attacker-squad", "U3", "german", "german-2")), "play.scenario");
-        Committed(await Setup(CardStart("tractor-works", firstSide: "german"), Unit("g1", "attacker-squad", "U3", "german", "german-2")));
+        Refused(await Setup(CardStart("tractor-works", firstSide: null), Unit("r1", "defender-squad", "X3", "russian", "russian-1")), "play.scenario");
+        // Pass 19 (ruling R19.2): the 308th sets up first in X3.
+        Committed(await Setup(CardStart("tractor-works", firstSide: "german"), Unit("r1", "defender-squad", "X3", "russian", "russian-1")));
         Assert.Equal("german", Current.PhasingSide);
         Assert.Equal(3, Current.Side("german")!.Groups.Count);
     }
