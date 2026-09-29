@@ -1,0 +1,194 @@
+{
+  "format": "asl-scenario-card/1",
+  "id": "gambit",
+  "title": "Gambit",
+  "catalog": "asl-scenario-a1@1.11.0",
+  "source": {
+    "basis": "Adapted from a legacy card to the registered rulebook (ruling R17.2); the Chapter H DYO procedures check its numbers, and what they leave open is manufactured under R0.3.",
+    "legacy": "ASL Scenario T14, The General, Vol. 28 No. 6 (1993), p. 64",
+    "adaptation": [
+      "The legacy text is paraphrased, not copied.",
+      "The New Zealanders use the British counters (A25.4); their LMG and ATR are manufactured on sheet MFG, and their 2-in. mortar follows the British Ordnance Listing (Chapter H, p. 426) (ruling R17.9).",
+      "The New Zealanders are ANZAC: Good Order ANZAC units are Stealthy unless Green (A25.44); the game does not apply it yet (backlog).",
+      "The German 5-4-8 squad follows the National Capabilities Chart (p. 695) (ruling R17.9).",
+      "The Victory Conditions are restated in A26 terms (Exit VP, A26.23 and A26.211).",
+      "No Battlefield Integrity total is printed: the Germans start with fewer than ten squad-equivalents (A16)."
+    ]
+  },
+  "place": "Near Maleme, Crete",
+  "date": {
+    "day": 21,
+    "month": 5,
+    "year": 1941
+  },
+  "introduction": "After a day pinned down by German aircraft around Maleme airfield, with their counterattacks failed and communications broken, the New Zealanders of the 5th Brigade pull back to regroup to the southeast. The 22nd Battalion has to slip past German paratroopers who seem to be everywhere.",
+  "boards": [
+    {
+      "board": "bd04",
+      "column": 0,
+      "row": 0,
+      "reversed": false
+    },
+    {
+      "board": "bd02",
+      "column": 0,
+      "row": 1,
+      "reversed": true
+    }
+  ],
+  "north": "top",
+  "turns": {
+    "count": 8,
+    "halfTurn": false,
+    "setsUpFirst": "british",
+    "movesFirst": "german"
+  },
+  "scenarioDefender": null,
+  "sides": [
+    {
+      "side": "british",
+      "san": 2,
+      "friendlyEdge": {
+        "edge": "top",
+        "basis": "entry",
+        "note": "A20.53: most of the force enters along the north edge on Turn 1."
+      },
+      "balance": "Add two 1-squad foxholes to the New Zealand OB.",
+      "groups": [
+        {
+          "name": "Elements of the 22nd New Zealand Battalion",
+          "elr": 3,
+          "areas": [
+            {
+              "id": "forward",
+              "kind": "hex-numbers",
+              "board": "bd04",
+              "from": 5,
+              "to": 7,
+              "limit": "Five counters, none of them a Concealment counter and at least two of them MMC (SSR 2)."
+            },
+            {
+              "id": "entry",
+              "kind": "entry",
+              "turn": 1,
+              "edge": "top",
+              "limit": "The rest of the group, in the British Player Turn of Turn 1, after the German Player Turn (SSR 2)."
+            }
+          ],
+          "units": [
+            {
+              "definition": "british-elite-squad",
+              "count": 12
+            },
+            {
+              "definition": "british-leader-9-1",
+              "count": 1
+            },
+            {
+              "definition": "british-leader-8-0",
+              "count": 2
+            },
+            {
+              "definition": "british-lmg",
+              "count": 2
+            },
+            {
+              "definition": "british-light-mortar",
+              "count": 2
+            },
+            {
+              "definition": "british-atr",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "side": "german",
+      "san": 4,
+      "friendlyEdge": {
+        "edge": "bottom",
+        "basis": "setup",
+        "note": "A20.53: the Germans set up in hexrows 8 to 10 of board 4, with no enemy between them and the south edge, so it is one of their Friendly Board Edges (the east and west edges may qualify too); the game names one edge per side (R5.16)."
+      },
+      "balance": "Add one LMG to the German OB.",
+      "groups": [
+        {
+          "name": "Elements of Sturm Regiment 1",
+          "elr": 4,
+          "areas": [
+            {
+              "id": "south",
+              "kind": "hex-numbers",
+              "board": "bd04",
+              "from": 8,
+              "to": 10
+            }
+          ],
+          "units": [
+            {
+              "definition": "attacker-elite-squad-5-4-8",
+              "count": 8
+            },
+            {
+              "definition": "attacker-leader-9-2",
+              "count": 1
+            },
+            {
+              "definition": "attacker-leader-9-1",
+              "count": 1
+            },
+            {
+              "definition": "attacker-leader-8-1",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "specialRules": [
+    {
+      "number": 1,
+      "text": "EC are Moderate, with no wind at start (B25.5, B25.63); the weather is Clear (no weather SSR).",
+      "status": "not-enforced",
+      "tokens": [],
+      "rules": [
+        "B25.5",
+        "B25.63",
+        "R16.9"
+      ],
+      "note": "The Clear weather is the game's default (R16.9); EC and wind, which matter for fire spread, are not modeled yet (backlog)."
+    },
+    {
+      "number": 2,
+      "text": "The British set up five counters, none of them a Concealment counter and at least two of them MMC, in hexes numbered 5 to 7 on board 4; the rest enter along the north edge during the British Player Turn of Turn 1.",
+      "status": "not-enforced",
+      "tokens": [],
+      "rules": [],
+      "note": "Setting up a game from a card and reinforcements entering are backlog."
+    },
+    {
+      "number": 3,
+      "text": "Infantry may not place SMOKE (A24.1); the mortars may fire Smoke normally. The Allied force is not Elite for C8.2, which is the registered default for a printed scenario.",
+      "status": "not-enforced",
+      "tokens": [],
+      "rules": [
+        "A24.1",
+        "C8.2"
+      ],
+      "note": "The game has no SSR token for either (backlog)."
+    }
+  ],
+  "victoryConditions": {
+    "kind": "exit",
+    "text": "The British win at once when they have exited at least 20 Exit VP off the south edge on or adjacent to the road hexes 2I1, 2Q1, or 2Y1 (a squad is worth 2 VP, a HS 1, a leader 1 plus 1 for each negative leadership modifier; broken Personnel give none). Otherwise the Germans win.",
+    "rules": [
+      "A26.23",
+      "A26.211",
+      "A26.3"
+    ]
+  },
+  "aftermath": "The Germans came down from the hill and cut off one New Zealand platoon, but in doing so opened a corridor through which the rest of the battalion escaped to regroup."
+}

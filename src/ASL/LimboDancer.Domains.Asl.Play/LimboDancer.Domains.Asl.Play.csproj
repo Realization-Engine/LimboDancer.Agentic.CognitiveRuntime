@@ -1,5 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <!-- The scenario cards (backlog pass 17); WithCulture="false" keeps the dotted names from reading as a culture on Linux. -->
+    <EmbeddedResource Include="..\units\scenarios\*.scenario-card.json" LogicalName="Scenarios.%(Filename)%(Extension)" WithCulture="false" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\LimboDancer.Domains.Asl.Units\LimboDancer.Domains.Asl.Units.csproj" />
     <ProjectReference Include="..\LimboDancer.Domains.Asl.ScenarioA1\LimboDancer.Domains.Asl.ScenarioA1.csproj" />
     <ProjectReference Include="..\LimboDancer.Dice\LimboDancer.Dice.csproj" />

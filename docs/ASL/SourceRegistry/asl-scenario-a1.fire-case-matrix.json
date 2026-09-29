@@ -8,7 +8,7 @@
   "chartReviewDecisionSha256": "a19bf80dedc36fbf36d9356552f28a538faeea9469c8d22daddfabed546fd1e2",
   "iftTranscriptionSha256": "42440dd6facf7aa23cfc8c884ed8c7266f6621b25cb889b679c850098d3a4cec",
   "terrainChartTranscriptionSha256": "afc61e1db4871050d91ab6c58f022ddca86651f8f0104e39408c156e44ffdafa",
-  "catalogSha256": "41f8b8272bfda60c83aa8827d0c99c427552b6638f78330ae48ae47d56100f24",
+  "catalogSha256": "c350cd3f52edec5c7236ef7fbfa292d49d64820d68704a6dbb1e49080ab094a8",
   "sourceFragments": [
     {
       "ruleId": "A.5",

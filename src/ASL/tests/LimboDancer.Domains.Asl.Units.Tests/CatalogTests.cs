@@ -131,6 +131,7 @@ public sealed class CatalogTests
                 "french-leader-6-plus-1", "french-leader-7-0", "french-leader-8-0", "french-leader-8-1", "french-leader-9-1", "french-leader-9-2",
                 "french-leader-10-2", "french-leader-10-3", "french-hero", "defender-commissar-9-0", "defender-commissar-10-0",
                 "defender-commissar-8-plus-1", "attacker-ft", "defender-ft", "attacker-dc", "defender-dc",
+                "attacker-elite-squad-5-4-8", "attacker-elite-half-squad-2-3-8", "attacker-hmg", "british-lmg", "british-light-mortar", "british-atr",
             ],
             catalog.Definitions.Select(definition => definition.Id));
         Assert.All(catalog.Slots, slot => Assert.NotEmpty(catalog.Filling(slot.Id)));

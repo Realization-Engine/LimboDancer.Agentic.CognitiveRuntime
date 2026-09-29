@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "catalog": "asl-scenario-a1",
-  "version": "1.10.0",
-  "label": "Scenario A1 catalog: Infantry Personnel, heroes, leaders, crews, MGs, light mortars, LATW, FT, DC, Guns, vehicles, and tanks, with Commissars and five more nationalities, for the reviewed Scenario A1 cases",
+  "version": "1.11.0",
+  "label": "Scenario A1 catalog: Infantry Personnel, heroes, leaders, crews, MGs, light mortars, LATW, FT, DC, Guns, vehicles, and tanks, with Commissars and five more nationalities, for the reviewed Scenario A1 cases and the scenario cards",
   "publication": "published",
   "vocabulary": [
     "asl@1.3.0"
@@ -12,9 +12,9 @@
       "id": "asl-counter-sheets:scenario-a1",
       "status": "reviewed",
       "record": "docs/ASL/SourceRegistry/CounterSheets/asl-counter-sheets.scenario-a1.source-record.json",
-      "recordSha256": "5a3db32c1b55ce6cca9734af618e32d1e5b7ff5bbfe6053f32e5e6a7ff69aca8",
+      "recordSha256": "a5ddedbb80bb6b5ed1d947ee696f9f36cd40b34b79e570213d1487ce55d66062",
       "transcription": "docs/ASL/SourceRegistry/CounterSheets/scenario-a1.counter-transcription.csv",
-      "transcriptionSha256": "6b6befe75efffb5fe44077739a8e04d2757073b25b768239adb72e1235ec96f7",
+      "transcriptionSha256": "ee373d5be4bcad4212e177ef8d12e1d5e22cbfe64d409d66857200136dd065c4",
       "transcriber": "Claude (claude-opus-5-5)",
       "reviewer": "Dennis Landi"
     }
@@ -13501,6 +13501,574 @@
           "attribute": "repair",
           "printed": false,
           "row": 2030
+        }
+      ]
+    },
+    {
+      "id": "attacker-elite-squad-5-4-8",
+      "kind": "asl:squad",
+      "kindRow": 2031,
+      "nationality": "german",
+      "nationalityRow": 2032,
+      "class": "elite",
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "NCC",
+        "counter": "attacker-elite-squad-5-4-8"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 5,
+          "row": 2033
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 4,
+          "row": 2034
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 8,
+          "row": 2035
+        },
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 2036
+        },
+        {
+          "face": "front",
+          "attribute": "class",
+          "value": "elite",
+          "row": 2037
+        },
+        {
+          "face": "front",
+          "attribute": "class-variant",
+          "value": "circle",
+          "row": 2038
+        },
+        {
+          "face": "front",
+          "attribute": "smoke-exponent",
+          "value": 2,
+          "row": 2039
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-fire",
+          "present": true,
+          "row": 2040
+        },
+        {
+          "face": "front",
+          "trait": "asl:spraying-fire",
+          "present": true,
+          "row": 2041
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "present": false,
+          "row": 2042
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-engineer",
+          "present": false,
+          "row": 2043
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 8,
+          "row": 2044
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "value": 13,
+          "row": 2045
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "recorded": false,
+          "row": 2046
+        }
+      ]
+    },
+    {
+      "id": "attacker-elite-half-squad-2-3-8",
+      "kind": "asl:half-squad",
+      "kindRow": 2047,
+      "nationality": "german",
+      "nationalityRow": 2048,
+      "class": "elite",
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "NCC",
+        "counter": "attacker-elite-half-squad-2-3-8"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 2,
+          "row": 2049
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 3,
+          "row": 2050
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 8,
+          "row": 2051
+        },
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 2052
+        },
+        {
+          "face": "front",
+          "attribute": "class",
+          "value": "elite",
+          "row": 2053
+        },
+        {
+          "face": "front",
+          "attribute": "class-variant",
+          "value": "circle",
+          "row": 2054
+        },
+        {
+          "face": "front",
+          "attribute": "smoke-exponent",
+          "printed": false,
+          "row": 2055
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-fire",
+          "present": false,
+          "row": 2056
+        },
+        {
+          "face": "front",
+          "trait": "asl:spraying-fire",
+          "present": false,
+          "row": 2057
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "present": false,
+          "row": 2058
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-engineer",
+          "present": false,
+          "row": 2059
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 7,
+          "row": 2060
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "value": 5,
+          "row": 2061
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "recorded": false,
+          "row": 2062
+        }
+      ]
+    },
+    {
+      "id": "attacker-hmg",
+      "kind": "asl:mg",
+      "kindRow": 2063,
+      "nationality": "german",
+      "nationalityRow": 2064,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "attacker-hmg"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "printed": false,
+          "row": 2065
+        },
+        {
+          "face": "front",
+          "attribute": "size",
+          "value": "heavy",
+          "row": 2066
+        },
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 7,
+          "row": 2067
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 16,
+          "row": 2068
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 12,
+          "row": 2069
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 3,
+          "row": 2070
+        },
+        {
+          "face": "front",
+          "attribute": "portage",
+          "value": 5,
+          "row": 2071
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "repair",
+          "value": 2,
+          "row": 2072
+        }
+      ]
+    },
+    {
+      "id": "british-lmg",
+      "kind": "asl:mg",
+      "kindRow": 2073,
+      "nationality": "british",
+      "nationalityRow": 2074,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "british-lmg"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "printed": false,
+          "row": 2075
+        },
+        {
+          "face": "front",
+          "attribute": "size",
+          "value": "light",
+          "row": 2076
+        },
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 2,
+          "row": 2077
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 7,
+          "row": 2078
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 11,
+          "row": 2079
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 1,
+          "row": 2080
+        },
+        {
+          "face": "front",
+          "attribute": "portage",
+          "value": 1,
+          "row": 2081
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "repair",
+          "value": 2,
+          "row": 2082
+        }
+      ]
+    },
+    {
+      "id": "british-light-mortar",
+      "kind": "asl:light-mortar",
+      "kindRow": 2083,
+      "nationality": "british",
+      "nationalityRow": 2084,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "OLG",
+        "counter": "british-light-mortar"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 2085
+        },
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "printed": false,
+          "row": 2086
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "printed": false,
+          "row": 2087
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 12,
+          "row": 2088
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 2,
+          "row": 2089
+        },
+        {
+          "face": "front",
+          "attribute": "portage",
+          "value": 4,
+          "row": 2090
+        },
+        {
+          "face": "front",
+          "attribute": "caliber",
+          "value": 51,
+          "row": 2091
+        },
+        {
+          "face": "front",
+          "attribute": "caliber-suffix",
+          "printed": false,
+          "row": 2092
+        },
+        {
+          "face": "front",
+          "attribute": "range-minimum",
+          "value": 2,
+          "row": 2093
+        },
+        {
+          "face": "front",
+          "attribute": "range-maximum",
+          "value": 11,
+          "row": 2094
+        },
+        {
+          "face": "front",
+          "attribute": "special-ammo",
+          "value": [
+            "s7"
+          ],
+          "row": 2095
+        },
+        {
+          "face": "front",
+          "attribute": "dates",
+          "value": "38-45",
+          "row": 2096
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-ap",
+          "present": true,
+          "row": 2097
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-he",
+          "present": false,
+          "row": 2098
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-removes",
+          "present": false,
+          "row": 2099
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "repair",
+          "recorded": false,
+          "row": 2100
+        }
+      ]
+    },
+    {
+      "id": "british-atr",
+      "kind": "asl:latw",
+      "kindRow": 2101,
+      "nationality": "british",
+      "nationalityRow": 2102,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "british-atr"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "printed": false,
+          "row": 2103
+        },
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 1,
+          "row": 2104
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 12,
+          "row": 2105
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 11,
+          "row": 2106
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "printed": false,
+          "row": 2107
+        },
+        {
+          "face": "front",
+          "attribute": "portage",
+          "value": 1,
+          "row": 2108
+        },
+        {
+          "face": "front",
+          "attribute": "latw-type",
+          "value": "atr",
+          "row": 2109
+        },
+        {
+          "face": "front",
+          "attribute": "caliber",
+          "value": 14,
+          "row": 2110
+        },
+        {
+          "face": "front",
+          "attribute": "range-maximum",
+          "value": 12,
+          "row": 2111
+        },
+        {
+          "face": "front",
+          "attribute": "special-ammo",
+          "printed": false,
+          "row": 2112
+        },
+        {
+          "face": "front",
+          "attribute": "to-hit-table",
+          "printed": false,
+          "row": 2113
+        },
+        {
+          "face": "front",
+          "attribute": "dates",
+          "printed": false,
+          "row": 2114
+        },
+        {
+          "face": "front",
+          "trait": "asl:breakdown-removes",
+          "present": false,
+          "row": 2115
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "repair",
+          "value": 2,
+          "row": 2116
         }
       ]
     }

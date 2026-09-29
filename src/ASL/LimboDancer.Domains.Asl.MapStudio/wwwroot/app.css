@@ -480,3 +480,35 @@ textarea.placements-text {
     overflow: auto;
     font-size: 0.75rem;
 }
+
+/* Scenario cards (backlog pass 17) */
+.scenario-card {
+    max-width: 60rem;
+}
+
+.scenario-card table.card-group {
+    border-collapse: collapse;
+    margin: 0.4rem 0 0.8rem;
+}
+
+.scenario-card table.card-group caption {
+    text-align: left;
+    font-weight: 600;
+}
+
+.scenario-card table.card-group th,
+.scenario-card table.card-group td {
+    border: 1px solid #d0d0d0;
+    padding: 0.15rem 0.5rem;
+    font-size: 0.85rem;
+}
+
+.scenario-card .card-manufactured {
+    color: #8a5a00;
+}
+
+.scenario-card .card-ssr-status,
+.scenario-card .card-rules {
+    color: #555;
+    font-size: 0.85rem;
+}

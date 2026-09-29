@@ -64,7 +64,6 @@ Step 17 left these out; steps 19 to 23 do not build them.
 | Item | Rules | Depends on |
 |---|---|---|
 | Smoke and WP | A24, p. 91 | Smoke placement |
-| ELR from the scenario card, once scenario cards are a registered source | A19.1, p. 86 | Scenario card registration |
 
 ## 7. Later passes
 
@@ -155,9 +154,8 @@ Vehicle movement (Reverse, VBM, ESB, Minimum Move, Bog, OVR, stacking, and terra
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
 | Dropping the SW beyond a withdrawing unit's IPC | R5.5 | A11.21, p. 73; A4.43, p. 50 | SW handling (pass 13) | A unit in Melee carrying more than its IPC may not withdraw; the refusal says so. |
-| The Friendly Board Edge from the scenario card | R5.16 | A20.53, p. 87 | Scenario cards (pass 17) | The players name one edge per side at a new game; a side with none named cannot Recall off the map. |
 | A Recalled AFV's Stop to unload its Passengers | Table player, item 9 | D5.341, pp. 203 to 204 | Passengers (pass 6) | A leaving Recalled AFV may not Stop. |
-| A Recall route to a Friendly Board Edge of more than one edge | R5.16, R5.17 | D5.341, pp. 203 to 204; A20.53 | Scenario cards (pass 17) | Only the one named edge counts. |
+| A Recall route to a Friendly Board Edge of more than one edge | R5.16, R5.17 | D5.341, pp. 203 to 204; A20.53 | Setting up a game from a card (section 27) | Only the one named edge counts. |
 
 ## 16. Added by the backlog pass 6
 
@@ -228,7 +226,7 @@ Vehicle movement (Reverse, VBM, ESB, Minimum Move, Bog, OVR, stacking, and terra
 | SMOKE and WP by ordnance, WP grenades, Dispersed SMOKE, drift, Gusts, and weather | R9.9 | C8.5, A24.3 to A24.62 | A Gun with an s# or WP#; Wind Force and Direction (weather built in pass 16) | Not reached: no catalog Gun lists SMOKE, no nationality in the game has WP grenades. |
 | The PF against Infantry, unarmored vehicles, and Guns (HE Equivalency), the PFk, the optional usage of C13.311, Desperation fire, a PF at range 0, and a PF Check in Subsequent First Fire | R9.8 | C8.31, C13.3, C13.311, C13.81 | HE Equivalency; Subsequent First Fire of SW | Refused. Range 0 is not reached, since Infantry and an enemy vehicle never share a Location in the review (R25.3). |
 | A squad firing a light mortar and a MG in one phase, forfeiting its inherent FP | R9.2 | A7.351 | One record of each unit's SW use | The Fire package's limit of two MG per squad does not count the mortar. |
-| The PF usage limit with reinforcements | R9.7 | C13.31 | Reinforcements (pass 17) | The limit counts the German squad equivalents at the end of setup. |
+| The PF usage limit with reinforcements | R9.7 | C13.31 | Reinforcements entering (section 27) | The limit counts the German squad equivalents at the end of setup. |
 | A kept Spotter that moved out of reach, and the HS of a Reduced Spotting squad keeping its Spotting ability | R9.4 | C9.3, p. 179 | Spotter records that follow lineage | A kept Spotter blocks a new one while it is Good Order, wherever it is; the HS of a Reduced Spotter is a new unit, so a new Spotter may be named. |
 | A SMOKE attempt in a Residual FP Location | R9.5 | A24.1, A8.2 | The Residual FP attack on an MF expenditure without entry | Refused. |
 | The SMOKE panel offering only squads with an exponent, and the own and ADJACENT Locations as choices | R9.5 | A24.1 | The page reading catalog attributes | The page lists every checked squad and takes a typed Location; the planner refuses the others. |
@@ -359,7 +357,7 @@ The backlog pass 15 (2026-09-29) built, and removed from sections 2, 5, 6, 10, 1
 | The Commissar substitution limits and the 8+1's availability | R15.6 | A25.22, A25.224 | Scenario OB | Setup places Commissars freely. |
 | Human Wave | R15.6 | A25.23 to A25.234 | A multi-hex movement declaration | Not built. |
 | Allied Troops' leadership in CC, in Deployment and Recombination, and an ally's SW used without captured penalties | R15.8 | A10.7, A21.1 | Nationality in those packages | CC and Deployment keep their nationality rules; an ally's SW counts as captured. |
-| An SSR assigning an ELR of 4 or less to underscored units | R15.9 | A19.132 | Scenario cards | The underscored exception always applies. |
+| An SSR assigning an ELR of 4 or less to underscored units | R15.9 | A19.132 | Setting up a game from a card (section 27) | The underscored exception always applies. |
 | A hero firing a LATW, a light mortar, or a Gun | R15.11 | A15.23 | Those weapons' packages reading a hero | Refused. |
 | Japanese, Axis Minor, Allied Minor, Chinese, and Partisan units, and the other national rules of A25 for the new nationalities (American broken Morale Level, Italian Lax, PAATC, capture, and escape, Finnish Ski and Cold rules, French rules) | R15.13 | A25, Chapter G | Their counters and rules | Not built; the new nationalities follow the general rules but for their Heat of Battle, Leader Creation, Replacement and Battle Hardening, and the British and Finnish exceptions above. |
 | The leaders' broken Morale Levels of the new nationalities and the Commissars | R15.13 | A1.4 | Printed counters | Their front morale, as every leader of the catalog (R0.3). |
@@ -379,7 +377,7 @@ The backlog pass 16 (2026-09-29) built, and removed from sections 2, 6, 11, 19, 
 |---|---|---|---|---|
 | Straying, Jitter Fire, Cloaking, and Lax, Normal, and Stealthy units at night | R16.5 | E1.4 to E1.43, E1.53 to E1.55, E1.6 to E1.63 | A Movement DR and the Majority Squad Type | Units move as by day; no Cloaking counters. |
 | A moving ATTACKER with an NVR of 0 entering a concealed DEFENDER's Location | R16.2 | E1.13 | The A12.15 return | The unit is returned as by day. |
-| The Scenario Defender at night: HIP and "?" allotments, Freedom of Movement, the ELR one lower, and Recon | R16.1 | E1.2 to E1.23 | Scenario cards (pass 17) | Setup places units freely; every unit may move. |
+| The Scenario Defender at night: HIP and "?" allotments, Freedom of Movement, the ELR one lower, and Recon | R16.1 | E1.2 to E1.23 | Setting up a game from a card (section 27) | Setup places units freely; every unit may move. |
 | Fortifications hidden at night, and a Factory's NVR of 1 | R16.2 | E1.16, E1.17 | Fortifications; Factory reads | Not built. |
 | A Fire Lane beyond NVR and Bore-Sighted Fire Lanes at night; To Hit from a Blind Hex at night; the captured MG's Sniper dr | R16.3 | E1.71, E1.73, E1.76 | Those windows | Fire Lanes need the NVR as other fire; no Blind Hex TH case; no Sniper dr. |
 | Target Acquisition only when Illuminated at night | Referee, pass 16 | E1.74, C6.5 | The Illumination read in the Ordnance facts | An Acquisition applies at night as by day. |
@@ -393,4 +391,24 @@ The backlog pass 16 (2026-09-29) built, and removed from sections 2, 6, 11, 19, 
 | Marsh and brush as Open Ground in snow, frozen streams, and minefields in Deep Snow | Referee, pass 16 | E3.722, E3.73, E3.732 | A weather-aware terrain key | Marsh and brush keep their day rules. |
 | The Clear weather between Locations of one building | R16.11 | E3.8 | Building identity in the LOS read | Only the firer's own hex is Clear. |
 | Manhandling, Entrenching, and foxholes in Mud, snow, and Extreme Winter; the Axis vehicles' immobilization in Extreme Winter | R16.12 to R16.14 | E3.61, E3.63, E3.722, E3.7332, E3.743, E3.744 | Manhandling and Entrenching | Not built; E3.744 is the scenario cards'. |
-| Extreme Winter's Fate in a pillbox, and the DYO Weather and NVR Tables | R16.14, R16.1 | E3.742, E3, E1.11 | Pillboxes; scenario cards (pass 17) | Only buildings shelter from Fate; the SSRs name the weather and NVR. |
+| Extreme Winter's Fate in a pillbox, and the DYO Weather and NVR Tables | R16.14, R16.1 | E3.742, E3, E1.11 | Pillboxes; the DYO purchase (section 27) | Only buildings shelter from Fate; the SSRs name the weather and NVR. |
+
+## 27. Added by the backlog pass 17
+
+The backlog pass 17 (2026-09-29) built the scenario-card presentation: the card format, its reader and validation, two cards adapted from legacy cards to the registered rulebook (The Guards Counterattack and Gambit), catalog 1.11.0, and the Studio's Scenario cards page. It removed from sections 6 and 15 the ELR and the Friendly Board Edge from the scenario card, which a card now presents; a game taking them from the card is the first row below. Card-driven play is out of the pass by the user's ruling of 2026-09-29. What it leaves out follows.
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| Setting up a game from a card: its boards and playable area, sides, ELR and SAN, Friendly Board Edges, Scenario Defender, month and year, SSR tokens, and the OB placed in its setup areas, with each hex's terrain checked | User ruling, 2026-09-29; R17.1, R17.8 | A2.1, A2.9, A19.1, A14.1, A20.53 | The new-game setup reading a card | The players set up a new game by hand and read the card beside it. |
+| An ELR for each OB group | R17.5 | A19.1, p. 86 | Setting up a game from a card | A side has one ELR; a card with groups of different ELRs shows each. |
+| Reinforcements entering during play: an OB group entering on its turn along its edge, with the SSR limits (Gambit's British on Turn 1) | User ruling, 2026-09-29; R17.8 | A2.6, A3.9 | Offboard units and entry in the MPh | Entering units are placed by hand. |
+| Evaluating the Victory Conditions: Control at game end, Exit VP (at once or at game end), CVP, Avoidance | User ruling, 2026-09-29; R17.11 | A26.1 to A26.4, pp. 98 to 100 | Building identity, exit records, VP values | The card shows the Victory Conditions as text; the players judge them. |
+| The full Chapter H DYO purchase: the roster, BPV purchases, the ELR Chart, SAN purchase, Leader Generation and the Leader Exchange DR, SW allotment, bonus Infantry, and the DYO Weather, EC, and NVR tables | User ruling, 2026-09-29; R17.2 | H1 to H1.84, pp. 328 to 336; E1.11; E3 | A DYO page | Cards are adapted from legacy cards; Chapter H only checks their numbers. |
+| Battlefield Integrity | R17.4 | A16 to A16.4, pp. 84 to 85 | A Casualty Tally in the records | The card prints the Integrity totals; nothing tallies them. |
+| The playable area and a half box on a Turn other than the last | R17.3, R17.4; referee, pass 17 | A2.1, A3.9 | Map limits in the planner | The playable area is shown, not enforced; a card has only a last-turn half turn. |
+| Balance: the dr for sides and the provision applied (a Hero; Sewer Movement; foxholes; a German LMG) | R17.11 | A26.4, B8.1, B8.4, B27 | Setting up a game from a card; Sewers and foxholes | The Balance is shown as text. |
+| EC and wind (B25.5, B25.63) as an SSR the game reads | R17.10 | B25.5, B25.6 to B25.65 | Fire spread and Kindling | SSR 1 of both cards is shown, not enforced; the weather is Clear by default. |
+| The legacy encirclement SSR of The Guards Counterattack, and Gambit's Infantry SMOKE ban | R17.10 | A7.7, A24.1 | SSR tokens for them | Shown, not enforced. |
+| ANZAC Stealth and the British immunity to Cowering by card nationality | R17.11; referee, pass 17 | A25.44, A25.45, p. 96 | A sub-nationality on the card | Shown as an adaptation note. |
+| The Commissar replacement of A25.22 offered at setup | R17.9 | A25.22, p. 94 | Setting up a game from a card | The Guards Counterattack's card fields the legacy 9-0 Commissar. |
+| More cards: The Tractor Works (a Factory, Fanaticism, "?", Assault Engineers, HMG, FT, DC) and the other legacy cards of The General | Pass 17 selection | B23.74, A12, A22, A23 | The counters and terrain they need | Two cards. |

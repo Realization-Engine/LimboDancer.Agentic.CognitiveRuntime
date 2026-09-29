@@ -4,10 +4,10 @@
   "domainId": "asl",
   "packageId": "scenario-a1-close-combat",
   "declaredUse": "Read-only conclusions for the Close Combat of one Location in one round, and for the Ambush drs before it, among Infantry of the reviewed Scenario A1 catalog, under the rulings of the ASL Unit Deviations, Ordnance, and Vehicles Plan (R29.1 to R29.15); and CC in a Location holding a vehicle, by and against it, after the PAATC (Backlog Passes Plan, R11.12 to R11.17); and Hand-to-Hand, concealment, TI, capture, prisoners, Infiltration, and overstacking in CC (Backlog Passes Plan, R14.1 to R14.13); and NKVD Field Promotion (Backlog Passes Plan, R15.7); and the night Ambush (Backlog Passes Plan, pass 16).",
-  "caseMatrixSha256": "ad9e918bba4377f6a50b5439414dfd28c4dc80cd93c50c0a54a11d55b79abb64",
+  "caseMatrixSha256": "40360846e4343a2a35f83561f80e75e418e5a5b232ffdcd45c97f0a74a069707",
   "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
   "cctTranscriptionSha256": "c2af9d03865da14baf7b0ec68989d99e0607079cb3f43f835d145b92bab8abbb",
-  "catalogSha256": "41f8b8272bfda60c83aa8827d0c99c427552b6638f78330ae48ae47d56100f24",
+  "catalogSha256": "c350cd3f52edec5c7236ef7fbfa292d49d64820d68704a6dbb1e49080ab094a8",
   "sourceFragments": [
     {
       "ruleId": "A1.6",

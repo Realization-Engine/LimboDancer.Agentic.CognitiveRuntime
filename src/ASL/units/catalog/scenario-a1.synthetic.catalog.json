@@ -3146,6 +3146,133 @@
         { "face": "front", "trait": "asl:breakdown-removes", "present": true, "row": 1890 },
         { "face": "malfunctioned", "attribute": "repair", "printed": false, "row": 1891 }
       ]
+    },
+    {
+      "id": "attacker-elite-squad-5-4-8",
+      "kind": "asl:squad", "kindRow": 1892,
+      "nationality": "british", "nationalityRow": 1893,
+      "class": "green",
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "attacker-elite-squad-5-4-8" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "firepower", "value": 2, "row": 1894 },
+        { "face": "front", "attribute": "range", "value": 2, "row": 1895 },
+        { "face": "front", "attribute": "morale", "value": 3, "row": 1896 },
+        { "face": "front", "attribute": "identity", "value": "S", "row": 1897 },
+        { "face": "front", "attribute": "class", "value": "green", "row": 1898 },
+        { "face": "front", "attribute": "class-variant", "printed": false, "row": 1899 },
+        { "face": "front", "attribute": "smoke-exponent", "value": 1, "row": 1900 },
+        { "face": "front", "trait": "asl:assault-fire", "present": true, "row": 1901 },
+        { "face": "front", "trait": "asl:spraying-fire", "present": false, "row": 1902 },
+        { "face": "front", "trait": "asl:elr-5", "present": false, "row": 1903 },
+        { "face": "front", "trait": "asl:assault-engineer", "present": false, "row": 1904 },
+        { "face": "broken", "attribute": "broken-morale", "value": 4, "row": 1905 },
+        { "face": "broken", "attribute": "bpv", "value": 5, "row": 1906 },
+        { "face": "broken", "trait": "asl:self-rally", "present": true, "row": 1907 }
+      ]
+    },
+    {
+      "id": "attacker-elite-half-squad-2-3-8",
+      "kind": "asl:half-squad", "kindRow": 1908,
+      "nationality": "british", "nationalityRow": 1909,
+      "class": "green",
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "attacker-elite-half-squad-2-3-8" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "firepower", "value": 2, "row": 1910 },
+        { "face": "front", "attribute": "range", "value": 1, "row": 1911 },
+        { "face": "front", "attribute": "morale", "value": 3, "row": 1912 },
+        { "face": "front", "attribute": "identity", "printed": false, "row": 1913 },
+        { "face": "front", "attribute": "class", "value": "green", "row": 1914 },
+        { "face": "broken", "attribute": "broken-morale", "value": 4, "row": 1915 },
+        { "face": "broken", "attribute": "bpv", "value": 2, "row": 1916 }
+      ]
+    },
+    {
+      "id": "attacker-hmg",
+      "kind": "asl:mg", "kindRow": 1917,
+      "nationality": "american", "nationalityRow": 1918,
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "attacker-hmg" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "size", "value": "heavy", "row": 1919 },
+        { "face": "front", "attribute": "firepower", "value": 4, "row": 1920 },
+        { "face": "front", "attribute": "range", "value": 5, "row": 1921 },
+        { "face": "front", "attribute": "breakdown", "value": 11, "row": 1922 },
+        { "face": "front", "attribute": "rate-of-fire", "value": 1, "row": 1923 },
+        { "face": "front", "attribute": "portage", "value": 1, "row": 1924 },
+        { "face": "malfunctioned", "attribute": "repair", "value": 2, "row": 1925 }
+      ]
+    },
+    {
+      "id": "british-lmg",
+      "kind": "asl:mg", "kindRow": 1926,
+      "nationality": "american", "nationalityRow": 1927,
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "british-lmg" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "size", "value": "light", "row": 1928 },
+        { "face": "front", "attribute": "firepower", "value": 3, "row": 1929 },
+        { "face": "front", "attribute": "range", "value": 4, "row": 1930 },
+        { "face": "front", "attribute": "breakdown", "value": 11, "row": 1931 },
+        { "face": "front", "attribute": "rate-of-fire", "value": 1, "row": 1932 },
+        { "face": "front", "attribute": "portage", "value": 1, "row": 1933 },
+        { "face": "malfunctioned", "attribute": "repair", "value": 2, "row": 1934 }
+      ]
+    },
+    {
+      "id": "british-light-mortar",
+      "kind": "asl:light-mortar", "kindRow": 1935,
+      "nationality": "british", "nationalityRow": 1936,
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "british-light-mortar" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "identity", "value": "S", "row": 1937 },
+        { "face": "front", "attribute": "firepower", "printed": false, "row": 1938 },
+        { "face": "front", "attribute": "range", "printed": false, "row": 1939 },
+        { "face": "front", "attribute": "breakdown", "value": 12, "row": 1940 },
+        { "face": "front", "attribute": "rate-of-fire", "value": 2, "row": 1941 },
+        { "face": "front", "attribute": "portage", "value": 3, "row": 1942 },
+        { "face": "front", "attribute": "caliber", "value": 51, "row": 1943 },
+        { "face": "front", "attribute": "caliber-suffix", "value": "star", "row": 1944 },
+        { "face": "front", "attribute": "range-minimum", "value": 1, "row": 1945 },
+        { "face": "front", "attribute": "range-maximum", "value": 12, "row": 1946 },
+        { "face": "front", "attribute": "special-ammo", "printed": false, "row": 1947 },
+        { "face": "front", "attribute": "dates", "value": "38-45", "row": 1948 },
+        { "face": "front", "trait": "asl:no-ap", "present": true, "row": 1949 },
+        { "face": "front", "trait": "asl:no-he", "present": false, "row": 1950 },
+        { "face": "front", "trait": "asl:breakdown-removes", "present": false, "row": 1951 },
+        { "face": "malfunctioned", "attribute": "repair", "value": 2, "row": 1952 }
+      ]
+    },
+    {
+      "id": "british-atr",
+      "kind": "asl:latw", "kindRow": 1953,
+      "nationality": "french", "nationalityRow": 1954,
+      "counter": { "source": "synthetic", "sheet": "synthetic", "counter": "british-atr" },
+      "applicability": { "status": "unreviewed" },
+      "slots": [],
+      "values": [
+        { "face": "front", "attribute": "identity", "value": "S", "row": 1955 },
+        { "face": "front", "attribute": "firepower", "value": 2, "row": 1956 },
+        { "face": "front", "attribute": "range", "value": 10, "row": 1957 },
+        { "face": "front", "attribute": "breakdown", "value": 12, "row": 1958 },
+        { "face": "front", "attribute": "rate-of-fire", "printed": false, "row": 1959 },
+        { "face": "front", "attribute": "portage", "value": 2, "row": 1960 },
+        { "face": "front", "attribute": "latw-type", "value": "atr", "row": 1961 },
+        { "face": "front", "attribute": "caliber", "value": 20, "row": 1962 },
+        { "face": "front", "attribute": "range-maximum", "value": 10, "row": 1963 },
+        { "face": "front", "attribute": "special-ammo", "printed": false, "row": 1964 },
+        { "face": "front", "attribute": "to-hit-table", "printed": false, "row": 1965 },
+        { "face": "front", "attribute": "dates", "printed": false, "row": 1966 },
+        { "face": "front", "trait": "asl:breakdown-removes", "present": false, "row": 1967 },
+        { "face": "malfunctioned", "attribute": "repair", "value": 1, "row": 1968 }
+      ]
     }
   ]
 }
