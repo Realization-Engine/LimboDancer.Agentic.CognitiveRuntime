@@ -329,3 +329,7 @@ Estimate: 4:40 (build 3:25) in the [ASL Unit Backlog Passes Plan](<ASL Unit Back
 | Table player's 16 findings (27 situations, played in a separate worktree): 11 fixed with 5 new tests, 5 recorded; rulings R13.3 to R13.6 reworded; Play (295), MapStudio (128), ScenarioA1 (427) pass | 19:35 | 19:45 | 0:10 | |
 | Review, design, backlog section 23 (13 rows removed from sections 2, 3, 5, 8, 11, and 22), requirements | 19:45 | 19:52 | 0:07 | |
 | Full local suite: build with warnings as errors, every ASL test project (2,211 passed, 30 skipped, 1 failed: the architecture test's scan hit `.git/worktrees`, held in a pending delete after a stray agent worktree was removed; the Docker clean clone runs it) | 19:50 | 20:06 | 0:16 | |
+| Commit d87daf8; merge gate: the Docker Linux check (restore, build, test, a1: every step exit 0; Authoring 163 of 163) and the three CI regeneration checks (identical) | 20:06 | 20:21 | 0:15 | |
+| Merge and push | 20:21 | 20:24 | 0:03 | |
+
+Total 2:31 of working time (17:53 to 20:24) against the 4:40 estimate (build 3:25); the build with both reviews' fixes, 17:58 to 19:45, took 1:47.
