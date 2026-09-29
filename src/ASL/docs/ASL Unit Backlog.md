@@ -416,4 +416,5 @@ The backlog pass 17 (2026-09-29) built the scenario-card presentation: the card 
 | Fanaticism by SSR for units in a building (The Tractor Works) | R17.13 | A10.8, p. 69 | An SSR token naming Fanatic units by place | Shown, not enforced. |
 | A sequential setup, "?" allotted at setup, and a die roll for the first move, played from a card | R17.12 | A2.9, A12.11, A3.9 | Setting up a game from a card | Shown on the card; the players follow it. |
 | A draw as a Victory Condition outcome | R17.13 | A26 | Evaluating the Victory Conditions | Shown as text. |
+| Hidden setup per side: a side does not see the other's placements during a sequential setup, nor HIP units or the contents of "?" | User ruling, 2026-09-29 (setup is hot-seat on the honor system) | A2.9, A12.11, A12.12, A12.3 | Setup from the OB (Scenario Card Games Plan, pass 19); a per-side view | Both sides see the whole map during setup. |
 | The Russian MMG's portage: the catalog's 4 PP (manufactured at unit step 23) against the legacy counter's apparent 5 PP | Referee, pass 17b | A4.42, A9.1 | A registered source printing it | 4 PP. |
