@@ -15,7 +15,7 @@
 5. **Visual check.** Run the Studio (`map-studio-scripted`) and play the new behavior. Stop the Studio before building or running tests, because it locks the DLLs.
 6. **Documents.** A review document and a design document for the pass; the rulings here; the requirements' done notes; the backlog: every row the pass builds leaves it with the pass named, and everything left out gets a row.
 7. **Full local suite before the first commit.** Run the whole solution and the ScenarioA1 tests, not only the projects touched. The Authoring, Units, and Rendering tests pin catalog and matrix digests, source-review subjects, and state goldens.
-8. **Merge gate.** Commit, then run the full local suite and the Docker Linux check (the script in appendix A, run as `bash docker_check.sh <branch>` from the session's scratchpad directory; it clones the committed branch, so commit first). Merge with `git merge --no-ff` into main and push. Report the time breakdown.
+8. **Merge gate.** Commit, then run the full local suite and the Docker Linux check (appendix A: `bash src/ASL/tools/docker-check/docker_check.sh <branch>` from the repository root; it clones the committed branch, so commit first), and the chart supplement regeneration locally. Merge with `git merge --no-ff` into main and push. Report the time breakdown.
 
 **Standing rules:**
 - Stage explicit paths only. Never `git add src/ASL`, `git add -A`, or anything under `src/ASL/boards/` (untracked live Studio data) or `.claude/`, and never commit images.
@@ -436,20 +436,4 @@ Each pass adds its rulings here, R5.1 onward for pass 5, subject to the referee'
 
 ## Appendix A. The Docker Linux check
 
-Save as `docker_check.sh` in the session's scratchpad directory. It builds with warnings as errors and runs every test project of the solution and the ScenarioA1 tests, which are not in the solution. Every step must report `== exit 0`.
-
-```bash
-#!/bin/bash
-# Usage: docker_check.sh <branch>
-BRANCH="$1"
-MSYS_NO_PATHCONV=1 docker run --rm -v "E:/Archive/GitHub/dlandi/LimboDancer.MCP:/repo:ro" mcr.microsoft.com/dotnet/sdk:10.0 bash -c '
-  git config --global --add safe.directory "*"
-  git clone -q --branch '"$BRANCH"' /repo /work || exit 1
-  cd /work
-  step() { echo "== $1"; shift; "$@"; echo "== exit $?"; }
-  step restore dotnet restore src/ASL/LimboDancer.Domains.Asl.sln --locked-mode -v:minimal
-  step build dotnet build src/ASL/LimboDancer.Domains.Asl.sln --configuration Release --no-restore --warnaserror -v:minimal
-  step test dotnet test src/ASL/LimboDancer.Domains.Asl.sln --configuration Release --no-build --no-restore
-  step a1 dotnet test src/ASL/tests/LimboDancer.Domains.Asl.ScenarioA1.Tests/LimboDancer.Domains.Asl.ScenarioA1.Tests.csproj --configuration Release --warnaserror -p:RestoreLockedMode=false
-  echo "== done"'
-```
+The script is committed at `src/ASL/tools/docker-check/docker_check.sh` (2026-09-29; earlier passes kept a copy in each session's scratchpad). Run it from Git Bash with Docker Desktop running, after the commit: `bash src/ASL/tools/docker-check/docker_check.sh <branch>`. It clones the committed branch into a clean `mcr.microsoft.com/dotnet/sdk:10.0` container and runs what the GitHub CI runs: a locked restore, a Release build with warnings as errors, every test project of the solution, the ScenarioA1 tests (not in the solution), and the source verification and pending comparison regenerations, each compared byte for byte with the committed file. Every step must report `== exit 0`. The chart supplement regeneration needs `jq`, so the merge gate runs it locally: build the Authoring CLI in Release and compare the JSON with sorted keys.
