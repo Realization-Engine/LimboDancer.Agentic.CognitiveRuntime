@@ -194,6 +194,8 @@ Keep a compact latest-result summary visible. Expand activity into grouped recor
 
 ## 8. Blazor implementation approach
 
+The [Razor Component Extraction Inventory](<ASL Map Studio Razor Component Extraction Inventory.md>) identifies concrete existing HTML/Razor blocks, proposed component contracts, state ownership, and extraction order across all ten pages. Its 142 candidate boundaries include optional nested children, not a requirement to create 142 files.
+
 Keep `MainLayout.razor` responsible for the shell. Introduce small shared components for page headers, status badges, field/help/error groups, searchable pickers, empty/loading states, workbench panes, and proposal review. Add scoped page styling where behavior differs; reserve `app.css` for tokens, base controls, and shared layout primitives.
 
 Extract Play presentation in small steps: context header, action groups, review pane, and activity. Keep the existing services and action arguments intact. Do not reimplement eligibility in visual components or couple the renderer to Blazor.
