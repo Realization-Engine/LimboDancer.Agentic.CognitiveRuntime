@@ -325,7 +325,7 @@ Do not impose EditForm on every panel or create nested forms. Native buttons, in
 
 Components used inside tables must render valid table elements. A row component emits tr; it does not put a div between tbody and tr. Preserve label/for pairs and unique IDs, especially attachment prefixes and repeated vehicle towing controls.
 
-Moving markup across Razor component boundaries can change how scoped CSS applies. If scoped styles are introduced, put styles with their owning component and check descendants rendered by nested components. Shared theme tokens and layout utilities remain in app.css. Validate the resulting DOM, not only component names.
+All component, page, shared, and base CSS belongs in `wwwroot/site.css`. Do not use Blazor CSS isolation, `.razor.css` files, embedded style elements, style attributes, or JavaScript CSS injection. Use explicit component/page root classes and data attributes so selectors remain predictable across nested Razor components. The existing app.css has been migrated in full. Validate the resulting DOM after interaction as well as the source: layer visibility and comparison mode previously created style attributes from JavaScript.
 
 ## 17. Recommended extraction order
 

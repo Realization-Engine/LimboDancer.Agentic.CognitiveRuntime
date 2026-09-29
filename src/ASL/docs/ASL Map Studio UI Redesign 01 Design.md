@@ -1,6 +1,6 @@
 # ASL Map Studio UI Redesign 01 Design
 
-**Status:** Proposed. Design only; implementation has not started.
+**Status:** Proposed redesign. The stylesheet foundation has been migrated to site.css; the screen and component redesign remains proposed.
 
 **Date:** 2026-09-28
 
@@ -95,6 +95,18 @@ Use one visually dominant action per active task. Play can offer multiple action
 Buttons use minimum height and allow meaningful labels to wrap when space requires it. Disabled controls remain legible and have a visible nearby reason when the reason is actionable. Preserve focus indicators on links, buttons, inputs, tabs, and canvas controls, including disabled link-style button overrides.
 
 Statuses combine words and an optional symbol with color. Distinguish Not checked, Checking, Verified, Failed, Out of scope, and Authored valid. Never present approximate vectorization as exact or interpret missing verification as failure.
+
+### 4.4 Required stylesheet ownership
+
+All Map Studio CSS lives in `wwwroot/site.css`, including tokens, base elements, shared controls, page layouts, component classes, responsive rules, and interaction states. The application loads it through `Assets["site.css"]`.
+
+Do not use HTML/SVG `style` attributes, embedded `<style>` elements, JavaScript `.style` writes or CSS injection, Blazor CSS isolation, or `.razor.css` files. Components express presentation state through semantic classes and data attributes; the corresponding CSS is defined in site.css. Scope page/component rules with explicit root classes rather than Blazor-generated selectors.
+
+The existing app.css has been migrated in full, so there is no second stylesheet or duplicate cascade to maintain. Although retaining app.css for basics was permitted, it is unnecessary for this foundation. The supplied redesign app.css remains reference material; introduce selected treatments into site.css as the redesign proceeds.
+
+SVG geometry and renderer-owned presentation attributes such as viewBox, coordinates, fill, stroke, and clip-path remain part of the existing deterministic vector output. They are not CSS declarations or style attributes. Dynamic Studio layer visibility and comparison opacity are controlled by data attributes whose rules live in site.css, including the comparison slider's 0 through 100 percent values.
+
+Acceptance includes checking rendered DOM after interactions, not just searching Razor markup: the previous viewport JavaScript created style attributes even though Razor had none.
 
 ## 5. Collection and authoring screens
 
@@ -196,7 +208,7 @@ Keep a compact latest-result summary visible. Expand activity into grouped recor
 
 The [Razor Component Extraction Inventory](<ASL Map Studio Razor Component Extraction Inventory.md>) identifies concrete existing HTML/Razor blocks, proposed component contracts, state ownership, and extraction order across all ten pages. Its 142 candidate boundaries include optional nested children, not a requirement to create 142 files.
 
-Keep `MainLayout.razor` responsible for the shell. Introduce small shared components for page headers, status badges, field/help/error groups, searchable pickers, empty/loading states, workbench panes, and proposal review. Add scoped page styling where behavior differs; reserve `app.css` for tokens, base controls, and shared layout primitives.
+Keep `MainLayout.razor` responsible for the shell. Introduce small shared components for page headers, status badges, field/help/error groups, searchable pickers, empty/loading states, workbench panes, and proposal review. Define all styles in site.css, using explicit page and component root classes where behavior differs. Do not create component stylesheets or inline styles.
 
 Extract Play presentation in small steps: context header, action groups, review pane, and activity. Keep the existing services and action arguments intact. Do not reimplement eligibility in visual components or couple the renderer to Blazor.
 
@@ -208,7 +220,7 @@ Do not copy the supplied stylesheet wholesale: it lacks general Play form layout
 
 ## 9. Delivery sequence and verification
 
-Each stage should be reviewable on its own. This document and its index entry are the only changes in the initial design commit.
+Each stage should be reviewable on its own. The initial design commit contained only this document and its index entry. The subsequent stylesheet foundation migrates app.css to site.css and replaces viewport inline styling without adopting the proposed visual theme or extracting components.
 
 | Stage | Deliverable | Completion evidence |
 |---|---|---|
@@ -237,3 +249,11 @@ Record browser evidence separately from automated results. A compilation or sele
 | Mobile | Reflow and task access, not a separate gameplay product | Keyboard, zoom, drawers, long labels |
 
 The next implementation step is stage 1 after design review. A small shell and representative library/viewer/Play layout should establish spacing and pane behavior before restyling every form. Changes to these proposed decisions belong in this document so later stages share the same rationale.
+
+## 11. Stylesheet foundation verification
+
+The existing stylesheet was moved from app.css to site.css, retaining its original rules. App.razor now loads site.css through the static asset map. The viewport uses data attributes for layer visibility and comparison state; all display, visibility, and opacity declarations live in site.css.
+
+Validation: Release build succeeded with the existing warning policy; 23 targeted MapStudio render-endpoint, map-page, and component tests passed; all five existing viewport pointer/tier tests passed. A headless Edge check using the real viewport module and stylesheet verified all 101 opacity values, layer hiding/showing across reload, side-by-side reload, swipe clipping, mode transitions, and disposal, with zero style attributes or embedded style elements in the resulting DOM.
+
+Initial page tests exposed local Git CRLF conversion of checksum-pinned JSON resources in the isolated checkout. Restoring their exact committed bytes resolved those failures; no rule-package content or checksum was changed.

@@ -1,3 +1,4 @@
+/* All Studio CSS belongs in this file. Use classes/data attributes, never inline styles or .razor.css. */
 :root {
     --ink: #1d232a;
     --muted: #5b6570;
@@ -99,6 +100,122 @@ table.library td {
     touch-action: none;
     user-select: none;
 }
+
+/* Viewport state is set by boardViewport.js without creating style attributes. */
+.board-svg > [data-layer-hidden="true"] {
+    display: none;
+}
+
+.board-svg[data-comparison-mode="side"] > [id^="layer-styled-"] {
+    visibility: hidden;
+}
+
+.board-svg[data-comparison-mode="overlay"] > [id^="layer-styled-"] {
+    opacity: var(--comparison-opacity, 0.5);
+}
+
+/* Whole-percent values match the comparison slider's 0..100 range. */
+.board-svg[data-comparison-opacity="0"] { --comparison-opacity: 0; }
+.board-svg[data-comparison-opacity="1"] { --comparison-opacity: 0.01; }
+.board-svg[data-comparison-opacity="2"] { --comparison-opacity: 0.02; }
+.board-svg[data-comparison-opacity="3"] { --comparison-opacity: 0.03; }
+.board-svg[data-comparison-opacity="4"] { --comparison-opacity: 0.04; }
+.board-svg[data-comparison-opacity="5"] { --comparison-opacity: 0.05; }
+.board-svg[data-comparison-opacity="6"] { --comparison-opacity: 0.06; }
+.board-svg[data-comparison-opacity="7"] { --comparison-opacity: 0.07; }
+.board-svg[data-comparison-opacity="8"] { --comparison-opacity: 0.08; }
+.board-svg[data-comparison-opacity="9"] { --comparison-opacity: 0.09; }
+.board-svg[data-comparison-opacity="10"] { --comparison-opacity: 0.1; }
+.board-svg[data-comparison-opacity="11"] { --comparison-opacity: 0.11; }
+.board-svg[data-comparison-opacity="12"] { --comparison-opacity: 0.12; }
+.board-svg[data-comparison-opacity="13"] { --comparison-opacity: 0.13; }
+.board-svg[data-comparison-opacity="14"] { --comparison-opacity: 0.14; }
+.board-svg[data-comparison-opacity="15"] { --comparison-opacity: 0.15; }
+.board-svg[data-comparison-opacity="16"] { --comparison-opacity: 0.16; }
+.board-svg[data-comparison-opacity="17"] { --comparison-opacity: 0.17; }
+.board-svg[data-comparison-opacity="18"] { --comparison-opacity: 0.18; }
+.board-svg[data-comparison-opacity="19"] { --comparison-opacity: 0.19; }
+.board-svg[data-comparison-opacity="20"] { --comparison-opacity: 0.2; }
+.board-svg[data-comparison-opacity="21"] { --comparison-opacity: 0.21; }
+.board-svg[data-comparison-opacity="22"] { --comparison-opacity: 0.22; }
+.board-svg[data-comparison-opacity="23"] { --comparison-opacity: 0.23; }
+.board-svg[data-comparison-opacity="24"] { --comparison-opacity: 0.24; }
+.board-svg[data-comparison-opacity="25"] { --comparison-opacity: 0.25; }
+.board-svg[data-comparison-opacity="26"] { --comparison-opacity: 0.26; }
+.board-svg[data-comparison-opacity="27"] { --comparison-opacity: 0.27; }
+.board-svg[data-comparison-opacity="28"] { --comparison-opacity: 0.28; }
+.board-svg[data-comparison-opacity="29"] { --comparison-opacity: 0.29; }
+.board-svg[data-comparison-opacity="30"] { --comparison-opacity: 0.3; }
+.board-svg[data-comparison-opacity="31"] { --comparison-opacity: 0.31; }
+.board-svg[data-comparison-opacity="32"] { --comparison-opacity: 0.32; }
+.board-svg[data-comparison-opacity="33"] { --comparison-opacity: 0.33; }
+.board-svg[data-comparison-opacity="34"] { --comparison-opacity: 0.34; }
+.board-svg[data-comparison-opacity="35"] { --comparison-opacity: 0.35; }
+.board-svg[data-comparison-opacity="36"] { --comparison-opacity: 0.36; }
+.board-svg[data-comparison-opacity="37"] { --comparison-opacity: 0.37; }
+.board-svg[data-comparison-opacity="38"] { --comparison-opacity: 0.38; }
+.board-svg[data-comparison-opacity="39"] { --comparison-opacity: 0.39; }
+.board-svg[data-comparison-opacity="40"] { --comparison-opacity: 0.4; }
+.board-svg[data-comparison-opacity="41"] { --comparison-opacity: 0.41; }
+.board-svg[data-comparison-opacity="42"] { --comparison-opacity: 0.42; }
+.board-svg[data-comparison-opacity="43"] { --comparison-opacity: 0.43; }
+.board-svg[data-comparison-opacity="44"] { --comparison-opacity: 0.44; }
+.board-svg[data-comparison-opacity="45"] { --comparison-opacity: 0.45; }
+.board-svg[data-comparison-opacity="46"] { --comparison-opacity: 0.46; }
+.board-svg[data-comparison-opacity="47"] { --comparison-opacity: 0.47; }
+.board-svg[data-comparison-opacity="48"] { --comparison-opacity: 0.48; }
+.board-svg[data-comparison-opacity="49"] { --comparison-opacity: 0.49; }
+.board-svg[data-comparison-opacity="50"] { --comparison-opacity: 0.5; }
+.board-svg[data-comparison-opacity="51"] { --comparison-opacity: 0.51; }
+.board-svg[data-comparison-opacity="52"] { --comparison-opacity: 0.52; }
+.board-svg[data-comparison-opacity="53"] { --comparison-opacity: 0.53; }
+.board-svg[data-comparison-opacity="54"] { --comparison-opacity: 0.54; }
+.board-svg[data-comparison-opacity="55"] { --comparison-opacity: 0.55; }
+.board-svg[data-comparison-opacity="56"] { --comparison-opacity: 0.56; }
+.board-svg[data-comparison-opacity="57"] { --comparison-opacity: 0.57; }
+.board-svg[data-comparison-opacity="58"] { --comparison-opacity: 0.58; }
+.board-svg[data-comparison-opacity="59"] { --comparison-opacity: 0.59; }
+.board-svg[data-comparison-opacity="60"] { --comparison-opacity: 0.6; }
+.board-svg[data-comparison-opacity="61"] { --comparison-opacity: 0.61; }
+.board-svg[data-comparison-opacity="62"] { --comparison-opacity: 0.62; }
+.board-svg[data-comparison-opacity="63"] { --comparison-opacity: 0.63; }
+.board-svg[data-comparison-opacity="64"] { --comparison-opacity: 0.64; }
+.board-svg[data-comparison-opacity="65"] { --comparison-opacity: 0.65; }
+.board-svg[data-comparison-opacity="66"] { --comparison-opacity: 0.66; }
+.board-svg[data-comparison-opacity="67"] { --comparison-opacity: 0.67; }
+.board-svg[data-comparison-opacity="68"] { --comparison-opacity: 0.68; }
+.board-svg[data-comparison-opacity="69"] { --comparison-opacity: 0.69; }
+.board-svg[data-comparison-opacity="70"] { --comparison-opacity: 0.7; }
+.board-svg[data-comparison-opacity="71"] { --comparison-opacity: 0.71; }
+.board-svg[data-comparison-opacity="72"] { --comparison-opacity: 0.72; }
+.board-svg[data-comparison-opacity="73"] { --comparison-opacity: 0.73; }
+.board-svg[data-comparison-opacity="74"] { --comparison-opacity: 0.74; }
+.board-svg[data-comparison-opacity="75"] { --comparison-opacity: 0.75; }
+.board-svg[data-comparison-opacity="76"] { --comparison-opacity: 0.76; }
+.board-svg[data-comparison-opacity="77"] { --comparison-opacity: 0.77; }
+.board-svg[data-comparison-opacity="78"] { --comparison-opacity: 0.78; }
+.board-svg[data-comparison-opacity="79"] { --comparison-opacity: 0.79; }
+.board-svg[data-comparison-opacity="80"] { --comparison-opacity: 0.8; }
+.board-svg[data-comparison-opacity="81"] { --comparison-opacity: 0.81; }
+.board-svg[data-comparison-opacity="82"] { --comparison-opacity: 0.82; }
+.board-svg[data-comparison-opacity="83"] { --comparison-opacity: 0.83; }
+.board-svg[data-comparison-opacity="84"] { --comparison-opacity: 0.84; }
+.board-svg[data-comparison-opacity="85"] { --comparison-opacity: 0.85; }
+.board-svg[data-comparison-opacity="86"] { --comparison-opacity: 0.86; }
+.board-svg[data-comparison-opacity="87"] { --comparison-opacity: 0.87; }
+.board-svg[data-comparison-opacity="88"] { --comparison-opacity: 0.88; }
+.board-svg[data-comparison-opacity="89"] { --comparison-opacity: 0.89; }
+.board-svg[data-comparison-opacity="90"] { --comparison-opacity: 0.9; }
+.board-svg[data-comparison-opacity="91"] { --comparison-opacity: 0.91; }
+.board-svg[data-comparison-opacity="92"] { --comparison-opacity: 0.92; }
+.board-svg[data-comparison-opacity="93"] { --comparison-opacity: 0.93; }
+.board-svg[data-comparison-opacity="94"] { --comparison-opacity: 0.94; }
+.board-svg[data-comparison-opacity="95"] { --comparison-opacity: 0.95; }
+.board-svg[data-comparison-opacity="96"] { --comparison-opacity: 0.96; }
+.board-svg[data-comparison-opacity="97"] { --comparison-opacity: 0.97; }
+.board-svg[data-comparison-opacity="98"] { --comparison-opacity: 0.98; }
+.board-svg[data-comparison-opacity="99"] { --comparison-opacity: 0.99; }
+.board-svg[data-comparison-opacity="100"] { --comparison-opacity: 1; }
 
 .board-highlight {
     fill: none;

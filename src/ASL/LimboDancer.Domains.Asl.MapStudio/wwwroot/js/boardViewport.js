@@ -211,7 +211,7 @@ async function reloadLayers(state, baseUrl, query, layers) {
     for (const group of groups) {
         const existing = state.svg.querySelector(`#${CSS.escape(group.id)}`);
         if (existing) {
-            group.style.display = existing.style.display;
+            group.setAttribute("data-layer-hidden", existing.getAttribute("data-layer-hidden") ?? "false");
             existing.replaceWith(group);
         }
     }
@@ -249,7 +249,7 @@ function setVisible(state, visible) {
     for (const group of state.svg.children) {
         const layer = group.id.startsWith("layer-") ? group.id.substring(6) : null;
         if (layer && layer !== "defs" && layer !== "units") {
-            group.style.display = visible.includes(layer) ? "" : "none";
+            group.setAttribute("data-layer-hidden", String(!visible.includes(layer)));
         }
     }
 
@@ -326,10 +326,11 @@ function styledGroups(svg) {
 function applyComparison(state) {
     const { mode, value } = state.comparison;
     const groups = styledGroups(state.svg);
+    state.svg.setAttribute("data-comparison-mode", mode);
+    // The UI slider uses whole percentages. All corresponding opacity rules live in site.css.
+    state.svg.setAttribute("data-comparison-opacity", Math.round(clamp(value, 0, 1) * 100));
     state.svg.querySelector("#comparison-clip")?.remove();
     for (const group of groups) {
-        group.style.opacity = "";
-        group.style.visibility = "";
         group.removeAttribute("clip-path");
     }
 
@@ -339,11 +340,7 @@ function applyComparison(state) {
         state.side = null;
     }
 
-    if (mode === "overlay") {
-        for (const group of groups) {
-            group.style.opacity = value;
-        }
-    } else if (mode === "swipe" && state.home) {
+    if (mode === "swipe" && state.home) {
         const clipPath = document.createElementNS(svgNamespace, "clipPath");
         clipPath.id = "comparison-clip";
         const rect = document.createElementNS(svgNamespace, "rect");
@@ -366,10 +363,6 @@ function applyComparison(state) {
         const keep = id => id === "layer-defs" || id === "layer-grid" || id === "layer-labels";
         const shared = [...state.svg.children].filter(group => keep(group.id)).map(group => group.cloneNode(true));
         state.side.replaceChildren(...shared.slice(0, 1), ...groups.map(group => group.cloneNode(true)), ...shared.slice(1));
-        for (const group of groups) {
-            group.style.visibility = "hidden";
-        }
-
         if (state.box) {
             state.side.setAttribute("viewBox", `${state.box.x} ${state.box.y} ${state.box.width} ${state.box.height}`);
         }
