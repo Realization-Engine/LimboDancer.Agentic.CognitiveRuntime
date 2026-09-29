@@ -235,4 +235,3 @@ Record browser evidence separately from automated results. A compilation or sele
 | Mobile | Reflow and task access, not a separate gameplay product | Keyboard, zoom, drawers, long labels |
 
 The next implementation step is stage 1 after design review. A small shell and representative library/viewer/Play layout should establish spacing and pane behavior before restyling every form. Changes to these proposed decisions belong in this document so later stages share the same rationale.
-
