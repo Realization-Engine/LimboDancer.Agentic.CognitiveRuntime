@@ -236,6 +236,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             "asl.game.ambush-withdraw" => PlanAmbushWithdrawal(scope, arguments, existing, attemptId, expected, label),
             "asl.game.guard-prisoners" => PlanGuardPrisoners(scope, arguments, existing, attemptId, expected, label),
             "asl.game.throw-dc" => PlanThrowDc(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
+            "asl.game.fire-starshell" => PlanStarshell(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.detonate-dc" => PlanDetonateDc(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             _ => Refused(scope, label, expected, "play.unknown-action"),
         };
@@ -540,22 +541,27 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
         // A12.12, A12.122 (ruling R12.5): as a Player Turn ends, the phasing side's Good Order Infantry may gain "?", some on a Final Concealment dr.
         var gains = state.Phase == "ccph" && phasing != state.PhasingSide ? ConcealmentGains(state) : [];
-        if (gains.Any(item => item.Drm is not null))
+        // B25.65 (backlog pass 16, rulings R16.1, R16.10): the Wind Change DR at the start of a RPh.
+        var wind = WindChangeDue(state, phase, turn, phasing);
+        if (gains.Any(item => item.Drm is not null) || wind)
         {
             var prefix = events.ToList();
             IReadOnlyList<GameEvent> Rolled(Func<RollRequest, RollResult> draw)
             {
                 var built = new List<GameEvent>(prefix);
                 AddConcealmentGains(scope, attemptId, expected, actor, gains, built, draw, []);
-                Finish(built, []);
+                Finish(built, [], draw);
                 return built;
             }
 
             return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
                 [$"play.advance: turn {turn}, {phase}, {phasing} phasing", .. reasons,
-                    $"play.concealment: {string.Join(", ", gains.Where(item => item.Drm is not null).Select(item => item.Unit.Id))} make a Final Concealment dr (A12.122)"])
+                    .. gains.Any(item => item.Drm is not null)
+                        ? [$"play.concealment: {string.Join(", ", gains.Where(item => item.Drm is not null).Select(item => item.Unit.Id))} make a Final Concealment dr (A12.122)"]
+                        : Array.Empty<string>(),
+                    .. wind ? ["play.wind-change: the Wind Change DR is made as the RPh begins (B25.65)"] : Array.Empty<string>()])
             {
-                Roll = new PlannedRoll("concealment", Rolled),
+                Roll = new PlannedRoll(wind ? "wind-change" : "concealment", Rolled),
                 FirstEventId = EventId(attemptId, 1),
             };
         }
@@ -564,11 +570,33 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         Finish(events, reasons);
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [$"play.advance: turn {turn}, {phase}, {phasing} phasing", .. reasons]);
 
-        void Finish(List<GameEvent> events, List<string> reasons)
+        void Finish(List<GameEvent> events, List<string> reasons, Func<RollRequest, RollResult>? draw = null)
         {
             var payload = new PhaseChanged(turn, phase, phasing);
             var changed = EventId(attemptId, events.Count + 1);
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "phase-changed", payload, rulePackage: null, visibility: null));
+            if (wind && draw is not null)
+            {
+                AddWindChange(scope, attemptId, expected, actor, state, events, reasons, draw, changed);
+            }
+
+            // E1.54 (backlog pass 16, ruling R16.6): at night a DM unit keeps DM until a Rally Original DR at most its printed morale.
+            if (state.Phase == "rph" && state.Night)
+            {
+                var start = existing.Select((item, index) => (item, index)).LastOrDefault(pair => pair.item.Payload is PhaseChanged).index;
+                var shed = existing.Skip(start).Select(item => item.Payload).OfType<RallyAttempted>()
+                    .Where(item => item.Resolution.TryGetProperty("arithmetic", out var arithmetic) && arithmetic.ValueKind == JsonValueKind.Object
+                        && arithmetic.TryGetProperty("originalDr", out var original) && state.Unit(item.Unit)?.Definition is { } definition
+                        && FireReference.Value.Definitions.GetValueOrDefault(definition.Definition)?.BrokenMorale is { } printed && original.GetInt32() <= printed)
+                    .Select(item => item.Unit).ToHashSet(StringComparer.Ordinal);
+                foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && Is(unit, Conditions.Broken) && Is(unit, Conditions.DesperationMorale)
+                    && !shed.Contains(unit.Id) && !retained.Contains(unit.Id)).OrderBy(unit => unit.Id, StringComparer.Ordinal))
+                {
+                    events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
+                        new ConditionsChanged(unit.Id, new Dictionary<string, ConditionState> { [Conditions.DesperationMorale] = ConditionState.True }), null, null, [changed]));
+                    reasons.Add($"play.night-dm: {unit.Id} keeps its DM: at night DM leaves only with a Rally Original DR at most the printed morale (E1.54)");
+                }
+            }
 
             // A10.62 (ruling R13.1): the DM its owner keeps as the RPh ends, and the DM of the start of the RtPh.
             foreach (var id in retained)
@@ -1595,6 +1623,14 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             // C8.1, C8.3 (ruling R7.6): Special Ammunition is available by year.
             payload["scenarioYear"] = JsonNode.Parse(year.GetRawText());
         }
+
+        // E1.1, E3 (backlog pass 16, rulings R16.1, R16.9): the night and weather SSRs.
+        if (NightAndWeatherRulesBar(start) is { } weatherBar)
+        {
+            reason = weatherBar;
+            return false;
+        }
+
         return true;
     }
 

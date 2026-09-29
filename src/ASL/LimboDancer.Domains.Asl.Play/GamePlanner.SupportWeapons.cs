@@ -440,7 +440,8 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.recover-weapon: {unit.Id} has tried to Recover {weapon.Id} this phase (A4.44)");
         }
 
-        var drm = Is(unit, Conditions.Cx) ? 1 : 0;
+        // E1.56 (backlog pass 16, ruling R16.7): +1 at night.
+        var drm = (Is(unit, Conditions.Cx) ? 1 : 0) + (state.Night ? 1 : 0);
         var package = ScenarioA1FirePackage.Identity.ToString();
         IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
         {

@@ -185,6 +185,9 @@ public sealed class BacklogPass11Tests : IDisposable
         return proposed.Outcome != PlayOutcome.NeedsConfirmation ? proposed : await play.ConfirmAsync(action, arguments, Player, proposed.Correlation);
     }
 
+    /// <summary>The special rules of the next setup (backlog pass 16: night and weather).</summary>
+    private string[] rules = [];
+
     private async Task Setup(string firstSide, params Dictionary<string, object>[] placements)
     {
         Committed(await Commit(Play(), GameActions.Setup, JsonSerializer.SerializeToElement(new
@@ -205,6 +208,7 @@ public sealed class BacklogPass11Tests : IDisposable
                 },
                 ["scenarioMonth"] = 7,
                 ["scenarioYear"] = 1942,
+                ["specialRules"] = rules,
             },
             placements,
         })));
@@ -1042,5 +1046,46 @@ public sealed class BacklogPass11Tests : IDisposable
         Committed(await VehicleCc(L(Ne("E5")), NoRoll(), pass: true));
         Assert.True(Current.CloseCombats.Single().Closed);
         NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task InMudAnUnpavedRoadIntoWoodsCostsTheOpenGroundRate()
+    {
+        // E3.6, E3.64 (backlog pass 16; referee, pass 16): a tank using a dirt road into woods pays Open Ground (1 MP) and 1 MP for Mud, with no Bog DR.
+        var woods = Ne("E8");
+        board.Terrain[woods] = "Woods";
+        board.Side("E8", HexsideDirection.NorthEast, terrain: "Dirt Road");
+        rules = ["weather:mud"];
+        await Setup("german", Vehicle("de-tk", "attacker-tank", L("E8"), "german"), Squad("r1", L("J9"), "russian"));
+        Committed(await Step("de-tk", "start"));
+        await Pass();
+        var before = Revision;
+        Committed(await Step("de-tk", "enter", L(woods)));
+        Assert.Equal(4, LastStep(before).HalfMp);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task InDeepSnowARoadEntryCostsAtLeastOneMp()
+    {
+        // E3.7331 (referee, pass 16): a truck along an unplowed road pays the road entry of at least 1 MP and 2 MP more for Deep Snow.
+        board.Side("E8", HexsideDirection.NorthEast, terrain: "Dirt Road");
+        rules = ["weather:deep-snow"];
+        await Setup("german", Vehicle("de-t", "attacker-truck", L("E8"), "german"), Squad("r1", L("J9"), "russian"));
+        Committed(await Step("de-t", "start"));
+        await Pass();
+        var before = Revision;
+        Committed(await Step("de-t", "enter", L(Ne("E8"))));
+        Assert.Equal(6, LastStep(before).HalfMp);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ABuAfvWhoseNvrIsZeroOnlyStops()
+    {
+        // E1.52 (referee, pass 16): at a Base NVR of 1 a BU AFV's NVR is 0, so it spends no MP but to Stop.
+        rules = ["night:1"];
+        await Setup("german", Vehicle("de-tk", "attacker-tank", L("E8"), "german", "east", "asl:bu"), Squad("r1", L("J9"), "russian"));
+        Refused(await Step("de-tk", "start"), "play.night-bu");
     }
 }

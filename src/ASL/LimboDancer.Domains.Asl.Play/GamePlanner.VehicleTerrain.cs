@@ -144,6 +144,15 @@ public sealed partial class GamePlanner
             terrain = month is >= 4 and <= 9 ? "grain" : "open-ground";
         }
 
+        // E3.6 (backlog pass 16, ruling R16.12; referee, pass 16): in Mud a vehicle using an unpaved road pays the Open Ground COT, whatever the hex holds.
+        var paved = road && crossed.Terrain?.Name == "Paved Road";
+        var plowed = road && state.SpecialRules.Contains("plowed-roads", StringComparer.Ordinal);
+        if (road && state.Weather("mud") && !paved)
+        {
+            road = false;
+            terrain = "open-ground";
+        }
+
         // B13.41, B13.42, B24.4: ALL and half the allotment are of the printed allotment (D1.1), whatever ESB added.
         var allotment = PrintedHalfMp(vehicle);
         var bog = new List<(string Cause, int Drm)>();
@@ -152,7 +161,8 @@ public sealed partial class GamePlanner
         var woods = terrain == "woods";
         if (road)
         {
-            cost = IsAfv(vehicle) && Is(vehicle, Conditions.ButtonedUp) ? 2 : 1;
+            // E3.724, E3.7331 (referee, pass 16): in Ground or Deep Snow a road entry costs at least one MP.
+            cost = IsAfv(vehicle) && Is(vehicle, Conditions.ButtonedUp) || state.Weather("ground-snow") || state.Weather("deep-snow") ? 2 : 1;
         }
         else if (woods)
         {
@@ -233,7 +243,7 @@ public sealed partial class GamePlanner
         }
 
         var towing = state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Towed } tow && tow.Holder == vehicle.Id) ? 2 : 0;
-        cost = all ? cost : cost + penalty + towing;
+        cost = all ? cost : cost + penalty + towing + VehicleWeatherHalfMp(state, type, terrain, road, paved, plowed, rise);
         if (reverse && !all)
         {
             cost *= ReverseMultiplier(vehicle);
@@ -242,6 +252,17 @@ public sealed partial class GamePlanner
         int? bogDrm = null;
         var causes = new List<string>();
         var own = VehicleBogDrm(state, vehicle);
+
+        // D8.21 notes 2 and 3 (backlog pass 16, rulings R16.12, R16.13; referee, pass 16): +1 on mud or snow-covered ground, +1 more with Deep Snow, not in
+        // a building (a Bog DR is never made by road).
+        if (terrain is not ("wooden-building" or "stone-building") && (state.Weather("mud") || state.Weather("ground-snow") || state.Weather("deep-snow")))
+        {
+            own.Add((state.Weather("mud") ? "mud" : "snow", 1));
+            if (state.Weather("deep-snow"))
+            {
+                own.Add(("deep-snow", 1));
+            }
+        }
         if (bog.Count > 0 && !road)
         {
             var total = bog.Concat(own).ToArray();

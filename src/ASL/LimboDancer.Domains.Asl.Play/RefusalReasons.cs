@@ -16,6 +16,7 @@ public static class RefusalReasons
     {
         // Fire (A7, A8, A9).
         ["fire.phase-outside"] = "this side may not fire this kind of attack in this phase (A3.2 to A3.5)",
+        ["fire.weather-outside"] = "the Low Visibility DRM must be 0 to 5 and the Extreme Winter B# reduction 0 to 2 (E1.7, E3.32, E3.741)",
         ["fire.residual-outside"] = "Residual FP attacks alone, at a printed counter value (A8.2, A8.22)",
         ["fire.target-outside"] = "the target Location holds no enemy unit the package reviews, is the firers' own Location, or has terrain it does not review",
         ["fire.ordnance-hit-outside"] = "an ordnance hit attacks on its Gun's HE FP column, with no firers of its own (C.6, C3.32)",

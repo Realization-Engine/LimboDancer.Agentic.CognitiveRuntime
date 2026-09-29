@@ -211,6 +211,64 @@ public sealed record GameState(
     /// </summary>
     public IReadOnlyList<string> AssaultWeaponUsers { get; init; } = [];
 
+    /// <summary>The Base NVR of a night game (E1.1; backlog pass 16, ruling R16.1): the SSR's at the start, then as the Wind Change DR sets it; null by day.</summary>
+    public int? Nvr
+    {
+        get; init;
+    }
+
+    /// <summary>The precipitation now falling (E3.51, E3.71; ruling R16.10): <c>rain</c>, <c>heavy-rain</c>, <c>snow</c>, <c>heavy-snow</c>, or null.</summary>
+    public string? Precipitation
+    {
+        get; init;
+    }
+
+    /// <summary>Whether rain has fallen this game (E3.54; referee, pass 16): it keeps costing MF after it stops.</summary>
+    public bool Rained
+    {
+        get; init;
+    }
+
+    /// <summary>The Player Turn (turn and phasing side) in which the first Starshell was fired (E1.921; referee, pass 16), or null.</summary>
+    public string? StarshellTurn
+    {
+        get; init;
+    }
+
+    /// <summary>Whether a Starshell has been fired this game (E1.91; ruling R16.8), after which a white dr of 4 no longer raises the NVR (E1.12).</summary>
+    public bool StarshellUsed
+    {
+        get; init;
+    }
+
+    /// <summary>The hexes from which a Starshell attempt was made this phase (E1.92; ruling R16.8): one attempt per hex per phase.</summary>
+    public IReadOnlyList<string> StarshellAttempts { get; init; } = [];
+
+    /// <summary>Whether the game is at night (E1.1; ruling R16.1).</summary>
+    public bool Night => Nvr is not null;
+
+    /// <summary>Whether an SSR names the weather <paramref name="kind"/> (E3; ruling R16.9), as <c>weather:kind</c>.</summary>
+    public bool Weather(string kind) => SpecialRules.Contains("weather:" + kind, StringComparer.Ordinal);
+
+    /// <summary>The Base NVR an SSR <c>night:n</c> names, or null (E1.1; ruling R16.1).</summary>
+    public static int? NightRule(IReadOnlyList<string> rules)
+    {
+        ArgumentNullException.ThrowIfNull(rules);
+        return rules.Select(rule => rule.StartsWith("night:", StringComparison.Ordinal)
+            && int.TryParse(rule.AsSpan(6), System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var nvr) ? nvr : (int?)null)
+            .FirstOrDefault(nvr => nvr is not null);
+    }
+
+    /// <summary>The precipitation an SSR names at the start (E3.51, E3.71; ruling R16.9), or null.</summary>
+    public static string? PrecipitationRule(IReadOnlyList<string> rules)
+    {
+        ArgumentNullException.ThrowIfNull(rules);
+        return rules.Contains("weather:heavy-rain", StringComparer.Ordinal) ? "heavy-rain"
+            : rules.Contains("weather:rain", StringComparer.Ordinal) ? "rain"
+            : rules.Contains("weather:falling-snow", StringComparer.Ordinal) ? "snow"
+            : null;
+    }
+
     /// <summary>The Fire Lanes in place (A9.22, A9.223; ruling R12.7); cleared at every phase change.</summary>
     public IReadOnlyList<FireLane> FireLanes { get; init; } = [];
 

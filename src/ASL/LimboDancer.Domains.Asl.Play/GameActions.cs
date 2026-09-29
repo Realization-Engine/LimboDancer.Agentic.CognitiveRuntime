@@ -620,13 +620,30 @@ public static class GameActions
             package = ScenarioA1FirePackage.Identity.ToString()
         }));
 
+    public static readonly ActionDescriptor FireStarshell = Descriptor("asl.game.fire-starshell", "Fire a Starshell",
+        "At night, a Good Order, unpinned, not TI leader, CE AFV, or MMC fires a Starshell in the PFPh (phasing side) or in the DFPh or as Defensive First Fire (the other side), one attempt per hex per phase, after a Usage dr of 4 or less (leader) or 2 or less: method own-hex (its hex, then one hex in a Random Direction), at-target (a Gunflash or Known enemy unit in its LOS within six hexes, then a Random Direction DR with the Extent of Error halved), or three-hexes (a hex exactly three hexes away, then a Random Direction DR). The Starshell Illuminates three hexes around it until the end of the CCPh (E1.9 to E1.923; ruling R16.8).",
+        PlayPermission, "asl.game.reviewed-fire-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "unitId", "method"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "unitId": { "type": "string" }, "method": { "type": "string", "enum": ["own-hex", "at-target", "three-hexes"] }, "at": { "type": "string" }
+          }
+        }
+        """, JsonSerializer.SerializeToElement(new
+        {
+            package = ScenarioA1FirePackage.Identity.ToString()
+        }));
+
     public static IReadOnlyList<ActionDescriptor> All
     {
         get;
     } =
         [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding, DeclareOverrun, Fire, Rally, Repair, Move, PassFire, EndMove, Advance, Ambush, CloseCombat, TakePrisoner,
             FireOrdnance, RecoverShock, TurnGun, HookGun, MoveVehicle, Overrun, VehicleCloseCombat, ButtonUp, Choose, Massacre, OpportunityFire,
-            Rout, Deploy, Recombine, Transfer, Drop, Recover, Dismantle, AmbushWithdraw, GuardPrisoners, ThrowDc, DetonateDc];
+            Rout, Deploy, Recombine, Transfer, Drop, Recover, Dismantle, AmbushWithdraw, GuardPrisoners, ThrowDc, DetonateDc, FireStarshell];
 
     public static string VersionKey(Guid tenant, string game) => $"asl.game:{tenant:N}:{game}";
 

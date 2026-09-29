@@ -718,6 +718,22 @@ public static class GameEventReader
                 return sniperId is null || sniperTrigger is null || sniperRoll is null || sniperDr is null || sniperResult is null
                     ? Missing(diagnostics, "A Sniper attack names its Sniper, trigger, roll, dr, and result.", path)
                     : new SniperAttacked(sniperId, sniperTrigger, sniperRoll, sniperDr.Value, sniperTarget, fields.OptionalString(payload, "unit", path), sniperResult);
+            case "wind-changed":
+                var windRoll = fields.RequiredString(payload, "roll", path);
+                return windRoll is null
+                    ? Missing(diagnostics, "A Wind Change DR names its roll.", path)
+                    : new WindChanged(windRoll, fields.OptionalInteger(payload, "nvr", path), fields.OptionalString(payload, "precipitation", path),
+                        fields.OptionalBoolean(payload, "gust", path), fields.OptionalString(payload, "nvrRoll", path));
+            case "starshell-fired":
+                var starshellUnit = fields.RequiredString(payload, "unit", path);
+                var starshellFrom = ReadLocation(payload, "from", path, fields, diagnostics);
+                var starshellMethod = fields.RequiredString(payload, "method", path);
+                var starshellUsage = fields.RequiredString(payload, "usageRoll", path);
+                var starshellAt = payload.TryGetProperty("at", out _) ? ReadLocation(payload, "at", path, fields, diagnostics) : null;
+                return starshellUnit is null || starshellFrom is null || starshellMethod is null || starshellUsage is null
+                    ? Missing(diagnostics, "A Starshell attempt names its unit, Location, method, and Usage roll.", path)
+                    : new StarshellFired(starshellUnit, starshellFrom, starshellMethod, starshellUsage, fields.OptionalBoolean(payload, "passed", path),
+                        fields.OptionalString(payload, "placementRoll", path), starshellAt, fields.OptionalString(payload, "starshell", path));
             case "prisoners-massacred":
                 return new PrisonersMassacred(fields.StringList(payload, "units", path), fields.StringList(payload, "prisoners", path),
                     fields.OptionalBoolean(payload, "berserk", path));

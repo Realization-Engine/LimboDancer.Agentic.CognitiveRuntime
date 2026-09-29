@@ -83,9 +83,11 @@ public static class ScenarioA1CloseCombatCalculator
             return new AmbushResolution(CloseCombatResolution.Abstained, ["asl.a1.cc.extra-roll:ambush"], [], null);
         }
 
-        // A11.4: a side whose Final dr is at least three below the other's ambushes it.
-        var ambusher = results[0].FinalDr <= results[1].FinalDr - 3 ? results[0].Side
-            : results[1].FinalDr <= results[0].FinalDr - 3 ? results[1].Side
+        // A11.4: a side whose Final dr is at least three below the other's ambushes it; E1.77 (ruling R16.7; table player, pass 16): the ATTACKER's
+        // need be only two below at night, unless Illuminated.
+        int Margin(AmbushSide side) => facts.DarkNight == true && side.Side == facts.AttackerSide ? 2 : 3;
+        var ambusher = results[0].FinalDr <= results[1].FinalDr - Margin(results[0]) ? results[0].Side
+            : results[1].FinalDr <= results[0].FinalDr - Margin(results[1]) ? results[1].Side
             : null;
         return new AmbushResolution(CloseCombatResolution.Resolved, [], results, ambusher);
     }

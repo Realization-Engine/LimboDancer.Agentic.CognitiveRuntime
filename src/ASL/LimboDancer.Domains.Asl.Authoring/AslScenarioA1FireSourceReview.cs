@@ -155,11 +155,14 @@ public static class AslScenarioA1FireSourceReview
     /// </summary>
     public const string Pass15ComparisonFile = "asl-scenario-a1.pass15-pdf-comparison.json";
     public const string Pass15ComparisonSha256 = "3cccc3cd658e922de30fbb148ffdf9e240a1de762782e4c06baeed24f14f97da";
+    public const string Pass16ComparisonFile = "asl-scenario-a1.pass16-pdf-comparison.json";
+    public const string Pass16ComparisonSha256 = "7318898a44db0d6a960f59f3a3fa35bbfbb1238e0fd7b65fde31c6bc60367f16";
 
     private const string ChapterA = "asl-easlrb-3.10:chapter-a";
     private const string ChapterB = "asl-easlrb-3.10:chapter-b";
     private const string ChapterC = "asl-easlrb-3.10:chapter-c";
     private const string ChapterD = "asl-easlrb-3.10:chapter-d";
+    private const string ChapterE = "asl-easlrb-3.10:chapter-e";
 
     // Rule, the element id the conversion registered the fragment under, source, line, kind, physical page.
     private static readonly (string Rule, string Registered, string Source, int Line, SourceFragmentKind Kind, int Page)[] Subjects =
@@ -844,6 +847,82 @@ public static class AslScenarioA1FireSourceReview
         ("A20.551", "A20.551", ChapterA, 1442, SourceFragmentKind.RuleText, 88),
     ];
 
+    private static readonly (string Rule, string Registered, string Source, int Line, SourceFragmentKind Kind, int Page)[] Pass16Subjects =
+    [
+        ("E1.1", "E1.1", ChapterE, 29, SourceFragmentKind.RuleText, 222),
+        ("E1.101", "E1.101", ChapterE, 33, SourceFragmentKind.RuleText, 222),
+        ("E1.12", "E1.12", ChapterE, 63, SourceFragmentKind.RuleText, 222),
+        ("E1.12", "E1.12", ChapterE, 71, SourceFragmentKind.RuleContinuation, 223),
+        ("E1.13", "E1.13", ChapterE, 73, SourceFragmentKind.RuleText, 223),
+        ("E1.14", "E1.14", ChapterE, 75, SourceFragmentKind.RuleText, 223),
+        ("E1.15", "E1.15", ChapterE, 77, SourceFragmentKind.RuleText, 223),
+        ("E1.31", "E1.31", ChapterE, 103, SourceFragmentKind.RuleText, 223),
+        ("E1.32", "E1.32", ChapterE, 105, SourceFragmentKind.RuleText, 223),
+        ("E1.33", "E1.33", ChapterE, 109, SourceFragmentKind.RuleText, 223),
+        ("E1.51", "E1.51", ChapterE, 131, SourceFragmentKind.RuleText, 224),
+        ("E1.52", "E1.52", ChapterE, 133, SourceFragmentKind.RuleText, 224),
+        ("E1.54", "E1.54", ChapterE, 143, SourceFragmentKind.RuleText, 224),
+        ("E1.56", "E1.56", ChapterE, 164, SourceFragmentKind.RuleText, 225),
+        ("E1.7", "E1.7", ChapterE, 174, SourceFragmentKind.RuleText, 225),
+        ("E1.75", "E1.75", ChapterE, 188, SourceFragmentKind.RuleText, 225),
+        ("E1.76", "E1.76", ChapterE, 190, SourceFragmentKind.RuleText, 225),
+        ("E1.77", "E1.77", ChapterE, 194, SourceFragmentKind.RuleText, 225),
+        ("E1.8", "E1.8", ChapterE, 198, SourceFragmentKind.RuleText, 226),
+        ("E1.81", "E1.81", ChapterE, 206, SourceFragmentKind.RuleText, 226),
+        ("E1.9", "E1.9", ChapterE, 234, SourceFragmentKind.RuleText, 226),
+        ("E1.91", "E1.91", ChapterE, 236, SourceFragmentKind.RuleText, 226),
+        ("E1.91", "E1.91", ChapterE, 238, SourceFragmentKind.RuleContinuation, 226),
+        ("E1.91", "E1.91", ChapterE, 242, SourceFragmentKind.RuleContinuation, 226),
+        ("E1.92", "E1.92", ChapterE, 244, SourceFragmentKind.RuleText, 226),
+        ("E1.92", "E1.92", ChapterE, 253, SourceFragmentKind.RuleContinuation, 226),
+        ("E1.92", "E1.92", ChapterE, 255, SourceFragmentKind.RuleContinuation, 226),
+        ("E1.921", "E1.921", ChapterE, 257, SourceFragmentKind.RuleText, 226),
+        ("E1.922", "E1.922", ChapterE, 259, SourceFragmentKind.RuleText, 226),
+        ("E1.922", "E1.922", ChapterE, 261, SourceFragmentKind.RuleContinuation, 226),
+        ("E1.922", "E1.922", ChapterE, 265, SourceFragmentKind.RuleContinuation, 226),
+        ("E1.922", "E1.922", ChapterE, 269, SourceFragmentKind.RuleContinuation, 227),
+        ("E1.922", "E1.922", ChapterE, 271, SourceFragmentKind.RuleContinuation, 227),
+        ("E1.922", "E1.922", ChapterE, 273, SourceFragmentKind.RuleContinuation, 227),
+        ("E1.922", "E1.922", ChapterE, 275, SourceFragmentKind.RuleContinuation, 227),
+        ("E1.923", "E1.923", ChapterE, 277, SourceFragmentKind.RuleText, 227),
+        ("E1.94", "E1.94", ChapterE, 292, SourceFragmentKind.RuleText, 227),
+        ("E3.1", "E3.1", ChapterE, 385, SourceFragmentKind.RuleText, 228),
+        ("E3.1", "E3.1", ChapterE, 389, SourceFragmentKind.RuleContinuation, 229),
+        ("E3.32", "E3.32", ChapterE, 458, SourceFragmentKind.RuleText, 229),
+        ("E3.4", "E3.4", ChapterE, 460, SourceFragmentKind.RuleText, 229),
+        ("E3.5", "E3.5", ChapterE, 462, SourceFragmentKind.RuleText, 229),
+        ("E3.51", "E3.51", ChapterE, 464, SourceFragmentKind.RuleText, 229),
+        ("E3.52", "E3.52", ChapterE, 468, SourceFragmentKind.RuleText, 229),
+        ("E3.54", "E3.54", ChapterE, 472, SourceFragmentKind.RuleText, 229),
+        ("E3.6", "E3.6", ChapterE, 476, SourceFragmentKind.RuleText, 229),
+        ("E3.6", "E3.6", ChapterE, 482, SourceFragmentKind.RuleContinuation, 230),
+        ("E3.62", "E3.62", ChapterE, 486, SourceFragmentKind.RuleText, 230),
+        ("E3.64", "E3.64", ChapterE, 490, SourceFragmentKind.RuleText, 230),
+        ("E3.65", "E3.65", ChapterE, 492, SourceFragmentKind.RuleText, 230),
+        ("E3.7", "E3.7", ChapterE, 494, SourceFragmentKind.RuleText, 230),
+        ("E3.71", "E3.71", ChapterE, 498, SourceFragmentKind.RuleText, 230),
+        ("E3.711", "E3.711", ChapterE, 502, SourceFragmentKind.RuleText, 230),
+        ("E3.72", "E3.72", ChapterE, 510, SourceFragmentKind.RuleText, 230),
+        ("E3.722", "E3.722", ChapterE, 514, SourceFragmentKind.RuleText, 230),
+        ("E3.723", "E3.723", ChapterE, 516, SourceFragmentKind.RuleText, 230),
+        ("E3.724", "E3.724", ChapterE, 518, SourceFragmentKind.RuleText, 230),
+        ("E3.73", "E3.73", ChapterE, 520, SourceFragmentKind.RuleText, 230),
+        ("E3.731", "E3.731", ChapterE, 524, SourceFragmentKind.RuleText, 231),
+        ("E3.733", "E3.733", ChapterE, 528, SourceFragmentKind.RuleText, 231),
+        ("E3.7331", "E3.7331", ChapterE, 530, SourceFragmentKind.RuleText, 231),
+        ("E3.74", "E3.74", ChapterE, 536, SourceFragmentKind.RuleText, 231),
+        ("E3.741", "E3.741", ChapterE, 540, SourceFragmentKind.RuleText, 231),
+        ("E3.741", "E3.741", ChapterE, 542, SourceFragmentKind.RuleContinuation, 231),
+        ("E3.741", "E3.741", ChapterE, 544, SourceFragmentKind.RuleContinuation, 231),
+        ("E3.742", "E3.742", ChapterE, 546, SourceFragmentKind.RuleText, 231),
+        ("E3.8", "E3.8", ChapterE, 560, SourceFragmentKind.RuleText, 231),
+        ("E3.9", "E3.9", ChapterE, 562, SourceFragmentKind.RuleText, 231),
+        ("B25.65", "B25.65", ChapterB, 1759, SourceFragmentKind.RuleText, 144),
+        ("B25.65", "B25.65", ChapterB, 1773, SourceFragmentKind.RuleContinuation, 144),
+        ("B25.65", "B25.65", ChapterB, 1779, SourceFragmentKind.RuleContinuation, 145),
+        ("B.8", "B.8", ChapterB, 50, SourceFragmentKind.RuleText, 112),
+    ];
+
     private static readonly (string Rule, string Registered, string Source, int Line, SourceFragmentKind Kind, int Page)[] Pass15Subjects =
     [
         ("A14.1", "A14.1", ChapterA, 1170, SourceFragmentKind.RuleText, 82),
@@ -898,7 +977,7 @@ public static class AslScenarioA1FireSourceReview
     private static readonly HashSet<(string Rule, int Line)> TwoPartSubjects =
         [("A7.212", 445), ("A8.26", 644), ("A8.31", 658), ("A9.2", 690), ("B3.4", 138), ("A12.11", 992), ("A11.41", 940), ("A20.21", 1402),
             ("A7.308", 485), ("D3.5", 383), ("A12.2", 1082), ("C6.17", 506), ("C13.32", 1008),
-            ("A4.134", 253), ("A4.31", 271), ("A8.15", 602), ("B9.35", 486), ("B9.41", 506), ("B24.2", 1594), ("D7.22", 688), ("A7.7", 545), ("A9.5", 726), ("A10.51", 798), ("A10.531", 806), ("A10.532", 812), ("A23.3", 1524)];
+            ("A4.134", 253), ("A4.31", 271), ("A8.15", 602), ("B9.35", 486), ("B9.41", 506), ("B24.2", 1594), ("D7.22", 688), ("A7.7", 545), ("A9.5", 726), ("A10.51", 798), ("A10.531", 806), ("A10.532", 812), ("A23.3", 1524), ("E1.7", 174), ("E3.6", 482)];
 
     /// <summary>The verified fragments, in subject order, keyed by rule id for the Fire package.</summary>
     public static IReadOnlyList<(string Rule, int Page, SourceFragment Fragment)> Fragments(GeneratedManifests manifests)
@@ -1000,6 +1079,12 @@ public static class AslScenarioA1FireSourceReview
         Build(repositoryRoot, manifests, attestation, Pass13ComparisonFile, Pass13ComparisonSha256, Pass13Subjects,
             "backlog pass 13 review");
 
+    /// <summary>The backlog pass 16 subjects: night and weather.</summary>
+    public static AslScenarioA1VerificationBatch BuildPass16(string repositoryRoot,
+        GeneratedManifests manifests, AslScenarioA1SourceAttestation attestation) =>
+        Build(repositoryRoot, manifests, attestation, Pass16ComparisonFile, Pass16ComparisonSha256, Pass16Subjects,
+            "backlog pass 16 review");
+
     /// <summary>The backlog pass 15 subjects: special units and nationalities.</summary>
     public static AslScenarioA1VerificationBatch BuildPass15(string repositoryRoot,
         GeneratedManifests manifests, AslScenarioA1SourceAttestation attestation) =>
@@ -1071,7 +1156,7 @@ public static class AslScenarioA1FireSourceReview
                 "Comparison no longer names the exact registered fragment.");
 
             var normalized = Normalize(fragment.Content, file is Pass7ComparisonFile or Pass8ComparisonFile or Pass9ComparisonFile or Pass9bComparisonFile or Pass10ComparisonFile
-                or Pass11ComparisonFile or Pass12ComparisonFile or Pass13ComparisonFile or Pass14ComparisonFile or Pass15ComparisonFile);
+                or Pass11ComparisonFile or Pass12ComparisonFile or Pass13ComparisonFile or Pass14ComparisonFile or Pass15ComparisonFile or Pass16ComparisonFile);
             var comparison = evidence.GetProperty("comparison").GetString();
             Require(evidence.GetProperty("normalizedAlphanumericSha256").GetString() == Hashing.Sha256Text(normalized)
                 && evidence.GetProperty("normalizedAlphanumericLength").GetInt32() == normalized.Length

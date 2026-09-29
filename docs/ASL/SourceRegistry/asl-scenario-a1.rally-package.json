@@ -3,8 +3,8 @@
   "status": "published-bounded-rally-package",
   "domainId": "asl",
   "packageId": "scenario-a1-rally",
-  "declaredUse": "Read-only conclusions for a declared Rally attempt by a broken unit of the reviewed Scenario A1 catalog: the DRM, the Final DR against the broken Morale Level, and the effect, including Fate, under the user's rulings of 2026-09-26 (ASL Unit Rally and Fire Extensions Plan, R19.1 to R19.10 and R0.2); with Heat of Battle and Leader Creation after an Original 2 (Deviations, Ordnance, and Vehicles Plan, R27.1 to R28.8 and R30.1 to R30.7); with the DM sources, terrain, and Self-Rally of Backlog Passes Plan R13.1, R13.2, and R13.8; and Commissars, NKVD Field Promotion, and Allied Troops (Backlog Passes Plan, R15.6 to R15.8).",
-  "caseMatrixSha256": "a3ee5d6499adc2ea4cdab7c6c4c56fad5082749cf54d549945ec3e18d479aecd",
+  "declaredUse": "Read-only conclusions for a declared Rally attempt by a broken unit of the reviewed Scenario A1 catalog: the DRM, the Final DR against the broken Morale Level, and the effect, including Fate, under the user's rulings of 2026-09-26 (ASL Unit Rally and Fire Extensions Plan, R19.1 to R19.10 and R0.2); with Heat of Battle and Leader Creation after an Original 2 (Deviations, Ordnance, and Vehicles Plan, R27.1 to R28.8 and R30.1 to R30.7); with the DM sources, terrain, and Self-Rally of Backlog Passes Plan R13.1, R13.2, and R13.8; and Commissars, NKVD Field Promotion, and Allied Troops (Backlog Passes Plan, R15.6 to R15.8); and Extreme Winter Fate (Backlog Passes Plan, pass 16).",
+  "caseMatrixSha256": "5b7fd6d472f2ea4f59819e1f3d3af2086304fef01a769b034492ae467e82f4a2",
   "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
   "catalogSha256": "41f8b8272bfda60c83aa8827d0c99c427552b6638f78330ae48ae47d56100f24",
   "sourceFragments": [
@@ -378,6 +378,20 @@
       "startLine": 1378,
       "fragmentId": "asl-fragment:sha256:f011b668d0a9c48dd369d5995b482bdae2c6ab6aa16d1d28428e47bb7cc1762d",
       "contentSha256": "5f520fdecb100dcd2982c8daad01df9f32a9a987dee23b93e6a4ae733a00c292"
+    },
+    {
+      "ruleId": "E3.74",
+      "physicalPdfPage": 231,
+      "startLine": 536,
+      "fragmentId": "asl-fragment:sha256:38a1908c06212aa2f91b7e6ed0842511b94b3946922994151389a61dab6a821d",
+      "contentSha256": "421926b9e95ee3809c9aeef21639d397c04b9be8a91dac2c3f3ac893497b8c5c"
+    },
+    {
+      "ruleId": "E3.742",
+      "physicalPdfPage": 231,
+      "startLine": 546,
+      "fragmentId": "asl-fragment:sha256:5eaee03638e795ad1e0fbe295a73c5b42b2c50abb767d46c910454e9444b8d8d",
+      "contentSha256": "26ca0c08b042d37a02507ef856b56550a4a2abcb32f1301c43ddcb33398eb284"
     }
   ],
   "rulings": {
@@ -400,7 +414,8 @@
     "noQuarter": "a-side-faced-with-no-quarter-treats-a-heat-of-battle-surrender-as-berserk-and-is-not-disrupted-A20.3-A15.5 (R5.6)",
     "commissar": "a-commissar-alone-directs-a-rally-in-his-location-plus-one-morale-below-10-immune-to-dm-a-failed-mmc-is-replaced-by-its-next-lower-quality-a-squad-already-the-lowest-reduced-a-hs-crew-or-smc-that-cannot-be-eliminated; a-broken-commissar-self-rallies-A25.221-A25.222 (R15.6)",
     "nkvdFieldPromotion": "an-nkvd-mmcs-field-promotion-uses-the-a25.25-table-dr-1-a-10-0-2-3-a-9-0-4-5-an-8-plus-1-commissar-6-none-plus-1-broken-minus-1-fanatic-A25.25 (R15.7)",
-    "alliedTroops": "a-leader-rallying-allied-troops-of-another-nationality-is-one-worse-A10.7 (R15.8)"
+    "alliedTroops": "a-leader-rallying-allied-troops-of-another-nationality-is-one-worse-A10.7 (R15.8)",
+    "extremeWinterFate": "extreme-winter-makes-an-original-rally-dr-of-11-fate-as-12-is-for-non-finnish-axis-units-before-april-1942-and-russians-before-april-1941-outside-a-building-or-pillbox-E3.742 (R16.14)"
   },
   "resolution": {
     "eligibility": "A broken unit of the catalog in its Location in the RPh, once per Player Turn and with no other RPh action (A3.1, A10.6); rallied by an unbroken friendly leader in the same Location (A10.6, A10.7), or by Self-Rally when no Good Order friendly leader is there (A10.63): a broken leader (A10.71), a unit with Self-Rally capability, or the first MMC Rally attempt of the side's own RPh (A18.11); never by a Disrupted unit (A19.12).",
@@ -428,7 +443,8 @@
     "A1-rally-marsh-rubble",
     "A1-rally-mmc-self-rally-none",
     "A1-rally-commissar",
-    "A1-rally-nkvd-commissar"
+    "A1-rally-nkvd-commissar",
+    "A1-rally-extreme-winter-fate"
   ],
   "executionAuthority": "none",
   "excludedOutcomes": [
@@ -441,5 +457,5 @@
     "Commissars created by NKVD Field Promotion (A25.25)",
     "prisoners exchanged for Unarmed counters (A20.5), and prisoner escape (A20.55)"
   ],
-  "priorRallyPackageManifestSha256": "ba0278e017520034864045a6cbcfc3fcca00628c59b96e60c7e1058bc546f223"
+  "priorRallyPackageManifestSha256": "3eb6e2144d053f4de8ab9d0bdbb765c93448726a16595f0561ed4e8b9c010715"
 }

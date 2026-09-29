@@ -291,4 +291,33 @@ public sealed class PlayPageDemoFixesTests : IDisposable
         Assert.Equal(2, live.History("village")!.Events.Count(item => item.Payload is Units.State.FireResolved));
         Assert.False(live.History("village")!.HasErrors);
     }
+
+    [Fact]
+    public void ANightGameIsSetUpWithItsSpecialRulesAndFiresAStarshell()
+    {
+        // Backlog pass 16 (rulings R16.1, R16.8): a new game names night:1 among its special rules; in the PFPh g1's leader fires a Starshell in its own
+        // hex, which lands one hex away and Illuminates three hexes around it (E1.922, E1.923).
+        var hexes = Hexes();
+        var page = context.Render<PlayPage>();
+        page.Find("#new-board").Change(Board);
+        page.Find("#new-first").Change("german");
+        page.Find("#new-second").Change("russian");
+        page.Find("#new-first-elr").Change("3");
+        page.Find("#new-second-elr").Change("3");
+        page.Find("#new-rules").Change("night:1 weather:overcast");
+        Place(page, "g1", "attacker-squad", hexes.One);
+        Place(page, "gl", "attacker-leader-8-0", hexes.One);
+        Place(page, "r1", "defender-squad", hexes.Two);
+        Commit(page, "#propose-setup");
+        Assert.Contains("Night: Base NVR 1", page.Find("#play-conditions").TextContent, StringComparison.Ordinal);
+        Advance(page, 1);
+        page.Find("#starshell-unit").Change("gl");
+        page.Find("#starshell-method").Change("own-hex");
+        dice.Enqueue(Enumerable.Repeat(1, 4));
+        Commit(page, "#propose-starshell");
+        var state = live.History("village")!.Current!;
+        Assert.Single(state.Entities, entity => entity.Kind == "asl:starshell");
+        Assert.Contains("fires a Starshell", page.Find("#play-night").TextContent, StringComparison.Ordinal);
+        Assert.False(live.History("village")!.HasErrors);
+    }
 }

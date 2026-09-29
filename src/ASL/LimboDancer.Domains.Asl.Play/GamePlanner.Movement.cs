@@ -271,6 +271,12 @@ public sealed partial class GamePlanner
         }
 
         // A4.5 (ruling R5.1): Double Time by Infantry neither broken, wounded, berserk, nor already CX, nor whose CX counter left at this MPh's start.
+        // E1.51 (backlog pass 16, ruling R16.5): no Double Time for a unit whose NVR is 0.
+        if (doubleTime && state.Nvr == 0)
+        {
+            return Refused(scope, label, expected, "play.night-double-time: with an NVR of 0 a unit may not Double Time (E1.51)");
+        }
+
         if (doubleTime && movers.FirstOrDefault(unit => Is(unit!, Conditions.Wounded) || Is(unit!, Conditions.Berserk) || Is(unit!, Conditions.Cx)
             || state.NoDoubleTime.Contains(unit!.Id)) is { } tired)
         {
@@ -417,7 +423,8 @@ public sealed partial class GamePlanner
 
             var extra = doubleTime ? (unit!.MfSpent == 0 && !unit.HalfMfSpent ? 2 : 1) : unit!.DoubleTimeMf;
             var exhausted = doubleTime || Is(unit, Conditions.Cx);
-            var bonus = (entry.RoadRate && !unit.OffRoad && pushed is null ? 1 : 0) + (LeaderBonus(state, unit, [.. movers.Select(item => item!)]) ? 2 : 0);
+            // E1.51 (backlog pass 16, ruling R16.5): no road bonus with an NVR of 0.
+            var bonus = (entry.RoadRate && !unit.OffRoad && pushed is null && state.Nvr != 0 ? 1 : 0) + (LeaderBonus(state, unit, [.. movers.Select(item => item!)]) ? 2 : 0);
             var ipc = unit.Id == leaderIpcTo.Recipient ? 1 : unit.Id == leaderIpcTo.Leader ? -1 : 0;
             if (MfAllotment(state, unit, extra, exhausted, bonus, ipc) is not { } allowance || MfAllotment(state, unit, 0, exhausted, bonus, ipc) is not { } plain)
             {
@@ -494,7 +501,9 @@ public sealed partial class GamePlanner
         // Good Order enemy ground unit within 16 hexes; a forced back reveals the whole stack (A12.15).
         void Unmask(List<GameEvent> events)
         {
-            var seen = forcedBack || (EnemyGoodOrderInLosWithin16(state, state.PhasingSide!, landed) && (!assault || terrain == "open-ground"));
+            // E1.31 (backlog pass 16, ruling R16.4): at night a mover loses "?" only by Non-Assault Movement in an Illuminated Location.
+            var seen = forcedBack || (EnemyGoodOrderInLosWithin16(state, state.PhasingSide!, landed)
+                && (state.Night ? !assault && Illuminated(state, landed) : !assault || terrain == "open-ground"));
             foreach (var unit in movers.Where(unit => seen && (unit!.Kind == UnitKinds.Dummy || Is(unit, Conditions.Concealed))))
             {
                 events.Add(unit!.Kind == UnitKinds.Dummy

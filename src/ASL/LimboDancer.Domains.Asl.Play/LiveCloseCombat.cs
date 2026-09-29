@@ -318,6 +318,11 @@ public sealed class CloseCombatRecordVerifier(ScenarioA1CloseCombatReference ref
             return reason;
         }
 
+        // E1.77 (ruling R16.7): whether the Location is Illuminated is the planner's reading of the map; by day there is no dark night.
+        expected = expected with
+        {
+            DarkNight = state.Night ? recorded.DarkNight : null
+        };
         if (JsonSerializer.Serialize(expected, LiveFire.Json) != JsonSerializer.Serialize(recorded, LiveFire.Json))
         {
             return "The Ambush record's facts do not match the game state.";

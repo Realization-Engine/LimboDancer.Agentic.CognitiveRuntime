@@ -208,19 +208,19 @@ public sealed class ScenarioA1OrdnanceReference
 /// </summary>
 public sealed class ScenarioA1OrdnancePackage : IDomainPackageResolver
 {
-    public const string ManifestSha256 = "b10deb34d69d49b5f7fe0ab1dbc2c5261b1b2736231411e8cd779ec1ddd301b6";
-    public const string MatrixSha256 = "81542d82bccce0cd67e01c21bb5268c55c838bc4f894839dfa98b5b3c7a1d7ab";
+    public const string ManifestSha256 = "5f21cf2bb29a582427faa360aca5fb6d8765a27f6f5762fa4712a3463ad1441f";
+    public const string MatrixSha256 = "671f0ded004a8e284e8727659e2a88fc30a1a42ef11cf616d2efbb1f95ef472a";
     /// <summary>
-    /// The package as revised at backlog pass 9b (the ATR and the Panzerschreck; catalog 1.9.0), before its backlog pass 15 revision (catalog 1.10.0).
-    /// Earlier: backlog pass 9, 58030546.
+    /// The package as revised at backlog pass 15 (catalog 1.10.0), before its backlog pass 16 revision (the weather cushion and Extreme Winter B#).
+    /// Earlier: backlog pass 9b, 120b1df9; backlog pass 9, 58030546.
     /// </summary>
-    public const string PriorManifestSha256 = "120b1df9714537883f198ac2876dbd7f084517e1041f400cf5f13895f3ccb699";
+    public const string PriorManifestSha256 = "b10deb34d69d49b5f7fe0ab1dbc2c5261b1b2736231411e8cd779ec1ddd301b6";
     public static readonly DomainPackageRef Identity = new(new DomainId("asl"), "scenario-a1-ordnance", "sha256:" + ManifestSha256);
 
     private static readonly string[] Cases =
     [
         "A1-ordnance-hit-resolved", "A1-ordnance-miss-resolved", "A1-ordnance-phase-outside", "A1-ordnance-gun-outside", "A1-ordnance-crew-outside",
-        "A1-ordnance-already-fired", "A1-ordnance-range-outside", "A1-ordnance-target-outside", "A1-ordnance-undecided", "A1-ordnance-roll-missing", "A1-ordnance-owner-options", "A1-ordnance-cx", "A1-ordnance-afv-cover", "A1-ordnance-vehicle-hit", "A1-ordnance-vehicle-outside", "A1-ordnance-special-ammunition", "A1-ordnance-tank-fire", "A1-ordnance-shock-and-crews", "A1-ordnance-unarmored-vehicle", "A1-ordnance-defensive-first-fire", "A1-ordnance-intensive-fire", "A1-ordnance-gun-target", "A1-ordnance-special-shots", "A1-ordnance-overstacking", "A1-ordnance-light-mortar", "A1-ordnance-area-target", "A1-ordnance-spotting", "A1-ordnance-panzerfaust", "A1-ordnance-panzerfaust-outside", "A1-ordnance-atr", "A1-ordnance-panzerschreck",
+        "A1-ordnance-already-fired", "A1-ordnance-range-outside", "A1-ordnance-target-outside", "A1-ordnance-undecided", "A1-ordnance-roll-missing", "A1-ordnance-owner-options", "A1-ordnance-cx", "A1-ordnance-afv-cover", "A1-ordnance-vehicle-hit", "A1-ordnance-vehicle-outside", "A1-ordnance-special-ammunition", "A1-ordnance-tank-fire", "A1-ordnance-shock-and-crews", "A1-ordnance-unarmored-vehicle", "A1-ordnance-defensive-first-fire", "A1-ordnance-intensive-fire", "A1-ordnance-gun-target", "A1-ordnance-special-shots", "A1-ordnance-overstacking", "A1-ordnance-light-mortar", "A1-ordnance-area-target", "A1-ordnance-spotting", "A1-ordnance-panzerfaust", "A1-ordnance-panzerfaust-outside", "A1-ordnance-atr", "A1-ordnance-panzerschreck", "A1-ordnance-weather",
     ];
 
     private static readonly string[] PinnedDigests = ["sourcePdfSha256", "toHitTranscriptionSha256", "iftTranscriptionSha256", "catalogSha256",

@@ -58,6 +58,16 @@ public sealed record RallyAttempt(
     }
 
     /// <summary>
+    /// Whether Extreme Winter's Fate applies to the unit (E3.742; ruling R16.14): a non-Finnish Axis unit before April 1942, or a Russian one before
+    /// April 1941, outside a building or pillbox; an Original DR of 11 is then Fate as 12 is (A10.64). Null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? ExtremeWinterFate
+    {
+        get; init;
+    }
+
+    /// <summary>
     /// The owner's answers to the attempt's options (ruling R5.8), <c>take</c> or <c>decline</c> by key: <c>leaderCreation:&lt;unit&gt;</c>
     /// (A18.11) and <c>battleHardening:&lt;unit&gt;</c> (A15.3). Null means every option is taken; otherwise an option the attempt reaches with
     /// no answer leaves it undecided.

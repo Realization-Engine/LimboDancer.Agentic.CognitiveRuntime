@@ -573,6 +573,13 @@
       "startLine": 1758,
       "fragmentId": "asl-fragment:sha256:5850efcfceb4866ca3d2ce0e7eaa3780ef67022fb90fe740955e5c1087adacab",
       "contentSha256": "48980cfe17197567162ed6578ced4cc60cd7164ef883d4d53ec4ba7189daf9a2"
+    },
+    {
+      "ruleId": "E1.77",
+      "physicalPdfPage": 225,
+      "startLine": 194,
+      "fragmentId": "asl-fragment:sha256:ee651919628af8e5c2e3217b1c3e0c3ef0a861a01fea5b1c8ce59e633a97bbb6",
+      "contentSha256": "25a6b290d8f834f5b4d31cd5098edb11cc299e416dc4e0f2cd9545072b4981c8"
     }
   ],
   "rulings": {
@@ -603,7 +610,8 @@
     "infiltration": "the-attackers-attacks-first-then-the-defenders; after-an-original-2-its-attackers-with-a-declared-destination-not-eliminated-captured-or-pinned-withdraw; after-an-original-12-its-surviving-defenders-with-one-withdraw-forfeiting-their-attacks-not-yet-resolved-A11.22 (R14.8)",
     "overstacking": "plus-one-per-squad-equivalent-a-side-exceeds-three-to-its-cc-attacks-and-minus-one-to-cc-attacks-on-its-units-prisoners-never-counted-A5.12-A5.131-A5.5-A20.51 (R14.10)",
     "bpv": "the-mmc-of-the-highest-bpv-founds-a-leader-created-in-cc; the-mmc-he-defends-with-by-random-selection-when-an-enemy-attack-takes-some-of-the-attacks-mmc-A18.2 (R14.12)",
-    "nkvdFieldPromotion": "an-nkvd-mmcs-field-promotion-in-cc-uses-the-a25.25-table-dr-1-a-10-0-2-3-a-9-0-4-5-an-8-plus-1-commissar-6-none-minus-1-per-odds-column-below-1-1-minus-1-fanatic-A25.25 (R15.7)"
+    "nkvdFieldPromotion": "an-nkvd-mmcs-field-promotion-in-cc-uses-the-a25.25-table-dr-1-a-10-0-2-3-a-9-0-4-5-an-8-plus-1-commissar-6-none-minus-1-per-odds-column-below-1-1-minus-1-fanatic-A25.25 (R15.7)",
+    "nightAmbush": "at-night-unless-the-location-is-illuminated-the-attackers-ambush-needs-a-final-dr-only-two-lower-the-defenders-still-three-E1.77 (R16.7)"
   },
   "resolution": {
     "odds": "The attackers' FP against the defenders' FP, rounded down to the printed CCT column; < 1-8 below one to eight, > 10-1 above ten to one (A11.11, p. 692).",
@@ -907,6 +915,15 @@
         "A5.5"
       ],
       "reason": "An overstacking side adds one per excess squad-equivalent to its attacks and subtracts one from attacks on it (ruling R14.10)."
+    },
+    {
+      "caseId": "A1-cc-night-ambush",
+      "reviewStatus": "reviewed-bounded",
+      "expectedDisposition": "resolved",
+      "sourceRules": [
+        "E1.77"
+      ],
+      "reason": "At night, unless the Location is Illuminated, the ATTACKER's Ambush needs a Final dr only two lower; the DEFENDER's still three (ruling R16.7)."
     }
   ],
   "admissionRule": "A declared round is resolved only when every fact is within the reviewed scope and every roll it needs is recorded; otherwise it is Abstained or Indeterminate with its reasons.",
@@ -983,5 +1000,5 @@
     "finnish-square-half-squad": 6
   },
   "bpvSource": "A./G. National Capabilities Chart, physical page 109 of the registered PDF, read from a 150 dpi render: German 4-6-7 10 (HS 4), 4-4-7 7 (3), 4-3-6 5 (2), 4-6-8 13 (5); Russian 4-4-7 7 (3), 5-2-7 7 (3), 4-2-6 4 (1), 4-5-8 11 (5), 6-2-8 12 (5), NKVD 6-2-8 13 (6). Backlog pass 15 adds the American, British, Italian, Finnish, and French MMC of catalog 1.10.0 from the same chart.",
-  "revision": "Backlog pass 15 (2026-09-28): NKVD Field Promotion creates Commissars (ruling R15.7); the BPV of five more nationalities; catalog 1.10.0. Earlier: Backlog pass 14 (2026-09-28): Hand-to-Hand, concealed and TI units, capture attempts, prisoners and their escape, Infiltration, overstacking, and the BPV of Field Promotion (rulings R14.1 to R14.13)."
+  "revision": "Backlog pass 16 (2026-09-29): the night Ambush (ruling R16.7). Earlier: Backlog pass 15 (2026-09-28): NKVD Field Promotion creates Commissars (ruling R15.7); the BPV of five more nationalities; catalog 1.10.0. Earlier: Backlog pass 14 (2026-09-28): Hand-to-Hand, concealed and TI units, capture attempts, prisoners and their escape, Infiltration, overstacking, and the BPV of Field Promotion (rulings R14.1 to R14.13)."
 }

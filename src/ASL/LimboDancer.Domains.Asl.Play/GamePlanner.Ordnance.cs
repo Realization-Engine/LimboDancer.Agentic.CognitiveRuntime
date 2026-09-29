@@ -91,6 +91,30 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, mapReason!);
         }
 
+        // Backlog pass 16 (rulings R16.2, R16.3, R16.11 to R16.14): ordnance at a Gunflash beyond NVR is not built; the Low Visibility DRM is a Hindrance
+        // of its own on the TH DR (Case R, C6.9), never cancelling FFMO or the Open Ground cases; Mud and Deep Snow cushion HE at Infantry in Open Ground;
+        // Extreme Winter lowers the Gun's B#.
+        if (map.Value.Shot.Hit is { BeyondNvr: true })
+        {
+            return Refused(scope, label, expected, "play.night-ordnance: ordnance fire at a Gunflash beyond the firer's NVR is not built (E1.81; ruling R16.2)");
+        }
+
+        if (map.Value.Shot.Hit is { } mapped)
+        {
+            var cushioned = (state.Weather("mud") || state.Weather("deep-snow")) && map.Value.Shot.VehicleTarget is null ? true : (bool?)null;
+            map = (map.Value.Shot with
+            {
+                Hit = mapped with
+                {
+                    LowVisibilityDrm = null,
+                    CushionedOpenGround = cushioned,
+                },
+                CushionedOpenGround = cushioned,
+                LowVisibilityDrm = mapped.LowVisibilityDrm,
+                BreakdownReduction = ExtremeWinterReduction(state, state.Unit(shot.Crew?.UnitId ?? string.Empty)?.Side),
+            }, map.Value.Facing);
+        }
+
         shot = PassEightFacts(state, map.Value.Shot, target);
         var reference = OrdnanceReference.Value;
         var precheck = ScenarioA1OrdnanceCalculator.Precheck(shot, reference);
@@ -241,6 +265,8 @@ public sealed partial class GamePlanner
             Range = null,
             SameLevel = read.SameLevel,
             Los = read.Los,
+            LowVisibilityDrm = read.LowVisibilityDrm,
+            BeyondNvr = read.BeyondNvr,
             TargetTerrain = read.TargetTerrain,
             Targets = revealing.Targets,
         };
@@ -351,6 +377,8 @@ public sealed partial class GamePlanner
                 Range = null,
                 SameLevel = read.SameLevel,
                 Los = read.Los,
+                LowVisibilityDrm = read.LowVisibilityDrm,
+                BeyondNvr = read.BeyondNvr,
                 TargetTerrain = read.TargetTerrain,
                 Targets = revealing.Targets,
             },

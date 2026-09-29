@@ -47,7 +47,9 @@ public sealed partial class GamePlanner
                     "checks" or "leaderLoss" or "berserkCheck" or "crewCheck" when before.Unit(unitId) is { } checker && !Is(checker, Conditions.Captured) => checker.Side,
                     _ => null,
                 };
-                if (maker is null || before.Sides.FirstOrDefault(item => item.Id != maker) is not { San: { } san } enemy || roll.Values.Sum() != san)
+                // E1.76 (backlog pass 16, ruling R16.7): at night each side's SAN is two higher, to at most 7.
+                if (maker is null || before.Sides.FirstOrDefault(item => item.Id != maker) is not { San: { } printed } enemy
+                    || roll.Values.Sum() != (before.Night ? Math.Min(printed + 2, 7) : printed))
                 {
                     continue;
                 }

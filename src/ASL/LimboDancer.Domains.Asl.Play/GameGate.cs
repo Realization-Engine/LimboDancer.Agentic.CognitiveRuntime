@@ -190,9 +190,14 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
             && !(item.Payload is InstanceEliminated && plan.Events.Any(step => step.Payload is VehicleStepped))
             && !(item.Payload is VehicleCheckRolled or DiceRolled && plan.Events.Any(step => step.Payload is VehicleStepped))
             && !(item.Payload is ConditionsChanged && plan.Events.Any(step => step.Payload is PhaseChanged))
+            // E1.921 (table player, pass 16): a hidden Starshell firer placed beneath a "?" follows the Starshell's own record.
+            && !(item.Payload is ConditionsChanged && plan.Events.Any(step => step.Payload is StarshellFired))
             // A10.62 (ruling R13.1): the DM an action gives broken units follows its own effect.
             && !(item.Payload is ConditionsChanged dm && dm.Conditions.Keys.All(key => key == Conditions.DesperationMorale)))?.Payload switch
         {
+            // A Starshell attempt (E1.92; ruling R16.8): its hex has made its attempt this phase.
+            StarshellFired starshell => state.StarshellAttempts.Contains(starshell.From.ToString(), StringComparer.Ordinal),
+
             // Dismantling or assembling a MG (A9.8; ruling R13.6): the MG carries the state and its use.
             ConditionsChanged dismantled when dismantled.Conditions.ContainsKey(Conditions.Dismantled) => state.Find(dismantled.Id) is EquipmentInstance weapon
                 && dismantled.Conditions.All(item => GameState.Condition(weapon, item.Key) == item.Value),

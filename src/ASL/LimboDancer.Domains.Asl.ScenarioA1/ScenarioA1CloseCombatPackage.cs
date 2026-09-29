@@ -100,8 +100,8 @@ public sealed class ScenarioA1CloseCombatReference
 /// </summary>
 public sealed class ScenarioA1CloseCombatPackage : IDomainPackageResolver
 {
-    public const string ManifestSha256 = "7ca1ea7cbaf78d149a753edf9c57578d8c1520d13a392a5046d9175237783f6c";
-    public const string MatrixSha256 = "6aad3831098cccea0bb1934e493c33d4abea951b4b6d44008911da28f98b679b";
+    public const string ManifestSha256 = "0a6875ccda2c7046ecfc45d3a2ea850548a9dcc08664ad9969113e2e24679894";
+    public const string MatrixSha256 = "ad9e918bba4377f6a50b5439414dfd28c4dc80cd93c50c0a54a11d55b79abb64";
     public static readonly DomainPackageRef Identity = new(new DomainId("asl"), "scenario-a1-close-combat", "sha256:" + ManifestSha256);
 
     private static readonly string[] Cases =
@@ -110,7 +110,7 @@ public sealed class ScenarioA1CloseCombatPackage : IDomainPackageResolver
         "A1-cc-stacking-outside", "A1-cc-director-outside", "A1-cc-berserk-must-attack", "A1-cc-field-promotion-undecided", "A1-cc-roll-missing", "A1-cc-cx",
         "A1-cc-vehicle-attacked", "A1-cc-vehicle-attacks", "A1-cc-vehicle-sequential", "A1-cc-vehicle-paatc", "A1-cc-vehicle-capture",
         "A1-cc-vehicle-roll-missing", "A1-cc-hand-to-hand", "A1-cc-concealed", "A1-cc-ti", "A1-cc-capture", "A1-cc-capture-outside",
-        "A1-cc-capture-choice-undecided", "A1-cc-prisoners-escape", "A1-cc-prisoner-outside", "A1-cc-infiltration", "A1-cc-overstacked",
+        "A1-cc-capture-choice-undecided", "A1-cc-prisoners-escape", "A1-cc-prisoner-outside", "A1-cc-infiltration", "A1-cc-overstacked", "A1-cc-night-ambush",
     ];
 
     private static readonly string[] PinnedDigests = ["sourcePdfSha256", "cctTranscriptionSha256", "catalogSha256"];

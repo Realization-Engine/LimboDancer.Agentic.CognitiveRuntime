@@ -134,6 +134,13 @@
             </select>
             <span class="muted">grain is a Hindrance only from June to September (B15.2), and costs Infantry 1½ MF only from April to September (B15.6)</span>
         </span>
+        <label for="new-rules">Special rules</label>
+        <span>
+            <input id="new-rules" value="@newRules" @onchange="@(args => newRules = args.Value as string ?? string.Empty)" size="48" />
+            <span class="muted">SSRs separated by spaces: night:n (the Base NVR, 0 to 6), night-clouds:scattered, night-moon:half, weather:mud, weather:overcast,
+                weather:mist, weather:rain, weather:falling-snow, weather:ground-snow, weather:deep-snow, weather:extreme-winter, plowed-roads, mol:side
+                (E1.1, E3; rulings R16.1, R16.9)</span>
+        </span>
         <label for="new-defender">Scenario Defender</label>
         <span>
             <select id="new-defender" value="@newDefender" @onchange="@(args => newDefender = args.Value as string ?? string.Empty)">
@@ -179,6 +186,10 @@ else if (state is not null)
         turn @state.Turn, @Games.PhaseLabel(state.Phase), @state.PhasingSide phasing.
         @(SetupOpen ? "Setup is open." : "Play has started; setup is closed.")
     </p>
+    @if (NightAndWeather(state) is { Length: > 0 } conditions)
+    {
+        <p id="play-conditions">@conditions</p>
+    }
 }
 
 @if (history is null || SetupOpen)
@@ -1233,6 +1244,36 @@ else if (state is not null)
                 <button id="propose-throw-dc" disabled="@(throwDc.Length == 0 || throwDcAt.Trim().Length == 0)" @onclick="ProposeThrowDc">Propose: Throw the DC</button>
             </div>
         }
+        @if (state.Night && StarshellFirers(firing).Any())
+        {
+            <h4>Starshells</h4>
+            <p class="muted" id="starshell-help">
+                A Good Order leader, CE AFV, or MMC fires a Starshell after a Usage dr of 4 or less (a leader) or 2 or less, one attempt per hex this phase:
+                in its own hex, then one hex in a Random Direction; at a Gunflash or Known enemy unit in its LOS within six hexes, then a Random Direction DR
+                with the Extent of Error halved; or in a hex exactly three hexes away, then a Random Direction DR. It Illuminates three hexes around it until
+                the end of the CCPh; firing it is not firing (E1.92, E1.923).
+            </p>
+            <div class="toolbar">
+                <label>Fired by
+                    <select id="starshell-unit" value="@starshellUnit" @onchange="@(args => starshellUnit = args.Value as string ?? string.Empty)">
+                        <option value="">choose</option>
+                        @foreach (var id in StarshellFirers(firing))
+                        {
+                            <option value="@id">@id</option>
+                        }
+                    </select>
+                </label>
+                <label>method
+                    <select id="starshell-method" value="@starshellMethod" @onchange="@(args => starshellMethod = args.Value as string ?? "own-hex")">
+                        <option value="own-hex">its own hex</option>
+                        <option value="at-target">at a Gunflash or Known enemy unit</option>
+                        <option value="three-hexes">three hexes away</option>
+                    </select>
+                </label>
+                <label>at <input id="starshell-at" value="@starshellAt" @onchange="@(args => starshellAt = args.Value as string ?? string.Empty)" size="12" /></label>
+                <button id="propose-starshell" disabled="@(starshellUnit.Length == 0 || (starshellMethod != "own-hex" && starshellAt.Trim().Length == 0))" @onclick="ProposeStarshell">Propose: fire a Starshell</button>
+            </div>
+        }
         @if (state.Phase == "afph" && state.PlacedCharges.Any(item => item.Operable))
         {
             <h4>Placed DCs</h4>
@@ -1574,6 +1615,17 @@ else if (state is not null)
         </ul>
     }
 
+    @if (NightRecords.Count > 0)
+    {
+        <h3>Night and weather</h3>
+        <ul id="play-night">
+            @foreach (var (eventId, text) in NightRecords)
+            {
+                <li class="night-record" data-event="@eventId">@text</li>
+            }
+        </ul>
+    }
+
     @if (SniperRecords.Count > 0)
     {
         <h3>Snipers</h3>
@@ -1755,6 +1807,7 @@ else if (state is not null)
     private string newMonth = string.Empty;
     private string newYear = string.Empty;
     private string newDefender = string.Empty;
+    private string newRules = string.Empty;
     private string placeBore = string.Empty;
     private bool ordnanceIntensive;
     private string ordnanceTurn = "east";
@@ -2890,6 +2943,68 @@ else if (state is not null)
         }));
     }
 
+    private string starshellUnit = string.Empty;
+    private string starshellMethod = "own-hex";
+    private string starshellAt = string.Empty;
+
+    /// <summary>The units of a side that may try a Starshell (E1.92; ruling R16.8): Good Order leaders and MMC, and CE AFV.</summary>
+    private IEnumerable<string> StarshellFirers(string side) => state is null ? []
+        : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && state.Location(unit.Id) is not null
+            && (unit.Kind is "asl:leader" or "asl:squad" or "asl:half-squad" or "asl:crew"
+                ? GameState.Condition(unit, Conditions.Broken) != ConditionState.True && GameState.Condition(unit, Conditions.Pinned) != ConditionState.True
+                : LiveFire.IsVehicle(unit) && GameState.Condition(unit, Conditions.ButtonedUp) != ConditionState.True))
+            .Select(unit => unit.Id).Order(StringComparer.Ordinal);
+
+    private Task ProposeStarshell() => Propose(GameActions.FireStarshell, JsonSerializer.SerializeToElement(new Dictionary<string, object>
+    {
+        ["gameId"] = gameId, ["attemptId"] = Attempt("starshell"), ["expectedRevision"] = (long)history!.Events.Count, ["unitId"] = starshellUnit,
+        ["method"] = starshellMethod, ["at"] = starshellAt.Trim(),
+    }));
+
+    /// <summary>The night and weather in force (rulings R16.1, R16.9): the NVR, the weather SSRs, the precipitation, and the Starshells.</summary>
+    private static string NightAndWeather(GameState state)
+    {
+        var parts = new List<string>();
+        if (state.Nvr is { } nvr)
+        {
+            parts.Add($"Night: Base NVR {nvr} (E1.1)");
+        }
+
+        var weather = state.SpecialRules.Where(rule => rule.StartsWith("weather:", StringComparison.Ordinal)).Select(rule => rule["weather:".Length..]).ToArray();
+        if (weather.Length > 0)
+        {
+            parts.Add("weather: " + string.Join(", ", weather) + " (E3)");
+        }
+
+        if (state.Precipitation is { } falling)
+        {
+            parts.Add(falling.Replace('-', ' ') + " is falling, causing Mist (E3.51, E3.71)");
+        }
+
+        var starshells = state.Entities.Where(entity => entity.Status == InstanceStatus.Active && entity.Kind == "asl:starshell" && entity.Position is MapPosition)
+            .Select(entity => ((MapPosition)entity.Position).Location.ToString()).ToArray();
+        if (starshells.Length > 0)
+        {
+            parts.Add("Starshells Illuminate three hexes around " + string.Join(", ", starshells) + " (E1.923)");
+        }
+
+        return string.Join("; ", parts) + (parts.Count > 0 ? "." : string.Empty);
+    }
+
+    /// <summary>The Wind Change DRs and Starshell attempts the viewer may see (rulings R16.8, R16.10), latest first.</summary>
+    private IReadOnlyList<(string EventId, string Text)> NightRecords => history is null ? []
+        : [.. history.Events.Where(item => item.IsVisibleTo(Viewer) && item.Payload is WindChanged or StarshellFired).Reverse().Select(item => (item.EventId, item.Payload switch
+        {
+            WindChanged wind => $"Wind Change DR ({wind.Roll})"
+                + (wind.Nvr is { } nvr ? $": the Base NVR is {nvr}" : string.Empty)
+                + (wind.Precipitation is { } falling ? $"; {falling.Replace('-', ' ')} falls" : string.Empty)
+                + (wind.Gust ? "; a Gust blows" : string.Empty) + " (B25.65, E1.12, E3.51)",
+            StarshellFired starshell => $"{starshell.Unit} fires a Starshell ({starshell.Method}): "
+                + (!starshell.Passed ? "its Usage dr fails (E1.921)"
+                    : starshell.At is { } at ? $"it lands in {at} and Illuminates three hexes around it (E1.922, E1.923)" : "it lands off the map"),
+            _ => string.Empty,
+        }))];
+
     private Task ProposeDetonateDc(string charge) => Propose(GameActions.DetonateDc, JsonSerializer.SerializeToElement(new Dictionary<string, object>
     {
         ["gameId"] = gameId, ["attemptId"] = Attempt("detonate-dc"), ["expectedRevision"] = (long)history!.Events.Count, ["equipmentId"] = charge,
@@ -3843,6 +3958,8 @@ else if (state is not null)
             start["scenarioDefender"] = newDefender;
         }
 
+        // E1.1, E3 (backlog pass 16, rulings R16.1, R16.9): the night and weather SSRs, among the others.
+        start["specialRules"] = newRules.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         return start;
     }
 

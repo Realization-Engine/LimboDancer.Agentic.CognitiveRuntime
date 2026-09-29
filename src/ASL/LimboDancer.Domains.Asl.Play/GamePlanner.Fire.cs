@@ -1476,6 +1476,7 @@ public sealed partial class GamePlanner
             };
         }
 
-        return (facts, null);
+        // Backlog pass 16 (rulings R16.2, R16.3, R16.11 to R16.14): night and weather.
+        return NightAndWeatherFacts(state, facts, target, targetRead.Hex.BaseLevel + (targetRead.Hex.Center.Terrain?.Height ?? 0), perLocation);
     }
 }

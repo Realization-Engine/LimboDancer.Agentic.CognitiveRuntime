@@ -432,6 +432,12 @@ public static class ScenarioA1FireCalculator
             ("MPh", "phasing", OverrunFire) => attack.Overrun is not null,
             _ => false,
         };
+        // E1.7, E3.32, E3.741 (rulings R16.3, R16.11, R16.14): the Low Visibility DRM is 0 to 5 (6 blocks the LOS), the Extreme Winter reduction 0 to 2.
+        if (attack.LowVisibilityDrm is < 0 or > 5 || attack.BreakdownReduction is < 0 or > 2)
+        {
+            outside.Add("asl.a1.fire.weather-outside");
+        }
+
         if (!phaseAdmitted)
         {
             outside.Add("asl.a1.fire.phase-outside");
@@ -1546,7 +1552,8 @@ public static class ScenarioA1FireCalculator
         private FireWeaponEffect VehicleWeaponEffect(FireVehicleFire vehicle, FireArithmetic arithmetic)
         {
             var definition = reference.Definitions[vehicle.DefinitionId!];
-            var breakdown = definition.Breakdown ?? 12;
+            // E3.741 (ruling R16.14): Extreme Winter lowers the B#.
+            var breakdown = (definition.Breakdown ?? 12) - (attack.BreakdownReduction ?? 0);
             var malfunctioned = arithmetic.OriginalDr >= breakdown;
             var retained = !malfunctioned && vehicle.Pinned != true && attack.Phase != "AFPh" && definition.RateOfFire is { } rof && arithmetic.Dice[0] <= rof;
             return new FireWeaponEffect(vehicle.VehicleId!, breakdown, malfunctioned, retained, false, FireCounter(), null);
@@ -1827,6 +1834,11 @@ public static class ScenarioA1FireCalculator
                 // C3.331 (ruling R9.3): an Area Target Type hit takes its TEM on the Effects DR.
                 drm.Add(new FireModifier("tem:" + attack.TargetTerrain, tem, "C3.331"));
             }
+            else if (hit is { Area: true } && hit.CriticalHit != true && attack.CushionedOpenGround == true && attack.TargetTerrain == "open-ground")
+            {
+                // E3.62, E3.731 (rulings R16.12, R16.13): Mud or Deep Snow cushions HE in Open Ground: +1 TEM on an Area Target Type hit's Effects DR.
+                drm.Add(new FireModifier("weather-cushion", 1m, "E3.62"));
+            }
             else if (hit is not null)
             {
                 // C.3: the TEM of an Infantry Target Type hit modifies its TH DR, not the Effects DR; C3.71: a Critical Hit reverses a
@@ -1909,6 +1921,13 @@ public static class ScenarioA1FireCalculator
             if (hindrance > 0 && attack.FireLane != true)
             {
                 drm.Add(new FireModifier("los-hindrance", hindrance, "A6.7"));
+            }
+
+            // E1.7, E3.1, E3.32 (rulings R16.3, R16.11): the Low Visibility Hindrance DRM of night and weather, which never negates FFMO; an
+            // ordnance hit takes it on its TH DR, and Residual FP never (the game supplies none for either).
+            if (attack.LowVisibilityDrm is > 0 and var lowVisibility && !residual && hit is null && attack.DemolitionCharge is null && attack.FireLane != true)
+            {
+                drm.Add(new FireModifier("lv-hindrance", lowVisibility, "E1.7"));
             }
 
             // A7.7 (ruling R12.11): +1 when an Encircled unit fires in the group, once however many do (A7.52).
@@ -2075,7 +2094,9 @@ public static class ScenarioA1FireCalculator
                 : ScenarioA1FireReference.ColumnFp.Where(fp => fp <= arithmetic.TotalFirepower - atr).DefaultIfEmpty(0).Max();
             var index = Array.FindLastIndex(ResidualCounters, fp => fp <= highest / 2m);
             // B9.31 (ruling R10.5): a wall or hedge TEM claimed against the attack lowers the Residual FP left as a Hindrance does.
-            index -= hindrance + Math.Max(leadership, 0) + (attack.HexsideTem?.Tem ?? 0);
+            index -= hindrance + Math.Max(leadership, 0) + (attack.HexsideTem?.Tem ?? 0)
+                // E3.62, E3.731 (rulings R16.12, R16.13): an HE attack cushioned by Mud or Deep Snow in Open Ground leaves one counter less.
+                + (attack.OrdnanceHit is not null && attack.CushionedOpenGround == true && attack.TargetTerrain == "open-ground" ? 1 : 0);
             return index < 0 ? null : ResidualCounters[index];
         }
 
@@ -2132,6 +2153,11 @@ public static class ScenarioA1FireCalculator
             if (vsConcealed)
             {
                 multipliers.Add(new FireModifier("area-fire-concealed-target", 0.5m, "A7.23"));
+            }
+            else if (attack.BeyondNvr == true)
+            {
+                // E1.81 (ruling R16.2): as at a concealed target, halved once only.
+                multipliers.Add(new FireModifier("area-fire-gunflash", 0.5m, "E1.81"));
             }
 
             if (attack.Phase == "AFPh")
@@ -2261,6 +2287,11 @@ public static class ScenarioA1FireCalculator
             {
                 multipliers.Add(new FireModifier("area-fire-concealed-target", 0.5m, "A7.23"));
             }
+            else if (attack.BeyondNvr == true)
+            {
+                // E1.81 (ruling R16.2): fire at a Gunflash beyond the firer's NVR is as at a concealed target, halved once only.
+                multipliers.Add(new FireModifier("area-fire-gunflash", 0.5m, "E1.81"));
+            }
 
             // A8.3, A8.31, A8.4, A9.3: Subsequent First Fire, FPF, a First-Fire-marked unit's Final Fire, and Sustained Fire
             // are Area Fire; in a group mixing FPF with other fire, each firer's own kind decides (ruling R12.3).
@@ -2311,11 +2342,11 @@ public static class ScenarioA1FireCalculator
             // A22.3, A22.5 (ruling R15.1): a FT's removal number is ten, two lower for a non-elite user and two lower again when captured.
             var breakdown = weapons.ToDictionary(weapon => weapon.EquipmentId!,
                 weapon => reference.Definitions[weapon.DefinitionId!] is { IsFt: true } ft
-                    ? AssaultWeaponRemoval(ft, (attack.Firers ?? []).FirstOrDefault(firer => firer.Weapons?.Contains(weapon) == true) is { } user
+                    ? -(attack.BreakdownReduction ?? 0) + AssaultWeaponRemoval(ft, (attack.Firers ?? []).FirstOrDefault(firer => firer.Weapons?.Contains(weapon) == true) is { } user
                         ? reference.Definitions[user.DefinitionId!] : null, weapon.Captured == true,
                         (attack.Firers ?? []).FirstOrDefault(firer => firer.Weapons?.Contains(weapon) == true)?.Inexperienced == true)
                     : (reference.Definitions[weapon.DefinitionId!].Breakdown ?? 12) - (IsSustained(attack, weapon, reference) ? 2 : 0) - AtrInexperience(weapon)
-                    - (weapon.Captured == true ? 2 : 0), StringComparer.Ordinal);
+                    - (weapon.Captured == true ? 2 : 0) - (attack.BreakdownReduction ?? 0), StringComparer.Ordinal);
             var reached = malfunction ? weapons.Where(weapon => original >= breakdown[weapon.EquipmentId!]).Select(weapon => weapon.EquipmentId!).ToArray() : [];
             var malfunctioned = new HashSet<string>(StringComparer.Ordinal);
             var selection = new Dictionary<string, int>(StringComparer.Ordinal);

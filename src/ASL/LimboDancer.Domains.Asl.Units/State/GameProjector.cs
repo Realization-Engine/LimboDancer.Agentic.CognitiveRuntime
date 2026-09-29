@@ -119,6 +119,8 @@ public static class GameProjector
                 SurrenderRejected rejected => RejectSurrender(previous, rejected),
                 PrisonerFreed freed => FreePrisoner(previous, freed),
                 SniperAttacked sniper => Snipe(previous, sniper),
+                WindChanged wind => ChangeWind(previous, wind),
+                StarshellFired starshell => FireStarshell(previous, starshell),
                 VehicleWrecked wreck => Wreck(previous, wreck),
                 PrisonersMassacred massacre => Massacre(previous, massacre),
                 ChoicePending pending => PendChoice(previous, pending, gameEvent.EventId),
@@ -299,6 +301,10 @@ public static class GameProjector
                 catalog.Identity, started.Turn, started.Phase, started.PhasingSide, [], [], [])
             {
                 SpecialRules = started.SpecialRules,
+                // E1.1, E3.51, E3.71 (backlog pass 16, rulings R16.1, R16.9): the SSRs' Base NVR and precipitation at the start.
+                Nvr = GameState.NightRule(started.SpecialRules),
+                Precipitation = GameState.PrecipitationRule(started.SpecialRules),
+                Rained = GameState.PrecipitationRule(started.SpecialRules) is "rain" or "heavy-rain",
                 ScenarioMonth = started.ScenarioMonth,
                 ScenarioYear = started.ScenarioYear,
                 ScenarioDefender = started.ScenarioDefender,
@@ -356,9 +362,12 @@ public static class GameProjector
             // Fire at the end of the AFPh (A3.5), and pins in the CCPh (A3.8), all on p. 47; DM at the end of every RPh
             // (A10.62, p. 68). Residual FP is removed at the end of the MPh (A8.2, p. 60), and a new Player Turn gives every
             // unit a new Rally attempt (A10.6, p. 68).
+            // E1.8 (backlog pass 16, ruling R16.2): at night First and Final Fire counters stay, as Gunflashes, until the end of the AFPh.
             string[] cleared = state.Phase switch
             {
+                "dfph" when state.Night => [Conditions.IntensiveFire],
                 "dfph" => [Conditions.FinalFire, Conditions.FirstFire, Conditions.IntensiveFire],
+                "afph" when state.Night => [Conditions.PrepFire, Conditions.BoundingFire, Conditions.IntensiveFire, Conditions.FinalFire, Conditions.FirstFire],
                 "afph" => [Conditions.PrepFire, Conditions.BoundingFire, Conditions.IntensiveFire],
                 "ccph" => [Conditions.Pinned, "asl:ti"],
 
@@ -424,7 +433,11 @@ public static class GameProjector
                     // A23.3 (ruling R15.2): a DC Placement lasts its Player Turn.
                     PlacedCharges = newPlayerTurn ? [] : state.PlacedCharges,
                     AssaultWeaponUsers = newPlayerTurn ? [] : state.AssaultWeaponUsers,
-                    Entities = state.Phase == "mph" ? RemoveSmokeGrenades(state.Entities) : state.Entities,
+                    StarshellAttempts = [],
+                    // E1.923 (ruling R16.8): Starshells are removed at the end of each CCPh.
+                    Entities = state.Phase == "mph" ? RemoveSmokeGrenades(state.Entities)
+                        : state.Phase == "ccph" ? [.. state.Entities.Where(entity => entity.Kind != "asl:starshell")]
+                        : state.Entities,
                     Turn = change.Turn,
                     Phase = change.Phase,
                     PhasingSide = change.PhasingSide,
@@ -3295,6 +3308,52 @@ public static class GameProjector
             {
                 PlacedCharges = kept,
                 Equipment = equipment,
+            };
+        }
+
+        /// <summary>
+        /// The Wind Change DR (B25.65; backlog pass 16, ruling R16.10): made at the start of a RPh of a game with night or changing weather, its roll
+        /// recorded; it sets the Base NVR (0 to 9) and the precipitation it names.
+        /// </summary>
+        private GameState? ChangeWind(GameState state, WindChanged wind)
+        {
+            if (state.Phase != "rph" || !rolls.ContainsKey(wind.Roll) || (wind.NvrRoll is { } nvrRoll && !rolls.ContainsKey(nvrRoll))
+                || (wind.Nvr is not null) != state.Night || wind.Nvr is < 0 or > 9 || wind.Precipitation is not (null or "rain" or "heavy-rain" or "snow" or "heavy-snow"))
+            {
+                return Fail<GameState>("UNIT-STATE-043", "A Wind Change DR is made in the RPh with a recorded roll, and sets a Base NVR of 0 to 9 only at night (B25.65, E1.12).");
+            }
+
+            return state with
+            {
+                Nvr = wind.Nvr,
+                Precipitation = wind.Precipitation,
+                Rained = state.Rained || wind.Precipitation is "rain" or "heavy-rain",
+            };
+        }
+
+        /// <summary>
+        /// A Starshell attempt (E1.92 to E1.923; ruling R16.8): by an active unit at night, once per hex per phase, its rolls recorded; a Starshell that
+        /// passed its Usage dr and landed on the map is placed in its Location until the end of the CCPh.
+        /// </summary>
+        private GameState? FireStarshell(GameState state, StarshellFired starshell)
+        {
+            if (!state.Night || state.Unit(starshell.Unit) is not { Status: InstanceStatus.Active } || !rolls.ContainsKey(starshell.UsageRoll)
+                || (starshell.PlacementRoll is { } placement && !rolls.ContainsKey(placement)) || (starshell.At is not null) != (starshell.Starshell is not null)
+                || (!starshell.Passed && starshell.At is not null) || state.StarshellAttempts.Contains(starshell.From.ToString(), StringComparer.Ordinal))
+            {
+                return Fail<GameState>("UNIT-STATE-044", "A Starshell is fired at night by a unit in play, once per hex per phase, with its rolls recorded (E1.92).");
+            }
+
+            var next = state with
+            {
+                StarshellAttempts = [.. state.StarshellAttempts, starshell.From.ToString()],
+                StarshellUsed = state.StarshellUsed || starshell.Passed,
+                StarshellTurn = state.StarshellTurn ?? (starshell.Passed ? $"{state.Turn}|{state.PhasingSide}" : null),
+            };
+            return starshell.At is not { } at ? next : next with
+            {
+                Entities = [.. next.Entities, new EntityInstance(starshell.Starshell!, "asl:starshell", state.Unit(starshell.Unit)!.Side, new MapPosition(at),
+                    new Dictionary<string, ConditionState>(StringComparer.Ordinal), InstanceStatus.Active)],
             };
         }
 

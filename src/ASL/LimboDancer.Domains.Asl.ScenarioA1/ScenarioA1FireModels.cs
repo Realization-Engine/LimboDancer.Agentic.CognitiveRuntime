@@ -207,6 +207,43 @@ public sealed record FireAttack(
     }
 
     /// <summary>
+    /// The Low Visibility Hindrance DRM of night and weather (E1.7, E3.1, E3.32; rulings R16.3, R16.11), which the game supplies for each attack it
+    /// applies to: cumulative with every other Hindrance, never negating FFMO, never lowering Residual FP. Null is 0.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? LowVisibilityDrm
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether the target Location is beyond the firers' NVR, seen only by its Gunflash (E1.81; ruling R16.2): Area Fire as at a concealed target,
+    /// halved once however many reasons apply. Null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? BeyondNvr
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether Mud or Deep Snow cushions an HE attack in Open Ground (E3.62, E3.731; rulings R16.12, R16.13): +1 TEM to an HE hit's Effects DR in
+    /// Open Ground, and its Residual FP one counter lower. Null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? CushionedOpenGround
+    {
+        get; init;
+    }
+
+    /// <summary>How much lower Extreme Winter makes the B# and X# of the firing side's weapons but a DC (E3.741; ruling R16.14): 1 or 2. Null is 0.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? BreakdownReduction
+    {
+        get; init;
+    }
+
+    /// <summary>
     /// Whether the moving targets are engaged in Hazardous Movement (A4.62; ruling R10.8): -2 to the attack, with no FFMO or FFNAM, unless
     /// pinned. Null is false.
     /// </summary>

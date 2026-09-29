@@ -121,6 +121,16 @@ public sealed class ScenarioA1CloseCombatTests
     }
 
     [Fact]
+    public void AtNightAnAmbushNeedsOnlyTwoBelow()
+    {
+        // E1.77 (backlog pass 16, ruling R16.7): 2 against 3+1 is no Ambush by day, and an Ambush on a dark night.
+        CloseCombatUnit[] units = [Unit("g1", "attacker-squad", "german", advanced: true), Unit("r1", "defender-squad", "russian", broken: true)];
+        var facts = new AmbushFacts("CCPh", At, "woods", "german", units, new Dictionary<string, int> { ["german"] = 2, ["russian"] = 3 });
+        Assert.Null(ScenarioA1CloseCombatCalculator.ResolveAmbush(facts, Reference).Ambusher);
+        Assert.Equal("german", ScenarioA1CloseCombatCalculator.ResolveAmbush(facts with { DarkNight = true }, Reference).Ambusher);
+    }
+
+    [Fact]
     public void AnAmbushOccursAtThreeBelowAndGivesItsDrmAndOrder()
     {
         // A11.4: the German squad advanced into the woods; the broken Russian squad gives +1; 1 against 4+1: the Germans ambush.

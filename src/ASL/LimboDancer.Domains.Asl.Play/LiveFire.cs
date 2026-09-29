@@ -821,6 +821,12 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
             HazardousMovement = recorded.HazardousMovement,
             SnapShot = recorded.SnapShot,
 
+            // Backlog pass 16 (rulings R16.2, R16.3, R16.11 to R16.14): the night and weather facts are the planner's reading of the map and the SSRs.
+            LowVisibilityDrm = recorded.LowVisibilityDrm,
+            BeyondNvr = recorded.BeyondNvr,
+            CushionedOpenGround = recorded.CushionedOpenGround,
+            BreakdownReduction = recorded.BreakdownReduction,
+
             // Backlog pass 12 (rulings R12.6, R12.7): Spraying Fire is the firer's declaration; a Fire Lane's Residual FP is the lane's in the state.
             SprayingFire = recorded.SprayingFire,
             SprayShare = recorded.SprayShare,
