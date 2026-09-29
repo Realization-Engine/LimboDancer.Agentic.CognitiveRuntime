@@ -31,9 +31,11 @@ public sealed record ScenarioCardEdge(string Edge, string Basis, string? Note);
 
 /// <summary>
 /// Where an OB group sets up or enters (ruling R17.8): named <c>building</c> hexes, the <c>hex-numbers</c> from and to of a
-/// board, or an <c>entry</c> on a Game Turn along an edge.
+/// board, or an <c>entry</c> on a Game Turn along an edge. An SSR may fix how many counters set up in an area, how many of them are
+/// MMC at least, and whether they may set up under "?" (pass 19, ruling R19.4).
 /// </summary>
-public sealed record ScenarioCardSetup(string Id, string Kind, IReadOnlyList<string>? Hexes, string? Board, int? From, int? To, int? Turn, string? Edge, string? Limit);
+public sealed record ScenarioCardSetup(string Id, string Kind, IReadOnlyList<string>? Hexes, string? Board, int? From, int? To, int? Turn, string? Edge, string? Limit,
+    int? Counters = null, int? MinMmc = null, bool? Concealed = null);
 
 /// <summary>A counter line of an OB group: a catalog definition, a count, and the setup area it belongs to.</summary>
 public sealed record ScenarioCardUnit(string Definition, int Count, string? Area);
@@ -383,7 +385,7 @@ public static partial class ScenarioCards
         "hex-numbers" => card.Boards.Any(board => board.Board == area.Board) && area.From is >= 0 and <= 10 && area.To is >= 0 and <= 10 && area.From <= area.To,
         "entry" => area.Turn is { } turn && turn >= 1 && turn <= card.Turns.Count && SideState.Edges.Contains(area.Edge ?? string.Empty, StringComparer.Ordinal),
         _ => false,
-    };
+    } && (area.Counters is null || (area.Kind != "entry" && area.Counters >= 1)) && (area.MinMmc is null || (area.Counters is { } counters && area.MinMmc >= 0 && area.MinMmc <= counters));
 
     private static void Cited(IReadOnlyList<string> rules, string where, Action<bool, string> check)
     {

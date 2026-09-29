@@ -247,6 +247,28 @@ else if (state is not null)
 @if (history is null || SetupOpen)
 {
     <h3>Setup</h3>
+    @if (SetupView is { } setup)
+    {
+        <table id="setup-pools" class="library">
+            <caption>The card's OB, group by group (A2.9; rulings R19.1 to R19.6)@(setup.CurrentOrder is { } now ? $": order {now} is setting up now" : ": every group has set up")</caption>
+            <thead><tr><th>Order</th><th>Side</th><th>OB group</th><th>Status</th><th>Still to set up</th><th>"?" left</th><th>Where</th></tr></thead>
+            <tbody>
+                @foreach (var group in setup.Groups.OrderBy(group => group.Order))
+                {
+                    <tr data-group="@group.Id">
+                        <td>@group.Order</td>
+                        <td>@group.Side</td>
+                        <td>@group.Name (@group.Id)</td>
+                        <td>@(!group.SetsUp ? "enters later" : group.Complete ? "set up" : group.Order == setup.CurrentOrder ? "setting up now" : "waits")</td>
+                        <td>@(group.Remaining.Count > 0 ? string.Join(", ", group.Remaining.Select(need => $"{need.Count} {DefinitionLabel(need.Definition)}{(need.Area is { } area ? $" in {area}" : string.Empty)}"))
+                            : group.SetsUp && !group.Complete ? "the counters its SSR names (see Where); both HS of a Deployed squad in one proposal" : "-")</td>
+                        <td>@group.DummiesLeft</td>
+                        <td>@string.Join("; ", group.Areas.Select(SetupAreaText))</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
     <div class="toolbar">
         <label>
             Unit
@@ -1834,6 +1856,22 @@ else if (state is not null)
 
     private string? scenarioCard;
     private string? scenarioSha;
+
+    /// <summary>
+    /// The setup of a game from a card (pass 19, ruling R19.2): the game's, or before the game exists the chosen card's with nothing yet set up.
+    /// </summary>
+    private SetupReport? SetupView => state is not null ? Live.Planner.CardSetup(state, new HashSet<string>())
+        : ChosenCard is { } card ? ScenarioSetup.Check(card, [], _ => null, _ => true, ScenarioA1FireReference.HalfSquadOf, card.Date.Month)
+        : null;
+
+    private string DefinitionLabel(string id) => PublishedCatalog?.Definition(id) is { } definition ? ScenarioCards.Describe(definition) : id;
+    private static string SetupAreaText(ScenarioCardSetup area) => area.Kind switch
+    {
+        "building" => $"building {area.Id} ({string.Join(", ", area.Hexes ?? [])})",
+        "hex-numbers" => $"hexes numbered {area.From} to {area.To} on {area.Board}" + (area.Counters is { } counters ? $", {counters} counters" : string.Empty)
+            + (area.MinMmc is { } mmc ? $", at least {mmc} MMC" : string.Empty) + (area.Concealed == false ? ", none under \"?\"" : string.Empty),
+        _ => $"enters on Turn {area.Turn} along the {area.Edge} edge",
+    };
     private string placeGroup = string.Empty;
     private string? placeNote;
     private readonly Dictionary<string, ScenarioCardRead?> cardReads = new(StringComparer.Ordinal);

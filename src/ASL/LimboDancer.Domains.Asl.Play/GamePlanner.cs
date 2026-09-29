@@ -198,6 +198,13 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             return new GamePlan(GamePlanStatus.Stale, scope, label, expected, [], [$"play.stale: the game is at revision {existing.Count}"]);
         }
 
+        // Pass 19 (ruling R19.2; referee, pass 19): in a game from a card nothing but setup happens until every group has set up.
+        if (action.Id.Value != "asl.game.setup" && existing.Count > 0 && existing.All(item => item.Payload is GameStarted or InstanceCreated or BoreSighted)
+            && Replay(existing).Current is { Scenario: not null } setupState && CardSetupIncomplete(setupState, existing) is { } unfinished)
+        {
+            return Refused(scope, label, expected, unfinished);
+        }
+
         var plan = action.Id.Value switch
         {
             "asl.game.setup" => PlanSetup(scope, arguments, existing, attemptId, expected, ref label),
@@ -362,6 +369,21 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             return Refused(scope, label, expected, vehicleBar);
         }
 
+        // Pass 19 (rulings R19.1 to R19.6): a game from a card sets up its OB, in its areas and order.
+        if (parsed.Events is { } carded && Replay([.. existing, .. carded]).Current is { } cardState && cardState.Scenario is { } playing)
+        {
+            if (ScenarioCards.Sha256(playing.Id) != playing.Sha256)
+            {
+                return Refused(scope, label, expected, $"play.scenario: the card '{playing.Id}' has changed since the game started, so its OB cannot be checked (ruling R19.1)");
+            }
+
+            var placedNow = carded.Select(item => item.Payload).OfType<InstanceCreated>().Select(item => item.Instance.Id).ToHashSet(StringComparer.Ordinal);
+            if (CardSetup(cardState, placedNow) is { Reasons.Count: > 0 } setupReport)
+            {
+                return Refused(scope, label, expected, [.. setupReport.Reasons]);
+            }
+        }
+
         // Ruling R18.3: where a side's OB groups differ in ELR, each of its units names its group, since no side ELR stands in for it.
         if (parsed.Events is { } grouped && Replay([.. existing, .. grouped]).Current is { } groupedState
             && groupedState.Units.FirstOrDefault(unit => unit.Group is null && unit.Kind is not (UnitKinds.Dummy or "asl:sniper" or "asl:hero" or "asl:crew")
@@ -410,6 +432,12 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         if (state.Sides.Count != 2)
         {
             return Refused(scope, label, expected, "play.two-sides: the sequence of play alternates two sides");
+        }
+
+        // Pass 19 (ruling R19.2): play starts when every group of a card that sets up on board has finished.
+        if (CardSetupIncomplete(state, existing) is { } incomplete)
+        {
+            return Refused(scope, label, expected, incomplete);
         }
 
         if (state.OpenAttempts.Count > 0)

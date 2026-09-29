@@ -428,3 +428,18 @@ Pass 18 (2026-09-29) built the start of a game from a card and removed the first
 | Tests of a Massacre raising every group's ELR, and of Deployment and Recombination keeping groups | Referee, pass 18 | A20.4, A1.31, A1.32 | Test situations for them | Built in the projector, not tested. |
 | An underscored MMC's fixed ELR 5 after a Massacre raises its group's past 5, the fixed ELR 5 of some squads (A25.12, A25.25, A25.31, A25.42), and Integrity Check ELR changes reaching each group | Referee, pass 18 | A20.4, A19.132, A16.2 | ELR by unit type; Battlefield Integrity | A group's ELR rises to at most 6; the underscored MMC stay at 5. |
 | A group named on a Dummy | Referee, pass 18 | A12.11 | None | Dropped without a diagnostic. |
+
+## 29. Added by the scenario card games pass 19
+
+Pass 19 (2026-09-29) built the setup of a game from a card: its OB group by group, in its areas and order, with its OB "?" and Deployment (section 27's first row is now built but for the rows below). What it leaves out follows.
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| The counters added for the cards (the German 5-4-8 and 8-3-8 and their HS) in the Fire package's HS, Replacement, and class tables | Pass 19 (found while building) | A19.13, A1.31, A7.302 | A revision of the Fire package's tables | Fire at them and their Deployment are not decided for those counters. |
+| The non-OB "?" each side places after both have set up, on units out of the enemy's LOS or 17 hexes away | R19.5 | A12.12, p. 76 | A LOS check at the end of setup | Only OB "?" at setup. |
+| HIP by SSR | R19.5 | A12.3 | An SSR token for HIP | Hidden units are refused at setup. |
+| The 10% of the squads entering in a turn Deployed before they enter | R19.6 | A2.9 | Reinforcements entering (pass 20) | Not built. |
+| Terrain the movement rules give no entry cost for (gully, stream, shellholes, graveyard, and others) refused at setup; a marsh setup through the planner is not tested | Referee, pass 19 | A2.9, B16.4 | Those terrains in the movement rules; a board with marsh | Refused at setup. |
+| A crew or HS manning a Gun stacking as a squad | Referee, pass 19 | A5.5 | Guns set up from cards | Counts as half a squad. |
+| A test of a card changed or gone since the game started | Referee, pass 19 | R19.1 | A way to change an embedded card in a test | Refused in code. |
+| Hidden setup per side (already in section 27) | User ruling, 2026-09-29 | A2.9, A12.12 | A per-side view | Both sides see the map. |

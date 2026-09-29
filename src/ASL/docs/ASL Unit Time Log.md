@@ -455,3 +455,14 @@ Estimate: 2:00 (build 0:45), the Scenario Card Games Plan, approved 2026-09-29. 
 | Merge and push | 18:23 | 18:25 | 0:02 | |
 
 Total 1:14 of working time (17:11 to 18:25) against the 2:00 estimate (build 0:45); the build with both reviews' fixes, 17:11 to 17:44, took 0:33, and the test runs and merge gate 0:41.
+
+## Pass 19: Setup from the OB
+
+Estimate: 3:30 (build 2:15), the Scenario Card Games Plan. The user said on 2026-09-29 to move straight to pass 19 after pass 18 merged. Kickoff 18:24 (reading done during pass 18's merge gate). Branch `feature/asl-backlog-pass-19`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| The setup checker (`ScenarioSetup`: OB lines by group and area, order, areas, terrain, stacking, OB "?", SSR limits, Deployment), its planner reading, the setup and start-of-play checks, Dummies keeping their group, the card's area limits (Gambit), 7 Play tests (board 01's real terrain), the Play page's setup table, a page check, and rulings R19.1 to R19.6 | 18:24 | 18:37 | 0:13 | |
+| The referee agent started; visual check in the Studio (map-studio-scripted: The Guards Counterattack's setup table, an out-of-order Russian squad refused, a German squad committed, the start of play refused); Studio stopped; table-player clone and agent started | 18:37 | 18:42 | 0:05 | The referee ran 18:37 to about 18:43; the table player 18:42 to about 18:51 |
+| Referee's 15 and table player's 9 findings: Deployment FRU and its base, no action before the setup is done, off-map counters, a changed card at the start of play, marsh, several SSR areas, unheld equipment, A5.5 SMC, no "?" after a later group begins, the messages, what an SSR area still owes; 5 more tests; 7 recorded; rulings, review, design, backlog section 29, requirements | 18:43 | 18:53 | 0:10 | |
+| Full local suite: build with warnings as errors, every solution test project, and the ScenarioA1 tests (470); the architecture test hit the held `.git/worktrees`; Play (502), MapStudio (136), Units (406), Authoring (166 of 167) pass | 18:53 | 19:08 | 0:15 | ScenarioA1 and Authoring ran side by side, 11:12 and 10:12 |
