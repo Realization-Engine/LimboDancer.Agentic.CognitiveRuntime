@@ -383,7 +383,7 @@ public static partial class ScenarioCards
         return turn < 0 || index < 0 ? edge : compass[(index - turn + 4) % 4];
     }
 
-    /// <summary>A counter as a card names it: "4-6-7 1st-line squad", "9-1 leader", "heavy MG 7-16", "51mm light mortar".</summary>
+    /// <summary>A counter as a card names it: "4-6-7 1st-line squad", "9-1 leader", "heavy MG 7-16", "51mm light mortar", "FT 24-1", "DC 30".</summary>
     public static string Describe(UnitDefinition definition)
     {
         ArgumentNullException.ThrowIfNull(definition);
@@ -401,6 +401,8 @@ public static partial class ScenarioCards
             "asl:mg" => $"{Text("front", "asl:size")} MG {Value("front", "asl:firepower")}-{Value("front", "asl:range")}",
             "asl:light-mortar" => $"{Value("front", "asl:caliber")}mm light mortar",
             "asl:latw" => $"{Text("front", "asl:latw-type")?.ToUpperInvariant()} {Value("front", "asl:firepower")}-{Value("front", "asl:range")}",
+            "asl:ft" => $"FT {Value("front", "asl:firepower")}-{Value("front", "asl:range")}",
+            "asl:dc" => $"DC {Value("front", "asl:firepower")}",
             _ => definition.Id,
         };
     }

@@ -79,6 +79,9 @@ public sealed class ScenarioCardsPageTests : IDisposable
         Assert.Contains("18 \"?\" counters", russian.TextContent, StringComparison.Ordinal);
         Assert.Contains("heavy MG 6-12", russian.TextContent, StringComparison.Ordinal);
         Assert.Contains("8-3-8 elite squad", page.Find("#card-side-german").TextContent, StringComparison.Ordinal);
+        Assert.Contains("FT 24-1", page.Find("#card-side-german").TextContent, StringComparison.Ordinal);
+        Assert.Contains("DC 30", page.Find("#card-side-german").TextContent, StringComparison.Ordinal);
+        Assert.DoesNotContain("attacker-", page.Find("#card").TextContent, StringComparison.Ordinal);
         Assert.Contains("sets up second", page.Find("#card-side-german").TextContent, StringComparison.Ordinal);
         Assert.Contains("The bottom edge (south), from its setup (A20.53).", page.Find("#card-side-german .card-edge").TextContent, StringComparison.Ordinal);
     }
