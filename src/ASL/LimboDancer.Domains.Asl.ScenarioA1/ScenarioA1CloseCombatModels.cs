@@ -59,6 +59,34 @@ public sealed record CloseCombatUnit(
     {
         get; init;
     }
+
+    /// <summary>Whether the unit is Unarmed (A20.5; ruling R14.5): a CC FP of one; null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Unarmed
+    {
+        get; init;
+    }
+
+    /// <summary>The Guard of a prisoner (A20.5; ruling R14.5); null when the unit is not a prisoner.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? GuardId
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the unit is TI (A4.8; ruling R14.3): +1 to its CC attacks, -1 to CC attacks against it; null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Ti
+    {
+        get; init;
+    }
+
+    /// <summary>The Location the unit withdraws to by Infiltration after an Original 2 by its attack or 12 against it (A11.22; ruling R14.8); null declines.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? InfiltrateTo
+    {
+        get; init;
+    }
 }
 
 /// <summary>One declared CC attack (A11.12): the units attacking together, the units they attack, and the leader directing it.</summary>
@@ -67,6 +95,27 @@ public sealed record CloseCombatDeclaration(IReadOnlyList<string>? Attackers, IR
     /// <summary>The attacking leader who applies his leadership DRM (A11.141); null when none directs.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Director
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the attack is a capture attempt (A20.22; ruling R14.4); null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Capture
+    {
+        get; init;
+    }
+
+    /// <summary>The defending side's choice of the unit captured at the Kill Number, in order of preference (A20.22; ruling R14.4).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<string>? Yield
+    {
+        get; init;
+    }
+
+    /// <summary>The capturing side's choice of the Guard of the units the attack captures (A20.5; ruling R14.4); null takes its first attacker.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Guard
     {
         get; init;
     }
@@ -101,6 +150,20 @@ public sealed record CloseCombatRolls(IReadOnlyDictionary<string, IReadOnlyList<
     {
         get; init;
     }
+
+    /// <summary>Each escaping prisoner's NTC DR by unit (A20.55; ruling R14.6).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyDictionary<string, IReadOnlyList<int>>? EscapeNtc
+    {
+        get; init;
+    }
+
+    /// <summary>The Random Selection dr of the MMC a created leader defends with, by "index:unit" (A18.2; ruling R14.12).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyDictionary<string, int>? LeaderStack
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -124,6 +187,16 @@ public sealed record CloseCombatFacts(
     public const string Simultaneous = "simultaneous";
     public const string AmbusherRound = "ambusher";
     public const string AmbushedRound = "ambushed";
+
+    /// <summary>The prisoners' escape attacks, resolved before any other CC in the Location (A11.33, A20.55; ruling R14.6).</summary>
+    public const string PrisonersRound = "prisoners";
+
+    /// <summary>Whether the Location's CC is Hand-to-Hand this CCPh, with the red Kill Numbers (J2.31, A11.11; ruling R14.1); null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? HandToHand
+    {
+        get; init;
+    }
 }
 
 /// <summary>A defending unit's Final DR in one attack, with its own DRM (A11.16), and the result for it.</summary>
@@ -132,6 +205,7 @@ public sealed record CloseCombatDefenderResult(string UnitId, IReadOnlyList<Fire
     public const string Eliminated = "eliminated";
     public const string PartialKill = "partial-kill";
     public const string NoEffect = "no-effect";
+    public const string Captured = "captured";
 
     /// <summary>The Random Selection dr of a Partial Kill among several defenders (A11.11); null when none was rolled.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -187,6 +261,62 @@ public sealed record CloseCombatUnitEffect(string UnitId, string DefinitionId, s
     {
         get; init;
     }
+
+    /// <summary>Whether the unit is captured (A20.22; ruling R14.4); a squad captured at the Kill Number is exchanged for two HS, one of them captured.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Captured
+    {
+        get; init;
+    }
+
+    /// <summary>Whether only one HS of the squad is captured and the other stays (A20.22 EX; ruling R14.4).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? CapturedHalf
+    {
+        get; init;
+    }
+
+    /// <summary>The Guard a captured unit is placed with (A20.5; ruling R14.4); null when it is freed as Unarmed.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? GuardId
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the unit loses its "?" (A11.19, A11.4, A12.14; ruling R14.2).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? ConcealmentLost
+    {
+        get; init;
+    }
+
+    /// <summary>The Location the unit withdraws to by Infiltration (A11.22; ruling R14.8).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? InfiltratedTo
+    {
+        get; init;
+    }
+
+    /// <summary>Whether a prisoner that attacked is no longer guarded (A20.55; ruling R14.6).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Escaped
+    {
+        get; init;
+    }
+
+    /// <summary>Whether an Unarmed unit is Armed again (A20.551; ruling R14.6): an escaped SMC.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Armed
+    {
+        get; init;
+    }
+
+    /// <summary>The Conscript definition an attacking Unarmed MMC is rearmed as (A20.551; ruling R14.6).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? RearmedAs
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -201,6 +331,9 @@ public sealed record CloseCombatCreatedLeader(int Attack, string UnitId, string 
 /// <summary>A SW of a unit eliminated in CC with an Original colored dr of 1: its loss dr against the black Kill Number (A11.13).</summary>
 public sealed record CloseCombatWeaponEffect(string EquipmentId, string HolderId, int Dr, bool Eliminated);
 
+/// <summary>A prisoner's escape NTC (A20.55; ruling R14.6): its DR against its Morale Level.</summary>
+public sealed record CloseCombatEscapeCheck(string UnitId, IReadOnlyList<int> Dice, int Morale, bool Passed);
+
 /// <summary>The Close Combat package's answer: resolved with each attack's arithmetic and the effects, or Abstained or Indeterminate.</summary>
 public sealed record CloseCombatResolution(
     string Disposition,
@@ -210,6 +343,13 @@ public sealed record CloseCombatResolution(
     IReadOnlyList<CloseCombatCreatedLeader> CreatedLeaders,
     IReadOnlyList<CloseCombatWeaponEffect> WeaponEffects)
 {
+    /// <summary>The escaping prisoners' NTCs (A20.55; ruling R14.6); null when none was taken.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<CloseCombatEscapeCheck>? EscapeChecks
+    {
+        get; init;
+    }
+
     public const string Resolved = "resolved";
     public const string Abstained = "abstained";
     public const string Indeterminate = "indeterminate";
@@ -225,7 +365,15 @@ public sealed record AmbushFacts(
     string? Terrain,
     string? AttackerSide,
     IReadOnlyList<CloseCombatUnit>? Units,
-    IReadOnlyDictionary<string, int>? Rolls);
+    IReadOnlyDictionary<string, int>? Rolls)
+{
+    /// <summary>Whether a hidden unit was placed beneath a "?" in the Location this CCPh, which makes an Ambush possible (A11.4; ruling R14.2).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? HiddenPlaced
+    {
+        get; init;
+    }
+}
 
 /// <summary>One side's Ambush dr, its drm, and its Final dr.</summary>
 public sealed record AmbushSide(string Side, int Dr, IReadOnlyList<FireModifier> Drm, int FinalDr);

@@ -54,11 +54,20 @@ public sealed partial class GamePlanner
 
         // A4.7: neither broken, pinned, nor TI; A15.431: a berserk unit does not advance; A11.15: nor one held in Melee; A12.14:
         // concealed movement is not reviewed.
-        if (units.FirstOrDefault(unit => new[] { Conditions.Broken, Conditions.Pinned, Conditions.Berserk, Conditions.Melee, Conditions.Captured, Conditions.Concealed, Conditions.Hidden, "asl:ti" }
-            .Any(condition => Is(unit!, condition)) || unit!.MovementEnded) is { } barred)
+        // Table player, pass 14: the refusal names the condition; a concealed unit may advance (A12.14; ruling R14.2), a hidden one may not (A12.3).
+        foreach (var unit in units)
         {
-            return Refused(scope, label, expected,
-                $"play.advance-unit: {barred.Id} is broken, pinned, TI, berserk, in Melee, captured, concealed, or has advanced this APh (A4.7, A15.431, A11.15)");
+            if (new[] { Conditions.Broken, Conditions.Pinned, Conditions.Berserk, Conditions.Melee, Conditions.Captured, Conditions.Hidden, "asl:ti" }
+                .FirstOrDefault(condition => Is(unit!, condition)) is { } condition)
+            {
+                return Refused(scope, label, expected,
+                    $"play.advance-unit: {unit!.Id} is {condition.Replace("asl:", string.Empty, StringComparison.Ordinal)}, so it may not advance (A4.7, A15.431, A11.15, A12.3)");
+            }
+
+            if (unit!.MovementEnded)
+            {
+                return Refused(scope, label, expected, $"play.advance-unit: {unit.Id} has advanced or moved as far as it may this phase (A4.7)");
+            }
         }
 
         if (units.FirstOrDefault(unit => Mans(state, unit!)) is { } gunner)
@@ -91,8 +100,13 @@ public sealed partial class GamePlanner
 
         var terrain = entry.Terrain;
 
+        // A5.11 (ruling R14.10): entering a Location the advance overstacks costs one more MF per excess squad-equivalent.
+        var arriving = state.At(to).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && !Is(unit, Conditions.Captured))
+            .Concat(units.Select(unit => unit!)).Distinct().ToArray();
+        var excess = OverstackExcess(arriving);
+
         // A7.7 (ruling R12.11): the first Location an Encircled unit enters costs twice its MF.
-        var halfMf = entry.HalfMf * (units.Any(unit => state.Encircled(unit!)) ? 2 : 1);
+        var halfMf = (entry.HalfMf * (units.Any(unit => state.Encircled(unit!)) ? 2 : 1)) + (2 * excess);
 
         // A4.72 EX, A4.12, A4.42 (ruling R10.8): a Good Order leader of its nationality advancing with a MMC adds two MF and one IPC to it.
         var unitList = units.Select(unit => unit!).ToArray();
@@ -124,16 +138,15 @@ public sealed partial class GamePlanner
             }
         }
 
-        // The enemy units there are Known (A11.19: concealment in CC is not reviewed), and none is a prisoner (A20.55).
-        var enemies = state.At(to).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side != state.PhasingSide).ToArray();
-        if (enemies.Any(unit => unit.Kind == UnitKinds.Dummy || Is(unit, Conditions.Concealed) || Is(unit, Conditions.Hidden) || Is(unit, Conditions.Captured)))
-        {
-            return Refused(scope, label, expected, "play.advance-concealed: an advance into concealed enemy units or prisoners is not reviewed (A11.19, A20.55)");
-        }
+        // A12.14, A11.19 (ruling R14.2): an advance may enter a Location of concealed or hidden enemy units or Dummies, and one holding prisoners;
+        // A20.53 (ruling R14.5): a Guard's prisoners go with it.
+        var enemies = state.At(to).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side != state.PhasingSide && !Is(unit, Conditions.Captured))
+            .ToArray();
 
-        if (state.At(to).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && Is(unit, Conditions.Captured)))
+        // A20.54 (ruling R14.5): an Unarmed unit that is not a prisoner never enters a Location of a Known enemy unit.
+        if (enemies.Any(KnownEnemy) && units.FirstOrDefault(unit => Is(unit!, Conditions.Unarmed)) is { } unarmed)
         {
-            return Refused(scope, label, expected, "play.advance-prisoners: a Location holding prisoners is not reviewed for CC (A20.55)");
+            return Refused(scope, label, expected, $"play.advance-unarmed: {unarmed.Id} is Unarmed and may not enter a Location of a Known enemy unit (A20.54)");
         }
 
         // A crew in CC, and the Gun it mans, are not reviewed (ruling R24.3).
@@ -142,22 +155,15 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.advance-crew: CC with a Gun's crew is not reviewed (C11, ruling R24.3)");
         }
 
-        // A20.53, A20.55: a Guard's prisoners advance with it, and CC in a Location holding prisoners is not reviewed.
-        if (enemies.Length > 0 && units.FirstOrDefault(unit => IsGuard(state, unit!)) is { } guard)
-        {
-            return Refused(scope, label, expected, $"play.advance-guard: {guard.Id} guards prisoners, who would enter CC with it, which is not reviewed (A20.53, A20.55)");
-        }
-
-        // A5.1: three squad-equivalents and four SMC per side; overstacking is not reviewed.
-        var side = state.At(to).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && !Is(unit, Conditions.Captured))
-            .Concat(units.Select(unit => unit!)).Distinct().ToArray();
-        if (Overstacked(side))
-        {
-            return Refused(scope, label, expected, "play.advance-overstacked: the advance would overstack the Location, which is not reviewed (A5.1, A5.12)");
-        }
-
+        // A19.12 (ruling R14.11): a Disrupted unit there, not in Melee, surrenders to the Good Order armed Known units advancing in, unless No Quarter.
+        var surrendering = enemies.Where(unit => Is(unit, Conditions.Disrupted) && !state.NoQuarter.Contains(unit.Side, StringComparer.Ordinal))
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal).ToArray();
+        string[] takers = [.. unitList.Where(unit => !Is(unit, Conditions.Unarmed) && !Is(unit, Conditions.Concealed) && !Is(unit, Conditions.Hidden)
+            && (vocabulary.IsA(unit.Kind, "asl:mmc") || vocabulary.IsA(unit.Kind, "asl:smc"))).Select(unit => unit.Id).Order(StringComparer.Ordinal)];
         var summary = $"play.advance: {string.Join(", ", ids)} advance into {to} ({terrain})" + (enemies.Length > 0 ? $", with {string.Join(", ", enemies.Select(item => item.Id))}: CC follows (A3.7)" : string.Empty)
-            + (tiring.Count > 0 ? $"; {string.Join(", ", tiring)} become CX advancing into Difficult Terrain (A4.72)" : string.Empty);
+            + (tiring.Count > 0 ? $"; {string.Join(", ", tiring)} become CX advancing into Difficult Terrain (A4.72)" : string.Empty)
+            + (excess > 0 ? $"; the Location is overstacked by {excess} squad-equivalent(s), which costs {excess} more MF (A5.11)" : string.Empty)
+            + (surrendering.Length > 0 && takers.Length > 0 ? $"; {string.Join(", ", surrendering.Select(unit => unit.Id))} is Disrupted and surrenders (A19.12)" : string.Empty);
         var package = ScenarioA1CloseCombatPackage.Identity.ToString();
         var testing = afv is null ? [] : unitList.Where(unit => NeedsPaatc(state, unit, afv)).ToArray();
         if (afv is not null && testing.Length > 0)
@@ -205,6 +211,25 @@ public sealed partial class GamePlanner
                 new ConditionsChanged(id, new Dictionary<string, ConditionState> { [Conditions.Cx] = ConditionState.True }), package, null, [EventId(attemptId, 1)]));
         }
 
+        // A12.14 (ruling R14.2; table player, pass 14): a concealed unit keeps its "?" advancing, even into CC, unless it enters Open Ground in the LOS of a
+        // Good Order enemy ground unit within 16 hexes.
+        if (terrain == "open-ground" && EnemyGoodOrderInLosWithin16(state, state.PhasingSide, to))
+        {
+            foreach (var seen in unitList.Where(unit => Is(unit, Conditions.Concealed)))
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
+                    new ConditionsChanged(seen.Id, new Dictionary<string, ConditionState> { [Conditions.Concealed] = ConditionState.False }), package, null, [EventId(attemptId, 1)]));
+            }
+        }
+
+        if (takers.Length > 0)
+        {
+            foreach (var disrupted in surrendering)
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "surrender-pending", new SurrenderPending(disrupted.Id, takers), package, null, [EventId(attemptId, 1)]));
+            }
+        }
+
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [summary]);
     }
 
@@ -215,13 +240,17 @@ public sealed partial class GamePlanner
     private bool? DifficultAdvance(GameState state, UnitInstance unit, int halfMf, bool aided = false, bool lent = false) =>
         MfAllotment(state, unit, 0, Is(unit, Conditions.Cx), aided ? 2 : 0, lent ? 1 : 0) is { } allotment && allotment > 0 ? halfMf >= 2 * Math.Min(4, allotment) : null;
 
-    /// <summary>A5.1, A5.5: more than three squad-equivalents (two HS or crews each) or more than four SMC of one side.</summary>
-    private bool Overstacked(IEnumerable<UnitInstance> units)
+    /// <summary>
+    /// A5.1, A5.5 (ruling R14.10): the squad-equivalents of one side's units above three, rounded up, a HS or crew half and five SMC a HS (four or fewer
+    /// none).
+    /// </summary>
+    private int OverstackExcess(IEnumerable<UnitInstance> units)
     {
         var list = units.ToArray();
+        var smc = list.Count(unit => vocabulary.IsA(unit.Kind, "asl:smc"));
         var squads = list.Count(unit => vocabulary.IsA(unit.Kind, "asl:squad"))
-            + (list.Count(unit => vocabulary.IsA(unit.Kind, "asl:half-squad") || vocabulary.IsA(unit.Kind, "asl:crew")) / 2m);
-        return squads > 3 || list.Count(unit => vocabulary.IsA(unit.Kind, "asl:smc")) > 4;
+            + (list.Count(unit => vocabulary.IsA(unit.Kind, "asl:half-squad") || vocabulary.IsA(unit.Kind, "asl:crew")) / 2m) + (Math.Floor(smc / 5m) / 2m);
+        return squads > 3 ? (int)Math.Ceiling(squads - 3) : 0;
     }
 
     /// <summary>The Ambush drs of a CC Location (A11.4): one dr for each side, the ATTACKER's first, resolved by the Close Combat package.</summary>
@@ -287,8 +316,20 @@ public sealed partial class GamePlanner
                     new DiceRolled(rollId, "cc-ambush", 1, 6, drawn.Values, DiceRolled.SystemSource, actor), package, null));
             }
 
+            var recordId = EventId(attemptId, events.Count + 1);
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "ambush-rolled", new AmbushRolled(location, rollIds, resolution.Ambusher,
                 JsonSerializer.SerializeToElement(facts, LiveFire.Json), JsonSerializer.SerializeToElement(resolution, LiveFire.Json)), package, null));
+
+            // A11.4 (ruling R14.2): the ambushed side loses all its concealment.
+            foreach (var unit in resolution.Ambusher is { } ambusher ? facts.Units!.Where(unit => unit.Side != ambusher && unit.Concealed == true && unit.Captured != true) : [])
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(unit.UnitId!, new Dictionary<string, ConditionState>
+                {
+                    [Conditions.Concealed] = ConditionState.False,
+                    [Conditions.Hidden] = ConditionState.False,
+                }), package, null, [recordId]));
+            }
+
             return events;
         }
 
@@ -340,6 +381,11 @@ public sealed partial class GamePlanner
             attacks.Add(new CloseCombatDeclaration([.. Strings(item, "attackers")], [.. Strings(item, "defenders")])
             {
                 Director = Text(item, "director", out var director) ? director : null,
+
+                // A20.22 (ruling R14.4): a capture attempt, the defender's choice at the Kill Number, and the Guard.
+                Capture = item.TryGetProperty("capture", out var capture) && capture.ValueKind == JsonValueKind.True ? true : null,
+                Yield = Strings(item, "yield").ToArray() is { Length: > 0 } yielded ? yielded : null,
+                Guard = Text(item, "guard", out var guard) ? guard : null,
             });
         }
 
@@ -373,8 +419,39 @@ public sealed partial class GamePlanner
         // A11.21, A4.72 (ruling R5.5): a withdrawal an advance could make only by becoming CX makes the unit CX.
         var tiring = withdrawals.Where(item => state.Unit(item.Key) is { } unit && WithdrawalTires(state, unit, location, BoardLocation.Parse(item.Value)))
             .Select(item => item.Key).ToHashSet(StringComparer.Ordinal);
+        // A11.22 (ruling R14.8): each Infiltration destination is one a withdrawal could reach.
+        var infiltrations = Map(arguments, "infiltrations") ?? new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var (unitId, destination) in infiltrations)
+        {
+            if (state.Unit(unitId) is not { Status: InstanceStatus.Active } unit || state.Location(unit.Id)?.Location != location
+                || !BoardLocation.TryParse(destination, out var to) || !WithdrawalDestinations(state, unit, location).Contains(to))
+            {
+                return Refused(scope, label, expected, $"play.cc-infiltration: {unitId} may infiltrate only to an ADJACENT Location a withdrawal could reach (A11.22, A11.21)");
+            }
+        }
+
+        tiring.UnionWith(infiltrations.Where(item => state.Unit(item.Key) is { } unit && WithdrawalTires(state, unit, location, BoardLocation.Parse(item.Value)))
+            .Select(item => item.Key));
+
+        // J2.31 (ruling R14.1): Hand-to-Hand is declared only where an SSR allows it, with the Location's first round.
+        var handToHand = arguments.TryGetProperty("handToHand", out var hand) && hand.ValueKind == JsonValueKind.True;
+        if (handToHand && !state.SpecialRules.Contains(HandToHandRule, StringComparer.Ordinal))
+        {
+            return Refused(scope, label, expected, "play.cc-hand-to-hand: Hand-to-Hand CC is declared only where an SSR allows it (J2.31, G1.64)");
+        }
+
+        // Referee, pass 14 (A25.43, G1.64): the ATTACKER declares it with the Location's first round other than the prisoners', unless it was ambushed.
+        var begun = state.CloseCombats.FirstOrDefault(item => item.Location == location);
+        if (handToHand && ((Text(arguments, "round", out var handRound) && handRound == CloseCombatFacts.PrisonersRound)
+            || begun?.Rounds.Any(item => item != CloseCombatResolved.PrisonersRound) == true || (begun?.Ambusher is { } ambushed && ambushed != state.PhasingSide)))
+        {
+            return Refused(scope, label, expected,
+                "play.cc-hand-to-hand: the ATTACKER declares Hand-to-Hand with the Location's first round, not in the prisoners' round, and not after being ambushed (J2.31, A25.43)");
+        }
+
         var terrain = ReadLocation(state, location) is { } read ? TerrainKey(read) : null;
-        var (facts, reason) = LiveCloseCombat.FromState(state, location, terrain, attacks, stacking, withdrawals, Text(arguments, "round", out var round) ? round : null);
+        var (facts, reason) = LiveCloseCombat.FromState(state, location, terrain, attacks, stacking, withdrawals, Text(arguments, "round", out var round) ? round : null,
+            infiltrations, handToHand);
         if (facts is null)
         {
             return Refused(scope, label, expected, reason!);
@@ -408,9 +485,16 @@ public sealed partial class GamePlanner
                 var split = key.IndexOf(':', StringComparison.Ordinal);
                 var (kind, rest) = (key[..split], key[(split + 1)..]);
                 string[] selected = kind == "randomSelection" ? rest[(rest.IndexOf(':', StringComparison.Ordinal) + 1)..].Split(',') : [];
+                if (kind == "leaderStack")
+                {
+                    selected = rest[(rest.IndexOf(':', StringComparison.Ordinal) + 1)..].Split(',');
+                }
+
                 var (count, purpose) = kind switch
                 {
                     "attack" => (2, "cc-attack"),
+                    "escapeNtc" => (2, "cc-escape-ntc"),
+                    "leaderStack" => (selected.Length, "cc-leader-stack"),
                     "randomSelection" => (selected.Length, "cc-random-selection"),
                     "woundSeverity" => (1, "cc-wound-severity"),
                     "leaderCreation" => (1, "cc-leader-creation"),
@@ -431,6 +515,12 @@ public sealed partial class GamePlanner
                     },
                     "woundSeverity" => rolls with { WoundSeverity = With(rolls.WoundSeverity, rest, drawn.Values[0]) },
                     "leaderCreation" => rolls with { LeaderCreation = With(rolls.LeaderCreation, rest, drawn.Values[0]) },
+                    "escapeNtc" => rolls with { EscapeNtc = With(rolls.EscapeNtc, rest, (IReadOnlyList<int>)drawn.Values) },
+                    "leaderStack" => rolls with
+                    {
+                        LeaderStack = selected.Select((id, index) => (id, index)).Aggregate(rolls.LeaderStack,
+                            (map, pair) => With(map, rest[..rest.IndexOf(':', StringComparison.Ordinal)] + ":" + pair.id, drawn.Values[pair.index]))
+                    },
                     _ => rolls with { WeaponLoss = With(rolls.WeaponLoss, rest, drawn.Values[0]) },
                 };
             }
@@ -448,9 +538,9 @@ public sealed partial class GamePlanner
         }
 
         var described = attacks.Count == 0 ? "no attacks"
-            : string.Join("; ", attacks.Select(item => $"{string.Join(", ", item.Attackers!)} attack {string.Join(", ", item.Defenders!)}"
+            : string.Join("; ", attacks.Select(item => $"{string.Join(", ", item.Attackers!)} {(item.Capture == true ? "attempt to capture" : "attack")} {string.Join(", ", item.Defenders!)}"
                 + (item.Director is { } director ? $", directed by {director}" : string.Empty)));
-        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], [$"play.cc: {facts.Round} round in {location}: {described} (A11.11, A11.12)"])
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], [$"play.cc: {facts.Round} round in {location}{(facts.HandToHand == true ? ", Hand-to-Hand" : string.Empty)}: {described} (A11.11, A11.12)"])
         {
             Roll = new PlannedRoll("cc", Build),
             FirstEventId = EventId(attemptId, 1),
@@ -524,7 +614,7 @@ public sealed partial class GamePlanner
             }
 
             var terrain = ReadLocation(state, location) is { } read ? TerrainKey(read) : null;
-            if (LiveCloseCombat.AmbushFromState(state, location, terrain).Facts is not null)
+            if (LiveCloseCombat.AmbushFromState(state, location, terrain).Facts is not null && MandatoryAttackDecidable(state, location, terrain, unit, here))
             {
                 return berserk is not null
                     ? $"play.cc-required: {unit.Id} is berserk with a Known enemy unit in {location}, so it attacks in CC before the CCPh ends (A15.43)"
@@ -533,6 +623,33 @@ public sealed partial class GamePlanner
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Whether the Close Combat package accepts some attack the unit must make (ruling R14.14): the unit alone, with the unit its stacking would take along
+    /// left out, against each Known enemy unit there in turn; when it refuses them all, the requirement lapses.
+    /// </summary>
+    private static bool MandatoryAttackDecidable(GameState state, BoardLocation location, string? terrain, UnitInstance unit, IReadOnlyList<UnitInstance> here)
+    {
+        if (!state.CloseCombats.Any(item => item.Location == location) && LiveCloseCombat.AmbushFromState(state, location, terrain).Facts is { Units: { } units }
+            && ScenarioA1CloseCombatCalculator.AmbushPossible(terrain, units, state.HiddenPlaced.Any(id => units.Any(item => item.UnitId == id))))
+        {
+            return true;
+        }
+
+        foreach (var enemy in here.Where(other => other.Side != unit.Side && KnownEnemy(other)))
+        {
+            var (facts, _) = LiveCloseCombat.FromState(state, location, terrain, [new CloseCombatDeclaration([unit.Id], [enemy.Id])], null);
+            // Referee, pass 14: the prisoners kept keep their Guards.
+            var kept = facts?.Units!.Where(item => item.UnitId == unit.Id || item.Side != unit.Side || item.Captured == true).ToList();
+            kept?.AddRange(facts!.Units!.Where(item => item.Side == unit.Side && item.UnitId != unit.Id && kept.Any(prisoner => prisoner.GuardId == item.UnitId)));
+            if (facts is not null && ScenarioA1CloseCombatCalculator.Precheck(facts with { Units = kept }, CloseCombatReference.Value) is { Count: 0 })
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>The ADJACENT ground-level Locations of a Location, such as an advance may enter (A4.7).</summary>
@@ -599,7 +716,7 @@ public sealed partial class GamePlanner
             // Ruling R11.16 (table-player finding): a Location holding a vehicle has no Ambush; its sides attack in turn.
             due.Add(open.Next is { } next ? $"{open.Location}: the {next} side attacks or passes (A11.31)"
                 : open.Ambusher is null ? $"{open.Location}: its round after the Ambush drs (A11.12)"
-                : $"{open.Location}: more attacks by the {open.Ambusher} side, then the ambushed side's round (A11.3, A11.32)");
+                : $"{open.Location}: more attacks by the {open.Ambusher} side, then the ambushed side's round, which may declare no attacks (A11.3, A11.32)");
         }
 
         var locations = state.Units.Where(unit => unit.Status == InstanceStatus.Active && state.Location(unit.Id) is not null)
@@ -700,7 +817,9 @@ public sealed partial class GamePlanner
                 conditions[Conditions.Fanatic] = ConditionState.True;
             }
 
-            yield return ("instance-created", new InstanceCreated(new NewInstance(id, "asl:leader", leader.DefinitionId, leader.Side, new MapPosition(location), null, conditions)));
+            // A11.22, A18.12 (ruling R14.8): a leader created by an attack whose MMC infiltrates goes with it.
+            var placedAt = resolution.Effects.FirstOrDefault(item => item.UnitId == leader.StackedWith)?.InfiltratedTo is { } gone ? BoardLocation.Parse(gone) : location;
+            yield return ("instance-created", new InstanceCreated(new NewInstance(id, "asl:leader", leader.DefinitionId, leader.Side, new MapPosition(placedAt), null, conditions)));
             if (leader.Eliminated)
             {
                 yield return ("instance-eliminated", new InstanceEliminated(id));
@@ -720,7 +839,59 @@ public sealed partial class GamePlanner
                 continue;
             }
 
+            // A20.22, A20.24, A20.5 (ruling R14.4): a captured unit abandons its SW and is placed with its Guard, or is freed as Unarmed; a squad captured
+            // at the Kill Number is exchanged for two HS, one of them captured.
+            if (effect.Captured == true)
+            {
+                foreach (var (type, payload) in CaptureEffects(state, unit, effect, attemptId))
+                {
+                    yield return (type, payload);
+                }
+
+                continue;
+            }
+
+            // A20.55 (ruling R14.6): a prisoner that attacked is no longer guarded; a SMC among them is Armed again.
+            if (effect.Escaped == true)
+            {
+                yield return ("prisoner-freed", new PrisonerFreed(unit.Id));
+            }
+
             var conditions = new Dictionary<string, ConditionState>(StringComparer.Ordinal);
+            if (effect.Armed == true)
+            {
+                conditions[Conditions.Unarmed] = ConditionState.False;
+            }
+
+            // A11.19, A12.14 (ruling R14.2): the unit loses its "?".
+            if (effect.ConcealmentLost == true)
+            {
+                conditions[Conditions.Concealed] = ConditionState.False;
+                conditions[Conditions.Hidden] = ConditionState.False;
+            }
+
+            // A20.551 (ruling R14.6): an Unarmed MMC is rearmed as a Conscript MMC of its size and nationality.
+            if (effect.RearmedAs is { } rearmed)
+            {
+                var conscript = CloseCombatReference.Value.Definitions[rearmed];
+                var armed = unit.Conditions.ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal);
+                foreach (var (name, value) in conditions)
+                {
+                    armed[name] = value;
+                }
+
+                armed[Conditions.Unarmed] = ConditionState.False;
+
+                // Table player, pass 14: a rearmed prisoner is no longer captured.
+                if (effect.Escaped == true)
+                {
+                    armed[Conditions.Captured] = ConditionState.False;
+                }
+                yield return ("lineage", new LineageRecorded(LineageAction.Replaced, [unit.Id],
+                    [new NewInstance($"{attemptId}-{unit.Id}", conscript.Kind, conscript.Id, unit.Side, unit.Position, null, armed)]));
+                continue;
+            }
+
             if (effect.Wounded && GameState.Condition(unit, Conditions.Wounded) != ConditionState.True)
             {
                 conditions[Conditions.Wounded] = ConditionState.True;
@@ -756,10 +927,10 @@ public sealed partial class GamePlanner
         }
 
         // A11.2: a withdrawing unit neither eliminated nor Reduced leaves the Melee for the Location it declared, CX when the withdrawal needs it
-        // (A11.21, A4.72; ruling R5.5).
-        foreach (var effect in resolution.Effects.Where(item => item.WithdrewTo is not null))
+        // (A11.21, A4.72; ruling R5.5); A11.22 (ruling R14.8): so does an infiltrating unit.
+        foreach (var effect in resolution.Effects.Where(item => (item.WithdrewTo ?? item.InfiltratedTo) is not null && item.RearmedAs is null))
         {
-            yield return ("instance-moved", new InstanceMoved(effect.UnitId, new MapPosition(BoardLocation.Parse(effect.WithdrewTo!))));
+            yield return ("instance-moved", new InstanceMoved(effect.UnitId, new MapPosition(BoardLocation.Parse((effect.WithdrewTo ?? effect.InfiltratedTo)!))));
             if (tiring.Contains(effect.UnitId))
             {
                 yield return ("conditions-changed", new ConditionsChanged(effect.UnitId, new Dictionary<string, ConditionState> { [Conditions.Cx] = ConditionState.True }));
@@ -767,9 +938,60 @@ public sealed partial class GamePlanner
         }
     }
 
+    /// <summary>The name of the SSR that allows Hand-to-Hand CC (J2.31; ruling R14.1).</summary>
+    public const string HandToHandRule = "hand-to-hand";
+
+    /// <summary>
+    /// A captured unit's events (A20.22, A20.24, A20.5; ruling R14.4): its SW left in the Location, its status cleared (a prisoner is never broken), and its
+    /// Guard, or its freeing as an Unarmed unit of its side; a squad captured at the Kill Number is first exchanged for two HS, the first captured.
+    /// </summary>
+    private static IEnumerable<(string Type, EventPayload Payload)> CaptureEffects(GameState state, UnitInstance unit, CloseCombatUnitEffect effect, string attemptId)
+    {
+        var at = state.Location(unit.Id)!.Location;
+        foreach (var weapon in effect.CapturedHalf == true ? Enumerable.Empty<EquipmentInstance>()
+            : state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding?.Holder == unit.Id).OrderBy(item => item.Id, StringComparer.Ordinal))
+        {
+            yield return ("equipment-transferred", new EquipmentTransferred(weapon.Id, null, new MapPosition(at)));
+        }
+
+        var captive = unit.Id;
+        if (effect.CapturedHalf == true)
+        {
+            var half = CloseCombatReference.Value.Definitions[ScenarioA1FireReference.HalfSquadOf(unit.Definition!.Definition)!];
+            captive = $"{attemptId}-{unit.Id}-a";
+            var free = $"{attemptId}-{unit.Id}-b";
+            yield return ("lineage", new LineageRecorded(LineageAction.Deployed, [unit.Id],
+                [new NewInstance(captive, half.Kind, half.Id, unit.Side, unit.Position, null, unit.Conditions),
+                    new NewInstance(free, half.Kind, half.Id, unit.Side, unit.Position, null, unit.Conditions)]));
+
+            // Referee, pass 14: the HS that is not captured keeps the squad's SW (A20.24 takes only the captured unit's).
+            foreach (var weapon in state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding?.Holder == unit.Id).OrderBy(item => item.Id, StringComparer.Ordinal))
+            {
+                yield return ("equipment-transferred", new EquipmentTransferred(weapon.Id, new Holding(free, HoldingRole.Possessed), null));
+            }
+        }
+
+        yield return ("conditions-changed", new ConditionsChanged(captive, new Dictionary<string, ConditionState>
+        {
+            [Conditions.Broken] = ConditionState.False,
+            [Conditions.Disrupted] = ConditionState.False,
+            [Conditions.Pinned] = ConditionState.False,
+            [Conditions.DesperationMorale] = ConditionState.False,
+            [Conditions.Concealed] = ConditionState.False,
+            [Conditions.Hidden] = ConditionState.False,
+            [Conditions.Melee] = ConditionState.False,
+            [Conditions.Unarmed] = ConditionState.True,
+        }));
+        if (effect.GuardId is { } guard)
+        {
+            yield return ("instance-captured", new InstanceCaptured(captive, guard));
+        }
+    }
+
     /// <summary>
     /// The captor's choice for a pending surrender (A15.5, A20.21): the unit abandons its SW in its Location (A20.24), is placed with
-    /// the Guard, and becomes its prisoner, no longer broken or Disrupted (A20.54: prisoners are never broken).
+    /// the Guard, and becomes its prisoner, no longer broken or Disrupted (A20.54: prisoners are never broken). With no captor able to guard it, the
+    /// captor's side frees it as an Unarmed unit instead (A20.21, A20.51; ruling R14.5).
     /// </summary>
     private GamePlan PlanTakePrisoner(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label)
     {
@@ -788,6 +1010,35 @@ public sealed partial class GamePlanner
         if (state.PendingSurrenders.FirstOrDefault(item => item.Unit == unitId) is not { } pending)
         {
             return Refused(scope, label, expected, $"play.no-surrender: {unitId} has not surrendered");
+        }
+
+        // A20.21, A20.51 (ruling R14.5): the unit goes to a captor with Guard capacity; when none has any, it is freed as Unarmed.
+        var able = pending.Captors.Where(id => state.Unit(id) is { Status: InstanceStatus.Active } captor && state.Unit(unitId) is { } surrendered
+            && GuardLoad(state, captor) + UnitSize(surrendered) <= 5 * UnitSize(captor)).ToArray();
+        var free = arguments.TryGetProperty("free", out var freeing) && freeing.ValueKind == JsonValueKind.True;
+        if (free || (!reject && able.Length > 0 && !able.Contains(captorId, StringComparer.Ordinal) && pending.Captors.Contains(captorId, StringComparer.Ordinal)))
+        {
+            if (able.Length > 0)
+            {
+                return Refused(scope, label, expected, $"play.captor-capacity: {string.Join(", ", able)} can guard {unitId}, so it is taken by one of them (A20.21, A20.51)");
+            }
+
+            if (state.Unit(unitId) is not { } loose || state.Location(loose.Id) is not { } looseAt)
+            {
+                return Refused(scope, label, expected, $"play.no-surrender: {unitId} has not surrendered");
+            }
+
+            var releasing = ScenarioA1FirePackage.Identity.ToString();
+            var released = new List<GameEvent>();
+            foreach (var weapon in state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding?.Holder == loose.Id).OrderBy(item => item.Id, StringComparer.Ordinal))
+            {
+                released.Add(Event(scope, attemptId, released.Count + 1, expected, "equipment-transferred", new EquipmentTransferred(weapon.Id, null, new MapPosition(looseAt.Location)),
+                    releasing, null, [pending.Event]));
+            }
+
+            released.Add(Event(scope, attemptId, released.Count + 1, expected, "prisoner-freed", new PrisonerFreed(loose.Id), releasing, null, [pending.Event]));
+            return new GamePlan(GamePlanStatus.Ready, scope, label, expected, released,
+                [$"play.freed-unarmed: no captor can guard {unitId}, so it abandons its SW and is freed as an Unarmed unit (A20.21, A20.51)"]);
         }
 
         // A20.3 (ruling R5.6): the captor's side may reject the surrender, eliminating the unit and facing its side with No Quarter.
@@ -878,18 +1129,21 @@ public sealed partial class GamePlanner
 
         var adjacent = state.Units.Where(other => other.Status == InstanceStatus.Active && other.Side != unit.Side && other.Definition is not null
                 && (KnownEnemy(other) || (revealed?.Contains(other.Id) == true && other.Kind != UnitKinds.Dummy && !Is(other, Conditions.Captured)))
-                && !Is(other, Conditions.Broken) && !Is(other, Conditions.Berserk) && !Is(other, Conditions.Melee)
+                && !Is(other, Conditions.Broken) && !Is(other, Conditions.Berserk) && !Is(other, Conditions.Melee) && !Is(other, Conditions.Unarmed)
                 && (vocabulary.IsA(other.Kind, "asl:mmc") || vocabulary.IsA(other.Kind, "asl:smc"))
                 && state.Location(other.Id)?.Location is { } there && IsAdjacent(state, there, at)).ToArray();
-        string[] guards = [.. adjacent.Where(other => state.Units.Where(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian == other.Id).Sum(UnitSize)
-            + UnitSize(unit) <= 5 * UnitSize(other)).Select(other => other.Id).Order(StringComparer.Ordinal)];
 
-        // A20.21, A20.5: a unit surrendering to captors with no Guard capacity left is freed as Unarmed, which is not built: undecided.
-        return adjacent.Length > 0 && guards.Length == 0 ? null : guards;
+        // A20.21, A20.51 (ruling R14.5): the captors with Guard capacity; with none, every captor, and the captor's side frees the unit as Unarmed.
+        string[] guards = [.. adjacent.Where(other => GuardLoad(state, other) + UnitSize(unit) <= 5 * UnitSize(other)).Select(other => other.Id).Order(StringComparer.Ordinal)];
+        return guards.Length > 0 ? guards : [.. adjacent.Select(other => other.Id).Order(StringComparer.Ordinal)];
     }
 
-    /// <summary>A unit's US# (A1.6, p. 45): a squad 3, a HS 2, a SMC 1.</summary>
-    private int UnitSize(UnitInstance unit) => vocabulary.IsA(unit.Kind, "asl:squad") ? 3 : vocabulary.IsA(unit.Kind, "asl:half-squad") ? 2 : 1;
+    /// <summary>The US# of a unit's prisoners (A20.51).</summary>
+    private int GuardLoad(GameState state, UnitInstance guard) =>
+        state.Units.Where(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian == guard.Id).Sum(UnitSize);
+
+    /// <summary>A unit's US# (A1.6, p. 45; A20.51): a squad 3, a HS or crew 2, a SMC 1.</summary>
+    private int UnitSize(UnitInstance unit) => vocabulary.IsA(unit.Kind, "asl:squad") ? 3 : vocabulary.IsA(unit.Kind, "asl:half-squad") || vocabulary.IsA(unit.Kind, "asl:crew") ? 2 : 1;
 
     /// <summary>The ADJACENT Location across each hexside of a Location's hex, at ground level, on one board or across a seam.</summary>
     private IEnumerable<BoardLocation> Neighbors(GameState state, BoardLocation at)

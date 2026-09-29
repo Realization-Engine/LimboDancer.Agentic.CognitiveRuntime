@@ -3,8 +3,8 @@
   "status": "published-bounded-close-combat-package",
   "domainId": "asl",
   "packageId": "scenario-a1-close-combat",
-  "declaredUse": "Read-only conclusions for the Close Combat of one Location in one round, and for the Ambush drs before it, among Infantry of the reviewed Scenario A1 catalog, under the rulings of the ASL Unit Deviations, Ordnance, and Vehicles Plan (R29.1 to R29.15); and CC in a Location holding a vehicle, by and against it, after the PAATC (Backlog Passes Plan, R11.12 to R11.17).",
-  "caseMatrixSha256": "ee109ae560382e0dd1edd368d986c20440603a89f99ec76fed2e3e7c44eb988a",
+  "declaredUse": "Read-only conclusions for the Close Combat of one Location in one round, and for the Ambush drs before it, among Infantry of the reviewed Scenario A1 catalog, under the rulings of the ASL Unit Deviations, Ordnance, and Vehicles Plan (R29.1 to R29.15); and CC in a Location holding a vehicle, by and against it, after the PAATC (Backlog Passes Plan, R11.12 to R11.17); and Hand-to-Hand, concealment, TI, capture, prisoners, Infiltration, and overstacking in CC (Backlog Passes Plan, R14.1 to R14.13).",
+  "caseMatrixSha256": "1a49b85e0dc30210c8181d3425597c3a37f86b98df5ed50c5683e2c5f446de71",
   "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
   "cctTranscriptionSha256": "c2af9d03865da14baf7b0ec68989d99e0607079cb3f43f835d145b92bab8abbb",
   "catalogSha256": "0d67c9a63fdad49a8de3d96ad5fd1e5302e321f9850bc241e198d93656e3943d",
@@ -372,10 +372,206 @@
       "startLine": 980,
       "fragmentId": "asl-fragment:sha256:d80bb713fb483efd4d8f642e2180000ad54b40b91fa73509186d8bf37a0d9a63",
       "contentSha256": "a73ddce34da9e9c4873ccde7135334dd8c952427c7c0856e9c619546c06b8ebe"
+    },
+    {
+      "ruleId": "A4.8",
+      "physicalPdfPage": 52,
+      "startLine": 335,
+      "fragmentId": "asl-fragment:sha256:18fb6f13c52c6af9823bbc58fdde1ca39af7569f2d5c3a33e0581b0000131f6d",
+      "contentSha256": "3b6299898c39f944959f734f51ee063e3d4882baba4314549802576bb70c71fa"
+    },
+    {
+      "ruleId": "A5.11",
+      "physicalPdfPage": 52,
+      "startLine": 343,
+      "fragmentId": "asl-fragment:sha256:cae39fe79104a498b96dd8dd7628ab5001937bf1ba17ece1d52916267b620b4d",
+      "contentSha256": "6e2f4bff522f17b32dbd3f068d7b7cbbfa6a841d549b6e7f114506c29f377d84"
+    },
+    {
+      "ruleId": "A5.12",
+      "physicalPdfPage": 52,
+      "startLine": 345,
+      "fragmentId": "asl-fragment:sha256:87dfb95c51817c660ed0c03a6647dfdd8280464410c14d11e6044f693c527ab2",
+      "contentSha256": "ae0e781ff4896c84c9b190a55e5179ce718479e23826634daebde734c944f457"
+    },
+    {
+      "ruleId": "A5.131",
+      "physicalPdfPage": 52,
+      "startLine": 349,
+      "fragmentId": "asl-fragment:sha256:6c12d8e720d3b4db730387b52aa5cef1194ae02357ccffe916991e2b7bc3a4aa",
+      "contentSha256": "8c40bff68f00366fbd7928327ae000e8f8324d483a8fb0bec73b7bb54d4d9c32"
+    },
+    {
+      "ruleId": "A11.33",
+      "physicalPdfPage": 73,
+      "startLine": 918,
+      "fragmentId": "asl-fragment:sha256:6b92dcc029a31faac3049ea250e4ee195606b2c5007cbfd302302136d7e1d9fe",
+      "contentSha256": "ce521795cfcf8b58e24fcf129c5f680897f9e82e0dc7dcdaf1e0147ece9212cc"
+    },
+    {
+      "ruleId": "A11.34",
+      "physicalPdfPage": 73,
+      "startLine": 920,
+      "fragmentId": "asl-fragment:sha256:9850f5a992298404582c115c35538adb7dc9596e17bfde157d9e4979eae9fd28",
+      "contentSha256": "18e882e6fcab3161d1fd60fc0efc7b78f99e744450690292a29e8df6122cbe03"
+    },
+    {
+      "ruleId": "A12.14",
+      "physicalPdfPage": 77,
+      "startLine": 1019,
+      "fragmentId": "asl-fragment:sha256:cda43e7e134c593883fc46a7db4073092a330a96c9f8b3717fb2fd1080ed966e",
+      "contentSha256": "ca12c552e5fb0bfbb8b7662086e2f374b3a69b61dc5cc1fc2a4f7046448ee8e5"
+    },
+    {
+      "ruleId": "A12.14",
+      "physicalPdfPage": 77,
+      "startLine": 1021,
+      "fragmentId": "asl-fragment:sha256:7216323ef53d5116d4196225f70f7c7de288bc0857ca038ae08517fc607e1be2",
+      "contentSha256": "8ed289cb9b86365ec503476980646bb604b00ecf6ee2c609263715de7ee7476a"
+    },
+    {
+      "ruleId": "A12.14",
+      "physicalPdfPage": 78,
+      "startLine": 1026,
+      "fragmentId": "asl-fragment:sha256:be273d9d5e7c30abd68766ac80434f3cd9306414ccebd46f15c1e123f1a2b004",
+      "contentSha256": "381a4c43174db47f8c6a206e6bbb0587d71af657d83bd1c36a1db096de577303"
+    },
+    {
+      "ruleId": "A12.14",
+      "physicalPdfPage": 78,
+      "startLine": 1028,
+      "fragmentId": "asl-fragment:sha256:2d9528f9b65338faad4e63ea48b365cf88f9b43b88c16bc401afa7ce485ef1f7",
+      "contentSha256": "b65887a8204e5a3fa2919ac1420f933835abf4211dd013ce790b26dbd599ad33"
+    },
+    {
+      "ruleId": "A12.14",
+      "physicalPdfPage": 78,
+      "startLine": 1034,
+      "fragmentId": "asl-fragment:sha256:ecc1b1e322ecd5c8e922d221908a40b7008959ce6994c12c20a40833e68078a4",
+      "contentSha256": "771168d592a77b35d067f0a7c6b144637fcc4632a877aab0275b4ceb1e26b7c1"
+    },
+    {
+      "ruleId": "A12.14",
+      "physicalPdfPage": 78,
+      "startLine": 1038,
+      "fragmentId": "asl-fragment:sha256:84163154704f51cfb253c5be199263c86c778ab3569bf447c3e2e8ed81e88900",
+      "contentSha256": "f12bc0285a959d794077c3c668d015d3adc6f49fe27996fb63bcbd8b42b52d1d"
+    },
+    {
+      "ruleId": "A12.15",
+      "physicalPdfPage": 78,
+      "startLine": 1042,
+      "fragmentId": "asl-fragment:sha256:e92332292b4bde444aff7f84127793084e1f0ecfd99af9750da6e4aa8af40ea3",
+      "contentSha256": "ce0cc02826bf66951ff4a1ce06b7a51d105eb2f2540f3710c2e49c2455306fcf"
+    },
+    {
+      "ruleId": "A19.12",
+      "physicalPdfPage": 86,
+      "startLine": 1364,
+      "fragmentId": "asl-fragment:sha256:6ba72d47257af162876dd49563dbed54703df7a7b1df92858bd006ea85abfed3",
+      "contentSha256": "5bc78bd5e698057d4592b155dd46623474e2ce32e23ffc1b1761da0ed39fee6a"
+    },
+    {
+      "ruleId": "A19.35",
+      "physicalPdfPage": 86,
+      "startLine": 1392,
+      "fragmentId": "asl-fragment:sha256:774e9df5b11849a5270b233e54b8303256e7ea9976d3fe2e3f4db609377c925c",
+      "contentSha256": "09fc1b972979824bb065077f233cfd6ee66fefb5ca1a39f43658a37ba12c81d9"
+    },
+    {
+      "ruleId": "A20.2",
+      "physicalPdfPage": 86,
+      "startLine": 1400,
+      "fragmentId": "asl-fragment:sha256:2b28bbd016919a5777a256dd7c5fd353276462cc50468a70813fd7ff1b21c978",
+      "contentSha256": "da99c4aa4dcdb503dc6ac8c1468058010e5815f30d62f19669f0fdda5fb7022c"
+    },
+    {
+      "ruleId": "A20.21",
+      "physicalPdfPage": 86,
+      "startLine": 1402,
+      "fragmentId": "asl-fragment:sha256:6be5916f1c102d787602cd89a8f68a1dcfbd21a64c8f3bbd252ef8b5eed8afd0",
+      "contentSha256": "96ed1e81977fe721bbf05abd5c29f137e63f6818af2241e72719bd5dabfe5fcc"
+    },
+    {
+      "ruleId": "A20.22",
+      "physicalPdfPage": 87,
+      "startLine": 1406,
+      "fragmentId": "asl-fragment:sha256:1624c3c59289902ae6276b204f1af6684cb554df377d1c2bcdc79b44368f93ad",
+      "contentSha256": "11a46d9a7285d222af2d6a7b5fea954c1b605ebfc36fb13ef1f7bafb7c688627"
+    },
+    {
+      "ruleId": "A20.221",
+      "physicalPdfPage": 87,
+      "startLine": 1410,
+      "fragmentId": "asl-fragment:sha256:bca943095a851b79660c2ffaaf0b847663964bd313d491ec7afb13e2f4f8cabb",
+      "contentSha256": "09e8883627a6083e035d109518da93b963cc1c58c0d09c6f92cadec67e76f9c3"
+    },
+    {
+      "ruleId": "A20.24",
+      "physicalPdfPage": 87,
+      "startLine": 1414,
+      "fragmentId": "asl-fragment:sha256:7cc77d2b2627a492b6202e07b11e0678101a4e23a0c3f625b6ba9fbf5fce7e4d",
+      "contentSha256": "d14d3ad38c6891bcc0027b5ab1422dd9ab0f48f724904c81fff1a0c06f6ce5bd"
+    },
+    {
+      "ruleId": "A20.3",
+      "physicalPdfPage": 87,
+      "startLine": 1416,
+      "fragmentId": "asl-fragment:sha256:c4251e0eb8cec3b1fc2490c9813cc26f5783b477577afb35e05c85cdbe45ff97",
+      "contentSha256": "51b548532f91004f11b20c181da4e3fa6a4ea441ed1bf9b63d236df153a32bdb"
+    },
+    {
+      "ruleId": "A20.5",
+      "physicalPdfPage": 87,
+      "startLine": 1420,
+      "fragmentId": "asl-fragment:sha256:087bbdf8f9fd340a83f5db81982320de54ec83f19185a7ae5b44954e06543d1a",
+      "contentSha256": "a70b19b2ddb5f1881118bf54b2faa5f466ea91f3861cee7650347c34e7b2fc0c"
+    },
+    {
+      "ruleId": "A20.51",
+      "physicalPdfPage": 87,
+      "startLine": 1426,
+      "fragmentId": "asl-fragment:sha256:d289aa7c94b14e2bea4f2a16ecb832b6d74a1232acdd66632c6f82d4ef95d03e",
+      "contentSha256": "54fa0261eb237b55d3236907df40b767a058da7f8b2047c8b97d81c302935c65"
+    },
+    {
+      "ruleId": "A20.52",
+      "physicalPdfPage": 87,
+      "startLine": 1428,
+      "fragmentId": "asl-fragment:sha256:49f9a4593f93e0ec6f2f27ceeae15ce7a11fada21c0ca95b31c6e45bcb7402f8",
+      "contentSha256": "ff1e9884caf28d2287ed3b36c9d864b588416dd3fba6f9d93db7f5b791af0b9f"
+    },
+    {
+      "ruleId": "A20.53",
+      "physicalPdfPage": 87,
+      "startLine": 1430,
+      "fragmentId": "asl-fragment:sha256:6098510e29ca5eccca07d33562d90d2b765406e53f5d62e87f5ffe7c6f62927e",
+      "contentSha256": "adac5f55a3faabce375292028a011b80b3835662c6d64950e99f05cd2a6879d9"
+    },
+    {
+      "ruleId": "A20.54",
+      "physicalPdfPage": 87,
+      "startLine": 1432,
+      "fragmentId": "asl-fragment:sha256:9b8c3c7504d616bba6ef827d108df71b0b7ed4565055291edd723b2dd7e2c746",
+      "contentSha256": "00d179e38e82f539bb69ca1a7c7d9966a6be14100148e4dd10a9789c1a883a07"
+    },
+    {
+      "ruleId": "A20.54",
+      "physicalPdfPage": 88,
+      "startLine": 1438,
+      "fragmentId": "asl-fragment:sha256:2d1183c3bf5103e0743fa960d38204258b418f649cc7c0c05e57823ddf8d4d39",
+      "contentSha256": "9939e46e305d7ed2a697819daadec7b3c2d8c22e569e164a85ebda17ea229a29"
+    },
+    {
+      "ruleId": "A20.551",
+      "physicalPdfPage": 88,
+      "startLine": 1442,
+      "fragmentId": "asl-fragment:sha256:2844e71d4d9b8e1b43057958f97db3445f1fc535ef187c3ef8d8e65a4476ad51",
+      "contentSha256": "7b1daaf4fbb6f05908f73d53a4b513bd5144f8656382a85c725df591b23edfcf"
     }
   ],
   "rulings": {
-    "scope": "Infantry against Infantry in one Location in the CCPh, with Withdrawal from Melee; Hand-to-Hand, concealment in CC, prisoners in CC, TI units, capture attempts, Infiltration withdrawal, Ambush Withdrawal, and overstacked Locations are out (R29.1, R29.14). CC with vehicles is built at backlog pass 11 (R11.14 to R11.17).",
+    "scope": "Close Combat in the CCPh between Infantry of the reviewed Scenario A1 catalog in one Location: the Ambush drs, the declared attacks of each round, their odds, black or red Kill Numbers, DRM, and effects, with Field Promotion. Since backlog pass 11, CC with vehicles: Infantry against a vehicle and a vehicle against Infantry, sequentially, with the PAATC. Since backlog pass 14, Hand-to-Hand, concealed and TI units, capture attempts, prisoners and their escape, Infiltration, and overstacked Locations (R14.1 to R14.13).",
     "advance": "A Good Order Infantry unit of the phasing side that is not pinned, berserk, in Melee, captured, or concealed advances one ADJACENT Location in the APh into reviewed terrain at the same level, even into a Location of Known enemy units; an advance costing at least min(4, its MF allotment) would make it CX, which is not built, and is refused; a unit that fired in the PFPh may advance (A3.7, A4.7, A4.72; R29.2).",
     "rounds": "Each Location resolves its CC once per CCPh: all declared attacks of both sides together, or with an Ambush the ambusher's attacks and then the other side's by its survivors; no unit attacks or is attacked more than once (A11.12, A11.3, A11.32; R29.3).",
     "smc": "A SMC is stacked with one MMC of its side or alone, declared before the attacks; a stacked SMC attacks with its MMC or not at all and is attacked with it; an unstacked SMC combines with no MMC; a SMC has one FP (A11.14; R29.4).",
@@ -383,17 +579,25 @@
     "results": "A Final DR below the black Kill Number eliminates the defender; equal is a Partial Kill: Casualty Reduction of the defender, or by Random Selection among those at the Kill Number (the highest dr and ties); a squad becomes its HS, a HS is eliminated, a SMC is wounded by a Wound Severity dr (A11.11, A7.302, A17.11; R29.6).",
     "weapons": "A SW of a unit eliminated in CC is eliminated too on an Original colored dr of 1 and a subsequent dr at most the black Kill Number (A11.13; R29.7).",
     "ambush": "An Ambush can occur where Infantry advanced this APh into a woods or building Location not in Melee; each side rolls a dr with each cause its force shows once: +1 broken, +1 pinned, +1 berserk, +1 Lax, -1 Stealthy, and the best unpinned Good Order leader's leadership unless alone or with a berserk unit; at least three below the other ambushes (A11.4, A11.17, A11.18, A19.36; R29.9).",
-    "fieldPromotion": "An Original 2 by an attacking MMC calls for a Leader Creation dr with -1 per odds column below 1-1; the leader joins the attack with his FP and defends with its MMC; his mandatory leadership takes the director's place, leadership modifiers not being cumulative (A10.7), and applies to no attack with a berserk unit (A11.141, A15.42); the base MMC's Morale Level must be single and the leader's MMC unambiguous (A18.12, A18.2; R29.12).",
+    "fieldPromotion": "An Original 2 by an attacking MMC calls for a Leader Creation dr with -1 per odds column below 1-1; the leader joins the attack with his FP and defends with its MMC; his mandatory leadership takes the director's place, leadership modifiers not being cumulative (A10.7), and applies to no attack with a berserk unit (A11.141, A15.42); the base MMC is the one of the highest BPV, and the MMC he defends with is chosen by Random Selection when an enemy attack takes some of the attack's MMC and not the others (A18.12, A18.2; R29.12, R14.12).",
     "berserk": "A berserk unit attacks in its side's round, never with a leader's DRM, and returns to normal when its group's attack eliminated every enemy unit eliminated in its Location, at least one, and none is left (A11.141, A15.43, A15.46; R29.15).",
     "withdrawal": "A unit held in Melee, not pinned, berserk, or Disrupted, may withdraw to a declared ADJACENT Location an advance could enter that holds no enemy unit; it makes no attack, attacks on it take -2 and +1 per friendly unit in the Melee not withdrawing, and it withdraws unless eliminated or Reduced; a broken unit that can withdraw must (A11.2, A11.21, A11.16; R29.11).",
     "reinforcement": "A unit that advanced this APh into a Location already in Melee attacks in its side's round (A11.15; R29.17).",
-    "odds": "Odds above 10 to 1 but below 11 to 1, with or without a created leader's FP, are undecided (A11.11; R29.16).",
+    "odds": "Odds are rounded down to the nearest printed ratio, so odds of at least 10 to 1 and below 11 to 1 are 10-1 and \"> 10-1\" is reached at 11 to 1 (A11.11; R14.13, replacing R29.16).",
     "cx": "plus-one-to-a-cc-attack-a-cx-unit-makes-once-minus-one-to-a-cc-attack-against-a-cx-unit-and-plus-one-to-its-sides-ambush-dr-A4.51 (R5.2)",
     "againstVehicle": "Infantry attack a vehicle one unit at a time, a MMC with at most one SMC, with the attackers' CCV as the Kill Number and its DRM: -3 unarmored, -1 no manned MG, -2 OT, -1 CE CT, -1 Immobile AFV, +1 or +2 per escort, +2 Motion, leadership, hero, and CX; a DR under the Kill Number destroys it, burning on a lower Original DR, equal to it immobilizes it; an Original 2 is an Unlikely Kill; an Original 12 Casualty Reduces the attackers (A11.5, A11.501, A11.51, A11.6, A11.61, A11.611, A11.612; R11.14).",
     "byVehicle": "A vehicle attacks the Infantry of one Location with its CMG and, CE, its AAMG on the CCT, against the defenders' CCV (each MMC's CCV, -1 Inexperienced and -1 pinned, at least one; a SMC adds one with a MMC and has a CCV of 2 alone), with random selection and wound severity (A11.62, A11.621; R11.15).",
     "sequential": "In a Location holding a vehicle CC is sequential: the non-vehicular side attacks first, then the sides alternate, each attack resolved before the next, until every unit has attacked, passed, or been eliminated; a side that passes passes with every unit it has left there; a vehicle is never held in Melee, and a non-Abandoned vehicle not in Motion holds Known enemy Infantry in Melee (A11.31, A11.7; R11.16).",
     "paatc": "A MMC advancing into, or attacking in CC, a Location of a manned unconcealed enemy AFV first passes a PAATC, unless exempt or passed this phase; concealed units in a Location an enemy vehicle enters are revealed or take the PAATC (A11.6, A12.41; R11.12, R11.17).",
-    "capture": "An unarmed vehicle not in Motion and without Personnel of its side is captured as a CCPh begins with enemy Infantry in its Location, and is Abandoned; a manned AFV or a vehicle in Motion is never captured (A11.52; R11.16)."
+    "capture": "a-non-berserk-attack-on-non-berserk-defenders-may-be-a-capture-attempt-plus-one-or-minus-one-against-inexperienced; below-the-kill-number-captures-every-defender; at-it-one-unit-of-the-defenders-declared-choice-a-squad-giving-up-one-hs; the-guard-is-the-named-or-first-attacker-with-capacity-else-freed-unarmed; a-side-wiped-out-in-a-simultaneous-round-captures-no-one-A20.22-A19.35-A20.2-A20.221-A20.24-A20.5-A20.51 (R14.4)",
+    "handToHand": "where-the-ssrs-include-hand-to-hand-the-attacker-may-declare-a-locations-cc-hand-to-hand-with-its-first-round-and-every-attack-there-that-ccph-uses-the-red-kill-number-never-with-a-vehicle-A11.11-J2.31 (R14.1)",
+    "concealment": "dummies-removed-and-hidden-units-placed-under-a-question-mark-when-a-locations-cc-starts; an-attack-on-a-concealed-defender-halves-its-fp; a-unit-loses-its-question-mark-attacking-or-directing-unless-its-ambushing-attack-clears-its-target-and-when-reduced-or-wounded; the-ambushed-side-loses-all-concealment; a-concealed-unit-is-neither-held-nor-holds-in-melee-A11.19-A11.4-A11.14-A11.15-A12.14 (R14.2)",
+    "ti": "plus-one-to-a-cc-attack-a-ti-unit-makes-once-and-minus-one-to-a-cc-attack-against-a-ti-unit-for-that-unit-A4.8 (R14.3)",
+    "prisoners": "a-captured-unit-is-unarmed-with-a-cc-fp-of-one; a-guard-attacking-non-prisoners-is-halved; prisoners-take-no-part-in-cc-but-to-escape-A20.5-A20.52-A20.54 (R14.5)",
+    "escape": "prisoners-whose-guard-is-broken-or-in-melee-attack-first-in-their-own-round-after-a-ntc-unless-the-guard-is-in-melee-each-attack-taking-in-the-guard; an-attacking-prisoner-is-no-longer-guarded; an-unarmed-mmc-is-rearmed-as-a-conscript-for-each-armed-enemy-unit-of-at-least-its-size-it-eliminates-or-captures-A20.55-A11.33-A11.34-A20.551 (R14.6)",
+    "infiltration": "the-attackers-attacks-first-then-the-defenders; after-an-original-2-its-attackers-with-a-declared-destination-not-eliminated-captured-or-pinned-withdraw; after-an-original-12-its-surviving-defenders-with-one-withdraw-forfeiting-their-attacks-not-yet-resolved-A11.22 (R14.8)",
+    "overstacking": "plus-one-per-squad-equivalent-a-side-exceeds-three-to-its-cc-attacks-and-minus-one-to-cc-attacks-on-its-units-prisoners-never-counted-A5.12-A5.131-A5.5-A20.51 (R14.10)",
+    "bpv": "the-mmc-of-the-highest-bpv-founds-a-leader-created-in-cc; the-mmc-he-defends-with-by-random-selection-when-an-enemy-attack-takes-some-of-the-attacks-mmc-A18.2 (R14.12)"
   },
   "resolution": {
     "odds": "The attackers' FP against the defenders' FP, rounded down to the printed CCT column; < 1-8 below one to eight, > 10-1 above ten to one (A11.11, p. 692).",
@@ -406,9 +610,6 @@
     "A1-cc-ambush-resolved",
     "A1-cc-phase-outside",
     "A1-cc-unit-outside",
-    "A1-cc-concealment-unreviewed",
-    "A1-cc-prisoners-unreviewed",
-    "A1-cc-overstacked-unreviewed",
     "A1-cc-attack-outside",
     "A1-cc-round-outside",
     "A1-cc-stacking-outside",
@@ -422,17 +623,25 @@
     "A1-cc-vehicle-sequential",
     "A1-cc-vehicle-paatc",
     "A1-cc-vehicle-capture",
-    "A1-cc-vehicle-roll-missing"
+    "A1-cc-vehicle-roll-missing",
+    "A1-cc-hand-to-hand",
+    "A1-cc-concealed",
+    "A1-cc-ti",
+    "A1-cc-capture",
+    "A1-cc-capture-outside",
+    "A1-cc-capture-choice-undecided",
+    "A1-cc-prisoners-escape",
+    "A1-cc-prisoner-outside",
+    "A1-cc-infiltration",
+    "A1-cc-overstacked"
   ],
   "excludedOutcomes": [
-    "Hand-to-Hand CC (J2.31), CC between Infantry in a Location holding a vehicle, and a vehicle's attack in CC on another vehicle",
+    "The rest of J2.31 beyond the red Kill Numbers, Gurkha and Japanese Hand-to-Hand (A25.43, G1.64), CC between Infantry in a Location holding a vehicle, and a vehicle's attack in CC on another vehicle",
     "Capture of a crewed vehicle in CC and use of captured vehicles (A11.52, A21.2), Armor Leaders, and Passengers and Riders in CC (A11.611)",
-    "Concealed and hidden units and Dummies in CC (A11.19)",
-    "Capture attempts in CC and prisoners in a CC Location (A20.22, A20.55)",
-    "Infiltration withdrawal and Ambush Withdrawal (A11.22, A11.41)",
-    "TI units in CC (A4.8), and overstacked Locations (A5.12, A5.131)",
-    "Advances into concealed enemy units, and advances changing level"
+    "A withdrawal into a concealed enemy unit's Location (A11.21)",
+    "Prisoners' Withdrawal from Melee, recapture in the MPh, Scrounging, and the exchange of prisoners left alone (A20.54, A20.55, A20.552, A20.221)",
+    "Advances changing level"
   ],
   "executionAuthority": "none",
-  "priorCloseCombatPackageManifestSha256": "fb0e0bf77f66684f95c351406e6929672b79940331e10832d9e273b8e6d651ee"
+  "priorCloseCombatPackageManifestSha256": "2dde0d2bd7f8a08dab8e808984ffee8b0a008e5a1c92b050c5c37163a0c0e5bf"
 }

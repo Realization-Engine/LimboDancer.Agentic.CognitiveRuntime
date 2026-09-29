@@ -150,6 +150,45 @@ public sealed class PlayPageCloseCombatTests : IDisposable
     }
 
     [Fact]
+    public void ACaptureAttemptIsDeclaredOnThePageAndItsRecordNamesTheGuard()
+    {
+        // Backlog pass 14 (ruling R14.4): the attack is marked as a capture attempt; 4 FP against a HS's 2 is 2-1, Kill Number 7, and +1 for the
+        // attempt: 2 and 3 capture the HS, which g1 guards (A20.22, A20.5).
+        var hexes = Hexes();
+        var page = context.Render<PlayPage>();
+        page.Find("#new-board").Change(Board);
+        page.Find("#new-first").Change("german");
+        page.Find("#new-second").Change("russian");
+        page.Find("#new-first-elr").Change("3");
+        page.Find("#new-second-elr").Change("2");
+        Place(page, "g1", "attacker-squad", hexes.One);
+        Place(page, "r1", "defender-half-squad", hexes.Two);
+        Commit(page, "#propose-setup");
+        for (var phase = 0; phase < 6; phase++)
+        {
+            Commit(page, "#propose-advance");
+        }
+
+        page.Find(".advance-unit[data-unit='g1']").Change(true);
+        page.Find("#advance-to").Change(hexes.Two);
+        Commit(page, "#propose-advance-units");
+        Commit(page, "#propose-advance");
+        page.Find("#cc-location").Change(hexes.Two);
+        page.Find(".cc-attacker[data-unit='g1']").Change(true);
+        page.Find(".cc-defender[data-unit='r1']").Change(true);
+        page.Find("#cc-capture").Change(true);
+        page.Find("#cc-add-attack").Click();
+        Assert.Contains("attempt to capture", page.Find("#cc-attacks").TextContent, StringComparison.Ordinal);
+        dice.Enqueue(2);
+        dice.Enqueue(3);
+        Commit(page, "#propose-cc");
+        var record = page.Find("#play-close-combats .cc-record").TextContent;
+        Assert.Contains("capture, A20.22", record, StringComparison.Ordinal);
+        Assert.Contains("r1 is captured and guarded by g1 (A20.22)", record, StringComparison.Ordinal);
+        Assert.False(live.History("village")!.HasErrors);
+    }
+
+    [Fact]
     public void AUnitHeldInMeleeWithdrawsFromThePage()
     {
         // Table-player review, item 1 and the page findings: the advance destinations are a list of ADJACENT Locations, no Ambush is

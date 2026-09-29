@@ -15,7 +15,7 @@ public static class LiveCloseCombat
 {
     /// <summary>The units of a CC Location as the package reads them, or the reason they cannot be read.</summary>
     public static (IReadOnlyList<CloseCombatUnit>? Units, string? Reason) Units(GameState state, BoardLocation location,
-        IReadOnlyDictionary<string, string>? stacking, IReadOnlyDictionary<string, string>? withdrawals = null)
+        IReadOnlyDictionary<string, string>? stacking, IReadOnlyDictionary<string, string>? withdrawals = null, IReadOnlyDictionary<string, string>? infiltrations = null)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(location);
@@ -24,16 +24,12 @@ public static class LiveCloseCombat
             return (null, $"play.cc-catalog: the Close Combat package reads {LiveFire.Catalog}@{LiveFire.CatalogVersion}, and this game uses {state.Catalog.Catalog}@{state.Catalog.Version}");
         }
 
-        UnitInstance[] units = [.. state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active).OrderBy(unit => unit.Id, StringComparer.Ordinal)];
+        // A11.19 (ruling R14.2): Dummies are removed before any attack is declared, so they are never CC units.
+        UnitInstance[] units = [.. state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Kind != UnitKinds.Dummy)
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal)];
         if (units.Any(unit => unit.Definition is null))
         {
-            return (null, "play.cc-units: the Location holds a Dummy or a unit outside the catalog (A11.19)");
-        }
-
-        // A4.8: a TI unit in CC is not reviewed (ruling R29.14).
-        if (units.Any(unit => Is(unit, "asl:ti")))
-        {
-            return (null, "play.cc-ti: the Location holds a TI unit, whose CC is not reviewed (A4.8)");
+            return (null, "play.cc-units: the Location holds a unit outside the catalog (A11.19)");
         }
 
         return ([.. units.Select(unit => new CloseCombatUnit(unit.Id, unit.Definition!.Definition, unit.Side, Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned),
@@ -44,6 +40,12 @@ public static class LiveCloseCombat
             StackedWith = stacking?.GetValueOrDefault(unit.Id),
             WithdrawingTo = withdrawals?.GetValueOrDefault(unit.Id),
             Cx = Is(unit, Conditions.Cx) ? true : null,
+
+            // Rulings R14.3, R14.5, R14.8: TI, Unarmed units and prisoners' Guards, and the declared Infiltrations.
+            Ti = Is(unit, "asl:ti") ? true : null,
+            Unarmed = Is(unit, Conditions.Unarmed) ? true : null,
+            GuardId = Is(unit, Conditions.Captured) ? unit.Custodian : null,
+            InfiltrateTo = infiltrations?.GetValueOrDefault(unit.Id),
             Weapons = state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unit.Id)
                 .Select(item => item.Id).Order(StringComparer.Ordinal).ToArray() is { Length: > 0 } weapons ? weapons : null,
         })], null);
@@ -54,7 +56,12 @@ public static class LiveCloseCombat
     {
         ArgumentNullException.ThrowIfNull(state);
         var (units, reason) = Units(state, location, null);
-        return units is null ? (null, reason) : (new AmbushFacts(state.Phase == "ccph" ? "CCPh" : state.Phase, location.ToString(), terrain, state.PhasingSide, units, null), null);
+
+        // A11.4 (ruling R14.2): a hidden unit placed there as the CCPh began makes an Ambush possible.
+        return units is null ? (null, reason) : (new AmbushFacts(state.Phase == "ccph" ? "CCPh" : state.Phase, location.ToString(), terrain, state.PhasingSide, units, null)
+        {
+            HiddenPlaced = units.Any(unit => state.HiddenPlaced.Contains(unit.UnitId!, StringComparer.Ordinal)) ? true : null,
+        }, null);
     }
 
     /// <summary>
@@ -64,27 +71,37 @@ public static class LiveCloseCombat
     /// </summary>
     public static (CloseCombatFacts? Facts, string? Reason) FromState(GameState state, BoardLocation location, string? terrain,
         IReadOnlyList<CloseCombatDeclaration> attacks, IReadOnlyDictionary<string, string>? stacking, IReadOnlyDictionary<string, string>? withdrawals = null,
-        string? requested = null)
+        string? requested = null, IReadOnlyDictionary<string, string>? infiltrations = null, bool handToHand = false)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(attacks);
-        var (units, reason) = Units(state, location, stacking, withdrawals);
+        var (units, reason) = Units(state, location, stacking, withdrawals, infiltrations);
         if (units is null)
         {
             return (null, reason);
         }
 
         var entry = state.CloseCombats.FirstOrDefault(item => item.Location == location);
-        if (entry is null && ScenarioA1CloseCombatCalculator.AmbushPossible(terrain, units))
+        if (entry is null && ScenarioA1CloseCombatCalculator.AmbushPossible(terrain, units, units.Any(unit => state.HiddenPlaced.Contains(unit.UnitId!, StringComparer.Ordinal))))
         {
             return (null, $"play.cc-ambush-first: Infantry advanced into CC in {location}, so the Ambush drs come first (A11.4)");
         }
 
-        var round = entry?.Ambusher is null ? CloseCombatFacts.Simultaneous
-            : entry.Rounds.Count == 0 || requested == CloseCombatFacts.AmbusherRound ? CloseCombatFacts.AmbusherRound
+        // A11.33, A11.34 (ruling R14.6): the prisoners' escape round, when asked for, comes before any other; the rounds after it follow as before.
+        var rounds = entry?.Rounds.Where(item => item != CloseCombatFacts.PrisonersRound).Count() ?? 0;
+        var ambushers = entry?.Ambusher is { } ambusher && units.Any(unit => unit.Side == ambusher && unit.Captured != true);
+        var round = requested == CloseCombatFacts.PrisonersRound && (entry is null || entry.Rounds.Count == 0) ? CloseCombatFacts.PrisonersRound
+            : entry?.Ambusher is null ? CloseCombatFacts.Simultaneous
+            : ambushers && (rounds == 0 || requested == CloseCombatFacts.AmbusherRound) ? CloseCombatFacts.AmbusherRound
             : CloseCombatFacts.AmbushedRound;
+
+        // J2.31 (ruling R14.1): the Location's first round other than the prisoners' declares Hand-to-Hand for the CCPh.
+        var hand = rounds > 0 ? entry!.HandToHand : round != CloseCombatFacts.PrisonersRound && handToHand;
         return (new CloseCombatFacts(state.Phase == "ccph" ? "CCPh" : state.Phase, location.ToString(), terrain, state.PhasingSide, round, entry?.Ambusher, units,
-            entry?.Attacked ?? [], entry?.Attacking ?? [], attacks, null), null);
+            entry?.Attacked ?? [], entry?.Attacking ?? [], attacks, null)
+        {
+            HandToHand = hand ? true : null,
+        }, null);
     }
 
     /// <summary>The rolls of a CC record, rebuilt from its roll ids and the recorded dice, in the package's shape.</summary>
@@ -97,6 +114,8 @@ public static class LiveCloseCombat
         var wounds = new Dictionary<string, int>(StringComparer.Ordinal);
         var creation = new Dictionary<string, int>(StringComparer.Ordinal);
         var weapons = new Dictionary<string, int>(StringComparer.Ordinal);
+        var escapes = new Dictionary<string, IReadOnlyList<int>>(StringComparer.Ordinal);
+        var stacks = new Dictionary<string, int>(StringComparer.Ordinal);
         foreach (var (key, id) in combat.Rolls)
         {
             if (!rolls.TryGetValue(id, out var roll) || roll.Sides != 6)
@@ -110,6 +129,23 @@ public static class LiveCloseCombat
             {
                 case "attack" when roll.Count == 2:
                     attacks[rest] = roll.Values;
+                    break;
+                case "escapeNtc" when roll.Count == 2:
+                    escapes[rest] = roll.Values;
+                    break;
+                case "leaderStack":
+                    var stackAt = rest.IndexOf(':', StringComparison.Ordinal);
+                    var stackIds = stackAt < 0 ? [] : rest[(stackAt + 1)..].Split(',');
+                    if (stackAt < 0 || roll.Count != stackIds.Length)
+                    {
+                        return null;
+                    }
+
+                    foreach (var (unit, index) in stackIds.Select((unit, index) => (unit, index)))
+                    {
+                        stacks[rest[..stackAt] + ":" + unit] = roll.Values[index];
+                    }
+
                     break;
                 case "randomSelection":
                     // "randomSelection:<attack>:<id>,<id>": one die per unit, in order.
@@ -146,6 +182,8 @@ public static class LiveCloseCombat
             WoundSeverity = wounds.Count > 0 ? wounds : null,
             LeaderCreation = creation.Count > 0 ? creation : null,
             WeaponLoss = weapons.Count > 0 ? weapons : null,
+            EscapeNtc = escapes.Count > 0 ? escapes : null,
+            LeaderStack = stacks.Count > 0 ? stacks : null,
         };
     }
 
@@ -386,7 +424,9 @@ public sealed class CloseCombatRecordVerifier(ScenarioA1CloseCombatReference ref
         // The stacking and the withdrawals are the players' declarations, taken as recorded.
         var stacking = recorded.Units.Where(unit => unit.StackedWith is not null).ToDictionary(unit => unit.UnitId!, unit => unit.StackedWith!, StringComparer.Ordinal);
         var withdrawals = recorded.Units.Where(unit => unit.WithdrawingTo is not null).ToDictionary(unit => unit.UnitId!, unit => unit.WithdrawingTo!, StringComparer.Ordinal);
-        var (expected, reason) = LiveCloseCombat.FromState(state, combat.Location, recorded.Terrain, recorded.Attacks, stacking, withdrawals, recorded.Round);
+        var infiltrations = recorded.Units.Where(unit => unit.InfiltrateTo is not null).ToDictionary(unit => unit.UnitId!, unit => unit.InfiltrateTo!, StringComparer.Ordinal);
+        var (expected, reason) = LiveCloseCombat.FromState(state, combat.Location, recorded.Terrain, recorded.Attacks, stacking, withdrawals, recorded.Round, infiltrations,
+            recorded.HandToHand == true);
         if (expected is null)
         {
             return reason;

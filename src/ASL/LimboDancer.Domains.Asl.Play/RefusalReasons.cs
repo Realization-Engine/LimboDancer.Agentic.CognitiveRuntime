@@ -42,7 +42,15 @@ public static class RefusalReasons
 
         // Close Combat (A11).
         ["cc.phase-outside"] = "Close Combat is resolved only in the CCPh (A11.1)",
-        ["cc.ambush-not-possible"] = "no Ambush is possible here: no Infantry advanced into woods or a building (A11.4)",
+        ["cc.ambush-not-possible"] = "no Ambush is possible here: no Infantry advanced into woods or a building, or with or against a concealed unit, and no hidden unit was placed (A11.4)",
+        ["cc.capture-outside"] = "a capture attempt is made by and against units none of which is berserk; its Guard is one of its armed attackers, and the defender's order names only its defenders (A20.2, A20.22)",
+        ["cc.capture-choice-undecided"] = "a capture attempt on several units needs the defender's order of choice for the unit captured at the Kill Number (A20.22)",
+        ["cc.escape-outside"] = "prisoners attack only in their own round, only a Guard that is broken or held in Melee, and every attack takes in the Guard (A20.55)",
+        ["cc.prisoner-outside"] = "prisoners take no part in CC but in their escape round, and are never attacked (A20.54, A20.55)",
+        ["cc.prisoner-guard-outside"] = "a prisoner's Guard is not an enemy unit in its Location (A20.5)",
+        ["cc.infiltration-outside"] = "a berserk, Disrupted, or withdrawing unit does not infiltrate (A11.2, A11.22)",
+        ["cc.field-promotion-bpv-missing"] = "a MMC of the attack has no BPV recorded, which Leader Creation needs (A18.2)",
+        ["cc.rearm-counter-missing"] = "the catalog has no Conscript MMC to rearm an Unarmed unit as (A20.551)",
         ["cc.unit-listed-twice"] = "a unit is named twice",
         ["cc.unit-outside"] = "a named unit is not an active unit in this Location, or is not reviewed in CC",
         ["cc.concealment-unreviewed"] = "concealment in CC is not reviewed (A11.19)",

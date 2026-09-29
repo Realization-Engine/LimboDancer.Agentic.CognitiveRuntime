@@ -83,7 +83,9 @@ public sealed class CloseCombatRecordTests
     [Fact]
     public void ALocationsCcIsResolvedOnceAndUnitsLeftTogetherAreHeldInMelee()
     {
-        var events = With(8, Phase("p1", "aph"), Advance("a1", G1, E4), Phase("p2", "ccph"), Combat("c1", CloseCombatResolved.Simultaneous, G1, R1));
+        // Ruling R14.2: a concealed unit is not held in Melee, so the Russian is Known here, as its own attack would have made it.
+        var events = With(8, Changed("k1", "r1", Conditions.Concealed, ConditionState.False), Phase("p1", "aph"), Advance("a1", G1, E4), Phase("p2", "ccph"),
+            Combat("c1", CloseCombatResolved.Simultaneous, G1, R1));
         var combat = Project(events);
         Assert.False(combat.HasErrors, string.Join(" ", combat.Diagnostics));
         Assert.True(combat.Current!.CloseCombats.Single().Closed);

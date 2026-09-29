@@ -111,25 +111,9 @@ The backlog pass 10 (2026-09-28) built this section.
 | Item | Deferred by | Rules | Depends on |
 |---|---|---|---|
 | CC by or against vehicles, sequential CC with a vehicle, Street Fighting | R29.1 | A11.31, A11.5 to A11.8, pp. 73 to 76 | Vehicles (step 25) |
-| Hand-to-Hand CC and the red Kill Numbers | R29.1 | A11.11, p. 72; J2.31 | A scenario that calls for it |
-| Concealed and hidden units and Dummies in CC, and an advance into concealed enemy units | R29.14 | A11.19, p. 73; A12.15, p. 78 | Concealment in CC |
-| Capture attempts in CC (+1, or -1 against Inexperienced Personnel) | R30.1 | A20.22, p. 86; A19.35, p. 86 | Unarmed counters |
-| Prisoners in a CC Location, prisoner escape, recapture | R30.8 | A20.55, p. 88; A20.54, pp. 87 and 88 | Unarmed counters and the prisoners' CC |
-| Infiltration withdrawal on an Original 2 or 12 | R29.13 | A11.22, p. 73 | Withdrawal in the middle of a round |
-| Ambush Withdrawal | R29.1 | A11.41, pp. 73 and 74 | Withdrawal before and after the ambusher's round |
-| TI units in CC | R29.14 | A4.8, p. 52; the CCT, p. 692 | TI tasks |
-| Overstacked CC and overstacking advances | R29.14, R29.2 | A5.12, A5.131, p. 52 | Overstacking penalties |
-| Unarmed counters, the excess surrendering units freed as Unarmed, and a Guard without capacity | R30.7 | A20.5, A20.21, A20.51, p. 87 | Unarmed definitions in the catalog; until then a surrender to Guards with no capacity is refused |
-| Moving, transferring, or abandoning prisoners by choice; a prisoner's owner moving it once freed | R30.8 | A20.5, A20.53, p. 87 | Guard actions in the RPh and APh |
 | A berserk unit's choice of which 1PP SW to abandon beyond its IPC | R30.5 | A15.431, p. 84; A4.42, p. 50 | An owner's choice before the charge |
 | Italian, Axis Minor, and Japanese Heat of Battle exceptions | Pass 2 review | Heat of Battle table notes, p. 83 | Counters of those nationalities; until then they are refused |
-| Field Promotion in CC by MMC of different BPV, or whose defending MMC is decided by Random Selection | R29.12 | A18.2, p. 85 | BPV in the catalog; a Random Selection for the leader's stacking |
-| Odds above 10 to 1 but below 11 to 1 | R29.16 | A11.11, p. 72 | A user ruling on the rounding |
-| The Ambush drm when a force is berserk (Berserk and Lax both counted) | R29.9 | A11.4, p. 73; A15.432, p. 84 | A user ruling on "(each)" |
 | Ambush at night (by at least 2) | R29.9 | A11.4 chart, p. 692 | Night rules (E1) |
-| A Guard advancing into CC | R29.19 | A20.53, A20.55, pp. 87 and 88 | The prisoners' CC | Refused. |
-| Mandatory CC that the package refuses | R29.17 | A15.43, A11.15 | The CC exclusions above | A berserk or reinforcing unit's Location must have its round only when the package reviews its units; if every declaration is then refused (undecided odds or Field Promotion), the CCPh cannot end, and the players split the attack. |
-| Field Promotion ambiguity in everyday combined attacks (the table player's most frequent refusal) | R29.12 | A18.12, p. 85 | A declaration of the base MMC and the MMC the created leader defends with | Two MMC of different Morale Level combining, or an enemy attack on some but not all of an attack's MMC, is refused before any roll. |
 | Play page: a berserk leader's companions' TCs in the CC record (SW left unpossessed by eliminated units are listed since pass 5) | Table-player review | A20.24, A15.431, A15.41 | | Shown in the fire and rally records and the move's reasons, not in the CC record. |
 
 ## 12. Added by the deviations pass 3 (step 24)
@@ -285,7 +269,6 @@ Vehicle movement (Reverse, VBM, ESB, Minimum Move, Bog, OVR, stacking, and terra
 | Hidden units moving | R10.10 | A12.3, p. 79 | HIP loss on movement | Refused. |
 | A Minimum Move into concealed enemy units | R10.9 | A4.134, A12.15 | A forced back after a Minimum Move | Refused. |
 | Infantry OVR outside the reviewed building case, and a lone revealed SMC's OVR option | R10.11 | A4.15, A4.151, A4.152, p. 49 | OVR NTC and the SMC's options for any terrain | A Known lone SMC's Location is refused; a lone revealed SMC forces the mover back (a deviation in section 1). |
-| An advance into concealed enemy units | R10.11 | A11.19, A12.15 | Concealment in CC (pass 14) | Refused. |
 | A berserk charge up or down a stairwell or along an upper level | R10.15 | A15.431, p. 84; B23.4 | Levels in the route graph | A Known enemy unit upstairs has no route: the charge ends in place. |
 | Wall Advantage between units adjacent across a wall since setup with no Scenario Defender named | R10.6 | B9.32, p. 119 | WA declared at setup | Fire between them is refused. |
 | A stack in Bypass splitting, making a SMOKE attempt, or occupying an obstacle that holds enemy units; fire at it from within the hex; a Snap Shot at a Bypass step; Bypass of a hex with a wall, hedge, or friendly units | R10.7 | A4.3 to A4.34, pp. 49 to 50 | Bypass kept per unit; vertex LOS | Refused. |
@@ -329,7 +312,7 @@ The backlog pass 12 (2026-09-28) built, and removed from sections 2, 3, 5, 8, 11
 | Spraying Fire in the MPh, at upper-level Locations of one hex, and counted toward an Encirclement | R12.6; referee, pass 12 | A9.5, A9.52, A7.7 | Spraying in the movement windows | Refused in the MPh; a spray does not count toward an Encirclement. |
 | Fire Lanes along an Alternate Hex Grain, their Snap Shots, intersecting lanes, the TPBF and CC Reaction Fire cancellation, Impulse movement, a lane's wall or hedge TEM, attacks on each MF expenditure after the first, and lanes against vehicles | R12.7; referee, pass 12 | A9.22 to A9.223 | Lane geometry and hexside TEM for Residual FP | A lane runs along a straight Hex Grain and attacks Infantry as they enter its Locations; its MG does not fire again until the DFPh. |
 | Other Hindrances on a Fire Lane (orchard, wrecks) as DRM | Referee, pass 12 | A9.222 | Hindrance types in the LOS read | No lane Hindrance applies as a DRM; any cancels FFMO. |
-| A concealed unit's TPBF into its own Melee Location | R12.8 | A11.15 | Concealment in CC (pass 14) | Refused. |
+| A concealed unit's TPBF into its own Melee Location | R12.8 | A11.15 | A fire phase's read of a concealed unit in a Melee Location (concealment in CC is built, pass 14) | Refused. |
 | Encirclement at upper levels, from the Locations above and below, by ordnance, of Vulnerable PRC of an Immobile vehicle, by vehicular armament, and its capture effects | R12.11 | A7.7, A7.72, A20.21 | Those attacks and levels | Only Infantry fire at Normal Range counts; ground-level Personnel are Encircled. |
 | The ordnance To Hit +1 for an Encircled Gun crew | R12.11 | A7.7 | The Ordnance package | Not applied. |
 | Spraying Fire's second Location, an Encirclement, or a Fire Lane after the first attack stops for an owner's choice (Battle Hardening, an Unlikely Kill dr) | Table player, pass 12 | A9.5, A7.7, A9.22 | Carrying the follow-on work in the choice's resume | They are not made; the choice resumes the first attack only. |
@@ -359,3 +342,21 @@ The backlog pass 13 (2026-09-28) built, and removed from sections 2, 3, 5, 8, 11
 | Short readable ids for HS and squads made by Deployment, Recombining, and Casualty Reduction | Table player, pass 13 | A1.31, A1.32 | An id scheme for produced units | Ids join the attempt and the parent id. |
 | The Deploy control splitting several SW between the two HS | Table player, pass 13 | A1.31 | A multi-select on the page | The page names one SW for the second HS; the action takes a list. |
 | A route builder with levels on the Play page | Table player, pass 13 | A10.5 | Map clicks on the Play page | Hexes are typed at level 0, or a full Location is typed. |
+
+## 24. Added by the backlog pass 14
+
+The backlog pass 14 (2026-09-28) built, and removed from sections 11 and 20: Hand-to-Hand CC with the red Kill Numbers; concealed and hidden units and Dummies in CC, and advances into concealed enemy units; TI units in CC; capture attempts; prisoners in a CC Location and their escape; Unarmed units, the units freed as Unarmed, and a Guard without capacity; transferring and abandoning prisoners; a Guard advancing into CC; Infiltration and Ambush Withdrawal; overstacked CC and overstacking advances; Field Promotion by MMC of different BPV and the MMC its leader defends with; the odds between 10 and 11 to 1; the berserk Ambush drm; and mandatory CC the package refuses. What it leaves out follows.
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| The rest of J2.31, and Gurkha and Japanese Hand-to-Hand (their -1 DRM, automatic declaration) | R14.1 | J2.31 (not in the registered PDF), A25.43, G1.64 | A registered J2.31; those nationalities' counters | Only the red Kill Numbers apply, by SSR. |
+| A withdrawal into a concealed enemy unit's Location | R14.2 | A11.21 | Withdrawal destinations with unknown units | Such a Location is not offered. |
+| Later attacks of the prisoners' round leaving out a Guard an earlier one eliminated | Referee, pass 14 | A20.55 | Sequential declaration of the prisoners' attacks | Every prisoner attack takes in the Guard (R14.6). |
+| Prisoners' Withdrawal from Melee while still guarded, recapture by entering Unarmed units' Location in the MPh, Scrounging, and the exchange of prisoners left alone for Green or Conscript units | R14.6 | A20.54, A20.55, A20.552, A20.221 | CC in the MPh; Scrounging DR | A prisoner that attacked is freed and may withdraw as an Unarmed unit; the rest is not built. |
+| An Unarmed counter's own Morale Level | R14.6 | A20.5 | The Unarmed counters' printed values | An Unarmed MMC's NTC uses its unit's Morale Level (R0.3). |
+| A Guard squad's automatic Deployment, prisoners sharing a Guard's TI or entrenchment, and escorting prisoners off a Friendly Board Edge | R14.5 | A20.5, A20.51, A20.53 | Deployment outside the RPh; entrenchments; exit | Not built. |
+| A Disrupted unit's surrender in phases other than an enemy advance into its Location | R14.11 | A19.12 | A per-phase check for Good Order enemies in its Location | Only the advance is read. |
+| The stacked SMC or MMC in the mandatory CC check | R14.14 | A15.43, A11.14 | Stacking in the requirement's read | The unit's attack alone is tried. |
+| Tasks that place TI | R14.3 | A4.8 | Entrenching, clearing rubble, and the other labor tasks | TI is read in CC, but nothing places it. |
+| Fire at the firer's own Location holding an Unarmed enemy unit is refused with the text for a unit named twice | Table player, pass 14 | A7.212, A20.54 | A same-Location fire text in the Fire package | Refused. |
+| A concealed Guard keeping its "?" after abandoning its prisoners in its Location | Table player, pass 14 | A12.14 | Concealment loss when an enemy unit shares the Location | It stays concealed. |

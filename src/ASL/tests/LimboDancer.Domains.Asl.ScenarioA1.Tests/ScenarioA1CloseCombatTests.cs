@@ -54,7 +54,8 @@ public sealed class ScenarioA1CloseCombatTests
     [InlineData(1, 9, "<1-8", 0)]
     [InlineData(1, 8, "1-8", 1)]
     [InlineData(10, 1, "10-1", 12)]
-    [InlineData(21, 2, ">10-1", 13)]
+    [InlineData(21, 2, "10-1", 12)]
+    [InlineData(22, 2, ">10-1", 13)]
     [InlineData(3, 4, "1-2", 4)]
     [InlineData(5, 5, "1-1", 5)]
     public void TheOddsRoundDownToThePrintedColumn(int attack, int defense, string odds, int kill)
@@ -205,11 +206,9 @@ public sealed class ScenarioA1CloseCombatTests
             "asl.a1.cc.broken-attacker:0" },
         { "SMC singled out", Facts(Example, [Attack(["r1", "r2"], ["gl"])]), "asl.a1.cc.stacking-outside:0" },
         { "SMC apart from its MMC", Facts(Example, [Attack(["gl"], ["r1"])]), "asl.a1.cc.stacking-outside:0" },
-        { "concealed", Facts([.. Example.Take(3), Example[3] with { Concealed = true }], ExampleAttacks), "asl.a1.cc.concealment-unreviewed" },
-        { "prisoner", Facts([.. Example, Unit("rp", "defender-half-squad", "russian") with { Captured = true }], ExampleAttacks), "asl.a1.cc.prisoners-unreviewed" },
+        { "prisoner without a Guard", Facts([.. Example, Unit("rp", "defender-half-squad", "russian") with { Captured = true }], ExampleAttacks),
+            "asl.a1.cc.prisoner-guard-outside" },
         { "pinned director", Facts([Example[0], Example[1] with { Pinned = true }, Example[2], Example[3]], ExampleAttacks), "asl.a1.cc.director-outside:0" },
-        { "overstacked", Facts([.. Example, Unit("r3", "defender-squad", "russian"), Unit("r4", "defender-squad", "russian")], ExampleAttacks),
-            "asl.a1.cc.overstacked-unreviewed" },
     };
 
     [Theory]
@@ -220,18 +219,15 @@ public sealed class ScenarioA1CloseCombatTests
     }
 
     [Fact]
-    public void AnAmbiguousFieldPromotionIsUndecidedBeforeAnyRoll()
+    public void AFieldPromotionOfMixedMmcIsDecidedByBpvAndRandomSelection()
     {
-        // A18.2: two attacking MMC of different Morale Levels leave the base unit undecided (the catalog has no BPV).
+        // A18.2 (ruling R14.12): two attacking MMC of different Morale Levels found the leader on the higher BPV; the refusal of R29.12 is gone.
         CloseCombatUnit[] units = [Unit("g1", "attacker-squad", "german"), Unit("g2", "attacker-elite-squad", "german"), Unit("r1", "defender-squad", "russian")];
-        Assert.Contains("asl.a1.cc.field-promotion-base-undecided:0",
-            ScenarioA1CloseCombatCalculator.Precheck(Facts(units, [Attack(["g1", "g2"], ["r1"])]), Reference));
+        Assert.Empty(ScenarioA1CloseCombatCalculator.Precheck(Facts(units, [Attack(["g1", "g2"], ["r1"])]), Reference));
 
-        // Two identical squads attacking, when the enemy attacks only one of them: which one the leader defends with matters.
+        // Two identical squads attacking, when the enemy attacks only one of them: the MMC the leader defends with is chosen by Random Selection.
         CloseCombatUnit[] twins = [Unit("g1", "attacker-squad", "german"), Unit("g2", "attacker-squad", "german"), Unit("r1", "defender-squad", "russian")];
-        Assert.Contains("asl.a1.cc.field-promotion-stacking-undecided:0",
-            ScenarioA1CloseCombatCalculator.Precheck(Facts(twins, [Attack(["g1", "g2"], ["r1"]), Attack(["r1"], ["g1"])]), Reference));
-        Assert.Empty(ScenarioA1CloseCombatCalculator.Precheck(Facts(twins, [Attack(["g1", "g2"], ["r1"]), Attack(["r1"], ["g1", "g2"])]), Reference));
+        Assert.Empty(ScenarioA1CloseCombatCalculator.Precheck(Facts(twins, [Attack(["g1", "g2"], ["r1"]), Attack(["r1"], ["g1"])]), Reference));
     }
 
     public static TheoryData<string> Accepted => ["example", "broken-and-hero", "ambusher-round", "berserk-and-weapon", "field-promotion"];
