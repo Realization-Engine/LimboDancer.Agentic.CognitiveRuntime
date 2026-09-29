@@ -133,7 +133,8 @@ else
                             </span>
                             @if (rule.Rules.Count > 0)
                             {
-                                <span class="card-rules">(@Cites(rule.Rules))</span>
+                                @* The space sits inside the span: Razor drops the whitespace-only text before it. *@
+                                <span class="card-rules"> (@Cites(rule.Rules))</span>
                             }
                         </li>
                     }
