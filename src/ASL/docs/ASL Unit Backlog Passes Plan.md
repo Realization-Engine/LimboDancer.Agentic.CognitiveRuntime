@@ -4,7 +4,7 @@
 
 **Date:** 2026-09-27
 
-**Scope:** every open row of the [ASL Unit Backlog](<ASL Unit Backlog.md>) (138 rows after the 2026-09-27 housekeeping), in twelve passes, 5 to 16, numbered after the four of the [ASL Unit Deviations, Ordnance, and Vehicles Plan](<ASL Unit Deviations, Ordnance, and Vehicles Plan.md>). Backlog section 13 (the Studio demo findings) is all fixed and not planned.
+**Scope:** every open row of the [ASL Unit Backlog](<ASL Unit Backlog.md>) (138 rows after the 2026-09-27 housekeeping), in thirteen passes, 5 to 17 (the scenario cards moved from pass 16 to a pass 17 of their own on 2026-09-29), numbered after the four of the [ASL Unit Deviations, Ordnance, and Vehicles Plan](<ASL Unit Deviations, Ordnance, and Vehicles Plan.md>). Backlog section 13 (the Studio demo findings) is all fixed and not planned.
 
 ## 1. How a pass is run
 
@@ -221,17 +221,26 @@ The estimates are point values. Pass 4, the one pass estimated from actuals, cam
 | | Overhead | | 1:15 |
 | | **Pass 15 total** (build 5:15) | | **6:30** |
 
-### Pass 16: Night, weather, and scenario cards
+### Pass 16: Night and weather
 
-**Purpose:** Night, weather, and scenario cards. The registered rulebook has no scenario cards (only the A26 Victory Conditions rules and Chapter H), so on 2026-09-28 the user chose to build them with Chapter H Design Your Own procedures and fill what those leave open with values manufactured under R0.3, labeled as manufactured. **After:** All other passes; it touches every area. **From:** Backlog sections 2, 6, and 11.
+**Purpose:** Night and weather. **After:** Passes 5 to 15; it touches every area. **From:** Backlog sections 2, 6, 11, and 19.
 
 | Task | What it changes in play | Rules | Estimate |
 |---|---|---|---|
 | 16.1 Night | Visibility (NVR), illumination, Night Ambush, and night DM and rally. | E1 | 1:30 |
 | 16.2 Weather | Weather effects and Extreme Winter Fate. | E3 | 1:00 |
-| 16.3 Scenario cards | A scenario-card format, and cards built with the Chapter H Design Your Own procedures and manufactured values (R0.3), registered as a source, so ELR, setup, Friendly Board Edges, reinforcements, and Victory Conditions come from the card. | A19.1, A26, Chapter H | 0:40 |
 | | Overhead | | 1:15 |
-| | **Pass 16 total** (build 3:10) | | **4:25** |
+| | **Pass 16 total** (build 2:30) | | **3:45** |
+
+### Pass 17: Scenario cards
+
+**Purpose:** Scenario cards, moved here from pass 16 on 2026-09-29. The registered rulebook has no scenario cards (only the A26 Victory Conditions rules and Chapter H), so on 2026-09-28 the user chose to build them with Chapter H Design Your Own procedures and fill what those leave open with values manufactured under R0.3, labeled as manufactured. **After:** All other passes, pass 16 included, so a card can set night and weather. **From:** Backlog sections 6, 15, and 19.
+
+| Task | What it changes in play | Rules | Estimate |
+|---|---|---|---|
+| 17.1 Scenario cards | A scenario-card format, and cards built with the Chapter H Design Your Own procedures and manufactured values (R0.3), registered as a source, so ELR, setup, Friendly Board Edges, reinforcements, and Victory Conditions come from the card. | A19.1, A26, Chapter H | 0:40 |
+| | Overhead | | 1:15 |
+| | **Pass 17 total** (build 0:40) | | **1:55** |
 
 ## 4. Duration report
 
@@ -248,12 +257,13 @@ The estimates are point values. Pass 4, the one pass estimated from actuals, cam
 | 13 | Rally, Rout, and support weapons | 6 | 3:25 | 4:40 | 3:16 to 6:04 |
 | 14 | Close Combat and capture, part 2 | 6 | 3:50 | 5:05 | 3:34 to 6:36 |
 | 15 | Special units and nationalities | 6 | 5:15 | 6:30 | 4:33 to 8:27 |
-| 16 | Night, weather, and scenario cards | 3 | 3:10 | 4:25 | 3:06 to 5:44 |
-| | **All passes** | **75** | **48:25** | **63:25** | **44:24 to 82:26** |
+| 16 | Night and weather | 2 | 2:30 | 3:45 | 2:38 to 4:53 |
+| 17 | Scenario cards | 1 | 0:40 | 1:55 | 1:20 to 2:30 |
+| | **All passes** | **75** | **48:25** | **64:40** | **45:16 to 84:04** |
 
-The whole plan is about 63:25 of working time, 8.5 working days of 7.5 hours.
+The whole plan is about 64:40 of working time, 8.6 working days of 7.5 hours (63:25 before the scenario cards became a pass of their own, with its own overhead).
 
-**Order.** Pass 5 first. Passes 6 and 7 build on pass 4's vehicles; pass 8 follows 7 (the Vehicle Target Type) and pass 9 follows 8. Pass 10 precedes pass 11. Passes 12 to 15 may be taken in any order after pass 5; pass 16 is last. The default order is 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16.
+**Order.** Pass 5 first. Passes 6 and 7 build on pass 4's vehicles; pass 8 follows 7 (the Vehicle Target Type) and pass 9 follows 8. Pass 10 precedes pass 11. Passes 12 to 15 may be taken in any order after pass 5; pass 16 follows them, and pass 17 is last. The default order is 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17.
 
 **Blocked.** Gun repair and removal (backlog section 12) needs a Gun's malfunctioned side, which no registered source prints. It stays in the backlog until one is registered.
 
@@ -278,7 +288,7 @@ Each pass adds its rulings here, R5.1 onward for pass 5, subject to the referee'
 | R5.13 | What does an Acquisition follow? | C6.5, C6.51: the Known target units of the shot. The counter moves with them while they stay in the Gun's LOS; when they enter a Location out of its LOS it stays in the last Location in LOS with no unit. When the acquired units are in more than one Location as one of them finishes its MPh, APh, RtPh, or CCPh Withdrawal, the Gun's side chooses which Location keeps it (a pending choice); until then a shot at any of their Locations uses it. It is lost when the crew is no longer Good Order or no longer mans the Gun. |
 | R5.14 | How does a vehicle end its MPh in Motion? | D2.4: the ATTACKER names the ADJACENT hex it wished to enter next; it ends in Motion when its MP left are fewer than that hex's entry cost plus one MP for each hexspine its VCA must turn (a reading: D2.4 says only "insufficient MP remaining to enter the next hex"), or when it has fewer than one MP left. |
 | R5.15 | What happens to MP left at the end of a vehicle's move? | D2.1: they are spent in its final hex as one expenditure, which opens the DEFENDER's window (A8.1, A8.14); the move ends when the DEFENDER passes. |
-| R5.16 | Where is a side's Friendly Board Edge? | A20.53: the edge the side entered from, or, for a side set up on board with no reinforcements, any edge it set up in front of with no enemy between. The game cannot read either without the scenario (pass 16), so the players name one edge at the start: the map's top, bottom, left, or right. |
+| R5.16 | Where is a side's Friendly Board Edge? | A20.53: the edge the side entered from, or, for a side set up on board with no reinforcements, any edge it set up in front of with no enemy between. The game cannot read either without the scenario (pass 17), so the players name one edge at the start: the map's top, bottom, left, or right. |
 | R5.17 | How does a Recalled AFV leave? | D5.341: at the end of the Player Turn of the Recall the counter shows Recall; +1, and in each of its owner's MPh the AFV must move by a shortest route in MP to the Friendly Board Edge without stopping, and exits by entering the mirror image of its edge hex (A2.6). It is recorded as exited, not eliminated. With no edge named, or a route the terrain review cannot decide, it may end its move in place, as the move's reason records. |
 | R5.18 | When is an immobilized Recalled AFV Abandoned? | D5.341, D5.41: at the end of the Player Turn of its Recall, or when it is immobilized while Recalled: it is marked Abandoned and its crew is placed beneath it as a crew counter of its nationality, carrying the Stun +1 (D5.34). The crew need not leave and may not re-crew it. |
 | R5.19 | Grain out of season? | B15.6: for Infantry, grain costs 1½ MF from April to September and is Open Ground otherwise; for fire it is Open Ground outside June to September, so FFMO applies there. A game with no scenario month is refused for grain, as for vehicles. |

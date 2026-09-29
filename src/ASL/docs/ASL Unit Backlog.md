@@ -160,9 +160,9 @@ Vehicle movement (Reverse, VBM, ESB, Minimum Move, Bog, OVR, stacking, and terra
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
 | Dropping the SW beyond a withdrawing unit's IPC | R5.5 | A11.21, p. 73; A4.43, p. 50 | SW handling (pass 13) | A unit in Melee carrying more than its IPC may not withdraw; the refusal says so. |
-| The Friendly Board Edge from the scenario card | R5.16 | A20.53, p. 87 | Scenario cards (pass 16) | The players name one edge per side at a new game; a side with none named cannot Recall off the map. |
+| The Friendly Board Edge from the scenario card | R5.16 | A20.53, p. 87 | Scenario cards (pass 17) | The players name one edge per side at a new game; a side with none named cannot Recall off the map. |
 | A Recalled AFV's Stop to unload its Passengers | Table player, item 9 | D5.341, pp. 203 to 204 | Passengers (pass 6) | A leaving Recalled AFV may not Stop. |
-| A Recall route to a Friendly Board Edge of more than one edge | R5.16, R5.17 | D5.341, pp. 203 to 204; A20.53 | Scenario cards (pass 16) | Only the one named edge counts. |
+| A Recall route to a Friendly Board Edge of more than one edge | R5.16, R5.17 | D5.341, pp. 203 to 204; A20.53 | Scenario cards (pass 17) | Only the one named edge counts. |
 
 ## 16. Added by the backlog pass 6
 
@@ -233,7 +233,7 @@ Vehicle movement (Reverse, VBM, ESB, Minimum Move, Bog, OVR, stacking, and terra
 | SMOKE and WP by ordnance, WP grenades, Dispersed SMOKE, drift, Gusts, and weather | R9.9 | C8.5, A24.3 to A24.62 | A Gun with an s# or WP#; wind and weather (pass 16) | Not reached: no catalog Gun lists SMOKE, no nationality in the game has WP grenades. |
 | The PF against Infantry, unarmored vehicles, and Guns (HE Equivalency), the PFk, the optional usage of C13.311, Desperation fire, a PF at range 0, and a PF Check in Subsequent First Fire | R9.8 | C8.31, C13.3, C13.311, C13.81 | HE Equivalency; Subsequent First Fire of SW | Refused. Range 0 is not reached, since Infantry and an enemy vehicle never share a Location in the review (R25.3). |
 | A squad firing a light mortar and a MG in one phase, forfeiting its inherent FP | R9.2 | A7.351 | One record of each unit's SW use | The Fire package's limit of two MG per squad does not count the mortar. |
-| The PF usage limit with reinforcements | R9.7 | C13.31 | Reinforcements (pass 16) | The limit counts the German squad equivalents at the end of setup. |
+| The PF usage limit with reinforcements | R9.7 | C13.31 | Reinforcements (pass 17) | The limit counts the German squad equivalents at the end of setup. |
 | A kept Spotter that moved out of reach, and the HS of a Reduced Spotting squad keeping its Spotting ability | R9.4 | C9.3, p. 179 | Spotter records that follow lineage | A kept Spotter blocks a new one while it is Good Order, wherever it is; the HS of a Reduced Spotter is a new unit, so a new Spotter may be named. |
 | A SMOKE attempt in a Residual FP Location | R9.5 | A24.1, A8.2 | The Residual FP attack on an MF expenditure without entry | Refused. |
 | The SMOKE panel offering only squads with an exponent, and the own and ADJACENT Locations as choices | R9.5 | A24.1 | The page reading catalog attributes | The page lists every checked squad and takes a typed Location; the planner refuses the others. |
