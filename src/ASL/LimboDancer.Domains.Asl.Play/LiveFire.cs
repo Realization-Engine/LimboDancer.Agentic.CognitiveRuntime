@@ -247,6 +247,7 @@ public static class LiveFire
             firerFacts.Add(new FireFirer(unit.Id, unit.Definition!.Definition, at.ToString(), Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned),
                 Is(unit, Conditions.Concealed), Fired(unit) && !swOnly, used is not null)
             {
+                Elr = unit.Group is not null ? state.ElrOf(unit) : null,
                 FirstFireMarked = Is(unit, Conditions.FirstFire) && !swOnly ? true : null,
                 FinalFireMarked = state.Phase == "mph" && Is(unit, Conditions.FinalFire) ? true : null,
                 // A7.351, A7.352: a crew, HS, or SMC that fired a Gun loses its inherent FP; a squad does not.
@@ -671,6 +672,8 @@ public static class LiveFire
             Is(unit, Conditions.Pinned), Is(unit, Conditions.Concealed), Is(unit, Conditions.Hidden), unit.Kind == UnitKinds.Dummy,
             Is(unit, Conditions.Wounded), Is(unit, Conditions.Disrupted))
         {
+            // Ruling R18.3: a unit of an OB group takes its group's ELR.
+            Elr = unit.Group is not null ? state.ElrOf(unit) : null,
             Fanatic = Is(unit, Conditions.Fanatic) ? true : null,
             Heroic = Is(unit, Conditions.Heroic) ? true : null,
             Berserk = Is(unit, Conditions.Berserk) ? true : null,

@@ -103,6 +103,25 @@ public static class GameEventWriter
                         writer.WriteString("friendlyEdge", edge);
                     }
 
+                    if (side.Groups.Count > 0)
+                    {
+                        writer.WriteStartArray("groups");
+                        foreach (var group in side.Groups)
+                        {
+                            writer.WriteStartObject();
+                            writer.WriteString("id", group.Id);
+                            writer.WriteString("name", group.Name);
+                            if (group.Elr is { } groupElr)
+                            {
+                                writer.WriteNumber("elr", groupElr);
+                            }
+
+                            writer.WriteEndObject();
+                        }
+
+                        writer.WriteEndArray();
+                    }
+
                     writer.WriteEndObject();
                 }
 
@@ -154,6 +173,15 @@ public static class GameEventWriter
                 if (started.ScenarioDefender is { } defender)
                 {
                     writer.WriteString("scenarioDefender", defender);
+                }
+
+                if (started.Scenario is { } scenario)
+                {
+                    writer.WriteStartObject("scenario");
+                    writer.WriteString("id", scenario.Id);
+                    writer.WriteString("sha256", scenario.Sha256);
+                    writer.WriteString("title", scenario.Title);
+                    writer.WriteEndObject();
                 }
 
                 break;
@@ -814,6 +842,11 @@ public static class GameEventWriter
         if (instance.Side is not null)
         {
             writer.WriteString("side", instance.Side);
+        }
+
+        if (instance.Group is { } group)
+        {
+            writer.WriteString("group", group);
         }
 
         if (instance.Position is { } position)

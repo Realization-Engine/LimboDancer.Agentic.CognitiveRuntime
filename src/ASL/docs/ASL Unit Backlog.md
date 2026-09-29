@@ -418,3 +418,13 @@ The backlog pass 17 (2026-09-29) built the scenario-card presentation: the card 
 | A draw as a Victory Condition outcome | R17.13 | A26 | Evaluating the Victory Conditions | Shown as text. |
 | Hidden setup per side: a side does not see the other's placements during a sequential setup, nor HIP units or the contents of "?" | User ruling, 2026-09-29 (setup is hot-seat on the honor system) | A2.9, A12.11, A12.12, A12.3 | Setup from the OB (Scenario Card Games Plan, pass 19); a per-side view | Both sides see the whole map during setup. |
 | The Russian MMG's portage: the catalog's 4 PP (manufactured at unit step 23) against the legacy counter's apparent 5 PP | Referee, pass 17b | A4.42, A9.1 | A registered source printing it | 4 PP. |
+
+## 28. Added by the scenario card games pass 18
+
+Pass 18 (2026-09-29) built the start of a game from a card and removed the first row of section 27 in part: a game now takes its boards, sides, ELR (per OB group), SAN, Friendly Board Edges, Scenario Defender, month and year, and SSR tokens from its card. Placing the OB in its setup areas stays for pass 19. What pass 18 leaves out follows.
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| Tests of a Massacre raising every group's ELR, and of Deployment and Recombination keeping groups | Referee, pass 18 | A20.4, A1.31, A1.32 | Test situations for them | Built in the projector, not tested. |
+| An underscored MMC's fixed ELR 5 after a Massacre raises its group's past 5, the fixed ELR 5 of some squads (A25.12, A25.25, A25.31, A25.42), and Integrity Check ELR changes reaching each group | Referee, pass 18 | A20.4, A19.132, A16.2 | ELR by unit type; Battlefield Integrity | A group's ELR rises to at most 6; the underscored MMC stay at 5. |
+| A group named on a Dummy | Referee, pass 18 | A12.11 | None | Dropped without a diagnostic. |

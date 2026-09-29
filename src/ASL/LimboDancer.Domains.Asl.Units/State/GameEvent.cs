@@ -37,7 +37,14 @@ public sealed record NewInstance(
     string? Side,
     Position? Position,
     Holding? Holding,
-    IReadOnlyDictionary<string, ConditionState> Conditions);
+    IReadOnlyDictionary<string, ConditionState> Conditions)
+{
+    /// <summary>The OB group the new unit belongs to (ruling R18.3); null to keep the group of the units it comes from.</summary>
+    public string? Group
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// <c>game-started</c>: the sides, the map in play, the catalog, and the opening turn and phase. A game that is not
@@ -69,6 +76,12 @@ public sealed record GameStarted(
 
     /// <summary>The Scenario Defender's side, when setup names it; only it may Bore Sight (C6.41; ruling R8.8).</summary>
     public string? ScenarioDefender
+    {
+        get; init;
+    }
+
+    /// <summary>The scenario card the game starts from (backlog pass 18, ruling R18.2); null for a game that names none.</summary>
+    public ScenarioCardReference? Scenario
     {
         get; init;
     }

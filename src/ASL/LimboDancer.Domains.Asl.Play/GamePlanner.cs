@@ -299,6 +299,18 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
                 return Refused(scope, label, expected, "play.start-required: a new game needs its sides, boards, and catalog");
             }
 
+            // Backlog pass 18 (rulings R18.1, R18.2): a game from a scenario card starts as the card says.
+            if (CardStart(start, out var fromCard, out var cardReason) is false)
+            {
+                return Refused(scope, label, expected, cardReason!);
+            }
+
+            using var cardStart = fromCard is null ? null : JsonDocument.Parse(fromCard.ToJsonString());
+            if (cardStart is not null)
+            {
+                start = cardStart.RootElement.Clone();
+            }
+
             if (Start(start, out var payload, out var startLabel, out var reason) is false)
             {
                 return Refused(scope, label, expected, reason!);
@@ -348,6 +360,16 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         if (parsed.Events is { } placed && Replay([.. existing, .. placed]).Current is { } after && VehicleSetupBar(after) is { } vehicleBar)
         {
             return Refused(scope, label, expected, vehicleBar);
+        }
+
+        // Ruling R18.3: where a side's OB groups differ in ELR, each of its units names its group, since no side ELR stands in for it.
+        if (parsed.Events is { } grouped && Replay([.. existing, .. grouped]).Current is { } groupedState
+            && groupedState.Units.FirstOrDefault(unit => unit.Group is null && unit.Kind is not (UnitKinds.Dummy or "asl:sniper" or "asl:hero" or "asl:crew")
+                && unit.Definition?.Definition.Contains("commissar", StringComparison.Ordinal) != true
+                && groupedState.Side(unit.Side) is { Groups.Count: > 0, Elr: null }) is { } ungrouped)
+        {
+            return Refused(scope, label, expected,
+                $"play.group: {ungrouped.Id} names no OB group, and the groups of {ungrouped.Side} differ in ELR (A19.1; ruling R18.3)");
         }
 
         IReadOnlyList<GameEvent>? withSights = null;
@@ -1496,6 +1518,53 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             new DomainConclusionContext(question, package, [Entity(unit.Id), Entity(locationId)], [observation]), cancellationToken);
     }
 
+    /// <summary>
+    /// A start naming a scenario card (backlog pass 18, rulings R18.1, R18.2): the card must be embedded, unchanged since the request read it,
+    /// valid against the catalog, and, when it leaves the first move to a die roll, the request names one of its sides. The start is then
+    /// the card's; only the label and that side come from the request. Null when the start names no card.
+    /// </summary>
+    private bool CardStart(JsonElement start, out JsonObject? fromCard, out string? reason)
+    {
+        fromCard = null;
+        reason = null;
+        if (!start.TryGetProperty("scenario", out var scenario) || scenario.ValueKind != JsonValueKind.Object)
+        {
+            return true;
+        }
+
+        var id = Text(scenario, "id", out var named) ? named : string.Empty;
+        var sha256 = Text(scenario, "sha256", out var hash) ? hash : string.Empty;
+        var catalogName = Text(start, "catalog", out var catalogText) ? catalogText : null;
+        var catalog = catalogs.FirstOrDefault(item => $"{item.Identity.Catalog}@{item.Identity.Version}" == catalogName);
+        if (ScenarioCards.Sha256(id) is not { } current)
+        {
+            reason = $"play.scenario: '{id}' is not a scenario card of the game (ruling R18.1)";
+            return false;
+        }
+
+        if (current != sha256)
+        {
+            reason = $"play.scenario: the card '{id}' has changed since it was read; read it again (ruling R18.2)";
+            return false;
+        }
+
+        if (catalog is null || ScenarioCards.Read(id, catalog) is not { IsValid: true, Card: { } card })
+        {
+            reason = $"play.scenario: the card '{id}' is not valid against the catalog '{catalogName}' (ruling R18.1)";
+            return false;
+        }
+
+        var first = Text(start, "firstSide", out var side) ? side : null;
+        if (card.Turns.MovesFirst is null && card.Sides.All(item => item.Side != first))
+        {
+            reason = $"play.scenario: {card.Turns.MovesFirstNote} Name the side that won it (A3.9; ruling R18.1)";
+            return false;
+        }
+
+        fromCard = ScenarioCards.Start(card, current, catalogName!, Text(start, "label", out var cardLabel) ? cardLabel : null, first);
+        return true;
+    }
+
     private bool Start(JsonElement start, out JsonObject? payload, out string label, out string? reason)
     {
         payload = null;
@@ -1622,6 +1691,12 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         {
             // C8.1, C8.3 (ruling R7.6): Special Ammunition is available by year.
             payload["scenarioYear"] = JsonNode.Parse(year.GetRawText());
+        }
+
+        // Backlog pass 18 (ruling R18.2): the scenario card the game starts from.
+        if (start.TryGetProperty("scenario", out var scenario) && scenario.ValueKind == JsonValueKind.Object)
+        {
+            payload["scenario"] = JsonNode.Parse(scenario.GetRawText());
         }
 
         // E1.1, E3 (backlog pass 16, rulings R16.1, R16.9): the night and weather SSRs.

@@ -62,6 +62,14 @@ public static class ScenarioA1FireCalculator
     /// the firing side's, for FPF) must be declared, a concealed firer or director must have a Good Order target within
     /// 16 hexes, and every unit a Reduction or Replacement can produce must have its Morale Levels.
     /// </summary>
+    /// <summary>
+    /// A19.11 (referee, pass 18): crews, Commissars, and heroes are never Replaced for failing a MC by more than their ELR, so an attack on them
+    /// needs no ELR.
+    /// </summary>
+    private static bool ElrImmune(string? definitionId, ScenarioA1FireReference reference) =>
+        definitionId is { } id && reference.Definitions.TryGetValue(id, out var definition)
+        && (definition.IsHero || definition.Kind == "asl:crew" || ScenarioA1FireReference.IsCommissar(id));
+
     public static IReadOnlyList<string> Precheck(FireAttack attack, ScenarioA1FireReference reference)
     {
         ArgumentNullException.ThrowIfNull(attack);
@@ -80,12 +88,15 @@ public static class ScenarioA1FireCalculator
         }
 
         var reasons = new List<string>();
-        if (attack.TargetSideElr is null && attack.Targets!.Any(item => item.Dummy != true))
+        if (attack.TargetSideElr is null && attack.Targets!.Any(item => item.Dummy != true && item.Elr is null && !ElrImmune(item.DefinitionId, reference)))
         {
             reasons.Add("asl.a1.fire.elr-undecided:elr-undeclared");
         }
 
-        if ((attack.FireKind == FinalProtectiveFire || attack.Targets!.Any(item => item.Friendly == true && item.Dummy != true)) && attack.FiringSideElr is null)
+        // Ruling R18.3 (referee, pass 18): only the FPF firers and the friendly targets take a MC the firing side's ELR decides.
+        if (attack.FiringSideElr is null
+            && ((attack.FireKind == FinalProtectiveFire && attack.Firers!.Any(item => item.FinalFireMarked == true && item.Elr is null && !ElrImmune(item.DefinitionId, reference)))
+                || attack.Targets!.Any(item => item.Friendly == true && item.Dummy != true && item.Elr is null && !ElrImmune(item.DefinitionId, reference))))
         {
             reasons.Add("asl.a1.fire.elr-undecided:firing-side-elr-undeclared");
         }
@@ -2406,6 +2417,7 @@ public static class ScenarioA1FireCalculator
             var firers = attack.Firers!.Where(firer => firer.FinalFireMarked == true).Select(firer => new TargetState(
                 new FireTarget(firer.UnitId, firer.DefinitionId, firer.LocationId, false, firer.Pinned, firer.Concealed, false, false, firer.Wounded == true, false)
                 {
+                    Elr = firer.Elr,
                     Fanatic = firer.Fanatic,
                     Inexperienced = firer.Inexperienced,
                     KnownEnemyInLos = firer.KnownEnemyInLos,
@@ -2805,8 +2817,12 @@ public static class ScenarioA1FireCalculator
         }
 
         /// <summary>A1.23, A19.13 (referee, pass 15): a MMC with an underscored Morale Factor has an ELR of 5; any other unit its side's.</summary>
-        private int? ElrOf(TargetState unit, bool firingSide) =>
-            unit.Definition is { IsMmc: true, UnderscoredMorale: true } && Elr(firingSide) is not null ? 5 : Elr(firingSide);
+        private int? ElrOf(TargetState unit, bool firingSide)
+        {
+            // Ruling R18.3: a unit's own ELR, from its OB group, before its side's; a unit ELR never Replaces needs none (A19.11).
+            var elr = unit.Target.Elr ?? (ElrImmune(unit.Definition.Id, reference) && (firingSide ? attack.FiringSideElr : attack.TargetSideElr) is null ? 5 : Elr(firingSide));
+            return unit.Definition is { IsMmc: true, UnderscoredMorale: true } && elr is not null ? 5 : elr;
+        }
 
         private int? Elr(bool firingSide)
         {

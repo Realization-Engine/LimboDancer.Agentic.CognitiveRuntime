@@ -170,11 +170,15 @@ else
     private string? selected;
     private ScenarioCardRead? read;
 
-    protected override void OnInitialized()
-    {
-        catalog = UnitCatalogs.Read(UnitCatalogs.ScenarioA1, Library.Vocabulary)?.Catalog;
-        Show(ScenarioCards.Names.FirstOrDefault());
-    }
+    /// <summary>The card to show first, as the Play page's link names it (ruling R18.2).</summary>
+    [SupplyParameterFromQuery(Name = "card")]
+    public string? Card { get; set; }
+
+    protected override void OnInitialized() => catalog = UnitCatalogs.Read(UnitCatalogs.ScenarioA1, Library.Vocabulary)?.Catalog;
+
+    // Referee, pass 18: the link picks its card whenever it is followed, even from this page.
+    protected override void OnParametersSet() =>
+        Show(Card is { } named && ScenarioCards.Names.Contains(named, StringComparer.Ordinal) ? named : selected ?? ScenarioCards.Names.FirstOrDefault());
 
     private void Choose(ChangeEventArgs change) => Show(change.Value?.ToString());
 

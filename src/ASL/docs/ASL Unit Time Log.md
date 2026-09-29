@@ -438,3 +438,16 @@ The user asked on 2026-09-29 for The Tractor Works as a third card, to run witho
 | Merge and push | 16:01 | 16:03 | 0:02 | |
 
 Total 1:01 of working time (15:02 to 16:03); the build with the referee's fixes, 15:02 to 15:26, took 0:24, and the test runs and merge gate 0:35.
+
+## Pass 18: Start from a card
+
+Estimate: 2:00 (build 0:45), the Scenario Card Games Plan, approved 2026-09-29. Kickoff 17:11. Branch `feature/asl-backlog-pass-18`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Reading the new-game form, the setup action, the planner's start, the event model, and where fire reads the ELR | 17:11 | 17:14 | 0:03 | |
+| The event model (OB groups on a side, the card on `game-started`, a unit's group kept through lineage, a Massacre raising every group), a target's and FPF firer's own ELR in the Fire package, the card's start in the planner, the Play page's card picker, group choice, and card panel | 17:14 | 17:20 | 0:06 | |
+| 7 Play tests and 2 page tests; rulings R18.1 to R18.3; the referee agent started | 17:20 | 17:26 | 0:06 | The referee ran 17:26 to about 17:33 |
+| Visual check in the Studio (map-studio-scripted: The Guards Counterattack from the picker, two grouped units, the setup committed, the card panel and its link); Studio stopped; table-player clone and agent started; design drafted | 17:26 | 17:31 | 0:05 | The table player ran 17:31 to about 17:41 |
+| Referee's 13 and table player's 9 findings: units created in play join a group, A19.11 units need no ELR, the FPF firers only, group validation, the page's side lookup, hash, cache, stale groups, no preset winner, the card panel's setup order and groups, the card notes; 4 more Play tests and a page check; 3 recorded; rulings, review, design, backlog section 28, requirements | 17:33 | 17:44 | 0:11 | |
+| Full local suite: build with warnings as errors, every solution test project, and the ScenarioA1 tests (470); the architecture test hit the held `.git/worktrees`; Play (493), MapStudio (136), Units (406), Authoring (166 of 167) pass | 17:44 | 18:03 | 0:19 | ScenarioA1 and Authoring ran side by side, 14:49 and 13:05 |
