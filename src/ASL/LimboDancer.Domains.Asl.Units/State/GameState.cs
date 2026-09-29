@@ -38,6 +38,20 @@ public sealed record GameState(
     /// <summary>The SSRs in force, as <c>game-started</c> named them; empty means none.</summary>
     public IReadOnlyList<string> SpecialRules { get; init; } = [];
 
+    /// <summary>The scenario card the game starts from (backlog pass 18, ruling R18.2); null for a game that names none.</summary>
+    public ScenarioCardReference? Scenario
+    {
+        get; init;
+    }
+
+    /// <summary>A unit's ELR (A19.1; ruling R18.3): its OB group's when it has one, otherwise its side's.</summary>
+    public int? ElrOf(UnitInstance unit)
+    {
+        ArgumentNullException.ThrowIfNull(unit);
+        var side = Side(unit.Side);
+        return unit.Group is { } group && side?.Groups.FirstOrDefault(item => item.Id == group) is { } found ? found.Elr ?? side.Elr : side?.Elr;
+    }
+
     /// <summary>The scenario's month when setup recorded it (B15: grain is a Hindrance June to September).</summary>
     public int? ScenarioMonth
     {

@@ -58,8 +58,8 @@ public sealed record ScenarioCardRule(int Number, string Text, string Status, IR
 public sealed record ScenarioCardVictory(string Kind, string Text, IReadOnlyList<string> Rules);
 
 /// <summary>
-/// A scenario card (backlog pass 17, rulings R17.1 to R17.11): read, validated, and shown, not played. Card-driven play
-/// (setting up a game from a card, reinforcements entering, evaluating the Victory Conditions) is backlog.
+/// A scenario card (backlog pass 17, rulings R17.1 to R17.11): read, validated, and shown; since pass 18 a game starts from one (rulings
+/// R18.1 to R18.3). Placing the OB in its setup areas, reinforcements entering, and evaluating the Victory Conditions are passes 19 to 21.
 /// </summary>
 public sealed record ScenarioCard(
     string Format,
@@ -132,6 +132,76 @@ public static partial class ScenarioCards
         .Where(name => name.StartsWith(Prefix, StringComparison.Ordinal) && name.EndsWith(Suffix, StringComparison.Ordinal))
         .Select(name => name[Prefix.Length..^Suffix.Length])
         .Order(StringComparer.Ordinal)];
+
+    /// <summary>The SHA-256 of an embedded card's text, with line endings as LF (ruling R18.2); null when none has that name.</summary>
+    public static string? Sha256(string name)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        using var stream = typeof(ScenarioCards).Assembly.GetManifestResourceStream(Prefix + name + Suffix);
+        if (stream is null)
+        {
+            return null;
+        }
+
+        using var reader = new StreamReader(stream);
+        var text = reader.ReadToEnd().ReplaceLineEndings("\n");
+        return Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text)));
+    }
+
+    /// <summary>The id a game gives an OB group of a side (ruling R18.3): the side and the group's place on the card, from 1.</summary>
+    public static string GroupId(string side, int index) => $"{side}-{index + 1}";
+
+    /// <summary>
+    /// The <c>start</c> of <c>asl.game.setup</c> a card gives (backlog pass 18, rulings R18.1 to R18.3): its boards, sides with their SAN,
+    /// Friendly Board Edges, and OB groups with their ELR, the side's ELR when all its groups share one, month and year, Scenario Defender,
+    /// the SSR tokens, and the card's id and SHA-256. The label is the card's title unless one is given; the side that moves first is the
+    /// card's, or the one given when the card leaves it to a die roll.
+    /// </summary>
+    public static JsonObject Start(ScenarioCard card, string sha256, string catalog, string? label, string? firstSide)
+    {
+        ArgumentNullException.ThrowIfNull(card);
+        var boards = new JsonArray();
+        foreach (var board in card.Boards)
+        {
+            boards.Add(card.Boards.Count == 1 && !board.Reversed
+                ? JsonValue.Create(board.Board)
+                : new JsonObject { ["board"] = board.Board, ["column"] = board.Column, ["row"] = board.Row, ["reversed"] = board.Reversed });
+        }
+
+        var sides = new JsonArray();
+        foreach (var side in card.Sides)
+        {
+            var node = new JsonObject { ["id"] = side.Side, ["nationality"] = side.Side, ["san"] = side.San, ["friendlyEdge"] = side.FriendlyEdge.Edge };
+            var elrs = side.Groups.Select(group => group.Elr).Distinct().ToArray();
+            if (elrs.Length == 1)
+            {
+                node["elr"] = elrs[0];
+            }
+
+            node["groups"] = new JsonArray([.. side.Groups.Select((group, index) =>
+                (JsonNode)new JsonObject { ["id"] = GroupId(side.Side, index), ["name"] = group.Name, ["elr"] = group.Elr })]);
+            sides.Add(node);
+        }
+
+        var start = new JsonObject
+        {
+            ["label"] = string.IsNullOrWhiteSpace(label) ? card.Title : label,
+            ["catalog"] = catalog,
+            ["boards"] = boards,
+            ["firstSide"] = card.Turns.MovesFirst ?? firstSide,
+            ["sides"] = sides,
+            ["scenarioMonth"] = card.Date.Month,
+            ["scenarioYear"] = card.Date.Year,
+            ["specialRules"] = new JsonArray([.. card.Tokens.Select(token => (JsonNode)JsonValue.Create(token))]),
+            ["scenario"] = new JsonObject { ["id"] = card.Id, ["sha256"] = sha256, ["title"] = card.Title },
+        };
+        if (card.ScenarioDefender is { } defender)
+        {
+            start["scenarioDefender"] = defender;
+        }
+
+        return start;
+    }
 
     /// <summary>Reads and validates an embedded card; null when none has that name.</summary>
     public static ScenarioCardRead? Read(string name, UnitCatalog catalog)

@@ -45,7 +45,19 @@ public sealed record SideState(string Id, string Nationality, int? Elr, int? San
 
     /// <summary>The map edges a side's Friendly Board Edge may be.</summary>
     public static IReadOnlyList<string> Edges { get; } = ["top", "bottom", "left", "right"];
+
+    /// <summary>
+    /// The side's OB groups when the game starts from a scenario card (A19.1: "each scenario OB will list an ELR for that group of units";
+    /// backlog pass 18, ruling R18.3); empty for a game that names none.
+    /// </summary>
+    public IReadOnlyList<ObGroup> Groups { get; init; } = [];
 }
+
+/// <summary>An OB group of a side: its id in the game, its name on the card, and its ELR (A19.1; ruling R18.3).</summary>
+public sealed record ObGroup(string Id, string Name, int? Elr);
+
+/// <summary>The scenario card a game starts from (backlog pass 18, ruling R18.2): its id, the SHA-256 of its text, and its title.</summary>
+public sealed record ScenarioCardReference(string Id, string Sha256, string Title);
 
 /// <summary>Where a board sits in a composed map: its slot, as in <see cref="BoardPlacement"/>, and whether it is reversed.</summary>
 public sealed record BoardSlot(int Column, int Row, bool Reversed);
@@ -370,6 +382,15 @@ public sealed record UnitInstance(
     bool MovementEnded = false) : IGameObject
 {
     string? IGameObject.Side => Side;
+
+    /// <summary>
+    /// The OB group the unit belongs to, when its side has groups (ruling R18.3); a unit that Replaces, Deploys from, or recombines other
+    /// units keeps their group.
+    /// </summary>
+    public string? Group
+    {
+        get; init;
+    }
 
     /// <summary>Half an MF spent beyond <see cref="MfSpent"/>, as grain's 1½ MF leaves (B15.4, p. 129).</summary>
     public bool HalfMfSpent

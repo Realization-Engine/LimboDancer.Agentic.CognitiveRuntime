@@ -442,6 +442,15 @@ public sealed record FireFirer(
     bool? FiredThisPlayerTurn,
     bool? UsesSupportWeapon)
 {
+    /// <summary>
+    /// The unit's own ELR, from its OB group (A19.1; backlog pass 18, ruling R18.3); null to take the side's ELR the attack declares.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? Elr
+    {
+        get; init;
+    }
+
     /// <summary>Whether this crew fired its Gun this Player Turn, which costs it its inherent FP (A7.352; ruling R8.4); null is false.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? GunFired
@@ -614,6 +623,15 @@ public sealed record FireTarget(
     bool? Wounded,
     bool? Disrupted)
 {
+    /// <summary>
+    /// The unit's own ELR, from its OB group (A19.1; backlog pass 18, ruling R18.3); null to take the side's ELR the attack declares.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? Elr
+    {
+        get; init;
+    }
+
     /// <summary>Whether the unit is Fanatic (A10.8): both Morale Levels one higher, never Disrupted; null is false.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Fanatic

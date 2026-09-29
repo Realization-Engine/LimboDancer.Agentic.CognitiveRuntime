@@ -64,19 +64,67 @@
     }
 </div>
 
+@if (state?.Scenario is { } scenario)
+{
+    <details id="play-card" open>
+        <summary>Scenario card: @scenario.Title</summary>
+        @if (CardRead(scenario.Id)?.Card is { } playCard)
+        {
+            @if (CardSha(scenario.Id) != scenario.Sha256)
+            {
+                <p id="play-card-changed" class="diagnostic warning">The card has changed since this game started; what follows is its current text.</p>
+            }
+            <p id="play-card-turns">@playCard.Turns.Count Game Turns@(playCard.Turns.HalfTurn ? ", the last with one Player Turn" : string.Empty); @playCard.Place, @ScenarioCards.DateText(playCard.Date).
+                @playCard.Turns.SetsUpFirst sets up first; @(playCard.Turns.MovesFirst is { } cardFirst ? $"{cardFirst} moves first." : $"{state.FirstSide} won the roll to move first.")</p>
+            <ul id="play-card-groups">
+                @foreach (var side in state.Sides)
+                {
+                    @foreach (var group in side.Groups)
+                    {
+                        <li>@side.Id: @group.Name (@group.Id), ELR @(group.Elr?.ToString(CultureInfo.InvariantCulture) ?? "not given")</li>
+                    }
+                }
+            </ul>
+            <p id="play-card-victory"><strong>Victory Conditions:</strong> @playCard.VictoryConditions.Text</p>
+            <ol id="play-card-ssr">
+                @foreach (var rule in playCard.SpecialRules)
+                {
+                    <li>@rule.Text</li>
+                }
+            </ol>
+            <a id="play-card-link" href="units/scenarios?card=@scenario.Id">The whole card</a>
+        }
+        else
+        {
+            <p id="play-card-missing" class="diagnostic warning">The card '@scenario.Id' is no longer among the scenario cards.</p>
+        }
+    </details>
+}
+
 @if (history is null)
 {
     <h3>New game</h3>
     <div class="fields">
+        <label for="new-card">Scenario card</label>
+        <span>
+            <select id="new-card" value="@(scenarioCard ?? string.Empty)" @onchange="ChooseCard">
+                <option value="">none: fill in the fields below</option>
+                @foreach (var name in ScenarioCards.Names)
+                {
+                    <option value="@name">@CardTitle(name)</option>
+                }
+            </select>
+            <span class="muted">a game from a card starts as the card says: its boards, sides, ELR, SAN, edges, date, Scenario Defender, and SSRs (ruling R18.1)</span>
+        </span>
         <label for="new-id">Game id</label><input id="new-id" value="@newId" @onchange="@(args => newId = args.Value as string ?? string.Empty)" placeholder="village" />
         <label for="new-label">Label</label><input id="new-label" value="@newLabel" @onchange="@(args => newLabel = args.Value as string ?? string.Empty)" />
         <label for="new-board">Boards</label>
         <span>
-            <input id="new-board" value="@newBoard" @onchange="@(args => { newBoard = args.Value as string ?? string.Empty; newMap = null; })" />
+            <input id="new-board" disabled="@CardChosen" value="@newBoard" @onchange="@(args => { newBoard = args.Value as string ?? string.Empty; newMap = null; })" />
             <span class="muted">one board, such as bd01, or placed boards, such as bd02@@0,0/r bd01@@0,1 (column, row, /r when reversed)</span>
         </span>
         <label for="new-map">Or a saved map</label>
-        <select id="new-map" value="@(newMap ?? string.Empty)" @onchange="ChooseMap">
+        <select id="new-map" disabled="@CardChosen" value="@(newMap ?? string.Empty)" @onchange="ChooseMap">
             <option value="">none</option>
             @foreach (var map in GameMaps.Saved())
             {
@@ -84,14 +132,18 @@
             }
         </select>
         <label for="new-first">First side</label>
-        <select id="new-first" value="@firstSide" @onchange="@(args => firstSide = args.Value as string ?? firstSide)">
-            @foreach (var side in Library.Vocabulary.Sides)
+        <select id="new-first" disabled="@FirstLocked" value="@firstSide" @onchange="ChooseFirst">
+            @if (ChosenCard is { Turns.MovesFirst: null })
+            {
+                <option value="">die roll: choose the winner</option>
+            }
+            @foreach (var side in Library.Vocabulary.Sides.Where(side => ChosenCard is not { } firstCard || firstCard.Sides.Any(item => item.Side == side.Name)))
             {
                 <option value="@side.Name">@side.Label</option>
             }
         </select>
         <label for="new-second">Second side</label>
-        <select id="new-second" value="@secondSide" @onchange="@(args => secondSide = args.Value as string ?? secondSide)">
+        <select id="new-second" disabled="@CardChosen" value="@secondSide" @onchange="@(args => secondSide = args.Value as string ?? secondSide)">
             @foreach (var side in Library.Vocabulary.Sides)
             {
                 <option value="@side.Name">@side.Label</option>
@@ -99,22 +151,22 @@
         </select>
         <label for="new-first-elr">ELR</label>
         <span>
-            <input id="new-first-elr" value="@firstElr" @onchange="@(args => firstElr = args.Value as string ?? string.Empty)" size="2" /> first side,
-            <input id="new-second-elr" value="@secondElr" @onchange="@(args => secondElr = args.Value as string ?? string.Empty)" size="2" /> second side;
-            SAN <input id="new-first-san" value="@firstSan" @onchange="@(args => firstSan = args.Value as string ?? string.Empty)" size="2" /> first side,
-            <input id="new-second-san" value="@secondSan" @onchange="@(args => secondSan = args.Value as string ?? string.Empty)" size="2" /> second side (A14.1: a side with a SAN places its Sniper counter below)
+            <input id="new-first-elr" disabled="@CardChosen" value="@firstElr" @onchange="@(args => firstElr = args.Value as string ?? string.Empty)" size="2" /> first side,
+            <input id="new-second-elr" disabled="@CardChosen" value="@secondElr" @onchange="@(args => secondElr = args.Value as string ?? string.Empty)" size="2" /> second side;
+            SAN <input id="new-first-san" disabled="@CardChosen" value="@firstSan" @onchange="@(args => firstSan = args.Value as string ?? string.Empty)" size="2" /> first side,
+            <input id="new-second-san" disabled="@CardChosen" value="@secondSan" @onchange="@(args => secondSan = args.Value as string ?? string.Empty)" size="2" /> second side (A14.1: a side with a SAN places its Sniper counter below)
             <span class="muted">the scenario's Experience Level Rating (A19.1), 0 to 5; fire needs the target side's</span>
         </span>
         <label for="new-first-edge">Friendly Board Edge</label>
         <span>
-            <select id="new-first-edge" value="@firstEdge" @onchange="@(args => firstEdge = args.Value as string ?? string.Empty)">
+            <select id="new-first-edge" disabled="@CardChosen" value="@firstEdge" @onchange="@(args => firstEdge = args.Value as string ?? string.Empty)">
                 <option value="">not named</option>
                 @foreach (var edge in Edges)
                 {
                     <option value="@edge">@edge</option>
                 }
             </select> @firstSide,
-            <select id="new-second-edge" value="@secondEdge" @onchange="@(args => secondEdge = args.Value as string ?? string.Empty)">
+            <select id="new-second-edge" disabled="@CardChosen" value="@secondEdge" @onchange="@(args => secondEdge = args.Value as string ?? string.Empty)">
                 <option value="">not named</option>
                 @foreach (var edge in Edges)
                 {
@@ -125,7 +177,7 @@
         </span>
         <label for="new-month">Month</label>
         <span>
-            <select id="new-month" value="@newMonth" @onchange="@(args => newMonth = args.Value as string ?? string.Empty)">
+            <select id="new-month" disabled="@CardChosen" value="@newMonth" @onchange="@(args => newMonth = args.Value as string ?? string.Empty)">
                 <option value="">not recorded</option>
                 @for (var month = 1; month <= 12; month++)
                 {
@@ -136,14 +188,14 @@
         </span>
         <label for="new-rules">Special rules</label>
         <span>
-            <input id="new-rules" value="@newRules" @onchange="@(args => newRules = args.Value as string ?? string.Empty)" size="48" />
+            <input id="new-rules" disabled="@CardChosen" value="@newRules" @onchange="@(args => newRules = args.Value as string ?? string.Empty)" size="48" />
             <span class="muted">SSRs separated by spaces: night:n (the Base NVR, 0 to 6), night-clouds:scattered, night-moon:half, weather:mud, weather:overcast,
                 weather:mist, weather:rain, weather:falling-snow, weather:ground-snow, weather:deep-snow, weather:extreme-winter, plowed-roads, mol:side
                 (E1.1, E3; rulings R16.1, R16.9)</span>
         </span>
         <label for="new-defender">Scenario Defender</label>
         <span>
-            <select id="new-defender" value="@newDefender" @onchange="@(args => newDefender = args.Value as string ?? string.Empty)">
+            <select id="new-defender" disabled="@CardChosen" value="@newDefender" @onchange="@(args => newDefender = args.Value as string ?? string.Empty)">
                 <option value="">not named</option>
                 <option value="@firstSide">@firstSide</option>
                 <option value="@secondSide">@secondSide</option>
@@ -152,7 +204,7 @@
         </span>
         <label for="new-year">Year</label>
         <span>
-            <select id="new-year" value="@newYear" @onchange="@(args => newYear = args.Value as string ?? string.Empty)">
+            <select id="new-year" disabled="@CardChosen" value="@newYear" @onchange="@(args => newYear = args.Value as string ?? string.Empty)">
                 <option value="">not recorded</option>
                 @for (var year = 1939; year <= 1945; year++)
                 {
@@ -211,6 +263,19 @@ else if (state is not null)
             </select>
         </label>
         <label>Id <input id="place-id" value="@placeId" @onchange="@(args => placeId = args.Value as string ?? string.Empty)" size="8" /></label>
+        @if (GroupChoices.Count > 0)
+        {
+            <label title="A19.1 (ruling R18.3): the unit takes its OB group's ELR.">
+                OB group
+                <select id="place-group" value="@placeGroup" @onchange="@(args => placeGroup = args.Value as string ?? string.Empty)">
+                    <option value="">none</option>
+                    @foreach (var (groupSide, group) in GroupChoices)
+                    {
+                        <option value="@group.Id">@groupSide: @group.Name@(group.Elr is { } groupElr ? $", ELR {groupElr}" : string.Empty)</option>
+                    }
+                </select>
+            </label>
+        }
         <label>Location <input id="place-location" value="@placeLocation" @onchange="@(args => placeLocation = args.Value as string ?? string.Empty)" size="12" /></label>
         <label>Or held by <input id="place-holder" value="@placeHolder" @onchange="@(args => placeHolder = args.Value as string ?? string.Empty)" size="8" /></label>
         @if (Definitions.FirstOrDefault(definition => definition.Id == placeDefinition)?.Kind is "asl:gun" or "asl:vehicle")
@@ -236,16 +301,24 @@ else if (state is not null)
         <label><input id="place-broken" type="checkbox" checked="@placeBroken" @onchange="@(args => placeBroken = args.Value is true)" /> broken</label>
         <button id="place-add" @onclick="AddPlacement">Add</button>
     </div>
+    @if (placeNote is not null)
+    {
+        <p id="place-note" class="diagnostic warning">@placeNote</p>
+    }
     @if (placements.Count > 0)
     {
         <ul id="place-list">
             @foreach (var placement in placements)
             {
-                <li>@placement.Id: @(placement.Definition ?? "a Dummy") @(placement.Holder is { } holder ? $"held by {holder}" : $"at {placement.Location}")@(placement.Facing is { } spine ? placement.Kind == "asl:vehicle" ? $", VCA {spine}" : $", facing {spine}" : "")@(placement.Concealed ? ", concealed" : "")@(placement.Hidden ? ", hidden" : "")@(placement.Broken ? ", broken" : "") <button class="link" @onclick="() => placements.Remove(placement)">remove</button></li>
+                <li>@placement.Id: @(placement.Definition ?? "a Dummy")@(placement.Group is { } inGroup ? $" ({inGroup})" : string.Empty) @(placement.Holder is { } holder ? $"held by {holder}" : $"at {placement.Location}")@(placement.Facing is { } spine ? placement.Kind == "asl:vehicle" ? $", VCA {spine}" : $", facing {spine}" : "")@(placement.Concealed ? ", concealed" : "")@(placement.Hidden ? ", hidden" : "")@(placement.Broken ? ", broken" : "") <button class="link" @onclick="() => placements.Remove(placement)">remove</button></li>
             }
         </ul>
     }
-    <button id="propose-setup" disabled="@(placements.Count == 0)" @onclick="ProposeSetup">Propose setup</button>
+    <button id="propose-setup" disabled="@(placements.Count == 0 || (history is null && CardChosen && firstSide.Length == 0))" @onclick="ProposeSetup">Propose setup</button>
+    @if (history is null && CardChosen && firstSide.Length == 0)
+    {
+        <span id="propose-needs-winner" class="muted">Roll for the first move and choose the winner above (A3.9).</span>
+    }
 }
 
 @if (state is not null && history?.Current is not null)
@@ -1757,7 +1830,119 @@ else if (state is not null)
     }
 
     private sealed record Placement(string Id, string? Definition, string Kind, string Side, string Location, bool Concealed, bool Hidden, string? Holder,
-        bool Broken = false, string? Facing = null, string? BoreSighted = null);
+        bool Broken = false, string? Facing = null, string? BoreSighted = null, string? Group = null);
+
+    private string? scenarioCard;
+    private string? scenarioSha;
+    private string placeGroup = string.Empty;
+    private string? placeNote;
+    private readonly Dictionary<string, ScenarioCardRead?> cardReads = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string?> cardShas = new(StringComparer.Ordinal);
+
+    /// <summary>A card read once per page (referee, pass 18): every render reads it from here.</summary>
+    private ScenarioCardRead? CardRead(string name)
+    {
+        if (!cardReads.TryGetValue(name, out var read))
+        {
+            cardReads[name] = read = PublishedCatalog is { } catalog ? ScenarioCards.Read(name, catalog) : null;
+        }
+
+        return read;
+    }
+
+    private string? CardSha(string name)
+    {
+        if (!cardShas.TryGetValue(name, out var sha))
+        {
+            cardShas[name] = sha = ScenarioCards.Sha256(name);
+        }
+
+        return sha;
+    }
+
+    /// <summary>Whether the new game comes from a scenario card, which fills and locks the start fields (ruling R18.1).</summary>
+    private bool CardChosen => scenarioCard is not null;
+
+    /// <summary>The side that moves first is locked too, unless the card leaves it to a die roll (A3.9).</summary>
+    private bool FirstLocked => ChosenCard is { Turns.MovesFirst: not null };
+
+    private ScenarioCard? ChosenCard => scenarioCard is not null ? CardRead(scenarioCard)?.Card : null;
+
+    private string CardTitle(string name) => CardRead(name)?.Card is { } card ? card.Title : name;
+
+    /// <summary>The OB groups a placement may name (ruling R18.3): the game's, or the chosen card's before the game starts.</summary>
+    private IReadOnlyList<(string Side, ObGroup Group)> GroupChoices => state is not null
+        ? [.. state.Sides.SelectMany(side => side.Groups.Select(group => (side.Id, group)))]
+        : ChosenCard is { } card
+            ? [.. card.Sides.SelectMany(side => side.Groups.Select((group, index) => (side.Side, new ObGroup(ScenarioCards.GroupId(side.Side, index), group.Name, group.Elr))))]
+            : [];
+
+    /// <summary>Fills the start fields from a card (backlog pass 18, ruling R18.1), or frees them when no card is chosen.</summary>
+    private void ChooseCard(ChangeEventArgs args)
+    {
+        scenarioCard = args.Value as string is { Length: > 0 } chosen ? chosen : null;
+        // Referee, pass 18: the card's hash as the page read it, so a card changed before the setup is refused (ruling R18.1).
+        scenarioSha = scenarioCard is null ? null : CardSha(scenarioCard);
+        var choices = GroupChoices.Select(choice => choice.Group.Id).ToHashSet(StringComparer.Ordinal);
+        for (var index = 0; index < placements.Count; index++)
+        {
+            if (placements[index].Group is { } stale && !choices.Contains(stale))
+            {
+                placements[index] = placements[index] with { Group = null };
+            }
+        }
+
+        if (ChosenCard is not { } card)
+        {
+            return;
+        }
+
+        newLabel = card.Title;
+        newMap = null;
+        newBoard = string.Join(' ', card.Boards.Select(board => card.Boards.Count == 1 && !board.Reversed
+            ? board.Board : $"{board.Board}@{board.Column},{board.Row}{(board.Reversed ? "/r" : string.Empty)}"));
+        // Table player, pass 18: a die-roll card waits for the players to name the winner.
+        if (card.Turns.MovesFirst is { } movesFirst)
+        {
+            FillFromCard(card, movesFirst);
+        }
+        else
+        {
+            (firstSide, secondSide, firstElr, secondElr, firstSan, secondSan, firstEdge, secondEdge) =
+                (string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
+        }
+
+        newMonth = card.Date.Month.ToString(CultureInfo.InvariantCulture);
+        newYear = card.Date.Year.ToString(CultureInfo.InvariantCulture);
+        newDefender = card.ScenarioDefender ?? string.Empty;
+        newRules = string.Join(' ', card.Tokens);
+    }
+
+    /// <summary>The sides' fields from a card, looked up by side (referee, pass 18): the first side as given, the other second.</summary>
+    private void FillFromCard(ScenarioCard card, string first)
+    {
+        firstSide = first;
+        secondSide = card.Sides.First(side => side.Side != first).Side;
+        ScenarioCardSide Of(string id) => card.Sides.First(side => side.Side == id);
+        string Elr(string id) => Of(id).Groups.Select(group => group.Elr).Distinct().ToArray() is [var only]
+            ? only.ToString(CultureInfo.InvariantCulture) : string.Empty;
+        (firstElr, secondElr) = (Elr(firstSide), Elr(secondSide));
+        (firstSan, secondSan) = (Of(firstSide).San.ToString(CultureInfo.InvariantCulture), Of(secondSide).San.ToString(CultureInfo.InvariantCulture));
+        (firstEdge, secondEdge) = (Of(firstSide).FriendlyEdge.Edge, Of(secondSide).FriendlyEdge.Edge);
+    }
+
+    /// <summary>The side that moves first; with a card that leaves it to a die roll, the other side follows (A3.9).</summary>
+    private void ChooseFirst(ChangeEventArgs args)
+    {
+        var chosen = args.Value as string ?? firstSide;
+        if (ChosenCard is { } card && card.Sides.Any(side => side.Side == chosen))
+        {
+            FillFromCard(card, chosen);
+            return;
+        }
+
+        firstSide = chosen;
+    }
 
     private string placeFacing = "east";
 
@@ -3841,8 +4026,12 @@ else if (state is not null)
         var holder = placeHolder.Trim() is { Length: > 0 } held && Library.Vocabulary.IsA(definition.Kind, "asl:equipment") ? held : null;
         // C2.23, A21.13: a Gun faces a hexspine at its Location and is manned by the crew named as its holder.
         var gun = definition.Kind is "asl:gun" or "asl:vehicle";
+        // Referee, pass 18: a group of another side is not taken, and the page says so.
+        var groupTaken = placeGroup.Length == 0 || GroupChoices.Any(choice => choice.Side == side && choice.Group.Id == placeGroup);
+        placeNote = groupTaken ? null : $"{placeGroup} is not an OB group of {side}, so {id} is placed without a group.";
         placements.Add(new Placement(id, definition.Id, definition.Kind, side, placeLocation.Trim(), placeConcealed, placeHidden, holder,
-            placeBroken && holder is null, gun ? placeFacing : null, definition.Kind == "asl:gun" && placeBore.Trim().Length > 0 ? placeBore.Trim() : null));
+            placeBroken && holder is null, gun ? placeFacing : null, definition.Kind == "asl:gun" && placeBore.Trim().Length > 0 ? placeBore.Trim() : null,
+            placeGroup.Length > 0 && GroupChoices.Any(choice => choice.Side == side && choice.Group.Id == placeGroup) ? placeGroup : null));
         placeId = string.Empty;
         placeHolder = string.Empty;
         placeBore = string.Empty;
@@ -3883,6 +4072,12 @@ else if (state is not null)
         if (item.Definition is not null)
         {
             placement["definition"] = item.Definition;
+        }
+
+        // Ruling R18.3: the unit's OB group.
+        if (item.Group is { } group)
+        {
+            placement["group"] = group;
         }
 
         // D2.11: a vehicle stands at its Location with its VCA; its crew's state starts CE for an OT AFV (D5.3).
@@ -3960,6 +4155,13 @@ else if (state is not null)
 
         // E1.1, E3 (backlog pass 16, rulings R16.1, R16.9): the night and weather SSRs, among the others.
         start["specialRules"] = newRules.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        // Backlog pass 18 (rulings R18.1, R18.2): the card the game starts from; the planner takes the start from it.
+        if (scenarioCard is { } card && scenarioSha is { } sha256)
+        {
+            start["scenario"] = new Dictionary<string, string> { ["id"] = card, ["sha256"] = sha256, ["title"] = ChosenCard?.Title ?? card };
+        }
+
         return start;
     }
 

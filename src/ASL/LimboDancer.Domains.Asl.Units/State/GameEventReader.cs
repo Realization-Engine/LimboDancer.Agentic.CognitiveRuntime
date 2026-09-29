@@ -135,11 +135,22 @@ public static class GameEventReader
                         diagnostics.Add(UnitDiagnostic.Error(Code, $"'{edge}' is not a map edge ({string.Join(", ", SideState.Edges)}).", sidePath));
                     }
 
+                    // Backlog pass 18 (ruling R18.3): the side's OB groups when the game starts from a scenario card.
+                    var groups = new List<ObGroup>();
+                    foreach (var (group, groupPath) in fields.Objects(side, "groups", sidePath))
+                    {
+                        if (fields.RequiredString(group, "id", groupPath) is { } groupId && fields.RequiredString(group, "name", groupPath) is { } groupName)
+                        {
+                            groups.Add(new ObGroup(groupId, groupName, fields.OptionalInteger(group, "elr", groupPath)));
+                        }
+                    }
+
                     if (sideId is not null && nationality is not null)
                     {
                         sides.Add(new SideState(sideId, nationality, fields.OptionalInteger(side, "elr", sidePath), fields.OptionalInteger(side, "san", sidePath))
                         {
                             FriendlyEdge = edge,
+                            Groups = groups,
                         });
                     }
                 }
@@ -188,6 +199,7 @@ public static class GameEventReader
                         ScenarioMonth = Month(fields.OptionalInteger(payload, "scenarioMonth", path), path, diagnostics),
                         ScenarioYear = Year(fields.OptionalInteger(payload, "scenarioYear", path), path, diagnostics),
                         ScenarioDefender = fields.OptionalString(payload, "scenarioDefender", path),
+                        Scenario = ReadScenario(payload, path, fields),
                     };
             case "phase-changed":
                 var nextTurn = fields.OptionalInteger(payload, "turn", path);
@@ -782,7 +794,24 @@ public static class GameEventReader
         return id is null || kind is null
             ? null
             : new NewInstance(id, kind, fields.OptionalString(item, "definition", path), fields.OptionalString(item, "side", path), position,
-                ReadHolding(item, path, fields, diagnostics), ReadConditions(item, path, diagnostics));
+                ReadHolding(item, path, fields, diagnostics), ReadConditions(item, path, diagnostics))
+            {
+                Group = fields.OptionalString(item, "group", path),
+            };
+    }
+
+    /// <summary>The scenario card a game starts from (ruling R18.2), when <c>game-started</c> names one.</summary>
+    private static ScenarioCardReference? ReadScenario(JsonElement payload, string path, JsonFields fields)
+    {
+        if (!payload.TryGetProperty("scenario", out var scenario) || scenario.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        var id = fields.RequiredString(scenario, "id", path + ".scenario");
+        var sha256 = fields.RequiredString(scenario, "sha256", path + ".scenario");
+        var title = fields.RequiredString(scenario, "title", path + ".scenario");
+        return id is null || sha256 is null || title is null ? null : new ScenarioCardReference(id, sha256, title);
     }
 
     private static Holding? ReadHolding(JsonElement item, string path, JsonFields fields, List<UnitDiagnostic> diagnostics)

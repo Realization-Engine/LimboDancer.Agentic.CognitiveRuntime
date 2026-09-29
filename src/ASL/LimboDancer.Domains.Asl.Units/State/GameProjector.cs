@@ -268,6 +268,20 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-005", "Sides need distinct slug ids other than 'adjudicator'.");
             }
 
+            // Ruling R18.3 (referee, pass 18): a side's OB groups have distinct ids and ELRs of 0 to 5 (A19.1), and its own ELR, when it names one,
+            // is the ELR its groups share.
+            foreach (var side in started.Sides.Where(side => side.Groups.Count > 0))
+            {
+                var shared = side.Groups.Select(group => group.Elr).Distinct().ToArray();
+                if (side.Groups.Select(group => group.Id).Distinct(StringComparer.Ordinal).Count() != side.Groups.Count
+                    || side.Groups.Any(group => !VocabularyNames.IsSlug(group.Id) || group.Elr is < 0 or > 5)
+                    || (side.Elr is { } sideElr && (shared.Length != 1 || shared[0] != sideElr)))
+                {
+                    return Fail<GameState>("UNIT-STATE-005",
+                        $"The OB groups of side '{side.Id}' need distinct slug ids and ELRs of 0 to 5, and a side ELR only when all its groups share it (A19.1).");
+                }
+            }
+
             foreach (var side in started.Sides.Where(side => !vocabulary.TryGetSide(side.Nationality, out _)))
             {
                 Error("UNIT-STATE-005", $"The nationality '{side.Nationality}' of side '{side.Id}' is not declared.");
@@ -308,6 +322,7 @@ public static class GameProjector
                 ScenarioMonth = started.ScenarioMonth,
                 ScenarioYear = started.ScenarioYear,
                 ScenarioDefender = started.ScenarioDefender,
+                Scenario = started.Scenario,
                 FirstSide = started.PhasingSide,
                 Source = gameEvent.Source,
             };
@@ -1228,7 +1243,12 @@ public static class GameProjector
             {
                 NoQuarter = next.NoQuarter.Contains(victims, StringComparer.Ordinal) ? next.NoQuarter : [.. next.NoQuarter, victims],
                 MassacreElrRaised = raise ? [.. next.MassacreElrRaised, victims] : next.MassacreElrRaised,
-                Sides = raise ? [.. next.Sides.Select(item => item.Id == victims && item.Elr is { } elr ? item with { Elr = Math.Min(elr + 1, 6) } : item)] : next.Sides,
+                // A20.4: the ELR of every OB group of the massacred side rises too (ruling R18.3).
+                Sides = raise ? [.. next.Sides.Select(item => item.Id != victims ? item : item with
+                {
+                    Elr = item.Elr is { } elr ? Math.Min(elr + 1, 6) : null,
+                    Groups = [.. item.Groups.Select(group => group.Elr is { } groupElr ? group with { Elr = Math.Min(groupElr + 1, 6) } : group)],
+                })] : next.Sides,
             };
         }
 
@@ -2532,8 +2552,20 @@ public static class GameProjector
                     $"The {definition.Nationality} definition '{definition.Id}' serves the {state.Side(instance.Side)!.Nationality} side '{instance.Side}'.", path));
             }
 
+            // Ruling R18.3: a unit names an OB group of its side, or keeps the group of the units it comes from (Replacement, Deployment).
+            // Units of two groups recombined take the group with the lower ELR (referee, pass 18).
+            var group = instance.Group ?? from.Select(id => state.Unit(id)).Where(item => item?.Group is not null)
+                .OrderBy(item => state.ElrOf(item!) ?? int.MaxValue).Select(item => item!.Group).FirstOrDefault();
+            if (instance.Group is { } named && instance.Side is { } owner && state.Side(owner)?.Groups.All(item => item.Id != named) != false)
+            {
+                return Fail<GameState>("UNIT-STATE-005", $"'{named}' is not an OB group of side '{owner}'.");
+            }
+
             var unit = new UnitInstance(instance.Id, instance.Kind, catalog.Reference(definition), instance.Side, position, instance.Conditions,
-                InstanceStatus.Active, from);
+                InstanceStatus.Active, from)
+            {
+                Group = group,
+            };
             return state with
             {
                 Units = [.. state.Units, unit]
@@ -3089,6 +3121,23 @@ public static class GameProjector
             else if (created.Creator is { } named)
             {
                 creator = state.Unit(named);
+            }
+
+            // Ruling R18.3 (referee, pass 18): a hero, a created leader, or a crew bailing out joins the OB group of the unit that made it,
+            // or of a unit of its side in its Location.
+            if (instance.Group is null && instance.Side is { } createdSide)
+            {
+                var joined = creator?.Group ?? (instance.Position is MapPosition createdAt
+                    ? state.Units.Where(item => item.Status == InstanceStatus.Active && item.Side == createdSide && item.Group is not null
+                        && item.Position is MapPosition itemAt && itemAt.Location == createdAt.Location).Select(item => item.Group).FirstOrDefault()
+                    : null);
+                if (joined is not null)
+                {
+                    instance = instance with
+                    {
+                        Group = joined
+                    };
+                }
             }
 
             if (Create(state, instance, from: []) is not { } next || next.Unit(instance.Id) is not { } unit)
