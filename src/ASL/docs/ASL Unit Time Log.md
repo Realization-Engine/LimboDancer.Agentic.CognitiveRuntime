@@ -434,3 +434,7 @@ The user asked on 2026-09-29 for The Tractor Works as a third card, to run witho
 | Visual check in the Studio (map-studio-scripted, the card chosen by a DOM change event); the first-move sentence fixed; Studio stopped; design and backlog | 15:14 | 15:17 | 0:03 | |
 | Referee's 9 findings: the edges derived column by column, the edge basis phrase, the 295th label noted, start Control (A26.11), SSR 2 and the sewers in both Stalingrad cards, the HMG portage note, A12.12; 1 recorded; catalog rebuilt and re-pinned; the review updated | 15:23 | 15:26 | 0:03 | |
 | Full local suite: build with warnings as errors, every solution test project, and the ScenarioA1 tests (470); the architecture test hit the held `.git/worktrees`; Play (482), MapStudio (134), Authoring (166 of 167) pass | 15:26 | 15:45 | 0:19 | ScenarioA1 and Authoring ran side by side, 13:56 and 13:10 |
+| Commit 1347115; merge gate: the chart supplement regeneration run locally (identical with sorted keys) and the Docker Linux check (restore, build, test, a1, and the source verification and pending comparison regenerations: every step exit 0; Authoring 167 of 167, ScenarioA1 470) | 15:45 | 16:01 | 0:16 | |
+| Merge and push | 16:01 | 16:03 | 0:02 | |
+
+Total 1:01 of working time (15:02 to 16:03); the build with the referee's fixes, 15:02 to 15:26, took 0:24, and the test runs and merge gate 0:35.
