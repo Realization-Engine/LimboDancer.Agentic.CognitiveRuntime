@@ -357,8 +357,6 @@ The backlog pass 14 (2026-09-28) built, and removed from sections 11 and 20: Han
 | A Guard squad's automatic Deployment, prisoners sharing a Guard's TI or entrenchment, and escorting prisoners off a Friendly Board Edge | R14.5 | A20.5, A20.51, A20.53 | Deployment outside the RPh; entrenchments; exit | Not built. |
 | A Disrupted unit's surrender in phases other than an enemy advance into its Location | R14.11 | A19.12 | A per-phase check for Good Order enemies in its Location | Only the advance is read. |
 | The stacked SMC or MMC in the mandatory CC check | R14.14 | A15.43, A11.14 | Stacking in the requirement's read | The unit's attack alone is tried. |
-| "> 10-1" read as 11 to 1 or more | R14.13; referee, pass 14 | A11.11 | The user's confirmation of the reading | Odds from 10 to 1 up to 11 to 1 are 10-1. |
 | Tasks that place TI | R14.3 | A4.8 | Entrenching, clearing rubble, and the other labor tasks | TI is read in CC, but nothing places it. |
 | Fire at the firer's own Location holding an Unarmed enemy unit is refused with the text for a unit named twice | Table player, pass 14 | A7.212, A20.54 | A same-Location fire text in the Fire package | Refused. |
 | A concealed Guard keeping its "?" after abandoning its prisoners in its Location | Table player, pass 14 | A12.14 | Concealment loss when an enemy unit shares the Location | It stays concealed. |
-| A created leader's leadership taking the director's place rather than adding to it | Table player, pass 14 | A18.12, A10.7 | The user's confirmation of R29.12 | The created leader's leadership replaces the director's. |

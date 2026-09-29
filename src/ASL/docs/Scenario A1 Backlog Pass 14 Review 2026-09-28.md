@@ -44,7 +44,7 @@ R14.1 to R14.14 are in the plan, section 5. The referee's findings changed R14.1
 | 7. The prisoners' round is declared at once, so a later attack cannot leave out a Guard an earlier one eliminated | A20.55 | Recorded: a reading in R14.6; backlog section 24. |
 | 8. A Disrupted unit in Melee did not surrender to fresh advancers | A19.12 | Fixed: the "not in Melee" test applies to the captors, not the Disrupted unit. |
 | 9. Hand-to-Hand could be declared in the prisoners' round, after a first round, or by an ambushed ATTACKER | A25.43, G1.64 | Fixed: refused in those cases; R14.1 reworded. |
-| 10. "> 10-1" literally covers 10.5 to 1 | A11.11 | Kept as a reading (R14.13); backlog section 24 asks the user to confirm it. |
+| 10. "> 10-1" literally covers 10.5 to 1 | A11.11 | Kept as a reading (R14.13); the user confirmed it on 2026-09-28. |
 | 11. Six to nine SMC counted as more than one HS | A5.5 | Fixed: each five SMC is a HS; tested. |
 | 12. A squad giving up one HS dropped all its SW, and rearming counted it as a squad | A20.22, A20.24, A20.551 | Fixed: the free HS keeps the SW, and rearming counts a HS. |
 | 13. An Original 12 let a pinned unit infiltrate | A11.22 | Fixed; tested. |
@@ -65,7 +65,7 @@ The table player played 25 situations (39 cases) in a local clone in the scratch
 | 5. The new package refusals gave a code only | | Fixed: sentences for capture, escape, prisoner, Guard, Infiltration, BPV, and rearming refusals, and the Ambush one reworded. |
 | 6. Fire at the firer's own Location holding an Unarmed enemy is refused as "a unit named twice" | A7.212 | Recorded: backlog section 24. |
 | 7. A concealed Guard keeps its "?" after abandoning prisoners in its Location | A12.14 | Recorded: backlog section 24. |
-| 8. A created leader's leadership takes the place of the director's, rather than adding to it | A18.12, A10.7 | Kept: R29.12 reads A10.7 ("not cumulative"); noted for the user in backlog section 24. |
+| 8. A created leader's leadership takes the place of the director's, rather than adding to it | A18.12, A10.7 | Kept: R29.12 reads A10.7 ("not cumulative"); the user confirmed it on 2026-09-28. |
 
 The A19.12 advance surrender and the no-capacity "free" option did not arise in play, since a RtPh surrender comes first; `AnAdvanceMayOverstackTheLocation` and the package tests cover the pieces, and `ASurrenderToAGuardWithNoCapacityLeftStillNamesItsCaptors` the captors.
 
