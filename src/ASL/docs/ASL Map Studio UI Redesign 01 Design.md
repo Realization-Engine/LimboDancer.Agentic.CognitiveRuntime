@@ -2,7 +2,7 @@
 
 **Status:** Consolidated design and component extraction plan. The supplied visual theme and stylesheet foundation are implemented in site.css; layout changes and component extraction remain proposed.
 
-**Date:** 2026-09-28
+**Date:** 2026-09-28. **Updated:** 2026-09-29, reviewed main through `ab32b53a8740f45dc47f8d349b0dcc5076d89f81` and local main follow-up `fd1e71b`.
 
 **Branch:** `UI-Redesign-01`, based on local `main` at `2fa3f564056049d222f722e4b5bc925d51c3abd3`.
 
@@ -12,7 +12,7 @@
 
 This document incorporates the former Razor Component Extraction Inventory and is the single reference for design decisions, component contracts, applied CSS values, and delivery evidence.
 
-**Contents:** [Visual system](#4-layout-and-visual-system), [Play](#6-play-workspace), [Component architecture](#8-blazor-component-architecture), [142-candidate inventory](#9-component-extraction-inventory), [Delivery](#10-delivery-sequence), [Verification](#12-acceptance-and-verification).
+**Contents:** [Visual system](#4-layout-and-visual-system), [Play](#6-play-workspace), [Component architecture](#8-blazor-component-architecture), [155-candidate inventory](#9-component-extraction-inventory), [Delivery](#10-delivery-sequence), [Verification](#12-acceptance-and-verification).
 
 ## 1. Outcome and boundaries
 
@@ -20,7 +20,7 @@ The Studio should make the next useful task apparent while keeping the board, cu
 
 The supplied `ASL Map Studio UX Audit & Redesign PDF` (one page, dated 28 Sep 2026) and `app.css` are design inputs supplied by the user. Their recommendations and the stylesheet's claim to be a drop-in replacement are evaluated here, not treated as implementation instructions. The originals remain outside the repository; this document records the decisions needed without requiring those files at build time.
 
-The baseline includes backlog passes 10 through 13: terrain and movement, vehicle movement and overruns, fire extensions, and Rally, Rout, and support weapons. Concurrent pass 14 work is outside this baseline. Before implementation, reconcile any newly merged actions and UI controls so the redesign does not remove capabilities.
+The branch implementation baseline includes backlog passes 10 through 13. The design inventory now also accounts for main passes 14 through 16: Close Combat/capture, special units and nationalities, and night/weather. Section 9.15 records the reviewed commits and additional boundaries. This documentation update does not merge main into the redesign branch; reconcile the implementation baseline before extracting the newly added controls.
 
 This proposal changes presentation and interaction. It preserves:
 
@@ -204,7 +204,7 @@ Use a searchable kind picker and keep the preview adjacent to the active fields.
 
 ### 6.1 Persistent context
 
-Promote the existing map from below the action forms into the central workspace. Keep game, side/perspective, turn, phase, and revision visible. Show live versus historical state explicitly. The selected unit or stack drives the task pane, but manual unit and Location entry remain available.
+Promote the existing map from below the action forms into the central workspace. Keep game, side/perspective, turn, phase, and revision visible. Show live versus historical state explicitly. Keep the current NVR, weather, precipitation and illumination summary visible when relevant, supplied by the authoritative state adapter. The selected unit or stack drives the task pane, but manual unit and Location entry remain available.
 
 ```text
 +-----------------------------------------------------------------------+
@@ -222,18 +222,18 @@ This is a layout sketch, not a promise that all controls fit at all widths. On n
 
 ### 6.2 Setup
 
-Separate game identity, board/map choice, sides and scenario conditions, and unit placement into named sections. Give each side its own ELR and Friendly Board Edge labels. Put rule explanations in help text beneath fields, with expandable citations. Do not force experienced users through a multi-page wizard; allow moving between sections and reviewing the complete setup before proposal.
+Separate game identity, board/map choice, sides and scenario conditions, and unit placement into named sections. Give each side its own ELR, SAN, and Friendly Board Edge labels. Preserve Sniper counter placement and scenario SSR text, including night and weather; a structured picker must round-trip existing tokens and retain unsupported-rule diagnostics. Put rule explanations in help text beneath fields, with expandable citations. Do not force experienced users through a multi-page wizard; allow moving between sections and reviewing the complete setup before proposal.
 
 ### 6.3 Phase and action organization
 
 | Context | Task groups, reflecting currently implemented capabilities |
 |---|---|
 | Rally | Rally, repair, Deploy/Recombine, eligible support-weapon handling, recovery choices |
-| Movement | Infantry/vehicle movement, SMOKE, movement costs, defender response window, overrun/reaction |
-| Fire phases | Small arms and ordnance, applicable fire options, targets and modifiers |
+| Movement | Infantry/vehicle movement, SMOKE, movement costs, DC placement, berserk retained SW, defender response window, overrun/reaction |
+| Fire phases | Small arms including FT/MOL, thrown/placed DCs, Starshell attempts, ordnance, targets and modifiers |
 | Rout | Rout requirement, destination/cover, route, Low Crawl, Interdiction and surrender results |
 | Advance | Unit selection, destination, movement implications |
-| Close Combat | Location, participants, Ambush/withdrawal, attacks, vehicle sequence, capture choices |
+| Close Combat | Location, participants, Ambush/withdrawal, attacks/capture, prisoner escape round, infiltration, Ambush Withdrawal, Hand-to-Hand option, vehicle sequence |
 
 This table organizes tasks; it is not a new eligibility specification. Existing planners and phase rules remain authoritative. An action chooser can show an unavailable action with a public reason, but must not infer permission or disclose hidden state. Keep End phase separate from an active unit task so it cannot be confused with completing that task.
 
@@ -249,7 +249,7 @@ The review pane must not reveal undisclosed defenders or consequences that the e
 
 ### 6.5 Activity and evidence
 
-Keep a compact latest-result summary visible. Expand activity into grouped records for movement, fire, ordnance, Close Combat, Rally/Rout/support weapons, and dice. Retain Fire Lane MG attribution and other explanatory facts added by recent commits. Rule citations are relevant evidence, not clutter to remove indiscriminately. Technical package identities and internal design references belong in a separate evidence disclosure.
+Keep a compact latest-result summary visible. Expand activity into grouped records for movement, fire, ordnance, Close Combat, Rally/Rout/support weapons, Sniper attacks, night/weather events, and dice. Retain Fire Lane MG attribution and other explanatory facts added by recent commits. Rule citations are relevant evidence, not clutter to remove indiscriminately. Technical package identities and internal design references belong in a separate evidence disclosure.
 
 ## 7. Interaction and accessibility acceptance targets
 
@@ -374,11 +374,13 @@ These folders express ownership, not a requirement to create every directory imm
 
 ### 9.1 Findings and source baseline
 
-The existing pages contain **142 candidate component boundaries**. They include shared components, page-specific task panels, and optional nested children. This is a broad inventory for selection, not a target of 142 new Razor files. A parent and its listed children are separate possible boundaries within overlapping source, not independent chunks to extract twice.
+The existing pages contain **155 candidate component boundaries**. They include shared components, page-specific task panels, and optional nested children. This is a broad inventory for selection, not a target of 155 new Razor files. A parent and its listed children are separate possible boundaries within overlapping source, not independent chunks to extract twice.
 
 The review covers all ten routed pages, MainLayout, the application/router shells, and the seven existing content components. It examines Razor markup, bindings, callbacks, relevant state-reset and viewport lifecycle code, and existing component-test selectors. This is source analysis, not a fresh browser usability or performance measurement.
 
-Source references are pinned to the application code at `2fa3f564056049d222f722e4b5bc925d51c3abd3`, the main baseline of this redesign branch. The original checkout contains ongoing pass 14 work; it was not modified. Reconcile that work before implementing the Close Combat and prisoner panels. Line numbers identify the original blocks; they will shift after extraction.
+Sections 9.3 through 9.14 retain their source references at `2fa3f564056049d222f722e4b5bc925d51c3abd3`, the implementation baseline of this redesign branch. Section 9.15 adds commit-pinned main references and contract amendments that supersede the older descriptions where noted. Local source links intentionally address the branch baseline; new main blocks use immutable GitHub links because those blocks are not yet in this checkout. The original checkout and its uncommitted files were not modified. Line numbers will shift after integration/extraction.
+
+Original branch baseline measurements:
 
 | Page | Total source lines | Lines before @code |
 |---|---:|---:|
@@ -404,7 +406,7 @@ The best extraction units are complete tasks or representations: a rout form, an
 - **P2: useful second pass.** Extract with its parent or when the redesign independently places/reuses the block.
 - **P3: conditional.** A sensible possible boundary, but leave inline unless reuse or complexity justifies it.
 
-The inventory contains **93 P1**, **45 P2**, and **4 P3** candidates. Names are proposed `.razor` filenames, not existing classes. Contracts are suggested inputs and outputs, not claims that these view models already exist. Callback names describe intent; use typed `EventCallback<T>` contracts during implementation.
+The inventory contains **102 P1**, **49 P2**, and **4 P3** candidates. Names are proposed `.razor` filenames, not existing classes. Contracts are suggested inputs and outputs, not claims that these view models already exist. Callback names describe intent; use typed `EventCallback<T>` contracts during implementation.
 
 Each table gives source location, proposed contract, and the reason for extraction. Linked ranges are source evidence, not code changes. A single line or small range listed for a shared primitive is one concrete usage, not a recommendation to make every similarly shaped element a component.
 
@@ -560,7 +562,7 @@ Each table gives source location, proposed contract, and the reason for extracti
 | ID / priority | Proposed component | Existing source block | Inputs and outputs | Why this boundary helps |
 |---|---|---|---|---|
 | C01 / P1 | `VehicleCloseCombatPanel` | [Play:755-810](<../LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L755>) | Per-Location projected participants, next side, selected attack draft; ReviewAttack/ReviewPass. | Use one keyed Location child for each repeated block; prevent selection leaking between Locations. |
-| C02 / P1 | `CloseCombatPanel` | [Play:811-940](<../LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L811>) | Selected Location, due/status/round facts and CC draft; reviewed action callbacks. | Task root for the following independently meaningful blocks; sensitive to forthcoming pass 14 additions. |
+| C02 / P1 | `CloseCombatPanel` | [Play:811-940](<../LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L811>) | Selected Location, due/status/round facts and CC draft; reviewed action callbacks. | Task root for the following independently meaningful blocks; include the pass 14 extensions in section 9.15. |
 | C03 / P2 | `CloseCombatLocationControl` | [Play:822-860](<../LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L822>) | Due Locations, selected Location, Ambush/round status; LocationChanged/RoundChanged/ReviewAmbush. | Own Location changes and the explicit draft-reset boundary. |
 | C04 / P1 | `CloseCombatStacking` | [Play:863-877](<../LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L863>) | Authorized SMC/MMC choices and stacking map; StackingChanged. | Repeated relational editor with unit IDs, separate from attack participant selection. |
 | C05 / P1 | `CloseCombatWithdrawals` | [Play:878-895](<../LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L878>) | Authorized unit destinations and mandatory flags; WithdrawalsChanged. | Repeated per-unit choices; planner supplies destinations and must-withdraw facts. |
@@ -568,7 +570,7 @@ Each table gives source location, proposed contract, and the reason for extracti
 | C07 / P2 | `CloseCombatAttackQueue` | [Play:931-937](<../LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L931>) | Declared attacks and review availability; Remove/ReviewRound. | A reviewable local queue, including explicit resolution with no attacks. |
 | C08 / P1 | `PendingChoicePanel` | [Play:941-957](<../LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L941>) | Authorized choice description/options or waiting state; ReviewChoice. | Independent blocking interaction; unauthorized viewers must not receive hidden option data. |
 | C09 / P1 | `PendingSurrenderPanel` | [Play:958-972](<../LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L958>) | Authorized surrender/Guard choices and waiting state; ReviewAccept/ReviewReject. | Repeated prompt keyed by surrender identity; retain No Quarter implications. |
-| C10 / P2 | `PrisonerActionPanel` | [Play:973-982](<../LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L973>) | Permitted unit/prisoner action rows; ReviewAction. | Current block contains massacre choices; extend only after pass 14 action inventory is reconciled. |
+| C10 / P2 | `PrisonerActionPanel` | [Play:973-982](<../LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L973>) | Permitted unit/prisoner action rows; ReviewAction. | Baseline block contains massacre choices; keep that contract distinct from N09 prisoner custody in section 9.15. |
 | C11 / P2 | `FireMarkerSummary` | [Play:983-995](<../LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L983>); [Play:1444-1450](<../LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L1444>) | Authorized Fire Lane, Encirclement and Residual FP summaries. | One map-context summary with meaningful categories, preserving MG/operator attribution. |
 | C12 / P1 | `OpportunityFireAction` | [Play:996-1011](<../LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L996>) | Eligible units and selected IDs; ReviewOpportunityFire. | Distinct preparatory action, not another option on immediate fire. |
 | C13 / P1 | `SmallArmsFirePanel` | [Play:1012-1100](<../LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L1012>) | Fire draft plus precomputed firer/weapon/director/target options; Review/Clear. | Complete task; group selection dependencies belong together. |
@@ -610,6 +612,71 @@ Each table gives source location, proposed contract, and the reason for extracti
 | E07 / P3 | `HexFeatureList` | [Board/HexInspector:74-90](<../LimboDancer.Domains.Asl.MapStudio/Components/Board/HexInspector.razor#L74>) | Covering feature display rows; SelectFeature. | Optional only if feature evidence is reused outside HexInspector. |
 | E08 / P2 | `TerrainPicker` | [Board/FeatureProperties:12-21](<../LimboDancer.Domains.Asl.MapStudio/Components/Board/FeatureProperties.razor#L12>); [Author:59-68](<../LimboDancer.Domains.Asl.MapStudio/Components/Pages/Author.razor#L59>) | Already-filtered terrain codes/names, selected code, ID; CodeChanged. | A genuinely shared terrain selection; feature-kind filtering remains with the authoring adapter. |
 
+### 9.15 Main review: passes 14 through 16 (2026-09-29)
+
+The reviewed remote main is `ab32b53a8740f45dc47f8d349b0dcc5076d89f81`. Local main additionally contains `fd1e71b`, a Docker merge-check script and plan update with no Studio markup changes. This review inspected commit diffs, current Play markup and action/reset helpers, the pass review reports, and the added MapStudio tests. It did not execute their tests or repeat their browser sessions.
+
+| Commits | Changes relevant to this redesign | Component response |
+|---|---|---|
+| `6cf7ea1`, merged by `5e58210`; review record `2fd2c24` | CC capture/Guard/yield, prisoner escape and custody, infiltration, Ambush Withdrawal and Hand-to-Hand | Extend C02-C09; add N05-N09; retain explicit proposal and disclosure boundaries |
+| `0af4dde`, merged by `91a18a4`; review record `ec7bf80` | SAN/Sniper placement/history, FT/MOL, thrown/placed DCs, berserk retained SW; expanded nationality/catalog rules | Extend P05/P08, A13, C13/C14 and R05/R06; add N03/N04/N10-N12 |
+| `eec0739`, merged by `ab32b53`; review record `68ca5e2` | Setup SSR text, night/weather summary, Starshell actions and event history | Extend P06 and R05; add N01/N02/N13 |
+| `e2ac914` | Scenario cards moved to pass 17 | No scenario-card component is justified by current markup |
+| `fd1e71b` (local main only) | Linux/Docker merge-check script and plan maintenance | No new UI boundary |
+
+Only Play.razor changed among Studio pages/components: 493 lines added and 20 removed. It now has 4,228 lines, including 1,740 before @code, up 473 and 208 respectively. Across the ten pages this is 7,449 total lines and 3,189 before @code. Play now accounts for approximately 57% and 55%. Other pages may display richer vocabulary/catalog data, but this does not justify nationality-specific editor components or duplicating UnitEditor's vocabulary-driven controls.
+
+#### Additional candidate boundaries
+
+These 13 additions contain nine P1 and four P2 candidates. Optional children overlap their named parents in the same way as the original inventory. No new component files are implemented by this review.
+
+| ID / priority | Proposed component | Existing source block on reviewed main | Inputs and outputs | Why this boundary helps |
+|---|---|---|---|---|
+| N01 / P1 | `ScenarioSpecialRulesField` | [Play:137-144](https://github.com/Realization-Engine/LimboDancer.Agentic.CognitiveRuntime/blob/ab32b53a8740f45dc47f8d349b0dcc5076d89f81/src/ASL/LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L137-L144) | SSR draft text, help and validation; RulesChanged. | Child of P06. Keep exact tokens and advanced text round-trip; the server validates combinations. Do not conflate game SSRs with Maps terrain rules. |
+| N02 / P1 | `NightWeatherSummary` | [Play:189-192](https://github.com/Realization-Engine/LimboDancer.Agentic.CognitiveRuntime/blob/ab32b53a8740f45dc47f8d349b0dcc5076d89f81/src/ASL/LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L189-L192) | Prepared NVR/weather/precipitation/illumination text; no service access. | Persistent context independent of the action pane. Distinguish no applicable conditions from withheld facts. |
+| N03 / P1 | `PlaceDemolitionChargeAction` | [Play:580-594](https://github.com/Realization-Engine/LimboDancer.Agentic.CognitiveRuntime/blob/ab32b53a8740f45dc47f8d349b0dcc5076d89f81/src/ASL/LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L580-L594) | Mover IDs, permitted charge/holder choices, target draft and busy state; DraftChanged/ReviewPlace. | Complete movement subtask. The page retains GameActions.Move and its placeDc/placeDcAt arguments, not a new independent mutation. |
+| N04 / P2 | `BerserkRetainedWeaponsField` | [Play:595-598](https://github.com/Realization-Engine/LimboDancer.Agentic.CognitiveRuntime/blob/ab32b53a8740f45dc47f8d349b0dcc5076d89f81/src/ASL/LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L595-L598) | Authorized berserk-mover context and retained SW draft; KeepChanged. | Optional A13 child for the conditional Keep SW field; preserve comma-separated IDs and server portage validation. |
+| N05 / P2 | `CloseCombatRoundOptions` | [Play:896-905](https://github.com/Realization-Engine/LimboDancer.Agentic.CognitiveRuntime/blob/ab32b53a8740f45dc47f8d349b0dcc5076d89f81/src/ASL/LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L896-L905) | Prisoner-round selection, Hand-to-Hand capability/value; RoundChanged/HandToHandChanged. | Optional C03 child. Round changes reset declarations; Hand-to-Hand is capability-gated, not a global preference. |
+| N06 / P1 | `AmbushWithdrawalActions` | [Play:907-921](https://github.com/Realization-Engine/LimboDancer.Agentic.CognitiveRuntime/blob/ab32b53a8740f45dc47f8d349b0dcc5076d89f81/src/ASL/LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L907-L921) | Authorized ambusher units and precomputed destinations; ReviewWithdraw(unit, destination). | A separate immediate proposal from C05 withdrawal declarations; preserve before-round/closed-round timing. |
+| N07 / P2 | `CaptureAttemptFields` | [Play:988-1003](https://github.com/Realization-Engine/LimboDancer.Agentic.CognitiveRuntime/blob/ab32b53a8740f45dc47f8d349b0dcc5076d89f81/src/ASL/LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L988-L1003) | Capture flag, attacker-derived Guard choices and ordered defender yield draft; DraftChanged. | Optional C06 child; capture belongs to a queued attack and must not execute when toggled. |
+| N08 / P1 | `CloseCombatInfiltrationChoices` | [Play:1005-1028](https://github.com/Realization-Engine/LimboDancer.Agentic.CognitiveRuntime/blob/ab32b53a8740f45dc47f8d349b0dcc5076d89f81/src/ASL/LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L1005-L1028) | Authorized unit destinations, selected infiltration map; InfiltrationsChanged. | Distinct conditional destination declarations; planner supplies eligibility and destinations, page submits them with the round. |
+| N09 / P1 | `PrisonerCustodyActions` | [Play:1072-1086](https://github.com/Realization-Engine/LimboDancer.Agentic.CognitiveRuntime/blob/ab32b53a8740f45dc47f8d349b0dcc5076d89f81/src/ASL/LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L1072-L1086) | Projected Guards, permitted recipients, transfer/abandon availability; ReviewTransfer/ReviewAbandon. | Rally/Advance custody operations differ from C10 massacre actions and C09 pending surrender; preserve explicit abandonment intent. |
+| N10 / P2 | `MolFirerChoice` | [Play:1167-1179](https://github.com/Realization-Engine/LimboDancer.Agentic.CognitiveRuntime/blob/ab32b53a8740f45dc47f8d349b0dcc5076d89f81/src/ASL/LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L1167-L1179) | SSR-enabled state, selected firer IDs and optional MOL user; FirerChanged. | Optional C14 child. Preserve none, SSR gating and the selected-firer dependency; do not duplicate the fire planner. |
+| N11 / P1 | `ThrowDemolitionChargeAction` | [Play:1226-1246](https://github.com/Realization-Engine/LimboDancer.Agentic.CognitiveRuntime/blob/ab32b53a8740f45dc47f8d349b0dcc5076d89f81/src/ASL/LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L1226-L1246) | Projected holder/charge pairs, target draft and busy state; DraftChanged/ReviewThrow. | Independent fire task. Use a typed pair in a new contract; the page adapts the current holder|charge encoding and two-Location result. |
+| N12 / P1 | `PlacedChargeDetonationActions` | [Play:1277-1287](https://github.com/Realization-Engine/LimboDancer.Agentic.CognitiveRuntime/blob/ab32b53a8740f45dc47f8d349b0dcc5076d89f81/src/ASL/LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L1277-L1287) | Authorized operable charge rows, disclosed target/concealment/CX text; ReviewDetonate(chargeId). | AFPh task with phase-end implications; buttons propose rather than detonate directly. |
+| N13 / P1 | `StarshellActionPanel` | [Play:1247-1276](https://github.com/Realization-Engine/LimboDancer.Agentic.CognitiveRuntime/blob/ab32b53a8740f45dc47f8d349b0dcc5076d89f81/src/ASL/LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L1247-L1276) | Eligible projected firers, method/target draft and busy state; DraftChanged/ReviewStarshell. | Separate night task: own-hex, at-target and three-hexes have different target requirements; preserve server timing, LOS and NVR checks. |
+
+#### Amendments to existing candidates
+
+These amendments expand existing boundaries and do not increase the count.
+
+| Candidate | Revised contract and preservation requirement |
+|---|---|
+| P03/P05, NewGameForm / ScenarioSidesFields | Each side draft now includes optional SAN alongside ELR and edge; preserve unset versus zero and the relation to a placed Sniper counter. Keep both side labels explicitly associated with their fields. |
+| P06, ScenarioConditionsFields | Compose N01 with month/year/defender inputs. Expose rule validation without turning the component into a rules engine. |
+| P08, SetupPlacementEditor | Include the per-side Sniper choice beside Dummy choices. Preserve the special Sniper placement/serialization path rather than requiring a catalog unit definition. |
+| A13, InfantryMovementAction | Include N03 and optional N04 with shared mover context, Assault Movement and Double Time. Review place versus ordinary move through their existing handlers. |
+| C02/C03, CloseCombatPanel / CloseCombatLocationControl | Include prisoner-round and Hand-to-Hand options, infiltration declarations and separate Ambush Withdrawal. A Location or round change is an explicit draft boundary. |
+| C06/C07, CloseCombatAttackBuilder / CloseCombatAttackQueue | DeclaredAttack now includes Capture, ordered Yield and optional Guard. Show capture versus attack, preserve yield order, and carry these values into review; adding an attack resets its fields. |
+| C09, PendingSurrenderPanel | Add ReviewFree as Unarmed beside accept/reject. Preserve the existing service meaning and availability; it is not equivalent to rejecting surrender with No Quarter. |
+| C10, PrisonerActionPanel | Retain the baseline massacre-specific actions. N09 separately owns transfer/abandon controls; a shared visual wrapper must not merge their command semantics. |
+| C13/C14, SmallArmsFirePanel / FireGroupSelector | Include FT among weapon choices and optional MOL user. Parent serialization preserves a FT holder's withoutInherent treatment and validates the MOL user against selected firers. |
+| R05, ActionRecordList | Reuse for NightRecords and SniperRecords, retaining play-night/night-record and play-snipers/sniper-record hooks and data-event IDs. No separate near-identical history components are needed. |
+| R06/R07, FireHistory / FireResolutionCard | Preserve DC identity, user and mode, including the thrown charge's attack at its own Location; retain FT/MOL and low-visibility arithmetic supplied by existing records. |
+| R05 Close Combat adapter | Keep capture/Guard, freed-as-Unarmed, escape NTC, rearming, infiltration, concealment loss and Hand-to-Hand evidence in formatted records. Generic list rendering must not discard these facts. |
+
+New reusable history blocks: [Play:1618-1638](https://github.com/Realization-Engine/LimboDancer.Agentic.CognitiveRuntime/blob/ab32b53a8740f45dc47f8d349b0dcc5076d89f81/src/ASL/LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L1618-L1638). State and formatting evidence: [Play:2159-2199](https://github.com/Realization-Engine/LimboDancer.Agentic.CognitiveRuntime/blob/ab32b53a8740f45dc47f8d349b0dcc5076d89f81/src/ASL/LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L2159-L2199), [Play:2261-2289](https://github.com/Realization-Engine/LimboDancer.Agentic.CognitiveRuntime/blob/ab32b53a8740f45dc47f8d349b0dcc5076d89f81/src/ASL/LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L2261-L2289), [Play:2918-3037](https://github.com/Realization-Engine/LimboDancer.Agentic.CognitiveRuntime/blob/ab32b53a8740f45dc47f8d349b0dcc5076d89f81/src/ASL/LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L2918-L3037).
+
+#### State, disclosure and verification additions
+
+- Adding a CC attack resets capture, Guard and yield along with participants/director. ClearCloseCombat also clears infiltration and Hand-to-Hand. ChooseRound currently clears participants/director/queued attacks, but not every new CC field; specify and test which fields should survive rather than assuming all resets are identical.
+- Revalidate charge/holder choices when movers, game, perspective or revision change. Revalidate the retained SW list, MOL user and Starshell firer/target when their dependent selections change. These are extraction requirements, not a claim that the present page already resets every field.
+- Keep IsVisibleTo filtering in the NightRecords/SniperRecords adapters. Night/weather summaries currently read state, and custody/detonation choices also inspect state; audit their presentation contracts for each perspective before passing data to children. Concealed target flags and illumination locations require the same scrutiny as ordinary fire facts. These are review targets, not demonstrated leaks.
+- Preserve the existing capture, two-Location thrown-DC, and night/Starshell page-test flows. Extend extraction coverage to freeing surrender, transferring/abandoning prisoners, capture/yield queue reset, prisoner rounds, infiltration and Ambush Withdrawal, FT/MOL dependencies, SAN/Sniper setup, and all Starshell methods. Check refused/stale/confirmed outcomes through the parent gate path.
+- Keep the pass reports' known rule limitations distinct from UI capabilities. This design does not promise additional night routing, Gunflash, terrain/weather, or Sniper adjudication beyond the server's implemented scope. Scenario-card workflow remains later work.
+
+[Pass 14 review](https://github.com/Realization-Engine/LimboDancer.Agentic.CognitiveRuntime/blob/ab32b53a8740f45dc47f8d349b0dcc5076d89f81/src/ASL/docs/Scenario%20A1%20Backlog%20Pass%2014%20Review%202026-09-28.md); [Pass 15 review](https://github.com/Realization-Engine/LimboDancer.Agentic.CognitiveRuntime/blob/ab32b53a8740f45dc47f8d349b0dcc5076d89f81/src/ASL/docs/Scenario%20A1%20Backlog%20Pass%2015%20Review%202026-09-29.md); [Pass 16 review](https://github.com/Realization-Engine/LimboDancer.Agentic.CognitiveRuntime/blob/ab32b53a8740f45dc47f8d349b0dcc5076d89f81/src/ASL/docs/Scenario%20A1%20Backlog%20Pass%2016%20Review%202026-09-29.md).
+
 ## 10. Delivery sequence
 
 The stylesheet foundation and supplied theme are implemented. Shell/navigation, responsive layouts, task panels, and the candidate component extractions remain to be delivered. Each stage should be reviewable on its own.
@@ -635,8 +702,8 @@ A broad inventory is useful, but the first changes should prove the contracts wi
 1. **Small shared behavior and read-only panels:** PerspectivePicker, RevisionNavigator, BoardScopeSummary, BoardProvenancePanel, CounterTierPreviewGrid and ActionRecordList. These offer visible reuse with limited mutation risk.
 2. **Proposal review and evidence:** ProposalReviewPanel, EntryReviewFacts and FireReviewFacts. Establish a narrow disclosed-data contract while preserving current handlers and test hooks.
 3. **Representative complete forms:** RoutActionPanel, SupportWeaponActionPanel, ScenarioRuleEditor and MapPlacementEditor. Exercise draft ownership and dependent selections before applying the pattern to every task.
-4. **Play task families:** Rally/repair/deploy/recombine, Infantry movement, vehicle movement, small arms fire and ordnance. Keep each family working before extracting the next.
-5. **Close Combat and required choices:** Reconcile pass 14, then extract Location-specific CC, attack queues, surrender/prisoner and required-choice panels.
+4. **Play task families:** Rally/repair/deploy/recombine, Infantry movement including DC placement and retained SW, vehicle movement, small arms including FT/MOL, thrown/placed DC actions, Starshells and ordnance. Keep each family working before extracting the next.
+5. **Close Combat and required choices:** Integrate the reviewed main baseline, then extract Location-specific CC, capture/escape/infiltration, attack queues, surrender, prisoner custody and required-choice panels. Preserve the distinct review handlers.
 6. **Viewport lifecycle and layout:** Extract BoardViewport with lifecycle tests, then rearrange tasks into the proposed map-centered workspace.
 7. **Optional children and refinements:** Split P2/P3 children only when the resulting parent is still difficult to understand, independently rendered, or reused. Leave small cohesive components intact.
 
@@ -650,7 +717,7 @@ P1 does not override dependency order. Shell/navigation and shared visual primit
 | Visual direction | Warm neutral surfaces and olive controls | Contrast and terrain separation |
 | Fonts | Bundled IBM Plex Sans/Mono and Barlow Condensed, with system fallbacks | Long labels, readability and loading |
 | Library | Compact list with optional lazy SVG previews | Render cost and browsing density |
-| Play | Map-centered workspace with phase task groups | Full action inventory after pass 14 merges |
+| Play | Map-centered workspace with phase task groups | Passes 14-16 contracts and disclosure; reconcile main before implementation |
 | Proposal review | Persistent pane; explicit confirmation | Stale/reconnect and withheld-information behavior |
 | Mobile | Reflow and task access, not a separate gameplay product | Keyboard, zoom, drawers, long labels |
 
@@ -687,4 +754,8 @@ The theme build succeeded. A headless Edge smoke check at 1366x900 reached nine 
 
 The viewport browser check was repeated against the supplied theme: all 101 opacity values, layer visibility/reload, side-by-side/reload, swipe and mode transitions, and disposal passed, with no style attributes or embedded styles.
 
-The supplied :root block and following theme rules are preserved exactly after newline normalization. The component inventory retains all 142 candidates and their original source references. Responsive, interactive, populated-game, and accessibility acceptance remains subject to the delivery matrix above.
+The supplied :root block and following theme rules are preserved exactly after newline normalization. The initial consolidation retained all 142 baseline candidates and their source references; the subsequent main review adds 13 candidates (section 9.15), for 155 total. Responsive, interactive, populated-game, and accessibility acceptance remains subject to the delivery matrix above.
+
+### 12.4 Main-review document verification
+
+Checked the 2026-09-29 additions against the reviewed Git source, including their line ranges, total counts and priorities. The inventory now has 155 unique candidate IDs: 102 P1, 49 P2 and four P3. Existing source links remain at the branch baseline; new references pin main at ab32b53. CSS values and the site.css-only rule are unchanged. This is a documentation update, so no application build, test run or fresh visual acceptance is claimed.

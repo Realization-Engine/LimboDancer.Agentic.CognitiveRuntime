@@ -35,7 +35,7 @@ Scenario A1 state changes only in live games: the Map Studio's registered game a
 
 ## Documents
 
-- [ASL Map Studio UI Redesign 01 Design](<ASL Map Studio UI Redesign 01 Design.md>): consolidated redesign, applied site.css theme values and local fonts, 142 component candidates with source references and contracts, state ownership, staged delivery, and verification. Includes the rule against inline styles and Blazor CSS isolation; based on main at `2fa3f56`.
+- [ASL Map Studio UI Redesign 01 Design](<ASL Map Studio UI Redesign 01 Design.md>): consolidated redesign, applied site.css theme values and local fonts, 155 component candidates with source references and contracts, state ownership, staged delivery, and verification. Includes the rule against inline styles and Blazor CSS isolation; implementation baseline `2fa3f56`, with passes 14-16 reviewed through main `ab32b53`.
 - `LimboDancer.Agentic.CognitiveRuntime ASL Reference-Domain Requirements.md`: normative ASL reference-domain requirements (ASL-RD-001 through ASL-RD-015), end-to-end acceptance scenarios, and traceability to the runtime planes.
 - `LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md`: current rulebook-to-ontology authoring, validation, publication, and first-slice specification.
 - `LimboDancer.Agentic.CognitiveRuntime ASL-OT-01 Source Registry Review.md`: conformance decision and implementation evidence for source registration and fragment location.
