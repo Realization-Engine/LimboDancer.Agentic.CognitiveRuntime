@@ -375,3 +375,7 @@ Estimate: 2:40, the user's figure of 2026-09-28 (the plan's 6:30, build 5:15, sc
 | Table player's 8 findings (34 situations): 6 fixed (a crash on a DFF Throw, the vehicle Placement freeze, one FT or DC per Player Turn, Prep Fire by a FT, a DC thrower's inherent FP, a hero's FT; the Finnish Self-Rally fixed by the catalog), 2 recorded; 33 situations kept as `BacklogPass15TablePlayerTests`; Play (353) pass | 00:50 | 01:10 | 0:20 | |
 | Review, design, backlog section 25 (14 rows removed from sections 2, 5, 6, 10, 11, and 22), requirements, ruling wording | 01:10 | 01:25 | 0:15 | |
 | Full local suite: build with warnings as errors, every solution test project, and the ScenarioA1 tests (464); 4 failed: the architecture test's scan hit the held `.git/worktrees`, and three Units catalog tests whose synthetic American green and Italian conscript squads now share key facts with the new nationalities' counters (they now read the synthetic catalog without those); Units (405) pass; the source verification, pending comparison, and chart supplement regenerations run locally (identical) | 01:25 | 01:36 | 0:11 | |
+| Commit 0af4dde; merge gate: the Docker Linux check (restore, build, test, a1, and the source verification and pending comparison regenerations: every step exit 0; Authoring 165 of 165, ScenarioA1 464) | 01:36 | 01:51 | 0:15 | |
+| Merge and push | 01:51 | 01:53 | 0:02 | |
+
+Total 3:19 of working time (22:34 to 01:53) against the 2:40 estimate (the plan's 6:30, build 5:15); the referee's and table player's fixes, 00:17 to 01:10, took 0:53.
