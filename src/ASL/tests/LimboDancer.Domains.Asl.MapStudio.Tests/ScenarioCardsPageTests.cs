@@ -50,7 +50,7 @@ public sealed class ScenarioCardsPageTests : IDisposable
         var page = context.Render<Scenarios>();
         page.Find("#card-choice").Change("guards-counterattack");
         Assert.Equal("The Guards Counterattack", page.Find("#card-title").TextContent);
-        Assert.Contains("Only hexrows A to P are playable. (shown, not enforced)", page.Find("#card-playable").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Only hexrows A to P are playable. (enforced:", page.Find("#card-playable").TextContent, StringComparison.Ordinal);
         Assert.StartsWith("[130] (A16 is optional", page.Find("#card-side-german .card-integrity").TextContent, StringComparison.Ordinal);
         Assert.StartsWith("[207]", page.Find("#card-side-russian .card-integrity").TextContent, StringComparison.Ordinal);
         Assert.Contains("building F3 (E4, F3, G3, G4)", page.Find("#card-side-russian").TextContent, StringComparison.Ordinal);

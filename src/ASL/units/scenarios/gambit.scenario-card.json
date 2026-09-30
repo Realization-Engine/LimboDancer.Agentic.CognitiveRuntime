@@ -116,6 +116,12 @@
         "note": "A20.53: the Germans set up in hexrows 8 to 10 of board 4, with no enemy between them and the south edge, so it is one of their Friendly Board Edges (the east and west edges may qualify too); the game names one edge per side (R5.16)."
       },
       "balance": "Add one LMG to the German OB.",
+      "balanceUnits": [
+        {
+          "definition": "attacker-lmg",
+          "count": 1
+        }
+      ],
       "groups": [
         {
           "name": "Elements of Sturm Regiment 1",

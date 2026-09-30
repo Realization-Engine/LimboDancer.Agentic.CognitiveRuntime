@@ -119,9 +119,24 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.move-stack: every mover is an active unit of the phasing side");
         }
 
+        // Pass 20 (ruling R20.5): a stack waiting off board enters along its entry edge; it never moves with units on the map.
+        var offBoard = movers.Count(unit => unit!.Position is OffMapPosition && state.Location(unit.Id) is null);
+        if (offBoard > 0)
+        {
+            return offBoard < movers.Length
+                ? Refused(scope, label, expected, "play.entry-stack: units waiting off board enter apart from units on the map (A2.51; ruling R20.5)")
+                : PlanEnter(scope, arguments, attemptId, expected, label, state, [.. movers.Select(unit => unit!)], ids, to);
+        }
+
         if (movers.Select(unit => state.Location(unit!.Id)?.Location).Distinct().ToArray() is not [{ } from])
         {
             return Refused(scope, label, expected, "play.move-stack: the stack moves from one Location (A4.2)");
+        }
+
+        // A2.1 (ruling R20.6): never out of the card's playable area.
+        if (to != from && PlayableBar(state, to) is { } outside)
+        {
+            return Refused(scope, label, expected, outside);
         }
 
         // C10.3, C10.111 (ruling R8.6): a crew pushes the Gun it mans, alone, Good Order and unpinned, a QSU Gun; a crew that moves otherwise
@@ -611,6 +626,93 @@ public sealed partial class GamePlanner
             Roll = new PlannedRoll(needsSelection ? "random-selection" : "residual", Build),
             FirstEventId = EventId(attemptId, 1),
         };
+    }
+
+    /// <summary>
+    /// A stack waiting off board enters (A2.5, A2.51; ruling R20.5): in its side's MPh of its entry Game Turn or later, into a ground-level hex of its
+    /// entry edge within the playable area, as the stack's first MF expenditure at that hex's cost, by Assault Movement or Double Time if it chooses.
+    /// The DEFENDER may then fire as at any step. Bypass, Minimum Move, SMOKE, a DC, and a hex holding enemy units or Residual FP are not built at entry.
+    /// </summary>
+    private GamePlan PlanEnter(GameScope scope, JsonElement arguments, string attemptId, long expected, string label, GameState state, UnitInstance[] movers,
+        string[] ids, BoardLocation to)
+    {
+        var assault = Flag(arguments, "assault");
+        var doubleTime = Flag(arguments, "doubleTime");
+        if (Flag(arguments, "minimumMove") || arguments.TryGetProperty("bypass", out _) || Text(arguments, "smoke", out _) || Text(arguments, "placeDc", out _)
+            || Text(arguments, "pushGun", out _) || (assault && doubleTime))
+        {
+            return Refused(scope, label, expected, "play.entry-options: a stack enters by a plain step, by Assault Movement, or with Double Time; Bypass, Minimum Move, SMOKE, and a DC are not built at entry (A4.61; ruling R20.5)");
+        }
+
+        if (state.Movement is not null)
+        {
+            return Refused(scope, label, expected, $"play.move-order: {string.Join(", ", state.Movement.Movers)} moved last; end their move first (A4.2)");
+        }
+
+        if (movers.FirstOrDefault(LiveFire.IsVehicle) is { } vehicle)
+        {
+            return Refused(scope, label, expected, $"play.entry-vehicle: {vehicle.Id} is a vehicle; vehicles entering from off board are not built (A2.52; ruling R20.5)");
+        }
+
+        if (movers.FirstOrDefault(unit => Is(unit, Conditions.Broken) || Is(unit, Conditions.Pinned) || unit.MovementEnded) is { } unable)
+        {
+            return Refused(scope, label, expected, $"play.move-unit: {unable.Id} is broken, pinned, or done moving (A4.1)");
+        }
+
+        var entries = movers.Select(unit => (Unit: unit, Entry: EntryFor(state, unit))).ToArray();
+        if (entries.FirstOrDefault(item => item.Entry is null) is { Unit: { } lost })
+        {
+            return Refused(scope, label, expected, $"play.entry: {lost.Id} waits off board with no entry on the card (ruling R20.5)");
+        }
+
+        if (entries.FirstOrDefault(item => item.Entry!.Value.Turn > state.Turn) is { Unit: { } early } late)
+        {
+            return Refused(scope, label, expected, $"play.entry-turn: {early.Id} enters on Game Turn {late.Entry!.Value.Turn}, not {state.Turn} (A2.5; ruling R20.5)");
+        }
+
+        var edges = entries.Select(item => item.Entry!.Value.Edge).Distinct(StringComparer.Ordinal).ToArray();
+        if (edges is not [var edge])
+        {
+            return Refused(scope, label, expected, "play.entry-stack: a stack enters along one edge; units of different entry edges enter apart (ruling R20.5)");
+        }
+
+        if (to.Level != 0 || !EdgeSides(state, to).Any(item => item.Edge == edge))
+        {
+            return Refused(scope, label, expected, $"play.entry-edge: {string.Join(", ", ids)} enter at ground level in a hex of the {edge} edge, and {to} is not one (A2.51; ruling R20.5)");
+        }
+
+        if (PlayableBar(state, to) is { } outside)
+        {
+            return Refused(scope, label, expected, outside);
+        }
+
+        if (EntryHexBar(state, state.PhasingSide!, to) is { } barred)
+        {
+            return Refused(scope, label, expected, barred);
+        }
+
+        var terrain = TerrainKey(ReadLocation(state, to)!)!;
+        var halfMf = InfantryEntryHalfMf(state, terrain)!.Value;
+
+        foreach (var unit in movers)
+        {
+            var extra = doubleTime ? 2 : 0;
+            if (MfAllotment(state, unit, extra, doubleTime) is not { } allowance || MfAllotment(state, unit, 0, doubleTime) is not { } plain)
+            {
+                return Refused(scope, label, expected, $"play.move-mf: {unit.Id} has no MF allowance the catalog decides");
+            }
+
+            if (allowance * 2 < halfMf || (assault && plain * 2 <= halfMf))
+            {
+                return Refused(scope, label, expected, $"play.move-mf: {unit.Id} has {allowance} MF, and entering {to} costs {halfMf / 2m} (A4.11, A4.61)");
+            }
+        }
+
+        var moved = new MovementStepped(ids, to, halfMf, assault, 1) { DoubleTime = doubleTime };
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
+            [Event(scope, attemptId, 1, expected, "movement-step", moved, ScenarioA1FirePackage.Identity.ToString(), null)],
+            [$"play.enter: {string.Join(", ", ids)} enter {to} from off board along the {edge} edge ({terrain}) for {halfMf / 2m} MF, their first MF expenditure"
+                + (assault ? ", by Assault Movement" : string.Empty) + (doubleTime ? ", Double Timing and now CX (A4.5)" : string.Empty) + " (A2.51; ruling R20.5)"]);
     }
 
     /// <summary>

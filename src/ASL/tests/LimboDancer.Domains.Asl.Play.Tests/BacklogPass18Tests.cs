@@ -114,8 +114,13 @@ public sealed class BacklogPass18Tests : IDisposable
         return proposed.Outcome != PlayOutcome.NeedsConfirmation ? proposed : await play.ConfirmAsync(action, arguments, Player, proposed.Correlation);
     }
 
-    private async Task<PlayResult> Setup(Dictionary<string, object?> start, params Dictionary<string, object>[] placements) =>
-        await Commit(Play(), GameActions.Setup, JsonSerializer.SerializeToElement(new
+    private async Task<PlayResult> Setup(Dictionary<string, object?> start, params Dictionary<string, object>[] placements) => await Setup(start, [], placements);
+
+    /// <summary>A setup whose start draws the given dice (ruling R20.2).</summary>
+    private async Task<PlayResult> Setup(Dictionary<string, object?> start, int[] dice, params Dictionary<string, object>[] placements)
+    {
+        var queue = new Queue<int>(dice);
+        return await Commit(Play(dice.Length > 0 ? new DiceRoller(_ => queue.Dequeue() - 1) : null), GameActions.Setup, JsonSerializer.SerializeToElement(new
         {
             gameId = Scope.Game,
             attemptId = "setup-1",
@@ -123,6 +128,7 @@ public sealed class BacklogPass18Tests : IDisposable
             start,
             placements,
         }));
+    }
 
     /// <summary>A start naming a card; its other fields are the request's, which the card's replace.</summary>
     private static Dictionary<string, object?> CardStart(string card, string? sha256 = null, string? firstSide = "german") => new()
@@ -184,13 +190,13 @@ public sealed class BacklogPass18Tests : IDisposable
         Refused(await Setup(CardStart("guards-counterattack", sha256: new string('0', 64)), Unit("g1", "attacker-squad", "F5", "german")), "play.scenario");
     }
 
-    // R18.1 (A3.9): The Tractor Works leaves the first move to a die roll; the request names the side that won it.
+    // R18.1, R20.2 (A3.9): The Tractor Works leaves the first move to a die roll, which the game rolls as it starts; a start naming a winner is refused.
     [Fact]
-    public async Task TheTractorWorksTakesTheSideThatWonTheDieRoll()
+    public async Task TheTractorWorksRollsForTheFirstMove()
     {
-        Refused(await Setup(CardStart("tractor-works", firstSide: null), Unit("r1", "defender-squad", "X3", "russian", "russian-1")), "play.scenario");
-        // Pass 19 (ruling R19.2): the 308th sets up first in X3.
-        Committed(await Setup(CardStart("tractor-works", firstSide: "german"), Unit("r1", "defender-squad", "X3", "russian", "russian-1")));
+        Refused(await Setup(CardStart("tractor-works", firstSide: "german"), Unit("r1", "defender-squad", "X3", "russian", "russian-1")), "play.scenario");
+        // Pass 19 (ruling R19.2): the 308th sets up first in X3. The Russians roll 2 and the Germans 5.
+        Committed(await Setup(CardStart("tractor-works", firstSide: null), [2, 5], Unit("r1", "defender-squad", "X3", "russian", "russian-1")));
         Assert.Equal("german", Current.PhasingSide);
         Assert.Equal(3, Current.Side("german")!.Groups.Count);
     }

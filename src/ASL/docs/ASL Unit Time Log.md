@@ -485,3 +485,20 @@ No estimate of its own: backlog section 29's first row, found by pass 19, run as
 | Merge and push | 20:58 | 21:00 | 0:02 | |
 
 Total 1:12 of working time (19:48 to 21:00), with no estimate of its own; the build with the referee's fixes, 19:48 to 20:18, took 0:30, and the test runs and merge gate 0:40, most of it overlapped with pass 20.
+
+## Pass 20: Turns, reinforcements, and the start options
+
+Estimate: 3:00 (build 1:45), the Scenario Card Games Plan. Run in the same session as pass 19b, by the user's kickoff of 2026-09-29; its reading and much of its build overlapped with pass 19b's referee, test runs, and merge gate. Branch `feature/asl-backlog-pass-20`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Reading A2.1, A2.5 to A2.9, A3.9, A4.1, and A26.4; the planner's phase advance, movement step, setup, and start; the event model; the Play page; the design, the rulings drafted, and the edits written as scripts | 20:02 | 20:33 | 0:31 | Alongside pass 19b's referee and full local suite |
+| The edits applied: `game-ended`, the first-move and Balance drs, the Balance counters, off-board setup and entry, the entry due at the MPh's end, the playable area, the page; 9 Play tests and a page test; pass 18 and 19 tests roll for The Tractor Works; the solution built with warnings as errors; Play (513), Units (406), MapStudio (136) pass; rulings R20.1 to R20.6; the referee and the table player (a clone) started | 20:34 | 20:56 | 0:22 | The pass 19b Docker check ran meanwhile |
+| Visual check in the Studio (map-studio-scripted: The Tractor Works' die roll and Balance choices, the first setup committing its drs, the card panel, the Scenarios page's enforced area); Studio stopped; pass 19b merged meanwhile | 20:56 | 21:04 | 0:08 | The referee ran 20:56 to about 21:05; the table player 20:56 to about 21:26 |
+| Referee's 16 findings: the rout and charge searches within the area, the multi-board area, the off-board Balance counter, the shared entry-hex test, vehicles at entry, the agreed Balance with players, the card read once; 2 tests; rulings reworded | 21:05 | 21:12 | 0:07 | |
+| Table player's 19 situations brought in as `BacklogPass20TablePlayerTests`: the Balance counters owed, no broken setup (R20.7), the rout test rewritten, the constant arrays; Play (534) pass; rulings, review, design, backlog section 30, requirements | 21:26 | 21:46 | 0:20 | The Play run took 8 minutes |
+| Full local suite: build with warnings as errors, every solution test project, and the ScenarioA1 tests (480); the architecture test hit the held `.git/worktrees`; Play (534), MapStudio (136), Units (406), Authoring (166 of 167) pass | 21:46 | 22:32 | 0:46 | ScenarioA1 26:05 and Play 18:39, slowed by the Docker check running alongside from 22:07 |
+| Commit 13495a9; merge gate: the chart supplement regeneration run locally (identical with sorted keys) and the Docker Linux check (restore, build, test, a1, and the source verification and pending comparison regenerations: every step exit 0; Authoring 167 of 167, Play 534, ScenarioA1 480) | 22:07 | 22:48 | 0:41 | Overlapped with the local suite |
+| Merge and push | 22:48 | 22:50 | 0:02 | |
+
+Total 2:17 of working time (20:02 to 22:50, less the 0:31 of pass 20 reading that overlapped pass 19b's gate) against the 3:00 estimate (build 1:45); the build with both reviews' fixes, 20:02 to 21:46, took 1:13 of its own, and the test runs and merge gate 1:04, most of it waiting on runs that the Docker check slowed.

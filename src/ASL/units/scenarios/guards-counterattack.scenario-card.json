@@ -34,7 +34,11 @@
   "north": "top",
   "playableArea": {
     "text": "Only hexrows A to P are playable.",
-    "enforced": false
+    "enforced": true,
+    "hexrows": {
+      "from": "A",
+      "to": "P"
+    }
   },
   "turns": {
     "count": 5,
@@ -54,6 +58,12 @@
         "note": "A20.53: in every hex column of board 1, the hexes of the German setup buildings lie south of those of the Russian ones, so the south edge is one of the German Friendly Board Edges; the game names one edge per side (R5.16)."
       },
       "balance": "Add one Hero to any German group.",
+      "balanceUnits": [
+        {
+          "definition": "attacker-hero",
+          "count": 1
+        }
+      ],
       "groups": [
         {
           "name": "Company H, 389th Infantry Regiment",

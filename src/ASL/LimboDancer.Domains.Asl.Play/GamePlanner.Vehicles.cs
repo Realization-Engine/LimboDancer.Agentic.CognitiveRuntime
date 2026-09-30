@@ -373,6 +373,13 @@ public sealed partial class GamePlanner
                 }
 
                 to = entered;
+
+                // A2.1 (ruling R20.6): never out of the card's playable area.
+                if (PlayableBar(state, entered) is { } outside)
+                {
+                    return Refused(scope, label, expected, outside);
+                }
+
                 var bypass = Flag(arguments, "bypass");
                 overrun = Flag(arguments, "overrun");
                 minimumMove = Flag(arguments, "minimumMove");

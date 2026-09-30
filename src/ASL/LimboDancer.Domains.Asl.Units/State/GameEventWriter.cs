@@ -181,9 +181,32 @@ public static class GameEventWriter
                     writer.WriteString("id", scenario.Id);
                     writer.WriteString("sha256", scenario.Sha256);
                     writer.WriteString("title", scenario.Title);
+                    if (scenario.Balance is { } balance)
+                    {
+                        writer.WriteString("balance", balance);
+                    }
+
+                    if (scenario.Players.Count > 0)
+                    {
+                        writer.WriteStartArray("players");
+                        foreach (var player in scenario.Players)
+                        {
+                            writer.WriteStartObject();
+                            writer.WriteString("name", player.Name);
+                            writer.WriteString("side", player.Side);
+                            writer.WriteEndObject();
+                        }
+
+                        writer.WriteEndArray();
+                    }
+
                     writer.WriteEndObject();
                 }
 
+                break;
+            case GameEnded ended:
+                writer.WriteNumber("turn", ended.Turn);
+                writer.WriteString("reason", ended.Reason);
                 break;
             case PhaseChanged phase:
                 writer.WriteNumber("turn", phase.Turn);

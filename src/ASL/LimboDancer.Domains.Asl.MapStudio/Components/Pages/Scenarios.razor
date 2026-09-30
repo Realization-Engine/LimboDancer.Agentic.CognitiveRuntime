@@ -56,7 +56,7 @@ else
                         North is the map's @card.North.
                         @if (card.PlayableArea is { } playable)
                         {
-                            <span id="card-playable"> @playable.Text @(playable.Enforced ? string.Empty : "(shown, not enforced)")</span>
+                            <span id="card-playable"> @playable.Text @(playable.Enforced ? "(enforced: setup, movement, entry, rout, advance, and withdrawal stay within it; ruling R20.6)" : "(shown, not enforced)")</span>
                         }
                     </dd>
                     <dt>Turn Record Chart (A3.9)</dt>

@@ -41,6 +41,12 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.advance-phase: units advance in their side's APh (A3.7, p. 47)");
         }
 
+        // A2.1 (ruling R20.6): never out of the card's playable area.
+        if (PlayableBar(state, to) is { } outside)
+        {
+            return Refused(scope, label, expected, outside);
+        }
+
         var units = ids.Select(state.Unit).ToArray();
         if (units.Any(unit => unit is not { Status: InstanceStatus.Active } || unit.Side != state.PhasingSide || unit.Definition is null))
         {
@@ -569,7 +575,7 @@ public sealed partial class GamePlanner
     /// not make it (A4.72; ruling R5.5).
     /// </summary>
     public IReadOnlyList<BoardLocation> WithdrawalDestinations(GameState state, UnitInstance unit, BoardLocation from) => Laden(state, unit) ? []
-        : [.. Neighbors(state, from).Where(to => InfantryStep(state, from, to).Entry is { AllMf: false } entry
+        : [.. Neighbors(state, from).Where(to => PlayableBar(state, to) is null && InfantryStep(state, from, to).Entry is { AllMf: false } entry
             && DifficultAdvance(state, unit, entry.HalfMf) is { } difficult && !(difficult && Is(unit, Conditions.Cx))
             && !state.At(to).OfType<UnitInstance>().Any(other => other.Status == InstanceStatus.Active && other.Side != unit.Side && !Is(other, Conditions.Captured)))];
 
@@ -1270,7 +1276,7 @@ public sealed partial class GamePlanner
                 continue;
             }
 
-            foreach (var next in Neighbors(state, from))
+            foreach (var next in Neighbors(state, from).Where(at => PlayableBar(state, at) is null))
             {
                 if (EntryCost(state, from, next) is { } cost && exact.TryGetValue(next, out var rest) && cost + rest == best && !steps.ContainsKey(next))
                 {
@@ -1308,7 +1314,8 @@ public sealed partial class GamePlanner
                 continue;
             }
 
-            foreach (var neighbor in Neighbors(state, node))
+            // A2.1 (ruling R20.6; referee, pass 20): a charge's route stays within the playable area.
+            foreach (var neighbor in Neighbors(state, node).Where(at => PlayableBar(state, at) is null))
             {
                 // Entering node from neighbor.
                 var entry = EntryCost(state, neighbor, node) ?? (lowerBound ? 2 : (int?)null);

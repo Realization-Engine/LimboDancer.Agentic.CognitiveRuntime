@@ -57,7 +57,20 @@ public sealed record SideState(string Id, string Nationality, int? Elr, int? San
 public sealed record ObGroup(string Id, string Name, int? Elr);
 
 /// <summary>The scenario card a game starts from (backlog pass 18, ruling R18.2): its id, the SHA-256 of its text, and its title.</summary>
-public sealed record ScenarioCardReference(string Id, string Sha256, string Title);
+public sealed record ScenarioCardReference(string Id, string Sha256, string Title)
+{
+    /// <summary>The side that plays with the card's Balance (A26.4; ruling R20.3), when one does.</summary>
+    public string? Balance
+    {
+        get; init;
+    }
+
+    /// <summary>The players and the sides they play (A26.4; ruling R20.3), when the start names them.</summary>
+    public IReadOnlyList<ScenarioPlayer> Players { get; init; } = [];
+}
+
+/// <summary>A player of a game from a card and the side they play (A26.4; ruling R20.3).</summary>
+public sealed record ScenarioPlayer(string Name, string Side);
 
 /// <summary>Where a board sits in a composed map: its slot, as in <see cref="BoardPlacement"/>, and whether it is reversed.</summary>
 public sealed record BoardSlot(int Column, int Row, bool Reversed);
