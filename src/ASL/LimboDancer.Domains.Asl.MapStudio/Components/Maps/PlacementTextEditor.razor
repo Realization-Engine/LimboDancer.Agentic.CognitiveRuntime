@@ -1,0 +1,28 @@
+@* M04 (plan section 16.5): the compact placement text, in an Advanced section; applying it replaces the placements and rules. *@
+<details class="placement-text" id="map-advanced" open="@(Problem is not null ? true : null)">
+    <summary>Advanced: the compact form</summary>
+    <p class="muted">One placement per board: <code>board@column,row</code>, <code>/r</code> for reversed, and <code>[Rule,...]</code>. It follows the placements above: Use this text applies it, and editing the placements or rules above replaces it.</p>
+    <textarea id="map-text" class="placements-text" aria-label="Placements as text" rows="2" value="@Text" @onchange="@(args => TextChanged.InvokeAsync(args.Value as string ?? string.Empty))"></textarea>
+    <p>
+        <button id="map-use-text" @onclick="OnApply">Use this text</button>
+        @if (Problem is { } problem)
+        {
+            <span id="map-text-problem" class="fail" role="alert">@problem</span>
+        }
+    </p>
+</details>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Text { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> TextChanged { get; set; }
+
+    [Parameter]
+    public EventCallback OnApply { get; set; }
+
+    /// <summary>Why the text could not be used; null when it was, or has not been tried.</summary>
+    [Parameter]
+    public string? Problem { get; set; }
+}

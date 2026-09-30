@@ -221,7 +221,7 @@ public sealed class RenderEndpointTests(StudioFactory factory) : IClassFixture<S
         Assert.Contains("2 boards in scope", html, StringComparison.Ordinal);
         Assert.Contains(">2 verified<", html, StringComparison.Ordinal);
         Assert.Contains("Verified (batch)", html, StringComparison.Ordinal);
-        Assert.Contains("Show out-of-scope boards (1)", html, StringComparison.Ordinal);
+        Assert.Contains("Out-of-scope boards (1)", html, StringComparison.Ordinal);
         Assert.DoesNotContain("VASL board 1a", html, StringComparison.Ordinal);
     }
 

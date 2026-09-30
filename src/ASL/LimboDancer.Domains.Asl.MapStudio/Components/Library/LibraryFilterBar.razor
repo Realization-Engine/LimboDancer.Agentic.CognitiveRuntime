@@ -1,0 +1,73 @@
+@* Plan section 12.1: search and filters above the results, with the result count and Clear; the page keeps the filter for the session. *@
+<div class="library-filters" role="search" aria-label="Board library">
+    <label>
+        Search
+        <input id="library-search" type="search" value="@Value.Search" placeholder="name or reference" @oninput="@(args => Change(Value with { Search = args.Value as string ?? string.Empty }))" />
+    </label>
+    <label>
+        Show
+        <select id="library-type" value="@Value.Type" @onchange="@(args => Change(Value with { Type = args.Value as string ?? Filter.AllTypes }))">
+            <option value="@Filter.AllTypes">everything</option>
+            <option value="authored">authored boards</option>
+            <option value="maps">maps</option>
+            <option value="vasl">VASL boards</option>
+        </select>
+    </label>
+    <label>
+        VASL status
+        <select id="library-status" value="@Value.Status" disabled="@(!Value.Shows("vasl"))" @onchange="@(args => Change(Value with { Status = args.Value as string ?? Filter.AnyStatus }))">
+            <option value="@Filter.AnyStatus">any</option>
+            <option value="verified">verified</option>
+            <option value="ingested">ingested</option>
+            <option value="failed">failed</option>
+            <option value="notchecked">not checked</option>
+        </select>
+    </label>
+    <label class="toggle">
+        <input id="library-out-of-scope" type="checkbox" checked="@Value.OutOfScope" disabled="@(!Value.Shows("vasl"))" @onchange="@(args => Change(Value with { OutOfScope = args.Value is true }))" />
+        Out-of-scope boards (@OutOfScopeCount)
+    </label>
+    <span id="library-count" role="status">@Shown of @Total shown</span>
+    @if (!Value.IsDefault)
+    {
+        <button id="library-clear" class="link" @onclick="@(() => Change(Filter.Default))">Clear filters</button>
+    }
+</div>
+
+@code {
+    /// <summary>The library's search and filters: text, the kind of entry, the VASL status, and whether out-of-scope boards show.</summary>
+    public sealed record Filter(string Search, string Type, string Status, bool OutOfScope)
+    {
+        public const string AllTypes = "all";
+
+        public const string AnyStatus = "any";
+
+        public static Filter Default { get; } = new(string.Empty, AllTypes, AnyStatus, false);
+
+        public bool IsDefault => this == Default;
+
+        /// <summary>Whether a name or reference matches the search, ignoring case.</summary>
+        public bool Matches(params string[] texts) =>
+            Search.Trim().Length == 0 || texts.Any(text => text.Contains(Search.Trim(), StringComparison.OrdinalIgnoreCase));
+
+        // A VASL status narrows the list to VASL boards, since only they have one (table player, pass 22c).
+        public bool Shows(string type) => (Type == AllTypes || Type == type) && (Status == AnyStatus || type == "vasl");
+    }
+
+    [Parameter, EditorRequired]
+    public Filter Value { get; set; } = Filter.Default;
+
+    [Parameter]
+    public EventCallback<Filter> ValueChanged { get; set; }
+
+    [Parameter]
+    public int Shown { get; set; }
+
+    [Parameter]
+    public int Total { get; set; }
+
+    [Parameter]
+    public int OutOfScopeCount { get; set; }
+
+    private Task Change(Filter filter) => ValueChanged.InvokeAsync(filter);
+}

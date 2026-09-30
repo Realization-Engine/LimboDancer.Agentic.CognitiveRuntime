@@ -1,7 +1,7 @@
 @page "/fidelity"
-@using System.Globalization
 @using LimboDancer.Domains.Asl.Maps
 @using LimboDancer.Domains.Asl.Maps.Vasl
+@using LimboDancer.Domains.Asl.MapStudio.Components.Fidelity
 @implements IDisposable
 @inject FidelityJobRunner Runner
 @inject FidelityReportStore Store
@@ -16,215 +16,37 @@
 }
 else
 {
-    <p>
-        <button @onclick="Start" disabled="@(Runner.State == FidelityJobState.Running)">Run batch</button>
-        <label class="toggle">
-            <input type="checkbox" checked="@includeF3" disabled="@(Runner.State == FidelityJobState.Running)" @onchange="@(args => includeF3 = (bool)args.Value!)" />
-            Include F3 (vectorize and recompile every board)
-        </label>
-        @if (Runner.State == FidelityJobState.Running)
-        {
-            <button @onclick="Runner.Cancel">Cancel</button>
-            <progress max="@(Runner.Progress?.Total ?? 1)" value="@(Runner.Progress?.Completed ?? 0)"></progress>
-            <span class="muted">@(Runner.Progress is { } progress ? $"{progress.Completed} of {progress.Total}, last {progress.LastBoard}" : "Starting")</span>
-        }
-        else if (Runner.State == FidelityJobState.Canceled)
-        {
-            <span class="muted">The last run was canceled.</span>
-        }
-        else if (Runner.State == FidelityJobState.Failed)
-        {
-            <span class="fail">The last run failed: @Runner.Error</span>
-        }
-    </p>
+    <FidelityRunControls State="@Runner.State" Progress="@Runner.Progress" Error="@Runner.Error" @bind-IncludeF3="includeF3"
+                         OnStart="@(() => Runner.Start(includeF3))" OnCancel="@Runner.Cancel" />
     <p class="muted">A run ingests every VASL board and checks F1, F2 against the oracle fixtures, lossless outlines, and both SVG views. F3 checks are informational: they describe the vectorized model and never change a board's outcome. Reports are saved under <code>@Store.Directory</code>.</p>
 }
 
-<h3>LOS against VASL</h3>
-@if (Los.Fixtures() is { Count: > 0 } losFixtures)
-{
-    <p>
-        <button id="los-fidelity-run" @onclick="CheckLos" disabled="@(losRunning || !Runner.IsAvailable)">Check LOS</button>
-        <span class="muted">The LOS read (LOS Design) against VASL's own LOS on each of the @losFixtures.Count LOS oracle fixtures. An answered pair that disagrees fails the check; unanswered pairs are listed by the rule not yet reproduced.</span>
-    </p>
-    @if (losRunning)
-    {
-        <p class="muted">Checking @losProgress...</p>
-    }
-    @if (losResults.Count > 0)
-    {
-        <table class="library" id="los-fidelity">
-            <thead><tr><th>Fixture</th><th>Pairs</th><th>Answered</th><th>Agreed</th><th>Outcome</th><th>Not reproduced yet</th></tr></thead>
-            <tbody>
-                @foreach (var result in losResults)
-                {
-                    <tr data-fixture="@result.Fixture">
-                        <td>@result.Fixture</td><td>@result.Pairs</td><td>@result.Answered</td><td>@result.Agreed</td>
-                        <td class="@(result.Passed ? "pass" : "fail")">@(result.Passed ? "Pass" : $"Fail: {result.Disagreements.Count} disagree")</td>
-                        <td>@string.Join("; ", result.Unsupported.OrderByDescending(item => item.Value).Select(item => $"{item.Key} ({item.Value})"))</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    }
-}
-else
-{
-    <p class="muted">No LOS oracle fixtures were found.</p>
-}
+<LosFidelityPanel Fixtures="@losFixtures.Count" Available="@Runner.IsAvailable" Running="@losRunning" Progress="@losProgress" Results="@losResults" OnRun="@CheckLos" />
 
 <h3>Batch reports</h3>
-@if (reports.Count > 0)
-{
-    <p>
-        <label>
-            Report
-            <select value="@selectedId" @onchange="Select">
-                @foreach (var stored in reports)
-                {
-                    <option value="@stored.Id">@stored.StartedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture): @stored.Summary.Verified verified, @stored.Summary.Failed failed</option>
-                }
-            </select>
-        </label>
-        @if (selectedId is not null)
-        {
-            <a href="@($"fidelity/reports/{selectedId}.json")" download>Download JSON</a>
-        }
-    </p>
-}
-else
-{
-    <p class="muted">No reports yet.</p>
-}
+<FidelityReportPicker Reports="@reports" Selected="@selectedId" SelectedChanged="@Select" />
 
 @if (report is not null)
 {
     var summary = report.Summary;
-    var ran = report.Boards.Where(board => board.Outcome is BatchOutcome.Verified or BatchOutcome.Ingested).ToArray();
-    <p class="totals">
-        <strong>@(summary.Boards - summary.OutOfScope) boards in scope:</strong>
-        <span class="pass">@summary.Verified verified</span>,
-        @summary.Ingested ingested,
-        <span class="@(summary.Failed > 0 ? "fail" : "")">@summary.Failed failed</span>.
-        @summary.OutOfScope out of scope.
-    </p>
-    <dl class="report">
-        <dt>Started</dt>
-        <dd>@report.StartedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture), @Seconds(report.DurationMs) s wall clock</dd>
-        <dt>VASL commit</dt>
-        <dd><code>@(report.VaslCommit ?? "unknown")</code></dd>
-        <dt>Catalog blob</dt>
-        <dd><code>@(report.SharedBoardMetadataBlob ?? "unavailable")</code></dd>
-        <dt>Versions</dt>
-        <dd>@string.Join(", ", report.Versions.Select(pair => $"{pair.Key} {pair.Value}"))</dd>
-        @if (ran.Length > 0)
-        {
-            <dt>Median per board</dt>
-            <dd>import @Median(ran, t => t.Import) ms, derive @Median(ran, t => t.Derive) ms, F2 @Median(ran, t => t.F2) ms, checks @Median(ran, t => t.Checks) ms</dd>
-        }
-        @if (report.Diagnostics.Count > 0)
-        {
-            <dt>Diagnostics</dt>
-            <dd><Diagnostics Items="report.Diagnostics" /></dd>
-        }
-    </dl>
-
-    <p>
-        <label>
-            Show
-            <select value="@filter" @onchange="@(args => filter = (string)args.Value!)">
-                <option value="in-scope">boards in scope</option>
-                <option value="problems">boards not verified</option>
-                <option value="all">all boards</option>
-            </select>
-        </label>
-    </p>
-
-    <table class="library">
-        <thead>
-            <tr>
-                <th>Board</th>
-                <th>Outcome</th>
-                <th>F1</th>
-                <th>F2</th>
-                <th>Checks</th>
-                <th>Diagnostics</th>
-                <th>ms</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var board in Visible(report))
-            {
-                <tr>
-                    <td>
-                        @if (board.Outcome is BatchOutcome.Verified or BatchOutcome.Ingested)
-                        {
-                            <a href="@($"boards/{board.Board}")">@board.Board</a>
-                        }
-                        else
-                        {
-                            @board.Board
-                        }
-                    </td>
-                    <td class="@OutcomeClass(board.Outcome)" title="@board.Reason">@board.Outcome</td>
-                    <td class="@(board.F1 == F1Status.Pass ? "pass" : "fail")">@board.F1</td>
-                    <td>
-                        @if (board.F2 is { } f2)
-                        {
-                            <span class="@(f2.Status == BatchF2.Pass ? "pass" : f2.Status == BatchF2.Fail ? "fail" : "muted")">@f2.Status</span>
-                            @if (f2.Differences.Count > 0 || f2.Diagnostics.Count > 0)
-                            {
-                                <details>
-                                    <summary>@f2.Differences.Count differences</summary>
-                                    <Diagnostics Items="f2.Diagnostics" />
-                                    <ul class="differences">
-                                        @foreach (var difference in f2.Differences.Take(MaxDifferences))
-                                        {
-                                            <li>@difference</li>
-                                        }
-                                    </ul>
-                                    @if (f2.Differences.Count > MaxDifferences)
-                                    {
-                                        <p class="muted">@(f2.Differences.Count - MaxDifferences) more in the JSON report.</p>
-                                    }
-                                </details>
-                            }
-                        }
-                    </td>
-                    <td>
-                        @foreach (var check in board.Checks)
-                        {
-                            <span class="diagnostic @(check.Passed ? "info" : check.Gating ? "error" : "warning")" title="@check.Detail">@check.Name</span>
-                        }
-                    </td>
-                    <td>
-                        @if (board.Outcome == BatchOutcome.OutOfScope)
-                        {
-                            <span class="muted">@board.Reason</span>
-                        }
-                        else
-                        {
-                            <Diagnostics Items="board.Diagnostics" />
-                        }
-                    </td>
-                    <td class="number">@Math.Round(board.Timings.Total).ToString(CultureInfo.InvariantCulture)</td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <BoardScopeSummary Id="fidelity-totals" InScope="@(summary.Boards - summary.OutOfScope)" Verified="@summary.Verified" Ingested="@summary.Ingested"
+                       Failed="@summary.Failed" OutOfScope="@summary.OutOfScope" />
+    <FidelityReportMetadata Report="@report" />
+    <FidelityResultsTable Boards="@report.Boards" @bind-Filter="filter" />
 }
 
 @code {
-    private const int MaxDifferences = 200;
     private IReadOnlyList<StoredReport> reports = [];
     private string? selectedId;
     private FidelityReport? report;
     private string filter = "in-scope";
     private bool includeF3;
+    private IReadOnlyList<string> losFixtures = [];
 
     protected override void OnInitialized()
     {
         Runner.Changed += OnRunnerChanged;
+        losFixtures = [.. Los.Fixtures()];
         Reload();
     }
 
@@ -242,9 +64,7 @@ else
         }
     }
 
-    private void Start() => Runner.Start(includeF3);
-
-    private readonly List<LimboDancer.Domains.Asl.Maps.Vasl.LosFidelityResult> losResults = [];
+    private readonly List<LosFidelityResult> losResults = [];
     private bool losRunning;
     private string losProgress = string.Empty;
 
@@ -253,7 +73,7 @@ else
     {
         losRunning = true;
         losResults.Clear();
-        foreach (var fixture in Los.Fixtures())
+        foreach (var fixture in losFixtures)
         {
             losProgress = Path.GetFileName(fixture);
             StateHasChanged();
@@ -266,9 +86,9 @@ else
         losRunning = false;
     }
 
-    private void Select(ChangeEventArgs args)
+    private void Select(string? id)
     {
-        selectedId = args.Value as string;
+        selectedId = id;
         report = selectedId is null ? null : Store.TryLoad(selectedId);
     }
 
@@ -281,28 +101,6 @@ else
 
         StateHasChanged();
     });
-
-    private IEnumerable<BatchBoardResult> Visible(FidelityReport current) => filter switch
-    {
-        "all" => current.Boards,
-        "problems" => current.Boards.Where(board => board.Outcome is BatchOutcome.Ingested or BatchOutcome.Failed),
-        _ => current.Boards.Where(board => board.Outcome != BatchOutcome.OutOfScope),
-    };
-
-    private static string OutcomeClass(BatchOutcome outcome) => outcome switch
-    {
-        BatchOutcome.Verified => "pass",
-        BatchOutcome.Failed => "fail",
-        _ => "muted",
-    };
-
-    private static string Seconds(double milliseconds) => (milliseconds / 1000).ToString("F1", CultureInfo.InvariantCulture);
-
-    private static string Median(IReadOnlyList<BatchBoardResult> boards, Func<BatchTimings, double> stage)
-    {
-        var values = boards.Select(board => stage(board.Timings)).Order().ToArray();
-        return values[values.Length / 2].ToString("F0", CultureInfo.InvariantCulture);
-    }
 
     public void Dispose() => Runner.Changed -= OnRunnerChanged;
 }

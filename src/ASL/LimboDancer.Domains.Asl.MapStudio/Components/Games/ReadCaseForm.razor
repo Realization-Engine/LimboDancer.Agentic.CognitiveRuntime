@@ -1,0 +1,41 @@
+@* G06 (plan section 16.8): a case read's request: the attacker (only the perspective's own units, or all for the adjudicator), the Location, and the expected revision; the page reads it. *@
+<div class="toolbar" id="case-form">
+    <label>
+        Attacker
+        <select id="case-attacker" value="@Draft.Attacker" @onchange="@(args => Change(Draft with { Attacker = args.Value as string ?? string.Empty }))">
+            @foreach (var attacker in Attackers)
+            {
+                <option value="@attacker.Id">@attacker.Id: @attacker.Label</option>
+            }
+        </select>
+    </label>
+    <label>Location <input id="case-location" value="@Draft.Location" @onchange="@(args => Change(Draft with { Location = args.Value as string ?? string.Empty }))" /></label>
+    <label>
+        Expected revision
+        <input id="case-expected" type="number" value="@Draft.Expected"
+               @onchange="@(args => Change(Draft with { Expected = long.TryParse(args.Value as string, out var value) ? value : Draft.Expected }))" />
+    </label>
+    <button id="case-read" @onclick="OnRead">Read</button>
+</div>
+
+@code {
+    /// <summary>A case read being prepared.</summary>
+    public sealed record CaseDraft(string Attacker, string Location, long Expected);
+
+    /// <summary>A unit that may attempt the case, with its accessible name.</summary>
+    public sealed record Attacker(string Id, string Label);
+
+    [Parameter, EditorRequired]
+    public CaseDraft Draft { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback<CaseDraft> DraftChanged { get; set; }
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Attacker> Attackers { get; set; } = [];
+
+    [Parameter]
+    public EventCallback OnRead { get; set; }
+
+    private Task Change(CaseDraft draft) => DraftChanged.InvokeAsync(draft);
+}

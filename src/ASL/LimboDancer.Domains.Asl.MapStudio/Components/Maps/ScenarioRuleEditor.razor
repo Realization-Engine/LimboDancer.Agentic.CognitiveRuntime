@@ -1,0 +1,81 @@
+@using LimboDancer.Domains.Asl.Maps.Vasl
+@* M03 (plan section 16.5): the LOS scenario-specific rules in the order chosen, which is the order they apply; the catalog's rules to add. *@
+<h3>Scenario-specific rules</h3>
+<p class="muted">Applied to every board in this order, as VASL's board picker does. LOS-neutral rules (such as NoRoads) are listed but change no terrain.</p>
+@if (Rules.Count > 0)
+{
+    <ol class="rules" id="map-rules">
+        @foreach (var (rule, index) in Rules.Select((rule, index) => (rule, index)))
+        {
+            <li @key="rule" data-rule="@rule">
+                <code>@rule</code> <span class="muted">@KindOf(Catalog, rule)</span>
+                <span class="rule-actions">
+                    @if (OnMove.HasDelegate)
+                    {
+                        <button class="link" disabled="@(index == 0)" aria-label="@($"Move {rule} up")" @onclick="() => OnMove.InvokeAsync((rule, -1))">Up</button>
+                        <button class="link" disabled="@(index == Rules.Count - 1)" aria-label="@($"Move {rule} down")" @onclick="() => OnMove.InvokeAsync((rule, 1))">Down</button>
+                    }
+                    <button class="link" @onclick="() => OnRemove.InvokeAsync(rule)">Remove</button>
+                </span>
+            </li>
+        }
+    </ol>
+}
+<p>
+    <select id="map-next-rule" aria-label="Rule to add" value="@Next" @onchange="@(args => chosen = args.Value as string)">
+        @foreach (var rule in Available)
+        {
+            <option value="@rule.Name">@rule.Name (@Describe(rule))</option>
+        }
+    </select>
+    <button id="map-add-rule" disabled="@(Next is null)" @onclick="Add">Add rule</button>
+</p>
+
+@code {
+    /// <summary>The rules chosen, in the order they apply.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<string> Rules { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public LosSsRuleSet Catalog { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback<string> OnAdd { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnRemove { get; set; }
+
+    /// <summary>A rule to move and by how many places (-1 up, 1 down); no move buttons when unset.</summary>
+    [Parameter]
+    public EventCallback<(string Rule, int By)> OnMove { get; set; }
+
+    private string? chosen;
+
+    private IEnumerable<LosSsRule> Available => Catalog.Rules.Where(rule => !Rules.Contains(rule.Name));
+
+    // The rule shown in the picker: the one chosen while it is still available, else the first available.
+    private string? Next => chosen is not null && Available.Any(rule => rule.Name == chosen) ? chosen : Available.FirstOrDefault()?.Name;
+
+    private async Task Add()
+    {
+        if (Next is { } rule)
+        {
+            chosen = null;
+            await OnAdd.InvokeAsync(rule);
+        }
+    }
+
+    private static string KindOf(LosSsRuleSet set, string rule) => set.TryGet(rule, out var found) ? Describe(found) : "not a VASL rule; ignored";
+
+    private static string Describe(LosSsRule rule) => rule.Kind switch
+    {
+        LosSsRuleKind.Ignore => "no LOS effect",
+        LosSsRuleKind.CustomCode => "VASL code",
+        LosSsRuleKind.TerrainMap => $"{rule.FromValue} to {rule.ToValue}",
+        LosSsRuleKind.ElevationMap => $"level {rule.FromValue} to {rule.ToValue}",
+        LosSsRuleKind.TerrainToElevationMap => $"{rule.FromValue} to open ground at level {rule.ToValue}",
+        LosSsRuleKind.ElevationToTerrainMap => $"level {rule.FromValue} to {rule.ToValue} at level 0",
+        LosSsRuleKind.TerrainToSelectElevationMap => $"{rule.FromValue} at level {rule.ToValue} to open ground",
+        _ => rule.Kind.ToString(),
+    };
+}

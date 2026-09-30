@@ -14,7 +14,7 @@
     <dt>Boards folder (<code>AslMaps:BoardsRoot</code>)</dt>
     <dd><code>@Options.ResolveBoardsRoot()</code></dd>
     <dt>Cache (<code>AslMaps:CacheRoot</code>)</dt>
-    <dd><code>@Options.ResolveCacheRoot()</code>, @CacheSize</dd>
+    <dd><code>@Options.ResolveCacheRoot()</code>, @cacheSize</dd>
     <dt>Oracle fixtures</dt>
     <dd><code>@(Options.ResolveOracleFixtures() ?? "not found")</code></dd>
     <dt>Versions</dt>
@@ -29,18 +29,14 @@
 </dl>
 
 @code {
-    private string CacheSize
-    {
-        get
-        {
-            var root = Options.ResolveCacheRoot();
-            if (!Directory.Exists(root))
-            {
-                return "empty";
-            }
+    // F09 (plan section 16.9), left inline: the cache is measured once when the page opens, not on every render.
+    private string cacheSize = string.Empty;
 
-            var bytes = new DirectoryInfo(root).EnumerateFiles("*", SearchOption.AllDirectories).Sum(file => file.Length);
-            return $"{bytes / 1024.0 / 1024.0:F1} MB";
-        }
+    protected override void OnInitialized()
+    {
+        var root = Options.ResolveCacheRoot();
+        cacheSize = Directory.Exists(root)
+            ? $"{new DirectoryInfo(root).EnumerateFiles("*", SearchOption.AllDirectories).Sum(file => file.Length) / 1024.0 / 1024.0:F1} MB"
+            : "empty";
     }
 }

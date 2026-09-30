@@ -1,0 +1,49 @@
+@using LimboDancer.Domains.Asl.Maps.Vasl
+@* F01 (plan section 16.9): starting and canceling the batch, F3 included or not, and the run's progress or last outcome; the page owns the runner. *@
+<p class="toolbar" id="fidelity-run">
+    <button id="fidelity-start" class="primary" @onclick="OnStart" disabled="@Running">Run batch</button>
+    <label class="toggle">
+        <input id="fidelity-f3" type="checkbox" checked="@IncludeF3" disabled="@Running" @onchange="@(args => IncludeF3Changed.InvokeAsync(args.Value is true))" />
+        Include F3 (vectorize and recompile every board)
+    </label>
+    @if (Running)
+    {
+        <button id="fidelity-cancel" @onclick="OnCancel">Cancel</button>
+        <progress max="@(Progress?.Total ?? 1)" value="@(Progress?.Completed ?? 0)" aria-label="Batch progress"></progress>
+        <span class="muted">@(Progress is { } progress ? $"{progress.Completed} of {progress.Total}, last {progress.LastBoard}" : "Starting")</span>
+    }
+    <span id="fidelity-status" class="@(State == FidelityJobState.Failed ? "fail" : "muted")" role="status">@StatusText</span>
+</p>
+
+@code {
+    [Parameter]
+    public FidelityJobState State { get; set; }
+
+    [Parameter]
+    public BatchProgress? Progress { get; set; }
+
+    [Parameter]
+    public string? Error { get; set; }
+
+    [Parameter]
+    public bool IncludeF3 { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> IncludeF3Changed { get; set; }
+
+    [Parameter]
+    public EventCallback OnStart { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    private bool Running => State == FidelityJobState.Running;
+
+    private string StatusText => State switch
+    {
+        FidelityJobState.Running => "The batch is running.",
+        FidelityJobState.Canceled => "The last run was canceled.",
+        FidelityJobState.Failed => $"The last run failed: {Error}",
+        _ => string.Empty,
+    };
+}

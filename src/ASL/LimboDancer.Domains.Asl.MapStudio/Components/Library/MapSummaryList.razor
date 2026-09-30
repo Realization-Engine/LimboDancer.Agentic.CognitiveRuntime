@@ -1,0 +1,62 @@
+@* H02 (plan section 16.4): saved maps with their placements and view links; edit and delete only where the caller handles them. *@
+@if (Maps.Count == 0)
+{
+    @EmptyContent
+}
+else
+{
+    <table class="library" id="@Id">
+        <thead>
+            <tr>
+                <th>Map</th>
+                <th>Boards</th>
+                @if (Actions)
+                {
+                    <th></th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var map in Maps)
+            {
+                <tr @key="map.Ref.Value" data-map="@map.Ref.Value">
+                    <td><a href="@($"boards/{map.Ref.Value}")">@map.Name</a></td>
+                    <td><code>@map.PlacementText</code></td>
+                    @if (Actions)
+                    {
+                        <td>
+                            @if (OnEdit.HasDelegate)
+                            {
+                                <button class="link" @onclick="() => OnEdit.InvokeAsync(map)">Edit</button>
+                            }
+                            @if (OnDelete.HasDelegate)
+                            {
+                                <button class="link danger" @onclick="() => OnDelete.InvokeAsync(map)">Delete</button>
+                            }
+                        </td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<MapDefinition> Maps { get; set; } = [];
+
+    [Parameter]
+    public string Id { get; set; } = "map-list";
+
+    [Parameter]
+    public EventCallback<MapDefinition> OnEdit { get; set; }
+
+    [Parameter]
+    public EventCallback<MapDefinition> OnDelete { get; set; }
+
+    /// <summary>What to show when there are no maps; nothing when null.</summary>
+    [Parameter]
+    public RenderFragment? EmptyContent { get; set; }
+
+    private bool Actions => OnEdit.HasDelegate || OnDelete.HasDelegate;
+}

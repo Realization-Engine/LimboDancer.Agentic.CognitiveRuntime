@@ -1,6 +1,6 @@
 # ASL Card Play and Map Studio Redesign Plan
 
-**Status:** Approved by the user on 2026-09-30. It merges and replaces two documents: the ASL Unit Card Play, Deferred Rules, and DYO Plan (approved 2026-09-30, passes 23 to 30) and the ASL Map Studio UI Redesign 01 Design (branch `UI-Redesign-01`, commit `800416a`); both were deleted after their content was carried over here, and git history keeps them. Pass 22b is built (2026-09-30; see its [design](<ASL Unit Backlog Pass 22b Design.md>) and [review](<Scenario A1 Backlog Pass 22b Review 2026-09-30.md>)); the passes run one at a time on the user's go-ahead, pass 22c next.
+**Status:** Approved by the user on 2026-09-30. It merges and replaces two documents: the ASL Unit Card Play, Deferred Rules, and DYO Plan (approved 2026-09-30, passes 23 to 30) and the ASL Map Studio UI Redesign 01 Design (branch `UI-Redesign-01`, commit `800416a`); both were deleted after their content was carried over here, and git history keeps them. Passes 22b and 22c are built (2026-09-30; see their designs, [22b](<ASL Unit Backlog Pass 22b Design.md>) and [22c](<ASL Unit Backlog Pass 22c Design.md>), and reviews, [22b](<Scenario A1 Backlog Pass 22b Review 2026-09-30.md>) and [22c](<Scenario A1 Backlog Pass 22c Review 2026-09-30.md>)); the passes run one at a time on the user's go-ahead, pass 22d next.
 
 **Date:** 2026-09-30
 
@@ -117,6 +117,8 @@ New rules adjudication, changes to game persistence, VASL artwork, a new compone
 ### Pass 22c: The collection pages
 
 **Purpose:** the collection pages become components, and the Board library can be searched. **After:** pass 22b. **From:** sections 12.1 and 12.2; the candidates of sections 16.4, 16.5, 16.8, and 16.9. No game pass touches these pages.
+
+**Status:** Built 2026-09-30, all four tasks: the 19 P1 candidates and M05 extracted, the other P2 and P3 candidates left inline (the review lists why), with two reviews and two visual checks. Items left out are in section 35 of the [ASL Unit Backlog](<ASL Unit Backlog.md>).
 
 | Task | What it changes | Rules | Estimate |
 |---|---|---|---|
@@ -461,6 +463,8 @@ Use a map collection followed by a composition workspace. The workspace has an o
 SSR selection supports search and categories based on actual catalog metadata. Preserve the exact selected rule identifiers and their order. Explain scope and show unsupported or diagnostic results without inventing rule behavior.
 
 Move compact placement syntax into an Advanced section, retaining full edit and round-trip functionality. Editing text or placements marks the preview stale until rebuilding finishes. An unsuccessful rebuild preserves the last valid preview, clearly labeled as out of date. Save must retain existing validation behavior.
+
+**Pass 22c:** the composer has no drawn preview of an unsaved map, so the last Check result stands for it: after an edit it stays, labeled out of date, with its findings hidden, until the next check. A drawn preview is backlog section 35. The board and rule pickers stay native selects (section 14); the board picker shows each board's title.
 
 ### 12.3 Board viewer and editor
 

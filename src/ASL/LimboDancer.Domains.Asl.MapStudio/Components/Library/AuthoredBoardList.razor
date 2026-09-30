@@ -1,0 +1,34 @@
+@* H01 (plan section 16.4): the authored boards, each with its view and edit links, and an empty state that says how to make one. *@
+@if (Boards.Count == 0)
+{
+    <p id="library-authored-empty" class="muted">@(Filtered ? "No authored board matches." : "None yet.") <a href="author/new">Create a board</a>, blank or from a verified VASL board.</p>
+}
+else
+{
+    <table class="library" id="library-authored">
+        <thead>
+            <tr><th>Board</th><th>Reference</th><th>Kept in</th><th></th></tr>
+        </thead>
+        <tbody>
+            @foreach (var entry in Boards)
+            {
+                <tr @key="(entry.Ref.Value, entry.IsDraft)" data-board="@entry.Ref.Value">
+                    <td><a href="@($"boards/{entry.Ref.Value}")">@entry.Name</a></td>
+                    <td><code>@entry.Ref.Value</code></td>
+                    <td class="muted">@(entry.IsDraft ? "drafts (derived from VASL data)" : "boards folder")</td>
+                    <td><a href="@($"author/{entry.Ref.Value}")">Edit</a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <p><a href="author/new">New board</a></p>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<AuthoredListing> Boards { get; set; } = [];
+
+    /// <summary>Whether a search or filter hides some boards, so an empty list says none matches rather than none exists.</summary>
+    [Parameter]
+    public bool Filtered { get; set; }
+}

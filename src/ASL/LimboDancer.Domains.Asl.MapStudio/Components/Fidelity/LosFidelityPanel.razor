@@ -1,0 +1,54 @@
+@using LimboDancer.Domains.Asl.Maps.Vasl
+@* F02 (plan section 16.9): the LOS read against VASL's LOS on the oracle fixtures; the page runs the comparisons one fixture at a time. *@
+<h3>LOS against VASL</h3>
+@if (Fixtures == 0)
+{
+    <p class="muted">No LOS oracle fixtures were found.</p>
+}
+else
+{
+    <p>
+        <button id="los-fidelity-run" @onclick="OnRun" disabled="@(Running || !Available)">Check LOS</button>
+        <span class="muted">The LOS read (LOS Design) against VASL's own LOS on each of the @Fixtures LOS oracle fixtures. An answered pair that disagrees fails the check; unanswered pairs are listed by the rule not yet reproduced.</span>
+    </p>
+    <p id="los-fidelity-status" class="muted" role="status">@(Running ? $"Checking {Progress}..." : Results.Count > 0 ? $"{Results.Count(result => result.Passed)} of {Results.Count} fixtures pass." : string.Empty)</p>
+    @if (Results.Count > 0)
+    {
+        <table class="library" id="los-fidelity">
+            <thead><tr><th>Fixture</th><th>Pairs</th><th>Answered</th><th>Agreed</th><th>Outcome</th><th>Not reproduced yet</th></tr></thead>
+            <tbody>
+                @foreach (var result in Results)
+                {
+                    <tr @key="result.Fixture" data-fixture="@result.Fixture">
+                        <td>@result.Fixture</td><td>@result.Pairs</td><td>@result.Answered</td><td>@result.Agreed</td>
+                        <td class="@(result.Passed ? "pass" : "fail")">@(result.Passed ? "Pass" : $"Fail: {result.Disagreements.Count} disagree")</td>
+                        <td>@string.Join("; ", result.Unsupported.OrderByDescending(item => item.Value).Select(item => $"{item.Key} ({item.Value})"))</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+@code {
+    /// <summary>How many LOS oracle fixtures there are.</summary>
+    [Parameter]
+    public int Fixtures { get; set; }
+
+    /// <summary>Whether a board source is configured, so the check can run.</summary>
+    [Parameter]
+    public bool Available { get; set; }
+
+    [Parameter]
+    public bool Running { get; set; }
+
+    /// <summary>The fixture being checked.</summary>
+    [Parameter]
+    public string Progress { get; set; } = string.Empty;
+
+    [Parameter]
+    public IReadOnlyList<LosFidelityResult> Results { get; set; } = [];
+
+    [Parameter]
+    public EventCallback OnRun { get; set; }
+}

@@ -1,5 +1,6 @@
 @page "/maps"
 @using LimboDancer.Domains.Asl.Maps.Vasl
+@using LimboDancer.Domains.Asl.MapStudio.Components.Maps
 @inject IBoardProvider Boards
 @inject IVaslMapSource Source
 @inject MapService MapStore
@@ -21,27 +22,7 @@
 }
 else
 {
-    @if (saved.Count > 0)
-    {
-        <table class="library">
-            <thead>
-                <tr><th>Map</th><th>Boards</th><th></th></tr>
-            </thead>
-            <tbody>
-                @foreach (var map in saved)
-                {
-                    <tr>
-                        <td><a href="@($"boards/{map.Ref.Value}")">@map.Name</a></td>
-                        <td><code>@map.PlacementText</code></td>
-                        <td>
-                            <button class="link" @onclick="() => Edit(map)">Edit</button>
-                            <button class="link danger" @onclick="() => Delete(map)">Delete</button>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    }
+    <MapSummaryList Id="map-saved" Maps="@saved" OnEdit="@Edit" OnDelete="@Delete" />
 
     <h3>@(editing is null ? "New map" : $"Edit {editing.Value}")</h3>
     <div class="form-grid wide">
@@ -49,103 +30,27 @@ else
         <input id="map-name" value="@name" @oninput="@(args => name = args.Value as string ?? string.Empty)" />
     </div>
 
-    <table class="library placements">
-        <thead>
-            <tr><th>Board</th><th>Column</th><th>Row</th><th>Reversed</th><th></th></tr>
-        </thead>
-        <tbody>
-            @foreach (var row in rows)
-            {
-                <tr>
-                    <td>
-                        <select aria-label="Board" value="@row.Board" @onchange="@(args => { row.Board = args.Value as string ?? row.Board; Changed(); })">
-                            @foreach (var entry in boards)
-                            {
-                                <option value="@entry.Ref.VaslBoardName">@entry.Ref.Value</option>
-                            }
-                        </select>
-                    </td>
-                    <td><input aria-label="Column" type="number" min="0" max="@(VaslMapBuilder.MaxBoardsPerRow - 1)" value="@row.Column" @onchange="@(args => { row.Column = Number(args, row.Column); Changed(); })" /></td>
-                    <td><input aria-label="Row" type="number" min="0" max="5" value="@row.Row" @onchange="@(args => { row.Row = Number(args, row.Row); Changed(); })" /></td>
-                    <td><input aria-label="Reversed" type="checkbox" checked="@row.Reversed" @onchange="@(args => { row.Reversed = args.Value is true; Changed(); })" /></td>
-                    <td><button class="link" @onclick="() => Remove(row)">Remove</button></td>
-                </tr>
-            }
-        </tbody>
-    </table>
-    <p><button @onclick="Add">Add a board</button></p>
-
-    <h3>Scenario-specific rules</h3>
-    <p class="muted">Applied to every board in this order, as VASL's board picker does. LOS-neutral rules (such as NoRoads) are listed but change no terrain.</p>
-    @if (rules.Count > 0)
-    {
-        <ol class="rules">
-            @foreach (var rule in rules)
-            {
-                <li>
-                    <code>@rule</code> <span class="muted">@KindOf(terrain.Rules, rule)</span>
-                    <button class="link" @onclick="() => RemoveRule(rule)">Remove</button>
-                </li>
-            }
-        </ol>
-    }
-    <p>
-        <select aria-label="Rule" value="@nextRule" @onchange="@(args => nextRule = args.Value as string)">
-            @foreach (var rule in terrain.Rules.Rules.Where(rule => !rules.Contains(rule.Name)))
-            {
-                <option value="@rule.Name">@rule.Name (@Describe(rule))</option>
-            }
-        </select>
-        <button @onclick="AddRule">Add rule</button>
-    </p>
-
-    <h3>Compact form</h3>
-    <p class="muted">One placement per board: <code>board@column,row</code>, <code>/r</code> for reversed, and <code>[Rule,...]</code>.</p>
-    <textarea class="placements-text" aria-label="Placements" rows="2" value="@text" @onchange="@(args => text = args.Value as string ?? string.Empty)"></textarea>
-    <p><button @onclick="UseText">Use this text</button></p>
-
-    <p>
-        <button @onclick="Check" disabled="@working">Check</button>
-        <button @onclick="Save" disabled="@working">Save and view</button>
-        @if (working)
-        {
-            <span class="muted">Building the map...</span>
-        }
-        else if (message is not null)
-        {
-            <span class="@(failed ? "fail" : "pass")">@message</span>
-        }
-    </p>
-    @foreach (var diagnostic in diagnostics)
-    {
-        <p class="@(diagnostic.Severity == MapDiagnosticSeverity.Error ? "fail" : "muted")">@diagnostic.Code @diagnostic.Message</p>
-    }
+    <MapPlacementEditor Rows="@rows" Boards="@boards" RowChanged="@RowChanged" RowRemoved="@Remove" OnAdd="@Add" />
+    <ScenarioRuleEditor Rules="@rules" Catalog="@terrain.Rules" OnAdd="@AddRule" OnRemove="@RemoveRule" OnMove="@MoveRule" />
+    <PlacementTextEditor @bind-Text="text" OnApply="@UseText" Problem="@textProblem" />
+    <MapBuildActions Busy="@working" Message="@message" Failed="@failed" Stale="@stale" Diagnostics="@diagnostics" OnCheck="@Check" OnSave="@Save" />
 }
 
 @code {
-    private sealed class PlacementRow
-    {
-        public string Board { get; set; } = "01";
-
-        public int Column { get; set; }
-
-        public int Row { get; set; }
-
-        public bool Reversed { get; set; }
-
-        public List<string> Rules { get; set; } = [];
-    }
-
     private IReadOnlyList<MapDefinition> saved = [];
     private IReadOnlyList<BoardListing> boards = [];
-    private List<PlacementRow> rows = [];
+    private List<MapPlacementEditor.PlacementDraft> rows = [];
     private List<string> rules = [];
+    private int nextId;
+    // Counts the maps loaded, so a check or save still running when another map is opened does not report on it.
+    private int loaded;
     private string name = "Untitled map";
     private string text = string.Empty;
-    private string? nextRule;
+    private string? textProblem;
     private BoardRef? editing;
     private bool working;
     private bool failed;
+    private bool stale;
     private string? message;
     private IReadOnlyList<MapDiagnostic> diagnostics = [];
 
@@ -171,8 +76,6 @@ else
         {
             Load([new BoardPlacement(boards.FirstOrDefault()?.Ref ?? BoardRef.Parse("bd01"))]);
         }
-
-        nextRule = Source.Terrain()?.Rules.Rules.FirstOrDefault()?.Name;
     }
 
     private void Edit(MapDefinition map)
@@ -192,18 +95,24 @@ else
         }
     }
 
+    // A map's rules apply to every board (VASL's board picker), so the first placement's rules, in their order, are the map's.
     private void Load(IReadOnlyList<BoardPlacement> placements)
     {
-        rows = placements.Select(placement => new PlacementRow
+        rows = [.. placements.Select(placement => new MapPlacementEditor.PlacementDraft(++nextId, placement.Board.VaslBoardName, placement.Column, placement.Row, placement.Reversed))];
+        rules = placements.Count > 0 ? [.. placements[0].Rules.Distinct(StringComparer.Ordinal)] : [];
+        (message, diagnostics, failed) = (null, [], false);
+        loaded++;
+        Changed();
+    }
+
+    private void RowChanged(MapPlacementEditor.PlacementDraft row)
+    {
+        var index = rows.FindIndex(existing => existing.Id == row.Id);
+        if (index >= 0)
         {
-            Board = placement.Board.VaslBoardName,
-            Column = placement.Column,
-            Row = placement.Row,
-            Reversed = placement.Reversed,
-            Rules = [.. placement.Rules],
-        }).ToList();
-        rules = rows.Count > 0 ? [.. rows[0].Rules] : [];
-        Changed(keepRules: true);
+            rows[index] = row;
+            Changed();
+        }
     }
 
     private void Add()
@@ -211,22 +120,21 @@ else
         var used = rows.Select(row => (row.Column, row.Row)).ToHashSet();
         var slot = Enumerable.Range(0, 6).SelectMany(row => Enumerable.Range(0, VaslMapBuilder.MaxBoardsPerRow).Select(column => (column, row)))
             .FirstOrDefault(candidate => !used.Contains(candidate));
-        rows.Add(new PlacementRow { Board = rows.LastOrDefault()?.Board ?? "01", Column = slot.column, Row = slot.row, Rules = [.. rules] });
+        rows.Add(new MapPlacementEditor.PlacementDraft(++nextId, rows.LastOrDefault()?.Board ?? "01", slot.column, slot.row, false));
         Changed();
     }
 
-    private void Remove(PlacementRow row)
+    private void Remove(MapPlacementEditor.PlacementDraft row)
     {
-        rows.Remove(row);
+        rows.RemoveAll(existing => existing.Id == row.Id);
         Changed();
     }
 
-    private void AddRule()
+    private void AddRule(string rule)
     {
-        if (nextRule is not null && !rules.Contains(nextRule))
+        if (!rules.Contains(rule))
         {
-            rules.Add(nextRule);
-            nextRule = Source.Terrain()?.Rules.Rules.FirstOrDefault(rule => !rules.Contains(rule.Name))?.Name;
+            rules.Add(rule);
             Changed();
         }
     }
@@ -237,20 +145,24 @@ else
         Changed();
     }
 
-    // Keeps the compact form in step with the rows; the rule list applies to every board.
-    private void Changed(bool keepRules = false)
+    // A rule moved up or down the order it applies in (table player, pass 22c).
+    private void MoveRule((string Rule, int By) move)
     {
-        if (!keepRules)
+        var index = rules.IndexOf(move.Rule);
+        var target = index + move.By;
+        if (index >= 0 && target >= 0 && target < rules.Count)
         {
-            foreach (var row in rows)
-            {
-                row.Rules = [.. rules];
-            }
+            (rules[index], rules[target]) = (rules[target], rules[index]);
+            Changed();
         }
+    }
 
+    // Keeps the compact form in step with the rows and marks the last check's result out of date (plan section 12.2).
+    private void Changed()
+    {
         text = string.Join(' ', PlacementsFromRows());
-        message = null;
-        diagnostics = [];
+        textProblem = null;
+        stale = message is not null;
     }
 
     private void UseText()
@@ -261,22 +173,28 @@ else
         }
         else
         {
-            failed = true;
-            message = "The text is not a list of placements.";
+            textProblem = "The text is not a list of placements.";
         }
     }
 
     private List<BoardPlacement> PlacementsFromRows() =>
         rows.Where(row => BoardRef.TryParse("bd" + row.Board, out _))
-            .Select(row => new BoardPlacement(BoardRef.Parse("bd" + row.Board), row.Column, row.Row, row.Reversed, [.. row.Rules]))
+            .Select(row => new BoardPlacement(BoardRef.Parse("bd" + row.Board), row.Column, row.Row, row.Reversed, [.. rules]))
             .ToList();
 
     private async Task Check()
     {
         working = true;
         var placements = PlacementsFromRows();
+        var map = loaded;
         var outcome = await Task.Run(() => MapStore.Check(placements));
         working = false;
+        if (map != loaded)
+        {
+            return;
+        }
+
+        stale = false;
         diagnostics = outcome.Diagnostics;
         failed = outcome.Diagnostics.Any(diagnostic => diagnostic.Severity == MapDiagnosticSeverity.Error);
         message = failed ? "VASL cannot build this map." : "VASL builds this map.";
@@ -288,6 +206,7 @@ else
         var placements = PlacementsFromRows();
         var outcome = await Task.Run(() => MapStore.Save(name, placements));
         working = false;
+        stale = false;
         diagnostics = outcome.Diagnostics;
         if (outcome.Ref is { } map)
         {
@@ -303,20 +222,4 @@ else
         failed = true;
         message = "The map was not saved.";
     }
-
-    private static int Number(ChangeEventArgs args, int fallback) => int.TryParse(args.Value as string, out var value) && value >= 0 ? value : fallback;
-
-    private static string KindOf(LosSsRuleSet set, string rule) => set.TryGet(rule, out var found) ? Describe(found) : "not a VASL rule; ignored";
-
-    private static string Describe(LosSsRule rule) => rule.Kind switch
-    {
-        LosSsRuleKind.Ignore => "no LOS effect",
-        LosSsRuleKind.CustomCode => "VASL code",
-        LosSsRuleKind.TerrainMap => $"{rule.FromValue} to {rule.ToValue}",
-        LosSsRuleKind.ElevationMap => $"level {rule.FromValue} to {rule.ToValue}",
-        LosSsRuleKind.TerrainToElevationMap => $"{rule.FromValue} to open ground at level {rule.ToValue}",
-        LosSsRuleKind.ElevationToTerrainMap => $"level {rule.FromValue} to {rule.ToValue} at level 0",
-        LosSsRuleKind.TerrainToSelectElevationMap => $"{rule.FromValue} at level {rule.ToValue} to open ground",
-        _ => rule.Kind.ToString(),
-    };
 }

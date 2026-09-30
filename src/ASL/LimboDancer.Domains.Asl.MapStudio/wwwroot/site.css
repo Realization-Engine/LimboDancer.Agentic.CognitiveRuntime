@@ -1003,6 +1003,12 @@ ol.rules li {
     padding: 0.2rem 0;
 }
 
+.rule-actions {
+    display: inline-flex;
+    gap: 0.6rem;
+    margin-left: 0.6rem;
+}
+
 textarea.placements-text {
     width: 100%;
     max-width: 48rem;
@@ -1439,7 +1445,7 @@ p.diagnostic:not(.info):not(.warning):not(.error) {
     gap: 0.35rem;
 }
 
-.revision-navigator input {
+.revision-navigator input[type="number"] {
     width: 5rem;
 }
 
@@ -1483,4 +1489,35 @@ p.diagnostic:not(.info):not(.warning):not(.error) {
 
 .card-provenance table.library td {
     vertical-align: top;
+}
+
+/* Plan section 12.1: the Board library's search and filters, above the results */
+.library-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+    margin: 0 0 1rem;
+    padding: 0.6rem 0.9rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    font-size: 0.875rem;
+}
+
+.library-filters input[type="search"] {
+    width: 14rem;
+    max-width: 100%;
+}
+
+#library-count {
+    color: var(--muted);
+}
+
+/* A link button that cannot act now reads as plain text. */
+button.link:disabled {
+    color: var(--muted);
+    background: none;
+    text-decoration: none;
+    cursor: default;
 }

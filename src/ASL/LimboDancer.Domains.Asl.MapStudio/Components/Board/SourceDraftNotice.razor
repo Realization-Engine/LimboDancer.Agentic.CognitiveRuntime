@@ -1,0 +1,11 @@
+@* M08 (plan section 16.5): a board derived from VASL data is a draft under the cache and may not be committed (ASL-MAP-073, ASL-MAP-074); always a warning, never an informational note. *@
+<p id="@Id" class="banner warning" role="note">@ChildContent</p>
+
+@code {
+    [Parameter]
+    public string? Id { get; set; }
+
+    /// <summary>The restriction as it applies here (a new board, or the board being edited).</summary>
+    [Parameter, EditorRequired]
+    public RenderFragment ChildContent { get; set; } = null!;
+}

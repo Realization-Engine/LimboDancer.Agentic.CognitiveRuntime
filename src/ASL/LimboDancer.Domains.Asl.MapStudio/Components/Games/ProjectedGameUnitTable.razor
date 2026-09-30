@@ -1,0 +1,29 @@
+@* G04 (plan section 16.8): the units a perspective may see, and the concealed presences it may only know of, as rows the page prepared from that view. *@
+<table class="library" id="game-units">
+    <thead><tr><th></th><th>Id</th><th>Unit</th><th>Location</th><th>Conditions</th><th>Good Order</th><th>Lineage and custody</th></tr></thead>
+    <tbody>
+        @foreach (var row in Rows)
+        {
+            <tr @key="row.Id" data-unit="@row.Id">
+                <td>@row.Preview</td>
+                <td>@row.Id</td>
+                <td>@row.Label</td>
+                <td>@row.Location</td>
+                <td>@row.Conditions</td>
+                <td>@row.GoodOrder</td>
+                <td>@row.Lineage</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    /// <summary>
+    /// One row: a unit the view shows, or a sealed presence whose conditions and Good Order read "withheld". The preview is SVG the
+    /// Studio's unit renderer made, so it is trusted markup.
+    /// </summary>
+    public sealed record Row(string Id, MarkupString Preview, string Label, string Location, string Conditions, string GoodOrder, string Lineage);
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Row> Rows { get; set; } = [];
+}

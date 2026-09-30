@@ -1,0 +1,129 @@
+@using LimboDancer.Domains.Asl.Maps.Vasl
+@* H05 (plan section 16.4): the VASL boards as rows the page resolved once (a loaded board, a fresh batch result, not checked, failed, or out of scope). *@
+<table class="library" id="library-vasl">
+    <thead>
+        <tr>
+            <th>Board</th>
+            <th>Status</th>
+            <th>F1 (grid)</th>
+            <th>F2 (hex facts)</th>
+            <th>Diagnostics</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var row in Rows)
+        {
+            <tr @key="row.Ref" data-board="@row.Ref" data-status="@row.Status.ToString().ToLowerInvariant()">
+                <td>
+                    @if (row.Status == LibraryStatus.OutOfScope)
+                    {
+                        @row.Title
+                    }
+                    else
+                    {
+                        <a href="@($"boards/{row.Ref}")">@row.Title</a>
+                    }
+                </td>
+                @if (row.Status == LibraryStatus.NotChecked)
+                {
+                    <td class="muted" colspan="4">Not checked</td>
+                }
+                else
+                {
+                    <td class="@row.StatusClass" title="@row.Reason">@row.StatusText</td>
+                    <td class="@row.F1Class">@row.F1Text</td>
+                    <td class="@row.F2Class">@row.F2Text</td>
+                    <td>
+                        @if (row.Diagnostics is { } diagnostics)
+                        {
+                            <Diagnostics Items="diagnostics" />
+                        }
+                        else
+                        {
+                            <span class="muted">@row.Reason</span>
+                        }
+                    </td>
+                }
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    /// <summary>Where a VASL board stands in the library.</summary>
+    public enum LibraryStatus
+    {
+        Verified,
+        Ingested,
+        Failed,
+        NotChecked,
+        OutOfScope,
+    }
+
+    /// <summary>One VASL board as the table shows it, resolved from the loaded board or a fresh batch result.</summary>
+    public sealed record Row(string Ref, string Title, LibraryStatus Status, string StatusText, string StatusClass, string? Reason,
+        string? F1Text, string F1Class, string? F2Text, string F2Class, IReadOnlyList<MapDiagnostic>? Diagnostics)
+    {
+        /// <summary>
+        /// A listing resolved as the library shows it: out of scope by metadata; a board loaded in this session; else the latest batch
+        /// result when its sources and tools are unchanged; else not checked.
+        /// </summary>
+        public static Row Of(BoardListing entry, IBoardProvider boards, FidelityJobRunner runner)
+        {
+            ArgumentNullException.ThrowIfNull(entry);
+            ArgumentNullException.ThrowIfNull(boards);
+            ArgumentNullException.ThrowIfNull(runner);
+            var reference = entry.Ref.Value;
+            if (entry.Scope == BoardScope.OutOfScope)
+            {
+                return new(reference, entry.Title, LibraryStatus.OutOfScope, "Out of scope", "muted", entry.ScopeReason, null, string.Empty, null, string.Empty, null);
+            }
+
+            var result = boards.Cached(entry.Ref);
+            if (result is null && runner.FreshResult(entry, boards.CatalogBlob) is { } batch)
+            {
+                var status = batch.Outcome switch
+                {
+                    BatchOutcome.Verified => LibraryStatus.Verified,
+                    BatchOutcome.Ingested => LibraryStatus.Ingested,
+                    _ => LibraryStatus.Failed,
+                };
+                return new(reference, entry.Title, status, $"{batch.Outcome} (batch)",
+                    batch.Outcome == BatchOutcome.Verified ? "pass" : batch.Outcome == BatchOutcome.Failed ? "fail" : string.Empty, batch.Reason,
+                    batch.F1.ToString(), batch.F1 == F1Status.Pass ? "pass" : "fail",
+                    batch.F2?.Status.ToString(), batch.F2?.Status == BatchF2.Pass ? "pass" : "muted", batch.Diagnostics);
+            }
+
+            if (result is null)
+            {
+                return new(reference, entry.Title, LibraryStatus.NotChecked, "Not checked", "muted", null, null, string.Empty, null, string.Empty, null);
+            }
+
+            if (result.Board is not { } board)
+            {
+                return new(reference, entry.Title, LibraryStatus.Failed, result.OutOfScope ? "Out of scope" : "Failed", "fail", null,
+                    null, string.Empty, null, string.Empty, result.Diagnostics);
+            }
+
+            var verified = board.Status == BoardStatus.Verified;
+            return new(reference, entry.Title, verified ? LibraryStatus.Verified : LibraryStatus.Ingested, board.Status.ToString(), verified ? "pass" : string.Empty, null,
+                board.F1?.Status.ToString(), board.F1 is { Passed: true } ? "pass" : "fail",
+                board.F2 switch
+                {
+                    null => "No oracle fixture",
+                    { Passed: true } => "Pass",
+                    var f2 => $"Fail ({f2.Differences.Count} differences, {f2.Diagnostics.Count} diagnostics)",
+                },
+                board.F2 switch
+                {
+                    null => "muted",
+                    { Passed: true } => "pass",
+                    _ => "fail",
+                },
+                board.Diagnostics);
+        }
+    }
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Row> Rows { get; set; } = [];
+}

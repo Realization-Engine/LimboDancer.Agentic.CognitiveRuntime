@@ -505,8 +505,17 @@ Pass 22b (2026-09-30) merged the supplied theme and built the shell, the shared 
 | The provenance panel marks a game whose catalog differs from its card's pinned catalog | Table player, pass 22b | R18.1 | A catalog comparison in the game start facts | Both catalogs are listed; only the card's hash is compared. |
 | A new game's id taken from the card (it is "village" for every card until typed) | Visual check, pass 22b | | The page tests that rely on the default id | The id must be typed for a second game. |
 | Focus moved to the first link when the drawer opens | UI review, pass 22b | | Shell work | Focus stays on the toggle; Tab reaches the links. |
-| `RevisionNavigator` shows a typed revision it refused (out of range or not a number) | UI review, pass 22b | | Its first use, plan task 22c.3 | The component has no page yet. |
 | Play's setup and unit tables at phone width | Visual check, pass 22b | | Plan task 28c.2 (responsive layouts) | The page scrolls sideways below about 530px. |
+
+## 35. Added by the redesign pass 22c
+
+Pass 22c (2026-09-30) turned the collection pages into components and made the Board library searchable. It built one row of section 34, `RevisionNavigator` showing a refused revision, which has left that list. Items it leaves out:
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| A drawn preview of an unsaved map in the composer, kept and labeled out of date after an edit | Plan section 12.2; pass 22c | | Rendering a map that is not saved (the render endpoint serves saved boards and maps only) | The last Check result stands for the preview and is labeled out of date after an edit. |
+| Searchable board and SSR pickers, with the SSRs grouped by catalog category | Plan sections 12.2 and 14 | | A picker with typing, arrow keys, Escape, and an announced count (section 14) | Native selects; the board picker shows titles. |
+| The library's filters in the address, for a link that opens the same filtered list | Pass 22c | | | Kept for the browser session; a reload clears them. |
 
 ### Rows planned in the Card Play and Map Studio Redesign Plan
 
