@@ -613,4 +613,7 @@ On the user's go-ahead after the demonstration, branch `fix/studio-22d-styles`.
 
 | Sub-task | Start | End | Duration | Notes |
 |---|---|---|---|---|
-| The LOS panel's From and To on their own rows (its actions no longer the toolbar band), the editor's tool rail wrapping its help and fitting its fields, a disabled primary button greyed; tried in the Studio, written, rebuilt, and checked again | 18:34 | 18:41 | 0:07 | |
+| The LOS panel's From and To on their own rows (its actions no longer the toolbar band), the editor's tool rail wrapping its help and fitting its fields, a disabled primary button greyed; tried in the Studio, written, rebuilt, and checked again | 18:34 | 18:36 | 0:02 | |
+| Full local suite and ScenarioA1 (480): Authoring fails only the known architecture test; MapStudio 186, Play 563. No Docker check: a UI fix seen in the Studio (the user's rule) | 18:46 | 19:18 | 0:32 | Waiting on the runs |
+| Merge into main (--no-ff), push, GitHub Actions checked | 19:19 | 19:22 | 0:03 | |
+| **Fix total** | 18:34 | 19:22 | **0:38** | Working time, the break from 18:36 to 18:46 left out |
