@@ -401,7 +401,6 @@ The backlog pass 17 (2026-09-29) built the scenario-card presentation: the card 
 |---|---|---|---|---|
 | Setting up a game from a card: its boards and playable area, sides, ELR and SAN, Friendly Board Edges, Scenario Defender, month and year, SSR tokens, and the OB placed in its setup areas, with each hex's terrain checked | User ruling, 2026-09-29; R17.1, R17.8 | A2.1, A2.9, A19.1, A14.1, A20.53 | The new-game setup reading a card | The players set up a new game by hand and read the card beside it. |
 | An ELR for each OB group | R17.5 | A19.1, p. 86 | Setting up a game from a card | A side has one ELR; a card with groups of different ELRs shows each. |
-| Evaluating the Victory Conditions: Control at game end, Exit VP (at once or at game end), CVP, Avoidance | User ruling, 2026-09-29; R17.11 | A26.1 to A26.4, pp. 98 to 100 | Building identity, exit records, VP values | The card shows the Victory Conditions as text; the players judge them. |
 | The full Chapter H DYO purchase: the roster, BPV purchases, the ELR Chart, SAN purchase, Leader Generation and the Leader Exchange DR, SW allotment, bonus Infantry, and the DYO Weather, EC, and NVR tables | User ruling, 2026-09-29; R17.2 | H1 to H1.84, pp. 328 to 336; E1.11; E3 | A DYO page | Cards are adapted from legacy cards; Chapter H only checks their numbers. |
 | Battlefield Integrity | R17.4 | A16 to A16.4, pp. 84 to 85 | A Casualty Tally in the records | The card prints the Integrity totals; nothing tallies them. |
 | A half box on a Turn other than the last (the playable area was built by pass 20) | R17.3, R17.4; referee, pass 17 | A3.9 | A Turn Record Chart with more than a last half turn | A card has only a last-turn half turn. |
@@ -413,7 +412,6 @@ The backlog pass 17 (2026-09-29) built the scenario-card presentation: the card 
 | More cards: the other legacy cards of The General (The Tractor Works was added by pass 17b) | Pass 17 selection | Varies | The counters and terrain they need | Three cards. |
 | A Factory by SSR (The Tractor Works' X3) | R17.13 | B23.74 to B23.742, p. 139 | Factory terrain in the terrain key | Shown, not enforced; X3 plays as an ordinary stone building. |
 | Fanaticism by SSR for units in a building (The Tractor Works) | R17.13 | A10.8, p. 69 | An SSR token naming Fanatic units by place | Shown, not enforced. |
-| A draw as a Victory Condition outcome | R17.13 | A26 | Evaluating the Victory Conditions | Shown as text. |
 | Hidden setup per side: a side does not see the other's placements during a sequential setup, nor HIP units or the contents of "?" | User ruling, 2026-09-29 (setup is hot-seat on the honor system) | A2.9, A12.11, A12.12, A12.3 | Setup from the OB (Scenario Card Games Plan, pass 19); a per-side view | Both sides see the whole map during setup. |
 | The Russian MMG's portage: the catalog's 4 PP (manufactured at unit step 23) against the legacy counter's apparent 5 PP | Referee, pass 17b | A4.42, A9.1 | A registered source printing it | 4 PP. |
 
@@ -452,8 +450,22 @@ Pass 20 (2026-09-29) built the end of a game from a card, the first-move dr and 
 | Entering a hex that holds concealed enemy units, Residual FP, or a Fire Lane; Bypass, Minimum Move, SMOKE, or a DC at entry | R20.5 | A2.51, A12.15, A8.22, A4.3, A4.134 | Entry through the full movement step | Refused with a message. |
 | Vehicles entering from off board (in Motion, loaded), and Guns entering limbered | R20.5 | A2.52, D2.4 | Vehicle movement from off board | Refused: no card enters vehicles yet. |
 | A card with several entry areas for one OB line's counters, or a Balance counter in a group that enters | R20.5 | A2.5 | Entry areas per counter | A unit enters by its line's entry, else its group's first. |
-| The Victory Conditions at the game's end | Scenario Card Games Plan, pass 21 | A26 | Pass 21 | The game ends and says so; the players judge the Victory Conditions. |
 | The first-move dr's manufactured form (a dr for each side, the higher moving first), against a registered procedure if one is found | R20.2 | A3.9 | A registered source | Manufactured under R0.3. |
 | A card that sets up units broken or under DM | R20.7 | A2.9 | A card token for it | Refused at setup. |
 | A setup naming another side's OB group gives the projector's raw message (UNIT-STATE-005) rather than a play.setup refusal; a Deployment off board says only that the squad is not on the map | Table player, pass 20 | R18.3, A2.52 | Message work | Refused, with a less helpful message. |
 | Paved road hexes of board 01 are named by their other terrain ("open-ground") in movement messages | Table player, pass 20 | B3 | The terrain key's names | The cost is right; the label is not. |
+
+## 31. Added by the scenario card games pass 21
+
+Pass 21 (2026-09-29) built the Victory Conditions of a game from a card: Control from the setup areas and through play, VP, CVP, and Exit VP, structured Victory Conditions on the three cards, the result recorded at game end or at once, and Infantry leaving the map (rulings R21.1 to R21.5). It removed from section 27 the rows for evaluating the Victory Conditions and for a draw, and from section 30 the row for the Victory Conditions at game end. What it leaves out follows.
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| Control of Locations (upper levels), vehicles' temporary Control, Control by Mopping Up, and Control forfeited to a Kindled Fire | R21.1 | A26.1, A26.12, A12.153, A26.16 | Location-level Control; Fire | Hexes and buildings only. |
+| A concealed or HIP unit's Control left undeclared until game end: the Play page shows Control to both sides | Referee, pass 21 | A26.15 | A per-side view (section 27) | Both sides see all Control. |
+| Start Control of a building partly in one side's area and partly on a board only that side sets up on, and of areas with no board on a multi-board card | Referee, pass 21 | A26.11 | A card that needs it | Such a building starts uncontrolled. |
+| Gun and vehicle VP: a Gun two, a vehicle one plus its MA and AF | R21.2 | A26.212 | A card fielding them | Guns and vehicles give no VP. |
+| Leaving the map in the APh, by Bypass with its extra MF, and at the road rate; a crew with its Gun and a Guard with prisoners leaving | R21.5 | A2.6, A20.53, C10.3 | Advance and Bypass exits | Refused with a message; the cost is the hex's own terrain. |
+| Captured units exited by their captors (double Exit VP at the end) | R21.2 | A26.23, A26.222 | Guards leaving the map | Not counted. |
+| The Control fold read on every Play page render and, for Gambit, after every action | Referee, pass 21 | | A cache of Control by revision | Correct, slower on long games. |
+| An exit refusal from a hex one row inside the edge (board 01's row-0 half hexes) does not name the edge hex nearby | Table player, pass 21 | A2.3, A2.6 | Message work | The refusal is correct and plain. |

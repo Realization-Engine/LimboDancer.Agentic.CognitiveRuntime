@@ -90,8 +90,18 @@ public sealed record GameStarted(
 /// <summary><c>phase-changed</c>.</summary>
 public sealed record PhaseChanged(int Turn, string Phase, string PhasingSide) : EventPayload;
 
-/// <summary><c>game-ended</c>: the Turn counter reached END (A3.9; ruling R20.1), after the last Player Turn of the given Game Turn.</summary>
-public sealed record GameEnded(int Turn, string Reason) : EventPayload;
+/// <summary>
+/// <c>game-ended</c>: the Turn counter reached END (A3.9; ruling R20.1), after the last Player Turn of the given Game Turn, or a Victory Condition was met at
+/// once (A26; ruling R21.4); with the result when the game is from a card.
+/// </summary>
+public sealed record GameEnded(int Turn, string Reason) : EventPayload
+{
+    /// <summary>The result the card's Victory Conditions give (ruling R21.4); null for a game without them.</summary>
+    public GameResult? Result
+    {
+        get; init;
+    }
+}
 
 /// <summary><c>instance-created</c>: a unit, piece of equipment, or entity enters the game.</summary>
 public sealed record InstanceCreated(NewInstance Instance) : EventPayload

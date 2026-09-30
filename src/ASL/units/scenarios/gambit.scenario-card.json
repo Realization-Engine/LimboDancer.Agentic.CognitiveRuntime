@@ -197,7 +197,27 @@
       "A26.23",
       "A26.211",
       "A26.3"
-    ]
+    ],
+    "outcomes": [
+      {
+        "winner": "british",
+        "immediate": true,
+        "any": [
+          {
+            "type": "exit-vp",
+            "side": "british",
+            "atLeast": 20,
+            "edge": "bottom",
+            "near": [
+              "bd02:I1",
+              "bd02:Q1",
+              "bd02:Y1"
+            ]
+          }
+        ]
+      }
+    ],
+    "otherwise": "german"
   },
   "aftermath": "The Germans came down from the hill and cut off one New Zealand platoon, but in doing so opened a corridor through which the rest of the battalion escaped to regroup."
 }

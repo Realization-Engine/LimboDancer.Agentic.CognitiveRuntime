@@ -502,3 +502,20 @@ Estimate: 3:00 (build 1:45), the Scenario Card Games Plan. Run in the same sessi
 | Merge and push | 22:48 | 22:50 | 0:02 | |
 
 Total 2:17 of working time (20:02 to 22:50, less the 0:31 of pass 20 reading that overlapped pass 19b's gate) against the 3:00 estimate (build 1:45); the build with both reviews' fixes, 20:02 to 21:46, took 1:13 of its own, and the test runs and merge gate 1:04, most of it waiting on runs that the Docker check slowed.
+
+## Pass 21: Victory Conditions
+
+Estimate: 3:45 (build 2:30), the Scenario Card Games Plan. The user said on 2026-09-29 to go ahead with pass 21, and later to continue with the remaining passes after it merges without their intervention. Kickoff 23:05. Branch `feature/asl-backlog-pass-21`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Reading A26.1 to A26.4, A.7, A2.6; the cards' Victory Conditions; the event model and the move step | 23:05 | 23:20 | 0:15 | |
+| The Infantry exit and exit records, the result on `game-ended`, the structured Victory Conditions and the three cards, `ScenarioVictory` (Control, VP, CVP, Exit VP, outcomes), the planner's result at the end and at once, the Play page; 8 Play tests; rulings R21.1 to R21.5 | 23:20 | 23:34 | 0:14 | |
+| The referee and the table player (a clone) started; visual check in the Studio (The Guards Counterattack set up through the page, the Victory Conditions table, played to its end by Avoidance); Studio stopped | 23:34 | 23:44 | 0:10 | The referee ran 23:34 to about 23:41; the table player 23:34 to about 00:13 |
+| Referee's findings: normal VP in the immediate check, no end while something is open, the card's hash and validity, no exit with a manned Gun or prisoners, Guns out of the VP, the CR ruling; 1 test; rulings | 23:41 | 23:48 | 0:07 | |
+| Table player's findings: SW leave with their carriers, Melee hexes shown as neither's; its tests brought in (one Gambit walk-off kept); 18 pass 21 tests pass; review, design, backlog section 31, requirements | 00:13 | 00:26 | 0:13 | The pass 21 tests took 5:18 |
+| Full local suite and the Docker check, side by side: build with warnings as errors, every solution test project, and the ScenarioA1 tests (480); the architecture test hit the held `.git/worktrees`. Docker Desktop was not running and was started (00:30). Both runs found 2 pass 20 tests comparing the whole `game-ended` record, which now carries the result; fixed to compare turn and reason (commit f03e6b5) | 00:26 | 01:02 | 0:36 | Pass 22 read and drafted meanwhile |
+| Commit 4bd323d and f03e6b5; merge gate: the chart supplement regeneration run locally (identical with sorted keys) and the Docker Linux check on f03e6b5 (restore, build, test, a1, and the source verification and pending comparison regenerations: every step exit 0; Play 552, Authoring 167 of 167, ScenarioA1 480) | 01:02 | 01:25 | 0:23 | |
+| Merge and push | 01:25 | 01:27 | 0:02 | |
+
+Total 2:22 of working time (23:05 to 01:27) against the 3:45 estimate (build 2:30); the build with both reviews' fixes, 23:05 to 00:26, took 1:21, and the test runs and merge gate 1:01, with one Docker run lost to Docker Desktop being down and one repeated for the pass 20 tests.

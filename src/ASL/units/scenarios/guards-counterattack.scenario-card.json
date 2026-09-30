@@ -354,6 +354,38 @@
       "A26.11",
       "A26.14",
       "A26.3"
-    ]
+    ],
+    "outcomes": [
+      {
+        "winner": "russian",
+        "immediate": false,
+        "any": [
+          {
+            "type": "control-margin",
+            "side": "russian",
+            "buildings": [
+              "F5",
+              "K5",
+              "I7",
+              "M7",
+              "M9"
+            ],
+            "versus": [
+              "N4",
+              "J2",
+              "M2",
+              "F3"
+            ],
+            "margin": 2
+          },
+          {
+            "type": "squad-ratio",
+            "side": "russian",
+            "ratio": 3
+          }
+        ]
+      }
+    ],
+    "otherwise": "german"
   }
 }

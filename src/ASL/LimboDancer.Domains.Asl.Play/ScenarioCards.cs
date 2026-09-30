@@ -66,8 +66,28 @@ public sealed record ScenarioCardSide(string Side, int San, int? IntegrityBpv, S
 /// </summary>
 public sealed record ScenarioCardRule(int Number, string Text, string Status, IReadOnlyList<string> Tokens, IReadOnlyList<string> Rules, string? Note);
 
-/// <summary>The Victory Conditions as text in A26 terms (ruling R17.11); never evaluated in pass 17.</summary>
-public sealed record ScenarioCardVictory(string Kind, string Text, IReadOnlyList<string> Rules);
+/// <summary>
+/// A Victory Condition the game evaluates (A26; ruling R21.3). <c>control-margin</c>: the side Controls <c>Margin</c> more of <c>Buildings</c> than the other
+/// side Controls of <c>Versus</c>. <c>control-count</c>: the side Controls at least <c>AtLeast</c> hexes of <c>Building</c>, a hex in Melee Controlled by neither
+/// when <c>MeleeUncontrolled</c>. <c>squad-ratio</c>: the side has at least <c>Ratio</c> times the other side's unbroken squad-equivalents. <c>sole-unbroken</c>:
+/// the side alone has an unbroken unit in <c>Building</c>. <c>exit-vp</c>: the side has exited at least <c>AtLeast</c> Exit VP off <c>Edge</c> from a hex on
+/// or adjacent to one of <c>Near</c>. <c>cvp</c>: the side has at least <c>AtLeast</c> CVP. Buildings are named by the id of a building setup area of the card.
+/// </summary>
+public sealed record ScenarioCardCondition(string Type, string Side, IReadOnlyList<string>? Buildings = null, IReadOnlyList<string>? Versus = null, int? Margin = null,
+    string? Building = null, int? AtLeast = null, bool? MeleeUncontrolled = null, double? Ratio = null, string? Edge = null, IReadOnlyList<string>? Near = null);
+
+/// <summary>
+/// An outcome of the Victory Conditions (ruling R21.3): its winner (a side, or <c>draw</c>) when any of its conditions holds, checked at once after every
+/// action when <c>Immediate</c>, and always at game end, in the card's order.
+/// </summary>
+public sealed record ScenarioCardOutcome(string Winner, bool Immediate, IReadOnlyList<ScenarioCardCondition> Any);
+
+/// <summary>
+/// The Victory Conditions (A26; rulings R17.11, R21.3): their text in A26 terms, their kind, and their structured form: the outcomes in order, and the
+/// result when none holds at game end (Avoidance, A26.3, or a draw).
+/// </summary>
+public sealed record ScenarioCardVictory(string Kind, string Text, IReadOnlyList<string> Rules, IReadOnlyList<ScenarioCardOutcome>? Outcomes = null,
+    string? Otherwise = null);
 
 /// <summary>
 /// A scenario card (backlog pass 17, rulings R17.1 to R17.11): read, validated, and shown; since pass 18 a game starts from one (rulings
@@ -132,6 +152,18 @@ public static partial class ScenarioCards
 
     /// <summary>The kinds of Victory Conditions (A26; ruling R17.11).</summary>
     public static IReadOnlyList<string> VictoryKinds { get; } = ["control", "exit", "casualty", "other"];
+
+    /// <summary>The Victory Condition types the game evaluates (ruling R21.3).</summary>
+    public static IReadOnlyList<string> ConditionTypes { get; } = ["control-margin", "control-count", "squad-ratio", "sole-unbroken", "exit-vp", "cvp"];
+
+    /// <summary>A building setup area of the card by its id (ruling R21.3): its hexes, on the card's board or its own; null when none has that id.</summary>
+    public static IReadOnlyList<BoardLocation>? BuildingHexes(ScenarioCard card, string id)
+    {
+        ArgumentNullException.ThrowIfNull(card);
+        var area = card.Sides.SelectMany(side => side.Groups).SelectMany(group => group.Areas).FirstOrDefault(item => item.Kind == "building" && item.Id == id);
+        var board = area?.Board ?? (card.Boards.Count == 1 ? card.Boards[0].Board : null);
+        return area?.Hexes is { } hexes && board is not null ? [.. hexes.Select(hex => BoardLocation.Parse($"{board}:{hex}:0"))] : null;
+    }
 
     private static readonly JsonSerializerOptions Options = new()
     {
@@ -363,6 +395,23 @@ public static partial class ScenarioCards
         Check(VictoryKinds.Contains(card.VictoryConditions.Kind, StringComparer.Ordinal) && !string.IsNullOrWhiteSpace(card.VictoryConditions.Text)
             && card.VictoryConditions.Rules.Count > 0, "card.victory: the Victory Conditions have a kind, their text, and the A26 rules they rest on");
         Cited(card.VictoryConditions.Rules, "the Victory Conditions", Check);
+
+        // Ruling R21.3: the structured Victory Conditions name the card's sides and buildings.
+        if (card.VictoryConditions.Outcomes is { } outcomes)
+        {
+            bool SideOrDraw(string? winner) => winner == "draw" || sides.Contains(winner, StringComparer.Ordinal);
+            Check(outcomes.Count > 0 && SideOrDraw(card.VictoryConditions.Otherwise),
+                "card.victory: structured Victory Conditions list their outcomes and the result when none holds at game end, a side or a draw (A26.3; ruling R21.3)");
+            foreach (var outcome in outcomes)
+            {
+                Check(SideOrDraw(outcome.Winner) && outcome.Any is { Count: > 0 }, $"card.victory: an outcome names a side of the card or a draw, and its conditions (ruling R21.3)");
+                foreach (var condition in outcome.Any ?? [])
+                {
+                    Check(ConditionValid(card, condition, sides), $"card.victory: the '{condition.Type}' condition of {condition.Side} is not complete, or names a building or hex the card lacks (ruling R21.3)");
+                }
+            }
+        }
+
         return found;
     }
 
@@ -410,6 +459,22 @@ public static partial class ScenarioCards
         "entry" => area.Turn is { } turn && turn >= 1 && turn <= card.Turns.Count && SideState.Edges.Contains(area.Edge ?? string.Empty, StringComparer.Ordinal),
         _ => false,
     } && (area.Counters is null || (area.Kind != "entry" && area.Counters >= 1)) && (area.MinMmc is null || (area.Counters is { } counters && area.MinMmc >= 0 && area.MinMmc <= counters));
+
+    private static bool ConditionValid(ScenarioCard card, ScenarioCardCondition condition, string[] sides)
+    {
+        bool Buildings(IReadOnlyList<string>? ids) => ids is { Count: > 0 } && ids.All(id => BuildingHexes(card, id) is not null);
+        return sides.Contains(condition.Side, StringComparer.Ordinal) && condition.Type switch
+        {
+            "control-margin" => Buildings(condition.Buildings) && Buildings(condition.Versus) && condition.Margin is >= 1,
+            "control-count" => condition.Building is { } building && BuildingHexes(card, building) is { } hexes && condition.AtLeast is { } least && least >= 1 && least <= hexes.Count,
+            "squad-ratio" => condition.Ratio is > 0,
+            "sole-unbroken" => condition.Building is { } only && BuildingHexes(card, only) is not null,
+            "exit-vp" => condition.AtLeast is >= 1 && SideState.Edges.Contains(condition.Edge ?? string.Empty, StringComparer.Ordinal)
+                && condition.Near is { Count: > 0 } near && near.All(hex => BoardLocation.TryParse(hex + ":0", out var at) && card.Boards.Any(item => item.Board == at.Board.Value)),
+            "cvp" => condition.AtLeast is >= 1,
+            _ => false,
+        };
+    }
 
     private static void Cited(IReadOnlyList<string> rules, string where, Action<bool, string> check)
     {

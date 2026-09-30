@@ -547,7 +547,7 @@ public sealed class BacklogPass20TablePlayerTests : IDisposable
             Committed(await Advance());
         }
 
-        Assert.Equal(new GameEnded(5, "last-game-turn"), Current.Ended);
+        Assert.Equal((5, "last-game-turn"), (Current.Ended!.Turn, Current.Ended.Reason));
         Assert.Equal("german", Current.PhasingSide);
         Refused(Log("move after the end", await Move(mover, "bd01:O4:0")), "play.game-over");
         Refused(Log("setup after the end", await PlaceWith(Start("guards-counterattack", ["bd01"]), Unit("x", "attacker-squad", "bd01:F5:0", "german", "german-1"))), "play.");

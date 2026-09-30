@@ -277,6 +277,30 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             plan = WithAdjacentDm(plan, scope, existing, attemptId, expected);
         }
 
+        // Pass 21 (ruling R21.4): an immediate Victory Condition met by the action ends the game after it.
+        if (plan.Status == GamePlanStatus.Ready && action.Id.Value != "asl.game.setup")
+        {
+            plan = plan.Roll is { } rolled
+                ? plan with
+                {
+                    Roll = rolled with
+                    {
+                        Build = draw => WithImmediateVictory(scope, attemptId, expected, existing, rolled.Build(draw))
+                    }
+                }
+                : plan with
+                {
+                    Events = WithImmediateVictory(scope, attemptId, expected, existing, plan.Events)
+                };
+            if (plan.Roll is null && plan.Events.Count > 0 && plan.Events[^1].Payload is GameEnded { Result: { } won } && won.Reason.Length > 0)
+            {
+                plan = plan with
+                {
+                    Reasons = [.. plan.Reasons, $"play.result: {(won.Winner is { } winner ? $"{winner} wins at once" : "a draw")}: {won.Reason}"]
+                };
+            }
+        }
+
         // A plan with a roll has no events until the store draws it; its outcomes are checked when they are built.
         if (plan.Status != GamePlanStatus.Ready || plan.Roll is not null)
         {
@@ -655,8 +679,15 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         {
             if (ending)
             {
+                // Pass 21 (ruling R21.4): the card's Victory Conditions decide the result as the game ends.
+                var result = Victory(Replay([.. existing, .. events]), ended: true)?.AtEnd;
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "game-ended",
-                    new GameEnded(state.Turn, turn > state.Turn ? "last-game-turn" : "half-turn"), rulePackage: null, visibility: null));
+                    new GameEnded(state.Turn, turn > state.Turn ? "last-game-turn" : "half-turn") { Result = result }, rulePackage: null, visibility: null));
+                if (result is not null)
+                {
+                    reasons.Add($"play.result: {(result.Winner is { } winner ? $"{winner} wins" : "a draw")}: {result.Reason}");
+                }
+
                 return;
             }
 
@@ -792,6 +823,12 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
                 ["location"] = to.ToString(),
             });
             return await PlanEnterBuildingAsync(scope, entry, existing, attemptId, expected, label, actor, cancellationToken);
+        }
+
+        // Pass 21 (ruling R21.5): a move naming an edge leaves the map.
+        if (Text(arguments, "exit", out var edge) && !arguments.TryGetProperty("to", out _))
+        {
+            return PlanExit(scope, arguments, existing, attemptId, expected, label, edge);
         }
 
         return PlanMove(scope, arguments, existing, attemptId, expected, label, actor);
