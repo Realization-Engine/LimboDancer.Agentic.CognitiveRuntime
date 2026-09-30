@@ -401,12 +401,11 @@ The backlog pass 17 (2026-09-29) built the scenario-card presentation: the card 
 |---|---|---|---|---|
 | Setting up a game from a card: its boards and playable area, sides, ELR and SAN, Friendly Board Edges, Scenario Defender, month and year, SSR tokens, and the OB placed in its setup areas, with each hex's terrain checked | User ruling, 2026-09-29; R17.1, R17.8 | A2.1, A2.9, A19.1, A14.1, A20.53 | The new-game setup reading a card | The players set up a new game by hand and read the card beside it. |
 | An ELR for each OB group | R17.5 | A19.1, p. 86 | Setting up a game from a card | A side has one ELR; a card with groups of different ELRs shows each. |
-| Reinforcements entering during play: an OB group entering on its turn along its edge, with the SSR limits (Gambit's British on Turn 1) | User ruling, 2026-09-29; R17.8 | A2.6, A3.9 | Offboard units and entry in the MPh | Entering units are placed by hand. |
 | Evaluating the Victory Conditions: Control at game end, Exit VP (at once or at game end), CVP, Avoidance | User ruling, 2026-09-29; R17.11 | A26.1 to A26.4, pp. 98 to 100 | Building identity, exit records, VP values | The card shows the Victory Conditions as text; the players judge them. |
 | The full Chapter H DYO purchase: the roster, BPV purchases, the ELR Chart, SAN purchase, Leader Generation and the Leader Exchange DR, SW allotment, bonus Infantry, and the DYO Weather, EC, and NVR tables | User ruling, 2026-09-29; R17.2 | H1 to H1.84, pp. 328 to 336; E1.11; E3 | A DYO page | Cards are adapted from legacy cards; Chapter H only checks their numbers. |
 | Battlefield Integrity | R17.4 | A16 to A16.4, pp. 84 to 85 | A Casualty Tally in the records | The card prints the Integrity totals; nothing tallies them. |
-| The playable area and a half box on a Turn other than the last | R17.3, R17.4; referee, pass 17 | A2.1, A3.9 | Map limits in the planner | The playable area is shown, not enforced; a card has only a last-turn half turn. |
-| Balance: the dr for sides and the provision applied (a Hero; Sewer Movement; foxholes; a German LMG) | R17.11 | A26.4, B8.1, B8.4, B27 | Setting up a game from a card; Sewers and foxholes | The Balance is shown as text. |
+| A half box on a Turn other than the last (the playable area was built by pass 20) | R17.3, R17.4; referee, pass 17 | A3.9 | A Turn Record Chart with more than a last half turn | A card has only a last-turn half turn. |
+| The Balance provisions the game has no rule for: Sewer Movement (both Stalingrad cards) and foxholes (Gambit); the dr and the Hero and LMG were built by pass 20 | R17.11; R20.4 | A26.4, B8.1, B8.4, B27 | Sewers and foxholes | The Balance is recorded and shown; the players apply it by hand. |
 | EC and wind (B25.5, B25.63) as an SSR the game reads | R17.10 | B25.5, B25.6 to B25.65 | Fire spread and Kindling | SSR 1 of both cards is shown, not enforced; the weather is Clear by default. |
 | The legacy encirclement SSR of The Guards Counterattack, and Gambit's Infantry SMOKE ban | R17.10 | A7.7, A24.1 | SSR tokens for them | Shown, not enforced. |
 | ANZAC Stealth and the British immunity to Cowering by card nationality | R17.11; referee, pass 17 | A25.44, A25.45, p. 96 | A sub-nationality on the card | Shown as an adaptation note. |
@@ -414,7 +413,6 @@ The backlog pass 17 (2026-09-29) built the scenario-card presentation: the card 
 | More cards: the other legacy cards of The General (The Tractor Works was added by pass 17b) | Pass 17 selection | Varies | The counters and terrain they need | Three cards. |
 | A Factory by SSR (The Tractor Works' X3) | R17.13 | B23.74 to B23.742, p. 139 | Factory terrain in the terrain key | Shown, not enforced; X3 plays as an ordinary stone building. |
 | Fanaticism by SSR for units in a building (The Tractor Works) | R17.13 | A10.8, p. 69 | An SSR token naming Fanatic units by place | Shown, not enforced. |
-| A sequential setup, "?" allotted at setup, and a die roll for the first move, played from a card | R17.12 | A2.9, A12.11, A3.9 | Setting up a game from a card | Shown on the card; the players follow it. |
 | A draw as a Victory Condition outcome | R17.13 | A26 | Evaluating the Victory Conditions | Shown as text. |
 | Hidden setup per side: a side does not see the other's placements during a sequential setup, nor HIP units or the contents of "?" | User ruling, 2026-09-29 (setup is hot-seat on the honor system) | A2.9, A12.11, A12.12, A12.3 | Setup from the OB (Scenario Card Games Plan, pass 19); a per-side view | Both sides see the whole map during setup. |
 | The Russian MMG's portage: the catalog's 4 PP (manufactured at unit step 23) against the legacy counter's apparent 5 PP | Referee, pass 17b | A4.42, A9.1 | A registered source printing it | 4 PP. |
@@ -437,8 +435,25 @@ Pass 19 (2026-09-29) built the setup of a game from a card: its OB group by grou
 |---|---|---|---|---|
 | The non-OB "?" each side places after both have set up, on units out of the enemy's LOS or 17 hexes away | R19.5 | A12.12, p. 76 | A LOS check at the end of setup | Only OB "?" at setup. |
 | HIP by SSR | R19.5 | A12.3 | An SSR token for HIP | Hidden units are refused at setup. |
-| The 10% of the squads entering in a turn Deployed before they enter | R19.6 | A2.9 | Reinforcements entering (pass 20) | Not built. |
 | Terrain the movement rules give no entry cost for (gully, stream, shellholes, graveyard, and others) refused at setup; a marsh setup through the planner is not tested | Referee, pass 19 | A2.9, B16.4 | Those terrains in the movement rules; a board with marsh | Refused at setup. |
 | A crew or HS manning a Gun stacking as a squad | Referee, pass 19 | A5.5 | Guns set up from cards | Counts as half a squad. |
 | A test of a card changed or gone since the game started | Referee, pass 19 | R19.1 | A way to change an embedded card in a test | Refused in code. |
 | Hidden setup per side (already in section 27) | User ruling, 2026-09-29 | A2.9, A12.12 | A per-side view | Both sides see the map. |
+
+## 30. Added by the scenario card games pass 20
+
+Pass 20 (2026-09-29) built the end of a game from a card, the first-move dr and the Balance at the start, reinforcements set up off board and entering in their MPh, and the playable area (rulings R20.1 to R20.6). It removed from section 27 the rows for reinforcements entering, the playable area, and the die roll for the first move, and the Balance row in part; and from section 29 the 10% Deployment of entering squads. What it leaves out follows.
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| Entry by advance in the APh, which A2.5 allows a unit capable of movement then | R20.5 | A2.5, A4.7 | An advance from off board | Entry is in the MPh; the MPh does not end while a unit is due. |
+| Delayed entry: the four-hex radius a Game Turn later, rubble or Blaze cutting the entry hex off, and never across a river | R20.5 | A2.5 | Blocked-entry checks | The MPh may end when every hex of the edge holds a Known enemy unit; the units enter on a later turn anywhere on the edge. |
+| An offboard squad's Deployment attempt in its RPh with a leader | R20.5 | A2.52 | Offboard actions in the RPh | Only the 10% Deployment at setup. |
+| Entering a hex that holds concealed enemy units, Residual FP, or a Fire Lane; Bypass, Minimum Move, SMOKE, or a DC at entry | R20.5 | A2.51, A12.15, A8.22, A4.3, A4.134 | Entry through the full movement step | Refused with a message. |
+| Vehicles entering from off board (in Motion, loaded), and Guns entering limbered | R20.5 | A2.52, D2.4 | Vehicle movement from off board | Refused: no card enters vehicles yet. |
+| A card with several entry areas for one OB line's counters, or a Balance counter in a group that enters | R20.5 | A2.5 | Entry areas per counter | A unit enters by its line's entry, else its group's first. |
+| The Victory Conditions at the game's end | Scenario Card Games Plan, pass 21 | A26 | Pass 21 | The game ends and says so; the players judge the Victory Conditions. |
+| The first-move dr's manufactured form (a dr for each side, the higher moving first), against a registered procedure if one is found | R20.2 | A3.9 | A registered source | Manufactured under R0.3. |
+| A card that sets up units broken or under DM | R20.7 | A2.9 | A card token for it | Refused at setup. |
+| A setup naming another side's OB group gives the projector's raw message (UNIT-STATE-005) rather than a play.setup refusal; a Deployment off board says only that the squad is not on the map | Table player, pass 20 | R18.3, A2.52 | Message work | Refused, with a less helpful message. |
+| Paved road hexes of board 01 are named by their other terrain ("open-ground") in movement messages | Table player, pass 20 | B3 | The terrain key's names | The cost is right; the label is not. |

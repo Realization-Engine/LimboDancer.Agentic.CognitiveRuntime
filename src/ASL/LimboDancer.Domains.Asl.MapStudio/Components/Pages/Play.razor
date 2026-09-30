@@ -75,7 +75,13 @@
                 <p id="play-card-changed" class="diagnostic warning">The card has changed since this game started; what follows is its current text.</p>
             }
             <p id="play-card-turns">@playCard.Turns.Count Game Turns@(playCard.Turns.HalfTurn ? ", the last with one Player Turn" : string.Empty); @playCard.Place, @ScenarioCards.DateText(playCard.Date).
-                @playCard.Turns.SetsUpFirst sets up first; @(playCard.Turns.MovesFirst is { } cardFirst ? $"{cardFirst} moves first." : $"{state.FirstSide} won the roll to move first.")</p>
+                @playCard.Turns.SetsUpFirst sets up first; @(playCard.Turns.MovesFirst is { } cardFirst ? $"{cardFirst} moves first." : $"{state.FirstSide} won the dr to move first (ruling R20.2).")</p>
+            <p id="play-card-balance">@(scenario.Balance is { } balanceSide ? $"{balanceSide} plays with its Balance: {playCard.Sides.FirstOrDefault(side => side.Side == balanceSide)?.Balance}" : "No side takes its Balance.")
+                @(scenario.Players.Count > 0 ? $" Players: {string.Join(", ", scenario.Players.Select(player => $"{player.Name} plays {player.Side}"))}." : string.Empty) (A26.4; ruling R20.3)</p>
+            @if (state.Ended is { } ended)
+            {
+                <p id="play-ended" class="diagnostic">The game ended after Game Turn @ended.Turn@(ended.Reason == "half-turn" ? ", a half turn" : string.Empty) (A3.9; ruling R20.1). The Victory Conditions are judged by the players until pass 21.</p>
+            }
             <ul id="play-card-groups">
                 @foreach (var side in state.Sides)
                 {
@@ -133,15 +139,32 @@
         </select>
         <label for="new-first">First side</label>
         <select id="new-first" disabled="@FirstLocked" value="@firstSide" @onchange="ChooseFirst">
-            @if (ChosenCard is { Turns.MovesFirst: null })
-            {
-                <option value="">die roll: choose the winner</option>
-            }
             @foreach (var side in Library.Vocabulary.Sides.Where(side => ChosenCard is not { } firstCard || firstCard.Sides.Any(item => item.Side == side.Name)))
             {
                 <option value="@side.Name">@side.Label</option>
             }
         </select>
+        @if (ChosenCard is { Turns.MovesFirst: null } rollCard)
+        {
+            <span id="new-first-roll" class="muted">@rollCard.Turns.MovesFirstNote The game rolls a dr for each side as it starts; the higher moves first (ruling R20.2).</span>
+        }
+        @if (ChosenCard is { } balanceCard)
+        {
+            <label for="new-balance" title="A26.4: when both players wish to play the same side, a dr decides, and the loser plays the other side with its Balance.">Balance</label>
+            <select id="new-balance" value="@newBalance" @onchange="@(args => newBalance = args.Value as string ?? string.Empty)">
+                <option value="">none</option>
+                @foreach (var balanceSide in balanceCard.Sides)
+                {
+                    <option value="@("agree:" + balanceSide.Side)">@balanceSide.Side takes its Balance by agreement</option>
+                    <option value="@("wish:" + balanceSide.Side)">both players wish to play @balanceSide.Side: a dr decides</option>
+                }
+            </select>
+            @if (newBalance.StartsWith("wish:", StringComparison.Ordinal))
+            {
+                <input id="new-player-one" value="@playerOne" @onchange="@(args => playerOne = args.Value as string ?? string.Empty)" size="10" placeholder="first player" />
+                <input id="new-player-two" value="@playerTwo" @onchange="@(args => playerTwo = args.Value as string ?? string.Empty)" size="10" placeholder="second player" />
+            }
+        }
         <label for="new-second">Second side</label>
         <select id="new-second" disabled="@CardChosen" value="@secondSide" @onchange="@(args => secondSide = args.Value as string ?? secondSide)">
             @foreach (var side in Library.Vocabulary.Sides)
@@ -259,9 +282,9 @@ else if (state is not null)
                         <td>@group.Order</td>
                         <td>@group.Side</td>
                         <td>@group.Name (@group.Id)</td>
-                        <td>@(!group.SetsUp ? "enters later" : group.Complete ? "set up" : group.Order == setup.CurrentOrder ? "setting up now" : "waits")</td>
+                        <td>@(!group.SetsUp ? (group.OffBoard.Count > 0 ? "sets up off board to enter" : "waits off board to enter") : group.Complete ? (group.OffBoard.Count > 0 ? "set up; the rest sets up off board to enter" : "set up") : group.Order == setup.CurrentOrder ? "setting up now" : "waits")</td>
                         <td>@(group.Remaining.Count > 0 ? string.Join(", ", group.Remaining.Select(need => $"{need.Count} {DefinitionLabel(need.Definition)}{(need.Area is { } area ? $" in {area}" : string.Empty)}"))
-                            : group.SetsUp && !group.Complete ? "the counters its SSR names (see Where); both HS of a Deployed squad in one proposal" : "-")</td>
+                            : group.SetsUp && !group.Complete ? "the counters its SSR names (see Where); both HS of a Deployed squad in one proposal" : "-")@(group.OffBoard.Count > 0 ? $"; off board to enter: {string.Join(", ", group.OffBoard.Select(need => $"{need.Count} {DefinitionLabel(need.Definition)}"))}" : string.Empty)</td>
                         <td>@group.DummiesLeft</td>
                         <td>@string.Join("; ", group.Areas.Select(SetupAreaText))</td>
                     </tr>
@@ -321,6 +344,7 @@ else if (state is not null)
         <label><input id="place-concealed" type="checkbox" checked="@placeConcealed" @onchange="@(args => placeConcealed = args.Value is true)" /> concealed</label>
         <label><input id="place-hidden" type="checkbox" checked="@placeHidden" @onchange="@(args => placeHidden = args.Value is true)" /> hidden</label>
         <label><input id="place-broken" type="checkbox" checked="@placeBroken" @onchange="@(args => placeBroken = args.Value is true)" /> broken</label>
+        <label title="A2.51 (ruling R20.5): a counter of an OB line that enters waits off board until it enters along its edge in its side's MPh."><input id="place-offboard" type="checkbox" checked="@placeOffBoard" @onchange="@(args => placeOffBoard = args.Value is true)" /> off board (enters)</label>
         <button id="place-add" @onclick="AddPlacement">Add</button>
     </div>
     @if (placeNote is not null)
@@ -332,15 +356,11 @@ else if (state is not null)
         <ul id="place-list">
             @foreach (var placement in placements)
             {
-                <li>@placement.Id: @(placement.Definition ?? "a Dummy")@(placement.Group is { } inGroup ? $" ({inGroup})" : string.Empty) @(placement.Holder is { } holder ? $"held by {holder}" : $"at {placement.Location}")@(placement.Facing is { } spine ? placement.Kind == "asl:vehicle" ? $", VCA {spine}" : $", facing {spine}" : "")@(placement.Concealed ? ", concealed" : "")@(placement.Hidden ? ", hidden" : "")@(placement.Broken ? ", broken" : "") <button class="link" @onclick="() => placements.Remove(placement)">remove</button></li>
+                <li>@placement.Id: @(placement.Definition ?? "a Dummy")@(placement.Group is { } inGroup ? $" ({inGroup})" : string.Empty) @(placement.Holder is { } holder ? $"held by {holder}" : placement.OffBoard ? "off board, to enter" : $"at {placement.Location}")@(placement.Facing is { } spine ? placement.Kind == "asl:vehicle" ? $", VCA {spine}" : $", facing {spine}" : "")@(placement.Concealed ? ", concealed" : "")@(placement.Hidden ? ", hidden" : "")@(placement.Broken ? ", broken" : "") <button class="link" @onclick="() => placements.Remove(placement)">remove</button></li>
             }
         </ul>
     }
-    <button id="propose-setup" disabled="@(placements.Count == 0 || (history is null && CardChosen && firstSide.Length == 0))" @onclick="ProposeSetup">Propose setup</button>
-    @if (history is null && CardChosen && firstSide.Length == 0)
-    {
-        <span id="propose-needs-winner" class="muted">Roll for the first move and choose the winner above (A3.9).</span>
-    }
+    <button id="propose-setup" disabled="@(placements.Count == 0)" @onclick="ProposeSetup">Propose setup</button>
 }
 
 @if (state is not null && history?.Current is not null)
@@ -645,7 +665,7 @@ else if (state is not null)
         <div class="toolbar">
             @foreach (var unit in MoveCandidates)
             {
-                <label><input class="move-unit" type="checkbox" data-unit="@unit.Id" checked="@moveUnits.Contains(unit.Id)" @onchange="@(args => Toggle(moveUnits, unit.Id, args.Value is true))" /> @unit.Id (@state.Location(unit.Id)?.Location)@(GameState.Condition(unit, Conditions.Berserk) == ConditionState.True ? ", berserk" : "")</label>
+                <label><input class="move-unit" type="checkbox" data-unit="@unit.Id" checked="@moveUnits.Contains(unit.Id)" @onchange="@(args => Toggle(moveUnits, unit.Id, args.Value is true))" /> @unit.Id (@(state.Location(unit.Id)?.Location.ToString() ?? (Live.Planner.EntryFor(state, unit) is { } entering ? $"off board: enters along the {entering.Edge} edge" : "off board")))@(GameState.Condition(unit, Conditions.Berserk) == ConditionState.True ? ", berserk" : "")</label>
             }
             <label title="A Location such as bd01:D5:0; the level after the hex moves up or down a stairwell or along an upper level of a building (B23.4, B23.421)">To <input id="move-to" value="@moveTo" @onchange="@(args => moveTo = args.Value as string ?? string.Empty)" size="12" /></label>
             <label title="A4.134: the unit's only hex this MPh, whatever it costs, even if CX; once the DEFENDER's fire is done it is pinned and CX."><input id="move-minimum" type="checkbox" checked="@moveMinimum" @onchange="@(args => moveMinimum = args.Value is true)" /> Minimum Move</label>
@@ -1852,10 +1872,13 @@ else if (state is not null)
     }
 
     private sealed record Placement(string Id, string? Definition, string Kind, string Side, string Location, bool Concealed, bool Hidden, string? Holder,
-        bool Broken = false, string? Facing = null, string? BoreSighted = null, string? Group = null);
+        bool Broken = false, string? Facing = null, string? BoreSighted = null, string? Group = null, bool OffBoard = false);
 
     private string? scenarioCard;
     private string? scenarioSha;
+    private string newBalance = string.Empty;
+    private string playerOne = string.Empty;
+    private string playerTwo = string.Empty;
 
     /// <summary>
     /// The setup of a game from a card (pass 19, ruling R19.2): the game's, or before the game exists the chosen card's with nothing yet set up.
@@ -1901,8 +1924,8 @@ else if (state is not null)
     /// <summary>Whether the new game comes from a scenario card, which fills and locks the start fields (ruling R18.1).</summary>
     private bool CardChosen => scenarioCard is not null;
 
-    /// <summary>The side that moves first is locked too, unless the card leaves it to a die roll (A3.9).</summary>
-    private bool FirstLocked => ChosenCard is { Turns.MovesFirst: not null };
+    /// <summary>The side that moves first is locked too; a card that leaves it to a die roll has it rolled as the game starts (A3.9; ruling R20.2).</summary>
+    private bool FirstLocked => CardChosen;
 
     private ScenarioCard? ChosenCard => scenarioCard is not null ? CardRead(scenarioCard)?.Card : null;
 
@@ -1939,16 +1962,9 @@ else if (state is not null)
         newMap = null;
         newBoard = string.Join(' ', card.Boards.Select(board => card.Boards.Count == 1 && !board.Reversed
             ? board.Board : $"{board.Board}@{board.Column},{board.Row}{(board.Reversed ? "/r" : string.Empty)}"));
-        // Table player, pass 18: a die-roll card waits for the players to name the winner.
-        if (card.Turns.MovesFirst is { } movesFirst)
-        {
-            FillFromCard(card, movesFirst);
-        }
-        else
-        {
-            (firstSide, secondSide, firstElr, secondElr, firstSan, secondSan, firstEdge, secondEdge) =
-                (string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
-        }
+        // Pass 20 (ruling R20.2): a die-roll card is rolled as the game starts; the fields list the side that sets up first.
+        FillFromCard(card, card.Turns.MovesFirst ?? card.Turns.SetsUpFirst);
+        newBalance = string.Empty;
 
         newMonth = card.Date.Month.ToString(CultureInfo.InvariantCulture);
         newYear = card.Date.Year.ToString(CultureInfo.InvariantCulture);
@@ -2011,6 +2027,7 @@ else if (state is not null)
     private bool placeHidden;
     private string placeHolder = string.Empty;
     private bool placeBroken;
+    private bool placeOffBoard;
     private string enterUnit = string.Empty;
     private string enterLocation = "bd01:E4:0";
     private Proposal? pending;
@@ -3299,7 +3316,8 @@ else if (state is not null)
     private IEnumerable<UnitInstance> MoveCandidates => state is null ? []
         : state.Movement is { } movement ? movement.Vehicle ? [] : movement.Members.Select(state.Unit).OfType<UnitInstance>()
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && !unit.MovementEnded && !LiveFire.IsVehicle(unit)
-            && state.Location(unit.Id) is not null && GameState.Condition(unit, Conditions.Broken) != ConditionState.True
+            && (state.Location(unit.Id) is not null || (unit.Position is OffMapPosition && Live.Planner.EntryFor(state, unit) is { } entry && entry.Turn <= state.Turn))
+            && GameState.Condition(unit, Conditions.Broken) != ConditionState.True
             && GameState.Condition(unit, Conditions.PrepFire) != ConditionState.True && GameState.Condition(unit, Conditions.Melee) != ConditionState.True
             && GameState.Condition(unit, Conditions.Captured) != ConditionState.True && !state.NoMoveThisPlayerTurn.Contains(unit.Id)).OrderBy(unit => unit.Id, StringComparer.Ordinal);
 
@@ -3879,7 +3897,7 @@ else if (state is not null)
     private UnitCatalog? PublishedCatalog => Live.Catalogs.FirstOrDefault(catalog => catalog.Publication == CatalogPublication.Published);
 
     /// <summary>Setup stays open until the first event that is not the start or a placement.</summary>
-    private bool SetupOpen => history is { } shown && shown.Events.All(item => item.Payload is GameStarted or InstanceCreated);
+    private bool SetupOpen => history is { } shown && shown.Events.All(item => GameState.IsSetupEvent(item.Payload));
 
     protected override void OnInitialized()
     {
@@ -4069,7 +4087,8 @@ else if (state is not null)
         placeNote = groupTaken ? null : $"{placeGroup} is not an OB group of {side}, so {id} is placed without a group.";
         placements.Add(new Placement(id, definition.Id, definition.Kind, side, placeLocation.Trim(), placeConcealed, placeHidden, holder,
             placeBroken && holder is null, gun ? placeFacing : null, definition.Kind == "asl:gun" && placeBore.Trim().Length > 0 ? placeBore.Trim() : null,
-            placeGroup.Length > 0 && GroupChoices.Any(choice => choice.Side == side && choice.Group.Id == placeGroup) ? placeGroup : null));
+            placeGroup.Length > 0 && GroupChoices.Any(choice => choice.Side == side && choice.Group.Id == placeGroup) ? placeGroup : null,
+            placeOffBoard && holder is null && !gun));
         placeId = string.Empty;
         placeHolder = string.Empty;
         placeBore = string.Empty;
@@ -4151,7 +4170,8 @@ else if (state is not null)
             return placement;
         }
 
-        placement["position"] = new { at = item.Location };
+        // A2.51 (ruling R20.5): a counter that enters waits off board.
+        placement["position"] = item.OffBoard ? new Dictionary<string, object> { ["offMap"] = true } : new Dictionary<string, object> { ["at"] = item.Location };
         if (item.Kind == "asl:sniper")
         {
             placement["conditions"] = new Dictionary<string, bool>();
@@ -4173,7 +4193,8 @@ else if (state is not null)
     {
         var start = new Dictionary<string, object?>
         {
-            ["label"] = newLabel, ["catalog"] = catalog, ["boards"] = SetupBoards(), ["map"] = newMap, ["firstSide"] = firstSide,
+            ["label"] = newLabel, ["catalog"] = catalog, ["boards"] = SetupBoards(), ["map"] = newMap,
+            ["firstSide"] = ChosenCard is { Turns.MovesFirst: null } ? null : firstSide,
             ["sides"] = new[] { Side(firstSide, firstElr, firstEdge, firstSan), Side(secondSide, secondElr, secondEdge, secondSan) },
         };
         if (int.TryParse(newMonth, CultureInfo.InvariantCulture, out var month))
@@ -4198,6 +4219,24 @@ else if (state is not null)
         if (scenarioCard is { } card && scenarioSha is { } sha256)
         {
             start["scenario"] = new Dictionary<string, string> { ["id"] = card, ["sha256"] = sha256, ["title"] = ChosenCard?.Title ?? card };
+
+            // A26.4 (ruling R20.3): the Balance by agreement, or the side both players wish to play.
+            if (newBalance.StartsWith("agree:", StringComparison.Ordinal))
+            {
+                start["balance"] = new Dictionary<string, object> { ["side"] = newBalance["agree:".Length..] };
+            }
+            else if (newBalance.StartsWith("wish:", StringComparison.Ordinal))
+            {
+                var wished = newBalance["wish:".Length..];
+                start["balance"] = new Dictionary<string, object>
+                {
+                    ["players"] = new[]
+                    {
+                        new Dictionary<string, string> { ["name"] = playerOne.Trim(), ["wants"] = wished },
+                        new Dictionary<string, string> { ["name"] = playerTwo.Trim(), ["wants"] = wished },
+                    },
+                };
+            }
         }
 
         return start;

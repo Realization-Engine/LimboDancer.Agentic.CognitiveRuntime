@@ -74,18 +74,23 @@ public sealed class ScenarioCardStartPageTests : IDisposable
 
     // A3.9: a card that leaves the first move to a die roll keeps the first side open, and the other side follows it.
     [Fact]
-    public void TheTractorWorksLeavesTheFirstMoveOpen()
+    public void TheTractorWorksRollsForTheFirstMoveAndOffersTheBalance()
     {
         var page = context.Render<PlayPage>();
         page.Find("#new-card").Change("tractor-works");
-        Assert.False(page.Find("#new-first").HasAttribute("disabled"));
-        // Referee and table player, pass 18: only the card's sides may move first, and the winner is not preset.
-        Assert.Equal(3, page.FindAll("#new-first option").Count);
-        Assert.Equal(string.Empty, page.Find("#new-first").GetAttribute("value"));
-        Assert.True(page.Find("#new-second").HasAttribute("disabled"));
-        page.Find("#new-first").Change("german");
-        Assert.Equal("russian", page.Find("#new-second").GetAttribute("value"));
-        Assert.Equal("4", page.Find("#new-first-elr").GetAttribute("value"));
-        Assert.Equal("bottom", page.Find("#new-first-edge").GetAttribute("value"));
+
+        // Pass 20 (ruling R20.2): the game rolls for the first move as it starts; the fields list the side that sets up first, and name no winner.
+        Assert.True(page.Find("#new-first").HasAttribute("disabled"));
+        Assert.Contains("rolls a dr for each side", page.Find("#new-first-roll").TextContent, StringComparison.Ordinal);
+        Assert.Equal("russian", page.Find("#new-first").GetAttribute("value"));
+        Assert.Equal("german", page.Find("#new-second").GetAttribute("value"));
+        Assert.Equal("bottom", page.Find("#new-second-edge").GetAttribute("value"));
+
+        // Ruling R20.3 (A26.4): no Balance, a side's by agreement, or a dr when both players wish the same side, who then name themselves.
+        Assert.Equal(5, page.FindAll("#new-balance option").Count);
+        Assert.Empty(page.FindAll("#new-player-one"));
+        page.Find("#new-balance").Change("wish:german");
+        Assert.NotNull(page.Find("#new-player-one"));
+        Assert.Empty(page.FindAll("#propose-needs-winner"));
     }
 }

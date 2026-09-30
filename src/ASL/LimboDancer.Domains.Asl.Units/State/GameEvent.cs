@@ -90,6 +90,9 @@ public sealed record GameStarted(
 /// <summary><c>phase-changed</c>.</summary>
 public sealed record PhaseChanged(int Turn, string Phase, string PhasingSide) : EventPayload;
 
+/// <summary><c>game-ended</c>: the Turn counter reached END (A3.9; ruling R20.1), after the last Player Turn of the given Game Turn.</summary>
+public sealed record GameEnded(int Turn, string Reason) : EventPayload;
+
 /// <summary><c>instance-created</c>: a unit, piece of equipment, or entity enters the game.</summary>
 public sealed record InstanceCreated(NewInstance Instance) : EventPayload
 {

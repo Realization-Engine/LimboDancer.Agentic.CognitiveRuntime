@@ -70,6 +70,8 @@ public static class GameProjector
                 GameStarted started when previous is null => Start(gameEvent, started),
                 _ when previous is null => Fail<GameState>("UNIT-STATE-004", "The first event must be game-started."),
                 GameStarted => Fail<GameState>("UNIT-STATE-004", "A game starts only once."),
+                _ when previous.Ended is not null => Fail<GameState>("UNIT-STATE-045", "The game has ended (A3.9; ruling R20.1); nothing more happens in it."),
+                GameEnded ended => End(previous, ended),
                 PhaseChanged phase => ChangePhase(previous, phase),
                 InstanceCreated created => CreateInPlay(previous, created),
                 InstanceMoved moved => Move(previous, moved),
@@ -144,7 +146,7 @@ public static class GameProjector
             }
 
             // C13.31 (ruling R9.7): setup ends with the first event of play; each side's Personnel then are its OB for the PF usage limit.
-            if (previous is not null && !previous.SetupClosed && gameEvent.Payload is not (GameStarted or InstanceCreated or BoreSighted))
+            if (previous is not null && !previous.SetupClosed && !GameState.IsSetupEvent(gameEvent.Payload))
             {
                 next = next with
                 {
@@ -327,6 +329,21 @@ public static class GameProjector
                 Source = gameEvent.Source,
             };
             return CheckPhase(state, started.Turn, started.Phase, started.PhasingSide) ? state : null;
+        }
+
+        /// <summary>The Turn counter reaches END (A3.9; ruling R20.1): after the current Game Turn, with nothing left open in it.</summary>
+        private GameState? End(GameState state, GameEnded ended)
+        {
+            if (ended.Turn != state.Turn || state.OpenAttempts.Count > 0 || state.Choice is not null || state.PendingSurrenders.Count > 0
+                || state.CloseCombats.Any(item => !item.Closed))
+            {
+                return Fail<GameState>("UNIT-STATE-045", "A game ends after its current Game Turn, with no entry attempt, choice, surrender, or CC left open (A3.9).");
+            }
+
+            return state with
+            {
+                Ended = ended,
+            };
         }
 
         private GameState? ChangePhase(GameState state, PhaseChanged change)

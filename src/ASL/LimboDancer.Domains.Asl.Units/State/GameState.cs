@@ -320,6 +320,19 @@ public sealed record GameState(
     /// <summary>The units whose CX counter was removed at the start of this MPh, which may not Double Time in it (A4.51, ruling R5.3).</summary>
     public IReadOnlyList<string> NoDoubleTime { get; init; } = [];
 
+    /// <summary>
+    /// Whether an event belongs to the setup (C13.31, ruling R9.7; ruling R19.2): the start, a unit set up, a Bore Sighted Location, or the drs a start
+    /// from a card draws for the first move and the Balance (rulings R20.2, R20.3).
+    /// </summary>
+    public static bool IsSetupEvent(EventPayload payload) =>
+        payload is GameStarted or InstanceCreated or BoreSighted or DiceRolled { Purpose: "first-move" or "balance" };
+
+    /// <summary>The end of the game (A3.9; ruling R20.1), once the Turn counter reached END; null while it goes on.</summary>
+    public GameEnded? Ended
+    {
+        get; init;
+    }
+
     /// <summary>The stack moving now in the MPh, if any (unit step 22).</summary>
     public MovementState? Movement
     {

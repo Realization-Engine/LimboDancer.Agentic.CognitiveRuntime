@@ -198,8 +198,14 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             return new GamePlan(GamePlanStatus.Stale, scope, label, expected, [], [$"play.stale: the game is at revision {existing.Count}"]);
         }
 
+        // Pass 20 (ruling R20.1): nothing happens in a game that has ended.
+        if (existing.Count > 0 && existing[^1].Payload is GameEnded over)
+        {
+            return Refused(scope, label, expected, $"play.game-over: the game ended after Game Turn {over.Turn} (A3.9; ruling R20.1)");
+        }
+
         // Pass 19 (ruling R19.2; referee, pass 19): in a game from a card nothing but setup happens until every group has set up.
-        if (action.Id.Value != "asl.game.setup" && existing.Count > 0 && existing.All(item => item.Payload is GameStarted or InstanceCreated or BoreSighted)
+        if (action.Id.Value != "asl.game.setup" && existing.Count > 0 && existing.All(item => GameState.IsSetupEvent(item.Payload))
             && Replay(existing).Current is { Scenario: not null } setupState && CardSetupIncomplete(setupState, existing) is { } unfinished)
         {
             return Refused(scope, label, expected, unfinished);
@@ -207,7 +213,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
         var plan = action.Id.Value switch
         {
-            "asl.game.setup" => PlanSetup(scope, arguments, existing, attemptId, expected, ref label),
+            "asl.game.setup" => PlanSetup(scope, arguments, existing, attemptId, expected, ref label, actor ?? "unknown"),
             "asl.game.advance-phase" => PlanAdvance(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.enter-empty-building" => await PlanEntryAsync(scope, arguments, existing, attemptId, expected, label, cancellationToken),
             "asl.game.declare-overrun" => await PlanDeclareAsync(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown", cancellationToken),
@@ -289,9 +295,10 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             : plan;
     }
 
-    private GamePlan PlanSetup(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, ref string label)
+    private GamePlan PlanSetup(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, ref string label,
+        string actor)
     {
-        if (existing.Any(item => item.Payload is not (GameStarted or InstanceCreated or BoreSighted)))
+        if (existing.Any(item => !GameState.IsSetupEvent(item.Payload)))
         {
             return Refused(scope, label, expected, "play.setup-closed: play has started, so no more units can be set up");
         }
@@ -299,6 +306,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         var events = new JsonArray();
         var sides = new Dictionary<string, string>(StringComparer.Ordinal);
         var boreSights = new List<(string Gun, BoardLocation At)>();
+        StartRolls? startRolls = null;
         if (existing.Count == 0)
         {
             if (!arguments.TryGetProperty("start", out var start) || start.ValueKind != JsonValueKind.Object)
@@ -307,7 +315,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             }
 
             // Backlog pass 18 (rulings R18.1, R18.2): a game from a scenario card starts as the card says.
-            if (CardStart(start, out var fromCard, out var cardReason) is false)
+            if (CardStart(start, out var fromCard, out var cardReason, out startRolls) is false)
             {
                 return Refused(scope, label, expected, cardReason!);
             }
@@ -416,9 +424,21 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             withSights = [.. setUp, .. sightEvents];
         }
 
-        return (withSights ?? parsed.Events) is { } list
-            ? new GamePlan(GamePlanStatus.Ready, scope, label, expected, list, [$"play.setup: {list.Count} event(s)"])
-            : Refused(scope, label, expected, [.. parsed.Reasons]);
+        if ((withSights ?? parsed.Events) is not { } list)
+        {
+            return Refused(scope, label, expected, [.. parsed.Reasons]);
+        }
+
+        // Pass 20 (rulings R20.2, R20.3): the start's drs, for the first move and for the Balance, are drawn as the game is written.
+        return startRolls is { } rolls && (rolls.FirstMove is not null || rolls.Balance is not null)
+            ? new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], [$"play.setup: {list.Count} event(s)",
+                .. rolls.FirstMove is not null ? ["play.first-move: a dr for each side decides which moves first (A3.9; ruling R20.2)"] : Array.Empty<string>(),
+                .. rolls.Balance is not null ? ["play.balance: both players wish to play the same side, so a dr decides it; the other side takes its Balance (A26.4; ruling R20.3)"] : Array.Empty<string>()])
+            {
+                Roll = new PlannedRoll("start", draw => StartRolled(scope, attemptId, expected, actor, list, rolls, draw)),
+                FirstEventId = EventId(attemptId, 1),
+            }
+            : new GamePlan(GamePlanStatus.Ready, scope, label, expected, list, [$"play.setup: {list.Count} event(s)"]);
     }
 
     private GamePlan PlanAdvance(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label,
@@ -493,6 +513,15 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         {
             return Refused(scope, label, expected, $"play.dc-detonate-pending: {unexploded.Charge} was Placed in {unexploded.Target} and detonates before the AFPh ends (A23.4)");
         }
+
+        // A2.5 (ruling R20.5): the MPh does not end while a unit whose entry turn has come waits off board, unless its edge is blocked.
+        if (state.Phase == "mph" && EntryDue(state) is { } due)
+        {
+            return Refused(scope, label, expected, due);
+        }
+
+        // A3.9 (ruling R20.1): the game from a card ends after its last Game Turn, or after the first side's Player Turn of a half turn.
+        var ending = index == Phases.All.Count - 1 && CardOf(state) is { } endCard && ScenarioCards.EndsAfter(endCard.Turns, state.Turn, state.PhasingSide == state.FirstSide);
 
         // A15.43: the MPh does not end while a berserk unit must still charge.
         var reasons = new List<string>();
@@ -590,9 +619,9 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         }
 
         // A12.12, A12.122 (ruling R12.5): as a Player Turn ends, the phasing side's Good Order Infantry may gain "?", some on a Final Concealment dr.
-        var gains = state.Phase == "ccph" && phasing != state.PhasingSide ? ConcealmentGains(state) : [];
+        var gains = !ending && state.Phase == "ccph" && phasing != state.PhasingSide ? ConcealmentGains(state) : [];
         // B25.65 (backlog pass 16, rulings R16.1, R16.10): the Wind Change DR at the start of a RPh.
-        var wind = WindChangeDue(state, phase, turn, phasing);
+        var wind = !ending && WindChangeDue(state, phase, turn, phasing);
         if (gains.Any(item => item.Drm is not null) || wind)
         {
             var prefix = events.ToList();
@@ -618,10 +647,19 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
         AddConcealmentGains(scope, attemptId, expected, actor, gains, events, null, reasons);
         Finish(events, reasons);
-        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [$"play.advance: turn {turn}, {phase}, {phasing} phasing", .. reasons]);
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [ending
+            ? $"play.game-ended: Game Turn {state.Turn} was the card's last{(turn > state.Turn ? string.Empty : ", a half turn")}, so the game ends (A3.9; ruling R20.1)"
+            : $"play.advance: turn {turn}, {phase}, {phasing} phasing", .. reasons]);
 
         void Finish(List<GameEvent> events, List<string> reasons, Func<RollRequest, RollResult>? draw = null)
         {
+            if (ending)
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "game-ended",
+                    new GameEnded(state.Turn, turn > state.Turn ? "last-game-turn" : "half-turn"), rulePackage: null, visibility: null));
+                return;
+            }
+
             var payload = new PhaseChanged(turn, phase, phasing);
             var changed = EventId(attemptId, events.Count + 1);
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "phase-changed", payload, rulePackage: null, visibility: null));
@@ -1551,10 +1589,11 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
     /// valid against the catalog, and, when it leaves the first move to a die roll, the request names one of its sides. The start is then
     /// the card's; only the label and that side come from the request. Null when the start names no card.
     /// </summary>
-    private bool CardStart(JsonElement start, out JsonObject? fromCard, out string? reason)
+    private bool CardStart(JsonElement start, out JsonObject? fromCard, out string? reason, out StartRolls? rolls)
     {
         fromCard = null;
         reason = null;
+        rolls = null;
         if (!start.TryGetProperty("scenario", out var scenario) || scenario.ValueKind != JsonValueKind.Object)
         {
             return true;
@@ -1582,15 +1621,145 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             return false;
         }
 
-        var first = Text(start, "firstSide", out var side) ? side : null;
-        if (card.Turns.MovesFirst is null && card.Sides.All(item => item.Side != first))
+        // Pass 20 (ruling R20.2): the die roll the card leaves the first move to is drawn at the first setup; the start names no winner.
+        var first = Text(start, "firstSide", out var side) && side.Length > 0 ? side : null;
+        if (card.Turns.MovesFirst is null && first is not null)
         {
-            reason = $"play.scenario: {card.Turns.MovesFirstNote} Name the side that won it (A3.9; ruling R18.1)";
+            reason = $"play.scenario: {card.Turns.MovesFirstNote} The game rolls it as it starts, so the start names no winner (A3.9; ruling R20.2)";
             return false;
         }
 
-        fromCard = ScenarioCards.Start(card, current, catalogName!, Text(start, "label", out var cardLabel) ? cardLabel : null, first);
+        // A26.4 (ruling R20.3): the Balance, by agreement or by a dr when both players wish to play the same side.
+        if (Balance(card, start, out var balance, out var players, out var wanted, out reason) is false)
+        {
+            return false;
+        }
+
+        fromCard = ScenarioCards.Start(card, current, catalogName!, Text(start, "label", out var cardLabel) ? cardLabel : null, card.Turns.MovesFirst ?? card.Turns.SetsUpFirst);
+        if (balance is not null)
+        {
+            fromCard["scenario"]!["balance"] = balance;
+        }
+
+        if (players.Count > 0)
+        {
+            fromCard["scenario"]!["players"] = new JsonArray([.. players.Select(player => (JsonNode)new JsonObject { ["name"] = player.Name, ["side"] = player.Side })]);
+        }
+
+        rolls = new StartRolls(card.Turns.MovesFirst is null ? [.. card.Sides.Select(item => item.Side)] : null, wanted);
         return true;
+    }
+
+    /// <summary>The drs a start from a card draws (rulings R20.2, R20.3): the sides that roll for the first move, and the Balance roll's players.</summary>
+    private sealed record StartRolls(IReadOnlyList<string>? FirstMove, BalanceRoll? Balance);
+
+    /// <summary>Two players who wish to play the same side (A26.4): the side, the players in the order the start names them, and the other side.</summary>
+    private sealed record BalanceRoll(string Wanted, string First, string Second, string Other);
+
+    /// <summary>
+    /// The start's Balance (A26.4; ruling R20.3): <c>balance.side</c> names the side that takes it by agreement; <c>balance.players</c> names two players
+    /// and the side each wishes to play: the same side for both is decided by a dr, the other side then taking its Balance; different sides, none.
+    /// </summary>
+    private static bool Balance(ScenarioCard card, JsonElement start, out string? balance, out List<ScenarioPlayer> players, out BalanceRoll? wanted, out string? reason)
+    {
+        balance = null;
+        players = [];
+        wanted = null;
+        reason = null;
+        if (!start.TryGetProperty("balance", out var node) || node.ValueKind != JsonValueKind.Object)
+        {
+            return true;
+        }
+
+        var sides = card.Sides.Select(item => item.Side).ToArray();
+        if (Text(node, "side", out var agreed))
+        {
+            balance = agreed;
+        }
+
+        if (node.TryGetProperty("players", out var list) && list.ValueKind == JsonValueKind.Array)
+        {
+            var named = list.EnumerateArray().Select((item, index) => (Name: Text(item, "name", out var name) && name.Length > 0 ? name : index == 0 ? "the first player" : "the second player",
+                Wants: Text(item, "wants", out var wants) ? wants : null)).ToArray();
+            if (named.Length != 2 || named.Any(item => !sides.Contains(item.Wants, StringComparer.Ordinal)) || named[0].Name == named[1].Name
+                || (balance is not null && named[0].Wants == named[1].Wants))
+            {
+                reason = "play.balance: the Balance names two players by different names, each with a side of the card they wish to play, and, when they wish different sides, the side that takes it by agreement (A26.4; ruling R20.3)";
+                return false;
+            }
+
+            if (named[0].Wants == named[1].Wants)
+            {
+                var other = sides.First(item => item != named[0].Wants);
+                wanted = new BalanceRoll(named[0].Wants!, named[0].Name, named[1].Name, other);
+                balance = other;
+            }
+            else
+            {
+                players = [.. named.Select(item => new ScenarioPlayer(item.Name, item.Wants!))];
+            }
+        }
+
+        if (balance is not null && !sides.Contains(balance, StringComparer.Ordinal))
+        {
+            reason = $"play.balance: '{balance}' is not a side of the card (A26.4; ruling R20.3)";
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// The start's events with its drs drawn (rulings R20.2, R20.3): a dr for each side, in the card's order and rerolled while they tie, gives the first
+    /// move to the higher; a dr for each player who wishes the same side gives it to the higher, the other playing the other side with its Balance.
+    /// </summary>
+    private List<GameEvent> StartRolled(GameScope scope, string attemptId, long expected, string actor, IReadOnlyList<GameEvent> placed, StartRolls rolls,
+        Func<RollRequest, RollResult> draw)
+    {
+        var events = new List<GameEvent>(placed);
+        var started = (GameStarted)events[0].Payload;
+        var scenario = started.Scenario!;
+        int Higher(string purpose)
+        {
+            for (var attempt = 1; attempt <= 20; attempt++)
+            {
+                var roll = draw(new RollRequest(2, 6));
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled",
+                    new DiceRolled($"{attemptId}-{purpose}-{attempt}", purpose, 2, 6, roll.Values, DiceRolled.SystemSource, actor), null, null));
+                if (roll.Values[0] != roll.Values[1])
+                {
+                    return roll.Values[0] > roll.Values[1] ? 0 : 1;
+                }
+            }
+
+            return 0;
+        }
+
+        if (rolls.FirstMove is [var one, var two])
+        {
+            started = started with
+            {
+                PhasingSide = Higher("first-move") == 0 ? one : two
+            };
+        }
+
+        if (rolls.Balance is { } balance)
+        {
+            var firstWins = Higher("balance") == 0;
+            scenario = scenario with
+            {
+                Players = [new ScenarioPlayer(firstWins ? balance.First : balance.Second, balance.Wanted), new ScenarioPlayer(firstWins ? balance.Second : balance.First, balance.Other)],
+            };
+        }
+
+        events[0] = events[0] with
+        {
+            Payload = started with
+            {
+                Scenario = scenario
+            }
+        };
+        return events;
     }
 
     private bool Start(JsonElement start, out JsonObject? payload, out string label, out string? reason)

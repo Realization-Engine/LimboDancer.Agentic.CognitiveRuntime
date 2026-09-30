@@ -35,7 +35,11 @@
   "north": "top",
   "playableArea": {
     "text": "Only hexrows O to GG are playable.",
-    "enforced": false
+    "enforced": true,
+    "hexrows": {
+      "from": "O",
+      "to": "GG"
+    }
   },
   "turns": {
     "count": 8,
@@ -177,6 +181,12 @@
         "note": "A20.53: in every hex column of board 1, the hexes of the German setup buildings lie south of those of the Russian ones, so the south edge is one of the German Friendly Board Edges; the game names one edge per side (R5.16)."
       },
       "balance": "Add one Hero to any German group.",
+      "balanceUnits": [
+        {
+          "definition": "attacker-hero",
+          "count": 1
+        }
+      ],
       "groups": [
         {
           "name": "Company A, Assault Engineer Battalion 50",

@@ -46,9 +46,14 @@ public sealed class BacklogPass19Tests : IDisposable
 
     private GamePlanner Planner() => new(store, new InMemoryBoardCatalog([Board01Fixture.Handle()]), Vocabulary, [Catalog]);
 
-    private static DiceRoller NoRoll() => new(_ => throw new InvalidOperationException("No roll."));
+    // Pass 20 (ruling R20.2): The Tractor Works rolls for the first move as it starts; each roll's first die is a 6, its second a 1.
+    private static DiceRoller FirstMoveRolls()
+    {
+        var die = 0;
+        return new(_ => die++ % 2 == 0 ? 5 : 0);
+    }
 
-    private GamePlay Play() => new(Planner(), store, new NullAudit(), roller: NoRoll());
+    private GamePlay Play() => new(Planner(), store, new NullAudit(), roller: FirstMoveRolls());
 
     private long Revision => store.Read(Scope)?.Events.Count ?? 0;
 
@@ -295,13 +300,13 @@ public sealed class BacklogPass19Tests : IDisposable
         var card = Card("tractor-works");
         var russian = Ob(card, "russian", 0);
         var dummies = Enumerable.Range(1, 18).Select(index => Dummy($"d{index}", "bd01:X3:0", "russian", "russian-1")).ToList();
-        Refused(await Place("tractor-works", "german", [.. russian, .. dummies, Dummy("d19", "bd01:X4:0", "russian", "russian-1")]), "play.setup-concealment");
-        Refused(await Place("tractor-works", "german", [.. russian, Dummy("d1", "bd01:T7:0", "russian", "russian-1")]), "play.setup-area");
-        Committed(await Place("tractor-works", "german", [.. russian, .. dummies]));
+        Refused(await Place("tractor-works", null, [.. russian, .. dummies, Dummy("d19", "bd01:X4:0", "russian", "russian-1")]), "play.setup-concealment");
+        Refused(await Place("tractor-works", null, [.. russian, Dummy("d1", "bd01:T7:0", "russian", "russian-1")]), "play.setup-area");
+        Committed(await Place("tractor-works", null, [.. russian, .. dummies]));
         var report = Planner().CardSetup(Current, new HashSet<string>())!;
         Assert.Equal(0, report.Groups.Single(group => group.Id == "russian-1").DummiesLeft);
         Assert.Equal(2, report.CurrentOrder);
-        Refused(await Place("tractor-works", "german", Unit("r99", "defender-line-squad", "bd01:P8:0", "russian", "russian-2")), "play.setup-order");
+        Refused(await Place("tractor-works", null, Unit("r99", "defender-line-squad", "bd01:P8:0", "russian", "russian-2")), "play.setup-order");
     }
 
     // R19.2 (A12.12; table player, pass 19): once a later group has begun, an earlier one adds nothing, not even a "?".
@@ -309,9 +314,9 @@ public sealed class BacklogPass19Tests : IDisposable
     public async Task AFinishedGroupAddsNoQuestionMarkAfterALaterOneBegins()
     {
         var card = Card("tractor-works");
-        Committed(await Place("tractor-works", "german", [.. Ob(card, "russian", 0), Dummy("d1", "bd01:X3:0", "russian", "russian-1")]));
-        Committed(await Place("tractor-works", "german", [.. Ob(card, "german", 1)]));
-        Refused(await Place("tractor-works", "german", Dummy("d2", "bd01:X4:0", "russian", "russian-1")), "play.setup-order");
+        Committed(await Place("tractor-works", null, [.. Ob(card, "russian", 0), Dummy("d1", "bd01:X3:0", "russian", "russian-1")]));
+        Committed(await Place("tractor-works", null, [.. Ob(card, "german", 1)]));
+        Refused(await Place("tractor-works", null, Dummy("d2", "bd01:X4:0", "russian", "russian-1")), "play.setup-order");
     }
 
     // R19.1 (referee and table player, pass 19): a SW sets up possessed by a unit of its group, not on its own.
@@ -394,7 +399,7 @@ public sealed class BacklogPass19Tests : IDisposable
     public async Task AnEngineerSquadSetsUpDeployed()
     {
         var card = Card("tractor-works");
-        Committed(await Place("tractor-works", "german", [.. Ob(card, "russian", 0)]));
+        Committed(await Place("tractor-works", null, [.. Ob(card, "russian", 0)]));
         var german = Ob(card, "german", 0);
         var squad = FreeSquads(german).First();
         Assert.Equal("attacker-elite-squad-8-3-8", squad["definition"]);
@@ -402,7 +407,7 @@ public sealed class BacklogPass19Tests : IDisposable
         german.Remove(squad);
         var half = ScenarioA1FireReference.HalfSquadOf("attacker-elite-squad-8-3-8")!;
         Assert.Equal("attacker-elite-half-squad-3-3-8", half);
-        Committed(await Place("tractor-works", "german", [.. german, Unit("h1", half, at, "german", "german-1"), Unit("h2", half, at, "german", "german-1")]));
+        Committed(await Place("tractor-works", null, [.. german, Unit("h1", half, at, "german", "german-1"), Unit("h2", half, at, "german", "german-1")]));
         var group = Planner().CardSetup(Current, new HashSet<string>())!.Groups.Single(item => item.Id == "german-1");
         Assert.True(group.Complete);
     }

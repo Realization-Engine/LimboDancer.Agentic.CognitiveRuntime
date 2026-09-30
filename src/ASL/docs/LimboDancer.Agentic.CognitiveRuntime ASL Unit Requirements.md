@@ -427,6 +427,8 @@ Later candidates, not yet sequenced: revisiting the Java VASL oracle tool, which
 
     Done for pass 19b (the Fire tables for the card counters): the review in the [Scenario A1 Backlog Pass 19b Review](<Scenario A1 Backlog Pass 19b Review 2026-09-29.md>) and the [ASL Unit Backlog Pass 19b Design](<ASL Unit Backlog Pass 19b Design.md>): the German 5-4-8 and 8-3-8 of the cards and their HS take Casualty Reduction, Deployment, Replacement, Battle Hardening, and a CC BPV.
 
+    Done for pass 20 (turns, reinforcements, and the start options): the review in the [Scenario A1 Backlog Pass 20 Review](<Scenario A1 Backlog Pass 20 Review 2026-09-29.md>) and the [ASL Unit Backlog Pass 20 Design](<ASL Unit Backlog Pass 20 Design.md>): a game from a card ends after its last Game Turn, rolls for the first move and the Balance as it starts, applies the Balance counters, sets up its reinforcements off board and enters them along their edge in their MPh, and keeps play within its playable area. What it leaves out is in the [ASL Unit Backlog](<ASL Unit Backlog.md>), section 30.
+
 ## 14. Acceptance scenarios
 
 - **U1, definition lookup.** Given the registered catalog, a lookup for a squad of a given nationality, class, and date returns its printed values with their source, and a lookup outside its applicability returns an explicit miss.

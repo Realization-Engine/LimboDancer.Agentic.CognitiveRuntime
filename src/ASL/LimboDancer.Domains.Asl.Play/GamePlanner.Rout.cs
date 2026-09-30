@@ -205,7 +205,8 @@ public sealed partial class GamePlanner
                 continue;
             }
 
-            foreach (var next in Neighbors(state, node.At))
+            // A2.1 (ruling R20.6; referee, pass 20): a rout never leaves the playable area, so its targets lie within it.
+            foreach (var next in Neighbors(state, node.At).Where(at => PlayableBar(state, at) is null))
             {
                 // Each LOS read is costly on a real board, so the search keeps what it has read.
                 if (!bars.TryGetValue((node.At, next, node.Mask), out var barred))
@@ -331,6 +332,12 @@ public sealed partial class GamePlanner
         if (state.Phase != "rtph")
         {
             return Refused(scope, label, expected, "play.rout-phase: broken units rout in the RtPh (A10.5)");
+        }
+
+        // A2.1 (ruling R20.6): a rout never leaves the card's playable area.
+        if (route.Select(step => PlayableBar(state, step)).FirstOrDefault(bar => bar is not null) is { } outside)
+        {
+            return Refused(scope, label, expected, outside);
         }
 
         if (state.Unit(unitId) is not { Status: InstanceStatus.Active } unit || !Is(unit, Conditions.Broken) || Is(unit, Conditions.Melee)

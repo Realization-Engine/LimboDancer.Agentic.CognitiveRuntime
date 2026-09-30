@@ -201,6 +201,10 @@ public static class GameEventReader
                         ScenarioDefender = fields.OptionalString(payload, "scenarioDefender", path),
                         Scenario = ReadScenario(payload, path, fields),
                     };
+            case "game-ended":
+                var endTurn = fields.OptionalInteger(payload, "turn", path);
+                var endReason = fields.RequiredString(payload, "reason", path);
+                return endTurn is null || endReason is null ? Missing(diagnostics, "A game end names its Game Turn and its reason.", path) : new GameEnded(endTurn.Value, endReason);
             case "phase-changed":
                 var nextTurn = fields.OptionalInteger(payload, "turn", path);
                 var nextPhase = fields.RequiredString(payload, "phase", path);
@@ -811,7 +815,25 @@ public static class GameEventReader
         var id = fields.RequiredString(scenario, "id", path + ".scenario");
         var sha256 = fields.RequiredString(scenario, "sha256", path + ".scenario");
         var title = fields.RequiredString(scenario, "title", path + ".scenario");
-        return id is null || sha256 is null || title is null ? null : new ScenarioCardReference(id, sha256, title);
+        if (id is null || sha256 is null || title is null)
+        {
+            return null;
+        }
+
+        // Pass 20 (ruling R20.3): the Balance side and the players.
+        var players = new List<ScenarioPlayer>();
+        if (scenario.TryGetProperty("players", out var playerList) && playerList.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var player in playerList.EnumerateArray())
+            {
+                if (fields.RequiredString(player, "name", path + ".scenario.players") is { } name && fields.RequiredString(player, "side", path + ".scenario.players") is { } side)
+                {
+                    players.Add(new ScenarioPlayer(name, side));
+                }
+            }
+        }
+
+        return new ScenarioCardReference(id, sha256, title) { Balance = fields.OptionalString(scenario, "balance", path + ".scenario"), Players = players };
     }
 
     private static Holding? ReadHolding(JsonElement item, string path, JsonFields fields, List<UnitDiagnostic> diagnostics)

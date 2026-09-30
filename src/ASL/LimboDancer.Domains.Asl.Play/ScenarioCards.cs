@@ -17,8 +17,14 @@ public sealed record ScenarioCardDate(int Day, int Month, int Year);
 /// <summary>A board in the card's configuration (A2.1; ruling R17.3): its slot, and whether it is turned 180 degrees.</summary>
 public sealed record ScenarioCardBoard(string Board, int Column, int Row, bool Reversed);
 
-/// <summary>A playable area the card names (ruling R17.3); shown, never enforced.</summary>
-public sealed record ScenarioCardArea(string Text, bool Enforced);
+/// <summary>A playable area's hexrows (ruling R20.6): a board's lettered hexrows from and to, both included.</summary>
+public sealed record ScenarioCardHexrows(string From, string To, string? Board = null);
+
+/// <summary>
+/// A playable area the card names (rulings R17.3, R20.6): its text, and, when it is enforced, its hexrows; setup, movement, entry, rout, advance, and
+/// withdrawal then refuse a Location outside it.
+/// </summary>
+public sealed record ScenarioCardArea(string Text, bool Enforced, ScenarioCardHexrows? Hexrows = null);
 
 /// <summary>
 /// The Turn Record Chart (A3.9; ruling R17.4). The side that moves first may be left to a die roll, with a note saying so (The Tractor Works;
@@ -47,8 +53,12 @@ public sealed record ScenarioCardUnit(string Definition, int Count, string? Area
 public sealed record ScenarioCardGroup(string Name, int Elr, IReadOnlyList<ScenarioCardSetup> Areas, IReadOnlyList<ScenarioCardUnit> Units,
     int? SetupOrder = null, int? Dummies = null);
 
-/// <summary>A side: its SAN (A14.1), Battlefield Integrity total (A16.1), Friendly Board Edge, Balance (A26.4), and OB groups.</summary>
-public sealed record ScenarioCardSide(string Side, int San, int? IntegrityBpv, ScenarioCardEdge FriendlyEdge, string Balance, IReadOnlyList<ScenarioCardGroup> Groups);
+/// <summary>
+/// A side: its SAN (A14.1), Battlefield Integrity total (A16.1), Friendly Board Edge, Balance (A26.4), and OB groups; the counters its Balance adds
+/// to its OB, set up with any of its groups (ruling R20.4).
+/// </summary>
+public sealed record ScenarioCardSide(string Side, int San, int? IntegrityBpv, ScenarioCardEdge FriendlyEdge, string Balance, IReadOnlyList<ScenarioCardGroup> Groups,
+    IReadOnlyList<ScenarioCardUnit>? BalanceUnits = null);
 
 /// <summary>
 /// An SSR (ruling R17.10): its text; <c>token</c> when the game reads it from its tokens, <c>game-default</c> when the game
@@ -270,6 +280,14 @@ public static partial class ScenarioCards
         Check(card.Boards.Select(board => board.Board).Distinct(StringComparer.Ordinal).Count() == card.Boards.Count, "card.boards: a board is named twice");
         Check(SideState.Edges.Contains(card.North, StringComparer.Ordinal), "card.north: North is the map's top, bottom, left, or right");
 
+        // A2.1 (ruling R20.6): an enforced playable area names its hexrows on a board of the card.
+        if (card.PlayableArea is { } playable)
+        {
+            Check(!playable.Enforced || (playable.Hexrows is { } rows && HexrowIndex(rows.From) is { } from && HexrowIndex(rows.To) is { } to && from <= to
+                && (rows.Board is null ? card.Boards.Count == 1 : card.Boards.Any(board => board.Board == rows.Board))),
+                "card.playable: an enforced playable area names its hexrows from and to, A to GG, on a board of the card (A2.1; ruling R20.6)");
+        }
+
         // A3.9 (ruling R17.4): the Turn Record Chart.
         var sides = card.Sides.Select(side => side.Side).ToArray();
         Check(card.Sides.Count == 2 && sides.Distinct(StringComparer.Ordinal).Count() == 2, "card.sides: a card has two sides");
@@ -356,6 +374,12 @@ public static partial class ScenarioCards
         check(side.FriendlyEdge.Basis != "entry" || side.Groups.SelectMany(group => group.Areas).Any(area => area.Kind == "entry" && area.Edge == side.FriendlyEdge.Edge),
             $"card.edge: {side.Side}'s Friendly Board Edge rests on its entry, and it enters along no such edge (A20.53)");
         check(!string.IsNullOrWhiteSpace(side.Balance), $"card.balance: {side.Side} has its Balance provision (A26.4)");
+        foreach (var unit in side.BalanceUnits ?? [])
+        {
+            var definition = catalog.Definition(unit.Definition);
+            check(definition is not null && definition.Nationality == side.Side && unit.Count >= 1 && unit.Area is null,
+                $"card.balance: the Balance counter '{unit.Definition}' is a {side.Side} definition of the catalog, at least one, with no area of its own (ruling R20.4)");
+        }
         check(side.Groups.Count > 0, $"card.ob: {side.Side} has an OB");
         foreach (var group in side.Groups)
         {
@@ -477,6 +501,48 @@ public static partial class ScenarioCards
             "asl:dc" => $"DC {Value("front", "asl:firepower")}",
             _ => definition.Id,
         };
+    }
+
+    /// <summary>
+    /// Whether the Player Turn ending now is the game's last (A3.9; ruling R20.1): the second of the card's last Game Turn, or its first when the card
+    /// gives that Game Turn only one Player Turn.
+    /// </summary>
+    public static bool EndsAfter(ScenarioCardTurns turns, int turn, bool firstSidePhasing)
+    {
+        ArgumentNullException.ThrowIfNull(turns);
+        return turn >= turns.Count && (!firstSidePhasing || turns.HalfTurn);
+    }
+
+    /// <summary>A lettered hexrow's place from west to east (A2.2): A is 0, Z 25, AA 26, and GG 32; null for anything else.</summary>
+    public static int? HexrowIndex(string? row) => row switch
+    {
+        { Length: 1 } when row[0] is >= 'A' and <= 'Z' => row[0] - 'A',
+        { Length: 2 } when row[0] == row[1] && row[0] is >= 'A' and <= 'G' => 26 + (row[0] - 'A'),
+        _ => null,
+    };
+
+    /// <summary>
+    /// Whether a Location lies in the card's playable area (A2.1; ruling R20.6): always, when the card enforces none; otherwise on its board, in its
+    /// hexrows.
+    /// </summary>
+    public static bool Playable(ScenarioCard card, BoardLocation at)
+    {
+        ArgumentNullException.ThrowIfNull(card);
+        ArgumentNullException.ThrowIfNull(at);
+        if (card.PlayableArea is not { Enforced: true, Hexrows: { } rows })
+        {
+            return true;
+        }
+
+        // The hexrows limit their own board; the card's other boards play whole (referee, pass 20).
+        var board = rows.Board ?? (card.Boards.Count == 1 ? card.Boards[0].Board : null);
+        if (board is not null && board != at.Board.Value)
+        {
+            return true;
+        }
+
+        var letters = new string(at.Hex.ToString().TakeWhile(char.IsLetter).ToArray());
+        return HexrowIndex(letters) is { } index && index >= HexrowIndex(rows.From) && index <= HexrowIndex(rows.To);
     }
 
     [GeneratedRegex("^([A-Z]|AA|BB|CC|DD|EE|FF|GG)(10|[0-9])$")]
