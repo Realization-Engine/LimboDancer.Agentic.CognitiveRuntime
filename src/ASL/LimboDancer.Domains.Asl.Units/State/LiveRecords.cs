@@ -74,6 +74,15 @@ public sealed record MovementStepped(IReadOnlyList<string> Movers, BoardLocation
         get; init;
     }
 
+    /// <summary>
+    /// The map edge the movers leave by (A2.6; pass 21, ruling R21.5), from their Location, as if entering the mirror-image hex beyond it; null for a
+    /// step on the map.
+    /// </summary>
+    public string? Exit
+    {
+        get; init;
+    }
+
     /// <summary>The Gun its crew pushes along with this step (C10.3; ruling R8.6); null when none. Any other Gun a mover mans is abandoned.</summary>
     public string? PushedGun
     {

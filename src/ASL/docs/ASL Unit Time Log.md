@@ -502,3 +502,15 @@ Estimate: 3:00 (build 1:45), the Scenario Card Games Plan. Run in the same sessi
 | Merge and push | 22:48 | 22:50 | 0:02 | |
 
 Total 2:17 of working time (20:02 to 22:50, less the 0:31 of pass 20 reading that overlapped pass 19b's gate) against the 3:00 estimate (build 1:45); the build with both reviews' fixes, 20:02 to 21:46, took 1:13 of its own, and the test runs and merge gate 1:04, most of it waiting on runs that the Docker check slowed.
+
+## Pass 21: Victory Conditions
+
+Estimate: 3:45 (build 2:30), the Scenario Card Games Plan. The user said on 2026-09-29 to go ahead with pass 21, and later to continue with the remaining passes after it merges without their intervention. Kickoff 23:05. Branch `feature/asl-backlog-pass-21`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Reading A26.1 to A26.4, A.7, A2.6; the cards' Victory Conditions; the event model and the move step | 23:05 | 23:20 | 0:15 | |
+| The Infantry exit and exit records, the result on `game-ended`, the structured Victory Conditions and the three cards, `ScenarioVictory` (Control, VP, CVP, Exit VP, outcomes), the planner's result at the end and at once, the Play page; 8 Play tests; rulings R21.1 to R21.5 | 23:20 | 23:34 | 0:14 | |
+| The referee and the table player (a clone) started; visual check in the Studio (The Guards Counterattack set up through the page, the Victory Conditions table, played to its end by Avoidance); Studio stopped | 23:34 | 23:44 | 0:10 | The referee ran 23:34 to about 23:41; the table player 23:34 to about 00:13 |
+| Referee's findings: normal VP in the immediate check, no end while something is open, the card's hash and validity, no exit with a manned Gun or prisoners, Guns out of the VP, the CR ruling; 1 test; rulings | 23:41 | 23:48 | 0:07 | |
+| Table player's findings: SW leave with their carriers, Melee hexes shown as neither's; its tests brought in (one Gambit walk-off kept); 18 pass 21 tests pass; review, design, backlog section 31, requirements | 00:13 | 00:26 | 0:13 | The pass 21 tests took 5:18 |

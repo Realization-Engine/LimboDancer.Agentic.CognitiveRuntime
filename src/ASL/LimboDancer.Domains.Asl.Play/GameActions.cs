@@ -272,16 +272,17 @@ public static class GameActions
         }));
 
     public static readonly ActionDescriptor Move = Descriptor("asl.game.move", "Move",
-        "Move a Good Order stack of the phasing side into an adjacent Location in its MPh at the terrain's MF cost, optionally by Assault Movement or with Double Time, which adds MF and makes the movers CX (A4.5); or, staying in its Location, have one of its squads attempt to place SMOKE grenades there or in an ADJACENT Location (A24.1), or have one of its units Place a DC in an ADJACENT Location for the MF entering it would cost (A23.3). A berserk unit names the 1PP SW it keeps within its IPC (A15.431). The DEFENDER may then fire at it before it moves again; Residual FP there attacks it first.",
+        "Move a Good Order stack of the phasing side into an adjacent Location in its MPh at the terrain's MF cost, optionally by Assault Movement or with Double Time, which adds MF and makes the movers CX (A4.5); or, staying in its Location, have one of its squads attempt to place SMOKE grenades there or in an ADJACENT Location (A24.1), or have one of its units Place a DC in an ADJACENT Location for the MF entering it would cost (A23.3); or, naming an edge instead of a Location, leave the map from an edge hex (A2.6). A berserk unit names the 1PP SW it keeps within its IPC (A15.431). The DEFENDER may then fire at it before it moves again; Residual FP there attacks it first.",
         PlayPermission, "asl.game.reviewed-fire-v1", """
         {
           "type": "object", "additionalProperties": false,
-          "required": ["gameId", "attemptId", "expectedRevision", "unitIds", "to"],
+          "required": ["gameId", "attemptId", "expectedRevision", "unitIds"],
           "properties": {
             "gameId": { "type": "string" }, "attemptId": { "type": "string" },
             "expectedRevision": { "type": "integer", "minimum": 0 },
             "unitIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
-            "to": { "type": "string" }, "assault": { "type": "boolean" }, "doubleTime": { "type": "boolean" }, "pushGun": { "type": "string" },
+            "to": { "type": "string" }, "exit": { "type": "string", "enum": ["top", "bottom", "left", "right"] },
+            "assault": { "type": "boolean" }, "doubleTime": { "type": "boolean" }, "pushGun": { "type": "string" },
             "smoke": { "type": "string" }, "smokeBy": { "type": "string" }, "minimumMove": { "type": "boolean" },
             "placeDc": { "type": "string" }, "placeDcAt": { "type": "string" },
             "keep": { "type": "array", "items": { "type": "string" } },

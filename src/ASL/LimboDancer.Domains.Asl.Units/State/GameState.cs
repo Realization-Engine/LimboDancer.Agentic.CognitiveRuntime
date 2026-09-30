@@ -327,6 +327,9 @@ public sealed record GameState(
     public static bool IsSetupEvent(EventPayload payload) =>
         payload is GameStarted or InstanceCreated or BoreSighted or DiceRolled { Purpose: "first-move" or "balance" };
 
+    /// <summary>The units that left the map (A2.6; ruling R21.5), in order, for Exit VP and CVP (A26.221, A26.23).</summary>
+    public IReadOnlyList<UnitExit> Exits { get; init; } = [];
+
     /// <summary>The end of the game (A3.9; ruling R20.1), once the Turn counter reached END; null while it goes on.</summary>
     public GameEnded? Ended
     {

@@ -72,6 +72,12 @@ public sealed record ScenarioCardReference(string Id, string Sha256, string Titl
 /// <summary>A player of a game from a card and the side they play (A26.4; ruling R20.3).</summary>
 public sealed record ScenarioPlayer(string Name, string Side);
 
+/// <summary>A unit that left the map (A2.6; ruling R21.5): the Location it left from, the edge it crossed, the Game Turn, and whether it was broken.</summary>
+public sealed record UnitExit(string Unit, BoardLocation From, string Edge, int Turn, bool Broken);
+
+/// <summary>The result of a game from a card (A26; ruling R21.4): the winner (null for a draw), the outcome that decided it, and the facts behind it.</summary>
+public sealed record GameResult(string? Winner, string Reason, IReadOnlyList<string> Facts);
+
 /// <summary>Where a board sits in a composed map: its slot, as in <see cref="BoardPlacement"/>, and whether it is reversed.</summary>
 public sealed record BoardSlot(int Column, int Row, bool Reversed);
 

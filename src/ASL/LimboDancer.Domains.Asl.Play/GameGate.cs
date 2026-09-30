@@ -205,6 +205,8 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
             // A vehicle's check with no MP expenditure (D2.5; ruling R11.3): an ESB DR, its effect on the vehicle.
             VehicleCheckRolled check => state.Unit(check.Vehicle) is { } checkedVehicle
                 && (check.Result != VehicleCheckRolled.Immobilized || GameState.Condition(checkedVehicle, Conditions.Immobilized) == ConditionState.True),
+            // Pass 21 (ruling R21.5): an exit leaves the movers Exited, with no moving stack.
+            MovementStepped { Exit: not null } left => state.Movement is null && left.Movers.All(id => state.Unit(id) is { Status: InstanceStatus.Exited }),
             MovementStepped moved => state.Movement is { WindowOpen: true } movement && movement.Step == moved.Step && movement.Location == moved.To,
             // A vehicle's MP expenditure: its window is open at this step, and the vehicle is where the step put it.
             VehicleStepped { Kind: VehicleStepped.Exit } exit => state.Unit(exit.Vehicle) is { Status: InstanceStatus.Exited },

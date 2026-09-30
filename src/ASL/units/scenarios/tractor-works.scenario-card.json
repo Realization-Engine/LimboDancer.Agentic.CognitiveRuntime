@@ -431,6 +431,57 @@
       "A26.1",
       "A26.11",
       "A26.13"
-    ]
+    ],
+    "outcomes": [
+      {
+        "winner": "russian",
+        "immediate": false,
+        "any": [
+          {
+            "type": "control-count",
+            "side": "russian",
+            "building": "X3",
+            "atLeast": 6,
+            "meleeUncontrolled": true
+          }
+        ]
+      },
+      {
+        "winner": "german",
+        "immediate": false,
+        "any": [
+          {
+            "type": "control-count",
+            "side": "german",
+            "building": "X3",
+            "atLeast": 6,
+            "meleeUncontrolled": true
+          }
+        ]
+      },
+      {
+        "winner": "russian",
+        "immediate": false,
+        "any": [
+          {
+            "type": "sole-unbroken",
+            "side": "russian",
+            "building": "X3"
+          }
+        ]
+      },
+      {
+        "winner": "german",
+        "immediate": false,
+        "any": [
+          {
+            "type": "sole-unbroken",
+            "side": "german",
+            "building": "X3"
+          }
+        ]
+      }
+    ],
+    "otherwise": "draw"
   }
 }

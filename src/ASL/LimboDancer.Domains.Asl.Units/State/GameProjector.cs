@@ -1753,6 +1753,35 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-029", "A Minimum Move is a stack's only step, a forced back leaves the stack in its Location, and a Bypass follows one or two hexsides (A4.134, A12.15, A4.31).");
             }
 
+            // A2.6 (ruling R21.5): an exit leaves the map from the stack's Location; the units are Exited, not eliminated, and the move ends.
+            if (moving.Exit is { } edge)
+            {
+                if (movers.Any(unit => state.Location(unit!.Id)?.Location != moving.To))
+                {
+                    return Fail<GameState>("UNIT-STATE-029", "An exit leaves the map from the moving stack's own Location (A2.6).");
+                }
+
+                var exited = state;
+                foreach (var unit in movers)
+                {
+                    exited = Replace(exited, unit! with
+                    {
+                        Position = OffMapPosition.Instance,
+                        Status = InstanceStatus.Exited,
+                    })!;
+                }
+
+                // Table player, pass 21: the SW the movers carry leave with them.
+                return exited with
+                {
+                    Equipment = [.. exited.Equipment.Select(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding
+                        && moving.Movers.Contains(holding.Holder, StringComparer.Ordinal) ? item with { Status = InstanceStatus.Exited } : item)],
+                    Movement = null,
+                    Exits = [.. state.Exits, .. movers.Select(unit => new UnitExit(unit!.Id, moving.To, edge, state.Turn,
+                        GameState.Condition(unit, Conditions.Broken) == ConditionState.True))],
+                };
+            }
+
             string[] leaders = [.. movers.Where(unit => vocabulary.IsA(unit!.Kind, "asl:leader")).Select(unit => unit!.Id)];
             var next = state;
             foreach (var unit in movers)

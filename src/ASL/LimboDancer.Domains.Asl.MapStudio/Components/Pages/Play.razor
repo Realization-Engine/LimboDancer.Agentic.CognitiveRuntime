@@ -80,7 +80,12 @@
                 @(scenario.Players.Count > 0 ? $" Players: {string.Join(", ", scenario.Players.Select(player => $"{player.Name} plays {player.Side}"))}." : string.Empty) (A26.4; ruling R20.3)</p>
             @if (state.Ended is { } ended)
             {
-                <p id="play-ended" class="diagnostic">The game ended after Game Turn @ended.Turn@(ended.Reason == "half-turn" ? ", a half turn" : string.Empty) (A3.9; ruling R20.1). The Victory Conditions are judged by the players until pass 21.</p>
+                <p id="play-ended" class="diagnostic">@(ended.Reason == "victory" ? $"The game ended at once in Game Turn {ended.Turn}" : $"The game ended after Game Turn {ended.Turn}{(ended.Reason == "half-turn" ? ", a half turn" : string.Empty)}") (A3.9, A26; rulings R20.1, R21.4).
+                    @if (ended.Result is { } result)
+                    {
+                        <strong id="play-result">@(result.Winner is { } winner ? $"{winner} wins" : "A draw"): @result.Reason.</strong>
+                    }
+                </p>
             }
             <ul id="play-card-groups">
                 @foreach (var side in state.Sides)
@@ -92,6 +97,23 @@
                 }
             </ul>
             <p id="play-card-victory"><strong>Victory Conditions:</strong> @playCard.VictoryConditions.Text</p>
+            @if (history is not null && Live.Planner.Victory(history) is { } victory)
+            {
+                <table id="play-victory" class="library">
+                    <caption>The Victory Conditions now (A26; rulings R21.1 to R21.4)@(state.Ended is null ? $": if the game ended now, {(victory.AtEnd.Winner is { } leader ? $"{leader} would win" : "it would be a draw")}" : string.Empty)</caption>
+                    <thead><tr><th>Controlled</th><th>By</th></tr></thead>
+                    <tbody>
+                        @foreach (var item in victory.Control)
+                        {
+                            <tr data-control="@item.Id"><td>@(item.Kind == "building" ? $"building {item.Id}" : $"hex {item.Id}")</td><td>@(item.InMelee ? "neither (in Melee)" : item.Side ?? "neither")</td></tr>
+                        }
+                        @foreach (var side in victory.Sides)
+                        {
+                            <tr data-side="@side.Side"><td>@side.Side</td><td>@side.Cvp CVP, @side.ExitVp Exit VP, @side.UnbrokenSquads.ToString("0.#", CultureInfo.InvariantCulture) unbroken squad-equivalents</td></tr>
+                        }
+                    </tbody>
+                </table>
+            }
             <ol id="play-card-ssr">
                 @foreach (var rule in playCard.SpecialRules)
                 {
@@ -677,6 +699,17 @@ else if (state is not null)
                 <label title="C10.3: the crew pushes its Gun at double the MF, with a Manhandling DR against its M#; uncheck to walk away and abandon the Gun."><input id="move-push" type="checkbox" checked="@movePush" @onchange="@(args => movePush = args.Value is true)" /> push @pushable.Id (unchecked: abandon it)</label>
             }
             <button id="propose-move" disabled="@(moveUnits.Count == 0 || moveTo.Trim().Length == 0)" @onclick="ProposeMove">Propose: move</button>
+            <label title="A2.6 (ruling R21.5): a stack in an edge hex leaves the map across that edge for its own hex's MF, and may not return.">
+                Leave by
+                <select id="move-exit" value="@moveExit" @onchange="@(args => moveExit = args.Value as string ?? string.Empty)">
+                    <option value="">edge</option>
+                    @foreach (var edge in SideState.Edges)
+                    {
+                        <option value="@edge">@edge</option>
+                    }
+                </select>
+            </label>
+            <button id="propose-exit" disabled="@(moveUnits.Count == 0 || moveExit.Length == 0)" @onclick="ProposeExit">Propose: leave the map</button>
             @if (SmokePlacers.Any())
             {
                 <label title="A24.1: a squad with a Smoke Placement Exponent, once per MPh, places SMOKE grenades in its Location (1 MF) or an ADJACENT one (2 MF) on a dr at most its exponent; a 6 ends its MPh. The counter (+2 Hindrance, +1 more out of it) leaves at the end of the MPh.">
@@ -2281,6 +2314,7 @@ else if (state is not null)
             + $"{(hit.CrewCheck is { } check ? "; " + CheckText(check) : "")}: {hit.CrewResult}",
     };
     private string moveTo = string.Empty;
+    private string moveExit = string.Empty;
     private bool moveAssault;
     private readonly HashSet<string> advanceUnits = new(StringComparer.Ordinal);
     private string advanceTo = string.Empty;
@@ -4264,6 +4298,13 @@ else if (state is not null)
 
         return side;
     }
+
+    /// <summary>The moving stack leaves the map across an edge (A2.6; ruling R21.5).</summary>
+    private Task ProposeExit() => Propose(GameActions.Move, JsonSerializer.SerializeToElement(new Dictionary<string, object>
+    {
+        ["gameId"] = gameId, ["attemptId"] = Attempt("exit"), ["expectedRevision"] = (long)history!.Events.Count,
+        ["unitIds"] = moveUnits.Order(StringComparer.Ordinal).ToArray(), ["exit"] = moveExit, ["doubleTime"] = moveDoubleTime,
+    }));
 
     private Task ProposeAdvance()
     {

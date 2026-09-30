@@ -207,6 +207,19 @@ public static class GameEventWriter
             case GameEnded ended:
                 writer.WriteNumber("turn", ended.Turn);
                 writer.WriteString("reason", ended.Reason);
+                if (ended.Result is { } result)
+                {
+                    writer.WriteStartObject("result");
+                    if (result.Winner is { } winner)
+                    {
+                        writer.WriteString("winner", winner);
+                    }
+
+                    writer.WriteString("reason", result.Reason);
+                    Strings(writer, "facts", result.Facts);
+                    writer.WriteEndObject();
+                }
+
                 break;
             case PhaseChanged phase:
                 writer.WriteNumber("turn", phase.Turn);
@@ -428,6 +441,11 @@ public static class GameEventWriter
                 if (moving.DoubleTime)
                 {
                     writer.WriteBoolean("doubleTime", true);
+                }
+
+                if (moving.Exit is { } exitEdge)
+                {
+                    writer.WriteString("exit", exitEdge);
                 }
 
                 if (moving.Smoke is { } smoke)

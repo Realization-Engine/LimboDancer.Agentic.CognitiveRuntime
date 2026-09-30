@@ -204,7 +204,20 @@ public static class GameEventReader
             case "game-ended":
                 var endTurn = fields.OptionalInteger(payload, "turn", path);
                 var endReason = fields.RequiredString(payload, "reason", path);
-                return endTurn is null || endReason is null ? Missing(diagnostics, "A game end names its Game Turn and its reason.", path) : new GameEnded(endTurn.Value, endReason);
+                if (endTurn is null || endReason is null)
+                {
+                    return Missing(diagnostics, "A game end names its Game Turn and its reason.", path);
+                }
+
+                // Pass 21 (ruling R21.4): the result.
+                GameResult? result = null;
+                if (payload.TryGetProperty("result", out var resultNode) && resultNode.ValueKind == JsonValueKind.Object)
+                {
+                    var decided = fields.RequiredString(resultNode, "reason", path + ".result");
+                    result = decided is null ? null : new GameResult(fields.OptionalString(resultNode, "winner", path + ".result"), decided, fields.StringList(resultNode, "facts", path + ".result"));
+                }
+
+                return new GameEnded(endTurn.Value, endReason) { Result = result };
             case "phase-changed":
                 var nextTurn = fields.OptionalInteger(payload, "turn", path);
                 var nextPhase = fields.RequiredString(payload, "phase", path);
@@ -421,6 +434,7 @@ public static class GameEventReader
                     {
                         Charge = charge,
                         DoubleTime = fields.OptionalBoolean(payload, "doubleTime", path),
+                        Exit = fields.OptionalString(payload, "exit", path),
                         PushedGun = fields.OptionalString(payload, "pushedGun", path),
                         Road = fields.OptionalBoolean(payload, "road", path),
                         MinimumMove = fields.OptionalBoolean(payload, "minimumMove", path),
