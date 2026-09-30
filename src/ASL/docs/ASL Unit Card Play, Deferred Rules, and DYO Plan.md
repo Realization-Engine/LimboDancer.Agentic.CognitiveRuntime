@@ -1,6 +1,6 @@
 # ASL Unit Card Play, Deferred Rules, and DYO Plan
 
-**Status:** Draft for the user's review, 2026-09-30. Nothing in it is approved; section 5 lists the questions to settle first.
+**Status:** Draft for the user's review, 2026-09-30. The user answered questions 1 to 3 the same day (section 5); questions 4 and 5 and the plan's approval are open.
 
 **Date:** 2026-09-30
 
@@ -32,7 +32,7 @@ Section 1 of the [ASL Unit Backlog Passes Plan](<ASL Unit Backlog Passes Plan.md
 
 | Task | What it changes in play | Rules | Estimate |
 |---|---|---|---|
-| 23.1 A side's view | The Play page's perspective becomes a view: a side's view hides the enemy's concealed and HIP units' identities, the contents of "?" stacks, and undeclared Control; the adjudicator view shows all. A hand-over screen between sides in a hot-seat game. | A12.1, A12.3, A26.15 | 0:50 |
+| 23.1 A side's view | The Play page's perspective becomes a view: a side's view hides the enemy's concealed and HIP units' identities, the contents of "?" stacks, and undeclared Control; the adjudicator view shows all. A hand-over screen between sides (user answer, 2026-09-30) blanks the map and panels until the next side confirms. | A12.1, A12.3, A26.15 | 0:50 |
 | 23.2 Hidden sequential setup | In a sequential setup, the side setting up second does not see the first side's placements until both have set up, except what the card places in view. | A2.9 | 0:35 |
 | 23.3 HIP by SSR | An SSR token names the units that set up HIP; they are recorded hidden and revealed by the A12.3 triggers already used for concealment loss. | A12.3, A12.33, A12.34 | 0:40 |
 | 23.4 The non-OB "?" | After both sides have set up, each side places "?" on units out of the enemy's LOS or at least 17 hexes away, checked against the board's LOS. | A12.12 | 0:25 |
@@ -113,7 +113,7 @@ Control forfeited to a Kindled Fire (A26.16) waits for Fire spread (section 27) 
 
 | Task | What it changes in play | Rules | Estimate |
 |---|---|---|---|
-| 29.1 The DYO setup and roster | A DYO page: nationalities, date, boards, and the points each side spends; the Roster, with the counter limits and purchase mechanics. | H1.1 to H1.14 | 0:45 |
+| 29.1 The DYO setup and roster | A DYO page: German and Russian (user answer, 2026-09-30), the date, boards, and the points each side spends; the Roster, with the counter limits and purchase mechanics. | H1.1 to H1.14 | 0:45 |
 | 29.2 Infantry purchase | Squads and crews by BPV and MPV, with Assault Engineers, Sappers, Commandos, and MOL capabilities where the game plays them; the ELR Chart and SAN. | H1.2 to H1.29 | 0:50 |
 | 29.3 Bonus Infantry and leaders | The second Infantry purchase and bonus Infantry; leader quality and the Leader Exchange DR. | H1.7 to H1.74, H1.8 to H1.82 | 0:40 |
 | 29.4 SW allotment and the card | SW allotted by ratio; the purchase written as a user card (sides, ELR, SAN, OB groups) and opened in the editor. | H1.83, H1.84 | 0:45 |
@@ -161,9 +161,14 @@ These stay in the backlog: Fire spread and Kindling (so Control forfeited to a K
 
 ## 5. Questions for the user
 
-1. **Hidden setup in a hot-seat game (pass 23).** Is a hand-over screen between sides (the Studio blanks the map until the next side confirms) the right form, or should each side play from its own browser tab with its own view?
-2. **Scope of group 2.** Should the berserk route and contact gaps (27.2, 27.3), which rarely arise in play, stay in, or go to the backlog to shorten the plan by about 1:30?
-3. **DYO nationalities (passes 29 and 30).** German and Russian only at first (the counters the cards use), or every nationality the catalog carries, with manufactured counters where needed?
+**Answered by the user, 2026-09-30:**
+
+1. **Hidden setup in a hot-seat game (pass 23): a hand-over screen.** The Studio blanks the map and the side panels between sides until the next side confirms it is at the screen; there is no separate tab per side.
+2. **Scope of group 2: the berserk gaps stay.** Tasks 27.2 and 27.3 remain in pass 27.
+3. **DYO nationalities (passes 29 and 30): German and Russian first.** The DYO page offers the two nationalities the cards use; the other nationalities the catalog carries, with manufactured counters where needed, go to the backlog when pass 29 is built.
+
+**Open:**
+
 4. **Order.** Run the groups as numbered (card play, then rules, then DYO), or take DYO earlier?
 5. **Autonomy.** Should the passes run one at a time with the user's go-ahead, or through merge without asking, as passes 18 to 22 did?
 
