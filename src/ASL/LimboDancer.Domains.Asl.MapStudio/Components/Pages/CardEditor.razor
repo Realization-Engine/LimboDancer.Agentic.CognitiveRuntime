@@ -41,7 +41,7 @@ else
         }
     </div>
 
-    <div class="fields">
+    <div class="fields card-editor">
         <label for="edit-id">Id</label>
         <span><input id="edit-id" value="@id" @onchange="@(args => Set(() => id = Text(args)))" size="32" /> <span class="muted">lower-case letters, digits, and hyphens; a built-in card's name is refused</span></span>
         <label for="edit-title">Title</label><input id="edit-title" value="@title" @onchange="@(args => Set(() => title = Text(args)))" size="48" />
@@ -151,7 +151,7 @@ else
         <p id="edit-valid" class="muted">The card is valid against catalog @catalog.Identity.Catalog@@@catalog.Identity.Version.</p>
     }
 
-    <button id="edit-save" disabled="@(diagnostics.Count > 0)" @onclick="Save">Save the card</button>
+    <button id="edit-save" @onclick="Save">Save the card</button>
     @if (note is not null)
     {
         <p id="edit-note">@note</p>
@@ -464,8 +464,11 @@ else
 
     private void Save()
     {
-        if (catalog is null || Build() is not { Card: { } card, Problems.Count: 0 })
+        // Referee, demo 2026-09-30: the button stays enabled, so a click that arrives with a field's last change is not lost; the card is checked here.
+        Check();
+        if (catalog is null || diagnostics.Count > 0 || Build() is not { Card: { } card, Problems.Count: 0 })
         {
+            note = "Not saved: fix the problems listed above first.";
             return;
         }
 

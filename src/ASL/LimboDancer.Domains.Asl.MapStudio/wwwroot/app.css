@@ -512,3 +512,26 @@ textarea.placements-text {
     color: #555;
     font-size: 0.85rem;
 }
+
+/* The card editor (pass 22): a label column and a field column; the JSON areas take the field column's width. */
+.card-editor {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 0.4rem 0.75rem;
+    align-items: center;
+    margin: 0.75rem 0;
+}
+
+.card-editor > label {
+    font-weight: 600;
+}
+
+.card-editor textarea {
+    width: 100%;
+    box-sizing: border-box;
+    font-family: ui-monospace, Consolas, monospace;
+}
+
+.card-editor > select {
+    justify-self: start;
+}
