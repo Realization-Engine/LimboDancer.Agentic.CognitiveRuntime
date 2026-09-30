@@ -1,0 +1,35 @@
+@* H03 (plan section 16.4): the counts of boards in scope by outcome; "not checked" only where the caller counts it (the library, not a batch report). *@
+<p class="totals" id="@Id">
+    <strong>@InScope @(InScope == 1 ? "board" : "boards") in scope:</strong>
+    <span class="pass">@Verified verified</span>,
+    @Ingested ingested,
+    <span class="@(Failed > 0 ? "fail" : string.Empty)">@Failed failed</span>@if (NotChecked is { } notChecked)
+    {
+        <text>, <span class="muted">@notChecked not checked</span></text>
+    }.
+    @OutOfScope out of scope.
+</p>
+
+@code {
+    [Parameter]
+    public string? Id { get; set; }
+
+    [Parameter]
+    public int InScope { get; set; }
+
+    [Parameter]
+    public int Verified { get; set; }
+
+    [Parameter]
+    public int Ingested { get; set; }
+
+    [Parameter]
+    public int Failed { get; set; }
+
+    /// <summary>Boards with no result yet; null where every board has one (a batch report).</summary>
+    [Parameter]
+    public int? NotChecked { get; set; }
+
+    [Parameter]
+    public int OutOfScope { get; set; }
+}

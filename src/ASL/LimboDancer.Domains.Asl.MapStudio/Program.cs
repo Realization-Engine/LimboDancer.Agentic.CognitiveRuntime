@@ -37,6 +37,7 @@ public static class Program
         builder.Services.AddSingleton<GameLibrary>();
         builder.Services.AddSingleton<GameMaps>();
         builder.Services.AddSingleton<StudioLos>();
+        builder.Services.AddScoped<LibraryViewState>();
 
         var app = builder.Build();
         app.UseAntiforgery();

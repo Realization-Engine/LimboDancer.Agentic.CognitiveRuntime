@@ -1,0 +1,95 @@
+@* M06 (plan section 16.5): a new board's name, reference, and start (blank with its size, or a verified VASL board); the page checks the reference and creates it. *@
+<div class="form-grid wide">
+    <label for="board-name">Name</label>
+    <input id="board-name" value="@Draft.Name" @oninput="@(args => Change(Draft with { Name = args.Value as string ?? string.Empty, Slug = Slug(args.Value as string ?? string.Empty) }))" />
+
+    <label for="board-slug">Reference</label>
+    <span>ab-<input id="board-slug" value="@Draft.Slug" @onchange="@(args => Change(Draft with { Slug = Slug(args.Value as string ?? string.Empty) }))" /></span>
+
+    <label for="board-start">Start from</label>
+    <select id="board-start" value="@Draft.Start" @onchange="@(args => Change(Draft with { Start = args.Value as string ?? "blank" }))">
+        <option value="blank">a blank board</option>
+        <option value="vasl">a verified VASL board, vectorized</option>
+    </select>
+
+    @if (Draft.Start == "blank")
+    {
+        <label for="board-width">Width (hexes)</label>
+        <input id="board-width" type="number" min="2" max="60" value="@Draft.Width" @onchange="@(args => Change(Draft with { Width = Parse(args, Draft.Width) }))" />
+        <label for="board-height">Height (hexes)</label>
+        <input id="board-height" type="number" min="1" max="40" value="@Draft.Height" @onchange="@(args => Change(Draft with { Height = Parse(args, Draft.Height) }))" />
+    }
+    else
+    {
+        <label for="board-source">VASL board</label>
+        <select id="board-source" value="@Draft.Source" @onchange="@(args => Change(Draft with { Source = args.Value as string }))">
+            @foreach (var entry in Sources)
+            {
+                <option value="@entry.Ref.Value">@entry.Title</option>
+            }
+        </select>
+    }
+</div>
+
+@if (Draft.Start == "vasl")
+{
+    <SourceDraftNotice Id="board-draft-notice">
+        The new board starts from the vectorized model of the VASL board, with its provenance recorded. It derives from VASL data, so it is
+        saved as a draft under the cache, not in the boards folder, and may not be committed until the source-derived content is replaced (ASL-MAP-074).
+    </SourceDraftNotice>
+}
+
+<p>
+    <button id="board-create" class="primary" @onclick="OnCreate" disabled="@Busy">Create</button>
+</p>
+<OperationFeedback Id="board-note" Busy="@Busy" BusyText="@(Draft.Start == "vasl" ? "Vectorizing..." : "Creating...")" Message="@Problem"
+                   Outcome="OperationFeedback.OperationOutcome.Refused" />
+
+@code {
+    /// <summary>A new board as it is being described: name, reference slug, start ("blank" or "vasl"), size, and VASL source.</summary>
+    public sealed record NewBoardDraft(string Name, string Slug, string Start, int Width, int Height, string? Source);
+
+    [Parameter, EditorRequired]
+    public NewBoardDraft Draft { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback<NewBoardDraft> DraftChanged { get; set; }
+
+    /// <summary>The VASL boards a board may start from.</summary>
+    [Parameter]
+    public IReadOnlyList<BoardListing> Sources { get; set; } = [];
+
+    [Parameter]
+    public bool Busy { get; set; }
+
+    /// <summary>Why the board was not created; null when there is nothing to say.</summary>
+    [Parameter]
+    public string? Problem { get; set; }
+
+    [Parameter]
+    public EventCallback OnCreate { get; set; }
+
+    private Task Change(NewBoardDraft draft) => DraftChanged.InvokeAsync(draft);
+
+    private static int Parse(ChangeEventArgs args, int fallback) => int.TryParse(args.Value as string, out var value) ? value : fallback;
+
+    /// <summary>A lowercase slug of letters, digits, and single hyphens.</summary>
+    public static string Slug(string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        var builder = new System.Text.StringBuilder();
+        foreach (var character in text.Trim().ToLowerInvariant())
+        {
+            if (char.IsAsciiLetterOrDigit(character))
+            {
+                builder.Append(character);
+            }
+            else if (builder.Length > 0 && builder[^1] != '-')
+            {
+                builder.Append('-');
+            }
+        }
+
+        return builder.ToString().Trim('-');
+    }
+}

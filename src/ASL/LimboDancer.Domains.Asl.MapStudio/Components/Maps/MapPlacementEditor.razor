@@ -1,0 +1,52 @@
+@using LimboDancer.Domains.Asl.Maps.Vasl
+@* M01 (plan section 16.5): the map's placements as rows keyed by a stable draft id, so removing one keeps the others' identity and focus. *@
+<table class="library placements" id="map-placements">
+    <thead>
+        <tr><th>Board</th><th>Column</th><th>Row</th><th>Reversed</th><th></th></tr>
+    </thead>
+    <tbody>
+        @foreach (var (row, place) in Rows.Select((row, index) => (row, index + 1)))
+        {
+            <tr @key="row.Id" data-placement="@row.Id">
+                <td>
+                    <select aria-label="@($"Board of placement {place}")" value="@row.Board" @onchange="@(args => Change(row with { Board = args.Value as string ?? row.Board }))">
+                        @foreach (var entry in Boards)
+                        {
+                            <option value="@entry.Ref.VaslBoardName">@entry.Ref.Value@(entry.Title != entry.Ref.Value ? $" ({entry.Title})" : string.Empty)</option>
+                        }
+                    </select>
+                </td>
+                <td><input aria-label="@($"Column of placement {place}")" type="number" min="0" max="@(VaslMapBuilder.MaxBoardsPerRow - 1)" value="@row.Column" @onchange="@(args => Change(row with { Column = Number(args, row.Column) }))" /></td>
+                <td><input aria-label="@($"Row of placement {place}")" type="number" min="0" max="5" value="@row.Row" @onchange="@(args => Change(row with { Row = Number(args, row.Row) }))" /></td>
+                <td><input aria-label="@($"Placement {place} reversed")" type="checkbox" checked="@row.Reversed" @onchange="@(args => Change(row with { Reversed = args.Value is true }))" /></td>
+                <td><button class="link" @onclick="() => RowRemoved.InvokeAsync(row)">Remove</button></td>
+            </tr>
+        }
+    </tbody>
+</table>
+<p><button id="map-add-board" @onclick="OnAdd">Add a board</button></p>
+
+@code {
+    /// <summary>One placement being edited: a stable id, the VASL board name ("01"), its slot, and whether it is reversed.</summary>
+    public sealed record PlacementDraft(int Id, string Board, int Column, int Row, bool Reversed);
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<PlacementDraft> Rows { get; set; } = [];
+
+    /// <summary>The VASL boards a placement may use.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<BoardListing> Boards { get; set; } = [];
+
+    [Parameter]
+    public EventCallback<PlacementDraft> RowChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<PlacementDraft> RowRemoved { get; set; }
+
+    [Parameter]
+    public EventCallback OnAdd { get; set; }
+
+    private Task Change(PlacementDraft row) => RowChanged.InvokeAsync(row);
+
+    private static int Number(ChangeEventArgs args, int fallback) => int.TryParse(args.Value as string, out var value) && value >= 0 ? value : fallback;
+}

@@ -1,0 +1,32 @@
+@using System.Globalization
+@using LimboDancer.Domains.Asl.Units.State
+@using LimboDancer.Domains.Asl.Maps.Read
+@* G07 (plan section 16.8): a case read's result, already limited to what the perspective may know: its status and reason, and the snapshot when it has one. *@
+<div id="case-result">
+    <p class="@(Result.IsDefinitive ? "pass" : "fail")"><strong>@Result.Status</strong> (@Result.Code): @Result.Reason</p>
+    @if (Result.Snapshot is { } snapshot)
+    {
+        <table class="library">
+            <tbody>
+                <tr><th>Stamp</th><td>revision @snapshot.Stamp.Revision, @snapshot.Source, @snapshot.Time.ToString("u", CultureInfo.InvariantCulture); turn @snapshot.Turn, @GameText.PhaseLabel(snapshot.Phase)</td></tr>
+                <tr><th>Attacker</th><td>@snapshot.Attacker.Unit.Id (@snapshot.Attacker.Definition.Id), Good Order @Conditions.Name(snapshot.Attacker.GoodOrder), @snapshot.Attacker.MfSpent MF spent this phase</td></tr>
+                <tr><th>Previous location</th><td>@GameText.LocationReadText(snapshot.Previous)</td></tr>
+                <tr><th>Location</th><td>@GameText.LocationReadText(snapshot.Target)@(snapshot.Distance is { } distance ? $"; {distance} hex(es) from the previous location" : string.Empty)</td></tr>
+                <tr>
+                    <th>Occupants</th>
+                    <td id="case-occupants">
+                        @GameText.OccupantsText(snapshot)
+                        <br /><span class="muted">@(snapshot.Occupancy.Complete ? "Complete: nothing can be there unseen." : $"Incomplete: {snapshot.Occupancy.IncompleteReason}")</span>
+                    </td>
+                </tr>
+                <tr><th>Sole enemy</th><td id="case-sole">@GameText.SoleText(snapshot)</td></tr>
+                <tr><th>Events this phase</th><td>@string.Join("; ", snapshot.Events.Select(item => $"r{item.Revision} {item.Type}{GameText.EventText(item)}{(snapshot.Reveals.Contains(item) ? " (reveal)" : string.Empty)}").DefaultIfEmpty("none"))</td></tr>
+            </tbody>
+        </table>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public CaseReadResult Result { get; set; } = null!;
+}

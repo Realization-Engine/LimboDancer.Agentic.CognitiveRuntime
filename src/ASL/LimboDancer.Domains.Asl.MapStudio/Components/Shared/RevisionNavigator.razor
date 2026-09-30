@@ -1,12 +1,19 @@
 @* S10 (plan section 16.3): stepping through a game's revisions; the page loads the revision it is given. *@
 <span class="revision-navigator">
-    <button id="@(Id)-previous" aria-label="Previous revision" disabled="@(Busy || Current <= Min)" @onclick="@(() => Go(Current - 1))">&#8249;</button>
-    <label>
-        Revision
-        <input id="@Id" type="number" min="@Min" max="@Max" value="@Current" disabled="@Busy" @onchange="Typed" />
-        of @Max
-    </label>
-    <button id="@(Id)-next" aria-label="Next revision" disabled="@(Busy || Current >= Max)" @onclick="@(() => Go(Current + 1))">&#8250;</button>
+    <button id="@(PreviousId ?? $"{Id}-previous")" aria-label="Previous revision" disabled="@(Busy || Current <= Min)" @onclick="@(() => Go(Current - 1))">@PreviousLabel</button>
+    @if (Slider)
+    {
+        <input @key="resets" id="@Id" type="range" min="@Min" max="@Max" value="@Current" disabled="@Busy" aria-label="Revision" @onchange="Typed" />
+    }
+    else
+    {
+        <label>
+            Revision
+            <input @key="resets" id="@Id" type="number" min="@Min" max="@Max" value="@Current" disabled="@Busy" @onchange="Typed" />
+            of @Max
+        </label>
+    }
+    <button id="@(NextId ?? $"{Id}-next")" aria-label="Next revision" disabled="@(Busy || Current >= Max)" @onclick="@(() => Go(Current + 1))">@NextLabel</button>
 </span>
 
 @code {
@@ -25,13 +32,45 @@
     [Parameter]
     public string Id { get; set; } = "revision";
 
+    /// <summary>The previous button's id; "{Id}-previous" when null.</summary>
+    [Parameter]
+    public string? PreviousId { get; set; }
+
+    /// <summary>The next button's id; "{Id}-next" when null.</summary>
+    [Parameter]
+    public string? NextId { get; set; }
+
+    [Parameter]
+    public string PreviousLabel { get; set; } = "‹";
+
+    [Parameter]
+    public string NextLabel { get; set; } = "›";
+
+    /// <summary>A range slider instead of a number field.</summary>
+    [Parameter]
+    public bool Slider { get; set; }
+
     [Parameter]
     public EventCallback<int> RevisionChanged { get; set; }
 
+    // Bumped when a typed revision is refused or clamped, so the field is drawn again with the revision in force (UI review, pass 22b).
+    private int resets;
+
     private Task Go(int revision) => RevisionChanged.InvokeAsync(Math.Clamp(revision, Min, Max));
 
-    private Task Typed(ChangeEventArgs args) =>
-        int.TryParse(args.Value as string, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var revision)
-            ? Go(revision)
-            : Task.CompletedTask;
+    private Task Typed(ChangeEventArgs args)
+    {
+        if (!int.TryParse(args.Value as string, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var revision))
+        {
+            resets++;
+            return Task.CompletedTask;
+        }
+
+        if (revision < Min || revision > Max)
+        {
+            resets++;
+        }
+
+        return Go(revision);
+    }
 }

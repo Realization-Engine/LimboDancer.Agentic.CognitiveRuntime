@@ -1,0 +1,55 @@
+@* G01 (plan section 16.8): the game, the perspective (S09), the revision (S10), and a link to the board; the page loads and projects the replay. *@
+<div class="toolbar" id="game-toolbar">
+    <label>
+        Game
+        <select id="game-name" value="@Game" @onchange="@(args => GameChanged.InvokeAsync(args.Value as string ?? string.Empty))">
+            @foreach (var name in Games)
+            {
+                <option value="@name">@name</option>
+            }
+        </select>
+    </label>
+    @if (Max > 0)
+    {
+        <PerspectivePicker Id="game-perspective" Label="Perspective" Choices="@Perspectives" Value="@Perspective" ValueChanged="@PerspectiveChanged" />
+        <RevisionNavigator Id="game-revision" PreviousId="game-previous" NextId="game-next" PreviousLabel="Previous" NextLabel="Next" Slider="true"
+                           Min="1" Max="@Max" Current="@Revision" RevisionChanged="@RevisionChanged" />
+        <button id="game-show" @onclick="OnShow">Show on @BoardName</button>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<string> Games { get; set; } = [];
+
+    [Parameter]
+    public string Game { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> GameChanged { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<PerspectivePicker.Choice> Perspectives { get; set; } = [];
+
+    [Parameter]
+    public string Perspective { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> PerspectiveChanged { get; set; }
+
+    [Parameter]
+    public int Revision { get; set; }
+
+    /// <summary>The replay's last revision; 0 when the game has no history, and only the game can be chosen.</summary>
+    [Parameter]
+    public int Max { get; set; }
+
+    [Parameter]
+    public EventCallback<int> RevisionChanged { get; set; }
+
+    [Parameter]
+    public string BoardName { get; set; } = "the board";
+
+    [Parameter]
+    public EventCallback OnShow { get; set; }
+}

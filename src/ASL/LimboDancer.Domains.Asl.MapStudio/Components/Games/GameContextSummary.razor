@@ -1,0 +1,42 @@
+@* G03 (plan section 16.8): where a game stands: the revision (where the caller can step through them), turn, phase, phasing side, and whose view. Play reuses it in pass 28c. *@
+<p id="@Id" class="game-context">
+    @if (Revision is { } revision)
+    {
+        <strong>Revision @revision@(Max is { } max ? $" of {max}" : string.Empty)</strong><text>:</text>
+    }
+    turn @Turn, @GameText.PhaseLabel(Phase), @PhasingSide phasing@(Perspective is { } perspective ? $"; {perspective}'s view" : string.Empty).
+    @if (Note is { Length: > 0 } note)
+    {
+        <span class="muted">@note</span>
+    }
+</p>
+
+@code {
+    [Parameter]
+    public string? Id { get; set; }
+
+    /// <summary>The revision shown; null where the caller does not step through revisions.</summary>
+    [Parameter]
+    public long? Revision { get; set; }
+
+    [Parameter]
+    public long? Max { get; set; }
+
+    [Parameter]
+    public int Turn { get; set; }
+
+    /// <summary>The phase's short name ("mph"), worded here.</summary>
+    [Parameter]
+    public string Phase { get; set; } = string.Empty;
+
+    [Parameter]
+    public string PhasingSide { get; set; } = string.Empty;
+
+    /// <summary>The perspective's name; null to leave it out.</summary>
+    [Parameter]
+    public string? Perspective { get; set; }
+
+    /// <summary>A note after the context, such as a synthetic fixture's stamp.</summary>
+    [Parameter]
+    public string? Note { get; set; }
+}

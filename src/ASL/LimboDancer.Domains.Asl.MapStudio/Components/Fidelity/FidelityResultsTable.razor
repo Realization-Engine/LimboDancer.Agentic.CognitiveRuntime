@@ -1,0 +1,114 @@
+@using System.Globalization
+@using LimboDancer.Domains.Asl.Maps.Vasl
+@* F06 (plan section 16.9): a report's boards, filtered, with outcome, F1, F2 and its differences, the named checks, diagnostics, and time. *@
+<p>
+    <label>
+        Show
+        <select id="fidelity-filter" value="@Filter" @onchange="@(args => FilterChanged.InvokeAsync(args.Value as string ?? "in-scope"))">
+            <option value="in-scope">boards in scope</option>
+            <option value="problems">boards not verified</option>
+            <option value="all">all boards</option>
+        </select>
+    </label>
+</p>
+
+<table class="library" id="fidelity-results">
+    <thead>
+        <tr>
+            <th>Board</th>
+            <th>Outcome</th>
+            <th>F1</th>
+            <th>F2</th>
+            <th>Checks</th>
+            <th>Diagnostics</th>
+            <th>ms</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var board in Visible)
+        {
+            <tr @key="board.Board" data-board="@board.Board">
+                <td>
+                    @if (board.Outcome is BatchOutcome.Verified or BatchOutcome.Ingested)
+                    {
+                        <a href="@($"boards/{board.Board}")">@board.Board</a>
+                    }
+                    else
+                    {
+                        @board.Board
+                    }
+                </td>
+                <td class="@OutcomeClass(board.Outcome)" title="@board.Reason">@board.Outcome</td>
+                <td class="@(board.F1 == F1Status.Pass ? "pass" : "fail")">@board.F1</td>
+                <td>
+                    @if (board.F2 is { } f2)
+                    {
+                        <span class="@(f2.Status == BatchF2.Pass ? "pass" : f2.Status == BatchF2.Fail ? "fail" : "muted")">@f2.Status</span>
+                        @if (f2.Differences.Count > 0 || f2.Diagnostics.Count > 0)
+                        {
+                            <details>
+                                <summary>@f2.Differences.Count differences</summary>
+                                <Diagnostics Items="f2.Diagnostics" />
+                                <ul class="differences">
+                                    @foreach (var difference in f2.Differences.Take(MaxDifferences))
+                                    {
+                                        <li>@difference</li>
+                                    }
+                                </ul>
+                                @if (f2.Differences.Count > MaxDifferences)
+                                {
+                                    <p class="muted">@(f2.Differences.Count - MaxDifferences) more in the JSON report.</p>
+                                }
+                            </details>
+                        }
+                    }
+                </td>
+                <td>
+                    @foreach (var check in board.Checks)
+                    {
+                        <span class="diagnostic @(check.Passed ? "info" : check.Gating ? "error" : "warning")" title="@check.Detail">@check.Name</span>
+                    }
+                </td>
+                <td>
+                    @if (board.Outcome == BatchOutcome.OutOfScope)
+                    {
+                        <span class="muted">@board.Reason</span>
+                    }
+                    else
+                    {
+                        <Diagnostics Items="board.Diagnostics" />
+                    }
+                </td>
+                <td class="number">@Math.Round(board.Timings.Total).ToString(CultureInfo.InvariantCulture)</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private const int MaxDifferences = 200;
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<BatchBoardResult> Boards { get; set; } = [];
+
+    /// <summary>"in-scope", "problems" (ingested or failed), or "all".</summary>
+    [Parameter]
+    public string Filter { get; set; } = "in-scope";
+
+    [Parameter]
+    public EventCallback<string> FilterChanged { get; set; }
+
+    private IEnumerable<BatchBoardResult> Visible => Filter switch
+    {
+        "all" => Boards,
+        "problems" => Boards.Where(board => board.Outcome is BatchOutcome.Ingested or BatchOutcome.Failed),
+        _ => Boards.Where(board => board.Outcome != BatchOutcome.OutOfScope),
+    };
+
+    private static string OutcomeClass(BatchOutcome outcome) => outcome switch
+    {
+        BatchOutcome.Verified => "pass",
+        BatchOutcome.Failed => "fail",
+        _ => "muted",
+    };
+}

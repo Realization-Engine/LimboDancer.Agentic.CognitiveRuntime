@@ -1,9 +1,11 @@
 @page "/"
-@using LimboDancer.Domains.Asl.Maps.Vasl
+@implements IAsyncDisposable
 @inject IBoardProvider Boards
 @inject FidelityJobRunner Runner
 @inject AuthoredBoardService Authored
 @inject MapService MapStore
+@inject LibraryViewState View
+@inject IJSRuntime JS
 
 <PageTitle>Board library - ASL Map Studio</PageTitle>
 
@@ -22,200 +24,155 @@
         </Instructions>
     </SourceRequiredNotice>
 }
+else if (loading)
+{
+    <p id="library-loading" class="muted" role="status">Loading the board library...</p>
+}
+else if (failure is not null)
+{
+    <p id="library-failure" class="diagnostic error" role="alert">The board library could not be read: @failure</p>
+}
 else
 {
-    <h3>Authored boards</h3>
-    @if (authored.Count == 0)
+    var filter = View.Filter;
+    var shownAuthored = filter.Shows("authored") ? authored.Where(entry => filter.Matches(entry.Name, entry.Ref.Value)).ToArray() : [];
+    var shownMaps = filter.Shows("maps") ? maps.Where(map => filter.Matches(map.Name, map.Ref.Value)).ToArray() : [];
+    var shownRows = filter.Shows("vasl") ? rows.Where(row => Visible(row, filter)).ToArray() : [];
+    var shown = shownAuthored.Length + shownMaps.Length + shownRows.Length;
+
+    <LibraryFilterBar Value="@filter" ValueChanged="@(value => View.Filter = value)" Shown="@shown"
+                      Total="@(authored.Count + maps.Count + rows.Count(row => filter.OutOfScope || row.Status != VaslBoardTable.LibraryStatus.OutOfScope))" OutOfScopeCount="@rows.Count(row => row.Status == VaslBoardTable.LibraryStatus.OutOfScope)" />
+
+    @if (shown == 0 && !filter.IsDefault)
     {
-        <p class="muted">None yet. <a href="author/new">Create a board</a>, blank or from a verified VASL board.</p>
+        <p id="library-no-match" class="muted">Nothing matches the search and filters. <button class="link" @onclick="@(() => View.Filter = LibraryFilterBar.Filter.Default)">Clear filters</button></p>
     }
     else
     {
-        <table class="library">
-            <thead>
-                <tr><th>Board</th><th>Reference</th><th>Kept in</th><th></th></tr>
-            </thead>
-            <tbody>
-                @foreach (var entry in authored)
-                {
-                    <tr>
-                        <td><a href="@($"boards/{entry.Ref.Value}")">@entry.Name</a></td>
-                        <td><code>@entry.Ref.Value</code></td>
-                        <td class="muted">@(entry.IsDraft ? "drafts (derived from VASL data)" : "boards folder")</td>
-                        <td><a href="@($"author/{entry.Ref.Value}")">Edit</a></td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-        <p><a href="author/new">New board</a></p>
-    }
-
-    <h3>Maps</h3>
-    @if (maps.Count == 0)
-    {
-        <p class="muted">None yet. <a href="maps">Compose a map</a> of placed, reversed, or rule-modified VASL boards.</p>
-    }
-    else
-    {
-        <table class="library">
-            <thead>
-                <tr><th>Map</th><th>Boards</th></tr>
-            </thead>
-            <tbody>
-                @foreach (var map in maps)
-                {
-                    <tr>
-                        <td><a href="@($"boards/{map.Ref.Value}")">@map.Name</a></td>
-                        <td><code>@map.PlacementText</code></td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-        <p><a href="maps">Compose a map</a></p>
-    }
-
-    <h3>VASL boards</h3>
-    var totals = Totals();
-    <p class="muted">@Boards.SourceDescription.</p>
-    <p class="totals">
-        <strong>@inScope.Count @(inScope.Count == 1 ? "board" : "boards") in scope:</strong>
-        <span class="pass">@totals.Verified verified</span>,
-        @totals.Ingested ingested,
-        <span class="@(totals.Failed > 0 ? "fail" : "")">@totals.Failed failed</span>,
-        <span class="muted">@totals.NotLoaded not checked</span>.
-        @outOfScope.Count out of scope.
-    </p>
-    <p>
-        @if (Runner.Latest is { } latest)
+        @if (filter.Shows("authored"))
         {
-            <span class="muted">Unopened boards show results from the fidelity report of @latest.Report.StartedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture) when their sources and tools are unchanged.</span>
+            <h3>Authored boards</h3>
+            <AuthoredBoardList Boards="@shownAuthored" Filtered="@(!filter.IsDefault)" />
         }
-        <a href="fidelity">Run the fidelity batch</a>
-        <label class="toggle">
-            <input type="checkbox" checked="@showOutOfScope" @onchange="@(args => showOutOfScope = (bool)args.Value!)" />
-            Show out-of-scope boards (@outOfScope.Count)
-        </label>
-    </p>
-    <table class="library">
-        <thead>
-            <tr>
-                <th>Board</th>
-                <th>Status</th>
-                <th>F1 (grid)</th>
-                <th>F2 (hex facts)</th>
-                <th>Diagnostics</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var entry in Visible())
+
+        @if (filter.Shows("maps"))
+        {
+            <h3>Maps</h3>
+            <MapSummaryList Id="library-maps" Maps="@shownMaps">
+                <EmptyContent>
+                    <p id="library-maps-empty" class="muted">@(filter.IsDefault ? "None yet." : "No map matches.") <a href="maps">Compose a map</a> of placed, reversed, or rule-modified VASL boards.</p>
+                </EmptyContent>
+            </MapSummaryList>
+            @if (shownMaps.Length > 0)
             {
-                var result = entry.Scope == BoardScope.OutOfScope ? null : Boards.Cached(entry.Ref);
-                <tr>
-                    @if (entry.Scope == BoardScope.OutOfScope)
-                    {
-                        <td>@entry.Title</td>
-                        <td class="muted">Out of scope</td>
-                        <td></td>
-                        <td></td>
-                        <td class="muted">@entry.ScopeReason</td>
-                    }
-                    else if (result is null && Runner.FreshResult(entry, Boards.CatalogBlob) is { } batch)
-                    {
-                        <td><a href="@($"boards/{entry.Ref.Value}")">@entry.Title</a></td>
-                        <td class="@(batch.Outcome == BatchOutcome.Verified ? "pass" : batch.Outcome == BatchOutcome.Failed ? "fail" : "")" title="@batch.Reason">@batch.Outcome (batch)</td>
-                        <td class="@(batch.F1 == F1Status.Pass ? "pass" : "fail")">@batch.F1</td>
-                        <td class="@(batch.F2?.Status == BatchF2.Pass ? "pass" : "muted")">@batch.F2?.Status</td>
-                        <td><Diagnostics Items="batch.Diagnostics" /></td>
-                    }
-                    else if (result is null)
-                    {
-                        <td><a href="@($"boards/{entry.Ref.Value}")">@entry.Title</a></td>
-                        <td class="muted" colspan="4">Not checked</td>
-                    }
-                    else if (result.Board is not { } board)
-                    {
-                        <td><a href="@($"boards/{entry.Ref.Value}")">@entry.Title</a></td>
-                        <td class="fail">@(result.OutOfScope ? "Out of scope" : "Failed")</td>
-                        <td></td>
-                        <td></td>
-                        <td><Diagnostics Items="result.Diagnostics" /></td>
-                    }
-                    else
-                    {
-                        <td><a href="@($"boards/{entry.Ref.Value}")">@entry.Title</a></td>
-                        <td class="@(board.Status == BoardStatus.Verified ? "pass" : "")">@board.Status</td>
-                        <td class="@(board.F1 is { Passed: true } ? "pass" : "fail")">@board.F1?.Status</td>
-                        <td class="@F2Class(board)">@F2Text(board)</td>
-                        <td><Diagnostics Items="board.Diagnostics" /></td>
-                    }
-                </tr>
+                <p><a href="maps">Compose a map</a></p>
             }
-        </tbody>
-    </table>
+        }
+
+        @if (filter.Shows("vasl"))
+        {
+            var inScope = rows.Where(row => row.Status != VaslBoardTable.LibraryStatus.OutOfScope).ToArray();
+            <h3>VASL boards</h3>
+            <p class="muted">@Boards.SourceDescription.</p>
+            <BoardScopeSummary Id="library-totals" InScope="@inScope.Length"
+                               Verified="@inScope.Count(row => row.Status == VaslBoardTable.LibraryStatus.Verified)"
+                               Ingested="@inScope.Count(row => row.Status == VaslBoardTable.LibraryStatus.Ingested)"
+                               Failed="@inScope.Count(row => row.Status == VaslBoardTable.LibraryStatus.Failed)"
+                               NotChecked="@inScope.Count(row => row.Status == VaslBoardTable.LibraryStatus.NotChecked)"
+                               OutOfScope="@(rows.Count - inScope.Length)" />
+            <p class="toolbar">
+                @if (Runner.Latest is { } latest)
+                {
+                    <span class="muted">Unopened boards show results from the fidelity report of @latest.Report.StartedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture) when their sources and tools are unchanged.</span>
+                }
+                <a href="fidelity">Run the fidelity batch</a>
+            </p>
+            @if (rows.Count == 0)
+            {
+                <p id="library-vasl-empty" class="muted">The VASL checkout lists no boards.</p>
+            }
+            else if (shownRows.Length == 0)
+            {
+                <p id="library-vasl-no-match" class="muted">No VASL board matches.</p>
+            }
+            else
+            {
+                <VaslBoardTable Rows="@shownRows" />
+            }
+        }
+    }
 }
 
 @code {
-    private IReadOnlyList<BoardListing> listing = [];
     private IReadOnlyList<AuthoredListing> authored = [];
     private IReadOnlyList<MapDefinition> maps = [];
-    private IReadOnlyList<BoardListing> inScope = [];
-    private IReadOnlyList<BoardListing> outOfScope = [];
-    private bool showOutOfScope;
+    private IReadOnlyList<VaslBoardTable.Row> rows = [];
+    private bool loading = true;
+    private string? failure;
+    private IJSObjectReference? scroll;
+    private bool disposed;
 
     protected override async Task OnInitializedAsync()
     {
-        listing = await Task.Run(Boards.List);
-        authored = await Task.Run(Authored.List);
-        maps = await Task.Run(MapStore.List);
-        inScope = listing.Where(entry => entry.Scope != BoardScope.OutOfScope).ToArray();
-        outOfScope = listing.Where(entry => entry.Scope == BoardScope.OutOfScope).ToArray();
-    }
-
-    private IEnumerable<BoardListing> Visible() => showOutOfScope ? listing : inScope;
-
-    private (int Verified, int Ingested, int Failed, int NotLoaded) Totals()
-    {
-        int verified = 0, ingested = 0, failed = 0, notLoaded = 0;
-        foreach (var entry in inScope)
+        if (Boards.SourceDescription is null)
         {
-            var outcome = Boards.Cached(entry.Ref) switch
-            {
-                { Board.Status: BoardStatus.Verified } => BatchOutcome.Verified,
-                { Board: not null } => BatchOutcome.Ingested,
-                not null => BatchOutcome.Failed,
-                null => Runner.FreshResult(entry, Boards.CatalogBlob)?.Outcome,
-            };
-            switch (outcome)
-            {
-                case null:
-                    notLoaded++;
-                    break;
-                case BatchOutcome.Verified:
-                    verified++;
-                    break;
-                case BatchOutcome.Ingested:
-                    ingested++;
-                    break;
-                default:
-                    failed++;
-                    break;
-            }
+            loading = false;
+            return;
         }
 
-        return (verified, ingested, failed, notLoaded);
+        try
+        {
+            // Read once here, not on each render: the listing, and each board's result from the cache or the latest fresh batch report.
+            var listing = await Task.Run(Boards.List);
+            authored = await Task.Run(Authored.List);
+            maps = await Task.Run(MapStore.List);
+            rows = await Task.Run(() => listing.Select(entry => VaslBoardTable.Row.Of(entry, Boards, Runner)).ToArray());
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException or System.Text.Json.JsonException)
+        {
+            failure = exception.Message;
+        }
+        finally
+        {
+            loading = false;
+        }
     }
 
-    private static string F2Text(StudioBoard board) => board.F2 switch
-    {
-        null => "No oracle fixture",
-        { Passed: true } => "Pass",
-        var f2 => $"Fail ({f2.Differences.Count} differences, {f2.Diagnostics.Count} diagnostics)",
-    };
+    private static bool Visible(VaslBoardTable.Row row, LibraryFilterBar.Filter filter) =>
+        (filter.OutOfScope || row.Status != VaslBoardTable.LibraryStatus.OutOfScope)
+        && (filter.Status == LibraryFilterBar.Filter.AnyStatus || string.Equals(row.Status.ToString(), filter.Status, StringComparison.OrdinalIgnoreCase))
+        && filter.Matches(row.Title, row.Ref);
 
-    private static string F2Class(StudioBoard board) => board.F2 switch
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        null => "muted",
-        { Passed: true } => "pass",
-        _ => "fail",
-    };
+        if (loading || scroll is not null || Boards.SourceDescription is null)
+        {
+            return;
+        }
+
+        try
+        {
+            scroll = await JS.InvokeAsync<IJSObjectReference>("import", "./js/scrollMemory.js");
+            await scroll.InvokeVoidAsync(disposed ? "forget" : "restore", "library");
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        disposed = true;
+        try
+        {
+            if (scroll is not null)
+            {
+                await scroll.InvokeVoidAsync("forget", "library");
+                await scroll.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+    }
 }

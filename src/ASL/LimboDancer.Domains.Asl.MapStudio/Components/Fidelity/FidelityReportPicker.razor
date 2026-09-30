@@ -1,0 +1,35 @@
+@using System.Globalization
+@* F04 (plan section 16.9): the saved batch reports, newest first, the one shown, and its JSON to download; an explicit empty state. *@
+@if (Reports.Count == 0)
+{
+    <p id="fidelity-no-reports" class="muted">No reports yet.</p>
+}
+else
+{
+    <p class="toolbar">
+        <label>
+            Report
+            <select id="fidelity-report" value="@Selected" @onchange="@(args => SelectedChanged.InvokeAsync(args.Value as string))">
+                @foreach (var stored in Reports)
+                {
+                    <option value="@stored.Id">@stored.StartedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture): @stored.Summary.Verified verified, @stored.Summary.Failed failed</option>
+                }
+            </select>
+        </label>
+        @if (Selected is not null)
+        {
+            <a id="fidelity-download" href="@($"fidelity/reports/{Selected}.json")" download>Download JSON</a>
+        }
+    </p>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<StoredReport> Reports { get; set; } = [];
+
+    [Parameter]
+    public string? Selected { get; set; }
+
+    [Parameter]
+    public EventCallback<string?> SelectedChanged { get; set; }
+}

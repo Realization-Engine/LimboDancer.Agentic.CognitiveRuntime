@@ -1,0 +1,49 @@
+@* M05 (plan section 16.5): Check and Save, and the last check's result; after an edit the result stays, labeled out of date, until the next check. *@
+<p class="map-build-actions">
+    <button id="map-check" @onclick="OnCheck" disabled="@Busy">Check</button>
+    <button id="map-save" class="primary" @onclick="OnSave" disabled="@Busy">Save and view</button>
+</p>
+<OperationFeedback Id="map-result" Busy="@Busy" BusyText="Building the map..." Message="@(Stale ? null : Message)"
+                   Outcome="@(Failed ? OperationFeedback.OperationOutcome.Refused : OperationFeedback.OperationOutcome.Done)" />
+@if (!Busy && Message is not null && Stale)
+{
+    <p id="map-result-stale" class="muted">
+        <StatusBadge Label="out of date" Tone="StatusBadge.BadgeTone.Warning" /> The last result, before the placements or rules changed: @Message Check again.
+    </p>
+}
+@if (!Busy && !Stale)
+{
+    <FindingList Id="map-diagnostics" Items="@Findings" />
+}
+
+@code {
+    [Parameter]
+    public bool Busy { get; set; }
+
+    /// <summary>The last check's or save's result; null before the first.</summary>
+    [Parameter]
+    public string? Message { get; set; }
+
+    [Parameter]
+    public bool Failed { get; set; }
+
+    /// <summary>Whether the placements changed since the result was found.</summary>
+    [Parameter]
+    public bool Stale { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<MapDiagnostic> Diagnostics { get; set; } = [];
+
+    [Parameter]
+    public EventCallback OnCheck { get; set; }
+
+    [Parameter]
+    public EventCallback OnSave { get; set; }
+
+    private IReadOnlyList<FindingList.Finding> Findings => [.. Diagnostics.Select(diagnostic => new FindingList.Finding(diagnostic.Message, diagnostic.Severity switch
+    {
+        MapDiagnosticSeverity.Error => FindingList.Severity.Error,
+        MapDiagnosticSeverity.Warning => FindingList.Severity.Warning,
+        _ => FindingList.Severity.Info,
+    }, diagnostic.Code))];
+}

@@ -2,6 +2,7 @@
 @using System.Globalization
 @using LimboDancer.Domains.Asl.Units.State
 @using LimboDancer.Domains.Asl.Maps.Read
+@using LimboDancer.Domains.Asl.MapStudio.Components.Games
 @inject GameLibrary GamesLibrary
 @inject UnitLibrary Library
 @inject NavigationManager Navigation
@@ -21,33 +22,10 @@
 }
 else
 {
-    <div class="toolbar">
-        <label>
-            Game
-            <select id="game-name" value="@name" @onchange="ChangeGame">
-                @foreach (var gameName in GamesLibrary.Names)
-                {
-                    <option value="@gameName">@gameName</option>
-                }
-            </select>
-        </label>
-        @if (state is not null)
-        {
-            <label>
-                Perspective
-                <select id="game-perspective" value="@perspective.Name" @onchange="ChangePerspective">
-                    @foreach (var option in state.Perspectives)
-                    {
-                        <option value="@option.Name">@option.Name</option>
-                    }
-                </select>
-            </label>
-            <button id="game-previous" disabled="@(revision <= 1)" @onclick="() => Step(-1)">Previous</button>
-            <input id="game-revision" type="range" min="1" max="@entry!.History!.States.Count" value="@revision" @onchange="ChangeRevision" aria-label="Revision" />
-            <button id="game-next" disabled="@(revision >= entry.History.States.Count)" @onclick="() => Step(1)">Next</button>
-            <button id="game-show" @onclick="ShowOnBoard">Show on @BoardName</button>
-        }
-    </div>
+    <GameReplayToolbar Games="@GamesLibrary.Names" Game="@name" GameChanged="@Open"
+                       Perspectives="@PerspectiveChoices" Perspective="@perspective.Name" PerspectiveChanged="@ChangePerspective"
+                       Revision="@((int)revision)" Max="@(state is null ? 0 : entry!.History!.States.Count)" RevisionChanged="@ChangeRevision"
+                       BoardName="@BoardName" OnShow="@ShowOnBoard" />
 
     @if (entry is not null)
     {
@@ -65,42 +43,12 @@ else
 
     @if (view is not null && state is not null)
     {
-        <p id="game-summary">
-            <strong>Revision @revision of @entry!.History!.States.Count</strong>:
-            turn @view.Turn, @PhaseLabel(view.Phase), @view.PhasingSide phasing; @view.Perspective.Name's view.
-            <span class="muted">@(state.Synthetic ? "Synthetic fixture." : string.Empty) Stamp: @view.Stamp.Scope.Game at revision @view.Stamp.Revision.</span>
-        </p>
+        <GameContextSummary Id="game-summary" Revision="@revision" Max="@entry!.History!.States.Count" Turn="@view.Turn" Phase="@view.Phase"
+                            PhasingSide="@view.PhasingSide" Perspective="@view.Perspective.Name"
+                            Note="@($"{(state.Synthetic ? "Synthetic fixture. " : string.Empty)}Stamp: {view.Stamp.Scope.Game} at revision {view.Stamp.Revision}.")" />
 
         <h3>Units</h3>
-        <table class="library" id="game-units">
-            <thead><tr><th></th><th>Id</th><th>Unit</th><th>Location</th><th>Conditions</th><th>Good Order</th><th>Lineage and custody</th></tr></thead>
-            <tbody>
-                @foreach (var unit in view.Units)
-                {
-                    <tr data-unit="@unit.Id">
-                        <td>@Preview(unit.Id)</td>
-                        <td>@unit.Id</td>
-                        <td>@Label(unit.Id, unit.Kind)</td>
-                        <td>@LocationText(unit.Id, unit.Position)</td>
-                        <td>@ConditionsText(unit)</td>
-                        <td>@Conditions.Name(GameState.GoodOrder(unit, Library.Vocabulary))</td>
-                        <td>@LineageText(unit)</td>
-                    </tr>
-                }
-                @foreach (var presence in view.Sealed)
-                {
-                    <tr data-unit="@presence.PlacementId">
-                        <td>@Preview(presence.PlacementId)</td>
-                        <td>@presence.PlacementId</td>
-                        <td>concealed @presence.Side presence</td>
-                        <td>@presence.Location</td>
-                        <td>withheld</td>
-                        <td>withheld</td>
-                        <td></td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+        <ProjectedGameUnitTable Rows="@unitRows" />
 
         @if (view.Equipment.Count > 0 || view.Entities.Count > 0)
         {
@@ -125,54 +73,17 @@ else
             ReadCase (ASL-UNIT-060) asks what a unit attempting something at a location reads: one snapshot of the game as it stood at revision @revision,
             as @view.Perspective.Name may know it, or an explicit nondefinitive result.
         </p>
-        <div class="toolbar">
-            <label>
-                Attacker
-                <select id="case-attacker" value="@caseAttacker" @onchange="@(args => caseAttacker = args.Value as string ?? string.Empty)">
-                    @foreach (var unit in view.Units.Where(unit => view.Perspective.IsAdjudicator || unit.Side == view.Perspective.Name))
-                    {
-                        <option value="@unit.Id">@unit.Id: @Label(unit.Id, unit.Kind)</option>
-                    }
-                </select>
-            </label>
-            <label>Location <input id="case-location" value="@caseLocation" @onchange="@(args => caseLocation = args.Value as string ?? string.Empty)" /></label>
-            <label>Expected revision <input id="case-expected" type="number" value="@caseExpected" @onchange="@(args => caseExpected = long.TryParse(args.Value as string, out var value) ? value : caseExpected)" /></label>
-            <button id="case-read" @onclick="ReadCase">Read</button>
-        </div>
+        <ReadCaseForm @bind-Draft="caseDraft" Attackers="@Attackers" OnRead="@ReadCase" />
         @if (caseResult is { } result)
         {
-            <div id="case-result">
-                <p class="@(result.IsDefinitive ? "pass" : "fail")"><strong>@result.Status</strong> (@result.Code): @result.Reason</p>
-                @if (result.Snapshot is { } snapshot)
-                {
-                    <table class="library">
-                        <tbody>
-                            <tr><th>Stamp</th><td>revision @snapshot.Stamp.Revision, @snapshot.Source, @snapshot.Time.ToString("u", CultureInfo.InvariantCulture); turn @snapshot.Turn, @PhaseLabel(snapshot.Phase)</td></tr>
-                            <tr><th>Attacker</th><td>@snapshot.Attacker.Unit.Id (@snapshot.Attacker.Definition.Id), Good Order @Conditions.Name(snapshot.Attacker.GoodOrder), @snapshot.Attacker.MfSpent MF spent this phase</td></tr>
-                            <tr><th>Previous location</th><td>@LocationReadText(snapshot.Previous)</td></tr>
-                            <tr><th>Location</th><td>@LocationReadText(snapshot.Target)@(snapshot.Distance is { } distance ? $"; {distance} hex(es) from the previous location" : string.Empty)</td></tr>
-                            <tr>
-                                <th>Occupants</th>
-                                <td id="case-occupants">
-                                    @string.Join(", ", snapshot.Occupancy.Units.Select(unit => $"{unit.Id} ({unit.Side} {unit.Kind.Replace("asl:", string.Empty, StringComparison.Ordinal)})")
-                                        .Concat(snapshot.Occupancy.Sealed.Select(presence => $"{presence.PlacementId} (concealed {presence.Side})"))
-                                        .Concat(snapshot.Occupancy.Entities.Select(entity => $"{entity.Id} ({entity.Kind.Replace("asl:", string.Empty, StringComparison.Ordinal)})")).DefaultIfEmpty("none seen"))
-                                    <br /><span class="muted">@(snapshot.Occupancy.Complete ? "Complete: nothing can be there unseen." : $"Incomplete: {snapshot.Occupancy.IncompleteReason}")</span>
-                                </td>
-                            </tr>
-                            <tr><th>Sole enemy</th><td id="case-sole">@SoleText(snapshot)</td></tr>
-                            <tr><th>Events this phase</th><td>@string.Join("; ", snapshot.Events.Select(item => $"r{item.Revision} {item.Type}{EventText(item)}{(snapshot.Reveals.Contains(item) ? " (reveal)" : string.Empty)}").DefaultIfEmpty("none"))</td></tr>
-                        </tbody>
-                    </table>
-                }
-            </div>
+            <ReadCaseResult Result="@result" />
         }
 
         <h3>Events @view.Perspective.Name is entitled to</h3>
         <ol id="game-events" class="muted">
             @foreach (var item in view.Events)
             {
-                <li value="@item.Revision" class="@(item.Revision == revision ? "pass" : "")">@item.Type @EventText(item)</li>
+                <li value="@item.Revision" class="@(item.Revision == revision ? "pass" : "")">@item.Type @GameText.EventText(item)</li>
             }
         </ol>
     }
@@ -186,13 +97,18 @@ else
     private Perspective perspective = Perspective.Adjudicator;
     private long revision = 1;
     private Dictionary<string, UnitDocument> documents = new(StringComparer.Ordinal);
-    private string caseAttacker = string.Empty;
-    private string caseLocation = "bd01:E4:0";
-    private long caseExpected;
+    private ReadCaseForm.CaseDraft caseDraft = new(string.Empty, "bd01:E4:0", 0);
     private CaseReadResult? caseResult;
     private UnitRenderer? renderer;
+    private IReadOnlyList<ProjectedGameUnitTable.Row> unitRows = [];
 
     private string BoardName => state?.Map.Boards.FirstOrDefault()?.Board.Value ?? "the board";
+
+    private IReadOnlyList<PerspectivePicker.Choice> PerspectiveChoices => state is null ? [] : [.. state.Perspectives.Select(option => new PerspectivePicker.Choice(option.Name, option.Name))];
+
+    // Only the perspective's own units may attempt a case, or every unit for the adjudicator.
+    private IReadOnlyList<ReadCaseForm.Attacker> Attackers => view is null ? []
+        : [.. view.Units.Where(unit => view.Perspective.IsAdjudicator || unit.Side == view.Perspective.Name).Select(unit => new ReadCaseForm.Attacker(unit.Id, Label(unit.Id, unit.Kind)))];
 
     protected override void OnInitialized()
     {
@@ -212,39 +128,36 @@ else
         Refresh();
     }
 
-    private void ChangeGame(ChangeEventArgs args) => Open(args.Value as string ?? string.Empty);
-
-    private void ChangePerspective(ChangeEventArgs args)
+    private void ChangePerspective(string chosen)
     {
-        perspective = new Perspective(args.Value as string ?? Perspective.AdjudicatorName);
+        perspective = new Perspective(chosen.Length > 0 ? chosen : Perspective.AdjudicatorName);
         Refresh();
     }
 
-    private void ChangeRevision(ChangeEventArgs args)
+    private void ChangeRevision(int chosen)
     {
-        revision = long.TryParse(args.Value as string, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) ? value : revision;
+        revision = chosen;
         Refresh();
     }
 
-    private void Step(int delta)
-    {
-        revision += delta;
-        Refresh();
-    }
-
+    // A new game, revision, or perspective projects the view again; the case read's result and an attacker the view no longer allows are cleared.
     private void Refresh()
     {
         state = entry?.History?.At(revision);
         view = state is null ? null : GameView.Of(entry!.History!, revision, perspective);
         documents = view is null ? new(StringComparer.Ordinal)
             : GameDocuments.For(view, Library.Vocabulary, GamesLibrary.Catalogs).ToDictionary(document => document.Id, StringComparer.Ordinal);
-        caseExpected = revision;
+        unitRows = view is null ? [] : [.. view.Units.Select(unit => new ProjectedGameUnitTable.Row(unit.Id, Preview(unit.Id), Label(unit.Id, unit.Kind),
+                LocationText(unit.Id, unit.Position), ConditionsText(unit), Conditions.Name(GameState.GoodOrder(unit, Library.Vocabulary)), LineageText(unit))),
+            .. view.Sealed.Select(presence => new ProjectedGameUnitTable.Row(presence.PlacementId, Preview(presence.PlacementId),
+                $"concealed {presence.Side} presence", presence.Location.ToString(), "withheld", "withheld", string.Empty))];
         caseResult = null;
-        var attackers = view?.Units.Where(unit => view.Perspective.IsAdjudicator || unit.Side == view.Perspective.Name).Select(unit => unit.Id).ToArray() ?? [];
-        if (!attackers.Contains(caseAttacker))
+        var attackers = Attackers.Select(attacker => attacker.Id).ToArray();
+        caseDraft = caseDraft with
         {
-            caseAttacker = attackers.FirstOrDefault() ?? string.Empty;
-        }
+            Expected = revision,
+            Attacker = attackers.Contains(caseDraft.Attacker) ? caseDraft.Attacker : attackers.FirstOrDefault() ?? string.Empty,
+        };
     }
 
     private void ReadCase()
@@ -254,18 +167,9 @@ else
             return;
         }
 
-        caseResult = BoardLocation.TryParse(caseLocation.Trim(), out var location)
-            ? GamesLibrary.ReadCase(entry, revision, caseAttacker, location, caseExpected, perspective)
-            : new CaseReadResult(CaseReadStatus.Inconsistent, "CASE-009", $"'{caseLocation}' is not a location such as bd01:E4:0.", null);
-    }
-
-    private static string LocationReadText(LocationRead read) =>
-        $"{read.Location}: {read.Level.Terrain?.Name ?? "no terrain"}, level {read.Level.Level}; board version {read.BoardVersion[..Math.Min(12, read.BoardVersion.Length)]}, {read.Status}";
-
-    private static string SoleText(CaseSnapshot snapshot)
-    {
-        var (unit, reason) = snapshot.Occupancy.SoleEnemy(snapshot.Attacker.Unit.Side);
-        return unit is not null ? $"{unit.Id}, definitively" : $"not definitive: {reason}";
+        caseResult = BoardLocation.TryParse(caseDraft.Location.Trim(), out var location)
+            ? GamesLibrary.ReadCase(entry, revision, caseDraft.Attacker, location, caseDraft.Expected, perspective)
+            : new CaseReadResult(CaseReadStatus.Inconsistent, "CASE-009", $"'{caseDraft.Location}' is not a location such as bd01:E4:0.", null);
     }
 
     private void ShowOnBoard()
@@ -314,30 +218,5 @@ else
             unit.Custodian is { } custodian ? $"prisoner of {custodian}" : null,
         }.OfType<string>());
 
-    private static string EventText(GameEvent item) => item.Payload switch
-    {
-        GameStarted started => $": {string.Join(" v ", started.Sides.Select(side => side.Id))} on {started.Map.Reference}",
-        PhaseChanged phase => $": turn {phase.Turn}, {PhaseLabel(phase.Phase)}",
-        InstanceCreated created => $": {created.Instance.Id} ({created.Instance.Kind})",
-        InstanceMoved moved => $": {moved.Id} to {moved.Position}",
-        ConditionsChanged changed => $": {changed.Id} {string.Join(", ", changed.Conditions.Select(pair => $"{pair.Key.Replace("asl:", string.Empty, StringComparison.Ordinal)} {Conditions.Name(pair.Value)}"))}",
-        LineageRecorded lineage => $": {lineage.Action.ToString().ToLowerInvariant()} {string.Join(", ", lineage.Consumed)} into {string.Join(", ", lineage.Produced.Select(produced => produced.Id))}",
-        InstanceCaptured captured => $": {captured.Id} by {captured.Custodian}",
-        InstanceEliminated eliminated => $": {eliminated.Id}",
-        EquipmentTransferred transferred => $": {transferred.Id}",
-        _ => string.Empty,
-    };
-
-    internal static string PhaseLabel(string phase) => phase switch
-    {
-        "rph" => "Rally Phase",
-        "pfph" => "Prep Fire Phase",
-        "mph" => "Movement Phase",
-        "dfph" => "Defensive Fire Phase",
-        "afph" => "Advancing Fire Phase",
-        "rtph" => "Rout Phase",
-        "aph" => "Advance Phase",
-        "ccph" => "Close Combat Phase",
-        _ => phase,
-    };
+    internal static string PhaseLabel(string phase) => GameText.PhaseLabel(phase);
 }
