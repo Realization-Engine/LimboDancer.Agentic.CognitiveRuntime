@@ -604,3 +604,5 @@ Estimate: 5:45 (build 4:30), the ASL Card Play and Map Studio Redesign Plan. Kic
 | Visual check again (the pane drew for the Unit Lab, then stopped; the rest read the page state and computed styles): the Lab's moved editors styled again, the LOS badges ("not read", "clear"), a route to bd02 dropping the old LOS line, the editor's name typed back reading saved, leaving declined then accepted; clean | 17:33 | 17:34 | 0:01 | |
 | Documents (design, review, the plan's status, backlog section 36) and formatting, while the full suite ran | 17:34 | 17:37 | 0:03 | |
 | Full local suite and ScenarioA1 (480): Authoring fails only the known architecture test; MapStudio 186, Play 563 | 17:34 | 18:00 | 0:26 | Waiting on the runs |
+| Merge gate: commit 7532322, push, the Docker Linux check (every step exit 0; Authoring 167, Play 563, MapStudio 186, ScenarioA1 480), the chart supplement regeneration (same), merge into main, push | 18:00 | 18:19 | 0:19 | |
+| **Pass 22d total** | 16:59 | 18:19 | **1:20** | Estimate 5:45 |
