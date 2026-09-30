@@ -1107,7 +1107,7 @@ textarea.placements-text {
 .card-editor textarea {
     width: 100%;
     box-sizing: border-box;
-    font-family: ui-monospace, Consolas, monospace;
+    font-family: var(--font-mono);
 }
 
 .card-editor > select {
