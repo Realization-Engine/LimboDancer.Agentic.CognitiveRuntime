@@ -1,0 +1,42 @@
+@* S04 (plan section 16.3): an operation's busy state and its result; an empty message is not taken as success. *@
+@if (Busy)
+{
+    <p id="@Id" class="operation-feedback busy" role="status">@(BusyText ?? "Working...")</p>
+}
+else if (Message is { Length: > 0 } message)
+{
+    <div id="@Id" class="operation-feedback @Outcome.ToString().ToLowerInvariant()" role="@(Outcome == OperationOutcome.Failed ? "alert" : "status")">
+        <p>@message</p>
+        @if (Details is { Count: > 0 } details)
+        {
+            <FindingList Items="@FindingList.Of(details, Outcome == OperationOutcome.Failed ? FindingList.Severity.Error : FindingList.Severity.Warning)" />
+        }
+    </div>
+}
+
+@code {
+    public enum OperationOutcome
+    {
+        Done,
+        Refused,
+        Failed,
+    }
+
+    [Parameter]
+    public string? Id { get; set; }
+
+    [Parameter]
+    public bool Busy { get; set; }
+
+    [Parameter]
+    public string? BusyText { get; set; }
+
+    [Parameter]
+    public string? Message { get; set; }
+
+    [Parameter]
+    public OperationOutcome Outcome { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<string>? Details { get; set; }
+}

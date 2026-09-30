@@ -7,18 +7,24 @@
 
 <PageTitle>Board library - ASL Map Studio</PageTitle>
 
+<PageHeader Title="Board library" />
+
 @if (Boards.SourceDescription is null)
 {
-    <p>No board source is configured. Set <code>AslMaps:VaslRoot</code> to a local VASL repository checkout, for example:</p>
+    <SourceRequiredNotice Missing="No board source is configured.">
+        <ChildContent>Set <code>AslMaps:VaslRoot</code> to a local VASL repository checkout, for example:</ChildContent>
+        <Instructions>
     <ul>
         <li>user secrets (Development): <code>dotnet user-secrets set AslMaps:VaslRoot E:/path/to/vasl</code> in the MapStudio project directory;</li>
         <li>an environment variable: <code>AslMaps__VaslRoot</code>;</li>
         <li>a command-line argument: <code>--AslMaps:VaslRoot=E:/path/to/vasl</code>.</li>
     </ul>
+        </Instructions>
+    </SourceRequiredNotice>
 }
 else
 {
-    <h2 class="page">Authored boards</h2>
+    <h3>Authored boards</h3>
     @if (authored.Count == 0)
     {
         <p class="muted">None yet. <a href="author/new">Create a board</a>, blank or from a verified VASL board.</p>
@@ -44,7 +50,7 @@ else
         <p><a href="author/new">New board</a></p>
     }
 
-    <h2 class="page">Maps</h2>
+    <h3>Maps</h3>
     @if (maps.Count == 0)
     {
         <p class="muted">None yet. <a href="maps">Compose a map</a> of placed, reversed, or rule-modified VASL boards.</p>
@@ -68,7 +74,7 @@ else
         <p><a href="maps">Compose a map</a></p>
     }
 
-    <h2 class="page">VASL boards</h2>
+    <h3>VASL boards</h3>
     var totals = Totals();
     <p class="muted">@Boards.SourceDescription.</p>
     <p class="totals">

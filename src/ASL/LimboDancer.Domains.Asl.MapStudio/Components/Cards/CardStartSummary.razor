@@ -1,0 +1,18 @@
+@* K03 (plan section 16.16): the start a card gives, read only; the page prepares the lines. *@
+<ul id="new-card-summary">
+    <li id="new-summary-boards">Boards: @Start.Boards</li>
+    <li id="new-summary-sides">@Start.Sides</li>
+    <li id="new-summary-date">@Start.Conditions</li>
+</ul>
+@if (Start.FirstRoll is { } firstRoll)
+{
+    <p id="new-first-roll" class="muted">@firstRoll</p>
+}
+
+@code {
+    /// <summary>The start as the page words it: the boards, the sides line, the date and conditions, and the first-move note if a dr decides.</summary>
+    public sealed record StartLines(string Boards, string Sides, string Conditions, string? FirstRoll);
+
+    [Parameter, EditorRequired]
+    public StartLines Start { get; set; } = new(string.Empty, string.Empty, string.Empty, null);
+}

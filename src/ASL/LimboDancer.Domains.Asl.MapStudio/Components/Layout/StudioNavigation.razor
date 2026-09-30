@@ -1,0 +1,63 @@
+@implements IDisposable
+@inject NavigationManager Navigation
+
+@* S01 (plan section 10): the Studio's destinations in groups; the group of the current page is marked, nested routes included. *@
+<nav id="studio-nav" class="studio-nav" aria-label="Studio" hidden="@Hidden" @onkeydown="KeyDown">
+    @foreach (var group in Groups)
+    {
+        var current = IsCurrent(group);
+        <section class="nav-group@(current ? " current" : string.Empty)" data-group="@group.Id">
+            <span class="nav-group-title" id="@($"nav-{group.Id}")">@group.Label</span>
+            <ul aria-labelledby="@($"nav-{group.Id}")">
+                @foreach (var item in group.Items)
+                {
+                    <li><NavLink href="@item.Href" Match="@item.Match">@item.Label</NavLink></li>
+                }
+            </ul>
+        </section>
+    }
+</nav>
+
+@code {
+    /// <summary>A destination: its label, its route relative to the base, and how the current route matches it.</summary>
+    public sealed record Destination(string Label, string Href, NavLinkMatch Match = NavLinkMatch.Prefix);
+
+    /// <summary>A group of destinations, and the route prefixes that belong to it ("" is the root, matched exactly).</summary>
+    public sealed record Group(string Id, string Label, IReadOnlyList<string> Prefixes, IReadOnlyList<Destination> Items);
+
+    public static IReadOnlyList<Group> Groups { get; } =
+    [
+        new("boards", "Boards", ["", "boards/", "author/"], [new("Board library", "", NavLinkMatch.All), new("New board", "author/new")]),
+        new("maps", "Maps", ["maps"], [new("Maps", "maps")]),
+        new("units", "Units", ["units/lab"], [new("Unit Lab", "units/lab")]),
+        new("scenarios", "Scenarios", ["units/scenarios", "units/cards"], [new("Scenario cards", "units/scenarios"), new("Card editor", "units/cards/edit")]),
+        new("play", "Play", ["games/play", "units/games"], [new("Play", "games/play"), new("Game states", "units/games")]),
+        new("verify", "Verify", ["fidelity"], [new("Fidelity", "fidelity")]),
+        new("settings", "Settings", ["settings"], [new("Settings", "settings")]),
+    ];
+
+    /// <summary>Whether the navigation is hidden (collapsed, or a closed drawer).</summary>
+    [Parameter]
+    public bool Hidden { get; set; }
+
+    /// <summary>Raised on Escape inside the navigation, so the layout can close a drawer and return focus.</summary>
+    [Parameter]
+    public EventCallback OnEscape { get; set; }
+
+    /// <summary>The group a base-relative path belongs to, if any.</summary>
+    public static Group? GroupOf(string relative)
+    {
+        var path = relative.Split('?', '#')[0].TrimEnd('/');
+        return Groups.FirstOrDefault(group => group.Prefixes.Any(prefix => prefix.Length == 0 ? path.Length == 0 : path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    private bool IsCurrent(Group group) => GroupOf(Navigation.ToBaseRelativePath(Navigation.Uri)) == group;
+
+    protected override void OnInitialized() => Navigation.LocationChanged += Changed;
+
+    private void Changed(object? sender, LocationChangedEventArgs args) => InvokeAsync(StateHasChanged);
+
+    private Task KeyDown(KeyboardEventArgs args) => args.Key == "Escape" ? OnEscape.InvokeAsync() : Task.CompletedTask;
+
+    public void Dispose() => Navigation.LocationChanged -= Changed;
+}

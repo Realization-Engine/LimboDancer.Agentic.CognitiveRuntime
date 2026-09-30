@@ -284,33 +284,147 @@ header.studio h1 {
     white-space: nowrap;
 }
 
-header.studio a {
-    display: inline-flex;
-    align-items: center;
+header.studio .nav-toggle {
     height: 2.1rem;
-    padding: 0 0.7rem;
+    min-width: 2.1rem;
+    margin-right: 0.75rem;
+    padding: 0 0.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: transparent;
+    color: var(--command-ink);
+    font-size: 1.1rem;
+}
+
+header.studio .nav-toggle:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+header.studio .nav-toggle:focus-visible {
+    outline-color: var(--accent-tint);
+}
+
+/* ---- Shell: a sidebar of grouped destinations beside the page (plan section 10) ---- */
+
+.studio-body {
+    display: grid;
+    grid-template-columns: 13rem minmax(0, 1fr);
+    min-height: calc(100vh - 3.5rem);
+}
+
+.studio-shell.nav-hidden .studio-body {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.studio-body > main {
+    min-width: 0;
+}
+
+.studio-nav {
+    padding: 0.75rem 0.5rem;
+    background: var(--surface-2);
+    border-right: 1px solid var(--line);
+    overflow-y: auto;
+}
+
+.studio-nav[hidden] {
+    display: none;
+}
+
+.nav-group + .nav-group {
+    margin-top: 0.6rem;
+}
+
+.nav-group-title {
+    display: block;
+    padding: 0 0.6rem;
+    font-family: var(--font-display);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.nav-group.current .nav-group-title {
+    color: var(--accent-ink);
+}
+
+.studio-nav ul {
+    list-style: none;
+    margin: 0.2rem 0 0;
+    padding: 0;
+}
+
+.studio-nav a {
+    display: block;
+    padding: 0.35rem 0.6rem;
     border-radius: var(--radius);
-    color: #d3d1c6;
+    color: var(--ink);
     font-size: 0.9rem;
     text-decoration: none;
-    white-space: nowrap;
 }
 
-header.studio a:hover {
-    color: #ffffff;
-    background: rgba(255, 255, 255, 0.08);
+.studio-nav a:hover {
+    background: var(--line-soft);
 }
 
-/* Blazor's NavLink adds .active; plain links can use aria-current="page" */
-header.studio a.active,
-header.studio a[aria-current="page"] {
-    color: var(--command);
+/* Blazor's NavLink adds .active and aria-current="page" */
+.studio-nav a.active,
+.studio-nav a[aria-current="page"] {
     background: var(--accent-tint);
+    color: var(--accent-ink);
     font-weight: 600;
 }
 
-header.studio a + a {
-    margin-left: 0; /* was -0.5rem to tighten spacing; gap now handles it */
+/* Narrow windows: the sidebar is a drawer over the page, closed until the toggle opens it. */
+.studio-shell.narrow .studio-body {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.studio-shell.narrow .studio-nav {
+    position: fixed;
+    top: 3.5rem;
+    left: 0;
+    bottom: 0;
+    width: min(16rem, 85vw);
+    z-index: 20;
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.2);
+}
+
+/* ---- Page header (S02) ---- */
+
+.page-header {
+    margin-bottom: 0.75rem;
+}
+
+.page-heading {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+}
+
+.page-heading h2.page {
+    margin: 0;
+}
+
+.page-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
+.page-description {
+    max-width: 75ch;
+    margin-top: 0.35rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.page-description p {
+    margin: 0.25rem 0;
 }
 
 main {
@@ -427,6 +541,12 @@ td.number {
     background: var(--info-bg);
     color: #1f3f5e;
     font-size: 0.875rem;
+}
+
+.banner.warning {
+    border-color: #e3cf9f;
+    background: var(--warn-bg);
+    color: var(--warn);
 }
 
 /* ---- Definition lists (run reports, settings) ------------------------------ */
@@ -1144,30 +1264,183 @@ p.diagnostic:not(.info):not(.warning):not(.error) {
 }
 
 .new-game-fields {
-    display: grid;
-    grid-template-columns: max-content minmax(0, 1fr);
-    gap: 0.4rem 0.75rem;
-    align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
     max-width: 60rem;
     margin: 0.5rem 0;
 }
 
-.new-game-fields > label {
-    font-weight: 600;
-}
-
-.new-game-fields > input,
-.new-game-fields > select {
-    justify-self: start;
-}
-
-.new-game-fields > ul {
+.new-game-fields #new-card-summary {
     margin: 0;
     padding-left: 1.25rem;
+}
+
+.new-game-fields #new-first-roll {
+    margin: 0.25rem 0 0;
 }
 
 /* A scenario card's facts read as prose, not as technical provenance. */
 .scenario-card dl.report dd {
     font-family: var(--font-sans);
     font-size: 0.875rem;
+}
+
+/* ---- Shared components (plan section 16.3) ---- */
+
+/* S05: a status in words and color */
+.status-badge {
+    display: inline-block;
+    padding: 0 0.45rem;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.35rem;
+    white-space: nowrap;
+    background: var(--line-soft);
+    color: var(--ink);
+}
+
+.status-badge.info { background: var(--info-bg); color: var(--info); }
+.status-badge.pass { background: var(--pass-bg); color: var(--pass); }
+.status-badge.warning { background: var(--warn-bg); color: var(--warn); }
+.status-badge.fail { background: var(--fail-bg); color: var(--fail); }
+
+/* S06: findings, each with its severity badge */
+.finding-list {
+    max-width: 60rem;
+    margin: 0.5rem 0;
+    padding: 0;
+    list-style: none;
+}
+
+.finding-list .finding {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid var(--line-soft);
+    font-size: 0.875rem;
+}
+
+.finding-list .finding:last-child {
+    border-bottom: 0;
+}
+
+.finding-list-empty {
+    color: var(--muted);
+    font-size: 0.875rem;
+}
+
+/* S04: an operation's busy state and result */
+.operation-feedback {
+    max-width: 60rem;
+    margin: 0.5rem 0;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+}
+
+.operation-feedback p {
+    margin: 0;
+}
+
+.operation-feedback.busy { background: var(--info-bg); color: var(--info); }
+.operation-feedback.done { background: var(--pass-bg); color: var(--pass); }
+.operation-feedback.refused { background: var(--warn-bg); color: var(--warn); }
+.operation-feedback.failed { background: var(--fail-bg); color: var(--fail); }
+
+/* S03: a source the page needs is not configured */
+.source-required {
+    max-width: 70ch;
+    padding: 0.75rem 1rem;
+    border: 1px solid #e3cf9f;
+    border-radius: var(--radius);
+    background: var(--warn-bg);
+    color: var(--ink);
+}
+
+.source-required p {
+    margin: 0.25rem 0;
+}
+
+/* S07: a label, its control, and its help or error */
+.field-group {
+    display: grid;
+    grid-template-columns: 9rem minmax(0, 1fr);
+    gap: 0.25rem 0.75rem;
+    align-items: baseline;
+}
+
+.field-group .field-label {
+    font-weight: 600;
+}
+
+.field-group .field-control > select,
+.field-group .field-control > input {
+    max-width: 100%;
+}
+
+.field-help {
+    margin: 0.2rem 0 0;
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.field-error {
+    margin: 0.2rem 0 0;
+    color: var(--fail);
+    font-size: 0.85rem;
+}
+
+@media (max-width: 40rem) {
+    .field-group {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* S10: stepping through revisions */
+.revision-navigator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.revision-navigator input {
+    width: 5rem;
+}
+
+/* K21: a card's provenance, collapsed beneath the card */
+.card-provenance {
+    max-width: 60rem;
+    margin: 1rem 0;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+}
+
+.card-provenance > summary {
+    font-weight: 600;
+}
+
+.card-provenance h4 {
+    margin: 0.9rem 0 0.4rem;
+}
+
+.card-provenance dl.report dd {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+}
+
+.card-provenance table.library {
+    min-width: 0;
+    width: 100%;
+}
+
+.provenance-values {
+    margin: 0.25rem 0 0;
+    padding-left: 1.1rem;
+    font-size: 0.8rem;
 }

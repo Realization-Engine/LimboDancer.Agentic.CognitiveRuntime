@@ -1,0 +1,78 @@
+@* K01 (plan section 16.16): a new game from a card: the card, the game's id and label, the start it gives, and the Balance. The page keeps the card's hash, the placements, and the proposal. *@
+<p id="new-game-help" class="muted">
+    Every game starts from a scenario card (ruling R22.4): a built-in card, one of yours, or a minimal card for a game with no scenario, made on the
+    <a id="new-card-editor" href="units/cards/edit">card editor</a>. The card gives the boards, sides, ELR, SAN, edges, date, Scenario Defender, and SSRs.
+</p>
+<div class="new-game-fields">
+    <FieldGroup Label="Scenario card" For="new-card">
+        <CardPicker Id="new-card" Cards="@Cards" Value="@Card" ValueChanged="@CardChanged" EmptyLabel="choose a card" />
+    </FieldGroup>
+    <FieldGroup Label="Game id" For="new-id">
+        <input id="new-id" value="@GameId" @onchange="@(args => GameIdChanged.InvokeAsync(args.Value as string ?? string.Empty))" placeholder="village" />
+    </FieldGroup>
+    <FieldGroup Label="Label" For="new-label">
+        <input id="new-label" value="@Label" @onchange="@(args => LabelChanged.InvokeAsync(args.Value as string ?? string.Empty))" />
+    </FieldGroup>
+    @if (Start is { } start)
+    {
+        <FieldGroup Label="The start">
+            <CardStartSummary Start="@start" />
+        </FieldGroup>
+        @if (BalanceSides is { } sides)
+        {
+            <FieldGroup Label="Balance" For="new-balance" Title="A26.4: when both players wish to play the same side, a dr decides, and the loser plays the other side with its Balance.">
+                <BalanceChoice Sides="@sides" Value="@Balance" ValueChanged="@BalanceChanged"
+                               PlayerOne="@PlayerOne" PlayerOneChanged="@PlayerOneChanged" PlayerTwo="@PlayerTwo" PlayerTwoChanged="@PlayerTwoChanged" />
+            </FieldGroup>
+        }
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<CardPicker.Choice> Cards { get; set; } = [];
+
+    [Parameter]
+    public string? Card { get; set; }
+
+    [Parameter]
+    public EventCallback<string?> CardChanged { get; set; }
+
+    [Parameter]
+    public string GameId { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> GameIdChanged { get; set; }
+
+    [Parameter]
+    public string Label { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> LabelChanged { get; set; }
+
+    /// <summary>The start the chosen card gives; null before a card is chosen.</summary>
+    [Parameter]
+    public CardStartSummary.StartLines? Start { get; set; }
+
+    /// <summary>The sides that may take their Balance; null for a minimal card, which has none.</summary>
+    [Parameter]
+    public IReadOnlyList<string>? BalanceSides { get; set; }
+
+    [Parameter]
+    public string Balance { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> BalanceChanged { get; set; }
+
+    [Parameter]
+    public string PlayerOne { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> PlayerOneChanged { get; set; }
+
+    [Parameter]
+    public string PlayerTwo { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> PlayerTwoChanged { get; set; }
+}

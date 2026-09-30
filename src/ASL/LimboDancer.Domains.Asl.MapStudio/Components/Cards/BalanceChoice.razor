@@ -1,0 +1,39 @@
+@* K04 (plan section 16.16): A26.4's Balance: taken by agreement, or when both players wish to play the same side, by a dr, with the players named. *@
+<span class="balance-choice">
+    <select id="new-balance" value="@Value" @onchange="@(args => ValueChanged.InvokeAsync(args.Value as string ?? string.Empty))">
+        <option value="">none</option>
+        @foreach (var side in Sides)
+        {
+            <option value="@("agree:" + side)">@side takes its Balance by agreement</option>
+            <option value="@("wish:" + side)">both players wish to play @side: a dr decides</option>
+        }
+    </select>
+    @if (Value.StartsWith("wish:", StringComparison.Ordinal))
+    {
+        <input id="new-player-one" value="@PlayerOne" @onchange="@(args => PlayerOneChanged.InvokeAsync(args.Value as string ?? string.Empty))" size="10" placeholder="first player" aria-label="First player" />
+        <input id="new-player-two" value="@PlayerTwo" @onchange="@(args => PlayerTwoChanged.InvokeAsync(args.Value as string ?? string.Empty))" size="10" placeholder="second player" aria-label="Second player" />
+    }
+</span>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<string> Sides { get; set; } = [];
+
+    [Parameter]
+    public string Value { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> ValueChanged { get; set; }
+
+    [Parameter]
+    public string PlayerOne { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> PlayerOneChanged { get; set; }
+
+    [Parameter]
+    public string PlayerTwo { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> PlayerTwoChanged { get; set; }
+}

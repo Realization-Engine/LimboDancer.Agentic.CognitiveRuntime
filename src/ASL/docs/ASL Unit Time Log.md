@@ -549,3 +549,13 @@ At the user's request, 2026-09-30, branch `feature/asl-card-editor-polish`.
 | Commit db812c9; the Docker Linux check (every step exit 0; MapStudio 156, Play 556, Authoring 167 of 167, ScenarioA1 480); no Authoring change, so no chart supplement run; merge and push | 07:43 | 08:02 | 0:19 | |
 
 Total 0:57 (07:03 to 08:02, with the plan drafted during the suite).
+
+## Pass 22b: The theme and the shared foundation
+
+Estimate: 5:30 (build 4:15), the ASL Card Play and Map Studio Redesign Plan, approved 2026-09-30. Kickoff 11:20. Branch `feature/asl-backlog-pass-22b`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| 22b.1: branch `UI-Redesign-01` merged into the pass branch (clean; site.css, local fonts, viewport data attributes) | 11:20 | 11:21 | 0:01 | |
+| 22b.2: S01 `StudioNavigation` (grouped sidebar, collapsible, a drawer under 1024px, Escape returns focus), `studioShell.js`, S02 `PageHeader` on ten pages, the draft restriction as a warning banner; checked in the Studio (wide, collapsed, nested route, narrow drawer) | 11:21 | 11:28 | 0:07 | |
+| 22b.3 and 22b.4: S03 to S07, S09, S10; K02 `CardPicker` on Play, Scenarios, and the card editor; K01 `NewGameFromCard` with K03 and K04; S03, S04, S06 adopted; 22b.5: `CardProvenance` in the Play library with the pass 17 registry embedded, K21 `CardProvenancePanel` on Scenarios and Play; 12 component tests, 6 provenance tests, page assertions; MapStudio 175 pass | 11:28 | 11:46 | 0:18 | Session paused here for a new chat |

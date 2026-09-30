@@ -1,0 +1,27 @@
+@* S02 (plan section 16.3): a collection page's title, its short description, and its page-level actions; no service access. *@
+<header class="page-header">
+    <div class="page-heading">
+        <h2 class="page">@Title</h2>
+        @if (Actions is not null)
+        {
+            <div class="page-actions">@Actions</div>
+        }
+    </div>
+    @if (ChildContent is not null)
+    {
+        <div class="page-description">@ChildContent</div>
+    }
+</header>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = string.Empty;
+
+    /// <summary>The page's short description.</summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>The page-level actions, such as New or Run.</summary>
+    [Parameter]
+    public RenderFragment? Actions { get; set; }
+}

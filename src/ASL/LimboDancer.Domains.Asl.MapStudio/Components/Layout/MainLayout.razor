@@ -1,17 +1,116 @@
 @inherits LayoutComponentBase
+@implements IAsyncDisposable
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
 
-<header class="studio">
-    <h1>ASL Map Studio</h1>
-    <a href="">Board library</a>
-    <a href="maps">Maps</a>
-    <a href="fidelity">Fidelity</a>
-    <a href="author/new">New board</a>
-    <a href="units/lab">Unit Lab</a>
-    <a href="units/games">Game states</a>
-    <a href="units/scenarios">Scenario cards</a>
-    <a href="games/play">Play</a>
-    <a href="settings">Settings</a>
-</header>
-<main>
-    @Body
-</main>
+<div class="@ShellClass">
+    <header class="studio">
+        <button class="nav-toggle" @ref="toggle" aria-controls="studio-nav" aria-expanded="@(Expanded ? "true" : "false")"
+                aria-label="@(Expanded ? "Hide navigation" : "Show navigation")" title="@(Expanded ? "Hide navigation" : "Show navigation")" @onclick="Toggle">
+            <span aria-hidden="true">&#9776;</span>
+        </button>
+        <h1>ASL Map Studio</h1>
+    </header>
+    <div class="studio-body">
+        <StudioNavigation Hidden="@(!Expanded)" OnEscape="Escape" />
+        <main>
+            @Body
+        </main>
+    </div>
+</div>
+
+@code {
+    private ElementReference toggle;
+    private IJSObjectReference? module;
+    private DotNetObjectReference<MainLayout>? self;
+
+    // Wide: the sidebar shows unless collapsed. Narrow (under 1024px): it is a drawer, closed until opened.
+    private bool narrow;
+    private bool collapsed;
+    private bool drawerOpen;
+
+    private bool Expanded => narrow ? drawerOpen : !collapsed;
+
+    private string ShellClass => "studio-shell" + (narrow ? " narrow" : string.Empty) + (Expanded ? string.Empty : " nav-hidden");
+
+    protected override void OnInitialized() => Navigation.LocationChanged += Changed;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        try
+        {
+            module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/studioShell.js");
+            self = DotNetObjectReference.Create(this);
+            SetNarrow(await module.InvokeAsync<bool>("watchNarrow", self));
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+    }
+
+    /// <summary>Called from the browser when the window crosses 1024px.</summary>
+    [JSInvokable]
+    public void SetNarrow(bool value)
+    {
+        if (narrow != value)
+        {
+            narrow = value;
+            drawerOpen = false;
+            StateHasChanged();
+        }
+    }
+
+    private void Toggle()
+    {
+        if (narrow)
+        {
+            drawerOpen = !drawerOpen;
+        }
+        else
+        {
+            collapsed = !collapsed;
+        }
+    }
+
+    private async Task Escape()
+    {
+        if (narrow && drawerOpen)
+        {
+            drawerOpen = false;
+            await toggle.FocusAsync();
+        }
+    }
+
+    // A route change closes the drawer; it never changes the wide sidebar or a page's state.
+    private void Changed(object? sender, LocationChangedEventArgs args)
+    {
+        if (drawerOpen)
+        {
+            drawerOpen = false;
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        Navigation.LocationChanged -= Changed;
+        try
+        {
+            if (module is not null)
+            {
+                await module.InvokeVoidAsync("unwatchNarrow");
+                await module.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+
+        self?.Dispose();
+    }
+}

@@ -16,11 +16,12 @@
 
 <PageTitle>Play - ASL Map Studio</PageTitle>
 
-<h2>Play</h2>
-<p class="muted">
-    Live games are the Studio's chosen game source (D2). Every change is a registered action through the Execution Gate: the Studio proposes it,
-    the gate checks it against the current game, boards, and catalog, and it commits only after you confirm. Nothing here edits a game directly.
-</p>
+<PageHeader Title="Play">
+    <p>
+        Live games are the Studio's chosen game source (D2). Every change is a registered action through the Execution Gate: the Studio proposes it,
+        the gate checks it against the current game, boards, and catalog, and it commits only after you confirm. Nothing here edits a game directly.
+    </p>
+</PageHeader>
 
 @if (Scripted is { } scripted)
 {
@@ -121,6 +122,10 @@
                 }
             </ol>
             <a id="play-card-link" href="units/scenarios?card=@scenario.Id">The whole card</a>
+            @if (PublishedCatalog is { } provenanceCatalog)
+            {
+                <CardProvenancePanel Id="play-card-provenance" Model="@CardProvenance.Of(playCard, Live.Cards.IsUser(scenario.Id), null, CardSha(scenario.Id) ?? scenario.Sha256, provenanceCatalog, new ScenarioCardReferenceFacts(scenario.Id, scenario.Sha256, $"{state.Catalog.Catalog}@{state.Catalog.Version}", CardSha(scenario.Id)))" />
+            }
         }
         else
         {
@@ -132,56 +137,9 @@
 @if (history is null)
 {
     <h3>New game</h3>
-    <p id="new-game-help" class="muted">
-        Every game starts from a scenario card (ruling R22.4): a built-in card, one of yours, or a minimal card for a game with no scenario, made on the
-        <a id="new-card-editor" href="units/cards/edit">card editor</a>. The card gives the boards, sides, ELR, SAN, edges, date, Scenario Defender, and SSRs.
-    </p>
-    <div class="fields new-game-fields">
-        <label for="new-card">Scenario card</label>
-        <select id="new-card" value="@(scenarioCard ?? string.Empty)" @onchange="ChooseCard">
-            <option value="">choose a card</option>
-            @foreach (var name in Live.Cards.Names)
-            {
-                <option value="@name">@CardTitle(name)@(Live.Cards.IsUser(name) ? " (yours)" : string.Empty)</option>
-            }
-        </select>
-        <label for="new-id">Game id</label><input id="new-id" value="@newId" @onchange="@(args => newId = args.Value as string ?? string.Empty)" placeholder="village" />
-        <label for="new-label">Label</label><input id="new-label" value="@newLabel" @onchange="@(args => newLabel = args.Value as string ?? string.Empty)" />
-        @if (ChosenCard is { } chosenCard)
-        {
-            <span>The start</span>
-            <ul id="new-card-summary">
-                <li id="new-summary-boards">Boards: @newBoard</li>
-                <li id="new-summary-sides">@firstSide@(firstSide == chosenCard.Turns.MovesFirst ? " moves first" : string.Empty): ELR @(firstElr.Length > 0 ? firstElr : chosenCard.Minimal ? "none" : "by OB group"), SAN @firstSan, edge @(firstEdge.Length > 0 ? firstEdge : "not named");
-                    @secondSide: ELR @(secondElr.Length > 0 ? secondElr : chosenCard.Minimal ? "none" : "by OB group"), SAN @secondSan, edge @(secondEdge.Length > 0 ? secondEdge : "not named")</li>
-                <li id="new-summary-date">Month @(newMonth.Length > 0 ? newMonth : "not recorded"), year @(newYear.Length > 0 ? newYear : "not recorded"); SSR tokens: @(newRules.Length > 0 ? newRules : "none"); Scenario Defender: @(newDefender.Length > 0 ? newDefender : "none")</li>
-            </ul>
-            @if (chosenCard.Turns.MovesFirst is null)
-            {
-                <span></span>
-                <span id="new-first-roll" class="muted">@chosenCard.Turns.MovesFirstNote The game rolls a dr for each side as it starts; the higher moves first (ruling R20.2).</span>
-            }
-            @if (!chosenCard.Minimal)
-            {
-                <label for="new-balance" title="A26.4: when both players wish to play the same side, a dr decides, and the loser plays the other side with its Balance.">Balance</label>
-                <span>
-                    <select id="new-balance" value="@newBalance" @onchange="@(args => newBalance = args.Value as string ?? string.Empty)">
-                        <option value="">none</option>
-                        @foreach (var balanceSide in chosenCard.Sides)
-                        {
-                            <option value="@("agree:" + balanceSide.Side)">@balanceSide.Side takes its Balance by agreement</option>
-                            <option value="@("wish:" + balanceSide.Side)">both players wish to play @balanceSide.Side: a dr decides</option>
-                        }
-                    </select>
-                    @if (newBalance.StartsWith("wish:", StringComparison.Ordinal))
-                    {
-                        <input id="new-player-one" value="@playerOne" @onchange="@(args => playerOne = args.Value as string ?? string.Empty)" size="10" placeholder="first player" />
-                        <input id="new-player-two" value="@playerTwo" @onchange="@(args => playerTwo = args.Value as string ?? string.Empty)" size="10" placeholder="second player" />
-                    }
-                </span>
-            }
-        }
-    </div>
+    <NewGameFromCard Cards="@CardChoices" Card="@scenarioCard" CardChanged="@ChooseCard"
+                     @bind-GameId="newId" @bind-Label="newLabel" Start="@NewStart" BalanceSides="@BalanceSides"
+                     @bind-Balance="newBalance" @bind-PlayerOne="playerOne" @bind-PlayerTwo="playerTwo" />
 }
 else if (history.Current is null && state is null)
 {
@@ -1883,6 +1841,20 @@ else if (state is not null)
 
     private string CardTitle(string name) => CardRead(name)?.Card is { } card ? card.Title : name;
 
+    /// <summary>The cards a new game may start from (K02).</summary>
+    private IReadOnlyList<CardPicker.Choice> CardChoices => [.. Live.Cards.Names.Select(name => new CardPicker.Choice(name, CardTitle(name), Live.Cards.IsUser(name)))];
+
+    /// <summary>The start the chosen card gives, worded for the summary (K03); null before a card is chosen.</summary>
+    private CardStartSummary.StartLines? NewStart => ChosenCard is not { } card ? null : new(
+        newBoard,
+        $"{firstSide}{(firstSide == card.Turns.MovesFirst ? " moves first" : string.Empty)}: ELR {(firstElr.Length > 0 ? firstElr : card.Minimal ? "none" : "by OB group")}, SAN {firstSan}, edge {(firstEdge.Length > 0 ? firstEdge : "not named")}; "
+            + $"{secondSide}: ELR {(secondElr.Length > 0 ? secondElr : card.Minimal ? "none" : "by OB group")}, SAN {secondSan}, edge {(secondEdge.Length > 0 ? secondEdge : "not named")}",
+        $"Month {(newMonth.Length > 0 ? newMonth : "not recorded")}, year {(newYear.Length > 0 ? newYear : "not recorded")}; SSR tokens: {(newRules.Length > 0 ? newRules : "none")}; Scenario Defender: {(newDefender.Length > 0 ? newDefender : "none")}",
+        card.Turns.MovesFirst is null ? $"{card.Turns.MovesFirstNote} The game rolls a dr for each side as it starts; the higher moves first (ruling R20.2)." : null);
+
+    /// <summary>The sides that may take their Balance (K04); none for a minimal card.</summary>
+    private IReadOnlyList<string>? BalanceSides => ChosenCard is { Minimal: false } card ? [.. card.Sides.Select(side => side.Side)] : null;
+
     /// <summary>The OB groups a placement may name (ruling R18.3): the game's, or the chosen card's before the game starts.</summary>
     private IReadOnlyList<(string Side, ObGroup Group)> GroupChoices => state is not null
         ? [.. state.Sides.SelectMany(side => side.Groups.Select(group => (side.Id, group)))]
@@ -1891,9 +1863,9 @@ else if (state is not null)
             : [];
 
     /// <summary>Fills the start fields from a card (backlog pass 18, ruling R18.1), or frees them when no card is chosen.</summary>
-    private void ChooseCard(ChangeEventArgs args)
+    private void ChooseCard(string? chosen)
     {
-        scenarioCard = args.Value as string is { Length: > 0 } chosen ? chosen : null;
+        scenarioCard = chosen is { Length: > 0 } ? chosen : null;
         // Referee, pass 18: the card's hash as the page read it, so a card changed before the setup is refused (ruling R18.1).
         scenarioSha = scenarioCard is null ? null : CardSha(scenarioCard);
         var choices = GroupChoices.Select(choice => choice.Group.Id).ToHashSet(StringComparer.Ordinal);

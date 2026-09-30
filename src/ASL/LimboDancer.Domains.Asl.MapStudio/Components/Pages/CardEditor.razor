@@ -10,13 +10,13 @@
 
 <PageTitle>Card editor - ASL Map Studio</PageTitle>
 
-<h2 class="page">Card editor</h2>
-
-<p class="hint">
-    Every game starts from a scenario card (rulings R22.1 to R22.4). Start from a minimal card (boards and two sides, for a game with no scenario), a copy
-    of a built-in card, or one of your cards; the card is checked as you edit it, and only a valid card is saved, under the boards folder beside the saved
-    maps. The OB groups, SSRs, and Victory Conditions are edited as JSON in the card format; the counter picker adds a counter line to a group.
-</p>
+<PageHeader Title="Card editor">
+    <p>
+        Every game starts from a scenario card (rulings R22.1 to R22.4). Start from a minimal card (boards and two sides, for a game with no scenario), a copy
+        of a built-in card, or one of your cards; the card is checked as you edit it, and only a valid card is saved, under the boards folder beside the saved
+        maps. The OB groups, SSRs, and Victory Conditions are edited as JSON in the card format; the counter picker adds a counter line to a group.
+    </p>
+</PageHeader>
 
 @if (catalog is null)
 {
@@ -27,13 +27,7 @@ else
     <div class="toolbar">
         <label>
             Start from
-            <select id="edit-source" value="@source" @onchange="ChooseSource">
-                <option value="">a minimal card</option>
-                @foreach (var name in Live.Cards.Names)
-                {
-                    <option value="@name">@(Live.Cards.IsUser(name) ? "your card" : "a copy of") @Title(name)</option>
-                }
-            </select>
+            <CardPicker Id="edit-source" Cards="@Choices" Value="@source" ValueChanged="@ChooseSource" EmptyLabel="a minimal card" />
         </label>
         @if (source is { Length: > 0 } && Live.Cards.IsUser(source))
         {
@@ -137,25 +131,12 @@ else
         </span>
     </div>
 
-    @if (diagnostics.Count > 0)
-    {
-        <ul id="edit-diagnostics" class="diagnostic error">
-            @foreach (var diagnostic in diagnostics)
-            {
-                <li>@diagnostic</li>
-            }
-        </ul>
-    }
-    else
-    {
-        <p id="edit-valid" class="muted">The card is valid against catalog @catalog.Identity.Catalog@@@catalog.Identity.Version.</p>
-    }
+    <FindingList Id="edit-diagnostics" Items="@FindingList.Of(diagnostics)" EmptyId="edit-valid">
+        <Empty>The card is valid against catalog @catalog.Identity.Catalog@@@catalog.Identity.Version.</Empty>
+    </FindingList>
 
     <button id="edit-save" class="primary" @onclick="Save">Save the card</button>
-    @if (note is not null)
-    {
-        <p id="edit-note">@note</p>
-    }
+    <OperationFeedback Id="edit-note" Message="@note" Outcome="@NoteOutcome" />
 }
 
 @code {
@@ -268,9 +249,17 @@ else
         }
     };
 
-    private void ChooseSource(ChangeEventArgs args)
+    private IReadOnlyList<CardPicker.Choice> Choices => [.. Live.Cards.Names.Select(name => new CardPicker.Choice(name, Title(name), Live.Cards.IsUser(name)))];
+
+    // A note that stops the user (a refusal) reads as one; a completed save, delete, or addition reads as done.
+    private OperationFeedback.OperationOutcome NoteOutcome => note is not null
+        && (note.StartsWith("Not saved", StringComparison.Ordinal) || note.StartsWith("Name a group", StringComparison.Ordinal)
+            || note.StartsWith("The side's", StringComparison.Ordinal) || note.StartsWith("Side ", StringComparison.Ordinal))
+        ? OperationFeedback.OperationOutcome.Refused : OperationFeedback.OperationOutcome.Done;
+
+    private void ChooseSource(string? chosen)
     {
-        source = Text(args);
+        source = chosen ?? string.Empty;
         note = null;
         if (source.Length > 0 && catalog is not null && Live.Cards.Read(source, catalog)?.Card is { } card)
         {

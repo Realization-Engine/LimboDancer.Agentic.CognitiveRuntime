@@ -1,0 +1,64 @@
+@* S06 (plan section 16.3): findings with their severity in words; callers adapt their own diagnostics to it. *@
+@if (Items.Count > 0)
+{
+    <ul id="@Id" class="finding-list">
+        @foreach (var item in Items)
+        {
+            <li class="finding @item.Severity.ToString().ToLowerInvariant()">
+                <StatusBadge Label="@SeverityLabel(item.Severity)" Tone="@ToneOf(item.Severity)" />
+                @if (item.Code is { Length: > 0 } findingCode)
+                {
+                    <code>@findingCode</code>
+                }
+                <span class="finding-message">@item.Message</span>
+            </li>
+        }
+    </ul>
+}
+else if (Empty is not null)
+{
+    <p id="@EmptyId" class="finding-list-empty">@Empty</p>
+}
+
+@code {
+    public enum Severity
+    {
+        Info,
+        Warning,
+        Error,
+    }
+
+    /// <summary>One finding: its message, its severity, and an optional code.</summary>
+    public sealed record Finding(string Message, Severity Severity = Severity.Error, string? Code = null);
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Finding> Items { get; set; } = [];
+
+    [Parameter]
+    public string? Id { get; set; }
+
+    /// <summary>Shown when there are no findings; an explicit "no findings" is evidence, not silence.</summary>
+    [Parameter]
+    public RenderFragment? Empty { get; set; }
+
+    [Parameter]
+    public string? EmptyId { get; set; }
+
+    /// <summary>Findings from plain messages, all of one severity.</summary>
+    public static IReadOnlyList<Finding> Of(IEnumerable<string> messages, Severity severity = Severity.Error) =>
+        [.. messages.Select(message => new Finding(message, severity))];
+
+    private static string SeverityLabel(Severity severity) => severity switch
+    {
+        Severity.Info => "Note",
+        Severity.Warning => "Warning",
+        _ => "Error",
+    };
+
+    private static StatusBadge.BadgeTone ToneOf(Severity severity) => severity switch
+    {
+        Severity.Info => StatusBadge.BadgeTone.Info,
+        Severity.Warning => StatusBadge.BadgeTone.Warning,
+        _ => StatusBadge.BadgeTone.Fail,
+    };
+}

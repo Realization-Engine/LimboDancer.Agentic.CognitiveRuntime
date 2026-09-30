@@ -1,0 +1,37 @@
+@* K02 (plan section 16.16): the scenario cards to choose from, the same on every page: a user card marked "(yours)". *@
+<select id="@Id" value="@(Value ?? string.Empty)" @onchange="Change" aria-label="@AriaLabel">
+    @if (EmptyLabel is not null)
+    {
+        <option value="">@EmptyLabel</option>
+    }
+    @foreach (var card in Cards)
+    {
+        <option value="@card.Name">@card.Title@(card.IsUser ? " (yours)" : string.Empty)</option>
+    }
+</select>
+
+@code {
+    /// <summary>One card: its name, its title, and whether it is the user's.</summary>
+    public sealed record Choice(string Name, string Title, bool IsUser);
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Choice> Cards { get; set; } = [];
+
+    [Parameter]
+    public string? Value { get; set; }
+
+    [Parameter]
+    public EventCallback<string?> ValueChanged { get; set; }
+
+    [Parameter]
+    public string? Id { get; set; }
+
+    /// <summary>The first option's label, for no card (for example "choose a card"); none when null.</summary>
+    [Parameter]
+    public string? EmptyLabel { get; set; }
+
+    [Parameter]
+    public string? AriaLabel { get; set; }
+
+    private Task Change(ChangeEventArgs args) => ValueChanged.InvokeAsync(args.Value as string is { Length: > 0 } name ? name : null);
+}

@@ -1,0 +1,37 @@
+@* S10 (plan section 16.3): stepping through a game's revisions; the page loads the revision it is given. *@
+<span class="revision-navigator">
+    <button id="@(Id)-previous" aria-label="Previous revision" disabled="@(Busy || Current <= Min)" @onclick="@(() => Go(Current - 1))">&#8249;</button>
+    <label>
+        Revision
+        <input id="@Id" type="number" min="@Min" max="@Max" value="@Current" disabled="@Busy" @onchange="Typed" />
+        of @Max
+    </label>
+    <button id="@(Id)-next" aria-label="Next revision" disabled="@(Busy || Current >= Max)" @onclick="@(() => Go(Current + 1))">&#8250;</button>
+</span>
+
+@code {
+    [Parameter]
+    public int Current { get; set; }
+
+    [Parameter]
+    public int Min { get; set; }
+
+    [Parameter]
+    public int Max { get; set; }
+
+    [Parameter]
+    public bool Busy { get; set; }
+
+    [Parameter]
+    public string Id { get; set; } = "revision";
+
+    [Parameter]
+    public EventCallback<int> RevisionChanged { get; set; }
+
+    private Task Go(int revision) => RevisionChanged.InvokeAsync(Math.Clamp(revision, Min, Max));
+
+    private Task Typed(ChangeEventArgs args) =>
+        int.TryParse(args.Value as string, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var revision)
+            ? Go(revision)
+            : Task.CompletedTask;
+}

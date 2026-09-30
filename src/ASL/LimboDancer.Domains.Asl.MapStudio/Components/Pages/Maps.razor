@@ -7,16 +7,17 @@
 
 <PageTitle>Maps - ASL Map Studio</PageTitle>
 
-<h2 class="page">Maps</h2>
-<p class="muted">
-    A map places VASL boards in slots, up to three across, optionally reversed, with LOS scenario-specific rules, and is
-    built as VASL's runtime builds it: half-hex seams merge with non-open terrain winning, and each board's rules run in
-    VASL's two phases. Overlays are not available, because VASL derives their terrain from overlay artwork.
-</p>
+<PageHeader Title="Maps">
+    <p>
+        A map places VASL boards in slots, up to three across, optionally reversed, with LOS scenario-specific rules, and is
+        built as VASL's runtime builds it: half-hex seams merge with non-open terrain winning, and each board's rules run in
+        VASL's two phases. Overlays are not available, because VASL derives their terrain from overlay artwork.
+    </p>
+</PageHeader>
 
 @if (Source.Terrain() is not { } terrain)
 {
-    <p>Maps need the terrain catalog and boards from a configured VASL checkout. See <a href="settings">Settings</a>.</p>
+    <SourceRequiredNotice Missing="No VASL checkout is configured.">Maps need its terrain catalog and boards.</SourceRequiredNotice>
 }
 else
 {
