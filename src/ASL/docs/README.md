@@ -35,6 +35,7 @@ Scenario A1 state changes only in live games: the Map Studio's registered game a
 
 ## Documents
 
+- [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>): passes 22b to 30, the Map Studio redesign (theme, shared components, every page as Blazor components, the map-centered Play workspace) interleaved with card play, the deferred rules, and the Chapter H DYO purchase; 170 component candidates assigned to passes.
 - `LimboDancer.Agentic.CognitiveRuntime ASL Reference-Domain Requirements.md`: normative ASL reference-domain requirements (ASL-RD-001 through ASL-RD-015), end-to-end acceptance scenarios, and traceability to the runtime planes.
 - `LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md`: current rulebook-to-ontology authoring, validation, publication, and first-slice specification.
 - `LimboDancer.Agentic.CognitiveRuntime ASL-OT-01 Source Registry Review.md`: conformance decision and implementation evidence for source registration and fragment location.
