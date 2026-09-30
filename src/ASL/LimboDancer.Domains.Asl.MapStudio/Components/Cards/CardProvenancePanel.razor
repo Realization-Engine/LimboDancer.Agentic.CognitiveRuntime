@@ -36,9 +36,9 @@
     <h4>Source</h4>
     <dl class="report">
         <dt>Basis</dt>
-        <dd>@Model.Source.Basis</dd>
+        <dd>@(string.IsNullOrWhiteSpace(Model.Source.Basis) ? "not recorded" : Model.Source.Basis)</dd>
         <dt>Legacy card</dt>
-        <dd>@Model.Source.Legacy</dd>
+        <dd>@(string.IsNullOrWhiteSpace(Model.Source.Legacy) ? "not recorded" : Model.Source.Legacy)</dd>
         <dt>Adaptation</dt>
         <dd>
             @if (Model.Source.Adaptation.Count == 0)
@@ -58,53 +58,67 @@
     </dl>
 
     <h4>Counters</h4>
-    <table class="library provenance-counters">
-        <thead><tr><th>Counter</th><th>Count</th><th>Counter reference</th><th>Source record</th><th>Values</th></tr></thead>
-        <tbody>
-            @foreach (var counter in Model.Counters)
-            {
-                <tr data-definition="@counter.Definition">
-                    <td>@counter.Label</td>
-                    <td>@counter.Count</td>
-                    <td>
-                        @counter.Counter
-                        @if (counter.Manufactured)
-                        {
-                            <StatusBadge Label="manufactured (R0.3)" Tone="StatusBadge.BadgeTone.Warning" Explanation="No registered source prints it; its values are manufactured on sheet MFG." />
-                        }
-                    </td>
-                    <td>
-                        @if (counter.Source is { } source)
-                        {
-                            <span>@source.Id: @SourceStatus(source.Status)@(source.Transcriber is { } by ? $", transcribed by {by}" : string.Empty)@(source.Reviewer is { } reviewer ? $", reviewed by {reviewer}" : string.Empty)</span>
-                        }
-                        else
-                        {
-                            <span class="muted">unknown</span>
-                        }
-                    </td>
-                    <td>
-                        @if (counter.Values.Count == 0)
-                        {
-                            <span class="muted">none recorded</span>
-                        }
-                        else
-                        {
-                            <details>
-                                <summary>@counter.Values.Count values</summary>
-                                <ul class="provenance-values">
-                                    @foreach (var value in counter.Values)
-                                    {
-                                        <li>@value.Face @value.Name: @value.Value <span class="muted">(@value.Source)</span></li>
-                                    }
-                                </ul>
-                            </details>
-                        }
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    @if (Model.Counters.Count == 0)
+    {
+        <p class="muted provenance-no-counters">The card has no OB counters; its sides set up by hand (ruling R22.3).</p>
+    }
+    else
+    {
+        <table class="library provenance-counters">
+            <thead><tr><th>Side</th><th>Counter</th><th>Count</th><th>Counter reference</th><th>Source record</th><th>Values</th></tr></thead>
+            <tbody>
+                @foreach (var counter in Model.Counters)
+                {
+                    <tr data-definition="@counter.Definition" data-side="@counter.Side">
+                        <td>@counter.Side</td>
+                        <td>
+                            @counter.Label
+                            @if (counter.Balance)
+                            {
+                                <StatusBadge Label="Balance only (A26.4)" Tone="StatusBadge.BadgeTone.Info" Explanation="Joins the OB only when the side takes its Balance." />
+                            }
+                        </td>
+                        <td>@counter.Count</td>
+                        <td>
+                            @counter.Counter
+                            @if (counter.Manufactured)
+                            {
+                                <StatusBadge Label="manufactured (R0.3)" Tone="StatusBadge.BadgeTone.Warning" Explanation="No registered source prints it; its values are manufactured on sheet MFG." />
+                            }
+                        </td>
+                        <td>
+                            @if (counter.Source is { } source)
+                            {
+                                <span>@(counter.Manufactured ? "sheet MFG entry, " : string.Empty)@source.Id: @SourceStatus(source.Status)@(source.Transcriber is { } by ? $", transcribed by {by}" : string.Empty)@(source.Reviewer is { } reviewer ? $", reviewed by {reviewer}" : string.Empty)@(counter.Manufactured ? "; values manufactured under R0.3" : string.Empty)</span>
+                            }
+                            else
+                            {
+                                <span class="muted">unknown</span>
+                            }
+                        </td>
+                        <td>
+                            @if (counter.Values.Count == 0)
+                            {
+                                <span class="muted">none recorded</span>
+                            }
+                            else
+                            {
+                                <details>
+                                    <summary>@counter.Values.Count values</summary>
+                                    <ul class="provenance-values">
+                                        @foreach (var value in counter.Values)
+                                        {
+                                            <li title="@value.Name">@value.Face @Plain(value.Name) @value.Value <span class="muted">(@value.Source)</span></li>
+                                        }
+                                    </ul>
+                                </details>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
 
     <h4>Citations</h4>
     @if (Model.Citations.Count == 0)
@@ -127,10 +141,10 @@
                             @switch (citation.Kind)
                             {
                                 case CitationKind.Fragment:
-                                    <span>rulebook PDF page@(citation.Pages.Count > 1 ? "s" : string.Empty) @string.Join(", ", citation.Pages); <code>@Short(citation.FragmentId)</code>; @citation.Comparison</span>
+                                    <span title="@citation.FragmentId">rulebook PDF page@(citation.Pages.Count > 1 ? "s" : string.Empty) @string.Join(", ", citation.Pages) (physical); @Comparison(citation.Comparison)</span>
                                     break;
                                 case CitationKind.Ruling:
-                                    <a href="@citation.Link" target="_blank" rel="noopener">Backlog Passes Plan, section 5</a>
+                                    <a href="@citation.Link" target="_blank" rel="noopener">Ruling @citation.Rule, Backlog Passes Plan, section 5</a>
                                     break;
                                 default:
                                     <span class="muted">not in the registry of compared fragments</span>
@@ -173,5 +187,15 @@
         _ => "synthetic",
     };
 
-    private static string Short(string? fragment) => fragment is null ? string.Empty : fragment.Length > 40 ? fragment[..40] + "..." : fragment;
+    /// <summary>A value's name without its vocabulary prefix and hyphens ("asl:broken-morale" reads "broken morale"); the full id is its title.</summary>
+    private static string Plain(string name) => (name.IndexOf(':', StringComparison.Ordinal) is var colon and >= 0 ? name[(colon + 1)..] : name).Replace('-', ' ');
+
+    /// <summary>The pass 17 comparison result in words; a result not known here is shown as recorded.</summary>
+    private static string Comparison(string? comparison) => comparison is null ? string.Empty
+        : string.Join("; ", comparison.Split("; ").Select(result => result switch
+        {
+            "complete-alphanumeric-match" => "the text matches the rulebook",
+            "complete-alphanumeric-match-in-two-parts" => "the text matches the rulebook, in two parts",
+            _ => result,
+        }));
 }

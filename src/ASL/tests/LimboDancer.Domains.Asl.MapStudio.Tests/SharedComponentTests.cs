@@ -3,6 +3,7 @@ using LimboDancer.Domains.Asl.MapStudio.Components.Cards;
 using LimboDancer.Domains.Asl.MapStudio.Components.Layout;
 using LimboDancer.Domains.Asl.MapStudio.Components.Shared;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LimboDancer.Domains.Asl.MapStudio.Tests;
@@ -40,6 +41,36 @@ public sealed class SharedComponentTests : IDisposable
     }
 
     [Fact]
+    public void TheShellCollapsesWideAndClosesTheDrawerOnEscapeAndOnARouteChange()
+    {
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+        var navigation = context.Services.GetRequiredService<NavigationManager>();
+        var shell = context.Render<MainLayout>(parameters => parameters.Add(layout => layout.Body, (RenderFragment)(builder => builder.AddContent(0, "page"))));
+
+        // Wide: the sidebar shows, the toggle collapses it, and a route change leaves it as it is.
+        Assert.Equal("true", shell.Find(".nav-toggle").GetAttribute("aria-expanded"));
+        shell.Find(".nav-toggle").Click();
+        Assert.True(shell.Find("#studio-nav").HasAttribute("hidden"));
+        navigation.NavigateTo("maps");
+        Assert.True(shell.Find("#studio-nav").HasAttribute("hidden"));
+        shell.Find(".nav-toggle").Click();
+        shell.Find(".studio-shell").KeyDown(new KeyboardEventArgs { Key = "Escape" });
+        Assert.False(shell.Find("#studio-nav").HasAttribute("hidden"));
+
+        // Narrow: a drawer, closed until opened; Escape anywhere in the shell closes it, and so does a route change.
+        shell.InvokeAsync(() => shell.Instance.SetNarrow(true));
+        Assert.Contains("narrow", shell.Find(".studio-shell").ClassName, StringComparison.Ordinal);
+        Assert.True(shell.Find("#studio-nav").HasAttribute("hidden"));
+        shell.Find(".nav-toggle").Click();
+        Assert.Equal("true", shell.Find(".nav-toggle").GetAttribute("aria-expanded"));
+        shell.Find(".studio-shell").KeyDown(new KeyboardEventArgs { Key = "Escape" });
+        Assert.True(shell.Find("#studio-nav").HasAttribute("hidden"));
+        shell.Find(".nav-toggle").Click();
+        navigation.NavigateTo("settings");
+        shell.WaitForAssertion(() => Assert.True(shell.Find("#studio-nav").HasAttribute("hidden")));
+    }
+
+    [Fact]
     public void ThePageHeaderShowsItsTitleDescriptionAndActions()
     {
         var header = context.Render<PageHeader>(parameters => parameters
@@ -72,15 +103,17 @@ public sealed class SharedComponentTests : IDisposable
     [Fact]
     public void OperationFeedbackIsSilentWithoutAMessageAndAlertsOnFailure()
     {
-        Assert.Empty(context.Render<OperationFeedback>().Markup.Trim());
+        var silent = context.Render<OperationFeedback>(parameters => parameters.Add(component => component.Id, "op"));
+        Assert.Equal("status", silent.Find("#op").GetAttribute("role"));
+        Assert.Empty(silent.Find("#op").TextContent.Trim());
         var busy = context.Render<OperationFeedback>(parameters => parameters.Add(component => component.Busy, true).Add(component => component.Id, "op"));
-        Assert.Equal("status", busy.Find("#op").GetAttribute("role"));
+        Assert.Contains("Working", busy.Find("#op.operation-feedback-region .busy").TextContent, StringComparison.Ordinal);
         var failed = context.Render<OperationFeedback>(parameters => parameters
             .Add(component => component.Id, "op")
             .Add(component => component.Message, "Not saved.")
             .Add(component => component.Outcome, OperationFeedback.OperationOutcome.Failed)
             .Add(component => component.Details, ["disk full"]));
-        Assert.Equal("alert", failed.Find("#op").GetAttribute("role"));
+        Assert.Equal("alert", failed.Find("#op .operation-feedback.failed").GetAttribute("role"));
         Assert.Contains("disk full", failed.Find("#op .finding-list").TextContent, StringComparison.Ordinal);
     }
 

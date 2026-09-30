@@ -2,7 +2,7 @@
 @inject NavigationManager Navigation
 
 @* S01 (plan section 10): the Studio's destinations in groups; the group of the current page is marked, nested routes included. *@
-<nav id="studio-nav" class="studio-nav" aria-label="Studio" hidden="@Hidden" @onkeydown="KeyDown">
+<nav id="studio-nav" class="studio-nav" aria-label="Studio" hidden="@Hidden">
     @foreach (var group in Groups)
     {
         var current = IsCurrent(group);
@@ -40,10 +40,6 @@
     [Parameter]
     public bool Hidden { get; set; }
 
-    /// <summary>Raised on Escape inside the navigation, so the layout can close a drawer and return focus.</summary>
-    [Parameter]
-    public EventCallback OnEscape { get; set; }
-
     /// <summary>The group a base-relative path belongs to, if any.</summary>
     public static Group? GroupOf(string relative)
     {
@@ -56,8 +52,6 @@
     protected override void OnInitialized() => Navigation.LocationChanged += Changed;
 
     private void Changed(object? sender, LocationChangedEventArgs args) => InvokeAsync(StateHasChanged);
-
-    private Task KeyDown(KeyboardEventArgs args) => args.Key == "Escape" ? OnEscape.InvokeAsync() : Task.CompletedTask;
 
     public void Dispose() => Navigation.LocationChanged -= Changed;
 }

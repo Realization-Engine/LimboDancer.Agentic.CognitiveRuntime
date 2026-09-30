@@ -3,7 +3,7 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 
-<div class="@ShellClass">
+<div class="@ShellClass" @onkeydown="KeyDown">
     <header class="studio">
         <button class="nav-toggle" @ref="toggle" aria-controls="studio-nav" aria-expanded="@(Expanded ? "true" : "false")"
                 aria-label="@(Expanded ? "Hide navigation" : "Show navigation")" title="@(Expanded ? "Hide navigation" : "Show navigation")" @onclick="Toggle">
@@ -12,7 +12,7 @@
         <h1>ASL Map Studio</h1>
     </header>
     <div class="studio-body">
-        <StudioNavigation Hidden="@(!Expanded)" OnEscape="Escape" />
+        <StudioNavigation Hidden="@(!Expanded)" />
         <main>
             @Body
         </main>
@@ -77,6 +77,9 @@
         }
     }
 
+    // Escape closes the drawer from anywhere in the shell, the toggle included (UI review, pass 22b).
+    private Task KeyDown(KeyboardEventArgs args) => args.Key == "Escape" ? Escape() : Task.CompletedTask;
+
     private async Task Escape()
     {
         if (narrow && drawerOpen)
@@ -86,13 +89,24 @@
         }
     }
 
-    // A route change closes the drawer; it never changes the wide sidebar or a page's state.
+    // A route change closes the drawer and returns focus to the toggle, since the link that had it is hidden; it never changes the wide
+    // sidebar or a page's state.
     private void Changed(object? sender, LocationChangedEventArgs args)
     {
         if (drawerOpen)
         {
             drawerOpen = false;
-            InvokeAsync(StateHasChanged);
+            _ = InvokeAsync(async () =>
+            {
+                StateHasChanged();
+                try
+                {
+                    await toggle.FocusAsync();
+                }
+                catch (JSDisconnectedException)
+                {
+                }
+            });
         }
     }
 

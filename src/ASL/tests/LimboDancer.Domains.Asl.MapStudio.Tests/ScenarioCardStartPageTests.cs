@@ -54,9 +54,10 @@ public sealed class ScenarioCardStartPageTests : IDisposable
         page.Find("#new-card").Change("guards-counterattack");
         Assert.Contains("bd01", page.Find("#new-summary-boards").TextContent, StringComparison.Ordinal);
         var sides = page.Find("#new-summary-sides").TextContent;
-        Assert.Contains("russian moves first: ELR 3, SAN 6, edge top", sides, StringComparison.Ordinal);
-        Assert.Contains("german: ELR 4, SAN 6, edge bottom", sides, StringComparison.Ordinal);
-        Assert.Contains("Month 10, year 1942", page.Find("#new-summary-date").TextContent, StringComparison.Ordinal);
+        Assert.Contains("russian: ELR 3, SAN 6, FBE top", sides, StringComparison.Ordinal);
+        Assert.Contains("russian moves first", page.Find("#new-summary-turns").TextContent, StringComparison.Ordinal);
+        Assert.Contains("german: ELR 4, SAN 6, FBE bottom", sides, StringComparison.Ordinal);
+        Assert.Contains("October 1942", page.Find("#new-summary-date").TextContent, StringComparison.Ordinal);
         Assert.Equal("The Guards Counterattack", page.Find("#new-label").GetAttribute("value"));
 
         // R18.3: the placement offers the card's OB groups.
@@ -87,10 +88,14 @@ public sealed class ScenarioCardStartPageTests : IDisposable
         var sides = page.Find("#new-summary-sides").TextContent;
         Assert.DoesNotContain("moves first", sides, StringComparison.Ordinal);
         Assert.StartsWith("russian", sides.Trim(), StringComparison.Ordinal);
-        Assert.Matches(@"german: ELR \d, SAN 6, edge bottom", sides);
+        Assert.Matches(@"german: ELR \d, SAN 6, FBE bottom", sides);
 
         // Ruling R20.3 (A26.4): no Balance, a side's by agreement, or a dr when both players wish the same side, who then name themselves.
         Assert.Equal(5, page.FindAll("#new-balance option").Count);
+        Assert.Contains("the loser plays russian with its Balance", page.Find("#new-balance option[value=\"wish:german\"]").TextContent, StringComparison.Ordinal);
+        Assert.Equal(2, page.FindAll("#new-balance-texts li").Count);
+        Assert.Contains("Game Turns", page.Find("#new-summary-turns").TextContent, StringComparison.Ordinal);
+        Assert.Contains("a dr decides who moves first", page.Find("#new-summary-turns").TextContent, StringComparison.Ordinal);
         Assert.Empty(page.FindAll("#new-player-one"));
         page.Find("#new-balance").Change("wish:german");
         Assert.NotNull(page.Find("#new-player-one"));

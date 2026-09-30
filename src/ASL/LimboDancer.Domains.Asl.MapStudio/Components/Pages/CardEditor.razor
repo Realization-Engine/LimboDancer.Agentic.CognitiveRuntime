@@ -136,7 +136,7 @@ else
     </FindingList>
 
     <button id="edit-save" class="primary" @onclick="Save">Save the card</button>
-    <OperationFeedback Id="edit-note" Message="@note" Outcome="@NoteOutcome" />
+    <OperationFeedback Id="edit-note" Message="@note" Outcome="@noteOutcome" />
 }
 
 @code {
@@ -251,11 +251,12 @@ else
 
     private IReadOnlyList<CardPicker.Choice> Choices => [.. Live.Cards.Names.Select(name => new CardPicker.Choice(name, Title(name), Live.Cards.IsUser(name)))];
 
-    // A note that stops the user (a refusal) reads as one; a completed save, delete, or addition reads as done.
-    private OperationFeedback.OperationOutcome NoteOutcome => note is not null
-        && (note.StartsWith("Not saved", StringComparison.Ordinal) || note.StartsWith("Name a group", StringComparison.Ordinal)
-            || note.StartsWith("The side's", StringComparison.Ordinal) || note.StartsWith("Side ", StringComparison.Ordinal))
-        ? OperationFeedback.OperationOutcome.Refused : OperationFeedback.OperationOutcome.Done;
+    // Set with each note (UI review, pass 22b): a refusal reads as one; a completed save, delete, or addition reads as done.
+    private OperationFeedback.OperationOutcome noteOutcome = OperationFeedback.OperationOutcome.Done;
+
+    private void Refuse(string text) => (note, noteOutcome) = (text, OperationFeedback.OperationOutcome.Refused);
+
+    private void Done(string? text) => (note, noteOutcome) = (text, OperationFeedback.OperationOutcome.Done);
 
     private void ChooseSource(string? chosen)
     {
@@ -457,13 +458,13 @@ else
         Check();
         if (catalog is null || diagnostics.Count > 0 || Build() is not { Card: { } card, Problems.Count: 0 })
         {
-            note = "Not saved: fix the problems listed above first.";
+            Refuse("Not saved: fix the problems listed above first.");
             return;
         }
 
         var refused = Live.Cards.Save(card, catalog, replace: card.Id == source && Live.Cards.IsUser(source));
         diagnostics = refused;
-        note = refused.Count == 0 ? $"Saved '{card.Id}'; start a game from it on the Play page." : null;
+        Done(refused.Count == 0 ? $"Saved '{card.Id}'; start a game from it on the Play page." : null);
         if (refused.Count == 0)
         {
             source = card.Id;
@@ -474,7 +475,7 @@ else
     {
         if (Live.Cards.Delete(source))
         {
-            note = $"Deleted '{source}'.";
+            Done($"Deleted '{source}'.");
             source = string.Empty;
             Load(null, false);
             Check();
@@ -488,7 +489,7 @@ else
         if (catalog?.Definition(pickDefinition) is not { } definition || definition.Nationality != side.Side
             || !int.TryParse(pickGroup, NumberStyles.Integer, CultureInfo.InvariantCulture, out var group) || !int.TryParse(pickCount, NumberStyles.Integer, CultureInfo.InvariantCulture, out var count))
         {
-            note = "Name a group by its place (1 onward), a counter, and a count.";
+            Refuse("Name a group by its place (1 onward), a counter, and a count.");
             return;
         }
 
@@ -499,22 +500,22 @@ else
         }
         catch (JsonException)
         {
-            note = "The side's OB groups are not valid JSON; fix them first.";
+            Refuse("The side's OB groups are not valid JSON; fix them first.");
             return;
         }
 
         if (group < 1 || group > groups.Count)
         {
-            note = groups.Count == 0
+            Refuse(groups.Count == 0
                 ? $"Side {PickSide + 1} has no OB group; add one in its OB groups JSON first (a card with an OB is not a minimal card)."
-                : $"Side {PickSide + 1} has {groups.Count} OB group(s).";
+                : $"Side {PickSide + 1} has {groups.Count} OB group(s).");
             return;
         }
 
         var target = groups[group - 1];
         groups[group - 1] = target with { Units = [.. target.Units, new ScenarioCardUnit(definition.Id, count, pickArea.Length > 0 ? pickArea : null)] };
         side.Groups = JsonSerializer.Serialize(groups, Json);
-        note = $"Added {count} {ScenarioCards.Describe(definition)} to group {group} of side {PickSide + 1}.";
+        Done($"Added {count} {ScenarioCards.Describe(definition)} to group {group} of side {PickSide + 1}.");
         Check();
     }
 }

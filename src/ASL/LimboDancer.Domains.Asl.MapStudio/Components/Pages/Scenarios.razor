@@ -20,14 +20,16 @@
 }
 else
 {
-    <label>
-        Card
-        <CardPicker Id="card-choice" Cards="@Choices" Value="@selected" ValueChanged="@Show" />
-    </label>
-    @if (selected is { } editable)
-    {
-        <a id="card-edit" href="@($"units/cards/edit?card={Uri.EscapeDataString(editable)}")">@(Live.Cards.IsUser(editable) ? "Edit this card" : "Copy this card to edit it")</a>
-    }
+    <div class="toolbar">
+        <label>
+            Card
+            <CardPicker Id="card-choice" Cards="@Choices" Value="@selected" ValueChanged="@Show" />
+        </label>
+        @if (selected is { } editable)
+        {
+            <a id="card-edit" href="@($"units/cards/edit?card={Uri.EscapeDataString(editable)}")">@(Live.Cards.IsUser(editable) ? "Edit this card" : "Copy this card to edit it")</a>
+        }
+    </div>
 
     @if (read is { } shown)
     {
@@ -193,11 +195,10 @@ else
         selected = name;
         read = name is null || catalog is null ? null : Live.Cards.Read(name, catalog);
         provenance = name is not null && catalog is not null && read?.Card is { } card && Live.Cards.Sha256(name) is { } sha
-            ? CardProvenance.Of(card, Live.Cards.IsUser(name), UserFile(name), sha, catalog)
+            ? CardProvenance.Of(card, Live.Cards.IsUser(name), Live.Cards.UserFile(name), sha, catalog)
             : null;
     }
 
-    private string? UserFile(string name) => Live.Cards.IsUser(name) && Live.Cards.Directory is { } root ? System.IO.Path.Combine(root, name + ".scenario-card.json") : null;
 
     private string Title(string name) => catalog is not null && Live.Cards.Read(name, catalog)?.Card is { } card ? card.Title : name;
 

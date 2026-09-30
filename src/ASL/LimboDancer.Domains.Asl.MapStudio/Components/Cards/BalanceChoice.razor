@@ -5,7 +5,7 @@
         @foreach (var side in Sides)
         {
             <option value="@("agree:" + side)">@side takes its Balance by agreement</option>
-            <option value="@("wish:" + side)">both players wish to play @side: a dr decides</option>
+            <option value="@("wish:" + side)">both players wish to play @side: a dr decides; the loser plays @Other(side) with its Balance</option>
         }
     </select>
     @if (Value.StartsWith("wish:", StringComparison.Ordinal))
@@ -14,10 +14,23 @@
         <input id="new-player-two" value="@PlayerTwo" @onchange="@(args => PlayerTwoChanged.InvokeAsync(args.Value as string ?? string.Empty))" size="10" placeholder="second player" aria-label="Second player" />
     }
 </span>
+@if (Texts is { Count: > 0 } texts)
+{
+    <ul id="new-balance-texts" class="muted">
+        @foreach (var side in Sides)
+        {
+            <li>@side: @(texts.TryGetValue(side, out var text) && text.Length > 0 ? text : "none printed")</li>
+        }
+    </ul>
+}
 
 @code {
     [Parameter, EditorRequired]
     public IReadOnlyList<string> Sides { get; set; } = [];
+
+    /// <summary>Each side's Balance as the card prints it, shown under the choice; none when null.</summary>
+    [Parameter]
+    public IReadOnlyDictionary<string, string>? Texts { get; set; }
 
     [Parameter]
     public string Value { get; set; } = string.Empty;
@@ -36,4 +49,7 @@
 
     [Parameter]
     public EventCallback<string> PlayerTwoChanged { get; set; }
+
+    /// <summary>The side other than the one named: the side the dr's loser plays.</summary>
+    private string Other(string side) => Sides.FirstOrDefault(other => other != side) ?? "the other side";
 }

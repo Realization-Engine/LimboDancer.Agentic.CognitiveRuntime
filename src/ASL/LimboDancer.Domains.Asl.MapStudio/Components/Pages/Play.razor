@@ -26,8 +26,10 @@
 @if (Scripted is { } scripted)
 {
     <div class="toolbar" id="scripted-dice">
-        <strong>Scripted dice are on (development only).</strong>
-        <span class="muted">Each die comes from this queue until it is empty, then from the system; games played now are test data.</span>
+        <span class="toolbar-note">
+            <strong>Scripted dice are on (development only).</strong>
+            <span class="muted">Each die comes from this queue until it is empty, then from the system; games played now are test data.</span>
+        </span>
         <label>Queue <input id="scripted-dice-values" size="24" placeholder="1 1 2 4" @bind="scriptedInput" /></label>
         <button id="scripted-dice-add" @onclick="QueueDice">Add</button>
         <button id="scripted-dice-clear" class="link" @onclick="() => scripted.Clear()">clear</button>
@@ -124,12 +126,18 @@
             <a id="play-card-link" href="units/scenarios?card=@scenario.Id">The whole card</a>
             @if (PublishedCatalog is { } provenanceCatalog)
             {
-                <CardProvenancePanel Id="play-card-provenance" Model="@CardProvenance.Of(playCard, Live.Cards.IsUser(scenario.Id), null, CardSha(scenario.Id) ?? scenario.Sha256, provenanceCatalog, new ScenarioCardReferenceFacts(scenario.Id, scenario.Sha256, $"{state.Catalog.Catalog}@{state.Catalog.Version}", CardSha(scenario.Id)))" />
+                <CardProvenancePanel Id="play-card-provenance" Model="@GameProvenance(playCard, scenario.Id, scenario.Sha256, provenanceCatalog)" />
             }
         }
         else
         {
             <p id="play-card-missing" class="diagnostic warning">The card '@scenario.Id' is no longer among the scenario cards.</p>
+            <dl id="play-card-recorded" class="report">
+                <dt>Started from</dt>
+                <dd>@scenario.Id, SHA-256 <code>@scenario.Sha256</code></dd>
+                <dt>Catalog</dt>
+                <dd>@($"{state.Catalog.Catalog}@{state.Catalog.Version}")</dd>
+            </dl>
         }
     </details>
 }
@@ -138,7 +146,7 @@
 {
     <h3>New game</h3>
     <NewGameFromCard Cards="@CardChoices" Card="@scenarioCard" CardChanged="@ChooseCard"
-                     @bind-GameId="newId" @bind-Label="newLabel" Start="@NewStart" BalanceSides="@BalanceSides"
+                     @bind-GameId="newId" @bind-Label="newLabel" Start="@NewStart" BalanceSides="@BalanceSides" BalanceTexts="@BalanceTexts"
                      @bind-Balance="newBalance" @bind-PlayerOne="playerOne" @bind-PlayerTwo="playerTwo" />
 }
 else if (history.Current is null && state is null)
@@ -1834,6 +1842,23 @@ else if (state is not null)
 
     private string? CardSha(string name) => Live.Cards.Sha256(name);
 
+    private (string Id, string? Sha, string StartSha, string Catalog)? provenanceKey;
+    private CardProvenance? provenance;
+
+    /// <summary>The game's card provenance (K21), built again only when the card, its hash, or the game changes (UI review, pass 22b).</summary>
+    private CardProvenance GameProvenance(ScenarioCard card, string id, string startSha, UnitCatalog catalog)
+    {
+        var key = (id, CardSha(id), startSha, $"{state!.Catalog.Catalog}@{state.Catalog.Version}");
+        if (provenance is null || provenanceKey != key)
+        {
+            provenance = CardProvenance.Of(card, Live.Cards.IsUser(id), Live.Cards.UserFile(id), key.Item2 ?? startSha, catalog,
+                new ScenarioCardReferenceFacts(id, startSha, key.Item4, key.Item2));
+            provenanceKey = key;
+        }
+
+        return provenance;
+    }
+
     /// <summary>Whether the new game comes from a scenario card, which fills and locks the start fields (ruling R18.1).</summary>
     private bool CardChosen => scenarioCard is not null;
 
@@ -1847,13 +1872,20 @@ else if (state is not null)
     /// <summary>The start the chosen card gives, worded for the summary (K03); null before a card is chosen.</summary>
     private CardStartSummary.StartLines? NewStart => ChosenCard is not { } card ? null : new(
         newBoard,
-        $"{firstSide}{(firstSide == card.Turns.MovesFirst ? " moves first" : string.Empty)}: ELR {(firstElr.Length > 0 ? firstElr : card.Minimal ? "none" : "by OB group")}, SAN {firstSan}, edge {(firstEdge.Length > 0 ? firstEdge : "not named")}; "
-            + $"{secondSide}: ELR {(secondElr.Length > 0 ? secondElr : card.Minimal ? "none" : "by OB group")}, SAN {secondSan}, edge {(secondEdge.Length > 0 ? secondEdge : "not named")}",
-        $"Month {(newMonth.Length > 0 ? newMonth : "not recorded")}, year {(newYear.Length > 0 ? newYear : "not recorded")}; SSR tokens: {(newRules.Length > 0 ? newRules : "none")}; Scenario Defender: {(newDefender.Length > 0 ? newDefender : "none")}",
+        // Table player, pass 22b: the Game Turns and who sets up first, which may differ from who moves first.
+        $"{card.Turns.Count} Game Turns{(card.Turns.HalfTurn ? ", the last with one Player Turn" : string.Empty)}; {card.Turns.SetsUpFirst} sets up first; "
+            + (card.Turns.MovesFirst is { } movesFirst ? $"{movesFirst} moves first" : "a dr decides who moves first"),
+        $"{firstSide}: ELR {(firstElr.Length > 0 ? firstElr : card.Minimal ? "none" : "by OB group")}, SAN {firstSan}, FBE {(firstEdge.Length > 0 ? firstEdge : "not named")}; "
+            + $"{secondSide}: ELR {(secondElr.Length > 0 ? secondElr : card.Minimal ? "none" : "by OB group")}, SAN {secondSan}, FBE {(secondEdge.Length > 0 ? secondEdge : "not named")}",
+        $"{ScenarioCards.PlaceAndDate(card)}; SSRs the game enforces: {(newRules.Length > 0 ? newRules : "none")}{(card.SpecialRules.Count > 0 ? $" (the card prints {card.SpecialRules.Count} SSR{(card.SpecialRules.Count == 1 ? string.Empty : "s")}; the Scenarios page says which are enforced)" : string.Empty)}; Scenario Defender: {(newDefender.Length > 0 ? newDefender : "none")}",
         card.Turns.MovesFirst is null ? $"{card.Turns.MovesFirstNote} The game rolls a dr for each side as it starts; the higher moves first (ruling R20.2)." : null);
 
     /// <summary>The sides that may take their Balance (K04); none for a minimal card.</summary>
     private IReadOnlyList<string>? BalanceSides => ChosenCard is { Minimal: false } card ? [.. card.Sides.Select(side => side.Side)] : null;
+
+    /// <summary>Each side's Balance as the card prints it (K04), so the choice is not made blind.</summary>
+    private IReadOnlyDictionary<string, string>? BalanceTexts => ChosenCard is { Minimal: false } card
+        ? card.Sides.ToDictionary(side => side.Side, side => side.Balance, StringComparer.Ordinal) : null;
 
     /// <summary>The OB groups a placement may name (ruling R18.3): the game's, or the chosen card's before the game starts.</summary>
     private IReadOnlyList<(string Side, ObGroup Group)> GroupChoices => state is not null
@@ -1889,8 +1921,6 @@ else if (state is not null)
         FillFromCard(card, card.Turns.MovesFirst ?? card.Turns.SetsUpFirst);
         newBalance = string.Empty;
 
-        newMonth = card.Date.Month > 0 ? card.Date.Month.ToString(CultureInfo.InvariantCulture) : string.Empty;
-        newYear = card.Date.Year > 0 ? card.Date.Year.ToString(CultureInfo.InvariantCulture) : string.Empty;
         newDefender = card.ScenarioDefender ?? string.Empty;
         newRules = string.Join(' ', card.Tokens);
     }
@@ -1952,8 +1982,6 @@ else if (state is not null)
     private string boundingTarget = string.Empty;
     private string vehicleIntended = string.Empty;
     private string secondElr = string.Empty;
-    private string newMonth = string.Empty;
-    private string newYear = string.Empty;
     private string newDefender = string.Empty;
     private string newRules = string.Empty;
     private string placeBore = string.Empty;

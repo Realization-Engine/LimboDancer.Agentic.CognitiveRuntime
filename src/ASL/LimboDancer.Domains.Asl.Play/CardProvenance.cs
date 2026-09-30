@@ -28,8 +28,12 @@ public sealed record GameStartFacts(string CardId, string Sha256, string Catalog
 /// <summary>One printed value of a counter and where it was read: the sheet, counter, face, and row.</summary>
 public sealed record ValueProvenance(string Face, string Name, string Value, ValueSource Source);
 
-/// <summary>A counter a card fields: how many, its counter reference, whether it is manufactured, its catalog source, and its values' sources.</summary>
-public sealed record CounterProvenance(string Definition, string Label, int Count, CounterReference Counter, bool Manufactured, CatalogSource? Source, IReadOnlyList<ValueProvenance> Values);
+/// <summary>
+/// A counter a side fields: how many, its counter reference, whether it is manufactured, its catalog source, and its values' sources. Balance
+/// counters (A26.4) are a row of their own, since they join the OB only when the side takes its Balance.
+/// </summary>
+public sealed record CounterProvenance(string Definition, string Label, int Count, CounterReference Counter, bool Manufactured, CatalogSource? Source, IReadOnlyList<ValueProvenance> Values,
+    string Side = "", bool Balance = false);
 
 /// <summary>A rule a card cites, and what it rests on: a fragment's physical PDF pages and comparison, or a ruling's link.</summary>
 public sealed record CitationProvenance(string Rule, CitationKind Kind, IReadOnlyList<int> Pages, string? FragmentId, string? Comparison, string? Link);
@@ -60,16 +64,21 @@ public sealed record CardProvenance(CardIdentityFacts Identity, GameStartFacts? 
         var started = game is null ? null : new GameStartFacts(game.CardId, game.Sha256, game.Catalog,
             game.CurrentSha256 is null ? CardMatch.Gone : game.CurrentSha256 == game.Sha256 ? CardMatch.Same : CardMatch.Changed);
 
-        var counts = card.Sides.SelectMany(side => side.Groups).SelectMany(group => group.Units)
-            .Concat(card.Sides.SelectMany(side => side.BalanceUnits ?? []))
-            .GroupBy(unit => unit.Definition, StringComparer.Ordinal)
-            .Select(line => (Definition: line.Key, Count: line.Sum(unit => unit.Count)));
+        // Table player, pass 22b: each side's counters apart, and its Balance counters apart from its OB.
+        var counts = card.Sides.SelectMany(side => side.Groups.SelectMany(group => group.Units).Select(unit => (side.Side, Balance: false, unit))
+                .Concat((side.BalanceUnits ?? []).Select(unit => (side.Side, Balance: true, unit))))
+            .GroupBy(line => (line.Side, line.Balance, line.unit.Definition))
+            .Select(line => (line.Key.Side, line.Key.Balance, line.Key.Definition, Count: line.Sum(item => item.unit.Count)));
         var counters = counts.Select(line => catalog.Definition(line.Definition) is { } definition
                 ? new CounterProvenance(definition.Id, ScenarioCards.Describe(definition), line.Count, definition.Counter, ScenarioCards.Manufactured(definition),
                     catalog.Source(definition.Counter.Source),
-                    [.. definition.Values.Where(value => !value.NotInSource).Select(value => new ValueProvenance(value.Face, value.Name, Shown(value), value.Source))])
-                : new CounterProvenance(line.Definition, line.Definition, line.Count, new CounterReference("unknown", "unknown", line.Definition), false, null, []))
-            .OrderBy(counter => counter.Label, StringComparer.Ordinal)
+                    [.. definition.Values.Where(value => !value.NotInSource).Select(value => new ValueProvenance(value.Face, value.Name, Shown(value), value.Source))],
+                    line.Side, line.Balance)
+                : new CounterProvenance(line.Definition, line.Definition, line.Count, new CounterReference("unknown", "unknown", line.Definition), false, null, [],
+                    line.Side, line.Balance))
+            .OrderBy(counter => counter.Side, StringComparer.Ordinal)
+            .ThenBy(counter => counter.Balance)
+            .ThenBy(counter => counter.Label, StringComparer.Ordinal)
             .ToList();
 
         var cited = card.SpecialRules.SelectMany(rule => rule.Rules).Concat(card.VictoryConditions.Rules).Distinct(StringComparer.Ordinal);

@@ -51,6 +51,8 @@ public sealed class ScenarioCardsPageTests : IDisposable
         Assert.NotEmpty(page.FindAll("#card-provenance tr[data-rule]"));
         Assert.DoesNotContain("unregistered", page.Find("#card-provenance .provenance-citations").TextContent, StringComparison.Ordinal);
         Assert.NotEmpty(page.FindAll("#card-provenance tr[data-definition]"));
+        Assert.NotEmpty(page.FindAll("#card-provenance tr[data-side=\"german\"]"));
+        Assert.NotEmpty(page.FindAll("#card-provenance tr[data-side=\"british\"]"));
         Assert.Contains("paraphrased", page.Find("#card-adaptation").TextContent, StringComparison.Ordinal);
     }
 

@@ -1,7 +1,7 @@
 @* K01 (plan section 16.16): a new game from a card: the card, the game's id and label, the start it gives, and the Balance. The page keeps the card's hash, the placements, and the proposal. *@
 <p id="new-game-help" class="muted">
     Every game starts from a scenario card (ruling R22.4): a built-in card, one of yours, or a minimal card for a game with no scenario, made on the
-    <a id="new-card-editor" href="units/cards/edit">card editor</a>. The card gives the boards, sides, ELR, SAN, edges, date, Scenario Defender, and SSRs.
+    <a id="new-card-editor" href="units/cards/edit">card editor</a>. The card gives the boards, sides, ELR, SAN, Friendly Board Edges (FBE), date, Scenario Defender, and SSRs.
 </p>
 <div class="new-game-fields">
     <FieldGroup Label="Scenario card" For="new-card">
@@ -21,7 +21,7 @@
         @if (BalanceSides is { } sides)
         {
             <FieldGroup Label="Balance" For="new-balance" Title="A26.4: when both players wish to play the same side, a dr decides, and the loser plays the other side with its Balance.">
-                <BalanceChoice Sides="@sides" Value="@Balance" ValueChanged="@BalanceChanged"
+                <BalanceChoice Sides="@sides" Texts="@BalanceTexts" Value="@Balance" ValueChanged="@BalanceChanged"
                                PlayerOne="@PlayerOne" PlayerOneChanged="@PlayerOneChanged" PlayerTwo="@PlayerTwo" PlayerTwoChanged="@PlayerTwoChanged" />
             </FieldGroup>
         }
@@ -57,6 +57,10 @@
     /// <summary>The sides that may take their Balance; null for a minimal card, which has none.</summary>
     [Parameter]
     public IReadOnlyList<string>? BalanceSides { get; set; }
+
+    /// <summary>Each side's Balance as the card prints it; none for a minimal card.</summary>
+    [Parameter]
+    public IReadOnlyDictionary<string, string>? BalanceTexts { get; set; }
 
     [Parameter]
     public string Balance { get; set; } = string.Empty;

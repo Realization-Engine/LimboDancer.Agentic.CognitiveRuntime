@@ -576,7 +576,6 @@ public static partial class ScenarioCards
     private static readonly string[] Months =
         ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-    /// <summary>The card's date as a card prints it: "6 October 1942".</summary>
     /// <summary>The card's place and date, as far as it gives them (table player, pass 22).</summary>
     public static string PlaceAndDate(ScenarioCard card)
     {
@@ -584,6 +583,7 @@ public static partial class ScenarioCards
         return string.IsNullOrWhiteSpace(card.Place) ? DateText(card.Date) : $"{card.Place}, {DateText(card.Date)}";
     }
 
+    /// <summary>The card's date as a card prints it: "6 October 1942".</summary>
     public static string DateText(ScenarioCardDate date)
     {
         ArgumentNullException.ThrowIfNull(date);

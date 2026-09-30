@@ -57,6 +57,23 @@ public sealed class CardProvenanceTests
     }
 
     [Fact]
+    public void EachSidesCountersAndItsBalanceCountersAreApart()
+    {
+        var card = ScenarioCards.Read("gambit", Catalog)!.Card!;
+        var provenance = Of("gambit");
+        Assert.All(provenance.Counters, counter => Assert.Contains(card.Sides, side => side.Side == counter.Side));
+        foreach (var side in card.Sides)
+        {
+            Assert.Equal(side.Groups.Sum(group => group.Units.Sum(unit => unit.Count)),
+                provenance.Counters.Where(counter => counter.Side == side.Side && !counter.Balance).Sum(counter => counter.Count));
+            Assert.Equal(side.BalanceUnits?.Sum(unit => unit.Count) ?? 0,
+                provenance.Counters.Where(counter => counter.Side == side.Side && counter.Balance).Sum(counter => counter.Count));
+        }
+
+        Assert.Contains(provenance.Counters, counter => counter.Balance);
+    }
+
+    [Fact]
     public void AGameSaysWhetherItsCardStillMatches()
     {
         var sha = ScenarioCards.Sha256("gambit")!;
