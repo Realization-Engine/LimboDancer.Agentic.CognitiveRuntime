@@ -37,7 +37,7 @@ else
         </label>
         @if (source is { Length: > 0 } && Live.Cards.IsUser(source))
         {
-            <button id="edit-delete" @onclick="Delete">Delete this card</button>
+            <button id="edit-delete" class="danger" @onclick="Delete">Delete this card</button>
         }
     </div>
 
@@ -151,7 +151,7 @@ else
         <p id="edit-valid" class="muted">The card is valid against catalog @catalog.Identity.Catalog@@@catalog.Identity.Version.</p>
     }
 
-    <button id="edit-save" @onclick="Save">Save the card</button>
+    <button id="edit-save" class="primary" @onclick="Save">Save the card</button>
     @if (note is not null)
     {
         <p id="edit-note">@note</p>

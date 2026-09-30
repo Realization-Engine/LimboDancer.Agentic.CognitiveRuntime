@@ -858,4 +858,20 @@ Checked the 2026-09-29 additions against the reviewed Git source, including thei
 
 ### 12.5 Rebase and passes 17 to 22 review (2026-09-30)
 
-The branch was rebased onto main `c13e9b7`. The only conflict was app.css: main had added the scenario card rules there, which this branch deletes. They were moved into site.css in the theme's tokens; the card editor rules main added later came across with Git's rename detection and were set to `--font-mono`. The review added 20 candidates and retired 5 (section 9.16): 170 active, 113 P1, 53 P2, and four P3. The old inventory's 188 local source links now pin `2fa3f56`. On the rebased branch the MapStudio project built in Release with warnings as errors, and the 156 MapStudio tests passed. No browser check of the card pages under the theme has been run yet; it is the first item of stage 1's evidence.
+The branch was rebased onto main `c13e9b7`. The only conflict was app.css: main had added the scenario card rules there, which this branch deletes. They were moved into site.css in the theme's tokens; the card editor rules main added later came across with Git's rename detection and were set to `--font-mono`. The review added 20 candidates and retired 5 (section 9.16): 170 active, 113 P1, 53 P2, and four P3. The old inventory's 188 local source links now pin `2fa3f56`. On the rebased branch the MapStudio project built in Release with warnings as errors, and the 156 MapStudio tests passed. A browser check of the card pages under the theme followed the same day (section 12.6).
+
+### 12.6 Card pages under the theme: browser check (2026-09-30)
+
+The Studio ran from this branch against the user's live data at the Browser pane's width (about 2,000 CSS pixels). The check covered the Scenario cards page, the card editor (a copy of The Guards Counterattack with a validation error, and a user card), a new game on Play from a card, and a finished game from a card (`p21-visual`, read only). Every page loaded only site.css and the seven local fonts, with no style attributes, no embedded styles, and no horizontal page overflow.
+
+It found one defect and four layout gaps, fixed on this branch and checked again after a relaunch:
+
+| Finding | Fix |
+|---|---|
+| The theme's `.diagnostic` is a badge (fixed height, no wrap, 0.75rem), but passes 18 to 22 use it on whole messages: the game result overflowed its 555px badge by 151px, and the editor's error list sat beside Save | `p.diagnostic` and `ul.diagnostic` are block messages that wrap, keep their severity colours, and use 0.875rem text; a result with no severity uses the surface colour. Spans stay badges. |
+| The new-game fields on Play had no grid | A `new-game-fields` class: a label column and a field column, capped at 60rem. |
+| The card editor spanned the whole pane (JSON lines about 1,900px) | Capped at 90rem, the collection width of section 4.1. |
+| A card's facts on the Scenarios page were 12px mono (`dl.report dd`) | Scenario cards use the sans face at 0.875rem; provenance reports elsewhere keep mono. |
+| Save was a plain button; Delete was not marked | Save is `primary` and Delete `danger` (section 4.3). |
+
+The 156 MapStudio tests passed after the changes. Not covered: narrow widths, 200% zoom, keyboard-only use, and the board viewer under the new rules (the rules are scoped, so it should be unchanged).

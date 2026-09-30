@@ -1113,3 +1113,61 @@ textarea.placements-text {
 .card-editor > select {
     justify-self: start;
 }
+
+/* A diagnostic used as a whole message (a paragraph or a list), not a badge: it wraps and keeps its severity colours (browser check, 2026-09-30). */
+p.diagnostic,
+ul.diagnostic {
+    display: block;
+    height: auto;
+    max-width: 60rem;
+    margin: 0.5rem 0;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+    white-space: normal;
+    cursor: auto;
+}
+
+ul.diagnostic {
+    padding-left: 1.75rem;
+}
+
+p.diagnostic:not(.info):not(.warning):not(.error) {
+    color: var(--ink);
+    background: var(--surface-2);
+    border-color: var(--line);
+}
+
+/* The card editor and the new-game fields: a label column and a field column, capped at the collection width. */
+.card-editor {
+    max-width: 90rem;
+}
+
+.new-game-fields {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 0.4rem 0.75rem;
+    align-items: center;
+    max-width: 60rem;
+    margin: 0.5rem 0;
+}
+
+.new-game-fields > label {
+    font-weight: 600;
+}
+
+.new-game-fields > input,
+.new-game-fields > select {
+    justify-self: start;
+}
+
+.new-game-fields > ul {
+    margin: 0;
+    padding-left: 1.25rem;
+}
+
+/* A scenario card's facts read as prose, not as technical provenance. */
+.scenario-card dl.report dd {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+}

@@ -136,7 +136,7 @@
         Every game starts from a scenario card (ruling R22.4): a built-in card, one of yours, or a minimal card for a game with no scenario, made on the
         <a id="new-card-editor" href="units/cards/edit">card editor</a>. The card gives the boards, sides, ELR, SAN, edges, date, Scenario Defender, and SSRs.
     </p>
-    <div class="fields">
+    <div class="fields new-game-fields">
         <label for="new-card">Scenario card</label>
         <select id="new-card" value="@(scenarioCard ?? string.Empty)" @onchange="ChooseCard">
             <option value="">choose a card</option>
