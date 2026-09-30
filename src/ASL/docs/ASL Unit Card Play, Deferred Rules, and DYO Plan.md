@@ -1,6 +1,6 @@
 # ASL Unit Card Play, Deferred Rules, and DYO Plan
 
-**Status:** Draft for the user's review, 2026-09-30. The user answered questions 1 to 3 the same day (section 5); questions 4 and 5 and the plan's approval are open.
+**Status:** Approved by the user on 2026-09-30, with all five questions of section 5 answered. No pass has started; pass 23 waits for the user's go-ahead.
 
 **Date:** 2026-09-30
 
@@ -166,11 +166,8 @@ These stay in the backlog: Fire spread and Kindling (so Control forfeited to a K
 1. **Hidden setup in a hot-seat game (pass 23): a hand-over screen.** The Studio blanks the map and the side panels between sides until the next side confirms it is at the screen; there is no separate tab per side.
 2. **Scope of group 2: the berserk gaps stay.** Tasks 27.2 and 27.3 remain in pass 27.
 3. **DYO nationalities (passes 29 and 30): German and Russian first.** The DYO page offers the two nationalities the cards use; the other nationalities the catalog carries, with manufactured counters where needed, go to the backlog when pass 29 is built.
-
-**Open:**
-
-4. **Order.** Run the groups as numbered (card play, then rules, then DYO), or take DYO earlier?
-5. **Autonomy.** Should the passes run one at a time with the user's go-ahead, or through merge without asking, as passes 18 to 22 did?
+4. **Order: as numbered.** The passes run 23 to 30 (card play, the deferred rules, then DYO, interleaved as section 2 lists them), so each pass builds on the one before and the editor forms (pass 28) follow the rules they edit.
+5. **Autonomy: one pass at a time.** Each pass starts only on the user's go-ahead and stops after its merge, with its times reported; a rule question that changes a pass's scope, or a failure that needs a design change, still stops the pass. Passes 26, 29, and 30 reach into areas not built before (vehicles from off board, Chapter H), which is why they are not run unattended.
 
 ## 6. Rulings
 
