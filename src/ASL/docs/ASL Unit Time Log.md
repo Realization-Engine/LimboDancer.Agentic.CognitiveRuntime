@@ -606,3 +606,14 @@ Estimate: 5:45 (build 4:30), the ASL Card Play and Map Studio Redesign Plan. Kic
 | Full local suite and ScenarioA1 (480): Authoring fails only the known architecture test; MapStudio 186, Play 563 | 17:34 | 18:00 | 0:26 | Waiting on the runs |
 | Merge gate: commit 7532322, push, the Docker Linux check (every step exit 0; Authoring 167, Play 563, MapStudio 186, ScenarioA1 480), the chart supplement regeneration (same), merge into main, push | 18:00 | 18:19 | 0:19 | |
 | **Pass 22d total** | 16:59 | 18:19 | **1:20** | Estimate 5:45 |
+
+## Fix: three Studio styles found in the pass 22d demonstration
+
+On the user's go-ahead after the demonstration, branch `fix/studio-22d-styles`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| The LOS panel's From and To on their own rows (its actions no longer the toolbar band), the editor's tool rail wrapping its help and fitting its fields, a disabled primary button greyed; tried in the Studio, written, rebuilt, and checked again | 18:34 | 18:36 | 0:02 | |
+| Full local suite and ScenarioA1 (480): Authoring fails only the known architecture test; MapStudio 186, Play 563. No Docker check: a UI fix seen in the Studio (the user's rule) | 18:46 | 19:18 | 0:32 | Waiting on the runs |
+| Merge into main (--no-ff), push, GitHub Actions checked | 19:19 | 19:22 | 0:03 | |
+| **Fix total** | 18:34 | 19:22 | **0:38** | Working time, the break from 18:36 to 18:46 left out |

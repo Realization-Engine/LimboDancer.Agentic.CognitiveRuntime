@@ -15,7 +15,7 @@
             <button class="link" id="los-target-selected" disabled="@(Selected is null)" @onclick="() => Change(Draft with { Target = Selected ?? Draft.Target })">selected hex</button>
         </span>
     </div>
-    <p class="toolbar">
+    <p class="los-actions">
         <button id="los-check" @onclick="OnCheck">Check LOS</button>
         <button id="los-clear" disabled="@(Result is null)" @onclick="OnClear">Clear</button>
     </p>

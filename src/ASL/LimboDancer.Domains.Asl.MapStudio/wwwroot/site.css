@@ -208,6 +208,14 @@ button[type="submit"]:hover:not(:disabled) {
     border-color: #3d5622;
 }
 
+/* A primary button that cannot act now looks it, as other disabled buttons do. */
+button.primary:disabled,
+button[type="submit"]:disabled {
+    color: #9a9f9a;
+    background: #ece9e1;
+    border-color: #e2ded3;
+}
+
 input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
 select,
 textarea {
@@ -1565,4 +1573,49 @@ button.link:disabled {
 
 details.advanced > summary {
     font-weight: 600;
+}
+
+/* The editor's tool rail: its help wraps and its fields fit the rail. */
+.editor-tools {
+    overflow-x: hidden;
+}
+
+.tool-options > * {
+    min-width: 0;
+}
+
+.tool-options select,
+.tool-options input:not([type="checkbox"]) {
+    width: 100%;
+    max-width: 100%;
+}
+
+/* The LOS panel in the narrow inspector: each end on its own row, its shortcuts wrapping under the field. */
+.los-panel .fields {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 0.5rem 0.6rem;
+    align-items: start;
+}
+
+.los-panel .fields > label {
+    padding-top: 0.35rem;
+}
+
+.los-panel .fields > span {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.3rem 0.6rem;
+    min-width: 0;
+}
+
+.los-panel .fields input:not([type="checkbox"]) {
+    flex: 1 1 8rem;
+    min-width: 0;
+}
+
+.los-actions {
+    display: flex;
+    gap: 0.5rem;
 }
