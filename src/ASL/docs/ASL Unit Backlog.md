@@ -486,3 +486,37 @@ Pass 22 (2026-09-30) built the card editor, the user's cards under `src/ASL/boar
 | A card with a future built-in card's name shadowed by it | R22.2 | | Built-in card additions | A user card is never named as a built-in card now; a later built-in card of the same name would hide it. |
 | The Guards card's SSR 3 note still says placing the OB "is pass 19" | Table player, pass 22 | | A card revision (it changes the card's hash) | The note is out of date; setup is built. |
 | The editor validates the whole card on every change | Referee, pass 22 | | Incremental checks | Fast enough for the three cards. |
+
+## 33. Added by the Card Play and Map Studio Redesign Plan
+
+The plan's legacy scenario migration (2026-09-30, Part VI) ports the portable cards of *The General* display first and makes them playable as rule passes 31 to 40 land. The user ruled the same day that Chapters F and G are not built there.
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| Chapter F (the desert terrain and rules) and Chapter G (the Pacific terrain and the Japanese national rules), for the legacy cards that need them | User ruling, 2026-09-30 | Chapter F; Chapter G, G1 | Armored combat, fortifications, and terrain (plan passes 31 to 38) | Their six legacy cards (G9, G16, G19, G20, G24, and G45) are ported display only and cannot be played. |
+| Small SVG previews in the Board library, loaded when visible and cached by board identity and options | Review of the plan, 2026-09-30 | | The Board library's search and filters (plan pass 22c) | A compact list without previews. |
+
+### Rows planned in the Card Play and Map Studio Redesign Plan
+
+The plan was approved on 2026-09-30. A survey of this backlog the same day found the rows below planned in its passes; each stays in its section until its pass builds it, and then leaves it with the pass named, as usual.
+
+| Backlog rows | Planned in |
+|---|---|
+| Hidden setup per side (§27, §29); HIP by SSR, the non-OB "?" (§29); Control left undeclared (§31); a hidden unit moving (§20) | Pass 23 |
+| Control of Locations, start Control edge cases, Gun and vehicle VP, the Control cache (§31) | Pass 24 (Control forfeited to a Kindled Fire: pass 40) |
+| Entry by advance, delayed and blocked entry, offboard Deployment, the full movement step at entry, several entry areas (§30); leaving the map in the APh, by Bypass, and at the road rate, a Guard leaving with prisoners, captured units exited (§31, §24); the SMOKE panel's eligibility (§19); clearer answers after DFF eliminates every mover, the end-move refusal after a DC placer was Replaced (§25); the raw OB group and Deployment messages (§30); the exit refusal naming the edge hex (§31) | Pass 25 |
+| Vehicles and Guns entering, Gun movement and limbering, hook-up and en portee (§12, §18, §30); a crew manning a Gun stacking (§29); a crew leaving with its Gun (§31); a Covered Arc across boards or on a reversed board, concealed crews and Guns (§12, §22); the Motion "wished to enter next" field (§21) | Pass 26 |
+| The berserk Dummies, route, and OVR rows (§1, §20, §21); the Axis Minor and Japanese Heat of Battle row, excluding the Japanese (§11); a berserk leader's companions' TCs (§11); Spraying Fire after a choice (§22); a DC's owner's options (§25) | Pass 27 |
+| Map picking, forms, edit-time checks, plain messages, renaming, delete confirmation and warning, the Guards SSR 3 note (§32); a test of a card changed or gone (§29) | Pass 28 |
+| The Deploy control splitting several SW, records of DM, Failure to Rout, and SW transfers (§23) | Pass 28b |
+| The full DYO purchase (§27); Gun BPV in the catalog (§12); the DYO Weather and NVR tables (§26) | Passes 29 and 30 |
+| More cards (§27); new nationalities' leaders' broken Morale Level from their counter sheets (§25); a user card shadowed by a built-in card of the same name (§32) | Display batches D1 to D18 |
+| Vehicle Target Type, AP, HEAT, and To Kill (§12); closed-topped AFVs, a Gun at a Location with a vehicle (§14); the MA in Bounding First Fire and its related rows (§17); crews Bailing Out (§20) and their inherent fire (§12, §18); FT, DC, and MOL against AFVs (§25); one fire marker for a tank's weapons, BMG and CMG (§1, §14, §17); Gun Duels (§18) | Pass 31 |
+| Recalled AFVs' fire and unloading, Shock and UK (§1, §15); ordnance SMOKE and WP (§6, §19); Passengers' fire and rout, Motion attempts, Riders (§14, §21, §23); Recall to a Friendly Board Edge of more than one edge (§15); fire at another level for ordnance and vehicles (§12, §18 to §20); the American national rules (§15); Armor Leaders and Fog, Winter Camouflage, Drifts, and Ice, if a card needs them (§21, §26) | Pass 32 |
+| Rally and DM in pillboxes and trenches (§2, §23); tasks that place TI (§24); foxholes for the Balance (§27); Manhandling, Entrenching, and foxholes in Mud, snow, and Extreme Winter (§26) | Pass 33 |
+| Wire for vehicles (§21); the French and Norwegian national rules (§15) | Pass 34 |
+| Water, bridges, and fording (§20); the terrain the movement rules refuse (§20, §29); marsh and brush in snow, frozen streams, minefields in Deep Snow (§26); paved road names (§30) | Pass 37 |
+| Hedges and bocage (§20); an AFV entering a building (§21); the Factory SSR and Sewer Movement (§27); the Italian, Finnish, Iraqi, and New Zealand national rules and ANZAC Stealth (§15, §27) | Pass 38 |
+| Partisans, the Dutch and Polish national rules (§15); the Scenario Defender at night, if a card needs it (§26) | Pass 39 |
+| Burning wrecks' spread (§16); Blazes in rout (§23); Flame, Blaze, and Kindling from FT, DC, and MOL (§25); wind, EC and wind as an SSR (§26, §27) | Pass 40 |
+
