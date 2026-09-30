@@ -546,3 +546,6 @@ At the user's request, 2026-09-30, branch `feature/asl-card-editor-polish`.
 | The Studio started and the editor demonstrated: its layout fixed first, then a minimal card, a copy of the Guards with the picker, the Play page, and the Scenarios page; four defects found | 07:03 | 07:10 | 0:07 | |
 | The four defects fixed (Save never disabled, the side ELR and the Victory line on the Scenarios page, no OB table for a minimal card); the tests changed; MapStudio 156 pass; retested in the Studio | 07:10 | 07:17 | 0:07 | |
 | Full local suite (MapStudio 156, Play 556, ScenarioA1 480; the architecture test hit the held `.git/worktrees`, known); the plan for passes 23 to 30 drafted meanwhile | 07:18 | 07:42 | 0:24 | |
+| Commit db812c9; the Docker Linux check (every step exit 0; MapStudio 156, Play 556, Authoring 167 of 167, ScenarioA1 480); no Authoring change, so no chart supplement run; merge and push | 07:43 | 08:02 | 0:19 | |
+
+Total 0:57 (07:03 to 08:02, with the plan drafted during the suite).
