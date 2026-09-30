@@ -469,3 +469,20 @@ Pass 21 (2026-09-29) built the Victory Conditions of a game from a card: Control
 | Captured units exited by their captors (double Exit VP at the end) | R21.2 | A26.23, A26.222 | Guards leaving the map | Not counted. |
 | The Control fold read on every Play page render and, for Gambit, after every action | Referee, pass 21 | | A cache of Control by revision | Correct, slower on long games. |
 | An exit refusal from a hex one row inside the edge (board 01's row-0 half hexes) does not name the edge hex nearby | Table player, pass 21 | A2.3, A2.6 | Message work | The refusal is correct and plain. |
+
+## 32. Added by the scenario card games pass 22
+
+Pass 22 (2026-09-30) built the card editor, the user's cards under `src/ASL/boards/cards`, minimal cards, and a Play page that starts every game from a card (rulings R22.1 to R22.4). It is the last pass of the Scenario Card Games Plan.
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| Setup areas picked on the map, and a map composer or saved-map picker for a card's boards | R22.1 | | Map work in the editor | Areas and boards are typed. |
+| OB groups, SSRs, and Victory Conditions edited as forms (a group's ELR, its areas, an outcome's conditions) | R22.1; table player, pass 22 | A19.1, A26 | Form work | Edited as JSON in the card format; the picker adds counter lines. |
+| Board and area checks at edit time (a copy moved to another board keeps areas that are not on it) | Table player, pass 22 | R19.3 | The board catalog in validation | Refused at setup, with a message. |
+| An SSR citing a rule that is not a compared fragment or a ruling (E1.1, E3.6) | Table player, pass 22 | R17.11 | More registered fragments | Refused; leave `rules` empty. |
+| Plain messages for bad JSON and bad board text ("bd01 bd02" read as side by side) | Table player, pass 22 | | Message work | The raw parser message, and a shared-slot refusal. |
+| Renaming a user card (the old one is kept) | Table player, pass 22 | R22.2 | Editor work | A new id saves a second card. |
+| A confirmation before deleting a card, a warning when a live game uses it, and playing on after its card is deleted or changed | Referee and table player, pass 22 | R18.1, R19.1 | A game-to-card index | Deleted at once; the game is refused and says the card is gone or changed. |
+| A card with a future built-in card's name shadowed by it | R22.2 | | Built-in card additions | A user card is never named as a built-in card now; a later built-in card of the same name would hide it. |
+| The Guards card's SSR 3 note still says placing the OB "is pass 19" | Table player, pass 22 | | A card revision (it changes the card's hash) | The note is out of date; setup is built. |
+| The editor validates the whole card on every change | Referee, pass 22 | | Incremental checks | Fast enough for the three cards. |

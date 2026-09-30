@@ -99,12 +99,7 @@ public sealed class PlayPageFireTests : IDisposable
     private IRenderedComponent<PlayPage> Game((string From, string Building, string Open) hexes, string germanElr = "3", bool concealed = false)
     {
         var page = context.Render<PlayPage>();
-        page.Find("#new-board").Change(Board);
-        page.Find("#new-first").Change("russian");
-        page.Find("#new-second").Change("german");
-        page.Find("#new-first-elr").Change("2");
-        page.Find("#new-second-elr").Change(germanElr);
-        page.Find("#new-month").Change("7");
+        MinimalCards.Choose(page, new Dictionary<string, string> { ["board"] = Board, ["first"] = "russian", ["second"] = "german", ["first-elr"] = "2", ["second-elr"] = germanElr, ["month"] = "7" });
         Place(page, "r1", "defender-squad", hexes.From);
         Place(page, "r2", "defender-squad", hexes.From);
         Place(page, "r3", "defender-squad", hexes.From);
@@ -256,11 +251,7 @@ public sealed class PlayPageFireTests : IDisposable
     {
         var hexes = Hexes();
         var page = context.Render<PlayPage>();
-        page.Find("#new-board").Change(Board);
-        page.Find("#new-first").Change("russian");
-        page.Find("#new-second").Change("german");
-        page.Find("#new-first-elr").Change("2");
-        page.Find("#new-second-elr").Change("3");
+        MinimalCards.Choose(page, new Dictionary<string, string> { ["board"] = Board, ["first"] = "russian", ["second"] = "german", ["first-elr"] = "2", ["second-elr"] = "3" });
         Place(page, "r1", "defender-squad", hexes.From);
         Place(page, "rl", "defender-leader", hexes.From);
         page.Find("#place-broken").Change(true);

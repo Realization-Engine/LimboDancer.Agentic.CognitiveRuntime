@@ -2,14 +2,16 @@
 @using LimboDancer.Domains.Asl.Play
 @using LimboDancer.Domains.Asl.Units.Catalog
 @inject UnitLibrary Library
+@inject LivePlay Live
 
 <PageTitle>Scenario cards - ASL Map Studio</PageTitle>
 
 <h2 class="page">Scenario cards</h2>
 
 <p class="hint">
-    Cards adapted from legacy scenario cards to the registered rulebook (backlog pass 17, rulings R17.1 to R17.11). A card is read and shown here;
-    it is not played: setting up a game from a card, reinforcements entering, and the Victory Conditions are still to come.
+    The built-in cards, adapted from legacy scenario cards to the registered rulebook (rulings R17.1 to R17.13), and your cards (ruling R22.2). Every game
+    starts from a card on the Play page; the <a id="card-editor" href="units/cards/edit">card editor</a> makes a new card, a minimal card for a game with no
+    scenario, or a copy of a built-in card to change.
 </p>
 
 @if (catalog is null)
@@ -21,12 +23,16 @@ else
     <label>
         Card
         <select id="card-choice" value="@selected" @onchange="Choose">
-            @foreach (var name in ScenarioCards.Names)
+            @foreach (var name in Live.Cards.Names)
             {
-                <option value="@name">@(Title(name))</option>
+                <option value="@name">@(Title(name))@(Live.Cards.IsUser(name) ? " (yours)" : string.Empty)</option>
             }
         </select>
     </label>
+    @if (selected is { } editable)
+    {
+        <a id="card-edit" href="@($"units/cards/edit?card={Uri.EscapeDataString(editable)}")">@(Live.Cards.IsUser(editable) ? "Edit this card" : "Copy this card to edit it")</a>
+    }
 
     @if (read is { } shown)
     {
@@ -44,7 +50,7 @@ else
         {
             <article id="card" class="scenario-card">
                 <h3 id="card-title">@card.Title</h3>
-                <p id="card-place">@card.Place, @ScenarioCards.DateText(card.Date)</p>
+                <p id="card-place">@ScenarioCards.PlaceAndDate(card)</p>
                 <p id="card-introduction">@card.Introduction</p>
 
                 <dl class="report">
@@ -83,7 +89,7 @@ else
                             <dd class="card-integrity">@(side.IntegrityBpv is { } bpv ? $"[{bpv}] (A16 is optional and not built yet)" : "none printed")</dd>
                             <dt>Friendly Board Edge (A20.53)</dt>
                             <dd class="card-edge">
-                                The @side.FriendlyEdge.Edge edge (@ScenarioCards.Compass(card, side.FriendlyEdge.Edge)), @Basis(side.FriendlyEdge.Basis).
+                                @(side.FriendlyEdge.Edge.Length == 0 ? "Not named (ruling R22.3)." : $"The {side.FriendlyEdge.Edge} edge ({ScenarioCards.Compass(card, side.FriendlyEdge.Edge)}), {Basis(side.FriendlyEdge.Basis)}.")
                                 @side.FriendlyEdge.Note
                             </dd>
                             <dt>Balance (A26.4)</dt>
@@ -145,7 +151,7 @@ else
                 </ol>
 
                 <h4>Victory Conditions</h4>
-                <p id="card-victory">@card.VictoryConditions.Text <span class="card-rules">(@Cites(card.VictoryConditions.Rules); not evaluated yet)</span></p>
+                <p id="card-victory">@card.VictoryConditions.Text <span class="card-rules">(@(card.VictoryConditions.Rules.Count > 0 ? Cites(card.VictoryConditions.Rules) + "; " : string.Empty)@(card.VictoryConditions.Outcomes is null ? "the players judge the result" : "evaluated by the game; ruling R21.1"))</span></p>
 
                 @if (card.Aftermath is { } aftermath)
                 {
@@ -178,17 +184,17 @@ else
 
     // Referee, pass 18: the link picks its card whenever it is followed, even from this page.
     protected override void OnParametersSet() =>
-        Show(Card is { } named && ScenarioCards.Names.Contains(named, StringComparer.Ordinal) ? named : selected ?? ScenarioCards.Names.FirstOrDefault());
+        Show(Card is { } named && Live.Cards.Names.Contains(named, StringComparer.Ordinal) ? named : selected ?? Live.Cards.Names.FirstOrDefault());
 
     private void Choose(ChangeEventArgs change) => Show(change.Value?.ToString());
 
     private void Show(string? name)
     {
         selected = name;
-        read = name is null || catalog is null ? null : ScenarioCards.Read(name, catalog);
+        read = name is null || catalog is null ? null : Live.Cards.Read(name, catalog);
     }
 
-    private string Title(string name) => catalog is not null && ScenarioCards.Read(name, catalog)?.Card is { } card ? card.Title : name;
+    private string Title(string name) => catalog is not null && Live.Cards.Read(name, catalog)?.Card is { } card ? card.Title : name;
 
     private static readonly string[] Ordinals = ["first", "second", "third", "fourth", "fifth", "sixth"];
 
@@ -219,6 +225,7 @@ else
         "setup" => "from its setup (A20.53)",
         "entry" => "from its entry (A20.53)",
         "ssr" => "by SSR",
+        "none" => "not named (ruling R22.3)",
         _ => "manufactured under R0.3",
     };
 

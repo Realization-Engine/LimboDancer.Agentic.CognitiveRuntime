@@ -98,7 +98,7 @@ public sealed class PlayPageTests : IDisposable
     private IRenderedComponent<PlayPage> StartGame(string at)
     {
         var page = context.Render<PlayPage>();
-        page.Find("#new-board").Change(Board);
+        MinimalCards.Choose(page, new Dictionary<string, string> { ["board"] = Board });
         page.Find("#place-id").Change("g1");
         page.Find("#place-location").Change(at);
         page.Find("#place-add").Click();
@@ -196,7 +196,7 @@ public sealed class PlayPageTests : IDisposable
     private IRenderedComponent<PlayPage> GameWithDefenders(params (string Id, string Definition)[] defenders)
     {
         var page = context.Render<PlayPage>();
-        page.Find("#new-board").Change(Board);
+        MinimalCards.Choose(page, new Dictionary<string, string> { ["board"] = Board });
         page.Find("#place-id").Change("g1");
         page.Find("#place-location").Change($"{Board}:A1:0");
         page.Find("#place-add").Click();
@@ -320,16 +320,17 @@ public sealed class PlayPageTests : IDisposable
     [Fact]
     public void PlacedBoardsAreRecordedAndTheMapNeedsTheVaslCheckout()
     {
-        // One board placed in slot (0, 0): the game records the placement; drawing a placed map needs the VASL checkout.
+        // One board placed in slot (0, 0), turned (a card lists a single unturned board as a plain board; ruling R22.4): the game records the placement;
+        // drawing a placed map needs the VASL checkout.
         var page = context.Render<PlayPage>();
-        page.Find("#new-board").Change($"{Board}@0,0");
+        MinimalCards.Choose(page, new Dictionary<string, string> { ["board"] = $"{Board}@0,0/r" });
         page.Find("#place-id").Change("g1");
         page.Find("#place-location").Change($"{Board}:A1:0");
         page.Find("#place-add").Click();
         Commit(page, "#propose-setup");
         var map = live.Planner.Replay(live.Store.Read(new GameScope(LivePlay.Tenant, "village"))!.Events).Current!.Map;
         Assert.True(map.IsPlaced);
-        Assert.Equal($"{Board}@0,0", map.Reference);
+        Assert.Equal($"{Board}@0,0/r", map.Reference);
         Assert.NotEmpty(page.FindAll("#play-map-problems li"));
         Assert.NotEmpty(page.FindAll("#play-units tr[data-unit='g1']"));
     }

@@ -94,15 +94,20 @@ public sealed class PlayPagePass5Tests : IDisposable
         page.Find("#place-add").Click();
     }
 
-    private IRenderedComponent<PlayPage> NewGame(string firstSide, string secondSide)
+    private IRenderedComponent<PlayPage> NewGame(string firstSide, string secondSide, string firstEdge = "", string secondEdge = "")
     {
         var page = context.Render<PlayPage>();
-        page.Find("#new-board").Change(Board);
-        page.Find("#new-first").Change(firstSide);
-        page.Find("#new-second").Change(secondSide);
-        page.Find("#new-first-elr").Change(firstSide == "russian" ? "2" : "3");
-        page.Find("#new-second-elr").Change(secondSide == "russian" ? "2" : "3");
-        page.Find("#new-month").Change("7");
+        MinimalCards.Choose(page, new Dictionary<string, string>
+        {
+            ["board"] = Board,
+            ["first"] = firstSide,
+            ["second"] = secondSide,
+            ["first-elr"] = firstSide == "russian" ? "2" : "3",
+            ["second-elr"] = secondSide == "russian" ? "2" : "3",
+            ["month"] = "7",
+            ["first-edge"] = firstEdge,
+            ["second-edge"] = secondEdge,
+        });
         return page;
     }
 
@@ -133,9 +138,8 @@ public sealed class PlayPagePass5Tests : IDisposable
     public void ANewGameNamesEachSidesFriendlyBoardEdgeAndAUnitMayDoubleTime()
     {
         var hexes = Hexes();
-        var page = NewGame("german", "russian");
-        page.Find("#new-first-edge").Change("left");
-        page.Find("#new-second-edge").Change("right");
+        // Ruling R22.4: the edges come from the game's (minimal) card.
+        var page = NewGame("german", "russian", "left", "right");
         Place(page, "g1", "attacker-squad", hexes.Open);
         Place(page, "r1", "defender-squad", hexes.Building);
         Commit(page, "#propose-setup");

@@ -14,7 +14,11 @@ public sealed class ScenarioCardsPageTests : IDisposable
     public ScenarioCardsPageTests()
     {
         var options = new StudioOptions { CacheRoot = Path.Combine(root, "cache"), BoardsRoot = Path.Combine(root, "boards") };
-        context.Services.AddSingleton(new UnitLibrary(options));
+        var library = new UnitLibrary(options);
+        context.Services.AddSingleton(library);
+
+        // Pass 22 (ruling R22.2): the page lists the cards of the Studio's library, built-in and the user's.
+        context.Services.AddSingleton(new LivePlay(library, new BuildingBoards(new MapService(options, new FakeVaslMapSource()))));
     }
 
     [Fact]
@@ -40,7 +44,7 @@ public sealed class ScenarioCardsPageTests : IDisposable
         Assert.Contains("5-4-8 elite squad", page.Find("#card-side-german").TextContent, StringComparison.Ordinal);
 
         Assert.Contains("Shown, not enforced", page.Find("#card-ssr").TextContent, StringComparison.Ordinal);
-        Assert.Contains("not evaluated yet", page.Find("#card-victory").TextContent, StringComparison.Ordinal);
+        Assert.Contains("evaluated by the game", page.Find("#card-victory").TextContent, StringComparison.Ordinal);
         Assert.Contains("paraphrased", page.Find("#card-adaptation").TextContent, StringComparison.Ordinal);
     }
 

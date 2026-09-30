@@ -74,7 +74,7 @@
             {
                 <p id="play-card-changed" class="diagnostic warning">The card has changed since this game started; what follows is its current text.</p>
             }
-            <p id="play-card-turns">@playCard.Turns.Count Game Turns@(playCard.Turns.HalfTurn ? ", the last with one Player Turn" : string.Empty); @playCard.Place, @ScenarioCards.DateText(playCard.Date).
+            <p id="play-card-turns">@playCard.Turns.Count Game Turns@(playCard.Turns.HalfTurn ? ", the last with one Player Turn" : string.Empty); @ScenarioCards.PlaceAndDate(playCard).
                 @playCard.Turns.SetsUpFirst sets up first; @(playCard.Turns.MovesFirst is { } cardFirst ? $"{cardFirst} moves first." : $"{state.FirstSide} won the dr to move first (ruling R20.2).")</p>
             <p id="play-card-balance">@(scenario.Balance is { } balanceSide ? $"{balanceSide} plays with its Balance: {playCard.Sides.FirstOrDefault(side => side.Side == balanceSide)?.Balance}" : "No side takes its Balance.")
                 @(scenario.Players.Count > 0 ? $" Players: {string.Join(", ", scenario.Players.Select(player => $"{player.Name} plays {player.Side}"))}." : string.Empty) (A26.4; ruling R20.3)</p>
@@ -132,132 +132,55 @@
 @if (history is null)
 {
     <h3>New game</h3>
+    <p id="new-game-help" class="muted">
+        Every game starts from a scenario card (ruling R22.4): a built-in card, one of yours, or a minimal card for a game with no scenario, made on the
+        <a id="new-card-editor" href="units/cards/edit">card editor</a>. The card gives the boards, sides, ELR, SAN, edges, date, Scenario Defender, and SSRs.
+    </p>
     <div class="fields">
         <label for="new-card">Scenario card</label>
-        <span>
-            <select id="new-card" value="@(scenarioCard ?? string.Empty)" @onchange="ChooseCard">
-                <option value="">none: fill in the fields below</option>
-                @foreach (var name in ScenarioCards.Names)
-                {
-                    <option value="@name">@CardTitle(name)</option>
-                }
-            </select>
-            <span class="muted">a game from a card starts as the card says: its boards, sides, ELR, SAN, edges, date, Scenario Defender, and SSRs (ruling R18.1)</span>
-        </span>
+        <select id="new-card" value="@(scenarioCard ?? string.Empty)" @onchange="ChooseCard">
+            <option value="">choose a card</option>
+            @foreach (var name in Live.Cards.Names)
+            {
+                <option value="@name">@CardTitle(name)@(Live.Cards.IsUser(name) ? " (yours)" : string.Empty)</option>
+            }
+        </select>
         <label for="new-id">Game id</label><input id="new-id" value="@newId" @onchange="@(args => newId = args.Value as string ?? string.Empty)" placeholder="village" />
         <label for="new-label">Label</label><input id="new-label" value="@newLabel" @onchange="@(args => newLabel = args.Value as string ?? string.Empty)" />
-        <label for="new-board">Boards</label>
-        <span>
-            <input id="new-board" disabled="@CardChosen" value="@newBoard" @onchange="@(args => { newBoard = args.Value as string ?? string.Empty; newMap = null; })" />
-            <span class="muted">one board, such as bd01, or placed boards, such as bd02@@0,0/r bd01@@0,1 (column, row, /r when reversed)</span>
-        </span>
-        <label for="new-map">Or a saved map</label>
-        <select id="new-map" disabled="@CardChosen" value="@(newMap ?? string.Empty)" @onchange="ChooseMap">
-            <option value="">none</option>
-            @foreach (var map in GameMaps.Saved())
-            {
-                <option value="@map.Ref.Value">@map.Name</option>
-            }
-        </select>
-        <label for="new-first">First side</label>
-        <select id="new-first" disabled="@FirstLocked" value="@firstSide" @onchange="ChooseFirst">
-            @foreach (var side in Library.Vocabulary.Sides.Where(side => ChosenCard is not { } firstCard || firstCard.Sides.Any(item => item.Side == side.Name)))
-            {
-                <option value="@side.Name">@side.Label</option>
-            }
-        </select>
-        @if (ChosenCard is { Turns.MovesFirst: null } rollCard)
+        @if (ChosenCard is { } chosenCard)
         {
-            <span id="new-first-roll" class="muted">@rollCard.Turns.MovesFirstNote The game rolls a dr for each side as it starts; the higher moves first (ruling R20.2).</span>
-        }
-        @if (ChosenCard is { } balanceCard)
-        {
-            <label for="new-balance" title="A26.4: when both players wish to play the same side, a dr decides, and the loser plays the other side with its Balance.">Balance</label>
-            <select id="new-balance" value="@newBalance" @onchange="@(args => newBalance = args.Value as string ?? string.Empty)">
-                <option value="">none</option>
-                @foreach (var balanceSide in balanceCard.Sides)
-                {
-                    <option value="@("agree:" + balanceSide.Side)">@balanceSide.Side takes its Balance by agreement</option>
-                    <option value="@("wish:" + balanceSide.Side)">both players wish to play @balanceSide.Side: a dr decides</option>
-                }
-            </select>
-            @if (newBalance.StartsWith("wish:", StringComparison.Ordinal))
+            <span>The start</span>
+            <ul id="new-card-summary">
+                <li id="new-summary-boards">Boards: @newBoard</li>
+                <li id="new-summary-sides">@firstSide@(firstSide == chosenCard.Turns.MovesFirst ? " moves first" : string.Empty): ELR @(firstElr.Length > 0 ? firstElr : chosenCard.Minimal ? "none" : "by OB group"), SAN @firstSan, edge @(firstEdge.Length > 0 ? firstEdge : "not named");
+                    @secondSide: ELR @(secondElr.Length > 0 ? secondElr : chosenCard.Minimal ? "none" : "by OB group"), SAN @secondSan, edge @(secondEdge.Length > 0 ? secondEdge : "not named")</li>
+                <li id="new-summary-date">Month @(newMonth.Length > 0 ? newMonth : "not recorded"), year @(newYear.Length > 0 ? newYear : "not recorded"); SSR tokens: @(newRules.Length > 0 ? newRules : "none"); Scenario Defender: @(newDefender.Length > 0 ? newDefender : "none")</li>
+            </ul>
+            @if (chosenCard.Turns.MovesFirst is null)
             {
-                <input id="new-player-one" value="@playerOne" @onchange="@(args => playerOne = args.Value as string ?? string.Empty)" size="10" placeholder="first player" />
-                <input id="new-player-two" value="@playerTwo" @onchange="@(args => playerTwo = args.Value as string ?? string.Empty)" size="10" placeholder="second player" />
+                <span></span>
+                <span id="new-first-roll" class="muted">@chosenCard.Turns.MovesFirstNote The game rolls a dr for each side as it starts; the higher moves first (ruling R20.2).</span>
+            }
+            @if (!chosenCard.Minimal)
+            {
+                <label for="new-balance" title="A26.4: when both players wish to play the same side, a dr decides, and the loser plays the other side with its Balance.">Balance</label>
+                <span>
+                    <select id="new-balance" value="@newBalance" @onchange="@(args => newBalance = args.Value as string ?? string.Empty)">
+                        <option value="">none</option>
+                        @foreach (var balanceSide in chosenCard.Sides)
+                        {
+                            <option value="@("agree:" + balanceSide.Side)">@balanceSide.Side takes its Balance by agreement</option>
+                            <option value="@("wish:" + balanceSide.Side)">both players wish to play @balanceSide.Side: a dr decides</option>
+                        }
+                    </select>
+                    @if (newBalance.StartsWith("wish:", StringComparison.Ordinal))
+                    {
+                        <input id="new-player-one" value="@playerOne" @onchange="@(args => playerOne = args.Value as string ?? string.Empty)" size="10" placeholder="first player" />
+                        <input id="new-player-two" value="@playerTwo" @onchange="@(args => playerTwo = args.Value as string ?? string.Empty)" size="10" placeholder="second player" />
+                    }
+                </span>
             }
         }
-        <label for="new-second">Second side</label>
-        <select id="new-second" disabled="@CardChosen" value="@secondSide" @onchange="@(args => secondSide = args.Value as string ?? secondSide)">
-            @foreach (var side in Library.Vocabulary.Sides)
-            {
-                <option value="@side.Name">@side.Label</option>
-            }
-        </select>
-        <label for="new-first-elr">ELR</label>
-        <span>
-            <input id="new-first-elr" disabled="@CardChosen" value="@firstElr" @onchange="@(args => firstElr = args.Value as string ?? string.Empty)" size="2" /> first side,
-            <input id="new-second-elr" disabled="@CardChosen" value="@secondElr" @onchange="@(args => secondElr = args.Value as string ?? string.Empty)" size="2" /> second side;
-            SAN <input id="new-first-san" disabled="@CardChosen" value="@firstSan" @onchange="@(args => firstSan = args.Value as string ?? string.Empty)" size="2" /> first side,
-            <input id="new-second-san" disabled="@CardChosen" value="@secondSan" @onchange="@(args => secondSan = args.Value as string ?? string.Empty)" size="2" /> second side (A14.1: a side with a SAN places its Sniper counter below)
-            <span class="muted">the scenario's Experience Level Rating (A19.1), 0 to 5; fire needs the target side's</span>
-        </span>
-        <label for="new-first-edge">Friendly Board Edge</label>
-        <span>
-            <select id="new-first-edge" disabled="@CardChosen" value="@firstEdge" @onchange="@(args => firstEdge = args.Value as string ?? string.Empty)">
-                <option value="">not named</option>
-                @foreach (var edge in Edges)
-                {
-                    <option value="@edge">@edge</option>
-                }
-            </select> @firstSide,
-            <select id="new-second-edge" disabled="@CardChosen" value="@secondEdge" @onchange="@(args => secondEdge = args.Value as string ?? string.Empty)">
-                <option value="">not named</option>
-                @foreach (var edge in Edges)
-                {
-                    <option value="@edge">@edge</option>
-                }
-            </select> @secondSide
-            <span class="muted">the map edge each side's Recalled vehicles leave by (A20.53, D5.341)</span>
-        </span>
-        <label for="new-month">Month</label>
-        <span>
-            <select id="new-month" disabled="@CardChosen" value="@newMonth" @onchange="@(args => newMonth = args.Value as string ?? string.Empty)">
-                <option value="">not recorded</option>
-                @for (var month = 1; month <= 12; month++)
-                {
-                    <option value="@month">@CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(month)</option>
-                }
-            </select>
-            <span class="muted">grain is a Hindrance only from June to September (B15.2), and costs Infantry 1½ MF only from April to September (B15.6)</span>
-        </span>
-        <label for="new-rules">Special rules</label>
-        <span>
-            <input id="new-rules" disabled="@CardChosen" value="@newRules" @onchange="@(args => newRules = args.Value as string ?? string.Empty)" size="48" />
-            <span class="muted">SSRs separated by spaces: night:n (the Base NVR, 0 to 6), night-clouds:scattered, night-moon:half, weather:mud, weather:overcast,
-                weather:mist, weather:rain, weather:falling-snow, weather:ground-snow, weather:deep-snow, weather:extreme-winter, plowed-roads, mol:side
-                (E1.1, E3; rulings R16.1, R16.9)</span>
-        </span>
-        <label for="new-defender">Scenario Defender</label>
-        <span>
-            <select id="new-defender" disabled="@CardChosen" value="@newDefender" @onchange="@(args => newDefender = args.Value as string ?? string.Empty)">
-                <option value="">not named</option>
-                <option value="@firstSide">@firstSide</option>
-                <option value="@secondSide">@secondSide</option>
-            </select>
-            <span class="muted">only the Scenario Defender's Guns may Bore Sight a Location at setup (C6.41)</span>
-        </span>
-        <label for="new-year">Year</label>
-        <span>
-            <select id="new-year" disabled="@CardChosen" value="@newYear" @onchange="@(args => newYear = args.Value as string ?? string.Empty)">
-                <option value="">not recorded</option>
-                @for (var year = 1939; year <= 1945; year++)
-                {
-                    <option value="@year">@year</option>
-                }
-            </select>
-            <span class="muted">APCR and HEAT are fired only in the years a counter lists them (C8.1, C8.3)</span>
-        </span>
     </div>
 }
 else if (history.Current is null && state is null)
@@ -382,7 +305,7 @@ else if (state is not null)
             }
         </ul>
     }
-    <button id="propose-setup" disabled="@(placements.Count == 0)" @onclick="ProposeSetup">Propose setup</button>
+    <button id="propose-setup" disabled="@(placements.Count == 0 || (history is null && !CardChosen))" @onclick="ProposeSetup">Propose setup</button>
 }
 
 @if (state is not null && history?.Current is not null)
@@ -1930,35 +1853,27 @@ else if (state is not null)
     };
     private string placeGroup = string.Empty;
     private string? placeNote;
-    private readonly Dictionary<string, ScenarioCardRead?> cardReads = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, string?> cardShas = new(StringComparer.Ordinal);
+    private readonly Dictionary<(string Name, string? Sha256), ScenarioCardRead?> cardReads = new();
 
-    /// <summary>A card read once per page (referee, pass 18): every render reads it from here.</summary>
+    /// <summary>
+    /// A card read once per text (referees, passes 18 and 22): every render reads it from here, and a card changed in the editor meanwhile is read
+    /// afresh.
+    /// </summary>
     private ScenarioCardRead? CardRead(string name)
     {
-        if (!cardReads.TryGetValue(name, out var read))
+        var key = (name, CardSha(name));
+        if (!cardReads.TryGetValue(key, out var read))
         {
-            cardReads[name] = read = PublishedCatalog is { } catalog ? ScenarioCards.Read(name, catalog) : null;
+            cardReads[key] = read = PublishedCatalog is { } catalog ? Live.Cards.Read(name, catalog) : null;
         }
 
         return read;
     }
 
-    private string? CardSha(string name)
-    {
-        if (!cardShas.TryGetValue(name, out var sha))
-        {
-            cardShas[name] = sha = ScenarioCards.Sha256(name);
-        }
-
-        return sha;
-    }
+    private string? CardSha(string name) => Live.Cards.Sha256(name);
 
     /// <summary>Whether the new game comes from a scenario card, which fills and locks the start fields (ruling R18.1).</summary>
     private bool CardChosen => scenarioCard is not null;
-
-    /// <summary>The side that moves first is locked too; a card that leaves it to a die roll has it rolled as the game starts (A3.9; ruling R20.2).</summary>
-    private bool FirstLocked => CardChosen;
 
     private ScenarioCard? ChosenCard => scenarioCard is not null ? CardRead(scenarioCard)?.Card : null;
 
@@ -1992,15 +1907,14 @@ else if (state is not null)
         }
 
         newLabel = card.Title;
-        newMap = null;
         newBoard = string.Join(' ', card.Boards.Select(board => card.Boards.Count == 1 && !board.Reversed
             ? board.Board : $"{board.Board}@{board.Column},{board.Row}{(board.Reversed ? "/r" : string.Empty)}"));
         // Pass 20 (ruling R20.2): a die-roll card is rolled as the game starts; the fields list the side that sets up first.
         FillFromCard(card, card.Turns.MovesFirst ?? card.Turns.SetsUpFirst);
         newBalance = string.Empty;
 
-        newMonth = card.Date.Month.ToString(CultureInfo.InvariantCulture);
-        newYear = card.Date.Year.ToString(CultureInfo.InvariantCulture);
+        newMonth = card.Date.Month > 0 ? card.Date.Month.ToString(CultureInfo.InvariantCulture) : string.Empty;
+        newYear = card.Date.Year > 0 ? card.Date.Year.ToString(CultureInfo.InvariantCulture) : string.Empty;
         newDefender = card.ScenarioDefender ?? string.Empty;
         newRules = string.Join(' ', card.Tokens);
     }
@@ -2012,23 +1926,10 @@ else if (state is not null)
         secondSide = card.Sides.First(side => side.Side != first).Side;
         ScenarioCardSide Of(string id) => card.Sides.First(side => side.Side == id);
         string Elr(string id) => Of(id).Groups.Select(group => group.Elr).Distinct().ToArray() is [var only]
-            ? only.ToString(CultureInfo.InvariantCulture) : string.Empty;
+            ? only.ToString(CultureInfo.InvariantCulture) : Of(id).Elr?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
         (firstElr, secondElr) = (Elr(firstSide), Elr(secondSide));
         (firstSan, secondSan) = (Of(firstSide).San.ToString(CultureInfo.InvariantCulture), Of(secondSide).San.ToString(CultureInfo.InvariantCulture));
         (firstEdge, secondEdge) = (Of(firstSide).FriendlyEdge.Edge, Of(secondSide).FriendlyEdge.Edge);
-    }
-
-    /// <summary>The side that moves first; with a card that leaves it to a die roll, the other side follows (A3.9).</summary>
-    private void ChooseFirst(ChangeEventArgs args)
-    {
-        var chosen = args.Value as string ?? firstSide;
-        if (ChosenCard is { } card && card.Sides.Any(side => side.Side == chosen))
-        {
-            FillFromCard(card, chosen);
-            return;
-        }
-
-        firstSide = chosen;
     }
 
     private string placeFacing = "east";
@@ -2048,7 +1949,6 @@ else if (state is not null)
     private string newId = "village";
     private string newLabel = "Village";
     private string newBoard = "bd01";
-    private string? newMap;
     private LimboDancer.Domains.Asl.Maps.Coordinates.BoardLocation? highlight;
     private string firstSide = "german";
     private string secondSide = "russian";
@@ -2068,7 +1968,6 @@ else if (state is not null)
     private string firstElr = string.Empty;
     private string firstEdge = string.Empty;
     private string secondEdge = string.Empty;
-    private static readonly string[] Edges = ["top", "bottom", "left", "right"];
     private bool moveDoubleTime;
 
     private bool moveMinimum;
@@ -2770,30 +2669,6 @@ else if (state is not null)
     private string ViewTarget => state is null ? string.Empty
         : state.Map.IsPlaced && state.Map.Reference.StartsWith("map-", StringComparison.Ordinal) ? state.Map.Reference : state.Map.Boards[0].Board.Value;
 
-    /// <summary>
-    /// The setup's boards: one reference, or placed boards in the compact form <c>bd02@0,0/r bd01@0,1</c>
-    /// (Composed Maps Design, section 6).
-    /// </summary>
-    private object[] SetupBoards() => [.. newBoard.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(token =>
-    {
-        var at = token.IndexOf('@', StringComparison.Ordinal);
-        if (at < 0)
-        {
-            return (object)token;
-        }
-
-        var slot = token[(at + 1)..];
-        var reversed = slot.EndsWith("/r", StringComparison.Ordinal);
-        var parts = (reversed ? slot[..^2] : slot).Split(',');
-        return new
-        {
-            board = token[..at],
-            column = parts.Length == 2 && int.TryParse(parts[0], CultureInfo.InvariantCulture, out var column) ? column : -1,
-            row = parts.Length == 2 && int.TryParse(parts[1], CultureInfo.InvariantCulture, out var row) ? row : -1,
-            reversed,
-        };
-    })];
-
     private string losSource = string.Empty;
     private string losTarget = string.Empty;
     private LosCheck? playLos;
@@ -2816,15 +2691,6 @@ else if (state is not null)
         if (state is not null && GameMaps.Board(state.Map).Board is { } board)
         {
             playLos = Los.Check(board, losSource, losTarget);
-        }
-    }
-
-    private void ChooseMap(ChangeEventArgs args)
-    {
-        newMap = args.Value as string is { Length: > 0 } chosen ? chosen : null;
-        if (GameMaps.Saved().FirstOrDefault(map => map.Ref.Value == newMap) is { } map)
-        {
-            newBoard = string.Join(' ', map.Placements.Select(placement => $"{placement.Board.Value}@{placement.Column},{placement.Row}{(placement.Reversed ? "/r" : "")}"));
         }
     }
 
@@ -4222,34 +4088,10 @@ else if (state is not null)
         return placement;
     }
 
-    /// <summary>A new game's start: its sides with their ELRs, and the scenario month when one is chosen.</summary>
+    /// <summary>A new game's start (rulings R18.1, R22.4): the card the game starts from, its label, and the Balance; the planner takes the rest from the card.</summary>
     private Dictionary<string, object?> Start(string catalog)
     {
-        var start = new Dictionary<string, object?>
-        {
-            ["label"] = newLabel, ["catalog"] = catalog, ["boards"] = SetupBoards(), ["map"] = newMap,
-            ["firstSide"] = ChosenCard is { Turns.MovesFirst: null } ? null : firstSide,
-            ["sides"] = new[] { Side(firstSide, firstElr, firstEdge, firstSan), Side(secondSide, secondElr, secondEdge, secondSan) },
-        };
-        if (int.TryParse(newMonth, CultureInfo.InvariantCulture, out var month))
-        {
-            start["scenarioMonth"] = month;
-        }
-
-        if (int.TryParse(newYear, CultureInfo.InvariantCulture, out var year))
-        {
-            start["scenarioYear"] = year;
-        }
-
-        if (newDefender.Length > 0)
-        {
-            start["scenarioDefender"] = newDefender;
-        }
-
-        // E1.1, E3 (backlog pass 16, rulings R16.1, R16.9): the night and weather SSRs, among the others.
-        start["specialRules"] = newRules.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-        // Backlog pass 18 (rulings R18.1, R18.2): the card the game starts from; the planner takes the start from it.
+        var start = new Dictionary<string, object?> { ["label"] = newLabel, ["catalog"] = catalog };
         if (scenarioCard is { } card && scenarioSha is { } sha256)
         {
             start["scenario"] = new Dictionary<string, string> { ["id"] = card, ["sha256"] = sha256, ["title"] = ChosenCard?.Title ?? card };
@@ -4274,29 +4116,6 @@ else if (state is not null)
         }
 
         return start;
-    }
-
-    /// <summary>A side of a new game, with its ELR when one is given (A19.1).</summary>
-    private static Dictionary<string, object> Side(string id, string elr, string edge, string san = "")
-    {
-        var side = new Dictionary<string, object> { ["id"] = id, ["nationality"] = id };
-        if (int.TryParse(elr, CultureInfo.InvariantCulture, out var value))
-        {
-            side["elr"] = value;
-        }
-
-        // A14.1 (backlog pass 15): the side's SAN.
-        if (int.TryParse(san, CultureInfo.InvariantCulture, out var activation))
-        {
-            side["san"] = activation;
-        }
-
-        if (edge.Length > 0)
-        {
-            side["friendlyEdge"] = edge;
-        }
-
-        return side;
     }
 
     /// <summary>The moving stack leaves the map across an edge (A2.6; ruling R21.5).</summary>

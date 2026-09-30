@@ -519,3 +519,20 @@ Estimate: 3:45 (build 2:30), the Scenario Card Games Plan. The user said on 2026
 | Merge and push | 01:25 | 01:27 | 0:02 | |
 
 Total 2:22 of working time (23:05 to 01:27) against the 3:45 estimate (build 2:30); the build with both reviews' fixes, 23:05 to 00:26, took 1:21, and the test runs and merge gate 1:01, with one Docker run lost to Docker Desktop being down and one repeated for the pass 20 tests.
+
+## Pass 22: The card editor
+
+Estimate: 3:30 (build 2:15), the Scenario Card Games Plan. Run without the user's intervention after pass 21 merged, by their instruction of 2026-09-29. Branch `feature/asl-backlog-pass-22`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Reading the Play page's new-game form, the Scenarios page, the page tests' game starts, and the planner's card reads; the design; the card library, minimal cards, the editor page, and the test migration written as scripts | 00:40 | 01:25 | 0:45 | During pass 21's merge gate |
+| The scripts applied: the card library, minimal cards, the planner reading the library, the editor page, the Scenarios page, the Play page without the form (dead members removed); the page tests moved to minimal cards; 4 Play tests and 3 editor page tests; MapStudio (139) and the pass 17 and 22 Play tests pass; rulings R22.1 to R22.4 | 01:27 | 01:40 | 0:13 | |
+| Live check in the Studio preview (copy, picker, save, the Play page's list and summary, delete); the referee and the table player started | 01:40 | 01:43 | 0:03 | |
+| The referee's fixes (a changed or gone card read by no rule, copies keeping the Integrity totals and the hexrows' board, save refusing a taken id, text and hash read together, the picker, atomic writes, the name pattern, minimal outcomes, the Play page's card reads) and the table player's (Extreme Winter's date, the gone-card message, side ELR with an OB, the id as typed, side changes, the stray comma, the Scenarios victory line, the picker hint); the table player's 16 tests kept; MapStudio 156 pass | 01:43 | 02:01 | 0:18 | The reviews ran 01:43 to 01:54 |
+| The design, the review, backlog section 32, and the ruling amendments; the full local suite in the background | 02:01 | 02:05 | 0:04 | |
+| Full local suite: every solution test project and the ScenarioA1 tests (480); Play 556, MapStudio 156; the architecture test hit the held `.git/worktrees` (known) | 02:05 | 02:36 | 0:31 | |
+| Commit fa365b7; merge gate: the chart supplement regeneration run locally (identical with sorted keys) and the Docker Linux check (restore, build, test, a1, and the source verification and pending comparison regenerations: every step exit 0; Play 556, MapStudio 156, Authoring 167 of 167, ScenarioA1 480) | 02:36 | 02:58 | 0:22 | |
+| Merge and push | 02:58 | 03:00 | 0:02 | |
+
+Total 2:18 of working time (00:40 to 01:25 during pass 21's merge gate, then 01:27 to 03:00) against the 3:30 estimate (build 2:15); the build with both reviews' fixes took 1:21, and the docs, test runs, and merge gate 0:57.
