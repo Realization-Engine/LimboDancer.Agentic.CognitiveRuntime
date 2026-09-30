@@ -1,0 +1,72 @@
+@* B13 (plan sections 12.3 and 16.6): the document's name, reference, status, and version; whether it has unsaved changes; Undo, Redo, and
+   Save (Save draft for a source-derived board); the view controls the caller supplies; and the last command's result. *@
+<div class="toolbar editor-header" id="editor-header">
+    <input class="board-name" value="@Name" aria-label="Board name" @onchange="@(args => args.Value is string name && !string.IsNullOrWhiteSpace(name) ? OnRename.InvokeAsync(name.Trim()) : Task.CompletedTask)" />
+    <span class="muted">@Board</span>
+    <span class="@(Status == BoardStatus.AuthoredValid ? "pass" : "fail")">@Status</span>
+    <span class="muted">version <code>@Version[..12]</code></span>
+    @if (Dirty)
+    {
+        <StatusBadge Label="unsaved changes" Tone="StatusBadge.BadgeTone.Warning" />
+    }
+    else
+    {
+        <StatusBadge Label="saved" Tone="StatusBadge.BadgeTone.Neutral" />
+    }
+    <button id="editor-undo" @onclick="OnUndo" disabled="@(UndoDescription is null)" title="@UndoDescription">Undo</button>
+    <button id="editor-redo" @onclick="OnRedo" disabled="@(RedoDescription is null)" title="@RedoDescription">Redo</button>
+    <button id="editor-save" class="primary" @onclick="OnSave" disabled="@(!Dirty)">@(IsDraft ? "Save draft" : "Save")</button>
+    @ChildContent
+    @if (Message is not null)
+    {
+        <span id="editor-status" class="@(MessageIsError ? "fail" : "muted")" role="@(MessageIsError ? "alert" : "status")">@Message</span>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Name { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public BoardRef Board { get; set; } = null!;
+
+    [Parameter]
+    public BoardStatus Status { get; set; }
+
+    [Parameter, EditorRequired]
+    public string Version { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool IsDraft { get; set; }
+
+    [Parameter]
+    public bool Dirty { get; set; }
+
+    [Parameter]
+    public string? UndoDescription { get; set; }
+
+    [Parameter]
+    public string? RedoDescription { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnRename { get; set; }
+
+    [Parameter]
+    public EventCallback OnUndo { get; set; }
+
+    [Parameter]
+    public EventCallback OnRedo { get; set; }
+
+    [Parameter]
+    public EventCallback OnSave { get; set; }
+
+    /// <summary>The view picker, snap, and the viewer link.</summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public string? Message { get; set; }
+
+    [Parameter]
+    public bool MessageIsError { get; set; }
+}

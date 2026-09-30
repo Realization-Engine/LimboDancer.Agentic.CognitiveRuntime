@@ -1,0 +1,90 @@
+@* B05 (plan sections 12.3 and 16.6): the game and replay strip: units shown or not, their source (a game projected by perspective, or a
+   placement set), the perspective (S09) and revision (S10) of a game, and the counter style. The perspective and revision stay in words
+   beside the controls. *@
+<div class="toolbar unit-strip" id="unit-strip">
+    <label><input type="checkbox" checked="@Show" @onchange="@(args => ShowChanged.InvokeAsync(args.Value is true))" /> Units</label>
+    @if (Show)
+    {
+        <select id="units-source" value="@Source" @onchange="@(args => SourceChanged.InvokeAsync(args.Value as string))" aria-label="Units source">
+            @if (Games.Count > 0)
+            {
+                <optgroup label="Games, projected by perspective">
+                    @foreach (var game in Games)
+                    {
+                        <option value="@game.Key">@game.Label</option>
+                    }
+                </optgroup>
+            }
+            @if (Sets.Count > 0)
+            {
+                <optgroup label="Placement sets">
+                    @foreach (var set in Sets)
+                    {
+                        <option value="@set.Key">@set.Label</option>
+                    }
+                </optgroup>
+            }
+        </select>
+        @if (Replay is { } replay)
+        {
+            <PerspectivePicker Id="units-perspective" Label="Perspective" Choices="@replay.Perspectives" Value="@replay.Perspective" ValueChanged="@PerspectiveChanged" />
+            <RevisionNavigator Id="units-revision" PreviousId="units-previous" NextId="units-next" Min="1" Max="@replay.Max" Current="@replay.Revision"
+                               RevisionChanged="@RevisionChanged" />
+            <span id="units-summary" class="muted">@replay.Perspective's view @(replay.Perspective == LimboDancer.Domains.Asl.Units.State.Perspective.AdjudicatorName ? "(sees every unit)" : "(what this side may see)"), revision @replay.Revision of @replay.Max</span>
+        }
+        <label>
+            Counters
+            <select id="units-sheet" value="@Sheet" @onchange="@(args => SheetChanged.InvokeAsync(args.Value as string ?? Sheet))" aria-label="Unit style sheet">
+                @foreach (var name in Sheets)
+                {
+                    <option value="@name">@name</option>
+                }
+            </select>
+        </label>
+    }
+</div>
+
+@code {
+    /// <summary>A source of units: its key ("game:..." or "set:...") and its label.</summary>
+    public sealed record SourceChoice(string Key, string Label);
+
+    /// <summary>A game being replayed: the perspectives, the one shown, and the revision.</summary>
+    public sealed record ReplayState(IReadOnlyList<PerspectivePicker.Choice> Perspectives, string Perspective, int Revision, int Max);
+
+    [Parameter]
+    public bool Show { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> ShowChanged { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<SourceChoice> Games { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<SourceChoice> Sets { get; set; } = [];
+
+    [Parameter]
+    public string? Source { get; set; }
+
+    [Parameter]
+    public EventCallback<string?> SourceChanged { get; set; }
+
+    /// <summary>The game shown, when the source is a game.</summary>
+    [Parameter]
+    public ReplayState? Replay { get; set; }
+
+    [Parameter]
+    public EventCallback<string> PerspectiveChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<int> RevisionChanged { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<string> Sheets { get; set; } = [];
+
+    [Parameter]
+    public string Sheet { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> SheetChanged { get; set; }
+}

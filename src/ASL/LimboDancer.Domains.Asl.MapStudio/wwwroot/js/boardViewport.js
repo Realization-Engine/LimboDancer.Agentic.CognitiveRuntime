@@ -118,8 +118,9 @@ export function create(host, dotnet) {
         }
     });
 
-    // Keyboard zoom and editing shortcuts while the board has focus (section 5.3).
-    host.addEventListener("keydown", event => {
+    // Keyboard zoom and editing shortcuts while the board has focus (section 5.3). The listener is on the host, which outlives the
+    // viewport, so dispose removes it: a host given a new viewport never answers a key twice.
+    const onKey = event => {
         if (event.target.closest?.("[data-unit-id]")) {
             return;
         }
@@ -150,7 +151,8 @@ export function create(host, dotnet) {
         }
 
         event.preventDefault();
-    });
+    };
+    host.addEventListener("keydown", onKey);
 
     return {
         load: (baseUrl, query, viewBox, layers, visible) => load(state, baseUrl, query, viewBox, layers, visible),
@@ -165,7 +167,10 @@ export function create(host, dotnet) {
         focusPoint: (x, y) => focusPoint(state, x, y),
         copyText: text => navigator.clipboard?.writeText(text),
         reset: () => reset(state),
-        dispose: () => host.replaceChildren(),
+        dispose: () => {
+            host.removeEventListener("keydown", onKey);
+            host.replaceChildren();
+        },
     };
 }
 

@@ -1,0 +1,31 @@
+@* U03 (plan section 16.7): the counter under each style sheet at far, mid, and near, as trusted SVG from the Studio's renderer; a refused
+   document says so instead. *@
+@if (Refused)
+{
+    <p class="fail" id="lab-refused">The document is refused; see the findings below.</p>
+}
+else
+{
+    <div class="previews" id="lab-tiers">
+        <span></span><strong>far</strong><strong>mid</strong><strong>near</strong>
+        @foreach (var row in Rows)
+        {
+            <span class="preview-label">@row.Label</span>
+            @foreach (var svg in row.Svgs)
+            {
+                <span class="preview" data-preview="@row.Label">@((MarkupString)svg)</span>
+            }
+        }
+    </div>
+}
+
+@code {
+    /// <summary>One style sheet's previews, far, mid, and near.</summary>
+    public sealed record Row(string Label, IReadOnlyList<string> Svgs);
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Row> Rows { get; set; } = [];
+
+    [Parameter]
+    public bool Refused { get; set; }
+}

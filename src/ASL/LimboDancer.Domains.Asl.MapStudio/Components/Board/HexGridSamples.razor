@@ -1,0 +1,29 @@
+@* E06 (plan section 16.14): the raw grid samples a hex's derivation reads, as rows prepared by the caller. *@
+<h3>Grid samples</h3>
+<table class="samples" id="hex-samples">
+    <tr><th>Sample</th><th>Pixel</th><th>Terrain</th><th>Elev.</th></tr>
+    @foreach (var row in Rows)
+    {
+        <tr>
+            <td>@row.Label</td>
+            <td>@row.X, @row.Y</td>
+            @if (row.OnGrid)
+            {
+                <td>@row.Terrain</td>
+                <td>@row.Elevation</td>
+            }
+            else
+            {
+                <td class="muted" colspan="2">off the grid</td>
+            }
+        </tr>
+    }
+</table>
+
+@code {
+    /// <summary>One sample: where it is, and the terrain name and elevation there, or off the grid.</summary>
+    public sealed record Row(string Label, int X, int Y, bool OnGrid, string Terrain, int Elevation);
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Row> Rows { get; set; } = [];
+}

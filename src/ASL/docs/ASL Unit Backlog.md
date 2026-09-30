@@ -517,6 +517,17 @@ Pass 22c (2026-09-30) turned the collection pages into components and made the B
 | Searchable board and SSR pickers, with the SSRs grouped by catalog category | Plan sections 12.2 and 14 | | A picker with typing, arrow keys, Escape, and an announced count (section 14) | Native selects; the board picker shows titles. |
 | The library's filters in the address, for a link that opens the same filtered list | Pass 22c | | | Kept for the browser session; a reload clears them. |
 
+## 36. Added by the redesign pass 22d
+
+Pass 22d (2026-09-30) turned the board viewer, the board editor, and the Unit Lab into components, with the board viewport's lifecycle in one component. Items it leaves out:
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| The Unit Lab's states grouped by kind (infantry, vehicle, fire markers) | Table player, pass 22d | | The vocabulary's state groups in the form | One list; a state that turns a face says which. |
+| The viewer's unit sources told apart when several live games share a label, and layers named in words | Table player, pass 22d (both earlier than it) | | | Each live game shows its label; layers show their ids (exact-terrain). |
+| Home and End on the inspector tabs also scroll the inspector | UI review, pass 22d | | A small script, since Blazor cannot prevent the default for some keys only | The tab moves and the pane may scroll. |
+| The board editor's three columns at narrow widths | Visual check, pass 22d | | Plan task 28c.2 (responsive layouts) | The board area is about 370px wide at 1100px. |
+
 ### Rows planned in the Card Play and Map Studio Redesign Plan
 
 The plan was approved on 2026-09-30. A survey of this backlog the same day found the rows below planned in its passes; each stays in its section until its pass builds it, and then leaves it with the pass named, as usual.

@@ -1,0 +1,32 @@
+@* U05 (plan section 16.7): a unit's details as the accessible labels word them, with its id and Location where the caller has them. *@
+<dl class="unit-details" id="@Id">
+    @if (ShowId)
+    {
+        <dt>ID</dt><dd>@Document.Id</dd>
+    }
+    @foreach (var detail in UnitLabels.Details(Document, Vocabulary))
+    {
+        <dt>@detail.Label</dt><dd>@detail.Value</dd>
+    }
+    @if (Location is { } location)
+    {
+        <dt>Location</dt><dd>@location</dd>
+    }
+</dl>
+
+@code {
+    [Parameter, EditorRequired]
+    public UnitDocument Document { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public LimboDancer.Domains.Asl.Units.Vocabulary.UnitVocabulary Vocabulary { get; set; } = null!;
+
+    [Parameter]
+    public bool ShowId { get; set; }
+
+    [Parameter]
+    public string? Location { get; set; }
+
+    [Parameter]
+    public string? Id { get; set; }
+}

@@ -1,0 +1,89 @@
+@* B15 (plan sections 14 and 16.6): tabs with their selected state and keyboard: Left and Right move between tabs, Home and End go to the
+   first and last, and the selected tab alone is in the tab order. The caller renders the selected panel as the child content. *@
+<div class="tabs" role="tablist" aria-label="@Label">
+    @foreach (var tab in Tabs)
+    {
+        var selected = tab.Id == Selected;
+        <button @key="tab.Id" @ref="buttons[tab.Id]" id="@TabId(tab.Id)" role="tab" class="@(selected ? "tab active" : "tab")" aria-selected="@(selected ? "true" : "false")"
+                aria-controls="@PanelId" tabindex="@(selected ? 0 : -1)" @onclick="() => Select(tab.Id, false)" @onkeydown="args => Key(tab.Id, args)">
+            @tab.Title@(tab.Count is { } count ? $" ({count})" : string.Empty)
+        </button>
+    }
+</div>
+<div class="tab-panel" role="tabpanel" id="@PanelId" aria-labelledby="@TabId(Selected)">
+    @ChildContent
+</div>
+
+@code {
+    /// <summary>One tab: its id, its title, and an optional count shown after it.</summary>
+    public sealed record Tab(string Id, string Title, int? Count = null);
+
+    private readonly Dictionary<string, ElementReference> buttons = new(StringComparer.Ordinal);
+    private string? focusPending;
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Tab> Tabs { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public string Selected { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> SelectedChanged { get; set; }
+
+    /// <summary>The tabs' name for assistive technology, such as "Inspector".</summary>
+    [Parameter]
+    public string Label { get; set; } = "Inspector";
+
+    /// <summary>The prefix of the tab and panel ids, so two tab sets on a page stay distinct.</summary>
+    [Parameter]
+    public string IdPrefix { get; set; } = "inspector";
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    private string PanelId => $"{IdPrefix}-panel";
+
+    private string TabId(string id) => $"{IdPrefix}-tab-{id}";
+
+    private async Task Select(string id, bool focus)
+    {
+        if (focus)
+        {
+            focusPending = id;
+        }
+
+        if (id != Selected)
+        {
+            await SelectedChanged.InvokeAsync(id);
+        }
+    }
+
+    private Task Key(string id, KeyboardEventArgs args)
+    {
+        var index = Tabs.ToList().FindIndex(tab => tab.Id == id);
+        var next = args.Key switch
+        {
+            "ArrowRight" => (index + 1) % Tabs.Count,
+            "ArrowLeft" => (index - 1 + Tabs.Count) % Tabs.Count,
+            "Home" => 0,
+            "End" => Tabs.Count - 1,
+            _ => -1,
+        };
+        return next >= 0 ? Select(Tabs[next].Id, true) : Task.CompletedTask;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (focusPending is { } id && buttons.TryGetValue(id, out var button))
+        {
+            focusPending = null;
+            try
+            {
+                await button.FocusAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+        }
+    }
+}

@@ -1,0 +1,51 @@
+@* U01 (plan section 16.7): the start for a Lab document: a new squad, a synthetic example, or a catalog definition by catalog and
+   publication; a catalog start says where it came from and that edits make a Lab document, not a catalog definition. *@
+<div class="toolbar">
+    <label>
+        Start from
+        <select id="lab-example" value="@Value" @onchange="@(args => ValueChanged.InvokeAsync(args.Value as string ?? string.Empty))">
+            <option value="">a new squad</option>
+            <optgroup label="Synthetic examples">
+                @foreach (var example in Examples)
+                {
+                    <option value="@example.Id">@UnitLabels.AccessibleName(example, Vocabulary)</option>
+                }
+            </optgroup>
+            @foreach (var group in Catalog.GroupBy(choice => choice.Definition.Catalog))
+            {
+                <optgroup label="@($"Catalog {group.Key.Catalog}@{group.Key.Version} ({group.First().Publication.ToString().ToLowerInvariant()})")">
+                    @foreach (var choice in group)
+                    {
+                        <option value="@choice.Key">@UnitLabels.AccessibleName(choice.Document, Vocabulary)</option>
+                    }
+                </optgroup>
+            }
+        </select>
+    </label>
+</div>
+@if (Catalog.FirstOrDefault(choice => choice.Key == Value) is { } catalogChoice)
+{
+    <p id="lab-catalog-source" class="muted" title="@catalogChoice.Definition.ToString()">
+        From @($"{catalogChoice.Definition.Catalog.Catalog}@{catalogChoice.Definition.Catalog.Version}"), definition @catalogChoice.Definition.Definition:
+        printed values from a @catalogChoice.Publication.ToString().ToLowerInvariant() catalog, with no states.
+        Edits here make a Lab document, not a catalog definition.
+    </p>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<UnitDocument> Examples { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<CatalogChoice> Catalog { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public LimboDancer.Domains.Asl.Units.Vocabulary.UnitVocabulary Vocabulary { get; set; } = null!;
+
+    /// <summary>The start chosen: "" for a new squad, an example's id, or a catalog choice's key.</summary>
+    [Parameter]
+    public string Value { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> ValueChanged { get; set; }
+}

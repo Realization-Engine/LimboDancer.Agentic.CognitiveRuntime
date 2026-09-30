@@ -1,0 +1,91 @@
+@* U09 with U10 inline (plan section 16.7): placing copies of the document on a board or map, loading and saving the placement set, and
+   viewing it. Synthetic display input only: it never writes a live game. *@
+<h3>Place on a board or map</h3>
+<div class="fields">
+    <label for="lab-board">Board or map</label>
+    <input id="lab-board" list="lab-boards" value="@Draft.Board" placeholder="bd01" @onchange="@(args => Change(Draft with { Board = args.Value as string ?? string.Empty }))" />
+    <datalist id="lab-boards">
+        @foreach (var listing in Boards)
+        {
+            <option value="@listing">@listing</option>
+        }
+    </datalist>
+    <label for="lab-hex">Hex</label>
+    <input id="lab-hex" value="@Draft.Hex" placeholder="E4, or bd01:E4 on a map" @onchange="@(args => Change(Draft with { Hex = args.Value as string ?? string.Empty }))" />
+    <label for="lab-level">Level</label>
+    <input id="lab-level" type="number" step="1" value="@Draft.Level" @onchange="@(args => Change(Draft with { Level = int.TryParse(args.Value as string, out var value) ? value : 0 }))" />
+    <label for="lab-set">Placement set</label>
+    <input id="lab-set" value="@Draft.SetId" @onchange="@(args => Change(Draft with { SetId = args.Value as string ?? string.Empty }))" />
+    <label for="lab-set-label">Set label</label>
+    <input id="lab-set-label" value="@Draft.SetLabel" @onchange="@(args => Change(Draft with { SetLabel = args.Value as string ?? string.Empty }))" />
+</div>
+<div class="toolbar">
+    <button id="lab-place" disabled="@(!CanPlace)" @onclick="OnPlace">Place this unit</button>
+    <button id="lab-load-set" @onclick="OnLoad">Load set</button>
+    <button id="lab-save-set" disabled="@(Placed.Count == 0)" @onclick="OnSave">Save set</button>
+</div>
+<OperationFeedback Id="lab-place-note" Message="@Message" Outcome="@(Failed ? OperationFeedback.OperationOutcome.Refused : OperationFeedback.OperationOutcome.Done)" />
+@if (Placed.Count > 0)
+{
+    <ul id="lab-placed">
+        @foreach (var unit in Placed)
+        {
+            <li @key="unit.Id">
+                @unit.Location: @UnitLabels.AccessibleName(unit, Vocabulary)
+                <button class="link" @onclick="() => OnRemove.InvokeAsync(unit)">remove</button>
+            </li>
+        }
+    </ul>
+}
+@if (SavedBoard is not null)
+{
+    <p><a id="lab-view" href="@($"boards/{SavedBoard}?units={Draft.SetId}")">View @Draft.SetId on @SavedBoard</a></p>
+}
+
+@code {
+    /// <summary>Where the next unit goes and the set it belongs to.</summary>
+    public sealed record PlacementDraft(string Board, string Hex, int Level, string SetId, string SetLabel);
+
+    [Parameter, EditorRequired]
+    public PlacementDraft Draft { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback<PlacementDraft> DraftChanged { get; set; }
+
+    /// <summary>The boards and maps offered for the Board field.</summary>
+    [Parameter]
+    public IReadOnlyList<string> Boards { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<UnitDocument> Placed { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public LimboDancer.Domains.Asl.Units.Vocabulary.UnitVocabulary Vocabulary { get; set; } = null!;
+
+    [Parameter]
+    public bool CanPlace { get; set; }
+
+    [Parameter]
+    public EventCallback OnPlace { get; set; }
+
+    [Parameter]
+    public EventCallback OnLoad { get; set; }
+
+    [Parameter]
+    public EventCallback OnSave { get; set; }
+
+    [Parameter]
+    public EventCallback<UnitDocument> OnRemove { get; set; }
+
+    [Parameter]
+    public string? Message { get; set; }
+
+    [Parameter]
+    public bool Failed { get; set; }
+
+    /// <summary>The board the set was saved for, to view it there; null until it is saved.</summary>
+    [Parameter]
+    public string? SavedBoard { get; set; }
+
+    private Task Change(PlacementDraft draft) => DraftChanged.InvokeAsync(draft);
+}

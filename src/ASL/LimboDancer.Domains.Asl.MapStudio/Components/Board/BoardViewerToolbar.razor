@@ -1,0 +1,40 @@
+@* B01 (plan sections 12.3 and 16.6): the board's title and status, its links, the view controls the caller supplies, and Fit. *@
+<div class="toolbar" id="viewer-toolbar">
+    <strong>@Board.Title</strong>
+    <span class="@(Board.Status is BoardStatus.Verified or BoardStatus.AuthoredValid ? "pass" : Board.Status == BoardStatus.Authored ? "fail" : "")">@Board.Status</span>
+    @if (Board.IsAuthored)
+    {
+        <a href="@($"author/{Board.Ref.Value}")">Edit</a>
+    }
+    @ChildContent
+    @if (Board.Ref.Kind == BoardRefKind.Vasl)
+    {
+        <a href="@($"maps?placements={Uri.EscapeDataString(Board.Ref.VaslBoardName + "@0,0")}")">Compose a map</a>
+    }
+    else if (Board.Composition is not null)
+    {
+        <a href="@($"maps?edit={Board.Ref.Value}")">Edit map</a>
+    }
+    <a href="@($"units/lab?board={Board.Ref.Value}")">Unit Lab</a>
+    <button id="viewer-fit" @onclick="OnFit">Fit</button>
+    @if (Preparing is not null)
+    {
+        <span class="muted" role="status">@Preparing</span>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public StudioBoard Board { get; set; } = null!;
+
+    /// <summary>The view picker and comparison controls.</summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public EventCallback OnFit { get; set; }
+
+    /// <summary>Work in progress, such as vectorizing for the Styled view.</summary>
+    [Parameter]
+    public string? Preparing { get; set; }
+}

@@ -1,0 +1,30 @@
+@* B03 (plan section 16.6): how the Styled and Exact views are compared, and the opacity or divider for the modes that have one. *@
+<label>
+    Show
+    <select id="comparison-mode" value="@Mode" @onchange="@(args => ModeChanged.InvokeAsync(args.Value as string ?? "overlay"))">
+        <option value="overlay">overlay</option>
+        <option value="swipe">swipe</option>
+        <option value="side">side by side</option>
+    </select>
+</label>
+@if (Mode != "side")
+{
+    <input id="comparison-value" type="range" min="0" max="100" value="@Value" aria-label="@(Mode == "swipe" ? "Divider position" : "Styled opacity")"
+           @oninput="@(args => int.TryParse(args.Value as string, out var value) ? ValueChanged.InvokeAsync(value) : Task.CompletedTask)" />
+}
+
+@code {
+    /// <summary>"overlay", "swipe", or "side".</summary>
+    [Parameter]
+    public string Mode { get; set; } = "overlay";
+
+    [Parameter]
+    public EventCallback<string> ModeChanged { get; set; }
+
+    /// <summary>The opacity or divider position, 0 to 100.</summary>
+    [Parameter]
+    public int Value { get; set; } = 50;
+
+    [Parameter]
+    public EventCallback<int> ValueChanged { get; set; }
+}

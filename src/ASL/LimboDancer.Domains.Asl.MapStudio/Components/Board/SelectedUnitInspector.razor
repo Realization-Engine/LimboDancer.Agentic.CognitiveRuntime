@@ -1,0 +1,72 @@
+@using LimboDancer.Domains.Asl.MapStudio.Components.Units
+@using LimboDancer.Domains.Asl.Units.State
+@* B07 with B08 inline (plan section 16.6): the selected unit's identity, and its facts in the game as the projected view gives them;
+   a concealed presence's identity and conditions are withheld. It never receives the game's full state. *@
+<h2 class="unit-name">@Unit.Name</h2>
+<UnitAccessibleDetails Document="@Unit.Document" Vocabulary="@Vocabulary" ShowId="true" Location="@Unit.Location.ToString()" />
+@if (View is { } view)
+{
+    @if (view.Units.FirstOrDefault(item => item.Id == Unit.Document.Id) is { } instance)
+    {
+        <h3>In the game</h3>
+        <dl class="unit-details" id="unit-game-facts">
+            <dt>Side</dt><dd>@instance.Side</dd>
+            <dt>Conditions</dt><dd>@ConditionsText(instance)</dd>
+            <dt>Good Order</dt><dd>@Conditions.Name(GameState.GoodOrder(instance, Vocabulary))</dd>
+            <dt>MF spent this phase</dt><dd>@instance.MfSpent</dd>
+            @if (instance.From.Count > 0)
+            {
+                <dt>Produced from</dt><dd>@string.Join(", ", instance.From)</dd>
+            }
+            @if (instance.Custodian is { } custodian)
+            {
+                <dt>Prisoner of</dt><dd>@custodian</dd>
+            }
+            @if (instance.Position is ContainedPosition contained)
+            {
+                <dt>Inside</dt><dd>@contained.Container (@contained.Role)</dd>
+            }
+        </dl>
+    }
+    else if (view.Sealed.Any(presence => presence.PlacementId == Unit.Document.Id))
+    {
+        <p id="unit-game-facts">A concealed presence: its identity and conditions are withheld from @view.Perspective.Name.</p>
+    }
+    else if (view.Equipment.Cast<IGameObject>().Concat(view.Entities).FirstOrDefault(item => item.Id == Unit.Document.Id) is { } other)
+    {
+        <h3>In the game</h3>
+        <dl class="unit-details" id="unit-game-facts">
+            <dt>Side</dt><dd>@(other.Side ?? "none")</dd>
+            <dt>Conditions</dt><dd>@ConditionsText(other)</dd>
+        </dl>
+    }
+}
+@if (Note is { Length: > 0 } note)
+{
+    <p class="muted">@note</p>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public PlacedUnit Unit { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public LimboDancer.Domains.Asl.Units.Vocabulary.UnitVocabulary Vocabulary { get; set; } = null!;
+
+    /// <summary>The game as the perspective sees it, when the unit comes from a game; null for a placement set.</summary>
+    [Parameter]
+    public GameView? View { get; set; }
+
+    /// <summary>Where the unit comes from, in words.</summary>
+    [Parameter]
+    public string? Note { get; set; }
+
+    private static string ConditionsText(IGameObject item)
+    {
+        var shown = item.Conditions.Where(pair => pair.Value is not ConditionState.False)
+            .Select(pair => pair.Value == ConditionState.True ? pair.Key.Replace("asl:", string.Empty, StringComparison.Ordinal)
+                : $"{pair.Key.Replace("asl:", string.Empty, StringComparison.Ordinal)} {Conditions.Name(pair.Value)}")
+            .ToArray();
+        return shown.Length == 0 ? "none" : string.Join(", ", shown);
+    }
+}

@@ -1,0 +1,159 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+@* B06 (plan sections 15.5 and 16.6): the board's drawing surface. It owns the host element, the JavaScript module and viewport, the .NET
+   reference the script calls back, and their disposal, so no page installs listeners of its own; pages draw through its commands. *@
+<div class="board-host" @ref="host"></div>
+
+@code {
+    private ElementReference host;
+    private IJSObjectReference? module;
+    private IJSObjectReference? viewport;
+    private DotNetObjectReference<BoardViewport>? self;
+    private bool disposed;
+
+    /// <summary>Raised once the script's viewport exists, so the page can load the board into it.</summary>
+    [Parameter]
+    public EventCallback OnReady { get; set; }
+
+    /// <summary>A click on the board, in board units. Plain delegates, so the page redraws only when it decides to.</summary>
+    [Parameter]
+    public Func<double, double, Task>? OnClick { get; set; }
+
+    /// <summary>The pointer moving over the board (at most every 100 ms), in board units.</summary>
+    [Parameter]
+    public Func<double, double, Task>? OnHover { get; set; }
+
+    /// <summary>A key the board handles: Escape, Delete, Undo, or Redo.</summary>
+    [Parameter]
+    public Func<string, Task>? OnKey { get; set; }
+
+    /// <summary>A finished drawing gesture: its points in board units.</summary>
+    [Parameter]
+    public Func<double[][], Task>? OnGesture { get; set; }
+
+    /// <summary>A drag with the Move tool, from one point to another.</summary>
+    [Parameter]
+    public Func<double, double, double, double, Task>? OnDrag { get; set; }
+
+    /// <summary>A click on a drawn unit, by its placement id.</summary>
+    [Parameter]
+    public Func<string, Task>? OnUnitSelected { get; set; }
+
+    /// <summary>Whether the viewport exists; commands before then do nothing.</summary>
+    public bool IsReady => viewport is not null;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        try
+        {
+            module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/boardViewport.js");
+            if (disposed)
+            {
+                await module.DisposeAsync();
+                return;
+            }
+
+            self = DotNetObjectReference.Create(this);
+            var created = await module.InvokeAsync<IJSObjectReference>("create", host, self);
+            if (disposed)
+            {
+                // Disposed while the viewport was being made: dispose everything this made.
+                await created.InvokeVoidAsync("dispose");
+                await created.DisposeAsync();
+                await module.DisposeAsync();
+                self.Dispose();
+                return;
+            }
+
+            viewport = created;
+        }
+        catch (JSDisconnectedException)
+        {
+            return;
+        }
+
+        await OnReady.InvokeAsync();
+    }
+
+    private ValueTask Send(string command, params object?[] arguments) =>
+        viewport is null ? ValueTask.CompletedTask : viewport.InvokeVoidAsync(command, arguments);
+
+    /// <summary>Loads a view: the render URL base and query, its view box, its layers, and the layers shown.</summary>
+    public ValueTask Load(string baseUrl, string query, object viewBox, IReadOnlyList<string> layers, IReadOnlyList<string> visible) =>
+        Send("load", baseUrl, query, viewBox, layers, visible);
+
+    public ValueTask ReloadLayers(string baseUrl, string query, IReadOnlyList<string> layers) => Send("reloadLayers", baseUrl, query, layers);
+
+    public ValueTask SetVisible(IReadOnlyList<string> visible) => Send("setVisible", visible);
+
+    public ValueTask SetUnits(string? svg) => Send("setUnits", svg);
+
+    public ValueTask SetLos(string? svg) => Send("setLos", svg);
+
+    /// <summary>Outlines a polygon given as "x,y x,y ..." in board units; null clears it.</summary>
+    public ValueTask Highlight(string? points) => Send("highlight", points);
+
+    public ValueTask SetTool(string gesture) => Send("setTool", gesture);
+
+    public ValueTask ApplyPatch(object patch) => Send("applyPatch", patch);
+
+    public ValueTask SetComparison(string mode, double value) => Send("setComparison", mode, value);
+
+    public ValueTask FocusPoint(double x, double y) => Send("focusPoint", x, y);
+
+    public ValueTask CopyText(string text) => Send("copyText", text);
+
+    /// <summary>Fits the board in the viewport again.</summary>
+    public ValueTask Reset() => Send("reset");
+
+    [JSInvokable]
+    public Task OnBoardClick(double x, double y) => OnClick?.Invoke(x, y) ?? Task.CompletedTask;
+
+    [JSInvokable]
+    public Task OnBoardHover(double x, double y) => OnHover?.Invoke(x, y) ?? Task.CompletedTask;
+
+    [JSInvokable]
+    public Task OnBoardKey(string key) => OnKey?.Invoke(key) ?? Task.CompletedTask;
+
+    [JSInvokable]
+    public Task OnBoardGesture(double[][] points) => OnGesture?.Invoke(points) ?? Task.CompletedTask;
+
+    [JSInvokable]
+    public Task OnBoardDrag(double x0, double y0, double x1, double y1) => OnDrag?.Invoke(x0, y0, x1, y1) ?? Task.CompletedTask;
+
+    [JSInvokable]
+    public Task OnUnitClick(string unitId) => OnUnitSelected?.Invoke(unitId) ?? Task.CompletedTask;
+
+    public async ValueTask DisposeAsync()
+    {
+        disposed = true;
+        // Cleared first, so a command sent while disposal runs does nothing rather than reach a disposed reference.
+        var disposing = viewport;
+        viewport = null;
+        try
+        {
+            if (disposing is not null)
+            {
+                await disposing.InvokeVoidAsync("dispose");
+                await disposing.DisposeAsync();
+            }
+
+            if (module is not null)
+            {
+                await module.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit is gone; the browser already discarded the viewport.
+        }
+
+        self?.Dispose();
+    }
+}

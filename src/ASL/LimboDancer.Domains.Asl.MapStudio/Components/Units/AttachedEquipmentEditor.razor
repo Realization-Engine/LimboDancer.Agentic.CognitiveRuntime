@@ -1,0 +1,31 @@
+@* U02 (plan section 16.7): the equipment attached to a unit, each item a unit editor keyed by its draft, so removing one keeps the others'
+   values and focus; input ids stay att0, att1, ... by place. *@
+<h3>Attached equipment</h3>
+@for (var index = 0; index < Attached.Count; index++)
+{
+    var item = Attached[index];
+    var position = index;
+    <fieldset class="attached" @key="item">
+        <legend>Item @(position + 1) <button class="link" id="@($"att{position}-remove")" @onclick="() => OnRemove.InvokeAsync(item)">remove</button></legend>
+        <UnitEditor Draft="item" Vocabulary="Vocabulary" Prefix="@($"att{position}")" IsAttached="true" OnChange="OnChange" />
+    </fieldset>
+}
+<button id="lab-attach" @onclick="OnAdd">Attach equipment</button>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<UnitDraft> Attached { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public LimboDancer.Domains.Asl.Units.Vocabulary.UnitVocabulary Vocabulary { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback OnAdd { get; set; }
+
+    /// <summary>An item to remove, by its draft (not its place).</summary>
+    [Parameter]
+    public EventCallback<UnitDraft> OnRemove { get; set; }
+
+    [Parameter]
+    public EventCallback OnChange { get; set; }
+}

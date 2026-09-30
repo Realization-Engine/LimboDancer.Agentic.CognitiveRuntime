@@ -1,0 +1,36 @@
+@* B02 (plan section 16.6): the views a board supports, in the caller's order; the editor offers no Comparison. *@
+<label class="board-view-picker">
+    View
+    <select id="@Id" value="@BoardRenderer.ViewName(Value)" @onchange="Change">
+        @foreach (var view in Views)
+        {
+            <option value="@BoardRenderer.ViewName(view)">@Label(view)</option>
+        }
+    </select>
+</label>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<BoardView> Views { get; set; } = [];
+
+    [Parameter]
+    public BoardView Value { get; set; }
+
+    [Parameter]
+    public EventCallback<BoardView> ValueChanged { get; set; }
+
+    [Parameter]
+    public string? Id { get; set; }
+
+    private Task Change(ChangeEventArgs args) =>
+        BoardRenderer.TryParseView(args.Value as string, out var view) && view != Value ? ValueChanged.InvokeAsync(view) : Task.CompletedTask;
+
+    private static string Label(BoardView view) => view switch
+    {
+        BoardView.Exact => "Exact",
+        BoardView.Styled => "Styled",
+        BoardView.HexFacts => "Hex facts",
+        BoardView.Comparison => "Comparison",
+        _ => view.ToString(),
+    };
+}

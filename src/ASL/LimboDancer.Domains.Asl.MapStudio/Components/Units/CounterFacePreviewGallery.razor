@@ -1,0 +1,19 @@
+@* U04 (plan section 16.7): each face and each side's view under one style sheet, near detail. *@
+<h4>Faces and perspectives under @Sheet</h4>
+<div class="previews" id="lab-faces">
+    @foreach (var face in Faces)
+    {
+        <span class="preview" data-preview="@face.Label" title="@face.Label">@((MarkupString)face.Svg)<br /><small>@face.Label</small></span>
+    }
+</div>
+
+@code {
+    /// <summary>One preview: its label and trusted SVG.</summary>
+    public sealed record Face(string Label, string Svg);
+
+    [Parameter, EditorRequired]
+    public string Sheet { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Face> Faces { get; set; } = [];
+}

@@ -1,0 +1,20 @@
+@* U07 (plan section 16.7): saving the document, with its result (S04), and its JSON (S14). *@
+<div class="toolbar">
+    <button id="lab-save-document" disabled="@(!CanSave)" @onclick="OnSave">Save document</button>
+</div>
+<OperationFeedback Id="lab-document-note" Message="@Message" Outcome="OperationFeedback.OperationOutcome.Done" />
+<JsonDisclosure Id="lab-json" Summary="Document JSON" Json="@Json" />
+
+@code {
+    [Parameter]
+    public bool CanSave { get; set; }
+
+    [Parameter, EditorRequired]
+    public string Json { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? Message { get; set; }
+
+    [Parameter]
+    public EventCallback OnSave { get; set; }
+}
