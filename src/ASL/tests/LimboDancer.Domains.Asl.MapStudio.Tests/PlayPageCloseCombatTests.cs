@@ -89,11 +89,7 @@ public sealed class PlayPageCloseCombatTests : IDisposable
     {
         var hexes = Hexes();
         var page = context.Render<PlayPage>();
-        page.Find("#new-board").Change(Board);
-        page.Find("#new-first").Change("german");
-        page.Find("#new-second").Change("russian");
-        page.Find("#new-first-elr").Change("3");
-        page.Find("#new-second-elr").Change("2");
+        MinimalCards.Choose(page, new Dictionary<string, string> { ["board"] = Board, ["first"] = "german", ["second"] = "russian", ["first-elr"] = "3", ["second-elr"] = "2" });
         Place(page, "g1", "attacker-squad", hexes.One);
         Place(page, "gl", "attacker-leader-8-1", hexes.One);
         Place(page, "r1", "defender-squad", hexes.Two);
@@ -156,11 +152,7 @@ public sealed class PlayPageCloseCombatTests : IDisposable
         // attempt: 2 and 3 capture the HS, which g1 guards (A20.22, A20.5).
         var hexes = Hexes();
         var page = context.Render<PlayPage>();
-        page.Find("#new-board").Change(Board);
-        page.Find("#new-first").Change("german");
-        page.Find("#new-second").Change("russian");
-        page.Find("#new-first-elr").Change("3");
-        page.Find("#new-second-elr").Change("2");
+        MinimalCards.Choose(page, new Dictionary<string, string> { ["board"] = Board, ["first"] = "german", ["second"] = "russian", ["first-elr"] = "3", ["second-elr"] = "2" });
         Place(page, "g1", "attacker-squad", hexes.One);
         Place(page, "r1", "defender-half-squad", hexes.Two);
         Commit(page, "#propose-setup");
@@ -195,11 +187,7 @@ public sealed class PlayPageCloseCombatTests : IDisposable
         // offered in Open Ground, and a unit held in Melee chooses its withdrawal on the CC panel (A11.2).
         var hexes = Hexes();
         var page = context.Render<PlayPage>();
-        page.Find("#new-board").Change(Board);
-        page.Find("#new-first").Change("german");
-        page.Find("#new-second").Change("russian");
-        page.Find("#new-first-elr").Change("3");
-        page.Find("#new-second-elr").Change("2");
+        MinimalCards.Choose(page, new Dictionary<string, string> { ["board"] = Board, ["first"] = "german", ["second"] = "russian", ["first-elr"] = "3", ["second-elr"] = "2" });
         Place(page, "g1", "attacker-squad", hexes.One);
         Place(page, "r1", "defender-squad", hexes.Two);
         Commit(page, "#propose-setup");

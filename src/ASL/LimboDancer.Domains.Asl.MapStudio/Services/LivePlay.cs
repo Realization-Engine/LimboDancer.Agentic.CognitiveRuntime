@@ -26,7 +26,10 @@ public sealed class LivePlay
         Root = Path.Combine(units.UnitsRoot, "live");
         Store = new FileGameStore(Root);
         Catalogs = [.. UnitCatalogs.Names.Select(name => UnitCatalogs.Read(name, units.Vocabulary)?.Catalog).OfType<UnitCatalog>()];
-        Planner = new GamePlanner(Store, new StudioBoardCatalog(boards), units.Vocabulary, Catalogs);
+
+        // Pass 22 (ruling R22.2): the user's cards are saved beside the saved maps, under the boards root.
+        Cards = new ScenarioCardLibrary(Path.Combine(Path.GetDirectoryName(units.UnitsRoot)!, "cards"));
+        Planner = new GamePlanner(Store, new StudioBoardCatalog(boards), units.Vocabulary, Catalogs, cardLibrary: Cards);
         Audit = new FileAuditSink(Path.Combine(Root, "audit.jsonl"));
         Play = new GamePlay(Planner, Store, Audit, roller: roller);
     }
@@ -37,6 +40,12 @@ public sealed class LivePlay
     }
 
     public string Root
+    {
+        get;
+    }
+
+    /// <summary>The scenario cards a game starts from: the built-in cards and the user's (ruling R22.2).</summary>
+    public ScenarioCardLibrary Cards
     {
         get;
     }

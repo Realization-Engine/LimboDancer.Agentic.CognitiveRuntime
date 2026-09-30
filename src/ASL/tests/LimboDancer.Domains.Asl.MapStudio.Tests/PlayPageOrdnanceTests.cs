@@ -85,11 +85,7 @@ public sealed class PlayPageOrdnanceTests : IDisposable
     {
         var hexes = Hexes();
         var page = context.Render<PlayPage>();
-        page.Find("#new-board").Change(Board);
-        page.Find("#new-first").Change("german");
-        page.Find("#new-second").Change("russian");
-        page.Find("#new-first-elr").Change("3");
-        page.Find("#new-second-elr").Change("2");
+        MinimalCards.Choose(page, new Dictionary<string, string> { ["board"] = Board, ["first"] = "german", ["second"] = "russian", ["first-elr"] = "3", ["second-elr"] = "2" });
         Place(page, "de-crew", "attacker-crew", hexes.One);
         page.Find("#place-definition").Change("attacker-inf-gun");
         page.Find("#place-facing").Change("east");

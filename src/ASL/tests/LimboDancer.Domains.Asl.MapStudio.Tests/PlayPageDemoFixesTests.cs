@@ -95,11 +95,7 @@ public sealed class PlayPageDemoFixesTests : IDisposable
     private IRenderedComponent<PlayPage> Start(string first, string second, params (string Id, string Definition, string At)[] units)
     {
         var page = context.Render<PlayPage>();
-        page.Find("#new-board").Change(Board);
-        page.Find("#new-first").Change(first);
-        page.Find("#new-second").Change(second);
-        page.Find("#new-first-elr").Change("3");
-        page.Find("#new-second-elr").Change("3");
+        MinimalCards.Choose(page, new Dictionary<string, string> { ["board"] = Board, ["first"] = first, ["second"] = second, ["first-elr"] = "3", ["second-elr"] = "3" });
         foreach (var (id, definition, at) in units)
         {
             Place(page, id, definition, at);
@@ -117,9 +113,7 @@ public sealed class PlayPageDemoFixesTests : IDisposable
     {
         var hexes = Hexes();
         var page = context.Render<PlayPage>();
-        page.Find("#new-board").Change(Board);
-        page.Find("#new-first").Change("german");
-        page.Find("#new-second").Change("russian");
+        MinimalCards.Choose(page, new Dictionary<string, string> { ["board"] = Board, ["first"] = "german", ["second"] = "russian" });
         Place(page, "de-crew", "attacker-crew", hexes.One);
         page.Find("#place-definition").Change("attacker-inf-gun");
         page.Find("#place-facing").Change("east");
@@ -242,11 +236,7 @@ public sealed class PlayPageDemoFixesTests : IDisposable
         // A4.431 (ruling R13.5): in the RPh g1 passes its LMG to g2 in its Location.
         var hexes = Hexes();
         var page = context.Render<PlayPage>();
-        page.Find("#new-board").Change(Board);
-        page.Find("#new-first").Change("german");
-        page.Find("#new-second").Change("russian");
-        page.Find("#new-first-elr").Change("3");
-        page.Find("#new-second-elr").Change("3");
+        MinimalCards.Choose(page, new Dictionary<string, string> { ["board"] = Board, ["first"] = "german", ["second"] = "russian", ["first-elr"] = "3", ["second-elr"] = "3" });
         Place(page, "g1", "attacker-squad", hexes.One);
         Place(page, "g2", "attacker-squad", hexes.One);
         Place(page, "gm", "attacker-lmg", hexes.One, holder: "g1");
@@ -272,11 +262,7 @@ public sealed class PlayPageDemoFixesTests : IDisposable
         // removed (A23.6).
         var hexes = Hexes();
         var page = context.Render<PlayPage>();
-        page.Find("#new-board").Change(Board);
-        page.Find("#new-first").Change("german");
-        page.Find("#new-second").Change("russian");
-        page.Find("#new-first-elr").Change("3");
-        page.Find("#new-second-elr").Change("3");
+        MinimalCards.Choose(page, new Dictionary<string, string> { ["board"] = Board, ["first"] = "german", ["second"] = "russian", ["first-elr"] = "3", ["second-elr"] = "3" });
         Place(page, "g1", "attacker-squad", hexes.One);
         Place(page, "gd", "attacker-dc", hexes.One, holder: "g1");
         Place(page, "r1", "defender-squad", hexes.Two);
@@ -299,12 +285,7 @@ public sealed class PlayPageDemoFixesTests : IDisposable
         // hex, which lands one hex away and Illuminates three hexes around it (E1.922, E1.923).
         var hexes = Hexes();
         var page = context.Render<PlayPage>();
-        page.Find("#new-board").Change(Board);
-        page.Find("#new-first").Change("german");
-        page.Find("#new-second").Change("russian");
-        page.Find("#new-first-elr").Change("3");
-        page.Find("#new-second-elr").Change("3");
-        page.Find("#new-rules").Change("night:1 weather:overcast");
+        MinimalCards.Choose(page, new Dictionary<string, string> { ["board"] = Board, ["first"] = "german", ["second"] = "russian", ["first-elr"] = "3", ["second-elr"] = "3", ["rules"] = "night:1 weather:overcast" });
         Place(page, "g1", "attacker-squad", hexes.One);
         Place(page, "gl", "attacker-leader-8-0", hexes.One);
         Place(page, "r1", "defender-squad", hexes.Two);

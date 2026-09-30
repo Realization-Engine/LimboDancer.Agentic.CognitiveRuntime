@@ -431,6 +431,8 @@ Later candidates, not yet sequenced: revisiting the Java VASL oracle tool, which
 
     Done for pass 21 (Victory Conditions): the review in the [Scenario A1 Backlog Pass 21 Review](<Scenario A1 Backlog Pass 21 Review 2026-09-29.md>) and the [ASL Unit Backlog Pass 21 Design](<ASL Unit Backlog Pass 21 Design.md>): a game from a card keeps the Control its Victory Conditions name, counts VP, CVP, and Exit VP, lets Infantry leave the map, and records the result at game end or at once, with the facts behind it. What it leaves out is in the [ASL Unit Backlog](<ASL Unit Backlog.md>), section 31.
 
+    Done for pass 22 (the card editor), the last pass of the Scenario Card Games Plan: the review in the [Scenario A1 Backlog Pass 22 Review](<Scenario A1 Backlog Pass 22 Review 2026-09-30.md>) and the [ASL Unit Backlog Pass 22 Design](<ASL Unit Backlog Pass 22 Design.md>): every game in the Studio starts from a card, built-in or the user's; the card editor makes minimal cards and copies of the built-in cards and saves them beside the saved maps; the new-game form is gone. What it leaves out is in the [ASL Unit Backlog](<ASL Unit Backlog.md>), section 32.
+
 ## 14. Acceptance scenarios
 
 - **U1, definition lookup.** Given the registered catalog, a lookup for a squad of a given nationality, class, and date returns its printed values with their source, and a lookup outside its applicability returns an explicit miss.

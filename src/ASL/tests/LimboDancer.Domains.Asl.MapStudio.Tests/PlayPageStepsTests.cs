@@ -97,12 +97,7 @@ public sealed class PlayPageStepsTests : IDisposable
     private IRenderedComponent<PlayPage> NewGame(string firstSide, string secondSide)
     {
         var page = context.Render<PlayPage>();
-        page.Find("#new-board").Change(Board);
-        page.Find("#new-first").Change(firstSide);
-        page.Find("#new-second").Change(secondSide);
-        page.Find("#new-first-elr").Change(firstSide == "russian" ? "2" : "3");
-        page.Find("#new-second-elr").Change(secondSide == "russian" ? "2" : "3");
-        page.Find("#new-month").Change("7");
+        MinimalCards.Choose(page, new Dictionary<string, string> { ["board"] = Board, ["first"] = firstSide, ["second"] = secondSide, ["first-elr"] = firstSide == "russian" ? "2" : "3", ["second-elr"] = secondSide == "russian" ? "2" : "3", ["month"] = "7" });
         return page;
     }
 

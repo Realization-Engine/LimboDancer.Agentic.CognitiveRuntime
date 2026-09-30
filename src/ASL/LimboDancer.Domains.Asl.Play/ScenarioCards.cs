@@ -58,7 +58,7 @@ public sealed record ScenarioCardGroup(string Name, int Elr, IReadOnlyList<Scena
 /// to its OB, set up with any of its groups (ruling R20.4).
 /// </summary>
 public sealed record ScenarioCardSide(string Side, int San, int? IntegrityBpv, ScenarioCardEdge FriendlyEdge, string Balance, IReadOnlyList<ScenarioCardGroup> Groups,
-    IReadOnlyList<ScenarioCardUnit>? BalanceUnits = null);
+    IReadOnlyList<ScenarioCardUnit>? BalanceUnits = null, int? Elr = null);
 
 /// <summary>
 /// An SSR (ruling R17.10): its text; <c>token</c> when the game reads it from its tokens, <c>game-default</c> when the game
@@ -114,6 +114,13 @@ public sealed record ScenarioCard(
 {
     /// <summary>The SSR tokens the game reads (rulings R16.1, R16.9).</summary>
     public IReadOnlyList<string> Tokens => [.. SpecialRules.SelectMany(rule => rule.Tokens)];
+
+    /// <summary>
+    /// Whether the card is a minimal card (ruling R22.3): boards and two sides with no OB, for a game with no scenario. Its sides may carry an ELR, and its
+    /// date and edges may be left unrecorded; units set up by hand, and the players judge the result.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool Minimal => Sides.Count > 0 && Sides.All(side => side.Groups.Count == 0);
 }
 
 /// <summary>A card and why it is refused, if it is: each diagnostic is a code and a message.</summary>
@@ -144,8 +151,8 @@ public static partial class ScenarioCards
     /// <summary>The kinds of setup area (ruling R17.8).</summary>
     public static IReadOnlyList<string> AreaKinds { get; } = ["building", "hex-numbers", "entry"];
 
-    /// <summary>The bases of a Friendly Board Edge (A20.53; ruling R17.7).</summary>
-    public static IReadOnlyList<string> EdgeBases { get; } = ["ssr", "entry", "setup", "manufactured"];
+    /// <summary>The bases of a Friendly Board Edge (A20.53; ruling R17.7); <c>none</c> leaves a minimal card's edge unnamed (ruling R22.3).</summary>
+    public static IReadOnlyList<string> EdgeBases { get; } = ["ssr", "entry", "setup", "manufactured", "none"];
 
     /// <summary>The SSR statuses (ruling R17.10).</summary>
     public static IReadOnlyList<string> RuleStatuses { get; } = ["token", "game-default", "not-enforced"];
@@ -177,8 +184,14 @@ public static partial class ScenarioCards
         .Select(name => name[Prefix.Length..^Suffix.Length])
         .Order(StringComparer.Ordinal)];
 
-    /// <summary>The SHA-256 of an embedded card's text, with line endings as LF (ruling R18.2); null when none has that name.</summary>
-    public static string? Sha256(string name)
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string?> EmbeddedSha256 = new(StringComparer.Ordinal);
+
+    /// <summary>The SHA-256 of an embedded card's text, with line endings as LF (ruling R18.2); null when none has that name. Read once (referee, pass 22).</summary>
+    public static string? Sha256(string name) => EmbeddedSha256.GetOrAdd(name, key =>
+        EmbeddedText(key) is { } text ? Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text))) : null);
+
+    /// <summary>An embedded card's text with LF line endings; null when none has that name.</summary>
+    public static string? EmbeddedText(string name)
     {
         ArgumentNullException.ThrowIfNull(name);
         using var stream = typeof(ScenarioCards).Assembly.GetManifestResourceStream(Prefix + name + Suffix);
@@ -188,8 +201,7 @@ public static partial class ScenarioCards
         }
 
         using var reader = new StreamReader(stream);
-        var text = reader.ReadToEnd().ReplaceLineEndings("\n");
-        return Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text)));
+        return reader.ReadToEnd().ReplaceLineEndings("\n");
     }
 
     /// <summary>The id a game gives an OB group of a side (ruling R18.3): the side and the group's place on the card, from 1.</summary>
@@ -215,11 +227,27 @@ public static partial class ScenarioCards
         var sides = new JsonArray();
         foreach (var side in card.Sides)
         {
-            var node = new JsonObject { ["id"] = side.Side, ["nationality"] = side.Side, ["san"] = side.San, ["friendlyEdge"] = side.FriendlyEdge.Edge };
+            var node = new JsonObject { ["id"] = side.Side, ["nationality"] = side.Side };
+
+            // Ruling R22.3: a minimal card names only what it records: a SAN above 0, an edge, the side's own ELR.
+            if (side.San > 0 || !card.Minimal)
+            {
+                node["san"] = side.San;
+            }
+
+            if (side.FriendlyEdge.Edge.Length > 0)
+            {
+                node["friendlyEdge"] = side.FriendlyEdge.Edge;
+            }
+
             var elrs = side.Groups.Select(group => group.Elr).Distinct().ToArray();
             if (elrs.Length == 1)
             {
                 node["elr"] = elrs[0];
+            }
+            else if (side.Groups.Count == 0 && side.Elr is { } own)
+            {
+                node["elr"] = own;
             }
 
             node["groups"] = new JsonArray([.. side.Groups.Select((group, index) =>
@@ -234,11 +262,20 @@ public static partial class ScenarioCards
             ["boards"] = boards,
             ["firstSide"] = card.Turns.MovesFirst ?? firstSide,
             ["sides"] = sides,
-            ["scenarioMonth"] = card.Date.Month,
-            ["scenarioYear"] = card.Date.Year,
             ["specialRules"] = new JsonArray([.. card.Tokens.Select(token => (JsonNode)JsonValue.Create(token))]),
             ["scenario"] = new JsonObject { ["id"] = card.Id, ["sha256"] = sha256, ["title"] = card.Title },
         };
+
+        // Ruling R22.3: a minimal card may leave its month and year unrecorded (0).
+        if (card.Date.Month > 0)
+        {
+            start["scenarioMonth"] = card.Date.Month;
+        }
+
+        if (card.Date.Year > 0)
+        {
+            start["scenarioYear"] = card.Date.Year;
+        }
         if (card.ScenarioDefender is { } defender)
         {
             start["scenarioDefender"] = defender;
@@ -298,8 +335,9 @@ public static partial class ScenarioCards
         Check(card.Catalog == $"{catalog.Identity.Catalog}@{catalog.Identity.Version}",
             $"card.catalog: the card names '{card.Catalog}', and the catalog is {catalog.Identity.Catalog}@{catalog.Identity.Version}");
         Check(card.Source is { Basis.Length: > 0, Legacy.Length: > 0 }, "card.source: a card says what it rests on and which legacy card it adapts (ruling R17.2)");
-        Check(card.Date.Year is >= 1936 and <= 1945 && card.Date.Month is >= 1 and <= 12 && card.Date.Day >= 1 && card.Date.Day <= DateTime.DaysInMonth(card.Date.Year, card.Date.Month),
-            "card.date: the date is a real day of 1936 to 1945");
+        Check((card.Minimal && card.Date.Day == 0 && card.Date.Month is >= 0 and <= 12 && card.Date.Year is 0 or (>= 1936 and <= 1945))
+            || (card.Date.Year is >= 1936 and <= 1945 && card.Date.Month is >= 1 and <= 12 && card.Date.Day >= 1 && card.Date.Day <= DateTime.DaysInMonth(card.Date.Year, card.Date.Month)),
+            "card.date: the date is a real day of 1936 to 1945; a minimal card may give only a month and a year, or neither, as 0 (ruling R22.3)");
 
         // A2.1 (ruling R17.3): the boards, each in its own slot.
         Check(card.Boards.Count > 0, "card.boards: a card names its boards (A2.1)");
@@ -362,9 +400,9 @@ public static partial class ScenarioCards
         {
             var attacker = card.Sides.FirstOrDefault(side => side.Side != defender);
             Check(sides.Contains(defender, StringComparer.Ordinal), $"card.defender: '{defender}' is not a side of the card");
-            Check(card.Sides.FirstOrDefault(side => side.Side == defender) is { } own && own.Groups.SelectMany(group => group.Areas).Any(area => area.Kind != "entry"),
+            Check(card.Minimal || (card.Sides.FirstOrDefault(side => side.Side == defender) is { } own && own.Groups.SelectMany(group => group.Areas).Any(area => area.Kind != "entry")),
                 "card.defender: a Scenario Defender sets up wholly or partly on board (Index, Scenario Attacker/Defender)");
-            Check(attacker is not null && attacker.Groups.SelectMany(group => group.Areas).All(area => area.Kind == "entry"),
+            Check(card.Minimal || (attacker is not null && attacker.Groups.SelectMany(group => group.Areas).All(area => area.Kind == "entry")),
                 "card.defender: a Scenario Defender faces a side that enters wholly from offboard (Index, Scenario Attacker/Defender)");
         }
 
@@ -382,9 +420,17 @@ public static partial class ScenarioCards
         var start = new JsonObject
         {
             ["specialRules"] = new JsonArray([.. card.Tokens.Select(token => (JsonNode)JsonValue.Create(token))]),
-            ["scenarioMonth"] = card.Date.Month,
-            ["scenarioYear"] = card.Date.Year,
         };
+        if (card.Date.Month > 0)
+        {
+            start["scenarioMonth"] = card.Date.Month;
+        }
+
+        if (card.Date.Year > 0)
+        {
+            start["scenarioYear"] = card.Date.Year;
+        }
+
         using (var document = JsonDocument.Parse(start.ToJsonString()))
         {
             var refused = GamePlanner.NightAndWeatherRulesBar(document.RootElement);
@@ -393,8 +439,10 @@ public static partial class ScenarioCards
 
         // A26 (ruling R17.11): the Victory Conditions as text, with their kind and the rules they rest on.
         Check(VictoryKinds.Contains(card.VictoryConditions.Kind, StringComparer.Ordinal) && !string.IsNullOrWhiteSpace(card.VictoryConditions.Text)
-            && card.VictoryConditions.Rules.Count > 0, "card.victory: the Victory Conditions have a kind, their text, and the A26 rules they rest on");
+            && (card.VictoryConditions.Rules.Count > 0 || card.Minimal), "card.victory: the Victory Conditions have a kind, their text, and the A26 rules they rest on");
         Cited(card.VictoryConditions.Rules, "the Victory Conditions", Check);
+        Check(!card.Minimal || card.VictoryConditions.Outcomes is null,
+            "card.victory: a minimal card names no outcomes; the players judge the result (ruling R22.3)");
 
         // Ruling R21.3: the structured Victory Conditions name the card's sides and buildings.
         if (card.VictoryConditions.Outcomes is { } outcomes)
@@ -418,18 +466,20 @@ public static partial class ScenarioCards
     private static void Side(ScenarioCard card, ScenarioCardSide side, UnitCatalog catalog, Action<bool, string> check)
     {
         check(side.San is >= 0 and <= 7, $"card.san: {side.Side}'s SAN is 0 to 7 (A14.1)");
-        check(SideState.Edges.Contains(side.FriendlyEdge.Edge, StringComparer.Ordinal) && EdgeBases.Contains(side.FriendlyEdge.Basis, StringComparer.Ordinal),
-            $"card.edge: {side.Side}'s Friendly Board Edge is the map's top, bottom, left, or right, from an SSR, entry, setup, or R0.3 (A20.53)");
+        check((card.Minimal && side.FriendlyEdge is { Edge.Length: 0, Basis: "none" })
+            || (SideState.Edges.Contains(side.FriendlyEdge.Edge, StringComparer.Ordinal) && EdgeBases.Contains(side.FriendlyEdge.Basis, StringComparer.Ordinal) && side.FriendlyEdge.Basis != "none"),
+            $"card.edge: {side.Side}'s Friendly Board Edge is the map's top, bottom, left, or right, from an SSR, entry, setup, or R0.3 (A20.53); a minimal card may leave it unnamed (ruling R22.3)");
+        check(side.Elr is null || (card.Minimal && side.Elr is >= 0 and <= 5), $"card.elr: only a minimal card gives {side.Side} an ELR of its own, 0 to 5 (A19.1; ruling R22.3)");
         check(side.FriendlyEdge.Basis != "entry" || side.Groups.SelectMany(group => group.Areas).Any(area => area.Kind == "entry" && area.Edge == side.FriendlyEdge.Edge),
             $"card.edge: {side.Side}'s Friendly Board Edge rests on its entry, and it enters along no such edge (A20.53)");
-        check(!string.IsNullOrWhiteSpace(side.Balance), $"card.balance: {side.Side} has its Balance provision (A26.4)");
+        check(card.Minimal || !string.IsNullOrWhiteSpace(side.Balance), $"card.balance: {side.Side} has its Balance provision (A26.4)");
         foreach (var unit in side.BalanceUnits ?? [])
         {
             var definition = catalog.Definition(unit.Definition);
             check(definition is not null && definition.Nationality == side.Side && unit.Count >= 1 && unit.Area is null,
                 $"card.balance: the Balance counter '{unit.Definition}' is a {side.Side} definition of the catalog, at least one, with no area of its own (ruling R20.4)");
         }
-        check(side.Groups.Count > 0, $"card.ob: {side.Side} has an OB");
+        check(side.Groups.Count > 0 || card.Minimal, $"card.ob: {side.Side} has an OB, unless the card is a minimal card, whose sides have none (ruling R22.3)");
         foreach (var group in side.Groups)
         {
             check(group.Elr is >= 0 and <= 5, $"card.elr: '{group.Name}' has an ELR of 0 to 5 (A19.1)");
@@ -527,10 +577,26 @@ public static partial class ScenarioCards
         ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
     /// <summary>The card's date as a card prints it: "6 October 1942".</summary>
+    /// <summary>The card's place and date, as far as it gives them (table player, pass 22).</summary>
+    public static string PlaceAndDate(ScenarioCard card)
+    {
+        ArgumentNullException.ThrowIfNull(card);
+        return string.IsNullOrWhiteSpace(card.Place) ? DateText(card.Date) : $"{card.Place}, {DateText(card.Date)}";
+    }
+
     public static string DateText(ScenarioCardDate date)
     {
         ArgumentNullException.ThrowIfNull(date);
-        return $"{date.Day} {Months[date.Month - 1]} {date.Year}";
+
+        // Ruling R22.3: a minimal card may record only a month and a year, or neither.
+        return date switch
+        {
+            { Day: > 0, Month: > 0 } => $"{date.Day} {Months[date.Month - 1]} {date.Year}",
+            { Month: > 0, Year: > 0 } => $"{Months[date.Month - 1]} {date.Year}",
+            { Month: > 0 } => Months[date.Month - 1],
+            { Year: > 0 } => date.Year.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            _ => "date not recorded",
+        };
     }
 
     /// <summary>The compass direction of a map edge, from the card's North (A2.1).</summary>

@@ -14,16 +14,16 @@ public sealed partial class GamePlanner
     public VictoryReport? Victory(GameHistory history, bool? ended = null)
     {
         ArgumentNullException.ThrowIfNull(history);
-        return history.Current is { Scenario: { } scenario } state && ScenarioCards.Sha256(scenario.Id) == scenario.Sha256 && CardOf(state) is { } card && Valid(state, card)
+        return history.Current is { Scenario: { } scenario } state && CardLibrary.Sha256(scenario.Id) == scenario.Sha256 && CardOf(state) is { } card && Valid(state, card)
             ? ScenarioVictory.Evaluate(card, history.States, unit => VictoryPoints(state, unit), at => Neighbors(state, at), ended ?? state.Ended is not null)
             : null;
     }
 
     // Referee, pass 21: a card that no longer validates decides nothing; each card's validity is read once.
-    private static readonly System.Collections.Concurrent.ConcurrentDictionary<(string Card, Units.Catalog.CatalogIdentity Catalog), bool> Validity = new();
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<(string Card, string Sha256, Units.Catalog.CatalogIdentity Catalog), bool> Validity = new();
 
     private bool Valid(GameState state, ScenarioCard card) => catalogs.FirstOrDefault(catalog => catalog.Identity == state.Catalog) is { } catalog
-        && Validity.GetOrAdd((card.Id, catalog.Identity), _ => ScenarioCards.Validate(card, catalog).Count == 0);
+        && state.Scenario is { } scenario && Validity.GetOrAdd((card.Id, scenario.Sha256, catalog.Identity), _ => ScenarioCards.Validate(card, catalog).Count == 0);
 
     /// <summary>
     /// A unit's VP (A26.211; ruling R21.2): a squad or crew two, a HS one, a leader one plus one for each negative leadership modifier; a Hero none. Guns and
@@ -57,7 +57,7 @@ public sealed partial class GamePlanner
 
         // Only a card with an immediate condition is read after every action (Gambit's Exit VP).
         if (catalogs.FirstOrDefault(catalog => $"{catalog.Identity.Catalog}@{catalog.Identity.Version}" == started.Catalog) is not { } catalog
-            || Cards.GetOrAdd((scenario.Id, catalog.Identity), key => ScenarioCards.Read(key.Card, catalog)?.Card) is not { VictoryConditions.Outcomes: { } outcomes }
+            || CachedCard(scenario.Id, catalog) is not { Card.VictoryConditions.Outcomes: { } outcomes }
             || !outcomes.Any(outcome => outcome.Immediate))
         {
             return events;

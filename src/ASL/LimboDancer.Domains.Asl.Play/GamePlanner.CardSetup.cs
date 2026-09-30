@@ -12,14 +12,34 @@ namespace LimboDancer.Domains.Asl.Play;
 public sealed partial class GamePlanner
 {
     // The embedded cards, read once per card and catalog: the route searches ask for the playable area at every step (referee, pass 20).
-    private static readonly System.Collections.Concurrent.ConcurrentDictionary<(string Card, CatalogIdentity Catalog), ScenarioCard?> Cards = new();
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<(string Card, string Sha256, CatalogIdentity Catalog), ScenarioCard?> Cards = new();
 
-    /// <summary>The card a game starts from, as it is embedded now; null for a game that names none.</summary>
+    /// <summary>
+    /// The card a game starts from, as the library holds it now; null for a game that names none, and for one whose card has changed or gone since it
+    /// started, so no rule follows a card the game did not start from (referee, pass 22).
+    /// </summary>
     internal ScenarioCard? CardOf(GameState state)
     {
         ArgumentNullException.ThrowIfNull(state);
         return state.Scenario is { } scenario && catalogs.FirstOrDefault(catalog => catalog.Identity == state.Catalog) is { } catalog
-            ? Cards.GetOrAdd((scenario.Id, catalog.Identity), key => ScenarioCards.Read(key.Card, catalog)?.Card)
+            && CachedCard(scenario.Id, catalog) is { } card && card.Sha256 == scenario.Sha256
+            ? card.Card
+            : null;
+    }
+
+    /// <summary>Why a game's card no longer serves it: deleted, or changed since the game started (table player, pass 22).</summary>
+    internal string Gone(string id) => CardLibrary.Sha256(id) is null ? "is no longer among the scenario cards" : "has changed since the game started";
+
+    /// <summary>A card and the SHA-256 of the text it was parsed from, read once per text (referee, pass 22).</summary>
+    private (ScenarioCard Card, string Sha256)? CachedCard(string id, UnitCatalog catalog)
+    {
+        if (CardLibrary.Current(id) is not { } current)
+        {
+            return null;
+        }
+
+        return Cards.GetOrAdd((id, current.Sha256, catalog.Identity), _ => ScenarioCards.Parse(id, current.Text, catalog).Card) is { } card
+            ? (card, current.Sha256)
             : null;
     }
 
@@ -31,7 +51,8 @@ public sealed partial class GamePlanner
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(placedNow);
-        if (CardOf(state) is not { } card)
+        // Ruling R22.3: a minimal card has no OB, so its units set up by hand as in a game with no card.
+        if (CardOf(state) is not { Minimal: false } card)
         {
             return null;
         }
@@ -169,9 +190,9 @@ public sealed partial class GamePlanner
         }
 
         // Referee, pass 19: a card changed or gone since the game started cannot say whether the setup is done.
-        if (state.Scenario is { } scenario && (ScenarioCards.Sha256(scenario.Id) != scenario.Sha256 || CardOf(state) is null))
+        if (state.Scenario is { } scenario && (CardLibrary.Sha256(scenario.Id) != scenario.Sha256 || CardOf(state) is null))
         {
-            return $"play.scenario: the card '{scenario.Id}' has changed since the game started, so its setup cannot be checked (ruling R19.1)";
+            return $"play.scenario: the card '{scenario.Id}' {Gone(scenario.Id)}, so its setup cannot be checked (ruling R19.1)";
         }
 
         if (CardSetup(state, new HashSet<string>()) is not { } report)

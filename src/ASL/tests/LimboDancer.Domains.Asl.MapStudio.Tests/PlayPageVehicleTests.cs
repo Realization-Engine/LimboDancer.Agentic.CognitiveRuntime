@@ -85,11 +85,7 @@ public sealed class PlayPageVehicleTests : IDisposable
     {
         var (one, two) = Hexes();
         var page = context.Render<PlayPage>();
-        page.Find("#new-board").Change(Board);
-        page.Find("#new-first").Change("german");
-        page.Find("#new-second").Change("russian");
-        page.Find("#new-first-elr").Change("3");
-        page.Find("#new-second-elr").Change("3");
+        MinimalCards.Choose(page, new Dictionary<string, string> { ["board"] = Board, ["first"] = "german", ["second"] = "russian", ["first-elr"] = "3", ["second-elr"] = "3" });
 
         // D2.11: the setup offers a VCA for a vehicle.
         page.Find("#place-definition").Change("attacker-truck");
@@ -132,11 +128,7 @@ public sealed class PlayPageVehicleTests : IDisposable
         // Germans can see.
         var (one, two) = Hexes();
         var page = context.Render<PlayPage>();
-        page.Find("#new-board").Change(Board);
-        page.Find("#new-first").Change("german");
-        page.Find("#new-second").Change("russian");
-        page.Find("#new-first-elr").Change("3");
-        page.Find("#new-second-elr").Change("3");
+        MinimalCards.Choose(page, new Dictionary<string, string> { ["board"] = Board, ["first"] = "german", ["second"] = "russian", ["first-elr"] = "3", ["second-elr"] = "3" });
         Place(page, "de-ht", "attacker-halftrack", one, "east");
         page.Find("#place-definition").Change("defender-squad");
         page.Find("#place-id").Change("r1");
@@ -159,12 +151,7 @@ public sealed class PlayPageVehicleTests : IDisposable
         // Location holding the T-34 offers it on the Vehicle Target Type with a choice of ammunition. The year setting is offered at setup.
         var (one, two) = Hexes();
         var page = context.Render<PlayPage>();
-        page.Find("#new-board").Change(Board);
-        page.Find("#new-first").Change("german");
-        page.Find("#new-second").Change("russian");
-        page.Find("#new-first-elr").Change("3");
-        page.Find("#new-second-elr").Change("3");
-        page.Find("#new-year").Change("1942");
+        MinimalCards.Choose(page, new Dictionary<string, string> { ["board"] = Board, ["first"] = "german", ["second"] = "russian", ["first-elr"] = "3", ["second-elr"] = "3", ["year"] = "1942" });
         Place(page, "de-tank", "attacker-tank", one, "east");
         Place(page, "ru-tank", "defender-tank", two, "west");
         Commit(page, "#propose-setup");
@@ -187,11 +174,7 @@ public sealed class PlayPageVehicleTests : IDisposable
         // resolution on the panel once the DEFENDER passes, after which the squad is offered CC Reaction Fire.
         var (one, two) = Hexes();
         var page = context.Render<PlayPage>();
-        page.Find("#new-board").Change(Board);
-        page.Find("#new-first").Change("german");
-        page.Find("#new-second").Change("russian");
-        page.Find("#new-first-elr").Change("3");
-        page.Find("#new-second-elr").Change("3");
+        MinimalCards.Choose(page, new Dictionary<string, string> { ["board"] = Board, ["first"] = "german", ["second"] = "russian", ["first-elr"] = "3", ["second-elr"] = "3" });
         Place(page, "de-tank", "attacker-tank", one, "east");
         page.Find("#place-definition").Change("defender-squad");
         page.Find("#place-id").Change("r1");
@@ -230,12 +213,7 @@ public sealed class PlayPageVehicleTests : IDisposable
         // firing, and draws its CA; in the MPh its crew may push it.
         var (one, two) = Hexes();
         var page = context.Render<PlayPage>();
-        page.Find("#new-board").Change(Board);
-        page.Find("#new-first").Change("german");
-        page.Find("#new-second").Change("russian");
-        page.Find("#new-first-elr").Change("3");
-        page.Find("#new-second-elr").Change("3");
-        page.Find("#new-defender").Change("russian");
+        MinimalCards.Choose(page, new Dictionary<string, string> { ["board"] = Board, ["first"] = "german", ["second"] = "russian", ["first-elr"] = "3", ["second-elr"] = "3", ["defender"] = "russian" });
         page.Find("#place-definition").Change("attacker-crew");
         page.Find("#place-id").Change("de-crew");
         page.Find("#place-location").Change(one);

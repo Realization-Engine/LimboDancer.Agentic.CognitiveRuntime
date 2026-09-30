@@ -137,8 +137,11 @@ public sealed record GamePlan(
 /// afresh. It never writes.
 /// </summary>
 public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, UnitVocabulary vocabulary, IReadOnlyList<UnitCatalog> catalogs,
-    TimeProvider? time = null, IFireLosReader? fireLos = null)
+    TimeProvider? time = null, IFireLosReader? fireLos = null, ScenarioCardLibrary? cardLibrary = null)
 {
+    /// <summary>The scenario cards a game may start from (ruling R22.2): the built-in cards, and the user's when the planner is given them.</summary>
+    public ScenarioCardLibrary CardLibrary { get; } = cardLibrary ?? ScenarioCardLibrary.Embedded;
+
     /// <summary>
     /// The terrain of an ordinary wooden or stone building (B23; the reviewed B. Terrain Chart supplement): the reviewed
     /// case covers its ground level whatever the building's height, so the multi-level names VASL boards use count too.
@@ -404,9 +407,9 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         // Pass 19 (rulings R19.1 to R19.6): a game from a card sets up its OB, in its areas and order.
         if (parsed.Events is { } carded && Replay([.. existing, .. carded]).Current is { } cardState && cardState.Scenario is { } playing)
         {
-            if (ScenarioCards.Sha256(playing.Id) != playing.Sha256)
+            if (CardLibrary.Sha256(playing.Id) != playing.Sha256)
             {
-                return Refused(scope, label, expected, $"play.scenario: the card '{playing.Id}' has changed since the game started, so its OB cannot be checked (ruling R19.1)");
+                return Refused(scope, label, expected, $"play.scenario: the card '{playing.Id}' {Gone(playing.Id)}, so its OB cannot be checked (ruling R19.1)");
             }
 
             var placedNow = carded.Select(item => item.Payload).OfType<InstanceCreated>().Select(item => item.Instance.Id).ToHashSet(StringComparer.Ordinal);
@@ -1640,7 +1643,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         var sha256 = Text(scenario, "sha256", out var hash) ? hash : string.Empty;
         var catalogName = Text(start, "catalog", out var catalogText) ? catalogText : null;
         var catalog = catalogs.FirstOrDefault(item => $"{item.Identity.Catalog}@{item.Identity.Version}" == catalogName);
-        if (ScenarioCards.Sha256(id) is not { } current)
+        if (CardLibrary.Sha256(id) is not { } current)
         {
             reason = $"play.scenario: '{id}' is not a scenario card of the game (ruling R18.1)";
             return false;
@@ -1652,7 +1655,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             return false;
         }
 
-        if (catalog is null || ScenarioCards.Read(id, catalog) is not { IsValid: true, Card: { } card })
+        if (catalog is null || CardLibrary.Read(id, catalog) is not { IsValid: true, Card: { } card })
         {
             reason = $"play.scenario: the card '{id}' is not valid against the catalog '{catalogName}' (ruling R18.1)";
             return false;
