@@ -1,6 +1,6 @@
 # ASL Card Play and Map Studio Redesign Plan
 
-**Status:** Approved by the user on 2026-09-30. It merges and replaces two documents: the ASL Unit Card Play, Deferred Rules, and DYO Plan (approved 2026-09-30, passes 23 to 30) and the ASL Map Studio UI Redesign 01 Design (branch `UI-Redesign-01`, commit `800416a`); both were deleted after their content was carried over here, and git history keeps them. No pass has started; the passes run one at a time on the user's go-ahead, pass 22b first.
+**Status:** Approved by the user on 2026-09-30. It merges and replaces two documents: the ASL Unit Card Play, Deferred Rules, and DYO Plan (approved 2026-09-30, passes 23 to 30) and the ASL Map Studio UI Redesign 01 Design (branch `UI-Redesign-01`, commit `800416a`); both were deleted after their content was carried over here, and git history keeps them. Pass 22b is built (2026-09-30; see its [design](<ASL Unit Backlog Pass 22b Design.md>) and [review](<Scenario A1 Backlog Pass 22b Review 2026-09-30.md>)); the passes run one at a time on the user's go-ahead, pass 22c next.
 
 **Date:** 2026-09-30
 
@@ -101,6 +101,8 @@ New rules adjudication, changes to game persistence, VASL artwork, a new compone
 ### Pass 22b: The theme and the shared foundation
 
 **Purpose:** the Studio takes the theme, grouped navigation, and the shared components every later pass reuses, and shows a scenario card's full provenance. **After:** pass 22. **From:** sections 10, 11, and 15; the component candidates of section 16.3.
+
+**Status:** Built 2026-09-30, all five tasks, with two reviews and two visual checks; the Unit Lab starting-template overlap of section 11 (planned for 22d.4) was fixed here. Items left out are in section 34 of the [ASL Unit Backlog](<ASL Unit Backlog.md>).
 
 | Task | What it changes | Rules | Estimate |
 |---|---|---|---|

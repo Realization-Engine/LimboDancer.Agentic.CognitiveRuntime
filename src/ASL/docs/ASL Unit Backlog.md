@@ -496,6 +496,18 @@ The plan's legacy scenario migration (2026-09-30, Part VI) ports the portable ca
 | Chapter F (the desert terrain and rules) and Chapter G (the Pacific terrain and the Japanese national rules), for the legacy cards that need them | User ruling, 2026-09-30 | Chapter F; Chapter G, G1 | Armored combat, fortifications, and terrain (plan passes 31 to 38) | Their six legacy cards (G9, G16, G19, G20, G24, and G45) are ported display only and cannot be played. |
 | Small SVG previews in the Board library, loaded when visible and cached by board identity and options | Review of the plan, 2026-09-30 | | The Board library's search and filters (plan pass 22c) | A compact list without previews. |
 
+## 34. Added by the redesign pass 22b
+
+Pass 22b (2026-09-30) merged the supplied theme and built the shell, the shared components, the card picker and new-game components, and card provenance. Items its reviews raised that it leaves out:
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| The provenance panel marks a game whose catalog differs from its card's pinned catalog | Table player, pass 22b | R18.1 | A catalog comparison in the game start facts | Both catalogs are listed; only the card's hash is compared. |
+| A new game's id taken from the card (it is "village" for every card until typed) | Visual check, pass 22b | | The page tests that rely on the default id | The id must be typed for a second game. |
+| Focus moved to the first link when the drawer opens | UI review, pass 22b | | Shell work | Focus stays on the toggle; Tab reaches the links. |
+| `RevisionNavigator` shows a typed revision it refused (out of range or not a number) | UI review, pass 22b | | Its first use, plan task 22c.3 | The component has no page yet. |
+| Play's setup and unit tables at phone width | Visual check, pass 22b | | Plan task 28c.2 (responsive layouts) | The page scrolls sideways below about 530px. |
+
 ### Rows planned in the Card Play and Map Studio Redesign Plan
 
 The plan was approved on 2026-09-30. A survey of this backlog the same day found the rows below planned in its passes; each stays in its section until its pass builds it, and then leaves it with the pass named, as usual.

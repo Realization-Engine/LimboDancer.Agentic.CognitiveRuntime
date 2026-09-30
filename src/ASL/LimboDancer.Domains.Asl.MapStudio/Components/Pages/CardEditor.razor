@@ -10,13 +10,13 @@
 
 <PageTitle>Card editor - ASL Map Studio</PageTitle>
 
-<h2 class="page">Card editor</h2>
-
-<p class="hint">
-    Every game starts from a scenario card (rulings R22.1 to R22.4). Start from a minimal card (boards and two sides, for a game with no scenario), a copy
-    of a built-in card, or one of your cards; the card is checked as you edit it, and only a valid card is saved, under the boards folder beside the saved
-    maps. The OB groups, SSRs, and Victory Conditions are edited as JSON in the card format; the counter picker adds a counter line to a group.
-</p>
+<PageHeader Title="Card editor">
+    <p>
+        Every game starts from a scenario card (rulings R22.1 to R22.4). Start from a minimal card (boards and two sides, for a game with no scenario), a copy
+        of a built-in card, or one of your cards; the card is checked as you edit it, and only a valid card is saved, under the boards folder beside the saved
+        maps. The OB groups, SSRs, and Victory Conditions are edited as JSON in the card format; the counter picker adds a counter line to a group.
+    </p>
+</PageHeader>
 
 @if (catalog is null)
 {
@@ -27,17 +27,11 @@ else
     <div class="toolbar">
         <label>
             Start from
-            <select id="edit-source" value="@source" @onchange="ChooseSource">
-                <option value="">a minimal card</option>
-                @foreach (var name in Live.Cards.Names)
-                {
-                    <option value="@name">@(Live.Cards.IsUser(name) ? "your card" : "a copy of") @Title(name)</option>
-                }
-            </select>
+            <CardPicker Id="edit-source" Cards="@Choices" Value="@source" ValueChanged="@ChooseSource" EmptyLabel="a minimal card" />
         </label>
         @if (source is { Length: > 0 } && Live.Cards.IsUser(source))
         {
-            <button id="edit-delete" @onclick="Delete">Delete this card</button>
+            <button id="edit-delete" class="danger" @onclick="Delete">Delete this card</button>
         }
     </div>
 
@@ -137,25 +131,12 @@ else
         </span>
     </div>
 
-    @if (diagnostics.Count > 0)
-    {
-        <ul id="edit-diagnostics" class="diagnostic error">
-            @foreach (var diagnostic in diagnostics)
-            {
-                <li>@diagnostic</li>
-            }
-        </ul>
-    }
-    else
-    {
-        <p id="edit-valid" class="muted">The card is valid against catalog @catalog.Identity.Catalog@@@catalog.Identity.Version.</p>
-    }
+    <FindingList Id="edit-diagnostics" Items="@FindingList.Of(diagnostics)" EmptyId="edit-valid">
+        <Empty>The card is valid against catalog @catalog.Identity.Catalog@@@catalog.Identity.Version.</Empty>
+    </FindingList>
 
-    <button id="edit-save" @onclick="Save">Save the card</button>
-    @if (note is not null)
-    {
-        <p id="edit-note">@note</p>
-    }
+    <button id="edit-save" class="primary" @onclick="Save">Save the card</button>
+    <OperationFeedback Id="edit-note" Message="@note" Outcome="@noteOutcome" />
 }
 
 @code {
@@ -268,9 +249,18 @@ else
         }
     };
 
-    private void ChooseSource(ChangeEventArgs args)
+    private IReadOnlyList<CardPicker.Choice> Choices => [.. Live.Cards.Names.Select(name => new CardPicker.Choice(name, Title(name), Live.Cards.IsUser(name)))];
+
+    // Set with each note (UI review, pass 22b): a refusal reads as one; a completed save, delete, or addition reads as done.
+    private OperationFeedback.OperationOutcome noteOutcome = OperationFeedback.OperationOutcome.Done;
+
+    private void Refuse(string text) => (note, noteOutcome) = (text, OperationFeedback.OperationOutcome.Refused);
+
+    private void Done(string? text) => (note, noteOutcome) = (text, OperationFeedback.OperationOutcome.Done);
+
+    private void ChooseSource(string? chosen)
     {
-        source = Text(args);
+        source = chosen ?? string.Empty;
         note = null;
         if (source.Length > 0 && catalog is not null && Live.Cards.Read(source, catalog)?.Card is { } card)
         {
@@ -468,13 +458,13 @@ else
         Check();
         if (catalog is null || diagnostics.Count > 0 || Build() is not { Card: { } card, Problems.Count: 0 })
         {
-            note = "Not saved: fix the problems listed above first.";
+            Refuse("Not saved: fix the problems listed above first.");
             return;
         }
 
         var refused = Live.Cards.Save(card, catalog, replace: card.Id == source && Live.Cards.IsUser(source));
         diagnostics = refused;
-        note = refused.Count == 0 ? $"Saved '{card.Id}'; start a game from it on the Play page." : null;
+        Done(refused.Count == 0 ? $"Saved '{card.Id}'; start a game from it on the Play page." : null);
         if (refused.Count == 0)
         {
             source = card.Id;
@@ -485,7 +475,7 @@ else
     {
         if (Live.Cards.Delete(source))
         {
-            note = $"Deleted '{source}'.";
+            Done($"Deleted '{source}'.");
             source = string.Empty;
             Load(null, false);
             Check();
@@ -499,7 +489,7 @@ else
         if (catalog?.Definition(pickDefinition) is not { } definition || definition.Nationality != side.Side
             || !int.TryParse(pickGroup, NumberStyles.Integer, CultureInfo.InvariantCulture, out var group) || !int.TryParse(pickCount, NumberStyles.Integer, CultureInfo.InvariantCulture, out var count))
         {
-            note = "Name a group by its place (1 onward), a counter, and a count.";
+            Refuse("Name a group by its place (1 onward), a counter, and a count.");
             return;
         }
 
@@ -510,22 +500,22 @@ else
         }
         catch (JsonException)
         {
-            note = "The side's OB groups are not valid JSON; fix them first.";
+            Refuse("The side's OB groups are not valid JSON; fix them first.");
             return;
         }
 
         if (group < 1 || group > groups.Count)
         {
-            note = groups.Count == 0
+            Refuse(groups.Count == 0
                 ? $"Side {PickSide + 1} has no OB group; add one in its OB groups JSON first (a card with an OB is not a minimal card)."
-                : $"Side {PickSide + 1} has {groups.Count} OB group(s).";
+                : $"Side {PickSide + 1} has {groups.Count} OB group(s).");
             return;
         }
 
         var target = groups[group - 1];
         groups[group - 1] = target with { Units = [.. target.Units, new ScenarioCardUnit(definition.Id, count, pickArea.Length > 0 ? pickArea : null)] };
         side.Groups = JsonSerializer.Serialize(groups, Json);
-        note = $"Added {count} {ScenarioCards.Describe(definition)} to group {group} of side {PickSide + 1}.";
+        Done($"Added {count} {ScenarioCards.Describe(definition)} to group {group} of side {PickSide + 1}.");
         Check();
     }
 }

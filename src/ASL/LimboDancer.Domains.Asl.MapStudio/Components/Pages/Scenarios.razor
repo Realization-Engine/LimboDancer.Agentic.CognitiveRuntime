@@ -6,13 +6,13 @@
 
 <PageTitle>Scenario cards - ASL Map Studio</PageTitle>
 
-<h2 class="page">Scenario cards</h2>
-
-<p class="hint">
-    The built-in cards, adapted from legacy scenario cards to the registered rulebook (rulings R17.1 to R17.13), and your cards (ruling R22.2). Every game
-    starts from a card on the Play page; the <a id="card-editor" href="units/cards/edit">card editor</a> makes a new card, a minimal card for a game with no
-    scenario, or a copy of a built-in card to change.
-</p>
+<PageHeader Title="Scenario cards">
+    <p>
+        The built-in cards, adapted from legacy scenario cards to the registered rulebook (rulings R17.1 to R17.13), and your cards (ruling R22.2). Every game
+        starts from a card on the Play page; the <a id="card-editor" href="units/cards/edit">card editor</a> makes a new card, a minimal card for a game with no
+        scenario, or a copy of a built-in card to change.
+    </p>
+</PageHeader>
 
 @if (catalog is null)
 {
@@ -20,30 +20,22 @@
 }
 else
 {
-    <label>
-        Card
-        <select id="card-choice" value="@selected" @onchange="Choose">
-            @foreach (var name in Live.Cards.Names)
-            {
-                <option value="@name">@(Title(name))@(Live.Cards.IsUser(name) ? " (yours)" : string.Empty)</option>
-            }
-        </select>
-    </label>
-    @if (selected is { } editable)
-    {
-        <a id="card-edit" href="@($"units/cards/edit?card={Uri.EscapeDataString(editable)}")">@(Live.Cards.IsUser(editable) ? "Edit this card" : "Copy this card to edit it")</a>
-    }
+    <div class="toolbar">
+        <label>
+            Card
+            <CardPicker Id="card-choice" Cards="@Choices" Value="@selected" ValueChanged="@Show" />
+        </label>
+        @if (selected is { } editable)
+        {
+            <a id="card-edit" href="@($"units/cards/edit?card={Uri.EscapeDataString(editable)}")">@(Live.Cards.IsUser(editable) ? "Edit this card" : "Copy this card to edit it")</a>
+        }
+    </div>
 
     @if (read is { } shown)
     {
         @if (shown.Diagnostics.Count > 0)
         {
-            <ul id="card-diagnostics" class="diagnostic error">
-                @foreach (var diagnostic in shown.Diagnostics)
-                {
-                    <li>@diagnostic</li>
-                }
-            </ul>
+            <FindingList Id="card-diagnostics" Items="@FindingList.Of(shown.Diagnostics)" />
         }
 
         @if (shown.Card is { } card)
@@ -172,6 +164,10 @@ else
                     }
                 </ul>
             </article>
+            @if (provenance is { } provenanceModel)
+            {
+                <CardProvenancePanel Model="@provenanceModel" />
+            }
         }
     }
 }
@@ -180,6 +176,7 @@ else
     private UnitCatalog? catalog;
     private string? selected;
     private ScenarioCardRead? read;
+    private CardProvenance? provenance;
 
     /// <summary>The card to show first, as the Play page's link names it (ruling R18.2).</summary>
     [SupplyParameterFromQuery(Name = "card")]
@@ -191,13 +188,17 @@ else
     protected override void OnParametersSet() =>
         Show(Card is { } named && Live.Cards.Names.Contains(named, StringComparer.Ordinal) ? named : selected ?? Live.Cards.Names.FirstOrDefault());
 
-    private void Choose(ChangeEventArgs change) => Show(change.Value?.ToString());
+    private IReadOnlyList<CardPicker.Choice> Choices => [.. Live.Cards.Names.Select(name => new CardPicker.Choice(name, Title(name), Live.Cards.IsUser(name)))];
 
     private void Show(string? name)
     {
         selected = name;
         read = name is null || catalog is null ? null : Live.Cards.Read(name, catalog);
+        provenance = name is not null && catalog is not null && read?.Card is { } card && Live.Cards.Sha256(name) is { } sha
+            ? CardProvenance.Of(card, Live.Cards.IsUser(name), Live.Cards.UserFile(name), sha, catalog)
+            : null;
     }
+
 
     private string Title(string name) => catalog is not null && Live.Cards.Read(name, catalog)?.Card is { } card ? card.Title : name;
 

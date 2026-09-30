@@ -549,3 +549,20 @@ At the user's request, 2026-09-30, branch `feature/asl-card-editor-polish`.
 | Commit db812c9; the Docker Linux check (every step exit 0; MapStudio 156, Play 556, Authoring 167 of 167, ScenarioA1 480); no Authoring change, so no chart supplement run; merge and push | 07:43 | 08:02 | 0:19 | |
 
 Total 0:57 (07:03 to 08:02, with the plan drafted during the suite).
+
+## Pass 22b: The theme and the shared foundation
+
+Estimate: 5:30 (build 4:15), the ASL Card Play and Map Studio Redesign Plan, approved 2026-09-30. Kickoff 11:20. Branch `feature/asl-backlog-pass-22b`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| 22b.1: branch `UI-Redesign-01` merged into the pass branch (clean; site.css, local fonts, viewport data attributes) | 11:20 | 11:21 | 0:01 | |
+| 22b.2: S01 `StudioNavigation` (grouped sidebar, collapsible, a drawer under 1024px, Escape returns focus), `studioShell.js`, S02 `PageHeader` on ten pages, the draft restriction as a warning banner; checked in the Studio (wide, collapsed, nested route, narrow drawer) | 11:21 | 11:28 | 0:07 | |
+| 22b.3 and 22b.4: S03 to S07, S09, S10; K02 `CardPicker` on Play, Scenarios, and the card editor; K01 `NewGameFromCard` with K03 and K04; S03, S04, S06 adopted; 22b.5: `CardProvenance` in the Play library with the pass 17 registry embedded, K21 `CardProvenancePanel` on Scenarios and Play; 12 component tests, 6 provenance tests, page assertions; MapStudio 175 pass | 11:28 | 11:46 | 0:18 | Session paused here for a new chat |
+| Visual check in the Studio (map-studio-scripted): the ten page headers, Play new-game fields and start summary, the card picker on Play, Scenarios, and the card editor, the editor findings and save feedback, the provenance panel on Scenarios and in a card game, Play at phone width; fixed the Unit Lab picker overflow and preview overflow, the Scenarios picker spacing, the scripted-dice note, the start summary date (the card date wording), and the provenance table alignment; rebuilt and checked again, clean | 11:50 | 12:00 | 0:10 | Resumed in a new chat |
+| Two reviews (UI and Blazor, 12 findings; table player, 11 findings) and fixes: the shell's Escape and focus, the status region, the game's provenance cached, the gone card's recorded start, the user card's file, blank provenance fields, the editor's outcomes; counters per side with Balance counters apart, the start's Game Turns and setup order, the enforced SSRs, FBE, the Balance texts and dr wording, plain value names and comparison words; shell and page tests | 12:00 | 12:07 | 0:07 | The reviewers ran from 12:00 to 12:04 |
+| Visual check again (Play start and Balance, Scenarios provenance for all three cards and a user card, the drawer by keyboard at 800px), two wording fixes and a CSS specificity fix, rebuilt and checked, clean | 12:07 | 12:11 | 0:04 | |
+| Documents (design, review, the plan's status, backlog section 34) while the full suite ran | 12:11 | 12:15 | 0:04 | |
+| Full local suite and ScenarioA1 (480): one MapStudio assertion on the old date wording, fixed and rerun (176 pass); Authoring fails only the known architecture test (`.git/worktrees` held); formatting verified | 12:11 | 12:59 | 0:48 | Mostly waiting on the runs |
+| Merge gate: commit af3c959, push, the Docker Linux check (every step exit 0; Authoring 167, Play 563, MapStudio 176, ScenarioA1 480), the chart supplement regeneration (same), merge into main, push | 12:59 | 13:22 | 0:23 | |
+| **Pass 22b total** | 11:20 | 13:22 | **1:58** | Estimate 5:30; the session break (11:46 to 11:50) is not counted |

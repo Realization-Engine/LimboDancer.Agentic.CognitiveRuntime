@@ -9,11 +9,10 @@
 
 <PageTitle>Fidelity - ASL Map Studio</PageTitle>
 
-<h2 class="page">Fidelity batch</h2>
-
+<PageHeader Title="Fidelity batch" />
 @if (!Runner.IsAvailable)
 {
-    <p>No board source is configured, so no batch can run. Saved reports are still listed below.</p>
+    <SourceRequiredNotice Missing="No board source is configured.">No batch can run; saved reports are still listed below.</SourceRequiredNotice>
 }
 else
 {

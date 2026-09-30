@@ -1,0 +1,23 @@
+@* S03 (plan section 16.3): what a page needs that is not configured, why, and where to set it. *@
+<div class="source-required" role="status">
+    <p><strong>@Missing</strong> @ChildContent</p>
+    @if (Instructions is not null)
+    {
+        @Instructions
+    }
+    <p><a href="settings">Settings</a> shows what is configured.</p>
+</div>
+
+@code {
+    /// <summary>What is missing, as a short sentence.</summary>
+    [Parameter, EditorRequired]
+    public string Missing { get; set; } = string.Empty;
+
+    /// <summary>What the page cannot do without it.</summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Optional setup instructions.</summary>
+    [Parameter]
+    public RenderFragment? Instructions { get; set; }
+}

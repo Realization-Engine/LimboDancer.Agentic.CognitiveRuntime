@@ -1,0 +1,49 @@
+@* S07 (plan section 16.3): a field's label, its control, and its help or error, kept together; the control stays native. *@
+<div class="field-group@(Error is { Length: > 0 } ? " has-error" : string.Empty)">
+    @if (For is { Length: > 0 })
+    {
+        <label class="field-label" for="@For" title="@Title">@Label</label>
+    }
+    else
+    {
+        <span class="field-label" title="@Title">@Label</span>
+    }
+    <div class="field-control">
+        @ChildContent
+        @if (Help is not null)
+        {
+            <p class="field-help" id="@HelpId">@Help</p>
+        }
+        @if (Error is { Length: > 0 } error)
+        {
+            <p class="field-error" id="@ErrorId" role="alert">@error</p>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Label { get; set; } = string.Empty;
+
+    /// <summary>The id of the control the label names; without it the label is plain text.</summary>
+    [Parameter]
+    public string? For { get; set; }
+
+    /// <summary>A hover explanation of the field, such as its rule.</summary>
+    [Parameter]
+    public string? Title { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public RenderFragment? Help { get; set; }
+
+    [Parameter]
+    public string? Error { get; set; }
+
+    /// <summary>The help text's id, for the control's aria-describedby.</summary>
+    public string? HelpId => For is { Length: > 0 } ? For + "-help" : null;
+
+    public string? ErrorId => For is { Length: > 0 } ? For + "-error" : null;
+}

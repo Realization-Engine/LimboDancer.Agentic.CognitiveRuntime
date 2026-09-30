@@ -142,6 +142,8 @@ public sealed class CardEditorPageTests : IDisposable
         page.Find("#play-confirm").Click();
         Assert.Contains("Setup is open", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
         Assert.Contains("My game", page.Find("#play-card").TextContent, StringComparison.Ordinal);
+        Assert.Contains("matches", page.Find("#play-card-provenance .provenance-match").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Your card", page.Find("#play-card-provenance .provenance-kept").TextContent, StringComparison.Ordinal);
     }
 
     // R22.4: a game recorded without a card (before pass 22) still loads and plays on the Play page.

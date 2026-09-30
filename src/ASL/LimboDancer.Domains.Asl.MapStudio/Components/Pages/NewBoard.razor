@@ -5,11 +5,10 @@
 
 <PageTitle>New board - ASL Map Studio</PageTitle>
 
-<h2 class="page">New board</h2>
-
+<PageHeader Title="New board" />
 @if (Authored.Catalog is null)
 {
-    <p>Authoring needs the terrain catalog from a configured VASL checkout, so every authored board stays exportable to VASL (Model Design section 4.2). See <a href="settings">Settings</a>.</p>
+    <SourceRequiredNotice Missing="No VASL checkout is configured.">Authoring needs its terrain catalog, so every authored board stays exportable to VASL (Model Design section 4.2).</SourceRequiredNotice>
 }
 else
 {

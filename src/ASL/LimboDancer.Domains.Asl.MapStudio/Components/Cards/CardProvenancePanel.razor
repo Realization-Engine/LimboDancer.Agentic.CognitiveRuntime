@@ -1,0 +1,201 @@
+@using LimboDancer.Domains.Asl.Play
+@using LimboDancer.Domains.Asl.Units.Catalog
+@* K21 (plan section 13.6): a card's full provenance, read only, from a prepared model; unknown provenance is shown as such. *@
+<details id="@Id" class="card-provenance">
+    <summary>Provenance</summary>
+
+    <h4>Card</h4>
+    <dl class="report">
+        <dt>Id</dt>
+        <dd class="provenance-id">@Model.Identity.Id</dd>
+        <dt>Kept</dt>
+        <dd class="provenance-kept">@(Model.Identity.IsUser ? $"Your card, in {Model.Identity.File ?? "the boards folder"}" : "Built in (embedded in the Play library)")</dd>
+        <dt>SHA-256</dt>
+        <dd class="provenance-sha"><code>@Model.Identity.Sha256</code></dd>
+        <dt>Format</dt>
+        <dd>@Model.Identity.Format</dd>
+        <dt>Catalog</dt>
+        <dd class="provenance-catalog">@Model.Identity.Catalog</dd>
+    </dl>
+
+    @if (Model.Game is { } game)
+    {
+        <h4>This game's start</h4>
+        <dl class="report">
+            <dt>Started from</dt>
+            <dd class="provenance-game-card">@game.CardId, SHA-256 <code>@game.Sha256</code></dd>
+            <dt>Catalog</dt>
+            <dd>@game.Catalog</dd>
+            <dt>The card now</dt>
+            <dd class="provenance-match">
+                <StatusBadge Label="@MatchLabel(game.Match)" Tone="@(game.Match == CardMatch.Same ? StatusBadge.BadgeTone.Pass : StatusBadge.BadgeTone.Warning)" />
+            </dd>
+        </dl>
+    }
+
+    <h4>Source</h4>
+    <dl class="report">
+        <dt>Basis</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Model.Source.Basis) ? "not recorded" : Model.Source.Basis)</dd>
+        <dt>Legacy card</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Model.Source.Legacy) ? "not recorded" : Model.Source.Legacy)</dd>
+        <dt>Adaptation</dt>
+        <dd>
+            @if (Model.Source.Adaptation.Count == 0)
+            {
+                <span class="muted">none recorded</span>
+            }
+            else
+            {
+                <ul>
+                    @foreach (var note in Model.Source.Adaptation)
+                    {
+                        <li>@note</li>
+                    }
+                </ul>
+            }
+        </dd>
+    </dl>
+
+    <h4>Counters</h4>
+    @if (Model.Counters.Count == 0)
+    {
+        <p class="muted provenance-no-counters">The card has no OB counters; its sides set up by hand (ruling R22.3).</p>
+    }
+    else
+    {
+        <table class="library provenance-counters">
+            <thead><tr><th>Side</th><th>Counter</th><th>Count</th><th>Counter reference</th><th>Source record</th><th>Values</th></tr></thead>
+            <tbody>
+                @foreach (var counter in Model.Counters)
+                {
+                    <tr data-definition="@counter.Definition" data-side="@counter.Side">
+                        <td>@counter.Side</td>
+                        <td>
+                            @counter.Label
+                            @if (counter.Balance)
+                            {
+                                <StatusBadge Label="Balance only (A26.4)" Tone="StatusBadge.BadgeTone.Info" Explanation="Joins the OB only when the side takes its Balance." />
+                            }
+                        </td>
+                        <td>@counter.Count</td>
+                        <td>
+                            @counter.Counter
+                            @if (counter.Manufactured)
+                            {
+                                <StatusBadge Label="manufactured (R0.3)" Tone="StatusBadge.BadgeTone.Warning" Explanation="No registered source prints it; its values are manufactured on sheet MFG." />
+                            }
+                        </td>
+                        <td>
+                            @if (counter.Source is { } source)
+                            {
+                                <span>@(counter.Manufactured ? "sheet MFG entry, " : string.Empty)@source.Id: @SourceStatus(source.Status)@(source.Transcriber is { } by ? $", transcribed by {by}" : string.Empty)@(source.Reviewer is { } reviewer ? $", reviewed by {reviewer}" : string.Empty)@(counter.Manufactured ? "; values manufactured under R0.3" : string.Empty)</span>
+                            }
+                            else
+                            {
+                                <span class="muted">unknown</span>
+                            }
+                        </td>
+                        <td>
+                            @if (counter.Values.Count == 0)
+                            {
+                                <span class="muted">none recorded</span>
+                            }
+                            else
+                            {
+                                <details>
+                                    <summary>@counter.Values.Count values</summary>
+                                    <ul class="provenance-values">
+                                        @foreach (var value in counter.Values)
+                                        {
+                                            <li title="@value.Name">@value.Face @Plain(value.Name) @value.Value <span class="muted">(@value.Source)</span></li>
+                                        }
+                                    </ul>
+                                </details>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    <h4>Citations</h4>
+    @if (Model.Citations.Count == 0)
+    {
+        <p class="muted">The card cites no rules in its SSRs or Victory Conditions.</p>
+    }
+    else
+    {
+        <table class="library provenance-citations">
+            <thead><tr><th>Rule</th><th>Rests on</th><th>Where</th></tr></thead>
+            <tbody>
+                @foreach (var citation in Model.Citations)
+                {
+                    <tr data-rule="@citation.Rule">
+                        <td>@citation.Rule</td>
+                        <td>
+                            <StatusBadge Label="@KindLabel(citation.Kind)" Tone="@(citation.Kind == CitationKind.Unregistered ? StatusBadge.BadgeTone.Warning : StatusBadge.BadgeTone.Info)" />
+                        </td>
+                        <td>
+                            @switch (citation.Kind)
+                            {
+                                case CitationKind.Fragment:
+                                    <span title="@citation.FragmentId">rulebook PDF page@(citation.Pages.Count > 1 ? "s" : string.Empty) @string.Join(", ", citation.Pages) (physical); @Comparison(citation.Comparison)</span>
+                                    break;
+                                case CitationKind.Ruling:
+                                    <a href="@citation.Link" target="_blank" rel="noopener">Ruling @citation.Rule, Backlog Passes Plan, section 5</a>
+                                    break;
+                                default:
+                                    <span class="muted">not in the registry of compared fragments</span>
+                                    break;
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</details>
+
+@code {
+    [Parameter, EditorRequired]
+    public CardProvenance Model { get; set; } = null!;
+
+    [Parameter]
+    public string Id { get; set; } = "card-provenance";
+
+    private static string MatchLabel(CardMatch match) => match switch
+    {
+        CardMatch.Same => "matches",
+        CardMatch.Changed => "changed since the game started",
+        _ => "no longer among the cards",
+    };
+
+    private static string KindLabel(CitationKind kind) => kind switch
+    {
+        CitationKind.Fragment => "registered fragment",
+        CitationKind.Ruling => "ruling",
+        _ => "unregistered",
+    };
+
+    private static string SourceStatus(CatalogSourceStatus status) => status switch
+    {
+        CatalogSourceStatus.Reviewed => "reviewed",
+        CatalogSourceStatus.TranscribedUnreviewed => "transcribed, not yet reviewed",
+        CatalogSourceStatus.AwaitingTranscription => "awaiting transcription",
+        _ => "synthetic",
+    };
+
+    /// <summary>A value's name without its vocabulary prefix and hyphens ("asl:broken-morale" reads "broken morale"); the full id is its title.</summary>
+    private static string Plain(string name) => (name.IndexOf(':', StringComparison.Ordinal) is var colon and >= 0 ? name[(colon + 1)..] : name).Replace('-', ' ');
+
+    /// <summary>The pass 17 comparison result in words; a result not known here is shown as recorded.</summary>
+    private static string Comparison(string? comparison) => comparison is null ? string.Empty
+        : string.Join("; ", comparison.Split("; ").Select(result => result switch
+        {
+            "complete-alphanumeric-match" => "the text matches the rulebook",
+            "complete-alphanumeric-match-in-two-parts" => "the text matches the rulebook, in two parts",
+            _ => result,
+        }));
+}

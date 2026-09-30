@@ -2,6 +2,8 @@
   <ItemGroup>
     <!-- The scenario cards (backlog pass 17); WithCulture="false" keeps the dotted names from reading as a culture on Linux. -->
     <EmbeddedResource Include="..\units\scenarios\*.scenario-card.json" LogicalName="Scenarios.%(Filename)%(Extension)" WithCulture="false" />
+    <!-- The pass 17 comparison registry, for a card's provenance (plan task 22b.5). -->
+    <EmbeddedResource Include="..\..\..\docs\ASL\SourceRegistry\asl-scenario-a1.pass17-pdf-comparison.json" LogicalName="SourceRegistry.asl-scenario-a1.pass17-pdf-comparison.json" WithCulture="false" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LimboDancer.Domains.Asl.Units\LimboDancer.Domains.Asl.Units.csproj" />

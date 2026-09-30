@@ -380,8 +380,8 @@ public sealed class TablePlayer22Tests : IDisposable
         var summary = page.Find("#new-card-summary").TextContent.Trim();
         output.WriteLine("start: " + summary);
         Assert.Contains("Scenario Defender: russian", summary, StringComparison.Ordinal);
-        Assert.Contains("Month 7, year not recorded", summary, StringComparison.Ordinal);
-        Assert.Contains("edge bottom", summary, StringComparison.Ordinal);
+        Assert.Contains("July; SSRs the game enforces", summary, StringComparison.Ordinal);
+        Assert.Contains("FBE bottom", summary, StringComparison.Ordinal);
         Assert.Contains("ELR 2", summary, StringComparison.Ordinal);
 
         page.Find("#new-id").Change("old");

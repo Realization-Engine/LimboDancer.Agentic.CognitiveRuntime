@@ -43,6 +43,9 @@ public sealed partial class ScenarioCardLibrary(string? directory)
     /// <summary>Whether a name is one of the user's cards.</summary>
     public bool IsUser(string name) => UserNames.Contains(name, StringComparer.Ordinal);
 
+    /// <summary>The file a user card is kept in; null for a built-in card or a name with no card.</summary>
+    public string? UserFile(string name) => IsUser(name) && Directory is { } root ? Path.Combine(root, name + Suffix) : null;
+
     /// <summary>A card's text with LF line endings, built-in or the user's; null when none has that name.</summary>
     public string? Text(string name) => Current(name)?.Text;
 

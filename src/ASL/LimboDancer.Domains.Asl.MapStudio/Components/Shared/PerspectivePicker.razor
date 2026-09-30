@@ -1,0 +1,32 @@
+@* S09 (plan section 16.3): the perspective a page is read from; the page reprojects and invalidates a pending proposal on change. *@
+<label class="perspective-picker">
+    @Label
+    <select id="@Id" value="@Value" @onchange="Change">
+        @foreach (var choice in Choices)
+        {
+            <option value="@choice.Name">@choice.Label</option>
+        }
+    </select>
+</label>
+
+@code {
+    /// <summary>One perspective: its name, and the label shown for it.</summary>
+    public sealed record Choice(string Name, string Label);
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Choice> Choices { get; set; } = [];
+
+    [Parameter]
+    public string Value { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> ValueChanged { get; set; }
+
+    [Parameter]
+    public string? Id { get; set; }
+
+    [Parameter]
+    public string Label { get; set; } = "View as";
+
+    private Task Change(ChangeEventArgs args) => ValueChanged.InvokeAsync(args.Value as string ?? string.Empty);
+}

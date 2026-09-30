@@ -1,0 +1,25 @@
+@* S05 (plan section 16.3): a status in words and color; the caller maps its own statuses, unknown and not checked included. *@
+<span class="status-badge @ToneClass" title="@Explanation">@Label</span>
+
+@code {
+    public enum BadgeTone
+    {
+        Neutral,
+        Info,
+        Pass,
+        Warning,
+        Fail,
+    }
+
+    [Parameter, EditorRequired]
+    public string Label { get; set; } = string.Empty;
+
+    [Parameter]
+    public BadgeTone Tone { get; set; }
+
+    /// <summary>A longer explanation, shown on hover; the label alone must still make sense.</summary>
+    [Parameter]
+    public string? Explanation { get; set; }
+
+    private string ToneClass => Tone.ToString().ToLowerInvariant();
+}
