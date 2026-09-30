@@ -1,0 +1,55 @@
+@* B12 (plan sections 12.3 and 16.6): where the board comes from and how it checks out: version, composition, VASL provenance, F1 and F2,
+   validation, the Styled model, and the derivation and renderer versions. Read only. *@
+<h3>Provenance</h3>
+<dl class="board-provenance" id="board-provenance">
+    <dt>Version</dt>
+    <dd><code>@Board.Version[..12]</code></dd>
+    @if (Board.Composition is { } composition)
+    {
+        <dt>Boards</dt>
+        <dd><code>@string.Join(" ", composition.Placements)</code></dd>
+        <dt>Size</dt>
+        <dd>@composition.Map.Geometry.WidthInHexes by @composition.Map.Geometry.HeightInHexes hexes</dd>
+        <dt>F2</dt>
+        <dd class="@F2Class">@(Board.F2 is null ? "no oracle scenario" : Board.F2.Passed ? "Pass" : $"{Board.F2.Differences.Count} differences")</dd>
+    }
+    @if (Board.Provenance is { } provenance)
+    {
+        <dt>VASL commit</dt>
+        <dd><code>@(provenance.VaslCommit?[..12] ?? "unknown")</code></dd>
+        <dt>LOSData</dt>
+        <dd>@provenance.LosData.RepositoryPath</dd>
+    }
+    @if (Board.F1 is { } f1)
+    {
+        <dt>F1</dt>
+        <dd class="@(f1.Passed ? "pass" : "fail")">@f1.Status</dd>
+        <dt>F2</dt>
+        <dd class="@F2Class">@(Board.F2 is null ? "no oracle fixture" : Board.F2.Passed ? "Pass" : $"{Board.F2.Differences.Count} differences")</dd>
+    }
+    @if (Board.Validation is { } validation)
+    {
+        <dt>Validation</dt>
+        <dd>@validation.Summary.Errors errors, @validation.Summary.Warnings warnings</dd>
+    }
+    @if (StyledModel is { } model)
+    {
+        <dt>Styled model</dt>
+        <dd>@model.Features.Count features (@model.Provenance.Kind)</dd>
+    }
+    <dt>Derivation</dt>
+    <dd>@Board.Facts.DerivationVersion</dd>
+    <dt>Renderer</dt>
+    <dd>@BoardRenderer.RendererVersion, theme @RenderTheme.Board.Name @RenderTheme.Board.Version</dd>
+</dl>
+
+@code {
+    [Parameter, EditorRequired]
+    public StudioBoard Board { get; set; } = null!;
+
+    /// <summary>The Feature Model behind the Styled views, once it exists.</summary>
+    [Parameter]
+    public FeatureModel? StyledModel { get; set; }
+
+    private string F2Class => Board.F2 is { Passed: true } ? "pass" : Board.F2 is null ? "muted" : "fail";
+}

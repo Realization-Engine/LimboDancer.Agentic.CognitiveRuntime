@@ -1,0 +1,30 @@
+@using LimboDancer.Domains.Asl.Units.Plausibility
+@* U06 (plan section 16.7): the document's findings by kind (the reader's diagnostics, plausibility warnings, and style warnings) through
+   S06, with an explicit "No findings." *@
+<h3>Findings</h3>
+<FindingList Id="lab-findings" EmptyId="lab-findings" Items="@Items">
+    <Empty>No findings.</Empty>
+</FindingList>
+
+@code {
+    [Parameter]
+    public IReadOnlyList<UnitDiagnostic> Diagnostics { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<PlausibilityWarning> Plausibility { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<RenderWarning> Style { get; set; } = [];
+
+    private IReadOnlyList<FindingList.Finding> Items =>
+    [
+        .. Diagnostics.Select(diagnostic => new FindingList.Finding(diagnostic.Path is null ? diagnostic.Message : $"{diagnostic.Path}: {diagnostic.Message}", diagnostic.Severity switch
+        {
+            UnitDiagnosticSeverity.Error => FindingList.Severity.Error,
+            UnitDiagnosticSeverity.Warning => FindingList.Severity.Warning,
+            _ => FindingList.Severity.Info,
+        }, diagnostic.Code)),
+        .. Plausibility.Select(warning => new FindingList.Finding($"Plausibility: {warning.Message}", FindingList.Severity.Warning, warning.Rule)),
+        .. Style.Select(warning => new FindingList.Finding($"Style: {warning.Message}", FindingList.Severity.Info)),
+    ];
+}

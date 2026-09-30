@@ -1,0 +1,24 @@
+@* E08 (plan section 16.14): a terrain chosen from codes the caller already filtered to a feature kind; used by the tool options and a
+   feature's properties. *@
+<select id="@Id" value="@Value" @onchange="Change">
+    @foreach (var terrain in Terrains)
+    {
+        <option value="@terrain.Code">@terrain.Name</option>
+    }
+</select>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<TerrainType> Terrains { get; set; } = [];
+
+    [Parameter]
+    public byte Value { get; set; }
+
+    [Parameter]
+    public EventCallback<byte> ValueChanged { get; set; }
+
+    [Parameter]
+    public string? Id { get; set; }
+
+    private Task Change(ChangeEventArgs args) => byte.TryParse(args.Value as string, out var code) ? ValueChanged.InvokeAsync(code) : Task.CompletedTask;
+}

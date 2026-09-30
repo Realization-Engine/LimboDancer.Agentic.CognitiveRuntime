@@ -1,0 +1,77 @@
+@* B14 (plan section 16.6): the options of the chosen tool: its terrain, a region's level, a linear feature's width and curve, a building's
+   footprint and join, and an annotation's mark. The page keeps the terrain chosen for each kind. *@
+<div class="tool-options" id="tool-options">
+    <p class="muted">@EditorTool.Get(Tool).Help</p>
+    @if (Terrains.Count > 0)
+    {
+        <label for="tool-code">Terrain</label>
+        <TerrainPicker Id="tool-code" Terrains="@Terrains" Value="@Code" ValueChanged="@CodeChanged" />
+    }
+    @if (Tool == EditorTool.Elevation)
+    {
+        <label for="tool-level">Level</label>
+        <input id="tool-level" type="number" min="-9" max="9" value="@Options.Level" @onchange="@(args => Change(Options with { Level = Parse(args, Options.Level) }))" />
+    }
+    @if (Tool == EditorTool.Linear)
+    {
+        <label for="tool-width">Width (px)</label>
+        <input id="tool-width" type="number" min="1" max="60" value="@Options.LinearWidth" @onchange="@(args => Change(Options with { LinearWidth = Parse(args, Options.LinearWidth) }))" />
+        <label><input id="tool-curved" type="checkbox" checked="@Options.Curved" @onchange="@(args => Change(Options with { Curved = args.Value is true }))" /> curved</label>
+    }
+    @if (Tool == EditorTool.Building)
+    {
+        <label for="tool-kit">Footprint</label>
+        <select id="tool-kit" value="@Options.BuildingMode" @onchange="@(args => Change(Options with { BuildingMode = args.Value as string ?? "centered" }))">
+            <option value="centered">centered box</option>
+            <option value="span-0">span north to south</option>
+            <option value="span-1">span northeast to southwest</option>
+            <option value="span-2">span southeast to northwest</option>
+            @foreach (var side in HexsideDirections.All)
+            {
+                <option value="@($"flush-{(int)side}")">flush to @side</option>
+            }
+        </select>
+        <label><input id="tool-join" type="checkbox" checked="@Options.JoinBuilding" @onchange="@(args => Change(Options with { JoinBuilding = args.Value is true }))" /> join selected building</label>
+    }
+    @if (Tool == EditorTool.Annotation)
+    {
+        <label for="tool-mark">Mark</label>
+        <select id="tool-mark" value="@Options.Mark" @onchange="@(args => Change(Options with { Mark = Enum.TryParse<HexsideMark>(args.Value as string, out var mark) ? mark : Options.Mark }))">
+            @foreach (var value in Enum.GetValues<HexsideMark>())
+            {
+                <option value="@value">@value</option>
+            }
+        </select>
+    }
+</div>
+
+@code {
+    /// <summary>The tool options other than terrain: a region's level, a linear feature's width and curve, a building's footprint and join, a mark.</summary>
+    public sealed record ToolOptions(int Level, int LinearWidth, bool Curved, string BuildingMode, bool JoinBuilding, HexsideMark Mark)
+    {
+        public static ToolOptions Default { get; } = new(1, 8, false, "centered", false, HexsideMark.Slope);
+    }
+
+    [Parameter, EditorRequired]
+    public string Tool { get; set; } = EditorTool.Select;
+
+    /// <summary>The terrains the tool may draw; none for a tool without terrain.</summary>
+    [Parameter]
+    public IReadOnlyList<TerrainType> Terrains { get; set; } = [];
+
+    [Parameter]
+    public byte Code { get; set; }
+
+    [Parameter]
+    public EventCallback<byte> CodeChanged { get; set; }
+
+    [Parameter, EditorRequired]
+    public ToolOptions Options { get; set; } = ToolOptions.Default;
+
+    [Parameter]
+    public EventCallback<ToolOptions> OptionsChanged { get; set; }
+
+    private Task Change(ToolOptions options) => OptionsChanged.InvokeAsync(options);
+
+    private static int Parse(ChangeEventArgs args, int fallback) => int.TryParse(args.Value as string, out var value) ? value : fallback;
+}

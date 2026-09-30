@@ -1,0 +1,25 @@
+@using LimboDancer.Domains.Asl.Units.Vocabulary
+@* E04 (plan section 16.14): attributes as labeled inputs in the order given, for a face or for the whole unit; the caller reads and writes
+   the values, so the scope stays explicit. *@
+<div class="fields">
+    @foreach (var definition in Definitions)
+    {
+        var id = IdOf(definition);
+        <label for="@id" title="@definition.Rule">@definition.Label</label>
+        <VocabularyAttributeInput Definition="@definition" Id="@id" Value="@ValueOf(definition)" ValueChanged="@(text => OnValue(definition, text))" />
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<AttributeDefinition> Definitions { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public Func<AttributeDefinition, string> IdOf { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public Func<AttributeDefinition, string> ValueOf { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public Func<AttributeDefinition, string?, Task> OnValue { get; set; } = null!;
+}

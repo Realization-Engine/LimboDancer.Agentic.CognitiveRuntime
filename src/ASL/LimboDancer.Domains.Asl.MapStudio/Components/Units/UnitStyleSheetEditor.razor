@@ -1,0 +1,91 @@
+@using LimboDancer.Domains.Asl.Units.Rendering.Styles
+@* U08 (plan section 16.7): a style sheet's raw text, parsed as it is typed (the text is kept even when it does not parse), a palette,
+   and saving the sheet under a new name. In an Advanced section (plan section 12.4). *@
+<details class="advanced" id="lab-style" open="@(Open ? true : null)">
+    <summary>Advanced: the style sheet</summary>
+    <div class="toolbar">
+        <label>
+            Edit
+            <select id="lab-sheet" value="@Sheet" @onchange="@(args => SheetChanged.InvokeAsync(args.Value as string ?? Sheet))">
+                @foreach (var name in Sheets)
+                {
+                    <option value="@name">@name</option>
+                }
+            </select>
+        </label>
+        <label>
+            Palette
+            <select id="lab-palette" value="@(Palette ?? string.Empty)" @onchange="@(args => PaletteChanged.InvokeAsync(args.Value as string is { Length: > 0 } name ? name : null))">
+                <option value="">the sheet's own</option>
+                @foreach (var name in Palettes)
+                {
+                    <option value="@name">@name</option>
+                }
+            </select>
+        </label>
+    </div>
+    <textarea id="lab-sheet-text" class="sheet" spellcheck="false" aria-label="Style sheet text" value="@Text" @oninput="@(args => TextChanged.InvokeAsync(args.Value as string ?? string.Empty))"></textarea>
+    <ul id="lab-sheet-diagnostics">
+        @foreach (var diagnostic in Diagnostics)
+        {
+            <li class="@(diagnostic.Severity == StyleDiagnosticSeverity.Error ? "fail" : "muted")">@diagnostic</li>
+        }
+    </ul>
+    <div class="toolbar">
+        <input id="lab-sheet-name" value="@SaveName" placeholder="my-sheet" aria-label="Save the sheet as" @onchange="@(args => SaveNameChanged.InvokeAsync(args.Value as string ?? string.Empty))" />
+        <button id="lab-save-sheet" disabled="@(!CanSave)" @onclick="OnSave">Save sheet as</button>
+    </div>
+    <OperationFeedback Id="lab-sheet-note" Message="@Message" Outcome="@(MessageIsError ? OperationFeedback.OperationOutcome.Refused : OperationFeedback.OperationOutcome.Done)" />
+</details>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<string> Sheets { get; set; } = [];
+
+    [Parameter]
+    public string Sheet { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> SheetChanged { get; set; }
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<string> Palettes { get; set; } = [];
+
+    [Parameter]
+    public string? Palette { get; set; }
+
+    [Parameter]
+    public EventCallback<string?> PaletteChanged { get; set; }
+
+    [Parameter]
+    public string Text { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> TextChanged { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<StyleDiagnostic> Diagnostics { get; set; } = [];
+
+    /// <summary>Whether the text parses, so it can be saved.</summary>
+    [Parameter]
+    public bool CanSave { get; set; }
+
+    [Parameter]
+    public string SaveName { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> SaveNameChanged { get; set; }
+
+    [Parameter]
+    public EventCallback OnSave { get; set; }
+
+    [Parameter]
+    public string? Message { get; set; }
+
+    [Parameter]
+    public bool MessageIsError { get; set; }
+
+    /// <summary>Opens the section, such as when the sheet has problems to show.</summary>
+    [Parameter]
+    public bool Open { get; set; }
+}

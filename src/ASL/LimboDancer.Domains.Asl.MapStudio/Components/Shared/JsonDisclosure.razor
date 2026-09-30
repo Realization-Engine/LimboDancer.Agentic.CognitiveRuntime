@@ -1,0 +1,16 @@
+@* S14 (plan section 16.3): JSON shown on request, in a collapsed section, as text. *@
+<details class="json-disclosure" id="@Id">
+    <summary>@Summary</summary>
+    <pre class="json">@Json</pre>
+</details>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Json { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Summary { get; set; } = "JSON";
+
+    [Parameter]
+    public string? Id { get; set; }
+}

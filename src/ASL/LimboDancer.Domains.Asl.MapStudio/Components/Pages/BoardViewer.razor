@@ -1,12 +1,11 @@
 @page "/boards/{BoardName}"
 @using System.Globalization
 @using LimboDancer.Domains.Asl.Units.State
-@implements IAsyncDisposable
+@using LimboDancer.Domains.Asl.MapStudio.Components.Layout
 @inject IBoardProvider Boards
 @inject UnitLibrary UnitLibrary
 @inject GameLibrary Games
 @inject StudioLos Los
-@inject IJSRuntime JS
 
 <PageTitle>@(board?.Title ?? BoardName) - ASL Map Studio</PageTitle>
 
@@ -23,295 +22,90 @@ else if (board is null)
     <div class="stage">
         @if (board is not null)
         {
-            <div class="toolbar">
-                <strong>@board.Title</strong>
-                <span class="@(board.Status is BoardStatus.Verified or BoardStatus.AuthoredValid ? "pass" : board.Status == BoardStatus.Authored ? "fail" : "")">@board.Status</span>
-                @if (board.IsAuthored)
-                {
-                    <a href="@($"author/{board.Ref.Value}")">Edit</a>
-                }
-                <label>
-                    View
-                    <select value="@BoardRenderer.ViewName(view)" @onchange="ChangeView">
-                        <option value="exact">Exact</option>
-                        @if (board.HasStyled)
-                        {
-                            <option value="styled">Styled</option>
-                        }
-                        <option value="hexfacts">Hex facts</option>
-                        @if (board.HasStyled)
-                        {
-                            <option value="comparison">Comparison</option>
-                        }
-                    </select>
-                </label>
-                @if (board.Ref.Kind == BoardRefKind.Vasl)
-                {
-                    <a href="@($"maps?placements={Uri.EscapeDataString(board.Ref.VaslBoardName + "@0,0")}")">Compose a map</a>
-                }
-                else if (board.Composition is not null)
-                {
-                    <a href="@($"maps?edit={board.Ref.Value}")">Edit map</a>
-                }
+            <BoardViewerToolbar Board="@board" OnFit="@(() => viewport!.Reset().AsTask())" Preparing="@preparing">
+                <BoardViewPicker Views="@Views" Value="@view" ValueChanged="@ChangeView" />
                 @if (view == BoardView.Comparison)
                 {
-                    <label>
-                        Show
-                        <select value="@comparisonMode" @onchange="ChangeComparison">
-                            <option value="overlay">overlay</option>
-                            <option value="swipe">swipe</option>
-                            <option value="side">side by side</option>
-                        </select>
-                    </label>
-                    @if (comparisonMode != "side")
-                    {
-                        <input type="range" min="0" max="100" value="@comparisonValue" aria-label="@(comparisonMode == "swipe" ? "Divider position" : "Styled opacity")"
-                               @oninput="ChangeComparisonValue" />
-                    }
+                    <BoardComparisonControls Mode="@comparisonMode" ModeChanged="@ChangeComparison" Value="@comparisonValue" ValueChanged="@ChangeComparisonValue" />
                 }
-                @foreach (var layer in ToggleLayers)
-                {
-                    <label>
-                        <input type="checkbox" checked="@visible.Contains(layer)" @onchange="@(args => ToggleLayer(layer, (bool)args.Value!))" />
-                        @layer
-                    </label>
-                }
-                @if (view == BoardView.HexFacts)
-                {
-                    <label>
-                        <input type="checkbox" checked="@trace" @onchange="ToggleTrace" />
-                        derivation trace
-                    </label>
-                }
-                @if (unitSets.Count > 0 || unitGames.Count > 0)
-                {
-                    <label><input type="checkbox" checked="@showUnits" @onchange="ToggleUnits" /> Units</label>
-                    @if (showUnits)
-                    {
-                        <select id="units-source" value="@unitSourceKey" @onchange="ChangeUnitSource" aria-label="Units source">
-                            @if (unitGames.Count > 0)
-                            {
-                                <optgroup label="Games, projected by perspective">
-                                    @foreach (var game in unitGames)
-                                    {
-                                        <option value="@(GamePrefix + game.Name)">@game.Label@(game.Record?.Synthetic == true ? " (synthetic)" : "")</option>
-                                    }
-                                </optgroup>
-                            }
-                            @if (unitSets.Count > 0)
-                            {
-                                <optgroup label="Placement sets">
-                                    @foreach (var entry in unitSets)
-                                    {
-                                        <option value="@(SetPrefix + entry.Set.SetId)">@entry.Set.Label@(entry.Set.Synthetic ? " (synthetic)" : "")</option>
-                                    }
-                                </optgroup>
-                            }
-                        </select>
-                        @if (gameProjection is { } projection)
-                        {
-                            <select id="units-perspective" value="@projection.View.Perspective.Name" @onchange="ChangePerspective" aria-label="Perspective">
-                                @foreach (var option in projection.Game.History!.States[^1].Perspectives)
-                                {
-                                    <option value="@option.Name">@option.Name</option>
-                                }
-                            </select>
-                            <button id="units-previous" disabled="@(gameRevision <= 1)" @onclick="() => StepRevision(-1)" aria-label="Previous revision">&lsaquo;</button>
-                            <span id="units-revision" class="muted">revision @gameRevision of @projection.Game.History!.States.Count</span>
-                            <button id="units-next" disabled="@(gameRevision >= projection.Game.History!.States.Count)" @onclick="() => StepRevision(1)" aria-label="Next revision">&rsaquo;</button>
-                        }
-                        <select value="@unitSheet" @onchange="ChangeUnitSheet" aria-label="Unit style sheet">
-                            @foreach (var name in UnitLibrary.SheetNames())
-                            {
-                                <option value="@name">@name</option>
-                            }
-                        </select>
-                    }
-                }
-                <a href="@($"units/lab?board={board.Ref.Value}")">Unit Lab</a>
-                <button @onclick="ResetView">Fit</button>
-                @if (preparing is not null)
-                {
-                    <span class="muted">@preparing</span>
-                }
+            </BoardViewerToolbar>
+            <div class="toolbar layers-row">
+                <BoardLayerToggles Layers="@ToggleLayers" Visible="@visible" LayerChanged="@ToggleLayer" TraceAvailable="@(view == BoardView.HexFacts)" Trace="@trace" TraceChanged="@ToggleTrace" />
             </div>
+            @if (unitSets.Count > 0 || unitGames.Count > 0)
+            {
+                <UnitOverlayControls Show="@showUnits" ShowChanged="@ToggleUnits"
+                                     Games="@(unitGames.Select(game => new UnitOverlayControls.SourceChoice(GamePrefix + game.Name, game.Label + (game.Record?.Synthetic == true ? " (synthetic)" : ""))).ToArray())"
+                                     Sets="@(unitSets.Select(entry => new UnitOverlayControls.SourceChoice(SetPrefix + entry.Set.SetId, entry.Set.Label + (entry.Set.Synthetic ? " (synthetic)" : ""))).ToArray())"
+                                     Source="@unitSourceKey" SourceChanged="@ChangeUnitSource" Replay="@Replay"
+                                     PerspectiveChanged="@ChangePerspective" RevisionChanged="@ChangeRevision"
+                                     Sheets="@UnitLibrary.SheetNames()" Sheet="@unitSheet" SheetChanged="@ChangeUnitSheet" />
+            }
         }
-        <div class="board-host" @ref="host"></div>
-        <p class="muted hint">Drag to pan, wheel or + and - to zoom, 0 to fit. Hover a hex to inspect it; click to keep it.</p>
+        <BoardViewport @ref="viewport" OnReady="@(() => viewportPending = board is not null)" OnClick="@OnBoardClick" OnHover="@OnBoardHover" OnKey="@OnBoardKey" OnUnitSelected="@OnUnitClick" />
+        <p class="muted hint">Drag to pan, wheel or + and - to zoom, 0 to fit. Hover a hex to inspect it; click to keep it, and Escape to release it.</p>
     </div>
     <aside class="inspector">
-        @if (selectedUnit is { } unit)
-        {
-            <h2 class="unit-name">@unit.Name</h2>
-            <dl class="unit-details">
-                <dt>ID</dt><dd>@unit.Document.Id</dd>
-                @foreach (var detail in UnitLabels.Details(unit.Document, UnitLibrary.Vocabulary))
-                {
-                    <dt>@detail.Label</dt><dd>@detail.Value</dd>
-                }
-                <dt>Location</dt><dd>@unit.Location</dd>
-            </dl>
-            @if (gameProjection is { } shownGame)
-            {
-                var gameView = shownGame.View;
-                @if (gameView.Units.FirstOrDefault(item => item.Id == unit.Document.Id) is { } instance)
-                {
-                    <h3>In the game</h3>
-                    <dl class="unit-details" id="unit-game-facts">
-                        <dt>Side</dt><dd>@instance.Side</dd>
-                        <dt>Conditions</dt><dd>@ConditionsText(instance)</dd>
-                        <dt>Good Order</dt><dd>@Conditions.Name(GameState.GoodOrder(instance, UnitLibrary.Vocabulary))</dd>
-                        <dt>MF spent this phase</dt><dd>@instance.MfSpent</dd>
-                        @if (instance.From.Count > 0)
-                        {
-                            <dt>Produced from</dt><dd>@string.Join(", ", instance.From)</dd>
-                        }
-                        @if (instance.Custodian is { } custodian)
-                        {
-                            <dt>Prisoner of</dt><dd>@custodian</dd>
-                        }
-                        @if (instance.Position is ContainedPosition contained)
-                        {
-                            <dt>Inside</dt><dd>@contained.Container (@contained.Role)</dd>
-                        }
-                    </dl>
-                }
-                else if (gameView.Sealed.Any(presence => presence.PlacementId == unit.Document.Id))
-                {
-                    <p id="unit-game-facts">A concealed presence: its identity and conditions are withheld from @gameView.Perspective.Name.</p>
-                }
-                else if (gameView.Equipment.Cast<IGameObject>().Concat(gameView.Entities).FirstOrDefault(item => item.Id == unit.Document.Id) is { } other)
-                {
-                    <h3>In the game</h3>
-                    <dl class="unit-details" id="unit-game-facts">
-                        <dt>Side</dt><dd>@(other.Side ?? "none")</dd>
-                        <dt>Conditions</dt><dd>@ConditionsText(other)</dd>
-                    </dl>
-                }
-
-                <p class="muted">Projection of @shownGame.Game.Label for @gameView.Perspective.Name at revision @gameView.Stamp.Revision; @(shownGame.Game.Record?.Synthetic == false ? "a live game, changed only through the governed path." : "a synthetic game, not a live one.")</p>
-            }
-            else if (unitOverlay is { } overlay && UnitSet is { } shown)
-            {
-                <p class="muted">@(shown.Set.Synthetic ? "Synthetic placement" : "Placement") from @shown.Set.Label (@overlay.SetId); display only, not game state.</p>
-            }
-        }
-        @if (showUnits && unitOverlay is { } units)
-        {
-            @foreach (var diagnostic in units.Diagnostics)
-            {
-                <p class="fail">Units: @diagnostic</p>
-            }
-            @if (selected is { } selectedHex && units.At(selectedHex.Index).ToArray() is { Length: > 0 } members)
-            {
-                <h3>Units in @selectedHex.Hex (@members.Length)</h3>
-                <ul class="unit-list">
-                    @foreach (var member in members)
-                    {
-                        <li><button class="link" @onclick="() => SelectUnit(member)">@member.Name</button>@(member.Shown ? "" : " (not drawn; stack beyond six)")</li>
-                    }
-                </ul>
-            }
-        }
         @if (board is not null)
         {
-            <details id="los-panel" open="@(losCheck is not null)">
-                <summary>LOS</summary>
-                <p class="muted">VASL's LOS (LOS Designs): from one location to another, such as bd01:E4:0, or from a hexside location such as bd01:E4:0/3, aimed at its first vertex or its next.</p>
-                <div class="fields">
-                    <label for="los-source">From</label>
-                    <span><input id="los-source" value="@losSource" @onchange="@(args => losSource = args.Value as string ?? string.Empty)" />
-                        <button class="link" id="los-source-selected" disabled="@(selected is null)" @onclick="() => losSource = SelectedLocation()">selected hex</button>
-                        <label class="toggle"><input type="checkbox" id="los-source-aux" checked="@losSourceAux" @onchange="@(args => losSourceAux = (bool)args.Value!)" /> from a hexside's next vertex</label></span>
-                    <label for="los-target">To</label>
-                    <span><input id="los-target" value="@losTarget" @onchange="@(args => losTarget = args.Value as string ?? string.Empty)" />
-                        <button class="link" id="los-target-selected" disabled="@(selected is null)" @onclick="() => losTarget = SelectedLocation()">selected hex</button></span>
-                </div>
-                <button id="los-check" @onclick="CheckLos">Check LOS</button>
-                <button id="los-clear" disabled="@(losCheck is null)" @onclick="ClearLos">Clear</button>
-                @if (losCheck is { } check)
+            <InspectorTabs Tabs="@InspectorTabList" @bind-Selected="panel" Label="Board inspector" IdPrefix="viewer">
+                @switch (panel)
                 {
-                    <p id="los-result" class="@(check.Result?.IsBlocked == true ? "fail" : check.Result?.IsAnswered == true ? "pass" : "muted")" data-status="@(check.Result?.Status.ToString() ?? "Refused")">@check.Summary</p>
-                }
-            </details>
-        }
-        @if (board is not null && (selected ?? hovered) is { } facts)
-        {
-            @if (selected is null)
-            {
-                <p class="muted">Hovering. Click to keep this hex.</p>
-            }
-            <HexInspector Board="board.Ref" Facts="facts" Grid="board.Render.Grid" Catalog="board.Catalog" LocationText="@board.LocationOf(facts)"
-                          Model="StyledModel" Validation="board.Validation" OnCopy="CopyLocation" />
-        }
-        else
-        {
-            <p class="muted">Hover or click a hex to inspect its derived facts and the grid samples behind them.</p>
-        }
+                    case "los":
+                        <LosPanel @bind-Draft="losDraft" Selected="@(selected is null ? null : SelectedLocation())" Result="@losCheck" OnCheck="@CheckLos" OnClear="@ClearLos" />
+                        break;
+                    case "evidence":
+                        @if (sample is not null)
+                        {
+                            <h3>Pixel clicked</h3>
+                            <p id="viewer-sample">@sample</p>
+                        }
+                        @if ((selected ?? hovered) is { } sampled)
+                        {
+                            <p class="muted">Hex @sampled.Hex:</p>
+                            <HexGridSamples Rows="@HexInspector.SampleRows(sampled, board.Render.Grid, board.Catalog)" />
+                        }
+                        <BoardProvenancePanel Board="@board" StyledModel="@StyledModel" />
+                        break;
+                    default:
+                        @if (selectedUnit is { } unit)
+                        {
+                            <SelectedUnitInspector Unit="@unit" Vocabulary="@UnitLibrary.Vocabulary" View="@gameProjection?.View" Note="@UnitNote" />
+                        }
+                        @if (showUnits && unitOverlay is { } units)
+                        {
+                            @foreach (var diagnostic in units.Diagnostics)
+                            {
+                                <p class="fail">Units: @diagnostic</p>
+                            }
+                            @if (selected is { } selectedHex && units.At(selectedHex.Index).ToArray() is { Length: > 0 } members)
+                            {
+                                <HexUnitStackList Hex="@selectedHex.Hex.ToString()" Members="@members" OnSelect="@(member => selectedUnit = member)" />
+                            }
+                        }
+                        @if ((selected ?? hovered) is { } facts)
+                        {
+                            @if (selected is null)
+                            {
+                                <p class="muted">Hovering. Click to keep this hex.</p>
+                            }
+                            <HexInspector Board="board.Ref" Facts="facts" Grid="board.Render.Grid" Catalog="board.Catalog" LocationText="@board.LocationOf(facts)"
+                                          Model="StyledModel" Validation="board.Validation" OnCopy="CopyLocation" ShowSamples="false" />
+                        }
+                        else
+                        {
+                            <p class="muted">Hover or click a hex to inspect its derived facts; its grid samples are under Evidence.</p>
+                        }
 
-        @if (sample is not null)
-        {
-            <h3>Pixel under the pointer</h3>
-            <p>@sample</p>
-        }
-
-        @if (board is not null)
-        {
-            <h3>Provenance</h3>
-            <dl>
-                <dt>Version</dt>
-                <dd><code>@board.Version[..12]</code></dd>
-                @if (board.Composition is { } composition)
-                {
-                    <dt>Boards</dt>
-                    <dd><code>@string.Join(" ", composition.Placements)</code></dd>
-                    <dt>Size</dt>
-                    <dd>@composition.Map.Geometry.WidthInHexes by @composition.Map.Geometry.HeightInHexes hexes</dd>
-                    <dt>F2</dt>
-                    <dd class="@(board.F2 is { Passed: true } ? "pass" : board.F2 is null ? "muted" : "fail")">
-                        @(board.F2 is null ? "no oracle scenario" : board.F2.Passed ? "Pass" : $"{board.F2.Differences.Count} differences")
-                    </dd>
+                        break;
                 }
-                @if (board.Provenance is { } provenance)
-                {
-                    <dt>VASL commit</dt>
-                    <dd><code>@(provenance.VaslCommit?[..12] ?? "unknown")</code></dd>
-                    <dt>LOSData</dt>
-                    <dd>@provenance.LosData.RepositoryPath</dd>
-                }
-                @if (board.F1 is { } f1)
-                {
-                    <dt>F1</dt>
-                    <dd class="@(f1.Passed ? "pass" : "fail")">@f1.Status</dd>
-                    <dt>F2</dt>
-                    <dd class="@(board.F2 is { Passed: true } ? "pass" : board.F2 is null ? "muted" : "fail")">
-                        @(board.F2 is null ? "no oracle fixture" : board.F2.Passed ? "Pass" : $"{board.F2.Differences.Count} differences")
-                    </dd>
-                }
-                @if (board.Validation is { } validation)
-                {
-                    <dt>Validation</dt>
-                    <dd>@validation.Summary.Errors errors, @validation.Summary.Warnings warnings</dd>
-                }
-                @if (StyledModel is { } model)
-                {
-                    <dt>Styled model</dt>
-                    <dd>@model.Features.Count features (@model.Provenance.Kind)</dd>
-                }
-                <dt>Derivation</dt>
-                <dd>@board.Facts.DerivationVersion</dd>
-                <dt>Renderer</dt>
-                <dd>@BoardRenderer.RendererVersion, theme @RenderTheme.Board.Name @RenderTheme.Board.Version</dd>
-            </dl>
+            </InspectorTabs>
         }
     </aside>
 </div>
 
 @code {
-    private ElementReference host;
-    private IJSObjectReference? module;
-    private IJSObjectReference? viewport;
-    private DotNetObjectReference<BoardViewer>? self;
+    private BoardViewport? viewport;
     private StudioBoard? board;
     private string? loadError;
     private string? preparing;
@@ -336,6 +130,9 @@ else if (board is null)
     private bool viewportPending;
     private string comparisonMode = "overlay";
     private int comparisonValue = 50;
+    private string panel = "selection";
+    private LosPanel.LosDraft losDraft = new(string.Empty, string.Empty, false);
+    private LosCheck? losCheck;
 
     [Parameter]
     public string BoardName { get; set; } = string.Empty;
@@ -354,11 +151,30 @@ else if (board is null)
     [SupplyParameterFromQuery(Name = "revision")]
     public long? RevisionQuery { get; set; }
 
+    private IReadOnlyList<InspectorTabs.Tab> InspectorTabList =>
+        [new("selection", "Selection"), new("los", "LOS"), new("evidence", "Evidence")];
+
+    private IReadOnlyList<BoardView> Views => board is { HasStyled: true }
+        ? [BoardView.Exact, BoardView.Styled, BoardView.HexFacts, BoardView.Comparison]
+        : [BoardView.Exact, BoardView.HexFacts];
+
     private UnitSetEntry? UnitSet => unitSourceKey is { } key && key.StartsWith(SetPrefix, StringComparison.Ordinal)
         ? unitSets.FirstOrDefault(entry => entry.Set.SetId == key[SetPrefix.Length..])
         : null;
 
-    private IEnumerable<string> ToggleLayers => BoardRenderer.Layers(view).Where(layer => layer != "defs" && !layer.StartsWith("styled-", StringComparison.Ordinal));
+    private UnitOverlayControls.ReplayState? Replay => gameProjection is { } projection
+        ? new([.. projection.Game.History!.States[^1].Perspectives.Select(option => new PerspectivePicker.Choice(option.Name, option.Name))],
+            projection.View.Perspective.Name, (int)gameRevision, projection.Game.History!.States.Count)
+        : null;
+
+    private string? UnitNote => gameProjection is { } shownGame
+        ? $"Projection of {shownGame.Game.Label} for {shownGame.View.Perspective.Name} at revision {shownGame.View.Stamp.Revision}; "
+            + (shownGame.Game.Record?.Synthetic == false ? "a live game, changed only through the governed path." : "a synthetic game, not a live one.")
+        : unitOverlay is { } overlay && UnitSet is { } shown
+            ? $"{(shown.Set.Synthetic ? "Synthetic placement" : "Placement")} from {shown.Set.Label} ({overlay.SetId}); display only, not game state."
+            : null;
+
+    private IReadOnlyList<string> ToggleLayers => [.. BoardRenderer.Layers(view).Where(layer => layer != "defs" && !layer.StartsWith("styled-", StringComparison.Ordinal))];
 
     /// <summary>The Feature Model behind the Styled views, once it exists.</summary>
     private FeatureModel? StyledModel =>
@@ -377,6 +193,7 @@ else if (board is null)
         gameProjection = null;
         showUnits = false;
         sample = null;
+        (losCheck, losDraft) = (null, new(string.Empty, string.Empty, false));
         if (!BoardRef.TryParse(BoardName, out var boardRef))
         {
             loadError = $"{BoardName} is not a board reference.";
@@ -417,25 +234,19 @@ else if (board is null)
         viewportPending = true;
     }
 
+    // The board loads into the viewport once both exist: after the board is read, or when the viewport becomes ready.
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (viewportPending && board is not null)
+        if (viewportPending && board is not null && viewport is { IsReady: true })
         {
             viewportPending = false;
-            if (viewport is null)
-            {
-                module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/boardViewport.js");
-                self = DotNetObjectReference.Create(this);
-                viewport = await module.InvokeAsync<IJSObjectReference>("create", host, self);
-            }
-
             await LoadView();
         }
     }
 
     private async Task LoadView()
     {
-        if (viewport is null || board is null)
+        if (viewport is not { IsReady: true } || board is null)
         {
             return;
         }
@@ -451,19 +262,13 @@ else if (board is null)
 
         var input = board.InputFor(view) ?? board.Render;
         var baseUrl = $"render/{board.Ref.Value}/{board.Version}/{BoardRenderer.ViewName(view)}";
-        await viewport.InvokeVoidAsync("load", baseUrl, trace ? "?trace=true" : "", BoardRenderer.ViewBox(input, view),
-            BoardRenderer.Layers(view), visible.ToArray());
-        await viewport.InvokeVoidAsync("setComparison", view == BoardView.Comparison ? comparisonMode : "none", comparisonValue / 100.0);
-        await viewport.InvokeVoidAsync("setUnits", showUnits ? unitOverlay?.Svg : null);
-        await viewport.InvokeVoidAsync("setLos", losCheck is not null ? Los.Layer(board, losCheck) : null);
+        await viewport.Load(baseUrl, trace ? "?trace=true" : "", BoardRenderer.ViewBox(input, view), BoardRenderer.Layers(view), [.. visible]);
+        await viewport.SetComparison(view == BoardView.Comparison ? comparisonMode : "none", comparisonValue / 100.0);
+        await viewport.SetUnits(showUnits ? unitOverlay?.Svg : null);
+        await viewport.SetLos(losCheck is not null ? Los.Layer(board, losCheck) : null);
         await Highlight();
         StateHasChanged();
     }
-
-    private string losSource = string.Empty;
-    private string losTarget = string.Empty;
-    private LosCheck? losCheck;
-    private bool losSourceAux;
 
     private string SelectedLocation() => board is not null && selected is { } facts ? board.LocationOf(facts) : string.Empty;
 
@@ -475,10 +280,11 @@ else if (board is null)
             return;
         }
 
-        losCheck = Los.Check(board, losSource, losTarget, losSourceAux ? LimboDancer.Domains.Asl.Maps.Los.LosAim.AuxiliaryPoint : LimboDancer.Domains.Asl.Maps.Los.LosAim.LosPoint);
+        losCheck = Los.Check(board, losDraft.Source, losDraft.Target,
+            losDraft.Auxiliary ? LimboDancer.Domains.Asl.Maps.Los.LosAim.AuxiliaryPoint : LimboDancer.Domains.Asl.Maps.Los.LosAim.LosPoint);
         if (viewport is not null)
         {
-            await viewport.InvokeVoidAsync("setLos", Los.Layer(board, losCheck));
+            await viewport.SetLos(Los.Layer(board, losCheck));
         }
     }
 
@@ -487,7 +293,7 @@ else if (board is null)
         losCheck = null;
         if (viewport is not null)
         {
-            await viewport.InvokeVoidAsync("setLos", (string?)null);
+            await viewport.SetLos(null);
         }
     }
 
@@ -520,13 +326,13 @@ else if (board is null)
     {
         if (viewport is not null)
         {
-            await viewport.InvokeVoidAsync("setUnits", showUnits ? unitOverlay?.Svg : null);
+            await viewport.SetUnits(showUnits ? unitOverlay?.Svg : null);
         }
     }
 
-    private async Task ToggleUnits(ChangeEventArgs args)
+    private async Task ToggleUnits(bool show)
     {
-        showUnits = args.Value is true;
+        showUnits = show;
         if (!showUnits)
         {
             selectedUnit = null;
@@ -535,9 +341,9 @@ else if (board is null)
         await PushUnits();
     }
 
-    private async Task ChangeUnitSource(ChangeEventArgs args)
+    private async Task ChangeUnitSource(string? key)
     {
-        unitSourceKey = args.Value as string;
+        unitSourceKey = key;
         gameRevision = long.MaxValue;
         gamePerspective = Perspective.AdjudicatorName;
         selectedUnit = null;
@@ -545,105 +351,85 @@ else if (board is null)
         await PushUnits();
     }
 
-    private async Task ChangePerspective(ChangeEventArgs args)
+    // A new perspective or revision projects the game again; a selected unit the new view does not show is cleared by BuildUnits.
+    private async Task ChangePerspective(string perspective)
     {
-        gamePerspective = args.Value as string ?? Perspective.AdjudicatorName;
+        gamePerspective = perspective.Length > 0 ? perspective : Perspective.AdjudicatorName;
         BuildUnits();
         await PushUnits();
     }
 
-    private async Task StepRevision(int delta)
+    private async Task ChangeRevision(int revision)
     {
-        gameRevision += delta;
+        gameRevision = revision;
         BuildUnits();
         await PushUnits();
     }
 
-    private static string ConditionsText(IGameObject item)
+    private async Task ChangeUnitSheet(string sheet)
     {
-        var shown = item.Conditions.Where(pair => pair.Value is not ConditionState.False)
-            .Select(pair => pair.Value == ConditionState.True ? pair.Key.Replace("asl:", string.Empty, StringComparison.Ordinal)
-                : $"{pair.Key.Replace("asl:", string.Empty, StringComparison.Ordinal)} {Conditions.Name(pair.Value)}")
-            .ToArray();
-        return shown.Length == 0 ? "none" : string.Join(", ", shown);
-    }
-
-    private async Task ChangeUnitSheet(ChangeEventArgs args)
-    {
-        unitSheet = args.Value as string ?? UnitLibrary.DefaultSheet;
+        unitSheet = sheet;
         BuildUnits();
         await PushUnits();
     }
 
-    private async Task ChangeView(ChangeEventArgs args)
+    private async Task ChangeView(BoardView next)
     {
-        if (BoardRenderer.TryParseView(args.Value as string, out var next) && next != view)
-        {
-            view = next;
-            visible = [.. BoardRenderer.Layers(view).Where(layer => layer != "defs")];
-            await LoadView();
-        }
-    }
-
-    private async Task ChangeComparison(ChangeEventArgs args)
-    {
-        comparisonMode = args.Value as string ?? "overlay";
-        if (viewport is not null)
-        {
-            await viewport.InvokeVoidAsync("setComparison", comparisonMode, comparisonValue / 100.0);
-        }
-    }
-
-    private async Task ChangeComparisonValue(ChangeEventArgs args)
-    {
-        if (int.TryParse(args.Value as string, out var value) && viewport is not null)
-        {
-            comparisonValue = value;
-            await viewport.InvokeVoidAsync("setComparison", comparisonMode, comparisonValue / 100.0);
-        }
-    }
-
-    private async Task ToggleLayer(string layer, bool on)
-    {
-        if (on)
-        {
-            visible.Add(layer);
-        }
-        else
-        {
-            visible.Remove(layer);
-        }
-
-        if (viewport is not null)
-        {
-            await viewport.InvokeVoidAsync("setVisible", visible.ToArray());
-        }
-    }
-
-    private async Task ToggleTrace(ChangeEventArgs args)
-    {
-        trace = (bool)args.Value!;
+        view = next;
+        visible = [.. BoardRenderer.Layers(view).Where(layer => layer != "defs")];
         await LoadView();
     }
 
-    private async Task ResetView()
+    private async Task ChangeComparison(string mode)
     {
+        comparisonMode = mode;
         if (viewport is not null)
         {
-            await viewport.InvokeVoidAsync("reset");
+            await viewport.SetComparison(comparisonMode, comparisonValue / 100.0);
         }
+    }
+
+    private async Task ChangeComparisonValue(int value)
+    {
+        comparisonValue = value;
+        if (viewport is not null)
+        {
+            await viewport.SetComparison(comparisonMode, comparisonValue / 100.0);
+        }
+    }
+
+    private async Task ToggleLayer((string Layer, bool Shown) change)
+    {
+        if (change.Shown)
+        {
+            visible.Add(change.Layer);
+        }
+        else
+        {
+            visible.Remove(change.Layer);
+        }
+
+        if (viewport is not null)
+        {
+            await viewport.SetVisible([.. visible]);
+        }
+    }
+
+    private async Task ToggleTrace(bool on)
+    {
+        trace = on;
+        await LoadView();
     }
 
     private async Task CopyLocation(string location)
     {
         if (viewport is not null)
         {
-            await viewport.InvokeVoidAsync("copyText", location);
+            await viewport.CopyText(location);
         }
     }
 
-    [JSInvokable]
-    public async Task OnBoardClick(double x, double y)
+    private async Task OnBoardClick(double x, double y)
     {
         if (board is null)
         {
@@ -663,8 +449,7 @@ else if (board is null)
     }
 
     /// <summary>Hover updates the inspector only when the pointer crosses into another hex.</summary>
-    [JSInvokable]
-    public Task OnBoardHover(double x, double y)
+    private Task OnBoardHover(double x, double y)
     {
         if (board is null || selected is not null)
         {
@@ -681,8 +466,7 @@ else if (board is null)
         return Task.CompletedTask;
     }
 
-    [JSInvokable]
-    public Task OnBoardKey(string key)
+    private Task OnBoardKey(string key)
     {
         if (key == "Escape" && selected is not null)
         {
@@ -694,14 +478,7 @@ else if (board is null)
         return Task.CompletedTask;
     }
 
-    [JSInvokable]
-    public Task OnBoardGesture(double[][] points) => Task.CompletedTask;
-
-    [JSInvokable]
-    public Task OnBoardDrag(double x0, double y0, double x1, double y1) => Task.CompletedTask;
-
-    [JSInvokable]
-    public async Task OnUnitClick(string unitId)
+    private async Task OnUnitClick(string unitId)
     {
         if (!showUnits || board is null || unitOverlay is null)
         {
@@ -713,12 +490,16 @@ else if (board is null)
         {
             selectedUnit = unit;
             selected = board.Facts[unit.Hex];
+            // A unit clicked while checking LOS stays on the LOS tab, so its hex can be taken as an end (table player, pass 22d).
+            if (panel != "los")
+            {
+                panel = "selection";
+            }
+
             await Highlight();
             StateHasChanged();
         }
     }
-
-    private void SelectUnit(PlacedUnit unit) => selectedUnit = unit;
 
     private async Task Highlight()
     {
@@ -731,29 +512,6 @@ else if (board is null)
             ? null
             : string.Join(" ", board.Render.Grid.Geometry.Vertices(selected.Index)
                 .Select(vertex => string.Create(CultureInfo.InvariantCulture, $"{vertex.X},{vertex.Y}")));
-        await viewport.InvokeVoidAsync("highlight", points);
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        try
-        {
-            if (viewport is not null)
-            {
-                await viewport.InvokeVoidAsync("dispose");
-                await viewport.DisposeAsync();
-            }
-
-            if (module is not null)
-            {
-                await module.DisposeAsync();
-            }
-        }
-        catch (JSDisconnectedException)
-        {
-            // The circuit is gone; the browser already discarded the viewport.
-        }
-
-        self?.Dispose();
+        await viewport.Highlight(points);
     }
 }

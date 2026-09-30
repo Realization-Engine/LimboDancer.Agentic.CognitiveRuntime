@@ -1,0 +1,75 @@
+@* B10 with B11 inline (plan sections 12.3 and 16.6): an LOS check between two Locations typed or taken from the selected hex, and its
+   result: blocked, clear, and unanswered never look alike. *@
+<div class="los-panel" id="los-panel">
+    <p class="muted">VASL's LOS (LOS Designs): from one location to another, such as bd01:E4:0, or from a hexside location such as bd01:E4:0/3, aimed at its first vertex or its next.</p>
+    <div class="fields">
+        <label for="los-source">From</label>
+        <span>
+            <input id="los-source" value="@Draft.Source" @onchange="@(args => Change(Draft with { Source = args.Value as string ?? string.Empty }))" />
+            <button class="link" id="los-source-selected" disabled="@(Selected is null)" @onclick="() => Change(Draft with { Source = Selected ?? Draft.Source })">selected hex</button>
+            <label class="toggle"><input type="checkbox" id="los-source-aux" checked="@Draft.Auxiliary" @onchange="@(args => Change(Draft with { Auxiliary = args.Value is true }))" /> from a hexside's next vertex</label>
+        </span>
+        <label for="los-target">To</label>
+        <span>
+            <input id="los-target" value="@Draft.Target" @onchange="@(args => Change(Draft with { Target = args.Value as string ?? string.Empty }))" />
+            <button class="link" id="los-target-selected" disabled="@(Selected is null)" @onclick="() => Change(Draft with { Target = Selected ?? Draft.Target })">selected hex</button>
+        </span>
+    </div>
+    <p class="toolbar">
+        <button id="los-check" @onclick="OnCheck">Check LOS</button>
+        <button id="los-clear" disabled="@(Result is null)" @onclick="OnClear">Clear</button>
+    </p>
+    @if (Result is { } check)
+    {
+        <p id="los-result" class="@(check.Result?.IsBlocked == true ? "fail" : check.Result?.IsAnswered == true ? "pass" : "muted")" data-status="@(check.Result?.Status.ToString() ?? "Refused")">
+            <StatusBadge Label="@StatusLabel(check)" Tone="@Tone(check)" />
+            @check.Summary
+        </p>
+    }
+</div>
+
+@code {
+    /// <summary>An LOS check being prepared: the two Locations, and whether the source aims at a hexside's next vertex.</summary>
+    public sealed record LosDraft(string Source, string Target, bool Auxiliary);
+
+    [Parameter, EditorRequired]
+    public LosDraft Draft { get; set; } = new(string.Empty, string.Empty, false);
+
+    [Parameter]
+    public EventCallback<LosDraft> DraftChanged { get; set; }
+
+    /// <summary>The selected hex's Location, offered for either end; null when no hex is selected.</summary>
+    [Parameter]
+    public string? Selected { get; set; }
+
+    /// <summary>The last check; null before one or after Clear.</summary>
+    [Parameter]
+    public LosCheck? Result { get; set; }
+
+    [Parameter]
+    public EventCallback OnCheck { get; set; }
+
+    [Parameter]
+    public EventCallback OnClear { get; set; }
+
+    private Task Change(LosDraft draft) => DraftChanged.InvokeAsync(draft);
+
+    // Table player, pass 22d: an answer on a board that is not verified says so in the badge, and a Location that could not be read is
+    // not the same as a line the engine cannot answer yet.
+    private static string StatusLabel(LosCheck check) => check.Result switch
+    {
+        null => "not read",
+        { IsAnswered: false } => "not answered",
+        { Status: LimboDancer.Domains.Asl.Maps.Los.LosStatus.Nondefinitive, IsBlocked: true } => "blocked, not definitive",
+        { Status: LimboDancer.Domains.Asl.Maps.Los.LosStatus.Nondefinitive } => "clear, not definitive",
+        { IsBlocked: true } => "blocked",
+        _ => "clear",
+    };
+
+    private static StatusBadge.BadgeTone Tone(LosCheck check) => check.Result switch
+    {
+        null or { IsAnswered: false } or { Status: LimboDancer.Domains.Asl.Maps.Los.LosStatus.Nondefinitive } => StatusBadge.BadgeTone.Warning,
+        { IsBlocked: true } => StatusBadge.BadgeTone.Fail,
+        _ => StatusBadge.BadgeTone.Pass,
+    };
+}

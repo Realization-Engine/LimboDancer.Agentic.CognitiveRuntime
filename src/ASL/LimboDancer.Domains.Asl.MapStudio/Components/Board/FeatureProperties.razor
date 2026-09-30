@@ -12,12 +12,7 @@
             @if (Codes.Count > 0)
             {
                 <label for="feature-code">Terrain</label>
-                <select id="feature-code" value="@Code" @onchange="ChangeCode">
-                    @foreach (var terrain in Codes)
-                    {
-                        <option value="@terrain.Code">@terrain.Name</option>
-                    }
-                </select>
+                <TerrainPicker Id="feature-code" Terrains="@Codes" Value="@((byte)Code)" ValueChanged="@ChangeCode" />
             }
 
             <label for="feature-layer">Layer</label>
@@ -72,9 +67,9 @@
             ? Catalog.Types.Where(type => TerrainKinds.KindOf(type) == kind || (kind == TerrainKind.Area && type.Code == BaseCode)).OrderBy(type => type.Name, StringComparer.Ordinal).ToArray()
             : [];
 
-    private Task ChangeCode(ChangeEventArgs args)
+    private Task ChangeCode(byte code)
     {
-        if (Feature is null || !byte.TryParse(args.Value as string, out var code))
+        if (Feature is null)
         {
             return Task.CompletedTask;
         }

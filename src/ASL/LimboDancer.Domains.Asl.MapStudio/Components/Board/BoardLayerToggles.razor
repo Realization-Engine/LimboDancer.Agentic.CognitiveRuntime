@@ -1,0 +1,40 @@
+@* B04 (plan sections 12.3 and 16.6): the rendered layers shown or hidden, and the derivation trace in the Hex facts view. Not LayerList,
+   which selects authored features. *@
+<fieldset class="layer-toggles" id="board-layers">
+    <legend>Layers</legend>
+    @foreach (var layer in Layers)
+    {
+        <label>
+            <input type="checkbox" data-layer="@layer" checked="@Visible.Contains(layer)" @onchange="@(args => LayerChanged.InvokeAsync((layer, args.Value is true)))" />
+            @layer
+        </label>
+    }
+    @if (TraceAvailable)
+    {
+        <label>
+            <input id="board-trace" type="checkbox" checked="@Trace" @onchange="@(args => TraceChanged.InvokeAsync(args.Value is true))" />
+            derivation trace
+        </label>
+    }
+</fieldset>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<string> Layers { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public IReadOnlySet<string> Visible { get; set; } = new HashSet<string>();
+
+    [Parameter]
+    public EventCallback<(string Layer, bool Shown)> LayerChanged { get; set; }
+
+    /// <summary>Whether the view has a derivation trace (the Hex facts view).</summary>
+    [Parameter]
+    public bool TraceAvailable { get; set; }
+
+    [Parameter]
+    public bool Trace { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> TraceChanged { get; set; }
+}

@@ -1,0 +1,41 @@
+@using LimboDancer.Domains.Asl.Units.Vocabulary
+@* E01 (plan section 16.14): one vocabulary attribute's input by its type: an enumeration with a blank for "not given", a number or
+   rating, a list (numbers as 6/7/8, text comma separated), or text. The raw text goes to the draft, which parses it. *@
+@switch (Definition.Type)
+{
+    case AttributeType.Enumeration:
+        <select id="@Id" value="@Value" @onchange="Change">
+            <option value=""></option>
+            @foreach (var member in Definition.Members)
+            {
+                <option value="@member.Name">@member.Label</option>
+            }
+        </select>
+        break;
+    case AttributeType.Number or AttributeType.Rating:
+        <input id="@Id" type="number" step="1" value="@Value" @onchange="Change" />
+        break;
+    case AttributeType.List:
+        <input id="@Id" value="@Value" placeholder="@(Definition.ItemType == AttributeType.Number ? "6/7/8" : "comma separated")" @onchange="Change" />
+        break;
+    default:
+        <input id="@Id" value="@Value" @onchange="Change" />
+        break;
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public AttributeDefinition Definition { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public string Id { get; set; } = string.Empty;
+
+    /// <summary>The value as the draft holds it, as text.</summary>
+    [Parameter]
+    public string Value { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string?> ValueChanged { get; set; }
+
+    private Task Change(ChangeEventArgs args) => ValueChanged.InvokeAsync(args.Value as string);
+}

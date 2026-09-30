@@ -50,26 +50,10 @@
         }
     </table>
 
-    <h3>Grid samples</h3>
-    <table class="samples">
-        <tr><th>Sample</th><th>Pixel</th><th>Terrain</th><th>Elev.</th></tr>
-        @foreach (var (label, point) in Samples())
-        {
-            <tr>
-                <td>@label</td>
-                <td>@point.X, @point.Y</td>
-                @if (Grid.TryGetCode(point.X, point.Y, out var code))
-                {
-                    <td>@Name(Catalog.TryGet(code, out var terrain) ? terrain : null)</td>
-                    <td>@Grid.ElevationAt(point.X, point.Y)</td>
-                }
-                else
-                {
-                    <td class="muted" colspan="2">off the grid</td>
-                }
-            </tr>
-        }
-    </table>
+    @if (ShowSamples)
+    {
+        <HexGridSamples Rows="@SampleRows(Facts, Grid, Catalog)" />
+    }
 
     @if (Model is not null)
     {
@@ -127,6 +111,10 @@
     [Parameter]
     public EventCallback<string> OnSelectFeature { get; set; }
 
+    /// <summary>Whether the grid samples show here; the viewer shows them in its Evidence tab instead.</summary>
+    [Parameter]
+    public bool ShowSamples { get; set; } = true;
+
     /// <summary>Overrides the location shown, such as the placed board's location for a hex of a composed map.</summary>
     [Parameter]
     public string? LocationText { get; set; }
@@ -152,14 +140,21 @@
         }
     }
 
-    private IEnumerable<(string Label, GridPoint Point)> Samples()
+    /// <summary>The grid samples a hex's derivation reads (E06): each point, and the terrain and elevation there.</summary>
+    public static IReadOnlyList<HexGridSamples.Row> SampleRows(HexFacts facts, LimboDancer.Domains.Asl.Maps.Grid.TerrainGrid grid, TerrainCatalog catalog)
     {
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(grid);
+        ArgumentNullException.ThrowIfNull(catalog);
         var labels = new[] { "center", "center +1 -1", "center +1 +1", "center -1 +1", "center -1 -1", "probe right", "probe left", "probe below", "probe above" };
-        var points = BoardValidator.SamplePoints(Grid.Geometry, Facts.Index).ToArray();
-        for (var index = 0; index < points.Length; index++)
+        var points = BoardValidator.SamplePoints(grid.Geometry, facts.Index).ToArray();
+        return [.. points.Select((point, index) =>
         {
-            yield return (index < labels.Length ? labels[index] : "edge " + (HexsideDirection)(index - labels.Length), points[index]);
-        }
+            var label = index < labels.Length ? labels[index] : "edge " + (HexsideDirection)(index - labels.Length);
+            return grid.TryGetCode(point.X, point.Y, out var code)
+                ? new HexGridSamples.Row(label, point.X, point.Y, true, Name(catalog.TryGet(code, out var terrain) ? terrain : null), grid.ElevationAt(point.X, point.Y))
+                : new HexGridSamples.Row(label, point.X, point.Y, false, string.Empty, 0);
+        })];
     }
 
     private Task Copy() => OnCopy.InvokeAsync(Location);

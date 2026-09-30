@@ -1,6 +1,6 @@
 # ASL Card Play and Map Studio Redesign Plan
 
-**Status:** Approved by the user on 2026-09-30. It merges and replaces two documents: the ASL Unit Card Play, Deferred Rules, and DYO Plan (approved 2026-09-30, passes 23 to 30) and the ASL Map Studio UI Redesign 01 Design (branch `UI-Redesign-01`, commit `800416a`); both were deleted after their content was carried over here, and git history keeps them. Passes 22b and 22c are built (2026-09-30; see their designs, [22b](<ASL Unit Backlog Pass 22b Design.md>) and [22c](<ASL Unit Backlog Pass 22c Design.md>), and reviews, [22b](<Scenario A1 Backlog Pass 22b Review 2026-09-30.md>) and [22c](<Scenario A1 Backlog Pass 22c Review 2026-09-30.md>)); the passes run one at a time on the user's go-ahead, pass 22d next.
+**Status:** Approved by the user on 2026-09-30. It merges and replaces two documents: the ASL Unit Card Play, Deferred Rules, and DYO Plan (approved 2026-09-30, passes 23 to 30) and the ASL Map Studio UI Redesign 01 Design (branch `UI-Redesign-01`, commit `800416a`); both were deleted after their content was carried over here, and git history keeps them. Passes 22b, 22c, and 22d are built (2026-09-30; see their designs, [22b](<ASL Unit Backlog Pass 22b Design.md>), [22c](<ASL Unit Backlog Pass 22c Design.md>), and [22d](<ASL Unit Backlog Pass 22d Design.md>), and reviews, [22b](<Scenario A1 Backlog Pass 22b Review 2026-09-30.md>), [22c](<Scenario A1 Backlog Pass 22c Review 2026-09-30.md>), and [22d](<Scenario A1 Backlog Pass 22d Review 2026-09-30.md>)); the passes run one at a time on the user's go-ahead, pass 23 next.
 
 **Date:** 2026-09-30
 
@@ -132,6 +132,8 @@ New rules adjudication, changes to game persistence, VASL artwork, a new compone
 ### Pass 22d: The workspaces
 
 **Purpose:** the board viewer, the board editor, and the Unit Lab become components, with the board viewport's lifecycle in one place. **After:** pass 22c. **From:** sections 12.3, 12.4, and 15.5; the candidates of sections 16.6, 16.7, and 16.14. Pass 28's map picking needs 22d.1.
+
+**Status:** Built 2026-09-30, all four tasks: 28 of the 34 candidates extracted (all 20 P1 and 8 of the P2 and P3), the rest left inline (the review lists why), with two reviews and two visual checks. Items left out are in section 36 of the [ASL Unit Backlog](<ASL Unit Backlog.md>).
 
 | Task | What it changes | Rules | Estimate |
 |---|---|---|---|
