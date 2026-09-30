@@ -564,3 +564,5 @@ Estimate: 5:30 (build 4:15), the ASL Card Play and Map Studio Redesign Plan, app
 | Visual check again (Play start and Balance, Scenarios provenance for all three cards and a user card, the drawer by keyboard at 800px), two wording fixes and a CSS specificity fix, rebuilt and checked, clean | 12:07 | 12:11 | 0:04 | |
 | Documents (design, review, the plan's status, backlog section 34) while the full suite ran | 12:11 | 12:15 | 0:04 | |
 | Full local suite and ScenarioA1 (480): one MapStudio assertion on the old date wording, fixed and rerun (176 pass); Authoring fails only the known architecture test (`.git/worktrees` held); formatting verified | 12:11 | 12:59 | 0:48 | Mostly waiting on the runs |
+| Merge gate: commit af3c959, push, the Docker Linux check (every step exit 0; Authoring 167, Play 563, MapStudio 176, ScenarioA1 480), the chart supplement regeneration (same), merge into main, push | 12:59 | 13:22 | 0:23 | |
+| **Pass 22b total** | 11:20 | 13:22 | **1:58** | Estimate 5:30; the session break (11:46 to 11:50) is not counted |
