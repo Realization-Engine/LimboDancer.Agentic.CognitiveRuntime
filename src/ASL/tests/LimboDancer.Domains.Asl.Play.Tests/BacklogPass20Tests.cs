@@ -226,7 +226,7 @@ public sealed class BacklogPass20Tests : IDisposable
             Committed(last);
         }
 
-        Assert.Equal(new GameEnded(5, "last-game-turn"), Current.Ended);
+        Assert.Equal((5, "last-game-turn"), (Current.Ended!.Turn, Current.Ended.Reason));
         Assert.Contains(last!.Reasons, reason => reason.StartsWith("play.game-ended", StringComparison.Ordinal));
         Assert.Equal(("german", "ccph"), (Current.PhasingSide, Current.Phase));
         Refused(await Advance(), "play.game-over");
