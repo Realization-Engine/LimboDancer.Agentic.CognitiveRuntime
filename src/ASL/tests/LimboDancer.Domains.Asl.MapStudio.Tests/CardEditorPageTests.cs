@@ -53,7 +53,9 @@ public sealed class CardEditorPageTests : IDisposable
         Assert.NotNull(editor.Find("#edit-valid"));
         editor.Find("#edit-id").Change("guards-counterattack");
         Assert.Contains("built-in card", editor.Find("#edit-diagnostics").TextContent, StringComparison.Ordinal);
-        Assert.True(editor.Find("#edit-save").HasAttribute("disabled"));
+        editor.Find("#edit-save").Click();
+        Assert.Contains("Not saved", editor.Find("#edit-note").TextContent, StringComparison.Ordinal);
+        Assert.DoesNotContain("guards-counterattack", live.Cards.UserNames);
         editor.Find("#edit-id").Change("village-fight");
         editor.Find("#edit-title").Change("Village fight");
         editor.Find("#edit-elr-0").Change("9");
@@ -101,7 +103,8 @@ public sealed class CardEditorPageTests : IDisposable
         var again = context.Render<EditorPage>();
         again.Find("#edit-source").Change("guards-counterattack");
         Assert.Contains("already have a card", again.Find("#edit-diagnostics").TextContent, StringComparison.Ordinal);
-        Assert.True(again.Find("#edit-save").HasAttribute("disabled"));
+        again.Find("#edit-save").Click();
+        Assert.Contains("Not saved", again.Find("#edit-note").TextContent, StringComparison.Ordinal);
 
         // Broken JSON is reported, not saved.
         editor.Find("#edit-victory").Change("{ nope");
@@ -128,6 +131,8 @@ public sealed class CardEditorPageTests : IDisposable
         page.Find("#new-card").Change("free-game");
         Assert.Contains("(yours)", page.Find("#new-card option[value='free-game']").TextContent, StringComparison.Ordinal);
         Assert.Empty(page.FindAll("#new-balance"));
+        Assert.NotNull(page.Find("#setup-minimal"));
+        Assert.Empty(page.FindAll("#setup-pools"));
         page.Find("#new-id").Change("free");
         page.Find("#place-definition").Change("attacker-squad");
         page.Find("#place-id").Change("g1");

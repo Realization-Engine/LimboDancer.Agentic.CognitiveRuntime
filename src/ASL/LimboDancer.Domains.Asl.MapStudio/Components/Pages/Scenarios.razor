@@ -83,6 +83,11 @@ else
                     <section id="card-side-@side.Side" class="card-side">
                         <h4>@Side(side.Side)</h4>
                         <dl class="report">
+                            @if (side.Elr is { } elr)
+                            {
+                                <dt>ELR (A19.1)</dt>
+                                <dd class="card-elr">@elr (the side's own, a minimal card; ruling R22.3)</dd>
+                            }
                             <dt>SAN (A14.1)</dt>
                             <dd class="card-san">@side.San</dd>
                             <dt>Battlefield Integrity (A16.1)</dt>
@@ -151,7 +156,7 @@ else
                 </ol>
 
                 <h4>Victory Conditions</h4>
-                <p id="card-victory">@card.VictoryConditions.Text <span class="card-rules">(@(card.VictoryConditions.Rules.Count > 0 ? Cites(card.VictoryConditions.Rules) + "; " : string.Empty)@(card.VictoryConditions.Outcomes is null ? "the players judge the result" : "evaluated by the game; ruling R21.1"))</span></p>
+                <p id="card-victory">@card.VictoryConditions.Text <span class="card-rules">(@(card.VictoryConditions.Rules.Count > 0 ? Cites(card.VictoryConditions.Rules) + "; " : string.Empty)@(card.VictoryConditions.Outcomes is null ? "not evaluated by the game" : "evaluated by the game; ruling R21.1"))</span></p>
 
                 @if (card.Aftermath is { } aftermath)
                 {

@@ -302,7 +302,9 @@ public sealed class TablePlayer22Tests : IDisposable
 
         // A player who typed ELR 2 is told that the OB groups give the ELR; nothing is dropped silently.
         Assert.Contains("card.elr", Diagnostics(editor), StringComparison.Ordinal);
-        Assert.True(editor.Find("#edit-save").HasAttribute("disabled"));
+        editor.Find("#edit-save").Click();
+        Assert.Contains("Not saved", editor.Find("#edit-note").TextContent, StringComparison.Ordinal);
+        Assert.DoesNotContain("guards-counterattack-copy", live.Cards.UserNames);
     }
 
     // 9. A card deleted after a game started from it: the game is refused, and says the card is gone (ruling R19.1; backlog 32).
@@ -425,7 +427,8 @@ public sealed class TablePlayer22Tests : IDisposable
         Assert.Contains("Edit this card", scenarios.Find("#card-edit").TextContent, StringComparison.Ordinal);
         Assert.Empty(scenarios.FindAll("#card-diagnostics"));
         Assert.DoesNotContain(" , ", card, StringComparison.Ordinal);
-        Assert.Contains("the players judge the result", scenarios.Find("#card-victory").TextContent, StringComparison.Ordinal);
+        Assert.Contains("not evaluated by the game", scenarios.Find("#card-victory").TextContent, StringComparison.Ordinal);
+        Assert.Equal(["3", "3"], scenarios.FindAll(".card-elr").Select(item => item.TextContent[..1]));
     }
 
     // 15. Renaming a user card: the editor saves a second card and keeps the first.

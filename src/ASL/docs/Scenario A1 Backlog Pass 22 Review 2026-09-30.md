@@ -54,3 +54,15 @@ The table player tried 16 situations through bUnit: 11 passed and 5 failed. The 
 ## Live check
 
 The Studio (`map-studio-scripted`): the editor copied The Guards Counterattack, added a counter with the picker, and saved it; the Play page listed it as "(yours)" with its start summary; a minimal card saved and deleted. The console errors were earlier reconnection attempts.
+
+## Demonstration fixes
+
+A demonstration to the user after the merge (2026-09-30) found five defects, fixed on `feature/asl-card-editor-polish` and retested in the Studio:
+
+| Defect | Fix |
+|---|---|
+| The editor's fields ran together in one line: the page had no grid rule | A two-column grid for the editor, with the JSON areas at full width and the lists at their own width. |
+| The first click on Save after correcting a field was lost: the button was still disabled when the field's change arrived | Save is never disabled; it checks the card when clicked and, when the card is invalid, says "Not saved" and why. |
+| The Scenarios page did not show a minimal card's side ELR | Shown, with its ruling. |
+| The Scenarios page's Victory line repeated a minimal card's text | It says whether the game evaluates the Victory Conditions. |
+| The Play page showed an empty OB table for a minimal card | Replaced by a line saying that a minimal card's units set up by hand. |

@@ -215,6 +215,10 @@ else if (state is not null)
 @if (history is null || SetupOpen)
 {
     <h3>Setup</h3>
+    @if (ChosenCard is { Minimal: true } || (state?.Scenario is { } playing && CardRead(playing.Id)?.Card is { Minimal: true }))
+    {
+        <p id="setup-minimal" class="muted">A minimal card has no OB: set up each side's units by hand (ruling R22.3).</p>
+    }
     @if (SetupView is { } setup)
     {
         <table id="setup-pools" class="library">
@@ -1840,7 +1844,7 @@ else if (state is not null)
     /// The setup of a game from a card (pass 19, ruling R19.2): the game's, or before the game exists the chosen card's with nothing yet set up.
     /// </summary>
     private SetupReport? SetupView => state is not null ? Live.Planner.CardSetup(state, new HashSet<string>())
-        : ChosenCard is { } card ? ScenarioSetup.Check(card, [], _ => null, _ => true, ScenarioA1FireReference.HalfSquadOf, card.Date.Month)
+        : ChosenCard is { Minimal: false } card ? ScenarioSetup.Check(card, [], _ => null, _ => true, ScenarioA1FireReference.HalfSquadOf, card.Date.Month)
         : null;
 
     private string DefinitionLabel(string id) => PublishedCatalog?.Definition(id) is { } definition ? ScenarioCards.Describe(definition) : id;
