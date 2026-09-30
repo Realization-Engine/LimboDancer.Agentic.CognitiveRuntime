@@ -163,7 +163,7 @@ public static class ScenarioA1FireCalculator
 
             // Every unit the attack can turn this one into: its HS, its Replacement, and its Battle Hardened unit (A15.3).
             foreach (var next in new[] { ScenarioA1FireReference.HalfSquadOf(id), ScenarioA1FireReference.ReplacementOf(id),
-                ScenarioA1FireReference.HardenedOf(id) }.OfType<string>())
+                ScenarioA1FireReference.CasualtyHalfSquadOf(id), ScenarioA1FireReference.HardenedOf(id) }.OfType<string>())
             {
                 pending.Push(next);
             }
@@ -2895,7 +2895,7 @@ public static class ScenarioA1FireCalculator
             if (unit.Definition.Kind == "asl:squad")
             {
                 var half = ScenarioA1FireReference.HalfSquadOf(unit.Definition.Id)!;
-                var lesser = ScenarioA1FireReference.ReplacementOf(half);
+                var lesser = ScenarioA1FireReference.CasualtyHalfSquadOf(half);
                 unit.ReduceTo(reference.Definitions[lesser ?? half], "casualty-reduced-beyond-elr");
                 if (lesser is null && !unit.Fanatic)
                 {

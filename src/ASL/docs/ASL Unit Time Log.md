@@ -470,3 +470,14 @@ Estimate: 3:30 (build 2:15), the Scenario Card Games Plan. The user said on 2026
 | Merge and push | 19:28 | 19:30 | 0:02 | |
 
 Total 1:06 of working time (18:24 to 19:30) against the 3:30 estimate (build 2:15); the build with both reviews' fixes, 18:24 to 18:53, took 0:29, and the test runs and merge gate 0:37.
+
+## Pass 19b: the Fire tables for the card counters
+
+No estimate of its own: backlog section 29's first row, found by pass 19, run as a small pass by the user's kickoff of 2026-09-29. Kickoff 19:48. Branch `feature/asl-backlog-pass-19b`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Reading the plan, rulings R17 to R19, the pass 18 and 19 documents, backlog sections 27 to 29, and the Fire reference tables | 19:48 | 19:51 | 0:03 | |
+| A19.13, A15.3, and the NCC German rows (rendered); the HS, Replacement, and highest-quality entries; 8 ScenarioA1 tests and 2 Play tests; ruling R19.7; the referee agent started | 19:51 | 20:02 | 0:11 | The referee ran 20:02 to about 20:10; pass 20 reading meanwhile |
+| Referee's 10 findings: the CC BPV table (matrix and package re-pinned), R19.7 reworded around A25.13, a separate Casualty HS table, the ELR 5 test, the package test reading the cards, a CC test; review, design, backlog, requirements | 20:10 | 20:18 | 0:08 | |
+| Full local suite: build with warnings as errors, every solution test project, and the ScenarioA1 tests (480); the architecture test hit the held `.git/worktrees`; Play (504), MapStudio (136), Units (406), Authoring (166 of 167) pass | 20:18 | 20:33 | 0:15 | ScenarioA1 and the solution ran side by side, 14:00 and 12:35; pass 20 code drafted meanwhile |

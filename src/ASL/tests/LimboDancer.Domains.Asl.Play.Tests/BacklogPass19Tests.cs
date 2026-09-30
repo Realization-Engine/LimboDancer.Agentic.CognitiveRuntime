@@ -388,4 +388,64 @@ public sealed class BacklogPass19Tests : IDisposable
             _ => "water", key => key != "water", ScenarioA1FireReference.HalfSquadOf, 10);
         Assert.Contains(report.Reasons, reason => reason.StartsWith("play.setup-terrain", StringComparison.Ordinal));
     }
+
+    // R19.6, R19.7 (pass 19b): an 8-3-8 of The Tractor Works sets up Deployed as its two 3-3-8, through the planner on board 01.
+    [Fact]
+    public async Task AnEngineerSquadSetsUpDeployed()
+    {
+        var card = Card("tractor-works");
+        Committed(await Place("tractor-works", "german", [.. Ob(card, "russian", 0)]));
+        var german = Ob(card, "german", 0);
+        var squad = FreeSquads(german).First();
+        Assert.Equal("attacker-elite-squad-8-3-8", squad["definition"]);
+        var at = JsonSerializer.SerializeToElement(squad["position"]).GetProperty("at").GetString()!;
+        german.Remove(squad);
+        var half = ScenarioA1FireReference.HalfSquadOf("attacker-elite-squad-8-3-8")!;
+        Assert.Equal("attacker-elite-half-squad-3-3-8", half);
+        Committed(await Place("tractor-works", "german", [.. german, Unit("h1", half, at, "german", "german-1"), Unit("h2", half, at, "german", "german-1")]));
+        var group = Planner().CardSetup(Current, new HashSet<string>())!.Groups.Single(item => item.Id == "german-1");
+        Assert.True(group.Complete);
+    }
+
+    // R19.6, R19.7 (pass 19b): one of Gambit's eight German 5-4-8 may set up Deployed as its two 2-3-8 (10% FRU is one), not two.
+    [Fact]
+    public void OneOfGambitsCircledESquadsMayDeploy()
+    {
+        var card = Card("gambit");
+        SetupCounter Counter(string id, string definition, string hex) =>
+            new(id, "german", "german-1", definition, Catalog.Definition(definition)!.Kind, BoardLocation.Parse($"bd04:{hex}:0"), false, false, false, false, true);
+        SetupCounter British(string id, string definition, string hex) =>
+            new(id, "british", "british-1", definition, Catalog.Definition(definition)!.Kind, BoardLocation.Parse($"bd04:{hex}:0"), false, false, false, false, true);
+        SetupReport Check(int deployed)
+        {
+            var counters = new List<SetupCounter>
+            {
+                Counter("l1", "attacker-leader-9-2", "C9"), Counter("l2", "attacker-leader-9-1", "D9"), Counter("l3", "attacker-leader-8-1", "E9"),
+
+                // The British five, who set up first (SSR 2).
+                British("b1", "british-elite-squad", "E5"), British("b2", "british-leader-9-1", "E5"), British("b3", "british-leader-8-0", "E6"),
+                British("b4", "british-leader-8-0", "E6"), British("b5", "british-elite-squad", "E7"),
+            };
+            var hexes = new[] { "C9", "C9", "D9", "D9", "E9", "E9", "F9", "F9" };
+            for (var index = 0; index < 8; index++)
+            {
+                if (index < deployed)
+                {
+                    counters.Add(Counter($"h{index}a", "attacker-elite-half-squad-2-3-8", hexes[index]));
+                    counters.Add(Counter($"h{index}b", "attacker-elite-half-squad-2-3-8", hexes[index]));
+                }
+                else
+                {
+                    counters.Add(Counter($"s{index}", "attacker-elite-squad-5-4-8", hexes[index]));
+                }
+            }
+
+            return ScenarioSetup.Check(card, counters, Terrain, key => key is not null, ScenarioA1FireReference.HalfSquadOf, card.Date.Month);
+        }
+
+        var one = Check(1);
+        Assert.Empty(one.Reasons);
+        Assert.True(one.Groups.Single(group => group.Id == "german-1").Complete);
+        Assert.Contains(Check(2).Reasons, reason => reason.StartsWith("play.setup-deployment", StringComparison.Ordinal));
+    }
 }

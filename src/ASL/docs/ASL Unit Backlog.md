@@ -431,11 +431,10 @@ Pass 18 (2026-09-29) built the start of a game from a card and removed the first
 
 ## 29. Added by the scenario card games pass 19
 
-Pass 19 (2026-09-29) built the setup of a game from a card: its OB group by group, in its areas and order, with its OB "?" and Deployment (section 27's first row is now built but for the rows below). What it leaves out follows.
+Pass 19 (2026-09-29) built the setup of a game from a card: its OB group by group, in its areas and order, with its OB "?" and Deployment (section 27's first row is now built but for the rows below). Pass 19b (2026-09-29) removed the row for the card counters' Fire tables (ruling R19.7). What it leaves out follows.
 
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
-| The counters added for the cards (the German 5-4-8 and 8-3-8 and their HS) in the Fire package's HS, Replacement, and class tables | Pass 19 (found while building) | A19.13, A1.31, A7.302 | A revision of the Fire package's tables | Fire at them and their Deployment are not decided for those counters. |
 | The non-OB "?" each side places after both have set up, on units out of the enemy's LOS or 17 hexes away | R19.5 | A12.12, p. 76 | A LOS check at the end of setup | Only OB "?" at setup. |
 | HIP by SSR | R19.5 | A12.3 | An SSR token for HIP | Hidden units are refused at setup. |
 | The 10% of the squads entering in a turn Deployed before they enter | R19.6 | A2.9 | Reinforcements entering (pass 20) | Not built. |
