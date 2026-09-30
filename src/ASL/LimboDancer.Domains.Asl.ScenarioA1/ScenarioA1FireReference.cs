@@ -238,6 +238,10 @@ public sealed class ScenarioA1FireReference
         ["french-elite-squad"] = "french-elite-half-squad",
         ["french-squad"] = "french-half-squad",
         ["french-green-squad"] = "french-green-half-squad",
+
+        // Pass 19b (ruling R19.7): the German circled-E 5-4-8 and plain-E 8-3-8 of the scenario cards (National Capabilities Chart, p. 695).
+        ["attacker-elite-squad-5-4-8"] = "attacker-elite-half-squad-2-3-8",
+        ["attacker-elite-squad-8-3-8"] = "attacker-elite-half-squad-3-3-8",
     };
 
     // The leader grades from worst to best (Chapter H leader table, p. 331; A15.3): 6+1, 7-0, 8-0, 8-1, 9-1, 9-2, 10-2, 10-3.
@@ -334,6 +338,9 @@ public sealed class ScenarioA1FireReference
         "french-elite-squad",
         "french-elite-half-squad",
         "american-leader-10-3", "british-leader-10-3", "italian-leader-10-3", "finnish-leader-10-1", "french-leader-10-3",
+
+        // Pass 19b (ruling R19.7): elite MMC, so Battle Hardening makes them Fanatic (A15.3).
+        "attacker-elite-squad-5-4-8", "attacker-elite-half-squad-2-3-8", "attacker-elite-squad-8-3-8", "attacker-elite-half-squad-3-3-8",
     };
 
     // The NKVD MMC (A25.25): 2nd Line, ELR 5, a -1 Heat of Battle DRM, Fanatic when Battle Hardened, Commissars by Field Promotion.
@@ -390,6 +397,19 @@ public sealed class ScenarioA1FireReference
         ["french-squad"] = "french-green-squad",
         ["french-elite-half-squad"] = "french-half-squad",
         ["french-half-squad"] = "french-green-half-squad",
+
+        // Pass 19b (ruling R19.7): the circled-E 5-4-8 by the 2nd Line 4-4-7 and its 2-3-8 HS by the 2-3-7 (a 1st Line 4-6-7 or
+        // 2-4-7 would raise the range, and no Replacement makes a Volksgrenadier 5-3-7, A25.13). The plain-E 8-3-8 has an
+        // underscored Morale Factor, so it is Replaced by its two broken 3-3-8 HS and a 3-3-8 is Disrupted (A19.13).
+        ["attacker-elite-squad-5-4-8"] = "attacker-2nd-line-squad",
+        ["attacker-elite-half-squad-2-3-8"] = "attacker-2nd-line-half-squad",
+    };
+
+    // A19.13 EXC (ruling R19.7; referee, pass 19b): the broken HS of lesser quality a Casualty MC beyond its ELR Reduces a squad to, where
+    // its own HS has an underscored Morale Factor and so is never Replaced: the 8-3-8 falls to the 2-3-7.
+    private static readonly IReadOnlyDictionary<string, string> CasualtyHalfSquads = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["attacker-elite-half-squad-3-3-8"] = "attacker-2nd-line-half-squad",
     };
 
     private readonly string[][] results;
@@ -430,6 +450,12 @@ public sealed class ScenarioA1FireReference
     /// <summary>The unit that Replaces a definition under A19.13, or null when none can (A19.12): a leader of the next lower grade.</summary>
     public static string? ReplacementOf(string definitionId) =>
         Replacements.GetValueOrDefault(definitionId) ?? Step(definitionId, -1);
+
+    /// <summary>
+    /// The broken HS of lesser quality a squad whose Casualty MC exceeds its ELR is Reduced to (A19.13 EXC), given its own HS: that HS's
+    /// Replacement, or for an underscored HS never Replaced the one ruled for it (ruling R19.7); null when none exists.
+    /// </summary>
+    public static string? CasualtyHalfSquadOf(string halfSquadId) => ReplacementOf(halfSquadId) ?? CasualtyHalfSquads.GetValueOrDefault(halfSquadId);
 
     /// <summary>The unit a definition is Battle Hardened into (A15.3), or null for the highest quality or an unreviewed one.</summary>
     public static string? HardenedOf(string definitionId) => Hardened.GetValueOrDefault(definitionId) ?? Step(definitionId, 1);

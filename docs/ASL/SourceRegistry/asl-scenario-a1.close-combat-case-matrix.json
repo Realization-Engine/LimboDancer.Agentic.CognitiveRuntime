@@ -997,8 +997,12 @@
     "finnish-green-squad": 13,
     "finnish-green-half-squad": 6,
     "finnish-square-squad": 14,
-    "finnish-square-half-squad": 6
+    "finnish-square-half-squad": 6,
+    "attacker-elite-squad-5-4-8": 13,
+    "attacker-elite-half-squad-2-3-8": 5,
+    "attacker-elite-squad-8-3-8": 16,
+    "attacker-elite-half-squad-3-3-8": 6
   },
-  "bpvSource": "A./G. National Capabilities Chart, physical page 109 of the registered PDF, read from a 150 dpi render: German 4-6-7 10 (HS 4), 4-4-7 7 (3), 4-3-6 5 (2), 4-6-8 13 (5); Russian 4-4-7 7 (3), 5-2-7 7 (3), 4-2-6 4 (1), 4-5-8 11 (5), 6-2-8 12 (5), NKVD 6-2-8 13 (6). Backlog pass 15 adds the American, British, Italian, Finnish, and French MMC of catalog 1.10.0 from the same chart.",
-  "revision": "Backlog pass 16 (2026-09-29): the night Ambush (ruling R16.7). Earlier: Backlog pass 15 (2026-09-28): NKVD Field Promotion creates Commissars (ruling R15.7); the BPV of five more nationalities; catalog 1.10.0. Earlier: Backlog pass 14 (2026-09-28): Hand-to-Hand, concealed and TI units, capture attempts, prisoners and their escape, Infiltration, overstacking, and the BPV of Field Promotion (rulings R14.1 to R14.13)."
+  "bpvSource": "A./G. National Capabilities Chart, physical page 109 of the registered PDF, read from a 150 dpi render: German 4-6-7 10 (HS 4), 4-4-7 7 (3), 4-3-6 5 (2), 4-6-8 13 (5); Russian 4-4-7 7 (3), 5-2-7 7 (3), 4-2-6 4 (1), 4-5-8 11 (5), 6-2-8 12 (5), NKVD 6-2-8 13 (6). Backlog pass 15 adds the American, British, Italian, Finnish, and French MMC of catalog 1.10.0 from the same chart. Pass 19b adds the German circled-E 5-4-8 13 (HS 2-3-8 5) and plain-E 8-3-8 16 (HS 3-3-8 6) of the scenario cards, from the National Capabilities Chart, physical page 695 (ruling R19.7).",
+  "revision": "Pass 19b (2026-09-29): the BPV of the German squads the scenario cards added (ruling R19.7). Earlier: Backlog pass 16 (2026-09-29): the night Ambush (ruling R16.7). Earlier: Backlog pass 15 (2026-09-28): NKVD Field Promotion creates Commissars (ruling R15.7); the BPV of five more nationalities; catalog 1.10.0. Earlier: Backlog pass 14 (2026-09-28): Hand-to-Hand, concealed and TI units, capture attempts, prisoners and their escape, Infiltration, overstacking, and the BPV of Field Promotion (rulings R14.1 to R14.13)."
 }
