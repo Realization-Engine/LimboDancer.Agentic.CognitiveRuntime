@@ -125,6 +125,10 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
                 .All(id => state.Unit(id) is not { Status: InstanceStatus.Active } unit || GameState.Condition(unit, Conditions.PrepFire) == ConditionState.True
                     || GameState.Condition(unit, Conditions.FinalFire) == ConditionState.True || GameState.Condition(unit, Conditions.FirstFire) == ConditionState.True
                     || GameState.Condition(unit, Conditions.BoundingFire) == ConditionState.True)
+        : plan.Events.Select(item => item.Payload).OfType<BuildingMoppedUp>().FirstOrDefault() is { } mopped
+        // Mopping Up (A12.153; ruling R24.2): the building is recorded as Mopped Up this Player Turn, and as secured when the plan secured it.
+        ? state.MoppedUpThisPlayerTurn.Contains(mopped.Building, StringComparer.Ordinal)
+            && (mopped.Secured is null || state.Secured.Any(item => item.Building == mopped.Building && item.Side == mopped.Side))
         : plan.Events.Select(item => item.Payload).OfType<OpportunityFireDeclared>().FirstOrDefault() is { } opportunity
         // Opportunity Fire (A7.25): its units carry the Bounding Fire counter.
         ? opportunity.Units.All(id => state.Unit(id) is { } unit && GameState.Condition(unit, Conditions.BoundingFire) == ConditionState.True)

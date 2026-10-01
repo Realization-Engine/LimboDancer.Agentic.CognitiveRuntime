@@ -255,6 +255,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             "asl.game.fire-starshell" => PlanStarshell(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.detonate-dc" => PlanDetonateDc(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.place-hidden" => PlanPlaceHidden(scope, arguments, existing, attemptId, expected, label),
+            "asl.game.mop-up" => PlanMopUp(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             _ => Refused(scope, label, expected, "play.unknown-action"),
         };
 

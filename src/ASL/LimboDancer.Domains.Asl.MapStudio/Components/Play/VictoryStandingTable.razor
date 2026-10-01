@@ -2,21 +2,50 @@
 @using LimboDancer.Domains.Asl.Play
 @* K08 (plan section 16.16): the Victory Conditions standing, read for the view shown. A side reads Control as it may know it (A26.15; ruling R23.4): the
    enemy's concealed and HIP units need not declare Control until game end, so they neither gain nor prevent it here, and its unbroken squad-equivalents
-   count only its Known units. What the result would be now rests on all of it, so only the adjudicator sees that line. *@
+   count only its Known units. What the result would be now rests on all of it, so only the adjudicator sees that line. Pass 24 (rulings R24.1, R24.3,
+   R24.5): a Location is a row only where its Control differs from its building's, and a side's CVP say how many come from Guns and vehicles. *@
 <table id="play-victory" class="library">
-    <caption>The Victory Conditions now (A26; rulings R21.1 to R21.4)@(IfEndedNow is { } now ? $": if the game ended now, {now}" : string.Empty)</caption>
+    <caption>The Victory Conditions now (A26; rulings R21.1 to R21.4, R24.1)@(IfEndedNow is { } now ? $": if the game ended now, {now}" : string.Empty)</caption>
     <thead><tr><th>Controlled</th><th>By</th></tr></thead>
     <tbody>
-        @foreach (var item in Report.Control)
+        @foreach (var item in Report.Control.Where(item => item.Kind != "location"))
         {
-            <tr data-control="@item.Id"><td>@(item.Kind == "building" ? $"building {item.Id}" : $"hex {item.Id}")</td><td>@(item.InMelee ? "neither (in Melee)" : item.Side ?? "neither")</td></tr>
+            <tr data-control="@item.Id"><td>@(item.Kind == "building" ? $"building {item.Id}" : $"hex {item.Id}")</td><td>@(item.InMelee ? "neither (in Melee)" : item.Side ?? "neither")@ByVehicle(item)</td></tr>
+        }
+        @* Table player, pass 24: one row per building and side, the Locations listed in a disclosure when there are several. *@
+        @foreach (var group in ScenarioVictory.DifferingLocations(Report.Control).GroupBy(item => (item.Building, item.Side)))
+        {
+            @if (group.Count() == 1)
+            {
+                var item = group.First();
+                <tr data-control="@item.Id" data-location="@item.Building"><td>@ScenarioVictory.LocationName(item) of building @item.Building</td><td>@(item.Side ?? "neither")@ByVehicle(item)</td></tr>
+            }
+            else
+            {
+                <tr data-locations="@group.Key.Building" data-by="@(group.Key.Side ?? "neither")">
+                    <td>
+                        <details>
+                            <summary>@group.Count() Locations of building @group.Key.Building</summary>
+                            @string.Join("; ", group.Select(item => ScenarioVictory.LocationName(item) + ByVehicle(item)))
+                        </details>
+                    </td>
+                    <td>@(group.Key.Side ?? "neither")</td>
+                </tr>
+            }
         }
         @foreach (var side in Report.Sides)
         {
-            <tr data-side="@side.Side"><td>@side.Side</td><td>@side.Cvp CVP, @side.ExitVp Exit VP, @side.UnbrokenSquads.ToString("0.#", CultureInfo.InvariantCulture) unbroken squad-equivalents@(KnownTo is { } known && side.Side != known ? " among its Known units" : string.Empty)</td></tr>
+            <tr data-side="@side.Side"><td>@side.Side</td><td>@side.Cvp CVP@(side.GunAndVehicleCvp > 0 ? $" ({side.GunAndVehicleCvp} for Guns and vehicles)" : string.Empty), @side.ExitVp Exit VP, @side.UnbrokenSquads.ToString("0.#", CultureInfo.InvariantCulture) unbroken squad-equivalents@(KnownTo is { } known && side.Side != known ? " among its Known units" : string.Empty)</td></tr>
         }
     </tbody>
 </table>
+@if (Report.Control.Any(item => item.Kind == "location"))
+{
+    <p id="play-victory-locations" class="muted">
+        A Location is listed only where its Control differs from its building's: an upper level or cellar keeps its own Control until an enemy MMC enters
+        it or Mopping Up secures the building (A26.1, A26.14, A12.153; ruling R24.1).
+    </p>
+}
 @if (KnownTo is { } viewer)
 {
     <p id="play-victory-known" class="muted">
@@ -36,4 +65,6 @@
     /// <summary>The side the standing is read for; null for the adjudicator, and once the game has ended.</summary>
     [Parameter]
     public string? KnownTo { get; set; }
+
+    private static string ByVehicle(VictoryControl item) => item.ByVehicle ? " (a vehicle, until it leaves; A26.12)" : string.Empty;
 }
