@@ -229,7 +229,6 @@ Vehicle movement (Reverse, VBM, ESB, Minimum Move, Bog, OVR, stacking, and terra
 | The PF usage limit with reinforcements | R9.7 | C13.31 | Reinforcements entering (section 27) | The limit counts the German squad equivalents at the end of setup. |
 | A kept Spotter that moved out of reach, and the HS of a Reduced Spotting squad keeping its Spotting ability | R9.4 | C9.3, p. 179 | Spotter records that follow lineage | A kept Spotter blocks a new one while it is Good Order, wherever it is; the HS of a Reduced Spotter is a new unit, so a new Spotter may be named. |
 | A SMOKE attempt in a Residual FP Location | R9.5 | A24.1, A8.2 | The Residual FP attack on an MF expenditure without entry | Refused. |
-| The SMOKE panel offering only squads with an exponent, and the own and ADJACENT Locations as choices | R9.5 | A24.1 | The page reading catalog attributes | The page lists every checked squad and takes a typed Location; the planner refuses the others. |
 
 ## 20. Added by the backlog pass 10
 
@@ -330,7 +329,7 @@ The backlog pass 14 (2026-09-28) built, and removed from sections 11 and 20: Han
 | Later attacks of the prisoners' round leaving out a Guard an earlier one eliminated | Referee, pass 14 | A20.55 | Sequential declaration of the prisoners' attacks | Every prisoner attack takes in the Guard (R14.6). |
 | Prisoners' Withdrawal from Melee while still guarded, recapture by entering Unarmed units' Location in the MPh, Scrounging, and the exchange of prisoners left alone for Green or Conscript units | R14.6 | A20.54, A20.55, A20.552, A20.221 | CC in the MPh; Scrounging DR | A prisoner that attacked is freed and may withdraw as an Unarmed unit; the rest is not built. |
 | An Unarmed counter's own Morale Level | R14.6 | A20.5 | The Unarmed counters' printed values | An Unarmed MMC's NTC uses its unit's Morale Level (R0.3). |
-| A Guard squad's automatic Deployment, prisoners sharing a Guard's TI or entrenchment, and escorting prisoners off a Friendly Board Edge | R14.5 | A20.5, A20.51, A20.53 | Deployment outside the RPh; entrenchments; exit | Not built. |
+| A Guard squad's automatic Deployment, and prisoners sharing a Guard's TI or entrenchment (escorting prisoners off a Friendly Board Edge was built in pass 25) | R14.5 | A20.5, A20.51 | Deployment outside the RPh; entrenchments | Not built. |
 | A Disrupted unit's surrender in phases other than an enemy advance into its Location | R14.11 | A19.12 | A per-phase check for Good Order enemies in its Location | Only the advance is read. |
 | The stacked SMC or MMC in the mandatory CC check | R14.14 | A15.43, A11.14 | Stacking in the requirement's read | The unit's attack alone is tried. |
 | Tasks that place TI | R14.3 | A4.8 | Entrenching, clearing rubble, and the other labor tasks | TI is read in CC, but nothing places it. |
@@ -365,8 +364,6 @@ The backlog pass 15 (2026-09-29) built, and removed from sections 2, 5, 6, 10, 1
 | A Placed DC halved when only some of its targets were concealed at Placement | Referee, pass 15 | A23.3 | Per-target concealment in the DC's attack | Halved only when every target was concealed at Placement. |
 | A broken Commissar's duty to Self-Rally before the other units of his Location | Referee, pass 15 | A25.222 | A rally order in the RPh | The RPh waits for every broken unit of his Location, in any order. |
 | The Encircled DRM of a DC's attack by an Encircled user | Referee, pass 15 | A7.7, A23.2 | Encirclement in the DC's attack | No Encircled DRM is added to a DC's attack. |
-| Clearer answers once Defensive First Fire has eliminated every mover | Table player, pass 15 | A8.1, A4.1 | The movement window closing with its last mover | pass-fire is accepted with no mover left and end-move answers with the state error UNIT-STATE-007; advancing the phase works. |
-| The end-move refusal's wording once the placer of a DC was Replaced and broken | Table player, pass 15 | A23.3 | The DEFENDER's window text reading the placer | end-move says the DEFENDER may still fire; advancing the phase works. |
 
 ## 26. Added by the backlog pass 16
 
@@ -439,15 +436,9 @@ Pass 20 (2026-09-29) built the end of a game from a card, the first-move dr and 
 
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
-| Entry by advance in the APh, which A2.5 allows a unit capable of movement then | R20.5 | A2.5, A4.7 | An advance from off board | Entry is in the MPh; the MPh does not end while a unit is due. |
-| Delayed entry: the four-hex radius a Game Turn later, rubble or Blaze cutting the entry hex off, and never across a river | R20.5 | A2.5 | Blocked-entry checks | The MPh may end when every hex of the edge holds a Known enemy unit; the units enter on a later turn anywhere on the edge. |
-| An offboard squad's Deployment attempt in its RPh with a leader | R20.5 | A2.52 | Offboard actions in the RPh | Only the 10% Deployment at setup. |
-| Entering a hex that holds concealed enemy units, Residual FP, or a Fire Lane; Bypass, Minimum Move, SMOKE, or a DC at entry | R20.5 | A2.51, A12.15, A8.22, A4.3, A4.134 | Entry through the full movement step | Refused with a message. |
 | Vehicles entering from off board (in Motion, loaded), and Guns entering limbered | R20.5 | A2.52, D2.4 | Vehicle movement from off board | Refused: no card enters vehicles yet. |
-| A card with several entry areas for one OB line's counters, or a Balance counter in a group that enters | R20.5 | A2.5 | Entry areas per counter | A unit enters by its line's entry, else its group's first. |
 | The first-move dr's manufactured form (a dr for each side, the higher moving first), against a registered procedure if one is found | R20.2 | A3.9 | A registered source | Manufactured under R0.3. |
 | A card that sets up units broken or under DM | R20.7 | A2.9 | A card token for it | Refused at setup. |
-| A setup naming another side's OB group gives the projector's raw message (UNIT-STATE-005) rather than a play.setup refusal; a Deployment off board says only that the squad is not on the map | Table player, pass 20 | R18.3, A2.52 | Message work | Refused, with a less helpful message. |
 | Paved road hexes of board 01 are named by their other terrain ("open-ground") in movement messages | Table player, pass 20 | B3 | The terrain key's names | The cost is right; the label is not. |
 
 ## 31. Added by the scenario card games pass 21
@@ -457,9 +448,7 @@ Pass 21 (2026-09-29) built the Victory Conditions of a game from a card: Control
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
 | Control forfeited to a Kindled Fire (Location Control, vehicles' temporary Control, and Mopping Up were built in pass 24) | R21.1 | A26.16 | Fire | No forfeiture. |
-| Leaving the map in the APh, by Bypass with its extra MF, and at the road rate; a crew with its Gun and a Guard with prisoners leaving | R21.5 | A2.6, A20.53, C10.3 | Advance and Bypass exits | Refused with a message; the cost is the hex's own terrain. |
-| Captured units exited by their captors (double Exit VP at the end) | R21.2 | A26.23, A26.222 | Guards leaving the map | Not counted. |
-| An exit refusal from a hex one row inside the edge (board 01's row-0 half hexes) does not name the edge hex nearby | Table player, pass 21 | A2.3, A2.6 | Message work | The refusal is correct and plain. |
+| A crew leaving the map with its Gun (leaving in the APh, by Bypass, at the road rate, and a Guard with prisoners were built in pass 25) | R21.5 | A2.6, C10.3 | Guns on a card (plan pass 26) | Refused with a message. |
 
 ## 32. Added by the scenario card games pass 22
 
@@ -545,7 +534,7 @@ The plan was approved on 2026-09-30. A survey of this backlog the same day found
 | Backlog rows | Planned in |
 |---|---|
 | Control of Locations, start Control edge cases, Gun and vehicle VP, the Control cache (§31) | Pass 24, built 2026-09-30 (Control forfeited to a Kindled Fire: pass 40) |
-| Entry by advance, delayed and blocked entry, offboard Deployment, the full movement step at entry, several entry areas (§30); leaving the map in the APh, by Bypass, and at the road rate, a Guard leaving with prisoners, captured units exited (§31, §24); the SMOKE panel's eligibility (§19); clearer answers after DFF eliminates every mover, the end-move refusal after a DC placer was Replaced (§25); the raw OB group and Deployment messages (§30); the exit refusal naming the edge hex (§31) | Pass 25 |
+| Entry by advance, delayed and blocked entry, offboard Deployment, the full movement step at entry, several entry areas (§30); leaving the map in the APh, by Bypass, and at the road rate, a Guard leaving with prisoners, captured units exited (§31, §24); the SMOKE panel's eligibility (§19); clearer answers after DFF eliminates every mover, the end-move refusal after a DC placer was Replaced (§25); the raw OB group and Deployment messages (§30); the exit refusal naming the edge hex (§31) | Pass 25, built 2026-10-01 |
 | Vehicles and Guns entering, Gun movement and limbering, hook-up and en portee (§12, §18, §30); a crew manning a Gun stacking (§29); a crew leaving with its Gun (§31); a Covered Arc across boards or on a reversed board, concealed crews and Guns (§12, §22); the Motion "wished to enter next" field (§21) | Pass 26 |
 | The berserk Dummies, route, and OVR rows (§1, §20, §21); the Axis Minor Heat of Battle row, the Japanese part waiting with Chapter G (§11); a berserk leader's companions' TCs (§11); Spraying Fire after a choice (§22); a DC's owner's options (§25) | Pass 27 |
 | Map picking, forms, edit-time checks, plain messages, renaming, delete confirmation and warning, the Guards SSR 3 note (§32); a test of a card changed or gone (§29) | Pass 28 |
@@ -580,3 +569,21 @@ Pass 24 (2026-09-30) built Control of Locations, Mopping Up with its Search casu
 | No Quarter given by an SSR or a nationality rule barring the opponent's Mopping Up | Referee, pass 24 | A20.3, A12.153 | A record of which side employed No Quarter | `NoQuarter` is filled only by a rejected surrender or a Massacre, which the check reads correctly. |
 | The Casualty dr's outcome in the result text | Table player, pass 24 | A12.154 | Message work | The plan line gives the drm; the dr and the Reduction show in the rolls and the unit table. |
 | Planner tests of Mopping Up with an enemy vehicle in Bypass and of the two-hex range refusal | Referee and table player, pass 24 | A12.153, A26.11 | A card fielding vehicles (plan pass 26), or a building wider than four hexes | Built and read; the cards cannot reach either. |
+
+## 39. Added by the game pass 25
+
+Pass 25 (2026-10-01) built entry by advance with the APh holding due units, named entry hexes and delayed entry within four hexes per Game Turn, entry through the full movement step (A12.15 forced back off board, Residual FP, Fire Lanes, Bypass, Minimum Move), offboard Deployment, a counter's named entry area, exits in the APh, from Bypass, at the road rate, and by a Guard with its prisoners with their CVP and Exit VP, the messages of task 25.7, and thirteen Play components (rulings R25.1 to R25.7). It removed from section 19 the SMOKE panel row; from section 25 the two movement message rows; from section 30 the rows for entry by advance, delayed entry, offboard Deployment, the full movement step at entry, several entry areas, and the raw OB group and Deployment messages; from section 31 the rows for captured units exited and the exit refusal, and the built parts of the exit row; and from section 24 the escort part of the Guard row. Items it leaves out:
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| Rubble or Blaze cutting an entry hex off from the rest of the board | R25.2 | A2.5 | Vehicles entering (plan pass 26); terrain Blaze (pass 40) | Infantry enter rubble at its cost; the game has no terrain Blaze. |
+| A pond on the edge stopping the delayed-entry radius, since VASL names rivers and ponds both Water | R25.2; referee, pass 25 | A2.5, B21 | Terrain that tells a river from a pond | Any Water, River, or Canal hex on the edge stops the radius. |
+| The delay radius counted from the entry turn when entry failed for another reason (a forced back, a unit unable to advance) | R25.2 | A2.5, A12.15 | A record of why an entry failed | The radius grows four hexes per Game Turn since the entry turn. |
+| The offboard setup boards of A2.51: off-board stacks, the leader "stacked with" an off-board squad, movement off board to a hex not adjacent | R25.4 | A2.51, A2.52 | Off-board hexes | Any leader waiting along the same edge serves; a stack enters any open hex of its edge. |
+| Named entry hexes checked against their edge when the card is edited | Referee, pass 25 | R19.3, A2.5 | The card editor's checks (plan pass 28) | Refused at entry, with a message naming the hexes. |
+| The setup form naming an off-board counter's entry area | R25.4 | A2.5 | The setup placement editor (plan pass 26, P08) | The action takes `position.entry`; the page's form names none. |
+| A PAATC on entry by advance into an enemy AFV's hex reading the entering stack's leader | Referee, pass 25 | A11.6 | A card fielding AFVs (plan pass 26) | The leader of the AFV's hex is read; no card fields a vehicle. |
+| A side with several Friendly Board Edges (any edge it entered from, or set up in front of) | Referee, pass 25 | A20.53 | Cards listing several edges | The card's one Friendly Board Edge, and the side's exit condition edges, spare an escorting Guard. |
+| Overstacking MF in the MPh (A5.11) | Referee, pass 25 | A5.11 | Overstacking in movement | Only the advance charges it; an entering stack keeps to the limits. |
+| Whether a card's Exit VP list counts prisoners, and doubled values in an immediate outcome | Table player, pass 25 | A26.23, A26.222 | A card token | Exited prisoners count their normal VP during play and double at the end, as A26.23 says. |
+| Page tests of entry by advance, the advance exit, the off-board Deploy lists, and the notes in each side's view | UI review, pass 25 | | A Studio test board with a card that enters | The planner tests and the Studio visual check cover them. |

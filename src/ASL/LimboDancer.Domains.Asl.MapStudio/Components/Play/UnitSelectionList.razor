@@ -1,0 +1,44 @@
+@* Plan S12 (pass 25): one checkbox per unit the caller offers, already read for the view (ruling R23.1) and already eligible; the caller keeps the
+   selection and its reset rules (plan section 15.3). The CSS class is the hook page tests use, such as move-unit or advance-unit. *@
+@if (Legend is null)
+{
+    @Boxes
+}
+else
+{
+    <fieldset class="@($"{CssClass}s")">
+        <legend>@Legend</legend>
+        @Boxes
+    </fieldset>
+}
+
+@code {
+    /// <summary>A unit offered: its id and how it reads, such as "bs9 (bd04:E1:0)".</summary>
+    public sealed record Row(string Id, string Label);
+
+    /// <summary>A unit checked or unchecked.</summary>
+    public sealed record Toggle(string Id, bool On);
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Row> Rows { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public IReadOnlySet<string> Selected { get; set; } = new HashSet<string>();
+
+    [Parameter, EditorRequired]
+    public string CssClass { get; set; } = string.Empty;
+
+    /// <summary>The group's name, such as "Units moving"; with one the boxes are a fieldset.</summary>
+    [Parameter]
+    public string? Legend { get; set; }
+
+    [Parameter]
+    public EventCallback<Toggle> OnToggle { get; set; }
+
+    private RenderFragment Boxes => @<text>
+        @foreach (var row in Rows)
+        {
+            <label><input class="@CssClass" type="checkbox" data-unit="@row.Id" checked="@Selected.Contains(row.Id)" @onchange="@(args => OnToggle.InvokeAsync(new Toggle(row.Id, args.Value is true)))" /> @row.Label</label>
+        }
+    </text>;
+}

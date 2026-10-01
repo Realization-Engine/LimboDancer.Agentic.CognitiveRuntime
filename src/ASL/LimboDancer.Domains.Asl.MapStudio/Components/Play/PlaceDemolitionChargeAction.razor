@@ -1,0 +1,45 @@
+@* Plan N03 (pass 25): a checked mover Places its DC (A23.3; ruling R15.2). The page offers the DC its checked movers hold and not yet Placed, keeps the
+   draft, and proposes it through the move action; the planner decides the rest. *@
+<label title="A23.3: a mover Places its DC in an ADJACENT Location in its LOS for the MF entering it would cost; it is operably Placed once the placer leaves or ends its move neither broken nor pinned, and detonates in the AFPh.">
+    Place DC
+    <select id="place-dc" value="@Charge" @onchange="@(args => OnCharge.InvokeAsync(args.Value as string ?? string.Empty))">
+        <option value="">choose</option>
+        @foreach (var charge in Charges)
+        {
+            <option value="@charge.Id">@charge.Label</option>
+        }
+    </select>
+</label>
+<LocationField Id="place-dc-at" Label="in" Value="@At" OnChange="@OnAt" />
+<button id="propose-place-dc" disabled="@(!Ready || Charge.Length == 0 || At.Trim().Length == 0)" aria-describedby="propose-place-dc-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: Place the DC</button>
+@if (Ready && (Charge.Length == 0 || At.Trim().Length == 0))
+{
+    <span id="propose-place-dc-ready" class="toolbar-note">Choose the DC and type the ADJACENT Location.</span>
+}
+
+@code {
+    /// <summary>A DC a mover holds, such as "dc1 (bs9)".</summary>
+    public sealed record ChargeChoice(string Id, string Label);
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<ChargeChoice> Charges { get; set; } = [];
+
+    [Parameter]
+    public string Charge { get; set; } = string.Empty;
+
+    [Parameter]
+    public string At { get; set; } = string.Empty;
+
+    /// <summary>Whether movers are checked.</summary>
+    [Parameter]
+    public bool Ready { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnCharge { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnAt { get; set; }
+
+    [Parameter]
+    public EventCallback OnPropose { get; set; }
+}

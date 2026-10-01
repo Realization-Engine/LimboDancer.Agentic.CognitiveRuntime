@@ -1,0 +1,43 @@
+@* Plan A01 (pass 25): a unit's entry into a building Location, decided by the adjudicator from the whole game (Infantry OVR Design). The page offers
+   the units the view sees (ruling R23.1), keeps the choice, and proposes the entry; what a hidden defender's building holds is disclosed only once it is
+   confirmed. *@
+<div class="toolbar">
+    <label>
+        Unit
+        <select id="enter-unit" value="@Unit" @onchange="@(args => OnUnit.InvokeAsync(args.Value as string ?? string.Empty))">
+            @foreach (var unit in Units)
+            {
+                <option value="@unit.Id">@unit.Label</option>
+            }
+        </select>
+    </label>
+    <LocationField Id="enter-location" Label="Building" Value="@Location" OnChange="@OnLocation" />
+    <button id="propose-enter" @onclick="@(() => OnPropose.InvokeAsync())">Propose: enter a building</button>
+</div>
+<p class="muted">
+    The adjudicator decides an entry from the whole game. An entry into a building the moving side cannot see into is only declared when proposed;
+    what it finds there is disclosed when it is confirmed.
+</p>
+
+@code {
+    /// <summary>A unit that may enter, such as "g1 (german)".</summary>
+    public sealed record Choice(string Id, string Label);
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Choice> Units { get; set; } = [];
+
+    [Parameter]
+    public string Unit { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Location { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> OnUnit { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnLocation { get; set; }
+
+    [Parameter]
+    public EventCallback OnPropose { get; set; }
+}

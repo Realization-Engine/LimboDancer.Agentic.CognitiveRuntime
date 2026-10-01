@@ -1,0 +1,29 @@
+@* Plan S11 (pass 25): a typed Location, such as bd01:D5:0, with its label and the help the caller gives; the caller keeps the text and reads it. *@
+<label title="@Title">@Label <input id="@Id" value="@Value" @onchange="@(args => OnChange.InvokeAsync(args.Value as string ?? string.Empty))" size="@Size" placeholder="@Placeholder" aria-describedby="@DescribedBy" /></label>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Id { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string Label { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Value { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? Title { get; set; }
+
+    [Parameter]
+    public string? Placeholder { get; set; }
+
+    [Parameter]
+    public int Size { get; set; } = 12;
+
+    /// <summary>The id of the help the input is described by; null for none.</summary>
+    [Parameter]
+    public string? DescribedBy { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnChange { get; set; }
+}

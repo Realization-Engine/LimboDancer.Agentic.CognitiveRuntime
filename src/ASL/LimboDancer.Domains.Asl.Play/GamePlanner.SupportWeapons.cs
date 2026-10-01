@@ -41,18 +41,22 @@ public sealed partial class GamePlanner
     /// The Good Order leader of a unit's nationality in its Location who directs a Deployment or Recombination (A1.31, A1.32), or why not; a leader who
     /// has only directed Recombinations may direct another (<paramref name="recombining"/>).
     /// </summary>
-    private (UnitInstance? Leader, string? Reason) DirectingLeader(GameState state, IReadOnlyList<GameEvent> existing, UnitInstance unit, BoardLocation at, string? leaderId,
-        bool recombining = false)
+    private (UnitInstance? Leader, string? Reason) DirectingLeader(GameState state, IReadOnlyList<GameEvent> existing, UnitInstance unit, BoardLocation? at, string? leaderId,
+        bool recombining = false, string? edge = null)
     {
+        var where = at is null ? $"waiting off board to enter along the {edge} edge (A2.52; ruling R25.4)" : "in its Location";
         if (leaderId is null)
         {
-            return Guards(unit) ? (null, null) : (null, $"play.deploy-leader: {unit.Id} needs a Good Order leader of its nationality in its Location (A1.31, A1.32)");
+            return Guards(unit) ? (null, null) : (null, $"play.deploy-leader: {unit.Id} needs a Good Order leader of its nationality {where} (A1.31, A1.32)");
         }
 
+        // Ruling R25.4: off board, the leader waits to enter along the same edge.
         if (state.Unit(leaderId) is not { } leader || !vocabulary.IsA(leader.Kind, "asl:leader") || !GoodOrder(leader) || leader.Side != unit.Side
-            || state.Location(leader.Id)?.Location != at || DefinitionOf(leader)?.Nationality != DefinitionOf(unit)?.Nationality)
+            || state.Location(leader.Id)?.Location != at
+            || (at is null && (leader.Position is not OffMapPosition || EntryFor(state, leader) is not { } led || led.Edge != edge || led.Turn > state.Turn))
+            || DefinitionOf(leader)?.Nationality != DefinitionOf(unit)?.Nationality)
         {
-            return (null, $"play.deploy-leader: '{leaderId}' is not a Good Order leader of {unit.Id}'s nationality in its Location (A1.31, A1.32)");
+            return (null, $"play.deploy-leader: '{leaderId}' is not a Good Order leader of {unit.Id}'s nationality {where} (A1.31, A1.32)");
         }
 
         if (RallyingLeaders(existing).Contains(leader.Id))
@@ -104,14 +108,26 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.deploy-phase: squads Deploy in the RPh (A1.31)");
         }
 
-        if (state.Unit(squadId) is not { } squad || !vocabulary.IsA(squad.Kind, "asl:squad") || !GoodOrder(squad) || state.Location(squad.Id)?.Location is not { } at)
+        if (state.Unit(squadId) is not { } squad || !vocabulary.IsA(squad.Kind, "asl:squad") || !GoodOrder(squad)
+            || (state.Location(squad.Id) is null && squad.Position is not OffMapPosition))
         {
-            return Refused(scope, label, expected, $"play.deploy-unit: '{squadId}' is not a Good Order squad on the map (A1.31)");
+            return Refused(scope, label, expected, $"play.deploy-unit: '{squadId}' is not a Good Order squad on the map or waiting off board to enter (A1.31, A2.52)");
         }
 
         if (squad.Side != state.PhasingSide)
         {
             return Refused(scope, label, expected, $"play.deploy-phase: {squad.Id} Deploys in its own side's RPh (A1.31)");
+        }
+
+        // A2.51, A2.52 (ruling R25.4): a squad waiting off board may attempt to Deploy in its RPh from its entry turn on, with a leader waiting to enter
+        // along the same edge (off-board stacks are not recorded).
+        var at = state.Location(squad.Id)?.Location;
+        var waiting = at is null ? EntryFor(state, squad) : null;
+        if (at is null && (waiting is null || waiting.Value.Turn > state.Turn))
+        {
+            return Refused(scope, label, expected, waiting is null
+                ? $"play.deploy-offboard: {squad.Id} waits off board with no entry on the card (A2.52; ruling R25.4)"
+                : $"play.deploy-offboard: {squad.Id} is set up off board at the start of the RPh of Game Turn {waiting.Value.Turn}, its entry turn, and may attempt to Deploy from then on (A2.51, A2.52; ruling R25.4)");
         }
 
         if (RallyPhaseActionBar(state, squad.Id) is { } squadBar)
@@ -124,7 +140,7 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.deploy-unit: the catalog has no Morale Level or HS for {squad.Id}");
         }
 
-        var (leader, leaderReason) = DirectingLeader(state, existing, squad, at, Text(arguments, "leader", out var named) ? named : null);
+        var (leader, leaderReason) = DirectingLeader(state, existing, squad, at, Text(arguments, "leader", out var named) ? named : null, edge: waiting?.Edge);
         if (leaderReason is not null)
         {
             return Refused(scope, label, expected, leaderReason);

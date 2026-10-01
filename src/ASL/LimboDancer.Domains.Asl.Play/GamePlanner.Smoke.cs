@@ -114,7 +114,7 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>A squad's Smoke Placement Exponent (A1.21, A24.1) as its catalog definition prints it; null when none is printed.</summary>
-    private int? SmokeExponent(UnitInstance unit) => unit.Definition is { } reference
+    public int? SmokeExponent(UnitInstance unit) => unit.Definition is { } reference
         ? catalogs.FirstOrDefault(catalog => catalog.Identity == reference.Catalog)?.Definition(reference.Definition)?.Printed("front", "asl:smoke-exponent")?.Value?.Number
         : null;
 }

@@ -1,0 +1,50 @@
+@* Plan K09 (pass 25): leaving the map across an edge (A2.6; rulings R21.5, R25.5), in the MPh beside the move or in the APh beside the advance. The
+   page checks the units, keeps the edge, and proposes the exit; the planner decides it. *@
+<label title="A2.6 (rulings R21.5, R25.5): a stack in an edge hex leaves the map across that edge as if entering the mirror-image hex beyond: its own hex's MF, at the road rate across a road hexside, or from Bypass one MF of Open Ground beyond the Bypass; by advance in the APh. A Guard takes its prisoners, only off its side's Friendly Board Edge or its exit condition's edge. Units that leave may not return.">
+    Leave by
+    <select id="@SelectId" aria-describedby="@DescribedBy" value="@Edge" @onchange="@(args => OnEdge.InvokeAsync(args.Value as string ?? string.Empty))">
+        <option value="">edge</option>
+        @foreach (var edge in Edges)
+        {
+            <option value="@edge.Edge">@edge.Label</option>
+        }
+    </select>
+</label>
+<button id="@ButtonId" disabled="@(!Ready || Edge.Length == 0)" aria-describedby="@($"{ButtonId}-ready")" @onclick="@(() => OnPropose.InvokeAsync())">Propose: leave the map</button>
+@if (Ready && Edge.Length == 0)
+{
+    <span id="@($"{ButtonId}-ready")" class="toolbar-note">Choose the edge to leave by.</span>
+}
+
+@code {
+    /// <summary>The select's id, such as move-exit.</summary>
+    [Parameter, EditorRequired]
+    public string SelectId { get; set; } = string.Empty;
+
+    /// <summary>The button's id, such as propose-exit.</summary>
+    [Parameter, EditorRequired]
+    public string ButtonId { get; set; } = string.Empty;
+
+    /// <summary>A map edge and how it reads, such as "bottom (south)".</summary>
+    public sealed record EdgeChoice(string Edge, string Label);
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<EdgeChoice> Edges { get; set; } = [];
+
+    [Parameter]
+    public string Edge { get; set; } = string.Empty;
+
+    /// <summary>Whether units are checked to leave.</summary>
+    [Parameter]
+    public bool Ready { get; set; }
+
+    /// <summary>The id of the help the select is described by; null for none.</summary>
+    [Parameter]
+    public string? DescribedBy { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnEdge { get; set; }
+
+    [Parameter]
+    public EventCallback OnPropose { get; set; }
+}

@@ -1,0 +1,25 @@
+@* Plan C19 (pass 25): an entry attempt that revealed a lone SMC awaits the attacker's Infantry OVR declaration (A12.15, A4.15); the phase cannot advance
+   until it is made. The page proposes the declaration; the planner decides it. *@
+<p class="fail" data-open-attempt="@EventId">
+    The entry attempt of @Unit into @Target awaits the attacker's Infantry OVR declaration (A12.15, p. 78). The phase cannot advance until it is made.
+    <button class="declare-decline" @onclick="@(() => OnDecline.InvokeAsync())">Propose: decline the OVR</button>
+    <button class="declare-elect" @onclick="@(() => OnElect.InvokeAsync())">Propose: elect the OVR</button>
+</p>
+
+@code {
+    /// <summary>The event id of the open attempt.</summary>
+    [Parameter, EditorRequired]
+    public string EventId { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string Unit { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string Target { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback OnDecline { get; set; }
+
+    [Parameter]
+    public EventCallback OnElect { get; set; }
+}

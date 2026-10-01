@@ -404,9 +404,10 @@ public sealed class BacklogPass20TablePlayerTests : IDisposable
         }));
     }
 
-    // 4. A2.52: a waiting squad asks to Deploy off board in its RPh; the player wants a clear refusal, not a silent acceptance.
+    // 4. A2.52 (ruling R25.4, pass 25): a waiting squad attempts to Deploy off board in its RPh with a leader waiting along the same edge; the squad or
+    // its two HS then enter with him.
     [Fact]
-    public async Task DeployingOffBoardIsRefusedClearly()
+    public async Task DeployingOffBoardIsAttemptedWithALeaderWaitingAlongTheEdge()
     {
         await SetUpGambit();
         await AdvanceTo("british", "rph");
@@ -415,9 +416,11 @@ public sealed class BacklogPass20TablePlayerTests : IDisposable
             squadId = "bs1",
             leader = "l1"
         }));
-        Assert.NotEqual(PlayOutcome.Committed, deploy.Outcome);
+        Committed(deploy);
         await AdvanceTo("british", "mph");
-        Committed(await Step(["bs1", "l1"], "bd04:M1:0"));
+        string[] movers = Current.Unit("bs1") is { Status: InstanceStatus.Active } ? ["bs1", "l1"]
+            : [.. Current.Units.Where(unit => unit.Kind == "asl:half-squad" && unit.Status == InstanceStatus.Active).Select(unit => unit.Id), "l1"];
+        Committed(await Step(movers, "bd04:M1:0"));
     }
 
     // 5. A2.5: every unit enters, then the MPh ends; a few more phases and the German Turn 2 with fire and a rout.

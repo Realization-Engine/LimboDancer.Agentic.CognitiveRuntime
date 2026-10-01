@@ -176,8 +176,10 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
         // The Ambush drs: the Location's CC records them and the ambusher.
         ? state.CloseCombats.Any(item => item.Location == ambush.Location && item.AmbushRolled && item.Ambusher == ambush.Ambusher)
         : plan.Events.Select(item => item.Payload).OfType<AdvanceMoved>().FirstOrDefault() is { } advanced
-        // An advance: its units are in the Location they entered, CX where the advance made them so (A4.72).
-        ? advanced.Units.All(id => state.Location(id)?.Location == advanced.To)
+        // An advance: its units are in the Location they entered, CX where the advance made them so (A4.72), or Exited off the map (ruling R25.5).
+        ? advanced.Exit is not null
+            ? advanced.Units.All(id => state.Unit(id) is { Status: InstanceStatus.Exited })
+            : advanced.Units.All(id => state.Location(id)?.Location == advanced.To)
         : plan.Events.Select(item => item.Payload).OfType<PrisonersMassacred>().FirstOrDefault() is { } massacre
         // A Massacre (A20.4): its prisoners are eliminated.
         ? massacre.Prisoners.All(id => state.Unit(id) is { Status: InstanceStatus.Eliminated })
@@ -211,6 +213,9 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
                 && (check.Result != VehicleCheckRolled.Immobilized || GameState.Condition(checkedVehicle, Conditions.Immobilized) == ConditionState.True),
             // Pass 21 (ruling R21.5): an exit leaves the movers Exited, with no moving stack.
             MovementStepped { Exit: not null } left => state.Movement is null && left.Movers.All(id => state.Unit(id) is { Status: InstanceStatus.Exited }),
+            // Ruling R25.3: a stack forced back off board stays there, its move over, with no window.
+            MovementStepped { Attempted: { } attempted } offBoard when attempted == offBoard.To => state.Movement is null
+                && offBoard.Movers.All(id => state.Unit(id) is { MovementEnded: true } && state.Location(id) is null) && Revealed(state, plan),
             MovementStepped moved => state.Movement is { WindowOpen: true } movement && movement.Step == moved.Step && movement.Location == moved.To,
             // A vehicle's MP expenditure: its window is open at this step, and the vehicle is where the step put it.
             VehicleStepped { Kind: VehicleStepped.Exit } exit => state.Unit(exit.Vehicle) is { Status: InstanceStatus.Exited },

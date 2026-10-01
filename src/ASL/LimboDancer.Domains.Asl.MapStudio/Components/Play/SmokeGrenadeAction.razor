@@ -1,0 +1,60 @@
+@* Plan A14 (pass 25): a SMOKE grenade attempt by a checked mover (A24.1). The page offers only the squads with a Smoke Placement Exponent that have not
+   tried this MPh, and as places the movers' own Location and the ADJACENT ones (backlog section 19); the planner decides the rest. *@
+<label title="A24.1: a squad with a Smoke Placement Exponent, once per MPh, places SMOKE grenades in its Location (1 MF) or an ADJACENT one (2 MF) on a dr at most its exponent; a 6 ends its MPh. The counter (+2 Hindrance, +1 more out of it) leaves at the end of the MPh.">
+    SMOKE by
+    <select id="smoke-by" value="@By" @onchange="@(args => OnBy.InvokeAsync(args.Value as string ?? string.Empty))">
+        <option value="">choose</option>
+        @foreach (var placer in Placers)
+        {
+            <option value="@placer.Id">@placer.Label</option>
+        }
+    </select>
+</label>
+<label>
+    in
+    <select id="smoke-at" value="@At" @onchange="@(args => OnAt.InvokeAsync(args.Value as string ?? string.Empty))">
+        <option value="">choose</option>
+        @foreach (var place in Places)
+        {
+            <option value="@place.Location">@place.Label</option>
+        }
+    </select>
+</label>
+<button id="propose-smoke" disabled="@(!Ready || By.Length == 0 || At.Trim().Length == 0)" aria-describedby="propose-smoke-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: SMOKE grenades</button>
+@if (Ready && (By.Length == 0 || At.Trim().Length == 0))
+{
+    <span id="propose-smoke-ready" class="toolbar-note">Choose the squad and where it places SMOKE.</span>
+}
+
+@code {
+    /// <summary>A squad that may try, such as "bs9 (exponent 2)".</summary>
+    public sealed record Placer(string Id, string Label);
+
+    /// <summary>A Location SMOKE may be placed in, such as "bd04:E1:0 (its own, 1 MF)".</summary>
+    public sealed record Place(string Location, string Label);
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Placer> Placers { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Place> Places { get; set; } = [];
+
+    [Parameter]
+    public string By { get; set; } = string.Empty;
+
+    [Parameter]
+    public string At { get; set; } = string.Empty;
+
+    /// <summary>Whether movers are checked.</summary>
+    [Parameter]
+    public bool Ready { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnBy { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnAt { get; set; }
+
+    [Parameter]
+    public EventCallback OnPropose { get; set; }
+}

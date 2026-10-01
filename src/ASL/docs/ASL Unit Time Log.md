@@ -671,3 +671,21 @@ Estimate: 3:25 (build 2:10), the ASL Card Play and Map Studio Redesign Plan. Kic
 | Full local suite and ScenarioA1 (480): Authoring fails only the known architecture test; the action registry test needed the new action (fixed, rerun); Play 585, MapStudio 195, Units 406 | 23:36 | 00:16 | 0:40 | Waiting on the runs |
 | Merge gate: commit 52dd9c8, the Docker Linux check (every step exit 0; Authoring 167, Play 585, MapStudio 195, ScenarioA1 480), the chart supplement regeneration (same), merge into main, push | 00:16 | 00:41 | 0:25 | |
 | **Pass 24 total** | 22:29 | 00:41 | **2:12** | Estimate 3:25 (build 2:10); the build to the documents took 1:11, the full suite 0:40, the merge gate 0:25 |
+
+## Pass 25: Entry and exit
+
+Estimate: 6:05 (build 4:50), the ASL Card Play and Map Studio Redesign Plan. Kickoff on the user's go-ahead. Branch `feature/asl-backlog-pass-25`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Reading: plan pass 25, sections 15.3 and 16.17, backlog sections 19, 25, 30, 31, and 38, rulings R20.5, R20.6, R21.5, and R24.3, the pass 20, 21, and 24 designs; A2.5 to A2.6, A4.134, A4.14, A4.3, A4.7, A8.22, A12.15, A20.53, A24.1, A26.22, and A26.23 in the PDF; `PlanEnter`, `PlanMove`, `PlanExit`, `PlanAdvanceUnits` | 07:20 | 07:27 | 0:07 | |
+| Rulings proposed; the user's three answers (named entry hexes, forced back off board, the APh holds) | 07:27 | 07:40 | 0:13 | No split proposed |
+| 25.1 to 25.5 and 25.7 in Units and Play: `OffMapPosition.Entry`, `AdvanceMoved.Exit`, `UnitExit.CapturedBy` and `Escort`, the forced back off board, `ExitUnits`; `EntryCheck`, `EntryHexesFor`, `EntryStep`, `GroundStep`, `BypassStep`, entry by advance, the new `PlanExit`, offboard Deployment, the setup entry area and group checks, the pass and end-move fixes, Exit VP and CVP | 07:40 | 08:03 | 0:23 | |
+| `BacklogPass25Tests` (10), the gate's readbacks, the Bypass entry fix (`BypassEntered`); Play 31 of pass 20, 21, 25 | 08:03 | 08:20 | 0:17 | Test runs about 5 to 9 minutes each |
+| 25.6: thirteen components, the page's lists and notes, K08; `PlayPagePass25Tests` and `MovementComponentTests`; MapStudio 203 | 08:20 | 08:32 | 0:12 | |
+| Visual check in the Studio (`p25-visual`, `p25-smoke`): entry in the MPh, the APh hold, entry and exit by advance, SMOKE choices; three fixes (wording, hex order, TI movers) | 08:32 | 08:40 | 0:08 | |
+| Rulings R25.1 to R25.7 written; three reviews (UI and Blazor, 9 findings; table player, 11; referee, 7) run in parallel; the design drafted meanwhile | 08:40 | 08:50 | 0:10 | The reviewers ran to about 09:00 |
+| Review fixes: disclosure of the reaction and Deploy lists, draft resets and pruning, accessibility; the APh hold by each unit's own advance, the `entry-due` text, open named hexes and forced-back notes, exit scoring and compass edges, the exit order message; stacking at entry, the leader's aid in an exit by advance, a Guard by any edge, the named-hex refusal; tests; Play 31, MapStudio 204 | 08:50 | 09:11 | 0:21 | |
+| Visual check again (`p25-check`, `p25-check2`): the fieldset (styled), notes, compass edges, the `entry-due` text, an exit by advance's scoring (reordered); clean | 09:11 | 09:17 | 0:06 | |
+| Documents (design, review, rulings, the plan's status, backlog section 39 and rows removed, this log) while the full suite ran | 09:17 | 09:22 | 0:05 | |
+| Full local suite and ScenarioA1 (480): Authoring fails only the known architecture test; Play found the pass 20 table player test expecting an off-board Deployment refused (R25.4 allows it): updated, rerun, passes; Play 596, MapStudio 204, Units 406 | 09:17 | 09:45 | 0:28 | Pass 26's reading and survey ran meanwhile, at the user's request |

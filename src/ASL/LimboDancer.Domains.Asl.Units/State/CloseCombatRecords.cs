@@ -7,7 +7,14 @@ namespace LimboDancer.Domains.Asl.Units.State;
 /// <c>advanced</c>: units of the phasing side advance one Location in the APh (A3.7, A4.7; unit step 29), together from
 /// one Location. A unit advances once per APh; a Guard's prisoners go with it (A20.53).
 /// </summary>
-public sealed record AdvanceMoved(IReadOnlyList<string> Units, BoardLocation To) : EventPayload;
+public sealed record AdvanceMoved(IReadOnlyList<string> Units, BoardLocation To) : EventPayload
+{
+    /// <summary>The map edge the units leave by from <see cref="To"/>, their own Location (A2.6; ruling R25.5); null for an advance on the map.</summary>
+    public string? Exit
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// <c>ambush-rolled</c>: the Ambush drs of a CC Location (A11.4), resolved by the Close Combat package: the rolls by side,

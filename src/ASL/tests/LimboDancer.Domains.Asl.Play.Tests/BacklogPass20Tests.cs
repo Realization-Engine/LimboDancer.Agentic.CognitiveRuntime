@@ -376,8 +376,8 @@ public sealed class BacklogPass20Tests : IDisposable
             Committed(await Advance());
         }
 
+        // Ruling R25.1 (pass 25): the MPh may end with them waiting, since they may enter by advance; the APh holds them instead (BacklogPass25Tests).
         Assert.Equal(("british", "mph"), (Current.PhasingSide, Current.Phase));
-        Refused(await Advance(), "play.entry-due");
         var top = Planner().EntryHexes(Current, "top");
         Assert.Contains(BoardLocation.Parse("bd04:E1:0"), top);
         Assert.DoesNotContain(BoardLocation.Parse("bd04:E5:0"), top);

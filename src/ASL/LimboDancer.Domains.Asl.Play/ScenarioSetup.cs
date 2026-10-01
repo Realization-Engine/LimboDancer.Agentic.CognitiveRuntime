@@ -27,6 +27,12 @@ public sealed record SetupCounter(string Id, string Side, string? Group, string?
     {
         get; init;
     }
+
+    /// <summary>The entry area an off-board counter's setup named (A2.5; ruling R25.4); null when it named none.</summary>
+    public string? Entry
+    {
+        get; init;
+    }
 }
 
 /// <summary>An OB line still to set up: its group, the area the card names for it (null for any of the group's areas), its definition, and how many.</summary>
@@ -387,8 +393,15 @@ public static class ScenarioSetup
                 continue;
             }
 
-            // R20.5: an off-board counter fills a line that enters; an on-board one a line that sets up, in its area.
-            bool Fits(ScenarioCardUnit unit) => counter.OffBoard ? EntryOf(group, unit) is not null
+            // R25.4: an off-board counter may name one of its group's entry areas.
+            if (counter.OffBoard && counter.Entry is { } named && !group.Areas.Any(area => area.Kind == "entry" && area.Id == named))
+            {
+                reasons.Add($"play.setup-entry: {counter.Id} of {group.Name} names the entry area '{named}', which its group does not have (A2.5; ruling R25.4)");
+                continue;
+            }
+
+            // R20.5: an off-board counter fills a line that enters, by the entry it named (ruling R25.4); an on-board one a line that sets up, in its area.
+            bool Fits(ScenarioCardUnit unit) => counter.OffBoard ? EntryOf(group, unit) is not null && (counter.Entry is null || unit.Area is null || unit.Area == counter.Entry)
                 : unit.Area is null ? EntryOf(group, unit) is null || group.Areas.Any(area => area.Counters is not null)
                 : group.Areas.FirstOrDefault(area => area.Id == unit.Area) is { Kind: not "entry" } area && Within(card, area, counter.At!);
             // A counter outside all its group's areas takes only the area reason (table player, pass 19).
@@ -398,7 +411,7 @@ public static class ScenarioSetup
             }
 
             if (counter.OffBoard && counter.Kind == "asl:squad" && lines.FirstOrDefault(item => item.Unit.Definition == counter.Definition && Fits(item.Unit)).Unit is { } entryLine
-                && EntryOf(group, entryLine)?.Turn is { } entryTurn)
+                && (group.Areas.FirstOrDefault(area => area.Kind == "entry" && area.Id == counter.Entry) ?? EntryOf(group, entryLine))?.Turn is { } entryTurn)
             {
                 enteringSquads[entryTurn] = enteringSquads.GetValueOrDefault(entryTurn) + 1;
             }

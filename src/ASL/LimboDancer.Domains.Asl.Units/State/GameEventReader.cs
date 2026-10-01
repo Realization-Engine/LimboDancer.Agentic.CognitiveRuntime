@@ -640,7 +640,7 @@ public static class GameEventReader
                 var advancedTo = ReadLocation(payload, "to", path, fields, diagnostics);
                 return advancedTo is null
                     ? Missing(diagnostics, "An advance names its units and the Location they enter.", path)
-                    : new AdvanceMoved(fields.StringList(payload, "units", path), advancedTo);
+                    : new AdvanceMoved(fields.StringList(payload, "units", path), advancedTo) { Exit = fields.OptionalString(payload, "exit", path) };
             case "ambush-rolled":
                 var ambushAt = ReadLocation(payload, "location", path, fields, diagnostics);
                 var ambushRolls = RollMap(payload, path, diagnostics);
@@ -979,7 +979,7 @@ public static class GameEventReader
 
         if (fields.OptionalBoolean(position, "offMap", positionPath))
         {
-            return OffMapPosition.Instance;
+            return fields.OptionalString(position, "entry", positionPath) is { } entry ? new OffMapPosition { Entry = entry } : OffMapPosition.Instance;
         }
 
         if (fields.OptionalBoolean(position, "notEntered", positionPath))

@@ -1,0 +1,78 @@
+@* Plan A23 (pass 25): the phasing side's advance (A3.7, A4.7): units in one Location into one ADJACENT Location; units waiting off board, whose entry
+   turn has come, into a hex of their entry edge (A2.5; ruling R25.1); or units in an edge hex off the map (A2.6; ruling R25.5). The page reads the units
+   for the view (ruling R23.1), keeps the draft and its reset rules (plan section 15.3), and proposes; the planner decides. *@
+<h4>Advance</h4>
+<p class="muted" id="advance-help">
+    The @Side side's Infantry that are not broken, pinned, berserk, or held in Melee may advance one Location (A3.7, A4.7),
+    even into a Location of Known enemy units, where Close Combat follows. A unit that fired in the PFPh may advance.
+</p>
+@if (Waiting.Count > 0)
+{
+    <p class="muted" id="advance-entry">
+        @string.Join(", ", Waiting) @(Waiting.Count == 1 ? "waits" : "wait") off board: units whose entry turn has come enter by advance into a hex of their entry
+        edge, and the APh does not end while one still may (A2.5; ruling R25.1).
+    </p>
+}
+<div class="toolbar">
+    <UnitSelectionList Rows="@Units" Selected="@Selected" CssClass="advance-unit" Legend="Units advancing" OnToggle="@OnToggle" />
+    <label>
+        To
+        <select id="advance-to" aria-describedby="@(Waiting.Count > 0 ? "advance-help advance-entry" : "advance-help")" value="@To" @onchange="@(args => OnTo.InvokeAsync(args.Value as string ?? string.Empty))">
+            <option value="">choose</option>
+            @foreach (var to in Destinations)
+            {
+                <option value="@to">@to</option>
+            }
+        </select>
+    </label>
+    <button id="propose-advance-units" disabled="@(Selected.Count == 0 || To.Trim().Length == 0)" aria-describedby="propose-advance-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: advance</button>
+    @if (Selected.Count == 0 || To.Trim().Length == 0)
+    {
+        <span id="propose-advance-ready" class="toolbar-note">Check the units advancing and choose where.</span>
+    }
+    <MapExitAction SelectId="advance-exit" ButtonId="propose-advance-exit" DescribedBy="advance-help" Edges="@Edges" Edge="@Edge" Ready="@(Selected.Count > 0)" OnEdge="@OnEdge" OnPropose="@OnExit" />
+</div>
+
+@code {
+    /// <summary>The phasing side.</summary>
+    [Parameter, EditorRequired]
+    public string Side { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<UnitSelectionList.Row> Units { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public IReadOnlySet<string> Selected { get; set; } = new HashSet<string>();
+
+    /// <summary>Where the checked units may advance: the ADJACENT Locations, or the hexes of their entry edge open to them.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<string> Destinations { get; set; } = [];
+
+    /// <summary>The units offered that wait off board.</summary>
+    [Parameter]
+    public IReadOnlyList<string> Waiting { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<MapExitAction.EdgeChoice> Edges { get; set; } = [];
+
+    [Parameter]
+    public string To { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Edge { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<UnitSelectionList.Toggle> OnToggle { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnTo { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnEdge { get; set; }
+
+    [Parameter]
+    public EventCallback OnPropose { get; set; }
+
+    [Parameter]
+    public EventCallback OnExit { get; set; }
+}

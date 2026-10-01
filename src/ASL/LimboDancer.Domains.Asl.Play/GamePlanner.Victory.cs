@@ -1,5 +1,6 @@
 using System.Text.Json;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
+using LimboDancer.Domains.Asl.Maps.Geometry;
 using LimboDancer.Domains.Asl.Units.State;
 
 namespace LimboDancer.Domains.Asl.Play;
@@ -155,9 +156,33 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>
-    /// Infantry leaving the map (A2.6; ruling R21.5): a Good Order stack of the phasing side in its MPh, the whole moving stack when one moves, from a
-    /// ground-level edge hex within the playable area, across that edge, as if entering the mirror-image hex beyond: the MF of its own hex's terrain. The
-    /// units are Exited and may not return. Leaving by Bypass or in the APh is not built.
+    /// What an exit counts for (A26.23, A26.221; table player, pass 25): toward the side's Exit VP when it meets an exit condition of the side's from this hex,
+    /// otherwise as elimination for the enemy's CVP, but an escorting Guard; empty for a card whose Victory Conditions name no outcome.
+    /// </summary>
+    private string ExitScoring(GameState state, string side, BoardLocation from, string edge, bool escorting)
+    {
+        if (CardOf(state) is not { VictoryConditions.Outcomes: { Count: > 0 } outcomes })
+        {
+            return string.Empty;
+        }
+
+        var meets = outcomes.SelectMany(outcome => outcome.Any).Any(condition => condition.Type == "exit-vp" && condition.Side == side && condition.Edge == edge
+            && condition.Near!.Select(hex => BoardLocation.Parse(hex + ":0")).Any(near => (near.Board == from.Board && near.Hex == from.Hex)
+                || Neighbors(state, near).Any(next => next.Board == from.Board && next.Hex == from.Hex)));
+        // Referee, pass 25: a Guard may leave by any edge with its prisoners, which stay captured; only off a Friendly Board Edge or its exit condition's edge is
+        // it not eliminated for CVP (A20.53, A26.221).
+        return meets ? "; it counts toward the side's Exit VP, none for broken Personnel (A26.23)"
+            : escorting && ScenarioVictory.EscortEdge(CardOf(state)!, side, edge) ? "; it meets no exit condition, but a Guard escorting prisoners off its side's Friendly Board Edge is not eliminated for CVP; its prisoners stay captured (A20.53, A26.221)"
+            : escorting ? "; it meets no exit condition and is not the side's Friendly Board Edge, so the Guard counts as eliminated for the enemy's CVP; its prisoners stay captured (A20.53, A26.221)"
+            : "; it meets no exit condition of the side, so the units count as eliminated for the enemy's CVP (A26.221)";
+    }
+
+    /// <summary>
+    /// Infantry leaving the map (A2.6; rulings R21.5, R25.5): a Good Order stack of the phasing side, in its MPh (the whole moving stack when one moves) or
+    /// by advance in its APh, from a ground-level edge hex within the playable area, across that edge, as if entering the mirror-image hex beyond: its own
+    /// hex's cost across the edge hexside, at the road rate across a road hexside; from Bypass, one MF of Open Ground when the far vertex of its last
+    /// hexside lies on the edge. A Guard takes its prisoners, only off its side's Friendly Board Edge or the edge of its exit condition (A20.53, A26.23).
+    /// The units are Exited and may not return.
     /// </summary>
     private GamePlan PlanExit(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label, string edge)
     {
@@ -167,13 +192,15 @@ public sealed partial class GamePlanner
         }
 
         var ids = Strings(arguments, "unitIds").ToArray();
-        if (state.Phase != "mph")
+        var advancing = state.Phase == "aph";
+        if (state.Phase != "mph" && !advancing)
         {
-            return Refused(scope, label, expected, "play.exit-phase: units leave the map in their side's MPh; leaving in the APh is not built (A2.6; ruling R21.5)");
+            return Refused(scope, label, expected, "play.exit-phase: units leave the map in their side's MPh or by advance in its APh, never in the RtPh (A2.6; rulings R21.5, R25.5)");
         }
 
         var movers = ids.Select(state.Unit).ToArray();
-        if (ids.Length == 0 || movers.Any(unit => unit is not { Status: InstanceStatus.Active } || unit.Side != state.PhasingSide || LiveFire.IsVehicle(unit)))
+        if (ids.Length == 0 || ids.Distinct(StringComparer.Ordinal).Count() != ids.Length
+            || movers.Any(unit => unit is not { Status: InstanceStatus.Active } || unit.Side != state.PhasingSide || LiveFire.IsVehicle(unit)))
         {
             return Refused(scope, label, expected, "play.exit-stack: every unit leaving is an active Infantry unit of the phasing side; a vehicle leaves by its own move (A2.6)");
         }
@@ -183,34 +210,113 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.exit-stack: the stack leaves from one Location on the map (A2.6)");
         }
 
+        // A3.3: a unit that fired in the PFPh does not move in the MPh, though it may advance (A4.7).
         if (movers.FirstOrDefault(unit => Is(unit!, Conditions.Broken) || Is(unit!, Conditions.Pinned) || Is(unit!, Conditions.Berserk) || Is(unit!, Conditions.Melee)
-            || Is(unit!, Conditions.Captured) || Is(unit!, Conditions.Hidden) || Is(unit!, "asl:ti") || unit!.MovementEnded || Is(unit!, Conditions.PrepFire)) is { } unable)
+            || Is(unit!, Conditions.Captured) || Is(unit!, Conditions.Hidden) || Is(unit!, "asl:ti") || unit!.MovementEnded || (!advancing && Is(unit!, Conditions.PrepFire))) is { } unable)
         {
-            return Refused(scope, label, expected, $"play.exit-unit: {unable.Id} is not free to move this MPh (A4.1, A3.3)");
+            return Refused(scope, label, expected, advancing
+                ? $"play.exit-unit: {unable.Id} is not free to advance this APh (A4.7)"
+                : $"play.exit-unit: {unable.Id} is not free to move this MPh (A4.1, A3.3)");
         }
 
-        // Referee, pass 21: a crew manning a Gun and a Guard with prisoners do not leave the map (C10.3, A20.53: not built).
-        if (movers.FirstOrDefault(unit => state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Manned } holding && holding.Holder == unit!.Id)
-            || IsGuard(state, unit!)) is { } bound)
+        // Referee, pass 21: a crew leaving with its Gun waits for Guns on a card (plan pass 26).
+        if (movers.FirstOrDefault(unit => state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Manned } holding && holding.Holder == unit!.Id)) is { } gunner)
         {
-            return Refused(scope, label, expected, $"play.exit-unit: {bound.Id} mans a Gun or guards prisoners; leaving the map with them is not built (C10.3, A20.53; ruling R21.5)");
+            return Refused(scope, label, expected, $"play.exit-unit: {gunner.Id} mans a Gun; leaving the map with it is not built (C10.3; ruling R21.5)");
         }
 
-        if (state.Movement is { } current && (current.WindowOpen || current.Bypass is { Count: > 0 } || !current.Members.ToHashSet(StringComparer.Ordinal).SetEquals(ids)))
+
+        var current = advancing ? null : state.Movement;
+        // Table player, pass 25: a fresh stack is told another one is moving.
+        if (current is not null && (current.WindowOpen || !current.Members.ToHashSet(StringComparer.Ordinal).SetEquals(ids)))
         {
             return Refused(scope, label, expected, current.WindowOpen
                 ? "play.move-window: the DEFENDER may still fire at the stack's last MF expenditure (A8.1, A8.11)"
-                : "play.exit-stack: the whole moving stack leaves together, never from Bypass (A2.6, A4.2; ruling R21.5)");
+                : !ids.Any(id => current.Members.Contains(id, StringComparer.Ordinal))
+                    ? $"play.move-order: {string.Join(", ", current.Movers)} moved last; end their move first (A4.2)"
+                    : "play.exit-stack: the whole moving stack leaves together (A2.6, A4.2; ruling R21.5)");
         }
 
-        if (from.Level != 0 || !EdgeSides(state, from).Any(item => item.Edge == edge) || PlayableBar(state, from) is not null)
+        var sides = EdgeSides(state, from).Where(item => item.Edge == edge).ToArray();
+        if (from.Level != 0 || sides.Length == 0 || PlayableBar(state, from) is not null)
         {
-            return Refused(scope, label, expected, $"play.exit-edge: {from} is not a ground-level hex of the {edge} edge within the playable area (A2.6; rulings R20.6, R21.5)");
+            // Table player, pass 21: from a hex near the edge, the refusal names the edge hexes next to it.
+            var near = from.Level == 0 && sides.Length == 0
+                ? Neighbors(state, from).Where(next => next.Level == 0 && EdgeSides(state, next).Any(item => item.Edge == edge) && PlayableBar(state, next) is null)
+                    .Select(next => next.ToString()).Order(StringComparer.Ordinal).ToArray()
+                : [];
+            return Refused(scope, label, expected, $"play.exit-edge: {from} is not a ground-level hex of the {edge} edge within the playable area (A2.6; rulings R20.6, R21.5)"
+                + (near.Length > 0 ? $"; {string.Join(" and ", near)} " + (near.Length == 1 ? "is" : "are") + " next to it" : string.Empty));
         }
 
-        if (ReadLocation(state, from) is not { } read || TerrainKey(read) is not { } terrain || InfantryEntryHalfMf(state, terrain) is not { } halfMf)
+        int halfMf;
+        string terrain;
+        var road = false;
+        if (current is { Bypass: { Count: > 0 } lane })
         {
-            return Refused(scope, label, expected, $"play.exit-terrain: the cost of leaving {from} is not decided (A2.6; ruling R21.5)");
+            // A2.6 (ruling R25.5): from Bypass, through the far vertex of the last hexside, with one MF beyond the Bypass, as Open Ground.
+            if (BypassEntered(state, from, current.From, lane) is not { } entered)
+            {
+                return Refused(scope, label, expected, "play.exit-bypass: the hexside the stack entered its Bypass by cannot be read");
+            }
+
+            var far = (HexsideDirection)(((int)lane[^1] + (((int)lane[0] - (int)entered + 6) % 6)) % 6);
+            if (!sides.Any(item => item.Side == lane[^1] || item.Side == far))
+            {
+                return Refused(scope, label, expected, $"play.exit-bypass: from Bypass the stack leaves only through the far vertex of its last hexside, which is not on the {edge} edge (A2.6, A4.31; ruling R25.5)");
+            }
+
+            (halfMf, terrain) = (2, "open-ground");
+        }
+        else
+        {
+            // The cheapest edge hexside of the hex: a half hex may lie on the edge across two.
+            var crossings = sides.Select(item => EntryGround(state, from, item.Side).Entry).OfType<InfantryEntry>().Where(item => !item.AllMf).ToArray();
+            if (crossings.Length == 0)
+            {
+                return Refused(scope, label, expected, $"play.exit-terrain: the cost of leaving {from} is not decided (A2.6; ruling R21.5)");
+            }
+
+            var cheapest = crossings.MinBy(item => item.HalfMf)!;
+            (halfMf, terrain, road) = (cheapest.HalfMf, cheapest.Terrain, cheapest.RoadRate);
+        }
+
+        var how = $"for {halfMf / 2m} MF" + (road ? " at the road rate" : string.Empty) + (current is { Bypass.Count: > 0 } ? " from Bypass" : string.Empty);
+        var escorted = state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Custodian is { } holder && ids.Contains(holder, StringComparer.Ordinal))
+            .Select(unit => unit.Id).Order(StringComparer.Ordinal).ToArray();
+        var with = escorted.Length > 0 ? $", escorting {string.Join(", ", escorted)} (A20.53)," : string.Empty;
+        var scoring = ExitScoring(state, movers[0]!.Side, from, edge, escorted.Length > 0);
+        var package = ScenarioA1.ScenarioA1FirePackage.Identity.ToString();
+        if (advancing)
+        {
+            // A4.72 (ruling R25.5): an advance off the map into Difficult Terrain makes the unit CX; a CX unit does not make it.
+            var tiring = new List<string>();
+            var (aided, ipcTo) = AdvanceAid(state, [.. movers.Select(unit => unit!)]);
+            foreach (var unit in movers)
+            {
+                // Referee, pass 25: with a leader's two MF and IPC, as any advance (A4.72 EX).
+                if (DifficultAdvance(state, unit!, halfMf, aided.Contains(unit!.Id), unit.Id == ipcTo) is not { } difficult)
+                {
+                    return Refused(scope, label, expected, $"play.advance-mf: {unit!.Id} has no MF allotment the catalog decides, or none left after portage (A4.7, A4.72)");
+                }
+
+                if (difficult && Is(unit!, Conditions.Cx))
+                {
+                    return Refused(scope, label, expected, $"play.advance-difficult-terrain: {unit!.Id} is CX and may not advance into Difficult Terrain (A4.72)");
+                }
+
+                if (difficult)
+                {
+                    tiring.Add(unit!.Id);
+                }
+            }
+
+            List<GameEvent> events = [.. tiring.Select((id, index) => Event(scope, attemptId, index + 1, expected, "conditions-changed",
+                new ConditionsChanged(id, new Dictionary<string, ConditionState> { [Conditions.Cx] = ConditionState.True }), package, null))];
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "advanced", new AdvanceMoved(ids, from) { Exit = edge }, package, null));
+            return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events,
+                [$"play.exit: {string.Join(", ", ids)} advance off the map from {from} across the {edge} edge ({terrain}){with} and may not return"
+                    + (tiring.Count > 0 ? $"; {string.Join(", ", tiring)} become CX advancing into Difficult Terrain (A4.72)" : string.Empty) + $" (A2.6; ruling R25.5){scoring}"]);
         }
 
         var doubleTime = Flag(arguments, "doubleTime");
@@ -229,9 +335,9 @@ public sealed partial class GamePlanner
             }
         }
 
-        var step = new MovementStepped(ids, from, halfMf, false, (state.Movement?.Step ?? 0) + 1) { Exit = edge, DoubleTime = doubleTime };
+        var step = new MovementStepped(ids, from, halfMf, false, (state.Movement?.Step ?? 0) + 1) { Exit = edge, DoubleTime = doubleTime, Road = road };
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
-            [Event(scope, attemptId, 1, expected, "movement-step", step, ScenarioA1.ScenarioA1FirePackage.Identity.ToString(), null)],
-            [$"play.exit: {string.Join(", ", ids)} leave the map from {from} across the {edge} edge for {halfMf / 2m} MF and may not return (A2.6; ruling R21.5)"]);
+            [Event(scope, attemptId, 1, expected, "movement-step", step, package, null)],
+            [$"play.exit: {string.Join(", ", ids)} leave the map from {from} across the {edge} edge {how}{with} and may not return (A2.6; rulings R21.5, R25.5){scoring}"]);
     }
 }

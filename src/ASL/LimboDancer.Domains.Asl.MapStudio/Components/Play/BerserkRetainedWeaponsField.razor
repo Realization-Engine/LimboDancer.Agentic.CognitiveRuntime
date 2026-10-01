@@ -1,0 +1,11 @@
+@* Plan N04 (pass 25): the 1PP SW a checked berserk mover keeps within its IPC before its charge (A15.431; ruling R15.14), comma-separated; the planner
+   checks the portage. *@
+<label title="A15.431: before its charge a berserk unit abandons SW of more than 1 PP and 1PP SW beyond its IPC; name those it keeps, comma-separated.">Keep SW <input id="move-keep" value="@Value" @onchange="@(args => OnChange.InvokeAsync(args.Value as string ?? string.Empty))" size="18" /></label>
+
+@code {
+    [Parameter]
+    public string Value { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> OnChange { get; set; }
+}

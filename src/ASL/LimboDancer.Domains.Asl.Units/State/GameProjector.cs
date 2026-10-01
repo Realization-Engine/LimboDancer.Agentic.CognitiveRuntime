@@ -659,6 +659,14 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-032", $"'{barred.Id}' is broken, pinned, berserk, in Melee, or captured, so it may not advance (A4.7, A15.431, A11.15).");
             }
 
+            // A2.6 (ruling R25.5): an advance may leave the map from the units' own Location.
+            if (advance.Exit is { } edge)
+            {
+                return units.Any(unit => state.Location(unit!.Id)?.Location != advance.To)
+                    ? Fail<GameState>("UNIT-STATE-032", "An exit by advance leaves the map from the units' own Location (A2.6).")
+                    : ExitUnits(state, [.. units.Select(unit => unit!)], advance.To, edge);
+            }
+
             var next = state;
             foreach (var unit in units)
             {
@@ -673,6 +681,37 @@ public static class GameProjector
             return next with
             {
                 Advances = [.. next.Advances, .. advance.Units.Select(id => new AdvanceRecord(id, advance.To))],
+            };
+        }
+
+        /// <summary>
+        /// Units leave the map (A2.6; rulings R21.5, R25.5): each is Exited, not eliminated, with the SW it carries (table player, pass 21); a Guard's
+        /// prisoners leave with it (A20.53), recorded as held by the Guard's side, and the Guard as escorting them (A26.221).
+        /// </summary>
+        private static GameState ExitUnits(GameState state, IReadOnlyList<UnitInstance> movers, BoardLocation from, string edge)
+        {
+            var prisoners = state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Custodian is { } guard && movers.Any(mover => mover.Id == guard)).ToArray();
+            string[] leaving = [.. movers.Select(unit => unit.Id), .. prisoners.Select(unit => unit.Id)];
+            var exited = state;
+            foreach (var unit in movers.Concat(prisoners))
+            {
+                exited = Replace(exited, unit with
+                {
+                    Position = OffMapPosition.Instance,
+                    Status = InstanceStatus.Exited,
+                })!;
+            }
+
+            return exited with
+            {
+                Equipment = [.. exited.Equipment.Select(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding
+                    && leaving.Contains(holding.Holder, StringComparer.Ordinal) ? item with { Status = InstanceStatus.Exited } : item)],
+                Exits = [.. state.Exits,
+                    .. movers.Select(unit => new UnitExit(unit.Id, from, edge, state.Turn, GameState.Condition(unit, Conditions.Broken) == ConditionState.True)
+                    {
+                        Escort = prisoners.Any(prisoner => prisoner.Custodian == unit.Id),
+                    }),
+                    .. prisoners.Select(unit => new UnitExit(unit.Id, from, edge, state.Turn, false, movers.First(mover => mover.Id == unit.Custodian).Side))],
             };
         }
 
@@ -1749,6 +1788,26 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-029", "A SMOKE placement is one attempt per MPh by a squad of the moving stack, in its Location, with its dr (A24.1).");
             }
 
+            // A12.15, A2.51 (ruling R25.3): a stack entering from off board that is forced back stays off board, its MF spent and its move over; no fire
+            // reaches it there, so no window opens.
+            if (moving.Attempted is { } offBoardAttempt && offBoardAttempt == moving.To && current is null
+                && movers.All(unit => unit!.Position is OffMapPosition && state.Location(unit.Id) is null))
+            {
+                var waiting = state;
+                foreach (var unit in movers)
+                {
+                    var spent = (unit!.MfSpent * 2) + (unit.HalfMfSpent ? 1 : 0) + moving.HalfMf;
+                    waiting = Replace(waiting, unit with
+                    {
+                        MfSpent = spent / 2,
+                        HalfMfSpent = spent % 2 == 1,
+                        MovementEnded = true,
+                    })!;
+                }
+
+                return waiting;
+            }
+
             // A4.134 (ruling R10.9): a Minimum Move is a stack's first and only step; A12.15 (ruling R10.11): a forced-back stack stays in its Location.
             if ((moving.MinimumMove && (current is not null || movers.Any(unit => unit!.MfSpent != 0 || unit.HalfMfSpent)))
                 || (moving.Attempted is { } attempted && (attempted == moving.To || movers.Any(unit => state.Location(unit!.Id)?.Location != moving.To)))
@@ -1765,24 +1824,9 @@ public static class GameProjector
                     return Fail<GameState>("UNIT-STATE-029", "An exit leaves the map from the moving stack's own Location (A2.6).");
                 }
 
-                var exited = state;
-                foreach (var unit in movers)
+                return ExitUnits(state, [.. movers.Select(unit => unit!)], moving.To, edge) with
                 {
-                    exited = Replace(exited, unit! with
-                    {
-                        Position = OffMapPosition.Instance,
-                        Status = InstanceStatus.Exited,
-                    })!;
-                }
-
-                // Table player, pass 21: the SW the movers carry leave with them.
-                return exited with
-                {
-                    Equipment = [.. exited.Equipment.Select(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding
-                        && moving.Movers.Contains(holding.Holder, StringComparer.Ordinal) ? item with { Status = InstanceStatus.Exited } : item)],
-                    Movement = null,
-                    Exits = [.. state.Exits, .. movers.Select(unit => new UnitExit(unit!.Id, moving.To, edge, state.Turn,
-                        GameState.Condition(unit, Conditions.Broken) == ConditionState.True))],
+                    Movement = null
                 };
             }
 
@@ -2332,10 +2376,11 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-029", "The ATTACKER ends the move of the moving stack's members once the DEFENDER's window closes (A4.2, A8.11).");
             }
 
+            // Pass 25 (table player, pass 15): a mover eliminated or Replaced by the DEFENDER's fire is ended with the rest, not refused.
             var next = state;
             foreach (var id in ended.Movers)
             {
-                if (Active(next, id) is UnitInstance unit)
+                if (next.Unit(id) is { Status: InstanceStatus.Active } unit)
                 {
                     // D2.4: a vehicle that ends its move without stopping is in Motion; one that stopped, or was stopped by a Stun or
                     // immobilization (D5.34), is not.

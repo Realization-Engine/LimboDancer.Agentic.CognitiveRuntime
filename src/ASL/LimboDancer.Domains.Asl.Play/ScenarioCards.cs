@@ -512,7 +512,10 @@ public static partial class ScenarioCards
         "building" => area.Hexes is { Count: > 0 } hexes && hexes.All(hex => HexPattern().IsMatch(hex)) && hexes.Contains(area.Id, StringComparer.Ordinal)
             && (area.Board is null ? card.Boards.Count == 1 : card.Boards.Any(board => board.Board == area.Board)),
         "hex-numbers" => card.Boards.Any(board => board.Board == area.Board) && area.From is >= 0 and <= 10 && area.To is >= 0 and <= 10 && area.From <= area.To,
-        "entry" => area.Turn is { } turn && turn >= 1 && turn <= card.Turns.Count && SideState.Edges.Contains(area.Edge ?? string.Empty, StringComparer.Ordinal),
+        // A2.5 (ruling R25.2): an entry may name its entry hexes, each on its board.
+        "entry" => area.Turn is { } turn && turn >= 1 && turn <= card.Turns.Count && SideState.Edges.Contains(area.Edge ?? string.Empty, StringComparer.Ordinal)
+            && (area.Hexes is null || (area.Hexes.Count > 0 && area.Hexes.All(hex => HexPattern().IsMatch(hex))
+                && (area.Board is null ? card.Boards.Count == 1 : card.Boards.Any(board => board.Board == area.Board)))),
         _ => false,
     } && (area.Counters is null || (area.Kind != "entry" && area.Counters >= 1)) && (area.MinMmc is null || (area.Counters is { } counters && area.MinMmc >= 0 && area.MinMmc <= counters));
 
