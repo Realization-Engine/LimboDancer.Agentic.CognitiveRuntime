@@ -637,3 +637,5 @@ Estimate: 5:25 (build 4:10), the ASL Card Play and Map Studio Redesign Plan. Kic
 | Visual check again: the British view in the German PFPh (the Fire panel's note, no German concealed unit among the pickers), the Games page's British event list during the German setup (British creations only); clean | 20:34 | 20:36 | 0:02 | |
 | Documents (design, review, rulings updated for the review fixes, the plan's status and decisions, backlog section 37 with six rows removed) and formatting, while the full suite ran | 20:36 | 20:41 | 0:05 | |
 | Full local suite and ScenarioA1 (480): Authoring fails only the known architecture test; Play 573, MapStudio 192, Units 406 | 20:37 | 21:12 | 0:35 | Waiting on the runs |
+| Merge gate: commit c90cada, push, the Docker Linux check (every step exit 0; Authoring 167, Play 573, MapStudio 192, ScenarioA1 480), the chart supplement regeneration (same), merge into main, push | 21:12 | 21:37 | 0:25 | |
+| **Pass 23 total** | 19:19 | 21:37 | **2:18** | Estimate 5:25; the reading (0:31) ran earlier, during the style fix's test runs |
