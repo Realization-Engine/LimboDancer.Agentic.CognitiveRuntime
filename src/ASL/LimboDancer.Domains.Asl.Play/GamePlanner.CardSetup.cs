@@ -65,6 +65,7 @@ public sealed partial class GamePlanner
             {
                 OffBoard = unit.Position is OffMapPosition && state.Location(unit.Id) is null,
                 Broken = Is(unit, Conditions.Broken),
+                NonOb = state.NonObConcealed.Contains(unit.Id, StringComparer.Ordinal),
             });
         }
 
@@ -73,7 +74,8 @@ public sealed partial class GamePlanner
             // A SW belongs to its holder's group, at its holder's Location; equipment on its own belongs to no group (referee, pass 19).
             var holder = item.Holding is { } holding ? state.Unit(holding.Holder) : null;
             counters.Add(new SetupCounter(item.Id, holder?.Side ?? item.Side ?? string.Empty, holder?.Group, item.Definition?.Definition, item.Kind,
-                holder is not null ? state.Location(holder.Id)?.Location : (item.Position as MapPosition)?.Location, false, false, false, true, placedNow.Contains(item.Id))
+                holder is not null ? state.Location(holder.Id)?.Location : (item.Position as MapPosition)?.Location, false, Is(item, Conditions.Hidden) && holder is null, false, true,
+                placedNow.Contains(item.Id))
             {
                 OffBoard = holder is not null && holder.Position is OffMapPosition && state.Location(holder.Id) is null,
             });

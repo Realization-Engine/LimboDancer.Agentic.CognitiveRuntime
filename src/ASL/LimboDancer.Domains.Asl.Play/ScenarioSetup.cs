@@ -21,6 +21,12 @@ public sealed record SetupCounter(string Id, string Side, string? Group, string?
     {
         get; init;
     }
+
+    /// <summary>Whether its "?" is a non-OB one, placed after both sides set up (A12.12; ruling R23.6), which the OB allotment does not count.</summary>
+    public bool NonOb
+    {
+        get; init;
+    }
 }
 
 /// <summary>An OB line still to set up: its group, the area the card names for it (null for any of the group's areas), its definition, and how many.</summary>
@@ -59,6 +65,9 @@ public sealed record SetupReport(IReadOnlyList<SetupGroup> Groups, int? CurrentO
 public static class ScenarioSetup
 {
     private static readonly string[] SmcKinds = ["asl:leader", "asl:hero"];
+
+    // Ruling R23.5: the kinds that may set up hidden.
+    private static readonly string[] InfantryKinds = ["asl:squad", "asl:half-squad", "asl:crew", "asl:leader", "asl:hero"];
 
     /// <summary>The order a group sets up in (R17.12): its own, else 1 for the side that sets up first and 2 for the other.</summary>
     public static int OrderOf(ScenarioCard card, ScenarioCardSide side, ScenarioCardGroup group)
@@ -176,7 +185,7 @@ public static class ScenarioSetup
 
                 // R19.5 (A12.11, A12.12): the group's OB "?" are its Dummies plus each Location of its concealed real units.
                 var dummies = mine.Count(counter => counter.Dummy);
-                var concealedStacks = mine.Where(counter => counter.Concealed && !counter.Dummy && !counter.Equipment && counter.At is not null)
+                var concealedStacks = mine.Where(counter => counter.Concealed && !counter.NonOb && !counter.Dummy && !counter.Equipment && counter.At is not null)
                     .Select(counter => counter.At!).Distinct().Count();
                 var allotment = group.Dummies ?? 0;
                 if (dummies + concealedStacks > allotment)
@@ -184,7 +193,7 @@ public static class ScenarioSetup
                     reasons.Add($"play.setup-concealment: {group.Name} uses {dummies + concealedStacks} \"?\" at setup and has {allotment} (A12.12; ruling R19.5)");
                 }
 
-                foreach (var counter in mine.Where(counter => (counter.Concealed || counter.Dummy) && counter.At is not null))
+                foreach (var counter in mine.Where(counter => ((counter.Concealed && !counter.NonOb) || counter.Dummy) && counter.At is not null))
                 {
                     var key = terrain(counter.At!);
                     var area = group.Areas.FirstOrDefault(item => item.Kind != "entry" && Within(card, item, counter.At!));
@@ -195,10 +204,6 @@ public static class ScenarioSetup
                     }
                 }
 
-                if (mine.Any(counter => counter.Hidden))
-                {
-                    reasons.Add($"play.setup-hidden: {group.Name} has no HIP by SSR (A12.3; ruling R19.5)");
-                }
 
                 // R19.4: an area whose SSR fixes its counters takes exactly that many, none a "?", with at least the MMC it names.
                 var complete = setsUp && remaining.Count == 0;
@@ -267,6 +272,50 @@ public static class ScenarioSetup
                 if (deployedThen > enteringAllowed)
                 {
                     reasons.Add($"play.setup-deployment: {side.Side} Deploys {deployedThen} squad(s) entering on Turn {turn}, and 10% (FRU) of its {squads + deployedThen} is {enteringAllowed} (A2.9; ruling R20.5)");
+                }
+            }
+        }
+
+        // R23.5 (A12.3): HIP only by an SSR token hip:<side>:<n>, for up to n squad-equivalents of MMC with the SMC set up with them, only in Concealment
+        // Terrain, and never a Dummy or a unit also under "?".
+        foreach (var side in card.Sides)
+        {
+            var hidden = placed.Where(counter => counter.Side == side.Side && counter.Hidden && !counter.Equipment).ToArray();
+            foreach (var counter in placed.Where(counter => counter.Side == side.Side && counter.Hidden && (counter.Equipment || !InfantryKinds.Contains(counter.Kind))))
+            {
+                reasons.Add($"play.setup-hidden: {counter.Id} sets up hidden; HIP is built for Infantry only, and hidden Guns and vehicles are not built (A12.3, A12.34; ruling R23.5)");
+            }
+
+            if (hidden.Length == 0)
+            {
+                continue;
+            }
+
+            if (HipAllowance(card.Tokens, side.Side) is not { } allowance)
+            {
+                reasons.Add($"play.setup-hidden: no SSR gives {side.Side} HIP (A12.3; an SSR hip:{side.Side}:n; ruling R23.5)");
+                continue;
+            }
+
+            var used = hidden.Count(counter => counter.Kind == "asl:squad") + (hidden.Count(counter => counter.Kind is "asl:half-squad" or "asl:crew") / 2m);
+            if (used > allowance)
+            {
+                reasons.Add($"play.setup-hidden: {side.Side} sets up {used:0.#} squad-equivalents hidden, and its SSR allows {allowance:0.#} (A12.3; ruling R23.5)");
+            }
+
+            foreach (var counter in hidden)
+            {
+                if (counter.Dummy || counter.Concealed)
+                {
+                    reasons.Add($"play.setup-hidden: {counter.Id} is hidden or under \"?\", not both, and a Dummy is never hidden (A12.3; ruling R23.5)");
+                }
+                else if (counter.At is { } at && (terrain(at) is not { } key || !ConcealmentTerrain(key, month)))
+                {
+                    reasons.Add($"play.setup-hidden: {counter.Id} sets up hidden at {at}, which is not Concealment Terrain (A12.3; ruling R23.5)");
+                }
+                else if (SmcKinds.Contains(counter.Kind) && !hidden.Any(other => other.At == counter.At && !SmcKinds.Contains(other.Kind) && !other.Dummy))
+                {
+                    reasons.Add($"play.setup-hidden: {counter.Id} is hidden only with a hidden MMC of its Location (A12.3; ruling R23.5)");
                 }
             }
         }
@@ -425,6 +474,20 @@ public static class ScenarioSetup
         }
 
         return (remaining, reasons, halves.Where(item => !item.Key.OffBoard).Sum(item => (item.Value + 1) / 2), offBoard, entering);
+    }
+
+    /// <summary>
+    /// The squad-equivalents a side may set up hidden (A12.3; ruling R23.5): the largest n of its SSR tokens <c>hip:&lt;side&gt;:&lt;n&gt;</c>; null when it has
+    /// none.
+    /// </summary>
+    public static decimal? HipAllowance(IEnumerable<string> tokens, string side)
+    {
+        ArgumentNullException.ThrowIfNull(tokens);
+        var prefix = $"hip:{side}:";
+        return tokens.Where(token => token.StartsWith(prefix, StringComparison.Ordinal))
+            .Select(token => decimal.TryParse(token[prefix.Length..], System.Globalization.NumberStyles.AllowDecimalPoint, System.Globalization.CultureInfo.InvariantCulture,
+                out var count) ? count : (decimal?)null)
+            .Where(count => count > 0).Max();
     }
 
     /// <summary>Concealment Terrain for setup (A12.12, as the planner reads it): grain only June to September.</summary>

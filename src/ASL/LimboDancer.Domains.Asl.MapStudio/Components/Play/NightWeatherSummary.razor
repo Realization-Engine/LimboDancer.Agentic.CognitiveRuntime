@@ -1,0 +1,10 @@
+@* N02 (plan section 16.15): the NVR, weather, precipitation, and illumination now, which both sides know; nothing when there is nothing to say. *@
+@if (!string.IsNullOrEmpty(Text))
+{
+    <p id="play-conditions">@Text</p>
+}
+
+@code {
+    [Parameter]
+    public string? Text { get; set; }
+}

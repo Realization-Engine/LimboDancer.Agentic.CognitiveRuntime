@@ -25,121 +25,23 @@
 
 @if (Scripted is { } scripted)
 {
-    <div class="toolbar" id="scripted-dice">
-        <span class="toolbar-note">
-            <strong>Scripted dice are on (development only).</strong>
-            <span class="muted">Each die comes from this queue until it is empty, then from the system; games played now are test data.</span>
-        </span>
-        <label>Queue <input id="scripted-dice-values" size="24" placeholder="1 1 2 4" @bind="scriptedInput" /></label>
-        <button id="scripted-dice-add" @onclick="QueueDice">Add</button>
-        <button id="scripted-dice-clear" class="link" @onclick="() => scripted.Clear()">clear</button>
-        <span id="scripted-dice-queued">Queued: @(scripted.Queued.Count == 0 ? "none" : string.Join(" ", scripted.Queued))</span>
-        @if (scriptedProblem is { } problem)
-        {
-            <span class="warning">@problem</span>
-        }
-    </div>
+    <ScriptedDicePanel Queued="@([.. scripted.Queued])" @bind-Input="scriptedInput" Add="QueueDice" Clear="@(() => scripted.Clear())" Problem="@scriptedProblem" />
 }
 
-<div class="toolbar">
-    <label>
-        Game
-        <select id="play-game" value="@gameId" @onchange="ChangeGame">
-            <option value="">a new game</option>
-            @foreach (var scope in Live.Games())
-            {
-                <option value="@scope.Game">@scope.Game</option>
-            }
-        </select>
-    </label>
-    @if (state is not null)
-    {
-        <label>
-            View as
-            <select id="play-perspective" value="@viewAs" @onchange="@(args => viewAs = args.Value as string ?? viewAs)">
-                @foreach (var perspective in state.Perspectives)
-                {
-                    <option value="@perspective.Name">@(perspective.IsAdjudicator ? "the adjudicator" : perspective.Name)</option>
-                }
-            </select>
-        </label>
-        <a id="play-view" href="@Games.BoardLink(ViewTarget, GameLibrary.LivePrefix + gameId, Perspective.Adjudicator, state.Revision)">View on @ViewTarget</a>
-    }
-</div>
+<LiveGameToolbar Games="@([.. Live.Games().Select(scope => scope.Game)])" GameId="@gameId" GameChanged="ChangeGame" Views="@ViewChoices"
+                 ViewAs="@(handOver ?? viewAs)" ViewChanged="ChangeView" BoardLabel="@ViewTarget"
+                 BoardLink="@(state is not null && handOver is null ? Games.BoardLink(ViewTarget, GameLibrary.LivePrefix + gameId, Viewer, state.Revision) : null)" />
+
+<HandOverScreen Next="@handOver" Label="@ViewLabel(handOver)" Confirmed="ConfirmView">
 
 @if (state?.Scenario is { } scenario)
 {
-    <details id="play-card" open>
-        <summary>Scenario card: @scenario.Title</summary>
-        @if (CardRead(scenario.Id)?.Card is { } playCard)
-        {
-            @if (CardSha(scenario.Id) != scenario.Sha256)
-            {
-                <p id="play-card-changed" class="diagnostic warning">The card has changed since this game started; what follows is its current text.</p>
-            }
-            <p id="play-card-turns">@playCard.Turns.Count Game Turns@(playCard.Turns.HalfTurn ? ", the last with one Player Turn" : string.Empty); @ScenarioCards.PlaceAndDate(playCard).
-                @playCard.Turns.SetsUpFirst sets up first; @(playCard.Turns.MovesFirst is { } cardFirst ? $"{cardFirst} moves first." : $"{state.FirstSide} won the dr to move first (ruling R20.2).")</p>
-            <p id="play-card-balance">@(scenario.Balance is { } balanceSide ? $"{balanceSide} plays with its Balance: {playCard.Sides.FirstOrDefault(side => side.Side == balanceSide)?.Balance}" : "No side takes its Balance.")
-                @(scenario.Players.Count > 0 ? $" Players: {string.Join(", ", scenario.Players.Select(player => $"{player.Name} plays {player.Side}"))}." : string.Empty) (A26.4; ruling R20.3)</p>
-            @if (state.Ended is { } ended)
-            {
-                <p id="play-ended" class="diagnostic">@(ended.Reason == "victory" ? $"The game ended at once in Game Turn {ended.Turn}" : $"The game ended after Game Turn {ended.Turn}{(ended.Reason == "half-turn" ? ", a half turn" : string.Empty)}") (A3.9, A26; rulings R20.1, R21.4).
-                    @if (ended.Result is { } result)
-                    {
-                        <strong id="play-result">@(result.Winner is { } winner ? $"{winner} wins" : "A draw"): @result.Reason.</strong>
-                    }
-                </p>
-            }
-            <ul id="play-card-groups">
-                @foreach (var side in state.Sides)
-                {
-                    @foreach (var group in side.Groups)
-                    {
-                        <li>@side.Id: @group.Name (@group.Id), ELR @(group.Elr?.ToString(CultureInfo.InvariantCulture) ?? "not given")</li>
-                    }
-                }
-            </ul>
-            <p id="play-card-victory"><strong>Victory Conditions:</strong> @playCard.VictoryConditions.Text</p>
-            @if (history is not null && Live.Planner.Victory(history) is { } victory)
-            {
-                <table id="play-victory" class="library">
-                    <caption>The Victory Conditions now (A26; rulings R21.1 to R21.4)@(state.Ended is null ? $": if the game ended now, {(victory.AtEnd.Winner is { } leader ? $"{leader} would win" : "it would be a draw")}" : string.Empty)</caption>
-                    <thead><tr><th>Controlled</th><th>By</th></tr></thead>
-                    <tbody>
-                        @foreach (var item in victory.Control)
-                        {
-                            <tr data-control="@item.Id"><td>@(item.Kind == "building" ? $"building {item.Id}" : $"hex {item.Id}")</td><td>@(item.InMelee ? "neither (in Melee)" : item.Side ?? "neither")</td></tr>
-                        }
-                        @foreach (var side in victory.Sides)
-                        {
-                            <tr data-side="@side.Side"><td>@side.Side</td><td>@side.Cvp CVP, @side.ExitVp Exit VP, @side.UnbrokenSquads.ToString("0.#", CultureInfo.InvariantCulture) unbroken squad-equivalents</td></tr>
-                        }
-                    </tbody>
-                </table>
-            }
-            <ol id="play-card-ssr">
-                @foreach (var rule in playCard.SpecialRules)
-                {
-                    <li>@rule.Text</li>
-                }
-            </ol>
-            <a id="play-card-link" href="units/scenarios?card=@scenario.Id">The whole card</a>
-            @if (PublishedCatalog is { } provenanceCatalog)
-            {
-                <CardProvenancePanel Id="play-card-provenance" Model="@GameProvenance(playCard, scenario.Id, scenario.Sha256, provenanceCatalog)" />
-            }
-        }
-        else
-        {
-            <p id="play-card-missing" class="diagnostic warning">The card '@scenario.Id' is no longer among the scenario cards.</p>
-            <dl id="play-card-recorded" class="report">
-                <dt>Started from</dt>
-                <dd>@scenario.Id, SHA-256 <code>@scenario.Sha256</code></dd>
-                <dt>Catalog</dt>
-                <dd>@($"{state.Catalog.Catalog}@{state.Catalog.Version}")</dd>
-            </dl>
-        }
-    </details>
+    var playCard = CardRead(scenario.Id)?.Card;
+    <PlayCardPanel Scenario="@scenario" Card="@playCard" Changed="@(CardSha(scenario.Id) != scenario.Sha256)" FirstSide="@state.FirstSide" Ended="@state.Ended"
+                   Groups="@([.. state.Sides.SelectMany(side => side.Groups.Select(group => $"{side.Id}: {group.Name} ({group.Id}), ELR {group.Elr?.ToString(CultureInfo.InvariantCulture) ?? "not given"}"))])"
+                   Victory="@(playCard is not null ? VictoryNow : null)"
+                   KnownTo="@VictoryKnownTo" Catalog="@($"{state.Catalog.Catalog}@{state.Catalog.Version}")"
+                   Provenance="@(playCard is not null && PublishedCatalog is { } provenanceCatalog ? GameProvenance(playCard, scenario.Id, scenario.Sha256, provenanceCatalog) : null)" />
 }
 
 @if (history is null)
@@ -151,19 +53,8 @@
 }
 else if (history.Current is null && state is null)
 {
-    <div id="play-replay-failed" class="fail">
-        <p><strong>This game does not replay</strong>, so it cannot be shown or played. The first reasons:</p>
-        <ul>
-            @foreach (var diagnostic in history.Diagnostics.Take(5))
-            {
-                <li>@diagnostic.Code: @diagnostic.Message</li>
-            }
-        </ul>
-        @if (history.Events.FirstOrDefault()?.Payload is GameStarted started && Live.Catalogs.All(catalog => $"{catalog.Identity.Catalog}@{catalog.Identity.Version}" != started.Catalog))
-        {
-            <p id="play-replay-catalog">It was set up with catalog @started.Catalog, which this Studio no longer carries. Start a new game to play with the current catalog.</p>
-        }
-    </div>
+    <GameReplayFailure Diagnostics="@history.Diagnostics"
+                       MissingCatalog="@(history.Events.FirstOrDefault()?.Payload is GameStarted started && Live.Catalogs.All(catalog => $"{catalog.Identity.Catalog}@{catalog.Identity.Version}" != started.Catalog) ? started.Catalog : null)" />
 }
 else if (state is not null)
 {
@@ -172,10 +63,7 @@ else if (state is not null)
         turn @state.Turn, @Games.PhaseLabel(state.Phase), @state.PhasingSide phasing.
         @(SetupOpen ? "Setup is open." : "Play has started; setup is closed.")
     </p>
-    @if (NightAndWeather(state) is { Length: > 0 } conditions)
-    {
-        <p id="play-conditions">@conditions</p>
-    }
+    <NightWeatherSummary Text="@NightAndWeather(state)" />
 }
 
 @if (history is null || SetupOpen)
@@ -187,25 +75,44 @@ else if (state is not null)
     }
     @if (SetupView is { } setup)
     {
-        <table id="setup-pools" class="library">
-            <caption>The card's OB, group by group (A2.9; rulings R19.1 to R19.6)@(setup.CurrentOrder is { } now ? $": order {now} is setting up now" : ": every group has set up")</caption>
-            <thead><tr><th>Order</th><th>Side</th><th>OB group</th><th>Status</th><th>Still to set up</th><th>"?" left</th><th>Where</th></tr></thead>
-            <tbody>
-                @foreach (var group in setup.Groups.OrderBy(group => group.Order))
+        <SetupPoolsTable Report="@setup" DefinitionLabel="@DefinitionLabel" OutOfSight="@Unseen" />
+    }
+    @if (state is not null && SetupView is { } seen && seen.Groups.Where(group => Unseen.Contains(group.Id)).Select(group => group.Side).Distinct().ToArray() is { Length: > 0 } unseen)
+    {
+        <p id="setup-out-of-sight" class="diagnostic">
+            @string.Join(" and ", unseen) @(unseen.Length == 1 ? "sets" : "set") up now, out of your sight: its placements are not shown to @Viewer.Name until it has
+            finished, and only it places units now. Hand the screen over by choosing its view (A12.12; ruling R23.3).
+        </p>
+    }
+    @if (state is not null && history is { Events.Count: > 0 } && SetupView is not { CurrentOrder: not null })
+    {
+        @foreach (var side in state.Sides.Where(side => Viewer.IsAdjudicator || side.Id == viewAs))
+        {
+            var choices = Live.Planner.NonObConcealment(state, side.Id);
+            <fieldset class="setup-non-ob" data-side="@side.Id">
+                <legend>Non-OB "?" for @side.Id (A12.12; ruling R23.6)</legend>
+                <p class="muted">
+                    Once both sides have set up, a stack with no "?" may take one if it is out of the LOS of every unbroken enemy ground unit within 16 hexes, or
+                    17 hexes or more from all of them. Hidden units are not on the board and do not count. The game checks this against every enemy unit, those
+                    under "?" too, as the opponent would at the table; a refusal names no enemy Location.
+                </p>
+                @if (choices.Count == 0)
                 {
-                    <tr data-group="@group.Id">
-                        <td>@group.Order</td>
-                        <td>@group.Side</td>
-                        <td>@group.Name (@group.Id)</td>
-                        <td>@(!group.SetsUp ? (group.OffBoard.Count > 0 ? "sets up off board to enter" : "waits off board to enter") : group.Complete ? (group.OffBoard.Count > 0 ? "set up; the rest sets up off board to enter" : "set up") : group.Order == setup.CurrentOrder ? "setting up now" : "waits")</td>
-                        <td>@(group.Remaining.Count > 0 ? string.Join(", ", group.Remaining.Select(need => $"{need.Count} {DefinitionLabel(need.Definition)}{(need.Area is { } area ? $" in {area}" : string.Empty)}"))
-                            : group.SetsUp && !group.Complete ? "the counters its SSR names (see Where); both HS of a Deployed squad in one proposal" : "-")@(group.OffBoard.Count > 0 ? $"; off board to enter: {string.Join(", ", group.OffBoard.Select(need => $"{need.Count} {DefinitionLabel(need.Definition)}"))}" : string.Empty)</td>
-                        <td>@group.DummiesLeft</td>
-                        <td>@string.Join("; ", group.Areas.Select(SetupAreaText))</td>
-                    </tr>
+                    <p class="muted non-ob-none">No stack of @side.Id may take a non-OB "?" now.</p>
                 }
-            </tbody>
-        </table>
+                else
+                {
+                    @foreach (var at in choices)
+                    {
+                        var key = $"{side.Id}|{at}";
+                        <label><input type="checkbox" class="non-ob-location" value="@at" checked="@nonObChosen.Contains(key)"
+                                      @onchange="@(args => Toggle(nonObChosen, key, args.Value is true))" /> @at</label>
+                    }
+                    <button class="propose-non-ob" disabled="@(!choices.Any(at => nonObChosen.Contains($"{side.Id}|{at}")))"
+                            @onclick="@(() => ProposeNonOb(side.Id, choices))">Propose: place @side.Id's non-OB "?"</button>
+                }
+            </fieldset>
+        }
     }
     <div class="toolbar">
         <label>
@@ -284,11 +191,22 @@ else if (state is not null)
     <div class="toolbar">
         <button id="propose-advance" @onclick="ProposeAdvance">Propose: advance the phase</button>
     </div>
+    @if (!SetupOpen && VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Hidden) == ConditionState.True
+        && state.Location(unit.Id) is not null && (Viewer.IsAdjudicator || unit.Side == viewAs)).ToArray() is { Length: > 0 } hiddenUnits)
+    {
+        <div class="toolbar" id="play-hidden">
+            <span class="toolbar-note">Hidden units (HIP): each is placed beneath a "?" before it moves or advances, or whenever its side chooses (A12.32; ruling R23.5).</span>
+            @foreach (var unit in hiddenUnits)
+            {
+                <button class="place-hidden" data-unit="@unit.Id" @onclick="@(() => ProposePlaceHidden(unit.Id))">Propose: place @unit.Id at @state.Location(unit.Id)!.Location beneath "?"</button>
+            }
+        </div>
+    }
     <div class="toolbar">
         <label>
             Unit
             <select id="enter-unit" value="@enterUnit" @onchange="@(args => enterUnit = args.Value as string ?? string.Empty)">
-                @foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active))
+                @foreach (var unit in VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active))
                 {
                     <option value="@unit.Id">@unit.Id (@unit.Side)</option>
                 }
@@ -313,7 +231,7 @@ else if (state is not null)
             not rout from the open, is eliminated, or surrenders to an ADJACENT Good Order enemy (A20.21).
         </p>
         <ul id="rout-obligations">
-            @foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Broken) == ConditionState.True
+            @foreach (var unit in VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Broken) == ConditionState.True
                 && Live.Planner.MayRout(state, unit)).OrderBy(unit => unit.Id, StringComparer.Ordinal))
             {
                 <li class="rout-obligation" data-unit="@unit.Id">
@@ -326,7 +244,7 @@ else if (state is not null)
                 Broken unit
                 <select id="rout-unit" value="@routUnit" @onchange="@(args => routUnit = args.Value as string ?? string.Empty)">
                     <option value="">choose</option>
-                    @foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Broken) == ConditionState.True
+                    @foreach (var unit in VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Broken) == ConditionState.True
                         && !state.RoutedThisPhase.Contains(unit.Id) && Live.Planner.MayRout(state, unit)))
                     {
                         <option value="@unit.Id">@unit.Id (@unit.Side)</option>
@@ -392,7 +310,7 @@ else if (state is not null)
                 Broken unit
                 <select id="rally-unit" value="@rallyUnit" @onchange="@(args => { rallyUnit = args.Value as string ?? string.Empty; rallyLeader = string.Empty; })">
                     <option value="">choose</option>
-                    @foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Broken) == ConditionState.True))
+                    @foreach (var unit in VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Broken) == ConditionState.True))
                     {
                         <option value="@unit.Id">@unit.Id (@unit.Side)</option>
                     }
@@ -415,12 +333,12 @@ else if (state is not null)
                 Malfunctioned SW or AAMG
                 <select id="repair-weapon" value="@repairWeapon" @onchange="@(args => repairWeapon = args.Value as string ?? string.Empty)">
                     <option value="">choose</option>
-                    @foreach (var weapon in state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed }
+                    @foreach (var weapon in VisibleEquipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed }
                         && GameState.Condition(item, Conditions.Malfunctioned) == ConditionState.True))
                     {
                         <option value="@weapon.Id">@weapon.Id (held by @weapon.Holding!.Holder)</option>
                     }
-                    @foreach (var vehicle in state.Units.Where(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit) && LiveFire.CrewExposed(unit)
+                    @foreach (var vehicle in VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit) && LiveFire.CrewExposed(unit)
                         && GameState.Condition(unit, Conditions.Malfunctioned) == ConditionState.True && GameState.Condition(unit, Conditions.Disabled) != ConditionState.True))
                     {
                         <option value="@vehicle.Id">@vehicle.Id's AAMG (a dr of 1 repairs it, a 6 disables it; D3.7)</option>
@@ -438,7 +356,7 @@ else if (state is not null)
                 Squad
                 <select id="deploy-squad" value="@deploySquad" @onchange="@(args => { deploySquad = args.Value as string ?? string.Empty; deployLeader = string.Empty; deployWeapon = string.Empty; })">
                     <option value="">choose</option>
-                    @foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Kind == "asl:squad" && state.Location(unit.Id) is not null
+                    @foreach (var unit in VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && unit.Kind == "asl:squad" && state.Location(unit.Id) is not null
                         && GameState.Condition(unit, Conditions.Broken) != ConditionState.True))
                     {
                         <option value="@unit.Id">@unit.Id (@unit.Side)</option>
@@ -459,7 +377,7 @@ else if (state is not null)
                 Second HS takes
                 <select id="deploy-weapon" value="@deployWeapon" @onchange="@(args => deployWeapon = args.Value as string ?? string.Empty)">
                     <option value="">no SW</option>
-                    @foreach (var weapon in state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == deploySquad))
+                    @foreach (var weapon in VisibleEquipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == deploySquad))
                     {
                         <option value="@weapon.Id">@weapon.Id</option>
                     }
@@ -472,7 +390,7 @@ else if (state is not null)
                 HS
                 <select id="recombine-one" value="@recombineOne" @onchange="@(args => { recombineOne = args.Value as string ?? string.Empty; recombineTwo = string.Empty; recombineLeader = string.Empty; })">
                     <option value="">choose</option>
-                    @foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Kind == "asl:half-squad" && state.Location(unit.Id) is not null))
+                    @foreach (var unit in VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && unit.Kind == "asl:half-squad" && state.Location(unit.Id) is not null))
                     {
                         <option value="@unit.Id">@unit.Id (@unit.Side)</option>
                     }
@@ -500,12 +418,12 @@ else if (state is not null)
             </label>
             <button id="propose-recombine" disabled="@(recombineOne.Length == 0 || recombineTwo.Length == 0)" @onclick="ProposeRecombine">Propose: recombine</button>
         </div>
-        @if (state.Units.Any(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.DesperationMorale) == ConditionState.True
+        @if (VisibleUnits.Any(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.DesperationMorale) == ConditionState.True
             && Live.Planner.MayRetainDm(state, unit.Id)))
         {
             <div class="toolbar" id="retain-dm">
                 <span>Keep DM as the RPh ends, outside woods and buildings (A10.62):</span>
-                @foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.DesperationMorale) == ConditionState.True
+                @foreach (var unit in VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.DesperationMorale) == ConditionState.True
                     && Live.Planner.MayRetainDm(state, unit.Id)))
                 {
                     <label><input class="retain-dm" type="checkbox" data-unit="@unit.Id" checked="@retainDm.Contains(unit.Id)" @onchange="@(args => Toggle(retainDm, unit.Id, args.Value is true))" /> @unit.Id</label>
@@ -541,105 +459,112 @@ else if (state is not null)
             or pass (A8.1, A8.11); the stack then moves on, whole or split, or ends its move. No other unit moves until every member of the stack has
             ended (A4.2); a member that breaks or is pinned ends its move. A Location holding Residual FP attacks a stack as it enters (A8.22).
         </p>
-        @if (state.Movement is { } movement)
+        @if (Viewer.IsAdjudicator || viewAs == state.PhasingSide)
         {
-            <p id="move-state" data-step="@movement.Step" data-window="@(movement.WindowOpen ? "open" : "closed")">
-                <strong>@string.Join(", ", movement.Movers)</strong> in @movement.Location, step @movement.Step@(movement.Assault ? ", by Assault Movement" : ""):
-                @(movement.WindowOpen ? "the DEFENDER may fire, or pass." : "the DEFENDER has passed; move on or end the move.")
-                <span id="move-members">@(movement.Members.Count > 0 ? $"May still move: {string.Join(", ", movement.Members)}." : "No member may move farther; end the move.")</span>
-                @if (movement.Bypass is { Count: > 0 } lane)
-                {
-                    <span id="move-bypass-state">@(" ")In Bypass along @string.Join(", ", lane.Select(side => side.ToString().ToLowerInvariant())): leave through the far vertex, or move To @movement.Location to occupy the obstacle; the move may not end here (A4.32).</span>
-                }
-                @if (movement.MinimumMove)
-                {
-                    <span id="move-minimum-state">@(" ")A Minimum Move: once the DEFENDER's fire is done the stack is pinned and CX, and its move ends (A4.134).</span>
-                }
-                @if (movement.EndingMembers.Count > 0 && !movement.MinimumMove)
-                {
-                    <span id="move-ending-state">@(" ")@string.Join(", ", movement.EndingMembers) end their move when the DEFENDER's window closes (a forced back, A12.15, or a SMOKE dr of 6, A24.1).</span>
-                }
-            </p>
-        }
-        @foreach (var (charging, target, next, undecided) in Charges)
-        {
-            @if (undecided is null)
+            @if (state.Movement is { } movement)
             {
-                <p class="fail" data-charge="@charging.Id">
-                    @charging.Id is berserk and charges @(target?.ToString() ?? "the nearest Known enemy unit") before any other unit moves (A15.43),
-                    by a shortest route: next @(next.Count == 1 ? "step" : "steps") @string.Join(" or ", next) (A15.431). It may not stop short while it has the MF.
-                </p>
-            }
-            else
-            {
-                <p class="muted" data-charge="@charging.Id" data-undecided="true">
-                    @charging.Id is berserk, but its charge@(target is { } at ? $" at {at}" : "") is not decided here: @undecided
-                </p>
-            }
-        }
-        <div class="toolbar">
-            @foreach (var unit in MoveCandidates)
-            {
-                <label><input class="move-unit" type="checkbox" data-unit="@unit.Id" checked="@moveUnits.Contains(unit.Id)" @onchange="@(args => Toggle(moveUnits, unit.Id, args.Value is true))" /> @unit.Id (@(state.Location(unit.Id)?.Location.ToString() ?? (Live.Planner.EntryFor(state, unit) is { } entering ? $"off board: enters along the {entering.Edge} edge" : "off board")))@(GameState.Condition(unit, Conditions.Berserk) == ConditionState.True ? ", berserk" : "")</label>
-            }
-            <label title="A Location such as bd01:D5:0; the level after the hex moves up or down a stairwell or along an upper level of a building (B23.4, B23.421)">To <input id="move-to" value="@moveTo" @onchange="@(args => moveTo = args.Value as string ?? string.Empty)" size="12" /></label>
-            <label title="A4.134: the unit's only hex this MPh, whatever it costs, even if CX; once the DEFENDER's fire is done it is pinned and CX."><input id="move-minimum" type="checkbox" checked="@moveMinimum" @onchange="@(args => moveMinimum = args.Value is true)" /> Minimum Move</label>
-            <label title="A4.3, A4.31: enter the woods or building hex along one or two of its hexsides the obstacle does not touch, in order, such as southeast, northeast; the stack then leaves through the far vertex or pays to occupy the obstacle (move To its own Location).">Bypass <input id="move-bypass" value="@moveBypass" @onchange="@(args => moveBypass = args.Value as string ?? string.Empty)" size="18" placeholder="southeast, northeast" /></label>
-            <label><input id="move-assault" type="checkbox" checked="@moveAssault" @onchange="@(args => moveAssault = args.Value is true)" /> Assault Movement</label>
-            <label title="Double Time adds 2 MF (1 after the unit has spent MF) and makes the unit CX (A4.5); not for a unit that is CX, or whose CX counter came off at the start of this MPh (A4.51), nor with Assault Movement (A4.61)."><input id="move-double-time" type="checkbox" checked="@moveDoubleTime" @onchange="@(args => moveDoubleTime = args.Value is true)" /> Double Time</label>
-            @if (MovingGun is { } pushable)
-            {
-                <label title="C10.3: the crew pushes its Gun at double the MF, with a Manhandling DR against its M#; uncheck to walk away and abandon the Gun."><input id="move-push" type="checkbox" checked="@movePush" @onchange="@(args => movePush = args.Value is true)" /> push @pushable.Id (unchecked: abandon it)</label>
-            }
-            <button id="propose-move" disabled="@(moveUnits.Count == 0 || moveTo.Trim().Length == 0)" @onclick="ProposeMove">Propose: move</button>
-            <label title="A2.6 (ruling R21.5): a stack in an edge hex leaves the map across that edge for its own hex's MF, and may not return.">
-                Leave by
-                <select id="move-exit" value="@moveExit" @onchange="@(args => moveExit = args.Value as string ?? string.Empty)">
-                    <option value="">edge</option>
-                    @foreach (var edge in SideState.Edges)
+                <p id="move-state" data-step="@movement.Step" data-window="@(movement.WindowOpen ? "open" : "closed")">
+                    <strong>@string.Join(", ", movement.Movers)</strong> in @movement.Location, step @movement.Step@(movement.Assault ? ", by Assault Movement" : ""):
+                    @(movement.WindowOpen ? "the DEFENDER may fire, or pass." : "the DEFENDER has passed; move on or end the move.")
+                    <span id="move-members">@(movement.Members.Count > 0 ? $"May still move: {string.Join(", ", movement.Members)}." : "No member may move farther; end the move.")</span>
+                    @if (movement.Bypass is { Count: > 0 } lane)
                     {
-                        <option value="@edge">@edge</option>
+                        <span id="move-bypass-state">@(" ")In Bypass along @string.Join(", ", lane.Select(side => side.ToString().ToLowerInvariant())): leave through the far vertex, or move To @movement.Location to occupy the obstacle; the move may not end here (A4.32).</span>
                     }
-                </select>
-            </label>
-            <button id="propose-exit" disabled="@(moveUnits.Count == 0 || moveExit.Length == 0)" @onclick="ProposeExit">Propose: leave the map</button>
-            @if (SmokePlacers.Any())
+                    @if (movement.MinimumMove)
+                    {
+                        <span id="move-minimum-state">@(" ")A Minimum Move: once the DEFENDER's fire is done the stack is pinned and CX, and its move ends (A4.134).</span>
+                    }
+                    @if (movement.EndingMembers.Count > 0 && !movement.MinimumMove)
+                    {
+                        <span id="move-ending-state">@(" ")@string.Join(", ", movement.EndingMembers) end their move when the DEFENDER's window closes (a forced back, A12.15, or a SMOKE dr of 6, A24.1).</span>
+                    }
+                </p>
+            }
+            @foreach (var (charging, target, next, undecided) in Charges)
             {
-                <label title="A24.1: a squad with a Smoke Placement Exponent, once per MPh, places SMOKE grenades in its Location (1 MF) or an ADJACENT one (2 MF) on a dr at most its exponent; a 6 ends its MPh. The counter (+2 Hindrance, +1 more out of it) leaves at the end of the MPh.">
-                    SMOKE by
-                    <select id="smoke-by" value="@smokeBy" @onchange="@(args => smokeBy = args.Value as string ?? string.Empty)">
-                        <option value="">choose</option>
-                        @foreach (var placer in SmokePlacers)
+                @if (undecided is null)
+                {
+                    <p class="fail" data-charge="@charging.Id">
+                        @charging.Id is berserk and charges @(target?.ToString() ?? "the nearest Known enemy unit") before any other unit moves (A15.43),
+                        by a shortest route: next @(next.Count == 1 ? "step" : "steps") @string.Join(" or ", next) (A15.431). It may not stop short while it has the MF.
+                    </p>
+                }
+                else
+                {
+                    <p class="muted" data-charge="@charging.Id" data-undecided="true">
+                        @charging.Id is berserk, but its charge@(target is { } at ? $" at {at}" : "") is not decided here: @undecided
+                    </p>
+                }
+            }
+            <div class="toolbar">
+                @foreach (var unit in MoveCandidates)
+                {
+                    <label><input class="move-unit" type="checkbox" data-unit="@unit.Id" checked="@moveUnits.Contains(unit.Id)" @onchange="@(args => Toggle(moveUnits, unit.Id, args.Value is true))" /> @unit.Id (@(state.Location(unit.Id)?.Location.ToString() ?? (Live.Planner.EntryFor(state, unit) is { } entering ? $"off board: enters along the {entering.Edge} edge" : "off board")))@(GameState.Condition(unit, Conditions.Berserk) == ConditionState.True ? ", berserk" : "")</label>
+                }
+                <label title="A Location such as bd01:D5:0; the level after the hex moves up or down a stairwell or along an upper level of a building (B23.4, B23.421)">To <input id="move-to" value="@moveTo" @onchange="@(args => moveTo = args.Value as string ?? string.Empty)" size="12" /></label>
+                <label title="A4.134: the unit's only hex this MPh, whatever it costs, even if CX; once the DEFENDER's fire is done it is pinned and CX."><input id="move-minimum" type="checkbox" checked="@moveMinimum" @onchange="@(args => moveMinimum = args.Value is true)" /> Minimum Move</label>
+                <label title="A4.3, A4.31: enter the woods or building hex along one or two of its hexsides the obstacle does not touch, in order, such as southeast, northeast; the stack then leaves through the far vertex or pays to occupy the obstacle (move To its own Location).">Bypass <input id="move-bypass" value="@moveBypass" @onchange="@(args => moveBypass = args.Value as string ?? string.Empty)" size="18" placeholder="southeast, northeast" /></label>
+                <label><input id="move-assault" type="checkbox" checked="@moveAssault" @onchange="@(args => moveAssault = args.Value is true)" /> Assault Movement</label>
+                <label title="Double Time adds 2 MF (1 after the unit has spent MF) and makes the unit CX (A4.5); not for a unit that is CX, or whose CX counter came off at the start of this MPh (A4.51), nor with Assault Movement (A4.61)."><input id="move-double-time" type="checkbox" checked="@moveDoubleTime" @onchange="@(args => moveDoubleTime = args.Value is true)" /> Double Time</label>
+                @if (MovingGun is { } pushable)
+                {
+                    <label title="C10.3: the crew pushes its Gun at double the MF, with a Manhandling DR against its M#; uncheck to walk away and abandon the Gun."><input id="move-push" type="checkbox" checked="@movePush" @onchange="@(args => movePush = args.Value is true)" /> push @pushable.Id (unchecked: abandon it)</label>
+                }
+                <button id="propose-move" disabled="@(moveUnits.Count == 0 || moveTo.Trim().Length == 0)" @onclick="ProposeMove">Propose: move</button>
+                <label title="A2.6 (ruling R21.5): a stack in an edge hex leaves the map across that edge for its own hex's MF, and may not return.">
+                    Leave by
+                    <select id="move-exit" value="@moveExit" @onchange="@(args => moveExit = args.Value as string ?? string.Empty)">
+                        <option value="">edge</option>
+                        @foreach (var edge in SideState.Edges)
                         {
-                            <option value="@placer.Id">@placer.Id</option>
+                            <option value="@edge">@edge</option>
                         }
                     </select>
                 </label>
-                <label>in <input id="smoke-at" value="@smokeAt" @onchange="@(args => smokeAt = args.Value as string ?? string.Empty)" size="12" /></label>
-                <button id="propose-smoke" disabled="@(moveUnits.Count == 0 || smokeBy.Length == 0 || smokeAt.Trim().Length == 0)" @onclick="ProposeSmoke">Propose: SMOKE grenades</button>
-            }
-            @if (MoverCharges.Any())
-            {
-                <label title="A23.3: a mover Places its DC in an ADJACENT Location in its LOS for the MF entering it would cost; it is operably Placed once the placer leaves or ends its move neither broken nor pinned, and detonates in the AFPh.">
-                    Place DC
-                    <select id="place-dc" value="@placeDc" @onchange="@(args => placeDc = args.Value as string ?? string.Empty)">
-                        <option value="">choose</option>
-                        @foreach (var charge in MoverCharges)
-                        {
-                            <option value="@charge.Id">@charge.Id (@charge.Holding!.Holder)</option>
-                        }
-                    </select>
-                </label>
-                <label>in <input id="place-dc-at" value="@placeDcAt" @onchange="@(args => placeDcAt = args.Value as string ?? string.Empty)" size="12" /></label>
-                <button id="propose-place-dc" disabled="@(moveUnits.Count == 0 || placeDc.Length == 0 || placeDcAt.Trim().Length == 0)" @onclick="ProposePlaceDc">Propose: Place the DC</button>
-            }
-            @if (moveUnits.Any(id => state.Unit(id) is { } mover && GameState.Condition(mover, Conditions.Berserk) == ConditionState.True))
-            {
-                <label title="A15.431: before its charge a berserk unit abandons SW of more than 1 PP and 1PP SW beyond its IPC; name those it keeps, comma-separated.">Keep SW <input id="move-keep" value="@moveKeep" @onchange="@(args => moveKeep = args.Value as string ?? string.Empty)" size="18" /></label>
-            }
-            <button id="propose-pass" disabled="@(state.Movement is not { WindowOpen: true })" @onclick='@(() => ProposeSimple(GameActions.PassFire, "pass"))'>Propose: the DEFENDER passes</button>
-            <button id="propose-end-move" disabled="@(state.Movement is not { WindowOpen: false })" @onclick="ProposeEndMove">Propose: end the move@(EndingSome ? " of the checked units" : "")</button>
-        </div>
+                <button id="propose-exit" disabled="@(moveUnits.Count == 0 || moveExit.Length == 0)" @onclick="ProposeExit">Propose: leave the map</button>
+                @if (SmokePlacers.Any())
+                {
+                    <label title="A24.1: a squad with a Smoke Placement Exponent, once per MPh, places SMOKE grenades in its Location (1 MF) or an ADJACENT one (2 MF) on a dr at most its exponent; a 6 ends its MPh. The counter (+2 Hindrance, +1 more out of it) leaves at the end of the MPh.">
+                        SMOKE by
+                        <select id="smoke-by" value="@smokeBy" @onchange="@(args => smokeBy = args.Value as string ?? string.Empty)">
+                            <option value="">choose</option>
+                            @foreach (var placer in SmokePlacers)
+                            {
+                                <option value="@placer.Id">@placer.Id</option>
+                            }
+                        </select>
+                    </label>
+                    <label>in <input id="smoke-at" value="@smokeAt" @onchange="@(args => smokeAt = args.Value as string ?? string.Empty)" size="12" /></label>
+                    <button id="propose-smoke" disabled="@(moveUnits.Count == 0 || smokeBy.Length == 0 || smokeAt.Trim().Length == 0)" @onclick="ProposeSmoke">Propose: SMOKE grenades</button>
+                }
+                @if (MoverCharges.Any())
+                {
+                    <label title="A23.3: a mover Places its DC in an ADJACENT Location in its LOS for the MF entering it would cost; it is operably Placed once the placer leaves or ends its move neither broken nor pinned, and detonates in the AFPh.">
+                        Place DC
+                        <select id="place-dc" value="@placeDc" @onchange="@(args => placeDc = args.Value as string ?? string.Empty)">
+                            <option value="">choose</option>
+                            @foreach (var charge in MoverCharges)
+                            {
+                                <option value="@charge.Id">@charge.Id (@charge.Holding!.Holder)</option>
+                            }
+                        </select>
+                    </label>
+                    <label>in <input id="place-dc-at" value="@placeDcAt" @onchange="@(args => placeDcAt = args.Value as string ?? string.Empty)" size="12" /></label>
+                    <button id="propose-place-dc" disabled="@(moveUnits.Count == 0 || placeDc.Length == 0 || placeDcAt.Trim().Length == 0)" @onclick="ProposePlaceDc">Propose: Place the DC</button>
+                }
+                @if (moveUnits.Any(id => state.Unit(id) is { } mover && GameState.Condition(mover, Conditions.Berserk) == ConditionState.True))
+                {
+                    <label title="A15.431: before its charge a berserk unit abandons SW of more than 1 PP and 1PP SW beyond its IPC; name those it keeps, comma-separated.">Keep SW <input id="move-keep" value="@moveKeep" @onchange="@(args => moveKeep = args.Value as string ?? string.Empty)" size="18" /></label>
+                }
+                <button id="propose-pass" disabled="@(state.Movement is not { WindowOpen: true })" @onclick='@(() => ProposeSimple(GameActions.PassFire, "pass"))'>Propose: the DEFENDER passes</button>
+                <button id="propose-end-move" disabled="@(state.Movement is not { WindowOpen: false })" @onclick="ProposeEndMove">Propose: end the move@(EndingSome ? " of the checked units" : "")</button>
+            </div>
+        }
+        else
+        {
+            <p class="muted" id="move-elsewhere">The @state.PhasingSide side moves now; its movers and their route are its own (choose its view to move; ruling R23.1).</p>
+        }
         @if (state.Movement is { Vehicle: true, WindowOpen: true, Members: [{ } reacting] } && state.Location(reacting)?.Location is { } reactionAt
             && ReactionUnits(reactionAt, reacting).Any())
         {
@@ -673,7 +598,7 @@ else if (state is not null)
                 <button id="propose-reaction" disabled="@(reactionAttacker.Length == 0)" @onclick="@(() => ProposeVehicleCc(reactionAt.ToString(), [reactionAttacker, .. (reactionLeader.Length > 0 ? new[] { reactionLeader } : [])], null, [], false))">Propose: CC Reaction Fire at @reacting</button>
             </div>
         }
-        @if (VehicleCandidates.Any())
+        @if (VehicleCandidates.Any() && (Viewer.IsAdjudicator || viewAs == state.PhasingSide))
         {
             <h4>Vehicle movement</h4>
             <p class="muted" id="vehicle-help">
@@ -738,7 +663,7 @@ else if (state is not null)
                     }
                     <button id="vehicle-declare-ovr" title="After the concealed units of the Location it entered were revealed or tested (A12.41)" @onclick='@(() => ProposeVehicleStep("overrun"))'>Propose: OVR here (A12.41)</button>
                     <button id="vehicle-stop" @onclick='@(() => ProposeVehicleStep("stop"))'>Propose: stop (1 MP)</button>
-                    @foreach (var towable in state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Kind == "asl:gun" && item.Position is MapPosition gunAt
+                    @foreach (var towable in VisibleEquipment.Where(item => item.Status == InstanceStatus.Active && item.Kind == "asl:gun" && item.Position is MapPosition gunAt
                         && gunAt.Location == state.Location(chosen.Id)?.Location))
                     {
                         @if (towable.Holding is { Role: HoldingRole.Towed })
@@ -1163,7 +1088,12 @@ else if (state is not null)
             <button id="propose-opportunity" disabled="@(opportunityUnits.Count == 0)" @onclick="ProposeOpportunity">Propose: Opportunity Fire</button>
         </div>
     }
-    @if (FiringSide is { } firing)
+    @if (FiringSide is { } waiting && !Viewer.IsAdjudicator && viewAs != waiting)
+    {
+        <h4>Fire</h4>
+        <p class="muted" id="fire-elsewhere">The @waiting side may fire now; its fire groups are its own (choose its view to fire; ruling R23.1).</p>
+    }
+    else if (FiringSide is { } firing)
     {
         <h4>Fire</h4>
         <p class="muted" id="fire-side">
@@ -1367,7 +1297,7 @@ else if (state is not null)
                             Spotter
                             <select id="ordnance-spotter" value="@ordnanceSpotter" @onchange="@(args => ordnanceSpotter = args.Value as string ?? string.Empty)">
                                 <option value="">none</option>
-                                @foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == firing && !LiveFire.IsVehicle(unit)).OrderBy(unit => unit.Id, StringComparer.Ordinal))
+                                @foreach (var unit in VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == firing && !LiveFire.IsVehicle(unit)).OrderBy(unit => unit.Id, StringComparer.Ordinal))
                                 {
                                     <option value="@unit.Id">@unit.Id (@state.Location(unit.Id)?.Location)</option>
                                 }
@@ -1378,7 +1308,7 @@ else if (state is not null)
                         Leader
                         <select id="ordnance-director" value="@ordnanceDirector" @onchange="@(args => ordnanceDirector = args.Value as string ?? string.Empty)">
                             <option value="">none</option>
-                            @foreach (var leader in state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == firing && unit.Kind == "asl:leader").OrderBy(unit => unit.Id, StringComparer.Ordinal))
+                            @foreach (var leader in VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == firing && unit.Kind == "asl:leader").OrderBy(unit => unit.Id, StringComparer.Ordinal))
                             {
                                 <option value="@leader.Id">@leader.Id (@state.Location(leader.Id)?.Location)</option>
                             }
@@ -1470,72 +1400,20 @@ else if (state is not null)
 
 @if (pending is { } proposal)
 {
-    <div id="play-proposal">
-        <h3>@proposal.Action.Name</h3>
-        <p class="@(proposal.Result.Outcome is PlayOutcome.NeedsConfirmation or PlayOutcome.Committed or PlayOutcome.Replay ? "pass" : "fail")">
-            <strong id="play-outcome">@OutcomeText(proposal.Result.Outcome, Withheld(proposal))</strong>
-        </p>
-        <ul id="play-reasons">
-            @foreach (var reason in Reasons(proposal))
+    <ProposalReviewPanel Title="@proposal.Action.Name" Accepted="@(proposal.Result.Outcome is PlayOutcome.NeedsConfirmation or PlayOutcome.Committed or PlayOutcome.Replay)"
+                         Outcome="@OutcomeText(proposal.Result.Outcome, Withheld(proposal))" Reasons="@([.. Reasons(proposal)])"
+                         CanConfirm="@(proposal.Result.Outcome == PlayOutcome.NeedsConfirmation)" Confirm="Confirm" Cancel="@(() => pending = null)">
+        <Evidence>
+            @if (proposal.Result.Plan?.Entry is { } review && !Withheld(proposal))
             {
-                <li>@reason</li>
+                <EntryReviewFacts Review="@review" />
             }
-        </ul>
-        @if (proposal.Result.Plan?.Entry is { } review && !Withheld(proposal))
-        {
-            <table class="library" id="play-facts">
-                <thead><tr><th>Reviewed fact (Scenario A1 first case)</th><th>From the game</th></tr></thead>
-                <tbody>
-                    @foreach (var (name, value) in review.Facts)
-                    {
-                        <tr data-fact="@name"><td>@name</td><td class="@(value == true ? "pass" : value == false ? "fail" : "muted")">@(value?.ToString().ToLowerInvariant() ?? "unknown")</td></tr>
-                    }
-                </tbody>
-            </table>
-            <p id="play-conclusion">
-                Conclusion: <strong>@review.Conclusion.Disposition</strong>. @review.Conclusion.Explanation
-                <span class="muted">(@review.Conclusion.ExplanationProvenance)</span>
-            </p>
-        }
-        @if (proposal.Result.Plan?.Fire is { Attack: var attack })
-        {
-            <table class="library" id="fire-facts">
-                <thead><tr><th>Fact of the attack</th><th>From the game and the map</th></tr></thead>
-                <tbody>
-                    <tr data-fact="phase"><td>Phase and side</td><td>@attack.Phase@(attack.FireKind is { } kind ? $" ({kind})" : ""), the @(attack.FiringSide) side</td></tr>
-                    <tr data-fact="firers"><td>Fire group</td><td>@FireGroupText(attack)</td></tr>
-                    <tr data-fact="target"><td>Target Location</td><td>@attack.TargetLocationId</td></tr>
-                    <tr data-fact="range"><td>Range</td><td>@RangeText(attack)</td></tr>
-                    <tr data-fact="level"><td>Same level</td><td>@(attack.SameLevel is { } same ? same ? "yes" : attack.TargetLevelAbove is { } above ? $"no: the target is {Math.Abs(above)} level{(Math.Abs(above) == 1 ? "" : "s")} {(above > 0 ? "above" : "below")} the firer" : "no" : "not read")</td></tr>
-                    <tr data-fact="los"><td>LOS</td><td>@(attack.Los is { } los ? $"{(los.Blocked == true ? "blocked" : "clear")}, Hindrance DRM {los.HindranceDrm}{(los.HindranceAttributed == true ? "" : " (not attributed)")}" : "not read")</td></tr>
-                    <tr data-fact="terrain"><td>Target terrain</td><td>@(attack.TargetTerrain ?? "not read")</td></tr>
-                    @* Backlog pass 10 (rulings R10.4 to R10.8, R10.13): the terrain facts the attack also reads. *@
-                    @if (attack.HexsideTem is { Terrain: { } wall, Tem: { } wallTem })
-                    {
-                        <tr data-fact="hexside-tem"><td>Wall or hedge</td><td>the @wall's +@wallTem TEM, instead of a lower in-hex TEM (B9.3)</td></tr>
-                    }
-                    @if (attack.HeightAdvantage == true)
-                    {
-                        <tr data-fact="height-advantage"><td>Height Advantage</td><td>+1 TEM when the target has no other positive TEM (B10.31)</td></tr>
-                    }
-                    @if (attack.SnapShot == true)
-                    {
-                        <tr data-fact="snap-shot"><td>Snap Shot</td><td>at the hexside the stack crossed: Area Fire, no TEM, FFMO, or FFNAM (A8.15)</td></tr>
-                    }
-                    @if (attack.HazardousMovement == true)
-                    {
-                        <tr data-fact="hazardous"><td>Hazardous Movement</td><td>-2, with no FFMO or FFNAM (A4.62)</td></tr>
-                    }
-                    <tr data-fact="month"><td>Month</td><td>@(attack.ScenarioMonth?.ToString(CultureInfo.InvariantCulture) ?? "not recorded")</td></tr>
-                </tbody>
-            </table>
-        }
-        @if (proposal.Result.Outcome == PlayOutcome.NeedsConfirmation)
-        {
-            <button id="play-confirm" @onclick="Confirm">Confirm</button>
-            <button id="play-cancel" class="link" @onclick="() => pending = null">Cancel</button>
-        }
-    </div>
+            @if (proposal.Result.Plan?.Fire is { Attack: var attack })
+            {
+                <FireReviewFacts Attack="@attack" FireGroup="@FireGroupText(attack)" Range="@RangeText(attack)" />
+            }
+        </Evidence>
+    </ProposalReviewPanel>
 }
 
 @if (state is not null)
@@ -1738,46 +1616,12 @@ else if (state is not null)
     </details>
 
     <h3>Units</h3>
-    <p class="muted" id="play-units-view">As @(Viewer.IsAdjudicator ? "the adjudicator sees them: every unit" : $"{Viewer.Name} sees them"), at revision @state.Revision.</p>
-    <table class="library" id="play-units">
-        <thead><tr><th>Id</th><th>Side</th><th>Kind</th><th>Location</th><th>MF spent</th><th>Conditions</th></tr></thead>
-        <tbody>
-            @foreach (var unit in VisibleUnits)
-            {
-                <tr data-unit="@unit.Id">
-                    <td>@unit.Id</td><td>@unit.Side</td><td>@unit.Kind.Replace("asl:", string.Empty, StringComparison.Ordinal)</td>
-                    <td>
-                        @if (unit.Status is InstanceStatus.Active or InstanceStatus.Wrecked && state.Location(unit.Id)?.Location is { } at)
-                        {
-                            <button class="play-locate" @onclick="() => highlight = at">@at</button>
-                        }
-                        else
-                        {
-                            @unit.Status.ToString().ToLowerInvariant()
-                        }
-                    </td>
-                    <td>@(unit.Status == InstanceStatus.Wrecked ? "wreck" : LiveFire.IsVehicle(unit) ? $"{HalfMpText(GamePlanner.VehicleHalfMp(unit).Spent)} of {HalfMpText(GamePlanner.VehicleHalfMp(unit).Allotment)} MP" : unit.MfSpent.ToString(CultureInfo.InvariantCulture))@(unit.MovementEnded ? ", movement ended" : "")</td>
-                    <td>@string.Join(", ", unit.Conditions.Where(pair => pair.Value == ConditionState.True).Select(pair => ConditionText(pair.Key)).Concat(Custody(unit)).Concat(VehicleNotes(unit))
-                        .Concat(state.Encircled(unit) ? ["Encircled (A7.7)"] : [])
-                        .Concat(unit.Status == InstanceStatus.Wrecked && GamePlanner.IsBurning(state, unit) ? ["burning (Blaze)"] : []))</td>
-                </tr>
-            }
-            @foreach (var presence in SealedPresences)
-            {
-                <tr data-sealed="@presence.PlacementId">
-                    <td>?</td><td>@presence.Side</td><td>concealed</td><td>@presence.Location</td><td></td><td></td>
-                </tr>
-            }
-        </tbody>
-    </table>
-    @if (Viewer.IsAdjudicator)
-    {
-        <details>
-            <summary>Audit (latest)</summary>
-            <pre class="json">@string.Join("\n", Live.Audit.Tail(12))</pre>
-        </details>
-    }
+    <PlayUnitTable ViewNote="@($"As {(Viewer.IsAdjudicator ? "the adjudicator sees them: every unit" : $"{Viewer.Name} sees them")}, at revision {state.Revision}.")"
+                   Rows="@UnitRows" Sealed="@([.. SealedPresences])" Locate="@(at => highlight = at)" />
+    <AdjudicatorAuditPanel Lines="@(Viewer.IsAdjudicator ? Live.Audit.Tail(12).ToArray() : null)" />
 }
+
+</HandOverScreen>
 
 @code {
     private string? scriptedInput;
@@ -1809,18 +1653,21 @@ else if (state is not null)
     /// <summary>
     /// The setup of a game from a card (pass 19, ruling R19.2): the game's, or before the game exists the chosen card's with nothing yet set up.
     /// </summary>
-    private SetupReport? SetupView => state is not null ? Live.Planner.CardSetup(state, new HashSet<string>())
+    private SetupReport? SetupView => state is not null ? ReadsNow.Setup
         : ChosenCard is { Minimal: false } card ? ScenarioSetup.Check(card, [], _ => null, _ => true, ScenarioA1FireReference.HalfSquadOf, card.Date.Month)
         : null;
 
+    /// <summary>The units the view may see, as R12 shows them: their movement and conditions in words (ruling R23.1).</summary>
+    private IReadOnlyList<PlayUnitTable.Row> UnitRows => state is null ? [] : [.. VisibleUnits.Select(unit => new PlayUnitTable.Row(unit.Id, unit.Side,
+        unit.Kind.Replace("asl:", string.Empty, StringComparison.Ordinal),
+        unit.Status is InstanceStatus.Active or InstanceStatus.Wrecked ? state.Location(unit.Id)?.Location : null, unit.Status.ToString().ToLowerInvariant(),
+        (unit.Status == InstanceStatus.Wrecked ? "wreck" : LiveFire.IsVehicle(unit) ? $"{HalfMpText(GamePlanner.VehicleHalfMp(unit).Spent)} of {HalfMpText(GamePlanner.VehicleHalfMp(unit).Allotment)} MP"
+            : unit.MfSpent.ToString(CultureInfo.InvariantCulture)) + (unit.MovementEnded ? ", movement ended" : ""),
+        string.Join(", ", unit.Conditions.Where(pair => pair.Value == ConditionState.True).Select(pair => ConditionText(pair.Key)).Concat(Custody(unit)).Concat(VehicleNotes(unit))
+            .Concat(state.Encircled(unit) ? ["Encircled (A7.7)"] : [])
+            .Concat(unit.Status == InstanceStatus.Wrecked && GamePlanner.IsBurning(state, unit) ? ["burning (Blaze)"] : []))))];
+
     private string DefinitionLabel(string id) => PublishedCatalog?.Definition(id) is { } definition ? ScenarioCards.Describe(definition) : id;
-    private static string SetupAreaText(ScenarioCardSetup area) => area.Kind switch
-    {
-        "building" => $"building {area.Id} ({string.Join(", ", area.Hexes ?? [])})",
-        "hex-numbers" => $"hexes numbered {area.From} to {area.To} on {area.Board}" + (area.Counters is { } counters ? $", {counters} counters" : string.Empty)
-            + (area.MinMmc is { } mmc ? $", at least {mmc} MMC" : string.Empty) + (area.Concealed == false ? ", none under \"?\"" : string.Empty),
-        _ => $"enters on Turn {area.Turn} along the {area.Edge} edge",
-    };
     private string placeGroup = string.Empty;
     private string? placeNote;
     private readonly Dictionary<(string Name, string? Sha256), ScenarioCardRead?> cardReads = new();
@@ -2412,15 +2259,18 @@ else if (state is not null)
     }));
 
     /// <summary>The Locations holding units of both sides, none of them a prisoner: where CC can occur (A11.1).</summary>
+    // Ruling R23.1: a side finds a CC Location by the units it may see and the "?" it knows of, never by a hidden unit.
     private IEnumerable<string> CloseCombatLocations => state is null ? []
-        : state.Units.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Captured) != ConditionState.True && state.Location(unit.Id) is not null)
-            .GroupBy(unit => state.Location(unit.Id)!.Location.ToString()).Where(group => group.Select(unit => unit.Side).Distinct(StringComparer.Ordinal).Count() > 1)
+        : VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Captured) != ConditionState.True && state.Location(unit.Id) is not null)
+            .Select(unit => (Location: state.Location(unit.Id)!.Location.ToString(), unit.Side))
+            .Concat(SealedPresences.Where(presence => !presence.Uninspected).Select(presence => (Location: presence.Location.ToString(), presence.Side)))
+            .GroupBy(item => item.Location).Where(group => group.Select(item => item.Side).Distinct(StringComparer.Ordinal).Count() > 1)
             .Select(group => group.Key).Order(StringComparer.Ordinal);
 
     private CloseCombatLocation? CloseCombatEntry => state?.CloseCombats.FirstOrDefault(item => item.Location.ToString() == ccLocation);
 
     private IEnumerable<UnitInstance> CloseCombatUnits => state is null || ccLocation.Length == 0 ? []
-        : state.Units.Where(unit => unit.Status == InstanceStatus.Active && state.Location(unit.Id)?.Location.ToString() == ccLocation)
+        : VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && state.Location(unit.Id)?.Location.ToString() == ccLocation)
             .OrderBy(unit => unit.Side, StringComparer.Ordinal).ThenBy(unit => unit.Id, StringComparer.Ordinal);
 
     private void SetStacking(string smc, string? mmc)
@@ -2661,7 +2511,109 @@ else if (state is not null)
     /// <summary>The perspective the page shows: a side, or the adjudicator, who sees everything (D3).</summary>
     private Perspective Viewer => state?.Perspectives.FirstOrDefault(perspective => perspective.Name == viewAs) ?? Perspective.Adjudicator;
 
-    private GameView? View => state is not null && history is not null && history.Current is not null ? GameView.Of(history, state.Revision, Viewer) : null;
+    // The view the page shows, read once per history and viewer: every panel reads it, and a side's view asks the card setup who is setting up now.
+    private (GameHistory? History, long Revision, string Viewer, GameView? View) viewCache;
+
+    private GameView? View
+    {
+        get
+        {
+            if (state is null || history?.Current is null)
+            {
+                return null;
+            }
+
+            if (viewCache.View is null || !ReferenceEquals(viewCache.History, history) || viewCache.Revision != state.Revision || viewCache.Viewer != Viewer.Name)
+            {
+                viewCache = (history, state.Revision, Viewer.Name, GameView.Of(history, state.Revision, Viewer, Unseen));
+            }
+
+            return viewCache.View;
+        }
+    }
+
+    /// <summary>The side the Victory standing is read for (ruling R23.4): the viewer's side until the game ends; none for the adjudicator.</summary>
+    private string? VictoryKnownTo => Viewer.IsAdjudicator || state?.Ended is not null ? null : Viewer.Name;
+
+    /// <summary>The equipment the viewer may see: all of it for the adjudicator; for a side, none held by a unit it may not see (ruling R23.1).</summary>
+    private IEnumerable<EquipmentInstance> VisibleEquipment => Viewer.IsAdjudicator ? state?.Equipment ?? [] : View?.Equipment ?? [];
+
+    // The setup, the sides out of sight, and the Victory standing, read once per history, revision, and viewer (UI review, pass 23).
+    private sealed record Reads(GameHistory? History, long Revision, string Viewer, SetupReport? Setup, IReadOnlySet<string> Unseen, VictoryReport? Victory);
+
+    private Reads? reads;
+
+    private Reads ReadsNow
+    {
+        get
+        {
+            if (reads is null || !ReferenceEquals(reads.History, history) || reads.Revision != (state?.Revision ?? -1) || reads.Viewer != Viewer.Name)
+            {
+                reads = state is null ? new Reads(history, -1, Viewer.Name, null, new HashSet<string>(), null)
+                    : new Reads(history, state.Revision, Viewer.Name, Live.Planner.CardSetup(state, new HashSet<string>()), Live.Planner.OutOfSight(state, Viewer),
+                        history is null ? null : Live.Planner.Victory(history, knownTo: VictoryKnownTo));
+            }
+
+            return reads;
+        }
+    }
+
+    /// <summary>The OB groups setting up out of the viewer's sight now (ruling R23.3).</summary>
+    private IReadOnlySet<string> Unseen => ReadsNow.Unseen;
+
+    private VictoryReport? VictoryNow => ReadsNow.Victory;
+
+    // Ruling R23.2: the view a hand-over waits to show; null when none waits.
+    private string? handOver;
+
+    private IReadOnlyList<PerspectivePicker.Choice> ViewChoices => state is null ? []
+        : [.. state.Perspectives.Select(perspective => new PerspectivePicker.Choice(perspective.Name, perspective.IsAdjudicator ? "the adjudicator" : perspective.Name))];
+
+    private static string ViewLabel(string? name) => name is null ? string.Empty : name == Perspective.AdjudicatorName ? "the adjudicator" : $"the {name} side";
+
+    /// <summary>
+    /// A new view waits behind the hand-over screen (ruling R23.2); what the last one prepared is dropped, since it may rest on what the next may not
+    /// see (plan section 13.4). Choosing the shown view again drops the hand-over.
+    /// </summary>
+    private void ChangeView(string next)
+    {
+        if (next == (handOver ?? viewAs))
+        {
+            return;
+        }
+
+        handOver = next == viewAs ? null : next;
+        ResetForView();
+    }
+
+    /// <summary>Everything the last view prepared: the proposal, the drafts of setup and of every action, and the LOS line.</summary>
+    private void ResetForView()
+    {
+        pending = null;
+        playLos = null;
+        losSource = string.Empty;
+        losTarget = string.Empty;
+        highlight = null;
+        placements.Clear();
+        placeHidden = false;
+        placeConcealed = false;
+        placeHolder = string.Empty;
+        nonObChosen.Clear();
+        retainDm.Clear();
+        moveUnits.Clear();
+        ResetDrafts(keepCloseCombat: true);
+    }
+
+    private void ConfirmView()
+    {
+        if (handOver is { } next)
+        {
+            viewAs = next;
+            handOver = null;
+            ResetForView();
+            enterUnit = VisibleUnits.FirstOrDefault()?.Id ?? string.Empty;
+        }
+    }
 
     /// <summary>The game's map drawn for the viewer at the shown revision (Composed Maps Design, section 8).</summary>
     private GameMapDrawing? Drawing => state is not null && history?.Current is not null
@@ -2712,7 +2664,8 @@ else if (state is not null)
         }
     }
 
-    private IEnumerable<UnitInstance> VisibleUnits => Viewer.IsAdjudicator || View is null ? state?.Units ?? [] : View.Units;
+    // A side's view with no replayed state shows nothing rather than the whole game (UI review, pass 23).
+    private IEnumerable<UnitInstance> VisibleUnits => Viewer.IsAdjudicator ? state?.Units ?? [] : View?.Units ?? [];
 
     /// <summary>
     /// The rolls the viewer may see, latest first, with the unit each die belongs to when the viewer may see that too:
@@ -3149,6 +3102,25 @@ else if (state is not null)
             _ => string.Empty,
         }))];
 
+    // Ruling R23.6: the Locations chosen for a non-OB "?", as side|Location.
+    private readonly HashSet<string> nonObChosen = new(StringComparer.Ordinal);
+
+    private Task ProposeNonOb(string side, IReadOnlyList<LimboDancer.Domains.Asl.Maps.Coordinates.BoardLocation> choices) => Propose(GameActions.Setup,
+        JsonSerializer.SerializeToElement(new Dictionary<string, object>
+        {
+            ["gameId"] = gameId, ["attemptId"] = Attempt("non-ob"), ["expectedRevision"] = (long)history!.Events.Count, ["placements"] = Array.Empty<object>(),
+            ["conceal"] = new Dictionary<string, object>
+            {
+                ["side"] = side,
+                ["locations"] = choices.Select(at => at.ToString()).Where(at => nonObChosen.Contains($"{side}|{at}")).ToArray(),
+            },
+        }));
+
+    private Task ProposePlaceHidden(string unit) => Propose(GameActions.PlaceHidden, JsonSerializer.SerializeToElement(new Dictionary<string, object>
+    {
+        ["gameId"] = gameId, ["attemptId"] = Attempt("place-hidden"), ["expectedRevision"] = (long)history!.Events.Count, ["unitIds"] = new[] { unit },
+    }));
+
     private Task ProposeDetonateDc(string charge) => Propose(GameActions.DetonateDc, JsonSerializer.SerializeToElement(new Dictionary<string, object>
     {
         ["gameId"] = gameId, ["attemptId"] = Attempt("detonate-dc"), ["expectedRevision"] = (long)history!.Events.Count, ["equipmentId"] = charge,
@@ -3220,6 +3192,7 @@ else if (state is not null)
     private IEnumerable<UnitInstance> MoveCandidates => state is null ? []
         : state.Movement is { } movement ? movement.Vehicle ? [] : movement.Members.Select(state.Unit).OfType<UnitInstance>()
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && !unit.MovementEnded && !LiveFire.IsVehicle(unit)
+            && GameState.Condition(unit, Conditions.Hidden) != ConditionState.True
             && (state.Location(unit.Id) is not null || (unit.Position is OffMapPosition && Live.Planner.EntryFor(state, unit) is { } entry && entry.Turn <= state.Turn))
             && GameState.Condition(unit, Conditions.Broken) != ConditionState.True
             && GameState.Condition(unit, Conditions.PrepFire) != ConditionState.True && GameState.Condition(unit, Conditions.Melee) != ConditionState.True
@@ -3389,7 +3362,7 @@ else if (state is not null)
             return [];
         }
 
-        var view = GameView.Of(history, state.Revision, perspective);
+        var view = GameView.Of(history, state.Revision, perspective, Live.Planner.OutOfSight(state, perspective));
         return view.Units.Where(unit => unit.Side != side).Select(unit => view.Locations.TryGetValue(unit.Id, out var at) ? at.Location.ToString() : null)
             .Concat(view.Sealed.Where(item => item.Side != side).Select(item => item.Location.ToString()))
             .OfType<string>().Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal);
@@ -3816,6 +3789,8 @@ else if (state is not null)
     private void ChangeGame(ChangeEventArgs args)
     {
         gameId = args.Value as string ?? string.Empty;
+        handOver = null;
+        nonObChosen.Clear();
         pending = null;
         shownPhase = null;
         placements.Clear();
@@ -3880,7 +3855,13 @@ else if (state is not null)
     /// A new phase: nothing chosen in the last one carries over, since the firing side, the Locations, and the units that may act
     /// have changed with it.
     /// </summary>
-    private void ResetForPhase()
+    private void ResetForPhase() => ResetDrafts(keepCloseCombat: false);
+
+    /// <summary>
+    /// The drafts of every action; CC declarations are kept when only the view changes, since each side declares its attacks openly into one proposal
+    /// (A11.1; ruling R5.20).
+    /// </summary>
+    private void ResetDrafts(bool keepCloseCombat)
     {
         ClearFire();
         opportunityUnits.Clear();
@@ -3890,8 +3871,12 @@ else if (state is not null)
         shockVehicle = string.Empty;
         advanceUnits.Clear();
         advanceTo = string.Empty;
-        ccLocation = string.Empty;
-        ClearCloseCombat();
+        if (!keepCloseCombat)
+        {
+            ccLocation = string.Empty;
+            ClearCloseCombat();
+        }
+
         rallyUnit = string.Empty;
         rallyLeader = string.Empty;
         repairWeapon = string.Empty;
@@ -3946,9 +3931,9 @@ else if (state is not null)
         }
 
         PruneFire();
-        if (state is not null && !state.Units.Any(unit => unit.Id == enterUnit))
+        if (state is not null && !VisibleUnits.Any(unit => unit.Id == enterUnit))
         {
-            enterUnit = state.Units.FirstOrDefault()?.Id ?? string.Empty;
+            enterUnit = VisibleUnits.FirstOrDefault()?.Id ?? string.Empty;
         }
 
         if (state is not null && !state.Perspectives.Any(perspective => perspective.Name == viewAs))
@@ -4165,7 +4150,7 @@ else if (state is not null)
     }));
 
     /// <summary>The SW on the map, possessed or not, other than Guns.</summary>
-    private IEnumerable<EquipmentInstance> SupportWeapons => state is null ? [] : state.Equipment.Where(item => item.Status == InstanceStatus.Active
+    private IEnumerable<EquipmentInstance> SupportWeapons => state is null ? [] : VisibleEquipment.Where(item => item.Status == InstanceStatus.Active
         && item.Holding?.Role != HoldingRole.Manned && item.Holding?.Role != HoldingRole.Towed && item.Kind != "asl:gun" && state.Location(item.Id) is not null)
         .OrderBy(item => item.Id, StringComparer.Ordinal);
 

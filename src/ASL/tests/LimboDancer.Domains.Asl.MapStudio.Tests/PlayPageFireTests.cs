@@ -179,7 +179,7 @@ public sealed class PlayPageFireTests : IDisposable
         Assert.Empty(dice);
         foreach (var perspective in Perspectives)
         {
-            page.Find("#play-perspective").Change(perspective);
+            page.ViewAs(perspective);
             var record = page.Find("#play-fires .fire-record");
             Assert.Equal(("10", "NMC"), (record.QuerySelector(".fire-final-dr")!.TextContent, record.QuerySelector(".fire-result")!.TextContent));
             Assert.Contains("r1: 4 FP × 2 (point-blank-fire, A7.21) = 8", record.QuerySelector(".fire-fp[data-unit='r1']")!.TextContent, StringComparison.Ordinal);
@@ -306,8 +306,12 @@ public sealed class PlayPageFireTests : IDisposable
         // refuses it (FireTests).
         Commit(page, "#propose-advance");
         Assert.Contains("Movement", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
-        Assert.Contains("The german side may fire", page.Find("#fire-side").TextContent, StringComparison.Ordinal);
+        Assert.Contains("The german side may fire now", page.Find("#fire-elsewhere").TextContent, StringComparison.Ordinal);
         Assert.NotNull(page.Find("#propose-move"));
+
+        // Ruling R23.1: the DEFENDER's fire panel is its own.
+        page.ViewAs("german");
+        Assert.Contains("The german side may fire", page.Find("#fire-side").TextContent, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -334,7 +338,7 @@ public sealed class PlayPageFireTests : IDisposable
         ChooseFire(page, hexes.From, ["r1", "r2"], "rl", hexes.Building);
         Confirm(page);
 
-        page.Find("#play-perspective").Change("russian");
+        page.ViewAs("russian");
         var fires = page.Find("#play-fires");
         Assert.Equal("none", fires.QuerySelector(".fire-result")!.TextContent);
         Assert.NotNull(fires.QuerySelector(".fire-withheld"));
@@ -343,7 +347,7 @@ public sealed class PlayPageFireTests : IDisposable
         Assert.Empty(page.FindAll("#play-units tr[data-unit='g1'], #play-units tr[data-unit='gh']"));
         Assert.Equal(2, page.FindAll("#play-units tr[data-sealed]").Count(row => row.TextContent.Contains(hexes.Building, StringComparison.Ordinal)));
 
-        page.Find("#play-perspective").Change("german");
+        page.ViewAs("german");
         Assert.Equal("unaffected", page.Find("#play-fires .fire-effects tr[data-unit='g1'] .fire-effect").TextContent);
         Assert.Null(page.Find("#play-fires").QuerySelector(".fire-withheld"));
     }

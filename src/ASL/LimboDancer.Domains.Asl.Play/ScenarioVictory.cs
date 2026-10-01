@@ -39,10 +39,12 @@ public static class ScenarioVictory
     /// <summary>
     /// Evaluates a card's Victory Conditions over the states of a game, the last being the present. <paramref name="vp"/> gives a unit's VP (A26.211),
     /// and <paramref name="adjacent"/> the hexes adjacent to a Location. <paramref name="ended"/> doubles captured units' VP (A26.222). Null when the card
-    /// has no structured Victory Conditions or play has not started.
+    /// has no structured Victory Conditions or play has not started. <paramref name="knownTo"/> reads them as that side may know them (A26.15; pass 23,
+    /// ruling R23.4): the enemy's concealed and hidden units neither gain nor prevent Control, since their Control need not be declared until game end,
+    /// and count for none of its unbroken squad-equivalents.
     /// </summary>
     public static VictoryReport? Evaluate(ScenarioCard card, IReadOnlyList<GameState> states, Func<UnitInstance, int> vp, Func<BoardLocation, IEnumerable<BoardLocation>> adjacent,
-        bool ended)
+        bool ended, string? knownTo = null)
     {
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(states);
@@ -54,7 +56,7 @@ public static class ScenarioVictory
             return null;
         }
 
-        var control = Control(card, states);
+        var control = Control(card, states, knownTo);
         var present = states[^1];
 
         // Table player, pass 21: a hex a hex count treats as neither's while it is in Melee is shown so.
@@ -70,7 +72,7 @@ public static class ScenarioVictory
         }
         var sides = card.Sides.Select(side => side.Side).ToArray();
         var standing = sides.Select(side => new VictorySide(side, Cvp(card, present, side, vp, adjacent, ended), ExitVp(card, present, side, vp, adjacent),
-            UnbrokenSquads(present, side))).ToArray();
+            UnbrokenSquads(present, side, knownTo))).ToArray();
 
         GameResult? Decide(bool immediateOnly)
         {
@@ -98,7 +100,7 @@ public static class ScenarioVictory
     /// setup area holds it alone (A26.11), then, state by state, the side whose armed Good Order Infantry MMC occupies it with no armed enemy ground unit
     /// there (A26.11, ground level for a hex, A26.13, any level for a building, A26.14), not in Bypass; Dummies neither gain nor prevent it (A26.15).
     /// </summary>
-    private static Dictionary<string, VictoryControl> Control(ScenarioCard card, IReadOnlyList<GameState> states)
+    private static Dictionary<string, VictoryControl> Control(ScenarioCard card, IReadOnlyList<GameState> states, string? knownTo)
     {
         var tracked = new Dictionary<string, VictoryControl>(StringComparer.Ordinal);
         var conditions = card.VictoryConditions.Outcomes!.SelectMany(outcome => outcome.Any).ToArray();
@@ -117,7 +119,7 @@ public static class ScenarioVictory
         {
             foreach (var (id, item) in tracked.ToArray())
             {
-                if (Gainer(state, item) is { } side && side != item.Side)
+                if (Gainer(state, item, knownTo) is { } side && side != item.Side)
                 {
                     tracked[id] = item with
                     {
@@ -157,10 +159,10 @@ public static class ScenarioVictory
     private static bool Is(UnitInstance unit, string condition) => GameState.Condition(unit, condition) == ConditionState.True;
 
     /// <summary>A.7, A26.11: an armed Good Order Infantry MMC, not in Bypass, gains Control; any armed enemy ground unit but a Dummy or a prisoner prevents it.</summary>
-    private static string? Gainer(GameState state, VictoryControl item)
+    private static string? Gainer(GameState state, VictoryControl item, string? knownTo)
     {
         var inside = state.Units.Where(unit => unit.Status == InstanceStatus.Active && state.Location(unit.Id)?.Location is { } at
-            && item.Hexes.Any(hex => hex.Board == at.Board && hex.Hex == at.Hex)).ToArray();
+            && item.Hexes.Any(hex => hex.Board == at.Board && hex.Hex == at.Hex) && !Undeclared(unit, knownTo)).ToArray();
         var gainers = inside.Where(unit => Mmc.Contains(unit.Kind) && !Is(unit, Conditions.Unarmed) && !Is(unit, Conditions.Broken) && !Is(unit, Conditions.Berserk)
             && !Is(unit, Conditions.Captured) && !Is(unit, Conditions.Melee)
             && (item.Kind == "building" || state.Location(unit.Id)!.Location.Level == 0)
@@ -169,12 +171,19 @@ public static class ScenarioVictory
             ? side : null;
     }
 
-    /// <summary>A side's unbroken squad-equivalents on the map (A16): a squad one, a HS or crew half; not broken, not a prisoner.</summary>
-    public static double UnbrokenSquads(GameState state, string side)
+    /// <summary>An enemy unit a side does not know as such (A26.15; ruling R23.4): concealed or hidden, when the Victory Conditions are read for that side.</summary>
+    private static bool Undeclared(UnitInstance unit, string? knownTo) =>
+        knownTo is not null && unit.Side != knownTo && (Is(unit, Conditions.Concealed) || Is(unit, Conditions.Hidden));
+
+    /// <summary>
+    /// A side's unbroken squad-equivalents on the map (A16): a squad one, a HS or crew half; not broken, not a prisoner. Read for <paramref name="knownTo"/>,
+    /// another side's concealed and hidden units are not counted (ruling R23.4).
+    /// </summary>
+    public static double UnbrokenSquads(GameState state, string side, string? knownTo = null)
     {
         ArgumentNullException.ThrowIfNull(state);
         return state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && state.Location(unit.Id) is not null && !Is(unit, Conditions.Broken)
-            && !Is(unit, Conditions.Captured)).Sum(unit => unit.Kind switch
+            && !Is(unit, Conditions.Captured) && !Undeclared(unit, knownTo)).Sum(unit => unit.Kind switch
             {
                 "asl:squad" => 1.0,
                 "asl:half-squad" or "asl:crew" => 0.5,

@@ -24,12 +24,18 @@ public sealed partial class GamePlanner
     /// <summary>The Axis nationalities of the catalog, for Extreme Winter (E3.741, E3.742): the Finns are Axis too, but excepted there.</summary>
     private static readonly string[] Axis = ["german", "italian", "finnish", "japanese"];
 
-    /// <summary>Why the SSRs of a new game are refused (rulings R16.1, R16.9), or null.</summary>
+    /// <summary>Why the SSRs of a new game are refused (rulings R16.1, R16.9, and R23.5 for HIP), or null.</summary>
     internal static string? NightAndWeatherRulesBar(JsonElement start)
     {
         string[] rules = start.TryGetProperty("specialRules", out var list) && list.ValueKind == JsonValueKind.Array
             ? [.. list.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString()!)]
             : [];
+        if (rules.FirstOrDefault(rule => rule.StartsWith("hip:", StringComparison.Ordinal)
+            && (rule.Split(':') is not [_, { Length: > 0 } side, _] || ScenarioSetup.HipAllowance([rule], side) is null)) is { } hip)
+        {
+            return $"play.hip-rule: '{hip}' is not hip:<side>:<n>, n the squad-equivalents of the side that may set up hidden, more than 0 (A12.3; ruling R23.5)";
+        }
+
         var weather = rules.Where(rule => rule.StartsWith("weather:", StringComparison.Ordinal)).Select(rule => rule["weather:".Length..]).ToArray();
         if (weather.FirstOrDefault(kind => !WeatherKinds.Contains(kind, StringComparer.Ordinal)) is { } unknown)
         {

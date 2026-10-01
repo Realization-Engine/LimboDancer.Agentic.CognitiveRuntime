@@ -1,0 +1,23 @@
+@* P07 (plan section 16.10): a live game that does not replay: its first five reasons, and why when its catalog is gone. *@
+<div id="play-replay-failed" class="fail">
+    <p><strong>This game does not replay</strong>, so it cannot be shown or played. The first reasons:</p>
+    <ul>
+        @foreach (var diagnostic in Diagnostics.Take(5))
+        {
+            <li>@diagnostic.Code: @diagnostic.Message</li>
+        }
+    </ul>
+    @if (MissingCatalog is { } catalog)
+    {
+        <p id="play-replay-catalog">It was set up with catalog @catalog, which this Studio no longer carries. Start a new game to play with the current catalog.</p>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public IReadOnlyList<UnitDiagnostic> Diagnostics { get; set; } = [];
+
+    /// <summary>The catalog the game started with when the Studio no longer carries it; null otherwise.</summary>
+    [Parameter]
+    public string? MissingCatalog { get; set; }
+}

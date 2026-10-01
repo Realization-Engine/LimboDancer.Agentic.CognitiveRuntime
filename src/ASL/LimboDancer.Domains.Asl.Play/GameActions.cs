@@ -15,7 +15,7 @@ public static class GameActions
     public const string PlayPermission = "asl.game.play";
 
     public static readonly ActionDescriptor Setup = Descriptor("asl.game.setup", "Set up a game",
-        "Start a live game on the boards in play, or add placements to one still in setup, as checked against the boards and the catalog.",
+        "Start a live game on the boards in play, or add placements to one still in setup, as checked against the boards and the catalog; or place non-OB \"?\" once both sides have set up (A12.12).",
         SetupPermission, "asl.game.setup-open-v1", """
         {
           "type": "object", "additionalProperties": false,
@@ -24,7 +24,8 @@ public static class GameActions
             "gameId": { "type": "string" }, "attemptId": { "type": "string" },
             "expectedRevision": { "type": "integer", "minimum": 0 },
             "start": { "type": "object" },
-            "placements": { "type": "array", "items": { "type": "object" } }
+            "placements": { "type": "array", "items": { "type": "object" } },
+            "conceal": { "type": "object" }
           }
         }
         """);
@@ -638,13 +639,27 @@ public static class GameActions
             package = ScenarioA1FirePackage.Identity.ToString()
         }));
 
+    public static readonly ActionDescriptor PlaceHidden = Descriptor("asl.game.place-hidden", "Place hidden units beneath \"?\"",
+        "Hidden units of one side are placed on the map beneath a \"?\" and are concealed from then on: a hidden unit that is to move or advance must first be placed so, and one may give up its hidden status so at any time (A12.32; pass 23, ruling R23.5).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "unitIds"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "unitIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+          }
+        }
+        """);
+
     public static IReadOnlyList<ActionDescriptor> All
     {
         get;
     } =
         [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding, DeclareOverrun, Fire, Rally, Repair, Move, PassFire, EndMove, Advance, Ambush, CloseCombat, TakePrisoner,
             FireOrdnance, RecoverShock, TurnGun, HookGun, MoveVehicle, Overrun, VehicleCloseCombat, ButtonUp, Choose, Massacre, OpportunityFire,
-            Rout, Deploy, Recombine, Transfer, Drop, Recover, Dismantle, AmbushWithdraw, GuardPrisoners, ThrowDc, DetonateDc, FireStarshell];
+            Rout, Deploy, Recombine, Transfer, Drop, Recover, Dismantle, AmbushWithdraw, GuardPrisoners, ThrowDc, DetonateDc, FireStarshell, PlaceHidden];
 
     public static string VersionKey(Guid tenant, string game) => $"asl.game:{tenant:N}:{game}";
 

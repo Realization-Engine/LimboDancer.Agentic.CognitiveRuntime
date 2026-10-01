@@ -151,7 +151,7 @@ public sealed record GameState(
     /// </summary>
     public IReadOnlyDictionary<string, int> SetupHalfSquads { get; init; } = new Dictionary<string, int>(StringComparer.Ordinal);
 
-    /// <summary>Whether setup is over: an event other than game-started, instance-created, or bore-sighted has been recorded.</summary>
+    /// <summary>Whether setup is over: an event other than game-started, instance-created, bore-sighted, or setup-concealed has been recorded.</summary>
     public bool SetupClosed
     {
         get; init;
@@ -213,6 +213,9 @@ public sealed record GameState(
     /// there (A11.4); cleared at every phase change.
     /// </summary>
     public IReadOnlyList<string> HiddenPlaced { get; init; } = [];
+
+    /// <summary>The units given a non-OB "?" after both sides set up (A12.12; pass 23, ruling R23.6), which the OB allotment of "?" does not count.</summary>
+    public IReadOnlyList<string> NonObConcealed { get; init; } = [];
 
     /// <summary>
     /// The DCs Placed this Player Turn (A23.3; backlog pass 15, ruling R15.2): pending until their placer leaves its Location or ends its move neither
@@ -325,7 +328,7 @@ public sealed record GameState(
     /// from a card draws for the first move and the Balance (rulings R20.2, R20.3).
     /// </summary>
     public static bool IsSetupEvent(EventPayload payload) =>
-        payload is GameStarted or InstanceCreated or BoreSighted or DiceRolled { Purpose: "first-move" or "balance" };
+        payload is GameStarted or InstanceCreated or BoreSighted or SetupConcealed or DiceRolled { Purpose: "first-move" or "balance" };
 
     /// <summary>The units that left the map (A2.6; ruling R21.5), in order, for Exit VP and CVP (A26.221, A26.23).</summary>
     public IReadOnlyList<UnitExit> Exits { get; init; } = [];

@@ -144,7 +144,7 @@ else
     private void Refresh()
     {
         state = entry?.History?.At(revision);
-        view = state is null ? null : GameView.Of(entry!.History!, revision, perspective);
+        view = state is null ? null : GamesLibrary.ViewOf(entry!.History!, revision, perspective);
         documents = view is null ? new(StringComparer.Ordinal)
             : GameDocuments.For(view, Library.Vocabulary, GamesLibrary.Catalogs).ToDictionary(document => document.Id, StringComparer.Ordinal);
         unitRows = view is null ? [] : [.. view.Units.Select(unit => new ProjectedGameUnitTable.Row(unit.Id, Preview(unit.Id), Label(unit.Id, unit.Kind),

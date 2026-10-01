@@ -257,6 +257,9 @@ public static class GameEventWriter
                 writer.WriteString("id", changed.Id);
                 WriteConditions(writer, changed.Conditions);
                 break;
+            case SetupConcealed concealed:
+                writer.WriteString("id", concealed.Id);
+                break;
             case LineageRecorded lineage:
                 writer.WriteString("action", lineage.Action.ToString().ToLowerInvariant());
                 Strings(writer, "consumed", lineage.Consumed);

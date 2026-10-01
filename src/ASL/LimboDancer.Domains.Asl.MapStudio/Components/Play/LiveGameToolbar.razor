@@ -1,0 +1,53 @@
+@* P02 (plan section 16.10): the live game's context: the game, the view it is played from, and the board link, which follows the view (section 15.4;
+   ruling R23.3) and is left out while a hand-over waits. *@
+<div class="toolbar">
+    <label>
+        Game
+        <select id="play-game" value="@GameId" @onchange="GameChanged">
+            <option value="">a new game</option>
+            @foreach (var game in Games)
+            {
+                <option value="@game">@game</option>
+            }
+        </select>
+    </label>
+    @if (Views.Count > 0)
+    {
+        <PerspectivePicker Id="play-perspective" Choices="@Views" Value="@ViewAs" ValueChanged="@ViewChanged" />
+        @if (BoardLink is { } link)
+        {
+            <a id="play-view" href="@link" title="The board viewer, read as @ViewLabel">View on @BoardLabel</a>
+        }
+    }
+</div>
+
+@code {
+    /// <summary>The live games, by id.</summary>
+    [Parameter]
+    public IReadOnlyList<string> Games { get; set; } = [];
+
+    [Parameter]
+    public string GameId { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<ChangeEventArgs> GameChanged { get; set; }
+
+    /// <summary>The game's views: its sides and the adjudicator; empty when no game is open.</summary>
+    [Parameter]
+    public IReadOnlyList<PerspectivePicker.Choice> Views { get; set; } = [];
+
+    [Parameter]
+    public string ViewAs { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> ViewChanged { get; set; }
+
+    /// <summary>The board viewer's link for the view shown; null while no view is shown.</summary>
+    [Parameter]
+    public string? BoardLink { get; set; }
+
+    [Parameter]
+    public string BoardLabel { get; set; } = string.Empty;
+
+    private string ViewLabel => Views.FirstOrDefault(choice => choice.Name == ViewAs)?.Label ?? ViewAs;
+}

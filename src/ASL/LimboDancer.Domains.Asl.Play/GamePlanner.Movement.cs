@@ -211,7 +211,7 @@ public sealed partial class GamePlanner
             || GameState.Condition(unit, Conditions.Pinned) == ConditionState.True || unit.MovementEnded
             || GameState.Condition(unit, Conditions.Hidden) == ConditionState.True))
         {
-            return Refused(scope, label, expected, "play.move-unit: every mover is Good Order, unpinned, not hidden, and not done moving (A4.1, A7.83, A12.3)");
+            return Refused(scope, label, expected, "play.move-unit: every mover is Good Order, unpinned, not hidden, and not done moving; a hidden unit is first placed beneath \"?\" (A4.1, A7.83, A12.32; ruling R23.5)");
         }
 
         // A4.2: once a stack moves, only its members move, together or apart, until the ATTACKER ends them all.

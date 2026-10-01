@@ -1,0 +1,39 @@
+@using System.Globalization
+@using LimboDancer.Domains.Asl.Play
+@* K08 (plan section 16.16): the Victory Conditions standing, read for the view shown. A side reads Control as it may know it (A26.15; ruling R23.4): the
+   enemy's concealed and HIP units need not declare Control until game end, so they neither gain nor prevent it here, and its unbroken squad-equivalents
+   count only its Known units. What the result would be now rests on all of it, so only the adjudicator sees that line. *@
+<table id="play-victory" class="library">
+    <caption>The Victory Conditions now (A26; rulings R21.1 to R21.4)@(IfEndedNow is { } now ? $": if the game ended now, {now}" : string.Empty)</caption>
+    <thead><tr><th>Controlled</th><th>By</th></tr></thead>
+    <tbody>
+        @foreach (var item in Report.Control)
+        {
+            <tr data-control="@item.Id"><td>@(item.Kind == "building" ? $"building {item.Id}" : $"hex {item.Id}")</td><td>@(item.InMelee ? "neither (in Melee)" : item.Side ?? "neither")</td></tr>
+        }
+        @foreach (var side in Report.Sides)
+        {
+            <tr data-side="@side.Side"><td>@side.Side</td><td>@side.Cvp CVP, @side.ExitVp Exit VP, @side.UnbrokenSquads.ToString("0.#", CultureInfo.InvariantCulture) unbroken squad-equivalents@(KnownTo is { } known && side.Side != known ? " among its Known units" : string.Empty)</td></tr>
+        }
+    </tbody>
+</table>
+@if (KnownTo is { } viewer)
+{
+    <p id="play-victory-known" class="muted">
+        Control as @viewer knows it: the enemy's concealed and hidden units need not declare Control until game end, so they count here neither to gain nor to
+        prevent it, nor among its unbroken squad-equivalents (A26.15; ruling R23.4). The adjudicator sees the whole standing.
+    </p>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public VictoryReport Report { get; set; } = default!;
+
+    /// <summary>What the result would be if the game ended now, such as "german would win"; given only for the adjudicator before the game ends.</summary>
+    [Parameter]
+    public string? IfEndedNow { get; set; }
+
+    /// <summary>The side the standing is read for; null for the adjudicator, and once the game has ended.</summary>
+    [Parameter]
+    public string? KnownTo { get; set; }
+}

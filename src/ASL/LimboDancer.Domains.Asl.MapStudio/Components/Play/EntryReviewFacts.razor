@@ -1,0 +1,21 @@
+@using LimboDancer.Domains.Asl.Play
+@* R02 (plan section 16.13): the reviewed facts of an entry and the conclusion; an unknown fact stays unknown, never false. The parent passes it only
+   when the view may see it. *@
+<table class="library" id="play-facts">
+    <thead><tr><th>Reviewed fact (Scenario A1 first case)</th><th>From the game</th></tr></thead>
+    <tbody>
+        @foreach (var (name, value) in Review.Facts)
+        {
+            <tr data-fact="@name"><td>@name</td><td class="@(value == true ? "pass" : value == false ? "fail" : "muted")">@(value?.ToString().ToLowerInvariant() ?? "unknown")</td></tr>
+        }
+    </tbody>
+</table>
+<p id="play-conclusion">
+    Conclusion: <strong>@Review.Conclusion.Disposition</strong>. @Review.Conclusion.Explanation
+    <span class="muted">(@Review.Conclusion.ExplanationProvenance)</span>
+</p>
+
+@code {
+    [Parameter, EditorRequired]
+    public EntryReview Review { get; set; } = default!;
+}

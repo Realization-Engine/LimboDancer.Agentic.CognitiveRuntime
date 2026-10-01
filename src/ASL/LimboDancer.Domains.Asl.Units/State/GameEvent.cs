@@ -125,6 +125,12 @@ public sealed record EquipmentTransferred(string Id, Holding? Holding, Position?
 /// <summary><c>conditions-changed</c>: one or more condition dimensions take new values.</summary>
 public sealed record ConditionsChanged(string Id, IReadOnlyDictionary<string, ConditionState> Conditions) : EventPayload;
 
+/// <summary>
+/// <c>setup-concealed</c>: a non-OB "?" placed on a unit after both sides have set up and before play starts (A12.12; pass 23, ruling R23.6). A setup
+/// event, so it does not close setup.
+/// </summary>
+public sealed record SetupConcealed(string Id) : EventPayload;
+
 /// <summary>What a lineage event records (ASL-UNIT-021).</summary>
 public enum LineageAction
 {

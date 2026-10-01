@@ -91,10 +91,18 @@ public sealed class GameLibrary(UnitLibrary units, IBoardProvider boards, LivePl
         ArgumentNullException.ThrowIfNull(entry);
         ArgumentNullException.ThrowIfNull(perspective);
         var history = entry.History ?? throw new InvalidOperationException($"{entry.Name} did not replay.");
-        var view = GameView.Of(history, revision, perspective);
+        var view = ViewOf(history, revision, perspective);
         var set = GameDocuments.PlacementSet(view, $"game-{entry.Name.Replace('.', '-')}-{perspective.Name}-r{revision}",
             $"{entry.Label}: {perspective.Name}, revision {revision}", units.Vocabulary, Catalogs);
         return new GameProjection(entry, view, set);
+    }
+
+    /// <summary>A perspective's view at a revision (pass 23, ruling R23.3): a side setting up now is out of the other side's sight (A12.12).</summary>
+    public GameView ViewOf(GameHistory history, long revision, Perspective perspective)
+    {
+        ArgumentNullException.ThrowIfNull(history);
+        ArgumentNullException.ThrowIfNull(perspective);
+        return GameView.Of(history, revision, perspective, history.At(revision) is { } state && live is not null ? live.Planner.OutOfSight(state, perspective) : null);
     }
 
     /// <summary>

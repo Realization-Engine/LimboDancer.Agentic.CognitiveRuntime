@@ -254,6 +254,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             "asl.game.throw-dc" => PlanThrowDc(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.fire-starshell" => PlanStarshell(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.detonate-dc" => PlanDetonateDc(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
+            "asl.game.place-hidden" => PlanPlaceHidden(scope, arguments, existing, attemptId, expected, label),
             _ => Refused(scope, label, expected, "play.unknown-action"),
         };
 
@@ -328,6 +329,12 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         if (existing.Any(item => !GameState.IsSetupEvent(item.Payload)))
         {
             return Refused(scope, label, expected, "play.setup-closed: play has started, so no more units can be set up");
+        }
+
+        // Ruling R23.6 (A12.12): the non-OB "?" each side places once both have set up.
+        if (arguments.TryGetProperty("conceal", out var conceal))
+        {
+            return PlanNonObConcealment(scope, conceal, existing, attemptId, expected, label);
         }
 
         var events = new JsonArray();

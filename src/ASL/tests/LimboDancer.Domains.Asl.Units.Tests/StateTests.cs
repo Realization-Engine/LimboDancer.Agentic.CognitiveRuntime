@@ -171,7 +171,11 @@ public sealed class StateTests
 
         var russian = GameView.Of(history, 8, Perspective.Side("russian"));
         Assert.Equal(["r1", "r2"], russian.Units.Where(unit => unit.Side == "russian").Select(unit => unit.Id));
-        Assert.Empty(russian.Sealed);
+
+        // Pass 23 (A2.9; ruling R23.3): before play starts the German stack shows its top counter, and its other two are counted, not identified.
+        Assert.Equal(["g1"], russian.Units.Where(unit => unit.Side == "german").Select(unit => unit.Id));
+        Assert.Equal(2, russian.Sealed.Count(presence => presence is { Side: "german", Uninspected: true } && presence.Location.ToString() == "bd01:D4:0"));
+        Assert.Equal(russian.Sealed.Count, russian.Sealed.Count(presence => presence.Uninspected));
         var adjudicator = GameView.Of(history, 8, Perspective.Adjudicator);
         Assert.Equal(5, adjudicator.Units.Count);
         Assert.Equal(8, adjudicator.Events.Count);

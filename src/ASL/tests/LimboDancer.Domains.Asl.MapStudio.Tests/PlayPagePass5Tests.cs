@@ -180,10 +180,10 @@ public sealed class PlayPagePass5Tests : IDisposable
         Assert.Empty(page.FindAll("#play-choice .choose"));
         Assert.Contains("Waiting for the german side", page.Find("#play-choice").TextContent, StringComparison.Ordinal);
 
-        page.Find("#play-perspective").Change("german");
+        page.ViewAs("german");
         Commit(page, "#play-choice .choose[data-option='decline']");
         Assert.Empty(page.FindAll("#play-choice"));
-        page.Find("#play-perspective").Change(Perspective.AdjudicatorName);
+        page.ViewAs(Perspective.AdjudicatorName);
         Assert.Contains(page.FindAll("#play-units tr"), row => row.TextContent.Contains("hero", StringComparison.Ordinal));
         Assert.DoesNotContain("eliminated", Row(page, "g2"), StringComparison.Ordinal);
     }
@@ -194,7 +194,7 @@ public sealed class PlayPagePass5Tests : IDisposable
         var page = Surrender("g2");
         Assert.NotEmpty(page.FindAll(".reject-surrender"));
         Commit(page, ".reject-surrender[data-unit='g2']");
-        page.Find("#play-perspective").Change(Perspective.AdjudicatorName);
+        page.ViewAs(Perspective.AdjudicatorName);
         Assert.Contains("eliminated", Row(page, "g2"), StringComparison.Ordinal);
         Assert.Empty(page.FindAll(".reject-surrender"));
     }
@@ -205,11 +205,11 @@ public sealed class PlayPagePass5Tests : IDisposable
         var page = Surrender("g2");
         Commit(page, ".take-prisoner[data-captor='r4']");
         Assert.Contains("captured", Row(page, "g2"), StringComparison.Ordinal);
-        page.Find("#play-perspective").Change("german");
+        page.ViewAs("german");
         Assert.Empty(page.FindAll(".massacre"));
-        page.Find("#play-perspective").Change("russian");
+        page.ViewAs("russian");
         Commit(page, ".massacre[data-unit='r6'][data-prisoner='g2']");
-        page.Find("#play-perspective").Change(Perspective.AdjudicatorName);
+        page.ViewAs(Perspective.AdjudicatorName);
         Assert.Contains("eliminated", Row(page, "g2"), StringComparison.Ordinal);
         Assert.Empty(page.FindAll(".massacre"));
     }

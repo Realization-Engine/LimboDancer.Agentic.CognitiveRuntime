@@ -110,6 +110,54 @@ public sealed class PlayPageTests : IDisposable
         return page;
     }
 
+    // Pass 23 (rulings R23.2, R23.3; plan section 15.4): a new view waits behind the hand-over screen, which leaves the map, the units, and the board
+    // link out of the page until its viewer confirms; the board link then reads the game as that view, not as the adjudicator.
+    [Fact]
+    public void ANewViewWaitsForItsViewer()
+    {
+        var page = StartGame($"{Board}:A1:0");
+        var first = page.Find("#play-perspective").GetAttribute("value")!;
+        Assert.NotEqual(Perspective.AdjudicatorName, first);
+        Assert.Contains($"perspective={first}", page.Find("#play-view").GetAttribute("href"), StringComparison.Ordinal);
+
+        page.Find("#play-perspective").Change(Perspective.AdjudicatorName);
+        Assert.Contains("Hand the screen to the adjudicator", page.Find("#play-handover-title").TextContent, StringComparison.Ordinal);
+        Assert.Empty(page.FindAll("#play-units"));
+        Assert.Empty(page.FindAll("#play-summary"));
+        Assert.Empty(page.FindAll("#play-view"));
+        page.Find("#play-handover-confirm").Click();
+        Assert.Empty(page.FindAll("#play-handover"));
+        Assert.Contains("perspective=adjudicator", page.Find("#play-view").GetAttribute("href"), StringComparison.Ordinal);
+        Assert.NotEmpty(page.FindAll("#play-units tr[data-unit='g1']"));
+
+        // Choosing the view shown again drops a waiting hand-over.
+        page.Find("#play-perspective").Change(first);
+        page.Find("#play-perspective").Change(Perspective.AdjudicatorName);
+        Assert.Empty(page.FindAll("#play-handover"));
+    }
+
+    // Plan section 13.4 (UI review and table player, pass 23): a hand-over drops what the last view drafted; the movers are the moving side's own.
+    [Fact]
+    public void AHandOverDropsTheLastViewsDrafts()
+    {
+        var page = StartGame($"{Board}:A1:0");
+        page.Find("#place-id").Change("g2");
+        page.Find("#place-location").Change($"{Board}:A1:0");
+        page.Find("#place-add").Click();
+        Assert.NotEmpty(page.FindAll("#place-list"));
+        page.ViewAs("russian");
+        Assert.Empty(page.FindAll("#place-list"));
+
+        page.ViewAs("german");
+        Commit(page, "#propose-advance");
+        Commit(page, "#propose-advance");
+        Assert.Contains("Movement Phase", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
+        Assert.NotEmpty(page.FindAll(".move-unit"));
+        page.ViewAs("russian");
+        Assert.Empty(page.FindAll(".move-unit"));
+        Assert.Contains("german side moves now", page.Find("#move-elsewhere").TextContent, StringComparison.Ordinal);
+    }
+
     private static void Commit(IRenderedComponent<PlayPage> page, string propose)
     {
         page.Find(propose).Click();
@@ -130,7 +178,7 @@ public sealed class PlayPageTests : IDisposable
 
         // The audit tail is the adjudicator's; a side's view does not show it.
         Assert.DoesNotContain("ExecutorCompleted", page.Markup, StringComparison.Ordinal);
-        page.Find("#play-perspective").Change(Perspective.AdjudicatorName);
+        page.ViewAs(Perspective.AdjudicatorName);
         Assert.Contains("ExecutorCompleted", page.Markup, StringComparison.Ordinal);
     }
 
@@ -143,7 +191,7 @@ public sealed class PlayPageTests : IDisposable
         Commit(page, "#propose-advance");
         Assert.Contains("Movement Phase", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
 
-        page.Find("#play-perspective").Change(Perspective.AdjudicatorName);
+        page.ViewAs(Perspective.AdjudicatorName);
         page.Find("#enter-location").Change(building);
         page.Find("#propose-enter").Click();
         page.WaitForAssertion(() => Assert.NotEmpty(page.FindAll("#play-facts")));
@@ -245,9 +293,9 @@ public sealed class PlayPageTests : IDisposable
         Assert.DoesNotContain("r2", german, StringComparison.Ordinal);
         Assert.Contains("movement ended", page.Find("#play-units tr[data-unit='g1']").TextContent, StringComparison.Ordinal);
 
-        page.Find("#play-perspective").Change("russian");
+        page.ViewAs("russian");
         Assert.Contains("for r1, r2", page.Find("#play-rolls li").TextContent, StringComparison.Ordinal);
-        page.Find("#play-perspective").Change(Perspective.AdjudicatorName);
+        page.ViewAs(Perspective.AdjudicatorName);
         Assert.Contains("for r1, r2", page.Find("#play-rolls li").TextContent, StringComparison.Ordinal);
     }
 
@@ -270,12 +318,12 @@ public sealed class PlayPageTests : IDisposable
     public void TheMapIsDrawnWithTheUnitsTheViewerMaySee()
     {
         var page = GameWithDefenders(("r1", "defender-squad"));
-        page.Find("#play-perspective").Change(Perspective.AdjudicatorName);
+        page.ViewAs(Perspective.AdjudicatorName);
         Assert.Contains("data-unit-id=\"r1\"", page.Find("#play-map").InnerHtml, StringComparison.Ordinal);
         Assert.Equal(Board, page.Find("#play-map").GetAttribute("data-source"));
 
         // The German side sees the concealed r1 only as a sealed presence.
-        page.Find("#play-perspective").Change("german");
+        page.ViewAs("german");
         Assert.Contains("data-unit-id=\"g1\"", page.Find("#play-map").InnerHtml, StringComparison.Ordinal);
         Assert.DoesNotContain("data-unit-id=\"r1\"", page.Find("#play-map").InnerHtml, StringComparison.Ordinal);
 
@@ -305,7 +353,7 @@ public sealed class PlayPageTests : IDisposable
     public void LosFromAUnitOffersOnlyUnitsTheViewerCanSee()
     {
         var page = GameWithDefenders(("r1", "defender-squad"));
-        page.Find("#play-perspective").Change("german");
+        page.ViewAs("german");
         var offered = page.FindAll("#play-los-unit option").Select(option => option.GetAttribute("value")).ToArray();
         Assert.Contains("g1", offered);
         Assert.DoesNotContain("r1", offered);
@@ -313,7 +361,7 @@ public sealed class PlayPageTests : IDisposable
         page.Find("#play-los-unit").Change("g1");
         Assert.Equal($"{Board}:A1:0", page.Find("#play-los-source").GetAttribute("value"));
 
-        page.Find("#play-perspective").Change(Perspective.AdjudicatorName);
+        page.ViewAs(Perspective.AdjudicatorName);
         Assert.Contains("r1", page.FindAll("#play-los-unit option").Select(option => option.GetAttribute("value")));
     }
 

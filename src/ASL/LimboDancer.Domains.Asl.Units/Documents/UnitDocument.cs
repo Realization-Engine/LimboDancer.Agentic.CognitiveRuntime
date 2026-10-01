@@ -63,6 +63,15 @@ public sealed record UnitDocument(
     UnitFacing? TurretFacing = null,
     UnitHexside? Hexside = null)
 {
+    /// <summary>
+    /// A placeholder for a counter beneath the top of an enemy stack before play starts, which may not be inspected yet (A2.9; pass 23, ruling R23.3);
+    /// drawn as a concealed placeholder but named for what it is.
+    /// </summary>
+    public bool Uninspected
+    {
+        get; init;
+    }
+
     public UnitFace? Face(string name) => Faces.FirstOrDefault(face => face.Name == name);
 
     public bool HasState(string state) => States.Contains(state, StringComparer.Ordinal);

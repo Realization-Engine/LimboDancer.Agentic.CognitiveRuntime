@@ -77,6 +77,7 @@ public static class GameProjector
                 InstanceMoved moved => Move(previous, moved),
                 EquipmentTransferred transferred => Transfer(previous, transferred),
                 ConditionsChanged changed => ChangeConditions(previous, changed),
+                SetupConcealed concealed => SetupConceal(previous, concealed),
                 LineageRecorded lineage => RecordLineage(previous, lineage),
                 InstanceEliminated eliminated => Eliminate(previous, eliminated.Id),
                 InstanceCaptured captured => Capture(previous, captured),
@@ -2940,6 +2941,16 @@ public static class GameProjector
             };
             return CheckPosition(state, moved.Kind, moved.Position) ? Replace(state, moved) : null;
         }
+
+        /// <summary>A non-OB "?" placed at the end of setup (A12.12; ruling R23.6): the unit is concealed, and recorded as such.</summary>
+        private GameState? SetupConceal(GameState state, SetupConcealed concealed) =>
+            ChangeConditions(state, new ConditionsChanged(concealed.Id,
+                new Dictionary<string, ConditionState>(StringComparer.Ordinal) { [Conditions.Concealed] = ConditionState.True })) is { } gained
+                ? gained with
+                {
+                    NonObConcealed = [.. state.NonObConcealed, concealed.Id]
+                }
+                : null;
 
         private GameState? ChangeConditions(GameState state, ConditionsChanged change)
         {

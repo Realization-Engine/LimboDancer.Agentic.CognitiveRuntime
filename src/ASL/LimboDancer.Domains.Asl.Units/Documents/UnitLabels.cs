@@ -16,6 +16,11 @@ public static class UnitLabels
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(vocabulary);
+        if (document.Uninspected)
+        {
+            return Clean($"{vocabulary.SideLabel(document.Side)} counter, not inspectable before play");
+        }
+
         if (document.Concealed)
         {
             var size = document.SizeClass is { } sizeClass ? $", size class {sizeClass}" : string.Empty;
@@ -64,7 +69,7 @@ public static class UnitLabels
         ArgumentNullException.ThrowIfNull(vocabulary);
         var rows = new List<UnitDetail>
         {
-            new("Kind", document.Concealed ? "concealed unit" : vocabulary.Kind(document.Kind).Label),
+            new("Kind", document.Uninspected ? "a counter not inspectable before play (A2.9)" : document.Concealed ? "concealed unit" : vocabulary.Kind(document.Kind).Label),
         };
         if (document.Side is not null)
         {

@@ -1,0 +1,46 @@
+@using System.Globalization
+@using LimboDancer.Domains.Asl.ScenarioA1
+@* R03 (plan section 16.13): the facts of an attack as the planner read them from the game and the map, with the terrain facts of pass 10. It shows
+   them; it does not recalculate them. *@
+<table class="library" id="fire-facts">
+    <thead><tr><th>Fact of the attack</th><th>From the game and the map</th></tr></thead>
+    <tbody>
+        <tr data-fact="phase"><td>Phase and side</td><td>@Attack.Phase@(Attack.FireKind is { } kind ? $" ({kind})" : ""), the @(Attack.FiringSide) side</td></tr>
+        <tr data-fact="firers"><td>Fire group</td><td>@FireGroup</td></tr>
+        <tr data-fact="target"><td>Target Location</td><td>@Attack.TargetLocationId</td></tr>
+        <tr data-fact="range"><td>Range</td><td>@Range</td></tr>
+        <tr data-fact="level"><td>Same level</td><td>@(Attack.SameLevel is { } same ? same ? "yes" : Attack.TargetLevelAbove is { } above ? $"no: the target is {Math.Abs(above)} level{(Math.Abs(above) == 1 ? "" : "s")} {(above > 0 ? "above" : "below")} the firer" : "no" : "not read")</td></tr>
+        <tr data-fact="los"><td>LOS</td><td>@(Attack.Los is { } los ? $"{(los.Blocked == true ? "blocked" : "clear")}, Hindrance DRM {los.HindranceDrm}{(los.HindranceAttributed == true ? "" : " (not attributed)")}" : "not read")</td></tr>
+        <tr data-fact="terrain"><td>Target terrain</td><td>@(Attack.TargetTerrain ?? "not read")</td></tr>
+        @* Backlog pass 10 (rulings R10.4 to R10.8, R10.13): the terrain facts the attack also reads. *@
+        @if (Attack.HexsideTem is { Terrain: { } wall, Tem: { } wallTem })
+        {
+            <tr data-fact="hexside-tem"><td>Wall or hedge</td><td>the @wall's +@wallTem TEM, instead of a lower in-hex TEM (B9.3)</td></tr>
+        }
+        @if (Attack.HeightAdvantage == true)
+        {
+            <tr data-fact="height-advantage"><td>Height Advantage</td><td>+1 TEM when the target has no other positive TEM (B10.31)</td></tr>
+        }
+        @if (Attack.SnapShot == true)
+        {
+            <tr data-fact="snap-shot"><td>Snap Shot</td><td>at the hexside the stack crossed: Area Fire, no TEM, FFMO, or FFNAM (A8.15)</td></tr>
+        }
+        @if (Attack.HazardousMovement == true)
+        {
+            <tr data-fact="hazardous"><td>Hazardous Movement</td><td>-2, with no FFMO or FFNAM (A4.62)</td></tr>
+        }
+        <tr data-fact="month"><td>Month</td><td>@(Attack.ScenarioMonth?.ToString(CultureInfo.InvariantCulture) ?? "not recorded")</td></tr>
+    </tbody>
+</table>
+
+@code {
+    [Parameter, EditorRequired]
+    public FireAttack Attack { get; set; } = default!;
+
+    /// <summary>The fire group in words, as the page names its firers and weapons.</summary>
+    [Parameter]
+    public string FireGroup { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Range { get; set; } = string.Empty;
+}

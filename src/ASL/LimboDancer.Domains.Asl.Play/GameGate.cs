@@ -224,6 +224,16 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
             ConditionsChanged exposure when plan.Events[^1].Type == "crew-exposure-changed" => state.Unit(exposure.Id) is { } vehicle
                 && exposure.Conditions.All(item => GameState.Condition(vehicle, item.Key) == item.Value),
 
+            // Hidden units placed beneath "?" (A12.32; ruling R23.5): each is concealed and no longer hidden.
+            ConditionsChanged when plan.Events[^1].Type == "hidden-placed" => plan.Events.Select(item => item.Payload).OfType<ConditionsChanged>()
+                .All(placed => state.Unit(placed.Id) is { } unit && GameState.Condition(unit, Conditions.Concealed) == ConditionState.True
+                    && GameState.Condition(unit, Conditions.Hidden) != ConditionState.True),
+
+            // A non-OB "?" (A12.12; ruling R23.6): each unit is concealed, and counted as a non-OB "?".
+            SetupConcealed => plan.Events.Select(item => item.Payload).OfType<SetupConcealed>()
+                .All(placed => state.Unit(placed.Id) is { } unit && GameState.Condition(unit, Conditions.Concealed) == ConditionState.True
+                    && state.NonObConcealed.Contains(placed.Id, StringComparer.Ordinal)),
+
             // A pending declaration: every unit the plan revealed is known, and its attempt is still open.
             ConditionsChanged => plan.Events.Select(item => item.Payload).OfType<EntryAttempted>().Any()
                 && state.OpenAttempts.Any(open => open.EventId == plan.Events[0].EventId) && Revealed(state, plan),

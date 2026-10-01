@@ -10,12 +10,15 @@ namespace LimboDancer.Domains.Asl.Play;
 /// </summary>
 public sealed partial class GamePlanner
 {
-    /// <summary>The Victory Conditions read against a game's history (rulings R21.1 to R21.4); null for a game with no structured ones.</summary>
-    public VictoryReport? Victory(GameHistory history, bool? ended = null)
+    /// <summary>
+    /// The Victory Conditions read against a game's history (rulings R21.1 to R21.4), for <paramref name="knownTo"/> as that side may know them (ruling R23.4);
+    /// null for a game with no structured ones.
+    /// </summary>
+    public VictoryReport? Victory(GameHistory history, bool? ended = null, string? knownTo = null)
     {
         ArgumentNullException.ThrowIfNull(history);
         return history.Current is { Scenario: { } scenario } state && CardLibrary.Sha256(scenario.Id) == scenario.Sha256 && CardOf(state) is { } card && Valid(state, card)
-            ? ScenarioVictory.Evaluate(card, history.States, unit => VictoryPoints(state, unit), at => Neighbors(state, at), ended ?? state.Ended is not null)
+            ? ScenarioVictory.Evaluate(card, history.States, unit => VictoryPoints(state, unit), at => Neighbors(state, at), ended ?? state.Ended is not null, knownTo)
             : null;
     }
 

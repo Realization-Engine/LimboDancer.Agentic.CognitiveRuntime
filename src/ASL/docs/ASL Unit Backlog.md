@@ -244,7 +244,6 @@ Vehicle movement (Reverse, VBM, ESB, Minimum Move, Bog, OVR, stacking, and terra
 | The vertex LOS to a Bypassing unit, fire at a Bypassing unit in a hex with a wall or hedge, Bypass beyond two hexsides or continued around the same hex, a Bypass across an Abrupt Elevation Change, and an Ablaze obstacle | R10.7 | A4.31, A4.34, pp. 49 to 50; B9.42 | Vertex LOS in the fire planner; terrain Blazes | Refused; LOS to the hex center must cross a Bypassed hexside. |
 | Snap Shots at a hexside of a hex with a wall, hedge, SMOKE, or rubble | R10.13 | A8.15, p. 59; B9.42, p. 121 | Their LOS modification | Refused. |
 | Hazardous Movement other than a pushing crew (Clearance, Fording, Climbing, a crew bailing out) | R10.8 | A4.62, p. 51; D5.6 | Those activities | Not reached. |
-| Hidden units moving | R10.10 | A12.3, p. 79 | HIP loss on movement | Refused. |
 | A Minimum Move into concealed enemy units | R10.9 | A4.134, A12.15 | A forced back after a Minimum Move | Refused. |
 | Infantry OVR outside the reviewed building case, and a lone revealed SMC's OVR option | R10.11 | A4.15, A4.151, A4.152, p. 49 | OVR NTC and the SMC's options for any terrain | A Known lone SMC's Location is refused; a lone revealed SMC forces the mover back (a deviation in section 1). |
 | A berserk charge up or down a stairwell or along an upper level | R10.15 | A15.431, p. 84; B23.4 | Levels in the route graph | A Known enemy unit upstairs has no route: the charge ends in place. |
@@ -412,7 +411,6 @@ The backlog pass 17 (2026-09-29) built the scenario-card presentation: the card 
 | More cards: the other legacy cards of The General (The Tractor Works was added by pass 17b) | Pass 17 selection | Varies | The counters and terrain they need | Three cards. |
 | A Factory by SSR (The Tractor Works' X3) | R17.13 | B23.74 to B23.742, p. 139 | Factory terrain in the terrain key | Shown, not enforced; X3 plays as an ordinary stone building. |
 | Fanaticism by SSR for units in a building (The Tractor Works) | R17.13 | A10.8, p. 69 | An SSR token naming Fanatic units by place | Shown, not enforced. |
-| Hidden setup per side: a side does not see the other's placements during a sequential setup, nor HIP units or the contents of "?" | User ruling, 2026-09-29 (setup is hot-seat on the honor system) | A2.9, A12.11, A12.12, A12.3 | Setup from the OB (Scenario Card Games Plan, pass 19); a per-side view | Both sides see the whole map during setup. |
 | The Russian MMG's portage: the catalog's 4 PP (manufactured at unit step 23) against the legacy counter's apparent 5 PP | Referee, pass 17b | A4.42, A9.1 | A registered source printing it | 4 PP. |
 
 ## 28. Added by the scenario card games pass 18
@@ -431,12 +429,9 @@ Pass 19 (2026-09-29) built the setup of a game from a card: its OB group by grou
 
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
-| The non-OB "?" each side places after both have set up, on units out of the enemy's LOS or 17 hexes away | R19.5 | A12.12, p. 76 | A LOS check at the end of setup | Only OB "?" at setup. |
-| HIP by SSR | R19.5 | A12.3 | An SSR token for HIP | Hidden units are refused at setup. |
 | Terrain the movement rules give no entry cost for (gully, stream, shellholes, graveyard, and others) refused at setup; a marsh setup through the planner is not tested | Referee, pass 19 | A2.9, B16.4 | Those terrains in the movement rules; a board with marsh | Refused at setup. |
 | A crew or HS manning a Gun stacking as a squad | Referee, pass 19 | A5.5 | Guns set up from cards | Counts as half a squad. |
 | A test of a card changed or gone since the game started | Referee, pass 19 | R19.1 | A way to change an embedded card in a test | Refused in code. |
-| Hidden setup per side (already in section 27) | User ruling, 2026-09-29 | A2.9, A12.12 | A per-side view | Both sides see the map. |
 
 ## 30. Added by the scenario card games pass 20
 
@@ -462,7 +457,6 @@ Pass 21 (2026-09-29) built the Victory Conditions of a game from a card: Control
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
 | Control of Locations (upper levels), vehicles' temporary Control, Control by Mopping Up, and Control forfeited to a Kindled Fire | R21.1 | A26.1, A26.12, A12.153, A26.16 | Location-level Control; Fire | Hexes and buildings only. |
-| A concealed or HIP unit's Control left undeclared until game end: the Play page shows Control to both sides | Referee, pass 21 | A26.15 | A per-side view (section 27) | Both sides see all Control. |
 | Start Control of a building partly in one side's area and partly on a board only that side sets up on, and of areas with no board on a multi-board card | Referee, pass 21 | A26.11 | A card that needs it | Such a building starts uncontrolled. |
 | Gun and vehicle VP: a Gun two, a vehicle one plus its MA and AF | R21.2 | A26.212 | A card fielding them | Guns and vehicles give no VP. |
 | Leaving the map in the APh, by Bypass with its extra MF, and at the road rate; a crew with its Gun and a Guard with prisoners leaving | R21.5 | A2.6, A20.53, C10.3 | Advance and Bypass exits | Refused with a message; the cost is the hex's own terrain. |
@@ -528,13 +522,31 @@ Pass 22d (2026-09-30) turned the board viewer, the board editor, and the Unit La
 | Home and End on the inspector tabs also scroll the inspector | UI review, pass 22d | | A small script, since Blazor cannot prevent the default for some keys only | The tab moves and the pane may scroll. |
 | The board editor's three columns at narrow widths | Visual check, pass 22d | | Plan task 28c.2 (responsive layouts) | The board area is about 370px wide at 1100px. |
 
+## 37. Added by the redesign pass 23
+
+Pass 23 (2026-09-30) built a side's view at setup and in play, the hand-over screen between sides, the board link that follows the view, HIP by SSR, hidden units placed beneath "?", the non-OB "?", and Control as a side knows it (rulings R23.1 to R23.6), and extracted thirteen Play components. It removed the rows for hidden setup per side (sections 27 and 29), HIP by SSR and the non-OB "?" (section 29), Control left undeclared (section 31), and hidden units moving (section 20). Items it leaves out:
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| Hidden Guns (an Emplaced Gun's HIP, its reveal by fire), fortifications set up hidden, and hidden vehicles | R23.5; referee, pass 23 | A12.33, A12.34, p. 80 | Guns and vehicles set up from cards (plan pass 26) | HIP is refused for anything but Infantry. |
+| A HIP unit giving up its hidden status to stop an enemy unit in its LOS from gaining "?", at setup or in play | Referee, pass 23 | A12.32, p. 80 | A setup event for it | Placing beneath "?" is from the start of play only; hidden units do not count against a non-OB "?". |
+| A "?" placed on a Good Order stack before it enters the map | R23.6 | A12.12, p. 77 | Entering units concealed (R20.5) | Entering units are never "?". |
+| A CC attack against a "?" declared from a side's view | Table player, pass 23 | A11.1, A12.13 | Attacks on a sealed presence | A side's CC panel lists only units it may see; the adjudicator declares an attack on concealed units. |
+| A hand-over when the page opens or reloads, and a "hand over" button beside an outcome (after a move, for Defensive First Fire, a choice, or a surrender) | Table player, pass 23 | | Plan pass 28c (the Play workspace) | The page opens as the phasing side's view; the view is changed in the picker. |
+| A board viewer tab opened earlier keeps its view after a hand-over | Table player, pass 23 | | Cross-tab state | The link opens the view chosen when it was followed. |
+| Counters beneath an enemy stack's top before play drawn as a stack-depth marker | Table player, pass 23 | A2.9 | A renderer marker | They are drawn as "?" placeholders and named "not inspectable before play" in the table and the accessible names. |
+| The non-OB "?" list reads every enemy unit, those under "?" too, so what it leaves out says something of the enemy's "?" | Table player, pass 23 | A12.12 | | The list is the opponent's check at the table; a refusal names no enemy Location. |
+| Focus after confirming the hand-over | UI review, pass 23 | | Focus management in the Play workspace | Focus returns to the page; Tab reaches the panels. |
+| The map drawn per render: `GameMaps.Draw` replays and projects the game each time | UI review, pass 23 | | A drawing cache by revision and view | Correct; slower on long games. |
+| The non-OB "?" against a board's real LOS in the tests (board 01's fixture carries no LOS data) | Referee, pass 23 | A12.12 | LOS data in the test fixture | Tested with a LOS stub and checked in the Studio on board 04. |
+| The setup form usable by the side out of sight | Table player, pass 23 | A12.12 | | Hot-seat on the honor system: the note says only the side setting up places units. |
+
 ### Rows planned in the Card Play and Map Studio Redesign Plan
 
 The plan was approved on 2026-09-30. A survey of this backlog the same day found the rows below planned in its passes; each stays in its section until its pass builds it, and then leaves it with the pass named, as usual.
 
 | Backlog rows | Planned in |
 |---|---|
-| Hidden setup per side (§27, §29); HIP by SSR, the non-OB "?" (§29); Control left undeclared (§31); a hidden unit moving (§20) | Pass 23 |
 | Control of Locations, start Control edge cases, Gun and vehicle VP, the Control cache (§31) | Pass 24 (Control forfeited to a Kindled Fire: pass 40) |
 | Entry by advance, delayed and blocked entry, offboard Deployment, the full movement step at entry, several entry areas (§30); leaving the map in the APh, by Bypass, and at the road rate, a Guard leaving with prisoners, captured units exited (§31, §24); the SMOKE panel's eligibility (§19); clearer answers after DFF eliminates every mover, the end-move refusal after a DC placer was Replaced (§25); the raw OB group and Deployment messages (§30); the exit refusal naming the edge hex (§31) | Pass 25 |
 | Vehicles and Guns entering, Gun movement and limbering, hook-up and en portee (§12, §18, §30); a crew manning a Gun stacking (§29); a crew leaving with its Gun (§31); a Covered Arc across boards or on a reversed board, concealed crews and Guns (§12, §22); the Motion "wished to enter next" field (§21) | Pass 26 |
