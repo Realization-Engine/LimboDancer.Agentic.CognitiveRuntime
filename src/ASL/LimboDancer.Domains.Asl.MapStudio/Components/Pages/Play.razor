@@ -61,7 +61,7 @@ else if (state is not null)
     <p id="play-summary">
         <strong>@(history.Current is not null ? $"Revision {state.Revision}" : "The game does not replay")</strong>:
         turn @state.Turn, @Games.PhaseLabel(state.Phase), @state.PhasingSide phasing.
-        @(SetupOpen ? "Setup is open." : "Play has started; setup is closed.")
+        @(SetupOpen ? "Setup is open." : state.Ended is not null ? "The game has ended; nothing more is played." : "Play has started; setup is closed.")
     </p>
     <NightWeatherSummary Text="@NightAndWeather(state)" />
 }
@@ -120,7 +120,13 @@ else if (state is not null)
         OnPropose="@ProposeSetup" />
 }
 
-@if (state is not null && history?.Current is not null)
+@if (state is { Ended: not null } && history?.Current is not null)
+{
+    @* Ruling R20.1: nothing happens in a game that has ended, so the page offers no action; its records, units, and map stay. *@
+    <h3>Play</h3>
+    <p id="play-over" class="muted">The game is over: its result is above, and no more actions are proposed (A3.9; ruling R20.1).</p>
+}
+else if (state is not null && history?.Current is not null)
 {
     <h3>Play</h3>
     <div class="toolbar">
