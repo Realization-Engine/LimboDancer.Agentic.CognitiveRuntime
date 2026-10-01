@@ -242,10 +242,14 @@ public static class GameEventReader
             case "crew-exposure-changed":
             case "concealment-lost":
             case "concealment-gained":
+            case "hidden-placed":
             case "desperation-morale":
                 var changedId = fields.RequiredString(payload, "id", path);
                 var conditions = ReadConditions(payload, path, diagnostics);
                 return changedId is null ? null : new ConditionsChanged(changedId, conditions);
+            case "setup-concealed":
+                var concealedId = fields.RequiredString(payload, "id", path);
+                return concealedId is null ? null : new SetupConcealed(concealedId);
             case "lineage":
                 var action = fields.RequiredString(payload, "action", path) switch
                 {

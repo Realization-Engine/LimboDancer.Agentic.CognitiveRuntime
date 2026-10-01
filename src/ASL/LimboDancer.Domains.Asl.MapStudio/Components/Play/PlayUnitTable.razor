@@ -1,0 +1,50 @@
+@* R12 (plan section 16.13): the units the view may see, with their movement and conditions already in words, and the "?" it knows of, by Location.
+   It receives rows, never the game state, so nothing withheld can reach it. *@
+<p class="muted" id="play-units-view">@ViewNote</p>
+<table class="library" id="play-units">
+    <thead><tr><th>Id</th><th>Side</th><th>Kind</th><th>Location</th><th>MF spent</th><th>Conditions</th></tr></thead>
+    <tbody>
+        @foreach (var row in Rows)
+        {
+            <tr data-unit="@row.Id">
+                <td>@row.Id</td><td>@row.Side</td><td>@row.Kind</td>
+                <td>
+                    @if (row.At is { } at)
+                    {
+                        <button class="play-locate" aria-label="Show @at on the map" @onclick="() => Locate.InvokeAsync(at)">@at</button>
+                    }
+                    else
+                    {
+                        @row.Status
+                    }
+                </td>
+                <td>@row.Movement</td>
+                <td>@row.Conditions</td>
+            </tr>
+        }
+        @foreach (var presence in Sealed)
+        {
+            <tr data-sealed="@presence.PlacementId">
+                <td>?</td><td>@presence.Side</td><td>@(presence.Uninspected ? "not inspectable before play (A2.9)" : "concealed")</td><td>@presence.Location</td><td></td><td></td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    /// <summary>A unit as the view shows it: where it is (null when it is off the map), or its status, its movement, and its conditions in words.</summary>
+    public sealed record Row(string Id, string Side, string Kind, BoardLocation? At, string Status, string Movement, string Conditions);
+
+    [Parameter]
+    public string ViewNote { get; set; } = string.Empty;
+
+    [Parameter]
+    public IReadOnlyList<Row> Rows { get; set; } = [];
+
+    /// <summary>The "?" the view knows of (A12.11), and before play the counters beneath an enemy stack's top (A2.9).</summary>
+    [Parameter]
+    public IReadOnlyList<LimboDancer.Domains.Asl.Units.State.SealedPresence> Sealed { get; set; } = [];
+
+    [Parameter]
+    public EventCallback<BoardLocation> Locate { get; set; }
+}

@@ -1,6 +1,6 @@
 # ASL Card Play and Map Studio Redesign Plan
 
-**Status:** Approved by the user on 2026-09-30. It merges and replaces two documents: the ASL Unit Card Play, Deferred Rules, and DYO Plan (approved 2026-09-30, passes 23 to 30) and the ASL Map Studio UI Redesign 01 Design (branch `UI-Redesign-01`, commit `800416a`); both were deleted after their content was carried over here, and git history keeps them. Passes 22b, 22c, and 22d are built (2026-09-30; see their designs, [22b](<ASL Unit Backlog Pass 22b Design.md>), [22c](<ASL Unit Backlog Pass 22c Design.md>), and [22d](<ASL Unit Backlog Pass 22d Design.md>), and reviews, [22b](<Scenario A1 Backlog Pass 22b Review 2026-09-30.md>), [22c](<Scenario A1 Backlog Pass 22c Review 2026-09-30.md>), and [22d](<Scenario A1 Backlog Pass 22d Review 2026-09-30.md>)); the passes run one at a time on the user's go-ahead, pass 23 next.
+**Status:** Approved by the user on 2026-09-30. It merges and replaces two documents: the ASL Unit Card Play, Deferred Rules, and DYO Plan (approved 2026-09-30, passes 23 to 30) and the ASL Map Studio UI Redesign 01 Design (branch `UI-Redesign-01`, commit `800416a`); both were deleted after their content was carried over here, and git history keeps them. Passes 22b, 22c, and 22d are built (2026-09-30; see their designs, [22b](<ASL Unit Backlog Pass 22b Design.md>), [22c](<ASL Unit Backlog Pass 22c Design.md>), and [22d](<ASL Unit Backlog Pass 22d Design.md>), and reviews, [22b](<Scenario A1 Backlog Pass 22b Review 2026-09-30.md>), [22c](<Scenario A1 Backlog Pass 22c Review 2026-09-30.md>), and [22d](<Scenario A1 Backlog Pass 22d Review 2026-09-30.md>)); pass 23, the first game pass, is built too (2026-09-30; its [design](<ASL Unit Backlog Pass 23 Design.md>) and [review](<Scenario A1 Backlog Pass 23 Review 2026-09-30.md>)). The passes run one at a time on the user's go-ahead, pass 24 next.
 
 **Date:** 2026-09-30
 
@@ -46,7 +46,7 @@ New rules adjudication, changes to game persistence, VASL artwork, a new compone
 
 **The user's answers (2026-09-30):**
 
-1. **Hidden setup in a hot-seat game (pass 23): a hand-over screen.** The Studio blanks the map and the side panels between sides until the next side confirms it is at the screen; there is no separate tab per side.
+1. **Hidden setup in a hot-seat game (pass 23): a hand-over screen.** The Studio blanks the map and the side panels between sides until the next side confirms it is at the screen; there is no separate tab per side. A later answer the same day, when pass 23 was built: in a sequential setup the second side sees the first side's finished setup as on the board (the rulebook, A12.12 and A2.9), not nothing until both have set up.
 2. **Scope of group 2: the berserk gaps stay.** Tasks 27.2 and 27.3 remain in pass 27.
 3. **DYO nationalities (passes 29 and 30): German and Russian first.** The DYO page offers the two nationalities the cards use; the other nationalities the catalog carries, with manufactured counters where needed, go to the backlog when pass 29 is built.
 4. **Order: as numbered.** The game passes run 23 to 30, so each builds on the one before and the editor forms (pass 28) follow the rules they edit. This merged plan keeps that order and inserts the Studio passes around it (section 4); the insertion needs the user's approval.
@@ -157,6 +157,8 @@ New rules adjudication, changes to game persistence, VASL artwork, a new compone
 | 23.5 Play context and review components | First, page tests that pin the Victory standing (`#play-victory`, `data-control`, `data-side`) in a side's and the adjudicator's view, which no test covers yet. Then P01 `ScriptedDicePanel`, P02 `LiveGameToolbar`, P07 `GameReplayFailure`, N02 `NightWeatherSummary`, R01 to R03 (the proposal review and its evidence), R12 `PlayUnitTable`, R13 `AdjudicatorAuditPanel`, K05 `SetupPoolsTable`, and K06 to K08 (the card panel, the game's end, the Victory standing), each receiving the side's view; the board link at Play:63 follows the view (section 15.4). | A26.15 | 1:25 |
 | | Overhead | | 1:15 |
 | | **Pass 23 total** (build 4:10) | | **5:25** |
+
+**Built 2026-09-30** (rulings R23.1 to R23.6). Task 23.2 follows the rulebook, by the user's answer of 2026-09-30, not its first text: the side setting up is out of the other's sight, and once it has finished the other side sees its setup as on the board, each stack's top counter until play starts (A12.12, A2.9). A hidden unit that moves is first placed beneath "?" (A12.32), not revealed. All thirteen candidates of task 23.5 are extracted, with the hand-over screen as a fourteenth component.
 
 ### Pass 24: Control of Locations and more VP
 
@@ -629,7 +631,7 @@ Several existing Play selectors query full `state`; extracting them does not by 
 
 Specific hotspots in the source:
 
-- Play:63 builds the board link with `Perspective.Adjudicator`, even though the toolbar has a selected perspective. Treat this as a separate explicit behavior decision and test it during the redesign; do not bury a perspective change in a component refactor. **2026-09-30:** still present on main. Pass 23 (per-side views with a hand-over screen) cannot hide a side's setup while this link opens the adjudicator view, so the decision is due before that pass.
+- Play:63 builds the board link with `Perspective.Adjudicator`, even though the toolbar has a selected perspective. Treat this as a separate explicit behavior decision and test it during the redesign; do not bury a perspective change in a component refactor. **2026-09-30:** still present on main. Pass 23 (per-side views with a hand-over screen) cannot hide a side's setup while this link opens the adjudicator view, so the decision is due before that pass. **Decided in pass 23 (ruling R23.3):** the link follows the page's view, and is left out while a hand-over waits.
 - The Victory Conditions standing (`#play-victory`) shows Control to both sides, which A26.15 withholds for concealed and HIP units (backlog section 31); a `VictoryStandingTable` child must receive the side's view once pass 23 provides it.
 - Play:246-250 (at `2fa3f56`) builds building-entry choices from active state units. Other task lists also consult state and planners. Pass only the disclosure appropriate to the current workflow; preserve adjudication authority on the server.
 - Required choice, surrender, audit, fire-effects and sealed-presence blocks have different disclosure rules. A generic card must not receive their secret data and merely hide it with CSS.

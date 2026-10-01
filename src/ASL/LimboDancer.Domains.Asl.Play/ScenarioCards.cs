@@ -415,6 +415,12 @@ public static partial class ScenarioCards
             Check(rule.Status != "not-enforced" || !string.IsNullOrWhiteSpace(rule.Note), $"card.ssr: SSR {rule.Number} is not enforced and says why");
             Check(!string.IsNullOrWhiteSpace(rule.Text), $"card.ssr: SSR {rule.Number} has its text");
             Cited(rule.Rules, $"SSR {rule.Number}", Check);
+
+            // Ruling R23.5 (referee, pass 23): a HIP token names a side of the card.
+            foreach (var token in rule.Tokens.Where(token => token.StartsWith("hip:", StringComparison.Ordinal)))
+            {
+                Check(token.Split(':') is [_, var named, _] && card.Sides.Any(side => side.Side == named), $"card.ssr: SSR {rule.Number}'s '{token}' names no side of the card");
+            }
         }
 
         var start = new JsonObject

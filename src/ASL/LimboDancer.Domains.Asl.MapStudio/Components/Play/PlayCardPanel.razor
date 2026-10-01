@@ -1,0 +1,96 @@
+@using LimboDancer.Domains.Asl.Play
+@using LimboDancer.Domains.Asl.Units.State
+@* K06 (plan sections 13.6, 16.16): the card a game started from, as the game reads it now: its turns, the Balance, the game's end (K07), the OB groups,
+   the Victory Conditions and their standing for the view (K08; ruling R23.4), the SSRs, and its provenance; or what the game recorded when the card is
+   gone. Everything here is printed on the card or known to both sides but the standing, which arrives already read for the view. *@
+<details id="play-card" open>
+    <summary>Scenario card: @Scenario.Title</summary>
+    @if (Card is { } card)
+    {
+        @if (Changed)
+        {
+            <p id="play-card-changed" class="diagnostic warning">The card has changed since this game started; what follows is its current text.</p>
+        }
+        <p id="play-card-turns">@card.Turns.Count Game Turns@(card.Turns.HalfTurn ? ", the last with one Player Turn" : string.Empty); @ScenarioCards.PlaceAndDate(card).
+            @card.Turns.SetsUpFirst sets up first; @(card.Turns.MovesFirst is { } cardFirst ? $"{cardFirst} moves first." : $"{FirstSide} won the dr to move first (ruling R20.2).")</p>
+        <p id="play-card-balance">@(Scenario.Balance is { } balanceSide ? $"{balanceSide} plays with its Balance: {card.Sides.FirstOrDefault(side => side.Side == balanceSide)?.Balance}" : "No side takes its Balance.")
+            @(Scenario.Players.Count > 0 ? $" Players: {string.Join(", ", Scenario.Players.Select(player => $"{player.Name} plays {player.Side}"))}." : string.Empty) (A26.4; ruling R20.3)</p>
+        @if (Ended is { } ended)
+        {
+            <GameEndNotice Ended="@ended" />
+        }
+        <ul id="play-card-groups">
+            @foreach (var group in Groups)
+            {
+                <li>@group</li>
+            }
+        </ul>
+        <p id="play-card-victory"><strong>Victory Conditions:</strong> @card.VictoryConditions.Text</p>
+        @if (Victory is { } victory)
+        {
+            <VictoryStandingTable Report="@victory" KnownTo="@KnownTo"
+                                  IfEndedNow="@(KnownTo is null && Ended is null ? victory.AtEnd.Winner is { } leader ? $"{leader} would win" : "it would be a draw" : null)" />
+        }
+        <ol id="play-card-ssr">
+            @foreach (var rule in card.SpecialRules)
+            {
+                <li>@rule.Text</li>
+            }
+        </ol>
+        <a id="play-card-link" href="units/scenarios?card=@Scenario.Id">The whole card</a>
+        @if (Provenance is { } provenance)
+        {
+            <CardProvenancePanel Id="play-card-provenance" Model="@provenance" />
+        }
+    }
+    else
+    {
+        <p id="play-card-missing" class="diagnostic warning">The card '@Scenario.Id' is no longer among the scenario cards.</p>
+        <dl id="play-card-recorded" class="report">
+            <dt>Started from</dt>
+            <dd>@Scenario.Id, SHA-256 <code>@Scenario.Sha256</code></dd>
+            <dt>Catalog</dt>
+            <dd>@Catalog</dd>
+        </dl>
+    }
+</details>
+
+@code {
+    /// <summary>What the game recorded of its card at its start (ruling R18.2).</summary>
+    [Parameter, EditorRequired]
+    public ScenarioCardReference Scenario { get; set; } = default!;
+
+    /// <summary>The card as the library holds it now; null when it is gone.</summary>
+    [Parameter]
+    public ScenarioCard? Card { get; set; }
+
+    /// <summary>Whether the card has changed since the game started.</summary>
+    [Parameter]
+    public bool Changed { get; set; }
+
+    /// <summary>The side that won the first-move dr, when the card leaves the first move to one (ruling R20.2).</summary>
+    [Parameter]
+    public string? FirstSide { get; set; }
+
+    [Parameter]
+    public GameEnded? Ended { get; set; }
+
+    /// <summary>The game's OB groups in words, each with its side and ELR (ruling R18.3).</summary>
+    [Parameter]
+    public IReadOnlyList<string> Groups { get; set; } = [];
+
+    /// <summary>The Victory standing, already read for the view (ruling R23.4); null when the card has no structured Victory Conditions.</summary>
+    [Parameter]
+    public VictoryReport? Victory { get; set; }
+
+    /// <summary>The side the standing was read for; null for the adjudicator and once the game has ended.</summary>
+    [Parameter]
+    public string? KnownTo { get; set; }
+
+    [Parameter]
+    public CardProvenance? Provenance { get; set; }
+
+    /// <summary>The catalog the game started with, shown when the card is gone.</summary>
+    [Parameter]
+    public string Catalog { get; set; } = string.Empty;
+}

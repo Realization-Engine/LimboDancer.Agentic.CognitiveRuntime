@@ -1,0 +1,37 @@
+@* P01 (plan section 16.10): the development-only scripted dice, with their warning that games played now are test data. *@
+<div class="toolbar" id="scripted-dice">
+    <span class="toolbar-note">
+        <strong>Scripted dice are on (development only).</strong>
+        <span class="muted">Each die comes from this queue until it is empty, then from the system; games played now are test data.</span>
+    </span>
+    <label>Queue <input id="scripted-dice-values" size="24" placeholder="1 1 2 4" value="@Input" @onchange="@(args => InputChanged.InvokeAsync(args.Value as string))" /></label>
+    <button id="scripted-dice-add" @onclick="Add">Add</button>
+    <button id="scripted-dice-clear" class="link" @onclick="Clear">clear</button>
+    <span id="scripted-dice-queued">Queued: @(Queued.Count == 0 ? "none" : string.Join(" ", Queued))</span>
+    @if (Problem is { } problem)
+    {
+        <span class="warning">@problem</span>
+    }
+</div>
+
+@code {
+    /// <summary>The dice waiting in the queue, in order.</summary>
+    [Parameter]
+    public IReadOnlyList<int> Queued { get; set; } = [];
+
+    [Parameter]
+    public string? Input { get; set; }
+
+    [Parameter]
+    public EventCallback<string?> InputChanged { get; set; }
+
+    [Parameter]
+    public EventCallback Add { get; set; }
+
+    [Parameter]
+    public EventCallback Clear { get; set; }
+
+    /// <summary>Why the last values typed were not queued; null when they were.</summary>
+    [Parameter]
+    public string? Problem { get; set; }
+}

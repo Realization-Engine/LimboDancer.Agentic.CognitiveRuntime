@@ -67,7 +67,8 @@ public sealed partial class GamePlanner
                 .FirstOrDefault(condition => Is(unit!, condition)) is { } condition)
             {
                 return Refused(scope, label, expected,
-                    $"play.advance-unit: {unit!.Id} is {condition.Replace("asl:", string.Empty, StringComparison.Ordinal)}, so it may not advance (A4.7, A15.431, A11.15, A12.3)");
+                    $"play.advance-unit: {unit!.Id} is {condition.Replace("asl:", string.Empty, StringComparison.Ordinal)}, so it may not advance (A4.7, A15.431, A11.15, A12.3)"
+                    + (condition == Conditions.Hidden ? "; a hidden unit is first placed beneath \"?\" (A12.32; ruling R23.5)" : string.Empty));
             }
 
             if (unit!.MovementEnded)

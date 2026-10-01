@@ -156,6 +156,7 @@ public sealed class PlayPageDemoFixesTests : IDisposable
         page.Find(".fire-firer[data-unit='g2']").Change(true);
         page.Find("#fire-target").Change(hexes.Two);
         Advance(page, 1);
+        page.ViewAs("russian");
         Assert.Equal(string.Empty, page.Find("#fire-from").GetAttribute("value"));
         Assert.Equal(string.Empty, page.Find("#fire-target").GetAttribute("value"));
         Assert.Empty(page.FindAll(".fire-firer"));
@@ -182,6 +183,7 @@ public sealed class PlayPageDemoFixesTests : IDisposable
         // A15.432 (ruling R12.10): in the DFPh the berserk g2 fires, so its Location is offered.
         Advance(page, 2);
         Assert.Equal("dfph", live.History("village")!.Current!.Phase);
+        page.ViewAs("german");
         Assert.Contains(page.FindAll("#fire-from option"), option => option.GetAttribute("value") == hexes.Two);
 
         // The German MPh: g2 charges first, marked with its target and next step, and it is the unit checked.

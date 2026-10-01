@@ -1,0 +1,15 @@
+@* R13 (plan section 16.13): the latest audit lines, which only the adjudicator may read. The parent passes them only for the adjudicator's view; with
+   none, nothing is rendered, so a side's page never holds them. *@
+@if (Lines is { } lines)
+{
+    <details id="play-audit">
+        <summary>Audit (latest)</summary>
+        <pre class="json">@string.Join("\n", lines)</pre>
+    </details>
+}
+
+@code {
+    /// <summary>The audit lines, or null for a view that may not read them.</summary>
+    [Parameter]
+    public IReadOnlyList<string>? Lines { get; set; }
+}

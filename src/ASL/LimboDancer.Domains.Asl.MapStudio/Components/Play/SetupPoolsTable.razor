@@ -1,0 +1,44 @@
+@using LimboDancer.Domains.Asl.Play
+@* K05 (plan section 16.16): the card's OB, group by group, in setup order (A2.9; rulings R19.1 to R19.6). The OB is printed on the card, so both
+   sides read it, but a group setting up out of the viewer's sight shows only its status (ruling R23.3); where a unit set up is not here. *@
+<table id="setup-pools" class="library">
+    <caption>The card's OB, group by group (A2.9; rulings R19.1 to R19.6)@(Report.CurrentOrder is { } now ? $": order {now} is setting up now" : ": every group has set up")</caption>
+    <thead><tr><th>Order</th><th>Side</th><th>OB group</th><th>Status</th><th>Still to set up</th><th>"?" left</th><th>Where</th></tr></thead>
+    <tbody>
+        @foreach (var group in Report.Groups.OrderBy(group => group.Order))
+        {
+            <tr data-group="@group.Id">
+                <td>@group.Order</td>
+                <td>@group.Side</td>
+                <td>@group.Name (@group.Id)</td>
+                <td>@(!group.SetsUp ? (group.OffBoard.Count > 0 ? "sets up off board to enter" : "waits off board to enter") : group.Complete ? (group.OffBoard.Count > 0 ? "set up; the rest sets up off board to enter" : "set up") : group.Order == Report.CurrentOrder ? "setting up now" : "waits")</td>
+                <td>@(OutOfSight.Contains(group.Id) ? "out of your sight" : group.Remaining.Count > 0 ? string.Join(", ", group.Remaining.Select(need => $"{need.Count} {DefinitionLabel(need.Definition)}{(need.Area is { } area ? $" in {area}" : string.Empty)}"))
+                    : group.SetsUp && !group.Complete ? "the counters its SSR names (see Where); both HS of a Deployed squad in one proposal" : "-")@(group.OffBoard.Count > 0 ? $"; off board to enter: {string.Join(", ", group.OffBoard.Select(need => $"{need.Count} {DefinitionLabel(need.Definition)}"))}" : string.Empty)</td>
+                <td>@(OutOfSight.Contains(group.Id) ? "-" : group.DummiesLeft)</td>
+                <td>@string.Join("; ", group.Areas.Select(AreaText))</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    [Parameter, EditorRequired]
+    public SetupReport Report { get; set; } = default!;
+
+    /// <summary>The OB groups setting up out of the viewer's sight (ruling R23.3): they show only their status.</summary>
+    [Parameter]
+    public IReadOnlySet<string> OutOfSight { get; set; } = new HashSet<string>();
+
+    /// <summary>A catalog definition in words, such as "4-6-7 squad".</summary>
+    [Parameter]
+    public Func<string, string> DefinitionLabel { get; set; } = id => id;
+
+    /// <summary>A setup area in words (R17.8, R19.4).</summary>
+    public static string AreaText(ScenarioCardSetup area) => area.Kind switch
+    {
+        "building" => $"building {area.Id} ({string.Join(", ", area.Hexes ?? [])})",
+        "hex-numbers" => $"hexes numbered {area.From} to {area.To} on {area.Board}" + (area.Counters is { } counters ? $", {counters} counters" : string.Empty)
+            + (area.MinMmc is { } mmc ? $", at least {mmc} MMC" : string.Empty) + (area.Concealed == false ? ", none under \"?\"" : string.Empty),
+        _ => $"enters on Turn {area.Turn} along the {area.Edge} edge",
+    };
+}

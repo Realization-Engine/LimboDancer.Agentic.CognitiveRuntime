@@ -1619,3 +1619,31 @@ details.advanced > summary {
     display: flex;
     gap: 0.5rem;
 }
+
+/* Pass 23 (ruling R23.2): the hand-over screen stands where the map and panels were, until the next viewer confirms. */
+.handover {
+    max-width: 40rem;
+    margin: 2rem auto;
+    padding: 1.5rem 1.75rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    text-align: center;
+}
+
+.handover h3 {
+    margin-top: 0;
+}
+
+.handover p {
+    color: var(--muted);
+}
+
+/* Ruling R23.6: the non-OB "?" a side may place once both sides have set up. */
+.setup-non-ob {
+    margin: 0.75rem 0;
+}
+
+.setup-non-ob label {
+    margin-right: 0.75rem;
+}

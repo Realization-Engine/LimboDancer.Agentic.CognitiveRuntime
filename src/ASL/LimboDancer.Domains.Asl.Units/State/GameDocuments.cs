@@ -47,7 +47,10 @@ public static class GameDocuments
         foreach (var presence in view.Sealed)
         {
             documents.Add(new UnitDocument(packs, presence.PlacementId, VocabularyNames.RootKind, presence.Side, presence.Location.ToString(), [], [], [], [],
-                Concealed: true));
+                Concealed: true)
+            {
+                Uninspected = presence.Uninspected,
+            });
         }
 
         foreach (var item in view.Equipment.Where(item => item.Holding is null or { Role: HoldingRole.Manned }))

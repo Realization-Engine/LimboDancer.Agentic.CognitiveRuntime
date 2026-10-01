@@ -1,0 +1,49 @@
+@* R01 (plan sections 13.4, 16.13): the review of a proposal. It shows only what the parent has already disclosed for the view: the outcome, the reasons,
+   and the evidence; the parent keeps the attempt, the revision, the withholding, and the execution. *@
+<div id="play-proposal">
+    <h3>@Title</h3>
+    <p class="@(Accepted ? "pass" : "fail")">
+        <strong id="play-outcome">@Outcome</strong>
+    </p>
+    <ul id="play-reasons">
+        @foreach (var reason in Reasons)
+        {
+            <li>@reason</li>
+        }
+    </ul>
+    @Evidence
+    @if (CanConfirm)
+    {
+        <button id="play-confirm" @onclick="Confirm">Confirm</button>
+        <button id="play-cancel" class="link" @onclick="Cancel">Cancel</button>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+    /// <summary>Whether the result is one the gate accepted: awaiting confirmation, committed, or replayed.</summary>
+    [Parameter]
+    public bool Accepted { get; set; }
+
+    [Parameter]
+    public string Outcome { get; set; } = string.Empty;
+
+    /// <summary>The reasons the view may read.</summary>
+    [Parameter]
+    public IReadOnlyList<string> Reasons { get; set; } = [];
+
+    /// <summary>The disclosed evidence: the entry's or the attack's facts.</summary>
+    [Parameter]
+    public RenderFragment? Evidence { get; set; }
+
+    [Parameter]
+    public bool CanConfirm { get; set; }
+
+    [Parameter]
+    public EventCallback Confirm { get; set; }
+
+    [Parameter]
+    public EventCallback Cancel { get; set; }
+}
