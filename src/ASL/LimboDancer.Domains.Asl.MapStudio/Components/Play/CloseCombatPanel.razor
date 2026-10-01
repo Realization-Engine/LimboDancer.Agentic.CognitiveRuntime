@@ -1,0 +1,236 @@
+@using LimboDancer.Domains.Asl.Units.State
+@* Plan C02 (pass 27): the CCPh in one chosen Location. The Location, the Ambush and the round (plan C03 and N05, kept here) come first, then the
+   ambusher's withdrawal (N06), the SMC stacking (C04), the Melee withdrawals (C05), the attacks being declared (C06), the infiltrations (N08), and
+   the attacks declared (C07, kept here). The page reads every fact for the view (ruling R23.1), keeps the draft and its resets (a new Location or
+   round starts the declarations over), and proposes; this panel calls no planner. *@
+<h4>Close Combat</h4>
+<p class="muted" id="cc-help">
+    Units of both sides in one Location attack each other (A11.11): one Location at a time, each unit attacking and attacked at most once
+    (A11.12). Where Infantry advanced into woods or a building, or with or against a concealed unit, roll for Ambush first (A11.4); the ambusher's round comes before the other
+    side's, and the ambusher resolves each attack before declaring the next (A11.3). Declare which MMC each SMC is stacked with before the
+    attacks (A11.14). A unit held in Melee may withdraw to an ADJACENT Location with no enemy unit (A11.2), and a broken one must try
+    (A11.16). Units of both sides left in a Location are held in Melee at the end of the phase (A11.15); a unit that keeps its "?" is not
+    (A11.19). An attack may be a capture attempt (+1 DRM, -1 against Inexperienced units; A20.22): below the Kill Number every defender is
+    captured, at it one of the defender's choice, in the order the defender gives. A unit may declare where it infiltrates to after an
+    Original 2 by its attack or 12 against it (A11.22). Prisoners of a broken Guard, or of one held in Melee, may attack it in their own
+    round first (A20.55). Hand-to-Hand CC, with the red Kill Numbers, needs its SSR (J2.31).
+</p>
+@if (Due.Count > 0)
+{
+    <ul id="cc-due">
+        @foreach (var item in Due)
+        {
+            <li>@item</li>
+        }
+    </ul>
+}
+<div class="toolbar">
+    <label>
+        Location
+        <select id="cc-location" value="@Location" @onchange="@(args => OnLocation.InvokeAsync(args.Value as string ?? string.Empty))">
+            <option value="">choose</option>
+            @foreach (var at in Locations)
+            {
+                <option value="@at">@at</option>
+            }
+        </select>
+    </label>
+    @if (Entry is { } entry)
+    {
+        <span id="cc-status">
+            @(entry.AmbushRolled ? entry.Ambusher is { } ambusher ? $"The {ambusher} side ambushes." : "No Ambush." : "")
+            @(entry.Closed ? "Resolved this CCPh." : entry.Rounds.Count > 0 ? "The ambusher may attack again, or the ambushed side's round follows." : "")
+        </span>
+        @if (!entry.Closed && entry.Ambusher is not null && entry.Rounds.Count > 0)
+        {
+            <label>
+                Round
+                <select id="cc-round" value="@Round" @onchange="@(args => OnRound.InvokeAsync(args.Value as string))">
+                    <option value="">the ambushed side's round</option>
+                    <option value="@CloseCombatResolved.AmbusherRound">another attack by the ambusher</option>
+                </select>
+            </label>
+        }
+    }
+    <button id="propose-ambush" disabled="@(!AmbushDue)" @onclick="@(() => OnProposeAmbush.InvokeAsync())">Propose: roll for Ambush</button>
+    @if (Location.Length > 0 && (Entry is null || Entry.Rounds.Count == 0))
+    {
+        <label><input id="cc-prisoners-round" type="checkbox" checked="@(Round == CloseCombatResolved.PrisonersRound)"
+            @onchange="@(args => OnRound.InvokeAsync(args.Value is true ? CloseCombatResolved.PrisonersRound : null))" /> prisoners' escape round (A20.55)</label>
+        @if (HandToHandAllowed)
+        {
+            <label><input id="cc-hand-to-hand" type="checkbox" checked="@HandToHand" @onchange="@(args => OnHandToHand.InvokeAsync(args.Value is true))" /> Hand-to-Hand (J2.31)</label>
+        }
+    }
+</div>
+@if (AmbushWithdrawals is { } withdrawals)
+{
+    <AmbushWithdrawalActions Withdrawals="@withdrawals" OnPropose="@OnAmbushWithdraw" />
+}
+@if (Location.Length > 0)
+{
+    <CloseCombatStacking Smcs="@Smcs" Stacking="@Stacking" OnStacking="@OnStacking" />
+    @if (Withdrawers.Count > 0)
+    {
+        <CloseCombatWithdrawals Units="@Withdrawers" Withdrawals="@Withdrawals" OnWithdrawal="@OnWithdrawal" />
+    }
+    @if (AmbushDue)
+    {
+        <p class="muted" id="cc-ambush-first">Infantry advanced into CC here, in woods or a building or with or against a concealed unit, or a hidden unit was placed here: roll for Ambush before any attack is declared (A11.4).</p>
+    }
+    <CloseCombatAttackBuilder Sides="@Sides" Declaring="@(!AmbushDue)" Attackers="@Attackers" Defenders="@Defenders" Directors="@Directors" Director="@Director"
+        Capture="@Capture" Guard="@Guard" Yield="@Yield" OnAttacker="@OnAttacker" OnDefender="@OnDefender" OnDirector="@OnDirector" OnCapture="@OnCapture"
+        OnGuard="@OnGuard" OnYield="@OnYield" OnAdd="@OnAddAttack" />
+    @if (!AmbushDue)
+    {
+        @if (Infiltrators is { } infiltrators)
+        {
+            <CloseCombatInfiltrationChoices Units="@infiltrators" Infiltrations="@Infiltrations" OnInfiltration="@OnInfiltration" />
+        }
+        <ul id="cc-attacks">
+            @foreach (var attack in Attacks)
+            {
+                <li>@string.Join(", ", attack.Attackers) @(attack.Capture ? "attempt to capture" : "attack") @string.Join(", ", attack.Defenders)@(attack.Director is { } director ? $", directed by {director}" : "")@(attack.Yield.Length > 0 ? $" (the defender gives up {string.Join(", then ", attack.Yield)})" : "") <button class="link" @onclick="@(() => OnRemoveAttack.InvokeAsync(attack))">remove</button></li>
+            }
+        </ul>
+        <button id="propose-cc" @onclick="@(() => OnPropose.InvokeAsync())">Propose: resolve CC@(Attacks.Count == 0 ? " with no attacks" : "")</button>
+    }
+}
+
+@code {
+    /// <summary>A CC attack declared on the page, not yet proposed, with its capture attempt, the defender's order of choice, and the Guard (A20.22).</summary>
+    public sealed record DeclaredAttack(string[] Attackers, string[] Defenders, string? Director, bool Capture = false, string[]? YieldOrder = null, string? Guard = null)
+    {
+        public string[] Yield => YieldOrder ?? [];
+    }
+
+    /// <summary>What the planner says is due in CC this phase.</summary>
+    [Parameter]
+    public IReadOnlyList<string> Due { get; set; } = [];
+
+    /// <summary>The Locations where CC can occur, as the view finds them.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<string> Locations { get; set; } = [];
+
+    [Parameter]
+    public string Location { get; set; } = string.Empty;
+
+    /// <summary>The chosen Location's CC record this phase: its Ambush and rounds, or none yet.</summary>
+    [Parameter]
+    public CloseCombatLocation? Entry { get; set; }
+
+    /// <summary>The round chosen: the ambushed side's (empty), another attack by the ambusher, or the prisoners' escape round.</summary>
+    [Parameter]
+    public string Round { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool AmbushDue { get; set; }
+
+    /// <summary>Whether the Hand-to-Hand SSR is in force.</summary>
+    [Parameter]
+    public bool HandToHandAllowed { get; set; }
+
+    [Parameter]
+    public bool HandToHand { get; set; }
+
+    /// <summary>The ambusher's withdrawals the view may propose now, or none to hide them.</summary>
+    [Parameter]
+    public IReadOnlyList<AmbushWithdrawalActions.Withdrawal>? AmbushWithdrawals { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<CloseCombatStacking.Smc> Smcs { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyDictionary<string, string> Stacking { get; set; } = new Dictionary<string, string>();
+
+    [Parameter]
+    public IReadOnlyList<CloseCombatWithdrawals.Withdrawer> Withdrawers { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyDictionary<string, string> Withdrawals { get; set; } = new Dictionary<string, string>();
+
+    [Parameter]
+    public IReadOnlyList<CloseCombatAttackBuilder.DeclaringSide> Sides { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlySet<string> Attackers { get; set; } = new HashSet<string>();
+
+    [Parameter]
+    public IReadOnlySet<string> Defenders { get; set; } = new HashSet<string>();
+
+    [Parameter]
+    public IReadOnlyList<string> Directors { get; set; } = [];
+
+    [Parameter]
+    public string Director { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool Capture { get; set; }
+
+    [Parameter]
+    public string Guard { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Yield { get; set; } = string.Empty;
+
+    /// <summary>The units that may declare an infiltration, or none when the Location cannot be read.</summary>
+    [Parameter]
+    public IReadOnlyList<CloseCombatInfiltrationChoices.Infiltrator>? Infiltrators { get; set; }
+
+    [Parameter]
+    public IReadOnlyDictionary<string, string> Infiltrations { get; set; } = new Dictionary<string, string>();
+
+    [Parameter]
+    public IReadOnlyList<DeclaredAttack> Attacks { get; set; } = [];
+
+    [Parameter]
+    public EventCallback<string> OnLocation { get; set; }
+
+    [Parameter]
+    public EventCallback<string?> OnRound { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> OnHandToHand { get; set; }
+
+    [Parameter]
+    public EventCallback OnProposeAmbush { get; set; }
+
+    [Parameter]
+    public EventCallback<AmbushWithdrawalActions.Withdrawal> OnAmbushWithdraw { get; set; }
+
+    [Parameter]
+    public EventCallback<CloseCombatStacking.Choice> OnStacking { get; set; }
+
+    [Parameter]
+    public EventCallback<CloseCombatWithdrawals.Choice> OnWithdrawal { get; set; }
+
+    [Parameter]
+    public EventCallback<UnitSelectionList.Toggle> OnAttacker { get; set; }
+
+    [Parameter]
+    public EventCallback<UnitSelectionList.Toggle> OnDefender { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnDirector { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> OnCapture { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnGuard { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnYield { get; set; }
+
+    [Parameter]
+    public EventCallback OnAddAttack { get; set; }
+
+    [Parameter]
+    public EventCallback<CloseCombatInfiltrationChoices.Choice> OnInfiltration { get; set; }
+
+    [Parameter]
+    public EventCallback<DeclaredAttack> OnRemoveAttack { get; set; }
+
+    [Parameter]
+    public EventCallback OnPropose { get; set; }
+}

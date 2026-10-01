@@ -1,0 +1,31 @@
+@* Plan N09 (pass 27): a Guard not in Melee hands its prisoners to another armed unit in its Location, or abandons them as Unarmed units (A20.5),
+   in the RPh or APh. The page reads the Guards and their recipients; abandoning is its own proposal, never the fallback of a transfer. *@
+<div class="toolbar" id="play-guards">
+    <span class="muted">Prisoners (A20.5): a Guard not in Melee hands them to another armed unit in its Location, or abandons them as Unarmed units.</span>
+    @foreach (var guard in Guards)
+    {
+        @foreach (var heir in guard.Heirs)
+        {
+            <button class="transfer-prisoners" data-guard="@guard.Id" data-to="@heir" @onclick="@(() => OnTransfer.InvokeAsync(new Transfer(guard.Id, heir)))">Propose: @guard.Id hands its prisoners to @heir</button>
+        }
+        <button class="abandon-prisoners" data-guard="@guard.Id" @onclick="@(() => OnAbandon.InvokeAsync(guard.Id))">Propose: @guard.Id abandons its prisoners</button>
+    }
+</div>
+
+@code {
+    /// <summary>A Guard and the units that could take its prisoners.</summary>
+    public sealed record Guard(string Id, IReadOnlyList<string> Heirs);
+
+    /// <summary>A Guard hands its prisoners to another unit.</summary>
+    public sealed record Transfer(string Guard, string To);
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Guard> Guards { get; set; } = [];
+
+    [Parameter]
+    public EventCallback<Transfer> OnTransfer { get; set; }
+
+    /// <summary>A Guard abandons its prisoners.</summary>
+    [Parameter]
+    public EventCallback<string> OnAbandon { get; set; }
+}

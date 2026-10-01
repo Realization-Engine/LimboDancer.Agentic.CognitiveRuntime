@@ -1,0 +1,110 @@
+@* Plan C06 (pass 27): one CC attack declared at a time (A11.11), each side the view may declare for (ruling R23.1) choosing its attackers and the
+   enemy units they attack, with a director (A11.141) and, as a capture attempt, the Guard and the defender's order of choice (A20.22; plan N07,
+   kept here). The page keeps the draft, preselects the director, and resets the fields when the attack is added; nothing executes when a box
+   is toggled. *@
+@foreach (var side in Sides)
+{
+    <div class="toolbar cc-side" data-side="@side.Side">
+        <span>@side.Side@(side.Attacker ? " (ATTACKER)" : "")</span>
+        <span>attack with</span>
+        @foreach (var unit in side.Attackers)
+        {
+            <label><input class="cc-attacker" type="checkbox" data-unit="@unit.Id" disabled="@unit.Broken" checked="@Attackers.Contains(unit.Id)" @onchange="@(args => OnAttacker.InvokeAsync(new UnitSelectionList.Toggle(unit.Id, args.Value is true)))" /> @unit.Label</label>
+        }
+        <span>attack</span>
+        @foreach (var unit in side.Defenders)
+        {
+            <label><input class="cc-defender" type="checkbox" data-unit="@unit.Id" data-by="@side.Side" checked="@Defenders.Contains(unit.Id)" @onchange="@(args => OnDefender.InvokeAsync(new UnitSelectionList.Toggle(unit.Id, args.Value is true)))" /> @unit.Label</label>
+        }
+    </div>
+}
+@if (Declaring)
+{
+    <div class="toolbar" id="cc-attack">
+        <label>
+            Director
+            <select id="cc-director" value="@Director" @onchange="@(args => OnDirector.InvokeAsync(args.Value as string ?? string.Empty))">
+                <option value="">none</option>
+                @foreach (var leader in Directors)
+                {
+                    <option value="@leader">@leader</option>
+                }
+            </select>
+        </label>
+        <label><input id="cc-capture" type="checkbox" checked="@Capture" @onchange="@(args => OnCapture.InvokeAsync(args.Value is true))" /> capture attempt</label>
+        @if (Capture)
+        {
+            <label>
+                Guard
+                <select id="cc-guard" value="@Guard" @onchange="@(args => OnGuard.InvokeAsync(args.Value as string ?? string.Empty))">
+                    <option value="">the first attacker</option>
+                    @foreach (var id in Attackers.Order(StringComparer.Ordinal))
+                    {
+                        <option value="@id">@id</option>
+                    }
+                </select>
+            </label>
+            <label>Defender's choice, in order <input id="cc-yield" value="@Yield" placeholder="r1, r2" @onchange="@(args => OnYield.InvokeAsync(args.Value as string ?? string.Empty))" /></label>
+        }
+        <button id="cc-add-attack" disabled="@(Attackers.Count == 0 || Defenders.Count == 0)" @onclick="@(() => OnAdd.InvokeAsync())">Add the attack</button>
+    </div>
+}
+
+@code {
+    /// <summary>A unit in the CC Location as a player reads it, and whether it is broken (and so may not attack).</summary>
+    public sealed record Participant(string Id, string Label, bool Broken);
+
+    /// <summary>A side that may declare attacks now, whether it is the ATTACKER, its units, and the other sides' units it may attack.</summary>
+    public sealed record DeclaringSide(string Side, bool Attacker, IReadOnlyList<Participant> Attackers, IReadOnlyList<Participant> Defenders);
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<DeclaringSide> Sides { get; set; } = [];
+
+    /// <summary>Whether attacks may be declared now: not while the Ambush is still to be rolled.</summary>
+    [Parameter]
+    public bool Declaring { get; set; }
+
+    [Parameter]
+    public IReadOnlySet<string> Attackers { get; set; } = new HashSet<string>();
+
+    [Parameter]
+    public IReadOnlySet<string> Defenders { get; set; } = new HashSet<string>();
+
+    /// <summary>The leaders who may direct the attack being declared.</summary>
+    [Parameter]
+    public IReadOnlyList<string> Directors { get; set; } = [];
+
+    [Parameter]
+    public string Director { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool Capture { get; set; }
+
+    [Parameter]
+    public string Guard { get; set; } = string.Empty;
+
+    /// <summary>The defender's order of choice as typed, such as "r1, r2".</summary>
+    [Parameter]
+    public string Yield { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<UnitSelectionList.Toggle> OnAttacker { get; set; }
+
+    [Parameter]
+    public EventCallback<UnitSelectionList.Toggle> OnDefender { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnDirector { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> OnCapture { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnGuard { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnYield { get; set; }
+
+    [Parameter]
+    public EventCallback OnAdd { get; set; }
+}

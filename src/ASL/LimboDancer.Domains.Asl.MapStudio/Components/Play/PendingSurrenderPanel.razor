@@ -1,0 +1,38 @@
+@* Plan C09 (pass 27): a unit that has surrendered (A15.5) waits on the captor's side: a Guard takes it, the side rejects the surrender with No
+   Quarter (A20.3), or frees it as Unarmed when no captor can guard it (A20.21), which is not a rejection. The page passes the captors only to the
+   captor's side's view and the adjudicator. *@
+<p class="fail" data-surrender="@Unit">
+    @Unit has surrendered (A15.5); the captor's side chooses the Guard, or rejects the surrender (A20.3), before anything else happens.
+    @if (MayAnswer)
+    {
+        @foreach (var captor in Captors)
+        {
+            <button class="take-prisoner" data-captor="@captor" @onclick="@(() => OnTake.InvokeAsync(captor))">Propose: @captor takes @Unit</button>
+        }
+        <button class="reject-surrender" data-unit="@Unit" @onclick="@(() => OnReject.InvokeAsync())">Propose: reject the surrender (No Quarter)</button>
+        <button class="free-surrender" data-unit="@Unit" @onclick="@(() => OnFree.InvokeAsync())">Propose: free it as Unarmed (no captor can guard it; A20.21)</button>
+    }
+</p>
+
+@code {
+    /// <summary>The unit that surrendered.</summary>
+    [Parameter, EditorRequired]
+    public string Unit { get; set; } = string.Empty;
+
+    /// <summary>Whether the view may answer: the captor's side or the adjudicator.</summary>
+    [Parameter]
+    public bool MayAnswer { get; set; }
+
+    /// <summary>The units that may take it as Guard, given only to a view that may answer.</summary>
+    [Parameter]
+    public IReadOnlyList<string> Captors { get; set; } = [];
+
+    [Parameter]
+    public EventCallback<string> OnTake { get; set; }
+
+    [Parameter]
+    public EventCallback OnReject { get; set; }
+
+    [Parameter]
+    public EventCallback OnFree { get; set; }
+}
