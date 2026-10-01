@@ -2,7 +2,7 @@
   "format": "asl-scenario-card/1",
   "id": "armor-test",
   "title": "Armor Test",
-  "catalog": "asl-scenario-a1@1.12.0",
+  "catalog": "asl-scenario-a1@1.13.0",
   "source": {
     "basis": "Manufactured under R0.3 as the test card of pass 26 of the Card Play and Map Studio Redesign Plan (ruling R26.7): it fields vehicles and Guns from setup to exit. It is not a published scenario.",
     "legacy": "None: a manufactured test card (R0.3; ruling R26.7), adapting no legacy card",

@@ -27,6 +27,7 @@ public sealed class BacklogPass10Tests : IDisposable
     private static readonly UnitCatalog Catalog = UnitCatalogs.Read(UnitCatalogs.ScenarioA1, Vocabulary)!.Catalog!;
     private static readonly string[] Bd01 = ["bd01"];
     private static readonly string[] G1 = ["g1"];
+    private static readonly string[] Rl = ["rl"];
     private static readonly string[] G2 = ["g2"];
     private static readonly string[] R1 = ["r1"];
     private static readonly string[] R2 = ["r2"];
@@ -201,7 +202,7 @@ public sealed class BacklogPass10Tests : IDisposable
             start = new Dictionary<string, object>
             {
                 ["label"] = "Pass 10",
-                ["catalog"] = "asl-scenario-a1@1.12.0",
+                ["catalog"] = "asl-scenario-a1@1.13.0",
                 ["boards"] = Bd01,
                 ["firstSide"] = "german",
                 ["sides"] = new object[]
@@ -654,6 +655,13 @@ public sealed class BacklogPass10Tests : IDisposable
         Committed(await Move(G1, L("C4")));
         Assert.Equal(At("C4"), Current.Location("g1")!.Location);
         await Pass();
+
+        // A4.152 (ruling R27.3): the OVR's CC comes at once in the MPh; both miss.
+        Committed(await Do(GameActions.CloseCombat, Once(6, 6, 6, 6), new
+        {
+            location = L("C4"),
+            attacks = new[] { new { attackers = G1, defenders = Rl }, new { attackers = Rl, defenders = G1 } },
+        }));
         Committed(await EndMove());
         Committed(await Move(G2, L("G5")));
         Assert.False(Is(Current.Unit("r2")!, Conditions.Concealed));

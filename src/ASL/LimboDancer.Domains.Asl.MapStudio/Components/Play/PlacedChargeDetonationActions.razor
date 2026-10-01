@@ -1,0 +1,20 @@
+@* Plan N12 (pass 27): the operably Placed DCs detonate in the AFPh (A23.4). The page passes the charges the firing side may detonate with what
+   it may read of the target; each button proposes, and the gate detonates only once confirmed. *@
+<h4>Placed DCs</h4>
+<div class="toolbar">
+    @foreach (var placed in Charges)
+    {
+        <button class="detonate-dc" data-dc="@placed.Charge" @onclick="@(() => OnDetonate.InvokeAsync(placed.Charge))">Propose: detonate @placed.Charge in @placed.Target (30 FP@(placed.TargetsConcealed ? ", halved" : "")@(placed.Cx ? ", +1 CX" : ""); A23.4)</button>
+    }
+</div>
+
+@code {
+    /// <summary>An operable Placed DC, its target Location, whether its attack is halved against concealed units, and whether its placer is CX.</summary>
+    public sealed record Placed(string Charge, string Target, bool TargetsConcealed, bool Cx);
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Placed> Charges { get; set; } = [];
+
+    [Parameter]
+    public EventCallback<string> OnDetonate { get; set; }
+}

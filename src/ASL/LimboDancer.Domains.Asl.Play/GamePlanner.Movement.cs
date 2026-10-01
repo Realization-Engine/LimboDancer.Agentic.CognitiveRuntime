@@ -202,9 +202,10 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.move-vehicle-kind: {driven.Id} is a vehicle and moves by its MP expenditures (D2.1)");
         }
 
-        if (EnemyVehicleAt(state, state.PhasingSide!, to) is { } blocking)
+        // A15.43 (ruling R27.2): a berserk charge enters a vehicle's Location for the sequential CC there (A11.31); its route decides whether it may.
+        if (EnemyVehicleAt(state, state.PhasingSide!, to) is { } blocking && !movers.All(unit => Is(unit!, Conditions.Berserk)))
         {
-            return Refused(scope, label, expected, $"play.move-enemy-vehicle: the enemy vehicle {blocking.Id} is in {to}; OVR and CC against a vehicle are not reviewed (D7, A11.5; ruling R25.3)");
+            return Refused(scope, label, expected, $"play.move-enemy-vehicle: the enemy vehicle {blocking.Id} is in {to}; Infantry OVR of a vehicle is not built, and only a berserk charge enters its Location in the MPh (D7, A11.5, A15.43; rulings R25.3, R27.2)");
         }
 
         // A3.3 (p. 47): a unit that fired in the PFPh does not move in the MPh.
@@ -265,7 +266,9 @@ public sealed partial class GamePlanner
         var abandoned = new List<EquipmentInstance>();
         if (berserk > 0)
         {
-            var (allowed, target, reason) = BerserkStep(state, [.. movers.Select(unit => unit!)], from, to, current, assault);
+            var lane = arguments.TryGetProperty("bypass", out var laneList) && laneList.ValueKind == JsonValueKind.Array
+                ? string.Join(",", Strings(arguments, "bypass").Select(item => item.ToLowerInvariant())) : null;
+            var (allowed, target, reason) = BerserkStep(state, [.. movers.Select(unit => unit!)], from, to, current, assault, lane);
             if (allowed is null)
             {
                 return Refused(scope, label, expected, reason!);
@@ -522,7 +525,10 @@ public sealed partial class GamePlanner
 
         // A12.15 (rulings R10.11, R10.15): the reveal. Hidden units first go beneath a "?"; a Random Selection among several real units reveals the
         // highest dr (ties all); Dummies alone are removed and the stack enters.
-        var needsSelection = revealing.Length > 0 && realOnes.Length > 1;
+        // A.9 (ruling R27.3): a charge draws among every counter there, Dummies too; each Dummy drawn above the first real unit is eliminated, and
+        // the Dummies drawn below it stay. Ties are all drawn together.
+        var pool = charge is not null && realOnes.Length > 0 ? [.. revealing.OrderBy(unit => unit.Id, StringComparer.Ordinal)] : realOnes;
+        var needsSelection = revealing.Length > 0 && realOnes.Length > 0 && pool.Length > 1;
         void Reveal(List<GameEvent> events, IReadOnlyList<int>? dice)
         {
             foreach (var hidden in revealing.Where(unit => Is(unit, Conditions.Hidden)))
@@ -531,15 +537,29 @@ public sealed partial class GamePlanner
                     new Dictionary<string, ConditionState> { [Conditions.Hidden] = ConditionState.False, [Conditions.Concealed] = ConditionState.True }), package, null));
             }
 
-            string[] shown = realOnes.Length == 0 ? [] : dice is null ? [realOnes[0].Id]
-                : [.. realOnes.Where((_, index) => dice[index] == dice.Max()).Select(unit => unit.Id)];
-            events.AddRange(RevealEvents(scope, attemptId, expected, events.Count + 1, shown));
-            if (realOnes.Length == 0 || charge is not null)
+            var shown = new List<string>();
+            var drawnDummies = realOnes.Length == 0 ? [.. revealing.Where(unit => unit.Kind == UnitKinds.Dummy)] : new List<UnitInstance>();
+            if (realOnes.Length > 0 && dice is null)
             {
-                foreach (var dummy in revealing.Where(unit => unit.Kind == UnitKinds.Dummy))
+                shown.Add(realOnes[0].Id);
+            }
+            else if (realOnes.Length > 0)
+            {
+                foreach (var draw in pool.Select((unit, index) => (Unit: unit, Dr: dice![index])).GroupBy(item => item.Dr).OrderByDescending(group => group.Key))
                 {
-                    events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(dummy.Id), package, null));
+                    drawnDummies.AddRange(draw.Where(item => item.Unit.Kind == UnitKinds.Dummy).Select(item => item.Unit));
+                    shown.AddRange(draw.Where(item => item.Unit.Kind != UnitKinds.Dummy).Select(item => item.Unit.Id));
+                    if (shown.Count > 0)
+                    {
+                        break;
+                    }
                 }
+            }
+
+            events.AddRange(RevealEvents(scope, attemptId, expected, events.Count + 1, shown));
+            foreach (var dummy in drawnDummies)
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(dummy.Id), package, null));
             }
         }
 
@@ -563,7 +583,7 @@ public sealed partial class GamePlanner
             var events = new List<GameEvent>(prefix);
             if (needsSelection && draw is not null)
             {
-                var roll = draw(new RollRequest(realOnes.Length, 6));
+                var roll = draw(new RollRequest(pool.Length, 6));
                 dice = roll.Values;
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled",
                     new DiceRolled($"{attemptId}-reveal", "random-selection", roll.Request.Count, roll.Request.Sides, roll.Values, DiceRolled.SystemSource, actor), package, null));
@@ -595,7 +615,7 @@ public sealed partial class GamePlanner
                 ? $"; a concealed unit at {to} is revealed and the stack is forced back off board with the MF spent, its MPh over; it may still enter by advance in the APh (A12.15, A2.5; ruling R25.3)"
                 : forcedBack
                 ? $"; a concealed unit at {to} is revealed and the stack stays in {from} with the MF spent, its move ending (A12.15)"
-                : charge is not null ? $"; the concealed units at {to} are revealed as the charge enters (A15.431, A12.15)"
+                : charge is not null ? $"; the charge enters {to} and draws among the counters there by Random Selection: each Dummy drawn before a real unit is eliminated (A15.431, A12.15, A.9)"
                 : $"; only Dummies were at {to}, and they are removed (A12.15)";
         }
 
@@ -617,7 +637,7 @@ public sealed partial class GamePlanner
         FireAttack? residualFacts = null;
         if (residual is not null)
         {
-            if (Replay([.. existing, .. Stepped([.. realOnes.Select(_ => 6)], null)]).Current is not { } entered
+            if (Replay([.. existing, .. Stepped([.. pool.Select(_ => 6)], null)]).Current is not { } entered
                 || LiveFire.ResidualFromState(entered, landed, residual.Fp) is not ({ } residualAttack, null)
                 || FireMapFacts(entered, residualAttack, landed) is not ({ } mapFacts, null))
             {
@@ -634,7 +654,7 @@ public sealed partial class GamePlanner
 
         if (lanes.Length > 0)
         {
-            if (Replay([.. existing, .. Stepped([.. realOnes.Select(_ => 6)], null)]).Current is not { } laneState
+            if (Replay([.. existing, .. Stepped([.. pool.Select(_ => 6)], null)]).Current is not { } laneState
                 || lanes.Any(item => FireLaneFacts(laneState, landed, item.Entry) is not { } laneFacts || ScenarioA1FireCalculator.Precheck(laneFacts, FireReference.Value).Count != 0))
             {
                 return Refused(scope, label, expected, "play.move-fire-lane: the Fire package does not decide the Fire Lane attack this entry would suffer (A9.22)");
@@ -697,12 +717,11 @@ public sealed partial class GamePlanner
     /// <summary>
     /// A berserk stack's step (A15.43, A15.431): every berserk unit of the Location that is not done moving, with the same wounded
     /// status, moves together and alone, never by Assault Movement, onto a shortest route to the nearest Known enemy unit in its
-    /// LOS; it enters that unit's Location, unless the only Known enemy unit there is a lone SMC (an Infantry OVR, A15.432, not
-    /// reviewed). Once in a Location with a Known enemy unit it moves no farther. Returns the charged Location, or why the step is
-    /// refused.
+    /// LOS, in Bypass when the route takes it so (<paramref name="lane"/>, ruling R27.2); it enters that unit's Location. Once in a
+    /// Location with a Known enemy unit it moves no farther. Returns the charged Location, or why the step is refused.
     /// </summary>
     private (bool? Allowed, BoardLocation? Target, string? Reason) BerserkStep(GameState state, UnitInstance[] movers, BoardLocation from, BoardLocation to,
-        MovementState? current, bool assault)
+        MovementState? current, bool assault, string? lane)
     {
         if (movers.Any(unit => !Is(unit, Conditions.Berserk)))
         {
@@ -721,10 +740,18 @@ public sealed partial class GamePlanner
             return (null, null, "play.berserk-stack: berserk units in one Location charge together unless one is wounded and one is not (A15.43)");
         }
 
-        var (steps, _, undecided) = ChargeSteps(state, movers[0].Side, from, current?.Charge);
+        var (steps, _, undecided) = ChargeSteps(state, movers, from, current);
         if (steps.TryGetValue(to, out var step))
         {
-            return (true, step.Target, null);
+            // Ruling R27.2: the step is taken as the shortest route takes it, in the open or in one of its Bypass lanes.
+            if (lane is null ? step.Plain : step.Lanes.Contains(lane, StringComparer.Ordinal))
+            {
+                return (true, step.Target, null);
+            }
+
+            return (null, null, $"play.berserk-charge: the shortest route enters {to} "
+                + string.Join(" or ", (step.Plain ? ["as an ordinary step"] : Array.Empty<string>()).Concat(step.Lanes.Select(item => $"in Bypass along {item.Replace(",", " and ", StringComparison.Ordinal)}")))
+                + " (A15.431, A4.3; ruling R27.2)");
         }
 
         if (undecided is not null)
@@ -824,7 +851,7 @@ public sealed partial class GamePlanner
                 continue;
             }
 
-            var (steps, _, undecided) = ChargeSteps(state, unit.Side, at.Location, movement.Charge);
+            var (steps, _, undecided) = ChargeSteps(state, [unit], at.Location, movement);
             var left = MfAllotment(state, unit, unit.DoubleTimeMf, Is(unit, Conditions.Cx)) is { } allowance ? (allowance * 2) - (unit.MfSpent * 2) - (unit.HalfMfSpent ? 1 : 0) : 0;
             if (steps.Values.Any(step => step.HalfMf <= left))
             {

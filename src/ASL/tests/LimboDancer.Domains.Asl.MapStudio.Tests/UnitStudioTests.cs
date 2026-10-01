@@ -179,7 +179,10 @@ public sealed class UnitStudioTests : IDisposable
                 "french-leader-10-2", "french-leader-10-3", "french-hero", "defender-commissar-9-0", "defender-commissar-10-0",
                 "defender-commissar-8-plus-1", "attacker-ft", "defender-ft", "attacker-dc", "defender-dc",
                 "attacker-elite-squad-5-4-8", "attacker-elite-half-squad-2-3-8", "attacker-hmg", "british-lmg", "british-light-mortar", "british-atr",
-                "attacker-elite-squad-8-3-8", "attacker-elite-half-squad-3-3-8", "defender-hmg",
+                "attacker-elite-squad-8-3-8", "attacker-elite-half-squad-3-3-8", "defender-hmg", "axis-minor-elite-squad", "axis-minor-elite-half-squad",
+                "axis-minor-square-squad", "axis-minor-square-half-squad", "axis-minor-squad", "axis-minor-half-squad", "axis-minor-conscript-squad",
+                "axis-minor-conscript-half-squad", "axis-minor-leader-6-plus-1", "axis-minor-leader-7-0", "axis-minor-leader-8-0", "axis-minor-leader-8-1",
+                "axis-minor-leader-9-1", "axis-minor-leader-9-2", "axis-minor-leader-10-2", "axis-minor-leader-10-3", "axis-minor-hero",
             ],
             choices.Select(choice => choice.Definition.Definition));
         Assert.All(choices, choice =>
@@ -202,8 +205,8 @@ public sealed class UnitStudioTests : IDisposable
         Assert.Contains("Russian", lab.Find("#lab-name").TextContent, StringComparison.Ordinal);
         Assert.Contains("4-4-7", lab.Find("#lab-name").TextContent, StringComparison.Ordinal);
         var source = lab.Find("#lab-catalog-source");
-        Assert.Contains("asl-scenario-a1@1.12.0, definition defender-squad", source.TextContent, StringComparison.Ordinal);
-        Assert.StartsWith("asl-scenario-a1@1.12.0+sha256:", source.GetAttribute("title"), StringComparison.Ordinal);
+        Assert.Contains("asl-scenario-a1@1.13.0, definition defender-squad", source.TextContent, StringComparison.Ordinal);
+        Assert.StartsWith("asl-scenario-a1@1.13.0+sha256:", source.GetAttribute("title"), StringComparison.Ordinal);
         Assert.EndsWith("#defender-squad", source.GetAttribute("title"), StringComparison.Ordinal);
         Assert.DoesNotContain("The document is refused", lab.Markup, StringComparison.Ordinal);
         Assert.DoesNotContain("class=\"fail\"", lab.Find("#lab-findings").OuterHtml, StringComparison.Ordinal);

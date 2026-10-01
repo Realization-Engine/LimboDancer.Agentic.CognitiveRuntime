@@ -1,0 +1,34 @@
+@* Plan C05 (pass 27): units held in Melee withdraw to an ADJACENT Location with no enemy unit (A11.2), and a broken one must try (A11.16). The planner
+   supplies each unit's destinations and whether it must try; the page keeps the declarations and submits them with the round. *@
+<div class="toolbar" id="cc-withdrawals">
+    @foreach (var unit in Units)
+    {
+        <label>
+            @unit.Label @(unit.MustTry ? "(broken: must try to withdraw)" : "")
+            <select class="cc-withdraw" data-unit="@unit.Id" value="@(Withdrawals.GetValueOrDefault(unit.Id) ?? string.Empty)" @onchange="@(args => OnWithdrawal.InvokeAsync(new Choice(unit.Id, args.Value as string)))">
+                <option value="">stays</option>
+                @foreach (var to in unit.Destinations)
+                {
+                    <option value="@to">withdraws to @to</option>
+                }
+            </select>
+        </label>
+    }
+</div>
+
+@code {
+    /// <summary>A unit that may withdraw: its id, how it reads, whether it must try, and where it may go.</summary>
+    public sealed record Withdrawer(string Id, string Label, bool MustTry, IReadOnlyList<string> Destinations);
+
+    /// <summary>A unit's declaration: where it withdraws to, or none when it stays.</summary>
+    public sealed record Choice(string Unit, string? To);
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Withdrawer> Units { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyDictionary<string, string> Withdrawals { get; set; } = new Dictionary<string, string>();
+
+    [Parameter]
+    public EventCallback<Choice> OnWithdrawal { get; set; }
+}

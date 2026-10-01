@@ -173,7 +173,7 @@ public sealed class BacklogPass15TablePlayerTests : IDisposable
             start = new Dictionary<string, object>
             {
                 ["label"] = "Pass 15",
-                ["catalog"] = "asl-scenario-a1@1.12.0",
+                ["catalog"] = "asl-scenario-a1@1.13.0",
                 ["boards"] = Bd01,
                 ["firstSide"] = firstSide,
                 ["specialRules"] = specialRules,

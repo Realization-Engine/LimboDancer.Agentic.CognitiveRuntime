@@ -1,0 +1,35 @@
+@* Plan N08 (pass 27): where a unit infiltrates to after an Original 2 by its attack or 12 against it (A11.22). The planner supplies the units the
+   view may declare for (ruling R23.1) and their destinations; the page keeps the declarations and submits them with the round. *@
+<div class="toolbar" id="cc-infiltrations">
+    <span class="muted">Infiltration on an Original 2 or 12 (A11.22):</span>
+    @foreach (var unit in Units)
+    {
+        <label>
+            @unit.Id
+            <select class="cc-infiltrate" data-unit="@unit.Id" value="@(Infiltrations.GetValueOrDefault(unit.Id) ?? string.Empty)" @onchange="@(args => OnInfiltration.InvokeAsync(new Choice(unit.Id, args.Value as string)))">
+                <option value="">stays</option>
+                @foreach (var to in unit.Destinations)
+                {
+                    <option value="@to">to @to</option>
+                }
+            </select>
+        </label>
+    }
+</div>
+
+@code {
+    /// <summary>A unit that may infiltrate, with the Locations it may go to (never empty).</summary>
+    public sealed record Infiltrator(string Id, IReadOnlyList<string> Destinations);
+
+    /// <summary>A unit's declaration: where it infiltrates to, or none when it stays.</summary>
+    public sealed record Choice(string Unit, string? To);
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Infiltrator> Units { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyDictionary<string, string> Infiltrations { get; set; } = new Dictionary<string, string>();
+
+    [Parameter]
+    public EventCallback<Choice> OnInfiltration { get; set; }
+}

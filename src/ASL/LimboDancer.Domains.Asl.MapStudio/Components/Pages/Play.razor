@@ -386,6 +386,12 @@ else if (state is not null && history?.Current is not null)
             or pass (A8.1, A8.11); the stack then moves on, whole or split, or ends its move. No other unit moves until every member of the stack has
             ended (A4.2); a member that breaks or is pinned ends its move. A Location holding Residual FP attacks a stack as it enters (A8.22).
         </p>
+        @* Table player and UI review, pass 27: every view learns of the OVR's CC; the side that may act for the phasing side proposes it. *@
+        @if (OverrunCloseCombat is { } overrun)
+        {
+            <BerserkOverrunCloseCombat Location="@overrun.Location.ToString()" Attackers="@overrun.Attackers" Smc="@overrun.Smc" SmcAttacks="@overrun.SmcAttacks"
+                Ready="@MayAnswer(state.PhasingSide)" OnPropose="@ProposeOverrunCloseCombat" />
+        }
         @if (Viewer.IsAdjudicator || viewAs == state.PhasingSide)
         {
             @if (EntryWaiting.Count > 0)
@@ -409,9 +415,11 @@ else if (state is not null && history?.Current is not null)
             {
                 @if (undecided is null)
                 {
+                    var lanes = Live.Planner.ChargeLanes(state, charging);
                     <p class="fail" data-charge="@charging.Id">
                         @charging.Id is berserk and charges @(target?.ToString() ?? "the nearest Known enemy unit") before any other unit moves (A15.43),
-                        by a shortest route: next @(next.Count == 1 ? "step" : "steps") @string.Join(" or ", next) (A15.431). It may not stop short while it has the MF.
+                        by a shortest route: next @(next.Count == 1 ? "step" : "steps") @string.Join(" or ", next.Select(step => lanes.TryGetValue(step, out var bypass)
+                            ? $"{step} in Bypass along {string.Join(" or ", bypass)}" : step.ToString())) (A15.431). It may not stop short while it has the MF.
                     </p>
                 }
                 else
@@ -502,303 +510,43 @@ else if (state is not null && history?.Current is not null)
             Edges="@ExitEdges" To="@advanceTo" Edge="@advanceExit" OnToggle="@ToggleAdvancer"
             OnTo="@(to => advanceTo = to)" OnEdge="@(edge => advanceExit = edge)" OnPropose="@ProposeAdvanceUnits" OnExit="@ProposeAdvanceExit" />
     }
-    @if (state.Phase == "ccph" && VehicleCcLocations.Any())
+    @if (state.Phase == "ccph" && VehicleCcRows is { Count: > 0 } vehicleCc)
     {
-        <h4>Close Combat with vehicles</h4>
-        <p class="muted" id="vehicle-cc-help">
-            In a Location holding a vehicle CC is sequential: the non-vehicular side attacks first, one attack at a time, then the sides alternate
-            until every unit has attacked or its side passes (A11.31). Infantry attack a vehicle with their CCV as the Kill Number, one unit or one
-            with a SMC (A11.5); a vehicle attacks Infantry with its CMG and CE AAMG on the CCT (A11.62). CC between Infantry there is not built.
-        </p>
-        @foreach (var location in VehicleCcLocations)
-        {
-            var (nextSide, _) = Live.Planner.VehicleCloseCombatTurn(state, location);
-            var here = state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active).ToArray();
-            var attacked = state.CloseCombats.FirstOrDefault(item => item.Location == location && !item.Closed)?.Attacking ?? [];
-            <div class="toolbar vehicle-cc" data-location="@location">
-                <span>@location: the @nextSide side attacks next.</span>
-                <label>
-                    Attacker
-                    <select class="vehicle-cc-attacker" value="@vehicleCcAttacker" @onchange="@(args => vehicleCcAttacker = args.Value as string ?? string.Empty)">
-                        <option value="">choose</option>
-                        @foreach (var unit in here.Where(unit => unit.Side == nextSide && !LiveFire.IsVehicle(unit) && unit.Kind != UnitKinds.Dummy && !attacked.Contains(unit.Id)
-                            && GameState.Condition(unit, Conditions.Broken) != ConditionState.True && GameState.Condition(unit, Conditions.Captured) != ConditionState.True))
-                        {
-                            <option value="@unit.Id">@unit.Id</option>
-                        }
-                    </select>
-                </label>
-                <label>
-                    With SMC
-                    <select class="vehicle-cc-leader" value="@vehicleCcLeader" @onchange="@(args => vehicleCcLeader = args.Value as string ?? string.Empty)">
-                        <option value="">none</option>
-                        @foreach (var unit in here.Where(unit => unit.Side == nextSide && unit.Kind is "asl:leader" or "asl:hero"))
-                        {
-                            <option value="@unit.Id">@unit.Id</option>
-                        }
-                    </select>
-                </label>
-                <label>
-                    Vehicle
-                    <select class="vehicle-cc-vehicle" value="@vehicleCcVehicle" @onchange="@(args => vehicleCcVehicle = args.Value as string ?? string.Empty)">
-                        <option value="">choose</option>
-                        @foreach (var unit in here.Where(LiveFire.IsVehicle))
-                        {
-                            <option value="@unit.Id">@unit.Id (@unit.Side)</option>
-                        }
-                    </select>
-                </label>
-                @foreach (var unit in here.Where(unit => !LiveFire.IsVehicle(unit) && unit.Side != nextSide))
-                {
-                    <label><input type="checkbox" class="vehicle-cc-defender" checked="@vehicleCcDefenders.Contains(unit.Id)" @onchange="@(args => { if (args.Value is true) { vehicleCcDefenders.Add(unit.Id); } else { vehicleCcDefenders.Remove(unit.Id); } })" /> @unit.Id</label>
-                }
-                <button class="propose-vehicle-cc-attack" disabled="@(vehicleCcAttacker.Length == 0 || vehicleCcVehicle.Length == 0)" @onclick="@(() => ProposeVehicleCc(location.ToString(), [vehicleCcAttacker, .. (vehicleCcLeader.Length > 0 ? new[] { vehicleCcLeader } : [])], vehicleCcVehicle, [], false))">Propose: Infantry attack the vehicle</button>
-                <button class="propose-vehicle-cc-vehicle" disabled="@(vehicleCcVehicle.Length == 0 || vehicleCcDefenders.Count == 0)" @onclick="@(() => ProposeVehicleCc(location.ToString(), [], vehicleCcVehicle, [.. vehicleCcDefenders], false))">Propose: the vehicle attacks the checked Infantry</button>
-                <button class="propose-vehicle-cc-pass" @onclick="@(() => ProposeVehicleCc(location.ToString(), [], null, [], true))">Propose: the @nextSide side passes</button>
-            </div>
-        }
+        <VehicleCloseCombatPanel Locations="@vehicleCc" Attacker="@vehicleCcAttacker" Leader="@vehicleCcLeader" Vehicle="@vehicleCcVehicle" Defenders="@vehicleCcDefenders"
+            OnAttacker="@(id => vehicleCcAttacker = id)" OnLeader="@(id => vehicleCcLeader = id)" OnVehicle="@(id => vehicleCcVehicle = id)"
+            OnDefender="@(pick => Toggle(vehicleCcDefenders, pick.Id, pick.On))"
+            OnProposeAttack="@(at => ProposeVehicleCc(at, [vehicleCcAttacker, .. (vehicleCcLeader.Length > 0 ? new[] { vehicleCcLeader } : [])], vehicleCcVehicle, [], false))"
+            OnProposeVehicle="@(at => ProposeVehicleCc(at, [], vehicleCcVehicle, [.. vehicleCcDefenders], false))" OnPass="@(at => ProposeVehicleCc(at, [], null, [], true))" />
     }
     @if (state.Phase == "ccph")
     {
-        <h4>Close Combat</h4>
-        <p class="muted" id="cc-help">
-            Units of both sides in one Location attack each other (A11.11): one Location at a time, each unit attacking and attacked at most once
-            (A11.12). Where Infantry advanced into woods or a building, or with or against a concealed unit, roll for Ambush first (A11.4); the ambusher's round comes before the other
-            side's, and the ambusher resolves each attack before declaring the next (A11.3). Declare which MMC each SMC is stacked with before the
-            attacks (A11.14). A unit held in Melee may withdraw to an ADJACENT Location with no enemy unit (A11.2), and a broken one must try
-            (A11.16). Units of both sides left in a Location are held in Melee at the end of the phase (A11.15); a unit that keeps its "?" is not
-            (A11.19). An attack may be a capture attempt (+1 DRM, -1 against Inexperienced units; A20.22): below the Kill Number every defender is
-            captured, at it one of the defender's choice, in the order the defender gives. A unit may declare where it infiltrates to after an
-            Original 2 by its attack or 12 against it (A11.22). Prisoners of a broken Guard, or of one held in Melee, may attack it in their own
-            round first (A20.55). Hand-to-Hand CC, with the red Kill Numbers, needs its SSR (J2.31).
-        </p>
-        @if (Live.Planner.CloseCombatDue(state) is { Count: > 0 } due)
-        {
-            <ul id="cc-due">
-                @foreach (var item in due)
-                {
-                    <li>@item</li>
-                }
-            </ul>
-        }
-        <div class="toolbar">
-            <label>
-                Location
-                <select id="cc-location" value="@ccLocation" @onchange="@(args => { ccLocation = args.Value as string ?? string.Empty; ClearCloseCombat(); DefaultStacking(); })">
-                    <option value="">choose</option>
-                    @foreach (var at in CloseCombatLocations)
-                    {
-                        <option value="@at">@at</option>
-                    }
-                </select>
-            </label>
-            @if (CloseCombatEntry is { } entry)
-            {
-                <span id="cc-status">
-                    @(entry.AmbushRolled ? entry.Ambusher is { } ambusher ? $"The {ambusher} side ambushes." : "No Ambush." : "")
-                    @(entry.Closed ? "Resolved this CCPh." : entry.Rounds.Count > 0 ? "The ambusher may attack again, or the ambushed side's round follows." : "")
-                </span>
-                @if (!entry.Closed && entry.Ambusher is not null && entry.Rounds.Count > 0)
-                {
-                    <label>
-                        Round
-                        <select id="cc-round" value="@ccRound" @onchange="@(args => ChooseRound(args.Value as string))">
-                            <option value="">the ambushed side's round</option>
-                            <option value="@CloseCombatResolved.AmbusherRound">another attack by the ambusher</option>
-                        </select>
-                    </label>
-                }
-            }
-            <button id="propose-ambush" disabled="@(!AmbushDue)" @onclick="ProposeAmbush">Propose: roll for Ambush</button>
-            @if (ccLocation.Length > 0 && (CloseCombatEntry is null || CloseCombatEntry.Rounds.Count == 0))
-            {
-                <label><input id="cc-prisoners-round" type="checkbox" checked="@(ccRound == CloseCombatResolved.PrisonersRound)"
-                    @onchange="@(args => ChooseRound(args.Value is true ? CloseCombatResolved.PrisonersRound : null))" /> prisoners' escape round (A20.55)</label>
-                @if (state.SpecialRules.Contains(GamePlanner.HandToHandRule))
-                {
-                    <label><input id="cc-hand-to-hand" type="checkbox" checked="@ccHandToHand" @onchange="@(args => ccHandToHand = args.Value is true)" /> Hand-to-Hand (J2.31)</label>
-                }
-            }
-        </div>
-        @if (CloseCombatEntry is { Ambusher: { } ambushing } withdrawing && (withdrawing.Rounds.Count == 0 || withdrawing.Closed)
-            && (Viewer.IsAdjudicator || viewAs == ambushing) && BoardLocation.TryParse(ccLocation, out var ambushAt))
-        {
-            <div class="toolbar" id="cc-ambush-withdrawal">
-                <span class="muted">Ambush Withdrawal (A11.41):</span>
-                @foreach (var unit in CloseCombatUnits.Where(unit => unit.Side == ambushing && GameState.Condition(unit, Conditions.Captured) != ConditionState.True))
-                {
-                    @foreach (var to in Live.Planner.WithdrawalDestinations(state, unit, ambushAt))
-                    {
-                        <button class="ambush-withdraw" data-unit="@unit.Id" data-to="@to" @onclick="@(() => ProposeAmbushWithdrawal(unit.Id, to.ToString()))">Propose: @unit.Id withdraws to @to</button>
-                    }
-                }
-            </div>
-        }
-        @if (ccLocation.Length > 0)
-        {
-            <div class="toolbar" id="cc-stacking">
-                @foreach (var smc in CloseCombatUnits.Where(unit => Library.Vocabulary.IsA(unit.Kind, "asl:smc") && (Viewer.IsAdjudicator || viewAs == unit.Side)))
-                {
-                    <label>
-                        @smc.Id stacked with
-                        <select class="cc-stack" data-unit="@smc.Id" value="@(ccStacking.GetValueOrDefault(smc.Id) ?? string.Empty)" @onchange="@(args => SetStacking(smc.Id, args.Value as string))">
-                            <option value="">alone</option>
-                            @foreach (var mmc in CloseCombatUnits.Where(unit => unit.Side == smc.Side && Library.Vocabulary.IsA(unit.Kind, "asl:mmc")))
-                            {
-                                <option value="@mmc.Id">@mmc.Id</option>
-                            }
-                        </select>
-                    </label>
-                }
-            </div>
-            @if (WithdrawalUnits.Any())
-            {
-                <div class="toolbar" id="cc-withdrawals">
-                    @foreach (var (unit, destinations) in WithdrawalUnits)
-                    {
-                        <label>
-                            @UnitLabel(unit) @(Live.Planner.MustWithdraw(state, unit) ? "(broken: must try to withdraw)" : "")
-                            <select class="cc-withdraw" data-unit="@unit.Id" value="@(ccWithdrawals.GetValueOrDefault(unit.Id) ?? string.Empty)" @onchange="@(args => SetWithdrawal(unit.Id, args.Value as string))">
-                                <option value="">stays</option>
-                                @foreach (var to in destinations)
-                                {
-                                    <option value="@to">withdraws to @to</option>
-                                }
-                            </select>
-                        </label>
-                    }
-                </div>
-            }
-            @if (AmbushDue)
-            {
-                <p class="muted" id="cc-ambush-first">Infantry advanced into CC here, in woods or a building or with or against a concealed unit, or a hidden unit was placed here: roll for Ambush before any attack is declared (A11.4).</p>
-            }
-            @foreach (var side in CloseCombatSides.Where(side => Viewer.IsAdjudicator || viewAs == side))
-            {
-                <div class="toolbar cc-side" data-side="@side">
-                    <span>@side@(side == state.PhasingSide ? " (ATTACKER)" : "")</span>
-                    <span>attack with</span>
-                    @foreach (var unit in CloseCombatUnits.Where(unit => unit.Side == side))
-                    {
-                        <label><input class="cc-attacker" type="checkbox" data-unit="@unit.Id" disabled="@IsBroken(unit)" checked="@ccAttackers.Contains(unit.Id)" @onchange="@(args => ToggleAttacker(unit.Id, args.Value is true))" /> @UnitLabel(unit)</label>
-                    }
-                    <span>attack</span>
-                    @foreach (var unit in CloseCombatUnits.Where(unit => unit.Side != side))
-                    {
-                        <label><input class="cc-defender" type="checkbox" data-unit="@unit.Id" data-by="@side" checked="@ccDefenders.Contains(unit.Id)" @onchange="@(args => Toggle(ccDefenders, unit.Id, args.Value is true))" /> @UnitLabel(unit)</label>
-                    }
-                </div>
-            }
-            @if (!AmbushDue)
-            {
-                <div class="toolbar" id="cc-attack">
-                    <label>
-                        Director
-                        <select id="cc-director" value="@ccDirector" @onchange="@(args => ccDirector = args.Value as string ?? string.Empty)">
-                            <option value="">none</option>
-                            @foreach (var leader in CloseCombatDirectors)
-                            {
-                                <option value="@leader.Id">@leader.Id</option>
-                            }
-                        </select>
-                    </label>
-                    <label><input id="cc-capture" type="checkbox" checked="@ccCapture" @onchange="@(args => ccCapture = args.Value is true)" /> capture attempt</label>
-                    @if (ccCapture)
-                    {
-                        <label>
-                            Guard
-                            <select id="cc-guard" value="@ccGuard" @onchange="@(args => ccGuard = args.Value as string ?? string.Empty)">
-                                <option value="">the first attacker</option>
-                                @foreach (var id in ccAttackers.Order(StringComparer.Ordinal))
-                                {
-                                    <option value="@id">@id</option>
-                                }
-                            </select>
-                        </label>
-                        <label>Defender's choice, in order <input id="cc-yield" value="@ccYield" placeholder="r1, r2" @onchange="@(args => ccYield = args.Value as string ?? string.Empty)" /></label>
-                    }
-                    <button id="cc-add-attack" disabled="@(ccAttackers.Count == 0 || ccDefenders.Count == 0)" @onclick="AddAttack">Add the attack</button>
-                </div>
-                @if (BoardLocation.TryParse(ccLocation, out var infiltrationAt))
-                {
-                    <div class="toolbar" id="cc-infiltrations">
-                        <span class="muted">Infiltration on an Original 2 or 12 (A11.22):</span>
-                        @foreach (var unit in CloseCombatUnits.Where(unit => (Viewer.IsAdjudicator || viewAs == unit.Side)
-                            && GameState.Condition(unit, Conditions.Berserk) != ConditionState.True && GameState.Condition(unit, Conditions.Disrupted) != ConditionState.True))
-                        {
-                            var destinations = Live.Planner.WithdrawalDestinations(state, unit, infiltrationAt);
-                            @if (destinations.Count > 0)
-                            {
-                                <label>
-                                    @unit.Id
-                                    <select class="cc-infiltrate" data-unit="@unit.Id" value="@(ccInfiltrations.GetValueOrDefault(unit.Id) ?? string.Empty)" @onchange="@(args => SetInfiltration(unit.Id, args.Value as string))">
-                                        <option value="">stays</option>
-                                        @foreach (var to in destinations)
-                                        {
-                                            <option value="@to">to @to</option>
-                                        }
-                                    </select>
-                                </label>
-                            }
-                        }
-                    </div>
-                }
-                <ul id="cc-attacks">
-                    @foreach (var attack in ccAttacks)
-                    {
-                        <li>@string.Join(", ", attack.Attackers) @(attack.Capture ? "attempt to capture" : "attack") @string.Join(", ", attack.Defenders)@(attack.Director is { } director ? $", directed by {director}" : "")@(attack.Yield.Length > 0 ? $" (the defender gives up {string.Join(", then ", attack.Yield)})" : "") <button class="link" @onclick="() => ccAttacks.Remove(attack)">remove</button></li>
-                    }
-                </ul>
-                <button id="propose-cc" @onclick="ProposeCloseCombat">Propose: resolve CC@(ccAttacks.Count == 0 ? " with no attacks" : "")</button>
-            }
-        }
+        <CloseCombatPanel Due="@Live.Planner.CloseCombatDue(state)" Locations="@([.. CloseCombatLocations])" Location="@ccLocation" Entry="@CloseCombatEntry" Round="@ccRound"
+            AmbushDue="@AmbushDue" HandToHandAllowed="@state.SpecialRules.Contains(GamePlanner.HandToHandRule)" HandToHand="@ccHandToHand" AmbushWithdrawals="@AmbushWithdrawals"
+            Smcs="@StackingChoices" Stacking="@ccStacking" Withdrawers="@Withdrawers" Withdrawals="@ccWithdrawals" Sides="@DeclaringSides" Attackers="@ccAttackers"
+            Defenders="@ccDefenders" Directors="@([.. CloseCombatDirectors.Select(unit => unit.Id)])" Director="@ccDirector" Capture="@ccCapture" Guard="@ccGuard" Yield="@ccYield"
+            Infiltrators="@Infiltrators" Infiltrations="@ccInfiltrations" Attacks="@ccAttacks" OnLocation="@ChooseCloseCombatLocation" OnRound="@ChooseRound"
+            OnHandToHand="@(on => ccHandToHand = on)" OnProposeAmbush="@ProposeAmbush" OnAmbushWithdraw="@(item => ProposeAmbushWithdrawal(item.Unit, item.To))"
+            OnStacking="@(pick => SetStacking(pick.Unit, pick.Value))" OnWithdrawal="@(pick => SetWithdrawal(pick.Unit, pick.To))"
+            OnAttacker="@(pick => ToggleAttacker(pick.Id, pick.On))" OnDefender="@(pick => Toggle(ccDefenders, pick.Id, pick.On))" OnDirector="@(id => ccDirector = id)"
+            OnCapture="@(on => ccCapture = on)" OnGuard="@(id => ccGuard = id)" OnYield="@(text => ccYield = text)" OnAddAttack="@AddAttack"
+            OnInfiltration="@(pick => SetInfiltration(pick.Unit, pick.To))" OnRemoveAttack="@(attack => ccAttacks.Remove(attack))" OnPropose="@ProposeCloseCombat" />
     }
     @if (state.Choice is { } choice)
     {
-        <div id="play-choice" class="fail" data-key="@choice.Key">
-            <p>The @choice.Side side answers before play goes on: @GamePlanner.DescribeChoice(choice) (ruling R5.8).</p>
-            @if (Viewer.IsAdjudicator || viewAs == choice.Side)
-            {
-                @foreach (var option in choice.Options)
-                {
-                    <button class="choose" data-option="@option" @onclick="@(() => ProposeChoose(choice.Key, option))">Propose: @ChoiceOptionText(choice, option)</button>
-                }
-            }
-            else
-            {
-                <p class="muted">Waiting for the @choice.Side side to answer.</p>
-            }
-        </div>
+        <PendingChoicePanel Key="@choice.Key" Side="@choice.Side" Description="@GamePlanner.DescribeChoice(choice)" MayAnswer="@MayAnswer(choice.Side)"
+            Options="@ChoiceOptions(choice)" OnChoose="@(option => ProposeChoose(choice.Key, option))" />
     }
     @foreach (var surrender in state.PendingSurrenders)
     {
         var captorSide = surrender.Captors.Select(state.Unit).OfType<UnitInstance>().Select(unit => unit.Side).FirstOrDefault();
-        <p class="fail" data-surrender="@surrender.Unit">
-            @surrender.Unit has surrendered (A15.5); the captor's side chooses the Guard, or rejects the surrender (A20.3), before anything else happens.
-            @if (Viewer.IsAdjudicator || viewAs == captorSide)
-            {
-                @foreach (var captor in surrender.Captors)
-                {
-                    <button class="take-prisoner" data-captor="@captor" @onclick="@(() => ProposeTakePrisoner(surrender.Unit, captor))">Propose: @captor takes @surrender.Unit</button>
-                }
-                <button class="reject-surrender" data-unit="@surrender.Unit" @onclick="@(() => ProposeRejectSurrender(surrender.Unit))">Propose: reject the surrender (No Quarter)</button>
-                <button class="free-surrender" data-unit="@surrender.Unit" @onclick="@(() => ProposeFreeSurrender(surrender.Unit))">Propose: free it as Unarmed (no captor can guard it; A20.21)</button>
-            }
-        </p>
+        <PendingSurrenderPanel @key="surrender.Event" Unit="@surrender.Unit" MayAnswer="@MayAnswer(captorSide)" Captors="@(MayAnswer(captorSide) ? surrender.Captors : [])"
+            OnTake="@(captor => ProposeTakePrisoner(surrender.Unit, captor))" OnReject="@(() => ProposeRejectSurrender(surrender.Unit))"
+            OnFree="@(() => ProposeFreeSurrender(surrender.Unit))" />
     }
-    @if (state.Phase is "rph" or "aph" && Guards.ToList() is { Count: > 0 } guards)
+    @if (state.Phase is "rph" or "aph" && MayAnswer(state.PhasingSide) && Guards is { Count: > 0 } guards)
     {
-        <div class="toolbar" id="play-guards">
-            <span class="muted">Prisoners (A20.5): a Guard not in Melee hands them to another armed unit in its Location, or abandons them as Unarmed units.</span>
-            @foreach (var (guard, heirs) in guards)
-            {
-                @foreach (var heir in heirs)
-                {
-                    <button class="transfer-prisoners" data-guard="@guard.Id" data-to="@heir.Id" @onclick="@(() => ProposeGuardPrisoners(guard.Id, heir.Id))">Propose: @guard.Id hands its prisoners to @heir.Id</button>
-                }
-                <button class="abandon-prisoners" data-guard="@guard.Id" @onclick="@(() => ProposeGuardPrisoners(guard.Id, null))">Propose: @guard.Id abandons its prisoners</button>
-            }
-        </div>
+        <PrisonerCustodyActions Guards="@guards" OnTransfer="@(transfer => ProposeGuardPrisoners(transfer.Guard, transfer.To))"
+            OnAbandon="@(guard => ProposeGuardPrisoners(guard, null))" />
     }
     @if (MassacringSide is { } massacring && (Viewer.IsAdjudicator || viewAs == massacring) && Massacres(massacring).ToList() is { Count: > 0 } massacres)
     {
@@ -825,19 +573,8 @@ else if (state is not null && history?.Current is not null)
     }
     @if (state.Phase == "pfph" && OpportunityCandidates.Any() && (Viewer.IsAdjudicator || viewAs == state.PhasingSide))
     {
-        <h4>Opportunity Fire</h4>
-        <p class="muted" id="opportunity-help">
-            Good Order Infantry that have not fired this Player Turn may hold their fire under a Bounding Fire counter: they do not fire in the PFPh
-            or move in the MPh, and fire in the AFPh without its halving, their MGs keeping Multiple ROF (A7.25). A concealed one in the LOS of a
-            Good Order enemy ground unit within 16 hexes loses its "?".
-        </p>
-        <div class="toolbar">
-            @foreach (var unit in OpportunityCandidates)
-            {
-                <label><input class="opportunity-unit" type="checkbox" data-unit="@unit.Id" checked="@opportunityUnits.Contains(unit.Id)" @onchange="@(args => Toggle(opportunityUnits, unit.Id, args.Value is true))" /> @unit.Id</label>
-            }
-            <button id="propose-opportunity" disabled="@(opportunityUnits.Count == 0)" @onclick="ProposeOpportunity">Propose: Opportunity Fire</button>
-        </div>
+        <OpportunityFireAction Units="@([.. OpportunityCandidates.Select(unit => unit.Id)])" Selected="@opportunityUnits"
+            OnToggle="@(pick => Toggle(opportunityUnits, pick.Id, pick.On))" OnPropose="@ProposeOpportunity" />
     }
     @if (FiringSide is { } waiting && !Viewer.IsAdjudicator && viewAs != waiting)
     {
@@ -846,129 +583,24 @@ else if (state is not null && history?.Current is not null)
     }
     else if (FiringSide is { } firing)
     {
-        <h4>Fire</h4>
-        <p class="muted" id="fire-side">
-            The @firing side may fire in the @Games.PhaseLabel(state.Phase) (A3.2, A3.3, A3.4, A3.5): Good Order squads and half-squads, in one Location
-            or in Locations each ADJACENT to another (A7.5), as one fire group, with the MGs they possess, optionally directed by a leader, at a Location
-            the @firing side can see into or at any Location. The reviewed Fire package resolves the attack, and only when every outcome the dice can reach
-            is decided.
-        </p>
-        <div class="toolbar">
-            <label>
-                From
-                <select id="fire-from" value="@fireFrom" @onchange="@(args => { fireFrom = args.Value as string ?? string.Empty; PruneFire(); })">
-                    <option value="">choose</option>
-                    @foreach (var at in FireLocations(firing))
-                    {
-                        <option value="@at">@at</option>
-                    }
-                </select>
-            </label>
-            @foreach (var unit in FireGroupAt(firing).Where(unit => (unit.Kind != "asl:leader" || PossessesMg(unit)) && MayFire(unit)))
-            {
-                <label><input class="fire-firer" type="checkbox" data-unit="@unit.Id" checked="@fireFirers.Contains(unit.Id)" @onchange="@(args => Toggle(fireFirers, unit.Id, args.Value is true))" /> @unit.Id</label>
-            }
-            @foreach (var weapon in FireWeapons)
-            {
-                <label><input class="fire-weapon" type="checkbox" data-weapon="@weapon.Id" checked="@fireWeapons.Contains(weapon.Id)" @onchange="@(args => Toggle(fireWeapons, weapon.Id, args.Value is true))" /> @weapon.Id (@weapon.Holding!.Holder)</label>
-            }
-            @foreach (var id in fireFirers.Where(id => FireWeapons.Any(weapon => weapon.Holding!.Holder == id && fireWeapons.Contains(weapon.Id))).Order(StringComparer.Ordinal))
-            {
-                <label><input class="fire-alone" type="checkbox" data-unit="@id" checked="@fireAlone.Contains(id)" @onchange="@(args => Toggle(fireAlone, id, args.Value is true))" /> @id's MGs alone</label>
-            }
-            <label>
-                Director
-                <select id="fire-director" value="@fireDirector" @onchange="@(args => fireDirector = args.Value as string ?? string.Empty)">
-                    <option value="">none</option>
-                    @foreach (var leader in FireLeaders(firing))
-                    {
-                        <option value="@leader.Id">@leader.Id</option>
-                    }
-                </select>
-            </label>
-            @if (state.SpecialRules.Contains("mol:" + firing, StringComparer.Ordinal))
-            {
-                <label title="A22.611: with a PBF or TPBF attack, one firer's MOL Check dr of 3 or less after its drm (+1 HS or crew, +2 SMC, +1 CX, +1 against a non-AFV) adds 4 FP; a colored 6 on the IFT DR breaks it.">MOL by
-                    <select id="fire-mol" value="@fireMol" @onchange="@(args => fireMol = args.Value as string ?? string.Empty)">
-                        <option value="">none</option>
-                        @foreach (var id in fireFirers.Order(StringComparer.Ordinal))
-                        {
-                            <option value="@id">@id</option>
-                        }
-                    </select>
-                </label>
-            }
-            <label>
-                Target
-                <select id="fire-target" value="@fireTarget" @onchange="@(args => fireTarget = args.Value as string ?? string.Empty)">
-                    <option value="">choose</option>
-                    @foreach (var at in FireTargets(firing))
-                    {
-                        <option value="@at">@at</option>
-                    }
-                </select>
-            </label>
-            <label>Or any Location <input id="fire-free-target" value="@fireFreeTarget" @onchange="@(args => fireFreeTarget = args.Value as string ?? string.Empty)" size="12" /></label>
-            @if (state.Phase == "mph")
-            {
-                <label title="A8.15: at the hexside the moving stack crossed, with LOS to both its ends; Area Fire with no TEM, FFMO, or FFNAM, and no Residual FP."><input id="fire-snap-shot" type="checkbox" checked="@fireSnapShot" @onchange="@(args => fireSnapShot = args.Value is true)" /> Snap Shot</label>
-            }
-            @if (state.Phase is "pfph" or "afph" or "dfph")
-            {
-                <label title="A9.5: a group whose every firer fires a MG attacks a second Location sharing a hexside with the target, as Area Fire on the same DR.">Spray also <input id="fire-spray" value="@fireSpray" @onchange="@(args => fireSpray = args.Value as string ?? string.Empty)" size="12" /></label>
-            }
-            @if (state.Phase == "mph")
-            {
-                <label title="A9.22: with Defensive First Fire by an unpinned squad's MG at a same-level target within Normal Range, a Fire Lane along the Hex Grain to this Location.">Fire Lane of
-                    <select id="fire-lane-weapon" value="@fireLaneWeapon" @onchange="@(args => fireLaneWeapon = args.Value as string ?? string.Empty)">
-                        <option value="">none</option>
-                        @foreach (var weapon in FireWeapons.Where(item => fireWeapons.Contains(item.Id)))
-                        {
-                            <option value="@weapon.Id">@weapon.Id</option>
-                        }
-                    </select>
-                    to <input id="fire-lane-to" value="@fireLaneTo" @onchange="@(args => fireLaneTo = args.Value as string ?? string.Empty)" size="12" />
-                </label>
-            }
-            @if (fireFirers.Any(id => state.Unit(id)?.Kind == "asl:leader"))
-            {
-                <label title="A9.12: a leader fires a MG alone as Area Fire; with another SMC stacked with him, at full FP.">Partner SMC
-                    <select id="fire-partner" value="@firePartner" @onchange="@(args => firePartner = args.Value as string ?? string.Empty)">
-                        <option value="">none</option>
-                        @foreach (var smc in FireGroupAt(firing).Where(unit => unit.Kind is "asl:leader" or "asl:hero" && !fireFirers.Contains(unit.Id)))
-                        {
-                            <option value="@smc.Id">@smc.Id</option>
-                        }
-                    </select>
-                </label>
-            }
-            <button id="propose-fire" disabled="@(fireFirers.Count == 0 || FireTarget.Length == 0)" @onclick="ProposeFire">Propose: fire</button>
-            <button id="fire-clear" class="link" @onclick="ClearFire">clear</button>
-        </div>
+        <SmallArmsFirePanel Side="@firing" Phase="@state.Phase" PhaseLabel="@Games.PhaseLabel(state.Phase)" Locations="@([.. FireLocations(firing)])" From="@fireFrom"
+            Firers="@FirerChoices(firing)" SelectedFirers="@fireFirers" Weapons="@([.. FireWeapons.Select(weapon => new SmallArmsFirePanel.Weapon(weapon.Id, weapon.Holding!.Holder))])"
+            SelectedWeapons="@fireWeapons" Alone="@fireAlone" Leaders="@([.. FireLeaders(firing).Select(leader => leader.Id)])" Director="@fireDirector"
+            MolAllowed='@state.SpecialRules.Contains("mol:" + firing, StringComparer.Ordinal)' Mol="@fireMol" Targets="@([.. FireTargets(firing)])" Target="@fireTarget"
+            FreeTarget="@fireFreeTarget" SnapShot="@fireSnapShot" Spray="@fireSpray" LaneWeapon="@fireLaneWeapon" LaneTo="@fireLaneTo" Partners="@FirePartners(firing)"
+            Partner="@firePartner" OnFrom="@(at => { fireFrom = at; PruneFire(); })" OnFirer="@(pick => Toggle(fireFirers, pick.Id, pick.On))"
+            OnWeapon="@(pick => Toggle(fireWeapons, pick.Id, pick.On))" OnAlone="@(pick => Toggle(fireAlone, pick.Id, pick.On))" OnDirector="@(id => fireDirector = id)"
+            OnMol="@(id => fireMol = id)" OnTarget="@(at => fireTarget = at)" OnFreeTarget="@(at => fireFreeTarget = at)" OnSnapShot="@(on => fireSnapShot = on)"
+            OnSpray="@(at => fireSpray = at)" OnLaneWeapon="@(id => fireLaneWeapon = id)" OnLaneTo="@(at => fireLaneTo = at)" OnPartner="@(id => firePartner = id)"
+            OnPropose="@ProposeFire" OnClear="@ClearFire" />
         @if (state.Phase == "pfph" && MopUpChoices(firing) is { Count: > 0 } mopUp)
         {
             <MoppingUpAction Buildings="@mopUp" OnPropose="@ProposeMopUp" />
         }
         @if (DcHolders(firing).Any())
         {
-            <h4>Demolition Charges</h4>
-            <p class="muted" id="dc-help">
-                A DC is Thrown into an ADJACENT Location at its thrower's level: 30 FP with +2 there, then the thrower's own Location with +3, each on its own DR,
-                +1 more in the AFPh unless an Opportunity Firer; a unit marked First Fire throws none, and the DC is removed (A23.6 to A23.63).
-            </p>
-            <div class="toolbar">
-                <label>Throw
-                    <select id="throw-dc" value="@throwDc" @onchange="@(args => throwDc = args.Value as string ?? string.Empty)">
-                        <option value="">choose</option>
-                        @foreach (var (holder, charge) in DcHolders(firing))
-                        {
-                            <option value="@($"{holder}|{charge}")">@charge (@holder)</option>
-                        }
-                    </select>
-                </label>
-                <label>into <input id="throw-dc-at" value="@throwDcAt" @onchange="@(args => throwDcAt = args.Value as string ?? string.Empty)" size="12" /></label>
-                <button id="propose-throw-dc" disabled="@(throwDc.Length == 0 || throwDcAt.Trim().Length == 0)" @onclick="ProposeThrowDc">Propose: Throw the DC</button>
-            </div>
+            <ThrowDemolitionChargeAction Charges="@([.. DcHolders(firing).Select(item => new ThrowDemolitionChargeAction.HeldCharge(item.Unit, item.Charge))])" Charge="@throwDc"
+                At="@throwDcAt" OnCharge="@(value => throwDc = value)" OnAt="@(at => throwDcAt = at)" OnPropose="@ProposeThrowDc" />
         }
         @if (state.Night && StarshellFirers(firing).Any())
         {
@@ -1002,13 +634,8 @@ else if (state is not null && history?.Current is not null)
         }
         @if (state.Phase == "afph" && state.PlacedCharges.Any(item => item.Operable))
         {
-            <h4>Placed DCs</h4>
-            <div class="toolbar">
-                @foreach (var placed in state.PlacedCharges.Where(item => item.Operable))
-                {
-                    <button class="detonate-dc" data-dc="@placed.Charge" @onclick="@(() => ProposeDetonateDc(placed.Charge))">Propose: detonate @placed.Charge in @placed.Target (30 FP@(placed.TargetsConcealed ? ", halved" : "")@(placed.Cx ? ", +1 CX" : ""); A23.4)</button>
-                }
-            </div>
+            <PlacedChargeDetonationActions Charges="@([.. state.PlacedCharges.Where(item => item.Operable).Select(item => new PlacedChargeDetonationActions.Placed(item.Charge, item.Target.ToString(), item.TargetsConcealed, item.Cx))])"
+                OnDetonate="@ProposeDetonateDc" />
         }
         @if ((state.Phase is "pfph" or "afph" or "dfph" || (state.Phase == "mph" && state.Movement is { WindowOpen: true })) && (OrdnanceGuns(firing).Any() || OrdnanceTanks(firing).Any() || PanzerfaustFirers(firing).Any()))
         {
@@ -1259,11 +886,11 @@ else if (state is not null && history?.Current is not null)
         </div>
     }
 
-    @if (CloseCombatRecords.Count > 0)
+    @if (CloseCombatRecords is { Count: > 0 } ccRecords)
     {
         <h3>Close Combat</h3>
         <ul id="play-close-combats">
-            @foreach (var (eventId, text) in CloseCombatRecords)
+            @foreach (var (eventId, text) in ccRecords)
             {
                 <li class="cc-record" data-event="@eventId">@text</li>
             }
@@ -1984,9 +1611,25 @@ else if (state is not null && history?.Current is not null)
             .OrderBy(unit => unit.Id, StringComparer.Ordinal);
 
     /// <summary>The Locations whose sequential CC with a vehicle is open this CCPh (A11.31).</summary>
+    // UI review, pass 27 (ruling R23.1): only a view that may act for the side attacking next is offered its Location.
     private IEnumerable<BoardLocation> VehicleCcLocations => state is null || state.Phase != "ccph" ? []
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit)).Select(unit => state.Location(unit.Id)?.Location).OfType<BoardLocation>()
-            .Distinct().Where(location => Live.Planner.VehicleCloseCombatTurn(state, location).Open).OrderBy(location => location.ToString(), StringComparer.Ordinal);
+            .Distinct().Where(location => Live.Planner.VehicleCloseCombatTurn(state, location) is { Open: true } turn && MayAnswer(turn.Next))
+            .OrderBy(location => location.ToString(), StringComparer.Ordinal);
+
+    /// <summary>Each open vehicle CC Location as the panel reads it (plan C01): the side that attacks next and the units it offers.</summary>
+    private IReadOnlyList<VehicleCloseCombatPanel.CcLocation> VehicleCcRows => state is null ? [] : [.. VehicleCcLocations.Select(location =>
+    {
+        var (nextSide, _) = Live.Planner.VehicleCloseCombatTurn(state, location);
+        var here = SeenOnly(state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active)).ToArray();
+        var attacked = state.CloseCombats.FirstOrDefault(item => item.Location == location && !item.Closed)?.Attacking ?? [];
+        return new VehicleCloseCombatPanel.CcLocation(location.ToString(), nextSide ?? string.Empty,
+            [.. here.Where(unit => unit.Side == nextSide && !LiveFire.IsVehicle(unit) && unit.Kind != UnitKinds.Dummy && !attacked.Contains(unit.Id)
+                && GameState.Condition(unit, Conditions.Broken) != ConditionState.True && GameState.Condition(unit, Conditions.Captured) != ConditionState.True).Select(unit => unit.Id)],
+            [.. here.Where(unit => unit.Side == nextSide && unit.Kind is "asl:leader" or "asl:hero").Select(unit => unit.Id)],
+            [.. here.Where(LiveFire.IsVehicle).Select(unit => new VehicleCloseCombatPanel.VehicleChoice(unit.Id, unit.Side))],
+            [.. here.Where(unit => !LiveFire.IsVehicle(unit) && unit.Side != nextSide).Select(unit => unit.Id)]);
+    })];
 
     private Task ProposeVehicleCc(string location, IReadOnlyList<string> attackers, string? vehicle, IReadOnlyList<string> defenders, bool pass)
     {
@@ -2155,7 +1798,7 @@ else if (state is not null && history?.Current is not null)
     private readonly Dictionary<string, string> ccInfiltrations = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> ccStacking = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> ccWithdrawals = new(StringComparer.Ordinal);
-    private readonly List<DeclaredAttack> ccAttacks = [];
+    private readonly List<CloseCombatPanel.DeclaredAttack> ccAttacks = [];
 
     /// <summary>
     /// Where the chosen units may advance: the ADJACENT Locations of their Location (A4.7), or, for units waiting off board, the hexes of their entry edge open
@@ -2280,12 +1923,6 @@ else if (state is not null && history?.Current is not null)
         }
     }
 
-    /// <summary>A CC attack declared on the page, not yet proposed, with its capture attempt, the defender's order of choice, and the Guard (A20.22).</summary>
-    private sealed record DeclaredAttack(string[] Attackers, string[] Defenders, string? Director, bool Capture = false, string[]? YieldOrder = null, string? Guard = null)
-    {
-        public string[] Yield => YieldOrder ?? [];
-    }
-
     private void SetInfiltration(string unit, string? to)
     {
         if (string.IsNullOrEmpty(to))
@@ -2299,14 +1936,14 @@ else if (state is not null && history?.Current is not null)
     }
 
     /// <summary>The phasing side's Guards not held in Melee, with the armed units of their side in their Location that could take their prisoners (A20.5).</summary>
-    private IEnumerable<(UnitInstance Guard, IReadOnlyList<UnitInstance> Heirs)> Guards => state is null ? []
-        : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && GameState.Condition(unit, Conditions.Melee) != ConditionState.True
+    private IReadOnlyList<PrisonerCustodyActions.Guard> Guards => state is null ? []
+        : [.. state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && GameState.Condition(unit, Conditions.Melee) != ConditionState.True
                 && state.Units.Any(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian == unit.Id))
             .OrderBy(unit => unit.Id, StringComparer.Ordinal)
-            .Select(guard => (guard, (IReadOnlyList<UnitInstance>)[.. state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Id != guard.Id && unit.Side == guard.Side
+            .Select(guard => new PrisonerCustodyActions.Guard(guard.Id, [.. SeenOnly(state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Id != guard.Id && unit.Side == guard.Side
                 && state.Location(unit.Id)?.Location == state.Location(guard.Id)?.Location && GameState.Condition(unit, Conditions.Captured) != ConditionState.True
-                && GameState.Condition(unit, Conditions.Unarmed) != ConditionState.True && (Library.Vocabulary.IsA(unit.Kind, "asl:mmc") || Library.Vocabulary.IsA(unit.Kind, "asl:smc")))
-                .OrderBy(unit => unit.Id, StringComparer.Ordinal)]));
+                && GameState.Condition(unit, Conditions.Unarmed) != ConditionState.True && (Library.Vocabulary.IsA(unit.Kind, "asl:mmc") || Library.Vocabulary.IsA(unit.Kind, "asl:smc"))))
+                .OrderBy(unit => unit.Id, StringComparer.Ordinal).Select(unit => unit.Id)]))];
 
     private Task ProposeAmbushWithdrawal(string unit, string to) => Propose(GameActions.AmbushWithdraw, JsonSerializer.SerializeToElement(new
     {
@@ -2373,6 +2010,50 @@ else if (state is not null && history?.Current is not null)
         : VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && state.Location(unit.Id)?.Location.ToString() == ccLocation)
             .OrderBy(unit => unit.Side, StringComparer.Ordinal).ThenBy(unit => unit.Id, StringComparer.Ordinal);
 
+    /// <summary>A new CC Location starts the declarations over, with each SMC stacked with its side's first MMC (A11.14).</summary>
+    private void ChooseCloseCombatLocation(string at)
+    {
+        ccLocation = at;
+        ClearCloseCombat();
+        DefaultStacking();
+    }
+
+    /// <summary>
+    /// The ambusher's withdrawals (plan N06; A11.41), before its round or once the Location's CC is closed, for the ambusher's view and the
+    /// adjudicator only; null hides them.
+    /// </summary>
+    private IReadOnlyList<AmbushWithdrawalActions.Withdrawal>? AmbushWithdrawals => state is not null && CloseCombatEntry is { Ambusher: { } ambushing } withdrawing
+        && (withdrawing.Rounds.Count == 0 || withdrawing.Closed) && (Viewer.IsAdjudicator || viewAs == ambushing) && BoardLocation.TryParse(ccLocation, out var ambushAt)
+        ? [.. CloseCombatUnits.Where(unit => unit.Side == ambushing && GameState.Condition(unit, Conditions.Captured) != ConditionState.True)
+            .SelectMany(unit => Live.Planner.WithdrawalDestinations(state, unit, ambushAt).Select(to => new AmbushWithdrawalActions.Withdrawal(unit.Id, to.ToString())))]
+        : null;
+
+    /// <summary>The SMC the view may declare stacking for (plan C04; ruling R23.1), each with the MMC of its side in the Location.</summary>
+    private IReadOnlyList<CloseCombatStacking.Smc> StackingChoices => [.. CloseCombatUnits
+        .Where(unit => Library.Vocabulary.IsA(unit.Kind, "asl:smc") && (Viewer.IsAdjudicator || viewAs == unit.Side))
+        .Select(smc => new CloseCombatStacking.Smc(smc.Id, [.. CloseCombatUnits.Where(unit => unit.Side == smc.Side && Library.Vocabulary.IsA(unit.Kind, "asl:mmc")).Select(unit => unit.Id)]))];
+
+    /// <summary>The units that may withdraw from Melee (plan C05), as a player reads them, with whether each must try.</summary>
+    private IReadOnlyList<CloseCombatWithdrawals.Withdrawer> Withdrawers => [.. WithdrawalUnits.Select(item => new CloseCombatWithdrawals.Withdrawer(item.Unit.Id, UnitLabel(item.Unit),
+        Live.Planner.MustWithdraw(state!, item.Unit), [.. item.Destinations.Select(to => to.ToString())]))];
+
+    /// <summary>The sides the view may declare attacks for (plan C06; ruling R23.1), each with its units and the other sides' units.</summary>
+    private IReadOnlyList<CloseCombatAttackBuilder.DeclaringSide> DeclaringSides => [.. CloseCombatSides.Where(side => Viewer.IsAdjudicator || viewAs == side)
+        .Select(side => new CloseCombatAttackBuilder.DeclaringSide(side, side == state!.PhasingSide,
+            [.. CloseCombatUnits.Where(unit => unit.Side == side).Select(unit => new CloseCombatAttackBuilder.Participant(unit.Id, UnitLabel(unit), IsBroken(unit)))],
+            [.. CloseCombatUnits.Where(unit => unit.Side != side).Select(unit => new CloseCombatAttackBuilder.Participant(unit.Id, UnitLabel(unit), IsBroken(unit)))]))];
+
+    /// <summary>
+    /// The units the view may declare an infiltration for (plan N08; A11.22): not berserk or Disrupted, with somewhere to go. Read only while attacks
+    /// may be declared; null when the Location cannot be read.
+    /// </summary>
+    private IReadOnlyList<CloseCombatInfiltrationChoices.Infiltrator>? Infiltrators => state is not null && !AmbushDue && BoardLocation.TryParse(ccLocation, out var at)
+        ? [.. CloseCombatUnits.Where(unit => (Viewer.IsAdjudicator || viewAs == unit.Side)
+                && GameState.Condition(unit, Conditions.Berserk) != ConditionState.True && GameState.Condition(unit, Conditions.Disrupted) != ConditionState.True)
+            .Select(unit => new CloseCombatInfiltrationChoices.Infiltrator(unit.Id, [.. Live.Planner.WithdrawalDestinations(state, unit, at).Select(to => to.ToString())]))
+            .Where(item => item.Destinations.Count > 0)]
+        : null;
+
     private void SetStacking(string smc, string? mmc)
     {
         if (string.IsNullOrEmpty(mmc))
@@ -2388,7 +2069,7 @@ else if (state is not null && history?.Current is not null)
     private void AddAttack()
     {
         string[] yielded = [.. ccYield.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
-        ccAttacks.Add(new DeclaredAttack([.. ccAttackers.Order(StringComparer.Ordinal)], [.. ccDefenders.Order(StringComparer.Ordinal)],
+        ccAttacks.Add(new CloseCombatPanel.DeclaredAttack([.. ccAttackers.Order(StringComparer.Ordinal)], [.. ccDefenders.Order(StringComparer.Ordinal)],
             ccDirector.Length > 0 && ccAttackers.Contains(ccDirector) ? ccDirector : null, ccCapture, ccCapture && yielded.Length > 0 ? yielded : null,
             ccCapture && ccGuard.Length > 0 && ccAttackers.Contains(ccGuard) ? ccGuard : null));
         ccAttackers.Clear();
@@ -2499,6 +2180,14 @@ else if (state is not null && history?.Current is not null)
         _ => option,
     };
 
+    /// <summary>Whether the view may answer for a side: that side's view or the adjudicator (ruling R23.1).</summary>
+    private bool MayAnswer(string? side) => Viewer.IsAdjudicator || viewAs == side;
+
+    /// <summary>A pending choice's options in words (plan C08), given only to a view that may answer.</summary>
+    private IReadOnlyList<PendingChoicePanel.Option> ChoiceOptions(PendingChoice choice) => MayAnswer(choice.Side)
+        ? [.. choice.Options.Select(option => new PendingChoicePanel.Option(option, ChoiceOptionText(choice, option)))]
+        : [];
+
     /// <summary>
     /// The firing side's units that may offer a Massacre (A20.4): Russian or berserk personnel not in Melee sharing a Location with an enemy
     /// prisoner. The planner decides the rest.
@@ -2529,8 +2218,38 @@ else if (state is not null && history?.Current is not null)
             }
 
             var records = new List<(string, string)>();
+
+            // A15.41 (ruling R27.3): the TCs a berserk leader's companions took when it went berserk, by leader, from the fire and Rally records the viewer
+            // may see; a CC round names them for each berserk leader in it, since the CC itself has no Heat of Battle.
+            var dice = new Dictionary<string, IReadOnlyList<int>>(StringComparer.Ordinal);
+            var companionChecks = new Dictionary<string, string>(StringComparer.Ordinal);
             foreach (var item in history.Events.Where(item => item.IsVisibleTo(Viewer)))
             {
+                if (item.Payload is DiceRolled rolledDice)
+                {
+                    dice[rolledDice.Roll] = rolledDice.Values;
+                }
+
+                // Fire (UI and table player review, pass 27): each Berserk TC names its leader in its DRM, on an attacked unit and a companion alike.
+                if (item.Payload is FireResolved fire && fire.Rolls.Keys.Any(key => key.StartsWith(BerserkCheckKey, StringComparison.Ordinal))
+                    && fire.Resolution.Deserialize<FireResolution>(LiveFire.Json) is { } fired)
+                {
+                    var byLeader = fired.Effects.Concat(fired.CompanionEffects ?? [])
+                        .SelectMany(effect => effect.Checks.Where(check => check.Kind == "Berserk TC").Select(check => (effect.UnitId, Check: check)))
+                        .GroupBy(entry => entry.Check.Drm.Select(drm => drm.Name).FirstOrDefault(name => name.StartsWith(BerserkLeaderDrm, StringComparison.Ordinal))?[BerserkLeaderDrm.Length..]);
+                    foreach (var group in byLeader.Where(group => group.Key is not null))
+                    {
+                        companionChecks[group.Key!] = CompanionText(group.Key!, group.Select(entry => (entry.UnitId, entry.Check.Dice, entry.Check.Passed)));
+                    }
+                }
+                else if (item.Payload is RallyAttempted rally && rally.Rolls.Keys.Any(key => key.StartsWith(BerserkCheckKey, StringComparison.Ordinal))
+                    && rally.Resolution.Deserialize<RallyResolution>(LiveFire.Json)?.Effect is { Berserk: true } effect)
+                {
+                    companionChecks[rally.Unit] = CompanionText(rally.Unit, rally.Rolls.Where(roll => roll.Key.StartsWith(BerserkCheckKey, StringComparison.Ordinal))
+                        .OrderBy(roll => roll.Key, StringComparer.Ordinal).Select(roll => (roll.Key[BerserkCheckKey.Length..], dice.GetValueOrDefault(roll.Value) ?? [],
+                            (effect.BerserkCompanions ?? []).Contains(roll.Key[BerserkCheckKey.Length..]))));
+                }
+
                 if (item.Payload is AmbushRolled ambush && ambush.Resolution.Deserialize<AmbushResolution>(LiveFire.Json) is { } rolled)
                 {
                     var sides = string.Join("; ", rolled.Sides.Select(side => $"{side.Side} dr {side.Dr}{ModifierText(side.Drm)} = {side.FinalDr}"));
@@ -2565,7 +2284,10 @@ else if (state is not null && history?.Current is not null)
                     var left = UnpossessedAfter(item, resolution).Select(weapon => $"{weapon} is left unpossessed in {combat.Location} (A11.13)");
                     var text = resolution.Attacks.Count == 0 ? "no attacks" : string.Join(" | ", attacks);
                     var hand = combat.Facts.TryGetProperty("handToHand", out var handToHand) && handToHand.ValueKind == JsonValueKind.True ? ", Hand-to-Hand (red Kill Numbers)" : "";
-                    records.Add((item.EventId, $"CC in {combat.Location}, {combat.Round} round{hand}: {string.Join("; ", new[] { text }.Concat(lost).Concat(ended).Concat(withdrew).Concat(left))}"));
+                    // Shown with the first CC record after the leader went berserk (UI review, pass 27).
+                    var companions = combat.Attackers.Concat(combat.Defenders).Distinct(StringComparer.Ordinal)
+                        .Select(unit => companionChecks.Remove(unit, out var checks) ? checks : null).OfType<string>().ToArray();
+                    records.Add((item.EventId, $"CC in {combat.Location}, {combat.Round} round{hand}: {string.Join("; ", new[] { text }.Concat(lost).Concat(ended).Concat(withdrew).Concat(left).Concat(companions))}"));
                 }
             }
 
@@ -2573,6 +2295,16 @@ else if (state is not null && history?.Current is not null)
             return records;
         }
     }
+
+    /// <summary>The roll key of a berserk leader's companion's TC in fire and Rally records (A15.41).</summary>
+    private const string BerserkCheckKey = "berserkCheck:";
+
+    /// <summary>The DRM a Berserk TC in a fire record takes from its leader, which names him (A15.41).</summary>
+    private const string BerserkLeaderDrm = "berserk-leader:";
+
+    /// <summary>A berserk leader's companions' TCs in words (A15.41; ruling R27.3).</summary>
+    private static string CompanionText(string leader, IEnumerable<(string Unit, IReadOnlyList<int> Dice, bool Berserk)> checks) =>
+        $"{leader} went berserk before this CC; its companions' TCs then: {string.Join(", ", checks.Select(check => $"{check.Unit} {string.Join("+", check.Dice)}: {(check.Berserk ? "goes berserk with it" : "stays")}"))} (A15.41)";
 
     /// <summary>The SW the units a CC round eliminated possessed before it, less those it eliminated: they stay in the Location unpossessed.</summary>
     private IEnumerable<string> UnpossessedAfter(GameEvent combat, CloseCombatResolution resolution)
@@ -3114,6 +2846,14 @@ else if (state is not null && history?.Current is not null)
     /// <summary>The target: any Location typed in, or else the one chosen from the Locations the firing side knows to hold an enemy.</summary>
     private string FireTarget => fireFreeTarget.Trim() is { Length: > 0 } typed ? typed : fireTarget;
 
+    /// <summary>The units of the chosen group that may fire: not a leader unless he possesses a MG (plan C13).</summary>
+    private IReadOnlyList<string> FirerChoices(string side) => [.. FireGroupAt(side).Where(unit => (unit.Kind != "asl:leader" || PossessesMg(unit)) && MayFire(unit)).Select(unit => unit.Id)];
+
+    /// <summary>The SMC of the group that may partner a firing leader (A9.12), or null when no leader fires.</summary>
+    private IReadOnlyList<string>? FirePartners(string side) => state is not null && fireFirers.Any(id => state.Unit(id)?.Kind == "asl:leader")
+        ? [.. FireGroupAt(side).Where(unit => unit.Kind is "asl:leader" or "asl:hero" && !fireFirers.Contains(unit.Id)).Select(unit => unit.Id)]
+        : null;
+
     private void ClearFire()
     {
         fireFrom = string.Empty;
@@ -3372,6 +3112,25 @@ else if (state is not null && history?.Current is not null)
     /// </summary>
     private IReadOnlyList<(UnitInstance Unit, BoardLocation? Target, IReadOnlyList<BoardLocation> Next, string? Undecided)> Charges =>
         state is null ? [] : Live.Planner.Charges(state);
+
+    /// <summary>
+    /// A berserk Infantry OVR onto a lone SMC whose CC comes now (A4.152, A15.432; ruling R27.3): its Location, the attacks the planner makes of it, the
+    /// berserk units, the SMC, and whether the SMC attacks back.
+    /// </summary>
+    private (BoardLocation Location, IReadOnlyList<CloseCombatDeclaration> Attacks, IReadOnlyList<string> Attackers, string Smc, bool SmcAttacks)? OverrunCloseCombat =>
+        state is not null && Live.Planner.BerserkOverrunPending(state) is { } at
+            && state.At(at).OfType<UnitInstance>().FirstOrDefault(unit => unit.Status == InstanceStatus.Active && unit.Side != state.PhasingSide
+                && GameState.Condition(unit, Conditions.Captured) != ConditionState.True) is { } smc
+            && Live.Planner.OverrunAttacks(state, at, smc) is { Count: > 0 } attacks
+            ? (at, attacks, attacks[0].Attackers!, smc.Id, attacks.Count > 1)
+            : null;
+
+    private Task ProposeOverrunCloseCombat() => OverrunCloseCombat is not { } overrun ? Task.CompletedTask
+        : Propose(GameActions.CloseCombat, JsonSerializer.SerializeToElement(new Dictionary<string, object>
+        {
+            ["gameId"] = gameId, ["attemptId"] = Attempt("overrun-cc"), ["expectedRevision"] = (long)history!.Events.Count, ["location"] = overrun.Location.ToString(),
+            ["attacks"] = overrun.Attacks.Select(attack => new { attackers = attack.Attackers, defenders = attack.Defenders }).ToArray(),
+        }));
 
     private Task ProposeRally()
     {

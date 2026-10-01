@@ -1,0 +1,43 @@
+@* Plan C08 (pass 27): a choice the game waits on before play goes on (ruling R5.8). The page passes the options only to the answering side's view
+   and the adjudicator; any other view gets none and reads that it waits. *@
+<div id="play-choice" class="fail" data-key="@Key">
+    <p>The @Side side answers before play goes on: @Description (ruling R5.8).</p>
+    @if (MayAnswer)
+    {
+        @foreach (var option in Options)
+        {
+            <button class="choose" data-option="@option.Value" @onclick="@(() => OnChoose.InvokeAsync(option.Value))">Propose: @option.Text</button>
+        }
+    }
+    else
+    {
+        <p class="muted">Waiting for the @Side side to answer.</p>
+    }
+</div>
+
+@code {
+    /// <summary>An option and how it reads, such as "take it".</summary>
+    public sealed record Option(string Value, string Text);
+
+    [Parameter, EditorRequired]
+    public string Key { get; set; } = string.Empty;
+
+    /// <summary>The side that answers.</summary>
+    [Parameter, EditorRequired]
+    public string Side { get; set; } = string.Empty;
+
+    /// <summary>The choice in words.</summary>
+    [Parameter, EditorRequired]
+    public string Description { get; set; } = string.Empty;
+
+    /// <summary>Whether the view may answer: the answering side or the adjudicator.</summary>
+    [Parameter]
+    public bool MayAnswer { get; set; }
+
+    /// <summary>The options, given only to a view that may answer.</summary>
+    [Parameter]
+    public IReadOnlyList<Option> Options { get; set; } = [];
+
+    [Parameter]
+    public EventCallback<string> OnChoose { get; set; }
+}

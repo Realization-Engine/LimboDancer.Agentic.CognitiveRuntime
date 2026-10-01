@@ -105,7 +105,7 @@ public sealed class BacklogPass20TablePlayerTests : IDisposable
         var start = new Dictionary<string, object?>
         {
             ["label"] = card,
-            ["catalog"] = "asl-scenario-a1@1.12.0",
+            ["catalog"] = "asl-scenario-a1@1.13.0",
             ["boards"] = boards,
             ["sides"] = Array.Empty<object>(),
             ["scenario"] = new

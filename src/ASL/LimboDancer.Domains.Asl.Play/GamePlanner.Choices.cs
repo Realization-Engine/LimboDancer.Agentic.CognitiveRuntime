@@ -139,12 +139,26 @@ public sealed partial class GamePlanner
                 case "fire":
                     var fire = resume.GetProperty("facts").Deserialize<FireAttack>(LiveFire.Json)!;
                     int? step = resume.TryGetProperty("step", out var stepValue) ? stepValue.GetInt32() : null;
+                    var followUps = resume.TryGetProperty("followUps", out var followNode) ? followNode.Deserialize<FireFollowUps>(LiveFire.Json) : null;
                     AddFireEvents(scope, attemptId, expected, actor, answered, fire with
                     {
                         Choices = With(fire.Choices)
                     }, resume.GetProperty("targetSide").GetString()!, step,
-                        events, draw, resumed);
+                        events, draw, resumed, followUps);
                     AddOverrunResolved(scope, attemptId, expected, answered, fire, events);
+
+                    // Ruling R27.4: what the attack was to do next is done once its options are answered, then the Sniper checks its DRs call for (a
+                    // DC's follow-ups make them with its removal; table player, pass 27).
+                    if (followUps is not null)
+                    {
+                        AddFireFollowUps(scope, attemptId, expected, actor, existing, answered, resume.GetProperty("targetSide").GetString()!, step, events, draw, followUps);
+                    }
+
+                    if (followUps?.DcCharge is null)
+                    {
+                        AddSniperAttacks(scope, attemptId, expected, actor, existing, events, draw);
+                    }
+
                     break;
                 case "rally":
                     var rally = resume.GetProperty("facts").Deserialize<RallyAttempt>(LiveFire.Json)!;

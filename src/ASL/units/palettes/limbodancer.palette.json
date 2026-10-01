@@ -1,11 +1,12 @@
 {
   "set": "limbodancer",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "label": "LimboDancer side palettes",
   "note": "Original palettes for the digital map: light fills with dark ink for text contrast. The side hues have not yet been checked with a color-vision simulator.",
   "fallback": { "fill": "#e4e4e4", "fill-muted": "#b8b8b8", "ink": "#111111", "accent": "#555555" },
   "sides": {
     "american": { "fill": "#b9dcae", "fill-muted": "#8aa681", "ink": "#0f1f0b", "accent": "#2f6b22" },
+    "axis-minor": { "fill": "#cfe6c4", "fill-muted": "#97ab8e", "ink": "#0f1d0a", "accent": "#3f7a2a" },
     "british": { "fill": "#f0d9a1", "fill-muted": "#b6a377", "ink": "#211806", "accent": "#8a5a00" },
     "finnish": { "fill": "#dde3ea", "fill-muted": "#a6adb5", "ink": "#0d1620", "accent": "#2a5d9f" },
     "french": { "fill": "#c3d3f5", "fill-muted": "#8e9cba", "ink": "#0b1530", "accent": "#3050a0" },

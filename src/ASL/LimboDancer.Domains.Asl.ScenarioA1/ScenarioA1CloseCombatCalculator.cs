@@ -303,7 +303,9 @@ public static class ScenarioA1CloseCombatCalculator
     private static List<string> Outside(CloseCombatFacts facts, ScenarioA1CloseCombatReference reference)
     {
         var outside = new List<string>();
-        if (facts.Phase != "CCPh")
+
+        // A4.152, A15.432 (ruling R27.3): CC is in the CCPh, or at once in the MPh after a berserk Infantry OVR onto a lone SMC.
+        if (facts.Phase != "CCPh" && !(facts.Phase == "MPh" && facts.InfantryOverrun == true))
         {
             outside.Add("asl.a1.cc.phase-outside");
         }

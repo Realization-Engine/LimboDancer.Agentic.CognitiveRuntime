@@ -55,10 +55,10 @@ public sealed record ScenarioCardGroup(string Name, int Elr, IReadOnlyList<Scena
 
 /// <summary>
 /// A side: its SAN (A14.1), Battlefield Integrity total (A16.1), Friendly Board Edge, Balance (A26.4), and OB groups; the counters its Balance adds
-/// to its OB, set up with any of its groups (ruling R20.4).
+/// to its OB, set up with any of its groups (ruling R20.4). An Axis Minor side names its nation (A25.8; ruling R27.1).
 /// </summary>
 public sealed record ScenarioCardSide(string Side, int San, int? IntegrityBpv, ScenarioCardEdge FriendlyEdge, string Balance, IReadOnlyList<ScenarioCardGroup> Groups,
-    IReadOnlyList<ScenarioCardUnit>? BalanceUnits = null, int? Elr = null);
+    IReadOnlyList<ScenarioCardUnit>? BalanceUnits = null, int? Elr = null, string? Nation = null);
 
 /// <summary>
 /// An SSR (ruling R17.10): its text; <c>token</c> when the game reads it from its tokens, <c>game-default</c> when the game
@@ -238,6 +238,11 @@ public static partial class ScenarioCards
             if (side.FriendlyEdge.Edge.Length > 0)
             {
                 node["friendlyEdge"] = side.FriendlyEdge.Edge;
+            }
+
+            if (side.Nation is { } nation)
+            {
+                node["nation"] = nation;
             }
 
             var elrs = side.Groups.Select(group => group.Elr).Distinct().ToArray();
@@ -472,6 +477,8 @@ public static partial class ScenarioCards
     private static void Side(ScenarioCard card, ScenarioCardSide side, UnitCatalog catalog, Action<bool, string> check)
     {
         check(side.San is >= 0 and <= 7, $"card.san: {side.Side}'s SAN is 0 to 7 (A14.1)");
+        check(side.Side == "axis-minor" ? SideState.AxisMinorNations.Contains(side.Nation ?? "", StringComparer.Ordinal) : side.Nation is null,
+            $"card.nation: an Axis Minor side names its nation ({string.Join(", ", SideState.AxisMinorNations)}), and no other side names one (A25.8; ruling R27.1)");
         check((card.Minimal && side.FriendlyEdge is { Edge.Length: 0, Basis: "none" })
             || (SideState.Edges.Contains(side.FriendlyEdge.Edge, StringComparer.Ordinal) && EdgeBases.Contains(side.FriendlyEdge.Basis, StringComparer.Ordinal) && side.FriendlyEdge.Basis != "none"),
             $"card.edge: {side.Side}'s Friendly Board Edge is the map's top, bottom, left, or right, from an SSR, entry, setup, or R0.3 (A20.53); a minimal card may leave it unnamed (ruling R22.3)");

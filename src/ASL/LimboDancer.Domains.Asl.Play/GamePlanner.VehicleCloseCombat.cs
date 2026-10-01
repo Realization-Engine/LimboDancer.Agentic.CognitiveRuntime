@@ -68,6 +68,67 @@ public sealed partial class GamePlanner
         return other is not null ? (other, false) : left.Contains(moved) ? (moved, false) : (null, true);
     }
 
+    /// <summary>
+    /// A berserk unit (of <paramref name="side"/>, or of either side) that still owes an attack on a Known enemy vehicle in a Location's sequential CC
+    /// this CCPh (A15.43, A11.31; ruling R27.2): it may attack, has not, and the Location holds no Gun's crew, whose CC is not built. Null when none does.
+    /// </summary>
+    private UnitInstance? BerserkOwingVehicleAttack(GameState state, BoardLocation location, string? side)
+    {
+        var entry = state.CloseCombats.FirstOrDefault(item => item.Location == location);
+        if (state.Phase != "ccph" || entry is { Closed: true } || !VehicleCloseCombatTurn(state, location).Open)
+        {
+            return null;
+        }
+
+        var here = state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active).ToArray();
+        return here.Any(unit => vocabulary.IsA(unit.Kind, "asl:crew")) ? null
+            : here.Where(unit => (side is null || unit.Side == side) && Is(unit, Conditions.Berserk) && CcAttacker(unit) && entry?.Attacking.Contains(unit.Id) != true
+                && here.Any(other => other.Side != unit.Side && LiveFire.IsVehicle(other) && KnownEnemy(other) && !Is(other, Conditions.Captured)))
+                .OrderBy(unit => unit.Id, StringComparer.Ordinal).FirstOrDefault();
+    }
+
+    /// <summary>
+    /// The Location of a berserk Infantry OVR onto a lone SMC whose CC is still to be resolved this MPh (A4.152, A15.432; ruling R27.3): the charging
+    /// stack, with a berserk MMC (A15.432, A4.15: a SMC alone does not OVR; referee and table player, pass 27), has entered the Location of the charge,
+    /// the DEFENDER's window on that entry has closed, the only enemy unit there is a Known SMC not held in Melee, and the Close Combat package
+    /// accepts the CC (otherwise the units are simply left together for the CCPh, so the MPh never stalls; table player, pass 27). Null when there
+    /// is none.
+    /// </summary>
+    public BoardLocation? BerserkOverrunPending(GameState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        if (state.Phase != "mph" || state.Movement is not { WindowOpen: false, Charge: { } charged } movement || movement.Location != charged
+            || state.CloseCombats.Any(item => item.Location == charged))
+        {
+            return null;
+        }
+
+        var here = state.At(charged).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && !Is(unit, Conditions.Captured)).ToArray();
+        var enemies = here.Where(unit => unit.Side != state.PhasingSide).ToArray();
+        if (!here.Any(unit => unit.Side == state.PhasingSide && movement.Members.Contains(unit.Id, StringComparer.Ordinal) && Is(unit, Conditions.Berserk)
+            && vocabulary.IsA(unit.Kind, "asl:mmc")) || enemies is not [{ } smc] || !vocabulary.IsA(smc.Kind, "asl:smc") || !KnownEnemy(smc) || Is(smc, Conditions.Melee))
+        {
+            return null;
+        }
+
+        var terrain = ReadLocation(state, charged) is { } read ? TerrainKey(read) : null;
+        var (facts, _) = LiveCloseCombat.FromState(state, charged, terrain, OverrunAttacks(state, charged, smc), null, overrun: true);
+        return facts is not null && ScenarioA1CloseCombatCalculator.Precheck(facts, CloseCombatReference.Value) is { Count: 0 } ? charged : null;
+    }
+
+    /// <summary>
+    /// The attacks of a berserk OVR's CC (A4.152, A15.432; ruling R27.3): every berserk unit of the phasing side there attacks the SMC, and the SMC attacks
+    /// them back when it may attack in CC (not broken or captured), which never costs it anything.
+    /// </summary>
+    public IReadOnlyList<CloseCombatDeclaration> OverrunAttacks(GameState state, BoardLocation location, UnitInstance smc)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(smc);
+        string[] berserk = [.. state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide
+            && Is(unit, Conditions.Berserk)).Select(unit => unit.Id).Order(StringComparer.Ordinal)];
+        return CcAttacker(smc) ? [new CloseCombatDeclaration(berserk, [smc.Id]), new CloseCombatDeclaration([smc.Id], berserk)] : [new CloseCombatDeclaration(berserk, [smc.Id])];
+    }
+
     /// <summary>The sides and units a CC Location holding a vehicle waits for, for the Play page (ruling R11.16).</summary>
     public (string? Next, bool Open) VehicleCloseCombatTurn(GameState state, BoardLocation location)
     {
@@ -178,6 +239,12 @@ public sealed partial class GamePlanner
         var passed = entry?.Passed ?? [];
         if (pass)
         {
+            // A15.43 (ruling R27.2): a side with a berserk unit facing a Known enemy vehicle there does not pass; the berserk unit attacks.
+            if (BerserkOwingVehicleAttack(state, location, next) is { } owing)
+            {
+                return Refused(scope, label, expected, $"play.cc-vehicle-berserk: {owing.Id} is berserk and attacks the enemy vehicle in {location}; its side does not pass (A15.43)");
+            }
+
             var (following, closed) = NextCcSide(state, location, next, attacked, [.. passed, next]);
             return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
                 [Event(scope, attemptId, 1, expected, "vehicle-close-combat-passed", new VehicleCloseCombatPassed(location, next, following, closed), null, null)],

@@ -292,6 +292,15 @@ public static class GameProjector
                 Error("UNIT-STATE-005", $"The nationality '{side.Nationality}' of side '{side.Id}' is not declared.");
             }
 
+            // A25.8 (ruling R27.1): an Axis Minor side names its nation; no other side names one.
+            foreach (var side in started.Sides.Where(side => side.Nationality == "axis-minor"
+                ? !SideState.AxisMinorNations.Contains(side.Nation ?? "", StringComparer.Ordinal) : side.Nation is not null))
+            {
+                Error("UNIT-STATE-005", side.Nationality == "axis-minor"
+                    ? $"The Axis Minor side '{side.Id}' needs its nation: {string.Join(", ", SideState.AxisMinorNations)} (A25.8)."
+                    : $"Side '{side.Id}' is {side.Nationality}; only an Axis Minor side names a nation (A25.8).");
+            }
+
             catalog = catalogs.FirstOrDefault(candidate => $"{candidate.Identity.Catalog}@{candidate.Identity.Version}" == started.Catalog);
             if (catalog is null)
             {
@@ -330,6 +339,9 @@ public static class GameProjector
                 Scenario = started.Scenario,
                 FirstSide = started.PhasingSide,
                 Source = gameEvent.Source,
+
+                // A25.8 (ruling R27.1): Hungarians fighting Romanians face No Quarter on both sides from the start.
+                NoQuarter = SideState.HungariansVersusRomanians(started.Sides) ? [.. started.Sides.Select(side => side.Id)] : [],
             };
             return CheckPhase(state, started.Turn, started.Phase, started.PhasingSide) ? state : null;
         }
@@ -891,9 +903,13 @@ public static class GameProjector
             }
 
             var entry = state.CloseCombats.FirstOrDefault(item => item.Location == combat.Location);
-            if (state.Phase != "ccph" || entry is { Closed: true } || state.CloseCombats.Any(item => !item.Closed && item.Location != combat.Location))
+
+            // A4.152 (ruling R27.3): or at once in the MPh, the CC of a berserk Infantry OVR, once the DEFENDER's window on the entry has closed.
+            var overrun = state.Phase == "mph" && combat.Facts.ValueKind == JsonValueKind.Object && combat.Facts.TryGetProperty("infantryOverrun", out var flag)
+                && flag.ValueKind == JsonValueKind.True && state.Movement is { WindowOpen: false } movement && movement.Location == combat.Location;
+            if ((state.Phase != "ccph" && !overrun) || entry is { Closed: true } || state.CloseCombats.Any(item => !item.Closed && item.Location != combat.Location))
             {
-                return Fail<GameState>("UNIT-STATE-030", "CC is resolved in the CCPh, once per Location, one Location at a time (A11.12).");
+                return Fail<GameState>("UNIT-STATE-030", "CC is resolved in the CCPh, once per Location, one Location at a time, or at once after a berserk Infantry OVR in the MPh (A11.12, A4.152).");
             }
 
             // A11.3: the ambusher's attacks are sequential, one record each, until the ambushed side's round closes the Location; A11.33, A11.34

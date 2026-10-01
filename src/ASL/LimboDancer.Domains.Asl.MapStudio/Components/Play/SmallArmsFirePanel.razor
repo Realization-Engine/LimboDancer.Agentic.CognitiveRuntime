@@ -1,0 +1,233 @@
+@* Plan C13 (pass 27): the firing side's fire group and its attack (A7.5, A9.1): the Location fired from, its firers and the MGs, FT and ATR they
+   possess, each MG alone, the director, the MOL user (A22.611; plan N10, kept here), the target, Snap Shot, Spraying Fire and a Fire Lane (plan C15,
+   kept here), and a leader's partner SMC (A9.12; plan C14, kept here). The page reads the choices for the view (ruling R23.1), keeps the draft and
+   prunes it when the Location changes, and proposes the fire. *@
+<h4>Fire</h4>
+<p class="muted" id="fire-side">
+    The @Side side may fire in the @PhaseLabel (A3.2, A3.3, A3.4, A3.5): Good Order squads and half-squads, in one Location
+    or in Locations each ADJACENT to another (A7.5), as one fire group, with the MGs they possess, optionally directed by a leader, at a Location
+    the @Side side can see into or at any Location. The reviewed Fire package resolves the attack, and only when every outcome the dice can reach
+    is decided.
+</p>
+<div class="toolbar">
+    <label>
+        From
+        <select id="fire-from" value="@From" @onchange="@(args => OnFrom.InvokeAsync(args.Value as string ?? string.Empty))">
+            <option value="">choose</option>
+            @foreach (var at in Locations)
+            {
+                <option value="@at">@at</option>
+            }
+        </select>
+    </label>
+    @foreach (var unit in Firers)
+    {
+        <label><input class="fire-firer" type="checkbox" data-unit="@unit" checked="@SelectedFirers.Contains(unit)" @onchange="@(args => OnFirer.InvokeAsync(new UnitSelectionList.Toggle(unit, args.Value is true)))" /> @unit</label>
+    }
+    @foreach (var weapon in Weapons)
+    {
+        <label><input class="fire-weapon" type="checkbox" data-weapon="@weapon.Id" checked="@SelectedWeapons.Contains(weapon.Id)" @onchange="@(args => OnWeapon.InvokeAsync(new UnitSelectionList.Toggle(weapon.Id, args.Value is true)))" /> @weapon.Id (@weapon.Holder)</label>
+    }
+    @foreach (var id in SelectedFirers.Where(id => Weapons.Any(weapon => weapon.Holder == id && SelectedWeapons.Contains(weapon.Id))).Order(StringComparer.Ordinal))
+    {
+        <label><input class="fire-alone" type="checkbox" data-unit="@id" checked="@Alone.Contains(id)" @onchange="@(args => OnAlone.InvokeAsync(new UnitSelectionList.Toggle(id, args.Value is true)))" /> @id's MGs alone</label>
+    }
+    <label>
+        Director
+        <select id="fire-director" value="@Director" @onchange="@(args => OnDirector.InvokeAsync(args.Value as string ?? string.Empty))">
+            <option value="">none</option>
+            @foreach (var leader in Leaders)
+            {
+                <option value="@leader">@leader</option>
+            }
+        </select>
+    </label>
+    @if (MolAllowed)
+    {
+        <label title="A22.611: with a PBF or TPBF attack, one firer's MOL Check dr of 3 or less after its drm (+1 HS or crew, +2 SMC, +1 CX, +1 against a non-AFV) adds 4 FP; a colored 6 on the IFT DR breaks it.">MOL by
+            <select id="fire-mol" value="@Mol" @onchange="@(args => OnMol.InvokeAsync(args.Value as string ?? string.Empty))">
+                <option value="">none</option>
+                @foreach (var id in SelectedFirers.Order(StringComparer.Ordinal))
+                {
+                    <option value="@id">@id</option>
+                }
+            </select>
+        </label>
+    }
+    <label>
+        Target
+        <select id="fire-target" value="@Target" @onchange="@(args => OnTarget.InvokeAsync(args.Value as string ?? string.Empty))">
+            <option value="">choose</option>
+            @foreach (var at in Targets)
+            {
+                <option value="@at">@at</option>
+            }
+        </select>
+    </label>
+    <label>Or any Location <input id="fire-free-target" value="@FreeTarget" @onchange="@(args => OnFreeTarget.InvokeAsync(args.Value as string ?? string.Empty))" size="12" /></label>
+    @if (Phase == "mph")
+    {
+        <label title="A8.15: at the hexside the moving stack crossed, with LOS to both its ends; Area Fire with no TEM, FFMO, or FFNAM, and no Residual FP."><input id="fire-snap-shot" type="checkbox" checked="@SnapShot" @onchange="@(args => OnSnapShot.InvokeAsync(args.Value is true))" /> Snap Shot</label>
+    }
+    @if (Phase is "pfph" or "afph" or "dfph")
+    {
+        <label title="A9.5: a group whose every firer fires a MG attacks a second Location sharing a hexside with the target, as Area Fire on the same DR.">Spray also <input id="fire-spray" value="@Spray" @onchange="@(args => OnSpray.InvokeAsync(args.Value as string ?? string.Empty))" size="12" /></label>
+    }
+    @if (Phase == "mph")
+    {
+        <label title="A9.22: with Defensive First Fire by an unpinned squad's MG at a same-level target within Normal Range, a Fire Lane along the Hex Grain to this Location.">Fire Lane of
+            <select id="fire-lane-weapon" value="@LaneWeapon" @onchange="@(args => OnLaneWeapon.InvokeAsync(args.Value as string ?? string.Empty))">
+                <option value="">none</option>
+                @foreach (var weapon in Weapons.Where(item => SelectedWeapons.Contains(item.Id)))
+                {
+                    <option value="@weapon.Id">@weapon.Id</option>
+                }
+            </select>
+            to <input id="fire-lane-to" value="@LaneTo" @onchange="@(args => OnLaneTo.InvokeAsync(args.Value as string ?? string.Empty))" size="12" />
+        </label>
+    }
+    @if (Partners is { } partners)
+    {
+        <label title="A9.12: a leader fires a MG alone as Area Fire; with another SMC stacked with him, at full FP.">Partner SMC
+            <select id="fire-partner" value="@Partner" @onchange="@(args => OnPartner.InvokeAsync(args.Value as string ?? string.Empty))">
+                <option value="">none</option>
+                @foreach (var smc in partners)
+                {
+                    <option value="@smc">@smc</option>
+                }
+            </select>
+        </label>
+    }
+    <button id="propose-fire" disabled="@(SelectedFirers.Count == 0 || (FreeTarget.Trim().Length == 0 && Target.Length == 0))" @onclick="@(() => OnPropose.InvokeAsync())">Propose: fire</button>
+    <button id="fire-clear" class="link" @onclick="@(() => OnClear.InvokeAsync())">clear</button>
+</div>
+
+@code {
+    /// <summary>A MG, FT, or ATR a chosen firer possesses, and its holder.</summary>
+    public sealed record Weapon(string Id, string Holder);
+
+    /// <summary>The firing side.</summary>
+    [Parameter, EditorRequired]
+    public string Side { get; set; } = string.Empty;
+
+    /// <summary>The phase's id, such as "pfph", which decides Snap Shot, Spraying Fire and the Fire Lane.</summary>
+    [Parameter, EditorRequired]
+    public string Phase { get; set; } = string.Empty;
+
+    /// <summary>The phase as players name it.</summary>
+    [Parameter]
+    public string PhaseLabel { get; set; } = string.Empty;
+
+    /// <summary>The Locations the side may fire from.</summary>
+    [Parameter]
+    public IReadOnlyList<string> Locations { get; set; } = [];
+
+    [Parameter]
+    public string From { get; set; } = string.Empty;
+
+    /// <summary>The units in the chosen group that may fire.</summary>
+    [Parameter]
+    public IReadOnlyList<string> Firers { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlySet<string> SelectedFirers { get; set; } = new HashSet<string>();
+
+    /// <summary>The weapons the chosen firers possess.</summary>
+    [Parameter]
+    public IReadOnlyList<Weapon> Weapons { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlySet<string> SelectedWeapons { get; set; } = new HashSet<string>();
+
+    /// <summary>The firers whose MGs fire alone.</summary>
+    [Parameter]
+    public IReadOnlySet<string> Alone { get; set; } = new HashSet<string>();
+
+    /// <summary>The leaders who may direct the group.</summary>
+    [Parameter]
+    public IReadOnlyList<string> Leaders { get; set; } = [];
+
+    [Parameter]
+    public string Director { get; set; } = string.Empty;
+
+    /// <summary>Whether the side's MOL SSR is in force.</summary>
+    [Parameter]
+    public bool MolAllowed { get; set; }
+
+    [Parameter]
+    public string Mol { get; set; } = string.Empty;
+
+    /// <summary>The Locations the side knows to hold an enemy.</summary>
+    [Parameter]
+    public IReadOnlyList<string> Targets { get; set; } = [];
+
+    [Parameter]
+    public string Target { get; set; } = string.Empty;
+
+    [Parameter]
+    public string FreeTarget { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool SnapShot { get; set; }
+
+    [Parameter]
+    public string Spray { get; set; } = string.Empty;
+
+    [Parameter]
+    public string LaneWeapon { get; set; } = string.Empty;
+
+    [Parameter]
+    public string LaneTo { get; set; } = string.Empty;
+
+    /// <summary>The SMC that may partner a firing leader, or none to hide the choice when no leader fires.</summary>
+    [Parameter]
+    public IReadOnlyList<string>? Partners { get; set; }
+
+    [Parameter]
+    public string Partner { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> OnFrom { get; set; }
+
+    [Parameter]
+    public EventCallback<UnitSelectionList.Toggle> OnFirer { get; set; }
+
+    [Parameter]
+    public EventCallback<UnitSelectionList.Toggle> OnWeapon { get; set; }
+
+    [Parameter]
+    public EventCallback<UnitSelectionList.Toggle> OnAlone { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnDirector { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnMol { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnTarget { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnFreeTarget { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> OnSnapShot { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnSpray { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnLaneWeapon { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnLaneTo { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnPartner { get; set; }
+
+    [Parameter]
+    public EventCallback OnPropose { get; set; }
+
+    [Parameter]
+    public EventCallback OnClear { get; set; }
+}

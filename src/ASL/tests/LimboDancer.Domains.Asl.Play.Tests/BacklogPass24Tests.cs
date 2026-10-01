@@ -169,7 +169,7 @@ public sealed class BacklogPass24Tests : IDisposable
             node["start"] = JsonSerializer.SerializeToNode(new
             {
                 label = "guards",
-                catalog = "asl-scenario-a1@1.12.0",
+                catalog = "asl-scenario-a1@1.13.0",
                 boards = Boards,
                 sides = Array.Empty<object>(),
                 scenario = new

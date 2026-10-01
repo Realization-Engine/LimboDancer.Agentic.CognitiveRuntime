@@ -134,7 +134,7 @@ public sealed class BacklogPass18Tests : IDisposable
     private static Dictionary<string, object?> CardStart(string card, string? sha256 = null, string? firstSide = "german") => new()
     {
         ["label"] = "From a card",
-        ["catalog"] = "asl-scenario-a1@1.12.0",
+        ["catalog"] = "asl-scenario-a1@1.13.0",
         ["boards"] = Bd05,
         ["firstSide"] = firstSide,
         ["sides"] = new object[] { new { id = "german", nationality = "german", elr = 1, san = 2 }, new { id = "russian", nationality = "russian", elr = 1 } },
@@ -214,7 +214,7 @@ public sealed class BacklogPass18Tests : IDisposable
     private static Dictionary<string, object?> SplitStart() => new()
     {
         ["label"] = "Split ELR",
-        ["catalog"] = "asl-scenario-a1@1.12.0",
+        ["catalog"] = "asl-scenario-a1@1.13.0",
         ["boards"] = Bd01,
         ["firstSide"] = "german",
         ["scenarioMonth"] = 7,
@@ -348,7 +348,7 @@ public sealed class BacklogPass18Tests : IDisposable
     public void ACardsSidesCarryTheirGroupsThroughTheRecord()
     {
         var card = ScenarioCards.Read("gambit", Catalog)!.Card!;
-        var start = ScenarioCards.Start(card, ScenarioCards.Sha256("gambit")!, "asl-scenario-a1@1.12.0", null, null);
+        var start = ScenarioCards.Start(card, ScenarioCards.Sha256("gambit")!, "asl-scenario-a1@1.13.0", null, null);
         Assert.Equal("Gambit", (string?)start["label"]);
         Assert.Equal("german", (string?)start["firstSide"]);
         var british = start["sides"]![0]!;

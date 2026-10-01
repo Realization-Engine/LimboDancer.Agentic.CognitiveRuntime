@@ -1,0 +1,35 @@
+@* Plan C04 (pass 27): which MMC each SMC is stacked with in the CC Location (A11.14). The page offers the SMC the view may declare for (ruling R23.1)
+   with the MMC of their side, and keeps the map and its defaults. *@
+<div class="toolbar" id="cc-stacking">
+    @foreach (var smc in Smcs)
+    {
+        <label>
+            @smc.Id stacked with
+            <select class="cc-stack" data-unit="@smc.Id" value="@(Stacking.GetValueOrDefault(smc.Id) ?? string.Empty)" @onchange="@(args => OnStacking.InvokeAsync(new Choice(smc.Id, args.Value as string)))">
+                <option value="">alone</option>
+                @foreach (var mmc in smc.Mmcs)
+                {
+                    <option value="@mmc">@mmc</option>
+                }
+            </select>
+        </label>
+    }
+</div>
+
+@code {
+    /// <summary>A SMC and the MMC of its side in the Location it may be stacked with.</summary>
+    public sealed record Smc(string Id, IReadOnlyList<string> Mmcs);
+
+    /// <summary>A unit's choice: the unit, and the chosen id or Location, or none.</summary>
+    public sealed record Choice(string Unit, string? Value);
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Smc> Smcs { get; set; } = [];
+
+    /// <summary>The MMC each SMC is stacked with.</summary>
+    [Parameter]
+    public IReadOnlyDictionary<string, string> Stacking { get; set; } = new Dictionary<string, string>();
+
+    [Parameter]
+    public EventCallback<Choice> OnStacking { get; set; }
+}

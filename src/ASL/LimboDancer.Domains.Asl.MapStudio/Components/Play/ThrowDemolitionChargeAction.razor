@@ -1,0 +1,49 @@
+@* Plan N11 (pass 27): a DC Thrown into an ADJACENT Location (A23.6 to A23.63). The page offers the DCs the firing side's units possess as
+   holder and charge pairs, keeps the draft in the "holder|charge" form the select uses, and proposes the throw. *@
+<h4>Demolition Charges</h4>
+<p class="muted" id="dc-help">
+    A DC is Thrown into an ADJACENT Location at its thrower's level: 30 FP with +2 there, then the thrower's own Location with +3, each on its own DR,
+    +1 more in the AFPh unless an Opportunity Firer; a unit marked First Fire throws none, and the DC is removed (A23.6 to A23.63).
+</p>
+<div class="toolbar">
+    <label>Throw
+        <select id="throw-dc" value="@Charge" @onchange="@(args => OnCharge.InvokeAsync(args.Value as string ?? string.Empty))">
+            <option value="">choose</option>
+            @foreach (var held in Charges)
+            {
+                <option value="@held.Value">@held.Charge (@held.Holder)</option>
+            }
+        </select>
+    </label>
+    <label>into <input id="throw-dc-at" value="@At" @onchange="@(args => OnAt.InvokeAsync(args.Value as string ?? string.Empty))" size="12" /></label>
+    <button id="propose-throw-dc" disabled="@(Charge.Length == 0 || At.Trim().Length == 0)" @onclick="@(() => OnPropose.InvokeAsync())">Propose: Throw the DC</button>
+</div>
+
+@code {
+    /// <summary>A DC and the unit that possesses it.</summary>
+    public sealed record HeldCharge(string Holder, string Charge)
+    {
+        /// <summary>The pair as the select carries it: "holder|charge".</summary>
+        public string Value => $"{Holder}|{Charge}";
+    }
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<HeldCharge> Charges { get; set; } = [];
+
+    /// <summary>The chosen pair as "holder|charge", or empty.</summary>
+    [Parameter]
+    public string Charge { get; set; } = string.Empty;
+
+    /// <summary>The Location typed as the target.</summary>
+    [Parameter]
+    public string At { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> OnCharge { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnAt { get; set; }
+
+    [Parameter]
+    public EventCallback OnPropose { get; set; }
+}

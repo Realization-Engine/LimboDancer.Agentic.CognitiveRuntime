@@ -87,7 +87,7 @@ public sealed class BacklogPass21Tests : IDisposable
         var start = new Dictionary<string, object?>
         {
             ["label"] = card,
-            ["catalog"] = "asl-scenario-a1@1.12.0",
+            ["catalog"] = "asl-scenario-a1@1.13.0",
             ["boards"] = new[] { "bd01" },
             ["firstSide"] = firstSide,
             ["sides"] = Array.Empty<object>(),
@@ -219,7 +219,7 @@ public sealed class BacklogPass21Tests : IDisposable
     private static Dictionary<string, object?> GambitStart() => new()
     {
         ["label"] = "gambit",
-        ["catalog"] = "asl-scenario-a1@1.12.0",
+        ["catalog"] = "asl-scenario-a1@1.13.0",
         ["boards"] = new[] { "bd04" },
         ["sides"] = Array.Empty<object>(),
         ["scenario"] = new

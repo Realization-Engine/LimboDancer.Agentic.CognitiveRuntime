@@ -2156,3 +2156,214 @@ MFG,defender-hmg,front,breakdown,12,Claude (claude-opus-5-5),"Claude (claude-opu
 MFG,defender-hmg,front,rate-of-fire,3,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",Manufactured under ruling R0.3 (2026-09-26) for the backlog pass 17b (2026-09-29): no registered source prints this counter: ROF 3 as the legacy card shows the counter
 MFG,defender-hmg,front,portage,5,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Manufactured under ruling R0.3 (2026-09-26) for the backlog pass 17b (2026-09-29): no registered source prints this counter: 5 PP as the legacy counter appears to print (A4.42); the catalog Russian MMG has 4 PP (referee, pass 17b)"
 MFG,defender-hmg,malfunctioned,repair,2,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Manufactured under ruling R0.3 (2026-09-26) for the backlog pass 17b (2026-09-29): no registered source prints this counter: repaired on a dr of 1 or 2, removed on a 6 (A9.72)"
+NCC,axis-minor-elite-squad,counter,kind,asl:squad,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC SQUAD column
+NCC,axis-minor-elite-squad,counter,nationality,axis-minor,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR section (A25.8: Romanian, Hungarian, Slovakian, Croatian, and Bulgarian; the nation is the side's)"
+NCC,axis-minor-elite-squad,front,firepower,4,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class E row: 4^1-4-7^7, BPV 8"
+NCC,axis-minor-elite-squad,front,range,4,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class E row: 4^1-4-7^7, BPV 8"
+NCC,axis-minor-elite-squad,front,morale,7,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class E row: 4^1-4-7^7, BPV 8"
+NCC,axis-minor-elite-squad,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A1.24: each counter has its own letter; the chart shows none
+NCC,axis-minor-elite-squad,front,class,elite,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class E row: 4^1-4-7^7, BPV 8"
+NCC,axis-minor-elite-squad,front,class-variant,not-printed,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class E row: 4^1-4-7^7, BPV 8"
+NCC,axis-minor-elite-squad,front,smoke-exponent,1,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class E row: 4^1-4-7^7, BPV 8"
+NCC,axis-minor-elite-squad,front,asl:assault-fire,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class E row: 4^1-4-7^7, BPV 8"
+NCC,axis-minor-elite-squad,front,asl:spraying-fire,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class E row: 4^1-4-7^7, BPV 8"
+NCC,axis-minor-elite-squad,front,asl:elr-5,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class E row: 4^1-4-7^7, BPV 8"
+NCC,axis-minor-elite-squad,front,asl:assault-engineer,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC: no AE superscript on the class
+NCC,axis-minor-elite-squad,broken,broken-morale,7,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class E row: 4^1-4-7^7, BPV 8"
+NCC,axis-minor-elite-squad,broken,bpv,8,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class E row: 4^1-4-7^7, BPV 8"
+NCC,axis-minor-elite-squad,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The chart shows no broken side (A10.63)
+NCC,axis-minor-elite-half-squad,counter,kind,asl:half-squad,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC HS column
+NCC,axis-minor-elite-half-squad,counter,nationality,axis-minor,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR section (A25.8: Romanian, Hungarian, Slovakian, Croatian, and Bulgarian; the nation is the side's)"
+NCC,axis-minor-elite-half-squad,front,firepower,2,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class E row, HS column: 2-4-7^6, BPV 3"
+NCC,axis-minor-elite-half-squad,front,range,4,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class E row, HS column: 2-4-7^6, BPV 3"
+NCC,axis-minor-elite-half-squad,front,morale,7,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class E row, HS column: 2-4-7^6, BPV 3"
+NCC,axis-minor-elite-half-squad,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A1.24: each counter has its own letter; the chart shows none
+NCC,axis-minor-elite-half-squad,front,class,elite,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class E row, HS column: 2-4-7^6, BPV 3"
+NCC,axis-minor-elite-half-squad,front,class-variant,not-printed,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class E row, HS column: 2-4-7^6, BPV 3"
+NCC,axis-minor-elite-half-squad,front,smoke-exponent,not-printed,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC: no superscript after the FP
+NCC,axis-minor-elite-half-squad,front,asl:assault-fire,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class E row, HS column: 2-4-7^6, BPV 3"
+NCC,axis-minor-elite-half-squad,front,asl:spraying-fire,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class E row, HS column: 2-4-7^6, BPV 3"
+NCC,axis-minor-elite-half-squad,front,asl:elr-5,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class E row, HS column: 2-4-7^6, BPV 3"
+NCC,axis-minor-elite-half-squad,front,asl:assault-engineer,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC: no AE superscript on the class
+NCC,axis-minor-elite-half-squad,broken,broken-morale,6,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class E row, HS column: 2-4-7^6, BPV 3"
+NCC,axis-minor-elite-half-squad,broken,bpv,3,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class E row, HS column: 2-4-7^6, BPV 3"
+NCC,axis-minor-elite-half-squad,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The chart shows no broken side (A10.63)
+NCC,axis-minor-square-squad,counter,kind,asl:squad,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC SQUAD column
+NCC,axis-minor-square-squad,counter,nationality,axis-minor,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR section (A25.8: Romanian, Hungarian, Slovakian, Croatian, and Bulgarian; the nation is the side's)"
+NCC,axis-minor-square-squad,front,firepower,5,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, boxed class 1 row: 5^1-3-7^6 with the 5 underlined, BPV 9; the 5-3-7 SMG squad of A25.84"
+NCC,axis-minor-square-squad,front,range,3,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, boxed class 1 row: 5^1-3-7^6 with the 5 underlined, BPV 9; the 5-3-7 SMG squad of A25.84"
+NCC,axis-minor-square-squad,front,morale,7,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, boxed class 1 row: 5^1-3-7^6 with the 5 underlined, BPV 9; the 5-3-7 SMG squad of A25.84"
+NCC,axis-minor-square-squad,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A1.24: each counter has its own letter; the chart shows none
+NCC,axis-minor-square-squad,front,class,1st-line,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, boxed class 1 row: 5^1-3-7^6 with the 5 underlined, BPV 9; the 5-3-7 SMG squad of A25.84"
+NCC,axis-minor-square-squad,front,class-variant,square,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, boxed class 1 row: 5^1-3-7^6 with the 5 underlined, BPV 9; the 5-3-7 SMG squad of A25.84"
+NCC,axis-minor-square-squad,front,smoke-exponent,1,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, boxed class 1 row: 5^1-3-7^6 with the 5 underlined, BPV 9; the 5-3-7 SMG squad of A25.84"
+NCC,axis-minor-square-squad,front,asl:assault-fire,yes,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, boxed class 1 row: 5^1-3-7^6 with the 5 underlined, BPV 9; the 5-3-7 SMG squad of A25.84: the FP is underlined"
+NCC,axis-minor-square-squad,front,asl:spraying-fire,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, boxed class 1 row: 5^1-3-7^6 with the 5 underlined, BPV 9; the 5-3-7 SMG squad of A25.84"
+NCC,axis-minor-square-squad,front,asl:elr-5,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, boxed class 1 row: 5^1-3-7^6 with the 5 underlined, BPV 9; the 5-3-7 SMG squad of A25.84"
+NCC,axis-minor-square-squad,front,asl:assault-engineer,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC: no AE superscript on the class
+NCC,axis-minor-square-squad,broken,broken-morale,6,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, boxed class 1 row: 5^1-3-7^6 with the 5 underlined, BPV 9; the 5-3-7 SMG squad of A25.84; A25.8: a non-elite squad's broken Morale Level is one less"
+NCC,axis-minor-square-squad,broken,bpv,9,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, boxed class 1 row: 5^1-3-7^6 with the 5 underlined, BPV 9; the 5-3-7 SMG squad of A25.84"
+NCC,axis-minor-square-squad,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The chart shows no broken side (A10.63)
+NCC,axis-minor-square-half-squad,counter,kind,asl:half-squad,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC HS column
+NCC,axis-minor-square-half-squad,counter,nationality,axis-minor,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR section (A25.8: Romanian, Hungarian, Slovakian, Croatian, and Bulgarian; the nation is the side's)"
+NCC,axis-minor-square-half-squad,front,firepower,2,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, boxed class 1 row, HS column: 2-2-7^5, BPV 3; the 2-2-7 HS of A25.84"
+NCC,axis-minor-square-half-squad,front,range,2,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, boxed class 1 row, HS column: 2-2-7^5, BPV 3; the 2-2-7 HS of A25.84"
+NCC,axis-minor-square-half-squad,front,morale,7,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, boxed class 1 row, HS column: 2-2-7^5, BPV 3; the 2-2-7 HS of A25.84"
+NCC,axis-minor-square-half-squad,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A1.24: each counter has its own letter; the chart shows none
+NCC,axis-minor-square-half-squad,front,class,1st-line,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, boxed class 1 row, HS column: 2-2-7^5, BPV 3; the 2-2-7 HS of A25.84"
+NCC,axis-minor-square-half-squad,front,class-variant,square,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, boxed class 1 row, HS column: 2-2-7^5, BPV 3; the 2-2-7 HS of A25.84"
+NCC,axis-minor-square-half-squad,front,smoke-exponent,not-printed,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC: no superscript after the FP
+NCC,axis-minor-square-half-squad,front,asl:assault-fire,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, boxed class 1 row, HS column: 2-2-7^5, BPV 3; the 2-2-7 HS of A25.84"
+NCC,axis-minor-square-half-squad,front,asl:spraying-fire,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, boxed class 1 row, HS column: 2-2-7^5, BPV 3; the 2-2-7 HS of A25.84"
+NCC,axis-minor-square-half-squad,front,asl:elr-5,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, boxed class 1 row, HS column: 2-2-7^5, BPV 3; the 2-2-7 HS of A25.84"
+NCC,axis-minor-square-half-squad,front,asl:assault-engineer,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC: no AE superscript on the class
+NCC,axis-minor-square-half-squad,broken,broken-morale,5,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, boxed class 1 row, HS column: 2-2-7^5, BPV 3; the 2-2-7 HS of A25.84; A25.8: a non-elite squad's broken Morale Level is one less"
+NCC,axis-minor-square-half-squad,broken,bpv,3,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, boxed class 1 row, HS column: 2-2-7^5, BPV 3; the 2-2-7 HS of A25.84"
+NCC,axis-minor-square-half-squad,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The chart shows no broken side (A10.63)
+NCC,axis-minor-squad,counter,kind,asl:squad,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC SQUAD column
+NCC,axis-minor-squad,counter,nationality,axis-minor,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR section (A25.8: Romanian, Hungarian, Slovakian, Croatian, and Bulgarian; the nation is the side's)"
+NCC,axis-minor-squad,front,firepower,3,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class 1 row: 3-4-7^6, BPV 6"
+NCC,axis-minor-squad,front,range,4,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class 1 row: 3-4-7^6, BPV 6"
+NCC,axis-minor-squad,front,morale,7,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class 1 row: 3-4-7^6, BPV 6"
+NCC,axis-minor-squad,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A1.24: each counter has its own letter; the chart shows none
+NCC,axis-minor-squad,front,class,1st-line,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class 1 row: 3-4-7^6, BPV 6"
+NCC,axis-minor-squad,front,class-variant,not-printed,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class 1 row: 3-4-7^6, BPV 6"
+NCC,axis-minor-squad,front,smoke-exponent,not-printed,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC: no superscript after the FP
+NCC,axis-minor-squad,front,asl:assault-fire,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class 1 row: 3-4-7^6, BPV 6"
+NCC,axis-minor-squad,front,asl:spraying-fire,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class 1 row: 3-4-7^6, BPV 6"
+NCC,axis-minor-squad,front,asl:elr-5,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class 1 row: 3-4-7^6, BPV 6"
+NCC,axis-minor-squad,front,asl:assault-engineer,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC: no AE superscript on the class
+NCC,axis-minor-squad,broken,broken-morale,6,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class 1 row: 3-4-7^6, BPV 6; A25.8: a non-elite squad's broken Morale Level is one less"
+NCC,axis-minor-squad,broken,bpv,6,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class 1 row: 3-4-7^6, BPV 6"
+NCC,axis-minor-squad,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The chart shows no broken side (A10.63)
+NCC,axis-minor-half-squad,counter,kind,asl:half-squad,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC HS column
+NCC,axis-minor-half-squad,counter,nationality,axis-minor,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR section (A25.8: Romanian, Hungarian, Slovakian, Croatian, and Bulgarian; the nation is the side's)"
+NCC,axis-minor-half-squad,front,firepower,1,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class 1 row, HS column: 1-3-7^5, BPV 2"
+NCC,axis-minor-half-squad,front,range,3,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class 1 row, HS column: 1-3-7^5, BPV 2"
+NCC,axis-minor-half-squad,front,morale,7,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class 1 row, HS column: 1-3-7^5, BPV 2"
+NCC,axis-minor-half-squad,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A1.24: each counter has its own letter; the chart shows none
+NCC,axis-minor-half-squad,front,class,1st-line,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class 1 row, HS column: 1-3-7^5, BPV 2"
+NCC,axis-minor-half-squad,front,class-variant,not-printed,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class 1 row, HS column: 1-3-7^5, BPV 2"
+NCC,axis-minor-half-squad,front,smoke-exponent,not-printed,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC: no superscript after the FP
+NCC,axis-minor-half-squad,front,asl:assault-fire,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class 1 row, HS column: 1-3-7^5, BPV 2"
+NCC,axis-minor-half-squad,front,asl:spraying-fire,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class 1 row, HS column: 1-3-7^5, BPV 2"
+NCC,axis-minor-half-squad,front,asl:elr-5,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class 1 row, HS column: 1-3-7^5, BPV 2"
+NCC,axis-minor-half-squad,front,asl:assault-engineer,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC: no AE superscript on the class
+NCC,axis-minor-half-squad,broken,broken-morale,5,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class 1 row, HS column: 1-3-7^5, BPV 2; A25.8: a non-elite squad's broken Morale Level is one less"
+NCC,axis-minor-half-squad,broken,bpv,2,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class 1 row, HS column: 1-3-7^5, BPV 2"
+NCC,axis-minor-half-squad,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The chart shows no broken side (A10.63)
+NCC,axis-minor-conscript-squad,counter,kind,asl:squad,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC SQUAD column
+NCC,axis-minor-conscript-squad,counter,nationality,axis-minor,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR section (A25.8: Romanian, Hungarian, Slovakian, Croatian, and Bulgarian; the nation is the side's)"
+NCC,axis-minor-conscript-squad,front,firepower,3,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class C row: 3-3-6^5, BPV 3"
+NCC,axis-minor-conscript-squad,front,range,3,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class C row: 3-3-6^5, BPV 3"
+NCC,axis-minor-conscript-squad,front,morale,6,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class C row: 3-3-6^5, BPV 3"
+NCC,axis-minor-conscript-squad,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A1.24: each counter has its own letter; the chart shows none
+NCC,axis-minor-conscript-squad,front,class,conscript,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class C row: 3-3-6^5, BPV 3"
+NCC,axis-minor-conscript-squad,front,class-variant,not-printed,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class C row: 3-3-6^5, BPV 3"
+NCC,axis-minor-conscript-squad,front,smoke-exponent,not-printed,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC: no superscript after the FP
+NCC,axis-minor-conscript-squad,front,asl:assault-fire,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class C row: 3-3-6^5, BPV 3"
+NCC,axis-minor-conscript-squad,front,asl:spraying-fire,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class C row: 3-3-6^5, BPV 3"
+NCC,axis-minor-conscript-squad,front,asl:elr-5,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class C row: 3-3-6^5, BPV 3"
+NCC,axis-minor-conscript-squad,front,asl:assault-engineer,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC: no AE superscript on the class
+NCC,axis-minor-conscript-squad,broken,broken-morale,5,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class C row: 3-3-6^5, BPV 3; A25.8: a non-elite squad's broken Morale Level is one less"
+NCC,axis-minor-conscript-squad,broken,bpv,3,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class C row: 3-3-6^5, BPV 3"
+NCC,axis-minor-conscript-squad,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The chart shows no broken side (A10.63)
+NCC,axis-minor-conscript-half-squad,counter,kind,asl:half-squad,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC HS column
+NCC,axis-minor-conscript-half-squad,counter,nationality,axis-minor,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR section (A25.8: Romanian, Hungarian, Slovakian, Croatian, and Bulgarian; the nation is the side's)"
+NCC,axis-minor-conscript-half-squad,front,firepower,1,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class C row, HS column: 1-2-6^4, BPV 1"
+NCC,axis-minor-conscript-half-squad,front,range,2,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class C row, HS column: 1-2-6^4, BPV 1"
+NCC,axis-minor-conscript-half-squad,front,morale,6,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class C row, HS column: 1-2-6^4, BPV 1"
+NCC,axis-minor-conscript-half-squad,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A1.24: each counter has its own letter; the chart shows none
+NCC,axis-minor-conscript-half-squad,front,class,conscript,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class C row, HS column: 1-2-6^4, BPV 1"
+NCC,axis-minor-conscript-half-squad,front,class-variant,not-printed,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class C row, HS column: 1-2-6^4, BPV 1"
+NCC,axis-minor-conscript-half-squad,front,smoke-exponent,not-printed,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC: no superscript after the FP
+NCC,axis-minor-conscript-half-squad,front,asl:assault-fire,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class C row, HS column: 1-2-6^4, BPV 1"
+NCC,axis-minor-conscript-half-squad,front,asl:spraying-fire,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class C row, HS column: 1-2-6^4, BPV 1"
+NCC,axis-minor-conscript-half-squad,front,asl:elr-5,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class C row, HS column: 1-2-6^4, BPV 1"
+NCC,axis-minor-conscript-half-squad,front,asl:assault-engineer,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",NCC: no AE superscript on the class
+NCC,axis-minor-conscript-half-squad,broken,broken-morale,4,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class C row, HS column: 1-2-6^4, BPV 1; A25.8: a non-elite squad's broken Morale Level is one less"
+NCC,axis-minor-conscript-half-squad,broken,bpv,1,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","NCC AXIS MINOR, class C row, HS column: 1-2-6^4, BPV 1"
+NCC,axis-minor-conscript-half-squad,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The chart shows no broken side (A10.63)
+LGR,axis-minor-leader-6-plus-1,counter,kind,asl:leader,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 6+1 (Chapter H leader table, p. 331; A10.7): morale 6, leadership DRM +1"
+LGR,axis-minor-leader-6-plus-1,counter,nationality,axis-minor,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 6+1 (Chapter H leader table, p. 331; A10.7): morale 6, leadership DRM +1"
+LGR,axis-minor-leader-6-plus-1,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no leader name
+LGR,axis-minor-leader-6-plus-1,front,leadership,+1,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 6+1 (Chapter H leader table, p. 331; A10.7): morale 6, leadership DRM +1"
+LGR,axis-minor-leader-6-plus-1,front,morale,6,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 6+1 (Chapter H leader table, p. 331; A10.7): morale 6, leadership DRM +1"
+LGR,axis-minor-leader-6-plus-1,front,asl:elr-5,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",Leader morale is not underlined
+LGR,axis-minor-leader-6-plus-1,broken,broken-morale,6,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Counter Examples (p. 676): the 9-1 leader's broken side prints morale 9, its front morale; so 6"
+LGR,axis-minor-leader-6-plus-1,broken,bpv,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no BPV
+LGR,axis-minor-leader-6-plus-1,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A10.71 lets any broken leader attempt Self-Rally
+LGR,axis-minor-leader-7-0,counter,kind,asl:leader,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 7-0 (Chapter H leader table, p. 331; A10.7): morale 7, leadership DRM 0"
+LGR,axis-minor-leader-7-0,counter,nationality,axis-minor,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 7-0 (Chapter H leader table, p. 331; A10.7): morale 7, leadership DRM 0"
+LGR,axis-minor-leader-7-0,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no leader name
+LGR,axis-minor-leader-7-0,front,leadership,0,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 7-0 (Chapter H leader table, p. 331; A10.7): morale 7, leadership DRM 0"
+LGR,axis-minor-leader-7-0,front,morale,7,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 7-0 (Chapter H leader table, p. 331; A10.7): morale 7, leadership DRM 0"
+LGR,axis-minor-leader-7-0,front,asl:elr-5,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",Leader morale is not underlined
+LGR,axis-minor-leader-7-0,broken,broken-morale,7,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Counter Examples (p. 676): the 9-1 leader's broken side prints morale 9, its front morale; so 7"
+LGR,axis-minor-leader-7-0,broken,bpv,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no BPV
+LGR,axis-minor-leader-7-0,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A10.71 lets any broken leader attempt Self-Rally
+LGR,axis-minor-leader-8-0,counter,kind,asl:leader,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 8-0 (Chapter H leader table, p. 331; A10.7): morale 8, leadership DRM 0"
+LGR,axis-minor-leader-8-0,counter,nationality,axis-minor,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 8-0 (Chapter H leader table, p. 331; A10.7): morale 8, leadership DRM 0"
+LGR,axis-minor-leader-8-0,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no leader name
+LGR,axis-minor-leader-8-0,front,leadership,0,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 8-0 (Chapter H leader table, p. 331; A10.7): morale 8, leadership DRM 0"
+LGR,axis-minor-leader-8-0,front,morale,8,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 8-0 (Chapter H leader table, p. 331; A10.7): morale 8, leadership DRM 0"
+LGR,axis-minor-leader-8-0,front,asl:elr-5,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",Leader morale is not underlined
+LGR,axis-minor-leader-8-0,broken,broken-morale,8,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Counter Examples (p. 676): the 9-1 leader's broken side prints morale 9, its front morale; so 8"
+LGR,axis-minor-leader-8-0,broken,bpv,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no BPV
+LGR,axis-minor-leader-8-0,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A10.71 lets any broken leader attempt Self-Rally
+LGR,axis-minor-leader-8-1,counter,kind,asl:leader,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 8-1 (Chapter H leader table, p. 331; A10.7): morale 8, leadership DRM -1"
+LGR,axis-minor-leader-8-1,counter,nationality,axis-minor,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 8-1 (Chapter H leader table, p. 331; A10.7): morale 8, leadership DRM -1"
+LGR,axis-minor-leader-8-1,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no leader name
+LGR,axis-minor-leader-8-1,front,leadership,-1,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 8-1 (Chapter H leader table, p. 331; A10.7): morale 8, leadership DRM -1"
+LGR,axis-minor-leader-8-1,front,morale,8,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 8-1 (Chapter H leader table, p. 331; A10.7): morale 8, leadership DRM -1"
+LGR,axis-minor-leader-8-1,front,asl:elr-5,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",Leader morale is not underlined
+LGR,axis-minor-leader-8-1,broken,broken-morale,8,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Counter Examples (p. 676): the 9-1 leader's broken side prints morale 9, its front morale; so 8"
+LGR,axis-minor-leader-8-1,broken,bpv,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no BPV
+LGR,axis-minor-leader-8-1,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A10.71 lets any broken leader attempt Self-Rally
+LGR,axis-minor-leader-9-1,counter,kind,asl:leader,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 9-1 (Chapter H leader table, p. 331; A10.7): morale 9, leadership DRM -1"
+LGR,axis-minor-leader-9-1,counter,nationality,axis-minor,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 9-1 (Chapter H leader table, p. 331; A10.7): morale 9, leadership DRM -1"
+LGR,axis-minor-leader-9-1,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no leader name
+LGR,axis-minor-leader-9-1,front,leadership,-1,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 9-1 (Chapter H leader table, p. 331; A10.7): morale 9, leadership DRM -1"
+LGR,axis-minor-leader-9-1,front,morale,9,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 9-1 (Chapter H leader table, p. 331; A10.7): morale 9, leadership DRM -1"
+LGR,axis-minor-leader-9-1,front,asl:elr-5,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",Leader morale is not underlined
+LGR,axis-minor-leader-9-1,broken,broken-morale,9,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Counter Examples (p. 676): the 9-1 leader's broken side prints morale 9, its front morale; so 9"
+LGR,axis-minor-leader-9-1,broken,bpv,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no BPV
+LGR,axis-minor-leader-9-1,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A10.71 lets any broken leader attempt Self-Rally
+LGR,axis-minor-leader-9-2,counter,kind,asl:leader,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 9-2 (Chapter H leader table, p. 331; A10.7): morale 9, leadership DRM -2"
+LGR,axis-minor-leader-9-2,counter,nationality,axis-minor,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 9-2 (Chapter H leader table, p. 331; A10.7): morale 9, leadership DRM -2"
+LGR,axis-minor-leader-9-2,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no leader name
+LGR,axis-minor-leader-9-2,front,leadership,-2,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 9-2 (Chapter H leader table, p. 331; A10.7): morale 9, leadership DRM -2"
+LGR,axis-minor-leader-9-2,front,morale,9,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 9-2 (Chapter H leader table, p. 331; A10.7): morale 9, leadership DRM -2"
+LGR,axis-minor-leader-9-2,front,asl:elr-5,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",Leader morale is not underlined
+LGR,axis-minor-leader-9-2,broken,broken-morale,9,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Counter Examples (p. 676): the 9-1 leader's broken side prints morale 9, its front morale; so 9"
+LGR,axis-minor-leader-9-2,broken,bpv,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no BPV
+LGR,axis-minor-leader-9-2,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A10.71 lets any broken leader attempt Self-Rally
+LGR,axis-minor-leader-10-2,counter,kind,asl:leader,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 10-2 (Chapter H leader table, p. 331; A10.7): morale 10, leadership DRM -2"
+LGR,axis-minor-leader-10-2,counter,nationality,axis-minor,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 10-2 (Chapter H leader table, p. 331; A10.7): morale 10, leadership DRM -2"
+LGR,axis-minor-leader-10-2,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no leader name
+LGR,axis-minor-leader-10-2,front,leadership,-2,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 10-2 (Chapter H leader table, p. 331; A10.7): morale 10, leadership DRM -2"
+LGR,axis-minor-leader-10-2,front,morale,10,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 10-2 (Chapter H leader table, p. 331; A10.7): morale 10, leadership DRM -2"
+LGR,axis-minor-leader-10-2,front,asl:elr-5,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",Leader morale is not underlined
+LGR,axis-minor-leader-10-2,broken,broken-morale,10,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Counter Examples (p. 676): the 9-1 leader's broken side prints morale 9, its front morale; so 10"
+LGR,axis-minor-leader-10-2,broken,bpv,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no BPV
+LGR,axis-minor-leader-10-2,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A10.71 lets any broken leader attempt Self-Rally
+LGR,axis-minor-leader-10-3,counter,kind,asl:leader,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 10-3 (Chapter H leader table, p. 331; A10.7): morale 10, leadership DRM -3"
+LGR,axis-minor-leader-10-3,counter,nationality,axis-minor,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 10-3 (Chapter H leader table, p. 331; A10.7): morale 10, leadership DRM -3"
+LGR,axis-minor-leader-10-3,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no leader name
+LGR,axis-minor-leader-10-3,front,leadership,-3,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 10-3 (Chapter H leader table, p. 331; A10.7): morale 10, leadership DRM -3"
+LGR,axis-minor-leader-10-3,front,morale,10,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Leader grade 10-3 (Chapter H leader table, p. 331; A10.7): morale 10, leadership DRM -3"
+LGR,axis-minor-leader-10-3,front,asl:elr-5,no,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",Leader morale is not underlined
+LGR,axis-minor-leader-10-3,broken,broken-morale,10,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","Counter Examples (p. 676): the 9-1 leader's broken side prints morale 9, its front morale; so 10"
+LGR,axis-minor-leader-10-3,broken,bpv,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The table gives no BPV
+LGR,axis-minor-leader-10-3,broken,asl:self-rally,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",A10.71 lets any broken leader attempt Self-Rally
+CEX,axis-minor-hero,counter,kind,asl:hero,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","A15.2 (p. 83): 1-4-9, wounded 1-3-8; the Counter Examples (p. 676) show the same hero counter"
+CEX,axis-minor-hero,counter,nationality,axis-minor,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",Assigned by the scenario: a hero takes the nationality of the unit that creates it
+CEX,axis-minor-hero,front,identity,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The sources give no hero name
+CEX,axis-minor-hero,front,firepower,1,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","A15.2 (p. 83): 1-4-9, wounded 1-3-8; the Counter Examples (p. 676) show the same hero counter"
+CEX,axis-minor-hero,front,range,4,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","A15.2 (p. 83): 1-4-9, wounded 1-3-8; the Counter Examples (p. 676) show the same hero counter"
+CEX,axis-minor-hero,front,morale,9,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","A15.2 (p. 83): 1-4-9, wounded 1-3-8; the Counter Examples (p. 676) show the same hero counter"
+CEX,axis-minor-hero,wounded,firepower,1,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","A15.2 (p. 83): 1-4-9, wounded 1-3-8; the Counter Examples (p. 676) show the same hero counter"
+CEX,axis-minor-hero,wounded,range,3,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","A15.2 (p. 83): 1-4-9, wounded 1-3-8; the Counter Examples (p. 676) show the same hero counter"
+CEX,axis-minor-hero,wounded,morale,8,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","A15.2 (p. 83): 1-4-9, wounded 1-3-8; the Counter Examples (p. 676) show the same hero counter"
+CEX,axis-minor-hero,broken,broken-morale,not-printed,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent","A15.2 (p. 83): a hero never breaks, so the counter has no broken morale"
+CEX,axis-minor-hero,broken,bpv,not-in-source,Claude (claude-opus-5-5),"Claude (claude-opus-5-5), independent referee agent",The sources give no hero BPV

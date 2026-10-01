@@ -197,6 +197,15 @@ public sealed record CloseCombatFacts(
     {
         get; init;
     }
+
+    /// <summary>
+    /// Whether this is the CC of a berserk Infantry OVR onto a lone SMC, resolved at once in the MPh (A4.152, A15.432; ruling R27.3); null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? InfantryOverrun
+    {
+        get; init;
+    }
 }
 
 /// <summary>A defending unit's Final DR in one attack, with its own DRM (A11.16), and the result for it.</summary>

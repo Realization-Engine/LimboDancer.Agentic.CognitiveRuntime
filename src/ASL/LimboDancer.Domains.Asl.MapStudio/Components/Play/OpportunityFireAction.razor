@@ -1,0 +1,30 @@
+@* Plan C12 (pass 27): the phasing side's Infantry hold their fire as Opportunity Fire in the PFPh (A7.25), a preparatory action of its own. The
+   page offers the eligible units the view sees (ruling R23.1) and keeps the selection. *@
+<h4>Opportunity Fire</h4>
+<p class="muted" id="opportunity-help">
+    Good Order Infantry that have not fired this Player Turn may hold their fire under a Bounding Fire counter: they do not fire in the PFPh
+    or move in the MPh, and fire in the AFPh without its halving, their MGs keeping Multiple ROF (A7.25). A concealed one in the LOS of a
+    Good Order enemy ground unit within 16 hexes loses its "?".
+</p>
+<div class="toolbar">
+    @foreach (var unit in Units)
+    {
+        <label><input class="opportunity-unit" type="checkbox" data-unit="@unit" checked="@Selected.Contains(unit)" @onchange="@(args => OnToggle.InvokeAsync(new UnitSelectionList.Toggle(unit, args.Value is true)))" /> @unit</label>
+    }
+    <button id="propose-opportunity" disabled="@(Selected.Count == 0)" @onclick="@(() => OnPropose.InvokeAsync())">Propose: Opportunity Fire</button>
+</div>
+
+@code {
+    /// <summary>The units that may hold their fire.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<string> Units { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlySet<string> Selected { get; set; } = new HashSet<string>();
+
+    [Parameter]
+    public EventCallback<UnitSelectionList.Toggle> OnToggle { get; set; }
+
+    [Parameter]
+    public EventCallback OnPropose { get; set; }
+}

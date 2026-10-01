@@ -1,0 +1,103 @@
+@* Plan C01 (pass 27): sequential CC in each Location holding a vehicle (A11.31). The page reads each open Location's next side and its units
+   (the planner's turn, read once per Location), keeps the one attack draft the Locations share, and proposes the attack or the pass. *@
+<h4>Close Combat with vehicles</h4>
+<p class="muted" id="vehicle-cc-help">
+    In a Location holding a vehicle CC is sequential: the non-vehicular side attacks first, one attack at a time, then the sides alternate
+    until every unit has attacked or its side passes (A11.31). Infantry attack a vehicle with their CCV as the Kill Number, one unit or one
+    with a SMC (A11.5); a vehicle attacks Infantry with its CMG and CE AAMG on the CCT (A11.62). CC between Infantry there is not built.
+</p>
+@foreach (var location in Locations)
+{
+    <div @key="location.Location" class="toolbar vehicle-cc" data-location="@location.Location">
+        <span>@location.Location: the @location.NextSide side attacks next.</span>
+        <label>
+            Attacker
+            <select class="vehicle-cc-attacker" value="@Attacker" @onchange="@(args => OnAttacker.InvokeAsync(args.Value as string ?? string.Empty))">
+                <option value="">choose</option>
+                @foreach (var unit in location.Attackers)
+                {
+                    <option value="@unit">@unit</option>
+                }
+            </select>
+        </label>
+        <label>
+            With SMC
+            <select class="vehicle-cc-leader" value="@Leader" @onchange="@(args => OnLeader.InvokeAsync(args.Value as string ?? string.Empty))">
+                <option value="">none</option>
+                @foreach (var unit in location.Leaders)
+                {
+                    <option value="@unit">@unit</option>
+                }
+            </select>
+        </label>
+        <label>
+            Vehicle
+            <select class="vehicle-cc-vehicle" value="@Vehicle" @onchange="@(args => OnVehicle.InvokeAsync(args.Value as string ?? string.Empty))">
+                <option value="">choose</option>
+                @foreach (var vehicle in location.Vehicles)
+                {
+                    <option value="@vehicle.Id">@vehicle.Id (@vehicle.Side)</option>
+                }
+            </select>
+        </label>
+        @foreach (var unit in location.Defenders)
+        {
+            <label><input type="checkbox" class="vehicle-cc-defender" checked="@Defenders.Contains(unit)" @onchange="@(args => OnDefender.InvokeAsync(new UnitSelectionList.Toggle(unit, args.Value is true)))" /> @unit</label>
+        }
+        <button class="propose-vehicle-cc-attack" disabled="@(Attacker.Length == 0 || Vehicle.Length == 0)" @onclick="@(() => OnProposeAttack.InvokeAsync(location.Location))">Propose: Infantry attack the vehicle</button>
+        <button class="propose-vehicle-cc-vehicle" disabled="@(Vehicle.Length == 0 || Defenders.Count == 0)" @onclick="@(() => OnProposeVehicle.InvokeAsync(location.Location))">Propose: the vehicle attacks the checked Infantry</button>
+        <button class="propose-vehicle-cc-pass" @onclick="@(() => OnPass.InvokeAsync(location.Location))">Propose: the @location.NextSide side passes</button>
+    </div>
+}
+
+@code {
+    /// <summary>A vehicle in the Location and its side.</summary>
+    public sealed record VehicleChoice(string Id, string Side);
+
+    /// <summary>
+    /// A Location whose sequential CC is open: the side that attacks next, its units that may still attack, its SMC, the vehicles there, and the
+    /// non-vehicular units of the other side a vehicle may attack.
+    /// </summary>
+    public sealed record CcLocation(string Location, string NextSide, IReadOnlyList<string> Attackers, IReadOnlyList<string> Leaders,
+        IReadOnlyList<VehicleChoice> Vehicles, IReadOnlyList<string> Defenders);
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<CcLocation> Locations { get; set; } = [];
+
+    [Parameter]
+    public string Attacker { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Leader { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Vehicle { get; set; } = string.Empty;
+
+    /// <summary>The checked Infantry the vehicle attacks.</summary>
+    [Parameter]
+    public IReadOnlySet<string> Defenders { get; set; } = new HashSet<string>();
+
+    [Parameter]
+    public EventCallback<string> OnAttacker { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnLeader { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnVehicle { get; set; }
+
+    [Parameter]
+    public EventCallback<UnitSelectionList.Toggle> OnDefender { get; set; }
+
+    /// <summary>Infantry attack the vehicle in this Location.</summary>
+    [Parameter]
+    public EventCallback<string> OnProposeAttack { get; set; }
+
+    /// <summary>The vehicle attacks the checked Infantry in this Location.</summary>
+    [Parameter]
+    public EventCallback<string> OnProposeVehicle { get; set; }
+
+    /// <summary>The next side passes in this Location.</summary>
+    [Parameter]
+    public EventCallback<string> OnPass { get; set; }
+}
