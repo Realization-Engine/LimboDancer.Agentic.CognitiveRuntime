@@ -22,9 +22,12 @@ public sealed class ScenarioCardsPageTests : IDisposable
     }
 
     [Fact]
-    public void GambitIsShownFirstWithItsEntryExitAndManufacturedCounters()
+    public void GambitIsShownWithItsEntryExitAndManufacturedCounters()
     {
         var page = context.Render<Scenarios>();
+
+        // Pass 26: Armor Test sorts first among the built-in cards, so Gambit is chosen.
+        page.Find("#card-choice").Change("gambit");
         Assert.Empty(page.FindAll("#card-diagnostics"));
         Assert.Equal("Gambit", page.Find("#card-title").TextContent);
         Assert.Contains("21 May 1941", page.Find("#card-place").TextContent, StringComparison.Ordinal);

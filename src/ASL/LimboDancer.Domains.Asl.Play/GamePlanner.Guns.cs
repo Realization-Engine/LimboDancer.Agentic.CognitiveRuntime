@@ -87,7 +87,9 @@ public sealed partial class GamePlanner
                 }, package, null, [EventId(attemptId, 2)]));
             }
 
-            // C10.3: "in all three cases" the Gun and its crew are TI once the push ends; a crew still pushing may go on (table player, pass 8).
+            // C10.3: "in all three cases" the Gun and its crew are TI once the push ends; a crew still pushing may go on (table player, pass 8). Ruling R26.4:
+            // a push off the map leaves nothing to mark.
+            if (moved.Exit is null || result == ManhandlingRolled.Stay)
             {
                 var ti = new Dictionary<string, ConditionState>(StringComparer.Ordinal) { ["asl:ti"] = ConditionState.True };
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(crew, ti), package, null, [EventId(attemptId, 2)]));
@@ -154,22 +156,47 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.hook-gun: '{gunId}' is not a Gun in {vehicle.Id}'s hex whose M# its T# does not exceed (C10.1)");
         }
 
-        // C10.111 (table player, pass 8): a crew or HS on foot, of the vehicle's side; an abandoned Gun is hooked up by any such unit there.
-        UnitInstance? OnFoot() => state.At(at.Location).OfType<UnitInstance>().FirstOrDefault(unit => unit.Status == InstanceStatus.Active && unit.Side == vehicle.Side
-            && (vocabulary.IsA(unit.Kind, "asl:crew") || vocabulary.IsA(unit.Kind, "asl:half-squad")) && !Mans(state, unit));
+        // C10.2 (ruling R26.1): limbering is not built, so only a QSU Gun is hooked up or unhooked.
+        if (gun.Definition is not { } gunType || FireReference.Value.Definitions.GetValueOrDefault(gunType.Definition)?.QuickSetUp != true)
+        {
+            return Refused(scope, label, expected, $"play.hook-gun: {gun.Id} is not QSU and must be limbered first, which is not built (C10.2; ruling R26.1)");
+        }
+
+        // C10.111 (table player, pass 8): a crew or HS on foot, of the vehicle's side; an abandoned Gun is hooked up by any such unit there. C10.12 (ruling
+        // R26.2): a crew riding the towing vehicle disembarks as it unhooks.
+        bool CanCrew(UnitInstance unit) => unit.Status == InstanceStatus.Active && unit.Side == vehicle.Side
+            && (vocabulary.IsA(unit.Kind, "asl:crew") || vocabulary.IsA(unit.Kind, "asl:half-squad")) && !Mans(state, unit);
+        UnitInstance? OnFoot() => state.At(at.Location).OfType<UnitInstance>().FirstOrDefault(CanCrew);
         var crew = hook
             ? gun.Holding is { Role: HoldingRole.Manned } manning ? state.Unit(manning.Holder) : gun.Holding is null ? OnFoot() : null
-            : gun.Holding is { Role: HoldingRole.Towed } tow && tow.Holder == vehicle.Id ? OnFoot() : null;
+            : gun.Holding is { Role: HoldingRole.Towed } tow && tow.Holder == vehicle.Id ? OnFoot() ?? state.Passengers(vehicle.Id).FirstOrDefault(CanCrew) : null;
         if (crew is null || Is(crew, Conditions.Broken) || Is(crew, Conditions.Pinned))
         {
-            return Refused(scope, label, expected, "play.hook-crew: the Gun's Good Order, unpinned crew is on foot in the hex (C10.111)");
+            return Refused(scope, label, expected, "play.hook-crew: the Gun's Good Order, unpinned crew is on foot in the hex, or rides the vehicle as it unhooks (C10.111, C10.12)");
+        }
+
+        // C10.11, C10.13 (ruling R26.2): the crew may board as it hooks up; the ammunition takes four PP (eight at 100mm or more) of the vehicle's capacity,
+        // which may leave no room only in an empty vehicle.
+        var boards = hook && Flag(arguments, "boards");
+        if (hook)
+        {
+            var reduction = (gun.Definition is { } caliberType ? FireReference.Value.Definitions.GetValueOrDefault(caliberType.Definition)?.Caliber : null) >= 100 ? 8 : 4;
+            var room = (PassengerCapacity(state, vehicle) ?? 0) - reduction;
+            UnitInstance[] riding = [.. state.Passengers(vehicle.Id), .. boards ? [crew] : Array.Empty<UnitInstance>()];
+            var load = riding.Sum(unit => PassengerPp(state, unit) ?? int.MaxValue / 8);
+            if (riding.Length > 0 && load > room)
+            {
+                return Refused(scope, label, expected, boards
+                    ? $"play.hook-capacity: with {gun.Id}'s ammunition {vehicle.Id} has {Math.Max(0, room)} PP for Passengers, and they would take {load} (C10.13, D6.1)"
+                    : $"play.hook-capacity: {gun.Id}'s ammunition takes {reduction} PP, which {vehicle.Id}'s Passengers need (C10.13)");
+            }
         }
 
         var package = ScenarioA1OrdnancePackage.Identity.ToString();
         var ti = new Dictionary<string, ConditionState>(StringComparer.Ordinal) { ["asl:ti"] = ConditionState.True };
         List<GameEvent> events =
         [
-            Event(scope, attemptId, 1, expected, "gun-hooked", new GunHooked(vehicle.Id, gun.Id, crew.Id, hook, cost, facing), package, null),
+            Event(scope, attemptId, 1, expected, "gun-hooked", new GunHooked(vehicle.Id, gun.Id, crew.Id, hook, cost, facing) { Boards = boards }, package, null),
             Event(scope, attemptId, 2, expected, "conditions-changed", new ConditionsChanged(gun.Id, ti), package, null),
             Event(scope, attemptId, 3, expected, "conditions-changed", new ConditionsChanged(crew.Id, ti), package, null),
         ];
@@ -180,6 +207,7 @@ public sealed partial class GamePlanner
         }
 
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events,
-            [$"play.hook-gun: {vehicle.Id} {(hook ? "hooks up" : "unhooks")} {gun.Id} for {cost} MP (C10.11, C10.12)"]);
+            [$"play.hook-gun: {vehicle.Id} {(hook ? "hooks up" : "unhooks")} {gun.Id} for {cost} MP"
+                + (boards ? $"; {crew.Id} boards it as a Passenger" : !hook && crew.Position is ContainedPosition ? $"; {crew.Id} disembarks to man it" : string.Empty) + " (C10.11, C10.12)"]);
     }
 }

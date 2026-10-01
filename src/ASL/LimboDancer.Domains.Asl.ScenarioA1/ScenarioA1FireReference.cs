@@ -102,6 +102,18 @@ public sealed record FireDefinition(
         get; init;
     }
 
+    /// <summary>A vehicle's printed Passenger capacity in PP (D1.5, D6.1); null when it carries none.</summary>
+    public int? PassengerCapacity
+    {
+        get; init;
+    }
+
+    /// <summary>Whether a Gun has Quick Set-Up, so it is never (un)limbered (C10.23).</summary>
+    public bool? QuickSetUp
+    {
+        get; init;
+    }
+
     /// <summary>A vehicle's MA weapon (D1.3): <c>aamg</c> for an MA AAMG.</summary>
     public string? MainArmament
     {
@@ -605,6 +617,8 @@ public sealed class ScenarioA1FireReference
             MovementType = Text("front", "movement-type"),
             MovementPoints = Value("front", "movement-points"),
             Towing = Value("front", "towing"),
+            PassengerCapacity = Value("front", "passenger-capacity"),
+            QuickSetUp = Trait("front", "asl:qsu"),
             Unarmored = Trait("front", "asl:unarmored"),
             OpenTopped = Trait("front", "asl:open-topped"),
             MainArmament = Text("front", "ma-weapon"),

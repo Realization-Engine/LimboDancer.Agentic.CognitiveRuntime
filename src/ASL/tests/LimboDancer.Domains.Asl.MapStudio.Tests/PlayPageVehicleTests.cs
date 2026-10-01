@@ -203,6 +203,9 @@ public sealed class PlayPageVehicleTests : IDisposable
         Assert.False(page.Find("#vehicle-resolve-ovr").HasAttribute("disabled"));
         dice.Enqueue([6, 6, 1, 1, 1, 1, 1]);
         Commit(page, "#vehicle-resolve-ovr");
+
+        // Pass 26: data-bypass now renders False, so the test reaches here; the CC Reaction Fire panel is the DEFENDER's since pass 25.
+        page.ViewAs("russian");
         Assert.Contains("r1", page.FindAll("#reaction-attacker option").Select(item => item.GetAttribute("value")));
     }
 

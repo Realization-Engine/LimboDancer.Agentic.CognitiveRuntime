@@ -212,6 +212,7 @@ public static class GameProjector
             next = KeepMelee(next);
             next = KeepCx(next);
             next = KeepAcquisitions(next, gameEvent.Payload);
+            next = KeepPassengers(next);
             next = next with
             {
                 Revision = gameEvent.Revision,
@@ -713,6 +714,36 @@ public static class GameProjector
                     }),
                     .. prisoners.Select(unit => new UnitExit(unit.Id, from, edge, state.Turn, false, movers.First(mover => mover.Id == unit.Custodian).Side))],
             };
+        }
+
+        /// <summary>
+        /// D6.1 (ruling R26.2): Passengers and Riders whose vehicle is no longer in play share its fate: eliminated with it, since Crew Survival for
+        /// Passengers (D5.6) is not built; exited with it, as its exit records.
+        /// </summary>
+        private static GameState KeepPassengers(GameState state)
+        {
+            var next = state;
+            foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Position is ContainedPosition { Role: ContainmentRole.Passenger or ContainmentRole.Rider }))
+            {
+                var container = state.Find(((ContainedPosition)unit.Position).Container);
+                if (container is null || container.Status == InstanceStatus.Active)
+                {
+                    continue;
+                }
+
+                next = Replace(next, unit with
+                {
+                    Status = container.Status == InstanceStatus.Exited ? InstanceStatus.Exited : InstanceStatus.Eliminated,
+                })!;
+                next = next with
+                {
+                    Equipment = [.. next.Equipment.Select(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unit.Id
+                        ? item with { Status = container.Status == InstanceStatus.Exited ? InstanceStatus.Exited : InstanceStatus.Eliminated }
+                        : item)],
+                };
+            }
+
+            return next;
         }
 
         /// <summary>A20.53: a Guard's prisoners move with it.</summary>
@@ -1620,6 +1651,23 @@ public static class GameProjector
                 MfSpent = halves / 2,
                 HalfMfSpent = halves % 2 == 1
             })!;
+
+            // C10.11, C10.12 (ruling R26.2): the crew may board the towing vehicle as it hooks up, and disembarks beneath it as it unhooks.
+            if (hooked.Boards && hooked.Hooked)
+            {
+                next = Replace(next, crew with
+                {
+                    Position = new ContainedPosition(vehicle.Id, ContainmentRole.Passenger),
+                    MovementEnded = true,
+                })!;
+            }
+            else if (!hooked.Hooked && crew.Position is ContainedPosition { Role: ContainmentRole.Passenger } aboard && aboard.Container == vehicle.Id)
+            {
+                next = Replace(next, crew with
+                {
+                    Position = new MapPosition(at.Location),
+                })!;
+            }
             var facing = hooked.Facing ?? (gun.Position as MapPosition)?.Facing;
             return next with
             {
@@ -1824,7 +1872,19 @@ public static class GameProjector
                     return Fail<GameState>("UNIT-STATE-029", "An exit leaves the map from the moving stack's own Location (A2.6).");
                 }
 
-                return ExitUnits(state, [.. movers.Select(unit => unit!)], moving.To, edge) with
+                // C10.3 (ruling R26.4): a pushed Gun leaves with its crew.
+                var gone = ExitUnits(state, [.. movers.Select(unit => unit!)], moving.To, edge);
+                if (moving.PushedGun is { } gunPushed && gone.Find(gunPushed) is EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Manned } } pushedGun
+                    && movers.Any(unit => unit!.Id == pushedGun.Holding!.Holder))
+                {
+                    gone = gone with
+                    {
+                        Equipment = [.. gone.Equipment.Select(item => item.Id == gunPushed ? item with { Status = InstanceStatus.Exited, Position = OffMapPosition.Instance } : item)],
+                        Exits = [.. gone.Exits, new UnitExit(gunPushed, moving.To, edge, state.Turn, false)],
+                    };
+                }
+
+                return gone with
                 {
                     Movement = null
                 };
@@ -1898,17 +1958,37 @@ public static class GameProjector
         private GameState? StepVehicle(GameState state, VehicleStepped step)
         {
             if (state.Phase != "mph" || Active(state, step.Vehicle) is not UnitInstance vehicle || !vocabulary.IsA(vehicle.Kind, "asl:vehicle")
-                || vehicle.Side != state.PhasingSide || vehicle.MovementEnded || step.HalfMp <= 0 || state.Location(vehicle.Id) is not { } at
-                || vehicle.Position is not MapPosition { Facing: { } facing })
+                || vehicle.Side != state.PhasingSide || vehicle.MovementEnded || step.HalfMp < 0 || (step.HalfMp == 0 && step.Kind != VehicleStepped.Load))
             {
                 return Fail<GameState>("UNIT-STATE-034", "A vehicle step moves a vehicle of the phasing side that has not ended its move, in the MPh (D2.1).");
+            }
+
+            // A2.52, D2.4 (ruling R26.1): a vehicle waiting off board is in Motion and enters across its edge as its first MP expenditure, with its VCA.
+            var entering = vehicle.Position is OffMapPosition && step.Kind == VehicleStepped.Enter && step.Entry is not null && step.Facing is not null && state.Movement is null;
+            MapPosition at;
+            Documents.UnitFacing facing;
+            if (entering)
+            {
+                at = new MapPosition(step.At) { Facing = step.Facing };
+                facing = step.Facing!.Value;
+            }
+            else if (state.Location(vehicle.Id) is { } here && vehicle.Position is MapPosition { Facing: { } faced })
+            {
+                at = here;
+                facing = faced;
+            }
+            else
+            {
+                return Fail<GameState>("UNIT-STATE-034", "A vehicle step moves a vehicle on the map, or one entering from off board across its edge with its VCA (D2.1, A2.52).");
             }
 
             // D5.341: a Recall stops the AFV like a Stun for the rest of that Player Turn; once its counter shows Recall; +1 it must move.
             var recalling = GameState.Condition(vehicle, Conditions.Recalled) == ConditionState.True && GameState.Condition(vehicle, Conditions.StunRecovery) != ConditionState.True;
             // D8.3 (ruling R11.10): a bogged vehicle's only expenditure is its Bog Removal Start MP.
             var bogged = GameState.Condition(vehicle, Conditions.Bogged) == ConditionState.True;
+            // D6.5, D6.1 (ruling R26.2): Passengers leave a vehicle that Prep Fired, is immobilized, or is Abandoned.
             if (new[] { Conditions.PrepFire, Conditions.Immobilized, Conditions.Stunned, Conditions.Shocked, Conditions.UnconfirmedKill, Conditions.Abandoned }
+                .Where(name => step.Kind != VehicleStepped.Unload || name is not (Conditions.PrepFire or Conditions.Immobilized or Conditions.Abandoned))
                 .FirstOrDefault(name => GameState.Condition(vehicle, name) == ConditionState.True) is { } barred)
             {
                 return Fail<GameState>("UNIT-STATE-034", $"'{vehicle.Id}' is marked {barred.Replace("asl:", "", StringComparison.Ordinal)} and may not move (D.3, D.7, D5.34, D5.41).");
@@ -1940,9 +2020,10 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-034", $"'{vehicle.Id}' is bogged: it spends MP only on its Bog Removal (D8.2, D8.3).");
             }
 
-            var inMotion = GameState.Condition(vehicle, Conditions.Motion) == ConditionState.True;
+            var inMotion = entering || GameState.Condition(vehicle, Conditions.Motion) == ConditionState.True;
             var started = current is not null ? current.Started : inMotion;
             var moving = started && current?.Stopped != true;
+            var stopped = current is not null ? current.Stopped || !current.Started : !inMotion;
 
             // D2.23 (ruling R11.1): Reverse is declared with the Start MP, and every entry until the vehicle stops keeps that direction.
             var reverse = current?.Reverse == true && moving;
@@ -1951,8 +2032,15 @@ public static class GameProjector
                 VehicleStepped.Start => !moving && step.At == at.Location && step.Facing is null && (step.BogRemoval ? bogged : step.HalfMp == 2),
                 VehicleStepped.Turn => moving && step.At == at.Location && step.Facing is { } turned && Math.Abs(((int)turned - (int)facing + 6) % 6) is 1 or 5
                     && step.HalfMp is 2 or 4,
-                VehicleStepped.Enter => moving && (step.At != at.Location || (step.Straddling is { } lane && lane != vehicle.Straddling)) && step.Facing is null
-                    && step.Reverse == reverse,
+                VehicleStepped.Enter => entering ? !step.Reverse && step.Straddling is null
+                    : moving && (step.At != at.Location || (step.Straddling is { } lane && lane != vehicle.Straddling)) && step.Facing is null && step.Reverse == reverse,
+
+                // D6.4, D6.5 (ruling R26.2): Infantry board a vehicle that has spent no MP this MPh and is not in Motion; Passengers disembark from a Stopped one.
+                VehicleStepped.Load => current is null && !inMotion && step.At == at.Location && step.Facing is null && step.Units is { Count: > 0 } boarding
+                    && boarding.All(id => Active(state, id) is UnitInstance unit && unit.Side == vehicle.Side && !unit.MovementEnded && state.Aboard(unit.Id) is null
+                        && state.Location(unit.Id)?.Location == at.Location && vocabulary.IsA(unit.Kind, "asl:personnel")),
+                VehicleStepped.Unload => stopped && vehicle.Straddling is null && step.At == at.Location && step.Facing is null && step.Units is { Count: > 0 } leaving
+                    && leaving.All(id => Active(state, id) is UnitInstance { Position: ContainedPosition { Role: ContainmentRole.Passenger } contained } && contained.Container == vehicle.Id),
                 VehicleStepped.Stop => moving && step.At == at.Location && step.Facing is null && step.HalfMp == 2,
 
                 // D2.1 (ruling R5.15): the MP left at the end of its move, spent in its hex, moving or stopped; A2.6: an exit from its edge hex.
@@ -1971,15 +2059,69 @@ public static class GameProjector
 
             if (step.Kind == VehicleStepped.Exit)
             {
-                // A2.6, D5.341: the vehicle leaves the playing area, not to return; it is recorded as exited, not eliminated.
-                var gone = Replace(state, vehicle with
+                // A2.6, D5.341: the vehicle leaves the playing area, not to return; it is recorded as exited, not eliminated. Ruling R26.4: its exit, its
+                // Passengers', and its towed Gun's are recorded with the edge, so the Exit VP and CVP read them.
+                var stilled = Replace(state, vehicle with
                 {
-                    Position = OffMapPosition.Instance,
-                    Status = InstanceStatus.Exited,
                     MovementEnded = true,
                     Conditions = new Dictionary<string, ConditionState>(vehicle.Conditions, StringComparer.Ordinal) { [Conditions.Motion] = ConditionState.False },
                 })!;
+                var edge = step.Edge ?? string.Empty;
+                var gone = ExitUnits(stilled, [stilled.Unit(vehicle.Id)!, .. stilled.Passengers(vehicle.Id)], at.Location, edge);
+                if (recalling || GameState.Condition(vehicle, Conditions.Recalled) == ConditionState.True)
+                {
+                    gone = gone with
+                    {
+                        Exits = [.. gone.Exits.Select(exit => exit.Unit == vehicle.Id && exit.Turn == state.Turn ? exit with { Recalled = true } : exit)],
+                    };
+                }
+                var towedGuns = gone.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Towed } tow && tow.Holder == vehicle.Id)
+                    .Select(item => item.Id).ToArray();
+                gone = gone with
+                {
+                    Equipment = [.. gone.Equipment.Select(item => towedGuns.Contains(item.Id) ? item with { Status = InstanceStatus.Exited, Position = OffMapPosition.Instance } : item)],
+                    Exits = [.. gone.Exits, .. towedGuns.Select(gun => new UnitExit(gun, at.Location, edge, state.Turn, false))],
+                };
                 return Settle(DropHeldBy(gone, [vehicle.Id]), new MovementState([vehicle.Id], at.Location, 0, step.Step, false, WindowOpen: false) { Vehicle = true, Members = [] });
+            }
+
+            if (step.Kind is VehicleStepped.Load or VehicleStepped.Unload)
+            {
+                var spent = (vehicle.MfSpent * 2) + (vehicle.HalfMfSpent ? 1 : 0) + step.HalfMp;
+                var loaded = Replace(state, vehicle with
+                {
+                    MfSpent = spent / 2,
+                    HalfMfSpent = spent % 2 == 1,
+                })!;
+                foreach (var id in step.Units!)
+                {
+                    var unit = loaded.Unit(id)!;
+                    loaded = Replace(loaded, step.Kind == VehicleStepped.Load
+                        ? unit with
+                        {
+                            Position = new ContainedPosition(vehicle.Id, ContainmentRole.Passenger),
+                            MfSpent = unit.MfSpent + 1,
+                            MovementEnded = true,
+                        }
+                        : unit with
+                        {
+                            Position = new MapPosition(at.Location),
+                            MfSpent = unit.MfSpent + step.UnitMf,
+                            MovementEnded = GameState.Condition(vehicle, Conditions.PrepFire) == ConditionState.True,
+                        })!;
+                }
+
+                return loaded with
+                {
+                    Movement = new MovementState([vehicle.Id], at.Location, (current?.HalfMfInLocation ?? 0) + step.HalfMp, step.Step, false, WindowOpen: true)
+                    {
+                        Vehicle = true,
+                        Started = current?.Started ?? false,
+                        Stopped = current?.Stopped ?? false,
+                        Reverse = current?.Reverse == true,
+                        EnteredFrom = current?.EnteredFrom,
+                    },
+                };
             }
 
             var halves = (vehicle.MfSpent * 2) + (vehicle.HalfMfSpent ? 1 : 0) + step.HalfMp;
@@ -2000,11 +2142,15 @@ public static class GameProjector
                 Straddling = step.Kind == VehicleStepped.Enter ? step.Straddling : vehicle.Straddling,
             })!;
 
-            // C10.1 (ruling R8.6): a Gun in tow goes with its vehicle.
+            // C10.1 (ruling R8.6): a Gun in tow goes with its vehicle, onto the map with it when it enters from off board (ruling R26.1).
             next = next with
             {
-                Equipment = [.. next.Equipment.Select(item => item.Holding is { Role: HoldingRole.Towed } tow && tow.Holder == vehicle.Id && item.Position is MapPosition towedAt
-                    ? item with { Position = towedAt with { Location = step.At } }
+                Equipment = [.. next.Equipment.Select(item => item.Holding is { Role: HoldingRole.Towed } tow && tow.Holder == vehicle.Id
+                    ? item.Position switch
+                    {
+                        MapPosition towedAt => item with { Position = towedAt with { Location = step.At } },
+                        _ => item with { Position = new MapPosition(step.At) },
+                    }
                     : item)],
             };
             return next with
@@ -2021,7 +2167,7 @@ public static class GameProjector
                     Reverse = step.Kind == VehicleStepped.Start ? step.Reverse : step.Kind != VehicleStepped.Stop && current?.Reverse == true,
                     Overrun = step.Overrunning ? step.At : null,
                     MinimumMove = step.MinimumMove,
-                    EnteredFrom = step.Kind == VehicleStepped.Enter && (step.At.Board != at.Location.Board || step.At.Hex != at.Location.Hex) ? at.Location : current?.EnteredFrom,
+                    EnteredFrom = step.Kind == VehicleStepped.Enter && !entering && (step.At.Board != at.Location.Board || step.At.Hex != at.Location.Hex) ? at.Location : current?.EnteredFrom,
                 },
             };
         }

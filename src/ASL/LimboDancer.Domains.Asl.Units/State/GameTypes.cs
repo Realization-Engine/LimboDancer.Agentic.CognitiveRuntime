@@ -76,7 +76,14 @@ public sealed record ScenarioPlayer(string Name, string Side);
 /// A unit that left the map (A2.6; ruling R21.5): the Location it left from, the edge it crossed, the Game Turn, and whether it was broken; for a
 /// prisoner, the side holding it (A20.53, A26.23; ruling R25.5), and for a Guard escorting prisoners, that it did (A26.221).
 /// </summary>
-public sealed record UnitExit(string Unit, BoardLocation From, string Edge, int Turn, bool Broken, string? CapturedBy = null, bool Escort = false);
+public sealed record UnitExit(string Unit, BoardLocation From, string Edge, int Turn, bool Broken, string? CapturedBy = null, bool Escort = false)
+{
+    /// <summary>Whether the unit left under Recall (D5.341), which counts neither Exit VP nor CVP (A26.23, A26.221; ruling R26.4).</summary>
+    public bool Recalled
+    {
+        get; init;
+    }
+}
 
 /// <summary>The result of a game from a card (A26; ruling R21.4): the winner (null for a draw), the outcome that decided it, and the facts behind it.</summary>
 public sealed record GameResult(string? Winner, string Reason, IReadOnlyList<string> Facts);

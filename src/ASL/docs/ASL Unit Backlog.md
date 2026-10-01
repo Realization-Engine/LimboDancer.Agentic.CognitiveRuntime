@@ -106,13 +106,11 @@ Every item here was built by the backlog pass 15; what they leave out is in sect
 | Bore Sighting | R24.2 | C6.4, p. 174 | Scenario Defender setup |
 | Fire within the Gun's own hex (Case E) | R24.2 | C5.5, p. 172 | Fire into one's own Location |
 | Captured and non-qualified use of a Gun (Case H) | R24.4 | C5.8, A21.13, pp. 173, 88 | Captured equipment |
-| Concealed crews and Guns, and a firing crew's loss of concealment | R24.4 | A12.14, C6.57 | Concealment of firing ordnance |
 | Crews' inherent fire, and A7.352's loss of it after the crew fires its Gun | R24.8 | A7.352, p. 56 | Crews as firers in the Fire package |
 | Crews and Guns as targets, and Gun destruction | R24.3 | C11, p. 181; C11.6 chart, p. 701 | Guns as targets |
-| Gun movement, manhandling, (un)limbering, towing, and abandoning a Gun; a crew leaving its Gun | R24.4 | C10, pp. 180 and 181; C2.8, A4.41 | Gun movement |
+| (Un)limbering and abandoning a Gun, and a crew leaving its Gun behind (pushing and towing were built in pass 8, a crew pushing its Gun off the map in pass 26) | R24.4; R26.1, R26.4 | C10, pp. 180 and 181; C2.8, A4.41 | Non-QSU Guns in the catalog; abandoning in play |
 | Gun repair and removal | R24.4 | A9.72, C2.28 | The Guns' malfunctioned sides (no registered source gives them) |
 | Overstacked firer or target Locations for ordnance | R24.8 | A5.12, A5.131 | Overstacking penalties |
-| A Covered Arc across boards or on a reversed board | Pass 3 design | C3.2, p. 168 | Composed-map geometry for bearings |
 | Targets at another level, and C2.6's depression and elevation limits | R24.2 | C2.6, p. 168 | Levels in fire |
 | Multiple Hits | R24.2 | C3.8, p. 171 | A reviewed Gun of 40mm or less |
 | A Gun's BPV, dates, and Animal-Pack capability (note O) in the catalog | Referee (catalog rows) | Chapter H key, p. 351; G10 | Vocabulary attributes for them |
@@ -201,7 +199,7 @@ Vehicle movement (Reverse, VBM, ESB, Minimum Move, Bog, OVR, stacking, and terra
 | Random SW Destruction of Guns by fire | R8.3 | C11.51, A9.74 | Random SW Destruction | Infantry fire never destroys a Gun. |
 | A7.353's halved inherent FP of a crew that fired its Gun | R8.4 | A7.353, p. 56 | Subsequent First Fire and Final Fire of crews | The crew has no inherent FP for the rest of the Player Turn. |
 | The Labor counter after a failed push, more than one unit pushing, a CA change while pushing, carried PP, and the DEFENDER's fire at a failed push | R8.6 | C10.3, B24.8 | Labor, portage checks | One crew or HS pushes; a failed push ends its move. |
-| A vehicle's hook-up opening the DEFENDER's window, Passengers loading with a hook-up, en portee, and limbering | R8.6 | C10.11, C10.13, C10.2, C10.5 | Passengers (pass 11) | The hook-up is resolved at once; both catalog Guns are QSU. |
+| A vehicle's hook-up opening the DEFENDER's window, en portee, and limbering (the crew boarding with a hook-up was built in pass 26) | R8.6; R26.1 | C10.11, C10.13, C10.2, C10.5 | Ordnance Notes; non-QSU Guns | The hook-up is resolved at once; both catalog Guns are QSU. |
 | Case O for ordnance firing at a pushing crew | R8.6 | C10.3 | Ordnance To Hit Cases for Hazardous Movement | The gunshield is denied; Infantry fire takes Hazardous Movement's -2 since the backlog pass 10 (ruling R10.8), ordnance takes no Case O. |
 | Recovery of an unmanned Gun and captured Guns | R8.6, R8.8 | A4.44, A21.11, C5.8 | Gun Recovery (SW Recovery was built in pass 13) | An abandoned Gun can only be hooked up and unhooked for a crew. |
 | A Target Facing change restarting the C6.17 count, and Case J1 or J2 after an AFV turns in view | R8.1 | C6.17 | Vehicle Target Facing history | The count runs per Location. |
@@ -272,7 +270,6 @@ Vehicle movement (Reverse, VBM, ESB, Minimum Move, Bog, OVR, stacking, and terra
 | A berserk charge at a vehicle | R11.17 | A15.43 | Charges at vehicles | The charge stays undecided and ends in place, as since pass 4. |
 | A Bypassing AFV in woods whose Target Facing the TEM rule of the IFT would change, and a turret's facing in Bypass | R11.2 | D2.34, D3.2 | Bypass facing for ordnance | Bypass Target Facing is read from the straddled hexside for both hull and turret. |
 | The current Morale Level of a combined PAATC | Referee, pass 11 | A12.41, p. 83 | Morale changes in play (DM, ELR replacement) | The printed ML, with Fanatic and wounds, is used (a reading). |
-| The "wished to enter next" field for Motion | Table player, pass 11 | D2.4 | Buttons for the VCA hexes | A free-text Location on the Play page. |
 
 ## 22. Added by the backlog pass 12
 
@@ -427,7 +424,6 @@ Pass 19 (2026-09-29) built the setup of a game from a card: its OB group by grou
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
 | Terrain the movement rules give no entry cost for (gully, stream, shellholes, graveyard, and others) refused at setup; a marsh setup through the planner is not tested | Referee, pass 19 | A2.9, B16.4 | Those terrains in the movement rules; a board with marsh | Refused at setup. |
-| A crew or HS manning a Gun stacking as a squad | Referee, pass 19 | A5.5 | Guns set up from cards | Counts as half a squad. |
 | A test of a card changed or gone since the game started | Referee, pass 19 | R19.1 | A way to change an embedded card in a test | Refused in code. |
 
 ## 30. Added by the scenario card games pass 20
@@ -436,7 +432,6 @@ Pass 20 (2026-09-29) built the end of a game from a card, the first-move dr and 
 
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
-| Vehicles entering from off board (in Motion, loaded), and Guns entering limbered | R20.5 | A2.52, D2.4 | Vehicle movement from off board | Refused: no card enters vehicles yet. |
 | The first-move dr's manufactured form (a dr for each side, the higher moving first), against a registered procedure if one is found | R20.2 | A3.9 | A registered source | Manufactured under R0.3. |
 | A card that sets up units broken or under DM | R20.7 | A2.9 | A card token for it | Refused at setup. |
 | Paved road hexes of board 01 are named by their other terrain ("open-ground") in movement messages | Table player, pass 20 | B3 | The terrain key's names | The cost is right; the label is not. |
@@ -448,7 +443,6 @@ Pass 21 (2026-09-29) built the Victory Conditions of a game from a card: Control
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
 | Control forfeited to a Kindled Fire (Location Control, vehicles' temporary Control, and Mopping Up were built in pass 24) | R21.1 | A26.16 | Fire | No forfeiture. |
-| A crew leaving the map with its Gun (leaving in the APh, by Bypass, at the road rate, and a Guard with prisoners were built in pass 25) | R21.5 | A2.6, C10.3 | Guns on a card (plan pass 26) | Refused with a message. |
 
 ## 32. Added by the scenario card games pass 22
 
@@ -514,7 +508,7 @@ Pass 23 (2026-09-30) built a side's view at setup and in play, the hand-over scr
 
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
-| Hidden Guns (an Emplaced Gun's HIP, its reveal by fire), fortifications set up hidden, and hidden vehicles | R23.5; referee, pass 23 | A12.33, A12.34, p. 80 | Guns and vehicles set up from cards (plan pass 26) | HIP is refused for anything but Infantry. |
+| Fortifications set up hidden, and hidden vehicles (an Emplaced Gun's HIP and its reveal by fire were built in pass 26) | R23.5; referee, pass 23; R26.5 | A12.33, A12.34, p. 80 | Fortifications (plan pass 33); hidden vehicles | HIP is refused for vehicles. |
 | A HIP unit giving up its hidden status to stop an enemy unit in its LOS from gaining "?", at setup or in play | Referee, pass 23 | A12.32, p. 80 | A setup event for it | Placing beneath "?" is from the start of play only; hidden units do not count against a non-OB "?". |
 | A "?" placed on a Good Order stack before it enters the map | R23.6 | A12.12, p. 77 | Entering units concealed (R20.5) | Entering units are never "?". |
 | A CC attack against a "?" declared from a side's view | Table player, pass 23 | A11.1, A12.13 | Attacks on a sealed presence | A side's CC panel lists only units it may see; the adjudicator declares an attack on concealed units. |
@@ -535,7 +529,7 @@ The plan was approved on 2026-09-30. A survey of this backlog the same day found
 |---|---|
 | Control of Locations, start Control edge cases, Gun and vehicle VP, the Control cache (§31) | Pass 24, built 2026-09-30 (Control forfeited to a Kindled Fire: pass 40) |
 | Entry by advance, delayed and blocked entry, offboard Deployment, the full movement step at entry, several entry areas (§30); leaving the map in the APh, by Bypass, and at the road rate, a Guard leaving with prisoners, captured units exited (§31, §24); the SMOKE panel's eligibility (§19); clearer answers after DFF eliminates every mover, the end-move refusal after a DC placer was Replaced (§25); the raw OB group and Deployment messages (§30); the exit refusal naming the edge hex (§31) | Pass 25, built 2026-10-01 |
-| Vehicles and Guns entering, Gun movement and limbering, hook-up and en portee (§12, §18, §30); a crew manning a Gun stacking (§29); a crew leaving with its Gun (§31); a Covered Arc across boards or on a reversed board, concealed crews and Guns (§12, §22); the Motion "wished to enter next" field (§21) | Pass 26 |
+| Vehicles and Guns entering, Gun movement and limbering, hook-up and en portee (§12, §18, §30); a crew manning a Gun stacking (§29); a crew leaving with its Gun (§31); a Covered Arc across boards or on a reversed board, concealed crews and Guns (§12, §22); the Motion "wished to enter next" field (§21) | Pass 26, built 2026-10-01 (limbering and en portee: section 40) |
 | The berserk Dummies, route, and OVR rows (§1, §20, §21); the Axis Minor Heat of Battle row, the Japanese part waiting with Chapter G (§11); a berserk leader's companions' TCs (§11); Spraying Fire after a choice (§22); a DC's owner's options (§25) | Pass 27 |
 | Map picking, forms, edit-time checks, plain messages, renaming, delete confirmation and warning, the Guards SSR 3 note (§32); a test of a card changed or gone (§29) | Pass 28 |
 | The Deploy control splitting several SW, records of DM, Failure to Rout, and SW transfers (§23) | Pass 28b |
@@ -564,7 +558,6 @@ Pass 24 (2026-09-30) built Control of Locations, Mopping Up with its Search casu
 | A captured vehicle holding and preventing Control for its captor with a Temporary Crew | R24.5; referee, pass 24 | A21.22, A26.12 | Captured vehicles used in play | It neither holds nor prevents Control. |
 | A vehicle's PRC gaining a Location's or hex's Control | R24.5 | A26.11, A26.12 | Passengers and riders | Not counted. |
 | A Victory Condition naming a Location | R24.1 | A26.1 | The card editor's forms (plan pass 28) | Location Control is shown and used by Mopping Up but decides no card. |
-| Exit VP for Guns and vehicles | R24.3 | A26.23 | Their exits (plan passes 25 and 26) | Not counted. |
 | The inherent crew's departure recorded on the vehicle | Referee and table player, pass 24 | A26.211 | A link from crew counter to vehicle | Read from the crew counter's id, which works for bail-out and Recall. |
 | No Quarter given by an SSR or a nationality rule barring the opponent's Mopping Up | Referee, pass 24 | A20.3, A12.153 | A record of which side employed No Quarter | `NoQuarter` is filled only by a rejected surrender or a Massacre, which the check reads correctly. |
 | The Casualty dr's outcome in the result text | Table player, pass 24 | A12.154 | Message work | The plan line gives the drm; the dr and the Reduction show in the rolls and the unit table. |
@@ -576,14 +569,36 @@ Pass 25 (2026-10-01) built entry by advance with the APh holding due units, name
 
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
-| Rubble or Blaze cutting an entry hex off from the rest of the board | R25.2 | A2.5 | Vehicles entering (plan pass 26); terrain Blaze (pass 40) | Infantry enter rubble at its cost; the game has no terrain Blaze. |
+| Rubble or Blaze cutting an entry hex off from the rest of the board (since pass 26 a vehicle's entry is refused into a hex it may not enter, rubble included) | R25.2; R26.1 | A2.5 | Terrain Blaze (pass 40); a board's connectivity | Infantry enter rubble at its cost; the game has no terrain Blaze. |
 | A pond on the edge stopping the delayed-entry radius, since VASL names rivers and ponds both Water | R25.2; referee, pass 25 | A2.5, B21 | Terrain that tells a river from a pond | Any Water, River, or Canal hex on the edge stops the radius. |
 | The delay radius counted from the entry turn when entry failed for another reason (a forced back, a unit unable to advance) | R25.2 | A2.5, A12.15 | A record of why an entry failed | The radius grows four hexes per Game Turn since the entry turn. |
 | The offboard setup boards of A2.51: off-board stacks, the leader "stacked with" an off-board squad, movement off board to a hex not adjacent | R25.4 | A2.51, A2.52 | Off-board hexes | Any leader waiting along the same edge serves; a stack enters any open hex of its edge. |
 | Named entry hexes checked against their edge when the card is edited | Referee, pass 25 | R19.3, A2.5 | The card editor's checks (plan pass 28) | Refused at entry, with a message naming the hexes. |
-| The setup form naming an off-board counter's entry area | R25.4 | A2.5 | The setup placement editor (plan pass 26, P08) | The action takes `position.entry`; the page's form names none. |
 | A PAATC on entry by advance into an enemy AFV's hex reading the entering stack's leader | Referee, pass 25 | A11.6 | A card fielding AFVs (plan pass 26) | The leader of the AFV's hex is read; no card fields a vehicle. |
 | A side with several Friendly Board Edges (any edge it entered from, or set up in front of) | Referee, pass 25 | A20.53 | Cards listing several edges | The card's one Friendly Board Edge, and the side's exit condition edges, spare an escorting Guard. |
 | Overstacking MF in the MPh (A5.11) | Referee, pass 25 | A5.11 | Overstacking in movement | Only the advance charges it; an entering stack keeps to the limits. |
 | Whether a card's Exit VP list counts prisoners, and doubled values in an immediate outcome | Table player, pass 25 | A26.23, A26.222 | A card token | Exited prisoners count their normal VP during play and double at the end, as A26.23 says. |
 | Page tests of entry by advance, the advance exit, the off-board Deploy lists, and the notes in each side's view | UI review, pass 25 | | A Studio test board with a card that enters | The planner tests and the Studio visual check cover them. |
+
+## 40. Added by the game pass 26
+
+Pass 26 (2026-10-01) built vehicles entering from off board in Motion with their Passengers and towed Guns, the MPh holding them, Passengers boarding and getting off, a crew boarding with a hook-up, a Gun set up manned or in tow with its crew stacking as a squad, exits of vehicles, Passengers, and towed or pushed Guns for Exit VP and CVP, an Emplaced Gun's HIP and its reveal by fire, the Covered Arc on reversed boards, the card Armor Test, and ten Play components (rulings R26.1 to R26.8). It removed from section 12 the rows for concealed crews and Guns and the Covered Arc across boards, and the built parts of the Gun movement row; from section 18 the built part of the hook-up row; from section 21 the "wished to enter next" row; from section 29 the manning crew's stacking; from section 30 vehicles entering; from section 31 a crew leaving with its Gun; from section 37 the hidden Gun part; from section 38 the Exit VP of Guns and vehicles; and from section 39 the setup form's entry area. Items it leaves out:
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| Limbering and unlimbering, Limbered Fire, and NM and RFNM Guns | R26.1 (the user, 2026-10-01) | C10.2 to C10.26, p. 180 | A non-QSU Gun in the catalog | A non-QSU Gun is refused in tow, at a hook-up, and in a push. |
+| En portee | R26.1 (the user, 2026-10-01) | C10.5 to C10.54, p. 181 | Ordnance Notes in a registered source | Not built. |
+| HIP of an Emplaced Gun out of every enemy ground unit's LOS outside Concealment Terrain, placed beneath "?" when one gains LOS | R26.5 (the user, 2026-10-01) | A12.34, p. 80 | A LOS check after every enemy step and at each phase | Refused at setup outside Concealment Terrain. |
+| A crew possessing a non-inherent SW barred from A12.34 HIP; the "considered not to have fired" (C8.9), RCL, zero-range, IFE, and FB/DB exceptions to the reveal | Referee, pass 26 | A12.34, C8.9 | A SW in the setup counters; those Guns | Not checked; the catalog's Guns reach none of the fire exceptions. |
+| Fire at a vehicle reaching its Passengers: an unarmored or open-topped vehicle's Passengers, CE halftrack Passengers, Collateral Attacks | R26.2; table player, pass 26 | D6.6, D6.61, p. 205 | Plan pass 31 | Passengers take no fire; only their vehicle does. |
+| Crew Survival for Passengers of a destroyed vehicle | R26.2 | D5.6, p. 204 | Plan pass 31 | They are eliminated with it, for the enemy's CVP. |
+| Passengers' fire, rout beneath a Stopped vehicle, OVR, and CC; Riders | R26.2 | D6.1, D6.2, p. 204 | Plan pass 32 | An action naming a Passenger is refused until it unloads; a broken one stays aboard free of rout. |
+| Boarding as a step of the Infantry move, after moving (the D6.4 EX), and a second stack boarding the same vehicle in one MPh | Referee and table player, pass 26 | D6.4, p. 205 | Boarding in the move planner | Only units that have not moved this MPh board, as the vehicle's first expenditure. |
+| Unloading in the MPh an immobilization ends the vehicle's move | Referee, pass 26 | D6.5, p. 205 | Unloading after the move ends | The Passengers unload in its next MPh. |
+| Unloaded units moving only "in the interim" of their vehicle's move; unloading into an enemy-occupied hex with a CC counter; FFNAM and FFMO against (un)loading units and an (un)load that fails under fire; a leader's four-MF limit and IPC aid when unloading | Referee, pass 26 | D6.5, D5.43, A4.42, pp. 204 to 205 | Interleaved movement; fire during (un)loading | Other units may move between; the (un)load always succeeds; a leader unloads against its own allotment. |
+| Five or more SMC as Passengers | Referee, pass 26 | D6.1, A5.5 | | More than four SMC aboard are refused. |
+| Abandoning a Gun to leave the map; more than one unit pushing a Gun off the map | Referee and table player, pass 26 | C10.3, p. 181 | Labor and assistance in a push | Refused with a message. |
+| A towed Gun's facing and an off-board vehicle's VCA asked by the setup form, and a vehicle placement removed before its Passengers | Table player and UI review, pass 26 | | Form work | The notes say they are unused; the planner refuses Passengers whose vehicle is gone. |
+| Exit buttons saying what the exit scores, and unload offered beyond three-fourths of the MP | Table player, pass 26 | A26.23, D6.5 | Plan pass 28c (the Play workspace) | The proposal's review says both. |
+| The vehicle panel's planner reads cached per revision (entries, exits, the VCA hexes, the Passengers) | UI review, pass 26 | | A view model per revision and view | The entries are read once per revision; the rest per render. |
+| The card's citable rule fragments for A2.52, D6, and A12.34 | R26.7 | R17.2 | A comparison of those rules with the PDF | Armor Test's SSRs cite the rulings. |

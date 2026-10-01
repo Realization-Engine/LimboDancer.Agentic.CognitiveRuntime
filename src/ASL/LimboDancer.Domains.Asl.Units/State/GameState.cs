@@ -414,7 +414,39 @@ public sealed record GameState(
     public IReadOnlyList<IGameObject> At(BoardLocation location)
     {
         ArgumentNullException.ThrowIfNull(location);
-        return [.. Objects.Where(item => item.Status == InstanceStatus.Active && Location(item.Id)?.Location == location)];
+
+        // D6.61 (ruling R26.2): Passengers and Riders, with what they carry, are reached through their vehicle, not as units on foot in its Location.
+        return [.. Objects.Where(item => item.Status == InstanceStatus.Active && Location(item.Id)?.Location == location && Aboard(item.Id) is null)];
+    }
+
+    /// <summary>
+    /// The vehicle an instance rides as a Passenger or Rider, or whose Passenger or Rider holds it (D6.1, D6.2; ruling R26.2); null when it is on foot,
+    /// or is no such cargo.
+    /// </summary>
+    public string? Aboard(string id)
+    {
+        ArgumentNullException.ThrowIfNull(id);
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        for (var item = Find(id); item is not null && seen.Add(item.Id);)
+        {
+            if (item is EquipmentInstance { Holding: { Role: HoldingRole.Possessed } holding })
+            {
+                item = Find(holding.Holder);
+                continue;
+            }
+
+            return item.Position is ContainedPosition { Role: ContainmentRole.Passenger or ContainmentRole.Rider } contained ? contained.Container : null;
+        }
+
+        return null;
+    }
+
+    /// <summary>The active units riding a vehicle as Passengers or Riders (D6.1, D6.2; ruling R26.2).</summary>
+    public IReadOnlyList<UnitInstance> Passengers(string vehicle)
+    {
+        ArgumentNullException.ThrowIfNull(vehicle);
+        return [.. Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Position is ContainedPosition { Role: ContainmentRole.Passenger or ContainmentRole.Rider } contained
+            && contained.Container == vehicle)];
     }
 
     /// <summary>

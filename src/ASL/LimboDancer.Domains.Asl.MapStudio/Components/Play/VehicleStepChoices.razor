@@ -1,0 +1,189 @@
+@* Plan A19 (pass 26): the chosen vehicle's MP expenditures as the planner offers them: entry from off board with its VCA, Start, Bog Removal, a VCA
+   change, each entry with its cost or the reason it is refused, ESB, OVR, Stop, an exit; the entry options; the Passengers it takes or lets off (D6.4,
+   D6.5); and, for a move ending in Motion, the hex it wished to enter next, among the hexes of its VCA (D2.4). The page builds the choices and proposes. *@
+@if (EntryHexes.Count > 0)
+{
+    <label title="A2.51, A2.52 (ruling R26.1): the hexes of its entry open to it this Game Turn, each at its own cost; one a Known enemy unit or an enemy vehicle holds, or one it may not enter, is not open.">
+        Enter at
+        <select id="vehicle-entry-hex" value="@EntryHex" @onchange="@(args => OnEntryHex.InvokeAsync(args.Value as string ?? string.Empty))">
+            <option value="">choose a hex</option>
+            @foreach (var hex in EntryHexes)
+            {
+                <option value="@hex.Value" disabled="@(hex.Bar is not null)" title="@(hex.Bar ?? string.Empty)">@hex.Label</option>
+            }
+        </select>
+    </label>
+    @if (EntryFacings.Count > 0)
+    {
+        <FacingPicker Id="vehicle-entry-facing" Label="VCA" Value="@EntryFacing" Choices="@EntryFacings" OnChange="@(facing => OnEntryFacing.InvokeAsync(facing))"
+            Title="D2.11: the VCA holds the hex it enters, a hexspine 30 degrees either side of its travel across the edge." />
+    }
+    <button id="vehicle-enter-map" disabled="@(EntryReason is not null)" aria-describedby="@(EntryReason is not null ? "vehicle-enter-map-reason" : null)"
+            @onclick="@(() => OnStep.InvokeAsync(new StepRequest("enter", EntryHex, EntryFacing)))">Propose: enter the map</button>
+    @if (EntryReason is { } why)
+    {
+        <span id="vehicle-enter-map-reason" class="toolbar-note">@why</span>
+    }
+}
+@foreach (var step in Steps)
+{
+    <button id="@step.Id" class="@step.Class" @attributes="@step.Data" disabled="@(step.Bar is not null && step.Disabled)" title="@(step.Bar ?? step.Title)"
+            @onclick="@(() => OnStep.InvokeAsync(step.Request))">@step.Label</button>
+}
+@if (Moving)
+{
+    <label title="An OVR of the enemy-occupied Location entered: a quarter of the printed MP more, resolved after the DEFENDER passes (D7.1)."><input type="checkbox" id="vehicle-ovr" checked="@Overrun" @onchange="@(args => OnOption.InvokeAsync(("overrun", args.Value is true)))" /> with an OVR</label>
+    <label title="A fully-tracked vehicle enters woods for half its MP with a Bog DR at +3, or for ALL its MP (B13.41, B13.42)."><input type="checkbox" id="vehicle-all-mp" checked="@AllMp" @onchange="@(args => OnOption.InvokeAsync(("allMp", args.Value is true)))" /> woods for ALL MP</label>
+    <label title="Only when the hex costs more than the printed allotment, as its only entry of the MPh; it ends in Motion (D2.15)."><input type="checkbox" id="vehicle-minimum" checked="@Minimum" @onchange="@(args => OnOption.InvokeAsync(("minimum", args.Value is true)))" /> Minimum Move</label>
+    @if (Tracked)
+    {
+        <label title="A tracked vehicle, once per MPh: +1 per MP sought and its manufacturer's DRM; 12 or more immobilizes it (D2.5).">ESB MP <input id="vehicle-esb-mp" value="@Esb" @onchange="@(args => OnEsb.InvokeAsync(args.Value as string ?? string.Empty))" size="2" /></label>
+        <button id="vehicle-esb" disabled="@(!int.TryParse(Esb, out _))" @onclick="@(() => OnStep.InvokeAsync(new StepRequest("esb")))">Propose: ESB</button>
+    }
+}
+@foreach (var exit in Exits)
+{
+    <button class="vehicle-exit" data-direction="@exit.Direction" data-edge="@exit.Edge" @onclick="@(() => OnStep.InvokeAsync(new StepRequest("exit", Edge: exit.Edge)))">@exit.Label</button>
+}
+@if (Moving)
+{
+    <span role="group" aria-labelledby="vehicle-intended-note">
+        <span class="toolbar-note" id="vehicle-intended-note">Wished to enter next, for a move that ends in Motion (D2.4):</span>
+        @foreach (var hex in IntendedChoices)
+        {
+            <button class="link vehicle-intended" data-at="@hex" aria-pressed="@(hex == Intended ? "true" : "false")" @onclick="@(() => OnIntended.InvokeAsync(hex))">@hex</button>
+        }
+    </span>
+    <label title="When the vehicle ends its move in Motion with MP left, the hex it wished to enter next decides whether it could (D2.4). Choose a hex of its VCA, or type another Location.">Wished to enter next <input id="vehicle-intended" value="@Intended" @onchange="@(args => OnIntended.InvokeAsync(args.Value as string ?? string.Empty))" size="12" /></label>
+}
+@if (Loadable.Count > 0)
+{
+    <fieldset class="vehicle-passengers" id="vehicle-load-units">
+        <legend>Board as Passengers (D6.4): one MF each; the vehicle keeps a quarter of its MP per MF left</legend>
+        @foreach (var unit in Loadable)
+        {
+            <label><input type="checkbox" class="vehicle-load" value="@unit" checked="@LoadChosen.Contains(unit)" @onchange="@(args => OnLoadToggle.InvokeAsync((unit, args.Value is true)))" /> @unit</label>
+        }
+        <button id="vehicle-load" disabled="@(!Loadable.Any(LoadChosen.Contains))" aria-describedby="vehicle-load-note" @onclick="@(() => OnStep.InvokeAsync(new StepRequest("load")))">Propose: board</button>
+        <span id="vehicle-load-note" class="toolbar-note">Check the units that board.</span>
+    </fieldset>
+}
+@if (Unloadable.Count > 0)
+{
+    <fieldset class="vehicle-passengers" id="vehicle-unload-units">
+        <legend>Passengers aboard; unload while stopped for a quarter of its MP (D6.5)</legend>
+        @foreach (var unit in Unloadable)
+        {
+            <label><input type="checkbox" class="vehicle-unload" value="@unit" checked="@UnloadChosen.Contains(unit)" @onchange="@(args => OnUnloadToggle.InvokeAsync((unit, args.Value is true)))" /> @unit</label>
+        }
+        <button id="vehicle-unload" disabled="@(!Unloadable.Any(UnloadChosen.Contains))" aria-describedby="vehicle-unload-note" @onclick="@(() => OnStep.InvokeAsync(new StepRequest("unload")))">Propose: unload</button>
+        <span id="vehicle-unload-note" class="toolbar-note">Check the Passengers that get off; they move on with the MF left.</span>
+    </fieldset>
+}
+
+@code {
+    /// <summary>An MP expenditure as the page proposes it.</summary>
+    public sealed record StepRequest(string Kind, string? To = null, string? Facing = null, string? Edge = null, bool Reverse = false, bool Bypass = false);
+
+    /// <summary>
+    /// A step's button: its element id or class and data attributes (kept for the page tests), its label, why it is refused (shown as its title, and
+    /// disabled when <paramref name="Disabled"/>), and the request it proposes.
+    /// </summary>
+    public sealed record StepButton(StepRequest Request, string Label, string? Id = null, string? Class = null, IReadOnlyDictionary<string, object>? Data = null,
+        string? Bar = null, bool Disabled = true, string? Title = null);
+
+    /// <summary>A hex an off-board vehicle may enter: its Location, how it reads with its cost, and why it is not open, or null.</summary>
+    public sealed record EntryHexChoice(string Value, string Label, string? Bar);
+
+    /// <summary>An exit the vehicle may make: the hexside's direction, the edge, and how it reads.</summary>
+    public sealed record ExitChoice(string Direction, string Edge, string Label);
+
+    [Parameter]
+    public IReadOnlyList<StepButton> Steps { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<ExitChoice> Exits { get; set; } = [];
+
+    /// <summary>For a vehicle waiting off board, the hexes of its entry (ruling R26.1).</summary>
+    [Parameter]
+    public IReadOnlyList<EntryHexChoice> EntryHexes { get; set; } = [];
+
+    [Parameter]
+    public string EntryHex { get; set; } = string.Empty;
+
+    /// <summary>The two VCAs the chosen entry hex allows.</summary>
+    [Parameter]
+    public IReadOnlyList<UnitFacing> EntryFacings { get; set; } = [];
+
+    [Parameter]
+    public string EntryFacing { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> OnEntryHex { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnEntryFacing { get; set; }
+
+    /// <summary>Why the entry cannot be proposed yet, or null.</summary>
+    private string? EntryReason =>
+        EntryHexes.FirstOrDefault(hex => hex.Value == EntryHex) is not { } chosen ? "Choose a hex to enter."
+        : chosen.Bar is { } bar ? bar
+        : !EntryFacings.Any(facing => UnitFacings.Name(facing) == EntryFacing) ? "Choose the VCA it enters with."
+        : null;
+
+    /// <summary>Whether the vehicle is moving, so the entry options, ESB, and the hex wished to enter next apply.</summary>
+    [Parameter]
+    public bool Moving { get; set; }
+
+    [Parameter]
+    public bool Tracked { get; set; }
+
+    [Parameter]
+    public bool Overrun { get; set; }
+
+    [Parameter]
+    public bool AllMp { get; set; }
+
+    [Parameter]
+    public bool Minimum { get; set; }
+
+    [Parameter]
+    public string Esb { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Intended { get; set; } = string.Empty;
+
+    /// <summary>The hexes of the vehicle's VCA, for the hex it wished to enter next.</summary>
+    [Parameter]
+    public IReadOnlyList<string> IntendedChoices { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<string> Loadable { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<string> Unloadable { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlySet<string> LoadChosen { get; set; } = new HashSet<string>();
+
+    [Parameter]
+    public IReadOnlySet<string> UnloadChosen { get; set; } = new HashSet<string>();
+
+    [Parameter]
+    public EventCallback<StepRequest> OnStep { get; set; }
+
+    [Parameter]
+    public EventCallback<(string Option, bool Value)> OnOption { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnEsb { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnIntended { get; set; }
+
+    [Parameter]
+    public EventCallback<(string Unit, bool Chosen)> OnLoadToggle { get; set; }
+
+    [Parameter]
+    public EventCallback<(string Unit, bool Chosen)> OnUnloadToggle { get; set; }
+}

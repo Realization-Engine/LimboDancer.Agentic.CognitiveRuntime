@@ -75,7 +75,14 @@ public sealed record ManhandlingRolled(string Gun, string Roll, int Drm, int Man
 /// on foot in the hex (C10.11, C10.12; ruling R8.6). Hooked, the Gun is towed and its crew is on foot; unhooked, the crew mans it again with
 /// the facing given.
 /// </summary>
-public sealed record GunHooked(string Vehicle, string Gun, string Crew, bool Hooked, int Mp, UnitFacing? Facing) : EventPayload;
+public sealed record GunHooked(string Vehicle, string Gun, string Crew, bool Hooked, int Mp, UnitFacing? Facing) : EventPayload
+{
+    /// <summary>Whether the crew boards the towing vehicle as a Passenger as it hooks up the Gun, at no extra MP (C10.11; ruling R26.2).</summary>
+    public bool Boards
+    {
+        get; init;
+    }
+}
 
 /// <summary>A Gun's shots this fire phase and whether its last one kept its Multiple ROF (C2.24); cleared at every phase change.</summary>
 public sealed record OrdnanceShotRecord(string Gun, int Shots, bool RateOfFireKept)

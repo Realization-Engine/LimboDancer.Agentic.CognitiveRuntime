@@ -1,0 +1,33 @@
+@* Plan S13 (pass 26): a hexspine to face, for a Gun's barrel (C2.23), a vehicle's VCA (D2.11), or an unhooked Gun; the caller keeps the choice and may
+   limit the hexspines offered. *@
+<label title="@Title">
+    @Label
+    <select id="@Id" value="@Value" @onchange="@(args => OnChange.InvokeAsync(args.Value as string ?? Value))">
+        @foreach (var spine in Choices ?? Enum.GetValues<UnitFacing>())
+        {
+            <option value="@UnitFacings.Name(spine)">@UnitFacings.Name(spine)</option>
+        }
+    </select>
+</label>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Id { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Label { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? Title { get; set; }
+
+    /// <summary>The hexspine's name, such as north-east.</summary>
+    [Parameter]
+    public string Value { get; set; } = "east";
+
+    /// <summary>The hexspines offered; null for all six.</summary>
+    [Parameter]
+    public IReadOnlyList<UnitFacing>? Choices { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnChange { get; set; }
+}

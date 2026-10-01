@@ -101,7 +101,8 @@ public sealed class BacklogPass17Tests
     [Fact]
     public void BothCardsAreEmbeddedAndValid()
     {
-        Assert.Equal(Cards, ScenarioCards.Names);
+        // Pass 26 (ruling R26.7): the manufactured Armor Test is embedded beside the ported cards; it adapts no legacy card.
+        Assert.Equal(["armor-test", .. Cards], ScenarioCards.Names);
         foreach (var name in Cards)
         {
             var card = Card(name);

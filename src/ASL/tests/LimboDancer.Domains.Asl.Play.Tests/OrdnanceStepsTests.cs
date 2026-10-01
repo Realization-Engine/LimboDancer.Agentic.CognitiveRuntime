@@ -269,12 +269,13 @@ public sealed class OrdnanceStepsTests : IDisposable
     [Fact]
     public async Task TableFindingsACrewNeitherStrandsTheGameNorFiresFromMelee()
     {
-        // A concealed crew fires its Gun and loses its "?" (A12.14); a crew in Melee does not fire (A11.15).
+        // A concealed crew fires its Emplaced Gun and loses its "?": the colored dr of 5 with an enemy within 16 hexes reveals them (A12.34; ruling R26.5); a
+        // crew in Melee does not fire (A11.15).
         await Setup("german", Unit("de-crew", "asl:crew", "attacker-crew", "bd01:A2:0", "german", "asl:concealed"),
             Gun("de-gun", "attacker-inf-gun", "bd01:A2:0", "south-east", "de-crew", "german"), Unit("r1", "asl:squad", "defender-squad", "bd01:A5:0", "russian"),
             Unit("r2", "asl:squad", "defender-squad", "bd01:B2:0", "russian"));
         await Advance();
-        Committed(await Do(GameActions.FireOrdnance, Once(3, 5, 6, 6), new
+        Committed(await Do(GameActions.FireOrdnance, Once(5, 3, 6, 6), new
         {
             gunId = "de-gun",
             target = "bd01:A5:0"

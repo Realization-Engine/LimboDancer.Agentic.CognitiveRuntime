@@ -21,8 +21,9 @@ public sealed partial class GamePlanner
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(unit);
+        // D6.1 (ruling R26.2): a broken Passenger may stay aboard, free of rout requirements.
         if (unit.Status != InstanceStatus.Active || !Is(unit, Conditions.Broken) || Is(unit, Conditions.Melee) || Is(unit, Conditions.Captured)
-            || state.Location(unit.Id)?.Location is not { } at)
+            || state.Aboard(unit.Id) is not null || state.Location(unit.Id)?.Location is not { } at)
         {
             return null;
         }
@@ -711,7 +712,7 @@ public sealed partial class GamePlanner
         var rejected = existing.Skip(start).Select(item => item.Payload).OfType<SurrenderRejected>().Select(item => item.Unit).ToHashSet(StringComparer.Ordinal);
         var failed = new List<(UnitInstance, string, IReadOnlyList<string>?)>();
         foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && Is(unit, Conditions.Broken) && !Is(unit, Conditions.Melee)
-            && !Is(unit, Conditions.Captured) && !LiveFire.IsVehicle(unit)).OrderBy(unit => unit.Id, StringComparer.Ordinal))
+            && !Is(unit, Conditions.Captured) && !LiveFire.IsVehicle(unit) && state.Aboard(unit.Id) is null).OrderBy(unit => unit.Id, StringComparer.Ordinal))
         {
             if (state.Location(unit.Id)?.Location is not { } at)
             {

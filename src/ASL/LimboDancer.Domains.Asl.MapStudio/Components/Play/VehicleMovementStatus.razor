@@ -1,0 +1,20 @@
+@* Plan A18 (pass 26): the chosen vehicle's status: its VCA, MP spent and left, Motion, Reverse, Bypass, ESB, bog, and its Passengers and towed Gun; and a
+   Recalled AFV's obligation (D5.341). The page composes the text. *@
+<span id="vehicle-state" data-vca="@Vca">@Text</span>
+@if (Recall is not null)
+{
+    <span id="vehicle-recall" class="fail">@Recall</span>
+}
+
+@code {
+    /// <summary>The VCA's hexspine name, empty for a vehicle waiting off board.</summary>
+    [Parameter]
+    public string Vca { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string Text { get; set; } = string.Empty;
+
+    /// <summary>A Recalled AFV's obligation, or null.</summary>
+    [Parameter]
+    public string? Recall { get; set; }
+}

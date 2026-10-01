@@ -161,7 +161,7 @@ public sealed partial class GamePlanner
     /// <summary>
     /// The map reads of a shot: range, levels, LOS and Hindrance, and the target terrain as for Infantry fire; the Gun's terrain (C5.11);
     /// and the Covered Arc (C3.2): the hexspines the Gun turns, fewest first, to have the target within 30 degrees of its barrel, the
-    /// boundary rows included. A Covered Arc is read on one unreversed board only.
+    /// boundary rows included. The Covered Arc is read in the map's frame across boards and on a reversed board (rulings R8.7, R26.6).
     /// </summary>
     private ((OrdnanceShot Shot, UnitFacing? Facing)? Facts, string? Reason) OrdnanceMapFacts(GameState state, OrdnanceShot shot, BoardLocation target)
     {
@@ -750,8 +750,31 @@ public sealed partial class GamePlanner
             gunConditions[Conditions.IntensiveFire] = ConditionState.True;
         }
 
+        // A12.34 (ruling R26.5): an Emplaced hidden or concealed Gun that fires is revealed, with its crew, when the colored dr of its Original To Hit DR is 5 or
+        // more and the nearest Good Order enemy ground unit with a LOS to it is within 16 hexes, or the dr is a 6 and that unit 17 hexes or more away;
+        // otherwise both are placed (or stay) beneath "?"; they keep HIP when no such unit has a LOS to the Gun.
+        Dictionary<string, ConditionState>? emplacedReveal = null;
+        if (facts.Vehicle is null && state.Find(facts.Gun.GunId!) is EquipmentInstance firingGun && LiveOrdnance.Emplaced(state, firingGun) && state.Unit(facts.Crew.UnitId!) is { } gunCrew
+            && new[] { (IGameObject)firingGun, gunCrew }.Any(item => GameState.Condition(item, Conditions.Concealed) == ConditionState.True || GameState.Condition(item, Conditions.Hidden) == ConditionState.True)
+            && rolls.ToHit is [var colored, ..] && state.Location(firingGun.Id) is { } firingAt)
+        {
+            var nearest = NearestGoodOrderEnemyInLos(state, gunCrew.Side, firingAt.Location);
+            emplacedReveal = nearest is null
+                ? []
+                : (colored >= 5 && nearest <= 16) || (colored == 6 && nearest >= 17)
+                    ? new Dictionary<string, ConditionState>(StringComparer.Ordinal) { [Conditions.Concealed] = ConditionState.False, [Conditions.Hidden] = ConditionState.False }
+                    : new Dictionary<string, ConditionState>(StringComparer.Ordinal) { [Conditions.Concealed] = ConditionState.True, [Conditions.Hidden] = ConditionState.False };
+            foreach (var (name, value) in emplacedReveal)
+            {
+                if (GameState.Condition(firingGun, name) != value)
+                {
+                    gunConditions[name] = value;
+                }
+            }
+        }
+
         // A12.14 (ruling R8.5): a concealed Gun loses its "?" with its crew.
-        if (resolution.CrewConcealmentLost == true && state.Find(facts.Gun.GunId!) is EquipmentInstance concealedGun
+        if (emplacedReveal is null && resolution.CrewConcealmentLost == true && state.Find(facts.Gun.GunId!) is EquipmentInstance concealedGun
             && (GameState.Condition(concealedGun, Conditions.Concealed) == ConditionState.True || GameState.Condition(concealedGun, Conditions.Hidden) == ConditionState.True))
         {
             gunConditions[Conditions.Concealed] = ConditionState.False;
@@ -779,9 +802,17 @@ public sealed partial class GamePlanner
                 crewConditions[marker] = ConditionState.True;
             }
 
-            if (resolution.CrewConcealmentLost == true)
+            if (emplacedReveal is not null)
+            {
+                foreach (var (name, value) in emplacedReveal.Where(pair => GameState.Condition(crew, pair.Key) != pair.Value))
+                {
+                    crewConditions[name] = value;
+                }
+            }
+            else if (resolution.CrewConcealmentLost == true)
             {
                 crewConditions[Conditions.Concealed] = ConditionState.False;
+                crewConditions[Conditions.Hidden] = ConditionState.False;
             }
 
             if (crewConditions.Count > 0 && resolution.FirerEffect is not (OrdnancePanzerfaustCheck.CasualtyReduction or OrdnancePanzerfaustCheck.Broken))

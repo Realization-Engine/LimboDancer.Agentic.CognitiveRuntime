@@ -1,0 +1,219 @@
+{
+  "format": "asl-scenario-card/1",
+  "id": "armor-test",
+  "title": "Armor Test",
+  "catalog": "asl-scenario-a1@1.12.0",
+  "source": {
+    "basis": "Manufactured under R0.3 as the test card of pass 26 of the Card Play and Map Studio Redesign Plan (ruling R26.7): it fields vehicles and Guns from setup to exit. It is not a published scenario.",
+    "legacy": "None: a manufactured test card (R0.3; ruling R26.7), adapting no legacy card",
+    "adaptation": [
+      "Every fact of the card is manufactured under R0.3: the forces, the areas, the turns, and the Victory Conditions were chosen to exercise vehicles entering loaded and towing, Passengers unloading, a Gun set up manned, and vehicles leaving the map.",
+      "The counters are the catalog's: the SPW 251/1, the PzKpfw IIIH, the Opel Blitz towing the leIG 18, the T-34 M41, and the 45mm PTP obr. 32."
+    ]
+  },
+  "place": "A road west of the Don, Russia",
+  "date": {
+    "day": 15,
+    "month": 8,
+    "year": 1942
+  },
+  "introduction": "A German column with a towed infantry gun pushes along a road toward the river, where a Russian rearguard waits with an anti-tank gun and one tank.",
+  "boards": [
+    {
+      "board": "bd04",
+      "column": 0,
+      "row": 0,
+      "reversed": false
+    }
+  ],
+  "north": "top",
+  "turns": {
+    "count": 5,
+    "halfTurn": false,
+    "setsUpFirst": "russian",
+    "movesFirst": "german"
+  },
+  "scenarioDefender": "russian",
+  "sides": [
+    {
+      "side": "russian",
+      "san": 2,
+      "friendlyEdge": {
+        "edge": "bottom",
+        "basis": "setup",
+        "note": "A20.53: the Russians set up in hexrows 5 to 10 with no enemy between them and the south edge."
+      },
+      "balance": "Add one 4-4-7 squad to the Russian OB.",
+      "balanceUnits": [
+        {
+          "definition": "defender-squad",
+          "count": 1
+        }
+      ],
+      "groups": [
+        {
+          "name": "Rearguard",
+          "elr": 3,
+          "dummies": 2,
+          "areas": [
+            {
+              "id": "south",
+              "kind": "hex-numbers",
+              "board": "bd04",
+              "from": 5,
+              "to": 10
+            }
+          ],
+          "units": [
+            {
+              "definition": "defender-squad",
+              "count": 3
+            },
+            {
+              "definition": "defender-leader-8-1",
+              "count": 1
+            },
+            {
+              "definition": "defender-crew",
+              "count": 1
+            },
+            {
+              "definition": "defender-at-gun",
+              "count": 1
+            },
+            {
+              "definition": "defender-tank",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "side": "german",
+      "san": 2,
+      "friendlyEdge": {
+        "edge": "top",
+        "basis": "entry",
+        "note": "A20.53: the Germans enter along the north edge."
+      },
+      "balance": "Add one LMG to the German OB.",
+      "balanceUnits": [
+        {
+          "definition": "attacker-lmg",
+          "count": 1
+        }
+      ],
+      "groups": [
+        {
+          "name": "Column",
+          "elr": 3,
+          "areas": [
+            {
+              "id": "entry",
+              "kind": "entry",
+              "turn": 1,
+              "edge": "top",
+              "limit": "The whole group enters along the north edge on Turn 1, the vehicles in Motion and loaded as they choose (A2.52)."
+            }
+          ],
+          "units": [
+            {
+              "definition": "attacker-halftrack",
+              "count": 1
+            },
+            {
+              "definition": "attacker-tank",
+              "count": 1
+            },
+            {
+              "definition": "attacker-truck",
+              "count": 1
+            },
+            {
+              "definition": "attacker-inf-gun",
+              "count": 1
+            },
+            {
+              "definition": "attacker-crew",
+              "count": 1
+            },
+            {
+              "definition": "attacker-squad",
+              "count": 1
+            },
+            {
+              "definition": "attacker-leader-8-1",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "specialRules": [
+    {
+      "number": 1,
+      "text": "EC are Moderate, with no wind; the weather is Clear. Grain is in season.",
+      "status": "not-enforced",
+      "tokens": [],
+      "rules": [
+        "B25.5",
+        "R16.9"
+      ],
+      "note": "The Clear weather is the game's default (R16.9); the scenario month, August, puts grain in season."
+    },
+    {
+      "number": 2,
+      "text": "The German vehicles enter in Motion; the squad and leader may enter as Passengers of the halftrack, and the crew as a Passenger of the truck towing the infantry gun.",
+      "status": "not-enforced",
+      "tokens": [],
+      "rules": [
+        "R26.1",
+        "R26.2"
+      ],
+      "note": "A2.52 allows it without an SSR; the setup places the Passengers and the towed Gun (ruling R26.1)."
+    },
+    {
+      "number": 3,
+      "text": "The Russian 45mm gun may set up hidden, with its crew, if Emplaced in Concealment Terrain.",
+      "status": "not-enforced",
+      "tokens": [],
+      "rules": [
+        "R26.5"
+      ],
+      "note": "A12.34 allows it without an SSR (ruling R26.5)."
+    }
+  ],
+  "victoryConditions": {
+    "kind": "exit",
+    "text": "The Germans win at once when they have exited at least 8 Exit VP off the south edge on or adjacent to hexes 4G10, 4Q10, or 4Y10 (a vehicle is worth its VP and its Passengers theirs, a Gun 2). Otherwise the Russians win.",
+    "rules": [
+      "A26.23",
+      "A26.211",
+      "A26.3",
+      "R26.4"
+    ],
+    "outcomes": [
+      {
+        "winner": "german",
+        "immediate": true,
+        "any": [
+          {
+            "type": "exit-vp",
+            "side": "german",
+            "atLeast": 8,
+            "edge": "bottom",
+            "near": [
+              "bd04:G10",
+              "bd04:Q10",
+              "bd04:Y10"
+            ]
+          }
+        ]
+      }
+    ],
+    "otherwise": "russian"
+  },
+  "aftermath": "A manufactured test of vehicles and Guns on a card; it has no history."
+}
