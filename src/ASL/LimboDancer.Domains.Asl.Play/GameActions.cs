@@ -324,16 +324,16 @@ public static class GameActions
         """);
 
     public static readonly ActionDescriptor Advance = Descriptor("asl.game.advance", "Advance",
-        "In the APh, Infantry of the phasing side in one Location that are not broken, pinned, berserk, or held in Melee advance into one ADJACENT Location at the same level, even one holding Known enemy units, where CC follows (A3.7, A4.7).",
+        "In the APh, Infantry of the phasing side in one Location that are not broken, pinned, berserk, or held in Melee advance into one ADJACENT Location at the same level, even one holding Known enemy units, where CC follows (A3.7, A4.7); units waiting off board enter by advance into a hex of their entry edge (A2.5); or, naming an edge instead of a Location, units leave the map from an edge hex (A2.6).",
         PlayPermission, "asl.game.reviewed-close-combat-v1", """
         {
           "type": "object", "additionalProperties": false,
-          "required": ["gameId", "attemptId", "expectedRevision", "unitIds", "to"],
+          "required": ["gameId", "attemptId", "expectedRevision", "unitIds"],
           "properties": {
             "gameId": { "type": "string" }, "attemptId": { "type": "string" },
             "expectedRevision": { "type": "integer", "minimum": 0 },
             "unitIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
-            "to": { "type": "string" }
+            "to": { "type": "string" }, "exit": { "type": "string", "enum": ["top", "bottom", "left", "right"] }
           }
         }
         """, JsonSerializer.SerializeToElement(new

@@ -1648,12 +1648,16 @@ details.advanced > summary {
     margin-right: 0.75rem;
 }
 
-/* Ruling R24.2: the units Mopping Up on a row of their own, one label each, kept whole when the list wraps. */
-.mop-up-units {
+/* Ruling R24.2, pass 25: the units Mopping Up, moving, or advancing on a row of their own, one label each, kept whole when the list wraps. */
+.mop-up-units,
+.move-units,
+.advance-units {
     flex-basis: 100%;
 }
 
-.mop-up-units label {
+.mop-up-units label,
+.move-units label,
+.advance-units label {
     margin-right: 0.75rem;
     white-space: nowrap;
 }

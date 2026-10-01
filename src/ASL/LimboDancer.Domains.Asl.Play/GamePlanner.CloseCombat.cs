@@ -29,6 +29,12 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.no-game: the game has no state yet");
         }
 
+        // A2.6 (ruling R25.5): an advance off the map.
+        if (Text(arguments, "exit", out var exitEdge) && !arguments.TryGetProperty("to", out _))
+        {
+            return PlanExit(scope, arguments, existing, attemptId, expected, label, exitEdge);
+        }
+
         var ids = Strings(arguments, "unitIds").ToArray();
         if (ids.Length == 0 || ids.Distinct(StringComparer.Ordinal).Count() != ids.Length || !Text(arguments, "to", out var toText)
             || !BoardLocation.TryParse(toText, out var to))
@@ -53,7 +59,36 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.advance-unit: every unit is an active unit of the phasing side from the catalog");
         }
 
-        if (units.Select(unit => state.Location(unit!.Id)?.Location).Distinct().ToArray() is not [{ } from])
+        // A2.5 (ruling R25.1): units whose entry turn has come and that did not enter in the MPh enter by advance, as one advance into a hex of their edge.
+        var offBoard = units.Count(unit => unit!.Position is OffMapPosition && state.Location(unit.Id) is null);
+        HexsideDirection? entering = null;
+        if (offBoard > 0)
+        {
+            if (offBoard < units.Length)
+            {
+                return Refused(scope, label, expected, "play.entry-stack: units waiting off board enter apart from units on the map (A2.51; ruling R20.5)");
+            }
+
+            var (edge, crossing, barred) = EntryCheck(state, [.. units.Select(unit => unit!)], to, true);
+            if (edge is null)
+            {
+                return Refused(scope, label, expected, barred!);
+            }
+
+            entering = crossing;
+        }
+
+        // An entering stack has no Location yet; it advances from the mirror-image hex beyond the edge (ruling R25.1).
+        BoardLocation from;
+        if (entering is not null)
+        {
+            from = to;
+        }
+        else if (units.Select(unit => state.Location(unit!.Id)?.Location).Distinct().ToArray() is [{ } origin])
+        {
+            from = origin;
+        }
+        else
         {
             return Refused(scope, label, expected, "play.advance-unit: the units advance from one Location");
         }
@@ -94,7 +129,7 @@ public sealed partial class GamePlanner
             && !Is(unit, Conditions.Abandoned) && !Is(unit, Conditions.Concealed) && !Is(unit, Conditions.Hidden));
 
         // A4.7 (rulings R10.1 to R10.3): one hex, or one level up or down in a stairwell hex, at the MF cost the move would pay; B16.4: never into marsh.
-        var (entry, stepReason) = InfantryStep(state, from, to);
+        var (entry, stepReason) = entering is { } edgeSide ? EntryGround(state, to, edgeSide) : InfantryStep(state, from, to);
         if (entry is null)
         {
             return Refused(scope, label, expected, stepReason!.Replace("play.move-", "play.advance-", StringComparison.Ordinal));
@@ -118,11 +153,8 @@ public sealed partial class GamePlanner
         // A4.72 EX, A4.12, A4.42 (ruling R10.8): a Good Order leader of its nationality advancing with a MMC adds two MF and one IPC to it.
         var unitList = units.Select(unit => unit!).ToArray();
         // Table player, pass 10: as in the MPh, the leader's IPC goes to the one laden MMC, and his two MF to every MMC of his nationality.
-        bool Aided(UnitInstance unit) => vocabulary.IsA(unit.Kind, "asl:mmc") && Nationality(unit) is { } nationality && unitList.Any(leader => leader.Id != unit.Id
-            && vocabulary.IsA(leader.Kind, "asl:leader") && !Is(leader, Conditions.Broken) && Nationality(leader) == nationality);
-        var ipcTo = unitList.Where(unit => Aided(unit) && Laden(state, unit)).ToArray() is [{ } onlyLaden]
-            && unitList.Any(leader => vocabulary.IsA(leader.Kind, "asl:leader") && !Is(leader, Conditions.Broken) && !Is(leader, Conditions.Wounded)
-                && Nationality(leader) == Nationality(onlyLaden)) ? onlyLaden.Id : null;
+        var (aided, ipcTo) = AdvanceAid(state, unitList);
+        bool Aided(UnitInstance unit) => aided.Contains(unit.Id);
 
         // A4.72 (ruling R5.5): an advance into a Location costing at least four MF, or all of the unit's non-Double Time allotment after
         // portage, makes it CX, and an already CX unit may not make it; a unit left with no MF after portage does not advance.
@@ -168,7 +200,8 @@ public sealed partial class GamePlanner
             .OrderBy(unit => unit.Id, StringComparer.Ordinal).ToArray();
         string[] takers = [.. unitList.Where(unit => !Is(unit, Conditions.Unarmed) && !Is(unit, Conditions.Concealed) && !Is(unit, Conditions.Hidden)
             && (vocabulary.IsA(unit.Kind, "asl:mmc") || vocabulary.IsA(unit.Kind, "asl:smc"))).Select(unit => unit.Id).Order(StringComparer.Ordinal)];
-        var summary = $"play.advance: {string.Join(", ", ids)} advance into {to} ({terrain})" + (enemies.Length > 0 ? $", with {string.Join(", ", enemies.Select(item => item.Id))}: CC follows (A3.7)" : string.Empty)
+        var summary = $"play.advance: {string.Join(", ", ids)} advance into {to} ({terrain})"
+            + (entering is not null ? " from off board, entering the map (A2.5; ruling R25.1)" : string.Empty) + (enemies.Length > 0 ? $", with {string.Join(", ", enemies.Select(item => item.Id))}: CC follows (A3.7)" : string.Empty)
             + (tiring.Count > 0 ? $"; {string.Join(", ", tiring)} become CX advancing into Difficult Terrain (A4.72)" : string.Empty)
             + (excess > 0 ? $"; the Location is overstacked by {excess} squad-equivalent(s), which costs {excess} more MF (A5.11)" : string.Empty)
             + (surrendering.Length > 0 && takers.Length > 0 ? $"; {string.Join(", ", surrendering.Select(unit => unit.Id))} is Disrupted and surrenders (A19.12)" : string.Empty);
@@ -581,6 +614,21 @@ public sealed partial class GamePlanner
             && !state.At(to).OfType<UnitInstance>().Any(other => other.Status == InstanceStatus.Active && other.Side != unit.Side && !Is(other, Conditions.Captured)))];
 
     /// <summary>Whether a unit carries more PP than its IPC (A4.42): three for a MMC, one for a SMC, none for a wounded SMC, one less while CX.</summary>
+    /// <summary>
+    /// A4.72 EX, A4.12, A4.42 (ruling R10.8): the MMC advancing with a Good Order leader of their nationality, who add his two MF, and the one laden MMC that
+    /// takes his IPC; used by the advance and by an exit by advance (referee, pass 25).
+    /// </summary>
+    private (HashSet<string> Aided, string? IpcTo) AdvanceAid(GameState state, UnitInstance[] units)
+    {
+        var aided = units.Where(unit => vocabulary.IsA(unit.Kind, "asl:mmc") && Nationality(unit) is { } nationality && units.Any(leader => leader.Id != unit.Id
+            && vocabulary.IsA(leader.Kind, "asl:leader") && !Is(leader, Conditions.Broken) && Nationality(leader) == nationality)).Select(unit => unit.Id)
+            .ToHashSet(StringComparer.Ordinal);
+        var ipcTo = units.Where(unit => aided.Contains(unit.Id) && Laden(state, unit)).ToArray() is [{ } onlyLaden]
+            && units.Any(leader => vocabulary.IsA(leader.Kind, "asl:leader") && !Is(leader, Conditions.Broken) && !Is(leader, Conditions.Wounded)
+                && Nationality(leader) == Nationality(onlyLaden)) ? onlyLaden.Id : null;
+        return (aided, ipcTo);
+    }
+
     private bool Laden(GameState state, UnitInstance unit)
     {
         var ipc = (vocabulary.IsA(unit.Kind, "asl:smc") ? (Is(unit, Conditions.Wounded) ? 0 : 1) : 3) - (Is(unit, Conditions.Cx) ? 1 : 0);

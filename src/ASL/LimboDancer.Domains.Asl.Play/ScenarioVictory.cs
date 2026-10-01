@@ -162,7 +162,7 @@ public static class ScenarioVictory
         var standing = sides.Select(side =>
         {
             var (cvp, equipment) = Cvp(card, present, side, vp, adjacent, ended, holders);
-            return new VictorySide(side, cvp, ExitVp(card, present, side, vp, adjacent), UnbrokenSquads(present, side, knownTo)) { GunAndVehicleCvp = equipment };
+            return new VictorySide(side, cvp, ExitVp(card, present, side, vp, adjacent, ended), UnbrokenSquads(present, side, knownTo)) { GunAndVehicleCvp = equipment };
         }).ToArray();
 
         GameResult? Decide(bool immediateOnly)
@@ -413,10 +413,26 @@ public static class ScenarioVictory
             && condition.Near!.Select(hex => BoardLocation.Parse(hex + ":0")).Any(near => (near.Board == exit.From.Board && near.Hex == exit.From.Hex)
                 || adjacent(near).Any(next => next.Board == exit.From.Board && next.Hex == exit.From.Hex)));
 
-    /// <summary>A26.23: the VP a side has exited through its exit conditions' areas, none for broken Personnel.</summary>
-    private static int ExitVp(ScenarioCard card, GameState state, string side, Func<UnitInstance, int> vp, Func<BoardLocation, IEnumerable<BoardLocation>> adjacent) =>
-        state.Exits.Where(exit => !exit.Broken && state.Unit(exit.Unit) is { Status: InstanceStatus.Exited } unit && unit.Side == side && Qualifies(card, exit, side, adjacent))
-            .Sum(exit => vp(state.Unit(exit.Unit)!));
+    /// <summary>
+    /// Whether a Guard escorting prisoners off an edge is not eliminated for CVP (A20.53, A26.221; referee, pass 25): the side's Friendly Board Edge as the card
+    /// names it, or the edge of one of its exit conditions.
+    /// </summary>
+    public static bool EscortEdge(ScenarioCard card, string side, string edge)
+    {
+        ArgumentNullException.ThrowIfNull(card);
+        return card.Sides.FirstOrDefault(item => item.Side == side)?.FriendlyEdge.Edge == edge
+            || card.VictoryConditions.Outcomes?.SelectMany(outcome => outcome.Any).Any(condition => condition.Type == "exit-vp" && condition.Side == side && condition.Edge == edge) == true;
+    }
+
+    /// <summary>
+    /// A26.23: the VP a side has exited through its exit conditions' areas, none for broken Personnel; the enemy units its Guards took off with them count
+    /// their normal VP during play and double once the game has ended (A26.222; ruling R25.5).
+    /// </summary>
+    private static int ExitVp(ScenarioCard card, GameState state, string side, Func<UnitInstance, int> vp, Func<BoardLocation, IEnumerable<BoardLocation>> adjacent,
+        bool ended) =>
+        state.Exits.Where(exit => !exit.Broken && state.Unit(exit.Unit) is { Status: InstanceStatus.Exited } unit && (exit.CapturedBy ?? unit.Side) == side
+            && Qualifies(card, exit, side, adjacent))
+            .Sum(exit => vp(state.Unit(exit.Unit)!) * (exit.CapturedBy is not null && ended ? 2 : 1));
 
     /// <summary>
     /// A26.22, A26.221, A26.222 (rulings R21.2, R24.3): a side's CVP: the VP of the enemy units eliminated or wrecked, or that left the map other than by
@@ -433,7 +449,10 @@ public static class ScenarioVictory
             var value = unit.Status switch
             {
                 InstanceStatus.Eliminated or InstanceStatus.Wrecked => vp(unit),
-                InstanceStatus.Exited when state.Exits.LastOrDefault(exit => exit.Unit == unit.Id) is not { } exit || !Qualifies(card, exit, unit.Side, adjacent) => vp(unit),
+                // A20.53, A26.222 (ruling R25.5): a prisoner its Guard took off the map is still held; A26.221: the escorting Guard is not eliminated.
+                InstanceStatus.Exited when state.Exits.LastOrDefault(exit => exit.Unit == unit.Id) is { CapturedBy: not null } => vp(unit) * (ended ? 2 : 1),
+                InstanceStatus.Exited when state.Exits.LastOrDefault(exit => exit.Unit == unit.Id) is not { } exit
+                    || (!(exit.Escort && EscortEdge(card, unit.Side, exit.Edge)) && !Qualifies(card, exit, unit.Side, adjacent)) => vp(unit),
                 InstanceStatus.Active when Is(unit, Conditions.Captured) => vp(unit) * (ended ? 2 : 1),
                 _ => 0,
             };

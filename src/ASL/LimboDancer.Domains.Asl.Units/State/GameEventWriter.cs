@@ -689,6 +689,11 @@ public static class GameEventWriter
             case AdvanceMoved advanced:
                 Strings(writer, "units", advanced.Units);
                 writer.WriteString("to", advanced.To.ToString());
+                if (advanced.Exit is { } advanceExit)
+                {
+                    writer.WriteString("exit", advanceExit);
+                }
+
                 break;
             case AmbushRolled ambush:
                 writer.WriteString("location", ambush.Location.ToString());
@@ -940,8 +945,13 @@ public static class GameEventWriter
                     _ => "in-fortification",
                 });
                 break;
-            case OffMapPosition:
+            case OffMapPosition offMap:
                 writer.WriteBoolean("offMap", true);
+                if (offMap.Entry is { } entry)
+                {
+                    writer.WriteString("entry", entry);
+                }
+
                 break;
             default:
                 writer.WriteBoolean("notEntered", true);

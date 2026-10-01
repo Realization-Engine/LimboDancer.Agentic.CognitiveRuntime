@@ -407,6 +407,21 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         }
 
         var parsed = Parse(scope, events, attemptId, expected);
+
+        // Table player, pass 20 (pass 25): a unit naming another side's OB group is refused here, with a plain message, not by the projector.
+        if (parsed.Events is { Count: > 0 } created && (existing.Count > 0 ? Replay(existing).Current : Replay([created[0]]).Current) is { } groupsState)
+        {
+            foreach (var instance in created.Select(item => item.Payload).OfType<InstanceCreated>().Select(item => item.Instance))
+            {
+                if (instance.Group is { } group && instance.Side is { } owner && groupsState.Side(owner) is { } ownSide && ownSide.Groups.All(item => item.Id != group))
+                {
+                    var holder = groupsState.Sides.FirstOrDefault(item => item.Groups.Any(other => other.Id == group))?.Id;
+                    return Refused(scope, label, expected, $"play.setup-group: {instance.Id} is {owner}'s, and the OB group '{group}' is "
+                        + (holder is null ? "not a group of this game" : $"{holder}'s") + "; a unit sets up in an OB group of its own side (ruling R18.3)");
+                }
+            }
+        }
+
         if (parsed.Events is { } placed && Replay([.. existing, .. placed]).Current is { } after && VehicleSetupBar(after) is { } vehicleBar)
         {
             return Refused(scope, label, expected, vehicleBar);
@@ -549,8 +564,8 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             return Refused(scope, label, expected, $"play.dc-detonate-pending: {unexploded.Charge} was Placed in {unexploded.Target} and detonates before the AFPh ends (A23.4)");
         }
 
-        // A2.5 (ruling R20.5): the MPh does not end while a unit whose entry turn has come waits off board, unless its edge is blocked.
-        if (state.Phase == "mph" && EntryDue(state) is { } due)
+        // A2.5 (rulings R20.5, R25.1): the APh does not end while a unit whose entry turn has come waits off board and may still enter by advance.
+        if (state.Phase == "aph" && EntryDue(state) is { } due)
         {
             return Refused(scope, label, expected, due);
         }

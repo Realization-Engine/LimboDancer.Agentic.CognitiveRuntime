@@ -1,4 +1,5 @@
 using LimboDancer.Domains.Asl.Maps.Coordinates;
+using LimboDancer.Domains.Asl.Maps.Geometry;
 using LimboDancer.Domains.Asl.ScenarioA1;
 using LimboDancer.Domains.Asl.Units.Catalog;
 using LimboDancer.Domains.Asl.Units.State;
@@ -64,6 +65,7 @@ public sealed partial class GamePlanner
                 Is(unit, Conditions.Concealed), Is(unit, Conditions.Hidden), unit.Kind == UnitKinds.Dummy, false, placedNow.Contains(unit.Id))
             {
                 OffBoard = unit.Position is OffMapPosition && state.Location(unit.Id) is null,
+                Entry = (unit.Position as OffMapPosition)?.Entry,
                 Broken = Is(unit, Conditions.Broken),
                 NonOb = state.NonObConcealed.Contains(unit.Id, StringComparer.Ordinal),
             });
@@ -93,10 +95,10 @@ public sealed partial class GamePlanner
             : null;
 
     /// <summary>
-    /// The Game Turn and edge a unit waiting off board enters by (ruling R20.5): its OB group's entry for its line (a HS its squad's, a Balance counter
-    /// its group's first); null when the card gives none.
+    /// The Game Turn, edge, and entry area a unit waiting off board enters by (rulings R20.5, R25.4): the entry area its setup named, else its OB group's
+    /// entry for its line (a HS its squad's, a Balance counter its group's first); null when the card gives none.
     /// </summary>
-    public (int Turn, string Edge)? EntryFor(GameState state, UnitInstance unit)
+    public (int Turn, string Edge, ScenarioCardSetup Area)? EntryFor(GameState state, UnitInstance unit)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(unit);
@@ -113,10 +115,42 @@ public sealed partial class GamePlanner
 
         var definition = unit.Definition?.Definition;
         var squad = definition is null ? null : ScenarioA1FireReference.SquadOf(definition);
-        var entry = group.Units.Where(line => line.Definition == definition || line.Definition == squad).Select(line => ScenarioSetup.EntryOf(group, line)).FirstOrDefault(area => area is not null)
+        var entry = (unit.Position is OffMapPosition { Entry: { } named } ? group.Areas.FirstOrDefault(area => area.Kind == "entry" && area.Id == named) : null)
+            ?? group.Units.Where(line => line.Definition == definition || line.Definition == squad).Select(line => ScenarioSetup.EntryOf(group, line)).FirstOrDefault(area => area is not null)
             ?? group.Areas.Where(area => area.Kind == "entry").OrderBy(area => area.Turn).FirstOrDefault();
-        return entry is { Turn: { } turn, Edge: { } edge } ? (turn, edge) : null;
+        return entry is { Turn: { } turn, Edge: { } edge } ? (turn, edge, entry) : null;
     }
+
+    /// <summary>
+    /// The hexes a stack waiting off board may enter in this Game Turn (A2.5; rulings R20.5, R25.2): every hex of its edge within the playable area; or,
+    /// when its entry area names its entry hexes, those hexes on its entry turn, and each Game Turn later (its entry blocked) the hexes of the edge
+    /// within four more hexes of them, never past a river or canal on the edge.
+    /// </summary>
+    public IReadOnlyList<BoardLocation> EntryHexesFor(GameState state, (int Turn, string Edge, ScenarioCardSetup Area) entry)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        var edge = EntryHexes(state, entry.Edge);
+        if (entry.Area.Hexes is not { Count: > 0 } named || CardOf(state) is not { } card)
+        {
+            return edge;
+        }
+
+        var board = entry.Area.Board ?? (card.Boards.Count == 1 ? card.Boards[0].Board : null);
+        var points = edge.Where(at => at.Board.Value == board && named.Contains(at.Hex.ToString(), StringComparer.Ordinal)).ToArray();
+        var radius = 4 * Math.Max(0, state.Turn - entry.Turn);
+        if (radius == 0)
+        {
+            return points;
+        }
+
+        var rivers = edge.Where(at => IsRiver(state, at)).ToArray();
+        return [.. edge.Where(at => points.Any(point => HexDistance(state, point, at) is { } distance && distance <= radius
+            && !rivers.Any(river => HexDistance(state, point, river) is { } near && near > 0 && HexDistance(state, river, at) is { } far && near + far == distance)))];
+    }
+
+    /// <summary>Whether a hex is a river or canal (B21), which delayed entry never crosses along the edge (A2.5).</summary>
+    private bool IsRiver(GameState state, BoardLocation at) =>
+        ReadLocation(state, at)?.Hex.Center.Terrain?.Name is { } name && (name == "Water" || name.Contains("River", StringComparison.Ordinal) || name.Contains("Canal", StringComparison.Ordinal));
 
     /// <summary>The ground-level hexes of an edge within the playable area (A2.51; ruling R20.5), from each board of the map.</summary>
     public IReadOnlyList<BoardLocation> EntryHexes(GameState state, string edge)
@@ -144,43 +178,141 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>
-    /// Why a stack of a side may not enter a hex from off board (ruling R20.5): it holds enemy units (A4.14; concealed ones are not built at entry),
-    /// Residual FP or a Fire Lane (not built at entry), or terrain whose entry cost is not decided; null when it may.
+    /// Why a hex obstructs a side's entry from off board (A2.5; rulings R20.5, R25.2): a Known enemy unit or an enemy vehicle holds it (A4.14), or its
+    /// entry cost is not decided; null when it may be entered. Concealed and hidden enemy units do not obstruct it: an entering stack meets them as at any
+    /// step (A12.15; ruling R25.3), as it meets Residual FP and Fire Lanes.
     /// </summary>
     internal string? EntryHexBar(GameState state, string side, BoardLocation at)
     {
-        if (state.At(at).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != side && !Is(unit, Conditions.Captured)))
+        if (state.At(at).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != side && !Is(unit, Conditions.Captured)
+            && (KnownEnemy(unit) || LiveFire.IsVehicle(unit))))
         {
-            return $"play.entry-occupied: {at} holds enemy units; Infantry may not enter a Known enemy's Location in the MPh, and entering concealed ones from off board is not built (A4.14, A12.15; ruling R20.5)";
+            return $"play.entry-occupied: {at} holds a Known enemy unit, so it is not entered from off board in the MPh (A2.5, A4.14; ruling R25.2)";
         }
 
-        if (state.ResidualFire.Any(item => item.Location == at) || state.FireLanes.Any(lane => lane.Entries.Any(item => item.Location == at)))
-        {
-            return $"play.entry-residual: {at} holds Residual FP; entering it from off board is not built (A8.22; ruling R20.5)";
-        }
-
-        return ReadLocation(state, at) is { } read && TerrainKey(read) is { } terrain && InfantryEntryHalfMf(state, terrain) is not null
+        return ReadLocation(state, at) is { } read && TerrainKey(read) is { } terrain && (terrain == "marsh" || InfantryEntryHalfMf(state, terrain) is not null)
             ? null
             : $"play.entry-terrain: the entry cost of {at} is not decided (ruling R20.5)";
     }
 
     /// <summary>
-    /// Why the phasing side's MPh may not end (A2.5; ruling R20.5): a unit whose entry turn has come still waits off board, and a hex of its edge within the
-    /// playable area may be entered; null when none does. Vehicles, which cannot enter yet, are not held (referee, pass 20).
+    /// Why the phasing side's APh may not end (A2.5; rulings R20.5, R25.1): a unit whose entry turn has come still waits off board, did not enter in the
+    /// MPh, and may still enter a hex open to it by advance; null when none does. The MPh may end with units waiting, since A2.5 lets a unit capable of
+    /// movement in the APh delay its entry until then. Vehicles, which cannot enter yet, are not held (referee, pass 20).
     /// </summary>
     internal string? EntryDue(GameState state)
     {
+        var waiting = new List<string>();
+        var open = new List<BoardLocation>();
         foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && unit.Position is OffMapPosition
             && state.Location(unit.Id) is null).OrderBy(unit => unit.Id, StringComparer.Ordinal))
         {
-            if (!LiveFire.IsVehicle(unit) && EntryFor(state, unit) is { } entry && entry.Turn <= state.Turn
-                && EntryHexes(state, entry.Edge).Any(at => EntryHexBar(state, unit.Side, at) is null))
+            if (!LiveFire.IsVehicle(unit) && EntryFor(state, unit) is { } entry && entry.Turn <= state.Turn && AdvanceEntries(state, unit, entry) is { Count: > 0 } hexes)
             {
-                return $"play.entry-due: {unit.Id} was to enter on Game Turn {entry.Turn} along the {entry.Edge} edge and enters in this MPh (A2.5; ruling R20.5)";
+                waiting.Add(unit.Id);
+                open.AddRange(hexes.Where(at => !open.Contains(at)));
             }
         }
 
-        return null;
+        // Table player, pass 25: the refusal names every unit still waiting and hexes open to them.
+        return waiting.Count == 0 ? null
+            : $"play.entry-due: {string.Join(", ", waiting)} {(waiting.Count == 1 ? "waits" : "wait")} off board and must still enter this Game Turn: advance into a hex of the entry edge, such as "
+                + string.Join(", ", open.Take(6)) + (open.Count > 6 ? ", ..." : string.Empty) + ", before the APh ends (A2.5; rulings R20.5, R25.1)";
+    }
+
+    /// <summary>
+    /// The hexes a unit may enter by advance in this APh (ruling R25.1; table player and referee, pass 25): those open to its entry this Game Turn that no Known
+    /// enemy unit or enemy vehicle holds, entered across the edge hexside at a decided cost that is not all of a unit's MF (marsh is not entered in the APh, B16.4),
+    /// and that the unit itself can advance into: not pinned, with MF left after portage, and not CX into Difficult Terrain (A4.7, A4.72). A unit that cannot
+    /// advance into any is "not capable of movement in the APh" (A2.5), so it does not hold the APh; its entry is a Game Turn later.
+    /// </summary>
+    private List<BoardLocation> AdvanceEntries(GameState state, UnitInstance unit, (int Turn, string Edge, ScenarioCardSetup Area) entry) =>
+        Is(unit, Conditions.Pinned) ? []
+            : [.. EntryHexesFor(state, entry).Where(at => EntryHexBar(state, unit.Side, at) is null
+                && EdgeSides(state, at).FirstOrDefault(item => item.Edge == entry.Edge) is { Edge: not null } crossing
+                && EntryGround(state, at, crossing.Side).Entry is { AllMf: false } cost
+                && DifficultAdvance(state, unit, cost.HalfMf) is { } difficult && !(difficult && Is(unit, Conditions.Cx)))];
+
+    /// <summary>
+    /// The hexes a unit waiting off board may enter in this MPh (A2.5; rulings R20.5, R25.2; table player, pass 25): those open to its entry this Game Turn that
+    /// no Known enemy unit or enemy vehicle holds; empty when its entry turn has not come or every such hex is held, which delays it a Game Turn.
+    /// </summary>
+    public IReadOnlyList<BoardLocation> OpenEntryHexes(GameState state, UnitInstance unit)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(unit);
+        return EntryFor(state, unit) is { } entry && entry.Turn <= state.Turn
+            ? [.. EntryHexesFor(state, entry).Where(at => EntryHexBar(state, unit.Side, at) is null)]
+            : [];
+    }
+
+    /// <summary>
+    /// The entry of a stack waiting off board (A2.5, A2.51; rulings R20.5, R25.2): every unit enters by the card in this Game Turn or a later one, along one
+    /// edge, into a ground-level hex open to it within the playable area; in the MPh not one a Known enemy unit holds (A4.14), which an advance may enter.
+    /// Returns the edge and the edge hexside crossed, or why the stack may not enter <paramref name="to"/>.
+    /// </summary>
+    private (string? Edge, HexsideDirection Side, string? Reason) EntryCheck(GameState state, UnitInstance[] movers, BoardLocation to, bool advancing)
+    {
+        if (movers.FirstOrDefault(LiveFire.IsVehicle) is { } vehicle)
+        {
+            return (null, default, $"play.entry-vehicle: {vehicle.Id} is a vehicle; vehicles entering from off board are not built (A2.52; ruling R20.5)");
+        }
+
+        // A5.1, A2.51 (referee, pass 25): an entering stack keeps to the stacking limits, which offboard setup never exceeds.
+        var squads = movers.Sum(unit => vocabulary.IsA(unit.Kind, "asl:squad") ? 1.0 : vocabulary.IsA(unit.Kind, "asl:half-squad") || vocabulary.IsA(unit.Kind, "asl:crew") ? 0.5 : 0.0);
+        if (squads > 3 || movers.Count(unit => vocabulary.IsA(unit.Kind, "asl:smc")) > 4)
+        {
+            return (null, default, "play.entry-stacking: an entering stack holds at most three squad-equivalents and four SMC, the stacking limits offboard setup never exceeds (A5.1, A2.51)");
+        }
+
+        var entries = movers.Select(unit => (Unit: unit, Entry: EntryFor(state, unit))).ToArray();
+        if (entries.FirstOrDefault(item => item.Entry is null) is { Unit: { } lost })
+        {
+            return (null, default, $"play.entry: {lost.Id} waits off board with no entry on the card (ruling R20.5)");
+        }
+
+        if (entries.FirstOrDefault(item => item.Entry!.Value.Turn > state.Turn) is { Unit: { } early } late)
+        {
+            return (null, default, $"play.entry-turn: {early.Id} enters on Game Turn {late.Entry!.Value.Turn}, not {state.Turn} (A2.5; ruling R20.5)");
+        }
+
+        if (entries.Select(item => item.Entry!.Value.Edge).Distinct(StringComparer.Ordinal).ToArray() is not [var edge])
+        {
+            return (null, default, "play.entry-stack: a stack enters along one edge; units of different entry edges enter apart (ruling R20.5)");
+        }
+
+        if (to.Level != 0 || EdgeSides(state, to).FirstOrDefault(item => item.Edge == edge) is not { Edge: not null } crossing)
+        {
+            return (null, default, $"play.entry-edge: {string.Join(", ", movers.Select(unit => unit.Id))} enter at ground level in a hex of the {edge} edge, and {to} is not one (A2.51; ruling R20.5)");
+        }
+
+        if (PlayableBar(state, to) is { } outside)
+        {
+            return (null, default, outside);
+        }
+
+        // A2.5 (ruling R25.2): named entry hexes, and the four-hex radius a Game Turn later for each turn the entry was blocked.
+        foreach (var (unit, entry) in entries)
+        {
+            if (!EntryHexesFor(state, entry!.Value).Any(at => at == to))
+            {
+                var named = entry.Value.Area.Hexes is { Count: > 0 } hexes ? string.Join(", ", hexes) : null;
+
+                // Referee, pass 25: a card naming no hex of the edge is said so, not left silent.
+                if (named is not null && !EntryHexes(state, edge).Any(at => entry.Value.Area.Hexes!.Contains(at.Hex.ToString(), StringComparer.Ordinal)))
+                {
+                    return (null, default, $"play.entry-hex: the card names {named} for {unit.Id}'s entry, and none is a hex of the {edge} edge within the playable area (ruling R25.2)");
+                }
+
+                return (null, default, named is null
+                    ? $"play.entry-edge: {to} is not a hex of the {edge} edge within the playable area (A2.51; ruling R20.5)"
+                    : state.Turn == entry.Value.Turn
+                        ? $"play.entry-hex: {unit.Id} enters by {named} on Game Turn {entry.Value.Turn}; elsewhere only a Game Turn later, if they are blocked (A2.5; ruling R25.2)"
+                        : $"play.entry-hex: {unit.Id} was to enter by {named}; on Game Turn {state.Turn} it enters within {4 * (state.Turn - entry.Value.Turn)} hexes of them along the {edge} edge, never past a river or canal (A2.5; ruling R25.2)");
+            }
+        }
+
+        return !advancing && EntryHexBar(state, movers[0].Side, to) is { } barred ? (null, default, barred) : (edge, crossing.Side, null);
     }
 
     /// <summary>Why a game from a card may not start play yet (ruling R19.2): a group that sets up on board has not finished; null when it may.</summary>

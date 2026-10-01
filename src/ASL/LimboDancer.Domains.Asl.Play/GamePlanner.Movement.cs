@@ -119,16 +119,42 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.move-stack: every mover is an active unit of the phasing side");
         }
 
-        // Pass 20 (ruling R20.5): a stack waiting off board enters along its entry edge; it never moves with units on the map.
+        // Rulings R20.5, R25.3: a stack waiting off board enters along its entry edge as its first step, which is a step like any other; it never moves
+        // with units on the map, and takes no action off board (A2.52).
         var offBoard = movers.Count(unit => unit!.Position is OffMapPosition && state.Location(unit.Id) is null);
+        HexsideDirection? entering = null;
         if (offBoard > 0)
         {
-            return offBoard < movers.Length
-                ? Refused(scope, label, expected, "play.entry-stack: units waiting off board enter apart from units on the map (A2.51; ruling R20.5)")
-                : PlanEnter(scope, arguments, attemptId, expected, label, state, [.. movers.Select(unit => unit!)], ids, to);
+            if (offBoard < movers.Length)
+            {
+                return Refused(scope, label, expected, "play.entry-stack: units waiting off board enter apart from units on the map (A2.51; ruling R20.5)");
+            }
+
+            if (Text(arguments, "smoke", out _) || Text(arguments, "placeDc", out _) || Text(arguments, "pushGun", out _))
+            {
+                return Refused(scope, label, expected, "play.entry-offboard-action: no action is allowed by units waiting off board; a stack places SMOKE or a DC once it is on the map (A2.52; ruling R25.3)");
+            }
+
+            var (edge, crossing, barred) = EntryCheck(state, [.. movers.Select(unit => unit!)], to, false);
+            if (edge is null)
+            {
+                return Refused(scope, label, expected, barred!);
+            }
+
+            entering = crossing;
         }
 
-        if (movers.Select(unit => state.Location(unit!.Id)?.Location).Distinct().ToArray() is not [{ } from])
+        // An entering stack has no Location yet: the steps below read its origin only for a stack on the map (ruling R25.3).
+        BoardLocation from;
+        if (entering is not null)
+        {
+            from = to;
+        }
+        else if (movers.Select(unit => state.Location(unit!.Id)?.Location).Distinct().ToArray() is [{ } origin])
+        {
+            from = origin;
+        }
+        else
         {
             return Refused(scope, label, expected, "play.move-stack: the stack moves from one Location (A4.2)");
         }
@@ -344,7 +370,9 @@ public sealed partial class GamePlanner
             }
         }
 
-        var (entry, stepReason, bypassing, occupy) = MoveEntry(state, [.. movers.Select(unit => unit!)], from, to, current, bypass);
+        var (entry, stepReason, bypassing, occupy) = entering is { } edgeSide
+            ? EntryStep(state, [.. movers.Select(unit => unit!)], to, edgeSide, bypass)
+            : MoveEntry(state, [.. movers.Select(unit => unit!)], from, to, current, bypass);
         if (entry is null)
         {
             return Refused(scope, label, expected, stepReason!);
@@ -468,7 +496,7 @@ public sealed partial class GamePlanner
             Attempted = forcedBack ? to : null,
             Bypass = bypassing,
         };
-        var summary = $"play.move: {string.Join(", ", ids)} " + (forcedBack ? $"attempt {to}" : occupy ? $"occupy the obstacle of {to}" : $"enter {to}")
+        var summary = $"{(entering is not null ? "play.enter" : "play.move")}: {string.Join(", ", ids)} " + (forcedBack ? $"attempt {to}" : occupy ? $"occupy the obstacle of {to}" : $"enter {to}")
             + $" ({terrain}{(bypassing is not null ? " in Bypass along " + string.Join(", ", bypassing.Select(side => side.ToString().ToLowerInvariant())) : string.Empty)}) for {halfMf / 2m} MF"
             + (assault ? ", by Assault Movement" : string.Empty)
             + (doubleTime ? ", Double Timing and now CX (A4.5)" : string.Empty)
@@ -478,10 +506,13 @@ public sealed partial class GamePlanner
         List<GameEvent> prefix = [.. abandoned.Select((item, index) => Event(scope, attemptId, index + 1, expected, "equipment-transferred",
             new EquipmentTransferred(item.Id, null, new MapPosition(from)), package, null))];
         var landed = forcedBack ? from : to;
-        var residual = state.ResidualFire.FirstOrDefault(item => item.Location == landed);
+
+        // A2.51 (ruling R25.3): a stack forced back off board is beyond every attack.
+        var offMap = entering is not null && forcedBack;
+        var residual = offMap ? null : state.ResidualFire.FirstOrDefault(item => item.Location == landed);
 
         // A9.22 (ruling R12.7): each Fire Lane with Residual FP in the Location attacks the stack after any other Residual FP.
-        var lanes = state.FireLanes.SelectMany(lane => lane.Entries.Where(item => item.Location == landed).Select(item => (Lane: lane, Entry: item))).ToArray();
+        var lanes = offMap ? [] : state.FireLanes.SelectMany(lane => lane.Entries.Where(item => item.Location == landed).Select(item => (Lane: lane, Entry: item))).ToArray();
         if (pushed is not null)
         {
             return residual is not null || lanes.Length > 0
@@ -553,9 +584,16 @@ public sealed partial class GamePlanner
             return events;
         }
 
+        if (entering is not null)
+        {
+            summary += " from off board, the stack's first MF expenditure (A2.51; ruling R25.3)";
+        }
+
         if (revealing.Length > 0)
         {
-            summary += forcedBack
+            summary += offMap
+                ? $"; a concealed unit at {to} is revealed and the stack is forced back off board with the MF spent, its MPh over; it may still enter by advance in the APh (A12.15, A2.5; ruling R25.3)"
+                : forcedBack
                 ? $"; a concealed unit at {to} is revealed and the stack stays in {from} with the MF spent, its move ending (A12.15)"
                 : charge is not null ? $"; the concealed units at {to} are revealed as the charge enters (A15.431, A12.15)"
                 : $"; only Dummies were at {to}, and they are removed (A12.15)";
@@ -566,7 +604,7 @@ public sealed partial class GamePlanner
             var events = Stepped(null, null);
 
             // A12.2 Case H (ruling R6.7): the step may bring a concealed vehicle out of Concealment Terrain into the movers' LOS.
-            if (Replay([.. existing, .. events]).Current is { } stepped && VehicleConcealmentLost(stepped, null, false) is { Count: > 0 } lost)
+            if (!offMap && Replay([.. existing, .. events]).Current is { } stepped && VehicleConcealmentLost(stepped, null, false) is { Count: > 0 } lost)
             {
                 events = [.. events, .. RevealEvents(scope, attemptId, expected, events.Count + 1, lost)];
                 summary += $"; {string.Join(", ", lost)} loses its \"?\" (A12.2)";
@@ -629,91 +667,32 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>
-    /// A stack waiting off board enters (A2.5, A2.51; ruling R20.5): in its side's MPh of its entry Game Turn or later, into a ground-level hex of its
-    /// entry edge within the playable area, as the stack's first MF expenditure at that hex's cost, by Assault Movement or Double Time if it chooses.
-    /// The DEFENDER may then fire as at any step. Bypass, Minimum Move, SMOKE, a DC, and a hex holding enemy units or Residual FP are not built at entry.
+    /// The first step of a stack waiting off board (A2.51, A2.6; ruling R25.3): into a ground-level hex of its entry edge across the edge's hexside, as if from
+    /// the mirror-image hex beyond it at the same level: the hex's own cost, at the road rate across a road hexside, one MF more across a wall or hedge,
+    /// or in Bypass along one or two hexsides starting at a vertex of the edge's hexside.
     /// </summary>
-    private GamePlan PlanEnter(GameScope scope, JsonElement arguments, string attemptId, long expected, string label, GameState state, UnitInstance[] movers,
-        string[] ids, BoardLocation to)
+    private (InfantryEntry? Entry, string? Reason, IReadOnlyList<HexsideDirection>? Bypass, bool Occupy) EntryStep(GameState state, UnitInstance[] movers, BoardLocation to,
+        HexsideDirection side, List<HexsideDirection>? bypass)
     {
-        var assault = Flag(arguments, "assault");
-        var doubleTime = Flag(arguments, "doubleTime");
-        if (Flag(arguments, "minimumMove") || arguments.TryGetProperty("bypass", out _) || Text(arguments, "smoke", out _) || Text(arguments, "placeDc", out _)
-            || Text(arguments, "pushGun", out _) || (assault && doubleTime))
+        if (bypass is not null)
         {
-            return Refused(scope, label, expected, "play.entry-options: a stack enters by a plain step, by Assault Movement, or with Double Time; Bypass, Minimum Move, SMOKE, and a DC are not built at entry (A4.61; ruling R20.5)");
+            return ReadLocation(state, to) is { } read && HexsideAt(state, to, side) is { } crossed
+                ? BypassStep(state, movers, to, side, read.Hex.BaseLevel, WallOn(crossed), bypass)
+                : (null, $"play.entry-terrain: the entry cost of {to} is not decided (ruling R20.5)", null, false);
         }
 
-        if (state.Movement is not null)
-        {
-            return Refused(scope, label, expected, $"play.move-order: {string.Join(", ", state.Movement.Movers)} moved last; end their move first (A4.2)");
-        }
-
-        if (movers.FirstOrDefault(LiveFire.IsVehicle) is { } vehicle)
-        {
-            return Refused(scope, label, expected, $"play.entry-vehicle: {vehicle.Id} is a vehicle; vehicles entering from off board are not built (A2.52; ruling R20.5)");
-        }
-
-        if (movers.FirstOrDefault(unit => Is(unit, Conditions.Broken) || Is(unit, Conditions.Pinned) || unit.MovementEnded) is { } unable)
-        {
-            return Refused(scope, label, expected, $"play.move-unit: {unable.Id} is broken, pinned, or done moving (A4.1)");
-        }
-
-        var entries = movers.Select(unit => (Unit: unit, Entry: EntryFor(state, unit))).ToArray();
-        if (entries.FirstOrDefault(item => item.Entry is null) is { Unit: { } lost })
-        {
-            return Refused(scope, label, expected, $"play.entry: {lost.Id} waits off board with no entry on the card (ruling R20.5)");
-        }
-
-        if (entries.FirstOrDefault(item => item.Entry!.Value.Turn > state.Turn) is { Unit: { } early } late)
-        {
-            return Refused(scope, label, expected, $"play.entry-turn: {early.Id} enters on Game Turn {late.Entry!.Value.Turn}, not {state.Turn} (A2.5; ruling R20.5)");
-        }
-
-        var edges = entries.Select(item => item.Entry!.Value.Edge).Distinct(StringComparer.Ordinal).ToArray();
-        if (edges is not [var edge])
-        {
-            return Refused(scope, label, expected, "play.entry-stack: a stack enters along one edge; units of different entry edges enter apart (ruling R20.5)");
-        }
-
-        if (to.Level != 0 || !EdgeSides(state, to).Any(item => item.Edge == edge))
-        {
-            return Refused(scope, label, expected, $"play.entry-edge: {string.Join(", ", ids)} enter at ground level in a hex of the {edge} edge, and {to} is not one (A2.51; ruling R20.5)");
-        }
-
-        if (PlayableBar(state, to) is { } outside)
-        {
-            return Refused(scope, label, expected, outside);
-        }
-
-        if (EntryHexBar(state, state.PhasingSide!, to) is { } barred)
-        {
-            return Refused(scope, label, expected, barred);
-        }
-
-        var terrain = TerrainKey(ReadLocation(state, to)!)!;
-        var halfMf = InfantryEntryHalfMf(state, terrain)!.Value;
-
-        foreach (var unit in movers)
-        {
-            var extra = doubleTime ? 2 : 0;
-            if (MfAllotment(state, unit, extra, doubleTime) is not { } allowance || MfAllotment(state, unit, 0, doubleTime) is not { } plain)
-            {
-                return Refused(scope, label, expected, $"play.move-mf: {unit.Id} has no MF allowance the catalog decides");
-            }
-
-            if (allowance * 2 < halfMf || (assault && plain * 2 <= halfMf))
-            {
-                return Refused(scope, label, expected, $"play.move-mf: {unit.Id} has {allowance} MF, and entering {to} costs {halfMf / 2m} (A4.11, A4.61)");
-            }
-        }
-
-        var moved = new MovementStepped(ids, to, halfMf, assault, 1) { DoubleTime = doubleTime };
-        return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
-            [Event(scope, attemptId, 1, expected, "movement-step", moved, ScenarioA1FirePackage.Identity.ToString(), null)],
-            [$"play.enter: {string.Join(", ", ids)} enter {to} from off board along the {edge} edge ({terrain}) for {halfMf / 2m} MF, their first MF expenditure"
-                + (assault ? ", by Assault Movement" : string.Empty) + (doubleTime ? ", Double Timing and now CX (A4.5)" : string.Empty) + " (A2.51; ruling R20.5)"]);
+        var (entry, reason) = EntryGround(state, to, side);
+        return (entry, reason, null, false);
     }
+
+    /// <summary>
+    /// The cost of crossing a map edge's hexside into a ground-level hex, or out of it into the mirror-image hex beyond (A2.51, A2.6; rulings R25.3, R25.5):
+    /// the hex's own terrain at the same level, at the road rate across a road hexside (the A2.6 EX's 2Y1), one MF more across a wall or hedge.
+    /// </summary>
+    private (InfantryEntry? Entry, string? Reason) EntryGround(GameState state, BoardLocation at, HexsideDirection side) =>
+        ReadLocation(state, at) is { } read && TerrainKey(read) is { } terrain && HexsideAt(state, at, side) is { } crossed
+            ? GroundStep(state, at, crossed, terrain, 0)
+            : (null, $"play.entry-terrain: the cost of crossing the map edge at {at} is not decided (ruling R25.3)");
 
     /// <summary>
     /// A berserk stack's step (A15.43, A15.431): every berserk unit of the Location that is not done moving, with the same wounded
@@ -767,12 +746,26 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.no-game: the game has no state yet");
         }
 
-        return state.Movement is { WindowOpen: true } movement
-            ? new GamePlan(GamePlanStatus.Ready, scope, label, expected,
-                [Event(scope, attemptId, 1, expected, "movement-window-closed", new MovementWindowClosed(movement.Step), null, null)],
-                [$"play.pass: the DEFENDER does not fire at {string.Join(", ", movement.Movers)} in {movement.Location}"
-                    + (movement.Ending ? $"; {string.Join(", ", movement.Movers)} ends its move (D2.1)" : string.Empty)])
-            : Refused(scope, label, expected, "play.pass-window: no moving stack awaits the DEFENDER");
+        if (state.Movement is not { WindowOpen: true } movement)
+        {
+            return Refused(scope, label, expected, "play.pass-window: no moving stack awaits the DEFENDER");
+        }
+
+        // Pass 25 (table player, pass 15): with every member broken, pinned, or eliminated by the DEFENDER's fire, passing also ends the stack's move.
+        List<GameEvent> events = [Event(scope, attemptId, 1, expected, "movement-window-closed", new MovementWindowClosed(movement.Step), null, null)];
+        var gone = movement.Members.Count == 0 && !movement.Vehicle && !movement.Ending && movement.Overrun is null;
+        if (gone)
+        {
+            events.Add(Event(scope, attemptId, 2, expected, "movement-ended", new MovementEnded([.. movement.Movers]), null, null));
+        }
+
+        var living = movement.Movers.Where(id => state.Unit(id) is { Status: InstanceStatus.Active }).ToArray();
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events,
+            [gone
+                ? $"play.pass: the DEFENDER fires no more in {movement.Location}; no member of the moving stack is left to move"
+                    + (living.Length > 0 ? $" ({string.Join(", ", living)} broken or pinned)" : " (every mover eliminated)") + ", so its move is over (A4.2, A8.1)"
+                : $"play.pass: the DEFENDER does not fire at {string.Join(", ", movement.Movers)} in {movement.Location}"
+                    + (movement.Ending ? $"; {string.Join(", ", movement.Movers)} ends its move (D2.1)" : string.Empty)]);
     }
 
     /// <summary>
@@ -793,9 +786,11 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.end-move: no stack is moving");
         }
 
+        // Pass 25 (table player, pass 15): the refusal says what to do, and that no member is left when the DEFENDER's fire broke or eliminated them all.
         if (movement.WindowOpen)
         {
-            return Refused(scope, label, expected, "play.end-move: the DEFENDER may still fire at the stack's last MF expenditure (A8.11)");
+            return Refused(scope, label, expected, $"play.end-move: the DEFENDER's window at {movement.Location} is open; the DEFENDER fires or passes first (A8.11)"
+                + (movement.Members.Count == 0 ? "; no member of the moving stack is left to move, so passing ends its move" : string.Empty));
         }
 
         var named = Strings(arguments, "unitIds").ToArray();

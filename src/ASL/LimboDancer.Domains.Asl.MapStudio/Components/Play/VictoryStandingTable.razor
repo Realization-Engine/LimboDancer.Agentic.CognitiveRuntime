@@ -39,7 +39,8 @@
         }
     </tbody>
 </table>
-@if (Report.Control.Any(item => item.Kind == "location"))
+@* Pass 25 (the user, after the pass 24 demo): the note shows only when a Location row is listed. *@
+@if (ScenarioVictory.DifferingLocations(Report.Control).Any())
 {
     <p id="play-victory-locations" class="muted">
         A Location is listed only where its Control differs from its building's: an upper level or cellar keeps its own Control until an enemy MMC enters

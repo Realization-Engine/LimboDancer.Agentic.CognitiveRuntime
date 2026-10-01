@@ -1,0 +1,47 @@
+@* Plan A13 (pass 25): the moving side's movers and their step: the Location entered (a hex of the entry edge for units waiting off board, ruling
+   R25.3), Minimum Move, Bypass, Assault Movement, Double Time, and a crew's push of its Gun. The page reads the movers for the view (ruling R23.1),
+   keeps the draft and its reset rules (plan section 15.3), and proposes the move; the planner decides it. *@
+<UnitSelectionList Rows="@Movers" Selected="@Selected" CssClass="move-unit" Legend="Units moving" OnToggle="@OnToggle" />
+<LocationField Id="move-to" Label="To" Value="@Draft.To" DescribedBy="move-help" Title="A Location such as bd01:D5:0; the level after the hex moves up or down a stairwell or along an upper level of a building (B23.4, B23.421); units waiting off board enter a hex of their entry edge (A2.51)" OnChange="@(value => Changed(Draft with { To = value }))" />
+<label title="A4.134: the unit's only hex this MPh, whatever it costs, even if CX; once the DEFENDER's fire is done it is pinned and CX."><input id="move-minimum" type="checkbox" checked="@Draft.Minimum" @onchange="@(args => Changed(Draft with { Minimum = args.Value is true }))" /> Minimum Move</label>
+<label title="A4.3, A4.31: enter the woods or building hex along one or two of its hexsides the obstacle does not touch, in order, such as southeast, northeast; the stack then leaves through the far vertex or pays to occupy the obstacle (move To its own Location).">Bypass <input id="move-bypass" value="@Draft.Bypass" @onchange="@(args => Changed(Draft with { Bypass = args.Value as string ?? string.Empty }))" size="18" placeholder="southeast, northeast" /></label>
+<label><input id="move-assault" type="checkbox" checked="@Draft.Assault" @onchange="@(args => Changed(Draft with { Assault = args.Value is true }))" /> Assault Movement</label>
+<label title="Double Time adds 2 MF (1 after the unit has spent MF) and makes the unit CX (A4.5); not for a unit that is CX, or whose CX counter came off at the start of this MPh (A4.51), nor with Assault Movement (A4.61)."><input id="move-double-time" type="checkbox" checked="@Draft.DoubleTime" @onchange="@(args => Changed(Draft with { DoubleTime = args.Value is true }))" /> Double Time</label>
+@if (PushGun is { } gun)
+{
+    <label title="C10.3: the crew pushes its Gun at double the MF, with a Manhandling DR against its M#; uncheck to walk away and abandon the Gun."><input id="move-push" type="checkbox" checked="@Draft.Push" @onchange="@(args => Changed(Draft with { Push = args.Value is true }))" /> push @gun (unchecked: abandon it)</label>
+}
+<button id="propose-move" disabled="@(Selected.Count == 0 || Draft.To.Trim().Length == 0)" aria-describedby="propose-move-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: move</button>
+@if (Selected.Count == 0 || Draft.To.Trim().Length == 0)
+{
+    <span id="propose-move-ready" class="toolbar-note">Check the units moving and type the Location they enter.</span>
+}
+
+@code {
+    /// <summary>The step drafted: the Location typed, Minimum Move, the Bypass hexsides typed, Assault Movement, Double Time, and the Gun pushed.</summary>
+    public sealed record MoveDraft(string To, bool Minimum, string Bypass, bool Assault, bool DoubleTime, bool Push);
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<UnitSelectionList.Row> Movers { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public IReadOnlySet<string> Selected { get; set; } = new HashSet<string>();
+
+    [Parameter, EditorRequired]
+    public MoveDraft Draft { get; set; } = new(string.Empty, false, string.Empty, false, false, true);
+
+    /// <summary>The Gun the one checked crew mans, which it may push; null when none.</summary>
+    [Parameter]
+    public string? PushGun { get; set; }
+
+    [Parameter]
+    public EventCallback<UnitSelectionList.Toggle> OnToggle { get; set; }
+
+    [Parameter]
+    public EventCallback<MoveDraft> OnDraftChanged { get; set; }
+
+    [Parameter]
+    public EventCallback OnPropose { get; set; }
+
+    private Task Changed(MoveDraft draft) => OnDraftChanged.InvokeAsync(draft);
+}
