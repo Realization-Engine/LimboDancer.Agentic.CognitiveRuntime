@@ -90,7 +90,7 @@
         <ul id="cc-attacks">
             @foreach (var attack in Attacks)
             {
-                <li>@string.Join(", ", attack.Attackers) @(attack.Capture ? "attempt to capture" : "attack") @string.Join(", ", attack.Defenders)@(attack.Director is { } director ? $", directed by {director}" : "")@(attack.Yield.Length > 0 ? $" (the defender gives up {string.Join(", then ", attack.Yield)})" : "") <button class="link" @onclick="@(() => OnRemoveAttack.InvokeAsync(attack))">remove</button></li>
+                <li>@string.Join(", ", attack.Attackers) @(attack.Capture ? "attempt to capture" : "attack") @string.Join(", ", attack.Defenders)@(attack.Director is { } director ? $", directed by {director}" : "")@(attack.Yield.Length > 0 ? $" (the defender gives up {string.Join(", then ", attack.Yield)})" : "") <button class="link" aria-label="@($"Remove: {string.Join(", ", attack.Attackers)} against {string.Join(", ", attack.Defenders)}")" @onclick="@(() => OnRemoveAttack.InvokeAsync(attack))">remove</button></li>
             }
         </ul>
         <button id="propose-cc" @onclick="@(() => OnPropose.InvokeAsync())">Propose: resolve CC@(Attacks.Count == 0 ? " with no attacks" : "")</button>

@@ -386,6 +386,12 @@ else if (state is not null && history?.Current is not null)
             or pass (A8.1, A8.11); the stack then moves on, whole or split, or ends its move. No other unit moves until every member of the stack has
             ended (A4.2); a member that breaks or is pinned ends its move. A Location holding Residual FP attacks a stack as it enters (A8.22).
         </p>
+        @* Table player and UI review, pass 27: every view learns of the OVR's CC; the side that may act for the phasing side proposes it. *@
+        @if (OverrunCloseCombat is { } overrun)
+        {
+            <BerserkOverrunCloseCombat Location="@overrun.Location.ToString()" Attackers="@overrun.Attackers" Smc="@overrun.Smc" SmcAttacks="@overrun.SmcAttacks"
+                Ready="@MayAnswer(state.PhasingSide)" OnPropose="@ProposeOverrunCloseCombat" />
+        }
         @if (Viewer.IsAdjudicator || viewAs == state.PhasingSide)
         {
             @if (EntryWaiting.Count > 0)
@@ -409,9 +415,11 @@ else if (state is not null && history?.Current is not null)
             {
                 @if (undecided is null)
                 {
+                    var lanes = Live.Planner.ChargeLanes(state, charging);
                     <p class="fail" data-charge="@charging.Id">
                         @charging.Id is berserk and charges @(target?.ToString() ?? "the nearest Known enemy unit") before any other unit moves (A15.43),
-                        by a shortest route: next @(next.Count == 1 ? "step" : "steps") @string.Join(" or ", next) (A15.431). It may not stop short while it has the MF.
+                        by a shortest route: next @(next.Count == 1 ? "step" : "steps") @string.Join(" or ", next.Select(step => lanes.TryGetValue(step, out var bypass)
+                            ? $"{step} in Bypass along {string.Join(" or ", bypass)}" : step.ToString())) (A15.431). It may not stop short while it has the MF.
                     </p>
                 }
                 else
@@ -420,11 +428,6 @@ else if (state is not null && history?.Current is not null)
                         @charging.Id is berserk, but its charge@(target is { } at ? $" at {at}" : "") is not decided here: @undecided
                     </p>
                 }
-            }
-            @if (OverrunCloseCombat is { } overrun)
-            {
-                <BerserkOverrunCloseCombat Location="@overrun.Location.ToString()" Attackers="@overrun.Attackers" Smc="@overrun.Smc" SmcAttacks="@overrunSmcAttacks"
-                    OnSmcAttacks="@(value => overrunSmcAttacks = value)" OnPropose="@ProposeOverrunCloseCombat" />
             }
             <div class="toolbar">
                 <InfantryMovementAction Movers="@MoveRows" Selected="@moveUnits" Draft="@MoveDraft" PushGun="@MovingGun?.Id"
@@ -540,7 +543,7 @@ else if (state is not null && history?.Current is not null)
             OnTake="@(captor => ProposeTakePrisoner(surrender.Unit, captor))" OnReject="@(() => ProposeRejectSurrender(surrender.Unit))"
             OnFree="@(() => ProposeFreeSurrender(surrender.Unit))" />
     }
-    @if (state.Phase is "rph" or "aph" && Guards is { Count: > 0 } guards)
+    @if (state.Phase is "rph" or "aph" && MayAnswer(state.PhasingSide) && Guards is { Count: > 0 } guards)
     {
         <PrisonerCustodyActions Guards="@guards" OnTransfer="@(transfer => ProposeGuardPrisoners(transfer.Guard, transfer.To))"
             OnAbandon="@(guard => ProposeGuardPrisoners(guard, null))" />
@@ -883,11 +886,11 @@ else if (state is not null && history?.Current is not null)
         </div>
     }
 
-    @if (CloseCombatRecords.Count > 0)
+    @if (CloseCombatRecords is { Count: > 0 } ccRecords)
     {
         <h3>Close Combat</h3>
         <ul id="play-close-combats">
-            @foreach (var (eventId, text) in CloseCombatRecords)
+            @foreach (var (eventId, text) in ccRecords)
             {
                 <li class="cc-record" data-event="@eventId">@text</li>
             }
@@ -1608,15 +1611,17 @@ else if (state is not null && history?.Current is not null)
             .OrderBy(unit => unit.Id, StringComparer.Ordinal);
 
     /// <summary>The Locations whose sequential CC with a vehicle is open this CCPh (A11.31).</summary>
+    // UI review, pass 27 (ruling R23.1): only a view that may act for the side attacking next is offered its Location.
     private IEnumerable<BoardLocation> VehicleCcLocations => state is null || state.Phase != "ccph" ? []
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit)).Select(unit => state.Location(unit.Id)?.Location).OfType<BoardLocation>()
-            .Distinct().Where(location => Live.Planner.VehicleCloseCombatTurn(state, location).Open).OrderBy(location => location.ToString(), StringComparer.Ordinal);
+            .Distinct().Where(location => Live.Planner.VehicleCloseCombatTurn(state, location) is { Open: true } turn && MayAnswer(turn.Next))
+            .OrderBy(location => location.ToString(), StringComparer.Ordinal);
 
     /// <summary>Each open vehicle CC Location as the panel reads it (plan C01): the side that attacks next and the units it offers.</summary>
     private IReadOnlyList<VehicleCloseCombatPanel.CcLocation> VehicleCcRows => state is null ? [] : [.. VehicleCcLocations.Select(location =>
     {
         var (nextSide, _) = Live.Planner.VehicleCloseCombatTurn(state, location);
-        var here = state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active).ToArray();
+        var here = SeenOnly(state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active)).ToArray();
         var attacked = state.CloseCombats.FirstOrDefault(item => item.Location == location && !item.Closed)?.Attacking ?? [];
         return new VehicleCloseCombatPanel.CcLocation(location.ToString(), nextSide ?? string.Empty,
             [.. here.Where(unit => unit.Side == nextSide && !LiveFire.IsVehicle(unit) && unit.Kind != UnitKinds.Dummy && !attacked.Contains(unit.Id)
@@ -1935,9 +1940,9 @@ else if (state is not null && history?.Current is not null)
         : [.. state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && GameState.Condition(unit, Conditions.Melee) != ConditionState.True
                 && state.Units.Any(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian == unit.Id))
             .OrderBy(unit => unit.Id, StringComparer.Ordinal)
-            .Select(guard => new PrisonerCustodyActions.Guard(guard.Id, [.. state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Id != guard.Id && unit.Side == guard.Side
+            .Select(guard => new PrisonerCustodyActions.Guard(guard.Id, [.. SeenOnly(state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Id != guard.Id && unit.Side == guard.Side
                 && state.Location(unit.Id)?.Location == state.Location(guard.Id)?.Location && GameState.Condition(unit, Conditions.Captured) != ConditionState.True
-                && GameState.Condition(unit, Conditions.Unarmed) != ConditionState.True && (Library.Vocabulary.IsA(unit.Kind, "asl:mmc") || Library.Vocabulary.IsA(unit.Kind, "asl:smc")))
+                && GameState.Condition(unit, Conditions.Unarmed) != ConditionState.True && (Library.Vocabulary.IsA(unit.Kind, "asl:mmc") || Library.Vocabulary.IsA(unit.Kind, "asl:smc"))))
                 .OrderBy(unit => unit.Id, StringComparer.Ordinal).Select(unit => unit.Id)]))];
 
     private Task ProposeAmbushWithdrawal(string unit, string to) => Propose(GameActions.AmbushWithdraw, JsonSerializer.SerializeToElement(new
@@ -2225,23 +2230,24 @@ else if (state is not null && history?.Current is not null)
                     dice[rolledDice.Roll] = rolledDice.Values;
                 }
 
-                var (berserkLeader, checkRolls, wentBerserk) = item.Payload switch
+                // Fire (UI and table player review, pass 27): each Berserk TC names its leader in its DRM, on an attacked unit and a companion alike.
+                if (item.Payload is FireResolved fire && fire.Rolls.Keys.Any(key => key.StartsWith(BerserkCheckKey, StringComparison.Ordinal))
+                    && fire.Resolution.Deserialize<FireResolution>(LiveFire.Json) is { } fired)
                 {
-                    FireResolved fire when fire.Rolls.Keys.Any(key => key.StartsWith(BerserkCheckKey, StringComparison.Ordinal))
-                        && fire.Resolution.Deserialize<FireResolution>(LiveFire.Json) is { } fired
-                        => (fired.Effects.FirstOrDefault(effect => effect.Berserk == true)?.UnitId, fire.Rolls,
-                            (IReadOnlyList<string>)[.. fired.CompanionEffects?.Select(effect => effect.UnitId) ?? []]),
-                    RallyAttempted rally when rally.Rolls.Keys.Any(key => key.StartsWith(BerserkCheckKey, StringComparison.Ordinal))
-                        && rally.Resolution.Deserialize<RallyResolution>(LiveFire.Json)?.Effect is { Berserk: true } effect
-                        => (rally.Unit, rally.Rolls, effect.BerserkCompanions ?? []),
-                    _ => ((string?)null, (IReadOnlyDictionary<string, string>?)null, (IReadOnlyList<string>)[]),
-                };
-                if (berserkLeader is not null && checkRolls is not null)
+                    var byLeader = fired.Effects.Concat(fired.CompanionEffects ?? [])
+                        .SelectMany(effect => effect.Checks.Where(check => check.Kind == "Berserk TC").Select(check => (effect.UnitId, Check: check)))
+                        .GroupBy(entry => entry.Check.Drm.Select(drm => drm.Name).FirstOrDefault(name => name.StartsWith(BerserkLeaderDrm, StringComparison.Ordinal))?[BerserkLeaderDrm.Length..]);
+                    foreach (var group in byLeader.Where(group => group.Key is not null))
+                    {
+                        companionChecks[group.Key!] = CompanionText(group.Key!, group.Select(entry => (entry.UnitId, entry.Check.Dice, entry.Check.Passed)));
+                    }
+                }
+                else if (item.Payload is RallyAttempted rally && rally.Rolls.Keys.Any(key => key.StartsWith(BerserkCheckKey, StringComparison.Ordinal))
+                    && rally.Resolution.Deserialize<RallyResolution>(LiveFire.Json)?.Effect is { Berserk: true } effect)
                 {
-                    var checks = checkRolls.Where(roll => roll.Key.StartsWith(BerserkCheckKey, StringComparison.Ordinal)).OrderBy(roll => roll.Key, StringComparer.Ordinal)
-                        .Select(roll => (Unit: roll.Key[BerserkCheckKey.Length..], Dice: dice.GetValueOrDefault(roll.Value) ?? []))
-                        .Select(check => $"{check.Unit} {string.Join("+", check.Dice)}: {(wentBerserk.Contains(check.Unit) ? "goes berserk with it" : "stays")}");
-                    companionChecks[berserkLeader] = $"{berserkLeader} went berserk before this CC; its companions' TCs then: {string.Join(", ", checks)} (A15.41)";
+                    companionChecks[rally.Unit] = CompanionText(rally.Unit, rally.Rolls.Where(roll => roll.Key.StartsWith(BerserkCheckKey, StringComparison.Ordinal))
+                        .OrderBy(roll => roll.Key, StringComparer.Ordinal).Select(roll => (roll.Key[BerserkCheckKey.Length..], dice.GetValueOrDefault(roll.Value) ?? [],
+                            (effect.BerserkCompanions ?? []).Contains(roll.Key[BerserkCheckKey.Length..]))));
                 }
 
                 if (item.Payload is AmbushRolled ambush && ambush.Resolution.Deserialize<AmbushResolution>(LiveFire.Json) is { } rolled)
@@ -2278,7 +2284,9 @@ else if (state is not null && history?.Current is not null)
                     var left = UnpossessedAfter(item, resolution).Select(weapon => $"{weapon} is left unpossessed in {combat.Location} (A11.13)");
                     var text = resolution.Attacks.Count == 0 ? "no attacks" : string.Join(" | ", attacks);
                     var hand = combat.Facts.TryGetProperty("handToHand", out var handToHand) && handToHand.ValueKind == JsonValueKind.True ? ", Hand-to-Hand (red Kill Numbers)" : "";
-                    var companions = combat.Attackers.Concat(combat.Defenders).Distinct(StringComparer.Ordinal).Select(unit => companionChecks.GetValueOrDefault(unit)).OfType<string>();
+                    // Shown with the first CC record after the leader went berserk (UI review, pass 27).
+                    var companions = combat.Attackers.Concat(combat.Defenders).Distinct(StringComparer.Ordinal)
+                        .Select(unit => companionChecks.Remove(unit, out var checks) ? checks : null).OfType<string>().ToArray();
                     records.Add((item.EventId, $"CC in {combat.Location}, {combat.Round} round{hand}: {string.Join("; ", new[] { text }.Concat(lost).Concat(ended).Concat(withdrew).Concat(left).Concat(companions))}"));
                 }
             }
@@ -2290,6 +2298,13 @@ else if (state is not null && history?.Current is not null)
 
     /// <summary>The roll key of a berserk leader's companion's TC in fire and Rally records (A15.41).</summary>
     private const string BerserkCheckKey = "berserkCheck:";
+
+    /// <summary>The DRM a Berserk TC in a fire record takes from its leader, which names him (A15.41).</summary>
+    private const string BerserkLeaderDrm = "berserk-leader:";
+
+    /// <summary>A berserk leader's companions' TCs in words (A15.41; ruling R27.3).</summary>
+    private static string CompanionText(string leader, IEnumerable<(string Unit, IReadOnlyList<int> Dice, bool Berserk)> checks) =>
+        $"{leader} went berserk before this CC; its companions' TCs then: {string.Join(", ", checks.Select(check => $"{check.Unit} {string.Join("+", check.Dice)}: {(check.Berserk ? "goes berserk with it" : "stays")}"))} (A15.41)";
 
     /// <summary>The SW the units a CC round eliminated possessed before it, less those it eliminated: they stay in the Location unpossessed.</summary>
     private IEnumerable<string> UnpossessedAfter(GameEvent combat, CloseCombatResolution resolution)
@@ -3098,37 +3113,24 @@ else if (state is not null && history?.Current is not null)
     private IReadOnlyList<(UnitInstance Unit, BoardLocation? Target, IReadOnlyList<BoardLocation> Next, string? Undecided)> Charges =>
         state is null ? [] : Live.Planner.Charges(state);
 
-    private bool overrunSmcAttacks = true;
-
     /// <summary>
-    /// A berserk Infantry OVR onto a lone SMC whose CC comes now (A4.152, A15.432; ruling R27.3): its Location, the berserk units there, and the SMC.
+    /// A berserk Infantry OVR onto a lone SMC whose CC comes now (A4.152, A15.432; ruling R27.3): its Location, the attacks the planner makes of it, the
+    /// berserk units, the SMC, and whether the SMC attacks back.
     /// </summary>
-    private (BoardLocation Location, IReadOnlyList<string> Attackers, string Smc)? OverrunCloseCombat =>
+    private (BoardLocation Location, IReadOnlyList<CloseCombatDeclaration> Attacks, IReadOnlyList<string> Attackers, string Smc, bool SmcAttacks)? OverrunCloseCombat =>
         state is not null && Live.Planner.BerserkOverrunPending(state) is { } at
-            && state.At(at).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Captured) != ConditionState.True).ToArray() is { } here
-            && here.FirstOrDefault(unit => unit.Side != state.PhasingSide) is { } smc
-            ? (at, [.. here.Where(unit => unit.Side == state.PhasingSide && GameState.Condition(unit, Conditions.Berserk) == ConditionState.True).Select(unit => unit.Id)], smc.Id)
+            && state.At(at).OfType<UnitInstance>().FirstOrDefault(unit => unit.Status == InstanceStatus.Active && unit.Side != state.PhasingSide
+                && GameState.Condition(unit, Conditions.Captured) != ConditionState.True) is { } smc
+            && Live.Planner.OverrunAttacks(state, at, smc) is { Count: > 0 } attacks
+            ? (at, attacks, attacks[0].Attackers!, smc.Id, attacks.Count > 1)
             : null;
 
-    private Task ProposeOverrunCloseCombat()
-    {
-        if (OverrunCloseCombat is not { } overrun)
-        {
-            return Task.CompletedTask;
-        }
-
-        List<object> attacks = [new { attackers = overrun.Attackers, defenders = new[] { overrun.Smc } }];
-        if (overrunSmcAttacks)
-        {
-            attacks.Add(new { attackers = new[] { overrun.Smc }, defenders = overrun.Attackers });
-        }
-
-        return Propose(GameActions.CloseCombat, JsonSerializer.SerializeToElement(new Dictionary<string, object>
+    private Task ProposeOverrunCloseCombat() => OverrunCloseCombat is not { } overrun ? Task.CompletedTask
+        : Propose(GameActions.CloseCombat, JsonSerializer.SerializeToElement(new Dictionary<string, object>
         {
             ["gameId"] = gameId, ["attemptId"] = Attempt("overrun-cc"), ["expectedRevision"] = (long)history!.Events.Count, ["location"] = overrun.Location.ToString(),
-            ["attacks"] = attacks,
+            ["attacks"] = overrun.Attacks.Select(attack => new { attackers = attack.Attackers, defenders = attack.Defenders }).ToArray(),
         }));
-    }
 
     private Task ProposeRally()
     {

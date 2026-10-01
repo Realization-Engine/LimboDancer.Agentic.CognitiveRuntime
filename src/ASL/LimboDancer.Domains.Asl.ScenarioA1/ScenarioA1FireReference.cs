@@ -335,12 +335,11 @@ public sealed class ScenarioA1FireReference
         ["french-half-squad"] = "french-elite-half-squad",
 
         // Pass 27 (ruling R27.1; A25.84): an Axis Minor Conscript becomes a 3-4-7, a 3-4-7 the elite 4-4-7 (the 5-3-7 would lower
-        // the range); the 2-2-7 HS of the 5-3-7 becomes the elite 2-4-7, no part of whose Strength Factor falls.
+        // the range); the 5-3-7 and its 2-2-7 HS become Fanatic instead (referee, pass 27).
         ["axis-minor-conscript-squad"] = "axis-minor-squad",
         ["axis-minor-squad"] = "axis-minor-elite-squad",
         ["axis-minor-conscript-half-squad"] = "axis-minor-half-squad",
         ["axis-minor-half-squad"] = "axis-minor-elite-half-squad",
-        ["axis-minor-square-half-squad"] = "axis-minor-elite-half-squad",
     };
 
     private static readonly HashSet<string> HighestQuality = new(StringComparer.Ordinal)
@@ -368,8 +367,8 @@ public sealed class ScenarioA1FireReference
         // Pass 19b (ruling R19.7): elite MMC, so Battle Hardening makes them Fanatic (A15.3).
         "attacker-elite-squad-5-4-8", "attacker-elite-half-squad-2-3-8", "attacker-elite-squad-8-3-8", "attacker-elite-half-squad-3-3-8",
 
-        // Pass 27 (ruling R27.1): the Axis Minor elite MMC and 10-3, and the 5-3-7, which A25.84 makes Fanatic when it Battle Hardens.
-        "axis-minor-elite-squad", "axis-minor-elite-half-squad", "axis-minor-square-squad", "axis-minor-leader-10-3",
+        // Pass 27 (ruling R27.1): the Axis Minor elite MMC and 10-3, and the 5-3-7 and its 2-2-7, which A25.84 makes Fanatic when they Battle Harden.
+        "axis-minor-elite-squad", "axis-minor-elite-half-squad", "axis-minor-square-squad", "axis-minor-square-half-squad", "axis-minor-leader-10-3",
     };
 
     // The NKVD MMC (A25.25): 2nd Line, ELR 5, a -1 Heat of Battle DRM, Fanatic when Battle Hardened, Commissars by Field Promotion.

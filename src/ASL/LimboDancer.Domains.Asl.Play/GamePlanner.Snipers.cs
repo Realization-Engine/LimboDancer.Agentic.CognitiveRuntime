@@ -24,8 +24,9 @@ public sealed partial class GamePlanner
             return;
         }
 
-        var dice = events.Select(item => item.Payload).OfType<DiceRolled>().ToDictionary(item => item.Roll, StringComparer.Ordinal);
-        var order = events.Select(item => item.Payload).OfType<DiceRolled>().Select(item => item.Roll).ToList();
+        // Table player, pass 27: an attack resumed after an owner's choice drew its dice in an earlier commit; its record is in this one.
+        var dice = existing.Concat(events).Select(item => item.Payload).OfType<DiceRolled>().ToDictionary(item => item.Roll, StringComparer.Ordinal);
+        var order = existing.Concat(events).Select(item => item.Payload).OfType<DiceRolled>().Select(item => item.Roll).ToList();
         var triggers = new List<(string Roll, string Sniper)>();
         foreach (var fire in events.Select(item => item.Payload).OfType<FireResolved>())
         {

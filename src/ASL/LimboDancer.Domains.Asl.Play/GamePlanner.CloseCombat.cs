@@ -863,6 +863,13 @@ public sealed partial class GamePlanner
             return $"play.berserk-crew: a charge into {to}, which holds a Gun's crew, is CC with a crew, which is not reviewed (C11, R24.3); the charge ends in place (ruling R30.5)";
         }
 
+        // Table player, pass 27: CC between Infantry in a Location holding a vehicle is not built (R11.16), so a charge enters a vehicle's Location only
+        // when no enemy Infantry is there.
+        if (enemies.Any(LiveFire.IsVehicle) && enemies.Any(unit => !LiveFire.IsVehicle(unit)))
+        {
+            return $"play.berserk-vehicle: a charge into {to}, which holds an enemy vehicle and enemy Infantry, needs CC between Infantry beside a vehicle, which is not built (R11.16); the charge ends in place (ruling R30.5)";
+        }
+
         return null;
     }
 
@@ -1398,7 +1405,9 @@ public sealed partial class GamePlanner
         var side = movers[0].Side;
         var previous = current?.Charge;
         var none = new Dictionary<BoardLocation, ChargeStep>();
-        var enemies = state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side != side && KnownEnemy(unit))
+
+        // Table player, pass 27: an Abandoned vehicle is no unit to charge.
+        var enemies = state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side != side && KnownEnemy(unit) && !(LiveFire.IsVehicle(unit) && Is(unit, Conditions.Abandoned)))
             .Select(unit => state.Location(unit.Id)?.Location).OfType<BoardLocation>().Distinct().ToArray();
         if (enemies.Contains(from))
         {
@@ -1549,6 +1558,19 @@ public sealed partial class GamePlanner
         }
 
         return charges;
+    }
+
+    /// <summary>
+    /// The Bypass lanes a berserk unit's next steps may take (ruling R27.2; table player, pass 27): by step, each lane's hexsides in the order a move names
+    /// them. Empty when no step is in Bypass.
+    /// </summary>
+    public IReadOnlyDictionary<BoardLocation, IReadOnlyList<string>> ChargeLanes(GameState state, UnitInstance unit)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(unit);
+        return state.Location(unit.Id) is not { } at ? new Dictionary<BoardLocation, IReadOnlyList<string>>()
+            : ChargeSteps(state, [unit], at.Location, state.Movement?.Members.Contains(unit.Id) == true ? state.Movement : null).Steps
+                .Where(step => step.Value.Lanes.Count > 0).ToDictionary(step => step.Key, step => step.Value.Lanes);
     }
 
     /// <summary>

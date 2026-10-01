@@ -147,10 +147,16 @@ public sealed partial class GamePlanner
                         events, draw, resumed, followUps);
                     AddOverrunResolved(scope, attemptId, expected, answered, fire, events);
 
-                    // Ruling R27.4: what the attack was to do next is done once its options are answered.
+                    // Ruling R27.4: what the attack was to do next is done once its options are answered, then the Sniper checks its DRs call for (a
+                    // DC's follow-ups make them with its removal; table player, pass 27).
                     if (followUps is not null)
                     {
                         AddFireFollowUps(scope, attemptId, expected, actor, existing, answered, resume.GetProperty("targetSide").GetString()!, step, events, draw, followUps);
+                    }
+
+                    if (followUps?.DcCharge is null)
+                    {
+                        AddSniperAttacks(scope, attemptId, expected, actor, existing, events, draw);
                     }
 
                     break;

@@ -1,12 +1,15 @@
 @* Pass 27 (ruling R27.3): the CC of a berserk Infantry OVR onto a lone SMC, resolved at once in the MPh once the DEFENDER's window on the entry
-   has closed (A4.152, A15.432). Every berserk unit there attacks the SMC; the SMC may attack them back. The page proposes it as a CC round. *@
-<div class="toolbar" id="overrun-cc" data-location="@Location">
+   has closed (A4.152, A15.432). Every berserk unit there attacks the SMC, and the SMC attacks them back when it can, since that never costs it
+   anything. Every view sees the notice; only a view that may act for the phasing side proposes the CC. *@
+<div class="toolbar" id="overrun-cc" data-location="@Location" role="status" aria-live="polite">
     <span class="fail">
-        @string.Join(", ", Attackers) overran the lone @Smc in @Location: their CC comes now, before anything else this MPh; if both survive they are
+        @string.Join(", ", Attackers) overran the lone @Smc in @Location: their CC comes now, before anything else this MPh@(SmcAttacks ? $", and {Smc} attacks back" : $"; {Smc} cannot attack back"). If both survive they are
         held in Melee for the CCPh (A4.152, A15.432).
     </span>
-    <label><input id="overrun-cc-smc" type="checkbox" checked="@SmcAttacks" @onchange="@(args => OnSmcAttacks.InvokeAsync(args.Value is true))" /> @Smc attacks back</label>
-    <button id="propose-overrun-cc" @onclick="@(() => OnPropose.InvokeAsync())">Propose: the OVR's CC</button>
+    @if (Ready)
+    {
+        <button id="propose-overrun-cc" @onclick="@(() => OnPropose.InvokeAsync())">Propose: the OVR's CC</button>
+    }
 </div>
 
 @code {
@@ -22,12 +25,13 @@
     [Parameter, EditorRequired]
     public string Smc { get; set; } = string.Empty;
 
-    /// <summary>Whether the SMC attacks the berserk units back.</summary>
+    /// <summary>Whether the SMC attacks the berserk units back: it does whenever it may attack in CC (not broken or captured).</summary>
     [Parameter]
-    public bool SmcAttacks { get; set; } = true;
+    public bool SmcAttacks { get; set; }
 
+    /// <summary>Whether this view may propose the CC (the phasing side's, or the adjudicator's).</summary>
     [Parameter]
-    public EventCallback<bool> OnSmcAttacks { get; set; }
+    public bool Ready { get; set; }
 
     [Parameter]
     public EventCallback OnPropose { get; set; }

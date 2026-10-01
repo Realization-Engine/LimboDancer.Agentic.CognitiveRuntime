@@ -67,17 +67,18 @@ public sealed class ScenarioA1Pass27Tests
     [Fact]
     public void AxisMinorReplacementAndBattleHardeningFollowA2584()
     {
-        // A25.84: the 5-3-7 and its 2-2-7 are Replaced by Conscripts and the 5-3-7 becomes Fanatic when Battle Hardened; a Conscript hardens to a 3-4-7.
+        // A25.84: the 5-3-7 and its 2-2-7 are Replaced by Conscripts and become Fanatic when Battle Hardened; a Conscript hardens to a 3-4-7.
         Assert.Equal("axis-minor-conscript-squad", ScenarioA1FireReference.ReplacementOf("axis-minor-square-squad"));
         Assert.Equal("axis-minor-conscript-half-squad", ScenarioA1FireReference.ReplacementOf("axis-minor-square-half-squad"));
         Assert.True(ScenarioA1FireReference.IsHighestQuality("axis-minor-square-squad"));
         Assert.Equal("axis-minor-squad", ScenarioA1FireReference.HardenedOf("axis-minor-conscript-squad"));
 
-        // A19.13, A15.3: the elite by the 3-4-7, the 3-4-7 by the Conscript; the 3-4-7 hardens to the elite, never to the 5-3-7 (its range would fall).
+        // A19.13, A15.3: the elite by the 3-4-7, the 3-4-7 by the Conscript; the 3-4-7 hardens to the elite, never to the 5-3-7 (its range would fall),
+        // and the 5-3-7's 2-2-7 is Fanatic rather than a 2-4-7 (referee, pass 27).
         Assert.Equal("axis-minor-squad", ScenarioA1FireReference.ReplacementOf("axis-minor-elite-squad"));
         Assert.Equal("axis-minor-conscript-squad", ScenarioA1FireReference.ReplacementOf("axis-minor-squad"));
         Assert.Equal("axis-minor-elite-squad", ScenarioA1FireReference.HardenedOf("axis-minor-squad"));
-        Assert.Equal("axis-minor-elite-half-squad", ScenarioA1FireReference.HardenedOf("axis-minor-square-half-squad"));
+        Assert.True(ScenarioA1FireReference.IsHighestQuality("axis-minor-square-half-squad"));
         Assert.Equal("axis-minor-leader-9-1", ScenarioA1FireReference.HardenedOf("axis-minor-leader-8-1"));
     }
 }

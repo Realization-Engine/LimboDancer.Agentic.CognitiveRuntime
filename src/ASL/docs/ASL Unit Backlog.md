@@ -20,9 +20,6 @@ These are not left out: the game resolves them in a simplified way and records t
 | A road hexside is always entered at the road rate | R10.1 | A4.132, p. 48; B3.3, p. 113 | A move argument choosing the other terrain's cost | The mover never pays the other terrain's cost instead, so a road-rate entry into woods or a building keeps the hex's TEM against fire and takes no FFMO. |
 | Wall Advantage is read from arrival order, not kept as state | R10.6 | B9.322, B9.323, B9.41, pp. 119 to 121 | WA counters in the state | Of two ADJACENT units sharing a wall that could both hold WA, the one that entered its Location first holds it, so a holder that broke and rallied, or left and came back, gets it back; B9.321's all-hexsides rule is not applied. |
 | A leader lends his IPC only to the one laden MMC with his leader bonus | R10.8 | A4.42, p. 50 | The player naming the unit | Any SMC may add its IPC to any one Good Order Infantry unit it starts and moves with; the game lends it only when exactly one MMC of the stack with the leader bonus carries more than its IPC. |
-| A berserk charge into concealed units removes every Dummy there | R10.11 | A.9, p. 43; A12.15, p. 78 | Random Selection among Dummies and real units | A.9 removes only the Dummies drawn above the first real unit. |
-| A berserk charge's shortest route never counts Bypass | R10.7, R10.15 | A15.431, p. 84; A4.3, p. 49 | Bypass lanes in the route graph | The route is the shortest over hex entries only. |
-| The CC of a berserk OVR onto a lone SMC is resolved in the CCPh | R10.15 | A4.152, A15.432, pp. 49, 84 | CC in the MPh | The berserk stack enters the SMC's Location; the SMC may fire at it (TPBF), and the CC follows in the CCPh as mandatory berserk CC. |
 | A unit pinned or broken in Bypass is treated as in the obstacle once the stack's move ends | R10.7 | A4.32, A4.33, p. 50 | Bypass kept per unit | It takes the obstacle's TEM in the DFPh rather than staying in the open portion for the rest of the MPh. |
 | The verifier takes the reveal of a move into concealed units, a Bypass exit, the Road Bonus flag, the leader bonus, and a Minimum Move's allowance as recorded | R10.8 to R10.11 | A12.15, A4.3, B3.4, A4.12, A4.134 | Map reads and the Random Selection record in the projector | They are planner reads recorded with the step, as range and LOS are; the projector checks a Minimum Move is a stack's only step and a forced back stays in its Location. |
 | A lone revealed SMC gives the mover no OVR option outside the reviewed building case | R10.11 | A4.15, A12.15, pp. 49, 78 | Infantry OVR (A4.15) | The stack is forced back, as if it declined the OVR. |
@@ -92,8 +89,7 @@ Every item here was built by the backlog pass 15; what they leave out is in sect
 | Item | Deferred by | Rules | Depends on |
 |---|---|---|---|
 | CC by or against vehicles, sequential CC with a vehicle, Street Fighting | R29.1 | A11.31, A11.5 to A11.8, pp. 73 to 76 | Vehicles (step 25) |
-| Axis Minor and Japanese Heat of Battle exceptions (the Italian one was built in pass 15) | Pass 2 review | Heat of Battle table notes, p. 83 | Counters of those nationalities; until then they are refused |
-| Play page: a berserk leader's companions' TCs in the CC record (SW left unpossessed by eliminated units are listed since pass 5) | Table-player review | A20.24, A15.431, A15.41 | | Shown in the fire and rally records and the move's reasons, not in the CC record. |
+| Japanese Heat of Battle exceptions (the Italian one was built in pass 15, the Axis Minor one in pass 27) | Pass 2 review | Heat of Battle table notes, p. 83 | Japanese counters (Chapter G) | Refused. |
 
 ## 12. Added by the deviations pass 3 (step 24)
 
@@ -243,7 +239,6 @@ Vehicle movement (Reverse, VBM, ESB, Minimum Move, Bog, OVR, stacking, and terra
 | Hazardous Movement other than a pushing crew (Clearance, Fording, Climbing, a crew bailing out) | R10.8 | A4.62, p. 51; D5.6 | Those activities | Not reached. |
 | A Minimum Move into concealed enemy units | R10.9 | A4.134, A12.15 | A forced back after a Minimum Move | Refused. |
 | Infantry OVR outside the reviewed building case, and a lone revealed SMC's OVR option | R10.11 | A4.15, A4.151, A4.152, p. 49 | OVR NTC and the SMC's options for any terrain | A Known lone SMC's Location is refused; a lone revealed SMC forces the mover back (a deviation in section 1). |
-| A berserk charge up or down a stairwell or along an upper level | R10.15 | A15.431, p. 84; B23.4 | Levels in the route graph | A Known enemy unit upstairs has no route: the charge ends in place. |
 | Wall Advantage between units adjacent across a wall since setup with no Scenario Defender named | R10.6 | B9.32, p. 119 | WA declared at setup | Fire between them is refused. |
 | A stack in Bypass splitting, making a SMOKE attempt, or occupying an obstacle that holds enemy units; fire at it from within the hex; a Snap Shot at a Bypass step; Bypass of a hex with a wall, hedge, or friendly units | R10.7 | A4.3 to A4.34, pp. 49 to 50 | Bypass kept per unit; vertex LOS | Refused. |
 | The player choosing which leader lends IPC to which unit | R10.8 | A4.42, p. 50 | A move argument naming them | A deviation in section 1. |
@@ -267,7 +262,6 @@ Vehicle movement (Reverse, VBM, ESB, Minimum Move, Bog, OVR, stacking, and terra
 | Captured vehicles used by their captors | R11.16 | A21.2 | Captured vehicle rules | A captured truck is Abandoned and neither moves nor fires. |
 | Passengers and Riders: in OVR, in CC, and their A11.611 survival | R11.11, R11.14 | D6, D7.11, A11.611 | Passengers and Riders | No vehicle carries any. |
 | Overstacking penalties of vehicles (A5.11 MP), and A5.132 | R11.6 | A5.11, A5.132, p. 52 | Vehicle overstacking | Any number of vehicles share a Location; each adds to the entry cost. |
-| A berserk charge at a vehicle | R11.17 | A15.43 | Charges at vehicles | The charge stays undecided and ends in place, as since pass 4. |
 | A Bypassing AFV in woods whose Target Facing the TEM rule of the IFT would change, and a turret's facing in Bypass | R11.2 | D2.34, D3.2 | Bypass facing for ordnance | Bypass Target Facing is read from the straddled hexside for both hull and turret. |
 | The current Morale Level of a combined PAATC | Referee, pass 11 | A12.41, p. 83 | Morale changes in play (DM, ELR replacement) | The printed ML, with Fanatic and wounds, is used (a reading). |
 
@@ -287,7 +281,6 @@ The backlog pass 12 (2026-09-28) built, and removed from sections 2, 3, 5, 8, 11
 | A concealed unit's TPBF into its own Melee Location | R12.8 | A11.15 | A fire phase's read of a concealed unit in a Melee Location (concealment in CC is built, pass 14) | Refused. |
 | Encirclement at upper levels, from the Locations above and below, by ordnance, of Vulnerable PRC of an Immobile vehicle, by vehicular armament, and its capture effects | R12.11 | A7.7, A7.72, A20.21 | Those attacks and levels | Only Infantry fire at Normal Range counts; ground-level Personnel are Encircled. |
 | The ordnance To Hit +1 for an Encircled Gun crew | R12.11 | A7.7 | The Ordnance package | Not applied. |
-| Spraying Fire's second Location, an Encirclement, or a Fire Lane after the first attack stops for an owner's choice (Battle Hardening, an Unlikely Kill dr) | Table player, pass 12 | A9.5, A7.7, A9.22 | Carrying the follow-on work in the choice's resume | They are not made; the choice resumes the first attack only. |
 | Fire Lane attacks on vehicles, and on units spending MF in a lane Location other than by entering it (SMOKE placement) | Table player, pass 12 | A9.222, A8.22, A8.222 | Lane attacks in the vehicle and in-Location planners | Only Infantry entering a lane Location are attacked. |
 | A Fire Lane's hard Hindrance (orchard) as a DRM, and SMOKE placed on the lane after it is laid | Table player, pass 12 | A9.222 | Hindrance types and SMOKE read at attack time | The Hindrance is read when the lane is placed, and any of it only cancels FFMO. |
 | The Fire Lanes and Encircled Locations drawn on the map | Table player, pass 12 | A9.22, A7.7 | Map overlays in the Play page | Listed above the Play page's panels. |
@@ -356,7 +349,6 @@ The backlog pass 15 (2026-09-29) built, and removed from sections 2, 5, 6, 10, 1
 | A hero firing a LATW, a light mortar, or a Gun | R15.11 | A15.23 | Those weapons' packages reading a hero | Refused. |
 | Japanese, Axis Minor, Allied Minor, Chinese, and Partisan units, and the other national rules of A25 for the new nationalities (American broken Morale Level, Italian Lax, PAATC, capture, and escape, Finnish Ski and Cold rules, French rules) | R15.13 | A25, Chapter G | Their counters and rules | Not built; the new nationalities follow the general rules but for their Heat of Battle, Leader Creation, Replacement and Battle Hardening, and the British and Finnish exceptions above. |
 | The leaders' broken Morale Levels of the new nationalities and the Commissars | R15.13 | A1.4 | Printed counters | Their front morale, as every leader of the catalog (R0.3). |
-| A DC's attack asks no owner's option | Pass 15 build | A15.3, A7.309 | Resuming a DC's two records after a choice | A DC's attack takes every Battle Hardening and Unlikely Kill option. |
 | LLMC after a Sniper eliminates, wounds, or breaks a leader | Referee, pass 15 | A14.3, A10.2 | A LLMC hook after a Sniper attack | No LLMC follows a Sniper attack. |
 | A Placed DC halved when only some of its targets were concealed at Placement | Referee, pass 15 | A23.3 | Per-target concealment in the DC's attack | Halved only when every target was concealed at Placement. |
 | A broken Commissar's duty to Self-Rally before the other units of his Location | Referee, pass 15 | A25.222 | A rally order in the RPh | The RPh waits for every broken unit of his Location, in any order. |
@@ -530,7 +522,7 @@ The plan was approved on 2026-09-30. A survey of this backlog the same day found
 | Control of Locations, start Control edge cases, Gun and vehicle VP, the Control cache (§31) | Pass 24, built 2026-09-30 (Control forfeited to a Kindled Fire: pass 40) |
 | Entry by advance, delayed and blocked entry, offboard Deployment, the full movement step at entry, several entry areas (§30); leaving the map in the APh, by Bypass, and at the road rate, a Guard leaving with prisoners, captured units exited (§31, §24); the SMOKE panel's eligibility (§19); clearer answers after DFF eliminates every mover, the end-move refusal after a DC placer was Replaced (§25); the raw OB group and Deployment messages (§30); the exit refusal naming the edge hex (§31) | Pass 25, built 2026-10-01 |
 | Vehicles and Guns entering, Gun movement and limbering, hook-up and en portee (§12, §18, §30); a crew manning a Gun stacking (§29); a crew leaving with its Gun (§31); a Covered Arc across boards or on a reversed board, concealed crews and Guns (§12, §22); the Motion "wished to enter next" field (§21) | Pass 26, built 2026-10-01 (limbering and en portee: section 40) |
-| The berserk Dummies, route, and OVR rows (§1, §20, §21); the Axis Minor Heat of Battle row, the Japanese part waiting with Chapter G (§11); a berserk leader's companions' TCs (§11); Spraying Fire after a choice (§22); a DC's owner's options (§25) | Pass 27 |
+| The berserk Dummies, route, and OVR rows (§1, §20, §21); the Axis Minor Heat of Battle row, the Japanese part waiting with Chapter G (§11); a berserk leader's companions' TCs (§11); Spraying Fire after a choice (§22); a DC's owner's options (§25) | Pass 27, built 2026-10-01 (the Japanese part, and CC with a Gun crew: sections 11, 12, 41) |
 | Map picking, forms, edit-time checks, plain messages, renaming, delete confirmation and warning, the Guards SSR 3 note (§32); a test of a card changed or gone (§29) | Pass 28 |
 | The Deploy control splitting several SW, records of DM, Failure to Rout, and SW transfers (§23) | Pass 28b |
 | The full DYO purchase (§27); Gun BPV in the catalog (§12); the DYO Weather and NVR tables (§26) | Passes 29 and 30 |
@@ -602,3 +594,25 @@ Pass 26 (2026-10-01) built vehicles entering from off board in Motion with their
 | Exit buttons saying what the exit scores, and unload offered beyond three-fourths of the MP | Table player, pass 26 | A26.23, D6.5 | Plan pass 28c (the Play workspace) | The proposal's review says both. |
 | The vehicle panel's planner reads cached per revision (entries, exits, the VCA hexes, the Passengers) | UI review, pass 26 | | A view model per revision and view | The entries are read once per revision; the rest per render. |
 | The card's citable rule fragments for A2.52, D6, and A12.34 | R26.7 | R17.2 | A comparison of those rules with the PDF | Armor Test's SSRs cite the rulings. |
+
+## 41. Added by the game pass 27
+
+Pass 27 (2026-10-01) built the Axis Minor counters of catalog 1.13.0 with their Heat of Battle, Leader Creation, Replacement, and Battle Hardening, a side's nation and No Quarter for Hungarians against Romanians; a berserk charge's route through Bypass, stairwells, and upper levels, and its charge at a vehicle; A.9 Random Selection among Dummies in a charge; the CC of a berserk OVR onto a lone SMC at once in the MPh; a berserk leader's companions' TCs with the CC record; the follow-ups of an attack and a DC's options resumed after an owner's choice; and 14 Play components (rulings R27.1 to R27.5). It removed from section 1 the berserk Dummies, route, and OVR rows; from section 11 the Axis Minor part of the Heat of Battle row and the companions' TCs; from section 20 the stairwell charge; from section 21 the charge at a vehicle; from section 22 Spraying Fire after a choice; and from section 25 the DC's options. Items it leaves out:
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| Axis Minor 1PAATC, no escape, red TH#, and PF | R27.1 (the user, 2026-10-01) | A25.81 to A25.83, A25.85, pp. 97 to 98 | Plan passes 34 to 39 (A25) | A non-elite Axis Minor takes the normal PAATC; they may escape; ordnance uses black TH#; no PF. |
+| The broken Morale Level one higher for Hungarians against Romanians, and for Axis Minors fighting within their own borders | R27.1 | A25.8, p. 97 | A broken Morale modifier by side or SSR | The printed broken Morale Level. |
+| A card holding two Axis Minor sides (Hungarians against Romanians), and a side id apart from its nationality on a card | R27.1; table player, pass 27 | A25.8 | The card format (plan pass 28) | Hungarians against Romanians start only from a setup naming both sides; a card side names one nation. |
+| The ATMM of Romanian non-crew MMC and the Hungarians' two-tone counters | R27.1 | A25.86, A25.87 | Plan passes 34 to 39 | Not built. |
+| A berserk charge into a Gun crew's Location | R27.2 | A15.43, C11 | Section 12 (CC with a crew) | The charge is undecided and ends in place (R30.5). |
+| A berserk charge into a vehicle's Location that also holds enemy Infantry | Table player, pass 27 | A15.43, A11.31 | CC between Infantry beside a vehicle (R11.16) | The charge is undecided and ends in place (R30.5). |
+| Destroying a vehicle in CC ending berserk | Table player, pass 27 | A15.45, p. 84 | A berserk end in vehicle CC | The unit stays berserk and charges on. |
+| A12.15's forced reveal of another non-Dummy unit when a charge's draw shows only a SMC with other concealed units there | Table player, pass 27 | A12.15, A4.15 | | No OVR; the charge stays in the Location, and CC follows in the CCPh. |
+| A second MMC's OVR onto a SMC already held in Melee | Referee, pass 27 | A4.152, p. 49 | | A berserk stack enters with no CC in the MPh; the CC follows in the CCPh. |
+| Replay re-checking an MPh CC record's OVR conditions (a berserk MMC, a lone Known SMC, no Melee) | Referee, pass 27 | A4.152 | | The record's flag and the moving stack's Location are checked; its facts are recomputed. |
+| Dummies in the A.9 draw of an ordinary A12.15 detection (not a charge) | Referee, pass 27 (before this pass) | A.9, A12.15 | | Only the real units are drawn; Dummies are removed when they are alone. |
+| Tests: a berserk attack on a vehicle ending the CCPh, an OVR that eliminates the SMC and the stack moving on, the spray, Encirclement, and Fire Lane resumes, Hungarians against Romanians in a played Heat of Battle, and the page's companion TC text | Referee and UI review, pass 27 | | | Covered by the planner's paths and tests of their parts. |
+| Draft records for `CloseCombatPanel` (37 parameters) and `SmallArmsFirePanel` (35) | UI review, pass 27 | | | Flat parameters, as the house style has them. |
+| The vehicle CC selects' accessible names naming their Location; component tests of the ambusher's round, Hand-to-Hand, the vehicle CC leaders, and Opportunity Fire's button | UI review, pass 27 | | | Not built. |
+| The OVR gate's replay of the event log on every action | Referee, pass 27 | | A cached state per revision | Correct, but costs a replay. |

@@ -27,6 +27,7 @@ public sealed class BacklogPass27Tests : IDisposable
     private static readonly string[] Bd01 = ["bd01"];
     private static readonly string[] G1 = ["g1"];
     private static readonly string[] Rl = ["rl"];
+    private static readonly string[] Gl = ["gl"];
     private static readonly string[] G2 = ["g2"];
     private static readonly string[] R1 = ["r1"];
     private static readonly string[] R2 = ["r2"];
@@ -376,6 +377,18 @@ public sealed class BacklogPass27Tests : IDisposable
         }));
         Assert.True(Is(Current.Unit("g1")!, Conditions.Melee));
         Assert.True(Is(Current.Unit("rl")!, Conditions.Melee));
+        Assert.Null(Planner().BerserkOverrunPending(Current));
+        Committed(await EndMove());
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ALoneBerserkLeaderEntersAnSmcsLocationWithoutAnOverrunCc()
+    {
+        // A15.432, A4.15 (referee and table player, pass 27): only a berserk MMC overruns; a lone berserk leader enters, and CC waits for the CCPh.
+        await Setup(Unit("gl", "asl:leader", "attacker-leader-8-0", L("C5"), "german", Conditions.Berserk), Unit("rl", "asl:leader", "defender-leader-7-0", L("C4"), "russian"));
+        Committed(await Move(Gl, L("C4")));
+        await Pass();
         Assert.Null(Planner().BerserkOverrunPending(Current));
         Committed(await EndMove());
         NoReplayErrors();

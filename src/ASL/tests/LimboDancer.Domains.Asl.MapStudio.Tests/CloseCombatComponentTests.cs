@@ -319,4 +319,21 @@ public sealed class CloseCombatComponentTests : IDisposable
         Assert.Equal(["", "lmg1"], panel.FindAll("#fire-lane-weapon option").Select(option => option.GetAttribute("value")));
         Assert.Equal(["", "l2"], panel.FindAll("#fire-partner option").Select(option => option.GetAttribute("value")));
     }
+
+    // Ruling R27.3 (UI and table player review, pass 27): every view reads the OVR's CC as a status; only a view that may act proposes it.
+    [Fact]
+    public void TheBerserkOverrunsCcIsAnnouncedToEveryViewAndProposedByTheActingOne()
+    {
+        var proposed = 0;
+        var panel = context.Render<BerserkOverrunCloseCombat>(parameters => parameters.Add(item => item.Location, "bd01:A2:0").Add(item => item.Attackers, ["g1"])
+            .Add(item => item.Smc, "rl").Add(item => item.SmcAttacks, true).Add(item => item.Ready, false).Add(item => item.OnPropose, () => proposed++));
+        Assert.Equal("status", panel.Find("#overrun-cc").GetAttribute("role"));
+        Assert.Contains("g1 overran the lone rl in bd01:A2:0", panel.Find("#overrun-cc").TextContent, StringComparison.Ordinal);
+        Assert.Contains("rl attacks back", panel.Find("#overrun-cc").TextContent, StringComparison.Ordinal);
+        Assert.Empty(panel.FindAll("#propose-overrun-cc"));
+        panel.Render(parameters => parameters.Add(item => item.Ready, true).Add(item => item.SmcAttacks, false));
+        Assert.Contains("rl cannot attack back", panel.Find("#overrun-cc").TextContent, StringComparison.Ordinal);
+        panel.Find("#propose-overrun-cc").Click();
+        Assert.Equal(1, proposed);
+    }
 }
