@@ -2,7 +2,7 @@
   "format": "asl-scenario-card/1",
   "id": "gambit",
   "title": "Gambit",
-  "catalog": "asl-scenario-a1@1.12.0",
+  "catalog": "asl-scenario-a1@1.13.0",
   "source": {
     "basis": "Adapted from a legacy card to the registered rulebook (ruling R17.2); the Chapter H DYO procedures check its numbers, and what they leave open is manufactured under R0.3.",
     "legacy": "ASL Scenario T14, The General, Vol. 28 No. 6 (1993), p. 64",

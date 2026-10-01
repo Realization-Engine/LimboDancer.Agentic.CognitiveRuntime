@@ -108,7 +108,7 @@ public sealed class BacklogPass23Tests : IDisposable
             node["start"] = JsonSerializer.SerializeToNode(new
             {
                 label = card,
-                catalog = "asl-scenario-a1@1.12.0",
+                catalog = "asl-scenario-a1@1.13.0",
                 scenario = new
                 {
                     id = card,
@@ -395,7 +395,7 @@ public sealed class BacklogPass23Tests : IDisposable
         Refused(await Conceal("russian", Current.Units.First(unit => unit.Side == "russian").Id), "play.setup-closed");
     }
 
-    private static ScenarioCard Minimal(string id) => new(ScenarioCards.Format, id, "A minimal game", "asl-scenario-a1@1.12.0",
+    private static ScenarioCard Minimal(string id) => new(ScenarioCards.Format, id, "A minimal game", "asl-scenario-a1@1.13.0",
         new ScenarioCardSource("A user card (ruling R22.2).", "none", []), string.Empty, new ScenarioCardDate(0, 7, 0), string.Empty,
         [new ScenarioCardBoard("bd01", 0, 0, false)], "top", null, new ScenarioCardTurns(10, false, "german", "german"), null,
         [new ScenarioCardSide("german", 2, null, new ScenarioCardEdge("bottom", "manufactured", null), string.Empty, [], null, 3),

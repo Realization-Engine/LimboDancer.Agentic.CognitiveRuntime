@@ -1,11 +1,12 @@
 {
   "pack": "asl",
-  "version": "1.15.0",
+  "version": "1.16.0",
   "label": "ASL Personnel, support weapons, Guns, vehicles, and entities that are not units",
   "note": "Original LimboDancer vocabulary. Rule references are to the registered rulebook PDF by physical page; no rulebook text or counter artwork.",
   "extends": [],
   "sides": [
     { "name": "american", "label": "American" },
+    { "name": "axis-minor", "label": "Axis Minor" },
     { "name": "british", "label": "British" },
     { "name": "finnish", "label": "Finnish" },
     { "name": "french", "label": "French" },

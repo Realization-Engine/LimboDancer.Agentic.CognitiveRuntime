@@ -77,8 +77,8 @@ public sealed class CardProvenanceTests
     public void AGameSaysWhetherItsCardStillMatches()
     {
         var sha = ScenarioCards.Sha256("gambit")!;
-        Assert.Equal(CardMatch.Same, Of("gambit", new("gambit", sha, "asl-scenario-a1@1.12.0", sha)).Game!.Match);
-        Assert.Equal(CardMatch.Changed, Of("gambit", new("gambit", "0" + sha[1..], "asl-scenario-a1@1.12.0", sha)).Game!.Match);
-        Assert.Equal(CardMatch.Gone, Of("gambit", new("gambit", sha, "asl-scenario-a1@1.12.0", null)).Game!.Match);
+        Assert.Equal(CardMatch.Same, Of("gambit", new("gambit", sha, "asl-scenario-a1@1.13.0", sha)).Game!.Match);
+        Assert.Equal(CardMatch.Changed, Of("gambit", new("gambit", "0" + sha[1..], "asl-scenario-a1@1.13.0", sha)).Game!.Match);
+        Assert.Equal(CardMatch.Gone, Of("gambit", new("gambit", sha, "asl-scenario-a1@1.13.0", null)).Game!.Match);
     }
 }

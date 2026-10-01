@@ -103,6 +103,11 @@ public static class GameEventWriter
                         writer.WriteString("friendlyEdge", edge);
                     }
 
+                    if (side.Nation is { } nation)
+                    {
+                        writer.WriteString("nation", nation);
+                    }
+
                     if (side.Groups.Count > 0)
                     {
                         writer.WriteStartArray("groups");

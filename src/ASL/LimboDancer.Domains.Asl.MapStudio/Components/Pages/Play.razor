@@ -2208,8 +2208,37 @@ else if (state is not null && history?.Current is not null)
             }
 
             var records = new List<(string, string)>();
+
+            // A15.41 (ruling R27.3): the TCs a berserk leader's companions took when it went berserk, by leader, from the fire and Rally records the viewer
+            // may see; a CC round names them for each berserk leader in it, since the CC itself has no Heat of Battle.
+            var dice = new Dictionary<string, IReadOnlyList<int>>(StringComparer.Ordinal);
+            var companionChecks = new Dictionary<string, string>(StringComparer.Ordinal);
             foreach (var item in history.Events.Where(item => item.IsVisibleTo(Viewer)))
             {
+                if (item.Payload is DiceRolled rolledDice)
+                {
+                    dice[rolledDice.Roll] = rolledDice.Values;
+                }
+
+                var (berserkLeader, checkRolls, wentBerserk) = item.Payload switch
+                {
+                    FireResolved fire when fire.Rolls.Keys.Any(key => key.StartsWith(BerserkCheckKey, StringComparison.Ordinal))
+                        && fire.Resolution.Deserialize<FireResolution>(LiveFire.Json) is { } fired
+                        => (fired.Effects.FirstOrDefault(effect => effect.Berserk == true)?.UnitId, fire.Rolls,
+                            (IReadOnlyList<string>)[.. fired.CompanionEffects?.Select(effect => effect.UnitId) ?? []]),
+                    RallyAttempted rally when rally.Rolls.Keys.Any(key => key.StartsWith(BerserkCheckKey, StringComparison.Ordinal))
+                        && rally.Resolution.Deserialize<RallyResolution>(LiveFire.Json)?.Effect is { Berserk: true } effect
+                        => (rally.Unit, rally.Rolls, effect.BerserkCompanions ?? []),
+                    _ => ((string?)null, (IReadOnlyDictionary<string, string>?)null, (IReadOnlyList<string>)[]),
+                };
+                if (berserkLeader is not null && checkRolls is not null)
+                {
+                    var checks = checkRolls.Where(roll => roll.Key.StartsWith(BerserkCheckKey, StringComparison.Ordinal)).OrderBy(roll => roll.Key, StringComparer.Ordinal)
+                        .Select(roll => (Unit: roll.Key[BerserkCheckKey.Length..], Dice: dice.GetValueOrDefault(roll.Value) ?? []))
+                        .Select(check => $"{check.Unit} {string.Join("+", check.Dice)}: {(wentBerserk.Contains(check.Unit) ? "goes berserk with it" : "stays")}");
+                    companionChecks[berserkLeader] = $"{berserkLeader} went berserk before this CC; its companions' TCs then: {string.Join(", ", checks)} (A15.41)";
+                }
+
                 if (item.Payload is AmbushRolled ambush && ambush.Resolution.Deserialize<AmbushResolution>(LiveFire.Json) is { } rolled)
                 {
                     var sides = string.Join("; ", rolled.Sides.Select(side => $"{side.Side} dr {side.Dr}{ModifierText(side.Drm)} = {side.FinalDr}"));
@@ -2244,7 +2273,8 @@ else if (state is not null && history?.Current is not null)
                     var left = UnpossessedAfter(item, resolution).Select(weapon => $"{weapon} is left unpossessed in {combat.Location} (A11.13)");
                     var text = resolution.Attacks.Count == 0 ? "no attacks" : string.Join(" | ", attacks);
                     var hand = combat.Facts.TryGetProperty("handToHand", out var handToHand) && handToHand.ValueKind == JsonValueKind.True ? ", Hand-to-Hand (red Kill Numbers)" : "";
-                    records.Add((item.EventId, $"CC in {combat.Location}, {combat.Round} round{hand}: {string.Join("; ", new[] { text }.Concat(lost).Concat(ended).Concat(withdrew).Concat(left))}"));
+                    var companions = combat.Attackers.Concat(combat.Defenders).Distinct(StringComparer.Ordinal).Select(unit => companionChecks.GetValueOrDefault(unit)).OfType<string>();
+                    records.Add((item.EventId, $"CC in {combat.Location}, {combat.Round} round{hand}: {string.Join("; ", new[] { text }.Concat(lost).Concat(ended).Concat(withdrew).Concat(left).Concat(companions))}"));
                 }
             }
 
@@ -2252,6 +2282,9 @@ else if (state is not null && history?.Current is not null)
             return records;
         }
     }
+
+    /// <summary>The roll key of a berserk leader's companion's TC in fire and Rally records (A15.41).</summary>
+    private const string BerserkCheckKey = "berserkCheck:";
 
     /// <summary>The SW the units a CC round eliminated possessed before it, less those it eliminated: they stay in the Location unpossessed.</summary>
     private IEnumerable<string> UnpossessedAfter(GameEvent combat, CloseCombatResolution resolution)

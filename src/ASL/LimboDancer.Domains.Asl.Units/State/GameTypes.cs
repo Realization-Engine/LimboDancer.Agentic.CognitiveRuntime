@@ -47,6 +47,24 @@ public sealed record SideState(string Id, string Nationality, int? Elr, int? San
     public static IReadOnlyList<string> Edges { get; } = ["top", "bottom", "left", "right"];
 
     /// <summary>
+    /// The nation of an Axis Minor side (A25.8; ruling R27.1): the counters are one set shared by the five nations, so the side names
+    /// which it is. Null for every other nationality.
+    /// </summary>
+    public string? Nation
+    {
+        get; init;
+    }
+
+    /// <summary>The Axis Minor nations (A25.8).</summary>
+    public static IReadOnlyList<string> AxisMinorNations { get; } = ["romanian", "hungarian", "slovakian", "croatian", "bulgarian"];
+
+    /// <summary>
+    /// Whether Hungarians fight Romanians in a game with these sides (A25.8, A25.82; ruling R27.1): No Quarter is then in effect for both.
+    /// </summary>
+    public static bool HungariansVersusRomanians(IReadOnlyList<SideState> sides) =>
+        sides.Any(side => side.Nation == "hungarian") && sides.Any(side => side.Nation == "romanian");
+
+    /// <summary>
     /// The side's OB groups when the game starts from a scenario card (A19.1: "each scenario OB will list an ELR for that group of units";
     /// backlog pass 18, ruling R18.3); empty for a game that names none.
     /// </summary>

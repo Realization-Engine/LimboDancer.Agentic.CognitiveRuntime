@@ -2156,3 +2156,214 @@ sheet,counter,face,attribute,value,transcriber,reviewer,note
 ,defender-hmg,front,rate-of-fire,,,,"whole number, or not-printed if the MG has no Multiple ROF (A9.2)"
 ,defender-hmg,front,portage,,,,whole number of PP (A4.4)
 ,defender-hmg,malfunctioned,repair,,,,whole number (A9.72)
+,axis-minor-elite-squad,counter,kind,,,,expected asl:squad
+,axis-minor-elite-squad,counter,nationality,,,,"american, axis-minor, british, finnish, french, german, italian, japanese, or russian"
+,axis-minor-elite-squad,front,firepower,,,,whole number (A1.21)
+,axis-minor-elite-squad,front,range,,,,whole number (A1.22)
+,axis-minor-elite-squad,front,morale,,,,whole number (A1.23)
+,axis-minor-elite-squad,front,identity,,,,"identity letter or crew numeral as printed, or not-printed (A1.24)"
+,axis-minor-elite-squad,front,class,,,,"elite, 1st-line, 2nd-line, green, conscript, or not-printed (A1.25)"
+,axis-minor-elite-squad,front,class-variant,,,,"circle, square, or not-printed (A1.25)"
+,axis-minor-elite-squad,front,smoke-exponent,,,,"whole number, or not-printed (A1.21)"
+,axis-minor-elite-squad,front,asl:assault-fire,,,,yes or no: firepower underlined (A1.21)
+,axis-minor-elite-squad,front,asl:spraying-fire,,,,yes or no: range underlined (A1.22)
+,axis-minor-elite-squad,front,asl:elr-5,,,,yes or no: morale underlined (A1.23)
+,axis-minor-elite-squad,front,asl:assault-engineer,,,,yes or no: DC symbol printed (A25.01)
+,axis-minor-elite-squad,broken,broken-morale,,,,"whole number, or not-printed if the counter has no broken side (A1.4)"
+,axis-minor-elite-squad,broken,bpv,,,,"whole number, or not-printed (A1.4)"
+,axis-minor-elite-squad,broken,asl:self-rally,,,,yes or no: broken morale in a square (A1.4)
+,axis-minor-elite-half-squad,counter,kind,,,,expected asl:half-squad
+,axis-minor-elite-half-squad,counter,nationality,,,,"american, axis-minor, british, finnish, french, german, italian, japanese, or russian"
+,axis-minor-elite-half-squad,front,firepower,,,,whole number (A1.21)
+,axis-minor-elite-half-squad,front,range,,,,whole number (A1.22)
+,axis-minor-elite-half-squad,front,morale,,,,whole number (A1.23)
+,axis-minor-elite-half-squad,front,identity,,,,"identity letter or crew numeral as printed, or not-printed (A1.24)"
+,axis-minor-elite-half-squad,front,class,,,,"elite, 1st-line, 2nd-line, green, conscript, or not-printed (A1.25)"
+,axis-minor-elite-half-squad,front,class-variant,,,,"circle, square, or not-printed (A1.25)"
+,axis-minor-elite-half-squad,front,smoke-exponent,,,,"whole number, or not-printed (A1.21)"
+,axis-minor-elite-half-squad,front,asl:assault-fire,,,,yes or no: firepower underlined (A1.21)
+,axis-minor-elite-half-squad,front,asl:spraying-fire,,,,yes or no: range underlined (A1.22)
+,axis-minor-elite-half-squad,front,asl:elr-5,,,,yes or no: morale underlined (A1.23)
+,axis-minor-elite-half-squad,front,asl:assault-engineer,,,,yes or no: DC symbol printed (A25.01)
+,axis-minor-elite-half-squad,broken,broken-morale,,,,"whole number, or not-printed if the counter has no broken side (A1.4)"
+,axis-minor-elite-half-squad,broken,bpv,,,,"whole number, or not-printed (A1.4)"
+,axis-minor-elite-half-squad,broken,asl:self-rally,,,,yes or no: broken morale in a square (A1.4)
+,axis-minor-square-squad,counter,kind,,,,expected asl:squad
+,axis-minor-square-squad,counter,nationality,,,,"american, axis-minor, british, finnish, french, german, italian, japanese, or russian"
+,axis-minor-square-squad,front,firepower,,,,whole number (A1.21)
+,axis-minor-square-squad,front,range,,,,whole number (A1.22)
+,axis-minor-square-squad,front,morale,,,,whole number (A1.23)
+,axis-minor-square-squad,front,identity,,,,"identity letter or crew numeral as printed, or not-printed (A1.24)"
+,axis-minor-square-squad,front,class,,,,"elite, 1st-line, 2nd-line, green, conscript, or not-printed (A1.25)"
+,axis-minor-square-squad,front,class-variant,,,,"circle, square, or not-printed (A1.25)"
+,axis-minor-square-squad,front,smoke-exponent,,,,"whole number, or not-printed (A1.21)"
+,axis-minor-square-squad,front,asl:assault-fire,,,,yes or no: firepower underlined (A1.21)
+,axis-minor-square-squad,front,asl:spraying-fire,,,,yes or no: range underlined (A1.22)
+,axis-minor-square-squad,front,asl:elr-5,,,,yes or no: morale underlined (A1.23)
+,axis-minor-square-squad,front,asl:assault-engineer,,,,yes or no: DC symbol printed (A25.01)
+,axis-minor-square-squad,broken,broken-morale,,,,"whole number, or not-printed if the counter has no broken side (A1.4)"
+,axis-minor-square-squad,broken,bpv,,,,"whole number, or not-printed (A1.4)"
+,axis-minor-square-squad,broken,asl:self-rally,,,,yes or no: broken morale in a square (A1.4)
+,axis-minor-square-half-squad,counter,kind,,,,expected asl:half-squad
+,axis-minor-square-half-squad,counter,nationality,,,,"american, axis-minor, british, finnish, french, german, italian, japanese, or russian"
+,axis-minor-square-half-squad,front,firepower,,,,whole number (A1.21)
+,axis-minor-square-half-squad,front,range,,,,whole number (A1.22)
+,axis-minor-square-half-squad,front,morale,,,,whole number (A1.23)
+,axis-minor-square-half-squad,front,identity,,,,"identity letter or crew numeral as printed, or not-printed (A1.24)"
+,axis-minor-square-half-squad,front,class,,,,"elite, 1st-line, 2nd-line, green, conscript, or not-printed (A1.25)"
+,axis-minor-square-half-squad,front,class-variant,,,,"circle, square, or not-printed (A1.25)"
+,axis-minor-square-half-squad,front,smoke-exponent,,,,"whole number, or not-printed (A1.21)"
+,axis-minor-square-half-squad,front,asl:assault-fire,,,,yes or no: firepower underlined (A1.21)
+,axis-minor-square-half-squad,front,asl:spraying-fire,,,,yes or no: range underlined (A1.22)
+,axis-minor-square-half-squad,front,asl:elr-5,,,,yes or no: morale underlined (A1.23)
+,axis-minor-square-half-squad,front,asl:assault-engineer,,,,yes or no: DC symbol printed (A25.01)
+,axis-minor-square-half-squad,broken,broken-morale,,,,"whole number, or not-printed if the counter has no broken side (A1.4)"
+,axis-minor-square-half-squad,broken,bpv,,,,"whole number, or not-printed (A1.4)"
+,axis-minor-square-half-squad,broken,asl:self-rally,,,,yes or no: broken morale in a square (A1.4)
+,axis-minor-squad,counter,kind,,,,expected asl:squad
+,axis-minor-squad,counter,nationality,,,,"american, axis-minor, british, finnish, french, german, italian, japanese, or russian"
+,axis-minor-squad,front,firepower,,,,whole number (A1.21)
+,axis-minor-squad,front,range,,,,whole number (A1.22)
+,axis-minor-squad,front,morale,,,,whole number (A1.23)
+,axis-minor-squad,front,identity,,,,"identity letter or crew numeral as printed, or not-printed (A1.24)"
+,axis-minor-squad,front,class,,,,"elite, 1st-line, 2nd-line, green, conscript, or not-printed (A1.25)"
+,axis-minor-squad,front,class-variant,,,,"circle, square, or not-printed (A1.25)"
+,axis-minor-squad,front,smoke-exponent,,,,"whole number, or not-printed (A1.21)"
+,axis-minor-squad,front,asl:assault-fire,,,,yes or no: firepower underlined (A1.21)
+,axis-minor-squad,front,asl:spraying-fire,,,,yes or no: range underlined (A1.22)
+,axis-minor-squad,front,asl:elr-5,,,,yes or no: morale underlined (A1.23)
+,axis-minor-squad,front,asl:assault-engineer,,,,yes or no: DC symbol printed (A25.01)
+,axis-minor-squad,broken,broken-morale,,,,"whole number, or not-printed if the counter has no broken side (A1.4)"
+,axis-minor-squad,broken,bpv,,,,"whole number, or not-printed (A1.4)"
+,axis-minor-squad,broken,asl:self-rally,,,,yes or no: broken morale in a square (A1.4)
+,axis-minor-half-squad,counter,kind,,,,expected asl:half-squad
+,axis-minor-half-squad,counter,nationality,,,,"american, axis-minor, british, finnish, french, german, italian, japanese, or russian"
+,axis-minor-half-squad,front,firepower,,,,whole number (A1.21)
+,axis-minor-half-squad,front,range,,,,whole number (A1.22)
+,axis-minor-half-squad,front,morale,,,,whole number (A1.23)
+,axis-minor-half-squad,front,identity,,,,"identity letter or crew numeral as printed, or not-printed (A1.24)"
+,axis-minor-half-squad,front,class,,,,"elite, 1st-line, 2nd-line, green, conscript, or not-printed (A1.25)"
+,axis-minor-half-squad,front,class-variant,,,,"circle, square, or not-printed (A1.25)"
+,axis-minor-half-squad,front,smoke-exponent,,,,"whole number, or not-printed (A1.21)"
+,axis-minor-half-squad,front,asl:assault-fire,,,,yes or no: firepower underlined (A1.21)
+,axis-minor-half-squad,front,asl:spraying-fire,,,,yes or no: range underlined (A1.22)
+,axis-minor-half-squad,front,asl:elr-5,,,,yes or no: morale underlined (A1.23)
+,axis-minor-half-squad,front,asl:assault-engineer,,,,yes or no: DC symbol printed (A25.01)
+,axis-minor-half-squad,broken,broken-morale,,,,"whole number, or not-printed if the counter has no broken side (A1.4)"
+,axis-minor-half-squad,broken,bpv,,,,"whole number, or not-printed (A1.4)"
+,axis-minor-half-squad,broken,asl:self-rally,,,,yes or no: broken morale in a square (A1.4)
+,axis-minor-conscript-squad,counter,kind,,,,expected asl:squad
+,axis-minor-conscript-squad,counter,nationality,,,,"american, axis-minor, british, finnish, french, german, italian, japanese, or russian"
+,axis-minor-conscript-squad,front,firepower,,,,whole number (A1.21)
+,axis-minor-conscript-squad,front,range,,,,whole number (A1.22)
+,axis-minor-conscript-squad,front,morale,,,,whole number (A1.23)
+,axis-minor-conscript-squad,front,identity,,,,"identity letter or crew numeral as printed, or not-printed (A1.24)"
+,axis-minor-conscript-squad,front,class,,,,"elite, 1st-line, 2nd-line, green, conscript, or not-printed (A1.25)"
+,axis-minor-conscript-squad,front,class-variant,,,,"circle, square, or not-printed (A1.25)"
+,axis-minor-conscript-squad,front,smoke-exponent,,,,"whole number, or not-printed (A1.21)"
+,axis-minor-conscript-squad,front,asl:assault-fire,,,,yes or no: firepower underlined (A1.21)
+,axis-minor-conscript-squad,front,asl:spraying-fire,,,,yes or no: range underlined (A1.22)
+,axis-minor-conscript-squad,front,asl:elr-5,,,,yes or no: morale underlined (A1.23)
+,axis-minor-conscript-squad,front,asl:assault-engineer,,,,yes or no: DC symbol printed (A25.01)
+,axis-minor-conscript-squad,broken,broken-morale,,,,"whole number, or not-printed if the counter has no broken side (A1.4)"
+,axis-minor-conscript-squad,broken,bpv,,,,"whole number, or not-printed (A1.4)"
+,axis-minor-conscript-squad,broken,asl:self-rally,,,,yes or no: broken morale in a square (A1.4)
+,axis-minor-conscript-half-squad,counter,kind,,,,expected asl:half-squad
+,axis-minor-conscript-half-squad,counter,nationality,,,,"american, axis-minor, british, finnish, french, german, italian, japanese, or russian"
+,axis-minor-conscript-half-squad,front,firepower,,,,whole number (A1.21)
+,axis-minor-conscript-half-squad,front,range,,,,whole number (A1.22)
+,axis-minor-conscript-half-squad,front,morale,,,,whole number (A1.23)
+,axis-minor-conscript-half-squad,front,identity,,,,"identity letter or crew numeral as printed, or not-printed (A1.24)"
+,axis-minor-conscript-half-squad,front,class,,,,"elite, 1st-line, 2nd-line, green, conscript, or not-printed (A1.25)"
+,axis-minor-conscript-half-squad,front,class-variant,,,,"circle, square, or not-printed (A1.25)"
+,axis-minor-conscript-half-squad,front,smoke-exponent,,,,"whole number, or not-printed (A1.21)"
+,axis-minor-conscript-half-squad,front,asl:assault-fire,,,,yes or no: firepower underlined (A1.21)
+,axis-minor-conscript-half-squad,front,asl:spraying-fire,,,,yes or no: range underlined (A1.22)
+,axis-minor-conscript-half-squad,front,asl:elr-5,,,,yes or no: morale underlined (A1.23)
+,axis-minor-conscript-half-squad,front,asl:assault-engineer,,,,yes or no: DC symbol printed (A25.01)
+,axis-minor-conscript-half-squad,broken,broken-morale,,,,"whole number, or not-printed if the counter has no broken side (A1.4)"
+,axis-minor-conscript-half-squad,broken,bpv,,,,"whole number, or not-printed (A1.4)"
+,axis-minor-conscript-half-squad,broken,asl:self-rally,,,,yes or no: broken morale in a square (A1.4)
+,axis-minor-leader-6-plus-1,counter,kind,,,,expected asl:leader
+,axis-minor-leader-6-plus-1,counter,nationality,,,,"american, axis-minor, british, finnish, french, german, italian, japanese, or russian"
+,axis-minor-leader-6-plus-1,front,identity,,,,"identity as printed, or not-printed"
+,axis-minor-leader-6-plus-1,front,leadership,,,,"signed whole number such as -1, 0, or +1 (A10.7)"
+,axis-minor-leader-6-plus-1,front,morale,,,,whole number (A10.7)
+,axis-minor-leader-6-plus-1,front,asl:elr-5,,,,yes or no: morale underlined (A1.23)
+,axis-minor-leader-6-plus-1,broken,broken-morale,,,,"whole number, or not-printed if the counter has no broken side (A1.4)"
+,axis-minor-leader-6-plus-1,broken,bpv,,,,"whole number, or not-printed (A1.4)"
+,axis-minor-leader-6-plus-1,broken,asl:self-rally,,,,yes or no: broken morale in a square (A1.4)
+,axis-minor-leader-7-0,counter,kind,,,,expected asl:leader
+,axis-minor-leader-7-0,counter,nationality,,,,"american, axis-minor, british, finnish, french, german, italian, japanese, or russian"
+,axis-minor-leader-7-0,front,identity,,,,"identity as printed, or not-printed"
+,axis-minor-leader-7-0,front,leadership,,,,"signed whole number such as -1, 0, or +1 (A10.7)"
+,axis-minor-leader-7-0,front,morale,,,,whole number (A10.7)
+,axis-minor-leader-7-0,front,asl:elr-5,,,,yes or no: morale underlined (A1.23)
+,axis-minor-leader-7-0,broken,broken-morale,,,,"whole number, or not-printed if the counter has no broken side (A1.4)"
+,axis-minor-leader-7-0,broken,bpv,,,,"whole number, or not-printed (A1.4)"
+,axis-minor-leader-7-0,broken,asl:self-rally,,,,yes or no: broken morale in a square (A1.4)
+,axis-minor-leader-8-0,counter,kind,,,,expected asl:leader
+,axis-minor-leader-8-0,counter,nationality,,,,"american, axis-minor, british, finnish, french, german, italian, japanese, or russian"
+,axis-minor-leader-8-0,front,identity,,,,"identity as printed, or not-printed"
+,axis-minor-leader-8-0,front,leadership,,,,"signed whole number such as -1, 0, or +1 (A10.7)"
+,axis-minor-leader-8-0,front,morale,,,,whole number (A10.7)
+,axis-minor-leader-8-0,front,asl:elr-5,,,,yes or no: morale underlined (A1.23)
+,axis-minor-leader-8-0,broken,broken-morale,,,,"whole number, or not-printed if the counter has no broken side (A1.4)"
+,axis-minor-leader-8-0,broken,bpv,,,,"whole number, or not-printed (A1.4)"
+,axis-minor-leader-8-0,broken,asl:self-rally,,,,yes or no: broken morale in a square (A1.4)
+,axis-minor-leader-8-1,counter,kind,,,,expected asl:leader
+,axis-minor-leader-8-1,counter,nationality,,,,"american, axis-minor, british, finnish, french, german, italian, japanese, or russian"
+,axis-minor-leader-8-1,front,identity,,,,"identity as printed, or not-printed"
+,axis-minor-leader-8-1,front,leadership,,,,"signed whole number such as -1, 0, or +1 (A10.7)"
+,axis-minor-leader-8-1,front,morale,,,,whole number (A10.7)
+,axis-minor-leader-8-1,front,asl:elr-5,,,,yes or no: morale underlined (A1.23)
+,axis-minor-leader-8-1,broken,broken-morale,,,,"whole number, or not-printed if the counter has no broken side (A1.4)"
+,axis-minor-leader-8-1,broken,bpv,,,,"whole number, or not-printed (A1.4)"
+,axis-minor-leader-8-1,broken,asl:self-rally,,,,yes or no: broken morale in a square (A1.4)
+,axis-minor-leader-9-1,counter,kind,,,,expected asl:leader
+,axis-minor-leader-9-1,counter,nationality,,,,"american, axis-minor, british, finnish, french, german, italian, japanese, or russian"
+,axis-minor-leader-9-1,front,identity,,,,"identity as printed, or not-printed"
+,axis-minor-leader-9-1,front,leadership,,,,"signed whole number such as -1, 0, or +1 (A10.7)"
+,axis-minor-leader-9-1,front,morale,,,,whole number (A10.7)
+,axis-minor-leader-9-1,front,asl:elr-5,,,,yes or no: morale underlined (A1.23)
+,axis-minor-leader-9-1,broken,broken-morale,,,,"whole number, or not-printed if the counter has no broken side (A1.4)"
+,axis-minor-leader-9-1,broken,bpv,,,,"whole number, or not-printed (A1.4)"
+,axis-minor-leader-9-1,broken,asl:self-rally,,,,yes or no: broken morale in a square (A1.4)
+,axis-minor-leader-9-2,counter,kind,,,,expected asl:leader
+,axis-minor-leader-9-2,counter,nationality,,,,"american, axis-minor, british, finnish, french, german, italian, japanese, or russian"
+,axis-minor-leader-9-2,front,identity,,,,"identity as printed, or not-printed"
+,axis-minor-leader-9-2,front,leadership,,,,"signed whole number such as -1, 0, or +1 (A10.7)"
+,axis-minor-leader-9-2,front,morale,,,,whole number (A10.7)
+,axis-minor-leader-9-2,front,asl:elr-5,,,,yes or no: morale underlined (A1.23)
+,axis-minor-leader-9-2,broken,broken-morale,,,,"whole number, or not-printed if the counter has no broken side (A1.4)"
+,axis-minor-leader-9-2,broken,bpv,,,,"whole number, or not-printed (A1.4)"
+,axis-minor-leader-9-2,broken,asl:self-rally,,,,yes or no: broken morale in a square (A1.4)
+,axis-minor-leader-10-2,counter,kind,,,,expected asl:leader
+,axis-minor-leader-10-2,counter,nationality,,,,"american, axis-minor, british, finnish, french, german, italian, japanese, or russian"
+,axis-minor-leader-10-2,front,identity,,,,"identity as printed, or not-printed"
+,axis-minor-leader-10-2,front,leadership,,,,"signed whole number such as -1, 0, or +1 (A10.7)"
+,axis-minor-leader-10-2,front,morale,,,,whole number (A10.7)
+,axis-minor-leader-10-2,front,asl:elr-5,,,,yes or no: morale underlined (A1.23)
+,axis-minor-leader-10-2,broken,broken-morale,,,,"whole number, or not-printed if the counter has no broken side (A1.4)"
+,axis-minor-leader-10-2,broken,bpv,,,,"whole number, or not-printed (A1.4)"
+,axis-minor-leader-10-2,broken,asl:self-rally,,,,yes or no: broken morale in a square (A1.4)
+,axis-minor-leader-10-3,counter,kind,,,,expected asl:leader
+,axis-minor-leader-10-3,counter,nationality,,,,"american, axis-minor, british, finnish, french, german, italian, japanese, or russian"
+,axis-minor-leader-10-3,front,identity,,,,"identity as printed, or not-printed"
+,axis-minor-leader-10-3,front,leadership,,,,"signed whole number such as -1, 0, or +1 (A10.7)"
+,axis-minor-leader-10-3,front,morale,,,,whole number (A10.7)
+,axis-minor-leader-10-3,front,asl:elr-5,,,,yes or no: morale underlined (A1.23)
+,axis-minor-leader-10-3,broken,broken-morale,,,,"whole number, or not-printed if the counter has no broken side (A1.4)"
+,axis-minor-leader-10-3,broken,bpv,,,,"whole number, or not-printed (A1.4)"
+,axis-minor-leader-10-3,broken,asl:self-rally,,,,yes or no: broken morale in a square (A1.4)
+,axis-minor-hero,counter,kind,,,,expected asl:hero
+,axis-minor-hero,counter,nationality,,,,the hero's nationality
+,axis-minor-hero,front,identity,,,,"identity as printed, or not-printed"
+,axis-minor-hero,front,firepower,,,,whole number (A1.21)
+,axis-minor-hero,front,range,,,,whole number (A1.22)
+,axis-minor-hero,front,morale,,,,whole number (A1.23)
+,axis-minor-hero,wounded,firepower,,,,whole number on the wounded side (A15.2)
+,axis-minor-hero,wounded,range,,,,whole number on the wounded side (A15.2)
+,axis-minor-hero,wounded,morale,,,,whole number on the wounded side (A15.2)
+,axis-minor-hero,broken,broken-morale,,,,a hero never breaks (A15.2)
+,axis-minor-hero,broken,bpv,,,,whole number

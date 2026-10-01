@@ -221,6 +221,13 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             return Refused(scope, label, expected, aboard);
         }
 
+        // A4.152 (ruling R27.3): once the DEFENDER's window on a berserk OVR's entry closes, its CC comes first.
+        if (action.Id.Value is not ("asl.game.close-combat" or "asl.game.choose") && existing.Count > 0 && Replay(existing).Current is { } overrunState
+            && BerserkOverrunPending(overrunState) is { } overrunAt)
+        {
+            return Refused(scope, label, expected, $"play.cc-overrun-first: the berserk Infantry OVR in {overrunAt} has its CC at once, before anything else happens (A4.152, A15.432)");
+        }
+
         var plan = action.Id.Value switch
         {
             "asl.game.setup" => PlanSetup(scope, arguments, existing, attemptId, expected, ref label, actor ?? "unknown"),

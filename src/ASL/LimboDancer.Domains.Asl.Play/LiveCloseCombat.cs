@@ -71,7 +71,7 @@ public static class LiveCloseCombat
     /// </summary>
     public static (CloseCombatFacts? Facts, string? Reason) FromState(GameState state, BoardLocation location, string? terrain,
         IReadOnlyList<CloseCombatDeclaration> attacks, IReadOnlyDictionary<string, string>? stacking, IReadOnlyDictionary<string, string>? withdrawals = null,
-        string? requested = null, IReadOnlyDictionary<string, string>? infiltrations = null, bool handToHand = false)
+        string? requested = null, IReadOnlyDictionary<string, string>? infiltrations = null, bool handToHand = false, bool overrun = false)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(attacks);
@@ -82,6 +82,16 @@ public static class LiveCloseCombat
         }
 
         var entry = state.CloseCombats.FirstOrDefault(item => item.Location == location);
+
+        // A4.152 (ruling R27.3): the CC of an Infantry OVR follows its entry at once, with no Ambush (A11.4 is for units that advance into CC).
+        if (overrun)
+        {
+            return (new CloseCombatFacts("MPh", location.ToString(), terrain, state.PhasingSide, CloseCombatFacts.Simultaneous, null, units, [], [], attacks, null)
+            {
+                InfantryOverrun = true,
+            }, null);
+        }
+
         if (entry is null && ScenarioA1CloseCombatCalculator.AmbushPossible(terrain, units, units.Any(unit => state.HiddenPlaced.Contains(unit.UnitId!, StringComparer.Ordinal))))
         {
             return (null, $"play.cc-ambush-first: Infantry advanced into CC in {location}, so the Ambush drs come first (A11.4)");
@@ -431,7 +441,7 @@ public sealed class CloseCombatRecordVerifier(ScenarioA1CloseCombatReference ref
         var withdrawals = recorded.Units.Where(unit => unit.WithdrawingTo is not null).ToDictionary(unit => unit.UnitId!, unit => unit.WithdrawingTo!, StringComparer.Ordinal);
         var infiltrations = recorded.Units.Where(unit => unit.InfiltrateTo is not null).ToDictionary(unit => unit.UnitId!, unit => unit.InfiltrateTo!, StringComparer.Ordinal);
         var (expected, reason) = LiveCloseCombat.FromState(state, combat.Location, recorded.Terrain, recorded.Attacks, stacking, withdrawals, recorded.Round, infiltrations,
-            recorded.HandToHand == true);
+            recorded.HandToHand == true, recorded.InfantryOverrun == true);
         if (expected is null)
         {
             return reason;

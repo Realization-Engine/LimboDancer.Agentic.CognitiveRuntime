@@ -254,6 +254,12 @@ public sealed class ScenarioA1FireReference
         // Pass 19b (ruling R19.7): the German circled-E 5-4-8 and plain-E 8-3-8 of the scenario cards (National Capabilities Chart, p. 695).
         ["attacker-elite-squad-5-4-8"] = "attacker-elite-half-squad-2-3-8",
         ["attacker-elite-squad-8-3-8"] = "attacker-elite-half-squad-3-3-8",
+
+        // Pass 27 (ruling R27.1): the Axis Minor MMC (catalog 1.13.0; National Capabilities Chart, p. 695).
+        ["axis-minor-elite-squad"] = "axis-minor-elite-half-squad",
+        ["axis-minor-square-squad"] = "axis-minor-square-half-squad",
+        ["axis-minor-squad"] = "axis-minor-half-squad",
+        ["axis-minor-conscript-squad"] = "axis-minor-conscript-half-squad",
     };
 
     // The leader grades from worst to best (Chapter H leader table, p. 331; A15.3): 6+1, 7-0, 8-0, 8-1, 9-1, 9-2, 10-2, 10-3.
@@ -268,7 +274,7 @@ public sealed class ScenarioA1FireReference
 
     // Backlog pass 15 (ruling R15.13): every grade of the five nationalities added by catalog 1.10.0.
     // The Finns have their own ranks (A25.71, A25.72; referee, pass 15): 8+1, 8-0, 9-0, 9-1, 10-0, 10-1.
-    private static readonly string[][] OtherLeaders = [.. new[] { "american", "british", "italian", "french" }
+    private static readonly string[][] OtherLeaders = [.. new[] { "american", "british", "italian", "french", "axis-minor" }
         .Select(nationality => new[] { "6-plus-1", "7-0", "8-0", "8-1", "9-1", "9-2", "10-2", "10-3" }.Select(grade => $"{nationality}-leader-{grade}").ToArray()),
         [.. new[] { "8-plus-1", "8-0", "9-0", "9-1", "10-0", "10-1" }.Select(grade => $"finnish-leader-{grade}")]];
 
@@ -327,6 +333,14 @@ public sealed class ScenarioA1FireReference
         ["french-squad"] = "french-elite-squad",
         ["french-green-half-squad"] = "french-half-squad",
         ["french-half-squad"] = "french-elite-half-squad",
+
+        // Pass 27 (ruling R27.1; A25.84): an Axis Minor Conscript becomes a 3-4-7, a 3-4-7 the elite 4-4-7 (the 5-3-7 would lower
+        // the range); the 2-2-7 HS of the 5-3-7 becomes the elite 2-4-7, no part of whose Strength Factor falls.
+        ["axis-minor-conscript-squad"] = "axis-minor-squad",
+        ["axis-minor-squad"] = "axis-minor-elite-squad",
+        ["axis-minor-conscript-half-squad"] = "axis-minor-half-squad",
+        ["axis-minor-half-squad"] = "axis-minor-elite-half-squad",
+        ["axis-minor-square-half-squad"] = "axis-minor-elite-half-squad",
     };
 
     private static readonly HashSet<string> HighestQuality = new(StringComparer.Ordinal)
@@ -353,6 +367,9 @@ public sealed class ScenarioA1FireReference
 
         // Pass 19b (ruling R19.7): elite MMC, so Battle Hardening makes them Fanatic (A15.3).
         "attacker-elite-squad-5-4-8", "attacker-elite-half-squad-2-3-8", "attacker-elite-squad-8-3-8", "attacker-elite-half-squad-3-3-8",
+
+        // Pass 27 (ruling R27.1): the Axis Minor elite MMC and 10-3, and the 5-3-7, which A25.84 makes Fanatic when it Battle Hardens.
+        "axis-minor-elite-squad", "axis-minor-elite-half-squad", "axis-minor-square-squad", "axis-minor-leader-10-3",
     };
 
     // The NKVD MMC (A25.25): 2nd Line, ELR 5, a -1 Heat of Battle DRM, Fanatic when Battle Hardened, Commissars by Field Promotion.
@@ -415,6 +432,14 @@ public sealed class ScenarioA1FireReference
         // underscored Morale Factor, so it is Replaced by its two broken 3-3-8 HS and a 3-3-8 is Disrupted (A19.13).
         ["attacker-elite-squad-5-4-8"] = "attacker-2nd-line-squad",
         ["attacker-elite-half-squad-2-3-8"] = "attacker-2nd-line-half-squad",
+
+        // Pass 27 (ruling R27.1; A25.84): the Axis Minor elite by the 1st Line 3-4-7, and the 5-3-7 and 3-4-7 by the Conscript, with their HS.
+        ["axis-minor-elite-squad"] = "axis-minor-squad",
+        ["axis-minor-square-squad"] = "axis-minor-conscript-squad",
+        ["axis-minor-squad"] = "axis-minor-conscript-squad",
+        ["axis-minor-elite-half-squad"] = "axis-minor-half-squad",
+        ["axis-minor-square-half-squad"] = "axis-minor-conscript-half-squad",
+        ["axis-minor-half-squad"] = "axis-minor-conscript-half-squad",
     };
 
     // A19.13 EXC (ruling R19.7; referee, pass 19b): the broken HS of lesser quality a Casualty MC beyond its ELR Reduces a squad to, where

@@ -167,7 +167,7 @@ public sealed class BacklogPass15Tests : IDisposable
             start = new Dictionary<string, object>
             {
                 ["label"] = "Pass 15",
-                ["catalog"] = "asl-scenario-a1@1.12.0",
+                ["catalog"] = "asl-scenario-a1@1.13.0",
                 ["boards"] = Bd01,
                 ["firstSide"] = firstSide,
                 ["specialRules"] = specialRules,
@@ -551,5 +551,34 @@ public sealed class BacklogPass15Tests : IDisposable
         }));
         Assert.NotEqual("g1", (Current.Find("m1") as EquipmentInstance)?.Holding?.Holder);
         Assert.Equal("g1", (Current.Find("m2") as EquipmentInstance)?.Holding?.Holder);
+    }
+
+    [Fact]
+    public async Task AThrownDcAsksItsOwnersOptionsAndThenAttacksItsThrowerAndIsRemoved()
+    {
+        // Ruling R27.4 (pass 27): the DC's attack reaches the Russian squad's Original 2 and its Battle Hardening option; the attack waits for the
+        // answer, and only then attacks the thrower's Location and removes the DC.
+        await SetupAt(1, "german", Unit("g1", "attacker-squad", "E3", "german"), Weapon("dc", "asl:dc", "attacker-dc", "g1", "german"),
+            Unit("r1", "defender-squad", "E4", "russian"));
+        var before = Revision;
+        Committed(await Do(GameActions.ThrowDc, Then(6, 3, 3, 1, 1, 3, 3), new
+        {
+            unitId = "g1",
+            equipmentId = "dc",
+            target = L("E4"),
+        }));
+        Assert.Equal(ChoicePending.BattleHardening, Current.Choice!.Kind);
+        Assert.Empty(Fires(before));
+        Assert.Equal(InstanceStatus.Active, Current.Find("dc")!.Status);
+        Committed(await Do(GameActions.Choose, Then(6), new
+        {
+            key = Current.Choice!.Key,
+            option = "decline",
+        }));
+        var fires = Fires(before);
+        Assert.Equal(2, fires.Length);
+        Assert.Contains(Resolution(fires[1]).Arithmetic!.Drm, item => item.Name == "thrower-location" && item.Value == 3m);
+        Assert.Equal(InstanceStatus.Eliminated, Current.Find("dc")!.Status);
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
     }
 }

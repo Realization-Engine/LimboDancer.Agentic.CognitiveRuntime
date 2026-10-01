@@ -22,7 +22,7 @@ public sealed partial class GamePlanner
     private static readonly string[] Moons = ["none", "half", "full"];
 
     /// <summary>The Axis nationalities of the catalog, for Extreme Winter (E3.741, E3.742): the Finns are Axis too, but excepted there.</summary>
-    private static readonly string[] Axis = ["german", "italian", "finnish", "japanese"];
+    private static readonly string[] Axis = ["german", "italian", "finnish", "japanese", "axis-minor"];
 
     /// <summary>Why the SSRs of a new game are refused (rulings R16.1, R16.9, and R23.5 for HIP), or null.</summary>
     internal static string? NightAndWeatherRulesBar(JsonElement start)

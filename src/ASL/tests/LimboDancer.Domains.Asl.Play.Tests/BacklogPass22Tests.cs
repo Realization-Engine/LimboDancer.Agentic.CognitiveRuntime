@@ -53,7 +53,7 @@ public sealed class BacklogPass22Tests : IDisposable
 
     private GameState Current => Planner().Replay(store.Read(Scope)!.Events).Current!;
 
-    private static ScenarioCard Minimal(string id) => new(ScenarioCards.Format, id, "A minimal game", "asl-scenario-a1@1.12.0",
+    private static ScenarioCard Minimal(string id) => new(ScenarioCards.Format, id, "A minimal game", "asl-scenario-a1@1.13.0",
         new ScenarioCardSource("A user card (ruling R22.2).", "none", []), string.Empty, new ScenarioCardDate(0, 7, 0), string.Empty,
         [new ScenarioCardBoard("bd01", 0, 0, false)], "top", null, new ScenarioCardTurns(10, false, "german", "german"), null,
         [new ScenarioCardSide("german", 2, null, new ScenarioCardEdge("bottom", "manufactured", null), string.Empty, [], null, 3),
@@ -75,7 +75,7 @@ public sealed class BacklogPass22Tests : IDisposable
             node["start"] = JsonSerializer.SerializeToNode(new
             {
                 label = card,
-                catalog = "asl-scenario-a1@1.12.0",
+                catalog = "asl-scenario-a1@1.13.0",
                 scenario = new
                 {
                     id = card,

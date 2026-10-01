@@ -119,7 +119,7 @@ public sealed class BacklogPass26Tests : IDisposable
             node["start"] = JsonSerializer.SerializeToNode(new Dictionary<string, object?>
             {
                 ["label"] = "armor-test",
-                ["catalog"] = "asl-scenario-a1@1.12.0",
+                ["catalog"] = "asl-scenario-a1@1.13.0",
                 ["boards"] = Board4Only,
                 ["sides"] = Array.Empty<object>(),
                 ["scenario"] = new
@@ -633,7 +633,7 @@ public sealed class BacklogPass26Tests : IDisposable
             start = new
             {
                 label = "Covered Arc",
-                catalog = "asl-scenario-a1@1.12.0",
+                catalog = "asl-scenario-a1@1.13.0",
                 boards = new object[] { new { board = "bd04", column = 0, row = 0, reversed = false }, new { board = "bd02", column = 0, row = 1, reversed = true } },
                 firstSide = "german",
                 sides = new[] { new { id = "german", nationality = "german" }, new { id = "russian", nationality = "russian" } },

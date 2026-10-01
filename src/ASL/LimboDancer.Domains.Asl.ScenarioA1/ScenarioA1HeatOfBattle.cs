@@ -97,10 +97,12 @@ public sealed record HeatOfBattleOutcome(IReadOnlyList<int> Dice, int OriginalDr
 public static class ScenarioA1HeatOfBattle
 {
     // A15.1: the nationality DRM of the Heat of Battle table; backlog pass 15 (ruling R15.13) admits the Italians, whose non-elite MMC surrender on
-    // 10 or more. Axis Minors and the Japanese (Surrender treated as Berserk) are refused (p. 83; backlog).
+    // 10 or more, and pass 27 (ruling R27.1) the Axis Minors, alike (A25.82). Hungarians fighting Romanians go Berserk on 10 or 11 instead: No
+    // Quarter is in effect for both sides there (A25.8), and No Quarter treats every Surrender result as Berserk. The Japanese are refused (backlog).
     private static readonly Dictionary<string, int> NationalityDrm = new(StringComparer.Ordinal)
     {
         ["american"] = 0,
+        ["axis-minor"] = 3,
         ["british"] = -1,
         ["finnish"] = -1,
         ["french"] = 1,
@@ -186,7 +188,7 @@ public static class ScenarioA1HeatOfBattle
 
         // A15.1 (ruling R15.13): a non-elite Italian MMC surrenders on a Final DR of 10 or more; A25.221 (ruling R15.6): a Commissar treats a
         // Surrender as Berserk, as a Fanatic unit does.
-        var surrenderFrom = unit.Nationality == "italian" && unit.IsMmc && unit.Class != "elite" ? 10 : 12;
+        var surrenderFrom = unit.Nationality is "italian" or "axis-minor" && unit.IsMmc && unit.Class != "elite" ? 10 : 12;
         var berserk = !hero && !hardening && (final < surrenderFrom || fanatic || noQuarter || ScenarioA1FireReference.IsCommissar(unit.Id));
         if (berserk)
         {

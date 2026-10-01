@@ -226,26 +226,15 @@ public sealed partial class GamePlanner
         IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
         {
             var events = new List<GameEvent>();
-            AddFireEvents(scope, attemptId, expected, actor, state, facts, targetSide, null, events, draw);
-            var malfunctioned = events.Select(item => item.Payload).OfType<FireResolved>().LastOrDefault()?.Resolution
-                .TryGetProperty("demolitionChargeMalfunctioned", out var flag) == true && flag.ValueKind == JsonValueKind.True;
-            if (thrower is { } own && !malfunctioned && !events.Any(item => item.Payload is ChoicePending) && Replay([.. existing, .. events]).Current is { } after
-                && LiveFire.DemolitionChargeFromState(after, chargeId, FireDemolitionCharge.Thrower, own).Attack is { } back)
-            {
-                AddFireEvents(scope, attemptId, expected, actor, after, HeatOfBattleFacts(after, back with
-                {
-                    Range = 0,
-                    SameLevel = true,
-                    TargetTerrain = ReadLocation(after, own) is { } ownRead ? TerrainKey(ownRead) : null,
-                }), state.Unit(facts.DemolitionCharge!.UserId!)!.Side, null, events, draw);
-            }
 
-            if (!events.Any(item => item.Payload is ChoicePending))
+            // Ruling R27.4: the DC's owners' options are asked for like any attack's; its thrower's Location and its removal follow the answers.
+            var followUps = new FireFollowUps(facts.TargetLocationId!)
             {
-                events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(chargeId), package, null));
-                AddSniperAttacks(scope, attemptId, expected, actor, existing, events, draw);
-            }
-
+                DcCharge = chargeId,
+                DcThrower = thrower?.ToString(),
+            };
+            AddFireEvents(scope, attemptId, expected, actor, state, facts, targetSide, null, events, draw, followUps: followUps);
+            AddFireFollowUps(scope, attemptId, expected, actor, existing, state, targetSide, null, events, draw, followUps);
             return events;
         }
 
