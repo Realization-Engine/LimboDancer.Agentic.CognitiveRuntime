@@ -1,6 +1,6 @@
 # ASL Card Play and Map Studio Redesign Plan
 
-**Status:** Approved by the user on 2026-09-30. It merges and replaces two documents: the ASL Unit Card Play, Deferred Rules, and DYO Plan (approved 2026-09-30, passes 23 to 30) and the ASL Map Studio UI Redesign 01 Design (branch `UI-Redesign-01`, commit `800416a`); both were deleted after their content was carried over here, and git history keeps them. Passes 22b, 22c, and 22d are built (2026-09-30; see their designs, [22b](<ASL Unit Backlog Pass 22b Design.md>), [22c](<ASL Unit Backlog Pass 22c Design.md>), and [22d](<ASL Unit Backlog Pass 22d Design.md>), and reviews, [22b](<Scenario A1 Backlog Pass 22b Review 2026-09-30.md>), [22c](<Scenario A1 Backlog Pass 22c Review 2026-09-30.md>), and [22d](<Scenario A1 Backlog Pass 22d Review 2026-09-30.md>)); pass 23, the first game pass, is built too (2026-09-30; its [design](<ASL Unit Backlog Pass 23 Design.md>) and [review](<Scenario A1 Backlog Pass 23 Review 2026-09-30.md>)). The passes run one at a time on the user's go-ahead, pass 24 next.
+**Status:** Approved by the user on 2026-09-30. It merges and replaces two documents: the ASL Unit Card Play, Deferred Rules, and DYO Plan (approved 2026-09-30, passes 23 to 30) and the ASL Map Studio UI Redesign 01 Design (branch `UI-Redesign-01`, commit `800416a`); both were deleted after their content was carried over here, and git history keeps them. Passes 22b, 22c, and 22d are built (2026-09-30; see their designs, [22b](<ASL Unit Backlog Pass 22b Design.md>), [22c](<ASL Unit Backlog Pass 22c Design.md>), and [22d](<ASL Unit Backlog Pass 22d Design.md>), and reviews, [22b](<Scenario A1 Backlog Pass 22b Review 2026-09-30.md>), [22c](<Scenario A1 Backlog Pass 22c Review 2026-09-30.md>), and [22d](<Scenario A1 Backlog Pass 22d Review 2026-09-30.md>)); pass 23, the first game pass, is built too (2026-09-30; its [design](<ASL Unit Backlog Pass 23 Design.md>) and [review](<Scenario A1 Backlog Pass 23 Review 2026-09-30.md>)), and pass 24 (2026-09-30; its [design](<ASL Unit Backlog Pass 24 Design.md>) and [review](<Scenario A1 Backlog Pass 24 Review 2026-09-30.md>)). The passes run one at a time on the user's go-ahead, pass 25 next.
 
 **Date:** 2026-09-30
 
@@ -175,6 +175,8 @@ New rules adjudication, changes to game persistence, VASL artwork, a new compone
 | | **Pass 24 total** (build 2:10) | | **3:25** |
 
 Control forfeited to a Kindled Fire (A26.16) waits for Fire spread (backlog section 27) and stays in the backlog.
+
+**Built 2026-09-30** (rulings R24.1 to R24.7). The user chose the rulebook on the three Control questions: an upper level or cellar no one enters keeps its own Control, a building's Control does not need every Location (A26.14), and Mopping Up comes with its Search casualties (A12.154). Cellars are left out of Location Control, since they have no use in play (B23.41). Mopping Up is a new action with a Play panel (`MoppingUpAction`), so the UI and Blazor reviewer ran too. No card fields a Gun or a vehicle yet, so task 24.2 is tested with constructed games. Task 24.3 found both edge cases unreachable from a valid card and resolves each hex on its own. Items left out are in section 38 of the [ASL Unit Backlog](<ASL Unit Backlog.md>).
 
 ### Pass 25: Entry and exit
 

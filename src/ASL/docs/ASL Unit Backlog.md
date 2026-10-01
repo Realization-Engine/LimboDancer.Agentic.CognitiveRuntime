@@ -456,12 +456,9 @@ Pass 21 (2026-09-29) built the Victory Conditions of a game from a card: Control
 
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
-| Control of Locations (upper levels), vehicles' temporary Control, Control by Mopping Up, and Control forfeited to a Kindled Fire | R21.1 | A26.1, A26.12, A12.153, A26.16 | Location-level Control; Fire | Hexes and buildings only. |
-| Start Control of a building partly in one side's area and partly on a board only that side sets up on, and of areas with no board on a multi-board card | Referee, pass 21 | A26.11 | A card that needs it | Such a building starts uncontrolled. |
-| Gun and vehicle VP: a Gun two, a vehicle one plus its MA and AF | R21.2 | A26.212 | A card fielding them | Guns and vehicles give no VP. |
+| Control forfeited to a Kindled Fire (Location Control, vehicles' temporary Control, and Mopping Up were built in pass 24) | R21.1 | A26.16 | Fire | No forfeiture. |
 | Leaving the map in the APh, by Bypass with its extra MF, and at the road rate; a crew with its Gun and a Guard with prisoners leaving | R21.5 | A2.6, A20.53, C10.3 | Advance and Bypass exits | Refused with a message; the cost is the hex's own terrain. |
 | Captured units exited by their captors (double Exit VP at the end) | R21.2 | A26.23, A26.222 | Guards leaving the map | Not counted. |
-| The Control fold read on every Play page render and, for Gambit, after every action | Referee, pass 21 | | A cache of Control by revision | Correct, slower on long games. |
 | An exit refusal from a hex one row inside the edge (board 01's row-0 half hexes) does not name the edge hex nearby | Table player, pass 21 | A2.3, A2.6 | Message work | The refusal is correct and plain. |
 
 ## 32. Added by the scenario card games pass 22
@@ -547,7 +544,7 @@ The plan was approved on 2026-09-30. A survey of this backlog the same day found
 
 | Backlog rows | Planned in |
 |---|---|
-| Control of Locations, start Control edge cases, Gun and vehicle VP, the Control cache (§31) | Pass 24 (Control forfeited to a Kindled Fire: pass 40) |
+| Control of Locations, start Control edge cases, Gun and vehicle VP, the Control cache (§31) | Pass 24, built 2026-09-30 (Control forfeited to a Kindled Fire: pass 40) |
 | Entry by advance, delayed and blocked entry, offboard Deployment, the full movement step at entry, several entry areas (§30); leaving the map in the APh, by Bypass, and at the road rate, a Guard leaving with prisoners, captured units exited (§31, §24); the SMOKE panel's eligibility (§19); clearer answers after DFF eliminates every mover, the end-move refusal after a DC placer was Replaced (§25); the raw OB group and Deployment messages (§30); the exit refusal naming the edge hex (§31) | Pass 25 |
 | Vehicles and Guns entering, Gun movement and limbering, hook-up and en portee (§12, §18, §30); a crew manning a Gun stacking (§29); a crew leaving with its Gun (§31); a Covered Arc across boards or on a reversed board, concealed crews and Guns (§12, §22); the Motion "wished to enter next" field (§21) | Pass 26 |
 | The berserk Dummies, route, and OVR rows (§1, §20, §21); the Axis Minor Heat of Battle row, the Japanese part waiting with Chapter G (§11); a berserk leader's companions' TCs (§11); Spraying Fire after a choice (§22); a DC's owner's options (§25) | Pass 27 |
@@ -565,3 +562,21 @@ The plan was approved on 2026-09-30. A survey of this backlog the same day found
 | Partisans, the Dutch and Polish national rules (§15) | Pass 39 |
 | Burning wrecks' spread (§16); Blazes in rout (§23); Flame, Blaze, and Kindling from FT, DC, and MOL (§25); wind, EC and wind as an SSR (§26, §27) | Pass 40 |
 
+## 38. Added by the game pass 24
+
+Pass 24 (2026-09-30) built Control of Locations, Mopping Up with its Search casualties, Gun and vehicle VP, the start Control edge cases, vehicles' temporary Control, and the Control fold cached by revision (rulings R24.1 to R24.7), and extended K08 `VictoryStandingTable`. It removed from section 31 the rows for the start Control edge cases, Gun and vehicle VP, and the Control fold, and the built parts of the Location Control row (Control forfeited to a Kindled Fire stays there). Items it leaves out:
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| Mopping Up a building the card does not name | R24.2 | A12.153 | Buildings read from the map | Only the card's building setup areas are offered and accepted. |
+| Rowhouses Mopped Up hex by hex, rubbled or Blazing Locations left out of the building, and Fortified Building Locations revealed | Referee and table player, pass 24 | A12.153, B23.71, A26.16 EX | Rowhouses, rubble, Fire, and fortifications in play | The whole building is Mopped Up; none of these arise on the cards. |
+| Casualty drs from a minefield, Residual FP, an HE FFE, or Booby Traps; nationality Stealth (ANZAC, Gurkhas, Finns, Commandos, Partisans) | Referee, pass 24 | A12.154, A11.17 | Those rules | The dr is rolled for concealed armed Good Order units only; a hero or heroic leader is Stealthy. |
+| Several guards for the units that surrender to one Mopping Up | R24.2 | A12.153, A20.5 | Form work | One guard takes them all. |
+| A captured vehicle holding and preventing Control for its captor with a Temporary Crew | R24.5; referee, pass 24 | A21.22, A26.12 | Captured vehicles used in play | It neither holds nor prevents Control. |
+| A vehicle's PRC gaining a Location's or hex's Control | R24.5 | A26.11, A26.12 | Passengers and riders | Not counted. |
+| A Victory Condition naming a Location | R24.1 | A26.1 | The card editor's forms (plan pass 28) | Location Control is shown and used by Mopping Up but decides no card. |
+| Exit VP for Guns and vehicles | R24.3 | A26.23 | Their exits (plan passes 25 and 26) | Not counted. |
+| The inherent crew's departure recorded on the vehicle | Referee and table player, pass 24 | A26.211 | A link from crew counter to vehicle | Read from the crew counter's id, which works for bail-out and Recall. |
+| No Quarter given by an SSR or a nationality rule barring the opponent's Mopping Up | Referee, pass 24 | A20.3, A12.153 | A record of which side employed No Quarter | `NoQuarter` is filled only by a rejected surrender or a Massacre, which the check reads correctly. |
+| The Casualty dr's outcome in the result text | Table player, pass 24 | A12.154 | Message work | The plan line gives the drm; the dr and the Reduction show in the rolls and the unit table. |
+| Planner tests of Mopping Up with an enemy vehicle in Bypass and of the two-hex range refusal | Referee and table player, pass 24 | A12.153, A26.11 | A card fielding vehicles (plan pass 26), or a building wider than four hexes | Built and read; the cards cannot reach either. |

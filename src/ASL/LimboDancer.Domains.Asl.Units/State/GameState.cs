@@ -217,6 +217,12 @@ public sealed record GameState(
     /// <summary>The units given a non-OB "?" after both sides set up (A12.12; pass 23, ruling R23.6), which the OB allotment of "?" does not count.</summary>
     public IReadOnlyList<string> NonObConcealed { get; init; } = [];
 
+    /// <summary>The buildings Mopped Up this Player Turn (A12.153; pass 24, ruling R24.2), each once per Player Turn. Cleared when the Player Turn changes.</summary>
+    public IReadOnlyList<string> MoppedUpThisPlayerTurn { get; init; } = [];
+
+    /// <summary>The buildings secured by Mopping Up (A12.153; ruling R24.2), in order, for the Control of their Locations (A26.11).</summary>
+    public IReadOnlyList<SecuredBuilding> Secured { get; init; } = [];
+
     /// <summary>
     /// The DCs Placed this Player Turn (A23.3; backlog pass 15, ruling R15.2): pending until their placer leaves its Location or ends its move neither
     /// broken nor pinned, then operably Placed in their target Location until they detonate in the AFPh.

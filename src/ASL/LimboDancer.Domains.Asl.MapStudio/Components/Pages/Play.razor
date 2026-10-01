@@ -1199,6 +1199,10 @@ else if (state is not null)
             <button id="propose-fire" disabled="@(fireFirers.Count == 0 || FireTarget.Length == 0)" @onclick="ProposeFire">Propose: fire</button>
             <button id="fire-clear" class="link" @onclick="ClearFire">clear</button>
         </div>
+        @if (state.Phase == "pfph" && MopUpChoices(firing) is { Count: > 0 } mopUp)
+        {
+            <MoppingUpAction Buildings="@mopUp" OnPropose="@ProposeMopUp" />
+        }
         @if (DcHolders(firing).Any())
         {
             <h4>Demolition Charges</h4>
@@ -3132,6 +3136,52 @@ else if (state is not null)
                 ["locations"] = choices.Select(at => at.ToString()).Where(at => nonObChosen.Contains($"{side}|{at}")).ToArray(),
             },
         }));
+
+    /// <summary>
+    /// The card's buildings the side may Mop Up now (A12.153; ruling R24.2): each not Mopped Up this Player Turn, with the side's MMC in it free to become
+    /// TI and the units there that may guard a surrender, read through the view (ruling R23.1). The planner decides range, enemies, and the rest.
+    /// </summary>
+    private IReadOnlyList<MoppingUpAction.Choice> MopUpChoices(string side)
+    {
+        if (state is not { } current)
+        {
+            return [];
+        }
+
+        string[] barred = [Conditions.Broken, Conditions.Berserk, Conditions.Pinned, Conditions.Captured, Conditions.Unarmed, Conditions.Melee, "asl:ti", Conditions.PrepFire];
+        var choices = new List<MoppingUpAction.Choice>();
+        foreach (var (id, hexes) in Live.Planner.MopUpBuildings(current).Where(item => !current.MoppedUpThisPlayerTurn.Contains(item.Id, StringComparer.Ordinal)))
+        {
+            var inside = SeenOnly(current.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && current.Location(unit.Id)?.Location is { Level: >= 0 } at
+                && hexes.Any(hex => hex.Board == at.Board && hex.Hex == at.Hex))).OrderBy(unit => unit.Id, StringComparer.Ordinal).ToArray();
+            string[] moppers = [.. inside.Where(unit => unit.Kind is "asl:squad" or "asl:half-squad" or "asl:crew"
+                && !barred.Any(name => GameState.Condition(unit, name) == ConditionState.True)).Select(unit => unit.Id)];
+            if (moppers.Length > 0)
+            {
+                choices.Add(new MoppingUpAction.Choice(id, moppers, [.. inside.Where(unit => unit.Kind != UnitKinds.Dummy
+                    && GameState.Condition(unit, Conditions.Broken) != ConditionState.True && GameState.Condition(unit, Conditions.Captured) != ConditionState.True).Select(unit => unit.Id)],
+                    inside.ToDictionary(unit => unit.Id, unit => current.Location(unit.Id)!.Location is var at && at.Level == 0 ? $"{at.Board.Value}:{at.Hex}" : $"{at.Board.Value}:{at.Hex} level {at.Level}",
+                        StringComparer.Ordinal)));
+            }
+        }
+
+        return choices;
+    }
+
+    private Task ProposeMopUp(MoppingUpAction.Proposal proposal)
+    {
+        var arguments = new Dictionary<string, object>
+        {
+            ["gameId"] = gameId, ["attemptId"] = Attempt("mop-up"), ["expectedRevision"] = (long)history!.Events.Count, ["building"] = proposal.Building,
+            ["unitIds"] = proposal.Units.ToArray(),
+        };
+        if (proposal.Guard is { } guardId)
+        {
+            arguments["guard"] = guardId;
+        }
+
+        return Propose(GameActions.MopUp, JsonSerializer.SerializeToElement(arguments));
+    }
 
     private Task ProposePlaceHidden(string unit) => Propose(GameActions.PlaceHidden, JsonSerializer.SerializeToElement(new Dictionary<string, object>
     {

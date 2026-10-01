@@ -88,4 +88,77 @@ public sealed class PlayComponentTests : IDisposable
         Assert.Contains("ExecutorCompleted", context.Render<AdjudicatorAuditPanel>(parameters => parameters.Add(item => item.Lines, ["ExecutorCompleted"])).Markup,
             StringComparison.Ordinal);
     }
+
+    // Pass 24 (rulings R24.1, R24.3, R24.5): a Location is a row only where its Control differs from its building's, a vehicle's hold is named, and a
+    // side's CVP say how many come from Guns and vehicles.
+    [Fact]
+    public void TheStandingListsDifferingLocationsAndGunAndVehicleCvp()
+    {
+        var hex = BoardLocation.Parse("bd01:F5:0");
+        var report = new VictoryReport(
+            [new VictoryControl("F5", "building", [hex], "russian"),
+                new VictoryControl("bd01:F5:0", "location", [hex], "german") { Level = 0, Building = "F5" },
+                new VictoryControl("bd01:F5:1", "location", [hex], "russian") { Level = 1, Building = "F5" },
+                new VictoryControl("bd01:F5:-1", "location", [hex], "russian") { Level = -1, Building = "F5", ByVehicle = true },
+                new VictoryControl("K5", "building", [hex], "russian"),
+                new VictoryControl("bd01:K5:1", "location", [hex], "german") { Level = 1, Building = "K5" },
+                new VictoryControl("bd01:K5:2", "location", [hex], "german") { Level = 2, Building = "K5" }],
+            [new VictorySide("german", 0, 0, 2), new VictorySide("russian", 8, 0, 3) { GunAndVehicleCvp = 6 }],
+            null, new GameResult("german", "no Victory Condition of the other side holds (A26.3)", []));
+        var table = context.Render<VictoryStandingTable>(parameters => parameters.Add(item => item.Report, report));
+        Assert.Equal("bd01:F5 ground level of building F5", table.Find("tr[data-control='bd01:F5:0'] td").TextContent);
+        Assert.Empty(table.FindAll("tr[data-control='bd01:F5:1']"));
+        Assert.Empty(table.FindAll("tr[data-control='bd01:F5:-1']"));
+        Assert.StartsWith("8 CVP (6 for Guns and vehicles)", table.Find("tr[data-side='russian'] td:last-child").TextContent, StringComparison.Ordinal);
+        Assert.Contains("R24.1", table.Find("#play-victory-locations").TextContent, StringComparison.Ordinal);
+
+        // Table player, pass 24: several Locations of one building and side are one row.
+        Assert.Equal("2 Locations of building K5", table.Find("tr[data-locations='K5'] summary").TextContent);
+        Assert.Equal("german", table.Find("tr[data-locations='K5'] td:last-child").TextContent);
+    }
+
+    // Ruling R24.2: the Mopping Up panel offers a building's units with their places, none checked (each becomes TI), and proposes the ones checked
+    // with the guard chosen.
+    [Fact]
+    public void MoppingUpProposesTheCheckedUnits()
+    {
+        MoppingUpAction.Proposal? proposed = null;
+        var panel = context.Render<MoppingUpAction>(parameters => parameters
+            .Add(item => item.Buildings, [new MoppingUpAction.Choice("F3", ["r1", "r2"], ["r1", "r2", "l1"],
+                new Dictionary<string, string> { ["r1"] = "E4", ["r2"] = "F3 level 1", ["l1"] = "E4" })])
+            .Add(item => item.OnPropose, (MoppingUpAction.Proposal value) => proposed = value));
+        Assert.True(panel.Find("#propose-mop-up").HasAttribute("disabled"));
+        panel.Find("#mop-up-building").Change("F3");
+        Assert.True(panel.Find("#propose-mop-up").HasAttribute("disabled"));
+        Assert.Contains("r2 in F3 level 1", panel.Find(".mop-up-units").TextContent, StringComparison.Ordinal);
+        panel.Find("input[data-unit='r1']").Change(true);
+        panel.Find("#mop-up-guard").Change("l1");
+        panel.Find("#propose-mop-up").Click();
+        Assert.Equal("F3", proposed!.Building);
+        Assert.Equal(["r1"], proposed.Units);
+        Assert.Equal("l1", proposed.Guard);
+    }
+
+    // UI review, pass 24: a checked unit the new choices no longer hold leaves the button disabled, no guard chosen sends none, and a building no longer
+    // offered (Mopped Up this Player Turn) drops the draft.
+    [Fact]
+    public void MoppingUpDropsAStaleDraft()
+    {
+        MoppingUpAction.Proposal? proposed = null;
+        var places = new Dictionary<string, string> { ["r1"] = "bd01:E4", ["r2"] = "bd01:E4" };
+        var panel = context.Render<MoppingUpAction>(parameters => parameters
+            .Add(item => item.Buildings, [new MoppingUpAction.Choice("F3", ["r1", "r2"], ["r1", "r2"], places)])
+            .Add(item => item.OnPropose, (MoppingUpAction.Proposal value) => proposed = value));
+        panel.Find("#mop-up-building").Change("F3");
+        panel.Find("input[data-unit='r1']").Change(true);
+        panel.Render(parameters => parameters.Add(item => item.Buildings, [new MoppingUpAction.Choice("F3", ["r2"], ["r2"], places)]));
+        Assert.True(panel.Find("#propose-mop-up").HasAttribute("disabled"));
+        panel.Find("input[data-unit='r2']").Change(true);
+        panel.Find("#propose-mop-up").Click();
+        Assert.Equal(["r2"], proposed!.Units);
+        Assert.Null(proposed.Guard);
+        panel.Render(parameters => parameters.Add(item => item.Buildings, []));
+        Assert.Empty(panel.FindAll(".mop-up-units"));
+        Assert.True(panel.Find("#propose-mop-up").HasAttribute("disabled"));
+    }
 }

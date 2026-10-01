@@ -863,6 +863,16 @@ public static class GameEventWriter
                 }
 
                 break;
+            case BuildingMoppedUp mopped:
+                writer.WriteString("building", mopped.Building);
+                writer.WriteString("side", mopped.Side);
+                Strings(writer, "units", mopped.Units);
+                if (mopped.Secured is { } secured)
+                {
+                    Strings(writer, "secured", [.. secured.Select(location => location.ToString())]);
+                }
+
+                break;
             case AcquisitionChanged acquisition:
                 writer.WriteString("gun", acquisition.Gun);
                 writer.WriteString("location", acquisition.Location.ToString());

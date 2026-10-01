@@ -651,3 +651,22 @@ Found in the Studio demo of pass 23 on the user's request, branch `fix/pass23-de
 | Full local suite and ScenarioA1 (480): Authoring fails only the known architecture test; Play 573, MapStudio 192. No Docker check: a UI fix seen in the Studio (the user's rule) | 21:51 | 22:22 | 0:31 | Waiting on the runs |
 | Merge into main (--no-ff), push, GitHub Actions checked | 22:22 | 22:24 | 0:02 | |
 | **Fix total** | 21:37 | 22:24 | **0:47** | |
+
+## Pass 24: Control of Locations and more VP
+
+Estimate: 3:25 (build 2:10), the ASL Card Play and Map Studio Redesign Plan. Kickoff on the user's go-ahead. Branch `feature/asl-backlog-pass-24`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Reading: plan pass 24, backlog sections 31 and 37, rulings R21.1 to R21.5 and R23.4, the pass 21 and 23 designs; A26.1 to A26.23, A12.153, A12.154 in the PDF; `ScenarioVictory`, the Victory planner, a survey of vehicles, Guns, capture, and actions (an agent) | 22:29 | 22:35 | 0:06 | The survey agent ran to about 22:42 |
+| Rulings proposed; the user's three answers (unentered Locations keep their own Control, a building needs no Location, Mopping Up with its Search casualties) | 22:35 | 22:45 | 0:10 | |
+| 24.1 to 24.4: Location items and the fold with `VictoryReading`, `VictoryCache`, start Control per hex, vehicles' temporary Control, Gun and vehicle VP and CVP; `building-mopped-up` (record, reader, writer, projector, gate) and `asl.game.mop-up`; 24.5: K08 rows and `MoppingUpAction` | 22:45 | 22:59 | 0:14 | |
+| `BacklogPass24Tests` (10) and two component tests; vehicle MA read from its type as well as the catalog's MA weapon | 22:59 | 23:12 | 0:13 | |
+| Visual check in the Studio: a Guards game (`p24-visual`) set up and played to the Russian PFPh, a Mop Up of F3, a squad walked into F5's H5 and its Location row, the German PFPh refusal; four issues fixed (none checked by default, places on labels, one-hex one-level buildings left out, singular wording) | 23:12 | 23:20 | 0:08 | |
+| Rulings R24.1 to R24.7 written; three reviews (referee, 12 findings; table player, 10; UI and Blazor, 12) run in parallel | 23:20 | 23:22 | 0:02 | The reviewers ran to about 23:32 |
+| UI review fixes (stale drafts, hints, places with the board, the fieldset's row) and the visual check of the earlier fixes | 23:22 | 23:26 | 0:04 | |
+| Referee and table player fixes: a vehicle in Bypass outside the building, armed vehicles by inherent crew, the guard per A20.5, cellars left out, a MG MA disabled, refusal reasons, what the Mop Up found, grouped Location rows; three tests; 12 and 7 pass | 23:26 | 23:33 | 0:07 | |
+| Visual check again: the German view's panel (F5, K5, M7; places; none checked; the hint), a Mop Up of K5 and the list after it; clean | 23:33 | 23:36 | 0:03 | |
+| Documents (design, review, rulings updated, the plan's status, backlog sections 31 and 38) while the full suite ran | 23:36 | 23:40 | 0:04 | |
+| Full local suite and ScenarioA1 (480): Authoring fails only the known architecture test; the action registry test needed the new action (fixed, rerun); Play 585, MapStudio 195, Units 406 | 23:36 | 00:16 | 0:40 | Waiting on the runs |
+

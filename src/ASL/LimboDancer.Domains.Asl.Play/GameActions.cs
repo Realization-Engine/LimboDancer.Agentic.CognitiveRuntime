@@ -653,13 +653,29 @@ public static class GameActions
         }
         """);
 
+    public static readonly ActionDescriptor MopUp = Descriptor("asl.game.mop-up", "Mop Up a building",
+        "In their side's PFPh, Infantry MMC in a building of the card become TI to secure it: hidden enemy units there are placed beneath \"?\" and Dummies removed; with no concealed enemy unit left, the side Controls every Location of the building and its broken enemy units surrender to the guard chosen (A12.153, A12.154, A26.11; pass 24, ruling R24.2).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "building", "unitIds"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "building": { "type": "string" },
+            "unitIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+            "guard": { "type": "string" }
+          }
+        }
+        """);
+
     public static IReadOnlyList<ActionDescriptor> All
     {
         get;
     } =
         [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding, DeclareOverrun, Fire, Rally, Repair, Move, PassFire, EndMove, Advance, Ambush, CloseCombat, TakePrisoner,
             FireOrdnance, RecoverShock, TurnGun, HookGun, MoveVehicle, Overrun, VehicleCloseCombat, ButtonUp, Choose, Massacre, OpportunityFire,
-            Rout, Deploy, Recombine, Transfer, Drop, Recover, Dismantle, AmbushWithdraw, GuardPrisoners, ThrowDc, DetonateDc, FireStarshell, PlaceHidden];
+            Rout, Deploy, Recombine, Transfer, Drop, Recover, Dismantle, AmbushWithdraw, GuardPrisoners, ThrowDc, DetonateDc, FireStarshell, PlaceHidden, MopUp];
 
     public static string VersionKey(Guid tenant, string game) => $"asl.game:{tenant:N}:{game}";
 

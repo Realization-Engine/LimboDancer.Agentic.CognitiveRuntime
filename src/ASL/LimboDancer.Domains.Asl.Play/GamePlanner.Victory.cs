@@ -17,10 +17,40 @@ public sealed partial class GamePlanner
     public VictoryReport? Victory(GameHistory history, bool? ended = null, string? knownTo = null)
     {
         ArgumentNullException.ThrowIfNull(history);
-        return history.Current is { Scenario: { } scenario } state && CardLibrary.Sha256(scenario.Id) == scenario.Sha256 && CardOf(state) is { } card && Valid(state, card)
-            ? ScenarioVictory.Evaluate(card, history.States, unit => VictoryPoints(state, unit), at => Neighbors(state, at), ended ?? state.Ended is not null, knownTo)
-            : null;
+        return Victory(history, ended, knownTo, history.Events.Count);
     }
+
+    /// <summary>The Victory Conditions read with the game's Control fold cached up to <paramref name="stored"/> events, those already in its log (ruling R24.6).</summary>
+    private VictoryReport? Victory(GameHistory history, bool? ended, string? knownTo, int stored)
+    {
+        if (history.Current is not { Scenario: { } scenario } state || CardLibrary.Sha256(scenario.Id) != scenario.Sha256 || CardOf(state) is not { } card || !Valid(state, card))
+        {
+            return null;
+        }
+
+        var first = history.Events[0];
+        var reading = new VictoryReading
+        {
+            Levels = hex => HexLevels(state, hex),
+            ArmedVehicle = vehicle => HasInherentCrew(state, vehicle),
+            EventIds = [.. history.Events.Select(item => $"{item.EventId}@{item.Time.UtcTicks.ToString(System.Globalization.CultureInfo.InvariantCulture)}")],
+            CacheUpTo = stored,
+            Cache = VictoryCaches.GetOrAdd($"{first.Scope}|{first.EventId}|{first.Time.UtcTicks}|{scenario.Sha256}", _ => new VictoryCache()),
+        };
+        return ScenarioVictory.Evaluate(card, history.States, unit => VictoryPoints(state, unit), at => Neighbors(state, at), ended ?? state.Ended is not null, knownTo, reading);
+    }
+
+    // Ruling R24.6 (the referee, pass 21): each game's Control fold is kept, so a reading folds only the states added since the last.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, VictoryCache> VictoryCaches = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// The levels of a hex's Locations (ground 0 and upper levels), rooftops (A26.14) and cellars left out: cellars have no other use in the game (B23.41;
+    /// table player, pass 24; ruling R24.1); ground level when unread.
+    /// </summary>
+    private IReadOnlyList<int> HexLevels(GameState state, BoardLocation hex) =>
+        ReadLocation(state, hex with { Level = 0 }) is { } read
+            ? [.. read.Hex.Locations.Where(item => item.Terrain?.Name is not "Rooftop" && item.Level >= 0).Select(item => item.Level).Distinct().Order()]
+            : [0];
 
     // Referee, pass 21: a card that no longer validates decides nothing; each card's validity is read once.
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<(string Card, string Sha256, Units.Catalog.CatalogIdentity Catalog), bool> Validity = new();
@@ -29,8 +59,9 @@ public sealed partial class GamePlanner
         && state.Scenario is { } scenario && Validity.GetOrAdd((card.Id, scenario.Sha256, catalog.Identity), _ => ScenarioCards.Validate(card, catalog).Count == 0);
 
     /// <summary>
-    /// A unit's VP (A26.211; ruling R21.2): a squad or crew two, a HS one, a leader one plus one for each negative leadership modifier; a Hero none. Guns and
-    /// vehicles (A26.212) are not counted yet (backlog).
+    /// A unit's VP (A26.211, A26.212; rulings R21.2, R24.3): a squad or crew two, a HS one, a leader one plus one for each negative leadership modifier; a
+    /// Hero none; a vehicle one, plus one for a MA not malfunctioned, one per five AF of its strongest (FRU, a 0 AF one; none unarmored), and two for its
+    /// inherent crew while it has one. A Gun's two VP are <see cref="ScenarioVictory.GunVp"/>.
     /// </summary>
     public int VictoryPoints(GameState state, UnitInstance unit)
     {
@@ -43,8 +74,57 @@ public sealed partial class GamePlanner
             "asl:leader" => 1 + Math.Max(0, -(unit.Definition is { } reference
                 ? catalogs.FirstOrDefault(catalog => catalog.Identity == reference.Catalog)?.Definition(reference.Definition)?.Printed("front", "asl:leadership")?.Value?.Number ?? 0
                 : 0)),
+            "asl:vehicle" => VehicleVictoryPoints(state, unit),
             _ => 0,
         };
+    }
+
+    /// <summary>
+    /// A26.212 (ruling R24.3): one VP, one for a MA not malfunctioned, one per multiple of five AF of the vehicle's single strongest AF, rounded up (a 0 AF
+    /// one; an unarmored vehicle none), and the inherent crew's two (A26.211) unless it has left the vehicle, Abandoned or as a crew counter of its own. An
+    /// unarmored vehicle with no armament has no inherent crew (A26.212 EX: an unarmed truck is worth one).
+    /// </summary>
+    private static int VehicleVictoryPoints(GameState state, UnitInstance vehicle)
+    {
+        var value = 1;
+        var definition = VehicleDefinition(vehicle);
+        var armor = vehicle.Definition is { } reference ? OrdnanceReference.Value.Armor.Vehicles.GetValueOrDefault(reference.Definition) : null;
+
+        // The MA is a Gun (its type, such as "t") or a MG the catalog names as the MA (a SPW 251/1's AAMG); not malfunctioned, nor disabled (a vehicle MG's
+        // condition, so only a MG MA loses its point to it).
+        if ((armor?.MaType is not null || definition?.MainArmament is not null) && !Is(vehicle, Conditions.Malfunctioned)
+            && !(armor?.MaType is null && Is(vehicle, Conditions.Disabled)))
+        {
+            value++;
+        }
+
+        if (armor is { Unarmored: false })
+        {
+            int?[] factors = [armor.FrontAf, armor.SideAf, ScenarioA1.ScenarioA1ArmorReference.ArmorFactor(armor, "turret", "front"),
+                ScenarioA1.ScenarioA1ArmorReference.ArmorFactor(armor, "turret", "side")];
+            var strongest = factors.Max() ?? 0;
+            value += strongest == 0 ? 1 : (strongest + 4) / 5;
+        }
+
+        if (HasInherentCrew(state, vehicle))
+        {
+            value += 2;
+        }
+
+        return value;
+    }
+
+    /// <summary>
+    /// Whether a vehicle has its inherent crew (A26.211, D5.1; rulings R24.3, R24.5): an armed vehicle (a MA or any MG) has one, an unarmed vehicle only an
+    /// Inherent Driver; it is gone once the vehicle is Abandoned or its crew is a counter of its own.
+    /// </summary>
+    private static bool HasInherentCrew(GameState state, UnitInstance vehicle)
+    {
+        var definition = VehicleDefinition(vehicle);
+        var armor = vehicle.Definition is { } reference ? OrdnanceReference.Value.Armor.Vehicles.GetValueOrDefault(reference.Definition) : null;
+        var armed = armor?.MaType is not null || definition is { MainArmament: not null } or { AntiAircraftMg: not null } or { BowMg: not null } or { CoaxialMg: not null };
+        return armed && !Is(vehicle, Conditions.Abandoned)
+            && !state.Units.Any(unit => unit.Kind == "asl:crew" && unit.Id.EndsWith($"-{vehicle.Id}-crew", StringComparison.Ordinal));
     }
 
     /// <summary>
@@ -69,7 +149,7 @@ public sealed partial class GamePlanner
         var history = Replay([.. existing, .. events]);
         // A26.222 (referee, pass 21): during play captured units count their normal VP; and the game ends only with nothing left open (UNIT-STATE-045).
         return history.Current is { SetupClosed: true, OpenAttempts.Count: 0, Choice: null, PendingSurrenders.Count: 0 } after && !after.CloseCombats.Any(item => !item.Closed)
-            && Victory(history, ended: false) is { Immediate: { } result }
+            && Victory(history, false, null, existing.Count) is { Immediate: { } result }
             ? [.. events, Event(scope, attemptId, events.Count + 1, expected, "game-ended", new GameEnded(after.Turn, "victory") { Result = result }, rulePackage: null, visibility: null)]
             : events;
     }

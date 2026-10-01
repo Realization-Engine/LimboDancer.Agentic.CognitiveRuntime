@@ -771,6 +771,26 @@ public static class GameEventReader
             case "prisoners-massacred":
                 return new PrisonersMassacred(fields.StringList(payload, "units", path), fields.StringList(payload, "prisoners", path),
                     fields.OptionalBoolean(payload, "berserk", path));
+            case "building-mopped-up":
+                var moppedBuilding = fields.RequiredString(payload, "building", path);
+                var moppingSide = fields.RequiredString(payload, "side", path);
+                List<BoardLocation>? secured = null;
+                if (payload.TryGetProperty("secured", out var securedNode) && securedNode.ValueKind == JsonValueKind.Array)
+                {
+                    secured = [];
+                    foreach (var item in securedNode.EnumerateArray())
+                    {
+                        if (item.ValueKind != JsonValueKind.String || !BoardLocation.TryParse(item.GetString()!, out var securedAt))
+                        {
+                            return Missing(diagnostics, "A secured building lists its Locations, such as bd01:E4:0.", path + ".secured");
+                        }
+
+                        secured.Add(securedAt);
+                    }
+                }
+
+                return moppedBuilding is null || moppingSide is null ? null
+                    : new BuildingMoppedUp(moppedBuilding, moppingSide, fields.StringList(payload, "units", path), secured);
             case "acquisition-changed":
                 var acquiringGun = fields.RequiredString(payload, "gun", path);
                 var acquiredAt = ReadLocation(payload, "location", path, fields, diagnostics);

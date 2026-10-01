@@ -1,0 +1,117 @@
+@* Ruling R24.2 (A12.153, A12.154): the phasing side's Mopping Up in its PFPh. The page gives the buildings of the card its MMC may Mop Up, each with
+   those units and the units that may guard a surrender, already read for the view (ruling R23.1); the planner decides every other condition. *@
+<h4>Mopping Up</h4>
+<p class="muted" id="mop-up-help">
+    Armed, unpinned, Good Order MMC in a building of the card become TI to secure it, once per building per Player Turn: each ground-level Location their
+    side does not Control must be within two hexes of one of them, and no unconcealed unbroken enemy unit may be inside. Hidden enemy units there are
+    placed beneath "?" and Dummies removed. With no concealed enemy unit left, the side Controls every Location of the building and the broken enemy
+    units there surrender to the guard chosen; otherwise the DEFENDER's Casualty dr may Reduce a Mopping-Up unit (A12.153, A12.154; ruling R24.2).
+</p>
+<div class="toolbar" id="mop-up">
+    <label>
+        Building
+        <select id="mop-up-building" aria-describedby="mop-up-help" value="@building" @onchange="@(args => Choose(args.Value as string))">
+            <option value="">choose</option>
+            @foreach (var item in Buildings)
+            {
+                <option value="@item.Id">@item.Id</option>
+            }
+        </select>
+    </label>
+    @if (Chosen is { } chosen)
+    {
+        <fieldset class="mop-up-units">
+            <legend>Units Mopping Up</legend>
+            @foreach (var unit in chosen.Units)
+            {
+                <label><input type="checkbox" class="mop-up-unit" data-unit="@unit" checked="@units.Contains(unit)" @onchange="@(args => Toggle(unit, args.Value is true))" /> @Named(chosen, unit)</label>
+            }
+        </fieldset>
+        <label>
+            Broken units surrender to
+            <select id="mop-up-guard" value="@guard" @onchange="@(args => guard = args.Value as string ?? string.Empty)">
+                <option value="">the first unit Mopping Up</option>
+                @foreach (var item in chosen.Guards)
+                {
+                    <option value="@item">@Named(chosen, item)</option>
+                }
+            </select>
+        </label>
+    }
+    <button id="propose-mop-up" disabled="@(Checked.Count == 0)" aria-describedby="mop-up-ready" @onclick="Proposed">Propose: Mop Up</button>
+    @if (Checked.Count == 0)
+    {
+        <span id="mop-up-ready" class="toolbar-note">Choose a building and at least one unit.</span>
+    }
+</div>
+
+@code {
+    /// <summary>
+    /// A building the side may Mop Up: its id, the MMC in it that may, the units in it that may guard a surrender, and where each unit is, such as "bd01:E4"
+    /// or "bd01:E4 level 1".
+    /// </summary>
+    public sealed record Choice(string Id, IReadOnlyList<string> Units, IReadOnlyList<string> Guards, IReadOnlyDictionary<string, string> Places);
+
+    /// <summary>A Mopping Up proposed: the building, its units, and the guard (null for the first unit).</summary>
+    public sealed record Proposal(string Building, IReadOnlyList<string> Units, string? Guard);
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Choice> Buildings { get; set; } = [];
+
+    [Parameter]
+    public EventCallback<Proposal> OnPropose { get; set; }
+
+    private string building = string.Empty;
+    private string guard = string.Empty;
+    private readonly List<string> units = [];
+
+    private Choice? Chosen => Buildings.FirstOrDefault(item => item.Id == building);
+
+    /// <summary>The checked units the building still offers, in its order.</summary>
+    private IReadOnlyList<string> Checked => Chosen is { } chosen ? [.. chosen.Units.Where(units.Contains)] : [];
+
+    // UI review, pass 24: a draft the new choices no longer hold (the building Mopped Up, a unit that fired, a guard gone) is dropped.
+    protected override void OnParametersSet()
+    {
+        if (Chosen is not { } chosen)
+        {
+            building = string.Empty;
+            guard = string.Empty;
+            units.Clear();
+            return;
+        }
+
+        units.RemoveAll(unit => !chosen.Units.Contains(unit));
+        if (!chosen.Guards.Contains(guard))
+        {
+            guard = string.Empty;
+        }
+    }
+
+    private void Choose(string? id)
+    {
+        building = id ?? string.Empty;
+        guard = string.Empty;
+        // Each unit Mopping Up becomes TI, so none is checked until the player chooses it.
+        units.Clear();
+    }
+
+    private static string Named(Choice choice, string unit) => choice.Places.TryGetValue(unit, out var place) ? $"{unit} in {place}" : unit;
+
+    private void Toggle(string unit, bool on)
+    {
+        units.Remove(unit);
+        if (on)
+        {
+            units.Add(unit);
+        }
+    }
+
+    private async Task Proposed()
+    {
+        if (Chosen is { } chosen && Checked.Count > 0)
+        {
+            await OnPropose.InvokeAsync(new Proposal(chosen.Id, Checked, guard.Length == 0 ? null : guard));
+        }
+    }
+}

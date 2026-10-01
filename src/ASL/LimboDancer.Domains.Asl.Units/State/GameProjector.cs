@@ -129,6 +129,7 @@ public static class GameProjector
                 ChoicePending pending => PendChoice(previous, pending, gameEvent.EventId),
                 ChoiceMade made => MakeChoice(previous, made),
                 AcquisitionChanged acquisition => ChangeAcquisition(previous, acquisition),
+                BuildingMoppedUp mopped => MopUp(previous, mopped),
                 _ => Fail<GameState>("UNIT-STATE-001", $"'{gameEvent.Type}' has no projection."),
             };
 
@@ -466,6 +467,8 @@ public static class GameProjector
                     // A23.3 (ruling R15.2): a DC Placement lasts its Player Turn.
                     PlacedCharges = newPlayerTurn ? [] : state.PlacedCharges,
                     AssaultWeaponUsers = newPlayerTurn ? [] : state.AssaultWeaponUsers,
+                    // A12.153 (ruling R24.2): a building is Mopped Up once per Player Turn.
+                    MoppedUpThisPlayerTurn = newPlayerTurn ? [] : state.MoppedUpThisPlayerTurn,
                     StarshellAttempts = [],
                     // E1.923 (ruling R16.8): Starshells are removed at the end of each CCPh.
                     Entities = state.Phase == "mph" ? RemoveSmokeGrenades(state.Entities)
@@ -2940,6 +2943,36 @@ public static class GameProjector
                 Position = position ?? NotEnteredPosition.Instance
             };
             return CheckPosition(state, moved.Kind, moved.Position) ? Replace(state, moved) : null;
+        }
+
+        /// <summary>
+        /// A12.153 (pass 24, ruling R24.2): Mopping Up declared in the PFPh by active units of the phasing side, once per building per Player Turn; the
+        /// units become TI, and a secured building is recorded for the Control of its Locations (A26.11).
+        /// </summary>
+        private GameState? MopUp(GameState state, BuildingMoppedUp mopped)
+        {
+            var units = mopped.Units.Select(state.Unit).ToArray();
+            if (state.Phase != "pfph" || mopped.Side != state.PhasingSide || units.Length == 0
+                || units.Any(unit => unit is not { Status: InstanceStatus.Active } || unit.Side != mopped.Side)
+                || state.MoppedUpThisPlayerTurn.Contains(mopped.Building, StringComparer.Ordinal))
+            {
+                return Fail<GameState>("UNIT-STATE-046", "Mopping Up is declared in the PFPh by active units of the phasing side, once per building per Player Turn (A12.153).");
+            }
+
+            var next = state;
+            foreach (var unit in units)
+            {
+                next = Replace(next, unit! with
+                {
+                    Conditions = new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal) { ["asl:ti"] = ConditionState.True },
+                });
+            }
+
+            return next with
+            {
+                MoppedUpThisPlayerTurn = [.. state.MoppedUpThisPlayerTurn, mopped.Building],
+                Secured = mopped.Secured is { } secured ? [.. state.Secured, new SecuredBuilding(mopped.Building, mopped.Side, secured)] : state.Secured,
+            };
         }
 
         /// <summary>A non-OB "?" placed at the end of setup (A12.12; ruling R23.6): the unit is concealed, and recorded as such.</summary>

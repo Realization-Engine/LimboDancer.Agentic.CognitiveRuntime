@@ -447,7 +447,8 @@ public sealed class PlayTests : IDisposable
                 "asl.game.move-vehicle", "asl.game.overrun", "asl.game.vehicle-close-combat",
                 "asl.game.button-up", "asl.game.choose", "asl.game.massacre", "asl.game.opportunity-fire",
                 "asl.game.rout", "asl.game.deploy", "asl.game.recombine", "asl.game.transfer", "asl.game.drop", "asl.game.recover", "asl.game.dismantle",
-                "asl.game.ambush-withdraw", "asl.game.guard-prisoners", "asl.game.throw-dc", "asl.game.detonate-dc", "asl.game.fire-starshell", "asl.game.place-hidden"],
+                "asl.game.ambush-withdraw", "asl.game.guard-prisoners", "asl.game.throw-dc", "asl.game.detonate-dc", "asl.game.fire-starshell", "asl.game.place-hidden",
+                "asl.game.mop-up"],
             GameActions.All.Select(action => action.Id.Value));
         Assert.All(GameActions.All, action => Assert.Equal(Abstractions.Actions.ActionReversibility.Irreversible, action.Risk.Reversibility));
         var precondition = Assert.Single(GameActions.EnterEmptyBuilding.Preconditions);
