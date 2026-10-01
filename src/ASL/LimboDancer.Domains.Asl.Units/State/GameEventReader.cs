@@ -491,7 +491,10 @@ public static class GameEventReader
 
                 return tower is null || towed is null || towCrew is null || towMp is null
                     ? Missing(diagnostics, "A hook-up record names its vehicle, Gun, crew, and MP.", path)
-                    : new GunHooked(tower, towed, towCrew, fields.OptionalBoolean(payload, "hooked", path), towMp.Value, unhookedFacing);
+                    : new GunHooked(tower, towed, towCrew, fields.OptionalBoolean(payload, "hooked", path), towMp.Value, unhookedFacing)
+                    {
+                        Boards = fields.OptionalBoolean(payload, "boards", path),
+                    };
             case "vehicle-step":
                 var vehicleAt = ReadLocation(payload, "at", path, fields, diagnostics);
                 var vehicleId = fields.RequiredString(payload, "vehicle", path);
@@ -520,6 +523,10 @@ public static class GameEventReader
                         MinimumMove = fields.OptionalBoolean(payload, "minimumMove", path),
                         BogRemoval = fields.OptionalBoolean(payload, "bogRemoval", path),
                         All = fields.OptionalBoolean(payload, "all", path),
+                        Entry = fields.OptionalString(payload, "entry", path),
+                        Edge = fields.OptionalString(payload, "edge", path),
+                        Units = payload.TryGetProperty("units", out _) ? fields.StringList(payload, "units", path) : null,
+                        UnitMf = fields.OptionalInteger(payload, "unitMf", path) ?? 0,
                     };
             case "vehicle-check-rolled":
                 var checkedVehicle = fields.RequiredString(payload, "vehicle", path);

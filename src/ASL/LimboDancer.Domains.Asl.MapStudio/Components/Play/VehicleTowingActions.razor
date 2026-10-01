@@ -1,0 +1,48 @@
+@* Plan A20 (pass 26): a Stopped vehicle hooking up a Gun its crew mans in its hex, the crew boarding as it does (C10.11; ruling R26.2), or unhooking its
+   towed Gun with a facing, the crew aboard disembarking to man it (C10.12). The page lists the Guns in the vehicle's hex and proposes; the planner checks
+   the T#, the QSU, and the ammunition's PP (C10.1, C10.2, C10.13). *@
+@if (Guns.Any(gun => !gun.Towed))
+{
+    <label title="C10.11: the crew may board the towing vehicle as a Passenger as it hooks up the Gun, at no extra MP, if the vehicle has room after the ammunition's PP (C10.13).">
+        <input type="checkbox" id="vehicle-hook-boards" checked="@Boards" @onchange="@(args => OnBoards.InvokeAsync(args.Value is true))" /> the crew boards as it hooks up
+    </label>
+}
+@foreach (var gun in Guns)
+{
+    @if (gun.Towed)
+    {
+        @* A vehicle tows one Gun (C10.1), so the facing picker renders once. *@
+        <FacingPicker Id="vehicle-unhook-facing" Label="Unhook facing" Value="@Facing" OnChange="@(facing => OnFacing.InvokeAsync(facing))"
+            Title="C10.12: the unhooked Gun is set down facing a hexspine; the crew riding the vehicle disembarks to man it." />
+        <button class="vehicle-unhook" data-gun="@gun.Id" @onclick="@(() => OnHook.InvokeAsync((gun.Id, false)))">Propose: unhook @gun.Id (half its MP)</button>
+    }
+    else
+    {
+        <button class="vehicle-hook" data-gun="@gun.Id" @onclick="@(() => OnHook.InvokeAsync((gun.Id, true)))">Propose: hook up @gun.Id (half its MP; C10.11)</button>
+    }
+}
+
+@code {
+    /// <summary>A Gun in the vehicle's hex: towed by it, or manned and ready to hook up.</summary>
+    public sealed record TowChoice(string Id, bool Towed);
+
+    [Parameter]
+    public IReadOnlyList<TowChoice> Guns { get; set; } = [];
+
+    /// <summary>The hexspine an unhooked Gun faces.</summary>
+    [Parameter]
+    public string Facing { get; set; } = "east";
+
+    /// <summary>Whether the crew boards as the Gun is hooked up.</summary>
+    [Parameter]
+    public bool Boards { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnFacing { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> OnBoards { get; set; }
+
+    [Parameter]
+    public EventCallback<(string Gun, bool Hooked)> OnHook { get; set; }
+}

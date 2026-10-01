@@ -540,6 +540,11 @@ public static class GameEventWriter
                     writer.WriteString("facing", Documents.UnitFacings.Name(unhooked));
                 }
 
+                if (hooked.Boards)
+                {
+                    writer.WriteBoolean("boards", true);
+                }
+
                 break;
             case VehicleStepped vehicle:
                 writer.WriteString("vehicle", vehicle.Vehicle);
@@ -580,6 +585,32 @@ public static class GameEventWriter
                 if (vehicle.All)
                 {
                     writer.WriteBoolean("all", true);
+                }
+
+                if (vehicle.Entry is { } entryEdge)
+                {
+                    writer.WriteString("entry", entryEdge);
+                }
+
+                if (vehicle.Edge is { } vehicleExitEdge)
+                {
+                    writer.WriteString("edge", vehicleExitEdge);
+                }
+
+                if (vehicle.UnitMf != 0)
+                {
+                    writer.WriteNumber("unitMf", vehicle.UnitMf);
+                }
+
+                if (vehicle.Units is { } aboard)
+                {
+                    writer.WriteStartArray("units");
+                    foreach (var unit in aboard)
+                    {
+                        writer.WriteStringValue(unit);
+                    }
+
+                    writer.WriteEndArray();
                 }
 
                 break;

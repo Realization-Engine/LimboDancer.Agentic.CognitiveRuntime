@@ -1,0 +1,46 @@
+@* Plan A17 (pass 26): the phasing side's vehicle movement: the vehicles that may spend MP now, read for the view (ruling R23.1), the chosen one, and its
+   status, steps, towing, and Bounding Fire as the page renders them for it. The page keeps the choice and its reset rules. *@
+<h4>Vehicle movement</h4>
+<p class="muted" id="vehicle-help">
+    A vehicle spends its MP one expenditure at a time, and the DEFENDER may fire or pass after each (D2.1, A8.1): Start for 1 MP, forward
+    or in Reverse, or none when it begins in Motion (D2.12, D2.23, D2.4); a VCA change of one hexspine for 1 MP, 2 in woods, buildings,
+    or rubble (D2.11); entering a hex its VCA points at, or in Reverse a rear hex at four or three times the cost, at the Terrain Chart
+    cost of its movement type, woods for ALL its MP or, fully-tracked, half its MP, with a Bog DR (D2.2, B13.41, D8.2); VBM around a
+    woods or building obstacle along a clear hexside for twice Open Ground (D2.3); a Minimum Move into a hex costing more than its
+    allotment (D2.15); ESB for up to a quarter more MP at the risk of immobilization (D2.5); an OVR of an enemy-occupied Location for a
+    quarter of its MP more (D7.1); and Stop for 1 MP (D2.13). It ends its move in Motion only when it cannot Stop or move on (D2.4); a
+    bogged vehicle's first expenditure is its Bog Removal (D8.3). A vehicle waiting off board enters in Motion across its edge as its first
+    MP expenditure, with a VCA holding the hex it enters, and the MPh does not end while it may (A2.52, D2.4; ruling R26.1). Stopped, it takes
+    Passengers before it spends any MP, or lets them off for a quarter of its MP (D6.4, D6.5; ruling R26.2).
+</p>
+<div class="toolbar">
+    <label>
+        Vehicle
+        <select id="vehicle-unit" value="@Selected" @onchange="@(args => OnSelect.InvokeAsync(args.Value as string ?? string.Empty))">
+            <option value="">choose</option>
+            @foreach (var vehicle in Vehicles)
+            {
+                <option value="@vehicle.Value">@vehicle.Label</option>
+            }
+        </select>
+    </label>
+    @ChildContent
+</div>
+
+@code {
+    /// <summary>A vehicle that may spend MP now, and how it reads: its id and Location, or off board.</summary>
+    public sealed record VehicleChoice(string Value, string Label);
+
+    [Parameter]
+    public IReadOnlyList<VehicleChoice> Vehicles { get; set; } = [];
+
+    [Parameter]
+    public string Selected { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> OnSelect { get; set; }
+
+    /// <summary>The chosen vehicle's status and actions.</summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

@@ -1,5 +1,7 @@
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Maps.Derivation;
+using LimboDancer.Domains.Asl.Maps.Geometry;
+using LimboDancer.Domains.Asl.Maps.Read;
 using LimboDancer.Domains.Asl.ScenarioA1;
 using LimboDancer.Domains.Asl.Units.Documents;
 using LimboDancer.Domains.Asl.Units.State;
@@ -97,12 +99,33 @@ public sealed partial class GamePlanner
     private (VehicleEntry? Entry, string? Reason) VehicleOutright(GameState state, UnitInstance vehicle, BoardLocation from, BoardLocation to, bool reverse, bool allMp)
     {
         var (fromRead, toRead, adjacent, crossed) = Step(state, from, to);
-        if (fromRead is null || toRead is null || !adjacent || crossed is null || MovementTypeOf(vehicle) is not { } type)
+        if (fromRead is null || toRead is null || !adjacent || crossed is null)
         {
             return (null, $"{to} is not an adjacent Location the map reads");
         }
 
-        if (to.Level != 0 || from.Level != 0)
+        return from.Level != 0 ? (null, "vehicles stay at ground level (B23.4)") : VehicleCost(state, vehicle, fromRead, toRead, crossed, to, reverse, allMp);
+    }
+
+    /// <summary>
+    /// A vehicle's entry from off board across a map edge hexside (A2.51, A2.52; ruling R26.1): as an outright entry from the mirror-image hex beyond, at
+    /// the hex's own level, across the edge hexside's road, wall, or hedge.
+    /// </summary>
+    private (VehicleEntry? Entry, string? Reason) VehicleEdgeEntry(GameState state, UnitInstance vehicle, BoardLocation to, HexsideDirection side, bool allMp) =>
+        ReadLocation(state, to) is { } read && HexsideAt(state, to, side) is { } crossed
+            ? VehicleCost(state, vehicle, read, read, crossed, to, false, allMp)
+            : (null, $"the cost of crossing the map edge at {to} is not decided (ruling R26.1)");
+
+    /// <summary>The cost of a vehicle's outright entry of a Location over the hexside it crosses (rulings R11.6 to R11.9), as <see cref="VehicleOutright"/> reads it.</summary>
+    private static (VehicleEntry? Entry, string? Reason) VehicleCost(GameState state, UnitInstance vehicle, LocationRead fromRead, LocationRead toRead, HexsideFacts crossed, BoardLocation to,
+        bool reverse, bool allMp)
+    {
+        if (MovementTypeOf(vehicle) is not { } type)
+        {
+            return (null, $"{to} is not an adjacent Location the map reads");
+        }
+
+        if (to.Level != 0)
         {
             return (null, "vehicles stay at ground level (B23.4)");
         }

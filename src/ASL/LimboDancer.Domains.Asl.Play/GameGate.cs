@@ -155,9 +155,10 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
         // A CA change without fire (C3.22): the Gun faces its new hexspine.
         ? state.Find(turned.Gun) is EquipmentInstance { Position: MapPosition { Facing: { } facing } } && facing == turned.Facing
         : plan.Events.Select(item => item.Payload).OfType<ManhandlingRolled>().FirstOrDefault() is { } pushed
-        // A push (C10.3): the Gun is where its result put it, with its crew.
-        ? state.Find(pushed.Gun) is EquipmentInstance { Holding: { } pusher } && state.Location(pusher.Holder)?.Location is { } crewAt
-            && (state.Find(pushed.Gun) as EquipmentInstance)?.Position is MapPosition gunAt && gunAt.Location == crewAt
+        // A push (C10.3): the Gun is where its result put it, with its crew; pushed off the map, both are Exited (ruling R26.4).
+        ? state.Find(pushed.Gun) is EquipmentInstance { Status: InstanceStatus.Exited } && plan.Events.Any(item => item.Payload is MovementStepped { Exit: not null })
+            || (state.Find(pushed.Gun) is EquipmentInstance { Holding: { } pusher } && state.Location(pusher.Holder)?.Location is { } crewAt
+                && (state.Find(pushed.Gun) as EquipmentInstance)?.Position is MapPosition gunAt && gunAt.Location == crewAt)
         : plan.Events.Select(item => item.Payload).OfType<GunHooked>().FirstOrDefault() is { } hooked
         // A hook-up or unhooking (C10.11, C10.12): the Gun is towed by the vehicle, or manned by its crew.
         ? state.Find(hooked.Gun) is EquipmentInstance { Holding: { } holder } && holder.Holder == (hooked.Hooked ? hooked.Vehicle : hooked.Crew)

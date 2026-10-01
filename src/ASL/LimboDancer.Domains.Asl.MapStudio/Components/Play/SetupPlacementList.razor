@@ -1,0 +1,30 @@
+@* Plan P09 (pass 26): the placements waiting to be proposed, each with what it is and where (a Passenger's vehicle, a towed Gun's), removable one by
+   one, and the setup proposal. The page keeps the list. *@
+@if (Items.Count > 0)
+{
+    <ul id="place-list">
+        @foreach (var item in Items)
+        {
+            <li @key="item.Key" data-key="@item.Key">@item.Text <button class="link" aria-label="Remove @item.Key" @onclick="@(() => OnRemove.InvokeAsync(item.Key))">remove</button></li>
+        }
+    </ul>
+}
+<button id="propose-setup" disabled="@(Items.Count == 0 || !Ready)" @onclick="@(() => OnPropose.InvokeAsync())">Propose setup</button>
+
+@code {
+    /// <summary>A placement waiting: its key, the counter's id, and how it reads.</summary>
+    public sealed record Item(string Key, string Text);
+
+    [Parameter]
+    public IReadOnlyList<Item> Items { get; set; } = [];
+
+    /// <summary>Whether a setup may be proposed beside a placement: a new game has its card chosen.</summary>
+    [Parameter]
+    public bool Ready { get; set; } = true;
+
+    [Parameter]
+    public EventCallback<string> OnRemove { get; set; }
+
+    [Parameter]
+    public EventCallback OnPropose { get; set; }
+}

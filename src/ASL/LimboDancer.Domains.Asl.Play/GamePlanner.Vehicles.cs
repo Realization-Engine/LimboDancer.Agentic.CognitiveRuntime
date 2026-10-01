@@ -38,7 +38,7 @@ public sealed partial class GamePlanner
 
     /// <summary>
     /// The two ADJACENT Locations a vehicle's VCA points at (D2.11, C3.2): the neighbors whose bearing is 30 degrees either side of its
-    /// facing hexspine, on one unreversed board (the bearing's limit, as for a Gun's Covered Arc).
+    /// facing hexspine, read in the map's frame on every board, reversed or not (rulings R8.7, R26.6).
     /// </summary>
     private IReadOnlyList<BoardLocation> VcaHexes(GameState state, BoardLocation at, UnitFacing facing)
     {
@@ -63,9 +63,20 @@ public sealed partial class GamePlanner
     {
         foreach (var vehicle in state.Units.Where(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit)))
         {
+            // A2.52 (ruling R26.1): a vehicle may wait off board to enter, in Motion, loaded up to its capacity, its Gun in tow.
+            if ((TowSetupBar(state, vehicle) ?? PassengerSetupBar(state, vehicle)) is { } loadBar)
+            {
+                return loadBar;
+            }
+
+            if (vehicle.Position is OffMapPosition)
+            {
+                continue;
+            }
+
             if (vehicle.Position is not MapPosition { Facing: not null } || state.Location(vehicle.Id) is not { } at)
             {
-                return $"play.setup-vehicle: {vehicle.Id} is set up on the map with its VCA facing a hexspine (D2.11)";
+                return $"play.setup-vehicle: {vehicle.Id} is set up on the map with its VCA facing a hexspine, or off board to enter (D2.11, A2.52)";
             }
 
             if ((Is(vehicle, Conditions.Concealed) || Is(vehicle, Conditions.Hidden)) && !VehicleConcealmentTerrain(state, at.Location))
@@ -82,6 +93,63 @@ public sealed partial class GamePlanner
             {
                 return $"play.setup-vehicle: {vehicle.Id} shares {at.Location} with an enemy unit at setup, which is not reviewed (ruling R25.3)";
             }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Why a vehicle's Passengers at setup are refused (A2.52, D6.1; ruling R26.2): they are Personnel of its side and OB group, on foot nowhere else,
+    /// within its capacity; null when they are not.
+    /// </summary>
+    private string? PassengerSetupBar(GameState state, UnitInstance vehicle)
+    {
+        var riding = state.Passengers(vehicle.Id);
+        if (riding.Count == 0)
+        {
+            return null;
+        }
+
+        if (riding.FirstOrDefault(unit => unit.Side != vehicle.Side || unit.Group != vehicle.Group || LiveFire.IsVehicle(unit) || !vocabulary.IsA(unit.Kind, "asl:personnel")) is { } stranger)
+        {
+            return $"play.setup-passenger: {stranger.Id} sets up as a Passenger of {vehicle.Id}, which takes Personnel of its own side and OB group (A2.52; ruling R26.2)";
+        }
+
+        if (riding.FirstOrDefault(unit => Is(unit, Conditions.Concealed) || Is(unit, Conditions.Hidden)) is { } hiding)
+        {
+            return $"play.setup-passenger: {hiding.Id} sets up as a Passenger, neither under \"?\" nor hidden (ruling R26.2)";
+        }
+
+        return CapacityBar(state, vehicle, []) is { } full ? $"play.setup-passenger: {full}" : null;
+    }
+
+    /// <summary>
+    /// Why a Gun set up in tow is refused (C10.1, C10.2, C10.13; ruling R26.1): the vehicle's T# exceeds the Gun's M#, the Gun is not QSU (limbering is not
+    /// built), more than one Gun is in tow, or the ammunition leaves the vehicle's Passengers no room; null when none is.
+    /// </summary>
+    private static string? TowSetupBar(GameState state, UnitInstance vehicle)
+    {
+        EquipmentInstance[] towed = [.. state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Towed } tow && tow.Holder == vehicle.Id)];
+        if (towed.Length == 0)
+        {
+            return null;
+        }
+
+        if (towed.Length > 1)
+        {
+            return $"play.setup-tow: {vehicle.Id} tows one Gun (C10.1)";
+        }
+
+        var gun = towed[0];
+        if (VehicleDefinition(vehicle)?.Towing is not { } towing || OrdnanceReference.Value.Guns.GetValueOrDefault(gun.Definition?.Definition ?? string.Empty) is not { Manhandling: { } manhandling }
+            || towing > manhandling)
+        {
+            return $"play.setup-tow: {vehicle.Id} tows {gun.Id} only when it has a T# no greater than the Gun's M# (C10.1)";
+        }
+
+        if (gun.Definition is not { } reference || FireReference.Value.Definitions.GetValueOrDefault(reference.Definition)?.QuickSetUp != true)
+        {
+            return $"play.setup-tow: {gun.Id} is not QSU, and limbering is not built, so it is not set up in tow (C10.2; ruling R26.1)";
         }
 
         return null;
@@ -245,6 +313,12 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.invalid-arguments: a vehicle's move names the vehicle and the kind of MP expenditure");
         }
 
+        // A2.52, D2.4 (ruling R26.1): a vehicle waiting off board enters in Motion.
+        if (state.Unit(id) is { Status: InstanceStatus.Active, Position: OffMapPosition } waiting && LiveFire.IsVehicle(waiting))
+        {
+            return PlanVehicleEntry(scope, arguments, existing, attemptId, expected, label, actor, state, waiting, kind);
+        }
+
         if (state.Phase != "mph" || state.Unit(id) is not { Status: InstanceStatus.Active } vehicle || !LiveFire.IsVehicle(vehicle)
             || vehicle.Side != state.PhasingSide || state.Location(vehicle.Id) is not { } at || vehicle.Position is not MapPosition { Facing: { } facing }
             || VehicleDefinition(vehicle) is not { MovementPoints: not null } definition)
@@ -267,6 +341,8 @@ public sealed partial class GamePlanner
             (Conditions.Stunned, "its crew is Stunned (D5.34)"), (Conditions.Shocked, "it is Shocked (C7.42)"),
             (Conditions.UnconfirmedKill, "it is an Unconfirmed Kill, still Shocked (C7.42)"), (Conditions.Abandoned, "it is Abandoned (D5.41)"),
             ("asl:ti", "it is TI after hooking up a Gun (C10.11)") }
+            // D6.5, D6.1 (referee, pass 26): Passengers leave a vehicle that Prep Fired, is immobilized, or is Abandoned.
+            .Where(item => kind != VehicleStepped.Unload || item.Item1 is not (Conditions.PrepFire or Conditions.Immobilized or Conditions.Abandoned))
             .FirstOrDefault(item => Is(vehicle, item.Item1)) is { Item2: { } why })
         {
             return Refused(scope, label, expected, $"play.move-vehicle: {id} may not move: {why}");
@@ -323,6 +399,10 @@ public sealed partial class GamePlanner
                 return PlanEsb(scope, arguments, existing, attemptId, expected, label, actor, state, vehicle, moving, afterAll);
             case VehicleStepped.Overrun:
                 return PlanDeclareOverrun(scope, existing, attemptId, expected, label, actor, state, vehicle, at.Location, moving, step);
+            case VehicleStepped.Load:
+                return PlanLoad(scope, arguments, existing, attemptId, expected, label, actor, state, vehicle, at.Location);
+            case VehicleStepped.Unload:
+                return PlanUnload(scope, arguments, existing, attemptId, expected, label, actor, state, vehicle, at.Location, step);
         }
 
         if (!moving)
@@ -344,6 +424,7 @@ public sealed partial class GamePlanner
         (int? Drm, IReadOnlyList<string> Causes) turnBog = (null, []);
         var overrun = false;
         var minimumMove = false;
+        string? exitEdge = null;
         switch (kind)
         {
             case VehicleStepped.Turn:
@@ -487,10 +568,15 @@ public sealed partial class GamePlanner
                 }
 
                 cost = exit.HalfMp;
-                summary = $"{id} exits the map from {at.Location} for {Mp(cost)} MP (A2.6)" + (leaving ? " by its Friendly Board Edge (D5.341)" : string.Empty);
+                exitEdge = EdgeSides(state, at.Location).FirstOrDefault(item => item.Side == exit.Direction).Edge;
+                summary = $"{id} exits the map from {at.Location} for {Mp(cost)} MP (A2.6)" + (leaving ? " by its Friendly Board Edge (D5.341)" : string.Empty)
+                    + (state.Passengers(id) is { Count: > 0 } riding ? $", with {string.Join(", ", riding.Select(unit => unit.Id))} aboard" : string.Empty)
+                    + (state.Equipment.FirstOrDefault(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Towed } tow && tow.Holder == id) is { } towing
+                        ? $", towing {towing.Id}" : string.Empty)
+                    + (exitEdge is not null ? ExitScoring(state, vehicle.Side, at.Location, exitEdge, false) : string.Empty);
                 break;
             default:
-                return Refused(scope, label, expected, "play.invalid-arguments: a vehicle's MP expenditure is start, turn, enter, stop, exit, esb, or overrun");
+                return Refused(scope, label, expected, "play.invalid-arguments: a vehicle's MP expenditure is start, turn, enter, stop, exit, esb, overrun, load, or unload");
         }
 
         // D5.341 (ruling R5.17): a leaving AFV keeps to a shortest route in MP to its Friendly Board Edge.
@@ -533,7 +619,7 @@ public sealed partial class GamePlanner
         if (kind == VehicleStepped.Exit)
         {
             return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
-                [Event(scope, attemptId, 1, expected, "vehicle-step", new VehicleStepped(id, kind, to, turned, cost, step), null, null)], [text]);
+                [Event(scope, attemptId, 1, expected, "vehicle-step", new VehicleStepped(id, kind, to, turned, cost, step) { Edge = exitEdge }, null, null)], [text]);
         }
 
         // A12.41 (ruling R11.12): an entry, not by VBM or a woods-road, into a Location of concealed enemy Personnel waits for their owner's choice.

@@ -28,8 +28,26 @@ public sealed record SetupCounter(string Id, string Side, string? Group, string?
         get; init;
     }
 
-    /// <summary>The entry area an off-board counter's setup named (A2.5; ruling R25.4); null when it named none.</summary>
+    /// <summary>The entry area an off-board counter's setup named (A2.5; ruling R25.4), or its vehicle's for a Passenger; null when it named none.</summary>
     public string? Entry
+    {
+        get; init;
+    }
+
+    /// <summary>The vehicle a Passenger rides (D6.1; ruling R26.2), which takes it out of its Location's stacking; null on foot.</summary>
+    public string? Aboard
+    {
+        get; init;
+    }
+
+    /// <summary>For a crew or HS, whether it mans a Gun, stacking as a squad (A5.5); for a Gun, whether it is manned (ruling R26.3).</summary>
+    public bool Manning
+    {
+        get; init;
+    }
+
+    /// <summary>For a Gun, whether it is set up in tow (C10.1; ruling R26.1).</summary>
+    public bool Towed
     {
         get; init;
     }
@@ -282,14 +300,35 @@ public static class ScenarioSetup
             }
         }
 
+        // R26.3 (A5.5, C10): a Gun sets up manned by a crew or HS of its group, or in tow, never alone on the map.
+        foreach (var gun in placed.Where(counter => counter.Kind == "asl:gun" && counter.At is not null && !counter.Manning && !counter.Towed))
+        {
+            reasons.Add($"play.setup-gun: {gun.Id} sets up manned by a crew or HS of its OB group, or in tow (A5.5, C10; ruling R26.3)");
+        }
+
+        // R26.5 (A12.34): an Emplaced Gun, set up manned and not in tow, and its manning crew may use HIP in Concealment Terrain with no SSR, together.
+        var emplacedHidden = placed.Where(counter => counter.Kind == "asl:gun" && counter.Hidden && counter.Manning && !counter.Towed && counter.At is { } at
+            && terrain(at) is { } key && ConcealmentTerrain(key, month)
+            && placed.Any(crew => !crew.Equipment && crew.Manning && crew.Hidden && crew.At == at && crew.Side == counter.Side)).ToArray();
+        bool HiddenWithGun(SetupCounter counter) => !counter.Equipment && counter.Manning && emplacedHidden.Any(gun => gun.At == counter.At && gun.Side == counter.Side);
+
         // R23.5 (A12.3): HIP only by an SSR token hip:<side>:<n>, for up to n squad-equivalents of MMC with the SMC set up with them, only in Concealment
         // Terrain, and never a Dummy or a unit also under "?".
         foreach (var side in card.Sides)
         {
-            var hidden = placed.Where(counter => counter.Side == side.Side && counter.Hidden && !counter.Equipment).ToArray();
-            foreach (var counter in placed.Where(counter => counter.Side == side.Side && counter.Hidden && (counter.Equipment || !InfantryKinds.Contains(counter.Kind))))
+            var hidden = placed.Where(counter => counter.Side == side.Side && counter.Hidden && !counter.Equipment && !HiddenWithGun(counter)).ToArray();
+            foreach (var counter in placed.Where(counter => counter.Side == side.Side && counter.Hidden && !emplacedHidden.Contains(counter)
+                && (counter.Equipment || !InfantryKinds.Contains(counter.Kind))))
             {
-                reasons.Add($"play.setup-hidden: {counter.Id} sets up hidden; HIP is built for Infantry only, and hidden Guns and vehicles are not built (A12.3, A12.34; ruling R23.5)");
+                reasons.Add(counter.Kind == "asl:gun"
+                    ? $"play.setup-hidden: {counter.Id} sets up hidden only as an Emplaced Gun, manned and not in tow, in Concealment Terrain, with its manning crew hidden too (A12.34; ruling R26.5)"
+                    : $"play.setup-hidden: {counter.Id} sets up hidden; HIP is built for Infantry and Emplaced Guns only, and hidden vehicles are not built (A12.3, A12.34; rulings R23.5, R26.5)");
+            }
+
+            // A12.34 (ruling R26.5): a hidden crew manning a Gun hides with it.
+            foreach (var crew in placed.Where(counter => counter.Side == side.Side && counter.Hidden && !counter.Equipment && counter.Manning && !HiddenWithGun(counter)))
+            {
+                reasons.Add($"play.setup-hidden: {crew.Id} mans a Gun, so it is hidden only with its Gun, Emplaced in Concealment Terrain (A12.34; ruling R26.5)");
             }
 
             if (hidden.Length == 0)
@@ -335,11 +374,13 @@ public static class ScenarioSetup
             }
         }
 
-        foreach (var stack in placed.Where(counter => counter.At is not null && !counter.Equipment && !counter.Dummy).GroupBy(counter => (counter.Side, counter.At!)))
+        // Ruling R26.2: Passengers are not stacked in their vehicle's Location.
+        foreach (var stack in placed.Where(counter => counter.At is not null && !counter.Equipment && !counter.Dummy && counter.Aboard is null).GroupBy(counter => (counter.Side, counter.At!)))
         {
             var smc = stack.Count(counter => SmcKinds.Contains(counter.Kind));
-            // A5.5 (referee, pass 19): four SMC count nothing; beyond that, five SMC equal a HS.
-            var squads = stack.Count(counter => counter.Kind == "asl:squad") + (stack.Count(counter => counter.Kind is "asl:half-squad" or "asl:crew") / 2m)
+            // A5.5 (referee, pass 19): four SMC count nothing; beyond that, five SMC equal a HS; a crew or HS manning a Gun counts as a squad (ruling R26.3).
+            var squads = stack.Count(counter => counter.Kind == "asl:squad" || (counter.Kind is "asl:half-squad" or "asl:crew" && counter.Manning))
+                + (stack.Count(counter => counter.Kind is "asl:half-squad" or "asl:crew" && !counter.Manning) / 2m)
                 + (smc > 4 ? smc / 10m : 0m);
             if (squads > 3)
             {

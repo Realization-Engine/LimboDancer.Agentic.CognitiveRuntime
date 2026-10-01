@@ -61,13 +61,19 @@ public sealed partial class GamePlanner
         var counters = new List<SetupCounter>();
         foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active))
         {
+            // Ruling R26.2: a Passenger waits off board, and enters, with its vehicle.
+            var aboard = state.Aboard(unit.Id);
+            var carrier = aboard is null ? null : state.Unit(aboard);
             counters.Add(new SetupCounter(unit.Id, unit.Side, unit.Group, unit.Definition?.Definition, unit.Kind, state.Location(unit.Id)?.Location,
                 Is(unit, Conditions.Concealed), Is(unit, Conditions.Hidden), unit.Kind == UnitKinds.Dummy, false, placedNow.Contains(unit.Id))
             {
-                OffBoard = unit.Position is OffMapPosition && state.Location(unit.Id) is null,
-                Entry = (unit.Position as OffMapPosition)?.Entry,
+                OffBoard = unit.Position is OffMapPosition or ContainedPosition && state.Location(unit.Id) is null,
+                Entry = (unit.Position as OffMapPosition)?.Entry ?? (carrier?.Position as OffMapPosition)?.Entry,
                 Broken = Is(unit, Conditions.Broken),
                 NonOb = state.NonObConcealed.Contains(unit.Id, StringComparer.Ordinal),
+                Aboard = aboard,
+                Manning = state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Kind == "asl:gun" && item.Holding is { Role: HoldingRole.Manned } manned
+                    && manned.Holder == unit.Id),
             });
         }
 
@@ -75,11 +81,14 @@ public sealed partial class GamePlanner
         {
             // A SW belongs to its holder's group, at its holder's Location; equipment on its own belongs to no group (referee, pass 19).
             var holder = item.Holding is { } holding ? state.Unit(holding.Holder) : null;
+            // A12.34 (ruling R26.5): a manned Gun's hidden status is its own, no longer hidden behind its crew's; a SW is hidden only with its holder.
             counters.Add(new SetupCounter(item.Id, holder?.Side ?? item.Side ?? string.Empty, holder?.Group, item.Definition?.Definition, item.Kind,
-                holder is not null ? state.Location(holder.Id)?.Location : (item.Position as MapPosition)?.Location, false, Is(item, Conditions.Hidden) && holder is null, false, true,
-                placedNow.Contains(item.Id))
+                holder is not null ? state.Location(holder.Id)?.Location : (item.Position as MapPosition)?.Location, false,
+                Is(item, Conditions.Hidden) && item.Holding is not { Role: HoldingRole.Possessed }, false, true, placedNow.Contains(item.Id))
             {
-                OffBoard = holder is not null && holder.Position is OffMapPosition && state.Location(holder.Id) is null,
+                OffBoard = holder is not null && holder.Position is OffMapPosition or ContainedPosition && state.Location(holder.Id) is null,
+                Manning = item.Holding is { Role: HoldingRole.Manned },
+                Towed = item.Holding is { Role: HoldingRole.Towed },
             });
         }
 
@@ -182,7 +191,7 @@ public sealed partial class GamePlanner
     /// entry cost is not decided; null when it may be entered. Concealed and hidden enemy units do not obstruct it: an entering stack meets them as at any
     /// step (A12.15; ruling R25.3), as it meets Residual FP and Fire Lanes.
     /// </summary>
-    internal string? EntryHexBar(GameState state, string side, BoardLocation at)
+    internal string? EntryHexBar(GameState state, string side, BoardLocation at, bool vehicle = false)
     {
         if (state.At(at).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != side && !Is(unit, Conditions.Captured)
             && (KnownEnemy(unit) || LiveFire.IsVehicle(unit))))
@@ -190,7 +199,8 @@ public sealed partial class GamePlanner
             return $"play.entry-occupied: {at} holds a Known enemy unit, so it is not entered from off board in the MPh (A2.5, A4.14; ruling R25.2)";
         }
 
-        return ReadLocation(state, at) is { } read && TerrainKey(read) is { } terrain && (terrain == "marsh" || InfantryEntryHalfMf(state, terrain) is not null)
+        // Ruling R26.1: a vehicle's entry cost is its own, read with its entry.
+        return vehicle || (ReadLocation(state, at) is { } read && TerrainKey(read) is { } terrain && (terrain == "marsh" || InfantryEntryHalfMf(state, terrain) is not null))
             ? null
             : $"play.entry-terrain: the entry cost of {at} is not decided (ruling R20.5)";
     }
@@ -198,7 +208,7 @@ public sealed partial class GamePlanner
     /// <summary>
     /// Why the phasing side's APh may not end (A2.5; rulings R20.5, R25.1): a unit whose entry turn has come still waits off board, did not enter in the
     /// MPh, and may still enter a hex open to it by advance; null when none does. The MPh may end with units waiting, since A2.5 lets a unit capable of
-    /// movement in the APh delay its entry until then. Vehicles, which cannot enter yet, are not held (referee, pass 20).
+    /// movement in the APh delay its entry until then. Vehicles, which cannot advance, are held in the MPh instead (ruling R26.1).
     /// </summary>
     internal string? EntryDue(GameState state)
     {
@@ -251,11 +261,11 @@ public sealed partial class GamePlanner
     /// edge, into a ground-level hex open to it within the playable area; in the MPh not one a Known enemy unit holds (A4.14), which an advance may enter.
     /// Returns the edge and the edge hexside crossed, or why the stack may not enter <paramref name="to"/>.
     /// </summary>
-    private (string? Edge, HexsideDirection Side, string? Reason) EntryCheck(GameState state, UnitInstance[] movers, BoardLocation to, bool advancing)
+    private (string? Edge, HexsideDirection Side, string? Reason) EntryCheck(GameState state, UnitInstance[] movers, BoardLocation to, bool advancing, bool vehicleEntry = false)
     {
-        if (movers.FirstOrDefault(LiveFire.IsVehicle) is { } vehicle)
+        if (!vehicleEntry && movers.FirstOrDefault(LiveFire.IsVehicle) is { } vehicle)
         {
-            return (null, default, $"play.entry-vehicle: {vehicle.Id} is a vehicle; vehicles entering from off board are not built (A2.52; ruling R20.5)");
+            return (null, default, $"play.entry-vehicle: {vehicle.Id} is a vehicle; it enters by its own MP expenditure in its MPh, in Motion, not with Infantry or by advance (A2.52, D2.4; ruling R26.1)");
         }
 
         // A5.1, A2.51 (referee, pass 25): an entering stack keeps to the stacking limits, which offboard setup never exceeds.
@@ -312,7 +322,7 @@ public sealed partial class GamePlanner
             }
         }
 
-        return !advancing && EntryHexBar(state, movers[0].Side, to) is { } barred ? (null, default, barred) : (edge, crossing.Side, null);
+        return !advancing && EntryHexBar(state, movers[0].Side, to, vehicleEntry) is { } barred ? (null, default, barred) : (edge, crossing.Side, null);
     }
 
     /// <summary>Why a game from a card may not start play yet (ruling R19.2): a group that sets up on board has not finished; null when it may.</summary>

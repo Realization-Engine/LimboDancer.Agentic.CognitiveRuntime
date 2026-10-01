@@ -1,0 +1,27 @@
+@* Plan A21 (pass 26): a moving vehicle's MG in Bounding First Fire (D3.3, D3.31, D2.42); the page offers it only when the vehicle may fire and lists the
+   target Locations its side sees. *@
+<label title="The vehicle's MG fires at the outset of its MPh or once the DEFENDER has passed on its last MP, at half FP, halved again while Non-Stopped (D3.3, D3.31, D2.42).">
+    Bounding First Fire at
+    <select id="vehicle-bff-target" value="@Target" @onchange="@(args => OnTarget.InvokeAsync(args.Value as string ?? string.Empty))">
+        <option value="">choose</option>
+        @foreach (var at in Targets)
+        {
+            <option value="@at">@at</option>
+        }
+    </select>
+</label>
+<button id="vehicle-bff" disabled="@(Target.Length == 0)" @onclick="@(() => OnPropose.InvokeAsync())">Propose: Bounding First Fire</button>
+
+@code {
+    [Parameter]
+    public IReadOnlyList<string> Targets { get; set; } = [];
+
+    [Parameter]
+    public string Target { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> OnTarget { get; set; }
+
+    [Parameter]
+    public EventCallback OnPropose { get; set; }
+}

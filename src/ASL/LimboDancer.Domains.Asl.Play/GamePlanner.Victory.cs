@@ -184,7 +184,7 @@ public sealed partial class GamePlanner
     /// hexside lies on the edge. A Guard takes its prisoners, only off its side's Friendly Board Edge or the edge of its exit condition (A20.53, A26.23).
     /// The units are Exited and may not return.
     /// </summary>
-    private GamePlan PlanExit(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label, string edge)
+    private GamePlan PlanExit(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label, string edge, string actor)
     {
         if (Replay(existing).Current is not { } state)
         {
@@ -210,19 +210,44 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.exit-stack: the stack leaves from one Location on the map (A2.6)");
         }
 
-        // A3.3: a unit that fired in the PFPh does not move in the MPh, though it may advance (A4.7).
+        // A3.3: a unit that fired in the PFPh does not move in the MPh, though it may advance (A4.7). C10.3 (referee, pass 26): a crew still pushing its Gun
+        // may push it on, off the map, though its last push made it TI.
+        var pushingOn = !advancing && Text(arguments, "pushGun", out _) && state.Movement is { } pushing && ids.All(id => pushing.Members.Contains(id, StringComparer.Ordinal));
         if (movers.FirstOrDefault(unit => Is(unit!, Conditions.Broken) || Is(unit!, Conditions.Pinned) || Is(unit!, Conditions.Berserk) || Is(unit!, Conditions.Melee)
-            || Is(unit!, Conditions.Captured) || Is(unit!, Conditions.Hidden) || Is(unit!, "asl:ti") || unit!.MovementEnded || (!advancing && Is(unit!, Conditions.PrepFire))) is { } unable)
+            || Is(unit!, Conditions.Captured) || Is(unit!, Conditions.Hidden) || (Is(unit!, "asl:ti") && !pushingOn) || unit!.MovementEnded || (!advancing && Is(unit!, Conditions.PrepFire))) is { } unable)
         {
             return Refused(scope, label, expected, advancing
                 ? $"play.exit-unit: {unable.Id} is not free to advance this APh (A4.7)"
                 : $"play.exit-unit: {unable.Id} is not free to move this MPh (A4.1, A3.3)");
         }
 
-        // Referee, pass 21: a crew leaving with its Gun waits for Guns on a card (plan pass 26).
+        // C10.3 (ruling R26.4): a crew or HS manning a Gun leaves the map only pushing it, alone, in its MPh, with a Manhandling DR as for any push.
+        EquipmentInstance? pushed = null;
         if (movers.FirstOrDefault(unit => state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Manned } holding && holding.Holder == unit!.Id)) is { } gunner)
         {
-            return Refused(scope, label, expected, $"play.exit-unit: {gunner.Id} mans a Gun; leaving the map with it is not built (C10.3; ruling R21.5)");
+            var manned = state.Equipment.First(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Manned } holding && holding.Holder == gunner.Id);
+            if (!Text(arguments, "pushGun", out var pushGunId) || pushGunId != manned.Id)
+            {
+                return Refused(scope, label, expected, $"play.exit-unit: {gunner.Id} mans {manned.Id}; it leaves the map only pushing it (check \"push {manned.Id}\" beside the move), since abandoning a Gun to leave is not built (C10.3; ruling R26.4)");
+            }
+
+            var pushBar = advancing ? "a Gun is pushed in the MPh, not by advance"
+                : movers.Length != 1 ? $"{gunner.Id} pushes its Gun alone; leave {string.Join(", ", movers.Where(unit => unit!.Id != gunner.Id).Select(unit => unit!.Id))} out of the stack"
+                : !vocabulary.IsA(gunner.Kind, "asl:crew") && !vocabulary.IsA(gunner.Kind, "asl:half-squad") ? $"{gunner.Id} is not a crew or HS"
+                : OrdnanceReference.Value.Guns.GetValueOrDefault(manned.Definition?.Definition ?? string.Empty) is not { Manhandling: not null } ? $"{manned.Id} has no M# in the catalog"
+                : state.Movement is { Bypass.Count: > 0 } && state.Movement.Members.Contains(gunner.Id, StringComparer.Ordinal) ? "a Gun is not pushed from Bypass"
+                : null;
+            if (pushBar is not null)
+            {
+                return Refused(scope, label, expected, $"play.move-push: {pushBar} (C10.3, C10.111; ruling R26.4)");
+            }
+
+            if (manned.Definition is not { } gunType || FireReference.Value.Definitions.GetValueOrDefault(gunType.Definition)?.QuickSetUp != true)
+            {
+                return Refused(scope, label, expected, $"play.move-push: {manned.Id} is not QSU, and limbering is not built, so it is not pushed (C10.2; ruling R26.1)");
+            }
+
+            pushed = manned;
         }
 
 
@@ -281,6 +306,17 @@ public sealed partial class GamePlanner
             (halfMf, terrain, road) = (cheapest.HalfMf, cheapest.Terrain, cheapest.RoadRate);
         }
 
+        // C10.3 (rulings R8.6, R26.4): a Gun is pushed only across Open Ground or grain, at double the MF.
+        if (pushed is not null)
+        {
+            if (terrain is not ("open-ground" or "grain"))
+            {
+                return Refused(scope, label, expected, $"play.move-push-terrain: a Gun is pushed only into Open Ground or grain in the review, and leaving {from} crosses {terrain} (C10.3; rulings R8.6, R26.4)");
+            }
+
+            halfMf *= 2;
+        }
+
         var how = $"for {halfMf / 2m} MF" + (road ? " at the road rate" : string.Empty) + (current is { Bypass.Count: > 0 } ? " from Bypass" : string.Empty);
         var escorted = state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Custodian is { } holder && ids.Contains(holder, StringComparer.Ordinal))
             .Select(unit => unit.Id).Order(StringComparer.Ordinal).ToArray();
@@ -335,7 +371,14 @@ public sealed partial class GamePlanner
             }
         }
 
-        var step = new MovementStepped(ids, from, halfMf, false, (state.Movement?.Step ?? 0) + 1) { Exit = edge, DoubleTime = doubleTime, Road = road };
+        var step = new MovementStepped(ids, from, halfMf, false, (state.Movement?.Step ?? 0) + 1) { Exit = edge, DoubleTime = doubleTime, Road = road && pushed is null };
+        if (pushed is not null)
+        {
+            // C10.3 (ruling R26.4): the Manhandling DR takes the MF spent, -2 across a road hexside; a DR above the M# leaves the Gun and crew in place.
+            return PushPlan(scope, attemptId, expected, label, actor, state, pushed, step, (halfMf / 2) - (road ? 2 : 0),
+                $"play.exit: {string.Join(", ", ids)} leave{(ids.Length == 1 ? "s" : string.Empty)} the map from {from} across the {edge} edge {how} (A2.6; rulings R21.5, R26.4){scoring}");
+        }
+
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
             [Event(scope, attemptId, 1, expected, "movement-step", step, package, null)],
             [$"play.exit: {string.Join(", ", ids)} leave the map from {from} across the {edge} edge {how}{with} and may not return (A2.6; rulings R21.5, R25.5){scoring}"]);

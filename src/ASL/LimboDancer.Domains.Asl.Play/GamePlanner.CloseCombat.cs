@@ -32,7 +32,7 @@ public sealed partial class GamePlanner
         // A2.6 (ruling R25.5): an advance off the map.
         if (Text(arguments, "exit", out var exitEdge) && !arguments.TryGetProperty("to", out _))
         {
-            return PlanExit(scope, arguments, existing, attemptId, expected, label, exitEdge);
+            return PlanExit(scope, arguments, existing, attemptId, expected, label, exitEdge, "unknown");
         }
 
         var ids = Strings(arguments, "unitIds").ToArray();

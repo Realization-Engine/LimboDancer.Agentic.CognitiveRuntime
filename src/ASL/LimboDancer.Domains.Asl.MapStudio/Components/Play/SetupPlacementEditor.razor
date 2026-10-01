@@ -1,0 +1,110 @@
+@* Plan P08 (pass 26): one setup placement's form: the counter, its id and OB group, its Location or holder (a SW's possessor, a Gun's crew or towing
+   vehicle, a Passenger's vehicle), a Gun's or vehicle's facing, a Bore Sighted Location, its state, and off-board placement with its entry area. The page
+   keeps the draft and its reset rules and adds the placement; the planner checks the setup. *@
+<div class="toolbar">
+    <label>
+        Unit
+        <select id="place-definition" value="@Draft.Definition" @onchange="@(args => Change(Draft with { Definition = args.Value as string ?? string.Empty }))">
+            @foreach (var choice in Definitions)
+            {
+                <option value="@choice.Value">@choice.Label</option>
+            }
+        </select>
+    </label>
+    <label>Id <input id="place-id" value="@Draft.Id" @onchange="@(args => Change(Draft with { Id = args.Value as string ?? string.Empty }))" size="8" /></label>
+    @if (Groups.Count > 0)
+    {
+        <label title="A19.1 (ruling R18.3): the unit takes its OB group's ELR.">
+            OB group
+            <select id="place-group" value="@Draft.Group" @onchange="@(args => Change(Draft with { Group = args.Value as string ?? string.Empty, Entry = string.Empty }))">
+                <option value="">none</option>
+                @foreach (var choice in Groups)
+                {
+                    <option value="@choice.Value">@choice.Label</option>
+                }
+            </select>
+        </label>
+    }
+    <LocationField Id="place-location" Label="Location" Value="@Draft.Location" OnChange="@(at => Change(Draft with { Location = at }))" />
+    <label title="A SW's possessor (A9.1); a Gun's manning crew, or the vehicle towing it (C10.1); a Passenger's vehicle (D6.1, A2.52).">
+        @HolderLabel <input id="place-holder" value="@Draft.Holder" @onchange="@(args => Change(Draft with { Holder = args.Value as string ?? string.Empty }))" size="8" />
+    </label>
+    @if (Kind is "asl:gun" or "asl:vehicle")
+    {
+        var vehicle = Kind == "asl:vehicle";
+        <FacingPicker Id="place-facing" Label="@(vehicle ? "VCA (hexspine)" : "Gun facing (hexspine)")" Value="@Draft.Facing"
+            Title="A Gun's barrel (C2.23) or a vehicle's VCA (D2.11) points at a hexspine: hexes are flat-topped, so north and south are hexsides."
+            OnChange="@(facing => Change(Draft with { Facing = facing }))" />
+        <span class="muted" id="place-facing-note">@(vehicle
+            ? "A vehicle stands at its Location, its VCA pointing at the two hexes either side of the hexspine; off board it waits in Motion and takes its VCA as it enters (A2.52)."
+            : "A Gun stands at its Location, manned by the crew named in \"Manned or towed by\", or waits in tow of the vehicle named there (C10.1).")</span>
+        @if (!vehicle)
+        {
+            <LocationField Id="place-bore" Label="Bore Sighted" Value="@Draft.Bore" Title="C6.42: the Scenario Defender's Gun may Bore Sight one Location outside its hex, in its LOS, within 16 hexes."
+                OnChange="@(at => Change(Draft with { Bore = at }))" />
+        }
+    }
+    <label><input id="place-concealed" type="checkbox" checked="@Draft.Concealed" @onchange="@(args => Change(Draft with { Concealed = args.Value is true }))" /> concealed</label>
+    <label title="HIP by an SSR for Infantry (A12.3); an Emplaced Gun and its crew in Concealment Terrain with no SSR (A12.34; ruling R26.5)."><input id="place-hidden" type="checkbox" checked="@Draft.Hidden" @onchange="@(args => Change(Draft with { Hidden = args.Value is true }))" /> hidden</label>
+    <label><input id="place-broken" type="checkbox" checked="@Draft.Broken" @onchange="@(args => Change(Draft with { Broken = args.Value is true }))" /> broken</label>
+    <label title="A2.51, A2.52 (rulings R20.5, R26.1): a counter of an OB line that enters waits off board until it enters along its edge, a vehicle in Motion."><input id="place-offboard" type="checkbox" checked="@Draft.OffBoard" @onchange="@(args => Change(Draft with { OffBoard = args.Value is true }))" /> off board (enters)</label>
+    @if (Draft.OffBoard && Entries.Count > 1)
+    {
+        <label title="A2.5 (ruling R25.4): a counter of a group with several entry areas names the one it enters by.">
+            Entry area
+            <select id="place-entry" value="@Draft.Entry" @onchange="@(args => Change(Draft with { Entry = args.Value as string ?? string.Empty }))">
+                <option value="">the line's own</option>
+                @foreach (var choice in Entries)
+                {
+                    <option value="@choice.Value">@choice.Label</option>
+                }
+            </select>
+        </label>
+    }
+    <button id="place-add" @onclick="@(() => OnAdd.InvokeAsync())">Add</button>
+</div>
+@if (Note is not null)
+{
+    <p id="place-note" class="diagnostic warning">@Note</p>
+}
+
+@code {
+    /// <summary>The placement being drafted; the page keeps it.</summary>
+    public sealed record SetupDraft(string Definition, string Id, string Group, string Location, string Holder, string Facing, string Bore, bool Concealed, bool Hidden,
+        bool Broken, bool OffBoard, string Entry);
+
+    /// <summary>A choice of a select: its value and how it reads.</summary>
+    public sealed record Choice(string Value, string Label);
+
+    [Parameter, EditorRequired]
+    public SetupDraft Draft { get; set; } = default!;
+
+    /// <summary>The counters to place: the catalog's, a Dummy and the Sniper counter per side.</summary>
+    [Parameter]
+    public IReadOnlyList<Choice> Definitions { get; set; } = [];
+
+    /// <summary>The OB groups of the card; empty for a game without one.</summary>
+    [Parameter]
+    public IReadOnlyList<Choice> Groups { get; set; } = [];
+
+    /// <summary>The entry areas of the chosen group (ruling R25.4).</summary>
+    [Parameter]
+    public IReadOnlyList<Choice> Entries { get; set; } = [];
+
+    /// <summary>The chosen counter's kind, such as asl:gun.</summary>
+    [Parameter]
+    public string? Kind { get; set; }
+
+    [Parameter]
+    public string? Note { get; set; }
+
+    [Parameter]
+    public EventCallback<SetupDraft> OnDraft { get; set; }
+
+    [Parameter]
+    public EventCallback OnAdd { get; set; }
+
+    private string HolderLabel => Kind == "asl:gun" ? "Manned or towed by" : "Or held by, or aboard";
+
+    private Task Change(SetupDraft draft) => OnDraft.InvokeAsync(draft);
+}

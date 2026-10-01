@@ -214,6 +214,13 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             return Refused(scope, label, expected, unfinished);
         }
 
+        // Ruling R26.2: a Passenger acts only with its vehicle until it unloads.
+        if (action.Id.Value is not ("asl.game.setup" or "asl.game.move-vehicle" or "asl.game.hook-gun" or "asl.game.advance-phase" or "asl.game.choose" or "asl.game.pass-fire"
+            or "asl.game.end-move" or "asl.game.button-up") && existing.Count > 0 && Replay(existing).Current is { } boardState && AboardBar(boardState, arguments) is { } aboard)
+        {
+            return Refused(scope, label, expected, aboard);
+        }
+
         var plan = action.Id.Value switch
         {
             "asl.game.setup" => PlanSetup(scope, arguments, existing, attemptId, expected, ref label, actor ?? "unknown"),
@@ -570,6 +577,12 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             return Refused(scope, label, expected, due);
         }
 
+        // A2.5 (ruling R26.1): vehicles cannot advance, so the MPh does not end while a vehicle whose entry turn has come waits off board and may enter.
+        if (state.Phase == "mph" && VehicleEntryDue(state) is { } vehicleDue)
+        {
+            return Refused(scope, label, expected, vehicleDue);
+        }
+
         // A3.9 (ruling R20.1): the game from a card ends after its last Game Turn, or after the first side's Player Turn of a half turn.
         var ending = index == Phases.All.Count - 1 && CardOf(state) is { } endCard && ScenarioCards.EndsAfter(endCard.Turns, state.Turn, state.PhasingSide == state.FirstSide);
 
@@ -854,7 +867,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         // Pass 21 (ruling R21.5): a move naming an edge leaves the map.
         if (Text(arguments, "exit", out var edge) && !arguments.TryGetProperty("to", out _))
         {
-            return PlanExit(scope, arguments, existing, attemptId, expected, label, edge);
+            return PlanExit(scope, arguments, existing, attemptId, expected, label, edge, actor);
         }
 
         return PlanMove(scope, arguments, existing, attemptId, expected, label, actor);

@@ -128,7 +128,18 @@ public sealed partial class GamePlanner
             && Los(state, one, two) is { Status: LosStatus.Clear };
     }
 
+    /// <summary>
+    /// The range to the nearest Good Order enemy ground unit with a clear LOS to a Location (A12.34); null when none has one. A Passenger is not counted:
+    /// its vehicle is (ruling R26.2).
+    /// </summary>
+    private int? NearestGoodOrderEnemyInLos(GameState state, string side, BoardLocation at) =>
+        state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side != side && unit.Kind != UnitKinds.Dummy && state.Aboard(unit.Id) is null
+                && GameState.Condition(unit, Conditions.Broken) != ConditionState.True)
+            .Select(unit => state.Location(unit.Id)?.Location).OfType<BoardLocation>().Distinct()
+            .Select(location => Los(state, location, at) is { Status: LosStatus.Clear } los ? los.Range : (int?)null).Where(range => range is not null).Min();
+
     /// <summary>Whether any Good Order enemy ground unit within 16 hexes has a clear LOS to a Location (A12.14, A12.141).</summary>
+
     private bool EnemyGoodOrderInLosWithin16(GameState state, string side, BoardLocation at) =>
         state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side != side && unit.Kind != UnitKinds.Dummy
                 && GameState.Condition(unit, Conditions.Broken) != ConditionState.True)

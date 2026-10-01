@@ -190,6 +190,36 @@ public sealed record VehicleStepped(string Vehicle, string Kind, BoardLocation A
     /// <summary>An OVR declared in the vehicle's own Location after the A12.41 choice there (D7.1; ruling R11.12): a quarter of its allotment.</summary>
     public const string Overrun = "overrun";
 
+    /// <summary>Infantry in the vehicle's Location board it as Passengers (D6.4; ruling R26.2): <see cref="Units"/> name them.</summary>
+    public const string Load = "load";
+
+    /// <summary>Passengers disembark beneath the Stopped vehicle (D6.5; ruling R26.2): <see cref="Units"/> name them.</summary>
+    public const string Unload = "unload";
+
+    /// <summary>For an entry from off board (A2.52, D2.4; ruling R26.1): the map edge the vehicle crosses into <see cref="At"/>, its VCA in <see cref="Facing"/>.</summary>
+    public string? Entry
+    {
+        get; init;
+    }
+
+    /// <summary>For an exit (A2.6; ruling R26.4): the map edge the vehicle leaves by.</summary>
+    public string? Edge
+    {
+        get; init;
+    }
+
+    /// <summary>For a load or an unload (D6.4, D6.5; ruling R26.2): the Infantry boarding or the Passengers disembarking.</summary>
+    public IReadOnlyList<string>? Units
+    {
+        get; init;
+    }
+
+    /// <summary>For an unload (D6.5; ruling R26.2): the MF each disembarking unit has spent once beneath the vehicle.</summary>
+    public int UnitMf
+    {
+        get; init;
+    }
+
     /// <summary>A Start declaring Reverse movement, and an entry made in Reverse (D2.2, D2.23; ruling R11.1).</summary>
     public bool Reverse
     {

@@ -1,0 +1,24 @@
+@* Plan A22 (pass 26): an AFV crew buttoning up or exposing itself (D5.33), in its side's MPh or APh; the page lists the AFVs that may change, read for the
+   view, and proposes the change. *@
+<h4>Crew exposure</h4>
+<p class="muted" id="bu-help">
+    The owner of an open-topped AFV places or removes its BU counter in its own MPh or APh, once per phase, not in an MPh after it Prep
+    Fired, and not while its crew is Stunned (D5.33, D5.34). A CE crew may fire the AAMG and is Vulnerable to Collateral Attacks (D5.3, D.8B).
+</p>
+<div class="toolbar">
+    @foreach (var afv in Vehicles)
+    {
+        <button class="bu-toggle" data-vehicle="@afv.Id" @onclick="@(() => OnToggle.InvokeAsync(afv))">Propose: @afv.Id @(afv.ButtonedUp ? "exposes its crew (CE)" : "buttons up (BU)")</button>
+    }
+</div>
+
+@code {
+    /// <summary>An AFV that may change its crew's exposure, and whether it is BU now.</summary>
+    public sealed record Exposure(string Id, bool ButtonedUp);
+
+    [Parameter]
+    public IReadOnlyList<Exposure> Vehicles { get; set; } = [];
+
+    [Parameter]
+    public EventCallback<Exposure> OnToggle { get; set; }
+}

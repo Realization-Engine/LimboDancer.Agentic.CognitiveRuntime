@@ -1,0 +1,30 @@
+@* Plan C18 (pass 26): a Gun's CA change without fire (C3.22), and how each target Location stands against its Covered Arc (C3.2), read in the map's frame on
+   every board, reversed or not (ruling R26.6). The page keeps the chosen hexspine and reads the arc. *@
+<div class="toolbar">
+    <FacingPicker Id="ordnance-turn" Label="Turn to" Value="@Facing" OnChange="@(facing => OnFacing.InvokeAsync(facing))"
+        Title="C3.22: the Gun changes its CA without firing, and fires no more this phase; in the PFPh neither it nor its crew moves this Player Turn." />
+    <button id="propose-turn-gun" @onclick="@(() => OnPropose.InvokeAsync())">Propose: turn without firing</button>
+</div>
+<ul id="ordnance-arc">
+    @foreach (var reading in Arc)
+    {
+        <li data-at="@reading.At">@reading.At: @reading.Status</li>
+    }
+</ul>
+
+@code {
+    /// <summary>A target Location and how it stands: in the CA, the hexspines to turn (Case A), or why it is refused.</summary>
+    public sealed record ArcReading(string At, string Status);
+
+    [Parameter]
+    public string Facing { get; set; } = "east";
+
+    [Parameter]
+    public IReadOnlyList<ArcReading> Arc { get; set; } = [];
+
+    [Parameter]
+    public EventCallback<string> OnFacing { get; set; }
+
+    [Parameter]
+    public EventCallback OnPropose { get; set; }
+}

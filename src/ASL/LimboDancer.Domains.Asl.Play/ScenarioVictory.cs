@@ -162,7 +162,7 @@ public static class ScenarioVictory
         var standing = sides.Select(side =>
         {
             var (cvp, equipment) = Cvp(card, present, side, vp, adjacent, ended, holders);
-            return new VictorySide(side, cvp, ExitVp(card, present, side, vp, adjacent, ended), UnbrokenSquads(present, side, knownTo)) { GunAndVehicleCvp = equipment };
+            return new VictorySide(side, cvp, ExitVp(card, present, side, vp, adjacent, ended, holders), UnbrokenSquads(present, side, knownTo)) { GunAndVehicleCvp = equipment };
         }).ToArray();
 
         GameResult? Decide(bool immediateOnly)
@@ -361,9 +361,9 @@ public static class ScenarioVictory
     private static bool Armed(UnitInstance unit, Func<UnitInstance, bool>? armedVehicle) => unit.Kind != UnitKinds.Dummy && !Is(unit, Conditions.Captured)
         && !Is(unit, Conditions.Unarmed) && !(LiveFire.IsVehicle(unit) && (Is(unit, Conditions.Abandoned) || armedVehicle?.Invoke(unit) == false));
 
-    /// <summary>The active units in the hexes, but those a side does not know (ruling R23.4).</summary>
+    /// <summary>The active units in the hexes, but those a side does not know (ruling R23.4) and Passengers (ruling R26.2).</summary>
     private static UnitInstance[] Inside(GameState state, IReadOnlyList<BoardLocation> hexes, string? knownTo) =>
-        [.. state.Units.Where(unit => unit.Status == InstanceStatus.Active && state.Location(unit.Id)?.Location is { } at
+        [.. state.Units.Where(unit => unit.Status == InstanceStatus.Active && state.Aboard(unit.Id) is null && state.Location(unit.Id)?.Location is { } at
             && hexes.Any(hex => hex.Board == at.Board && hex.Hex == at.Hex) && !Undeclared(unit, knownTo))];
 
     /// <summary>
@@ -426,13 +426,22 @@ public static class ScenarioVictory
 
     /// <summary>
     /// A26.23: the VP a side has exited through its exit conditions' areas, none for broken Personnel; the enemy units its Guards took off with them count
-    /// their normal VP during play and double once the game has ended (A26.222; ruling R25.5).
+    /// their normal VP during play and double once the game has ended (A26.222; ruling R25.5). A vehicle counts its VP with its Passengers', and a Gun
+    /// towed or pushed off the map its two (A26.212; ruling R26.4).
     /// </summary>
     private static int ExitVp(ScenarioCard card, GameState state, string side, Func<UnitInstance, int> vp, Func<BoardLocation, IEnumerable<BoardLocation>> adjacent,
-        bool ended) =>
-        state.Exits.Where(exit => !exit.Broken && state.Unit(exit.Unit) is { Status: InstanceStatus.Exited } unit && (exit.CapturedBy ?? unit.Side) == side
+        bool ended, Dictionary<string, string> holders) =>
+        state.Exits.Where(exit => !exit.Broken && !exit.Recalled && state.Unit(exit.Unit) is { Status: InstanceStatus.Exited } unit && (exit.CapturedBy ?? unit.Side) == side
             && Qualifies(card, exit, side, adjacent))
-            .Sum(exit => vp(state.Unit(exit.Unit)!) * (exit.CapturedBy is not null && ended ? 2 : 1));
+            .Sum(exit => vp(state.Unit(exit.Unit)!) * (exit.CapturedBy is not null && ended ? 2 : 1))
+        + (state.Exits.Count(exit => state.Find(exit.Unit) is EquipmentInstance { Kind: "asl:gun", Status: InstanceStatus.Exited } gun && ExitSide(gun, holders) == side
+            && Qualifies(card, exit, side, adjacent)) * GunVp);
+
+    /// <summary>The side a Gun belongs to: its own, else the side last holding it (A26.222).</summary>
+    private static string? GunSide(EquipmentInstance gun, Dictionary<string, string> holders) => gun.Side ?? holders.GetValueOrDefault(gun.Id);
+
+    /// <summary>The side that took a Gun off the map: the side last holding it (referee, pass 26: a captor's exit is the captor's).</summary>
+    private static string? ExitSide(EquipmentInstance gun, Dictionary<string, string> holders) => holders.GetValueOrDefault(gun.Id) ?? gun.Side;
 
     /// <summary>
     /// A26.22, A26.221, A26.222 (rulings R21.2, R24.3): a side's CVP: the VP of the enemy units eliminated or wrecked, or that left the map other than by
@@ -451,6 +460,8 @@ public static class ScenarioVictory
                 InstanceStatus.Eliminated or InstanceStatus.Wrecked => vp(unit),
                 // A20.53, A26.222 (ruling R25.5): a prisoner its Guard took off the map is still held; A26.221: the escorting Guard is not eliminated.
                 InstanceStatus.Exited when state.Exits.LastOrDefault(exit => exit.Unit == unit.Id) is { CapturedBy: not null } => vp(unit) * (ended ? 2 : 1),
+                // A26.23, A26.221 (ruling R26.4): a vehicle leaving under Recall counts no CVP.
+                InstanceStatus.Exited when state.Exits.LastOrDefault(exit => exit.Unit == unit.Id) is { Recalled: true } => 0,
                 InstanceStatus.Exited when state.Exits.LastOrDefault(exit => exit.Unit == unit.Id) is not { } exit
                     || (!(exit.Escort && EscortEdge(card, unit.Side, exit.Edge)) && !Qualifies(card, exit, unit.Side, adjacent)) => vp(unit),
                 InstanceStatus.Active when Is(unit, Conditions.Captured) => vp(unit) * (ended ? 2 : 1),
@@ -460,13 +471,17 @@ public static class ScenarioVictory
             equipment += LiveFire.IsVehicle(unit) ? value : 0;
         }
 
-        // A26.212, A26.222 (ruling R24.3): a Gun is captured while the side last to hold it is the enemy's.
-        foreach (var gun in state.Equipment.Where(item => item.Kind == "asl:gun" && item.Side is { } owner && owner != side))
+        // A26.212, A26.222 (ruling R24.3): a Gun is captured while the side last to hold it is the enemy's; A26.221 (ruling R26.4): one that left the map other
+        // than by its side's exit conditions counts as eliminated.
+        foreach (var gun in state.Equipment.Where(item => item.Kind == "asl:gun" && GunSide(item, holders) is { } owner && owner != side))
         {
             var value = gun.Status switch
             {
                 InstanceStatus.Eliminated => GunVp,
                 InstanceStatus.Active when holders.TryGetValue(gun.Id, out var holder) && holder == side => GunVp * (ended ? 2 : 1),
+                // A26.222: a Gun its captor took off the map is still the captor's.
+                InstanceStatus.Exited when ExitSide(gun, holders) == side => GunVp * (ended ? 2 : 1),
+                InstanceStatus.Exited when state.Exits.LastOrDefault(exit => exit.Unit == gun.Id) is not { } gunExit || !Qualifies(card, gunExit, GunSide(gun, holders)!, adjacent) => GunVp,
                 _ => 0,
             };
             total += value;
