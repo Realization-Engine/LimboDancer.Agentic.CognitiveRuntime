@@ -726,7 +726,12 @@ else if (state is not null)
             }
         </div>
     }
-    @if (state.Phase == "aph")
+    @if (state.Phase == "aph" && !Viewer.IsAdjudicator && viewAs != state.PhasingSide)
+    {
+        <h4>Advance</h4>
+        <p class="muted" id="advance-elsewhere">The @state.PhasingSide side advances now; its units and their Locations are its own (choose its view to advance; ruling R23.1).</p>
+    }
+    else if (state.Phase == "aph")
     {
         <h4>Advance</h4>
         <p class="muted" id="advance-help">
@@ -1072,7 +1077,7 @@ else if (state is not null)
             }
         </ul>
     }
-    @if (state.Phase == "pfph" && OpportunityCandidates.Any())
+    @if (state.Phase == "pfph" && OpportunityCandidates.Any() && (Viewer.IsAdjudicator || viewAs == state.PhasingSide))
     {
         <h4>Opportunity Fire</h4>
         <p class="muted" id="opportunity-help">
@@ -1875,20 +1880,20 @@ else if (state is not null)
     /// The phasing side's vehicles that may spend MP now (D2.1): the moving vehicle while one moves; otherwise those not done moving, and not
     /// immobilized, Stunned, Recalled, or after Prep Fire (D.7, D5.34, D5.341, D.3).
     /// </summary>
-    private IEnumerable<UnitInstance> VehicleCandidates => state is null || state.Phase != "mph" ? []
+    private IEnumerable<UnitInstance> VehicleCandidates => SeenOnly(state is null || state.Phase != "mph" ? []
         : state.Movement is { } moving ? moving.Vehicle ? moving.Members.Select(state.Unit).OfType<UnitInstance>() : []
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && LiveFire.IsVehicle(unit) && !unit.MovementEnded
             && GamePlanner.MayStartVehicleMove(unit))
-            .OrderBy(unit => unit.Id, StringComparer.Ordinal);
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal));
 
     /// <summary>The phasing side's AFVs whose crew may button up or expose itself (D5.33): not Stunned or Recalled.</summary>
-    private IEnumerable<UnitInstance> ButtonUpCandidates => state is null ? []
+    private IEnumerable<UnitInstance> ButtonUpCandidates => SeenOnly(state is null ? []
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && GamePlanner.IsArmoredVehicle(unit)
             && GamePlanner.MayChangeExposure(unit)
             && !(state.Phase == "mph" && GameState.Condition(unit, Conditions.PrepFire) == ConditionState.True)
             && (state.Movement is not { WindowOpen: true } open || !open.Movers.Contains(unit.Id, StringComparer.Ordinal))
             && !ExposureChanged.Contains(unit.Id))
-            .OrderBy(unit => unit.Id, StringComparer.Ordinal);
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal));
 
     /// <summary>The AFVs whose BU counter was placed or removed since the phase began, once per phase (D5.33).</summary>
     private HashSet<string> ExposureChanged
@@ -2226,11 +2231,11 @@ else if (state is not null)
     /// The phasing side's units that may advance: not broken, pinned, berserk, in Melee, captured, or already advanced (A4.7), and
     /// not a crew manning a Gun, which may not leave it (C10, A21.13; ruling R24.4).
     /// </summary>
-    private IEnumerable<UnitInstance> AdvanceCandidates => state is null ? []
+    private IEnumerable<UnitInstance> AdvanceCandidates => SeenOnly(state is null ? []
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && !unit.MovementEnded && state.Location(unit.Id) is not null
             && !new[] { Conditions.Broken, Conditions.Pinned, Conditions.Berserk, Conditions.Melee, Conditions.Captured, Conditions.Concealed, Conditions.Hidden, "asl:ti" }.Any(name => GameState.Condition(unit, name) == ConditionState.True)
             && !Mans(unit))
-            .OrderBy(unit => unit.Id, StringComparer.Ordinal);
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal));
 
     private bool Mans(UnitInstance unit) => state is not null && state.Equipment.Any(item => item.Status == InstanceStatus.Active
         && item.Holding is { Role: HoldingRole.Manned } holding && holding.Holder == unit.Id);
@@ -2665,6 +2670,18 @@ else if (state is not null)
     }
 
     // A side's view with no replayed state shows nothing rather than the whole game (UI review, pass 23).
+    /// <summary>The units of a list the view may see: every action's picker passes through it (ruling R23.1; Studio demo, pass 23).</summary>
+    private IEnumerable<UnitInstance> SeenOnly(IEnumerable<UnitInstance> units)
+    {
+        if (Viewer.IsAdjudicator)
+        {
+            return units;
+        }
+
+        var seen = VisibleUnits.Select(unit => unit.Id).ToHashSet(StringComparer.Ordinal);
+        return units.Where(unit => seen.Contains(unit.Id));
+    }
+
     private IEnumerable<UnitInstance> VisibleUnits => Viewer.IsAdjudicator ? state?.Units ?? [] : View?.Units ?? [];
 
     /// <summary>
@@ -2735,10 +2752,10 @@ else if (state is not null)
     };
 
     /// <summary>The Shocked AFVs and Unconfirmed Kills that owe their RPh dr (C7.42).</summary>
-    private IEnumerable<UnitInstance> ShockedVehicles => state is null ? []
+    private IEnumerable<UnitInstance> ShockedVehicles => SeenOnly(state is null ? []
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit) && !state.ShockRollsThisPhase.Contains(unit.Id)
             && (GameState.Condition(unit, Conditions.Shocked) == ConditionState.True || GameState.Condition(unit, Conditions.UnconfirmedKill) == ConditionState.True))
-            .OrderBy(unit => unit.Id, StringComparer.Ordinal);
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal));
 
     /// <summary>A tank as a player reads it: its VCA and TCA, BU or CE, its fire this phase, its Acquisition, and what stops it firing.</summary>
     private string TankLabel(UnitInstance tank)
@@ -3161,11 +3178,11 @@ else if (state is not null)
         && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unit.Id);
 
     /// <summary>The phasing side's Infantry that may hold their fire as Opportunity Fire (A7.25).</summary>
-    private IEnumerable<UnitInstance> OpportunityCandidates => state is null || state.Phase != "pfph" ? []
+    private IEnumerable<UnitInstance> OpportunityCandidates => SeenOnly(state is null || state.Phase != "pfph" ? []
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && !LiveFire.IsVehicle(unit) && unit.Kind != UnitKinds.Dummy
             && state.Location(unit.Id) is not null && GameState.Condition(unit, Conditions.PrepFire) != ConditionState.True
             && new[] { Conditions.Broken, Conditions.Berserk, Conditions.Melee, Conditions.Captured, Conditions.BoundingFire }.All(name => GameState.Condition(unit, name) != ConditionState.True))
-            .OrderBy(unit => unit.Id, StringComparer.Ordinal);
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal));
 
     private Task ProposeOpportunity()
     {
@@ -3181,22 +3198,22 @@ else if (state is not null)
     }
 
     /// <summary>The leaders who may rally the chosen unit: the Good Order or broken leaders of its side in its Location (A10.6, A10.71).</summary>
-    private IEnumerable<UnitInstance> RallyLeaders => state?.Unit(rallyUnit) is not { } unit || state.Location(unit.Id)?.Location is not { } at ? []
+    private IEnumerable<UnitInstance> RallyLeaders => SeenOnly(state?.Unit(rallyUnit) is not { } unit || state.Location(unit.Id)?.Location is not { } at ? []
         : state.At(at).OfType<UnitInstance>().Where(item => item.Status == InstanceStatus.Active && item.Id != unit.Id && item.Side == unit.Side
-            && item.Kind == "asl:leader").OrderBy(item => item.Id, StringComparer.Ordinal);
+            && item.Kind == "asl:leader").OrderBy(item => item.Id, StringComparer.Ordinal));
 
     /// <summary>
     /// The phasing side's units that may still move this MPh: the moving stack itself while one moves; otherwise those that did
     /// not fire in the PFPh (A3.3, p. 47), are not broken, and are not a crew manning a Gun (C10, A21.13; ruling R24.4).
     /// </summary>
-    private IEnumerable<UnitInstance> MoveCandidates => state is null ? []
+    private IEnumerable<UnitInstance> MoveCandidates => SeenOnly(state is null ? []
         : state.Movement is { } movement ? movement.Vehicle ? [] : movement.Members.Select(state.Unit).OfType<UnitInstance>()
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && !unit.MovementEnded && !LiveFire.IsVehicle(unit)
             && GameState.Condition(unit, Conditions.Hidden) != ConditionState.True
             && (state.Location(unit.Id) is not null || (unit.Position is OffMapPosition && Live.Planner.EntryFor(state, unit) is { } entry && entry.Turn <= state.Turn))
             && GameState.Condition(unit, Conditions.Broken) != ConditionState.True
             && GameState.Condition(unit, Conditions.PrepFire) != ConditionState.True && GameState.Condition(unit, Conditions.Melee) != ConditionState.True
-            && GameState.Condition(unit, Conditions.Captured) != ConditionState.True && !state.NoMoveThisPlayerTurn.Contains(unit.Id)).OrderBy(unit => unit.Id, StringComparer.Ordinal);
+            && GameState.Condition(unit, Conditions.Captured) != ConditionState.True && !state.NoMoveThisPlayerTurn.Contains(unit.Id)).OrderBy(unit => unit.Id, StringComparer.Ordinal));
 
     /// <summary>
     /// The berserk units to charge now, with the Location each charges and its next steps (A15.43, A15.431), or why the model cannot
@@ -3268,9 +3285,9 @@ else if (state is not null)
     private string smokeAt = string.Empty;
 
     /// <summary>The checked movers that may attempt SMOKE grenades this MPh (A24.1): squads not yet tried; the planner reads their exponent.</summary>
-    private IEnumerable<UnitInstance> SmokePlacers => state is null ? []
+    private IEnumerable<UnitInstance> SmokePlacers => SeenOnly(state is null ? []
         : moveUnits.Select(id => state.Unit(id)).OfType<UnitInstance>().Where(unit => unit.Kind == "asl:squad" && !state.SmokeAttempts.Contains(unit.Id, StringComparer.Ordinal))
-            .OrderBy(unit => unit.Id, StringComparer.Ordinal);
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal));
 
     private Task ProposeSmoke()
     {
@@ -4162,9 +4179,9 @@ else if (state is not null)
     private string? SupportWeaponHolder => state?.Find(swWeapon) is EquipmentInstance { Holding: { Role: HoldingRole.Possessed } holding } ? holding.Holder : null;
 
     /// <summary>The units in the chosen SW's Location that could Recover or receive it.</summary>
-    private IEnumerable<UnitInstance> SupportWeaponUnits => state?.Location(swWeapon)?.Location is { } at
+    private IEnumerable<UnitInstance> SupportWeaponUnits => SeenOnly(state?.Location(swWeapon)?.Location is { } at
         ? state.At(at).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Id != SupportWeaponHolder && !LiveFire.IsVehicle(unit))
-        : [];
+        : []);
 
     private Task ProposeSupportWeapon(ActionDescriptor action)
     {
@@ -4191,10 +4208,10 @@ else if (state is not null)
         : [];
 
     /// <summary>The HS that could Recombine with the chosen one: of its definition, in its Location.</summary>
-    private IEnumerable<UnitInstance> RecombinePartners => state?.Unit(recombineOne) is { } one && state.Location(one.Id)?.Location is { } at
+    private IEnumerable<UnitInstance> RecombinePartners => SeenOnly(state?.Unit(recombineOne) is { } one && state.Location(one.Id)?.Location is { } at
         ? state.At(at).OfType<UnitInstance>().Where(other => other.Status == InstanceStatus.Active && other.Id != one.Id && other.Kind == "asl:half-squad"
             && other.Definition?.Definition == one.Definition?.Definition)
-        : [];
+        : []);
 
     private Task ProposeDeploy()
     {
