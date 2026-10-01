@@ -421,6 +421,11 @@ else if (state is not null && history?.Current is not null)
                     </p>
                 }
             }
+            @if (OverrunCloseCombat is { } overrun)
+            {
+                <BerserkOverrunCloseCombat Location="@overrun.Location.ToString()" Attackers="@overrun.Attackers" Smc="@overrun.Smc" SmcAttacks="@overrunSmcAttacks"
+                    OnSmcAttacks="@(value => overrunSmcAttacks = value)" OnPropose="@ProposeOverrunCloseCombat" />
+            }
             <div class="toolbar">
                 <InfantryMovementAction Movers="@MoveRows" Selected="@moveUnits" Draft="@MoveDraft" PushGun="@MovingGun?.Id"
                     OnToggle="@ToggleMover" OnDraftChanged="@SetMoveDraft" OnPropose="@ProposeMove" />
@@ -3092,6 +3097,38 @@ else if (state is not null && history?.Current is not null)
     /// </summary>
     private IReadOnlyList<(UnitInstance Unit, BoardLocation? Target, IReadOnlyList<BoardLocation> Next, string? Undecided)> Charges =>
         state is null ? [] : Live.Planner.Charges(state);
+
+    private bool overrunSmcAttacks = true;
+
+    /// <summary>
+    /// A berserk Infantry OVR onto a lone SMC whose CC comes now (A4.152, A15.432; ruling R27.3): its Location, the berserk units there, and the SMC.
+    /// </summary>
+    private (BoardLocation Location, IReadOnlyList<string> Attackers, string Smc)? OverrunCloseCombat =>
+        state is not null && Live.Planner.BerserkOverrunPending(state) is { } at
+            && state.At(at).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Captured) != ConditionState.True).ToArray() is { } here
+            && here.FirstOrDefault(unit => unit.Side != state.PhasingSide) is { } smc
+            ? (at, [.. here.Where(unit => unit.Side == state.PhasingSide && GameState.Condition(unit, Conditions.Berserk) == ConditionState.True).Select(unit => unit.Id)], smc.Id)
+            : null;
+
+    private Task ProposeOverrunCloseCombat()
+    {
+        if (OverrunCloseCombat is not { } overrun)
+        {
+            return Task.CompletedTask;
+        }
+
+        List<object> attacks = [new { attackers = overrun.Attackers, defenders = new[] { overrun.Smc } }];
+        if (overrunSmcAttacks)
+        {
+            attacks.Add(new { attackers = new[] { overrun.Smc }, defenders = overrun.Attackers });
+        }
+
+        return Propose(GameActions.CloseCombat, JsonSerializer.SerializeToElement(new Dictionary<string, object>
+        {
+            ["gameId"] = gameId, ["attemptId"] = Attempt("overrun-cc"), ["expectedRevision"] = (long)history!.Events.Count, ["location"] = overrun.Location.ToString(),
+            ["attacks"] = attacks,
+        }));
+    }
 
     private Task ProposeRally()
     {
