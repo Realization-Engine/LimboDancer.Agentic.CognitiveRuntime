@@ -669,4 +669,5 @@ Estimate: 3:25 (build 2:10), the ASL Card Play and Map Studio Redesign Plan. Kic
 | Visual check again: the German view's panel (F5, K5, M7; places; none checked; the hint), a Mop Up of K5 and the list after it; clean | 23:33 | 23:36 | 0:03 | |
 | Documents (design, review, rulings updated, the plan's status, backlog sections 31 and 38) while the full suite ran | 23:36 | 23:40 | 0:04 | |
 | Full local suite and ScenarioA1 (480): Authoring fails only the known architecture test; the action registry test needed the new action (fixed, rerun); Play 585, MapStudio 195, Units 406 | 23:36 | 00:16 | 0:40 | Waiting on the runs |
-
+| Merge gate: commit 52dd9c8, the Docker Linux check (every step exit 0; Authoring 167, Play 585, MapStudio 195, ScenarioA1 480), the chart supplement regeneration (same), merge into main, push | 00:16 | 00:41 | 0:25 | |
+| **Pass 24 total** | 22:29 | 00:41 | **2:12** | Estimate 3:25 (build 2:10); the build to the documents took 1:11, the full suite 0:40, the merge gate 0:25 |
