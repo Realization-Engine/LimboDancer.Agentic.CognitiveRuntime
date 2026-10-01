@@ -106,7 +106,7 @@ public sealed class BacklogPass17Tests
         foreach (var name in Cards)
         {
             var card = Card(name);
-            Assert.Equal("asl-scenario-a1@1.12.0", card.Catalog);
+            Assert.Equal("asl-scenario-a1@1.13.0", card.Catalog);
             Assert.Contains("registered rulebook", card.Source.Basis, StringComparison.Ordinal);
             Assert.Contains("paraphrased", card.Source.Adaptation[0], StringComparison.Ordinal);
         }

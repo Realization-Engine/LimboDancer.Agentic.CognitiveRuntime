@@ -101,7 +101,7 @@ public sealed class ConcealedEntryTests : IDisposable
             start = new
             {
                 label = "Village test",
-                catalog = "asl-scenario-a1@1.12.0",
+                catalog = "asl-scenario-a1@1.13.0",
                 boards = Bd01,
                 firstSide = "german",
                 sides = new[] { new { id = "german", nationality = "german" }, new { id = "russian", nationality = "russian" } },

@@ -130,7 +130,7 @@ public sealed class VehicleStepsTests : IDisposable
             start = new
             {
                 label = "Convoy",
-                catalog = "asl-scenario-a1@1.12.0",
+                catalog = "asl-scenario-a1@1.13.0",
                 boards = Bd01,
                 firstSide,
                 scenarioMonth = 7,
@@ -429,17 +429,34 @@ public sealed class VehicleStepsTests : IDisposable
     }
 
     [Fact]
-    public async Task ABerserkChargeAtAnEnemyVehicleEndsInPlace()
+    public async Task ABerserkChargeAtAnEnemyVehicleEntersItsLocationAndAttacksIt()
     {
-        // The berserk German squad in B9 has the Russian truck in B8 ADJACENT: CC and OVR against a vehicle are not built, so the charge
-        // is undecided and ends in place (rulings R25.3, R30.5); the MPh is not stuck.
-        await Setup("german", Squad("g1", "attacker-squad", "bd01:B9:0", "german", Conditions.Berserk), Vehicle("ru-t", "defender-truck", "bd01:B8:0", "russian"),
+        // A15.43 (ruling R27.2): the berserk German squad in B9 charges the Russian tank in B8 and enters its Location in the MPh; in the CCPh it
+        // attacks the tank in the sequential CC (A11.31): its side may not pass, and the CCPh may not end, until it has.
+        await Setup("german", Squad("g1", "attacker-squad", "bd01:B9:0", "german", Conditions.Berserk), Vehicle("ru-t", "defender-tank", "bd01:B8:0", "russian"),
             Vehicle("de-t", "attacker-truck", "bd01:A10:0", "german"));
         await Advance(2);
         var charge = Assert.Single(Planner().Charges(Current));
-        Assert.Contains("play.berserk-vehicle", charge.Undecided, StringComparison.Ordinal);
-        await Advance();
-        Assert.Equal("dfph", Current.Phase);
+        Assert.Equal([BoardLocation.Parse("bd01:B8:0")], charge.Next);
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G1,
+            to = "bd01:B8:0"
+        }));
+        Assert.Equal(BoardLocation.Parse("bd01:B8:0"), Current.Location("g1")!.Location);
+        while (Current.Phase != "ccph")
+        {
+            await Advance();
+        }
+
+        Refused(await Do(GameActions.AdvancePhase, NoRoll(), new
+        {
+        }), "play.cc-required");
+        Refused(await Do(GameActions.VehicleCloseCombat, NoRoll(), new
+        {
+            location = "bd01:B8:0",
+            pass = true
+        }), "play.cc-vehicle-berserk");
     }
 
     [Fact]

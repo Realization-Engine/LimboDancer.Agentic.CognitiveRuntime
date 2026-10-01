@@ -712,3 +712,19 @@ Estimate: 6:00 (build 4:45), the ASL Card Play and Map Studio Redesign Plan. Kic
 | Full local suite and ScenarioA1 (480): Authoring fails only the known architecture test; Play 606; MapStudio found two tests changed by the pass (the cards page now shows Armor Test first; a vehicle page test that had always stopped early on `data-bypass` now reaches the CC Reaction Fire panel, the DEFENDER's since pass 25): fixed, MapStudio rerun 212 | 13:51 | 14:24 | 0:33 | Documents written meanwhile |
 | Merge gate: commit b0c5d4f, the Docker Linux check (every step exit 0; Authoring 167, Play 606, MapStudio 212, ScenarioA1 480), the chart supplement regeneration (identical), merge into main (bc0e8f4; a first attempt left the branch's new files untracked, checked identical and removed), push | 14:24 | 14:46 | 0:22 | |
 | **Pass 26 total** | 12:10 | 14:46 | **2:36** | Estimate 6:00 (build 4:45); the build to the documents took 1:41, the full suite 0:33, the merge gate 0:22 |
+
+
+## Pass 27: Heat of Battle, Leader Creation, and berserk gaps
+
+Estimate: 5:15 (build 4:00), the ASL Card Play and Map Studio Redesign Plan. Kickoff on the user's go-ahead. Branch `feature/asl-backlog-pass-27`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Reading: plan pass 27, the backlog rows, rulings R10.7, R10.11, R10.15, R11.17, R15.2, R15.13; A25.8 to A25.85 and the National Capabilities Chart in the PDF (the survey of pass-27-prep reused) | 15:30 | 15:36 | 0:06 | |
+| Rulings R27.1 to R27.5 proposed with the six questions; the user agreed with every recommendation (one shared Axis Minor set with the nation per side, counter values now and the other A25.8 rules to the backlog, catalog 1.13.0, the companions' TCs beside the CC record, level-aware neighbours for the charge only, one pass) | 15:36 | 16:05 | 0:29 | Mostly waiting for the answers |
+| 27.5 handed to a background agent in a local clone (`.git/worktrees` is held, so no worktree): 14 P1 components and `CloseCombatComponentTests` | 16:05 | | | Runs alongside 27.1 to 27.4 |
+| 27.1: vocabulary 1.16.0 (`axis-minor`), palettes 1.1.0, 17 Axis Minor counters transcribed from the chart (NCC, LGR, CEX), catalog 1.13.0 rebuilt from its sources, the synthetic catalog, the re-pins (66 version strings, four packages' digest chains); Replacement and Battle Hardening chains (A25.84), Heat of Battle +3 and surrender on 10, Leader Creation drm 0 and unknown nationalities refused, a side's nation, No Quarter for Hungarians against Romanians, a card side's nation | 16:05 | 16:19 | 0:14 | |
+| 27.2: the charge's route by a forward search over Locations, stairwell levels, and Bypass lanes; the first moves of every shortest route; a charge into an enemy vehicle's Location and the berserk unit's vehicle CC required in the CCPh | 16:19 | 16:33 | 0:14 | A Gun crew's Location stays barred (CC with a crew is backlog row 120) |
+| 27.3: A.9 Random Selection among Dummies and real units in a charge; the berserk OVR's CC at once in the MPh (calculator, projector, planner gate, Melee after it) | 16:33 | 16:43 | 0:10 | The page parts wait for 27.5 |
+| 27.4: `FireFollowUps` (Spraying Fire's second Location, Encirclement, Fire Lane, a DC's thrower attack and removal) carried in the resume; a DC asks its owners' options | 16:43 | 16:48 | 0:05 | |
+| Tests: `ScenarioA1Pass27Tests` (4), `BacklogPass27Tests` (5), the DC choice test, two earlier tests updated (the pass 10 OVR, the vehicle charge); 30 pass | 16:48 | 16:56 | 0:08 | |

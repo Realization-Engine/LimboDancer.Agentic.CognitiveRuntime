@@ -122,7 +122,7 @@ public sealed class BacklogPass25Tests : IDisposable
     private Dictionary<string, object?> Start(string card) => new()
     {
         ["label"] = card,
-        ["catalog"] = "asl-scenario-a1@1.12.0",
+        ["catalog"] = "asl-scenario-a1@1.13.0",
         ["boards"] = Ids("bd04"),
         ["sides"] = Array.Empty<object>(),
         ["scenario"] = new

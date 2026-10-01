@@ -132,7 +132,7 @@ public sealed class OrdnanceStepsTests : IDisposable
             start = new
             {
                 label = "Ordnance",
-                catalog = "asl-scenario-a1@1.12.0",
+                catalog = "asl-scenario-a1@1.13.0",
                 boards = Bd01,
                 firstSide,
                 scenarioMonth = 7,

@@ -30,16 +30,24 @@ public static class ScenarioA1FieldPromotion
             return (null, $"{reasonPrefix}.leader-creation-not-applicable:{unit.Nationality}");
         }
 
-        var drm = new List<FireModifier>();
-        var nationality = unit.Nationality switch
+        // A18.2 (ruling R27.1): the table's nationality drm; a nationality it does not list (French, Axis Minor) has none, and a nationality the
+        // game has not reviewed is refused rather than given none.
+        int? nationality = unit.Nationality switch
         {
             "american" or "british" or "german" => -1,
             "russian" or "italian" => 1,
-            _ => 0,
+            "french" or "axis-minor" => 0,
+            _ => null,
         };
+        if (nationality is null)
+        {
+            return (null, $"{reasonPrefix}.leader-creation-nationality-unreviewed:{unit.Nationality}");
+        }
+
+        var drm = new List<FireModifier>();
         if (nationality != 0)
         {
-            drm.Add(new FireModifier("nationality:" + unit.Nationality, nationality, "A18.2"));
+            drm.Add(new FireModifier("nationality:" + unit.Nationality, nationality.Value, "A18.2"));
         }
 
         if (morale >= 8)

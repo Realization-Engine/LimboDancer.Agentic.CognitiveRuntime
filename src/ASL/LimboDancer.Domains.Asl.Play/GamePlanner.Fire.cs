@@ -502,40 +502,16 @@ public sealed partial class GamePlanner
                 return events;
             }
 
-            AddFireEvents(scope, attemptId, expected, actor, state, facts, targetSide, step, events, draw);
-            var record = events.LastOrDefault(item => item.Payload is FireResolved);
-            if (spray is not null && !events.Any(item => item.Payload is ChoicePending) && record?.Payload is FireResolved first && first.Rolls.TryGetValue("attack", out var attackRoll)
-                && events.Select(item => item.Payload).OfType<DiceRolled>().FirstOrDefault(item => item.Roll == attackRoll) is { } dice)
+            var followUps = new FireFollowUps(target.ToString())
             {
-                // A9.5: the second Location takes the same Original DR.
-                var sprayState = Replay([.. existing, .. events]).Current!;
-                var sprayTargetSide = spray.Targets!.FirstOrDefault(item => item.Friendly != true) is { } sprayed ? state.Unit(sprayed.UnitId!)!.Side : targetSide;
-                AddFireEvents(scope, attemptId, expected, actor, sprayState, spray, sprayTargetSide, step, events, draw,
-                    new ResumedRolls(new Dictionary<string, string>(StringComparer.Ordinal) { ["attack"] = attackRoll }, [("attack", dice.Values)]));
-            }
-
-            if (encircles is not null && record is not null && !events.Any(item => item.Payload is ChoicePending)
-                && Replay([.. existing, .. events]).Current is { } sealedState
-                && sealedState.At(target).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side == encircles))
-            {
-                events.Add(Event(scope, attemptId, events.Count + 1, expected, "encirclement-placed", new EncirclementPlaced(target, encircles, record.EventId), null, null,
-                    [record.EventId]));
-            }
-
-            // A9.22: no Fire Lane when the manning Infantry Cowered or the MG malfunctioned; the MG is marked First Fire.
-            if (lane is { } placed && !events.Any(item => item.Payload is ChoicePending) && record?.Payload is FireResolved laneRecord
-                && !(laneRecord.Resolution.TryGetProperty("arithmetic", out var laneArithmetic) && laneArithmetic.TryGetProperty("cowered", out var cowered) && cowered.GetBoolean())
-                && Replay([.. existing, .. events]).Current is { } laned && laned.Find(placed.Weapon) is EquipmentInstance weapon && !Is(weapon, Conditions.Malfunctioned))
-            {
-                events.Add(Event(scope, attemptId, events.Count + 1, expected, "fire-lane-placed", new FireLanePlaced(record.EventId, placed.Weapon, placed.Operator, placed.Entries),
-                    null, null, [record.EventId]));
-                if (!Is(weapon, Conditions.FirstFire))
-                {
-                    events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
-                        new ConditionsChanged(placed.Weapon, new Dictionary<string, ConditionState> { [Conditions.FirstFire] = ConditionState.True }), null, null, [record.EventId]));
-                }
-            }
-
+                Spray = spray,
+                Encircles = encircles,
+                LaneWeapon = lane?.Weapon,
+                LaneOperator = lane?.Operator,
+                LaneEntries = lane is { } declaredLane ? [.. declaredLane.Entries.Select(item => new FireFollowUps.LaneEntry(item.Location.ToString(), item.Fp, item.HindranceDrm))] : null,
+            };
+            AddFireEvents(scope, attemptId, expected, actor, state, facts, targetSide, step, events, draw, followUps: followUps);
+            AddFireFollowUps(scope, attemptId, expected, actor, existing, state, targetSide, step, events, draw, followUps);
             AddSniperAttacks(scope, attemptId, expected, actor, existing, events, draw);
             return events;
         }
@@ -629,22 +605,149 @@ public sealed partial class GamePlanner
             .Select(equipment => equipment.Id).Order(StringComparer.Ordinal)];
 
     /// <summary>
+    /// What follows a fire attack once its owners' options are answered (ruling R27.4): Spraying Fire's second Location on the same Original DR (A9.5),
+    /// the Encirclement it seals (A7.7), the Fire Lane it lays (A9.22), and a DC's attack on its thrower's Location and its removal (A23.6, A23.4).
+    /// A choice pending in the first attack carries it in its resume.
+    /// </summary>
+    internal sealed record FireFollowUps(string Target)
+    {
+        public FireAttack? Spray
+        {
+            get; init;
+        }
+
+        public string? Encircles
+        {
+            get; init;
+        }
+
+        public string? LaneWeapon
+        {
+            get; init;
+        }
+
+        public string? LaneOperator
+        {
+            get; init;
+        }
+
+        public IReadOnlyList<LaneEntry>? LaneEntries
+        {
+            get; init;
+        }
+
+        /// <summary>The DC removed after its attacks; null for other fire.</summary>
+        public string? DcCharge
+        {
+            get; init;
+        }
+
+        /// <summary>The thrower's Location a Thrown DC attacks next (A23.6); null once that attack is made, and for a Placed DC.</summary>
+        public string? DcThrower
+        {
+            get; init;
+        }
+
+        public sealed record LaneEntry(string Location, int Fp, int HindranceDrm);
+    }
+
+    /// <summary>The follow-ups of an attack whose record is the last in <paramref name="events"/> (ruling R27.4); nothing while a choice is pending.</summary>
+    private void AddFireFollowUps(GameScope scope, string attemptId, long expected, string actor, IReadOnlyList<GameEvent> existing, GameState state, string targetSide,
+        int? step, List<GameEvent> events, Func<RollRequest, RollResult> draw, FireFollowUps followUps)
+    {
+        if (events.Any(item => item.Payload is ChoicePending))
+        {
+            return;
+        }
+
+        var target = BoardLocation.Parse(followUps.Target);
+        var record = events.LastOrDefault(item => item.Payload is FireResolved);
+        if (followUps.Spray is { } spray && record?.Payload is FireResolved first && first.Rolls.TryGetValue("attack", out var attackRoll)
+            && existing.Concat(events).Select(item => item.Payload).OfType<DiceRolled>().FirstOrDefault(item => item.Roll == attackRoll) is { } dice)
+        {
+            // A9.5: the second Location takes the same Original DR.
+            var sprayState = Replay([.. existing, .. events]).Current!;
+            var sprayTargetSide = spray.Targets!.FirstOrDefault(item => item.Friendly != true) is { } sprayed ? state.Unit(sprayed.UnitId!)!.Side : targetSide;
+            AddFireEvents(scope, attemptId, expected, actor, sprayState, spray, sprayTargetSide, step, events, draw,
+                new ResumedRolls(new Dictionary<string, string>(StringComparer.Ordinal) { ["attack"] = attackRoll }, [("attack", dice.Values)]), followUps with
+                {
+                    Spray = null
+                });
+            if (events.Any(item => item.Payload is ChoicePending))
+            {
+                return;
+            }
+        }
+
+        if (followUps.Encircles is { } encircles && record is not null && Replay([.. existing, .. events]).Current is { } sealedState
+            && sealedState.At(target).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side == encircles))
+        {
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "encirclement-placed", new EncirclementPlaced(target, encircles, record.EventId), null, null,
+                [record.EventId]));
+        }
+
+        // A9.22: no Fire Lane when the manning Infantry Cowered or the MG malfunctioned; the MG is marked First Fire.
+        if (followUps is { LaneWeapon: { } laneWeapon, LaneOperator: { } laneOperator, LaneEntries: { } laneEntries } && record?.Payload is FireResolved laneRecord
+            && !(laneRecord.Resolution.TryGetProperty("arithmetic", out var laneArithmetic) && laneArithmetic.TryGetProperty("cowered", out var cowered) && cowered.GetBoolean())
+            && Replay([.. existing, .. events]).Current is { } laned && laned.Find(laneWeapon) is EquipmentInstance weapon && !Is(weapon, Conditions.Malfunctioned))
+        {
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "fire-lane-placed", new FireLanePlaced(record.EventId, laneWeapon, laneOperator,
+                [.. laneEntries.Select(item => new FireLaneEntry(BoardLocation.Parse(item.Location), item.Fp, item.HindranceDrm))]), null, null, [record.EventId]));
+            if (!Is(weapon, Conditions.FirstFire))
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
+                    new ConditionsChanged(laneWeapon, new Dictionary<string, ConditionState> { [Conditions.FirstFire] = ConditionState.True }), null, null, [record.EventId]));
+            }
+        }
+
+        if (followUps.DcCharge is not { } chargeId)
+        {
+            return;
+        }
+
+        // A23.6 (ruling R15.3): a Thrown DC that did not malfunction attacks its thrower's Location next.
+        var malfunctioned = record?.Payload is FireResolved dcRecord && dcRecord.Resolution.TryGetProperty("demolitionChargeMalfunctioned", out var flag)
+            && flag.ValueKind == JsonValueKind.True;
+        if (followUps.DcThrower is { } throwerText && !malfunctioned && Replay([.. existing, .. events]).Current is { } after
+            && BoardLocation.Parse(throwerText) is var own && LiveFire.DemolitionChargeFromState(after, chargeId, FireDemolitionCharge.Thrower, own).Attack is { } back
+            && back.DemolitionCharge?.UserId is { } user && after.Unit(user) is { } thrower)
+        {
+            AddFireEvents(scope, attemptId, expected, actor, after, HeatOfBattleFacts(after, back with
+            {
+                Range = 0,
+                SameLevel = true,
+                TargetTerrain = ReadLocation(after, own) is { } ownRead ? TerrainKey(ownRead) : null,
+            }), thrower.Side, null, events, draw, followUps: followUps with
+            {
+                DcThrower = null
+            });
+            if (events.Any(item => item.Payload is ChoicePending))
+            {
+                return;
+            }
+        }
+
+        events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(chargeId), ScenarioA1FirePackage.Identity.ToString(), null));
+        AddSniperAttacks(scope, attemptId, expected, actor, existing, events, draw);
+    }
+
+    /// <summary>
     /// Draws the rolls the package asks for, one at a time, and adds the attack's events: the dice, the fire record (withheld
     /// from the firing side when it would identify unseen targets the attack leaves unaffected), its public report, the
     /// effects on the targets, the FPF firers' NMC, the MGs' malfunctions and markers, the fire markers, and the Residual FP
     /// it leaves.
     /// </summary>
     private void AddFireEvents(GameScope scope, string attemptId, long expected, string actor, GameState state, FireAttack facts, string targetSide,
-        int? step, List<GameEvent> events, Func<RollRequest, RollResult> draw, ResumedRolls? resumed = null)
+        int? step, List<GameEvent> events, Func<RollRequest, RollResult> draw, ResumedRolls? resumed = null, FireFollowUps? followUps = null)
     {
         var reference = FireReference.Value;
         var package = ScenarioA1FirePackage.Identity.ToString();
 
-        // Ruling R5.8: the owners' options are asked for as the attack reaches them; a resumed attack starts from the rolls it drew.
-        // A DC's attack takes every option (ruling R15.2), so its thrower's Location and its removal follow in the same commit.
+        // Ruling R5.8: the owners' options are asked for as the attack reaches them; a resumed attack starts from the rolls it drew. A DC's attack
+        // asks them too (ruling R27.4): its thrower's Location and its removal follow once they are answered.
         facts = facts with
         {
-            Choices = facts.Choices ?? (facts.DemolitionCharge is null ? new Dictionary<string, string>(StringComparer.Ordinal) : null)
+            Choices = facts.Choices ?? new Dictionary<string, string>(StringComparer.Ordinal)
         };
         var rollIds = new Dictionary<string, string>(resumed?.RollIds ?? new Dictionary<string, string>(), StringComparer.Ordinal);
         var rolls = new FireRolls(null, null, null, null, null);
@@ -679,6 +782,12 @@ public sealed partial class GamePlanner
                 if (step is { } movementStep)
                 {
                     resume["step"] = movementStep;
+                }
+
+                // Ruling R27.4: what follows the attack (Spraying Fire's second Location, Encirclement, a Fire Lane, a DC's thrower and removal) resumes too.
+                if (followUps is not null)
+                {
+                    resume["followUps"] = JsonNode.Parse(JsonSerializer.Serialize(followUps, LiveFire.Json));
                 }
 
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "choice-pending", Pending(state, choiceKey, resume), package, null));

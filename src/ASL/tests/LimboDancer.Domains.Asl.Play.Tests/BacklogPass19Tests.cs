@@ -70,7 +70,7 @@ public sealed class BacklogPass19Tests : IDisposable
     private static Dictionary<string, object?> Start(string card, string? firstSide = null) => new()
     {
         ["label"] = card,
-        ["catalog"] = "asl-scenario-a1@1.12.0",
+        ["catalog"] = "asl-scenario-a1@1.13.0",
         ["boards"] = Bd01,
         ["firstSide"] = firstSide,
         ["sides"] = Array.Empty<object>(),

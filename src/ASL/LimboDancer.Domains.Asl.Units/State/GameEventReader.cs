@@ -130,6 +130,7 @@ public static class GameEventReader
                     var sideId = fields.RequiredString(side, "id", sidePath);
                     var nationality = fields.RequiredString(side, "nationality", sidePath);
                     var edge = fields.OptionalString(side, "friendlyEdge", sidePath);
+                    var nation = fields.OptionalString(side, "nation", sidePath);
                     if (edge is not null && !SideState.Edges.Contains(edge, StringComparer.Ordinal))
                     {
                         diagnostics.Add(UnitDiagnostic.Error(Code, $"'{edge}' is not a map edge ({string.Join(", ", SideState.Edges)}).", sidePath));
@@ -150,6 +151,7 @@ public static class GameEventReader
                         sides.Add(new SideState(sideId, nationality, fields.OptionalInteger(side, "elr", sidePath), fields.OptionalInteger(side, "san", sidePath))
                         {
                             FriendlyEdge = edge,
+                            Nation = nation,
                             Groups = groups,
                         });
                     }

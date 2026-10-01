@@ -407,9 +407,11 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.invalid-arguments: CC names its Location and its attacks (which may be none)");
         }
 
-        if (state.Phase != "ccph")
+        // A4.152, A15.432 (ruling R27.3): the CC of a berserk Infantry OVR onto a lone SMC is resolved at once in the MPh.
+        var overrun = state.Phase == "mph" && BerserkOverrunPending(state) == location;
+        if (state.Phase != "ccph" && !overrun)
         {
-            return Refused(scope, label, expected, "play.cc-phase: CC is resolved in the CCPh (A3.8, A11.1)");
+            return Refused(scope, label, expected, "play.cc-phase: CC is resolved in the CCPh, or in the MPh after a berserk Infantry OVR onto a lone SMC (A3.8, A11.1, A4.152)");
         }
 
         // A11.31 (ruling R11.16): CC in a Location holding a vehicle is sequential, one attack at a time, with the vehicle CC action.
@@ -435,6 +437,19 @@ public sealed partial class GamePlanner
                 Yield = Strings(item, "yield").ToArray() is { Length: > 0 } yielded ? yielded : null,
                 Guard = Text(item, "guard", out var guard) ? guard : null,
             });
+        }
+
+        // A15.432 (ruling R27.3): every berserk unit of the OVR attacks the SMC; the SMC may attack them back; nothing else happens in that CC.
+        if (overrun)
+        {
+            var berserkHere = state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide
+                && Is(unit, Conditions.Berserk)).Select(unit => unit.Id).ToHashSet(StringComparer.Ordinal);
+            var phasing = attacks.Where(item => item.Attackers!.All(berserkHere.Contains)).ToArray();
+            if (phasing.Length != 1 || !phasing[0].Attackers!.ToHashSet(StringComparer.Ordinal).SetEquals(berserkHere) || attacks.Count > 2
+                || attacks.Any(item => item.Capture == true) || arguments.TryGetProperty("withdrawals", out _) || arguments.TryGetProperty("infiltrations", out _))
+            {
+                return Refused(scope, label, expected, "play.cc-overrun: in the OVR's CC every berserk unit attacks the SMC together, and the SMC may attack them; no capture, withdrawal, or Infiltration (A4.152, A15.432, A20.21)");
+            }
         }
 
         // A11.14: the SMC stacking is declared once, before either side's attacks; the ambushed side's round keeps the first round's.
@@ -499,7 +514,7 @@ public sealed partial class GamePlanner
 
         var terrain = ReadLocation(state, location) is { } read ? TerrainKey(read) : null;
         var (facts, reason) = LiveCloseCombat.FromState(state, location, terrain, attacks, stacking, withdrawals, Text(arguments, "round", out var round) ? round : null,
-            infiltrations, handToHand);
+            infiltrations, handToHand, overrun);
         if (facts is null)
         {
             return Refused(scope, label, expected, reason!);
@@ -582,6 +597,20 @@ public sealed partial class GamePlanner
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, type, payload, package, null, [recordId]));
             }
 
+            // A4.152 (ruling R27.3): an SMC that survives the OVR's CC and the units that OVR it are held in Melee, to fight again in the CCPh.
+            if (overrun && Replay([.. existing, .. events]).Current is { } after)
+            {
+                var left = after.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && !Is(unit, Conditions.Captured)).ToArray();
+                if (left.Select(unit => unit.Side).Distinct(StringComparer.Ordinal).Count() > 1)
+                {
+                    foreach (var unit in left.OrderBy(unit => unit.Id, StringComparer.Ordinal))
+                    {
+                        events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
+                            new ConditionsChanged(unit.Id, new Dictionary<string, ConditionState> { [Conditions.Melee] = ConditionState.True }), package, null, [recordId]));
+                    }
+                }
+            }
+
             return events;
         }
 
@@ -654,6 +683,12 @@ public sealed partial class GamePlanner
             && state.Location(unit.Id) is not null).ToArray();
         foreach (var location in active.Select(unit => state.Location(unit.Id)!.Location).Distinct().OrderBy(item => item.ToString(), StringComparer.Ordinal))
         {
+            // A15.43, A11.31 (ruling R27.2): a berserk unit that charged a vehicle attacks it in the Location's sequential CC.
+            if (BerserkOwingVehicleAttack(state, location, null) is { } owing)
+            {
+                return $"play.cc-required: {owing.Id} is berserk with a Known enemy vehicle in {location}, so it attacks the vehicle in CC before the CCPh ends (A15.43, A11.31)";
+            }
+
             if (state.CloseCombats.Any(item => item.Location == location))
             {
                 continue;
@@ -661,7 +696,7 @@ public sealed partial class GamePlanner
 
             var here = active.Where(unit => state.Location(unit.Id)!.Location == location).ToArray();
 
-            // CC with a crew (ruling R24.3) or a vehicle (ruling R25.10) is not reviewed, so it cannot be required.
+            // CC with a crew (ruling R24.3) is not reviewed, so it cannot be required; a Location holding a vehicle has its sequential CC (A11.31).
             if (here.Any(unit => vocabulary.IsA(unit.Kind, "asl:crew") || LiveFire.IsVehicle(unit)))
             {
                 continue;
@@ -813,9 +848,8 @@ public sealed partial class GamePlanner
         state.Units.Any(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian == unit.Id);
 
     /// <summary>
-    /// Why a berserk unit may not step into a Location (A15.431, A15.432, A20.55): it holds prisoners (CC with prisoners present is pass 14), a concealed
-    /// or hidden enemy unit or a Dummy (concealment in CC is not reviewed), or, as the charge's target, only a lone enemy SMC (an
-    /// Infantry OVR, not reviewed). Null when the step is allowed.
+    /// Why a berserk unit may not step into a Location (A15.431, A15.432): it holds a Gun's crew, whose CC is not built (backlog). A charge at a vehicle
+    /// enters its Location for the sequential CC there (ruling R27.2). Null when the step is allowed.
     /// </summary>
     private string? ChargeBarred(GameState state, string side, BoardLocation to)
     {
@@ -827,11 +861,6 @@ public sealed partial class GamePlanner
         if (enemies.Any(unit => vocabulary.IsA(unit.Kind, "asl:crew")))
         {
             return $"play.berserk-crew: a charge into {to}, which holds a Gun's crew, is CC with a crew, which is not reviewed (C11, R24.3); the charge ends in place (ruling R30.5)";
-        }
-
-        if (enemies.FirstOrDefault(LiveFire.IsVehicle) is { } vehicle)
-        {
-            return $"play.berserk-vehicle: a charge into {to}, which holds the enemy vehicle {vehicle.Id}, is CC or OVR against a vehicle (A11.5, D7), which is not reviewed; the charge ends in place (rulings R25.3, R30.5)";
         }
 
         return null;
@@ -1265,21 +1294,115 @@ public sealed partial class GamePlanner
         { } entry => entry.HalfMf,
     };
 
+    /// <summary>A step of a berserk charge (A15.431; ruling R27.2): the Location charged, the least half MF of the step, whether it may be taken
+    /// as an ordinary step, and the Bypass lanes (hexsides, lowercase, comma-separated) it may be taken in.</summary>
+    private sealed record ChargeStep(BoardLocation Target, int HalfMf, bool Plain, IReadOnlyList<string> Lanes);
+
+    /// <summary>A node of a charge's route (ruling R27.2): a Location, or an obstacle hex in Bypass with the hexside entered by and the lane.</summary>
+    private readonly record struct ChargeNode(BoardLocation At, HexsideDirection? Entered, string? Lane);
+
+    /// <summary>A first move of a charge's route: the Location entered, the Bypass lane when it enters Bypass, and its half MF.</summary>
+    private readonly record struct ChargeMove(BoardLocation To, string? Lane, int HalfMf);
+
+    /// <summary>A Bypass lane's key: its hexsides, lowercase, comma-separated.</summary>
+    private static string LaneKey(IEnumerable<HexsideDirection> lane) => string.Join(",", lane.Select(side => side.ToString().ToLowerInvariant()));
+
+    private static List<HexsideDirection> Lane(string key) => [.. key.Split(',').Select(name => Enum.Parse<HexsideDirection>(name, ignoreCase: true))];
+
     /// <summary>
-    /// The steps a berserk stack may take toward the nearest Known enemy unit in its LOS (A15.43, A15.431): the first step of each
-    /// shortest route in MF to that unit's Location, over reviewed terrain, around other Locations holding enemy units. Equidistant
-    /// targets are the ATTACKER's choice, so their steps are all allowed. With no Known enemy unit in LOS, the charge keeps to the
-    /// Location it charged (<paramref name="previous"/>). Terrain the game refuses to enter is on no route (ruling R10.15); a route never
-    /// counts Bypass, a recorded deviation.
+    /// The Locations a charge may step to from a Location (B23.4, B23.421; ruling R27.2): the ADJACENT hexes at ground level and, from an upper
+    /// level, at that level; and the levels above and below in the same hex. Which of them can be entered, and at what cost, is the movement
+    /// rules' (rulings R10.1 to R10.3).
     /// </summary>
-    private (IReadOnlyDictionary<BoardLocation, (BoardLocation Target, int HalfMf)> Steps, BoardLocation? Target, string? Undecided) ChargeSteps(GameState state,
-        string side, BoardLocation from, BoardLocation? previous)
+    private IEnumerable<BoardLocation> ChargeNeighbors(GameState state, BoardLocation at)
     {
+        foreach (var hex in Neighbors(state, at))
+        {
+            yield return hex;
+            if (at.Level != 0)
+            {
+                yield return hex with
+                {
+                    Level = at.Level
+                };
+            }
+        }
+
+        foreach (var level in HexLevels(state, at).Where(level => Math.Abs(level - at.Level) == 1))
+        {
+            yield return at with
+            {
+                Level = level
+            };
+        }
+    }
+
+    /// <summary>
+    /// The moves out of a node of a charge's route (A15.431, A4.3, A4.31; ruling R27.2): from a Location, each step the movement rules allow and each
+    /// Bypass of an ADJACENT woods or building hex along one or two of its hexsides; from Bypass, the steps out through the far vertex.
+    /// </summary>
+    private IEnumerable<(ChargeNode Node, ChargeMove Move)> ChargeEdges(GameState state, UnitInstance[] movers, ChargeNode node)
+    {
+        if (node.Lane is { } key)
+        {
+            var lane = Lane(key);
+            var turn = ((int)lane[0] - (int)node.Entered!.Value + 6) % 6;
+            var far = (HexsideDirection)(((int)lane[^1] + turn) % 6);
+            foreach (var side in new[] { lane[^1], far }.Distinct())
+            {
+                if (Across(state, node.At, side) is { } exit && exit.Level == 0 && PlayableBar(state, exit) is null && EntryCost(state, node.At, exit) is { } cost)
+                {
+                    yield return (new ChargeNode(exit, null, null), new ChargeMove(exit, null, cost));
+                }
+            }
+
+            yield break;
+        }
+
+        foreach (var next in ChargeNeighbors(state, node.At).Where(at => PlayableBar(state, at) is null))
+        {
+            if (EntryCost(state, node.At, next) is { } cost)
+            {
+                yield return (new ChargeNode(next, null, null), new ChargeMove(next, null, cost));
+            }
+
+            if (node.At.Level != 0 || next.Level != 0 || ReadLocation(state, node.At) is not { } fromRead || SideToward(state, next, node.At) is not { } side)
+            {
+                continue;
+            }
+
+            var wall = SideToward(state, node.At, next) is { } toward ? WallOn(HexsideAt(state, node.At, toward)) : null;
+            foreach (var turn in new[] { 1, 5 })
+            {
+                foreach (var length in new[] { 1, 2 })
+                {
+                    List<HexsideDirection> lane = [.. Enumerable.Range(1, length).Select(index => (HexsideDirection)(((int)side + (turn * index)) % 6))];
+                    if (BypassStep(state, movers, next, side, fromRead.Hex.BaseLevel, wall, lane).Entry is { } entry)
+                    {
+                        yield return (new ChargeNode(next, side, LaneKey(lane)), new ChargeMove(next, LaneKey(lane), entry.HalfMf));
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// The steps a berserk stack may take toward the nearest Known enemy unit in its LOS (A15.43, A15.431): the first move of each shortest route
+    /// in MF to that unit's Location, over the entries the game allows, Bypass lanes, stairwells, and upper levels (ruling R27.2), around other
+    /// Locations holding enemy units. Equidistant targets and routes are the ATTACKER's choice, so their steps are all allowed. With no Known enemy
+    /// unit in LOS, the charge keeps to the Location it charged. <paramref name="current"/> is the stack's move this MPh, when the movers are in it.
+    /// </summary>
+    private (IReadOnlyDictionary<BoardLocation, ChargeStep> Steps, BoardLocation? Target, string? Undecided) ChargeSteps(GameState state,
+        UnitInstance[] movers, BoardLocation from, MovementState? current)
+    {
+        var side = movers[0].Side;
+        var previous = current?.Charge;
+        var none = new Dictionary<BoardLocation, ChargeStep>();
         var enemies = state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side != side && KnownEnemy(unit))
             .Select(unit => state.Location(unit.Id)?.Location).OfType<BoardLocation>().Distinct().ToArray();
         if (enemies.Contains(from))
         {
-            return (new Dictionary<BoardLocation, (BoardLocation, int)>(), from, null);
+            return (none, from, null);
         }
 
         var inLos = enemies.Where(location => Los(state, from, location) is { Status: LosStatus.Clear }).ToArray();
@@ -1297,7 +1420,7 @@ public sealed partial class GamePlanner
             var distances = inLos.Select(location => (location, Distance: HexDistance(state, from, location))).ToArray();
             if (distances.Any(item => item.Distance is null))
             {
-                return (new Dictionary<BoardLocation, (BoardLocation, int)>(), null, "play.charge-undecided: a distance to a Known enemy unit cannot be read");
+                return (none, null, "play.charge-undecided: a distance to a Known enemy unit cannot be read");
             }
 
             var nearest = distances.Min(item => item.Distance!.Value);
@@ -1309,35 +1432,45 @@ public sealed partial class GamePlanner
         }
         else
         {
-            return (new Dictionary<BoardLocation, (BoardLocation, int)>(), null, null);
+            return (none, null, null);
         }
 
-        var steps = new Dictionary<BoardLocation, (BoardLocation Target, int HalfMf)>();
+        // A4.32 (ruling R27.2): a stack in Bypass starts from its lane.
+        var start = new ChargeNode(from, null, null);
+        if (current is { Bypass: { Count: > 0 } lane } && current.Location == from && movers.All(unit => current.Movers.Contains(unit.Id, StringComparer.Ordinal))
+            && BypassEntered(state, from, current.From, lane) is { } entered)
+        {
+            start = new ChargeNode(from, entered, LaneKey(lane));
+        }
+
+        var steps = new Dictionary<BoardLocation, ChargeStep>();
         var undecided = new List<string>();
         foreach (var target in targets)
         {
             var blocked = enemies.Where(location => location != target).ToHashSet();
-            // Ruling R10.15: every entry the game allows is costed, so the shortest route is decided; terrain it refuses is on no route.
-            var exact = RouteCosts(state, target, blocked, lowerBound: false);
-            if (!exact.TryGetValue(from, out var best))
+            if (ChargeFirstMoves(state, movers, start, target, blocked) is not { } moves)
             {
                 undecided.Add($"play.charge-no-route: no route the game allows leads from {from} to {target}; the charge ends in place (A15.431)");
                 continue;
             }
 
-            foreach (var next in Neighbors(state, from).Where(at => PlayableBar(state, at) is null))
+            foreach (var move in moves.OrderBy(item => item.To.ToString(), StringComparer.Ordinal))
             {
-                if (EntryCost(state, from, next) is { } cost && exact.TryGetValue(next, out var rest) && cost + rest == best && !steps.ContainsKey(next))
+                // A step the model cannot take leaves the charge undecided, so it may end in place (ruling R30.5).
+                if (ChargeBarred(state, side, move.To) is { } barred)
                 {
-                    // A step the model cannot take leaves the charge undecided, so it may end in place (ruling R30.5).
-                    if (ChargeBarred(state, side, next) is { } barred)
-                    {
-                        undecided.Add(barred);
-                        continue;
-                    }
-
-                    steps[next] = (target, cost);
+                    undecided.Add(barred);
+                    continue;
                 }
+
+                var known = steps.GetValueOrDefault(move.To);
+                IReadOnlyList<string> lanes = known?.Lanes ?? [];
+                if (move.Lane is { } key && !lanes.Contains(key))
+                {
+                    lanes = [.. lanes, key];
+                }
+
+                steps[move.To] = new ChargeStep(known?.Target ?? target, Math.Min(known?.HalfMf ?? int.MaxValue, move.HalfMf), (known?.Plain ?? false) || move.Lane is null, lanes);
             }
         }
 
@@ -1347,42 +1480,42 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>
-    /// The least half MF from each Location to a target Location (A15.431: the shortest route in MF), by Dijkstra from the target
-    /// over entry costs; Locations holding other enemy units are not passed through. With <paramref name="lowerBound"/> an entry
-    /// the review does not decide costs one MF, the least any entry costs, so the result bounds every route from below.
+    /// The first moves of every shortest route in MF from a node to a target Location (A15.431; ruling R27.2), by Dijkstra over the charge's moves;
+    /// Locations holding other enemy units are not passed through. Null when no route reaches the target.
     /// </summary>
-    private Dictionary<BoardLocation, int> RouteCosts(GameState state, BoardLocation target, HashSet<BoardLocation> blocked, bool lowerBound)
+    private HashSet<ChargeMove>? ChargeFirstMoves(GameState state, UnitInstance[] movers, ChargeNode start, BoardLocation target, HashSet<BoardLocation> blocked)
     {
-        var best = new Dictionary<BoardLocation, int> { [target] = 0 };
-        var queue = new PriorityQueue<BoardLocation, int>();
-        queue.Enqueue(target, 0);
+        var best = new Dictionary<ChargeNode, int> { [start] = 0 };
+        var firsts = new Dictionary<ChargeNode, HashSet<ChargeMove>> { [start] = [] };
+        var done = new HashSet<ChargeNode>();
+        var queue = new PriorityQueue<ChargeNode, int>();
+        queue.Enqueue(start, 0);
+        var goal = new ChargeNode(target, null, null);
         while (queue.TryDequeue(out var node, out var cost))
         {
-            if (cost > best[node] || (node != target && blocked.Contains(node)))
+            if (!done.Add(node) || node == goal || (node != start && node.Lane is null && blocked.Contains(node.At)))
             {
                 continue;
             }
 
-            // A2.1 (ruling R20.6; referee, pass 20): a charge's route stays within the playable area.
-            foreach (var neighbor in Neighbors(state, node).Where(at => PlayableBar(state, at) is null))
+            foreach (var (next, move) in ChargeEdges(state, movers, node))
             {
-                // Entering node from neighbor.
-                var entry = EntryCost(state, neighbor, node) ?? (lowerBound ? 2 : (int?)null);
-                if (entry is not { } value)
+                var total = cost + Math.Max(1, move.HalfMf);
+                HashSet<ChargeMove> via = node == start ? [move] : firsts[node];
+                if (total < best.GetValueOrDefault(next, int.MaxValue))
                 {
-                    continue;
+                    best[next] = total;
+                    firsts[next] = [.. via];
+                    queue.Enqueue(next, total);
                 }
-
-                var total = cost + value;
-                if (total < best.GetValueOrDefault(neighbor, int.MaxValue))
+                else if (total == best[next] && !done.Contains(next))
                 {
-                    best[neighbor] = total;
-                    queue.Enqueue(neighbor, total);
+                    firsts[next].UnionWith(via);
                 }
             }
         }
 
-        return best;
+        return firsts.TryGetValue(goal, out var found) && found.Count > 0 ? found : null;
     }
 
     /// <summary>
@@ -1403,8 +1536,8 @@ public sealed partial class GamePlanner
         foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && Is(unit, Conditions.Berserk)
             && !Is(unit, Conditions.Melee) && !unit.MovementEnded && state.Location(unit.Id) is not null).OrderBy(unit => unit.Id, StringComparer.Ordinal))
         {
-            var (steps, target, undecided) = ChargeSteps(state, unit.Side, state.Location(unit.Id)!.Location,
-                state.Movement?.Members.Contains(unit.Id) == true ? state.Movement.Charge : null);
+            var (steps, target, undecided) = ChargeSteps(state, [unit], state.Location(unit.Id)!.Location,
+                state.Movement?.Members.Contains(unit.Id) == true ? state.Movement : null);
             if (must.Contains(unit))
             {
                 charges.Add((unit, steps.Values.First().Target, [.. steps.Keys.OrderBy(item => item.ToString(), StringComparer.Ordinal)], null));
@@ -1425,7 +1558,7 @@ public sealed partial class GamePlanner
     private IReadOnlyList<UnitInstance> MustCharge(GameState state) =>
         [.. state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && Is(unit, Conditions.Berserk) && !Is(unit, Conditions.Melee)
             && !unit.MovementEnded && state.Location(unit.Id) is { } at
-            && ChargeSteps(state, unit.Side, at.Location, state.Movement?.Members.Contains(unit.Id) == true ? state.Movement.Charge : null) is { Steps.Count: > 0 } charge
+            && ChargeSteps(state, [unit], at.Location, state.Movement?.Members.Contains(unit.Id) == true ? state.Movement : null) is { Steps.Count: > 0 } charge
             && MfAllotment(state, unit, unit.DoubleTimeMf, Is(unit, Conditions.Cx)) is { } allowance
             && charge.Steps.Values.Any(step => (allowance * 2) - (unit.MfSpent * 2) - (unit.HalfMfSpent ? 1 : 0) >= step.HalfMf))];
 }
