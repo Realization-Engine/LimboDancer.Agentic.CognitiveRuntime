@@ -639,3 +639,15 @@ Estimate: 5:25 (build 4:10), the ASL Card Play and Map Studio Redesign Plan. Kic
 | Full local suite and ScenarioA1 (480): Authoring fails only the known architecture test; Play 573, MapStudio 192, Units 406 | 20:37 | 21:12 | 0:35 | Waiting on the runs |
 | Merge gate: commit c90cada, push, the Docker Linux check (every step exit 0; Authoring 167, Play 573, MapStudio 192, ScenarioA1 480), the chart supplement regeneration (same), merge into main, push | 21:12 | 21:35 | 0:23 | |
 | **Pass 23 total** | 19:19 | 21:35 | **2:16** | Estimate 5:25; the reading (0:31) ran earlier, during the style fix's test runs |
+
+## Fix: pass 23 demo, the pickers the reviews missed
+
+Found in the Studio demo of pass 23 on the user's request, branch `fix/pass23-demo-pickers`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Demo in the Studio: a fresh Gambit game (`p23-demo`) through setup, the hand-over, the British view while the Germans set up, the non-OB "?", and play; found the British view offering the German Opportunity Fire list, with the two units under the Y10 "?" | 21:37 | 21:42 | 0:05 | |
+| Fix: every action's unit list passes through one `SeenOnly` filter (ten lists); the Opportunity Fire and Advance panels only for the phasing side and the adjudicator; checked again in the Studio (the British view in the PFPh and the APh); a page test; MapStudio 192 pass | 21:42 | 21:50 | 0:08 | |
+| Full local suite and ScenarioA1 (480): Authoring fails only the known architecture test; Play 573, MapStudio 192. No Docker check: a UI fix seen in the Studio (the user's rule) | 21:51 | 22:22 | 0:31 | Waiting on the runs |
+| Merge into main (--no-ff), push, GitHub Actions checked | 22:22 | 22:24 | 0:02 | |
+| **Fix total** | 21:37 | 22:24 | **0:47** | |

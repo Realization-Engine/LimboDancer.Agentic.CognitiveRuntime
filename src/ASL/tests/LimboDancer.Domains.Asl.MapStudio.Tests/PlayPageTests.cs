@@ -150,6 +150,12 @@ public sealed class PlayPageTests : IDisposable
 
         page.ViewAs("german");
         Commit(page, "#propose-advance");
+
+        // The Studio demo of pass 23: Opportunity Fire is the phasing side's choice, so the other side sees none of it.
+        Assert.NotEmpty(page.FindAll("#propose-opportunity"));
+        page.ViewAs("russian");
+        Assert.Empty(page.FindAll("#propose-opportunity"));
+        page.ViewAs("german");
         Commit(page, "#propose-advance");
         Assert.Contains("Movement Phase", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
         Assert.NotEmpty(page.FindAll(".move-unit"));
