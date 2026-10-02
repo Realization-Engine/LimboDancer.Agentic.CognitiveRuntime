@@ -76,6 +76,7 @@ public sealed class PlayPageTests : IDisposable
         context.Services.AddSingleton(live);
         context.Services.AddSingleton(games);
         context.Services.AddSingleton(new GameMaps(boards, maps, new RenderCache(), library, games));
+        context.UseViewport();
         context.Services.AddSingleton(new StudioLos(boards, maps, options));
     }
 
@@ -123,7 +124,7 @@ public sealed class PlayPageTests : IDisposable
         page.Find("#play-perspective").Change(Perspective.AdjudicatorName);
         Assert.Contains("Hand the screen to the adjudicator", page.Find("#play-handover-title").TextContent, StringComparison.Ordinal);
         Assert.Empty(page.FindAll("#play-units"));
-        Assert.Empty(page.FindAll("#play-summary"));
+        Assert.Empty(page.FindAll("#play-workspace"));
         Assert.Empty(page.FindAll("#play-view"));
         page.Find("#play-handover-confirm").Click();
         Assert.Empty(page.FindAll("#play-handover"));
@@ -325,18 +326,19 @@ public sealed class PlayPageTests : IDisposable
     {
         var page = GameWithDefenders(("r1", "defender-squad"));
         page.ViewAs(Perspective.AdjudicatorName);
-        Assert.Contains("data-unit-id=\"r1\"", page.Find("#play-map").InnerHtml, StringComparison.Ordinal);
-        Assert.Equal(Board, page.Find("#play-map").GetAttribute("data-source"));
+        page.WaitForAssertion(() => Assert.Contains("data-unit-id=\"r1\"", context.MapLayer("setUnits"), StringComparison.Ordinal));
+        Assert.Equal(Board, page.MapSource());
 
         // The German side sees the concealed r1 only as a sealed presence.
         page.ViewAs("german");
-        Assert.Contains("data-unit-id=\"g1\"", page.Find("#play-map").InnerHtml, StringComparison.Ordinal);
-        Assert.DoesNotContain("data-unit-id=\"r1\"", page.Find("#play-map").InnerHtml, StringComparison.Ordinal);
+        page.WaitForAssertion(() => Assert.Contains("data-unit-id=\"g1\"", context.MapLayer("setUnits"), StringComparison.Ordinal));
+        Assert.DoesNotContain("data-unit-id=\"r1\"", context.MapLayer("setUnits"), StringComparison.Ordinal);
 
-        // Choosing a unit's location highlights its hex.
-        Assert.Empty(page.FindAll("#play-highlight"));
+        // Choosing a unit's location highlights its hex, and the picked hex lists what the view sees there (pass 28c).
+        Assert.Empty(context.MapLayer("highlight"));
         page.Find("#play-units tr[data-unit='g1'] .play-locate").Click();
-        Assert.Single(page.FindAll("#play-highlight"));
+        page.WaitForAssertion(() => Assert.NotEmpty(context.MapLayer("highlight")));
+        Assert.Single(page.FindAll("#play-selected-units li[data-unit='g1']"));
     }
 
     [Fact]
@@ -349,10 +351,10 @@ public sealed class PlayPageTests : IDisposable
         page.Find("#play-los-check").Click();
         Assert.Equal("Clear", page.Find("#play-los-result").GetAttribute("data-status"));
         Assert.StartsWith("Clear, range 2", page.Find("#play-los-result").TextContent, StringComparison.Ordinal);
-        Assert.Contains("id=\"layer-los\"", page.Find("#play-map").InnerHtml, StringComparison.Ordinal);
+        page.WaitForAssertion(() => Assert.Contains("id=\"layer-los\"", context.MapLayer("setLos"), StringComparison.Ordinal));
 
         page.Find("#play-los-clear").Click();
-        Assert.DoesNotContain("layer-los", page.Find("#play-map").InnerHtml, StringComparison.Ordinal);
+        page.WaitForAssertion(() => Assert.DoesNotContain("layer-los", context.MapLayer("setLos"), StringComparison.Ordinal));
     }
 
     [Fact]

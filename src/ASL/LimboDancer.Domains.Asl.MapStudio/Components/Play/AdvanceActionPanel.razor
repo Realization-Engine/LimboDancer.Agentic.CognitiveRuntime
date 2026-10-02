@@ -2,10 +2,10 @@
    turn has come, into a hex of their entry edge (A2.5; ruling R25.1); or units in an edge hex off the map (A2.6; ruling R25.5). The page reads the units
    for the view (ruling R23.1), keeps the draft and its reset rules (plan section 15.3), and proposes; the planner decides. *@
 <h4>Advance</h4>
-<p class="muted" id="advance-help">
+<RuleHelp Id="advance-help" Summary="@($"The {Side} side's Infantry that are not broken, pinned, berserk, or held in Melee may advance one Location, even into Known enemy units (A4.7).")">
     The @Side side's Infantry that are not broken, pinned, berserk, or held in Melee may advance one Location (A3.7, A4.7),
     even into a Location of Known enemy units, where Close Combat follows. A unit that fired in the PFPh may advance.
-</p>
+</RuleHelp>
 @if (Waiting.Count > 0)
 {
     <p class="muted" id="advance-entry">
@@ -17,7 +17,7 @@
     <UnitSelectionList Rows="@Units" Selected="@Selected" CssClass="advance-unit" Legend="Units advancing" OnToggle="@OnToggle" />
     <label>
         To
-        <select id="advance-to" aria-describedby="@(Waiting.Count > 0 ? "advance-help advance-entry" : "advance-help")" value="@To" @onchange="@(args => OnTo.InvokeAsync(args.Value as string ?? string.Empty))">
+        <select id="advance-to" aria-describedby="@(Waiting.Count > 0 ? "advance-help-summary advance-entry" : "advance-help-summary")" value="@To" @onchange="@(args => OnTo.InvokeAsync(args.Value as string ?? string.Empty))">
             <option value="">choose</option>
             @foreach (var to in Destinations)
             {
@@ -30,7 +30,7 @@
     {
         <span id="propose-advance-ready" class="toolbar-note">Check the units advancing and choose where.</span>
     }
-    <MapExitAction SelectId="advance-exit" ButtonId="propose-advance-exit" DescribedBy="advance-help" Edges="@Edges" Edge="@Edge" Ready="@(Selected.Count > 0)" OnEdge="@OnEdge" OnPropose="@OnExit" />
+    <MapExitAction SelectId="advance-exit" ButtonId="propose-advance-exit" DescribedBy="advance-help-summary" Edges="@Edges" Edge="@Edge" Ready="@(Selected.Count > 0)" OnEdge="@OnEdge" OnPropose="@OnExit" />
 </div>
 
 @code {

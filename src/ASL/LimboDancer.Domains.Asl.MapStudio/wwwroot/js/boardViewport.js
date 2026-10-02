@@ -168,6 +168,7 @@ export function create(host, dotnet) {
         focusPoint: (x, y) => focusPoint(state, x, y),
         copyText: text => navigator.clipboard?.writeText(text),
         reset: () => reset(state),
+        zoom: factor => zoomCenter(state, factor),
         dispose: () => {
             host.removeEventListener("keydown", onKey);
             host.replaceChildren();

@@ -36,6 +36,7 @@ public sealed class PlayPageStepsTests : IDisposable
         context.Services.AddSingleton(live);
         context.Services.AddSingleton(games);
         context.Services.AddSingleton(new GameMaps(boards, maps, new RenderCache(), library, games));
+        context.UseViewport();
         context.Services.AddSingleton(new StudioLos(boards, maps, options));
     }
 
@@ -187,7 +188,7 @@ public sealed class PlayPageStepsTests : IDisposable
         foreach (var perspective in new[] { "german", "russian", Perspective.AdjudicatorName })
         {
             page.ViewAs(perspective);
-            Assert.Equal(hexes.Building, page.Find("#play-map .play-residual").GetAttribute("data-location"));
+            page.WaitForAssertion(() => Assert.Equal(hexes.Building, context.MapQuery(".play-residual")?.GetAttribute("data-location")));
         }
 
         Assert.Contains("first-fire", Row(page, "r1"), StringComparison.Ordinal);
@@ -212,7 +213,7 @@ public sealed class PlayPageStepsTests : IDisposable
         // Residual FP is gone when the MPh ends (A8.2).
         Commit(page, "#propose-advance");
         Assert.Empty(page.FindAll("#play-residual"));
-        Assert.Empty(page.FindAll("#play-map .play-residual"));
+        page.WaitForAssertion(() => Assert.Null(context.MapQuery(".play-residual")));
     }
 
     [Fact]

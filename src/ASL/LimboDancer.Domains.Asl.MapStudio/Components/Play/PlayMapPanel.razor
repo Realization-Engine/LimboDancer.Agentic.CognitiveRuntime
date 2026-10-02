@@ -1,0 +1,136 @@
+@using LimboDancer.Domains.Asl.MapStudio.Components.Board
+@using LimboDancer.Domains.Asl.Maps.Coordinates
+@using LimboDancer.Domains.Asl.Maps.Rendering
+@* R11 (plan sections 13.1, 15.5, 16.13; pass 28c): the game's map in the middle of the workspace, on B06 BoardViewport. The page gives the layers
+   already drawn for the view (the units it may see, the LOS line, the marks, and the highlighted hex); the panel owns only the viewport, loads the
+   board when it changes, and sends a layer only when its text changes. A click names the hex under it, and a click on a counter names the counter. *@
+<section id="play-map" class="play-map" data-source="@Layers?.Source" aria-label="Map">
+    @if (Layers is { Board: not null })
+    {
+        <div class="toolbar play-map-tools">
+            <button type="button" id="play-map-zoom-in" aria-label="Zoom in" @onclick="@(() => Zoom(0.8))">+</button>
+            <button type="button" id="play-map-zoom-out" aria-label="Zoom out" @onclick="@(() => Zoom(1.25))">-</button>
+            <button type="button" id="play-map-fit" @onclick="Fit">Fit</button>
+            <span class="muted" id="play-map-keys">Drag to pan. With the map focused, + and - zoom and 0 fits.</span>
+        </div>
+        <BoardViewport @ref="viewport" Label="The game's map" OnReady="@Ready" OnClick="@Click" OnUnitSelected="@Unit" />
+    }
+    else if (Layers is { } failed)
+    {
+        <ul id="play-map-problems">
+            @foreach (var problem in failed.Problems)
+            {
+                <li>@problem</li>
+            }
+        </ul>
+    }
+</section>
+
+@code {
+    private BoardViewport? viewport;
+    private bool loading;
+    private string? shown;
+    private (string? Units, string? Los, string? Marks, string? Highlight) sent;
+
+    /// <summary>The map drawn for the view; null when no game is shown.</summary>
+    [Parameter]
+    public GameMapLayers? Layers { get; set; }
+
+    /// <summary>The ground-level Location of a hex clicked on the map.</summary>
+    [Parameter]
+    public EventCallback<BoardLocation> OnLocation { get; set; }
+
+    /// <summary>A counter clicked on the map, by its placement id: a unit's id, or a "?" the view sees.</summary>
+    [Parameter]
+    public EventCallback<string> OnUnit { get; set; }
+
+    private string? Key => Layers?.Board is { } board ? $"{board.Ref.Value}/{board.Version}" : null;
+
+    private Task Ready()
+    {
+        shown = null;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // One load at a time, and the layers after it: a load replaces the board's groups, so every layer is sent again (as in the card editor's map).
+        if (loading || viewport is not { IsReady: true } || Layers?.Board is not { } board)
+        {
+            return;
+        }
+
+        if (Key != shown)
+        {
+            (shown, loading, sent) = (Key, true, default);
+            try
+            {
+                await viewport.Load($"render/{board.Ref.Value}/{board.Version}/{BoardRenderer.ViewName(BoardView.Exact)}", string.Empty,
+                    BoardRenderer.ViewBox(board.Render, BoardView.Exact), BoardRenderer.Layers(BoardView.Exact),
+                    [.. BoardRenderer.Layers(BoardView.Exact).Where(layer => layer != "defs")]);
+            }
+            finally
+            {
+                loading = false;
+            }
+
+            if (Key != shown)
+            {
+                StateHasChanged();
+                return;
+            }
+        }
+
+        var layers = Layers;
+        if (layers.Units != sent.Units)
+        {
+            sent.Units = layers.Units;
+            await viewport.SetUnits(layers.Units);
+        }
+
+        if (layers.Los != sent.Los)
+        {
+            sent.Los = layers.Los;
+            await viewport.SetLos(layers.Los);
+        }
+
+        if (layers.Marks != sent.Marks)
+        {
+            sent.Marks = layers.Marks;
+            await viewport.SetMarks(layers.Marks);
+        }
+
+        if (layers.Highlight != sent.Highlight)
+        {
+            sent.Highlight = layers.Highlight;
+            await viewport.Highlight(layers.Highlight);
+        }
+    }
+
+    private async Task Zoom(double factor)
+    {
+        if (viewport is not null)
+        {
+            await viewport.Zoom(factor);
+        }
+    }
+
+    private async Task Fit()
+    {
+        if (viewport is not null)
+        {
+            await viewport.Reset();
+        }
+    }
+
+    private async Task Click(double x, double y)
+    {
+        if (Layers?.Board is { } board && GameMaps.LocationAt(board, x, y) is { } at)
+        {
+            await InvokeAsync(() => OnLocation.InvokeAsync(at));
+        }
+    }
+
+    private Task Unit(string id) => InvokeAsync(() => OnUnit.InvokeAsync(id));
+}

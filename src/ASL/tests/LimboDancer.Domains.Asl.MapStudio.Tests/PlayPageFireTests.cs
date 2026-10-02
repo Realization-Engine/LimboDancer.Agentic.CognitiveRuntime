@@ -36,6 +36,7 @@ public sealed class PlayPageFireTests : IDisposable
         context.Services.AddSingleton(live);
         context.Services.AddSingleton(games);
         context.Services.AddSingleton(new GameMaps(boards, maps, new RenderCache(), library, games));
+        context.UseViewport();
         context.Services.AddSingleton(new StudioLos(boards, maps, options));
     }
 
@@ -133,8 +134,11 @@ public sealed class PlayPageFireTests : IDisposable
     private static string Row(IRenderedComponent<PlayPage> page, string unit) => page.Find($"#play-units tr[data-unit='{unit}']").TextContent;
 
     /// <summary>The label the map gives a unit's counter, which names its states (such as Prep Fire, pinned, or broken).</summary>
-    private static string Counter(IRenderedComponent<PlayPage> page, string unit) =>
-        page.Find($"#play-map g[data-unit-id='{unit}']").GetAttribute("aria-label") ?? string.Empty;
+    private string Counter(IRenderedComponent<PlayPage> page, string unit)
+    {
+        page.WaitForAssertion(() => Assert.NotNull(context.MapQuery($"g[data-unit-id='{unit}']")));
+        return context.MapQuery($"g[data-unit-id='{unit}']")!.GetAttribute("aria-label") ?? string.Empty;
+    }
 
     private void Roll(params int[] values)
     {

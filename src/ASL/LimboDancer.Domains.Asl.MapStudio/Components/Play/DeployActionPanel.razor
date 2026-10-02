@@ -38,7 +38,11 @@
             }
         </fieldset>
     }
-    <button id="propose-deploy" disabled="@(!Squads.Any(squad => squad.Id == Squad))" @onclick="@(() => OnPropose.InvokeAsync())">Propose: deploy</button>
+    <button id="propose-deploy" disabled="@(!Squads.Any(squad => squad.Id == Squad))" aria-describedby="propose-deploy-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: deploy</button>
+    @if (!Squads.Any(squad => squad.Id == Squad))
+    {
+        <span id="propose-deploy-ready" class="toolbar-note">Choose the squad that Deploys.</span>
+    }
 </div>
 
 @code {

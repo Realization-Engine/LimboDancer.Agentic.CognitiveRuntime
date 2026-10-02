@@ -25,7 +25,11 @@
         </select>
     </label>
     <label>at <input id="starshell-at" value="@At" disabled="@(Method == OwnHex)" @onchange="@(args => OnAt.InvokeAsync(args.Value as string ?? string.Empty))" size="12" /></label>
-    <button id="propose-starshell" disabled="@(!Firers.Contains(Unit) || (Method != OwnHex && At.Trim().Length == 0))" @onclick="@(() => OnPropose.InvokeAsync())">Propose: fire a Starshell</button>
+    <button id="propose-starshell" disabled="@(!Firers.Contains(Unit) || (Method != OwnHex && At.Trim().Length == 0))" aria-describedby="propose-starshell-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: fire a Starshell</button>
+    @if (!Firers.Contains(Unit) || (Method != OwnHex && At.Trim().Length == 0))
+    {
+        <span id="propose-starshell-ready" class="toolbar-note">Choose the firer, and the Location unless it fires into its own hex.</span>
+    }
 </div>
 
 @code {

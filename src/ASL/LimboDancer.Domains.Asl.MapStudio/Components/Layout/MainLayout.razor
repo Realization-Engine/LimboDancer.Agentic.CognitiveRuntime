@@ -14,7 +14,10 @@
     <div class="studio-body">
         <StudioNavigation Hidden="@(!Expanded)" />
         <main>
-            @Body
+            @* Pass 28c: pages that change their layout under 1024px (the Play workspace's tabs) read the same width the drawer does. *@
+            <CascadingValue Value="@narrow" Name="StudioNarrow">
+                @Body
+            </CascadingValue>
         </main>
     </div>
 </div>
@@ -47,6 +50,11 @@
             module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/studioShell.js");
             self = DotNetObjectReference.Create(this);
             SetNarrow(await module.InvokeAsync<bool>("watchNarrow", self));
+            if (!narrow && await module.InvokeAsync<bool>("isMedium"))
+            {
+                collapsed = true;
+                StateHasChanged();
+            }
         }
         catch (JSDisconnectedException)
         {

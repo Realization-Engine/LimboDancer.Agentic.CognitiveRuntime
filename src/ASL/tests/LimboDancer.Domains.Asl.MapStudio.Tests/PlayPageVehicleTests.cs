@@ -33,6 +33,7 @@ public sealed class PlayPageVehicleTests : IDisposable
         context.Services.AddSingleton(live);
         context.Services.AddSingleton(games);
         context.Services.AddSingleton(new GameMaps(boards, maps, new RenderCache(), library, games));
+        context.UseViewport();
         context.Services.AddSingleton(new StudioLos(boards, maps, options));
         context.Services.AddSingleton(dice);
     }
@@ -238,7 +239,7 @@ public sealed class PlayPageVehicleTests : IDisposable
         Assert.Contains("range 1", page.Find($"#ordnance-arc li[data-at='{two}']").TextContent, StringComparison.Ordinal);
         Assert.Single(page.FindAll("#ordnance-intensive"));
         Assert.Single(page.FindAll("#propose-turn-gun"));
-        Assert.Contains("layer-covered-arc", page.Markup, StringComparison.Ordinal);
+        page.WaitForAssertion(() => Assert.Contains("layer-covered-arc", context.MapLayer("setMarks"), StringComparison.Ordinal));
         Commit(page, "#propose-advance");
         page.Find(".move-unit[data-unit='de-crew']").Change(true);
         Assert.Single(page.FindAll("#move-push"));

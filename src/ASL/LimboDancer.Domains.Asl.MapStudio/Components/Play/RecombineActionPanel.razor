@@ -31,7 +31,11 @@
             }
         </select>
     </label>
-    <button id="propose-recombine" disabled="@(!HalfSquads.Any(unit => unit.Id == One) || !Partners.Contains(Two))" @onclick="@(() => OnPropose.InvokeAsync())">Propose: recombine</button>
+    <button id="propose-recombine" disabled="@(!HalfSquads.Any(unit => unit.Id == One) || !Partners.Contains(Two))" aria-describedby="propose-recombine-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: recombine</button>
+    @if (!HalfSquads.Any(unit => unit.Id == One) || !Partners.Contains(Two))
+    {
+        <span id="propose-recombine-ready" class="toolbar-note">Choose the two HS that Recombine.</span>
+    }
 </div>
 
 @code {

@@ -7,8 +7,12 @@ using LimboDancer.Domains.Asl.Units.State;
 
 namespace LimboDancer.Domains.Asl.MapStudio.Services;
 
-/// <summary>A game's map drawn for one viewer: the SVG, the board or map it was drawn from, and why it could not be drawn.</summary>
-public sealed record GameMapDrawing(string? Svg, string? Source, IReadOnlyList<string> Problems);
+/// <summary>
+/// A game's map for one viewer as the viewport's layers (pass 28c, R11): the board it is drawn from (null when it cannot be drawn), its name, the
+/// <c>layer-units</c> group of the units the viewer may see, the <c>layer-los</c> group, the <c>layer-marks</c> group, the highlighted hex's points,
+/// and why the map cannot be drawn.
+/// </summary>
+public sealed record GameMapLayers(StudioBoard? Board, string? Source, string? Units, string? Los, string? Marks, string? Highlight, IReadOnlyList<string> Problems);
 
 /// <summary>
 /// The map of a live game on the Play page (Composed Maps Design, section 8): its one board, its saved map, or a map
@@ -52,45 +56,44 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, RenderCache
     }
 
     /// <summary>
-    /// Draws a live game at a revision for a viewer, with a location highlighted when given, and any extra layer (such
-    /// as an LOS line) on top, then the Residual FP counters in play (unit step 22).
+    /// A live game's map at a revision for a viewer, as the layers the Play page's viewport draws (pass 28c, R11): the board to load, the units the
+    /// viewer may see, the LOS line, the marks (the Covered Arc and the Residual FP counters in play, unit step 22), and the highlighted hex.
     /// </summary>
-    public GameMapDrawing Draw(string gameId, MapInPlay map, Perspective viewer, long revision, BoardLocation? highlight = null,
-        Func<StudioBoard, string>? extraLayer = null, IReadOnlyList<ResidualFire>? residualFire = null)
+    public GameMapLayers Layers(string gameId, MapInPlay map, Perspective viewer, long revision, BoardLocation? highlight = null,
+        Func<StudioBoard, string>? los = null, Func<StudioBoard, string>? marks = null, IReadOnlyList<ResidualFire>? residualFire = null)
     {
         ArgumentNullException.ThrowIfNull(map);
         ArgumentNullException.ThrowIfNull(viewer);
         var loaded = Board(map);
         if (loaded.Board is not { } board)
         {
-            return new GameMapDrawing(null, null, [.. loaded.Diagnostics.Select(item => $"{item.Code}: {item.Message}")]);
+            return new GameMapLayers(null, null, null, null, null, null, [.. loaded.Diagnostics.Select(item => $"{item.Code}: {item.Message}")]);
         }
 
-        if (renders.Get(board, BoardView.Exact, "document", trace: false) is not { } rendered)
+        if (renders.Get(board, BoardView.Exact, "document", trace: false) is null)
         {
-            return new GameMapDrawing(null, board.Ref.Value, [$"{board.Ref} has nothing to draw in the Exact view."]);
+            return new GameMapLayers(null, board.Ref.Value, null, null, null, null, [$"{board.Ref} has nothing to draw in the Exact view."]);
         }
 
         var entry = games.Load(GameLibrary.LivePrefix + gameId);
-        var layers = new List<string>();
-        if (entry.History is { HasErrors: false } && units.Renderer(UnitLibrary.DefaultSheet) is { } renderer)
-        {
-            layers.Add(units.Overlay(board, games.Projection(entry, viewer, revision).Set, renderer).Svg);
-        }
+        var unitLayer = entry.History is { HasErrors: false } && units.Renderer(UnitLibrary.DefaultSheet) is { } renderer
+            ? units.Overlay(board, games.Projection(entry, viewer, revision).Set, renderer).Svg
+            : null;
 
+        string? points = null;
         if (highlight is not null && UnitLibrary.TargetFor(board).Locate(highlight) is { } hex)
         {
-            var points = string.Join(' ', board.Render.Grid.Geometry.Vertices(hex)
+            points = string.Join(' ', board.Render.Grid.Geometry.Vertices(hex)
                 .Select(point => string.Create(CultureInfo.InvariantCulture, $"{point.X:0.##},{point.Y:0.##}")));
-            layers.Add($"<polygon id=\"play-highlight\" class=\"play-highlight\" points=\"{points}\" fill=\"none\" stroke=\"#d00\" stroke-width=\"4\"/>");
-        }
-
-        if (extraLayer is not null)
-        {
-            layers.Add(extraLayer(board));
         }
 
         // Residual FP is public (A8.2): every viewer sees each counter's value at the centre of its hex.
+        var marked = new List<string>();
+        if (marks is not null)
+        {
+            marked.Add(marks(board));
+        }
+
         foreach (var residual in residualFire ?? [])
         {
             if (UnitLibrary.TargetFor(board).Locate(residual.Location) is { } at)
@@ -98,15 +101,30 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, RenderCache
                 var vertices = board.Render.Grid.Geometry.Vertices(at).ToArray();
                 var x = vertices.Average(point => point.X);
                 var y = vertices.Average(point => point.Y);
-                layers.Add(string.Create(CultureInfo.InvariantCulture,
+                marked.Add(string.Create(CultureInfo.InvariantCulture,
                     $"<g class=\"play-residual\" data-location=\"{residual.Location}\" data-fp=\"{residual.Fp}\"><circle cx=\"{x:0.##}\" cy=\"{y:0.##}\" r=\"14\" fill=\"#fff3c4\" stroke=\"#a40\" stroke-width=\"2\"/>"
                     + $"<text x=\"{x:0.##}\" y=\"{y + 5:0.##}\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"#a40\">{residual.Fp}</text></g>"));
             }
         }
 
-        var svg = rendered.Svg;
-        var end = svg.LastIndexOf("</svg>", StringComparison.Ordinal);
-        return new GameMapDrawing(end < 0 ? svg : svg[..end] + string.Concat(layers) + svg[end..], board.Ref.Value, []);
+        return new GameMapLayers(board, board.Ref.Value, unitLayer, los?.Invoke(board), $"<g id=\"layer-marks\">{string.Concat(marked)}</g>", points, []);
+    }
+
+    /// <summary>The ground-level Location of the hex under a point of the map, in board units; null off the map (pass 28c).</summary>
+    public static BoardLocation? LocationAt(StudioBoard board, double x, double y)
+    {
+        ArgumentNullException.ThrowIfNull(board);
+        if (board.Render.Grid.Geometry.HexAt(x, y) is not { } index)
+        {
+            return null;
+        }
+
+        if (board.Composition is { } composition)
+        {
+            return composition.Map.OwnerOf(index) is { } owner ? new BoardLocation(owner.Board, owner.Hex, 0) : null;
+        }
+
+        return new BoardLocation(board.Ref, board.Facts[index].Hex, 0);
     }
 
     private static bool Same(IReadOnlyList<BoardPlacement> first, IReadOnlyList<BoardPlacement> second) =>

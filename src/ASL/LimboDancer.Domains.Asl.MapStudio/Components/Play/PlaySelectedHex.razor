@@ -1,0 +1,48 @@
+@using LimboDancer.Domains.Asl.Units.State
+@* Pass 28c (plan section 13.1): the hex picked on the map or by a unit's Locate, with what the view sees there: the rows of its units and the "?"
+   it knows of. It receives rows already read for the view, never the game state. *@
+@if (Hex is { Length: > 0 })
+{
+    <section id="play-selected" class="play-selected" aria-labelledby="play-selected-title">
+        <h4 id="play-selected-title">Hex @Hex</h4>
+        @if (Units.Count == 0 && Sealed.Count == 0)
+        {
+            <p class="muted" id="play-selected-empty">@ViewName sees no unit here.</p>
+        }
+        else
+        {
+            <ul id="play-selected-units">
+                @foreach (var row in Units)
+                {
+                    <li @key="row.Id" data-unit="@row.Id">@row.Id (@row.Side @row.Kind, @row.At)@(row.Conditions.Length > 0 ? $": {row.Conditions}" : string.Empty)</li>
+                }
+                @foreach (var presence in Sealed)
+                {
+                    <li @key="presence.PlacementId" data-sealed="@presence.PlacementId">"?" of @presence.Side at @presence.Location</li>
+                }
+            </ul>
+        }
+        <button type="button" id="play-selected-clear" class="link" @onclick="@(() => Clear.InvokeAsync())">Clear</button>
+    </section>
+}
+
+@code {
+    /// <summary>The hex, such as "bd01:D4"; null or empty when none is picked.</summary>
+    [Parameter]
+    public string? Hex { get; set; }
+
+    /// <summary>The units the view sees in the hex, at any level.</summary>
+    [Parameter]
+    public IReadOnlyList<PlayUnitTable.Row> Units { get; set; } = [];
+
+    /// <summary>The "?" the view knows of in the hex.</summary>
+    [Parameter]
+    public IReadOnlyList<SealedPresence> Sealed { get; set; } = [];
+
+    /// <summary>Who is looking, such as "The german side" or "The adjudicator".</summary>
+    [Parameter]
+    public string ViewName { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback Clear { get; set; }
+}

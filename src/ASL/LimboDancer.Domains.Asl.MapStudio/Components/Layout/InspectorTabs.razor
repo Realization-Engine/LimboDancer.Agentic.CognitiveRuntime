@@ -1,18 +1,22 @@
 @* B15 (plan sections 14 and 16.6): tabs with their selected state and keyboard: Left and Right move between tabs, Home and End go to the
-   first and last, and the selected tab alone is in the tab order. The caller renders the selected panel as the child content. *@
+   first and last, and the selected tab alone is in the tab order. The caller renders the selected panel as the child content, or each tab's panel
+   itself (SeparatePanels). *@
 <div class="tabs" role="tablist" aria-label="@Label">
     @foreach (var tab in Tabs)
     {
         var selected = tab.Id == Selected;
         <button @key="tab.Id" @ref="buttons[tab.Id]" id="@TabId(tab.Id)" role="tab" class="@(selected ? "tab active" : "tab")" aria-selected="@(selected ? "true" : "false")"
-                aria-controls="@PanelId" tabindex="@(selected ? 0 : -1)" @onclick="() => Select(tab.Id, false)" @onkeydown="args => Key(tab.Id, args)">
+                aria-controls="@(SeparatePanels ? PanelFor(IdPrefix, tab.Id) : PanelId)" tabindex="@(selected ? 0 : -1)" @onclick="() => Select(tab.Id, false)" @onkeydown="args => Key(tab.Id, args)">
             @tab.Title@(tab.Count is { } count ? $" ({count})" : string.Empty)
         </button>
     }
 </div>
-<div class="tab-panel" role="tabpanel" id="@PanelId" aria-labelledby="@TabId(Selected)">
-    @ChildContent
-</div>
+@if (!SeparatePanels)
+{
+    <div class="tab-panel" role="tabpanel" id="@PanelId" aria-labelledby="@TabId(Selected)">
+        @ChildContent
+    </div>
+}
 
 @code {
     /// <summary>One tab: its id, its title, and an optional count shown after it.</summary>
@@ -41,9 +45,22 @@
     [Parameter]
     public RenderFragment? ChildContent { get; set; }
 
+    /// <summary>
+    /// Whether the caller renders a panel for each tab itself (pass 28c, the Play workspace), each with the id <c>{IdPrefix}-panel-{tab}</c>, role
+    /// tabpanel, and hidden unless selected, so a panel that is not shown keeps its state; the child content is then not used.
+    /// </summary>
+    [Parameter]
+    public bool SeparatePanels { get; set; }
+
+    /// <summary>The id of a tab's own panel when the caller renders the panels.</summary>
+    public static string PanelFor(string prefix, string id) => $"{prefix}-panel-{id}";
+
+    /// <summary>The id of a tab's button, which labels its panel.</summary>
+    public static string TabFor(string prefix, string id) => $"{prefix}-tab-{id}";
+
     private string PanelId => $"{IdPrefix}-panel";
 
-    private string TabId(string id) => $"{IdPrefix}-tab-{id}";
+    private string TabId(string id) => TabFor(IdPrefix, id);
 
     private async Task Select(string id, bool focus)
     {

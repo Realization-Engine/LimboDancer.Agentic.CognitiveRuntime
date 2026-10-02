@@ -3,7 +3,7 @@
 
 @* B06 (plan sections 15.5 and 16.6): the board's drawing surface. It owns the host element, the JavaScript module and viewport, the .NET
    reference the script calls back, and their disposal, so no page installs listeners of its own; pages draw through its commands. *@
-<div class="board-host" @ref="host"></div>
+<div class="board-host" @ref="host" aria-label="@Label"></div>
 
 @code {
     private ElementReference host;
@@ -11,6 +11,10 @@
     private IJSObjectReference? viewport;
     private DotNetObjectReference<BoardViewport>? self;
     private bool disposed;
+
+    /// <summary>The surface's name for assistive technology, such as "The game's map"; none when null (pass 28c).</summary>
+    [Parameter]
+    public string? Label { get; set; }
 
     /// <summary>Raised once the script's viewport exists, so the page can load the board into it.</summary>
     [Parameter]
@@ -114,6 +118,9 @@
 
     /// <summary>Fits the board in the viewport again.</summary>
     public ValueTask Reset() => Send("reset");
+
+    /// <summary>Zooms about the centre: a factor under 1 zooms in, over 1 out (pass 28c: the Play map's zoom buttons).</summary>
+    public ValueTask Zoom(double factor) => Send("zoom", factor);
 
     [JSInvokable]
     public Task OnBoardClick(double x, double y) => OnClick?.Invoke(x, y) ?? Task.CompletedTask;

@@ -1,16 +1,16 @@
 @* Ruling R24.2 (A12.153, A12.154): the phasing side's Mopping Up in its PFPh. The page gives the buildings of the card its MMC may Mop Up, each with
    those units and the units that may guard a surrender, already read for the view (ruling R23.1); the planner decides every other condition. *@
 <h4>Mopping Up</h4>
-<p class="muted" id="mop-up-help">
+<RuleHelp Id="mop-up-help" Summary="Armed, unpinned, Good Order MMC Mop Up a building once per Player Turn when each ground-level Location their side does not Control is within two hexes of one of them; with no concealed enemy unit left, their side Controls it (A12.153, A12.154; ruling R24.2).">
     Armed, unpinned, Good Order MMC in a building of the card become TI to secure it, once per building per Player Turn: each ground-level Location their
     side does not Control must be within two hexes of one of them, and no unconcealed unbroken enemy unit may be inside. Hidden enemy units there are
     placed beneath "?" and Dummies removed. With no concealed enemy unit left, the side Controls every Location of the building and the broken enemy
     units there surrender to the guard chosen; otherwise the DEFENDER's Casualty dr may Reduce a Mopping-Up unit (A12.153, A12.154; ruling R24.2).
-</p>
+</RuleHelp>
 <div class="toolbar" id="mop-up">
     <label>
         Building
-        <select id="mop-up-building" aria-describedby="mop-up-help" value="@building" @onchange="@(args => Choose(args.Value as string))">
+        <select id="mop-up-building" aria-describedby="mop-up-help-summary" value="@building" @onchange="@(args => Choose(args.Value as string))">
             <option value="">choose</option>
             @foreach (var item in Buildings)
             {

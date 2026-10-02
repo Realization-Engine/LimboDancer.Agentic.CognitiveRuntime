@@ -76,7 +76,7 @@
     --surface: #ffffff;
     --surface-2: #faf9f5;
     --line-soft: #efece4;
-    --control-line: #cfc9ba;
+    --control-line: #8f897a;   /* pass 28c: 3:1 against the surfaces and the ground, for control boundaries (plan section 14) */
     --command: #1e2419;
     --command-ink: #e8e6dd;
     --accent-ink: #3f5a22;
@@ -184,7 +184,7 @@ button {
 
 button:hover:not(:disabled) {
     background: var(--surface-2);
-    border-color: #b8b1a0;
+    border-color: #6f6a5e;
 }
 
 button:disabled {
@@ -1687,4 +1687,343 @@ details.advanced > summary {
     flex-wrap: wrap;
     align-items: center;
     gap: 0.25rem 1rem;
+}
+
+/* ---- Pass 28c: the Play workspace (plan sections 11.1 and 13.1) ---------------------------------------------------------------------- */
+
+/* Text for assistive technology only, such as the Play page's announcements. */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* The context stays in sight above the workspace: the game, the view, the revision, turn, and phase, and a way back to the review. */
+.play-context {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    margin: 0 0 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+.play-context-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 0.75rem;
+    margin-top: 0.35rem;
+}
+
+.play-context-line #play-summary {
+    margin: 0;
+}
+
+.play-context #play-conditions {
+    margin: 0.25rem 0 0;
+    font-size: 0.875rem;
+}
+
+.play-context-actions {
+    margin-top: 0.4rem;
+}
+
+/* Wide (1440px and up): the actions, the map, and the review side by side over the activity strip. The workspace fills the window below the
+   context; each pane scrolls on its own, so the map stays in view. */
+.play-workspace {
+    --workspace-height: calc(100vh - 7rem);
+    display: grid;
+    grid-template-columns: minmax(22rem, 28rem) minmax(0, 1fr) minmax(18rem, 22rem);
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas:
+        "actions map review"
+        "activity activity activity";
+    gap: 0.75rem;
+    height: var(--workspace-height);
+    min-height: 32rem;
+    margin-bottom: 1rem;
+}
+
+@supports (height: 100dvh) {
+    .play-workspace {
+        --workspace-height: calc(100dvh - 7rem);
+    }
+}
+
+.play-pane {
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
+    padding: 0.5rem 0.75rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+/* A pane brought into view stops below the sticky context, not under it. */
+.play-pane {
+    scroll-margin-top: 6.5rem;
+}
+
+@media (max-width: 63.99rem) {
+    .play-pane {
+        scroll-margin-top: 0.75rem;
+    }
+}
+
+.play-pane:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.play-actions {
+    grid-area: actions;
+}
+
+.play-map-pane {
+    grid-area: map;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.play-review {
+    grid-area: review;
+}
+
+.play-activity {
+    grid-area: activity;
+    max-height: 45vh;
+}
+
+.play-pane > h3:first-child,
+.play-pane > :first-child > h3:first-child {
+    margin-top: 0;
+}
+
+/* The map fills its pane; the LOS tools sit under it. */
+.play-map {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+.play-map .board-host {
+    flex: 1;
+    min-height: 16rem;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    background: var(--panel);
+    overflow: hidden;
+}
+
+.play-map-tools {
+    margin-bottom: 0.4rem;
+    font-size: 0.875rem;
+}
+
+.play-map-tools button {
+    min-width: 2.25rem;
+    min-height: 2rem;
+}
+
+.play-map-pane #play-los {
+    flex: none;
+    margin-top: 0.5rem;
+}
+
+.play-map-pane #play-residual {
+    margin: 0 0 0.4rem;
+}
+
+/* The activity strip: the latest record, with every record beneath it, grouped by turn and phase. */
+.play-activity #play-latest {
+    margin: 0 0 0.25rem;
+}
+
+.record-when {
+    margin: 0.6rem 0 0.2rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
+.play-selected {
+    margin-top: 0.75rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--line-soft);
+}
+
+.play-selected h4 {
+    margin: 0 0 0.25rem;
+}
+
+.play-selected ul {
+    margin: 0 0 0.4rem;
+    padding-left: 1.1rem;
+}
+
+/* 1024px to 1439px: the map and one side pane, the review over the actions. */
+@media (max-width: 89.99rem) {
+    .play-workspace {
+        grid-template-columns: minmax(0, 1fr) minmax(20rem, 26rem);
+        grid-template-rows: auto minmax(0, 1fr) auto;
+        grid-template-areas:
+            "map review"
+            "map actions"
+            "activity activity";
+    }
+
+    .play-review {
+        max-height: 40vh;
+    }
+}
+
+/* Under 1024px (and at 200% zoom): the context scrolls away with the page, so it does not fill a short window, and its Review and hand-over
+   buttons stay reachable in a bar fixed to the window's foot (plan section 13.1). */
+@media (max-width: 63.99rem) {
+    .play-context {
+        position: static;
+    }
+
+    .play-context-actions {
+        position: fixed;
+        right: 0.75rem;
+        bottom: 0.75rem;
+        left: 0.75rem;
+        z-index: 15;
+        margin: 0;
+        padding: 0.4rem 0.6rem;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.15);
+    }
+
+    .play-context-actions .toolbar-note {
+        flex-basis: auto;
+        font-size: 0.85rem;
+    }
+
+    main:has(.play-context-actions) {
+        padding-bottom: 5rem;
+    }
+}
+
+/* Under 1024px: labelled Map, Actions, and Activity tabs, with the review above them; the page scrolls, and the map keeps a usable height. */
+.play-workspace.narrow {
+    display: block;
+    height: auto;
+    min-height: 0;
+}
+
+.play-workspace.narrow .play-pane {
+    margin-top: 0.5rem;
+    max-height: none;
+    overflow: visible;
+}
+
+.play-workspace.narrow .play-pane[hidden] {
+    display: none;
+}
+
+.play-workspace.narrow .play-map-pane {
+    height: 70vh;
+    overflow: hidden;
+}
+
+@supports (height: 100dvh) {
+    .play-workspace.narrow .play-map-pane {
+        height: 70dvh;
+    }
+}
+
+.play-workspace.narrow .play-review:has(#play-review-none):not(:has(#play-selected)) {
+    display: none;
+}
+
+/* Wide tables and long rows scroll inside their pane rather than widening the page (plan section 11.1, 320px reflow). */
+.play-pane table,
+#play-units {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.play-pane select,
+.play-pane input:not([type="checkbox"]):not([type="radio"]) {
+    max-width: 100%;
+}
+
+/* Plan section 14: no motion is needed to use the Studio. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Pass 28c (plan sections 11.1 and 14): every page reflows down to 320 CSS pixels and at 400% zoom. Controls never grow wider than their
+   container, fieldsets may shrink, long identifiers wrap, and a wide table scrolls inside itself rather than widening the page. */
+main select,
+main textarea,
+main input:not([type="checkbox"]):not([type="radio"]) {
+    max-width: 100%;
+}
+
+main fieldset {
+    min-width: 0;
+}
+
+main code {
+    overflow-wrap: anywhere;
+}
+
+main :is(p, li, dd, dt, summary, legend, label, h2, h3, h4) {
+    overflow-wrap: break-word;
+}
+
+@media (max-width: 40rem) {
+    main table,
+    main table.library {
+        display: block;
+        position: relative;
+        max-width: 100%;
+        overflow-x: auto;
+    }
+
+    /* A form's labels sit above their fields, so a field keeps the width it needs. */
+    main .form-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+main :is(.toolbar, .fields, .field-group, .form-grid) > * {
+    min-width: 0;
+    max-width: 100%;
+}
+
+/* The Unit Lab under 1024px: the fields and the preview stack in one column. */
+@media (max-width: 63.99rem) {
+    .lab {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .lab .lab-preview {
+        position: static;
+        max-height: none;
+    }
 }

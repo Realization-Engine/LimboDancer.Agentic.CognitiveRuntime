@@ -17,7 +17,7 @@
 </RuleHelp>
 <div class="toolbar">
     <label>
-        Gun
+        Weapon
         <select id="ordnance-gun" value="@Gun" @onchange="@(args => OnGun.InvokeAsync(args.Value as string ?? string.Empty))">
             <option value="">choose</option>
             @foreach (var gun in Guns)
@@ -61,7 +61,11 @@
     {
         <span class="muted" id="ordnance-pf-usage">@usage</span>
     }
-    <button id="propose-ordnance" disabled="@(!Ready)" @onclick="@(() => OnPropose.InvokeAsync())">Propose: fire</button>
+    <button id="propose-ordnance" disabled="@(!Ready)" aria-describedby="propose-ordnance-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: fire</button>
+    @if (!Ready)
+    {
+        <span id="propose-ordnance-ready" class="toolbar-note">Choose the weapon and its target.</span>
+    }
 </div>
 
 @code {

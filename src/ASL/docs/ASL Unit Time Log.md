@@ -778,3 +778,14 @@ Estimate: 4:25 (build 3:10), the ASL Card Play and Map Studio Redesign Plan. Kic
 | Full local suite: Dice 24, Authoring 166 of 167 (the architecture test, held `.git/worktrees`; Docker passes it), MapStudio 252, Maps 244, Maps.Rendering 34, Maps.Vasl 121, Units 408, Units.CounterSheets 19, Units.Rendering 352, Play 615, ScenarioA1 484 | 00:38 | 01:09 | 0:31 | Play took 27 minutes |
 | Merge gate: commit 2967b01, the Docker Linux check (every step exit 0; Authoring 167, Play 615, MapStudio 252, ScenarioA1 484), the chart supplement regeneration (identical), the time log, merge into main, push | 00:45 | 01:20 | 0:35 | Ran beside the local suite |
 | **Pass 28b total** | 23:43 | 01:20 | **1:37** | Estimate 4:25 (build 3:10); the build to the documents took 0:55, the full suite 0:31, the merge gate 0:35 (overlapping) |
+
+
+## Pass 28c: The Play workspace and hardening
+
+Estimate: 5:15 (build 4:00), the ASL Card Play and Map Studio Redesign Plan. Kickoff on the user's go-ahead. Branch `feature/asl-backlog-pass-28c`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Reading: plan pass 28c, sections 11.1, 13, 14, 15.1 to 15.9, 16.13, 16.16, 17.3, backlog sections 37 and 43; survey of Play.razor, the Play components, the shell, B06, and the map service | 05:39 | 05:45 | 0:06 | |
+| Four questions; the user chose the interactive BoardViewport for R11 (beyond the recommended markup move), all four backlog rows, the recommended activity strip, and Play fully hardened with the other pages checked | 05:45 | 05:45 | 0:00 | Kept as one pass: about 7:00 at the plan's rates, and recent passes ran at half their estimates |
+| 28c.1 to 28c.3 built: R11 `PlayMapPanel` on B06, `GameMaps.Layers`, the context header, the picked hex, the workspace grid and tabs, hand-over on load and the outcome hand-over, busy and stale handling, focus, records by turn and phase, RuleHelp on ten older panels, ready notes, RPh headings, "Weapon" | 05:45 | 06:05 | 0:20 | Writes into the repository got no verdict: scratchpad and copy |
