@@ -1,6 +1,6 @@
 # ASL Card Play and Map Studio Redesign Plan
 
-**Status:** Approved by the user on 2026-09-30. It merges and replaces two documents: the ASL Unit Card Play, Deferred Rules, and DYO Plan (approved 2026-09-30, passes 23 to 30) and the ASL Map Studio UI Redesign 01 Design (branch `UI-Redesign-01`, commit `800416a`); both were deleted after their content was carried over here, and git history keeps them. Passes 22b, 22c, and 22d are built (2026-09-30; see their designs, [22b](<ASL Unit Backlog Pass 22b Design.md>), [22c](<ASL Unit Backlog Pass 22c Design.md>), and [22d](<ASL Unit Backlog Pass 22d Design.md>), and reviews, [22b](<Scenario A1 Backlog Pass 22b Review 2026-09-30.md>), [22c](<Scenario A1 Backlog Pass 22c Review 2026-09-30.md>), and [22d](<Scenario A1 Backlog Pass 22d Review 2026-09-30.md>)); pass 23, the first game pass, is built too (2026-09-30; its [design](<ASL Unit Backlog Pass 23 Design.md>) and [review](<Scenario A1 Backlog Pass 23 Review 2026-09-30.md>)), pass 24 (2026-09-30; its [design](<ASL Unit Backlog Pass 24 Design.md>) and [review](<Scenario A1 Backlog Pass 24 Review 2026-09-30.md>)), pass 25 (2026-10-01; its [design](<ASL Unit Backlog Pass 25 Design.md>) and [review](<Scenario A1 Backlog Pass 25 Review 2026-10-01.md>)), pass 26 (2026-10-01; its [design](<ASL Unit Backlog Pass 26 Design.md>) and [review](<Scenario A1 Backlog Pass 26 Review 2026-10-01.md>)), pass 27 (2026-10-01; its [design](<ASL Unit Backlog Pass 27 Design.md>) and [review](<Scenario A1 Backlog Pass 27 Review 2026-10-01.md>)), pass 28 (2026-10-01; its [design](<ASL Unit Backlog Pass 28 Design.md>) and [review](<Scenario A1 Backlog Pass 28 Review 2026-10-01.md>)), and pass 28b, a Studio pass (2026-10-02; its [design](<ASL Unit Backlog Pass 28b Design.md>) and [review](<Scenario A1 Backlog Pass 28b Review 2026-10-02.md>)). The passes run one at a time on the user's go-ahead, pass 28c next.
+**Status:** Approved by the user on 2026-09-30. It merges and replaces two documents: the ASL Unit Card Play, Deferred Rules, and DYO Plan (approved 2026-09-30, passes 23 to 30) and the ASL Map Studio UI Redesign 01 Design (branch `UI-Redesign-01`, commit `800416a`); both were deleted after their content was carried over here, and git history keeps them. Passes 22b, 22c, and 22d are built (2026-09-30; see their designs, [22b](<ASL Unit Backlog Pass 22b Design.md>), [22c](<ASL Unit Backlog Pass 22c Design.md>), and [22d](<ASL Unit Backlog Pass 22d Design.md>), and reviews, [22b](<Scenario A1 Backlog Pass 22b Review 2026-09-30.md>), [22c](<Scenario A1 Backlog Pass 22c Review 2026-09-30.md>), and [22d](<Scenario A1 Backlog Pass 22d Review 2026-09-30.md>)); pass 23, the first game pass, is built too (2026-09-30; its [design](<ASL Unit Backlog Pass 23 Design.md>) and [review](<Scenario A1 Backlog Pass 23 Review 2026-09-30.md>)), pass 24 (2026-09-30; its [design](<ASL Unit Backlog Pass 24 Design.md>) and [review](<Scenario A1 Backlog Pass 24 Review 2026-09-30.md>)), pass 25 (2026-10-01; its [design](<ASL Unit Backlog Pass 25 Design.md>) and [review](<Scenario A1 Backlog Pass 25 Review 2026-10-01.md>)), pass 26 (2026-10-01; its [design](<ASL Unit Backlog Pass 26 Design.md>) and [review](<Scenario A1 Backlog Pass 26 Review 2026-10-01.md>)), pass 27 (2026-10-01; its [design](<ASL Unit Backlog Pass 27 Design.md>) and [review](<Scenario A1 Backlog Pass 27 Review 2026-10-01.md>)), pass 28 (2026-10-01; its [design](<ASL Unit Backlog Pass 28 Design.md>) and [review](<Scenario A1 Backlog Pass 28 Review 2026-10-01.md>)), pass 28b, a Studio pass (2026-10-02; its [design](<ASL Unit Backlog Pass 28b Design.md>) and [review](<Scenario A1 Backlog Pass 28b Review 2026-10-02.md>)), and pass 28c, the last Studio pass (2026-10-02; its [design](<ASL Unit Backlog Pass 28c Design.md>) and [review](<Scenario A1 Backlog Pass 28c Review 2026-10-02.md>)). The passes run one at a time on the user's go-ahead, pass 29 next.
 
 **Date:** 2026-09-30
 
@@ -268,6 +268,8 @@ Control forfeited to a Kindled Fire (A26.16) waits for Fire spread (backlog sect
 | 28c.3 Hardening | Keyboard use, focus and drawers, 200% zoom and 320px reflow, the contrast targets, reduced motion, and reconnection with a pending proposal (section 14); the browser matrix at 1920x1080, 1366x768, 1024x768, and narrow widths (section 17.3). | | 1:30 |
 | | Overhead | | 1:15 |
 | | **Pass 28c total** (build 4:00) | | **5:15** |
+
+**Built 2026-10-02**, all three tasks, with three reviews and two visual checks. The user chose the interactive BoardViewport for R11, beyond the recommended markup move. All four offered backlog rows are built: RuleHelp for the older panels, the ready notes, the RPh headings and "Weapon", and the hand-over on load with an outcome hand-over button. The user also took the recommended activity strip and the recommended reach of the hardening: Play fully, the other pages checked and fixed where they broke. R11 is extracted. Section 15.10 holds the decisions; items left out are in section 44 of the [ASL Unit Backlog](<ASL Unit Backlog.md>).
 
 ### Pass 29: DYO purchase I: Infantry, leaders, and SW
 
@@ -703,6 +705,30 @@ These folders express ownership, not a requirement to create every directory imm
 - **Resets.** One page method holds the resets of the Rally, Rout, SW, Starshell, and ordnance panels for another game, phase, or view; the resets within a panel stay in its handlers on the page.
 - **Shared wording.** Text formatting that several components and the page share lives in an internal static class beside them (`FireText`), not in a component.
 
+### 15.10 Decisions of pass 28c
+
+**Added 2026-10-02.**
+
+- **Breakpoints.** The workspace follows section 11.1:
+  - From 1440px: actions, map, and review side by side over the activity strip.
+  - From 1024px to 1439px: the map and one side pane, with the navigation starting collapsed.
+  - Under 1024px: labelled Map, Actions, and Activity tabs under the review.
+
+  Breakpoints that the script also reads are in pixels. The narrow layout holds in CSS before the script reports the width; only the tabs need the script.
+- **Context.** The context header stays in sight above the workspace, which sizes itself from the header's measured height. Under 1024px the header scrolls away, and its Review and hand-over buttons stay in a bar fixed to the window's foot. Everything in it is known to both sides, so it shows during a hand-over; its announcement goes with the view.
+- **Whose turn.** The page names the view the game waits for:
+  - a choice's side;
+  - a surrender's captors;
+  - the DEFENDER after a step or in the DFPh;
+  - the other side in the RPh, RtPh, and CCPh;
+  - otherwise the phasing side.
+
+  It offers the hand-over to that view, or says "You act". A page opened on a game, or another game chosen, waits behind the hand-over.
+- **The map.** R11 `PlayMapPanel` owns B06 `BoardViewport` and receives layers already read for the view (`GameMaps.Layers`). It loads the board when the board changes and sends a layer only when its text changes. The page caches the layers by game, revision, view, picked hex, LOS line, and Gun. A click picks a hex for the review pane's list; it does not fill the action drafts.
+- **Confirmation.** One gate request at a time; Confirm and Cancel wait while it runs. A proposal records its revision, and a Confirm at another revision is shown as Stale and never sent.
+- **The DEFENDER's pass.** Only the DEFENDER passes, from its own view beside its fire panel. Its review reads only that it passed.
+- **Theme.** The control border token meets 3:1 against the surfaces. Shared reflow rules keep every page within 320 CSS pixels.
+
 # Part IV. The component inventory
 
 ## 16. Component extraction inventory
@@ -930,7 +956,7 @@ Each table gives source location, proposed contract, and the reason for extracti
 | R08 / P2 | `FireArithmeticBreakdown` | [Play:1367-1379](https://github.com/Realization-Engine/LimboDancer.Agentic.CognitiveRuntime/blob/2fa3f564056049d222f722e4b5bc925d51c3abd3/src/ASL/LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L1367) | Authorized firer arithmetic, multipliers, column shifts, dice and DRM. | Independently verifiable explanation; presentation must not recalculate the adjudication. |
 | R09 / P2 | `InfantryFireEffectsTable` | [Play:1380-1395](https://github.com/Realization-Engine/LimboDancer.Agentic.CognitiveRuntime/blob/2fa3f564056049d222f722e4b5bc925d51c3abd3/src/ASL/LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L1380) | Disclosed target effects, definition changes and checks. | A coherent nested table; null/withheld effects must not be treated as an empty success. |
 | R10 / P2 | `VehicleFireEffectsTable` | [Play:1396-1411](https://github.com/Realization-Engine/LimboDancer.Agentic.CognitiveRuntime/blob/2fa3f564056049d222f722e4b5bc925d51c3abd3/src/ASL/LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L1396) | Disclosed vehicle-hit, vehicle-line and crew results. | Different data schema from Infantry effects warrants its own component. |
-| R11 / P1 | `PlayMapPanel` | [Play:1443-1466](https://github.com/Realization-Engine/LimboDancer.Agentic.CognitiveRuntime/blob/2fa3f564056049d222f722e4b5bc925d51c3abd3/src/ASL/LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L1443) | Perspective-safe drawing SVG/source/problems and current selection; LocationSelected if supported. | Own drawing success/error presentation. Reusing interactive BoardViewport is later behavior work, not a markup-only extraction. |
+| R11 / P1 (built in pass 28c, on B06) | `PlayMapPanel` | [Play:1443-1466](https://github.com/Realization-Engine/LimboDancer.Agentic.CognitiveRuntime/blob/2fa3f564056049d222f722e4b5bc925d51c3abd3/src/ASL/LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L1443) | Perspective-safe drawing SVG/source/problems and current selection; LocationSelected if supported. | Own drawing success/error presentation. Reusing interactive BoardViewport is later behavior work, not a markup-only extraction. |
 | R12 / P1 | `PlayUnitTable` | [Play:1491-1523](https://github.com/Realization-Engine/LimboDancer.Agentic.CognitiveRuntime/blob/2fa3f564056049d222f722e4b5bc925d51c3abd3/src/ASL/LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L1491) | Projected visible-unit/sealed rows, formatted costs/conditions; Locate. | Separate live movement-aware table; never pass full state just to compute a row label. |
 | R13 / P2 | `AdjudicatorAuditPanel` | [Play:1524-1529](https://github.com/Realization-Engine/LimboDancer.Agentic.CognitiveRuntime/blob/2fa3f564056049d222f722e4b5bc925d51c3abd3/src/ASL/LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor#L1524) | Explicitly authorized audit lines; no service access in generic child. | Authorization wrapper around JsonDisclosure; hiding with CSS does not protect the audit. |
 
@@ -1110,7 +1136,7 @@ Every active candidate belongs to exactly one pass; the five retired ones (P03 t
 | 27 | 24 | 14 | 10 | A12 `BerserkChargeNotices`, C01 `VehicleCloseCombatPanel`, C02 `CloseCombatPanel`, C03 `CloseCombatLocationControl`, C04 `CloseCombatStacking`, C05 `CloseCombatWithdrawals`, C06 `CloseCombatAttackBuilder`, C07 `CloseCombatAttackQueue`, C08 `PendingChoicePanel`, C09 `PendingSurrenderPanel`, C10 `PrisonerActionPanel`, C11 `FireMarkerSummary`, C12 `OpportunityFireAction`, C13 `SmallArmsFirePanel`, C14 `FireGroupSelector`, C15 `FireTargetOptions`, N05 `CloseCombatRoundOptions`, N06 `AmbushWithdrawalActions`, N07 `CaptureAttemptFields`, N08 `CloseCombatInfiltrationChoices`, N09 `PrisonerCustodyActions`, N10 `MolFirerChoice`, N11 `ThrowDemolitionChargeAction`, N12 `PlacedChargeDetonationActions` |
 | 28 | 11 | 7 | 4 | (K19 retired in pass 28) K10 `ScenarioCardView`, K11 `CardSideSection`, K12 `CardSpecialRulesList`, K13 `CardEditorForm`, K14 `CardIdentityFields`, K15 `CardMapFields`, K16 `CardTurnRecordFields`, K17 `CardSideFields`, K18 `ObCounterPicker`, K19 `CardJsonField`, K20 `CardSaveActions` |
 | 28b (built; A03 left inline in A02) | 20 | 13 | 7 | A02 `RoutActionPanel`, A03 `RoutObligations`, A04 `SupportWeaponActionPanel`, A05 `RallyActionPanel`, A06 `RepairActionPanel`, A07 `DeployActionPanel`, A08 `RecombineActionPanel`, A09 `DmRetentionChoices`, A10 `ShockRecoveryAction`, C16 `OrdnanceFirePanel`, C17 `OrdnanceTargetFields`, R04 `DiceRollHistory`, R05 `ActionRecordList`, R06 `FireHistory`, R07 `FireResolutionCard`, R08 `FireArithmeticBreakdown`, R09 `InfantryFireEffectsTable`, R10 `VehicleFireEffectsTable`, N13 `StarshellActionPanel`, S08 `RuleHelp` |
-| 28c | 1 | 1 | 0 | R11 `PlayMapPanel` |
+| 28c (built; R11 on B06 BoardViewport) | 1 | 1 | 0 | R11 `PlayMapPanel` |
 | **All** | **171** | **114** | **57** | |
 
 # Part V. Acceptance and rulings
