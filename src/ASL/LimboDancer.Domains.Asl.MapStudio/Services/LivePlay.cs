@@ -25,7 +25,7 @@ public sealed class LivePlay
         ArgumentNullException.ThrowIfNull(units);
         Root = Path.Combine(units.UnitsRoot, "live");
         Store = new FileGameStore(Root);
-        Catalogs = [.. UnitCatalogs.Names.Select(name => UnitCatalogs.Read(name, units.Vocabulary)?.Catalog).OfType<UnitCatalog>()];
+        Catalogs = [.. UnitCatalogs.ReplayNames.Select(name => UnitCatalogs.Read(name, units.Vocabulary)?.Catalog).OfType<UnitCatalog>()];
 
         // Pass 22 (ruling R22.2): the user's cards are saved beside the saved maps, under the boards root.
         Cards = new ScenarioCardLibrary(Path.Combine(Path.GetDirectoryName(units.UnitsRoot)!, "cards"));
