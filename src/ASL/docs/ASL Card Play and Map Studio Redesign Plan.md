@@ -1162,7 +1162,7 @@ The most useful initial outcome is a set of focused page coordinators composing 
 
 **User rule, 2026-09-30.** Before the full local suite, the Docker check, or any other long test run, every pass runs the Studio (`map-studio-scripted`) and checks in the browser every page it changed: the new behavior played, the new or extracted components looked at, in a side's and the adjudicator's view where disclosure applies. Every issue found is fixed at once and the visual check run again, until it is clean; only then do the costly tests run. A pass or task the Studio cannot show (a rules change with no page effect, a test, a document) records that it needed none. The browser evidence of section 17.3 comes from this check.
 
-**Game passes.** A game pass is complete when its tasks' rules play as its rulings say, its referee and table player reviews are answered, and the merge gate of the Backlog Passes Plan's section 1 passes: the full local suite with the ScenarioA1 tests, the Docker Linux check, the chart supplement regeneration where authoring changed, and GitHub Actions after the push. Its component task (23.5, 24.5, 25.6, 26.5, 27.5, 28.5, or 29.5) also meets section 17.1.
+**Game passes.** A game pass is complete when its tasks' rules play as its rulings say, its referee and table player reviews are answered, and the merge gate of the Backlog Passes Plan's section 1 passes: the full local suite, the rules tests among it, the Docker Linux check, the chart supplement regeneration where authoring changed, and GitHub Actions after the push. Its component task (23.5, 24.5, 25.6, 26.5, 27.5, 28.5, or 29.5) also meets section 17.1.
 
 ### 17.3 Browser evidence
 

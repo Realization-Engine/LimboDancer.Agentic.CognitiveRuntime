@@ -2,7 +2,7 @@
 # The Docker Linux check of the ASL merge gate (ASL Unit Backlog Passes Plan, section 1 and appendix A).
 #
 # Clones the committed branch into a clean Linux container and runs what the GitHub CI runs: a locked restore, a Release
-# build with warnings as errors, every test project of the solution, the ScenarioA1 tests (not in the solution), and the
+# build with warnings as errors, every test project of the solution (the rules tests among them, since 2026-10-02), and the
 # source verification and pending comparison regenerations, each compared byte for byte with the committed file. Every
 # step must report "== exit 0". The chart supplement regeneration needs jq, so the merge gate runs it locally instead.
 #

@@ -348,7 +348,7 @@ The conditions in those facts (Good Order, unpinned, concealed, armed) are state
 
 - `Units.Tests/CatalogTests`: the synthetic catalog reads; canonical writing keeps the identity; the identity changes with a value or a source; values are typed and sourced; effective values leave printed ones alone; U1 lookups, including explicit misses; each definition becomes a valid unit document that round-trips through the display's writer and reader; pinned sources are verified; publication rules; and each refusal code.
 - `Units.CounterSheets.Tests`: building from synthetic fills of the committed worksheet (draft, published, second-person review, identity change on review); each transcription and record refusal; and the committed files agree (the worksheet has no values and asks for exactly the manifest's counters, the synthetic catalog has the manifest's slots, and the record, transcription, and committed catalog match or are all absent).
-- `ScenarioA1.Tests/ScenarioA1CatalogCrossCheckTests`: section 11.
+- `Rules.Tests/ScenarioA1CatalogCrossCheckTests` (`ScenarioA1.Tests` until 2026-10-02): section 11.
 
 Synthetic definitions use deliberately low values and invented dates (1901), and are labelled synthetic wherever they appear.
 
