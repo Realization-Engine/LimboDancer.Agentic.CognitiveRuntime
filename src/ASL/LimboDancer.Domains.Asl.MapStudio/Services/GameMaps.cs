@@ -12,10 +12,10 @@ namespace LimboDancer.Domains.Asl.MapStudio.Services;
 
 /// <summary>
 /// A game's map for one viewer as the viewport's layers (pass 28c, R11): the board it is drawn from (null when it cannot be drawn), its name, the
-/// <c>layer-units</c> group of the units the viewer may see, the <c>layer-los</c> group, the <c>layer-marks</c> group, the highlighted hex's points,
-/// and why the map cannot be drawn. Pass 29: the overlay those units were drawn from and the view they were read for, which the board inspector reads.
+/// <c>layer-units</c> group of the units the viewer may see, the <c>layer-marks</c> group, and why the map cannot be drawn. Pass 29: the overlay
+/// those units were drawn from and the view they were read for, which the board inspector reads; the workspace draws the picked hex and LOS itself.
 /// </summary>
-public sealed record GameMapLayers(StudioBoard? Board, string? Source, string? Units, string? Los, string? Marks, string? Highlight, IReadOnlyList<string> Problems)
+public sealed record GameMapLayers(StudioBoard? Board, string? Source, string? Units, string? Marks, IReadOnlyList<string> Problems)
 {
     /// <summary>The units the viewer may see, as placed on the map; null when they cannot be drawn.</summary>
     public UnitOverlay? Overlay
@@ -73,34 +73,27 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, RenderCache
 
     /// <summary>
     /// A live game's map at a revision for a viewer, as the layers the Play page's viewport draws (pass 28c, R11): the board to load, the units the
-    /// viewer may see, the LOS line, the marks (the Covered Arc and the Residual FP counters in play, unit step 22), and the highlighted hex.
+    /// viewer may see and the marks (the Covered Arc and the Residual FP counters in play, unit step 22).
     /// </summary>
-    public GameMapLayers Layers(string gameId, MapInPlay map, Perspective viewer, long revision, BoardLocation? highlight = null,
-        Func<StudioBoard, string>? los = null, Func<StudioBoard, string>? marks = null, IReadOnlyList<ResidualFire>? residualFire = null)
+    public GameMapLayers Layers(string gameId, MapInPlay map, Perspective viewer, long revision, Func<StudioBoard, string>? marks = null,
+        IReadOnlyList<ResidualFire>? residualFire = null)
     {
         ArgumentNullException.ThrowIfNull(map);
         ArgumentNullException.ThrowIfNull(viewer);
         var loaded = Board(map);
         if (loaded.Board is not { } board)
         {
-            return new GameMapLayers(null, null, null, null, null, null, [.. loaded.Diagnostics.Select(item => $"{item.Code}: {item.Message}")]);
+            return new GameMapLayers(null, null, null, null, [.. loaded.Diagnostics.Select(item => $"{item.Code}: {item.Message}")]);
         }
 
         if (renders.Get(board, BoardView.Exact, "document", trace: false) is null)
         {
-            return new GameMapLayers(null, board.Ref.Value, null, null, null, null, [$"{board.Ref} has nothing to draw in the Exact view."]);
+            return new GameMapLayers(null, board.Ref.Value, null, null, [$"{board.Ref} has nothing to draw in the Exact view."]);
         }
 
         var entry = games.Load(GameLibrary.LivePrefix + gameId);
         var projection = entry.History is { HasErrors: false } ? games.Projection(entry, viewer, revision) : null;
         var overlay = projection is not null && units.Renderer(UnitLibrary.DefaultSheet) is { } renderer ? units.Overlay(board, projection.Set, renderer) : null;
-
-        string? points = null;
-        if (highlight is not null && UnitLibrary.TargetFor(board).Locate(highlight) is { } hex)
-        {
-            points = string.Join(' ', board.Render.Grid.Geometry.Vertices(hex)
-                .Select(point => string.Create(CultureInfo.InvariantCulture, $"{point.X:0.##},{point.Y:0.##}")));
-        }
 
         // Residual FP is public (A8.2): every viewer sees each counter's value at the centre of its hex.
         var marked = new List<string>();
@@ -122,7 +115,7 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, RenderCache
             }
         }
 
-        return new GameMapLayers(board, board.Ref.Value, overlay?.Svg, los?.Invoke(board), $"<g id=\"layer-marks\">{string.Concat(marked)}</g>", points, [])
+        return new GameMapLayers(board, board.Ref.Value, overlay?.Svg, $"<g id=\"layer-marks\">{string.Concat(marked)}</g>", [])
         {
             Overlay = overlay,
             View = projection?.View,

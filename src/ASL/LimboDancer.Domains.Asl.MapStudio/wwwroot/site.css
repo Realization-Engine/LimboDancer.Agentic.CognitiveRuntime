@@ -639,6 +639,24 @@ dl.report dd {
     background: var(--panel);
 }
 
+/* Pass 29: the map turned a quarter clockwise as one. The drawing takes the host's height as its width and its width as its height, then turns
+   about its top-left corner and moves back into the host; the host's size comes from the layout, never from the drawing. */
+.board-host.rotated {
+    position: relative;
+    container-type: size;
+    overflow: hidden;
+}
+
+.board-host.rotated > .board-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100cqh;
+    height: 100cqw;
+    transform-origin: 0 0;
+    transform: translateX(100cqw) rotate(90deg);
+}
+
 .board-svg {
     width: 100%;
     height: 100%;
@@ -684,6 +702,15 @@ dl.report dd {
     border-left: 1px solid var(--line);
     padding: 1rem 1.1rem;
     background: var(--surface);
+}
+
+/* A fieldset that only groups controls to disable them together, with no box of its own (pass 29). */
+fieldset.plain {
+    display: contents;
+}
+
+.unit-list li.current > button {
+    font-weight: 600;
 }
 
 .inspector h2 {
@@ -1927,10 +1954,9 @@ details.advanced > summary {
         }
     }
 
-    /* Pass 29: the review pane is the map's inspector too, so it always shows; it keeps to part of the window and scrolls. */
+    /* Pass 29: under 1024px the inspector sits below the map, in the Map tab, so what a click picks shows right under it. */
     .play-workspace .play-pane.play-review {
-        max-height: 55vh;
-        overflow: auto;
+        max-height: none;
     }
 }
 

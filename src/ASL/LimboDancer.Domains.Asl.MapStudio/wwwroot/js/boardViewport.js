@@ -4,6 +4,7 @@
 
 const svgNamespace = "http://www.w3.org/2000/svg";
 const hoverInterval = 100;
+const rotationKey = "studio.map.rotated";
 
 export function create(host, dotnet) {
     const svg = document.createElementNS(svgNamespace, "svg");
@@ -13,8 +14,9 @@ export function create(host, dotnet) {
 
     const state = {
         host, svg, dotnet, side: null, box: null, home: null, drag: null, generation: 0, highlight: null,
-        tool: "select", points: [], overlay: null, lastHover: 0, comparison: { mode: "none", value: 0.5 },
+        tool: "select", points: [], overlay: null, lastHover: 0, comparison: { mode: "none", value: 0.5 }, rotated: false,
     };
+    setRotation(state, readRotation());
 
     svg.addEventListener("wheel", event => {
         if (!state.box) {
@@ -67,8 +69,10 @@ export function create(host, dotnet) {
             return;
         }
 
+        // Turned a quarter clockwise (pass 29), the map's x runs down the screen and its y runs to the left.
         const unitsPerPixel = drag.box.width / svg.clientWidth;
-        setBox(state, { ...drag.box, x: drag.box.x - dx * unitsPerPixel, y: drag.box.y - dy * unitsPerPixel });
+        const [mx, my] = state.rotated ? [dy, -dx] : [dx, dy];
+        setBox(state, { ...drag.box, x: drag.box.x - mx * unitsPerPixel, y: drag.box.y - my * unitsPerPixel });
     });
 
     svg.addEventListener("pointerup", event => {
@@ -169,6 +173,8 @@ export function create(host, dotnet) {
         copyText: text => navigator.clipboard?.writeText(text),
         reset: () => reset(state),
         zoom: factor => zoomCenter(state, factor),
+        setRotation: on => setRotation(state, on),
+        isRotated: () => state.rotated,
         dispose: () => {
             host.removeEventListener("keydown", onKey);
             host.replaceChildren();
@@ -512,6 +518,30 @@ function toBoard(state, clientX, clientY) {
     point.y = clientY;
     const board = point.matrixTransform(state.svg.getScreenCTM().inverse());
     return { x: board.x, y: board.y };
+}
+
+// Pass 29: the whole map turned a quarter clockwise as one, as if walking to the side of the table. The turn is a CSS transform on the drawing
+// (site.css, .board-host.rotated); the board's coordinates do not change, and the pointer is read through the screen matrix, which includes it.
+// The choice is remembered by the browser.
+function readRotation() {
+    try {
+        return localStorage.getItem(rotationKey) === "true";
+    } catch {
+        return false;
+    }
+}
+
+function setRotation(state, on) {
+    state.rotated = Boolean(on);
+    state.host.classList.toggle("rotated", state.rotated);
+    try {
+        localStorage.setItem(rotationKey, String(state.rotated));
+    } catch {
+        // Storage is blocked: the turn holds for this page only.
+    }
+
+    updateUnitTier(state);
+    return state.rotated;
 }
 
 function clamp(value, min, max) {

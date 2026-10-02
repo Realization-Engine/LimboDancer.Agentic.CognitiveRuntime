@@ -33,6 +33,7 @@ else if (board is null)
                     }
                 </BoardViewerToolbar>
                 <div class="toolbar layers-row">
+                    <button type="button" id="map-rotate" aria-pressed="@(workspace?.Rotated == true ? "true" : "false")" @onclick="@(() => workspace!.ToggleRotation())">Rotate map</button>
                     <BoardLayerToggles Layers="@ToggleLayers" Visible="@visible" LayerChanged="@ToggleLayer" TraceAvailable="@(view == BoardView.HexFacts)" Trace="@trace" TraceChanged="@(on => trace = on)" />
                 </div>
                 @if (unitSets.Count > 0 || unitGames.Count > 0)
@@ -142,6 +143,8 @@ else if (board is null)
             return;
         }
 
+        // The Styled view kept from another board is vectorized before this board is shown in it.
+        await PrepareStyled(result.Board, view);
         board = result.Board;
         if (board.IsAuthored)
         {
@@ -166,13 +169,15 @@ else if (board is null)
         showUnits = unitSourceKey is not null;
         BuildUnits();
         visible = [.. BoardRenderer.Layers(view).Where(layer => layer != "defs")];
-        await PrepareStyled();
     }
 
-    /// <summary>A VASL board's Styled input is its vectorization, computed once on first use, before the view that needs it is drawn.</summary>
-    private async Task PrepareStyled()
+    /// <summary>
+    /// A VASL board's Styled input is its vectorization, computed once on first use. It is ready before the view that needs it is set, so the
+    /// workspace never draws that view without it (pass 29).
+    /// </summary>
+    private async Task PrepareStyled(StudioBoard? target, BoardView next)
     {
-        if (board is not null && view is BoardView.Styled or BoardView.Comparison && board.Render.Styled is null && board.StyledRender is { IsValueCreated: false } styled)
+        if (target is not null && next is BoardView.Styled or BoardView.Comparison && target.Render.Styled is null && target.StyledRender is { IsValueCreated: false } styled)
         {
             preparing = "Vectorizing the board for the Styled view...";
             StateHasChanged();
@@ -231,9 +236,9 @@ else if (board is null)
 
     private async Task ChangeView(BoardView next)
     {
+        await PrepareStyled(board, next);
         view = next;
         visible = [.. BoardRenderer.Layers(view).Where(layer => layer != "defs")];
-        await PrepareStyled();
     }
 
     private void ToggleLayer((string Layer, bool Shown) change)

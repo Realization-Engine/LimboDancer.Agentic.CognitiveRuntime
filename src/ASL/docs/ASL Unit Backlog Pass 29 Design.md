@@ -1,6 +1,6 @@
 # ASL Unit Backlog Pass 29 Design
 
-**Status:** In progress. Tasks 29.1 to 29.4 are built and checked in the Studio; 29.5 is not started. The unit tests, the reviews, and the merge gate wait until the batch of UI work on branch `ui-improvements` is done (the user's direction, 2026-10-02). Pass 29 (The shared board workspace) of the [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>), section 5, a Studio pass.
+**Status:** In progress. Tasks 29.1 to 29.4 are built and checked in the Studio, with a review's fixes and the map's rotation (section 9); 29.5 is not started. The unit tests, the reviews, and the merge gate wait until the batch of UI work on branch `ui-improvements` is done (the user's direction, 2026-10-02). Pass 29 (The shared board workspace) of the [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>), section 5, a Studio pass.
 
 **Date:** 2026-10-02
 
@@ -84,5 +84,47 @@ One issue was found and fixed: a counter click kept the hex but lost the unit's 
 ## 8. Open
 
 - **29.5, the selection in the board link** (`Games.BoardLink` with `hex=`), is not started.
-- **Narrow windows.** With the Map tab open, a click on the map fills the inspector above the tabs, out of sight until the page scrolls up.
 - **Tests, at the end of the batch.** The component tests of `PlayMapPanel` and `PlaySelectedHex` go, and the Play page tests that read the old map panel, `play-selected`, or `play-los-*` move to the workspace. New component tests for `BoardInspector` and `BoardWorkspace`.
+
+## 9. The review's fixes and the turned map
+
+The user had Claude Design review the first build (commit 747ad2c). It found no case of a view seeing more than it may, but four ways state could outlive a change of view or game, and several usability problems. On 2026-10-02 the user accepted every fix below, chose to put the inspector under the map in narrow windows, and pointed to the map rotation of backlog section 44 as what makes that work: a board is about three times wider than tall, so in a portrait window most of the Map tab was empty.
+
+**The turned map.**
+
+- "Rotate map" in the map's toolbar, on Play and the board viewer, turns the whole map a quarter clockwise as one: terrain, counters, labels, LOS, marks, and the highlight. The user ruled that counters turn with the board; nothing is redrawn upright.
+- The turn is a CSS transform on the drawing (`.board-host.rotated`, sized with container units), so the board's coordinates do not change. The viewport reads the pointer through the screen matrix, which includes the transform, so clicks, hover, and wheel zoom stay right; dragging to pan maps the screen's movement onto the turned axes.
+- The browser remembers the choice (local storage, `studio.map.rotated`); it is off until first chosen.
+
+**Narrow windows.** Under 1024px the inspector sits below the map, inside the Map tab, so what a click picks shows right under the map. A new proposal and the Review button open the Map tab with the Proposal tab chosen. Wider, the inspector stays the right-hand pane.
+
+**The Proposal tab.**
+
+- While a proposal waits for Confirm, a click on a hex or a counter keeps the Proposal tab open (`HoldPanel`). Otherwise a counter click opens Selection, and a hex click opens Selection from the Proposal tab; LOS stays open, so its ends can be picked.
+- The tab reads "Proposal (1)" only while a proposal needs confirmation, not after a commit, refusal, or Stale result.
+
+**State across a change of view or game.**
+
+- The game and view pickers are disabled while the gate works, and a proposal or confirmation that returns for another game or view is dropped.
+- Changing the game clears the picked hex and the open tab (the Gun was already cleared with the panel choices).
+- The workspace carries a `@key` of the game and the view, so a new view always starts a new workspace, whether or not a hand-over unmounted it.
+- A picked "?" is let go when the view is read again, since its placement id is numbered afresh at each revision.
+
+**Smaller fixes.**
+
+- A hover draws the inspector again, not the workspace, so the actions pane is not redrawn as the pointer moves.
+- The units in a hex show their ids, and the unit shown above is marked ("shown above").
+- The LOS tab opened with an empty From takes the picked hex.
+- Good Order reads Yes or No; a side reads as the counter names it ("German"), in the game facts too.
+- The duplicate `play-proposal` id is gone (the tab's wrapper is `play-proposal-tab`); Play's unused injects are removed; `GameMaps.Layers` loses its highlight and LOS parameters, and `GameMapLayers` its Los and Highlight fields.
+- A layer the browser refuses is reported like a failed load, with Try again.
+- The Styled view is set only once its vectorization is ready, also when a board opens in it.
+- With no drawable map, a new proposal and Review focus the review pane.
+
+**Studio checks**, on port 6670 with `p28c-walk2`:
+
+- the turned map at 1920x1080: Fit, a counter click (the screen point maps to the counter's own board coordinates, and the hit is the counter), a drag that keeps the point under the pointer, hover across hexes;
+- the Proposal tab: a counter and a hex click kept it open while Confirm waited; after Cancel the count went and a hex click opened Selection;
+- 683x384: a proposal opened the Map tab, with the inspector below the map and the focus on it; 320x640: the turned map fills the column, and nothing scrolls sideways;
+- the LOS tab filled From with the picked hex; the hand-over started the Russian view on Selection with the map still turned;
+- the board viewer: the turn remembered across pages, the Styled view drawn after its vectorization, and the turn switched off.

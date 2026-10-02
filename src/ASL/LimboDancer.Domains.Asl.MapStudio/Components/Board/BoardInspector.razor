@@ -23,7 +23,7 @@
                     <h3>Pixel clicked</h3>
                     <p id="viewer-sample">@Sample</p>
                 }
-                @if ((Selected ?? Hovered) is { } sampled)
+                @if ((Selected ?? hovered) is { } sampled)
                 {
                     <p class="muted">Hex @sampled.Hex:</p>
                     <HexGridSamples Rows="@HexInspector.SampleRows(sampled, Board.Render.Grid, Board.Catalog)" />
@@ -43,10 +43,10 @@
                     }
                     @if (Selected is { } selectedHex && units.At(selectedHex.Index).ToArray() is { Length: > 0 } members)
                     {
-                        <HexUnitStackList Hex="@selectedHex.Hex.ToString()" Members="@members" OnSelect="@SelectedUnitChanged" />
+                        <HexUnitStackList Hex="@selectedHex.Hex.ToString()" Members="@members" Selected="@SelectedUnit?.Document.Id" OnSelect="@SelectedUnitChanged" />
                     }
                 }
-                @if ((Selected ?? Hovered) is { } facts)
+                @if ((Selected ?? hovered) is { } facts)
                 {
                     @if (Selected is null)
                     {
@@ -71,6 +71,9 @@
 
     private static readonly IReadOnlyList<InspectorTabs.Tab> BuiltIn = [new("selection", "Selection"), new("los", "LOS"), new("evidence", "Evidence")];
 
+    // The hex under the pointer while none is kept. The workspace sets it here, so a hover redraws the inspector alone (pass 29).
+    private HexFacts? hovered;
+
     [Parameter, EditorRequired]
     public StudioBoard Board { get; set; } = null!;
 
@@ -94,10 +97,6 @@
     /// <summary>The hex clicked and kept; null when none is.</summary>
     [Parameter]
     public HexFacts? Selected { get; set; }
-
-    /// <summary>The hex under the pointer while none is kept.</summary>
-    [Parameter]
-    public HexFacts? Hovered { get; set; }
 
     /// <summary>The units shown on the map, already read for the view; null when no units are shown.</summary>
     [Parameter]
@@ -143,6 +142,16 @@
 
     [Parameter]
     public EventCallback<string> OnCopy { get; set; }
+
+    /// <summary>Shows the hex under the pointer; only the inspector is drawn again, and only when the hex changes.</summary>
+    public void SetHovered(HexFacts? facts)
+    {
+        if (facts?.Index != hovered?.Index)
+        {
+            hovered = facts;
+            StateHasChanged();
+        }
+    }
 
     private IReadOnlyList<InspectorTabs.Tab> TabList => [.. Extras.Select(extra => extra.Tab), .. BuiltIn];
 }

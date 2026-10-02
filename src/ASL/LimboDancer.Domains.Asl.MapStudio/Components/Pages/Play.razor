@@ -10,9 +10,7 @@
 @using static LimboDancer.Domains.Asl.MapStudio.Components.Play.FireText
 @inject LivePlay Live
 @inject UnitLibrary Library
-@inject NavigationManager Navigation
 @inject GameMaps GameMaps
-@inject StudioLos Los
 @inject IServiceProvider Services
 @inject IJSRuntime JS
 @implements IAsyncDisposable
@@ -35,7 +33,7 @@
                    Conditions="@(state is null ? null : NightAndWeather(state))" HasCard="@(state?.Scenario is not null && handOver is null)"
                    PendingTitle="@(handOver is null ? pending?.Action.Name : null)" Review="@FocusReview" Awaiting="@(AwaitingView is { } awaited ? ViewLabel(awaited) : null)"
                    AwaitingNote="@AwaitingNote" HandOver="@HandOverToAwaiting" Status="@status">
-    <LiveGameToolbar Games="@([.. Live.Games().Select(scope => scope.Game)])" GameId="@gameId" GameChanged="ChangeGame" Views="@ViewChoices"
+    <LiveGameToolbar Games="@([.. Live.Games().Select(scope => scope.Game)])" GameId="@gameId" GameChanged="ChangeGame" Disabled="@busy" Views="@ViewChoices"
                      ViewAs="@(handOver ?? viewAs)" ViewChanged="ChangeView" BoardLabel="@ViewTarget"
                      BoardLink="@(state is not null && handOver is null ? Games.BoardLink(ViewTarget, GameLibrary.LivePrefix + gameId, Viewer, state.Revision) : null)" />
 </PlayContextHeader>
@@ -148,7 +146,7 @@ else if (state is not null)
        the review pane are BoardWorkspace, the review pane its inspector, with the proposal as its first tab. *@
     <div id="play-workspace" class="@(narrow ? "play-workspace narrow" : "play-workspace")">
         @{
-            RenderFragment proposalBlock = @<div id="play-proposal">
+            RenderFragment proposalBlock = @<div id="play-proposal-tab">
                 @if (pending is null)
                 {
                     <p class="muted" id="play-review-none">Nothing to review: a proposal shows here, with Confirm and Cancel.</p>
@@ -497,11 +495,11 @@ else if (state is not null)
         }
         @if (MapLayers is { Board: { } mapBoard } layers)
         {
-            <BoardWorkspace @ref="workspace" Board="@mapBoard" Units="@layers.Overlay" UnitView="@layers.View" Marks="@layers.Marks" Vocabulary="@Library.Vocabulary"
+            <BoardWorkspace @key="@($"{gameId}/{Viewer.Name}")" @ref="workspace" Board="@mapBoard" Units="@layers.Overlay" UnitView="@layers.View" Marks="@layers.Marks" Vocabulary="@Library.Vocabulary"
                             Selected="@(highlight is { } picked ? GameMaps.FactsAt(mapBoard, picked) : null)"
                             SelectedChanged="@(facts => highlight = facts is null ? null : GameMaps.LocationOf(mapBoard, facts.Index))"
-                            @bind-Panel="inspectorTab" Extras="@([new BoardInspector.ExtraTab(new("proposal", "Proposal", pending is null ? null : 1), proposalBlock)])"
-                            InspectorLabel="Review and inspector" IdPrefix="play-inspector" MapLabel="The game's map" InspectorFirst="true"
+                            @bind-Panel="inspectorTab" Extras="@([new BoardInspector.ExtraTab(new("proposal", "Proposal", AwaitingConfirm ? 1 : null), proposalBlock)])"
+                            HoldPanel="@AwaitingConfirm" InspectorLabel="Review and inspector" IdPrefix="play-inspector" MapLabel="The game's map" InspectorFirst="@(!narrow)"
                             InspectorClass="play-pane play-review inspector" InspectorAttributes="@ReviewAttributes"
                             StageClass="play-pane play-map-pane play-map" StageAttributes="@MapAttributes(layers.Source)" Between="@between">
                 <Toolbar>
@@ -516,6 +514,7 @@ else if (state is not null)
                         <button type="button" id="play-map-zoom-in" aria-label="Zoom in" @onclick="@(() => workspace!.Zoom(0.8))">+</button>
                         <button type="button" id="play-map-zoom-out" aria-label="Zoom out" @onclick="@(() => workspace!.Zoom(1.25))">-</button>
                         <button type="button" id="play-map-fit" @onclick="@(() => workspace!.Fit())">Fit</button>
+                        <button type="button" id="map-rotate" aria-pressed="@(workspace?.Rotated == true ? "true" : "false")" @onclick="@(() => workspace!.ToggleRotation())">Rotate map</button>
                         <span class="muted" id="play-map-keys">Drag to pan. With the map focused, + and - zoom and 0 fits. Click a hex or a counter to inspect it.</span>
                     </div>
                 </Toolbar>
@@ -523,7 +522,7 @@ else if (state is not null)
         }
         else
         {
-            <section id="play-panel-review" class="play-pane play-review" aria-label="Review" aria-busy="@(busy ? "true" : "false")" tabindex="-1">
+            <section id="play-panel-review" class="play-pane play-review" aria-label="Review" aria-busy="@(busy ? "true" : "false")" tabindex="-1" @ref="reviewFallback">
                 @proposalBlock
             </section>
             @between
@@ -1962,7 +1961,8 @@ else if (state is not null)
     /// </summary>
     private void ChangeView(string next)
     {
-        if (next == (handOver ?? viewAs))
+        // Pass 29: the view does not change while the gate works, so a result lands with the view that asked for it.
+        if (busy || next == (handOver ?? viewAs))
         {
             return;
         }
@@ -3283,8 +3283,15 @@ else if (state is not null)
     /// </summary>
     private void ChangeGame(ChangeEventArgs args)
     {
+        if (busy)
+        {
+            return;
+        }
+
         gameId = args.Value as string ?? string.Empty;
         handOver = null;
+        highlight = null;
+        inspectorTab = "selection";
         placeEntry = string.Empty;
         nonObChosen.Clear();
         pending = null;
@@ -3964,6 +3971,7 @@ else if (state is not null)
         }
 
         (busy, status) = (true, "Checking the proposal.");
+        var asked = AskedBy;
         Proposal proposed;
         try
         {
@@ -3975,9 +3983,16 @@ else if (state is not null)
             busy = false;
         }
 
+        // Pass 29: a result that returns for another game or view is dropped, never shown to the view that did not ask.
+        if (AskedBy != asked)
+        {
+            status = string.Empty;
+            return;
+        }
+
         pending = proposed;
         status = $"{action.Name}: {OutcomeText(proposed.Result.Outcome, Withheld(proposed))}";
-        (focusReview, inspectorTab) = (true, "proposal");
+        ShowProposal();
         Refresh();
     }
 
@@ -4020,6 +4035,7 @@ else if (state is not null)
         }
 
         (busy, status) = (true, "Confirming.");
+        var asked = AskedBy;
         PlayResult result;
         try
         {
@@ -4028,6 +4044,13 @@ else if (state is not null)
         finally
         {
             busy = false;
+        }
+
+        if (AskedBy != asked)
+        {
+            status = string.Empty;
+            Refresh();
+            return;
         }
 
         status = $"{proposal.Action.Name}: {OutcomeText(result.Outcome, false)}";
@@ -4153,6 +4176,7 @@ else if (state is not null)
         ["id"] = "play-panel-review",
         ["aria-busy"] = busy ? "true" : "false",
         ["tabindex"] = "-1",
+        ["hidden"] = narrow && paneTab != "map",
     };
 
     /// <summary>The map pane's attributes: its tab panel or region, and the map's source.</summary>
@@ -4251,7 +4275,25 @@ else if (state is not null)
         }
     }
 
-    private void FocusReview() => (focusReview, inspectorTab) = (true, "proposal");
+    private void FocusReview() => ShowProposal();
+
+    /// <summary>The Proposal tab chosen and brought into view with the focus; under 1024px it is in the Map tab (pass 29).</summary>
+    private void ShowProposal()
+    {
+        (focusReview, inspectorTab) = (true, "proposal");
+        if (narrow)
+        {
+            paneTab = "map";
+        }
+    }
+
+    /// <summary>The game and the view a gate call is made for; a result returning for others is dropped (pass 29).</summary>
+    private string AskedBy => $"{gameId}/{handOver ?? viewAs}";
+
+    /// <summary>Whether a proposal waits for Confirm, so its tab is marked and stays open when the map is clicked (pass 29).</summary>
+    private bool AwaitingConfirm => pending?.Result.Outcome == PlayOutcome.NeedsConfirmation;
+
+    private ElementReference reviewFallback;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -4266,7 +4308,7 @@ else if (state is not null)
 
             if (focusReview || focusActions)
             {
-                var pane = focusReview ? workspace?.Inspector ?? default : actionsPane;
+                var pane = focusReview ? workspace?.Inspector ?? reviewFallback : actionsPane;
                 (focusReview, focusActions) = (false, false);
                 workspaceScript ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/playWorkspace.js");
                 await workspaceScript.InvokeVoidAsync("reveal", pane);
@@ -4310,7 +4352,7 @@ else if (state is not null)
             if (mapCache.Layers is null || mapCache.Game != gameId || mapCache.Revision != state.Revision || mapCache.Viewer != Viewer.Name
                 || mapCache.Gun != ordnanceGun)
             {
-                mapCache = (gameId, state.Revision, Viewer.Name, ordnanceGun, GameMaps.Layers(gameId, state.Map, Viewer, state.Revision, null, null, CoveredArcLayer,
+                mapCache = (gameId, state.Revision, Viewer.Name, ordnanceGun, GameMaps.Layers(gameId, state.Map, Viewer, state.Revision, CoveredArcLayer,
                     state.ResidualFire));
             }
 

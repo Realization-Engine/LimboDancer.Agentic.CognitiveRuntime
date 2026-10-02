@@ -1,9 +1,12 @@
-@* B09 (plan section 16.6): the units in the selected hex, each selectable; a unit beyond the six a stack draws says so. *@
+@* B09 (plan section 16.6): the units in the selected hex, each selectable, with its id; the unit shown above is marked (pass 29). A unit beyond
+   the six a stack draws says so. *@
 <h3>Units in @Hex (@Members.Count)</h3>
 <ul class="unit-list" id="hex-units">
     @foreach (var member in Members)
     {
-        <li @key="member.Document.Id"><button class="link" @onclick="() => OnSelect.InvokeAsync(member)">@member.Name</button>@(member.Shown ? "" : " (not drawn; stack beyond six)")</li>
+        var current = member.Document.Id == Selected;
+        <li @key="member.Document.Id" class="@(current ? "current" : null)"><button class="link" aria-current="@(current ? "true" : null)" @onclick="() => OnSelect.InvokeAsync(member)">@member.Name</button>
+            <span class="muted">@member.Document.Id@(current ? ", shown above" : string.Empty)</span>@(member.Shown ? "" : " (not drawn; stack beyond six)")</li>
     }
 </ul>
 
@@ -13,6 +16,10 @@
 
     [Parameter, EditorRequired]
     public IReadOnlyList<PlacedUnit> Members { get; set; } = [];
+
+    /// <summary>The id of the unit shown above the list; null when none is.</summary>
+    [Parameter]
+    public string? Selected { get; set; }
 
     [Parameter]
     public EventCallback<PlacedUnit> OnSelect { get; set; }

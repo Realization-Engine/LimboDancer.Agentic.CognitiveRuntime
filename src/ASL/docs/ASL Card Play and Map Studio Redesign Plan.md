@@ -279,7 +279,7 @@ Control forfeited to a Kindled Fire (A26.16) waits for Fire spread (backlog sect
 
 **Purpose:** one map workspace for every page that shows a board. **After:** pass 28c. **From:** the user's review of the board viewer against Play.
 
-**In progress 2026-10-02:** tasks 29.1 to 29.4 are built in one go at the user's word and checked in the Studio; 29.5 is not started. The user chose the Proposal tab over a pinned review. Section 15.11 holds the decisions; the [pass 29 design](<ASL Unit Backlog Pass 29 Design.md>) the detail.
+**In progress 2026-10-02:** tasks 29.1 to 29.4 are built in one go at the user's word and checked in the Studio, then a review's fixes and the turned map from backlog section 44; 29.5 is not started. The user chose the Proposal tab over a pinned review. Section 15.11 holds the decisions; the [pass 29 design](<ASL Unit Backlog Pass 29 Design.md>) the detail.
 
 | Task | What it changes | Estimate |
 |---|---|---|
@@ -763,6 +763,9 @@ These folders express ownership, not a requirement to create every directory imm
 - **The view's overlay.** `GameMaps.Layers` returns the unit overlay and the view beside the SVG, so the Selection tab reads what the view may see and nothing more (section 15.4). Terrain facts, Evidence, and LOS are terrain only and serve every view.
 - **The workspace draws the picked hex and the LOS line.** The page's map cache keys only on the game, revision, view, and Gun.
 - **Retired.** `PlayMapPanel`, `PlaySelectedHex`, and Play's LOS form under the map.
+- **The turned map** (backlog section 44, the user's row). "Rotate map" turns the whole map a quarter clockwise as one, counters included, by a CSS transform; the board's coordinates and the pointer mapping are unchanged, and the browser remembers the choice.
+- **Narrow windows.** Under 1024px the inspector sits below the map in the Map tab; a proposal opens the Map tab on its Proposal tab.
+- **The Proposal tab holds** while a proposal waits for Confirm, and is counted only then. The game and view pickers are disabled while the gate works, and the workspace is keyed by the game and the view.
 
 # Part IV. The component inventory
 

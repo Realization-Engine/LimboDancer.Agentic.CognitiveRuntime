@@ -32,8 +32,12 @@
     private string? shown;
     private string? loadProblem;
     private (string? Units, string? Los, string? Marks, string? Highlight, string? Visible, string? Comparison) sent;
+    private BoardInspector? inspectorPane;
     private HexFacts? hovered;
     private PlacedUnit? selectedUnit;
+    private GameView? shownView;
+    private string? shownPanel;
+    private bool rotated;
     private string? sample;
     private LosPanel.LosDraft losDraft = new(string.Empty, string.Empty, false);
     private LosCheck? losCheck;
@@ -97,6 +101,13 @@
     [Parameter]
     public IReadOnlyList<BoardInspector.ExtraTab> Extras { get; set; } = [];
 
+    /// <summary>
+    /// Whether the open tab stays open when a hex or a counter is clicked, such as Play's Proposal tab while a proposal waits for Confirm (pass 29).
+    /// Otherwise a click on the map shows the Selection tab, unless LOS is open.
+    /// </summary>
+    [Parameter]
+    public bool HoldPanel { get; set; }
+
     [Parameter]
     public string InspectorLabel { get; set; } = "Board inspector";
 
@@ -135,8 +146,11 @@
     /// <summary>The inspector's element, for a host that brings it into view.</summary>
     public ElementReference Inspector => inspector;
 
-    private RenderFragment InspectorPane => @<BoardInspector Board="@Board" Panel="@Panel" PanelChanged="@PanelChanged" Label="@InspectorLabel" IdPrefix="@IdPrefix"
-        Extras="@Extras" Selected="@Selected" Hovered="@hovered" Units="@Units" SelectedUnit="@selectedUnit" SelectedUnitChanged="@PickUnit"
+    /// <summary>Whether the map is turned a quarter clockwise (pass 29).</summary>
+    public bool Rotated => rotated;
+
+    private RenderFragment InspectorPane => @<BoardInspector @ref="inspectorPane" Board="@Board" Panel="@Panel" PanelChanged="@PanelChanged" Label="@InspectorLabel" IdPrefix="@IdPrefix"
+        Extras="@Extras" Selected="@Selected" Units="@Units" SelectedUnit="@selectedUnit" SelectedUnitChanged="@PickUnit"
         Vocabulary="@Vocabulary" View="@UnitView" UnitNote="@UnitNote" Sample="@sample" StyledModel="@StyledModel" LosDraft="@losDraft"
         LosDraftChanged="@(draft => losDraft = draft)" LosResult="@losCheck" OnCheckLos="@CheckLos" OnClearLos="@ClearLos" OnCopy="@Copy" />;
 
@@ -146,24 +160,56 @@
 
     protected override void OnParametersSet()
     {
-        // A unit the overlay no longer draws, or one outside the hex kept, is dropped.
+        // A unit the overlay no longer draws, or one outside the hex kept, is dropped. A "?" is let go when the view is read again: its placement
+        // id is numbered afresh at each revision, so the same id may be another presence (pass 29).
         if (selectedUnit is { } unit)
         {
-            selectedUnit = Units?.Units.FirstOrDefault(item => item.Document.Id == unit.Document.Id) is { } kept && kept.Hex == Selected?.Index ? kept : null;
+            var sealedBefore = shownView is not null && !ReferenceEquals(shownView, UnitView) && shownView.Sealed.Any(presence => presence.PlacementId == unit.Document.Id);
+            selectedUnit = !sealedBefore && Units?.Units.FirstOrDefault(item => item.Document.Id == unit.Document.Id) is { } kept && kept.Hex == Selected?.Index ? kept : null;
         }
+
+        shownView = UnitView;
 
         // Another board starts with nothing hovered, sampled, or checked.
         if (shown is not null && !shown.StartsWith($"{Board.Ref.Value}/{Board.Version}/", StringComparison.Ordinal))
         {
             (hovered, sample, losCheck) = (null, null, null);
+            inspectorPane?.SetHovered(null);
         }
+
+        // The LOS tab opened with an empty From takes the hex kept (pass 29).
+        if (Panel == "los" && shownPanel != "los" && losDraft.Source.Length == 0 && Selected is not null)
+        {
+            losDraft = losDraft with { Source = Board.LocationOf(Selected) };
+        }
+
+        shownPanel = Panel;
     }
 
-    private Task Ready()
+    private async Task Ready()
     {
         shown = null;
+        try
+        {
+            rotated = viewport is not null && await viewport.IsRotated();
+        }
+        catch (JSException)
+        {
+            rotated = false;
+        }
+
         StateHasChanged();
-        return Task.CompletedTask;
+    }
+
+    /// <summary>Turns the whole map a quarter clockwise, or back; the browser remembers the choice (pass 29).</summary>
+    public async Task ToggleRotation()
+    {
+        if (viewport is not null)
+        {
+            rotated = !rotated;
+            await viewport.SetRotation(rotated);
+            StateHasChanged();
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -201,6 +247,25 @@
                 StateHasChanged();
                 return;
             }
+        }
+
+        try
+        {
+            await SendLayers();
+        }
+        catch (JSException exception)
+        {
+            // A layer the browser refuses is reported like a failed load; Try again loads the board and sends every layer afresh.
+            (shown, loadProblem) = (null, exception.Message);
+            StateHasChanged();
+        }
+    }
+
+    private async Task SendLayers()
+    {
+        if (viewport is null)
+        {
+            return;
         }
 
         var visible = string.Join('|', Visible ?? AllLayers);
@@ -286,7 +351,24 @@
             ? $"Pixel ({cellX}, {cellY}): code {code} {(Board.Catalog.TryGet(code, out var type) ? type.Name : "-")}, elevation {grid.ElevationAt(cellX, cellY)}"
             : $"Pixel ({cellX}, {cellY}) is off the grid.";
         selectedUnit = null;
-        return InvokeAsync(() => Select(grid.Geometry.HexAt(x, y) is { } hex ? Board.Facts[hex] : null));
+        return InvokeAsync(async () =>
+        {
+            await ShowSelection(fromExtraTab: true);
+            await Select(grid.Geometry.HexAt(x, y) is { } hex ? Board.Facts[hex] : null);
+        });
+    }
+
+    /// <summary>
+    /// A click on the map shows what it picked: a counter opens Selection from Evidence or a host's tab, and a hex from a host's tab, unless the
+    /// host holds its tab open or LOS is open, so its hex can be taken as an end (table player, pass 22d; pass 29).
+    /// </summary>
+    private async Task ShowSelection(bool fromExtraTab)
+    {
+        var extra = Extras.Any(item => item.Tab.Id == Panel);
+        if (!HoldPanel && Panel != "los" && Panel != "selection" && (!fromExtraTab || extra))
+        {
+            await PanelChanged.InvokeAsync("selection");
+        }
     }
 
     /// <summary>Hover updates the inspector only when the pointer crosses into another hex, and only while no hex is kept.</summary>
@@ -301,7 +383,7 @@
         if (next?.Index != hovered?.Index)
         {
             hovered = next;
-            return InvokeAsync(StateHasChanged);
+            return InvokeAsync(() => inspectorPane?.SetHovered(next));
         }
 
         return Task.CompletedTask;
@@ -318,12 +400,7 @@
 
         return InvokeAsync(async () =>
         {
-            // A unit clicked while checking LOS stays on the LOS tab, so its hex can be taken as an end (table player, pass 22d).
-            if (Panel != "los" && Panel != "selection")
-            {
-                await PanelChanged.InvokeAsync("selection");
-            }
-
+            await ShowSelection(fromExtraTab: false);
             selectedUnit = unit;
             await Select(Board.Facts[unit.Hex]);
         });

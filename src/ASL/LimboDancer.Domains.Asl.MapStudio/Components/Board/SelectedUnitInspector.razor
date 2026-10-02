@@ -10,9 +10,9 @@
     {
         <h3>In the game</h3>
         <dl class="unit-details" id="unit-game-facts">
-            <dt>Side</dt><dd>@instance.Side</dd>
+            <dt>Side</dt><dd>@SideName(instance.Side)</dd>
             <dt>Conditions</dt><dd>@ConditionsText(instance)</dd>
-            <dt>Good Order</dt><dd>@Conditions.Name(GameState.GoodOrder(instance, Vocabulary))</dd>
+            <dt>Good Order</dt><dd>@YesNo(GameState.GoodOrder(instance, Vocabulary))</dd>
             <dt>MF spent this phase</dt><dd>@instance.MfSpent</dd>
             @if (instance.From.Count > 0)
             {
@@ -36,7 +36,7 @@
     {
         <h3>In the game</h3>
         <dl class="unit-details" id="unit-game-facts">
-            <dt>Side</dt><dd>@(other.Side ?? "none")</dd>
+            <dt>Side</dt><dd>@(other.Side is { } side ? SideName(side) : "none")</dd>
             <dt>Conditions</dt><dd>@ConditionsText(other)</dd>
         </dl>
     }
@@ -60,6 +60,16 @@
     /// <summary>Where the unit comes from, in words.</summary>
     [Parameter]
     public string? Note { get; set; }
+
+    // Pass 29: a side reads as the counter names it ("Russian"), and Good Order as Yes or No.
+    private static string SideName(string side) => side.Length == 0 ? side : char.ToUpperInvariant(side[0]) + side[1..];
+
+    private static string YesNo(ConditionState state) => state switch
+    {
+        ConditionState.True => "Yes",
+        ConditionState.False => "No",
+        _ => Conditions.Name(state),
+    };
 
     private static string ConditionsText(IGameObject item)
     {

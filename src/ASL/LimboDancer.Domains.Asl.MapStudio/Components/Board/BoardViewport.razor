@@ -98,6 +98,12 @@
 
     public ValueTask SetUnits(string? svg) => Send("setUnits", svg);
 
+    /// <summary>Turns the whole map a quarter clockwise, or back (pass 29); the browser remembers the choice.</summary>
+    public ValueTask SetRotation(bool on) => Send("setRotation", on);
+
+    /// <summary>Whether the map is turned; false before the viewport exists.</summary>
+    public async ValueTask<bool> IsRotated() => viewport is not null && await viewport.InvokeAsync<bool>("isRotated");
+
     public ValueTask SetLos(string? svg) => Send("setLos", svg);
 
     /// <summary>Outlines picked hexes: an SVG group with the id <c>layer-marks</c>, drawn on top; null clears it (pass 28, the card editor's map).</summary>
