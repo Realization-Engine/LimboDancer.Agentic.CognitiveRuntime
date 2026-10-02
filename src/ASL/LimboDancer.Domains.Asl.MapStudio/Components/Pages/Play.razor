@@ -159,6 +159,7 @@ else if (state is not null && history?.Current is not null)
     }
     @if (state.Phase == "rph")
     {
+        <h4>Rally and Repair</h4>
         <RallyActionPanel Units="@RallyChoices" Leaders="@([.. RallyLeaders.Select(leader => leader.Id)])" Unit="@rallyUnit" Leader="@rallyLeader"
             OnUnit="@(id => { rallyUnit = id; rallyLeader = string.Empty; })" OnLeader="@(id => rallyLeader = id)" OnPropose="@ProposeRally" />
         <RepairActionPanel Weapons="@RepairChoices" Weapon="@repairWeapon" OnWeapon="@(id => repairWeapon = id)" OnPropose="@ProposeRepair" />
@@ -399,7 +400,7 @@ else if (state is not null && history?.Current is not null)
         }
         @if (state.Night && StarshellFirers(firing).Any())
         {
-            <StarshellActionPanel Firers="@([.. StarshellFirers(firing)])" Unit="@starshellUnit" Method="@starshellMethod" At="@starshellAt"
+            <StarshellActionPanel Firers="@StarshellChoices(firing)" Unit="@starshellUnit" Method="@starshellMethod" At="@starshellAt"
                 OnUnit="@(id => starshellUnit = id)" OnMethod="@(method => starshellMethod = method)" OnAt="@(at => starshellAt = at)" OnPropose="@ProposeStarshell" />
         }
         @if (state.Phase == "afph" && state.PlacedCharges.Any(item => item.Operable))
@@ -462,7 +463,7 @@ else if (state is not null && history?.Current is not null)
     <ActionRecordList Heading="Close Combat" ListId="play-close-combats" Records='@Entries(CloseCombatRecords, "cc")' />
     <ActionRecordList Heading="Night and weather" ListId="play-night" Records='@Entries(NightRecords, "night")' />
     <ActionRecordList Heading="Snipers" ListId="play-snipers" Records='@Entries(SniperRecords, "sniper")' />
-    <ActionRecordList Heading="Rally, Rout, and support weapons" ListId="play-rallies"
+    <ActionRecordList Heading="Rally, Rout, and other actions" ListId="play-rallies"
                       Records="@([.. RallyAndRepairRecords.Select(item => new ActionRecordList.Entry(item.EventId, item.Kind, item.Text))])" />
 
     <h3>Map</h3>
@@ -2208,7 +2209,8 @@ else if (state is not null && history?.Current is not null)
         {
             ["gameId"] = gameId, ["attemptId"] = Attempt("gun"), ["expectedRevision"] = (long)history!.Events.Count, ["gunId"] = ordnanceGun, ["target"] = ordnanceTarget,
         };
-        if (ordnanceIntensive && state?.Find(ordnanceGun) is not EquipmentInstance { Kind: "asl:light-mortar" } && !ordnanceGun.EndsWith(":pf", StringComparison.Ordinal))
+        // UI review, pass 28b: a value the panel hides for this weapon is never sent.
+        if (ordnanceIntensive && OrdnanceIntensiveAllowed)
         {
             arguments["intensive"] = true;
         }
@@ -2220,7 +2222,7 @@ else if (state is not null && history?.Current is not null)
         {
             arguments["director"] = ordnanceDirector;
         }
-        if (ordnanceVehicle.Length > 0)
+        if (ordnanceVehicle.Length > 0 && OrdnanceAmmunitionKind != OrdnanceTargetFields.AmmunitionKind.None)
         {
             arguments["targetVehicle"] = ordnanceVehicle;
             arguments["ammunition"] = ordnanceGun.EndsWith(":pf", StringComparison.Ordinal) ? "heat" : ordnanceAmmunition;
@@ -2414,7 +2416,7 @@ else if (state is not null && history?.Current is not null)
     }
 
     private string starshellUnit = string.Empty;
-    private string starshellMethod = "own-hex";
+    private string starshellMethod = StarshellActionPanel.OwnHex;
     private string starshellAt = string.Empty;
 
     /// <summary>The units of a side that may try a Starshell (E1.92; ruling R16.8): Good Order leaders and MMC, and CE AFV.</summary>
@@ -3057,7 +3059,7 @@ else if (state is not null && history?.Current is not null)
             : "not read";
 
     /// <summary>
-    /// The Rally and Repair attempts the viewer may see, latest first, each with its arithmetic: for a rally the DR, each DRM,
+    /// The Rally and Repair attempts the viewer may see, latest attempt first, each with its arithmetic: for a rally the DR, each DRM,
     /// the Final DR against the Morale Level, and the result (A10.6 to A10.64); for a repair the dr against the Repair Number
     /// (A9.72). A rally by a concealed unit that stays concealed is its own side's (ruling R19.8).
     /// </summary>
@@ -3073,10 +3075,14 @@ else if (state is not null && history?.Current is not null)
             var rolls = history.Events.Select(item => item.Payload).OfType<DiceRolled>().ToDictionary(item => item.Roll, StringComparer.Ordinal);
             var records = new List<(string, string, string)>();
             // Backlog section 23 (pass 28b): each attempt's events, to tell a Failure to Rout and a lone SW transfer from the same events elsewhere.
-            var attempts = history.Events.GroupBy(AttemptOf, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.ToArray(), StringComparer.Ordinal);
+            var attempts = history.Events.GroupBy(item => AttemptOf(item.EventId), StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.ToArray(), StringComparer.Ordinal);
+            var starts = history.Events.Select((item, index) => (Attempt: AttemptOf(item.EventId), index)).GroupBy(pair => pair.Attempt, StringComparer.Ordinal)
+                .ToDictionary(group => group.Key, group => group.First().index, StringComparer.Ordinal);
             foreach (var (item, index) in history.Events.Select((item, index) => (item, index)).Where(pair => pair.item.IsVisibleTo(Viewer)))
             {
                 var before = index > 0 ? history.States.ElementAtOrDefault(index - 1) : null;
+                var attempt = AttemptOf(item.EventId);
+                var start = starts[attempt] > 0 ? history.States.ElementAtOrDefault(starts[attempt] - 1) : null;
                 if (item.Payload is RallyAttempted rally && rally.Resolution.Deserialize<RallyResolution>(LiveFire.Json) is { Arithmetic: { } arithmetic } resolution)
                 {
                     records.Add((item.EventId, "rally", RallyText(rally, arithmetic, resolution.Effect)));
@@ -3095,7 +3101,7 @@ else if (state is not null && history?.Current is not null)
                 else if (item.Payload is LineageRecorded { Action: LineageAction.Deployed or LineageAction.Recombined } lineage)
                 {
                     records.Add((item.EventId, "lineage", lineage.Action == LineageAction.Deployed
-                        ? $"{lineage.Consumed[0]} becomes the HS {string.Join(" and ", lineage.Produced.Select(unit => unit.Id))} (A1.31)"
+                        ? $"{lineage.Consumed[0]} becomes the HS {string.Join(" and ", lineage.Produced.Select(unit => unit.Id))} (A1.31){DeploySplit(attempts[attempt], lineage)}"
                         : $"{string.Join(" and ", lineage.Consumed)} Recombine into {lineage.Produced[0].Id} (A1.32)"));
                 }
                 else if (item.Payload is ConditionsChanged dismantled && dismantled.Conditions.TryGetValue(Conditions.Dismantled, out var taken))
@@ -3105,10 +3111,19 @@ else if (state is not null && history?.Current is not null)
                 else if (item.Payload is ConditionsChanged marked && marked.Conditions.TryGetValue(Conditions.DesperationMorale, out var gained)
                     && gained == ConditionState.True && Open(before, marked.Id))
                 {
-                    records.Add((item.EventId, "dm", $"{marked.Id} comes under DM (A10.62)"));
+                    // Referee, pass 28b: the RPh's end clears DM and sets it again for a unit that keeps it (A10.62 EXC; E1.54 at night), which is not
+                    // DM gained.
+                    if (start?.Unit(marked.Id) is not { } earlier || GameState.Condition(earlier, Conditions.DesperationMorale) != ConditionState.True)
+                    {
+                        records.Add((item.EventId, "dm", $"{marked.Id} comes under DM (A10.62)"));
+                    }
+                    else if (start.Phase == "rph")
+                    {
+                        records.Add((item.EventId, "dm", $"{marked.Id} keeps DM as the RPh ends ({(start.Night ? "E1.54" : "A10.62")})"));
+                    }
                 }
                 else if (item.Payload is InstanceEliminated eliminated && item.RulePackage is null && before?.Phase == "rtph"
-                    && attempts[AttemptOf(item)].Any(other => other.Payload is PhaseChanged) && Open(before, eliminated.Id))
+                    && attempts[attempt].Any(other => other.Payload is PhaseChanged) && Open(before, eliminated.Id))
                 {
                     records.Add((item.EventId, "failure-to-rout", $"{eliminated.Id} is eliminated for Failure to Rout as the RtPh ends (A10.5)"));
                 }
@@ -3117,7 +3132,7 @@ else if (state is not null && history?.Current is not null)
                     records.Add((item.EventId, "drop", $"{dropped.Id} is left in {left.Location} (A4.43)"));
                 }
                 else if (item.Payload is EquipmentTransferred { Holding: { Role: HoldingRole.Possessed } receiver } passed
-                    && attempts[AttemptOf(item)].Count(other => !IsDmOnly(other.Payload)) == 1
+                    && attempts[attempt].Count(other => !IsDmOnly(other.Payload)) == 1
                     && before?.Find(passed.Id) is EquipmentInstance { Holding: { Role: HoldingRole.Possessed } held } && held.Holder != receiver.Holder
                     && Open(before, held.Holder) && Open(before, receiver.Holder))
                 {
@@ -3172,8 +3187,8 @@ else if (state is not null && history?.Current is not null)
                 }
             }
 
-            records.Reverse();
-            return records;
+            // Table player, pass 28b: the latest attempt first, and each attempt's records in the order they happened, so a cause reads before its effect.
+            return [.. records.GroupBy(record => AttemptOf(record.Item1), StringComparer.Ordinal).Reverse().SelectMany(group => group)];
         }
     }
 
@@ -3263,20 +3278,13 @@ else if (state is not null && history?.Current is not null)
         moveDoubleTime = false;
         moveMinimum = false;
         moveBypass = string.Empty;
-        rallyUnit = string.Empty;
-        rallyLeader = string.Empty;
-        repairWeapon = string.Empty;
         advanceUnits.Clear();
         advanceTo = string.Empty;
         advanceExit = string.Empty;
         smokeBy = smokeAt = placeDc = placeDcAt = string.Empty;
         ccLocation = string.Empty;
         ClearCloseCombat();
-        ordnanceGun = string.Empty;
-        ordnanceTarget = string.Empty;
-        ordnanceVehicle = string.Empty;
-        shockVehicle = string.Empty;
-        ResetRallyAndOrdnance();
+        ResetPanelChoices();
         Refresh();
     }
 
@@ -3330,10 +3338,6 @@ else if (state is not null && history?.Current is not null)
     {
         ClearFire();
         opportunityUnits.Clear();
-        ordnanceGun = string.Empty;
-        ordnanceTarget = string.Empty;
-        ordnanceVehicle = string.Empty;
-        shockVehicle = string.Empty;
         advanceUnits.Clear();
         advanceTo = string.Empty;
         advanceExit = string.Empty;
@@ -3344,9 +3348,6 @@ else if (state is not null && history?.Current is not null)
             ClearCloseCombat();
         }
 
-        rallyUnit = string.Empty;
-        rallyLeader = string.Empty;
-        repairWeapon = string.Empty;
         moveTo = string.Empty;
         moveAssault = false;
         moveDoubleTime = false;
@@ -3363,15 +3364,18 @@ else if (state is not null && history?.Current is not null)
         vehicleEntryHex = string.Empty;
         vehicleEntryFacing = string.Empty;
         boundingTarget = string.Empty;
-        ResetRallyAndOrdnance();
+        ResetPanelChoices();
     }
 
     /// <summary>
-    /// Pass 28b (section 15.3): the Rout, SW, Deployment, Recombination, DM, Shock, Starshell, and ordnance choices, cleared for another game, phase,
-    /// or view, so a panel never shows one unit and proposes another.
+    /// Pass 28b (section 15.3): the Rally, Repair, Rout, SW, Deployment, Recombination, DM, Shock, Starshell, and ordnance choices, cleared for
+    /// another game, phase, or view, so a panel never shows one unit and proposes another.
     /// </summary>
-    private void ResetRallyAndOrdnance()
+    private void ResetPanelChoices()
     {
+        rallyUnit = rallyLeader = repairWeapon = string.Empty;
+        ordnanceGun = ordnanceTarget = ordnanceVehicle = string.Empty;
+        ordnanceTurn = "east";
         routUnit = routRoute = string.Empty;
         routLowCrawl = false;
         swWeapon = swUnit = string.Empty;
@@ -3699,42 +3703,53 @@ else if (state is not null && history?.Current is not null)
 
     private static PlayChoice Labelled(UnitInstance unit) => new(unit.Id, $"{unit.Id} ({unit.Side})");
 
+    /// <summary>The units the view sees that may act: no Passenger (ruling R26.2).</summary>
+    private IEnumerable<UnitInstance> ActingUnits => SeenOnly(VisibleUnits);
+
+    /// <summary>The units of a side that may try a Starshell, among those the view sees.</summary>
+    private IReadOnlyList<string> StarshellChoices(string side)
+    {
+        var seen = ActingUnits.Select(unit => unit.Id).ToHashSet(StringComparer.Ordinal);
+        return [.. StarshellFirers(side).Where(seen.Contains)];
+    }
+
     /// <summary>Pass 28b: the SW action the panel asks for, as its registered action.</summary>
-    private Task ProposeSupportWeaponKind(string kind) => ProposeSupportWeapon(kind switch
+    private Task ProposeSupportWeaponKind(string kind) => (kind switch
     {
         SupportWeaponActionPanel.Transfer => GameActions.Transfer,
         SupportWeaponActionPanel.Drop => GameActions.Drop,
         SupportWeaponActionPanel.Recover => GameActions.Recover,
-        _ => GameActions.Dismantle,
-    });
+        SupportWeaponActionPanel.Dismantle => GameActions.Dismantle,
+        _ => null,
+    }) is { } action ? ProposeSupportWeapon(action) : Task.CompletedTask;
 
     /// <summary>Pass 28b: the broken units the view sees that may rout, and what each owes (A10.5; ruling R23.1).</summary>
     private IReadOnlyList<RoutActionPanel.Obligation> RoutObligations => state is null ? []
-        : [.. VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Broken) == ConditionState.True && Live.Planner.MayRout(state, unit))
+        : [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Broken) == ConditionState.True && Live.Planner.MayRout(state, unit))
             .OrderBy(unit => unit.Id, StringComparer.Ordinal)
             .Select(unit => new RoutActionPanel.Obligation(unit.Id, $"{unit.Id} ({unit.Side}): "
                 + (Live.Planner.MustRout(state, unit) is { } why ? $"must rout: {why}" : "may rout: it is under DM")
                 + (state.RoutedThisPhase.Contains(unit.Id) ? "; has routed" : RoutAdviceText(unit))))];
 
     private IReadOnlyList<PlayChoice> RoutChoices => state is null ? []
-        : [.. VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Broken) == ConditionState.True
+        : [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Broken) == ConditionState.True
             && !state.RoutedThisPhase.Contains(unit.Id) && Live.Planner.MayRout(state, unit)).Select(Labelled)];
 
     private IReadOnlyList<PlayChoice> RallyChoices =>
-        [.. VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Broken) == ConditionState.True).Select(Labelled)];
+        [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Broken) == ConditionState.True).Select(Labelled)];
 
     private IReadOnlyList<PlayChoice> RepairChoices =>
     [
         .. VisibleEquipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed }
                 && GameState.Condition(item, Conditions.Malfunctioned) == ConditionState.True)
             .Select(weapon => new PlayChoice(weapon.Id, $"{weapon.Id} (held by {weapon.Holding!.Holder})")),
-        .. VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit) && LiveFire.CrewExposed(unit)
+        .. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit) && LiveFire.CrewExposed(unit)
                 && GameState.Condition(unit, Conditions.Malfunctioned) == ConditionState.True && GameState.Condition(unit, Conditions.Disabled) != ConditionState.True)
             .Select(vehicle => new PlayChoice(vehicle.Id, $"{vehicle.Id}'s AAMG (a dr of 1 repairs it, a 6 disables it; D3.7)")),
     ];
 
     private IReadOnlyList<PlayChoice> DeployChoices => state is null ? []
-        : [.. VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && unit.Kind == "asl:squad" && (state.Location(unit.Id) is not null || WaitsToEnter(unit))
+        : [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && unit.Kind == "asl:squad" && (state.Location(unit.Id) is not null || WaitsToEnter(unit))
                 && (Viewer.IsAdjudicator || unit.Side == viewAs) && GameState.Condition(unit, Conditions.Broken) != ConditionState.True)
             .Select(unit => new PlayChoice(unit.Id, $"{unit.Id} ({unit.Side}{(state.Location(unit.Id) is null ? ", off board" : "")})"))];
 
@@ -3744,10 +3759,10 @@ else if (state is not null && history?.Current is not null)
             .Select(item => item.Id)];
 
     private IReadOnlyList<PlayChoice> RecombineChoices => state is null ? []
-        : [.. VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && unit.Kind == "asl:half-squad" && state.Location(unit.Id) is not null).Select(Labelled)];
+        : [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && unit.Kind == "asl:half-squad" && state.Location(unit.Id) is not null).Select(Labelled)];
 
     private IReadOnlyList<string> DmRetainers => state is null ? []
-        : [.. VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.DesperationMorale) == ConditionState.True
+        : [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.DesperationMorale) == ConditionState.True
             && Live.Planner.MayRetainDm(state, unit.Id)).Select(unit => unit.Id)];
 
     private IReadOnlyList<PlayChoice> ShockChoices => [.. ShockedVehicles.Select(vehicle => new PlayChoice(vehicle.Id,
@@ -3760,26 +3775,29 @@ else if (state is not null && history?.Current is not null)
         ordnanceAmmunition = OrdnanceAmmunitions.FirstOrDefault() ?? "ap";
         ordnanceSpotter = string.Empty;
         ordnanceDirector = string.Empty;
+        ordnanceVehicle = string.Empty;
+        ordnanceIntensive = false;
+        ordnanceTurn = "east";
     }
 
     private bool OrdnancePanzerfaust => ordnanceGun.EndsWith(":pf", StringComparison.Ordinal);
 
     private IReadOnlyList<PlayChoice> OrdnanceChoices(string side) =>
     [
-        .. OrdnanceGuns(side).Select(gun => new PlayChoice(gun.Id, GunLabel(gun))),
-        .. OrdnanceTanks(side).Select(tank => new PlayChoice(tank.Id, TankLabel(tank))),
-        .. PanzerfaustFirers(side).Select(faust => new PlayChoice(faust.Id + ":pf", $"{faust.Id}: Panzerfaust (PF Check first; C13.31)")),
+        .. OrdnanceGuns(side).Where(gun => Viewer.IsAdjudicator || VisibleEquipment.Any(item => item.Id == gun.Id)).Select(gun => new PlayChoice(gun.Id, GunLabel(gun))),
+        .. SeenOnly(OrdnanceTanks(side)).Select(tank => new PlayChoice(tank.Id, TankLabel(tank))),
+        .. SeenOnly(PanzerfaustFirers(side)).Select(faust => new PlayChoice(faust.Id + ":pf", $"{faust.Id}: Panzerfaust (PF Check first; C13.31)")),
     ];
 
     /// <summary>The units that may spot for the chosen light mortar (C9.3), or null for any other weapon.</summary>
     private IReadOnlyList<PlayChoice>? OrdnanceSpotters(string side) => state is not null && state.Find(ordnanceGun) is EquipmentInstance { Kind: "asl:light-mortar" }
-        ? [.. VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && !LiveFire.IsVehicle(unit)).OrderBy(unit => unit.Id, StringComparer.Ordinal)
+        ? [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && !LiveFire.IsVehicle(unit)).OrderBy(unit => unit.Id, StringComparer.Ordinal)
             .Select(unit => new PlayChoice(unit.Id, $"{unit.Id} ({state.Location(unit.Id)?.Location})"))]
         : null;
 
     /// <summary>The leaders who may direct a light mortar, a LATW, or a Panzerfaust (A7.531), or null for a Gun or MA.</summary>
     private IReadOnlyList<PlayChoice>? OrdnanceDirectors(string side) => state is not null && (state.Find(ordnanceGun) is EquipmentInstance { Kind: "asl:light-mortar" or "asl:latw" } || OrdnancePanzerfaust)
-        ? [.. VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && unit.Kind == "asl:leader").OrderBy(unit => unit.Id, StringComparer.Ordinal)
+        ? [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && unit.Kind == "asl:leader").OrderBy(unit => unit.Id, StringComparer.Ordinal)
             .Select(leader => new PlayChoice(leader.Id, $"{leader.Id} ({state.Location(leader.Id)?.Location})"))]
         : null;
 
@@ -3808,7 +3826,12 @@ else if (state is not null && history?.Current is not null)
     private static bool IsDmOnly(EventPayload payload) => payload is ConditionsChanged { Conditions: var changed } && changed.Keys.All(key => key == Conditions.DesperationMorale);
 
     /// <summary>The attempt an event belongs to: its id without the event's number.</summary>
-    private static string AttemptOf(GameEvent item) => item.EventId.LastIndexOf('-') is > 0 and var at ? item.EventId[..at] : item.EventId;
+    private static string AttemptOf(string eventId) => eventId.LastIndexOf('-') is > 0 and var at ? eventId[..at] : eventId;
+
+    /// <summary>Who takes which SW when a squad Deploys (A1.31), such as "; r1-2 takes r-lmg".</summary>
+    private static string DeploySplit(IEnumerable<GameEvent> attempt, LineageRecorded lineage) => string.Concat(lineage.Produced.Select(half =>
+        attempt.Select(other => other.Payload).OfType<EquipmentTransferred>().Where(moved => moved.Holding?.Holder == half.Id).Select(moved => moved.Id).ToArray()
+            is { Length: > 0 } taken ? $"; {half.Id} takes {string.Join(", ", taken)}" : ""));
 
     /// <summary>
     /// Whether a record may name a unit to the view (pass 28b, section 15.4): the adjudicator, the unit's own side, or a unit then neither concealed

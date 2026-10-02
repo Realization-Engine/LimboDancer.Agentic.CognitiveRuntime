@@ -2,14 +2,14 @@
    units with the phase's advance. The page gives the units the view sees that the planner allows (ruling R23.1). *@
 @if (Units.Count > 0)
 {
-    <div class="toolbar" id="retain-dm">
-        <span>Keep DM as the RPh ends, outside woods and buildings (A10.62):</span>
+    <fieldset class="toolbar" id="retain-dm">
+        <legend>Keep DM as the RPh ends, outside woods and buildings (A10.62); sent when the phase is advanced</legend>
         @foreach (var unit in Units)
         {
             <label @key="unit"><input class="retain-dm" type="checkbox" data-unit="@unit" checked="@Selected.Contains(unit)"
                                       @onchange="@(args => OnToggle.InvokeAsync(new Toggle(unit, args.Value is true)))" /> @unit</label>
         }
-    </div>
+    </fieldset>
 }
 
 @code {

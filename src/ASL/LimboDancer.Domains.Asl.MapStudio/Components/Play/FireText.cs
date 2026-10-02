@@ -21,7 +21,7 @@ public sealed record FireView(string EventId, string Group, string Target, strin
 /// The wording of fire results (pass 28b, moved from the Play page so the fire history's components and the page's other records share it). It
 /// formats what a record already holds and never recalculates an adjudication.
 /// </summary>
-public static class FireText
+internal static class FireText
 {
     public static string Number(decimal value) => value.ToString("0.##", CultureInfo.InvariantCulture);
 

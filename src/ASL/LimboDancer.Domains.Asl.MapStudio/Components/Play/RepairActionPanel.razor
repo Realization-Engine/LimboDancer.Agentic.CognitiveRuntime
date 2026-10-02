@@ -11,7 +11,7 @@
             }
         </select>
     </label>
-    <button id="propose-repair" disabled="@(Weapon.Length == 0)" @onclick="@(() => OnPropose.InvokeAsync())">Propose: repair</button>
+    <button id="propose-repair" disabled="@(!Weapons.Any(weapon => weapon.Id == Weapon))" @onclick="@(() => OnPropose.InvokeAsync())">Propose: repair</button>
 </div>
 
 @code {

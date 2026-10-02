@@ -134,6 +134,9 @@ public sealed class PlayPagePass28bTests : IDisposable
         Assert.Equal(halves[1], HolderOf(state, "gm2"));
         Assert.Equal(halves[1], HolderOf(state, "gm3"));
         Assert.Equal(string.Empty, page.Find("#deploy-squad").GetAttribute("value"));
+
+        // Table player, pass 28b: the record says which HS took which SW.
+        Assert.EndsWith($"(A1.31); {halves[0]} takes gm1; {halves[1]} takes gm2, gm3", page.Find("#play-rallies .lineage-record").TextContent, StringComparison.Ordinal);
     }
 
     // Backlog section 23 (A4.431, A10.62), built in pass 28b: a SW transfer and DM gained are records, for each side.
@@ -154,8 +157,13 @@ public sealed class PlayPagePass28bTests : IDisposable
         Commit(page, "#propose-transfer");
         Assert.Equal("g1 passes gm to g2 (A4.431)", page.Find("#play-rallies .transfer-record").TextContent);
 
-        // A10.62: the phase change puts the broken r1, ADJACENT to g1 and g2, under DM.
-        for (var phase = 0; phase < 5; phase++)
+        // A10.62: the transfer leaves the broken r1 ADJACENT to g1 and g2, so it comes under DM; its owner keeps it as the RPh ends (the EXC), which is
+        // recorded as kept, not gained (referee, pass 28b).
+        Assert.Equal("r1 comes under DM (A10.62)", page.Find("#play-rallies .dm-record").TextContent);
+        page.Find(".retain-dm[data-unit='r1']").Change(true);
+        Commit(page, "#propose-advance");
+        Assert.Equal("r1 keeps DM as the RPh ends (A10.62)", page.Find("#play-rallies li").TextContent);
+        for (var phase = 0; phase < 4; phase++)
         {
             Commit(page, "#propose-advance");
         }

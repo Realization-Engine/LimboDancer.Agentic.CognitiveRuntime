@@ -3,7 +3,7 @@
    fields' choices; choosing another weapon resets the ammunition, the Spotter, and the leader, and another target clears the vehicle, both in
    the page's handlers (section 15.3). The planner decides every shot. *@
 <h4>Ordnance</h4>
-<RuleHelp Id="ordnance-help" Summary="A manned Gun, a tank's MA, a light mortar, or a LATW fires HE at a Location's Infantry, or at one vehicle there with the ammunition it carries; a hit is resolved on the IFT or by the To Kill DR (C3.3, C3.31, C7).">
+<RuleHelp Id="ordnance-help" Summary="A manned Gun or a tank's MA fires HE at a Location's units, or the ammunition it carries at one vehicle there; a light mortar fires on the Area Target Type; a Panzerfaust or Panzerschreck fires HEAT, and an ATR AP, at a vehicle (C3.3, C3.31, C9.3, C13).">
     A Gun manned by its crew, or a tank's MA, fires HE at the enemy units of a Location on the Infantry Target Type (C3.3, C3.32), or at
     one enemy vehicle there on the Vehicle Target Type with AP, APCR, HEAT, or HE (C3.31, C8.1). It turns its barrel or turret to bring the
     target into its Covered Arc if it must, with the Case A DRM (C5.1). An Original colored dr at most its ROF lets it fire again this
@@ -88,7 +88,7 @@
 
     /// <summary>The target fields, an <see cref="OrdnanceTargetFields"/>.</summary>
     [Parameter, EditorRequired]
-    public RenderFragment? Target { get; set; }
+    public RenderFragment Target { get; set; } = default!;
 
     /// <summary>Whether the weapon may use Intensive Fire (a Gun or MA, not a mortar, LATW, or Panzerfaust).</summary>
     [Parameter]

@@ -31,7 +31,7 @@
             }
         </select>
     </label>
-    <button id="propose-recombine" disabled="@(One.Length == 0 || Two.Length == 0)" @onclick="@(() => OnPropose.InvokeAsync())">Propose: recombine</button>
+    <button id="propose-recombine" disabled="@(!HalfSquads.Any(unit => unit.Id == One) || !Partners.Contains(Two))" @onclick="@(() => OnPropose.InvokeAsync())">Propose: recombine</button>
 </div>
 
 @code {

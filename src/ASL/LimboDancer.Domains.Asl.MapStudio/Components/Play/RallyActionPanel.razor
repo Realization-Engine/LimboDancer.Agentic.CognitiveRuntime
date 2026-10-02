@@ -1,9 +1,8 @@
 @* Plan A05 (pass 28b): a broken unit's rally in the RPh. The page gives the broken units and the leaders in the chosen unit's Location that the view
    sees (ruling R23.1); choosing another unit clears the leader, which the page does in its OnUnit handler (section 15.3). *@
-<h4>Rally and Repair</h4>
-<RuleHelp Id="rally-help" Summary="A broken unit tries to rally once per Player Turn, with a Good Order leader in its Location or by Self-Rally; a Good Order unit may repair a malfunctioned SW it holds (A10.6, A9.72).">
-    In the RPh a broken unit may attempt to rally once per Player Turn, rallied by a Good Order leader in its Location or by Self-Rally
-    (A10.6), and a Good Order unit that did not attempt to rally may repair a malfunctioned SW it possesses (A9.72). A vehicle's CE crew,
+<RuleHelp Id="rally-help" Summary="A broken unit tries to rally once per Player Turn, with a Good Order leader in its Location or by Self-Rally if able, +4 under DM; a Good Order unit may repair a malfunctioned SW it holds (A10.6, A10.62, A10.63, A9.72).">
+    In the RPh a broken unit may attempt to rally once per Player Turn, rallied by a Good Order leader in its Location or by Self-Rally if able
+    (A10.6, A10.63), and a Good Order unit that did not attempt to rally may repair a malfunctioned SW it possesses (A9.72). A vehicle's CE crew,
     not Stunned or Recalled, may repair its AAMG: a dr of 1 repairs it, a 6 disables it (D3.7).
     The reviewed Rally package resolves the attempt only when every outcome the dice can reach is decided.
 </RuleHelp>
@@ -28,7 +27,7 @@
             }
         </select>
     </label>
-    <button id="propose-rally" disabled="@(Unit.Length == 0)" @onclick="@(() => OnPropose.InvokeAsync())">Propose: rally</button>
+    <button id="propose-rally" disabled="@(!Units.Any(unit => unit.Id == Unit))" @onclick="@(() => OnPropose.InvokeAsync())">Propose: rally</button>
 </div>
 
 @code {

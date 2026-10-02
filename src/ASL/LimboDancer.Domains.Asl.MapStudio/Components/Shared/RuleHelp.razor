@@ -3,7 +3,7 @@
 <div class="rule-help" data-help="@Id">
     <p class="muted rule-help-summary" id="@($"{Id}-summary")">@Summary</p>
     <details class="rule-help-detail">
-        <summary>The rule in full</summary>
+        <summary aria-describedby="@($"{Id}-summary")">The rule in full</summary>
         <p class="muted" id="@Id">@ChildContent</p>
     </details>
 </div>

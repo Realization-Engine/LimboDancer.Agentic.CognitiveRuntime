@@ -11,7 +11,7 @@
         Total @FireText.Number(Arithmetic.TotalFirepower) FP: the @(Arithmetic.UnshiftedColumnFp?.ToString(CultureInfo.InvariantCulture) ?? "no") column@(Arithmetic.ColumnShift != 0 || Arithmetic.Cowered ? $", shifted {Arithmetic.ColumnShift}{(Arithmetic.Cowered ? " by Cowering (A7.9)" : "")} to the {Arithmetic.ColumnFp?.ToString(CultureInfo.InvariantCulture) ?? "no"} column" : "")
     </li>
     <li class="fire-dr">
-        IFT DR @string.Join(", ", Arithmetic.Dice) = @Arithmetic.OriginalDr@(string.Concat(Arithmetic.Drm.Select(item => $" {(item.Value < 0 ? "-" : "+")} {FireText.Number(Math.Abs(item.Value))} ({item.Name}, {item.Rule})"))):
+        IFT DR @string.Join(", ", Arithmetic.Dice) = @Arithmetic.OriginalDr@FireText.ModifierText(Arithmetic.Drm):
         Final DR <span class="fire-final-dr">@Arithmetic.FinalDr</span>, result <strong class="fire-result">@Arithmetic.Result</strong>
     </li>
 </ul>

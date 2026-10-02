@@ -1,7 +1,7 @@
 @* Plan A07 (pass 28b): a squad Deploying into two HS (A1.31). The page gives the squads and leaders the view sees (ruling R23.1) and the SW the chosen
    squad possesses; choosing another squad clears the leader and the SW, which the page does in its OnSquad handler (section 15.3). Each SW checked
    goes to the second HS, the rest stay with the first (backlog section 23, built in pass 28b). *@
-<RuleHelp Id="deploy-help" Summary="A Good Order squad with a Good Order leader of its nationality Deploys into two HS on a NTC; two Good Order HS of one kind Recombine with such a leader. Either is the sole RPh action (A1.31, A1.32).">
+<RuleHelp Id="deploy-help" Summary="A Good Order squad Deploys into two HS on a NTC with a Good Order leader in its Location (Guards need no leader); two Good Order HS of one kind Recombine the same way. Either is the sole RPh action (A1.31, A1.32).">
     A Good Order squad with a Good Order leader of its nationality in its Location Deploys into two HS on a NTC modified by his leadership (Guards
     need no leader and take it unmodified); two Good Order HS of one kind Recombine with such a leader. Either is the units' and the leader's sole RPh action (A1.31, A1.32).
     A squad waiting off board may attempt to Deploy from its entry turn's RPh with a leader waiting to enter along the same edge (A2.52; ruling R25.4).
@@ -30,7 +30,7 @@
     @if (Weapons.Count > 0)
     {
         <fieldset id="deploy-weapons">
-            <legend>Second HS takes</legend>
+            <legend>SW for the second HS (the rest stay with the first)</legend>
             @foreach (var weapon in Weapons)
             {
                 <label @key="weapon"><input type="checkbox" class="deploy-weapon" data-weapon="@weapon" checked="@Second.Contains(weapon)"
@@ -38,7 +38,7 @@
             }
         </fieldset>
     }
-    <button id="propose-deploy" disabled="@(Squad.Length == 0)" @onclick="@(() => OnPropose.InvokeAsync())">Propose: deploy</button>
+    <button id="propose-deploy" disabled="@(!Squads.Any(squad => squad.Id == Squad))" @onclick="@(() => OnPropose.InvokeAsync())">Propose: deploy</button>
 </div>
 
 @code {

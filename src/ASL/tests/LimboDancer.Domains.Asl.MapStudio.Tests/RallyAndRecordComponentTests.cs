@@ -94,9 +94,9 @@ public sealed class RallyAndRecordComponentTests : IDisposable
     [Fact]
     public void TheRecordListKeepsEachKindAndEvent()
     {
-        var list = context.Render<ActionRecordList>(parameters => parameters.Add(item => item.Heading, "Rally, Rout, and support weapons").Add(item => item.ListId, "play-rallies")
+        var list = context.Render<ActionRecordList>(parameters => parameters.Add(item => item.Heading, "Rally, Rout, and other actions").Add(item => item.ListId, "play-rallies")
             .Add(item => item.Records, [new ActionRecordList.Entry("a-1", "transfer", "g1 passes gm to g2 (A4.431)"), new ActionRecordList.Entry("b-2", "dm", "r1 comes under DM (A10.62)")]));
-        Assert.Equal("Rally, Rout, and support weapons", list.Find("h3").TextContent);
+        Assert.Equal("Rally, Rout, and other actions", list.Find("h3").TextContent);
         Assert.Equal("a-1", list.Find("#play-rallies .transfer-record").GetAttribute("data-event"));
         Assert.Equal("r1 comes under DM (A10.62)", list.Find("#play-rallies .dm-record").TextContent);
         Assert.Empty(context.Render<ActionRecordList>(parameters => parameters.Add(item => item.Heading, "Snipers").Add(item => item.ListId, "play-snipers")

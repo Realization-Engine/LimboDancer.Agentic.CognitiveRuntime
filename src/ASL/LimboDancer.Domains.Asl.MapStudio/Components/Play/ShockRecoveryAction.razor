@@ -17,7 +17,7 @@
                 }
             </select>
         </label>
-        <button id="propose-shock" disabled="@(Vehicle.Length == 0)" @onclick="@(() => OnPropose.InvokeAsync())">Propose: roll for it</button>
+        <button id="propose-shock" disabled="@(!Vehicles.Any(vehicle => vehicle.Id == Vehicle))" @onclick="@(() => OnPropose.InvokeAsync())">Propose: roll for it</button>
     </div>
 }
 
