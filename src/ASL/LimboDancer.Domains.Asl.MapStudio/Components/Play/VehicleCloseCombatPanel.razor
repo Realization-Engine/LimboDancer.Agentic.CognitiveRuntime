@@ -1,11 +1,11 @@
 @* Plan C01 (pass 27): sequential CC in each Location holding a vehicle (A11.31). The page reads each open Location's next side and its units
    (the planner's turn, read once per Location), keeps the one attack draft the Locations share, and proposes the attack or the pass. *@
 <h4>Close Combat with vehicles</h4>
-<p class="muted" id="vehicle-cc-help">
+<RuleHelp Id="vehicle-cc-help" Summary="With a vehicle in the Location, CC is sequential: the non-vehicular side attacks first, then the sides alternate until every unit has attacked or its side passes (A11.31).">
     In a Location holding a vehicle CC is sequential: the non-vehicular side attacks first, one attack at a time, then the sides alternate
     until every unit has attacked or its side passes (A11.31). Infantry attack a vehicle with their CCV as the Kill Number, one unit or one
     with a SMC (A11.5); a vehicle attacks Infantry with its CMG and CE AAMG on the CCT (A11.62). CC between Infantry there is not built.
-</p>
+</RuleHelp>
 @foreach (var location in Locations)
 {
     <div @key="location.Location" class="toolbar vehicle-cc" data-location="@location.Location">

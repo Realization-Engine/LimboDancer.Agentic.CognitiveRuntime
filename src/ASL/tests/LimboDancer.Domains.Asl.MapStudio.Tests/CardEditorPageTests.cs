@@ -32,6 +32,7 @@ public sealed class CardEditorPageTests : IDisposable
         context.Services.AddSingleton(live);
         context.Services.AddSingleton(games);
         context.Services.AddSingleton(new GameMaps(boards, maps, new RenderCache(), library, games));
+        context.UseViewport();
         context.Services.AddSingleton(new StudioLos(boards, maps, options));
         context.Services.AddSingleton(dice);
     }

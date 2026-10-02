@@ -33,6 +33,7 @@ public sealed class PlayPageVehicleTests : IDisposable
         context.Services.AddSingleton(live);
         context.Services.AddSingleton(games);
         context.Services.AddSingleton(new GameMaps(boards, maps, new RenderCache(), library, games));
+        context.UseViewport();
         context.Services.AddSingleton(new StudioLos(boards, maps, options));
         context.Services.AddSingleton(dice);
     }
@@ -140,7 +141,7 @@ public sealed class PlayPageVehicleTests : IDisposable
         page.Find("#vehicle-unit").Change("de-ht");
         Commit(page, "#vehicle-start");
         Assert.Empty(page.FindAll("#vehicle-bff"));
-        Commit(page, "#propose-pass");
+        page.PassAs("russian", Commit);
         Assert.Contains(two, page.FindAll("#vehicle-bff-target option").Select(item => item.GetAttribute("value")));
     }
 
@@ -186,7 +187,7 @@ public sealed class PlayPageVehicleTests : IDisposable
         page.Find("#vehicle-unit").Change("de-tank");
         Assert.Single(page.FindAll("#vehicle-start-reverse"));
         Commit(page, "#vehicle-start");
-        Commit(page, "#propose-pass");
+        page.PassAs("russian", Commit);
         Assert.Single(page.FindAll("#vehicle-esb"));
         if (page.FindAll($".vehicle-enter[data-to='{two}']").FirstOrDefault(item => item.GetAttribute("data-bypass") == "False") is not { } enter
             || enter.HasAttribute("disabled"))
@@ -199,7 +200,7 @@ public sealed class PlayPageVehicleTests : IDisposable
         page.Find("#vehicle-ovr").Change(true);
         Commit(page, $".vehicle-enter[data-to='{two}'][data-bypass='False']");
         Assert.True(page.Find("#vehicle-resolve-ovr").HasAttribute("disabled"));
-        Commit(page, "#propose-pass");
+        page.PassAs("russian", Commit);
         Assert.False(page.Find("#vehicle-resolve-ovr").HasAttribute("disabled"));
         dice.Enqueue([6, 6, 1, 1, 1, 1, 1]);
         Commit(page, "#vehicle-resolve-ovr");
@@ -238,7 +239,7 @@ public sealed class PlayPageVehicleTests : IDisposable
         Assert.Contains("range 1", page.Find($"#ordnance-arc li[data-at='{two}']").TextContent, StringComparison.Ordinal);
         Assert.Single(page.FindAll("#ordnance-intensive"));
         Assert.Single(page.FindAll("#propose-turn-gun"));
-        Assert.Contains("layer-covered-arc", page.Markup, StringComparison.Ordinal);
+        page.WaitForAssertion(() => Assert.Contains("layer-covered-arc", context.MapLayer("setMarks"), StringComparison.Ordinal));
         Commit(page, "#propose-advance");
         page.Find(".move-unit[data-unit='de-crew']").Change(true);
         Assert.Single(page.FindAll("#move-push"));

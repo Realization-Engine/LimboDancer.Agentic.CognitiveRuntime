@@ -27,7 +27,11 @@
             }
         </select>
     </label>
-    <button id="propose-rally" disabled="@(!Units.Any(unit => unit.Id == Unit))" @onclick="@(() => OnPropose.InvokeAsync())">Propose: rally</button>
+    <button id="propose-rally" disabled="@(!Units.Any(unit => unit.Id == Unit))" aria-describedby="propose-rally-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: rally</button>
+    @if (!Units.Any(unit => unit.Id == Unit))
+    {
+        <span id="propose-rally-ready" class="toolbar-note">Choose the broken unit that tries to rally.</span>
+    }
 </div>
 
 @code {

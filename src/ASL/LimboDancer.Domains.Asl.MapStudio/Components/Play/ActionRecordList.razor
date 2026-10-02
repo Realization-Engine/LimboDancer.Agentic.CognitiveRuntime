@@ -4,12 +4,31 @@
 @if (Records.Count > 0)
 {
     <h3>@Heading</h3>
-    <ul id="@ListId">
-        @foreach (var record in Records)
-        {
-            <li @key="record.EventId" class="@($"{record.Kind}-record")" data-event="@record.EventId">@record.Text</li>
-        }
-    </ul>
+    @if (When is null)
+    {
+        <ul id="@ListId">
+            @foreach (var record in Records)
+            {
+                <li @key="record.EventId" class="@($"{record.Kind}-record")" data-event="@record.EventId">@record.Text</li>
+            }
+        </ul>
+    }
+    else
+    {
+        @* Backlog section 43 (pass 28c): the records under their turn and phase, in the list's order. *@
+        <div id="@ListId" class="record-groups">
+            @foreach (var group in Groups(When))
+            {
+                <h4 class="record-when">@(group.When ?? "Before play")</h4>
+                <ul>
+                    @foreach (var record in group.Records)
+                    {
+                        <li @key="record.EventId" class="@($"{record.Kind}-record")" data-event="@record.EventId">@record.Text</li>
+                    }
+                </ul>
+            }
+        </div>
+    }
 }
 
 @code {
@@ -24,4 +43,31 @@
 
     [Parameter, EditorRequired]
     public IReadOnlyList<Entry> Records { get; set; } = [];
+
+    /// <summary>The turn and phase of a record's event, such as "Turn 2, Rally Phase"; the records are grouped under it when given.</summary>
+    [Parameter]
+    public Func<string, string?>? When { get; set; }
+
+    /// <summary>The records in runs of one turn and phase, in the list's order.</summary>
+    public static IReadOnlyList<(string? When, IReadOnlyList<T> Records)> Group<T>(IEnumerable<T> records, Func<T, string?> when)
+    {
+        var groups = new List<(string? When, IReadOnlyList<T> Records)>();
+        foreach (var record in records)
+        {
+            var label = when(record);
+            if (groups.Count > 0 && groups[^1].When == label)
+            {
+                ((List<T>)groups[^1].Records).Add(record);
+            }
+            else
+            {
+                groups.Add((label, new List<T> { record }));
+            }
+        }
+
+        return groups;
+    }
+
+    private IReadOnlyList<(string? When, IReadOnlyList<Entry> Records)> Groups(Func<string, string?> when) =>
+        Group(Records, record => when(record.EventId));
 }

@@ -1,0 +1,108 @@
+@* Pass 28c (plan section 13.1): the context that stays in sight above the workspace: the game and the view (the toolbar given as child content), the
+   revision, turn, and phase, whether the page shows the live game, the night and weather, a way back to a pending proposal, and the hand-over a
+   waiting answer needs. Everything here is known to both sides; the page shows it while a hand-over waits, too. *@
+<div id="play-context" class="play-context">
+    @ChildContent
+    @if (Summary is { Length: > 0 })
+    {
+        <div class="play-context-line">
+            @if (Live is { } live)
+            {
+                <span id="play-live"><StatusBadge Tone="@(Ended ? StatusBadge.BadgeTone.Warning : live ? StatusBadge.BadgeTone.Pass : StatusBadge.BadgeTone.Fail)"
+                    Label="@(Ended ? "Ended" : live ? "Live" : "Does not replay")"
+                    Explanation="@(Ended ? "The game has ended." : live ? "The game's latest revision, as play goes on." : "The game's events do not replay; nothing can be played.")" /></span>
+            }
+            <p id="play-summary">@Summary</p>
+            @if (Revision is { } revision)
+            {
+                <span class="muted" id="play-revision">revision @revision</span>
+            }
+            @if (HasCard)
+            {
+                <a id="play-card-link" href="@CardHref">Card and Victory Conditions</a>
+            }
+        </div>
+        <NightWeatherSummary Text="@Conditions" />
+        @if (Acting is { Length: > 0 } acting)
+        {
+            <p class="muted" id="play-acting">@acting</p>
+        }
+    }
+    @if (PendingTitle is { Length: > 0 } || Awaiting is { Length: > 0 })
+    {
+        <div class="toolbar play-context-actions">
+            @if (PendingTitle is { Length: > 0 } title)
+            {
+                <button type="button" id="play-review-jump" class="primary" @onclick="@(() => Review.InvokeAsync())">Review: @title</button>
+            }
+            @if (Awaiting is { Length: > 0 } awaiting)
+            {
+                <span class="toolbar-note" id="play-awaiting">@AwaitingNote</span>
+                <button type="button" id="play-hand-over" @onclick="@(() => HandOver.InvokeAsync())">Hand over to @awaiting</button>
+            }
+        </div>
+    }
+    <p id="play-status" class="@(Busy ? "play-status busy" : "play-status")" role="status" aria-live="polite">@(Busy ? "Working: " : string.Empty)@Status</p>
+</div>
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>The revision, turn, phase, and phasing side in words, and whether setup is open; empty when no game is shown.</summary>
+    [Parameter]
+    public string? Summary { get; set; }
+
+    /// <summary>The revision shown, apart from the turn and phase; null when the game does not replay or none is shown.</summary>
+    [Parameter]
+    public long? Revision { get; set; }
+
+    /// <summary>What the shown view does now when it waits on no other view, such as "You act: the german side acts in the Movement Phase."</summary>
+    [Parameter]
+    public string? Acting { get; set; }
+
+    /// <summary>Whether the gate is working on a proposal or a confirmation.</summary>
+    [Parameter]
+    public bool Busy { get; set; }
+
+    /// <summary>Whether the page shows the live game's latest revision; false when the game does not replay; null when no game is shown.</summary>
+    [Parameter]
+    public bool? Live { get; set; }
+
+    [Parameter]
+    public bool Ended { get; set; }
+
+    /// <summary>The NVR, weather, precipitation, and illumination now.</summary>
+    [Parameter]
+    public string? Conditions { get; set; }
+
+    /// <summary>Whether the game has a card panel to go to.</summary>
+    [Parameter]
+    public bool HasCard { get; set; }
+
+    /// <summary>The page's own address with the card panel's fragment, so the link stays on the page.</summary>
+    [Parameter]
+    public string CardHref { get; set; } = "#play-card";
+
+    /// <summary>The pending proposal's title; null when none is pending.</summary>
+    [Parameter]
+    public string? PendingTitle { get; set; }
+
+    [Parameter]
+    public EventCallback Review { get; set; }
+
+    /// <summary>The view whose answer the game waits for, named for its viewer ("the russian side"); null when the shown view may act.</summary>
+    [Parameter]
+    public string? Awaiting { get; set; }
+
+    /// <summary>What the game waits for, such as "The DEFENDER may fire or pass."</summary>
+    [Parameter]
+    public string AwaitingNote { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback HandOver { get; set; }
+
+    /// <summary>A short announcement for assistive technology: working, a proposal to review, a result.</summary>
+    [Parameter]
+    public string Status { get; set; } = string.Empty;
+}

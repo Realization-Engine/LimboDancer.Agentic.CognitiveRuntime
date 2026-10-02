@@ -13,6 +13,11 @@ export function watchNarrow(dotnet) {
     return query.matches;
 }
 
+// Plan section 11.1: from 1024px to 1439px the navigation starts collapsed, so the workspaces keep their width; it stays the user's choice after.
+export function isMedium() {
+    return window.matchMedia("(max-width: 1439.98px)").matches;
+}
+
 export function unwatchNarrow() {
     if (watcher) {
         watcher.query.removeEventListener("change", watcher.listener);

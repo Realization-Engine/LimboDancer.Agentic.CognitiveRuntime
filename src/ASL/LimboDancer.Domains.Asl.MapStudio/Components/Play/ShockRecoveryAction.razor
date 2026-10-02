@@ -2,6 +2,7 @@
    (ruling R23.1), each labelled with its state; the RPh does not end until each has rolled. *@
 @if (Vehicles.Count > 0)
 {
+    <h4>Shock and Unconfirmed Kills</h4>
     <RuleHelp Id="shock-help" Summary="Each Shocked AFV and Unconfirmed Kill rolls a dr before the RPh can end (C7.42).">
         A Shocked AFV makes a dr in this RPh: 1 or 2 removes the Shock, 3 to 6 makes it an Unconfirmed Kill; an Unconfirmed Kill's dr of 1 to 3
         removes it and 4 to 6 wrecks the AFV (C7.42). The RPh does not end until each has rolled.
@@ -17,7 +18,11 @@
                 }
             </select>
         </label>
-        <button id="propose-shock" disabled="@(!Vehicles.Any(vehicle => vehicle.Id == Vehicle))" @onclick="@(() => OnPropose.InvokeAsync())">Propose: roll for it</button>
+        <button id="propose-shock" disabled="@(!Vehicles.Any(vehicle => vehicle.Id == Vehicle))" aria-describedby="propose-shock-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: roll for it</button>
+        @if (!Vehicles.Any(vehicle => vehicle.Id == Vehicle))
+        {
+            <span id="propose-shock-ready" class="toolbar-note">Choose the vehicle that rolls.</span>
+        }
     </div>
 }
 

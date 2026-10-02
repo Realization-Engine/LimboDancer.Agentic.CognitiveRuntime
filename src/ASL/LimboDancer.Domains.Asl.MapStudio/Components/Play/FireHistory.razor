@@ -4,9 +4,16 @@
 {
     <h3>Fire</h3>
     <div id="play-fires">
-        @foreach (var record in Records)
+        @foreach (var group in ActionRecordList.Group(Records, record => When?.Invoke(record.EventId)))
         {
-            <FireResolutionCard @key="record.EventId" Record="@record" />
+            @if (When is not null)
+            {
+                <h4 class="record-when">@(group.When ?? "Before play")</h4>
+            }
+            @foreach (var record in group.Records)
+            {
+                <FireResolutionCard @key="record.EventId" Record="@record" />
+            }
         }
     </div>
 }
@@ -14,4 +21,8 @@
 @code {
     [Parameter, EditorRequired]
     public IReadOnlyList<FireView> Records { get; set; } = [];
+
+    /// <summary>The turn and phase of a record's event; the records are grouped under it when given (backlog section 43, pass 28c).</summary>
+    [Parameter]
+    public Func<string, string?>? When { get; set; }
 }

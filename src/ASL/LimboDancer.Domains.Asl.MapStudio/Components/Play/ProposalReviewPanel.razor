@@ -14,8 +14,8 @@
     @Evidence
     @if (CanConfirm)
     {
-        <button id="play-confirm" @onclick="Confirm">Confirm</button>
-        <button id="play-cancel" class="link" @onclick="Cancel">Cancel</button>
+        <button id="play-confirm" disabled="@Busy" @onclick="Confirm">@(Busy ? "Confirming" : "Confirm")</button>
+        <button id="play-cancel" class="link" disabled="@Busy" @onclick="Cancel">Cancel</button>
     }
 </div>
 
@@ -40,6 +40,10 @@
 
     [Parameter]
     public bool CanConfirm { get; set; }
+
+    /// <summary>Whether the gate is working on this proposal; Confirm and Cancel wait for it (plan section 13.4; pass 28c).</summary>
+    [Parameter]
+    public bool Busy { get; set; }
 
     [Parameter]
     public EventCallback Confirm { get; set; }

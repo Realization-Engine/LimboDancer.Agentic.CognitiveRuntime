@@ -486,7 +486,7 @@ Pass 22d (2026-09-30) turned the board viewer, the board editor, and the Unit La
 
 ## 37. Added by the redesign pass 23
 
-Pass 23 (2026-09-30) built a side's view at setup and in play, the hand-over screen between sides, the board link that follows the view, HIP by SSR, hidden units placed beneath "?", the non-OB "?", and Control as a side knows it (rulings R23.1 to R23.6), and extracted thirteen Play components. It removed the rows for hidden setup per side (sections 27 and 29), HIP by SSR and the non-OB "?" (section 29), Control left undeclared (section 31), and hidden units moving (section 20). Items it leaves out:
+Pass 23 (2026-09-30) built a side's view at setup and in play, the hand-over screen between sides, the board link that follows the view, HIP by SSR, hidden units placed beneath "?", the non-OB "?", and Control as a side knows it (rulings R23.1 to R23.6), and extracted thirteen Play components. It removed the rows for hidden setup per side (sections 27 and 29), HIP by SSR and the non-OB "?" (section 29), Control left undeclared (section 31), and hidden units moving (section 20). Pass 28c (2026-10-02) built three of its rows: the hand-over on load with an outcome hand-over button, focus after the hand-over, and the map's layers read once per revision and view. Items it leaves out:
 
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
@@ -494,12 +494,9 @@ Pass 23 (2026-09-30) built a side's view at setup and in play, the hand-over scr
 | A HIP unit giving up its hidden status to stop an enemy unit in its LOS from gaining "?", at setup or in play | Referee, pass 23 | A12.32, p. 80 | A setup event for it | Placing beneath "?" is from the start of play only; hidden units do not count against a non-OB "?". |
 | A "?" placed on a Good Order stack before it enters the map | R23.6 | A12.12, p. 77 | Entering units concealed (R20.5) | Entering units are never "?". |
 | A CC attack against a "?" declared from a side's view | Table player, pass 23 | A11.1, A12.13 | Attacks on a sealed presence | A side's CC panel lists only units it may see; the adjudicator declares an attack on concealed units. |
-| A hand-over when the page opens or reloads, and a "hand over" button beside an outcome (after a move, for Defensive First Fire, a choice, or a surrender) | Table player, pass 23 | | Plan pass 28c (the Play workspace) | The page opens as the phasing side's view; the view is changed in the picker. |
 | A board viewer tab opened earlier keeps its view after a hand-over | Table player, pass 23 | | Cross-tab state | The link opens the view chosen when it was followed. |
 | Counters beneath an enemy stack's top before play drawn as a stack-depth marker | Table player, pass 23 | A2.9 | A renderer marker | They are drawn as "?" placeholders and named "not inspectable before play" in the table and the accessible names. |
 | The non-OB "?" list reads every enemy unit, those under "?" too, so what it leaves out says something of the enemy's "?" | Table player, pass 23 | A12.12 | | The list is the opponent's check at the table; a refusal names no enemy Location. |
-| Focus after confirming the hand-over | UI review, pass 23 | | Focus management in the Play workspace | Focus returns to the page; Tab reaches the panels. |
-| The map drawn per render: `GameMaps.Draw` replays and projects the game each time | UI review, pass 23 | | A drawing cache by revision and view | Correct; slower on long games. |
 | The non-OB "?" against a board's real LOS in the tests (board 01's fixture carries no LOS data) | Referee, pass 23 | A12.12 | LOS data in the test fixture | Tested with a LOS stub and checked in the Studio on board 04. |
 | The setup form usable by the side out of sight | Table player, pass 23 | A12.12 | | Hot-seat on the honor system: the note says only the side setting up places units. |
 
@@ -626,17 +623,13 @@ Pass 28 (2026-10-01) built the card editor's forms for every card field with the
 
 ## 43. Added by the redesign pass 28b
 
-Pass 28b (2026-10-02) made the rest of Play components: the Rout, SW, Rally, Repair, Deploy, Recombine, DM retention, and Shock panels, ordnance fire and its target fields, Starshells, the dice, the action records, the fire history with its arithmetic and effects tables, and S08 RuleHelp. It removed from section 23 the Deploy control splitting several SW between the two HS and the records of DM gained, Failure to Rout eliminations, and SW transfers. Items it leaves out:
+Pass 28b (2026-10-02) made the rest of Play components: the Rout, SW, Rally, Repair, Deploy, Recombine, DM retention, and Shock panels, ordnance fire and its target fields, Starshells, the dice, the action records, the fire history with its arithmetic and effects tables, and S08 RuleHelp. It removed from section 23 the Deploy control splitting several SW between the two HS and the records of DM gained, Failure to Rout eliminations, and SW transfers. Pass 28c (2026-10-02) built four of its rows: RuleHelp for the older panels, the ready notes, the RPh headings and "Weapon", and records grouped by turn and phase. Items it leaves out:
 
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
-| RuleHelp for the help paragraphs of the Play components passes 23 to 28 extracted (Mopping Up and others) | The user, pass 28b | | Pass 28c | Their full paragraphs show as before. |
-| A ready note beside each disabled Propose button of this pass's panels, as passes 24 to 28 give theirs | UI review, pass 28b | | Pass 28c's hardening | The button is disabled until its choice is one the panel offers; the SW panel has a note. |
 | Deploy and Recombine leaders defaulting to "choose", with a leader required unless the squad is Guards | Table player, pass 28b | A1.31, A1.32 | | The leader defaults to "none (Guards)"; the gate refuses a non-Guards squad without one. |
-| Records grouped by turn and phase | Table player, pass 28b | | Pass 28c's activity strip | Records are listed latest attempt first, with no turn or phase. |
 | Records of DM removed, and DM's cause in its record | Table player, pass 28b | A10.62 | | DM gained and DM kept as the RPh ends are recorded. |
 | The reason for a Failure to Rout in its record (ADJACENT, or left in the open) | Table player, pass 28b | A10.5 | | The record names the unit and A10.5; the proposal's reasons give the cause. |
-| The RPh heading over Rally to Shock split by task, and "Weapon" for the ordnance select | Table player, pass 28b | | Pass 28c's layout | One "Rally and Repair" heading; the select is labelled "Gun". |
 | `oninput` for the rout route and the Starshell target | Table player, pass 28b | | | Both update on change, as before. |
 | Drafts kept until a new view is confirmed, not cleared when another view is picked | Table player, pass 28b | | Ruling R23.2 | Picking another view clears the last view's drafts at once. |
 | A record's disclosure decided by the view at the revisions around its event, not by `Open`'s check of concealment and HIP | Referee, pass 28b | A12.14 | | A record names a unit to its own side, or when the unit was neither concealed nor hidden just before; it never names more than the view. |
@@ -644,3 +637,25 @@ Pass 28b (2026-10-02) made the rest of Play components: the Rout, SW, Rally, Rep
 | Page tests that a hidden ordnance vehicle and Intensive Fire are not sent after a weapon change | UI review, pass 28b | C5.6 | | The page clears both on a weapon change and checks before sending. |
 | The page's other DRM text built through `FireText.ModifierText` | UI review, pass 28b | | | Three records build the same text inline. |
 | The ordnance panel's target fields as a parameter record rather than a slot | UI review, pass 28b | | | The page passes `OrdnanceTargetFields` in a required slot. |
+
+## 44. Added by the redesign pass 28c
+
+Pass 28c (2026-10-02) made Play the map-centered workspace: R11 `PlayMapPanel` on the interactive B06 `BoardViewport`, the context header, the picked hex, the workspace panes and narrow tabs, busy and stale handling, focus, the DEFENDER's own pass, and reflow and contrast fixes across the Studio. It removed the rows for the hand-over on load and the outcome hand-over, focus after the hand-over, and the map drawn per render (section 37), and RuleHelp for the older panels, the ready notes, the RPh headings and "Weapon", and records by turn and phase (section 43). Items it leaves out:
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| A "Rotate map" toggle for narrow, portrait windows, with counters, labels, facing, the Covered Arc, LOS, and the viewport's pointer mapping kept right | The user, pass 28c | | Rotation in the renderer and the viewport | At 320px the map fits its width; Zoom, Fit, and drag to pan reach any hex. |
+| The DEFENDER's fire panel and "may fire now" note shown for the whole MPh, not only while the window on a step is open | Table player, pass 28c | A8.1 | | The planner refuses fire with no stack moving; the tests pin the panel's presence. |
+| "Propose: end the <phase>" offered to every view, not only to the view that may end it | Table player, pass 28c | | | Hot-seat on the honor system; the gate accepts the advance from any view. |
+| A picked hex filling the action drafts (fire From or Target, the movers, the rally unit, the ordnance target) | Table player, pass 28c | | | The picked hex lists what the view sees there; the drafts are chosen in their selects. |
+| The latest-record line drawing on every event (moves, passes, choices, surrenders), and on what the incoming view missed since its last hand-over | Table player, pass 28c | | | It shows the latest of the action records the view may read. |
+| A DEFENDER standing order to pass on a moving stack unless it enters chosen LOS | Table player, pass 28c | A8.1 | | Each pass is a hand-over and a proposal. |
+| The other views' tabs refreshed when another tab or viewer commits | Pass 28c's visual check | | A push from the live library | The page reads the game again on its next action; a Confirm then is stale. |
+| The revision count shown while one side sets up out of sight (each hidden placement adds one) | Referee, pass 28c | A12.3 | | Already shown in the unit table's note and the board link before this pass. |
+| A thrown DC's level: the full paragraph and the planner say "at its thrower's level", where A23.6 allows throwing down a level and forbids only a full level higher | Referee, pass 28c | A23.6 | A rule pass | The summary leaves the level out; the planner keeps its rule. |
+| The Advance and small arms fire paragraphs' scope (berserk advance, leaders and crews as firers) | Referee, pass 28c | A15.43, A7.5 | | The paragraphs say what the planner offers. |
+| The navigation collapsing between 1024px and 1439px only after the first paint | UI review, pass 28c | | Server-side knowledge of the width | It collapses a moment after the page opens. |
+| Strict JSInterop in the Play page tests, layers read per viewport instance, and the reveal call's target asserted | UI review, pass 28c | | | The tests run the scripts loosely and read the last layer sent. |
+| The other pages' wide tables in labelled scroll regions, as the Play units table is | UI review, pass 28c | | | Under 40rem a wide table scrolls inside itself as a block. |
+| Hover-only explanations (such as Intensive Fire's title) reachable by focus | UI review, pass 28c | | | The text is in the rule help or the reasons too. |
+| The `LimboDancer.Domains.Asl.ScenarioA1` project renamed `LimboDancer.Domains.Asl.Rules` (its tests `...Rules.Tests`), with its namespace, folder, references, CI workflow, and Docker check script, and later its `ScenarioA1` type prefixes; the data identities stay: the package ids games record (`scenario-a1-fire` and the rest), the digest-pinned review files and their resource names, the `asl-scenario-a1.*` source registry files, and the catalog id | The user, pass 28c | | A pass of its own after 28c, with the full suite and Docker | The name records the project's first bounded case; it holds every reviewed rule package. |

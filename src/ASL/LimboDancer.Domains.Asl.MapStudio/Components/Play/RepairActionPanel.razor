@@ -11,7 +11,11 @@
             }
         </select>
     </label>
-    <button id="propose-repair" disabled="@(!Weapons.Any(weapon => weapon.Id == Weapon))" @onclick="@(() => OnPropose.InvokeAsync())">Propose: repair</button>
+    <button id="propose-repair" disabled="@(!Weapons.Any(weapon => weapon.Id == Weapon))" aria-describedby="propose-repair-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: repair</button>
+    @if (!Weapons.Any(weapon => weapon.Id == Weapon))
+    {
+        <span id="propose-repair-ready" class="toolbar-note">Choose the malfunctioned SW or AAMG.</span>
+    }
 </div>
 
 @code {
