@@ -274,8 +274,8 @@ public sealed class PlayPageFireTests : IDisposable
         page.Find("#fire-target").Change(hexes.Building);
 
         // Another game, then this one again: nothing chosen carries over, so no attack names a unit of another game.
-        page.Find("#play-game").Change(string.Empty);
-        page.Find("#play-game").Change("village");
+        page.OpenGame(string.Empty);
+        page.OpenGame("village");
         Assert.DoesNotContain(page.FindAll(".fire-firer"), item => item.HasAttribute("checked"));
         Assert.Equal(string.Empty, page.Find("#fire-from").GetAttribute("value") ?? string.Empty);
         Assert.True(page.Find("#propose-fire").HasAttribute("disabled"));

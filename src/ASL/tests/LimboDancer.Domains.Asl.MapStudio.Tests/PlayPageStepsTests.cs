@@ -245,7 +245,7 @@ public sealed class PlayPageStepsTests : IDisposable
         File.WriteAllText(file, File.ReadAllText(file).Replace("asl-scenario-a1@1.13.0", "asl-scenario-a1@1.12.0", StringComparison.Ordinal));
         var original = File.ReadAllBytes(file);
         var reopened = context.Render<PlayPage>();
-        reopened.Find("#play-game").Change("village");
+        reopened.OpenGame("village");
 
         Assert.Empty(reopened.FindAll("#play-replay-failed"));
         Assert.False(live.History("village")!.HasErrors);
@@ -265,7 +265,7 @@ public sealed class PlayPageStepsTests : IDisposable
         var file = Directory.GetFiles(live.Root, "village.game.json", SearchOption.AllDirectories).Single();
         File.WriteAllText(file, File.ReadAllText(file).Replace("asl-scenario-a1@1.13.0", "asl-scenario-a1@1.1.0", StringComparison.Ordinal));
         var reopened = context.Render<PlayPage>();
-        reopened.Find("#play-game").Change("village");
+        reopened.OpenGame("village");
         Assert.Contains("does not replay", reopened.Find("#play-replay-failed").TextContent, StringComparison.Ordinal);
         Assert.NotEmpty(reopened.FindAll("#play-replay-failed li"));
         Assert.Contains("asl-scenario-a1@1.1.0", reopened.Find("#play-replay-catalog").TextContent, StringComparison.Ordinal);

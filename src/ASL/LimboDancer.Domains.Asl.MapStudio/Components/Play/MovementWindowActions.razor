@@ -1,5 +1,8 @@
 @* Plan A15 (pass 25): the DEFENDER's pass while the window on the moving stack is open, and the end of the move once it is closed (A8.1, A8.11, A4.2). *@
-<button id="propose-pass" disabled="@(WindowOpen is not true)" @onclick="@(() => OnPass.InvokeAsync())">Propose: the DEFENDER passes</button>
+@if (MayPass)
+{
+    <button id="propose-pass" disabled="@(WindowOpen is not true)" @onclick="@(() => OnPass.InvokeAsync())">Propose: the DEFENDER passes</button>
+}
 <button id="propose-end-move" disabled="@(WindowOpen is not false)" @onclick="@(() => OnEnd.InvokeAsync())">Propose: end the move@(EndingSome ? " of the checked units" : "")</button>
 
 @code {
@@ -10,6 +13,10 @@
     /// <summary>Whether only some members of the moving stack are checked, so only they end their move.</summary>
     [Parameter]
     public bool EndingSome { get; set; }
+
+    /// <summary>Whether this view may pass for the DEFENDER: the adjudicator; the DEFENDER passes from its own view (pass 28c; A8.1).</summary>
+    [Parameter]
+    public bool MayPass { get; set; } = true;
 
     [Parameter]
     public EventCallback OnPass { get; set; }

@@ -141,7 +141,7 @@ public sealed class PlayPageVehicleTests : IDisposable
         page.Find("#vehicle-unit").Change("de-ht");
         Commit(page, "#vehicle-start");
         Assert.Empty(page.FindAll("#vehicle-bff"));
-        Commit(page, "#propose-pass");
+        page.PassAs("russian", Commit);
         Assert.Contains(two, page.FindAll("#vehicle-bff-target option").Select(item => item.GetAttribute("value")));
     }
 
@@ -187,7 +187,7 @@ public sealed class PlayPageVehicleTests : IDisposable
         page.Find("#vehicle-unit").Change("de-tank");
         Assert.Single(page.FindAll("#vehicle-start-reverse"));
         Commit(page, "#vehicle-start");
-        Commit(page, "#propose-pass");
+        page.PassAs("russian", Commit);
         Assert.Single(page.FindAll("#vehicle-esb"));
         if (page.FindAll($".vehicle-enter[data-to='{two}']").FirstOrDefault(item => item.GetAttribute("data-bypass") == "False") is not { } enter
             || enter.HasAttribute("disabled"))
@@ -200,7 +200,7 @@ public sealed class PlayPageVehicleTests : IDisposable
         page.Find("#vehicle-ovr").Change(true);
         Commit(page, $".vehicle-enter[data-to='{two}'][data-bypass='False']");
         Assert.True(page.Find("#vehicle-resolve-ovr").HasAttribute("disabled"));
-        Commit(page, "#propose-pass");
+        page.PassAs("russian", Commit);
         Assert.False(page.Find("#vehicle-resolve-ovr").HasAttribute("disabled"));
         dice.Enqueue([6, 6, 1, 1, 1, 1, 1]);
         Commit(page, "#vehicle-resolve-ovr");

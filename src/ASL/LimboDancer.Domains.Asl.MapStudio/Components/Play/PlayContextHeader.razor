@@ -13,12 +13,20 @@
                     Explanation="@(Ended ? "The game has ended." : live ? "The game's latest revision, as play goes on." : "The game's events do not replay; nothing can be played.")" /></span>
             }
             <p id="play-summary">@Summary</p>
+            @if (Revision is { } revision)
+            {
+                <span class="muted" id="play-revision">revision @revision</span>
+            }
             @if (HasCard)
             {
                 <a id="play-card-link" href="@CardHref">Card and Victory Conditions</a>
             }
         </div>
         <NightWeatherSummary Text="@Conditions" />
+        @if (Acting is { Length: > 0 } acting)
+        {
+            <p class="muted" id="play-acting">@acting</p>
+        }
     }
     @if (PendingTitle is { Length: > 0 } || Awaiting is { Length: > 0 })
     {
@@ -34,7 +42,7 @@
             }
         </div>
     }
-    <p id="play-status" class="visually-hidden" role="status" aria-live="polite">@Status</p>
+    <p id="play-status" class="@(Busy ? "play-status busy" : "play-status")" role="status" aria-live="polite">@(Busy ? "Working: " : string.Empty)@Status</p>
 </div>
 
 @code {
@@ -44,6 +52,18 @@
     /// <summary>The revision, turn, phase, and phasing side in words, and whether setup is open; empty when no game is shown.</summary>
     [Parameter]
     public string? Summary { get; set; }
+
+    /// <summary>The revision shown, apart from the turn and phase; null when the game does not replay or none is shown.</summary>
+    [Parameter]
+    public long? Revision { get; set; }
+
+    /// <summary>What the shown view does now when it waits on no other view, such as "You act: the german side acts in the Movement Phase."</summary>
+    [Parameter]
+    public string? Acting { get; set; }
+
+    /// <summary>Whether the gate is working on a proposal or a confirmation.</summary>
+    [Parameter]
+    public bool Busy { get; set; }
 
     /// <summary>Whether the page shows the live game's latest revision; false when the game does not replay; null when no game is shown.</summary>
     [Parameter]

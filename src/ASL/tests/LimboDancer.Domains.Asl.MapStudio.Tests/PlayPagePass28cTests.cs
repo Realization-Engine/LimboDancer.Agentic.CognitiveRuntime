@@ -134,7 +134,7 @@ public sealed class PlayPagePass28cTests : IDisposable
 
         // Another page commits first.
         var other = context.Render<PlayPage>();
-        other.Find("#play-game").Change("village");
+        other.OpenGame("village");
         Commit(other, "#propose-advance");
         Assert.Equal("pfph", Current.Phase);
 
@@ -161,12 +161,25 @@ public sealed class PlayPagePass28cTests : IDisposable
         Assert.Contains("DEFENDER may fire", page.Find("#play-awaiting").TextContent, StringComparison.Ordinal);
         Assert.Contains("russian side", page.Find("#play-hand-over").TextContent, StringComparison.Ordinal);
 
+        // A8.1, A8.11 (referee, pass 28c): only the DEFENDER passes; the moving side's view has no pass.
+        Assert.Empty(page.FindAll("#propose-pass"));
+        Assert.NotEmpty(page.Find("#play-status").TextContent);
+
         page.Find("#play-hand-over").Click();
         Assert.Contains("russian side", page.Find("#play-handover-title").TextContent, StringComparison.Ordinal);
+
+        // Ruling R23.2: the last view's announcement does not stay for the next viewer.
+        Assert.Empty(page.Find("#play-status").TextContent);
         page.Find("#play-handover-confirm").Click();
         Assert.Empty(page.FindAll("#play-hand-over"));
-        Commit(page, "#propose-pass");
-        Assert.True(Current.Movement is { WindowOpen: false });
+        Assert.Contains(hexes.Three, page.Find("#dff-note").TextContent, StringComparison.Ordinal);
+
+        // Ruling R23.1: the DEFENDER's review of its pass names no mover.
+        page.Find("#propose-pass").Click();
+        page.WaitForAssertion(() => Assert.Contains("Confirm to commit", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+        Assert.DoesNotContain("g1", page.Find("#play-reasons").TextContent, StringComparison.Ordinal);
+        page.Find("#play-confirm").Click();
+        page.WaitForAssertion(() => Assert.True(Current.Movement is { WindowOpen: false }));
     }
 
     // Backlog section 43: the records sit under their turn and phase, and the strip shows the latest one.
@@ -201,6 +214,11 @@ public sealed class PlayPagePass28cTests : IDisposable
         Assert.False(page.Find("#play-panel-actions").HasAttribute("hidden"));
         Assert.True(page.Find("#play-panel-map").HasAttribute("hidden"));
         Assert.Single(page.FindAll("#play-map"));
+
+        // UI review, pass 28c: a hand-over opens the Actions tab, so the focus has a pane to go to.
+        page.Find("#play-tab-map").Click();
+        page.ViewAs("russian");
+        Assert.False(page.Find("#play-panel-actions").HasAttribute("hidden"));
     }
 
     // Wide, the panes are named regions with no tabs.

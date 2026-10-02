@@ -4,7 +4,7 @@
 @* R11 (plan sections 13.1, 15.5, 16.13; pass 28c): the game's map in the middle of the workspace, on B06 BoardViewport. The page gives the layers
    already drawn for the view (the units it may see, the LOS line, the marks, and the highlighted hex); the panel owns only the viewport, loads the
    board when it changes, and sends a layer only when its text changes. A click names the hex under it, and a click on a counter names the counter. *@
-<section id="play-map" class="play-map" data-source="@Layers?.Source" aria-label="Map">
+<div id="play-map" class="play-map" data-source="@Layers?.Source">
     @if (Layers is { Board: not null })
     {
         <div class="toolbar play-map-tools">
@@ -13,6 +13,10 @@
             <button type="button" id="play-map-fit" @onclick="Fit">Fit</button>
             <span class="muted" id="play-map-keys">Drag to pan. With the map focused, + and - zoom and 0 fits.</span>
         </div>
+        @if (loadProblem is { } problem)
+        {
+            <p class="fail" id="play-map-load">The map did not load: @problem <button type="button" id="play-map-retry" @onclick="Retry">Try again</button></p>
+        }
         <BoardViewport @ref="viewport" Label="The game's map" OnReady="@Ready" OnClick="@Click" OnUnitSelected="@Unit" />
     }
     else if (Layers is { } failed)
@@ -24,13 +28,14 @@
             }
         </ul>
     }
-</section>
+</div>
 
 @code {
     private BoardViewport? viewport;
     private bool loading;
     private string? shown;
     private (string? Units, string? Los, string? Marks, string? Highlight) sent;
+    private string? loadProblem;
 
     /// <summary>The map drawn for the view; null when no game is shown.</summary>
     [Parameter]
@@ -63,12 +68,19 @@
 
         if (Key != shown)
         {
-            (shown, loading, sent) = (Key, true, default);
+            (shown, loading, sent, loadProblem) = (Key, true, default, null);
             try
             {
                 await viewport.Load($"render/{board.Ref.Value}/{board.Version}/{BoardRenderer.ViewName(BoardView.Exact)}", string.Empty,
                     BoardRenderer.ViewBox(board.Render, BoardView.Exact), BoardRenderer.Layers(BoardView.Exact),
                     [.. BoardRenderer.Layers(BoardView.Exact).Where(layer => layer != "defs")]);
+            }
+            catch (JSException exception)
+            {
+                // UI review, pass 28c: a board that does not load says so and may be tried again, rather than ending the circuit.
+                (shown, loadProblem) = (null, exception.Message);
+                StateHasChanged();
+                return;
             }
             finally
             {
@@ -106,6 +118,11 @@
             sent.Highlight = layers.Highlight;
             await viewport.Highlight(layers.Highlight);
         }
+    }
+
+    private void Retry()
+    {
+        (shown, loadProblem) = (null, null);
     }
 
     private async Task Zoom(double factor)

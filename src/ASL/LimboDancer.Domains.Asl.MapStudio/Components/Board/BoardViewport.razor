@@ -3,7 +3,7 @@
 
 @* B06 (plan sections 15.5 and 16.6): the board's drawing surface. It owns the host element, the JavaScript module and viewport, the .NET
    reference the script calls back, and their disposal, so no page installs listeners of its own; pages draw through its commands. *@
-<div class="board-host" @ref="host" aria-label="@Label"></div>
+<div class="board-host" @ref="host" role="@(Label is null ? null : "group")" aria-roledescription="@(Label is null ? null : "map")" aria-label="@Label"></div>
 
 @code {
     private ElementReference host;

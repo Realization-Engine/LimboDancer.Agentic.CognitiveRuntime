@@ -122,7 +122,7 @@ public sealed class TablePlayer22Tests : IDisposable
             output.WriteLine("summary: " + page.Find("#play-summary").TextContent.Trim());
         }
 
-        Assert.Contains("Play has started", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
+        Assert.DoesNotContain("Setup is open", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
         Assert.Contains("2 Game Turns", page.Find("#play-card-turns").TextContent, StringComparison.Ordinal);
     }
 
@@ -333,7 +333,7 @@ public sealed class TablePlayer22Tests : IDisposable
         Assert.DoesNotContain("doomed", live.Cards.UserNames);
 
         var again = context.Render<PlayPage>();
-        again.Find("#play-game").Change("doomed-1");
+        again.OpenGame("doomed-1");
         Assert.NotNull(again.Find("#play-card-missing"));
         output.WriteLine("missing: " + again.Find("#play-card-missing").TextContent);
         var advance = Propose(again, "#propose-advance");
@@ -354,7 +354,7 @@ public sealed class TablePlayer22Tests : IDisposable
         Save(editor);
 
         var again = context.Render<PlayPage>();
-        again.Find("#play-game").Change("changing-1");
+        again.OpenGame("changing-1");
         output.WriteLine("changed: " + (again.FindAll("#play-card-changed").Count > 0 ? again.Find("#play-card-changed").TextContent : "(no warning)"));
         output.WriteLine("turns shown: " + again.Find("#play-card-turns").TextContent.Trim());
         Assert.NotEmpty(again.FindAll("#play-card-changed"));
@@ -365,7 +365,7 @@ public sealed class TablePlayer22Tests : IDisposable
         editor.Find("#edit-turns").Change("10");
         Save(editor);
         var restored = context.Render<PlayPage>();
-        restored.Find("#play-game").Change("changing-1");
+        restored.OpenGame("changing-1");
         output.WriteLine("after restoring, warning shown: " + restored.FindAll("#play-card-changed").Count);
         var resumed = Propose(restored, "#propose-advance");
         Assert.Contains("Committed", resumed, StringComparison.Ordinal);

@@ -31,7 +31,7 @@
     <ScriptedDicePanel Queued="@([.. scripted.Queued])" @bind-Input="scriptedInput" Add="QueueDice" Clear="@(() => scripted.Clear())" Problem="@scriptedProblem" />
 }
 
-<PlayContextHeader Summary="@ContextSummary" Live="@(state is null || history is null ? null : history.Current is not null)" Ended="@(state?.Ended is not null)"
+<PlayContextHeader Summary="@ContextSummary" Revision="@(state is not null && history?.Current is not null ? state.Revision : null)" Acting="@ActingNote" Busy="@busy" Live="@(state is null || history is null ? null : history.Current is not null)" Ended="@(state?.Ended is not null)"
                    Conditions="@(state is null ? null : NightAndWeather(state))" HasCard="@(state?.Scenario is not null && handOver is null)"
                    PendingTitle="@(handOver is null ? pending?.Action.Name : null)" Review="@FocusReview" Awaiting="@(AwaitingView is { } awaited ? ViewLabel(awaited) : null)"
                    AwaitingNote="@AwaitingNote" HandOver="@HandOverToAwaiting" Status="@status">
@@ -111,7 +111,7 @@
         {
             <ProposalReviewPanel Title="@proposal.Action.Name" Accepted="@(proposal.Result.Outcome is PlayOutcome.NeedsConfirmation or PlayOutcome.Committed or PlayOutcome.Replay)"
                                  Outcome="@OutcomeText(proposal.Result.Outcome, Withheld(proposal))" Reasons="@([.. Reasons(proposal)])"
-                                 CanConfirm="@(proposal.Result.Outcome == PlayOutcome.NeedsConfirmation)" Confirm="Confirm" Cancel="@(() => pending = null)">
+                                 CanConfirm="@(proposal.Result.Outcome == PlayOutcome.NeedsConfirmation)" Busy="@busy" Confirm="Confirm" Cancel="@(() => { if (!busy) { pending = null; } })">
                 <Evidence>
                     @if (proposal.Result.Plan?.Entry is { } review && !Withheld(proposal))
                     {
@@ -146,11 +146,7 @@ else if (state is not null)
     @* Pass 28c (plan sections 11.1 and 13.1): the workspace. Wide, the actions, the map, and the review sit side by side over the activity strip;
        narrower, the map and one side pane; under 1024px, labelled Map, Actions, and Activity tabs, with the review above them. *@
     <div id="play-workspace" class="@(narrow ? "play-workspace narrow" : "play-workspace")">
-        @if (narrow)
-        {
-            <InspectorTabs Tabs="@PaneTabs" Selected="@paneTab" SelectedChanged="@(tab => paneTab = tab)" Label="Workspace" IdPrefix="play" SeparatePanels="true" />
-        }
-        <section id="play-panel-review" class="play-pane play-review" aria-label="Review" tabindex="-1" @ref="reviewPane">
+        <section id="play-panel-review" class="play-pane play-review" aria-label="Review" aria-busy="@(busy ? "true" : "false")" tabindex="-1" @ref="reviewPane">
             @if (pending is null)
             {
                 <p class="muted" id="play-review-none">Nothing to review: a proposal shows here, with Confirm and Cancel.</p>
@@ -158,6 +154,10 @@ else if (state is not null)
             @reviewBlock
             <PlaySelectedHex Hex="@SelectedHex" Units="@SelectedUnits" Sealed="@SelectedSealed" ViewName="@ViewName" Clear="@(() => highlight = null)" />
         </section>
+        @if (narrow)
+        {
+            <InspectorTabs Tabs="@PaneTabs" Selected="@paneTab" SelectedChanged="@(tab => paneTab = tab)" Label="Workspace" IdPrefix="play" SeparatePanels="true" />
+        }
         <section id="play-panel-actions" class="play-pane play-actions" tabindex="-1" @ref="actionsPane" @attributes="@Pane("actions", "Actions")">
             @if (SetupOpen)
             {
@@ -172,8 +172,26 @@ else if (state is not null)
             else if (state is not null && history?.Current is not null)
             {
                 <h3>Play</h3>
+                @* Table player, pass 28c: what play waits on comes first. *@
+                @if (state.Choice is { } choice)
+                {
+                    <PendingChoicePanel Key="@choice.Key" Side="@choice.Side" Description="@GamePlanner.DescribeChoice(choice)" MayAnswer="@MayAnswer(choice.Side)"
+                        Options="@ChoiceOptions(choice)" OnChoose="@(option => ProposeChoose(choice.Key, option))" />
+                }
+                @foreach (var surrender in state.PendingSurrenders)
+                {
+                    var captorSide = surrender.Captors.Select(state.Unit).OfType<UnitInstance>().Select(unit => unit.Side).FirstOrDefault();
+                    <PendingSurrenderPanel @key="surrender.Event" Unit="@surrender.Unit" MayAnswer="@MayAnswer(captorSide)" Captors="@(MayAnswer(captorSide) ? surrender.Captors : [])"
+                        OnTake="@(captor => ProposeTakePrisoner(surrender.Unit, captor))" OnReject="@(() => ProposeRejectSurrender(surrender.Unit))"
+                        OnFree="@(() => ProposeFreeSurrender(surrender.Unit))" />
+                }
+                @foreach (var open in state.OpenAttempts)
+                {
+                    <OpenEntryDeclaration EventId="@open.EventId" Unit="@open.Unit" Target="@open.Target.ToString()" OnDecline='@(() => ProposeDeclaration(open.Unit, "decline"))'
+                        OnElect='@(() => ProposeDeclaration(open.Unit, "elect"))' />
+                }
                 <div class="toolbar">
-                    <button id="propose-advance" @onclick="ProposeAdvance">Propose: advance the phase</button>
+                    <button id="propose-advance" @onclick="ProposeAdvance">Propose: end the @Games.PhaseLabel(state.Phase)</button>
                 </div>
                 @if (!SetupOpen && VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Hidden) == ConditionState.True
                     && state.Location(unit.Id) is not null && (Viewer.IsAdjudicator || unit.Side == viewAs)).ToArray() is { Length: > 0 } hiddenUnits)
@@ -288,20 +306,13 @@ else if (state is not null)
                             {
                                 <BerserkRetainedWeaponsField Value="@moveKeep" OnChange="@(keep => moveKeep = keep)" />
                             }
-                            <MovementWindowActions WindowOpen="@state.Movement?.WindowOpen" EndingSome="@EndingSome" OnPass='@(() => ProposeSimple(GameActions.PassFire, "pass"))'
-                                OnEnd="@ProposeEndMove" />
+                            <MovementWindowActions WindowOpen="@state.Movement?.WindowOpen" EndingSome="@EndingSome" MayPass="@Viewer.IsAdjudicator"
+                                OnPass='@(() => ProposeSimple(GameActions.PassFire, "pass"))' OnEnd="@ProposeEndMove" />
                         </div>
                     }
                     else
                     {
                         <p class="muted" id="move-elsewhere">The @state.PhasingSide side moves now; its movers and their route are its own (choose its view to move; ruling R23.1).</p>
-                        @* Pass 28c: the DEFENDER passes from its own view too, where the hand-over after a step brings it (A8.1). *@
-                        @if (state.Movement is { WindowOpen: true } && viewAs != state.PhasingSide)
-                        {
-                            <div class="toolbar">
-                                <button id="propose-pass" @onclick='@(() => ProposeSimple(GameActions.PassFire, "pass"))'>Propose: the DEFENDER passes</button>
-                            </div>
-                        }
                     }
                     @if (state.Movement is { Vehicle: true, WindowOpen: true, Members: [{ } reacting] } && state.Location(reacting)?.Location is { } reactionAt
                         && (Viewer.IsAdjudicator || viewAs != state.PhasingSide) && SeenOnly(ReactionUnits(reactionAt, reacting)).ToArray() is { Length: > 0 } reactors)
@@ -378,18 +389,6 @@ else if (state is not null)
                         OnCapture="@(on => ccCapture = on)" OnGuard="@(id => ccGuard = id)" OnYield="@(text => ccYield = text)" OnAddAttack="@AddAttack"
                         OnInfiltration="@(pick => SetInfiltration(pick.Unit, pick.To))" OnRemoveAttack="@(attack => ccAttacks.Remove(attack))" OnPropose="@ProposeCloseCombat" />
                 }
-                @if (state.Choice is { } choice)
-                {
-                    <PendingChoicePanel Key="@choice.Key" Side="@choice.Side" Description="@GamePlanner.DescribeChoice(choice)" MayAnswer="@MayAnswer(choice.Side)"
-                        Options="@ChoiceOptions(choice)" OnChoose="@(option => ProposeChoose(choice.Key, option))" />
-                }
-                @foreach (var surrender in state.PendingSurrenders)
-                {
-                    var captorSide = surrender.Captors.Select(state.Unit).OfType<UnitInstance>().Select(unit => unit.Side).FirstOrDefault();
-                    <PendingSurrenderPanel @key="surrender.Event" Unit="@surrender.Unit" MayAnswer="@MayAnswer(captorSide)" Captors="@(MayAnswer(captorSide) ? surrender.Captors : [])"
-                        OnTake="@(captor => ProposeTakePrisoner(surrender.Unit, captor))" OnReject="@(() => ProposeRejectSurrender(surrender.Unit))"
-                        OnFree="@(() => ProposeFreeSurrender(surrender.Unit))" />
-                }
                 @if (state.Phase is "rph" or "aph" && MayAnswer(state.PhasingSide) && Guards is { Count: > 0 } guards)
                 {
                     <PrisonerCustodyActions Guards="@guards" OnTransfer="@(transfer => ProposeGuardPrisoners(transfer.Guard, transfer.To))"
@@ -430,6 +429,16 @@ else if (state is not null)
                 }
                 else if (FiringSide is { } firing)
                 {
+                    @* Pass 28c (A8.1, A8.11): after each step the DEFENDER, from its own view, sees where the stack is and fires at it or passes. *@
+                    @if (state.Phase == "mph" && !Viewer.IsAdjudicator && viewAs != state.PhasingSide && MovingAt is { } movingAt)
+                    {
+                        <h4>Defensive First Fire</h4>
+                        <div class="toolbar" id="dff-window">
+                            <span class="toolbar-note" id="dff-note">The moving stack is at @movingAt: fire at it below, or pass (A8.1).</span>
+                            <button type="button" id="dff-show" @onclick="@(() => highlight = movingAt)">Show it on the map</button>
+                            <button id="propose-pass" @onclick='@(() => ProposeSimple(GameActions.PassFire, "pass"))'>Propose: the DEFENDER passes</button>
+                        </div>
+                    }
                     <SmallArmsFirePanel Side="@firing" Phase="@state.Phase" PhaseLabel="@Games.PhaseLabel(state.Phase)" Locations="@([.. FireLocations(firing)])" From="@fireFrom"
                         Firers="@FirerChoices(firing)" SelectedFirers="@fireFirers" Weapons="@([.. FireWeapons.Select(weapon => new SmallArmsFirePanel.Weapon(weapon.Id, weapon.Holding!.Holder))])"
                         SelectedWeapons="@fireWeapons" Alone="@fireAlone" Leaders="@([.. FireLeaders(firing).Select(leader => leader.Id)])" Director="@fireDirector"
@@ -481,14 +490,9 @@ else if (state is not null)
                     }
                 }
             }
-            @foreach (var open in state!.OpenAttempts)
-            {
-                <OpenEntryDeclaration EventId="@open.EventId" Unit="@open.Unit" Target="@open.Target.ToString()" OnDecline='@(() => ProposeDeclaration(open.Unit, "decline"))'
-                    OnElect='@(() => ProposeDeclaration(open.Unit, "elect"))' />
-            }
         </section>
         <section id="play-panel-map" class="play-pane play-map-pane" @attributes="@Pane("map", "Map")">
-            @if (state.ResidualFire.Count > 0)
+            @if (state!.ResidualFire.Count > 0)
             {
                 <p id="play-residual">
                     Residual FP this MPh (A8.2):
@@ -1054,7 +1058,7 @@ else if (state is not null)
     private string secondSan = string.Empty;
 
     /// <summary>A proposal, its result, and the revision it was proposed at (pass 28c: a Confirm at another revision is stale).</summary>
-    private sealed record Proposal(ActionDescriptor Action, JsonElement Arguments, PlayResult Result, long Revision = 0);
+    private sealed record Proposal(ActionDescriptor Action, JsonElement Arguments, PlayResult Result, long? Revision = null);
 
     private string gameId = string.Empty;
     private GameHistory? history;
@@ -1958,6 +1962,7 @@ else if (state is not null)
     private void ResetForView()
     {
         pending = null;
+        status = string.Empty;
         playLos = null;
         losSource = string.Empty;
         losTarget = string.Empty;
@@ -1982,6 +1987,7 @@ else if (state is not null)
             ResetForView();
             enterUnit = VisibleUnits.FirstOrDefault()?.Id ?? string.Empty;
             focusActions = true;
+            paneTab = "actions";
         }
     }
 
@@ -2082,7 +2088,9 @@ else if (state is not null)
     private bool Withheld(Proposal proposal) => !Viewer.IsAdjudicator && proposal.Result.Plan?.Disclosure is { Withheld: true };
 
     private IReadOnlyList<string> Reasons(Proposal proposal) =>
-        !Viewer.IsAdjudicator && proposal.Result.Plan is { Disclosure: { } disclosure } plan
+        proposal.Action == GameActions.PassFire && !Viewer.IsAdjudicator && viewAs != state?.PhasingSide && proposal.Result.Outcome is not (PlayOutcome.Denied or PlayOutcome.Failed)
+            ? ["play.pass: the DEFENDER passes on the moving stack; it moves on, or ends its move (A8.1, A8.11)."]
+        : !Viewer.IsAdjudicator && proposal.Result.Plan is { Disclosure: { } disclosure } plan
             ? disclosure.ReasonsForMover(plan, confirmed: proposal.Result.Outcome != PlayOutcome.NeedsConfirmation)
             : proposal.Result.Plan?.Fire is { } fire ? fire.ReasonsFor(proposal.Result.Reasons, Viewer) : proposal.Result.Reasons;
 
@@ -3310,7 +3318,14 @@ else if (state is not null)
         ccLocation = string.Empty;
         ClearCloseCombat();
         ResetPanelChoices();
+        status = string.Empty;
         Refresh();
+
+        // Referee, pass 28c: another game is opened as the page is, behind the hand-over (backlog section 37).
+        if (state is not null && history?.Current is not null && viewAs.Length > 0)
+        {
+            handOver = viewAs;
+        }
     }
 
     /// <summary>
@@ -4003,14 +4018,14 @@ else if (state is not null)
         // Plan section 13.4: after a reconnect, another tab, or another viewer's commit, the game is read again first; a proposal made at another
         // revision is stale and is never confirmed (the gate also refuses it by its expected revision).
         var now = gameId.Length > 0 ? Live.History(gameId) : null;
-        if (proposal.Revision > 0 && now is not null && now.Events.Count != proposal.Revision)
+        if (proposal.Revision is { } proposedAt && (now?.Events.Count ?? 0) != proposedAt)
         {
             pending = proposal with
             {
                 Result = proposal.Result with
                 {
                     Outcome = PlayOutcome.Stale,
-                    Reasons = [$"The game is at revision {now.Events.Count}; this proposal was made at revision {proposal.Revision}."],
+                    Reasons = [$"The game is at revision {now?.Events.Count ?? 0}; this proposal was made at revision {proposedAt}."],
                 },
             };
             status = OutcomeText(PlayOutcome.Stale, false);
@@ -4159,9 +4174,8 @@ else if (state is not null)
 
     /// <summary>The context line: the revision, turn, phase, and phasing side, and whether setup is open; null with no game shown.</summary>
     private string? ContextSummary => state is null || history is null ? null
-        : $"{(history.Current is not null ? $"Revision {state.Revision}" : "The game does not replay")}: turn {state.Turn}, {Games.PhaseLabel(state.Phase)}, "
-            + $"{state.PhasingSide} phasing. "
-            + (SetupOpen ? "Setup is open." : state.Ended is not null ? "The game has ended; nothing more is played." : "Play has started; setup is closed.");
+        : (history.Current is not null ? string.Empty : "The game does not replay: ") + $"Turn {state.Turn}, {state.PhasingSide} {Games.PhaseLabel(state.Phase)}."
+            + (SetupOpen ? " Setup is open." : state.Ended is not null ? " The game has ended; nothing more is played." : string.Empty);
 
     /// <summary>
     /// The side whose answer or turn the game waits for, when it is not the shown view (backlog section 37): a choice's side, a surrender's captors,
@@ -4183,7 +4197,14 @@ else if (state is not null)
 
     private string AwaitingNote => state is null ? string.Empty : Awaiting(state).Note;
 
-    private static (string? Side, string Note) Awaiting(GameState shown)
+    /// <summary>What the shown view does now, when the game waits on no other view (table player, pass 28c); null otherwise.</summary>
+    private string? ActingNote => state is null || history?.Current is null || state.Ended is not null || SetupOpen || Viewer.IsAdjudicator || handOver is not null
+        || AwaitingView is not null ? null : $"You act: {Awaiting(state).Note}";
+
+    /// <summary>Where the moving stack is, which the DEFENDER sees as units or a "?" (A8.1); null when no stack moves.</summary>
+    private BoardLocation? MovingAt => state?.Movement is { Members: [var first, ..] } ? state.Location(first)?.Location : null;
+
+    private (string? Side, string Note) Awaiting(GameState shown)
     {
         var defender = shown.Sides.FirstOrDefault(side => side.Id != shown.PhasingSide)?.Id;
         if (shown.Choice is { } choice)
@@ -4204,7 +4225,13 @@ else if (state is not null)
 
         if (shown.Phase == "dfph")
         {
-            return (defender, $"The {defender} side may fire in the {Games.PhaseLabel(shown.Phase)}.");
+            return (defender, $"The {defender} side may fire, then ends the {Games.PhaseLabel(shown.Phase)}.");
+        }
+
+        if (shown.Phase is "rph" or "rtph" or "ccph")
+        {
+            var other = viewAs == shown.PhasingSide ? defender : shown.PhasingSide;
+            return (other, $"Both sides act in the {Games.PhaseLabel(shown.Phase)}, the {shown.PhasingSide} side first: the {other} side too.");
         }
 
         return (shown.PhasingSide, $"The {shown.PhasingSide} side acts in the {Games.PhaseLabel(shown.Phase)}.");
@@ -4225,6 +4252,12 @@ else if (state is not null)
         // Plan section 14: a new proposal takes the focus to its review; a confirmed hand-over takes it to the actions (backlog section 37).
         try
         {
+            if (firstRender)
+            {
+                workspaceScript ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/playWorkspace.js");
+                await workspaceScript.InvokeVoidAsync("watchContext");
+            }
+
             if (focusReview || focusActions)
             {
                 var pane = focusReview ? reviewPane : actionsPane;
@@ -4233,7 +4266,7 @@ else if (state is not null)
                 await workspaceScript.InvokeVoidAsync("reveal", pane);
             }
         }
-        catch (Exception exception) when (exception is JSDisconnectedException or InvalidOperationException or JSException)
+        catch (Exception exception) when (exception is JSDisconnectedException or JSException or TaskCanceledException)
         {
             // The element was not rendered (no game shown) or the circuit is gone: focus stays where it was.
         }
@@ -4245,10 +4278,11 @@ else if (state is not null)
         {
             if (workspaceScript is not null)
             {
+                await workspaceScript.InvokeVoidAsync("unwatchContext");
                 await workspaceScript.DisposeAsync();
             }
         }
-        catch (JSDisconnectedException)
+        catch (Exception exception) when (exception is JSDisconnectedException or JSException or TaskCanceledException)
         {
             // The circuit is gone; the browser already dropped the module.
         }

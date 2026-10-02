@@ -1740,7 +1740,7 @@ details.advanced > summary {
 /* Wide (1440px and up): the actions, the map, and the review side by side over the activity strip. The workspace fills the window below the
    context; each pane scrolls on its own, so the map stays in view. */
 .play-workspace {
-    --workspace-height: calc(100vh - 7rem);
+    --workspace-height: calc(100vh - var(--play-context-height, 6rem) - 1.5rem);
     display: grid;
     grid-template-columns: minmax(22rem, 28rem) minmax(0, 1fr) minmax(18rem, 22rem);
     grid-template-rows: minmax(0, 1fr) auto;
@@ -1755,7 +1755,7 @@ details.advanced > summary {
 
 @supports (height: 100dvh) {
     .play-workspace {
-        --workspace-height: calc(100dvh - 7rem);
+        --workspace-height: calc(100dvh - var(--play-context-height, 6rem) - 1.5rem);
     }
 }
 
@@ -1771,10 +1771,10 @@ details.advanced > summary {
 
 /* A pane brought into view stops below the sticky context, not under it. */
 .play-pane {
-    scroll-margin-top: 6.5rem;
+    scroll-margin-top: calc(var(--play-context-height, 6rem) + 0.75rem);
 }
 
-@media (max-width: 63.99rem) {
+@media (max-width: 1023.98px) {
     .play-pane {
         scroll-margin-top: 0.75rem;
     }
@@ -1793,7 +1793,7 @@ details.advanced > summary {
     grid-area: map;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow: auto;
 }
 
 .play-review {
@@ -1873,7 +1873,7 @@ details.advanced > summary {
 }
 
 /* 1024px to 1439px: the map and one side pane, the review over the actions. */
-@media (max-width: 89.99rem) {
+@media (max-width: 1439.98px) {
     .play-workspace {
         grid-template-columns: minmax(0, 1fr) minmax(20rem, 26rem);
         grid-template-rows: auto minmax(0, 1fr) auto;
@@ -1890,7 +1890,7 @@ details.advanced > summary {
 
 /* Under 1024px (and at 200% zoom): the context scrolls away with the page, so it does not fill a short window, and its Review and hand-over
    buttons stay reachable in a bar fixed to the window's foot (plan section 13.1). */
-@media (max-width: 63.99rem) {
+@media (max-width: 1023.98px) {
     .play-context {
         position: static;
     }
@@ -1919,44 +1919,72 @@ details.advanced > summary {
     }
 }
 
-/* Under 1024px: labelled Map, Actions, and Activity tabs, with the review above them; the page scrolls, and the map keeps a usable height. */
-.play-workspace.narrow {
-    display: block;
-    height: auto;
-    min-height: 0;
-}
+/* Under 1024px: the review above labelled Map, Actions, and Activity tabs; the page scrolls, and the map keeps a usable height. The layout follows
+   the width itself, so it holds before the script reports it too (UI review, pass 28c); the tabs come with the script. */
+@media (max-width: 1023.98px) {
+    .play-workspace {
+        display: block;
+        height: auto;
+        min-height: 0;
+    }
 
-.play-workspace.narrow .play-pane {
-    margin-top: 0.5rem;
-    max-height: none;
-    overflow: visible;
-}
+    .play-workspace .play-pane {
+        margin-top: 0.5rem;
+        max-height: none;
+    }
 
-.play-workspace.narrow .play-pane[hidden] {
-    display: none;
-}
+    .play-workspace .play-pane:not(.play-map-pane) {
+        overflow: visible;
+    }
 
-.play-workspace.narrow .play-map-pane {
-    height: 70vh;
-    overflow: hidden;
-}
+    .play-workspace .play-map-pane {
+        height: 70vh;
+    }
 
-@supports (height: 100dvh) {
-    .play-workspace.narrow .play-map-pane {
-        height: 70dvh;
+    @supports (height: 100dvh) {
+        .play-workspace .play-map-pane {
+            height: 70dvh;
+        }
+    }
+
+    .play-workspace .play-review:has(#play-review-none):not(:has(#play-selected)) {
+        display: none;
     }
 }
 
-.play-workspace.narrow .play-review:has(#play-review-none):not(:has(#play-selected)) {
+.play-workspace .play-pane[hidden] {
     display: none;
 }
 
-/* Wide tables and long rows scroll inside their pane rather than widening the page (plan section 11.1, 320px reflow). */
-.play-pane table,
-#play-units {
-    display: block;
+/* A wide table scrolls inside its own labelled region rather than widening the page (plan section 11.1, 320px reflow). */
+.table-scroll {
     max-width: 100%;
     overflow-x: auto;
+}
+
+/* The context's announcement: what the gate is doing or last answered. */
+.play-status {
+    margin: 0.25rem 0 0;
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
+.play-status:empty {
+    display: none;
+}
+
+.play-status.busy {
+    color: var(--info);
+    font-weight: 600;
+}
+
+.play-context-line #play-revision {
+    font-size: 0.85rem;
+}
+
+#play-acting {
+    margin: 0.2rem 0 0;
+    font-size: 0.875rem;
 }
 
 .play-pane select,
@@ -2017,7 +2045,7 @@ main :is(.toolbar, .fields, .field-group, .form-grid) > * {
 }
 
 /* The Unit Lab under 1024px: the fields and the preview stack in one column. */
-@media (max-width: 63.99rem) {
+@media (max-width: 1023.98px) {
     .lab {
         grid-template-columns: minmax(0, 1fr);
     }

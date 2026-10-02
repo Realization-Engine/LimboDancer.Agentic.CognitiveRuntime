@@ -179,7 +179,7 @@ public sealed class PlayPageTests : IDisposable
         var page = StartGame($"{Board}:A1:0");
         var game = Assert.Single(live.Games());
         Assert.Equal("village", game.Game);
-        Assert.Contains("Revision 2", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
+        Assert.Equal("revision 2", page.Find("#play-revision").TextContent);
         Assert.Contains("Setup is open", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
         Assert.NotEmpty(page.FindAll("#play-units tr[data-unit='g1']"));
 
@@ -244,7 +244,7 @@ public sealed class PlayPageTests : IDisposable
 
         // The refusal depends only on the mover and the terrain, so the side is told why at once.
         Assert.Contains("play.fact-false: isAdjacentGroundLevelOrdinaryBuilding", reasons);
-        Assert.Contains("Revision 4", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
+        Assert.Equal("revision 4", page.Find("#play-revision").TextContent);
     }
 
     /// <summary>A game in the German MPh with g1 in A1 and the Russian units given, each concealed, in B1.</summary>
@@ -293,7 +293,7 @@ public sealed class PlayPageTests : IDisposable
             ("random-selection", new RandomSelection("enter-1-roll-1", "enter-1-1", ["r1", "r2"]), ["russian"]),
             ("conditions-changed", new ConditionsChanged("r1", Revealed), null),
             ("entry-forced-back", new EntryForcedBack("g1", "enter-1-1", a1, 2, false), null));
-        page.Find("#play-game").Change("village");
+        page.OpenGame("village");
 
         var german = page.Find("#play-rolls li").TextContent;
         Assert.Contains("random-selection: 6, 2", german, StringComparison.Ordinal);
@@ -317,7 +317,7 @@ public sealed class PlayPageTests : IDisposable
             ("dice-rolled", new DiceRolled("enter-1-roll-1", TaskCheck.OvrNtc, 2, 6, [3, 5], DiceRolled.SystemSource, "studio-user"), null),
             ("task-check", new TaskCheck("g1", "enter-1-roll-1", TaskCheck.OvrNtc, 7, [new TaskCheckModifier("B23.3", 3)], 11, false), null),
             ("entry-forced-back", new EntryForcedBack("g1", "enter-1-1", a1, 2, false), null));
-        page.Find("#play-game").Change("village");
+        page.OpenGame("village");
         Assert.Contains("OVR NTC: 3, 5 + 3 (TEM) = 11 against morale 7: failed", page.Find("#play-rolls li").TextContent, StringComparison.Ordinal);
     }
 
@@ -331,8 +331,8 @@ public sealed class PlayPageTests : IDisposable
 
         // The German side sees the concealed r1 only as a sealed presence.
         page.ViewAs("german");
-        page.WaitForAssertion(() => Assert.Contains("data-unit-id=\"g1\"", context.MapLayer("setUnits"), StringComparison.Ordinal));
-        Assert.DoesNotContain("data-unit-id=\"r1\"", context.MapLayer("setUnits"), StringComparison.Ordinal);
+        page.WaitForAssertion(() => Assert.DoesNotContain("data-unit-id=\"r1\"", context.MapLayer("setUnits"), StringComparison.Ordinal));
+        Assert.Contains("data-unit-id=\"g1\"", context.MapLayer("setUnits"), StringComparison.Ordinal);
 
         // Choosing a unit's location highlights its hex, and the picked hex lists what the view sees there (pass 28c).
         Assert.Empty(context.MapLayer("highlight"));
@@ -397,7 +397,7 @@ public sealed class PlayPageTests : IDisposable
         var page = GameWithDefenders(("l1", "defender-leader"));
         Append(("entry-attempted", new EntryAttempted("g1", BoardLocation.Parse($"{Board}:B1:0"), 2), null),
             ("conditions-changed", new ConditionsChanged("l1", Revealed), null));
-        page.Find("#play-game").Change("village");
+        page.OpenGame("village");
         Assert.Contains("awaits the attacker's Infantry OVR declaration", page.Find("[data-open-attempt='enter-1-1']").TextContent, StringComparison.Ordinal);
 
         page.Find("#propose-advance").Click();
