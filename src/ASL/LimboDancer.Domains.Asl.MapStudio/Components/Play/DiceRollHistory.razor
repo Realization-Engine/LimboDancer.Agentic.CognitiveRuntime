@@ -1,0 +1,33 @@
+@* Plan R04 (pass 28b): the latest rolls the view may see. The page gives each roll already written, with the units it belongs to only when the view may
+   see them (Random Selection and Declined OVR Design, section 7), and whether scripted dice are on, so the test-data warning shows. *@
+@if (Rolls.Count > 0)
+{
+    <h3>Rolls</h3>
+    @if (Scripted)
+    {
+        <p class="muted" id="rolls-scripted">
+            Scripted dice are on: each roll is recorded as the system's, as replay requires (DICE-12), but its dice may have come from the queue,
+            so games played now are test data.
+        </p>
+    }
+    <ul id="play-rolls">
+        @foreach (var roll in Rolls)
+        {
+            <li @key="roll.Roll" data-roll="@roll.Roll">
+                @roll.Text
+                <span class="muted">(@roll.Drawn)</span>
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    /// <summary>A roll: its id, what it was for with its dice and units, such as "rally: 1, 2 for r1", and how it was drawn.</summary>
+    public sealed record Row(string Roll, string Text, string Drawn);
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Row> Rolls { get; set; } = [];
+
+    [Parameter]
+    public bool Scripted { get; set; }
+}

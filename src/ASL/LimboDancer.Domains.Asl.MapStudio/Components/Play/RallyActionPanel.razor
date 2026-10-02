@@ -1,0 +1,56 @@
+@* Plan A05 (pass 28b): a broken unit's rally in the RPh. The page gives the broken units and the leaders in the chosen unit's Location that the view
+   sees (ruling R23.1); choosing another unit clears the leader, which the page does in its OnUnit handler (section 15.3). *@
+<h4>Rally and Repair</h4>
+<RuleHelp Id="rally-help" Summary="A broken unit tries to rally once per Player Turn, with a Good Order leader in its Location or by Self-Rally; a Good Order unit may repair a malfunctioned SW it holds (A10.6, A9.72).">
+    In the RPh a broken unit may attempt to rally once per Player Turn, rallied by a Good Order leader in its Location or by Self-Rally
+    (A10.6), and a Good Order unit that did not attempt to rally may repair a malfunctioned SW it possesses (A9.72). A vehicle's CE crew,
+    not Stunned or Recalled, may repair its AAMG: a dr of 1 repairs it, a 6 disables it (D3.7).
+    The reviewed Rally package resolves the attempt only when every outcome the dice can reach is decided.
+</RuleHelp>
+<div class="toolbar">
+    <label>
+        Broken unit
+        <select id="rally-unit" value="@Unit" @onchange="@(args => OnUnit.InvokeAsync(args.Value as string ?? string.Empty))">
+            <option value="">choose</option>
+            @foreach (var unit in Units)
+            {
+                <option value="@unit.Id">@unit.Label</option>
+            }
+        </select>
+    </label>
+    <label>
+        Rallied by
+        <select id="rally-leader" value="@Leader" @onchange="@(args => OnLeader.InvokeAsync(args.Value as string ?? string.Empty))">
+            <option value="">Self-Rally</option>
+            @foreach (var leader in Leaders)
+            {
+                <option value="@leader">@leader</option>
+            }
+        </select>
+    </label>
+    <button id="propose-rally" disabled="@(Unit.Length == 0)" @onclick="@(() => OnPropose.InvokeAsync())">Propose: rally</button>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<PlayChoice> Units { get; set; } = [];
+
+    /// <summary>The leaders who may rally the chosen unit.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<string> Leaders { get; set; } = [];
+
+    [Parameter]
+    public string Unit { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Leader { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> OnUnit { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnLeader { get; set; }
+
+    [Parameter]
+    public EventCallback OnPropose { get; set; }
+}

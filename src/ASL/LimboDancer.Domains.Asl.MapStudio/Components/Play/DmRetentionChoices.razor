@@ -1,0 +1,27 @@
+@* Plan A09 (pass 28b): the units under DM that may keep it as the RPh ends (A10.62). These are choices, not an action: the page sends the checked
+   units with the phase's advance. The page gives the units the view sees that the planner allows (ruling R23.1). *@
+@if (Units.Count > 0)
+{
+    <div class="toolbar" id="retain-dm">
+        <span>Keep DM as the RPh ends, outside woods and buildings (A10.62):</span>
+        @foreach (var unit in Units)
+        {
+            <label @key="unit"><input class="retain-dm" type="checkbox" data-unit="@unit" checked="@Selected.Contains(unit)"
+                                      @onchange="@(args => OnToggle.InvokeAsync(new Toggle(unit, args.Value is true)))" /> @unit</label>
+        }
+    </div>
+}
+
+@code {
+    /// <summary>A unit checked or cleared.</summary>
+    public sealed record Toggle(string Id, bool On);
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<string> Units { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlySet<string> Selected { get; set; } = new HashSet<string>();
+
+    [Parameter]
+    public EventCallback<Toggle> OnToggle { get; set; }
+}

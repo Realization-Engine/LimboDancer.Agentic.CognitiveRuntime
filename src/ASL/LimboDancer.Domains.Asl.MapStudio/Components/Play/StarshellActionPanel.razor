@@ -1,0 +1,58 @@
+@* Plan N13 (pass 28b): a Starshell attempt at night (E1.92). The page gives the firing side's units that may try, already read for the view (ruling
+   R23.1); the planner decides the Usage dr, the LOS and NVR for a shot at a target, and the Random Direction. The own-hex method needs no target. *@
+<h4>Starshells</h4>
+<RuleHelp Id="starshell-help" Summary="A Good Order leader, MMC, or CE AFV fires a Starshell after a Usage dr, once per hex this phase; it Illuminates until the end of the CCPh, and firing it is not firing (E1.92, E1.923).">
+    A Good Order leader, CE AFV, or MMC fires a Starshell after a Usage dr of 4 or less (a leader) or 2 or less, one attempt per hex this phase:
+    in its own hex, then one hex in a Random Direction; at a Gunflash or Known enemy unit in its LOS within six hexes, then a Random Direction DR
+    with the Extent of Error halved; or in a hex exactly three hexes away, then a Random Direction DR. It Illuminates three hexes around it until
+    the end of the CCPh; firing it is not firing (E1.92, E1.923).
+</RuleHelp>
+<div class="toolbar">
+    <label>Fired by
+        <select id="starshell-unit" value="@Unit" @onchange="@(args => OnUnit.InvokeAsync(args.Value as string ?? string.Empty))">
+            <option value="">choose</option>
+            @foreach (var id in Firers)
+            {
+                <option value="@id">@id</option>
+            }
+        </select>
+    </label>
+    <label>method
+        <select id="starshell-method" value="@Method" @onchange="@(args => OnMethod.InvokeAsync(args.Value as string ?? OwnHex))">
+            <option value="@OwnHex">its own hex</option>
+            <option value="at-target">at a Gunflash or Known enemy unit</option>
+            <option value="three-hexes">three hexes away</option>
+        </select>
+    </label>
+    <label>at <input id="starshell-at" value="@At" @onchange="@(args => OnAt.InvokeAsync(args.Value as string ?? string.Empty))" size="12" /></label>
+    <button id="propose-starshell" disabled="@(Unit.Length == 0 || (Method != OwnHex && At.Trim().Length == 0))" @onclick="@(() => OnPropose.InvokeAsync())">Propose: fire a Starshell</button>
+</div>
+
+@code {
+    /// <summary>The method that fires in the firer's own hex and needs no target.</summary>
+    public const string OwnHex = "own-hex";
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<string> Firers { get; set; } = [];
+
+    [Parameter]
+    public string Unit { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Method { get; set; } = OwnHex;
+
+    [Parameter]
+    public string At { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> OnUnit { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnMethod { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnAt { get; set; }
+
+    [Parameter]
+    public EventCallback OnPropose { get; set; }
+}

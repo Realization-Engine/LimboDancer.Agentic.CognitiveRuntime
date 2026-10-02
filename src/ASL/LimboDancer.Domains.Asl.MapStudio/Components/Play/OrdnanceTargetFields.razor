@@ -1,0 +1,93 @@
+@* Plan C17 (pass 28b): an ordnance shot's target. The page gives the target Locations, the enemy vehicles the view sees in the chosen one (ruling R23.1),
+   and how the shot's ammunition is set: none (a light mortar fires on the Area Target Type), fixed (a Panzerfaust or Panzerschreck HEAT, an ATR AP), or
+   chosen from what the Gun carries. The two vehicle selects of the old page are one here. Choosing another Location clears the vehicle, which the
+   page does in its OnTarget handler (section 15.3). *@
+<label>
+    Target
+    <select id="ordnance-target" value="@Target" @onchange="@(args => OnTarget.InvokeAsync(args.Value as string ?? string.Empty))">
+        <option value="">choose</option>
+        @foreach (var at in Targets)
+        {
+            <option value="@at">@at</option>
+        }
+    </select>
+</label>
+@if (Ammunition != AmmunitionKind.None && Vehicles.Count > 0)
+{
+    <label>
+        Vehicle
+        <select id="ordnance-vehicle" value="@Vehicle" @onchange="@(args => OnVehicle.InvokeAsync(args.Value as string ?? string.Empty))">
+            <option value="">choose</option>
+            @foreach (var vehicle in Vehicles)
+            {
+                <option value="@vehicle.Id">@vehicle.Label</option>
+            }
+        </select>
+    </label>
+    @if (Ammunition == AmmunitionKind.Fixed)
+    {
+        <span class="muted" id="ordnance-pf-heat">@Fixed</span>
+    }
+    else
+    {
+        <label>
+            Ammunition
+            <select id="ordnance-ammunition" value="@Chosen" @onchange="@(args => OnAmmunition.InvokeAsync(args.Value as string ?? "ap"))">
+                @foreach (var ammunition in Ammunitions)
+                {
+                    <option value="@ammunition">@ammunition.ToUpperInvariant()</option>
+                }
+            </select>
+        </label>
+    }
+}
+
+@code {
+    /// <summary>How a shot at a vehicle takes its ammunition.</summary>
+    public enum AmmunitionKind
+    {
+        /// <summary>No vehicle may be chosen: a light mortar fires on the Area Target Type (C9.3).</summary>
+        None,
+
+        /// <summary>The weapon fires one kind only, named by <see cref="Fixed"/>.</summary>
+        Fixed,
+
+        /// <summary>The Gun or MA fires one of <see cref="Ammunitions"/> (C8.1).</summary>
+        Selectable,
+    }
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<string> Targets { get; set; } = [];
+
+    /// <summary>The enemy vehicles in the chosen Location that the view sees.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<PlayChoice> Vehicles { get; set; } = [];
+
+    [Parameter]
+    public AmmunitionKind Ammunition { get; set; }
+
+    /// <summary>The fixed ammunition with its rule, such as "HEAT (C13.34, C13.43)".</summary>
+    [Parameter]
+    public string Fixed { get; set; } = string.Empty;
+
+    [Parameter]
+    public IReadOnlyList<string> Ammunitions { get; set; } = [];
+
+    [Parameter]
+    public string Target { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Vehicle { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Chosen { get; set; } = "ap";
+
+    [Parameter]
+    public EventCallback<string> OnTarget { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnVehicle { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnAmmunition { get; set; }
+}

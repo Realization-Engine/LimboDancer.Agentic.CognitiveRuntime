@@ -1,0 +1,25 @@
+@* Plan R07 (pass 28b): one fire attack as the view may see it. Its effects are null when they are withheld (the target Location's units stay
+   concealed), and that is said rather than shown as an empty table. *@
+<div class="fire-record" data-fire="@Record.EventId">
+    <p>
+        <strong class="fire-group">@Record.Group fire at @Record.Target</strong>.
+    </p>
+    <FireArithmeticBreakdown Arithmetic="@Record.Arithmetic" />
+    @if (Record.Effects is { } effects && (effects.Count > 0 || Record.Vehicles is not { Count: > 0 }))
+    {
+        <InfantryFireEffectsTable Effects="@effects" />
+    }
+    @if (Record.Vehicles is { Count: > 0 } vehicles)
+    {
+        <VehicleFireEffectsTable Vehicles="@vehicles" />
+    }
+    else if (Record.Effects is null)
+    {
+        <p class="muted fire-withheld">The target Location's units are not disclosed: the result leaves them concealed (A12.14, p. 77), so only the @(Record.TargetSide ?? "target") side sees them.</p>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public FireView Record { get; set; } = default!;
+}

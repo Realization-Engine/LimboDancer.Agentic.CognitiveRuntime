@@ -1,0 +1,22 @@
+@* Plan R08 (pass 28b): a fire attack's arithmetic as recorded: each firer's FP and multipliers, the column and its shifts, and the IFT DR with its
+   DRM. It writes the record's numbers and never recalculates them. *@
+@using System.Globalization
+@using LimboDancer.Domains.Asl.ScenarioA1
+<ul>
+    @foreach (var firer in Arithmetic.Firers)
+    {
+        <li class="fire-fp" data-unit="@firer.UnitId">@firer.UnitId: @firer.Printed FP@(string.Concat(firer.Multipliers.Select(item => $" × {FireText.Number(item.Value)} ({item.Name}, {item.Rule})"))) = @FireText.Number(firer.Firepower)</li>
+    }
+    <li class="fire-column">
+        Total @FireText.Number(Arithmetic.TotalFirepower) FP: the @(Arithmetic.UnshiftedColumnFp?.ToString(CultureInfo.InvariantCulture) ?? "no") column@(Arithmetic.ColumnShift != 0 || Arithmetic.Cowered ? $", shifted {Arithmetic.ColumnShift}{(Arithmetic.Cowered ? " by Cowering (A7.9)" : "")} to the {Arithmetic.ColumnFp?.ToString(CultureInfo.InvariantCulture) ?? "no"} column" : "")
+    </li>
+    <li class="fire-dr">
+        IFT DR @string.Join(", ", Arithmetic.Dice) = @Arithmetic.OriginalDr@(string.Concat(Arithmetic.Drm.Select(item => $" {(item.Value < 0 ? "-" : "+")} {FireText.Number(Math.Abs(item.Value))} ({item.Name}, {item.Rule})"))):
+        Final DR <span class="fire-final-dr">@Arithmetic.FinalDr</span>, result <strong class="fire-result">@Arithmetic.Result</strong>
+    </li>
+</ul>
+
+@code {
+    [Parameter, EditorRequired]
+    public FireArithmetic Arithmetic { get; set; } = default!;
+}

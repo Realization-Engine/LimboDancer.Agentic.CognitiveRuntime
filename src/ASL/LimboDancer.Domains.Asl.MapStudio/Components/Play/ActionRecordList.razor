@@ -1,0 +1,27 @@
+@* Plan R05 (pass 28b): one list of records already written for the view: ordnance, Close Combat, night and weather, Snipers, and Rally, Rout, and
+   support weapons. Each adapter on the page keeps its own disclosure filter (section 16.15); this list only shows what it is given. A record's kind
+   names its class, such as "rally-record", and its event id its data-event. *@
+@if (Records.Count > 0)
+{
+    <h3>@Heading</h3>
+    <ul id="@ListId">
+        @foreach (var record in Records)
+        {
+            <li @key="record.EventId" class="@($"{record.Kind}-record")" data-event="@record.EventId">@record.Text</li>
+        }
+    </ul>
+}
+
+@code {
+    /// <summary>A record: the event it comes from, its kind, and its text.</summary>
+    public sealed record Entry(string EventId, string Kind, string Text);
+
+    [Parameter, EditorRequired]
+    public string Heading { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string ListId { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Entry> Records { get; set; } = [];
+}

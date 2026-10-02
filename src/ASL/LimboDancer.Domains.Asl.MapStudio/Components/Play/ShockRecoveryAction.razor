@@ -1,0 +1,37 @@
+@* Plan A10 (pass 28b): a Shocked AFV's or Unconfirmed Kill's dr in the RPh (C7.42). The page gives the vehicles the view sees that still owe it
+   (ruling R23.1), each labelled with its state; the RPh does not end until each has rolled. *@
+@if (Vehicles.Count > 0)
+{
+    <RuleHelp Id="shock-help" Summary="Each Shocked AFV and Unconfirmed Kill rolls a dr before the RPh can end (C7.42).">
+        A Shocked AFV makes a dr in this RPh: 1 or 2 removes the Shock, 3 to 6 makes it an Unconfirmed Kill; an Unconfirmed Kill's dr of 1 to 3
+        removes it and 4 to 6 wrecks the AFV (C7.42). The RPh does not end until each has rolled.
+    </RuleHelp>
+    <div class="toolbar">
+        <label>
+            Shocked AFV
+            <select id="shock-vehicle" value="@Vehicle" @onchange="@(args => OnVehicle.InvokeAsync(args.Value as string ?? string.Empty))">
+                <option value="">choose</option>
+                @foreach (var vehicle in Vehicles)
+                {
+                    <option value="@vehicle.Id">@vehicle.Label</option>
+                }
+            </select>
+        </label>
+        <button id="propose-shock" disabled="@(Vehicle.Length == 0)" @onclick="@(() => OnPropose.InvokeAsync())">Propose: roll for it</button>
+    </div>
+}
+
+@code {
+    /// <summary>The vehicles that owe their dr, such as "ge-tank (Unconfirmed Kill)".</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<PlayChoice> Vehicles { get; set; } = [];
+
+    [Parameter]
+    public string Vehicle { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> OnVehicle { get; set; }
+
+    [Parameter]
+    public EventCallback OnPropose { get; set; }
+}

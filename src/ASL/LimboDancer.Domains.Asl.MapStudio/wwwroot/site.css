@@ -1661,3 +1661,22 @@ details.advanced > summary {
     margin-right: 0.75rem;
     white-space: nowrap;
 }
+
+/* Pass 28b (S08 RuleHelp): a rule's one-line summary, with its full text collapsed beneath. */
+.rule-help {
+    max-width: 60rem;
+    margin: 0.25rem 0 0.5rem;
+}
+
+.rule-help-summary {
+    margin: 0 0 0.15rem;
+}
+
+.rule-help-detail > summary {
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
+.rule-help-detail > p {
+    margin: 0.25rem 0 0;
+}
