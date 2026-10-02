@@ -825,3 +825,15 @@ On the user's go-ahead after the rename, with every new `--warnaserror` error fi
 | The merge gate's documents updated (the rules tests run with the solution; test file paths), commit 45d6712 | 09:15 | 09:20 | 0:05 | At the user's request, beside the suite |
 | Merge gate: commit 3b6744f, the Docker Linux check (the solution's test step ran the rules tests: Rules 484, Authoring 167, Play 615, MapStudio 264; every step exit 0), the time log, merge into main, push | 09:09 | 09:34 | 0:25 | |
 | **Total** | 08:57 | 09:34 | **0:37** | |
+
+
+## Pass 29: The shared board workspace
+
+Added by the user on 2026-10-02 as the first task of the UI and playability work. Estimate 4:30 (build 3:15). Branch `ui-improvements`. Each task is checked in the Studio only; the unit tests, reviews, and merge gate run once the batch of UI work is done.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Preparation: the plan's sections 13, 14, and 15.10, the pass 28c design and review, backlog sections 37, 43, and 44, a survey of Play and its components; four candidate groups | 18:05 | 18:20 | 0:15 | Approximate start |
+| The planned passes from the old 29 renumbered up by one, pass 29 added to the plan's section 5 and schedule, the totals recomputed | 18:27 | 18:29 | 0:02 | Plus the backlog, three rulings, and a code comment |
+| 29.1 `BoardInspector` moved out of the board viewer; checked in the user's Studio (5178): hex and counter clicks, tabs by keyboard, LOS, Evidence, Escape, hover | 18:29 | 18:38 | 0:09 | |
+| 29.2 to 29.4: `BoardWorkspace`, the board viewer as its host, `GameMaps.Layers` with the overlay and view, Play on the workspace with a Proposal tab; `PlayMapPanel` and `PlaySelectedHex` retired; checked in my Studio (6670) at 1920x1080, 1366x768, 1024x768, 683x384, and 320x640 | 18:41 | 19:01 | 0:20 | One fix found in the Studio: a counter click lost the unit's details |

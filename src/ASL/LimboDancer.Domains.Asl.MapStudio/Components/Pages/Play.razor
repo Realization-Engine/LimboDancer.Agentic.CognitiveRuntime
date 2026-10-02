@@ -144,16 +144,18 @@ else if (history.Current is null && state is null)
 else if (state is not null)
 {
     @* Pass 28c (plan sections 11.1 and 13.1): the workspace. Wide, the actions, the map, and the review sit side by side over the activity strip;
-       narrower, the map and one side pane; under 1024px, labelled Map, Actions, and Activity tabs, with the review above them. *@
+       narrower, the map and one side pane; under 1024px, labelled Map, Actions, and Activity tabs, with the review above them. Pass 29: the map and
+       the review pane are BoardWorkspace, the review pane its inspector, with the proposal as its first tab. *@
     <div id="play-workspace" class="@(narrow ? "play-workspace narrow" : "play-workspace")">
-        <section id="play-panel-review" class="play-pane play-review" aria-label="Review" aria-busy="@(busy ? "true" : "false")" tabindex="-1" @ref="reviewPane">
-            @if (pending is null)
-            {
-                <p class="muted" id="play-review-none">Nothing to review: a proposal shows here, with Confirm and Cancel.</p>
-            }
-            @reviewBlock
-            <PlaySelectedHex Hex="@SelectedHex" Units="@SelectedUnits" Sealed="@SelectedSealed" ViewName="@ViewName" Clear="@(() => highlight = null)" />
-        </section>
+        @{
+            RenderFragment proposalBlock = @<div id="play-proposal">
+                @if (pending is null)
+                {
+                    <p class="muted" id="play-review-none">Nothing to review: a proposal shows here, with Confirm and Cancel.</p>
+                }
+                @reviewBlock
+            </div>;
+            RenderFragment between = @<text>
         @if (narrow)
         {
             <InspectorTabs Tabs="@PaneTabs" Selected="@paneTab" SelectedChanged="@(tab => paneTab = tab)" Label="Workspace" IdPrefix="play" SeparatePanels="true" />
@@ -491,38 +493,49 @@ else if (state is not null)
                 }
             }
         </section>
-        <section id="play-panel-map" class="play-pane play-map-pane" @attributes="@Pane("map", "Map")">
-            @if (state!.ResidualFire.Count > 0)
-            {
-                <p id="play-residual">
-                    Residual FP this MPh (A8.2):
-                    @string.Join("; ", state.ResidualFire.Select(item => $"{item.Fp} in {item.Location}"))
-                </p>
-            }
-            <PlayMapPanel Layers="@MapLayers" OnLocation="@(at => highlight = at)" OnUnit="@SelectCounter" />
-            <details id="play-los" open="@(playLos is not null)">
-                <summary>LOS</summary>
-                <p class="muted">VASL's LOS over the game's map (LOS Designs): terrain only, so every viewer may check it, from a location or from a unit the viewer can see.</p>
-                <div class="fields">
-                    <label for="play-los-unit">From unit</label>
-                    <select id="play-los-unit" @onchange="ChooseLosUnit">
-                        <option value="">none</option>
-                        @foreach (var unit in VisibleUnits.Where(unit => state?.Location(unit.Id) is not null))
-                        {
-                            <option value="@unit.Id">@unit.Id (@state!.Location(unit.Id)!.Location)</option>
-                        }
-                    </select>
-                    <label for="play-los-source">From</label><input id="play-los-source" value="@losSource" @onchange="@(args => losSource = args.Value as string ?? string.Empty)" />
-                    <label for="play-los-target">To</label><input id="play-los-target" value="@losTarget" @onchange="@(args => losTarget = args.Value as string ?? string.Empty)" />
-                </div>
-                <button id="play-los-check" @onclick="CheckLos">Check LOS</button>
-                <button id="play-los-clear" disabled="@(playLos is null)" @onclick="() => playLos = null">Clear</button>
-                @if (playLos is { } check)
-                {
-                    <p id="play-los-result" data-status="@(check.Result?.Status.ToString() ?? "Refused")">@check.Summary</p>
-                }
-            </details>
-        </section>
+            </text>;
+        }
+        @if (MapLayers is { Board: { } mapBoard } layers)
+        {
+            <BoardWorkspace @ref="workspace" Board="@mapBoard" Units="@layers.Overlay" UnitView="@layers.View" Marks="@layers.Marks" Vocabulary="@Library.Vocabulary"
+                            Selected="@(highlight is { } picked ? GameMaps.FactsAt(mapBoard, picked) : null)"
+                            SelectedChanged="@(facts => highlight = facts is null ? null : GameMaps.LocationOf(mapBoard, facts.Index))"
+                            @bind-Panel="inspectorTab" Extras="@([new BoardInspector.ExtraTab(new("proposal", "Proposal", pending is null ? null : 1), proposalBlock)])"
+                            InspectorLabel="Review and inspector" IdPrefix="play-inspector" MapLabel="The game's map" InspectorFirst="true"
+                            InspectorClass="play-pane play-review inspector" InspectorAttributes="@ReviewAttributes"
+                            StageClass="play-pane play-map-pane play-map" StageAttributes="@MapAttributes(layers.Source)" Between="@between">
+                <Toolbar>
+                    @if (state!.ResidualFire.Count > 0)
+                    {
+                        <p id="play-residual">
+                            Residual FP this MPh (A8.2):
+                            @string.Join("; ", state.ResidualFire.Select(item => $"{item.Fp} in {item.Location}"))
+                        </p>
+                    }
+                    <div class="toolbar play-map-tools">
+                        <button type="button" id="play-map-zoom-in" aria-label="Zoom in" @onclick="@(() => workspace!.Zoom(0.8))">+</button>
+                        <button type="button" id="play-map-zoom-out" aria-label="Zoom out" @onclick="@(() => workspace!.Zoom(1.25))">-</button>
+                        <button type="button" id="play-map-fit" @onclick="@(() => workspace!.Fit())">Fit</button>
+                        <span class="muted" id="play-map-keys">Drag to pan. With the map focused, + and - zoom and 0 fits. Click a hex or a counter to inspect it.</span>
+                    </div>
+                </Toolbar>
+            </BoardWorkspace>
+        }
+        else
+        {
+            <section id="play-panel-review" class="play-pane play-review" aria-label="Review" aria-busy="@(busy ? "true" : "false")" tabindex="-1">
+                @proposalBlock
+            </section>
+            @between
+            <section id="play-panel-map" class="play-pane play-map-pane" @attributes="@Pane("map", "Map")">
+                <ul id="play-map-problems">
+                    @foreach (var problem in MapLayers?.Problems ?? [])
+                    {
+                        <li>@problem</li>
+                    }
+                </ul>
+            </section>
+        }
         <section id="play-panel-activity" class="play-pane play-activity" @attributes="@Pane("activity", "Activity")">
             <p id="play-latest">@(LatestRecord ?? "No record yet.")</p>
             <details id="play-history">
@@ -1963,10 +1976,8 @@ else if (state is not null)
     {
         pending = null;
         status = string.Empty;
-        playLos = null;
-        losSource = string.Empty;
-        losTarget = string.Empty;
         highlight = null;
+        inspectorTab = "selection";
         placements.Clear();
         placeHidden = false;
         placeConcealed = false;
@@ -1995,31 +2006,6 @@ else if (state is not null)
     /// <summary>What "View on" opens: the saved map the game copied, or its first board.</summary>
     private string ViewTarget => state is null ? string.Empty
         : state.Map.IsPlaced && state.Map.Reference.StartsWith("map-", StringComparison.Ordinal) ? state.Map.Reference : state.Map.Boards[0].Board.Value;
-
-    private string losSource = string.Empty;
-    private string losTarget = string.Empty;
-    private LosCheck? playLos;
-
-    /// <summary>
-    /// LOS from a unit (LOS Result Design, section 5): only units the viewer can see are offered, and choosing one fills the
-    /// source with its location.
-    /// </summary>
-    private void ChooseLosUnit(ChangeEventArgs args)
-    {
-        if (state is not null && args.Value as string is { Length: > 0 } id && VisibleUnits.Any(unit => unit.Id == id) && state.Location(id) is { } at)
-        {
-            losSource = at.Location.ToString();
-        }
-    }
-
-    /// <summary>Checks LOS between two locations of the game's map (LOS Design, section 6).</summary>
-    private void CheckLos()
-    {
-        if (state is not null && GameMaps.Board(state.Map).Board is { } board)
-        {
-            playLos = Los.Check(board, losSource, losTarget);
-        }
-    }
 
     /// <summary>A prisoner's Guard, and a Guard's prisoners (A20.5), as the units table shows them.</summary>
     private IEnumerable<string> Custody(UnitInstance unit)
@@ -3991,7 +3977,7 @@ else if (state is not null)
 
         pending = proposed;
         status = $"{action.Name}: {OutcomeText(proposed.Result.Outcome, Withheld(proposed))}";
-        focusReview = true;
+        (focusReview, inspectorTab) = (true, "proposal");
         Refresh();
     }
 
@@ -4156,7 +4142,27 @@ else if (state is not null)
 
     private string paneTab = "map";
 
-    private ElementReference reviewPane;
+    private BoardWorkspace? workspace;
+
+    // The inspector's open tab: "proposal" while a proposal waits, otherwise what the player chose (pass 29).
+    private string inspectorTab = "selection";
+
+    /// <summary>The review pane's attributes, as the inspector of the workspace (pass 29).</summary>
+    private Dictionary<string, object> ReviewAttributes => new()
+    {
+        ["id"] = "play-panel-review",
+        ["aria-busy"] = busy ? "true" : "false",
+        ["tabindex"] = "-1",
+    };
+
+    /// <summary>The map pane's attributes: its tab panel or region, and the map's source.</summary>
+    private Dictionary<string, object> MapAttributes(string? source)
+    {
+        var attributes = Pane("map", "Map");
+        attributes["id"] = "play-panel-map";
+        attributes["data-source"] = source ?? string.Empty;
+        return attributes;
+    }
     private ElementReference actionsPane;
     private bool focusReview;
     private IJSObjectReference? workspaceScript;
@@ -4245,7 +4251,7 @@ else if (state is not null)
         }
     }
 
-    private void FocusReview() => focusReview = true;
+    private void FocusReview() => (focusReview, inspectorTab) = (true, "proposal");
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -4260,7 +4266,7 @@ else if (state is not null)
 
             if (focusReview || focusActions)
             {
-                var pane = focusReview ? reviewPane : actionsPane;
+                var pane = focusReview ? workspace?.Inspector ?? default : actionsPane;
                 (focusReview, focusActions) = (false, false);
                 workspaceScript ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/playWorkspace.js");
                 await workspaceScript.InvokeVoidAsync("reveal", pane);
@@ -4288,35 +4294,9 @@ else if (state is not null)
         }
     }
 
-    private string ViewName => Viewer.IsAdjudicator ? "The adjudicator" : $"The {Viewer.Name} side";
-
-    /// <summary>The picked hex, as "board:hex"; null when none is picked.</summary>
-    private string? SelectedHex => highlight is { } at ? $"{at.Board.Value}:{at.Hex}" : null;
-
-    private IReadOnlyList<PlayUnitTable.Row> SelectedUnits => highlight is { } at
-        ? [.. UnitRows.Where(row => row.At is { } where && where.Board == at.Board && where.Hex == at.Hex)]
-        : [];
-
-    private IReadOnlyList<SealedPresence> SelectedSealed => highlight is { } at
-        ? [.. SealedPresences.Where(presence => presence.Location.Board == at.Board && presence.Location.Hex == at.Hex)]
-        : [];
-
-    /// <summary>A counter clicked on the map: a unit the view sees, or a "?" it knows of; its hex is picked.</summary>
-    private void SelectCounter(string id)
-    {
-        if (UnitRows.FirstOrDefault(row => row.Id == id)?.At is { } at)
-        {
-            highlight = at;
-        }
-        else if (SealedPresences.FirstOrDefault(presence => presence.PlacementId == id) is { } presence)
-        {
-            highlight = presence.Location;
-        }
-    }
-
-    // The map's layers, read once per game, revision, view, picked hex, LOS line, and the Gun whose Covered Arc is drawn (backlog section 37: the map
-    // was drawn on every render).
-    private (string Game, long Revision, string Viewer, string? Highlight, object? Los, string Gun, GameMapLayers? Layers) mapCache;
+    // The map's layers, read once per game, revision, view, and the Gun whose Covered Arc is drawn (backlog section 37: the map was drawn on every
+    // render). Pass 29: the workspace draws the picked hex and the LOS line itself.
+    private (string Game, long Revision, string Viewer, string Gun, GameMapLayers? Layers) mapCache;
 
     private GameMapLayers? MapLayers
     {
@@ -4327,13 +4307,11 @@ else if (state is not null)
                 return null;
             }
 
-            var picked = highlight?.ToString();
             if (mapCache.Layers is null || mapCache.Game != gameId || mapCache.Revision != state.Revision || mapCache.Viewer != Viewer.Name
-                || mapCache.Highlight != picked || !ReferenceEquals(mapCache.Los, playLos) || mapCache.Gun != ordnanceGun)
+                || mapCache.Gun != ordnanceGun)
             {
-                var check = playLos;
-                mapCache = (gameId, state.Revision, Viewer.Name, picked, check, ordnanceGun, GameMaps.Layers(gameId, state.Map, Viewer, state.Revision, highlight,
-                    check is not null ? board => Los.Layer(board, check) : null, CoveredArcLayer, state.ResidualFire));
+                mapCache = (gameId, state.Revision, Viewer.Name, ordnanceGun, GameMaps.Layers(gameId, state.Map, Viewer, state.Revision, null, null, CoveredArcLayer,
+                    state.ResidualFire));
             }
 
             return mapCache.Layers;

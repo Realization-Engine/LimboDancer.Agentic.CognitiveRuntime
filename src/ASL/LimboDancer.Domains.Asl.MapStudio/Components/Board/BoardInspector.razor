@@ -1,0 +1,148 @@
+@using LimboDancer.Domains.Asl.Units.State
+@using LimboDancer.Domains.Asl.MapStudio.Components.Layout
+@* Pass 29 (plan section 5): the board inspector beside a map, moved out of the board viewer: Selection (the picked unit, the units in the picked
+   hex, and the hex's facts), LOS, and Evidence (the pixel clicked, the hex's grid samples, and the board's provenance), with any tabs the host adds
+   before them. It shows only what it is given: the units come already read for the view, and the host keeps the selection, the LOS check, and
+   the open tab. *@
+<InspectorTabs Tabs="@TabList" Selected="@Panel" SelectedChanged="@PanelChanged" Label="@Label" IdPrefix="@IdPrefix">
+    @if (Extras.FirstOrDefault(extra => extra.Tab.Id == Panel) is { } shownExtra)
+    {
+        @shownExtra.Content
+    }
+    else
+    {
+        @switch (Panel)
+        {
+            case "los":
+                <LosPanel Draft="@LosDraft" DraftChanged="@LosDraftChanged" Selected="@(Selected is null ? null : Board.LocationOf(Selected))" Result="@LosResult"
+                          OnCheck="@OnCheckLos" OnClear="@OnClearLos" />
+                break;
+            case "evidence":
+                @if (Sample is not null)
+                {
+                    <h3>Pixel clicked</h3>
+                    <p id="viewer-sample">@Sample</p>
+                }
+                @if ((Selected ?? Hovered) is { } sampled)
+                {
+                    <p class="muted">Hex @sampled.Hex:</p>
+                    <HexGridSamples Rows="@HexInspector.SampleRows(sampled, Board.Render.Grid, Board.Catalog)" />
+                }
+                <BoardProvenancePanel Board="@Board" StyledModel="@StyledModel" />
+                break;
+            default:
+                @if (SelectedUnit is { } unit)
+                {
+                    <SelectedUnitInspector Unit="@unit" Vocabulary="@Vocabulary" View="@View" Note="@UnitNote" />
+                }
+                @if (Units is { } units)
+                {
+                    @foreach (var diagnostic in units.Diagnostics)
+                    {
+                        <p class="fail">Units: @diagnostic</p>
+                    }
+                    @if (Selected is { } selectedHex && units.At(selectedHex.Index).ToArray() is { Length: > 0 } members)
+                    {
+                        <HexUnitStackList Hex="@selectedHex.Hex.ToString()" Members="@members" OnSelect="@SelectedUnitChanged" />
+                    }
+                }
+                @if ((Selected ?? Hovered) is { } facts)
+                {
+                    @if (Selected is null)
+                    {
+                        <p class="muted">Hovering. Click to keep this hex.</p>
+                    }
+                    <HexInspector Board="Board.Ref" Facts="facts" Grid="Board.Render.Grid" Catalog="Board.Catalog" LocationText="@Board.LocationOf(facts)"
+                                  Model="StyledModel" Validation="Board.Validation" OnCopy="OnCopy" ShowSamples="false" />
+                }
+                else
+                {
+                    <p class="muted">Hover or click a hex to inspect its derived facts; its grid samples are under Evidence.</p>
+                }
+
+                break;
+        }
+    }
+</InspectorTabs>
+
+@code {
+    /// <summary>A tab the host adds, with the markup it shows when chosen.</summary>
+    public sealed record ExtraTab(InspectorTabs.Tab Tab, RenderFragment Content);
+
+    private static readonly IReadOnlyList<InspectorTabs.Tab> BuiltIn = [new("selection", "Selection"), new("los", "LOS"), new("evidence", "Evidence")];
+
+    [Parameter, EditorRequired]
+    public StudioBoard Board { get; set; } = null!;
+
+    /// <summary>The open tab: "selection", "los", "evidence", or an extra tab's id.</summary>
+    [Parameter]
+    public string Panel { get; set; } = "selection";
+
+    [Parameter]
+    public EventCallback<string> PanelChanged { get; set; }
+
+    [Parameter]
+    public string Label { get; set; } = "Board inspector";
+
+    [Parameter]
+    public string IdPrefix { get; set; } = "viewer";
+
+    /// <summary>Tabs the host shows before Selection, LOS, and Evidence.</summary>
+    [Parameter]
+    public IReadOnlyList<ExtraTab> Extras { get; set; } = [];
+
+    /// <summary>The hex clicked and kept; null when none is.</summary>
+    [Parameter]
+    public HexFacts? Selected { get; set; }
+
+    /// <summary>The hex under the pointer while none is kept.</summary>
+    [Parameter]
+    public HexFacts? Hovered { get; set; }
+
+    /// <summary>The units shown on the map, already read for the view; null when no units are shown.</summary>
+    [Parameter]
+    public UnitOverlay? Units { get; set; }
+
+    [Parameter]
+    public PlacedUnit? SelectedUnit { get; set; }
+
+    [Parameter]
+    public EventCallback<PlacedUnit> SelectedUnitChanged { get; set; }
+
+    [Parameter, EditorRequired]
+    public LimboDancer.Domains.Asl.Units.Vocabulary.UnitVocabulary Vocabulary { get; set; } = null!;
+
+    /// <summary>The game's view the units were read for; null for a placement set.</summary>
+    [Parameter]
+    public GameView? View { get; set; }
+
+    [Parameter]
+    public string? UnitNote { get; set; }
+
+    /// <summary>The pixel last clicked, described for the Evidence tab.</summary>
+    [Parameter]
+    public string? Sample { get; set; }
+
+    [Parameter]
+    public FeatureModel? StyledModel { get; set; }
+
+    [Parameter]
+    public LosPanel.LosDraft LosDraft { get; set; } = new(string.Empty, string.Empty, false);
+
+    [Parameter]
+    public EventCallback<LosPanel.LosDraft> LosDraftChanged { get; set; }
+
+    [Parameter]
+    public LosCheck? LosResult { get; set; }
+
+    [Parameter]
+    public EventCallback OnCheckLos { get; set; }
+
+    [Parameter]
+    public EventCallback OnClearLos { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnCopy { get; set; }
+
+    private IReadOnlyList<InspectorTabs.Tab> TabList => [.. Extras.Select(extra => extra.Tab), .. BuiltIn];
+}

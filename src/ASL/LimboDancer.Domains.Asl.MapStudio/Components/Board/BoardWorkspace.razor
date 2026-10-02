@@ -1,0 +1,338 @@
+@using System.Globalization
+@using LimboDancer.Domains.Asl.Units.State
+@inject StudioLos Los
+@* Pass 29 (plan section 5): a board's map and its inspector, shared by the board viewer and Play. It owns B06 BoardViewport and BoardInspector,
+   loads the board when the board or its view changes, sends a layer only when it changes, and keeps what the inspector shows: the hex hovered,
+   the unit picked, the pixel clicked, and the LOS check. The host gives the units already read for the view and any marks, binds the hex kept and
+   the open tab, and lays the two parts out: the stage (its toolbar, the map, and a footer) and the inspector are siblings, with any content the
+   host puts between them. *@
+@if (InspectorFirst)
+{
+    <aside @ref="inspector" class="@InspectorClass" @attributes="@InspectorAttributes">@InspectorPane</aside>
+}
+@Between
+<div class="@StageClass" @attributes="@StageAttributes">
+    @Toolbar
+    @if (loadProblem is { } problem)
+    {
+        <p class="fail" id="workspace-load">The map did not load: @problem <button type="button" id="workspace-retry" @onclick="Retry">Try again</button></p>
+    }
+    <BoardViewport @ref="viewport" Label="@MapLabel" OnReady="@Ready" OnClick="@Click" OnHover="@Hover" OnKey="@Key" OnUnitSelected="@UnitClick" />
+    @Footer
+</div>
+@if (!InspectorFirst)
+{
+    <aside @ref="inspector" class="@InspectorClass" @attributes="@InspectorAttributes">@InspectorPane</aside>
+}
+
+@code {
+    private BoardViewport? viewport;
+    private ElementReference inspector;
+    private bool loading;
+    private string? shown;
+    private string? loadProblem;
+    private (string? Units, string? Los, string? Marks, string? Highlight, string? Visible, string? Comparison) sent;
+    private HexFacts? hovered;
+    private PlacedUnit? selectedUnit;
+    private string? sample;
+    private LosPanel.LosDraft losDraft = new(string.Empty, string.Empty, false);
+    private LosCheck? losCheck;
+
+    [Parameter, EditorRequired]
+    public StudioBoard Board { get; set; } = null!;
+
+    [Parameter]
+    public BoardView View { get; set; } = BoardView.Exact;
+
+    /// <summary>Whether the board is drawn with its trace (the Hex Facts view).</summary>
+    [Parameter]
+    public bool Trace { get; set; }
+
+    /// <summary>The board layers shown; null shows them all.</summary>
+    [Parameter]
+    public IReadOnlyCollection<string>? Visible { get; set; }
+
+    /// <summary>The Comparison view's mode; it applies only in that view.</summary>
+    [Parameter]
+    public string ComparisonMode { get; set; } = "overlay";
+
+    /// <summary>The Comparison view's value, 0 to 100.</summary>
+    [Parameter]
+    public int ComparisonValue { get; set; } = 50;
+
+    /// <summary>The units on the map, already read for the view; null shows none.</summary>
+    [Parameter]
+    public UnitOverlay? Units { get; set; }
+
+    /// <summary>The game's view the units were read for; null for a placement set.</summary>
+    [Parameter]
+    public GameView? UnitView { get; set; }
+
+    [Parameter]
+    public string? UnitNote { get; set; }
+
+    /// <summary>The <c>layer-marks</c> group (Play's Covered Arc and Residual FP); null draws none.</summary>
+    [Parameter]
+    public string? Marks { get; set; }
+
+    [Parameter, EditorRequired]
+    public LimboDancer.Domains.Asl.Units.Vocabulary.UnitVocabulary Vocabulary { get; set; } = null!;
+
+    [Parameter]
+    public FeatureModel? StyledModel { get; set; }
+
+    /// <summary>The hex clicked and kept; the host may set it (a unit located in a table) or bind it.</summary>
+    [Parameter]
+    public HexFacts? Selected { get; set; }
+
+    [Parameter]
+    public EventCallback<HexFacts?> SelectedChanged { get; set; }
+
+    [Parameter]
+    public string Panel { get; set; } = "selection";
+
+    [Parameter]
+    public EventCallback<string> PanelChanged { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<BoardInspector.ExtraTab> Extras { get; set; } = [];
+
+    [Parameter]
+    public string InspectorLabel { get; set; } = "Board inspector";
+
+    [Parameter]
+    public string IdPrefix { get; set; } = "viewer";
+
+    /// <summary>The map's name for assistive technology; none when null.</summary>
+    [Parameter]
+    public string? MapLabel { get; set; }
+
+    [Parameter]
+    public RenderFragment? Toolbar { get; set; }
+
+    [Parameter]
+    public RenderFragment? Footer { get; set; }
+
+    /// <summary>Markup the host puts between the inspector and the stage when the inspector comes first.</summary>
+    [Parameter]
+    public RenderFragment? Between { get; set; }
+
+    [Parameter]
+    public bool InspectorFirst { get; set; }
+
+    [Parameter]
+    public string StageClass { get; set; } = "stage";
+
+    [Parameter]
+    public string InspectorClass { get; set; } = "inspector";
+
+    [Parameter]
+    public IReadOnlyDictionary<string, object>? StageAttributes { get; set; }
+
+    [Parameter]
+    public IReadOnlyDictionary<string, object>? InspectorAttributes { get; set; }
+
+    /// <summary>The inspector's element, for a host that brings it into view.</summary>
+    public ElementReference Inspector => inspector;
+
+    private RenderFragment InspectorPane => @<BoardInspector Board="@Board" Panel="@Panel" PanelChanged="@PanelChanged" Label="@InspectorLabel" IdPrefix="@IdPrefix"
+        Extras="@Extras" Selected="@Selected" Hovered="@hovered" Units="@Units" SelectedUnit="@selectedUnit" SelectedUnitChanged="@PickUnit"
+        Vocabulary="@Vocabulary" View="@UnitView" UnitNote="@UnitNote" Sample="@sample" StyledModel="@StyledModel" LosDraft="@losDraft"
+        LosDraftChanged="@(draft => losDraft = draft)" LosResult="@losCheck" OnCheckLos="@CheckLos" OnClearLos="@ClearLos" OnCopy="@Copy" />;
+
+    private string LoadKey => $"{Board.Ref.Value}/{Board.Version}/{View}/{Trace}";
+
+    private IReadOnlyList<string> AllLayers => [.. BoardRenderer.Layers(View).Where(layer => layer != "defs")];
+
+    protected override void OnParametersSet()
+    {
+        // A unit the overlay no longer draws, or one outside the hex kept, is dropped.
+        if (selectedUnit is { } unit)
+        {
+            selectedUnit = Units?.Units.FirstOrDefault(item => item.Document.Id == unit.Document.Id) is { } kept && kept.Hex == Selected?.Index ? kept : null;
+        }
+
+        // Another board starts with nothing hovered, sampled, or checked.
+        if (shown is not null && !shown.StartsWith($"{Board.Ref.Value}/{Board.Version}/", StringComparison.Ordinal))
+        {
+            (hovered, sample, losCheck) = (null, null, null);
+        }
+    }
+
+    private Task Ready()
+    {
+        shown = null;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // One load at a time, and the layers after it: a load replaces the board's groups, so every layer is sent again.
+        if (loading || viewport is not { IsReady: true })
+        {
+            return;
+        }
+
+        if (LoadKey != shown)
+        {
+            (shown, loading, sent, loadProblem) = (LoadKey, true, default, null);
+            try
+            {
+                var input = Board.InputFor(View) ?? Board.Render;
+                await viewport.Load($"render/{Board.Ref.Value}/{Board.Version}/{BoardRenderer.ViewName(View)}", Trace ? "?trace=true" : string.Empty,
+                    BoardRenderer.ViewBox(input, View), BoardRenderer.Layers(View), [.. Visible ?? AllLayers]);
+                sent.Visible = string.Join('|', Visible ?? AllLayers);
+            }
+            catch (JSException exception)
+            {
+                // UI review, pass 28c: a board that does not load says so and may be tried again, rather than ending the circuit.
+                (shown, loadProblem) = (null, exception.Message);
+                StateHasChanged();
+                return;
+            }
+            finally
+            {
+                loading = false;
+            }
+
+            if (LoadKey != shown)
+            {
+                StateHasChanged();
+                return;
+            }
+        }
+
+        var visible = string.Join('|', Visible ?? AllLayers);
+        if (visible != sent.Visible)
+        {
+            sent.Visible = visible;
+            await viewport.SetVisible([.. Visible ?? AllLayers]);
+        }
+
+        var comparison = View == BoardView.Comparison ? $"{ComparisonMode}/{ComparisonValue}" : "none";
+        if (comparison != sent.Comparison)
+        {
+            sent.Comparison = comparison;
+            await viewport.SetComparison(View == BoardView.Comparison ? ComparisonMode : "none", ComparisonValue / 100.0);
+        }
+
+        if (Units?.Svg != sent.Units)
+        {
+            sent.Units = Units?.Svg;
+            await viewport.SetUnits(Units?.Svg);
+        }
+
+        var los = losCheck is null ? null : Los.Layer(Board, losCheck);
+        if (los != sent.Los)
+        {
+            sent.Los = los;
+            await viewport.SetLos(los);
+        }
+
+        if (Marks != sent.Marks)
+        {
+            sent.Marks = Marks;
+            await viewport.SetMarks(Marks);
+        }
+
+        var highlight = Selected is null ? null : string.Join(' ', Board.Render.Grid.Geometry.Vertices(Selected.Index)
+            .Select(vertex => string.Create(CultureInfo.InvariantCulture, $"{vertex.X:0.##},{vertex.Y:0.##}")));
+        if (highlight != sent.Highlight)
+        {
+            sent.Highlight = highlight;
+            await viewport.Highlight(highlight);
+        }
+    }
+
+    private void Retry() => (shown, loadProblem) = (null, null);
+
+    public async Task Zoom(double factor)
+    {
+        if (viewport is not null)
+        {
+            await viewport.Zoom(factor);
+        }
+    }
+
+    public async Task Fit()
+    {
+        if (viewport is not null)
+        {
+            await viewport.Reset();
+        }
+    }
+
+    private void CheckLos() => losCheck = Los.Check(Board, losDraft.Source, losDraft.Target,
+        losDraft.Auxiliary ? LimboDancer.Domains.Asl.Maps.Los.LosAim.AuxiliaryPoint : LimboDancer.Domains.Asl.Maps.Los.LosAim.LosPoint);
+
+    private void ClearLos() => losCheck = null;
+
+    private async Task Copy(string location)
+    {
+        if (viewport is not null)
+        {
+            await viewport.CopyText(location);
+        }
+    }
+
+    private void PickUnit(PlacedUnit unit) => selectedUnit = unit;
+
+    private Task Click(double x, double y)
+    {
+        var grid = Board.Render.Grid;
+        var (cellX, cellY) = ((int)Math.Floor(x), (int)Math.Floor(y));
+        sample = grid.TryGetCode(cellX, cellY, out var code)
+            ? $"Pixel ({cellX}, {cellY}): code {code} {(Board.Catalog.TryGet(code, out var type) ? type.Name : "-")}, elevation {grid.ElevationAt(cellX, cellY)}"
+            : $"Pixel ({cellX}, {cellY}) is off the grid.";
+        selectedUnit = null;
+        return InvokeAsync(() => Select(grid.Geometry.HexAt(x, y) is { } hex ? Board.Facts[hex] : null));
+    }
+
+    /// <summary>Hover updates the inspector only when the pointer crosses into another hex, and only while no hex is kept.</summary>
+    private Task Hover(double x, double y)
+    {
+        if (Selected is not null)
+        {
+            return Task.CompletedTask;
+        }
+
+        var next = Board.Render.Grid.Geometry.HexAt(x, y) is { } hex ? Board.Facts[hex] : null;
+        if (next?.Index != hovered?.Index)
+        {
+            hovered = next;
+            return InvokeAsync(StateHasChanged);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task Key(string key) => key == "Escape" && Selected is not null ? InvokeAsync(() => Select(null)) : Task.CompletedTask;
+
+    private Task UnitClick(string unitId)
+    {
+        if (Units?.Units.FirstOrDefault(item => item.Document.Id == unitId) is not { } unit)
+        {
+            return Task.CompletedTask;
+        }
+
+        return InvokeAsync(async () =>
+        {
+            // A unit clicked while checking LOS stays on the LOS tab, so its hex can be taken as an end (table player, pass 22d).
+            if (Panel != "los" && Panel != "selection")
+            {
+                await PanelChanged.InvokeAsync("selection");
+            }
+
+            selectedUnit = unit;
+            await Select(Board.Facts[unit.Hex]);
+        });
+    }
+
+    private async Task Select(HexFacts? facts)
+    {
+        Selected = facts;
+        await SelectedChanged.InvokeAsync(facts);
+        StateHasChanged();
+    }
+}
