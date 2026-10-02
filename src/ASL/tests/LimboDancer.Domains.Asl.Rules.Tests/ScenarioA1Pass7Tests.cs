@@ -39,7 +39,13 @@ public sealed class ScenarioA1Pass7Tests
     private static OrdnanceResolution Resolve(OrdnanceShot shot, int[]? toKill = null, int[]? shock = null, int[]? crew = null, int[]? survival = null) =>
         ScenarioA1OrdnanceCalculator.Resolve(shot with
         {
-            Rolls = shot.Rolls! with { ToKill = toKill, ShockCheck = shock, CrewCheck = crew, CrewSurvival = survival }
+            Rolls = shot.Rolls! with
+            {
+                ToKill = toKill,
+                ShockCheck = shock,
+                CrewCheck = crew,
+                CrewSurvival = survival
+            }
         }, Reference);
 
     [Fact]
@@ -219,10 +225,24 @@ public sealed class ScenarioA1Pass7Tests
         // C3.6: at 25 hexes the red Vehicle row is 5, and Case I +1 with a moving, concealed target's Cases J and K (+2 each) leaves no Final
         // DR that hits: an Original 2 hits on a subsequent dr of 2 on the turret, of 3 on the hull.
         var shot = Tank("russian", range: 25, target: Target("attacker-tank", moving: true, concealed: true), toHit: [1, 1]);
-        var turret = ScenarioA1OrdnanceCalculator.Resolve(shot with { Rolls = shot.Rolls! with { Subsequent = 2, ToKill = [6, 6] } }, Reference);
+        var turret = ScenarioA1OrdnanceCalculator.Resolve(shot with
+        {
+            Rolls = shot.Rolls! with
+            {
+                Subsequent = 2,
+                ToKill = [6, 6]
+            }
+        }, Reference);
         Assert.True(turret.ToHit!.Improbable);
         Assert.Equal("turret", turret.Kill!.HitLocation);
-        var hull = ScenarioA1OrdnanceCalculator.Resolve(shot with { Rolls = shot.Rolls! with { Subsequent = 3, ToKill = [6, 6] } }, Reference);
+        var hull = ScenarioA1OrdnanceCalculator.Resolve(shot with
+        {
+            Rolls = shot.Rolls! with
+            {
+                Subsequent = 3,
+                ToKill = [6, 6]
+            }
+        }, Reference);
         Assert.Equal("hull", hull.Kill!.HitLocation);
     }
 
@@ -231,12 +251,24 @@ public sealed class ScenarioA1Pass7Tests
     {
         // D5.34: "+1" after a Stun: +1 To Hit for the firer; +1 to the target crew's NTC, TC, and Crew Survival.
         var shot = Tank("russian", toHit: [4, 2]);
-        var firer = Resolve(shot with { Vehicle = shot.Vehicle! with { StunRecovery = true } }, toKill: [6, 6]).ToHit!;
+        var firer = Resolve(shot with
+        {
+            Vehicle = shot.Vehicle! with
+            {
+                StunRecovery = true
+            }
+        }, toKill: [6, 6]).ToHit!;
         Assert.Contains(firer.Drm, item => item.Name == "stun" && item.Value == 1 && item.Rule == "D5.34");
-        var recovering = Tank("russian", target: Target("attacker-tank") with { StunRecovery = true }, toHit: [4, 2]);
+        var recovering = Tank("russian", target: Target("attacker-tank") with
+        {
+            StunRecovery = true
+        }, toHit: [4, 2]);
         var tc = Resolve(recovering, toKill: [3, 4], crew: [4, 4]).Kill!;
         Assert.Equal((8, 9, 8, true), (tc.CrewCheck!.OriginalDr, tc.CrewCheck.FinalDr, tc.CrewCheck.MoraleLevel, tc.Abandoned == true));
-        var survival = Resolve(Tank("russian", target: Target("attacker-tank") with { StunRecovery = true }, toHit: [2, 4]), toKill: [3, 4], survival: [3, 3]).Kill!;
+        var survival = Resolve(Tank("russian", target: Target("attacker-tank") with
+        {
+            StunRecovery = true
+        }, toHit: [2, 4]), toKill: [3, 4], survival: [3, 3]).Kill!;
         Assert.Equal((1, 7, false), (survival.CrewSurvival!.Drm, survival.CrewSurvival.FinalDr, survival.CrewSurvival.Survived));
     }
 
@@ -244,9 +276,16 @@ public sealed class ScenarioA1Pass7Tests
     public void AnAbandonedOrShockedTargetsCrewTakesNoCheckAndNoSurvival()
     {
         // D5.5 (table player, item 7): no Immobilization TC for a Shocked, Stunned, or absent crew; D5.6: an Abandoned AFV has no crew to survive.
-        var shocked = Resolve(Tank("russian", target: Target("attacker-tank") with { CrewMayTakeTc = false }, toHit: [4, 2]), toKill: [3, 4]).Kill!;
+        var shocked = Resolve(Tank("russian", target: Target("attacker-tank") with
+        {
+            CrewMayTakeTc = false
+        }, toHit: [4, 2]), toKill: [3, 4]).Kill!;
         Assert.Equal((OrdnanceKill.Immobilized, (FireCheck?)null), (shocked.Result, shocked.CrewCheck));
-        var abandoned = Resolve(Tank("russian", target: Target("attacker-tank") with { CrewMayTakeTc = false, Abandoned = true }, toHit: [2, 4]), toKill: [3, 4]);
+        var abandoned = Resolve(Tank("russian", target: Target("attacker-tank") with
+        {
+            CrewMayTakeTc = false,
+            Abandoned = true
+        }, toHit: [2, 4]), toKill: [3, 4]);
         Assert.Equal((OrdnanceResolution.Resolved, OrdnanceKill.Eliminated, (OrdnanceCrewSurvival?)null), (abandoned.Disposition, abandoned.Kill!.Result, abandoned.Kill.CrewSurvival));
     }
 
@@ -255,7 +294,13 @@ public sealed class ScenarioA1Pass7Tests
     {
         // D2.42, C5.35: Case C4 for a Motion firer is not built; C5.3: Case C for an AFPh shot after entering a new hex is not built.
         var shot = Tank("german", phase: "AFPh", toHit: [4, 2]);
-        Assert.Contains("asl.a1.ordnance.vehicle-fire-outside", Resolve(shot with { Vehicle = shot.Vehicle! with { Moved = true } }).Reasons);
+        Assert.Contains("asl.a1.ordnance.vehicle-fire-outside", Resolve(shot with
+        {
+            Vehicle = shot.Vehicle! with
+            {
+                Moved = true
+            }
+        }).Reasons);
         Assert.Contains("asl.a1.ordnance.vehicle-fire-outside", Resolve(Tank("german", phase: "AFPh", inMotion: true, toHit: [4, 2])).Reasons);
         Assert.DoesNotContain("asl.a1.ordnance.vehicle-fire-outside", Resolve(shot, toKill: [6, 6]).Reasons);
     }
@@ -325,6 +370,9 @@ internal static class Pass7ShotExtensions
 {
     public static OrdnanceShot WithDepleted(this OrdnanceShot shot, string ammunition) => shot with
     {
-        Gun = shot.Gun! with { Depleted = [ammunition] },
+        Gun = shot.Gun! with
+        {
+            Depleted = [ammunition]
+        },
     };
 }

@@ -20,12 +20,18 @@ public sealed class ScenarioA1Package : IDomainPackageResolver
         stream.CopyTo(buffer);
         if (!string.Equals(Convert.ToHexStringLower(SHA256.HashData(buffer.ToArray())),
                 DecisionSha256, StringComparison.Ordinal))
+        {
             throw new InvalidOperationException("The reviewed decision changed.");
+        }
+
         using var decision = JsonDocument.Parse(buffer.ToArray());
         var root = decision.RootElement;
         if (root.GetProperty("status").GetString() != "accepted-declared-case"
             || root.GetProperty("newlyVerifiedFragmentCount").GetInt32() != 10)
+        {
             throw new InvalidOperationException("The bounded decision has not been accepted.");
+        }
+
         var references = root.GetProperty("requiredRuleIds").EnumerateArray()
             .Select(rule => new CanonicalReference(Identity,
                 rule.GetString()!.StartsWith('B') ? "asl-easlrb-3.10:chapter-b" : "asl-easlrb-3.10:chapter-a",

@@ -33,7 +33,10 @@ public sealed class ScenarioA1Pass14Tests
         // A11.11, J2.31 (ruling R14.1): 4-4 is 1-1, black 5 and red 7; a DR of 6 kills in Hand-to-Hand and does nothing otherwise.
         CloseCombatUnit[] units = [Unit("g1", "attacker-squad", "german"), Unit("r1", "defender-squad", "russian")];
         var normal = ScenarioA1CloseCombatCalculator.Resolve(Facts(units, [Attack(["g1"], ["r1"])], Rolls([3, 3])), Reference);
-        var hand = ScenarioA1CloseCombatCalculator.Resolve(Facts(units, [Attack(["g1"], ["r1"])], Rolls([3, 3])) with { HandToHand = true }, Reference);
+        var hand = ScenarioA1CloseCombatCalculator.Resolve(Facts(units, [Attack(["g1"], ["r1"])], Rolls([3, 3])) with
+        {
+            HandToHand = true
+        }, Reference);
         Assert.Equal(5, normal.Attacks[0].KillNumber);
         Assert.Equal(7, hand.Attacks[0].KillNumber);
         Assert.False(Effect(normal, "r1").Eliminated);
@@ -96,7 +99,10 @@ public sealed class ScenarioA1Pass14Tests
     {
         // A20.22, A20.5 (ruling R14.4): +1 DRM; below the Kill Number every defender is captured and placed with the attacker.
         CloseCombatUnit[] units = [Unit("g1", "attacker-squad", "german"), Unit("r1", "defender-half-squad", "russian")];
-        var attack = Attack(["g1"], ["r1"]) with { Capture = true };
+        var attack = Attack(["g1"], ["r1"]) with
+        {
+            Capture = true
+        };
         var result = ScenarioA1CloseCombatCalculator.Resolve(Facts(units, [attack], Rolls([2, 3])), Reference);
         Assert.Contains(result.Attacks[0].Defending[0].Drm, item => item.Name == "capture" && item.Value == 1);
         var effect = Effect(result, "r1");
@@ -120,7 +126,11 @@ public sealed class ScenarioA1Pass14Tests
         Assert.Contains("asl.a1.cc.capture-choice-undecided:0", undecided);
 
         // 8-6 is 1-1, Kill 5; +1 capture: an Original 4 is a Final 5.
-        var attack = Attack(["g1", "g2"], ["r1", "r2"]) with { Capture = true, Yield = ["r1", "r2"] };
+        var attack = Attack(["g1", "g2"], ["r1", "r2"]) with
+        {
+            Capture = true,
+            Yield = ["r1", "r2"]
+        };
         var result = ScenarioA1CloseCombatCalculator.Resolve(Facts(units, [attack], Rolls([2, 2])), Reference);
         Assert.True(Effect(result, "r1").Captured);
         Assert.True(Effect(result, "r1").CapturedHalf);
@@ -179,7 +189,12 @@ public sealed class ScenarioA1Pass14Tests
     {
         // A20.55 (ruling R14.6): the Guard is Good Order, so no escape; broken, each prisoner takes a NTC and attacks at (1) FP.
         var guard = Unit("g1", "attacker-half-squad", "german");
-        var prisoner = Unit("rp", "defender-squad", "russian") with { Captured = true, GuardId = "g1", Unarmed = true };
+        var prisoner = Unit("rp", "defender-squad", "russian") with
+        {
+            Captured = true,
+            GuardId = "g1",
+            Unarmed = true
+        };
         CloseCombatDeclaration[] escape = [Attack(["rp"], ["g1"])];
         Assert.Contains("asl.a1.cc.escape-outside:0",
             ScenarioA1CloseCombatCalculator.Precheck(Facts([guard, prisoner], escape, round: CloseCombatFacts.PrisonersRound), Reference));
@@ -337,7 +352,10 @@ public sealed class ScenarioA1Pass14Tests
             "infiltration" => Facts([Unit("g1", "attacker-squad", "german") with { InfiltrateTo = "bd01:G6:0" },
                 Unit("r1", "defender-squad", "russian") with { InfiltrateTo = "bd01:G4:0" }], [Attack(["g1"], ["r1"]), Attack(["r1"], ["g1"])]),
             "concealed" => Facts([Unit("g1", "attacker-squad", "german"), Unit("r1", "defender-squad", "russian") with { Concealed = true }],
-                [Attack(["g1"], ["r1"]), Attack(["r1"], ["g1"])]) with { HandToHand = true },
+                [Attack(["g1"], ["r1"]), Attack(["r1"], ["g1"])]) with
+            {
+                HandToHand = true
+            },
             _ => Facts([Unit("g1", "attacker-squad", "german"), Unit("g2", "attacker-squad", "german"), Unit("r1", "defender-squad", "russian")],
                 [Attack(["g1", "g2"], ["r1"]), Attack(["r1"], ["g1"])]),
         };
@@ -348,7 +366,10 @@ public sealed class ScenarioA1Pass14Tests
     // Walks every roll the package asks for: two dice over their 36 pairs, a Random Selection over every assignment, a dr over 1 to 6.
     private static int Explore(CloseCombatFacts facts, CloseCombatRolls rolls)
     {
-        var result = ScenarioA1CloseCombatCalculator.Resolve(facts with { Rolls = rolls }, Reference);
+        var result = ScenarioA1CloseCombatCalculator.Resolve(facts with
+        {
+            Rolls = rolls
+        }, Reference);
         if (result.Disposition == CloseCombatResolution.Resolved)
         {
             return 1;
@@ -367,7 +388,13 @@ public sealed class ScenarioA1Pass14Tests
                 for (var second = 1; second <= 6; second++)
                 {
                     IReadOnlyList<int> pair = [first, second];
-                    paths += Explore(facts, kind == "attack" ? rolls with { Attacks = With(rolls.Attacks, rest, pair) } : rolls with { EscapeNtc = With(rolls.EscapeNtc, rest, pair) });
+                    paths += Explore(facts, kind == "attack" ? rolls with
+                    {
+                        Attacks = With(rolls.Attacks, rest, pair)
+                    } : rolls with
+                    {
+                        EscapeNtc = With(rolls.EscapeNtc, rest, pair)
+                    });
                 }
             }
         }
@@ -386,7 +413,13 @@ public sealed class ScenarioA1Pass14Tests
                     value /= 6;
                 }
 
-                paths += Explore(facts, kind == "randomSelection" ? rolls with { RandomSelection = map } : rolls with { LeaderStack = map });
+                paths += Explore(facts, kind == "randomSelection" ? rolls with
+                {
+                    RandomSelection = map
+                } : rolls with
+                {
+                    LeaderStack = map
+                });
             }
         }
         else

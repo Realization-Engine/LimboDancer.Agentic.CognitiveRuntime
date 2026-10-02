@@ -16,7 +16,10 @@ public static class ScenarioA1ConformanceAdmission
         stream.CopyTo(buffer);
         var bytes = buffer.ToArray();
         if (Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes)) != Sha256)
+        {
             throw new InvalidOperationException("The conformance admission record changed.");
+        }
+
         using var document = JsonDocument.Parse(bytes);
         var root = document.RootElement;
         if (root.GetProperty("schemaVersion").GetString() != "1.0.0"
@@ -32,6 +35,8 @@ public static class ScenarioA1ConformanceAdmission
             || root.GetProperty("admittedExactCaseCount").GetInt32() != 7
             || root.GetProperty("nonDefinitiveCaseCount").GetInt32() != 2
             || root.GetProperty("requiredConformance").GetArrayLength() != 7)
+        {
             throw new InvalidOperationException("The ASL-OT-04 bounded conformance gate did not reproduce.");
+        }
     }
 }

@@ -47,6 +47,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LimboDancer.Dice", "LimboDa
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LimboDancer.Dice.Tests", "tests\LimboDancer.Dice.Tests\LimboDancer.Dice.Tests.csproj", "{3B6B23B3-6E66-4CB7-92A6-6DC471274BA3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LimboDancer.Domains.Asl.Rules", "LimboDancer.Domains.Asl.Rules\LimboDancer.Domains.Asl.Rules.csproj", "{25382121-8B1B-443F-A04F-146416C4E000}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LimboDancer.Domains.Asl.Rules.Tests", "tests\LimboDancer.Domains.Asl.Rules.Tests\LimboDancer.Domains.Asl.Rules.Tests.csproj", "{8D96214F-EA7B-4187-B884-BACA4A3D7933}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -309,6 +313,30 @@ Global
 		{3B6B23B3-6E66-4CB7-92A6-6DC471274BA3}.Release|x64.Build.0 = Release|Any CPU
 		{3B6B23B3-6E66-4CB7-92A6-6DC471274BA3}.Release|x86.ActiveCfg = Release|Any CPU
 		{3B6B23B3-6E66-4CB7-92A6-6DC471274BA3}.Release|x86.Build.0 = Release|Any CPU
+		{25382121-8B1B-443F-A04F-146416C4E000}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{25382121-8B1B-443F-A04F-146416C4E000}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{25382121-8B1B-443F-A04F-146416C4E000}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{25382121-8B1B-443F-A04F-146416C4E000}.Debug|x64.Build.0 = Debug|Any CPU
+		{25382121-8B1B-443F-A04F-146416C4E000}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{25382121-8B1B-443F-A04F-146416C4E000}.Debug|x86.Build.0 = Debug|Any CPU
+		{25382121-8B1B-443F-A04F-146416C4E000}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{25382121-8B1B-443F-A04F-146416C4E000}.Release|Any CPU.Build.0 = Release|Any CPU
+		{25382121-8B1B-443F-A04F-146416C4E000}.Release|x64.ActiveCfg = Release|Any CPU
+		{25382121-8B1B-443F-A04F-146416C4E000}.Release|x64.Build.0 = Release|Any CPU
+		{25382121-8B1B-443F-A04F-146416C4E000}.Release|x86.ActiveCfg = Release|Any CPU
+		{25382121-8B1B-443F-A04F-146416C4E000}.Release|x86.Build.0 = Release|Any CPU
+		{8D96214F-EA7B-4187-B884-BACA4A3D7933}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8D96214F-EA7B-4187-B884-BACA4A3D7933}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8D96214F-EA7B-4187-B884-BACA4A3D7933}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8D96214F-EA7B-4187-B884-BACA4A3D7933}.Debug|x64.Build.0 = Debug|Any CPU
+		{8D96214F-EA7B-4187-B884-BACA4A3D7933}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8D96214F-EA7B-4187-B884-BACA4A3D7933}.Debug|x86.Build.0 = Debug|Any CPU
+		{8D96214F-EA7B-4187-B884-BACA4A3D7933}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8D96214F-EA7B-4187-B884-BACA4A3D7933}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8D96214F-EA7B-4187-B884-BACA4A3D7933}.Release|x64.ActiveCfg = Release|Any CPU
+		{8D96214F-EA7B-4187-B884-BACA4A3D7933}.Release|x64.Build.0 = Release|Any CPU
+		{8D96214F-EA7B-4187-B884-BACA4A3D7933}.Release|x86.ActiveCfg = Release|Any CPU
+		{8D96214F-EA7B-4187-B884-BACA4A3D7933}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -323,5 +351,6 @@ Global
 		{3B76AC00-93FB-4ABB-9D38-618F3F3C87A0} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{F78AA858-5F0C-48A2-AE90-466B0F24A400} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{3B6B23B3-6E66-4CB7-92A6-6DC471274BA3} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{8D96214F-EA7B-4187-B884-BACA4A3D7933} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal

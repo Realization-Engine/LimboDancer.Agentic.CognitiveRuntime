@@ -4,10 +4,22 @@ using LimboDancer.Abstractions.Observations;
 
 namespace LimboDancer.Domains.Asl.Rules;
 
-public enum ScenarioA1OvrElection { Unknown, Requested, Elected }
-public enum ScenarioA1OvrRemainingMf { Unknown, AtLeastFour, BelowFour }
-public enum ScenarioA1OvrNtcResult { Unknown, Passed, Failed }
-public enum ScenarioA1OtherConcealedNonDummy { Unknown, Present, None }
+public enum ScenarioA1OvrElection
+{
+    Unknown, Requested, Elected
+}
+public enum ScenarioA1OvrRemainingMf
+{
+    Unknown, AtLeastFour, BelowFour
+}
+public enum ScenarioA1OvrNtcResult
+{
+    Unknown, Passed, Failed
+}
+public enum ScenarioA1OtherConcealedNonDummy
+{
+    Unknown, Present, None
+}
 
 /// <summary>
 /// Supplied state for an elected Infantry OVR after a lone concealed SMC reveal (unit step 10): the attacker and the
@@ -25,7 +37,7 @@ public sealed record ScenarioA1OvrNtcSnapshot(
 
 public interface IScenarioA1OvrNtcSnapshotSource
 {
-    ValueTask<ScenarioA1OvrNtcSnapshot?> ReadAsync(Guid tenantId, DomainPackageRef package, string unitId, string locationId,
+    public ValueTask<ScenarioA1OvrNtcSnapshot?> ReadAsync(Guid tenantId, DomainPackageRef package, string unitId, string locationId,
         CancellationToken cancellationToken = default);
 }
 

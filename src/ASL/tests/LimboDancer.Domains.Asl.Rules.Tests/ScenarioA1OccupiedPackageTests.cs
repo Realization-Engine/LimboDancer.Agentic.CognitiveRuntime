@@ -91,9 +91,12 @@ public sealed class ScenarioA1OccupiedPackageTests
         var resolver = new ScenarioA1OccupiedConclusionResolver();
         var descriptor = Descriptor();
         foreach (var id in new[] { "A1-concealed-occupancy-attempt", "A1-unknown-location-or-modifier" })
+        {
             Assert.Equal(ConclusionDisposition.Indeterminate,
                 (await resolver.ConcludeAsync(Context(descriptor, id, new Dictionary<string, string>())))
                     .Disposition);
+        }
+
         Assert.Equal(ConclusionDisposition.Abstained,
             (await resolver.ConcludeAsync(Context(descriptor, "invented-case", new Dictionary<string, string>())))
                 .Disposition);

@@ -92,7 +92,12 @@ internal static class ScenarioA1ArmorCalculator
 
         // C13.3, C13.34, C8.31 (ruling R9.8): a PF fires HEAT only at an AFV; its other targets need HE Equivalency, not built. Pass 9b: a PSK fires
         // HEAT and an ATR AP at any vehicle (C13.43, C13.2).
-        if (latw && (gun.LatwType switch { "pf" => ammunition != "heat" || !armored, "psk" => ammunition != "heat", _ => ammunition != "ap" }))
+        if (latw && (gun.LatwType switch
+        {
+            "pf" => ammunition != "heat" || !armored,
+            "psk" => ammunition != "heat",
+            _ => ammunition != "ap"
+        }))
         {
             outside.Add(Prefix + "ammunition-outside");
             return;
@@ -320,7 +325,11 @@ internal static class ScenarioA1ArmorCalculator
         if (casualty)
         {
             isHit = critical = false;
-            toHit = toHit with { Hit = false, CriticalHit = false };
+            toHit = toHit with
+            {
+                Hit = false,
+                CriticalHit = false
+            };
         }
 
         // C8.9: special ammunition is used below its Depletion Number, used and run out at it, and was never there above it, when the Gun
@@ -460,7 +469,10 @@ internal static class ScenarioA1ArmorCalculator
 
         if (result == OrdnanceKill.Shock)
         {
-            made = made with { Shocked = true };
+            made = made with
+            {
+                Shocked = true
+            };
         }
         else if (result == OrdnanceKill.PossibleShock && morale is { } shockMorale)
         {
@@ -505,7 +517,10 @@ internal static class ScenarioA1ArmorCalculator
 
             var drmValue = target.CrewImpaired == true || target.StunRecovery == true ? 1 : 0;
             var finalDr = survival[0] + survival[1] + drmValue;
-            made = made with { CrewSurvival = new OrdnanceCrewSurvival([.. survival], drmValue, finalDr, cs, finalDr <= cs) };
+            made = made with
+            {
+                CrewSurvival = new OrdnanceCrewSurvival([.. survival], drmValue, finalDr, cs, finalDr <= cs)
+            };
         }
 
         return (made, null);

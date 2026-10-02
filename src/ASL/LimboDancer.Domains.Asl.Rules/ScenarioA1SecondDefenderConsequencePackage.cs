@@ -50,7 +50,9 @@ public sealed class ScenarioA1SecondDefenderConsequencePackage : IDomainPackageR
             || root.GetProperty("positiveCaseIds").GetArrayLength() != 2
             || !JsonElement.DeepEquals(root.GetProperty("excludedOutcomes"),
                 reviewed.GetProperty("excludedConsequences")))
+        {
             throw new InvalidOperationException("The second-defender consequence admission inputs changed.");
+        }
 
         descriptor = new DomainPackageDescriptor(Identity, Rules.Select(rule =>
             new CanonicalReference(Identity, rule == "B23.4"
@@ -79,7 +81,10 @@ public sealed class ScenarioA1SecondDefenderConsequencePackage : IDomainPackageR
         stream.CopyTo(buffer);
         var bytes = buffer.ToArray();
         if (Convert.ToHexStringLower(SHA256.HashData(bytes)) != digest)
+        {
             throw new InvalidOperationException("A second-defender consequence artifact changed: " + name);
+        }
+
         return JsonDocument.Parse(bytes);
     }
 }

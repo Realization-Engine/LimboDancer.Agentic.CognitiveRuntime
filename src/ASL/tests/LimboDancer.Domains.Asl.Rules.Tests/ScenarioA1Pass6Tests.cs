@@ -61,16 +61,32 @@ public sealed class ScenarioA1Pass6Tests
     public void AWreckOrFriendlyAfvGivesInfantryOneTemAndCancelsFfmo()
     {
         // Defensive First Fire at a squad moving in Open Ground beside its AFV: -1 FFNAM, and +1 for the AFV instead of -1 FFMO (D9.3, A4.6).
-        var covered = ScenarioA1FireCalculator.Resolve(Moving(Attack([6, 5]), ScenarioA1FireCalculator.FirstFire) with { AfvCover = "de-ht" }, Reference);
+        var covered = ScenarioA1FireCalculator.Resolve(Moving(Attack([6, 5]), ScenarioA1FireCalculator.FirstFire) with
+        {
+            AfvCover = "de-ht"
+        }, Reference);
         Assert.True(covered.Disposition == FireResolution.Resolved, string.Join("; ", covered.Reasons));
         Assert.Equal([("afv-cover:de-ht", 1m), ("ffnam", -1m)], Drm(covered));
 
         // Woods' +1 TEM is a positive TEM, so the AFV adds nothing; fire from within the Location gets no cover.
-        var woods = ScenarioA1FireCalculator.Resolve(Attack([6, 5], terrain: "woods") with { AfvCover = "de-ht", Rolls = new FireRolls([6, 5], null, null, null) }, Reference);
+        var woods = ScenarioA1FireCalculator.Resolve(Attack([6, 5], terrain: "woods") with
+        {
+            AfvCover = "de-ht",
+            Rolls = new FireRolls([6, 5], null, null, null)
+        }, Reference);
         Assert.Equal([("tem:woods", 1m)], Drm(woods));
-        var within = ScenarioA1FireCalculator.Resolve(Attack([6, 5], firers: [Firer("ru-1", At)]) with { FirerLocationId = At, AfvCover = "de-ht", Range = 0, Rolls = new FireRolls([6, 5], null, null, null) }, Reference);
+        var within = ScenarioA1FireCalculator.Resolve(Attack([6, 5], firers: [Firer("ru-1", At)]) with
+        {
+            FirerLocationId = At,
+            AfvCover = "de-ht",
+            Range = 0,
+            Rolls = new FireRolls([6, 5], null, null, null)
+        }, Reference);
         Assert.DoesNotContain(within.Arithmetic?.Drm ?? [], item => item.Name.StartsWith("afv-cover:", StringComparison.Ordinal));
-        Assert.Null(ScenarioA1FireCalculator.Cover(Attack([6, 5], firers: [Firer("ru-1", At)]) with { AfvCover = "de-ht" }));
+        Assert.Null(ScenarioA1FireCalculator.Cover(Attack([6, 5], firers: [Firer("ru-1", At)]) with
+        {
+            AfvCover = "de-ht"
+        }));
     }
 
     [Theory]
@@ -90,7 +106,10 @@ public sealed class ScenarioA1Pass6Tests
     public void ResidualFpTakesTheSmokeOfTheTargetLocation()
     {
         // A8.2 (referee D2): a burning wreck's +2 smoke in the Location applies to Residual FP, and cancels FFMO (A24.2).
-        var result = ScenarioA1FireCalculator.Resolve(Residual(4, [6, 5], [Vehicle("de-t", "attacker-truck")]) with { Los = new FireLos(false, 2, true, false) }, Reference);
+        var result = ScenarioA1FireCalculator.Resolve(Residual(4, [6, 5], [Vehicle("de-t", "attacker-truck")]) with
+        {
+            Los = new FireLos(false, 2, true, false)
+        }, Reference);
         Assert.True(result.Disposition == FireResolution.Resolved, string.Join("; ", result.Reasons));
         Assert.Contains(Drm(result), item => item == ("los-hindrance", 2m));
         Assert.DoesNotContain(Drm(result), item => item.Name == "ffmo");
@@ -126,7 +145,10 @@ public sealed class ScenarioA1Pass6Tests
         Assert.True(result.Disposition == FireResolution.Resolved, string.Join("; ", result.Reasons));
         Assert.Equal((8, 7), (result.Arithmetic!.ColumnFp, Assert.Single(result.VehicleEffects!).KillNumber));
 
-        var seen = ScenarioA1FireCalculator.Resolve(attack with { Vehicles = [Vehicle("de-t", "attacker-truck")] }, Reference);
+        var seen = ScenarioA1FireCalculator.Resolve(attack with
+        {
+            Vehicles = [Vehicle("de-t", "attacker-truck")]
+        }, Reference);
         Assert.Equal(16, seen.Arithmetic!.ColumnFp);
     }
 

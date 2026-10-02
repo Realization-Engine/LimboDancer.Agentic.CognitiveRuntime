@@ -56,7 +56,10 @@ public sealed class ScenarioA1ConcealedSmcOverrunObservationTests
             snapshot with { Terrain = snapshot.Terrain with { Variant = "NoRoads" } },
             snapshot with { Terrain = snapshot.Terrain with { Hex = "E5" } },
         })
+        {
             Assert.Empty((await Provider(candidate).ObserveAsync(Query())).Observations);
+        }
+
         Assert.Empty((await Provider(snapshot).ObserveAsync(Query(
             package: ScenarioA1PostRevealPackage.Identity))).Observations);
         Assert.Empty((await Provider(snapshot).ObserveAsync(Query(extra: true))).Observations);

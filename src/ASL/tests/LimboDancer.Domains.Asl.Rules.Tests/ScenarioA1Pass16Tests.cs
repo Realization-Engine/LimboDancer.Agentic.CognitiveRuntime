@@ -23,7 +23,12 @@ public sealed class ScenarioA1Pass16Tests
             terrain, targets ?? [Target("de-s")], 3, new FireRolls(dice, null, null, null));
 
     private static FireFirer Flamethrower(string id = "ru-1", string definition = "defender-squad") =>
-        Firer(id, definition) with { Weapons = [new FireWeapon("ru-ft", "defender-ft", false, false, false)], UsesInherentFp = false, UsesSupportWeapon = true };
+        Firer(id, definition) with
+        {
+            Weapons = [new FireWeapon("ru-ft", "defender-ft", false, false, false)],
+            UsesInherentFp = false,
+            UsesSupportWeapon = true
+        };
 
     /// <summary>Resolves an attack, supplying each further roll with a fixed value: checks as given (2 and 2 by default), drs of 1.</summary>
     private static FireResolution Complete(FireAttack attack, int[]? checks = null, int molCheck = 1)
@@ -43,7 +48,10 @@ public sealed class ScenarioA1Pass16Tests
             var key = reason["asl.a1.fire.roll-missing:".Length..];
             if (key == "molCheck")
             {
-                rolls = rolls with { MolCheck = molCheck };
+                rolls = rolls with
+                {
+                    MolCheck = molCheck
+                };
                 continue;
             }
 
@@ -81,20 +89,35 @@ public sealed class ScenarioA1Pass16Tests
     public void TheLowVisibilityDrmIsAddedAndBoundedAndNeverTakenByResidualFp()
     {
         // E1.7, E3.32 (rulings R16.3, R16.11): +1 at night, as the game supplies it.
-        var night = Complete(Attack([3, 3]) with { LowVisibilityDrm = 1 });
+        var night = Complete(Attack([3, 3]) with
+        {
+            LowVisibilityDrm = 1
+        });
         Assert.Contains(night.Arithmetic!.Drm, item => item.Name == "lv-hindrance" && item.Value == 1m);
         Assert.DoesNotContain(Complete(Attack([3, 3])).Arithmetic!.Drm, item => item.Name == "lv-hindrance");
-        Assert.DoesNotContain("asl.a1.fire.weather-outside", ScenarioA1FireCalculator.Resolve(Attack([3, 3]) with { LowVisibilityDrm = 5 }, Reference).Reasons);
-        Assert.Contains("asl.a1.fire.weather-outside", ScenarioA1FireCalculator.Resolve(Attack([3, 3]) with { LowVisibilityDrm = 6 }, Reference).Reasons);
+        Assert.DoesNotContain("asl.a1.fire.weather-outside", ScenarioA1FireCalculator.Resolve(Attack([3, 3]) with
+        {
+            LowVisibilityDrm = 5
+        }, Reference).Reasons);
+        Assert.Contains("asl.a1.fire.weather-outside", ScenarioA1FireCalculator.Resolve(Attack([3, 3]) with
+        {
+            LowVisibilityDrm = 6
+        }, Reference).Reasons);
     }
 
     [Fact]
     public void FireAtAGunflashBeyondNvrIsHalvedOnceOnly()
     {
         // E1.81 (ruling R16.2): halved as Area Fire; at a concealed target, halved once.
-        var known = Complete(Attack([3, 3]) with { BeyondNvr = true });
+        var known = Complete(Attack([3, 3]) with
+        {
+            BeyondNvr = true
+        });
         Assert.Contains(known.Arithmetic!.Firers.SelectMany(item => item.Multipliers), item => item.Name == "area-fire-gunflash");
-        var concealed = Complete(Attack([3, 3], targets: [Target("de-s") with { Concealed = true }]) with { BeyondNvr = true });
+        var concealed = Complete(Attack([3, 3], targets: [Target("de-s") with { Concealed = true }]) with
+        {
+            BeyondNvr = true
+        });
         var multipliers = concealed.Arithmetic!.Firers.SelectMany(item => item.Multipliers).ToArray();
         Assert.Contains(multipliers, item => item.Name == "area-fire-concealed-target");
         Assert.DoesNotContain(multipliers, item => item.Name == "area-fire-gunflash");
@@ -106,9 +129,16 @@ public sealed class ScenarioA1Pass16Tests
         // E3.741 (ruling R16.14): two lower for early Axis, so an Original DR two below the B# malfunctions the MG.
         var breakdown = Reference.Definitions["defender-lmg"].Breakdown!.Value;
         var dice = breakdown - 2 >= 7 ? new[] { breakdown - 2 - 3, 3 } : [3, 3];
-        FireFirer Gunner() => Firer("ru-1") with { Weapons = [new FireWeapon("ru-lmg", "defender-lmg", false, false, false)], UsesSupportWeapon = true };
+        FireFirer Gunner() => Firer("ru-1") with
+        {
+            Weapons = [new FireWeapon("ru-lmg", "defender-lmg", false, false, false)],
+            UsesSupportWeapon = true
+        };
         var plain = Complete(Attack(dice, firers: [Gunner()]));
-        var winter = Complete(Attack(dice, firers: [Gunner()]) with { BreakdownReduction = 2 });
+        var winter = Complete(Attack(dice, firers: [Gunner()]) with
+        {
+            BreakdownReduction = 2
+        });
         Assert.False(plain.WeaponEffects!.Single().Malfunctioned);
         Assert.True(winter.WeaponEffects!.Single().Malfunctioned);
     }

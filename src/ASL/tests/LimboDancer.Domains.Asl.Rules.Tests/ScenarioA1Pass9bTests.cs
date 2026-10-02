@@ -30,7 +30,10 @@ public sealed class ScenarioA1Pass9bTests
     }
 
     private static OrdnanceResolution Resolve(OrdnanceShot shot, int[] toHit, int[]? toKill = null) =>
-        ScenarioA1OrdnanceCalculator.Resolve(shot with { Rolls = new OrdnanceRolls(toHit, null, null, null, null) { ToKill = toKill, CrewSurvival = [6, 6], CrewCheck = [3, 4], ShockCheck = [3, 4] } }, Reference);
+        ScenarioA1OrdnanceCalculator.Resolve(shot with
+        {
+            Rolls = new OrdnanceRolls(toHit, null, null, null, null) { ToKill = toKill, CrewSurvival = [6, 6], CrewCheck = [3, 4], ShockCheck = [3, 4] }
+        }, Reference);
 
     [Fact]
     public void AnAtrHitsOnTheBlackVehicleRowAndKillsWithTheRussianAtrTk()
@@ -73,9 +76,15 @@ public sealed class ScenarioA1Pass9bTests
     public void APanzerschreckTakesTheBackblastAndAnAtrDoesNot()
     {
         // C13.8 (R9.11): +2 from a ground-level building for the PSK, none for the ATR; both take +2 in the AFPh (C13.1).
-        var psk = Resolve(Shot("german", "attacker-psk", "attacker-squad", "defender-tank", "heat", 2, phase: "AFPh") with { Panzerfaust = new OrdnancePanzerfaust(null, null, true, null) }, [3, 2], [6, 6]);
+        var psk = Resolve(Shot("german", "attacker-psk", "attacker-squad", "defender-tank", "heat", 2, phase: "AFPh") with
+        {
+            Panzerfaust = new OrdnancePanzerfaust(null, null, true, null)
+        }, [3, 2], [6, 6]);
         Assert.Equal(2, psk.ToHit!.Drm.Count(item => item.Name.StartsWith("case-c3", StringComparison.Ordinal)));
-        var atr = Resolve(Shot("russian", "defender-atr", "defender-squad", "attacker-tank", "ap", 3, phase: "AFPh") with { Panzerfaust = new OrdnancePanzerfaust(null, null, true, null) }, [3, 2], [6, 6]);
+        var atr = Resolve(Shot("russian", "defender-atr", "defender-squad", "attacker-tank", "ap", 3, phase: "AFPh") with
+        {
+            Panzerfaust = new OrdnancePanzerfaust(null, null, true, null)
+        }, [3, 2], [6, 6]);
         Assert.Single(atr.ToHit!.Drm, item => item.Name.StartsWith("case-c3", StringComparison.Ordinal));
     }
 

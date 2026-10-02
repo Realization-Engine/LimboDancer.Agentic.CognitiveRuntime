@@ -17,7 +17,7 @@ public sealed record Board01Building(string Material, int Levels);
 /// </summary>
 public interface IScenarioA1TerrainEvidence
 {
-    bool IsSupportedGroundLevel(ScenarioA1TerrainBinding? binding);
+    public bool IsSupportedGroundLevel(ScenarioA1TerrainBinding? binding);
 }
 
 /// <summary>Only the explicit building-type overrides in VASL board 01 metadata.</summary>
@@ -36,8 +36,11 @@ public sealed class Board01TerrainCatalog : IScenarioA1TerrainEvidence
 
     public bool IsSupportedGroundLevel(ScenarioA1TerrainBinding? binding)
     {
-        return binding is { BoardId: BoardId, BoardVersion: BoardVersion,
-            MetadataGitBlobSha: MetadataGitBlobSha, Level: 0, Variant: null }
+        return binding is
+        {
+            BoardId: BoardId, BoardVersion: BoardVersion,
+            MetadataGitBlobSha: MetadataGitBlobSha, Level: 0, Variant: null
+        }
             && buildings.ContainsKey(binding.Hex);
     }
 
@@ -51,7 +54,9 @@ public sealed class Board01TerrainCatalog : IScenarioA1TerrainEvidence
         if (root.GetProperty("board").GetString() != BoardId
             || root.GetProperty("version").GetString() != BoardVersion
             || root.GetProperty("metadataGitBlobSha").GetString() != MetadataGitBlobSha)
+        {
             throw new InvalidOperationException("Board 01 metadata identity differs from the pinned source.");
+        }
 
         var result = new Dictionary<string, Board01Building>(StringComparer.Ordinal);
         foreach (var group in root.GetProperty("overrides").EnumerateObject())
@@ -64,8 +69,12 @@ public sealed class Board01TerrainCatalog : IScenarioA1TerrainEvidence
                 _ => throw new InvalidOperationException("Unknown board building type."),
             };
             foreach (var hex in group.Value.EnumerateArray())
+            {
                 if (!result.TryAdd(hex.GetString()!, building))
+                {
                     throw new InvalidOperationException("Duplicate board building override.");
+                }
+            }
         }
         return result;
     }
@@ -92,7 +101,10 @@ public sealed class Board01ValidatedSnapshotSource(
                     or ScenarioA1BoardOccupancy.ExactlyOneKnownEnemySmc
                     or ScenarioA1BoardOccupancy.KnownFriendlyOnly)
                 && snapshot.IsAdjacentGroundLevelOrdinaryBuilding != true))
+        {
             return null;
+        }
+
         return snapshot;
     }
 }

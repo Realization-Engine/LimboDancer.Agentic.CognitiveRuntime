@@ -40,11 +40,18 @@ public sealed class ScenarioA1Pass8Tests
 
     private static OrdnanceResolution Resolve(OrdnanceShot shot, int[] toHit, int[]? ift = null, int? subsequent = null)
     {
-        var rolls = shot.Rolls! with { ToHit = toHit, Subsequent = subsequent };
+        var rolls = shot.Rolls! with
+        {
+            ToHit = toHit,
+            Subsequent = subsequent
+        };
         var last = string.Empty;
         for (var step = 0; step < 40; step++)
         {
-            var result = ScenarioA1OrdnanceCalculator.Resolve(shot with { Rolls = rolls }, Reference);
+            var result = ScenarioA1OrdnanceCalculator.Resolve(shot with
+            {
+                Rolls = rolls
+            }, Reference);
             if (result.Reasons is not [{ } reason] || !reason.StartsWith("asl.a1.ordnance.roll-missing:", StringComparison.Ordinal))
             {
                 return result;
@@ -56,11 +63,29 @@ public sealed class ScenarioA1Pass8Tests
             var inner = key[(key.IndexOf(':', StringComparison.Ordinal) + 1)..];
             var fire = (critical ? rolls.CriticalHit : rolls.Hit) ?? new FireRolls(null, null, null, null);
             var unit = inner.Contains(':', StringComparison.Ordinal) ? inner[(inner.IndexOf(':', StringComparison.Ordinal) + 1)..] : string.Empty;
-            fire = inner.StartsWith("attack", StringComparison.Ordinal) ? fire with { Attack = ift ?? [3, 4] }
-                : inner.StartsWith("randomSelection:", StringComparison.Ordinal) ? fire with { RandomSelection = unit.Split(',').ToDictionary(id => id, _ => 3) }
-                : inner.StartsWith("checks:", StringComparison.Ordinal) ? fire with { Checks = new Dictionary<string, IReadOnlyList<int>>(fire.Checks ?? new Dictionary<string, IReadOnlyList<int>>()) { [unit] = [3, 4] } }
-                : fire with { WoundSeverity = new Dictionary<string, int> { [unit] = 2 } };
-            rolls = critical ? rolls with { CriticalHit = fire } : rolls with { Hit = fire };
+            fire = inner.StartsWith("attack", StringComparison.Ordinal) ? fire with
+            {
+                Attack = ift ?? [3, 4]
+            }
+                : inner.StartsWith("randomSelection:", StringComparison.Ordinal) ? fire with
+                {
+                    RandomSelection = unit.Split(',').ToDictionary(id => id, _ => 3)
+                }
+                : inner.StartsWith("checks:", StringComparison.Ordinal) ? fire with
+                {
+                    Checks = new Dictionary<string, IReadOnlyList<int>>(fire.Checks ?? new Dictionary<string, IReadOnlyList<int>>()) { [unit] = [3, 4] }
+                }
+                : fire with
+                {
+                    WoundSeverity = new Dictionary<string, int> { [unit] = 2 }
+                };
+            rolls = critical ? rolls with
+            {
+                CriticalHit = fire
+            } : rolls with
+            {
+                Hit = fire
+            };
         }
 
         throw new InvalidOperationException("The package kept asking for rolls: " + last);
@@ -84,7 +109,14 @@ public sealed class ScenarioA1Pass8Tests
     {
         // C6.17: no more shots at a target in a Location than the MF it spent there, a minimum of one.
         Assert.Contains("asl.a1.ordnance.first-fire-limit", Resolve(FirstFire(German("MPh"), spent: 1, shots: 1), [5, 6]).Reasons);
-        Assert.Equal(OrdnanceResolution.Resolved, Resolve(FirstFire(German("MPh"), spent: 2, shots: 1) with { Gun = German().Gun! with { ShotsThisPhase = 1, RateOfFireKept = true } }, [5, 6]).Disposition);
+        Assert.Equal(OrdnanceResolution.Resolved, Resolve(FirstFire(German("MPh"), spent: 2, shots: 1) with
+        {
+            Gun = German().Gun! with
+            {
+                ShotsThisPhase = 1,
+                RateOfFireKept = true
+            }
+        }, [5, 6]).Disposition);
         Assert.Contains("asl.a1.ordnance.phase-outside", Resolve(FirstFire(German("PFPh")), [5, 6]).Reasons);
     }
 
@@ -114,21 +146,53 @@ public sealed class ScenarioA1Pass8Tests
     {
         // C2.241, C5.6, C5.61, C5.62 (R8.2): refused normally; as Intensive Fire it adds Case F +2, its B# is 10, and it is marked
         // Intensive Fire.
-        var marked = German("DFPh") with { Gun = German().Gun! with { FirstFire = true } };
+        var marked = German("DFPh") with
+        {
+            Gun = German().Gun! with
+            {
+                FirstFire = true
+            }
+        };
         Assert.Contains("asl.a1.ordnance.gun-already-fired", Resolve(marked, [5, 6]).Reasons);
-        var intensive = Resolve(marked with { IntensiveFire = true }, [5, 5]);
+        var intensive = Resolve(marked with
+        {
+            IntensiveFire = true
+        }, [5, 5]);
         Assert.Equal((2m, 10, true, "intensive-fire"), (Drm(intensive, "case-f"), intensive.Gun!.BreakdownNumber, intensive.Gun.Malfunctioned, intensive.Gun.FireCounter));
-        Assert.Contains("asl.a1.ordnance.gun-already-fired", Resolve(marked with { IntensiveFire = true, Gun = marked.Gun! with { IntensiveFired = true } }, [5, 6]).Reasons);
+        Assert.Contains("asl.a1.ordnance.gun-already-fired", Resolve(marked with
+        {
+            IntensiveFire = true,
+            Gun = marked.Gun! with
+            {
+                IntensiveFired = true
+            }
+        }, [5, 6]).Reasons);
     }
 
     [Fact]
     public void IntensiveFireNeedsTheNormalRofUsedAndNotTheAfph()
     {
         // C5.6: only after its normal ROF is used, and never in the AFPh.
-        Assert.Contains("asl.a1.ordnance.gun-already-fired", Resolve(German() with { IntensiveFire = true }, [5, 6]).Reasons);
-        var fired = German() with { Gun = German().Gun! with { FiredThisPlayerTurn = true } };
-        Assert.Equal(OrdnanceResolution.Resolved, Resolve(fired with { IntensiveFire = true }, [5, 6]).Disposition);
-        Assert.Contains("asl.a1.ordnance.gun-already-fired", Resolve(German("AFPh") with { Gun = fired.Gun, IntensiveFire = true }, [5, 6]).Reasons);
+        Assert.Contains("asl.a1.ordnance.gun-already-fired", Resolve(German() with
+        {
+            IntensiveFire = true
+        }, [5, 6]).Reasons);
+        var fired = German() with
+        {
+            Gun = German().Gun! with
+            {
+                FiredThisPlayerTurn = true
+            }
+        };
+        Assert.Equal(OrdnanceResolution.Resolved, Resolve(fired with
+        {
+            IntensiveFire = true
+        }, [5, 6]).Disposition);
+        Assert.Contains("asl.a1.ordnance.gun-already-fired", Resolve(German("AFPh") with
+        {
+            Gun = fired.Gun,
+            IntensiveFire = true
+        }, [5, 6]).Reasons);
     }
 
     [Fact]
@@ -136,22 +200,45 @@ public sealed class ScenarioA1Pass8Tests
     {
         // C5.5 Case E: +2 in the Gun's own Location, +4 in woods, without Case L; C5.8 Case H: +2 for a squad manning it; C6.4 Case M: -2
         // instead of the Acquisition; A5.12 and A5.131: +1 per squad equivalent over for the firer, -1 for the target.
-        var own = Resolve(German(range: 0) with { SameHex = true }, [5, 6]);
+        var own = Resolve(German(range: 0) with
+        {
+            SameHex = true
+        }, [5, 6]);
         Assert.Equal((2m, (decimal?)null), (Drm(own, "case-e"), Drm(own, "case-l")));
-        Assert.Equal(4m, Drm(Resolve(German(range: 0, woods: true) with { SameHex = true }, [5, 6]), "case-e"));
+        Assert.Equal(4m, Drm(Resolve(German(range: 0, woods: true) with
+        {
+            SameHex = true
+        }, [5, 6]), "case-e"));
         Assert.Contains("asl.a1.ordnance.out-of-range", Resolve(German(range: 0), [5, 6]).Reasons);
-        Assert.Equal(2m, Drm(Resolve(German(crew: "attacker-squad") with { NonQualified = true }, [5, 6]), "case-h"));
+        Assert.Equal(2m, Drm(Resolve(German(crew: "attacker-squad") with
+        {
+            NonQualified = true
+        }, [5, 6]), "case-h"));
         Assert.Contains("asl.a1.ordnance.crew-outside", Resolve(German(crew: "attacker-squad"), [5, 6]).Reasons);
-        var sighted = Resolve(German() with { BoreSighted = true, Acquisition = -1 }, [5, 6]);
+        var sighted = Resolve(German() with
+        {
+            BoreSighted = true,
+            Acquisition = -1
+        }, [5, 6]);
         Assert.Equal((-2m, (decimal?)null), (Drm(sighted, "case-m"), Drm(sighted, "case-n")));
-        var crowded = Resolve(German() with { FirerOverstack = 1, TargetOverstack = 2 }, [5, 6]);
+        var crowded = Resolve(German() with
+        {
+            FirerOverstack = 1,
+            TargetOverstack = 2
+        }, [5, 6]);
         Assert.Equal((1m, -2m), (Drm(crowded, "overstack-firer"), Drm(crowded, "overstack-target")));
     }
 
     private static OrdnanceShot AtTheGun(bool emplaced = true, bool gunshield = true)
     {
         var shot = German(targets: [Target("ru-crew", "defender-crew")]);
-        return shot with { Hit = shot.Hit! with { GunTarget = new FireGunTarget("ru-gun", "defender-at-gun", "ru-crew", emplaced, gunshield) } };
+        return shot with
+        {
+            Hit = shot.Hit! with
+            {
+                GunTarget = new FireGunTarget("ru-gun", "defender-at-gun", "ru-crew", emplaced, gunshield)
+            }
+        };
     }
 
     [Fact]
@@ -199,18 +286,46 @@ public sealed class ScenarioA1Pass8Tests
         // A7.352 (R8.4): a crew fires its inherent FP, unless it fired its Gun this Player Turn.
         var crew = new FireFirer("de-crew", "attacker-crew", "bd01:G7:0", false, false, false, false, false);
         var target = Target("ru-s");
-        var ok = ScenarioA1FireCalculator.Resolve(Attack([target], crew) with { GunTarget = null }, fire);
+        var ok = ScenarioA1FireCalculator.Resolve(Attack([target], crew) with
+        {
+            GunTarget = null
+        }, fire);
         Assert.DoesNotContain("asl.a1.fire.firer-outside", ok.Reasons);
-        Assert.Contains("asl.a1.fire.firer-outside", ScenarioA1FireCalculator.Resolve(Attack([target], crew with { GunFired = true }) with { GunTarget = null }, fire).Reasons);
+        Assert.Contains("asl.a1.fire.firer-outside", ScenarioA1FireCalculator.Resolve(Attack([target], crew with
+        {
+            GunFired = true
+        }) with
+        {
+            GunTarget = null
+        }, fire).Reasons);
     }
 
     [Fact]
     public void IntensiveFireIsBarredAfterFinalFireAndWithAPinnedCrew()
     {
         // C5.6 (referee, pass 8): a Final Fire counter or a pinned crew bars Intensive Fire.
-        var final = German("DFPh") with { Gun = German().Gun! with { FiredThisPlayerTurn = true, FinalFire = true }, IntensiveFire = true };
+        var final = German("DFPh") with
+        {
+            Gun = German().Gun! with
+            {
+                FiredThisPlayerTurn = true,
+                FinalFire = true
+            },
+            IntensiveFire = true
+        };
         Assert.Contains("asl.a1.ordnance.gun-already-fired", Resolve(final, [5, 6]).Reasons);
-        var pinned = German() with { Gun = German().Gun! with { FiredThisPlayerTurn = true }, Crew = German().Crew! with { Pinned = true }, IntensiveFire = true };
+        var pinned = German() with
+        {
+            Gun = German().Gun! with
+            {
+                FiredThisPlayerTurn = true
+            },
+            Crew = German().Crew! with
+            {
+                Pinned = true
+            },
+            IntensiveFire = true
+        };
         Assert.Contains("asl.a1.ordnance.gun-already-fired", Resolve(pinned, [5, 6]).Reasons);
     }
 
@@ -228,10 +343,16 @@ public sealed class ScenarioA1Pass8Tests
             Ammunition = "ap",
             ScenarioYear = 1942,
         };
-        var claimed = ScenarioA1OrdnanceCalculator.Resolve(shot with { Movement = new OrdnanceMovement(2, null, null, 2, 1) { MpClaimed = 1 } }, Reference);
+        var claimed = ScenarioA1OrdnanceCalculator.Resolve(shot with
+        {
+            Movement = new OrdnanceMovement(2, null, null, 2, 1) { MpClaimed = 1 }
+        }, Reference);
         Assert.Contains(claimed.ToHit!.Drm, item => item.Name == "case-j2");
         Assert.Contains("asl.a1.ordnance.first-fire-limit",
-            ScenarioA1OrdnanceCalculator.Resolve(shot with { Movement = new OrdnanceMovement(3, null, null, 2, 1) { MpClaimed = 2 } }, Reference).Reasons);
+            ScenarioA1OrdnanceCalculator.Resolve(shot with
+            {
+                Movement = new OrdnanceMovement(3, null, null, 2, 1) { MpClaimed = 2 }
+            }, Reference).Reasons);
     }
 
     [Fact]
@@ -239,7 +360,13 @@ public sealed class ScenarioA1Pass8Tests
     {
         // C3.71 (referee, pass 8): the Critical Hit's Effects DR keeps FFNAM and FFMO.
         var shot = FirstFire(German("MPh"));
-        shot = shot with { Hit = shot.Hit! with { TargetMovement = new FireMovement(false) } };
+        shot = shot with
+        {
+            Hit = shot.Hit! with
+            {
+                TargetMovement = new FireMovement(false)
+            }
+        };
         var critical = Resolve(shot, [1, 1], ift: [5, 6], subsequent: 1);
         Assert.True(critical.ToHit!.CriticalHit);
         Assert.Contains(critical.CriticalHit!.Arithmetic!.Drm, item => item.Name == "ffnam");

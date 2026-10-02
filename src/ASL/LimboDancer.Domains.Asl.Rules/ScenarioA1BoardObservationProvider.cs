@@ -20,31 +20,106 @@ public enum ScenarioA1BoardOccupancy
 /// <summary>Optional, case-specific state variables supplied with a versioned snapshot.</summary>
 public sealed record ScenarioA1AdditionalBoardState
 {
-    public bool? IsFortified { get; init; }
-    public bool? HasNoBreachAtEntryHexsideAndLevel { get; init; }
-    public bool? IsAdvancePhase { get; init; }
-    public bool? IsGoodOrderInfantryMmc { get; init; }
-    public bool? OwnNtcPassed { get; init; }
-    public bool? IsSmcOutsideAfv { get; init; }
-    public bool? HasNoOtherOccupants { get; init; }
-    public bool? DefensiveResponseUnresolved { get; init; }
-    public bool? HasAtLeastFourMf { get; init; }
-    public bool? HasAtLeastThreeMf { get; init; }
-    public int? FriendlySquads { get; init; }
-    public int? FriendlyUnmannedCrewsOrHalfSquads { get; init; }
-    public int? FriendlySmc { get; init; }
-    public int? IncomingSquads { get; init; }
-    public bool? HasNoVehicles { get; init; }
-    public bool? HasNoMannedGun { get; init; }
-    public bool? HasValidBreachAtCrossedHexsideAndLevel { get; init; }
-    public bool? IsOneHorizontalHexSameLevel { get; init; }
-    public bool? IsOneHorizontalHex { get; init; }
-    public bool? CloseCombatUnresolved { get; init; }
-    public bool? IsNotCx { get; init; }
-    public bool? HasNoPortage { get; init; }
-    public bool? IsGoodOrderUnpinnedInfantry { get; init; }
-    public bool? IsGoodOrderUnpinnedInfantryWithoutTiOrCc { get; init; }
-    public bool? IsNotDifficultTerrain { get; init; }
+    public bool? IsFortified
+    {
+        get; init;
+    }
+    public bool? HasNoBreachAtEntryHexsideAndLevel
+    {
+        get; init;
+    }
+    public bool? IsAdvancePhase
+    {
+        get; init;
+    }
+    public bool? IsGoodOrderInfantryMmc
+    {
+        get; init;
+    }
+    public bool? OwnNtcPassed
+    {
+        get; init;
+    }
+    public bool? IsSmcOutsideAfv
+    {
+        get; init;
+    }
+    public bool? HasNoOtherOccupants
+    {
+        get; init;
+    }
+    public bool? DefensiveResponseUnresolved
+    {
+        get; init;
+    }
+    public bool? HasAtLeastFourMf
+    {
+        get; init;
+    }
+    public bool? HasAtLeastThreeMf
+    {
+        get; init;
+    }
+    public int? FriendlySquads
+    {
+        get; init;
+    }
+    public int? FriendlyUnmannedCrewsOrHalfSquads
+    {
+        get; init;
+    }
+    public int? FriendlySmc
+    {
+        get; init;
+    }
+    public int? IncomingSquads
+    {
+        get; init;
+    }
+    public bool? HasNoVehicles
+    {
+        get; init;
+    }
+    public bool? HasNoMannedGun
+    {
+        get; init;
+    }
+    public bool? HasValidBreachAtCrossedHexsideAndLevel
+    {
+        get; init;
+    }
+    public bool? IsOneHorizontalHexSameLevel
+    {
+        get; init;
+    }
+    public bool? IsOneHorizontalHex
+    {
+        get; init;
+    }
+    public bool? CloseCombatUnresolved
+    {
+        get; init;
+    }
+    public bool? IsNotCx
+    {
+        get; init;
+    }
+    public bool? HasNoPortage
+    {
+        get; init;
+    }
+    public bool? IsGoodOrderUnpinnedInfantry
+    {
+        get; init;
+    }
+    public bool? IsGoodOrderUnpinnedInfantryWithoutTiOrCc
+    {
+        get; init;
+    }
+    public bool? IsNotDifficultTerrain
+    {
+        get; init;
+    }
 }
 
 /// <summary>Typed state returned by a tenant-scoped board source, not a caller's case label.</summary>
@@ -72,7 +147,7 @@ public sealed record ScenarioA1BoardSnapshot(
 
 public interface IScenarioA1BoardSnapshotSource
 {
-    ValueTask<ScenarioA1BoardSnapshot?> ReadAsync(Guid tenantId, DomainPackageRef package,
+    public ValueTask<ScenarioA1BoardSnapshot?> ReadAsync(Guid tenantId, DomainPackageRef package,
         string unitId, string locationId, CancellationToken cancellationToken = default);
 }
 
@@ -90,24 +165,37 @@ public sealed class ScenarioA1BoardObservationProvider(IScenarioA1BoardSnapshotS
         if (query.Package != ScenarioA1OccupiedPackage.Identity || query.Kind.Value != QueryKind
             || query.Parameters.EnumerateObject().Count() != 3
             || query.MaxResults != 1)
+        {
             return Empty(query, "asl.a1.board.query-outside-admitted-scope");
+        }
+
         var unitId = Parameter(query.Parameters, "unitId");
         var locationId = Parameter(query.Parameters, "locationId");
         var expectedVersion = Parameter(query.Parameters, "observationVersion");
         if (unitId is null || locationId is null || expectedVersion is null || unitId == locationId)
+        {
             return Empty(query, "asl.a1.board.query-incomplete");
+        }
 
         var snapshot = await source.ReadAsync(query.TenantId, query.Package, unitId, locationId,
             cancellationToken);
         if (snapshot is null)
+        {
             return Empty(query, "asl.a1.board.snapshot-unavailable");
+        }
+
         if (snapshot.TenantId != query.TenantId || snapshot.Package != query.Package
             || snapshot.UnitId != unitId || snapshot.LocationId != locationId
             || snapshot.Version != expectedVersion || string.IsNullOrWhiteSpace(snapshot.SourceId)
             || snapshot.ObservedAt.Offset != TimeSpan.Zero)
+        {
             return Empty(query, "asl.a1.board.snapshot-scope-or-version-mismatch");
+        }
+
         if (snapshot.IsMovementPhase == true && snapshot.Additional?.IsAdvancePhase == true)
+        {
             return Empty(query, "asl.a1.board.conflicting-phase");
+        }
 
         Dictionary<string, string>? facts = null;
         if (snapshot.Occupancy == ScenarioA1BoardOccupancy.KnownEmpty
@@ -120,10 +208,14 @@ public sealed class ScenarioA1BoardObservationProvider(IScenarioA1BoardSnapshotS
         {
             facts = new Dictionary<string, string>(StringComparer.Ordinal)
             {
-                ["canMove"] = "true", ["location"] = "adjacentGroundLevelOrdinaryBuilding",
-                ["occupancy"] = "knownEmpty", ["phase"] = "mph",
-                ["remainingMf"] = "atLeastTwo", ["roadBypassElevationAdditionalTerrain"] = "none",
-                ["specialModifier"] = "none", ["stacking"] = "belowNormalLimit",
+                ["canMove"] = "true",
+                ["location"] = "adjacentGroundLevelOrdinaryBuilding",
+                ["occupancy"] = "knownEmpty",
+                ["phase"] = "mph",
+                ["remainingMf"] = "atLeastTwo",
+                ["roadBypassElevationAdditionalTerrain"] = "none",
+                ["specialModifier"] = "none",
+                ["stacking"] = "belowNormalLimit",
                 ["unit"] = "knownGoodOrderInfantrySquad",
             };
         }
@@ -135,9 +227,12 @@ public sealed class ScenarioA1BoardObservationProvider(IScenarioA1BoardSnapshotS
         {
             facts = new Dictionary<string, string>(StringComparer.Ordinal)
             {
-                ["a414Exception"] = "none", ["location"] = "knownBuildingLocation",
-                ["occupancy"] = "knownUnconcealedEnemyMmc", ["phase"] = "mph",
-                ["specialModifier"] = "none", ["unit"] = "ordinaryInfantry",
+                ["a414Exception"] = "none",
+                ["location"] = "knownBuildingLocation",
+                ["occupancy"] = "knownUnconcealedEnemyMmc",
+                ["phase"] = "mph",
+                ["specialModifier"] = "none",
+                ["unit"] = "ordinaryInfantry",
             };
         }
         else if (snapshot is
@@ -149,14 +244,23 @@ public sealed class ScenarioA1BoardObservationProvider(IScenarioA1BoardSnapshotS
         })
         {
             if (snapshot.Additional != new ScenarioA1AdditionalBoardState
-                { IsFortified = true, HasNoBreachAtEntryHexsideAndLevel = true })
+            {
+                IsFortified = true,
+                HasNoBreachAtEntryHexsideAndLevel = true
+            })
+            {
                 return Empty(query, "asl.a1.board.unreviewed-state-variable");
+            }
+
             facts = new Dictionary<string, string>(StringComparer.Ordinal)
             {
-                ["a414Exception"] = "none", ["breach"] = "noneAtEntryHexsideAndLevel",
+                ["a414Exception"] = "none",
+                ["breach"] = "noneAtEntryHexsideAndLevel",
                 ["location"] = "knownFortifiedBuildingLocation",
                 ["occupancy"] = "knownUnpinnedGoodOrderArmedEnemySquad",
-                ["phase"] = "mph", ["specialModifier"] = "none", ["unit"] = "ordinaryInfantry",
+                ["phase"] = "mph",
+                ["specialModifier"] = "none",
+                ["unit"] = "ordinaryInfantry",
             };
         }
         else if (snapshot is
@@ -174,21 +278,31 @@ public sealed class ScenarioA1BoardObservationProvider(IScenarioA1BoardSnapshotS
         })
         {
             if (snapshot.Additional != new ScenarioA1AdditionalBoardState
-                {
-                    IsGoodOrderInfantryMmc = true, OwnNtcPassed = true,
-                    IsSmcOutsideAfv = true, HasNoOtherOccupants = true,
-                    DefensiveResponseUnresolved = true, HasAtLeastFourMf = true,
-                })
+            {
+                IsGoodOrderInfantryMmc = true,
+                OwnNtcPassed = true,
+                IsSmcOutsideAfv = true,
+                HasNoOtherOccupants = true,
+                DefensiveResponseUnresolved = true,
+                HasAtLeastFourMf = true,
+            })
+            {
                 return Empty(query, "asl.a1.board.unreviewed-state-variable");
+            }
+
             facts = new Dictionary<string, string>(StringComparer.Ordinal)
             {
-                ["canMove"] = "true", ["defensiveResponse"] = "unresolved",
+                ["canMove"] = "true",
+                ["defensiveResponse"] = "unresolved",
                 ["location"] = "adjacentGroundLevelOrdinaryBuilding",
-                ["ntc"] = "passedByMovingMmc", ["occupancy"] = "exactlyOneKnownEnemySmc",
-                ["otherOccupants"] = "none", ["phase"] = "mph",
+                ["ntc"] = "passedByMovingMmc",
+                ["occupancy"] = "exactlyOneKnownEnemySmc",
+                ["otherOccupants"] = "none",
+                ["phase"] = "mph",
                 ["remainingMf"] = "atLeastFour",
                 ["roadBypassElevationAdditionalTerrain"] = "none",
-                ["smcInAfv"] = "false", ["specialModifier"] = "none",
+                ["smcInAfv"] = "false",
+                ["specialModifier"] = "none",
                 ["unit"] = "knownGoodOrderInfantryMmc",
             };
         }
@@ -208,23 +322,33 @@ public sealed class ScenarioA1BoardObservationProvider(IScenarioA1BoardSnapshotS
         })
         {
             if (snapshot.Additional != new ScenarioA1AdditionalBoardState
-                {
-                    IsFortified = true, IsAdvancePhase = true,
-                    HasValidBreachAtCrossedHexsideAndLevel = true,
-                    IsOneHorizontalHexSameLevel = true, HasNoOtherOccupants = true,
-                    CloseCombatUnresolved = true, IsNotCx = true, HasNoPortage = true,
-                    IsGoodOrderUnpinnedInfantry = true,
-                })
+            {
+                IsFortified = true,
+                IsAdvancePhase = true,
+                HasValidBreachAtCrossedHexsideAndLevel = true,
+                IsOneHorizontalHexSameLevel = true,
+                HasNoOtherOccupants = true,
+                CloseCombatUnresolved = true,
+                IsNotCx = true,
+                HasNoPortage = true,
+                IsGoodOrderUnpinnedInfantry = true,
+            })
+            {
                 return Empty(query, "asl.a1.board.unreviewed-state-variable");
+            }
+
             facts = new Dictionary<string, string>(StringComparer.Ordinal)
             {
                 ["advance"] = "oneHorizontalHexSameLevel",
                 ["breach"] = "validCounterAtCrossedHexsideAndLevel",
-                ["closeCombat"] = "unresolved", ["cx"] = "false",
+                ["closeCombat"] = "unresolved",
+                ["cx"] = "false",
                 ["location"] = "fortifiedBuilding",
                 ["occupancy"] = "exactlyOneKnownUnpinnedGoodOrderArmedEnemySquad",
-                ["otherOccupants"] = "none", ["phase"] = "aph",
-                ["portage"] = "none", ["specialModifier"] = "none",
+                ["otherOccupants"] = "none",
+                ["phase"] = "aph",
+                ["portage"] = "none",
+                ["specialModifier"] = "none",
                 ["unit"] = "goodOrderUnpinnedInfantry",
             };
         }
@@ -242,21 +366,33 @@ public sealed class ScenarioA1BoardObservationProvider(IScenarioA1BoardSnapshotS
         })
         {
             if (snapshot.Additional != new ScenarioA1AdditionalBoardState
-                {
-                    HasAtLeastThreeMf = true, FriendlySquads = 2,
-                    FriendlyUnmannedCrewsOrHalfSquads = 1, FriendlySmc = 0,
-                    IncomingSquads = 1, HasNoVehicles = true, HasNoMannedGun = true,
-                })
+            {
+                HasAtLeastThreeMf = true,
+                FriendlySquads = 2,
+                FriendlyUnmannedCrewsOrHalfSquads = 1,
+                FriendlySmc = 0,
+                IncomingSquads = 1,
+                HasNoVehicles = true,
+                HasNoMannedGun = true,
+            })
+            {
                 return Empty(query, "asl.a1.board.unreviewed-state-variable");
+            }
+
             facts = new Dictionary<string, string>(StringComparer.Ordinal)
             {
-                ["friendlySmc"] = "0", ["friendlySquads"] = "2",
-                ["friendlyUnmannedCrewsOrHalfSquads"] = "1", ["incomingSquads"] = "1",
+                ["friendlySmc"] = "0",
+                ["friendlySquads"] = "2",
+                ["friendlyUnmannedCrewsOrHalfSquads"] = "1",
+                ["incomingSquads"] = "1",
                 ["location"] = "adjacentGroundLevelOrdinaryBuilding",
-                ["mannedGun"] = "none", ["occupancy"] = "knownFriendlyOnly",
-                ["phase"] = "mph", ["remainingMf"] = "atLeastThree",
+                ["mannedGun"] = "none",
+                ["occupancy"] = "knownFriendlyOnly",
+                ["phase"] = "mph",
+                ["remainingMf"] = "atLeastThree",
                 ["roadBypassElevationAdditionalTerrain"] = "none",
-                ["specialModifier"] = "none", ["unit"] = "ordinaryInfantrySquad",
+                ["specialModifier"] = "none",
+                ["unit"] = "ordinaryInfantrySquad",
                 ["vehicles"] = "none",
             };
         }
@@ -275,33 +411,48 @@ public sealed class ScenarioA1BoardObservationProvider(IScenarioA1BoardSnapshotS
         })
         {
             if (snapshot.Additional != new ScenarioA1AdditionalBoardState
-                {
-                    IsAdvancePhase = true, IsOneHorizontalHex = true,
-                    CloseCombatUnresolved = true, IsNotCx = true,
-                    IsNotDifficultTerrain = true, HasNoOtherOccupants = true,
-                    HasNoPortage = true,
-                    IsGoodOrderUnpinnedInfantryWithoutTiOrCc = true,
-                })
+            {
+                IsAdvancePhase = true,
+                IsOneHorizontalHex = true,
+                CloseCombatUnresolved = true,
+                IsNotCx = true,
+                IsNotDifficultTerrain = true,
+                HasNoOtherOccupants = true,
+                HasNoPortage = true,
+                IsGoodOrderUnpinnedInfantryWithoutTiOrCc = true,
+            })
+            {
                 return Empty(query, "asl.a1.board.unreviewed-state-variable");
+            }
+
             facts = new Dictionary<string, string>(StringComparer.Ordinal)
             {
-                ["advance"] = "oneHorizontalHex", ["closeCombat"] = "unresolved",
-                ["cx"] = "false", ["difficultTerrain"] = "false",
+                ["advance"] = "oneHorizontalHex",
+                ["closeCombat"] = "unresolved",
+                ["cx"] = "false",
+                ["difficultTerrain"] = "false",
                 ["location"] = "ordinaryBuilding",
                 ["occupancy"] = "exactlyOneKnownUnconcealedEnemyMmc",
-                ["otherOccupants"] = "none", ["phase"] = "aph",
-                ["portage"] = "none", ["specialModifier"] = "none",
+                ["otherOccupants"] = "none",
+                ["phase"] = "aph",
+                ["portage"] = "none",
+                ["specialModifier"] = "none",
                 ["unit"] = "goodOrderUnpinnedInfantryWithoutTiOrCc",
             };
         }
         if (facts is null)
+        {
             return Empty(query, "asl.a1.board.state-outside-reviewed-cases");
+        }
 
         var candidate = new ScenarioA1SemanticCandidate();
         var matches = candidate.Cases.Where(item => item.ReviewStatus == "reviewed-bounded"
             && candidate.Evaluate(item.Id, facts).Disposition == item.ExpectedDisposition).ToArray();
         if (matches.Length != 1)
+        {
             return Empty(query, "asl.a1.board.case-ambiguous");
+        }
+
         var observation = new Observation("asl-board:" + query.QueryId,
             new ObservationSource(snapshot.SourceId), query.TenantId, snapshot.ObservedAt,
             JsonSerializer.SerializeToElement(facts), locationId, snapshot.Version,

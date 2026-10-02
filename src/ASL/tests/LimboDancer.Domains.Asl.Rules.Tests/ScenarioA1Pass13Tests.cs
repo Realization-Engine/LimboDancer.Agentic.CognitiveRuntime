@@ -63,7 +63,10 @@ public sealed class ScenarioA1Pass13Tests
         var rolls = attack.Rolls!;
         for (var step = 0; step < 20; step++)
         {
-            var result = ScenarioA1FireCalculator.Resolve(attack with { Rolls = rolls }, FireReference);
+            var result = ScenarioA1FireCalculator.Resolve(attack with
+            {
+                Rolls = rolls
+            }, FireReference);
             if (result.Reasons is not [{ } reason] || !reason.StartsWith("asl.a1.fire.roll-missing:checks:", StringComparison.Ordinal))
             {
                 return result;
@@ -76,7 +79,10 @@ public sealed class ScenarioA1Pass13Tests
                 checks[id] = [2, 2];
             }
 
-            rolls = rolls with { Checks = checks };
+            rolls = rolls with
+            {
+                Checks = checks
+            };
         }
 
         throw new InvalidOperationException("Too many rolls.");
@@ -93,7 +99,10 @@ public sealed class ScenarioA1Pass13Tests
         Assert.True(Complete(Fire([2, 5], captured)).WeaponEffects!.Single().RateOfFireRetained);
 
         // Not captured, it is outside the package: a unit fires only its own nationality's MG (A21.1).
-        var uncaptured = ScenarioA1FireCalculator.Resolve(Fire([4, 6], captured with { Captured = null }), FireReference);
+        var uncaptured = ScenarioA1FireCalculator.Resolve(Fire([4, 6], captured with
+        {
+            Captured = null
+        }), FireReference);
         Assert.Contains(uncaptured.Reasons, reason => reason.StartsWith("asl.a1.fire.weapon-outside", StringComparison.Ordinal));
     }
 }

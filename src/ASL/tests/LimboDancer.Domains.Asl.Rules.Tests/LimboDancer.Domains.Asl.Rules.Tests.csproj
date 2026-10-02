@@ -1,9 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <IsTestProject>true</IsTestProject>
-    <RestorePackagesWithLockFile>false</RestorePackagesWithLockFile>
-    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
-    <RestoreLockedMode>false</RestoreLockedMode>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" />

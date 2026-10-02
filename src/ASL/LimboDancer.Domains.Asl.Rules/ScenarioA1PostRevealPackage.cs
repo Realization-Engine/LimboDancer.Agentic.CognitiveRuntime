@@ -21,7 +21,10 @@ public sealed class ScenarioA1PostRevealPackage : IDomainPackageResolver
         stream.CopyTo(buffer);
         var bytes = buffer.ToArray();
         if (Convert.ToHexStringLower(SHA256.HashData(bytes)) != ManifestSha256)
+        {
             throw new InvalidOperationException("The post-reveal manifest changed.");
+        }
+
         using var document = JsonDocument.Parse(bytes);
         var root = document.RootElement;
         var cases = root.GetProperty("acceptedCaseIds").EnumerateArray()
@@ -47,7 +50,10 @@ public sealed class ScenarioA1PostRevealPackage : IDomainPackageResolver
             || !Fragment(fragments[1], "A4.14", 49,
                 "asl-fragment:sha256:d22c4de11eefffac89c9585633ca3f4eeff313cc2d1ddd535975e1e8c23e0e69",
                 "65adb630eb862eb54b49feb1e414bdf9b0c5132f8d0c55e6eaa94eb5b44c6995"))
+        {
             throw new InvalidOperationException("The post-reveal admission inputs changed.");
+        }
+
         descriptor = new DomainPackageDescriptor(Identity,
         [
             new CanonicalReference(Identity, "asl-easlrb-3.10:chapter-a", "A12.15", "3.01"),

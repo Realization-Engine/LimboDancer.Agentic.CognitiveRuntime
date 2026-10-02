@@ -116,7 +116,7 @@ The fixture gains a second Player Turn (revisions 19 to 21): the MPh of turn 2, 
 ## 10. Tests
 
 - `Units.Tests/CaseReadTests`: the map read API (resolution, version, evidence, status, distance, neighbor, catalog); an adjudicator snapshot; a side never getting a sole defender; a concealed occupant as a sealed presence; a hidden unit reported like a missing one; every nondefinitive code; staleness by affecting events; staleness judged only from entitled events.
-- `ScenarioA1.Tests/ScenarioA1CaseReadCrossCheckTests`: section 7.
+- `Rules.Tests/ScenarioA1CaseReadCrossCheckTests` (`ScenarioA1.Tests` until 2026-10-02): section 7.
 - `MapStudio.Tests/GameStatesTests`: the panel's attacker choice by perspective, an unavailable board, and a stale read.
 
 ## 11. Not in this step
