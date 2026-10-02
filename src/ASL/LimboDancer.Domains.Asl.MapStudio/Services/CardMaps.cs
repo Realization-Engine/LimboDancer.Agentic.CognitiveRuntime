@@ -68,7 +68,9 @@ public sealed class CardMaps(MapService maps)
         var open = new Stack<HexIndex>([first]);
         while (open.TryPop(out var hex))
         {
-            foreach (var side in map.Facts[hex].Hexsides.Where(side => side.OnMap && side.Terrain is { IsBuilding: true }))
+            // Referee, pass 28: Rowhouses are separate buildings (B23.71), and so are Factories butted across their outside walls; a Factory's interior
+            // walls stay within it (B23.74).
+            foreach (var side in map.Facts[hex].Hexsides.Where(side => side.OnMap && side.Terrain is { IsBuilding: true } && !Divides(side.Terrain) && !Divides(side.HexsideTerrain)))
             {
                 if (geometry.Neighbor(hex, side.Side) is { } next && map.Facts[next].Center.Terrain is { IsBuilding: true }
                     && map.Composition!.Map.OwnerOf(next)?.Board.Value == start.Board && found.Add(next))
@@ -82,6 +84,10 @@ public sealed class CardMaps(MapService maps)
     }
 
     /// <summary>Whether a hex lies on an edge of the map (top, bottom, left, or right): no hex beyond it on that side.</summary>
+    /// <summary>
+    /// Whether a hex lies on an edge of the map (top, bottom, left, or right), as the game reads it (referee, pass 28; the planner's entry edges): a side
+    /// with no hex beyond belongs to the edge its missing neighbour lies past.
+    /// </summary>
     public static bool OnEdge(StudioBoard map, CardHex hex, string edge)
     {
         ArgumentNullException.ThrowIfNull(map);
@@ -90,16 +96,30 @@ public sealed class CardMaps(MapService maps)
             return false;
         }
 
-        HexsideDirection[] sides = edge switch
+        var geometry = map.Facts.Geometry;
+        foreach (var side in Enum.GetValues<HexsideDirection>().Where(side => geometry.Neighbor(index, side) is null))
         {
-            "top" => [HexsideDirection.North],
-            "bottom" => [HexsideDirection.South],
-            "left" => [HexsideDirection.NorthWest, HexsideDirection.SouthWest],
-            "right" => [HexsideDirection.NorthEast, HexsideDirection.SouthEast],
-            _ => [],
-        };
-        return sides.Any(side => map.Facts.Geometry.Neighbor(index, side) is null);
+            var even = index.Column % 2 == 0;
+            var (column, row) = side switch
+            {
+                HexsideDirection.North => (index.Column, index.Row - 1),
+                HexsideDirection.NorthEast => (index.Column + 1, index.Row + (even ? 0 : -1)),
+                HexsideDirection.SouthEast => (index.Column + 1, index.Row + (even ? 1 : 0)),
+                HexsideDirection.South => (index.Column, index.Row + 1),
+                HexsideDirection.SouthWest => (index.Column - 1, index.Row + (even ? 1 : 0)),
+                _ => (index.Column - 1, index.Row + (even ? 0 : -1)),
+            };
+            if ((column < 0 ? "left" : column >= geometry.WidthInHexes ? "right" : row < 0 ? "top" : "bottom") == edge)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
+
+    private static bool Divides(LimboDancer.Domains.Asl.Maps.Terrain.TerrainType? terrain) =>
+        terrain is { } wall && (wall.Name.StartsWith("Rowhouse Wall", StringComparison.Ordinal) || wall.Name == "Breach" || wall.IsOutsideFactoryWall);
 
     /// <summary>
     /// The card's areas and hexes checked against its drawn map (ruling R28.3): every hex named is on its board, a building area is one whole building,
@@ -130,14 +150,20 @@ public sealed class CardMaps(MapService maps)
                     {
                         problems.Add($"card.setup: '{group.Name}' area '{area.Id}': {board} {area.Id} is not a building hex (ruling R17.8)");
                     }
-                    else if (!building.Order(StringComparer.Ordinal).SequenceEqual(area.Hexes!.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal), StringComparer.Ordinal))
+                    // Referee, pass 28: a half hex on a seam belongs to the board placed later, so the join leaves it out; the area may still name it.
+                    else if (building.Except(area.Hexes!, StringComparer.Ordinal).Any()
+                        || area.Hexes!.Except(building, StringComparer.Ordinal).Any(extra => Index(map, new CardHex(board, extra)) is not { } seam || map.Composition!.Map.OwnerOf(seam)?.Board.Value == board))
                     {
                         problems.Add($"card.setup: '{group.Name}' area '{area.Id}' is not one whole building: the building at {area.Id} is {string.Join(" ", building)} (ruling R17.8)");
                     }
                 }
-                else if (area.Kind == "entry" && area.Hexes!.Where(hex => !OnEdge(map, new CardHex(board, hex), area.Edge ?? string.Empty)).ToArray() is { Length: > 0 } inland)
+                else if (area.Kind == "entry" && area.Edge is { Length: > 0 } && area.Hexes!.Where(hex => !OnEdge(map, new CardHex(board, hex), area.Edge ?? string.Empty)).ToArray() is { Length: > 0 } inland)
                 {
-                    problems.Add($"card.setup: '{group.Name}' entry '{area.Id}' names {string.Join(", ", inland)}, which are not on the {area.Edge} edge (A2.5)");
+                    problems.Add($"card.setup: '{group.Name}' entry '{area.Id}' names {string.Join(", ", inland)}, which are not on the {area.Edge} edge (A2.51)");
+                }
+                else if (area.Kind == "entry" && area.Hexes!.Where(hex => BoardLocation.TryParse($"{board}:{hex}:0", out var at) && !ScenarioCards.Playable(card, at)).ToArray() is { Length: > 0 } outside)
+                {
+                    problems.Add($"card.setup: '{group.Name}' entry '{area.Id}' names {string.Join(", ", outside)}, outside the playable area (ruling R20.6)");
                 }
             }
         }
@@ -173,7 +199,7 @@ public sealed class CardMaps(MapService maps)
             markup.Append(CultureInfo.InvariantCulture, $"<polygon class=\"card-picked\" data-hex=\"{hex}\" points=\"{points}\" fill=\"#d0a000\" fill-opacity=\"0.35\" stroke=\"#a06000\" stroke-width=\"3\"/>");
         }
 
-        return markup.Length == 0 ? null : $"<g id=\"layer-los\">{markup}</g>";
+        return markup.Length == 0 ? null : $"<g id=\"layer-marks\">{markup}</g>";
     }
 
     private static HexIndex? Index(StudioBoard map, CardHex hex) =>

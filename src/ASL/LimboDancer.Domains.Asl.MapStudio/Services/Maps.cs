@@ -158,6 +158,12 @@ public sealed class MapService(StudioOptions options, IVaslMapSource source)
             _ => new Lazy<BoardLoadResult>(() => LoadUncached(new MapDefinition(reference, "Game map", placements)))).Value;
         if (result.Board is not null)
         {
+            // UI review, pass 28: the card editor builds a map per board change; keep only the recent ones.
+            if (placed.Count >= 32)
+            {
+                placed.Clear();
+            }
+
             placed[reference] = result;
         }
 

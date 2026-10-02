@@ -14,14 +14,14 @@
         </select>
     </FieldGroup>
     <FieldGroup Label="Text" For="edit-victory-text">
-        <textarea id="edit-victory-text" rows="3" cols="80" @onchange="@(args => Set(() => Victory.Text = Text(args)))">@Victory.Text</textarea>
+        <textarea id="edit-victory-text" rows="3" cols="80" @onchange="@(args => Set(() => Victory.Text = Text(args)))" value="@Victory.Text"></textarea>
     </FieldGroup>
     <FieldGroup Label="Rules" For="edit-victory-rules">
-        <ChildContent><input id="edit-victory-rules" value="@Victory.Rules" @onchange="@(args => Set(() => Victory.Rules = Text(args)))" size="30" placeholder="A26.1 A26.3" /></ChildContent>
+        <ChildContent><input id="edit-victory-rules" aria-describedby="edit-victory-rules-help" value="@Victory.Rules" @onchange="@(args => Set(() => Victory.Rules = Text(args)))" size="30" placeholder="A26.1 A26.3" /></ChildContent>
         <Help>The A26 fragments or rulings they rest on, separated by spaces (ruling R17.11).</Help>
     </FieldGroup>
     <FieldGroup Label="Evaluated by the game" For="edit-victory-evaluated">
-        <ChildContent><input id="edit-victory-evaluated" type="checkbox" checked="@Victory.Evaluated" @onchange="@(args => Set(() => Victory.Evaluated = args.Value is true))" /></ChildContent>
+        <ChildContent><input id="edit-victory-evaluated" aria-describedby="edit-victory-evaluated-help" type="checkbox" checked="@Victory.Evaluated" @onchange="@(args => Set(() => Victory.Evaluated = args.Value is true))" /></ChildContent>
         <Help>A minimal card's are not: the players judge the result (ruling R22.3).</Help>
     </FieldGroup>
     @if (Victory.Evaluated)
@@ -31,7 +31,7 @@
             {
                 var at = index;
                 var outcome = Victory.Outcomes[at];
-                <li id="@($"edit-outcome-{at}")">
+                <li @key="outcome" id="@($"edit-outcome-{at}")">
                     <span class="card-area-line">
                         <label>
                             winner
@@ -41,7 +41,7 @@
                             </select>
                         </label>
                         <label><input id="@($"edit-outcome-{at}-immediate")" type="checkbox" checked="@outcome.Immediate" @onchange="@(args => Set(() => outcome.Immediate = args.Value is true))" /> at once, after any action</label>
-                        <button id="@($"edit-outcome-{at}-remove")" type="button" @onclick="@(() => Set(() => Victory.Outcomes.RemoveAt(at)))">Remove the outcome</button>
+                        <button id="@($"edit-outcome-{at}-remove")" type="button" @onclick="@(() => Set(() => Victory.Outcomes.Remove(outcome)))">Remove the outcome</button>
                     </span>
                     <p class="card-subhead">when any of these holds:</p>
                     <ul>
@@ -50,12 +50,12 @@
                             var place = number;
                             var condition = outcome.Conditions[place];
                             var id = $"edit-condition-{at}-{place}";
-                            <li id="@id" class="card-area-line">
-                                <select id="@($"{id}-side")" value="@condition.Side" @onchange="@(args => Set(() => condition.Side = Text(args)))" aria-label="Side">
+                            <li @key="condition" id="@id" class="card-area-line">
+                                <select id="@($"{id}-side")" value="@condition.Side" @onchange="@(args => Set(() => condition.Side = Text(args)))" aria-label="@($"Outcome {at + 1} condition {place + 1} side")">
                                     <option value="">choose a side</option>
                                     @SideOptions
                                 </select>
-                                <select id="@($"{id}-type")" value="@condition.Type" @onchange="@(args => Set(() => condition.Type = Text(args)))" aria-label="Condition">
+                                <select id="@($"{id}-type")" value="@condition.Type" @onchange="@(args => Set(() => condition.ChangeType(Text(args))))" aria-label="@($"Outcome {at + 1} condition {place + 1}")">
                                     @foreach (var type in ScenarioCards.ConditionTypes)
                                     {
                                         <option value="@type">@Describe(type)</option>
@@ -71,7 +71,7 @@
                                     case "control-count":
                                         <label>hexes, at least <input id="@($"{id}-atleast")" value="@condition.AtLeast" @onchange="@(args => Set(() => condition.AtLeast = Text(args)))" size="2" /></label>
                                         <label>of building <input id="@($"{id}-building")" value="@condition.Building" @onchange="@(args => Set(() => condition.Building = Text(args)))" size="6" /></label>
-                                        <label><input id="@($"{id}-melee")" type="checkbox" checked="@condition.MeleeUncontrolled" @onchange="@(args => Set(() => condition.MeleeUncontrolled = args.Value is true))" /> a hex in Melee Controlled by neither</label>
+                                        <label><input id="@($"{id}-melee")" type="checkbox" checked="@(condition.MeleeUncontrolled is true)" @onchange="@(args => Set(() => condition.MeleeUncontrolled = args.Value is true))" /> a hex in Melee Controlled by neither</label>
                                         break;
                                     case "squad-ratio":
                                         <label>at least <input id="@($"{id}-ratio")" value="@condition.Ratio" @onchange="@(args => Set(() => condition.Ratio = Text(args)))" size="3" /> times the other side's unbroken squad-equivalents</label>
@@ -94,14 +94,14 @@
                                         </label>
                                         <label>on or adjacent to <input id="@($"{id}-near")" value="@condition.Near" @onchange="@(args => Set(() => condition.Near = Text(args)))" size="24" placeholder="bd02:I1 bd02:Q1" /></label>
                                         <button id="@($"{id}-pick")" type="button" aria-pressed="@ReferenceEquals(Picking, condition).ToString().ToLowerInvariant()" @onclick="@(() => OnPick.InvokeAsync(condition))">
-                                            @(ReferenceEquals(Picking, condition) ? "Picking on the map" : "Pick on the map")
+                                            Pick on the map
                                         </button>
                                         break;
                                     default:
                                         <label>at least <input id="@($"{id}-atleast")" value="@condition.AtLeast" @onchange="@(args => Set(() => condition.AtLeast = Text(args)))" size="3" /> CVP</label>
                                         break;
                                 }
-                                <button id="@($"{id}-remove")" type="button" @onclick="@(() => Set(() => outcome.Conditions.RemoveAt(place)))">Remove</button>
+                                <button id="@($"{id}-remove")" type="button" @onclick="@(() => Set(() => outcome.Conditions.Remove(condition)))">Remove</button>
                             </li>
                         }
                     </ul>
@@ -112,7 +112,7 @@
         <button id="edit-outcome-add" type="button" @onclick="@(() => Set(() => Victory.Outcomes.Add(new OutcomeDraft())))">Add an outcome</button>
         <FieldGroup Label="When none holds at game end" For="edit-victory-otherwise">
             <ChildContent>
-                <select id="edit-victory-otherwise" value="@Victory.Otherwise" @onchange="@(args => Set(() => Victory.Otherwise = Text(args)))">
+                <select id="edit-victory-otherwise" aria-describedby="edit-victory-otherwise-help" value="@Victory.Otherwise" @onchange="@(args => Set(() => Victory.Otherwise = Text(args)))">
                     <option value="">choose</option>
                     @WinnerOptions
                 </select>

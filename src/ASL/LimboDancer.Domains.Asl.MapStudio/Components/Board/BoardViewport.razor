@@ -96,6 +96,9 @@
 
     public ValueTask SetLos(string? svg) => Send("setLos", svg);
 
+    /// <summary>Outlines picked hexes: an SVG group with the id <c>layer-marks</c>, drawn on top; null clears it (pass 28, the card editor's map).</summary>
+    public ValueTask SetMarks(string? svg) => Send("setMarks", svg);
+
     /// <summary>Outlines a polygon given as "x,y x,y ..." in board units; null clears it.</summary>
     public ValueTask Highlight(string? points) => Send("highlight", points);
 

@@ -164,20 +164,21 @@ public static partial class ScenarioCards
     public static IReadOnlyList<string> ConditionTypes { get; } = ["control-margin", "control-count", "squad-ratio", "sole-unbroken", "exit-vp", "cvp"];
 
     /// <summary>
-    /// The SHA-256 of a built-in card's earlier texts that differ from its current text only in a note (ruling R28.4): a game started from one plays on
-    /// as from the current text. The Guards Counterattack's SSR 3 note was revised in pass 28.
+    /// The SHA-256 of a built-in card's earlier texts that differ only in a note or status from a later text, each paired with that later text's SHA-256
+    /// (ruling R28.4; referee, pass 28): a game started from the earlier text plays on from the later one, and from no other. The Guards Counterattack's
+    /// SSR 3 was revised in pass 28.
     /// </summary>
-    public static IReadOnlyDictionary<string, IReadOnlyList<string>> EarlierRevisions
+    public static IReadOnlyDictionary<string, IReadOnlyList<(string Earlier, string Current)>> EarlierRevisions
     {
         get;
-    } = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
+    } = new Dictionary<string, IReadOnlyList<(string Earlier, string Current)>>(StringComparer.Ordinal)
     {
-        ["guards-counterattack"] = ["132c2241db7d192460b1c7146f58b9b63027c8d5af17e698111772f871dddcab"],
+        ["guards-counterattack"] = [("132c2241db7d192460b1c7146f58b9b63027c8d5af17e698111772f871dddcab", "ad43d29ddd9a989bd30953abbf620a93e866ec9bbc566906e696b115fd348dae")],
     };
 
     /// <summary>Whether a game that recorded <paramref name="recorded"/> still plays the card whose text now hashes to <paramref name="current"/> (rulings R22.2, R28.4).</summary>
     public static bool SameCard(string id, string recorded, string? current) =>
-        current is not null && (current == recorded || (EarlierRevisions.TryGetValue(id, out var earlier) && earlier.Contains(recorded, StringComparer.Ordinal)));
+        current is not null && (current == recorded || (EarlierRevisions.TryGetValue(id, out var earlier) && earlier.Contains((recorded, current))));
 
     /// <summary>A building setup area of the card by its id (ruling R21.3): its hexes, on the card's board or its own; null when none has that id.</summary>
     public static IReadOnlyList<BoardLocation>? BuildingHexes(ScenarioCard card, string id)

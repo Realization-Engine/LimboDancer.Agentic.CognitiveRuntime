@@ -26,6 +26,7 @@
     private string? shown;
     private string? marked;
     private CardHex? last;
+    private bool loading;
 
     /// <summary>The card's boards as a map; null when they cannot be drawn.</summary>
     [Parameter]
@@ -53,32 +54,45 @@
     {
         if (Map is not null && $"{Map.Ref.Value}/{Map.Version}" != shown)
         {
-            pending = true;
+            (pending, last) = (true, null);
         }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (viewport is not { IsReady: true } || Map is null)
+        // UI review, pass 28: one load at a time; a render during it would outline hexes the load then wipes, so the marks are sent after it.
+        if (loading || viewport is not { IsReady: true } || Map is null)
         {
             return;
         }
 
-        var key = $"{Map.Ref.Value}/{Map.Version}";
+        var map = Map;
+        var key = $"{map.Ref.Value}/{map.Version}";
         if (pending || key != shown)
         {
-            pending = false;
-            shown = key;
-            marked = null;
-            await viewport.Load($"render/{Map.Ref.Value}/{Map.Version}/{BoardRenderer.ViewName(BoardView.Exact)}", string.Empty,
-                BoardRenderer.ViewBox(Map.Render, BoardView.Exact), BoardRenderer.Layers(BoardView.Exact), [.. BoardRenderer.Layers(BoardView.Exact).Where(layer => layer != "defs")]);
+            (pending, shown, loading) = (false, key, true);
+            try
+            {
+                await viewport.Load($"render/{map.Ref.Value}/{map.Version}/{BoardRenderer.ViewName(BoardView.Exact)}", string.Empty,
+                    BoardRenderer.ViewBox(map.Render, BoardView.Exact), BoardRenderer.Layers(BoardView.Exact), [.. BoardRenderer.Layers(BoardView.Exact).Where(layer => layer != "defs")]);
+            }
+            finally
+            {
+                (loading, marked) = (false, null);
+            }
+
+            if (Map is null || $"{Map.Ref.Value}/{Map.Version}" != shown)
+            {
+                StateHasChanged();
+                return;
+            }
         }
 
         var marks = CardMaps.Marks(Map, Marked);
         if (marks != marked)
         {
             marked = marks;
-            await viewport.SetLos(marks);
+            await viewport.SetMarks(marks);
         }
     }
 

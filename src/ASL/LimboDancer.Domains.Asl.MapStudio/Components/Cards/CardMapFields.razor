@@ -16,18 +16,18 @@
             {
                 var at = index;
                 var board = Draft.Boards[at];
-                <tr>
+                <tr @key="board">
                     <td><input id="@($"edit-board-{at}")" list="edit-board-names" value="@board.Board" @onchange="@(args => Set(() => board.Board = Text(args)))" size="8" aria-label="@($"Board {at + 1}")" /></td>
                     <td><input id="@($"edit-board-{at}-column")" value="@board.Column" @onchange="@(args => Set(() => board.Column = Text(args)))" size="2" aria-label="@($"Board {at + 1} column, from the west")" /></td>
                     <td><input id="@($"edit-board-{at}-row")" value="@board.Row" @onchange="@(args => Set(() => board.Row = Text(args)))" size="2" aria-label="@($"Board {at + 1} row, from the north")" /></td>
                     <td><input id="@($"edit-board-{at}-reversed")" type="checkbox" checked="@board.Reversed" @onchange="@(args => Set(() => board.Reversed = args.Value is true))" aria-label="@($"Board {at + 1} turned 180 degrees")" /></td>
-                    <td><button id="@($"edit-board-{at}-remove")" type="button" disabled="@(Draft.Boards.Count == 1)" @onclick="@(() => Set(() => Draft.Boards.RemoveAt(at)))">Remove</button></td>
+                    <td><button id="@($"edit-board-{at}-remove")" type="button" disabled="@(Draft.Boards.Count == 1)" @onclick="@(() => Set(() => Draft.Boards.Remove(board)))">Remove</button></td>
                 </tr>
             }
         </tbody>
     </table>
     <p class="toolbar">
-        <button id="edit-board-add" type="button" @onclick="@(() => Set(() => Draft.Boards.Add(NextBoard())))">Add a board</button>
+        <button id="edit-board-add" type="button" @onclick="@(() => Set(() => Draft.AddBoard(NextBoard())))">Add a board</button>
         @if (SavedMaps.Count > 0)
         {
             <label>
@@ -57,9 +57,10 @@
     </FieldGroup>
     <FieldGroup Label="Playable area" For="edit-playable">
         <ChildContent>
-            <input id="edit-playable" value="@Draft.PlayableText" @onchange="@(args => Set(() => Draft.PlayableText = Text(args)))" size="40" placeholder="none" />
+            <input id="edit-playable" aria-describedby="edit-playable-help" value="@Draft.PlayableText" @onchange="@(args => Set(() => Draft.PlayableText = Text(args)))" size="40" placeholder="none" />
             hexrows <input id="edit-playable-from" value="@Draft.PlayableFrom" @onchange="@(args => Set(() => Draft.PlayableFrom = Text(args)))" size="3" aria-label="Playable hexrows from" /> to
             <input id="edit-playable-to" value="@Draft.PlayableTo" @onchange="@(args => Set(() => Draft.PlayableTo = Text(args)))" size="3" aria-label="Playable hexrows to" />
+            <label><input id="edit-playable-enforced" type="checkbox" checked="@Draft.PlayableEnforced" @onchange="@(args => Set(() => Draft.PlayableEnforced = args.Value is true))" /> enforced</label>
             on board <input id="edit-playable-board" value="@Draft.PlayableBoard" @onchange="@(args => Set(() => Draft.PlayableBoard = Text(args)))" size="6" placeholder="every" aria-label="Playable hexrows board" />
         </ChildContent>
         <Help>Enforced when hexrows are given (ruling R20.6).</Help>

@@ -78,15 +78,52 @@ public sealed class CardEditorPass28Tests : IDisposable
         Assert.Null(draft.Build("x").Card!.Sides[0].Nation);
     }
 
-    // R28.1: an SSR's tokens are written only when the game reads it, so a status changed away from "token" leaves no hidden tokens behind.
+    // R28.1 (referee, pass 28): an SSR's tokens are kept as typed, so a token left on a rule the game does not read is reported rather than dropped.
     [Fact]
-    public void AnSsrKeepsTokensOnlyWhileTheGameReadsIt()
+    public void AnSsrsTokensAreKeptAsTyped()
     {
+        var catalog = live.Catalogs[0];
         var draft = CardDraft.Minimal();
-        draft.Rules.Add(new RuleDraft { Text = "Mud.", Status = "token", Tokens = "weather:mud" });
-        Assert.Equal(["weather:mud"], draft.Build("x").Card!.SpecialRules[0].Tokens);
-        draft.Rules[0].Status = "game-default";
-        Assert.Empty(draft.Build("x").Card!.SpecialRules[0].Tokens);
+        draft.Rules.Add(new RuleDraft { Text = "Mud.", Status = "game-default", Tokens = "weather:mud" });
+        var card = draft.Build($"{catalog.Identity.Catalog}@{catalog.Identity.Version}").Card!;
+        Assert.Equal(["weather:mud"], card.SpecialRules[0].Tokens);
+        Assert.Contains(ScenarioCards.Validate(card, catalog), item => item.Contains("has tokens exactly when the game reads it", StringComparison.Ordinal));
+    }
+
+    // Referee, pass 28: what a card says is kept as read: hexrows shown but not enforced, a note beside a named first side, "?" on an entry, and an
+    // explicit false.
+    [Fact]
+    public void LesserFieldsAreKeptAsRead()
+    {
+        var card = ScenarioCards.Read("tractor-works", live.Catalogs[0])!.Card!;
+        var outcomes = card.VictoryConditions.Outcomes!.Select(outcome => outcome with { Any = [.. outcome.Any.Select(item => item.Type == "control-count" ? item with { MeleeUncontrolled = false } : item)] }).ToList();
+        var changed = card with
+        {
+            PlayableArea = card.PlayableArea! with
+            {
+                Enforced = false
+            },
+            Turns = card.Turns with
+            {
+                MovesFirst = "russian",
+                MovesFirstNote = "The Russians move first, as the legacy card has it."
+            },
+            VictoryConditions = card.VictoryConditions with
+            {
+                Outcomes = outcomes
+            },
+        };
+        var built = CardDraft.From(changed, user: true).Build(card.Catalog).Card!;
+        Assert.Equal(ScenarioCardLibrary.Serialize(changed), ScenarioCardLibrary.Serialize(built));
+    }
+
+    // Referee, pass 28: an earlier text is accepted only against the text it was revised into.
+    [Fact]
+    public void AnEarlierTextMatchesOnlyItsRevision()
+    {
+        var (earlier, current) = ScenarioCards.EarlierRevisions["guards-counterattack"][0];
+        Assert.True(ScenarioCards.SameCard("guards-counterattack", earlier, current));
+        Assert.False(ScenarioCards.SameCard("guards-counterattack", earlier, new string('1', 64)));
     }
 
     // R28.2, R28.3: the card's boards drawn as one map, the hex under a point, and areas and exit hexes checked against the boards. The synthetic board
@@ -239,4 +276,38 @@ public sealed class CardEditorPass28Tests : IDisposable
     private static ScenarioCardGroup Group(string name, (string Id, string Kind, string[] Hexes) area, string definition) =>
         new(name, 3, [area.Kind == "entry" ? new ScenarioCardSetup(area.Id, "entry", area.Hexes, null, null, null, 1, "top", null)
             : new ScenarioCardSetup(area.Id, area.Kind, area.Hexes, null, null, null, null, null, null)], [new ScenarioCardUnit(definition, 1, area.Id)]);
+
+    // Table player and UI review, pass 28: picking ends when its area is removed or stops taking hexes from the map; a removed SSR's text goes with it.
+    [Fact]
+    public void PickingAndRowsFollowTheirItems()
+    {
+        var editor = context.Render<EditorPage>();
+        CardEditorDriver.Boards(editor, "bd02");
+        editor.Find("#edit-group-add-0").Click();
+        editor.Find("#edit-group-0-0-area-add").Click();
+        editor.Find("#edit-group-0-0-area-0-pick").Click();
+        Assert.Contains("area 'area-1'", editor.Find("#edit-map-target").TextContent, StringComparison.Ordinal);
+        editor.Find("#edit-group-0-0-area-0-kind").Change("hex-numbers");
+        Assert.Contains("Pick on the map", editor.Find("#edit-map-target").TextContent, StringComparison.Ordinal);
+        Assert.NotNull(editor.Find("#edit-group-0-0-area-0-board"));
+
+        editor.Find("#edit-group-0-0-area-0-kind").Change("building");
+        editor.Find("#edit-group-0-0-area-0-pick").Click();
+        editor.Find("#edit-group-0-0-area-0-remove").Click();
+        Assert.Contains("Pick on the map", editor.Find("#edit-map-target").TextContent, StringComparison.Ordinal);
+
+        CardEditorDriver.AddRule(editor, "First.", "game-default");
+        CardEditorDriver.AddRule(editor, "Second.", "game-default");
+        editor.Find("#edit-ssr-0-remove").Click();
+        Assert.Equal("Second.", editor.Find("#edit-ssr-0-text").GetAttribute("value"));
+    }
+
+    // Table player, pass 28: a side's list leaves out the other side's nationality, so two sides cannot be merged by a swap.
+    [Fact]
+    public void ASideCannotTakeTheOtherSidesNationality()
+    {
+        var editor = context.Render<EditorPage>();
+        Assert.DoesNotContain(editor.FindAll("#edit-side-0 option"), option => option.GetAttribute("value") == "russian");
+        Assert.DoesNotContain(editor.FindAll("#edit-side-1 option"), option => option.GetAttribute("value") == "german");
+    }
 }

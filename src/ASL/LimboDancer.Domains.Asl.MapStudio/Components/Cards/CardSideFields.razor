@@ -7,7 +7,7 @@
     <legend>Side @(Index + 1): @SideDraft.Side</legend>
     <FieldGroup Label="Nationality" For="@($"edit-side-{Index}")">
         <select id="@($"edit-side-{Index}")" value="@SideDraft.Side" @onchange="@(args => Set(() => Draft.ChangeSide(Index, Text(args))))">
-            @foreach (var side in Sides)
+            @foreach (var side in Sides.Where(side => side.Name != Draft.Sides[1 - Index].Side))
             {
                 <option value="@side.Name">@side.Label</option>
             }
@@ -25,13 +25,13 @@
     </FieldGroup>
     <FieldGroup Label="SAN and ELR" For="@($"edit-san-{Index}")" Title="A14.1; A19.1">
         <ChildContent>
-            SAN <input id="@($"edit-san-{Index}")" value="@SideDraft.San" @onchange="@(args => Set(() => SideDraft.San = Text(args)))" size="2" />
-            ELR <input id="@($"edit-elr-{Index}")" value="@SideDraft.Elr" @onchange="@(args => Set(() => SideDraft.Elr = Text(args)))" size="2" aria-label="@($"Side {Index + 1}'s ELR")" />
+            SAN <input id="@($"edit-san-{Index}")" aria-describedby="@($"edit-san-{Index}-help")" value="@SideDraft.San" @onchange="@(args => Set(() => SideDraft.San = Text(args)))" size="2" />
+            ELR <input id="@($"edit-elr-{Index}")" aria-describedby="@($"edit-san-{Index}-help")" value="@SideDraft.Elr" @onchange="@(args => Set(() => SideDraft.Elr = Text(args)))" size="2" aria-label="@($"Side {Index + 1}'s ELR")" />
         </ChildContent>
         <Help>The side's own ELR is a minimal card's (ruling R22.3); a card with an OB gives each group its own, so leave it empty.</Help>
     </FieldGroup>
     <FieldGroup Label="Friendly Board Edge" For="@($"edit-edge-{Index}")" Title="A20.53; ruling R17.7">
-        <select id="@($"edit-edge-{Index}")" value="@SideDraft.Edge" @onchange="@(args => Set(() => SideDraft.Edge = Text(args)))">
+        <select id="@($"edit-edge-{Index}")" value="@SideDraft.Edge" @onchange="@(args => Set(() => ChangeEdge(Text(args))))">
             <option value="">not named</option>
             @foreach (var edge in SideState.Edges)
             {
@@ -47,7 +47,7 @@
         <input id="@($"edit-edge-note-{Index}")" value="@SideDraft.EdgeNote" @onchange="@(args => Set(() => SideDraft.EdgeNote = Text(args)))" size="40" placeholder="a note" aria-label="@($"Side {Index + 1}'s edge note")" />
     </FieldGroup>
     <FieldGroup Label="Battlefield Integrity BPV" For="@($"edit-integrity-{Index}")" Title="A16.1">
-        <ChildContent><input id="@($"edit-integrity-{Index}")" value="@SideDraft.Integrity" @onchange="@(args => Set(() => SideDraft.Integrity = Text(args)))" size="3" placeholder="none" /></ChildContent>
+        <ChildContent><input id="@($"edit-integrity-{Index}")" aria-describedby="@($"edit-integrity-{Index}-help")" value="@SideDraft.Integrity" @onchange="@(args => Set(() => SideDraft.Integrity = Text(args)))" size="3" placeholder="none" /></ChildContent>
         <Help>The card's printed total, checked against the starting MMC (ruling R17.4).</Help>
     </FieldGroup>
     <FieldGroup Label="Balance" For="@($"edit-balance-{Index}")" Title="A26.4">
@@ -61,10 +61,10 @@
                 {
                     var at = index;
                     var unit = balanceUnits[at];
-                    <li>
+                    <li @key="unit">
                         @(Catalog.Definition(unit.Definition) is { } definition ? ScenarioCards.Describe(definition) : unit.Definition)
                         count <input id="@($"edit-balance-unit-{Index}-{at}-count")" value="@unit.Count" @onchange="@(args => Set(() => unit.Count = Text(args)))" size="2" aria-label="@($"Count of Balance line {at + 1}")" />
-                        <button id="@($"edit-balance-unit-{Index}-{at}-remove")" type="button" @onclick="@(() => Set(() => RemoveBalance(at)))">Remove</button>
+                        <button id="@($"edit-balance-unit-{Index}-{at}-remove")" type="button" @onclick="@(() => Set(() => RemoveBalance(unit)))">Remove</button>
                     </li>
                 }
             </ul>
@@ -74,8 +74,9 @@
     @for (var index = 0; index < SideDraft.Groups.Count; index++)
     {
         var at = index;
-        <CardGroupFields Id="@($"edit-group-{Index}-{at}")" Index="@at" Group="@SideDraft.Groups[at]" Side="@SideDraft.Side" Catalog="@Catalog" Definitions="@Definitions"
-                         Boards="@Boards" Picking="@Picking" OnPick="@OnPick" RemoveGroup="@(() => Set(() => SideDraft.Groups.RemoveAt(at)))" Changed="@Changed"
+        var group = SideDraft.Groups[at];
+        <CardGroupFields @key="group" SideLabel="@(Index + 1)" Id="@($"edit-group-{Index}-{at}")" Index="@at" Group="@group" Side="@SideDraft.Side" Catalog="@Catalog" Definitions="@Definitions"
+                         Boards="@Boards" Picking="@Picking" OnPick="@OnPick" RemoveGroup="@(() => Set(() => RemoveGroup(group)))" Changed="@Changed"
                          RenameArea="@RenameArea" />
     }
     <button id="@($"edit-group-add-{Index}")" type="button" @onclick="AddGroup">Add an OB group</button>
@@ -132,11 +133,28 @@
         SideDraft.Elr = string.Empty;
     });
 
+    // Table player, pass 28: a named edge needs a basis, so "none" becomes R0.3 where the author sees it; an unnamed edge has none.
+    private void ChangeEdge(string edge)
+    {
+        SideDraft.Edge = edge;
+        SideDraft.Basis = edge.Length == 0 ? "none" : SideDraft.Basis == "none" ? "manufactured" : SideDraft.Basis;
+    }
+
+    // Table player, pass 28: the last group removed gives its ELR back to the side, which is a minimal card's again.
+    private void RemoveGroup(GroupDraft group)
+    {
+        SideDraft.Groups.Remove(group);
+        if (SideDraft.Groups.Count == 0 && SideDraft.Elr.Trim().Length == 0)
+        {
+            SideDraft.Elr = group.Elr;
+        }
+    }
+
     private Task AddBalance(LineDraft unit) => Set(() => (SideDraft.BalanceUnits ??= []).Add(new LineDraft { Definition = unit.Definition, Count = unit.Count }));
 
-    private void RemoveBalance(int at)
+    private void RemoveBalance(LineDraft unit)
     {
-        SideDraft.BalanceUnits!.RemoveAt(at);
+        SideDraft.BalanceUnits!.Remove(unit);
         if (SideDraft.BalanceUnits.Count == 0)
         {
             SideDraft.BalanceUnits = null;

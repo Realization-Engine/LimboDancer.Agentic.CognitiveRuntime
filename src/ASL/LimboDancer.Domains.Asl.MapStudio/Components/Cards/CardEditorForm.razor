@@ -65,6 +65,12 @@
             shown = Draft;
             (picking, pickNote) = (null, null);
         }
+
+        // Table player and UI review, pass 28: picking ends when its area or condition is removed, hidden, or no longer takes hexes from the map.
+        if (picking is not null && !Draft.Shows(picking))
+        {
+            picking = null;
+        }
     }
 
     private IReadOnlyList<string> CardBoards => [.. Draft.Boards.Select(board => board.Board.Trim()).Where(board => board.Length > 0).Distinct(StringComparer.Ordinal)];

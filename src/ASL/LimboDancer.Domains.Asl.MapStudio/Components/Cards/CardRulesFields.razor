@@ -8,9 +8,9 @@
         {
             var at = index;
             var rule = Draft.Rules[at];
-            <li id="@($"edit-ssr-{at}")">
+            <li @key="rule" id="@($"edit-ssr-{at}")">
                 <span class="card-area-line">
-                    <label class="card-wide">text <textarea id="@($"edit-ssr-{at}-text")" rows="2" cols="70" @onchange="@(args => Set(() => rule.Text = Text(args)))">@rule.Text</textarea></label>
+                    <label class="card-wide">text <textarea id="@($"edit-ssr-{at}-text")" rows="2" cols="70" @onchange="@(args => Set(() => rule.Text = Text(args)))" value="@rule.Text"></textarea></label>
                 </span>
                 <span class="card-area-line">
                     <label>
@@ -22,14 +22,12 @@
                             }
                         </select>
                     </label>
-                    @if (rule.Status == "token")
-                    {
-                        <label title="R16.1, R16.9, R23.5">tokens <input id="@($"edit-ssr-{at}-tokens")" value="@rule.Tokens" @onchange="@(args => Set(() => rule.Tokens = Text(args)))" size="30" placeholder="night:1 weather:rain" /></label>
-                    }
+                    @* Referee, pass 28: tokens stay as typed whatever the status, so a token left on a rule the game does not read is reported, not dropped. *@
+                    <label title="read by the game only when the status is token (rulings R16.1, R16.9, R23.5)">tokens <input id="@($"edit-ssr-{at}-tokens")" value="@rule.Tokens" @onchange="@(args => Set(() => rule.Tokens = Text(args)))" size="30" placeholder="@(rule.Status == "token" ? "night:1 weather:rain" : "none")" /></label>
                     <label title="registered rule fragments or rulings (ruling R17.2)">rules <input id="@($"edit-ssr-{at}-rules")" value="@rule.Rules" @onchange="@(args => Set(() => rule.Rules = Text(args)))" size="16" /></label>
                     <label>note <input id="@($"edit-ssr-{at}-note")" value="@rule.Note" @onchange="@(args => Set(() => rule.Note = Text(args)))" size="40" placeholder="@(rule.Status == "not-enforced" ? "why it is not enforced" : string.Empty)" /></label>
                     <button id="@($"edit-ssr-{at}-up")" type="button" disabled="@(at == 0)" @onclick="@(() => Set(() => Move(at, at - 1)))" aria-label="@($"Move SSR {at + 1} up")">Up</button>
-                    <button id="@($"edit-ssr-{at}-remove")" type="button" @onclick="@(() => Set(() => Draft.Rules.RemoveAt(at)))">Remove</button>
+                    <button id="@($"edit-ssr-{at}-remove")" type="button" @onclick="@(() => Set(() => Draft.Rules.Remove(rule)))">Remove</button>
                 </span>
             </li>
         }

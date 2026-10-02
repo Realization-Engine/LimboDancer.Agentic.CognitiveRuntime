@@ -4,25 +4,29 @@
    may be picked on the map (ruling R28.2): a click on a building picks the whole building, a click on an entry hex adds or removes it. *@
 <li class="card-area" id="@Id">
     <span class="card-area-line">
-        <label>id <input id="@($"{Id}-id")" value="@Area.Id" @onchange="@(args => Renamed.InvokeAsync(Text(args).Trim()))" size="6" /></label>
+        <label>@(Area.Kind == "building" ? "anchor hex" : "id") <input id="@($"{Id}-id")" aria-label="@($"{Label} id")" value="@Area.Id" @onchange="@(args => Renamed.InvokeAsync(Text(args).Trim()))" size="6" /></label>
         <label>
             kind
-            <select id="@($"{Id}-kind")" value="@Area.Kind" @onchange="@(args => Set(() => Area.Kind = Text(args)))">
+            <select id="@($"{Id}-kind")" aria-label="@($"{Label} kind")" value="@Area.Kind" @onchange="@(args => Set(() => Area.Kind = Text(args)))">
                 @foreach (var kind in ScenarioCards.AreaKinds)
                 {
                     <option value="@kind">@kind</option>
                 }
             </select>
         </label>
-        @if (Boards.Count > 1 || Area.Board.Length > 0)
+        @if (Boards.Count > 1 || Area.Board.Length > 0 || Area.Kind == "hex-numbers")
         {
             <label>
                 board
                 <select id="@($"{Id}-board")" value="@Area.Board" @onchange="@(args => Set(() => Area.Board = Text(args)))">
-                    <option value="">@(Boards.Count == 1 ? "the card's" : "choose")</option>
+                    <option value="">@(Boards.Count == 1 && Area.Kind != "hex-numbers" ? "the card's" : "choose")</option>
                     @foreach (var board in Boards)
                     {
                         <option value="@board">@board</option>
+                    }
+                    @if (Area.Board.Length > 0 && !Boards.Contains(Area.Board))
+                    {
+                        <option value="@Area.Board">@Area.Board (not on the card)</option>
                     }
                 </select>
             </label>
@@ -30,7 +34,7 @@
         @switch (Area.Kind)
         {
             case "building":
-                <label>hexes, the anchor first <input id="@($"{Id}-hexes")" value="@Area.Hexes" @onchange="@(args => Set(() => Area.Hexes = Text(args)))" size="24" /></label>
+                <label>hexes, the anchor among them <input id="@($"{Id}-hexes")" value="@Area.Hexes" @onchange="@(args => Set(() => Area.Hexes = Text(args)))" size="24" /></label>
                 break;
             case "hex-numbers":
                 <label>hex numbers <input id="@($"{Id}-from")" value="@Area.From" @onchange="@(args => Set(() => Area.From = Text(args)))" size="2" /></label>
@@ -53,9 +57,9 @@
         }
         @if (Area.Kind != "hex-numbers")
         {
-            <button id="@($"{Id}-pick")" type="button" aria-pressed="@Picking.ToString().ToLowerInvariant()" @onclick="@(() => Pick.InvokeAsync())">@(Picking ? "Picking on the map" : "Pick on the map")</button>
+            <button id="@($"{Id}-pick")" type="button" aria-pressed="@Picking.ToString().ToLowerInvariant()" aria-label="@($"Pick {Label} on the map")" @onclick="@(() => Pick.InvokeAsync())">Pick on the map</button>
         }
-        <button id="@($"{Id}-remove")" type="button" @onclick="@(() => Remove.InvokeAsync())">Remove the area</button>
+        <button id="@($"{Id}-remove")" type="button" aria-label="@($"Remove {Label}")" @onclick="@(() => Remove.InvokeAsync())">Remove the area</button>
     </span>
     <span class="card-area-line">
         <label>limit, as the SSR says <input id="@($"{Id}-limit")" value="@Area.Limit" @onchange="@(args => Set(() => Area.Limit = Text(args)))" size="40" /></label>
@@ -82,6 +86,10 @@
 
     [Parameter, EditorRequired]
     public AreaDraft Area { get; set; } = default!;
+
+    /// <summary>Which area this is ("side 1 group 2 area 1"), for the controls' names.</summary>
+    [Parameter]
+    public string Label { get; set; } = "area";
 
     /// <summary>The card's boards by name.</summary>
     [Parameter]

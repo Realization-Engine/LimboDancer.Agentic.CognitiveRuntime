@@ -47,7 +47,12 @@ public sealed class CardDraft
     /// <summary>The side that moves first, empty when a die roll decides it (ruling R17.12).</summary>
     public string MovesFirst { get; set; } = "german";
 
-    public string MovesFirstNote { get; set; } = "A die roll before play decides which side moves first.";
+    public string MovesFirstNote { get; set; } = DieRollNote;
+
+    /// <summary>Whether the playable area's hexrows are enforced (ruling R20.6); a card may name them and say they are shown only.</summary>
+    public bool PlayableEnforced { get; set; } = true;
+
+    private const string DieRollNote = "A die roll before play decides which side moves first.";
 
     public string Defender { get; set; } = string.Empty;
 
@@ -92,7 +97,8 @@ public sealed class CardDraft
             HalfTurn = card.Turns.HalfTurn,
             SetsUpFirst = card.Turns.SetsUpFirst,
             MovesFirst = card.Turns.MovesFirst ?? string.Empty,
-            MovesFirstNote = card.Turns.MovesFirstNote ?? "A die roll before play decides which side moves first.",
+            MovesFirstNote = card.Turns.MovesFirstNote ?? DieRollNote,
+            PlayableEnforced = card.PlayableArea?.Enforced ?? true,
             Defender = card.ScenarioDefender ?? string.Empty,
             Sides = [.. card.Sides.Take(2).Select(SideDraft.Of)],
             Rules = [.. card.SpecialRules.Select(RuleDraft.Of)],
@@ -116,14 +122,14 @@ public sealed class CardDraft
         var victory = Victory.Build(read);
         var playable = PlayableText.Trim().Length == 0 && PlayableFrom.Trim().Length == 0 ? null
             : new ScenarioCardArea(PlayableText.Trim().Length > 0 ? PlayableText.Trim() : $"Only hexrows {PlayableFrom.Trim()} to {PlayableTo.Trim()} are playable.",
-                PlayableFrom.Trim().Length > 0,
+                PlayableFrom.Trim().Length > 0 && PlayableEnforced,
                 PlayableFrom.Trim().Length > 0 ? new ScenarioCardHexrows(PlayableFrom.Trim(), PlayableTo.Trim(), PlayableBoard.Trim().Length > 0 ? PlayableBoard.Trim() : null) : null);
         var card = new ScenarioCard(ScenarioCards.Format, Id.Trim(), Title, catalog,
             new ScenarioCardSource(SourceBasis, SourceLegacy, Lines(Adaptation)), Place,
             new ScenarioCardDate(read.Int(Day, "card.date: the day"), read.Int(Month, "card.date: the month"), read.Int(Year, "card.date: the year")), Introduction,
             boards, North, playable,
             new ScenarioCardTurns(read.Int(Turns, "card.turns: the Game Turns"), HalfTurn, SetsUpFirst, MovesFirst.Length > 0 ? MovesFirst : null,
-                MovesFirst.Length > 0 ? null : MovesFirstNote),
+                MovesFirst.Length == 0 || MovesFirstNote != DieRollNote ? MovesFirstNote : null),
             Defender.Length > 0 ? Defender : null, sides, rules, victory, Aftermath.Trim().Length > 0 ? Aftermath.Trim() : null);
         foreach (var side in Sides.Where(side => side.Groups.Count > 0 && side.Elr.Trim().Length > 0))
         {
@@ -131,6 +137,24 @@ public sealed class CardDraft
         }
 
         return (problems.Count == 0 ? card : null, problems);
+    }
+
+    /// <summary>The boards as the card would name them, or null while a column or row is not a whole number.</summary>
+    public IReadOnlyList<ScenarioCardBoard>? BoardsOrNull()
+    {
+        var boards = new List<ScenarioCardBoard>();
+        foreach (var board in Boards)
+        {
+            if (!int.TryParse(board.Column.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var column)
+                || !int.TryParse(board.Row.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var row))
+            {
+                return null;
+            }
+
+            boards.Add(new ScenarioCardBoard(board.Board.Trim(), column, row, board.Reversed));
+        }
+
+        return boards;
     }
 
     /// <summary>A side's new nationality, which the sides naming it on the Turn Record Chart and as Scenario Defender follow (table player, pass 22).</summary>
@@ -177,11 +201,43 @@ public sealed class CardDraft
             line.Area = id;
         }
 
+        // Referee, pass 28: a condition names a building by an id the whole card shares; it follows only when no other area keeps that id.
+        if (Sides.SelectMany(side => side.Groups).SelectMany(group => group.Areas).Any(other => other != area && other.Id == old))
+        {
+            return;
+        }
+
         string Follow(string words) => string.Join(' ', CardDraft.Words(words).Select(word => word == old ? id : word));
         foreach (var condition in Victory.Outcomes.SelectMany(outcome => outcome.Conditions))
         {
             (condition.Buildings, condition.Versus, condition.Building) = (Follow(condition.Buildings), Follow(condition.Versus), condition.Building == old ? id : condition.Building);
         }
+    }
+
+    /// <summary>Whether an area or condition is still part of the card, and shown: picking ends when it is not (table player and UI review, pass 28).</summary>
+    public bool Shows(object target) => target switch
+    {
+        AreaDraft area => area.Kind != "hex-numbers" && Sides.SelectMany(side => side.Groups).Any(group => group.Areas.Contains(area)),
+        ConditionDraft condition => condition.Type == "exit-vp" && Victory.Evaluated && Victory.Outcomes.Any(outcome => outcome.Conditions.Contains(condition)),
+        _ => false,
+    };
+
+    /// <summary>
+    /// A second board for a card on one board (table player, pass 28): an area that named no board meant the card's only board, so it names that board now,
+    /// since a card on several boards names each area's.
+    /// </summary>
+    public void AddBoard(BoardDraft board)
+    {
+        ArgumentNullException.ThrowIfNull(board);
+        if (Boards.Count == 1 && Boards[0].Board.Trim() is { Length: > 0 } only)
+        {
+            foreach (var area in Sides.SelectMany(side => side.Groups).SelectMany(group => group.Areas).Where(area => area.Board.Trim().Length == 0 && (area.Kind != "entry" || area.Hexes.Trim().Length > 0)))
+            {
+                area.Board = only;
+            }
+        }
+
+        Boards.Add(board);
     }
 
     internal static string Text(int value) => value.ToString(CultureInfo.InvariantCulture);
@@ -292,7 +348,7 @@ public sealed class SideDraft
     {
         var groups = Groups.Select(group => group.Build(read, Side)).ToList();
         return new ScenarioCardSide(Side, read.Int(San, $"card.san: {Side}'s SAN"), null,
-            new ScenarioCardEdge(Edge, Edge.Length == 0 ? "none" : Basis == "none" ? "manufactured" : Basis, EdgeNote.Trim().Length > 0 ? EdgeNote.Trim() : null),
+            new ScenarioCardEdge(Edge, Edge.Length == 0 ? "none" : Basis, EdgeNote.Trim().Length > 0 ? EdgeNote.Trim() : null),
             Balance, groups, BalanceUnits?.Select(unit => unit.Build(read, $"{Side}'s Balance")).ToList(),
             groups.Count == 0 && Elr.Trim().Length > 0 ? read.Int(Elr, $"card.elr: {Side}'s ELR") : null,
             Side == "axis-minor" && Nation.Length > 0 ? Nation : null)
@@ -391,7 +447,8 @@ public sealed class AreaDraft
                 read.OptionalInt(Counters, $"{what} counters"), read.OptionalInt(MinMmc, $"{what} MMC at least"), Concealed),
             "hex-numbers" => new ScenarioCardSetup(Id.Trim(), Kind, null, Opt(Board), read.OptionalInt(From, $"{what} from"), read.OptionalInt(To, $"{what} to"), null, null, Opt(Limit),
                 read.OptionalInt(Counters, $"{what} counters"), read.OptionalInt(MinMmc, $"{what} MMC at least"), Concealed),
-            _ => new ScenarioCardSetup(Id.Trim(), Kind, hexes.Count > 0 ? hexes : null, Opt(Board), null, null, read.OptionalInt(Turn, $"{what} Game Turn"), Opt(Edge), Opt(Limit)),
+            _ => new ScenarioCardSetup(Id.Trim(), Kind, hexes.Count > 0 ? hexes : null, Opt(Board), null, null, read.OptionalInt(Turn, $"{what} Game Turn"), Opt(Edge), Opt(Limit),
+                null, null, Concealed),
         };
     }
 
@@ -436,7 +493,7 @@ public sealed class RuleDraft
     };
 
     internal ScenarioCardRule Build(int number) =>
-        new(number, Text, Status, Status == "token" ? CardDraft.Words(Tokens) : [], CardDraft.Words(Rules), Note.Trim().Length > 0 ? Note.Trim() : null);
+        new(number, Text, Status, CardDraft.Words(Tokens), CardDraft.Words(Rules), Note.Trim().Length > 0 ? Note.Trim() : null);
 }
 
 /// <summary>The Victory Conditions (A26; rulings R17.11, R21.3).</summary>
@@ -512,7 +569,8 @@ public sealed class ConditionDraft
 
     public string AtLeast { get; set; } = string.Empty;
 
-    public bool MeleeUncontrolled
+    /// <summary>A hex in Melee Controlled by neither, or no word on it; kept as read, so a card's explicit false survives.</summary>
+    public bool? MeleeUncontrolled
     {
         get; set;
     }
@@ -533,11 +591,23 @@ public sealed class ConditionDraft
         Margin = CardDraft.Text(condition.Margin),
         Building = condition.Building ?? string.Empty,
         AtLeast = CardDraft.Text(condition.AtLeast),
-        MeleeUncontrolled = condition.MeleeUncontrolled is true,
+        MeleeUncontrolled = condition.MeleeUncontrolled,
         Ratio = condition.Ratio?.ToString(CultureInfo.InvariantCulture) ?? string.Empty,
         Edge = condition.Edge ?? string.Empty,
         Near = string.Join(' ', condition.Near ?? []),
     };
+
+    /// <summary>A new type, whose fields start empty: an Exit VP total does not become a CVP total (table player, pass 28).</summary>
+    public void ChangeType(string type)
+    {
+        if (type == Type)
+        {
+            return;
+        }
+
+        (Type, Buildings, Versus, Margin, Building, AtLeast, MeleeUncontrolled, Ratio, Edge, Near) =
+            (type, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, null, string.Empty, string.Empty, string.Empty);
+    }
 
     internal ScenarioCardCondition Build(CardDraft.Numbers read)
     {
@@ -545,7 +615,7 @@ public sealed class ConditionDraft
         return Type switch
         {
             "control-margin" => new(Type, Side, Buildings: CardDraft.Words(Buildings), Versus: CardDraft.Words(Versus), Margin: read.OptionalInt(Margin, $"{what}, its margin")),
-            "control-count" => new(Type, Side, Building: Opt(Building), AtLeast: read.OptionalInt(AtLeast, $"{what}, its hexes"), MeleeUncontrolled: MeleeUncontrolled ? true : null),
+            "control-count" => new(Type, Side, Building: Opt(Building), AtLeast: read.OptionalInt(AtLeast, $"{what}, its hexes"), MeleeUncontrolled: MeleeUncontrolled),
             "squad-ratio" => new(Type, Side, Ratio: read.OptionalDouble(Ratio, $"{what}, its ratio")),
             "sole-unbroken" => new(Type, Side, Building: Opt(Building)),
             "exit-vp" => new(Type, Side, AtLeast: read.OptionalInt(AtLeast, $"{what}, its Exit VP"), Edge: Opt(Edge), Near: CardDraft.Words(Near)),

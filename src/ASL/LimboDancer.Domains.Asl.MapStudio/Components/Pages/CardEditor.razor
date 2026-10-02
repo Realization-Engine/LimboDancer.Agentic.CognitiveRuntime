@@ -25,7 +25,7 @@ else
     <div class="toolbar">
         <label>
             Start from
-            <CardPicker Id="edit-source" Cards="@Choices" Value="@source" ValueChanged="@ChooseSource" EmptyLabel="a minimal card" />
+            <CardPicker Id="edit-source" Cards="@choices" Value="@source" ValueChanged="@ChooseSource" EmptyLabel="a minimal card" />
         </label>
     </div>
 
@@ -36,7 +36,7 @@ else
         <Empty>The card is valid against catalog @catalog.Identity.Catalog@@@catalog.Identity.Version@(map is null ? "." : " and its boards.")</Empty>
     </FindingList>
 
-    <CardSaveActions Source="@(source.Length > 0 && Live.Cards.IsUser(source) ? source : null)" RenameTo="@draft.Id.Trim()" Games="@games" Note="@note" Outcome="@noteOutcome"
+    <CardSaveActions Source="@editing" RenameTo="@draft.Id.Trim()" Games="@games" Note="@note" Outcome="@noteOutcome"
                      OnSave="@Save" OnRename="@Rename" OnDelete="@Delete" />
 }
 
@@ -56,6 +56,10 @@ else
     private IReadOnlyList<string> games = [];
     private IReadOnlyList<string> diagnostics = [];
     private string? note;
+    private IReadOnlyList<CardPicker.Choice> choices = [];
+
+    // The user card being edited; null for a new card or a copy of a built-in card. Read from the library when the card changes, not on every render.
+    private string? editing;
 
     // Set with each note (UI review, pass 22b): a refusal reads as one; a completed save, rename, or delete reads as done.
     private OperationFeedback.OperationOutcome noteOutcome = OperationFeedback.OperationOutcome.Done;
@@ -75,7 +79,13 @@ else
         Refresh();
     }
 
-    private IReadOnlyList<CardPicker.Choice> Choices => [.. Live.Cards.Names.Select(name => new CardPicker.Choice(name, Title(name), Live.Cards.IsUser(name)))];
+    // UI review, pass 28: the library is listed and its cards read when it changes, not on every keystroke.
+    private void ListCards()
+    {
+        var users = Live.Cards.UserNames;
+        choices = [.. Live.Cards.Names.Select(name => new CardPicker.Choice(name, Title(name), users.Contains(name, StringComparer.Ordinal)))];
+        editing = source.Length > 0 && users.Contains(source, StringComparer.Ordinal) ? source : null;
+    }
 
     private string Title(string name) => catalog is not null && Live.Cards.Read(name, catalog)?.Card is { } card ? card.Title : name;
 
@@ -103,7 +113,8 @@ else
     /// <summary>The checks again, and the games that started from the card being edited (the game-to-card index; ruling R28.4).</summary>
     private void Refresh()
     {
-        games = source.Length > 0 && Live.Cards.IsUser(source) ? Live.GamesFrom(source) : [];
+        ListCards();
+        games = editing is { } user ? Live.GamesFrom(user) : [];
         Check();
     }
 
@@ -127,6 +138,8 @@ else
         var (card, problems) = draft.Build($"{catalog.Identity.Catalog}@{catalog.Identity.Version}");
         if (card is null)
         {
+            // UI review, pass 28: the map follows the board fields even while another field is unfinished, and goes when a board's slot is not a number.
+            (map, mapProblems) = draft.BoardsOrNull() is { } boards ? Maps.Cards.Load(boards) : (null, ["a board's column or row is not a whole number"]);
             (diagnostics, json) = (problems, null);
             return null;
         }
@@ -160,6 +173,7 @@ else
 
         Done($"Saved '{card.Id}'; start a game from it on the Play page.");
         source = card.Id;
+        ListCards();
         games = Live.GamesFrom(source);
     }
 
@@ -183,6 +197,7 @@ else
 
         Live.Cards.Delete(old);
         source = card.Id;
+        ListCards();
         Done($"Renamed '{old}' to '{card.Id}'.");
         games = Live.GamesFrom(source);
     }
