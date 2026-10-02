@@ -1,0 +1,30 @@
+@* Plan A06 (pass 28b): a malfunctioned SW, or a vehicle's AAMG, repaired in the RPh (A9.72, D3.7). The page gives the weapons the view sees with
+   their holder or vehicle in the label (ruling R23.1); the planner decides who repairs. *@
+<div class="toolbar">
+    <label>
+        Malfunctioned SW or AAMG
+        <select id="repair-weapon" value="@Weapon" @onchange="@(args => OnWeapon.InvokeAsync(args.Value as string ?? string.Empty))">
+            <option value="">choose</option>
+            @foreach (var weapon in Weapons)
+            {
+                <option value="@weapon.Id">@weapon.Label</option>
+            }
+        </select>
+    </label>
+    <button id="propose-repair" disabled="@(!Weapons.Any(weapon => weapon.Id == Weapon))" @onclick="@(() => OnPropose.InvokeAsync())">Propose: repair</button>
+</div>
+
+@code {
+    /// <summary>The malfunctioned SW possessed by a unit and the AAMG of CE vehicles, such as "r-lmg (held by r1)".</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<PlayChoice> Weapons { get; set; } = [];
+
+    [Parameter]
+    public string Weapon { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> OnWeapon { get; set; }
+
+    [Parameter]
+    public EventCallback OnPropose { get; set; }
+}

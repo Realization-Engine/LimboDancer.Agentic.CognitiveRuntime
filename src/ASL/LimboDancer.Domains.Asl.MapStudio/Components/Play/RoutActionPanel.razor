@@ -1,0 +1,68 @@
+@* Plan A02 (pass 28b): a broken unit's rout in the RtPh. The page gives the obligations already written for the view and the units that may still
+   rout (ruling R23.1); the planner decides the route, the Interdictions, and the Failure to Rout. A03 RoutObligations stays inline here: it is one list. *@
+<h4>Rout</h4>
+<RuleHelp Id="rout-help" Summary="Broken units that must rout, or are under DM, rout one at a time, the ATTACKER's first, toward the nearest woods or building; Low Crawl moves one Location and is never Interdicted. One that ends the RtPh ADJACENT to a Known unbroken armed enemy unit, or stays in the Open Ground hex it had to leave, is eliminated or surrenders (A10.5, A10.52, A20.21).">
+    In the RtPh the ATTACKER's broken units rout first, one at a time, then the DEFENDER's (A10.5). A broken unit must rout when a Known unbroken
+    armed enemy unit is ADJACENT or in its Location, or it is in Open Ground in the LOS and Normal Range of a Known enemy unit; it may rout under DM.
+    It has six MF (a wounded SMC three) and must reach the nearest woods or building Location it can this RtPh, never moving closer to a Known armed
+    enemy unit that has seen it, nor ADJACENT to one. Entering Open Ground in the LOS of an unbroken enemy unit is Interdicted by a NMC; Low Crawl
+    is one Location using all its MF and is never Interdicted (A10.52, A10.53). As the RtPh ends a broken unit ADJACENT to its enemy, or one that did
+    not rout from the open, is eliminated, or surrenders to an ADJACENT Good Order enemy (A20.21).
+</RuleHelp>
+<ul id="rout-obligations">
+    @foreach (var item in Obligations)
+    {
+        <li @key="item.Unit" class="rout-obligation" data-unit="@item.Unit">@item.Text</li>
+    }
+</ul>
+<div class="toolbar">
+    <label>
+        Broken unit
+        <select id="rout-unit" value="@Unit" @onchange="@(args => OnUnit.InvokeAsync(args.Value as string ?? string.Empty))">
+            <option value="">choose</option>
+            @foreach (var unit in Units)
+            {
+                <option value="@unit.Id">@unit.Label</option>
+            }
+        </select>
+    </label>
+    <label>
+        Route (hexes in order)
+        <input id="rout-route" placeholder="E6, E7" value="@Route" @onchange="@(args => OnRoute.InvokeAsync(args.Value as string ?? string.Empty))" />
+    </label>
+    <label><input id="rout-low-crawl" type="checkbox" checked="@LowCrawl" @onchange="@(args => OnLowCrawl.InvokeAsync(args.Value is true))" /> Low Crawl</label>
+    <button id="propose-rout" disabled="@(!Units.Any(unit => unit.Id == Unit) || Route.Trim().Length == 0)" @onclick="@(() => OnPropose.InvokeAsync())">Propose: rout</button>
+</div>
+
+@code {
+    /// <summary>A broken unit that may rout and what it owes, such as "r1 (russian): must rout: ...; has routed".</summary>
+    public sealed record Obligation(string Unit, string Text);
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Obligation> Obligations { get; set; } = [];
+
+    /// <summary>The broken units that may still rout this RtPh.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<PlayChoice> Units { get; set; } = [];
+
+    [Parameter]
+    public string Unit { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Route { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool LowCrawl { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnUnit { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnRoute { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> OnLowCrawl { get; set; }
+
+    [Parameter]
+    public EventCallback OnPropose { get; set; }
+}

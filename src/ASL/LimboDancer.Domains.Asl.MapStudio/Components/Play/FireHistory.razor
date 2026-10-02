@@ -1,0 +1,17 @@
+@* Plan R06 (pass 28b): the fire attacks the view may see, latest first. The page gives each record it is entitled to, and for one withheld from it the
+   public report of its arithmetic with no effects (Fire in Live Play, part 5). *@
+@if (Records.Count > 0)
+{
+    <h3>Fire</h3>
+    <div id="play-fires">
+        @foreach (var record in Records)
+        {
+            <FireResolutionCard @key="record.EventId" Record="@record" />
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<FireView> Records { get; set; } = [];
+}

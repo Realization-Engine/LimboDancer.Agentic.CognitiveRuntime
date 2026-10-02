@@ -1,0 +1,69 @@
+@* Plan A08 (pass 28b): two HS Recombining into a squad (A1.32). The page gives the HS the view sees, the partners of the first, and the leaders with
+   it (ruling R23.1); choosing another first HS clears the partner and the leader, which the page does in its OnOne handler (section 15.3). *@
+<div class="toolbar">
+    <label>
+        HS
+        <select id="recombine-one" value="@One" @onchange="@(args => OnOne.InvokeAsync(args.Value as string ?? string.Empty))">
+            <option value="">choose</option>
+            @foreach (var unit in HalfSquads)
+            {
+                <option value="@unit.Id">@unit.Label</option>
+            }
+        </select>
+    </label>
+    <label>
+        with
+        <select id="recombine-two" value="@Two" @onchange="@(args => OnTwo.InvokeAsync(args.Value as string ?? string.Empty))">
+            <option value="">choose</option>
+            @foreach (var unit in Partners)
+            {
+                <option value="@unit">@unit</option>
+            }
+        </select>
+    </label>
+    <label>
+        Leader
+        <select id="recombine-leader" value="@Leader" @onchange="@(args => OnLeader.InvokeAsync(args.Value as string ?? string.Empty))">
+            <option value="">none (Guards)</option>
+            @foreach (var leader in Leaders)
+            {
+                <option value="@leader">@leader</option>
+            }
+        </select>
+    </label>
+    <button id="propose-recombine" disabled="@(!HalfSquads.Any(unit => unit.Id == One) || !Partners.Contains(Two))" @onclick="@(() => OnPropose.InvokeAsync())">Propose: recombine</button>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<PlayChoice> HalfSquads { get; set; } = [];
+
+    /// <summary>The HS that may Recombine with the first.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<string> Partners { get; set; } = [];
+
+    /// <summary>The leaders who may help the first HS Recombine.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<string> Leaders { get; set; } = [];
+
+    [Parameter]
+    public string One { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Two { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Leader { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> OnOne { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnTwo { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnLeader { get; set; }
+
+    [Parameter]
+    public EventCallback OnPropose { get; set; }
+}

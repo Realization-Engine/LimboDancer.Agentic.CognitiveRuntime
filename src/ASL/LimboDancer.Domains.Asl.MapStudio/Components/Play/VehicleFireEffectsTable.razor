@@ -1,0 +1,21 @@
+@* Plan R10 (pass 28b): the Vehicle line and crew results of the target Location's vehicles (A7.308, D.8B), as recorded. Its rows have a different
+   schema from the Infantry effects, so it is its own table. *@
+@using LimboDancer.Domains.Asl.ScenarioA1
+<table class="library fire-vehicles">
+    <thead><tr><th>Vehicle</th><th>Vehicle line</th><th>Crew</th></tr></thead>
+    <tbody>
+        @foreach (var hit in Vehicles)
+        {
+            <tr data-vehicle="@hit.VehicleId">
+                <td>@hit.VehicleId (@hit.DefinitionId)</td>
+                <td class="fire-vehicle-result">@FireText.VehicleLineText(hit)</td>
+                <td class="fire-vehicle-crew">@FireText.CrewText(hit)</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<FireVehicleEffect> Vehicles { get; set; } = [];
+}

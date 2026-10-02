@@ -1,0 +1,23 @@
+@* Plan S08 (pass 28b): a rule paragraph moved out of the task flow. The summary always shows; the full text and its citations sit in a collapsed
+   disclosure that keeps the paragraph's id, so a test or an aria-describedby still finds it. Its only state is whether it is open. *@
+<div class="rule-help" data-help="@Id">
+    <p class="muted rule-help-summary" id="@($"{Id}-summary")">@Summary</p>
+    <details class="rule-help-detail">
+        <summary aria-describedby="@($"{Id}-summary")">The rule in full</summary>
+        <p class="muted" id="@Id">@ChildContent</p>
+    </details>
+</div>
+
+@code {
+    /// <summary>The id of the full paragraph, such as "rout-help"; the summary takes the same id with "-summary".</summary>
+    [Parameter, EditorRequired]
+    public string Id { get; set; } = string.Empty;
+
+    /// <summary>One line a player reads before acting.</summary>
+    [Parameter, EditorRequired]
+    public string Summary { get; set; } = string.Empty;
+
+    /// <summary>The full rule text with its citations.</summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

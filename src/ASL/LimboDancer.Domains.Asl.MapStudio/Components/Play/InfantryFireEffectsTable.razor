@@ -1,0 +1,21 @@
+@* Plan R09 (pass 28b): what an attack did to each target unit the view may see: its definition before and after, the effect, and its checks. The
+   page passes it only when the effects are disclosed; withheld effects never reach it (section 15.4). *@
+@using LimboDancer.Domains.Asl.ScenarioA1
+<table class="library fire-effects">
+    <thead><tr><th>Target</th><th>Effect</th><th>Checks</th></tr></thead>
+    <tbody>
+        @foreach (var effect in Effects)
+        {
+            <tr data-unit="@effect.UnitId">
+                <td>@effect.UnitId (@effect.DefinitionId@(effect.FinalDefinitionId != effect.DefinitionId ? $", now {effect.FinalDefinitionId}" : ""))</td>
+                <td class="fire-effect">@FireText.EffectText(effect)</td>
+                <td>@string.Join("; ", effect.Checks.Select(FireText.CheckText))</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<FireUnitEffect> Effects { get; set; } = [];
+}

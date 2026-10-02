@@ -1,0 +1,122 @@
+@* Plan C16 (pass 28b): a Gun, a tank's MA, a light mortar, a LATW, or a Panzerfaust fired at a Location or one vehicle in it. The page gives the
+   firing side's weapons with their state in the label, the units the view sees for the Spotter and the leader (ruling R23.1), and the target
+   fields' choices; choosing another weapon resets the ammunition, the Spotter, and the leader, and another target clears the vehicle, both in
+   the page's handlers (section 15.3). The planner decides every shot. *@
+<h4>Ordnance</h4>
+<RuleHelp Id="ordnance-help" Summary="A manned Gun or a tank's MA fires HE at a Location's units, or the ammunition it carries at one vehicle there; a light mortar fires on the Area Target Type; a Panzerfaust or Panzerschreck fires HEAT, and an ATR AP, at a vehicle (C3.3, C3.31, C9.3, C13).">
+    A Gun manned by its crew, or a tank's MA, fires HE at the enemy units of a Location on the Infantry Target Type (C3.3, C3.32), or at
+    one enemy vehicle there on the Vehicle Target Type with AP, APCR, HEAT, or HE (C3.31, C8.1). It turns its barrel or turret to bring the
+    target into its Covered Arc if it must, with the Case A DRM (C5.1). An Original colored dr at most its ROF lets it fire again this
+    phase (C2.24), and each shot acquires the Location for the next (C6.5). A hit on Infantry attacks every enemy unit there on the IFT
+    column of the HE FP (C.6); a hit on a vehicle strikes its turret or hull, and the To Kill DR decides its fate (C3.9, C7). A light
+    mortar fires on the Area Target Type at every unit of the hex, at half its HE FP, and may fire at a hex its Spotter in or next to its hex
+    sees (C3.33, C9.3). From October 1943 a German unit may make a PF Check to fire a Panzerfaust at an enemy AFV (C13.31). An ATR fires
+    AP at a vehicle here on the black Vehicle row up to 12 hexes, and at Infantry from the fire panel as 1 FP with no Long Range or Residual
+    FP (C13.2, C13.24). A Panzerschreck, from September 1943, fires HEAT at a vehicle on its own table (10, 9, 8, 7 at 1 to 4 hexes), +2 from a
+    ground-level building (not above it, nor pinned there), and is removed on 11 or 12 (C13.47, C13.8). Both are manufactured counters.
+</RuleHelp>
+<div class="toolbar">
+    <label>
+        Gun
+        <select id="ordnance-gun" value="@Gun" @onchange="@(args => OnGun.InvokeAsync(args.Value as string ?? string.Empty))">
+            <option value="">choose</option>
+            @foreach (var gun in Guns)
+            {
+                <option value="@gun.Id">@gun.Label</option>
+            }
+        </select>
+    </label>
+    @if (Spotters is not null)
+    {
+        <label title="C9.3: a Good Order unit in the mortar's hex or an adjacent one spots for it (+2, ROF one less), in the PFPh or DFPh; it keeps spotting while Good Order.">
+            Spotter
+            <select id="ordnance-spotter" value="@Spotter" @onchange="@(args => OnSpotter.InvokeAsync(args.Value as string ?? string.Empty))">
+                <option value="">none</option>
+                @foreach (var unit in Spotters)
+                {
+                    <option value="@unit.Id">@unit.Label</option>
+                }
+            </select>
+        </label>
+    }
+    @if (Directors is not null)
+    {
+        <label title="A7.531: a leader in the firer's Location adds his leadership modifier to the To Hit DR, as his direction for the phase.">
+            Leader
+            <select id="ordnance-director" value="@Director" @onchange="@(args => OnDirector.InvokeAsync(args.Value as string ?? string.Empty))">
+                <option value="">none</option>
+                @foreach (var leader in Directors)
+                {
+                    <option value="@leader.Id">@leader.Label</option>
+                }
+            </select>
+        </label>
+    }
+    @Target
+    @if (IntensiveAllowed)
+    {
+        <label title="C5.6: once its normal ROF is used, a Gun may fire once more with +2 (Case F) and its B# two lower; never in the AFPh."><input id="ordnance-intensive" type="checkbox" checked="@Intensive" @onchange="@(args => OnIntensive.InvokeAsync(args.Value is true))" /> Intensive Fire</label>
+    }
+    @if (PanzerfaustUsage is { } usage)
+    {
+        <span class="muted" id="ordnance-pf-usage">@usage</span>
+    }
+    <button id="propose-ordnance" disabled="@(!Ready)" @onclick="@(() => OnPropose.InvokeAsync())">Propose: fire</button>
+</div>
+
+@code {
+    /// <summary>The firing side's Guns, tanks, light mortars, LATW, and Panzerfaust firers (whose value ends in ":pf").</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<PlayChoice> Guns { get; set; } = [];
+
+    [Parameter]
+    public string Gun { get; set; } = string.Empty;
+
+    /// <summary>The units that may spot for a light mortar, or null when the weapon takes no Spotter.</summary>
+    [Parameter]
+    public IReadOnlyList<PlayChoice>? Spotters { get; set; }
+
+    [Parameter]
+    public string Spotter { get; set; } = string.Empty;
+
+    /// <summary>The leaders who may direct the shot, or null when the weapon takes no leader.</summary>
+    [Parameter]
+    public IReadOnlyList<PlayChoice>? Directors { get; set; }
+
+    [Parameter]
+    public string Director { get; set; } = string.Empty;
+
+    /// <summary>The target fields, an <see cref="OrdnanceTargetFields"/>.</summary>
+    [Parameter, EditorRequired]
+    public RenderFragment Target { get; set; } = default!;
+
+    /// <summary>Whether the weapon may use Intensive Fire (a Gun or MA, not a mortar, LATW, or Panzerfaust).</summary>
+    [Parameter]
+    public bool IntensiveAllowed { get; set; }
+
+    [Parameter]
+    public bool Intensive { get; set; }
+
+    /// <summary>The side's Panzerfaust shots against its allowance, or null when it has no Panzerfaust firer.</summary>
+    [Parameter]
+    public string? PanzerfaustUsage { get; set; }
+
+    /// <summary>Whether a weapon and a target are chosen.</summary>
+    [Parameter]
+    public bool Ready { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnGun { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnSpotter { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnDirector { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> OnIntensive { get; set; }
+
+    [Parameter]
+    public EventCallback OnPropose { get; set; }
+}
