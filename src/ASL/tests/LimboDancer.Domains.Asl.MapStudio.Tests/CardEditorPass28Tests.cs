@@ -1,6 +1,7 @@
 using Bunit;
 using LimboDancer.Domains.Asl.MapStudio.Components.Cards;
 using LimboDancer.Domains.Asl.MapStudio.Services;
+using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Play;
 using Microsoft.Extensions.DependencyInjection;
 using EditorPage = LimboDancer.Domains.Asl.MapStudio.Components.Pages.CardEditor;
@@ -88,17 +89,18 @@ public sealed class CardEditorPass28Tests : IDisposable
         Assert.Empty(draft.Build("x").Card!.SpecialRules[0].Tokens);
     }
 
-    // R28.2, R28.3: the card's boards drawn as one map; a building is found whole from a hex, and areas and exit hexes are checked against the boards.
+    // R28.2, R28.3: the card's boards drawn as one map, the hex under a point, and areas and exit hexes checked against the boards. The synthetic board
+    // has no building hex, so the whole-building join is checked on board 01 in the Studio (the built-in cards' areas pass it).
     [Fact]
-    public void TheMapFindsBuildingsAndChecksTheAreas()
+    public void TheMapChecksTheAreas()
     {
         var cardMaps = new CardMaps(maps);
         var (map, problems) = cardMaps.Load([new ScenarioCardBoard("bd02", 0, 0, false)]);
         Assert.True(map is not null, string.Join("; ", problems));
-        var buildingHex = map!.Facts.Hexes.First(hex => hex.Center.Terrain is { IsBuilding: true }).Hex.ToString();
-        var openHex = map.Facts.Hexes.First(hex => hex.Center.Terrain is not { IsBuilding: true }).Hex.ToString();
-        Assert.Equal([buildingHex], CardMaps.Building(map, new CardHex("bd02", buildingHex)));
+        var openHex = map!.Facts.Hexes.First(hex => hex.Center.Terrain is not { IsBuilding: true }).Hex.ToString();
         Assert.Empty(CardMaps.Building(map, new CardHex("bd02", openHex)));
+        Assert.Equal(new CardHex("bd02", "A1"), CardMaps.HexAt(map, map.Render.Grid.Geometry.CenterDot(map.Composition!.Map.Locate(BoardRef.Parse("bd02"), HexName.Parse("A1"))!.Value).X,
+            map.Render.Grid.Geometry.CenterDot(map.Composition.Map.Locate(BoardRef.Parse("bd02"), HexName.Parse("A1"))!.Value).Y));
 
         // The render endpoint can draw the map: its reference loads as a board.
         Assert.NotNull(maps.Load(map.Ref).Board);
@@ -108,14 +110,19 @@ public sealed class CardEditorPass28Tests : IDisposable
         {
             Sides =
             [
-                Side("german", Group("G", (buildingHex, "building", [buildingHex, openHex]), "attacker-squad")),
+                Side("german", Group("G", (openHex, "building", [openHex, "Z9"]), "attacker-squad")),
                 Side("russian", Group("R", ("entry", "entry", ["B2"]), "defender-squad")),
             ],
             VictoryConditions = new ScenarioCardVictory("exit", "Exit.", ["A26.23"],
                 [new ScenarioCardOutcome("german", false, [new ScenarioCardCondition("exit-vp", "german", AtLeast: 1, Edge: "top", Near: ["bd02:A1", "bd02:Z9"])])], "russian"),
         };
         var found = CardMaps.Check(card, map);
-        Assert.Contains(found, item => item.Contains($"is not one whole building: the building at {buildingHex} is {buildingHex}", StringComparison.Ordinal));
+        Assert.Contains(found, item => item.Contains("names Z9, not hexes of bd02", StringComparison.Ordinal));
+        var single = CardMaps.Check(card with
+        {
+            Sides = [Side("german", Group("G", (openHex, "building", [openHex]), "attacker-squad")), card.Sides[1]]
+        }, map);
+        Assert.Contains(single, item => item.Contains($"bd02 {openHex} is not a building hex", StringComparison.Ordinal));
         Assert.Contains(found, item => item.Contains("names B2, which are not on the top edge", StringComparison.Ordinal));
         Assert.Contains(found, item => item.Contains("bd02:Z9", StringComparison.Ordinal));
         Assert.DoesNotContain(found, item => item.Contains("bd02:A1,", StringComparison.Ordinal));
@@ -185,6 +192,12 @@ public sealed class CardEditorPass28Tests : IDisposable
         editor.Find("#edit-balance-0").Change("Add a squad.");
         editor.Find("#edit-balance-1").Change("Add a leader.");
         editor.Find("#edit-victory-rules").Change("A26.1");
+        editor.Find("#edit-day").Change("3");
+        editor.Find("#edit-month").Change("10");
+        editor.Find("#edit-year").Change("1942");
+        editor.Find("#edit-edge-0").Change("bottom");
+        editor.Find("#edit-edge-1").Change("top");
+        Assert.NotNull(editor.Find("#edit-valid"));
         editor.Find("#edit-save").Click();
         Assert.Contains("Saved 'formed'", editor.Find("#edit-note").TextContent, StringComparison.Ordinal);
         var card = live.Cards.Read("formed", live.Catalogs[0])!.Card!;
