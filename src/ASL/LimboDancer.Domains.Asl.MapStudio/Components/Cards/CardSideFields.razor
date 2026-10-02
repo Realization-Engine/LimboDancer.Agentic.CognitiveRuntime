@@ -75,7 +75,8 @@
     {
         var at = index;
         <CardGroupFields Id="@($"edit-group-{Index}-{at}")" Index="@at" Group="@SideDraft.Groups[at]" Side="@SideDraft.Side" Catalog="@Catalog" Definitions="@Definitions"
-                         Boards="@Boards" Picking="@Picking" OnPick="@OnPick" RemoveGroup="@(() => Set(() => SideDraft.Groups.RemoveAt(at)))" Changed="@Changed" />
+                         Boards="@Boards" Picking="@Picking" OnPick="@OnPick" RemoveGroup="@(() => Set(() => SideDraft.Groups.RemoveAt(at)))" Changed="@Changed"
+                         RenameArea="@RenameArea" />
     }
     <button id="@($"edit-group-add-{Index}")" type="button" @onclick="AddGroup">Add an OB group</button>
 </fieldset>
@@ -108,6 +109,10 @@
 
     [Parameter]
     public EventCallback Changed { get; set; }
+
+    /// <summary>An area's new id, which the card's references to it follow (CardDraft.RenameArea).</summary>
+    [Parameter]
+    public EventCallback<(AreaDraft Area, string Id)> RenameArea { get; set; }
 
     private SideDraft SideDraft => Draft.Sides[Index];
 

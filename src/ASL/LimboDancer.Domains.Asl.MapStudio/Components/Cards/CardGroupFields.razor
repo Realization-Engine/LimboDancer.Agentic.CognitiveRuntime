@@ -18,7 +18,8 @@
             var at = index;
             var area = Group.Areas[at];
             <CardAreaFields Id="@($"{Id}-area-{at}")" Area="@area" Boards="@Boards" Picking="@ReferenceEquals(Picking, area)"
-                            Pick="@(() => OnPick.InvokeAsync(area))" Remove="@(() => Set(() => Group.Areas.RemoveAt(at)))" Changed="@Changed" />
+                            Pick="@(() => OnPick.InvokeAsync(area))" Remove="@(() => Set(() => Group.Areas.RemoveAt(at)))" Changed="@Changed"
+                            Renamed="@(id => RenameArea.InvokeAsync((area, id)))" />
         }
     </ul>
     <button id="@($"{Id}-area-add")" type="button" @onclick="@(() => Set(() => Group.Areas.Add(new AreaDraft { Id = NewAreaId() })))">Add an area</button>
@@ -85,6 +86,9 @@
 
     [Parameter]
     public EventCallback RemoveGroup { get; set; }
+
+    [Parameter]
+    public EventCallback<(AreaDraft Area, string Id)> RenameArea { get; set; }
 
     [Parameter]
     public EventCallback Changed { get; set; }

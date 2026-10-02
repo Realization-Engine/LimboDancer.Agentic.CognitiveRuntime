@@ -157,6 +157,33 @@ public sealed class CardDraft
         Victory.Otherwise = Follow(Victory.Otherwise);
     }
 
+    /// <summary>
+    /// An area's new id, which its group's counter lines and the Victory Conditions naming it follow (pass 28), so picking or retyping an area does not
+    /// leave them naming an area that is gone.
+    /// </summary>
+    public void RenameArea(AreaDraft area, string id)
+    {
+        ArgumentNullException.ThrowIfNull(area);
+        var old = area.Id;
+        area.Id = id;
+        if (old.Length == 0 || old == id || Sides.SelectMany(side => side.Groups).FirstOrDefault(group => group.Areas.Contains(area)) is not { } owner
+            || owner.Areas.Any(other => other != area && other.Id == old))
+        {
+            return;
+        }
+
+        foreach (var line in owner.Units.Where(line => line.Area == old))
+        {
+            line.Area = id;
+        }
+
+        string Follow(string words) => string.Join(' ', CardDraft.Words(words).Select(word => word == old ? id : word));
+        foreach (var condition in Victory.Outcomes.SelectMany(outcome => outcome.Conditions))
+        {
+            (condition.Buildings, condition.Versus, condition.Building) = (Follow(condition.Buildings), Follow(condition.Versus), condition.Building == old ? id : condition.Building);
+        }
+    }
+
     internal static string Text(int value) => value.ToString(CultureInfo.InvariantCulture);
 
     internal static string Text(int? value) => value?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;

@@ -4,7 +4,7 @@
    may be picked on the map (ruling R28.2): a click on a building picks the whole building, a click on an entry hex adds or removes it. *@
 <li class="card-area" id="@Id">
     <span class="card-area-line">
-        <label>id <input id="@($"{Id}-id")" value="@Area.Id" @onchange="@(args => Set(() => Area.Id = Text(args)))" size="6" /></label>
+        <label>id <input id="@($"{Id}-id")" value="@Area.Id" @onchange="@(args => Renamed.InvokeAsync(Text(args).Trim()))" size="6" /></label>
         <label>
             kind
             <select id="@($"{Id}-kind")" value="@Area.Kind" @onchange="@(args => Set(() => Area.Kind = Text(args)))">
@@ -96,6 +96,10 @@
 
     [Parameter]
     public EventCallback Remove { get; set; }
+
+    /// <summary>A new id typed for the area; the card's counter lines and conditions naming it follow.</summary>
+    [Parameter]
+    public EventCallback<string> Renamed { get; set; }
 
     [Parameter]
     public EventCallback Changed { get; set; }

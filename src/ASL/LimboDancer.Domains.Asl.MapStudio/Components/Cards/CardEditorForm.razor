@@ -14,7 +14,7 @@
     {
         var at = index;
         <CardSideFields Draft="@Draft" Index="@at" Sides="@Sides" Catalog="@Catalog" Definitions="@Definitions(Draft.Sides[at].Side)" Boards="@CardBoards"
-                        Picking="@picking" OnPick="@Pick" Changed="@Changed" />
+                        Picking="@picking" OnPick="@Pick" Changed="@Changed" RenameArea="@RenameArea" />
     }
     <CardRulesFields Draft="@Draft" Changed="@Changed" />
     <CardVictoryFields Draft="@Draft" Picking="@picking" OnPick="@Pick" Changed="@Changed" />
@@ -87,6 +87,12 @@
         _ => [],
     };
 
+    private Task RenameArea((AreaDraft Area, string Id) change)
+    {
+        Draft.RenameArea(change.Area, change.Id);
+        return Changed.InvokeAsync();
+    }
+
     private void Pick(object target)
     {
         picking = ReferenceEquals(picking, target) ? null : target;
@@ -108,7 +114,8 @@
                     return;
                 }
 
-                (area.Id, area.Hexes, area.Board) = (hex.Hex, string.Join(' ', building), several ? hex.Board : string.Empty);
+                Draft.RenameArea(area, hex.Hex);
+                (area.Hexes, area.Board) = (string.Join(' ', building), several ? hex.Board : string.Empty);
                 picking = null;
                 break;
             case AreaDraft area:
