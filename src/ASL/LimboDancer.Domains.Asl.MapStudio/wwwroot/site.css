@@ -1680,3 +1680,11 @@ details.advanced > summary {
 .rule-help-detail > p {
     margin: 0.25rem 0 0;
 }
+
+/* Pass 28b demo: the Deploy panel's SW checkboxes keep apart, so each label reads with its own box. */
+#deploy-weapons {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 1rem;
+}
