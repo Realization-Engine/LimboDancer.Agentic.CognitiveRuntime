@@ -1,6 +1,6 @@
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Maps.Geometry;
-using LimboDancer.Domains.Asl.ScenarioA1;
+using LimboDancer.Domains.Asl.Rules;
 using LimboDancer.Domains.Asl.Units.Documents;
 using LimboDancer.Domains.Asl.Units.State;
 

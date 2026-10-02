@@ -171,8 +171,8 @@ public sealed class DeclareOverrunTests : IDisposable
         Assert.Equal(PlayOutcome.Committed, decline.Outcome);
         var events = store.Read(Scope)!.Events.Skip((int)pending).ToArray();
         Assert.Equal(["overrun-declared", "entry-forced-back"], events.Select(item => item.Type));
-        Assert.Equal(ScenarioA1.ScenarioA1ConcealedSmcOverrunPackage.Identity.ToString(), events[0].RulePackage);
-        Assert.Equal(ScenarioA1.ScenarioA1PostRevealPackage.Identity.ToString(), events[1].RulePackage);
+        Assert.Equal(Rules.ScenarioA1ConcealedSmcOverrunPackage.Identity.ToString(), events[0].RulePackage);
+        Assert.Equal(Rules.ScenarioA1PostRevealPackage.Identity.ToString(), events[1].RulePackage);
         Assert.Contains(decline.Plan!.Reasons, reason => reason.StartsWith("play.declined", StringComparison.Ordinal));
         Assert.Equal(("bd01:D4:0", 2, true), (Current.Location("g1")!.Location.ToString(), Current.Unit("g1")!.MfSpent, Current.Unit("g1")!.MovementEnded));
         Assert.Empty(Current.OpenAttempts);
@@ -223,7 +223,7 @@ public sealed class DeclareOverrunTests : IDisposable
 
         var events = store.Read(Scope)!.Events.Skip((int)pending).ToArray();
         Assert.Equal(["overrun-declared", "dice-rolled", "task-check", "entry-forced-back"], events.Select(item => item.Type));
-        Assert.All(events, item => Assert.Equal(ScenarioA1.ScenarioA1OvrNtcPackage.Identity.ToString(), item.RulePackage));
+        Assert.All(events, item => Assert.Equal(Rules.ScenarioA1OvrNtcPackage.Identity.ToString(), item.RulePackage));
         Assert.Equal(OverrunDeclared.Elected, Assert.IsType<OverrunDeclared>(events[0].Payload).Choice);
         var roll = Assert.IsType<DiceRolled>(events[1].Payload);
         Assert.Equal(("declare-1-roll-1", TaskCheck.OvrNtc), (roll.Roll, roll.Purpose));

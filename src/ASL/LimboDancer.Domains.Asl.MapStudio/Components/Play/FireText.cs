@@ -1,5 +1,5 @@
 using System.Globalization;
-using LimboDancer.Domains.Asl.ScenarioA1;
+using LimboDancer.Domains.Asl.Rules;
 
 namespace LimboDancer.Domains.Asl.MapStudio.Components.Play;
 

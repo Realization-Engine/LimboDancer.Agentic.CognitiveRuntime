@@ -1,6 +1,6 @@
 using System.Text.Json;
 using LimboDancer.Abstractions.Actions;
-using LimboDancer.Domains.Asl.ScenarioA1;
+using LimboDancer.Domains.Asl.Rules;
 
 namespace LimboDancer.Domains.Asl.Play;
 

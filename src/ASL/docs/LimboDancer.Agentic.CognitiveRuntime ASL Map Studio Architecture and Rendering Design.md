@@ -55,7 +55,7 @@ MapStudio ------> Maps, Maps.Vasl, Maps.Rendering
 
 ### 2.3 Existing solution gap
 
-The Scenario A1 projects (`LimboDancer.Domains.Asl.ScenarioA1` and its tests) exist under `src/ASL/` but are not in `LimboDancer.Domains.Asl.sln`. They also opt out of lock files and code-style enforcement. Adding them to the solution is outside this design. The map projects do not opt out of either.
+The rules projects (`LimboDancer.Domains.Asl.Rules`, named `LimboDancer.Domains.Asl.ScenarioA1` until 2026-10-02, and its tests) exist under `src/ASL/` but are not in `LimboDancer.Domains.Asl.sln`. They also opt out of lock files and code-style enforcement. Adding them to the solution is outside this design. The map projects do not opt out of either.
 
 ## 3. SVG rendering (`LimboDancer.Domains.Asl.Maps.Rendering`)
 
