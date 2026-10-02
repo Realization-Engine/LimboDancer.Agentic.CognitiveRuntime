@@ -127,7 +127,10 @@ public sealed class ScenarioA1CloseCombatTests
         CloseCombatUnit[] units = [Unit("g1", "attacker-squad", "german", advanced: true), Unit("r1", "defender-squad", "russian", broken: true)];
         var facts = new AmbushFacts("CCPh", At, "woods", "german", units, new Dictionary<string, int> { ["german"] = 2, ["russian"] = 3 });
         Assert.Null(ScenarioA1CloseCombatCalculator.ResolveAmbush(facts, Reference).Ambusher);
-        Assert.Equal("german", ScenarioA1CloseCombatCalculator.ResolveAmbush(facts with { DarkNight = true }, Reference).Ambusher);
+        Assert.Equal("german", ScenarioA1CloseCombatCalculator.ResolveAmbush(facts with
+        {
+            DarkNight = true
+        }, Reference).Ambusher);
     }
 
     [Fact]
@@ -139,16 +142,25 @@ public sealed class ScenarioA1CloseCombatTests
         var ambush = ScenarioA1CloseCombatCalculator.ResolveAmbush(facts, Reference);
         Assert.Equal("german", ambush.Ambusher);
         Assert.Equal([("broken", 1m)], ambush.Sides.Single(item => item.Side == "russian").Drm.Select(item => (item.Name, item.Value)));
-        var none = ScenarioA1CloseCombatCalculator.ResolveAmbush(facts with { Rolls = new Dictionary<string, int> { ["german"] = 2, ["russian"] = 3 } }, Reference);
+        var none = ScenarioA1CloseCombatCalculator.ResolveAmbush(facts with
+        {
+            Rolls = new Dictionary<string, int> { ["german"] = 2, ["russian"] = 3 }
+        }, Reference);
         Assert.Null(none.Ambusher);
 
         // No Ambush in the open, or where nobody advanced.
-        Assert.Contains("asl.a1.cc.ambush-not-possible", ScenarioA1CloseCombatCalculator.ResolveAmbush(facts with { Terrain = "open-ground" }, Reference).Reasons);
+        Assert.Contains("asl.a1.cc.ambush-not-possible", ScenarioA1CloseCombatCalculator.ResolveAmbush(facts with
+        {
+            Terrain = "open-ground"
+        }, Reference).Reasons);
 
         // A hero is Stealthy (-1, A11.17, A15.24); an Inexperienced unit is Lax (+1, A19.36); the best leader's modifier unless alone.
         CloseCombatUnit[] mixed = [Unit("g1", "attacker-conscript-squad", "german", advanced: true), Unit("gh", "attacker-hero", "german"),
             Unit("gl", "attacker-leader-9-1", "german"), Unit("r1", "defender-squad", "russian")];
-        var drm = ScenarioA1CloseCombatCalculator.ResolveAmbush(facts with { Units = mixed }, Reference).Sides.Single(item => item.Side == "german").Drm;
+        var drm = ScenarioA1CloseCombatCalculator.ResolveAmbush(facts with
+        {
+            Units = mixed
+        }, Reference).Sides.Single(item => item.Side == "german").Drm;
         Assert.Equal([("lax", 1m), ("stealthy", -1m), ("leadership:gl", -1m)], drm.Select(item => (item.Name, item.Value)));
 
         // The ambusher's round comes first, with -1, and attacks against it take +1 in the other side's round (A11.4, A11.32).
@@ -188,9 +200,18 @@ public sealed class ScenarioA1CloseCombatTests
             Unit("r1", "defender-half-squad", "russian") with { Weapons = ["r-mmg"] }];
         var facts = Facts(units, [Attack(["g1", "g2"], ["r1"])], Rolls([1, 3]));
         Assert.Equal(["asl.a1.cc.roll-missing:weaponLoss:r-mmg"], ScenarioA1CloseCombatCalculator.Resolve(facts, Reference).Reasons);
-        var lost = ScenarioA1CloseCombatCalculator.Resolve(facts with { Rolls = Rolls([1, 3]) with { WeaponLoss = new Dictionary<string, int> { ["r-mmg"] = 6 } } }, Reference);
+        var lost = ScenarioA1CloseCombatCalculator.Resolve(facts with
+        {
+            Rolls = Rolls([1, 3]) with
+            {
+                WeaponLoss = new Dictionary<string, int> { ["r-mmg"] = 6 }
+            }
+        }, Reference);
         Assert.Equal(("4-1", true), (lost.Attacks[0].Odds, Assert.Single(lost.WeaponEffects).Eliminated));
-        var kept = ScenarioA1CloseCombatCalculator.Resolve(facts with { Rolls = Rolls([3, 1]) }, Reference);
+        var kept = ScenarioA1CloseCombatCalculator.Resolve(facts with
+        {
+            Rolls = Rolls([3, 1])
+        }, Reference);
         Assert.Empty(kept.WeaponEffects);
     }
 
@@ -271,7 +292,10 @@ public sealed class ScenarioA1CloseCombatTests
     // an Original 2 matter), and every dr over 1 to 6.
     private static int Explore(CloseCombatFacts facts, CloseCombatRolls rolls)
     {
-        var result = ScenarioA1CloseCombatCalculator.Resolve(facts with { Rolls = rolls }, Reference);
+        var result = ScenarioA1CloseCombatCalculator.Resolve(facts with
+        {
+            Rolls = rolls
+        }, Reference);
         if (result.Disposition == CloseCombatResolution.Resolved)
         {
             return 1;
@@ -289,7 +313,10 @@ public sealed class ScenarioA1CloseCombatTests
             {
                 for (var second = 1; second <= 6; second++)
                 {
-                    paths += Explore(facts, rolls with { Attacks = With(rolls.Attacks, rest, (IReadOnlyList<int>)[first, second]) });
+                    paths += Explore(facts, rolls with
+                    {
+                        Attacks = With(rolls.Attacks, rest, (IReadOnlyList<int>)[first, second])
+                    });
                 }
             }
         }
@@ -305,7 +332,10 @@ public sealed class ScenarioA1CloseCombatTests
                     next[attack + ":" + id] = value;
                 }
 
-                paths += Explore(facts, rolls with { RandomSelection = next });
+                paths += Explore(facts, rolls with
+                {
+                    RandomSelection = next
+                });
             }
         }
         else

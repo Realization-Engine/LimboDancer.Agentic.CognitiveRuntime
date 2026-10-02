@@ -81,20 +81,32 @@ public sealed class ScenarioA1Pass10Tests
     public void AWallReplacesALowerInHexTemAndLeavesNoFfmo()
     {
         // B9.3, B9.31 (ruling R10.5): a moving squad in Open Ground behind a wall takes +2, not FFMO.
-        var wall = Complete(Moving(Attack([4, 4])) with { HexsideTem = new FireHexsideTem("wall", 2) });
+        var wall = Complete(Moving(Attack([4, 4])) with
+        {
+            HexsideTem = new FireHexsideTem("wall", 2)
+        });
         Assert.Contains(("wall", 2m), Drm(wall));
         Assert.DoesNotContain(Drm(wall), item => item.Name == "ffmo");
         Assert.Contains(("ffnam", -1m), Drm(wall));
 
         // Not cumulative: the wooden building's +2 stands against a hedge's +1, and a wall's +2 replaces the woods' +1.
-        var hedge = Complete(Attack([4, 4], "wooden-building") with { HexsideTem = new FireHexsideTem("hedge", 1) });
+        var hedge = Complete(Attack([4, 4], "wooden-building") with
+        {
+            HexsideTem = new FireHexsideTem("hedge", 1)
+        });
         Assert.Equal([("tem:wooden-building", 2m)], Drm(hedge).Where(item => item.Name.StartsWith("tem:", StringComparison.Ordinal) || item.Name is "wall" or "hedge"));
-        var woods = Complete(Attack([4, 4], "woods") with { HexsideTem = new FireHexsideTem("wall", 2) });
+        var woods = Complete(Attack([4, 4], "woods") with
+        {
+            HexsideTem = new FireHexsideTem("wall", 2)
+        });
         Assert.Contains(("wall", 2m), Drm(woods));
         Assert.DoesNotContain(Drm(woods), item => item.Name == "tem:woods");
 
         // More than the printed TEM is outside the package.
-        var wrong = ScenarioA1FireCalculator.Resolve(Attack([4, 4]) with { HexsideTem = new FireHexsideTem("hedge", 2) }, Reference);
+        var wrong = ScenarioA1FireCalculator.Resolve(Attack([4, 4]) with
+        {
+            HexsideTem = new FireHexsideTem("hedge", 2)
+        }, Reference);
         Assert.Contains("asl.a1.fire.terrain-fact-outside", wrong.Reasons);
     }
 
@@ -102,13 +114,29 @@ public sealed class ScenarioA1Pass10Tests
     public void HeightAdvantageIsPlusOneOnlyWithNoOtherPositiveTem()
     {
         // B10.31 (ruling R10.4): +1 in Open Ground, and no FFMO against a moving target.
-        var open = Complete(Moving(Attack([4, 4])) with { HeightAdvantage = true, SameLevel = false, TargetLevelAbove = 1 });
+        var open = Complete(Moving(Attack([4, 4])) with
+        {
+            HeightAdvantage = true,
+            SameLevel = false,
+            TargetLevelAbove = 1
+        });
         Assert.Contains(("height-advantage", 1m), Drm(open));
         Assert.DoesNotContain(Drm(open), item => item.Name == "ffmo");
 
-        var woods = Complete(Attack([4, 4], "woods") with { HeightAdvantage = true, SameLevel = false, TargetLevelAbove = 1 });
+        var woods = Complete(Attack([4, 4], "woods") with
+        {
+            HeightAdvantage = true,
+            SameLevel = false,
+            TargetLevelAbove = 1
+        });
         Assert.DoesNotContain(Drm(woods), item => item.Name == "height-advantage");
-        var walled = Complete(Attack([4, 4]) with { HeightAdvantage = true, HexsideTem = new FireHexsideTem("hedge", 1), SameLevel = false, TargetLevelAbove = 1 });
+        var walled = Complete(Attack([4, 4]) with
+        {
+            HeightAdvantage = true,
+            HexsideTem = new FireHexsideTem("hedge", 1),
+            SameLevel = false,
+            TargetLevelAbove = 1
+        });
         Assert.DoesNotContain(Drm(walled), item => item.Name == "height-advantage");
     }
 
@@ -116,16 +144,31 @@ public sealed class ScenarioA1Pass10Tests
     public void FireAcrossLevelsIsDecidedWithPbfAtMostOneLevelUp()
     {
         // A7.21 (ruling R10.4): an adjacent target one level up takes PBF; two levels up does not.
-        var oneUp = Complete(Attack([4, 4], "stone-building", range: 1) with { SameLevel = false, TargetLevelAbove = 1 });
+        var oneUp = Complete(Attack([4, 4], "stone-building", range: 1) with
+        {
+            SameLevel = false,
+            TargetLevelAbove = 1
+        });
         Assert.Equal("resolved", oneUp.Disposition);
         Assert.Contains("point-blank-fire", Multipliers(oneUp));
-        var twoUp = Complete(Attack([4, 4], "stone-building", range: 1) with { SameLevel = false, TargetLevelAbove = 2 });
+        var twoUp = Complete(Attack([4, 4], "stone-building", range: 1) with
+        {
+            SameLevel = false,
+            TargetLevelAbove = 2
+        });
         Assert.DoesNotContain("point-blank-fire", Multipliers(twoUp));
-        var below = Complete(Attack([4, 4], "stone-building", range: 1) with { SameLevel = false, TargetLevelAbove = -2 });
+        var below = Complete(Attack([4, 4], "stone-building", range: 1) with
+        {
+            SameLevel = false,
+            TargetLevelAbove = -2
+        });
         Assert.Contains("point-blank-fire", Multipliers(below));
 
         // A target at another level names how far above the firer it is.
-        var unnamed = ScenarioA1FireCalculator.Resolve(Attack([4, 4]) with { SameLevel = false }, Reference);
+        var unnamed = ScenarioA1FireCalculator.Resolve(Attack([4, 4]) with
+        {
+            SameLevel = false
+        }, Reference);
         Assert.Contains("asl.a1.fire.fact-missing:targetLevelAbove", unnamed.Reasons);
     }
 
@@ -147,12 +190,18 @@ public sealed class ScenarioA1Pass10Tests
     public void ASnapShotIsAreaFireWithNoTemFfmoOrFfnam()
     {
         // A8.15 (ruling R10.13): 4 FP halved to 2, and the woods' TEM, FFMO, and FFNAM do not apply.
-        var snap = Complete(Moving(Attack([3, 3], "woods")) with { SnapShot = true });
+        var snap = Complete(Moving(Attack([3, 3], "woods")) with
+        {
+            SnapShot = true
+        });
         Assert.Contains("snap-shot", Multipliers(snap));
         Assert.DoesNotContain(Drm(snap), item => item.Name is "tem:woods" or "ffmo" or "ffnam");
 
         // Only as Defensive First Fire in the MPh.
-        var prep = ScenarioA1FireCalculator.Resolve(Attack([3, 3]) with { SnapShot = true }, Reference);
+        var prep = ScenarioA1FireCalculator.Resolve(Attack([3, 3]) with
+        {
+            SnapShot = true
+        }, Reference);
         Assert.Contains("asl.a1.fire.terrain-fact-outside", prep.Reasons);
     }
 
@@ -160,7 +209,10 @@ public sealed class ScenarioA1Pass10Tests
     public void HazardousMovementIsMinusTwoWithNoFfmoOrFfnam()
     {
         // A4.62 (ruling R10.8): a crew pushing its Gun.
-        var push = Complete(Moving(Attack([5, 5])) with { HazardousMovement = true });
+        var push = Complete(Moving(Attack([5, 5])) with
+        {
+            HazardousMovement = true
+        });
         Assert.Contains(("hazardous-movement", -2m), Drm(push));
         Assert.DoesNotContain(Drm(push), item => item.Name is "ffmo" or "ffnam");
     }
@@ -180,11 +232,17 @@ public sealed class ScenarioA1Pass10Tests
     {
         // B9.31 (ruling R10.5): as a Hindrance does, a claimed wall TEM lowers the Residual FP counter left.
         var open = Complete(Moving(Attack([6, 6])));
-        var walled = Complete(Moving(Attack([6, 6])) with { HexsideTem = new FireHexsideTem("wall", 2) });
+        var walled = Complete(Moving(Attack([6, 6])) with
+        {
+            HexsideTem = new FireHexsideTem("wall", 2)
+        });
         Assert.NotNull(open.Arithmetic!.ResidualFp);
         Assert.True(walled.Arithmetic!.ResidualFp is null || walled.Arithmetic.ResidualFp < open.Arithmetic.ResidualFp);
 
         // A8.223 (referee, pass 10): a Snap Shot leaves no Residual FP.
-        Assert.Null(Complete(Moving(Attack([6, 6])) with { SnapShot = true }).Arithmetic!.ResidualFp);
+        Assert.Null(Complete(Moving(Attack([6, 6])) with
+        {
+            SnapShot = true
+        }).Arithmetic!.ResidualFp);
     }
 }

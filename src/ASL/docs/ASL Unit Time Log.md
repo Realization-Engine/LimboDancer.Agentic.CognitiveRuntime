@@ -811,3 +811,13 @@ Backlog section 44, on the user's go-ahead after pass 28c. No estimate. Branch `
 | Full local suite: Dice 24, Authoring 166 of 167 (the architecture test, held `.git/worktrees`; Docker passes it), MapStudio 264, Maps 244, Maps.Rendering 34, Maps.Vasl 121, Units 408, Units.CounterSheets 19, Units.Rendering 352, Play 615, Rules 484; the chart supplement regeneration (identical) | 07:56 | 08:25 | 0:29 | |
 | Merge gate: commit 07084d2, the Docker Linux check (every step exit 0; Authoring 167, Play 615, MapStudio 264, Rules 484), the time log, merge into main, push | 07:56 | 08:31 | 0:35 | Ran beside the local suite |
 | **Rename total** | 07:42 | 08:31 | **0:49** | The edit took 0:13; the rest was the test runs |
+
+
+## The rules projects in the solution
+
+On the user's go-ahead after the rename, with every new `--warnaserror` error fixed. No estimate. Branch `feature/rules-in-solution`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Both projects added to `LimboDancer.Domains.Asl.sln` (`LimboDancer.Abstractions`, which `dotnet sln add` pulled in, taken out again); their lock-file and code-style opt-outs removed; lock files generated; a locked restore passes | 08:57 | 09:00 | 0:03 | |
+| The `--warnaserror` build's 1,160 new errors fixed with `dotnet format` (style IDE0011 and IDE0040, then whitespace IDE0055), limited to the files named: the library 462 in 25 files, the tests 698 in 24 files; a token comparison shows no change but added braces and access modifiers; the separate rules-test steps of CI and the Docker check removed; the architecture design's note updated | 09:00 | 09:08 | 0:08 | Release and Debug build with no error |

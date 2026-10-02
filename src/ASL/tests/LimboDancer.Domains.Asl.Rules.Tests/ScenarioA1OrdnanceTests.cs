@@ -36,11 +36,18 @@ public sealed class ScenarioA1OrdnanceTests
     private static OrdnanceShot Russian(int range = 5, string phase = "PFPh", int turn = 0, bool woods = false) =>
         new(phase, "phasing", "russian", new OrdnanceGun("ru-gun", "defender-at-gun", false, 0, false, false),
             new OrdnanceCrew("ru-crew", "defender-crew", false, false, false, false, false), At, range, turn, woods, true, 0,
-            Hit(phase, "phasing", "open-ground", [Target("de-s", "attacker-squad")]) with { TargetSideElr = 3 }, new OrdnanceRolls(null, null, null, null, null));
+            Hit(phase, "phasing", "open-ground", [Target("de-s", "attacker-squad")]) with
+            {
+                TargetSideElr = 3
+            }, new OrdnanceRolls(null, null, null, null, null));
 
     private static OrdnanceShot With(OrdnanceShot shot, int[] toHit, int? subsequent = null) => shot with
     {
-        Rolls = shot.Rolls! with { ToHit = toHit, Subsequent = subsequent }
+        Rolls = shot.Rolls! with
+        {
+            ToHit = toHit,
+            Subsequent = subsequent
+        }
     };
 
     /// <summary>Resolves a shot, answering each further roll with a fixed value: IFT and MC DR 3 and 4, drs of 2.</summary>
@@ -49,7 +56,10 @@ public sealed class ScenarioA1OrdnanceTests
         var rolls = shot.Rolls!;
         for (var step = 0; step < 60; step++)
         {
-            var result = ScenarioA1OrdnanceCalculator.Resolve(shot with { Rolls = rolls }, Reference);
+            var result = ScenarioA1OrdnanceCalculator.Resolve(shot with
+            {
+                Rolls = rolls
+            }, Reference);
             if (result.Reasons is not [{ } reason] || !reason.StartsWith("asl.a1.ordnance.roll-missing:", StringComparison.Ordinal))
             {
                 return result;
@@ -65,20 +75,32 @@ public sealed class ScenarioA1OrdnanceTests
     {
         if (key == "subsequent")
         {
-            return rolls with { Subsequent = dr };
+            return rolls with
+            {
+                Subsequent = dr
+            };
         }
 
         if (key.StartsWith("criticalSelection:", StringComparison.Ordinal))
         {
             var units = key["criticalSelection:".Length..].Split(',');
-            return rolls with { CriticalSelection = units.Select((id, index) => (id, index)).ToDictionary(item => item.id, item => item.index == 0 ? 6 : 1) };
+            return rolls with
+            {
+                CriticalSelection = units.Select((id, index) => (id, index)).ToDictionary(item => item.id, item => item.index == 0 ? 6 : 1)
+            };
         }
 
         var critical = key.StartsWith("critical-hit:", StringComparison.Ordinal);
         var inner = key[(key.IndexOf(':', StringComparison.Ordinal) + 1)..];
         var fire = (critical ? rolls.CriticalHit : rolls.Hit) ?? new FireRolls(null, null, null, null);
         fire = FireAnswer(fire, inner, iftAttack, twoDice, dr);
-        return critical ? rolls with { CriticalHit = fire } : rolls with { Hit = fire };
+        return critical ? rolls with
+        {
+            CriticalHit = fire
+        } : rolls with
+        {
+            Hit = fire
+        };
     }
 
     private static FireRolls FireAnswer(FireRolls rolls, string key, int[] iftAttack, int[] twoDice, int dr)
@@ -163,7 +185,11 @@ public sealed class ScenarioA1OrdnanceTests
     public void AtNightTheLowVisibilityDrmIsACaseRHindranceOfItsOwnAndMudCushionsHe()
     {
         // E1.7, E3.1, E3.62 (backlog pass 16; referee, pass 16): +1 Case R for Low Visibility, apart from the LOS Hindrance, and +1 TEM for Mud in Open Ground.
-        var drm = ScenarioA1OrdnanceCalculator.Resolve(With(German() with { LowVisibilityDrm = 1, CushionedOpenGround = true }, [6, 6]), Reference).ToHit!.Drm;
+        var drm = ScenarioA1OrdnanceCalculator.Resolve(With(German() with
+        {
+            LowVisibilityDrm = 1,
+            CushionedOpenGround = true
+        }, [6, 6]), Reference).ToHit!.Drm;
         Assert.Contains(drm, item => item.Name == "case-r:lv" && item.Value == 1);
         Assert.Contains(drm, item => item.Name == "case-q:weather-cushion" && item.Value == 1);
         Assert.DoesNotContain(drm, item => item.Name == "case-r");
@@ -180,7 +206,14 @@ public sealed class ScenarioA1OrdnanceTests
 
         // Referee's reading A: when only the lowest Final DR hits (2 + 6 = 8), the Infantry Target Type's rule still applies: a dr of 2 (at
         // most half of 8) is a Critical Hit, a 5 is not; the bracketed exception belongs to the Area and Vehicle Target Types (R24.7).
-        var hard = German(terrain: "stone-building", pinned: true, acquisition: 0) with { Hit = German().Hit! with { TargetTerrain = "stone-building", Los = new FireLos(false, 1, true, false) } };
+        var hard = German(terrain: "stone-building", pinned: true, acquisition: 0) with
+        {
+            Hit = German().Hit! with
+            {
+                TargetTerrain = "stone-building",
+                Los = new FireLos(false, 1, true, false)
+            }
+        };
         Assert.Equal(8, 2 + (int)ScenarioA1OrdnanceCalculator.Resolve(With(hard, [6, 6]), Reference).ToHit!.Drm.Sum(item => item.Value));
         Assert.True(Complete(With(hard, [1, 1], 2)).ToHit!.CriticalHit);
         Assert.False(Complete(With(hard, [1, 1], 5)).ToHit!.CriticalHit);
@@ -379,7 +412,13 @@ public sealed class ScenarioA1OrdnanceTests
         // A4.51 (ruling R5.2): a CX crew adds one to its Gun's To Hit DR.
         var shot = German();
         var plain = ScenarioA1OrdnanceCalculator.Resolve(With(shot, [6, 5]), Reference).ToHit!;
-        var tired = ScenarioA1OrdnanceCalculator.Resolve(With(shot with { Crew = shot.Crew! with { Cx = true } }, [6, 5]), Reference).ToHit!;
+        var tired = ScenarioA1OrdnanceCalculator.Resolve(With(shot with
+        {
+            Crew = shot.Crew! with
+            {
+                Cx = true
+            }
+        }, [6, 5]), Reference).ToHit!;
         Assert.DoesNotContain(plain.Drm, item => item.Name == "cx");
         Assert.Contains(tired.Drm, item => item.Name == "cx" && item.Value == 1 && item.Rule == "A4.51");
         Assert.Equal(plain.FinalDr + 1, tired.FinalDr);
@@ -391,7 +430,13 @@ public sealed class ScenarioA1OrdnanceTests
         // D9.3, D10.3 (ruling R6.1): Infantry in Open Ground with a wreck take its +1 TEM as Case Q.
         var shot = German();
         var plain = ScenarioA1OrdnanceCalculator.Resolve(With(shot, [6, 5]), Reference).ToHit!;
-        var covered = ScenarioA1OrdnanceCalculator.Resolve(With(shot with { Hit = shot.Hit! with { AfvCover = "de-wreck" } }, [6, 5]), Reference).ToHit!;
+        var covered = ScenarioA1OrdnanceCalculator.Resolve(With(shot with
+        {
+            Hit = shot.Hit! with
+            {
+                AfvCover = "de-wreck"
+            }
+        }, [6, 5]), Reference).ToHit!;
         Assert.Contains(covered.Drm, item => item.Name == "case-q:afv-cover:de-wreck" && item.Value == 1 && item.Rule == "D9.3");
         Assert.Equal(plain.FinalDr + 1, covered.FinalDr);
     }

@@ -32,7 +32,10 @@ public sealed class ScenarioA1Pass5Tests
     public void ACxFirerOrDirectorAddsOneToTheIftDrOnce()
     {
         // A4.51, R5.2: two CX firers and a CX leader add +1 once; with no CX unit the DR has no such DRM.
-        var cx = ScenarioA1FireCalculator.Resolve(Attack([6, 6], [Firer("ru-1", cx: true), Firer("ru-2", cx: true)], [German("de-s")], Leader with { Cx = true }), Reference);
+        var cx = ScenarioA1FireCalculator.Resolve(Attack([6, 6], [Firer("ru-1", cx: true), Firer("ru-2", cx: true)], [German("de-s")], Leader with
+        {
+            Cx = true
+        }), Reference);
         Assert.Equal(FireResolution.Resolved, cx.Disposition);
         Assert.Single(cx.Arithmetic!.Drm, item => item.Name.StartsWith("cx:", StringComparison.Ordinal) && item.Value == 1 && item.Rule == "A4.51");
 
@@ -84,18 +87,27 @@ public sealed class ScenarioA1Pass5Tests
         };
         Assert.Equal(["asl.a1.fire.choice-missing:battleHardening:de-s"], ScenarioA1FireCalculator.Resolve(attack, Reference).Reasons);
 
-        var refused = ScenarioA1FireCalculator.Resolve(attack with { Choices = new Dictionary<string, string> { ["battleHardening:de-s"] = "decline" } }, Reference);
+        var refused = ScenarioA1FireCalculator.Resolve(attack with
+        {
+            Choices = new Dictionary<string, string> { ["battleHardening:de-s"] = "decline" }
+        }, Reference);
         var effect = Assert.Single(refused.Effects);
         Assert.Equal(("attacker-squad", true), (effect.FinalDefinitionId, effect.HeatOfBattle!.HardeningRefused));
         Assert.Contains("hero-created:attacker-hero", effect.Events);
         Assert.Contains("battle-hardening-refused", effect.Events);
 
-        var taken = ScenarioA1FireCalculator.Resolve(attack with { Choices = new Dictionary<string, string> { ["battleHardening:de-s"] = "take" } }, Reference);
+        var taken = ScenarioA1FireCalculator.Resolve(attack with
+        {
+            Choices = new Dictionary<string, string> { ["battleHardening:de-s"] = "take" }
+        }, Reference);
         Assert.Equal("attacker-elite-squad", Assert.Single(taken.Effects).FinalDefinitionId);
 
         // An answer the attack never reaches is refused.
         Assert.Contains("asl.a1.fire.extra-choice:unlikelyKill:de-t",
-            ScenarioA1FireCalculator.Resolve(attack with { Choices = new Dictionary<string, string> { ["battleHardening:de-s"] = "take", ["unlikelyKill:de-t"] = "take" } }, Reference).Reasons);
+            ScenarioA1FireCalculator.Resolve(attack with
+            {
+                Choices = new Dictionary<string, string> { ["battleHardening:de-s"] = "take", ["unlikelyKill:de-t"] = "take" }
+            }, Reference).Reasons);
     }
 
     [Theory]
@@ -117,7 +129,10 @@ public sealed class ScenarioA1Pass5Tests
         var answered = attack with
         {
             Choices = new Dictionary<string, string> { ["unlikelyKill:de-t"] = answer },
-            Rolls = attack.Rolls! with { UnlikelyKill = dr is { } value ? new Dictionary<string, int> { ["de-t"] = value } : null },
+            Rolls = attack.Rolls! with
+            {
+                UnlikelyKill = dr is { } value ? new Dictionary<string, int> { ["de-t"] = value } : null
+            },
         };
         var result = ScenarioA1FireCalculator.Resolve(answered, Reference);
         Assert.True(result.Disposition == FireResolution.Resolved, string.Join("; ", result.Reasons));
@@ -141,7 +156,10 @@ public sealed class ScenarioA1Pass5Tests
     public void CxChangesCloseCombatAndAmbush()
     {
         static CloseCombatUnit Unit(string id, string definition, string side, bool cx = false) =>
-            new(id, definition, side, false, false, false, false, false, false, false, false, false, false, false) { Cx = cx ? true : null };
+            new(id, definition, side, false, false, false, false, false, false, false, false, false, false, false)
+            {
+                Cx = cx ? true : null
+            };
 
         // A4.51, R5.2: +1 to the attack of a CX attacker; -1 to an attack against a CX defender, for that unit.
         var facts = new CloseCombatFacts("CCPh", At, "open-ground", "german", CloseCombatFacts.Simultaneous, null,

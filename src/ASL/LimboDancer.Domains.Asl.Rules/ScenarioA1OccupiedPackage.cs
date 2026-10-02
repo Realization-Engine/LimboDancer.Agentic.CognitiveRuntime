@@ -24,7 +24,10 @@ public sealed class ScenarioA1OccupiedPackage : IDomainPackageResolver
         stream.CopyTo(buffer);
         var bytes = buffer.ToArray();
         if (Convert.ToHexStringLower(SHA256.HashData(bytes)) != ManifestSha256)
+        {
             throw new InvalidOperationException("The package manifest changed.");
+        }
+
         using var document = JsonDocument.Parse(bytes);
         var root = document.RootElement;
         if (root.GetProperty("schemaVersion").GetString() != "1.0.0"

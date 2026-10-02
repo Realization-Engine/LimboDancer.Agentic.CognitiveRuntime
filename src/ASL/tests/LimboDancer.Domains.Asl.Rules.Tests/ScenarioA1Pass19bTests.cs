@@ -36,7 +36,10 @@ public sealed class ScenarioA1Pass19bTests
         var rolls = attack.Rolls!;
         for (var step = 0; step < 20; step++)
         {
-            var result = ScenarioA1FireCalculator.Resolve(attack with { Rolls = rolls }, Reference);
+            var result = ScenarioA1FireCalculator.Resolve(attack with
+            {
+                Rolls = rolls
+            }, Reference);
             if (result.Reasons is not [{ } reason] || !reason.StartsWith("asl.a1.fire.roll-missing:", StringComparison.Ordinal))
             {
                 Assert.Equal(FireResolution.Resolved, result.Disposition);
@@ -214,7 +217,10 @@ public sealed class ScenarioA1Pass19bTests
 
         // The 8-3-8's underscored 3-3-8 is never Replaced: a Casualty MC beyond its ELR 5 (Encircled, so an Original 12 fails by six) leaves a broken
         // 2-3-7 (ruling R19.7).
-        var engineer = Resolve(Attack([4, 5], Engineer, 1) with { Targets = [Target(Engineer) with { Encircled = true }] }, [6, 6]);
+        var engineer = Resolve(Attack([4, 5], Engineer, 1) with
+        {
+            Targets = [Target(Engineer) with { Encircled = true }]
+        }, [6, 6]);
         Assert.Equal(("attacker-2nd-line-half-squad", true), (engineer.FinalDefinitionId, engineer.Broken));
         Assert.Contains("casualty-reduced-beyond-elr", engineer.Events);
     }
@@ -229,12 +235,18 @@ public sealed class ScenarioA1Pass19bTests
         Assert.DoesNotContain("replaced-by-two-half-squads", byFive.Events);
 
         // Encircled (morale 7, A7.7), the same check fails by six and Replaces it by its two broken 3-3-8.
-        var effect = Resolve(Attack([3, 4], Engineer, 1) with { Targets = [Target(Engineer) with { Encircled = true }] }, [6, 5]);
+        var effect = Resolve(Attack([3, 4], Engineer, 1) with
+        {
+            Targets = [Target(Engineer) with { Encircled = true }]
+        }, [6, 5]);
         Assert.Equal((EngineerHs, true), (effect.FinalDefinitionId, effect.Broken));
         Assert.Contains("replaced-by-two-half-squads", effect.Events);
 
         // A 3-3-8 is Disrupted instead.
-        var half = Resolve(Attack([3, 4], EngineerHs, 1) with { Targets = [Target(EngineerHs) with { Encircled = true }] }, [6, 5]);
+        var half = Resolve(Attack([3, 4], EngineerHs, 1) with
+        {
+            Targets = [Target(EngineerHs) with { Encircled = true }]
+        }, [6, 5]);
         Assert.Equal((EngineerHs, true, true), (half.FinalDefinitionId, half.Broken, half.Disrupted));
     }
 

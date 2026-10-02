@@ -23,7 +23,12 @@ public sealed class ScenarioA1Pass15Tests
             terrain, targets ?? [Target("de-s")], 3, new FireRolls(dice, null, null, null));
 
     private static FireFirer Flamethrower(string id = "ru-1", string definition = "defender-squad") =>
-        Firer(id, definition) with { Weapons = [new FireWeapon("ru-ft", "defender-ft", false, false, false)], UsesInherentFp = false, UsesSupportWeapon = true };
+        Firer(id, definition) with
+        {
+            Weapons = [new FireWeapon("ru-ft", "defender-ft", false, false, false)],
+            UsesInherentFp = false,
+            UsesSupportWeapon = true
+        };
 
     /// <summary>Resolves an attack, supplying each further roll with a fixed value: checks as given (2 and 2 by default), drs of 1.</summary>
     private static FireResolution Complete(FireAttack attack, int[]? checks = null, int molCheck = 1)
@@ -43,7 +48,10 @@ public sealed class ScenarioA1Pass15Tests
             var key = reason["asl.a1.fire.roll-missing:".Length..];
             if (key == "molCheck")
             {
-                rolls = rolls with { MolCheck = molCheck };
+                rolls = rolls with
+                {
+                    MolCheck = molCheck
+                };
                 continue;
             }
 
@@ -85,7 +93,11 @@ public sealed class ScenarioA1Pass15Tests
         Assert.Equal(24m, adjacent.Arithmetic!.TotalFirepower);
         Assert.DoesNotContain(adjacent.Arithmetic.Drm, item => item.Name.StartsWith("tem:", StringComparison.Ordinal));
         Assert.Equal(12m, Complete(Attack([5, 4], firers: [Flamethrower()], range: 2)).Arithmetic!.TotalFirepower);
-        Assert.Equal(12m, Complete(Attack([5, 4], firers: [Flamethrower()]) with { SameLevel = false, TargetLevelAbove = 2 }).Arithmetic!.TotalFirepower);
+        Assert.Equal(12m, Complete(Attack([5, 4], firers: [Flamethrower()]) with
+        {
+            SameLevel = false,
+            TargetLevelAbove = 2
+        }).Arithmetic!.TotalFirepower);
 
         // A22.32: never at Long Range through a Hindrance, nor three levels away, nor with a leader or another firer (A22.31).
         Assert.Contains("asl.a1.fire.flamethrower-outside", ScenarioA1FireCalculator.Resolve(Attack([5, 4], firers: [Flamethrower()], range: 2, hindrance: 1), Reference).Reasons);
@@ -109,7 +121,10 @@ public sealed class ScenarioA1Pass15Tests
         {
             Weapons = [new FireWeapon("ru-ft", "defender-ft", false, false, false) { Captured = true }],
         };
-        FireResolution Finnish(int[] dice, string definition) => Complete(Attack(dice, firers: [Captured(definition)]) with { FiringNationalities = ["finnish"] });
+        FireResolution Finnish(int[] dice, string definition) => Complete(Attack(dice, firers: [Captured(definition)]) with
+        {
+            FiringNationalities = ["finnish"]
+        });
         Assert.Null(Finnish([4, 3], "finnish-squad").FlamethrowerRemoved);
         Assert.Equal("ru-ft", Finnish([4, 4], "finnish-squad").FlamethrowerRemoved);
         Assert.Equal("ru-ft", Finnish([4, 2], "finnish-2nd-line-squad").FlamethrowerRemoved);
@@ -139,7 +154,11 @@ public sealed class ScenarioA1Pass15Tests
         var charge = new FireDemolitionCharge("ru-dc", "defender-dc", FireDemolitionCharge.Thrower, "ru-1", "defender-squad", false, false, null, null);
         var back = Attack([6, 6]) with
         {
-            Firers = null, FireGroupComplete = null, Los = null, Range = 0, TargetLocationId = From,
+            Firers = null,
+            FireGroupComplete = null,
+            Los = null,
+            Range = 0,
+            TargetLocationId = From,
             Targets = [Target("ru-1", "defender-squad") with { LocationId = From, Friendly = true }],
             FiringSideElr = 2,
             DemolitionCharge = charge,
@@ -147,7 +166,12 @@ public sealed class ScenarioA1Pass15Tests
         var twelve = Complete(back);
         Assert.NotEqual(true, twelve.DemolitionChargeMalfunctioned);
         Assert.Contains(twelve.Arithmetic!.Drm, item => item.Name == "thrower-location");
-        var defensive = Complete(back with { Phase = "MPh", FiringSide = "non-phasing", Rolls = new FireRolls([3, 3], null, null, null) });
+        var defensive = Complete(back with
+        {
+            Phase = "MPh",
+            FiringSide = "non-phasing",
+            Rolls = new FireRolls([3, 3], null, null, null)
+        });
         Assert.DoesNotContain(defensive.Reasons ?? [], reason => reason.StartsWith("asl.a1.fire.phase-outside", StringComparison.Ordinal));
         Assert.NotNull(defensive.Arithmetic);
     }
@@ -157,17 +181,30 @@ public sealed class ScenarioA1Pass15Tests
     {
         // A23.1, A23.6, A7.9 (rulings R15.2, R15.3): doubles never Cower a DC; the target's TEM applies.
         var charge = new FireDemolitionCharge("ru-dc", "defender-dc", FireDemolitionCharge.Thrown, "ru-1", "defender-squad", false, false, null, null);
-        var thrown = Complete(Attack([3, 3]) with { Firers = null, FireGroupComplete = null, Los = null, DemolitionCharge = charge });
+        var thrown = Complete(Attack([3, 3]) with
+        {
+            Firers = null,
+            FireGroupComplete = null,
+            Los = null,
+            DemolitionCharge = charge
+        });
         Assert.Equal(30m, thrown.Arithmetic!.TotalFirepower);
         Assert.False(thrown.Arithmetic.Cowered);
         Assert.Contains(thrown.Arithmetic.Drm, item => item.Name == "thrown-dc" && item.Value == 2m);
         Assert.Contains(thrown.Arithmetic.Drm, item => item.Name == "tem:stone-building");
         var back = Complete(Attack([3, 3]) with
         {
-            Firers = null, FireGroupComplete = null, Los = null, Range = 0, TargetLocationId = From,
+            Firers = null,
+            FireGroupComplete = null,
+            Los = null,
+            Range = 0,
+            TargetLocationId = From,
             Targets = [Target("ru-1", "defender-squad") with { LocationId = From, Friendly = true }],
             FiringSideElr = 2,
-            DemolitionCharge = charge with { Mode = FireDemolitionCharge.Thrower },
+            DemolitionCharge = charge with
+            {
+                Mode = FireDemolitionCharge.Thrower
+            },
         });
         Assert.Contains(back.Arithmetic!.Drm, item => item.Name == "thrower-location" && item.Value == 3m);
     }
@@ -177,11 +214,25 @@ public sealed class ScenarioA1Pass15Tests
     {
         // A23.2, A23.4 (ruling R15.2): an Original 10 removes a 1st Line owner's DC with no effect; a DC Placed at concealed units is Area Fire.
         var charge = new FireDemolitionCharge("ru-dc", "defender-dc", FireDemolitionCharge.Placed, "ru-1", "defender-squad", false, false, false, null);
-        var placed = Attack([5, 5]) with { Phase = "AFPh", Firers = null, FireGroupComplete = null, Los = null, DemolitionCharge = charge };
+        var placed = Attack([5, 5]) with
+        {
+            Phase = "AFPh",
+            Firers = null,
+            FireGroupComplete = null,
+            Los = null,
+            DemolitionCharge = charge
+        };
         var dud = Complete(placed);
         Assert.True(dud.DemolitionChargeMalfunctioned);
         Assert.Equal("none", dud.Arithmetic!.Result);
-        var halved = Complete(placed with { Rolls = new FireRolls([2, 3], null, null, null), DemolitionCharge = charge with { ConcealedWhenPlaced = true } });
+        var halved = Complete(placed with
+        {
+            Rolls = new FireRolls([2, 3], null, null, null),
+            DemolitionCharge = charge with
+            {
+                ConcealedWhenPlaced = true
+            }
+        });
         Assert.Equal(15m, halved.Arithmetic!.TotalFirepower);
         Assert.DoesNotContain(halved.Arithmetic.Drm, item => item.Name == "advancing-fire");
     }
@@ -207,7 +258,10 @@ public sealed class ScenarioA1Pass15Tests
     {
         // A25.221 (ruling R15.6): a Russian squad with a 9-0 Commissar checks on 8, and the Commissar checks first.
         var targets = new[] { Target("ru-s", "defender-squad"), Target("ru-c", "defender-commissar-9-0") };
-        var attack = Attack([4, 3], firers: [Firer("de-1", "attacker-squad"), Firer("de-2", "attacker-squad")], targets: targets) with { TargetSideElr = 2 };
+        var attack = Attack([4, 3], firers: [Firer("de-1", "attacker-squad"), Firer("de-2", "attacker-squad")], targets: targets) with
+        {
+            TargetSideElr = 2
+        };
         var result = Complete(attack, checks: [4, 4]);
         var squad = result.Effects.Single(item => item.UnitId == "ru-s");
         Assert.All(squad.Checks, check => Assert.Equal(8, check.MoraleLevel));
@@ -220,7 +274,10 @@ public sealed class ScenarioA1Pass15Tests
         // A10.7 (ruling R15.8): a German 9-2 directing an Italian squad is -1.
         var attack = Attack([4, 3], firers: [Firer("de-1", "attacker-squad"), Firer("it-1", "italian-squad")],
             director: new FireDirector("de-l", "attacker-leader-9-2", From, false, false, false, false, false), targets: [Target("ru-s", "defender-squad")])
-            with { FiringNationalities = ["german", "italian"] };
+            with
+        {
+            FiringNationalities = ["german", "italian"]
+        };
         Assert.Contains(Complete(attack).Arithmetic!.Drm, item => item.Name == "leadership:de-l" && item.Value == -1m);
     }
 
@@ -230,7 +287,10 @@ public sealed class ScenarioA1Pass15Tests
         // A1.23, A19.13 (ruling R15.9; referee, pass 15): an underscored HS has an ELR of 5 whatever its side's. A 2MC on 11 fails by five and only breaks it;
         // Encircled (morale 7), it fails by six and is Disrupted.
         FireAttack Attack2Mc(bool encircled) => Attack([1, 2], firers: [Firer("de-1", "attacker-squad"), Firer("de-2", "attacker-squad")],
-            targets: [Target("ru-h", "defender-nkvd-half-squad") with { Encircled = encircled ? true : null }]) with { TargetSideElr = 1 };
+            targets: [Target("ru-h", "defender-nkvd-half-squad") with { Encircled = encircled ? true : null }]) with
+        {
+            TargetSideElr = 1
+        };
         var byFive = Complete(Attack2Mc(false), checks: [6, 5]).Effects.Single();
         Assert.True(byFive.Broken);
         Assert.False(byFive.Disrupted);
@@ -247,7 +307,10 @@ public sealed class ScenarioA1Pass15Tests
         Assert.Equal(HeatOfBattleOutcome.Surrender, ScenarioA1HeatOfBattle.Resolve(squad, false, null, false, [5, 2], Reference.Definitions, true, []).Outcome!.Result);
         Assert.Equal(HeatOfBattleOutcome.Berserk,
             ScenarioA1HeatOfBattle.Resolve(Reference.Definitions["italian-elite-squad"], false, null, false, [6, 2], Reference.Definitions, true, []).Outcome!.Result);
-        var japanese = Reference.Definitions["attacker-squad"] with { Nationality = "japanese" };
+        var japanese = Reference.Definitions["attacker-squad"] with
+        {
+            Nationality = "japanese"
+        };
         Assert.Equal("asl.a1.hob.nationality-unreviewed:attacker-squad", ScenarioA1HeatOfBattle.Resolve(japanese, false, null, false, [3, 3], Reference.Definitions, true, []).Undecided);
     }
 
@@ -280,7 +343,11 @@ public sealed class ScenarioA1Pass15Tests
     public void AHeroFiresAMgWithItsTwoManDrmAndHisHeroicDrm()
     {
         // A15.23, A15.24 (ruling R15.11): full FP, +1 and -1, and no inherent FP of his own.
-        var hero = Firer("ru-h", "defender-hero") with { Weapons = [new FireWeapon("ru-lmg", "defender-lmg", false, false, false)], UsesSupportWeapon = true };
+        var hero = Firer("ru-h", "defender-hero") with
+        {
+            Weapons = [new FireWeapon("ru-lmg", "defender-lmg", false, false, false)],
+            UsesSupportWeapon = true
+        };
         var result = Complete(Attack([4, 3], firers: [hero]));
         Assert.Contains(result.Arithmetic!.Drm, item => item.Name == "hero-mg:ru-h");
         Assert.Contains(result.Arithmetic.Drm, item => item.Name == "heroic:ru-h");

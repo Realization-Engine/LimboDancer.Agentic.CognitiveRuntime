@@ -47,7 +47,9 @@ public sealed class ScenarioA1SecondDefenderPackage : IDomainPackageResolver
                     .Select(item => item.GetProperty("caseId").GetString()))
             || root.GetProperty("positiveCaseIds").GetArrayLength() != 2
             || root.GetProperty("excludedOutcomes").GetArrayLength() != 5)
+        {
             throw new InvalidOperationException("The second-defender package admission inputs changed.");
+        }
 
         descriptor = new DomainPackageDescriptor(Identity, Rules.Select(rule =>
             new CanonicalReference(Identity, "asl-easlrb-3.10:chapter-a", rule, "3.01"))
@@ -75,7 +77,10 @@ public sealed class ScenarioA1SecondDefenderPackage : IDomainPackageResolver
         stream.CopyTo(buffer);
         var bytes = buffer.ToArray();
         if (Convert.ToHexStringLower(SHA256.HashData(bytes)) != digest)
+        {
             throw new InvalidOperationException("A second-defender artifact changed: " + name);
+        }
+
         return JsonDocument.Parse(bytes);
     }
 }

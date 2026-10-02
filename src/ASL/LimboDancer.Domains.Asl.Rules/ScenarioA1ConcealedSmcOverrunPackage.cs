@@ -51,7 +51,9 @@ public sealed class ScenarioA1ConcealedSmcOverrunPackage : IDomainPackageResolve
                 transition.RootElement.GetProperty("sourceFragments"))
             || !JsonElement.DeepEquals(root.GetProperty("sourceFragments"),
                 matrix.RootElement.GetProperty("sourceFragments")))
+        {
             throw new InvalidOperationException("The concealed-SMC OVR admission inputs changed.");
+        }
 
         descriptor = new DomainPackageDescriptor(Identity, Rules.Select(rule => new CanonicalReference(
             Identity, rule == "B23.4" ? "asl-easlrb-3.10:chapter-b" : "asl-easlrb-3.10:chapter-a",
@@ -79,7 +81,10 @@ public sealed class ScenarioA1ConcealedSmcOverrunPackage : IDomainPackageResolve
         stream.CopyTo(buffer);
         var bytes = buffer.ToArray();
         if (Convert.ToHexStringLower(SHA256.HashData(bytes)) != digest)
+        {
             throw new InvalidOperationException("A concealed-SMC OVR artifact changed: " + name);
+        }
+
         return JsonDocument.Parse(bytes);
     }
 }

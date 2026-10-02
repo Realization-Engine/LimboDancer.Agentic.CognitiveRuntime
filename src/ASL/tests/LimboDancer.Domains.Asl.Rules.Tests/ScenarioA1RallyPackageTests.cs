@@ -55,7 +55,10 @@ public sealed class ScenarioA1RallyPackageTests
     public void ExtremeWinterMakesAnOriginalElevenFate()
     {
         // E3.742 (backlog pass 16, ruling R16.14): an Original 11 is Fate for the units Extreme Winter names; otherwise it is only a failed rally.
-        var winter = ScenarioA1RallyCalculator.Resolve(Attempt([5, 6]) with { ExtremeWinterFate = true }, Reference).Effect!;
+        var winter = ScenarioA1RallyCalculator.Resolve(Attempt([5, 6]) with
+        {
+            ExtremeWinterFate = true
+        }, Reference).Effect!;
         Assert.Equal(("defender-half-squad", false), (winter.FinalDefinitionId, winter.Rallied));
         var plain = ScenarioA1RallyCalculator.Resolve(Attempt([5, 6]), Reference).Effect!;
         Assert.Equal("defender-squad", plain.FinalDefinitionId);
@@ -156,7 +159,13 @@ public sealed class ScenarioA1RallyPackageTests
     {
         // A25.25 (backlog pass 15, ruling R15.7): an NKVD MMC's Field Promotion uses the Commissar table: a dr of 1, +1 broken, is a 9-0 Commissar.
         var attempt = Attempt([1, 1], Unit(definition: "defender-nkvd-squad"), selfRally: true, firstMmc: true, goodOrderLeader: false);
-        var result = ScenarioA1RallyCalculator.Resolve(attempt with { Rolls = attempt.Rolls! with { LeaderCreation = 1 } }, Reference);
+        var result = ScenarioA1RallyCalculator.Resolve(attempt with
+        {
+            Rolls = attempt.Rolls! with
+            {
+                LeaderCreation = 1
+            }
+        }, Reference);
         Assert.Equal("defender-commissar-9-0", result.Effect!.CreatedLeaderDefinitionId);
     }
 
@@ -232,7 +241,10 @@ public sealed class ScenarioA1RallyPackageTests
     // the Leader Creation dr, a Wound Severity dr, and each companion's Berserk TC (unit step 30).
     private static int Explore(string name, RallyAttempt attempt, RallyRolls rolls)
     {
-        var result = ScenarioA1RallyCalculator.Resolve(attempt with { Rolls = rolls }, Reference);
+        var result = ScenarioA1RallyCalculator.Resolve(attempt with
+        {
+            Rolls = rolls
+        }, Reference);
         if (result.Disposition == RallyResolution.Resolved)
         {
             return 1;
@@ -256,7 +268,10 @@ public sealed class ScenarioA1RallyPackageTests
                         _ => rolls with
                         {
                             BerserkChecks = new Dictionary<string, IReadOnlyList<int>>(rolls.BerserkChecks ?? new Dictionary<string, IReadOnlyList<int>>(),
-                                StringComparer.Ordinal) { [key["berserkCheck:".Length..]] = dice },
+                                StringComparer.Ordinal)
+                            {
+                                [key["berserkCheck:".Length..]] = dice
+                            },
                         },
                     });
                 }
@@ -266,7 +281,13 @@ public sealed class ScenarioA1RallyPackageTests
         {
             for (var dr = 1; dr <= 6; dr++)
             {
-                paths += Explore(name, attempt, key == "leaderCreation" ? rolls with { LeaderCreation = dr } : rolls with { WoundSeverity = dr });
+                paths += Explore(name, attempt, key == "leaderCreation" ? rolls with
+                {
+                    LeaderCreation = dr
+                } : rolls with
+                {
+                    WoundSeverity = dr
+                });
             }
         }
 

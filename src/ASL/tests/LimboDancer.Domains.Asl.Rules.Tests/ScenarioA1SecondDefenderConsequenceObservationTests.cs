@@ -56,7 +56,9 @@ public sealed class ScenarioA1SecondDefenderConsequenceObservationTests
         Assert.Equal("asl.a1.second-defender-consequence.exact-case:" + caseId,
             Assert.Single(result.ReasonCodes));
         if (caseId != SmcCase)
+        {
             Assert.Empty((await Provider(snapshot).ObserveAsync(Query(SmcCase))).Observations);
+        }
     }
 
     [Fact]
@@ -80,7 +82,10 @@ public sealed class ScenarioA1SecondDefenderConsequenceObservationTests
             state with { Eligibility = state.Eligibility with
                 { Terrain = state.Eligibility.Terrain with { BoardVersion = "wrong" } } },
         })
+        {
             Assert.Empty((await Provider(candidate).ObserveAsync(Query(SmcCase))).Observations);
+        }
+
         Assert.Empty((await Provider(state).ObserveAsync(Query(SmcCase,
             ScenarioA1SecondDefenderPackage.Identity))).Observations);
         Assert.Empty((await Provider(state).ObserveAsync(Query(SmcCase, previous: "bd01:D5:0")))

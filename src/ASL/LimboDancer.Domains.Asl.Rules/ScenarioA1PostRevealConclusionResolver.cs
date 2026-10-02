@@ -17,10 +17,15 @@ public sealed class ScenarioA1PostRevealConclusionResolver : IDomainConclusionRe
         ArgumentNullException.ThrowIfNull(context);
         var question = context.Question;
         if (question.Package != ScenarioA1PostRevealPackage.Identity)
+        {
             throw new ArgumentException("The exact post-reveal package is required.", nameof(context));
+        }
+
         var pinned = (await package.ResolveAsync(question.Package, cancellationToken)).Package!;
         if (!context.Package.CanonicalSources.SequenceEqual(pinned.CanonicalSources))
+        {
             throw new ArgumentException("The post-reveal sources changed.", nameof(context));
+        }
 
         var ambiguities = new List<string>();
         var outside = new List<string>();
@@ -28,34 +33,51 @@ public sealed class ScenarioA1PostRevealConclusionResolver : IDomainConclusionRe
             || question.Parameters.ValueKind != JsonValueKind.Object
             || question.Parameters.EnumerateObject().Count() != 3
             || context.CalculationEvidence.Count != 0)
+        {
             outside.Add("asl.a1.reveal.outside-declared-use");
+        }
+
         var unitId = Parameter(question.Parameters, "unitId");
         var locationId = Parameter(question.Parameters, "locationId");
         var version = Parameter(question.Parameters, "observationVersion");
         if (unitId is null || locationId is null || version is null || unitId == locationId)
+        {
             ambiguities.Add("question.subject-or-version-missing");
+        }
+
         if (context.EntityResolutions.Count != 2 || unitId is null || locationId is null
             || new[] { unitId, locationId }.Any(id => context.EntityResolutions.Count(item =>
                 item.Query.Reference == id
                 && item.Outcome == DomainEntityResolutionOutcome.Resolved) != 1))
+        {
             ambiguities.Add("entity.resolution-incomplete-or-ambiguous");
+        }
+
         var observation = context.Observations.Count == 1 ? context.Observations[0] : null;
         if (observation is null || observation.Version != version
             || observation.ResourceId != locationId || observation.ObservedAt > question.AskedAt)
+        {
             ambiguities.Add("observation.exact-version-and-location-required");
+        }
 
         var facts = new Dictionary<string, string>(StringComparer.Ordinal);
         if (observation is not null)
         {
             if (observation.Data.ValueKind != JsonValueKind.Object)
+            {
                 ambiguities.Add("observation.facts-object-required");
+            }
             else
+            {
                 foreach (var item in observation.Data.EnumerateObject())
                 {
                     if (item.Value.ValueKind != JsonValueKind.String
                         || !facts.TryAdd(item.Name, item.Value.GetString()!))
+                    {
                         ambiguities.Add("observation.duplicate-or-nonstring-fact");
+                    }
                 }
+            }
         }
         var required = new Dictionary<string, string>(StringComparer.Ordinal)
         {
@@ -70,15 +92,22 @@ public sealed class ScenarioA1PostRevealConclusionResolver : IDomainConclusionRe
             || !facts.ContainsKey("defenderReveal") || !facts.ContainsKey("previousLocationId")
             || string.IsNullOrWhiteSpace(facts.GetValueOrDefault("previousLocationId"))
             || facts.GetValueOrDefault("previousLocationId") == locationId)
+        {
             ambiguities.Add("fact.post-reveal-evidence-incomplete");
+        }
         else if (facts.Count != 8 || required.Any(item => facts[item.Key] != item.Value))
+        {
             outside.Add("fact.outside-exact-case");
+        }
 
         var reveal = facts.GetValueOrDefault("defenderReveal");
         var forcedBack = reveal == "nonDummy";
         var dummiesOnly = reveal == "dummiesOnly";
         if (ambiguities.Count == 0 && !forcedBack && !dummiesOnly)
+        {
             ambiguities.Add("fact.defender-reveal-unresolved");
+        }
+
         var disposition = ambiguities.Count != 0 ? ConclusionDisposition.Indeterminate
             : outside.Count != 0 ? ConclusionDisposition.Abstained
             : forcedBack ? ConclusionDisposition.Definitive : ConclusionDisposition.Qualified;
@@ -91,10 +120,13 @@ public sealed class ScenarioA1PostRevealConclusionResolver : IDomainConclusionRe
                 "user-directed-affirmative-xunit-review"),
         };
         if (observation is not null)
+        {
             evidence.Add(new EvidenceReference("asl-a1-reveal:" + observation.ObservationId,
                 EvidenceKind.Observation, question.TenantId, question.Package,
                 observation.ResourceId ?? observation.ObservationId, observation.Version,
                 observation.Provenance ?? observation.Source.SourceId));
+        }
+
         CanonicalReference[] applicable = disposition is ConclusionDisposition.Definitive
             or ConclusionDisposition.Qualified
             ? forcedBack ? pinned.CanonicalSources.ToArray()

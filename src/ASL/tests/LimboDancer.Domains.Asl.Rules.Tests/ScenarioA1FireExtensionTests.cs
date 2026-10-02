@@ -429,7 +429,10 @@ public sealed class ScenarioA1FireExtensionTests
         Assert.Equal(("defender-nkvd-squad", false, false), (conscript.FinalDefinitionId, conscript.Broken, conscript.Disrupted));
 
         // Ruling R28.7: a broken elite squad with no better class becomes Fanatic and is unbroken too: 4+4 = 8, -1 elite, +1 broken.
-        var elite = HeatOfBattle([4, 4], Target("de-s", "attacker-elite-squad") with { Broken = true }).Effects.Single();
+        var elite = HeatOfBattle([4, 4], Target("de-s", "attacker-elite-squad") with
+        {
+            Broken = true
+        }).Effects.Single();
         Assert.Equal((true, false), (elite.Fanatic, elite.Broken));
     }
 

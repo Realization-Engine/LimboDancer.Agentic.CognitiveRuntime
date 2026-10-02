@@ -23,11 +23,16 @@ public sealed class ScenarioA1ConclusionResolver : IDomainConclusionResolver
         ArgumentNullException.ThrowIfNull(context);
         var question = context.Question;
         if (question.Package != ScenarioA1Package.Identity)
+        {
             throw new ArgumentException("The Scenario A1 resolver requires the exact reviewed package.", nameof(context));
+        }
+
         var pinned = (await new ScenarioA1Package().ResolveAsync(ScenarioA1Package.Identity,
             cancellationToken)).Package!;
         if (!context.Package.CanonicalSources.SequenceEqual(pinned.CanonicalSources))
+        {
             throw new ArgumentException("The resolved source set differs from the reviewed case.", nameof(context));
+        }
 
         var evidence = new List<EvidenceReference>
         {
@@ -43,37 +48,56 @@ public sealed class ScenarioA1ConclusionResolver : IDomainConclusionResolver
         var ambiguities = new List<string>();
         var outside = new List<string>();
         if (question.Kind.Value != QuestionKind || question.Kind.DomainId != question.Package.DomainId)
+        {
             outside.Add("question.kind-outside-reviewed-case");
+        }
+
         var parameters = question.Parameters;
         var unitId = StringParameter(parameters, "unitId");
         var locationId = StringParameter(parameters, "locationId");
         if (unitId is null || locationId is null || unitId == locationId)
+        {
             ambiguities.Add("question.subjects-missing");
+        }
+
         foreach (var id in new[] { unitId, locationId }.Where(id => id is not null).Distinct(StringComparer.Ordinal))
         {
             var matches = context.EntityResolutions.Where(result => result.Query.Reference == id).ToArray();
             if (matches.Length != 1 || matches[0].Outcome != DomainEntityResolutionOutcome.Resolved)
+            {
                 ambiguities.Add("entity.unresolved-or-ambiguous:" + id);
+            }
         }
         if (context.EntityResolutions.Count != 2)
+        {
             ambiguities.Add("entity.resolution-set-incomplete");
+        }
 
         if (context.Observations.Count != 1)
+        {
             ambiguities.Add("observation.exactly-one-required");
+        }
         else
         {
             var observation = context.Observations[0];
             if (observation.Version is null || observation.ResourceId != locationId
                 || observation.ObservedAt > question.AskedAt)
+            {
                 ambiguities.Add("observation.version-or-location-unusable");
+            }
+
             foreach (var name in FactNames)
             {
                 if (observation.Data.ValueKind != JsonValueKind.Object
                     || !observation.Data.TryGetProperty(name, out var value)
                     || value.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+                {
                     ambiguities.Add("fact.unknown:" + name);
+                }
                 else if (value.ValueKind == JsonValueKind.False)
+                {
                     outside.Add("fact.outside-reviewed-case:" + name);
+                }
             }
         }
         var disposition = ambiguities.Count > 0 ? ConclusionDisposition.Indeterminate
@@ -87,7 +111,11 @@ public sealed class ScenarioA1ConclusionResolver : IDomainConclusionResolver
         var conclusion = new DomainConclusion(
             "asl-a1:" + question.QuestionId, question, disposition,
             disposition == ConclusionDisposition.Definitive
-                ? JsonSerializer.SerializeToElement(new { eligible = true, entryMf = 2 }) : null,
+                ? JsonSerializer.SerializeToElement(new
+                {
+                    eligible = true,
+                    entryMf = 2
+                }) : null,
             evidence,
             disposition == ConclusionDisposition.Definitive ? context.Package.CanonicalSources : [],
             [],

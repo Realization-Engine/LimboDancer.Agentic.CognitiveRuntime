@@ -93,9 +93,15 @@ public sealed class ScenarioA1ConcealedSmcOverrunTests
         var facts = Facts();
         foreach (var key in new[] { "overrunElection", "ntc", "remainingMf",
             "additionalDefenderReveal", "soleEnemySmcOccupancy", "defenderResponseOrImmediateCc" })
+        {
             facts.Remove(key);
+        }
+
         foreach (var item in CaseFacts(caseId))
+        {
             facts.Add(item.Key, item.Value);
+        }
+
         var conclusion = await new ScenarioA1ConcealedSmcOverrunConclusionResolver()
             .ConcludeAsync(Context(descriptor, Observation(facts), caseId));
         Assert.Equal(expected, conclusion.Disposition);

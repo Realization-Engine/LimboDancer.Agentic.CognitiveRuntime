@@ -67,7 +67,10 @@ public sealed class ScenarioA1SemanticCandidate
         _acceptedCaseIds = ScenarioA1BoundedAdmission.Validate(RootSha256, cases);
     }
 
-    public string RootSha256 { get; }
+    public string RootSha256
+    {
+        get;
+    }
     public IReadOnlyCollection<ScenarioA1SemanticCase> Cases => _cases.Values.ToArray();
 
     public ScenarioA1SemanticResult Evaluate(string caseId, IReadOnlyDictionary<string, string> facts)

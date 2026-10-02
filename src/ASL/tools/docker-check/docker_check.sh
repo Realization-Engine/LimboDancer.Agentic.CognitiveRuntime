@@ -25,7 +25,6 @@ MSYS_NO_PATHCONV=1 docker run --rm -v "$ROOT:/repo:ro" mcr.microsoft.com/dotnet/
   step restore dotnet restore src/ASL/LimboDancer.Domains.Asl.sln --locked-mode -v:minimal
   step build dotnet build src/ASL/LimboDancer.Domains.Asl.sln --configuration Release --no-restore --warnaserror -v:minimal
   step test dotnet test src/ASL/LimboDancer.Domains.Asl.sln --configuration Release --no-build --no-restore
-  step a1 dotnet test src/ASL/tests/LimboDancer.Domains.Asl.Rules.Tests/LimboDancer.Domains.Asl.Rules.Tests.csproj --configuration Release --warnaserror -p:RestoreLockedMode=false
   CLI="dotnet run --project src/ASL/LimboDancer.Domains.Asl.Authoring.Cli --configuration Release --no-build --no-restore -- --source-commit a3254ff1d492dbdd28483d86f5b42437b48e80d4 --registry-output /tmp/reg.json --verification-output /tmp/ver.json --a1-attestation docs/ASL/SourceRegistry/asl-scenario-a1.source-attestation.json"
   step ci-verification bash -c "$CLI --a1-verification-output /tmp/a1ver.json >/dev/null && cmp docs/ASL/SourceRegistry/asl-scenario-a1.source-verification.json /tmp/a1ver.json"
   step ci-pending bash -c "$CLI --a1-comparison docs/ASL/SourceRegistry/asl-scenario-a1.first-case-pdf-comparison.json --a1-comparison-output /tmp/pending.json >/dev/null && cmp docs/ASL/SourceRegistry/asl-scenario-a1.pending-comparison-records.json /tmp/pending.json"

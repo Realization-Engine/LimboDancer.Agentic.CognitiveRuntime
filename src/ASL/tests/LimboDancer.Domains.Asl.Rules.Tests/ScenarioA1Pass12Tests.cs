@@ -132,7 +132,10 @@ public sealed class ScenarioA1Pass12Tests
         Assert.Contains(result.Arithmetic.Firers.Single(item => item.UnitId == "ru-2").Multipliers, item => item.Name == "area-fire" && item.Rule == "A8.3");
 
         // Referee, pass 12: an unmarked unit does not join FPF, since its First Fire counter would differ.
-        var unmarked = Complete(attack with { Firers = [attack.Firers![0], Firer("ru-2")] });
+        var unmarked = Complete(attack with
+        {
+            Firers = [attack.Firers![0], Firer("ru-2")]
+        });
         Assert.Contains("asl.a1.fire.firer-already-fired", unmarked.Reasons);
         Assert.Equal(["ru-1", "ru-l"], result.FirerEffects!.Select(item => item.UnitId).Order(StringComparer.Ordinal));
     }
@@ -141,7 +144,11 @@ public sealed class ScenarioA1Pass12Tests
     public void ALeaderFiresAMgAsAreaFireAloneAndAtFullFpWithAPartner()
     {
         // A9.12 (ruling R12.4): the leader's LMG, 2 FP at PBF 4, halved alone; with a stacked SMC as his partner it keeps 4, and both are marked.
-        var lone = Firer("ru-l", "defender-leader") with { UsesInherentFp = false, Weapons = [Mg("ru-mg")] };
+        var lone = Firer("ru-l", "defender-leader") with
+        {
+            UsesInherentFp = false,
+            Weapons = [Mg("ru-mg")]
+        };
         var alone = Complete(Attack([6, 5], firers: [lone]));
         Assert.Equal(2m, alone.Arithmetic!.TotalFirepower);
         var together = Complete(Attack([6, 5], firers: [lone with { Partner = "ru-l2" }]));
@@ -162,16 +169,29 @@ public sealed class ScenarioA1Pass12Tests
     public void SprayingFireIsAreaFireAndItsSecondRecordMarksNothing()
     {
         // A9.5 (ruling R12.6): the squad with its LMG sprays; each Location is attacked at half FP; the second record leaves the markers to the first.
-        var sprayer = Firer("ru-1") with { Weapons = [Mg("ru-mg")] };
-        var first = Complete(Attack([6, 5], firers: [sprayer]) with { SprayingFire = true });
+        var sprayer = Firer("ru-1") with
+        {
+            Weapons = [Mg("ru-mg")]
+        };
+        var first = Complete(Attack([6, 5], firers: [sprayer]) with
+        {
+            SprayingFire = true
+        });
         Assert.All(first.Arithmetic!.Firers, item => Assert.Contains(item.Multipliers, multiplier => multiplier.Name == "spraying-fire"));
         Assert.Equal(["ru-1"], first.FireCounterUnitIds);
-        var second = Complete(Attack([6, 5], firers: [sprayer]) with { SprayingFire = true, SprayShare = true });
+        var second = Complete(Attack([6, 5], firers: [sprayer]) with
+        {
+            SprayingFire = true,
+            SprayShare = true
+        });
         Assert.Empty(second.FireCounterUnitIds);
         Assert.Null(second.WeaponEffects);
 
         // A9.5: every firer of a spraying group fires a MG.
-        var bare = Complete(Attack([6, 5]) with { SprayingFire = true });
+        var bare = Complete(Attack([6, 5]) with
+        {
+            SprayingFire = true
+        });
         Assert.Contains("asl.a1.fire.spraying-fire-outside", bare.Reasons);
     }
 
@@ -190,9 +210,15 @@ public sealed class ScenarioA1Pass12Tests
     {
         // A11.15 (ruling R12.8): the Russian squad in the Melee is attacked with the Germans; it needs its own side's ELR.
         var targets = new[] { Target("de-s"), Target("ru-m", "defender-squad") with { Friendly = true } };
-        var undeclared = ScenarioA1FireCalculator.Precheck(Attack([6, 4], targets: targets) with { Rolls = null }, Reference);
+        var undeclared = ScenarioA1FireCalculator.Precheck(Attack([6, 4], targets: targets) with
+        {
+            Rolls = null
+        }, Reference);
         Assert.Contains("asl.a1.fire.elr-undecided:firing-side-elr-undeclared", undeclared);
-        var result = Complete(Attack([6, 4], targets: targets) with { FiringSideElr = 3 });
+        var result = Complete(Attack([6, 4], targets: targets) with
+        {
+            FiringSideElr = 3
+        });
         Assert.Equal(FireResolution.Resolved, result.Disposition);
         Assert.Equal(2, result.Effects.Count);
     }
@@ -202,7 +228,10 @@ public sealed class ScenarioA1Pass12Tests
     {
         // A20.54 (ruling R12.9): the captured Russian squad fails its NMC (6 + 5 = 11 against 7) and becomes a HS; the German Guard breaks.
         var targets = new[] { Target("de-s"), Target("ru-p", "defender-squad") with { Friendly = true, GuardId = "de-s" } };
-        var result = Complete(Attack([6, 4], targets: targets) with { FiringSideElr = 3 }, checks: [6, 5]);
+        var result = Complete(Attack([6, 4], targets: targets) with
+        {
+            FiringSideElr = 3
+        }, checks: [6, 5]);
         var prisoner = result.Effects.Single(item => item.UnitId == "ru-p");
         Assert.False(prisoner.Broken);
         Assert.NotEqual(prisoner.DefinitionId, prisoner.FinalDefinitionId);

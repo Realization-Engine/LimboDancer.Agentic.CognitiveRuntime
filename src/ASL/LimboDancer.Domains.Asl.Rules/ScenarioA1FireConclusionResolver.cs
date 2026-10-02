@@ -113,7 +113,11 @@ public sealed class ScenarioA1FireConclusionResolver : IDomainConclusionResolver
 
         var definitive = disposition == ConclusionDisposition.Definitive;
         return new DomainConclusion("asl-a1-fire:" + question.QuestionId, question, disposition,
-            definitive ? JsonSerializer.SerializeToElement(new { resolution = resolution!, executed = false }, Output) : null,
+            definitive ? JsonSerializer.SerializeToElement(new
+            {
+                resolution = resolution!,
+                executed = false
+            }, Output) : null,
             evidence, definitive ? pinned.CanonicalSources.ToArray() : [], [],
             definitive ? ["The IFT result of the declared attack and its effect on each target unit, under the reviewed Fire rulings."] : [],
             ambiguities, disposition == ConclusionDisposition.Abstained ? outside

@@ -77,7 +77,10 @@ public sealed class ScenarioA1PostRevealTests
             baseline with { DefenderReveal = ScenarioA1DefenderReveal.NonDummy,
                 TenantId = Guid.NewGuid() },
         })
+        {
             Assert.Empty((await Provider(state).ObserveAsync(Query())).Observations);
+        }
+
         Assert.Empty((await Provider(baseline with
         {
             DefenderReveal = ScenarioA1DefenderReveal.NonDummy,

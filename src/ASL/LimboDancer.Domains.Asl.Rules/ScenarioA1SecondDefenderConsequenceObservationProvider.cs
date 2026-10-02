@@ -13,7 +13,7 @@ public sealed record ScenarioA1SecondDefenderConsequenceSnapshot(
 
 public interface IScenarioA1SecondDefenderConsequenceSnapshotSource
 {
-    ValueTask<ScenarioA1SecondDefenderConsequenceSnapshot?> ReadAsync(Guid tenantId,
+    public ValueTask<ScenarioA1SecondDefenderConsequenceSnapshot?> ReadAsync(Guid tenantId,
         DomainPackageRef package, string unitId, string locationId,
         CancellationToken cancellationToken = default);
 }
@@ -33,7 +33,10 @@ public sealed class ScenarioA1SecondDefenderConsequenceObservationProvider(
         if (query.Package != ScenarioA1SecondDefenderConsequencePackage.Identity
             || query.Kind.Value != QueryKind || query.Parameters.ValueKind != JsonValueKind.Object
             || query.Parameters.EnumerateObject().Count() != 5 || query.MaxResults != 1)
+        {
             return Empty(query, "asl.a1.second-defender-consequence.query-outside-exact-package");
+        }
+
         var unitId = Parameter(query.Parameters, "unitId");
         var locationId = Parameter(query.Parameters, "locationId");
         var previousId = Parameter(query.Parameters, "previousLocationId");
@@ -43,7 +46,10 @@ public sealed class ScenarioA1SecondDefenderConsequenceObservationProvider(
             || caseId is null || !caseId.StartsWith("A1-second-defender-consequence-",
                 StringComparison.Ordinal)
             || new[] { unitId, locationId, previousId }.Distinct().Count() != 3)
+        {
             return Empty(query, "asl.a1.second-defender-consequence.query-incomplete");
+        }
+
         var snapshot = await source.ReadAsync(query.TenantId, query.Package, unitId, locationId,
             cancellationToken);
         if (snapshot is null || snapshot.Package != query.Package
@@ -61,7 +67,9 @@ public sealed class ScenarioA1SecondDefenderConsequenceObservationProvider(
             || snapshot.OvrEntryResolved != false
             || (snapshot.Eligibility.SecondRevealOrdinal is not null
                 && snapshot.Eligibility.SecondRevealOrdinal <= snapshot.Eligibility.ElectionOrdinal))
+        {
             return Empty(query, "asl.a1.second-defender-consequence.attempt-or-previous-location-unreviewed");
+        }
 
         var eligibilityId = "A1-second-defender-" + caseId["A1-second-defender-consequence-".Length..];
         var eligibilityQuery = new ObservationQuery(query.QueryId + ":eligibility", query.TenantId,
@@ -70,14 +78,20 @@ public sealed class ScenarioA1SecondDefenderConsequenceObservationProvider(
                 ScenarioA1SecondDefenderObservationProvider.QueryKind),
             JsonSerializer.SerializeToElement(new
             {
-                unitId, locationId, observationVersion = version, caseId = eligibilityId,
+                unitId,
+                locationId,
+                observationVersion = version,
+                caseId = eligibilityId,
             }), 1);
         var eligibilityProvider = new ScenarioA1SecondDefenderObservationProvider(
             new EligibilitySource(snapshot.Eligibility), terrain);
         var observations = (await eligibilityProvider.ObserveAsync(eligibilityQuery,
             cancellationToken)).Observations;
         if (observations.Count != 1)
+        {
             return Empty(query, "asl.a1.second-defender-consequence.eligibility-events-unreviewed");
+        }
+
         var facts = observations[0].Data.EnumerateObject().ToDictionary(item => item.Name,
             item => item.Value.GetString()!, StringComparer.Ordinal);
         facts.Remove("smcOutsideAfv");

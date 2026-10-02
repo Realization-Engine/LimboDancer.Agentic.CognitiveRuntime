@@ -55,7 +55,10 @@ public static class ScenarioA1OrdnanceCalculator
             }
 
             var fired = ScenarioA1ArmorCalculator.Run(shot, gun, reference);
-            return fired.Disposition == OrdnanceResolution.Resolved ? fired with { PanzerfaustCheck = check } : fired;
+            return fired.Disposition == OrdnanceResolution.Resolved ? fired with
+            {
+                PanzerfaustCheck = check
+            } : fired;
         }
 
         return shot.TargetType == OrdnanceTargetTypes.Area ? ScenarioA1AreaCalculator.Run(shot, gun, reference)

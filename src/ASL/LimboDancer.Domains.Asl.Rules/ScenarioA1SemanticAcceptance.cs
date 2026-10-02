@@ -18,7 +18,10 @@ public static class ScenarioA1SemanticAcceptance
         stream.CopyTo(buffer);
         var bytes = buffer.ToArray();
         if (Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes)) != Sha256)
+        {
             throw new InvalidOperationException("The semantic acceptance record changed.");
+        }
+
         using var document = JsonDocument.Parse(bytes);
         var root = document.RootElement;
         if (root.GetProperty("schemaVersion").GetString() != "1.0.0"
@@ -42,28 +45,43 @@ public static class ScenarioA1SemanticAcceptance
             || accepted.Concat(nonDefinitive).Distinct(StringComparer.Ordinal).Count() != 9
             || !cases.Keys.ToHashSet(StringComparer.Ordinal).SetEquals(accepted.Concat(nonDefinitive))
             || root.GetProperty("exclusions").GetArrayLength() != 4)
+        {
             throw new InvalidOperationException("The declared use has incomplete case or exclusion coverage.");
+        }
 
         foreach (var id in accepted)
         {
             var semanticCase = cases[id];
             if (semanticCase.ReviewStatus != "reviewed-bounded" || semanticCase.Predicates.Count == 0)
+            {
                 throw new InvalidOperationException("An accepted case has no reviewed predicate contract.");
+            }
+
             var facts = semanticCase.Predicates.ToDictionary(item => item.Key, item => item.ExpectedValue);
             if (candidate.Evaluate(id, facts).Disposition != semanticCase.ExpectedDisposition)
+            {
                 throw new InvalidOperationException("The accepted case does not reproduce.");
+            }
+
             facts.Remove(semanticCase.Predicates[0].Key);
             if (candidate.Evaluate(id, facts).Disposition != "indeterminate")
+            {
                 throw new InvalidOperationException("Missing evidence was accepted.");
+            }
+
             facts[semanticCase.Predicates[0].Key] = "contrary";
             if (candidate.Evaluate(id, facts).Disposition != "abstained")
+            {
                 throw new InvalidOperationException("Contrary evidence was accepted.");
+            }
         }
         foreach (var id in nonDefinitive)
         {
             if (cases[id].ReviewStatus != "reviewed-nondefinitive"
                 || candidate.Evaluate(id, new Dictionary<string, string>()).Disposition != "indeterminate")
+            {
                 throw new InvalidOperationException("An unresolved case acquired a definitive result.");
+            }
         }
     }
 

@@ -117,7 +117,9 @@ public sealed class Board01TerrainCatalogTests
                 { IsAdvancePhase = true } },
             fortified with { IsMovementPhase = false },
         })
+        {
             Assert.Empty((await Provider(changed).ObserveAsync(Query())).Observations);
+        }
 
         var stacking = cases.Single(item =>
             item.CaseId == "A1-stacking-equivalents-needed").Snapshot;
@@ -148,11 +150,13 @@ public sealed class Board01TerrainCatalogTests
             ScenarioA1BoardOccupancy.ConcealedOrHidden,
             ScenarioA1BoardOccupancy.Unknown,
         })
+        {
             Assert.Empty((await Provider(Snapshot() with
             {
                 Occupancy = occupancy
             })
                 .ObserveAsync(Query())).Observations);
+        }
     }
 
     [Fact]

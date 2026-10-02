@@ -54,7 +54,9 @@ public sealed class ScenarioA1SecondDefenderObservationTests
         Assert.Equal("asl.a1.second-defender.exact-case:" + caseId,
             Assert.Single(result.ReasonCodes));
         if (caseId != SmcCase)
+        {
             Assert.Empty((await provider.ObserveAsync(Query(SmcCase))).Observations);
+        }
     }
 
     [Fact]
@@ -93,7 +95,10 @@ public sealed class ScenarioA1SecondDefenderObservationTests
             state with { Terrain = state.Terrain with { BoardVersion = "wrong" } },
             state with { Terrain = state.Terrain with { Variant = "NoRoads" } },
         })
+        {
             Assert.Empty((await Provider(candidate).ObserveAsync(Query(SmcCase))).Observations);
+        }
+
         Assert.Empty((await Provider(state).ObserveAsync(Query(SmcCase,
             ScenarioA1ConcealedSmcOverrunPackage.Identity))).Observations);
         Assert.Empty((await Provider(state).ObserveAsync(Query(SmcCase, extra: true))).Observations);
