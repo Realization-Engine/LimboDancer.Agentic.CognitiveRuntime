@@ -12,7 +12,7 @@
 
 Provide an inventory of unit-related rules and a candidate domain model for the ASL solution. The rulebook distinguishes counters, the people or equipment they represent, capabilities printed on counters, mutable game conditions, and transformations. A usable game-state source must preserve these distinctions, plus identity, chronology, visibility, provenance, and version.
 
-The current solution **does have domain models**, but chiefly for terrain/maps and tightly scoped Scenario A1 facts. `LimboDancer.Domains.Asl.Maps` provides board coordinates, terrain and hex facts. `LimboDancer.Domains.Asl.ScenarioA1` has bounded occupancy/reveal snapshots and `ScenarioA1ReturnState`; it does not provide a reusable personnel, vehicle, Gun, or equipment definition catalog, a general unit-instance aggregate, or an authoritative game-wide event source. This analysis designs those missing concepts; it does not silently reinterpret the existing exact-case contracts.
+The current solution **does have domain models**, but chiefly for terrain/maps and tightly scoped Scenario A1 facts. `LimboDancer.Domains.Asl.Maps` provides board coordinates, terrain and hex facts. `LimboDancer.Domains.Asl.Rules` (then named `LimboDancer.Domains.Asl.ScenarioA1`) has bounded occupancy/reveal snapshots and `ScenarioA1ReturnState`; it does not provide a reusable personnel, vehicle, Gun, or equipment definition catalog, a general unit-instance aggregate, or an authoritative game-wide event source. This analysis designs those missing concepts; it does not silently reinterpret the existing exact-case contracts.
 
 ## 1. Rulebook inventory
 

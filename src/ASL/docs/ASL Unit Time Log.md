@@ -798,3 +798,13 @@ Estimate: 5:15 (build 4:00), the ASL Card Play and Map Studio Redesign Plan. Kic
 | Full local suite: Dice 24, Authoring 166 of 167 (the architecture test, held `.git/worktrees`; Docker passes it), MapStudio 264, Maps 244, Maps.Rendering 34, Maps.Vasl 121, Units 408, Units.CounterSheets 19, Units.Rendering 352, Play 615, ScenarioA1 484; the chart supplement regeneration (identical) | 06:52 | 07:30 | 0:38 | The solution build took 5:38; Play took 30 minutes; the user's question about ScenarioA1 led to a backlog row for renaming the project (4ab1662) |
 | Merge gate: commit aad550c, the Docker Linux check (every step exit 0; Authoring 167, Play 615, MapStudio 264, ScenarioA1 484), the time log, merge into main, push | 06:57 | 07:37 | 0:40 | Ran beside the local suite |
 | **Pass 28c total** | 05:39 | 07:37 | **1:58** | Estimate 5:15 (build 4:00); the build to the documents took 1:13 with two visual checks and three reviews, the full suite 0:38, the merge gate 0:40 (overlapping) |
+
+
+## The ScenarioA1 project renamed Rules
+
+Backlog section 44, on the user's go-ahead after pass 28c. No estimate. Branch `feature/rename-scenarioa1-to-rules`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Survey: references to the project and namespace (202), the explicit resource names, lock files, the CI workflow and Docker script, a Maps test naming the folders, three design documents; saved games record only package ids | 07:42 | 07:46 | 0:04 | Neither project is in the solution |
+| Rename: two folders and project files, namespace in 161 files, partial qualifiers `ScenarioA1.` to `Rules.` in 3 files, lock files, CI, Docker script, documents noting the old name; solution, rules tests, and a locked restore build clean | 07:46 | 07:55 | 0:09 | No Studio check: nothing the Studio shows changes |

@@ -12,8 +12,8 @@ public sealed partial class ScenarioA1LocationCompatibilityTests
 {
     private static readonly string[] ScannedDirectories =
     [
-        Path.Combine("src", "ASL", "LimboDancer.Domains.Asl.ScenarioA1"),
-        Path.Combine("src", "ASL", "tests", "LimboDancer.Domains.Asl.ScenarioA1.Tests"),
+        Path.Combine("src", "ASL", "LimboDancer.Domains.Asl.Rules"),
+        Path.Combine("src", "ASL", "tests", "LimboDancer.Domains.Asl.Rules.Tests"),
         Path.Combine("docs", "ASL", "SourceRegistry"),
     ];
 

@@ -101,8 +101,8 @@ public sealed partial class GamePlanner
 
         if (armor is { Unarmored: false })
         {
-            int?[] factors = [armor.FrontAf, armor.SideAf, ScenarioA1.ScenarioA1ArmorReference.ArmorFactor(armor, "turret", "front"),
-                ScenarioA1.ScenarioA1ArmorReference.ArmorFactor(armor, "turret", "side")];
+            int?[] factors = [armor.FrontAf, armor.SideAf, Rules.ScenarioA1ArmorReference.ArmorFactor(armor, "turret", "front"),
+                Rules.ScenarioA1ArmorReference.ArmorFactor(armor, "turret", "side")];
             var strongest = factors.Max() ?? 0;
             value += strongest == 0 ? 1 : (strongest + 4) / 5;
         }
@@ -322,7 +322,7 @@ public sealed partial class GamePlanner
             .Select(unit => unit.Id).Order(StringComparer.Ordinal).ToArray();
         var with = escorted.Length > 0 ? $", escorting {string.Join(", ", escorted)} (A20.53)," : string.Empty;
         var scoring = ExitScoring(state, movers[0]!.Side, from, edge, escorted.Length > 0);
-        var package = ScenarioA1.ScenarioA1FirePackage.Identity.ToString();
+        var package = Rules.ScenarioA1FirePackage.Identity.ToString();
         if (advancing)
         {
             // A4.72 (ruling R25.5): an advance off the map into Difficult Terrain makes the unit CX; a CX unit does not make it.

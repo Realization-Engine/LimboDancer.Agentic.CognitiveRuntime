@@ -160,7 +160,7 @@ public sealed class ConcealedEntryTests : IDisposable
         Assert.Equal(types, record.Events.Skip((int)start).Select(item => item.Type));
         Assert.Equal(events, types.Length);
         Assert.All(record.Events.Skip((int)start + 1), item => Assert.Contains(record.Events[(int)start].EventId, item.Causes));
-        Assert.All(record.Events.Skip((int)start), item => Assert.Equal(ScenarioA1.ScenarioA1PostRevealPackage.Identity.ToString(), item.RulePackage));
+        Assert.All(record.Events.Skip((int)start), item => Assert.Equal(Rules.ScenarioA1PostRevealPackage.Identity.ToString(), item.RulePackage));
 
         var state = History().Current!;
         var mover = state.Unit("g1")!;

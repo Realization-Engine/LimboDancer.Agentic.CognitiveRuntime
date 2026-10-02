@@ -1,5 +1,5 @@
 using LimboDancer.Domains.Asl.Maps.Coordinates;
-using LimboDancer.Domains.Asl.ScenarioA1;
+using LimboDancer.Domains.Asl.Rules;
 
 namespace LimboDancer.Domains.Asl.Play;
 
