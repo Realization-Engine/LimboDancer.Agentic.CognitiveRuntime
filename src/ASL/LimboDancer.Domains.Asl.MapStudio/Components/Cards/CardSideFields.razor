@@ -127,7 +127,7 @@
         SideDraft.Elr = string.Empty;
     });
 
-    private Task AddBalance(UnitDraft unit) => Set(() => (SideDraft.BalanceUnits ??= []).Add(new UnitDraft { Definition = unit.Definition, Count = unit.Count }));
+    private Task AddBalance(LineDraft unit) => Set(() => (SideDraft.BalanceUnits ??= []).Add(new LineDraft { Definition = unit.Definition, Count = unit.Count }));
 
     private void RemoveBalance(int at)
     {

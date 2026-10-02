@@ -49,7 +49,7 @@
     public IReadOnlyList<string>? Areas { get; set; }
 
     [Parameter]
-    public EventCallback<UnitDraft> AddRequested { get; set; }
+    public EventCallback<LineDraft> AddRequested { get; set; }
 
     protected override void OnParametersSet()
     {
@@ -68,5 +68,5 @@
     private static string Text(ChangeEventArgs args) => args.Value as string ?? string.Empty;
 
     private Task Add() => definition.Length == 0 ? Task.CompletedTask
-        : AddRequested.InvokeAsync(new UnitDraft { Definition = definition, Count = count, Area = area });
+        : AddRequested.InvokeAsync(new LineDraft { Definition = definition, Count = count, Area = area });
 }

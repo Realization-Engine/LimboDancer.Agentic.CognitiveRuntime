@@ -37,7 +37,10 @@ public sealed class CardDraft
 
     public string Turns { get; set; } = "10";
 
-    public bool HalfTurn { get; set; }
+    public bool HalfTurn
+    {
+        get; set;
+    }
 
     public string SetsUpFirst { get; set; } = "german";
 
@@ -91,9 +94,9 @@ public sealed class CardDraft
             MovesFirst = card.Turns.MovesFirst ?? string.Empty,
             MovesFirstNote = card.Turns.MovesFirstNote ?? "A die roll before play decides which side moves first.",
             Defender = card.ScenarioDefender ?? string.Empty,
-            Sides = [.. card.Sides.Take(2).Select(SideDraft.From)],
-            Rules = [.. card.SpecialRules.Select(RuleDraft.From)],
-            Victory = VictoryDraft.From(card.VictoryConditions),
+            Sides = [.. card.Sides.Take(2).Select(SideDraft.Of)],
+            Rules = [.. card.SpecialRules.Select(RuleDraft.Of)],
+            Victory = VictoryDraft.Of(card.VictoryConditions),
             SourceBasis = card.Source.Basis,
             SourceLegacy = card.Source.Legacy,
             Adaptation = string.Join('\n', card.Source.Adaptation),
@@ -206,7 +209,10 @@ public sealed class BoardDraft
 
     public string Row { get; set; } = "0";
 
-    public bool Reversed { get; set; }
+    public bool Reversed
+    {
+        get; set;
+    }
 }
 
 /// <summary>A side's fields (rulings R17.5 to R17.8, R20.4, R22.3, R27.1).</summary>
@@ -233,11 +239,14 @@ public sealed class SideDraft
     public string Balance { get; set; } = string.Empty;
 
     /// <summary>The counters the Balance adds (ruling R20.4); null when the card lists none, kept apart from an empty list.</summary>
-    public List<UnitDraft>? BalanceUnits { get; set; }
+    public List<LineDraft>? BalanceUnits
+    {
+        get; set;
+    }
 
     public List<GroupDraft> Groups { get; set; } = [];
 
-    public static SideDraft From(ScenarioCardSide side) => new()
+    public static SideDraft Of(ScenarioCardSide side) => new()
     {
         Side = side.Side,
         Nation = side.Nation ?? string.Empty,
@@ -248,8 +257,8 @@ public sealed class SideDraft
         EdgeNote = side.FriendlyEdge.Note ?? string.Empty,
         Integrity = CardDraft.Text(side.IntegrityBpv),
         Balance = side.Balance,
-        BalanceUnits = side.BalanceUnits is { } units ? [.. units.Select(UnitDraft.From)] : null,
-        Groups = [.. side.Groups.Select(GroupDraft.From)],
+        BalanceUnits = side.BalanceUnits is { } units ? [.. units.Select(LineDraft.Of)] : null,
+        Groups = [.. side.Groups.Select(GroupDraft.Of)],
     };
 
     internal ScenarioCardSide Build(CardDraft.Numbers read)
@@ -279,16 +288,16 @@ public sealed class GroupDraft
 
     public List<AreaDraft> Areas { get; set; } = [];
 
-    public List<UnitDraft> Units { get; set; } = [];
+    public List<LineDraft> Units { get; set; } = [];
 
-    public static GroupDraft From(ScenarioCardGroup group) => new()
+    public static GroupDraft Of(ScenarioCardGroup group) => new()
     {
         Name = group.Name,
         Elr = CardDraft.Text(group.Elr),
         SetupOrder = CardDraft.Text(group.SetupOrder),
         Dummies = CardDraft.Text(group.Dummies),
-        Areas = [.. group.Areas.Select(AreaDraft.From)],
-        Units = [.. group.Units.Select(UnitDraft.From)],
+        Areas = [.. group.Areas.Select(AreaDraft.Of)],
+        Units = [.. group.Units.Select(LineDraft.Of)],
     };
 
     internal ScenarioCardGroup Build(CardDraft.Numbers read, string side) =>
@@ -324,9 +333,12 @@ public sealed class AreaDraft
     public string MinMmc { get; set; } = string.Empty;
 
     /// <summary>Whether its counters may set up under "?", or no word on it (ruling R19.4).</summary>
-    public bool? Concealed { get; set; }
+    public bool? Concealed
+    {
+        get; set;
+    }
 
-    public static AreaDraft From(ScenarioCardSetup area) => new()
+    public static AreaDraft Of(ScenarioCardSetup area) => new()
     {
         Id = area.Id,
         Kind = area.Kind,
@@ -360,7 +372,7 @@ public sealed class AreaDraft
 }
 
 /// <summary>A counter line: a catalog definition, a count, and its area (ruling R17.8).</summary>
-public sealed class UnitDraft
+public sealed class LineDraft
 {
     public string Definition { get; set; } = string.Empty;
 
@@ -368,7 +380,7 @@ public sealed class UnitDraft
 
     public string Area { get; set; } = string.Empty;
 
-    public static UnitDraft From(ScenarioCardUnit unit) => new() { Definition = unit.Definition, Count = CardDraft.Text(unit.Count), Area = unit.Area ?? string.Empty };
+    public static LineDraft Of(ScenarioCardUnit unit) => new() { Definition = unit.Definition, Count = CardDraft.Text(unit.Count), Area = unit.Area ?? string.Empty };
 
     internal ScenarioCardUnit Build(CardDraft.Numbers read, string where) =>
         new(Definition, read.Int(Count, $"card.ob: {where} count of '{Definition}'"), Area.Length > 0 ? Area : null);
@@ -387,7 +399,7 @@ public sealed class RuleDraft
 
     public string Note { get; set; } = string.Empty;
 
-    public static RuleDraft From(ScenarioCardRule rule) => new()
+    public static RuleDraft Of(ScenarioCardRule rule) => new()
     {
         Text = rule.Text,
         Status = rule.Status,
@@ -410,19 +422,22 @@ public sealed class VictoryDraft
     public string Rules { get; set; } = string.Empty;
 
     /// <summary>Whether the game evaluates them: the outcomes and the result when none holds are then part of the card.</summary>
-    public bool Evaluated { get; set; }
+    public bool Evaluated
+    {
+        get; set;
+    }
 
     public List<OutcomeDraft> Outcomes { get; set; } = [];
 
     public string Otherwise { get; set; } = string.Empty;
 
-    public static VictoryDraft From(ScenarioCardVictory victory) => new()
+    public static VictoryDraft Of(ScenarioCardVictory victory) => new()
     {
         Kind = victory.Kind,
         Text = victory.Text,
         Rules = string.Join(' ', victory.Rules),
         Evaluated = victory.Outcomes is not null,
-        Outcomes = [.. (victory.Outcomes ?? []).Select(OutcomeDraft.From)],
+        Outcomes = [.. (victory.Outcomes ?? []).Select(OutcomeDraft.Of)],
         Otherwise = victory.Otherwise ?? string.Empty,
     };
 
@@ -436,15 +451,18 @@ public sealed class OutcomeDraft
 {
     public string Winner { get; set; } = string.Empty;
 
-    public bool Immediate { get; set; }
+    public bool Immediate
+    {
+        get; set;
+    }
 
     public List<ConditionDraft> Conditions { get; set; } = [];
 
-    public static OutcomeDraft From(ScenarioCardOutcome outcome) => new()
+    public static OutcomeDraft Of(ScenarioCardOutcome outcome) => new()
     {
         Winner = outcome.Winner,
         Immediate = outcome.Immediate,
-        Conditions = [.. outcome.Any.Select(ConditionDraft.From)],
+        Conditions = [.. outcome.Any.Select(ConditionDraft.Of)],
     };
 
     internal ScenarioCardOutcome Build(CardDraft.Numbers read) => new(Winner, Immediate, [.. Conditions.Select(condition => condition.Build(read))]);
@@ -467,7 +485,10 @@ public sealed class ConditionDraft
 
     public string AtLeast { get; set; } = string.Empty;
 
-    public bool MeleeUncontrolled { get; set; }
+    public bool MeleeUncontrolled
+    {
+        get; set;
+    }
 
     public string Ratio { get; set; } = string.Empty;
 
@@ -476,7 +497,7 @@ public sealed class ConditionDraft
     /// <summary>The hexes an exit is made on or adjacent to, each with its board (<c>bd02:I1</c>).</summary>
     public string Near { get; set; } = string.Empty;
 
-    public static ConditionDraft From(ScenarioCardCondition condition) => new()
+    public static ConditionDraft Of(ScenarioCardCondition condition) => new()
     {
         Type = condition.Type,
         Side = condition.Side,

@@ -77,13 +77,11 @@ public sealed class CardEditorPageTests : IDisposable
         editor.Find("#edit-source").Change("guards-counterattack");
         Assert.Equal("guards-counterattack-copy", editor.Find("#edit-id").GetAttribute("value"));
         Assert.NotNull(editor.Find("#edit-valid"));
-        editor.Find("#edit-pick-side").Change("0");
-        editor.Find("#edit-pick-group").Change("1");
-        editor.Find("#edit-pick-definition").Change("attacker-lmg");
-        editor.Find("#edit-pick-count").Change("1");
-        editor.Find("#edit-pick-area").Change("F5");
-        editor.Find("#edit-pick-add").Click();
-        Assert.Contains("Added 1", editor.Find("#edit-note").TextContent, StringComparison.Ordinal);
+        editor.Find("#edit-group-0-0-pick-definition").Change("attacker-lmg");
+        editor.Find("#edit-group-0-0-pick-count").Change("1");
+        editor.Find("#edit-group-0-0-pick-area").Change("F5");
+        editor.Find("#edit-group-0-0-pick-add").Click();
+        Assert.Contains("attacker-lmg", editor.Find("#edit-group-0-0-units").InnerHtml, StringComparison.Ordinal);
         editor.Find("#edit-save").Click();
         var saved = live.Cards.Read("guards-counterattack-copy", live.Catalogs[0])!;
         Assert.True(saved.IsValid, string.Join("; ", saved.Diagnostics));
@@ -93,11 +91,10 @@ public sealed class CardEditorPageTests : IDisposable
         Assert.Equal(ScenarioCards.Read("guards-counterattack", live.Catalogs[0])!.Card!.Sides.Select(side => side.IntegrityBpv), saved.Card.Sides.Select(side => side.IntegrityBpv));
 
         // Referee, pass 22: the picker adds the counter it shows, the first of the side it names.
-        editor.Find("#edit-pick-side").Change("1");
-        var shown = editor.Find("#edit-pick-definition option").GetAttribute("value");
-        editor.Find("#edit-pick-add").Click();
-        Assert.Contains($"({shown})", editor.Find("#edit-pick-definition option").OuterHtml, StringComparison.Ordinal);
-        Assert.EndsWith($"\"{shown}\"", JsonDocument.Parse(editor.Find("#edit-groups-1").TextContent).RootElement[0].GetProperty("units").EnumerateArray().Last().GetProperty("definition").GetRawText(), StringComparison.Ordinal);
+        var shown = editor.Find("#edit-group-1-0-pick-definition option").GetAttribute("value");
+        editor.Find("#edit-group-1-0-pick-add").Click();
+        var json = JsonDocument.Parse(editor.Find("#edit-json pre").TextContent).RootElement;
+        Assert.Equal(shown, json.GetProperty("sides")[1].GetProperty("groups")[0].GetProperty("units").EnumerateArray().Last().GetProperty("definition").GetString());
 
         // Referee, pass 22: a second copy under the same id does not overwrite the first.
         var again = context.Render<EditorPage>();
@@ -106,9 +103,9 @@ public sealed class CardEditorPageTests : IDisposable
         again.Find("#edit-save").Click();
         Assert.Contains("Not saved", again.Find("#edit-note").TextContent, StringComparison.Ordinal);
 
-        // Broken JSON is reported, not saved.
-        editor.Find("#edit-victory").Change("{ nope");
-        Assert.Contains("card.victory", editor.Find("#edit-diagnostics").TextContent, StringComparison.Ordinal);
+        // A field that is not a number is reported in plain words, not saved (ruling R28.3).
+        editor.Find("#edit-turns").Change("ten");
+        Assert.Contains("card.turns: the Game Turns is 'ten', which is not a whole number", editor.Find("#edit-diagnostics").TextContent, StringComparison.Ordinal);
 
         // The Scenarios page lists the copy as yours and links it back to the editor.
         var scenarios = context.Render<ScenariosPage>();
@@ -123,7 +120,7 @@ public sealed class CardEditorPageTests : IDisposable
     {
         var editor = context.Render<EditorPage>();
         editor.Find("#edit-id").Change("free-game");
-        editor.Find("#edit-boards").Change(FakeBoardProvider.Board.Ref.Value);
+        CardEditorDriver.Boards(editor, FakeBoardProvider.Board.Ref.Value);
         editor.Find("#edit-save").Click();
 
         var page = context.Render<PlayPage>();
