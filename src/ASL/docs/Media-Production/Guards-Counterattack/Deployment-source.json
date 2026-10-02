@@ -1,0 +1,9 @@
+{
+  "game": "guards-map-tour-01",
+  "revision": 52,
+  "sha256": "208a6ad3cea8285f4eb061b3e6855c35cebe166ef52b8fd07e752d089931becb",
+  "catalog": "asl-scenario-a1@1.12.0",
+  "board": "bd01",
+  "counters": 51,
+  "note": "Read-only transcription of the saved deployment used for the narration; the live game record is not included."
+}

@@ -1,0 +1,22 @@
+{
+  "master": "the-guards-counterattack-cut-5-named.mp3",
+  "wav": "the-guards-counterattack-cut-5-named.wav",
+  "duration_seconds": 1287.89,
+  "turns": 55,
+  "reused_turns": 0,
+  "new_turns": 55,
+  "measured_loudness_lufs": "-21.03",
+  "measured_true_peak_dbtp": "-3.19",
+  "human_listening_review": "pending",
+  "normalization": {
+    "integrated_loudness_target_lufs": -20,
+    "true_peak_target_dbtp": -3,
+    "loudness_range_target_lu": 11,
+    "sample_rate_hz": 44100,
+    "channels": 1,
+    "master_pcm_bits": 16,
+    "mp3_bitrate_kbps": 160,
+    "between_turns_seconds": 0.45,
+    "between_scenes_seconds": 1.5
+  }
+}

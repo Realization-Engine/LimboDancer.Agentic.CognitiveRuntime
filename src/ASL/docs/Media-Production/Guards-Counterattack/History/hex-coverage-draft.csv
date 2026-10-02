@@ -1,0 +1,23 @@
+Side,Hex,Level,Building group,Squads,Named personnel,Interview status
+german,F5,0,F5,1,Martin Adler; Karl Brenner,existing interview
+german,F6,0,F5,1,Heinrich Vogt,new interview draft
+german,H5,0,F5,1,Paul Seidel,presenter orientation
+german,J4,0,K5,1,Walter Kruger,presenter orientation
+german,J5,0,K5,1,Emil Roth,presenter orientation
+german,K5,0,K5,1,Josef Baumann; Otto Weiss,presenter orientation
+german,I7,0,I7,3,Hans Dietrich; Kurt Neumann; Anton Schreiber; Ernst Falk,new interview draft
+german,L6,0,M7,1,Franz Becker,presenter orientation
+german,L7,0,M7,1,Georg Lenz,presenter orientation
+german,M7,0,M7,1,Rudolf Winter; Wilhelm Hartmann,presenter orientation
+german,M9,0,M9,1,Wilhelm Fuchs; Friedrich Keller,presenter orientation
+russian,E4,0,F3,3,Ivan Makarov; Sergei Antonov; Mikhail Baranov,presenter orientation
+russian,F3,0,F3,3,Viktor Lebedev; Nikolai Orlov; Grigori Fomin; Aleksei Voronin,existing interview
+russian,G3,0,F3,3,Dmitri Yegorov; Andrei Petrov; Leonid Savin,presenter orientation
+russian,G4,0,F3,3,Vasili Morozov; Boris Nikitin; Fyodor Karpov,presenter orientation
+russian,J2,0,J2,1,Stepan Kuznetsov; Pavel Sokolov,new interview draft
+russian,M2,0,M2,3,Pyotr Denisov; Yakov Tikhonov; Aleksandr Melnikov,presenter orientation
+russian,N2,0,N2,1,Konstantin Volkov,presenter orientation
+russian,M5,0,N4,1,Anatoli Ryabov,presenter orientation
+russian,N3,0,N4,1,Semyon Gusev,presenter orientation
+russian,N4,0,N4,1,Roman Ilyin; Nikolai Belov,new interview draft
+russian,N5,0,N4,1,Timofei Pavlov,presenter orientation

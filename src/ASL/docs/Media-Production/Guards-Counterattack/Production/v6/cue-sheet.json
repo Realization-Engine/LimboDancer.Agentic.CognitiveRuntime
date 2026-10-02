@@ -1,0 +1,442 @@
+[
+  {
+    "turn": 1,
+    "scene": "1. The card and the battlefield",
+    "speaker": "PRESENTER",
+    "start_seconds": 0,
+    "duration_seconds": 211.6,
+    "reused": false
+  },
+  {
+    "turn": 2,
+    "scene": "2. Fifty-one counters",
+    "speaker": "PRESENTER",
+    "start_seconds": 213.1,
+    "duration_seconds": 127.92,
+    "reused": false
+  },
+  {
+    "turn": 3,
+    "scene": "3. Choosing the first objective",
+    "speaker": "PRESENTER",
+    "start_seconds": 342.52,
+    "duration_seconds": 9.36,
+    "reused": false
+  },
+  {
+    "turn": 4,
+    "scene": "3. Choosing the first objective",
+    "speaker": "SOVIET VORONIN",
+    "start_seconds": 352.33,
+    "duration_seconds": 63.36,
+    "reused": false
+  },
+  {
+    "turn": 5,
+    "scene": "3. Choosing the first objective",
+    "speaker": "PRESENTER",
+    "start_seconds": 416.14,
+    "duration_seconds": 3.76,
+    "reused": false
+  },
+  {
+    "turn": 6,
+    "scene": "3. Choosing the first objective",
+    "speaker": "SOVIET VORONIN",
+    "start_seconds": 420.35,
+    "duration_seconds": 50.64,
+    "reused": false
+  },
+  {
+    "turn": 7,
+    "scene": "3. Choosing the first objective",
+    "speaker": "PRESENTER",
+    "start_seconds": 471.44,
+    "duration_seconds": 5.76,
+    "reused": false
+  },
+  {
+    "turn": 8,
+    "scene": "3. Choosing the first objective",
+    "speaker": "SOVIET VORONIN",
+    "start_seconds": 477.65,
+    "duration_seconds": 30.8,
+    "reused": false
+  },
+  {
+    "turn": 9,
+    "scene": "4. Defending the crossing",
+    "speaker": "PRESENTER",
+    "start_seconds": 509.95,
+    "duration_seconds": 10.24,
+    "reused": false
+  },
+  {
+    "turn": 10,
+    "scene": "4. Defending the crossing",
+    "speaker": "GERMAN BRENNER",
+    "start_seconds": 520.64,
+    "duration_seconds": 42.48,
+    "reused": false
+  },
+  {
+    "turn": 11,
+    "scene": "4. Defending the crossing",
+    "speaker": "PRESENTER",
+    "start_seconds": 563.57,
+    "duration_seconds": 2.8,
+    "reused": false
+  },
+  {
+    "turn": 12,
+    "scene": "4. Defending the crossing",
+    "speaker": "GERMAN BRENNER",
+    "start_seconds": 566.82,
+    "duration_seconds": 52.72,
+    "reused": false
+  },
+  {
+    "turn": 13,
+    "scene": "4. Defending the crossing",
+    "speaker": "PRESENTER",
+    "start_seconds": 619.99,
+    "duration_seconds": 2.8,
+    "reused": false
+  },
+  {
+    "turn": 14,
+    "scene": "4. Defending the crossing",
+    "speaker": "GERMAN BRENNER",
+    "start_seconds": 623.24,
+    "duration_seconds": 25.6,
+    "reused": false
+  },
+  {
+    "turn": 15,
+    "scene": "5. The squad's job",
+    "speaker": "PRESENTER",
+    "start_seconds": 650.34,
+    "duration_seconds": 8.48,
+    "reused": false
+  },
+  {
+    "turn": 16,
+    "scene": "5. The squad's job",
+    "speaker": "SOVIET LEBEDEV",
+    "start_seconds": 659.27,
+    "duration_seconds": 40.48,
+    "reused": false
+  },
+  {
+    "turn": 17,
+    "scene": "5. The squad's job",
+    "speaker": "PRESENTER",
+    "start_seconds": 700.2,
+    "duration_seconds": 2.56,
+    "reused": false
+  },
+  {
+    "turn": 18,
+    "scene": "5. The squad's job",
+    "speaker": "SOVIET LEBEDEV",
+    "start_seconds": 703.21,
+    "duration_seconds": 21.6,
+    "reused": false
+  },
+  {
+    "turn": 19,
+    "scene": "5. The squad's job",
+    "speaker": "PRESENTER",
+    "start_seconds": 725.26,
+    "duration_seconds": 5.52,
+    "reused": false
+  },
+  {
+    "turn": 20,
+    "scene": "5. The squad's job",
+    "speaker": "GERMAN ADLER",
+    "start_seconds": 731.23,
+    "duration_seconds": 26.72,
+    "reused": false
+  },
+  {
+    "turn": 21,
+    "scene": "5. The squad's job",
+    "speaker": "PRESENTER",
+    "start_seconds": 758.4,
+    "duration_seconds": 5.44,
+    "reused": false
+  },
+  {
+    "turn": 22,
+    "scene": "5. The squad's job",
+    "speaker": "GERMAN ADLER",
+    "start_seconds": 764.29,
+    "duration_seconds": 40.16,
+    "reused": false
+  },
+  {
+    "turn": 23,
+    "scene": "5. The squad's job",
+    "speaker": "PRESENTER",
+    "start_seconds": 804.9,
+    "duration_seconds": 6.08,
+    "reused": false
+  },
+  {
+    "turn": 24,
+    "scene": "5. The squad's job",
+    "speaker": "GERMAN VOGT",
+    "start_seconds": 811.43,
+    "duration_seconds": 24.08,
+    "reused": false
+  },
+  {
+    "turn": 25,
+    "scene": "5. The squad's job",
+    "speaker": "PRESENTER",
+    "start_seconds": 835.96,
+    "duration_seconds": 2.24,
+    "reused": false
+  },
+  {
+    "turn": 26,
+    "scene": "5. The squad's job",
+    "speaker": "GERMAN VOGT",
+    "start_seconds": 838.65,
+    "duration_seconds": 17.76,
+    "reused": false
+  },
+  {
+    "turn": 27,
+    "scene": "6. The central fight",
+    "speaker": "PRESENTER",
+    "start_seconds": 857.91,
+    "duration_seconds": 9.28,
+    "reused": false
+  },
+  {
+    "turn": 28,
+    "scene": "6. The central fight",
+    "speaker": "SOVIET SOKOLOV",
+    "start_seconds": 867.64,
+    "duration_seconds": 46.96,
+    "reused": false
+  },
+  {
+    "turn": 29,
+    "scene": "6. The central fight",
+    "speaker": "PRESENTER",
+    "start_seconds": 915.05,
+    "duration_seconds": 3.68,
+    "reused": false
+  },
+  {
+    "turn": 30,
+    "scene": "6. The central fight",
+    "speaker": "SOVIET SOKOLOV",
+    "start_seconds": 919.18,
+    "duration_seconds": 34.24,
+    "reused": false
+  },
+  {
+    "turn": 31,
+    "scene": "6. The central fight",
+    "speaker": "PRESENTER",
+    "start_seconds": 953.87,
+    "duration_seconds": 6.8,
+    "reused": false
+  },
+  {
+    "turn": 32,
+    "scene": "6. The central fight",
+    "speaker": "GERMAN FALK",
+    "start_seconds": 961.12,
+    "duration_seconds": 32.4,
+    "reused": false
+  },
+  {
+    "turn": 33,
+    "scene": "6. The central fight",
+    "speaker": "PRESENTER",
+    "start_seconds": 993.97,
+    "duration_seconds": 3.12,
+    "reused": false
+  },
+  {
+    "turn": 34,
+    "scene": "6. The central fight",
+    "speaker": "GERMAN FALK",
+    "start_seconds": 997.54,
+    "duration_seconds": 34.08,
+    "reused": false
+  },
+  {
+    "turn": 35,
+    "scene": "6. The central fight",
+    "speaker": "PRESENTER",
+    "start_seconds": 1032.07,
+    "duration_seconds": 4.08,
+    "reused": false
+  },
+  {
+    "turn": 36,
+    "scene": "6. The central fight",
+    "speaker": "GERMAN FALK",
+    "start_seconds": 1036.6,
+    "duration_seconds": 22.64,
+    "reused": false
+  },
+  {
+    "turn": 37,
+    "scene": "7. The eastern opportunity",
+    "speaker": "PRESENTER",
+    "start_seconds": 1060.74,
+    "duration_seconds": 6.96,
+    "reused": false
+  },
+  {
+    "turn": 38,
+    "scene": "7. The eastern opportunity",
+    "speaker": "SOVIET BELOV",
+    "start_seconds": 1068.15,
+    "duration_seconds": 48.32,
+    "reused": false
+  },
+  {
+    "turn": 39,
+    "scene": "7. The eastern opportunity",
+    "speaker": "PRESENTER",
+    "start_seconds": 1116.92,
+    "duration_seconds": 4.72,
+    "reused": false
+  },
+  {
+    "turn": 40,
+    "scene": "7. The eastern opportunity",
+    "speaker": "SOVIET BELOV",
+    "start_seconds": 1122.09,
+    "duration_seconds": 39.84,
+    "reused": false
+  },
+  {
+    "turn": 41,
+    "scene": "7. The eastern opportunity",
+    "speaker": "PRESENTER",
+    "start_seconds": 1162.38,
+    "duration_seconds": 3.92,
+    "reused": false
+  },
+  {
+    "turn": 42,
+    "scene": "7. The eastern opportunity",
+    "speaker": "SOVIET BELOV",
+    "start_seconds": 1166.75,
+    "duration_seconds": 38.56,
+    "reused": false
+  },
+  {
+    "turn": 43,
+    "scene": "7. The eastern opportunity",
+    "speaker": "PRESENTER",
+    "start_seconds": 1205.76,
+    "duration_seconds": 5.68,
+    "reused": false
+  },
+  {
+    "turn": 44,
+    "scene": "7. The eastern opportunity",
+    "speaker": "GERMAN BRENNER",
+    "start_seconds": 1211.89,
+    "duration_seconds": 42.48,
+    "reused": false
+  },
+  {
+    "turn": 45,
+    "scene": "8. Five turns to make it count",
+    "speaker": "PRESENTER",
+    "start_seconds": 1255.87,
+    "duration_seconds": 3.76,
+    "reused": false
+  },
+  {
+    "turn": 46,
+    "scene": "8. Five turns to make it count",
+    "speaker": "SOVIET VORONIN",
+    "start_seconds": 1260.08,
+    "duration_seconds": 33.84,
+    "reused": false
+  },
+  {
+    "turn": 47,
+    "scene": "8. Five turns to make it count",
+    "speaker": "PRESENTER",
+    "start_seconds": 1294.37,
+    "duration_seconds": 4.32,
+    "reused": false
+  },
+  {
+    "turn": 48,
+    "scene": "8. Five turns to make it count",
+    "speaker": "SOVIET VORONIN",
+    "start_seconds": 1299.14,
+    "duration_seconds": 22.32,
+    "reused": false
+  },
+  {
+    "turn": 49,
+    "scene": "8. Five turns to make it count",
+    "speaker": "PRESENTER",
+    "start_seconds": 1321.91,
+    "duration_seconds": 4.24,
+    "reused": false
+  },
+  {
+    "turn": 50,
+    "scene": "8. Five turns to make it count",
+    "speaker": "GERMAN BRENNER",
+    "start_seconds": 1326.6,
+    "duration_seconds": 35.44,
+    "reused": false
+  },
+  {
+    "turn": 51,
+    "scene": "8. Five turns to make it count",
+    "speaker": "PRESENTER",
+    "start_seconds": 1362.49,
+    "duration_seconds": 6.16,
+    "reused": false
+  },
+  {
+    "turn": 52,
+    "scene": "8. Five turns to make it count",
+    "speaker": "SOVIET LEBEDEV",
+    "start_seconds": 1369.1,
+    "duration_seconds": 24.24,
+    "reused": false
+  },
+  {
+    "turn": 53,
+    "scene": "8. Five turns to make it count",
+    "speaker": "PRESENTER",
+    "start_seconds": 1393.79,
+    "duration_seconds": 3.04,
+    "reused": false
+  },
+  {
+    "turn": 54,
+    "scene": "8. Five turns to make it count",
+    "speaker": "GERMAN ADLER",
+    "start_seconds": 1397.28,
+    "duration_seconds": 21.2,
+    "reused": false
+  },
+  {
+    "turn": 55,
+    "scene": "8. Five turns to make it count",
+    "speaker": "PRESENTER",
+    "start_seconds": 1418.93,
+    "duration_seconds": 72.56,
+    "reused": false
+  }
+]

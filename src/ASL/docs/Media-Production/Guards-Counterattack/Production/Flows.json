@@ -1,0 +1,30 @@
+{
+  "v5-named": {
+    "flow": {
+      "flow_id": "HgtEu6wTb1U9iQlzdCAN",
+      "name": "The Guards Counterattack - Script v5 - Named Leaders",
+      "url": "https://elevenlabs.io/app/flows/HgtEu6wTb1U9iQlzdCAN"
+    },
+    "full_episode": {
+      "asset_id": "D2vHRSI1aDvMzliO0DVW",
+      "name": "PLAY FULL EPISODE - Script v5 - Named Leaders.mp3",
+      "mime_type": "audio/mpeg",
+      "size_bytes": 25759391,
+      "flow_id": "HgtEu6wTb1U9iQlzdCAN",
+      "node_id": "314IaXmJonwUZya6RJw7"
+    }
+  },
+  "v6": {
+    "flow": {
+      "flow_id": "s7728fkrGhoYg93qWZFO",
+      "url": "https://elevenlabs.io/app/flows/s7728fkrGhoYg93qWZFO"
+    },
+    "full_episode": {
+      "asset_id": "me8QjbINiailzhlkST0D",
+      "node_id": "fLiybBC5CzQd3mxfdjje",
+      "name": "The Guards Counterattack - Script v6 - Complete Episode.mp3",
+      "mime_type": "audio/mpeg",
+      "size_bytes": 29831358
+    }
+  }
+}

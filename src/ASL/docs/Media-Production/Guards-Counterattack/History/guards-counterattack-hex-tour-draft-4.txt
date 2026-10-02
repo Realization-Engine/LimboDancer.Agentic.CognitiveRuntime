@@ -1,0 +1,593 @@
+THE GUARDS COUNTERATTACK: ACROSS THE ROAD
+
+1. Scene 1: Two buildings
+PRESENTER
+
+[calm, clear voice] The Guards Counterattack. Across the Road.
+
+Stalingrad, the sixth of October, nineteen forty-two.
+
+In the north of the city, German and Soviet troops are fighting through the industrial district. The factories, workers' housing, and streets between them form a connected battlefield. Holding a workshop or an apartment building can protect an approach to the next position. Losing one can expose the men still holding nearby.
+
+The Soviet formations fighting in this district include the Thirty-seventh Guards Rifle Division and the Three Hundred and Eighth Rifle Division. The Guards have been formed from airborne troops and are now fighting as infantry. The Three Hundred and Eighth, raised in Siberia, has entered the city fighting under Vasily Chuikov's Sixty-second Army.
+
+Our scenario draws on this struggle around the approaches to the Dzerzhinsky Tractor Works. Its premise is a local Soviet counterattack against German infantry who have gained ground and must now hold it. The Guards are to drive them from their buildings, with other Soviet riflemen already established nearby.
+
+An attack on this scale has an immediate purpose. Recovering a position may help neighboring troops hold on, interfere with the enemy's next advance, or restore room to move. But taking a building is only part of the task. The attackers must arrive with enough men still organized to defend it.
+
+The attack has not begun. On either side of the road, men prepare without knowing what their opponents intend.
+
+2. Scene 1: The battlefield and the objective
+PRESENTER
+
+Look first at the whole battlefield. North is at the top of board one. Hexrows A through P form the playing area. The orange counters are Soviet; the blue counters are German. The Guards are concentrated toward the upper left of the occupied area. Other Soviet riflemen extend the line to the right. German positions face them from buildings farther down the map.
+
+The fighting centers on stone buildings separated by paved roads and open ground, with smaller wooden buildings and patches of woods elsewhere on the board. A building can shelter several squads while dividing their views. Men on one face may see an enemy position that is hidden from men only a hex away.
+
+We will use hex coordinates to locate each stop. F three names both a particular hex and the larger building containing it. The Guards occupy four hexes of that building. The German building called F five likewise extends beyond F five itself. Every unit shown here starts on the ground floor.
+
+The Soviet side has twenty-one squads: twelve Guards squads concentrated in one building group, and nine ordinary rifle squads distributed among four others. Two leaders and a commissar accompany them. Their only separate support weapon is a medium machine gun.
+
+The German side has thirteen rifle squads and five leaders, spread among five building groups. Six light machine guns, one medium machine gun, and one heavy machine gun support them. There are no tanks, artillery batteries, or later reinforcements in this order of battle.
+
+The Soviets move first and have five turns. At the end, they must control at least two more German starting stone buildings than the Germans control Soviet starting stone buildings. Taking two while losing one is not enough. The five German buildings are F five, K five, I seven, M seven, and M nine. The four Soviet stone buildings are F three, J two, M two, and N four. The wooden building at N two does not count toward this building objective.
+
+The Soviets can also win by finishing with at least three times as many unbroken squad-equivalents as the Germans. Infantry that can still act matters as much as the ground gained.
+
+The Germans must prevent both results. That makes the Soviet starting buildings important too. The Germans can threaten those positions as well as defend their own.
+
+3. Scene 1: The complete Soviet deployment
+PRESENTER
+
+Begin with the Guards' building group, F three, toward the western part of the occupied battlefield.
+
+Three Guards squads occupy E four, on the southwestern side of the group. Three more occupy F three with Captain Aleksei Voronin. These are the squads of Lebedev, Orlov, and Fomin. Another three occupy G three, and the remaining three occupy G four. That accounts for all twelve Guards squads, with Voronin as their single leader and no separate support-weapon counters.
+
+Their concentration is formidable, but these four positions have different views. Voronin at F three has a ground-level sightline to just one occupied German hex: F five, across the road at F four. The squads at E four can also see toward H five and J five. Those at G four have lines toward F five, H five, J four, and J five. From G three, every occupied German hex is screened.
+
+The captain stands among twelve squads, yet some can observe German positions he cannot see. Others cannot see an occupied German position at all.
+
+Now move east to the Soviet riflemen. At J two, Sergeant Stepan Kuznetsov's squad has the medium machine gun. Lieutenant Pavel Sokolov is with them. Open ground at J three separates this position from German-held J four, two hexes south of J two.
+
+Farther east, three rifle squads occupy M two. They are the squads of Denisov, Tikhonov, and Melnikov. No leader or support weapon shares their hex. One rifle squad, Volkov's, occupies N two, also without a leader or support weapon. M two is a stone building, with ground-level lines toward German-held K five and, farther away, F five. N two is a separate wooden building. Its squad has no ground-level sightline to an occupied German hex. These neighbors have different roles in the building objective and different views of the enemy.
+
+The last four Soviet rifle squads occupy the building group called N four. Gusev's squad is at N three. Ilyin's squad is at N four with Commissar Nikolai Belov. Ryabov's squad is at M five, and Pavlov's at N five. None of these four squads has a separate support weapon.
+
+The commissar's own position at N four is screened from the occupied German hexes. The squads at M five and N five have views toward several German positions. Belov must therefore depend on reports from men whose immediate situation differs from his own.
+
+That is the entire Soviet deployment: twelve Guards squads in four occupied hexes of building F three; nine rifle squads in seven occupied hexes across J two, M two, N two, and the N four building group. Twenty-one squads, two leaders, one commissar, and one medium machine gun.
+
+4. Scene 1: The complete German deployment
+PRESENTER
+
+Now trace the German deployment from the frontage opposite the Guards to the positions farther south and east.
+
+The first building group is F five. At F five itself, Lieutenant Karl Brenner is with Sergeant Martin Adler's rifle squad. Immediately south, at F six, Vogt's squad has a light machine gun. Toward the eastern end, Seidel's squad occupies H five. This group contains three squads, one leader, and one light machine gun.
+
+Brenner at F five has lines toward the Guards at E four, F three, and G four, and toward the Soviet riflemen at J two and M two. G three is screened. Seidel at H five has lines toward E four, G four, and J two. Vogt at F six cannot see any occupied Soviet hex from ground level. Brenner has a wider view than the Soviet captain opposite him, but even he cannot see the entire Guards concentration.
+
+Next is the building group called K five. Kruger's squad and a light machine gun occupy J four. Roth's squad occupies J five. At K five itself, Baumann's squad has another light machine gun, with the leader Otto Weiss alongside it. This is another three-squad group, with one leader and two light machine guns.
+
+This building joins two parts of the battle. J four has sightlines toward J two and the Guards at G four. J five has lines toward E four and G four, but also toward Soviet-held N five farther east. Weiss at K five can see toward M five and M two. None of the occupied Guards hexes is visible from his position. Reports from his neighboring squads will describe a fight he cannot watch directly.
+
+To the southwest of that group, all three squads at I seven share the ground floor with Senior Lieutenant Ernst Falk. Dietrich's squad carries one light machine gun; Neumann's carries another. Schreiber's squad has no separate support weapon. This is the Germans' three-squad concentration under their strongest leader. Its use remains undecided: staying, firing, or moving would each serve a different immediate purpose.
+
+Farther east is the M seven building group. Becker's squad and a light machine gun occupy L six. Lenz's squad occupies L seven without a separate support weapon. At M seven itself, Winter's squad has the medium machine gun, with the leader Wilhelm Hartmann. This group contains three squads, one leader, one light machine gun, and one medium machine gun.
+
+The positions at L six and M seven have ground-level sightlines toward Soviet-held M five and N five. L seven has no direct ground-level view to an occupied Soviet hex. A squad sheltered there is close to the fighting without sharing the view from the exposed positions.
+
+Finally, farther south at M nine, Fuchs's squad has the heavy machine gun. The leader Friedrich Keller is with it. They occupy a separate building group. From here there is a clear ground-level sightline toward Soviet-held N five, but the weapon does not command every Soviet position simply because it has long reach.
+
+That accounts for all thirteen German squads: three in the F five group, three in K five, three at I seven, three in M seven, and one at M nine. Each building group has a leader. The six light machine guns are at F six, J four, K five, two at I seven, and one at L six. The medium gun is at M seven; the heavy gun is at M nine.
+
+5. Scene 1: At the road
+PRESENTER
+
+Across the whole position, the Soviet advantage lies in squad numbers and the concentrated Guards force. The German advantage includes more leaders and more support weapons distributed among separate buildings.
+
+Three areas now lie before us: the Guards opposite F five; the central positions around J two and K five; and the eastern frontage between N four and M seven, with the German heavy gun farther south at M nine. The sightlines connect these areas. A position facing one building may also receive fire from another direction. The Soviet stone buildings remain objectives the Germans can take, even while the Guards are attacking.
+
+The map shows both forces. The men inside these buildings must work with partial views and reports from their neighbors. A clear sightline does not guarantee effective fire, and a short distance does not establish a safe route.
+
+We begin at F three, ground floor. Captain Aleksei Voronin is here with three Guards squads. Across the paved road at F four stands the German-held frontage at F five.
+
+Captain, what does the building opposite mean to you?
+
+6. Scene 1: Two buildings
+SOVIET VORONIN
+
+[Strong Russian Accent] [measured voice] That is where I want us to establish ourselves first. I can point to it and give an order to reach it. What needs explaining is what happens when some men have arrived and others have not.
+
+[Strong Russian Accent] Fomin asked me about that. He has one of the squads here. If the first men reach the building and stop, waiting for me, we have spent their effort without making the position useful.
+
+7. Scene 1: Two buildings
+PRESENTER
+
+Who else is here?
+
+8. Scene 1: Two buildings
+SOVIET VORONIN
+
+[Strong Russian Accent] Lebedev and Orlov, each with his own squad. Lebedev wants the first instruction made definite. Orlov asks what happens to men who lose contact with their group.
+
+[Strong Russian Accent] There are nine more squads elsewhere in this building. They are near me on a sketch. That does not mean an order reaches them the instant I think of it.
+
+9. Scene 1: Two buildings
+PRESENTER
+
+What do you know about the men opposite?
+
+10. Scene 1: Two buildings
+SOVIET VORONIN
+
+[Strong Russian Accent] The briefing identifies those buildings as enemy positions. I do not know how many men are behind each part, or which group could move to support another.
+
+[Strong Russian Accent] If the first place we reach seems empty, that will not mean the whole building is ours.
+
+11. Scene 2: The opposite frontage
+PRESENTER
+
+We cross the road on the map to hex F five, ground floor. German Lieutenant Karl Brenner shares this position with Sergeant Martin Adler's rifle squad. The road at F four separates them from Voronin at F three. Brenner has not heard Voronin's plans.
+
+Lieutenant, what are you watching?
+
+12. Scene 2: The opposite frontage
+GERMAN BRENNER
+
+[Strong German Accent] [quiet, matter-of-fact voice] The building opposite. Its near frontage, and its ends. Some of what is behind it is hidden from me.
+
+[Strong German Accent] We have been warned to expect an attack. I do not know where the first men will come from. Or whether the first movement I see will be the important one.
+
+13. Scene 2: The opposite frontage
+PRESENTER
+
+What is around you?
+
+14. Scene 2: The opposite frontage
+GERMAN BRENNER
+
+[Strong German Accent] Road in front, toward the north, and to either side of this frontage. Farther around to the southwest, the ground opens out.
+
+[Strong German Accent] Seidel holds the eastern part of our building. Vogt and the light machine gun are to the south. Adler's squad is here.
+
+[Strong German Accent] There are longer openings toward the northeast, too. I cannot spend the whole time watching the men nearest us. If fire reaches us from farther away while they move, Adler will still need an answer about the road in front.
+
+15. Scene 2: The opposite frontage
+PRESENTER
+
+Can Vogt see what you see?
+
+16. Scene 2: The opposite frontage
+GERMAN BRENNER
+
+[Strong German Accent] No. He has a view along the southern side. He does not have this view toward the occupied Russian frontage.
+
+[Strong German Accent] If I tell him something is obvious, I should first ask whether he can see it from where he is.
+
+17. Scene 2: The opposite frontage
+PRESENTER
+
+What has Adler asked you?
+
+18. Scene 2: The opposite frontage
+GERMAN BRENNER
+
+[Strong German Accent] Who covers him if he has to move.
+
+[Strong German Accent] [pause] I cannot promise fire from every neighboring position. If he is being forced out, I need to know while he still has a squad that can move deliberately. Then we can judge what support is possible.
+
+[Strong German Accent] He would prefer a firmer answer. So would I.
+
+19. Scene 3: An order from this position
+PRESENTER
+
+Back at F three, ground floor, we remain at the same opening moment. Voronin must account for squads whose views differ from his own.
+
+Captain, turn us around. What is behind you?
+
+20. Scene 3: An order from this position
+SOVIET VORONIN
+
+[Strong Russian Accent] Another road, to the north. Our own occupied parts of the building lie to either side.
+
+[Strong Russian Accent] I can see toward those positions. That does not tell me whether a sergeant has understood me. The road in front holds my attention. I have to make myself check the rest.
+
+21. Scene 3: An order from this position
+PRESENTER
+
+On the map, Yegorov's squad is at G three, and Morozov's at G four, both on the ground floor of the Guards' building. These nearby positions do not offer the same view.
+
+Captain, do all your squads have a view of the enemy?
+
+22. Scene 3: An order from this position
+SOVIET VORONIN
+
+[Strong Russian Accent] No. Yegorov, toward the northeastern side, cannot see their occupied frontage directly. Morozov, on the southeastern face, has openings toward more positions than I have here.
+
+[Strong Russian Accent] From here, the building opposite takes almost all of my view of their occupied line. Morozov must watch farther to the east as well. If he reports movement there, I cannot settle it by looking out from this position. I need him to tell me where it was and what he actually saw.
+
+23. Scene 3: An order from this position
+PRESENTER
+
+How do you find that out?
+
+24. Scene 3: An order from this position
+SOVIET VORONIN
+
+[Strong Russian Accent] I ask him to explain the task back to me. Yegorov needs an instruction he can follow without seeing the enemy frontage. Morozov needs to know which of the openings in front of him matters to the first movement. If both simply wait for what I can see from here, they may wait for different things.
+
+25. Scene 3: An order from this position
+PRESENTER
+
+Still at F three, ground floor, Sergeant Viktor Lebedev is nearby with his own Guards squad. His concern is the task immediately ahead.
+
+Sergeant, what is your task?
+
+26. Scene 3: An order from this position
+SOVIET LEBEDEV
+
+[Strong Russian Accent] [plain, attentive voice] We are preparing to go toward the building opposite. I know the objective. I still need to know whether my squad moves first or helps another one get across.
+
+27. Scene 3: An order from this position
+PRESENTER
+
+Could you show your men where to go?
+
+28. Scene 3: An order from this position
+SOVIET LEBEDEV
+
+[Strong Russian Accent] I can show them the building. I cannot show them what is behind its near face.
+
+[Strong Russian Accent] Pointing across a road is easier than explaining what to do if the man you are following stops halfway.
+
+29. Scene 3: An order from this position
+PRESENTER
+
+Does having the captain here help?
+
+30. Scene 3: An order from this position
+SOVIET LEBEDEV
+
+[Strong Russian Accent] I can ask him and get an answer. That helps.
+
+[Strong Russian Accent] But a man may wait for the captain to answer something his sergeant has already explained. I need my men listening to the order that applies to them. If I have misunderstood it, I want the captain to correct me here.
+
+31. Scene 3: An order from this position
+PRESENTER
+
+You would tell him you did not understand?
+
+32. Scene 3: An order from this position
+SOVIET LEBEDEV
+
+[Strong Russian Accent] Yes. Here, while I can ask. Before I am out on the road, wondering whether the squad is following me or waiting for me to come back.
+
+33. Scene 4: What a gun can cover
+PRESENTER
+
+We return to Sergeant Martin Adler at F five, ground floor. His rifle squad shares Brenner's position. Vogt's light machine gun is at F six, immediately south, within the same building group. Seidel's squad occupies H five, toward its eastern end.
+
+Sergeant, what do you need to know about Vogt's gun?
+
+34. Scene 4: What a gun can cover
+GERMAN ADLER
+
+[Strong German Accent] [direct, level voice] Whether Vogt can see the ground where my men would be. Someone can tell me he will cover a movement. The fact that he has a gun does not tell me whether he can do it.
+
+35. Scene 4: What a gun can cover
+PRESENTER
+
+Have you asked the lieutenant?
+
+36. Scene 4: What a gun can cover
+GERMAN ADLER
+
+[Strong German Accent] Yes. He needs to know if we are being forced out while I can still get the men to act together. I understand that. I still want to know what would cover us.
+
+37. Scene 4: What a gun can cover
+PRESENTER
+
+You wanted more than he could tell you?
+
+38. Scene 4: What a gun can cover
+GERMAN ADLER
+
+[Strong German Accent] I got as much as he could give me now. Better to know that now than discover later that a promise depended on a gun pointing somewhere else.
+
+39. Scene 4: What a gun can cover
+PRESENTER
+
+What are you checking in your own squad?
+
+40. Scene 4: What a gun can cover
+GERMAN ADLER
+
+[Strong German Accent] Whether the men are still doing the task. A man can stay in his place and watch the wrong direction. Or misunderstand the last instruction. You do not learn that by looking at his back.
+
+[Strong German Accent] I want an answer that concerns what I asked him. Can he tell me what is in front of him? I do not need a speech.
+
+41. Scene 4: What a gun can cover
+PRESENTER
+
+What would make you tell Brenner you could no longer hold?
+
+42. Scene 4: What a gun can cover
+GERMAN ADLER
+
+[Strong German Accent] If I could no longer get the squad to do what holding requires. An approach no longer watched. Men unable to remain effective in their positions.
+
+[Strong German Accent] I would tell him what has stopped working. He can do more with that than with “it is bad here.”
+
+43. Scene 4: What a gun can cover
+PRESENTER
+
+And do your men know you are uncertain?
+
+44. Scene 4: What a gun can cover
+GERMAN ADLER
+
+[Strong German Accent] They see the same building I see. They know I cannot see through it.
+
+[Strong German Accent] If I pretend to know exactly where the attack will come, they may keep looking there after something has changed. I tell them what we expect. I need to remember when I am guessing.
+
+45. Scene 4A: A gun without the same view
+PRESENTER
+
+We move our attention one hex south, to F six, ground floor. This is still the building group called F five. Sergeant Heinrich Vogt's squad has the light machine gun Adler has been asking about.
+
+From the ground floor here, the occupied Soviet positions are screened from view. Brenner's frontage lies immediately north, but its masonry screens the Guards beyond. Roads lie to the south. The gun's presence alone does not establish that it can cover Adler's next movement.
+
+Sergeant, what would you need before promising to cover them?
+
+46. Scene 4A: A gun without the same view
+GERMAN VOGT
+
+[Strong German Accent] I would need to know where they intend to go. Then I can judge whether the gun can help. If I cannot see the ground, I must say so.
+
+[Strong German Accent] I can see our positions farther back, at the isolated building and along the southern line. I cannot see the occupied Russian frontage from here. If Adler wants fire across the road in front of him, we must settle where the gun would have to be before he depends on it.
+
+47. Scene 4A: A gun without the same view
+PRESENTER
+
+Would you move the gun?
+
+48. Scene 4A: A gun without the same view
+GERMAN VOGT
+
+[Strong German Accent] If that is what the task requires. But someone must know that we are moving it. For a time, the gun will not be doing the work it was doing here.
+
+[Strong German Accent] I do not want one squad depending on a position we have just left.
+
+49. Scene 4B: The riflemen's supporting position
+PRESENTER
+
+Now to the Soviet position at J two, ground floor. Lieutenant Pavel Sokolov is with Sergeant Stepan Kuznetsov's rifle squad and the Soviet medium machine gun. These are riflemen of the scenario's Three Hundred and Eighth Division contingent, separate from the Guards concentrated farther west.
+
+Two hexes south, across the open ground at J three, is the German position at J four. It belongs to the building group called K five. Sergeant Kruger's squad and a light machine gun occupy J four. German infantry also occupy J five and K five.
+
+The ground-level line to J four is clear. There are also lines toward H five and F five, where the Germans face the Guards, and toward Falk at I seven. This single Soviet machine gun stands at a junction between the central fight and the attack farther west. Those openings work both ways: the German positions have lines back toward J two.
+
+Lieutenant Sokolov, how do you support the Guards without forgetting your own position?
+
+50. Scene 4B: The riflemen's supporting position
+SOVIET SOKOLOV
+
+[Strong Russian Accent] The German building in front of us is close. Farther to our right, there are openings toward the buildings facing the Guards. I must decide where our fire is needed. If the gun changes its attention, the men depending on it must know.
+
+[Strong Russian Accent] The men here still have ground to hold. I cannot promise their help everywhere at once.
+
+51. Scene 4B: The riflemen's supporting position
+PRESENTER
+
+If the Guards begin to move, does that settle what you should do?
+
+52. Scene 4B: The riflemen's supporting position
+SOVIET SOKOLOV
+
+[Strong Russian Accent] It tells me something has changed. It does not tell me every part of the plan has worked.
+
+[Strong Russian Accent] I still have Germans directly in front of me. If we lose the gun trying to answer every demand, we will help nobody. Kuznetsov and I must keep the squad together and the gun working while we carry out the task we have been given.
+
+53. Scene 4C: The German concentration
+PRESENTER
+
+At I seven, ground floor, Senior Lieutenant Ernst Falk has three German squads and two light machine guns. This concentration gives the German side choices beyond Brenner's immediate frontage.
+
+From the ground floor at I seven, there are clear sightlines to Soviet-held J two and M five. Voronin's position at F three is screened from view. Falk has men available, but moving them would change what he can hold here.
+
+Lieutenant, what would make you commit men from here?
+
+54. Scene 4C: The German concentration
+GERMAN FALK
+
+[Strong German Accent] I cannot see the Guards from here. I can watch openings toward the Russian positions farther east, but an appeal from Brenner must tell me what is happening at his frontage. Does he need fire, men to hold another part of the building, or help getting a squad out? Those are different tasks.
+
+[Strong German Accent] I want to know what they are expected to do when they arrive.
+
+55. Scene 4C: The German concentration
+PRESENTER
+
+What is the cost of waiting?
+
+56. Scene 4C: The German concentration
+GERMAN FALK
+
+[Strong German Accent] The men asking for help may have less time than I think. That is why the report matters. What has failed? What can they still hold?
+
+[Strong German Accent] I must make a decision from what reaches me. I cannot wait until I know everything.
+
+57. Scene 4D: The Soviet line beyond the Guards
+PRESENTER
+
+At the eastern end of the Soviet line, we enter N four, ground floor. Commissar Nikolai Belov is here with Sergeant Roman Ilyin's rifle squad. The same building group has one Soviet squad at N three, one at M five, and one at N five.
+
+Belov has no direct ground-level view of the occupied German positions. The exposed parts of his building have different views. From M five, the German positions at K five, L six, M seven, and I seven fall on clear terrain sightlines. From N five, there are sightlines to L six, M seven, J five, and M nine.
+
+The German medium machine gun is at M seven; the heavy machine gun is at M nine. Belov cannot see either position from this room.
+
+Commissar, what do you need from men whose view is different from yours?
+
+58. Scene 4D: The Soviet line beyond the Guards
+SOVIET BELOV
+
+[Strong Russian Accent] Ryabov and Pavlov are watching approaches I cannot see from this room. I need to know which position has fired, where the fire is falling, and whether their men can still carry out the order. If one reports trouble, I cannot assume the other is facing the same thing.
+
+[Strong Russian Accent] I also need to know whether the men can carry out the next instruction. A position marked on a sketch does not answer that.
+
+59. Scene 4D: The Soviet line beyond the Guards
+PRESENTER
+
+The Guards are preparing an attack elsewhere. What remains your responsibility?
+
+60. Scene 4D: The Soviet line beyond the Guards
+SOVIET BELOV
+
+[Strong Russian Accent] The men here, and the work they have to do. An attack elsewhere does not make our position safe.
+
+[Strong Russian Accent] If help is needed, I want to know what we can actually spare. I do not want to promise men twice.
+
+61. Scene 4D: The Soviet line beyond the Guards
+PRESENTER
+
+Look across from this Soviet building to the Germans at L six and M seven. Both positions have lines toward M five and N five. Between them, Lenz at L seven cannot see an occupied Soviet hex from the ground floor. Farther south, the heavy gun at M nine has a line to N five alone among the occupied Soviet positions. Pavlov at N five faces a field of observation that Belov, only one hex away, does not share.
+
+Between these occupied buildings lie roads, open ground, and obstructed views. A nearby squad may be able to help, but reaching it or coordinating with it presents a separate problem.
+
+62. Scene 5: Where the leader belongs
+PRESENTER
+
+We return to Voronin and Brenner. Both remain at their starting positions.
+
+At F three, ground floor, Captain Voronin has yet to decide whether to accompany the first men across.
+
+What would make you go with them?
+
+63. Scene 5: Where the leader belongs
+SOVIET VORONIN
+
+[Strong Russian Accent] [thoughtful, measured voice] I am useful here while the squads are being organized. The sergeants know where to find me. If I go too early, men who need an answer may have no way to obtain it.
+
+[Strong Russian Accent] But if a forward group reaches the next building and begins to lose its order, I may be needed there. I am trying to recognize when that changes.
+
+64. Scene 5: Where the leader belongs
+PRESENTER
+
+What troubles you about coordinating twelve squads?
+
+65. Scene 5: Where the leader belongs
+SOVIET VORONIN
+
+[Strong Russian Accent] They can each do something reasonable and still interfere with one another. One moves because it thinks another is covering it. The other moves because it thinks the first has already arrived.
+
+[Strong Russian Accent] Nobody needs to be foolish for that to happen.
+
+66. Scene 5: Where the leader belongs
+PRESENTER
+
+Across the road at F five, ground floor, Lieutenant Brenner remains beside Adler. He must judge whether to stay here or attend to trouble elsewhere in the building.
+
+What would take you away from this position?
+
+67. Scene 5: Where the leader belongs
+GERMAN BRENNER
+
+[Strong German Accent] [controlled, deliberate voice] A specific failure that needs me. If Seidel reports that he cannot keep his squad together, I may need to go. I will not leave simply because I want to look.
+
+[Strong German Accent] Adler is here. I expect him to distinguish between being frightened and being unable to continue his task. That is a difficult distinction to demand of another man. Beside him, I have to make it too.
+
+68. Scene 5: Where the leader belongs
+PRESENTER
+
+What would success look like in the next few minutes?
+
+69. Scene 5: Where the leader belongs
+GERMAN BRENNER
+
+[Strong German Accent] Adler still able to tell me what his men can do. Vogt's gun somewhere useful. Seidel still connected to us. That would leave me with choices.
+
+70. Scene 5: Where the leader belongs
+PRESENTER
+
+And if keeping the building means losing that connection?
+
+71. Scene 5: Where the leader belongs
+GERMAN BRENNER
+
+[Strong German Accent] [firm, quiet voice] Which part of the building? Which squads? What could they still defend afterward?
+
+[Strong German Accent] I have orders to hold this position. I am not going to decide how to leave it as an exercise for an interview.
+
+72. Scene 6: Before the first movement
+PRESENTER
+
+Our final questions return to the two sergeants we met across the road from one another.
+
+At F three, ground floor, Viktor Lebedev still has his squad to prepare.
+
+Are you frightened?
+
+73. Scene 6: Before the first movement
+SOVIET LEBEDEV
+
+[Strong Russian Accent] [quiet, candid voice] Yes.
+
+74. Scene 6: Before the first movement
+PRESENTER
+
+What do you do with that?
+
+75. Scene 6: Before the first movement
+SOVIET LEBEDEV
+
+[Strong Russian Accent] I have things to check. That occupies me. I think about the first few steps outside. Then I remember I still have to speak to the men here.
+
+[Strong Russian Accent] You can ask whether a man is ready and hear “yes” without learning very much. I want him to tell me where he thinks we are going. If he points somewhere else, we have found a problem while we can still fix it.
+
+76. Scene 6: Before the first movement
+PRESENTER
+
+Would you want the captain beside you?
+
+77. Scene 6: Before the first movement
+SOVIET LEBEDEV
+
+[Strong Russian Accent] I would be glad of it. But my instruction cannot depend on him coming. I need to know what to do if I look around and he is not there.
+
+78. Scene 6: Before the first movement
+PRESENTER
+
+What do you still need to ask him?
+
+79. Scene 6: Before the first movement
+SOVIET LEBEDEV
+
+[Strong Russian Accent] Whether we move first, or help another squad across. I can prepare the men for either. I do not want them guessing which it is.
+
+80. Scene 6: Before the first movement
+PRESENTER
+
+Across the road at F five, ground floor, German Sergeant Martin Adler remains beside Brenner.
+
+What do your men need from you now?
+
+81. Scene 6: Before the first movement
+GERMAN ADLER
+
+[Strong German Accent] [steady, practical voice] To notice when an instruction no longer makes sense from where they are. To give them an answer they can use.
+
+[Strong German Accent] And if I tell them to move, to have thought about what happens between this cover and the next.
+
+82. Scene 6: Before the first movement
+PRESENTER
+
+[calm, reflective voice] We began with the road at F four. Beyond it, the map has shown us a wider problem.
+
+At F three, Voronin faces one occupied German position. At G four, his squads can see toward four. Across the road, Brenner must watch the Guards and the longer openings toward J two and M two. Vogt, one hex behind him, cannot see an occupied Soviet position at all.
+
+Farther east, Sokolov has the Soviet medium gun at J two. Falk waits at I seven with three German squads. Around N four, the men at M five and N five face German positions their commissar cannot see. All remain at their starting positions. No one has crossed the road.
+
+The Soviet player has five turns. The outcome will depend on ground held and on the infantry still able to act when the scenario ends.
+
+We leave all of them before the first movement. What follows belongs to the scenario as it is played.
+
+[pause] The Guards Counterattack. Across the Road.

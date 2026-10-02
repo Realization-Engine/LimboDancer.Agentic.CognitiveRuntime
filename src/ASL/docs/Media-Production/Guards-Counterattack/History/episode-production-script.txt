@@ -1,0 +1,275 @@
+THE GUARDS COUNTERATTACK: ACROSS THE ROAD
+Approved cast production script
+
+1. Scene 1: Two buildings | PRESENTER
+[calm, clear voice] The Guards Counterattack. Across the Road.
+
+Stalingrad, the sixth of October, nineteen forty-two.
+
+In the north of the city, German and Soviet troops are fighting through the industrial district. The factories, workers' housing, and streets between them form a connected battlefield. Holding a workshop or an apartment building can protect an approach to the next position. Losing one can expose the men still holding nearby.
+
+The Soviet formations fighting in this district include the Thirty-seventh Guards Rifle Division and the Three Hundred and Eighth Rifle Division. The Guards have been formed from airborne troops and are now fighting as infantry. The Three Hundred and Eighth, raised in Siberia, has entered the city fighting under Vasily Chuikov's Sixty-second Army.
+
+Our scenario draws on this struggle around the approaches to the Dzerzhinsky Tractor Works. Its premise is a local Soviet counterattack against German infantry who have gained ground and must now hold it. The Guards are to drive them from their buildings, with other Soviet riflemen already established nearby.
+
+An attack on this scale has an immediate purpose. Recovering a position may help neighboring troops hold on, interfere with the enemy's next advance, or restore room to move. But taking a building is only part of the task. The attackers must arrive with enough men still organized to defend it.
+
+[short pause] This is a dramatization based on the Advanced Squad Leader scenario, The Guards Counterattack. The historical formations are real. Our game map and starting positions are an illustrative battlefield, not a verified reconstruction of these particular streets. The four men you will hear are fictional. Their words are imagined, not recorded testimony.
+
+We hold at one moment, before the scenario's first action. The interviews are separate. None of these men can hear what the others tell us.
+
+Two buildings face each other across a road. Soviet Guards occupy one. German infantry hold the other. From the positions we visit, the near frontage opposite is visible. Much of what lies behind it is concealed.
+
+We begin with Soviet Captain Aleksei Voronin, on the ground floor with three of his squads.
+
+Captain, what does the building opposite mean to you?
+
+2. Scene 1: Two buildings | SOVIET VORONIN
+[Strong Russian Accent] [measured voice] That is where I want us to establish ourselves first. I can point to it and give an order to reach it. What needs explaining is what happens when some men have arrived and others have not.
+
+[Strong Russian Accent] Fomin asked me about that. He has one of the squads here. If the first men reach the building and stop, waiting for me, we have spent their effort without making the position useful.
+
+3. Scene 1: Two buildings | PRESENTER
+Who else is here?
+
+4. Scene 1: Two buildings | SOVIET VORONIN
+[Strong Russian Accent] Lebedev and Orlov, each with his own squad. Lebedev wants the first instruction made definite. Orlov asks what happens to men who lose contact with their group.
+
+[Strong Russian Accent] There are nine more squads elsewhere in this building. They are near me on a sketch. That does not mean an order reaches them the instant I think of it.
+
+5. Scene 1: Two buildings | PRESENTER
+What do you know about the men opposite?
+
+6. Scene 1: Two buildings | SOVIET VORONIN
+[Strong Russian Accent] The briefing identifies those buildings as enemy positions. I do not know how many men are behind each part, or which group could move to support another.
+
+[Strong Russian Accent] If the first place we reach seems empty, that will not mean the whole building is ours.
+
+7. Scene 2: The opposite frontage | PRESENTER
+Across the road, German Lieutenant Karl Brenner occupies the ground floor with Sergeant Martin Adler's rifle squad. Brenner has not heard Voronin's plans.
+
+Lieutenant, what are you watching?
+
+8. Scene 2: The opposite frontage | GERMAN BRENNER
+[Strong German Accent] [quiet, matter-of-fact voice] The building opposite. Its near frontage, and its ends. Some of what is behind it is hidden from me.
+
+[Strong German Accent] We have been warned to expect an attack. I do not know where the first men will come from. Or whether the first movement I see will be the important one.
+
+9. Scene 2: The opposite frontage | PRESENTER
+What is around you?
+
+10. Scene 2: The opposite frontage | GERMAN BRENNER
+[Strong German Accent] Road in front, toward the north, and to either side of this frontage. Farther around to the southwest, the ground opens out.
+
+[Strong German Accent] Seidel holds the eastern part of our building. Vogt and the light machine gun are to the south. Adler's squad is here.
+
+[Strong German Accent] There are longer openings toward the northeast, too. Fire from farther away could occupy us while men closer in move.
+
+11. Scene 2: The opposite frontage | PRESENTER
+Can Vogt see what you see?
+
+12. Scene 2: The opposite frontage | GERMAN BRENNER
+[Strong German Accent] No. He has a view along the southern side. He does not have this view toward the occupied Russian frontage.
+
+[Strong German Accent] If I tell him something is obvious, I should first ask whether he can see it from where he is.
+
+13. Scene 2: The opposite frontage | PRESENTER
+What has Adler asked you?
+
+14. Scene 2: The opposite frontage | GERMAN BRENNER
+[Strong German Accent] Who covers him if he has to move.
+
+[Strong German Accent] [pause] I cannot promise fire from every neighboring position. If he is being forced out, I need to know while he still has a squad that can move deliberately. Then we can judge what support is possible.
+
+[Strong German Accent] He would prefer a firmer answer. So would I.
+
+15. Scene 3: An order from this position | PRESENTER
+Back in the Soviet building, at the same opening moment, Voronin must account for squads whose views differ from his own.
+
+Captain, turn us around. What is behind you?
+
+16. Scene 3: An order from this position | SOVIET VORONIN
+[Strong Russian Accent] Another road, to the north. Our own occupied parts of the building lie to either side.
+
+[Strong Russian Accent] I can see toward those positions. That does not tell me whether a sergeant has understood me. The road in front holds my attention. I have to make myself check the rest.
+
+17. Scene 3: An order from this position | PRESENTER
+Do all your squads have a view of the enemy?
+
+18. Scene 3: An order from this position | SOVIET VORONIN
+[Strong Russian Accent] No. Yegorov, toward the northeastern side, cannot see their occupied frontage directly. Morozov, on the southeastern face, has openings toward more positions than I have here.
+
+[Strong Russian Accent] If I say, “When you see them move,” one sergeant may have a useful instruction. Another may have nothing he can act on.
+
+19. Scene 3: An order from this position | PRESENTER
+How do you find that out?
+
+20. Scene 3: An order from this position | SOVIET VORONIN
+[Strong Russian Accent] I ask him to explain the task back to me. What is he watching? What would cause him to move? If the answer depends on something he cannot see, I need to change the instruction.
+
+21. Scene 3: An order from this position | PRESENTER
+Sergeant Viktor Lebedev is nearby, with his own Guards squad. In his separate interview, the question is more immediate.
+
+Sergeant, what is your task?
+
+22. Scene 3: An order from this position | SOVIET LEBEDEV
+[Strong Russian Accent] [plain, attentive voice] We are preparing to go toward the building opposite. I know the objective. I still need to know whether my squad moves first or helps another one get across.
+
+23. Scene 3: An order from this position | PRESENTER
+Could you show your men where to go?
+
+24. Scene 3: An order from this position | SOVIET LEBEDEV
+[Strong Russian Accent] I can show them the building. I cannot show them what is behind its near face.
+
+[Strong Russian Accent] Pointing across a road is easier than explaining what to do if the man you are following stops halfway.
+
+25. Scene 3: An order from this position | PRESENTER
+Does having the captain here help?
+
+26. Scene 3: An order from this position | SOVIET LEBEDEV
+[Strong Russian Accent] I can ask him and get an answer. That helps.
+
+[Strong Russian Accent] But a man may wait for the captain to answer something his sergeant has already explained. I need my men listening to the order that applies to them. If I have misunderstood it, I want the captain to correct me here.
+
+27. Scene 3: An order from this position | PRESENTER
+You would tell him you did not understand?
+
+28. Scene 3: An order from this position | SOVIET LEBEDEV
+[Strong Russian Accent] Yes. Here, while I can ask. Before I am out on the road, wondering whether the squad is following me or waiting for me to come back.
+
+29. Scene 4: What a gun can cover | PRESENTER
+In the German building, Sergeant Martin Adler also wants an instruction he can use. His rifle squad shares Brenner's position. The light machine gun belongs to Vogt's squad, farther south in the building.
+
+Sergeant, what do you need to know about that gun?
+
+30. Scene 4: What a gun can cover | GERMAN ADLER
+[Strong German Accent] [direct, level voice] Whether Vogt can see the ground where my men would be. Someone can tell me he will cover a movement. The fact that he has a gun does not tell me whether he can do it.
+
+31. Scene 4: What a gun can cover | PRESENTER
+Have you asked the lieutenant?
+
+32. Scene 4: What a gun can cover | GERMAN ADLER
+[Strong German Accent] Yes. He needs to know if we are being forced out while I can still get the men to act together. I understand that. I still want to know what would cover us.
+
+33. Scene 4: What a gun can cover | PRESENTER
+You wanted more than he could tell you?
+
+34. Scene 4: What a gun can cover | GERMAN ADLER
+[Strong German Accent] I got as much as he could give me now. Better to know that now than discover later that a promise depended on a gun pointing somewhere else.
+
+35. Scene 4: What a gun can cover | PRESENTER
+What are you checking in your own squad?
+
+36. Scene 4: What a gun can cover | GERMAN ADLER
+[Strong German Accent] Whether the men are still doing the task. A man can stay in his place and watch the wrong direction. Or misunderstand the last instruction. You do not learn that by looking at his back.
+
+[Strong German Accent] I want an answer that concerns what I asked him. Can he tell me what is in front of him? I do not need a speech.
+
+37. Scene 4: What a gun can cover | PRESENTER
+What would make you tell Brenner you could no longer hold?
+
+38. Scene 4: What a gun can cover | GERMAN ADLER
+[Strong German Accent] If I could no longer get the squad to do what holding requires. An approach no longer watched. Men unable to remain effective in their positions.
+
+[Strong German Accent] I would tell him what has stopped working. He can do more with that than with “it is bad here.”
+
+39. Scene 4: What a gun can cover | PRESENTER
+And do your men know you are uncertain?
+
+40. Scene 4: What a gun can cover | GERMAN ADLER
+[Strong German Accent] They see the same building I see. They know I cannot see through it.
+
+[Strong German Accent] If I pretend to know exactly where the attack will come, they may keep looking there after something has changed. I tell them what we expect. I need to remember when I am guessing.
+
+41. Scene 5: Where the leader belongs | PRESENTER
+We return to the leaders' separate accounts. Neither has left his starting position.
+
+On the Soviet side, Captain Voronin has yet to decide whether to accompany the first men across.
+
+What would make you go with them?
+
+42. Scene 5: Where the leader belongs | SOVIET VORONIN
+[Strong Russian Accent] [thoughtful, measured voice] I am useful here while the squads are being organized. The sergeants know where to find me. If I go too early, men who need an answer may have no way to obtain it.
+
+[Strong Russian Accent] But if a forward group reaches the next building and begins to lose its order, I may be needed there. I am trying to recognize when that changes.
+
+43. Scene 5: Where the leader belongs | PRESENTER
+What troubles you about coordinating twelve squads?
+
+44. Scene 5: Where the leader belongs | SOVIET VORONIN
+[Strong Russian Accent] They can each do something reasonable and still interfere with one another. One moves because it thinks another is covering it. The other moves because it thinks the first has already arrived.
+
+[Strong Russian Accent] Nobody needs to be foolish for that to happen.
+
+45. Scene 5: Where the leader belongs | PRESENTER
+Across the road, Lieutenant Brenner must judge whether to remain beside Adler or attend to trouble elsewhere in his building.
+
+What would take you away from this position?
+
+46. Scene 5: Where the leader belongs | GERMAN BRENNER
+[Strong German Accent] [controlled, deliberate voice] A specific failure that needs me. If Seidel reports that he cannot keep his squad together, I may need to go. I will not leave simply because I want to look.
+
+[Strong German Accent] Adler is here. I expect him to distinguish between being frightened and being unable to continue his task. That is a difficult distinction to demand of another man. Beside him, I have to make it too.
+
+47. Scene 5: Where the leader belongs | PRESENTER
+What would success look like in the next few minutes?
+
+48. Scene 5: Where the leader belongs | GERMAN BRENNER
+[Strong German Accent] Adler still able to tell me what his men can do. Vogt's gun somewhere useful. Seidel still connected to us. That would leave me with choices.
+
+49. Scene 5: Where the leader belongs | PRESENTER
+And if keeping the building means losing that connection?
+
+50. Scene 5: Where the leader belongs | GERMAN BRENNER
+[Strong German Accent] [firm, quiet voice] Which part of the building? Which squads? What could they still defend afterward?
+
+[Strong German Accent] I have orders to hold this position. I am not going to decide how to leave it as an exercise for an interview.
+
+51. Scene 6: Before the first movement | PRESENTER
+Our final questions return to the sergeants, still at their opening positions.
+
+In the Soviet building, Viktor Lebedev has his squad to prepare.
+
+Are you frightened?
+
+52. Scene 6: Before the first movement | SOVIET LEBEDEV
+[Strong Russian Accent] [quiet, candid voice] Yes.
+
+53. Scene 6: Before the first movement | PRESENTER
+What do you do with that?
+
+54. Scene 6: Before the first movement | SOVIET LEBEDEV
+[Strong Russian Accent] I have things to check. That occupies me. I think about the first few steps outside. Then I remember I still have to speak to the men here.
+
+[Strong Russian Accent] You can ask whether a man is ready and hear “yes” without learning very much. I want him to tell me where he thinks we are going. If he points somewhere else, we have found a problem while we can still fix it.
+
+55. Scene 6: Before the first movement | PRESENTER
+Would you want the captain beside you?
+
+56. Scene 6: Before the first movement | SOVIET LEBEDEV
+[Strong Russian Accent] I would be glad of it. But my instruction cannot depend on him coming. I need to know what to do if I look around and he is not there.
+
+57. Scene 6: Before the first movement | PRESENTER
+What do you still need to ask him?
+
+58. Scene 6: Before the first movement | SOVIET LEBEDEV
+[Strong Russian Accent] Whether we move first, or help another squad across. I can prepare the men for either. I do not want them guessing which it is.
+
+59. Scene 6: Before the first movement | PRESENTER
+Across the road, German Sergeant Martin Adler remains beside Brenner.
+
+What do your men need from you now?
+
+60. Scene 6: Before the first movement | GERMAN ADLER
+[Strong German Accent] [steady, practical voice] To notice when an instruction no longer makes sense from where they are. To give them an answer they can use.
+
+[Strong German Accent] And if I tell them to move, to have thought about what happens between this cover and the next.
+
+61. Scene 6: Before the first movement | PRESENTER
+[calm, reflective voice] The same road. Two opposing positions. Four different responsibilities.
+
+Voronin still has to make the first tasks clear. Brenner has to judge what support his positions can provide. Lebedev needs to know his squad's part. Adler needs to know what his men can still do.
+
+We leave them at the opening moment. The crossing has not begun. What follows belongs to the scenario as it is played.
+
+[pause] The Guards Counterattack. Across the Road.

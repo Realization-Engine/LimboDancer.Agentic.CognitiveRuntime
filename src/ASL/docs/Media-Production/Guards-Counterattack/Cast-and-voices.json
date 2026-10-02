@@ -1,0 +1,53 @@
+{
+  "project": "The Guards Counterattack: Across the Road",
+  "model": "eleven_v4",
+  "voices": [
+    {
+      "voice_name": "Christopher",
+      "voice_id": "G17SuINrv2H9FC6nvetn",
+      "accent_hint": null,
+      "speakers": [
+        "PRESENTER"
+      ]
+    },
+    {
+      "voice_name": "Yuri - Serious Academic Lecturer",
+      "voice_id": "lrAMYdevetahiZbiSohB",
+      "accent_hint": "[Strong Russian Accent]",
+      "speakers": [
+        "SOVIET BELOV",
+        "SOVIET VORONIN"
+      ]
+    },
+    {
+      "voice_name": "Aray",
+      "voice_id": "gRUaWJngCuSre3Tohuso",
+      "accent_hint": "[Strong Russian Accent]",
+      "speakers": [
+        "SOVIET LEBEDEV",
+        "SOVIET SOKOLOV"
+      ]
+    },
+    {
+      "voice_name": "Myrddin - Magical Narrator & Wise Mentor",
+      "voice_id": "oR4uRy4fHDUGGISL0Rev",
+      "accent_hint": "[Strong German Accent]",
+      "speakers": [
+        "GERMAN BRENNER",
+        "GERMAN FALK"
+      ]
+    },
+    {
+      "voice_name": "Marshal - German Prof.",
+      "voice_id": "nzeAacJi50IvxcyDnMXa",
+      "accent_hint": "[Strong German Accent]",
+      "speakers": [
+        "GERMAN ADLER",
+        "GERMAN VOGT"
+      ]
+    }
+  ],
+  "directions": "Accent hints begin every character paragraph. Additional delivery hints are preserved in Script-v6-turns.json.",
+  "approval": "Five base voices were approved during auditions. Additional characters reuse these voices with delivery variations.",
+  "voice_identity_note": "Voronin uses user-supplied Yuri voice ID lrAMYdevetahiZbiSohB. Historical connector labels differed; retain the approved ID."
+}

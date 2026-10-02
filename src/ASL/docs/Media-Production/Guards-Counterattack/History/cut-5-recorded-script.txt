@@ -1,0 +1,323 @@
+THE GUARDS COUNTERATTACK: ACROSS THE ROAD
+
+1. The card and the battlefield
+PRESENTER
+
+[calm, clear voice] The Guards Counterattack. ASL Scenario A. Stalingrad, the sixth of October, nineteen forty-two.
+
+Put board one in front of you, with north at the top. Only hexrows A through P are in play. The Germans set up first. The Soviets move first. There are five game turns.
+
+Let's start with the victory conditions. The Soviets must finish with control of at least two more German starting stone buildings than the Germans control Soviet starting stone buildings. Capture two and lose none: enough. Capture two and lose one: not enough.
+
+There is another way to win. At the end, the Soviets can have at least three times as many unbroken squad-equivalents as the Germans. A German squad rallied before the finish can therefore matter as much as a building recovered.
+
+The five German building objectives are F five, K five, I seven, M seven, and M nine. The four Soviet stone buildings are F three, J two, M two, and N four. Soviet-held N two is wooden. It does not count toward that building total.
+
+Those conditions give the two players different problems. The Soviets need enough progress to force a result in five turns. The Germans need to deny both Soviet victory conditions. A German counterattack against a Soviet building can undo some of the attackers' gains elsewhere.
+
+This scenario card places this contest in the struggle for northern Stalingrad's industrial district. Factories, workers' housing, and the streets between them formed a connected battlefield. A local counterattack could recover an approach, relieve pressure on neighboring troops, or interrupt preparations for the next German advance.
+
+Here, the Soviet force includes elements of the Thirty-seventh Guards and Three Hundred and Eighth Rifle Divisions. The Guards, formed from airborne troops, are fighting as infantry. The scenario brings their counterattack down to a few buildings on the approaches to the Tractor Works. There are no tanks or artillery batteries in this order of battle, and no reinforcements arriving later. The force needed to win is already on the board.
+
+We can inspect both sides' deployments. So can the commanders we are about to question. They know the opposing forces and the objectives. Knowing where a counter stands, however, does not give a squad a shot through a building. Their plans must work with the actual sightlines, ranges, and positions on this map.
+
+2. Fifty-one counters
+PRESENTER
+
+The Soviets have twenty-one squads, two leaders, a commissar, and one medium machine gun. The Germans have thirteen squads, five leaders, six light machine guns, one medium, and one heavy. Fifty-one counters altogether. No balance option is in use. All troops begin on the ground floor.
+
+Find the Guards' building at F three. Three squads occupy E four, three F three, three G three, and three G four. Captain Aleksei Voronin, the ten-minus-two leader, is at F three. His twelve six-two-eight squads have strong short-range firepower, but a normal range of only two hexes.
+
+The nine Soviet four-four-seven squads extend the position eastward. One is at J two with Lieutenant Sokolov and the medium machine gun. Three are at M two. One is at N two. The other four occupy M five, N three, N four, and N five, with Commissar Belov at N four.
+
+Now the German four-six-seven squads. In building F five, one squad occupies F five with Lieutenant Brenner, another holds F six with a light machine gun, and a third holds H five.
+
+In building K five, there is one squad each at J four, J five, and K five. The light machine guns are at J four and K five; the eight-zero leader is at K five.
+
+At I seven, Lieutenant Falk, the nine-minus-two leader, has three squads and two light machine guns in one hex.
+
+Building M seven contains a squad and light machine gun at L six, a squad at L seven, and a squad with the medium machine gun and an eight-minus-one leader at M seven. Finally, M nine holds one squad, the heavy machine gun, and another eight-minus-one leader.
+
+The Germans have fewer squads, but more leaders, more machine guns, and greater normal squad range. The Soviets have the larger force and the first move. Where should they apply it?
+
+3. Choosing the first objective
+PRESENTER
+
+Captain Voronin, you know the entire German deployment. Which buildings are you planning to take?
+
+SOVIET VORONIN
+
+[Strong Russian Accent] F five is my first objective. It is close enough for the Guards to use their full squad firepower from several starting positions. Twelve Guards squads face three German squads in that building. That is where I can create the strongest local pressure.
+
+[Strong Russian Accent] But F five is only one building. Taking F five, F six, and H five does not give me three objectives. For the second, I would initially look toward K five. My squads at G four already have lines toward its western positions at J four and J five, and Sokolov can engage J four from J two.
+
+[Strong Russian Accent] I want the first attack to help open the second. If the eastern riflemen gain a better opportunity against M seven, we can change the second objective. We cannot spend four turns deciding that we need one.
+
+PRESENTER
+
+Why not fire all twelve Guards squads before moving anyone?
+
+SOVIET VORONIN
+
+[Strong Russian Accent] Because the squads that Prep Fire cannot move in the Movement Phase. I need a force that can exploit the shooting. If everyone fires, a successful attack on the defenders may leave me with no movement ready to take advantage of it.
+
+[Strong Russian Accent] My opening choice would be to use the three squads here at F three as a fire base against F five, with my leadership. I would preserve other squads for movement. The exact commitment depends on which German positions are still effective after our fire.
+
+[Strong Russian Accent] E four also has a line to F five at two hexes. G four can engage F five and H five at two hexes, but its lines to J four and J five are three hexes long, beyond the Guards' normal range. G three cannot see any occupied German position from the ground floor. Those three squads need a movement task; leaving them there to wait for a target wastes their strength.
+
+PRESENTER
+
+Suppose your opening fire breaks Adler at F five. Is the road open?
+
+SOVIET VORONIN
+
+[Strong Russian Accent] No. Look at F four, the road between us. The Germans at H five, J four, and J five also have lines into that hex. Adler is the nearest defender, but he is not the whole crossing problem.
+
+[Strong Russian Accent] That is why G four and J two matter. I need pressure on the Germans who can fire into the crossing from farther east. Breaking one squad is an opportunity. It is not permission to move the entire force into the road.
+
+4. Defending the crossing
+PRESENTER
+
+Lieutenant Brenner, the Soviets have twelve Guards squads opposite your three. How do you make that an unfavorable attack?
+
+GERMAN BRENNER
+
+[Strong German Accent] Make them fight more than the squad directly ahead. Adler and I are at F five. Seidel is at H five. Both positions can fire into F four. The squads at J four and J five can reach it as well. The Russians must deal with those lines before their numbers become an advantage inside our building.
+
+[Strong German Accent] The range matters. From H five to F four it is two hexes. From J four and J five it is four. Those are all within our squads' normal range. A Russian attack focused only on Adler leaves other German squads with useful work to do.
+
+PRESENTER
+
+What does that mean for your first defensive shots?
+
+GERMAN BRENNER
+
+[Strong German Accent] I want to disrupt the units that will actually take the building. A large stack still sitting in stone cover is tempting, especially with Voronin in it. But if I spend my fire without considering the squads about to enter the road, I help him divide our attention on his terms.
+
+[Strong German Accent] I would look closely at movement into F four. From F five that is an adjacent target. A squad stopped there can delay the following attack. But after I fire, the Russian player knows more about what my squad can still do that phase. He may try a different group or approach. I must leave the other positions doing useful work.
+
+PRESENTER
+
+And if the Soviets gain a foothold at F five?
+
+GERMAN BRENNER
+
+[Strong German Accent] Then F six and H five become immediate concerns. I need surviving squads positioned to contest the building, and I need Falk to decide whether help here is worth weakening I seven.
+
+[Strong German Accent] I will not feed every German squad into F five simply because it was attacked first. If saving it costs us K five and leaves the infantry broken, we have defended the wrong thing. The victory conditions cover the whole board.
+
+5. The squad's job
+PRESENTER
+
+Sergeant Lebedev, your squad is with Voronin at F three. In his proposed opening, you are part of the fire base. What is your job?
+
+SOVIET LEBEDEV
+
+[Strong Russian Accent] Fire on F five and help make Adler's position ineffective before the movement begins. At two hexes, we are within our normal range. We have the captain here. That is a useful concentration of force against one German squad and its leader in stone cover.
+
+[Strong Russian Accent] But if my squad Prep Fires, we are not also the squad crossing F four in the Movement Phase. Another group must be ready for that. I should judge our fire by whether it helps that movement, not just whether we obtained a result on a counter.
+
+PRESENTER
+
+What do you need to tell the squad going across?
+
+SOVIET LEBEDEV
+
+[Strong Russian Accent] Whether F five is still firing effectively. And that our fire on F five has done nothing by itself to remove the Germans at H five, J four, or J five.
+
+[Strong Russian Accent] If Adler breaks and they rush into fire from J four, we have only solved part of their problem. The captain must coordinate the other firing positions before sending them.
+
+PRESENTER
+
+Sergeant Adler, you are the squad they intend to break. What are you defending first?
+
+GERMAN ADLER
+
+[Strong German Accent] The entry at F five and the road immediately in front of it. If I can stop the leading Russian squad at F four, the next squad must decide whether to follow into that fire or lose time finding another approach.
+
+[Strong German Accent] My squad has no separate machine-gun counter. Our job still matters. We are the nearest defenders, with Brenner beside us, and the Russians must cross the interval before they can use their numbers against us at close quarters.
+
+PRESENTER
+
+Would you rather shoot Voronin's stack or the squads moving toward you?
+
+GERMAN ADLER
+
+[Strong German Accent] If Voronin's stack is exposed to a particularly good attack, I consider it. But three squads in a stone building are not automatically a better target than one squad crossing the road. I want a result that stops the attack, not merely a large number of men under the attack roll.
+
+[Strong German Accent] The other consideration is timing. I do not assume that because one Russian squad has drawn our fire, the next squad can cross safely. Nor should the Russians. We have to work through the actual defensive-fire opportunities as they occur.
+
+PRESENTER
+
+Sergeant Vogt, your light machine gun is at F six. Can it support Adler's fight over F four?
+
+GERMAN VOGT
+
+[Strong German Accent] Not from this ground-floor position. F five blocks my line to F four. I cannot fire through Adler's building frontage because we know the Russians are beyond it.
+
+[Strong German Accent] But look west of Adler, at E five. I do have a clear line there, at two hexes. A Russian approach around that side presents a different problem. My gun is not idle merely because it cannot fire at the occupied Russian starting hexes.
+
+PRESENTER
+
+Would you move it up to F five?
+
+GERMAN VOGT
+
+[Strong German Accent] That could put it on the main frontage, but it would also concentrate another squad there and leave this position weaker. I would move for a specific purpose: reinforce the frontage, contest an entry, or take a better firing position. I would not move simply to put every weapon where the first shots were fired.
+
+6. The central fight
+PRESENTER
+
+Lieutenant Sokolov, you have one squad and the Soviet medium machine gun at J two. The Guards want help with their crossing. Where would you put your opening fire?
+
+SOVIET SOKOLOV
+
+[Strong Russian Accent] J four is my first choice. It is two hexes away, occupied by a German squad and light machine gun, and it can fire into F four. An effective attack there helps the Guards and weakens the western side of the K five objective.
+
+[Strong Russian Accent] I also have lines toward H five, F five, and Falk at I seven. The gun can influence several parts of the battle. That does not mean I should keep changing targets while none of them is put under enough pressure to matter.
+
+PRESENTER
+
+Why not aim at Falk's three squads and nine-minus-two leader immediately?
+
+SOVIET SOKOLOV
+
+[Strong Russian Accent] It is a valuable concentration, and an opportunity there could be decisive. But I seven cannot fire into the F four crossing from its present ground-floor position. J four can. If the immediate task is to help the Guards cross, that distinction matters.
+
+[Strong Russian Accent] I also have only one squad here. J two itself counts toward the Soviet buildings the Germans can capture. If I send that squad forward with the gun, I must account for the position I leave behind. Supporting the attack does not require abandoning my own objective.
+
+PRESENTER
+
+Lieutenant Falk, you are at I seven with three squads and two light machine guns. Are you the German reserve?
+
+GERMAN FALK
+
+[Strong German Accent] I can be used that way, but I am also holding one of the five buildings the Russians want. Calling these squads a reserve does not make I seven expendable.
+
+[Strong German Accent] From here, we have lines toward J two and M five. Fire against J two can put pressure on Sokolov's squad and gun. Fire against M five can interfere with the eastern Soviet force. We can contribute without moving toward Brenner.
+
+PRESENTER
+
+What would make you send a squad toward F five?
+
+GERMAN FALK
+
+[Strong German Accent] A chance to preserve the building at a reasonable cost. One squad arriving where it can still influence the fight may be worth sending. Moving all three because Brenner is under attack would sacrifice our concentration, weaken I seven, and stop the fire we can deliver from here.
+
+[Strong German Accent] I would first ask whether F five is still defensible. If the Russians have committed heavily there, we should also examine what that commitment leaves vulnerable. Their stone buildings count in the victory calculation. A credible threat to one of them can force Voronin to keep troops back.
+
+PRESENTER
+
+Why not leave all three squads stacked at I seven throughout the game?
+
+GERMAN FALK
+
+[Strong German Accent] Concentrating them with my leadership gives us a strong firing position. It also exposes several important counters to the same attack. And a strong stack in the wrong place can spend five turns watching the Russians win elsewhere.
+
+[Strong German Accent] We start here because it offers choices. We should not confuse the starting arrangement with a plan for the entire game.
+
+7. The eastern opportunity
+PRESENTER
+
+Commissar Belov, suppose the Germans reinforce against the Guards. What can your riflemen do from the eastern side?
+
+SOVIET BELOV
+
+[Strong Russian Accent] Put pressure on M seven, or on the eastern face of K five. At M five, Ryabov's squad has lines toward K five, L six, and M seven, each at two hexes, and toward Falk farther away at I seven.
+
+[Strong Russian Accent] At N five, Pavlov has lines toward L six, M seven, J five, and the heavy machine gun at M nine. If the Germans move men west, these are positions where we can look for a second building opportunity.
+
+[Strong Russian Accent] But those same lines expose our squads. A second attack must have enough support to accomplish something. Feeding one rifle squad into several German firing positions would merely make their defense easier.
+
+PRESENTER
+
+You also have squads at N three and N four. How would you use them?
+
+SOVIET BELOV
+
+[Strong Russian Accent] Neither starting hex has a ground-level line to an occupied German position. The squad with me at N four is not an opening fire base against the Germans. Those positions provide men who can reinforce our exposed faces, help hold the building, or become part of a movement after we choose a task.
+
+[Strong Russian Accent] I know where the Germans are, just as the player does. That knowledge helps me choose the task. It does not let the squad at N four fire through the intervening terrain.
+
+PRESENTER
+
+And the four squads farther north, at M two and N two?
+
+SOVIET BELOV
+
+[Strong Russian Accent] The three at M two have lines toward K five and F five. K five is at four hexes, within their normal squad range; F five is at seven. That makes K five the more natural opening target for their rifles, unless another opportunity justifies the longer shot.
+
+[Strong Russian Accent] The squad at N two has no ground-level line to an occupied German position. Its wooden building does not count toward the building objective, so we should consider whether that squad has more useful work elsewhere. But moving it still requires a destination and a route. A building being worth no victory credit does not make the ground around it harmless.
+
+PRESENTER
+
+Lieutenant Brenner, what keeps the eastern German defense working if Falk sends help west?
+
+GERMAN BRENNER
+
+[Strong German Accent] The positions at L six and M seven both have lines toward M five and N five. The medium gun at M seven belongs to that immediate fight. The heavy gun at M nine reaches N five, but none of the other occupied Soviet hexes from its present position.
+
+[Strong German Accent] Lenz's squad at L seven sees no occupied Soviet hex. It may have to reinforce another part of the building or respond to movement. We cannot count every German squad and machine gun as if it can all fire at the same target.
+
+[Strong German Accent] If we strip this frontage to save F five, Belov may obtain the second building the Guards need. The Soviet threat at one end of the board is a reason to examine the other end, not forget it.
+
+8. Five turns to make it count
+PRESENTER
+
+Captain Voronin, give us your opening plan in board terms.
+
+SOVIET VORONIN
+
+[Strong Russian Accent] Put effective fire onto F five. Use G four and Sokolov at J two to help deal with the defenders farther east who can interfere with the crossing. Keep enough Guards out of Prep Fire to move when an opportunity appears. Give the squads at G three a useful movement task instead of expecting them to shoot through the building.
+
+[Strong Russian Accent] Then secure our first building while preparing the next attack. K five is the initial second objective, but the eastern riflemen may create an opportunity against M seven. I would not insist on the original second objective after the board has changed.
+
+PRESENTER
+
+What would make the first turn a failure even if you break German squads?
+
+SOVIET VORONIN
+
+[Strong Russian Accent] If we make no progress and have no better position for the next turn. Or if we cross with so much force in one exposed group that a single successful attack leaves the assault broken in the road.
+
+[Strong Russian Accent] We have five turns, but we do not have five attempts to start. The first turn should leave us closer to controlling buildings, with enough organized infantry to continue.
+
+PRESENTER
+
+Lieutenant Brenner, what are you trying to preserve as the turns pass?
+
+GERMAN BRENNER
+
+[Strong German Accent] Enough buildings and enough unbroken infantry to deny both ways of winning. A delay at F four is useful if it consumes time the Russians need for their second objective. A withdrawal is useful if the survivors can still defend or counterattack. Neither decision is valuable simply because it avoids losses this turn.
+
+[Strong German Accent] Near the end, I want the squad-equivalent count checked as carefully as the buildings. If the Soviets have fifteen unbroken squad-equivalents and we have only five, their three-to-one condition is met. Holding the map neatly will not save us from that result.
+
+PRESENTER
+
+Sergeant Lebedev, suppose your squad eventually reaches the German building. What is the next task?
+
+SOVIET LEBEDEV
+
+[Strong Russian Accent] Find which defenders still contest it and help secure control. Reaching one hex is not a signal for the whole force to stop. F six and H five remain separate tactical problems even though they belong to the same building objective.
+
+[Strong Russian Accent] Then we need enough men holding what we have gained while other squads prepare to move again. If everyone crowds into the first success, nobody is working on the second building.
+
+PRESENTER
+
+Sergeant Adler, what are you trying to deny him?
+
+GERMAN ADLER
+
+[Strong German Accent] A quick crossing, a cheap entry, and time to turn toward the next objective. If my squad remains effective, it forces him to spend men, fire, or movement on our position. If we break, I want the surviving force brought back into the fight where the rules and the situation allow it. An unbroken squad on the last turn still counts.
+
+PRESENTER
+
+[calm, clear voice] Return to the whole board.
+
+The first Soviet problem is the crossing near F four, under lines from four German positions. The central problem is whether J two and the Guards' eastern frontage can reduce the German interference from J four and J five. At I seven, Falk must balance his existing fire against the value of moving men elsewhere. On the eastern flank, the Soviet riflemen can threaten another objective, but face the German positions at K five, L six, M seven, and M nine.
+
+The victory conditions connect these fights. A Soviet building lost can offset a German building taken. Squads broken in an unsuccessful attack can change the infantry ratio. A leader who restores a squad can change it back.
+
+Five turns. Two opposing plans. The opening deployment gives each side opportunities, and neither side can use all of them at once.
+
+[pause] The Guards Counterattack. Across the Road.
