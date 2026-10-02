@@ -233,6 +233,26 @@ public sealed class PlayPageStepsTests : IDisposable
     }
 
     [Fact]
+    public void AGameUsingTheArchivedCatalogReplaysWithoutRewritingItsRecord()
+    {
+        var hexes = Hexes();
+        var page = NewGame("russian", "german");
+        Place(page, "r1", "defender-squad", hexes.From);
+        Commit(page, "#propose-setup");
+
+        var file = Directory.GetFiles(live.Root, "village.game.json", SearchOption.AllDirectories).Single();
+        File.WriteAllText(file, File.ReadAllText(file).Replace("asl-scenario-a1@1.13.0", "asl-scenario-a1@1.12.0", StringComparison.Ordinal));
+        var original = File.ReadAllBytes(file);
+        var reopened = context.Render<PlayPage>();
+        reopened.Find("#play-game").Change("village");
+
+        Assert.Empty(reopened.FindAll("#play-replay-failed"));
+        Assert.False(live.History("village")!.HasErrors);
+        Assert.False(context.Services.GetRequiredService<GameLibrary>().Load("live:village").History!.HasErrors);
+        Assert.Equal(original, File.ReadAllBytes(file));
+    }
+
+    [Fact]
     public void AGameThatDoesNotReplaySaysWhy()
     {
         var hexes = Hexes();

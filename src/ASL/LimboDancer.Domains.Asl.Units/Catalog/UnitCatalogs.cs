@@ -12,6 +12,7 @@ public static class UnitCatalogs
     public const string ScenarioA1Synthetic = "scenario-a1.synthetic";
 
     private const string Prefix = "Catalogs.";
+    private const string ArchivePrefix = "ArchivedCatalogs.";
     private const string Suffix = ".catalog.json";
 
     /// <summary>The embedded catalog names, in ordinal order.</summary>
@@ -20,12 +21,19 @@ public static class UnitCatalogs
         .Select(name => name[Prefix.Length..^Suffix.Length])
         .Order(StringComparer.Ordinal)];
 
+    /// <summary>Current catalogs plus immutable older versions needed to replay saved games.</summary>
+    public static IReadOnlyList<string> ReplayNames => [.. Names, .. typeof(UnitCatalogs).Assembly.GetManifestResourceNames()
+        .Where(name => name.StartsWith(ArchivePrefix, StringComparison.Ordinal) && name.EndsWith(Suffix, StringComparison.Ordinal))
+        .Select(name => name[ArchivePrefix.Length..^Suffix.Length])
+        .Order(StringComparer.Ordinal)];
+
     /// <summary>Reads an embedded catalog; null when no catalog of that name is embedded.</summary>
     public static UnitCatalogResult? Read(string name, UnitVocabulary vocabulary)
     {
         ArgumentNullException.ThrowIfNull(name);
         ArgumentNullException.ThrowIfNull(vocabulary);
-        using var stream = typeof(UnitCatalogs).Assembly.GetManifestResourceStream(Prefix + name + Suffix);
+        using var stream = typeof(UnitCatalogs).Assembly.GetManifestResourceStream(Prefix + name + Suffix)
+            ?? typeof(UnitCatalogs).Assembly.GetManifestResourceStream(ArchivePrefix + name + Suffix);
         if (stream is null)
         {
             return null;

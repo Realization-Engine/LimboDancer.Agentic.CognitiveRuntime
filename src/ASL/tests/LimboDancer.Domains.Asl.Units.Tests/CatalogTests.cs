@@ -86,6 +86,19 @@ public sealed class CatalogTests
     private static string Hash(byte[] bytes) => Convert.ToHexStringLower(SHA256.HashData(bytes));
 
     [Fact]
+    public void ArchivedCatalogsAreAvailableForReplayButNotCurrentSelection()
+    {
+        const string archived = "scenario-a1-1.12.0";
+        Assert.Contains(archived, UnitCatalogs.ReplayNames);
+        Assert.DoesNotContain(archived, UnitCatalogs.Names);
+        var result = UnitCatalogs.Read(archived, UnitsTestData.Asl.Value);
+        Assert.NotNull(result?.Catalog);
+        Assert.Empty(result.Diagnostics);
+        Assert.StartsWith("asl-scenario-a1@1.12.0+sha256:", result.Catalog.Identity.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain(result.Catalog.Definitions, definition => definition.Id == "axis-minor-squad");
+    }
+
+    [Fact]
     public void TheSyntheticCatalogIsEmbeddedAndReads()
     {
         Assert.Contains(UnitCatalogs.ScenarioA1Synthetic, UnitCatalogs.Names);

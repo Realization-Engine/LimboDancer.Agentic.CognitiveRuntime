@@ -3782,9 +3782,11 @@ else if (state is not null && history?.Current is not null)
     public string? GameQuery { get; set; }
 
     private IReadOnlyList<UnitDefinition> Definitions =>
-        [.. Live.Catalogs.Where(catalog => catalog.Publication == CatalogPublication.Published).SelectMany(catalog => catalog.Definitions)];
+        PublishedCatalog?.Definitions ?? [];
 
-    private UnitCatalog? PublishedCatalog => Live.Catalogs.FirstOrDefault(catalog => catalog.Publication == CatalogPublication.Published);
+    private UnitCatalog? PublishedCatalog => history?.Events.FirstOrDefault()?.Payload is GameStarted started
+        ? Live.Catalogs.FirstOrDefault(catalog => $"{catalog.Identity.Catalog}@{catalog.Identity.Version}" == started.Catalog)
+        : Live.Catalogs.FirstOrDefault(catalog => catalog.Publication == CatalogPublication.Published);
 
     /// <summary>Setup stays open until the first event that is not the start or a placement.</summary>
     private bool SetupOpen => history is { } shown && shown.Events.All(item => GameState.IsSetupEvent(item.Payload));
