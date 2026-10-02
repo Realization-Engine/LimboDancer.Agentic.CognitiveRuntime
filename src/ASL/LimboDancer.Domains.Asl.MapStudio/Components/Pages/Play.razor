@@ -4231,7 +4231,7 @@ else if (state is not null)
         if (shown.Phase is "rph" or "rtph" or "ccph")
         {
             var other = viewAs == shown.PhasingSide ? defender : shown.PhasingSide;
-            return (other, $"Both sides act in the {Games.PhaseLabel(shown.Phase)}, the {shown.PhasingSide} side first: the {other} side too.");
+            return (other, $"Both sides act in the {Games.PhaseLabel(shown.Phase)}, the {shown.PhasingSide} side first.");
         }
 
         return (shown.PhasingSide, $"The {shown.PhasingSide} side acts in the {Games.PhaseLabel(shown.Phase)}.");

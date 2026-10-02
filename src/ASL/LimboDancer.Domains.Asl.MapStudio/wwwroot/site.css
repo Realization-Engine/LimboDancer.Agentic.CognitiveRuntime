@@ -2055,3 +2055,10 @@ main :is(.toolbar, .fields, .field-group, .form-grid) > * {
         max-height: none;
     }
 }
+
+/* A long action label wraps inside its pane rather than pushing the pane sideways (pass 28c visual check). */
+.play-pane button {
+    max-width: 100%;
+    white-space: normal;
+    text-align: left;
+}
